@@ -91,9 +91,11 @@ missionNamespace setVariable ["comspec_sse_fnc_biiLayerWatch", {
 }];
 
 missionNamespace setVariable ["comspec_sse_fnc_biiPollTick", {
-    if !(missionNamespace getVariable ["comspec_sse_biiBridgeEnabled", true]) exitWith {};
-    call (missionNamespace getVariable ["comspec_sse_fnc_biiPollOnce", {}]);
-    call (missionNamespace getVariable ["comspec_sse_fnc_biiLayerWatch", {}]);
+    // Passerelle coupée : on saute le travail mais on garde la boucle (réactivation en cours de mission).
+    if (missionNamespace getVariable ["comspec_sse_biiBridgeEnabled", true]) then {
+        call (missionNamespace getVariable ["comspec_sse_fnc_biiPollOnce", {}]);
+        call (missionNamespace getVariable ["comspec_sse_fnc_biiLayerWatch", {}]);
+    };
     [
         { [] call (missionNamespace getVariable ["comspec_sse_fnc_biiPollTick", {}]); },
         [],

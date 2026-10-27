@@ -1,7 +1,8 @@
 /*
     Actions de l'app Poste TOC (fn_pageToc).
       "prio" niveau | "send" (message au camp) | "order" clé de groupe ("" : tous) | "sms" nom | "nav" page | "saveCs"
-      "recv" [indicatif, texte, heure, priorité, camp, id, émetteur]   message du poste reçu (événement comspec_atak_native_tocMsg)
+      "recv" [indicatif, texte, heure, priorité, camp, id, émetteur, destinataire (UID ; "" : tout le camp)]
+             message du poste reçu (événement comspec_atak_native_tocMsg ; le PC du poste, fn_tocLaptop, écrit aussi à un chef)
 */
 params [["_a", ""], ["_v", ""]];
 private _draft = uiNamespace getVariable ["COMSPEC_ATAK_TocDraft", createHashMap];
@@ -28,8 +29,9 @@ switch (_a) do {
         call _redraw;
     };
     case "recv": {
-        _v params [["_cs", "TOC"], ["_body", ""], ["_time", ""], ["_prio", "ROUTINE"], ["_side", ""], ["_id", ""], ["_uid", ""]];
+        _v params [["_cs", "TOC"], ["_body", ""], ["_time", ""], ["_prio", "ROUTINE"], ["_side", ""], ["_id", ""], ["_uid", ""], ["_to", ""]];
         if (!hasInterface || {isNull player} || {_side isNotEqualTo str side group player} || {_uid isEqualTo getPlayerUID player}) exitWith {};
+        if (_to isNotEqualTo "" && {_to isNotEqualTo getPlayerUID player}) exitWith {};
         if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
         private _txt = [format ["[%1] %2", _prio, _body], _body] select (_prio isEqualTo "ROUTINE");
         [format ["TOC · %1", _cs], _txt, _time, _id] call comspec_atak_native_fnc_p2pReceive;

@@ -23,7 +23,14 @@ switch (toLower _action) do {
     };
     case "cancel": { _s set ["orderCompose", false]; call _redraw; };
     case "set": { call _keep; _d set [_key, _value]; call _redraw; };
-    case "grid": { call _keep; _d set ["grid", [player, 8] call comspec_atak_native_fnc_gridRef]; call _redraw; };
+    case "grid": {
+        call _keep;
+        _d set ["grid", [player, 8] call comspec_atak_native_fnc_gridRef];
+        // Champ mis à jour aussi : fn_pageRender relit les champs avant le redessin.
+        private _gc = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault ["grid", controlNull];
+        if (!isNull _gc) then { _gc ctrlSetText (_d get "grid"); };
+        call _redraw;
+    };
     case "send": {
         call _keep;
         private _kind = _d getOrDefault ["kind", "MOVE"];

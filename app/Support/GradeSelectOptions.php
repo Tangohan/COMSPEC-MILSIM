@@ -37,6 +37,20 @@ final class GradeSelectOptions
         'US' => 'États-Unis',
     ];
 
+    // Libellés de groupe en anglais : un <optgroup label> n'est pas repris par la traduction du site.
+    private const CATEGORY_LABELS_EN = [
+        'OFFICIER' => 'Officers',
+        'SOUS_OFFICIER' => 'NCOs',
+        'MDR' => 'Enlisted',
+        'CIVIL' => 'Civilians',
+        'HORS_GRADE' => 'No grade',
+    ];
+
+    private const SYSTEM_LABELS_EN = [
+        'FR' => 'France',
+        'US' => 'United States',
+    ];
+
     /**
      * @param list<array<string, mixed>> $grades
      * @return list<array<string, mixed>>
@@ -77,15 +91,18 @@ final class GradeSelectOptions
 
             return $c !== 0 ? $c : (self::sortKey($a) <=> self::sortKey($b));
         });
+        $en = function_exists('locale') && locale() === 'en';
+        $categoryLabels = $en ? self::CATEGORY_LABELS_EN : self::CATEGORY_LABELS;
+        $systemLabels = $en ? self::SYSTEM_LABELS_EN : self::SYSTEM_LABELS;
         $groups = [];
         foreach ($rows as $g) {
             $cat = self::category($g);
             $label = self::isCustom($g)
-                ? (trim((string) ($g['category_label'] ?? '')) ?: 'Grades')
-                : (self::CATEGORY_LABELS[$cat] ?? (trim((string) ($g['category_label'] ?? '')) ?: 'Autres'));
+                ? (trim((string) ($g['category_label'] ?? '')) ?: ($en ? 'Ranks' : 'Grades'))
+                : ($categoryLabels[$cat] ?? (trim((string) ($g['category_label'] ?? '')) ?: ($en ? 'Other' : 'Autres')));
             if ($multi) {
                 $country = self::country($g);
-                $system = self::isCustom($g) ? (trim((string) ($g['system_label'] ?? '')) ?: $country) : (self::SYSTEM_LABELS[$country] ?? $country);
+                $system = self::isCustom($g) ? (trim((string) ($g['system_label'] ?? '')) ?: $country) : ($systemLabels[$country] ?? $country);
                 $label = $system . ' · ' . $label;
             }
             if ($groups === [] || $groups[count($groups) - 1]['label'] !== $label) {

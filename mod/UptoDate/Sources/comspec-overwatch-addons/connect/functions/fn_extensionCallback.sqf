@@ -17,6 +17,31 @@ if ((_function select [0, 6]) isEqualTo "async:") exitWith {
 };
 
 switch (_function) do {
+    case "PhoneHandset": {
+        // Numéro du terminal attribué au joueur. L'e-mail et le nom civil ne passent pas ici.
+        if (!hasInterface || {isNull player}) exitWith {};
+        private _parts = [_data, toString [9]] call comspec_overwatch_connect_fnc_splitKeepEmpty;
+        private _cell = {
+            params ["_i"];
+            private _s = _parts param [_i, ""];
+            if (_s isEqualTo "-") then { "" } else { _s }
+        };
+        private _db = [[0] call _cell, [1] call _cell, [2] call _cell, [3] call _cell];
+        if ((_db select 0) isEqualTo "") exitWith {};
+        private _gen = player getVariable ["COMSPEC_ATAK_PhoneGen", 0];
+        private _old = missionNamespace getVariable ["comspec_profile_phone", []];
+        if !(_old isEqualType []) then { _old = []; };
+        if (_old isEqualTo _db) exitWith {};
+        missionNamespace setVariable ["comspec_profile_phone", _db, false];
+        if ((count _old) > 0) then {
+            private _devChanged = ((_old param [1, ""]) isNotEqualTo (_db select 1)) || {(_old param [2, ""]) isNotEqualTo (_db select 2)};
+            private _fromSwap = _devChanged && {_gen > 0} && {(_old param [0, ""]) isEqualTo (_db select 0)};
+            if (_devChanged) then { player setVariable ["COMSPEC_ATAK_PhoneGen", 0, true]; };
+            if (!_fromSwap && {!isNil "comspec_atak_native_fnc_notify"}) then {
+                ["INFO", format ["Téléphone mis à jour par Athena : %1", _db select 0], 5, 20] call comspec_atak_native_fnc_notify;
+            };
+        };
+    };
     case "Connected": {
         // N'ecrase pas un echec auth deja constate (race async ancienne DLL).
         private _keyLen = count (missionNamespace getVariable ["comspec_overwatch_api_key", ""]);
@@ -604,12 +629,17 @@ switch (_function) do {
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     };
     case "NetworkReconnected": {
-        missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
-        missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
-        missionNamespace setVariable ["COMSPEC_LastHealthOk", diag_tickTime, false];
-        ["INFO", "Athena", "Liaison rétablie"] call comspec_overwatch_connect_fnc_log;
-        [format ["[Athena] Liaison rétablie"], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
-        ["reconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
+        // Fin de coupure simulée : ne pas forcer « linked » (appareil détruit, zone sans couverture, pas de
+        // session) → recalcul réel ; son et santé seulement si la liaison est effectivement revenue.
+        missionNamespace setVariable ["COMSPEC_LinkStateRefreshedAt", -99, false];
+        private _st = [] call comspec_overwatch_connect_fnc_refreshLinkState;
+        ["INFO", "Athena", format ["Fin de coupure réseau — état %1", _st]] call comspec_overwatch_connect_fnc_log;
+        if (_st in ["linked", "degraded"]) then {
+            missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
+            missionNamespace setVariable ["COMSPEC_LastHealthOk", diag_tickTime, false];
+            [format ["[Athena] Liaison rétablie"], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
+            ["reconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
+        };
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     };
     default {};

@@ -652,7 +652,7 @@ if (function_exists('i18n_phrase')) {
                     aria-controls="athena-header-profile"
                 >
                     <span class="athena-header__profile-identity">
-                        <span class="athena-header__profile-name"><?= $h($headerDisplayName) ?></span>
+                        <span class="athena-header__profile-name"><?= staff_name($headerDisplayName, (int) (\App\Core\Session::get('user_id') ?? 0)) ?></span>
                         <span class="athena-header__profile-title">
                             <?= $h($headerGradeLabel) ?><?php if ($headerGradeOtan !== null): ?> · <?= $h($headerGradeOtan) ?><?php endif; ?>
                         </span>
@@ -682,7 +682,7 @@ if (function_exists('i18n_phrase')) {
                             <div class="athena-header__profile-cover-shade"></div>
                             <div class="athena-header__profile-topline">
                                 <span>Session active</span>
-                                <b><?= $h($headerDisplayName) ?></b>
+                                <b><?= staff_name($headerDisplayName, (int) (\App\Core\Session::get('user_id') ?? 0), true) ?></b>
                             </div>
                         </div>
                         <div class="athena-header__profile-body">
@@ -694,7 +694,7 @@ if (function_exists('i18n_phrase')) {
                                 require base_path('views/partials/ui/user_avatar.php');
                                 ?>
                                 <div class="athena-header__profile-name-block">
-                                    <strong><?= $h($headerDisplayName) ?></strong>
+                                    <strong><?= staff_name($headerDisplayName, (int) (\App\Core\Session::get('user_id') ?? 0), true) ?></strong>
                                     <span>
                                         <?= $h($headerGradeLong) ?><?php if ($headerGradeOtan !== null): ?> · <?= $h($headerGradeOtan) ?><?php endif; ?>
                                         · <?= $h($headerMatriculeLabel) ?>

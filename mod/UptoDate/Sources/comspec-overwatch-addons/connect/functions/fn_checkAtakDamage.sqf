@@ -169,7 +169,10 @@ switch (_realism) do {
                 format ["dommages torse=%1", (_chestDamage toFixed 2)]
             ] call comspec_overwatch_connect_fnc_logAtakEvent;
             [true] call comspec_overwatch_connect_fnc_logAtakStateChange;
-            [] call comspec_overwatch_connect_fnc_disconnect;
+            // Pas de fn_disconnect ici (réservé à Ended / Unload display 46) : il armerait
+            // COMSPEC_DisconnectSent pour toute la mission. Liaison hors ligne seulement ;
+            // refreshLinkState la maintient via device_destroyed jusqu'à réparation.
+            missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
         };
     };
 };

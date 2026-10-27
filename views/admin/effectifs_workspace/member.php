@@ -233,7 +233,7 @@ $fileScore = (int) round((($checks - count($missing)) / $checks) * 100);
         </div>
         <div class="eff-fiche-hero__id">
             <p class="eff-page-kicker">Fiche membre<?php if ($grade !== ''): ?> · <?= $h($grade) ?><?php endif; ?></p>
-            <h1 class="eff-page-title"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></h1>
+            <h1 class="eff-page-title"><?= staff_name($name, $id, true) ?></h1>
             <p class="eff-fiche-hero__meta">
                 <?php if ($callsign !== ''): ?>
                     <span>Indicatif <?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?></span>
@@ -833,6 +833,8 @@ $fileScore = (int) round((($checks - count($missing)) / $checks) * 100);
         <?php $renderRhList($combinedHistory, static function (array $h) use ($fmtDate): string {
             $label = trim((string) ($h['title'] ?? $h['event_label'] ?? $h['event_type'] ?? $h['stage_label'] ?? $h['summary'] ?? 'Événement RH'));
             $date = $fmtDate((string) ($h['event_date'] ?? $h['occurred_at'] ?? $h['created_at'] ?? ''));
+            // Libellé enregistré en français : traduit morceau par morceau avant d'être collé à la date.
+            $label = \App\Support\HrHistoryLabel::forPage($label);
             return ($date !== '' ? $date . ' · ' : '') . $label;
         }); ?>
     </article>

@@ -194,7 +194,7 @@ if ((count _route) > 0) then {
             [_a, _b, _mpu, [0.26, 0.52, 0.96, 1]] call _seg;
         };
     };
-    _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [0.92, 0.26, 0.21, 1], _route get "dest", 26 * _k * _is, 26 * _k * _is, 0, _route getOrDefault ["label", ""], 2, 0.028 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [0.92, 0.26, 0.21, 1], _route get "dest", 26 * _k * _is, 26 * _k * _is, 0, (_route getOrDefault ["label", ""]) call comspec_atak_native_fnc_tr, 2, 0.028 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
 };
 
 // Calques Relief (champ de vision / altitudes) et Wave Relay (liens du maillage).
@@ -223,15 +223,19 @@ uiNamespace setVariable ["COMSPEC_ATAK_SelfGpsPos", _selfGps];
 private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) isEqualTo "NATO";
 // Terminal compromis (fn_compromiseView) : flux BFT coupé, seule ma position GPS reste en direct (pistes figées dessinées à la fin).
 private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
+private _dcAll = uiNamespace getVariable "COMSPEC_ATAK_MapDrawCache";
+if (isNil "_dcAll") then { _dcAll = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_MapDrawCache", _dcAll]; };
+// Unités parties : entrées périmées retirées de temps en temps (pas de table sans fin).
+if ((count _dcAll) > (300 max (2 * (count (_data getOrDefault ["units", createHashMap]))))) then { private _tNow = diag_tickTime; { if (_tNow > ((_y select 0) + 5)) then { _dcAll deleteAt _x; }; } forEach +_dcAll; };
 {
     private _entity = _y;
     private _pos = _entity getOrDefault ["position",[]];
     if ((count _pos) < 2) then { continue };
     if (_compSkip && {!(_entity getOrDefault ["self", false])}) then { continue };
     private _self = _entity getOrDefault ["self",false];
-    // Symbole, couleur de base, icône perso et symbole OTAN gardés 1 s dans la piste (« drawCache ») : refaits à
-    // chaque image et pour chaque unité avant, alors qu'ils ne changent qu'avec la table des unités.
-    private _dc = _entity getOrDefault ["drawCache", []];
+    // Symbole, couleur de base, icône perso et symbole OTAN gardés 1 s par unité (table à part, COMSPEC_ATAK_MapDrawCache) :
+    // refaits à chaque image et pour chaque unité avant. Plus dans la piste : fn_localDataRefresh la refait 4 fois par seconde.
+    private _dc = _dcAll getOrDefault [_x, []];
     if ((count _dc) < 7 || {diag_tickTime > (_dc select 0)} || {(_dc select 6) isNotEqualTo _nato}) then {
         ([_entity] call comspec_atak_native_fnc_symbology) params ["_sIcon","_sColor"];
         private _ci = "";
@@ -243,7 +247,7 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
         private _nt = ""; private _ne = "";
         if (_nato && {!_self}) then { ([_entity] call comspec_atak_native_fnc_natoSymbol) params ["_nt0", "_ne0"]; _nt = _nt0; _ne = _ne0; };
         _dc = [diag_tickTime + 1, _sIcon, _sColor, _ci, _nt, _ne, _nato];
-        _entity set ["drawCache", _dc];
+        _dcAll set [_x, _dc];
     };
     private _icon = _dc select 1;
     private _color = +(_dc select 2);
@@ -270,7 +274,7 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
     };
     // Précision annoncée par le point de position de l'allié (fn_pli) : cercle discret au-delà de 10 m.
     private _acc = _entity getOrDefault ["acc", 0];
-    if (!_self && {_acc >= 10}) then { _map drawEllipse [_pos, _acc, _acc, 0, [_color select 0, _color select 1, _color select 2, (_color select 3) * 0.45], ""]; };
+    if (!_self && {_acc >= 10} && {profileNamespace getVariable ["COMSPEC_ATAK_AccRings", true]}) then { _map drawEllipse [_pos, _acc, _acc, 0, [_color select 0, _color select 1, _color select 2, (_color select 3) * 0.45], ""]; };
     _map drawIcon [_icon,_color,_pos,_size,_size,_dir,"",0];
     if (_lblOn && {!_boxOn} && {_scale < 0.25}) then {
         private _cs = _entity getOrDefault ["callsign",""];
@@ -309,8 +313,24 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
     };
 } forEach (_data getOrDefault ["units",createHashMap]);
 
+// Listes filtrées du magasin des marqueurs (repères Athena absents du jeu ; marqueurs à cartouche E / N), refaites quand
+// sa révision change (au plus 4 fois par seconde) et toutes les 2 s par sécurité : avant, deux passes complètes sur tous
+// les marqueurs (mission comprise) à chaque image.
+private _mkRev = (_data getOrDefault ["revisions",createHashMap]) getOrDefault ["markers",-1];
+private _mkLists = missionNamespace getVariable ["COMSPEC_ATAK_DrawMkLists", []];
+if ((count _mkLists) < 4 || {(_mkLists select 0) isNotEqualTo _mkRev} || {diag_tickTime > (_mkLists select 1)}) then {
+    private _rem = [];
+    private _tag = [];
+    {
+        private _lc = _y getOrDefault ["local",false];
+        if (!_lc) then { _rem pushBack [_x,_y]; };
+        if ((_y getOrDefault ["text",""]) isNotEqualTo "" && {!_lc || {((_y getOrDefault ["id",_x]) find "_USER_DEFINED") >= 0}} && {!((toUpper (_y getOrDefault ["shape","ICON"])) in ["POLYLINE","RECTANGLE","ELLIPSE"])}) then { _tag pushBack [_x,_y]; };
+    } forEach (_data getOrDefault ["markers",createHashMap]);
+    _mkLists = [_mkRev, diag_tickTime + 2, _rem, _tag];
+    missionNamespace setVariable ["COMSPEC_ATAK_DrawMkLists", _mkLists];
+};
 {
-    private _marker = _y;
+    private _marker = _x select 1;
     if (_marker getOrDefault ["local",false]) then { continue };
     private _pos = _marker getOrDefault ["position",[]];
     if ((count _pos) < 2) then { continue };
@@ -337,7 +357,7 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
             _map drawIcon [_icon,_rgba,_pos,16 * _k * _is,16 * _k * _is,_marker getOrDefault ["dir",0],"",0];
         };
     };
-} forEach (_data getOrDefault ["markers",createHashMap]);
+} forEach (_mkLists select 2);
 
 {
     if ((count _x) >= 2) then {
@@ -350,15 +370,15 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
     {
         if ((count _x) >= 3) then { _map drawPolygon [_x,[0.95,0.67,0.20,0.18]]; };
     } forEach (_data getOrDefault ["zones",[]]);
-    uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", -1];
+    missionNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", -1];
 } else {
     // Calque masqué : Overwatch recrée ses marqueurs de zone à chaque synchro, on les remasque.
     // Seulement quand un marqueur a changé (compteur COMSPEC_ATAK_MkRev), au plus toutes les 2 s : avant, tous les
     // marqueurs étaient parcourus toutes les 2 s même sans aucun changement.
     private _zRev = missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0];
-    if (diag_tickTime > (uiNamespace getVariable ["COMSPEC_ATAK_ZonesHideAt", 0]) && {_zRev isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_ZonesHideRev", -1])}) then {
-        uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideAt", diag_tickTime + 2];
-        uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", _zRev];
+    if (diag_tickTime > (missionNamespace getVariable ["COMSPEC_ATAK_ZonesHideAt", 0]) && {_zRev isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_ZonesHideRev", -1])}) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_ZonesHideAt", diag_tickTime + 2];
+        missionNamespace setVariable ["COMSPEC_ATAK_ZonesHideRev", _zRev];
         { if ((_x select [0, 11]) isEqualTo "COMSPEC_TZ_" && {(markerAlpha _x) > 0}) then { _x setMarkerAlphaLocal 0; }; } forEach allMapMarkers;
     };
 };
@@ -410,6 +430,8 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
 // Mes charges (app Explosifs) : numéro de pose, mode de mise à feu, temps restant des minuteries, T- de la séquence.
 {
     private _e = _x get "obj";
+    // Charge détonée ou supprimée dans la fenêtre du cache de fn_exploList (0,5 s) : pas d'icône à l'origine de la carte.
+    if (isNull _e) then { continue };
     private _c = [[0.95,0.67,0.20,1], [0.90,0.78,0.29,1], [0.90,0.28,0.23,1], [0.79,0.83,0.81,1]] select ((["atak","command","timer","mine"] find (_x get "kind")) max 0);
     private _txt = format ["C%1", _forEachIndex + 1];
     if ((_x get "remaining") >= 0) then { _txt = format ["%1 · %2 s", _txt, ceil (_x get "remaining")]; };
@@ -441,7 +463,10 @@ if ((_state getOrDefault ["interactive",false]) && {_state getOrDefault ["mapDis
     private _me = _selfGps;
     private _c = [_cursor select 0,_cursor select 1,0];
     [[_me select 0,_me select 1,0],_c,_yellow] call _dashed;
-    _map drawIcon [_dot,_yellow,_c,10,10,0,format ["%1 m  %2°",round (_me distance2D _c),round (_me getDir _c)],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
+    // Distance, azimut et dénivelé (sol sous le curseur moins le sol sous ma position GPS) avec la pente moyenne.
+    private _dz = round ((getTerrainHeightASL _c) - (getTerrainHeightASL [_me select 0, _me select 1]));
+    private _dd = _me distance2D _c;
+    _map drawIcon [_dot,_yellow,_c,10,10,0,format ["%1 m  %2°  %3%4 m (%5 %%)",round _dd,[round (_me getDir _c),3] call CBA_fnc_formatNumber,["","+"] select (_dz > 0),_dz,round (100 * _dz / (_dd max 1))],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
 };
 
 // Point de pose choisi d'un clic droit en mode MARQUEUR (fn_markerPlace) : aperçu du type choisi dans un anneau qui pulse.
@@ -466,7 +491,9 @@ if ((count _measure) >= 2) then {
     _measure params ["_a","_b"];
     _map drawLine [_a,_b,_amber];
     _map drawIcon [_dot,_amber,_a,14,14,0,"A",2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
-    _map drawIcon [_dot,_amber,_b,14,14,0,format ["%1 m  %2°",round (_a distance2D _b),round (_a getDir _b)],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
+    private _dz = round ((getTerrainHeightASL _b) - (getTerrainHeightASL _a));
+    private _dd = _a distance2D _b;
+    _map drawIcon [_dot,_amber,_b,14,14,0,format ["%1 m  %2°  %3%4 m (%5 %%)",round _dd,[round (_a getDir _b),3] call CBA_fnc_formatNumber,["","+"] select (_dz > 0),_dz,round (100 * _dz / (_dd max 1))],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
 };
 
 // Bâtiments numérotés
@@ -542,8 +569,8 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
     private _fs = (((_mp select 3) * 0.024) max (safeZoneH * 0.010)) * _ts;
     {
         if (_used >= 30) then { break };
-        private _m = _y;
-        private _id = _m getOrDefault ["id", _x];
+        private _m = _x select 1;
+        private _id = _m getOrDefault ["id", _x select 0];
         private _title = _m getOrDefault ["text", ""];
         if (_title isEqualTo "") then { continue };
         if ((_m getOrDefault ["local", false]) && {(_id find "_USER_DEFINED") < 0}) then { continue };
@@ -601,7 +628,7 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
         if !(ctrlShown _c) then { _c ctrlShow true; };
         _used = _used + 1;
         _tagged pushBack _id;
-    } forEach (_data getOrDefault ["markers", createHashMap]);
+    } forEach (_mkLists select 3);
     if ((count _gridCache) > 400) then { _gridCache = createHashMap; };
     uiNamespace setVariable ["COMSPEC_ATAK_TagGridCache", _gridCache];
 };

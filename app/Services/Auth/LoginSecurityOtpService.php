@@ -47,7 +47,91 @@ final class LoginSecurityOtpService
         private EmailService $emailService,
         private TotpService $totpService,
         private TotpSecretCipher $totpSecretCipher,
+        private RecoveryCodeService $recoveryCodeService = new RecoveryCodeService(),
+        private TrustedDeviceService $trustedDeviceService = new TrustedDeviceService(),
     ) {}
+
+    public function recoveryCodes(): RecoveryCodeService
+    {
+        return $this->recoveryCodeService;
+    }
+
+    public function trustedDevices(): TrustedDeviceService
+    {
+        return $this->trustedDeviceService;
+    }
+
+    /**
+     * « Se souvenir de cet appareil » est proposé à tous sauf aux administrateurs de la plateforme,
+     * à qui le code reste demandé à chaque connexion.
+     *
+     * @param array<string, mixed> $user
+     */
+    public function canTrustDevice(array $user): bool
+    {
+        if (!$this->trustedDeviceService->isAvailable()) {
+            return false;
+        }
+        if ((int) ($user['is_platform_admin'] ?? 0) === 1) {
+            return false;
+        }
+
+        return !$this->userRepository->emailHasPlatformAdmin((string) ($user['email'] ?? ''));
+    }
+
+    /**
+     * Second facteur à demander pour cette connexion : exigé et pas d'appareil de confiance valide.
+     *
+     * @param array<string, mixed> $user
+     */
+    public function needsChallengeNow(array $user): bool
+    {
+        if (!$this->isSecondFactorRequired($user)) {
+            return false;
+        }
+        if ($this->canTrustDevice($user) && $this->trustedDeviceService->isTrusted($user)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Code de secours saisi à l'étape de double vérification (téléphone perdu).
+     * Compte dans le même plafond de tentatives que les codes à six chiffres.
+     *
+     * @param array<string, mixed> $pending
+     * @return array{ok: bool, message: string, user?: array<string, mixed>, remaining?: int}
+     */
+    public function verifyPendingRecoveryCode(array $pending, string $code): array
+    {
+        $userId = (int) ($pending['user_id'] ?? 0);
+        $tenantId = (int) ($pending['tenant_id'] ?? 0);
+        if (strlen(RecoveryCodeService::normalize($code)) !== 8) {
+            return ['ok' => false, 'message' => 'Un code de secours compte 8 caractères, par exemple ABCD-EFGH.'];
+        }
+        $attempts = (int) ($pending['attempts'] ?? 0);
+        if ($attempts >= self::MAX_TOTP_ATTEMPTS) {
+            Session::forget('pending_login_security_otp');
+
+            return ['ok' => false, 'message' => 'Trop de tentatives. Reconnectez-vous.'];
+        }
+        $pending['attempts'] = $attempts + 1;
+        Session::set('pending_login_security_otp', $pending);
+
+        $user = $this->userRepository->findById($userId, $tenantId);
+        if (!$user) {
+            Session::forget('pending_login_security_otp');
+
+            return ['ok' => false, 'message' => 'Compte indisponible.'];
+        }
+        if (!$this->recoveryCodeService->consume($userId, $code)) {
+            return ['ok' => false, 'message' => 'Code de secours incorrect ou déjà utilisé.'];
+        }
+        Session::forget('pending_login_security_otp');
+
+        return ['ok' => true, 'message' => 'ok', 'user' => $user, 'remaining' => $this->recoveryCodeService->remaining($userId)];
+    }
 
     public function isMandatoryForUserId(int $userId): bool
     {
@@ -186,9 +270,9 @@ final class LoginSecurityOtpService
             'generated_at' => time(),
             'attempts' => 0,
             'can_fallback_email' => $this->canUseEmailFallback($user),
+            'can_use_recovery' => $this->recoveryCodeService->remaining($userId) > 0,
+            'can_remember' => $this->canTrustDevice($user),
         ]);
-        Session::flash('info', 'Ouvrez votre application d’authentification et saisissez le code à six chiffres.');
-
         return Response::redirect(url('login/otp'));
     }
 
@@ -254,6 +338,8 @@ final class LoginSecurityOtpService
             'generated_at' => time(),
             'attempts' => 0,
             'can_fallback_totp' => $this->isTotpEnabled($user),
+            'can_use_recovery' => $this->recoveryCodeService->remaining($userId) > 0,
+            'can_remember' => $this->canTrustDevice($user),
         ]);
         Session::flash('info', 'Un code vient d’être envoyé sur votre adresse e-mail.');
 

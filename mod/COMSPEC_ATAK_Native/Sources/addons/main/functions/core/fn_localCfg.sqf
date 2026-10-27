@@ -119,7 +119,11 @@ private _readFile = {
         private _chunk = _rest select [_bar + 1];
         if (_chunk isEqualTo "") exitWith {};
         _out = _out + _chunk;
-        _off = count _out;
+        // La DLL compte en caractères UTF-16 (Substring) ; sans forceUnicode, count renvoie des octets UTF-8 (accents).
+        // Caractère hors plan de base (émoji) : deux unités UTF-16.
+        forceUnicode 0;
+        private _n = count _chunk;
+        _off = _off + _n + ({ _x > 65535 } count (toArray _chunk));
     };
     if (_err isNotEqualTo []) exitWith { _err };
     private _arr = parseSimpleArray _out;
@@ -172,7 +176,14 @@ switch (_act) do {
         private _json = [_cfg] call comspec_atak_native_fnc_json;
         private _ok = false;
         if (((["LocalBegin"] call comspec_atak_native_fnc_extensionCall) select [0, 3]) isEqualTo "OK|") then {
-            for "_i" from 0 to ((count _json) - 1) step 4000 do { ["LocalAppend", [_json select [_i, 4000]]] call comspec_atak_native_fnc_extensionCall; };
+            // Découpe en caractères, pas en octets : un accent coupé en deux écrivait U+FFFD dans le fichier.
+            forceUnicode 0;
+            private _len = count _json;
+            for "_i" from 0 to (_len - 1) step 2000 do {
+                forceUnicode 0;
+                private _part = _json select [_i, 2000];
+                ["LocalAppend", [_part]] call comspec_atak_native_fnc_extensionCall;
+            };
             _ok = ((["LocalCommit", ["config"]] call comspec_atak_native_fnc_extensionCall) select [0, 3]) isEqualTo "OK|";
         };
         private _st = missionNamespace getVariable ["COMSPEC_ATAK_LocalCfgState", ["default", "", false]];
@@ -184,12 +195,15 @@ switch (_act) do {
         if (!hasInterface || {isNull player}) exitWith { false };
         private _cfg = ["get"] call comspec_atak_native_fnc_localCfg;
         private _nums = (_cfg get "phone") get "numbers";
+        if !(_nums isEqualType []) then { _nums = []; };
         // Numéro principal : seulement en ATAK local (avec Athena, le numéro vient du poste).
+        // Les deux côtés d'un select sont calculés : indexer -1 ici plantait à chaque arrivée en mission.
         private _local = ([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on";
-        private _pi = _nums findIf { _x get "primary" };
-        private _prim = ["", (_nums select _pi) get "number"] select (_local && {_pi >= 0});
+        private _pi = _nums findIf { _x isEqualType createHashMap && { _x get "primary" } };
+        private _prim = "";
+        if (_local && {_pi >= 0}) then { _prim = (_nums select _pi) get "number"; };
         if ((player getVariable ["COMSPEC_ATAK_LocalNum", ""]) isNotEqualTo _prim) then { player setVariable ["COMSPEC_ATAK_LocalNum", _prim, true]; };
-        private _pub = (_nums select { _x get "shared" }) apply { [_x get "number", _x get "type", _x get "label"] };
+        private _pub = (_nums select { _x isEqualType createHashMap && { _x get "shared" } }) apply { [_x get "number", _x get "type", _x get "label"] };
         if ((player getVariable ["COMSPEC_ATAK_Numbers", []]) isNotEqualTo _pub) then { player setVariable ["COMSPEC_ATAK_Numbers", _pub, true]; };
         true
     };

@@ -80,7 +80,16 @@ private _screens = missionNamespace getVariable ["COMSPEC_BriefingScreens", []];
 
     if (!isNull _object) then {
 
-        _object setObjectTexture [_selection, _path];
+        // Un fichier hors du jeu ne s'affiche pas : le poser écrasait la diffusion et laissait l'image d'origine.
+        private _cur = _object getVariable ["COMSPEC_ATAK_ScreenCur", ""];
+        if (_cur isEqualType "" && {(_cur select [0, 2]) isEqualTo "#("}) then { continue };
+        private _tex = _path;
+        if (!isNil "comspec_atak_native_fnc_texUsable") then {
+            private _use = [_path] call comspec_atak_native_fnc_texUsable;
+            if (_use isEqualTo "") then { continue };
+            _tex = _use;
+        };
+        _object setObjectTexture [_selection, _tex];
 
     };
 

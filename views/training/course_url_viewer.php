@@ -49,5 +49,6 @@ $headHtml = ob_get_clean();
         require base_path('views/training/partials/url_viewer.php');
         ?>
     </main>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

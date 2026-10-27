@@ -16,11 +16,10 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.169;
-        versionStr = "1.0.169";
-        versionAr[] = {1, 0, 169};
-        // Historique : 1.0.167 Relais/P2P, 1.0.168 Relais AT ne reste plus collé + P2P alimenté,
-        // 1.0.169 palier « Donateur Athena » affiché après le rôle dans l'overlay d'identité.
+        version = 1.168;
+        versionStr = "1.0.168";
+        versionAr[] = {1, 0, 168};
+        // Historique : 1.0.167 Relais/P2P, 1.0.168 Relais AT ne reste plus collé + P2P alimenté.
     };
 };
 

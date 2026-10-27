@@ -8,6 +8,9 @@ Coques photo du terminal ATAK (images fournies par TTRD, 2026-10-14) à la place
                               (src/frame_sonim.png : téléphone à gauche, goTenna de face puis côté clip à droite)
   s23           SAMSUNG S23   S23 en coque durcie tan (planche de TTRD, 2026-10-19, découpée par cut_s23.py) ;
                               son dos est la vraie photo du dos (src/frame_s23_back.png), pas un panneau dessiné
+  ip17          IPHONE 17 PRO iPhone 17 Pro en coque durcie olive, support JPC, batterie et câble (image de TTRD,
+                              2026-10-26, détourée par cut_ip17.py) ; écran après la Dynamic Island, dos dessiné
+                              (src/frame_ip17_back.png : coque moulée, plateau photo)
 Les identifiants restent ceux des anciens modèles : un profil qui a gardé « iphone » ou « rugged » ne casse pas.
 
 Chaque photo garde ses proportions : l'ouverture de l'écran n'est donc plus la même pour tous les modèles. La photo
@@ -17,7 +20,7 @@ fn_layoutGet (SCREEN, écran paysage par modèle) et les écrit dans render/fram
 
     python3 frame_photos.py            # écrit render/phone_<modèle>_front.png et _back.png
     python3 gen_assets.py <hemtt> models    # puis les PAA (paysage, portrait, nuit, dos)
-    python3 gen_dirt.py <hemtt> case iphone rugged sonim keys tablet s23
+    python3 gen_dirt.py <hemtt> case iphone rugged sonim keys tablet s23 ip17
 
 Dos : miroir de la face (même silhouette une fois retournée), l'intérieur de la coque remplacé par un panneau en
 polymère sombre avec le module photo ; les marquages de la coque (OPENA, BUNKER SUPPLY) sont remis à l'endroit.
@@ -42,9 +45,10 @@ FRAMES = {
     "tablet": ("frame_tablette.png", (160, 104, 1523, 794, 30), []),
     "sonim": ("frame_sonim.png", (58, 117, 1130, 696, 40), []),  # panneau en px de la photo assemblée
     "s23": ("frame_s23.png", None, []),
+    "ip17": ("frame_ip17.png", None, []),
 }
-# Vraie photo du dos, téléphone retourné (haut à droite) : remplace le miroir de la face et le panneau dessiné.
-BACKS = {"s23": "frame_s23_back.png"}
+# Photo du dos, téléphone retourné (haut à droite) : remplace le miroir de la face et le panneau dessiné.
+BACKS = {"s23": "frame_s23_back.png", "ip17": "frame_ip17_back.png"}
 # Photos à assembler : (boîte du téléphone, [(boîte de l'accessoire vu de face, vu de dos, position dans la boîte du
 # téléphone)]) ; l'accessoire passe derrière le téléphone (clipsé au dos), le dos montre son côté clip.
 COMPOSE = {

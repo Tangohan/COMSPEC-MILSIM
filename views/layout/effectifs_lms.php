@@ -72,5 +72,6 @@ require base_path('views/partials/layout_flash_toasts.php');
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/back-office-search.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
 <?php endif; ?>
 <?php require base_path('views/partials/donor_marks_assets.php'); ?>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

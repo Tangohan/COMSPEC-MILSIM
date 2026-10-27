@@ -8,7 +8,10 @@
     (Athena regroupe les classes par type : Chinook, Black Hawk…).
     Envoi à Athena par la DLL du serveur (Distance.Batch de COMSPEC Link 2.0.86) toutes les 10 min, au départ d'un joueur
     et en fin de mission. Ce qui n'est pas parti reste en mémoire serveur et repart au prochain envoi.
-    Params : [mode : "tick" | "flush" (tout envoyer) | "leave" (envoyer un joueur), uid (pour "leave")]
+    Comme le temps de jeu (fn_playTimeServer), le serveur ne compte que tant qu'il arrive à envoyer (COMSPEC_ATAK_SrvPlayOK) :
+    sinon (serveur sans COMSPEC Link relié à Athena) chaque joueur compte lui-même et envoie par sa propre DLL
+    (modes "self" / "selfFlush", mémoire COMSPEC_ATAK_Dist*Self, envoi marqué source = client : Athena ne garde que lui).
+    Params : [mode : "tick" | "flush" (tout envoyer) | "leave" (envoyer un joueur) | "self" | "selfFlush", uid (pour "leave")]
     Mémoire (uid ->) : COMSPEC_ATAK_DistLast [unité, position ASL, en saut]
                        COMSPEC_ATAK_DistAcc  [indicatif, compteurs, pilote] à envoyer
                        COMSPEC_ATAK_DistSess [indicatif, compteurs, pilote] de cette mission, montré dans l'app
@@ -16,23 +19,37 @@
     pilote : HashMap classe -> [nom, heli|plane, secondes, mètres]
 */
 params [["_mode", "tick"], ["_only", ""]];
-if (!isServer) exitWith { false };
+private _self = _mode in ["self", "selfFlush"];
+if (_self && {!hasInterface}) exitWith { false };
+if (!_self && {!isServer}) exitWith { false };
+// Relais du joueur : mémoire à part (un hôte de partie est serveur et joueur à la fois).
+private _v = ["", "Self"] select _self;
+private _srvOk = missionNamespace getVariable ["COMSPEC_ATAK_SrvPlayOK", false];
+// Relais au repos (cas courant : le serveur compte) et rien en attente : sortie avant toute allocation.
+if (_mode isEqualTo "self" && {_srvOk} && {(count (missionNamespace getVariable ["COMSPEC_ATAK_DistAccSelf", []])) isEqualTo 0}) exitWith {
+    missionNamespace setVariable ["COMSPEC_ATAK_DistLastSelf", nil];
+    true
+};
 private _now = diag_tickTime;
-private _last = missionNamespace getVariable ["COMSPEC_ATAK_DistLast", createHashMap];
-private _acc = missionNamespace getVariable ["COMSPEC_ATAK_DistAcc", createHashMap];
-private _sess = missionNamespace getVariable ["COMSPEC_ATAK_DistSess", createHashMap];
-missionNamespace setVariable ["COMSPEC_ATAK_DistLast", _last];
-missionNamespace setVariable ["COMSPEC_ATAK_DistAcc", _acc];
-missionNamespace setVariable ["COMSPEC_ATAK_DistSess", _sess];
+private _last = missionNamespace getVariable ["COMSPEC_ATAK_DistLast" + _v, createHashMap];
+private _acc = missionNamespace getVariable ["COMSPEC_ATAK_DistAcc" + _v, createHashMap];
+private _sess = missionNamespace getVariable ["COMSPEC_ATAK_DistSess" + _v, createHashMap];
+missionNamespace setVariable ["COMSPEC_ATAK_DistLast" + _v, _last];
+missionNamespace setVariable ["COMSPEC_ATAK_DistAcc" + _v, _acc];
+missionNamespace setVariable ["COMSPEC_ATAK_DistSess" + _v, _sess];
 
-if (_mode isEqualTo "tick") then {
-    private _dt = (_now - (missionNamespace getVariable ["COMSPEC_ATAK_DistTick", _now])) min 10;
-    missionNamespace setVariable ["COMSPEC_ATAK_DistTick", _now];
+if (_mode in ["tick", "self"]) then {
+    private _dt = (_now - (missionNamespace getVariable ["COMSPEC_ATAK_DistTick" + _v, _now])) min 10;
+    missionNamespace setVariable ["COMSPEC_ATAK_DistTick" + _v, _now];
+    // Un seul compteur à la fois : le serveur tant qu'il sait envoyer, sinon le joueur lui-même.
+    // Compteur au repos : sa dernière position est oubliée, sinon le trajet fait pendant que l'autre comptait serait
+    // recompté au premier passage après la bascule.
+    if (_srvOk isEqualTo _self) exitWith { { _last deleteAt _x; } forEach (keys _last); };
     if (_dt <= 0 || {!(missionNamespace getVariable ["comspec_atak_native_distance", true])}) exitWith {};
     // Vitesse au-delà de laquelle l'écart est un téléport (respawn, Zeus, changement de slot) : non compté.
     private _vmax = createHashMapFromArray [["foot", 14], ["land", 130], ["sea", 60], ["air", 900], ["halo", 120]];
-    private _publish = (_now - (missionNamespace getVariable ["COMSPEC_ATAK_DistPub", -1e9])) >= 15;
-    if (_publish) then { missionNamespace setVariable ["COMSPEC_ATAK_DistPub", _now]; };
+    private _publish = (_now - (missionNamespace getVariable ["COMSPEC_ATAK_DistPub" + _v, -1e9])) >= 15;
+    if (_publish) then { missionNamespace setVariable ["COMSPEC_ATAK_DistPub" + _v, _now]; };
     {
         private _unit = _x;
         private _uid = getPlayerUID _unit;
@@ -87,17 +104,20 @@ if (_mode isEqualTo "tick") then {
         // Compteurs de cette mission envoyés au téléphone du joueur (app Distances) toutes les 15 s.
         if (_publish) then {
             (_sess get _uid) params ["", "_c", "_p"];
-            _unit setVariable ["COMSPEC_ATAK_DistMe", [(keys _c) apply { [_x, _c get _x] }, (keys _p) apply { [_x] + (_p get _x) }], owner _unit];
+            private _me = [(keys _c) apply { [_x, _c get _x] }, (keys _p) apply { [_x] + (_p get _x) }];
+            // Part du serveur et part du relais publiées à part : le téléphone les additionne (fn_distanceMine).
+            if (_self) then { _unit setVariable ["COMSPEC_ATAK_DistMeSelf", _me]; } else { _unit setVariable ["COMSPEC_ATAK_DistMe", _me, owner _unit]; };
         };
-    } forEach allPlayers;
+    } forEach ([allPlayers, [player]] select _self);
 };
 
-// Envoi : toutes les 10 min, ou tout de suite (départ d'un joueur, fin de mission).
-private _sent0 = missionNamespace getVariable ["COMSPEC_ATAK_DistSent", -1e9];
-if (_mode isEqualTo "tick" && {(_now - _sent0) < 600}) exitWith { true };
-if (_mode isNotEqualTo "leave") then { missionNamespace setVariable ["COMSPEC_ATAK_DistSent", _now]; };
+// Envoi : toutes les 10 min, ou tout de suite (départ d'un joueur, fin de mission, ACTUALISER → selfFlush).
+// Ne pas horodater DistSent tant qu'il n'y a rien à envoyer : sinon le premier tick à Acc vide bloquait 10 min.
+private _sent0 = missionNamespace getVariable ["COMSPEC_ATAK_DistSent" + _v, -1e9];
+if (_mode in ["tick", "self"] && {(_now - _sent0) < 600}) exitWith { true };
 private _uids = if (_mode isEqualTo "leave") then { [_only] select { _x in _acc } } else { keys _acc };
 if (_uids isEqualTo []) exitWith { true };
+if (_mode isNotEqualTo "leave") then { missionNamespace setVariable ["COMSPEC_ATAK_DistSent" + _v, _now]; };
 private _mk = missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2", missionName, worldName]];
 private _ok = true;
 private _r = "";
@@ -119,7 +139,9 @@ for "_i" from 0 to ((count _uids) - 1) step 25 do {
     } forEach (_uids select [_i, 25]);
     if (_players isNotEqualTo []) then {
         _tried = true;
-        _r = "COMSPECExtension" callExtension ["Distance.Batch", [[createHashMapFromArray [["mission_key", _mk], ["players", _players]]] call comspec_atak_native_fnc_json]];
+        private _body = createHashMapFromArray [["mission_key", _mk], ["players", _players]];
+        if (_self) then { _body set ["source", "client"]; };
+        _r = "COMSPECExtension" callExtension ["Distance.Batch", [[_body] call comspec_atak_native_fnc_json]];
         if (_r isEqualType []) then { _r = _r param [0, ""]; };
         if ((_r select [0, 3]) isEqualTo "OK|") then {
             { _acc deleteAt _x; } forEach _sent;
@@ -128,11 +150,13 @@ for "_i" from 0 to ((count _uids) - 1) step 25 do {
         };
     };
 };
+// État de l'envoi montré dans l'app : public pour le serveur, local pour le relais du joueur (COMSPEC_ATAK_DistSrvSelf).
 if (_tried) then {
-    if (_ok) then { missionNamespace setVariable ["COMSPEC_ATAK_DistSrv", [true, serverTime], true]; };
-    if (!_ok && {(missionNamespace getVariable ["COMSPEC_ATAK_DistSrv", [true, -1]]) select 0}) then {
-        missionNamespace setVariable ["COMSPEC_ATAK_DistSrv", [false, (missionNamespace getVariable ["COMSPEC_ATAK_DistSrv", [true, -1]]) select 1], true];
-        ["WARN", "DISTANCE", format ["Distance.Batch refusé (%1) : gardé en mémoire serveur, renvoyé au prochain envoi", [_r, "COMSPEC Link 2.0.86 requis"] select (_r isEqualTo "")]] call comspec_atak_native_fnc_log;
+    private _stVar = "COMSPEC_ATAK_DistSrv" + _v;
+    // Toujours poser l'heure : un échec avec _at = -1 s'affichait « Pas encore envoyé » et masquait le refus.
+    missionNamespace setVariable [_stVar, [_ok, serverTime], !_self];
+    if (!_ok) then {
+        ["WARN", "DISTANCE", format ["Distance.Batch refusé (%1) : gardé en mémoire %2, renvoyé au prochain envoi", [_r, "COMSPEC Link requis"] select (_r isEqualTo ""), ["serveur", "du joueur"] select _self]] call comspec_atak_native_fnc_log;
     };
 };
 true

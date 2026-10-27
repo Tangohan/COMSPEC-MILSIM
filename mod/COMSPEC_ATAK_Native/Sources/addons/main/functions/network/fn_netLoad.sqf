@@ -27,7 +27,8 @@ switch (_mode) do {
         { _kb = _kb + (_x select 1); } forEach _t;
         private _kbps = round (_kb * 8 / 30);
         private _old = player getVariable ["COMSPEC_ATAK_NetLoad", 0];
-        if (abs (_kbps - _old) > ((_old * 0.2) max 4)) then { player setVariable ["COMSPEC_ATAK_NetLoad", _kbps, true]; };
+        // Passage à 0 (ou depuis 0) toujours publié : sous 4 kbit/s le seuil ne laissait jamais retomber la valeur publique.
+        if (abs (_kbps - _old) > ((_old * 0.2) max 4) || {(_kbps isEqualTo 0) isNotEqualTo (_old isEqualTo 0)}) then { player setVariable ["COMSPEC_ATAK_NetLoad", _kbps, true]; };
     };
     case "at": {
         private _cap = _c max 100;

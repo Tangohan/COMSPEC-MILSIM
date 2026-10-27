@@ -186,7 +186,8 @@ $orbatChildren = [
     ['label' => 'Postes', 'href' => url('back-office/positions'), 'active' => $navAt('back-office/positions')],
     ['label' => 'Catalogue de l’organisation', 'href' => url('back-office/organisation/catalogue'), 'active' => !empty($boNavCatalog)],
     ['label' => 'Grades', 'href' => url('back-office/referentiels/grades'), 'active' => $navAt('back-office/referentiels/grades', 'back-office/organisation/grades')],
-    ['label' => 'Qualifications', 'href' => url('back-office/referentiels/qualifications'), 'active' => $navAt('back-office/referentiels/qualifications')],
+    ['label' => 'Qualifications', 'href' => url('back-office/referentiels/qualifications'), 'active' => $navAt('back-office/referentiels/qualifications') && !$navAt('back-office/referentiels/qualifications/cursus-pilote')],
+    ['label' => 'Cursus pilote', 'href' => url('back-office/referentiels/qualifications/cursus-pilote'), 'active' => $navAt('back-office/referentiels/qualifications/cursus-pilote')],
     ['label' => 'Compétences par grade', 'href' => url('back-office/referentiels/competences'), 'active' => $navAt('back-office/referentiels/competences')],
     ['label' => 'Décorations', 'href' => url('back-office/referentiels/decorations'), 'active' => $navAt('back-office/referentiels/decorations')],
     ['label' => 'Dotation', 'href' => url('back-office/referentiels/dotation'), 'active' => $navAt('back-office/referentiels/dotation')],
@@ -332,6 +333,7 @@ if ($isOperatorBoNav) {
                     'warn' => $opQualifBadge !== null,
                     'notif' => $opQualifBadge !== null,
                 ],
+                ['label' => 'Mon carnet de vol', 'href' => url('back-office/ma-situation/carnet-de-vol'), 'icon' => 'path', 'active' => str_starts_with($p, 'back-office/ma-situation/carnet-de-vol')],
                 [
                     'label' => 'Mon avancement',
                     'href' => url('back-office/ma-situation/avancement'),
@@ -724,7 +726,7 @@ $renderAthNavItem = static function (array $item) use ($h, $athIco): void {
                 <?php endif; ?>
             </a>
             <?php if ($children !== []): ?>
-            <button type="button" class="ath-sidebar__kids-toggle" data-ath-kids-toggle aria-controls="<?= $h($kidsId) ?>" aria-expanded="<?= $showKids ? 'true' : 'false' ?>" aria-label="<?= $h('Afficher les pages de ' . (string) $item['label']) ?>">
+            <button type="button" class="ath-sidebar__kids-toggle" data-ath-kids-toggle aria-controls="<?= $h($kidsId) ?>" aria-expanded="<?= $showKids ? 'true' : 'false' ?>" aria-label="<?= $h(locale() === 'en' ? 'Show the pages of ' . \App\Support\HtmlTranslator::translateText((string) $item['label']) : 'Afficher les pages de ' . (string) $item['label']) ?>">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
             </button>
             <?php endif; ?>

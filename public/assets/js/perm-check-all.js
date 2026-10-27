@@ -11,10 +11,15 @@
         return Array.prototype.slice.call(root.querySelectorAll('input[type="checkbox"][name="permission_ids[]"]'));
     }
 
+    function toggleable(list) {
+        return list.filter(function (b) { return !b.disabled && !b.hasAttribute('data-perm-locked'); });
+    }
+
     function sync(master, list) {
-        var on = list.filter(function (b) { return b.checked; }).length;
-        master.checked = list.length > 0 && on === list.length;
-        master.indeterminate = on > 0 && on < list.length;
+        var editable = toggleable(list);
+        var on = editable.filter(function (b) { return b.checked; }).length;
+        master.checked = editable.length > 0 && on === editable.length;
+        master.indeterminate = on > 0 && on < editable.length;
     }
 
     function init(form) {
@@ -33,7 +38,7 @@
         };
         if (all) {
             all.addEventListener('change', function () {
-                boxes(form).forEach(function (b) { b.checked = all.checked; });
+                toggleable(boxes(form)).forEach(function (b) { b.checked = all.checked; });
                 refresh();
             });
         }
@@ -41,7 +46,7 @@
             g.addEventListener('change', function () {
                 var scope = g.closest('[data-perm-scope]');
                 if (scope) {
-                    boxes(scope).forEach(function (b) { b.checked = g.checked; });
+                    toggleable(boxes(scope)).forEach(function (b) { b.checked = g.checked; });
                 }
                 refresh();
             });

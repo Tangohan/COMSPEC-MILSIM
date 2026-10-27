@@ -7,7 +7,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "$STR_COMSPEC_SSE_CFG_65874AF125";
             property = "comspec_sse_domex_enabled";
             control = "Checkbox";
-            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_enabled', _value, true]; }; if (_value) then { _this setVariable ['comspec_sse_enabled', true, isServer]; };";
+            expression = "if (isServer) then { _this setVariable ['comspec_sse_domex_enabled', _value, true]; if (_value) then { _this setVariable ['comspec_sse_enabled', true, true]; }; };";
             defaultValue = "false";
             typeName = "BOOL";
             condition = "objectSimulated - objectBrain";

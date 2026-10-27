@@ -42,15 +42,17 @@ private _side = str side group player;
 {
     _x params [["_pos", [0, 0, 0]], ["_rad", 500], ["_uid", ""], ["_s", ""], ["_until", 1e9]];
     if (_s isEqualTo _side && {_until >= _now}) then {
-        if (_pos isEqualType objNull) then { _pos = getPosATL _pos; };
+        // Objet supprimé (Zeus, nettoyage) : rien dessiné (getPosATL objNull = origine de la carte).
+        if (_pos isEqualType objNull) then { if (isNull _pos) then { continue; }; _pos = getPosATL _pos; };
         _map drawEllipse [[_pos select 0, _pos select 1, 0], _rad, _rad, 0, [0.85, 0.25, 0.95, 0.9], ""];
         _map drawEllipse [[_pos select 0, _pos select 1, 0], _rad, _rad, 0, [0.85, 0.25, 0.95, 0.08], _fill];
         _map drawIcon [_none, [0.85, 0.25, 0.95, 1], [_pos select 0, _pos select 1, 0], 0, 0, 0, ("BROUILLEUR") call comspec_atak_native_fnc_tr, 2, 0.024 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), (COMSPEC_ATAK_FontSet select 1), "center"];
     };
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
 ([] call comspec_atak_native_fnc_ewEffects) params ["", "", "", "", "_gpsErr", "_off", "_gpsSt"];
-if (_gpsErr > 0) then {
-    private _p = (getPosATL player) vectorAdd _off;
+if (_gpsErr > 0 && {profileNamespace getVariable ["COMSPEC_ATAK_AccRings", true]}) then {
+    // Même point que mon icône (fn_mapOnDraw, position lissée de l'image) : le cercle reste centré sur le point affiché.
+    private _p = uiNamespace getVariable ["COMSPEC_ATAK_SelfGpsPos", (getPosATL player) vectorAdd _off];
     // Erreur de quelques mètres : pas de cercle (plus petit que l'icône).
     if (_gpsErr >= 8 || {_gpsSt isNotEqualTo "FIX"}) then {
         _map drawEllipse [[_p select 0, _p select 1, 0], _gpsErr, _gpsErr, 0, [[0.95, 0.67, 0.20, 0.8], [0.62, 0.66, 0.64, 0.8]] select (_gpsSt isNotEqualTo "FIX"), ""];

@@ -26,7 +26,7 @@ private _apply = {
         };
         default {
             [_level, false] call comspec_sse_fnc_setScenarioLevel;
-            private _applied = [_datasetId, _pos, _radius, _level] call comspec_sse_fnc_applyDataset;
+            private _applied = [_datasetId, _pos, _radius, _level, false] call comspec_sse_fnc_applyDataset;
             if (!(_applied isEqualType []) || {_applied isEqualTo []}) then {
                 [format ["Dataset « %1 » : aucun rôle appliqué (dataset inconnu ou personne dans %2 m).", _datasetId, _radius], "warn"] call comspec_sse_fnc_zeusNotify;
             } else {

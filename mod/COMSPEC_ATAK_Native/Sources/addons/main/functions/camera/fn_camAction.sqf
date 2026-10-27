@@ -12,7 +12,7 @@
     Modes :
       ["aceInit"]                 actions ACE (auto-interaction « Téléphone ATAK > Caméras » et actions sur la caméra)
       ["place"]                   pose devant soi (lancer de rayon à 3 m depuis les yeux), barre de progression ACE
-      ["pickup", obj]             récupère la caméra (rend l'item si elle est intacte)
+      ["pickup", obj]             récupère la caméra (rend l'item si elle est intacte) ; arbitrage serveur ["srvTake", obj, joueur]
       ["rotate", obj, degrés]     tourne la caméra sur son axe vertical (+ à droite)
       ["rename", obj]             ouvre le téléphone sur la caméra, champ de nom affiché
       ["setName", obj, nom]       renomme (16 caractères au plus)
@@ -55,8 +55,10 @@ switch (_mode) do {
         if !(["can", _a] call comspec_atak_native_fnc_camShare) exitWith { ["NOACCESS", "Accès retiré", [0.54, 0.6, 0.58, 1]] };
         private _now = [time, serverTime] select isMultiplayer;
         // Brouilleurs de mission (mêmes entrées que fn_linkQuality) : au cœur de la zone, plus d'image.
+        // Filtre ami (index 5) : le camp épargné (index 3) garde ses caméras, comme ses téléphones (fn_relayNet).
+        private _camSide = _a getVariable ["COMSPEC_ATAK_CamSide", ""];
         private _jam = (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) findIf {
-            _x isEqualType [] && {
+            _x isEqualType [] && {!((_x param [5, false]) && {(_x param [3, ""]) isEqualTo _camSide})} && {
                 _x params [["_p", [0, 0, 0]], ["_r", 500], "", "", ["_until", 1e9]];
                 if (_p isEqualType objNull) then { _p = getPosATL _p; };
                 _until > _now && {(_a distance2D _p) < _r * 0.6}
@@ -151,21 +153,36 @@ switch (_mode) do {
         [2, [_a], { ["pickupNow", (_this select 0) select 0] call comspec_atak_native_fnc_camAction; }, {}, ("Récupération de la caméra…") call comspec_atak_native_fnc_tr] call ace_common_fnc_progressBar;
         true
     };
+    // Ramassage arbitré par le serveur : deux joueurs qui finissent la barre ensemble ne reçoivent pas chacun un item.
     case "pickupNow": {
         if (isNull _a) exitWith { false };
+        missionNamespace setVariable ["COMSPEC_ATAK_Cams", (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]) select { !isNull _x && {_x isNotEqualTo _a} }];
+        ["srvTake", _a, player] remoteExecCall ["comspec_atak_native_fnc_camAction", 2];
+        true
+    };
+    // Serveur : premier arrivé seul servi (verrou posé avant la suppression), item rendu au ramasseur (_b).
+    case "srvTake": {
+        if (!isServer) exitWith { false };
+        if (isNull _a || {!(_b isEqualType objNull)} || {isNull _b} || {(typeOf _a) isNotEqualTo CAM_CLASS} || {_a getVariable ["COMSPEC_ATAK_CamTaken", false]}) exitWith { false };
+        _a setVariable ["COMSPEC_ATAK_CamTaken", true];
         private _dead = ["dead", _a] call _fn;
         private _name = _a getVariable ["COMSPEC_ATAK_CamName", "Caméra"];
-        missionNamespace setVariable ["COMSPEC_ATAK_Cams", (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]) select { !isNull _x && {_x isNotEqualTo _a} }];
-        ["srvReg", _a, false] remoteExecCall ["comspec_atak_native_fnc_camAction", 2];
+        ["srvReg", _a, false] call _fn;
         deleteVehicle _a;
-        if (_dead) exitWith { ["INFO", format ["%1 détruite retirée", _name], 3, 20] call comspec_atak_native_fnc_notify; true };
+        ["pickupGive", _name, _dead] remoteExecCall ["comspec_atak_native_fnc_camAction", _b];
+        true
+    };
+    // Ramasseur (sur ordre du serveur) : _a nom de la caméra, _b détruite.
+    case "pickupGive": {
+        private _name = [_a, "Caméra"] select !(_a isEqualType "");
+        if (_b isEqualTo true) exitWith { ["INFO", format ["%1 détruite retirée", _name], 3, 20] call comspec_atak_native_fnc_notify; true };
         if (player canAdd CAM_ITEM) then {
             player addItem CAM_ITEM;
         } else {
             private _gh = createVehicle ["GroundWeaponHolder", getPosATL player, [], 0, "CAN_COLLIDE"];
             _gh addItemCargoGlobal [CAM_ITEM, 1];
         };
-        ["INFO", format ["%1 récupérée%2", _name, ["", " (inventaire plein : posée au sol)"] select !(CAM_ITEM in (items player))], 3, 20] call comspec_atak_native_fnc_notify;
+        ["INFO", format [["%1 récupérée", "%1 récupérée (inventaire plein : posée au sol)"] select !(CAM_ITEM in (items player)), _name], 3, 20] call comspec_atak_native_fnc_notify;
         true
     };
     // Serveur : registre COMSPEC_ATAK_Cams tenu et publié par lui seul (objets supprimés retirés au passage). Pose :

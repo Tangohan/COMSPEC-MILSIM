@@ -68,7 +68,7 @@ if !(_player canAdd _item) exitWith {
         _media set ["quality", _quality];
         _media set ["collector", name _player];
         // Contenu rattaché à la fiche de l'appareil (ajout concurrent sûr, sans doublon d'UID).
-        ["append", _target, ["collectedMedia", [_media], "uid"]] call comspec_sse_fnc_recordOp;
+        // Ajouté avec la chaîne de possession ci-dessous en un seul commit (une diffusion de la fiche).
 
         private _coc = createHashMapFromArray [
             ["evidenceId", _media get "uid"],
@@ -83,7 +83,10 @@ if !(_player canAdd _item) exitWith {
             ["container", [_player, "evidence_bag"] call comspec_sse_fnc_resolveEquipment]
         ];
         // Chaîne de possession seulement : l'appareil lui-même n'est pas collecté (il reste exploitable et saisissable).
-        ["append", _target, ["chainOfCustody", [_coc], "evidenceId"]] call comspec_sse_fnc_recordOp;
+        ["batch", _target, [
+            ["append", ["collectedMedia", [_media], "uid"]],
+            ["append", ["chainOfCustody", [_coc], "evidenceId"]]
+        ]] call comspec_sse_fnc_recordOp;
 
         [format ["Support %1 collecté\n%2\nFichiers : %3", _kind, _media get "uid", count (_media getOrDefault ["files", []])], "SUCCESS"] call comspec_sse_fnc_notify;
         [_media get "uid", "collect_media", _kind, _media getOrDefault ["summary", ""], _quality, "QUEUED"] call comspec_sse_fnc_addJournalEntry;

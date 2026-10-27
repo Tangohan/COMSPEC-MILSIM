@@ -72,3 +72,78 @@
     .bo-dbf-grid__search { width: 100%; max-width: none; }
     .bo-dbf-grid__bar { flex-wrap: wrap; }
 }
+
+/* ==========================================================================
+   2026-10-26 : guide « Comment ça marche », aides par champ, barre de tableau
+   claire (suit le thème), cartes carrées et police normale.
+   ========================================================================== */
+.bo-dbf .ath-card,
+.bo-dbf .ath-kpi,
+.bo-dbf .ath-panel,
+.bo-dbf .ath-btn,
+.bo-dbf input,
+.bo-dbf select,
+.bo-dbf textarea { border-radius: 0 !important; }
+.bo-dbf .ath-kpi__value { font-family: var(--ath-font, inherit); font-weight: 800; letter-spacing: -0.01em; }
+.bo-dbf-kpi-help { margin: 6px 0 0; padding-top: 6px; border-top: 1px dashed var(--ath-line-soft); font-size: 11px; line-height: 1.4; color: var(--ath-subtle); }
+.bo-dbf-ico { flex: 0 0 auto; vertical-align: -3px; }
+
+/* Guide */
+.bo-dbf-guide { padding: 0; }
+.bo-dbf-guide__sum { display: flex; align-items: center; gap: 8px; padding: 12px 16px; cursor: pointer; font-weight: 800; font-size: 14px; color: var(--ath-ink); list-style: none; }
+.bo-dbf-guide__sum::-webkit-details-marker { display: none; }
+.bo-dbf-guide__sum::after { content: "▸"; margin-left: auto; color: var(--ath-subtle); transition: transform .15s; }
+.bo-dbf-guide[open] .bo-dbf-guide__sum::after { transform: rotate(90deg); }
+.bo-dbf-guide__sum .bo-dbf-ico { color: var(--ath-accent); }
+.bo-dbf-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0 16px; margin: 0; padding: 0 16px; list-style: none; }
+.bo-dbf-steps li { display: flex; gap: 10px; min-width: 0; padding: 12px 0 14px; border-top: 1px solid var(--ath-line-soft); }
+.bo-dbf-steps__n { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; font-size: 12px; font-weight: 900; color: #fff; background: var(--ath-accent); }
+.bo-dbf-steps b { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ath-ink); }
+.bo-dbf-steps b .bo-dbf-ico { color: var(--ath-accent); }
+.bo-dbf-steps p { margin: 4px 0 0; font-size: 12px; line-height: 1.5; color: var(--ath-muted); }
+.bo-dbf-guide__foot { margin: 0; padding: 10px 16px 14px; border-top: 1px solid var(--ath-line-soft); font-size: 12px; line-height: 1.5; color: var(--ath-muted); }
+.bo-dbf-guide__foot a, .bo-dbf-empty a, .bo-dbf-form small a, .bo-dbf-legend a { color: var(--ath-accent); font-weight: 700; }
+
+/* Choix de l'opération */
+.bo-dbf-pick__help { flex: 1 1 100%; margin: 0; font-size: 11.5px; color: var(--ath-subtle); }
+
+/* Légende des états */
+.bo-dbf-legend { font-size: 12px; }
+.bo-dbf-legend > summary { cursor: pointer; width: max-content; max-width: 100%; color: var(--ath-accent); font-weight: 700; }
+.bo-dbf-legend dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px 16px; margin: 8px 0 0; padding: 10px 12px; border: 1px solid var(--ath-line); background: var(--ath-surface); }
+.bo-dbf-legend dt { display: flex; align-items: center; gap: 6px; font-weight: 800; color: var(--ath-ink); }
+.bo-dbf-legend dd { margin: 2px 0 0; color: var(--ath-muted); line-height: 1.45; }
+
+/* Barre du tableau : claire, suit le thème (plus de bandeau ardoise en clair) */
+.bo-dbf-grid__bar { padding: 8px 12px; background: var(--ath-table-head, var(--ath-line-soft)); color: var(--ath-ink); border-bottom: 1px solid var(--ath-line); }
+.bo-dbf-grid__title { font-family: inherit; font-size: 13px; font-weight: 800; letter-spacing: 0; }
+.bo-dbf-grid__title small { margin-left: 8px; font-size: 11px; font-weight: 600; color: var(--ath-subtle); }
+.bo-dbf-grid__search { width: 240px; padding: 6px 10px; border: 1px solid var(--ath-line); background: var(--ath-surface); color: var(--ath-ink); }
+.bo-dbf-grid__foot { font-family: inherit; font-size: 11px; }
+.bo-dbf-mono, .bo-dbf-c-num { font-family: inherit; font-variant-numeric: tabular-nums; }
+.bo-dbf .bo-aar-seg__btn b { font-family: inherit; }
+
+/* État vide */
+.bo-dbf-empty { padding: 22px 18px; font-size: 13px; color: var(--ath-muted); }
+.bo-dbf-empty p { margin: 0 0 8px; }
+.bo-dbf-empty b { color: var(--ath-ink); }
+.bo-dbf-empty ul { margin: 0 0 12px; padding-left: 18px; display: grid; gap: 6px; max-width: 760px; line-height: 1.5; }
+.bo-dbf-empty__ico { display: inline-flex; margin-bottom: 6px; color: var(--ath-accent); }
+
+/* Formulaires : aide sous chaque champ */
+.bo-dbf-form small { font-size: 11px; font-weight: 500; line-height: 1.45; color: var(--ath-subtle); }
+.bo-dbf-form__check { gap: 8px !important; align-items: flex-start !important; }
+.bo-dbf-form__check span { display: grid; gap: 2px; color: var(--ath-ink); }
+.bo-dbf-form__bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.bo-dbf-panel { padding: 0 16px; }
+.bo-dbf-panel__sum { padding: 12px 0; }
+.bo-dbf-panel[open] { padding-bottom: 16px; }
+
+.bo-dbf-form input, .bo-dbf-form select, .bo-dbf-form textarea, .bo-dbf-grid__search { box-sizing: border-box; }
+
+@media (max-width: 640px) {
+    .bo-dbf .bo-aar-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .bo-dbf-steps { grid-template-columns: minmax(0, 1fr); }
+    .bo-dbf-grid__title small { display: block; margin: 2px 0 0; }
+    .bo-dbf-pick__select { flex: 1 1 100%; }
+}

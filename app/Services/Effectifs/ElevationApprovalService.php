@@ -356,7 +356,7 @@ class ElevationApprovalService
      *   unit_id?: int|null,
      *   role_apply_mode?: string|null
      * } $proposal
-     * @return array{ok:bool,message:string,applied:list<string>}
+     * @return array{ok:bool,message:string,applied:list<string>,record?:string}
      */
     public function applyApprovedChanges(
         int $tenantId,
@@ -500,23 +500,38 @@ class ElevationApprovalService
 
         $labels = $this->proposalLabels($tenantId, $proposal);
         $parts = [];
+        $partsEn = [];
         if (in_array('grade', $applied, true) && $labels['grade']) {
             $parts[] = 'grade « ' . $labels['grade'] . ' »';
+            $partsEn[] = 'rank "' . $labels['grade'] . '"';
         }
         if (in_array('role', $applied, true) && $labels['role']) {
             $parts[] = $roleApplyMode === self::ROLE_APPLY_ADD
                 ? 'rôle « ' . $labels['role'] . ' » ajouté en plus des rôles actuels'
                 : 'rôle remplacé par « ' . $labels['role'] . ' »';
+            $partsEn[] = $roleApplyMode === self::ROLE_APPLY_ADD
+                ? 'role "' . $labels['role'] . '" added to the current roles'
+                : 'role replaced with "' . $labels['role'] . '"';
         }
         if (in_array('job_role', $applied, true) && $labels['job_role']) {
             $parts[] = 'fonction « ' . $labels['job_role'] . ' »';
+            $partsEn[] = 'job "' . $labels['job_role'] . '"';
         }
         if (in_array('unit', $applied, true) && $labels['unit']) {
             $parts[] = 'affectation « ' . $labels['unit'] . ' »';
+            $partsEn[] = 'assignment "' . $labels['unit'] . '"';
         }
         if (in_array('permissions', $applied, true)) {
-            $parts[] = count($permissionIds) . ' droit' . (count($permissionIds) > 1 ? 's' : '') . ' d’accès spécifique' . (count($permissionIds) > 1 ? 's' : '');
+            $n = count($permissionIds);
+            $parts[] = $n . ' droit' . ($n > 1 ? 's' : '') . ' d’accès spécifique' . ($n > 1 ? 's' : '');
+            $partsEn[] = $n . ' specific access right' . ($n > 1 ? 's' : '');
         }
+        // Message composé de valeurs : écrit dans la langue de la page (la traduction automatique ne le reconnaît pas).
+        // La version française reste la trace écrite du dossier RH.
+        $recordFr = 'Élévation appliquée : ' . implode(', ', $parts) . '.';
+        $message = function_exists('locale') && locale() === 'en'
+            ? 'Promotion applied: ' . implode(', ', $partsEn) . '.'
+            : $recordFr;
 
         $this->serviceHistoryWriter->recordElevation(
             $targetUserId,
@@ -533,7 +548,8 @@ class ElevationApprovalService
 
         return [
             'ok' => true,
-            'message' => 'Élévation appliquée : ' . implode(', ', $parts) . '.',
+            'message' => $message,
+            'record' => $recordFr,
             'applied' => $applied,
         ];
     }

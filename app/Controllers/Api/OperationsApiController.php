@@ -37,6 +37,9 @@ class OperationsApiController
     public function missionsTimeline(Request $request, array $params = []): Response
     {
         $missionId = $this->resolveMissionId($request, $params);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         if ($missionId === null) {
             return $this->error(
                 'operations.missions.mission_id_required',
@@ -59,6 +62,9 @@ class OperationsApiController
     public function missionsEvents(Request $request, array $params = []): Response
     {
         $missionId = $this->resolveMissionId($request, $params);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         if ($missionId === null) {
             return $this->error(
                 'operations.missions.mission_id_required',
@@ -123,6 +129,9 @@ class OperationsApiController
     public function aar(Request $request, array $params = []): Response
     {
         $missionId = $this->resolveMissionId($request, $params);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         if ($missionId === null) {
             return $this->error(
                 'operations.aar.mission_id_required',
@@ -149,6 +158,9 @@ class OperationsApiController
     public function aarExportPdf(Request $request, array $params = []): Response
     {
         $missionId = $this->resolveMissionId($request, $params);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         if ($missionId === null) {
             return $this->error(
                 'operations.aar.mission_id_required',
@@ -176,6 +188,9 @@ class OperationsApiController
     public function readiness(Request $request, array $params = []): Response
     {
         $missionId = $this->resolveMissionId($request, $params);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         if ($missionId === null) {
             return $this->error(
                 'operations.readiness.mission_id_required',
@@ -210,6 +225,9 @@ class OperationsApiController
     public function medical(Request $request, array $params = []): Response
     {
         $missionId = $this->resolveMissionId($request, $params);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         if ($missionId === null) {
             return $this->error(
                 'operations.medical.mission_id_required',
@@ -325,6 +343,9 @@ class OperationsApiController
     public function comms(Request $request, array $params = []): Response
     {
         $missionId = $this->resolveMissionId($request, $params);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         if ($missionId === null) {
             return $this->error(
                 'operations.comms.mission_id_required',
@@ -368,14 +389,30 @@ class OperationsApiController
         ]);
     }
 
-    private function resolveMissionId(Request $request, array $params): ?string
+    /**
+     * missionId de l’URL (ou de la requête) cloisonné par communauté comme scopedMissionId : null
+     * si absent (chaque route garde son 400) ; communauté non identifiée → 403, valeur invalide →
+     * 422, mission d’une autre communauté → 403 operations.mission_forbidden au lieu d’être relue.
+     */
+    private function resolveMissionId(Request $request, array $params): string|Response|null
     {
-        $missionId = $params['missionId'] ?? $request->query('missionId') ?? $request->query('mission_id') ?? null;
-        if ($missionId === null) {
+        $raw = $params['missionId'] ?? $request->query('missionId') ?? $request->query('mission_id') ?? null;
+        if ($raw === null || (is_scalar($raw) && trim((string) $raw) === '')) {
             return null;
         }
-        $missionId = trim((string) $missionId);
-        return $missionId !== '' ? $missionId : null;
+        $tenantId = TacticalMissionScope::tenantId();
+        if ($tenantId === null) {
+            return TacticalMissionScope::tenantRequiredResponse();
+        }
+        if (!TacticalMissionScope::isAcceptableRaw($raw)) {
+            return $this->error('operations.mission_id_invalid', 'missionId invalide.', 422, ['param' => 'missionId']);
+        }
+        $missionId = trim((string) $raw);
+        if (!TacticalMissionScope::belongsTo($missionId, $tenantId)) {
+            return $this->error('operations.mission_forbidden', 'Mission hors du périmètre de votre communauté.', 403, ['param' => 'missionId']);
+        }
+
+        return $missionId;
     }
 
     private function jsonBody(): array
@@ -420,7 +457,8 @@ class OperationsApiController
 
     private function nullableQuery(Request $request, string $key): ?string
     {
-        $v = trim((string) ($request->query($key) ?? ''));
+        // queryString : une valeur en tableau (?from[]=x) vaut '' au lieu de « Array to string conversion » (500).
+        $v = trim($request->queryString($key));
         return $v === '' ? null : $v;
     }
 

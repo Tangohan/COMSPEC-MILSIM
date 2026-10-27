@@ -266,13 +266,8 @@ switch (toUpper _mode) do {
         true
     };
     case "BLUR": {
-        if (!_active) exitWith { false };
-        // Type de flou des visages pour la partie (le réglage CBA reste le point de départ).
-        private _types = ["gauss", "motion", "pixel", "black", "off"];
-        private _cur = uiNamespace getVariable ["COMSPEC_ATAK_BlurType", missionNamespace getVariable ["comspec_atak_native_blur_type", "gauss"]];
-        uiNamespace setVariable ["COMSPEC_ATAK_BlurType", _types select ((((_types find _cur) max 0) + 1) mod 5)];
-        playSound "ClickSoft";
-        ["HUD"] call comspec_atak_native_fnc_photoMode;
+        ["blur"] call comspec_atak_native_fnc_photoCam;
+        if (_active) then { ["HUD"] call comspec_atak_native_fnc_photoMode; };
         true
     };
     case "HELP": {
@@ -455,7 +450,7 @@ switch (toUpper _mode) do {
         // Fiche du cliché (relais Discord) : position et axe de l'objectif, objectif, zoom, flash, modèle, version.
         private _meta = ["", "", false, "", false, "phone", "", _viewPos, (((_viewDir select 0) atan2 (_viewDir select 1)) + 360) mod 360,
             [["lens", ["rear", "selfie"] select (_st getOrDefault ["selfie", false])], ["zoom", _st getOrDefault ["zoom", 1]],
-             ["flash", ["off", "on"] select _fire], ["model", profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"]],
+             ["flash", ["off", "on"] select _fire], ["model", ([player] call comspec_atak_native_fnc_phoneCarried) select 0],
              ["atak", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]]],
             _viewDir];
         [_fire, [_px, _py, _pz], _meta, _st getOrDefault ["selfie", false]] spawn {

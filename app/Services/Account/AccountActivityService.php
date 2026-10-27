@@ -25,6 +25,9 @@ final class AccountActivityService
         AuditAction::AUTH_TOTP_ENABLED => ['label' => 'Application d’authentification activée', 'tone' => 'ok'],
         AuditAction::AUTH_TOTP_DISABLED => ['label' => 'Application d’authentification désactivée', 'tone' => 'warn'],
         AuditAction::AUTH_EMAIL_LOGIN_OTP_TOGGLED => ['label' => 'Code par e-mail modifié', 'tone' => 'muted'],
+        AuditAction::AUTH_RECOVERY_CODE_USED => ['label' => 'Connexion avec un code de secours', 'tone' => 'warn'],
+        AuditAction::AUTH_RECOVERY_CODES_GENERATED => ['label' => 'Nouveaux codes de secours', 'tone' => 'ok'],
+        AuditAction::AUTH_TRUSTED_DEVICES_REVOKED => ['label' => 'Appareil de confiance retiré', 'tone' => 'muted'],
         AuditAction::USER_STEAM_LINKED => ['label' => 'Compte Steam lié', 'tone' => 'ok'],
     ];
 

@@ -42,6 +42,9 @@ final class AtakActivityLogService
      */
     private const POSITION_SEEN_REFRESH_SEC = 20;
 
+    /** Refus non authentifié (communauté non prouvée) : même refus journalisé au plus toutes les N s. */
+    private const UNVERIFIED_AUTH_FAIL_THROTTLE_SEC = 60;
+
     /** Types internes → libellés métier (FR). */
     public const TYPE_CLIENT_INIT = 'client_init';
     public const TYPE_CALLSIGN_CHANGE = 'callsign_change';
@@ -435,6 +438,32 @@ final class AtakActivityLogService
         }
         $safeMeta['ok'] = $success;
         $this->record($tenantId, $mapId > 0 ? $mapId : self::AUTH_MAP_ID, self::TYPE_AUTH, $label, $actor, $safeMeta);
+    }
+
+    /**
+     * Refus d’une requête qui n’a prouvé aucune communauté (ni clé valide, ni session) : n’importe qui peut
+     * l’envoyer, y compris avec le tenant_id d’une autre communauté. Le diagnostic reste dans le journal,
+     * mais au plus une entrée par minute pour un même refus, contrôlée par un fichier témoin sans ouvrir
+     * le journal : sinon chaque requête réécrivait tout le journal de la carte 1 sous verrou, et 5 000
+     * requêtes en chassaient tous les vrais événements. L’appelant vérifie que la communauté existe.
+     *
+     * @param array<string, mixed> $meta
+     */
+    public function recordUnverifiedAuthFailure(int $tenantId, string $label, array $meta = []): void
+    {
+        if ($tenantId < 1 || $label === '') {
+            return;
+        }
+        $parts = [$label];
+        foreach (['reason', 'path_hint', 'method'] as $k) {
+            $parts[] = is_string($meta[$k] ?? null) ? $meta[$k] : '';
+        }
+        $witness = $this->witnessPath($tenantId, self::AUTH_MAP_ID, 'authfail_' . md5(implode('|', $parts)));
+        if ($this->witnessFresh($witness, self::UNVERIFIED_AUTH_FAIL_THROTTLE_SEC) !== null) {
+            return;
+        }
+        $this->witnessWrite($witness, '');
+        $this->recordAuthAttempt($tenantId, false, $label, $meta);
     }
 
     /**
@@ -979,11 +1008,7 @@ final class AtakActivityLogService
 
     public function clientKeyFromRequest(): string
     {
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $forwarded = $_SERVER['HTTP_X_FORWARDED_FOR'];
-            $ip = is_string($forwarded) ? trim(explode(',', $forwarded)[0]) : trim((string) $forwarded[0]);
-        }
+        $ip = \App\Support\ClientIp::resolve();
         $ip = trim((string) $ip);
         if ($ip === '') {
             return '';

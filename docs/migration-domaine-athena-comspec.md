@@ -138,3 +138,42 @@ et en tête de `location / {` :
 ```
 
 `/public/api/…` est réécrit en `/api/…` avant d'arriver là : il reste servi. `nginx -t && systemctl reload nginx`.
+
+À exempter aussi, en plus de `/api/` : **`/map-photo/`** (tuiles du fond PHOTO, `meta.json`, `index-jpg.txt`), que la
+DLL télécharge en jeu depuis `_baseUrl` :
+
+```nginx
+    # Ancien domaine : tuiles du fond PHOTO servies telles quelles (fond déjà installé chez les joueurs).
+    location ^~ /map-photo/ {
+        try_files $uri /index.php?$query_string;
+    }
+```
+
+Depuis le correctif SEC-001, la DLL **ne suit plus les redirections sur les requêtes qui portent les secrets** (sinon
+une 3xx d'un hôte Athena vers un tiers emporterait les en-têtes `X-COMSPEC-*`, que .NET conserve) : une 308 sur une
+route d'API renverrait `ERR|http_308` au téléphone au lieu d'être suivie. **L'API ne doit donc jamais rediriger** —
+ni `athena.ttrd.fr` vers `athena-comspec.eu`, ni `/api/x` vers `/api/x/`. Les tuiles `/map-photo/` ne portent aucun
+secret : leur client suit les redirections, mais l'exemption ci-dessus évite un aller-retour par tuile.
+
+**Hôtes auxquels la DLL confie ses secrets** (correctif SEC-001, `IsTrustedPortalHost` dans `Extension.cs`) :
+`https://athena.ttrd.fr` et `https://athena-comspec.eu`, rien d'autre — ni sous-domaine (`atak.`, `sse.`), ni `http://`,
+ni identifiants dans l'adresse. Toute autre adresse reçue du jeu est refusée avec `ERR|untrusted_host`. Ajouter un
+domaine demande de modifier cette liste et de republier les deux DLL.
+
+- **Athena local de développement** : la boucle locale (`127.0.0.1`, `localhost`, `::1`) n'est acceptée que si la
+  variable d'environnement `COMSPEC_DEV_TRUST_LOOPBACK=1` est posée pour le processus Arma (lue une fois au chargement
+  de la DLL). Sans elle, un Athena local répond `ERR|untrusted_host` dès la liaison. Jamais en production.
+- **Avant de publier les DLL 2.0.96 (ATAK natif 2.4.1) ou plus récentes**, vérifier sur les deux domaines qu'aucune
+  route d'API ne redirige, sous l'adresse que la DLL appelle réellement (préfixe `/public` des mods, réécrit en
+  interne par nginx) **et** sans le préfixe. Vérifier en `GET`, pas avec `curl -I` : le routeur d'Athena ne connaît
+  pas `HEAD` et répond `404` à toutes ces adresses, ce qui ne dit rien des redirections.
+
+  ```bash
+  for u in https://athena-comspec.eu/public/api/atak/version https://athena.ttrd.fr/public/api/atak/version \
+           https://athena-comspec.eu/api/atak/version https://athena.ttrd.fr/api/atak/version; do
+    curl -sS -o /dev/null -w "%{http_code} %{redirect_url} $u\n" "$u"
+  done
+  ```
+
+  Attendu sur chaque ligne : `200`, puis rien avant l'adresse testée (aucune redirection) ; jamais `301`, `302`,
+  `307` ni `308`. De même pour un fichier sous `/public/map-photo/`.

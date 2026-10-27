@@ -33,5 +33,7 @@
 #define COMSPEC_ATAK_IDC_HW_POWER 88547
 #define COMSPEC_ATAK_IDC_NOTIF 88548
 #define COMSPEC_ATAK_IDC_LINKLOGO 88549
+// PC portable du poste TOC (fn_tocLaptop) : écran propre au poste, sans téléphone.
+#define COMSPEC_ATAK_IDD_TOCLAPTOP 88560
 #define COMSPEC_ATAK_IDC_DYNAMIC_START 88600
 #define COMSPEC_ATAK_IDC_DYNAMIC_END 88999

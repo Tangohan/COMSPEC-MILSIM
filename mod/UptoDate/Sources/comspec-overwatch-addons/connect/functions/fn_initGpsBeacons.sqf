@@ -8,6 +8,8 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconsHooked", true, false];
 
 private _isBridge = {
     if (isNull player) exitWith { false };
+    // Mort : son drapeau public COMSPEC_AtakReporterLinked passe à faux, le suivant s'élit aussi → doublons.
+    if (!alive player) exitWith { false };
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
     private _uids = [];
     {
@@ -160,6 +162,8 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
             if (isNull _x || {!alive _x}) then { continue };
             if (isPlayer _x) then { continue };
             if ([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) then { continue };
+            // Géoloc coupée ailleurs (drapeau public à faux) : retirer de la liste locale.
+            if !([_x, "COMSPEC_PhoneTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) then { continue };
             _keepU pushBack _x;
             if !([_x, _others] call comspec_overwatch_connect_fnc_isNearestAtakReporter) then { continue };
             [_x] call comspec_overwatch_connect_fnc_reportPhonePosition;

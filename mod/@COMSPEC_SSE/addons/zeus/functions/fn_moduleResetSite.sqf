@@ -17,7 +17,7 @@ private _apply = {
     if (!_confirm) exitWith {
         ["Réinitialisation annulée : cochez la confirmation.", "warn"] call comspec_sse_fnc_zeusNotify;
     };
-    private _n = [nearestObjects [_pos, [], _radius]] call comspec_sse_fnc_zeusClearEntities;
+    private _n = [nearestObjects [_pos, ["ThingX", "ReammoBox_F", "WeaponHolder", "AllVehicles", "Static"], _radius]] call comspec_sse_fnc_zeusClearEntities;
     [format ["Site réinitialisé : %1 entité(s) nettoyée(s) dans %2 m.", _n, _radius], if (_n > 0) then { "info" } else { "warn" }] call comspec_sse_fnc_zeusNotify;
 };
 

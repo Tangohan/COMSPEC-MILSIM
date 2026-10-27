@@ -103,13 +103,14 @@ $platformNav = [
     ['key' => 'communication', 'label' => 'Communication', 'items' => [
         ['path' => 'admin/system/alerts', 'label' => 'Alertes plateforme', 'icon' => 'megaphone', 'access' => 'hub', 'desc' => 'Bandeaux et annonces sur le portail'],
         ['path' => 'admin/system/e-mails', 'label' => 'Envois d’e-mails', 'icon' => 'mail', 'access' => 'system', 'desc' => 'Quota quotidien, alertes regroupées, volume par type'],
+        ['path' => 'admin/system/retrospective', 'label' => 'Rétrospective annuelle', 'icon' => 'star', 'access' => 'system', 'desc' => 'Bilan de l’année des joueurs et des unités : date de publication, aperçu'],
         ['path' => 'admin/newsletter', 'label' => 'Lettre d’information', 'icon' => 'mail', 'access' => 'system', 'desc' => 'Inscrits depuis la page d’accueil'],
         ['path' => 'admin/system/cooperation/catalog', 'label' => 'Types de coopération', 'icon' => 'coop', 'access' => 'system', 'desc' => 'Catalogue des coopérations entre unités'],
         ['path' => 'admin/system/cooperation/announcements', 'label' => 'Annonces de coopération', 'icon' => 'megaphone', 'access' => 'system', 'desc' => 'Messages diffusés aux communautés'],
         ['path' => 'admin/musique', 'label' => 'Musique', 'icon' => 'music', 'access' => 'system', 'desc' => 'Bibliothèque du site et de l’app Musique de l’ATAK, playlist globale'],
     ]],
     ['key' => 'configuration', 'label' => 'Configuration', 'items' => [
-        ['path' => 'admin/settings', 'label' => 'Paramètres système', 'icon' => 'gear', 'access' => 'system', 'desc' => 'Configuration effective, en lecture seule'],
+        ['path' => 'admin/settings', 'label' => 'Paramètres système', 'icon' => 'gear', 'access' => 'system', 'desc' => 'Configuration effective, version minimale des DLL du jeu'],
         ['path' => 'admin/system/military-referential', 'label' => 'Référentiel militaire', 'icon' => 'orbat', 'access' => 'system', 'desc' => 'Organisations, commandements, unités'],
         ['path' => 'admin/system/integrations', 'label' => 'Intégrations de la plateforme', 'icon' => 'megaphone', 'access' => 'system', 'desc' => 'Salons Discord de l’équipe, rôles liés de Discord, envoi commun des e-mails'],
         ['path' => 'admin/system/cron', 'label' => 'Tâches automatiques', 'icon' => 'clock', 'access' => 'system', 'desc' => 'Travaux récurrents et leur dernier passage'],
@@ -126,7 +127,8 @@ $platformNav = [
         ['path' => 'admin/atak-mod-reports', 'label' => 'Rapports d’erreurs du mod', 'icon' => 'audit', 'access' => 'system', 'desc' => 'Erreurs remontées par le pack, toutes communautés'],
     ]],
     ['key' => 'exploitation', 'label' => 'Exploitation', 'items' => [
-        ['path' => 'admin/system/donnees', 'label' => 'Registre des données', 'icon' => 'layers', 'access' => 'system', 'desc' => 'Comptes, joueurs, ATAK, unités, sessions en tableaux : corrélations, export, purge'],
+        ['path' => 'admin/system/exploitation', 'label' => 'Console d’exploitation', 'icon' => 'ops', 'access' => 'system', 'desc' => 'État du site, migrations, sauvegardes, suppressions de comptes'],
+        ['path' => 'admin/system/donnees', 'label' => 'Registre des données', 'icon' => 'layers', 'access' => 'system', 'desc' => 'Comptes, joueurs, ATAK, mods proches, sessions : recherche Steam par profil, corrélations, export, purge'],
         ['path' => 'admin/system/storage', 'label' => 'Espace disque', 'icon' => 'disk', 'access' => 'system', 'desc' => 'Occupation et vidage des historiques'],
         ['path' => 'admin/maintenance', 'label' => 'Maintenance des données', 'icon' => 'wrench', 'access' => 'hub', 'desc' => 'Fenêtres de maintenance planifiées'],
         ['path' => 'admin/audit', 'label' => 'Journal d’audit', 'icon' => 'audit', 'access' => 'hub', 'desc' => 'Toutes les actions sensibles'],

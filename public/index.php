@@ -188,6 +188,20 @@ if ($isPublicAsset && !str_contains($requestPath, '..')) {
     exit;
 }
 
+// DLL du jeu plus ancienne que le plancher de version (réglage plateforme game_min_link_version, vide par défaut) :
+// refus immédiat sur les deux domaines, avant la maintenance, la session et la base (App\Support\GameClientVersionGate).
+// Une erreur du contrôle ne bloque jamais le site : la requête continue normalement.
+try {
+    $gameClientRefusal = \App\Support\GameClientVersionGate::check($requestPath, $_SERVER);
+} catch (Throwable $gateError) {
+    error_log('GameClientVersionGate : ' . $gateError->getMessage());
+    $gameClientRefusal = null;
+}
+if ($gameClientRefusal !== null) {
+    $gameClientRefusal->send();
+    exit;
+}
+
 // Ancien domaine athena.ttrd.fr : les pages affichent l'annonce du nouveau domaine (bouton vers la même page) ;
 // l'API et les fichiers restent servis tels quels pour les mods déjà installés.
 $domainMovedTarget = \App\Support\PortalHost::legacyNoticeTarget($_SERVER);
@@ -211,9 +225,13 @@ if (!$maintenanceSkipped) {
             $isAllowedIp = in_array($clientIp, $allowedIps, true);
 
             if (!$isAllowedIp) {
+                $message = (string) ($legacyData['message'] ?? 'Maintenance en cours. Merci de réessayer dans quelques minutes.');
+                if (\App\Support\MaintenanceGuard::wantsJson($requestPath)) {
+                    // API (DLL, mod, Overwatch, téléphone) : JSON « maintenance » et retour dans 30 à 60 s.
+                    \App\Support\MaintenanceGuard::sendLegacyFileApiResponse($message);
+                }
                 http_response_code(503);
                 header('Retry-After: 300');
-                $message = (string) ($legacyData['message'] ?? 'Maintenance en cours. Merci de réessayer dans quelques minutes.');
                 $view503 = $root . '/views/errors/503.php';
                 if (is_file($view503)) {
                     require $view503;

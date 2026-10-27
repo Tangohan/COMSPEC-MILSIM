@@ -34,6 +34,37 @@ final class FileRateLimiter
     }
 
     /**
+     * Secondes avant la remise à zéro de la fenêtre en cours pour cette clé, au moins 1 et au plus $decaySeconds
+     * (NET-027). La fenêtre est fixe : un refus prend fin à window_start + $decaySeconds, et non une fenêtre entière
+     * après lui. Sans compteur lisible, ou fenêtre déjà finie : 1. Ne modifie pas le compteur.
+     */
+    public function secondsUntilReset(string $key, int $decaySeconds): int
+    {
+        $path = base_path('storage/cache/ratelimit') . '/' . hash('sha256', $key) . '.json';
+        $fp = is_file($path) ? @fopen($path, 'r') : false;
+        if ($fp === false) {
+            return 1;
+        }
+        try {
+            if (!flock($fp, LOCK_SH)) {
+                return 1;
+            }
+            $raw = stream_get_contents($fp);
+            flock($fp, LOCK_UN);
+            $data = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+            if (!is_array($data) || !isset($data['window_start'])) {
+                return 1;
+            }
+
+            return max(1, min($decaySeconds, (int) $data['window_start'] + $decaySeconds - time()));
+        } catch (\Throwable) {
+            return 1;
+        } finally {
+            fclose($fp);
+        }
+    }
+
+    /**
      * Supprime le fichier de compteur pour une clé (déblocage ops / honeypot).
      */
     public function clear(string $key): bool

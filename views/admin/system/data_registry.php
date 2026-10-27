@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * Administration plateforme — Registre des données (/admin/system/donnees).
- * Tableaux façon tableur (communautés, comptes, joueurs Steam, ATAK, sessions de jeu, traces orphelines),
+ * Tableaux façon tableur (communautés, comptes, joueurs Steam, ATAK, sessions de jeu, mods proches, traces orphelines),
  * corrélations d'une ligne et purge. Rendu par public/assets/js/admin-data-registry.js.
  *
  * @var array<string, string> $registryDatasets
@@ -15,7 +15,7 @@ $datasets = is_array($registryDatasets ?? null) ? $registryDatasets : [];
   <div class="ath-page-head__copy">
     <p class="ath-page-head__kicker">EXPLOITATION · DONNÉES</p>
     <h1 class="ath-page-head__title" id="adr-title">Registre des données</h1>
-    <p class="ath-page-head__sub">Communautés, comptes, joueurs Steam, ATAK, unités de la carte et sessions de jeu en tableaux : corrélations, export Excel et purge des joueurs fantômes.</p>
+    <p class="ath-page-head__sub">Communautés, comptes, joueurs Steam, ATAK, unités de la carte et sessions de jeu en tableaux : corrélations, export Excel et purge. Collez une adresse de profil Steam pour retrouver un compte. L’onglet Mods proches signale les packs qui ressemblent au nôtre sans la fiche officielle.</p>
   </div>
   <div class="ath-page-head__actions"><a class="ath-btn" href="<?= $h(url('admin/system/cron')) ?>">Entretien automatique</a></div>
 </section>
@@ -23,6 +23,7 @@ $datasets = is_array($registryDatasets ?? null) ? $registryDatasets : [];
      data-api="<?= $h(url('admin/system/donnees/api')) ?>"
      data-action="<?= $h(url('admin/system/donnees/action')) ?>"
      data-corr="<?= $h(url('admin/system/donnees/correlations')) ?>"
+     data-tools="<?= $h(url('admin/system/donnees/outils')) ?>"
      data-csrf="<?= $h(\App\Core\Csrf::token()) ?>"
      data-initial="users">
 
@@ -32,6 +33,23 @@ $datasets = is_array($registryDatasets ?? null) ? $registryDatasets : [];
     <?php endforeach; ?>
   </nav>
 
+  <aside class="adr-tools" aria-label="Outils rapides">
+    <div class="adr-tools__block">
+      <h2 class="adr-tools__title">Repérer un compte Steam</h2>
+      <p class="adr-tools__help">Collez l’adresse du profil (steamcommunity.com/profiles/… ou /id/pseudo), un SteamID64, ou un identifiant STEAM_0:… .</p>
+      <form class="adr-tools__form" id="adr-steam-form">
+        <input type="search" id="adr-steam-q" name="steam_q" placeholder="https://steamcommunity.com/id/…" autocomplete="off" aria-label="Adresse ou identifiant Steam">
+        <button type="submit" class="ath-btn ath-btn--solid" id="adr-steam-go">Repérer</button>
+      </form>
+      <p class="adr-tools__result" id="adr-steam-result" hidden></p>
+    </div>
+    <div class="adr-tools__block">
+      <h2 class="adr-tools__title">Mods proches du pack</h2>
+      <p class="adr-tools__help">Liste les mods vus chez les joueurs dont le nom rappelle COMSPEC, ATAK, Athena ou Overwatch, sans la fiche Workshop officielle — copie locale ou republication possible.</p>
+      <button type="button" class="ath-btn" id="adr-goto-lookalikes">Ouvrir Mods proches</button>
+    </div>
+  </aside>
+
   <p class="adr-lead" id="adr-lead"></p>
   <div class="adr-flags" id="adr-flags" role="group" aria-label="Filtres rapides"></div>
 
@@ -39,7 +57,7 @@ $datasets = is_array($registryDatasets ?? null) ? $registryDatasets : [];
     <div class="ath-table-toolbar">
       <label class="ath-table-toolbar__search adr-search">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input type="search" id="adr-q" placeholder="Rechercher partout (nom, e-mail, Steam, ATAK, communauté…)" aria-label="Rechercher">
+        <input type="search" id="adr-q" placeholder="Nom, e-mail, Steam, URL de profil, ATAK, communauté…" aria-label="Rechercher">
       </label>
       <span class="ath-table-toolbar__count" id="adr-count"></span>
       <span class="adr-selcount" id="adr-selcount"></span>

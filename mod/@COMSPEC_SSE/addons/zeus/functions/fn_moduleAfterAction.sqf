@@ -12,7 +12,7 @@ if !(_ctx get "run") exitWith { true };
 
 private _apply = {
     params ["_pos", "_radius", "_export"];
-    private _lines = [_pos, _radius] call comspec_sse_fnc_afterActionReport;
+    private _lines = [_pos, _radius, false] call comspec_sse_fnc_afterActionReport;
     private _msg = if (_lines isEqualType [] && {_lines isNotEqualTo []}) then { _lines joinString "\n" } else { "Compte rendu généré." };
     if (_export) then {
         private _graph = [] call comspec_sse_fnc_exportMissionGraph;

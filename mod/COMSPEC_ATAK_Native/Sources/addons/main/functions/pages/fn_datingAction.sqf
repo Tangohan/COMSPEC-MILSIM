@@ -5,7 +5,11 @@
     Params : [action, argument]
       "like" / "pass" / "super" : clé du profil affiché (UID du joueur, ou « ai:netId »)
       "shot"   : photo affichée (0 portrait, 1 buste, 2 en pied ; -1 / +1 pour la précédente / suivante)
-      "tab"    : onglet (FIND, MATCH, ME)        "open" : conversation d'un match IA ("" pour revenir)
+      "tab"    : onglet (FIND, TIPS, FILES, MATCH, ME)
+      "open"   : conversation d'un match IA (« ai:netId ») ou d'une source (« src:CODE ») ("" pour revenir)
+      Chasse aux HVT (fn_hvtIntel) : "tipOpen" (id du tuyau, "" pour revenir), "tipFilter" (NEW ou ALL),
+      "review" ([id, OK|NO]), "markTip" (id), "file" (clé du dossier, "" pour revenir), "fileMark", "fileShare",
+      "fileSalute" (clé du dossier), "followup" (code de la source)
       "ask"    : demander où est le match IA     "mark" : marquer sur la carte la dernière position donnée
       "visible": apparaître ou non               "bio" : bio suivante         "sms" : nom du joueur
       "reset"  : revoir les profils passés
@@ -40,7 +44,28 @@ switch (_act) do {
         playSound "ClickSoft";
         call _rerender;
     };
-    case "tab": { _s set ["rcTab", _arg]; _s set ["rcOpen", ""]; _s set ["rcShot", 0]; call _rerender; };
+    case "tab": { _s set ["rcTab", _arg]; _s set ["rcOpen", ""]; _s set ["rcTip", ""]; _s set ["rcFile", ""]; _s set ["rcShot", 0]; call _rerender; };
+    case "tipOpen": {
+        _s set ["rcTip", _arg];
+        _s set ["rcShot", 0];
+        call _rerender;
+    };
+    case "tipFilter": { _s set ["rcTipFilter", _arg]; call _rerender; };
+    case "review": {
+        _arg params ["_id", "_st"];
+        ["review", [_id, _st]] call comspec_atak_native_fnc_hvtIntel;
+        playSound "ClickSoft";
+        // Tuyau suivant encore non lu, comme le profil suivant après un swipe.
+        private _next = ((missionNamespace getVariable ["COMSPEC_ATAK_HvtTips", []]) select { (_x select 6) isEqualTo "NEW" }) param [0, []];
+        _s set ["rcTip", _next param [0, ""]];
+        call _rerender;
+    };
+    case "markTip": { ["markTip", _arg] call comspec_atak_native_fnc_hvtIntel; };
+    case "file": { _s set ["rcFile", _arg]; _s set ["rcShot", 0]; call _rerender; };
+    case "fileMark": { ["mark", _arg] call comspec_atak_native_fnc_hvtIntel; };
+    case "fileShare": { ["share", _arg] call comspec_atak_native_fnc_hvtIntel; };
+    case "fileSalute": { ["salute", _arg] call comspec_atak_native_fnc_hvtIntel; };
+    case "followup": { ["followup", _arg] call comspec_atak_native_fnc_hvtIntel; };
     case "open": { _s set ["rcOpen", _arg]; call _rerender; };
     case "shot": {
         private _n = if (_arg isEqualType 0 && {_arg in [-1, 1]}) then { ((_s getOrDefault ["rcShot", 0]) + _arg + 3) mod 3 } else { _arg };
@@ -76,7 +101,11 @@ switch (_act) do {
                     _m pushBackUnique _key;
                     missionNamespace setVariable ["COMSPEC_ATAK_RencardAiMatches", _m];
                     private _name = (["profile", _u] call comspec_atak_native_fnc_datingSpecials) get "name";
-                    (["clue", _u] call comspec_atak_native_fnc_datingSpecials) params ["_txt", "_pos"];
+                    (["clue", _u] call comspec_atak_native_fnc_datingSpecials) params ["_txt", "_pos", ["_true", true]];
+                    // HVT : le rendez-vous donné entre dans son dossier (tuyau « contact direct », peut-être un piège).
+                    if ((["kind", _u] call comspec_atak_native_fnc_datingSpecials) isEqualTo "HVT" && {_pos isNotEqualTo []}) then {
+                        ["tip", [_key, "DIRECT", [0, 1] select _true, 300, "", _pos, _txt]] call comspec_atak_native_fnc_hvtIntel;
+                    };
                     private _chat = missionNamespace getVariable ["COMSPEC_ATAK_RencardAiChat", createHashMap];
                     _chat set [_key, [[false, "Salut :) Ton profil m'a plu.", [dayTime, "HH:MM"] call BIS_fnc_timeToString, []], [false, _txt, [dayTime, "HH:MM"] call BIS_fnc_timeToString, _pos]]];
                     missionNamespace setVariable ["COMSPEC_ATAK_RencardAiChat", _chat];
@@ -109,8 +138,11 @@ switch (_act) do {
             [_arg, false, selectRandom ["Patience...", "Je t'ai déjà dit, sois pas si pressé.", "Plus tard. Je suis occupé."]] call _say;
         } else {
             _at set [_arg, diag_tickTime];
-            (["clue", _u] call comspec_atak_native_fnc_datingSpecials) params ["_txt", ["_pos", []]];
+            (["clue", _u] call comspec_atak_native_fnc_datingSpecials) params ["_txt", ["_pos", []], ["_true", true]];
             [_arg, false, _txt, _pos] call _say;
+            if (!isNull _u && {_pos isNotEqualTo []} && {(["kind", _u] call comspec_atak_native_fnc_datingSpecials) isEqualTo "HVT"}) then {
+                ["tip", [_arg, "DIRECT", [0, 1] select _true, 300, "", _pos, _txt]] call comspec_atak_native_fnc_hvtIntel;
+            };
             if (_pos isNotEqualTo []) then { [] call comspec_atak_native_fnc_vibrate; };
         };
         call _rerender;

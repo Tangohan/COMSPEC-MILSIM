@@ -11,6 +11,7 @@ missionNamespace setVariable ["COMSPEC_ProxyTrackServerHooked", true, false];
     if (!(_ids isEqualType [])) then { _ids = []; };
     private _snaps = [];
     private _sig = [];
+    private _sigCoarse = [];
     private _alive = [];
     {
         if (!(_x isEqualType "")) then { continue };
@@ -22,6 +23,7 @@ missionNamespace setVariable ["COMSPEC_ProxyTrackServerHooked", true, false];
         private _asl = (getPosASL _obj) select 2;
         _snaps pushBack [_x, _pos select 0, _pos select 1, getDir _obj, _asl];
         _sig pushBack [_x, round (_pos select 0), round (_pos select 1), round (getDir _obj)];
+        _sigCoarse pushBack [_x, round ((_pos select 0) / 10), round ((_pos select 1) / 10), round ((getDir _obj) / 15)];
     } forEach _ids;
     // Purge des netIds d'IA supprimées / mortes : la liste grossissait sans fin et était rescannée toutes les 4 s.
     if ((count _alive) != (count _ids)) then {
@@ -29,7 +31,13 @@ missionNamespace setVariable ["COMSPEC_ProxyTrackServerHooked", true, false];
     };
     // Diffusion seulement si une position (au mètre) / un cap a changé : sinon le tableau complet
     // partait toutes les 4 s vers tous les clients, même avec des IA immobiles.
+    // Seul le relais (client élu) lit ce tableau, mais il part public vers tous : seuil ~10 m / 15° pour
+    // diffuser vite, et petits écarts (au mètre) seulement toutes les 20 s, pour ne pas inonder le réseau.
     if (_sig isEqualTo (missionNamespace getVariable ["COMSPEC_AllyTrackSnapSig", []])) exitWith {};
+    private _coarseSame = _sigCoarse isEqualTo (missionNamespace getVariable ["COMSPEC_AllyTrackSnapSigCoarse", []]);
+    if (_coarseSame && {(time - (missionNamespace getVariable ["COMSPEC_AllyTrackSnapAt", -1e9])) < 20}) exitWith {};
     missionNamespace setVariable ["COMSPEC_AllyTrackSnapSig", _sig, false];
+    missionNamespace setVariable ["COMSPEC_AllyTrackSnapSigCoarse", _sigCoarse, false];
+    missionNamespace setVariable ["COMSPEC_AllyTrackSnapAt", time, false];
     missionNamespace setVariable ["COMSPEC_AllyTrackSnapshots", _snaps, true];
 }, 4, []] call CBA_fnc_addPerFrameHandler;

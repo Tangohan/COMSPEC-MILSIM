@@ -26,8 +26,21 @@ missionNamespace setVariable ["COMSPEC_ServerQueue", _queue, false];
 
 private _n = count (keys _queue);
 if (_n > 120) then {
-    // Garde-fou : trop d’entrées → flush immédiat des plus anciennes
-    [] call comspec_overwatch_connect_fnc_serverFlushQueue;
+    // Garde-fou : trop d’entrées → exécution immédiate des plus anciennes (échéance la plus proche) jusqu’à 120.
+    // serverFlushQueue n’exécute que les entrées échues : juste après un ajout, rien ne l’est (débounce).
+    private _byDue = (keys _queue) apply { [(_queue getOrDefault [_x, [0]]) param [0, 0], _x] };
+    _byDue sort true;
+    {
+        // getOrDefault : une clé déjà retirée (code ré-entrant) ne rend pas nil.
+        private _oldKey = _x select 1;
+        private _oldEntry = _queue getOrDefault [_oldKey, []];
+        _queue deleteAt _oldKey;
+        if ((_oldEntry isEqualType []) && {(count _oldEntry) >= 2}) then {
+            private _oldCode = _oldEntry param [1, {}];
+            private _oldArgs = _oldEntry param [2, []];
+            if (_oldCode isEqualType {}) then { _oldArgs call _oldCode; };
+        };
+    } forEach (_byDue select [0, _n - 120]);
 };
 
 true

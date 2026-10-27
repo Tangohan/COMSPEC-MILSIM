@@ -49,7 +49,7 @@ switch (_act) do {
         if (_d isEqualTo [] || {!(_m isEqualType 0)} || {_m <= 0}) exitWith { [_m, 1, "", ""] };
         _d params ["_id", "", "_name", "_gain", "_exp"];
         if (_id isEqualTo "patch" && {vehicle player isNotEqualTo player || {(speed player) > 1.5}}) then {
-            _gain = 1.05; _exp = 0.95; _name = _name + " (mal orientée en mouvement)";
+            _gain = 1.05; _exp = 0.95; _name = format ["%1 (mal orientée en mouvement)", _name];
         };
         private _new = (_m min 1) ^ _exp;
         [_new, _gain, _name, format ["+%1 %%", round (((_new * _gain) / (_m min 1) - 1) * 100)]]
@@ -76,7 +76,7 @@ switch (_act) do {
         // autre modèle (mesuré sur tools/render/phone_<modèle>_front.png), pour que l'antenne parte du boîtier.
         ((createHashMapFromArray [
             ["rugged", [50, 124]], ["iphone", [20, 35]], ["sonim", [-50, -18]], ["tablet", [20, 33]], ["keys", [20, 33]],
-            ["s23", [0, -17]]
+            ["s23", [0, -17]], ["ip17", [20, 68]]
         ]) getOrDefault [_l getOrDefault ["model", "s7"], [0, 0]]) params ["_ox", "_oy"];
         (if (_land) then { [238 + _ox, -832 + _oy, 384, 1536] } else { [1344 - _oy, 238 + _ox, 1536, 384] }) params ["_fx", "_fy", "_fw", "_fh"];
         (_l get "phone") params ["_px", "_py", "_pw", "_ph"];

@@ -539,7 +539,9 @@ function migrations_web_render_login(?string $message = null, string $tone = 'ba
     echo '<section class="mg-login ath-panel">';
     echo '<p class="ath-page-head__kicker">ADMINISTRATION DU SITE · BASE DE DONNÉES</p>';
     echo '<h1 class="mg-login__title">Migrations de la base</h1>';
-    echo '<p class="mg-login__sub">Accès réservé à l’administration du site. Saisissez le mot de passe du service de migrations.</p>';
+    echo '<p class="mg-login__sub">Les migrations se pilotent désormais depuis la console d’exploitation, avec votre compte d’administrateur du site.</p>';
+    echo '<a class="ath-btn ath-btn--solid mg-login__btn" href="/admin/system/exploitation?onglet=migrations">' . migrations_web_icon('db') . '<span>Ouvrir la console d’exploitation</span></a>';
+    echo '<p class="mg-login__sub" style="margin-top:1.25rem">Accès de secours, quand le site lui-même ne démarre plus : mot de passe du service de migrations.</p>';
     if ($message !== null) {
         echo '<div class="mg-flash mg-flash--' . migrations_web_h($tone) . '" role="alert">' . migrations_web_h($message) . '</div>';
     }
@@ -816,7 +818,21 @@ function migrations_web_render_output(string $root, string $stepId): void
     migrations_web_layout_end();
 }
 
-function migrations_web_begin_run_console(string $root, ?array $onlyStep = null): void
+/** Adresse de retour : la console d'exploitation quand le passage y a été lancé, sinon ce tableau de bord. */
+function migrations_web_return_url(string $anchor = ''): string
+{
+    $console = (string) ($GLOBALS['__migrations_console_return'] ?? '');
+    if ($console !== '') {
+        return migrations_web_h($console);
+    }
+
+    return migrations_web_self() . $anchor;
+}
+
+/**
+ * @param list<string> $replay fichiers SQL à rejouer (passage complet avec --replay)
+ */
+function migrations_web_begin_run_console(string $root, ?array $onlyStep = null, array $replay = []): void
 {
     @set_time_limit(0);
     @ini_set('max_execution_time', '0');
@@ -841,13 +857,18 @@ function migrations_web_begin_run_console(string $root, ?array $onlyStep = null)
     if ($onlyStep !== null) {
         $GLOBALS['__migrations_only_step'] = $onlyStep['id'];
     }
+    if ($replay !== []) {
+        $GLOBALS['__migrations_replay'] = $replay;
+    }
 
     migrations_web_layout_start('Migrations en cours');
     $total = count(MigrationRegistry::load($root));
     echo '<section class="ath-page-head mg-head"><div class="ath-page-head__copy"><p class="ath-page-head__kicker">MIGRATIONS · EXÉCUTION EN COURS</p>';
-    echo '<h1 class="ath-page-head__title">' . ($onlyStep !== null ? 'Relance : ' . migrations_web_h($onlyStep['label']) : 'Passage complet') . '</h1>';
+    $runTitle = $onlyStep !== null ? 'Relance : ' . migrations_web_h($onlyStep['label'])
+        : ($replay !== [] ? 'Passage complet, rejeu de ' . migrations_web_h(implode(', ', $replay)) : 'Passage complet');
+    echo '<h1 class="ath-page-head__title">' . $runTitle . '</h1>';
     echo '<p class="ath-page-head__sub">Démarré ' . migrations_web_h(date('d/m/Y à H:i:s')) . ($onlyStep !== null ? ' · étape <code>' . migrations_web_h($onlyStep['id']) . '</code>' : ' · ' . $total . ' étapes') . '. Ne fermez pas la page : le journal est enregistré à la fin.</p></div>';
-    echo '<div class="ath-page-head__actions"><a class="ath-btn" href="' . migrations_web_self() . '">' . migrations_web_icon('back') . '<span>Tableau de bord</span></a></div></section>';
+    echo '<div class="ath-page-head__actions"><a class="ath-btn" href="' . migrations_web_return_url() . '">' . migrations_web_icon('back') . '<span>' . (isset($GLOBALS['__migrations_console_return']) ? 'Console d’exploitation' : 'Tableau de bord') . '</span></a></div></section>';
     echo '<div class="mg-runbar" data-mg-runbar data-total="' . ($onlyStep !== null ? 1 : $total) . '"><span class="mg-pulse" aria-hidden="true"></span><b data-mg-progress-label>Préparation…</b><span class="mg-progress"><span class="mg-progress__bar" data-mg-progress></span></span></div>';
     echo '<pre class="mg-console" id="mg-console" data-mg-live>';
     echo str_repeat(' ', 2048) . "\n";
@@ -897,7 +918,7 @@ function migrations_web_begin_run_console(string $root, ?array $onlyStep = null)
             ? '<span class="ath-tag ath-tag--' . ($warn > 0 ? 'warn' : 'ok') . '">' . ($warn > 0 ? 'Terminé avec ' . $warn . ' avertissement(s)' : 'Terminé sans erreur') . '</span>'
             : '<span class="ath-tag ath-tag--bad">Terminé avec des erreurs</span>';
         echo '<span>' . migrations_web_h(str_replace('.', ',', (string) $duration)) . ' s</span><span class="mg-runbar__spacer"></span>';
-        echo '<a class="ath-btn ath-btn--solid" href="' . migrations_web_self() . '#mg-steps">' . migrations_web_icon('back') . '<span>Voir le résultat des étapes</span></a></div>';
+        echo '<a class="ath-btn ath-btn--solid" href="' . migrations_web_return_url('#mg-steps') . '">' . migrations_web_icon('back') . '<span>Voir le résultat des étapes</span></a></div>';
         migrations_web_layout_end();
         @flush();
     });
@@ -920,6 +941,41 @@ function migrations_web_gate(): void
     }
     $method = (string) ($_SERVER['REQUEST_METHOD'] ?? 'GET');
     $action = (string) ($method === 'POST' ? ($_POST['action'] ?? '') : ($_GET['action'] ?? ''));
+
+    // Lancement depuis la console d'exploitation (admin du site vérifié) : ticket à usage unique.
+    if ($method === 'GET' && isset($_GET['ticket'])) {
+        require_once $root . '/app/Support/Ops/OpsMigrationTicket.php';
+        $ticket = \App\Support\Ops\OpsMigrationTicket::consume($root, (string) $_GET['ticket']);
+        if ($ticket === null) {
+            migrations_web_render_login('Lien de lancement expiré ou déjà utilisé : relancez depuis la console d’exploitation (Administration du site › Exploitation).');
+            exit;
+        }
+        $return = (string) ($ticket['return'] ?? '');
+        $GLOBALS['__migrations_console_return'] = preg_match('#^(https?://[^\s"<>]+|/[^\s"<>]*)$#', $return) === 1 ? $return : '/admin/system/exploitation?onglet=migrations';
+        $only = null;
+        $replay = [];
+        if ($ticket['action'] === 'run_step') {
+            $only = MigrationRegistry::find($root, (string) ($ticket['step'] ?? ''));
+            if ($only === null || !$only['rerun']) {
+                migrations_web_render_login('Cette étape ne peut pas être relancée seule : lancez toutes les migrations.', 'warn');
+                exit;
+            }
+        } elseif ($ticket['action'] === 'replay') {
+            foreach ((array) ($ticket['replay'] ?? []) as $file) {
+                $file = basename((string) $file);
+                if (preg_match('/^[A-Za-z0-9._-]+\.sql$/', $file) === 1 && is_file($root . '/migrations/' . $file)) {
+                    $replay[] = $file;
+                }
+            }
+            if ($replay === []) {
+                migrations_web_render_login('Fichier SQL introuvable.', 'warn');
+                exit;
+            }
+        }
+        migrations_web_begin_run_console($root, $only, $replay);
+
+        return; // la suite de run-migrations.php exécute le pipeline
+    }
 
     if ($action === 'logout' && $method === 'POST') {
         if (migrations_web_csrf_ok($_POST['csrf'] ?? null)) {

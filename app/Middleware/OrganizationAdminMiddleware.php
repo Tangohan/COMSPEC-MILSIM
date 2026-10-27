@@ -50,6 +50,7 @@ class OrganizationAdminMiddleware
                 // Garder en phase avec EffectifsLmsAccess::allows() — personnel.profile.view exclu
                 // volontairement (voir ce fichier pour le pourquoi).
                 $gate->allows('organization.effectifs.hub.view')
+                || $gate->allows('admin.roles.manage')
                 || $gate->allows('personnel.profile.update')
                 || $gate->allows('personnel.assignments.manage')
                 || $gate->allows('personnel.grades.manage')

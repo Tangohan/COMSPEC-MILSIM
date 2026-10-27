@@ -280,3 +280,31 @@ html[data-bo-theme="dark"] .rmt__label.rmt__label--cat {
 html[data-bo-theme="dark"] .rmt__num.is-zero {
   color: #4a5550;
 }
+
+/* Mon compte › Double vérification : niveau, codes de secours, appareils de confiance (account-hub.css). */
+html[data-bo-theme="dark"] .account-hub__text,
+html[data-bo-theme="dark"] .account-hub__level-label { color: #b7c3d4; }
+html[data-bo-theme="dark"] .account-hub__level-next,
+html[data-bo-theme="dark"] .account-hub__device-meta { color: #8b98aa; }
+html[data-bo-theme="dark"] .account-hub__level-bar span,
+html[data-bo-theme="dark"] .account-hub__codes-meter span { background: #26302c; }
+html[data-bo-theme="dark"] .account-hub__codes-meter span.is-left { background: #10b981; }
+html[data-bo-theme="dark"] .account-hub__codes-box {
+  background: #221b0c;
+  border-color: #8a6414;
+}
+html[data-bo-theme="dark"] .account-hub__codes-warn { color: #fcd34d; }
+html[data-bo-theme="dark"] .account-hub__codes code {
+  background: #111513;
+  border-color: #5c4712;
+  color: #f1f5f9;
+}
+html[data-bo-theme="dark"] .account-hub__device {
+  background: #111513;
+  border-color: #2b3430;
+}
+html[data-bo-theme="dark"] .account-hub__device-icon {
+  background: #192c23;
+  color: #57f9cb;
+}
+html[data-bo-theme="dark"] .account-hub__device-title { color: #eef2f6; }
