@@ -117,10 +117,12 @@ final class AtakAccessoriesVehicleTest extends TestCase
         foreach (['rugged', 'iphone', 'ip17'] as $m) {
             self::assertFileExists($data . 'phone_back_' . $m . '.paa');
         }
-        self::assertStringContainsString('"COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone"', $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf'));
+        $settings = $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf');
+        self::assertStringContainsString('comspec_atak_native_fnc_phoneCarried', $settings);
+        self::assertStringNotContainsString('"COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone"', $settings);
         // Pas de marque : modèles génériques.
         foreach (['iPhone', 'Crosscall', 'Apple'] as $brand) {
-            self::assertStringNotContainsString($brand, $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf'), $brand);
+            self::assertStringNotContainsString($brand, $settings, $brand);
         }
     }
 }
