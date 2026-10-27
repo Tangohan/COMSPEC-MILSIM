@@ -175,6 +175,7 @@ private _errTxt = switch (_err) do {
     case "ACCOUNT_DISABLED": { "Ce compte n’est plus autorisé." };
     case "TENANT_DISABLED": { "Cette communauté n’est plus accessible." };
     case "NO_TENANT": { "Aucune communauté n’est rattachée à ce compte." };
+    case "CLIENT_UNTRUSTED": { "Ce module n’est pas reconnu. Installez la version officielle du pack, puis relancez Arma." };
     case "MOD_OUTDATED": {
         if (_modMin isEqualTo "") then {
             "Cette version du pack n’est plus acceptée. Installez la mise à jour."

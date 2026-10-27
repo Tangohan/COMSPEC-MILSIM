@@ -15,7 +15,7 @@ private _cur = uiNamespace getVariable ["COMSPEC_ATAK_BuzzAlert", []];
 switch (_act) do {
     case "show": {
         _arg params [["_from", "?"], ["_grid", ""], ["_txt", ""], ["_pos", []], ["_src", objNull]];
-        uiNamespace setVariable ["COMSPEC_ATAK_BuzzAlert", [_from, _grid, _txt, _pos, _src, diag_tickTime, [dayTime, "HH:MM"] call BIS_fnc_timeToString]];
+        uiNamespace setVariable ["COMSPEC_ATAK_BuzzAlert", [_from, _grid, _txt, _pos, _src, diag_tickTime, (["now"] call comspec_atak_native_fnc_clockFmt)]];
         ["draw"] call comspec_atak_native_fnc_buzzAlert;
     };
     case "close": { uiNamespace setVariable ["COMSPEC_ATAK_BuzzAlert", []]; call _clear; };

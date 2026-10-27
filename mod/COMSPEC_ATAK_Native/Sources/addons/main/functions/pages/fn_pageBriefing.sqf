@@ -387,7 +387,7 @@ if (_src isEqualTo "GOOGLE" && {_path isNotEqualTo ""}) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_SlideWeb", _store];
             };
             ["INFO", "BRIEFING", format ["Diapositive Google : fichier %1, %2", _path, ["affichée par le navigateur intégré (texture refusée par Arma)", _why] select (_why isNotEqualTo "")]] call comspec_atak_native_fnc_log;
-            _gCache set [_path, [["WEB:" + _path, ""] select (_why isNotEqualTo ""), ["", "Arma refuse l'image Google (hors PBO) et " + _why] select (_why isNotEqualTo "")]];
+            _gCache set [_path, [["WEB:" + _path, ""] select (_why isNotEqualTo ""), ["", format ["Arma refuse l'image Google (hors PBO) et %1", _why]] select (_why isNotEqualTo "")]];
             [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
         };
         _st = [diag_tickTime];

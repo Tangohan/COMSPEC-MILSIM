@@ -91,7 +91,7 @@ private _showState = ["state", "alerts"] call comspec_atak_native_fnc_medShow;
     if (_who isEqualTo "") then { _who = _x getOrDefault ["label", "?"]; };
     _rows pushBack ["buttons", [[format ["%1 · %2 · %3 · %4", _kindLabel, _who, _x getOrDefault ["grid", "—"], toUpper (_x getOrDefault ["triage_label", _status])],
         compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['medSel', ['%1', ''] select (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['medSel', '']) isEqualTo '%1')]; [{ ['MEDICAL'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _id], _id isEqualTo _sel]]];
-    _rows pushBack ["text", format ["<t size='0.75' color='%1'>● %2</t><t size='0.75' color='#8a9a93'>  %3</t>", _col, _x getOrDefault ["triage_label", _status], _x getOrDefault ["created_at", ""]]];
+    _rows pushBack ["text", format ["<t size='0.75' color='%1'>● %2</t><t size='0.75' color='#8a9a93'>  %3</t>", _col, _x getOrDefault ["triage_label", _status], [_x getOrDefault ["created_at", ""]] call comspec_atak_native_fnc_clockFmt]];
     if (_id isEqualTo _sel) then {
         private _grid = _x getOrDefault ["grid", ""];
         // Patient de l'alerte : retrouvé en jeu par son identifiant Steam ou son indicatif, sinon données de l'alerte.

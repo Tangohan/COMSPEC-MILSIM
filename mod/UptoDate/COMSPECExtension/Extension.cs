@@ -552,6 +552,7 @@ public static partial class Extension
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
             using var req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = JsonContent(json.ToString()) };
+            StampOfficialClient(req);
             using var response = SendTimed(req, cts.Token);
             if ((int)response.StatusCode == 429) return "ERR|rate_limited";
             var body = ReadContentUtf8(response, cts.Token);
@@ -564,7 +565,10 @@ public static partial class Extension
             }
             catch (JsonException) { }
             if (!response.IsSuccessStatusCode)
+            {
+                if (body.Contains("client_untrusted", StringComparison.Ordinal)) return "ERR|client_untrusted";
                 return "ERR|" + (status.Length > 0 ? status : "http_" + (int)response.StatusCode);
+            }
             return "OK|" + (status.Length > 0 ? status : "sent");
         }
         catch (Exception ex)
@@ -678,6 +682,8 @@ public static partial class Extension
                 return "OK|connected";
             }
 
+            if (respBody.Contains("client_untrusted", StringComparison.Ordinal))
+                return "ERR|client_untrusted";
             if (code is 401)
                 return "ERR|unauthorized";
             if (code is 403)
@@ -3294,6 +3300,7 @@ public static partial class Extension
         // en texture .paa, que DownloadBriefingSlideImage range telle quelle ; sans l'en-tête, JPEG comme avant.
         req.Headers.Remove("X-COMSPEC-Image");
         req.Headers.TryAddWithoutValidation("X-COMSPEC-Image", "paa");
+        StampOfficialClient(req);
     }
 
     private static void ApplySteamUid(string? steamUid)
@@ -4390,8 +4397,11 @@ public static partial class Extension
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 // HttpRequestMessage dédié : redeem sans clé API (le code court est le secret).
                 using var req = new HttpRequestMessage(HttpMethod.Post, redeemUri) { Content = content };
+                StampOfficialClient(req);
                 using var resp = HttpClient.SendAsync(req, redeemToken).GetAwaiter().GetResult();
                 var respBody = ReadContentUtf8(resp, redeemToken);
+                if (respBody.Contains("client_untrusted", StringComparison.Ordinal))
+                    return "ERR|client_untrusted";
                 if (!resp.IsSuccessStatusCode)
                 {
                     var httpCode = (int)resp.StatusCode;
@@ -4474,8 +4484,11 @@ public static partial class Extension
                 using var content = new StringContent(payload, Encoding.UTF8);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 using var req = new HttpRequestMessage(HttpMethod.Post, steamUri) { Content = content };
+                StampOfficialClient(req);
                 using var resp = HttpClient.SendAsync(req, steamToken).GetAwaiter().GetResult();
                 var respBody = ReadContentUtf8(resp, steamToken);
+                if (respBody.Contains("client_untrusted", StringComparison.Ordinal))
+                    return "ERR|client_untrusted";
                 if (!resp.IsSuccessStatusCode)
                 {
                     var httpCode = (int)resp.StatusCode;
@@ -4581,8 +4594,11 @@ public static partial class Extension
                 using var content = new StringContent(payload, Encoding.UTF8);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 using var req = new HttpRequestMessage(HttpMethod.Post, betaUri) { Content = content };
+                StampOfficialClient(req);
                 using var resp = HttpClient.SendAsync(req, betaToken).GetAwaiter().GetResult();
                 var respBody = ReadContentUtf8(resp, betaToken);
+                if (respBody.Contains("client_untrusted", StringComparison.Ordinal))
+                    return "ERR|client_untrusted";
                 if (!resp.IsSuccessStatusCode)
                 {
                     var httpCode = (int)resp.StatusCode;
@@ -4686,6 +4702,7 @@ public static partial class Extension
                 using var content = new StringContent(payload, Encoding.UTF8);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 using var req = new HttpRequestMessage(HttpMethod.Post, diagUri) { Content = content };
+                StampOfficialClient(req);
                 using var resp = HttpClient.SendAsync(req, diagToken).GetAwaiter().GetResult();
                 var respBody = ReadContentUtf8(resp, diagToken);
                 if (!resp.IsSuccessStatusCode)

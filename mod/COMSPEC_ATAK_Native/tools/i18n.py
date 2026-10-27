@@ -237,6 +237,10 @@ def looks_like_code(s):
         return True
     if re.fullmatch(r"[a-z0-9_\-]+", t) and len(t) <= 3:
         return True
+    # Préfixe court collé à des valeurs (« CR%1%2 » : identifiant de compte rendu) : code, pas une phrase. Traduit,
+    # il réécrivait tout texte commençant par « CR » (« CROW 1-1 » -> « RPTOW 1-1 »).
+    if re.fullmatch(r"[A-Z]{1,4}(%\d)+", t):
+        return True
     return False
 
 
