@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Support\MaintenanceGuard;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -13,6 +14,11 @@ use PHPUnit\Framework\TestCase;
  */
 final class MaintenanceRetryAfterTest extends TestCase
 {
+    /** Fichiers de bootstrap/ chargés par public/index.php avant la maintenance. */
+    private const BOOTSTRAP_FILES = ['env.php', 'error_hint.php', 'app.php', 'autoload.php', 'load_phpmailer.php'];
+
+    private const LINKED_DIRS = ['app', 'views', 'vendor'];
+
     public function testRetryAfterFollowsTheAnnouncedEnd(): void
     {
         $now = (int) strtotime('2026-10-26 14:00:00');
@@ -55,6 +61,7 @@ final class MaintenanceRetryAfterTest extends TestCase
      * l'en-tête Retry-After et le champ retry_after portent la même valeur, tirée de l'heure de fin
      * (120 s plus l'étalement de 0 à 15 s).
      */
+    #[Group('php-builtin-server')]
     public function testEnforceSendsTheDelayOfTheAnnouncedEndInTheHeaderAndTheBody(): void
     {
         if (!extension_loaded('pdo_sqlite')) {
@@ -104,6 +111,7 @@ final class MaintenanceRetryAfterTest extends TestCase
      * 5 min dès le troisième échec. Maintenant le JSON de la maintenance planifiée, même délai dans l'en-tête et le
      * corps, tiré au hasard entre 30 et 60 s.
      */
+    #[Group('php-builtin-server')]
     public function testLegacyFileMaintenanceAnswersApisInJson(): void
     {
         $responses = self::serve(<<<'PHP'
@@ -128,23 +136,96 @@ final class MaintenanceRetryAfterTest extends TestCase
     }
 
     /**
-     * L4-R2, branchement : public/index.php envoie les API vers la réponse JSON avant la page HTML. Ce fichier ne
-     * peut pas être servi ici sans poser storage/maintenance.json dans le dépôt ; la réponse elle-même est vérifiée
-     * par testLegacyFileMaintenanceAnswersApisInJson.
+     * TEST-013 (L4-R2, branchement) : le vrai public/index.php, servi par `php -S` pendant l'ancienne maintenance par
+     * fichier. Avant, ce branchement n'était vérifié qu'en cherchant des lignes dans le fichier. Le contrôleur frontal
+     * et ses fichiers de démarrage sont copiés dans un dossier temporaire, où storage/maintenance.json est posé : le
+     * dépôt n'est jamais mis en maintenance. Les API (avec ou sans en-tête Accept, comme la DLL) reçoivent le JSON
+     * « maintenance » avec un délai de 30 à 60 s, le même dans l'en-tête et le corps ; les pages reçoivent la page
+     * HTML avec Retry-After 300, comme avant.
      */
-    public function testLegacyFileMaintenanceSendsApisToTheJsonResponseBeforeTheHtmlPage(): void
+    #[Group('php-builtin-server')]
+    public function testLegacyFileMaintenanceThroughTheFrontControllerAnswersApisInJsonAndPagesInHtml(): void
     {
-        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/public/index.php');
-        $block = (string) strstr((string) strstr($src, "'/storage/maintenance.json'"), 'getActiveMaintenance', true);
+        $copy = self::frontControllerCopy(['enabled' => true, 'message' => 'Mise à jour en cours.', 'allowed_ips' => []]);
+        try {
+            $responses = self::request($copy . '/public/index.php', $copy . '/public', [
+                ['/api/units', 'application/json'],
+                ['/api/atak/position', ''],
+                ['/api/chat?mapId=1&limit=25&after=10', ''],
+                ['/api/atak/client-init', 'application/json'],
+                ['/', 'text/html,application/xhtml+xml'],
+                ['/login', 'text/html,application/xhtml+xml'],
+            ]);
+        } finally {
+            self::removeFrontControllerCopy($copy);
+        }
 
-        $branch = strpos($block, 'if (\App\Support\MaintenanceGuard::wantsJson($requestPath)) {');
-        $send = strpos($block, '\App\Support\MaintenanceGuard::sendLegacyFileApiResponse($message);');
-        $html = strpos($block, "header('Retry-After: 300');");
-        self::assertNotFalse($branch);
-        self::assertNotFalse($send);
-        self::assertNotFalse($html, 'page HTML inchangée');
-        self::assertLessThan($send, $branch);
-        self::assertLessThan($html, $send);
+        foreach (array_slice($responses, 0, 4) as $i => $response) {
+            self::assertSame(503, $response['status'], "API {$i} : {$response['raw']}");
+            self::assertStringStartsWith('application/json', $response['headers']['content-type'] ?? '', "API {$i} : {$response['raw']}");
+            self::assertSame('no-store', $response['headers']['cache-control'] ?? null, "API {$i}");
+            self::assertSame('1', $response['headers']['x-athena-maintenance'] ?? null, "API {$i}");
+            self::assertSame('maintenance', $response['body']['error'] ?? null, "API {$i}");
+            self::assertSame('Mise à jour en cours.', $response['body']['message'] ?? null, "API {$i}");
+            $header = (int) ($response['headers']['retry-after'] ?? 0);
+            self::assertSame($header, $response['body']['retry_after'] ?? null, "API {$i} : en-tête et corps annoncent un seul délai");
+            self::assertGreaterThanOrEqual(30, $header, "API {$i}");
+            self::assertLessThanOrEqual(60, $header, "API {$i}");
+        }
+        foreach (array_slice($responses, 4) as $i => $response) {
+            self::assertSame(503, $response['status'], "page {$i} : {$response['raw']}");
+            self::assertStringStartsWith('text/html', strtolower($response['headers']['content-type'] ?? ''), "page {$i}");
+            self::assertSame('300', $response['headers']['retry-after'] ?? null, "page {$i} : délai des pages inchangé");
+            self::assertNull($response['body'], "page {$i} : pas de JSON");
+            self::assertStringContainsString('<html', $response['raw'], "page {$i}");
+        }
+    }
+
+    /**
+     * Copie temporaire pour servir le vrai public/index.php. Le contrôleur frontal et les fichiers de démarrage qu'il
+     * charge sont de vraies copies : PHP résout les liens symboliques, et un __DIR__ lu à travers un lien désignerait
+     * le dépôt, donc son storage/. app/, views/ et vendor/ sont des liens vers le dépôt.
+     *
+     * @param array<string, mixed> $maintenance contenu de storage/maintenance.json
+     */
+    private static function frontControllerCopy(array $maintenance): string
+    {
+        $root = dirname(__DIR__, 2);
+        $copy = sys_get_temp_dir() . '/athena-front-' . bin2hex(random_bytes(6));
+        foreach (['/public', '/bootstrap', '/storage'] as $sub) {
+            mkdir($copy . $sub, 0777, true);
+        }
+        copy($root . '/public/index.php', $copy . '/public/index.php');
+        foreach (self::BOOTSTRAP_FILES as $file) {
+            copy($root . '/bootstrap/' . $file, $copy . '/bootstrap/' . $file);
+        }
+        foreach (self::LINKED_DIRS as $name) {
+            if (file_exists($root . '/' . $name) && !@symlink($root . '/' . $name, $copy . '/' . $name)) {
+                self::removeFrontControllerCopy($copy);
+                self::markTestSkipped('liens symboliques indisponibles');
+            }
+        }
+        file_put_contents($copy . '/storage/maintenance.json', json_encode($maintenance, JSON_THROW_ON_ERROR));
+
+        return $copy;
+    }
+
+    /** Retire la copie : les liens eux-mêmes (jamais leur cible), puis les fichiers et dossiers posés par le test. */
+    private static function removeFrontControllerCopy(string $copy): void
+    {
+        foreach (self::LINKED_DIRS as $name) {
+            if (is_link($copy . '/' . $name)) {
+                unlink($copy . '/' . $name);
+            }
+        }
+        foreach (self::BOOTSTRAP_FILES as $file) {
+            @unlink($copy . '/bootstrap/' . $file);
+        }
+        @unlink($copy . '/public/index.php');
+        @unlink($copy . '/storage/maintenance.json');
+        foreach (['/public', '/bootstrap', '/storage', ''] as $sub) {
+            @rmdir($copy . $sub);
+        }
     }
 
     /**
@@ -156,14 +237,9 @@ final class MaintenanceRetryAfterTest extends TestCase
      */
     private static function serve(string $script, int $requests): array
     {
-        if (!function_exists('proc_open')) {
-            self::markTestSkipped('proc_open indisponible');
-        }
-
         $dir = sys_get_temp_dir() . '/athena-maintenance-' . bin2hex(random_bytes(6));
         mkdir($dir);
         $router = $dir . '/router.php';
-        $log = $dir . '/server.log';
         $prelude = <<<'PHP'
             <?php
 
@@ -179,6 +255,28 @@ final class MaintenanceRetryAfterTest extends TestCase
             PHP;
         file_put_contents($router, strtr($prelude, ['__ROOT__' => var_export(dirname(__DIR__, 2), true)]) . $script . "\n");
 
+        try {
+            return self::request($router, $dir, array_fill(0, $requests, ['/api/units', 'application/json']));
+        } finally {
+            @unlink($router);
+            @rmdir($dir);
+        }
+    }
+
+    /**
+     * Lance `php -S` sur 127.0.0.1, port libre, avec le script de routage $router, et lui envoie les requêtes GET
+     * $requests ([chemin, en-tête Accept ; vide : pas d'en-tête]). Le serveur est arrêté dans tous les cas.
+     *
+     * @param list<array{0: string, 1: string}> $requests
+     * @return list<array{status: int, headers: array<string, string>, body: array<string, mixed>|null, raw: string}>
+     */
+    private static function request(string $router, string $docroot, array $requests): array
+    {
+        if (!function_exists('proc_open')) {
+            self::markTestSkipped('proc_open indisponible');
+        }
+
+        $log = sys_get_temp_dir() . '/athena-php-server-' . bin2hex(random_bytes(6)) . '.log';
         $socket = stream_socket_server('tcp://127.0.0.1:0', $errno, $errstr);
         self::assertNotFalse($socket, "port local : {$errstr}");
         $name = (string) stream_socket_get_name($socket, false);
@@ -186,17 +284,17 @@ final class MaintenanceRetryAfterTest extends TestCase
         fclose($socket);
 
         $server = proc_open(
-            [PHP_BINARY, '-S', '127.0.0.1:' . $port, $router],
+            [PHP_BINARY, '-S', '127.0.0.1:' . $port, '-t', $docroot, $router],
             [0 => ['pipe', 'r'], 1 => ['file', $log, 'a'], 2 => ['file', $log, 'a']],
             $pipes,
-            $dir
+            $docroot
         );
         self::assertIsResource($server);
         fclose($pipes[0]);
 
         $responses = [];
         try {
-            for ($i = 0; $i < $requests; $i++) {
+            foreach ($requests as [$path, $accept]) {
                 $connection = false;
                 for ($try = 0; $connection === false && $try < 100; $try++) {
                     $connection = @stream_socket_client('tcp://127.0.0.1:' . $port, $errno, $errstr, 1);
@@ -208,7 +306,8 @@ final class MaintenanceRetryAfterTest extends TestCase
                     self::fail("php -S injoignable sur le port {$port} : " . (string) @file_get_contents($log));
                 }
                 stream_set_timeout($connection, 10);
-                fwrite($connection, "GET /api/units HTTP/1.0\r\nHost: 127.0.0.1\r\nAccept: application/json\r\nConnection: close\r\n\r\n");
+                $acceptLine = $accept !== '' ? "Accept: {$accept}\r\n" : '';
+                fwrite($connection, "GET {$path} HTTP/1.0\r\nHost: 127.0.0.1\r\n{$acceptLine}Connection: close\r\n\r\n");
                 $raw = (string) stream_get_contents($connection);
                 fclose($connection);
 
@@ -226,9 +325,7 @@ final class MaintenanceRetryAfterTest extends TestCase
         } finally {
             proc_terminate($server);
             proc_close($server);
-            @unlink($router);
             @unlink($log);
-            @rmdir($dir);
         }
 
         return $responses;
