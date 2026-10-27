@@ -293,13 +293,17 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
-            $pr(1176, '2026-10-27', 'Corrections de fiches : l’actuel et le proposé se lisent clairement', 'Dans Effectifs, À traiter, la fenêtre Décider indique l’équipe et l’emploi en clair : ce qui est en place, et ce que le membre propose. Une absence se lit « Aucune équipe » ou « Aucun emploi ». La page Corrections de fiches présente les deux côte à côte. Rechargez le portail (Ctrl+F5).', [], [
+            $pr(1176, '2026-10-27', 'Corrections et avancement : le portail parle en clair', 'Dans Effectifs, À traiter, la fenêtre Décider indique l’équipe et l’emploi en clair : ce qui est en place, et ce que le membre propose. Une absence se lit « Aucune équipe » ou « Aucun emploi ». La page Corrections de fiches présente les deux côte à côte. Les campagnes d’avancement se lisent comme une liste, et chaque candidature affiche l’avis et la décision en français. Rechargez le portail (Ctrl+F5).', [], [
                 'Chaque changement se lit en deux volets : Actuellement et Proposé',
                 'La fenêtre Décider nomme les équipes, précise l’équipe principale, et nomme les emplois',
+                'Les campagnes d’avancement affichent le grade, l’année, la période, les places et le statut',
+                'Chaque candidature indique l’ancienneté, le classement, la mobilité, l’avis et la décision',
             ], [
                 'La fenêtre Décider montrait les équipes et les emplois sous une forme illisible',
+                'L’avis et la décision d’une candidature s’affichaient sous un code interne',
             ], ['personnel'], [
                 'Ouvrez Effectifs, À traiter, puis Décider sur une demande de correction. Les équipes et les emplois sont en clair. La page Corrections de fiches montre l’actuel à gauche et le proposé à droite.',
+                'Ouvrez RH, Avancement. Chaque campagne est un lien. Dans une campagne, l’avis se lit « Proposé » ou « Pas encore d’avis », et la décision « Inscrit au tableau » ou « En attente ».',
             ], 'Portail Athena'),
             $pr(1011, '2026-10-27', 'Registre des données : Steam par adresse de profil et mods proches', 'Dans le registre des données, vous collez l’adresse d’un profil Steam pour retrouver le compte. Un onglet liste les mods vus chez les joueurs qui ressemblent au pack officiel sans en porter la fiche Workshop. Ce sont des signaux à vérifier, pas une preuve de copie. Rechargez le portail (Ctrl+F5).', [
                 'Repérage d’un compte à partir de l’adresse steamcommunity.com/profiles/… ou /id/…',
