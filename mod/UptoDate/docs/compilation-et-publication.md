@@ -33,6 +33,8 @@ build_mod.bat
 
 Sans DLL fraîche après `dotnet publish`, ou si sa copie échoue (DLL verrouillée par Arma), le build s'arrête en échec : l'ancienne DLL du dossier `@COMSPECOverwatch` n'est plus déployée.
 
+Il s'arrête aussi en échec si une copie vers un dossier Arma échoue, par exemple un PBO ou la DLL verrouillés par Arma : le détail est dans `build_log.txt`, sous la ligne `[DEPLOY] Cible` du dossier en cause. Un addon optionnel (`atak_athena`, `mavik_compat`, `sse_ace`) qui ne compile pas ne donne qu'un avertissement, à son nom : son ancien PBO, s'il existe, part tel quel au déploiement.
+
 Log complet : `mod/UptoDate/build_log.txt`
 
 Build sans pause (CI / script) :
@@ -100,6 +102,7 @@ Après changement **DLL seule** : remplacer `COMSPECExtension_x64.dll` suffit si
 | dotnet publish failed | SDK 8 installé ? erreur C# dans log |
 | AddonBuilder failed | Chemin Tools, config.cpp syntaxe |
 | Build en échec : « DLL Native AOT fraiche introuvable » ou « Copie de la DLL fraiche impossible » | Vérifier `bin/publish/COMSPECExtension_x64.dll` ; fermer Arma si la DLL est verrouillée |
+| Build en échec : « Au moins une copie vers un dossier Arma a echoue » | Fermer Arma puis relancer ; voir `build_log.txt` sous la ligne `[DEPLOY] Cible` |
 | workshop-pack.ps1 : « DLL COMSPEC Link … refusée » | DLL plus ancienne que 2.0.96 : relancer `build_mod.bat` |
 | workshop-pack.ps1 : « … vise l'objet Workshop 3684656708, qui est l'ATAK natif » | Retirer `publishedid` du `meta.cpp` ; ne pas publier ce pack |
 | En jeu extension absente | DLL manquante ou bloquée antivirus |

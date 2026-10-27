@@ -79,14 +79,15 @@ if %ERRORLEVEL% NEQ 0 (
     goto :build_fail
 )
 
+:: Addons optionnels : le test d'echec suit AddonBuilder sur la meme ligne et lit son code de sortie a l'execution,
+:: meme negatif (plantage). Un test de ERRORLEVEL entre pourcents, dans ce bloc, serait developpe avant AddonBuilder.
 :: Bridge optionnel ATAK Enhanced (cTab/BCE) - ignore si AddonBuilder echoue
 if exist "%SOURCES_DIR%\atak_athena\config.cpp" (
     echo [BUILD] Compilation de comspec_overwatch_atak_athena... >> "%BUILD_LOG%"
     echo [BUILD] Compilation de comspec_overwatch_atak_athena...
-    "%BUILDER_PATH%" "%SOURCES_DIR%\atak_athena" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\atak_athena -toolsDirectory="%ARMA_TOOLS%" >> "%BUILD_LOG%" 2>&1
-    if %ERRORLEVEL% NEQ 0 (
-        echo [WARN] AddonBuilder atak_athena a echoue - PBO optionnel ignore. >> "%BUILD_LOG%"
-        echo [WARN] AddonBuilder atak_athena a echoue - PBO optionnel ignore.
+    "%BUILDER_PATH%" "%SOURCES_DIR%\atak_athena" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\atak_athena -toolsDirectory="%ARMA_TOOLS%" >> "%BUILD_LOG%" 2>&1 || (
+        echo [WARN] AddonBuilder atak_athena a echoue - PBO optionnel non reconstruit, l'ancien atak_athena.pbo eventuel est deploye tel quel. >> "%BUILD_LOG%"
+        echo [WARN] AddonBuilder atak_athena a echoue - PBO optionnel non reconstruit, l'ancien atak_athena.pbo eventuel est deploye tel quel.
     )
 )
 
@@ -94,10 +95,9 @@ if exist "%SOURCES_DIR%\atak_athena\config.cpp" (
 if exist "%SOURCES_DIR%\mavik_compat\config.cpp" (
     echo [BUILD] Compilation de comspec_overwatch_mavik_compat... >> "%BUILD_LOG%"
     echo [BUILD] Compilation de comspec_overwatch_mavik_compat...
-    "%BUILDER_PATH%" "%SOURCES_DIR%\mavik_compat" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\mavik_compat -toolsDirectory="%ARMA_TOOLS%" >> "%BUILD_LOG%" 2>&1
-    if %ERRORLEVEL% NEQ 0 (
-        echo [WARN] AddonBuilder mavik_compat a echoue - PBO optionnel ignore. >> "%BUILD_LOG%"
-        echo [WARN] AddonBuilder mavik_compat a echoue - PBO optionnel ignore.
+    "%BUILDER_PATH%" "%SOURCES_DIR%\mavik_compat" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\mavik_compat -toolsDirectory="%ARMA_TOOLS%" >> "%BUILD_LOG%" 2>&1 || (
+        echo [WARN] AddonBuilder mavik_compat a echoue - PBO optionnel non reconstruit, l'ancien mavik_compat.pbo eventuel est deploye tel quel. >> "%BUILD_LOG%"
+        echo [WARN] AddonBuilder mavik_compat a echoue - PBO optionnel non reconstruit, l'ancien mavik_compat.pbo eventuel est deploye tel quel.
     )
 )
 
@@ -105,10 +105,9 @@ if exist "%SOURCES_DIR%\mavik_compat\config.cpp" (
 if exist "%SOURCES_DIR%\sse_ace\config.cpp" (
     echo [BUILD] Compilation de comspec_overwatch_sse_ace... >> "%BUILD_LOG%"
     echo [BUILD] Compilation de comspec_overwatch_sse_ace...
-    "%BUILDER_PATH%" "%SOURCES_DIR%\sse_ace" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\sse_ace -toolsDirectory="%ARMA_TOOLS%" >> "%BUILD_LOG%" 2>&1
-    if %ERRORLEVEL% NEQ 0 (
-        echo [WARN] AddonBuilder sse_ace a echoue - PBO optionnel ignore. >> "%BUILD_LOG%"
-        echo [WARN] AddonBuilder sse_ace a echoue - PBO optionnel ignore.
+    "%BUILDER_PATH%" "%SOURCES_DIR%\sse_ace" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\sse_ace -toolsDirectory="%ARMA_TOOLS%" >> "%BUILD_LOG%" 2>&1 || (
+        echo [WARN] AddonBuilder sse_ace a echoue - PBO optionnel non reconstruit, l'ancien sse_ace.pbo eventuel est deploye tel quel. >> "%BUILD_LOG%"
+        echo [WARN] AddonBuilder sse_ace a echoue - PBO optionnel non reconstruit, l'ancien sse_ace.pbo eventuel est deploye tel quel.
     )
 )
 
@@ -164,6 +163,8 @@ set "LOCAL_MOD=%ARMA_PATH%\%MOD_NAME%"
 :: Pack communauté SOAR : Arma charge la DLL depuis ce dossier (pas @COMSPECOverwatch).
 set "SOAR_FN=%ARMA_PATH%\!Workshop\@# S.O.A.R - FN"
 
+:: Chaque copie vers une cible note son echec ; le build s'arrete alors en echec apres le deploiement.
+set "DEPLOY_FAIL="
 if exist "%ARMA_PATH%" (
     for %%T in ("%LOCAL_MOD%" "%SOAR_FN%") do (
         if exist %%~T (
@@ -183,15 +184,15 @@ if exist "%ARMA_PATH%" (
             if exist "%%~T\addons\comspec_overwatch_sse_ace.pbo" del /f /q "%%~T\addons\comspec_overwatch_sse_ace.pbo"
             if exist "%%~T\addons\comspec_overwatch_atak_athena.txt" del /f /q "%%~T\addons\comspec_overwatch_atak_athena.txt"
             if exist "%%~T\addons\atak_athena.txt" del /f /q "%%~T\addons\atak_athena.txt"
-            copy /Y "%OUTPUT_DIR%\addons\connect.pbo" "%%~T\addons\connect.pbo" >> "%BUILD_LOG%" 2>&1
-            copy /Y "%OUTPUT_DIR%\addons\main.pbo" "%%~T\addons\main.pbo" >> "%BUILD_LOG%" 2>&1
-            if exist "%OUTPUT_DIR%\addons\atak_athena.pbo" copy /Y "%OUTPUT_DIR%\addons\atak_athena.pbo" "%%~T\addons\atak_athena.pbo" >> "%BUILD_LOG%" 2>&1
-            if exist "%OUTPUT_DIR%\addons\mavik_compat.pbo" copy /Y "%OUTPUT_DIR%\addons\mavik_compat.pbo" "%%~T\addons\mavik_compat.pbo" >> "%BUILD_LOG%" 2>&1
-            if exist "%OUTPUT_DIR%\addons\sse_ace.pbo" copy /Y "%OUTPUT_DIR%\addons\sse_ace.pbo" "%%~T\addons\sse_ace.pbo" >> "%BUILD_LOG%" 2>&1
-            if exist "%OUTPUT_DIR%\COMSPECExtension_x64.dll" copy /Y "%OUTPUT_DIR%\COMSPECExtension_x64.dll" "%%~T\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1
-            if exist "%OUTPUT_DIR%\mod.cpp" copy /Y "%OUTPUT_DIR%\mod.cpp" "%%~T\mod.cpp" >> "%BUILD_LOG%" 2>&1
-            if exist "%OUTPUT_DIR%\logo.paa" copy /Y "%OUTPUT_DIR%\logo.paa" "%%~T\logo.paa" >> "%BUILD_LOG%" 2>&1
-            if exist "%OUTPUT_DIR%\logoSmall.paa" copy /Y "%OUTPUT_DIR%\logoSmall.paa" "%%~T\logoSmall.paa" >> "%BUILD_LOG%" 2>&1
+            copy /Y "%OUTPUT_DIR%\addons\connect.pbo" "%%~T\addons\connect.pbo" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+            copy /Y "%OUTPUT_DIR%\addons\main.pbo" "%%~T\addons\main.pbo" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+            if exist "%OUTPUT_DIR%\addons\atak_athena.pbo" copy /Y "%OUTPUT_DIR%\addons\atak_athena.pbo" "%%~T\addons\atak_athena.pbo" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+            if exist "%OUTPUT_DIR%\addons\mavik_compat.pbo" copy /Y "%OUTPUT_DIR%\addons\mavik_compat.pbo" "%%~T\addons\mavik_compat.pbo" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+            if exist "%OUTPUT_DIR%\addons\sse_ace.pbo" copy /Y "%OUTPUT_DIR%\addons\sse_ace.pbo" "%%~T\addons\sse_ace.pbo" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+            if exist "%OUTPUT_DIR%\COMSPECExtension_x64.dll" copy /Y "%OUTPUT_DIR%\COMSPECExtension_x64.dll" "%%~T\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+            if exist "%OUTPUT_DIR%\mod.cpp" copy /Y "%OUTPUT_DIR%\mod.cpp" "%%~T\mod.cpp" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+            if exist "%OUTPUT_DIR%\logo.paa" copy /Y "%OUTPUT_DIR%\logo.paa" "%%~T\logo.paa" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
+            if exist "%OUTPUT_DIR%\logoSmall.paa" copy /Y "%OUTPUT_DIR%\logoSmall.paa" "%%~T\logoSmall.paa" >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"
         ) else (
             echo [WARN] Cible absente: %%~T >> "%BUILD_LOG%"
             echo [WARN] Cible absente: %%~T
@@ -201,6 +202,12 @@ if exist "%ARMA_PATH%" (
     echo [WARN] Dossier Arma 3 non trouve: %ARMA_PATH% >> "%BUILD_LOG%"
     echo [WARN] Dossier Arma 3 non trouve: %ARMA_PATH%
     echo         Mod pret dans: %OUTPUT_DIR% >> "%BUILD_LOG%"
+)
+if defined DEPLOY_FAIL (
+    echo [ERREUR] Au moins une copie vers un dossier Arma a echoue - fichier verrouille ? Fermer Arma puis relancer le build. >> "%BUILD_LOG%"
+    echo [ERREUR] Au moins une copie vers un dossier Arma a echoue - fichier verrouille ? Fermer Arma puis relancer le build.
+    echo          Detail dans build_log.txt, sous la ligne [DEPLOY] Cible du dossier en cause.
+    goto :build_fail
 )
 
 echo. >> "%BUILD_LOG%"

@@ -81,6 +81,39 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         return $commands;
     }
 
+    /**
+     * Profondeur de bloc avant chaque ligne de commande : parenthèses hors guillemets, « ^ » échappe. Celles d'un
+     * echo ne comptent pas ; une « ) » d'echo dans un bloc est refusée par ailleurs.
+     *
+     * @param list<string> $commands
+     * @return list<int>
+     */
+    private static function batDepths(array $commands): array
+    {
+        $depths = [];
+        $depth = 0;
+        foreach ($commands as $line) {
+            $depths[] = $depth;
+            if (preg_match('/^echo[\s.]/i', $line) === 1) {
+                continue;
+            }
+            $quoted = false;
+            for ($i = 0, $n = strlen($line); $i < $n; $i++) {
+                if ($line[$i] === '^' && !$quoted) {
+                    $i++;
+                } elseif ($line[$i] === '"') {
+                    $quoted = !$quoted;
+                } elseif ($line[$i] === '(' && !$quoted) {
+                    $depth++;
+                } elseif ($line[$i] === ')' && !$quoted) {
+                    $depth = max(0, $depth - 1);
+                }
+            }
+        }
+
+        return $depths;
+    }
+
     public function testLegacyMetaCppNoLongerTargetsTheAtakNativeWorkshopItem(): void
     {
         // Le Publisher d'Arma 3 met à jour l'objet dont meta.cpp porte le numéro (mod/docs/PUBLICATION.md).
@@ -299,6 +332,64 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         foreach ($toDone[0] as [, $offset]) {
             self::assertGreaterThan((int) strpos($bat, 'BUILD REUSSI'), $offset, 'goto :build_done avant BUILD REUSSI');
         }
+    }
+
+    public function testLegacyBuildReportsOptionalAddonAndDeployFailures(): void
+    {
+        $bat = $this->read('build_mod.bat');
+        $commands = self::batCommands($bat);
+        $depths = self::batDepths($commands);
+        self::assertSame(0, $depths[count($depths) - 1], 'parenthèses déséquilibrées avant la dernière ligne');
+
+        // Dans un bloc, %ERRORLEVEL% est développé avant la commande qu'il devait contrôler : valeur figée.
+        $frozen = [];
+        foreach ($commands as $i => $line) {
+            if ($depths[$i] > 0 && stripos($line, '%ERRORLEVEL%') !== false) {
+                $frozen[] = $line;
+            }
+        }
+        self::assertSame([], $frozen, '%ERRORLEVEL% lu dans un bloc');
+
+        // Chaque appel d'AddonBuilder a un contrôle lu à l'exécution : « || », « if errorlevel 1 », ou %ERRORLEVEL%
+        // sur la ligne suivante, hors bloc.
+        $builders = 0;
+        foreach ($commands as $i => $line) {
+            if (!str_starts_with($line, '"%BUILDER_PATH%"')) {
+                continue;
+            }
+            $builders++;
+            $next = $commands[$i + 1] ?? '';
+            self::assertTrue(
+                str_ends_with($line, ' || (')
+                || preg_match('/^if errorlevel 1 \($/i', $next) === 1
+                || ($depths[$i] === 0 && preg_match('/^if %ERRORLEVEL% NEQ 0 \($/i', $next) === 1),
+                'AddonBuilder sans contrôle d\'échec : ' . $line,
+            );
+        }
+        self::assertGreaterThanOrEqual(5, $builders);
+
+        // Déploiement : chaque copie vers une cible note son échec, et un échec fait échouer le build avant
+        // « BUILD REUSSI ». Sans cela, une DLL verrouillée dans Arma 3\@COMSPECOverwatch restait l'ancienne.
+        $loop = array_search('for %%T in ("%LOCAL_MOD%" "%SOAR_FN%") do (', $commands, true);
+        self::assertIsInt($loop);
+        $copies = [];
+        for ($i = $loop + 1; $i < count($commands) && $depths[$i] > $depths[$loop]; $i++) {
+            if (preg_match('/\bcopy\s/i', $commands[$i]) === 1) {
+                $copies[] = $commands[$i];
+            }
+        }
+        self::assertNotEmpty(array_filter($copies, static fn (string $copy): bool => str_contains($copy, '"%%~T\COMSPECExtension_x64.dll"')));
+        foreach ($copies as $copy) {
+            self::assertStringEndsWith(' >> "%BUILD_LOG%" 2>&1 || set "DEPLOY_FAIL=1"', $copy);
+        }
+        $reset = strpos($bat, "\nset \"DEPLOY_FAIL=\"\n");
+        $check = strpos($bat, "\nif defined DEPLOY_FAIL (\n");
+        self::assertNotFalse($reset);
+        self::assertNotFalse($check);
+        self::assertLessThan((int) strpos($bat, '    for %%T in ('), $reset);
+        self::assertGreaterThan((int) strpos($bat, '    for %%T in ('), $check);
+        self::assertLessThan((int) strpos($bat, 'BUILD REUSSI'), $check);
+        self::assertMatchesRegularExpression('/^if defined DEPLOY_FAIL \(\n(?:    echo [^\n()]*\n)+    goto :build_fail\n\)$/m', $bat);
     }
 
     public function testDocsNoLongerSendTheLegacyPackToTheWorkshop(): void
