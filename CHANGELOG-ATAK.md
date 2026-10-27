@@ -38,6 +38,22 @@ Changelog Steam (copier-coller) : [ATAK 2.7.0](docs/dev/STEAM-CHANGELOG-2026-10-
 
 ---
 
+## Téléphone porté, écrans et liaison (ATAK natif 2.8.3.AB - Denver, COMSPEC Link 2.0.99)
+
+### Résumé joueur
+Type : correctif
+FR : Le téléphone garde l’identité du compte et la liaison reprend seule
+- Le raccourci Overwatch ouvre le téléphone du pack et les opérateurs reliés apparaissent sur sa carte.
+- Après une coupure, le téléphone reprend de lui-même dans la minute et demie, ou après le délai demandé par le portail.
+- Un joueur relié ne peut plus réécrire le temps de jeu ou les distances des autres.
+EN : The phone keeps the account identity and reconnects by itself
+- The Overwatch shortcut opens the pack phone and linked operators appear on its map.
+- After an outage, the phone reconnects within ninety seconds, or after the delay requested by the portal.
+- A linked player can no longer overwrite another player’s play time or distances.
+
+### Détail technique
+- Version de regroupement des correctifs de liaison, d’identité et d’affichage livrés dans le pack 2.8.3.
+
 ## Diapositives sur les écrans (ATAK natif 2.8.2.AB - Denver, COMSPEC Link 2.0.99)
 
 ### Résumé joueur

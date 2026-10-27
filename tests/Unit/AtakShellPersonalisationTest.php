@@ -48,15 +48,17 @@ final class AtakShellPersonalisationTest extends TestCase
         }
     }
 
-    public function testTintsAreWiredIntoTexturesAndSettings(): void
+    public function testPhoneItemTintAndModuleTintAreWiredIntoTexturesAndSettings(): void
     {
         $get = $this->read(self::MAIN . '/functions/ui/fn_layoutGet.sqf');
-        self::assertStringContainsString('"COMSPEC_ATAK_ShellTint", "coyote"', $get);
+        self::assertStringContainsString('comspec_atak_native_fnc_phoneCarried', $get);
+        self::assertStringContainsString('params ["_model", "_shellTint", "_phoneItem"]', $get);
         self::assertStringContainsString('phone_%1%2.paa", ["portrait", "landscape"] select _land, _shellSfx', $get);
         $ov = $this->read(self::MAIN . '/functions/datalink/fn_dataOverlay.sqf');
         self::assertStringContainsString('"COMSPEC_ATAK_ModuleTint", "olive"', $ov);
         $set = $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf');
-        self::assertStringContainsString('["COMSPEC_ATAK_ShellTint", "coyote", "Couleur de la coque"', $set);
+        self::assertStringContainsString('Le modèle et la couleur viennent de l\'objet porté.', $set);
+        self::assertStringNotContainsString('["COMSPEC_ATAK_ShellTint", "coyote", "Couleur de la coque"', $set);
         self::assertStringContainsString('["COMSPEC_ATAK_ModuleTint", "olive", "Module DL-7"', $set);
         self::assertStringContainsString('"Antenne (port SMA)"', $set);
         self::assertStringContainsString('comspec_atak_native_fnc_backView', $set);

@@ -104,7 +104,7 @@ final class AtakAccessoriesVehicleTest extends TestCase
     public function testPhoneModelsShareTheScreenOpening(): void
     {
         $lay = $this->read(self::MAIN . '/functions/ui/fn_layoutGet.sqf');
-        self::assertStringContainsString('"COMSPEC_ATAK_PhoneModel"', $lay);
+        self::assertStringContainsString('comspec_atak_native_fnc_phoneCarried', $lay);
         self::assertStringContainsString('_model = "tablet";', $lay);
         self::assertStringNotContainsString('VIS_', $lay);
         $data = dirname(__DIR__, 2) . '/' . self::MAIN . '/data/';
