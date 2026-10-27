@@ -69,5 +69,5 @@ _interval = (_interval max 1) min 15;
     private _txCount = {
         (_x getOrDefault ["tx", false]) || {_x getOrDefault ["speaking", false]}
     } count _list;
-    missionNamespace setVariable ["COMSPEC_RadioProximityTxCount", _txCount, false];
+    localNamespace setVariable ["COMSPEC_RadioProximityTxCount", _txCount];
 }, _interval, []] call CBA_fnc_addPerFrameHandler;

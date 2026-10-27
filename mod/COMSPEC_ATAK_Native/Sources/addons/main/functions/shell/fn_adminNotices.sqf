@@ -36,7 +36,7 @@ private _keep = {
     };
     _l
 };
-missionNamespace setVariable ["COMSPEC_ATAK_NoticeKeep", _keep];
+uiNamespace setVariable ["COMSPEC_ATAK_NoticeKeep", _keep];
 private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ALERTS") then { ["ALERTS"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 switch (_act) do {
     case "check": {
@@ -66,7 +66,7 @@ switch (_act) do {
             if ((_r select [0, 3]) isNotEqualTo "OK|") exitWith {};
             private _list = missionNamespace getVariable ["COMSPEC_ATAK_AdminNotices", []];
             private _seen = missionNamespace getVariable ["COMSPEC_ATAK_AdminNoticesSeen", []];
-            private _keep = missionNamespace getVariable ["COMSPEC_ATAK_NoticeKeep", {[]}];
+            private _keep = uiNamespace getVariable ["COMSPEC_ATAK_NoticeKeep", {[]}];
             private _shown = ["COMSPEC_ATAK_NoticeSeen"] call _keep;
             private _acked = ["COMSPEC_ATAK_NoticeAck"] call _keep;
             private _new = [];

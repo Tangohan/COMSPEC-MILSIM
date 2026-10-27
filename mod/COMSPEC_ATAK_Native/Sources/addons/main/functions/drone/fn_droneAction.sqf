@@ -337,7 +337,7 @@ private _camFov = {
         [_cam, "off", nil, true] call comspec_atak_native_fnc_camVar;
     };
 };
-missionNamespace setVariable ["COMSPEC_ATAK_DroneFovFn", _camFov];
+uiNamespace setVariable ["COMSPEC_ATAK_DroneFovFn", _camFov];
 private _camOpen = {
     if (!isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull]) || {isNull _d}) exitWith {};
     // Nacelle posée hors du modèle, du côté où elle regarde (voir la boucle ci-dessous) : sur un Mavic, la caméra

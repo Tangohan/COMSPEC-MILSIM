@@ -66,7 +66,7 @@ private _configurePhone = {
 
 private _applyAlly = {
     params ["_obj", ["_pool", []], ["_forced", -1]];
-    private _targets = [_obj, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusCollectAllyAi", { [] }]);
+    private _targets = [_obj, _pool] call (localNamespace getVariable ["COMSPEC_ZeusCollectAllyAi", { [] }]);
     if (_targets isEqualTo []) exitWith {
         ["Sélectionnez une IA (ou un véhicule avec un équipage IA).", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
     };
@@ -106,7 +106,7 @@ private _applyAlly = {
 };
 private _toggleAlly = {
     params ["_obj", ["_pool", []]];
-    [_obj, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusApplyAllyTrack", {}]);
+    [_obj, _pool] call (localNamespace getVariable ["COMSPEC_ZeusApplyAllyTrack", {}]);
 };
 
 private _toggleEnemyAi = {
@@ -114,13 +114,13 @@ private _toggleEnemyAi = {
     [_on] call comspec_overwatch_connect_fnc_setAtakShowEnemyAi;
 };
 
-missionNamespace setVariable ["COMSPEC_ZeusToggleGpsBeacon", _toggleGps];
-missionNamespace setVariable ["COMSPEC_ZeusTogglePhoneTrack", _configurePhone];
-missionNamespace setVariable ["COMSPEC_ZeusConfigurePhoneTrack", _configurePhone];
-missionNamespace setVariable ["COMSPEC_ZeusApplyAllyTrack", _applyAlly];
-missionNamespace setVariable ["COMSPEC_ZeusToggleAllyTrack", _toggleAlly];
-missionNamespace setVariable ["COMSPEC_ZeusToggleEnemyAi", _toggleEnemyAi];
-missionNamespace setVariable ["COMSPEC_ZeusCollectAllyAi", _collectAi];
+localNamespace setVariable ["COMSPEC_ZeusToggleGpsBeacon", _toggleGps];
+localNamespace setVariable ["COMSPEC_ZeusTogglePhoneTrack", _configurePhone];
+localNamespace setVariable ["COMSPEC_ZeusConfigurePhoneTrack", _configurePhone];
+localNamespace setVariable ["COMSPEC_ZeusApplyAllyTrack", _applyAlly];
+localNamespace setVariable ["COMSPEC_ZeusToggleAllyTrack", _toggleAlly];
+localNamespace setVariable ["COMSPEC_ZeusToggleEnemyAi", _toggleEnemyAi];
+localNamespace setVariable ["COMSPEC_ZeusCollectAllyAi", _collectAi];
 
 if (
     !(missionNamespace getVariable ["COMSPEC_ZenTrackActionsRegistered", false])
@@ -134,7 +134,7 @@ if (
             if (isNull _obj) then {
                 { if (!(_x isKindOf "CAManBase")) exitWith { _obj = _x }; } forEach (nearestObjects [_pos, ["LandVehicle", "Air", "Ship"], 8]);
             };
-            [_obj] call (missionNamespace getVariable ["COMSPEC_ZeusToggleGpsBeacon", {}]);
+            [_obj] call (localNamespace getVariable ["COMSPEC_ZeusToggleGpsBeacon", {}]);
         },
         _iconGps
     ] call comspec_overwatch_connect_fnc_zenModule;
@@ -147,7 +147,7 @@ if (
             if (isNull _obj || {!(_obj isKindOf "CAManBase")}) then {
                 { if (_x isKindOf "CAManBase") exitWith { _obj = _x }; } forEach (nearestObjects [_pos, ["CAManBase"], 5]);
             };
-            [_obj, 0] call (missionNamespace getVariable ["COMSPEC_ZeusConfigurePhoneTrack", {}]);
+            [_obj, 0] call (localNamespace getVariable ["COMSPEC_ZeusConfigurePhoneTrack", {}]);
         },
         _iconPhone
     ] call comspec_overwatch_connect_fnc_zenModule;
@@ -161,7 +161,7 @@ if (
             if (isNull _obj) then {
                 { if (_x isKindOf "CAManBase" && {!isPlayer _x}) exitWith { _obj = _x }; } forEach (nearestObjects [_pos, ["CAManBase"], 8]);
             };
-            [_obj, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusToggleAllyTrack", {}]);
+            [_obj, _pool] call (localNamespace getVariable ["COMSPEC_ZeusToggleAllyTrack", {}]);
         },
         _iconAlly
     ] call comspec_overwatch_connect_fnc_zenModule;
@@ -170,7 +170,7 @@ if (
         "COMSPEC Roleplay",
         "Afficher les IA ennemies sur la carte",
         {
-            [] call (missionNamespace getVariable ["COMSPEC_ZeusToggleEnemyAi", {}]);
+            [] call (localNamespace getVariable ["COMSPEC_ZeusToggleEnemyAi", {}]);
         },
         _iconEnemy
     ] call comspec_overwatch_connect_fnc_zenModule;
@@ -189,7 +189,7 @@ if (
             private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
             private _obj = objNull;
             { if (!(_x isKindOf "CAManBase")) exitWith { _obj = _x }; } forEach _pool;
-            [_obj] call (missionNamespace getVariable ["COMSPEC_ZeusToggleGpsBeacon", {}]);
+            [_obj] call (localNamespace getVariable ["COMSPEC_ZeusToggleGpsBeacon", {}]);
         },
         {
             private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
@@ -206,7 +206,7 @@ if (
             private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
             private _obj = objNull;
             { if (_x isKindOf "CAManBase") exitWith { _obj = _x }; } forEach _pool;
-            [_obj, 0.12] call (missionNamespace getVariable ["COMSPEC_ZeusConfigurePhoneTrack", {}]);
+            [_obj, 0.12] call (localNamespace getVariable ["COMSPEC_ZeusConfigurePhoneTrack", {}]);
         },
         {
             private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
@@ -226,11 +226,11 @@ if (
             if (isNull _obj) then {
                 { if (!(_x isKindOf "CAManBase")) exitWith { _obj = _x }; } forEach _pool;
             };
-            [_obj, _pool, true] call (missionNamespace getVariable ["COMSPEC_ZeusApplyAllyTrack", {}]);
+            [_obj, _pool, true] call (localNamespace getVariable ["COMSPEC_ZeusApplyAllyTrack", {}]);
         },
         {
             private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
-            private _units = [objNull, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusCollectAllyAi", { [] }]);
+            private _units = [objNull, _pool] call (localNamespace getVariable ["COMSPEC_ZeusCollectAllyAi", { [] }]);
             ({ !([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) } count _units) > 0
         }
     ] call comspec_overwatch_connect_fnc_zenAction;
@@ -247,11 +247,11 @@ if (
             if (isNull _obj) then {
                 { if (!(_x isKindOf "CAManBase")) exitWith { _obj = _x }; } forEach _pool;
             };
-            [_obj, _pool, false] call (missionNamespace getVariable ["COMSPEC_ZeusApplyAllyTrack", {}]);
+            [_obj, _pool, false] call (localNamespace getVariable ["COMSPEC_ZeusApplyAllyTrack", {}]);
         },
         {
             private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
-            private _units = [objNull, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusCollectAllyAi", { [] }]);
+            private _units = [objNull, _pool] call (localNamespace getVariable ["COMSPEC_ZeusCollectAllyAi", { [] }]);
             ({ [_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag } count _units) > 0
         }
     ] call comspec_overwatch_connect_fnc_zenAction;
@@ -303,7 +303,7 @@ if (
         if (isNull _obj) then {
             { if (!(_x isKindOf "CAManBase")) exitWith { _obj = _x }; } forEach ([] call comspec_overwatch_connect_fnc_curatorSelectedObjects);
         };
-        [_obj] call (missionNamespace getVariable ["COMSPEC_ZeusToggleGpsBeacon", {}]);
+        [_obj] call (localNamespace getVariable ["COMSPEC_ZeusToggleGpsBeacon", {}]);
     }, _iconGps] call ace_zeus_fnc_addModule;
 
     ["COMSPEC ATAK", "Géolocalisation téléphone", {
@@ -311,7 +311,7 @@ if (
         if (isNull _obj || {!(_obj isKindOf "CAManBase")}) then {
             { if (_x isKindOf "CAManBase") exitWith { _obj = _x }; } forEach ([] call comspec_overwatch_connect_fnc_curatorSelectedObjects);
         };
-        [_obj, 0] call (missionNamespace getVariable ["COMSPEC_ZeusConfigurePhoneTrack", {}]);
+        [_obj, 0] call (localNamespace getVariable ["COMSPEC_ZeusConfigurePhoneTrack", {}]);
     }, _iconPhone] call ace_zeus_fnc_addModule;
 
     ["COMSPEC ATAK", "IA alliée sur l’ATAK", {
@@ -320,11 +320,11 @@ if (
         if (isNull _obj) then {
             { if (_x isKindOf "CAManBase" && {!isPlayer _x}) exitWith { _obj = _x }; } forEach _pool;
         };
-        [_obj, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusToggleAllyTrack", {}]);
+        [_obj, _pool] call (localNamespace getVariable ["COMSPEC_ZeusToggleAllyTrack", {}]);
     }, _iconAlly] call ace_zeus_fnc_addModule;
 
     ["COMSPEC ATAK", "Afficher les IA ennemies sur la carte", {
-        [] call (missionNamespace getVariable ["COMSPEC_ZeusToggleEnemyAi", {}]);
+        [] call (localNamespace getVariable ["COMSPEC_ZeusToggleEnemyAi", {}]);
     }, _iconEnemy] call ace_zeus_fnc_addModule;
 
     missionNamespace setVariable ["COMSPEC_AceTrackActionsRegistered", true];

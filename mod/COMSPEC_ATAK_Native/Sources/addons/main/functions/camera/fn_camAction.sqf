@@ -246,7 +246,7 @@ switch (_mode) do {
 
         // Sur la caméra posée.
         private _mine = { (_target getVariable ["COMSPEC_ATAK_CamSide", ""]) isEqualTo str side group _player && {!(["dead", _target] call comspec_atak_native_fnc_camAction)} };
-        missionNamespace setVariable ["COMSPEC_ATAK_CamMine", _mine];
+        uiNamespace setVariable ["COMSPEC_ATAK_CamMine", _mine];
         private _main = ["COMSPEC_ATAK_CamMain", "Caméra IP", _icon, {}, { true }, {}, [], [0, 0, 0], 2.5] call comspec_atak_native_fnc_aceAction;
         [CAM_CLASS, 0, [], _main] call ace_interact_menu_fnc_addActionToClass;
         {
@@ -255,9 +255,9 @@ switch (_mode) do {
         } forEach [
             ["COMSPEC_ATAK_CamTake", "Récupérer la caméra", { ["pickup", _target] call comspec_atak_native_fnc_camAction; }, { !(["dead", _target] call comspec_atak_native_fnc_camAction) }],
             ["COMSPEC_ATAK_CamWreck", "Retirer la caméra détruite", { ["pickupNow", _target] call comspec_atak_native_fnc_camAction; }, { ["dead", _target] call comspec_atak_native_fnc_camAction }],
-            ["COMSPEC_ATAK_CamRename", "Renommer", { ["rename", _target] call comspec_atak_native_fnc_camAction; }, { call (missionNamespace getVariable "COMSPEC_ATAK_CamMine") && {[_player] call comspec_atak_native_fnc_hasDevice} }],
-            ["COMSPEC_ATAK_CamRotL", "Orienter à gauche (-45°)", { ["rotate", _target, -45] call comspec_atak_native_fnc_camAction; }, { call (missionNamespace getVariable "COMSPEC_ATAK_CamMine") }],
-            ["COMSPEC_ATAK_CamRotR", "Orienter à droite (+45°)", { ["rotate", _target, 45] call comspec_atak_native_fnc_camAction; }, { call (missionNamespace getVariable "COMSPEC_ATAK_CamMine") }]
+            ["COMSPEC_ATAK_CamRename", "Renommer", { ["rename", _target] call comspec_atak_native_fnc_camAction; }, { call (uiNamespace getVariable "COMSPEC_ATAK_CamMine") && {[_player] call comspec_atak_native_fnc_hasDevice} }],
+            ["COMSPEC_ATAK_CamRotL", "Orienter à gauche (-45°)", { ["rotate", _target, -45] call comspec_atak_native_fnc_camAction; }, { call (uiNamespace getVariable "COMSPEC_ATAK_CamMine") }],
+            ["COMSPEC_ATAK_CamRotR", "Orienter à droite (+45°)", { ["rotate", _target, 45] call comspec_atak_native_fnc_camAction; }, { call (uiNamespace getVariable "COMSPEC_ATAK_CamMine") }]
         ];
         true
     };

@@ -52,14 +52,14 @@ private _set = {
     [] call comspec_atak_native_fnc_saveProfile;
     if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; };
 };
-missionNamespace setVariable ["COMSPEC_ATAK_PersoSet", _set];
+uiNamespace setVariable ["COMSPEC_ATAK_PersoSet", _set];
 {
     _x params ["_var", "_def", "_id", "_label", "_opts"];
     [_root + ["COMSPEC_ATAK_Perso"], _id, _label] call _add;
     {
         _x params ["_txt", "_val"];
         [_root + ["COMSPEC_ATAK_Perso", _id], format ["%1_%2", _id, _val], _txt, "",
-            compile format ["['%1', '%2'] call (missionNamespace getVariable 'COMSPEC_ATAK_PersoSet');", _var, _val],
+            compile format ["['%1', '%2'] call (uiNamespace getVariable 'COMSPEC_ATAK_PersoSet');", _var, _val],
             compile format ["(profileNamespace getVariable ['%1', '%2']) isNotEqualTo '%3'", _var, _def, _val]] call _add;
     } forEach _opts;
 } forEach [
@@ -81,10 +81,10 @@ private _vestUse = {
     [] call comspec_atak_native_fnc_saveProfile;
     ["tick"] call comspec_atak_native_fnc_vestMount;
 };
-missionNamespace setVariable ["COMSPEC_ATAK_VestUse", _vestUse];
-[_vestPath, "COMSPEC_ATAK_VestOurs", "Mettre aussi notre téléphone sur ce gilet", "", { ["ours"] call (missionNamespace getVariable "COMSPEC_ATAK_VestUse"); },
+uiNamespace setVariable ["COMSPEC_ATAK_VestUse", _vestUse];
+[_vestPath, "COMSPEC_ATAK_VestOurs", "Mettre aussi notre téléphone sur ce gilet", "", { ["ours"] call (uiNamespace getVariable "COMSPEC_ATAK_VestUse"); },
     { [_player] call comspec_atak_native_fnc_vestBuiltin && {(profileNamespace getVariable ["COMSPEC_ATAK_VestBuiltinUse", "vest"]) isNotEqualTo "ours"} }] call _add;
-[_vestPath, "COMSPEC_ATAK_VestTheirs", "Garder seulement l'ATAK du gilet", "", { ["vest"] call (missionNamespace getVariable "COMSPEC_ATAK_VestUse"); },
+[_vestPath, "COMSPEC_ATAK_VestTheirs", "Garder seulement l'ATAK du gilet", "", { ["vest"] call (uiNamespace getVariable "COMSPEC_ATAK_VestUse"); },
     { [_player] call comspec_atak_native_fnc_vestBuiltin && {(profileNamespace getVariable ["COMSPEC_ATAK_VestBuiltinUse", "vest"]) isEqualTo "ours"} }] call _add;
 // Gilet non reconnu (ou reconnu à tort) : le joueur le marque lui-même, retenu dans son profil.
 private _vestMark = {
@@ -98,10 +98,10 @@ private _vestMark = {
     [] call comspec_atak_native_fnc_saveProfile;
     ["tick"] call comspec_atak_native_fnc_vestMount;
 };
-missionNamespace setVariable ["COMSPEC_ATAK_VestMark", _vestMark];
-[_vestPath, "COMSPEC_ATAK_VestMarkOn", "Mon gilet a déjà un ATAK", "", { [true] call (missionNamespace getVariable "COMSPEC_ATAK_VestMark"); },
+uiNamespace setVariable ["COMSPEC_ATAK_VestMark", _vestMark];
+[_vestPath, "COMSPEC_ATAK_VestMarkOn", "Mon gilet a déjà un ATAK", "", { [true] call (uiNamespace getVariable "COMSPEC_ATAK_VestMark"); },
     { !([_player] call comspec_atak_native_fnc_vestBuiltin) }] call _add;
-[_vestPath, "COMSPEC_ATAK_VestMarkOff", "Mon gilet n'a pas d'ATAK", "", { [false] call (missionNamespace getVariable "COMSPEC_ATAK_VestMark"); },
+[_vestPath, "COMSPEC_ATAK_VestMarkOff", "Mon gilet n'a pas d'ATAK", "", { [false] call (uiNamespace getVariable "COMSPEC_ATAK_VestMark"); },
     { [_player] call comspec_atak_native_fnc_vestBuiltin }] call _add;
 
 // Tablette durcie sur le rabat du JPC, écran ATAK en 3D (fn_jpcScreen). En chantier (W.I.P) : actions masquées.
@@ -114,12 +114,12 @@ missionNamespace setVariable ["COMSPEC_ATAK_VestMark", _vestMark];
 [_root, "COMSPEC_ATAK_Care", "Entretien", "\z\comspec_atak_native\addons\main\data\item_repairkit.paa"] call _add;
 private _care = _root + ["COMSPEC_ATAK_Care"];
 private _ow = { !isNil "comspec_overwatch_connect_fnc_isAtakFunctional" && {!isNil "comspec_overwatch_connect_fnc_repairAtak"} };
-missionNamespace setVariable ["COMSPEC_ATAK_OwRepair", _ow];
+uiNamespace setVariable ["COMSPEC_ATAK_OwRepair", _ow];
 [_care, "COMSPEC_ATAK_OwPower", "Rallumer le téléphone", "", { ["power"] call comspec_overwatch_connect_fnc_repairAtak; }, {
-    call (missionNamespace getVariable "COMSPEC_ATAK_OwRepair") && {private _s = [] call comspec_overwatch_connect_fnc_isAtakFunctional; !(_s get "powered_on") && {!(_s get "device_destroyed")}}
+    call (uiNamespace getVariable "COMSPEC_ATAK_OwRepair") && {private _s = [] call comspec_overwatch_connect_fnc_isAtakFunctional; !(_s get "powered_on") && {!(_s get "device_destroyed")}}
 }] call _add;
 [_care, "COMSPEC_ATAK_OwScreen", "Réparer l'écran (caisse à outils)", "", { ["screen"] call comspec_overwatch_connect_fnc_repairAtak; }, {
-    call (missionNamespace getVariable "COMSPEC_ATAK_OwRepair") && {private _s = [] call comspec_overwatch_connect_fnc_isAtakFunctional; !(_s get "screen_ok") && {!(_s get "device_destroyed")} && {"ToolKit" in (items player)}}
+    call (uiNamespace getVariable "COMSPEC_ATAK_OwRepair") && {private _s = [] call comspec_overwatch_connect_fnc_isAtakFunctional; !(_s get "screen_ok") && {!(_s get "device_destroyed")} && {"ToolKit" in (items player)}}
 }] call _add;
 [_care, "COMSPEC_ATAK_OwDiag", "Diagnostic", "", {
     private _s = [] call comspec_overwatch_connect_fnc_isAtakFunctional;
@@ -133,7 +133,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_OwRepair", _ow];
         "Écran" call _T, [_s get "screen_ok", "détruit"] call _ok,
         "Liaison" call _T, [_s get "connection_ok", "coupée"] call _ok,
         ["", " · " + ("Téléphone détruit" call _T)] select (_s get "device_destroyed")], 8, 40] call comspec_atak_native_fnc_notify;
-}, { call (missionNamespace getVariable "COMSPEC_ATAK_OwRepair") }] call _add;
+}, { call (uiNamespace getVariable "COMSPEC_ATAK_OwRepair") }] call _add;
 // Les mêmes actions posées par Overwatch dans « Équipement » sont retirées une fois en place (doublons).
 [{ missionNamespace getVariable ["COMSPEC_AtakRepairReady", false] }, {
     {
@@ -167,14 +167,14 @@ private _gwKids = {
     } forEach [["relay", "Activer la passerelle (relais)"], ["cp", "Déployer le poste de commandement"], ["off", "Couper la passerelle"]];
     _out
 };
-missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
+uiNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
 [_root, "COMSPEC_ATAK_GwSelf", "Passerelle du véhicule", "\A3\ui_f\data\map\markers\nato\b_hq.paa", {},
     { !isNull objectParent _player && {["can", objectParent _player] call comspec_atak_native_fnc_vehicleGateway} },
-    { [objectParent _player] call (missionNamespace getVariable "COMSPEC_ATAK_GwKids") }] call _add;
+    { [objectParent _player] call (uiNamespace getVariable "COMSPEC_ATAK_GwKids") }] call _add;
 {
     private _a = ["COMSPEC_ATAK_GwExt", "Passerelle ATAK", "\A3\ui_f\data\map\markers\nato\b_hq.paa", {},
         { ["can", _target] call comspec_atak_native_fnc_vehicleGateway },
-        { [_target] call (missionNamespace getVariable "COMSPEC_ATAK_GwKids") }] call comspec_atak_native_fnc_aceAction;
+        { [_target] call (uiNamespace getVariable "COMSPEC_ATAK_GwKids") }] call comspec_atak_native_fnc_aceAction;
     [_x, 0, ["ACE_MainActions"], _a, true] call ace_interact_menu_fnc_addActionToClass;
     // Kit terminal (réglage serveur « avec le kit installé ») : tablette durcie posée dans le véhicule.
     private _k = ["COMSPEC_ATAK_VehKit", "Installer le terminal ATAK", "\z\comspec_atak_native\addons\main\data\item_vehiclekit.paa", {

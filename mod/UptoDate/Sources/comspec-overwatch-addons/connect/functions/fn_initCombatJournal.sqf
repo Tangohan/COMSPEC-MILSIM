@@ -88,14 +88,14 @@ if (!(missionNamespace getVariable ["COMSPEC_CombatAceLockEH", false])) then {
             ["y", _pos select 1]
         ]] call comspec_overwatch_connect_fnc_noteCombatEvent;
     };
-    missionNamespace setVariable ["COMSPEC_CombatAcePos", _fnc_acePos, false];
+    localNamespace setVariable ["COMSPEC_CombatAcePos", _fnc_acePos];
     {
         [_x, {
-            ["lock"] call (missionNamespace getVariable ["COMSPEC_CombatAcePos", {}]);
+            ["lock"] call (localNamespace getVariable ["COMSPEC_CombatAcePos", {}]);
         }] call CBA_fnc_addEventHandler;
     } forEach ["ace_lockon_locked", "ace_missileguidance_lockAcquired"];
     ["ace_missileguidance_incoming", {
-        ["attempt"] call (missionNamespace getVariable ["COMSPEC_CombatAcePos", {}]);
+        ["attempt"] call (localNamespace getVariable ["COMSPEC_CombatAcePos", {}]);
     }] call CBA_fnc_addEventHandler;
 };
 

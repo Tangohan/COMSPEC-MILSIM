@@ -28,10 +28,10 @@ private _attachVanilla = {
 };
 
 [] call _attachVanilla;
-missionNamespace setVariable ["COMSPEC_SuperPingAttachVanilla", _attachVanilla, false];
+localNamespace setVariable ["COMSPEC_SuperPingAttachVanilla", _attachVanilla];
 [] call comspec_overwatch_connect_fnc_superPingPoll;
 [{
-    [] call (missionNamespace getVariable ["COMSPEC_SuperPingAttachVanilla", {}]);
+    [] call (localNamespace getVariable ["COMSPEC_SuperPingAttachVanilla", {}]);
     // Pulses expirés (> 7 s) purgés ici aussi : seul le Draw de la carte vanilla les retirait, et un pulse
     // resté en liste gardait le relevé GetPings actif toute la mission.
     private _pulses = missionNamespace getVariable ["COMSPEC_SuperPingPulses", []];

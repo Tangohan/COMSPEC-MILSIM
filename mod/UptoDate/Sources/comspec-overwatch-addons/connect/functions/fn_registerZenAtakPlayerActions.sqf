@@ -30,12 +30,12 @@ private _pickPlayer = {
     } forEach _pool;
     _unit
 };
-missionNamespace setVariable ["COMSPEC_ZeusPickPlayer", _pickPlayer];
+localNamespace setVariable ["COMSPEC_ZeusPickPlayer", _pickPlayer];
 
 private _open = {
     params [["_unit", objNull]];
     if (isNull _unit) then {
-        _unit = [[], objNull] call (missionNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]);
+        _unit = [[], objNull] call (localNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]);
     };
     if (isNull _unit) exitWith {
         ["Sélectionnez un joueur.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
@@ -46,18 +46,18 @@ private _open = {
     }, _unit, 0.12] call CBA_fnc_waitAndExecute;
 };
 
-missionNamespace setVariable ["COMSPEC_ZeusOpenPlayerAtak", _open];
+localNamespace setVariable ["COMSPEC_ZeusOpenPlayerAtak", _open];
 
 private _applyFx = {
     params [["_pos", []], ["_obj", objNull], "_act", "_dur"];
-    private _unit = [_pos, _obj] call (missionNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]);
+    private _unit = [_pos, _obj] call (localNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]);
     if (isNull _unit) exitWith {
         ["Sélectionnez un joueur.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
     };
     [_unit, _act, _dur] remoteExecCall ["comspec_overwatch_connect_fnc_relayZeusAtakEffect", 2];
     [format ["Zeus → %1 : %2", name _unit, _act], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
 };
-missionNamespace setVariable ["COMSPEC_ZeusApplyAtakFx", _applyFx];
+localNamespace setVariable ["COMSPEC_ZeusApplyAtakFx", _applyFx];
 
 // --- ZEN : clic droit sur joueur (dossier + actions) ---
 if (
@@ -67,7 +67,7 @@ if (
 ) then {
     private _hasPlayer = {
         params [["_pos", []], ["_obj", objNull]];
-        !isNull ([_pos, _obj] call (missionNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]))
+        !isNull ([_pos, _obj] call (localNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]))
     };
     private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa";
     private _root = [
@@ -85,8 +85,8 @@ if (
         _icon,
         {
             params ["_pos", "_obj"];
-            private _unit = [_pos, _obj] call (missionNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]);
-            [_unit] call (missionNamespace getVariable ["COMSPEC_ZeusOpenPlayerAtak", {}]);
+            private _unit = [_pos, _obj] call (localNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]);
+            [_unit] call (localNamespace getVariable ["COMSPEC_ZeusOpenPlayerAtak", {}]);
         },
         { true }
     ] call comspec_overwatch_connect_fnc_zenAction;
@@ -99,7 +99,7 @@ if (
             _label,
             "",
             compile format [
-                "params ['_pos', '_obj']; [_pos, _obj, '%1', %2] call (missionNamespace getVariable ['COMSPEC_ZeusApplyAtakFx', {}]);",
+                "params ['_pos', '_obj']; [_pos, _obj, '%1', %2] call (localNamespace getVariable ['COMSPEC_ZeusApplyAtakFx', {}]);",
                 _act,
                 _dur
             ],
@@ -128,11 +128,11 @@ if (
         "ATAK — Éditer joueur",
         {
             params ["_pos", "_obj"];
-            private _unit = [_pos, _obj] call (missionNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]);
+            private _unit = [_pos, _obj] call (localNamespace getVariable ["COMSPEC_ZeusPickPlayer", { objNull }]);
             if (isNull _unit) then {
                 { if (isPlayer _x) exitWith { _unit = _x; }; } forEach (nearestObjects [_pos, ["CAManBase"], 5]);
             };
-            [_unit] call (missionNamespace getVariable ["COMSPEC_ZeusOpenPlayerAtak", {}]);
+            [_unit] call (localNamespace getVariable ["COMSPEC_ZeusOpenPlayerAtak", {}]);
         },
         "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa"
     ] call comspec_overwatch_connect_fnc_zenModule;
@@ -194,7 +194,7 @@ if (
         if (isNull _unit || {!isPlayer _unit}) then {
             { if (isPlayer _x) exitWith { _unit = _x; }; } forEach ([] call comspec_overwatch_connect_fnc_curatorSelectedObjects);
         };
-        [_unit] call (missionNamespace getVariable ["COMSPEC_ZeusOpenPlayerAtak", {}]);
+        [_unit] call (localNamespace getVariable ["COMSPEC_ZeusOpenPlayerAtak", {}]);
     }, "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa"] call ace_zeus_fnc_addModule;
 
     ["COMSPEC ATAK", "Brouiller joueur (45s)", {
@@ -250,7 +250,7 @@ if (
         "comspec_atak_zeus_panel",
         "Infos / dégâts / brouillage",
         "",
-        { [] call (missionNamespace getVariable "COMSPEC_ZeusOpenPlayerAtak"); },
+        { [] call (localNamespace getVariable "COMSPEC_ZeusOpenPlayerAtak"); },
         { true }
     ] call comspec_overwatch_connect_fnc_aceAction;
     _panel = [_panel] call comspec_overwatch_connect_fnc_acePadAction;

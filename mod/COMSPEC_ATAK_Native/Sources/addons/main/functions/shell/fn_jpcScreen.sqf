@@ -106,7 +106,7 @@ switch (_act) do {
         if !(_style isEqualTo "jpc" && _usable) exitWith { false };
         private _obj = call _ensure;
         [_obj, true] call _pose;
-        missionNamespace setVariable ["COMSPEC_ATAK_JpcPose", _pose];
+        uiNamespace setVariable ["COMSPEC_ATAK_JpcPose", _pose];
         missionNamespace setVariable ["COMSPEC_ATAK_JpcFirst", 6];
         // Écran vu par les autres : capture ATAK figée ; écran du porteur : l'interface vivante.
         // Nom unique à chaque ouverture : le display précédent (et ses contrôles) n'est jamais réutilisé.
@@ -134,7 +134,7 @@ switch (_act) do {
                 missionNamespace setVariable ["COMSPEC_ATAK_JpcNext", diag_tickTime + 1 / _rate];
                 private _obj = missionNamespace getVariable ["COMSPEC_ATAK_JpcObj", objNull];
                 if (isNull _obj) exitWith {};
-                [_obj, true, false] call (missionNamespace getVariable ["COMSPEC_ATAK_JpcPose", {}]);
+                [_obj, true, false] call (uiNamespace getVariable ["COMSPEC_ATAK_JpcPose", {}]);
                 // Les premières images sont toujours dessinées (sinon l'écran reste noir tant qu'on ne l'a pas regardé).
                 private _first = missionNamespace getVariable ["COMSPEC_ATAK_JpcFirst", 0];
                 if (_first <= 0 && {(worldToScreen (ASLToAGL getPosASL _obj)) isEqualTo [] || {(positionCameraToWorld [0, 0, 0]) distance _obj > 6}}) exitWith {};

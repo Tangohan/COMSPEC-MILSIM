@@ -9,7 +9,7 @@ if (!hasInterface) exitWith {};
 ["comspec_atak_native_dockResult", { ["result", _this] call comspec_atak_native_fnc_dockClient; }] call CBA_fnc_addEventHandler;
 private _icon = "\z\comspec_atak_native\addons\main\data\item_dock.paa";
 private _staff = { serverCommandAvailable "#kick" || {!isNull (getAssignedCuratorLogic player)} || {missionNamespace getVariable ["comspec_atak_native_dock_anyone", false]} };
-missionNamespace setVariable ["COMSPEC_ATAK_DockStaff", _staff];
+uiNamespace setVariable ["COMSPEC_ATAK_DockStaff", _staff];
 if (!isNil "ace_interact_menu_fnc_createAction") then {
     private _root = ["COMSPEC_ATAK_Dock", "Socle de recharge", _icon, { ["status", [_target]] call comspec_atak_native_fnc_dockClient; }, { true }, {
         private _out = [];
@@ -20,7 +20,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
             _out pushBack [["COMSPEC_ATAK_DockPut", format ["Poser mon téléphone (emplacement %1)", _free + 1], "\z\comspec_atak_native\addons\main\data\item_dock.paa",
                 { ["put", [_target, -1]] call comspec_atak_native_fnc_dockClient; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
         };
-        private _all = call (missionNamespace getVariable "COMSPEC_ATAK_DockStaff");
+        private _all = call (uiNamespace getVariable "COMSPEC_ATAK_DockStaff");
         {
             if ((count _x) > 3 && {_all || {(_x select 0) isEqualTo _uid}}) then {
                 _x params ["_owner", "_name", "_lv"];
@@ -56,6 +56,6 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
             "'COMSPEC_ATAK_DockKit' in (items player) && {isNull objectParent player}"];
     };
     call _add;
-    missionNamespace setVariable ["COMSPEC_ATAK_DockActions", _add];
-    player addEventHandler ["Respawn", { call (missionNamespace getVariable "COMSPEC_ATAK_DockActions"); }];
+    uiNamespace setVariable ["COMSPEC_ATAK_DockActions", _add];
+    player addEventHandler ["Respawn", { call (uiNamespace getVariable "COMSPEC_ATAK_DockActions"); }];
 };

@@ -35,13 +35,13 @@ uiNamespace setVariable ["COMSPEC_ATAK_Secret_dlPass", ""];
 }] call CBA_fnc_addEventHandler;
 
 // Titres des actions molette, traduits (retraduits par le tick si la langue change en cours de partie).
-missionNamespace setVariable ["COMSPEC_ATAK_DataActTitles", {
+uiNamespace setVariable ["COMSPEC_ATAK_DataActTitles", {
     private _img = "<img image='\z\comspec_atak_native\addons\main\data\app_datalink.paa'/> ";
     [_img + (("Brancher l'ATAK (câble DL-7)") call comspec_atak_native_fnc_tr), _img + (("Débrancher le câble DL-7") call comspec_atak_native_fnc_tr)]
 }];
 private _addAction = {
     if (!isNil { player getVariable "COMSPEC_ATAK_DataActions" }) exitWith {};
-    private _titles = call (missionNamespace getVariable ["COMSPEC_ATAK_DataActTitles", { ["", ""] }]);
+    private _titles = call (uiNamespace getVariable ["COMSPEC_ATAK_DataActTitles", { ["", ""] }]);
     private _a = player addAction [
         _titles select 0,
         { ["connect", cursorObject] call comspec_atak_native_fnc_dataAction; },
@@ -58,8 +58,8 @@ private _addAction = {
     player setVariable ["COMSPEC_ATAK_DataActLang", missionNamespace getVariable ["COMSPEC_ATAK_Lang", ""]];
 };
 call _addAction;
-player addEventHandler ["Respawn", { [{ player setVariable ["COMSPEC_ATAK_DataActions", nil]; [] call (missionNamespace getVariable ["COMSPEC_ATAK_DataAddAction", {}]); }, [], 1] call CBA_fnc_waitAndExecute; }];
-missionNamespace setVariable ["COMSPEC_ATAK_DataAddAction", _addAction];
+player addEventHandler ["Respawn", { [{ player setVariable ["COMSPEC_ATAK_DataActions", nil]; [] call (uiNamespace getVariable ["COMSPEC_ATAK_DataAddAction", {}]); }, [], 1] call CBA_fnc_waitAndExecute; }];
+uiNamespace setVariable ["COMSPEC_ATAK_DataAddAction", _addAction];
 
 // ACE : action sur chaque support, posée dès qu'il apparaît dans la liste du serveur.
 if (!isNil "ace_interact_menu_fnc_createAction") then {
@@ -87,7 +87,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     private _lang = missionNamespace getVariable ["COMSPEC_ATAK_Lang", ""];
     if ((player getVariable ["COMSPEC_ATAK_DataActLang", _lang]) isNotEqualTo _lang) then {
         player setVariable ["COMSPEC_ATAK_DataActLang", _lang];
-        private _titles = call (missionNamespace getVariable ["COMSPEC_ATAK_DataActTitles", { ["", ""] }]);
+        private _titles = call (uiNamespace getVariable ["COMSPEC_ATAK_DataActTitles", { ["", ""] }]);
         { if (_x isEqualType 0 && {_x >= 0}) then { player setUserActionText [_x, _titles select _forEachIndex]; }; } forEach (player getVariable ["COMSPEC_ATAK_DataActions", []]);
     };
 }, 0.25] call CBA_fnc_addPerFrameHandler;

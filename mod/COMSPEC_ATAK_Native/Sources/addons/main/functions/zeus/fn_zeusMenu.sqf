@@ -156,9 +156,9 @@ switch (_act) do {
             if (_u isEqualTo [] && {_hover isEqualType objNull}) then { _u = ["players", [_hover]] call comspec_atak_native_fnc_zeusMenu; };
             _u
         };
-        missionNamespace setVariable ["COMSPEC_ATAK_ZeusTargets", _targets];
+        uiNamespace setVariable ["COMSPEC_ATAK_ZeusTargets", _targets];
         private _icon = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
-        private _root = ["comspec_atak_zeus", "ATAK · Contrôle Zeus", _icon, {}, { (_this call (missionNamespace getVariable "COMSPEC_ATAK_ZeusTargets")) isNotEqualTo [] }] call comspec_atak_native_fnc_zenAction;
+        private _root = ["comspec_atak_zeus", "ATAK · Contrôle Zeus", _icon, {}, { (_this call (uiNamespace getVariable "COMSPEC_ATAK_ZeusTargets")) isNotEqualTo [] }] call comspec_atak_native_fnc_zenAction;
         [_root, [], 7] call zen_context_menu_fnc_addAction;
         private _groups = [];
         {
@@ -172,7 +172,7 @@ switch (_act) do {
             };
             private _gid = format ["comspec_atak_zeus_g%1", _groups find _grp];
             private _a = [format ["comspec_atak_zeus_%1", _id], _label, "", {
-                private _u = _this call (missionNamespace getVariable "COMSPEC_ATAK_ZeusTargets");
+                private _u = _this call (uiNamespace getVariable "COMSPEC_ATAK_ZeusTargets");
                 ["apply", [_this param [6, ""], _u]] call comspec_atak_native_fnc_zeusMenu;
             }, { true }, _id] call comspec_atak_native_fnc_zenAction;
             [_a, ["comspec_atak_zeus", _gid], 100 - _forEachIndex] call zen_context_menu_fnc_addAction;

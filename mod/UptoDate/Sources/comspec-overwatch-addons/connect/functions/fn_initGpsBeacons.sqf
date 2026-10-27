@@ -25,7 +25,7 @@ private _isBridge = {
     (getPlayerUID player) isEqualTo (_uids select 0)
 };
 
-missionNamespace setVariable ["COMSPEC_GpsBeaconIsBridge", _isBridge, false];
+localNamespace setVariable ["COMSPEC_GpsBeaconIsBridge", _isBridge];
 
 private _scan = {
     private _vehs = missionNamespace getVariable ["COMSPEC_GpsBeaconObjects", []];
@@ -76,10 +76,10 @@ private _scan = {
     missionNamespace setVariable ["COMSPEC_PhoneTrackUnits", _phones, false];
     missionNamespace setVariable ["COMSPEC_AllyTrackUnits", _allies, false];
 };
-missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
+localNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan];
 
 [] call _scan;
-[{ [] call (missionNamespace getVariable ["COMSPEC_GpsBeaconScan", {}]); }, [], 3] call CBA_fnc_waitAndExecute;
+[{ [] call (localNamespace getVariable ["COMSPEC_GpsBeaconScan", {}]); }, [], 3] call CBA_fnc_waitAndExecute;
 
 [{
     // Drapeau public « lié à Athena » pour l’élection du relais (écrit seulement quand il change).
@@ -97,7 +97,7 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
     // alimentent déjà les listes directement.
     if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_GpsBeaconScanAt", -1e9])) >= 12) then {
         missionNamespace setVariable ["COMSPEC_GpsBeaconScanAt", diag_tickTime, false];
-        [] call (missionNamespace getVariable ["COMSPEC_GpsBeaconScan", {}]);
+        [] call (localNamespace getVariable ["COMSPEC_GpsBeaconScan", {}]);
     };
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {
         missionNamespace setVariable ["COMSPEC_TrackSigWasDown", true, false];
@@ -143,7 +143,7 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
         };
     };
 
-    if (call (missionNamespace getVariable ["COMSPEC_GpsBeaconIsBridge", { false }])) then {
+    if (call (localNamespace getVariable ["COMSPEC_GpsBeaconIsBridge", { false }])) then {
         private _snaps = missionNamespace getVariable ["COMSPEC_AllyTrackSnapshots", []];
         if (_snaps isEqualType []) then {
             {

@@ -294,35 +294,35 @@ switch (_act) do {
                 [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
             };
         };
-        missionNamespace setVariable ["COMSPEC_ATAK_Mpu5Rerender", _rerender];
+        uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Rerender", _rerender];
         private _isRadio = { params ["_r"]; _r isEqualTo true || {_r isEqualTo 1} || {_r isEqualTo "1"} };
-        missionNamespace setVariable ["COMSPEC_ATAK_Mpu5IsRadio", _isRadio];
+        uiNamespace setVariable ["COMSPEC_ATAK_Mpu5IsRadio", _isRadio];
         // Mon émission (alternat ACRE2 sur une radio).
         ["acre_startedSpeaking", {
             params ["_u", ["_r", false], ["_id", ""]];
-            if (_u isNotEqualTo player || {!([_r] call (missionNamespace getVariable "COMSPEC_ATAK_Mpu5IsRadio"))} || {!(_id isEqualType "")}) exitWith {};
+            if (_u isNotEqualTo player || {!([_r] call (uiNamespace getVariable "COMSPEC_ATAK_Mpu5IsRadio"))} || {!(_id isEqualType "")}) exitWith {};
             uiNamespace setVariable ["COMSPEC_ATAK_PttMine", [_id, diag_tickTime]];
-            call (missionNamespace getVariable "COMSPEC_ATAK_Mpu5Rerender");
+            call (uiNamespace getVariable "COMSPEC_ATAK_Mpu5Rerender");
         }] call CBA_fnc_addEventHandler;
         ["acre_stoppedSpeaking", {
             params ["_u"];
             if (_u isNotEqualTo player) exitWith {};
             uiNamespace setVariable ["COMSPEC_ATAK_PttMine", ["", 0]];
-            call (missionNamespace getVariable "COMSPEC_ATAK_Mpu5Rerender");
+            call (uiNamespace getVariable "COMSPEC_ATAK_Mpu5Rerender");
         }] call CBA_fnc_addEventHandler;
         // Émissions des autres joueurs : ACRE2 les signale à chaque client ; le tri « entendue ou non » se fait à l'affichage.
         ["acre_remoteStartedSpeaking", {
             params ["_u", ["_r", false], ["_id", ""]];
-            if (isNull _u || {!([_r] call (missionNamespace getVariable "COMSPEC_ATAK_Mpu5IsRadio"))} || {!(_id isEqualType "")} || {_id isEqualTo ""}) exitWith {};
+            if (isNull _u || {!([_r] call (uiNamespace getVariable "COMSPEC_ATAK_Mpu5IsRadio"))} || {!(_id isEqualType "")} || {_id isEqualTo ""}) exitWith {};
             private _h = (uiNamespace getVariable ["COMSPEC_ATAK_PttHeard", []]) select { (_x select 0) isNotEqualTo _u };
             _h pushBack [_u, _id, diag_tickTime];
             uiNamespace setVariable ["COMSPEC_ATAK_PttHeard", _h];
-            call (missionNamespace getVariable "COMSPEC_ATAK_Mpu5Rerender");
+            call (uiNamespace getVariable "COMSPEC_ATAK_Mpu5Rerender");
         }] call CBA_fnc_addEventHandler;
         ["acre_remoteStoppedSpeaking", {
             params ["_u"];
             uiNamespace setVariable ["COMSPEC_ATAK_PttHeard", (uiNamespace getVariable ["COMSPEC_ATAK_PttHeard", []]) select { (_x select 0) isNotEqualTo _u }];
-            call (missionNamespace getVariable "COMSPEC_ATAK_Mpu5Rerender");
+            call (uiNamespace getVariable "COMSPEC_ATAK_Mpu5Rerender");
         }] call CBA_fnc_addEventHandler;
         [{ ["tick"] call comspec_atak_native_fnc_mpu5; }, 2] call CBA_fnc_addPerFrameHandler;
     };

@@ -330,9 +330,9 @@ switch (_mode) do {
             }, [], [0, 0, 0], 4] call comspec_atak_native_fnc_aceAction;
             [_o, 0, [], _root] call ace_interact_menu_fnc_addActionToObject;
         } else {
-            _o addAction [format ["<t color='#7fd0b0'>%1</t>", ("Écran : diapositive suivante") call comspec_atak_native_fnc_tr], { ["step", [_this select 0, 1]] call comspec_atak_native_fnc_screenCast; }, nil, 1.4, false, true, "", "private _player = _this; call (missionNamespace getVariable 'COMSPEC_ATAK_ScreenCond')", 4];
-            _o addAction [format ["<t color='#7fd0b0'>%1</t>", ("Écran : diapositive précédente") call comspec_atak_native_fnc_tr], { ["step", [_this select 0, -1]] call comspec_atak_native_fnc_screenCast; }, nil, 1.39, false, true, "", "private _player = _this; call (missionNamespace getVariable 'COMSPEC_ATAK_ScreenCond')", 4];
-            missionNamespace setVariable ["COMSPEC_ATAK_ScreenCond", _cond];
+            _o addAction [format ["<t color='#7fd0b0'>%1</t>", ("Écran : diapositive suivante") call comspec_atak_native_fnc_tr], { ["step", [_this select 0, 1]] call comspec_atak_native_fnc_screenCast; }, nil, 1.4, false, true, "", "private _player = _this; call (uiNamespace getVariable 'COMSPEC_ATAK_ScreenCond')", 4];
+            _o addAction [format ["<t color='#7fd0b0'>%1</t>", ("Écran : diapositive précédente") call comspec_atak_native_fnc_tr], { ["step", [_this select 0, -1]] call comspec_atak_native_fnc_screenCast; }, nil, 1.39, false, true, "", "private _player = _this; call (uiNamespace getVariable 'COMSPEC_ATAK_ScreenCond')", 4];
+            uiNamespace setVariable ["COMSPEC_ATAK_ScreenCond", _cond];
         };
         true
     };

@@ -39,14 +39,14 @@ private _place = {
     ] call zen_dialog_fnc_create;
 };
 
-missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
+localNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
 
 [
     "COMSPEC Roleplay",
     "Zone sans couverture ATAK",
     {
         params ["_pos", "_obj"];
-        [_pos, _obj, "no_coverage", 200, 100] call (missionNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
+        [_pos, _obj, "no_coverage", 200, 100] call (localNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
     },
     _icon
 ] call comspec_overwatch_connect_fnc_zenModule;
@@ -56,7 +56,7 @@ missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
     "Zone d'interférence ATAK",
     {
         params ["_pos", "_obj"];
-        [_pos, _obj, "interference", 300, 50] call (missionNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
+        [_pos, _obj, "interference", 300, 50] call (localNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
     },
     _icon
 ] call comspec_overwatch_connect_fnc_zenModule;
@@ -66,7 +66,7 @@ missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
     "Zone de couverture dégradée",
     {
         params ["_pos", "_obj"];
-        [_pos, _obj, "degraded", 500, 30] call (missionNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
+        [_pos, _obj, "degraded", 500, 30] call (localNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
     },
     _icon
 ] call comspec_overwatch_connect_fnc_zenModule;
@@ -76,7 +76,7 @@ missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
     "Brouilleur ATAK actif",
     {
         params ["_pos", "_obj"];
-        [_pos, _obj, "jammer", 400, 80] call (missionNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
+        [_pos, _obj, "jammer", 400, 80] call (localNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
     },
     _icon
 ] call comspec_overwatch_connect_fnc_zenModule;

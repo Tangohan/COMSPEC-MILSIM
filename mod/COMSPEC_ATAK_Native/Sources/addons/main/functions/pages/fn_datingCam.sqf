@@ -65,7 +65,7 @@ switch (_act) do {
         ([_u, _shot] call _pose) params ["_pos", "_dir", "_up", "_fov"];
         _cam setPosASL _pos; _cam setVectorDirAndUp [_dir, _up]; _cam camSetFov _fov; _cam camCommit 0;
         if ((missionNamespace getVariable ["COMSPEC_ATAK_DateCamPfh", -1]) < 0) then {
-            missionNamespace setVariable ["COMSPEC_ATAK_DateCamPose", _pose];
+            uiNamespace setVariable ["COMSPEC_ATAK_DateCamPose", _pose];
             missionNamespace setVariable ["COMSPEC_ATAK_DateCamPfh", [{
                 private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DateCam", objNull];
                 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -76,7 +76,7 @@ switch (_act) do {
                 // Hors de Tinder, téléphone fermé ou personne disparue : caméra coupée.
                 if (isNull _cam || {isNull _src} || {(_s getOrDefault ["activePage", ""]) isNotEqualTo "DATING"}
                     || {isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])} || {!alive player}) exitWith { ["stop"] call comspec_atak_native_fnc_datingCam; };
-                ([_u, ([_cam, "shot", 0] call comspec_atak_native_fnc_camVar)] call (missionNamespace getVariable "COMSPEC_ATAK_DateCamPose")) params ["_pos", "_dir", "_up", "_fov"];
+                ([_u, ([_cam, "shot", 0] call comspec_atak_native_fnc_camVar)] call (uiNamespace getVariable "COMSPEC_ATAK_DateCamPose")) params ["_pos", "_dir", "_up", "_fov"];
                 _cam setPosASL _pos; _cam setVectorDirAndUp [_dir, _up]; _cam camSetFov _fov; _cam camCommit 0;
             }, 0] call CBA_fnc_addPerFrameHandler];
         };

@@ -35,7 +35,7 @@ private _kindFromTrigger = {
     if (_s find "command" >= 0 || {_s find "clacker" >= 0} || {_s find "m57" >= 0} || {_s find "m26" >= 0} || {_s find "mk16" >= 0} || {_s find "deadman" >= 0}) exitWith { "clacker" };
     "command"
 };
-missionNamespace setVariable ["COMSPEC_ExplosiveKindFromTrigger", _kindFromTrigger, false];
+localNamespace setVariable ["COMSPEC_ExplosiveKindFromTrigger", _kindFromTrigger];
 
 private _kindFromClackers = {
     params ["_explosive", "_unit"];
@@ -45,13 +45,13 @@ private _kindFromClackers = {
     {
         if ((_x isEqualType []) && {(count _x) > 0} && {(_x select 0) isEqualTo _explosive}) then {
             private _trig = if ((count _x) > 4) then { _x select 4 } else { "Command" };
-            _kind = [_trig] call (missionNamespace getVariable ["COMSPEC_ExplosiveKindFromTrigger", { "command" }]);
+            _kind = [_trig] call (localNamespace getVariable ["COMSPEC_ExplosiveKindFromTrigger", { "command" }]);
         };
     } forEach _list;
     _kind
 };
 
-missionNamespace setVariable ["COMSPEC_ExplosiveKindFromClackers", _kindFromClackers, false];
+localNamespace setVariable ["COMSPEC_ExplosiveKindFromClackers", _kindFromClackers];
 
 ["ace_explosives_setup", {
     params ["_placeholder", "_magClassname", "_unit"];
@@ -94,7 +94,7 @@ missionNamespace setVariable ["COMSPEC_ExplosiveKindFromClackers", _kindFromClac
         };
     };
 
-    private _kindFn = missionNamespace getVariable ["COMSPEC_ExplosiveKindFromClackers", { "" }];
+    private _kindFn = localNamespace getVariable ["COMSPEC_ExplosiveKindFromClackers", { "" }];
     private _kind = [_explosive, _unit] call _kindFn;
     private _delay = 0;
     private _timerAt = missionNamespace getVariable ["COMSPEC_LastAceTimerAt", -1e9];

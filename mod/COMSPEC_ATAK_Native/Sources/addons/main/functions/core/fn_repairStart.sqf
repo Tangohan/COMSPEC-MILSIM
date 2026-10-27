@@ -23,7 +23,7 @@ if (!_kit && !_tool) exitWith { ["WARNING", "Kit de réparation ATAK requis · (
 if (player getVariable ["COMSPEC_ATAK_Repairing", false]) exitWith { false };
 player setVariable ["COMSPEC_ATAK_Repairing", true];
 private _time = [20, 12] select _kit;
-missionNamespace setVariable ["COMSPEC_ATAK_RepairDone", {
+uiNamespace setVariable ["COMSPEC_ATAK_RepairDone", {
     params [["_kit", false]];
     player setVariable ["COMSPEC_ATAK_Repairing", false];
     if (_kit) then {
@@ -41,7 +41,7 @@ if (!isNil "ace_common_fnc_progressBar") then {
     uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
     [] call comspec_atak_native_fnc_close;
     [_time, [_kit], {
-        (_this select 0) call (missionNamespace getVariable ["COMSPEC_ATAK_RepairDone", {}]);
+        (_this select 0) call (uiNamespace getVariable ["COMSPEC_ATAK_RepairDone", {}]);
     }, {
         player setVariable ["COMSPEC_ATAK_Repairing", false];
         ["WARNING", "Réparation du téléphone interrompue.", 4, 30] call comspec_atak_native_fnc_notify;
@@ -54,7 +54,7 @@ if (!isNil "ace_common_fnc_progressBar") then {
             player setVariable ["COMSPEC_ATAK_Repairing", false];
             ["WARNING", "Réparation du téléphone interrompue.", 4, 30] call comspec_atak_native_fnc_notify;
         };
-        [_kit] call (missionNamespace getVariable ["COMSPEC_ATAK_RepairDone", {}]);
+        [_kit] call (uiNamespace getVariable ["COMSPEC_ATAK_RepairDone", {}]);
     }, [_kit], _time] call CBA_fnc_waitAndExecute;
 };
 true

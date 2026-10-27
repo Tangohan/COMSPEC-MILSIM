@@ -8,14 +8,14 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa";
 private _open = {
     [true] call comspec_overwatch_connect_fnc_theaterSurveyShow;
 };
-missionNamespace setVariable ["COMSPEC_ZeusOpenTheaterSurvey", _open];
+localNamespace setVariable ["COMSPEC_ZeusOpenTheaterSurvey", _open];
 
 if (
     !(missionNamespace getVariable ["COMSPEC_AceTheaterSurveyRegistered", false])
     && {!isNil "ace_zeus_fnc_addModule"}
 ) then {
     ["COMSPEC Outils", "Relever la carte du théâtre", {
-        [] call (missionNamespace getVariable ["COMSPEC_ZeusOpenTheaterSurvey", {}]);
+        [] call (localNamespace getVariable ["COMSPEC_ZeusOpenTheaterSurvey", {}]);
     }, _icon] call ace_zeus_fnc_addModule;
     ["COMSPEC Outils", "Relever routes et villes", {
         ["zeus"] call comspec_overwatch_connect_fnc_moduleGeoNetwork;
@@ -30,7 +30,7 @@ if (missionNamespace getVariable ["COMSPEC_ZenTheaterSurveyRegistered", false]) 
     "COMSPEC Outils",
     "Relever la carte du théâtre",
     {
-        [] call (missionNamespace getVariable ["COMSPEC_ZeusOpenTheaterSurvey", {}]);
+        [] call (localNamespace getVariable ["COMSPEC_ZeusOpenTheaterSurvey", {}]);
     },
     _icon
 ] call comspec_overwatch_connect_fnc_zenModule;
@@ -51,7 +51,7 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
         "Relever la carte du théâtre",
         _icon,
         {
-            [] call (missionNamespace getVariable ["COMSPEC_ZeusOpenTheaterSurvey", {}]);
+            [] call (localNamespace getVariable ["COMSPEC_ZeusOpenTheaterSurvey", {}]);
         },
         { true }
     ] call comspec_overwatch_connect_fnc_zenAction;

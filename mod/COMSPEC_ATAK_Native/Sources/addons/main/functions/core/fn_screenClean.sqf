@@ -25,7 +25,7 @@ private _time = [[3, 6] select _blood, 10] select _deep;
 private _kits = ((missionNamespace getVariable ["comspec_atak_native_clean_items", ""]) splitString ", ;") apply { toLower _x };
 if (_kits isNotEqualTo [] && {((items player) findIf { (toLower _x) in _kits }) >= 0}) then { _deep = true; _time = _time / 2; };
 missionNamespace setVariable ["COMSPEC_ATAK_CleanDeep", _deep];
-missionNamespace setVariable ["COMSPEC_ATAK_CleanDone", {
+uiNamespace setVariable ["COMSPEC_ATAK_CleanDone", {
     player setVariable ["COMSPEC_ATAK_Cleaning", false];
     private _deep = missionNamespace getVariable ["COMSPEC_ATAK_CleanDeep", false];
     ["clean", _deep] call comspec_atak_native_fnc_screenDirt;
@@ -43,7 +43,7 @@ private _label = ["Nettoyage de l'écran du téléphone…", "Nettoyage complet 
 // Téléphone affiché : pas de barre ACE (c'est une fenêtre qui passerait devant), simple attente avec bandeau.
 if (!isNil "ace_common_fnc_progressBar" && {isNull ([] call comspec_atak_native_fnc_display)}) then {
     [_time, [], {
-        call (missionNamespace getVariable ["COMSPEC_ATAK_CleanDone", {}]);
+        call (uiNamespace getVariable ["COMSPEC_ATAK_CleanDone", {}]);
     }, {
         player setVariable ["COMSPEC_ATAK_Cleaning", false];
     }, (_label call comspec_atak_native_fnc_tr), { alive player }, ["isNotInside", "isNotSitting", "isNotSwimming"]] call ace_common_fnc_progressBar;
@@ -51,7 +51,7 @@ if (!isNil "ace_common_fnc_progressBar" && {isNull ([] call comspec_atak_native_
     ["INFO", format ["%1 (%2 s)", _label, _time], _time, 10] call comspec_atak_native_fnc_notify;
     [{
         if (!alive player) exitWith { player setVariable ["COMSPEC_ATAK_Cleaning", false]; };
-        call (missionNamespace getVariable ["COMSPEC_ATAK_CleanDone", {}]);
+        call (uiNamespace getVariable ["COMSPEC_ATAK_CleanDone", {}]);
     }, [], _time] call CBA_fnc_waitAndExecute;
 };
 true

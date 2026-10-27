@@ -56,7 +56,7 @@ private _set = {
     _st set ["v3d", [_p, _d, _r, _h]];
     [{ ["VIEW3D", false] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
 };
-missionNamespace setVariable ["COMSPEC_ATAK_V3dSet", _set];
+uiNamespace setVariable ["COMSPEC_ATAK_V3dSet", _set];
 private _rows = [
     [["◀", "['turn', -30]"], ["▶", "['turn', 30]"], ["+", "['zoom', 0.7]"], ["−", "['zoom', 1.4]"]],
     [["▲", "['up', 1]"], ["▼", "['up', -1]"], ["NORD", "['north', 0]"], ["CARTE", ""]]
@@ -69,7 +69,7 @@ private _bw4 = (_vw - 3 * _pad / 2) / 4;
         private _b = ["COMSPEC_RscButton", [_vx + _forEachIndex * (_bw4 + _pad / 2), _ry, _bw4, _btnH], _t] call comspec_atak_native_fnc_pageCtrl;
         _b ctrlSetFontHeight _fs;
         _b ctrlAddEventHandler ["ButtonClick", compile ([
-            format ["%1 call (missionNamespace getVariable 'COMSPEC_ATAK_V3dSet');", _code],
+            format ["%1 call (uiNamespace getVariable 'COMSPEC_ATAK_V3dSet');", _code],
             "[{ ['MAP', false] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;"
         ] select (_code isEqualTo ""))];
     } forEach _x;
