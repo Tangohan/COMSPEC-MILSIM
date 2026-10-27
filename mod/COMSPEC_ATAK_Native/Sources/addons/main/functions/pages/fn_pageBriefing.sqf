@@ -22,7 +22,9 @@ private _bridge = [] call comspec_atak_native_fnc_bridge;
 
 private _btn = {
     params ["_rect", "_label", "_code", ["_active", false]];
-    private _b = ["COMSPEC_RscButton", _rect, _label] call comspec_atak_native_fnc_pageCtrl;
+    // Bouton actif : classe verte aussi au survol et au focus (sinon fond bleu-vert du survol sous un texte sombre,
+    // onglet DIAPOS illisible une fois touché, capture de TTRD du 26/10).
+    private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _active, _rect, _label] call comspec_atak_native_fnc_pageCtrl;
     _b ctrlSetFontHeight _fs;
     if (_active) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
     _b ctrlAddEventHandler ["ButtonClick", _code];
@@ -387,7 +389,7 @@ if (_src isEqualTo "GOOGLE" && {_path isNotEqualTo ""}) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_SlideWeb", _store];
             };
             ["INFO", "BRIEFING", format ["Diapositive Google : fichier %1, %2", _path, ["affichée par le navigateur intégré (texture refusée par Arma)", _why] select (_why isNotEqualTo "")]] call comspec_atak_native_fnc_log;
-            _gCache set [_path, [["WEB:" + _path, ""] select (_why isNotEqualTo ""), ["", "Arma refuse l'image Google (hors PBO) et " + _why] select (_why isNotEqualTo "")]];
+            _gCache set [_path, [["WEB:" + _path, ""] select (_why isNotEqualTo ""), ["", "Diapositive Google impossible à afficher : " + _why] select (_why isNotEqualTo "")]];
             [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
         };
         _st = [diag_tickTime];
@@ -459,17 +461,14 @@ if (_total < 1 || {_path isEqualTo ""}) then {
     _t ctrlSetStructuredText parseText ((format ["<t align='center' color='#8a9a93'>%1</t>", _msg]) call comspec_atak_native_fnc_tr);
 } else {
     if ((_path select [0, 4]) isEqualTo "WEB:") then {
-        // Navigateur intégré : la diapositive (JPEG en base64) dans une page data: centrée sur fond noir.
+        // Navigateur intégré : la diapositive (JPEG en base64) centrée sur fond noir (fn_slideWebShow).
         ((uiNamespace getVariable ["COMSPEC_ATAK_SlideWeb", createHashMap]) getOrDefault [_path select [4], ["jpeg", ""]]) params ["_mime", "_b64"];
         private _wb = ["COMSPEC_RscWebBrowser", [_vx, _vy, _vw, _vh]] call comspec_atak_native_fnc_pageCtrl;
         if (isNull _wb || {_b64 isEqualTo ""}) exitWith {
             private _t = ["COMSPEC_RscStructuredText", [_vx + _pad, _vy + _vh * 0.38, _vw - 2 * _pad, _rowH * 3]] call comspec_atak_native_fnc_pageCtrl;
             _t ctrlSetStructuredText parseText (("<t align='center' color='#8a9a93'>Le navigateur intégré d'Arma n'est pas disponible : diapositive impossible à afficher.</t>") call comspec_atak_native_fnc_tr);
         };
-        // Concaténation (pas format) : l'image dépasse de loin la longueur qu'accepte format.
-        private _html = "<html><body style='margin:0;background:black;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden'><img src='data:image/" + _mime + ";base64," + _b64 + "' style='max-width:100%;max-height:100%;object-fit:contain'></body></html>";
-        private _enc = controlNull ctrlWebBrowserAction ["ToBase64", _html];
-        _wb ctrlWebBrowserAction ["OpenDataAsURL", if (_enc isEqualType "" && {_enc isNotEqualTo ""}) then { "data:text/html;base64," + _enc } else { "data:text/html;charset=utf-8," + _html }];
+        [_wb, _mime, _b64] call comspec_atak_native_fnc_slideWebShow;
     } else {
         ["COMSPEC_RscSlide", [_vx, _vy, _vw, _vh], _path] call comspec_atak_native_fnc_pageCtrl;
     };
@@ -479,7 +478,10 @@ if (_total < 1 || {_path isEqualTo ""}) then {
 // Titre de diapositive, présentateur et présents passent par parseText : échappés (« <CS> Bob »).
 private _escTxt = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
 private _title = if (_total > 0) then { _titles param [_idx, ""] } else { "" };
-private _srcLabel = createHashMapFromArray [["GOOGLE", "Google Slides · synchronisé"], ["ATHENA", "Athena"], ["LOCAL", "Briefing"]] getOrDefault [_src, ""];
+// Google : chargé par TESTER LE LIEN (ce téléphone seul, rien n'est envoyé aux autres) ou diffusé à tous.
+private _gLocal = uiNamespace getVariable ["COMSPEC_ATAK_BriefLocalDeck", ""];
+private _gLabel = ["Google Slides · partagé avec tous", "Google Slides · ce téléphone seulement"] select (_gLocal isNotEqualTo "" && {_gLocal isEqualTo (missionNamespace getVariable ["COMSPEC_GoogleBriefingUrl", ""])});
+private _srcLabel = createHashMapFromArray [["GOOGLE", _gLabel], ["ATHENA", "Athena"], ["LOCAL", "Briefing"]] getOrDefault [_src, ""];
 if (_src isEqualTo "FENRIR") then { _srcLabel = format ["<t color='#c9a0ff'>FENRIR · %1</t>", [_fst select 11] call _escTxt]; };
 // Opération Athena rattachée à la diapositive (vide : commune à toutes les opérations).
 private _op = if (_src isEqualTo "ATHENA" && {_total > 0}) then { ((missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) select _idx) param [5, ""] } else { "" };

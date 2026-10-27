@@ -113,7 +113,7 @@ class COMSPEC_RscBubbleOut: COMSPEC_RscStructuredText { colorBackground[]={0.10,
 class COMSPEC_RscChip: COMSPEC_RscTextCenter { font=ATAK_FONT_BOLD; colorBackground[]={0.55,0.38,0.08,1}; colorText[]={1,1,1,1}; };
 // Curseur du rejeu de mission (app AAR).
 // Navigateur intégré d'Arma (CT_WEBBROWSER, Arma 3 2.14+) : diapositives Athena qu'Arma refuse en texture (image
-// téléchargée hors d'un PBO). Contenu local seulement (page data: ouverte par OpenDataAsURL), aucune adresse externe.
+// téléchargée hors d'un PBO). Contenu local seulement (data\web\slide.html, fn_slideWebShow), aucune adresse externe.
 // Classe sans parent (comme la tablette Overwatch) : rien ne dépend d'une classe du jeu absente selon la version.
 class COMSPEC_RscWebBrowser { type=106; idc=-1; style=0; x=0; y=0; w=0.3; h=0.3; colorBackground[]={0,0,0,1}; colorText[]={1,1,1,1}; allowExternalURL=0; url=""; };
 class COMSPEC_RscSlider: RscXSliderH { color[]={0.36,0.78,0.42,0.9}; colorActive[]={0.46,0.88,0.52,1}; colorDisabled[]={0.4,0.45,0.42,0.6}; };
