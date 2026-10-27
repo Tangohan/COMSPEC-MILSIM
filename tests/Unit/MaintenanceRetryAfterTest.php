@@ -139,9 +139,9 @@ final class MaintenanceRetryAfterTest extends TestCase
      * TEST-013 (L4-R2, branchement) : le vrai public/index.php, servi par `php -S` pendant l'ancienne maintenance par
      * fichier. Avant, ce branchement n'était vérifié qu'en cherchant des lignes dans le fichier. Le contrôleur frontal
      * et ses fichiers de démarrage sont copiés dans un dossier temporaire, où storage/maintenance.json est posé : le
-     * dépôt n'est jamais mis en maintenance. Les API (avec ou sans en-tête Accept, comme la DLL) reçoivent le JSON
-     * « maintenance » avec un délai de 30 à 60 s, le même dans l'en-tête et le corps ; les pages reçoivent la page
-     * HTML avec Retry-After 300, comme avant.
+     * dépôt n'est jamais mis en maintenance. Les API (avec ou sans en-tête Accept, en lecture comme en écriture : la
+     * DLL envoie ses positions et son tchat en POST) reçoivent le JSON « maintenance » avec un délai de 30 à 60 s, le
+     * même dans l'en-tête et le corps ; les pages reçoivent la page HTML avec Retry-After 300, comme avant.
      */
     #[Group('php-builtin-server')]
     public function testLegacyFileMaintenanceThroughTheFrontControllerAnswersApisInJsonAndPagesInHtml(): void
@@ -153,6 +153,8 @@ final class MaintenanceRetryAfterTest extends TestCase
                 ['/api/atak/position', ''],
                 ['/api/chat?mapId=1&limit=25&after=10', ''],
                 ['/api/atak/client-init', 'application/json'],
+                ['/api/atak/position', '', 'POST'],
+                ['/api/chat', 'application/json', 'POST'],
                 ['/', 'text/html,application/xhtml+xml'],
                 ['/login', 'text/html,application/xhtml+xml'],
             ]);
@@ -160,7 +162,7 @@ final class MaintenanceRetryAfterTest extends TestCase
             self::removeFrontControllerCopy($copy);
         }
 
-        foreach (array_slice($responses, 0, 4) as $i => $response) {
+        foreach (array_slice($responses, 0, 6) as $i => $response) {
             self::assertSame(503, $response['status'], "API {$i} : {$response['raw']}");
             self::assertStringStartsWith('application/json', $response['headers']['content-type'] ?? '', "API {$i} : {$response['raw']}");
             self::assertSame('no-store', $response['headers']['cache-control'] ?? null, "API {$i}");
@@ -172,7 +174,7 @@ final class MaintenanceRetryAfterTest extends TestCase
             self::assertGreaterThanOrEqual(30, $header, "API {$i}");
             self::assertLessThanOrEqual(60, $header, "API {$i}");
         }
-        foreach (array_slice($responses, 4) as $i => $response) {
+        foreach (array_slice($responses, 6) as $i => $response) {
             self::assertSame(503, $response['status'], "page {$i} : {$response['raw']}");
             self::assertStringStartsWith('text/html', strtolower($response['headers']['content-type'] ?? ''), "page {$i}");
             self::assertSame('300', $response['headers']['retry-after'] ?? null, "page {$i} : délai des pages inchangé");
@@ -264,10 +266,11 @@ final class MaintenanceRetryAfterTest extends TestCase
     }
 
     /**
-     * Lance `php -S` sur 127.0.0.1, port libre, avec le script de routage $router, et lui envoie les requêtes GET
-     * $requests ([chemin, en-tête Accept ; vide : pas d'en-tête]). Le serveur est arrêté dans tous les cas.
+     * Lance `php -S` sur 127.0.0.1, port libre, avec le script de routage $router, et lui envoie les requêtes
+     * $requests ([chemin, en-tête Accept ; vide : pas d'en-tête, méthode : GET si absente]). Un POST porte un petit
+     * corps JSON, comme un envoi de la DLL. Le serveur est arrêté dans tous les cas.
      *
-     * @param list<array{0: string, 1: string}> $requests
+     * @param list<array{0: string, 1: string, 2?: string}> $requests
      * @return list<array{status: int, headers: array<string, string>, body: array<string, mixed>|null, raw: string}>
      */
     private static function request(string $router, string $docroot, array $requests): array
@@ -294,7 +297,9 @@ final class MaintenanceRetryAfterTest extends TestCase
 
         $responses = [];
         try {
-            foreach ($requests as [$path, $accept]) {
+            foreach ($requests as $request) {
+                [$path, $accept] = $request;
+                $method = $request[2] ?? 'GET';
                 $connection = false;
                 for ($try = 0; $connection === false && $try < 100; $try++) {
                     $connection = @stream_socket_client('tcp://127.0.0.1:' . $port, $errno, $errstr, 1);
@@ -307,7 +312,9 @@ final class MaintenanceRetryAfterTest extends TestCase
                 }
                 stream_set_timeout($connection, 10);
                 $acceptLine = $accept !== '' ? "Accept: {$accept}\r\n" : '';
-                fwrite($connection, "GET {$path} HTTP/1.0\r\nHost: 127.0.0.1\r\n{$acceptLine}Connection: close\r\n\r\n");
+                $payload = $method === 'GET' ? '' : '{"mapId":1}';
+                $bodyLines = $payload === '' ? '' : "Content-Type: application/json\r\nContent-Length: " . strlen($payload) . "\r\n";
+                fwrite($connection, "{$method} {$path} HTTP/1.0\r\nHost: 127.0.0.1\r\n{$acceptLine}{$bodyLines}Connection: close\r\n\r\n{$payload}");
                 $raw = (string) stream_get_contents($connection);
                 fclose($connection);
 

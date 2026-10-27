@@ -80,7 +80,8 @@ final class RateLimitRetryAfterTest extends TestCase
 
         self::assertSame(429, $response->statusCode());
         $header = (int) $response->headerValue('Retry-After');
-        self::assertGreaterThanOrEqual(14 - (time() - $before), $header, 'temps restant de la fenêtre');
+        // Borne basse exacte, sans marge : time() est relu après l'appel, donc au plus tard que l'heure du calcul.
+        self::assertGreaterThanOrEqual(15 - (time() - $before), $header, 'temps restant de la fenêtre');
         self::assertLessThanOrEqual(15, $header, 'pas la fenêtre entière (60 s)');
         $json = json_decode($response->body(), true);
         self::assertIsArray($json);
@@ -102,7 +103,7 @@ final class RateLimitRetryAfterTest extends TestCase
         $short = $this->throughMiddleware('POST', '/login');
         self::assertSame(429, $short->statusCode());
         $header = (int) $short->headerValue('Retry-After');
-        self::assertGreaterThanOrEqual(49 - (time() - $now), $header);
+        self::assertGreaterThanOrEqual(50 - (time() - $now), $header);
         self::assertLessThanOrEqual(50, $header, 'fin de fenêtre dans 50 s : pas 120');
     }
 
@@ -135,7 +136,7 @@ final class RateLimitRetryAfterTest extends TestCase
             self::assertNotNull($response, $label);
             self::assertSame(429, $response->statusCode(), $label);
             $header = (int) $response->headerValue('Retry-After');
-            self::assertGreaterThanOrEqual(max(1, $left - 1 - (time() - $now)), $header, $label);
+            self::assertGreaterThanOrEqual(max(1, $left - (time() - $now)), $header, $label);
             self::assertLessThanOrEqual($left, $header, $label . ' : temps restant, pas la fenêtre entière');
             $json = json_decode($response->body(), true);
             self::assertIsArray($json);
@@ -162,7 +163,7 @@ final class RateLimitRetryAfterTest extends TestCase
 
         $this->seed($key, $now - 30, 7);
         $left = $limiter->secondsUntilReset($key, 60);
-        self::assertGreaterThanOrEqual(29 - (time() - $now), $left);
+        self::assertGreaterThanOrEqual(30 - (time() - $now), $left);
         self::assertLessThanOrEqual(30, $left);
         self::assertSame(7, $limiter->attempts($key, 60), 'compteur inchangé');
 

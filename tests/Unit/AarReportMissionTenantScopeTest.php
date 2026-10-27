@@ -14,6 +14,7 @@ use App\Repositories\AarReportRepository;
 use App\Repositories\AarReportTemplateRepository;
 use App\Repositories\TheatreMissionCycleRepository;
 use PDO;
+use PDOException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -213,6 +214,48 @@ final class AarReportMissionTenantScopeTest extends TestCase
         $ownJson = json_decode($own->body(), true);
         self::assertIsArray($ownJson);
         self::assertSame('Aigle noir', $ownJson['report']['mission_title'] ?? null);
+    }
+
+    /**
+     * La communauté est celle de la session (argument $tenantId), jamais celle du corps : l'API passe tout le corps JSON
+     * à save(). Un tenant_id envoyé par le client ne fait ni accepter le cycle d'une autre communauté, ni refuser celui
+     * de la sienne, et le compte rendu est enregistré dans la communauté de la session.
+     */
+    public function testTenantIdSentInThePayloadDoesNotChangeTheCommunity(): void
+    {
+        try {
+            $this->reports->save(self::OWN, null, self::AUTHOR, ['title' => 'Compte rendu', 'mission_cycle_id' => self::FOREIGN_CYCLE, 'tenant_id' => self::FOREIGN]);
+            self::fail('cycle d’une autre communauté accepté avec un tenant_id dans le corps');
+        } catch (\DomainException $e) {
+            self::assertSame(AarReportRepository::UNKNOWN_MISSION_MESSAGE, $e->getMessage());
+        }
+        self::assertSame(0, $this->storedReports(), 'rien n’est enregistré');
+
+        $report = $this->reports->save(self::OWN, null, self::AUTHOR, ['title' => 'Compte rendu', 'mission_cycle_id' => self::OWN_CYCLE, 'tenant_id' => self::FOREIGN]);
+        self::assertSame(self::OWN_CYCLE, (int) ($report['mission_cycle_id'] ?? 0), 'cycle de la communauté gardé');
+        self::assertSame('Aigle noir', $report['mission_title'] ?? null);
+        self::assertSame([self::OWN], array_map('intval', $this->pdo->query('SELECT tenant_id FROM aar_reports')->fetchAll(PDO::FETCH_COLUMN)));
+    }
+
+    /**
+     * Une erreur de base pendant l'enregistrement n'est pas un refus du formulaire : elle remonte au gestionnaire
+     * d'erreurs, au lieu de devenir un 422 qui porterait son message brut. Seul le refus du cycle donne un 422.
+     */
+    public function testApiStoreLetsADatabaseErrorPropagateInsteadOfAnswering422(): void
+    {
+        $this->signInAsAtakManager();
+        $_POST = ['title' => 'Compte rendu', 'mission_cycle_id' => (string) self::OWN_CYCLE];
+        $reports = $this->createMock(AarReportRepository::class);
+        $reports->method('save')->willReturnCallback(static function (): array {
+            throw new PDOException('SQLSTATE[HY000]: General error: 2006 MySQL server has gone away');
+        });
+
+        try {
+            $response = (new AarReportsApiController($reports))->store(new Request());
+            self::fail('erreur de base changée en réponse ' . $response->statusCode() . ' : ' . $response->body());
+        } catch (PDOException $e) {
+            self::assertStringContainsString('gone away', $e->getMessage());
+        }
     }
 
     /** Back-office : retour au formulaire avec le message, rien d'enregistré, au lieu d'une page d'erreur. */
