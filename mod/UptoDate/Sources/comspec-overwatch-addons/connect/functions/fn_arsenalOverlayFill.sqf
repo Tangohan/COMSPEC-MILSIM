@@ -65,9 +65,25 @@ private _right = ((ctrlPosition _grp) select 2) - 0.012;
 // Filtre d'état avec compteurs, selon l'onglet.
 private _stateKey = _grp getVariable ["COMSPEC_ArsenalStateKey", "all"];
 private _groups = if (_isCloud) then {
-    [["all", "Toutes les tenues", []], ["new", "Nouvelles", ["new"]], ["out", "Pas dans mon arsenal", ["out", "mine", "diff", "new"]], ["mine", "Partagées par moi", []]]
+    [
+        ["all", "Toutes les tenues", []],
+        ["featured", "Mises en avant", []],
+        ["mandatory", "Obligatoires", []],
+        ["fav", "Favoris", []],
+        ["new", "Nouvelles", ["new"]],
+        ["out", "Pas dans mon arsenal", ["out", "mine", "diff", "new"]],
+        ["mine", "Partagées par moi", []]
+    ]
 } else {
-    [["all", "Tous les états", []], ["pending", "Pas à jour sur le site", _pendingStates], ["remote", "Modifiées sur le site", ["remote"]], ["synced", "Sur le site", ["synced", "unknown", "comm"]]]
+    [
+        ["all", "Tous les états", []],
+        ["featured", "Mises en avant", []],
+        ["mandatory", "Obligatoires", []],
+        ["fav", "Favoris", []],
+        ["pending", "Pas à jour sur le site", _pendingStates],
+        ["remote", "Modifiées sur le site", ["remote"]],
+        ["synced", "Sur le site", ["synced", "unknown", "comm"]]
+    ]
 };
 private _match = {
     params ["_r", "_k"];
@@ -75,6 +91,9 @@ private _match = {
         case "all": { true };
         case "mine": { _r select 8 };
         case "out": { ((_r select 10) isNotEqualTo "in") };
+        case "fav": { if (_isCloud) then { _r select 6 } else { _r param [7, false] } };
+        case "featured": { if (_isCloud) then { _r param [12, false] } else { _r param [8, false] } };
+        case "mandatory": { if (_isCloud) then { _r param [13, false] } else { _r param [9, false] } };
         default { private _g = _groups select (_groups findIf { (_x select 0) isEqualTo _k }); ((_r call _stateOf) in (_g select 2)) };
     }
 };
@@ -105,7 +124,14 @@ private _base = _rows select {
     [_r, _stateKey] call _match
     && {
         private _st = ([_r call _stateOf, _isCloud] call comspec_overwatch_connect_fnc_arsenalStateInfo) select 0;
-        private _hay = toLower ([_r select 1, _r select _collIdx, [_r param [4, ""], ""] select !_isCloud, _st, (_st) call comspec_overwatch_connect_fnc_tr] joinString " ");
+        private _author = if (_isCloud) then { _r select 4 } else { _r param [6, ""] };
+        private _badge = if (_isCloud) then { _r param [14, ""] } else { _r param [10, ""] };
+        private _hay = toLower ([
+            _r select 1, _r select _collIdx, _author, _badge, _st, (_st) call comspec_overwatch_connect_fnc_tr,
+            ["", "favori"] select (if (_isCloud) then { _r select 6 } else { _r param [7, false] }),
+            ["", "mise en avant"] select (if (_isCloud) then { _r param [12, false] } else { _r param [8, false] }),
+            ["", "obligatoire"] select (if (_isCloud) then { _r param [13, false] } else { _r param [9, false] })
+        ] joinString " ");
         (_words findIf { (_hay find _x) < 0 }) < 0
     }
 };
@@ -162,9 +188,25 @@ _shown = switch (_sort) do {
     };
     default {
         if (_isCloud) then {
-            [_shown, [], { format ["%1|%2|%3", ["1", "0"] select (_x select 6), toLower (_x select 3), toLower (_x select 2)] }, "ASCEND"] call BIS_fnc_sortBy
+            [_shown, [], {
+                format ["%1|%2|%3|%4|%5",
+                    ["1", "0"] select (_x param [13, false]),
+                    ["1", "0"] select (_x param [12, false]),
+                    ["1", "0"] select (_x select 6),
+                    toLower (_x select 3),
+                    toLower (_x select 2)
+                ]
+            }, "ASCEND"] call BIS_fnc_sortBy
         } else {
-            [_shown, [], { format ["%1|%2", toLower (_x select 2), toLower (_x select 1)] }, "ASCEND"] call BIS_fnc_sortBy
+            [_shown, [], {
+                format ["%1|%2|%3|%4|%5",
+                    ["1", "0"] select (_x param [9, false]),
+                    ["1", "0"] select (_x param [8, false]),
+                    ["1", "0"] select (_x param [7, false]),
+                    toLower (_x select 2),
+                    toLower (_x select 1)
+                ]
+            }, "ASCEND"] call BIS_fnc_sortBy
         }
     };
 };
@@ -184,8 +226,19 @@ if (!isNull _list) then {
     {
         private _st = [_x call _stateOf, _isCloud] call comspec_overwatch_connect_fnc_arsenalStateInfo;
         _st params ["_label", "_rgba"];
-        private _star = if (_isCloud && {_x select 6}) then { "★ " } else { "" };
-        private _r = _list lnbAddRow ["", _star + (_x select _nameIdx), _x select _collIdx, (_label) call comspec_overwatch_connect_fnc_tr];
+        private _fav = if (_isCloud) then { _x select 6 } else { _x param [7, false] };
+        private _feat = if (_isCloud) then { _x param [12, false] } else { _x param [8, false] };
+        private _mand = if (_isCloud) then { _x param [13, false] } else { _x param [9, false] };
+        private _author = if (_isCloud) then { _x select 4 } else { _x param [6, ""] };
+        private _prefix = "";
+        if (_mand) then { _prefix = _prefix + "● "; };
+        if (_feat) then { _prefix = _prefix + "◆ "; };
+        if (_fav) then { _prefix = _prefix + "★ "; };
+        private _collTxt = _x select _collIdx;
+        if (_author isNotEqualTo "") then {
+            _collTxt = format ["%1 · %2", _collTxt, _author];
+        };
+        private _r = _list lnbAddRow ["", _prefix + (_x select _nameIdx), _collTxt, (_label) call comspec_overwatch_connect_fnc_tr];
         _list lnbSetValue [[_r, 0], _forEachIndex];
         if (_pick) then {
             [_list, _r, (toLower (_x select 0)) in _marked] call comspec_overwatch_connect_fnc_arsenalOverlayMark;
@@ -196,6 +249,8 @@ if (!isNull _list) then {
         }; };
         _list lnbSetColor [[_r, 2], [0.56, 0.65, 0.59, 1]];
         _list lnbSetColor [[_r, 3], _rgba];
+        if (_mand) then { _list lnbSetColor [[_r, 1], [0.95, 0.72, 0.28, 1]]; };
+        if (_feat && {!_mand}) then { _list lnbSetColor [[_r, 1], [0.55, 0.82, 1, 1]]; };
     } forEach _shown;
     // État vide : une phrase qui dit pourquoi et quoi faire.
     if ((count _shown) isEqualTo 0) then {
@@ -213,10 +268,17 @@ if (!isNull _list) then {
     _grp setVariable ["COMSPEC_ArsenalUiLock", false];
 };
 
-// Date de la liste du site gardée sur ce PC et nombre affiché.
+// Date de la liste du site gardée sur ce PC, synchro Documents, et nombre affiché.
 private _status = _grp getVariable ["COMSPEC_ArsenalStatus", controlNull];
 if (!isNull _status) then {
-    _status ctrlSetStructuredText parseText (format ["<t align='right' size='0.78' color='#8fa596'>%1 · %2</t>",
+    (_grp getVariable ["COMSPEC_ArsenalLocalSync", [false, "", ""]]) params [["_syncOk", false], ["_syncPath", ""], ["_syncAt", ""]];
+    private _syncTxt = if (_syncOk) then {
+        format ["<t color='#5cc76b'>%1</t>", format [("Copie locale OK (%1)") call comspec_overwatch_connect_fnc_tr, [_syncAt, _grp getVariable ["COMSPEC_ArsenalLoadedAt", "--:--"]] select (_syncAt isEqualTo "")]]
+    } else {
+        format ["<t color='#e0a050'>%1</t>", ("Pas encore de copie locale Documents") call comspec_overwatch_connect_fnc_tr]
+    };
+    _status ctrlSetStructuredText parseText (format ["<t align='right' size='0.72' color='#8fa596'>%1<br/>%2 · %3</t>",
+        _syncTxt,
         if (_offline) then { format ["<t color='#e0a050'>%1</t>", ("Athena hors ligne") call comspec_overwatch_connect_fnc_tr] } else { format [("Liste du site du %1") call comspec_overwatch_connect_fnc_tr, _grp getVariable ["COMSPEC_ArsenalLoadedAt", "--:--"]] },
         format [("%1 affichée(s) sur %2") call comspec_overwatch_connect_fnc_tr, count _shown, count _rows]]);
 };

@@ -22,7 +22,10 @@ private _clean = {
 };
 private _publish = {
     params ["_cs"];
+    // Une seule identité pour Overwatch (COMSPEC_Callsign) et le téléphone natif (CsCustom / Public).
     if ((player getVariable ["COMSPEC_ATAK_CsCustom", ""]) isNotEqualTo _cs) then { player setVariable ["COMSPEC_ATAK_CsCustom", _cs, true]; };
+    if ((player getVariable ["COMSPEC_CallsignPublic", ""]) isNotEqualTo _cs) then { player setVariable ["COMSPEC_CallsignPublic", _cs, true]; };
+    if ((player getVariable ["COMSPEC_Callsign", ""]) isNotEqualTo _cs) then { player setVariable ["COMSPEC_Callsign", _cs, true]; };
 };
 // config.json du mode local (fn_localCfg), seulement quand la fonction existe.
 private _hasCfg = !isNil "comspec_atak_native_fnc_localCfg";

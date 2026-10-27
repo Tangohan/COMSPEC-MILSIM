@@ -53,7 +53,21 @@ private _row = {
     (_g getVariable ["COMSPEC_ArsenalShown", []]) param [_i, []]
 };
 private _reload = { _d setVariable ["COMSPEC_ArsenalForceList", true]; [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh; };
-private _metaCloud = { params ["_r"]; format ["%1%2%3", _r select 3, ["", format [" · par %1", _r select 4]] select ((_r select 4) isNotEqualTo ""), ["", format [" · %1", (_r select 5) select [0, 10]]] select ((_r select 5) isNotEqualTo "")] };
+private _metaCloud = {
+    params ["_r"];
+    private _bits = [_r select 3];
+    if ((_r select 4) isNotEqualTo "") then { _bits pushBack format [("par %1") call comspec_overwatch_connect_fnc_tr, _r select 4]; };
+    if ((_r select 5) isNotEqualTo "") then { _bits pushBack ((_r select 5) select [0, 10]); };
+    if ((_r param [14, ""]) isNotEqualTo "") then { _bits pushBack (_r select 14); };
+    _bits joinString " · "
+};
+private _metaLocal = {
+    params ["_r"];
+    private _bits = [format ["%1 · %2", _r select 2, ("sur cet ordinateur") call comspec_overwatch_connect_fnc_tr]];
+    if ((_r param [6, ""]) isNotEqualTo "") then { _bits pushBack format [("par %1") call comspec_overwatch_connect_fnc_tr, _r select 6]; };
+    if ((_r param [10, ""]) isNotEqualTo "") then { _bits pushBack (_r select 10); };
+    _bits joinString " · "
+};
 
 switch (_act) do {
     case "toggle": {
@@ -165,12 +179,37 @@ switch (_act) do {
             [_d, _r, _arg, [_r] call _metaCloud] spawn {
                 params ["_d", "_r", "_i", "_meta"];
                 private _lo = [_r select 0] call comspec_overwatch_connect_fnc_arsenalCloudLoadout;
+                // Tenue ACE étendue [tenue, infos] : l'aperçu n'utilise que la tenue.
+                if ((count _lo) == 2 && {(_lo select 0) isEqualType []} && {(count (_lo select 0)) >= 9}) then {
+                    _lo = [_lo select 0] call comspec_overwatch_connect_fnc_arsenalNormalizeLoadout;
+                } else {
+                    _lo = [_lo] call comspec_overwatch_connect_fnc_arsenalNormalizeLoadout;
+                };
                 private _g = _d getVariable ["COMSPEC_ArsenalOverlay", controlNull];
                 if (isNull _g || {(_g getVariable ["COMSPEC_ArsenalSelected", -1]) isNotEqualTo _i}) exitWith {};
                 [_d, _lo, _r select 2, _meta] call comspec_overwatch_connect_fnc_arsenalOverlayPreview;
             };
         } else {
-            [_d, [_r select 3] call comspec_overwatch_connect_fnc_arsenalNormalizeLoadout, _r select 1, format ["%1 · sur cet ordinateur", _r select 2]] call comspec_overwatch_connect_fnc_arsenalOverlayPreview;
+            private _meta = [_r] call _metaLocal;
+            private _lo = [_r select 3] call comspec_overwatch_connect_fnc_arsenalNormalizeLoadout;
+            private _siteId = _r param [13, ""];
+            if (_lo isEqualTo [] && {_siteId isNotEqualTo ""}) then {
+                [_d, [], _r select 1, "Chargement…"] call comspec_overwatch_connect_fnc_arsenalOverlayPreview;
+                [_d, _r, _arg, _meta, _siteId] spawn {
+                    params ["_d", "_r", "_i", "_meta", "_id"];
+                    private _lo = [_id] call comspec_overwatch_connect_fnc_arsenalCloudLoadout;
+                    if ((count _lo) == 2 && {(_lo select 0) isEqualType []} && {(count (_lo select 0)) >= 9}) then {
+                        _lo = [_lo select 0] call comspec_overwatch_connect_fnc_arsenalNormalizeLoadout;
+                    } else {
+                        _lo = [_lo] call comspec_overwatch_connect_fnc_arsenalNormalizeLoadout;
+                    };
+                    private _g = _d getVariable ["COMSPEC_ArsenalOverlay", controlNull];
+                    if (isNull _g || {(_g getVariable ["COMSPEC_ArsenalSelected", -1]) isNotEqualTo _i}) exitWith {};
+                    [_d, _lo, _r select 1, _meta] call comspec_overwatch_connect_fnc_arsenalOverlayPreview;
+                };
+            } else {
+                [_d, _lo, _r select 1, _meta] call comspec_overwatch_connect_fnc_arsenalOverlayPreview;
+            };
         };
     };
     case "apply": {
@@ -179,10 +218,18 @@ switch (_act) do {
         if (_arg isEqualType 0 && {_arg >= 0}) then { _g setVariable ["COMSPEC_ArsenalSelected", _arg]; };
         private _r = call _row;
         if (_r isEqualTo []) exitWith { ["Choisissez d'abord une tenue dans la liste."] call _say; };
+        // Après enfiler : on ferme le panneau pour retrouver l'arsenal (retour de jeu).
         if (_isCloud) then {
-            [_r select 0] spawn { params ["_id"]; [_id] call comspec_overwatch_connect_fnc_arsenalApplyCloud; };
+            [_r select 0] spawn {
+                params ["_id"];
+                if ([_id] call comspec_overwatch_connect_fnc_arsenalApplyCloud) then {
+                    ["close"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+                };
+            };
         } else {
-            [[_r select 3] call comspec_overwatch_connect_fnc_arsenalNormalizeLoadout, _r select 0] call comspec_overwatch_connect_fnc_arsenalApplyLoadout;
+            if ([[_r select 3] call comspec_overwatch_connect_fnc_arsenalNormalizeLoadout, _r select 0] call comspec_overwatch_connect_fnc_arsenalApplyLoadout) then {
+                ["close"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            };
         };
     };
     case "keep": {

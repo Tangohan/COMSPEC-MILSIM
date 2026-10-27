@@ -21,6 +21,7 @@
       ["remove", objet]                                  retire l'écran (serveur ; ailleurs, demande au serveur)
       ["list"]                    écrans à portée de mon téléphone, de mon camp, triés par distance
       ["cast", objet]             diffuse ma diapositive en cours sur l'écran ("castAll" : tous les écrans à portée)
+      ["castOn", objet]           comme cast, et désigne l'objet comme écran si besoin (ACE sur TV / écran TOC)
       ["stop", objet]             arrête la diffusion        ["step", [objet, ±1]] : diapositive précédente / suivante
       ["sync"]                    ma diapositive a changé : les écrans que je diffuse suivent
       ["tick"]                    toutes les 2 s (XEH_postInitClient) : image des écrans proches, actions ACE ou molette
@@ -99,6 +100,17 @@ switch (_mode) do {
         { if (["cast", _x] call _fn) then { _n = _n + 1; }; } forEach (["list"] call _fn);
         _n
     };
+    case "castOn": {
+        // ACE / écran TOC : désigne l'objet comme écran de briefing s'il ne l'est pas encore, puis diffuse.
+        if (isNull _a || {!alive _a}) exitWith { false };
+        if ((count (_a getVariable ["COMSPEC_ATAK_Screen", []])) < 5) then {
+            private _nm = getText (configOf _a >> "displayName");
+            if (_nm isEqualTo "") then { _nm = "Écran"; };
+            private _sel = [_a, 0] call _face;
+            ["add", [_a, _nm select [0, 32], 50, "", _sel, true]] call _fn;
+        };
+        ["cast", _a] call _fn
+    };
     case "cast": {
         if (isNull _a) exitWith { false };
         if ((count (_a getVariable ["COMSPEC_ATAK_Screen", []])) < 5) exitWith { false };
@@ -117,7 +129,15 @@ switch (_mode) do {
                 ["show", _gUrl, _idx] call comspec_overwatch_connect_fnc_broadcastGoogleBriefingState;
             };
         };
+        // Écran TOC : libérer la dalle avant de poser la diapositive (évite d'enregistrer la texture TOC comme « origine »).
+        if ((count (_a getVariable ["COMSPEC_ATAK_TocScr", []])) >= 8 && {(_a getVariable ["COMSPEC_ATAK_TocTex", ""]) isNotEqualTo ""}) then {
+            _a setObjectTexture [_a getVariable ["COMSPEC_ATAK_TocSel", 0], _a getVariable ["COMSPEC_ATAK_TocOrig", ""]];
+            _a setVariable ["COMSPEC_ATAK_TocTex", ""];
+            _a setVariable ["COMSPEC_ATAK_ScreenOrig", nil];
+            _a setVariable ["COMSPEC_ATAK_ScreenCur", ""];
+        };
         _a setVariable ["COMSPEC_ATAK_ScreenCast", [player, name player, _src, _deck, _idx], true];
+        ["INFO", format ["Diapositives sur %1", (_a getVariable ["COMSPEC_ATAK_Screen", []]) param [0, "l'écran"]], 2, 20] call comspec_atak_native_fnc_notify;
         true
     };
     case "stop": {
@@ -376,6 +396,9 @@ switch (_mode) do {
         private _o = _a;
         private _cfg = _o getVariable ["COMSPEC_ATAK_Screen", []];
         if !(_cfg param [4, true]) exitWith { false };
+        // Écran aussi TOC / classe TV : le menu ACE « Écran COMSPEC » (fn_tocScreen aceInit) couvre déjà les diapositives.
+        if ((count (_o getVariable ["COMSPEC_ATAK_TocScr", []])) >= 8) exitWith { false };
+        if ((typeOf _o) in (((["classes"] call comspec_atak_native_fnc_tocScreen) apply { _x select 1 }))) exitWith { false };
         private _cond = { private _c = _target getVariable ["COMSPEC_ATAK_ScreenCast", []]; private _s = (_target getVariable ["COMSPEC_ATAK_Screen", []]) param [2, ""]; (count _c) >= 5 && {_s isEqualTo "" || {_s isEqualTo str side group _player}} };
         if (!isNil "ace_interact_menu_fnc_createAction") then {
             private _icon = "\z\comspec_atak_native\addons\main\data\app_briefing.paa";

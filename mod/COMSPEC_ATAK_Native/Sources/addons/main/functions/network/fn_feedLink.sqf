@@ -42,6 +42,14 @@ switch (_mode) do {
         true
     };
     default {
+        // Ma propre caméra : rendu local sur le téléphone, sans trajet radio. Sinon, en bâtiment, les pertes
+        // du lien (toiture, murs) faisaient clignoter « SIGNAL INSTABLE » sur mon propre flux.
+        if (isNull _src || {_src isEqualTo player}) exitWith {
+            createHashMapFromArray [
+                ["kbps", 8000], ["loss", 0], ["tier", "HD"], ["res", 512], ["drop", 0],
+                ["up", [8000, 0, "Local"]], ["down", [8000, 0, "Local"]], ["why", ""]
+            ]
+        };
         private _cr = missionNamespace getVariable ["comspec_atak_native_camera_range", 600];
         if !(_cr isEqualType 0) then { _cr = 600; };
         private _dd = if (_src isKindOf "COMSPEC_ATAK_CameraObj") then { player distance _src } else { 1e9 };
@@ -54,9 +62,10 @@ switch (_mode) do {
                 case (_kbps >= 700): { ["SD", 256, 0.05] };
                 default { ["BAS", 128, 0.2] };
             };
+            // Décrochage moins agressif : la perte Wi-Fi proche ne doit pas noircir l'image en permanence.
             createHashMapFromArray [
                 ["kbps", _kbps], ["loss", _loss], ["tier", _tier select 0], ["res", _tier select 1],
-                ["drop", ((_tier select 2) + _loss / 150) min 0.8], ["up", [_kbps, _loss, "Wi-Fi"]], ["down", [_kbps, _loss, "Wi-Fi"]], ["why", ""]
+                ["drop", ((_tier select 2) + _loss / 400) min 0.35], ["up", [_kbps, _loss, "Wi-Fi"]], ["down", [_kbps, _loss, "Wi-Fi"]], ["why", ""]
             ]
         };
         private _down = call _mine;
@@ -103,16 +112,18 @@ switch (_mode) do {
             default { "" };
         };
         if (_why isNotEqualTo "") then { _kbps = 0; };
+        // En bâtiment, les pertes montent vite : on garde le palier lisible, mais le voile noir ne doit pas
+        // clignoter en continu (ex. 28 % de perte → un flash toutes les 0,5 s).
         private _tier = switch (true) do {
             case (_kbps <= 0): { ["COUPÉ", 0, 1] };
-            case (_kbps >= 1800 && {_loss < 15}): { ["HD", 512, 0] };
-            case (_kbps >= 700): { ["SD", 256, 0.05] };
-            case (_kbps >= 250): { ["BAS", 128, 0.2] };
-            default { ["MINIMAL", 64, 0.4] };
+            case (_kbps >= 1800 && {_loss < 20}): { ["HD", 512, 0] };
+            case (_kbps >= 700): { ["SD", 256, 0.03] };
+            case (_kbps >= 250): { ["BAS", 128, 0.1] };
+            default { ["MINIMAL", 64, 0.22] };
         };
         createHashMapFromArray [
             ["kbps", _kbps], ["loss", _loss], ["tier", _tier select 0], ["res", _tier select 1],
-            ["drop", ((_tier select 2) + _loss / 150) min 0.8], ["up", [_uk, _ul, _ur]], ["down", _down], ["why", _why]
+            ["drop", ((_tier select 2) + _loss / 450) min 0.4], ["up", [_uk, _ul, _ur]], ["down", _down], ["why", _why]
         ]
     };
 }
