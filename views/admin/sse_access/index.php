@@ -97,7 +97,7 @@ $clearanceLabel = static function (array $c) use ($classificationLabels): string
             <?= \App\Core\Csrf::field() ?>
             <div class="md:col-span-2">
                 <label for="label" class="block text-xs font-bold text-slate-600 mb-1">Libellé</label>
-                <input id="label" name="label" type="text" required maxlength="120" value="Accès temporaire"
+                <input id="label" name="label" type="text" required maxlength="120" value="<?= locale() === 'en' ? 'Temporary access' : 'Accès temporaire' ?>"
                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
             </div>
             <div>

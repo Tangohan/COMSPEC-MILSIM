@@ -53,6 +53,11 @@ final class AtakShellPersonalisationTest extends TestCase
         $get = $this->read(self::MAIN . '/functions/ui/fn_layoutGet.sqf');
         self::assertStringContainsString('comspec_atak_native_fnc_phoneCarried', $get);
         self::assertStringContainsString('params ["_model", "_shellTint", "_phoneItem"]', $get);
+        self::assertStringContainsString('_tint = _shellTint;', $get);
+        self::assertStringContainsString(
+            '"COMSPEC_ATAK_ShellTint", "coyote"',
+            $this->read(self::MAIN . '/functions/core/fn_phoneCarried.sqf')
+        );
         self::assertStringContainsString('phone_%1%2.paa", ["portrait", "landscape"] select _land, _shellSfx', $get);
         $ov = $this->read(self::MAIN . '/functions/datalink/fn_dataOverlay.sqf');
         self::assertStringContainsString('"COMSPEC_ATAK_ModuleTint", "olive"', $ov);

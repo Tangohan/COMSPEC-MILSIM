@@ -43,6 +43,7 @@ final class AtakGarminWatchTest extends TestCase
         self::assertStringContainsString('COMSPEC_RscMapAtak', $w);
         self::assertStringContainsString('comspec_atak_native_fnc_gpsPos', $w);
         self::assertStringContainsString('notifHistory', $w);
+        self::assertStringContainsString('comspec_atak_native_fnc_canUse', $w);
         self::assertStringNotContainsString('"COMSPEC_ATAK_Bt"', $w);
         foreach (['gw_frame', 'gw_disc', 'gw_alt', 'gw_bt', 'gw_phone', 'gw_bolt', 'gw_arrow', 'gw_pin'] as $t) {
             self::assertFileExists(self::MAIN . '/data/' . $t . '.paa', $t);
