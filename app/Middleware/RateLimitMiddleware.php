@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Services\Security\FileRateLimiter;
+use App\Support\ComspecApiKeyAuth;
 
 /**
  * Throttling par IP (invité) ou par compte connecté (uid) sur routes sensibles :
@@ -79,11 +80,18 @@ final class RateLimitMiddleware
             return null;
         }
 
-        // NET-028 : écriture du tchat et comptes rendus SALUTE, par compte pour une session web, par IP sinon (jeu,
-        // invité ; /api/atak/position compte déjà le jeu par IP). Loin de l'usage réel : une pression sur Resynch renvoie
-        // au plus 17 lignes de tchat, une fois par 15 s (68 par minute) ; les pages web n'écrivent qu'à chaque envoi d'un
-        // joueur, et un SALUTE se remplit à la main. Un 429 laisse la ligne dans la file de la DLL : rien n'est perdu.
+        // NET-028 : écriture du tchat et comptes rendus SALUTE, par compte pour une session web, par IP sinon. Loin de
+        // l'usage réel : les pages web n'écrivent qu'à chaque envoi d'un joueur, et un SALUTE se remplit à la main
+        // (aucun client du jeu n'appelle cette route).
         if ($method === 'POST' && $path === '/api/chat') {
+            // Flux du jeu (clé ou jeton présenté, sans compte web) : AtakArmaWriteGuard le compte déjà par joueur
+            // (150 écritures du jeu par minute, tchat compris). Un second plafond par IP serait partagé par tous
+            // les joueurs derrière une même adresse (réseau local, CGNAT). Une session web reste comptée par compte,
+            // même si elle présente une clé : une fausse clé ne la soustrait pas au plafond.
+            if ($uid <= 0 && ComspecApiKeyAuth::extractPresentedKey() !== '') {
+                return null;
+            }
+
             return [120, 60, 'rl:chat_write:' . $actorKey];
         }
         if ($method === 'POST' && $path === '/api/atak/salute') {

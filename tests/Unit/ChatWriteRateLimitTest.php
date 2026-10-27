@@ -8,17 +8,22 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Middleware\RateLimitMiddleware;
 use App\Services\Security\FileRateLimiter;
+use App\Support\ComspecApiKeyAuth;
 use PHPUnit\Framework\TestCase;
 
 /**
  * NET-028 : POST /api/chat (session web) et POST /api/atak/salute n'avaient aucun frein. Plafonds posés dans
  * RateLimitMiddleware : 120 écritures du tchat et 30 SALUTE par minute, par compte pour une session web, par IP sinon.
- * Usage réel bien en dessous : une pression sur Resynch renvoie au plus 17 lignes, une fois par 15 s ; les pages web
- * n'écrivent qu'à chaque envoi d'un joueur.
+ * Usage réel bien en dessous : les pages web n'écrivent qu'à chaque envoi d'un joueur, et un SALUTE se remplit à la
+ * main. Le tchat du jeu (clé ou jeton présenté, sans compte web) reste compté par joueur par AtakArmaWriteGuard
+ * (150 écritures du jeu par minute) : pas de second plafond par IP, partagé par des joueurs derrière une même adresse.
  */
 final class ChatWriteRateLimitTest extends TestCase
 {
-    private const SERVER_KEYS = ['REQUEST_METHOD', 'REQUEST_URI', 'SCRIPT_NAME', 'REMOTE_ADDR'];
+    private const SERVER_KEYS = [
+        'REQUEST_METHOD', 'REQUEST_URI', 'SCRIPT_NAME', 'REMOTE_ADDR',
+        'HTTP_AUTHORIZATION', 'HTTP_X_COMSPEC_KEY', 'HTTP_X_ATAK_TOKEN',
+    ];
 
     /** @var array<string, mixed> */
     private array $savedServer = [];
@@ -44,9 +49,15 @@ final class ChatWriteRateLimitTest extends TestCase
             if (array_key_exists($key, $_SERVER)) {
                 $this->savedServer[$key] = $_SERVER[$key];
             }
+            // Aucune clé héritée d'un test précédent : chaque test pose la sienne.
+            if (str_starts_with($key, 'HTTP_')) {
+                unset($_SERVER[$key]);
+            }
         }
         $this->savedSession = ['set' => isset($_SESSION), 'value' => $_SESSION ?? null];
         $_SESSION = [];
+        // Corps JSON gardé en cache statique (clé « api_key ») : vidé avant et après.
+        ComspecApiKeyAuth::resetForTests();
     }
 
     protected function tearDown(): void
@@ -72,6 +83,7 @@ final class ChatWriteRateLimitTest extends TestCase
         } else {
             unset($_POST);
         }
+        ComspecApiKeyAuth::resetForTests();
         parent::tearDown();
     }
 
@@ -83,11 +95,30 @@ final class ChatWriteRateLimitTest extends TestCase
         self::assertSame([['rl:salute:uid:42', 30, 60]], $this->countedFor('POST', '/api/atak/salute', '203.0.113.21'));
     }
 
-    /** Jeu (clé d'accès, sans session web) et invité : par IP, comme /api/atak/position. */
-    public function testWithoutWebSessionWritesAreCountedPerIp(): void
+    /** Ni compte web, ni clé : par IP. */
+    public function testWithoutAccountOrKeyWritesAreCountedPerIp(): void
     {
         self::assertSame([['rl:chat_write:ip:203.0.113.22', 120, 60]], $this->countedFor('POST', '/api/chat', '203.0.113.22'));
         self::assertSame([['rl:salute:ip:203.0.113.22', 30, 60]], $this->countedFor('POST', '/api/atak/salute', '203.0.113.22'));
+    }
+
+    /**
+     * Tchat du jeu : la DLL présente toujours la clé de la communauté (X-COMSPEC-KEY) ou un jeton (Bearer). Il reste
+     * compté par joueur dans AtakArmaWriteGuard, pas par IP ici. SALUTE, qu'aucun client du jeu n'appelle, reste
+     * compté par IP ; une session web reste comptée par compte, même avec une clé.
+     */
+    public function testGameChatIsLeftToTheArmaGuardButSaluteAndWebSessionsAreStillCounted(): void
+    {
+        $_SERVER['HTTP_X_COMSPEC_KEY'] = 'cle-communaute-de-test';
+        self::assertSame([], $this->countedFor('POST', '/api/chat', '203.0.113.25'), 'clé de la communauté');
+        self::assertSame([['rl:salute:ip:203.0.113.25', 30, 60]], $this->countedFor('POST', '/api/atak/salute', '203.0.113.25'));
+
+        unset($_SERVER['HTTP_X_COMSPEC_KEY']);
+        $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer jeton-jeu-de-test';
+        self::assertSame([], $this->countedFor('POST', '/api/chat', '203.0.113.25'), 'jeton du jeu');
+
+        $_SESSION = ['user_id' => 42, 'tenant_id' => 7];
+        self::assertSame([['rl:chat_write:uid:42', 120, 60]], $this->countedFor('POST', '/api/chat', '203.0.113.25'), 'session web avec une clé');
     }
 
     /** Lectures du tchat (relève du jeu, pages web) et autres routes du tchat : aucun nouveau frein. */
