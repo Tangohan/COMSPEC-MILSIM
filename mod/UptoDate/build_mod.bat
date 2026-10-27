@@ -160,7 +160,9 @@ if exist "%PROJECT_DIR%mod.cpp" (
 echo [DEPLOY] Synchronisation avec le dossier Arma 3... >> "%BUILD_LOG%"
 echo [DEPLOY] Synchronisation avec le dossier Arma 3...
 set "LOCAL_MOD=%ARMA_PATH%\%MOD_NAME%"
-:: Pack communauté SOAR : Arma charge la DLL depuis ce dossier (pas @COMSPECOverwatch).
+:: Copie locale du pack de la communaute SOAR, avec laquelle TTRD teste le mod : cible gardee volontairement.
+:: Arma charge la DLL depuis ce dossier (pas @COMSPECOverwatch). Avant un build, verifier que ce dossier porte le
+:: pack herite et non l'ATAK natif, dont le main.pbo a le prefixe z\comspec_atak_native\addons\main.
 set "SOAR_FN=%ARMA_PATH%\!Workshop\@# S.O.A.R - FN"
 
 :: Chaque copie vers une cible note son echec ; le build s'arrete alors en echec apres le deploiement.

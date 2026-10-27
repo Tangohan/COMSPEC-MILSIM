@@ -31,6 +31,8 @@ build_mod.bat
 3. Copie DLL + mod.cpp vers `@COMSPECOverwatch/` (git ne suit pas cette DLL : elle n'existe qu'après un build)
 4. Déploiement optionnel vers les dossiers Arma locaux (`Arma 3\@COMSPECOverwatch`, pack SOAR FN), jamais vers le dossier Workshop de l'ATAK natif
 
+Le pack SOAR FN (`Arma 3\!Workshop\@# S.O.A.R - FN`) est la copie locale avec laquelle TTRD teste le mod. Le build y remplace les PBO, la DLL, `mod.cpp` et les logos, et y supprime d'anciens fichiers, dont `comspec_overwatch_connect.pbo`. Cette cible est gardée volontairement. Avant un build, vérifiez que ce dossier porte le pack hérité et non l'ATAK natif, dont le `main.pbo` a le préfixe `z\comspec_atak_native\addons\main`.
+
 Sans DLL fraîche après `dotnet publish`, ou si sa copie échoue (DLL verrouillée par Arma), le build s'arrête en échec : l'ancienne DLL du dossier `@COMSPECOverwatch` n'est plus déployée.
 
 Il s'arrête aussi en échec si une copie vers un dossier Arma échoue, par exemple un PBO ou la DLL verrouillés par Arma : le détail est dans `build_log.txt`, sous la ligne `[DEPLOY] Cible` du dossier en cause. Un addon optionnel (`atak_athena`, `mavik_compat`, `sse_ace`) qui ne compile pas ne donne qu'un avertissement, à son nom : son ancien PBO, s'il existe, part tel quel au déploiement.

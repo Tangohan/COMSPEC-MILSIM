@@ -253,6 +253,7 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         self::assertStringNotContainsString('workshop\content\107410', $bat);
         // !Workshop\@COMSPECOverwatch était la jonction du lanceur vers ce même dossier Workshop.
         self::assertStringNotContainsString('WORKSHOP_MOD', $bat);
+        // Cibles gardées : le mod local et la copie SOAR FN, avec laquelle TTRD teste le mod.
         self::assertStringContainsString('    for %%T in ("%LOCAL_MOD%" "%SOAR_FN%") do (', $bat);
     }
 
