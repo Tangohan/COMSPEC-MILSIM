@@ -27,6 +27,35 @@ private _curView = {
     private _d = getCameraViewDirection player;
     [(eyePos player) vectorAdd (_d vectorMultiply 0.25), _d]
 };
+// Animation donnée par un nom de fonction (réglages CBA « ATAK · Photo ») : rend cette fonction seulement si CfgFunctions
+// la déclare (addon, ou description.ext de la mission), donc finale ; sinon {} (aucune animation, une ligne au journal
+// par nom). Réponse gardée pour la mission en localNamespace (noms et booléens seulement).
+private _animFn = {
+    params [["_name", ""]];
+    private _lo = toLower _name;
+    private _known = localNamespace getVariable ["COMSPEC_ATAK_PhotoAnimFn", createHashMap];
+    localNamespace setVariable ["COMSPEC_ATAK_PhotoAnimFn", _known];
+    if !(_lo in _known) then {
+        private _i = _lo find "_fnc_";
+        private _tag = _lo select [0, _i max 0];
+        private _short = _lo select [(_i max 0) + 5];
+        private _ok = false;
+        if (_i > 0 && {_short isNotEqualTo ""}) then {
+            {
+                {
+                    private _t = getText (_x >> "tag");
+                    if (_t isEqualTo "") then { _t = configName _x; };
+                    if ((toLower _t) isEqualTo _tag && {(("true" configClasses _x) findIf { isClass (_x >> _short) }) >= 0}) exitWith { _ok = true; };
+                } forEach ("true" configClasses (_x >> "CfgFunctions"));
+                if (_ok) exitWith {};
+            } forEach [configFile, missionConfigFile];
+        };
+        _known set [_lo, _ok];
+        if (!_ok) then { ["WARNING", "PHOTO", format ["Animation photo ignorée : %1 n'est pas une fonction déclarée dans CfgFunctions.", str _name]] call comspec_atak_native_fnc_log; };
+    };
+    if !(_known getOrDefault [_lo, false]) exitWith { {} };
+    missionNamespace getVariable [_name, {}]
+};
 switch (toUpper _mode) do {
     case "ENTER": {
         if (_active) exitWith { false };
@@ -110,13 +139,13 @@ switch (toUpper _mode) do {
             // Passage selfie <-> photo : la fonction de l'animation précédente remet sa pose à zéro.
             private _prev = _st getOrDefault ["lastAnim", ""];
             if (_prev isNotEqualTo _anim && {(toLower _prev) find "_fnc_" >= 0}) then {
-                private _fnPrev = missionNamespace getVariable [_prev, {}];
+                private _fnPrev = [_prev] call _animFn;
                 if (_fnPrev isEqualType {}) then { [player, "exit"] call _fnPrev; };
             };
             if (_anim isNotEqualTo "") then {
                 switch (true) do {
                     case ((toLower _anim) find "_fnc_" >= 0): {
-                        private _fn = missionNamespace getVariable [_anim, {}];
+                        private _fn = [_anim] call _animFn;
                         if (_fn isEqualType {}) then { [player, ["photo", "selfie"] select _self] call _fn; };
                     };
                     case (isClass (configFile >> "CfgMovesMaleSdr" >> "States" >> _anim)): {
@@ -549,7 +578,7 @@ switch (toUpper _mode) do {
         _st set ["lastAnim", ""];
         if (_last isNotEqualTo "" && {alive player} && {vehicle player isEqualTo player}) then {
             if ((toLower _last) find "_fnc_" >= 0) then {
-                private _fn = missionNamespace getVariable [_last, {}];
+                private _fn = [_last] call _animFn;
                 if (_fn isEqualType {}) then { [player, "exit"] call _fn; };
             } else {
                 if ((toLower (animationState player)) isEqualTo (toLower _last)) then { player playMoveNow ""; player switchMove ""; };
