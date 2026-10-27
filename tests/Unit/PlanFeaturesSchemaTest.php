@@ -64,4 +64,13 @@ final class PlanFeaturesSchemaTest extends TestCase
         self::assertTrue(SubscriptionPlanFeaturesCatalog::defaultsForSlug('pro')['registry_featured']);
         self::assertTrue(SubscriptionPlanFeaturesCatalog::defaultsForSlug('pro_plus')['registry_featured']);
     }
+
+    public function testPdfExportsArePaidPlanModule(): void
+    {
+        self::assertContains('pdf_exports', SubscriptionPlanFeaturesCatalog::BOOL_FEATURES);
+        self::assertFalse(SubscriptionPlanFeaturesCatalog::defaultsForSlug('free')['pdf_exports']);
+        foreach (['standard', 'pro', 'pro_plus'] as $slug) {
+            self::assertTrue(SubscriptionPlanFeaturesCatalog::defaultsForSlug($slug)['pdf_exports'], $slug);
+        }
+    }
 }

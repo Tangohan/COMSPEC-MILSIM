@@ -144,5 +144,6 @@ $navIndex = 0;
         </main>
     </div>
 </div>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

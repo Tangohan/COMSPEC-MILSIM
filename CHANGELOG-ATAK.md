@@ -202,6 +202,26 @@ EN : The watch shows the map, my point, my allies, and the player
 - Écran MUSIC : mêmes actions que le lecteur (`toggle`, `next`, `prev`, `seek`, `volStep`). BACK ouvre les commandes ; UP / DOWN ne changent d'écran que tant qu'elles sont fermées.
 - Cadran : ligne du bas remplacée par le morceau en cours.
 
+## Téléphone porté, écrans et liaison (ATAK natif 2.8.3.AB - Denver, COMSPEC Link 2.0.99)
+
+### Résumé joueur
+Type : correctif
+FR : Le téléphone garde l’identité du compte et la liaison reprend seule
+- Le raccourci Overwatch ouvre le téléphone du pack et les opérateurs reliés apparaissent sur sa carte.
+- Après une coupure, le téléphone reprend de lui-même dans la minute et demie, ou après le délai demandé par le portail.
+- Un joueur relié ne peut plus réécrire le temps de jeu ou les distances des autres.
+EN : The phone keeps the account identity and reconnects by itself
+- The Overwatch shortcut opens the pack phone and linked operators appear on its map.
+- After an outage, the phone reconnects within ninety seconds, or after the delay requested by the portal.
+- A linked player can no longer overwrite another player’s play time or distances.
+
+### Détail technique
+- Version de regroupement des correctifs de liaison, d’identité et d’affichage livrés dans le pack 2.8.3.
+- Le modèle et la couleur viennent de l’objet porté ; les anciens réglages ne pilotent plus la coque.
+- La reprise automatique utilise les paliers 45, 75 et 90 secondes ; un délai `Retry-After` plus long reste respecté.
+- Les lots de temps de jeu et de distance d’une session joueur sont limités à son propre Steam UID.
+- Les pages ouvertes depuis le jeu sont limitées à la liaison, la carte et la 9-LINE du portail.
+
 ## Diapositives sur les écrans (ATAK natif 2.8.2.AB - Denver, COMSPEC Link 2.0.99)
 
 ### Résumé joueur

@@ -210,6 +210,31 @@ final class AccountPurgeServiceTest extends TestCase
         self::assertSame(3, $this->countRows($pdo, 'SELECT COUNT(*) FROM users'));
     }
 
+    /**
+     * Deux anciens membres inscrits au même événement : la clé unique (événement, membre)
+     * empêche de tout passer sur « Ancien membre ». La seconde inscription part avec la
+     * personne, au lieu de rester pointée sur un compte effacé.
+     */
+    public function testReassignmentCollidingWithUniqueKeyDropsTheDuplicate(): void
+    {
+        $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, tenant_id INT, email TEXT, display_name TEXT,
+            callsign TEXT, status TEXT, is_service_account INT DEFAULT 0, created_at TEXT, updated_at TEXT)');
+        $pdo->exec('CREATE TABLE event_attendance (id INTEGER PRIMARY KEY, event_id INT, user_id INT, UNIQUE (event_id, user_id))');
+        $pdo->exec(
+            "INSERT INTO users (id, tenant_id, email, display_name, status) VALUES
+             (1, 1, 'deleted-1-1@deleted.invalid', 'Compte supprimé', 'inactive'),
+             (2, 1, 'deleted-2-1@deleted.invalid', 'Compte supprimé', 'inactive')"
+        );
+        $pdo->exec('INSERT INTO event_attendance (event_id, user_id) VALUES (7, 1), (7, 2), (8, 2)');
+
+        $result = (new AccountPurgeService($pdo))->purgeAnonymizedAccounts();
+
+        self::assertTrue($result['ok'], implode(' | ', $result['errors']));
+        self::assertSame(0, $this->countRows($pdo, 'SELECT COUNT(*) FROM event_attendance WHERE user_id IN (1, 2)'));
+        self::assertSame(2, $this->countRows($pdo, 'SELECT COUNT(*) FROM event_attendance'));
+    }
+
     private function countRows(PDO $pdo, string $sql): int
     {
         return (int) $pdo->query($sql)->fetchColumn();

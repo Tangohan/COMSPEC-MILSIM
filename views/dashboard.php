@@ -188,6 +188,10 @@ require base_path('views/partials/alert_banners.php');
             </div>
         </section>
 
+        <?php if (!empty($account_is_solo)): ?>
+            <?php require base_path('views/partials/dashboard_solo_overview.php'); ?>
+        <?php endif; ?>
+
         <?php if ($candidate_enlistment_tracking !== []): ?>
         <section class="dash-zone dash-guest-zone dash-reveal" data-dash-reveal aria-labelledby="dash-guest-tracking-title">
             <div class="dash-guest-zone__inner">
@@ -346,5 +350,6 @@ require base_path('views/partials/alert_banners.php');
     require base_path('views/partials/lms_module_entry_modal.php');
     ?>
     <?php require base_path('views/partials/dashboard_ui_tour_boot.php'); ?>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

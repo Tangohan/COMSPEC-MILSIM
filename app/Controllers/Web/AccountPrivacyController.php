@@ -39,6 +39,7 @@ final class AccountPrivacyController
             'accountHubPage' => true,
             'deletionRequestedAt' => $user['deletion_requested_at'] ?? null,
             'deletionScheduledAt' => $user['deletion_scheduled_at'] ?? null,
+            'deletionHandover' => $this->deletionService->communityHandoverPlan((int) $user['id'], (int) ($user['tenant_id'] ?? 0)),
         ]);
     }
 

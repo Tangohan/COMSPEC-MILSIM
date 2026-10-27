@@ -263,7 +263,7 @@ $actionForm = static function (string $action, array $fields, string $label, str
                         <span class="pu-avatar" aria-hidden="true"><?= $h($initial) ?></span>
                         <div class="pu-person__id">
                             <h2 class="pu-person__name">
-                                <a class="pu-person__link" href="<?= $h($personUrl) ?>"><?= $h($primary) ?></a>
+                                <a class="pu-person__link<?= staff_name_class($anchorId) ?>" href="<?= $h($personUrl) ?>" data-staff-done><?= $h($primary) ?></a><?= staff_mark($anchorId, true) ?>
                                 <?php if ($ban !== null): ?>
                                     <span class="pa-pill pa-pill--rose">Banni du site</span>
                                 <?php endif; ?>
@@ -315,13 +315,13 @@ $actionForm = static function (string $action, array $fields, string $label, str
                                     <summary class="pa-btn pa-btn--sm pa-btn--line" aria-label="Autres actions sur le compte">Supprimer…</summary>
                                     <div class="pu-more__menu">
                                         <p class="pu-more__title">Actions sur tout le compte</p>
-                                        <?= $actionForm('admin/users/delete', ['user_id' => $anchorId, 'tenant_id' => $anchorTid, 'scope' => 'site'], 'Anonymiser le compte', 'pu-menu-item', [
-                                            'title' => 'Anonymiser le compte de ' . $primary . ' ?',
-                                            'body' => "Le nom, l’e-mail et les données personnelles sont effacés dans toutes ses communautés.\nSes messages et participations restent, signés « Compte supprimé ».\nL’adresse e-mail redevient libre. On ne peut pas revenir en arrière.",
+                                        <?= $actionForm('admin/users/delete', ['user_id' => $anchorId, 'tenant_id' => $anchorTid, 'scope' => 'site'], 'Supprimer le compte', 'pu-menu-item', [
+                                            'title' => 'Supprimer le compte de ' . $primary . ' ?',
+                                            'body' => "Le compte, son compte de jeu, ses rôles et ses données personnelles sont effacés dans toutes ses communautés.\nSes communautés passent au membre suivant, ou sont supprimées s’il était seul.\nCe que d’autres membres partagent (messages, comptes rendus) reste, signé « Ancien membre ».\nUne nouvelle inscription avec cette adresse repart de zéro. On ne peut pas revenir en arrière.",
                                             'tone' => 'danger',
-                                            'ok' => 'Anonymiser',
+                                            'ok' => 'Supprimer le compte',
                                         ]) ?>
-                                        <p class="pu-more__hint">Efface l’identité, garde l’historique. Pour une demande RGPD.</p>
+                                        <p class="pu-more__hint">Efface la personne, garde ce que les autres membres partagent. Pour une demande RGPD.</p>
                                         <?= $actionForm('admin/users/purge', ['user_id' => $anchorId, 'tenant_id' => $anchorTid, 'scope' => 'site', 'confirm_email' => ''], 'Supprimer définitivement', 'pu-menu-item pu-menu-item--danger', [
                                             'title' => 'Supprimer définitivement le compte de ' . $primary . ' ?',
                                             'body' => "Toutes les fiches de cette adresse sont effacées de la base, dans toutes ses communautés.\nRien ne peut être restauré.",
@@ -531,7 +531,7 @@ $actionForm = static function (string $action, array $fields, string $label, str
                     <h4>Sur tout le site</h4>
                     <dl>
                         <div><dt>Bannir du site <span class="pa-pill pa-pill--mint">réversible</span></dt><dd>Bloque la connexion et l’inscription (e-mail, Steam ID, IP au choix) sans rien effacer. Pour un fauteur de troubles.</dd></div>
-                        <div><dt>Anonymiser le compte <span class="pa-pill pa-pill--rose">définitif</span></dt><dd>Efface l’identité partout, garde l’historique sous « Compte supprimé ». Pour une demande de suppression des données.</dd></div>
+                        <div><dt>Supprimer le compte <span class="pa-pill pa-pill--rose">définitif</span></dt><dd>Efface la personne partout (compte de jeu, rôles, données personnelles) ; ses communautés passent au membre suivant, ou sont supprimées s’il était seul. Ce que les autres membres partagent reste sous « Ancien membre ». Pour une demande de suppression des données.</dd></div>
                         <div><dt>Supprimer définitivement <span class="pa-pill pa-pill--rose">définitif</span></dt><dd>Efface tout de la base. Pour les faux comptes et comptes de test.</dd></div>
                         <div><dt>Bloquer une adresse IP</dt><dd>Dans le dossier complet (rubrique Réseau) ou la liste « Adresses IP et e-mails bloqués ».</dd></div>
                     </dl>

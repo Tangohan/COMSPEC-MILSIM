@@ -1215,6 +1215,20 @@ return function (Router $router) {
     $router->get('/admin/maintenance', [SystemMaintenanceController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     // Ancienne page « Dons » : le compte PayPal se règle désormais dans Admin > Paiements (un seul réglage).
     $router->get('/admin/system/dons', fn () => \App\Core\Response::redirect(url('admin/paiements') . '?vue=dons'), [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Console d'exploitation : état du site, migrations, sauvegardes, suppressions de comptes (double vérification).
+    $router->get('/admin/system/exploitation', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/code', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'sendCode'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/verifier', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'verify'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/verrouiller', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'lock'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/migrations/lancer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'launchMigrations'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/sauvegardes/creer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'createBackup'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/sauvegardes/verifier', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'verifyBackup'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/sauvegardes/telecharger', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'downloadBackup'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/sauvegardes/restaurer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'restoreBackup'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/sauvegardes/supprimer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'deleteBackup'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/comptes/programmer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'scheduleDeletion'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/comptes/annuler', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'cancelDeletion'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/comptes/supprimer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'executeDeletion'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/storage', [SystemStorageController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/storage/purge', [SystemStorageController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Explorateur de données (administration du site) : lire, chercher, modifier, supprimer, vider.
@@ -1781,6 +1795,7 @@ return function (Router $router) {
     $router->get('/back-office/ressources/effectifs/nouveau', [UserAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/nouveau', [UserAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/export', [EffectifsWorkspaceController::class, 'exportCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/export.pdf', [EffectifsWorkspaceController::class, 'exportPdf'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/importer', [EffectifsWorkspaceController::class, 'importRoster'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/modele-tableur', [EffectifsWorkspaceController::class, 'rosterTemplate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/doublons', [EffectifsWorkspaceController::class, 'duplicateSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2047,6 +2062,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/atak/suivi-cr', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/imposer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'force'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/reglages', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'settings'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/renommer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'rename'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/retirer-session', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'hideSession'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/effacer-historique', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'clearHistory'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/{id}/supprimer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/suivi-cr/{id}/export.csv', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/{id}/relancer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'remind'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/{id}/cloturer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'close'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

@@ -1002,11 +1002,13 @@ final class SystemUsersController
             ],
         );
 
+        $handoverNote = AccountDeletionService::describeHandover($result['handover'] ?? []);
         Session::flash(
             'success',
-            $scope === 'org'
-                ? 'Appartenance retirée de cette communauté (anonymisation). Les autres communautés de la personne sont intactes.'
-                : 'Compte anonymisé sur tout le site. Ses données personnelles ont été effacées. L’adresse e-mail peut être réutilisée.'
+            ($scope === 'org'
+                ? 'Appartenance retirée de cette communauté. Les autres communautés de la personne sont intactes.'
+                : 'Compte supprimé définitivement sur tout le site : données personnelles, compte de jeu et rôles effacés. Une nouvelle inscription avec cette adresse repart de zéro.')
+            . ($handoverNote !== '' ? ' ' . $handoverNote : '')
         );
 
         return Response::redirect($this->backUrl($request));
@@ -1086,6 +1088,11 @@ final class SystemUsersController
             ],
         );
 
+        $handover = $this->deletionService()->releaseIdentityBeforePurge(
+            $siblingIds,
+            $email,
+            $scope === 'org' ? $tenantId : null
+        );
         $report = $this->purgeService()->purge($userId, $scope === 'org' ? [] : $siblingIds);
         if (!$report['ok'] && $report['purged_user_ids'] === []) {
             Session::flash(
@@ -1103,6 +1110,10 @@ final class SystemUsersController
             . ($report['rows_deleted'] > 1 ? 's' : '')
             . ', ' . $report['rows_detached'] . ' référence' . ($report['rows_detached'] > 1 ? 's' : '')
             . ' détachée' . ($report['rows_detached'] > 1 ? 's' : '') . '.';
+        $handoverNote = AccountDeletionService::describeHandover($handover);
+        if ($handoverNote !== '') {
+            $message .= ' ' . $handoverNote;
+        }
         if ($report['errors'] !== []) {
             $message .= ' ' . count($report['errors']) . ' avertissement'
                 . (count($report['errors']) > 1 ? 's' : '') . ' — voir le journal serveur.';

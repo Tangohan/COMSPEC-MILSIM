@@ -190,6 +190,7 @@ final class AdminIntelIntakeController
             'playersQuery' => $q,
             'playersSort' => $sort,
             'intakeToTreat' => $this->intake->countToTreat($tenantId),
+            'backOfficePageCss' => ['remontees-joueurs.css'],
         ]);
     }
 
