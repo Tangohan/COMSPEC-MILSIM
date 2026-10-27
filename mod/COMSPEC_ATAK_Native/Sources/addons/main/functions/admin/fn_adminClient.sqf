@@ -9,11 +9,13 @@
       [reçu à, droit, total, fiches, erreur, recherche, début], COMSPEC_ATAK_AdminRole (droit Athena connu : "platform" |
       "manager" | "none" | "").
     Params : [action, arguments]
-      "report" [demandeur]  ma fiche, envoyée directement au demandeur (événement du serveur, seulement quand un admin regarde) :
+      "report" [demandeur]  ma fiche, envoyée au serveur, qui la relaie au demandeur (fn_adminServer « row » ; demande du
+                serveur, seulement quand un admin regarde) :
                 [uid, nom, indicatif, camp, groupe, ATAK porté, batterie %, état de l'appareil, clé Athena, état Athena,
                  version du mod, version de Link, effets Zeus [[clé, valeur]...], numéro, IMEI, terminal Athena, SOS, balise BFT,
                  position, compromission (fn_compromiseView), réseau]
-      "data" [genre, données]   réponse du serveur ou d'un joueur ("player" | "debug" | "result" | "denied")
+      "data" [genre, données]   réponse du serveur ("player" : fiche d'un joueur relayée | "debug" | "result" | "denied"),
+                                par remoteExecCall du serveur (lot mpauth3, SEC-015 : plus d'événement CBA comspec_atak_native_adminData)
       "scan"                    demande l'état de la partie (au plus toutes les 4 s côté serveur)
       "fleet" [recherche, début] parc Athena (spawn)        "probe"   droit Athena, sans afficher (spawn)
       "site" [action, HashMap]  action Athena sur un ATAK du parc (spawn)
@@ -72,7 +74,9 @@ switch (_act) do {
             getPosATL player, _cv getOrDefault ["state", ""],
             (player getVariable ["COMSPEC_ATAK_NetUp", []]) param [0, -1]
         ];
-        ["comspec_atak_native_adminData", ["player", _row], _to] call CBA_fnc_targetEvent;
+        // Par le serveur (fn_adminServer « row ») : il y met l'UID et le nom de ce poste et ne la relaie qu'à un admin
+        // dont le relevé est en cours.
+        ["row", [_to, _row]] remoteExecCall ["comspec_atak_native_fnc_adminServer", 2];
     };
     case "data": {
         _arg params [["_kind", ""], ["_d", []]];

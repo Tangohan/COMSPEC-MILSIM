@@ -153,7 +153,7 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertStringContainsString('[_a, _xa] remoteExecCall ["comspec_atak_native_fnc_adminServer", 2];', $this->read(self::MAIN . '/functions/admin/fn_adminClient.sqf'));
         $code = $this->stripSqfComments($this->read(self::MAIN . '/functions/admin/fn_adminServer.sqf'));
         self::assertMatchesRegularExpression('/if \(_remote\) then \{ _caller = \[remoteExecutedOwner\] call comspec_atak_native_fnc_reqUnit; \};.*?'
-            . 'if \(_remote && \{!\(_act in \["scan", "capture", "hunt", "apps"\]\)\}\) exitWith \{.*?'
+            . 'if \(_remote && \{!\(_act in \["scan", "capture", "hunt", "apps", "row"\]\)\}\) exitWith \{.*?'
             . 'if \(_remote && \{isNull _caller\}\) exitWith \{.*?'
             . 'if \(_remote && \{!\(\[_caller\] call comspec_atak_native_fnc_adminAllowed\)\}\) exitWith \{.*?switch \(_act\) do \{/s', $code);
     }
@@ -363,8 +363,9 @@ final class AtakMultiplayerAuthTest extends TestCase
         // par des chaînes compris, casse ignorée comme le fait CBA). Un gestionnaire rétabli rouvre la voie que le lot
         // ferme (R2 : captureSrv gardé pour « giveFail » rouvrait B2 et D2) ; un émetteur sans gestionnaire perd la
         // demande sans bruit (R1).
-        // Lot mpauth3 : capLocal (SEC-023), droneCmd (SEC-022), debriefRecv et debriefData (SEC-030) s'y ajoutent.
-        $removed = ['captureSrv', 'compromise', 'admin', 'adminReport', 'zeus', 'ft', 'planSrv', 'dataSrv', 'capLocal', 'droneCmd', 'debriefRecv', 'debriefData'];
+        // Lot mpauth3 : capLocal (SEC-023), droneCmd (SEC-022), debriefRecv et debriefData (SEC-030), adminData (SEC-015)
+        // s'y ajoutent.
+        $removed = ['captureSrv', 'compromise', 'admin', 'adminReport', 'zeus', 'ft', 'planSrv', 'dataSrv', 'capLocal', 'droneCmd', 'debriefRecv', 'debriefData', 'adminData'];
         $quoted = '/(["\'])comspec_atak_native_(?:' . implode('|', $removed) . ')\1/i';
         // Fonctions qui jugent le demandeur par remoteExecutedOwner (fn_reqUnit) : appelées depuis un gestionnaire CBA,
         // elles ne voient pas d'appel distant et croient l'unité fournie par l'émetteur. Aucun gestionnaire ne les
@@ -438,7 +439,7 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertSame([], $refused);
         // Repères : la lecture voit les envois connus, relais compris (une lecture cassée ne passerait pas en silence).
         foreach ([
-            'comspec_atak_native_fnc_adminserver' => ['apps', 'capture', 'hunt', 'scan'],
+            'comspec_atak_native_fnc_adminserver' => ['apps', 'capture', 'hunt', 'row', 'scan'],
             'comspec_atak_native_fnc_captureserver' => ['athena', 'dismiss', 'dropped', 'validate'],
             'comspec_atak_native_fnc_zeusserver' => ['jamArea', 'jamClear', 'once', 'reset', 'set'],
         ] as $fn => $expected) {
@@ -980,6 +981,64 @@ final class AtakMultiplayerAuthTest extends TestCase
         }
         self::assertSame([[self::MAIN . '/functions/debrief/fn_debriefServer.sqf', 2]], $calls);
         self::assertStringContainsString('class comspec_atak_native_fnc_debrief { allowedTargets = 1; jip = 0; };', $this->cppCode($this->read(self::MAIN . '/config.cpp')));
+    }
+
+    public function testAdminAppDataReachesThePhoneOnlyFromTheServer(): void
+    {
+        // Lot mpauth3 (SEC-015, N12) : le gestionnaire CBA comspec_atak_native_adminData tournait chez chaque joueur sans
+        // savoir qui avait levé l'événement ; tout client envoyait à un admin (ou à tous, rejoué à chaque arrivant par
+        // CBA_fnc_globalEventJIP) une fausse notification « ADMIN », de fausses fiches ou un faux débogage. Réponses du
+        // serveur et fiches des joueurs arrivent maintenant par remoteExecCall du serveur à fn_adminClient « data », qui
+        // refuse tout autre émetteur ; le serveur met dans chaque fiche l'UID et le nom du poste émetteur et ne la relaie
+        // qu'à un admin dont le relevé est en cours. L'admin local au serveur (hôte) est servi à l'image suivante.
+        $srv = $this->stripSqfComments($this->read(self::MAIN . '/functions/admin/fn_adminServer.sqf'));
+        self::assertStringNotContainsString('CBA_fnc_targetEvent', $srv);
+        self::assertMatchesRegularExpression('/private _replyTo = \{\s*params \["_u", "_kind", "_data"\];\s*'
+            . 'if \(isNull _u\) exitWith \{\};\s*'
+            . 'if \(local _u\) exitWith \{ \[\{ _this call comspec_atak_native_fnc_adminClient; \}, \["data", \[_kind, _data\]\]\] call CBA_fnc_execNextFrame; \};\s*'
+            . '\["data", \[_kind, _data\]\] remoteExecCall \["comspec_atak_native_fnc_adminClient", _u\];\s*\};/', $srv);
+        self::assertStringContainsString('private _reply = { params ["_kind", "_data"]; [_caller, _kind, _data] call _replyTo; };', $srv);
+        self::assertStringContainsString('[_caller, "denied", []] call _replyTo;', $srv);
+        // « row » : jugée avant le droit d'admin (tout joueur répond au relevé), pour la fiche de son poste seulement.
+        $row = $this->between($srv, 'if (_act isEqualTo "row") exitWith {', 'if (_remote && {!([_caller] call comspec_atak_native_fnc_adminAllowed)}) exitWith {');
+        $order = [
+            '_args params [["_to", objNull], ["_row", []]];',
+            'if (isNull _caller || {!(_to isEqualType objNull)} || {isNull _to} || {!(_row isEqualType [])} || {(count _row) > 30} || {(count str _row) > 8000}) exitWith { false };',
+            'if (((localNamespace getVariable ["COMSPEC_ATAK_AdminScans", []]) findIf { (_x select 0) isEqualTo _to && {(_t - (_x select 1)) < 15} }) < 0) exitWith { false };',
+            'if ((_t - (_rowAt getOrDefault [_k, -100])) < 2) exitWith { false };',
+            '_row set [0, getPlayerUID _caller];',
+            '_row set [1, name _caller];',
+            '[_to, "player", _row] call _replyTo;',
+        ];
+        $at = 0;
+        foreach ($order as $step) {
+            $i = strpos($row, $step, $at);
+            self::assertNotFalse($i, $step);
+            $at = (int) $i + strlen($step);
+        }
+        // Le relevé en cours est noté par « scan » seul, après le droit et la cadence ; l'hôte est servi sans appel distant.
+        $scan = $this->between($srv, 'case "scan": {', 'case "capture": {');
+        self::assertSame(1, substr_count($srv, 'setVariable ["COMSPEC_ATAK_AdminScans"'));
+        self::assertStringContainsString('localNamespace setVariable ["COMSPEC_ATAK_AdminScans", ', $scan);
+        self::assertStringContainsString('private _far = _to select { !local _x };', $scan);
+        self::assertStringContainsString('if (_far isNotEqualTo []) then { ["report", [_caller]] remoteExecCall ["comspec_atak_native_fnc_adminClient", _far]; };', $scan);
+        self::assertStringContainsString('if ((_to findIf { local _x }) >= 0) then { [{ _this call comspec_atak_native_fnc_adminClient; }, ["report", [_caller]]] call CBA_fnc_execNextFrame; };', $scan);
+        // Le joueur envoie sa fiche au serveur, plus à l'admin.
+        $client = $this->stripSqfComments($this->read(self::MAIN . '/functions/admin/fn_adminClient.sqf'));
+        self::assertStringNotContainsString('CBA_fnc_targetEvent', $client);
+        self::assertStringContainsString('["row", [_to, _row]] remoteExecCall ["comspec_atak_native_fnc_adminServer", 2];', $this->between($client, 'case "report": {', 'case "data": {'));
+        // fn_adminClient n'est appelée à distance que par fn_adminServer, avec deux arguments (rien dans la file JIP).
+        $calls = [];
+        foreach ($this->sources() as $rel => $units) {
+            foreach ($units as $code) {
+                foreach ($this->remoteCalls($code) as [, $right]) {
+                    if ($right !== null && strtolower((string) $this->literal($right[0])) === 'comspec_atak_native_fnc_adminclient') {
+                        $calls[$rel][] = count($right);
+                    }
+                }
+            }
+        }
+        self::assertSame([self::MAIN . '/functions/admin/fn_adminServer.sqf' => [2, 2]], $calls);
     }
 
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */

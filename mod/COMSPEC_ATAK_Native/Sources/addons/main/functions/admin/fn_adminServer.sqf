@@ -12,7 +12,12 @@
       "hunt"     [actif]   traque des joueurs par l'IA qui a un téléphone (réglage comspec_atak_native_capture_hunt), pour la partie
       "apps"     [id, "required" | "forbidden" | "free"]   App Store : app obligatoire, interdite ou laissée au choix
                  des joueurs pour la partie (fn_appInstall, variable publique COMSPEC_ATAK_AppPolicy) ; ["", "reset"] : tout libérer
-    Réponse au demandeur : comspec_atak_native_adminData [genre, données] ("debug" | "result" | "denied").
+      "row"      [admin, fiche]   fiche d'un joueur (fn_adminClient « report »), relayée à l'admin dont le relevé est en cours
+    Réponse au demandeur : ["data", [genre, données]] remoteExecCall vers fn_adminClient ("player" | "debug" | "result" |
+    "denied"), que fn_adminClient n'accepte que du serveur. Lot mpauth3 (SEC-015) : plus d'événement CBA
+    comspec_atak_native_adminData, que tout client levait chez un admin (ou chez tous, rejoué à chaque arrivant par
+    CBA_fnc_globalEventJIP) : fausse notification « ADMIN », fausses fiches, faux débogage. Les fiches des joueurs passent
+    par le serveur, qui y met l'UID et le nom du poste émetteur et ne les relaie qu'à un admin dont le relevé est en cours.
 */
 if (!isServer) exitWith {};
 params [["_act", ""], ["_args", []], ["_caller", objNull]];
@@ -27,9 +32,18 @@ if (_remote) then { _caller = [remoteExecutedOwner] call comspec_atak_native_fnc
 // Hôte d'une partie locale : son propre appel n'est pas distant (son poste EST le serveur, remoteExecutedOwner y
 // vaut 2 ou rien). Il reste le demandeur, sans quoi la réponse et le journal partiraient vers objNull.
 if (!_remote && {isNull _caller} && {hasInterface}) then { _caller = player; };
+// Réponse du serveur au téléphone d'un admin : remoteExecCall vers fn_adminClient « data », qui n'accepte que le serveur.
+// Admin local au serveur (hôte d'une partie locale) : appel à l'image suivante, hors de la pile de la demande en cours,
+// qui peut être celle d'un autre client (la garde de fn_adminClient la refuserait).
+private _replyTo = {
+    params ["_u", "_kind", "_data"];
+    if (isNull _u) exitWith {};
+    if (local _u) exitWith { [{ _this call comspec_atak_native_fnc_adminClient; }, ["data", [_kind, _data]]] call CBA_fnc_execNextFrame; };
+    ["data", [_kind, _data]] remoteExecCall ["comspec_atak_native_fnc_adminClient", _u];
+};
 // Actions ouvertes aux clients (app Admin), le droit étant jugé juste après sur le demandeur. « apps » (App Store,
 // regroupement 2.5.0) y est : sans elle, tout admin qui n'est pas l'hôte était refusé (contre-expertise v4, B5).
-if (_remote && {!(_act in ["scan", "capture", "hunt", "apps"])}) exitWith {
+if (_remote && {!(_act in ["scan", "capture", "hunt", "apps", "row"])}) exitWith {
     diag_log format ["[COMSPEC ATAK NATIVE][WARN][ADMIN] Action « %1 » refusée au poste %2 (réservée au serveur)", _act, remoteExecutedOwner];
     false
 };
@@ -37,13 +51,32 @@ if (_remote && {isNull _caller}) exitWith {
     diag_log format ["[COMSPEC ATAK NATIVE][WARN][ADMIN] Demande « %1 » refusée au poste %2 (demandeur introuvable)", _act, remoteExecutedOwner];
     false
 };
+// Fiche d'un joueur (fn_adminClient « report », réponse à « scan ») : ouverte à tout joueur, pour sa propre fiche. UID et
+// nom sont ceux du poste émetteur, jamais ceux qu'annonce la fiche ; relayée seulement à un admin dont le relevé
+// (« scan ») a moins de 15 s, et bornée.
+if (_act isEqualTo "row") exitWith {
+    _args params [["_to", objNull], ["_row", []]];
+    if (isNull _caller || {!(_to isEqualType objNull)} || {isNull _to} || {!(_row isEqualType [])} || {(count _row) > 30} || {(count str _row) > 8000}) exitWith { false };
+    private _t = [time, serverTime] select isMultiplayer;
+    if (((localNamespace getVariable ["COMSPEC_ATAK_AdminScans", []]) findIf { (_x select 0) isEqualTo _to && {(_t - (_x select 1)) < 15} }) < 0) exitWith { false };
+    // Une fiche toutes les 2 s au plus par joueur et par admin : le serveur ne sert pas d'amplificateur.
+    private _rowAt = localNamespace getVariable ["COMSPEC_ATAK_AdminRowAt", createHashMap];
+    localNamespace setVariable ["COMSPEC_ATAK_AdminRowAt", _rowAt];
+    private _k = format ["%1|%2", getPlayerUID _caller, getPlayerUID _to];
+    if ((_t - (_rowAt getOrDefault [_k, -100])) < 2) exitWith { false };
+    _rowAt set [_k, _t];
+    _row set [0, getPlayerUID _caller];
+    _row set [1, name _caller];
+    [_to, "player", _row] call _replyTo;
+    true
+};
 if (_remote && {!([_caller] call comspec_atak_native_fnc_adminAllowed)}) exitWith {
     diag_log format ["[COMSPEC ATAK NATIVE][WARN][ADMIN] Demande « %1 » refusée à %2 (ni Zeus ni admin)", _act, name _caller];
-    ["comspec_atak_native_adminData", ["denied", []], _caller] call CBA_fnc_targetEvent;
+    [_caller, "denied", []] call _replyTo;
     false
 };
 private _now = [time, serverTime] select isMultiplayer;
-private _reply = { params ["_kind", "_data"]; ["comspec_atak_native_adminData", [_kind, _data], _caller] call CBA_fnc_targetEvent; };
+private _reply = { params ["_kind", "_data"]; [_caller, _kind, _data] call _replyTo; };
 switch (_act) do {
     case "init": {
         // Pas de gestionnaire d'événement CBA : les demandes des clients arrivent par remoteExecCall vers 2, seule
@@ -54,11 +87,16 @@ switch (_act) do {
         private _last = _caller getVariable ["COMSPEC_ATAK_AdminScanAt", -100];
         if ((_now - _last) < 4) exitWith {};
         _caller setVariable ["COMSPEC_ATAK_AdminScanAt", _now];
+        // Relevé en cours pour cet admin : les fiches « row » des 15 s suivantes lui sont relayées.
+        localNamespace setVariable ["COMSPEC_ATAK_AdminScans", ((localNamespace getVariable ["COMSPEC_ATAK_AdminScans", []]) select { !isNull (_x select 0) && {(_x select 0) isNotEqualTo _caller} && {(_now - (_x select 1)) < 15} }) + [[_caller, _now]]];
         private _to = allPlayers select { !(_x isKindOf "HeadlessClient_F") };
         // remoteExecCall (et non l'événement CBA comspec_atak_native_adminReport, que tout client pouvait lever) :
         // le joueur qui reçoit la demande voit alors qu'elle vient du serveur (remoteExecutedOwner == 2) et n'y répond
         // que dans ce cas. Le serveur reste seul juge du droit du demandeur (contrôle en tête de cette fonction).
-        if (_to isNotEqualTo []) then { ["report", [_caller]] remoteExecCall ["comspec_atak_native_fnc_adminClient", _to]; };
+        // Joueur local au serveur (hôte) : appel à l'image suivante, hors de la pile de la demande en cours.
+        private _far = _to select { !local _x };
+        if (_far isNotEqualTo []) then { ["report", [_caller]] remoteExecCall ["comspec_atak_native_fnc_adminClient", _far]; };
+        if ((_to findIf { local _x }) >= 0) then { [{ _this call comspec_atak_native_fnc_adminClient; }, ["report", [_caller]]] call CBA_fnc_execNextFrame; };
 
         private _side = { private _s = side group _this; [str _s, "?"] select (isNull group _this) };
         private _caps = [];

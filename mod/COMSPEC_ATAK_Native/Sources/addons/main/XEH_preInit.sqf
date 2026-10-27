@@ -673,12 +673,11 @@ if (isServer) then { ["comspec_atak_native_gwSrv", { _this call comspec_atak_nat
 // constate lui-même après l'ordre « give » (fn_captureServer « giveCheck »).
 // Pas de gestionnaire comspec_atak_native_compromise non plus : alertes, révocation chez Athena et nouvel IMEI arrivent
 // du serveur par remoteExecCall, seule voie qui laisse le joueur vérifier que l'ordre vient du serveur (fn_compromise).
-// App Admin : un admin demande l'état de la partie, chaque joueur lui répond directement (fn_adminClient).
+// App Admin : un admin demande l'état de la partie, chaque joueur répond au serveur, qui relaie (fn_adminClient).
 // Plus de gestionnaire comspec_atak_native_adminReport : la demande de relevé arrive par remoteExecCall du serveur
 // (fn_adminServer « scan »), seule voie où le joueur peut voir qu'elle vient bien du serveur et pas d'un autre client.
-if (hasInterface) then {
-    ["comspec_atak_native_adminData", { ["data", _this] call comspec_atak_native_fnc_adminClient; }] call CBA_fnc_addEventHandler;
-};
+// Plus de gestionnaire comspec_atak_native_adminData non plus (lot mpauth3, SEC-015) : réponses du serveur et fiches
+// relayées arrivent par remoteExecCall du serveur à fn_adminClient « data », qui refuse tout autre émetteur.
 if (hasInterface) then { ["comspec_atak_native_note", { params [["_t", ""]]; ["INFO", _t, 5, 40] call comspec_atak_native_fnc_notify; }] call CBA_fnc_addEventHandler; };
 
 // Données médicales affichées par l'ATAK : décocher masque la donnée (ou l'endroit) pour tous, sans choix possible (fn_medShow).
