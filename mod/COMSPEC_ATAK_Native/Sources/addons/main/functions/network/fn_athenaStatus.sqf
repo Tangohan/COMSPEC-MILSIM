@@ -27,7 +27,7 @@ private _detail = ["COMSPEC_LinkDetail"] call _v;
 private _ready = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
 private _linked = missionNamespace getVariable ["COMSPEC_OperatorLinked", false];
 if !(_bridge) then {
-    private _cells = (["GetAuthState", []] call comspec_atak_native_fnc_extensionCall) splitString "|";
+    private _cells = (["GetAuthState", []] call comspec_atak_native_fnc_extensionCall) splitString (toString [9]);
     _state = _cells param [1, ""];
     _sigState = _cells param [1, "—"];
     _err = _cells param [4, ""];

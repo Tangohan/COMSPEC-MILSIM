@@ -10,7 +10,12 @@ if !([player] call comspec_overwatch_connect_fnc_hasTerminal) exitWith {
     false
 };
 
-// Ouverture standard cTab / ATAK Enhanced (même touche que le téléphone Android)
+// Téléphone livré avec le pack. cTab reste le secours s'il est chargé seul.
+if (!isNil "comspec_atak_native_fnc_open") exitWith {
+    [true] call comspec_atak_native_fnc_open;
+    true
+};
+
 if (!isNil "cTab_fnc_onIfMainPressed") exitWith {
     [] call cTab_fnc_onIfMainPressed;
     true

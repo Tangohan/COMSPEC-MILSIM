@@ -16,7 +16,7 @@ private _extra = [missionNamespace getVariable ["comspec_atak_native_device_item
 private _patterns = [missionNamespace getVariable ["comspec_atak_native_device_patterns", "android,atak,smartphone"]] call _split;
 private _tablets = missionNamespace getVariable ["comspec_atak_native_device_tablets", false];
 // Notre téléphone compte toujours ; nos autres objets (kit, câble, antennes…) contiennent « atak » mais n'en sont pas.
-private _out = ["comspec_atak_phone"] + _extra;
+private _out = ["comspec_atak_phone", "comspec_atak_phone_s7_od", "comspec_atak_phone_s7_black", "comspec_atak_phone_s23", "comspec_atak_phone_iphone", "comspec_atak_phone_ip17", "comspec_atak_phone_rugged", "comspec_atak_phone_sonim", "comspec_atak_phone_tablet"] + _extra;
 { _out pushBackUnique _x; } forEach ([_patterns] call comspec_atak_native_fnc_deviceScan);
 if (_tablets) then {
     { if (isClass (configFile >> "CfgWeapons" >> _x)) then { _out pushBackUnique toLower _x; }; } forEach ["ItemcTab", "ItemMicroDAGR", "ACE_microDAGR"];

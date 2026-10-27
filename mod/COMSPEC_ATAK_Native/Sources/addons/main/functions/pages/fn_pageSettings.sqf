@@ -111,20 +111,16 @@ private _fold = {
     params ["_k", "_t", "_sub", ["_def", false]];
     ["fold", _t, _sub, [_k, _def] call _foldOpen, compile format ["['%1', %2] call (uiNamespace getVariable 'COMSPEC_ATAK_SetFold');", _k, _def]]
 };
-// Modèles du téléphone : seuls ceux dont l'objet exigé est porté sont proposés (Options des addons > ATAK · Objets par interface).
-private _models = [["DURCI S7", "s7"], ["SAMSUNG S23", "s23"], ["IPHONE 17 PRO", "ip17"], ["V2 ENHANCED", "iphone"], ["XIAOMI X3D", "rugged"], ["SONIM XP8", "sonim"], ["TABLETTE", "keys"]];
-private _modelOk = missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }];
-private _okModels = _models select { (_x select 1) isEqualTo "s7" || {[_x select 1, player] call _modelOk} };
-private _noModels = (_models - _okModels) apply { _x select 0 };
-private _modelHelp = "La couleur de la coque ne change que sur le S7. TABLETTE : tablette durcie.";
-if ((count _noModels) > 0) then { _modelHelp = _modelHelp + format [" Item requis manquant pour : %1.", _noModels joinString ", "]; };
-private _modelRows = [["COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone", _okModels select [0, 4], ["", _modelHelp] select (4 >= count _okModels)] call _profSegment];
-for "_i" from 4 to ((count _okModels) - 1) step 4 do {
-    _modelRows pushBack (["COMSPEC_ATAK_PhoneModel", "s7", "", _okModels select [_i, 4], ["", _modelHelp] select (_i + 4 >= count _okModels)] call _profSegment);
-};
-private _perso = [["section", "Téléphone", "Modèle, coque et antenne"]] + _modelRows + [
+// Le modèle et la couleur viennent de l'objet porté. On ne les change plus ici.
+([player] call comspec_atak_native_fnc_phoneCarried) params ["_wornModel", "_wornTint", "_wornName"];
+private _modelNames = createHashMapFromArray [["s7", "SAMSUNG S7"], ["s23", "SAMSUNG S23"], ["ip17", "IPHONE 17 PRO"], ["iphone", "V2 ENHANCED"], ["rugged", "XIAOMI X3D"], ["sonim", "SONIM XP8"], ["keys", "TABLETTE"]];
+private _tintNames = createHashMapFromArray [["coyote", "COYOTE"], ["od", "OLIVE"], ["black", "NOIR"]];
+private _modelName = _modelNames getOrDefault [_wornModel, "SAMSUNG S7"];
+if (_wornModel isEqualTo "s7") then { _modelName = _modelName + " " + (_tintNames getOrDefault [_wornTint, "COYOTE"]); };
+private _perso = [["section", "Téléphone", "L'objet porté, l'antenne"]] + [
+    ["text", "Le modèle et la couleur sont ceux du téléphone dans vos poches. Samsung S7 coyote, olive ou noir, Samsung S23, iPhone 17 Pro, V2 Enhanced, Xiaomi X3D, Sonim XP8, tablette durcie."],
+    ["info", "Téléphone porté", [_wornName, "aucun"] select (_wornName isEqualTo "")],
     ["COMSPEC_ATAK_Shell", "auto", "Coque", [["AUTO", "auto"], ["JOUR", "day"], ["NUIT", "night"]], "AUTO : coque de nuit après le coucher du soleil"] call _profSegment,
-    ["COMSPEC_ATAK_ShellTint", "coyote", "Couleur de la coque", [["COYOTE", "coyote"], ["VERT OD", "od"], ["NOIR", "black"]]] call _profSegment,
     ["segment", "Antenne (port SMA)", [["AUCUNE", { ["unmount"] call comspec_atak_native_fnc_antenna; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, (["get"] call comspec_atak_native_fnc_antenna) isEqualTo []]]
         + ((["owned"] call comspec_atak_native_fnc_antenna) apply {
             [toUpper ((_x select 2) select [8]), compile format ["['mount', '%1'] call comspec_atak_native_fnc_antenna; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _x select 0],
@@ -568,7 +564,6 @@ if (_athMode isEqualTo "on") then {
 // À propos du téléphone, façon Android : modèle, identité, versions et contrôle de l'installation, sur cette page seulement
 // (la DLL n'est interrogée qu'ici).
 private _about = [];
-private _modelName = (_models select { (_x select 1) isEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"]) }) param [0, ["DURCI S7"]] select 0;
 private _build = missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"]];
 if (_cat isEqualTo "ABOUT" || {_query isNotEqualTo ""}) then {
     ([player] call comspec_atak_native_fnc_phoneIdent) params [["_num", "—"], ["_imei", "—"], ["_mac", "—"]];

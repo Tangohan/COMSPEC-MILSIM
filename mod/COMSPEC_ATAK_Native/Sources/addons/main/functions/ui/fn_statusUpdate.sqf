@@ -95,7 +95,7 @@ if (_page isEqualTo "ATHENA") then {
     private _sig = if ([] call comspec_atak_native_fnc_bridge) then {
         [["comspec_overwatch_auth_state", "—"] call _str, toLower (["COMSPEC_LinkState", "offline"] call _str), missionNamespace getVariable ["COMSPEC_AthenaReady", false]]
     } else {
-        private _cells = (["GetAuthState", []] call comspec_atak_native_fnc_extensionCall) splitString "|";
+        private _cells = (["GetAuthState", []] call comspec_atak_native_fnc_extensionCall) splitString (toString [9]);
         private _st = _cells param [1, "—"];
         [_st, ["offline", "linked"] select (_st isEqualTo "READY"), _st isEqualTo "READY"]
     };
@@ -115,7 +115,7 @@ if (_page isNotEqualTo "ATHENA" && {diag_tickTime >= (missionNamespace getVariab
         private _a = missionNamespace getVariable ["comspec_overwatch_auth_state", ""];
         if (_a isEqualType "") then { _a } else { str _a }
     } else {
-        ((["GetAuthState", []] call comspec_atak_native_fnc_extensionCall) splitString "|") param [1, ""]
+        ((["GetAuthState", []] call comspec_atak_native_fnc_extensionCall) splitString (toString [9])) param [1, ""]
     };
     if (_auth isEqualTo "READY") exitWith { missionNamespace setVariable ["COMSPEC_ATAK_LoginSince", -1]; };
     private _since = missionNamespace getVariable ["COMSPEC_ATAK_LoginSince", -1];

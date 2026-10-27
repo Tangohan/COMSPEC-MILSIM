@@ -62,6 +62,11 @@ public static partial class Extension
         if (function == "GetAuthState")
             return FormatGameAuthState();
 
+        // Ancienne lecture du terminal. Le numéro part une fois vers le téléphone officiel (PhoneHandset),
+        // pas sur demande d'un script.
+        if (function == "GetDeviceIdentity")
+            return "ERR|denied";
+
         if (function == "SetSteamId")
         {
             var steam = args.Length > 0 ? ArmaString(args[0]) : "";
@@ -186,7 +191,7 @@ public static partial class Extension
                 TabCell(_gameAuthProgress.ToString(CultureInfo.InvariantCulture)),
                 TabCell(_gameAuthStep),
                 TabCell(_gameAuthError),
-                IdentityCell(_gameProfileName),
+                TabCell("-"),
                 CallsignCell(_gameProfileCallsign),
                 IdentityCell(_gameTenantName),
                 IdentityCell(_gameProfileUnit),
@@ -201,18 +206,33 @@ public static partial class Extension
                 IdentityCell(_gameProfileFunction),
                 TabCell(_gameSteamLinked),
                 TabCell(_gameSteamNotice),
-                IdentityCell(_gameProfileFirstName),
-                IdentityCell(_gameProfileLastName),
-                TabCell(_gameAccountId),
-                TabCell(_gameAccountEmail),
+                TabCell("-"),
+                TabCell("-"),
+                TabCell("-"),
+                TabCell("-"),
                 TabCell(_gameDeviceId),
                 TabCell(_gameSessionExpiresAt),
-                TabCell(_gamePhoneNumber),
-                TabCell(_gamePhoneImei),
-                TabCell(_gamePhoneMac),
-                TabCell(_gamePhoneFormat),
+                TabCell("-"),
+                TabCell("-"),
+                TabCell("-"),
+                TabCell("-"),
                 IdentityCell(_gameProfileUnitShort));
         }
+    }
+
+    /// <summary>
+    /// Numéro du terminal attribué au joueur. Pas l'e-mail ni le nom civil.
+    /// Poussé une fois au téléphone officiel. Aucune commande ne le relit.
+    /// </summary>
+    private static void PublishHandsetIdentity()
+    {
+        if (_gamePhoneNumber.Length == 0 && _gamePhoneImei.Length == 0 && _gamePhoneMac.Length == 0)
+            return;
+        InvokeCallback("PhoneHandset", string.Join("\t",
+            TabCell(_gamePhoneNumber),
+            TabCell(_gamePhoneImei),
+            TabCell(_gamePhoneMac),
+            TabCell(_gamePhoneFormat)));
     }
 
     private static string TabCell(string s)
@@ -956,6 +976,7 @@ public static partial class Extension
             _gameProfileRevision = n;
         if (_gameProfileCallsign.Length > 0)
             _callSign = _gameProfileCallsign;
+        PublishHandsetIdentity();
     }
 
     private static string ResolveGameMediaUrl(string raw)

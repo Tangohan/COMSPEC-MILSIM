@@ -8,6 +8,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
 var cs={p:[],reset:function(){cs.p=[];},add:function(t){cs.p.push(t);},show:function(m){
 var b=cs.p.join(''),i=document.getElementById('s');cs.p=[];
 i.onload=function(){i.style.visibility='visible';};
+i.style.visibility='visible';
 // Image data: refusée : même image par une adresse blob:.
 i.onerror=function(){i.onerror=null;try{var r=atob(b),a=new Uint8Array(r.length);for(var k=0;k<r.length;k++){a[k]=r.charCodeAt(k);}i.src=URL.createObjectURL(new Blob([a],{type:'image/'+m}));}catch(e){}};
 i.src='data:image/'+m+';base64,'+b;}};

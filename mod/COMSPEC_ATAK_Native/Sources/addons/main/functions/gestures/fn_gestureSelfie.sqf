@@ -48,10 +48,9 @@ switch (_mode) do {
     case "selfie": {
         if (isNull _phone || {(attachedTo _phone) isNotEqualTo _unit}) then {
             call _drop;
-            private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
+            ([_unit] call comspec_atak_native_fnc_phoneCarried) params ["_model", "_tint"];
             if !(_model in ["s7", "s23", "rugged", "iphone", "sonim", "ip17"]) then { _model = "s7"; };
             _phone = createSimpleObject ["COMSPEC_ATAK_JpcPhone_" + _model, getPosASL _unit, false];
-            private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"];
             if (_model isEqualTo "s7" && {_tint in ["od", "black"]}) then {
                 _phone setObjectTextureGlobal [0, format ["\z\comspec_atak_native\addons\main\data\jpc_s7_%1_ca.paa", _tint]];
             };

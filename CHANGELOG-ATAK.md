@@ -38,6 +38,59 @@ Changelog Steam (copier-coller) : [ATAK 2.7.0](docs/dev/STEAM-CHANGELOG-2026-10-
 
 ---
 
+## Diapositives sur les écrans (ATAK natif 2.8.2.AB - Denver, COMSPEC Link 2.0.99)
+
+### Résumé joueur
+Type : correctif
+FR : Une diapositive diffusée s'affiche sur l'écran du terrain
+- La diapositive visible sur le téléphone apparaît aussi sur l'écran désigné.
+- L'image d'origine de l'écran ne reste plus à la place.
+EN : A cast slide shows on the field screen
+- The slide visible on the phone also appears on the designated screen.
+- The screen's original picture no longer stays in its place.
+
+### Détail technique
+- `fn_screenCast` : sélection `screen` si l'index 0 est le châssis ; préchargement du display ; `SetBrowserInternalSize` ; `displayUpdate` après chargement puis `StopBrowser`.
+- `fn_applyGoogleBriefingSlide` : ne remplace plus une diffusion par un fichier qu'Arma refuse.
+- Écrans `COMSPEC_BriefingScreens` peints par le même chemin.
+
+## Correctifs de démarrage (ATAK natif 2.8.1.AB - Denver, COMSPEC Link 2.0.99)
+
+### Résumé joueur
+Type : correctif
+FR : Le téléphone, Zeus et l’arsenal ne plantent plus au chargement
+- L’arrivée en mission ne bloque plus le numéro du téléphone.
+- Depuis Zeus, copier les identifiants d’un opérateur aboutit.
+- La liste des tenues dans l’arsenal se charge.
+EN : The phone, Zeus and the arsenal no longer fail while loading
+- Joining a mission no longer breaks the phone number.
+- Copying an operator’s identifiers from Zeus completes.
+- The wardrobe list in the arsenal loads.
+
+### Détail technique
+- `fn_localCfg` : `select` booléen évaluait `select -1`.
+- `fn_zeusShowPlayerAtak` : `toString [10]` sorti du `replaceString`.
+- `fn_arsenalOverlayRefresh` : colonne `params` sans nom remplacée par `_gap`.
+
+## Montre Garmin et téléphones en objets (ATAK natif 2.8.0.AB - Denver, COMSPEC Link 2.0.99)
+
+### Résumé joueur
+Type : nouveauté
+FR : La montre n’est plus un cercle blanc, et chaque téléphone est un objet
+- La montre s’ouvre avec un appui bref sur la touche Montre. Ctrl+Maj+O l’affiche en grand. Le boîtier, l’heure et les écrans sont visibles.
+- Le modèle et la couleur viennent de l’objet dans les poches : Samsung S7 coyote, olive ou noir, Samsung S23, iPhone 17 Pro, V2 Enhanced, Xiaomi X3D, Sonim XP8, tablette durcie.
+- L’ancien téléphone COMSPEC est le Samsung S7 coyote. On ne change plus le modèle ni la couleur dans les réglages.
+- Quittez Arma complètement après l’installation, puis relancez.
+EN : The watch is no longer a white circle, and each phone is an item
+- The watch opens with a short press of the Watch key. Ctrl+Shift+O shows it large. The case, the time and the screens are visible.
+- The model and colour come from the item in your pockets: coyote, olive or black Samsung S7, Samsung S23, iPhone 17 Pro, V2 Enhanced, Xiaomi X3D, Sonim XP8, rugged tablet.
+- The previous COMSPEC phone is the coyote Samsung S7. Model and colour are no longer changed in the settings.
+- Quit Arma completely after installing, then start it again.
+
+### Détail technique
+- `fn_watch.sqf` : la fonction de couleur `_C` entrait en collision avec le contrôle `_c` (SQF insensible à la casse). Le dessin plantait à la ligne 631 et laissait le disque blanc. Renommée `_tone`.
+- Téléphones : une classe d’objet par modèle et, pour le S7, par couleur (`comspec_phoneModel`, `comspec_phoneTint`). `fn_phoneCarried` alimente l’affichage, le dos, le gilet, le selfie et le socle. Les réglages « Modèle » et « Couleur de la coque » sont retirés du téléphone et du menu d’interaction.
+
 ## Regroupement : montre Garmin, radio avec le téléphone, diapositives Google, module officiel (ATAK natif 2.7.0.AB - Denver, COMSPEC Link 2.0.99)
 
 ### Résumé joueur
