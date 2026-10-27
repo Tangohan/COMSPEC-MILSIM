@@ -22,8 +22,11 @@ detach _cam;
 // Juste devant l'objectif, panoramique relatif à l'orientation de la caméra (suit un véhicule porteur).
 _cam attachTo [_obj, [0, 0.12, 0.03]];
 _cam setVectorDirAndUp [[sin _pan, cos _pan, 0], [0, 0, 1]];
-"comspec_livecam" setPiPEffect [_mode];
 missionNamespace setVariable ["COMSPEC_ATAK_LivecamKind", "fixed"];
+private _mm = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["livecamFocal", 35];
+if !(_mm isEqualType 0) then { _mm = 35; };
+(["fov", ((0.75 * 35 / (_mm max 1)) max 0.15) min 2]) call comspec_atak_native_fnc_livecamStart;
+"comspec_livecam" setPiPEffect [_mode];
 if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
     missionNamespace setVariable ["COMSPEC_ATAK_LivecamPfh", [{
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];

@@ -111,12 +111,13 @@ if (_mode in ["tick", "self"]) then {
     } forEach ([allPlayers, [player]] select _self);
 };
 
-// Envoi : toutes les 10 min, ou tout de suite (départ d'un joueur, fin de mission).
+// Envoi : toutes les 10 min, ou tout de suite (départ d'un joueur, fin de mission, ACTUALISER → selfFlush).
+// Ne pas horodater DistSent tant qu'il n'y a rien à envoyer : sinon le premier tick à Acc vide bloquait 10 min.
 private _sent0 = missionNamespace getVariable ["COMSPEC_ATAK_DistSent" + _v, -1e9];
 if (_mode in ["tick", "self"] && {(_now - _sent0) < 600}) exitWith { true };
-if (_mode isNotEqualTo "leave") then { missionNamespace setVariable ["COMSPEC_ATAK_DistSent" + _v, _now]; };
 private _uids = if (_mode isEqualTo "leave") then { [_only] select { _x in _acc } } else { keys _acc };
 if (_uids isEqualTo []) exitWith { true };
+if (_mode isNotEqualTo "leave") then { missionNamespace setVariable ["COMSPEC_ATAK_DistSent" + _v, _now]; };
 private _mk = missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2", missionName, worldName]];
 private _ok = true;
 private _r = "";
@@ -152,10 +153,10 @@ for "_i" from 0 to ((count _uids) - 1) step 25 do {
 // État de l'envoi montré dans l'app : public pour le serveur, local pour le relais du joueur (COMSPEC_ATAK_DistSrvSelf).
 if (_tried) then {
     private _stVar = "COMSPEC_ATAK_DistSrv" + _v;
-    if (_ok) then { missionNamespace setVariable [_stVar, [true, serverTime], !_self]; };
-    if (!_ok && {(missionNamespace getVariable [_stVar, [true, -1]]) select 0}) then {
-        missionNamespace setVariable [_stVar, [false, (missionNamespace getVariable [_stVar, [true, -1]]) select 1], !_self];
-        ["WARN", "DISTANCE", format ["Distance.Batch refusé (%1) : gardé en mémoire %2, renvoyé au prochain envoi", [_r, "COMSPEC Link 2.0.86 requis"] select (_r isEqualTo ""), ["serveur", "du joueur"] select _self]] call comspec_atak_native_fnc_log;
+    // Toujours poser l'heure : un échec avec _at = -1 s'affichait « Pas encore envoyé » et masquait le refus.
+    missionNamespace setVariable [_stVar, [_ok, serverTime], !_self];
+    if (!_ok) then {
+        ["WARN", "DISTANCE", format ["Distance.Batch refusé (%1) : gardé en mémoire %2, renvoyé au prochain envoi", [_r, "COMSPEC Link requis"] select (_r isEqualTo ""), ["serveur", "du joueur"] select _self]] call comspec_atak_native_fnc_log;
     };
 };
 true
