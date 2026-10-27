@@ -22,7 +22,9 @@
       docs/PLANCHER-VERSION-DLL.md) ou une version illisible ;
     - si OutDir est dans mod/COMSPEC_ATAK_Native, le contient, ou est sous steamapps/workshop
       ou sous le dossier !Workshop d'Arma 3.
-  Après ce dernier contrôle, un refus retire aussi le meta.cpp du dossier de sortie.
+  Après ce dernier contrôle, un refus retire aussi le meta.cpp du dossier de sortie, comme tout arrêt
+  avant la fin du pack (erreur, Ctrl+C). Après la dernière copie, le meta.cpp de la sortie est relu :
+  le pack est refusé s'il vise l'objet 3684656708.
 
 .PARAMETER SourceMod
   Dossier mod de travail (défaut : @COMSPECOverwatch à côté de ce script).
@@ -95,6 +97,12 @@ if ($outDirKey -match '(?i)[\\/](steamapps[\\/]workshop|!Workshop)[\\/]') {
         "Le nettoyage du staging viderait un objet Workshop : choisissez un -OutDir hors de Steam.")
 }
 $OutDirChecked = $true
+
+# Arrêt par exception (W23) : ErrorActionPreference vaut Stop, donc un Remove-Item ou un Copy-Item qui échoue arrête le
+# script sans passer par Write-Fail. La suite du script tourne dans ce try, sans indentation de plus ; le finally, en
+# fin de fichier, retire le meta.cpp d'une sortie inachevée.
+$PackDone = $false
+try {
 
 if (-not (Test-Path -LiteralPath $SourceMod)) {
     Write-Fail "Source introuvable : $SourceMod"
@@ -258,6 +266,18 @@ if ($bad.Count -gt 0) {
     Write-Fail ("Fichiers interdits détectés dans le pack :`n  - " + ($bad -join "`n  - "))
 }
 
+# meta.cpp de la sortie, relu après la dernière copie (W23, V3) : quel que soit le chemin qui l'y a mis, le pack est
+# refusé s'il vise l'objet de l'ATAK natif.
+$packMeta = Join-Path $OutDir "meta.cpp"
+if (Test-Path -LiteralPath $packMeta) {
+    $packMetaText = [string](Get-Content -LiteralPath $packMeta -Raw)
+    if ($packMetaText -match "\b$AtakNativeWorkshopId\b") {
+        Write-Fail ("$packMeta vise l'objet Workshop $AtakNativeWorkshopId, qui est l'ATAK natif : pack refusé. Ce pack " +
+            "hérité n'a plus d'objet Workshop ; l'ATAK natif se publie seulement depuis mod\COMSPEC_ATAK_Native.")
+    }
+}
+$PackDone = $true
+
 # Rapport
 Write-Host ""
 Write-Host "========== PACK WORKSHOP OK ==========" -ForegroundColor Green
@@ -287,3 +307,19 @@ Write-Host ""
 Write-Host "Ce pack hérité n'a plus d'objet Workshop : ne publiez pas $OutDir sur l'objet $AtakNativeWorkshopId (ATAK natif)."
 Write-Host "L'ATAK natif se publie seulement depuis mod\COMSPEC_ATAK_Native (dossier @COMSPEC_ATAK_Native)."
 Write-Host 'Voir PACKAGING.md et SECURITY.md dans le dossier mod.'
+
+} finally {
+    # Arrêt avant la fin du pack (erreur, refus de Write-Fail, Ctrl+C) : la sortie inachevée ne garde pas de meta.cpp.
+    if (-not $PackDone -and (Test-Path -LiteralPath $OutDir)) {
+        $leftMeta = Join-Path $OutDir "meta.cpp"
+        if (Test-Path -LiteralPath $leftMeta -PathType Leaf) {
+            Remove-Item -LiteralPath $leftMeta -Force -ErrorAction SilentlyContinue
+            if (Test-Path -LiteralPath $leftMeta) {
+                Write-Host "[FAIL] $leftMeta n'a pas pu être supprimé : supprimez-le avant d'ouvrir le Publisher." -ForegroundColor Red
+            } else {
+                Write-Host "[FAIL] $leftMeta supprimé : la sortie inachevée ne vise plus aucun objet Workshop." -ForegroundColor Red
+            }
+        }
+        Write-Host "[FAIL] Pack inachevé : ne publiez pas le contenu de $OutDir." -ForegroundColor Red
+    }
+}

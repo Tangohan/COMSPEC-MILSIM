@@ -225,10 +225,20 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         // Chaque refus passe par Write-Fail, qui sort avec un code non nul.
         self::assertMatchesRegularExpression('/\bexit 1\b/', self::psFunctionBody($ps, 'Write-Fail'));
 
-        // Les contrôles sont au niveau du script, hors de tout bloc : aucune condition ajoutée autour ne peut les sauter.
+        // Les contrôles sont au premier niveau du try du script (W23), hors de tout autre bloc : aucune condition ajoutée
+        // autour ne peut les sauter.
+        $code = self::psCodeLines($ps);
         $depths = self::psDepths($ps);
+        $try = array_search('try {', $code, true);
+        $finally = array_search('} finally {', $code, true);
+        self::assertIsInt($try);
+        self::assertIsInt($finally);
+        self::assertSame(0, $depths['try {'] ?? null, 'try du script dans un bloc');
         foreach (['if (Test-Path -LiteralPath $metaCpp) {', 'if (-not $dll) {', 'if ($null -eq $dllVersion) {', 'if ($dllVersion -lt $MinLinkVersion) {'] as $control) {
-            self::assertSame(0, $depths[$control] ?? null, 'contrôle absent ou dans un bloc : ' . $control);
+            $at = array_search($control, $code, true);
+            self::assertIsInt($at, 'contrôle absent : ' . $control);
+            self::assertTrue($at > $try && $at < $finally, 'contrôle hors du try : ' . $control);
+            self::assertSame(1, $depths[$control] ?? null, 'contrôle dans un bloc : ' . $control);
         }
 
         // Les deux refus tombent avant la préparation du pack : rien n'est copié dans le dossier à publier.
@@ -332,12 +342,14 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         // Un seul break : celui de la boucle des DLL candidates (hors boucle, break sort aussi du script).
         self::assertSame(['break'], array_values(array_filter($code, static fn (string $line): bool => preg_match('/(?<![\w$.-])break(?![\w-])/i', $line) === 1)));
 
-        // L'objet de l'ATAK natif n'apparaît dans le code qu'à sa définition et dans le contrôle de meta.cpp.
+        // L'objet de l'ATAK natif n'apparaît dans le code qu'à sa définition et dans les deux contrôles de meta.cpp :
+        // celui de la source, puis celui de la sortie.
         $uses = array_values(array_filter($code, static fn (string $line): bool => stripos($line, 'AtakNativeWorkshopId') !== false
             || str_contains($line, SteamWorkshop::ATAK_NATIVE_ID)));
         self::assertSame([
             "\$AtakNativeWorkshopId = '" . SteamWorkshop::ATAK_NATIVE_ID . "'",
             'if ($metaText -match "\b$AtakNativeWorkshopId\b") {',
+            'if ($packMetaText -match "\b$AtakNativeWorkshopId\b") {',
         ], $uses);
     }
 
@@ -395,14 +407,95 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         self::assertLessThan((int) strpos($fail, $meta), (int) strpos($fail, $removal));
         self::assertSame(['Join-Path $OutDir "meta.cpp"'], self::psAssignments($ps, 'outMeta'));
 
-        // Le script ne supprime rien d'autre que ce meta.cpp, le dossier de sortie au staging et l'ancien zip.
+        // Le script ne supprime rien d'autre que ce meta.cpp, le dossier de sortie au staging, l'ancien zip et, dans le
+        // finally, le meta.cpp d'une sortie inachevée.
         $code = self::psCodeLines($ps);
         self::assertSame([
             'Remove-Item -LiteralPath $outMeta -Force -ErrorAction SilentlyContinue',
             'Remove-Item -LiteralPath $OutDir -Recurse -Force',
             'if (Test-Path -LiteralPath $zipPath) { Remove-Item -LiteralPath $zipPath -Force }',
+            'Remove-Item -LiteralPath $leftMeta -Force -ErrorAction SilentlyContinue',
         ], array_values(array_filter($code, static fn (string $line): bool => stripos($line, 'Remove-Item') !== false)));
         self::assertSame([], array_values(array_filter($code, static fn (string $line): bool => preg_match('/(?<![\w$.-])(?:rm|del|erase|rd|rmdir|ri|Clear-Item|cli)(?![\w-])/i', $line) === 1)));
+    }
+
+    public function testWorkshopPackRereadsTheOutputMetaCppAndClearsItOnAnEarlyStop(): void
+    {
+        $ps = $this->read('workshop-pack.ps1');
+        $code = self::psCodeLines($ps);
+        $depths = self::psDepths($ps);
+
+        // V3 (revue v3) : après la dernière copie, le meta.cpp de la sortie est relu, quel que soit le chemin qui l'y a
+        // mis, et le pack est refusé s'il vise l'objet de l'ATAK natif.
+        $check = <<<'PS'
+            $packMeta = Join-Path $OutDir "meta.cpp"
+            if (Test-Path -LiteralPath $packMeta) {
+                $packMetaText = [string](Get-Content -LiteralPath $packMeta -Raw)
+                if ($packMetaText -match "\b$AtakNativeWorkshopId\b") {
+                    Write-Fail (
+            PS;
+        self::assertStringContainsString("\n" . $check, $ps);
+        self::assertSame(['Join-Path $OutDir "meta.cpp"'], self::psAssignments($ps, 'packMeta'));
+        self::assertSame(['[string](Get-Content -LiteralPath $packMeta -Raw)'], self::psAssignments($ps, 'packMetaText'));
+        self::assertSame(1, $depths['if (Test-Path -LiteralPath $packMeta) {'] ?? null, 'contrôle final dans un bloc');
+
+        // Il suit toute copie et toute création dans la sortie : après lui, seul le zip est écrit, à côté de $OutDir.
+        $at = array_search('if ($packMetaText -match "\b$AtakNativeWorkshopId\b") {', $code, true);
+        self::assertIsInt($at);
+        self::assertSame(
+            ['Compress-Archive -Path $OutDir -DestinationPath $zipPath -CompressionLevel Optimal'],
+            array_values(array_filter(array_slice($code, $at), static fn (string $line): bool => preg_match('/(?<![\w$.-])(?:Copy-Item|cpi|New-Item|ni|Compress-Archive)(?![\w-])/i', $line) === 1)),
+            'écriture dans la sortie après le contrôle final de meta.cpp',
+        );
+        // Le pack n'est fini qu'après ce contrôle : entre les deux, seulement le refus et ses accolades.
+        self::assertSame(['$false', '$true'], self::psAssignments($ps, 'PackDone'));
+        $done = array_search('$PackDone = $true', $code, true);
+        self::assertIsInt($done);
+        self::assertGreaterThan($at, $done);
+        foreach (array_slice($code, $at + 1, $done - $at - 1) as $line) {
+            self::assertMatchesRegularExpression('/^(?:Write-Fail \(""(?: \+)?|""\)(?: \+)?|\})$/', $line, 'entre le contrôle final et la fin du pack : ' . $line);
+        }
+
+        // W23 (revue v3) : après la garde de sortie, la suite du script tourne dans un seul try, sans catch ni trap. Son
+        // finally, en fin de fichier, retire le meta.cpp d'une sortie inachevée : erreur qui arrête le script, refus de
+        // Write-Fail ou Ctrl+C.
+        $checked = array_search('$OutDirChecked = $true', $code, true);
+        self::assertIsInt($checked);
+        self::assertSame(['$PackDone = $false', 'try {'], array_slice($code, $checked + 1, 2));
+        self::assertSame(0, $depths['try {'] ?? null);
+        self::assertSame(['try {'], array_values(array_filter($code, static fn (string $line): bool => preg_match('/(?<![\w$.-])(?:try|catch|trap)(?![\w-])/i', $line) === 1)));
+        $finally = array_search('} finally {', $code, true);
+        self::assertIsInt($finally);
+        self::assertGreaterThan($done, $finally);
+        self::assertSame(1, $depths['} finally {'] ?? null);
+        self::assertSame([
+            '} finally {',
+            'if (-not $PackDone -and (Test-Path -LiteralPath $OutDir)) {',
+            '$leftMeta = Join-Path $OutDir "meta.cpp"',
+            'if (Test-Path -LiteralPath $leftMeta -PathType Leaf) {',
+            'Remove-Item -LiteralPath $leftMeta -Force -ErrorAction SilentlyContinue',
+            'if (Test-Path -LiteralPath $leftMeta) {',
+            'Write-Host "" -ForegroundColor Red',
+            '} else {',
+            'Write-Host "" -ForegroundColor Red',
+            '}',
+            '}',
+            'Write-Host "" -ForegroundColor Red',
+            '}',
+            '}',
+        ], array_slice($code, $finally), 'finally absent, incomplet ou suivi d\'autre code');
+        self::assertSame(['Join-Path $OutDir "meta.cpp"'], self::psAssignments($ps, 'leftMeta'));
+
+        // Seules ces lignes de code nomment meta.cpp : le retrait de Write-Fail, le contrôle et la copie de la source, le
+        // contrôle final et le retrait du finally. Aucune ne garde ni ne remet le meta.cpp d'une sortie précédente.
+        self::assertSame([
+            '$outMeta = Join-Path $OutDir "meta.cpp"',
+            '$metaCpp = Join-Path $SourceMod "meta.cpp"',
+            '$metaCpp = Join-Path $SourceMod "meta.cpp"',
+            'Copy-Item -LiteralPath $metaCpp -Destination (Join-Path $OutDir "meta.cpp") -Force',
+            '$packMeta = Join-Path $OutDir "meta.cpp"',
+            '$leftMeta = Join-Path $OutDir "meta.cpp"',
+        ], array_values(array_filter($code, static fn (string $line): bool => stripos($line, 'meta.cpp') !== false)));
     }
 
     public function testLegacyBuildNoLongerDeploysIntoTheAtakNativeWorkshopFolder(): void
