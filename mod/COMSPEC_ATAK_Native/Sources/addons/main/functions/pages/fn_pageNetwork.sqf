@@ -394,7 +394,7 @@ if !(_sim) then {
 } else {
     private _bx = _pad;
     [_bx, _y + _fs * 0.1, _fs * 1.1, _lq get "bars", ["bad", "bad", "warn", "ok", "ok"] select (_lq get "bars")] call _bars;
-    private _queue = count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]);
+    private _queue = count (localNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]);
     private _c = [[_bx + _fs * 2.2, _y, _cw - _fs * 2.2 - 2 * _pad, _fs * 1.3], format ["<t size='%1' font='COMSPEC_BarlowBold'>%2</t><br/><t size='%3'>Débit <t color='#c9d4cf'>%4</t> · latence %5 ms · perte %6 %%<br/>Photo (600 Ko) : environ %7 s · message : %8 s%9</t>",
         _k, _lq get "label", _k * 0.8, [_lq get "kbps"] call _rate, _lq get "latency", _lq get "loss",
         [round (((_lq get "latency") / 1000) + 4800 / ((_lq get "kbps") max 1)), "∞"] select ((_lq get "kbps") <= 0),
@@ -406,7 +406,7 @@ if !(_sim) then {
 
 // --- Hors connexion (fn_offline) : données figées, réceptions retenues, envois en file ---
 (["state"] call comspec_atak_native_fnc_offline) params ["_offNow", "_offSync", "_offFor", "_offHeld"];
-private _offQueue = count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]);
+private _offQueue = count (localNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]);
 ["Hors connexion", ["Sans signal, le téléphone garde ses données et envoie tout au retour du réseau", "Le téléphone ne reçoit plus : vous consultez les données enregistrées"] select _offNow] call _section;
 ["État", ["<t color='#5cc76b'>en ligne</t>", format ["<t color='#f2ab33'>hors connexion depuis %1</t>", [format ["%1 s", round _offFor], format ["%1 min", floor (_offFor / 60)]] select (_offFor >= 60)]] select _offNow] call _info;
 ["Dernière synchro", [_offSync, "—"] select (_offSync isEqualTo "")] call _info;

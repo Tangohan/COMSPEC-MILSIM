@@ -135,7 +135,7 @@ switch (_action) do {
         if !(_tag isEqualType []) then { _tag = []; };
         private _blood = if (isNil "comspec_overwatch_connect_fnc_getBloodType") then { _tag param [2, ""] } else { [] call comspec_overwatch_connect_fnc_getBloodType };
         private _str = { params ["_v"]; if (_v isEqualType "") then { _v } else { "" } };
-        private _queue = (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]) apply { [_x param [2, "Envoi"], _x param [3, 1]] };
+        private _queue = (localNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]) apply { [_x param [2, "Envoi"], _x param [3, 1]] };
         private _failed = ((missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []]) select { _x isEqualType "" }) apply { private _p = _x splitString "\/"; _p select ((count _p) - 1) };
         private _pending = count (missionNamespace getVariable ["COMSPEC_Athena_PhotoPending", []]);
         private _frs = uiNamespace getVariable ["COMSPEC_ATAK_FrsDraft", createHashMap];
@@ -196,8 +196,8 @@ switch (_action) do {
     // Mes envois en souffrance, repartis par l'ATAK d'un équipier : exécutés ici (le code ne voyage pas sur le réseau).
     case "flush": {
         _arg params [["_by", "un équipier"], ["_from", objNull]];
-        private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
-        missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", []];
+        private _queue = localNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
+        localNamespace setVariable ["COMSPEC_ATAK_NetQueue", []];
         private _n = 0;
         { _x params ["_code", ["_args", []]]; if (_code isEqualType {}) then { _args call _code; _n = _n + 1; }; } forEach _queue;
         // Photos refusées par Athena : nouvelle tentative avec la mention de la récupération.

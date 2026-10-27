@@ -30,7 +30,7 @@ switch (_tab) do {
         private _q = [] call comspec_atak_native_fnc_linkQuality;
         _rows append [
             ["info", "Débit", format ["%1 · %2 kbit/s · %3 ms · perte %4 %%", _q get "label", _q get "kbps", _q get "latency", _q get "loss"]],
-            ["info", "File sans réseau", str count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []])],
+            ["info", "File sans réseau", str count (localNamespace getVariable ["COMSPEC_ATAK_NetQueue", []])],
             ["info", "Photos en attente / reçues / refusées", format ["%1 / %2 / %3", count (missionNamespace getVariable ["COMSPEC_Athena_PhotoPending", []]), count (missionNamespace getVariable ["COMSPEC_Athena_PhotoUploaded", []]), count (missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []])]],
             ["info", "Dernier envoi photo", [missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", "—"]] call _esc],
             ["info", "Retour Athena photo", [str (missionNamespace getVariable ["COMSPEC_LastReconUploadResult", []])] call _esc],

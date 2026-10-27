@@ -8,7 +8,8 @@
       suite se perdent, puis redevient bon) ; condition « Pertes de paquets » coupée (fn_netCond "loss") : rien ne se perd ;
     - surcharge : chaque envoi compte dans le trafic publié du téléphone (fn_netLoad "track") ;
     - réception seule (hors de portée d'émission, fn_linkQuality "tx" faux) : comme sans signal ;
-    - aucun signal : mis en file, parti dès que le réseau revient (vidé par la boucle de XEH_postInitClient) ;
+    - aucun signal : mis en file, parti dès que le réseau revient (vidé par la boucle de XEH_postInitClient) ; la file
+      porte le code de chaque envoi : elle est rangée en localNamespace (propre à la machine, jamais synchronisée) ;
       un envoi avec une clé remplace celui de même clé déjà en file (marqueur modifié plusieurs fois : seul le dernier part) ;
       les envois urgents (MEDEVAC, alertes, JTAC, rapports…) passent devant les autres dans la file et ne sont jamais
       abandonnés quand elle est pleine (les autres les plus anciens partent).
@@ -32,7 +33,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_NetTxAt", _txAt];
 if (_try isEqualTo 1) then { ["track", _kb] call comspec_atak_native_fnc_netLoad; };
 if !(_q get "sim") exitWith { ["IMMÉDIAT", "simulation coupée"] call _trace; _args call _code; "SENT" };
 if ((_q get "bars") isEqualTo 0 || {!(_q getOrDefault ["tx", true])}) exitWith {
-    private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
+    private _queue = localNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
     if (_key isNotEqualTo "") then { _queue = _queue select { (_x param [5, ""]) isNotEqualTo _key }; };
     private _urgent = { params ["_l"]; _l = toLower _l; (["medevac", "alerte", "salute", "jtac", "rapport", "blessure", "décès", "panique", "accusé"] findIf { (_l find _x) >= 0 }) >= 0 };
     // Priorité : un envoi urgent se place après le dernier urgent déjà en file, devant les envois ordinaires.
@@ -49,7 +50,7 @@ if ((_q get "bars") isEqualTo 0 || {!(_q getOrDefault ["tx", true])}) exitWith {
     };
     private _why = ["aucun signal", "réception seule"] select ((_q get "bars") > 0);
     ["EN FILE", _why] call _trace;
-    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue];
+    localNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue];
     ["WARNING", format [["Pas de réseau : %1 en attente (%2 dans la file)", "Réception seule, émission impossible : %1 en attente (%2 dans la file)"] select ((_q get "bars") > 0), _label, count _queue], 4, 40] call comspec_atak_native_fnc_notify;
     "QUEUED"
 };
@@ -94,9 +95,9 @@ if (_delay > 3) then { ["INFO", format ["%1 : envoi en cours, environ %2 s (%3 k
     missionNamespace setVariable ["COMSPEC_ATAK_NetLog", _t];
     // Troisième échec (modèle réaliste) : l'envoi n'arrive pas, il retourne en tête de file et repartira avec elle.
     if (_lost && {_try >= 3}) exitWith {
-        private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
+        private _queue = localNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
         _queue insert [0, [[_code, _args, _label, _kb, 1, _key]]];
-        missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue];
+        localNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue];
         ["WARNING", format ["%1 : échec après 3 essais, remis en file", _label], 4, 30] call comspec_atak_native_fnc_notify;
     };
     if (_lost) exitWith {

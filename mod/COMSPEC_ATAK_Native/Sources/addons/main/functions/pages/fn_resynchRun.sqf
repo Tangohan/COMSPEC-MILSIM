@@ -94,7 +94,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ResynchBusy", true, false];
     };
 
     // File d'envoi : ce qui attend le réseau sur le téléphone (débit simulé) et chez COMSPEC Link.
-    private _q = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
+    private _q = localNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
     private _photos = { (toLower (_x param [2, ""])) find "photo" >= 0 } count _q;
     private _dll = 0;
     if ([] call comspec_atak_native_fnc_bridge && {!(missionNamespace getVariable ["COMSPEC_ATAK_SendQNo", false])}) then {

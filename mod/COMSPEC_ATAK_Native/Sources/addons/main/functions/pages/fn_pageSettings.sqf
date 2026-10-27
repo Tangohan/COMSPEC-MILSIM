@@ -532,7 +532,7 @@ private _cat = _s getOrDefault ["setCat", ""];
 private _query = _s getOrDefault ["setQuery", ""];
 if (_athMode isEqualTo "on") then {
     (["state"] call comspec_atak_native_fnc_offline) params ["_offNow", "_offSync", "_offFor"];
-    private _queue = count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]);
+    private _queue = count (localNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]);
     if (!isNil "comspec_overwatch_connect_fnc_outboxState") then { _queue = _queue + ((["get"] call comspec_overwatch_connect_fnc_outboxState) getOrDefault ["count", 0]); };
     private _resAt = missionNamespace getVariable ["COMSPEC_ATAK_ResynchAt", ""];
     private _steps = _st get "steps";

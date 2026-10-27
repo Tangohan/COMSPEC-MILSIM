@@ -678,14 +678,14 @@ addMissionEventHandler ["EntityKilled", {
         missionNamespace setVariable ["COMSPEC_ATAK_P2pInbox", []];
         { (_x + [true]) call comspec_atak_native_fnc_p2pReceive; } forEach _inbox;
     };
-    private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
+    private _queue = localNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
     if ((count _queue) isEqualTo 0) exitWith {};
     // Réception seule (hors de portée d'émission) : la file attend aussi.
     private _lq = [] call comspec_atak_native_fnc_linkQuality;
     if ((_lq get "bars") isEqualTo 0 || {!(_lq getOrDefault ["tx", true])}) exitWith {};
     // Au plus 5 envois toutes les 2 s : vider toute la file d'un coup figeait le jeu au retour du réseau.
     private _batch = _queue select [0, 5];
-    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue select [5]];
+    localNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue select [5]];
     if !(missionNamespace getVariable ["COMSPEC_ATAK_NetFlushing", false]) then { ["SUCCESS", format ["Réseau revenu : %1 envoi(s) en attente partent", count _queue], 4, 30] call comspec_atak_native_fnc_notify; };
     missionNamespace setVariable ["COMSPEC_ATAK_NetFlushing", (count _queue) > 5];
     { _x call comspec_atak_native_fnc_netSend; } forEach _batch;

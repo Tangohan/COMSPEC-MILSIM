@@ -174,7 +174,7 @@ private _pageSig = switch (_page) do {
     case "TASK": { [count ([] call comspec_atak_native_fnc_tasksAll), (values ([] call comspec_atak_native_fnc_tasksAll)) apply { _x getOrDefault ["status", ""] }, (simpleTasks player) apply { taskState _x }, (values (missionNamespace getVariable ["COMSPEC_ATAK_OrderAcks", createHashMap])) apply { (values _x) apply { _x select 1 } }] };
     // Débit simulé laissé de côté : il varie sans cesse et faisait redessiner toute la page chaque seconde
     // (la page se rafraîchit d'elle-même toutes les 5 s).
-    case "NETWORK": { [_lq get "bars", ([] call comspec_atak_native_fnc_deviceHealth) get "state", count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []])] };
+    case "NETWORK": { [_lq get "bars", ([] call comspec_atak_native_fnc_deviceHealth) get "state", count (localNamespace getVariable ["COMSPEC_ATAK_NetQueue", []])] };
     case "DEBUG": { [count (missionNamespace getVariable ["COMSPEC_ATAK_Log", []]), count (missionNamespace getVariable ["COMSPEC_DiagLog", []]), count (missionNamespace getVariable ["COMSPEC_ATAK_NetLog", []])] };
     case "BFT": { ((values (_data getOrDefault ["units", createHashMap])) select { (_x getOrDefault ["affiliation", ""]) isEqualTo "friend" }) apply { [_x getOrDefault ["freshness", ""], round (((_x getOrDefault ["position", [0,0,0]]) distance2D player) / 50), alive (_x getOrDefault ["object", objNull])] } };
     case "GPS": {
