@@ -98,14 +98,7 @@ final class AtakArmaWriteGuard
         if ($session !== null) {
             $bound = $session['steam_uid'];
             if ($steam !== null && !hash_equals($bound, $steam)) {
-                $this->log($tenantId, false, 'Tentative d’usurpation d’identité jeu refusée', [
-                    'reason' => 'steam_spoof',
-                ]);
-
-                return Response::json([
-                    'error' => 'steam_mismatch',
-                    'message' => 'Identité de jeu incohérente. Reconnectez votre compte Athena.',
-                ], 403);
+                return $this->steamMismatch($tenantId);
             }
             $steam = $bound;
         }
@@ -122,6 +115,11 @@ final class AtakArmaWriteGuard
                     'error' => 'steam_not_linked',
                     'message' => 'Aucun compte Athena n’est lié à ce Steam pour cette communauté. Utilisez un code de liaison ou liez Steam dans votre profil.',
                 ], 403);
+            }
+            // Jeton d'accès jeu personnel : l'identité vérifiée prime sur le Steam déclaré.
+            $user = $this->preferVerifiedMember($tenantId, $user, $steam);
+            if ($user instanceof Response) {
+                return $user;
             }
             $status = strtolower(trim((string) ($user['status'] ?? 'active')));
             if (in_array($status, ['banned', 'disabled', 'suspended', 'deleted'], true)) {
@@ -181,6 +179,54 @@ final class AtakArmaWriteGuard
             'steam_uid' => $steam,
             'session_ok' => $session !== null,
         ];
+    }
+
+    /**
+     * Le jeton d'accès jeu personnel (game_sessions) prime sur le Steam déclaré par le client : la fiche retenue doit être
+     * celle du membre de ce jeton. Avec la seule clé partagée, rien n'est comparé et la fiche trouvée est rendue telle
+     * quelle. Deux fiches de la communauté peuvent porter le même Steam (doublon) : celle du membre vérifié prime.
+     *
+     * @param array<string, mixed> $user fiche trouvée par le Steam déclaré dans cette communauté
+     * @return array<string, mixed>|Response la fiche retenue, ou 403 steam_mismatch
+     */
+    public function preferVerifiedMember(int $tenantId, array $user, string $steam): array|Response
+    {
+        $verifiedUserId = AtakGameIdentityPolicy::verifiedUserId();
+        $verifiedSteam = AtakGameIdentityPolicy::verifiedSteam();
+        if ($verifiedUserId === null && $verifiedSteam === null) {
+            return $user;
+        }
+        if ($verifiedUserId !== null) {
+            if ((int) ($user['id'] ?? 0) === $verifiedUserId) {
+                return $user;
+            }
+            $own = $this->users->findById($verifiedUserId, $tenantId);
+            if (is_array($own) && SteamId::normalize((string) ($own['steam_id'] ?? '')) === $steam) {
+                return $own;
+            }
+        } elseif ($verifiedSteam !== null && hash_equals($verifiedSteam, $steam)) {
+            return $user;
+        }
+
+        return $this->steamMismatch($tenantId);
+    }
+
+    /** Steam déclaré contraire à l'identité vérifiée (session ou jeton personnel). Journal au plus une fois par minute. */
+    private function steamMismatch(int $tenantId): Response
+    {
+        $this->logThrottled(
+            $tenantId,
+            'steam_spoof',
+            60,
+            false,
+            'Tentative d’usurpation d’identité jeu refusée',
+            ['reason' => 'steam_spoof']
+        );
+
+        return Response::json([
+            'error' => 'steam_mismatch',
+            'message' => 'Identité de jeu incohérente. Reconnectez votre compte Athena.',
+        ], 403);
     }
 
     /**

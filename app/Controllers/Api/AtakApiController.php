@@ -50,6 +50,7 @@ use App\Services\Tactical\RoleplaySimulationService;
 use App\Support\ArmaMarkerLabel;
 use App\Support\AtakPoMarker;
 use App\Support\AtakArmaWriteGuard;
+use App\Support\AtakGameIdentityPolicy;
 use App\Support\AtakOrderWaypoint;
 use App\Support\AtakPlayNight;
 use App\Support\ReconCapturedAt;
@@ -4163,6 +4164,11 @@ class AtakApiController
                     'error' => 'steam_not_linked',
                     'message' => 'Aucun compte Athena n’est lié à ce Steam pour cette communauté. Utilisez un code de liaison ou liez Steam dans votre profil.',
                 ], 403);
+            }
+            // Jeton d'accès jeu personnel : la session n'est émise que pour le Steam de ce membre.
+            $user = $this->armaGuard->preferVerifiedMember($tenantId, $user, $steam);
+            if ($user instanceof Response) {
+                return $user;
             }
             $status = strtolower(trim((string) ($user['status'] ?? 'active')));
             if (in_array($status, ['banned', 'disabled', 'suspended', 'deleted'], true)) {
@@ -14379,8 +14385,15 @@ class AtakApiController
             if ($actor instanceof Response) {
                 return $actor;
             }
-            $user = $this->userRepository->findBySteamIdForTenant($tenantId, (string) ($actor['steam_uid'] ?? ''));
-            $userId = (int) ($user['id'] ?? 0);
+            // Jeton d'accès jeu personnel : son membre (la garde a refusé le Steam d'un autre membre). Sinon le Steam
+            // retenu par la garde.
+            $verifiedUserId = AtakGameIdentityPolicy::verifiedUserId();
+            if ($verifiedUserId !== null) {
+                $userId = $verifiedUserId;
+            } else {
+                $user = $this->userRepository->findBySteamIdForTenant($tenantId, (string) ($actor['steam_uid'] ?? ''));
+                $userId = (int) ($user['id'] ?? 0);
+            }
         }
         if ($userId < 1) {
             return Response::json(['error' => 'Linked user required'], 403);
