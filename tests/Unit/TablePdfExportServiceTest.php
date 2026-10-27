@@ -5,12 +5,18 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Controllers\Admin\EffectifsWorkspaceController;
+use App\Core\Container;
 use App\Services\Export\TablePdfExportService;
 use App\Support\TrainingCertificatePdfEngine;
 use PHPUnit\Framework\TestCase;
 
 final class TablePdfExportServiceTest extends TestCase
 {
+    public function testContainerResolvesTheExportService(): void
+    {
+        self::assertInstanceOf(TablePdfExportService::class, Container::get(TablePdfExportService::class));
+    }
+
     /** @return array<string, mixed> */
     private function doc(): array
     {

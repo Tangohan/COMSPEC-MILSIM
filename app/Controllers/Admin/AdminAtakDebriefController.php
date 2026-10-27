@@ -55,7 +55,7 @@ final class AdminAtakDebriefController
         if ($tenantId < 1) {
             return Response::redirect(url('dashboard'));
         }
-        $forbidden = ModuleFeatureAccess::guardAtak('view', 'back-office/atak/comptes-rendus');
+        $forbidden = ModuleFeatureAccess::guardAtak('view', self::BASE);
         if ($forbidden instanceof Response) {
             return $forbidden;
         }
@@ -69,11 +69,12 @@ final class AdminAtakDebriefController
         $op = AtakMissionKey::normalize((string) $request->query('op', ''));
         if ($crId > 0) {
             $selected = $repo->find($tenantId, $crId);
+        } elseif ($op === '' && $operations !== []) {
+            // Rien de choisi : ouvrir la dernière session (évite le « 0 joueur » quand un CR
+            // plus récent prenait la main alors que le sélecteur montrait déjà cette session).
+            $op = (string) $operations[0]['mission_key'];
         } elseif ($op === '' && $debriefs !== []) {
             $selected = $repo->find($tenantId, (int) $debriefs[0]['id']);
-        } elseif ($op === '' && $operations !== []) {
-            // Rien de choisi : la dernière session jouée (la liste affichait son nom sans charger ses joueurs).
-            $op = (string) $operations[0]['mission_key'];
         }
         if ($selected !== null) {
             $op = (string) ($selected['mission_key'] ?? '');
