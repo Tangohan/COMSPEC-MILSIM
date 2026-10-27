@@ -90,10 +90,16 @@ class RscTitles {
         onLoad="[_this select 0, false] call comspec_atak_native_fnc_displayLoad";
     };
     // Montre Garmin au poignet (fn_watch, touche Montre du jeu) : contrôles créés par le code.
+    // Les boîtiers 1024 sont déclarés ici. Posés seulement après coup, ils ne s'affichent pas : il ne reste que le disque.
     class COMSPEC_RscTitleGarmin {
         idd=-1; duration=1e+011; fadein=0; fadeout=0; movingEnable=0;
         onLoad="uiNamespace setVariable ['COMSPEC_ATAK_WatchDisplay', _this select 0]";
-        class controls {};
+        class controls {
+            class Frame: COMSPEC_RscWatchPic { idc=7711; x=-2; y=-2; w=0.05; h=0.05; text="\z\comspec_atak_native\addons\main\data\gw_frame.paa"; };
+            class FrameCoyote: COMSPEC_RscWatchPic { idc=7712; x=-2; y=-2; w=0.05; h=0.05; text="\z\comspec_atak_native\addons\main\data\gw_frame_coyote.paa"; };
+            class FrameFree: COMSPEC_RscWatchPic { idc=7713; x=-2; y=-2; w=0.05; h=0.05; text="\z\comspec_atak_native\addons\main\data\gw_frame_freecandy.paa"; };
+            class FrameUsa: COMSPEC_RscWatchPic { idc=7714; x=-2; y=-2; w=0.05; h=0.05; text="\z\comspec_atak_native\addons\main\data\gw_frame_usa.paa"; };
+        };
     };
     // Mode photo : viseur plein écran, le joueur se déplace normalement.
     class COMSPEC_RscTitleCamera {

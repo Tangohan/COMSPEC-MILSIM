@@ -610,7 +610,8 @@ switch (_act) do {
         private _sig = str [_page, _size, _side, _ratio, _big, _night, _lum, _w get "zoom", _skin];
         private _n = _w getOrDefault ["ctrls", createHashMap];
         if ((_w get "built") isNotEqualTo _sig || {isNull (_n getOrDefault ["frame", controlNull])}) then {
-            { ctrlDelete _x; } forEach (allControls _d);
+            // 7711-7714 : boîtiers déclarés dans la couche, à garder (sinon la texture 1024 ne se charge plus).
+            { if !((ctrlIDC _x) in [7711, 7712, 7713, 7714]) then { ctrlDelete _x; }; } forEach (allControls _d);
             _n = createHashMap;
             _w set ["ctrls", _n];
             _w set ["built", _sig];
@@ -618,16 +619,17 @@ switch (_act) do {
                 params ["_key", "_cls", "_rect"];
                 private _c = _d ctrlCreate [_cls, -1];
                 _c ctrlSetPosition _rect;
-                _c ctrlCommit 0;
                 _c ctrlEnable false;
                 _n set [_key, _c];
                 _c
             };
+            // Image blanche : la classe verte du téléphone, validée avant la couleur, restait un disque vert.
             private _pic = {
                 params ["_key", "_t", "_u", "_v", "_s", ["_col", [1, 1, 1, 1]]];
-                private _c = [_key, "COMSPEC_RscPicture", [_u, _v, _s, _s] call _P] call _mk;
+                private _c = [_key, "COMSPEC_RscWatchPic", [_u, _v, _s, _s] call _P] call _mk;
                 _c ctrlSetText (_t call _tex);
                 _c ctrlSetTextColor (_col call _C);
+                _c ctrlCommit 0;
                 _c
             };
             private _txt = {
@@ -636,12 +638,14 @@ switch (_act) do {
                 _c ctrlSetFont _font;
                 _c ctrlSetFontHeight (_fh * _ry);
                 _c ctrlSetTextColor (_col call _C);
+                _c ctrlCommit 0;
                 _c
             };
             private _box = {
                 params ["_key", "_u", "_v", "_uw", "_vh", "_col"];
                 private _c = [_key, "COMSPEC_RscText", [_u, _v, _uw, _vh] call _P] call _mk;
                 _c ctrlSetBackgroundColor (_col call _C);
+                _c ctrlCommit 0;
                 _c
             };
             private _rich = {
@@ -649,6 +653,7 @@ switch (_act) do {
                 private _c = [_key, "COMSPEC_RscStructuredText", [_u, _v, _uw, _vh] call _P] call _mk;
                 _c ctrlSetFont _fR;
                 _c ctrlSetFontHeight (_fh * _ry);
+                _c ctrlCommit 0;
                 _c
             };
             // Arc continu (points serrés) : de l'angle _a0 à _a1 (degrés, 0 en haut, sens horaire), _k points.
@@ -670,6 +675,7 @@ switch (_act) do {
             // Fond noir de l'écran (disque), contenu, puis la montre par-dessus (l'écran de la texture est transparent).
             ["bg", "gw_disc", -1.02, -1.02, 2.04, [0.004, 0.004, 0.005, 1]] call _pic;
             (_n get "bg") ctrlSetTextColor [0.004, 0.004, 0.005, 1];
+            (_n get "bg") ctrlCommit 0;
             switch (_page) do {
                 case "FACE": {
                     ["bba", 212, 328, 30, 0.9, 0.07] call _arc;
@@ -711,6 +717,7 @@ switch (_act) do {
                 };
                 case "MAP": {
                     private _mc = ["map", "COMSPEC_RscMapAtak", [-0.8, -0.8, 1.6, 1.6] call _P] call _mk;
+                    _mc ctrlCommit 0;
                     _mc ctrlMapAnimAdd [0, [0.012, 0.025, 0.05, 0.1] select (_w get "zoom"), [] call comspec_atak_native_fnc_gpsPos];
                     ctrlMapAnimCommit _mc;
                     _mc ctrlAddEventHandler ["Draw", {
@@ -728,12 +735,14 @@ switch (_act) do {
                         _mc drawIcon ["\z\comspec_atak_native\addons\main\data\gw_arrow.paa", [1, 0.42, 0.12, 1], _me, 22, 22, getDir (vehicle player), "", 0];
                     }];
                     // Mode nuit : filtre rouge sur la carte.
-                    if (_night) then { ["nf", "gw_disc", -1.02, -1.02, 2.04, [0.55, 0, 0, 0.4]] call _pic; (_n get "nf") ctrlSetTextColor [0.55, 0, 0, 0.4]; };
+                    if (_night) then { ["nf", "gw_disc", -1.02, -1.02, 2.04, [0.55, 0, 0, 0.4]] call _pic; (_n get "nf") ctrlSetTextColor [0.55, 0, 0, 0.4]; (_n get "nf") ctrlCommit 0; };
                     ["northBg", "gw_disc", -0.11, -0.97, 0.22, [0, 0, 0, 0.75]] call _pic;
                     (_n get "northBg") ctrlSetTextColor [0, 0, 0, 0.75];
+                    (_n get "northBg") ctrlCommit 0;
                     ["north", -0.3, -0.94, 0.6, 0.16, 0.12, _fB, _cRed] call _txt;
                     ["gridBg", -0.62, 0.56, 1.24, 0.3, [0, 0, 0, 0.72]] call _box;
                     (_n get "gridBg") ctrlSetBackgroundColor [0, 0, 0, 0.72];
+                    (_n get "gridBg") ctrlCommit 0;
                     ["grid", -0.6, 0.58, 1.2, 0.13, 0.11, _fB, _cWhite] call _txt;
                     ["scale", -0.6, 0.7, 1.2, 0.12, 0.09, _fR, _cGrey] call _txt;
                     ["nofix", -0.7, -0.08, 1.4, 0.16, 0.13, _fB, _cOrange] call _txt;
@@ -826,15 +835,16 @@ switch (_act) do {
             // Bandeau (notifications du téléphone, retour des actions) : caché sauf à l'arrivée.
             ["banBg", -0.8, -0.66, 1.6, 0.46, [0.13, 0.14, 0.15, 0.97]] call _box;
             ["ban", -0.74, -0.62, 1.48, 0.4, 0.105] call _rich;
-            ["frame", "COMSPEC_RscPicture", [_x0, _y0, _ww, _size]] call _mk;
+            ["frame", "COMSPEC_RscWatchPic", [_x0, _y0, _ww, _size]] call _mk;
             (_n get "frame") ctrlSetText (_skin call _tex);
             (_n get "frame") ctrlSetTextColor [1, 1, 1, 1];
+            (_n get "frame") ctrlCommit 0;
             { (_n get _x) ctrlShow false; } forEach ["banBg", "ban"];
             _w set ["slow", 0];
         };
         private _g = { _n getOrDefault [_this, controlNull] };
         private _set = { params ["_k", "_t"]; (_k call _g) ctrlSetText ((_t) call _tr); };
-        private _col = { params ["_k", "_c"]; (_k call _g) ctrlSetTextColor (_c call _C); };
+        private _col = { params ["_k", "_c"]; private _ctrl = _k call _g; _ctrl ctrlSetTextColor (_c call _C); _ctrl ctrlCommit 0; };
 
         // --- Mises à jour rapides (0,1 s) : boussole, carte, chrono, minuteur ---
         if (_page isEqualTo "COMPASS") then {
@@ -847,6 +857,7 @@ switch (_act) do {
                 _c ctrlSetText ([_cards select _i, (_cards select _i) call _tr] select ((_i mod 3) isEqualTo 0));
                 _c ctrlSetTextColor (([_cGrey, _cWhite] select ((_i mod 3) isEqualTo 0)) call _C);
                 if (_i isEqualTo 0) then { _c ctrlSetTextColor (_cRed call _C); };
+                _c ctrlCommit 0;
             };
             for "_i" from 0 to 35 do {
                 if ((_i mod 3) isNotEqualTo 0) then {
