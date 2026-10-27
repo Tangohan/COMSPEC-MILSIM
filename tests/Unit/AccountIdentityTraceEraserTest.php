@@ -39,7 +39,7 @@ final class AccountIdentityTraceEraserTest extends TestCase
         $this->pdo->exec("INSERT INTO platform_account_bans (email_norm) VALUES ('parti@x.fr')");
     }
 
-    private function count(string $sql): int
+    private function countRows(string $sql): int
     {
         return (int) $this->pdo->query($sql)->fetchColumn();
     }
@@ -48,12 +48,12 @@ final class AccountIdentityTraceEraserTest extends TestCase
     {
         $report = (new AccountIdentityTraceEraser($this->pdo))->erase('parti@x.fr', [10]);
 
-        self::assertSame(0, $this->count("SELECT COUNT(*) FROM athena_accounts WHERE email = 'parti@x.fr'"));
-        self::assertSame(0, $this->count('SELECT COUNT(*) FROM account_tenant_memberships WHERE account_id = 1'));
-        self::assertSame(0, $this->count('SELECT COUNT(*) FROM game_sessions WHERE account_id = 1'));
-        self::assertSame(0, $this->count('SELECT COUNT(*) FROM atak_trusted_devices WHERE account_id = 1'));
-        self::assertSame(0, $this->count("SELECT COUNT(*) FROM site_role_assignments WHERE email_normalized = 'parti@x.fr'"));
-        self::assertSame(0, $this->count("SELECT COUNT(*) FROM community_invitations WHERE status = 'pending'"));
+        self::assertSame(0, $this->countRows("SELECT COUNT(*) FROM athena_accounts WHERE email = 'parti@x.fr'"));
+        self::assertSame(0, $this->countRows('SELECT COUNT(*) FROM account_tenant_memberships WHERE account_id = 1'));
+        self::assertSame(0, $this->countRows('SELECT COUNT(*) FROM game_sessions WHERE account_id = 1'));
+        self::assertSame(0, $this->countRows('SELECT COUNT(*) FROM atak_trusted_devices WHERE account_id = 1'));
+        self::assertSame(0, $this->countRows("SELECT COUNT(*) FROM site_role_assignments WHERE email_normalized = 'parti@x.fr'"));
+        self::assertSame(0, $this->countRows("SELECT COUNT(*) FROM community_invitations WHERE status = 'pending'"));
         self::assertSame(1, $report['athena_accounts']);
     }
 
@@ -61,11 +61,11 @@ final class AccountIdentityTraceEraserTest extends TestCase
     {
         (new AccountIdentityTraceEraser($this->pdo))->erase('parti@x.fr', [10]);
 
-        self::assertSame(1, $this->count("SELECT COUNT(*) FROM athena_accounts WHERE email = 'reste@x.fr'"));
-        self::assertSame(1, $this->count('SELECT COUNT(*) FROM atak_trusted_devices WHERE account_id = 2'));
-        self::assertSame(1, $this->count("SELECT COUNT(*) FROM site_role_assignments WHERE email_normalized = 'reste@x.fr'"));
-        self::assertSame(1, $this->count("SELECT COUNT(*) FROM community_invitations WHERE status = 'accepted'"), 'L’historique d’invitation acceptée reste à la communauté.');
-        self::assertSame(1, $this->count('SELECT COUNT(*) FROM platform_account_bans'), 'Un bannissement survit à la suppression du compte.');
+        self::assertSame(1, $this->countRows("SELECT COUNT(*) FROM athena_accounts WHERE email = 'reste@x.fr'"));
+        self::assertSame(1, $this->countRows('SELECT COUNT(*) FROM atak_trusted_devices WHERE account_id = 2'));
+        self::assertSame(1, $this->countRows("SELECT COUNT(*) FROM site_role_assignments WHERE email_normalized = 'reste@x.fr'"));
+        self::assertSame(1, $this->countRows("SELECT COUNT(*) FROM community_invitations WHERE status = 'accepted'"), 'L’historique d’invitation acceptée reste à la communauté.');
+        self::assertSame(1, $this->countRows('SELECT COUNT(*) FROM platform_account_bans'), 'Un bannissement survit à la suppression du compte.');
     }
 
     public function testOrphanGameAccountIsErasedOnlyWithoutLiveMember(): void
@@ -78,7 +78,7 @@ final class AccountIdentityTraceEraserTest extends TestCase
         $this->pdo->exec("UPDATE users SET email = 'deleted-10@deleted.invalid', deleted_at = '2026-10-01' WHERE id = 10");
 
         self::assertSame(1, $eraser->eraseOrphanGameAccount('parti@x.fr'));
-        self::assertSame(0, $this->count("SELECT COUNT(*) FROM athena_accounts WHERE email = 'parti@x.fr'"));
-        self::assertSame(0, $this->count('SELECT COUNT(*) FROM atak_trusted_devices WHERE account_id = 1'));
+        self::assertSame(0, $this->countRows("SELECT COUNT(*) FROM athena_accounts WHERE email = 'parti@x.fr'"));
+        self::assertSame(0, $this->countRows('SELECT COUNT(*) FROM atak_trusted_devices WHERE account_id = 1'));
     }
 }
