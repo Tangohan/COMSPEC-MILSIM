@@ -107,7 +107,7 @@ switch (_act) do {
             if (!isNull _chute) then { deleteVehicle _chute; };
             createVehicle ["SmokeShellPurple", getPosATL _box, [], 0, "CAN_COLLIDE"];
             // Caisse vide ou oubliée : retirée au bout de 20 min par le serveur, même si le demandeur a quitté la partie.
-            ["comspec_atak_native_deleteLater", [[_box], 1200]] call CBA_fnc_serverEvent;
+            [[_box], 1200] remoteExecCall ["comspec_atak_native_fnc_deleteLater", 2];
         };
         _o set ["step", "DONE"];
         _o set ["pos", _pos];

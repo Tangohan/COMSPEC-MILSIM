@@ -225,7 +225,7 @@ switch (_act) do {
             };
             [{ ["landed", _this] call comspec_atak_native_fnc_logisticsAction; }, [_id, getPosATL _box]] call CBA_fnc_execNextFrame;
             // Caisse (et jerrican) oubliés : retirés au bout de 30 min par le serveur, même si le demandeur a quitté la partie.
-            ["comspec_atak_native_deleteLater", [_trash, 1800]] call CBA_fnc_serverEvent;
+            [_trash, 1800] remoteExecCall ["comspec_atak_native_fnc_deleteLater", 2];
         };
     };
     case "landed": {

@@ -364,9 +364,9 @@ final class AtakMultiplayerAuthTest extends TestCase
         // ferme (R2 : captureSrv gardé pour « giveFail » rouvrait B2 et D2) ; un émetteur sans gestionnaire perd la
         // demande sans bruit (R1).
         // Lot mpauth3 : capLocal (SEC-023), droneCmd (SEC-022), debriefRecv et debriefData (SEC-030), adminData (SEC-015),
-        // dockPut, dockTake, dockDeploy, dockPack et dockResult (SEC-025) s'y ajoutent.
+        // dockPut, dockTake, dockDeploy, dockPack et dockResult (SEC-025), deleteLater (SEC-024) s'y ajoutent.
         $removed = ['captureSrv', 'compromise', 'admin', 'adminReport', 'zeus', 'ft', 'planSrv', 'dataSrv', 'capLocal', 'droneCmd', 'debriefRecv', 'debriefData', 'adminData',
-            'dockPut', 'dockTake', 'dockDeploy', 'dockPack', 'dockResult'];
+            'dockPut', 'dockTake', 'dockDeploy', 'dockPack', 'dockResult', 'deleteLater'];
         $quoted = '/(["\'])comspec_atak_native_(?:' . implode('|', $removed) . ')\1/i';
         // Fonctions qui jugent le demandeur par remoteExecutedOwner (fn_reqUnit) : appelées depuis un gestionnaire CBA,
         // elles ne voient pas d'appel distant et croient l'unité fournie par l'émetteur. Aucun gestionnaire ne les
@@ -1184,6 +1184,56 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertStringContainsString('class comspec_atak_native_fnc_dockServer { allowedTargets = 2; };', $cfg);
         self::assertStringContainsString('class comspec_atak_native_fnc_dockClient { allowedTargets = 1; jip = 0; };', $cfg);
         self::assertStringContainsString('["Déjà %1 socles posés à votre nom sur ce serveur. Repliez-en un d\'abord.", "', $this->read(self::MAIN . '/i18n/en.txt'));
+    }
+
+    public function testDelayedCleanupDeletesOnlyTheRequesterObjectsWithinBounds(): void
+    {
+        // Lot mpauth3 (SEC-024, MP2-04) : le gestionnaire CBA comspec_atak_native_deleteLater (XEH_postInitServer)
+        // supprimait plus tard n'importe quel objet de la partie (véhicule, bâtiment, unité d'un autre joueur), au délai
+        // choisi par l'émetteur, même après son départ. La demande passe par remoteExecCall vers fn_deleteLater, sur le
+        // serveur : objets du poste qui demande seulement (créés par lui, encore locaux chez lui), jamais une unité, 4 par
+        // demande, 20 en attente par poste, délai de 10 min à 2 h, et rien qui a un équipage au moment de supprimer.
+        $f = $this->stripSqfComments($this->read(self::MAIN . '/functions/core/fn_deleteLater.sqf'));
+        self::assertMatchesRegularExpression('/^params \[\["_objs", \[\]\], \["_delay", 1800\]\];\s*'
+            . 'if \(!isServer\) exitWith \{\};\s*'
+            . 'if \(isRemoteExecutedJIP\) exitWith \{[^{}]*\};\s*'
+            . 'private _remote = isMultiplayer && \{isRemoteExecuted\} && \{remoteExecutedOwner isNotEqualTo 2\};\s*'
+            . 'if \(!\(_objs isEqualType \[\]\) \|\| \{!\(_delay isEqualType 0\)\}\) exitWith \{\};\s*'
+            . 'private _who = \[2, remoteExecutedOwner\] select _remote;/', trim($f));
+        $order = [
+            '_objs = (_objs select { _x isEqualType objNull && {!isNull _x} && {!(_x isKindOf "CAManBase")} && {!_remote || {(owner _x) isEqualTo _who}} }) select [0, 4];',
+            'private _q = localNamespace getVariable ["COMSPEC_ATAK_DeleteLater", createHashMap];',
+            'private _due = (_q getOrDefault [_who, []]) select { _x > _now };',
+            '_objs = _objs select [0, (20 - (count _due)) max 0];',
+            'if (_objs isEqualTo []) exitWith {',
+            '_delay = (_delay max 600) min 7200;',
+            '{ _due pushBack (_now + _delay); } forEach _objs;',
+            '_q set [_who, _due];',
+            '[{ { if (!isNull _x && {(crew _x) isEqualTo []}) then { deleteVehicle _x; }; } forEach _this; }, _objs, _delay] call CBA_fnc_waitAndExecute;',
+        ];
+        $at = 0;
+        foreach ($order as $step) {
+            $i = strpos($f, $step, $at);
+            self::assertNotFalse($i, $step);
+            $at = (int) $i + strlen($step);
+        }
+        self::assertSame(1, substr_count($f, 'deleteVehicle'));
+        // Deux émetteurs connus (caisse UberEats, caisse et jerrican de la logistique), vers le serveur, deux arguments
+        // (rien dans la file JIP) ; plus de gestionnaire CBA (invariant des événements retirés).
+        $calls = [];
+        foreach ($this->sources() as $rel => $units) {
+            foreach ($units as $code) {
+                foreach ($this->remoteCalls($code) as [$left, $right]) {
+                    if ($right !== null && strtolower((string) $this->literal($right[0])) === 'comspec_atak_native_fnc_deletelater') {
+                        $calls[] = [basename($rel), trim($right[1] ?? ''), count($right), count((array) $left)];
+                    }
+                }
+            }
+        }
+        self::assertSame([['fn_foodAction.sqf', '2', 2, 2], ['fn_logisticsAction.sqf', '2', 2, 2]], $calls);
+        $cfg = $this->cppCode($this->read(self::MAIN . '/config.cpp'));
+        self::assertStringContainsString('class saveProfile {}; class localCfg {}; class deleteLater {};', $cfg);
+        self::assertStringContainsString('class comspec_atak_native_fnc_deleteLater { allowedTargets = 2; };', $cfg);
     }
 
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */

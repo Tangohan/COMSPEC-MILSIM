@@ -202,11 +202,9 @@ COMSPEC_ATAK_FtCheck = {
 }, [], 15] call CBA_fnc_waitAndExecute;
 // Distances parcourues et heures de pilote de chaque joueur (app Distances), envoyées à Athena toutes les 10 min (fn_distanceServer).
 [{ ["tick"] call comspec_atak_native_fnc_distanceServer; }, 3] call COMSPEC_ATAK_PfhSpread;
-// Ménage différé demandé par un client (caisses larguées...) : fait ici pour survivre à son départ.
-["comspec_atak_native_deleteLater", {
-    params [["_objs", []], ["_delay", 1800]];
-    [{ { if (!isNull _x) then { deleteVehicle _x; }; } forEach _this; }, _objs, _delay] call CBA_fnc_waitAndExecute;
-}] call CBA_fnc_addEventHandler;
+// Ménage différé demandé par un client (caisses larguées...) : fn_deleteLater, par remoteExecCall vers le serveur, pour
+// les objets du poste qui demande seulement (lot mpauth3, SEC-024 : plus d'événement CBA comspec_atak_native_deleteLater,
+// qui supprimait plus tard n'importe quel objet de la partie).
 addMissionEventHandler ["HandleDisconnect", {
     params [["_unit", objNull], "", "_uid"];
     ["leave", _uid] call comspec_atak_native_fnc_playTimeServer;
