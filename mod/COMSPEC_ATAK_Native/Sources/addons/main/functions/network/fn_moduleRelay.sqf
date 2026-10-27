@@ -152,8 +152,9 @@ private _apply = {
             };
         };
         _list pushBackUnique _x;
-        // Fiche du relais remontée à Athena quand l'addon Overwatch est chargé (serveur).
-        if (isServer && {!isNil "comspec_overwatch_connect_fnc_syncAtakRelay"}) then { [_x, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };
+        // Fiche du relais remontée à Athena quand l'addon Overwatch est chargé (serveur). Garde par la config, comme
+        // fn_relayTower : sans connect, ce nom reste vide et un client pouvait le remplir par publicVariable.
+        if (isServer && {isClass (configFile >> "CfgPatches" >> "comspec_overwatch_connect")}) then { [_x, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };
     } forEach _targets;
     missionNamespace setVariable ["COMSPEC_AtakRelays", _list, true];
     if (_req) then { missionNamespace setVariable ["COMSPEC_ATAK_RelaysRequired", true, true]; };

@@ -558,15 +558,15 @@ final class AtakServerCodeNamespaceGuardTest extends TestCase
                 }
             }
         }
-        // Fichiers serveur (garde !isServer de premier niveau) : pas de garde isNil seule sur une fonction d'un autre
-        // paquet.
+        // Code serveur (fichier à garde !isServer de premier niveau, ou ligne qui teste isServer) : pas de garde isNil
+        // seule sur une fonction d'un autre paquet.
         foreach ($all as $rel => $c) {
             $server = basename($rel) === 'XEH_postInitServer.sqf' || preg_match('/(?m)^if\s*\(\s*!\s*isServer\s*\)\s*exitWith/', $c) === 1;
-            if (!$server) {
-                continue;
-            }
             $own = str_starts_with($rel, self::MAIN) ? '/^(comspec_atak_native|cba|bis)_fnc_/i' : '/^(comspec_overwatch_connect|comspec_overwatch_main|cba|bis)_fnc_/i';
             foreach (preg_split('/\R/', $c) ?: [] as $i => $line) {
+                if (!$server && preg_match('/\bisServer\b/', $line) !== 1) {
+                    continue;
+                }
                 if (preg_match_all('/isNil\s*"([A-Za-z0-9_]+?_fnc_[A-Za-z0-9_]+)"/', $line, $m)) {
                     foreach ($m[1] as $name) {
                         if (preg_match($own, $name) !== 1 && !str_contains($line, 'configFile >>')) {
@@ -577,9 +577,14 @@ final class AtakServerCodeNamespaceGuardTest extends TestCase
             }
         }
         // Natif serveur → connect : seulement si connect est chargé.
-        foreach (['/functions/network/fn_relayTower.sqf', '/functions/network/fn_relayConvert.sqf'] as $f) {
+        $connectGuard = [
+            '/functions/network/fn_relayTower.sqf' => 'if (isClass (configFile >> "CfgPatches" >> "comspec_overwatch_connect")) then { [_o, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };',
+            '/functions/network/fn_relayConvert.sqf' => 'if (isClass (configFile >> "CfgPatches" >> "comspec_overwatch_connect")) then { [_o, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };',
+            '/functions/network/fn_moduleRelay.sqf' => 'if (isServer && {isClass (configFile >> "CfgPatches" >> "comspec_overwatch_connect")}) then { [_x, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };',
+        ];
+        foreach ($connectGuard as $f => $want) {
             $c = $all[self::MAIN . $f] ?? '';
-            if (!str_contains($c, 'if (isClass (configFile >> "CfgPatches" >> "comspec_overwatch_connect")) then { [_o, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };')) {
+            if (!str_contains($c, $want)) {
                 $offenders[] = self::MAIN . "$f : syncAtakRelay sans garde CfgPatches comspec_overwatch_connect";
             }
         }
