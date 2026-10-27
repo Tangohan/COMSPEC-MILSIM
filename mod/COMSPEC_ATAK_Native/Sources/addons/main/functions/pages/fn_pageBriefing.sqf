@@ -287,6 +287,9 @@ if (_src isEqualTo "ATHENA" && {_total > 0}) then {
     private _loading = uiNamespace getVariable ["COMSPEC_ATAK_SlideLoading", createHashMap];
     uiNamespace setVariable ["COMSPEC_ATAK_SlideLoading", _loading];
     // Entrée datée (diag_tickTime) : au-delà de 25 s (fin de mission ou erreur pendant le téléchargement), elle est périmée.
+    // Image du navigateur intégré évincée du magasin base64 (vidé au-delà de 12) : entrée périmée, image relue.
+    private _hit = (_cache getOrDefault [_path, [""]]) param [0, ""];
+    if ((_hit select [0, 4]) isEqualTo "WEB:" && {!((_hit select [4]) in (uiNamespace getVariable ["COMSPEC_ATAK_SlideWeb", createHashMap]))}) then { _cache deleteAt _path; };
     private _since = _loading getOrDefault [_path, -100];
     if !(_since isEqualType 0) then { _since = -100; };
     if (!(_path in _cache) && {diag_tickTime - _since > 25}) then {
@@ -329,7 +332,7 @@ if (_src isEqualTo "ATHENA" && {_total > 0}) then {
                 private _off = 0;
                 private _err = "";
                 for "_n" from 0 to 400 do {
-                    private _r = [(["COMSPECExtension", "ImageDataChunk", [_webUrl, _key, _off]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
+                    private _r = [(["COMSPECExtension", "ImageDataChunk", [_webUrl, _key, _off toFixed 0]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
                     if (isNil "_r") then { _r = ""; };
                     if (_r isEqualType []) then { _r = _r param [0, ""]; };
                     if !(_r isEqualType "") then { _r = str _r; };
@@ -376,6 +379,8 @@ if (_src isEqualTo "GOOGLE" && {_path isNotEqualTo ""}) then {
     private _gCache = uiNamespace getVariable ["COMSPEC_ATAK_GSlideCache", createHashMap];
     uiNamespace setVariable ["COMSPEC_ATAK_GSlideCache", _gCache];
     private _st = _gCache getOrDefault [_path, []];
+    // Image évincée du magasin base64 (vidé au-delà de 12) : relue comme une diapositive jamais vue.
+    if ((count _st) > 1 && {((_st select 0) select [0, 4]) isEqualTo "WEB:"} && {!(_path in (uiNamespace getVariable ["COMSPEC_ATAK_SlideWeb", createHashMap]))}) then { _st = []; };
     // Entrée : [] absente, [heure] en cours, [résultat, raison] faite.
     if ((count _st) isEqualTo 0 || {(count _st) isEqualTo 1 && {diag_tickTime - (_st select 0) > 25}}) then {
         _gCache set [_path, [diag_tickTime]];

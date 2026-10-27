@@ -175,6 +175,8 @@ switch (_mode) do {
                     if (_key isNotEqualTo "") then {
                         // Cache : texture posable (chemin lisible ou "WEB:<source>"), ou heure d'un échec (nouvel essai après 60 s).
                         private _p = _cache getOrDefault [_key, -1e9];
+                        // Image évincée du magasin base64 (vidé au-delà de 12) : « WEB:<clé> » périmé, image relue.
+                        if (_p isEqualType "" && {(_p select [0, 4]) isEqualTo "WEB:"} && {!(_key in (uiNamespace getVariable ["COMSPEC_ATAK_ScreenWeb", createHashMap]))}) then { _cache deleteAt _key; _p = -1e9; };
                         if (_p isEqualType "" && {_p isNotEqualTo ""}) then {
                             _want = _p;
                         } else {
@@ -263,7 +265,8 @@ switch (_mode) do {
                     if ((_o getVariable ["COMSPEC_ATAK_ScreenWebShown", ""]) isNotEqualTo _web) then {
                         _o setVariable ["COMSPEC_ATAK_ScreenWebShown", _web];
                         _o setVariable ["COMSPEC_ATAK_ScreenWebAt", diag_tickTime];
-                        ["web", [_disp, _web]] call _fn;
+                        // Image absente (magasin vidé) : page non chargée, nouvel essai au prochain passage.
+                        if !(["web", [_disp, _web]] call _fn) then { _o setVariable ["COMSPEC_ATAK_ScreenWebShown", ""]; };
                     };
                     // Le navigateur dessine après coup : texture recopiée souvent pendant 15 s, puis toutes les 10 s si l'écran est vu.
                     private _fresh = diag_tickTime - (_o getVariable ["COMSPEC_ATAK_ScreenWebAt", -1e9]) < 15;

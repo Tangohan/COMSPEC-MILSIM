@@ -19,8 +19,9 @@ private _b64 = "";
 private _mime = "jpeg";
 private _off = 0;
 private _err = "";
+// Décalage en texte entier : un nombre au-delà de 999 999 pouvait partir en « 1.00386e+06 », relu 0 par la DLL.
 for "_n" from 0 to 400 do {
-    private _r = [(["COMSPECExtension", "ImageDataChunk", [_arg, _key, _off]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
+    private _r = [(["COMSPECExtension", "ImageDataChunk", [_arg, _key, _off toFixed 0]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
     if (isNil "_r") then { _r = ""; };
     if (_r isEqualType []) then { _r = _r param [0, ""]; };
     if !(_r isEqualType "") then { _r = str _r; };
