@@ -105,6 +105,10 @@ final class AtakAccessoriesVehicleTest extends TestCase
     {
         $lay = $this->read(self::MAIN . '/functions/ui/fn_layoutGet.sqf');
         self::assertStringContainsString('comspec_atak_native_fnc_phoneCarried', $lay);
+        self::assertStringContainsString(
+            '"COMSPEC_ATAK_PhoneModel"',
+            $this->read(self::MAIN . '/functions/core/fn_phoneCarried.sqf')
+        );
         self::assertStringNotContainsString('profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel"', $lay);
         self::assertStringContainsString('_model = "tablet";', $lay);
         self::assertStringNotContainsString('VIS_', $lay);
@@ -121,5 +125,6 @@ final class AtakAccessoriesVehicleTest extends TestCase
         $settings = $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf');
         self::assertStringContainsString('comspec_atak_native_fnc_phoneCarried', $settings);
         self::assertStringNotContainsString('"COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone"', $settings);
+        self::assertStringContainsString('Le modèle et la couleur sont ceux du téléphone dans vos poches.', $settings);
     }
 }

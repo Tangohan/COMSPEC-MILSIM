@@ -44,6 +44,7 @@ final class AtakDeferredLinkAssetTest extends TestCase
         $pos = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_updatePosition.sqf');
 
         self::assertStringContainsString('SendBackoffLadderSec = { 45, 75, 90 }', $cs);
+        self::assertStringContainsString('RetryAfterCapSec = 600', $cs);
         self::assertStringContainsString('SendFailStreakToEnter = 3', $cs);
         self::assertStringContainsString('SendOkStreakToStepDown = 2', $cs);
         self::assertStringContainsString('InvokeCallback("SendBackoff"', $cs);

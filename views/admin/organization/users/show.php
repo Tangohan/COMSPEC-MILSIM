@@ -134,7 +134,7 @@ $flashWarn = \App\Core\Session::getFlash('warning');
         </div>
         <div class="ath-member-show__identity">
             <p class="ath-member-show__kicker">Fiche membre</p>
-            <p class="ath-member-show__name"><?= $h($displayName !== '' ? $displayName : 'Membre sans nom affiché') ?></p>
+            <p class="ath-member-show__name"><?= staff_name($displayName !== '' ? $displayName : 'Membre sans nom affiché', $uid, true) ?></p>
             <p class="ath-member-show__email"><?= $h(function_exists('email_for_display') ? email_for_display($email) : $email) ?></p>
             <div class="ath-member-show__tags">
                 <span class="ath-tag <?= $h($statusTagClass) ?>"><?= $h($statusLabel) ?></span>
