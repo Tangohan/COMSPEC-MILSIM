@@ -15,6 +15,9 @@
     téléphone) = [[uid ou "ALL", méthode, nom de qui a partagé, heure]...]. Le poseur d'une caméra fixe (et le porteur
     de son téléphone) y a toujours accès. Réglage comspec_atak_native_camera_share (CBA) : 0 partage obligatoire
     (défaut), 1 tout le camp voit toutes les caméras sans partage (comportement d'avant).
+    Sur le serveur, les règles lisent ses propres tables, que le réseau n'écrit pas : localNamespace COMSPEC_ATAK_CamAcc
+    ([source, liste]..., écrite par « srvAcc », qui publie ensuite la liste) et COMSPEC_ATAK_CamOwners (poseur retenu à
+    la pose, fn_camAction). Caméra sans poseur retenu (créée par un script) : personne n'en est le poseur pour le serveur.
 
     Modes :
       ["required"]                      bool : le partage est-il obligatoire
@@ -65,17 +68,28 @@ private _num = { params ["_v", "_d"]; if (_v isEqualType 0) then { _v } else { _
 // de player). Fonctions locales : dans la pile d'une demande distante, un appel imbriqué de la fonction garde le
 // contexte distant et serait refusé par la garde ci-dessus.
 private _required = { ([missionNamespace getVariable ["comspec_atak_native_camera_share", 0], 0] call _num) isEqualTo 0 };
+// Liste d'accès : sur le serveur, sa copie (contre-expertise mpauth3 v1, R5) ; la variable publique, qu'un poste peut
+// réécrire, ne sert qu'à l'affichage du téléphone.
 private _accessOf = {
     params ["_s"];
     if (isNull _s) exitWith { [] };
-    private _acc = _s getVariable ["COMSPEC_ATAK_ShareAcc", []];
+    private _acc = if (isServer) then {
+        (((localNamespace getVariable ["COMSPEC_ATAK_CamAcc", []]) select { (_x select 0) isEqualTo _s }) param [0, [objNull, []]]) select 1
+    } else {
+        _s getVariable ["COMSPEC_ATAK_ShareAcc", []]
+    };
     if (_acc isEqualType []) then { _acc } else { [] }
 };
-// Poseur de la caméra fixe, ou porteur pour la caméra de son téléphone.
+// Poseur de la caméra fixe, ou porteur pour la caméra de son téléphone. Sur le serveur, le poseur retenu à la pose
+// (fn_camAction « srvReg », R5) ; ailleurs, les variables publiques de la caméra, pour l'affichage.
 private _isOwner = {
     params ["_s", "_u"];
     if (isNull _s) exitWith { false };
     if !([_s] call _isCam) exitWith { _s isEqualTo _u };
+    if (isServer) exitWith {
+        private _e = (localNamespace getVariable ["COMSPEC_ATAK_CamOwners", []]) select { (_x select 0) isEqualTo _s };
+        _e isNotEqualTo [] && {((_e select 0) select 1) isEqualTo ([_u] call _uidOf)}
+    };
     private _ou = _s getVariable ["COMSPEC_ATAK_CamOwnerUid", ""];
     // Caméra posée avant le partage : seul le nom du poseur est connu.
     if (_ou isEqualTo "") then { (_s getVariable ["COMSPEC_ATAK_CamOwner", ""]) isEqualTo name _u } else { _ou isEqualTo ([_u] call _uidOf) }
@@ -195,7 +209,8 @@ switch (_mode) do {
     };
     // Serveur : seul à modifier et publier COMSPEC_ATAK_ShareAcc. Entrées vides : tous les accès retirés. Demande d'un
     // client (SEC-005) : jugée sur le demandeur (_mayEdit). Entrées bornées : quatre chaînes de 64 caractères au plus,
-    // 64 entrées par demande, 128 dans la liste publiée (les plus récentes).
+    // 64 entrées par demande, 128 dans la liste publiée (les plus récentes). La fusion part de la copie du serveur
+    // (COMSPEC_ATAK_CamAcc, R5), jamais de la liste publiée.
     case "srvAcc": {
         if (!isServer) exitWith { false };
         _a params [["_src", objNull, [objNull]], ["_add", [], [[]]]];
@@ -212,6 +227,9 @@ switch (_mode) do {
             if ((count _all) > 128) then { _all = _all select [(count _all) - 128, 128]; };
             _all
         };
+        private _tab = (localNamespace getVariable ["COMSPEC_ATAK_CamAcc", []]) select { !isNull (_x select 0) && {(_x select 0) isNotEqualTo _src} };
+        _tab pushBack [_src, _acc];
+        localNamespace setVariable ["COMSPEC_ATAK_CamAcc", _tab];
         _src setVariable ["COMSPEC_ATAK_ShareAcc", _acc, true];
         true
     };

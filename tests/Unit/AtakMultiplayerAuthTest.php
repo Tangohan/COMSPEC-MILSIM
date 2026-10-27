@@ -505,7 +505,31 @@ final class AtakMultiplayerAuthTest extends TestCase
         $reg = $this->between($code, 'case "srvReg": {', 'case "rotate": {');
         self::assertMatchesRegularExpression('/^case "srvReg": \{\s*if \(!isServer \|\| \{!\(_a isEqualType objNull\)\}\) exitWith \{ false \};\s*'
             . 'if \(_remote && \{_b isNotEqualTo true \|\| \{isNull _a\} \|\| \{!alive _req\} \|\| \{\(_req distance _a\) > 10\}\}\) exitWith \{[^{}]*false\s*\};\s*'
-            . '\[_a, _b isEqualTo true\] call _register;\s*true\s*\};\s*$/', $reg);
+            . '\[_a, _b isEqualTo true, \[player, _req\] select _remote\] call _register;\s*true\s*\};\s*$/', $reg);
+        // Poseur retenu par le serveur (contre-expertise mpauth3 v1, R5) : le demandeur (l'hôte pour sa propre pose), à la
+        // première pose seulement, dans localNamespace, que le réseau n'écrit pas ; l'entrée part avec la caméra.
+        $this->assertBlocks($code, [
+            'private _register = {' => [
+                'private _register = {',
+                'params ["_o", "_add", ["_by", objNull]];',
+                'private _list = (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]) select { !isNull _x && {_x isNotEqualTo _o} };',
+                'private _own = (localNamespace getVariable ["COMSPEC_ATAK_CamOwners", []]) select { !isNull (_x select 0) && {_add || {(_x select 0) isNotEqualTo _o}} };',
+                'if (_add && {!isNull _o} && {(typeOf _o) isEqualTo CAM_CLASS}) then {',
+                '_list pushBack _o;',
+                'if (!isNull _by && {(_own findIf { (_x select 0) isEqualTo _o }) < 0}) then {',
+                '_own pushBack [_o, [getPlayerUID _by, netId _by] select (getPlayerUID _by isEqualTo "")];',
+                '};',
+                'if (isNil { _o getVariable "COMSPEC_ATAK_CamSrvEh" }) then {',
+                '_o setVariable ["COMSPEC_ATAK_CamSrvEh", true];',
+                '_o addEventHandler ["Explosion", { params ["_c", "_dmg"]; if (_dmg > 0.05) then { _c setVariable ["COMSPEC_ATAK_CamDead", true, true]; }; }];',
+                '{ _x addCuratorEditableObjects [[_o], true]; } forEach allCurators;',
+                '};',
+                '};',
+                'localNamespace setVariable ["COMSPEC_ATAK_CamOwners", _own];',
+                'missionNamespace setVariable ["COMSPEC_ATAK_Cams", _list, true];',
+                '}',
+            ],
+        ], 'fn_camAction');
         // Ni l'une ni l'autre ne se ré-appelle : dans la pile d'une demande distante, l'appel imbriqué garde le contexte
         // distant et serait refusé (« dead » rendait faux, le retrait du registre ne se faisait plus).
         foreach (['srvTake' => $take, 'srvReg' => $reg] as $mode => $body) {
@@ -529,7 +553,9 @@ final class AtakMultiplayerAuthTest extends TestCase
         // n'importe quel objet sans regarder qui demandait : un client s'accordait la caméra d'autrui ou vidait une
         // liste. La fonction était absente de la liste blanche (partage cassé en mode 1). Elle y entre (allowedTargets
         // = 2) avec une garde en tête, et « srvAcc » juge le demandeur avec les règles que le téléphone applique déjà
-        // (« owner », « can »), écrites une seule fois en fonctions locales.
+        // (« owner », « can »), écrites une seule fois en fonctions locales. Contre-expertise mpauth3 v1 (R5) : sur le
+        // serveur, ces règles lisent le poseur qu'il a retenu à la pose et sa copie des listes d'accès, jamais les
+        // variables publiques de la caméra, qu'un poste client peut réécrire.
         $code = $this->stripSqfComments($this->read(self::MAIN . '/functions/camera/fn_camShare.sqf'));
         $head = $this->between($code, 'params [["_mode", ""], ["_a", objNull], ["_b", objNull]];', 'switch (_mode) do {');
         self::assertMatchesRegularExpression('/^params \[\["_mode", ""\], \["_a", objNull\], \["_b", objNull\]\];\s*'
@@ -554,7 +580,11 @@ final class AtakMultiplayerAuthTest extends TestCase
                 'private _accessOf = {',
                 'params ["_s"];',
                 'if (isNull _s) exitWith { [] };',
-                'private _acc = _s getVariable ["COMSPEC_ATAK_ShareAcc", []];',
+                'private _acc = if (isServer) then {',
+                '(((localNamespace getVariable ["COMSPEC_ATAK_CamAcc", []]) select { (_x select 0) isEqualTo _s }) param [0, [objNull, []]]) select 1',
+                '} else {',
+                '_s getVariable ["COMSPEC_ATAK_ShareAcc", []]',
+                '};',
                 'if (_acc isEqualType []) then { _acc } else { [] }',
                 '}',
             ],
@@ -563,6 +593,10 @@ final class AtakMultiplayerAuthTest extends TestCase
                 'params ["_s", "_u"];',
                 'if (isNull _s) exitWith { false };',
                 'if !([_s] call _isCam) exitWith { _s isEqualTo _u };',
+                'if (isServer) exitWith {',
+                'private _e = (localNamespace getVariable ["COMSPEC_ATAK_CamOwners", []]) select { (_x select 0) isEqualTo _s };',
+                '_e isNotEqualTo [] && {((_e select 0) select 1) isEqualTo ([_u] call _uidOf)}',
+                '};',
                 'private _ou = _s getVariable ["COMSPEC_ATAK_CamOwnerUid", ""];',
                 'if (_ou isEqualTo "") then { (_s getVariable ["COMSPEC_ATAK_CamOwner", ""]) isEqualTo name _u } else { _ou isEqualTo ([_u] call _uidOf) }',
                 '}',
@@ -602,6 +636,54 @@ final class AtakMultiplayerAuthTest extends TestCase
         self::assertStringContainsString('if ((count _new) > 64) then { _new resize 64; };', $srv);
         self::assertStringContainsString('if ((count _all) > 128) then { _all = _all select [(count _all) - 128, 128]; };', $srv);
         self::assertDoesNotMatchRegularExpression('/\bcall\s+(?:_fn|comspec_atak_native_fnc_cam(?:Share|Action))\b/i', $srv);
+        // Bloc entier (R5) : la fusion part de la copie du serveur, gardée avant la publication.
+        $this->assertBlocks($code, [
+            'case "srvAcc": {' => [
+                'case "srvAcc": {',
+                'if (!isServer) exitWith { false };',
+                '_a params [["_src", objNull, [objNull]], ["_add", [], [[]]]];',
+                'if (isNull _src) exitWith { false };',
+                'if (_remote && {!([_src, _req, _add isNotEqualTo []] call _mayEdit)}) exitWith {',
+                'diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAM] Partage de %1 refusé à %2 (ni poseur ou porteur, ni accès à la caméra)", _src, name _req];',
+                'false',
+                '};',
+                'private _acc = if (_add isEqualTo []) then { [] } else {',
+                'private _new = _add select { _x isEqualType [] && {(count _x) isEqualTo 4} && {(_x findIf { !(_x isEqualType "") || {(count _x) > 64} }) < 0} };',
+                'if ((count _new) > 64) then { _new resize 64; };',
+                'private _ids = _new apply { _x select 0 };',
+                'private _all = (([_src] call _accessOf) select { !((_x param [0, ""]) in _ids) }) + _new;',
+                'if ((count _all) > 128) then { _all = _all select [(count _all) - 128, 128]; };',
+                '_all',
+                '};',
+                'private _tab = (localNamespace getVariable ["COMSPEC_ATAK_CamAcc", []]) select { !isNull (_x select 0) && {(_x select 0) isNotEqualTo _src} };',
+                '_tab pushBack [_src, _acc];',
+                'localNamespace setVariable ["COMSPEC_ATAK_CamAcc", _tab];',
+                '_src setVariable ["COMSPEC_ATAK_ShareAcc", _acc, true];',
+                'true',
+                '}',
+            ],
+        ], 'fn_camShare');
+        // Tables du serveur (R5) : en localNamespace seulement ; le poseur écrit au seul registre de fn_camAction, la
+        // liste d'accès au seul « srvAcc » ; aucune autre mention de ces noms dans le mod.
+        $uses = [];
+        $named = 0;
+        foreach ($this->sources() as $rel => $units) {
+            $named += (int) preg_match_all('/\bCOMSPEC_ATAK_Cam(?:Owners|Acc)\b/', $units[0]);
+            preg_match_all('/\blocalNamespace ([gs]etVariable) \["(COMSPEC_ATAK_Cam(?:Owners|Acc))"/', $units[0], $m, PREG_SET_ORDER);
+            foreach ($m as $x) {
+                $uses[] = basename($rel) . ' ' . $x[1] . ' ' . $x[2];
+            }
+        }
+        sort($uses);
+        self::assertSame(count($uses), $named);
+        self::assertSame([
+            'fn_camAction.sqf getVariable COMSPEC_ATAK_CamOwners',
+            'fn_camAction.sqf setVariable COMSPEC_ATAK_CamOwners',
+            'fn_camShare.sqf getVariable COMSPEC_ATAK_CamAcc',
+            'fn_camShare.sqf getVariable COMSPEC_ATAK_CamAcc',
+            'fn_camShare.sqf getVariable COMSPEC_ATAK_CamOwners',
+            'fn_camShare.sqf setVariable COMSPEC_ATAK_CamAcc',
+        ], $uses);
         self::assertStringContainsString('class comspec_atak_native_fnc_camShare { allowedTargets = 2; };', $this->remoteExecFunctions(self::MAIN . '/config.cpp'));
         $files = $this->sources();
         $lists = $this->remoteLists($files);

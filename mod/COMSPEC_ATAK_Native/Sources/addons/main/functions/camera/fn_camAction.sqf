@@ -6,7 +6,10 @@
       COMSPEC_ATAK_CamSide  camp du poseur (str side), seul ce camp la voit dans le téléphone
       COMSPEC_ATAK_CamName  nom (CAM-1, CAM-2... ou renommée)
       COMSPEC_ATAK_CamOwner nom du poseur ; COMSPEC_ATAK_CamGroup indicatif de son groupe
+      COMSPEC_ATAK_CamOwnerUid UID du poseur (CamOwner et CamOwnerUid : affichage du téléphone ; le serveur ne les lit pas)
     Registre partagé : missionNamespace COMSPEC_ATAK_Cams (objets), tenu et publié par le serveur seul (["srvReg", obj, ajout]).
+    Poseur pour le serveur : localNamespace COMSPEC_ATAK_CamOwners ([caméra, UID]...), retenu à la première pose
+    (« srvReg ») ; fn_camShare y juge les partages demandés au serveur.
     Détruite (dégâts, explosion, véhicule porteur détruit) : hors service, se retire sans rendre l'item.
 
     Modes :
@@ -64,18 +67,26 @@ private _isDead = {
 };
 // Serveur : registre COMSPEC_ATAK_Cams tenu et publié par lui seul (objets supprimés retirés au passage). Pose : objet
 // rendu éditable par Zeus, et événement Explosion ajouté ici aussi (il ne joue que là où l'objet est local : le serveur
-// reprend la caméra au départ du poseur). Fonction locale, même raison que _isDead.
+// reprend la caméra au départ du poseur). Poseur (_by) : retenu dans localNamespace COMSPEC_ATAK_CamOwners, que le
+// réseau n'écrit pas, à la première pose seulement ; l'entrée part avec la caméra (contre-expertise mpauth3 v1, R5 :
+// les variables publiques de la caméra, écrites par un poste client, ne sont plus lues pour un droit). Fonction locale,
+// même raison que _isDead.
 private _register = {
-    params ["_o", "_add"];
+    params ["_o", "_add", ["_by", objNull]];
     private _list = (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]) select { !isNull _x && {_x isNotEqualTo _o} };
+    private _own = (localNamespace getVariable ["COMSPEC_ATAK_CamOwners", []]) select { !isNull (_x select 0) && {_add || {(_x select 0) isNotEqualTo _o}} };
     if (_add && {!isNull _o} && {(typeOf _o) isEqualTo CAM_CLASS}) then {
         _list pushBack _o;
+        if (!isNull _by && {(_own findIf { (_x select 0) isEqualTo _o }) < 0}) then {
+            _own pushBack [_o, [getPlayerUID _by, netId _by] select (getPlayerUID _by isEqualTo "")];
+        };
         if (isNil { _o getVariable "COMSPEC_ATAK_CamSrvEh" }) then {
             _o setVariable ["COMSPEC_ATAK_CamSrvEh", true];
             _o addEventHandler ["Explosion", { params ["_c", "_dmg"]; if (_dmg > 0.05) then { _c setVariable ["COMSPEC_ATAK_CamDead", true, true]; }; }];
             { _x addCuratorEditableObjects [[_o], true]; } forEach allCurators;
         };
     };
+    localNamespace setVariable ["COMSPEC_ATAK_CamOwners", _own];
     missionNamespace setVariable ["COMSPEC_ATAK_Cams", _list, true];
 };
 // Repère orthonormé d'un regard (haut vertical autant que possible).
@@ -238,13 +249,14 @@ switch (_mode) do {
     };
     // Serveur : registre COMSPEC_ATAK_Cams (_register). Demande d'un client (SEC-005) : ajout seulement, d'une caméra à
     // 10 m au plus du demandeur vivant (il vient de la poser, à 3 m au plus de ses yeux) ; seul le serveur retire.
+    // Poseur retenu (R5) : le demandeur, ou le joueur de l'hôte pour sa propre pose (personne sur un serveur dédié).
     case "srvReg": {
         if (!isServer || {!(_a isEqualType objNull)}) exitWith { false };
         if (_remote && {_b isNotEqualTo true || {isNull _a} || {!alive _req} || {(_req distance _a) > 10}}) exitWith {
             diag_log format ["[COMSPEC ATAK NATIVE][WARN][CAM] Registre des caméras : demande refusée à %1 (retrait, ou caméra absente ou à plus de 10 m)", name _req];
             false
         };
-        [_a, _b isEqualTo true] call _register;
+        [_a, _b isEqualTo true, [player, _req] select _remote] call _register;
         true
     };
     case "rotate": {
