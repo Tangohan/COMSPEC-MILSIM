@@ -1563,15 +1563,19 @@ final class AtakMultiplayerAuthTest extends TestCase
         // module (remoteExec vers le propriétaire de la logique). Sans classe CfgRemoteExec, ce relais était refusé en
         // silence en mode 1. Les deux fonctions y entrent (cible : un client, jamais par la file JIP), avec une garde en
         // tête, avant le relais : d'un appel distant, seulement le serveur ou, sur le serveur, le poste de la logique.
+        // Contre-expertise mpauth3 v1 (R6) : le poste de la logique n'est admis que pour une logique du module qui appelle
+        // la fonction (sa classe dans CfgVehicles de connect), plus pour l'unité d'un client.
         $cfg = $this->remoteExecFunctions(self::CONNECT . '/config.cpp');
-        foreach (['zeusModuleScanRelays', 'zeusResyncRelay'] as $fn) {
+        $modules = $this->cppCode($this->read(self::CONNECT . '/config.cpp'));
+        foreach (['zeusModuleScanRelays' => 'COMSPEC_ModuleScanRelays', 'zeusResyncRelay' => 'COMSPEC_ModuleResyncRelay'] as $fn => $module) {
             $code = $this->stripSqfComments($this->read(self::CONNECT . '/functions/fn_' . $fn . '.sqf'));
             self::assertMatchesRegularExpression('/^private _lgReq = _this param \[0, objNull\];\s*'
-                . 'if !\(_lgReq isEqualType objNull\) then \{ _lgReq = objNull; \};\s*'
+                . 'if \(!\(_lgReq isEqualType objNull\) \|\| \{\(typeOf _lgReq\) isNotEqualTo "' . $module . '"\}\) then \{ _lgReq = objNull; \};\s*'
                 . 'if \(isRemoteExecutedJIP \|\| \{isRemoteExecuted && \{!\(remoteExecutedOwner in \[2, owner _lgReq\]\)\}\}\) exitWith \{\s*'
                 . 'diag_log format \["\[COMSPEC ATAK\]\[WARN\]\[ZEUS\] [^"]*", remoteExecutedOwner, isRemoteExecutedJIP\];\s*\};\s*'
                 . 'if \(!hasInterface\) exitWith \{\s*private _lg = _this param \[0, objNull\];/', trim($code), $fn);
             self::assertStringContainsString('class comspec_overwatch_connect_fnc_' . $fn . ' { allowedTargets = 1; jip = 0; };', $cfg, $fn);
+            self::assertSame(1, preg_match_all('/\bclass ' . $module . '\s*:\s*Module_F\s*\{[^{}]*\bfunction = "comspec_overwatch_connect_fnc_' . $fn . '";/', $modules), $fn);
         }
         // Seuls appels distants de ces fonctions : le relais du serveur vers le poste du Zeus, deux éléments à droite
         // (rien dans la file JIP).

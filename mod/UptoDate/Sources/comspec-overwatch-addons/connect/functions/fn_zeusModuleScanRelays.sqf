@@ -10,8 +10,10 @@
 // d'un client vers un autre client : d'un appel distant, la garde n'admet que le serveur ou, sur le serveur, le poste
 // propriétaire de la logique (celui qui a posé le module), et jamais un rejeu de la file JIP. L'initialisation du module
 // par le moteur n'est pas un appel distant : elle passe, comme une partie solo ou l'éditeur.
+// Le poste de la logique n'est admis que si l'objet passé est une logique de ce module (contre-expertise mpauth3 v1,
+// R6) : un client ne peut plus y passer sa propre unité pour faire lancer la fonction sur l'hôte.
 private _lgReq = _this param [0, objNull];
-if !(_lgReq isEqualType objNull) then { _lgReq = objNull; };
+if (!(_lgReq isEqualType objNull) || {(typeOf _lgReq) isNotEqualTo "COMSPEC_ModuleScanRelays"}) then { _lgReq = objNull; };
 if (isRemoteExecutedJIP || {isRemoteExecuted && {!(remoteExecutedOwner in [2, owner _lgReq])}}) exitWith {
     diag_log format ["[COMSPEC ATAK][WARN][ZEUS] Scanner des relais refusé : l'appel ne vient ni du serveur ni du poste du module (poste %1, file JIP : %2)", remoteExecutedOwner, isRemoteExecutedJIP];
 };
