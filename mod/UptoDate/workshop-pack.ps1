@@ -100,8 +100,8 @@ if (-not $dll) {
     Write-Fail "Aucune COMSPECExtension_x64.dll Native AOT (>= 500 Ko) trouvée. Lancez build_mod.bat / dotnet publish."
 }
 
-# Version de la DLL retenue (SEC-001). La DLL suivie dans git sous @COMSPECOverwatch est une 2.0.57 tant que
-# build_mod.bat ne l'a pas remplacée par une DLL fraîche.
+# Version de la DLL retenue (SEC-001). Celle de @COMSPECOverwatch vient du dernier build_mod.bat ; git ne la suit
+# plus, mais une copie plus ancienne peut y rester (une 2.0.57 dans un clone d'avant ARCH-021).
 $dllProductVersion = [string]([System.Diagnostics.FileVersionInfo]::GetVersionInfo((Get-Item -LiteralPath $dll).FullName).ProductVersion)
 $dllVersion = $null
 if ($dllProductVersion -match '^\s*(\d+\.\d+(\.\d+){0,2})') { $dllVersion = [version]($Matches[1]) }

@@ -297,7 +297,9 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         self::assertStringContainsString('set "DOTNET_BUILD_DIR=%PROJECT_DIR%COMSPECExtension\bin\Release\net8.0\win-x64\publish"', $bat);
         self::assertLessThan((int) strpos($bat, 'set "DLL_SRC="'), (int) strpos($bat, 'dotnet publish "%CS_PROJ_PATH%"'));
         $ignore = str_replace("\r\n", "\n", (string) file_get_contents($this->rootPath('.gitignore')));
-        foreach (['mod/UptoDate/COMSPECExtension/bin/', 'mod/UptoDate/@COMSPECOverwatch/net8.0/'] as $rule) {
+        // La DLL du dossier du mod est elle aussi une sortie de build : git ne suit plus l'ancienne 2.0.57.
+        $rules = ['mod/UptoDate/COMSPECExtension/bin/', 'mod/UptoDate/@COMSPECOverwatch/net8.0/', 'mod/UptoDate/@COMSPECOverwatch/COMSPECExtension_x64.dll'];
+        foreach ($rules as $rule) {
             self::assertMatchesRegularExpression('/^' . preg_quote($rule, '/') . '$/m', $ignore, '.gitignore sans ' . $rule);
         }
     }

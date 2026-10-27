@@ -72,6 +72,9 @@ tcpdf/.git/
 mod/UptoDate/@COMSPECOverwatch/**/*.pdb
 mod/UptoDate/@COMSPECOverwatch/net8.0/
 mod/UptoDate/@COMSPECOverwatch/COMSPECExtension_x64.pdb
+# DLL COMSPEC Link du pack hérité : build_mod.bat la recrée à chaque build. La copie suivie jusqu'ici, une 2.0.57,
+# était sous le plancher SEC-001 (ARCH-021). Les PBO, logos et mod.cpp de ce dossier restent suivis.
+mod/UptoDate/@COMSPECOverwatch/COMSPECExtension_x64.dll
 mod/UptoDate/COMSPECExtension/bin/
 mod/UptoDate/COMSPECExtension/obj/
 mod/UptoDate/COMSPECExtension/**/*.pdb

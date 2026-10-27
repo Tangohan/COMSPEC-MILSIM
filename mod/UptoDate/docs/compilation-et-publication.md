@@ -28,7 +28,7 @@ build_mod.bat
 
 1. `dotnet publish` → **COMSPECExtension_x64.dll** (Native AOT, ~7–8 Mo)
 2. AddonBuilder → **main.pbo**, **connect.pbo**, **atak_athena.pbo**, **mavik_compat.pbo**
-3. Copie DLL + mod.cpp vers `@COMSPECOverwatch/`
+3. Copie DLL + mod.cpp vers `@COMSPECOverwatch/` (git ne suit pas cette DLL : elle n'existe qu'après un build)
 4. Déploiement optionnel vers les dossiers Arma locaux (`Arma 3\@COMSPECOverwatch`, pack SOAR FN), jamais vers le dossier Workshop de l'ATAK natif
 
 Sans DLL fraîche après `dotnet publish`, ou si sa copie échoue (DLL verrouillée par Arma), le build s'arrête en échec : l'ancienne DLL du dossier `@COMSPECOverwatch` n'est plus déployée.

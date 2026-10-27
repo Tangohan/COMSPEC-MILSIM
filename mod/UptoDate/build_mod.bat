@@ -119,8 +119,8 @@ set "DLL_SRC="
 if exist "%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll" set "DLL_SRC=%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll"
 if not defined DLL_SRC if exist "%DOTNET_BUILD_DIR%\COMSPECExtension_x64.dll" set "DLL_SRC=%DOTNET_BUILD_DIR%\COMSPECExtension_x64.dll"
 if not defined DLL_SRC if exist "%OUTPUT_DIR%\net8.0\win-x64\native\COMSPECExtension_x64.dll" set "DLL_SRC=%OUTPUT_DIR%\net8.0\win-x64\native\COMSPECExtension_x64.dll"
-:: Sans DLL fraiche, le mod garderait l'ancienne DLL suivie dans git (COMSPEC Link 2.0.57, d'avant SEC-001) et le
-:: deploiement la recopierait : le build s'arrete en echec (ARCH-021).
+:: Sans DLL fraiche, le mod garderait l'ancienne DLL de son dossier, celle d'un build precedent ou la 2.0.57 que git
+:: suivait avant ARCH-021 (sous le plancher SEC-001), et le deploiement la recopierait : le build s'arrete en echec.
 if not defined DLL_SRC (
     echo [ERREUR] DLL Native AOT fraiche introuvable apres dotnet publish - attendue dans COMSPECExtension\bin\publish. >> "%BUILD_LOG%"
     echo [ERREUR] DLL Native AOT fraiche introuvable apres dotnet publish - attendue dans COMSPECExtension\bin\publish.
