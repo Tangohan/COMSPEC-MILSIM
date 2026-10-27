@@ -41,7 +41,7 @@ if ((count _shown) isEqualTo 0) then {
         [_p, 8] call comspec_atak_native_fnc_gridRef, round (player distance2D _p), [format ["vue il y a %1 s", _ago], "en vue"] select (_ago < 2),
         _e get "clock", ["drone", "téléphone"] select ((_e get "src") isEqualTo "PHONE")]];
     _rows pushBack ["buttons", [
-        ["CARTE", compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [[%1, %2, 0], 0.02] call comspec_atak_native_fnc_mapCenter;", _p select 0, _p select 1], false, true, "Centre la carte sur la cible"],
+        ["CARTE", compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [[%1, %2, 0], 0.02] call comspec_atak_native_fnc_mapCenter;", str (_p select 0), str (_p select 1)], false, true, "Centre la carte sur la cible"],
         ["EN MARQUEUR", compile format ["['toMarker', %1] call comspec_atak_native_fnc_lockAction;", str _k], false, true, "Pose un marqueur permanent à sa position (éditeur de marqueur prérempli)"],
         ["EN FICHE SSE", compile format ["['toSse', %1] call comspec_atak_native_fnc_lockAction;", str _k], false, true, "Ouvre une fiche SSE d'observation (FRO) préremplie avec la cible"],
         ["CAMÉRA DU DRONE", compile format ["['droneCam', %1] call comspec_atak_native_fnc_lockAction;", str _k], false, _drone && {_st isNotEqualTo "DOWN"}, "Pointe la caméra du drone appairé sur la cible et la garde dessus (vue incrustée sur la carte)"],
@@ -61,7 +61,7 @@ if ((count _zones) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a9
     _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='#8a9a93'>rayon %2 m · à %3 m · posée par %4</t>",
         [_c, 8] call comspec_atak_native_fnc_gridRef, _r, round (player distance2D _c), [_who] call _esc]];
     _rows pushBack ["buttons", [
-        ["CARTE", compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [[%1, %2, 0], 0.05] call comspec_atak_native_fnc_mapCenter;", _c select 0, _c select 1], false, true],
+        ["CARTE", compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [[%1, %2, 0], 0.05] call comspec_atak_native_fnc_mapCenter;", str (_c select 0), str (_c select 1)], false, true],
         ["RETIRER", compile format ["['remove', %1] call comspec_atak_native_fnc_noFly; %2", str _id, _re], false, true, "Retire la zone pour tout le camp"]
     ]];
 } forEach _zones;

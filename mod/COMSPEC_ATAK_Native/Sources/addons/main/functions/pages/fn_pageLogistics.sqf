@@ -53,8 +53,8 @@ switch (_tab) do {
             private _id = _x get "id";
             private _st = _x get "status";
             _rows pushBack ["text", [_x, false] call _card];
-            private _b = [["CARTE", compile format ["['locate', '%1'] call comspec_atak_native_fnc_logisticsAction;", _id]]];
-            if (_st in ["DEMANDEE", "VALIDEE"]) then { _b pushBack ["ANNULER", compile format ["['cancel', '%1'] call comspec_atak_native_fnc_logisticsAction;", _id]]; };
+            private _b = [["CARTE", compile format ["['locate', %1] call comspec_atak_native_fnc_logisticsAction;", str format ["%1", _id]]]];
+            if (_st in ["DEMANDEE", "VALIDEE"]) then { _b pushBack ["ANNULER", compile format ["['cancel', %1] call comspec_atak_native_fnc_logisticsAction;", str format ["%1", _id]]]; };
             if ((_x getOrDefault ["by", ""]) isNotEqualTo "") then { _rows pushBack ["text", format ["<t size='0.75' color='#8a9a93'>Traité par %1 à %2</t>", [_x get "by"] call _esc, _x getOrDefault ["hourUpd", ""]]]; };
             _rows pushBack ["buttons", _b];
         } forEach (_myReqs select [0, 15]);
@@ -67,7 +67,7 @@ switch (_tab) do {
             private _id = _x get "id";
             private _st = _x get "status";
             _rows pushBack ["text", [_x, true] call _card];
-            private _cmd = { params ["_label", "_a", ["_primary", false]]; [_label, compile format ["['%1', '%2'] call comspec_atak_native_fnc_logisticsAction;", _a, _id], _primary] };
+            private _cmd = { params ["_label", "_a", ["_primary", false]]; [_label, compile format ["['%1', %2] call comspec_atak_native_fnc_logisticsAction;", _a, str format ["%1", _id]], _primary] };
             private _b = [["CARTE", "locate"] call _cmd];
             switch (_st) do {
                 case "DEMANDEE": { _b append [["VALIDER", "validate", true] call _cmd, ["REFUSER", "refuse"] call _cmd]; };

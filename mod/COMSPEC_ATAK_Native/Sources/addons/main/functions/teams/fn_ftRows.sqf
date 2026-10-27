@@ -41,9 +41,9 @@ _rows pushBack ["section", format ["Équipes de feu (%1)", count _teams], "Visib
     if (_inIt) then {
         _btns pushBack ["QUITTER", { ["leave"] call comspec_atak_native_fnc_ftAction; }];
     } else {
-        _btns pushBack [["REJOINDRE", "FERMÉE"] select ((_t get "locked") && {!_isGL}), compile format ["['join', '%1'] call comspec_atak_native_fnc_ftAction;", _tid], true, !(_t get "locked") || {_isGL}];
+        _btns pushBack [["REJOINDRE", "FERMÉE"] select ((_t get "locked") && {!_isGL}), compile format ["['join', %1] call comspec_atak_native_fnc_ftAction;", str format ["%1", _tid]], true, !(_t get "locked") || {_isGL}];
     };
-    if (_canEdit) then { _btns pushBack ["MODIFIER", compile format ["['editOpen', '%1'] call comspec_atak_native_fnc_ftAction;", _tid]]; };
+    if (_canEdit) then { _btns pushBack ["MODIFIER", compile format ["['editOpen', %1] call comspec_atak_native_fnc_ftAction;", str format ["%1", _tid]]]; };
     _rows pushBack ["person", _t get "icon", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t size='0.8' color='#8a9a93'>%3 · %4 membre(s)%5%6</t>%7<br/><t size='0.8'>%8</t>",
         _t get "hex", [_t get "name"] call _esc, _t get "colorLabel", count _m,
         ["", format [" · chef %1", [name _lead] call _esc]] select !isNull _lead,
@@ -58,12 +58,12 @@ _rows pushBack ["section", format ["Équipes de feu (%1)", count _teams], "Visib
             ["memo", "ftEDesc", "Description (mission, secteur, consignes)", _t get "desc", 2],
             // Deux rangées de deux : libellés jamais coupés, même en mini portrait.
             ["buttons", [
-                ["ENREGISTRER", compile format ["['edit', '%1'] call comspec_atak_native_fnc_ftAction;", _tid], true],
+                ["ENREGISTRER", compile format ["['edit', %1] call comspec_atak_native_fnc_ftAction;", str format ["%1", _tid]], true],
                 ["ANNULER", { ["editClose"] call comspec_atak_native_fnc_ftAction; }]
             ]],
             ["buttons", [
-                [["FERMER L'ÉQUIPE", "OUVRIR L'ÉQUIPE"] select (_t get "locked"), compile format ["['lock', '%1'] call comspec_atak_native_fnc_ftAction;", _tid], false, true, ["Plus personne ne peut la rejoindre seul", "Tout le monde peut la rejoindre"] select (_t get "locked")],
-                ["DISSOUDRE", compile format ["['delete', '%1'] call comspec_atak_native_fnc_ftAction;", _tid], false, true, "Supprime l'équipe : ses membres passent sans équipe"]
+                [["FERMER L'ÉQUIPE", "OUVRIR L'ÉQUIPE"] select (_t get "locked"), compile format ["['lock', %1] call comspec_atak_native_fnc_ftAction;", str format ["%1", _tid]], false, true, ["Plus personne ne peut la rejoindre seul", "Tout le monde peut la rejoindre"] select (_t get "locked")],
+                ["DISSOUDRE", compile format ["['delete', %1] call comspec_atak_native_fnc_ftAction;", str format ["%1", _tid]], false, true, "Supprime l'équipe : ses membres passent sans équipe"]
             ]],
             ["gap"]
         ];

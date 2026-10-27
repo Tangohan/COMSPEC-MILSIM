@@ -104,7 +104,7 @@ private _ago = {
     private _new = _idx < _fresh;
     private _meta = format ["%1%2%3", ["", "<t color='#5cc76b'>●</t>  "] select _new, [_n] call _ago, ["", format ["  ·  ×%1", _times]] select (_times > 1)];
     private _page = _m get "page";
-    private _open = if (_page isEqualTo "") then { {} } else { compile format ["['%1'] call comspec_atak_native_fnc_navigate;", _page] };
+    private _open = if (_page isEqualTo "") then { {} } else { compile format ["[%1] call comspec_atak_native_fnc_navigate;", str _page] };
     // Fermer : par identifiant (fn_notify), à défaut par texte et heure (entrées d'avant la mise à jour).
     private _close = compile format ["
         private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap];

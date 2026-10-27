@@ -90,7 +90,7 @@ private _showState = ["state", "alerts"] call comspec_atak_native_fnc_medShow;
     private _who = _x getOrDefault ["call_sign", ""];
     if (_who isEqualTo "") then { _who = _x getOrDefault ["label", "?"]; };
     _rows pushBack ["buttons", [[format ["%1 · %2 · %3 · %4", _kindLabel, _who, _x getOrDefault ["grid", "—"], toUpper (_x getOrDefault ["triage_label", _status])],
-        compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['medSel', ['%1', ''] select (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['medSel', '']) isEqualTo '%1')]; [{ ['MEDICAL'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _id], _id isEqualTo _sel]]];
+        compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['medSel', [%1, ''] select (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['medSel', '']) isEqualTo %1)]; [{ ['MEDICAL'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", str _id], _id isEqualTo _sel]]];
     _rows pushBack ["text", format ["<t size='0.75' color='%1'>● %2</t><t size='0.75' color='#8a9a93'>  %3</t>", _col, _x getOrDefault ["triage_label", _status], _x getOrDefault ["created_at", ""]]];
     if (_id isEqualTo _sel) then {
         private _grid = _x getOrDefault ["grid", ""];
@@ -101,12 +101,12 @@ private _showState = ["state", "alerts"] call comspec_atak_native_fnc_medShow;
         // Données masquées (Réglages > Réalisme, fn_medShow) : la ligne ne garde que ce qui est affiché.
         ([_btT, _wT, "alerts"] call _identRow) params ["_idL", "_idV"];
         if (_idL isNotEqualTo "") then { _rows pushBack ["info", _idL, _idV]; };
-        private _b = [[ "LOCALISER", compile format ["['locate', '%1'] call comspec_atak_native_fnc_medicalAction;", _grid]]];
+        private _b = [[ "LOCALISER", compile format ["['locate', %1] call comspec_atak_native_fnc_medicalAction;", str format ["%1", _grid]]]];
         if (_canTriage) then {
             _b append [
-                ["EN COURS", compile format ["['triage', 'en_cours', '%1'] call comspec_atak_native_fnc_medicalAction;", _id]],
-                ["TRAITÉ", compile format ["['triage', 'traite', '%1'] call comspec_atak_native_fnc_medicalAction;", _id], true],
-                ["KIA", compile format ["['triage', 'kia', '%1'] call comspec_atak_native_fnc_medicalAction;", _id]]
+                ["EN COURS", compile format ["['triage', 'en_cours', %1] call comspec_atak_native_fnc_medicalAction;", str _id]],
+                ["TRAITÉ", compile format ["['triage', 'traite', %1] call comspec_atak_native_fnc_medicalAction;", str _id], true],
+                ["KIA", compile format ["['triage', 'kia', %1] call comspec_atak_native_fnc_medicalAction;", str _id]]
             ];
         };
         _rows pushBack ["buttons", _b];
@@ -156,10 +156,10 @@ _rows pushBack ["section", "Suivi des MEDEVAC", ["Aucune demande en cours", form
     _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1 · %2</t>  <t size='0.8' color='#8a9a93'>%3 · LZ %4</t><br/><t size='0.8'>T1 %5 · T2 %6 · T3 %7 · brancards %8 · %9 · %10</t><br/>%11  %12%13",
         _r get "prio", _r get "from", _r get "time", _r get "grid", _r get "t1", _r get "t2", _r get "t3", _r get "litter", _r get "sec", _r get "mark",
         _dots, _stTxt, ["", format ["  <t size='0.75' color='#8a9a93'>par %1</t>", _r get "by"]] select ((_r get "by") isNotEqualTo "")]];
-    private _b = [["LZ", compile format ["['locateReq', '%1'] call comspec_atak_native_fnc_medicalAction;", _r get "id"]]];
+    private _b = [["LZ", compile format ["['locateReq', %1] call comspec_atak_native_fnc_medicalAction;", str format ["%1", _r get "id"]]]];
     if (_st < 4) then {
-        if (!_mine) then { _b pushBack [_steps select (_st + 1), compile format ["['status', '%1', '%2'] call comspec_atak_native_fnc_medicalAction;", _r get "id", _st + 1], true]; };
-        if (_mine) then { _b pushBack ["ANNULER", compile format ["['status', '%1', '-1'] call comspec_atak_native_fnc_medicalAction;", _r get "id"]]; };
+        if (!_mine) then { _b pushBack [_steps select (_st + 1), compile format ["['status', %1, %2] call comspec_atak_native_fnc_medicalAction;", str format ["%1", _r get "id"], str format ["%1", _st + 1]], true]; };
+        if (_mine) then { _b pushBack ["ANNULER", compile format ["['status', %1, '-1'] call comspec_atak_native_fnc_medicalAction;", str format ["%1", _r get "id"]]]; };
     };
     _rows pushBack ["buttons", _b];
 } forEach _reqs;
