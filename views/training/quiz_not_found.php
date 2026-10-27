@@ -34,5 +34,6 @@ $headHtml = ob_get_clean();
             </div>
         </main>
     </div>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

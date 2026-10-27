@@ -181,6 +181,10 @@ EN : The phone keeps the account identity and reconnects by itself
 
 ### Détail technique
 - Version de regroupement des correctifs de liaison, d’identité et d’affichage livrés dans le pack 2.8.3.
+- Le modèle et la couleur viennent de l’objet porté ; les anciens réglages ne pilotent plus la coque.
+- La reprise automatique utilise les paliers 45, 75 et 90 secondes ; un délai `Retry-After` plus long reste respecté.
+- Les lots de temps de jeu et de distance d’une session joueur sont limités à son propre Steam UID.
+- Les pages ouvertes depuis le jeu sont limitées à la liaison, la carte et la 9-LINE du portail.
 
 ## Diapositives sur les écrans (ATAK natif 2.8.2.AB - Denver, COMSPEC Link 2.0.99)
 

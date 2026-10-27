@@ -88,7 +88,7 @@ $flashErr = Session::getFlash('error');
             ?>
             <li class="ctb-podium__card is-<?= $i + 1 ?>">
                 <span class="ctb-podium__rank"><?= $i + 1 ?></span>
-                <strong class="ctb-podium__name" translate="no"><?= $h($leader['name'] ?? '') ?></strong>
+                <strong class="ctb-podium__name" translate="no"><?= staff_name((string) ($leader['name'] ?? ''), (int) ($leader['user_id'] ?? 0)) ?></strong>
                 <span class="ctb-pill ctb-pill--published"><?= $h(__('site.' . $honors[$i])) ?></span>
                 <?php if ($shown !== []): ?><span class="ctb-podium__roles"><?= $h($roleLine($shown)) ?></span><?php endif; ?>
                 <span class="ctb-podium__meta"><?= $t('leader_texts', ['n' => (int) ($leader['validated'] ?? 0)]) ?></span>
@@ -100,7 +100,7 @@ $flashErr = Session::getFlash('error');
         <ul class="ctb-credits">
             <?php foreach ($otherCredits as $c): ?>
             <li class="ctb-credit">
-                <strong translate="no"><?= $h($c['name']) ?></strong>
+                <strong translate="no"><?= staff_name((string) $c['name'], (int) ($c['user_id'] ?? 0)) ?></strong>
                 <span><?= $h($roleLine(is_array($c['roles'] ?? null) ? $c['roles'] : [])) ?><?php if (($c['languages'] ?? '') !== ''): ?> <span translate="no">(<?= $h(strtoupper(str_replace(',', ', ', (string) $c['languages']))) ?>)</span><?php endif; ?></span>
             </li>
             <?php endforeach; ?>

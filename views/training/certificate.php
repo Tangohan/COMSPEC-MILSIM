@@ -297,5 +297,6 @@ $canDownloadDocument = !$publicConsultationView && $downloadUrl !== '' && ($stat
     });
     </script>
     <?php endif; ?>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

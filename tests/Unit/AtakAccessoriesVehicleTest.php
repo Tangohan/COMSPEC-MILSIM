@@ -109,6 +109,7 @@ final class AtakAccessoriesVehicleTest extends TestCase
             '"COMSPEC_ATAK_PhoneModel"',
             $this->read(self::MAIN . '/functions/core/fn_phoneCarried.sqf')
         );
+        self::assertStringNotContainsString('profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel"', $lay);
         self::assertStringContainsString('_model = "tablet";', $lay);
         self::assertStringNotContainsString('VIS_', $lay);
         $data = dirname(__DIR__, 2) . '/' . self::MAIN . '/data/';
