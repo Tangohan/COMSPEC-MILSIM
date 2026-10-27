@@ -59,7 +59,7 @@ EN : The Garmin watch shows its face again, and only the official pack can reach
 - PR réunies : #1169 (messages de charge du téléphone), #1171 (touches radio avec le téléphone en plein écran), #1172 (diapositives Google relues quand le magasin est plein). #1167 était déjà dans la 2.6.0.
 - Montre : images sur une classe blanche, couleur et texture validées ensemble, boîtiers déclarés sur la couche.
 - Module officiel : preuve jointe aux requêtes du jeu. Inactive tant que le secret n’est pas posé sur le serveur, en même temps que ce pack.
-- Versions : ATAK natif 2.7.0.AB - Denver, COMSPEC Link 2.0.99. La DLL native du téléphone reste 2.0.98-native.
+- Versions : ATAK natif 2.7.0.AB - Denver, COMSPEC Link 2.0.99, DLL native du téléphone 2.0.99-native.
 - À tester en jeu : montre (boîtier et cadran, les quatre coloris) ; alternat radio téléphone en plein écran ; diapositive Google dans Briefing puis sur un écran ; message de batterie vide ; liaison avec le pack officiel, et refus d’une copie une fois le poste à jour.
 
 ## Regroupement : diapositives sur les écrans, Live Presentation (FENRIR), JVN hors ligne, floutage des visages, textes lisibles, 131 correctifs (ATAK natif 2.6.0.AB - Denver, COMSPEC Link 2.0.98)
