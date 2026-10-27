@@ -90,6 +90,13 @@ _data = [_data, "clusterId", _cluster getOrDefault ["clusterId", ""]] call comsp
 _data = [_data, "theme", _cluster getOrDefault ["theme", ""]] call comspec_sse_fnc_setPair;
 
 private _sections = [_data, "sections", createHashMap] call comspec_sse_fnc_getPair;
+if !(_sections isEqualType createHashMap) then { _sections = createHashMap; };
+// Régénération d'une fiche existante (Zeus, modèle…) : identité / téléphone / documents sont
+// réécrits plus bas, donc les couches intel dérivées de l'ancienne fiche doivent être rebâties
+// (sinon attachIntelLayers sort tôt et garde l'ancien numéro, alias, etc.).
+if (!isNil "_existing" && {_existing isEqualType []}) then {
+    { _sections deleteAt _x; } forEach ["intelLayers", "exploitationLevel", "hiddenCaches", "deletedData"];
+};
 private _region = _cluster getOrDefault ["region", "IRAQ"];
 private _pools = [_region, _seed] call comspec_sse_fnc_getNarrativePools;
 

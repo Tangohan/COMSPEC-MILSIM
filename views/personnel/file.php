@@ -1718,7 +1718,7 @@ if ($personnelFileIsRhFull) {
                                 </div>
                                 <p class="pf-timeline__title"><?= htmlspecialchars((string) ($event['title'] ?? '')) ?></p>
                                 <?php if ($evReason !== ''): ?><p class="pf-timeline__text">Motif : <?= htmlspecialchars($evReason, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
-                                <?php if (!empty($event['description'])): ?><p class="pf-timeline__text"><?= nl2br(htmlspecialchars((string) $event['description'])) ?></p><?php endif; ?>
+                                <?php if (!empty($event['description'])): ?><p class="pf-timeline__text"><?= nl2br(htmlspecialchars(\App\Support\HrHistoryLabel::forPage((string) $event['description']))) ?></p><?php endif; ?>
                             </div>
                         </li>
                         <?php endforeach; ?>

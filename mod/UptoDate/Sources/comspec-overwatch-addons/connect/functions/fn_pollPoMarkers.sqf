@@ -180,7 +180,9 @@ if (
 
     private _lastSync = _synced getOrDefault [_name, -1e9];
     if ((diag_tickTime - _lastSync) > 45 && {missionNamespace getVariable ["COMSPEC_AthenaReady", false]}) then {
-        if (!isNil "comspec_overwatch_connect_fnc_syncMapMarker") then {
+        // Hub actif : le serveur relaie déjà le point d’objectif.
+        if (!(missionNamespace getVariable ["COMSPEC_ServerHubActive", false])
+            && {!isNil "comspec_overwatch_connect_fnc_syncMapMarker"}) then {
             [_name, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
         };
         _synced set [_name, diag_tickTime];

@@ -8,7 +8,7 @@
   const $$ = (s, el = root) => [...el.querySelectorAll(s)];
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const num = v => Number(v || 0).toLocaleString('fr-FR');
-  const api = root.dataset.api, actionUrl = root.dataset.action, corrUrl = root.dataset.corr, csrf = root.dataset.csrf;
+  const api = root.dataset.api, actionUrl = root.dataset.action, corrUrl = root.dataset.corr, toolsUrl = root.dataset.tools || '', csrf = root.dataset.csrf;
 
   const state = {
     dataset: root.dataset.initial || 'users', q: '', filters: {}, flag: '', sort: '', dir: 'desc', page: 1, per: 100,
@@ -36,7 +36,11 @@
         if (!v || !v.label) return '<span class="adr-mute">—</span>';
         return `<button type="button" class="adr-link" data-corr-type="${esc(v.type)}" data-corr-id="${esc(v.id)}">${esc(v.label)}</button>${v.sub ? `<small>${esc(v.sub)}</small>` : ''}`;
       }
-      case 'link': return v && v.href ? `<a href="${esc(v.href)}" class="adr-link">${esc(v.label || 'Ouvrir')}</a>` : '<span class="adr-mute">—</span>';
+      case 'link': {
+        if (!v || !v.href) return '<span class="adr-mute">—</span>';
+        const ext = /^https?:\/\//i.test(String(v.href));
+        return `<a href="${esc(v.href)}" class="adr-link"${ext ? ' target="_blank" rel="noopener noreferrer"' : ''}>${esc(v.label || 'Ouvrir')}</a>`;
+      }
       default: return v == null || v === '' ? '<span class="adr-mute">—</span>' : esc(v);
     }
   }
@@ -116,6 +120,10 @@
     $('#adr-export').href = query({ format: 'csv', page: 1, per: 100000 }).toString();
     $('#adr-status').textContent = m.note || '';
     $('#adr-lead').textContent = m.lead || '';
+    const steamChip = m.resolved_steam
+      ? ` <button type="button" class="adr-steam-chip" data-corr-type="steam" data-corr-id="${esc(m.resolved_steam)}" title="Voir les corrélations">Steam ${esc(m.resolved_steam)}</button>`
+      : '';
+    if (steamChip) $('#adr-status').innerHTML = esc(m.note || '') + steamChip;
   }
 
   // ---------------------------------------------------------------- corrélations
@@ -227,6 +235,58 @@
     if (j.ok) { drawer.hidden = true; load(); }
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { drawer.hidden = true; $('#adr-cols-menu').hidden = true; } });
+
+  function activateDataset(key) {
+    const tab = $(`[data-dataset="${CSS.escape(key)}"]`);
+    if (tab) tab.click();
+  }
+
+  const steamForm = $('#adr-steam-form');
+  const steamResult = $('#adr-steam-result');
+  if (steamForm) {
+    steamForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const raw = ($('#adr-steam-q')?.value || '').trim();
+      if (!raw) return;
+      steamResult.hidden = false;
+      steamResult.textContent = 'Recherche du profil…';
+      steamResult.className = 'adr-tools__result';
+      let steam = null, message = '';
+      try {
+        if (toolsUrl) {
+          const u = new URL(toolsUrl, location.origin);
+          u.searchParams.set('op', 'steam');
+          u.searchParams.set('q', raw);
+          const r = await fetch(u, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+          const j = await r.json();
+          steam = j.steam || null;
+          message = j.message || '';
+        }
+      } catch (err) {
+        message = 'Recherche impossible pour le moment.';
+      }
+      if (steam) {
+        steamResult.innerHTML = `${esc(message || 'Profil trouvé.')} <code>${esc(steam)}</code>
+          <button type="button" class="ath-btn adr-mini" data-corr-type="steam" data-corr-id="${esc(steam)}">Corrélations</button>`;
+        steamResult.className = 'adr-tools__result is-ok';
+        state.q = steam;
+        $('#adr-q').value = steam;
+        if (state.dataset !== 'users' && state.dataset !== 'players') activateDataset('users');
+        else { state.page = 1; load(); }
+        toast('Steam repéré : ' + steam, true);
+      } else {
+        // Même sans résolution vanity, on lance la recherche brute (URL profiles déjà gérée côté serveur).
+        steamResult.textContent = message || 'Profil non résolu : la recherche générale est quand même lancée.';
+        steamResult.className = 'adr-tools__result is-ko';
+        state.q = raw;
+        $('#adr-q').value = raw;
+        if (state.dataset !== 'users' && state.dataset !== 'players') activateDataset('users');
+        else { state.page = 1; load(); }
+      }
+    });
+  }
+  const goLook = $('#adr-goto-lookalikes');
+  if (goLook) goLook.addEventListener('click', () => activateDataset('lookalikes'));
 
   const hash = location.hash.replace('#', '');
   const start = hash && $(`[data-dataset="${CSS.escape(hash)}"]`) ? $(`[data-dataset="${CSS.escape(hash)}"]`) : $(`[data-dataset="${CSS.escape(state.dataset)}"]`);

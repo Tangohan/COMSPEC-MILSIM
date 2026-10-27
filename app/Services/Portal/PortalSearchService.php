@@ -284,7 +284,7 @@ final class PortalSearchService
 
             return true;
         }));
-        $all = array_values(array_filter($all, static fn ($row): bool => is_array($row)));
+        $all = SearchCatalogLocale::localize(array_values(array_filter($all, static fn ($row): bool => is_array($row))));
 
         $needle = mb_strtolower(trim($raw));
         if ($needle === '') {

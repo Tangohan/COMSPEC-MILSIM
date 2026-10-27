@@ -422,8 +422,8 @@ switch (_tab) do {
                 _jp params ["", "_how", "_nT", "_nF", "_good", "_rev"];
                 _rows append [
                     ["banner", format ["<t color='#5fd38a'>JACKPOT</t> · %1", _how], [0.06, 0.16, 0.09, 1]],
-                    ["info", "Tuyaux vrais", format ["%1 sur %2", _nT, _nT + _nF]],
-                    ["info", "Vos décisions justes", format ["%1 sur %2", _good, _rev]],
+                    ["info", "Tuyaux vrais", format ["%1 / %2", _nT, _nT + _nF]],
+                    ["info", "Vos décisions justes", format ["%1 / %2", _good, _rev]],
                     ["text", format ["<t size='0.85' color='%1'>La vérité de chaque tuyau est révélée ci-dessous ; les sources sont recotées. Exploitez maintenant : fouille SSE, téléphone, documents.</t>", _grey]]
                 ];
             } else {
@@ -617,7 +617,7 @@ switch (_tab) do {
             ["info", "Tuyaux confirmés", str (_hs get "ok")],
             ["info", "Informateurs", str (_hs get "sources")],
             ["info", "Jackpots", str (_hs get "jackpots")],
-            ["info", "Décisions justes", if ((_hs get "judged") > 0) then { format ["%1 sur %2", _hs get "good", _hs get "judged"] } else { "—" }]
+            ["info", "Décisions justes", if ((_hs get "judged") > 0) then { format ["%1 / %2", _hs get "good", _hs get "judged"] } else { "—" }]
         ];
         private _fr = if (_land) then { [_pad * 2 + _cardW, _cy, _bw - _cardW - _pad * 2, _ch] } else { [0, _cy + _cardH + _pad / 2, _bw, _ch - _cardH - _pad / 2] };
         [_rows, _fr] call comspec_atak_native_fnc_formRender;

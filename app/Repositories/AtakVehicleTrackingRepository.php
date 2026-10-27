@@ -606,10 +606,20 @@ class AtakVehicleTrackingRepository
     }
 
     /**
-     * Crée une demande de service
+     * Crée une demande de service pour un véhicule de la communauté donnée.
+     * atak_vehicle_service_requests n'a pas de tenant_id : 0 si le véhicule est absent ou d'une autre
+     * communauté, et rien n'est écrit.
      */
-    public function createServiceRequest(int $vehicleId, array $requestData): int
+    public function createServiceRequest(int $vehicleId, int $tenantId, array $requestData): int
     {
+        $vehicle = $this->db->fetchOne(
+            "SELECT id FROM atak_vehicle_tracking WHERE id = :id AND tenant_id = :tenant_id",
+            ['id' => $vehicleId, 'tenant_id' => $tenantId]
+        );
+        if ($vehicle === null) {
+            return 0;
+        }
+
         $sql = "INSERT INTO atak_vehicle_service_requests (
             vehicle_tracking_id, request_type, priority, request_details,
             requested_by_callsign, service_pos_x, service_pos_y

@@ -28,7 +28,8 @@ final class AtakC2OrderIssueAssetTest extends TestCase
         self::assertStringContainsString('orderIssuerLabel', $issue);
         self::assertStringNotContainsString('_issuer = name player', $issue);
         self::assertStringContainsString('setVariable ["COMSPEC_Orders", _orders, false]', $issue);
-        self::assertStringContainsString('remoteExecCall ["comspec_overwatch_connect_fnc_receiveOrder", -2, false]', $issue);
+        // Cible 0 : -2 excluait l'hôte d'une partie hébergée ; receiveOrder écarte l'émetteur et le serveur dédié.
+        self::assertStringContainsString('remoteExecCall ["comspec_overwatch_connect_fnc_receiveOrder", 0, false]', $issue);
         self::assertStringNotContainsString('[_order] remoteExecCall', $issue);
 
         self::assertStringContainsString('comspec_profile_name', $issuer);

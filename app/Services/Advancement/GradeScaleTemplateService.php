@@ -343,18 +343,34 @@ final class GradeScaleTemplateService
                         'rank_order' => $rankOrder,
                         'advancement_seniority_enabled' => empty($row['is_commissioned']),
                         'advancement_choice_enabled' => !empty($row['is_commissioned']) || $index >= 2,
-                        'min_time_in_previous_grade_months' => $index === 0 ? 0 : min(36, ($index + 1) * 6),
+                        'min_time_in_previous_grade_months' => $this->defaultMonths($index),
                     ]);
                     $inserted = true;
                     $idsInOrder[] = $id;
                     continue;
                 }
-                $idsInOrder[] = (int) $existing['id'];
+                $existingId = (int) $existing['id'];
+                $oldIndex = (int) ($existing['rank_order'] ?? 0) - 1;
+                if (!empty($row['_custom']) && $oldIndex !== $index
+                    && (string) ($existing['min_time_in_previous_grade_months'] ?? '') === (string) $this->defaultMonths($oldIndex)) {
+                    // Durée posée automatiquement avec l’ancien ordre inversé : elle suit le nouveau rang.
+                    $this->repository->updateGradeMinMonths($existingId, $tenantId, $this->defaultMonths($index));
+                }
+                if (!empty($existing['archived_at'])) {
+                    // Grade revenu dans le référentiel de la communauté.
+                    $this->repository->restoreGrade($existingId, $tenantId);
+                    $inserted = true;
+                }
+                $idsInOrder[] = $existingId;
             }
-            if ($inserted && $idsInOrder !== []) {
+            // Sur mesure : l’ordre suit toujours l’échelle de la communauté (flèches ↑ ↓ du référentiel).
+            if (($inserted || !empty($catRows[0]['_custom'])) && $idsInOrder !== []) {
                 $this->repository->reorderGrades($tenantId, $idsInOrder);
             }
         }
+
+        // Changement de référentiel (ex. grades personnalisés) : les anciens grades US/FR ne doivent plus servir de grade suivant.
+        $this->repository->archiveOtherCatalogGrades($tenantId, $codes);
 
         return $codes;
     }
@@ -393,8 +409,34 @@ final class GradeScaleTemplateService
         if ($rows === []) {
             return [];
         }
+        if ($this->isCommunityOwnedSystem($pdo, $systemCode)) {
+            // Grades sur mesure : classés du plus haut au plus bas (un nouveau grade arrive en tête), l’inverse d’une progression.
+            foreach ($rows as &$row) {
+                $row['sort_order'] = -(int) ($row['sort_order'] ?? 0);
+                $row['_custom'] = true;
+            }
+            unset($row);
+        }
 
         return $this->applyCatalogOverrides($pdo, $tenantId, $rows);
+    }
+
+    /** Temps minimal dans le grade précédent proposé par défaut selon le rang (0 = premier grade). */
+    private function defaultMonths(int $index): int
+    {
+        return $index <= 0 ? 0 : min(36, ($index + 1) * 6);
+    }
+
+    private function isCommunityOwnedSystem(\PDO $pdo, string $systemCode): bool
+    {
+        try {
+            $st = $pdo->prepare('SELECT owner_tenant_id FROM grade_systems WHERE code = ? LIMIT 1');
+            $st->execute([$systemCode]);
+
+            return (int) ($st->fetchColumn() ?: 0) > 0;
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     /**

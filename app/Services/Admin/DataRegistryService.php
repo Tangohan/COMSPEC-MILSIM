@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services\Admin;
 
+use App\Core\Container;
 use App\Core\Database;
 use App\Repositories\AtakAdminControlRepository;
 use App\Services\Cron\Jobs\PlayerDataRetentionCronJob;
+use App\Services\Steam\SteamWebApiService;
 use App\Support\SteamId;
 use PDO;
 
@@ -27,7 +29,19 @@ final class DataRegistryService
         'units' => 'Unités sur la carte',
         'sessions' => 'Sessions de jeu',
         'tenants' => 'Communautés',
+        'lookalikes' => 'Mods proches',
         'cleanup' => 'Nettoyage',
+    ];
+
+    /** @var array<string, string> */
+    private const USER_STATUS_LABELS = [
+        'active' => 'Compte actif',
+        'inactive' => 'Compte inactif',
+        'pending_verification' => 'En attente de vérification de l’e-mail',
+        'merged' => 'Fusionné',
+        'deleted' => 'Supprimé',
+        'banned' => 'Suspendu',
+        'suspended' => 'Suspendu',
     ];
 
     /** @var array<string, bool> */
@@ -87,6 +101,7 @@ final class DataRegistryService
             'units' => $this->defUnits(),
             'sessions' => $this->defSessions(),
             'tenants' => $this->defTenants(),
+            'lookalikes' => $this->emptyDef(), // lecture dédiée dans lookalikes()
             default => throw new \InvalidArgumentException('unknown_dataset'),
         };
     }
@@ -113,7 +128,7 @@ final class DataRegistryService
                 ['key' => 'label', 'label' => 'Compte', 'type' => 'entity'],
                 ['key' => 'email', 'label' => 'E-mail'],
                 ['key' => 'tenant_name', 'label' => 'Communauté', 'type' => 'entity'],
-                ['key' => 'status', 'label' => 'Statut', 'options' => $this->distinct('users', 'status')],
+                ['key' => 'status', 'label' => 'Statut', 'options' => $this->userStatusOptions()],
                 ['key' => 'steam_id', 'label' => 'Steam', 'type' => 'entity'],
                 ['key' => 'terminals', 'label' => 'ATAK', 'type' => 'num'],
                 ['key' => 'sessions', 'label' => 'Sessions actives', 'type' => 'num'],
@@ -122,24 +137,32 @@ final class DataRegistryService
                 ['key' => 'last_login_at', 'label' => 'Dernière connexion', 'type' => 'date'],
                 ['key' => 'created_at', 'label' => 'Créé', 'type' => 'date'],
                 ['key' => 'flags', 'label' => 'Signaux', 'type' => 'tags', 'filter' => false, 'sortable' => false],
+                ['key' => 'open', 'label' => 'Fiche', 'type' => 'link', 'filter' => false, 'sortable' => false],
             ],
             'flags' => [
                 'ghost' => ['Supprimés avec traces de jeu', "deleted_at IS NOT NULL AND (terminals > 0 OR profiles > 0 OR sessions > 0)", 'bad', 'Comptes supprimés dont le joueur apparaît encore (carte, ATAK, registre)'],
                 'dupe' => ['Steam en double', 'steam_dupes > 0', 'warn', 'Le même Steam est porté par plusieurs fiches vivantes'],
                 'deleted' => ['Supprimés / anonymisés', 'deleted_at IS NOT NULL', 'neut', ''],
                 'linked' => ['Steam lié', "steam_id IS NOT NULL AND steam_id <> '' AND deleted_at IS NULL", 'ok', ''],
+                'nosteam' => ['Sans Steam', "(steam_id IS NULL OR steam_id = '') AND deleted_at IS NULL", 'warn', 'Compte vivant sans identifiant Steam'],
+                'pending' => ['E-mail à vérifier', "status = 'pending_verification' AND deleted_at IS NULL", 'warn', ''],
                 'never' => ['Liés, jamais vus en jeu', "steam_id IS NOT NULL AND steam_id <> '' AND last_game IS NULL AND deleted_at IS NULL", 'neut', ''],
             ],
             'actions' => [
                 ['key' => 'purge_traces', 'label' => 'Effacer les traces de jeu', 'danger' => true, 'confirm' => 'Carte, ATAK, sessions, registre, mods et statistiques de ces comptes seront effacés. Les comptes eux-mêmes restent.'],
                 ['key' => 'unlink_steam', 'label' => 'Délier le Steam', 'confirm' => 'Le Steam est retiré des fiches et les sessions de jeu sont fermées.'],
+                ['key' => 'block_steam', 'label' => 'Bloquer le Steam plateforme', 'danger' => true, 'confirm' => 'Les Steam liés à ces comptes ne pourront plus envoyer de données de jeu à Athena.'],
             ],
             'post' => function (array $r): array {
+                $statusRaw = (string) ($r['status'] ?? '');
+                $steamRaw = $r['steam_id'] !== null && $r['steam_id'] !== '' ? (string) $r['steam_id'] : null;
                 $r['_corr'] = ['type' => 'user', 'id' => $r['id']];
                 $r['_ghost'] = $r['deleted_at'] !== null && ((int) $r['terminals'] + (int) $r['profiles'] + (int) $r['sessions']) > 0;
                 $r['label'] = ['type' => 'user', 'id' => $r['id'], 'label' => (string) $r['label'], 'sub' => (string) ($r['callsign'] ?? '')];
                 $r['tenant_name'] = $r['tenant_id'] ? ['type' => 'tenant', 'id' => $r['tenant_id'], 'label' => (string) ($r['tenant_name'] ?? ('#' . $r['tenant_id']))] : null;
-                $r['steam_id'] = $r['steam_id'] ? ['type' => 'steam', 'id' => $r['steam_id'], 'label' => (string) $r['steam_id']] : null;
+                $r['status'] = self::USER_STATUS_LABELS[$statusRaw] ?? ($statusRaw !== '' ? $statusRaw : '—');
+                $r['steam_id'] = $steamRaw ? ['type' => 'steam', 'id' => $steamRaw, 'label' => $steamRaw] : null;
+                $r['open'] = ['href' => url('admin/users/' . (int) $r['id'] . '/edit'), 'label' => 'Ouvrir'];
                 $tags = [];
                 if ($r['deleted_at'] !== null) {
                     $tags[] = ['label' => 'Supprimé', 'tone' => 'neut', 'title' => 'Anonymisé le ' . $r['deleted_at']];
@@ -149,6 +172,12 @@ final class DataRegistryService
                 }
                 if ((int) $r['steam_dupes'] > 0) {
                     $tags[] = ['label' => 'Steam ×' . ((int) $r['steam_dupes'] + 1), 'tone' => 'warn'];
+                }
+                if ($steamRaw === null && $r['deleted_at'] === null) {
+                    $tags[] = ['label' => 'Sans Steam', 'tone' => 'warn'];
+                }
+                if ($statusRaw === 'pending_verification' && $r['deleted_at'] === null) {
+                    $tags[] = ['label' => 'E-mail à vérifier', 'tone' => 'warn'];
                 }
                 $r['flags'] = $tags;
 
@@ -465,6 +494,49 @@ final class DataRegistryService
         return array_map(static fn ($v): array => ['value' => (string) $v, 'label' => (string) $v], $rows);
     }
 
+    /** @return list<array{value: string, label: string}> */
+    private function userStatusOptions(): array
+    {
+        $opts = $this->distinct('users', 'status');
+        foreach ($opts as &$o) {
+            $o['label'] = self::USER_STATUS_LABELS[$o['value']] ?? $o['value'];
+        }
+        unset($o);
+
+        return $opts;
+    }
+
+    /**
+     * Repère un SteamID64 dans une saisie libre (chiffres, STEAM_…, URL profiles, URL /id/…).
+     *
+     * @return array{steam: ?string, note: string}
+     */
+    public function resolveSteamQuery(string $raw): array
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return ['steam' => null, 'note' => ''];
+        }
+        $offline = SteamId::normalize($raw);
+        if ($offline !== null) {
+            return ['steam' => $offline, 'note' => 'Identifiant Steam reconnu dans la saisie.'];
+        }
+        try {
+            /** @var SteamWebApiService $api */
+            $api = Container::get(SteamWebApiService::class);
+            $resolved = $api->resolveSteamIdFromUserInput($raw);
+            if ($resolved !== null) {
+                return ['steam' => $resolved, 'note' => 'Profil Steam repéré depuis l’adresse du compte.'];
+            }
+            if (preg_match('#steamcommunity\.com/id/#i', $raw) === 1 && !$api->isConfigured()) {
+                return ['steam' => null, 'note' => 'Adresse /id/… : la clé Steam du serveur n’est pas configurée, impossible de résoudre le pseudo.'];
+            }
+        } catch (\Throwable) {
+        }
+
+        return ['steam' => null, 'note' => ''];
+    }
+
     // ================================================================= lecture
 
     /**
@@ -476,15 +548,34 @@ final class DataRegistryService
         if ($dataset === 'cleanup') {
             return $this->cleanup();
         }
+        if ($dataset === 'lookalikes') {
+            return $this->lookalikes($q, $flag, $sort, $dir, $page, $per);
+        }
         $def = $this->definition($dataset);
         $colKeys = array_column($def['columns'], 'key');
         $where = [];
         $params = [];
+        $steamHint = $this->resolveSteamQuery($q);
+        $resolvedSteam = $steamHint['steam'];
         if ($q !== '' && $def['search'] !== []) {
-            $where[] = '(' . implode(' OR ', array_map(static fn ($c) => "x.{$c} LIKE ?", $def['search'])) . ')';
-            foreach ($def['search'] as $_) {
-                $params[] = '%' . $q . '%';
+            $terms = [$q];
+            if ($resolvedSteam !== null && $resolvedSteam !== $q) {
+                $terms[] = $resolvedSteam;
             }
+            $or = [];
+            foreach ($terms as $term) {
+                $isSteam64 = SteamId::isSteam64($term);
+                foreach ($def['search'] as $c) {
+                    if ($isSteam64 && (str_contains($c, 'steam') || $c === 'steam')) {
+                        $or[] = "x.{$c} = ?";
+                        $params[] = $term;
+                    } else {
+                        $or[] = "x.{$c} LIKE ?";
+                        $params[] = '%' . $term . '%';
+                    }
+                }
+            }
+            $where[] = '(' . implode(' OR ', $or) . ')';
         }
         foreach ($filters as $k => $v) {
             if (!in_array($k, $colKeys, true) || $v === '' || $k === 'flags') {
@@ -545,14 +636,22 @@ final class DataRegistryService
             return $r;
         }, $rows);
 
+        $note = $error !== null ? 'Erreur de lecture : voir le journal du serveur.' : ($def['note'] ?? '');
+        if ($note === '' && $steamHint['note'] !== '' && $resolvedSteam !== null) {
+            $note = $steamHint['note'] . ' Recherche élargie à « ' . $resolvedSteam . ' ».';
+        } elseif ($note === '' && $steamHint['note'] !== '') {
+            $note = $steamHint['note'];
+        }
+
         return [
             'meta' => [
                 'columns' => array_map(static fn ($c) => array_intersect_key($c, array_flip(['key', 'label', 'type', 'options', 'filter', 'sortable'])), $def['columns']),
                 'flags' => $flagCounts,
                 'total_all' => $totalAll,
                 'actions' => $def['actions'],
-                'note' => $error !== null ? 'Erreur de lecture : voir le journal du serveur.' : ($def['note'] ?? ''),
+                'note' => $note,
                 'lead' => self::LEADS[$dataset] ?? '',
+                'resolved_steam' => $resolvedSteam,
             ],
             'rows' => $rows,
             'total' => $total,
@@ -560,14 +659,154 @@ final class DataRegistryService
     }
 
     private const LEADS = [
-        'users' => 'Toutes les fiches, toutes communautés. « Supprimés avec traces de jeu » : comptes effacés dont le joueur apparaît encore sur la carte, en ATAK ou dans le registre.',
-        'players' => 'Chaque identifiant Steam trouvé dans les données de jeu, avec les comptes qui le portent. Un « fantôme » n’a plus aucun compte vivant.',
+        'users' => 'Toutes les fiches, toutes communautés. Collez une adresse de profil Steam (…/profiles/… ou …/id/…) pour retrouver le compte. « Supprimés avec traces de jeu » : comptes effacés dont le joueur apparaît encore sur la carte, en ATAK ou dans le registre.',
+        'players' => 'Chaque identifiant Steam trouvé dans les données de jeu, avec les comptes qui le portent. Un « fantôme » n’a plus aucun compte vivant. Une adresse de profil Steam fonctionne aussi dans la recherche.',
         'terminals' => 'Tous les ATAK enregistrés, avec leur compte. Retirer révoque certificats et appareils de confiance avant de supprimer la fiche.',
         'units' => 'Ce que la carte BFT affiche pour chaque communauté. Une unité muette ou sans compte est un fantôme.',
         'sessions' => 'Sessions ouvertes par le jeu (COMSPEC Link) : actives, révoquées ou expirées.',
         'tenants' => 'Communautés et volume de leurs données de jeu.',
+        'lookalikes' => 'Mods vus chez les joueurs dont le nom ou le dossier rappelle COMSPEC, ATAK, Athena ou Overwatch, mais sans la fiche Workshop officielle (souvent une copie locale ou une republication). Ce n’est pas une preuve de réutilisation du code : c’est un signal à vérifier.',
         'cleanup' => 'Données orphelines ou périmées. L’entretien automatique en efface une partie chaque nuit ; ici vous pouvez lancer le nettoyage tout de suite.',
     ];
+
+    /**
+     * Mods détectés proches du pack officiel, sans signature Workshop attendue.
+     *
+     * @return array{meta: array<string, mixed>, rows: list<array<string, mixed>>, total: int}
+     */
+    private function lookalikes(string $q, string $flag, string $sort, string $dir, int $page, int $per): array
+    {
+        $columns = [
+            ['key' => 'name', 'label' => 'Mod repéré', 'filter' => false],
+            ['key' => 'mod_dir', 'label' => 'Dossier', 'type' => 'mono', 'filter' => false],
+            ['key' => 'workshop_id', 'label' => 'Fiche Workshop', 'type' => 'mono', 'filter' => false],
+            ['key' => 'players', 'label' => 'Joueurs', 'type' => 'num', 'filter' => false],
+            ['key' => 'communities', 'label' => 'Communautés', 'type' => 'num', 'filter' => false],
+            ['key' => 'last_seen', 'label' => 'Dernière vue', 'type' => 'date', 'filter' => false],
+            ['key' => 'flags', 'label' => 'Signaux', 'type' => 'tags', 'filter' => false, 'sortable' => false],
+            ['key' => 'open', 'label' => 'Workshop', 'type' => 'link', 'filter' => false, 'sortable' => false],
+        ];
+        $flagDefs = [
+            'unsigned' => ['Sans fiche Workshop', 'bad', 'Dossier ou nom proche, aucune fiche Workshop'],
+            'foreign' => ['Autre fiche Workshop', 'warn', 'Dossier ou nom proche, fiche différente du pack officiel'],
+        ];
+        if (!$this->has('game_detected_mods')) {
+            return [
+                'meta' => [
+                    'columns' => $columns,
+                    'flags' => [],
+                    'total_all' => 0,
+                    'actions' => [],
+                    'note' => 'Les listes de mods des joueurs ne sont pas encore disponibles sur cette installation.',
+                    'lead' => self::LEADS['lookalikes'],
+                    'resolved_steam' => null,
+                ],
+                'rows' => [],
+                'total' => 0,
+            ];
+        }
+
+        $raw = $this->rows(
+            'SELECT m.mod_dir, MAX(m.name) AS name, MAX(m.workshop_id) AS workshop_id,
+                    MIN(m.first_seen) AS first_seen, MAX(m.last_seen) AS last_seen,
+                    COUNT(DISTINCT m.tenant_id) AS communities,
+                    (SELECT COUNT(DISTINCT pm.steam_id) FROM game_player_mods pm WHERE pm.mod_dir = m.mod_dir) AS players
+             FROM game_detected_mods m
+             GROUP BY m.mod_dir
+             ORDER BY MAX(m.last_seen) DESC
+             LIMIT 4000',
+            []
+        );
+
+        $matched = [];
+        foreach ($raw as $r) {
+            $dir = (string) ($r['mod_dir'] ?? '');
+            $name = (string) ($r['name'] ?? '');
+            $wid = (string) ($r['workshop_id'] ?? '');
+            $hit = LookalikeModProbe::classify($dir, $name, $wid);
+            if (!$hit['matched']) {
+                continue;
+            }
+            $widClean = preg_replace('/\D/', '', $wid) ?? '';
+            $kind = $widClean === '' ? 'unsigned' : 'foreign';
+            $matched[] = [
+                '_id' => $dir !== '' ? $dir : ('wid:' . $widClean),
+                'name' => $name !== '' ? $name : $dir,
+                'mod_dir' => $dir,
+                'workshop_id' => $widClean !== '' ? $widClean : '—',
+                'players' => (int) ($r['players'] ?? 0),
+                'communities' => (int) ($r['communities'] ?? 0),
+                'last_seen' => $r['last_seen'] ?? null,
+                'first_seen' => $r['first_seen'] ?? null,
+                'flags' => [[
+                    'label' => $kind === 'unsigned' ? 'Sans fiche Workshop' : 'Autre fiche',
+                    'tone' => $hit['severity'],
+                    'title' => implode(' · ', $hit['reasons']),
+                ]],
+                'open' => $widClean !== ''
+                    ? ['href' => 'https://steamcommunity.com/sharedfiles/filedetails/?id=' . rawurlencode($widClean), 'label' => 'Ouvrir']
+                    : null,
+                '_ghost' => $kind === 'unsigned',
+                '_kind' => $kind,
+            ];
+        }
+
+        $flagCounts = [];
+        foreach ($flagDefs as $k => $f) {
+            $flagCounts[] = [
+                'key' => $k,
+                'label' => $f[0],
+                'tone' => $f[1],
+                'title' => $f[2],
+                'count' => count(array_filter($matched, static fn (array $r): bool => ($r['_kind'] ?? '') === $k)),
+            ];
+        }
+
+        $qLower = mb_strtolower(trim($q));
+        $rows = array_values(array_filter($matched, static function (array $r) use ($flag, $qLower): bool {
+            if ($flag !== '' && ($r['_kind'] ?? '') !== $flag) {
+                return false;
+            }
+            if ($qLower === '') {
+                return true;
+            }
+            $blob = mb_strtolower(($r['mod_dir'] ?? '') . ' ' . ($r['name'] ?? '') . ' ' . ($r['workshop_id'] ?? ''));
+
+            return str_contains($blob, $qLower);
+        }));
+
+        $sortCol = in_array($sort, ['name', 'mod_dir', 'workshop_id', 'players', 'communities', 'last_seen'], true) ? $sort : 'players';
+        usort($rows, static function (array $a, array $b) use ($sortCol, $dir): int {
+            $av = $a[$sortCol] ?? null;
+            $bv = $b[$sortCol] ?? null;
+            $cmp = is_numeric($av) && is_numeric($bv)
+                ? ((float) $av <=> (float) $bv)
+                : strcmp((string) $av, (string) $bv);
+
+            return strtolower($dir) === 'asc' ? $cmp : -$cmp;
+        });
+
+        $total = count($rows);
+        $per = max(10, min(1000, $per));
+        $page = max(1, $page);
+        $slice = array_slice($rows, ($page - 1) * $per, $per);
+
+        return [
+            'meta' => [
+                'columns' => $columns,
+                'flags' => $flagCounts,
+                'total_all' => count($matched),
+                'actions' => [],
+                'note' => $total === 0
+                    ? 'Aucun mod proche du pack officiel sans fiche attendue pour le moment.'
+                    : 'Signaux seulement : vérifiez la fiche Workshop et le comportement en jeu avant toute conclusion.',
+                'lead' => self::LEADS['lookalikes'],
+                'resolved_steam' => null,
+            ],
+            'rows' => $slice,
+            'total' => $total,
+        ];
+    }
 
     /** Préfixe les colonnes des conditions de « flags » par l'alias x (expressions simples). */
     private function qualify(string $cond): string
@@ -815,6 +1054,22 @@ final class DataRegistryService
                 }
 
                 return ['ok' => true, 'message' => "Steam délié sur {$n} compte(s)."];
+            case 'users:block_steam':
+                $block = \App\Core\Container::get(\App\Services\Moderation\IndicatorBlocklistService::class);
+                foreach ($ids as $id) {
+                    $u = $this->row('SELECT steam_id FROM users WHERE id = ?', [(int) $id]);
+                    $sid = SteamId::normalize((string) ($u['steam_id'] ?? ''));
+                    if ($sid === null) {
+                        continue;
+                    }
+                    try {
+                        $block->addSteamBlock($actorId, 'global', null, $sid, 'Bloqué depuis le registre des données (comptes)', null);
+                        $n++;
+                    } catch (\Throwable) {
+                    }
+                }
+
+                return ['ok' => true, 'message' => "{$n} Steam bloqué(s) sur toute la plateforme."];
             case 'players:purge_steam':
                 foreach ($ids as $sid) {
                     $rows += array_sum($purge->purgeSteam($sid, null));

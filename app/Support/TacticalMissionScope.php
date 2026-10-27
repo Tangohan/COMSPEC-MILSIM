@@ -8,7 +8,7 @@ use App\Core\Response;
 use App\Core\Session;
 
 /**
- * Bac de mission des API C2 (zones de danger, logistique, SITREP) cloisonné par communauté.
+ * Bac de mission des API C2 (zones de danger, logistique, SITREP, appui-feu, relecture et AAR) cloisonné par communauté.
  * Même règle que IffController : le tenant vient de la clé communauté / session jeu, sinon de la
  * session web ; un missionId fourni n’est retenu que s’il porte le préfixe mission_<tenant>_map_.
  */
@@ -44,6 +44,15 @@ final class TacticalMissionScope
             'error' => 'invalid_mission_id',
             'message' => 'Identifiant de mission invalide.',
         ], 422);
+    }
+
+    /** missionId d’une autre communauté demandé en lecture (relecture, AAR) : refus explicite. */
+    public static function missionForbiddenResponse(): Response
+    {
+        return Response::json([
+            'error' => 'mission_forbidden',
+            'message' => 'Mission hors du périmètre de votre communauté.',
+        ], 403);
     }
 
     /** Valeur brute acceptable : absente, ou scalaire de longueur bornée. */

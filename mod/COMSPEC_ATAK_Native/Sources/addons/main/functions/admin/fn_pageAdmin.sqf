@@ -296,7 +296,7 @@ switch (_tab) do {
         };
         _cfg params [["_capOn", true], ["_radius", 100], ["_hunt", true], ["_huntR", 3000], ["_crack", 120]];
         _rows pushBack ["section", "Réglages de la partie", format ["Ramassage %1 (rayon %2 m) · traque %3 (rayon %4 m) · déchiffrage %5 s · relevé %6",
-            ["coupé", "actif"] select _capOn, _radius, ["coupée", "active"] select _hunt, _huntR, _crack, [diag_tickTime - _dbgAt, "en attente"] select (_dbgAt < 0)]];
+            ["coupé", "actif"] select _capOn, _radius, ["coupée", "active"] select _hunt, _huntR, _crack, [[diag_tickTime - _dbgAt] call _ago, "en attente"] select (_dbgAt < 0)]];
         _rows pushBack ["buttons", [
             ["ACTUALISER", { ["scan"] call comspec_atak_native_fnc_adminClient; }, true, true],
             [["RÉTABLIR LA TRAQUE", "COUPER LA TRAQUE"] select _hunt, compile format ["['server', ['hunt', [%1]]] call comspec_atak_native_fnc_adminClient;", !_hunt], false, true,
@@ -327,8 +327,10 @@ switch (_tab) do {
             _rows pushBack ["info", "Porteur", [format ["%1 (%2) · %3 · groupe %4 · %5", [_cName] call _esc, _cType, _cSide, [_cGrp] call _esc,
                 [[_cPos, 8] call comspec_atak_native_fnc_gridRef, "—"] select (_cPos isEqualTo [])], "aucun"] select (_cType isEqualTo "")];
             _rows pushBack ["info", "Dernière connexion", [format ["%1 · %2", _lastGrid, [_lastAgo] call _ago], "jamais"] select (_lastGrid isEqualTo "")];
-            _rows pushBack ["info", "Compromission", format ["%1%2 · Athena %3", (createHashMapFromArray [["suspected", "suspectée"], ["validated", "validée"], ["dismissed", "rejetée"]]) getOrDefault [_state, _state],
-                ["", " par " + _by] select (_by isNotEqualTo ""), [_athena, "—"] select (_athena isEqualTo "")]];
+            // Modèles entiers (pas de « + » : le dictionnaire ne retrouverait pas la phrase) ; état Athena en clair, comme l'app Alertes.
+            private _stName = (createHashMapFromArray [["suspected", "suspectée"], ["validated", "validée"], ["dismissed", "rejetée"]]) getOrDefault [_state, _state];
+            private _athTxt = (createHashMapFromArray [["ok", "certificat révoqué"], ["pending", "révocation demandée…"], ["offline", "hors ligne, révoquer depuis le poste"], ["", "—"]]) getOrDefault [_athena, _athena];
+            _rows pushBack ["info", "Compromission", [format ["%1 · Athena : %2", _stName, _athTxt], format ["%1 par %2 · Athena : %3", _stName, _by, _athTxt]] select (_by isNotEqualTo "")];
             {
                 _x params ["_gid", "_n", "_hp", "_gs"];
                 _rows pushBack ["info", "Traque", format ["%1 (%2, %3 IA) » %4", [_gid] call _esc, _gs, _n, [[_hp, 6] call comspec_atak_native_fnc_gridRef, "en attente"] select (_hp isEqualTo [])]];

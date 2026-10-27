@@ -45,8 +45,7 @@ private _gy = _gs * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pix
 for "_i" from 1 to (floor (_bh / (_gy max 0.001))) do { [0, _gy * _i, _bw, _gy * _i, [1, 1, 1, 0.035]] call _line; };
 
 // En-tête et aide.
-private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
-private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"];
+([player] call comspec_atak_native_fnc_phoneCarried) params ["_model", "_tint"];
 private _s7 = !(_model in ["rugged", "iphone", "sonim", "s23", "ip17"]);
 private _nMounted = { _x get "mounted" } count _slots;
 private _headH = _fs * 1.9;

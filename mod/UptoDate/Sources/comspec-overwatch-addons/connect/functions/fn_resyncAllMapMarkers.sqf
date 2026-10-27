@@ -5,6 +5,7 @@
     Diff par signature pour éviter de spammer SendMarker.
 */
 if (!hasInterface) exitWith {};
+if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_sync_map_markers", true])) exitWith {};
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};

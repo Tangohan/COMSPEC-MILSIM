@@ -109,7 +109,12 @@ $statusTone = [
                 <select name="target_ref" aria-label="Poste, AAV ou offre">
                     <option value="">Aucune</option>
                     <?php
-                    $cibleGroups = [
+                    // Libellés de groupe (optgroup) : la traduction de la page ne les voit pas.
+                    $cibleGroups = locale() === 'en' ? [
+                        'postes' => 'Positions',
+                        'aav' => 'Calls for volunteers',
+                        'offres' => 'Offers',
+                    ] : [
                         'postes' => 'Postes',
                         'aav' => 'AAV · Appels à volontaire',
                         'offres' => 'Offres',

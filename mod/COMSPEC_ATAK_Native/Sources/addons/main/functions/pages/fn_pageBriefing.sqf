@@ -22,7 +22,9 @@ private _bridge = [] call comspec_atak_native_fnc_bridge;
 
 private _btn = {
     params ["_rect", "_label", "_code", ["_active", false]];
-    private _b = ["COMSPEC_RscButton", _rect, _label] call comspec_atak_native_fnc_pageCtrl;
+    // Bouton actif : classe verte aussi au survol et au focus (sinon fond bleu-vert du survol sous un texte sombre,
+    // onglet DIAPOS illisible une fois touché, capture de TTRD du 26/10).
+    private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _active, _rect, _label] call comspec_atak_native_fnc_pageCtrl;
     _b ctrlSetFontHeight _fs;
     if (_active) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
     _b ctrlAddEventHandler ["ButtonClick", _code];
@@ -35,8 +37,11 @@ private _btn = {
 private _gearW = _rowH / (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 // Cinquième onglet ÉCRANS seulement quand un écran COMSPEC est à portée (fn_screenCast).
 private _screens = ["list"] call comspec_atak_native_fnc_screenCast;
-if ((count _screens) isEqualTo 0 && {_tab isEqualTo "SCREENS"}) then { _tab = "SLIDES"; _s set ["briefTab", _tab]; };
-private _nTabs = [4, 5] select ((count _screens) > 0);
+// Présentations du mod FENRIR (Live Presentation) à portée, s'il est chargé (fn_fenrir) : même onglet ÉCRANS.
+private _fenrir = ["list"] call comspec_atak_native_fnc_fenrir;
+private _nScreens = (count _screens) + (count _fenrir);
+if (_nScreens isEqualTo 0 && {_tab isEqualTo "SCREENS"}) then { _tab = "SLIDES"; _s set ["briefTab", _tab]; };
+private _nTabs = [4, 5] select (_nScreens > 0);
 private _tw = (_gw - 2 * _pad - _gearW - _pad / 2) / _nTabs;
 private _qn = count ((uiNamespace getVariable ["COMSPEC_ATAK_BriefQ", createHashMap]) getOrDefault ["list", []]);
 [[_pad, _pad, _tw - _pad / 6, _rowH], ["DIAPOSITIVES", "DIAPOS"] select (_nTabs > 4), { ["tab", "SLIDES"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "SLIDES"] call _btn;
@@ -44,7 +49,7 @@ private _qn = count ((uiNamespace getVariable ["COMSPEC_ATAK_BriefQ", createHash
 [[_pad + 2 * _tw, _pad, _tw - _pad / 6, _rowH], "MISSION", { ["tab", "MISSION"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "MISSION"] call _btn;
 [[_pad + 3 * _tw, _pad, _tw - _pad / 6, _rowH], "CARTE", { [{ ["PLAN"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }] call _btn;
 if (_nTabs > 4) then {
-    [[_pad + 4 * _tw, _pad, _tw - _pad / 6, _rowH], format ["ÉCRANS (%1)", count _screens], { ["tab", "SCREENS"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "SCREENS"] call _btn;
+    [[_pad + 4 * _tw, _pad, _tw - _pad / 6, _rowH], format ["ÉCRANS (%1)", _nScreens], { ["tab", "SCREENS"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "SCREENS"] call _btn;
 };
 private _gx = _gw - _pad - _gearW;
 private _gearOn = _tab isEqualTo "SETTINGS";
@@ -65,11 +70,16 @@ if (_tab isEqualTo "SETTINGS") exitWith {
 // Écrans COMSPEC à portée : diffuser ma diapositive en cours, la faire défiler, arrêter (fn_screenCast).
 if (_tab isEqualTo "SCREENS") exitWith {
     ([] call comspec_atak_native_fnc_briefingSignature) params ["_src", "_idx", "_total"];
-    private _rows = [
-        ["section", "Écrans à portée", "Diapositives de ce téléphone sur les écrans du jeu"],
-        ["text", "<t size='0.8' color='#8a9a93'>DIFFUSER affiche votre diapositive en cours sur l'écran ; quand vous tournez les pages dans DIAPOSITIVES, l'écran suit. Tout le monde peut aussi la faire défiler à l'écran avec ACE. Chaque joueur voit l'image s'il a COMSPEC Link.</t>"]
-    ];
-    if (_total < 1) then { _rows pushBack ["text", "<t color='#f2ab33'>Aucune diapositive chargée : ouvrez d'abord une présentation dans DIAPOSITIVES.</t>"]; };
+    // Présentation FENRIR regardée : ce ne sont pas mes diapositives, rien à diffuser.
+    if (_src isEqualTo "FENRIR") then { _total = 0; };
+    private _rows = [];
+    if ((count _screens) > 0) then {
+        _rows append [
+            ["section", "Écrans à portée", "Diapositives de ce téléphone sur les écrans du jeu"],
+            ["text", "<t size='0.8' color='#8a9a93'>DIFFUSER affiche votre diapositive en cours sur l'écran ; quand vous tournez les pages dans DIAPOSITIVES, l'écran suit. Tout le monde peut aussi la faire défiler à l'écran avec ACE. Chaque joueur voit l'image s'il a COMSPEC Link.</t>"]
+        ];
+        if (_total < 1) then { _rows pushBack ["text", ["<t color='#f2ab33'>Aucune diapositive chargée : ouvrez d'abord une présentation dans DIAPOSITIVES.</t>", "<t color='#f2ab33'>Vous regardez une présentation FENRIR : touchez MES DIAPOS pour diffuser les vôtres.</t>"] select (_src isEqualTo "FENRIR")]; };
+    };
     if ((count _screens) > 1 && {_total > 0}) then { _rows pushBack ["buttons", [["DIFFUSER SUR TOUS", { ["castAll"] call comspec_atak_native_fnc_screenCast; [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }, [], 0.3] call CBA_fnc_waitAndExecute; }, true]]]; };
     {
         private _o = _x;
@@ -96,6 +106,44 @@ if (_tab isEqualTo "SCREENS") exitWith {
         };
         if ((count _b) > 0) then { _rows pushBack ["buttons", _b]; };
     } forEach _screens;
+    // Présentations FENRIR : les voir sur le téléphone, les piloter si le module FENRIR le permet, y mettre mon Google Slides.
+    if ((count _fenrir) > 0) then {
+        _rows append [
+            ["section", "Présentations FENRIR", "Mod Live Presentation : écrans pilotés par leur console"],
+            ["text", "<t size='0.8' color='#8a9a93'>VOIR montre la présentation dans DIAPOSITIVES. Les flèches et MON GOOGLE SLIDES ne marchent que si le module FENRIR vous laisse piloter.</t>"]
+        ];
+        private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
+        private _viewed = ["viewed"] call comspec_atak_native_fnc_fenrir;
+        private _hasG = (profileNamespace getVariable ["COMSPEC_ATAK_BriefGoogleUrl", ""]) isNotEqualTo "" || {missionNamespace getVariable ["COMSPEC_GoogleBriefingActive", false]};
+        private _again = "[{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'BRIEFING') then { ['BRIEFING'] call comspec_atak_native_fnc_pageRender; }; }, [], 0.5] call CBA_fnc_waitAndExecute;";
+        {
+            _x params ["_fid", "_dist"];
+            private _st = ["state", _fid] call comspec_atak_native_fnc_fenrir;
+            private _sl = _st select 2;
+            private _name = _st select 11;
+            if (_name isEqualTo "") then { _name = "Briefing"; };
+            private _can = ["can", _fid] call comspec_atak_native_fnc_fenrir;
+            private _state = switch (_st select 4) do {
+                case "loading": { "<t color='#7fb6e6'>chargement…</t>" };
+                case "error": { format ["<t color='#e86a5a'>erreur : %1</t>", [_st select 5] call _esc] };
+                default {
+                    if ((count _sl) isEqualTo 0) then { "<t color='#8a9a93'>vide</t>" } else {
+                        format ["<t color='#5cc76b'>%1 / %2</t> %3", (_st select 3) + 1, count _sl, [(_sl param [_st select 3, []]) param [1, ""]] call _esc]
+                    };
+                };
+            };
+            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='#8a9a93'>%2 m · %3</t><br/>%4", [_name] call _esc, round _dist, ["lecture seule", "vous pilotez"] select _can, _state]];
+            private _b = [[["VOIR", "MES DIAPOS"] select (_viewed isEqualTo _fid), compile format ["['view', %1] call comspec_atak_native_fnc_fenrir;", str ([_fid, ""] select (_viewed isEqualTo _fid))], _viewed isNotEqualTo _fid]];
+            if (_can && {(count _sl) > 0}) then {
+                _b append [
+                    ["«", compile format ["['cmd', ['%1', 'prev']] call comspec_atak_native_fnc_fenrir; %2", _fid, _again]],
+                    ["»", compile format ["['cmd', ['%1', 'next']] call comspec_atak_native_fnc_fenrir; %2", _fid, _again]]
+                ];
+            };
+            if (_can && {_hasG}) then { _b pushBack ["MON GOOGLE SLIDES", compile format ["['push', '%1'] call comspec_atak_native_fnc_fenrir;", _fid]]; };
+            _rows pushBack ["buttons", _b];
+        } forEach _fenrir;
+    };
     [_rows, [0, _y0, _bw, _bh - _y0]] call comspec_atak_native_fnc_formRender;
     true
 };
@@ -207,13 +255,29 @@ if (_tab isEqualTo "MISSION") exitWith {
 // Source « Google Slides » de l'engrenage : le lien enregistré est chargé une fois à l'ouverture.
 private _pref = profileNamespace getVariable ["COMSPEC_ATAK_BriefSource", "AUTO"];
 private _gUrl = profileNamespace getVariable ["COMSPEC_ATAK_BriefGoogleUrl", ""];
-if (_pref isEqualTo "GOOGLE" && {_bridge} && {_gUrl isNotEqualTo ""} && {_src isNotEqualTo "GOOGLE"} && {(uiNamespace getVariable ["COMSPEC_ATAK_BriefAutoTried", ""]) isNotEqualTo _gUrl}) then {
+if (_pref isEqualTo "GOOGLE" && {_bridge} && {_gUrl isNotEqualTo ""} && {!(_src in ["GOOGLE", "FENRIR"])} && {(uiNamespace getVariable ["COMSPEC_ATAK_BriefAutoTried", ""]) isNotEqualTo _gUrl}) then {
     uiNamespace setVariable ["COMSPEC_ATAK_BriefAutoTried", _gUrl];
     [{ ["load", [_this, false]] call comspec_atak_native_fnc_briefingCfg; }, _gUrl] call CBA_fnc_execNextFrame;
 };
 // Raison montrée dans la zone d'image quand la diapositive Athena ne peut pas s'afficher (vide : image affichée).
 private _slideWhy = "";
 private _slideLoading = false;
+// Présentation FENRIR : image reçue de son serveur (base64), montrée par le navigateur intégré comme le repli Athena.
+private _fid = ["viewed"] call comspec_atak_native_fnc_fenrir;
+private _fst = ["state", _fid] call comspec_atak_native_fnc_fenrir;
+if (_src isEqualTo "FENRIR" && {_total > 0}) then {
+    private _hash = (_path splitString "?") param [0, ""];
+    private _b64 = ["image", _hash] call comspec_atak_native_fnc_fenrir;
+    _slideLoading = _b64 isEqualTo "";
+    _path = "";
+    if (!_slideLoading) then {
+        private _store = uiNamespace getVariable ["COMSPEC_ATAK_SlideWeb", createHashMap];
+        if (count _store > 12) then { _store = createHashMap; };
+        _store set ["fnr_" + _hash, ["jpeg", _b64]];
+        uiNamespace setVariable ["COMSPEC_ATAK_SlideWeb", _store];
+        _path = "WEB:fnr_" + _hash;
+    };
+};
 if (_src isEqualTo "ATHENA" && {_total > 0}) then {
     // Image en cache local (téléchargée une fois par diapositive) : [chemin, raison].
     private _cache = uiNamespace getVariable ["COMSPEC_ATAK_SlideCache", createHashMap];
@@ -223,6 +287,9 @@ if (_src isEqualTo "ATHENA" && {_total > 0}) then {
     private _loading = uiNamespace getVariable ["COMSPEC_ATAK_SlideLoading", createHashMap];
     uiNamespace setVariable ["COMSPEC_ATAK_SlideLoading", _loading];
     // Entrée datée (diag_tickTime) : au-delà de 25 s (fin de mission ou erreur pendant le téléchargement), elle est périmée.
+    // Image du navigateur intégré évincée du magasin base64 (vidé au-delà de 12) : entrée périmée, image relue.
+    private _hit = (_cache getOrDefault [_path, [""]]) param [0, ""];
+    if ((_hit select [0, 4]) isEqualTo "WEB:" && {!((_hit select [4]) in (uiNamespace getVariable ["COMSPEC_ATAK_SlideWeb", createHashMap]))}) then { _cache deleteAt _path; };
     private _since = _loading getOrDefault [_path, -100];
     if !(_since isEqualType 0) then { _since = -100; };
     if (!(_path in _cache) && {diag_tickTime - _since > 25}) then {
@@ -265,7 +332,7 @@ if (_src isEqualTo "ATHENA" && {_total > 0}) then {
                 private _off = 0;
                 private _err = "";
                 for "_n" from 0 to 400 do {
-                    private _r = [(["COMSPECExtension", "ImageDataChunk", [_webUrl, _key, _off]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
+                    private _r = [(["COMSPECExtension", "ImageDataChunk", [_webUrl, _key, _off toFixed 0]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
                     if (isNil "_r") then { _r = ""; };
                     if (_r isEqualType []) then { _r = _r param [0, ""]; };
                     if !(_r isEqualType "") then { _r = str _r; };
@@ -304,14 +371,54 @@ if (_src isEqualTo "ATHENA" && {_total > 0}) then {
     _path = _p;
     _slideWhy = _why;
 };
+// Google Slides : image téléchargée par COMSPEC Link dans comspec_cache, refusée par Arma hors d'un PBO (écran noir,
+// capture de TTRD du 26/10). Même repli que pour Athena : navigateur intégré (COMSPEC Link 2.0.98+, « local: »).
+if (_src isEqualTo "GOOGLE" && {_path isNotEqualTo ""}) then {
+    private _use = [_path] call comspec_atak_native_fnc_texUsable;
+    if (_use isNotEqualTo "") exitWith { _path = _use; };
+    private _gCache = uiNamespace getVariable ["COMSPEC_ATAK_GSlideCache", createHashMap];
+    uiNamespace setVariable ["COMSPEC_ATAK_GSlideCache", _gCache];
+    private _st = _gCache getOrDefault [_path, []];
+    // Image évincée du magasin base64 (vidé au-delà de 12) : relue comme une diapositive jamais vue.
+    if ((count _st) > 1 && {((_st select 0) select [0, 4]) isEqualTo "WEB:"} && {!(_path in (uiNamespace getVariable ["COMSPEC_ATAK_SlideWeb", createHashMap]))}) then { _st = []; };
+    // Entrée : [] absente, [heure] en cours, [résultat, raison] faite.
+    if ((count _st) isEqualTo 0 || {(count _st) isEqualTo 1 && {diag_tickTime - (_st select 0) > 25}}) then {
+        _gCache set [_path, [diag_tickTime]];
+        [_path, _gCache] spawn {
+            params ["_path", "_gCache"];
+            (["local:" + _path, format ["gslide_%1", hashValue _path]] call comspec_atak_native_fnc_slideWebData) params ["_mime", "_b64", "_why"];
+            if (_why isEqualTo "") then {
+                private _store = uiNamespace getVariable ["COMSPEC_ATAK_SlideWeb", createHashMap];
+                if (count _store > 12) then { _store = createHashMap; };
+                _store set [_path, [_mime, _b64]];
+                uiNamespace setVariable ["COMSPEC_ATAK_SlideWeb", _store];
+            };
+            ["INFO", "BRIEFING", format ["Diapositive Google : fichier %1, %2", _path, ["affichée par le navigateur intégré (texture refusée par Arma)", _why] select (_why isNotEqualTo "")]] call comspec_atak_native_fnc_log;
+            _gCache set [_path, [["WEB:" + _path, ""] select (_why isNotEqualTo ""), ["", "Diapositive Google impossible à afficher : " + _why] select (_why isNotEqualTo "")]];
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+        };
+        _st = [diag_tickTime];
+    };
+    _slideLoading = (count _st) < 2;
+    _path = if (_slideLoading) then { "" } else { _st select 0 };
+    _slideWhy = _st param [1, ""];
+};
 
 private _btnH = _rowH;
 // Présentation en direct (Athena) : bandeau présentateur / présents et notes de la diapositive.
 private _live = if (_src isEqualTo "ATHENA") then { ["get"] call comspec_atak_native_fnc_briefingLive } else { [] };
 private _iPresent = (_live param [0, objNull]) isEqualTo player;
 private _follow = _s getOrDefault ["briefFollow", true];
-private _detail = if (_src isEqualTo "ATHENA" && {_total > 0}) then { ((missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) select _idx) param [4, ""] } else { "" };
-private _liveH = [0, _fs * 1.5 + _pad / 2] select (_src isEqualTo "ATHENA" && {_total > 0});
+private _detail = switch (true) do {
+    case (_total < 1): { "" };
+    case (_src isEqualTo "ATHENA"): { ((missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) select _idx) param [4, ""] };
+    // Notes de l'orateur de la diapositive FENRIR.
+    case (_src isEqualTo "FENRIR"): { ((_fst select 2) param [_idx, []]) param [2, ""] };
+    default { "" };
+};
+if !(_detail isEqualType "") then { _detail = ""; };
+// Bandeau : présentation en direct (Athena) ou présentation FENRIR regardée (avec retour à mes diapositives).
+private _liveH = [0, _fs * 1.5 + _pad / 2] select ((_src isEqualTo "ATHENA" && {_total > 0}) || {_src isEqualTo "FENRIR"});
 private _notesH = [0, _fs * 3.4] select (_detail isNotEqualTo "");
 private _foot = _btnH + _fs * 1.6 + _pad * 2 + _liveH + _notesH;
 private _listW = [0, _gw * 0.28] select (_land && {_total > 1});
@@ -341,10 +448,17 @@ private _bg = ["COMSPEC_RscPanel", [_vx, _vy, _vw, _vh]] call comspec_atak_nativ
 _bg ctrlSetBackgroundColor [0, 0, 0, 1];
 if (_total < 1 || {_path isEqualTo ""}) then {
     private _msg = switch (true) do {
+        case (_src isEqualTo "FENRIR" && {_total < 1}): {
+            switch (_fst select 4) do {
+                case "loading": { "La présentation FENRIR se charge sur son serveur…" };
+                case "error": { format ["FENRIR n'a pas pu charger la présentation :<br/>%1", [[_fst select 5, "&", "&amp;"] call CBA_fnc_replace, "<", "&lt;"] call CBA_fnc_replace] };
+                default { "Cette présentation FENRIR est vide.<br/>Son présentateur colle un lien dans la console FENRIR, ou touchez MON GOOGLE SLIDES dans l'onglet ÉCRANS." };
+            }
+        };
         case (_total < 1 && {_bridge} && {_pref isEqualTo "GOOGLE"}): { ["Aucune présentation Google enregistrée.<br/>Touchez l'engrenage en haut à droite pour coller le lien Google Slides.", "Chargement de la présentation Google…<br/>En cas d'échec, l'engrenage en haut à droite explique pourquoi."] select (_gUrl isNotEqualTo "") };
         case (_total < 1 && {_bridge}): { "Aucune diapositive pour l'instant.<br/>Le présentateur partage un Google Slides depuis le tableau de briefing, ou publiez des diapositives sur Athena puis touchez ACTUALISER.<br/>Votre propre lien Google Slides : touchez l'engrenage en haut à droite." };
         case (_total < 1): { "Aucun briefing reçu.<br/>Les diapositives Athena demandent COMSPEC Link." };
-        case (_src isEqualTo "GOOGLE" || {_slideLoading}): { "Chargement de la diapositive…" };
+        case (_slideLoading || {_src isEqualTo "GOOGLE" && {_slideWhy isEqualTo ""}}): { "Chargement de la diapositive…" };
         case (_slideWhy isNotEqualTo ""): { _slideWhy + "<br/>Touchez ACTUALISER pour réessayer." };
         default { "Image indisponible (réseau ou cache).<br/>Touchez ACTUALISER pour réessayer." };
     };
@@ -352,17 +466,14 @@ if (_total < 1 || {_path isEqualTo ""}) then {
     _t ctrlSetStructuredText parseText ((format ["<t align='center' color='#8a9a93'>%1</t>", _msg]) call comspec_atak_native_fnc_tr);
 } else {
     if ((_path select [0, 4]) isEqualTo "WEB:") then {
-        // Navigateur intégré : la diapositive (JPEG en base64) dans une page data: centrée sur fond noir.
+        // Navigateur intégré : la diapositive (JPEG en base64) centrée sur fond noir (fn_slideWebShow).
         ((uiNamespace getVariable ["COMSPEC_ATAK_SlideWeb", createHashMap]) getOrDefault [_path select [4], ["jpeg", ""]]) params ["_mime", "_b64"];
         private _wb = ["COMSPEC_RscWebBrowser", [_vx, _vy, _vw, _vh]] call comspec_atak_native_fnc_pageCtrl;
         if (isNull _wb || {_b64 isEqualTo ""}) exitWith {
             private _t = ["COMSPEC_RscStructuredText", [_vx + _pad, _vy + _vh * 0.38, _vw - 2 * _pad, _rowH * 3]] call comspec_atak_native_fnc_pageCtrl;
             _t ctrlSetStructuredText parseText (("<t align='center' color='#8a9a93'>Le navigateur intégré d'Arma n'est pas disponible : diapositive impossible à afficher.</t>") call comspec_atak_native_fnc_tr);
         };
-        // Concaténation (pas format) : l'image dépasse de loin la longueur qu'accepte format.
-        private _html = "<html><body style='margin:0;background:black;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden'><img src='data:image/" + _mime + ";base64," + _b64 + "' style='max-width:100%;max-height:100%;object-fit:contain'></body></html>";
-        private _enc = controlNull ctrlWebBrowserAction ["ToBase64", _html];
-        _wb ctrlWebBrowserAction ["OpenDataAsURL", if (_enc isEqualType "" && {_enc isNotEqualTo ""}) then { "data:text/html;base64," + _enc } else { "data:text/html;charset=utf-8," + _html }];
+        [_wb, _mime, _b64] call comspec_atak_native_fnc_slideWebShow;
     } else {
         ["COMSPEC_RscSlide", [_vx, _vy, _vw, _vh], _path] call comspec_atak_native_fnc_pageCtrl;
     };
@@ -372,7 +483,11 @@ if (_total < 1 || {_path isEqualTo ""}) then {
 // Titre de diapositive, présentateur et présents passent par parseText : échappés (« <CS> Bob »).
 private _escTxt = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
 private _title = if (_total > 0) then { _titles param [_idx, ""] } else { "" };
-private _srcLabel = createHashMapFromArray [["GOOGLE", "Google Slides · synchronisé"], ["ATHENA", "Athena"], ["LOCAL", "Briefing"]] getOrDefault [_src, ""];
+// Google : chargé par TESTER LE LIEN (ce téléphone seul, rien n'est envoyé aux autres) ou diffusé à tous.
+private _gLocal = uiNamespace getVariable ["COMSPEC_ATAK_BriefLocalDeck", ""];
+private _gLabel = ["Google Slides · partagé avec tous", "Google Slides · ce téléphone seulement"] select (_gLocal isNotEqualTo "" && {_gLocal isEqualTo (missionNamespace getVariable ["COMSPEC_GoogleBriefingUrl", ""])});
+private _srcLabel = createHashMapFromArray [["GOOGLE", _gLabel], ["ATHENA", "Athena"], ["LOCAL", "Briefing"]] getOrDefault [_src, ""];
+if (_src isEqualTo "FENRIR") then { _srcLabel = format ["<t color='#c9a0ff'>FENRIR · %1</t>", [_fst select 11] call _escTxt]; };
 // Opération Athena rattachée à la diapositive (vide : commune à toutes les opérations).
 private _op = if (_src isEqualTo "ATHENA" && {_total > 0}) then { ((missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) select _idx) param [5, ""] } else { "" };
 if (_op isNotEqualTo "") then {
@@ -382,15 +497,26 @@ if (_op isNotEqualTo "") then {
 private _info = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh + _pad / 2, _vw, _fs * 1.6]] call comspec_atak_native_fnc_pageCtrl;
 _info ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold'>%1</t><t align='right' size='0.85' color='#8a9a93'>%2 · %3 / %4</t>", [_title] call _escTxt, _srcLabel, [_idx + 1, 0] select (_total < 1), _total]) call comspec_atak_native_fnc_tr);
 
-// Notes de la diapositive (texte saisi sur Athena).
+// Notes de la diapositive (texte saisi sur Athena, notes de l'orateur FENRIR).
 if (_notesH > 0) then {
     private _nt = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh + _pad / 2 + _fs * 1.6, _vw, _notesH]] call comspec_atak_native_fnc_pageCtrl;
     private _e = _detail;
-    { _e = [_e, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]];
+    { _e = [_e, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"], [toString [10], " ¶ "]];
     _nt ctrlSetStructuredText parseText ((format ["<t size='0.85' color='#c9d4cf'>%1</t>", [_e, " ¶ ", "<br/>"] call CBA_fnc_replace]) call comspec_atak_native_fnc_tr);
 };
+// Bandeau FENRIR : pilotage permis ou non, heure de mise à jour, retour à mes diapositives.
+if (_liveH > 0 && {_src isEqualTo "FENRIR"}) then {
+    private _ly = _bh - _btnH - _pad - _liveH;
+    private _can = ["can", _fid] call comspec_atak_native_fnc_fenrir;
+    private _lt = ["COMSPEC_RscStructuredText", [_vx, _ly, _vw * 0.66, _liveH]] call comspec_atak_native_fnc_pageCtrl;
+    _lt ctrlSetStructuredText parseText ((format ["<t color='%1' font='COMSPEC_BarlowBold'>● %2</t>  <t size='0.85' color='#8a9a93'>%3</t>",
+        ["#f2ab33", "#5cc76b"] select _can, ["FENRIR · LECTURE SEULE", "FENRIR · VOUS PILOTEZ"] select _can,
+        ["", format ["mise à jour %1", _fst select 10]] select ((_fst select 10) isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+    private _lw = _vw * 0.34 - _pad / 2;
+    [[_vx + _vw - _lw, _ly, _lw, _fs * 1.5], "MES DIAPOS", { ["view", ""] call comspec_atak_native_fnc_fenrir; }] call _btn;
+};
 // Bandeau de présentation : qui présente, présents, PRÉSENTER / SUIVRE.
-if (_liveH > 0) then {
+if (_liveH > 0 && {_src isNotEqualTo "FENRIR"}) then {
     private _ly = _bh - _btnH - _pad - _liveH;
     private _txt = switch (true) do {
         case (_iPresent): { private _a = ["attendees"] call comspec_atak_native_fnc_briefingLive; format ["<t color='#5cc76b' font='COMSPEC_BarlowBold'>● VOUS PRÉSENTEZ</t>  <t size='0.85' color='#8a9a93'>%1 présent(s)%2</t>", count _a, ["", format [" : %1", ((_a select [0, 6]) apply { [name _x] call _escTxt }) joinString ", "]] select ((count _a) > 0)] };
@@ -409,7 +535,7 @@ if (_liveH > 0) then {
 
 // Navigation
 private _by = _bh - _btnH - _pad;
-private _canRefresh = _bridge && {_src isNotEqualTo "GOOGLE" || {_pref isEqualTo "GOOGLE"}};
+private _canRefresh = [_bridge && {_src isNotEqualTo "GOOGLE" || {_pref isEqualTo "GOOGLE"}}, ["can", _fid] call comspec_atak_native_fnc_fenrir] select (_src isEqualTo "FENRIR");
 private _n = [2, 3] select _canRefresh;
 private _w = (_vw - (_n - 1) * _pad / 2) / _n;
 private _bx = _vx;

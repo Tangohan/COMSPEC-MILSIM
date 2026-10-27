@@ -84,7 +84,7 @@ switch (_act) do {
                 // Avis déjà validé par le joueur : jamais réaffiché, le COMPRIS repart vers Athena.
                 if (_id isNotEqualTo "" && {_id in _acked}) then { _again pushBackUnique _id; continue };
                 if (_id isNotEqualTo "" && {!(_id in _seen)}) then {
-                    private _row = [_id, _kind, _level, _title, _body, _ack isEqualTo "1", [dayTime, "HH:MM"] call BIS_fnc_timeToString, _meta];
+                    private _row = [_id, _kind, _level, _title, _body, _ack isEqualTo "1", (["now"] call comspec_atak_native_fnc_clockFmt), _meta];
                     // CR de fin d'opération imposé par le site : la fiche s'ouvre dans l'app CR fin d'op, validée à la remise.
                     if (_kind isEqualTo "debrief") then {
                         _seen pushBack _id;

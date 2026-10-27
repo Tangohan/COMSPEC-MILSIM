@@ -1,0 +1,111 @@
+/* Sous-pages en fenêtre (ath-modal-frame.js). Sobre, aligné sur le back-office (jour / nuit). */
+.ath-mf {
+  --mf-bg: #fff;
+  --mf-line: #e2e8f0;
+  --mf-text: #0f172a;
+  --mf-muted: #475569;
+  width: min(100vw - 2rem, 72rem);
+  height: min(100dvh - 2rem, 56rem);
+  max-width: none;
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--mf-line);
+  border-radius: 14px;
+  background: var(--mf-bg);
+  color: var(--mf-text);
+  box-shadow: 0 30px 80px -20px rgba(15, 23, 42, 0.45);
+  overflow: hidden;
+}
+html[data-bo-theme="dark"] .ath-mf {
+  --mf-bg: #0b0f14;
+  --mf-line: rgba(255, 255, 255, 0.12);
+  --mf-text: #e2e8f0;
+  --mf-muted: #94a3b8;
+}
+.ath-mf[open] { display: flex; flex-direction: column; }
+.ath-mf::backdrop { background: rgba(15, 23, 42, 0.55); }
+.ath-mf__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem 0.6rem 1rem;
+  border-bottom: 1px solid var(--mf-line);
+}
+.ath-mf__title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ath-mf__full {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--mf-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+.ath-mf__full:hover { color: var(--mf-text); }
+.ath-mf__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--mf-line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--mf-muted);
+  cursor: pointer;
+}
+.ath-mf__close:hover { color: var(--mf-text); }
+.ath-mf__close:focus-visible, .ath-mf__full:focus-visible { outline: 2px solid #64748b; outline-offset: 2px; }
+.ath-mf__body { position: relative; flex: 1; min-height: 0; }
+.ath-mf__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--mf-bg);
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+}
+.ath-mf.is-ready .ath-mf__frame { opacity: 1; }
+.ath-mf__loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin: -0.875rem 0 0 -0.875rem;
+  border: 2px solid var(--mf-line);
+  border-top-color: var(--mf-muted);
+  border-radius: 50%;
+  animation: athMfSpin 0.8s linear infinite;
+}
+.ath-mf.is-ready .ath-mf__loading { display: none; }
+@keyframes athMfSpin { to { transform: rotate(360deg); } }
+html.ath-mf-open { overflow: hidden; }
+@media (max-width: 640px) {
+  .ath-mf { width: 100vw; height: 100dvh; border-radius: 0; border: 0; }
+  .ath-mf__full { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ath-mf__frame { transition: none; }
+  .ath-mf__loading { animation: none; }
+}
+
+/* Page affichée dans la fenêtre : seulement son contenu, sans menu, barre ni bandeaux. */
+html.ath-in-modal body > *:not(main):not(script):not(style):not(dialog):not(#flash-toast-root) { display: none !important; }
+html.ath-in-modal main > *:not(.bo-shell-row):not(script):not(style):not(#flash-toast-root) { display: none !important; }
+html.ath-in-modal .bo-shell-row > aside,
+html.ath-in-modal .bo-shell-row > .ath-mobile-bar,
+html.ath-in-modal .bo-shell-row > [aria-hidden="true"],
+html.ath-in-modal .ath-topbar { display: none !important; }
+html.ath-in-modal main, html.ath-in-modal .bo-shell-row { min-height: 0 !important; }

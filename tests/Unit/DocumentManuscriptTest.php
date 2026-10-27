@@ -10,6 +10,28 @@ use PHPUnit\Framework\TestCase;
 
 final class DocumentManuscriptTest extends TestCase
 {
+    private bool $hadPost = false;
+
+    private mixed $savedPost = null;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->hadPost = isset($_POST);
+        $this->savedPost = $_POST ?? null;
+    }
+
+    /** $_POST est remis tel qu'il était : les tests qui passent après en dépendent (Request le lit). */
+    protected function tearDown(): void
+    {
+        if ($this->hadPost) {
+            $_POST = $this->savedPost;
+        } else {
+            unset($_POST);
+        }
+        parent::tearDown();
+    }
+
     public function testAuthoredOriginAndCoverFieldsSurviveRoundTrip(): void
     {
         $_POST = [
@@ -40,7 +62,6 @@ final class DocumentManuscriptTest extends TestCase
         self::assertCount(2, DocumentManuscript::filledSignatures($view));
         self::assertStringContainsString('Free-fall operations', $view['body']);
         self::assertStringContainsString('<p>', $view['body']);
-        unset($_POST);
     }
 
     public function testSanitizeStripsScripts(): void

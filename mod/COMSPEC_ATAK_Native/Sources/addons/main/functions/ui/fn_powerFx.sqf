@@ -69,6 +69,8 @@ private _collapse = {
     [{
         params ["_crt", "_cx", "_cy", "_cw", "_ch"];
         if (isNull _crt) exitWith {};
+        private _dc = (ctrlParent _crt) displayCtrl 88510;
+        if (!isNull _dc) then { (ctrlPosition _dc) params ["_nx", "_ny", "_nw", "_nh"]; _cx = _nx; _cy = _ny; _cw = _nw; _ch = _nh; };
         _crt ctrlSetPosition [_cx + _cw * 0.5, _cy + _ch * 0.496, 0, _ch * 0.008]; _crt ctrlSetFade 0.6; _crt ctrlCommit 0.16;
     }, [_crt, _cx, _cy, _cw, _ch], 0.2] call CBA_fnc_waitAndExecute;
 };
@@ -112,6 +114,9 @@ uiNamespace setVariable ["COMSPEC_ATAK_PowerCollapse", _collapse];
     [{
         params ["_code", "_c", "_r", "_f"];
         if (isNull (_c select 0)) exitWith {};
+        // Cadre de l'écran relu à chaque étape : la coque a pu être glissée ou tournée depuis le début de l'animation.
+        private _dc = (ctrlParent (_c select 0)) displayCtrl 88510;
+        if (!isNull _dc) then { _r = ctrlPosition _dc; };
         [_c, _r, _f] call _code;
     }, [_code, _ctrls, [_rx, _ry, _rw, _rh], _font], _t] call CBA_fnc_waitAndExecute;
 } forEach _steps;

@@ -46,7 +46,7 @@ if (!isNil "ace_common_fnc_progressBar" && {isNull ([] call comspec_atak_native_
         call (missionNamespace getVariable ["COMSPEC_ATAK_CleanDone", {}]);
     }, {
         player setVariable ["COMSPEC_ATAK_Cleaning", false];
-    }, _label, { alive player }, ["isNotInside", "isNotSitting", "isNotSwimming"]] call ace_common_fnc_progressBar;
+    }, (_label call comspec_atak_native_fnc_tr), { alive player }, ["isNotInside", "isNotSitting", "isNotSwimming"]] call ace_common_fnc_progressBar;
 } else {
     ["INFO", format ["%1 (%2 s)", _label, _time], _time, 10] call comspec_atak_native_fnc_notify;
     [{

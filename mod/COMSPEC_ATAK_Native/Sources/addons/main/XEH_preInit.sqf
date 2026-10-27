@@ -4,6 +4,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_PerfPreInitAt", diag_tickTime];
 COMSPEC_ATAK_UI_GENERATION = "native-rsc-v1";
 // Plancher des petites tailles de texte, recalculé par fn_layoutGet (0 tant qu'aucun écran n'est dessiné).
 COMSPEC_ATAK_FontMin = 0;
+COMSPEC_ATAK_FontBody = 0; // taille de base du texte structuré des pages (fn_layoutGet, fn_fontApply)
 // Police du téléphone (Réglages > Police) : familles courante, grasse et légère, avant tout dessin.
 [] call comspec_atak_native_fnc_fontSet;
 // Constantes posées par chaque machine (preInit tourne partout) : rien à diffuser. En public, chaque arrivée
@@ -78,6 +79,11 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["Envoyer le rapport de démarrage", "Coché par défaut. Une seule fois, au premier lancement : quand vous vous connectez à Athena en jeu (ou si la connexion échoue), un rapport sur l'état du mod est posté dans le salon de debug du Discord Athena, avec votre pseudo et votre indicatif : versions, DLL, connexion, numéro et IMEI du téléphone, appareil porté, FPS, erreurs. Ça aide l'équipe à vous dépanner. Pour le renvoyer : menu Échap > Dépannage liaison > Renvoyer le check de démarrage. Aucun UID Steam ni adresse IP. Décochez pour ne rien envoyer."],
     ["COMSPEC", "ATAK · Debug"], true, 0] call comspec_atak_native_fnc_addSetting;
 
+// Liaison Athena proposée à la première sortie du téléphone sans compte (fn_displayLoad), par joueur.
+["comspec_atak_native_link_offer", "CHECKBOX",
+    ["Proposer la liaison Athena à la sortie du téléphone", "Coché par défaut. Tant que votre jeu n'est pas relié à un compte Athena, la première sortie du téléphone de chaque mission ouvre l'app Athena avec un code à saisir sur le site. Décochez pour garder votre dernière app à l'ouverture."],
+    ["COMSPEC", "ATAK · Interface"], true, 0] call comspec_atak_native_fnc_addSetting;
+
 // Taille du téléphone en plein écran (par joueur) : 60 à 100 %, centré. Aussi dans Réglages > Emplacement du téléphone.
 ["comspec_atak_native_full_scale", "SLIDER",
     ["Taille du téléphone en main", "Taille du téléphone quand vous l'avez en main (plein écran). 100 % = taille normale ; en dessous, il rétrécit en restant centré, texte et boutons compris."],
@@ -85,6 +91,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     { if !(isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; }; }] call comspec_atak_native_fnc_addSetting;
 
 // HUD des autres mods (boussole F-PANO / ECOTI, température, heure...) masqué sous le téléphone (par joueur, fn_foreignHud).
+// Heure des alertes (fn_clockFmt) : heure de la mission, du PC, UTC, ou PC et UTC. Par joueur.
+["comspec_atak_native_alert_clock", "LIST",
+    ["Heure des alertes", "Heure affichée sur les alertes du téléphone (app Alertes, notifications, alertes plein écran, MEDEVAC, alertes santé). Heure de la mission (par défaut) : l'horloge du jeu. Heure locale : l'horloge de votre PC. Zulu : l'heure UTC, suivie de Z. Locale et Zulu : les deux. Les alertes déjà reçues gardent leur heure."],
+    ["COMSPEC", "ATAK · Affichage"], [["game", "local", "zulu", "both"], ["Heure de la mission", "Heure locale (PC)", "Zulu (UTC)", "Locale et Zulu"], 0], 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_hide_foreign_hud", "CHECKBOX",
     ["Cacher le HUD des autres mods derrière le téléphone", "Coché par défaut. Quand le téléphone est à l'écran (porté ou en main), les infos que d'autres mods affichent au même endroit (boussole F-PANO / ECOTI, température, heure, distance...) sont cachées pour ne pas passer par-dessus. Elles reviennent dès que vous rangez le téléphone. Décochez pour toujours les voir."],
     ["COMSPEC", "ATAK · Affichage"], true, 0,
@@ -200,7 +210,7 @@ private _uiCat = ["COMSPEC", "ATAK · Modèle et items requis"];
 // joueur, le même que Réglages > Personnaliser > Modèle (COMSPEC_ATAK_ProfSet tient les deux à jour) ; vide = choix du
 // téléphone conservé. Le S7 reste le défaut et reprend si l'objet exigé pour le modèle n'est pas porté.
 ["comspec_atak_native_phone_model", "LIST",
-    ["Modèle du téléphone", "Apparence du téléphone ATAK, aussi réglable dans le téléphone (Réglages > Personnaliser). Si le modèle demande un item (voir ci-dessous) que vous n'avez pas, le téléphone reste en Durci S7."],
+    ["Modèle du téléphone", "Utilisé seulement si vous ne portez pas un téléphone COMSPEC. Avec un Samsung S7, un iPhone ou un autre modèle dans les poches, c'est cet objet qui s'affiche, couleur comprise."],
     _uiCat, [["", "s7", "s23", "ip17", "iphone", "rugged", "sonim", "keys"],
         ["Celui choisi dans le téléphone", "Durci S7", "Samsung S23", "iPhone 17 Pro", "V2 Enhanced", "Xiaomi X3D", "Sonim XP8", "Tablette"], 0], 0,
     {
@@ -749,6 +759,10 @@ if (isServer) then {
 ["comspec_atak_native_action_menu_vehicle", "CHECKBOX",
     ["Menu d'actions autorisé en véhicule", "Dans un véhicule, la molette et le menu d'actions d'Arma restent utilisables quand le téléphone est porté (en petit à l'écran) : démarrer le moteur, changer de place, descendre... Téléphone en main, la molette reste au téléphone."],
     ["COMSPEC", "ATAK · Interface"], true, 0] call comspec_atak_native_fnc_addSetting;
+// Touches d'autres mods relayées quand le téléphone est en main (fn_keyPass) : alternat radio TFAR / ACRE2 par défaut.
+["comspec_atak_native_pass_mods", "EDITBOX",
+    ["Touches d'autres mods avec le téléphone en main", "Téléphone en main (plein écran), les raccourcis des autres mods ne passent plus, sauf ceux des mods listés ici : noms comme dans Options > Contrôles > Configurer les addons, séparés par des virgules. Par défaut « TFAR, ACRE2 » : alternat radio et autres touches radio. Rien ne part pendant que vous tapez dans un champ. Vide : aucune touche relayée."],
+    ["COMSPEC", "ATAK · Interface"], "TFAR, ACRE2", 0, { ["reset"] call comspec_atak_native_fnc_keyPass; }] call comspec_atak_native_fnc_addSetting;
 
 // Mode drone : les ordres s'exécutent là où le drone est local (pilote, serveur ou client qui l'a posé).
 ["comspec_atak_native_droneCmd", { _this call comspec_atak_native_fnc_droneCmd; }] call CBA_fnc_addEventHandler;

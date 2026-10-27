@@ -2,6 +2,16 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
+[h1]COMSPEC SSE — update of 26/10/2026 (2)[/h1]
+[b]Restart Arma completely.[/b] Use with COMSPEC ATAK 2.6.0.AB "Denver".
+
+[list]
+[*] Many fixes from a further full review of the mod: identity and dogtags, generated sites and evidence, intel built from the briefing, collected media and evidence photos taken with the ATAK.
+[*] Zeus: fixes to the apply-model, map point, reset site and debug modules.
+[*] Better behaviour alongside the BII mod.
+[/list]
+
+----------------------------------------
 [h1]COMSPEC SSE — mise à jour du 26/10/2026[/h1]
 [b]Relance Arma complètement.[/b] À utiliser avec COMSPEC ATAK 2.4.0.AB « Denver ».
 

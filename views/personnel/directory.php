@@ -63,14 +63,18 @@ $seniorityOf = static function (?string $dateStr): ?array {
         return null;
     }
     $diff = $now->diff($start);
+    // Libellé composé en une seule langue (la traduction automatique ne gère pas « 7 ans 4 mois »).
+    $en = locale() === 'en';
+    $yLabel = $diff->y . ($en ? ($diff->y > 1 ? ' years' : ' year') : ' an' . ($diff->y > 1 ? 's' : ''));
+    $mLabel = $diff->m . ($en ? ($diff->m > 1 ? ' months' : ' month') : ' mois');
     if ($diff->y > 0 && $diff->m > 0) {
-        $label = $diff->y . ' an' . ($diff->y > 1 ? 's' : '') . ' ' . $diff->m . ' mois';
+        $label = $yLabel . ' ' . $mLabel;
     } elseif ($diff->y > 0) {
-        $label = $diff->y . ' an' . ($diff->y > 1 ? 's' : '');
+        $label = $yLabel;
     } elseif ($diff->m > 0) {
-        $label = $diff->m . ' mois';
+        $label = $mLabel;
     } else {
-        $label = '< 1 mois';
+        $label = $en ? '< 1 month' : '< 1 mois';
     }
 
     return ['label' => $label, 'since' => $start->format('d/m/Y'), 'days' => (int) $diff->days];

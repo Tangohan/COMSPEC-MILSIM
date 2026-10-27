@@ -81,6 +81,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
     if (isNil "COMSPEC_MapMarkerEHs") then {
         private _resyncSoon = {
             params ["_marker"];
+            if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
             if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
             if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
@@ -106,9 +107,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
                 private _ch = _this param [1, -1];
                 private _own = _this param [2, -1];
                 private _local = _this param [3, false];
-                // Repère venu d'une autre machine (joueur, Zeus) : le hub serveur (uplink Athena OK) l'envoie déjà une fois.
-                // Le renvoyer depuis chaque client lié donnait N+1 envois, attribués au mauvais joueur.
-                if (!(_local isEqualTo true) && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]}) exitWith {};
+                private _hub = missionNamespace getVariable ["COMSPEC_ServerHubActive", false];
                 if (_local isEqualTo true) then {
                     private _st = systemTime;
                     private _hh = str (_st select 3);
@@ -119,15 +118,19 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
                     missionNamespace setVariable [
                         format ["COMSPEC_UserMkMeta_%1", _marker],
                         [_ch, _by, format ["%1:%2", _hh, _mm], _own],
-                        false
+                        _hub
                     ];
                 };
+                // Hub actif : seul le serveur envoie. Le poste auteur ne double plus.
+                if (_hub) exitWith {};
+                if (!(_local isEqualTo true) && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]}) exitWith {};
                 [_marker] call (missionNamespace getVariable ["COMSPEC_MarkerResyncSoon", {}]);
             }],
             addMissionEventHandler ["MarkerUpdated", {
                 private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
                 if (_marker isEqualTo "") exitWith {};
                 // Drapeau « local » (dernier booléen des paramètres) : repère distant → laissé au hub serveur.
+                if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
                 private _local = (_this select {_x isEqualType true}) param [0, true];
                 if (!_local && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]}) exitWith {};
                 if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
@@ -140,6 +143,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
             addMissionEventHandler ["MarkerDeleted", {
                 private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
                 if (_marker isEqualTo "") exitWith {};
+                if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
                 private _local = (_this select {_x isEqualType true}) param [0, true];
                 if (!_local && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]}) exitWith {};
                 if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
@@ -160,6 +164,7 @@ if (isNil "COMSPEC_MapClosedEh") then {
     COMSPEC_MapClosedEh = addMissionEventHandler ["Map", {
         params ["_mapIsOpened"];
         if (_mapIsOpened) exitWith {};
+        if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
         [{
             if (!isNil "comspec_overwatch_connect_fnc_syncUserMapMarkers") then {
                 [] call comspec_overwatch_connect_fnc_syncUserMapMarkers;
@@ -235,6 +240,43 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         _this call comspec_overwatch_connect_fnc_extensionCallback;
     }];
     ["DEBUG", "Boot", "ExtensionCallback EH enregistré"] call comspec_overwatch_connect_fnc_log;
+};
+
+// Affichage situation JVN (Draw3D) — OFF par défaut ; profil ATAK si présent ; pas de conflit F-PANO.
+// Hors du bloc de démarrage Athena : celui-ci sort tout de suite quand Overwatch est coupé (service Athéna
+// « Non », mode full local / TOC), et l'affichage, entièrement local, ne s'enregistrait alors jamais.
+if (isNil "COMSPEC_EcotiBootEh") then {
+COMSPEC_EcotiBootEh = ["CBA_settingsInitialized", {
+    if (missionNamespace getVariable ["COMSPEC_EcotiBootDone", false]) exitWith {};
+    missionNamespace setVariable ["COMSPEC_EcotiBootDone", true, false];
+    [{
+        private _raw = profileNamespace getVariable ["COMSPEC_EcotiHudEnabled", "UNSET"];
+        if (_raw isEqualType true) then {
+            [_raw, false] call comspec_overwatch_connect_fnc_ecotiApplyHudSetting;
+        };
+        private _cut = profileNamespace getVariable ["COMSPEC_EcotiCutawayEnabled", "UNSET"];
+        if (_cut isEqualType true) then {
+            [_cut, true] call comspec_overwatch_connect_fnc_ecotiApplyCutawaySetting;
+            profileNamespace setVariable ["COMSPEC_EcotiCutawayEnabled", nil];
+            [] call comspec_overwatch_connect_fnc_saveProfile;
+        };
+        private _theme = profileNamespace getVariable ["COMSPEC_EcotiTheme", "UNSET"];
+        if (_theme isEqualType "" && {_theme isNotEqualTo "UNSET"}) then {
+            [_theme, false] call comspec_overwatch_connect_fnc_ecotiApplyThemeSetting;
+        };
+        private _render = profileNamespace getVariable ["COMSPEC_EcotiRenderMode", "UNSET"];
+        if (_render isEqualType "" && {_render isNotEqualTo "UNSET"}) then {
+            [_render, false] call comspec_overwatch_connect_fnc_ecotiApplyRenderModeSetting;
+        };
+        private _tubeInfo = profileNamespace getVariable ["COMSPEC_EcotiTubeInfo", "UNSET"];
+        if (_tubeInfo isEqualType "" && {_tubeInfo isNotEqualTo "UNSET"}) then {
+            [_tubeInfo, false] call comspec_overwatch_connect_fnc_ecotiApplyTubeInfoSetting;
+        };
+        if (!isNil "comspec_overwatch_connect_fnc_ecotiInit") then {
+            [] call comspec_overwatch_connect_fnc_ecotiInit;
+        };
+    }, [], 3] call CBA_fnc_waitAndExecute;
+}] call CBA_fnc_addEventHandler;
 };
 
 if (isNil "COMSPEC_CbaSettingsEhArmed") then {
@@ -347,37 +389,13 @@ COMSPEC_CbaSettingsBootCode = {
         [] call comspec_overwatch_connect_fnc_initATAKMenu;
     }, [], 8] call CBA_fnc_waitAndExecute;
 
-    // Affichage situation JVN (Draw3D) — OFF par défaut ; profil ATAK si présent ; pas de conflit F-PANO.
+    // Liaison (bandeau, simulation de dégradation). L'affichage situation JVN a son propre démarrage
+    // plus haut (COMSPEC_EcotiBootEh) : il doit aussi marcher sans Athena.
     [{
-        private _raw = profileNamespace getVariable ["COMSPEC_EcotiHudEnabled", "UNSET"];
-        if (_raw isEqualType true) then {
-            [_raw, false] call comspec_overwatch_connect_fnc_ecotiApplyHudSetting;
-        };
-        private _cut = profileNamespace getVariable ["COMSPEC_EcotiCutawayEnabled", "UNSET"];
-        if (_cut isEqualType true) then {
-            [_cut, true] call comspec_overwatch_connect_fnc_ecotiApplyCutawaySetting;
-            profileNamespace setVariable ["COMSPEC_EcotiCutawayEnabled", nil];
-            [] call comspec_overwatch_connect_fnc_saveProfile;
-        };
-        private _theme = profileNamespace getVariable ["COMSPEC_EcotiTheme", "UNSET"];
-        if (_theme isEqualType "" && {_theme isNotEqualTo "UNSET"}) then {
-            [_theme, false] call comspec_overwatch_connect_fnc_ecotiApplyThemeSetting;
-        };
-        private _render = profileNamespace getVariable ["COMSPEC_EcotiRenderMode", "UNSET"];
-        if (_render isEqualType "" && {_render isNotEqualTo "UNSET"}) then {
-            [_render, false] call comspec_overwatch_connect_fnc_ecotiApplyRenderModeSetting;
-        };
-        private _tubeInfo = profileNamespace getVariable ["COMSPEC_EcotiTubeInfo", "UNSET"];
-        if (_tubeInfo isEqualType "" && {_tubeInfo isNotEqualTo "UNSET"}) then {
-            [_tubeInfo, false] call comspec_overwatch_connect_fnc_ecotiApplyTubeInfoSetting;
-        };
         [false, true] call comspec_overwatch_connect_fnc_linkStripApplySetting;
         private _linkSim = profileNamespace getVariable ["COMSPEC_LinkDegradeSimEnabled", "UNSET"];
         if (_linkSim isEqualType true) then {
             [_linkSim, false] call comspec_overwatch_connect_fnc_linkDegradeSimApplySetting;
-        };
-        if (!isNil "comspec_overwatch_connect_fnc_ecotiInit") then {
-            [] call comspec_overwatch_connect_fnc_ecotiInit;
         };
     }, [], 3] call CBA_fnc_waitAndExecute;
 

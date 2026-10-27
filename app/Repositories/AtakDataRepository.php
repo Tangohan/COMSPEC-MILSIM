@@ -1817,10 +1817,21 @@ class AtakDataRepository
     /**
      * Messages plus récents qu’un id (poll jeu / TOC → Athena inbox).
      *
+     * $withProtocolOrders : fenêtre BRUTE, lignes « ORDER|… » comprises. La relève avec curseur
+     * (AtakApiController::scanChatAfter) en a besoin pour savoir si la fenêtre était pleine et jusqu’où avancer ;
+     * elle masque ensuite ces lignes elle-même. Filtrées ici, après le LIMIT, un bloc de « ORDER| » donnait une
+     * fenêtre vide ou « pas pleine » : la relève s’arrêtait sur le même curseur à chaque passage.
+     *
      * @return list<array<string, mixed>>
      */
-    public function getChatMessagesAfter(int $tenantId, int $mapId, int $afterId, int $limit = 50, ?string $channelKey = null): array
-    {
+    public function getChatMessagesAfter(
+        int $tenantId,
+        int $mapId,
+        int $afterId,
+        int $limit = 50,
+        ?string $channelKey = null,
+        bool $withProtocolOrders = false
+    ): array {
         $afterId = max(0, $afterId);
         $limit = max(1, min($limit, 200));
         if ($afterId < 1) {
@@ -1846,8 +1857,10 @@ class AtakDataRepository
             );
             $stmt->execute([$tenantId, $mapId, $afterId]);
         }
+        /** @var list<array<string, mixed>> $rows */
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return $this->withoutProtocolOrderChat($stmt->fetchAll(PDO::FETCH_ASSOC));
+        return $withProtocolOrders ? $rows : $this->withoutProtocolOrderChat($rows);
     }
 
     public function addChatMessage(
@@ -2377,17 +2390,32 @@ class AtakDataRepository
     {
         $out = [];
         foreach ($rows as $row) {
-            $body = ltrim((string) ($row['body'] ?? ''));
-            if (strncasecmp($body, 'ORDER|', 6) === 0) {
-                continue;
-            }
-            if (stripos($body, 'ORDER|') !== false) {
+            if (self::isProtocolOrderChatBody((string) ($row['body'] ?? ''))) {
                 continue;
             }
             $out[] = $row;
         }
 
         return $out;
+    }
+
+    /**
+     * Protocole d’ordres C2 (« ORDER|… », en tête ou cité dans le corps : « Reçu, ORDER| annulé »,
+     * « MP|…|ORDER|… »), sans tenir compte de la casse : jamais montré dans la messagerie. Pas quand « order| »
+     * termine un mot : « MP|Border|TOC|… » ou « ALERTE TACTIQUE|TIC|Border|… » (indicatif « Border ») sont des
+     * messages ordinaires, que la règle précédente (« ORDER| » n’importe où) masquait.
+     * Seule définition : lecture (withoutProtocolOrderChat, relève avec curseur) et écriture (POST /api/chat
+     * refuse ce que la lecture masquerait ensuite) appliquent exactement la même règle.
+     */
+    public static function isProtocolOrderChatBody(string $body): bool
+    {
+        if (stripos($body, 'ORDER|') === false) {
+            return false;
+        }
+        $match = preg_match('/(?<!\p{L})ORDER\|/iu', $body);
+
+        // Corps qui n’est pas de l’UTF-8 valide (preg_match en erreur) : règle large, comme avant.
+        return $match === false || $match === 1;
     }
 
     /**

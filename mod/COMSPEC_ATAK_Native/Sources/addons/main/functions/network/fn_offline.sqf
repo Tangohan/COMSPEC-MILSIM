@@ -118,13 +118,15 @@ switch (toLower _act) do {
                 _st set ["sync", call _hhmm];
                 ["INFO", "OFFLINE", format ["Réseau revenu après %1 s : %2 message(s), %3 ordre(s), %4 alerte(s), %5 donnée(s) retenue(s)", round _gone, _newMsg, _newOrd, _newAlr, count _held]] call comspec_atak_native_fnc_log;
                 private _bits = [];
-                if (_newMsg > 0) then { _bits pushBack format ["%1 message(s)", _newMsg]; };
-                if (_newOrd > 0) then { _bits pushBack format ["%1 ordre(s)", _newOrd]; };
-                if (_newAlr > 0) then { _bits pushBack format ["%1 alerte(s)", _newAlr]; };
-                if ((count _held) > 0) then { _bits pushBack format ["%1 compte(s) rendu(s) et appel(s)", count _held]; };
+                if (_newMsg > 0) then { _bits pushBack ((format ["%1 message(s)", _newMsg]) call comspec_atak_native_fnc_tr); };
+                if (_newOrd > 0) then { _bits pushBack ((format ["%1 ordre(s)", _newOrd]) call comspec_atak_native_fnc_tr); };
+                if (_newAlr > 0) then { _bits pushBack ((format ["%1 alerte(s)", _newAlr]) call comspec_atak_native_fnc_tr); };
+                if ((count _held) > 0) then { _bits pushBack ((format ["%1 compte(s) rendu(s) et appel(s)", count _held]) call comspec_atak_native_fnc_tr); };
                 if ([player] call comspec_atak_native_fnc_hasDevice && {_gone > 10}) then {
-                    ["SUCCESS", format ["Synchro après %1 hors connexion%2", [format ["%1 s", round _gone], format ["%1 min", round (_gone / 60)]] select (_gone >= 90),
-                        ["", " : " + (_bits joinString ", ") + " reçu(s)"] select ((count _bits) > 0)], 5, 40, "NETWORK"] call comspec_atak_native_fnc_notify;
+                    // Deux modèles complets (pas de morceau collé) : la notification se traduit en entier (fn_tr).
+                    private _gonTxt = [format ["%1 s", round _gone], format ["%1 min", round (_gone / 60)]] select (_gone >= 90);
+                    ["SUCCESS", [format ["Synchro après %1 hors connexion", _gonTxt],
+                        format ["Synchro après %1 hors connexion : %2 reçu(s)", _gonTxt, _bits joinString ", "]] select ((count _bits) > 0), 5, 40, "NETWORK"] call comspec_atak_native_fnc_notify;
                 };
                 if (!isNull ([] call comspec_atak_native_fnc_display)) then {
                     private _page = _s getOrDefault ["activePage", ""];
