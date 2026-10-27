@@ -100,7 +100,9 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
                 [_m, false, _forceLater] call comspec_overwatch_connect_fnc_syncMapMarker;
             }, [_marker], 0.4] call CBA_fnc_waitAndExecute;
         };
-        missionNamespace setVariable ["COMSPEC_MarkerResyncSoon", _resyncSoon];
+        // localNamespace (jamais synchronisé) : exécuté par les gestionnaires de repères de ce poste (joueur, ou serveur hébergé) ;
+        // en missionNamespace, un autre client pouvait le remplacer par publicVariable et faire exécuter son code à chaque repère.
+        localNamespace setVariable ["COMSPEC_MarkerResyncSoon", _resyncSoon];
         COMSPEC_MapMarkerEHs = [
             addMissionEventHandler ["MarkerCreated", {
                 private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
@@ -124,7 +126,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
                         false
                     ];
                 };
-                [_marker] call (missionNamespace getVariable ["COMSPEC_MarkerResyncSoon", {}]);
+                [_marker] call (localNamespace getVariable ["COMSPEC_MarkerResyncSoon", {}]);
             }],
             addMissionEventHandler ["MarkerUpdated", {
                 private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;

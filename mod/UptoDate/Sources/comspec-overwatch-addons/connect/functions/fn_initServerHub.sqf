@@ -59,23 +59,25 @@ if (isNil "COMSPEC_ServerMarkerEHs") then {
             [_marker, _deleted]
         ] call comspec_overwatch_connect_fnc_serverEnqueue;
     };
-    missionNamespace setVariable ["COMSPEC_ServerEnqueueMarker", _enqueueMarker, false];
+    // localNamespace (jamais synchronisé) : les gestionnaires de repères du serveur l'exécutent ; en missionNamespace, un
+    // client pouvait le remplacer par publicVariable et faire exécuter son code au serveur à chaque repère posé.
+    localNamespace setVariable ["COMSPEC_ServerEnqueueMarker", _enqueueMarker];
 
     COMSPEC_ServerMarkerEHs = [
         addMissionEventHandler ["MarkerCreated", {
             private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
             if (_marker isEqualTo "") exitWith {};
-            [_marker, false] call (missionNamespace getVariable ["COMSPEC_ServerEnqueueMarker", {}]);
+            [_marker, false] call (localNamespace getVariable ["COMSPEC_ServerEnqueueMarker", {}]);
         }],
         addMissionEventHandler ["MarkerUpdated", {
             private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
             if (_marker isEqualTo "") exitWith {};
-            [_marker, false] call (missionNamespace getVariable ["COMSPEC_ServerEnqueueMarker", {}]);
+            [_marker, false] call (localNamespace getVariable ["COMSPEC_ServerEnqueueMarker", {}]);
         }],
         addMissionEventHandler ["MarkerDeleted", {
             private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
             if (_marker isEqualTo "") exitWith {};
-            [_marker, true] call (missionNamespace getVariable ["COMSPEC_ServerEnqueueMarker", {}]);
+            [_marker, true] call (localNamespace getVariable ["COMSPEC_ServerEnqueueMarker", {}]);
         }]
     ];
 };
