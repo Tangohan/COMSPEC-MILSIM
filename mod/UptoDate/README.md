@@ -25,6 +25,6 @@ Changelog pack : [`@COMSPECOverwatch/CHANGELOG.md`](@COMSPECOverwatch/CHANGELOG.
 - `Sources/comspec-overwatch-addons/{main,connect,atak_athena,mavik_compat}` — sources addons
 - `COMSPECExtension/` — extension native (DLL)
 - `build_mod.bat` — compile DLL + PBO → `@COMSPECOverwatch/`, puis copie dans les dossiers Arma locaux (`Arma 3\@COMSPECOverwatch` et la copie de test SOAR FN), sauf une cible qui porte l'ATAK natif ; s'arrête en échec sans DLL fraîche
-- `workshop-pack.ps1` — pack propre après build ; refuse une DLL sous 2.0.96, un `meta.cpp` qui vise l'objet `3684656708` de l'ATAK natif, et une sortie dans l'ATAK natif ou sous un dossier Workshop de Steam
+- `workshop-pack.ps1` — pack propre après build ; refuse une DLL sous 2.0.96, un `meta.cpp` qui vise l'objet `3684656708` de l'ATAK natif, une sortie dans l'ATAK natif, sous un dossier Workshop de Steam ou qui contient Arma 3, Steam ou un pack natif, et un `-OutDir` non vide qui n'est pas une de ses sorties
 
 Les archives historiques sont dans `mod/Ancienne version de tout/`.

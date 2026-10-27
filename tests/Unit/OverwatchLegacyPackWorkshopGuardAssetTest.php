@@ -17,6 +17,9 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
     /** Garde du déploiement du build hérité : seul le pack de l'ATAK natif a cette DLL (N3). */
     private const NATIVE_TARGET_GUARD = 'if exist "%%~T\COMSPECATAKNativeExtension_x64.dll" (';
 
+    /** Seule création de fichier du pack hérité : le marqueur d'une sortie du script, écrit au staging (N8). */
+    private const OUT_MARKER_WRITE = 'New-Item -ItemType File -Path (Join-Path $OutDir $OutMarkerName) -Value $OutMarkerText -Force | Out-Null';
+
     private function rootPath(string $relative): string
     {
         return dirname(__DIR__, 2) . '/' . $relative;
@@ -316,8 +319,8 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         self::assertGreaterThan(100, count($code), 'lignes de code du script introuvables');
 
         // Hors commentaires et messages : aucune copie hors Copy-Item (dont les contrôles précédents vérifient la
-        // source), aucune autre écriture de fichier, aucun publishedid. Aucune variable ni fonction de contrôle
-        // redéfinie par une autre syntaxe, et aucun autre script ou commande lancé depuis celui-ci.
+        // source), aucune autre écriture de fichier que le marqueur de sortie, aucun publishedid. Aucune variable ni
+        // fonction de contrôle redéfinie par une autre syntaxe, et aucun autre script ou commande lancé depuis celui-ci.
         $forbidden = [
             'copie hors Copy-Item' => '/(?<![\w$.-])(?:copy|cp|cpi|robocopy|xcopy)(?![\w-])/i',
             'écriture de fichier' => '/(?<![\w$.-])(?:Set-Content|Add-Content|Out-File|sc|ac|Tee-Object|tee|Expand-Archive)(?![\w-])|-OutFile\b|>/i',
@@ -333,7 +336,7 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
         $offending = [];
         foreach ($code as $line) {
             foreach ($forbidden as $what => $pattern) {
-                if (preg_match($pattern, $line) === 1) {
+                if (preg_match($pattern, $line) === 1 && !($what === 'New-Item hors dossier' && $line === self::OUT_MARKER_WRITE)) {
                     $offending[] = $what . ' : ' . $line;
                 }
             }
@@ -370,24 +373,46 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
             if ($outDirKey -match '(?i)[\\/](steamapps[\\/]workshop|!Workshop)[\\/]') {
                 Write-Fail (
             PS;
+        // N8 (revue v3) : une sortie qui contient le jeu, une bibliothèque Steam ou un pack natif est refusée dans tous
+        // les cas, et un -OutDir passé à la main qui existe, n'est pas vide et n'a pas le marqueur d'une sortie du script
+        // aussi. Le drapeau est lu avant la valeur par défaut : la sortie par défaut reste acceptée sans marqueur.
+        $containsGuard = <<<'PS'
+            if (Test-Path -LiteralPath $OutDir -PathType Container) {
+                foreach ($precious in @('!Workshop', 'steamapps', 'arma3_x64.exe', 'COMSPECATAKNativeExtension_x64.dll')) {
+                    if (Test-Path -LiteralPath (Join-Path $OutDir $precious)) {
+                        Write-Fail (
+            PS;
+        $markerGuard = <<<'PS'
+            if ($OutDirGiven -and (Test-Path -LiteralPath $OutDir)) {
+                $outDirMarked = Test-Path -LiteralPath (Join-Path $OutDir $OutMarkerName) -PathType Leaf
+                $outDirEmpty = (Test-Path -LiteralPath $OutDir -PathType Container) -and -not (Get-ChildItem -LiteralPath $OutDir -Force | Select-Object -First 1)
+                if (-not $outDirMarked -and -not $outDirEmpty) {
+                    Write-Fail (
+            PS;
         self::assertStringContainsString($nativeGuard, $ps);
         self::assertStringContainsString($steamGuard, $ps);
-        foreach (['outDirKey', 'atakNativeKey', 'ignoreCase'] as $name) {
+        self::assertStringContainsString("\n" . $containsGuard, $ps);
+        self::assertStringContainsString("\n" . $markerGuard, $ps);
+        foreach (['outDirKey', 'atakNativeKey', 'ignoreCase', 'outDirMarked', 'outDirEmpty', 'OutMarkerText'] as $name) {
             self::assertCount(1, self::psAssignments($ps, $name), '$' . $name . ' réaffectée');
         }
         self::assertSame(['$false', '$true'], self::psAssignments($ps, 'OutDirChecked'));
+        self::assertSame(['[bool]$OutDir'], self::psAssignments($ps, 'OutDirGiven'));
+        self::assertSame(["'workshop-pack-sortie.txt'"], self::psAssignments($ps, 'OutMarkerName'));
+        // Texte du marqueur en ASCII imprimable : l'encodage de New-Item -Value n'est pas le même selon PowerShell.
+        self::assertMatchesRegularExpression("/^\\\$OutMarkerText = '[\\x20-\\x26\\x28-\\x7E]+'\$/m", $ps);
         $previous = -1;
-        foreach (["if (-not \$OutDir) {", '$OutDirChecked = $false', '$outDirKey = ', '$outDirKey -match ', '$OutDirChecked = $true',
-            'if (-not (Test-Path -LiteralPath $SourceMod)) {', 'Write-Step "Nettoyage staging'] as $marker) {
+        foreach (['$OutDirGiven = [bool]$OutDir', "if (-not \$OutDir) {", '$OutDirChecked = $false', '$outDirKey = ', '$outDirKey -match ',
+            $containsGuard, $markerGuard, '$OutDirChecked = $true', 'if (-not (Test-Path -LiteralPath $SourceMod)) {', 'Write-Step "Nettoyage staging'] as $marker) {
             $at = strpos($ps, $marker);
             self::assertNotFalse($at, 'absent : ' . $marker);
             self::assertGreaterThan($previous, $at, 'hors d\'ordre : ' . $marker);
             $previous = $at;
         }
-        // Les deux « if » des gardes (lignes 3 et 5 ci-dessus) et le drapeau sont au niveau du script, hors de tout bloc.
+        // Les « if » des quatre gardes et le drapeau sont au niveau du script, hors de tout bloc.
         $guardLines = explode("\n", $nativeGuard . "\n" . $steamGuard);
         $depths = self::psDepths($ps);
-        foreach ([$guardLines[3], $guardLines[5], '$OutDirChecked = $true'] as $line) {
+        foreach ([$guardLines[3], $guardLines[5], explode("\n", $containsGuard)[0], explode("\n", $markerGuard)[0], '$OutDirChecked = $true'] as $line) {
             self::assertSame(0, $depths[$line] ?? null, 'garde absente ou dans un bloc : ' . $line);
         }
 
@@ -417,6 +442,17 @@ final class OverwatchLegacyPackWorkshopGuardAssetTest extends TestCase
             'Remove-Item -LiteralPath $leftMeta -Force -ErrorAction SilentlyContinue',
         ], array_values(array_filter($code, static fn (string $line): bool => stripos($line, 'Remove-Item') !== false)));
         self::assertSame([], array_values(array_filter($code, static fn (string $line): bool => preg_match('/(?<![\w$.-])(?:rm|del|erase|rd|rmdir|ri|Clear-Item|cli)(?![\w-])/i', $line) === 1)));
+
+        // Le marqueur est écrit au staging, juste après la création de la sortie vidée. Seules ces lignes créent un
+        // dossier ou un fichier.
+        self::assertSame([
+            'New-Item -ItemType Directory -Path (Join-Path $OutDir "addons") -Force | Out-Null',
+            self::OUT_MARKER_WRITE,
+            'if (-not (Test-Path -LiteralPath $keysOut)) { New-Item -ItemType Directory -Path $keysOut | Out-Null }',
+        ], array_values(array_filter($code, static fn (string $line): bool => preg_match('/(?<![\w$.-])(?:New-Item|ni)(?![\w-])/i', $line) === 1)));
+        $staged = array_search('Remove-Item -LiteralPath $OutDir -Recurse -Force', $code, true);
+        self::assertIsInt($staged);
+        self::assertSame(['}', 'New-Item -ItemType Directory -Path (Join-Path $OutDir "addons") -Force | Out-Null', self::OUT_MARKER_WRITE], array_slice($code, $staged + 1, 3));
     }
 
     public function testWorkshopPackRereadsTheOutputMetaCppAndClearsItOnAnEarlyStop(): void

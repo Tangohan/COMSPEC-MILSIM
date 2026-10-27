@@ -21,7 +21,11 @@
     - si la DLL retenue annonce une ProductVersion sous 2.0.96 (plancher SEC-001,
       docs/PLANCHER-VERSION-DLL.md) ou une version illisible ;
     - si OutDir est dans mod/COMSPEC_ATAK_Native, le contient, ou est sous steamapps/workshop
-      ou sous le dossier !Workshop d'Arma 3.
+      ou sous le dossier !Workshop d'Arma 3 ;
+    - si OutDir contient !Workshop, steamapps, arma3_x64.exe ou COMSPECATAKNativeExtension_x64.dll
+      (dossier d'Arma 3, bibliothèque Steam, pack de l'ATAK natif) ;
+    - si un OutDir passé à la main existe, n'est pas vide et n'a pas le fichier workshop-pack-sortie.txt
+      que le script écrit dans chaque sortie.
   Après ce dernier contrôle, un refus retire aussi le meta.cpp du dossier de sortie, comme tout arrêt
   avant la fin du pack (erreur, Ctrl+C). Après la dernière copie, le meta.cpp de la sortie est relu :
   le pack est refusé s'il vise l'objet 3684656708.
@@ -31,6 +35,7 @@
 
 .PARAMETER OutDir
   Destination du pack (défaut : publisher/@COMSPECOverwatch). Le script la vide puis la remplit.
+  Un dossier passé ici qui existe déjà doit être vide ou être une sortie précédente du script.
 
 .PARAMETER Zip
   Si défini, crée aussi une archive .zip à côté de OutDir.
@@ -49,6 +54,8 @@ param(
 $ErrorActionPreference = "Stop"
 $ModRoot = $PSScriptRoot
 if (-not $SourceMod) { $SourceMod = Join-Path $ModRoot '@COMSPECOverwatch' }
+# -OutDir passé à la main (N8), lu avant la valeur par défaut : seul un tel dossier doit porter le marqueur.
+$OutDirGiven = [bool]$OutDir
 if (-not $OutDir) { $OutDir = Join-Path $ModRoot 'publisher\@COMSPECOverwatch' }
 
 # Objet Workshop de l'ATAK natif (App\Support\SteamWorkshop::ATAK_NATIVE_ID) : ce pack ne doit jamais le viser.
@@ -58,6 +65,9 @@ $AtakNativeWorkshopId = '3684656708'
 $MinLinkVersion = [version]'2.0.96'
 # Vrai une fois $OutDir contrôlé : un refus retire alors le meta.cpp de la sortie (N8).
 $OutDirChecked = $false
+# Marqueur écrit dans chaque sortie (N8). Texte en ASCII : l'encodage de New-Item -Value varie selon PowerShell.
+$OutMarkerName = 'workshop-pack-sortie.txt'
+$OutMarkerText = 'Sortie de mod/UptoDate/workshop-pack.ps1, qui vide et refait ce dossier a chaque execution. Pack herite sans objet Workshop : ne pas le publier.'
 
 function Write-Step([string] $msg) { Write-Host "[PACK] $msg" -ForegroundColor Cyan }
 function Write-Fail([string] $msg) {
@@ -95,6 +105,28 @@ if ($outDirKey.StartsWith($atakNativeKey, $ignoreCase) -or $atakNativeKey.Starts
 if ($outDirKey -match '(?i)[\\/](steamapps[\\/]workshop|!Workshop)[\\/]') {
     Write-Fail ("Sortie refusée : $OutDir est sous un dossier Workshop de Steam (steamapps\workshop, ou !Workshop d'Arma 3). " +
         "Le nettoyage du staging viderait un objet Workshop : choisissez un -OutDir hors de Steam.")
+}
+# Une sortie qui contient le jeu, une bibliothèque Steam ou un pack de l'ATAK natif est refusée dans tous les cas, même
+# derrière une jonction : le nettoyage du staging viderait ce dossier.
+if (Test-Path -LiteralPath $OutDir -PathType Container) {
+    foreach ($precious in @('!Workshop', 'steamapps', 'arma3_x64.exe', 'COMSPECATAKNativeExtension_x64.dll')) {
+        if (Test-Path -LiteralPath (Join-Path $OutDir $precious)) {
+            Write-Fail ("Sortie refusée : $OutDir contient $precious, comme le dossier d'Arma 3, une bibliothèque Steam ou un " +
+                "pack de l'ATAK natif. Le nettoyage du staging le viderait : choisissez un -OutDir hors de ces dossiers.")
+        }
+    }
+}
+# Un -OutDir passé à la main qui existe n'est vidé que s'il est vide ou porte le marqueur d'une sortie de ce script
+# (dossier personnel, sources, dossier d'un autre mod : refusés). La sortie par défaut s'en passe : au premier
+# passage, elle peut dater d'avant ce marqueur.
+if ($OutDirGiven -and (Test-Path -LiteralPath $OutDir)) {
+    $outDirMarked = Test-Path -LiteralPath (Join-Path $OutDir $OutMarkerName) -PathType Leaf
+    $outDirEmpty = (Test-Path -LiteralPath $OutDir -PathType Container) -and -not (Get-ChildItem -LiteralPath $OutDir -Force | Select-Object -First 1)
+    if (-not $outDirMarked -and -not $outDirEmpty) {
+        Write-Fail ("Sortie refusée : $OutDir existe, n'est pas vide et n'a pas le fichier $OutMarkerName que ce script écrit " +
+            "dans ses sorties. Le nettoyage du staging le viderait : passez un dossier vide ou absent, ou lancez le script " +
+            "sans -OutDir.")
+    }
 }
 $OutDirChecked = $true
 
@@ -172,6 +204,7 @@ if (Test-Path -LiteralPath $OutDir) {
     Remove-Item -LiteralPath $OutDir -Recurse -Force
 }
 New-Item -ItemType Directory -Path (Join-Path $OutDir "addons") -Force | Out-Null
+New-Item -ItemType File -Path (Join-Path $OutDir $OutMarkerName) -Value $OutMarkerText -Force | Out-Null
 
 Write-Step "Copie meta / crédits"
 Copy-Item -LiteralPath $modCpp -Destination (Join-Path $OutDir "mod.cpp") -Force
