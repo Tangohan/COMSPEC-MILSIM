@@ -970,12 +970,57 @@ class AtakApiController
             'method' => 'code',
         ], $actor);
 
-        return Response::json([
+        $payload = [
             'ok' => true,
             'api_url' => $apiUrl,
             'api_key' => $apiKey,
             'tenant_id' => (string) $tenantId,
-        ]);
+        ];
+        $tokens = $this->personalTokensForLinkCode($userId, $tenantId, $body, $steamUid);
+        if ($tokens !== null) {
+            $payload['tokens'] = $tokens;
+        }
+
+        return Response::json($payload);
+    }
+
+    /**
+     * Le code de liaison à usage unique, généré par le membre connecté au site, prouve aussi le membre : une DLL qui
+     * annonce son poste (device_id) reçoit en plus son jeton d'accès jeu personnel, même forme que Game Auth
+     * (access_token, refresh_token, expires_in, device_id, pairing_token). Sans device_id (DLL publiées jusqu'ici),
+     * rien n'est émis et la réponse reste celle d'avant. Un refus de Game Auth (compte sans e-mail, maintenance,
+     * blocage, version) laisse la liaison par clé réussir sans jeton.
+     *
+     * @param array<string, mixed> $body
+     * @return array<string, mixed>|null
+     */
+    private function personalTokensForLinkCode(int $userId, int $tenantId, array $body, ?string $steamUid): ?array
+    {
+        $deviceId = trim((string) ($body['device_id'] ?? ''));
+        if ($deviceId === '') {
+            return null;
+        }
+        $fields = [
+            'device_id' => $deviceId,
+            'mod_version' => trim((string) ($body['mod_version'] ?? '')),
+            'extension_version' => trim((string) ($body['extension_version'] ?? '')),
+        ];
+        // Sans Steam détecté en jeu, Game Auth reprend celui de la fiche du membre.
+        if ($steamUid !== null) {
+            $fields['steam_id'] = $steamUid;
+        }
+        try {
+            /** @var \App\Services\Game\GameAuthService $auth */
+            $auth = \App\Core\Container::get(\App\Services\Game\GameAuthService::class);
+            $issued = $auth->issueForUser($userId, $tenantId, $fields);
+        } catch (\Throwable) {
+            return null;
+        }
+        $tokens = ($issued['ok'] ?? false) ? ($issued['payload']['tokens'] ?? null) : null;
+
+        return is_array($tokens) && is_string($tokens['access_token'] ?? null) && $tokens['access_token'] !== ''
+            ? $tokens
+            : null;
     }
 
     /**
