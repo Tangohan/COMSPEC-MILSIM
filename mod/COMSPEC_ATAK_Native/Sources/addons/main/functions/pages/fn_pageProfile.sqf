@@ -108,12 +108,19 @@ _rows pushBack ["buttons", [
 
 // Batterie
 private _bat = [] call comspec_atak_native_fnc_battery;
-private _charging = (vehicle player) isNotEqualTo player;
-private _spares = { (toLower _x) in (((missionNamespace getVariable ["comspec_atak_native_battery_items", "ACE_UAVBattery"]) splitString ", ") apply { toLower _x }) } count (items player);
+// Recharge réelle (fn_battery : véhicule moteur allumé, batterie externe) et autonomie au rythme mesuré, comme l'app Réseau.
+(missionNamespace getVariable ["COMSPEC_ATAK_BatteryInfo", [0, []]]) params [["_rate", 0]];
+private _charging = _rate < 0;
+private _left = switch (true) do {
+    case _charging: { "en charge" };
+    case (_rate <= 0.01): { "—" };
+    default { private _m = round (_bat / _rate); format ["≈ %1 h %2 min", floor (_m / 60), _m mod 60] };
+};
+private _spares = [player, true] call comspec_atak_native_fnc_batteryItem;
 _rows append [
-    ["section", "Batterie", ["Simulation coupée (réglages)", "Recharge à bord d'un véhicule"] select (profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true])],
+    ["section", "Batterie", ["Simulation coupée (réglages)", "Recharge : véhicule moteur allumé, batterie externe ou socle CS-10"] select (profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true])],
     ["info", "Niveau", format ["<t color='%1'>%2 %%</t>", ["#e5483a", "#f2ab33", "#5cc76b"] select ((floor (_bat / 25)) min 2), round _bat]],
-    ["info", "Autonomie", [format ["≈ %1 h %2 min", floor (_bat * 3 / 60), round ((_bat * 3) mod 60)], "en charge"] select _charging],
+    ["info", "Autonomie", _left],
     ["info", "Batteries de rechange", str _spares],
     ["buttons", [["CHANGER LA BATTERIE", { ["battery"] call comspec_atak_native_fnc_profileAction; }, _spares > 0]]]
 ];

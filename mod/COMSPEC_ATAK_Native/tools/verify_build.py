@@ -76,7 +76,7 @@ def source_files(src: pathlib.Path) -> set[str]:
 
 
 # PBO -packonly : config.cpp reste texte, ses #include et les fichiers lus par loadFile/execVM sont résolus en jeu.
-RUNTIME_EXT = {"cpp", "hpp", "h", "inc", "sqf", "txt", "xml"}
+RUNTIME_EXT = {"cpp", "hpp", "h", "inc", "sqf", "txt", "xml", "html"}
 
 
 def compare(names: list[str], src: pathlib.Path) -> tuple[list[str], list[str], list[str]]:

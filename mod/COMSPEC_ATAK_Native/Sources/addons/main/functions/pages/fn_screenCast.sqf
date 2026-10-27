@@ -99,6 +99,15 @@ switch (_mode) do {
             false
         };
         _d params ["_src", "_deck", "_idx"];
+        // Google chargé par TESTER LE LIEN (ce téléphone seul) : les autres joueurs n'avaient pas le deck et voyaient un
+        // écran noir. Il leur est d'abord diffusé (même chemin que DIFFUSER À TOUS), la navigation suit ensuite pour tous.
+        if (_src isEqualTo "GOOGLE") then {
+            private _gUrl = uiNamespace getVariable ["COMSPEC_ATAK_BriefLocalDeck", ""];
+            if (_gUrl isNotEqualTo "") then {
+                uiNamespace setVariable ["COMSPEC_ATAK_BriefLocalDeck", ""];
+                ["show", _gUrl, _idx] call comspec_overwatch_connect_fnc_broadcastGoogleBriefingState;
+            };
+        };
         _a setVariable ["COMSPEC_ATAK_ScreenCast", [player, name player, _src, _deck, _idx], true];
         true
     };
@@ -166,6 +175,8 @@ switch (_mode) do {
                     if (_key isNotEqualTo "") then {
                         // Cache : texture posable (chemin lisible ou "WEB:<source>"), ou heure d'un échec (nouvel essai après 60 s).
                         private _p = _cache getOrDefault [_key, -1e9];
+                        // Image évincée du magasin base64 (vidé au-delà de 12) : « WEB:<clé> » périmé, image relue.
+                        if (_p isEqualType "" && {(_p select [0, 4]) isEqualTo "WEB:"} && {!(_key in (uiNamespace getVariable ["COMSPEC_ATAK_ScreenWeb", createHashMap]))}) then { _cache deleteAt _key; _p = -1e9; };
                         if (_p isEqualType "" && {_p isNotEqualTo ""}) then {
                             _want = _p;
                         } else {
@@ -254,7 +265,8 @@ switch (_mode) do {
                     if ((_o getVariable ["COMSPEC_ATAK_ScreenWebShown", ""]) isNotEqualTo _web) then {
                         _o setVariable ["COMSPEC_ATAK_ScreenWebShown", _web];
                         _o setVariable ["COMSPEC_ATAK_ScreenWebAt", diag_tickTime];
-                        ["web", [_disp, _web]] call _fn;
+                        // Image absente (magasin vidé) : page non chargée, nouvel essai au prochain passage.
+                        if !(["web", [_disp, _web]] call _fn) then { _o setVariable ["COMSPEC_ATAK_ScreenWebShown", ""]; };
                     };
                     // Le navigateur dessine après coup : texture recopiée souvent pendant 15 s, puis toutes les 10 s si l'écran est vu.
                     private _fresh = diag_tickTime - (_o getVariable ["COMSPEC_ATAK_ScreenWebAt", -1e9]) < 15;
@@ -288,7 +300,7 @@ switch (_mode) do {
         true
     };
     case "web": {
-        // Diapositive (JPEG en base64) dans une page data: centrée sur fond noir, sur toute la texture.
+        // Diapositive (JPEG en base64) centrée sur fond noir, sur toute la texture (fn_slideWebShow).
         _a params ["_d", ["_url", ""]];
         disableSerialization;
         if (isNull _d) exitWith { false };
@@ -301,10 +313,7 @@ switch (_mode) do {
         };
         ((uiNamespace getVariable ["COMSPEC_ATAK_ScreenWeb", createHashMap]) getOrDefault [_url, ["jpeg", ""]]) params ["_mime", "_b64"];
         if (isNull _wb || {_b64 isEqualTo ""}) exitWith { false };
-        // Concaténation (pas format) : l'image dépasse de loin la longueur qu'accepte format.
-        private _html = "<html><body style='margin:0;background:black;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden'><img src='data:image/" + _mime + ";base64," + _b64 + "' style='width:100%;height:100%;object-fit:contain'></body></html>";
-        private _enc = controlNull ctrlWebBrowserAction ["ToBase64", _html];
-        _wb ctrlWebBrowserAction ["OpenDataAsURL", if (_enc isEqualType "" && {_enc isNotEqualTo ""}) then { "data:text/html;base64," + _enc } else { "data:text/html;charset=utf-8," + _html }];
+        [_wb, _mime, _b64] call comspec_atak_native_fnc_slideWebShow;
         true
     };
     case "actions": {

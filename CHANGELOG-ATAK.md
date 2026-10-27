@@ -34,9 +34,33 @@ EN : The Athena portal address is no longer a setting
 
 Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.md) · [TECHREP #00003](docs/dev/TECHREP-00003.md).
 
-Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-2026-09-22-overwatch-1.6.12.md) · [Overwatch 1.6.9](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.9.md) · [Overwatch 1.6.8](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.8.md) · [Overwatch 1.6.7](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.7.md) · [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md) · [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-2026-09-15-overwatch-1.5.78.md) · [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+Changelog Steam (copier-coller) : [ATAK 2.7.0](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.7.0.md) · [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-2026-09-22-overwatch-1.6.12.md) · [Overwatch 1.6.9](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.9.md) · [Overwatch 1.6.8](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.8.md) · [Overwatch 1.6.7](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.7.md) · [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md) · [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-2026-09-15-overwatch-1.5.78.md) · [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
 
 ---
+
+## Regroupement : montre Garmin, radio avec le téléphone, diapositives Google, module officiel (ATAK natif 2.7.0.AB - Denver, COMSPEC Link 2.0.99)
+
+### Résumé joueur
+Type : nouveauté
+FR : La montre Garmin réaffiche son cadran, et seul le pack officiel parle au poste
+- La montre au poignet affiche de nouveau le boîtier, l’heure et les écrans, au lieu d’un disque vert.
+- Avec le téléphone en plein écran, l’alternat radio fonctionne de nouveau. La liste des mods dont les touches passent encore se règle dans les options.
+- Les diapositives Google restent visibles dans l’app Briefing et peuvent être partagées, y compris quand plusieurs diapositives se succèdent.
+- Le message de batterie vide indique comment recharger : véhicule moteur allumé, batterie externe ou socle.
+- Après la mise à jour du poste et du pack, une copie modifiée du module ne peut plus ouvrir la liaison. Quittez Arma complètement après l’installation.
+EN : The Garmin watch shows its face again, and only the official pack can reach the command post
+- The wrist watch shows the case, the time and the screens again, instead of a green disc.
+- With the phone fullscreen, the radio push-to-talk works again. The list of mods whose keys still get through is in the options.
+- Google slides stay visible in the Briefing app and can be shared, including when several slides follow one another.
+- The empty-battery message says how to recharge: vehicle with the engine running, power bank or dock.
+- After the command post and the pack are updated, a modified copy of the module can no longer open the link. Quit Arma completely after installing.
+
+### Détail technique
+- PR réunies : #1169 (messages de charge du téléphone), #1171 (touches radio avec le téléphone en plein écran), #1172 (diapositives Google relues quand le magasin est plein). #1167 était déjà dans la 2.6.0.
+- Montre : images sur une classe blanche, couleur et texture validées ensemble, boîtiers déclarés sur la couche.
+- Module officiel : preuve jointe aux requêtes du jeu. Inactive tant que le secret n’est pas posé sur le serveur, en même temps que ce pack.
+- Versions : ATAK natif 2.7.0.AB - Denver, COMSPEC Link 2.0.99, DLL native du téléphone 2.0.99-native.
+- À tester en jeu : montre (boîtier et cadran, les quatre coloris) ; alternat radio téléphone en plein écran ; diapositive Google dans Briefing puis sur un écran ; message de batterie vide ; liaison avec le pack officiel, et refus d’une copie une fois le poste à jour.
 
 ## Regroupement : diapositives sur les écrans, Live Presentation (FENRIR), JVN hors ligne, floutage des visages, textes lisibles, 131 correctifs (ATAK natif 2.6.0.AB - Denver, COMSPEC Link 2.0.98)
 

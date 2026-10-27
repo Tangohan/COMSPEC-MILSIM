@@ -4,8 +4,9 @@
     - retire les espaces, retours à la ligne et caractères invisibles (copier-coller depuis Discord, un PDF, un mail) ;
     - accepte un identifiant seul, un lien sans https://, en http://, avec /u/0/ (compte Google), /edit, /pub,
       /embed, /present, ?usp=sharing ou #slide=… : le lien rendu est la forme courte que la DLL sait charger,
-      https://docs.google.com/presentation/d/ID/edit ou, pour un lien « Publier sur le Web »,
-      https://docs.google.com/presentation/d/e/2PACX-…/pub ;
+      https://docs.google.com/presentation/d/ID/edit ;
+    - refuse un lien « Publier sur le Web » (/d/e/2PACX-…/pub) : son identifiant n'est pas celui de la présentation,
+      COMSPEC Link ne peut pas en exporter les diapositives (le site Athena le refuse aussi) ;
     - message : l'erreur expliquée (lien Drive, Docs, Sheets, raccourci…) ou ce qui a été reconnu.
     Aucun appel réseau : le chargement réel est fait par TESTER / CHARGER (fn_briefingAction).
 */
@@ -54,7 +55,7 @@ if (_at < 0) exitWith {
     [false, "", _msg, _fixes]
 };
 
-// Chemin après /presentation/ : [u/N/]d/ID/… ou d/e/2PACX-…/pub
+// Chemin après /presentation/ : [u/N/]d/ID/… (d/e/2PACX-…/pub refusé)
 private _rest = _u select [_at + count _host];
 private _cut = { params ["_t"]; private _end = count _t; { private _p = _t find _x; if (_p >= 0 && {_p < _end}) then { _end = _p; }; } forEach ["/", "?", "#", "&"]; _t select [0, _end] };
 if ((toLowerANSI (_rest select [0, 2])) isEqualTo "u/") then {
@@ -65,16 +66,13 @@ if ((toLowerANSI (_rest select [0, 2])) isNotEqualTo "d/") exitWith {
     [false, "", "Lien Google Slides incomplet : l'identifiant de la présentation (après /d/) manque. Copiez le lien depuis Partager.", _fixes]
 };
 _rest = _rest select [2];
-private _published = (toLowerANSI (_rest select [0, 2])) isEqualTo "e/";
-if (_published) then { _rest = _rest select [2]; };
+if ((toLowerANSI (_rest select [0, 2])) isEqualTo "e/") exitWith {
+    [false, "", "Lien « Publier sur le Web » (…/d/e/…/pub) : COMSPEC Link ne peut pas le lire. Collez le lien de la présentation elle-même (Partager > Copier le lien, …/presentation/d/…/edit), ouverte à « Tous les utilisateurs disposant du lien ».", _fixes]
+};
 private _id = [_rest] call _cut;
 if !([_id] call _isId) exitWith {
     [false, "", "Identifiant de présentation illisible dans le lien. Recopiez-le depuis Google Slides (Partager > Copier le lien).", _fixes]
 };
-private _clean = if (_published) then {
-    format ["https://docs.google.com/presentation/d/e/%1/pub", _id]
-} else {
-    format ["https://docs.google.com/presentation/d/%1/edit", _id]
-};
+private _clean = format ["https://docs.google.com/presentation/d/%1/edit", _id];
 if ((toLowerANSI _clean) isNotEqualTo (toLowerANSI _u)) then { _fixes pushBack "lien remis en forme simple"; };
-[true, _clean, format [["Présentation %1 (partagée par lien).", "Présentation %1 (publiée sur le Web)."] select _published, (_id select [0, 8]) + "…"], _fixes]
+[true, _clean, format ["Présentation %1 (partagée par lien).", (_id select [0, 8]) + "…"], _fixes]

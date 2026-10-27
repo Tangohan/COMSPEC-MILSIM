@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.98";
+    private const string ExtensionVersion = "2.0.99";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -3428,6 +3428,40 @@ public static partial class Extension
         "Distance.Batch", "Squad.Sync", "ScreenTime.Report", "ScreenTime.Batch", "Garmin.Report", "NetConditions.Report",
     };
 
+
+    /// <summary>
+    /// ImageDataChunk « local:<chemin> » : image déjà téléchargée par la DLL (diapositive Google Slides de comspec_cache),
+    /// qu'Arma refuse hors d'un PBO, lue en base64 par morceaux pour le navigateur intégré. Seulement sous un dossier
+    /// comspec_cache de la DLL. Aucun appel réseau : répond aussi sans session Athena (avant, le contrôle
+    /// « ERR|not_connected » de TryGetSyncResponse passait en premier : capture de TTRD du 26/10, diapositive noire).
+    /// </summary>
+    private static string ImageDataChunkLocal(string?[] args)
+    {
+        var imageUrl = (args[0] ?? "").Trim();
+        if (!long.TryParse(args[2], out var offset) || offset < 0) offset = 0;
+        string full;
+        try { full = Path.GetFullPath(imageUrl.Substring(6).Trim()); }
+        catch { return "ERR|path_not_allowed"; }
+        var roots = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "comspec_cache"),
+            Path.Combine(Path.GetTempPath(), "comspec_cache"),
+        }.Select(r => Path.GetFullPath(r).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
+        if (!roots.Any(r => full.StartsWith(r, StringComparison.OrdinalIgnoreCase))) return "ERR|path_not_allowed";
+        byte[] local;
+        try { local = File.ReadAllBytes(full); }
+        catch (FileNotFoundException) { return "ERR|not_found"; }
+        catch (DirectoryNotFoundException) { return "ERR|not_found"; }
+        catch (Exception ex) { return "ERR|read_failed_" + ex.GetType().Name; }
+        var localPng = local.Length >= 8 && local[0] == 0x89 && local[1] == (byte)'P' && local[2] == (byte)'N' && local[3] == (byte)'G';
+        var localJpeg = local.Length >= 3 && local[0] == 0xFF && local[1] == 0xD8 && local[2] == 0xFF;
+        if (!localPng && !localJpeg) return "ERR|invalid_image";
+        if (local.Length > 1_400_000) return "ERR|too_large";
+        if (offset >= local.Length) return "OK|" + local.Length + "|" + local.Length + "|";
+        var localLen = (int)Math.Min(5940, local.Length - offset);
+        return "OK|" + local.Length + "|" + (offset + localLen) + "|" + Convert.ToBase64String(local, (int)offset, localLen) + (offset + localLen >= local.Length ? "|" + (localPng ? "png" : "jpeg") : "");
+    }
+
     private static string? TryGetSyncResponse(string? function, string?[] args)
     {
         // File d'envoi suivie (app Réseau du téléphone) : lue en mémoire, sans réseau.
@@ -4729,6 +4763,9 @@ public static partial class Extension
             }
         }
 
+        // Diapositive Google déjà téléchargée (« local: ») : lue sur le disque, sans session Athena.
+        if (function == "ImageDataChunk" && args.Length >= 3 && (args[0] ?? "").TrimStart().StartsWith("local:", StringComparison.OrdinalIgnoreCase))
+            return ImageDataChunkLocal(args);
         if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
         // Re-normalise au cas où une ancienne session a stocké une URL sans schéma.
         _baseUrl = NormalizeBaseUrl(_baseUrl);
@@ -6321,32 +6358,6 @@ public static partial class Extension
                 var safeKey = new string(keyRaw.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-').ToArray());
                 if (safeKey.Length == 0 || safeKey.Length > 80) safeKey = "web";
                 if (!long.TryParse(args[2], out var offset) || offset < 0) offset = 0;
-                // « local:<chemin> » : image déjà téléchargée par la DLL (diapositive Google Slides de comspec_cache), qu'Arma
-                // refuse hors d'un PBO. Lue telle quelle, seulement sous un dossier comspec_cache de la DLL.
-                if (imageUrl.StartsWith("local:", StringComparison.OrdinalIgnoreCase))
-                {
-                    string full;
-                    try { full = Path.GetFullPath(imageUrl.Substring(6).Trim()); }
-                    catch { return "ERR|path_not_allowed"; }
-                    var roots = new[]
-                    {
-                        Path.Combine(AppContext.BaseDirectory, "comspec_cache"),
-                        Path.Combine(Path.GetTempPath(), "comspec_cache"),
-                    }.Select(r => Path.GetFullPath(r).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
-                    if (!roots.Any(r => full.StartsWith(r, StringComparison.OrdinalIgnoreCase))) return "ERR|path_not_allowed";
-                    byte[] local;
-                    try { local = File.ReadAllBytes(full); }
-                    catch (FileNotFoundException) { return "ERR|not_found"; }
-                    catch (DirectoryNotFoundException) { return "ERR|not_found"; }
-                    catch (Exception ex) { return "ERR|read_failed_" + ex.GetType().Name; }
-                    var localPng = local.Length >= 8 && local[0] == 0x89 && local[1] == (byte)'P' && local[2] == (byte)'N' && local[3] == (byte)'G';
-                    var localJpeg = local.Length >= 3 && local[0] == 0xFF && local[1] == 0xD8 && local[2] == 0xFF;
-                    if (!localPng && !localJpeg) return "ERR|invalid_image";
-                    if (local.Length > 1_400_000) return "ERR|too_large";
-                    if (offset >= local.Length) return "OK|" + local.Length + "|" + local.Length + "|";
-                    var localLen = (int)Math.Min(5940, local.Length - offset);
-                    return "OK|" + local.Length + "|" + (offset + localLen) + "|" + Convert.ToBase64String(local, (int)offset, localLen) + (offset + localLen >= local.Length ? "|" + (localPng ? "png" : "jpeg") : "");
-                }
                 if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out var imgUri) && !string.IsNullOrEmpty(_baseUrl))
                 {
                     var rel = imageUrl.StartsWith('/') ? imageUrl : "/" + imageUrl.TrimStart('/');

@@ -19,8 +19,9 @@ private _b64 = "";
 private _mime = "jpeg";
 private _off = 0;
 private _err = "";
+// Décalage en texte entier : un nombre au-delà de 999 999 pouvait partir en « 1.00386e+06 », relu 0 par la DLL.
 for "_n" from 0 to 400 do {
-    private _r = [(["COMSPECExtension", "ImageDataChunk", [_arg, _key, _off]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
+    private _r = [(["COMSPECExtension", "ImageDataChunk", [_arg, _key, _off toFixed 0]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
     if (isNil "_r") then { _r = ""; };
     if (_r isEqualType []) then { _r = _r param [0, ""]; };
     if !(_r isEqualType "") then { _r = str _r; };
@@ -40,5 +41,10 @@ private _local = (toLower (_src select [0, 6])) isEqualTo "local:";
     case (_local && {_err in ["host_not_allowed", "path_not_allowed"]}): { "COMSPEC Link 2.0.98 requise pour afficher les diapositives Google" };
     case (_err isEqualTo "not_found"): { ["le site n'a pas encore la copie JPEG : renvoyez la diapositive sur Athena", "image Google introuvable dans le cache : touchez ACTUALISER"] select _local };
     case (_err isEqualTo "too_large"): { "image trop lourde pour le navigateur intégré (1,4 Mo au plus)" };
-    default { _err };
+    // COMSPEC Link 2.0.98 : « local: » refusé sans session Athena (capture de TTRD du 26/10), corrigé dans la version suivante.
+    case (_local && {_err isEqualTo "not_connected"}): { "COMSPEC Link n'est pas connecté à Athena et sa version ne lit pas l'image Google sans connexion : mettez COMSPEC Link à jour" };
+    case (_err isEqualTo "not_connected"): { "COMSPEC Link n'est pas connecté à Athena" };
+    case (_err isEqualTo "timeout"): { "COMSPEC Link n'a pas répondu à temps" };
+    case (_err isEqualTo "invalid_image"): { "fichier reçu qui n'est pas une image JPEG ou PNG" };
+    default { format ["erreur de COMSPEC Link (%1)", _err] };
 }]

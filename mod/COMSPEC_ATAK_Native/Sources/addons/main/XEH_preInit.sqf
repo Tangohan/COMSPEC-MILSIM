@@ -759,6 +759,10 @@ if (isServer) then {
 ["comspec_atak_native_action_menu_vehicle", "CHECKBOX",
     ["Menu d'actions autorisé en véhicule", "Dans un véhicule, la molette et le menu d'actions d'Arma restent utilisables quand le téléphone est porté (en petit à l'écran) : démarrer le moteur, changer de place, descendre... Téléphone en main, la molette reste au téléphone."],
     ["COMSPEC", "ATAK · Interface"], true, 0] call comspec_atak_native_fnc_addSetting;
+// Touches d'autres mods relayées quand le téléphone est en main (fn_keyPass) : alternat radio TFAR / ACRE2 par défaut.
+["comspec_atak_native_pass_mods", "EDITBOX",
+    ["Touches d'autres mods avec le téléphone en main", "Téléphone en main (plein écran), les raccourcis des autres mods ne passent plus, sauf ceux des mods listés ici : noms comme dans Options > Contrôles > Configurer les addons, séparés par des virgules. Par défaut « TFAR, ACRE2 » : alternat radio et autres touches radio. Rien ne part pendant que vous tapez dans un champ. Vide : aucune touche relayée."],
+    ["COMSPEC", "ATAK · Interface"], "TFAR, ACRE2", 0, { ["reset"] call comspec_atak_native_fnc_keyPass; }] call comspec_atak_native_fnc_addSetting;
 
 // Mode drone : les ordres s'exécutent là où le drone est local (pilote, serveur ou client qui l'a posé).
 ["comspec_atak_native_droneCmd", { _this call comspec_atak_native_fnc_droneCmd; }] call CBA_fnc_addEventHandler;
