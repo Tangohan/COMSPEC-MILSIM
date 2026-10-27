@@ -753,8 +753,8 @@ player addEventHandler ["Explosion", {
     ["blast", [_d, _dist]] call comspec_atak_native_fnc_deviceImpact;
     ["blast", _d] call comspec_atak_native_fnc_screenDirt;
 }];
-// Réapparition : téléphone neuf (charge de départ du serveur comme fn_battery, données effacées oubliées).
-player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK_Device", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_Battery", 5 max (missionNamespace getVariable ["comspec_atak_native_battery_start", 100]) min 100]; missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_HandsBlood", 0]; ["resync"] call comspec_atak_native_fnc_phoneSecurity; }];
+// Réapparition : téléphone neuf (charge de départ du serveur comme fn_battery, données effacées oubliées) et plus de batterie externe fixée.
+player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK_Device", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_Battery", 5 max (missionNamespace getVariable ["comspec_atak_native_battery_start", 100]) min 100]; missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_HandsBlood", 0]; missionNamespace setVariable ["COMSPEC_ATAK_PowerBankOn", false]; missionNamespace setVariable ["COMSPEC_ATAK_PowerBankCharge", 100]; (_this select 0) setVariable ["COMSPEC_ATAK_PowerBank", false, true]; ["resync"] call comspec_atak_native_fnc_phoneSecurity; }];
 // Eau : téléphone étanche quelques dizaines de secondes ; ensuite l'eau s'infiltre (haut-parleur, batterie, extinction…),
 // détruit seulement après une longue immersion. Dans le sac, l'eau entre deux fois moins vite. L'eau lave aussi l'écran.
 [{
