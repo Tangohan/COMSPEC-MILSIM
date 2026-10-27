@@ -886,7 +886,8 @@ class AtakApiController
         $row = $this->gameLinkRepository->findValidByCode($code);
         if ($row === null) {
             $reason = $this->gameLinkRepository->explainInvalidCode($code);
-            $failTenant = $this->resolveTenantId($request) ?? (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: 0);
+            // Même règle que la garde : resolveTenantId() lisait (int) tenant_id (« tenant_id[]=N » donnait 1).
+            $failTenant = ComspecApiKeyAuth::guessTenantIdForLog();
             $failLabel = match ($reason) {
                 'already_used' => 'Liaison en jeu refusée — code déjà utilisé',
                 'expired' => 'Liaison en jeu refusée — code expiré',
@@ -1008,7 +1009,7 @@ class AtakApiController
 
         $user = $this->userRepository->findBySteamId($steamUid);
         if ($user === null) {
-            $failTenant = $this->resolveTenantId($request) ?? (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: 0);
+            $failTenant = ComspecApiKeyAuth::guessTenantIdForLog();
             $this->logUnverifiedLinkRefusal($failTenant, 'Liaison en jeu refusée — Steam non reconnu', [
                 'reason' => 'steam_not_linked',
                 'method' => 'steam',
@@ -1141,9 +1142,10 @@ class AtakApiController
     }
 
     /**
-     * Liaison refusée avant toute preuve (code inconnu, Steam non reconnu) : la communauté vient souvent de
-     * la requête elle-même (tenant_id de l’URL ou du corps). Journalisé seulement si elle existe, et au plus
-     * une fois par minute pour un même refus (AtakActivityLogService::recordUnverifiedAuthFailure).
+     * Liaison refusée avant toute preuve (code inconnu, Steam non reconnu) : la communauté vient de la même règle
+     * que la garde (ComspecApiKeyAuth::guessTenantIdForLog : tenant_id de l’URL en chiffres seulement, le corps
+     * n’est pas lu). Journalisé seulement si elle existe, et au plus une fois par minute pour un même refus
+     * (AtakActivityLogService::recordUnverifiedAuthFailure).
      *
      * @param array<string, mixed> $meta
      */
@@ -7692,8 +7694,27 @@ class AtakApiController
     /** Fenêtre lue en base par relève de tchat avec curseur (le dépôt borne de son côté à 200). */
     private const CHAT_FETCH_MAX = 200;
 
-    /** Fenêtres enchaînées au plus par relève : traverse un bloc de messages cachés sans bloquer le curseur. */
+    /**
+     * Fenêtres enchaînées au plus par relève : traverse un bloc de messages cachés sans bloquer le curseur.
+     * La première fait 2 × limit (cas normal : une seule lecture), les suivantes CHAT_FETCH_MAX : au plus
+     * 2 × limit + 600 lignes brutes par relève (650 pour COMSPEC Link, 680 pour l'ATAK natif).
+     */
     private const CHAT_SCAN_MAX_PASSES = 4;
+
+    /**
+     * Octets de sortie DLL visés par relève avec curseur. La DLL du jeu (COMSPECExtension, GetChatMessages, même
+     * Extension.cs pour COMSPEC Link et l'ATAK natif) écrit une ligne « id\tauteur\tcorps\tcreated_at\tcanal\n »
+     * par message, corps coupé à 280 caractères, et coupe le tout à 7 996 octets UTF-8 en gardant les lignes les
+     * PLUS RÉCENTES : les plus anciennes étaient perdues pour de bon, puisque le client avance son curseur au plus
+     * grand id reçu. Marge d'environ 500 octets sous cette limite.
+     */
+    private const GAME_CHAT_OUTPUT_BUDGET = 7500;
+
+    /** Auteur réservé au transport des réglages d'affichage des camps (« REGLAGES AFFICHAGE|… »). */
+    private static function isReservedSettingsAuthor(string $author): bool
+    {
+        return mb_strtoupper(trim($author)) === 'REGLAGES';
+    }
 
     /**
      * Messages à montrer : sans le bruit technique déjà en base, et sans les MP qui ne concernent pas l'indicatif.
@@ -7710,12 +7731,16 @@ class AtakApiController
             }
             $body = (string) ($row['body'] ?? '');
             $author = (string) ($row['author'] ?? '');
+            // Protocole d'ordres C2 : la relève avec curseur lit la fenêtre brute et le masque ici.
+            if (AtakDataRepository::isProtocolOrderChatBody($body)) {
+                continue;
+            }
             // Anciens messages parfois découpés (auteur REGLAGES / corps AFFICHAGE|…)
             if (TacticalAlertParser::isHiddenSystemChatBody($body)) {
                 continue;
             }
             if (
-                mb_strtoupper(trim($author)) === 'REGLAGES'
+                self::isReservedSettingsAuthor($author)
                 && str_starts_with(mb_strtoupper(trim($body)), 'AFFICHAGE|')
             ) {
                 continue;
@@ -7740,6 +7765,10 @@ class AtakApiController
      * CHAT_SCAN_MAX_PASSES fenêtres pour qu'un bloc de messages cachés, ou de MP qui ne concernent pas cet
      * indicatif, ne laisse pas le curseur sur une réponse vide, ce qui aurait figé la relève.
      *
+     * $fetch doit rendre la fenêtre BRUTE (lignes « ORDER|… » comprises) : « pleine » et « jusqu'où avancer » se
+     * jugent sur les lignes lues en base, le masquage vient après (visibleChatRows). Après la première fenêtre, on lit
+     * CHAT_FETCH_MAX lignes à la fois : un bloc caché se traverse en peu de lectures.
+     *
      * @param callable(int, int): mixed $fetch (curseur, taille de fenêtre) → lignes brutes, ordre id croissant
      * @return list<array<string, mixed>>
      */
@@ -7755,7 +7784,8 @@ class AtakApiController
         $cursor = max(0, $afterId);
         $rows = [];
         for ($pass = 0; $pass < self::CHAT_SCAN_MAX_PASSES; $pass++) {
-            $raw = $fetch($cursor, $fetchLimit);
+            $window = $pass === 0 ? $fetchLimit : max($fetchLimit, self::CHAT_FETCH_MAX);
+            $raw = $fetch($cursor, $window);
             $raw = is_array($raw) ? array_values($raw) : [];
             if ($raw === []) {
                 break;
@@ -7769,13 +7799,74 @@ class AtakApiController
             foreach (self::visibleChatRows($raw, $mpCallsign) as $visibleRow) {
                 $rows[] = $visibleRow;
             }
-            if (count($rows) >= $limit || count($raw) < $fetchLimit || $maxId <= $cursor) {
+            if (count($rows) >= $limit || count($raw) < $window || $maxId <= $cursor) {
                 break;
             }
             $cursor = $maxId;
         }
 
         return count($rows) > $limit ? array_slice($rows, 0, $limit) : $rows;
+    }
+
+    /**
+     * Relève avec curseur : les plus anciens messages, tant que la sortie de la DLL du jeu tient dans
+     * GAME_CHAT_OUTPUT_BUDGET. La suite part à la relève suivante (le client repart du plus grand id reçu).
+     * Toujours au moins un message, sinon un message trop long immobiliserait le curseur.
+     *
+     * @param list<mixed> $rows messages prêts à envoyer, ordre id croissant
+     * @return list<mixed>
+     */
+    private static function keepWithinGameChatOutput(array $rows, int $budget = self::GAME_CHAT_OUTPUT_BUDGET): array
+    {
+        $kept = [];
+        $bytes = 0;
+        foreach ($rows as $row) {
+            $lineBytes = is_array($row) ? self::gameChatLineBytes($row) : 0;
+            if ($kept !== [] && $bytes + $lineBytes > $budget) {
+                break;
+            }
+            $kept[] = $row;
+            $bytes += $lineBytes;
+        }
+
+        return $kept;
+    }
+
+    /**
+     * Octets UTF-8 de la ligne que la DLL écrit pour ce message (SimplifyChatMessagesJson). Estimation par excès :
+     * la DLL coupe le corps à 280 unités UTF-16, 280 caractères en gardent au moins autant d'octets.
+     *
+     * @param array<string, mixed> $row
+     */
+    private static function gameChatLineBytes(array $row): int
+    {
+        $body = self::gameChatField($row['body'] ?? '');
+        if (mb_strlen($body, 'UTF-8') > 280) {
+            $body = mb_substr($body, 0, 280, 'UTF-8');
+        }
+        $channel = self::gameChatField($row['channel_key'] ?? ($row['channel'] ?? ''));
+        if (trim($channel) === '') {
+            $channel = 'general';
+        }
+
+        // 4 tabulations et le saut de ligne final.
+        return 5
+            + self::gameChatFieldBytes(self::gameChatField($row['id'] ?? ''))
+            + self::gameChatFieldBytes(self::gameChatField($row['author'] ?? ''))
+            + self::gameChatFieldBytes($body)
+            + self::gameChatFieldBytes(self::gameChatField($row['created_at'] ?? ''))
+            + self::gameChatFieldBytes($channel);
+    }
+
+    private static function gameChatField(mixed $value): string
+    {
+        return is_scalar($value) ? (string) $value : '';
+    }
+
+    /** Champ nettoyé comme par la DLL : tabulation → espace, saut de ligne → « — » entre espaces, \r retiré. */
+    private static function gameChatFieldBytes(string $value): int
+    {
+        return strlen(str_replace(["\t", "\n", "\r"], [' ', ' — ', ''], $value));
     }
 
     public function chatIndex(Request $request, array $params = []): Response
@@ -7811,7 +7902,7 @@ class AtakApiController
             try {
                 $rows = self::scanChatAfter(
                     fn (int $cursor, int $window): array
-                        => $this->atak->getChatMessagesAfter($tenantId, $mapId, $cursor, $window, $channelKey),
+                        => $this->atak->getChatMessagesAfter($tenantId, $mapId, $cursor, $window, $channelKey, true),
                     $afterId,
                     $limit,
                     $fetchLimit,
@@ -7867,6 +7958,10 @@ class AtakApiController
             $rows = $this->applyIntelScramble($request, $tenantId, $mapId, 'chat', $rows);
         } catch (\Throwable) {
             // Un brouillage intel défaillant ne doit pas couper le journal radio.
+        }
+        if ($afterId > 0) {
+            // Relève du jeu : pas plus que ce que la DLL rend sans couper, mesuré sur le texte réellement envoyé.
+            $rows = self::keepWithinGameChatOutput(array_values($rows));
         }
 
         return Response::json($rows);
@@ -9019,6 +9114,22 @@ class AtakApiController
                 'hidden_from_chat' => true,
                 'order' => is_array($orderRow) ? $this->serializeOrder($orderRow) : null,
             ], 201);
+        }
+
+        // Ce que la lecture masquerait ensuite n'est plus stocké : invisible pour tous, une suite de ces lignes figeait
+        // la relève avec curseur de tous les clients du jeu (50 messages suffisaient pour COMSPEC Link). Les ordres
+        // complets et les réglages reconnus sont interceptés plus haut et ne passent pas par ici.
+        if (is_string($bodyText) && AtakDataRepository::isProtocolOrderChatBody($bodyText)) {
+            return Response::json([
+                'error' => 'order_incomplete',
+                'message' => 'Message refusé : « ORDER| » est réservé aux ordres complets (ORDER|identifiant|type|cible|priorité|émetteur).',
+            ], 422);
+        }
+        if (is_string($author) && self::isReservedSettingsAuthor($author)) {
+            return Response::json([
+                'error' => 'reserved_author',
+                'message' => 'Message refusé : l’auteur « REGLAGES » est réservé aux réglages d’affichage des camps.',
+            ], 422);
         }
 
         // Dédup alertes auto (KO / arrêt cardiaque) : ne pas réinsérer la même alerte en boucle.
