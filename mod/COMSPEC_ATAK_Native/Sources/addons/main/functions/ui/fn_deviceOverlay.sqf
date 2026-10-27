@@ -164,7 +164,7 @@ if (_off) then {
             _step, missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "1.6.0"], _hp get "reason"]) call comspec_atak_native_fnc_tr);
     } else {
         _txt ctrlSetStructuredText parseText ((format ["<t align='center' size='1.2' color='#5f6f68' font='COMSPEC_BarlowBold'>ÉCRAN ÉTEINT</t><br/><t align='center' color='#c9d4cf'>%1</t><br/><t align='center' size='0.85' color='#8a9a93'>%2</t>", _hp get "reason", switch (true) do {
-            case ((_hp get "reason") isEqualTo "Batterie vide"): { "Rechargez en véhicule ou changez la batterie" };
+            case ((_hp get "reason") isEqualTo "Batterie vide"): { "Rechargez (véhicule, batterie externe, socle) ou changez la batterie" };
             case ((_hp get "offLeft") > 0): { format ["Redémarrage dans %1 s", _hp get "offLeft"] };
             default { "Redémarrage en cours…" };
         }]) call comspec_atak_native_fnc_tr);
