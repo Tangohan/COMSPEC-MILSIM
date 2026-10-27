@@ -19,8 +19,11 @@ private _apply = {
     if (!_enable) exitWith {
         // Gestionnaire par image retiré (il restait actif toute la mission une fois l'inspecteur ouvert).
         if (!isNil "comspec_sse_debugEh") then { removeMissionEventHandler ["EachFrame", comspec_sse_debugEh]; comspec_sse_debugEh = nil; };
+        // Niveau de log restauré (sinon le RPT reste verbeux toute la mission).
+        if (!isNil "comspec_sse_debugPrev") then { missionNamespace setVariable ["comspec_sse_debug", comspec_sse_debugPrev]; comspec_sse_debugPrev = nil; };
         ["Inspecteur SSE désactivé."] call comspec_sse_fnc_zeusNotify;
     };
+    if (isNil "comspec_sse_debugPrev") then { comspec_sse_debugPrev = missionNamespace getVariable ["comspec_sse_debug", false]; };
     missionNamespace setVariable ["comspec_sse_debug", true];
 
     if (isNil "comspec_sse_debugEh") then {

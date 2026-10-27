@@ -17,6 +17,10 @@
       "tick"     : (toutes les 2 s) détecte la MPU5, publie COMSPEC_ATAK_Mpu5 [débit montant Mbit/s, bonds] ou [] et
                    COMSPEC_ATAK_VoiceNet [[id radio, MHz émission, nom du canal]...] quand ils changent.
       "init"     : événements CBA d'ACRE2 (acre_startedSpeaking, acre_stoppedSpeaking et leurs versions remote) et tick.
+      "plug"     : branche le téléphone sur la radio ACRE2 ou TFAR du joueur (longue portée d'abord), ou le débranche :
+                   la radio relaie alors les données comme une MPU5, avec ses propres réglages (comspec_atak_native_radio_*).
+      "plugged"  : radio branchée encore portée par le joueur : [id, "LR" | "SW", nom] ou [].
+      "source"   : ce qui relaie mes données : ["MPU5" | "LR" | "SW", nom, portée m, gain dB, débit max Mbit/s] ou [].
     Lecture prudente d'ACRE2 : chaque fonction est testée avant l'appel ; sans ACRE2, seule la partie maillage reste.
 */
 params [["_act", ""], ["_arg", []]];
@@ -49,11 +53,93 @@ switch (_act) do {
     };
     case "range": {
         private _base = missionNamespace getVariable ["COMSPEC_ATAK_MeshRange", 3000];
-        if !(["has", _arg] call comspec_atak_native_fnc_mpu5) exitWith { _base };
-        (missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000]) max _base
+        private _u = _arg param [0, player];
+        if (_u isNotEqualTo player) exitWith {
+            private _pub = _u getVariable ["COMSPEC_ATAK_Mpu5", []];
+            if (_pub isEqualTo []) exitWith { _base };
+            (_pub param [2, missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000]]) max _base
+        };
+        private _src = ["source"] call comspec_atak_native_fnc_mpu5;
+        if (_src isEqualTo []) exitWith { _base };
+        (_src select 2) max _base
     };
     case "gain": {
-        [0, missionNamespace getVariable ["comspec_atak_native_mpu5_gain", 8]] select (["has", [player]] call comspec_atak_native_fnc_mpu5)
+        (["source"] call comspec_atak_native_fnc_mpu5) param [3, 0]
+    };
+    case "plugged": {
+        private _p = uiNamespace getVariable ["COMSPEC_ATAK_RadioPlug", []];
+        if (_p isEqualTo [] || {!(missionNamespace getVariable ["comspec_atak_native_radio_data", true])}) exitWith { [] };
+        _p params ["_id", "_kind"];
+        // Radio rangée, jetée ou volée : la liaison tombe.
+        private _ok = if (_acre) then {
+            private _l = [] call acre_api_fnc_getCurrentRadioList;
+            !isNil "_l" && {_id in _l}
+        } else {
+            if (_kind isEqualTo "LR") then {
+                private _lr = if (isNil "TFAR_fnc_activeLrRadio") then { nil } else { call TFAR_fnc_activeLrRadio };
+                !isNil "_lr" && {_lr isEqualType []} && {(count _lr) > 0}
+            } else {
+                private _sw = if (isNil "TFAR_fnc_activeSwRadio") then { nil } else { call TFAR_fnc_activeSwRadio };
+                !isNil "_sw" && {_sw isEqualType ""} && {_sw isNotEqualTo ""}
+            };
+        };
+        if (!_ok) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_RadioPlug", []]; [] };
+        _p
+    };
+    case "plug": {
+        if ((["plugged"] call comspec_atak_native_fnc_mpu5) isNotEqualTo []) exitWith {
+            uiNamespace setVariable ["COMSPEC_ATAK_RadioPlug", []];
+            ["INFO", "Téléphone débranché de la radio", 3, 20] call comspec_atak_native_fnc_notify;
+            false
+        };
+        if !(missionNamespace getVariable ["comspec_atak_native_radio_data", true]) exitWith {
+            ["WARNING", "Données par radio désactivées sur ce serveur", 3, 20] call comspec_atak_native_fnc_notify; false
+        };
+        // Radios longue portée (sac à dos, véhicule) d'abord : plus de portée, plus de débit.
+        private _lrBase = ["acre_prc117f", "acre_prc77", "acre_sem70", "acre_vrc"];
+        private _found = [];
+        if (_acre) then {
+            private _l = [] call acre_api_fnc_getCurrentRadioList;
+            if (isNil "_l") then { _l = []; };
+            private _all = _l apply {
+                private _b = toLower ([_x] call acre_api_fnc_getBaseRadio);
+                [[1, 0] select ((_lrBase findIf { (_b find _x) isEqualTo 0 }) >= 0), _x, ["SW", "LR"] select ((_lrBase findIf { (_b find _x) isEqualTo 0 }) >= 0),
+                    getText (configFile >> "CfgWeapons" >> _b >> "displayName")]
+            } select { (toLower (_x select 1) find "acre_prc343") < 0 };
+            _all sort true;
+            if ((count _all) > 0) then { (_all select 0) params ["", "_id", "_k", "_n"]; _found = [_id, _k, [_n, _id] select (_n isEqualTo "")]; };
+        } else {
+            private _lr = if (isNil "TFAR_fnc_activeLrRadio") then { nil } else { call TFAR_fnc_activeLrRadio };
+            private _sw = if (isNil "TFAR_fnc_activeSwRadio") then { nil } else { call TFAR_fnc_activeSwRadio };
+            if (!isNil "_lr" && {_lr isEqualType []} && {(count _lr) > 0}) then {
+                private _o = _lr select 0;
+                _found = ["tfar_lr", "LR", [getText (configFile >> "CfgVehicles" >> typeOf _o >> "displayName"), "Radio longue portée"] select (isNull _o)];
+            } else {
+                if (!isNil "_sw" && {_sw isEqualType ""} && {_sw isNotEqualTo ""}) then {
+                    _found = [_sw, "SW", getText (configFile >> "CfgWeapons" >> _sw >> "displayName")];
+                };
+            };
+        };
+        if (_found isEqualTo []) exitWith {
+            ["WARNING", "Aucune radio ACRE2 ou TFAR compatible sur vous (la radio personnelle 343 ne transporte pas de données)", 4, 20] call comspec_atak_native_fnc_notify; false
+        };
+        uiNamespace setVariable ["COMSPEC_ATAK_RadioPlug", _found];
+        uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Has", nil];
+        ["INFO", format ["Téléphone branché sur %1 : les données passent par la radio", _found select 2], 4, 20] call comspec_atak_native_fnc_notify;
+        true
+    };
+    case "source": {
+        if (["has", [player]] call comspec_atak_native_fnc_mpu5) exitWith {
+            ["MPU5", "MPU5", missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000],
+                missionNamespace getVariable ["comspec_atak_native_mpu5_gain", 8], missionNamespace getVariable ["comspec_atak_native_mpu5_mbps", 20]]
+        };
+        private _p = ["plugged"] call comspec_atak_native_fnc_mpu5;
+        if (_p isEqualTo []) exitWith { [] };
+        private _k = toLower (_p select 1);
+        [_p select 1, _p select 2,
+            missionNamespace getVariable [format ["comspec_atak_native_radio_%1_range", _k], [2000, 10000] select (_k isEqualTo "lr")],
+            missionNamespace getVariable [format ["comspec_atak_native_radio_%1_gain", _k], [4, 10] select (_k isEqualTo "lr")],
+            missionNamespace getVariable [format ["comspec_atak_native_radio_%1_mbps", _k], [0.5, 2] select (_k isEqualTo "lr")]]
     };
     case "freq": {
         private _id = _arg param [0, ""];
@@ -152,13 +238,15 @@ switch (_act) do {
         _out
     };
     case "tick": {
-        private _has = ["has", [player]] call comspec_atak_native_fnc_mpu5;
+        private _src = ["source"] call comspec_atak_native_fnc_mpu5;
+        private _has = _src isNotEqualTo [];
         private _was = uiNamespace getVariable ["COMSPEC_ATAK_Mpu5Was", false];
-        if (_has isNotEqualTo _was) then {
-            uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Was", _has];
+        if (([false, _src param [0, ""]] select _has) isNotEqualTo _was) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Was", [false, _src param [0, ""]] select _has];
             uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", nil];
             uiNamespace setVariable ["COMSPEC_ATAK_Mesh", nil];
-            ["INFO", ["MPU5 retirée : le téléphone repasse sur sa propre radio", "MPU5 détectée : le téléphone passe par la radio maillée"] select _has, 4, 20] call comspec_atak_native_fnc_notify;
+            ["INFO", [["Radio retirée : le téléphone repasse sur sa propre antenne", "MPU5 retirée : le téléphone repasse sur sa propre antenne"] select (_was isEqualTo "MPU5"),
+                ["Données relayées par la radio", "MPU5 détectée : le téléphone passe par la radio maillée"] select ((_src param [0, ""]) isEqualTo "MPU5")] select _has, 4, 20] call comspec_atak_native_fnc_notify;
         };
         // État publié : débit montant reçu d'un relais (ou d'une autre MPU5, au plus 3 bonds) que la MPU5 relaie à l'équipe.
         private _pub = [];
@@ -167,21 +255,25 @@ switch (_act) do {
             private _mb = 0;
             private _hops = 0;
             if (_b isNotEqualTo [] && {_b select 14}) then {
-                _mb = (_b select 3) min (missionNamespace getVariable ["comspec_atak_native_mpu5_mbps", 20]);
+                _mb = (_b select 3) min (_src select 4);
                 if ((_b select 5) isEqualTo "mpu5") then {
                     private _e = ["entry", _b select 0] call comspec_atak_native_fnc_relayNet;
                     _hops = (_e param [18, 0]) + 1;
                 };
             };
-            _pub = [parseNumber (_mb toFixed 1), _hops];
+            // Portée et nom publiés : les autres téléphones voient ce nœud avec la portée de sa radio (MPU5, LR ou SW).
+            _pub = [parseNumber (_mb toFixed 2), _hops, round (_src select 2), _src select 1];
         };
         // Débit qui varie seul (évanouissement autour d'un palier de modulation) : diffusé s'il tient deux tours de suite
-        // (comme fn_feedLink) ; changement de sauts, coupure ou retour du réseau : tout de suite.
+        // (comme fn_feedLink) ; changement de sauts, coupure ou retour du réseau : tout de suite. Débit qui change à chaque
+        // tour (porteur en mouvement, mode simplifié où le débit suit la distance) : diffusé quand même au 3e tour en attente,
+        // pour ne pas laisser l'équipe sur un débit périmé.
         private _mOld = player getVariable ["COMSPEC_ATAK_Mpu5", []];
         if (_pub isEqualTo _mOld) then { uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Pend", []]; } else {
             private _soft = (count _mOld) isEqualTo 2 && {(count _pub) isEqualTo 2} && {(_mOld select 1) isEqualTo (_pub select 1)} && {(_mOld select 0) > 0} && {(_pub select 0) > 0};
-            if (_soft && {_pub isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_Mpu5Pend", []])}) then {
-                uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Pend", _pub];
+            (uiNamespace getVariable ["COMSPEC_ATAK_Mpu5Pend", []]) params [["_pend", []], ["_pendN", 0]];
+            if (_soft && {_pub isNotEqualTo _pend} && {_pendN < 2}) then {
+                uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Pend", [_pub, _pendN + 1]];
             } else {
                 uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Pend", []];
                 player setVariable ["COMSPEC_ATAK_Mpu5", _pub, true];

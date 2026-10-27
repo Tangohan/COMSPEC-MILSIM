@@ -96,7 +96,8 @@ private _pfh = [{
     private _jam = false;
     {
         _x params [["_pos", [0, 0, 0]], ["_rad", 500], "", "", ["_until", 1e9]];
-        if (_pos isEqualType objNull) then { _pos = getPosATL _pos; };
+        // Objet supprimé : ignoré (getPosATL objNull = origine, fausse saturation près de [0,0]).
+        if (_pos isEqualType objNull) then { if (isNull _pos) then { continue; }; _pos = getPosATL _pos; };
         private _d = _me distance2D _pos;
         if (_until >= _now && {_d < (_rad + 2000)}) then {
             _jam = true;

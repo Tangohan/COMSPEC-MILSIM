@@ -151,21 +151,31 @@ if (!_bootstrapped) exitWith {
     {
         private _line = _x;
         if (_line isEqualTo "") then { continue };
-        private _cols = _line splitString _tab;
+        private _cols = [_line, _tab] call comspec_overwatch_connect_fnc_splitKeepEmpty;
         if ((count _cols) < 3) then { continue };
         private _id = _cols select 0;
         if (_id isNotEqualTo "" && {!(_id in _seen)}) then { _seen pushBack _id; };
     } forEach _lines;
     while { (count _seen) > 200 } do { _seen deleteAt 0; };
     missionNamespace setVariable ["COMSPEC_ChatSeenIds", _seen, false];
-    missionNamespace setVariable ["COMSPEC_ChatPollBootstrapped", true, false];
+    // La DLL rend d'abord un « OK| » vide (cache pas encore rempli, lecture en arrière-plan) : le peuplement
+    // silencieux ne se clôt qu'avec au moins une ligne reçue, ou 45 s après le premier OK (tableau vraiment vide).
+    private _t0 = missionNamespace getVariable ["COMSPEC_ChatPollFirstOkAt", -1];
+    if (_t0 < 0) then {
+        _t0 = diag_tickTime;
+        missionNamespace setVariable ["COMSPEC_ChatPollFirstOkAt", _t0, false];
+    };
+    if (({ _x isNotEqualTo "" } count _lines) > 0 || {(diag_tickTime - _t0) >= 45}) then {
+        missionNamespace setVariable ["COMSPEC_ChatPollBootstrapped", true, false];
+    };
     false
 };
 
 {
     private _line = _x;
     if (_line isEqualTo "") then { continue };
-    private _cols = _line splitString _tab;
+    // splitKeepEmpty : un auteur vide ne décale plus le corps / l'horodatage.
+    private _cols = [_line, _tab] call comspec_overwatch_connect_fnc_splitKeepEmpty;
     if ((count _cols) < 3) then { continue };
 
     private _id = _cols select 0;

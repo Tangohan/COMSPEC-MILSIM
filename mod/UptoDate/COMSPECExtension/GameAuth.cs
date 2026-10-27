@@ -48,12 +48,11 @@ public static partial class Extension
     {
         if (function == "Init")
         {
-            var url = args.Length > 0 ? NormalizeBaseUrl(args[0]) : "";
-            if (url.Length == 0)
-                url = NormalizeBaseUrl("https://athena.ttrd.fr/public");
-            if (url.Length == 0)
+            // SEC-001 : adresse de portail depuis SQF → point de contrôle unique. Une adresse refusée (hôte non-Athena,
+            // http en clair : voir IsSecretSafeUri) est traitée comme une adresse vide : portail officiel, jamais elle.
+            if (!TrySetSqfBaseUrl(args.Length > 0 ? args[0] : "", out _)
+                && !TrySetSqfBaseUrl("https://athena.ttrd.fr/public", out _))
                 return FailGameAuth("NETWORK_ERROR");
-            _baseUrl = url;
             SetGameAuth("EXTENSION_READY", 8, "");
             EnsureGameDeviceId();
             SetGameAuth("CONTACTING_ATHENA", 16, "");
@@ -62,6 +61,11 @@ public static partial class Extension
 
         if (function == "GetAuthState")
             return FormatGameAuthState();
+
+        // Ancienne lecture du terminal. Le numéro part une fois vers le téléphone officiel (PhoneHandset),
+        // pas sur demande d'un script.
+        if (function == "GetDeviceIdentity")
+            return "ERR|denied";
 
         if (function == "SetSteamId")
         {
@@ -83,9 +87,9 @@ public static partial class Extension
 
         if (function == "RestoreSession")
         {
-            var url = args.Length > 0 ? NormalizeBaseUrl(args[0]) : _baseUrl;
-            if (url.Length > 0)
-                _baseUrl = url;
+            // SEC-001 : adresse refusée par IsSecretSafeUri ignorée (on garde _baseUrl courant, déjà contrôlé).
+            if (args.Length > 0)
+                TrySetSqfBaseUrl(args[0], out _);
             var modVer = args.Length > 1 ? ArmaString(args[1]) : "";
             RememberDetectedMod(modVer);
             if (args.Length > 2)
@@ -95,9 +99,8 @@ public static partial class Extension
 
         if (function == "AuthPassword" && args.Length >= 2)
         {
-            var url = NormalizeBaseUrl(args[0]);
-            if (url.Length > 0)
-                _baseUrl = url;
+            // SEC-001 : adresse refusée par IsSecretSafeUri ignorée (identifiants envoyés à Athena seulement, en https).
+            TrySetSqfBaseUrl(args[0], out _);
             var modVer = args.Length > 3 ? ArmaString(args[3]) : "";
             RememberDetectedMod(modVer);
             if (args.Length > 4)
@@ -112,17 +115,15 @@ public static partial class Extension
 
         if (function == "RequestOtp" && args.Length >= 2)
         {
-            var url = NormalizeBaseUrl(args[0]);
-            if (url.Length > 0)
-                _baseUrl = url;
+            // SEC-001 : adresse refusée par IsSecretSafeUri ignorée (identifiants envoyés à Athena seulement, en https).
+            TrySetSqfBaseUrl(args[0], out _);
             return GameRequestOtp(ArmaString(args[1]));
         }
 
         if (function == "VerifyOtp" && args.Length >= 3)
         {
-            var url = NormalizeBaseUrl(args[0]);
-            if (url.Length > 0)
-                _baseUrl = url;
+            // SEC-001 : adresse refusée par IsSecretSafeUri ignorée (identifiants envoyés à Athena seulement, en https).
+            TrySetSqfBaseUrl(args[0], out _);
             var modVer = args.Length > 3 ? ArmaString(args[3]) : "";
             RememberDetectedMod(modVer);
             if (args.Length > 4)
@@ -132,9 +133,8 @@ public static partial class Extension
 
         if (function == "AuthSteam" && args.Length >= 2)
         {
-            var url = NormalizeBaseUrl(args[0]);
-            if (url.Length > 0)
-                _baseUrl = url;
+            // SEC-001 : adresse refusée par IsSecretSafeUri ignorée (identifiants envoyés à Athena seulement, en https).
+            TrySetSqfBaseUrl(args[0], out _);
             var steamMod = args.Length > 2 ? ArmaString(args[2]) : "";
             RememberDetectedMod(steamMod);
             return GameAuthSteam(ArmaString(args[1]), steamMod);
@@ -191,7 +191,7 @@ public static partial class Extension
                 TabCell(_gameAuthProgress.ToString(CultureInfo.InvariantCulture)),
                 TabCell(_gameAuthStep),
                 TabCell(_gameAuthError),
-                IdentityCell(_gameProfileName),
+                TabCell("-"),
                 CallsignCell(_gameProfileCallsign),
                 IdentityCell(_gameTenantName),
                 IdentityCell(_gameProfileUnit),
@@ -206,18 +206,33 @@ public static partial class Extension
                 IdentityCell(_gameProfileFunction),
                 TabCell(_gameSteamLinked),
                 TabCell(_gameSteamNotice),
-                IdentityCell(_gameProfileFirstName),
-                IdentityCell(_gameProfileLastName),
-                TabCell(_gameAccountId),
-                TabCell(_gameAccountEmail),
+                TabCell("-"),
+                TabCell("-"),
+                TabCell("-"),
+                TabCell("-"),
                 TabCell(_gameDeviceId),
                 TabCell(_gameSessionExpiresAt),
-                TabCell(_gamePhoneNumber),
-                TabCell(_gamePhoneImei),
-                TabCell(_gamePhoneMac),
-                TabCell(_gamePhoneFormat),
+                TabCell("-"),
+                TabCell("-"),
+                TabCell("-"),
+                TabCell("-"),
                 IdentityCell(_gameProfileUnitShort));
         }
+    }
+
+    /// <summary>
+    /// Numéro du terminal attribué au joueur. Pas l'e-mail ni le nom civil.
+    /// Poussé une fois au téléphone officiel. Aucune commande ne le relit.
+    /// </summary>
+    private static void PublishHandsetIdentity()
+    {
+        if (_gamePhoneNumber.Length == 0 && _gamePhoneImei.Length == 0 && _gamePhoneMac.Length == 0)
+            return;
+        InvokeCallback("PhoneHandset", string.Join("\t",
+            TabCell(_gamePhoneNumber),
+            TabCell(_gamePhoneImei),
+            TabCell(_gamePhoneMac),
+            TabCell(_gamePhoneFormat)));
     }
 
     private static string TabCell(string s)
@@ -378,8 +393,10 @@ public static partial class Extension
                 return resumed;
             return FailGameAuth("SESSION_EXPIRED");
         }
+        // SEC-001 : même le magasin local passe par le point de contrôle (défense en profondeur : un fichier
+        // de session altéré ne doit pas rediriger la liaison). Hôte non-Athena → on garde _baseUrl courant.
         if (!string.IsNullOrEmpty(store.BaseUrl))
-            _baseUrl = NormalizeBaseUrl(store.BaseUrl);
+            TrySetSqfBaseUrl(store.BaseUrl, out _);
 
         // Modern flow first: refresh rotates the refresh token atomically.
         var json = RefreshGameSession(store.RefreshToken, modVersion);
@@ -388,7 +405,7 @@ public static partial class Extension
         {
             // Backward compatibility with older ATHENA deployments.
             json = GamePostJson("/api/game/v1/session/restore",
-                $"{{\"refresh_token\":\"{EscapeJson(store.RefreshToken)}\",\"device_id\":\"{EscapeJson(_gameDeviceId)}\",\"mod_version\":\"{EscapeJson(modVersion)}\",\"extension_version\":\"{EscapeJson(ExtensionVersion)}\"}}",
+                $"{{\"refresh_token\":\"{EscapeJson(store.RefreshToken)}\",\"device_id\":\"{EscapeJson(_gameDeviceId)}\",\"mod_version\":\"{EscapeJson(modVersion)}\",\"extension_version\":\"{EscapeJson(CurrentExtensionVersion())}\"}}",
                 withBearer: false);
         }
 
@@ -409,7 +426,7 @@ public static partial class Extension
     private static string RefreshGameSession(string refreshToken, string modVersion)
     {
         return GamePostJson("/api/game/v1/session/refresh",
-            $"{{\"refresh_token\":\"{EscapeJson(refreshToken)}\",\"device_id\":\"{EscapeJson(_gameDeviceId)}\",\"mod_version\":\"{EscapeJson(modVersion)}\",\"extension_version\":\"{EscapeJson(ExtensionVersion)}\"}}",
+            $"{{\"refresh_token\":\"{EscapeJson(refreshToken)}\",\"device_id\":\"{EscapeJson(_gameDeviceId)}\",\"mod_version\":\"{EscapeJson(modVersion)}\",\"extension_version\":\"{EscapeJson(CurrentExtensionVersion())}\"}}",
             withBearer: false);
     }
 
@@ -446,6 +463,8 @@ public static partial class Extension
     // était retenté à chaque appel, avec jusqu'à SyncTimeoutSeconds d'attente à chaque fois (gel de la partie).
     private static int _gameRefreshBusy;
     private static long _gameRefreshFailTicks;
+    // Incrémenté à chaque déconnexion : un rafraîchissement parti avant ne réinstalle ni jeton ni refresh DPAPI.
+    private static int _gameSessionGen;
 
     private static bool EnsureFreshGameAccessToken()
     {
@@ -528,7 +547,11 @@ public static partial class Extension
             return _gameAccessToken.Length > 0;
         }
 
+        var gen = System.Threading.Volatile.Read(ref _gameSessionGen);
         var json = RefreshGameSession(store.RefreshToken, _modVersion);
+        // Déconnexion pendant l'appel : réponse ignorée (sinon le joueur était reconnecté en silence).
+        if (gen != System.Threading.Volatile.Read(ref _gameSessionGen))
+            return false;
         if (IsRefreshRevoked(json))
         {
             DpapiGameStore.ClearTokens(keepDeviceId: true);
@@ -541,11 +564,85 @@ public static partial class Extension
             return false;
         }
 
-        var result = ApplyGameAuthResponse(json, "RefreshSession");
-        var ok = result.StartsWith("OK|", StringComparison.Ordinal)
-            && _gameAccessToken.Length > 0;
+        // Rotation des jetons seule : pas de nouveau passage par les états de connexion (READY gardé),
+        // ni bootstrap, ni client-init. Une erreur réseau ne remplace plus READY par NETWORK_ERROR.
+        // Verrou partagé avec GameLogout (qui y incrémente la génération) : la génération est revérifiée
+        // juste avant d'écrire les jetons, une déconnexion ne peut plus se glisser entre le test et l'écriture.
+        bool ok;
+        lock (DpapiGameStore.Sync)
+        {
+            if (gen != System.Threading.Volatile.Read(ref _gameSessionGen))
+                return false;
+            ok = ApplyRefreshTokens(json) && _gameAccessToken.Length > 0;
+        }
         if (!ok) System.Threading.Interlocked.Exchange(ref _gameRefreshFailTicks, DateTime.UtcNow.Ticks);
         return ok;
+    }
+
+    private static bool ApplyRefreshTokens(string json)
+    {
+        if (string.IsNullOrEmpty(json) || json.StartsWith("ERR|", StringComparison.Ordinal))
+            return false;
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
+                return false;
+            if (root.TryGetProperty("error", out _))
+            {
+                CaptureVersionHints(json);
+                return false;
+            }
+            if (!root.TryGetProperty("tokens", out var tokens) || tokens.ValueKind != JsonValueKind.Object)
+                return false;
+            ApplyGameTokens(root, tokens);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Jetons d'une réponse Game Auth (connexion ou rotation) : accès, échéance, refresh / appairage DPAPI.</summary>
+    private static void ApplyGameTokens(JsonElement root, JsonElement tokens)
+    {
+        var access = tokens.TryGetProperty("access_token", out var at) ? (at.GetString() ?? "") : "";
+        var refresh = tokens.TryGetProperty("refresh_token", out var rt) ? (rt.GetString() ?? "") : "";
+        var pairing = tokens.TryGetProperty("pairing_token", out var pt) ? (pt.GetString() ?? "") : "";
+        var device = tokens.TryGetProperty("device_id", out var di) ? (di.GetString() ?? "") : "";
+        if (access.Length > 0)
+        {
+            _gameAccessToken = access;
+            ResetPollRefusals();
+            // Clé communauté fournie par le portail (comme Appairer) : la garder
+            // pour les routes ATAK si le Bearer est mal relayé. Sinon ne plus
+            // effacer une clé déjà valide (Redeem / Connect préalable).
+            var apiKeyFromAuth = root.TryGetProperty("api_key", out var akEl)
+                ? (akEl.GetString() ?? "")
+                : "";
+            if (apiKeyFromAuth.Length > 0)
+                ApplyApiKeyHeaders(apiKeyFromAuth);
+        }
+        if (tokens.TryGetProperty("expires_in", out var exp)
+            && exp.ValueKind == JsonValueKind.Number
+            && exp.TryGetInt32(out var expSeconds)
+            && expSeconds > 0)
+            _gameAccessExpiresAt = DateTimeOffset.UtcNow.AddSeconds(Math.Clamp(expSeconds, 30, 86400));
+        else if (access.Length > 0)
+            _gameAccessExpiresAt = DateTimeOffset.UtcNow.AddSeconds(7200);
+        if (device.Length >= 16)
+            _gameDeviceId = device;
+        DpapiGameStore.Update(store =>
+        {
+            store.DeviceId = _gameDeviceId;
+            store.BaseUrl = _baseUrl;
+            if (refresh.Length > 0)
+                store.RefreshToken = refresh;
+            if (pairing.Length > 0)
+                store.PairingToken = pairing;
+        });
     }
 
     private static string GameAuthPassword(string email, string password, string modVersion)
@@ -554,7 +651,7 @@ public static partial class Extension
         EnsureGameDeviceId();
         var steam = _steamUid;
         var json = GamePostJson("/api/game/v1/auth/password",
-            $"{{\"email\":\"{EscapeJson(email.Trim())}\",\"password\":\"{EscapeJson(password)}\",\"device_id\":\"{EscapeJson(_gameDeviceId)}\",\"steam_id\":\"{EscapeJson(steam)}\",\"mod_version\":\"{EscapeJson(modVersion)}\",\"extension_version\":\"{EscapeJson(ExtensionVersion)}\"}}",
+            $"{{\"email\":\"{EscapeJson(email.Trim())}\",\"password\":\"{EscapeJson(password)}\",\"device_id\":\"{EscapeJson(_gameDeviceId)}\",\"steam_id\":\"{EscapeJson(steam)}\",\"mod_version\":\"{EscapeJson(modVersion)}\",\"extension_version\":\"{EscapeJson(CurrentExtensionVersion())}\"}}",
             withBearer: false);
         return ApplyGameAuthResponse(json, "AuthPassword");
     }
@@ -580,7 +677,7 @@ public static partial class Extension
         SetGameAuth("AUTHENTICATING", 36, "");
         EnsureGameDeviceId();
         var json = GamePostJson("/api/game/v1/auth/otp/verify",
-            $"{{\"email\":\"{EscapeJson(email.Trim())}\",\"code\":\"{EscapeJson(code.Trim())}\",\"device_id\":\"{EscapeJson(_gameDeviceId)}\",\"steam_id\":\"{EscapeJson(_steamUid)}\",\"mod_version\":\"{EscapeJson(modVersion)}\",\"extension_version\":\"{EscapeJson(ExtensionVersion)}\"}}",
+            $"{{\"email\":\"{EscapeJson(email.Trim())}\",\"code\":\"{EscapeJson(code.Trim())}\",\"device_id\":\"{EscapeJson(_gameDeviceId)}\",\"steam_id\":\"{EscapeJson(_steamUid)}\",\"mod_version\":\"{EscapeJson(modVersion)}\",\"extension_version\":\"{EscapeJson(CurrentExtensionVersion())}\"}}",
             withBearer: false);
         return ApplyGameAuthResponse(json, "VerifyOtp");
     }
@@ -593,7 +690,7 @@ public static partial class Extension
         var store = DpapiGameStore.Load();
         var pairing = store?.PairingToken ?? "";
         var json = GamePostJson("/api/game/v1/auth/steam/exchange",
-            $"{{\"steam_id\":\"{EscapeJson(_steamUid)}\",\"device_id\":\"{EscapeJson(_gameDeviceId)}\",\"pairing_token\":\"{EscapeJson(pairing)}\",\"mod_version\":\"{EscapeJson(modVersion)}\",\"extension_version\":\"{EscapeJson(ExtensionVersion)}\"}}",
+            $"{{\"steam_id\":\"{EscapeJson(_steamUid)}\",\"device_id\":\"{EscapeJson(_gameDeviceId)}\",\"pairing_token\":\"{EscapeJson(pairing)}\",\"mod_version\":\"{EscapeJson(modVersion)}\",\"extension_version\":\"{EscapeJson(CurrentExtensionVersion())}\"}}",
             withBearer: false);
         return ApplyGameAuthResponse(json, "AuthSteam");
     }
@@ -644,14 +741,27 @@ public static partial class Extension
 
     private static string GameLogout()
     {
-        try
+        // Un rafraîchissement en cours ne doit plus réinstaller la session (voir RefreshGameAccessTokenNow) :
+        // incrément sous le même verrou que l'écriture des jetons rafraîchis.
+        lock (DpapiGameStore.Sync)
+            System.Threading.Interlocked.Increment(ref _gameSessionGen);
+        // Appelé en direct depuis le thread du jeu : POST best-effort en tâche de fond avec le jeton actuel,
+        // sans rafraîchissement préalable (jusqu'à 2 × SyncTimeoutSeconds de gel avec Athena lente ou absente).
+        var logoutToken = _gameAccessToken;
+        if (logoutToken.Length > 0)
         {
-            if (_gameAccessToken.Length > 0)
-                GamePostJson("/api/game/v1/session/logout", "{}", withBearer: true);
-        }
-        catch
-        {
-            // best-effort
+            // Passe par GamePostJson : même filtre d'hôte SEC-001 que les autres envois du Bearer.
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    GamePostJson("/api/game/v1/session/logout", "{}", withBearer: true, bearerToken: logoutToken);
+                }
+                catch
+                {
+                    // best-effort
+                }
+            });
         }
         _gameAccessToken = "";
         _gameAccessExpiresAt = DateTimeOffset.MinValue;
@@ -668,6 +778,11 @@ public static partial class Extension
         });
         SetGameAuth("INITIALIZING", 0, "");
         _gameProfileName = "";
+        _gameProfileFirstName = "";
+        _gameProfileLastName = "";
+        _gameAccountId = "";
+        _gameAccountEmail = "";
+        _gameSessionExpiresAt = "";
         _gameProfileCallsign = "";
         _gameProfileGrade = "";
         _gameProfileUnit = "";
@@ -724,7 +839,7 @@ public static partial class Extension
         };
     }
 
-    private static string ApplyGameAuthResponse(string json, string source, bool persistTokens = true)
+    private static string ApplyGameAuthResponse(string json, string source, bool persistTokens = true, bool finish = true)
     {
         if (json.StartsWith("ERR|", StringComparison.Ordinal))
         {
@@ -743,43 +858,7 @@ public static partial class Extension
             }
             SetGameAuth("RESOLVING_ACCOUNT", 48, "");
             if (persistTokens && root.TryGetProperty("tokens", out var tokens))
-            {
-                var access = tokens.TryGetProperty("access_token", out var at) ? (at.GetString() ?? "") : "";
-                var refresh = tokens.TryGetProperty("refresh_token", out var rt) ? (rt.GetString() ?? "") : "";
-                var pairing = tokens.TryGetProperty("pairing_token", out var pt) ? (pt.GetString() ?? "") : "";
-                var device = tokens.TryGetProperty("device_id", out var di) ? (di.GetString() ?? "") : "";
-                if (access.Length > 0)
-                {
-                    _gameAccessToken = access;
-                    ResetPollRefusals();
-                    // Clé communauté fournie par le portail (comme Appairer) : la garder
-                    // pour les routes ATAK si le Bearer est mal relayé. Sinon ne plus
-                    // effacer une clé déjà valide (Redeem / Connect préalable).
-                    var apiKeyFromAuth = root.TryGetProperty("api_key", out var akEl)
-                        ? (akEl.GetString() ?? "")
-                        : "";
-                    if (apiKeyFromAuth.Length > 0)
-                        ApplyApiKeyHeaders(apiKeyFromAuth);
-                }
-                if (tokens.TryGetProperty("expires_in", out var exp)
-                    && exp.ValueKind == JsonValueKind.Number
-                    && exp.TryGetInt32(out var expSeconds)
-                    && expSeconds > 0)
-                    _gameAccessExpiresAt = DateTimeOffset.UtcNow.AddSeconds(Math.Clamp(expSeconds, 30, 86400));
-                else if (access.Length > 0)
-                    _gameAccessExpiresAt = DateTimeOffset.UtcNow.AddSeconds(7200);
-                if (device.Length >= 16)
-                    _gameDeviceId = device;
-                DpapiGameStore.Update(store =>
-                {
-                    store.DeviceId = _gameDeviceId;
-                    store.BaseUrl = _baseUrl;
-                    if (refresh.Length > 0)
-                        store.RefreshToken = refresh;
-                    if (pairing.Length > 0)
-                        store.PairingToken = pairing;
-                });
-            }
+                ApplyGameTokens(root, tokens);
             SetGameAuth("RESOLVING_TENANT", 58, "");
             var accountSteamId = "";
             if (root.TryGetProperty("account", out var account))
@@ -845,9 +924,12 @@ public static partial class Extension
             if (source != "GetBootstrap" && _gameAccessToken.Length > 0)
             {
                 var boot = GameGetJson("/api/game/v1/bootstrap");
+                // Appel imbriqué sans fin de connexion : un seul client-init, celui de l'appel extérieur ci-dessous.
                 if (!boot.StartsWith("ERR|", StringComparison.Ordinal))
-                    ApplyGameAuthResponse(boot, "GetBootstrap", persistTokens: false);
+                    ApplyGameAuthResponse(boot, "GetBootstrap", persistTokens: false, finish: false);
             }
+            if (!finish)
+                return "OK|applied";
             SetGameAuth("CONNECTING_C2", 90, "");
             if (_gameAccessToken.Length > 0 && !string.IsNullOrEmpty(_baseUrl))
             {
@@ -894,6 +976,7 @@ public static partial class Extension
             _gameProfileRevision = n;
         if (_gameProfileCallsign.Length > 0)
             _callSign = _gameProfileCallsign;
+        PublishHandsetIdentity();
     }
 
     private static string ResolveGameMediaUrl(string raw)
@@ -935,6 +1018,7 @@ public static partial class Extension
 
     private static string MapGameError(string code, string raw)
     {
+        if (raw.Contains("client_untrusted", StringComparison.Ordinal)) return "CLIENT_UNTRUSTED";
         if (raw.Contains("INVALID_CREDENTIALS", StringComparison.Ordinal)) return "INVALID_CREDENTIALS";
         if (raw.Contains("OTP_EXPIRED", StringComparison.Ordinal)) return "OTP_EXPIRED";
         if (raw.Contains("STEAM_NOT_LINKED", StringComparison.Ordinal)) return "STEAM_NOT_LINKED";
@@ -954,21 +1038,27 @@ public static partial class Extension
         return code.Length > 0 ? code : "NETWORK_ERROR";
     }
 
-    private static string GamePostJson(string path, string payload, bool withBearer)
+    // bearerToken : jeton imposé (déconnexion en tâche de fond), sans rafraîchissement préalable.
+    private static string GamePostJson(string path, string payload, bool withBearer, string? bearerToken = null)
     {
-        if (withBearer && !EnsureFreshGameAccessToken())
+        if (withBearer && bearerToken is null && !EnsureFreshGameAccessToken())
             return "ERR|SESSION_EXPIRED";
         if (!TryBuildRequestUri(_baseUrl, path, out var uri, out var uriErr) || uri is null)
             return "ERR|" + uriErr;
+        // SEC-001 : ce site pose lui-même le Bearer du compte (et le corps porte mot de passe, code ou OTP) sans
+        // passer par AttachApiKeyHeader : même filtre d'hôte, au cas où _baseUrl cesserait un jour d'être sûr.
+        if (!IsSecretSafeUri(uri)) return "ERR|untrusted_host";
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
             using var content = new StringContent(payload, Encoding.UTF8);
             content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             using var req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = content };
-            if (withBearer && _gameAccessToken.Length > 0)
-                req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + _gameAccessToken);
-            var resp = HttpClient.SendAsync(req, cts.Token).GetAwaiter().GetResult();
+            StampOfficialClient(req);
+            var bearer = bearerToken ?? _gameAccessToken;
+            if (withBearer && bearer.Length > 0)
+                req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + bearer);
+            using var resp = HttpClient.SendAsync(req, cts.Token).GetAwaiter().GetResult();
             var body = ReadContentUtf8(resp, cts.Token);
             if (!resp.IsSuccessStatusCode)
             {
@@ -996,13 +1086,16 @@ public static partial class Extension
             return "ERR|SESSION_EXPIRED";
         if (!TryBuildRequestUri(_baseUrl, path, out var uri, out var uriErr) || uri is null)
             return "ERR|" + uriErr;
+        // SEC-001 : Bearer du compte posé ici, hors AttachApiKeyHeader : même filtre d'hôte.
+        if (!IsSecretSafeUri(uri)) return "ERR|untrusted_host";
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
             using var req = new HttpRequestMessage(HttpMethod.Get, uri);
+            StampOfficialClient(req);
             if (_gameAccessToken.Length > 0)
                 req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + _gameAccessToken);
-            var resp = HttpClient.SendAsync(req, cts.Token).GetAwaiter().GetResult();
+            using var resp = HttpClient.SendAsync(req, cts.Token).GetAwaiter().GetResult();
             var body = ReadContentUtf8(resp, cts.Token);
             if (!resp.IsSuccessStatusCode)
             {

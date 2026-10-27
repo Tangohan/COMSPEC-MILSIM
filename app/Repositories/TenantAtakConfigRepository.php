@@ -622,7 +622,11 @@ class TenantAtakConfigRepository
 
     /**
      * Vérifie si une clé présentée correspond à une clé de communauté.
+     * Une erreur de base remonte à l’appelant au lieu de passer pour une clé inconnue :
+     * ComspecApiKeyAuth distingue ainsi une clé fausse (401) d’une vérification impossible (503, NET-001).
+     *
      * @return int|null tenant_id si trouvé
+     * @throws \Throwable base indisponible
      */
     public function findTenantIdByAccessKey(string $presented): ?int
     {
@@ -630,31 +634,27 @@ class TenantAtakConfigRepository
         if ($presented === '' || !$this->hasAccessKeyColumn()) {
             return null;
         }
-        try {
-            // Recherche indexée par préfixe (posé par generateAccessKey / ensureAccessKey),
-            // puis lignes anciennes sans préfixe. Aucun plafond de lignes : chaque
-            // communauté reliée reçoit désormais sa clé.
-            $queries = [
-                ['SELECT tenant_id, access_key FROM tenant_atak_config
-                  WHERE access_key_prefix = ? AND access_key IS NOT NULL AND access_key != \'\'', [substr($presented, 0, 10)]],
-                ['SELECT tenant_id, access_key FROM tenant_atak_config
-                  WHERE (access_key_prefix IS NULL OR access_key_prefix = \'\')
-                    AND access_key IS NOT NULL AND access_key != \'\'', []],
-            ];
-            foreach ($queries as [$sql, $args]) {
-                $stmt = $this->pdo()->prepare($sql);
-                $stmt->execute($args);
-                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    $stored = trim((string) ($row['access_key'] ?? ''));
-                    if ($stored !== '' && hash_equals($stored, $presented)) {
-                        $tid = (int) ($row['tenant_id'] ?? 0);
+        // Recherche indexée par préfixe (posé par generateAccessKey / ensureAccessKey),
+        // puis lignes anciennes sans préfixe. Aucun plafond de lignes : chaque
+        // communauté reliée reçoit désormais sa clé.
+        $queries = [
+            ['SELECT tenant_id, access_key FROM tenant_atak_config
+              WHERE access_key_prefix = ? AND access_key IS NOT NULL AND access_key != \'\'', [substr($presented, 0, 10)]],
+            ['SELECT tenant_id, access_key FROM tenant_atak_config
+              WHERE (access_key_prefix IS NULL OR access_key_prefix = \'\')
+                AND access_key IS NOT NULL AND access_key != \'\'', []],
+        ];
+        foreach ($queries as [$sql, $args]) {
+            $stmt = $this->pdo()->prepare($sql);
+            $stmt->execute($args);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $stored = trim((string) ($row['access_key'] ?? ''));
+                if ($stored !== '' && hash_equals($stored, $presented)) {
+                    $tid = (int) ($row['tenant_id'] ?? 0);
 
-                        return $tid > 0 ? $tid : null;
-                    }
+                    return $tid > 0 ? $tid : null;
                 }
             }
-        } catch (\Throwable) {
-            return null;
         }
 
         return null;

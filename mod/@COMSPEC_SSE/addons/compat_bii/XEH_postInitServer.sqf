@@ -3,6 +3,7 @@
     Pas de scan allMissionObjects "ThingX" au démarrage (trop lourd / risqué sur S.O.A.R).
     Les preuves objet passent uniquement par les hooks BII.
 */
+missionNamespace setVariable ["comspec_sse_biiPostInitDone", true];
 if !(missionNamespace getVariable ["comspec_sse_biiBridgeEnabled", true]) exitWith {};
 if !([] call comspec_sse_fnc_biiIsPresent) exitWith {};
 

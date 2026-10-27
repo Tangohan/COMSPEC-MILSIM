@@ -32,7 +32,7 @@ if (_key isNotEqualTo "") then {
     profileNamespace setVariable ["COMSPEC_ATAK_AlertsSeen", _seen];
     [] call comspec_atak_native_fnc_saveProfile;
 };
-private _time = [dayTime, "HH:MM"] call BIS_fnc_timeToString;
+private _time = (["now"] call comspec_atak_native_fnc_clockFmt);
 switch (_kind) do {
     case "notify": {
         private _type = toUpper (_arg getOrDefault ["type", "NOTIFY"]);

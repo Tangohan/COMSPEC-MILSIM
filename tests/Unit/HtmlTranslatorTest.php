@@ -87,6 +87,13 @@ final class HtmlTranslatorTest extends TestCase
         self::assertSame('<script>var a = "Membres";</script><textarea>Membres</textarea><div translate="no"><p>Membres</p><div>Membres</div></div><p>Members</p>', $out);
     }
 
+    public function testTranslatesTextareaPlaceholderAndDataLabelButNotTypedContent(): void
+    {
+        $html = '<textarea placeholder="Rechercher">Membres</textarea><td data-label="Statut">Actif</td><div translate="no" title="Fermer">Membres</div>';
+        $out = HtmlTranslator::translate($html);
+        self::assertSame('<textarea placeholder="Search">Membres</textarea><td data-label="Status">Active</td><div translate="no" title="Fermer">Membres</div>', $out);
+    }
+
     public function testUnknownTextStaysFrench(): void
     {
         $html = '<p>Texte inconnu</p><!-- Membres -->';

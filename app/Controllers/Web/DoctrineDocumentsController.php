@@ -179,10 +179,7 @@ final class DoctrineDocumentsController
             return Response::json(['success' => false, 'error' => 'Version invalide.'], 400);
         }
 
-        $ip = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '');
-        if (str_contains($ip, ',')) {
-            $ip = trim(explode(',', $ip)[0]);
-        }
+        $ip = \App\Support\ClientIp::resolve();
         $ua = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
 
         $result = $this->acknowledgmentService->sign($tenantId, $userId, $doctrine, $version, $ip, $ua);

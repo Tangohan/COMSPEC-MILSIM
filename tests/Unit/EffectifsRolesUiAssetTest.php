@@ -18,9 +18,16 @@ final class EffectifsRolesUiAssetTest extends TestCase
         self::assertStringContainsString('Comme un rôle Discord', $view);
         self::assertStringContainsString('permission_ids[]', $view);
         self::assertStringContainsString('Nouveau niveau', $view);
+        self::assertStringContainsString('toujours requis', $view);
+        self::assertStringContainsString('data-perm-locked', $view);
+        self::assertStringContainsString('clés de la communauté', $view);
         self::assertStringNotContainsString('endpoint', $view);
         self::assertStringNotContainsString('JSON', $view);
         self::assertStringNotContainsString('slug', strtolower($view));
+
+        $js = (string) file_get_contents($root . '/public/assets/js/perm-check-all.js');
+        self::assertStringContainsString('data-perm-locked', $js);
+        self::assertStringContainsString('toggleable', $js);
 
         self::assertStringContainsString('name="access_role_id"', $member);
         self::assertStringContainsString('type="radio"', $member);

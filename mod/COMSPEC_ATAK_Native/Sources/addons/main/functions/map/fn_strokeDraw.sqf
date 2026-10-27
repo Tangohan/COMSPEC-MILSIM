@@ -10,34 +10,38 @@ private _now = diag_tickTime;
 // Traits (POLYLINE) connus : nom -> style ([] tant que sa variable de style n'est pas arrivée). Tenus à jour par les
 // marqueurs changés (EH, carnet COMSPEC_ATAK_MkDirtySk) ; tous les marqueurs ne sont parcourus qu'au premier dessin et
 // toutes les 30 s. Avant : parcours de tous les marqueurs toutes les 2 s, à chaque fois une petite saccade.
-private _known = uiNamespace getVariable ["COMSPEC_ATAK_SkKnown", createHashMap];
+private _known = missionNamespace getVariable ["COMSPEC_ATAK_SkKnown", createHashMap];
 private _dirty = missionNamespace getVariable ["COMSPEC_ATAK_MkDirtySk", createHashMap];
 private _styleOf = { missionNamespace getVariable [format ["COMSPEC_ATAK_SK_%1", _this regexReplace ["[^A-Za-z0-9]", "_"]], []] };
-private _list = uiNamespace getVariable ["COMSPEC_ATAK_SkList", []];
+private _list = missionNamespace getVariable ["COMSPEC_ATAK_SkList", []];
 private _rebuild = false;
-if (_now > (uiNamespace getVariable ["COMSPEC_ATAK_SkFull", -1]) || {"" in _dirty}) then {
-    uiNamespace setVariable ["COMSPEC_ATAK_SkFull", _now + 30];
+// Points et boîte englobante de chaque trait, gardés jusqu'à ce que le marqueur change (carnet MkDirtySk) ou jusqu'au
+// relevé complet de 30 s (avant : polyligne recopiée et comparée en entier à chaque image, pour chaque trait).
+private _geo = missionNamespace getVariable ["COMSPEC_ATAK_SkGeo", createHashMap];
+if (_now > (missionNamespace getVariable ["COMSPEC_ATAK_SkFull", -1]) || {"" in _dirty}) then {
+    missionNamespace setVariable ["COMSPEC_ATAK_SkFull", _now + 30];
     missionNamespace setVariable ["COMSPEC_ATAK_MkDirtySk", createHashMap];
+    _geo = createHashMap;
     _known = createHashMap;
     { if ((markerShape _x) isEqualTo "POLYLINE") then { _known set [_x, _x call _styleOf]; }; } forEach allMapMarkers;
-    uiNamespace setVariable ["COMSPEC_ATAK_SkKnown", _known];
+    missionNamespace setVariable ["COMSPEC_ATAK_SkKnown", _known];
     _rebuild = true;
 } else {
     if ((count _dirty) > 0) then {
         missionNamespace setVariable ["COMSPEC_ATAK_MkDirtySk", createHashMap];
-        { if ((markerShape _x) isEqualTo "POLYLINE") then { _known set [_x, _x call _styleOf]; } else { _known deleteAt _x; }; } forEach (keys _dirty);
+        { _geo deleteAt _x; if ((markerShape _x) isEqualTo "POLYLINE") then { _known set [_x, _x call _styleOf]; } else { _known deleteAt _x; }; } forEach (keys _dirty);
         _rebuild = true;
     };
     // Style publié après la création du trait (variable publique arrivée plus tard) : relu toutes les 2 s, traits seulement.
-    if (_now > (uiNamespace getVariable ["COMSPEC_ATAK_SkScan", -1])) then {
-        uiNamespace setVariable ["COMSPEC_ATAK_SkScan", _now + 2];
+    if (_now > (missionNamespace getVariable ["COMSPEC_ATAK_SkScan", -1])) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_SkScan", _now + 2];
         { private _st = _x call _styleOf; if (_st isNotEqualTo _y) then { _known set [_x, _st]; _rebuild = true; }; } forEach _known;
     };
 };
 if (_rebuild) then {
     _list = [];
     { if ((count _y) >= 2) then { _list pushBack [_x, _y]; }; } forEach _known;
-    uiNamespace setVariable ["COMSPEC_ATAK_SkList", _list];
+    missionNamespace setVariable ["COMSPEC_ATAK_SkList", _list];
 };
 private _colCache = uiNamespace getVariable "COMSPEC_ATAK_SkColors";
 if (isNil "_colCache") then { _colCache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_SkColors", _colCache]; };
@@ -61,17 +65,15 @@ private _vx0 = ((_vtl select 0) min (_vbr select 0)) - _vmg;
 private _vx1 = ((_vtl select 0) max (_vbr select 0)) + _vmg;
 private _vy0 = ((_vtl select 1) min (_vbr select 1)) - _vmg;
 private _vy1 = ((_vtl select 1) max (_vbr select 1)) + _vmg;
-// Points et boîte englobante de chaque trait gardés tant que sa polyligne ne change pas (avant : liste refaite à chaque image).
-private _geo = uiNamespace getVariable ["COMSPEC_ATAK_SkGeo", createHashMap];
 if ((count _geo) > 400) then { _geo = createHashMap; };
-uiNamespace setVariable ["COMSPEC_ATAK_SkGeo", _geo];
+missionNamespace setVariable ["COMSPEC_ATAK_SkGeo", _geo];
 {
     _x params ["_m", "_st"];
     if ((markerShape _m) isEqualTo "" || {(markerAlpha _m) <= 0}) then { continue };
     _st params [["_w", 2], ["_arrow", false]];
-    private _flat = markerPolyline _m;
     private _g = _geo getOrDefault [_m, []];
-    if ((_g param [0, []]) isNotEqualTo _flat) then {
+    if ((count _g) isEqualTo 0) then {
+        private _flat = markerPolyline _m;
         private _pts = [];
         private _bx0 = 1e9; private _bx1 = -1e9; private _by0 = 1e9; private _by1 = -1e9;
         for "_i" from 0 to ((count _flat) - 2) step 2 do {
@@ -79,7 +81,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_SkGeo", _geo];
             _pts pushBack [_px, _py, 0];
             _bx0 = _bx0 min _px; _bx1 = _bx1 max _px; _by0 = _by0 min _py; _by1 = _by1 max _py;
         };
-        _g = [_flat, _pts, [_bx0, _bx1, _by0, _by1]];
+        _g = [[], _pts, [_bx0, _bx1, _by0, _by1]];
         _geo set [_m, _g];
     };
     _g params ["", "_pts", "_bb"];

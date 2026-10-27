@@ -80,9 +80,14 @@ if (_interactive) then {
             [{ [] call comspec_atak_native_fnc_hudToggle; }] call CBA_fnc_execNextFrame;
             true
         };
+        // Touches d'autres mods (alternat radio TFAR / ACRE2…) : leurs raccourcis CBA ne passent pas sans ce relais (fn_keyPass).
+        if (["down", _this] call comspec_atak_native_fnc_keyPass) exitWith { true };
         // Saisie dans un champ du téléphone (« a », « e »… faisaient pencher le personnage) : touche gardée (fn_keyBlock).
         _this call comspec_atak_native_fnc_keyBlock
     }];
+    // Alternat relâché : fin d'émission radio (fn_keyPass).
+    ["reset"] call comspec_atak_native_fnc_keyPass;
+    _display displayAddEventHandler ["KeyUp", { ["up", _this] call comspec_atak_native_fnc_keyPass }];
     // Même garde sur le display de mission, si la touche y passe quand même (posée une fois par partie).
     private _d46 = findDisplay 46;
     if (!isNull _d46 && {(_d46 getVariable ["COMSPEC_KeyBlockEh", -1]) < 0}) then {
@@ -124,7 +129,23 @@ if (_interactive) then {
 [] call comspec_atak_native_fnc_schedulerStart;
 // HUD des autres mods (F-PANO / ECOTI...) masqué sous le téléphone tant qu'il est affiché (fn_foreignHud).
 ["start"] call comspec_atak_native_fnc_foreignHud;
-[profileNamespace getVariable ["COMSPEC_ATAK_LastPage", "MAP"]] call comspec_atak_native_fnc_navigate;
+private _page = profileNamespace getVariable ["COMSPEC_ATAK_LastPage", "MAP"];
+// Première sortie en main de la mission, jeu pas encore relié à un compte Athena (service Athena « Oui ») :
+// le téléphone s'ouvre sur l'app Athena, onglet COMPTE, avec un code déjà demandé, à saisir sur le site (/lier).
+// Réglage CBA « Proposer la liaison Athena à la sortie du téléphone » (comspec_atak_native_link_offer) pour s'en passer.
+// Rien en mode local (service « Non », comspec_atak_native_local_only) ni quand BattlEye bloque la DLL.
+if (_interactive && {missionNamespace getVariable ["comspec_atak_native_link_offer", true]} && {!(missionNamespace getVariable ["COMSPEC_ATAK_LinkOffered", false])}) then {
+    missionNamespace setVariable ["COMSPEC_ATAK_LinkOffered", true];
+    private _st = [] call comspec_atak_native_fnc_athenaStatus;
+    if (!(_st get "logged") && {(_st get "key") in ["disconnected", "unlinked", "code", "error"]}) then {
+        _page = "ATHENA";
+        uiNamespace setVariable ["COMSPEC_ATAK_AthenaTab", "account"];
+        private _ls = (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLink", [""]]) param [0, ""];
+        if !(_ls in ["asking", "pending"]) then { ["start"] call comspec_atak_native_fnc_athenaLink; };
+        ["INFO", "ATHENA", "Première sortie du téléphone sans compte Athena : app Athena ouverte avec un code"] call comspec_atak_native_fnc_log;
+    };
+};
+[_page] call comspec_atak_native_fnc_navigate;
 // Écran de verrouillage : première sortie de la mission, après une minute rangé ou un redémarrage (fn_lockScreen).
 // Avant fn_statusUpdate, qui note l'heure du dernier affichage.
 ["check"] call comspec_atak_native_fnc_lockScreen;

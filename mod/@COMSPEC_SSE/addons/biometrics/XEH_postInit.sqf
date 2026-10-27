@@ -45,6 +45,5 @@ if (hasInterface) then {
         if (isNull (getAssignedCuratorLogic player)) exitWith {};
         // Traduit puis mis en forme par zeusNotify (parseText avant tr ne traduisait jamais rien).
         [_msg, "warn"] call comspec_sse_fnc_zeusNotify;
-        if (!isNull (findDisplay 312)) then { [_msg] call BIS_fnc_showCuratorFeedbackMessage; };
     }] call CBA_fnc_addEventHandler;
 };

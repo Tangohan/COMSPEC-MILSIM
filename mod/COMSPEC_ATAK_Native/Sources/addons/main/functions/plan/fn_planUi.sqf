@@ -383,7 +383,7 @@ if (_menuName isEqualTo "EXPORT") then {
         ["SAVE", "Enregistrer dans mes plans", "vue PLANS", compile format ["['save', [%1, %2]] call comspec_atak_native_fnc_planAction;", str _src, str _saveName]]
     ];
     if (_src isNotEqualTo "S") then { _rows pushBack ["PUB", "Publier sur le plan du camp", ["édition réservée", "ajoute au camp"] select _can, ["publish", [_src, false]] call _act]; };
-    _rows pushBack ["IMP", "Importer un plan", "presse-papiers → brouillon", ["import"] call _act];
+    _rows pushBack ["IMP", "Importer un plan", "presse-papiers » brouillon", ["import"] call _act];
     private _er = _rects get "export";
     [(_er select 0) + (_er select 2) - _mw, _my + pixelH * 4, _mw, "EXPORTER", format ["%1 élément(s) · %2", _n, _srcName], _rows, [0.18, 0.42, 0.66, 1]] call _menu;
 };

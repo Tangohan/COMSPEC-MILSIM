@@ -83,6 +83,7 @@ final class AuditActionLabel
         'platform.ops_account_deletion_scheduled' => 'Suppression de compte programmée',
         'platform.ops_account_deletion_cancelled' => 'Suppression de compte annulée',
         'platform.ops_account_deletion_executed' => 'Compte supprimé depuis la console d’exploitation',
+        'platform.game_client_floor_updated' => 'Version minimale des DLL du jeu modifiée (administration du site)',
         'platform.donations_updated' => 'Réglage des dons PayPal modifié (administration du site)',
         'platform.data_table_emptied' => 'Table vidée depuis l’explorateur de données (administration du site)',
         'platform.data_row_updated' => 'Ligne modifiée depuis l’explorateur de données (administration du site)',

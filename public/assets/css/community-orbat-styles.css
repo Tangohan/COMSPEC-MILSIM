@@ -362,3 +362,19 @@
   .pb-sec-organisation[data-pb-orbat-style="strength"] .orb-meta--strength { margin-bottom: 12px; }
   .pb-sec-organisation[data-pb-orbat-style="orgchart"] .cl-unit { width: 170px; }
 }
+
+/* Organigramme : une ligne par unité racine (sinon les racines s'écartent d'autant que leurs sous-unités
+   et laissent un grand vide entre elles), et repli en arbre vertical sur petit écran. */
+.pb-sec-organisation[data-pb-orbat-style="orgchart"] .cl-units { flex-direction: column; align-items: center; gap: calc(var(--orb-gap) * 2.5); }
+.pb-sec-organisation[data-pb-orbat-style="orgchart"] .cl-units > .cl-orbat-node + .cl-orbat-node { padding-top: calc(var(--orb-gap) * 2); border-top: 1px dashed var(--orb-line); }
+@media (max-width: 760px) {
+  .pb-sec-organisation[data-pb-orbat-style="orgchart"] .orb-scroll { overflow-x: visible; padding: 0; }
+  .pb-sec-organisation[data-pb-orbat-style="orgchart"] .cl-units { width: auto; min-width: 0; align-items: stretch; gap: var(--orb-gap); }
+  .pb-sec-organisation[data-pb-orbat-style="orgchart"] .cl-orbat-node { align-items: stretch; }
+  .pb-sec-organisation[data-pb-orbat-style="orgchart"] .cl-unit { width: auto; }
+  .pb-sec-organisation[data-pb-orbat-style="orgchart"] .cl-orbat-children { flex-direction: column; gap: var(--orb-gap); margin-top: var(--orb-gap); padding: 0 0 0 14px; border-left: 2px solid var(--orb-line); }
+  .pb-sec-organisation[data-pb-orbat-style="orgchart"] .cl-orbat-children::before,
+  .pb-sec-organisation[data-pb-orbat-style="orgchart"] .cl-orbat-children > .cl-orbat-node::before,
+  .pb-sec-organisation[data-pb-orbat-style="orgchart"] .cl-orbat-children > .cl-orbat-node::after { display: none; }
+  .pb-sec-organisation[data-pb-orbat-style="orgchart"] .cl-orbat-children > .cl-orbat-node { padding: 0; }
+}

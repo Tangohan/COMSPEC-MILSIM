@@ -89,10 +89,7 @@ class AtakController
 
         $nodeUrl = atak_client_base_url($config);
 
-        $visitorIp = $_SERVER['REMOTE_ADDR'] ?? '';
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $visitorIp = trim(explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]);
-        }
+        $visitorIp = \App\Support\ClientIp::resolve();
 
         $jwtSecret = isset($config['jwt_secret']) && $config['jwt_secret'] !== '' ? $config['jwt_secret'] : null;
         $token = $this->atakTokenService->generate($jwtSecret);

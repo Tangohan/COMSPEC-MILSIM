@@ -185,6 +185,8 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
                 ];
             };
             // Marqueur joueur posé par un autre client : c'est son poste qui le relaie (sinon N envois).
+            // Tout autre marqueur global non local est déjà relayé par le hub serveur (sinon N+1 envois).
+            if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
             if (_local isNotEqualTo true && {((toLower _marker) find "_defined") >= 0}) exitWith {};
             [_marker] call (missionNamespace getVariable ["COMSPEC_MarkerResyncSoon", {}]);
         }],
@@ -198,6 +200,7 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
             private _force = [_marker] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
             // Dernier paramètre = changement local : seul le poste auteur relaie un marqueur joueur (_USER_DEFINED, _DEFINED #, cTab).
             private _local = _this param [(count _this) - 1, true];
+            if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
             if (_local isEqualTo false && {((toLower _marker) find "_defined") >= 0}) exitWith {};
             [_marker, false, _force] call comspec_overwatch_connect_fnc_syncMapMarker;
         }],
@@ -211,6 +214,7 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
             private _force = [_marker] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
             // Dernier paramètre = changement local : seul le poste auteur relaie un marqueur joueur (_USER_DEFINED, _DEFINED #, cTab).
             private _local = _this param [(count _this) - 1, true];
+            if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
             if (_local isEqualTo false && {((toLower _marker) find "_defined") >= 0}) exitWith {};
             [_marker, true, _force] call comspec_overwatch_connect_fnc_syncMapMarker;
         }]
@@ -469,16 +473,35 @@ private _fnc_addPoll = {
     if (!(_orders isEqualType [])) exitWith {};
     private _seen = missionNamespace getVariable ["COMSPEC_OrdersSeen", []];
     if (!(_seen isEqualType [])) then { _seen = []; };
-    _seen = _seen apply { trim (str _x) };
+    // Ids déjà en chaîne : str y ajoutait des guillemets (aucun id ne correspondait).
+    private _fnc_oidText = { params [["_v", ""]]; if (_v isEqualType "") then { trim _v } else { trim (str _v) } };
+    _seen = _seen apply { [_x] call _fnc_oidText };
+    // Ordres écartés par receiveOrder (pas pour ce joueur, émis par lui) : sans cette liste, le même ordre
+    // était repris toutes les 5 s et bloquait ceux placés derrière lui.
+    // id -> diag_tickTime : un ordre écarté est repris après 45 s (PHONE_GEOLOC en échec, ordre qui concerne
+    // le joueur une fois l'indicatif / le groupe synchronisé) au lieu d'être écarté pour toute la partie.
+    private _skip = missionNamespace getVariable ["COMSPEC_OrdersFallbackSkip", createHashMap];
+    if (!(_skip isEqualType createHashMap)) then { _skip = createHashMap; };
+    private _nowSkip = diag_tickTime;
+    {
+        if ((_nowSkip - (_skip get _x)) >= 45) then { _skip deleteAt _x; };
+    } forEach (keys _skip);
     private _pending = _orders select {
         (_x isEqualType createHashMap)
         && {
-            private _oid = trim (str (_x getOrDefault ["id", ""]));
-            _oid isNotEqualTo "" && {!(_oid in _seen)}
+            private _oid = [_x getOrDefault ["id", ""]] call _fnc_oidText;
+            _oid isNotEqualTo "" && {!(_oid in _seen)} && {!(_oid in _skip)}
         }
     };
     if ((count _pending) < 1) exitWith {};
-    [_pending select 0] call comspec_overwatch_connect_fnc_receiveOrder;
+    private _next = _pending select 0;
+    private _nextId = [_next getOrDefault ["id", ""]] call _fnc_oidText;
+    [_next] call comspec_overwatch_connect_fnc_receiveOrder;
+    private _seenAfter = (missionNamespace getVariable ["COMSPEC_OrdersSeen", []]) apply { [_x] call _fnc_oidText };
+    if (!(_nextId in _seenAfter)) then {
+        _skip set [_nextId, _nowSkip];
+    };
+    missionNamespace setVariable ["COMSPEC_OrdersFallbackSkip", _skip, false];
 }, 5, []] call CBA_fnc_addPerFrameHandler;
 
 [{

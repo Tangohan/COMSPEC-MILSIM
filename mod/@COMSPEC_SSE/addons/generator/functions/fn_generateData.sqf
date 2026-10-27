@@ -27,7 +27,17 @@ private _type = [_entity] call comspec_sse_fnc_resolveEntityType;
 private _existing = [_entity] call comspec_sse_fnc_getData;
 private _seed = if (isNil "_existing" || {!(_existing isEqualType [])}) then { -1 } else { [_existing, "seed", -1] call comspec_sse_fnc_getPair };
 if !(_seed isEqualType 0) then { _seed = -1; };
-if (_seed < 0) then { _seed = [_entity] call comspec_sse_fnc_entitySeed; };
+if (_seed < 0) then {
+    // Graine saisie sur l'objet (attribut Eden / dataset) : remplace la graine de mission pour cette entité.
+    private _objSeed = _entity getVariable ["comspec_sse_missionSeed", ""];
+    if (_objSeed isEqualType 0) then { _objSeed = str _objSeed; };
+    if (_objSeed isEqualType "" && {_objSeed isNotEqualTo ""}) then {
+        private _p = getPosASL _entity;
+        _seed = [[0, _objSeed] call comspec_sse_fnc_hash, format ["%1|%2|%3|", typeOf _entity, round ((_p select 0) * 10), round ((_p select 1) * 10)]] call comspec_sse_fnc_hash;
+    } else {
+        _seed = [_entity] call comspec_sse_fnc_entitySeed;
+    };
+};
 _profile = [_profile, _seed] call comspec_sse_fnc_resolveProfile;
 
 private _data = if (isNil "_existing" || {!(_existing isEqualType [])}) then {
@@ -80,6 +90,13 @@ _data = [_data, "clusterId", _cluster getOrDefault ["clusterId", ""]] call comsp
 _data = [_data, "theme", _cluster getOrDefault ["theme", ""]] call comspec_sse_fnc_setPair;
 
 private _sections = [_data, "sections", createHashMap] call comspec_sse_fnc_getPair;
+if !(_sections isEqualType createHashMap) then { _sections = createHashMap; };
+// Régénération d'une fiche existante (Zeus, modèle…) : identité / téléphone / documents sont
+// réécrits plus bas, donc les couches intel dérivées de l'ancienne fiche doivent être rebâties
+// (sinon attachIntelLayers sort tôt et garde l'ancien numéro, alias, etc.).
+if (!isNil "_existing" && {_existing isEqualType []}) then {
+    { _sections deleteAt _x; } forEach ["intelLayers", "exploitationLevel", "hiddenCaches", "deletedData"];
+};
 private _region = _cluster getOrDefault ["region", "IRAQ"];
 private _pools = [_region, _seed] call comspec_sse_fnc_getNarrativePools;
 

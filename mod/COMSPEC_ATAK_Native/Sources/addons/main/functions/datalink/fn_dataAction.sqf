@@ -145,6 +145,8 @@ switch (_act) do {
         if (_why isEqualTo "" && {(player distance _obj) > _len + 0.5}) then { _why = "Câble arraché : vous vous êtes éloigné du support"; };
         if (_why isEqualTo "" && {!alive player || {!isNull objectParent player}}) then { _why = "Câble débranché"; };
         if (_why isEqualTo "" && {!([player] call comspec_atak_native_fnc_hasDevice)}) then { _why = "ATAK retiré : liaison perdue"; };
+        // Zeus a retiré les données (fn_dataServer "remove") : plus rien à lire ni à télécharger.
+        if (_why isEqualTo "" && {isNil { _obj getVariable "COMSPEC_ATAK_Data" }}) then { _why = "Données retirées du support"; };
         if (_why isNotEqualTo "") exitWith {
             if (_phase isEqualTo "DL") then { ["comspec_atak_native_dataSrv", ["rip", _obj, player, []]] call CBA_fnc_serverEvent; };
             [_why, "WARNING"] call _end;

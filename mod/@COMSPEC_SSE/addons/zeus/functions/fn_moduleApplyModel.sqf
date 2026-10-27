@@ -25,8 +25,18 @@ if (_targets isEqualTo []) exitWith {
 };
 
 if (_modelId isNotEqualTo "") then {
-    { [_x, _modelId, "ZEUS"] call comspec_sse_fnc_applyModel; } forEach _targets;
-    [_targets, 2] call comspec_sse_fnc_zeusBroadcastEnabled;
+    // Étalé (generateData + ACE par entité) : même file que zeusGenerateTargets.
+    private _interval = 0.28;
+    [
+        _targets apply { [_x, _modelId, "ZEUS"] },
+        {
+            params ["_ent", "_id", "_by"];
+            if (isNull _ent) exitWith {};
+            [_ent, _id, _by] call comspec_sse_fnc_applyModel;
+        },
+        _interval
+    ] call comspec_sse_fnc_queueEntityJobs;
+    [_targets, (count _targets) * _interval + 2] call comspec_sse_fnc_zeusBroadcastEnabled;
     [format ["Modèle %1 appliqué sur %2 cible(s)", _modelId, count _targets]] call comspec_sse_fnc_zeusNotify;
 } else {
     if (_ctx get "zeus") then {

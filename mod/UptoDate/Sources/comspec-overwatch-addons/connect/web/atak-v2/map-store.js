@@ -130,11 +130,39 @@
             return row || cached || null;
         });
     }
+    function trimMem(store, max, keep) {
+        var bag = mem[store];
+        if (!bag)
+            return;
+        var keys = Object.keys(bag);
+        if (keys.length <= max)
+            return;
+        keys.sort(function (a, b) {
+            var ra = bag[a] || {};
+            var rb = bag[b] || {};
+            var ta = ra.queuedAt || ra.timestamp || ra.savedAt || "";
+            var tb = rb.queuedAt || rb.timestamp || rb.savedAt || "";
+            if (ta === tb)
+                return a < b ? -1 : 1;
+            return ta < tb ? -1 : 1;
+        });
+        var guard = 0;
+        while (keys.length > max && guard < keys.length + 2) {
+            guard += 1;
+            var k = keys.shift();
+            if (k === keep) {
+                keys.push(k);
+                continue;
+            }
+            del(store, k);
+        }
+    }
     function put(store, key, value) {
         if (store === "events" || store === "queue") {
             if (!value || !value.event_id)
                 return Promise.resolve(false);
             mem[store][value.event_id] = value;
+            trimMem(store, 800, value.event_id);
             lsWrite(store, value.event_id, value);
             return tx(store, "readwrite", function (s) {
                 if (!s)
@@ -143,6 +171,8 @@
             });
         }
         mem[store][key] = value;
+        if (store === "tiles")
+            trimMem(store, 400, key);
         lsWrite(store, key, value);
         return tx(store, "readwrite", function (s) {
             if (!s)

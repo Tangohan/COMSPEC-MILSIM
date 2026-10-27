@@ -14,6 +14,14 @@ private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [
 private _types = [] call comspec_atak_native_fnc_groupTypes;
 private _typeOf = { params ["_g"]; private _k = _g getVariable ["COMSPEC_GroupType", "INF"]; (_types select { (_x select 0) isEqualTo _k }) param [0, _types select 0] };
 private _dist = { params ["_d"]; [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 1]] select (_d >= 1000) };
+// Distance et direction depuis moi (« 340 m NE ») : où chercher le joueur sans ouvrir la carte.
+private _card8 = [["N", "NE", "E", "SE", "S", "SW", "W", "NW"], ["N", "NE", "E", "SE", "S", "SO", "O", "NO"]] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr");
+private _where = { params ["_u"]; format ["%1 %2", [_u distance2D player] call _dist, _card8 select ((round ((player getDir _u) / 45)) mod 8)] };
+// Initiale d'un nom (pastille sans photo, comme les SMS) : première lettre, « # » sans lettre ni chiffre.
+private _ini = { params ["_n"]; toUpper ((((_n splitString " -_.:[]()|") select { _x isNotEqualTo "" }) param [0, "#"]) select [0, 1]) };
+// Ouvre la conversation SMS / centre la carte sur un joueur (boutons des membres).
+private _smsCode = { params ["_u"]; compile format ["private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['chatPeer', %1]; _s set ['chatView', 'CONV']; _s set ['chatPick', false]; ['CHAT'] call comspec_atak_native_fnc_navigate;", str (name _u)] };
+private _mapCode = { params ["_u"]; compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [{ private _u = objectFromNetId _this; if (!isNull _u) then { [_u] call comspec_atak_native_fnc_mapCenter; }; }, '%1', 0.25] call CBA_fnc_waitAndExecute;", netId _u] };
 private _isOpen = { params ["_k", ["_def", false]]; _s getOrDefault [format ["grpFold_%1", _k], _def] };
 private _fold = { params ["_k", "_t", "_sub", ["_def", false]]; ["fold", _t, _sub, [_k, _def] call _isOpen, compile format ["['fold', ['%1', %2]] call comspec_atak_native_fnc_groupAction;", _k, _def]] };
 private _grp = group player;
@@ -65,19 +73,26 @@ if (_tab isEqualTo "MINE") then {
     _sorted sort true;
     {
         private _u = _x select 2;
+        private _me = _u isEqualTo player;
+        // Photo Athena seulement si Arma sait la lire (fn_avatarPath passe par fn_texUsable), sinon l'initiale dans
+        // une pastille aux couleurs de l'équipe de feu (le cadre restait noir).
         private _avatar = [_u] call comspec_atak_native_fnc_avatarPath;
-        private _pic = [_avatar, [_u, "texture"] call BIS_fnc_rankParams] select (_avatar isEqualTo "");
         private _role = getText (configOf _u >> "displayName");
-        private _btns = [];
-        if (_isLead && {_u isNotEqualTo player} && {isPlayer _u}) then { _btns pushBack ["CHEF", compile format ["['lead', '%1'] call comspec_atak_native_fnc_groupAction;", netId _u], false, true, "Passer le commandement du groupe"]; };
         private _ft = [_u] call comspec_atak_native_fnc_ftInfo;
         if ((_ft get "roleLabel") isNotEqualTo "") then { _role = _ft get "roleLabel"; };
-        _rows pushBack ["person", _pic, format ["<t font='COMSPEC_BarlowBold'>%1</t>%2%3<br/><t size='0.8' color='#8a9a93'>%4 · </t><t size='0.8'>%5</t><t size='0.8' color='#8a9a93'> · %6</t>",
+        private _tint = [[0.36, 0.78, 0.42, 1], _ft get "rgba"] select ((_ft get "id") isNotEqualTo "");
+        private _btns = [];
+        if (!_me && {isPlayer _u}) then { _btns pushBack ["SMS", [_u] call _smsCode, false, alive _u, "Écrire un SMS à ce joueur"]; };
+        if (!_me) then { _btns pushBack ["CARTE", [_u] call _mapCode, false, true, "Voir ce joueur sur la carte"]; };
+        if (_isLead && {!_me} && {isPlayer _u}) then { _btns pushBack ["CHEF", compile format ["['lead', '%1'] call comspec_atak_native_fnc_groupAction;", netId _u], false, true, "Passer le commandement du groupe"]; };
+        private _st = [_u] call _state;
+        _rows pushBack ["person", _avatar, format ["<t font='COMSPEC_BarlowBold'>%1</t>%2%3%4<br/><t size='0.8' color='#a9b8b1'>%5</t><t size='0.8' color='#8a9a93'> · </t><t size='0.8'>%6</t><t size='0.8' color='#8a9a93'> · %7</t>",
             [name _u] call _esc,
-            ["", "  <t size='0.8' color='#e8b84a'>● CHEF</t>"] select (_u isEqualTo leader _grp),
-            ["", format ["  <t size='0.8' color='%1'>● %2</t>", _ft get "hex", [_ft get "name"] call _esc]] select ((_ft get "id") isNotEqualTo ""),
-            [_role] call _esc, ([_u] call _state) select 1,
-            [[_u distance2D player] call _dist, "moi"] select (_u isEqualTo player)], _btns];
+            ["", "  <t size='0.8' color='#e8b84a'>CHEF</t>"] select (_u isEqualTo leader _grp),
+            ["", "  <t size='0.8' color='#7fb6e6'>MOI</t>"] select _me,
+            ["", format ["  <t size='0.8' color='%1'>%2</t>", _ft get "hex", [_ft get "name"] call _esc]] select ((_ft get "id") isNotEqualTo ""),
+            [_role] call _esc, _st select 1,
+            [[_u] call _where, "ici"] select _me], _btns, _tint, [name _u] call _ini];
     } forEach _sorted;
 
     // Réglages du chef, repliés par défaut pour laisser la liste des membres visible.
@@ -113,7 +128,7 @@ if (_tab isEqualTo "ALL") then {
         ([_g] call _typeOf) params ["", "_tname", "_ticon"];
         private _locked = _g getVariable ["COMSPEC_GroupLocked", false];
         _rows pushBack ["person", _ticon, format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='#7fb6e6'>%2</t>%6<br/><t size='0.8' color='#8a9a93'>%3 membre(s) · chef </t><t size='0.8'>%4</t><t size='0.8' color='#8a9a93'> · %5</t>",
-            [groupId _g] call _esc, _tname, count units _g, [name leader _g] call _esc, [_d] call _dist,
+            [groupId _g] call _esc, _tname, count units _g, [name leader _g] call _esc, [leader _g] call _where,
             ["", "  <t size='0.8' color='#f2ab33'>● Fermé</t>"] select _locked],
             [[["REJOINDRE", "FERMÉ"] select _locked, compile format ["['join', '%1'] call comspec_atak_native_fnc_groupAction;", netId _g], !_locked, !_locked, ["Rejoindre ce groupe", "Demandez au chef de l'ouvrir"] select _locked]], [0.28, 0.70, 1, 1]];
     } forEach _sorted;

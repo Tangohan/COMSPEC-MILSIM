@@ -18,7 +18,9 @@ uiNamespace setVariable ["COMSPEC_ATAK_RaiseQueued", true];
     if ((uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]) <= (uiNamespace getVariable ["COMSPEC_ATAK_OvSeq", 0])) exitWith {};
     private _surf = (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []];
     private _fx = (uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []];
-    if !((uiNamespace getVariable ["COMSPEC_ATAK_DevFront", false]) || {(count _surf) > 0} || {(count _fx) > 0}) exitWith {
+    // Verrou à distance du Zeus : l'écran rouge (fn_zeusOverlay) doit rester devant les toasts et bandeaux créés après lui.
+    if !((uiNamespace getVariable ["COMSPEC_ATAK_DevFront", false]) || {(count _surf) > 0} || {(count _fx) > 0}
+        || {(["lock", ""] call comspec_atak_native_fnc_zeusFx) isNotEqualTo ""}) exitWith {
         uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
     };
     private _kill = {

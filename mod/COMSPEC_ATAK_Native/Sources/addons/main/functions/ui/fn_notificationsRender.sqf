@@ -20,7 +20,9 @@ _s set ["notifications", _q];
 private _hidden = ((uiNamespace getVariable ["COMSPEC_ATAK_PowerFx", []]) param [1, -1]) > _now
     || {((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"])}
     // Écran de verrouillage affiché (fn_lockScreen) : il montre lui-même les dernières notifications.
-    || {uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]};
+    || {uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]}
+    // Verrou à distance du Zeus (écran rouge de fn_zeusOverlay) : rien par-dessus.
+    || {(["lock", ""] call comspec_atak_native_fnc_zeusFx) isNotEqualTo ""};
 private _show = createHashMap;
 if (!_hidden && {(count _q) > 0}) then {
     private _best = 0;

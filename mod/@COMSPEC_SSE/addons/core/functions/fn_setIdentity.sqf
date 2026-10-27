@@ -20,7 +20,8 @@ if (isNil "_identity" || {!(_identity isEqualType createHashMap)}) then {
     _identity set [toLower _k, _v];
 } forEach _pairs;
 
-[_entity, "identity", _identity, _public] call comspec_sse_fnc_setSection;
+// Écritures locales puis un seul commit public en fin (une seule diffusion de la fiche).
+[_entity, "identity", _identity, false] call comspec_sse_fnc_setSection;
 
 private _authoredKeys = [];
 { _authoredKeys pushBack (toLower (_x select 0)); } forEach _pairs;
@@ -33,13 +34,20 @@ if (
 };
 
 if (!isNil "comspec_sse_fnc_syncIdentityBridgeVars") then {
-    [_entity, _public] call comspec_sse_fnc_syncIdentityBridgeVars;
+    [_entity, _public, false] call comspec_sse_fnc_syncIdentityBridgeVars;
 };
 
 private _status = [_entity, "sectionStatus"] call comspec_sse_fnc_getSection;
 if (!isNil "_status" && {_status isEqualType createHashMap}) then {
     _status set ["identity", "complete"];
-    [_entity, "sectionStatus", _status, _public] call comspec_sse_fnc_setSection;
+    [_entity, "sectionStatus", _status, false] call comspec_sse_fnc_setSection;
+};
+
+if (_public) then {
+    private _data = [_entity] call comspec_sse_fnc_getData;
+    if (!isNil "_data" && {_data isEqualType []}) then {
+        [_entity, _data, true] call comspec_sse_fnc_setData;
+    };
 };
 
 // Ne pas sync dogtag pendant une génération en cours (réentrée ACE).

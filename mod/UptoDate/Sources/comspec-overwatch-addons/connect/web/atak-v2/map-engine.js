@@ -626,9 +626,9 @@
         var obj = state.objects[id];
         if (!obj)
             return false;
-        obj.deleted = true;
         record("delete", id, obj.type);
         removeLeaflet(id);
+        delete state.objects[id];
         if (state.ao && state.ao.id === id) {
             state.ao = null;
             paintAoMask();

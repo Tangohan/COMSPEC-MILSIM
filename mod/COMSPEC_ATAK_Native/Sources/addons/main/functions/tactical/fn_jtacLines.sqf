@@ -175,7 +175,7 @@ private _l9 = ["j9"] call _val;
 
 private _fah = ["jFah"] call _val;
 private _ltl = "";
-if (_mark isEqualTo "LASER" && _hasT) then { _ltl = format ["%1°", [round (player getDir _tgt), 3] call CBA_fnc_formatNumber]; };
+if (_mark isEqualTo "LASER" && _hasT) then { _ltl = format ["%1° M", [([player, _tgt] call comspec_atak_native_fnc_magBearing) select 1, 3] call CBA_fnc_formatNumber]; };
 private _rem = [];
 if (_fah isNotEqualTo "") then { _rem pushBack format ["FAH %1", _fah]; };
 if (_ltl isNotEqualTo "") then { _rem pushBack format ["LTL %1", _ltl]; };

@@ -4,16 +4,16 @@
       - ciel : toit au-dessus de la tête et murs autour (bâtiment), sous-sol, arbres proches (forêt), bâtiments hauts et
         relief qui masquent l'horizon (rue étroite, vallée encaissée), carrosserie d'un véhicule ;
       - satellites visibles : 12 à découvert ; sous 4, plus de fix : la dernière position connue sert 30 s (moins de 25 m
-        parcourus), puis position par le réseau (30 à 150 m selon le signal) ; sans réseau, aucune position fiable
-        (incertitude de 500 m) ;
+        parcourus), puis position par le réseau (15 à 60 m selon le signal) ; sans réseau, aucune position fiable
+        (incertitude de 500 m) ; dans un bâtiment le fix tient (erreur de 10 à 20 m), sauf en sous-sol ;
       - attente des satellites : téléphone allumé, rallumé ou batterie changée, le GPS cherche de 3 s (éteint moins de
         2 min) à environ 40 s (premier démarrage de la mission) ; en attendant, position approximative par le réseau
-        (environ 150 m, sans réseau aucune) ;
+        (environ 60 m, sans réseau aucune) ;
       - l'erreur dérive lentement (multitrajets) au lieu de sauter d'une mesure à l'autre ;
       - pertes de fix (condition « gpsLoss », 0-200 %) : part des satellites masqués par le toit, les arbres, les immeubles
         ou le relief qui compte vraiment (0 % : le fix tient partout, seule la précision baisse) ;
       - fiabilité (condition « gpsRel » : 0 parfaite, 1 bonne, 2 moyenne, 3 médiocre) : décrochages du fix de 5 à 25 s et
-        sauts de position (multitrajets, 15 à 60 m, qui reviennent en 10 à 30 s), de jamais à environ une fois par minute.
+        sauts de position (multitrajets, 6 à 20 m, qui reviennent en 10 à 30 s), de jamais à environ une fois par minute.
     Recalculé au plus toutes les 2 s (6 s téléphone fermé). État dans missionNamespace : repart à chaque mission.
     Renvoie [erreur en mètres, état "FIX" | "ACQ" | "NOFIX" | "NET" | "OFF", satellites, [raisons (textes à traduire)],
              décalage de la position affichée [dx, dy, 0]].
@@ -56,26 +56,33 @@ private _res = call {
     private _sats = 12;
     private _why = [];
     private _multi = 0;
+    private _inside = false;
     // Bâtiment : toit au-dessus, murs autour (mêmes rayons que la liaison radio, fn_linkQuality), sous-sol.
     if (_veh isEqualTo player) then {
         private _roofs = count (lineIntersectsSurfaces [_eye, _eye vectorAdd [0, 0, 30], player, objNull, true, 4, "GEOM", "NONE"]);
         if (_roofs > 0) then {
+            _inside = true;
             private _walls = 0;
             for "_a" from 0 to 315 step 45 do {
                 if ((count (lineIntersectsSurfaces [_eye, _eye vectorAdd [8 * sin _a, 8 * cos _a, 0], player, objNull, true, 1, "GEOM", "NONE"])) > 0) then { _walls = _walls + 1; };
             };
             switch (true) do {
                 case ((_eye select 2) < (getTerrainHeightASL _eye) - 0.5): { _sats = 0; _why pushBack "En sous-sol"; };
-                case (_walls >= 7 && {_roofs >= 2}): { _sats = 2; _why pushBack "Au cœur d'un bâtiment"; };
-                case (_walls >= 5 || {_roofs >= 2}): { _sats = 4; _multi = _multi + 35; _why pushBack "Dans un bâtiment"; };
-                default { _sats = 6; _multi = _multi + 12; _why pushBack "Sous un toit, près d'une ouverture"; };
+                // Bâtiment : le fix tient (un téléphone récent garde le GPS près des fenêtres, aidé du Wi-Fi), erreur de
+                // 10 à 20 m. Avant : 2 à 4 satellites, plus de fix ou erreur de 60 m, point à 40 m de ma vraie position
+                // (retour de TTRD, 26/10 : « c'est trop »).
+                case (_walls >= 7 && {_roofs >= 2}): { _sats = 5; _multi = _multi + 10; _why pushBack "Au cœur d'un bâtiment"; };
+                case (_walls >= 5 || {_roofs >= 2}): { _sats = 6; _multi = _multi + 8; _why pushBack "Dans un bâtiment"; };
+                default { _sats = 8; _multi = _multi + 3; _why pushBack "Sous un toit, près d'une ouverture"; };
             };
         };
     } else {
         // Véhicule : la carrosserie coupe un peu ; aéronef, ciel dégagé.
         if !(_veh isKindOf "Air") then { _sats = _sats - 2; _multi = _multi + 3; _why pushBack "Dans un véhicule"; };
     };
-    if (_sats > 2 && {!(_veh isKindOf "Air")}) then {
+    // Horizon et forêt : seulement dehors. Dans un bâtiment, mes propres murs coupaient les 8 rayons « rue étroite »
+    // (5 satellites et 32 m de reflets en plus, comptés deux fois avec le bâtiment) : plus de fix et point très loin.
+    if (_sats > 2 && {!_inside} && {!(_veh isKindOf "Air")}) then {
         // Horizon masqué à 15° : bâtiments hauts (60 m) et relief (400 m), 8 directions.
         private _bld = 0;
         private _ter = 0;
@@ -113,7 +120,7 @@ private _res = call {
     private _jump = missionNamespace getVariable ["COMSPEC_ATAK_GpsJump", []];
     if (_rate > 0 && {_jump isEqualTo []} && {random 1 < 1 - exp (-_rate * 0.5 * _dt / 60)}) then {
         private _a = random 360;
-        private _m = 15 + random 45;
+        private _m = 6 + random 14;
         _jump = [[_m * sin _a, _m * cos _a, 0], diag_tickTime, 10 + random 20];
         missionNamespace setVariable ["COMSPEC_ATAK_GpsJump", _jump];
     };
@@ -141,13 +148,13 @@ private _res = call {
         } else {
             missionNamespace setVariable ["COMSPEC_ATAK_GpsLast", nil];
             // Position par le réseau (antennes et Wi-Fi, comme un smartphone à l'intérieur) : autour de ma vraie position,
-            // 150 m d'incertitude avec une barre de signal, 30 m avec quatre ; le décalage garde sa direction (pas de saut).
+            // 60 m d'incertitude avec une barre de signal, 15 m avec quatre ; le décalage garde sa direction (pas de saut).
             private _bars = ([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 0];
             if (_bars > 0) then {
-                private _rad = 150 - 40 * (((_bars min 4) max 1) - 1);
+                private _rad = 60 - 15 * (((_bars min 4) max 1) - 1);
                 private _ang = missionNamespace getVariable ["COMSPEC_ATAK_GpsNetAng", -1];
                 if (_ang < 0) then { _ang = random 360; missionNamespace setVariable ["COMSPEC_ATAK_GpsNetAng", _ang]; };
-                private _d = 0.6 * _rad;
+                private _d = 0.35 * _rad;
                 _r = [_rad, ["NET", "ACQ"] select _acq, _sats, _why2 + ["Position approximative par le réseau"], [_d * sin _ang, _d * cos _ang, 0]];
             } else {
                 // Ni satellites ni réseau : aucune position fiable, incertitude maximale (500 m) affichée.
@@ -158,11 +165,12 @@ private _res = call {
     };
     missionNamespace setVariable ["COMSPEC_ATAK_GpsNetAng", nil];
     // Erreur horizontale typique d'un téléphone : 3 à 5 m à découvert, puis selon le nombre de satellites et les reflets.
-    private _base = switch (true) do { case (_sats >= 9): { 3 + random 2 }; case (_sats >= 7): { 6 + random 3 }; case (_sats >= 5): { 12 + random 6 }; default { 25 + random 10 }; };
+    private _base = switch (true) do { case (_sats >= 9): { 3 + random 2 }; case (_sats >= 7): { 4 + random 2 }; case (_sats >= 5): { 6 + random 3 }; default { 9 + random 4 }; };
     private _err = (_base + _multi * (0.7 + random 0.6)) * _k;
     _walk = _walk vectorAdd [(random 2 - 1) * 0.25 * _err, (random 2 - 1) * 0.25 * _err, 0];
     private _m = vectorMagnitude _walk;
-    if (_m > 0.8 * _err && {_m > 0}) then { _walk = _walk vectorMultiply (0.8 * _err / _m); };
+    // Point affiché à au plus la moitié du rayon annoncé : ma vraie position reste toujours dans l'anneau de précision.
+    if (_m > 0.5 * _err && {_m > 0}) then { _walk = _walk vectorMultiply (0.5 * _err / _m); };
     missionNamespace setVariable ["COMSPEC_ATAK_GpsWalk", _walk];
     // Saut de position en cours : décalage qui revient peu à peu vers zéro, compté dans l'erreur annoncée.
     private _off = _walk;

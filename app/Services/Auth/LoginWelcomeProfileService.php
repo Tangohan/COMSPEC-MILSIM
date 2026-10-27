@@ -143,9 +143,13 @@ final class LoginWelcomeProfileService
         $yearsSince = intdiv($daysSince, 365);
         $monthsSince = intdiv($daysSince % 365, 30);
         if ($yearsSince > 0) {
-            $label = $yearsSince . ' an' . ($yearsSince > 1 ? 's' : '');
+            // Libellé composé en une seule langue (la traduction automatique ne gère pas « 2 ans et 3 mois »).
+            $en = locale() === 'en';
+            $label = $yearsSince . ($en ? ($yearsSince > 1 ? ' years' : ' year') : ' an' . ($yearsSince > 1 ? 's' : ''));
             if ($monthsSince > 0) {
-                $label .= ' et ' . $monthsSince . ' mois';
+                $label .= $en
+                    ? ' and ' . $monthsSince . ($monthsSince > 1 ? ' months' : ' month')
+                    : ' et ' . $monthsSince . ' mois';
             }
 
             return $label;

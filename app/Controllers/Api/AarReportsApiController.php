@@ -66,7 +66,12 @@ final class AarReportsApiController
             'closed_actions' => $request->input('closed_actions'),
         ];
         $id = isset($params['id']) ? (int) $params['id'] : ((int) ($body['id'] ?? 0));
-        $report = $this->reports->save($tenantId, $id > 0 ? $id : null, $userId, $body);
+        try {
+            $report = $this->reports->save($tenantId, $id > 0 ? $id : null, $userId, $body);
+        } catch (\DomainException $e) {
+            // Cycle de mission d'une autre communauté : refusé, rien n'est enregistré (SEC-032).
+            return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
 
         return Response::json(['ok' => true, 'report' => $report], $id > 0 ? 200 : 201);
     }

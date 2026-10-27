@@ -43,7 +43,7 @@ final class RegisterUxAssetTest extends TestCase
         self::assertStringContainsString('data-strength-meter', $register);
         self::assertStringContainsString('data-error-for="email"', $register);
         self::assertStringContainsString('athena.bo.theme', $register);
-        self::assertStringContainsString('html[data-bo-theme="dark"] .ds-page--register', $registerCss);
+        self::assertStringContainsString('html[data-bo-theme="dark"] .ds-page--auth', $registerCss);
         self::assertStringContainsString('.rg-error:empty', $registerCss);
         self::assertStringContainsString('aria-invalid', $registerJs);
         self::assertStringContainsString("'register_error_field'", $controller);

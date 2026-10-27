@@ -15,7 +15,10 @@ if (isNil "CBA_fnc_globalEventJIP") exitWith {
     false
 };
 
-private _revision = (missionNamespace getVariable ["COMSPEC_GoogleBriefingRevision", 0]) + 1;
+// Révision max(locale, dernière appliquée) + 1 : un nouveau présentateur (ou un JIP)
+// reprend la séquence au lieu de repartir de 1 et d'être ignoré partout.
+private _revision = ((missionNamespace getVariable ["COMSPEC_GoogleBriefingRevision", 0])
+    max (missionNamespace getVariable ["COMSPEC_GoogleBriefingAppliedRev", 0])) + 1;
 missionNamespace setVariable ["COMSPEC_GoogleBriefingRevision", _revision];
 
 [

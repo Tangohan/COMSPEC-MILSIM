@@ -6,6 +6,17 @@
     rédacteur, sinon elles ne montreraient que l'interface.
 */
 if (!hasInterface) exitWith {};
+// Bouton « Valider » (non planifié) : SubmitSseFieldNote est un POST synchrone qui figerait le jeu
+// et empêcherait l'affichage de « Transmission en cours… ». Les champs viennent du cache : relance sûre.
+// Le jeu ne fige plus pendant l'envoi : un second clic ne doit pas transmettre la fiche deux fois.
+if (!canSuspend) exitWith {
+    if (uiNamespace getVariable ["COMSPEC_IntelNote_Submitting", false]) exitWith {};
+    uiNamespace setVariable ["COMSPEC_IntelNote_Submitting", true];
+    _this spawn {
+        _this call comspec_overwatch_connect_fnc_intelNoteSubmit;
+        uiNamespace setVariable ["COMSPEC_IntelNote_Submitting", false];
+    };
+};
 
 private _disp = uiNamespace getVariable ["COMSPEC_IntelNote_Display", displayNull];
 if (isNull _disp) then { _disp = findDisplay 9982; };
@@ -259,10 +270,9 @@ if (!isNil "comspec_overwatch_connect_fnc_playAtakNotification") then {
 };
 
 // Referme avant les captures : c'est la scène qui doit être photographiée.
+// Rédacteur déjà refermé pendant l'envoi : ne pas fermer à l'aveugle le dialogue du dessus (téléphone, arsenal…).
 if (!isNull _disp) then {
     _disp closeDisplay 1;
-} else {
-    closeDialog 0;
 };
 
 if (_noteId isNotEqualTo "" && {_pieces isNotEqualTo []}) then {

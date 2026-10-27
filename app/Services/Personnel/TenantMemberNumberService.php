@@ -282,13 +282,7 @@ final class TenantMemberNumberService
         if (!$this->schemaReady() || $tenantId < 1 || $userId < 1) {
             return null;
         }
-        $user = $this->users->findById($userId, $tenantId);
-        if ($user === null) {
-            return null;
-        }
-        $v = trim((string) ($user['tenant_member_number'] ?? ''));
-
-        return $v !== '' ? $v : null;
+        return $this->users->tenantMemberNumberFor($userId, $tenantId);
     }
 
     /**
@@ -373,8 +367,7 @@ final class TenantMemberNumberService
         if ($user === null) {
             return ['ok' => false, 'error' => 'Membre introuvable dans cette communauté.'];
         }
-        $old = trim((string) ($user['tenant_member_number'] ?? ''));
-        $old = $old !== '' ? $old : null;
+        $old = $this->users->tenantMemberNumberFor($userId, $tenantId);
         if ($old === $value) {
             return ['ok' => true, 'value' => $value];
         }

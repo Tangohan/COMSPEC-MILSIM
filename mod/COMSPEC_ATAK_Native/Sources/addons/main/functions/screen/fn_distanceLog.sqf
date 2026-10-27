@@ -23,7 +23,7 @@ if ((count _book) isEqualTo 0) then {
     _book set ["missions", +(_book getOrDefault ["missions", []])];
     missionNamespace setVariable ["COMSPEC_ATAK_DistBk", _book];
 };
-(player getVariable ["COMSPEC_ATAK_DistMe", []]) params [["_pairs", []], ["_pilot", []]];
+([] call comspec_atak_native_fnc_distanceMine) params [["_pairs", []], ["_pilot", []]];
 if (_pairs isNotEqualTo []) then {
     private _cur = createHashMapFromArray _pairs;
     private _mk = missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2", missionName, worldName]];

@@ -23,6 +23,10 @@ $readinessTone = [
 ];
 ?>
 <section class="eff-rh-hero">
+    <div class="eff-pg__actions">
+        <a class="eff-catalog__btn" href="<?= $h(effectifs_workspace_url('alertes')) ?>">Postes à pourvoir</a>
+        <a class="eff-catalog__btn" href="<?= $h(effectifs_workspace_url('mobilite')) ?>">Mobilité interne</a>
+    </div>
     <p class="eff-page-kicker">Dossier RH</p>
     <h2 class="eff-page-title">Succession et vivier</h2>
     <p class="eff-page-lead">
@@ -56,22 +60,16 @@ $readinessTone = [
         </div>
     </div>
 <?php else: ?>
-    <div class="eff-rh-pills" role="tablist" aria-label="Filtrer le vivier">
-        <a href="<?= $h(effectifs_workspace_url('vivier')) ?>" class="eff-rh-pill <?= $filter === '' ? 'is-on' : '' ?>">Tous</a>
-        <?php foreach ($readinessLabels as $k => $lab): ?>
-            <a href="<?= $h(effectifs_workspace_url('vivier') . '?readiness=' . rawurlencode((string) $k)) ?>"
-               class="eff-rh-pill <?= $filter === $k ? 'is-on' : '' ?> eff-rh-pill--<?= $h($readinessTone[$k] ?? '') ?>">
-                <?= $h((string) $lab) ?>
-            </a>
-        <?php endforeach; ?>
-    </div>
-
     <?php if ($canManage): ?>
-    <section class="eff-rh-form" aria-labelledby="eff-vivier-add-title">
-        <div class="eff-rh-form__head">
-            <h2 id="eff-vivier-add-title" class="eff-rh-form__title">Ajouter au vivier</h2>
-            <p class="eff-rh-form__lead">Choisissez un membre, le poste visé, puis le niveau de maturité.</p>
-        </div>
+    <details class="eff-rh-form" aria-labelledby="eff-vivier-add-title"<?= $rows === [] ? ' open' : '' ?>>
+        <summary>
+            <span class="eff-rh-form__head">
+                <span class="min-w-0">
+                    <span id="eff-vivier-add-title" class="eff-rh-form__title">Ajouter au vivier</span>
+                    <span class="eff-rh-form__lead">Choisissez un membre, le poste visé, puis le niveau de maturité.</span>
+                </span>
+            </span>
+        </summary>
         <form method="post" action="<?= $h(effectifs_workspace_url('vivier')) ?>" class="eff-rh-form__grid">
             <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
             <div class="eff-rh-field">
@@ -114,7 +112,7 @@ $readinessTone = [
                 <button type="submit" class="eff-rh-btn eff-rh-btn--primary">Ajouter au vivier</button>
             </div>
         </form>
-    </section>
+    </details>
     <?php endif; ?>
 
     <div class="eff-catalog">
@@ -124,6 +122,15 @@ $readinessTone = [
                 <h2 class="eff-catalog__title">Personnes identifiées</h2>
                 <p class="eff-catalog__lead">Retirer une entrée n’efface pas le dossier du membre : elle quitte seulement le vivier.</p>
             </div>
+        <div class="eff-rh-pills" role="tablist" aria-label="Filtrer le vivier">
+        <a href="<?= $h(effectifs_workspace_url('vivier')) ?>" class="eff-rh-pill <?= $filter === '' ? 'is-on' : '' ?>">Tous</a>
+        <?php foreach ($readinessLabels as $k => $lab): ?>
+            <a href="<?= $h(effectifs_workspace_url('vivier') . '?readiness=' . rawurlencode((string) $k)) ?>"
+               class="eff-rh-pill <?= $filter === $k ? 'is-on' : '' ?> eff-rh-pill--<?= $h($readinessTone[$k] ?? '') ?>">
+                <?= $h((string) $lab) ?>
+            </a>
+        <?php endforeach; ?>
+        </div>
         </div>
         <?php if ($rows === []): ?>
             <div class="eff-catalog__empty"><strong>Vivier vide<?= $filter !== '' ? ' pour ce filtre' : '' ?>.</strong></div>
@@ -153,7 +160,7 @@ $readinessTone = [
                         <tr>
                             <td>
                                 <strong class="eff-sheets__name"><?= $h($name) ?></strong>
-                                <?php if ($cs !== ''): ?><br><span class="eff-sheets__meta"><?= $h($cs) ?></span><?php endif; ?>
+                                <?php if ($cs !== ''): ?><span class="eff-sheets__meta"><?= $h($cs) ?></span><?php endif; ?>
                             </td>
                             <td><?= $h((string) ($e['target_role_label'] ?? '')) ?></td>
                             <td><span class="eff-rh-chip eff-rh-chip--<?= $h($tone) ?>"><?= $h((string) ($readinessLabels[$rd] ?? $rd)) ?></span></td>
@@ -162,7 +169,7 @@ $readinessTone = [
                             <td>
                                 <div class="eff-rh-row-actions">
                                     <?php if ($uid > 0): ?>
-                                        <a class="is-primary" href="<?= $h(effectifs_workspace_url('membres/' . $uid)) ?>">Fiche</a>
+                                        <a href="<?= $h(effectifs_workspace_url('membres/' . $uid)) ?>">Fiche</a>
                                     <?php endif; ?>
                                     <?php if ($canManage && $eid > 0): ?>
                                         <form method="post" action="<?= $h(effectifs_workspace_url('vivier/' . $eid . '/retirer')) ?>" onsubmit="return confirm('Retirer cette personne du vivier ? Le dossier du membre n’est pas modifié.');">
