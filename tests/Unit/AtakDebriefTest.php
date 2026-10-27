@@ -99,4 +99,23 @@ final class AtakDebriefTest extends TestCase
             self::assertArrayHasKey($q['label'], $en, $q['label']);
         }
     }
+
+    public function testHistoryCanBeClearedAndOperationsRenamed(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $routes = (string) file_get_contents($root . '/routes/web.php');
+        foreach (['/back-office/atak/suivi-cr/renommer', '/back-office/atak/suivi-cr/retirer-session', '/back-office/atak/suivi-cr/effacer-historique', '/back-office/atak/suivi-cr/{id}/supprimer'] as $path) {
+            self::assertStringContainsString("'" . $path . "'", $routes);
+        }
+        self::assertStringContainsString('CREATE TABLE IF NOT EXISTS `atak_debrief_ops`', (string) file_get_contents($root . '/bootstrap/atak_debrief_migration.php'));
+
+        $view = (string) file_get_contents($root . '/views/admin/atak_debrief/index.php');
+        self::assertStringContainsString('Qu’est-ce qu’une opération ?', $view);
+        self::assertStringContainsString('name="confirmation"', $view);
+
+        $en = require $root . '/lang/en/site_auto.php';
+        foreach (['Qu’est-ce qu’une opération ?', 'Opération renommée.', 'Session retirée de la liste.', 'Tapez EFFACER pour confirmer : rien n’a été effacé.'] as $fr) {
+            self::assertArrayHasKey($fr, $en, $fr);
+        }
+    }
 }
