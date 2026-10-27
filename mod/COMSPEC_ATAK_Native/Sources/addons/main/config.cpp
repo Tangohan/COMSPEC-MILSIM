@@ -730,6 +730,13 @@ class CfgRemoteExec {
         // demandeur peut être local au serveur (hôte d'une partie locale). jip = 0.
         class comspec_atak_native_fnc_droneServer { allowedTargets = 2; };
         class comspec_atak_native_fnc_droneCmd { allowedTargets = 0; jip = 0; };
+        // Socle de recharge CS-10 (lot mpauth3, SEC-025) : poser, reprendre, poser le kit, replier, demandés au serveur et
+        // jugés sur le demandeur qu'il retrouve (fn_dockServer, ces quatre actions seulement), puis réponse du serveur au
+        // demandeur (fn_dockClient « result », qui refuse tout autre émetteur ; l'hôte d'une partie locale est servi sans
+        // appel distant). Remplace les événements CBA comspec_atak_native_dockPut, _dockTake, _dockDeploy, _dockPack et
+        // comspec_atak_native_dockResult. jip = 0.
+        class comspec_atak_native_fnc_dockServer { allowedTargets = 2; };
+        class comspec_atak_native_fnc_dockClient { allowedTargets = 1; jip = 0; };
     };
 };
 

@@ -45,6 +45,7 @@ Identités livrées :
 
 - Objet `COMSPEC_ATAK_ChargingDock` (Eden, Zeus) ou kit `COMSPEC_ATAK_DockKit` à poser (ACE Équipement). Dix emplacements : 1 à 5 en bas de gauche à droite vu de face, 6 à 10 sur le gradin.
 - Logique : `functions/dock` (`fn_dockServer` état, recharge et mémoire serveur ; `fn_dockVisual` textures ; `fn_dockClient` et `fn_dockMenu` actions). Mémoire : `profileNamespace` du serveur, `COMSPEC_ATAK_DockDb_v1`.
+- Demandes des joueurs au serveur par `remoteExecCall` (`fn_dockServer` : `put`, `take`, `deploy`, `pack`), jugées sur le joueur du poste qui demande ; réponse par `remoteExecCall` vers `fn_dockClient` (`result`). Au plus 10 socles posés avec le kit par joueur (UID, toutes cartes) ; profil borné à 300 socles, les plus récemment vus d'abord, écrit au plus toutes les 5 s (et en fin de partie).
 - Modèle `data/charging_dock.p3d` : `tools/model_charging_dock.py` (Blender, Arma 3 Object Builder ; reprend le maillage du téléphone du gilet), images 2D par `tools/gen_dock_assets.py`. Sélections `phone1..10`, `screen1..10`, `led1..10`.
 
 ## Mode full local et PC portable de TOC

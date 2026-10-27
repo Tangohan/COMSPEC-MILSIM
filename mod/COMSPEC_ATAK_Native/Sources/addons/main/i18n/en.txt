@@ -5426,6 +5426,7 @@
 ["Dégâts localisés", "Localized damage"],
 ["Dégâts selon l'endroit où il est porté, saleté de l'écran", "Damage by where it is worn, screen dirt"],
 ["Dégâts selon où il est porté, saleté de l'écran", "Damage by where it is worn, screen dirt"],
+["Déjà %1 socles posés à votre nom sur ce serveur. Repliez-en un d'abord.", "Already %1 docks placed under your name on this server. Fold one first."],
 ["Déjà au registre — transmettez un iris, des empreintes ou de l’ADN pour enrichir la fiche.", "Already in the register — submit an iris, fingerprints or DNA to enrich the record."],
 ["DÉJÀ DANS MON ARSENAL", "ALREADY IN MY ARSENAL"],
 ["Déjà dans votre arsenal, identique.", "Already in your arsenal, identical."],

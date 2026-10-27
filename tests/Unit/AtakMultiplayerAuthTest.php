@@ -363,9 +363,10 @@ final class AtakMultiplayerAuthTest extends TestCase
         // par des chaînes compris, casse ignorée comme le fait CBA). Un gestionnaire rétabli rouvre la voie que le lot
         // ferme (R2 : captureSrv gardé pour « giveFail » rouvrait B2 et D2) ; un émetteur sans gestionnaire perd la
         // demande sans bruit (R1).
-        // Lot mpauth3 : capLocal (SEC-023), droneCmd (SEC-022), debriefRecv et debriefData (SEC-030), adminData (SEC-015)
-        // s'y ajoutent.
-        $removed = ['captureSrv', 'compromise', 'admin', 'adminReport', 'zeus', 'ft', 'planSrv', 'dataSrv', 'capLocal', 'droneCmd', 'debriefRecv', 'debriefData', 'adminData'];
+        // Lot mpauth3 : capLocal (SEC-023), droneCmd (SEC-022), debriefRecv et debriefData (SEC-030), adminData (SEC-015),
+        // dockPut, dockTake, dockDeploy, dockPack et dockResult (SEC-025) s'y ajoutent.
+        $removed = ['captureSrv', 'compromise', 'admin', 'adminReport', 'zeus', 'ft', 'planSrv', 'dataSrv', 'capLocal', 'droneCmd', 'debriefRecv', 'debriefData', 'adminData',
+            'dockPut', 'dockTake', 'dockDeploy', 'dockPack', 'dockResult'];
         $quoted = '/(["\'])comspec_atak_native_(?:' . implode('|', $removed) . ')\1/i';
         // Fonctions qui jugent le demandeur par remoteExecutedOwner (fn_reqUnit) : appelées depuis un gestionnaire CBA,
         // elles ne voient pas d'appel distant et croient l'unité fournie par l'émetteur. Aucun gestionnaire ne les
@@ -1039,6 +1040,150 @@ final class AtakMultiplayerAuthTest extends TestCase
             }
         }
         self::assertSame([self::MAIN . '/functions/admin/fn_adminServer.sqf' => [2, 2]], $calls);
+    }
+
+    public function testDockRequestsAreJudgedOnTheRequesterAndTheServerProfileIsBounded(): void
+    {
+        // Lot mpauth3 (SEC-025, MP2-05) : les événements CBA comspec_atak_native_dockPut, _dockTake, _dockDeploy et
+        // _dockPack prenaient l'unité dans les arguments. Tout client posait ou reprenait un téléphone au nom d'un autre et
+        // posait sans fin des socles près de n'importe qui, gardés dans le profil du serveur (COMSPEC_ATAK_DockDb_v1) et
+        // recréés à chaque partie ; comspec_atak_native_dockResult faisait rendre un objet, une charge ou un état
+        // d'appareil au téléphone d'un autre. Les quatre demandes passent par remoteExecCall vers fn_dockServer, jugées sur
+        // le demandeur que retrouve le serveur ; la réponse revient par remoteExecCall vers fn_dockClient, qui n'accepte
+        // que le serveur. Socles du kit plafonnés par joueur, profil borné et écrit au plus toutes les 5 s.
+        $srv = $this->stripSqfComments($this->read(self::MAIN . '/functions/dock/fn_dockServer.sqf'));
+        self::assertMatchesRegularExpression('/^params \[\["_act", "init"\], \["_a", \[\]\]\];\s*'
+            . 'if \(!isServer\) exitWith \{\};\s*'
+            . 'if \(isRemoteExecutedJIP\) exitWith \{[^{}]*\};\s*'
+            . 'private _remote = isMultiplayer && \{isRemoteExecuted\} && \{remoteExecutedOwner isNotEqualTo 2\};\s*'
+            . 'if \(_remote && \{!\(_act in \["put", "take", "deploy", "pack"\]\)\}\) exitWith \{[^{}]*\};\s*'
+            . 'private _req = \[objNull, player\] select hasInterface;\s*'
+            . 'if \(_remote\) then \{ _req = \[remoteExecutedOwner\] call comspec_atak_native_fnc_reqUnit; \};\s*'
+            . 'if \(_remote && \{isNull _req\}\) exitWith \{[^{}]*\};\s*'
+            . 'if !\(_a isEqualType \[\]\) exitWith \{\};/', trim($srv));
+        $lists = $this->remoteLists($this->sources());
+        self::assertSame(['put', 'take', 'deploy', 'pack'], $lists['comspec_atak_native_fnc_dockserver'] ?? null);
+        // Aucune unité reçue : le demandeur est _req partout. Plus d'événement CBA, ni d'appel imbriqué de la fonction
+        // hors des gestionnaires du serveur posés par « init » (dans une demande, l'appel imbriqué garderait le contexte de
+        // l'appel distant et la garde le refuserait).
+        self::assertStringNotContainsString('_unit', $srv);
+        self::assertStringNotContainsString('CBA_fnc_targetEvent', $srv);
+        self::assertStringNotContainsString('CBA_fnc_addEventHandler', $srv);
+        self::assertSame(5, substr_count($srv, 'call comspec_atak_native_fnc_dockServer'));
+        self::assertSame(5, substr_count($this->between($srv, 'case "init": {', 'case "id": {'), 'call comspec_atak_native_fnc_dockServer'));
+        $steps = [
+            'put' => [$this->between($srv, 'case "put": {', 'case "take": {'), [
+                '_a params [["_dock", objNull], ["_slot", -1], ["_item", ""], ["_level", 100], ["_device", []], ["_tint", "coyote"]];',
+                'if (isNull _req || {!(_item isEqualType "")} || {_item isEqualTo ""}) exitWith {};',
+                'if (!(_dock isEqualType objNull) || {isNull _dock} || {!(_dock isKindOf _class)}) exitWith { [_req, "put", false, "Socle replié", [_item]] call _reply; };',
+                'if !((toLower _item) in ([] call comspec_atak_native_fnc_deviceCatalog)) exitWith { [_req, "put", false, "Pas de téléphone sur vous", [_item]] call _reply; };',
+                'if (!(_slot isEqualType 0) || {!(_level isEqualType 0)}) exitWith { [_req, "put", false, "Emplacement occupé ou socle plein", [_item]] call _reply; };',
+                'if (!(_device isEqualType []) || {(count _device) > 64} || {(count str _device) > 8000}) then { _device = []; };',
+                'if !(_tint in ["coyote", "od", "black"]) then { _tint = "coyote"; };',
+                'private _id = [_dock] call _idOf;',
+                'if ((_req distance _dock) > 6) exitWith { [_req, "put", false, "Trop loin du socle", [_item]] call _reply; };',
+                '_slots set [_slot, [getPlayerUID _req, name _req, _item, (_level max 0) min 100, _device, _tint, serverTime]];',
+                '[false] call _save;',
+            ]],
+            'take' => [$this->between($srv, 'case "take": {', 'case "zeusKit": {'), [
+                '_a params [["_dock", objNull], ["_slot", -1]];',
+                'if (isNull _req || {!(_dock isEqualType objNull)} || {isNull _dock} || {!(_dock isKindOf _class)} || {!(_slot isEqualType 0)}) exitWith {};',
+                'private _id = [_dock] call _idOf;',
+                'private _mine = (_s select 0) isEqualTo getPlayerUID _req;',
+                'private _staff = (admin (owner _req)) > 0 || {!isNull (getAssignedCuratorLogic _req)};',
+                'if ((_req distance _dock) > 6) exitWith { [_req, "take", false, "Trop loin du socle"] call _reply; };',
+                '[false] call _save;',
+            ]],
+            'deploy' => [$this->between($srv, 'case "deploy": {', 'case "pack": {'), [
+                '_a params [["_pos", []], ["_dir", 0]];',
+                'if (isNull _req || {!(_pos isEqualType [])} || {!(_pos isEqualTypeArray [0, 0, 0])} || {!(_dir isEqualType 0)} || {((getPosASL _req) distance _pos) > 4}) exitWith { [_req, "deploy", false, "Place invalide"] call _reply; };',
+                'private _uid = getPlayerUID _req;',
+                'if (({ private _pl = _x select 1; (count _pl) > 4 && {(_pl select 4) isEqualTo _uid} } count (values _db)) >= _kitMax) exitWith {',
+                '[_req, "deploy", false, format ["Déjà %1 socles posés à votre nom sur ce serveur. Repliez-en un d\'abord.", _kitMax]] call _reply;',
+                'private _o = createVehicle [_class, ASLToATL _pos, [], 0, "CAN_COLLIDE"];',
+                'private _id = format ["kit|%1|%2|%3", _uid, (call _utc), floor random 1e5];',
+                '[_o, _id, true] call _register;',
+                '_db set [_id, [call _empty, [worldName, getPosASL _o, vectorDir _o, vectorUp _o, _uid], call _utc]];',
+                '[false] call _save;',
+            ]],
+            'pack' => [$this->between($srv, 'case "pack": {', 'default {};'), [
+                '_a params [["_dock", objNull]];',
+                'if (isNull _req || {!(_dock isEqualType objNull)} || {isNull _dock} || {!(_dock isKindOf _class)}) exitWith {};',
+                'private _id = [_dock] call _idOf;',
+                'if !([_dock] call _kitOf) exitWith { [_req, "pack", false, "Ce socle fait partie de la mission"] call _reply; };',
+                'if ((_req distance _dock) > 6) exitWith { [_req, "pack", false, "Trop loin du socle"] call _reply; };',
+                '_db deleteAt _id;',
+                '[false] call _save;',
+            ]],
+        ];
+        foreach ($steps as $act => [$case, $order]) {
+            $at = 0;
+            foreach ($order as $step) {
+                $i = strpos($case, $step, $at);
+                self::assertNotFalse($i, "$act : $step");
+                $at = (int) $i + strlen($step);
+            }
+        }
+        // Identifiant et genre (kit ou mission) d'un socle : registre du serveur, rempli à la création ou à la première vue
+        // (dès le lancement pour les socles de la mission) ; les variables publiques ne sont plus qu'écrites, pour les menus.
+        self::assertStringContainsString('{ [_x] call _idOf; } forEach (allMissionObjects _class);', $this->between($srv, 'case "init": {', 'case "id": {'));
+        self::assertSame(1, substr_count($srv, 'getVariable ["COMSPEC_ATAK_DockId"'));
+        self::assertStringContainsString('if (!(_id isEqualType "") || {_id isEqualTo ""} || {(count _id) > 100}) then {', $srv);
+        self::assertStringNotContainsString('getVariable ["COMSPEC_ATAK_DockKit"', $srv);
+        self::assertSame(1, substr_count($srv, 'setVariable ["COMSPEC_ATAK_DockKit"'));
+        self::assertSame(1, substr_count($srv, 'setVariable ["COMSPEC_ATAK_DockId"'));
+        self::assertStringContainsString('if ([_dock] call _kitOf) then {', $this->between($srv, 'case "tick": {', 'case "publish": {'));
+        // État du serveur hors de portée des clients (localNamespace) ; profil borné, relu avec prudence, écrit au plus
+        // toutes les 5 s (une demande de joueur écrit le profil du serveur : saveProfileNamespace réécrit tout le profil).
+        self::assertSame(0, preg_match('/missionNamespace (?:get|set)Variable \["COMSPEC_ATAK_Dock/', $srv));
+        self::assertStringContainsString('private _kitMax = 10;', $srv);
+        self::assertStringContainsString('private _dbMax = 300;', $srv);
+        self::assertStringContainsString('if ((count _out) > _dbMax) then { _out = ([_out, [], { _x select 3 }, "DESCEND"] call BIS_fnc_sortBy) select [0, _dbMax]; };', $srv);
+        self::assertStringContainsString('_rows = ([_rows select { _x isEqualType [] && {(_x param [3, ""]) isEqualType 0} }, [], { _x select 3 }, "DESCEND"] call BIS_fnc_sortBy) select [0, _dbMax];', $srv);
+        self::assertStringContainsString('_slots = _slots apply { [[], _x] select (_x isEqualType [] && {_x isEqualTypeArray ["", "", "", 0, [], "", 0]}) };', $srv);
+        self::assertStringContainsString('if (!_force && {(serverTime - (localNamespace getVariable ["COMSPEC_ATAK_DockSaved", -1e9])) < 5}) exitWith { localNamespace setVariable ["COMSPEC_ATAK_DockLater", true]; };', $srv);
+        self::assertStringContainsString('case "save": { [true] call _save; };', $srv);
+        self::assertSame(substr_count($srv, 'call _save'), substr_count($srv, '[false] call _save') + substr_count($srv, '[true] call _save'));
+        // Réponse au demandeur seul, par la voie gardée ; l'hôte d'une partie locale est servi à l'image suivante.
+        self::assertMatchesRegularExpression('/private _reply = \{\s*params \["_u", "_what", "_ok", "_msg", \["_data", \[\]\]\];\s*'
+            . 'if \(isNull _u\) exitWith \{\};\s*'
+            . 'if \(local _u\) exitWith \{ \[\{ _this call comspec_atak_native_fnc_dockClient; \}, \["result", \[_what, _ok, _msg, _data\]\]\] call CBA_fnc_execNextFrame; \};\s*'
+            . '\["result", \[_what, _ok, _msg, _data\]\] remoteExecCall \["comspec_atak_native_fnc_dockClient", _u\];\s*\};/', $srv);
+        // fn_dockClient : seul le serveur l'appelle à distance (garde en tête, juste après params) ; plus d'événement CBA.
+        $client = $this->stripSqfComments($this->read(self::MAIN . '/functions/dock/fn_dockClient.sqf'));
+        self::assertMatchesRegularExpression('/^params \[\["_act", "phone"\], \["_a", \[\]\]\];\s*'
+            . preg_quote('if (isRemoteExecutedJIP || {isRemoteExecuted && {remoteExecutedOwner isNotEqualTo 2}}) exitWith {', '/')
+            . '\s*diag_log format \["\[COMSPEC ATAK NATIVE\]\[WARN\]\[DOCK\] [^"]*", _act, remoteExecutedOwner, isRemoteExecutedJIP\];\s*false\s*\};/', trim($client));
+        self::assertStringNotContainsString('CBA_fnc_serverEvent', $client);
+        self::assertStringNotContainsString('CBA_fnc_addEventHandler', $this->stripSqfComments($this->read(self::MAIN . '/functions/dock/fn_dockMenu.sqf')));
+        // Appels distants : demandes de fn_dockClient au serveur, réponse de fn_dockServer au demandeur ; deux arguments
+        // chacun (rien dans la file JIP), sans unité dans la demande.
+        $calls = [];
+        foreach ($this->sources() as $rel => $units) {
+            foreach ($units as $code) {
+                foreach ($this->remoteCalls($code) as [$left, $right]) {
+                    $fn = strtolower((string) ($right === null ? '' : $this->literal($right[0])));
+                    if (in_array($fn, ['comspec_atak_native_fnc_dockserver', 'comspec_atak_native_fnc_dockclient'], true)) {
+                        $calls[] = [basename($rel), $this->literal(trim($left[0] ?? '')), trim($right[1] ?? ''), count($right)];
+                    }
+                }
+            }
+        }
+        self::assertSame([
+            ['fn_dockClient.sqf', 'put', '2', 2],
+            ['fn_dockClient.sqf', 'take', '2', 2],
+            ['fn_dockClient.sqf', 'deploy', '2', 2],
+            ['fn_dockClient.sqf', 'pack', '2', 2],
+            ['fn_dockServer.sqf', 'result', '_u', 2],
+        ], $calls);
+        self::assertStringContainsString('["put", [_dock, _slot, _item, _lv, ', $client);
+        self::assertStringNotContainsString('player', $this->between($client, 'case "take": {', 'case "status": {'));
+        self::assertStringContainsString('["deploy", [_pos, (_dir + 180) % 360]] remoteExecCall ["comspec_atak_native_fnc_dockServer", 2];', $client);
+        self::assertStringContainsString('["pack", [_dock]] remoteExecCall ["comspec_atak_native_fnc_dockServer", 2];', $client);
+        $cfg = $this->cppCode($this->read(self::MAIN . '/config.cpp'));
+        self::assertStringContainsString('class comspec_atak_native_fnc_dockServer { allowedTargets = 2; };', $cfg);
+        self::assertStringContainsString('class comspec_atak_native_fnc_dockClient { allowedTargets = 1; jip = 0; };', $cfg);
+        self::assertStringContainsString('["Déjà %1 socles posés à votre nom sur ce serveur. Repliez-en un d\'abord.", "', $this->read(self::MAIN . '/i18n/en.txt'));
     }
 
     /** Source SQF sans ses commentaires de ligne et de bloc, chaînes "…" et '…' gardées telles quelles. */

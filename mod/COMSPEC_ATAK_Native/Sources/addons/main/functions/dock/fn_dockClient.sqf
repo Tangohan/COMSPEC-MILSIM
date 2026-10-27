@@ -7,9 +7,21 @@
       "take"    : [socle, emplacement] -> reprend le téléphone (charge et état rendus)
       "status"  : [socle] -> fiche des 10 emplacements
       "deploy"  : pose le kit devant soi (sur une table ou au sol)      "pack" : [socle] -> replie un socle vide
-      "result"  : réponse du serveur [action, ok, message, données]
+      "result"  : réponse du serveur [action, ok, message, données] (remoteExecCall du serveur, fn_dockServer)
+    Demandes au serveur : [action, arguments] remoteExecCall ["comspec_atak_native_fnc_dockServer", 2], sans unité : le
+    serveur juge le joueur du poste qui demande (lot mpauth3, SEC-025 : plus d'événements CBA comspec_atak_native_dockPut,
+    _dockTake, _dockDeploy, _dockPack ni comspec_atak_native_dockResult).
 */
 params [["_act", "phone"], ["_a", []]];
+// Appel distant : seul le serveur (poste 2) entre ici, jamais un rejeu de la file JIP (même garde que fn_adminClient).
+// « result » rend un objet, une charge et un état d'appareil au joueur de ce poste ; « put », « take », « deploy » et
+// « pack » lui retirent son téléphone ou son kit et parlent au serveur en son nom : en mode 2 (sans liste blanche), un
+// autre client les faisait jouer ici. Avant, l'événement CBA comspec_atak_native_dockResult remettait la réponse sans
+// dire qui l'avait levé : tout client faisait rendre un objet, une charge ou un état d'appareil au téléphone d'un autre.
+if (isRemoteExecutedJIP || {isRemoteExecuted && {remoteExecutedOwner isNotEqualTo 2}}) exitWith {
+    diag_log format ["[COMSPEC ATAK NATIVE][WARN][DOCK] Appel « %1 » refusé : il ne vient pas du serveur ou il est rejoué depuis la file JIP (poste %2, file JIP : %3)", _act, remoteExecutedOwner, isRemoteExecutedJIP];
+    false
+};
 // Retour affiché DANS le téléphone (centre de notifications + bandeau à la prochaine ouverture), jamais sur l'écran de jeu.
 // Texte traduit à l'affichage (fn_notificationsRender, fn_pageNotifs).
 // Sans téléphone sur soi (bandeau jamais vu à temps) : un échec est signalé par le son d'erreur, jamais par un hint.
@@ -50,8 +62,8 @@ switch (_act) do {
         if (_item in (items player)) then { player removeItem _item; } else { player unlinkItem _item; };
         private _dev = missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap];
         private _lv = missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100];
-        ["comspec_atak_native_dockPut", [_dock, player, _slot, _item, _lv, [[], (keys _dev) apply { [_x, _dev get _x] }] select (_dev isEqualType createHashMap),
-            profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"]]] call CBA_fnc_serverEvent;
+        ["put", [_dock, _slot, _item, _lv, [[], (keys _dev) apply { [_x, _dev get _x] }] select (_dev isEqualType createHashMap),
+            profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"]]] remoteExecCall ["comspec_atak_native_fnc_dockServer", 2];
         playSound "ClickSoft";
         [{ missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", false]; }, [], 5] call CBA_fnc_waitAndExecute;
     };
@@ -59,7 +71,7 @@ switch (_act) do {
         _a params ["_dock", "_slot"];
         if (missionNamespace getVariable ["COMSPEC_ATAK_DockBusy", false]) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", true];
-        ["comspec_atak_native_dockTake", [_dock, player, _slot]] call CBA_fnc_serverEvent;
+        ["take", [_dock, _slot]] remoteExecCall ["comspec_atak_native_fnc_dockServer", 2];
         [{ missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", false]; }, [], 5] call CBA_fnc_waitAndExecute;
     };
     case "status": {
@@ -98,14 +110,14 @@ switch (_act) do {
         player removeItem "COMSPEC_ATAK_DockKit";
         player playActionNow "PutDown";
         // L'avant du socle (voyants, écrans) face au joueur.
-        ["comspec_atak_native_dockDeploy", [player, _pos, (_dir + 180) % 360]] call CBA_fnc_serverEvent;
+        ["deploy", [_pos, (_dir + 180) % 360]] remoteExecCall ["comspec_atak_native_fnc_dockServer", 2];
         [{ missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", false]; }, [], 5] call CBA_fnc_waitAndExecute;
     };
     case "pack": {
         _a params ["_dock"];
         if (missionNamespace getVariable ["COMSPEC_ATAK_DockBusy", false]) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", true];
-        ["comspec_atak_native_dockPack", [_dock, player]] call CBA_fnc_serverEvent;
+        ["pack", [_dock]] remoteExecCall ["comspec_atak_native_fnc_dockServer", 2];
         [{ missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", false]; }, [], 5] call CBA_fnc_waitAndExecute;
     };
     case "result": {

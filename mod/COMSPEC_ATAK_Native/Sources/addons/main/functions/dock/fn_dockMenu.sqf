@@ -6,7 +6,8 @@
     Sans ACE : actions molette en regardant le socle à moins de 3 m.
 */
 if (!hasInterface) exitWith {};
-["comspec_atak_native_dockResult", { ["result", _this] call comspec_atak_native_fnc_dockClient; }] call CBA_fnc_addEventHandler;
+// Réponse du serveur : remoteExecCall vers fn_dockClient « result » (lot mpauth3, SEC-025), plus l'événement CBA
+// comspec_atak_native_dockResult, que tout client levait chez un autre.
 private _icon = "\z\comspec_atak_native\addons\main\data\item_dock.paa";
 private _staff = { serverCommandAvailable "#kick" || {!isNull (getAssignedCuratorLogic player)} || {missionNamespace getVariable ["comspec_atak_native_dock_anyone", false]} };
 missionNamespace setVariable ["COMSPEC_ATAK_DockStaff", _staff];
