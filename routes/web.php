@@ -1078,6 +1078,7 @@ return function (Router $router) {
     // Registre des données (tableaux, corrélations, purge des joueurs fantômes).
     $router->get('/admin/system/donnees', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/donnees/api', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'api'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/donnees/outils', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'tools'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/donnees/correlations', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'correlations'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/donnees/action', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'action'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cron', [SystemCronController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
