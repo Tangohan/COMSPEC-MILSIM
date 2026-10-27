@@ -33,7 +33,7 @@ private _showOutline = missionNamespace getVariable ["comspec_overwatch_ecoti_sh
 private _showRoute = missionNamespace getVariable ["comspec_overwatch_ecoti_show_route", true];
 private _showUnitOutline = missionNamespace getVariable ["comspec_overwatch_ecoti_show_unit_outline", true];
 // Cache local (localNamespace, jamais synchronisé) : ses couleurs passent par fn_ecotiNormalizeColor, qui compile les
-// chaînes. En missionNamespace, un client pouvait le remplacer par publicVariable et faire exécuter son code ici.
+// chaînes : seul ce poste remplit le cache qu'il compile.
 private _cache = localNamespace getVariable ["COMSPEC_EcotiDrawCache", createHashMap];
 private _fusionOn = missionNamespace getVariable ["comspec_overwatch_ecoti_fusion", true];
 if (!(_fusionOn isEqualType true)) then { _fusionOn = true; };

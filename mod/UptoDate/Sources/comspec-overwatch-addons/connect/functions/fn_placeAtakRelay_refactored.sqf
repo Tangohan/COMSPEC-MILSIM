@@ -19,7 +19,7 @@ if ((count _pos) < 2) exitWith { objNull };
 if (_range < 0) then {
     // Fallback si fonction pas disponible
     // Réglage réalisme seulement s'il vient d'une fonction de la config du jeu (CfgFunctions, finale) : realism_config
-    // n'est pas construit, ce nom reste vide et un client pouvait le remplir par publicVariable pour faire exécuter son code.
+    // n'est pas construit, et sans cette garde ce nom ne désignerait pas une fonction finale.
     if (!isClass (configFile >> "CfgFunctions" >> "ATHENA") || {isNil "ATHENA_fnc_getRealismParam"}) then {
         _range = 2000; // Fallback hardcodé
         diag_log "[ATHENA] WARN: ATHENA_fnc_getRealismParam not available, using fallback 2000m";

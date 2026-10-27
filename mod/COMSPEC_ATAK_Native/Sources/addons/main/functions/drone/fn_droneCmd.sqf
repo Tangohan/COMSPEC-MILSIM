@@ -395,9 +395,9 @@ switch (_cmd) do {
         ["STRIKE"] call _setMode;
         private _loop = _d getVariable ["COMSPEC_DroneLoop", 0];
         // Drone touché ou détruit pendant la frappe (tir, arbre, mur, la cible elle-même) : la charge part sur place.
-        // Fermetures en localNamespace (machine où le drone est local, jamais synchronisé), plus en variables du drone :
-        // n'importe quel client pouvait les réécrire par un setVariable diffusé sur l'objet, et la machine du drone
-        // (le pilote, ou le serveur) exécutait son code au premier dégât. Même code pour tous les drones.
+        // Fermetures en localNamespace (machine où le drone est local, jamais synchronisé), plus en variables du drone,
+        // synchronisables : au premier dégât, la machine du drone (le pilote, ou le serveur) n'exécute que le code
+        // qu'elle a posé. Même code pour tous les drones.
         localNamespace setVariable ["COMSPEC_ATAK_DroneDetonateFn", _detonate];
         if !(_d getVariable ["COMSPEC_DroneStrikeEh", false]) then {
             _d setVariable ["COMSPEC_DroneStrikeEh", true];

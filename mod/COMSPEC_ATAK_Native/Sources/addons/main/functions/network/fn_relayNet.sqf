@@ -54,7 +54,7 @@ switch (_act) do {
         private _out = [];
         private _defR = 2000;
         // Réglage réalisme seulement s'il vient d'une fonction de la config du jeu (CfgFunctions, finale) : realism_config
-        // n'est pas construit, ce nom reste vide et un client pouvait le remplir par publicVariable pour faire exécuter son code.
+        // n'est pas construit, et sans cette garde ce nom ne désignerait pas une fonction finale.
         if (isClass (configFile >> "CfgFunctions" >> "ATHENA") && {!isNil "ATHENA_fnc_getRealismParam"}) then { _defR = ["radio_relays", "relay_range_m", 2000] call ATHENA_fnc_getRealismParam; };
         private _side = str side group player;
         private _num = { params ["_v", "_d"]; [_d, _v] select (_v isEqualType 0) };

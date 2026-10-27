@@ -231,7 +231,7 @@ if (isServer) then {
   le remplacer. Seul le résultat (actif ou non, et la raison) est envoyé aux joueurs. Appelée ailleurs que sur le
   serveur, ou à distance par un client, la fonction refuse (`false`) et l'écrit au journal.
 - **Rupture (sécurité)** : la variable d'objet `COMSPEC_AtakRelayCondSrv`, donnée en exemple depuis la 2.4.1, n'est
-  plus lue, car un client pouvait la réécrire. Une mission qui la posait voit son relais rester « condition non
+  plus lue, car une variable d'objet est synchronisable. Une mission qui la posait voit son relais rester « condition non
   remplie » : remplacer cette ligne par l'appel à `comspec_atak_native_fnc_relayCondSet` ci-dessus. Le module posé
   dans Eden et les préréglages ne changent pas.
 
@@ -239,5 +239,5 @@ if (isServer) then {
 `""`, `"mast"`, `"stopped"` or `"engineoff"` (public variable), or a code condition set on the server with
 `[object, "code"] call comspec_atak_native_fnc_relayCondSet` (`_this` = the object, `""` removes it) together with
 `COMSPEC_AtakRelayCond` set to any other text, such as `"code"`. The code stays in a server-only registry that is never
-synchronised. **Breaking change (security):** the `COMSPEC_AtakRelayCondSrv` object variable is no longer read, since a
-client could overwrite it; missions that set it must call `comspec_atak_native_fnc_relayCondSet` instead.
+synchronised. **Breaking change (security):** the `COMSPEC_AtakRelayCondSrv` object variable is no longer read, since
+object variables can be synchronised; missions that set it must call `comspec_atak_native_fnc_relayCondSet` instead.

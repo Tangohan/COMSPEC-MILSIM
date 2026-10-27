@@ -586,8 +586,8 @@ switch (_mode) do {
             _o setVariable ["COMSPEC_ATAK_TocAt", -10];
         };
         // uiNamespace (local à la machine, jamais synchronisé) : les actions ci-dessous (ACE et addAction) sont posées et
-        // déclenchées sur cette même machine. En variable globale, un client pouvait réécrire COMSPEC_ATAK_TocDo par
-        // publicVariable et faire exécuter n'importe quel code à quiconque utilise l'action de l'écran TOC.
+        // déclenchées sur cette même machine, qui n'exécute que le code posé ici (plus de variable globale
+        // COMSPEC_ATAK_TocDo).
         uiNamespace setVariable ["COMSPEC_ATAK_TocDo", _do];
         private _cond = "private _o = _target; private _c = _o getVariable ['COMSPEC_ATAK_TocScr', []]; (count _c) >= 8 && {(_c select 1) isEqualTo '' || {(_c select 1) isEqualTo str side group player}}";
         if (!isNil "ace_interact_menu_fnc_createAction") then {

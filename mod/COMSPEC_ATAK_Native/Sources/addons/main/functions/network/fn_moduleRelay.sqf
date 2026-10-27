@@ -129,7 +129,7 @@ private _apply = {
         _x setVariable ["COMSPEC_AtakRelayFreq", _freq, true];
         _x setVariable ["COMSPEC_AtakRelayCond", trim _cond, true];
         // Condition en code : registre du serveur (fn_relayCondSet, localNamespace jamais synchronisé), seul évalué par
-        // fn_relayCond, qui ne compile ni la variable publique ni une variable de l'objet (un client peut les écraser).
+        // fn_relayCond, qui ne compile ni la variable publique ni une variable de l'objet (toutes deux synchronisables).
         // Un Zeus client ne peut que garder le code déjà posé sur le serveur (Eden ou script serveur).
         if (isServer && {!((toLower trim _cond) in ["", "stopped", "engineoff", "mast"])}) then { [_x, trim _cond] call comspec_atak_native_fnc_relayCondSet; };
         _x setVariable ["COMSPEC_AtakRelayAutonomy", _aut, true];
@@ -153,7 +153,7 @@ private _apply = {
         };
         _list pushBackUnique _x;
         // Fiche du relais remontée à Athena quand l'addon Overwatch est chargé (serveur). Garde par la config, comme
-        // fn_relayTower : sans connect, ce nom reste vide et un client pouvait le remplir par publicVariable.
+        // fn_relayTower : sans connect, ce nom ne désigne pas une fonction finale, et il n'est pas appelé.
         if (isServer && {isClass (configFile >> "CfgPatches" >> "comspec_overwatch_connect")}) then { [_x, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };
     } forEach _targets;
     missionNamespace setVariable ["COMSPEC_AtakRelays", _list, true];

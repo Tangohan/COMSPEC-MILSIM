@@ -12,8 +12,8 @@
       autre texte : condition en code SQF, _this = l'objet, qui rend vrai quand le relais doit marcher.
                   Exemple : _this animationSourcePhase "mast_src" > 0.9 && {(abs speed _this) < 1}
                   Sécurité : le code n'est JAMAIS compilé depuis une variable que le réseau peut écrire : ni la variable
-                  publique COMSPEC_AtakRelayCond, ni une variable de l'objet (même posée sans diffusion sur le serveur,
-                  un client l'écrase par un setVariable diffusé), ni missionNamespace (publicVariable). Seul le serveur
+                  publique COMSPEC_AtakRelayCond, ni une variable de l'objet (synchronisable, même posée sans diffusion
+                  par le serveur), ni missionNamespace. Seul le serveur
                   l'évalue, depuis son registre localNamespace COMSPEC_ATAK_RelayCondSrc (jamais synchronisé), rempli
                   par le module en Eden ou par comspec_atak_native_fnc_relayCondSet (serveur seul) ; le cache du code
                   compilé (COMSPEC_ATAK_RelayCondCode) est lui aussi en localNamespace. Le serveur publie le résultat

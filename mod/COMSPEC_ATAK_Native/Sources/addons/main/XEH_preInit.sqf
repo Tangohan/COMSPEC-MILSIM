@@ -23,9 +23,8 @@ diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
 // Boucles périodiques des postInit : le décalage de départ est désormais dans la fonction finale
-// comspec_atak_native_fnc_pfhSpread (avant : variable globale COMSPEC_ATAK_PfhSpread, qu'un client pouvait remplacer
-// par publicVariable puis faire exécuter par le serveur). CfgFunctions compile les fonctions au preInit : elle est prête
-// dès les postInit, seuls appelants.
+// comspec_atak_native_fnc_pfhSpread (avant : variable globale COMSPEC_ATAK_PfhSpread, non finale). CfgFunctions
+// compile les fonctions au preInit : elle est prête dès les postInit, seuls appelants.
 
 // Langue du mod (par joueur) : téléphone, menus CBA COMSPEC (ATAK, Overwatch, SSE) et SSE. Sans sous-catégorie : CBA
 // range ces réglages en tête de la liste COMSPEC, au-dessus des sections « ATAK · … ». Titre bilingue, jamais traduit.

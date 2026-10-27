@@ -59,8 +59,8 @@ if (missionNamespace getVariable ["comspec_overwatch_log_to_file", true]) then {
 
 // Repères déjà nôtres (poste → jeu) : ne pas les renvoyer, ni relancer le pont cTab.
 // Prédicat gardé en localNamespace (jamais synchronisé) : les gestionnaires de repères et les boucles de synchro du poste
-// (fn_startSyncLoops) l'exécutent, le serveur a sa propre copie (fn_initServerHub) ; en missionNamespace, un client
-// pouvait le remplacer par publicVariable.
+// (fn_startSyncLoops) l'exécutent, le serveur a sa propre copie (fn_initServerHub) : chaque machine n'exécute que le
+// prédicat qu'elle a posé.
 localNamespace setVariable ["COMSPEC_fnc_isOwnedMapMarker", {
     params ["_n"];
     if (!(_n isEqualType "") || {_n isEqualTo ""}) exitWith { false };
@@ -102,7 +102,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
             }, [_marker], 0.4] call CBA_fnc_waitAndExecute;
         };
         // localNamespace (jamais synchronisé) : exécuté par les gestionnaires de repères de ce poste (joueur, ou serveur hébergé) ;
-        // en missionNamespace, un autre client pouvait le remplacer par publicVariable et faire exécuter son code à chaque repère.
+        // seule cette machine le pose, et aucune autre ne peut le remplacer.
         localNamespace setVariable ["COMSPEC_MarkerResyncSoon", _resyncSoon];
         COMSPEC_MapMarkerEHs = [
             addMissionEventHandler ["MarkerCreated", {
@@ -282,8 +282,8 @@ COMSPEC_EcotiBootEh = ["CBA_settingsInitialized", {
 if (isNil "COMSPEC_CbaSettingsEhArmed") then {
 // Bloc de démarrage gardé dans une variable : fn_athenaApply le rejoue (COMSPEC_CbaSettingsBootReplay)
 // quand le joueur passe Athéna à « Oui » en mission alors qu'il était coupé au démarrage.
-// En localNamespace (jamais synchronisé) et non en variable globale : un client pouvait sinon la remplacer par
-// publicVariable, et fn_athenaApply / fn_connect l'exécutaient chez le joueur visé.
+// En localNamespace (jamais synchronisé) et non en variable globale : fn_athenaApply et fn_connect n'exécutent que le
+// bloc posé par ce poste.
 localNamespace setVariable ["COMSPEC_CbaSettingsBootCode", {
     if (missionNamespace getVariable ["COMSPEC_CbaSettingsBootArmed", false]) exitWith {};
     missionNamespace setVariable ["COMSPEC_CbaSettingsBootFired", true, false];

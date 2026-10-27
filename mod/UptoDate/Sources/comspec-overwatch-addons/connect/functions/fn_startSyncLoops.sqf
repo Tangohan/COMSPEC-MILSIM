@@ -164,7 +164,7 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
             }, [_marker], 0.4] call CBA_fnc_waitAndExecute;
     };
     // localNamespace (jamais synchronisé) : exécuté par les gestionnaires de repères de ce poste (joueur, ou serveur hébergé) ;
-    // en missionNamespace, un autre client pouvait le remplacer par publicVariable et faire exécuter son code à chaque repère.
+    // seule cette machine le pose, et aucune autre ne peut le remplacer.
     localNamespace setVariable ["COMSPEC_MarkerResyncSoon", _resyncSoon];
     COMSPEC_MapMarkerEHs = [
         addMissionEventHandler ["MarkerCreated", {

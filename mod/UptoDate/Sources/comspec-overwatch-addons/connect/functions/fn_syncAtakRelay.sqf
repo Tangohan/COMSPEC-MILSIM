@@ -18,7 +18,7 @@ if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RelaySyncHoldUntil",
 private _defaultRange = 2000;
 private _defaultSlots = 8;
 // Réglage réalisme seulement s'il vient d'une fonction de la config du jeu (CfgFunctions, finale) : realism_config
-// n'est pas construit, ce nom reste vide et un client pouvait le remplir par publicVariable pour faire exécuter son code.
+// n'est pas construit, et sans cette garde ce nom ne désignerait pas une fonction finale.
 if (isClass (configFile >> "CfgFunctions" >> "ATHENA") && {!isNil "ATHENA_fnc_getRealismParam"}) then {
     _defaultRange = ["radio_relays", "relay_range_m", 2000] call ATHENA_fnc_getRealismParam;
     _defaultSlots = ["radio_relays", "max_relay_connections", 10] call ATHENA_fnc_getRealismParam;

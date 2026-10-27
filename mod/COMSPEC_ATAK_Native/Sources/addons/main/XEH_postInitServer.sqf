@@ -77,8 +77,8 @@ private _keep = {
     };
     COMSPEC_ATAK_SrvLog set [_side, _l];
 };
-// Tenu en localNamespace (jamais synchronisé) et non en missionNamespace : un client pouvait sinon le remplacer par
-// publicVariable, et le serveur l'exécutait à chaque compte rendu, MEDEVAC, BDA, demande logistique ou message du poste.
+// Tenu en localNamespace (propre au serveur, jamais synchronisé) et non en missionNamespace : le serveur l'exécute à
+// chaque compte rendu, MEDEVAC, BDA, demande logistique ou message du poste, et lui seul le pose.
 localNamespace setVariable ["COMSPEC_ATAK_SrvKeep", _keep];
 // Marqueurs « réseau ATAK uniquement » (fn_markerNet) : mémoire du serveur et remise aux joueurs du canal.
 ["comspec_atak_native_tacMkSrv", { ["srv", _this] call comspec_atak_native_fnc_markerNet; }] call CBA_fnc_addEventHandler;
@@ -150,8 +150,8 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["srvMeta", [_m, objNu
 missionNamespace setVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2#%3", missionName, worldName, ((systemTimeUTC select [0, 5]) apply { [str _x, "0" + str _x] select (_x < 10) }) joinString ""], true];
 // Contrôle de cohérence : unités dont l'équipe n'existe plus dans leur groupe (changement de groupe hors téléphone,
 // équipe dissoute) remises sans équipe. Toutes les 10 s, et à la demande (Inter-team > RESYNCHRONISER, arrivée d'un joueur).
-// Code serveur gardé en localNamespace (jamais synchronisé) et non plus dans une variable globale, qu'un client
-// pouvait remplacer par publicVariable puis faire exécuter par le serveur (boucle 10 s et événement ftCheck).
+// Code serveur gardé en localNamespace (propre au serveur, jamais synchronisé) et non plus dans une variable globale :
+// la boucle de 10 s et l'événement ftCheck n'exécutent que le code posé ici.
 localNamespace setVariable ["COMSPEC_ATAK_FtCheck", {
     params [["_by", objNull]];
     private _fixed = 0;
