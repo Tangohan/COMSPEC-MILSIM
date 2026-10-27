@@ -10,6 +10,9 @@ use PDO;
 
 final class AarReportRepository
 {
+    /** Message de refus d'un cycle de mission que la communauté ne possède pas (SEC-032). */
+    public const UNKNOWN_MISSION_MESSAGE = 'Cette mission est introuvable dans votre communauté.';
+
     private PDO $pdo;
     private bool $ensured = false;
 
@@ -71,7 +74,7 @@ final class AarReportRepository
                 FROM aar_reports r
                 LEFT JOIN users u ON u.id = r.author_user_id
                 LEFT JOIN users uv ON uv.id = r.validated_by_user_id
-                LEFT JOIN theatre_mission_cycles m ON m.id = r.mission_cycle_id
+                LEFT JOIN theatre_mission_cycles m ON m.id = r.mission_cycle_id AND m.tenant_id = r.tenant_id
                 WHERE ' . implode(' AND ', $where) . '
                 ORDER BY COALESCE(r.reported_at, r.created_at) DESC, r.id DESC';
         $st = $this->pdo->prepare($sql);
@@ -139,7 +142,7 @@ final class AarReportRepository
              FROM aar_reports r
              LEFT JOIN users u ON u.id = r.author_user_id
              LEFT JOIN users uv ON uv.id = r.validated_by_user_id
-             LEFT JOIN theatre_mission_cycles m ON m.id = r.mission_cycle_id
+             LEFT JOIN theatre_mission_cycles m ON m.id = r.mission_cycle_id AND m.tenant_id = r.tenant_id
              WHERE r.tenant_id = ? AND r.id = ? LIMIT 1'
         );
         $st->execute([$tenantId, $id]);
@@ -151,11 +154,20 @@ final class AarReportRepository
     /**
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
+     *
+     * @throws \DomainException mission_cycle_id d'un cycle que la communauté ne possède pas (message
+     *                          UNKNOWN_MISSION_MESSAGE) ; rien n'est alors écrit
      */
     public function save(int $tenantId, ?int $id, int $authorUserId, array $payload): array
     {
         $status = $this->allowed((string) ($payload['status'] ?? 'pending'));
         $missionId = (int) ($payload['mission_cycle_id'] ?? 0);
+        // SEC-032 : un cycle de mission d'une autre communauté, ou disparu, est refusé avant toute écriture. Avant,
+        // son identifiant était enregistré tel quel et les lectures affichaient le titre de ce cycle.
+        $mission = $missionId > 0 ? (new TheatreMissionCycleRepository($this->pdo))->findForTenant($tenantId, $missionId) : null;
+        if ($missionId > 0 && $mission === null) {
+            throw new \DomainException(self::UNKNOWN_MISSION_MESSAGE);
+        }
         $title = $this->clip((string) ($payload['title'] ?? ($payload['operation_label'] ?? 'Compte rendu post-op')), 200);
         $operationLabel = $this->nullableString($payload['operation_label'] ?? null, 200);
         $existing = ($id !== null && $id > 0) ? $this->findForTenant($tenantId, $id) : null;
@@ -186,7 +198,7 @@ final class AarReportRepository
         $templateId = (int) ($payload['template_id'] ?? ($existing['template_id'] ?? 0));
         $customAnswersJson = $this->encodeCustomAnswers($payload['custom_answers'] ?? ($existing['custom_answers_raw'] ?? null));
 
-        $missionWindow = $this->missionWindow($tenantId, $missionId);
+        $missionWindow = $this->missionWindow($mission);
         $hasCustom = $this->hasCustomColumns();
         if ($id !== null && $id > 0) {
             if ($hasCustom) {
@@ -442,13 +454,12 @@ final class AarReportRepository
         return $st->rowCount() > 0;
     }
 
-    private function missionWindow(int $tenantId, int $missionId): array
+    /**
+     * @param array<string, mixed>|null $mission cycle de la communauté (findForTenant), null sans mission liée
+     * @return array{mission_started_at: mixed, mission_ended_at: mixed}
+     */
+    private function missionWindow(?array $mission): array
     {
-        if ($missionId < 1) {
-            return ['mission_started_at' => null, 'mission_ended_at' => null];
-        }
-        $repo = new TheatreMissionCycleRepository($this->pdo);
-        $mission = $repo->findForTenant($tenantId, $missionId);
         if (!is_array($mission)) {
             return ['mission_started_at' => null, 'mission_ended_at' => null];
         }
@@ -673,7 +684,7 @@ final class AarReportRepository
              FROM aar_reports r
              LEFT JOIN users u ON u.id = r.author_user_id
              LEFT JOIN users uv ON uv.id = r.validated_by_user_id
-             LEFT JOIN theatre_mission_cycles m ON m.id = r.mission_cycle_id
+             LEFT JOIN theatre_mission_cycles m ON m.id = r.mission_cycle_id AND m.tenant_id = r.tenant_id
              WHERE r.tenant_id = ? AND r.mission_plan_id = ?
              ORDER BY r.id DESC LIMIT 1'
         );

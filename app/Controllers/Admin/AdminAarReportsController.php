@@ -365,7 +365,13 @@ final class AdminAarReportsController
             return Response::redirect(url(self::BASE . '/nouveau') . ($mission > 0 ? '?mission=' . $mission : ''));
         }
 
-        $saved = $this->reports->save($tenantId, null, $userId, $built['payload']);
+        try {
+            $saved = $this->reports->save($tenantId, null, $userId, $built['payload']);
+        } catch (\DomainException $e) {
+            // Cycle de mission d'une autre communauté, ou supprimé entre-temps : rien n'est enregistré (SEC-032).
+            Session::flash('error', $e->getMessage());
+            return Response::redirect(url(self::BASE . '/nouveau'));
+        }
         Session::flash('success', 'Compte rendu enregistré.');
         $id = (int) ($saved['id'] ?? 0);
 
@@ -408,7 +414,13 @@ final class AdminAarReportsController
             return Response::redirect(url('back-office/atak/comptes-rendus/' . $id . '/edit'));
         }
 
-        $this->reports->save($tenantId, $id, $userId, $built['payload']);
+        try {
+            $this->reports->save($tenantId, $id, $userId, $built['payload']);
+        } catch (\DomainException $e) {
+            // Cycle de mission d'une autre communauté, ou supprimé entre-temps : le compte rendu reste tel quel (SEC-032).
+            Session::flash('error', $e->getMessage());
+            return Response::redirect(url('back-office/atak/comptes-rendus/' . $id . '/edit'));
+        }
         Session::flash('success', 'Compte rendu mis à jour.');
 
         return Response::redirect(url('back-office/atak/comptes-rendus/' . $id));
