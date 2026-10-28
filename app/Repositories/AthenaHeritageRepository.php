@@ -45,6 +45,286 @@ final class AthenaHeritageRepository
     }
 
     /**
+     * Crée les tables patrimoine si absentes (idempotent) — évite une page vide
+     * tant que `run-migrations.php` n’a pas été lancé sur le VPS.
+     */
+    public function ensureSchema(): bool
+    {
+        if ($this->ready()) {
+            return true;
+        }
+        try {
+            $this->pdo->exec(
+                "CREATE TABLE IF NOT EXISTS athena_heritage_snapshots (
+                    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    snapshot_date DATE NOT NULL,
+                    operators_total INT UNSIGNED NOT NULL DEFAULT 0,
+                    organizations_total INT UNSIGNED NOT NULL DEFAULT 0,
+                    sessions_total INT UNSIGNED NOT NULL DEFAULT 0,
+                    distance_km DECIMAL(14, 2) NOT NULL DEFAULT 0.00,
+                    playtime_hours DECIMAL(14, 2) NOT NULL DEFAULT 0.00,
+                    version_label VARCHAR(32) NULL,
+                    version_adoption_pct DECIMAL(5, 2) NULL,
+                    metrics_json JSON NULL,
+                    source ENUM('live', 'backfill', 'manual') NOT NULL DEFAULT 'live',
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uq_athena_heritage_snapshots_date (snapshot_date),
+                    KEY idx_athena_heritage_snapshots_created (created_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
+            $this->pdo->exec(
+                "CREATE TABLE IF NOT EXISTS athena_heritage_milestones (
+                    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    milestone_key VARCHAR(64) NOT NULL,
+                    category ENUM('threshold', 'first', 'version', 'custom') NOT NULL DEFAULT 'threshold',
+                    occurred_at DATETIME NULL,
+                    date_precision ENUM('exact', 'day', 'month', 'unknown') NOT NULL DEFAULT 'exact',
+                    title VARCHAR(255) NOT NULL,
+                    narrative TEXT NOT NULL,
+                    value_numeric DECIMAL(16, 2) NULL,
+                    value_label VARCHAR(120) NULL,
+                    context_json JSON NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uq_athena_heritage_milestones_key (milestone_key),
+                    KEY idx_athena_heritage_milestones_occurred (occurred_at),
+                    KEY idx_athena_heritage_milestones_category (category)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
+            $this->pdo->exec(
+                "CREATE TABLE IF NOT EXISTS athena_heritage_version_points (
+                    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    version VARCHAR(32) NOT NULL,
+                    released_at DATE NULL,
+                    date_precision ENUM('exact', 'day', 'month', 'unknown') NOT NULL DEFAULT 'unknown',
+                    title VARCHAR(255) NOT NULL,
+                    summary TEXT NULL,
+                    stats_json JSON NULL,
+                    changelog_ref VARCHAR(64) NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uq_athena_heritage_version (version),
+                    KEY idx_athena_heritage_version_released (released_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
+        } catch (\Throwable) {
+            return $this->ready();
+        }
+
+        return $this->ready();
+    }
+
+    public function countSnapshots(): int
+    {
+        if (!$this->hasTable('athena_heritage_snapshots')) {
+            return 0;
+        }
+        $st = $this->pdo->query('SELECT COUNT(*) FROM athena_heritage_snapshots');
+
+        return $st ? (int) $st->fetchColumn() : 0;
+    }
+
+    public function countMilestones(): int
+    {
+        if (!$this->hasTable('athena_heritage_milestones')) {
+            return 0;
+        }
+        $st = $this->pdo->query('SELECT COUNT(*) FROM athena_heritage_milestones');
+
+        return $st ? (int) $st->fetchColumn() : 0;
+    }
+
+    public function countVersionPoints(): int
+    {
+        if (!$this->hasTable('athena_heritage_version_points')) {
+            return 0;
+        }
+        $st = $this->pdo->query('SELECT COUNT(*) FROM athena_heritage_version_points');
+
+        return $st ? (int) $st->fetchColumn() : 0;
+    }
+
+    /**
+     * Série quotidienne reconstruite (cumul opérateurs / organisations) depuis created_at.
+     *
+     * @return list<array{
+     *   snapshot_date: string,
+     *   operators_total: int,
+     *   organizations_total: int,
+     *   sessions_total: int,
+     *   distance_km: float,
+     *   playtime_hours: float,
+     *   source: string
+     * }>
+     */
+    public function reconstructGrowthSeries(?string $fromDate = null, ?string $toDate = null): array
+    {
+        $opsDaily = $this->dailyNewCounts('users', $this->activeOperatorsWhereSql());
+        $orgDaily = $this->hasTable('tenants')
+            ? $this->dailyNewCounts('tenants', '')
+            : [];
+
+        $dates = array_values(array_unique(array_merge(array_keys($opsDaily), array_keys($orgDaily))));
+        sort($dates);
+        if ($dates === []) {
+            return [];
+        }
+
+        $from = $fromDate !== null && $fromDate !== '' ? $fromDate : null;
+        $to = $toDate !== null && $toDate !== '' ? $toDate : (new \DateTimeImmutable('today'))->format('Y-m-d');
+
+        $ops = 0;
+        $orgs = 0;
+        $series = [];
+        foreach ($dates as $day) {
+            $ops += (int) ($opsDaily[$day] ?? 0);
+            $orgs += (int) ($orgDaily[$day] ?? 0);
+            if ($from !== null && $day < $from) {
+                continue;
+            }
+            if ($to !== null && $day > $to) {
+                break;
+            }
+            $series[] = [
+                'snapshot_date' => $day,
+                'operators_total' => $ops,
+                'organizations_total' => $orgs,
+                'sessions_total' => 0,
+                'distance_km' => 0.0,
+                'playtime_hours' => 0.0,
+                'source' => 'backfill',
+            ];
+        }
+
+        return $this->downsampleSeries($series, 120);
+    }
+
+    /**
+     * Persiste la série reconstruite (sans écraser un snapshot « live » du jour plus riche).
+     *
+     * @return int Nombre de jours écrits / mis à jour
+     */
+    public function backfillSnapshotsFromGrowth(?string $fromDate = null, ?string $toDate = null): int
+    {
+        if (!$this->hasTable('athena_heritage_snapshots')) {
+            return 0;
+        }
+        $written = 0;
+        foreach ($this->reconstructGrowthSeries($fromDate, $toDate) as $row) {
+            $existing = $this->snapshotOnDate((string) $row['snapshot_date']);
+            if (is_array($existing) && (string) ($existing['source'] ?? '') === 'live') {
+                // Ne pas écraser un point live déjà capturé.
+                continue;
+            }
+            $row['source'] = 'backfill';
+            $this->upsertSnapshot($row);
+            $written++;
+        }
+
+        return $written;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function snapshotOnDate(string $date): ?array
+    {
+        if (!$this->hasTable('athena_heritage_snapshots')) {
+            return null;
+        }
+        $st = $this->pdo->prepare('SELECT * FROM athena_heritage_snapshots WHERE snapshot_date = ? LIMIT 1');
+        $st->execute([$date]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * @return array<string, int> date => count
+     */
+    private function dailyNewCounts(string $table, string $extraWhereSql): array
+    {
+        if (!$this->hasTable($table) || !$this->hasColumn($table, 'created_at')) {
+            return [];
+        }
+        $safe = str_replace('`', '', $table);
+        if ($table === 'users') {
+            $sql = 'SELECT DATE(u.created_at) AS d, COUNT(*) AS cnt FROM `users` u';
+            $sql .= $extraWhereSql !== '' ? (' WHERE ' . $extraWhereSql) : '';
+            $sql .= ' GROUP BY DATE(u.created_at) ORDER BY d ASC';
+        } else {
+            $sql = 'SELECT DATE(created_at) AS d, COUNT(*) AS cnt FROM `' . $safe . '`';
+            $sql .= $extraWhereSql !== '' ? (' WHERE ' . $extraWhereSql) : '';
+            $sql .= ' GROUP BY DATE(created_at) ORDER BY d ASC';
+        }
+        try {
+            $st = $this->pdo->query($sql);
+        } catch (\Throwable) {
+            return [];
+        }
+        $rows = $st ? $st->fetchAll(PDO::FETCH_ASSOC) : [];
+        $out = [];
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $d = (string) ($row['d'] ?? '');
+            if ($d === '') {
+                continue;
+            }
+            $out[$d] = (int) ($row['cnt'] ?? 0);
+        }
+
+        return $out;
+    }
+
+    private function activeOperatorsWhereSql(): string
+    {
+        $parts = [];
+        if ($this->hasColumn('users', 'status')) {
+            $parts[] = "u.status = 'active'";
+        }
+        if ($this->hasColumn('users', 'is_service_account')) {
+            $parts[] = '(u.is_service_account IS NULL OR u.is_service_account = 0)';
+        }
+
+        return implode(' AND ', $parts);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $series
+     * @return list<array<string, mixed>>
+     */
+    private function downsampleSeries(array $series, int $maxPoints): array
+    {
+        $n = count($series);
+        if ($n <= $maxPoints || $maxPoints < 3) {
+            return $series;
+        }
+        $out = [];
+        $lastIdx = $n - 1;
+        $step = ($n - 1) / ($maxPoints - 1);
+        $seen = [];
+        for ($i = 0; $i < $maxPoints; $i++) {
+            $idx = (int) round($i * $step);
+            if ($idx < 0) {
+                $idx = 0;
+            }
+            if ($idx > $lastIdx) {
+                $idx = $lastIdx;
+            }
+            if (isset($seen[$idx])) {
+                continue;
+            }
+            $seen[$idx] = true;
+            $out[] = $series[$idx];
+        }
+
+        return $out;
+    }
+
+    /**
      * @param array<string, mixed> $row
      */
     public function upsertSnapshot(array $row): void

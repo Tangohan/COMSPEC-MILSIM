@@ -168,10 +168,10 @@ $chartPayload = [
                         $key = (string) ($item['key'] ?? '');
                         $n = sprintf('%02d', $index + 1);
                         ?>
-                        <li class="site-sse-step site-history__node site-history__node--<?= $e(preg_replace('/[^a-z0-9\-]/i', '', $kind) ?? 'custom') ?>" id="<?= $e($key) ?>">
+                        <li class="site-sse-step site-history__node site-history__node--<?= $e(preg_replace('/[^a-z0-9\-]/i', '', $kind) ?? 'custom') ?><?= $index === 0 ? ' is-open' : '' ?>" id="<?= $e($key) ?>">
                             <span class="site-sse-step__n"><?= $e($n) ?></span>
                             <div class="site-history__node-body">
-                                <button type="button" class="site-history__node-toggle" data-hist-toggle aria-expanded="false">
+                                <button type="button" class="site-history__node-toggle" data-hist-toggle aria-expanded="<?= $index === 0 ? 'true' : 'false' ?>">
                                     <span class="site-history__node-meta">
                                         <span class="site-history__chip"><?= $e($kindLabel($kind)) ?></span>
                                         <time class="site-history__when"><?= $e($formatDateLabel(isset($item['occurred_at']) ? (string) $item['occurred_at'] : null, $precision)) ?></time>
@@ -180,8 +180,11 @@ $chartPayload = [
                                     <?php if (!empty($item['value_label'])): ?>
                                         <span class="site-history__node-value"><?= $e($item['value_label']) ?></span>
                                     <?php endif; ?>
+                                    <?php if (!empty($item['narrative'])): ?>
+                                        <span class="site-history__node-excerpt"><?= $e($item['narrative']) ?></span>
+                                    <?php endif; ?>
                                 </button>
-                                <div class="site-history__node-panel" hidden>
+                                <div class="site-history__node-panel"<?= $index === 0 ? '' : ' hidden' ?>>
                                     <p class="site-history__narrative"><?= $e($item['narrative'] ?? '') ?></p>
                                     <?php if ($stats !== null): ?>
                                         <dl class="site-history__statgrid">
