@@ -29,6 +29,7 @@ final class LeaveCommunityService
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
         private TenantCommunityFeedRepository $feedRepository,
         private AdminAuditService $adminAuditService,
+        private AtakCommunityMigrationService $atakCommunityMigrationService,
     ) {}
 
     /**
@@ -83,6 +84,11 @@ final class LeaveCommunityService
         }
 
         $this->userRepository->leaveCommunity($userId, $tenantId);
+        try {
+            $this->atakCommunityMigrationService->detachFromCommunity($userId, $tenantId);
+        } catch (\Throwable $e) {
+            error_log('[community.leave.atak] ' . $e->getMessage());
+        }
 
         try {
             $this->adminAuditService->logUserLeftCommunity($tenantId, $userId, $userId);
