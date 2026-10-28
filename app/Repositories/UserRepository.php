@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\PortalAccessChoice;
 use App\Support\SilentSchemaMigration;
 use App\Support\SqlText;
 
@@ -1575,128 +1576,139 @@ class UserRepository
             }
         }
 
-        if ($hasGradeColumns) {
-            if ($this->hasProfileSlugColumn()) {
-                $stmt = $this->pdo()->prepare(
-                    $hasAthenaIdentifier
-                        ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, athena_identifier, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
-                        : 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
-                );
-                $params = [
-                    $tenantId,
-                    $data['email'],
-                    $data['password_hash'],
-                    $data['display_name'] ?? null,
-                    $data['callsign'] ?? null,
-                    $profileSlug,
-                ];
-                if ($hasAthenaIdentifier) {
-                    $params[] = $athenaIdentifier;
+        try {
+            if ($hasGradeColumns) {
+                if ($this->hasProfileSlugColumn()) {
+                    $stmt = $this->pdo()->prepare(
+                        $hasAthenaIdentifier
+                            ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, athena_identifier, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                            : 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                    );
+                    $params = [
+                        $tenantId,
+                        $data['email'],
+                        $data['password_hash'],
+                        $data['display_name'] ?? null,
+                        $data['callsign'] ?? null,
+                        $profileSlug,
+                    ];
+                    if ($hasAthenaIdentifier) {
+                        $params[] = $athenaIdentifier;
+                    }
+                    $params = array_merge($params, [
+                        $data['role_id'] ?? null,
+                        $data['grade_id'] ?? null,
+                        $data['status'] ?? 'pending',
+                        $data['nationality_code'] ?? null,
+                        $data['preferred_grade_format'] ?? 'classic',
+                        $data['professional_category_code'] ?? null,
+                    ]);
+                    $stmt->execute($params);
+                } else {
+                    $stmt = $this->pdo()->prepare(
+                        $hasAthenaIdentifier
+                            ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, athena_identifier, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                            : 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                    );
+                    $params = [
+                        $tenantId,
+                        $data['email'],
+                        $data['password_hash'],
+                        $data['display_name'] ?? null,
+                        $data['callsign'] ?? null,
+                    ];
+                    if ($hasAthenaIdentifier) {
+                        $params[] = $athenaIdentifier;
+                    }
+                    $params = array_merge($params, [
+                        $data['role_id'] ?? null,
+                        $data['grade_id'] ?? null,
+                        $data['status'] ?? 'pending',
+                        $data['nationality_code'] ?? null,
+                        $data['preferred_grade_format'] ?? 'classic',
+                        $data['professional_category_code'] ?? null,
+                    ]);
+                    $stmt->execute($params);
                 }
-                $params = array_merge($params, [
-                    $data['role_id'] ?? null,
-                    $data['grade_id'] ?? null,
-                    $data['status'] ?? 'pending',
-                    $data['nationality_code'] ?? null,
-                    $data['preferred_grade_format'] ?? 'classic',
-                    $data['professional_category_code'] ?? null,
-                ]);
-                $stmt->execute($params);
             } else {
-                $stmt = $this->pdo()->prepare(
-                    $hasAthenaIdentifier
-                        ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, athena_identifier, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
-                        : 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, nationality_code, preferred_grade_format, professional_category_code, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
-                );
-                $params = [
-                    $tenantId,
-                    $data['email'],
-                    $data['password_hash'],
-                    $data['display_name'] ?? null,
-                    $data['callsign'] ?? null,
-                ];
-                if ($hasAthenaIdentifier) {
-                    $params[] = $athenaIdentifier;
+                if ($this->hasProfileSlugColumn()) {
+                    $stmt = $this->pdo()->prepare(
+                        $hasAthenaIdentifier
+                            ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, athena_identifier, role_id, grade_id, status, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                            : 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, role_id, grade_id, status, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                    );
+                    $params = [
+                        $tenantId,
+                        $data['email'],
+                        $data['password_hash'],
+                        $data['display_name'] ?? null,
+                        $data['callsign'] ?? null,
+                        $profileSlug,
+                    ];
+                    if ($hasAthenaIdentifier) {
+                        $params[] = $athenaIdentifier;
+                    }
+                    $params = array_merge($params, [
+                        $data['role_id'] ?? null,
+                        $data['grade_id'] ?? null,
+                        $data['status'] ?? 'pending',
+                    ]);
+                    $stmt->execute($params);
+                } else {
+                    $stmt = $this->pdo()->prepare(
+                        $hasAthenaIdentifier
+                            ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, athena_identifier, role_id, grade_id, status, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                            : 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                    );
+                    $params = [
+                        $tenantId,
+                        $data['email'],
+                        $data['password_hash'],
+                        $data['display_name'] ?? null,
+                        $data['callsign'] ?? null,
+                    ];
+                    if ($hasAthenaIdentifier) {
+                        $params[] = $athenaIdentifier;
+                    }
+                    $params = array_merge($params, [
+                        $data['role_id'] ?? null,
+                        $data['grade_id'] ?? null,
+                        $data['status'] ?? 'pending',
+                    ]);
+                    $stmt->execute($params);
                 }
-                $params = array_merge($params, [
-                    $data['role_id'] ?? null,
-                    $data['grade_id'] ?? null,
-                    $data['status'] ?? 'pending',
-                    $data['nationality_code'] ?? null,
-                    $data['preferred_grade_format'] ?? 'classic',
-                    $data['professional_category_code'] ?? null,
-                ]);
-                $stmt->execute($params);
             }
-        } else {
-            if ($this->hasProfileSlugColumn()) {
-                $stmt = $this->pdo()->prepare(
-                    $hasAthenaIdentifier
-                        ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, athena_identifier, role_id, grade_id, status, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
-                        : 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, profile_slug, role_id, grade_id, status, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
-                );
-                $params = [
+            $newId = (int) $this->pdo()->lastInsertId();
+            if ($newId > 0 && $this->hasCommunityMembershipTable()) {
+                $created = $this->findById($newId, null) ?? $data;
+                $created['tenant_id'] = $tenantId;
+                $this->communityMemberships()->ensureMembership(
+                    $newId,
                     $tenantId,
-                    $data['email'],
-                    $data['password_hash'],
-                    $data['display_name'] ?? null,
-                    $data['callsign'] ?? null,
-                    $profileSlug,
-                ];
-                if ($hasAthenaIdentifier) {
-                    $params[] = $athenaIdentifier;
-                }
-                $params = array_merge($params, [
-                    $data['role_id'] ?? null,
-                    $data['grade_id'] ?? null,
-                    $data['status'] ?? 'pending',
-                ]);
-                $stmt->execute($params);
-            } else {
-                $stmt = $this->pdo()->prepare(
-                    $hasAthenaIdentifier
-                        ? 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, athena_identifier, role_id, grade_id, status, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
-                        : 'INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                    UserIdentityMergeRules::communityProfileFromUserRow($created),
+                    $newId
                 );
-                $params = [
-                    $tenantId,
-                    $data['email'],
-                    $data['password_hash'],
-                    $data['display_name'] ?? null,
-                    $data['callsign'] ?? null,
-                ];
-                if ($hasAthenaIdentifier) {
-                    $params[] = $athenaIdentifier;
-                }
-                $params = array_merge($params, [
-                    $data['role_id'] ?? null,
-                    $data['grade_id'] ?? null,
-                    $data['status'] ?? 'pending',
-                ]);
-                $stmt->execute($params);
             }
-        }
-        $newId = (int) $this->pdo()->lastInsertId();
-        if ($newId > 0 && $this->hasCommunityMembershipTable()) {
-            $created = $this->findById($newId, null) ?? $data;
-            $created['tenant_id'] = $tenantId;
-            $this->communityMemberships()->ensureMembership(
-                $newId,
-                $tenantId,
-                UserIdentityMergeRules::communityProfileFromUserRow($created),
-                $newId
-            );
-        }
 
-        return $newId;
+            return $newId;
+        } catch (\PDOException $e) {
+            if (preg_match('/Duplicate.*(email|email_identity|uk_users_email)/i', $e->getMessage()) === 1) {
+                throw new RuntimeException(
+                    'Un compte existe déjà avec cette adresse e-mail. Connectez-vous plutôt que de créer un second compte.',
+                    0,
+                    $e
+                );
+            }
+            throw $e;
+        }
     }
 
     /**
@@ -3867,17 +3879,38 @@ class UserRepository
      *
      * @return int Id du compte (inchangé)
      * @param array{display_name?: ?string, callsign?: ?string} $identityOverrides
+     * @param bool $replaceOtherLiveCommunities Si vrai (ex. création de communauté), quitte les autres communautés réelles après rattachement.
      */
-    public function cloneUserToTenant(int $sourceUserId, int $newTenantId, int $roleId, ?int $gradeId = null, array $identityOverrides = []): int
-    {
-        return $this->addMembershipToTenant($sourceUserId, $newTenantId, $roleId, $gradeId, $identityOverrides);
+    public function cloneUserToTenant(
+        int $sourceUserId,
+        int $newTenantId,
+        int $roleId,
+        ?int $gradeId = null,
+        array $identityOverrides = [],
+        bool $replaceOtherLiveCommunities = false
+    ): int {
+        return $this->addMembershipToTenant(
+            $sourceUserId,
+            $newTenantId,
+            $roleId,
+            $gradeId,
+            $identityOverrides,
+            $replaceOtherLiveCommunities
+        );
     }
 
     /**
      * @param array{display_name?: ?string, callsign?: ?string} $identityOverrides
+     * @param bool $replaceOtherLiveCommunities Si vrai, autorise le passage d’une communauté réelle à une autre en quittant les précédentes.
      */
-    public function addMembershipToTenant(int $sourceUserId, int $newTenantId, int $roleId, ?int $gradeId = null, array $identityOverrides = []): int
-    {
+    public function addMembershipToTenant(
+        int $sourceUserId,
+        int $newTenantId,
+        int $roleId,
+        ?int $gradeId = null,
+        array $identityOverrides = [],
+        bool $replaceOtherLiveCommunities = false
+    ): int {
         $u = $this->findById($sourceUserId, null);
         if (!$u) {
             throw new InvalidArgumentException('Utilisateur source introuvable.');
@@ -3888,6 +3921,20 @@ class UserRepository
                 return (int) $existing['id'];
             }
             throw new RuntimeException('Cet email est déjà inscrit dans cette communauté.');
+        }
+        if (!$replaceOtherLiveCommunities && $this->hasCommunityMembershipTable()) {
+            foreach ($this->communityMemberships()->listActiveForUser($sourceUserId) as $row) {
+                $tid = (int) ($row['tenant_id'] ?? 0);
+                if ($tid < 1 || $tid === $newTenantId) {
+                    continue;
+                }
+                if (PortalAccessChoice::membershipIsPlaceholder($row)) {
+                    continue;
+                }
+                throw new RuntimeException(
+                    'Ce compte appartient déjà à une autre communauté. Un compte ne peut plus avoir plusieurs communautés : quittez d’abord l’actuelle depuis Compte → Accès, puis rejoignez celle-ci.'
+                );
+            }
         }
         $displayName = array_key_exists('display_name', $identityOverrides)
             ? $identityOverrides['display_name']
@@ -3909,13 +3956,64 @@ class UserRepository
                 fn (string $s) => $this->isProfileSlugTaken($newTenantId, $s)
             );
         }
+        if ($replaceOtherLiveCommunities && $this->hasCommunityMembershipTable()) {
+            foreach ($this->communityMemberships()->listActiveForUser($sourceUserId) as $row) {
+                $tid = (int) ($row['tenant_id'] ?? 0);
+                if ($tid < 1 || $tid === $newTenantId || PortalAccessChoice::membershipIsPlaceholder($row)) {
+                    continue;
+                }
+                $ownerRoleId = (new RoleRepository())->getIdBySlug($tid, 'community_owner');
+                if ($ownerRoleId !== null
+                    && $this->userHasTenantRole($sourceUserId, $ownerRoleId)
+                    && $this->countUsersWithRole($ownerRoleId) <= 1
+                ) {
+                    $label = trim((string) ($row['tenant_name'] ?? ''));
+                    if ($label === '') {
+                        $label = 'une autre communauté';
+                    }
+                    throw new RuntimeException(
+                        'Vous êtes le dernier propriétaire de « ' . $label
+                        . ' ». Transférez ce rôle avant de créer ou rejoindre une autre communauté.'
+                    );
+                }
+            }
+        }
         $this->communityMemberships()->ensureMembership($sourceUserId, $newTenantId, $profile, $sourceUserId);
         $this->communityMemberships()->leavePlaceholderMembershipsIfHasLiveOrg($sourceUserId);
+        if ($replaceOtherLiveCommunities) {
+            $this->leaveOtherLiveCommunities($sourceUserId, $newTenantId);
+        }
         if ($roleId > 0) {
             $this->syncOrganizationRoles($sourceUserId, $newTenantId, [$roleId], null, true);
         }
 
         return $sourceUserId;
+    }
+
+    /**
+     * Quitte toutes les communautés actives sauf celle conservée (placeholders inclus).
+     *
+     * @return int Nombre de communautés réelles quittées
+     */
+    public function leaveOtherLiveCommunities(int $userId, int $keepTenantId): int
+    {
+        if ($userId < 1 || $keepTenantId < 1 || !$this->hasCommunityMembershipTable()) {
+            return 0;
+        }
+        $leftLive = 0;
+        foreach ($this->communityMemberships()->listActiveForUser($userId) as $row) {
+            $tenantId = (int) ($row['tenant_id'] ?? 0);
+            if ($tenantId < 1 || $tenantId === $keepTenantId) {
+                continue;
+            }
+            $wasPlaceholder = PortalAccessChoice::membershipIsPlaceholder($row);
+            $this->leaveCommunity($userId, $tenantId);
+            if (!$wasPlaceholder) {
+                $leftLive++;
+            }
+        }
+
+        return $leftLive;
     }
 
     /**

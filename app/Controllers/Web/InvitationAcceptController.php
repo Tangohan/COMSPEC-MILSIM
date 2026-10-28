@@ -160,22 +160,35 @@ final class InvitationAcceptController
         }
 
         $existingGlobal = $this->users->findFirstByEmailGlobal($email);
-        if ($existingGlobal) {
-            if (!password_verify($password, (string) $existingGlobal['password_hash'])) {
-                Session::flash('error', 'Mot de passe incorrect pour ce compte email.');
+        try {
+            if ($existingGlobal) {
+                if (!password_verify($password, (string) $existingGlobal['password_hash'])) {
+                    Session::flash('error', 'Mot de passe incorrect pour ce compte email.');
 
-                return Response::redirect(url('invitations/accept') . '?token=' . rawurlencode($token));
+                    return Response::redirect(url('invitations/accept') . '?token=' . rawurlencode($token));
+                }
+                $newId = $this->users->cloneUserToTenant((int) $existingGlobal['id'], $tenantId, $roleId, $gradeId);
+            } else {
+                $ph = password_hash($password, PASSWORD_ARGON2ID);
+                $newId = $this->users->create($tenantId, [
+                    'email' => $email,
+                    'password_hash' => $ph,
+                    'role_id' => $roleId,
+                    'grade_id' => $gradeId,
+                    'status' => 'active',
+                ]);
             }
-            $newId = $this->users->cloneUserToTenant((int) $existingGlobal['id'], $tenantId, $roleId, $gradeId);
-        } else {
-            $ph = password_hash($password, PASSWORD_ARGON2ID);
-            $newId = $this->users->create($tenantId, [
-                'email' => $email,
-                'password_hash' => $ph,
-                'role_id' => $roleId,
-                'grade_id' => $gradeId,
-                'status' => 'active',
-            ]);
+        } catch (\Throwable $e) {
+            Session::flash(
+                'error',
+                \App\Support\UserFacingExceptionMapper::isDuplicateEmail($e)
+                    ? 'Un compte existe déjà avec cette adresse e-mail. Connectez-vous plutôt.'
+                    : (trim($e->getMessage()) !== '' && !preg_match('/SQLSTATE|PDOException/i', $e->getMessage())
+                        ? $e->getMessage()
+                        : 'Impossible d’accepter cette invitation pour le moment.')
+            );
+
+            return Response::redirect(url('invitations/accept') . '?token=' . rawurlencode($token));
         }
         if (!$existingGlobal) {
             $this->users->syncOrganizationRoles($newId, $tenantId, [$roleId], null, true);

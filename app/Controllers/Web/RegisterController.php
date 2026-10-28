@@ -283,6 +283,15 @@ final class RegisterController
         } catch (Throwable $e) {
             $pdo->rollBack();
             error_log('[auth.register] ' . $e->getMessage());
+            if (UserFacingExceptionMapper::isDuplicateEmail($e)) {
+                Session::flash(
+                    'error',
+                    'Un compte existe déjà avec cette adresse e-mail. Connectez-vous (ou utilisez « Mot de passe oublié »), puis rejoignez la communauté via une invitation — ne créez pas un second compte.'
+                );
+                Session::flash('login_old_email', $email);
+
+                return Response::redirect(url('login'));
+            }
             $flashBack(UserFacingExceptionMapper::registrationMessage($e));
 
             return Response::redirect(url('register'));
