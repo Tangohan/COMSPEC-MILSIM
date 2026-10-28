@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.109";
+    private const string ExtensionVersion = "2.0.110";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -1018,7 +1018,7 @@ public static partial class Extension
         || url.Contains("/api/atak/briefing-plan", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// BACKGROUND (OPT-02) : remplacables / non urgents — file drainée, jamais de drop silencieux
+    /// BACKGROUND (OPT-02 / OPT-11) : remplacables / non urgents — file drainée, jamais de drop silencieux
     /// (contrairement au best-effort vidéo qui peut être abandonné sous cooldown).
     /// </summary>
     private static bool IsBackgroundQueuedEndpoint(string url) =>
@@ -1026,10 +1026,12 @@ public static partial class Extension
         || url.Contains("/api/atak/viewshed", StringComparison.OrdinalIgnoreCase)
         || url.Contains("/api/atak/relays", StringComparison.OrdinalIgnoreCase)
         || url.Contains("/api/atak/rf-hits", StringComparison.OrdinalIgnoreCase)
-        || url.Contains("/api/atak/explosive-timers", StringComparison.OrdinalIgnoreCase);
+        || url.Contains("/api/atak/explosive-timers", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/logistics/", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/admin-control/", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// PRIORITY (OPT-06) : messagerie, CAS, renseignement, pings — file drainée (pas de FAF),
+    /// PRIORITY (OPT-06 / OPT-11) : messagerie, CAS, renseignement, pings, IFF — file drainée (pas de FAF),
     /// jamais de drop silencieux. Le drain place encore les positions avant ces envois.
     /// </summary>
     private static bool IsPriorityQueuedEndpoint(string url) =>
@@ -1041,7 +1043,8 @@ public static partial class Extension
         || url.Contains("/api/pings", StringComparison.OrdinalIgnoreCase)
         || url.Contains("/api/atak/designator", StringComparison.OrdinalIgnoreCase)
         || url.Contains("/api/atak/laser-codes", StringComparison.OrdinalIgnoreCase)
-        || url.Contains("/api/atak/sigint", StringComparison.OrdinalIgnoreCase);
+        || url.Contains("/api/atak/sigint", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/iff/", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsMarkerEndpoint(string url) =>
         url.Contains("/api/atak/marker", StringComparison.OrdinalIgnoreCase)
@@ -3619,6 +3622,8 @@ public static partial class Extension
         "SendSigint", "SendRfHit", "UpdateVehicleTracking",
         "Distance.Batch", "Squad.Sync", "ScreenTime.Report", "ScreenTime.Batch", "Garmin.Report",
         "NetConditions.Report", "BriefingPlan.Push", "ImageDataChunk",
+        // OPT-13 : mise en file seule (pas de HTTP sync) — hors AsyncGate comme SendMarker.
+        "SendChat", "SubmitExplosiveTimer", "SendPing", "SendIntel",
     };
 
     /// <summary>Cache octets ImageDataChunk* (évite ReadAllBytes × N chunks, F-DLL-08). Clé = chemin absolu.</summary>

@@ -34,9 +34,26 @@ EN : The Athena portal address is no longer a setting
 
 Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.md) · [TECHREP #00003](docs/dev/TECHREP-00003.md).
 
-Changelog Steam (copier-coller) : [ATAK 2.9.18](docs/dev/STEAM-CHANGELOG-2026-10-28-atak-2.9.18.md) · [ATAK 2.9.17](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.9.17.md) · [ATAK 2.9.16](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.9.16.md) · [ATAK 2.7.0](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.7.0.md) · [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-2026-09-22-overwatch-1.6.12.md) · [Overwatch 1.6.9](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.9.md) · [Overwatch 1.6.8](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.8.md) · [Overwatch 1.6.7](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.7.md) · [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md) · [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-2026-09-15-overwatch-1.5.78.md) · [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+Changelog Steam (copier-coller) : [ATAK 2.9.19](docs/dev/STEAM-CHANGELOG-2026-10-28-atak-2.9.19.md) · [ATAK 2.9.18](docs/dev/STEAM-CHANGELOG-2026-10-28-atak-2.9.18.md) · [ATAK 2.9.17](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.9.17.md) · [ATAK 2.9.16](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.9.16.md) · [ATAK 2.7.0](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.7.0.md) · [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-2026-09-22-overwatch-1.6.12.md) · [Overwatch 1.6.9](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.9.md) · [Overwatch 1.6.8](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.8.md) · [Overwatch 1.6.7](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.7.md) · [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md) · [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-2026-09-15-overwatch-1.5.78.md) · [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
 
 ---
+
+## Pack 2.9.19 : file d’envoi élargie et envois hors fil jeu (ATAK natif 2.9.19.AG - Denver, COMSPEC Link 2.0.110)
+
+### Résumé joueur
+Type : performance
+FR : Liaison plus fluide sous charge
+- La logistique, l’identification ami-ennemi et les accusés de commande n’ouvrent plus d’envois parallèles.
+- Les ordres et les notifications du poste ne figent plus l’image.
+EN : Smoother link under load
+- Logistics, IFF replies and command acks no longer open parallel sends.
+- Orders and post notifications no longer freeze the frame.
+
+### Détail technique
+- OPT-11 : logistics / admin-control → BACKGROUND ; IFF → PRIORITY
+- OPT-12 : `FeatureLatchMax` 64 + `MaybePruneFeatureLatches`
+- OPT-13 : AsyncLocal SendChat / SubmitExplosiveTimer / SendPing / SendIntel ; SQF spawn+extAwait
+- Link 2.0.110 ; DevDispatch UPDATE #1203
 
 ## Pack 2.9.18 : connexion et relevé carte hors fil jeu (ATAK natif 2.9.18.AG - Denver, COMSPEC Link 2.0.109)
 

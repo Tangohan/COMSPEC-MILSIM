@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Net.Http;
 
 namespace COMSPECExtension;
@@ -24,6 +25,8 @@ public static partial class Extension
     };
 
     private const long FeatureLatchMs = 30L * 60 * 1000;
+    /// <summary>OPT-12 : plafond dures des latches fonction (session longue, nombreuses routes refusées).</summary>
+    private const int FeatureLatchMax = 64;
 
     private static volatile string _authLatchCode = "";
 
@@ -63,6 +66,26 @@ public static partial class Extension
         var key = RefusalEndpointKey(url);
         FeatureLatchCodes[key] = code;
         FeatureLatchUntilMs[key] = Environment.TickCount64 + FeatureLatchMs;
+        MaybePruneFeatureLatches();
+    }
+
+    /// <summary>OPT-12 : retire les latches expirés ; si trop de clés, évince les plus anciennes.</summary>
+    private static void MaybePruneFeatureLatches()
+    {
+        if (FeatureLatchUntilMs.Count <= FeatureLatchMax) return;
+        var now = Environment.TickCount64;
+        foreach (var kv in FeatureLatchUntilMs)
+        {
+            if (kv.Value > now) continue;
+            FeatureLatchUntilMs.TryRemove(kv.Key, out _);
+            FeatureLatchCodes.TryRemove(kv.Key, out _);
+        }
+        if (FeatureLatchUntilMs.Count <= FeatureLatchMax) return;
+        foreach (var kv in FeatureLatchUntilMs.OrderBy(x => x.Value).Take(FeatureLatchUntilMs.Count - FeatureLatchMax))
+        {
+            FeatureLatchUntilMs.TryRemove(kv.Key, out _);
+            FeatureLatchCodes.TryRemove(kv.Key, out _);
+        }
     }
 
     /// <summary>Session déjà prête et sans erreur : un client-init de contrôle accepté n'a rien à rétablir.</summary>

@@ -17,7 +17,10 @@
 | **B** | OPT-06 | Chat / CAS / intel : file prioritaire dédiée (pas drop silencieux) | Latence contrôlée sans FAF | Moyenne | **Fait en 2.0.108** (`IsPriorityQueuedEndpoint`) |
 | **B** | OPT-07 | `MapCap.Scan` → `OK\|queued` + Poll résultat | Fil jeu léger | Moyenne | **Fait en 2.0.109** (`MapCap.ScanPoll`) |
 | **B** | OPT-08 | Auth login SQF → extAwait (password/OTP/Steam/C2) | Moins de freeze lobby | Moyenne | **Fait en 2.0.109** (spawn + extAwait) |
-| **C** | OPT-09 | Ordonnanceur unique CRITICAL/HIGH/… | Unification | Haute | **Élevé** — différé : les files actuelles suffisent si OPT-01..05 |
+| **B+** | OPT-11 | logistics / admin-ack → BACKGROUND ; IFF → PRIORITY | Moins de FAF résiduel | Faible | **Fait en 2.0.110** |
+| **B+** | OPT-12 | Soft-cap `FeatureLatch` (64 + prune) | Mémoire session longue | Faible | **Fait en 2.0.110** |
+| **B+** | OPT-13 | SendChat / explosive / suppressions marqueurs → AsyncLocal + SQF spawn | Fil jeu léger | Faible | **Fait en 2.0.110** |
+| **C** | OPT-09 | Ordonnanceur unique CRITICAL/HIGH/… | Unification | Haute | **Élevé** — différé : les files actuelles suffisent si OPT-01..08+11 |
 | **C** | OPT-10 | Tests charge 10–60 joueurs / 429 / coupure | Preuve longue durée | Haute | — (infra) |
 | **—** | — | Toucher `ERR\|use_async` / Connect dual | — | — | **Interdit** sans design |
 
@@ -34,7 +37,11 @@
 
 ## Lot B → Link **2.0.109** / ATAK **2.9.18**
 
-OPT-06 (2.0.108) + OPT-07/08 (2.0.109) : MapCap.Scan async + auth SQF extAwait. OPT-09/10 toujours différés.
+OPT-06 (2.0.108) + OPT-07/08 (2.0.109) : MapCap.Scan async + auth SQF extAwait.
+
+## Lot B+ → Link **2.0.110** / ATAK **2.9.19**
+
+OPT-11..13 : FAF résiduels (logistics / IFF / ack), plafond FeatureLatch, SQF SendChat/explosive/suppressions marqueurs. OPT-09/10 toujours différés.
 
 ## Lot C
 

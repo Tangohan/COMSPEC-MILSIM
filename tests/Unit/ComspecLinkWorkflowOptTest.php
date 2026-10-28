@@ -41,6 +41,8 @@ final class ComspecLinkWorkflowOptTest extends TestCase
         self::assertStringContainsString('/api/atak/playtime', $cs);
         self::assertStringContainsString('/api/atak/relays', $cs);
         self::assertStringContainsString('/api/atak/rf-hits', $cs);
+        self::assertStringContainsString('/api/logistics/', $cs);
+        self::assertStringContainsString('/api/atak/admin-control/', $cs);
         self::assertStringContainsString('IsBackgroundQueuedEndpoint(url)', $cs);
     }
 
@@ -51,7 +53,26 @@ final class ComspecLinkWorkflowOptTest extends TestCase
         self::assertStringContainsString('/api/chat', $cs);
         self::assertStringContainsString('/api/cas/', $cs);
         self::assertStringContainsString('/api/atak/intel', $cs);
+        self::assertStringContainsString('/api/iff/', $cs);
         self::assertStringContainsString('IsPriorityQueuedEndpoint(url)', $cs);
+    }
+
+    public function testFeatureLatchHasSoftCap(): void
+    {
+        $latch = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/Extension_RefusalLatch.cs'
+        );
+        self::assertStringContainsString('FeatureLatchMax = 64', $latch);
+        self::assertStringContainsString('MaybePruneFeatureLatches', $latch);
+    }
+
+    public function testAsyncLocalIncludesSendChatAndExplosive(): void
+    {
+        $cs = $this->ext();
+        self::assertMatchesRegularExpression(
+            '/AsyncLocalCommands[\s\S]*?"SendChat"[\s\S]*?"SubmitExplosiveTimer"/',
+            $cs
+        );
     }
 
     public function testMemStatsExposesQueueDepths(): void
@@ -96,7 +117,7 @@ final class ComspecLinkWorkflowOptTest extends TestCase
             dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/COMSPECExtension.csproj'
         );
         self::assertStringContainsString('<Version>' . $ver . '</Version>', $proj);
-        self::assertTrue(version_compare($ver, '2.0.109', '>='));
+        self::assertTrue(version_compare($ver, '2.0.110', '>='));
     }
 
     public function testMapCapScanIsQueuedWithPoll(): void

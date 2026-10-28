@@ -52,5 +52,13 @@ missionNamespace setVariable ["COMSPEC_WebNotifBeatAt", diag_tickTime];
 // Au plus 15 par envoi (taille du JSON) : en rafale, seules les 15 plus récentes partent.
 if ((count _new) > 15) then { _new = _new select [(count _new) - 15, 15]; };
 private _json = [createHashMapFromArray [["atak_notifs", _new], ["atak_notif_unread", _unread]]] call comspec_overwatch_connect_fnc_hashMapToJson;
-"COMSPECExtension" callExtension ["SubmitExplosiveTimer", [_json]];
+// OPT-13 : mise en file hors fil jeu.
+[_json] spawn {
+    params ["_json"];
+    if (!isNil "comspec_overwatch_connect_fnc_extAwait") then {
+        ["COMSPECExtension", "SubmitExplosiveTimer", [_json]] call comspec_overwatch_connect_fnc_extAwait;
+    } else {
+        "COMSPECExtension" callExtension ["SubmitExplosiveTimer", [_json]];
+    };
+};
 count _new

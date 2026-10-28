@@ -294,6 +294,13 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1203, '2026-10-28', 'Liaison : moins d’envois parallèles résiduels', 'Avec le pack 2.9.19 et la liaison 2.0.110, les mises à jour de logistique, les réponses d’identification ami-ennemi et les accusés de réception de commande rejoignent la file d’envoi déjà utilisée pour les positions et la messagerie. Les ordres et les notifications du poste partent aussi sans figer l’image. La carte des alliés reste prioritaire.', [
+                'Logistique, identification ami-ennemi et accusés de commande passent par la file d’envoi',
+                'Ordres et notifications du poste sans figer l’image',
+                'Liaison 2.0.110 livrée avec ce pack',
+            ], [], [], ['atak'], [
+                'Mettez à jour le pack 2.9.19, quittez Arma complètement, puis relancez.',
+            ], 'Pack téléphone 2.9.19 et liaison 2.0.110 à republier'),
             $pr(1202, '2026-10-28', 'Connexion et relevé carte sans figer le jeu', 'Avec le pack 2.9.18 et la liaison 2.0.109, la connexion au compte (mot de passe, code e-mail, Steam, ouverture du canal poste) ne bloque plus l’image pendant l’attente du portail. Le relevé des images déjà prises pour la capture de carte se fait aussi en arrière-plan : l’interface Zeus et le jeu restent fluides pendant ce parcours.', [
                 'Connexion e-mail, code temporaire, Steam et ouverture du canal poste sans figer l’image',
                 'Relevé des images de capture de carte en arrière-plan avant de reprendre ou démarrer une séance',
