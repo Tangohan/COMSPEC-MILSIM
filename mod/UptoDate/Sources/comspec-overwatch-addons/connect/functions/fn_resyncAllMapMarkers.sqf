@@ -106,16 +106,30 @@ private _hubOwns = isMultiplayer && {missionNamespace getVariable ["COMSPEC_Serv
 } forEach _markers;
 
 // Suppressions : seulement si le budget n’a pas été saturé (sinon on risque des faux positifs)
+// OPT-13 : un spawn + extAwait (SendMarker AsyncLocal) — N callExtension sync figeaient.
 if (_spent < _budget) then {
+    private _dels = [];
     {
         if (!(_x in _next)) then {
             private _delName = _x;
             if ((_delName find "#") >= 0) then {
                 _delName = (_delName splitString "#" joinString "__H__");
             };
-            "COMSPECExtension" callExtension ["SendMarker", [_delName, "{}", "1", "1"]];
+            _dels pushBack _delName;
         };
     } forEach (keys _prev);
+    if ((count _dels) > 0) then {
+        [_dels] spawn {
+            params ["_dels"];
+            {
+                if (!isNil "comspec_overwatch_connect_fnc_extAwait") then {
+                    ["COMSPECExtension", "SendMarker", [_x, "{}", "1", "1"]] call comspec_overwatch_connect_fnc_extAwait;
+                } else {
+                    "COMSPECExtension" callExtension ["SendMarker", [_x, "{}", "1", "1"]];
+                };
+            } forEach _dels;
+        };
+    };
 };
 
 missionNamespace setVariable ["COMSPEC_Athena_MapMarkerSnap", _next, false];

@@ -81,7 +81,15 @@ private _encodedPayload = if (_targetType != "") then {
     _payload
 };
 private _encoded = format ["ORDER|%1|%2|%3|%4|%5|%6", _id, _orderType, _target, _priority, _issuer, _encodedPayload];
-"COMSPECExtension" callExtension ["SendChat", [_issuer, _encoded]];
+// OPT-13 : mise en file hors fil jeu (SendChat AsyncLocal).
+[_issuer, _encoded] spawn {
+    params ["_issuer", "_encoded"];
+    if (!isNil "comspec_overwatch_connect_fnc_extAwait") then {
+        ["COMSPECExtension", "SendChat", [_issuer, _encoded]] call comspec_overwatch_connect_fnc_extAwait;
+    } else {
+        "COMSPECExtension" callExtension ["SendChat", [_issuer, _encoded]];
+    };
+};
 
 ["OnOrderIssued", _order] call comspec_overwatch_connect_fnc_publishEvent;
 

@@ -509,10 +509,10 @@ public static partial class Extension
     }
 
     /// <summary>
-    /// Drain prioritaire : construit un lot et POST /api/atak/telemetry/batch.
+    /// Drain prioritaire : construit un lot et POST /api/atak/telemetry/batch (async, F-DLL-06).
     /// Échec → secours unitaire via EnqueueForRetry.
     /// </summary>
-    private static bool TryDrainTelemetryBatch()
+    private static async Task<bool> TryDrainTelemetryBatchAsync()
     {
         if (!_telemetryBatchEnabled || string.IsNullOrEmpty(_baseUrl))
             return false;
@@ -583,7 +583,7 @@ public static partial class Extension
                 catch { /* garder JSON brut */ }
             }
 
-            using var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
+            using var response = await HttpClient.SendAsync(req).ConfigureAwait(false);
             var code = (int)response.StatusCode;
             NoteTrafficUntracked(req, response);
             Interlocked.Exchange(ref _telemetryLastLatencyMs, Math.Max(0, Environment.TickCount64 - started));
