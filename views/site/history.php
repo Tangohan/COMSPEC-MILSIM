@@ -122,14 +122,16 @@ $chartPayload = [
             <p class="site-sse-block__lead"><?= $e(__('site.hist_chart_lead')) ?></p>
             <div class="site-history__period" role="group" aria-label="<?= $e(__('site.hist_chart_period')) ?>">
                 <?php
+                // Clés numériques castées en int par PHP → forcer string avant rawurlencode / comparaisons.
                 $periods = [
                     'all' => __('site.hist_chart_period_all'),
                     '365' => __('site.hist_chart_period_365'),
                     '90' => __('site.hist_chart_period_90'),
                 ];
                 foreach ($periods as $key => $label):
-                    $href = url('notre-histoire') . ($key === 'all' ? '' : ('?periode=' . rawurlencode($key)));
-                    $active = $period === $key;
+                    $periodKey = (string) $key;
+                    $href = url('notre-histoire') . ($periodKey === 'all' ? '' : ('?periode=' . rawurlencode($periodKey)));
+                    $active = $period === $periodKey;
                 ?>
                     <a href="<?= $e($href) ?>" class="site-history__period-btn<?= $active ? ' is-active' : '' ?>"<?= $active ? ' aria-current="page"' : '' ?>><?= $e($label) ?></a>
                 <?php endforeach; ?>
