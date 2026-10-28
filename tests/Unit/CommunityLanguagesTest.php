@@ -27,6 +27,22 @@ final class CommunityLanguagesTest extends TestCase
         self::assertSame(['en', 'ru'], CommunityLanguages::normalizeList(['ru', 'xx', 'en', 'RU']));
     }
 
+    public function testFlagHtmlUsesFlagcdnImagesNotRegionalEmojis(): void
+    {
+        self::assertSame('FR', CommunityLanguages::countryCode('fr'));
+        self::assertSame('GB', CommunityLanguages::countryCode('en'));
+        self::assertSame('RU', CommunityLanguages::countryCode('ru'));
+
+        $fr = CommunityLanguages::flagHtml('fr');
+        self::assertStringContainsString('flagcdn.com/16x12/fr.png', $fr);
+        self::assertStringNotContainsString('🇫🇷', $fr);
+
+        $flags = CommunityLanguages::flagsHtml(['fr', 'en', 'fr']);
+        self::assertStringContainsString('flagcdn.com/16x12/fr.png', $flags);
+        self::assertStringContainsString('flagcdn.com/16x12/gb.png', $flags);
+        self::assertSame(1, substr_count($flags, 'flagcdn.com/16x12/fr.png'));
+    }
+
     public function testCommunityDefaultsAndOrbatLanguage(): void
     {
         $community = ['default_locale' => 'es', 'community_languages' => ['en']];
@@ -125,5 +141,7 @@ final class CommunityLanguagesTest extends TestCase
         self::assertStringContainsString("/membres/{id}/langues'", $routes);
         self::assertStringContainsString('id="eff-dlg-langues"', $member);
         self::assertStringContainsString('name="langue"', $roster);
+        self::assertStringContainsString('flagsHtml(', $roster);
+        self::assertStringContainsString('eff-sheets__lang-flag', $roster);
     }
 }

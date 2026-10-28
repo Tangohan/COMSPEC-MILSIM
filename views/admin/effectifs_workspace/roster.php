@@ -315,7 +315,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                 <select id="eff-langue" name="langue">
                     <option value="">Toutes les langues</option>
                     <?php foreach (array_values(array_unique(array_merge($rosterLanguageCodes, $languageFilter !== '' ? [$languageFilter] : []))) as $langCode): ?>
-                        <option value="<?= htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8') ?>" <?= $languageFilter === $langCode ? 'selected' : '' ?>><?= htmlspecialchars(\App\Support\CommunityLanguages::flag($langCode) . ' ' . \App\Support\CommunityLanguages::label($langCode), ENT_QUOTES, 'UTF-8') ?></option>
+                        <option value="<?= htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8') ?>" <?= $languageFilter === $langCode ? 'selected' : '' ?>><?= htmlspecialchars(strtoupper(\App\Support\CommunityLanguages::countryCode($langCode) ?: $langCode) . ' · ' . \App\Support\CommunityLanguages::label($langCode), ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -599,7 +599,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                             . ($rowLang['others'] !== [] ? ($rosterEn ? ', understands ' : ', comprend ') . implode(', ', array_map($rowLangName, $rowLang['others'])) : '')
                                             . ($rowLang['source'] !== 'member' ? ($rosterEn ? ' (to be confirmed)' : ' (à confirmer)') : '');
                                         ?>
-                                        <span class="eff-sheets__badge eff-sheets__badge--lang<?= $rowLang['source'] !== 'member' ? ' eff-sheets__badge--muted' : '' ?>" title="<?= htmlspecialchars($rowLangTitle, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(\App\Support\CommunityLanguages::flag((string) $rowLang['primary']) . ' ' . implode('·', array_map('strtoupper', $rowLangCodes)), ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="eff-sheets__badge eff-sheets__badge--lang<?= $rowLang['source'] !== 'member' ? ' eff-sheets__badge--muted' : '' ?>" title="<?= htmlspecialchars($rowLangTitle, ENT_QUOTES, 'UTF-8') ?>"><?= \App\Support\CommunityLanguages::flagsHtml($rowLangCodes, ['class' => 'eff-sheets__lang-flag', 'size' => '16x12']) ?><span class="eff-sheets__lang-codes"><?= htmlspecialchars(implode('·', array_map('strtoupper', $rowLangCodes)), ENT_QUOTES, 'UTF-8') ?></span></span>
                                     <?php endif; ?>
                                     <?php if (is_array($phaseBadge) && ($phaseBadge['label'] ?? '') !== ''): ?>
                                         <?php

@@ -124,32 +124,40 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  padding: 0.7rem 0.6rem;
+  padding: 0.8rem 0.7rem;
   background: #0f172a;
   color: #f8fafc;
   font-size: 0.66rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-align: left;
   text-transform: uppercase;
   white-space: nowrap;
   border: 0;
+  border-right: 1px solid rgba(248, 250, 252, 0.14);
+  box-shadow: inset 0 -2px 0 0 var(--ath-accent, #0b8a5c);
+}
+
+.bo-eff-workspace #eff-roster-table.eff-das__table thead th:last-child {
+  border-right: 0;
+  border-top-right-radius: 0.8rem;
 }
 
 .bo-eff-workspace #eff-roster-table.eff-das__table thead th:first-child {
   border-top-left-radius: 0.8rem;
 }
 
-.bo-eff-workspace #eff-roster-table.eff-das__table thead th:last-child {
-  border-top-right-radius: 0.8rem;
-}
-
 .bo-eff-workspace #eff-roster-table.eff-das__table tbody td {
-  padding: 0.6rem 0.6rem;
+  padding: 0.6rem 0.7rem;
   border-top: 1px solid var(--ath-line-soft, #f1f4f5);
+  border-right: 1px solid var(--ath-line-soft, #f1f4f5);
   vertical-align: middle;
   color: var(--ath-ink, #0c1116);
   background: var(--ath-surface, #fff);
+}
+
+.bo-eff-workspace #eff-roster-table.eff-das__table tbody td:last-child {
+  border-right: 0;
 }
 
 .bo-eff-workspace #eff-roster-table.eff-das__table tbody tr:nth-child(even) td {
@@ -348,6 +356,28 @@
   gap: 0.3rem;
 }
 
+.bo-eff-workspace .eff-sheets--das #eff-roster-table .eff-sheets__badge--lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-weight: 700;
+}
+
+.bo-eff-workspace .eff-sheets--das #eff-roster-table .eff-sheets__lang-flag {
+  width: 16px;
+  height: 12px;
+  flex: 0 0 auto;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.12);
+}
+
+.bo-eff-workspace .eff-sheets--das #eff-roster-table .eff-sheets__lang-codes {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--ath-ink, #0c1116);
+}
+
 .bo-eff-workspace .eff-sheets--das #eff-roster-table .eff-sheets__meta {
   color: var(--ath-muted, #6d7a80);
   font-size: 0.7rem;
@@ -356,17 +386,17 @@
 
 .eff-das__callsign {
   font-family: var(--ath-mono, ui-monospace, monospace);
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 800;
   color: var(--ath-ink, #0c1116);
   background: var(--ath-line-soft, #f1f4f5);
   border-radius: 0.3rem;
-  padding: 0.05rem 0.35rem;
+  padding: 0.1rem 0.4rem;
 }
 
 /* ——— Cellules ——— */
 .eff-das__strong {
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .eff-das__muted {
@@ -391,13 +421,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 700;
+  font-weight: 800;
   vertical-align: middle;
 }
 
 .eff-das__seniority,
 .eff-das__time {
-  font-weight: 700;
+  font-weight: 800;
   color: var(--ath-accent, #0b8a5c);
   white-space: nowrap;
 }
@@ -582,7 +612,7 @@ html[data-bo-theme="dark"] .bo-eff-workspace .eff-sheets--das #eff-roster-table 
   display: block;
   max-width: 13rem;
   white-space: normal;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.3;
 }
 
