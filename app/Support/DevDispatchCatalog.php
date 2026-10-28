@@ -330,7 +330,7 @@ final class DevDispatchCatalog
             ], ['atak'], [
                 'Approchez un écran. ACE → Écran COMSPEC → Afficher le PIP du poste (ouvrez d’abord le PC du poste). Puis Diffuser mes diapositives depuis Briefing.',
             ], 'Pack du téléphone à republier'),
-            $pr(1185, '2026-10-27', 'Téléphone : groupes d’apps, calculette et bloc-notes', 'Sur l’accueil du téléphone, vous créez des groupes pour ranger vos applications. Clic droit sur une app pour l’épingler ou l’ajouter à un groupe. Deux apps civiles s’ajoutent : Calculette (opérations courantes) et Bloc-notes (notes locales sur ce poste). Quittez Arma complètement, puis relancez.', [
+            $pr(1184, '2026-10-27', 'Téléphone : groupes d’apps, calculette et bloc-notes', 'Sur l’accueil du téléphone, vous créez des groupes pour ranger vos applications. Clic droit sur une app pour l’épingler ou l’ajouter à un groupe. Deux apps civiles s’ajoutent : Calculette (opérations courantes) et Bloc-notes (notes locales sur ce poste). Quittez Arma complètement, puis relancez.', [
                 'Groupes d’applications personnels (créer, renommer, supprimer, ajouter / retirer une app)',
                 'Filtre GROUPES et section Mes groupes sur l’accueil',
                 'Clic droit sur une tuile : épingler, ajouter au groupe, fermer',
@@ -341,7 +341,7 @@ final class DevDispatchCatalog
             ], [], ['atak'], [
                 'Ouvrez l’accueil. Créez un groupe via Mes groupes ou clic droit sur une app. Ouvrez Calculette et Bloc-notes dans Civil.',
             ], 'Pack du téléphone à republier'),
-            $pr(1184, '2026-10-27', 'Intégration : la fiche d’un parcours se lit d’un coup d’œil', 'Dans Intégration des recrues, la fiche d’un membre montre d’abord ce qu’il reste à faire : statut, avancement, référent, et l’étape en cours. Les étapes se suivent en chronologie. Vous validez directement, ou malgré tout avec un motif. Les rendez-vous et l’annulation restent à portée, sans encombrer la page. Rechargez le portail (Ctrl+F5).', [
+            $pr(1185, '2026-10-27', 'Intégration : la fiche d’un parcours se lit d’un coup d’œil', 'Dans Intégration des recrues, la fiche d’un membre montre d’abord ce qu’il reste à faire : statut, avancement, référent, et l’étape en cours. Les étapes se suivent en chronologie. Vous validez directement, ou malgré tout avec un motif. Les rendez-vous et l’annulation restent à portée, sans encombrer la page. Rechargez le portail (Ctrl+F5).', [
                 'Bandeau de synthèse : prochaine étape, référent, reste à faire',
                 'Étapes en chronologie, avec validation de l’étape en cours',
             ], [], [], ['personnel'], [
