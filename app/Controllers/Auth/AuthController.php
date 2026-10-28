@@ -27,6 +27,7 @@ use App\Services\Auth\LoginSecurityOtpService;
 use App\Services\Auth\LoginAccueilBackgroundService;
 use App\Services\Auth\LoginWelcomeProfileService;
 use App\Services\Auth\PasswordResetService;
+use App\Services\Community\CommunityMembershipConsolidationService;
 use App\Support\LoginAccueilImageStorage;
 
 class AuthController
@@ -52,6 +53,7 @@ class AuthController
         private LoginWelcomeProfileService $loginWelcomeProfileService,
         private PasswordResetService $passwordResetService,
         private LoginAccueilBackgroundService $loginAccueilBackgroundService,
+        private CommunityMembershipConsolidationService $communityMembershipConsolidationService,
     ) {}
 
     /**
@@ -573,8 +575,32 @@ class AuthController
             return Response::redirect(url('login/select-community'));
         }
 
+        $temporaryAccess = (string) $request->input('temporary_access') === '1';
+        if (!$temporaryAccess) {
+            if ((string) $request->input('confirm_definitive') !== '1') {
+                Session::flash('error', __('auth.select_community_confirm_required'));
+
+                return Response::redirect(url('login/select-community'));
+            }
+
+            $consolidation = $this->communityMembershipConsolidationService->consolidateToChoice($chosen, $allowed);
+            if (empty($consolidation['ok'])) {
+                // Rester sur l’écran : un accès temporaire peut ouvrir la communauté à régulariser.
+                Session::flash('error', (string) ($consolidation['error'] ?? __('auth.flash_invalid_choice')));
+
+                return Response::redirect(url('login/select-community'));
+            }
+            if ((int) ($consolidation['left_count'] ?? 0) > 0) {
+                Session::flash('success', __('auth.select_community_consolidated'));
+            }
+        }
+
         Session::forget('pending_community_selection');
         Session::forget('pending_verification_email');
+
+        // Recharger le profil après consolidation (appartenances mises à jour).
+        $user = $this->userRepository->findById((int) $chosen['user_id'], $tenantId) ?? $user;
+
         if ($this->loginSecurityOtpService->needsChallengeNow($user)) {
             return $this->loginSecurityOtpService->beginLoginChallenge($user);
         }

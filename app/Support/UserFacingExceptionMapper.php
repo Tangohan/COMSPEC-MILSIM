@@ -16,7 +16,7 @@ final class UserFacingExceptionMapper
     public static function registrationMessage(Throwable $e): string
     {
         if (self::isDuplicateEmail($e)) {
-            return 'Cette adresse e-mail est déjà utilisée. Connectez-vous ou choisissez une autre adresse.';
+            return 'Un compte existe déjà avec cette adresse e-mail. Connectez-vous (ou utilisez « Mot de passe oublié »), puis rejoignez la communauté via une invitation — ne créez pas un second compte.';
         }
 
         return 'Inscription impossible pour le moment. Réessayez dans quelques instants.';
@@ -38,14 +38,22 @@ final class UserFacingExceptionMapper
         return 'Impossible de créer la communauté pour le moment. Réessayez plus tard ou contactez le support.';
     }
 
+    public static function isDuplicateEmail(Throwable $e): bool
+    {
+        $msg = $e->getMessage();
+        if (
+            stripos($msg, 'existe déjà') !== false
+            && (stripos($msg, 'e-mail') !== false || stripos($msg, 'email') !== false || stripos($msg, 'adresse') !== false)
+        ) {
+            return true;
+        }
+
+        return (bool) preg_match('/Duplicate.*(email|email_identity|users\.email|uk_users_email|uniq.*email)/i', $msg);
+    }
+
     private static function looksTechnical(string $msg): bool
     {
         return (bool) preg_match('/SQLSTATE|Unknown column|PDOException|\bPDO\b|duplicate key/i', $msg);
-    }
-
-    private static function isDuplicateEmail(Throwable $e): bool
-    {
-        return (bool) preg_match('/Duplicate.*(email|users\.email|uniq.*email)/i', $e->getMessage());
     }
 
     private static function isDuplicateSlug(Throwable $e): bool

@@ -95,7 +95,15 @@ final class TenantBootstrapService
                 TenantSeedHelper::seedBaseRoles($pdo, $tenantId);
             }
 
-            $newUserId = $this->userRepository->cloneUserToTenant($creatorUserId, $tenantId, $communityOwnerRoleId, $gradeId);
+            // Un compte = une communauté : la nouvelle organisation remplace les appartenances réelles précédentes.
+            $newUserId = $this->userRepository->cloneUserToTenant(
+                $creatorUserId,
+                $tenantId,
+                $communityOwnerRoleId,
+                $gradeId,
+                [],
+                true
+            );
 
             TenantSeedHelper::ensureOnboardingPortalCourse($pdo, $tenantId, $newUserId);
             TenantSeedHelper::ensureRolesOrgCourse($pdo, $tenantId, $newUserId);

@@ -2,6 +2,7 @@
 /** @var string $email */
 /** @var list<array{tenant_id: int, user_id: int, tenant_name: string, tenant_slug: string}> $candidates */
 $error = \App\Core\Session::getFlash('error');
+$success = \App\Core\Session::getFlash('success');
 $title = $title ?? __('auth.title_select_community');
 $t = static fn (string $key): string => htmlspecialchars(__($key), ENT_QUOTES, 'UTF-8');
 $athena_header_current = 'login';
@@ -29,6 +30,9 @@ $athena_header_current = 'login';
         <?php if ($error): ?>
             <?php $flash_variant = 'error'; $flash_message = $error; $flash_margin_class = ''; require base_path('views/partials/flash_message.php'); ?>
         <?php endif; ?>
+        <?php if ($success): ?>
+            <?php $flash_variant = 'success'; $flash_message = $success; $flash_margin_class = ''; require base_path('views/partials/flash_message.php'); ?>
+        <?php endif; ?>
     </div>
 
     <form method="post" action="<?= url('login/select-community') ?>" class="ds-form rg-form" data-busy-form>
@@ -48,9 +52,33 @@ $athena_header_current = 'login';
                 </label>
                 <?php endforeach; ?>
             </fieldset>
+            <label class="ds-check au-confirm">
+                <input type="checkbox" name="confirm_definitive" value="1" required>
+                <span><?= $t('auth.select_community_confirm') ?></span>
+            </label>
             <button type="submit" class="ds-btn ds-btn--primary ds-btn--block au-btn au-btn--primary" data-busy-label="<?= $t('auth.submit_login_busy') ?>"><?= $t('auth.select_community_continue') ?></button>
         </section>
     </form>
+
+    <form method="post" action="<?= url('login/select-community') ?>" class="ds-form rg-form au-temp-form" data-busy-form>
+        <?= \App\Core\Csrf::field() ?>
+        <input type="hidden" name="temporary_access" value="1">
+        <input type="hidden" name="tenant_id" value="<?= (int) ($candidates[0]['tenant_id'] ?? 0) ?>" id="au-temp-tenant">
+        <p class="ds-hint au-temp-hint"><?= $t('auth.select_community_temporary') ?></p>
+        <button type="submit" class="ds-btn ds-btn--ghost ds-btn--block au-btn" data-busy-label="<?= $t('auth.submit_login_busy') ?>"><?= $t('auth.select_community_temporary') ?></button>
+    </form>
+    <script>
+    (function () {
+        var temp = document.getElementById('au-temp-tenant');
+        if (!temp) return;
+        document.querySelectorAll('input[name="tenant_id"][type="radio"]').forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                if (radio.checked) temp.value = radio.value;
+            });
+            if (radio.checked) temp.value = radio.value;
+        });
+    })();
+    </script>
 
     <div class="ds-alt au-alt">
         <p><a class="au-link" href="<?= htmlspecialchars(url('login') . '?autre-compte=1', ENT_QUOTES, 'UTF-8') ?>"><?= $t('auth.otp_other_account') ?></a></p>

@@ -115,6 +115,13 @@ class Container
                 self::get(\App\Repositories\TenantCommunityFeedRepository::class),
                 self::get(\App\Services\Admin\AdminAuditService::class),
             ),
+            \App\Services\Community\CommunityMembershipConsolidationService::class => new \App\Services\Community\CommunityMembershipConsolidationService(
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Services\Admin\AdminAuditService::class),
+                self::get(\App\Repositories\TenantCommunityFeedRepository::class),
+            ),
             \App\Controllers\Web\CommunityController::class => new \App\Controllers\Web\CommunityController(
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
@@ -317,6 +324,7 @@ class Container
                 self::get(\App\Services\Auth\LoginWelcomeProfileService::class),
                 self::get(\App\Services\Auth\PasswordResetService::class),
                 self::get(\App\Services\Auth\LoginAccueilBackgroundService::class),
+                self::get(\App\Services\Community\CommunityMembershipConsolidationService::class),
             ),
             \App\Services\Auth\LoginWelcomeProfileService::class => new \App\Services\Auth\LoginWelcomeProfileService(
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
