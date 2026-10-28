@@ -89,6 +89,8 @@ final class AthenaHeritageAssetTest extends TestCase
         // PHP caste '365'/'90' en int : rawurlencode exige string (sinon 500).
         self::assertStringContainsString('$periodKey = (string) $key', $view);
         self::assertStringContainsString('rawurlencode($periodKey)', $view);
+        // Features changelog = tableaux {kind,text} : ne jamais caster l’entrée entière en string.
+        self::assertStringContainsString("\$feat['text']", $view);
 
         $css = (string) file_get_contents($root . '/public/assets/css/site-history.css');
         self::assertStringContainsString('.site-history-hero', $css);
