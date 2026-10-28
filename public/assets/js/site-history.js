@@ -84,6 +84,7 @@
       ctx.strokeStyle = color;
       ctx.lineWidth = 2.25;
       ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
       ctx.stroke();
       if (fill && series.length > 1) {
         ctx.lineTo(xAt(series.length - 1), pad.t + h);
@@ -91,6 +92,20 @@
         ctx.closePath();
         ctx.fillStyle = fill;
         ctx.fill();
+      }
+      // Points visibles (indispensable quand n=1 : une ligne seule est invisible).
+      for (var p = 0; p < series.length; p++) {
+        var px = xAt(p);
+        var py = yAt(series[p]);
+        ctx.beginPath();
+        ctx.arc(px, py, series.length === 1 ? 5 : 3, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(px, py, series.length === 1 ? 5 : 3, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(5,5,5,0.55)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
       }
     }
 

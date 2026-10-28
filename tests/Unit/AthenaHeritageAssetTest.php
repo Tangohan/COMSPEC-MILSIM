@@ -93,6 +93,21 @@ final class AthenaHeritageAssetTest extends TestCase
         $css = (string) file_get_contents($root . '/public/assets/css/site-history.css');
         self::assertStringContainsString('.site-history-hero', $css);
         self::assertStringContainsString('site-history-hero__scrim', $css);
+        self::assertStringContainsString('site-history__node-excerpt', $css);
+
+        $js = (string) file_get_contents($root . '/public/assets/js/site-history.js');
+        self::assertStringContainsString('Points visibles', $js);
+        self::assertStringContainsString('ctx.arc', $js);
+
+        $repoSrc = (string) file_get_contents($root . '/app/Repositories/AthenaHeritageRepository.php');
+        self::assertStringContainsString('function ensureSchema', $repoSrc);
+        self::assertStringContainsString('function reconstructGrowthSeries', $repoSrc);
+        self::assertStringContainsString('function backfillSnapshotsFromGrowth', $repoSrc);
+
+        $serviceSrc = (string) file_get_contents($root . '/app/Services/Platform/AthenaHeritageService.php');
+        self::assertStringContainsString('virtualMilestonesFromLive', $serviceSrc);
+        self::assertStringContainsString('reconstructGrowthSeries', $serviceSrc);
+        self::assertStringContainsString('ensureSchema', $serviceSrc);
 
         $fr = (string) file_get_contents($root . '/lang/fr/site.php');
         $en = (string) file_get_contents($root . '/lang/en/site.php');
