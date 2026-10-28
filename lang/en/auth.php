@@ -215,4 +215,8 @@ return [
     'select_community_temporary' => 'Open temporarily (to transfer an owner role)',
     'select_community_consolidated' => 'Community saved. Other memberships have been ended.',
     'select_community_title' => 'Choose your definitive community',
+    'select_community_invalid' => 'Invalid community choice.',
+    'select_community_last_owner' => 'You are the last owner of “:name”. Open that community temporarily, transfer the owner role to another member, then sign in again to finish your choice.',
+    'flash_email_already_exists' => 'An account already exists with this email address. Log in (or use “Forgot password”), then join the community via an invitation or an application — do not create a second account.',
+    'flash_email_already_exists_short' => 'An account already exists with this email address. Sign in instead.',
 ];

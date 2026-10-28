@@ -3971,6 +3971,7 @@ class UserRepository
                     if ($label === '') {
                         $label = 'une autre communauté';
                     }
+                    // Modèle site_auto : « Vous êtes le dernier propriétaire de « %1 ». Transférez… »
                     throw new RuntimeException(
                         'Vous êtes le dernier propriétaire de « ' . $label
                         . ' ». Transférez ce rôle avant de créer ou rejoindre une autre communauté.'
