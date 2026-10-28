@@ -228,12 +228,13 @@ final class AtakLinkTrustedHostAssetTest extends TestCase
         $ext = $this->read($this->linkDir() . '/Extension.cs');
 
         // Un seul envoi de file (FIFO, marqueurs, position coalescée) : c'est lui qui porte le contrôle.
+        // Link 2.0.105+ : drain async → TrySendQueuedPostAsync (plus de GetResult sync).
         self::assertSame(2, substr_count($ext, 'AddQueueSecrets('),
-            'AddQueueSecrets : une déclaration et un seul appel (TrySendQueuedPost)');
-        $send = self::blockAfter($ext, 'private static bool TrySendQueuedPost((string Url, string Body) item)');
+            'AddQueueSecrets : une déclaration et un seul appel (TrySendQueuedPostAsync)');
+        $send = self::blockAfter($ext, 'private static async Task<bool> TrySendQueuedPostAsync((string Url, string Body) item)');
         $guard = 'if (!IsSecretSafeUri(item.Url))';
         self::assertStringContainsString($guard, $send,
-            'TrySendQueuedPost doit abandonner une URL de file non sûre (queue.jsonl / position.json modifiés)');
+            'TrySendQueuedPostAsync doit abandonner une URL de file non sûre (queue.jsonl / position.json modifiés)');
         $guardBlock = self::blockAfter($send, $guard);
         self::assertStringContainsString('JournalTrack(item.Url, item.Body, "failed"', $guardBlock,
             'L\'envoi abandonné doit être journalisé');
