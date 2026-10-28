@@ -41,10 +41,11 @@ final class AthenaHeritageService
         }
 
         $metrics = $this->collectLiveMetrics();
+        // Backfill plafonné : réservé au cron (évite un timeout PHP-FPM sur la page publique).
         $backfilled = 0;
         if ($this->repo->countSnapshots() < 2) {
             try {
-                $backfilled = $this->repo->backfillSnapshotsFromGrowth();
+                $backfilled = $this->repo->backfillSnapshotsFromGrowth(null, null, 90);
             } catch (\Throwable) {
                 $backfilled = 0;
             }
@@ -82,6 +83,40 @@ final class AthenaHeritageService
                 'snapshots_backfilled' => $backfilled,
             ],
         ];
+    }
+
+    /**
+     * Sync léger pour la page publique : pas de backfill massif (sinon timeout FPM → 500).
+     */
+    public function syncForPublicPage(): void
+    {
+        if (!$this->repo->ensureSchema()) {
+            return;
+        }
+        $metrics = $this->collectLiveMetrics();
+        try {
+            $this->repo->upsertSnapshot([
+                'snapshot_date' => (new \DateTimeImmutable('today'))->format('Y-m-d'),
+                'operators_total' => $metrics['operators_total'],
+                'organizations_total' => $metrics['organizations_total'],
+                'sessions_total' => $metrics['sessions_total'],
+                'distance_km' => $metrics['distance_km'],
+                'playtime_hours' => $metrics['playtime_hours'],
+                'version_label' => $metrics['version_label'],
+                'version_adoption_pct' => $metrics['version_adoption_pct'],
+                'metrics_json' => $metrics['extra'],
+                'source' => 'live',
+            ]);
+        } catch (\Throwable) {
+        }
+        try {
+            $this->detectAndPersistMilestones($metrics);
+        } catch (\Throwable) {
+        }
+        try {
+            $this->syncMajorVersionPoints($metrics);
+        } catch (\Throwable) {
+        }
     }
 
     /**
@@ -481,34 +516,19 @@ final class AthenaHeritageService
             // Lecture seule éventuelle : on continue en mode reconstruit.
         }
 
-        if ($this->repo->ready()) {
-            // Refresh si snapshot du jour manquant, frise vide, ou courbe encore trop fine.
-            try {
-                $latest = $this->repo->latestSnapshot();
-                $today = (new \DateTimeImmutable('today'))->format('Y-m-d');
-                $latestDate = is_array($latest) ? (string) ($latest['snapshot_date'] ?? '') : '';
-                $needsRefresh = $latestDate !== $today
-                    || $this->repo->countMilestones() < 2
-                    || $this->repo->countVersionPoints() < 1
-                    || $this->repo->countSnapshots() < 2;
-                if ($needsRefresh) {
-                    $this->refresh();
-                } else {
-                    // Même jour : resynchroniser jalons / versions (idempotent) sans re-backfill.
-                    $this->detectAndPersistMilestones($live);
-                    $this->syncMajorVersionPoints($live);
-                }
-            } catch (\Throwable) {
-                // La page reste consultable même si l’écriture échoue.
-            }
+        // Sync léger uniquement (jamais de backfill massif ici → timeout FPM / 500).
+        try {
+            $this->syncForPublicPage();
+        } catch (\Throwable) {
+            // Page toujours consultable en mode reconstruit.
         }
 
         $snapshots = $this->repo->ready() ? $this->repo->listSnapshots($from, $to) : [];
-        if (count($snapshots) < 2) {
+        // Courbe : préférer la reconstruction cumulée (lecture seule) dès que l’historique stocké est trop fin.
+        if (count($snapshots) < 7) {
             try {
                 $reconstructed = $this->repo->reconstructGrowthSeries($from, $to);
-                if ($reconstructed !== []) {
-                    // Fusionne : conserve sessions/distance du live sur le point du jour.
+                if (count($reconstructed) > count($snapshots)) {
                     $today = (new \DateTimeImmutable('today'))->format('Y-m-d');
                     $snapshots = $reconstructed;
                     foreach ($snapshots as $i => $row) {
@@ -549,13 +569,31 @@ final class AthenaHeritageService
             ]];
         }
 
-        $milestones = $this->repo->ready() ? $this->repo->listMilestones() : [];
-        if ($milestones === []) {
-            $milestones = $this->virtualMilestonesFromLive($live);
+        $milestones = [];
+        try {
+            $milestones = $this->repo->ready() ? $this->repo->listMilestones() : [];
+        } catch (\Throwable) {
+            $milestones = [];
         }
-        $versions = $this->repo->ready() ? $this->repo->listVersionPoints() : [];
+        if ($milestones === []) {
+            try {
+                $milestones = $this->virtualMilestonesFromLive($live);
+            } catch (\Throwable) {
+                $milestones = [];
+            }
+        }
+        $versions = [];
+        try {
+            $versions = $this->repo->ready() ? $this->repo->listVersionPoints() : [];
+        } catch (\Throwable) {
+            $versions = [];
+        }
         if ($versions === []) {
-            $versions = $this->virtualVersionPoints($live);
+            try {
+                $versions = $this->virtualVersionPoints($live);
+            } catch (\Throwable) {
+                $versions = [];
+            }
         }
 
         $changelog = [];

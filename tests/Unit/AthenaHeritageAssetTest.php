@@ -108,6 +108,12 @@ final class AthenaHeritageAssetTest extends TestCase
         self::assertStringContainsString('virtualMilestonesFromLive', $serviceSrc);
         self::assertStringContainsString('reconstructGrowthSeries', $serviceSrc);
         self::assertStringContainsString('ensureSchema', $serviceSrc);
+        self::assertStringContainsString('syncForPublicPage', $serviceSrc);
+        // La page publique ne doit pas appeler refresh() (backfill) — timeout FPM.
+        self::assertDoesNotMatchRegularExpression(
+            '/function buildPublicPage.*?\$this->refresh\(\)/s',
+            $serviceSrc
+        );
 
         $fr = (string) file_get_contents($root . '/lang/fr/site.php');
         $en = (string) file_get_contents($root . '/lang/en/site.php');

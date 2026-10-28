@@ -208,13 +208,17 @@ final class AthenaHeritageRepository
      *
      * @return int Nombre de jours écrits / mis à jour
      */
-    public function backfillSnapshotsFromGrowth(?string $fromDate = null, ?string $toDate = null): int
+    public function backfillSnapshotsFromGrowth(?string $fromDate = null, ?string $toDate = null, int $maxWrites = 90): int
     {
         if (!$this->hasTable('athena_heritage_snapshots')) {
             return 0;
         }
+        $maxWrites = max(1, min(365, $maxWrites));
         $written = 0;
         foreach ($this->reconstructGrowthSeries($fromDate, $toDate) as $row) {
+            if ($written >= $maxWrites) {
+                break;
+            }
             $existing = $this->snapshotOnDate((string) $row['snapshot_date']);
             if (is_array($existing) && (string) ($existing['source'] ?? '') === 'live') {
                 // Ne pas écraser un point live déjà capturé.
