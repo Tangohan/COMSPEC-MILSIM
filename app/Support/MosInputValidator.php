@@ -18,7 +18,9 @@ final class MosInputValidator
         if ($s === '') {
             return null;
         }
-        if (!preg_match('/^[0-9]{1,4}[A-Z](-[0-9A-Z]{1,4})?$/', $s)) {
+        // MOS / AOC Army (11B, 68W, 153A) ou AFSC enlisted Air Force (1Z2X1), cf. UsArmyMosCatalog.
+        if (!preg_match('/^[0-9]{1,4}[A-Z](-[0-9A-Z]{1,4})?$/', $s)
+            && !preg_match('/^[A-Z]?[0-9][A-Z][0-9][0-9X][0-9][A-Z]?$/', $s)) {
             return null;
         }
 

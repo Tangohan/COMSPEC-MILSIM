@@ -31,6 +31,9 @@ final class TrainingSessionInstructorGuard
         if ($this->pedagogyRepository->hasActiveInstructorEligibility($tenantId, $instructorUserId, $courseId)) {
             return true;
         }
+        if ($this->pedagogyRepository->userHasDesignation($tenantId, $instructorUserId, ['delivery_instructor', 'design_trainer'])) {
+            return true;
+        }
         if ($this->pedagogyRepository->tenantHasAnyInstructorEligibility($tenantId)) {
             $this->lastUserMessage = 'Cet encadrant n’est pas habilité pour ce parcours ou son habilitation a expiré. Mettez à jour les habilitations ou choisissez un autre membre.';
 
@@ -39,7 +42,7 @@ final class TrainingSessionInstructorGuard
         if ($this->pedagogyRepository->userHasInstructorLikeDefinitions($tenantId, $instructorUserId)) {
             return true;
         }
-        $this->lastUserMessage = 'Seuls les membres disposant d’un rôle d’animation ou d’une habilitation valide peuvent être désignés sur ce créneau.';
+        $this->lastUserMessage = 'Seuls les membres nommés à l’animation, disposant d’un rôle d’animation ou d’une habilitation valide peuvent être désignés sur ce créneau.';
 
         return false;
     }

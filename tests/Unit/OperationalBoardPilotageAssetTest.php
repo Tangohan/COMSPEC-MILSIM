@@ -19,8 +19,10 @@ final class OperationalBoardPilotageAssetTest extends TestCase
 
         $nav = (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php');
 
-        self::assertStringContainsString('ops-board--pilotage', $view);
+        self::assertStringContainsString('class="bo-tbo"', $view);
         self::assertStringContainsString("views/operations/partials/board_pilotage.php", $view);
+        self::assertStringContainsString('partials/board_admin_card.php', $view);
+        self::assertStringContainsString('Mettre en ligne', (string) file_get_contents($root . '/views/operations/partials/board_admin_card.php'));
         self::assertStringNotContainsString('ops-board__hero', $view);
 
         self::assertStringContainsString('boardCockpit', $controller);
@@ -37,13 +39,17 @@ final class OperationalBoardPilotageAssetTest extends TestCase
         self::assertStringContainsString('Ouvrir le poste ATAK', $partial);
         self::assertStringContainsString('Portail missions', $partial);
         self::assertStringContainsString('Effectifs', $partial);
+        self::assertStringContainsString('back-office/atak/briefing-slides', $partial);
+        self::assertStringContainsString("'can_slides'", $controller);
         self::assertStringNotContainsString('endpoint', strtolower($partial));
         self::assertStringNotContainsString('JSON', $partial);
         self::assertStringNotContainsString('slug', strtolower($partial));
 
+        $pageCss = (string) file_get_contents($root . '/public/assets/css/back-office-tableau-operationnel.css');
         self::assertStringContainsString('.ops-board--pilotage', $css);
-        self::assertStringContainsString('.ops-board__cockpit', $css);
-        self::assertStringContainsString('background: transparent', $css);
+        self::assertStringContainsString('.bo-tbo-tools', $pageCss);
+        self::assertStringContainsString('html[data-bo-theme="dark"] .bo-tbo', $pageCss);
+        self::assertStringContainsString('back-office-tableau-operationnel.css', $pages);
 
         self::assertStringContainsString('Tableau opérationnel', $pages);
         self::assertStringContainsString("['label' => 'Événements'", $pages);

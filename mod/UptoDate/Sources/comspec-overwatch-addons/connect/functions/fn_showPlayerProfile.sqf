@@ -42,8 +42,15 @@ if (_label == "") exitWith {
 
 private _localPath = "";
 if (_avatarUrl != "") then {
+    // Clé avatar_<uid>_<empreinte de l'adresse> : la DLL rend alors le portrait déjà en cache sans requête
+    // (« avatar_<uid> » seul n'avait qu'un « _ » et retéléchargeait à chaque ouverture). Sans HashText
+    // (DLL ancienne) : clé historique. extAwait : le GET ne fige plus le jeu depuis le spawn appelant.
     private _cacheKey = "avatar_" + (getPlayerUID player);
-    private _raw = ["COMSPECExtension" callExtension ["DownloadBriefingSlideImage", [_avatarUrl, _cacheKey]]] call comspec_overwatch_connect_fnc_extResult;
+    private _urlHash = [_avatarUrl] call comspec_overwatch_connect_fnc_arsenalHash;
+    if (_urlHash isEqualType "" && {_urlHash isNotEqualTo ""}) then {
+        _cacheKey = format ["avatar_%1_%2", getPlayerUID player, _urlHash select [0, 16]];
+    };
+    private _raw = [["COMSPECExtension", "DownloadBriefingSlideImage", [_avatarUrl, _cacheKey]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
     private _parts = _raw splitString "|";
     private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
     if (_prefix == "OK" && {count _parts >= 2}) then { _localPath = _parts select 1; };
@@ -52,7 +59,7 @@ if (_avatarUrl != "") then {
 if (isNull _display) exitWith {}; // le joueur a pu fermer le dialog pendant le téléchargement
 
 private _picCtrl = _display displayCtrl _picIdc;
-if (!isNull _picCtrl && {_localPath != ""}) then { _picCtrl ctrlSetText _localPath; };
+if (!isNull _picCtrl && {_localPath != ""}) then { _picCtrl ctrlSetText ((_localPath) call comspec_overwatch_connect_fnc_tr); };
 
 private _nameCtrl = _display displayCtrl _nameIdc;
 if (!isNull _nameCtrl) then {
@@ -71,5 +78,5 @@ if (!isNull _nameCtrl) then {
         "Activity not tracked"
     };
     _lines pushBack format ["<t size='0.42' color='#5a6c7e'>%1</t>", _activityLabel];
-    _nameCtrl ctrlSetStructuredText parseText (_lines joinString "<br/>");
+    _nameCtrl ctrlSetStructuredText parseText (((_lines joinString "<br/>")) call comspec_overwatch_connect_fnc_tr);
 };

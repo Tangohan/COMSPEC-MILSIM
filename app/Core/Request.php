@@ -118,6 +118,30 @@ class Request
         return $this->request[$key] ?? $default;
     }
 
+    /**
+     * Paramètre de requête en chaîne. Une valeur non scalaire (?x[]=…) donne le défaut au lieu
+     * d’un « Array to string conversion » (ErrorException, 500). Équivaut à (string) $this->query().
+     */
+    public function queryString(string $key, mixed $default = ''): string
+    {
+        return self::scalarString($this->query[$key] ?? $default, $default);
+    }
+
+    /** Même chose pour le corps POST : équivaut à (string) $this->input() sur une valeur scalaire. */
+    public function inputString(string $key, mixed $default = ''): string
+    {
+        return self::scalarString($this->request[$key] ?? $default, $default);
+    }
+
+    private static function scalarString(mixed $value, mixed $default): string
+    {
+        if ($value === null || is_scalar($value)) {
+            return (string) $value;
+        }
+
+        return is_scalar($default) ? (string) $default : '';
+    }
+
     public function all(): array
     {
         return array_merge($this->query, $this->request);
@@ -135,12 +159,35 @@ class Request
 
     public function ip(): string
     {
-        return $this->server['HTTP_X_FORWARDED_FOR'] ?? $this->server['HTTP_CLIENT_IP'] ?? $this->server['REMOTE_ADDR'] ?? '';
+        return \App\Support\ClientIp::resolve($this->server);
     }
 
     public function userAgent(): string
     {
         return $this->server['HTTP_USER_AGENT'] ?? '';
+    }
+
+    /** En-tête HTTP de la requête (« Sec-Fetch-Dest », « Accept »…), null s'il est absent. */
+    public function header(string $name): ?string
+    {
+        $key = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
+        $v = $this->server[$key] ?? null;
+
+        return is_string($v) ? $v : null;
+    }
+
+    /**
+     * Ouverture d'une page par le navigateur (barre d'adresse, lien), par opposition à une image, un fetch ou un client
+     * API : Sec-Fetch-Dest « document », ou à défaut un Accept qui commence par text/html.
+     */
+    public function isBrowserNavigation(): bool
+    {
+        $dest = $this->header('Sec-Fetch-Dest');
+        if ($dest !== null && $dest !== '') {
+            return in_array(strtolower($dest), ['document', 'iframe'], true);
+        }
+
+        return str_starts_with(strtolower(trim((string) $this->header('Accept'))), 'text/html');
     }
 
     /** @param mixed $value */

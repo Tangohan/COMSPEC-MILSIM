@@ -51,7 +51,7 @@ switch (_page) do {
     };
     case "STATUS": {
         _body = format ["%1<br/>Athena : %2<br/>Extension : %3<br/>Mod : %4<br/>Dernière synchro : %5<br/>Attente réseau : %6 s<br/>Interface : native-rsc-v1<br/><br/>Le terminal et la carte restent disponibles hors ligne.", ["STATUT SYSTÈME"] call _h,
-            _state getOrDefault ["networkState", "OFFLINE"], ["DLL native (sans Overwatch)", "DLL COMSPEC Link partagée (session unique)"] select ([] call comspec_atak_native_fnc_bridge), missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"],
+            _state getOrDefault ["networkState", "OFFLINE"], ["DLL native (sans Overwatch)", "DLL COMSPEC Link partagée (session unique)"] select ([] call comspec_atak_native_fnc_bridge), missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"]],
             if ([] call comspec_atak_native_fnc_bridge) then { ["en attente", "assurée par Overwatch"] select (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) } else { if ((_data getOrDefault ["lastNetworkUpdate", -1]) < 0) then { "jamais" } else { format ["il y a %1 s", round (diag_tickTime - (_data get "lastNetworkUpdate"))] } },
             missionNamespace getVariable ["COMSPEC_SendBackoffSec", 0]];
     };
@@ -60,7 +60,7 @@ switch (_page) do {
 
 private _textH = _bh - 2 * _pad - ([0, _rowH + _pad] select ((count _buttons) > 0));
 private _text = ["COMSPEC_RscStructuredText", [_pad, _pad, _bw - 2 * _pad - 0.012, _textH]] call comspec_atak_native_fnc_pageCtrl;
-_text ctrlSetStructuredText parseText _body;
+_text ctrlSetStructuredText parseText ((_body) call comspec_atak_native_fnc_tr);
 _text ctrlSetPosition [_pad, _pad, _bw - 2 * _pad - 0.012, (ctrlTextHeight _text) max _textH];
 _text ctrlCommit 0;
 
@@ -70,7 +70,7 @@ if (_n > 0) then {
     {
         _x params ["_label", "_code"];
         private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * (_bw2 + _pad), _bh - _rowH - _pad, _bw2, _rowH], _label] call comspec_atak_native_fnc_pageCtrl;
-        _b ctrlSetFontHeight (_l get "fontSmall");
+        _b ctrlSetFontHeight ((_l get "fontSmall") max COMSPEC_ATAK_FontMin);
         _b ctrlAddEventHandler ["ButtonClick", _code];
     } forEach _buttons;
 };

@@ -18,6 +18,17 @@ final class SteamId
     public const STEAM64_MAX_LEN = 20;
 
     /**
+     * Valeur « sans Steam » envoyée par Arma (solo, aperçu éditeur, hôte local, IA) : à traiter comme absente,
+     * pas comme un identifiant invalide.
+     */
+    public static function isPlaceholder(?string $raw): bool
+    {
+        $upper = strtoupper(trim(trim((string) $raw), '"\''));
+
+        return $upper === '' || str_starts_with($upper, '_SP_') || $upper === 'LOCAL' || $upper === 'AI';
+    }
+
+    /**
      * Accepte SteamID64, SteamID2 (STEAM_X:Y:Z), SteamID3 ([U:1:N] / U:1:N),
      * URL …/profiles/…, espaces / séparateurs autour de chiffres, guillemets.
      * Rejette les chaînes vides et les placeholders solo Arma.

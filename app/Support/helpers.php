@@ -42,7 +42,7 @@ if (!function_exists('platform_app_version')) {
 
 if (!function_exists('asset_url')) {
     /**
-     * URL d’asset avec cache-busting ?v=version applicative.
+     * URL d’asset avec cache-busting ?v=identifiant du déploiement (commit Git) : change à chaque mise à jour du site.
      */
     function asset_url(string $path): string
     {
@@ -50,7 +50,7 @@ if (!function_exists('asset_url')) {
         $base = function_exists('url') ? rtrim(url(''), '/') : '';
         $sep = str_contains($path, '?') ? '&' : '?';
 
-        return $base . $path . $sep . 'v=' . rawurlencode(platform_app_version());
+        return $base . $path . $sep . 'v=' . rawurlencode(\App\Support\BuildVersion::id());
     }
 }
 
@@ -348,7 +348,19 @@ if (!function_exists('html_lang')) {
     /** Valeur de l’attribut HTML `lang`. */
     function html_lang(): string
     {
-        return locale() === 'en' ? 'en' : 'fr';
+        return locale() === 'en' ? site_lang() : 'fr';
+    }
+}
+
+if (!function_exists('site_lang')) {
+    /**
+     * Langue affichée : fr, en, ou le code d'une langue publiée par la communauté (locale() vaut alors « en »).
+     */
+    function site_lang(): string
+    {
+        $lang = $GLOBALS['__app_site_lang'] ?? null;
+
+        return is_string($lang) && $lang !== '' ? $lang : locale();
     }
 }
 
@@ -537,6 +549,9 @@ if (!function_exists('app_environment_label_fr')) {
 
 if (!function_exists('email_config')) {
     /**
+     * Envoi commun de la plateforme. Le compte réglé par l'administrateur dans Administration › Intégrations de la plateforme
+     * (platform_settings) l'emporte ; les réglages MAIL_* du .env ne servent plus que de secours.
+     *
      * @return array<string, mixed>
      */
     function email_config(): array
@@ -545,6 +560,10 @@ if (!function_exists('email_config')) {
         if ($cfg === null) {
             $path = base_path('config/email.php');
             $cfg = is_file($path) ? require $path : [];
+            $platform = \App\Services\Email\TenantMailSender::platformOverride();
+            if ($platform !== null) {
+                $cfg = array_replace($cfg, $platform);
+            }
         }
 
         return $cfg;
@@ -560,7 +579,7 @@ if (!function_exists('email_file_mailer_notice')) {
         $m = strtolower((string) (email_config()['default_mailer'] ?? ''));
 
         return $m === 'file'
-            ? 'Le courrier est en mode « fichier » : les messages sont enregistrés dans storage/mail-outbox/ sur le serveur, ils ne partent pas sur Internet. Pour un envoi réel, configurez SMTP (MAIL_MAILER=smtp et MAIL_HOST, etc.) dans .env.'
+            ? 'Le courrier est en mode « fichier » : les messages sont enregistrés dans storage/mail-outbox/ sur le serveur, ils ne partent pas sur Internet. Pour un envoi réel, chaque communauté peut saisir son compte d’envoi dans Intégrations > E-mails, et l’administrateur de la plateforme règle l’envoi commun dans Administration › Intégrations de la plateforme (plus besoin du .env).'
             : '';
     }
 }
@@ -1119,6 +1138,20 @@ if (!function_exists('atak_map_fond_layers')) {
                 ];
             }
         }
+        // Fonds capturés en jeu par le mod (capture de la carte, tools/map_stitch.py --pyramid --upload).
+        $world = \App\Support\AtakMapPhotoStore::world($slug);
+        if ($world !== null) {
+            $store = new \App\Support\AtakMapPhotoStore();
+            foreach ([
+                'sat' => ['photo-comspec', 'Photo COMSPEC', 'Vue satellite capturée en jeu, bâtiments et arbres compris'],
+                'plan' => ['plan-comspec', 'Plan COMSPEC', 'Carte du jeu capturée en jeu, très détaillée'],
+            ] as $mode => [$id, $label, $help]) {
+                $spec = $store->overlaySpec($world, $mode, url(''));
+                if ($spec !== null) {
+                    $layers[] = ['id' => $id, 'label' => $label, 'help' => $help, 'kind' => 'overlay', 'spec' => $spec];
+                }
+            }
+        }
 
         return $layers;
     }
@@ -1316,6 +1349,9 @@ if (!function_exists('back_office_nav_permission_rules')) {
             'admin/system/avis-plateforme' => [
                 'any_permissions' => ['admin.system'],
             ],
+            'admin/system/noms-inappropries' => [
+                'any_permissions' => ['admin.system'],
+            ],
             'back-office/organisation/catalogue' => [
                 'any_permissions' => [
                     'organization.catalog.manage', 'organization.orbat.manage',
@@ -1419,13 +1455,13 @@ if (!function_exists('back_office_nav_rule_for_path')) {
         if ($best !== null) {
             return $best;
         }
-        // Défaut prudent pour tout chemin BO / admin / jnet non cartographié.
-        if (
-            str_starts_with($path, 'back-office')
-            || str_starts_with($path, 'admin/')
-            || $path === 'admin'
-            || str_starts_with($path, 'jnet')
-        ) {
+        // « Admin » = administrateur de la plateforme uniquement : un chemin /admin non cartographié
+        // ne s’affiche jamais pour un gestionnaire de communauté.
+        if (str_starts_with($path, 'admin/') || $path === 'admin') {
+            return ['any_permissions' => ['admin.system']];
+        }
+        // Défaut prudent pour tout chemin BO / jnet non cartographié.
+        if (str_starts_with($path, 'back-office') || str_starts_with($path, 'jnet')) {
             return ['any_permissions' => ['admin.organization', 'admin.access', 'admin.system']];
         }
 
@@ -1484,7 +1520,8 @@ if (!function_exists('portal_nav_href_permission_allowed')) {
 
         if (function_exists('navigation_current_tenant_type')) {
             $tenantType = navigation_current_tenant_type();
-            if (!\App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, $path)) {
+            if (!\App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, $path)
+                || \App\Services\Community\TenantTypeConfig::backOfficePathHidden($tenantType, $path)) {
                 return false;
             }
         }
@@ -1617,7 +1654,8 @@ if (!function_exists('is_formation_workspace_request')) {
 if (!function_exists('is_platform_site_admin_shell_request')) {
     /**
      * Pages d’administration « site entier » (pilotage / infra) avec barre latérale dédiée.
-     * Exclut les écrans rattachés à la communauté active (/admin/modpacks, /admin/atak-config, etc.).
+     * Les outils de la communauté active vivent sous /back-office (modpacks, ATAK…) :
+     * tout ce qui reste sous /admin relève de l’administrateur de la plateforme.
      */
     function is_platform_site_admin_shell_request(): bool
     {
@@ -1629,7 +1667,7 @@ if (!function_exists('is_platform_site_admin_shell_request')) {
             return false;
         }
         $rest = substr($p, strlen('admin/'));
-        $prefixes = ['ops-center', 'audit', 'analytics', 'newsletter', 'content-moderation', 'maintenance', 'roles', 'settings', 'site-roles', 'tenants', 'users'];
+        $prefixes = ['ops-center', 'audit', 'analytics', 'newsletter', 'maintenance', 'roles', 'settings', 'site-roles', 'tenants', 'users', 'atak-beta', 'atak-mod-reports', 'formules-offertes', 'paiements', 'parc-atak'];
         foreach ($prefixes as $prefix) {
             if ($rest === $prefix || str_starts_with($rest, $prefix . '/')) {
                 return true;
@@ -1950,6 +1988,33 @@ if (!function_exists('can')) {
     }
 }
 
+if (!function_exists('staff_name')) {
+    /**
+     * Nom d'un membre (échappé) avec la marque « équipe Athena » : aigle et nom rouge pour
+     * l'administration de la plateforme, casque et nom vert pour le support. Sans marque, renvoie seulement le nom échappé.
+     */
+    function staff_name(string $name, int $userId, bool $large = false): string
+    {
+        return \App\Services\Platform\StaffMarkService::name($name, $userId, $large);
+    }
+}
+
+if (!function_exists('staff_mark')) {
+    /** Icône seule (à placer après un nom déjà affiché), ou chaîne vide ; $large pour un titre. */
+    function staff_mark(int $userId, bool $large = false): string
+    {
+        return \App\Services\Platform\StaffMarkService::mark($userId, $large);
+    }
+}
+
+if (!function_exists('staff_name_class')) {
+    /** Classes CSS de couleur à ajouter sur l'élément qui porte le nom (« is-staff is-staff--admin »), ou ''. */
+    function staff_name_class(int $userId): string
+    {
+        return \App\Services\Platform\StaffMarkService::nameClass($userId);
+    }
+}
+
 if (!function_exists('is_platform_admin')) {
     function is_platform_admin(): bool
     {
@@ -2048,19 +2113,13 @@ if (!function_exists('detect_current_module')) {
      */
     function detect_current_module(string $path): ?string
     {
-        if (preg_match('#^/c/[^/]+/forum#', $path) === 1) {
-            return 'forum';
-        }
-        if (str_starts_with($path, '/forum') || str_starts_with($path, '/api/forum')) {
-            return 'forum';
-        }
-
         // Aligné sur TenantTypeConfig::moduleForUri — les règles plateforme « module carte » couvrent toute la surface ATAK.
         $atakPrefixes = [
             '/atak', '/tacmap', '/overwatch', '/c2',
             '/admin/atak-config', '/admin/atak-mod', '/admin/atak-mod-blocks', '/admin/atak-beta', '/admin/atak',
             '/back-office/atak', '/back-office/ressources/atak-config', '/back-office/ressources/atak-mod',
             '/back-office/ressources/atak-mod-blocks', '/back-office/ressources/atak-beta',
+            '/back-office/ressources/atak-diffusion-rapports', '/back-office/ressources/atak-realism', '/back-office/ressources/serveurs-de-jeu',
             '/api/atak', '/api/markers', '/api/units', '/api/chat', '/api/pings',
             '/api/nine-line', '/api/cas', '/api/recon', '/api/map-shapes', '/api/flight-manifest',
             '/api/intel', '/api/fire-support', '/api/danger-zones', '/api/logistics', '/api/replay', '/api/iff',
@@ -2113,7 +2172,23 @@ if (!function_exists('community_display_name')) {
             return 'Pas d\'organisation';
         }
 
-        return (string) ($tenantOrMembershipRow['name'] ?? '');
+        return name_mask_text((string) ($tenantOrMembershipRow['name'] ?? ''));
+    }
+}
+
+if (!function_exists('name_mask_text')) {
+    /** Nom de communauté ou d’unité avec les mots inappropriés remplacés par « • » (texte brut). */
+    function name_mask_text(string $name): string
+    {
+        return \App\Services\Moderation\NameModerationService::maskText($name);
+    }
+}
+
+if (!function_exists('name_blur_html')) {
+    /** HTML échappé d’un nom de communauté ou d’unité, mots inappropriés floutés. */
+    function name_blur_html(string $name): string
+    {
+        return \App\Services\Moderation\NameModerationService::blurHtml($name);
     }
 }
 
@@ -2458,4 +2533,5 @@ if (!function_exists('email_for_display')) {
     }
 }
 
-require __DIR__ . '/forum_helpers.php';
+require __DIR__ . '/markdown_helpers.php';
+require __DIR__ . '/moderation_helpers.php';

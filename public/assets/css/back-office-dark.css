@@ -102,9 +102,12 @@ html[data-bo-theme="dark"] .pf-deadline,
 html[data-bo-theme="dark"] .pf-btn,
 html[data-bo-theme="dark"] .dm-btn:not(.dm-btn--primary),
 html[data-bo-theme="dark"] .personnel-file-hub-tabs,
+html[data-bo-theme="dark"] .personnel-file-lead .adv-panel--fiche,
 html[data-bo-theme="dark"] .personnel-file-hub-actions a {
   background: #141a18;
 }
+html[data-bo-theme="dark"] [data-personnel-visibility-admin] { border-color: #26302c; }
+html[data-bo-theme="dark"] [data-personnel-visibility-admin] button[type="submit"] { background: #12d18e; color: #06120d; }
 html[data-bo-theme="dark"] .pf-parcours { background: radial-gradient(90% 120% at 100% 0%, rgba(18, 209, 142, 0.1) 0%, rgba(18, 209, 142, 0) 60%), #141a18; }
 html[data-bo-theme="dark"] .pf-ring__track { stroke: #1d2a25; }
 html[data-bo-theme="dark"] .pf-timeline__dot,
@@ -191,3 +194,117 @@ html[data-bo-theme="dark"] .account-hub__ov-check.is-todo .account-hub__ov-check
 html[data-bo-theme="dark"] .account-hub__btn--ink { background: #e6ebe8; color: #0c1116; }
 html[data-bo-theme="dark"] .account-hub__btn--ink:hover { background: #fff; color: #0c1116; }
 html[data-bo-theme="dark"] .account-hub__ov-check.is-todo .account-hub__ov-check-mark { color: #3d2903; }
+
+/* ATAK : Escouades en jeu, Temps d'écran et rôles, Files d'envoi Athena (aksq-, sqf-) :
+   jetons de nuit (les --ds-color-* restent clairs) et cellules du tableau sur la même surface. */
+html[data-bo-theme="dark"] .aksq {
+  --aksq-bg: #0d1110;
+  --aksq-surface: #141a18;
+  --aksq-line: #26302c;
+  --aksq-text: #e6ebe8;
+  --aksq-muted: #9aa6a1;
+  --aksq-accent: #12d18e;
+  --aksq-accent-soft: rgba(18, 209, 142, 0.1);
+  color: #e6ebe8;
+}
+html[data-bo-theme="dark"] .aksq__hero { background: linear-gradient(160deg, #141a18, rgba(18, 209, 142, 0.06)); }
+html[data-bo-theme="dark"] .aksq__table th,
+html[data-bo-theme="dark"] .aksq__table td { background: transparent; color: #dbe0de; border-bottom-color: #26302c; }
+html[data-bo-theme="dark"] .aksq__table thead th { background: #18201d; color: #9aa6a1; }
+html[data-bo-theme="dark"] .aksq__table tbody tr:hover th,
+html[data-bo-theme="dark"] .aksq__table tbody tr:hover td { background: #17211d; }
+html[data-bo-theme="dark"] .aksq__period.is-active { color: #04130d; }
+html[data-bo-theme="dark"] .aksq__notice { background: #2a2212; border-color: #4d3c17; color: #f5d48a; }
+html[data-bo-theme="dark"] .sqf { --sqf-none: #5b6763; --sqf-offline: #7c8a99; }
+html[data-bo-theme="dark"] .sqf__table tr.is-stale th,
+html[data-bo-theme="dark"] .sqf__table tr.is-stale td { color: #7f8b86; }
+html[data-bo-theme="dark"] .sqf__table tr.is-current th,
+html[data-bo-theme="dark"] .sqf__table tr.is-current td { background: rgba(18, 209, 142, 0.08); }
+html[data-bo-theme="dark"] .sqf__cell { opacity: 0.35; }
+html[data-bo-theme="dark"] .sqf__cell--ok, html[data-bo-theme="dark"] .sqf__cell--slow,
+html[data-bo-theme="dark"] .sqf__cell--overloaded, html[data-bo-theme="dark"] .sqf__cell--offline { opacity: 1; }
+html[data-bo-theme="dark"] .sqf__step { background: rgba(154, 166, 161, 0.12); }
+html[data-bo-theme="dark"] .sqf__error, html[data-bo-theme="dark"] .sqf__bad, html[data-bo-theme="dark"] .sqf__state--failed { color: #f87171; }
+html[data-bo-theme="dark"] .sqf__state--retry, html[data-bo-theme="dark"] .sqf__state--sending { color: #fbbf24; }
+html[data-bo-theme="dark"] .sqf__state--done { color: #34d399; }
+
+/* Recherche du back-office : résultat actif, surlignage, touches */
+html[data-bo-theme="dark"] .ath-bo-search__results a.is-active {
+  background: #192c23;
+  box-shadow: inset 3px 0 0 #12d18e;
+}
+html[data-bo-theme="dark"] .ath-bo-search__results mark {
+  background: #1f4a37;
+  color: inherit;
+}
+html[data-bo-theme="dark"] .ath-bo-search__hint kbd {
+  border-color: #2c3a33;
+  background: #141a17;
+  color: #dee4e1;
+}
+html[data-bo-theme="dark"] .ath-bo-search__empty a {
+  color: #34d399;
+}
+
+/* Fichiers partagés : accent éclairci pour rester lisible sur fond sombre. */
+html[data-bo-theme="dark"] .fs {
+  --fs-accent: #2dd4bf;
+  --fs-accent-soft: rgba(45, 212, 191, 0.13);
+}
+html[data-bo-theme="dark"] .fs .fs-btn--primary,
+html[data-bo-theme="dark"] .fs .fs-seg label:has(input:checked) { background: #0f766e; border-color: #0f766e; color: #fff; }
+
+/* Référentiel des grades : compteur de l'onglet actif « Grades personnalisés ». */
+html[data-bo-theme="dark"] .grd-ref__tabs a.is-active .grd-ref__count {
+  border-color: #e0e6e3;
+  background: #e0e6e3;
+  color: #0c1116;
+}
+html[data-bo-theme="dark"] .grd-ref__btn {
+  border-color: #e0e6e3;
+  background: #e0e6e3;
+  color: #0c1116;
+}
+html[data-bo-theme="dark"] .grd-ref__btn:hover {
+  border-color: #34d399;
+  background: #34d399;
+  color: #0c1116;
+}
+
+/* Remontées par joueur : étiquettes de catégorie éclaircies sur fond sombre. */
+html[data-bo-theme="dark"] .rmt__label.rmt__label--cat {
+  color: color-mix(in srgb, var(--rmt-cat, #8c959f) 45%, #ffffff);
+  background: color-mix(in srgb, var(--rmt-cat, #8c959f) 22%, #111513);
+  border-color: color-mix(in srgb, var(--rmt-cat, #8c959f) 50%, #111513);
+}
+html[data-bo-theme="dark"] .rmt__num.is-zero {
+  color: #4a5550;
+}
+
+/* Mon compte › Double vérification : niveau, codes de secours, appareils de confiance (account-hub.css). */
+html[data-bo-theme="dark"] .account-hub__text,
+html[data-bo-theme="dark"] .account-hub__level-label { color: #b7c3d4; }
+html[data-bo-theme="dark"] .account-hub__level-next,
+html[data-bo-theme="dark"] .account-hub__device-meta { color: #8b98aa; }
+html[data-bo-theme="dark"] .account-hub__level-bar span,
+html[data-bo-theme="dark"] .account-hub__codes-meter span { background: #26302c; }
+html[data-bo-theme="dark"] .account-hub__codes-meter span.is-left { background: #10b981; }
+html[data-bo-theme="dark"] .account-hub__codes-box {
+  background: #221b0c;
+  border-color: #8a6414;
+}
+html[data-bo-theme="dark"] .account-hub__codes-warn { color: #fcd34d; }
+html[data-bo-theme="dark"] .account-hub__codes code {
+  background: #111513;
+  border-color: #5c4712;
+  color: #f1f5f9;
+}
+html[data-bo-theme="dark"] .account-hub__device {
+  background: #111513;
+  border-color: #2b3430;
+}
+html[data-bo-theme="dark"] .account-hub__device-icon {
+  background: #192c23;
+  color: #57f9cb;
+}
+html[data-bo-theme="dark"] .account-hub__device-title { color: #eef2f6; }

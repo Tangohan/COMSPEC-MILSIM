@@ -4,13 +4,11 @@
 /** @var array $communityConfig */
 /** @var array<string, mixed>|null $communityProfile */
 /** @var bool $hasMembershipInTenant */
-/** @var bool $showForumCta */
 $slug = $tenant['slug'] ?? '';
 $name = $tenant['name'] ?? '';
 $communityConfig = $communityConfig ?? [];
 $cp = $communityProfile ?? \App\Services\Community\TenantCommunityProfileService::getPublicViewModel($communityConfig, (string) ($tenant['slug'] ?? ''));
 $hasMembershipInTenant = $hasMembershipInTenant ?? false;
-$showForumCta = $showForumCta ?? true;
 
 $presentationMode = ($cp['presentationMode'] ?? 'simple') === 'military' ? 'military' : 'simple';
 $simpleBody = (string) ($cp['simpleBody'] ?? '');
@@ -59,7 +57,7 @@ $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
         <?php endforeach; ?>
     </div>
 
-    <h1 class="text-3xl font-black uppercase tracking-tight text-slate-900 mb-2"><?= htmlspecialchars($name) ?></h1>
+    <h1 class="text-3xl font-black uppercase tracking-tight text-slate-900 mb-2"><?= name_blur_html($name) ?></h1>
     <p class="text-sm text-slate-500 mb-6"><?= $publicAudience === 'platform' ? 'Portail public — fiche de présentation' : 'Page publique — fiche de présentation de la communauté' ?></p>
 
     <?php if ($gameLabel !== '' || $mainMods !== '' || $modpackSize !== null): ?>
@@ -115,13 +113,6 @@ $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
     <?php endif; ?>
 
     <div class="flex flex-wrap gap-3 mb-10">
-        <?php if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()): ?>
-        <?php if ($showForumCta): ?>
-            <a href="<?= htmlspecialchars(url('c/' . $slug . '/forum')) ?>" class="inline-flex items-center px-4 py-2.5 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-emerald-700">Découvrir le forum</a>
-        <?php else: ?>
-            <span class="inline-flex items-center px-4 py-2.5 bg-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider rounded-xl cursor-not-allowed" title="Forum réservé aux membres">Forum (réservé membres)</span>
-        <?php endif; ?>
-        <?php endif; ?>
 
         <?php if ($primaryCta === 'rejoindre' || $primaryCta === 'candidater'): ?>
             <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="comspec-analytics-cta inline-flex items-center px-4 py-2.5 <?= $primaryCta === 'rejoindre' ? 'bg-emerald-600 text-white hover:bg-emerald-500 border border-emerald-600' : 'border border-dashed border-slate-300 text-slate-700 hover:bg-slate-50' ?> text-xs font-bold uppercase rounded-xl" data-comspec-zone="fiche_classique" data-comspec-cta="<?= $primaryCta ?>"><?= $primaryCta === 'rejoindre' ? 'Rejoindre' : 'Candidater' ?></a>

@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Guide COMSPEC SSE</title>
+<style>
+  @page { size: A4; margin: 18mm 17mm 20mm 17mm; }
+  :root { --ink: #1d2422; --muted: #5d6965; --accent: #2f6b45; --accent-soft: #e6f0e9; --line: #cfd8d3; --warn: #8a5a12; --warn-soft: #fbf1df; }
+  * { box-sizing: border-box; }
+  body { font-family: "DejaVu Sans", "Liberation Sans", Arial, sans-serif; color: var(--ink); font-size: 10.2pt; line-height: 1.5; margin: 0; }
+  h1, h2, h3 { font-family: "DejaVu Sans Condensed", "Liberation Sans Narrow", "DejaVu Sans", sans-serif; color: #12201a; line-height: 1.2; }
+  h1 { font-size: 21pt; margin: 0 0 6mm; padding-bottom: 3mm; border-bottom: 2.5px solid var(--accent); page-break-before: always; }
+  h2 { font-size: 13.5pt; margin: 7mm 0 2mm; color: var(--accent); }
+  h3 { font-size: 11pt; margin: 5mm 0 1.5mm; }
+  p { margin: 0 0 2.6mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+  li { margin-bottom: 1.2mm; }
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9.2pt; page-break-inside: auto; }
+  tr { page-break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 1.6mm 2.2mm; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); color: #12201a; font-weight: bold; }
+  code, .k { font-family: "DejaVu Sans Mono", monospace; font-size: 8.8pt; background: #f1f4f2; padding: 0 1mm; border-radius: 2px; }
+  .box { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 2.5mm 3.5mm; margin: 3mm 0 4mm; page-break-inside: avoid; }
+  .warn { border-left-color: #c58a2a; background: var(--warn-soft); }
+  .box b:first-child { color: var(--accent); }
+  .warn b:first-child { color: var(--warn); }
+  .steps { counter-reset: s; list-style: none; padding-left: 0; }
+  .steps > li { counter-increment: s; position: relative; padding-left: 9mm; margin-bottom: 2.2mm; }
+  .steps > li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 6mm; height: 6mm; border-radius: 50%; background: var(--accent); color: #fff; font-size: 8.5pt; font-weight: bold; text-align: center; line-height: 6mm; }
+  .cover { height: 255mm; display: flex; flex-direction: column; justify-content: space-between; padding: 22mm 6mm 6mm; background: linear-gradient(160deg, #0f1a15 0%, #1d3326 65%, #2f6b45 100%); color: #e9f1ec; margin: -18mm -17mm 0; padding-left: 20mm; padding-right: 20mm; }
+  .cover .brand { letter-spacing: 3px; font-size: 10pt; color: #9fd3b0; }
+  .cover h0 { display: block; font-size: 34pt; font-weight: bold; line-height: 1.1; margin-top: 10mm; color: #fff; }
+  .cover .sub { font-size: 14pt; color: #cfe3d6; margin-top: 5mm; max-width: 140mm; }
+  .cover .meta { font-size: 9.5pt; color: #a9c4b3; border-top: 1px solid rgba(255,255,255,.25); padding-top: 4mm; }
+  .toc { columns: 1; }
+  .toc a { color: var(--ink); text-decoration: none; }
+  .toc li { margin-bottom: 1.6mm; }
+  .toc .n { display: inline-block; width: 8mm; color: var(--accent); font-weight: bold; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+  .tag { display: inline-block; font-size: 8pt; padding: .2mm 1.6mm; border-radius: 6px; background: #e9eeeb; color: var(--muted); margin-right: 1mm; }
+  .small { font-size: 8.8pt; color: var(--muted); }
+  .nobreak { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div>
+    <div class="brand">COMSPEC · MILSIM</div>
+    <h0>COMSPEC SSE</h0>
+    <div class="sub">Guide du mod d'exploitation de site sensible pour Arma 3 : joueurs, chefs de mission et Zeus.</div>
+  </div>
+  <div class="meta">Version 0.9.0 · octobre 2026<br>Biométrie, organisations et tableau des liens, chaîne de possession des preuves, campagnes, numérique et câble DL-7.</div>
+</section>
+
+<h1 id="sommaire" style="page-break-before: always;">Sommaire</h1>
+<ol class="toc" style="list-style:none;padding-left:0">
+  <li><span class="n">1</span><a href="#c1">Présentation</a></li>
+  <li><span class="n">2</span><a href="#c2">Installation et dépendances</a></li>
+  <li><span class="n">3</span><a href="#c3">Prise en main pour les joueurs</a></li>
+  <li><span class="n">4</span><a href="#c4">Relevés biométriques</a></li>
+  <li><span class="n">5</span><a href="#c5">Capture : sac de tête et animations</a></li>
+  <li><span class="n">6</span><a href="#c6">Saisie, scellés et chaîne de possession</a></li>
+  <li><span class="n">7</span><a href="#c7">Exploitation numérique et câble DL-7</a></li>
+  <li><span class="n">8</span><a href="#c8">Organisations et tableau des liens</a></li>
+  <li><span class="n">9</span><a href="#c9">Campagnes</a></li>
+  <li><span class="n">10</span><a href="#c10">Mise en place d'une mission dans Eden</a></li>
+  <li><span class="n">11</span><a href="#c11">Conduite au Zeus</a></li>
+  <li><span class="n">12</span><a href="#c12">Personnalisation</a></li>
+  <li><span class="n">13</span><a href="#c13">Exemple complet : drill SOT</a></li>
+  <li><span class="n">14</span><a href="#c14">Dépannage</a></li>
+  <li><span class="n">A</span><a href="#ca">Glossaire</a></li>
+</ol>
+<div class="box"><b>Dans le jeu.</b> Ce guide existe aussi dans le manuel de terrain d'Arma (catégorie COMSPEC SSE) : menu ACE personnel, COMSPEC SSE, « Guide SSE », ou menu COMSPEC SSE de la barre d'Eden, ou module Zeus « Tutoriel : manuel du Zeus ».</div>
+
+<h1 id="c1">1. Présentation</h1>
+<p>Le SSE (<i>Sensitive Site Exploitation</i>) regroupe tout ce qu'une équipe fait sur un objectif une fois la zone tenue : identifier les personnes, relever les corps, fouiller, saisir et sceller les preuves, exploiter les téléphones et les ordinateurs, puis transmettre. COMSPEC SSE reproduit ce travail dans Arma 3 avec une logique de bout en bout : ce que vous trouvez sur le terrain alimente une base biométrique, un registre des scellés et un tableau des liens qui se remplit au fil des missions.</p>
+<h2>Ce que fait le mod</h2>
+<ul>
+  <li><b>Biométrie réaliste.</b> Chaque personnage a ses empreintes, ses iris, son visage et son ADN. La qualité d'un relevé dépend des conditions, et la recherche dans la base peut se tromper comme un vrai système.</li>
+  <li><b>Organisations.</b> Les personnages appartiennent à des réseaux, des cellules ou des clans, avec des rôles. Les joueurs les découvrent en jouant.</li>
+  <li><b>Tableau des liens.</b> Un graphe et un organigramme (ORBAT) montrent ce que l'équipe sait des personnes, des organisations, des pièces et des données.</li>
+  <li><b>Chaîne de possession.</b> Chaque pièce saisie est numérotée et scellée ; chaque geste est inscrit dans un journal infalsifiable.</li>
+  <li><b>Numérique.</b> Téléphones, ordinateurs, clés USB et radios contiennent des données générées et cohérentes, extractibles au câble DL-7 avec l'ATAK natif.</li>
+  <li><b>Campagnes.</b> Personnages, organisations et découvertes se retrouvent d'une mission à l'autre, ou se remettent à zéro pour un drill.</li>
+</ul>
+<h2>Qui fait quoi</h2>
+<table>
+  <tr><th>Rôle</th><th>Ce qu'il utilise</th><th>Chapitres</th></tr>
+  <tr><td>Joueur, opérateur SSE</td><td>Menus ACE, terminal SEEK II, tableau des liens, registre des scellés</td><td>3 à 8</td></tr>
+  <tr><td>Chef de mission</td><td>Attributs et modules Eden, campagnes</td><td>9, 10, 12</td></tr>
+  <tr><td>Zeus</td><td>Modules ZEN « COMSPEC SSE », tableau vue Zeus, exercice</td><td>11, 13</td></tr>
+</table>
+
+<h1 id="c2">2. Installation et dépendances</h1>
+<table>
+  <tr><th>Mod</th><th>Statut</th><th>Rôle</th></tr>
+  <tr><td>CBA_A3</td><td>Obligatoire</td><td>Réglages, événements, raccourcis</td></tr>
+  <tr><td>ACE3</td><td>Obligatoire</td><td>Menus d'interaction, captifs, blessures</td></tr>
+  <tr><td>@COMSPEC_SSE</td><td>Obligatoire</td><td>Le mod lui-même (serveur et clients)</td></tr>
+  <tr><td>Zeus Enhanced (ZEN)</td><td>Recommandé</td><td>Formulaires et modules Zeus</td></tr>
+  <tr><td>@COMSPEC_ATAK_Native</td><td>Optionnel</td><td>Câble DL-7, ATAK ; la passerelle se charge seule si l'ATAK est présent</td></tr>
+  <tr><td>COMSPEC Overwatch</td><td>Optionnel</td><td>Terminal SEEK en liaison, transmission vers Athena</td></tr>
+  <tr><td>BII Identifi</td><td>Optionnel</td><td>Fiches, watchlist et clés biométriques reprises par le SSE</td></tr>
+  <tr><td>COMSPEC Link 2.0.67</td><td>Optionnel</td><td>Sur le serveur : envoi et récupération des campagnes dans Athena</td></tr>
+</table>
+<div class="box warn"><b>Après une mise à jour.</b> Relancez Arma complètement, pas seulement la mission : les fichiers du mod sont chargés au démarrage du jeu. Le serveur et tous les joueurs doivent avoir la même version.</div>
+<p>Tout le SSE passe par <b>@COMSPEC_SSE</b>. Les anciens modules SSE du mod Overwatch ont été repris sous les mêmes noms de classe : les missions déjà faites continuent de fonctionner.</p>
+
+<h1 id="c3">3. Prise en main pour les joueurs</h1>
+<h2>Les menus</h2>
+<table>
+  <tr><th>Où</th><th>Comment</th><th>Ce qu'on y trouve</th></tr>
+  <tr><td>Sur une personne</td><td>Interaction ACE, COMSPEC SSE</td><td>Inspecter, photographier, fouiller, relevés biométriques, sac de tête, lire les documents, terminal SEEK, approfondir l'exploitation, chronologie</td></tr>
+  <tr><td>Sur un objet</td><td>Interaction ACE, SSE</td><td>Examiner, fouiller, collecter, mettre sous scellé, lire les documents, exploiter (radio, téléphone, ordinateur)</td></tr>
+  <tr><td>Sur un équipier</td><td>Interaction ACE</td><td>Remettre mes pièces scellées</td></tr>
+  <tr><td>Sur soi</td><td>Interaction personnelle ACE, COMSPEC SSE</td><td>Journal, terminal SEEK, tableau des liens, registre des scellés, pièces que je détiens, campagne en cours, guide, équiper le kit</td></tr>
+</table>
+<p>Le raccourci <span class="k">Ctrl+Maj+S</span> ouvre le terminal SEEK (modifiable dans les touches CBA).</p>
+<h2>Le matériel</h2>
+<table>
+  <tr><th>Objet</th><th>Usage</th></tr>
+  <tr><td>Terminal SEEK II</td><td>Enrôlement et identification biométriques : empreintes, iris, visage, interrogation de la base</td></tr>
+  <tr><td>Kit d'empreintes</td><td>Empreintes et latentes sur les objets</td></tr>
+  <tr><td>Kit ADN</td><td>Prélèvement envoyé au laboratoire</td></tr>
+  <tr><td>Appareil photo</td><td>Photos de preuve et de visage</td></tr>
+  <tr><td>Sachet de preuve</td><td>Collecte et mise sous scellé</td></tr>
+  <tr><td>Gants d'examen</td><td>Manipulation des pièces</td></tr>
+  <tr><td>Sac de tête (capture)</td><td>À poser sur un prisonnier</td></tr>
+</table>
+<p>« Équiper le kit SSE », dans le menu personnel, ajoute le kit de base si l'inventaire a la place.</p>
+
+<h1 id="c4">4. Relevés biométriques</h1>
+<p>Chaque personnage reçoit du serveur une identité biologique unique : dix doigts avec leurs minuties, leurs noyaux et deltas, une classification de Henry et un code NCIC ; deux iris avec leur texture (cryptes, sillons, pupille) ; un visage ; un profil ADN. Deux personnages différents ne partagent jamais une biométrie, même d'une mission à l'autre.</p>
+<h2>Relever</h2>
+<ol class="steps">
+  <li>Approchez le sujet. Debout et coopérant, il tend la main ou regarde l'appareil. Menotté, à terre ou mort, l'opérateur s'agenouille et manipule le corps.</li>
+  <li>Menu ACE sur le sujet, COMSPEC SSE : empreintes, iris, visage, ADN, ou tout relever. Une barre de progression et des bips accompagnent la lecture.</li>
+  <li>Ouvrez le terminal SEEK : le sujet est rempli, chaque doigt a sa note de qualité (NFIQ).</li>
+  <li>Interrogez la base depuis l'onglet REVUE.</li>
+</ol>
+<h2>La qualité compte</h2>
+<p>La nuit, la pluie, un sujet agité, un corps ancien, des mains ou un visage blessés (blessures ACE) dégradent la qualité. Au-delà d'un seuil de blessure, le relevé est impossible sur la partie touchée. Un doigt amputé ou un œil artificiel manquent au relevé.</p>
+<h2>Lire le résultat</h2>
+<table>
+  <tr><th>Résultat</th><th>Signification</th></tr>
+  <tr><td>MATCH</td><td>Identité trouvée : au moins deux doigts ou un iris concordants et un score au-dessus du seuil. L'appartenance du sujet à son organisation devient confirmée.</td></tr>
+  <tr><td>Correspondance possible</td><td>Score intermédiaire : à confirmer par un autre relevé.</td></tr>
+  <tr><td>Candidat à confirmer</td><td>Un individu ressemblant ressort, avec peu de minuties retrouvées et une distance de Hamming d'iris au-dessus du seuil : probablement une fausse alerte.</td></tr>
+  <tr><td>NO MATCH</td><td>Inconnu de la base consultée.</td></tr>
+  <tr><td>Identité déclarée différente</td><td>Les papiers ne correspondent pas au dossier : faux papiers.</td></tr>
+</table>
+<div class="box"><b>Hors liaison, en liaison.</b> Sans liaison, le terminal ne consulte que sa base locale (tiers embarqués et rencontres de la mission). En liaison, la recherche part sur l'ABIS et prend plus de temps. L'ADN part au laboratoire : le résultat arrive plus tard, avec une recherche familiale.</div>
+<p>Les <b>latentes</b> se relèvent sur les armes au sol près d'un corps et sur les objets liés à un sujet ; elles entrent dans la base de la mission et sont rapprochées de leur auteur.</p>
+
+<h1 id="c5">5. Capture : sac de tête et animations</h1>
+<p>Un prisonnier menotté, rendu, inconscient ou mort peut recevoir un sac de tête : menu ACE sur le sujet, COMSPEC SSE, « Poser un sac de tête » (il faut l'objet dans l'inventaire). Un joueur capturé voit noir et entend étouffé. Tant que le sac est en place, le visage et les iris ne peuvent pas être relevés. Le retrait rend le sac à l'opérateur.</p>
+<div class="box"><b>Ordre conseillé.</b> Relevés d'abord (visage, iris, empreintes), puis sac de tête, puis transfert du prisonnier.</div>
+<p>Les relevés sont animés : l'opérateur s'agenouille sur un corps, tient l'appareil face à un sujet debout ; le sujet coopérant tend la main ou regarde l'appareil.</p>
+<p class="small">Le modèle du sac se règle dans les réglages CBA (COMSPEC SSE, Biométrie, « Modèle du sac de tête ») : une cagoule ou un bandeau d'un autre mod peut le remplacer.</p>
+
+<h1 id="c6">6. Saisie, scellés et chaîne de possession</h1>
+<p>Une preuve n'a de valeur que si l'on peut dire qui l'a eue entre les mains, quand et où. Le SSE tient ce registre pour vous.</p>
+<h2>Le cycle d'une pièce</h2>
+<ol class="steps">
+  <li><b>Saisie.</b> « Collecter » un objet ouvre une pièce : numéro <span class="k">P-dossier-0001</span>, objet, étiquette, saisisseur, heure, position.</li>
+  <li><b>Scellé.</b> « Mettre sous scellé » pose un scellé numéroté <span class="k">SC-000000</span>. Le saisisseur devient détenteur.</li>
+  <li><b>Photo.</b> Chaque photographie de la pièce est inscrite (cap et qualité).</li>
+  <li><b>Ouverture.</b> Exploiter une pièce scellée brise d'abord le scellé ; c'est inscrit, et un rappel invite à resceller.</li>
+  <li><b>Rescellé.</b> La remettre sous scellé lui donne un nouveau numéro ; les anciens restent au journal.</li>
+  <li><b>Remise.</b> Menu ACE sur un équipier, « Remettre mes pièces scellées » : chaque pièce change de détenteur, avec émargement au journal.</li>
+</ol>
+<h2>Un journal infalsifiable</h2>
+<p>Chaque ligne du journal porte l'empreinte de son contenu et de la ligne précédente. Si une ligne est modifiée après coup, la chaîne casse : le registre affiche la pièce en rouge et désigne la ligne altérée. Pour les exercices, le Zeus peut altérer un journal (« Scellé : altérer le journal ») et voir si l'équipe le repère.</p>
+<p>Le registre se consulte dans le menu personnel, « Registre des scellés ». « Pièces que je détiens » liste ce que vous portez. Le journal part avec la fiche transmise au portail.</p>
+
+<h1 id="c7">7. Exploitation numérique et câble DL-7</h1>
+<p>Téléphones, ordinateurs, clés USB, cartes mémoire et radios contiennent des données générées et cohérentes avec leur propriétaire : fichiers, courriels, SMS, contacts, journal d'appels, historique de navigation, éléments supprimés, identifiants, lieux, photos, fichiers chiffrés.</p>
+<p>« Approfondir l'exploitation » révèle les données par paliers. Exploiter une personne (son téléphone, son carnet) fait soupçonner des membres de sa cellule ; exploiter un objet rattaché à une organisation la révèle.</p>
+<h2>Câble DL-7 (ATAK natif)</h2>
+<p>Avec l'ATAK natif chargé, un opérateur équipé du câble DL-7 se branche sur un appareil et en télécharge le contenu. Le chef de mission règle pour chaque objet : écran de connexion, mot de passe et indice, nombre d'essais et conséquence (verrouillage, effacement, alarme), forçage et sa durée, port (USB-C, RJ45, série), alarme, effacement après le premier téléchargement. Le contenu numérique du SSE devient extractible sans rien saisir.</p>
+
+<h1 id="c8">8. Organisations et tableau des liens</h1>
+<h2>Les organisations</h2>
+<p>Un personnage peut appartenir à une organisation : réseau, cellule, groupe armé, milice, réseau criminel, clan, entreprise écran, service de renseignement, réseau de soutien. Les organisations ont une hiérarchie (une cellule sous son réseau), un niveau de menace et une description. Chaque membre a un rôle :</p>
+<table>
+  <tr><th>Rang</th><th>Rôles</th></tr>
+  <tr><td>Sommet</td><td>Chef, adjoint</td></tr>
+  <tr><td>Encadrement</td><td>Chef de cellule</td></tr>
+  <tr><td>Spécialistes</td><td>Financier, logisticien, artificier, recruteur, propagandiste, transmissions</td></tr>
+  <tr><td>Exécutants</td><td>Courrier, guetteur, combattant, membre</td></tr>
+  <tr><td>Périphérie</td><td>Facilitateur, sympathisant</td></tr>
+</table>
+<h2>Découvrir le réseau</h2>
+<p>Au départ, les joueurs ne savent rien (sauf ce que le chef de mission a prévu). Ce qu'ils savent progresse en jouant :</p>
+<table>
+  <tr><th>Action</th><th>Effet</th></tr>
+  <tr><td>Contrôler, enrôler une personne</td><td>Elle entre au tableau des liens</td></tr>
+  <tr><td>Identification biométrique (MATCH)</td><td>Son appartenance devient confirmée</td></tr>
+  <tr><td>Exploiter une personne</td><td>Elle est soupçonnée, et deux membres de sa cellule aussi (« contact de... »)</td></tr>
+  <tr><td>Exploiter un objet lié à une personne</td><td>La personne est soupçonnée</td></tr>
+  <tr><td>Exploiter un objet rattaché à une organisation</td><td>L'organisation est repérée</td></tr>
+</table>
+<h2>Le tableau des liens</h2>
+<p>Menu personnel, « Tableau des liens ». Deux vues :</p>
+<ul>
+  <li><b>GRAPHE</b> : chaque organisation au centre de ses cellules et membres, chaque objet autour de son détenteur, les lieux mentionnés par les documents.</li>
+  <li><b>ORBAT</b> : organigramme, organisation en haut, cellules en dessous, membres en colonne du chef au sympathisant.</li>
+</ul>
+<p>Filtres : tout, personnes, organisations, objets et données, confirmé seul. Un clic ouvre la fiche du nœud (rôle, source et heure de la découverte, état, pièce saisie, liens) ; un double-clic zoome ; la molette change l'échelle. Les couleurs des organisations suivent la menace ; un « ? » marque ce qui n'est que soupçonné.</p>
+
+<h1 id="c9">9. Campagnes</h1>
+<p>Une campagne garde d'une mission à l'autre :</p>
+<ul>
+  <li>sa graine biométrique : les mêmes personnages ont les mêmes empreintes ;</li>
+  <li>ses personnages récurrents : même nom, même alias, même appartenance ;</li>
+  <li>ses organisations et ce que les joueurs en savent ;</li>
+  <li>les rencontres biométriques et le registre des scellés (les pièces des missions précédentes sont archivées) ;</li>
+  <li>un journal de campagne (une ligne par mission).</li>
+</ul>
+<h2>Trois types</h2>
+<table>
+  <tr><th>Type</th><th>Usage</th><th>Ce qui est gardé</th></tr>
+  <tr><td>Permanente</td><td>La vraie campagne, sur la vraie carte de mission</td><td>Tout</td></tr>
+  <tr><td>Récurrente</td><td>Le bootcamp et les drills répétés</td><td>Personnages et organisations ; tout redevient inconnu au chargement</td></tr>
+  <tr><td>Temporaire</td><td>Drill SOT réaliste, bac à sable</td><td>Rien : graine propre, vidé à la fin. Peut copier la structure d'une autre campagne</td></tr>
+</table>
+<h2>Personnages récurrents</h2>
+<p>Un personnage se retrouve d'une mission à l'autre s'il a un <b>identifiant biométrique fixé</b> (attribut Eden de la personne, par exemple <span class="k">HVT-ABOU-SAMIR</span>) ou une clé BII Identifi. Placez-le dans chaque mission avec le même identifiant : il garde son nom, son alias, ses empreintes et son appartenance, même sur une autre carte. Les figurants anonymes, eux, sont propres à chaque partie.</p>
+<h2>Sauvegarder et charger</h2>
+<ul>
+  <li><b>Eden</b> : module « Campagne SSE » (charger ou créer au lancement, sauvegarde automatique, sauvegarde en fin de mission) ; module « Campagne SSE : sauvegarder » synchronisé à un déclencheur.</li>
+  <li><b>Zeus</b> : charger ou créer, sauvegarder, état et journal, remettre à zéro, fin de mission, exporter, importer, supprimer.</li>
+</ul>
+<p>Les sauvegardes vivent dans le profil du serveur. « Exporter » copie une campagne sous forme de texte ; « Importer » la recrée sur un autre serveur ou dans une autre communauté.</p>
+<h2>Dans Athena : gérer et partager</h2>
+<p>Quand le serveur est relié à Athena (COMSPEC Link 2.0.67), chaque sauvegarde est copiée dans <b>Bureau SSE › Campagnes</b> (réglage CBA « Copier les sauvegardes dans Athena », activé par défaut). Le module Zeus « Campagne : envoyer à Athena » le fait à la demande. Sans liaison, collez dans Athena le texte du module « Exporter ».</p>
+<ul>
+  <li><b>Lire</b> : ORBAT des organisations avec ce que les joueurs savent, personnages, registre des scellés avec le journal de chaque pièce, journal de campagne.</li>
+  <li><b>Gérer</b> : renommer, changer de type, dupliquer pour un drill (mêmes personnages et même biométrie, rien de découvert), remettre à zéro les découvertes, archiver, supprimer.</li>
+  <li><b>Revenir en jeu</b> : module Zeus « Campagne : récupérer depuis Athena », avec ou sans chargement immédiat.</li>
+</ul>
+<h2>Partager entre communautés</h2>
+<p>Rien n'est partagé par défaut. Sur la fiche d'une campagne, une communauté peut la publier dans le <b>catalogue partagé</b>, soit en structure seule (personnages, organisations, rôles, sans découvertes ni pièces), soit complète. Les autres communautés la copient chez elles en un clic, puis mettent leur copie à jour quand l'original change.</p>
+<p><b>Pas de biométrie en double.</b> La graine d'une campagne est tirée au hasard, unique au monde. Un personnage est identifié partout par sa graine et sa clé (« identifiant global » affiché dans Athena) : une copie garde les mêmes empreintes pour les mêmes personnages, deux campagnes différentes ne peuvent pas produire la même biométrie. Si Athena détecte une graine reprise par une campagne sans lien, la fiche l'affiche en rouge.</p>
+<div class="box"><b>Exemple d'organisation.</b> OP-SABLE (permanente) sur la carte de campagne ; BOOTCAMP (récurrente) sur la carte d'entraînement, avec les mêmes instructeurs-figurants à chaque séance ; un drill SOT (temporaire) qui copie la structure d'OP-SABLE pour s'entraîner sur un réseau réaliste sans toucher à la vraie campagne.</div>
+
+<h1 id="c10">10. Mise en place d'une mission dans Eden</h1>
+<ol class="steps">
+  <li><b>Campagne.</b> Posez le module « Campagne SSE » (catégorie COMSPEC SSE, Mission et scénario). Identifiant, nom, type, sauvegarde automatique.</li>
+  <li><b>Personnes.</b> Dans les attributs d'une unité : catégories COMSPEC SSE (identité, biométrie, identifiant fixé pour un personnage récurrent, verdict imposé) et Organisation (organisation, cellule, rôle, nom de guerre, ce que les joueurs savent au départ).</li>
+  <li><b>Organisations.</b> Module « Organisation » (Personnes et liens) : nom, nature, rattachement, menace, description. Synchronisez des personnes, ou le chef d'un groupe pour tout le groupe. Rôles saisis sur chaque personne, ou générés en cellules d'après la graine. Synchronisez aussi les objets qui lui appartiennent.</li>
+  <li><b>Objets.</b> Tout objet simulé peut devenir SSE : attributs COMSPEC SSE (activer, nature imposée, richesse), « Rattaché à l'organisation », catégorie Extraction DL-7.</li>
+  <li><b>Sites.</b> Les modules Sites et objets génèrent un site complet (objets exploitables, supports numériques, documents, liens réseau).</li>
+  <li><b>Fin.</b> Module « Campagne SSE : sauvegarder » synchronisé à un déclencheur de fin d'objectif.</li>
+</ol>
+<h2>Catégories des modules</h2>
+<table>
+  <tr><th>Catégorie Eden</th><th>Contenu</th></tr>
+  <tr><td>1. Sites et objets</td><td>Sites complets, objets de renseignement, profils SSE</td></tr>
+  <tr><td>2. Personnes et liens</td><td>Identité d'un sujet, organisation, liens entre cibles</td></tr>
+  <tr><td>3. Mission et scénario</td><td>Campagne, sauvegarde, dossier actif, brief, directeur de scénario, terminal SEEK, présentation des documents</td></tr>
+  <tr><td>4. Numérique (DOMEX, DL-7)</td><td>Données numériques, extraction au câble</td></tr>
+  <tr><td>5. Outils du Zeus</td><td>Outils de conduite</td></tr>
+</table>
+
+<h1 id="c11">11. Conduite au Zeus</h1>
+<p>Les modules ZEN sont rangés dans les catégories « COMSPEC SSE ». La plupart agissent sur la sélection Zeus ou sur l'objet visé.</p>
+<table>
+  <tr><th>Catégorie</th><th>Modules</th></tr>
+  <tr><td>Mission</td><td>Campagne (charger ou créer, sauvegarder, état et journal, remettre à zéro, fin de mission, exporter, importer, supprimer), dossier actif, présentation des documents, scellé : altérer le journal</td></tr>
+  <tr><td>Personnes</td><td>Identité d'un sujet, biométrie du sujet, doter en terminal SEEK, organisation (affecter, générer un réseau, rattacher des objets, révéler aux joueurs, retirer), tableau des liens (vue Zeus)</td></tr>
+  <tr><td>Numérique</td><td>DOMEX, rendre extractible au DL-7</td></tr>
+  <tr><td>Outils</td><td>Tutoriel : manuel du Zeus ; tutoriel : poser un exercice ici</td></tr>
+</table>
+<h2>Le tableau des liens vue Zeus</h2>
+<p>Il montre tout le réseau ; ce que les joueurs ignorent apparaît en gris. Choisissez un nœud et appuyez sur RÉVÉLER pour le rendre connu des joueurs (par exemple un renseignement transmis par le PC).</p>
+<h2>Générer un réseau</h2>
+<p>Sélectionnez des personnes, ou une seule personne pour tout son groupe, puis « Organisation : générer un réseau ». Jusqu'à quatre personnes : un groupe avec chef, adjoint et spécialistes. Au-delà : un chef et son adjoint au sommet, le reste en cellules de trois à cinq avec leur chef et des rôles cohérents avec leur métier (logistique, action, soutien). Même graine et mêmes personnes : même organisation.</p>
+
+<h1 id="c12">12. Personnalisation</h1>
+<p>Réglages CBA : Échap, Options, Réglages de l'addon, COMSPEC SSE. Tous sont décidés par le serveur.</p>
+<h2>Biométrie</h2>
+<table>
+  <tr><th>Réglage</th><th>Effet</th></tr>
+  <tr><td>Moteur biométrique</td><td>Active le moteur complet (sinon ancien comportement)</td></tr>
+  <tr><td>Graine de campagne</td><td>Fixée par la campagne chargée ; sinon le nom de la mission</td></tr>
+  <tr><td>Seuils de correspondance</td><td>Score pour MATCH et pour correspondance possible</td></tr>
+  <tr><td>Fausses alertes (%)</td><td>Fréquence des candidats ressemblants</td></tr>
+  <tr><td>Rigueur des conditions</td><td>Poids de la nuit, de la pluie, du stress</td></tr>
+  <tr><td>Blessure bloquant le relevé</td><td>Seuil de blessure ACE au-delà duquel le relevé est impossible</td></tr>
+  <tr><td>Base locale, durées de recherche, délai ADN</td><td>Comportement du terminal hors liaison et en liaison</td></tr>
+  <tr><td>Population (enrôlés, watchlist, faux papiers)</td><td>Pourcentages par camp</td></tr>
+  <tr><td>Modèle du sac de tête</td><td>Classe de lunettes portée (une cagoule d'un autre mod)</td></tr>
+</table>
+<h2>Organisations et scellés</h2>
+<table>
+  <tr><th>Réglage</th><th>Effet</th></tr>
+  <tr><td>Rôles en plus</td><td><span class="k">identifiant:Libellé:rang</span>, séparés par des virgules (rang 0 = sommet, 5 = périphérie). Exemple : <span class="k">imam:Imam:1, passeur:Passeur:4</span></td></tr>
+  <tr><td>Natures d'organisation en plus</td><td><span class="k">identifiant:Libellé</span>. Exemple : <span class="k">tribu:Tribu, cartel:Cartel</span></td></tr>
+  <tr><td>Noms de code des cellules</td><td>Liste remplaçant la liste intégrée</td></tr>
+  <tr><td>Contacts révélés par exploitation</td><td>Membres de la cellule soupçonnés quand on exploite une personne</td></tr>
+  <tr><td>L'identification confirme l'appartenance</td><td>Désactivé : elle ne fait que soupçonner</td></tr>
+  <tr><td>Préfixes des pièces et des scellés</td><td>Par défaut P et SC</td></tr>
+</table>
+
+<h1 id="c13">13. Exemple complet : drill SOT</h1>
+<p>Un drill d'une heure sur la carte d'entraînement, sans toucher à la vraie campagne.</p>
+<ol class="steps">
+  <li><b>Zeus</b> : « Campagne : charger ou créer », identifiant <span class="k">DRILL-SOT</span>, type temporaire, éventuellement « Copier la structure de » OP-SABLE.</li>
+  <li><b>Zeus</b> : « Tutoriel : poser un exercice ici » sur la zone de l'objectif. Cinq civils d'une même cellule apparaissent : un se rend, un est mort, trois sont debout ; le téléphone et les documents du chef sont posés à côté de lui ; une caisse d'armes appartient à la cellule.</li>
+  <li><b>Équipe</b> : sécuriser, contrôler le sujet qui se rend (relevés complets, interrogation), puis lui poser le sac de tête.</li>
+  <li><b>Équipe</b> : relever le corps (empreintes et ADN), photographier.</li>
+  <li><b>Équipe</b> : collecter et sceller le téléphone et les documents ; remettre les pièces au chef d'équipe.</li>
+  <li><b>Équipe</b> : exploiter le téléphone et la caisse ; ouvrir le tableau des liens et reconstituer la cellule.</li>
+  <li><b>Zeus</b> (option) : « Scellé : altérer le journal » sur une pièce ; l'équipe doit repérer la ligne altérée au registre.</li>
+  <li><b>Débriefing</b> : tableau des liens en vue Zeus pour comparer ce qui a été découvert à la réalité ; puis « Campagne : fin de mission » vide le bac à sable.</li>
+</ol>
+
+<h1 id="c14">14. Dépannage</h1>
+<table>
+  <tr><th>Symptôme</th><th>À vérifier</th></tr>
+  <tr><td>Pas de menu COMSPEC SSE</td><td>ACE et CBA chargés ; la personne ou l'objet est bien activé SSE (attribut Eden ou module)</td></tr>
+  <tr><td>Le relevé est refusé</td><td>Matériel dans l'inventaire ; blessures ACE de la main, du bras ou du visage ; sac de tête en place</td></tr>
+  <tr><td>Le tableau des liens est vide</td><td>Normal au départ : contrôlez, identifiez, exploitez. Le Zeus voit tout en vue Zeus</td></tr>
+  <tr><td>Un personnage récurrent a changé d'empreintes</td><td>Même identifiant biométrique fixé et même campagne chargée dans les deux missions</td></tr>
+  <tr><td>Le Zeus est averti d'une identité en double</td><td>Deux personnes portent le même identifiant ou la même graine : corrigez dans Eden</td></tr>
+  <tr><td>Rien n'a été sauvegardé</td><td>Campagne temporaire (voulu) ; sinon sauvegarde automatique ou module de sauvegarde</td></tr>
+  <tr><td>« COMSPEC Link 2.0.67 requis »</td><td>Mettez à jour la DLL du serveur ; sans elle, passez par Exporter et le collage dans Athena</td></tr>
+  <tr><td>Envoi à Athena refusé (clé d'accès)</td><td>Le serveur doit être relié à la communauté (clé d'accès Athena dans les réglages du serveur)</td></tr>
+  <tr><td>Pas d'extraction DL-7</td><td>ATAK natif chargé, câble DL-7 équipé, objet rendu extractible</td></tr>
+</table>
+
+<h1 id="ca">A. Glossaire</h1>
+<table>
+  <tr><th>Terme</th><th>Définition</th></tr>
+  <tr><td>ABIS</td><td>Automated Biometric Identification System : la grande base consultée en liaison</td></tr>
+  <tr><td>BEWL</td><td>Biometrically Enabled Watch List : liste de surveillance par tiers (1 à 4)</td></tr>
+  <tr><td>Chaîne de possession</td><td>Suite documentée des détenteurs d'une pièce, de la saisie à l'analyse</td></tr>
+  <tr><td>Classification de Henry</td><td>Classement des dix doigts par motifs (arcs, boucles, verticilles)</td></tr>
+  <tr><td>Distance de Hamming</td><td>Écart entre deux codes d'iris ; sous 0,32, même œil</td></tr>
+  <tr><td>DOMEX</td><td>Document and Media Exploitation : exploitation des documents et supports</td></tr>
+  <tr><td>Latente</td><td>Empreinte laissée sur un objet, relevée à la poudre</td></tr>
+  <tr><td>Minuties</td><td>Points caractéristiques d'une empreinte (fins et bifurcations de crêtes)</td></tr>
+  <tr><td>NFIQ</td><td>Note de qualité d'une empreinte</td></tr>
+  <tr><td>ORBAT</td><td>Ordre de bataille : organigramme d'une organisation</td></tr>
+  <tr><td>SEEK II</td><td>Terminal portatif d'enrôlement et d'identification biométriques</td></tr>
+  <tr><td>SOT</td><td>Entraînement aux opérations spéciales ; ici, un drill temporaire</td></tr>
+  <tr><td>SSE</td><td>Sensitive Site Exploitation : exploitation de site sensible</td></tr>
+</table>
+<p class="small" style="margin-top:8mm">COMSPEC SSE, guide de la version 0.9.0. Les fonctions marquées en cours de test peuvent évoluer ; le manuel de terrain du jeu suit la version installée.</p>
+</body>
+</html>

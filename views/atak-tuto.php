@@ -20,7 +20,7 @@ $canAdmin = function_exists('can') && (can('admin.system') || can('admin.organiz
         <span class="text-slate-300">·</span>
         <a href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-slate-900 font-medium">Carte ATAK</a>
         <span class="text-slate-300">·</span>
-        <a href="<?= htmlspecialchars($modUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-slate-900 font-medium">Télécharger le pack</a>
+        <a href="<?= htmlspecialchars($modUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-slate-900 font-medium">Installer le mod (Steam)</a>
         <span class="text-slate-300">·</span>
         <a href="<?= htmlspecialchars($guideUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:text-slate-900 font-medium">Guide du pack</a>
     </nav>
@@ -80,7 +80,6 @@ $canAdmin = function_exists('can') && (can('admin.system') || can('admin.organiz
                 Dans le téléphone : <strong>Paramètres</strong> → rubrique <strong>Liaison au poste</strong> :
             </p>
             <ul class="list-disc pl-6 text-slate-700 space-y-1 text-sm">
-                <li><strong>Adresse du portail</strong> — en général <code class="bg-slate-100 px-1 rounded text-xs"><?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?></code></li>
                 <li><strong>Clé d’accès communauté</strong> — uniquement si un admin vous l’a communiquée (sinon laissez vide si déjà mémorisée)</li>
                 <li><strong>Identifiant de communauté</strong> — utile si plusieurs communautés partagent la même adresse</li>
             </ul>

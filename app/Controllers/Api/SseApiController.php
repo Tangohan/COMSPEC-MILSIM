@@ -23,6 +23,7 @@ use App\Support\ComspecApiKeyAuth;
 use App\Support\SsePersonDedupe;
 use App\Support\SteamId;
 use App\Support\HttpJsonBody;
+use App\Support\SseFacePortrait;
 use App\Support\TerrainUploadedImage;
 
 /**
@@ -163,10 +164,41 @@ final class SseApiController
         );
 
         if ($existing !== null && $newModalities === []) {
+            // Même personne retransmise (même contrôle, même requête, même dossier) :
+            // tout est regroupé sur la fiche existante, sans nouvelle entrée de journal
+            // tant que rien de neuf n'arrive. C'est ce qui évite le spam du poste.
+            $existingId = (int) $existing['id'];
+            $filled = $this->persons->mergeRetransmission($existingId, $tenantId, $data);
+            $filing = $this->fileOnCase(
+                $tenantId,
+                $mapId,
+                $existingId,
+                (string) ($body['case_code'] ?? ''),
+                $actor,
+                (string) ($data['submitter_callsign'] ?? 'Terrain')
+            );
+            $completed = array_values(array_filter($filled, static fn (string $c) => $c !== 'identity_query'));
+            if ($completed !== [] || !empty($filing['newly_linked'])) {
+                $this->activityLog->record(
+                    $tenantId,
+                    $mapId,
+                    'SSE_PERSON',
+                    sprintf(
+                        'Fiche complétée : %s%s',
+                        $existing['display_name'] ?? 'sans nom',
+                        !empty($filing['newly_linked']) ? ' (classée au dossier ' . $filing['code'] . ')' : ''
+                    ),
+                    (string) ($data['submitter_callsign'] ?? 'Terrain')
+                );
+            }
+            $existing = $this->persons->findById($existingId, $tenantId) ?? $existing;
             $existing['duplicate'] = true;
-            $existing['updated'] = false;
+            $existing['updated'] = $filled !== [] || !empty($filing['newly_linked']);
+            $existing['filing'] = $filing;
             $existing['biometric_samples'] = $existingSamples;
-            $existing['message'] = 'Cette personne est déjà au registre. Transmettez un nouvel iris, des empreintes ou de l’ADN pour enrichir la fiche.';
+            $existing['message'] = $existing['updated']
+                ? 'Cette personne est déjà au registre : la fiche existante a été complétée.'
+                : 'Cette personne est déjà au registre. Transmettez un nouvel iris, des empreintes ou de l’ADN pour enrichir la fiche.';
 
             return Response::json($existing, 200);
         }
@@ -207,29 +239,19 @@ final class SseApiController
             );
         }
 
-        // Classement : code dossier saisi sur le terrain.
-        $caseCode = strtoupper(trim((string) ($body['case_code'] ?? '')));
-        $filing = ['code' => $caseCode, 'linked' => false, 'case' => null];
-        $filedCaseId = null;
-        if ($caseCode !== '') {
-            $case = $this->cases->findByReferenceCode($tenantId, $caseCode);
-            if ($case !== null) {
-                $this->cases->linkPerson(
-                    (int) $case['id'],
-                    $id,
-                    $tenantId,
-                    isset($actor['user_id']) ? (int) $actor['user_id'] : null,
-                    'Classement depuis le terminal SEEK'
-                );
-                $filing['linked'] = true;
-                $filedCaseId = (int) $case['id'];
-                $filing['case'] = [
-                    'id' => (int) $case['id'],
-                    'reference_code' => (string) ($case['reference_code'] ?? ''),
-                    'title' => (string) ($case['title'] ?? ''),
-                ];
-            }
+        // Classement : code dossier saisi sur le terrain (créé s'il n'existe pas).
+        if ($merged) {
+            $this->persons->mergeRetransmission($id, $tenantId, $data);
         }
+        $filing = $this->fileOnCase(
+            $tenantId,
+            $mapId,
+            $id,
+            (string) ($body['case_code'] ?? ''),
+            $actor,
+            (string) ($data['submitter_callsign'] ?? 'Terrain')
+        );
+        $filedCaseId = !empty($filing['case']['id']) ? (int) $filing['case']['id'] : null;
 
         $person = $this->persons->findById($id, $tenantId);
         if (is_array($person)) {
@@ -396,6 +418,55 @@ final class SseApiController
         return Response::json(['person' => $person]);
     }
 
+    /**
+     * Classe une fiche au dossier désigné par le terrain. Un code inconnu crée le
+     * dossier : le système ouvre lui-même ses dossiers au lieu de laisser la fiche
+     * sans classement. Rattacher deux fois la même personne ne fait rien.
+     *
+     * @param array<string, mixed>|mixed $actor
+     * @return array{code: string, linked: bool, case: array<string, mixed>|null, created?: bool, newly_linked?: bool}
+     */
+    private function fileOnCase(int $tenantId, int $mapId, int $personId, string $caseCode, mixed $actor, string $callsign): array
+    {
+        $caseCode = mb_substr(strtoupper(trim($caseCode)), 0, 32);
+        $filing = ['code' => $caseCode, 'linked' => false, 'case' => null];
+        if ($caseCode === '' || $personId < 1) {
+            return $filing;
+        }
+        $found = $this->cases->findOrCreateByReference(
+            $tenantId,
+            $mapId,
+            $caseCode,
+            'Dossier ' . $caseCode,
+            'Ouvert automatiquement à la première fiche transmise sous ce code par ' . $callsign . '.'
+        );
+        if ($found === null) {
+            return $filing;
+        }
+        $case = $found['case'];
+        $caseId = (int) ($case['id'] ?? 0);
+        if ($found['created']) {
+            $filing['created'] = true;
+            $this->activityLog->record(
+                $tenantId,
+                $mapId,
+                'SSE_AUTO',
+                sprintf('Dossier %s ouvert automatiquement : code inconnu saisi sur le terrain.', $caseCode),
+                $callsign
+            );
+        }
+        $userId = is_array($actor) && isset($actor['user_id']) ? (int) $actor['user_id'] : null;
+        $filing['newly_linked'] = $this->cases->linkPerson($caseId, $personId, $tenantId, $userId, 'Classement depuis le terminal SEEK');
+        $filing['linked'] = true;
+        $filing['case'] = [
+            'id' => $caseId,
+            'reference_code' => (string) ($case['reference_code'] ?? ''),
+            'title' => (string) ($case['title'] ?? ''),
+        ];
+
+        return $filing;
+    }
+
     public function personsPhotoStore(Request $request, array $params = []): Response
     {
         if (!$this->authArma()) {
@@ -440,8 +511,9 @@ final class SseApiController
                 'message' => 'Impossible de recevoir la photo. Vérifiez la liaison puis réessayez.',
             ], 400);
         }
-        $maxBytes = 12 * 1024 * 1024;
-        if (!empty($file['size']) && (int) $file['size'] > $maxBytes) {
+        if (!empty($file['size']) && (int) $file['size'] > TerrainUploadedImage::MAX_FILE_BYTES) {
+            error_log(sprintf('[sse/photos] file_too_large size=%d name=%s', (int) $file['size'], (string) ($file['name'] ?? '')));
+
             return Response::json([
                 'error' => 'file_too_large',
                 'message' => 'La photo est trop lourde. Essayez une capture plus légère.',
@@ -455,6 +527,11 @@ final class SseApiController
                 'error' => 'invalid_image',
                 'message' => 'Format de photo non pris en charge. Utilisez une image JPEG ou PNG.',
             ], 400);
+        }
+
+        // Capture 4K en PNG (~10 Mo) : 1920 px, JPEG 80 avant rangement.
+        if (\App\Support\StoredPhotoCompressor::compressUploadToJpeg($tmp)) {
+            $ext = 'jpg';
         }
 
         $dir = base_path('public/uploads/sse');
@@ -482,6 +559,19 @@ final class SseApiController
         if ($gridRef !== '') {
             $meta['grid_reference'] = $gridRef;
         }
+        // Cliché SEEK cadré sur la tête : recadrage portrait 3:4, la capture brute reste en archive.
+        $angleInfo = SseFacePortrait::parseAngle((string) ($_POST['angle'] ?? 'face'));
+        if ($angleInfo['portrait']) {
+            $portraitName = sprintf('sse_%d_%s_%s_portrait.jpg', $personId, time(), $safeAuthor);
+            if (SseFacePortrait::writePortrait($dest, $dir . DIRECTORY_SEPARATOR . $portraitName)) {
+                $meta['source_image_path'] = $relative;
+                $meta['portrait'] = true;
+                $relative = 'uploads/sse/' . $portraitName;
+            }
+        }
+        if ($angleInfo['quality'] !== null) {
+            $meta['quality_estimate'] = $angleInfo['quality'];
+        }
         foreach (['pos_x', 'pos_y', 'pos_z'] as $coordKey) {
             if (isset($_POST[$coordKey]) && $_POST[$coordKey] !== '' && is_numeric($_POST[$coordKey])) {
                 $meta[$coordKey] = (float) $_POST[$coordKey];
@@ -489,7 +579,8 @@ final class SseApiController
         }
         $photoId = $this->persons->addPhoto($personId, $tenantId, [
             'image_path' => $relative,
-            'angle' => $_POST['angle'] ?? 'face',
+            'angle' => $angleInfo['angle'],
+            'quality' => $angleInfo['quality'],
             'caption' => $_POST['caption'] ?? null,
             'author_callsign' => $author,
             'pos_x' => $_POST['pos_x'] ?? null,
@@ -628,6 +719,14 @@ final class SseApiController
         }
         $limit = (int) ($request->query('limit') ?? 40);
         $items = (new \App\Services\Sse\SseWantedNoticeService())->forTenant($r, $limit > 0 ? $limit : 40);
+        // COMSPEC Link 2.0.95+ : photo en texture .paa (Arma n'affiche ni PNG ni WebP).
+        if (\App\Support\AtakGameImage::clientAcceptsPaa()) {
+            foreach ($items as $i => $item) {
+                if (($item['photo'] ?? '') !== '') {
+                    $items[$i]['photo'] = \App\Support\AtakGameImage::urlFor((string) $item['photo'], \App\Support\AtakGameImage::FIT_PHOTO) ?? $item['photo'];
+                }
+            }
+        }
 
         return Response::json(['wanted' => $items, 'count' => count($items)]);
     }
@@ -1129,7 +1228,7 @@ final class SseApiController
             return $this->jsonBodyCache;
         }
         if (HttpJsonBody::isMultipart()) {
-            $this->jsonBodyCache = HttpJsonBody::postFields();
+            $this->jsonBodyCache = self::withCaseCode(HttpJsonBody::postFields());
 
             return $this->jsonBodyCache;
         }
@@ -1141,9 +1240,27 @@ final class SseApiController
         }
         $decoded = json_decode($raw, true);
         unset($raw);
-        $this->jsonBodyCache = is_array($decoded) ? $decoded : [];
+        $this->jsonBodyCache = self::withCaseCode(is_array($decoded) ? $decoded : []);
 
         return $this->jsonBodyCache;
+    }
+
+    /**
+     * Le pack @COMSPEC_SSE envoie la référence de dossier sous « case_reference » ;
+     * SEEK Overwatch et l'ATAK natif sous « case_code ». Les deux classent la fiche.
+     *
+     * @param array<string, mixed> $body
+     * @return array<string, mixed>
+     */
+    public static function withCaseCode(array $body): array
+    {
+        $code = trim((string) ($body['case_code'] ?? ''));
+        $ref = $body['case_reference'] ?? '';
+        if ($code === '' && is_string($ref) && trim($ref) !== '') {
+            $body['case_code'] = trim($ref);
+        }
+
+        return $body;
     }
 
     /**

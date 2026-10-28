@@ -1,27 +1,28 @@
 /*
     Mât Relais AT le plus proche : pastille sur la carte, emprise de portée,
-    alerte en quittant la zone.
+    alerte en quittant la zone. Avec l'ATAK natif chargé : alerte seulement (il dessine les relais lui-même).
 */
 if (!hasInterface) exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 
 private _mk = "comspec_relay_nearest";
 private _ring = "comspec_relay_range";
+// Existence testée par getMarkerColor ("" = absent) : plus de copie de allMapMarkers toutes les 2 s.
 private _info = createHashMap;
 if (!isNil "comspec_overwatch_connect_fnc_getNearestAtakRelay") then {
     _info = [] call comspec_overwatch_connect_fnc_getNearestAtakRelay;
 };
 if (!(_info isEqualType createHashMap) || {(count (keys _info)) < 1}) exitWith {
-    if (_mk in allMapMarkers) then { deleteMarkerLocal _mk; };
-    if (_ring in allMapMarkers) then { deleteMarkerLocal _ring; };
+    if ((getMarkerColor _mk) isNotEqualTo "") then { deleteMarkerLocal _mk; };
+    if ((getMarkerColor _ring) isNotEqualTo "") then { deleteMarkerLocal _ring; };
     missionNamespace setVariable ["COMSPEC_RelayWasInRange", nil, false];
     false
 };
 
 private _pos = _info getOrDefault ["pos", []];
 if (!(_pos isEqualType []) || {(count _pos) < 2}) exitWith {
-    if (_mk in allMapMarkers) then { deleteMarkerLocal _mk; };
-    if (_ring in allMapMarkers) then { deleteMarkerLocal _ring; };
+    if ((getMarkerColor _mk) isNotEqualTo "") then { deleteMarkerLocal _mk; };
+    if ((getMarkerColor _ring) isNotEqualTo "") then { deleteMarkerLocal _ring; };
     false
 };
 private _name = _info getOrDefault ["name", "Relais AT"];
@@ -33,27 +34,35 @@ private _col = if (!_alive) then { "ColorRed" } else {
     if (_inRange) then { "ColorGreen" } else { "ColorYellow" };
 };
 
+// ATAK natif chargé : il dessine lui-même les relais sur la carte du téléphone (calque « Relais », masquable) ; le
+// carré « Relais … » et son cercle doublonnaient ce dessin et restaient visibles même calque masqué.
+private _native = isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main");
+if (_native) then {
+    if ((getMarkerColor _mk) isNotEqualTo "") then { deleteMarkerLocal _mk; };
+    if ((getMarkerColor _ring) isNotEqualTo "") then { deleteMarkerLocal _ring; };
+};
 private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
 missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
 
-if (!(_mk in allMapMarkers)) then {
+if (!_native && {(getMarkerColor _mk) isEqualTo ""}) then {
     createMarkerLocal [_mk, _pos];
     _mk setMarkerTypeLocal "mil_box";
     _mk setMarkerSizeLocal [0.9, 0.9];
 };
-_mk setMarkerPosLocal _pos;
-_mk setMarkerColorLocal _col;
-_mk setMarkerTextLocal _name;
-
-if (!(_ring in allMapMarkers)) then {
-    createMarkerLocal [_ring, _pos];
-    _ring setMarkerShapeLocal "ELLIPSE";
-    _ring setMarkerBrushLocal "Border";
+if (!_native) then {
+    _mk setMarkerPosLocal _pos;
+    _mk setMarkerColorLocal _col;
+    _mk setMarkerTextLocal _name;
+    if ((getMarkerColor _ring) isEqualTo "") then {
+        createMarkerLocal [_ring, _pos];
+        _ring setMarkerShapeLocal "ELLIPSE";
+        _ring setMarkerBrushLocal "Border";
+    };
+    _ring setMarkerPosLocal _pos;
+    _ring setMarkerSizeLocal [_range, _range];
+    _ring setMarkerColorLocal _col;
+    _ring setMarkerAlphaLocal 0.55;
 };
-_ring setMarkerPosLocal _pos;
-_ring setMarkerSizeLocal [_range, _range];
-_ring setMarkerColorLocal _col;
-_ring setMarkerAlphaLocal 0.55;
 
 private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
 if (_unmute < 0) then { _unmute = 0; };

@@ -284,6 +284,11 @@ final class CommunityMediaAdminController
         }
 
         $showPublic = $request->input('show_on_public_page') ? 1 : 0;
+        // Bouton « Publier maintenant » du bandeau d’état : publie et affiche sur la vitrine en un clic.
+        if ($request->input('publish_now')) {
+            $status = CommunityMediaDetails::STATUS_PUBLISHED;
+            $showPublic = 1;
+        }
         $isHero = $request->input('is_hero') ? 1 : 0;
         if (($showPublic || $isHero || $status === CommunityMediaDetails::STATUS_PUBLISHED)
             && !CommunityMediaStaffAccess::canPublish(Gate::getInstance())
@@ -323,7 +328,7 @@ final class CommunityMediaAdminController
             $data['external_url'] = $norm['url'];
         }
 
-        $flash = 'Média enregistré.';
+        $flash = $request->input('publish_now') ? 'Média publié : il est maintenant visible sur la page publique.' : 'Média enregistré.';
         if ($blurMode === CommunityMediaDetails::BLUR_AUTO_FACE && $regions === []) {
             $data['blur_regions_json'] = json_encode([
                 ['x' => 35.0, 'y' => 12.0, 'w' => 30.0, 'h' => 28.0],

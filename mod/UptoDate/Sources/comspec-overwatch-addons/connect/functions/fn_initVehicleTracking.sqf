@@ -10,8 +10,14 @@ if (!isNull _bound && {_bound isEqualTo player}) exitWith { true };
 missionNamespace setVariable ["COMSPEC_VehTrackPlayer", player, false];
 missionNamespace setVariable ["COMSPEC_VehTrackLastAt", -1e9, false];
 
-player addEventHandler ["GetInMan", {
+// Les EH du joueur sont repris sur la nouvelle unité au respawn, puis ce script les rajoute (rebind) :
+// ils s'empilaient à chaque REAPP. Seul le dernier EH enregistré (id mémorisé) agit ; un doublon repris
+// se retire lui-même au premier déclenchement.
+private _evh = player addEventHandler ["GetInMan", {
     params ["_unit", "_role", "_vehicle", "_turret"];
+    if (_thisEventHandler != (missionNamespace getVariable ["COMSPEC_VehTrackEh_GetInMan", -1])) exitWith {
+        _unit removeEventHandler ["GetInMan", _thisEventHandler];
+    };
     if (_vehicle isEqualTo _unit) exitWith {};
 
     if (!isNil "comspec_overwatch_connect_fnc_applyCtabBftCallsign") then {
@@ -46,7 +52,9 @@ player addEventHandler ["GetInMan", {
             params ["_args", "_handle"];
             _args params ["_vehicle"];
 
-            if (isNull _vehicle || {alive _x} count (crew _vehicle) isEqualTo 0) then {
+            // Arrêt aussi quand le joueur a quitté le véhicule : sinon le PFH tournait tant qu'il restait
+            // un équipage (un PFH de plus par véhicule emprunté, jusqu'à la fin de la partie).
+            if (isNull _vehicle || {vehicle player != _vehicle} || {({alive _x} count (crew _vehicle)) isEqualTo 0}) then {
                 [_handle] call CBA_fnc_removePerFrameHandler;
                 _vehicle setVariable ["COMSPEC_TrackingHandle", -1];
             } else {
@@ -62,9 +70,13 @@ player addEventHandler ["GetInMan", {
         // Pas de systemChat : le suivi reste silencieux (journal / milsim).
     };
 }];
+missionNamespace setVariable ["COMSPEC_VehTrackEh_GetInMan", _evh, false];
 
-player addEventHandler ["GetOutMan", {
+_evh = player addEventHandler ["GetOutMan", {
     params ["_unit", "_role", "_vehicle", "_turret"];
+    if (_thisEventHandler != (missionNamespace getVariable ["COMSPEC_VehTrackEh_GetOutMan", -1])) exitWith {
+        _unit removeEventHandler ["GetOutMan", _thisEventHandler];
+    };
     if (isNull _unit || {!local _unit}) exitWith {};
     if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
     if (!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent") then {
@@ -82,9 +94,13 @@ player addEventHandler ["GetOutMan", {
         ], 1] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
     };
 }];
+missionNamespace setVariable ["COMSPEC_VehTrackEh_GetOutMan", _evh, false];
 
-player addEventHandler ["Killed", {
+_evh = player addEventHandler ["Killed", {
     params ["_unit"];
+    if (_thisEventHandler != (missionNamespace getVariable ["COMSPEC_VehTrackEh_Killed", -1])) exitWith {
+        _unit removeEventHandler ["Killed", _thisEventHandler];
+    };
 
     if (missionNamespace getVariable ["COMSPEC_DeathThenRespawn", false]) exitWith {};
     if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
@@ -95,11 +111,18 @@ player addEventHandler ["Killed", {
         _vehicleData set ["vehicle_callsign", getText (configOf _vehicle >> "displayName")];
         _vehicleData set ["status", "DESTROYED"];
         private _jsonString = [_vehicleData] call comspec_overwatch_connect_fnc_hashMapToJson;
-        "COMSPECExtension" callExtension ["UpdateVehicleTracking", [_jsonString]];
+        // POST hors du thread de jeu (spawn + extAwait) : retour inutilisé, l'appel synchrone figeait le jeu.
+        [_jsonString] spawn {
+            ["COMSPECExtension", "UpdateVehicleTracking", _this] call comspec_overwatch_connect_fnc_extAwait;
+        };
     };
 }];
+missionNamespace setVariable ["COMSPEC_VehTrackEh_Killed", _evh, false];
 
-player addEventHandler ["Respawn", {
+_evh = player addEventHandler ["Respawn", {
+    if (_thisEventHandler != (missionNamespace getVariable ["COMSPEC_VehTrackEh_Respawn", -1])) exitWith {
+        (_this select 0) removeEventHandler ["Respawn", _thisEventHandler];
+    };
     // Grâce déjà posée par initATAK (Respawn / EntityRespawned) — ici on rebind seulement.
     [{
         [] call comspec_overwatch_connect_fnc_initVehicleTracking;
@@ -108,5 +131,6 @@ player addEventHandler ["Respawn", {
         };
     }, [], 0.5] call CBA_fnc_waitAndExecute;
 }];
+missionNamespace setVariable ["COMSPEC_VehTrackEh_Respawn", _evh, false];
 
 true

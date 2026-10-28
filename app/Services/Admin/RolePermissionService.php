@@ -70,10 +70,13 @@ class RolePermissionService
         if (!$this->roleRepository->canAssignInTenantAdminContext($roleId, $tenantId)) {
             throw new \InvalidArgumentException('Ce rôle ne relève pas de votre communauté ou est réservé à la plateforme. Il ne peut pas être modifié depuis cet espace.');
         }
-        $this->permissionRepository->setPermissionsForRole(
-            $roleId,
+        $role = $this->roleRepository->findById($roleId, $tenantId);
+        $ids = $this->withManagerProtectedPermissions(
+            $tenantId,
+            (string) ($role['slug'] ?? ''),
             $this->assignablePermissionIdsForTenant($tenantId, $permissionIds)
         );
+        $this->permissionRepository->setPermissionsForRole($roleId, $ids);
     }
 
     /**
@@ -88,19 +91,52 @@ class RolePermissionService
         }
         $ids = $this->assignablePermissionIdsForTenant($tenantId, $permissionIds);
         $role = $this->roleRepository->findById($roleId, $tenantId);
-        $slug = (string) ($role['slug'] ?? '');
-        if ($slug === CommunityAccessProfiles::SLUG_MANAGER) {
-            foreach ($this->permissionRepository->allForTenant($tenantId) as $row) {
-                if ((string) ($row['slug'] ?? '') === 'admin.roles.manage') {
-                    $keep = (int) ($row['id'] ?? 0);
-                    if ($keep > 0 && !in_array($keep, $ids, true)) {
-                        $ids[] = $keep;
-                    }
-                    break;
-                }
+        $ids = $this->withManagerProtectedPermissions($tenantId, (string) ($role['slug'] ?? ''), $ids);
+        $this->permissionRepository->setPermissionsForRole($roleId, $ids);
+    }
+
+    /**
+     * Identifiants des droits protégés du Gestionnaire pour ce tenant.
+     *
+     * @return list<int>
+     */
+    public function managerProtectedPermissionIdsForTenant(int $tenantId): array
+    {
+        $wanted = array_fill_keys(CommunityAccessProfiles::managerProtectedPermissionSlugs(), true);
+        $ids = [];
+        foreach ($this->permissionRepository->allForTenant($tenantId) as $row) {
+            $slug = (string) ($row['slug'] ?? '');
+            $id = (int) ($row['id'] ?? 0);
+            if ($id > 0 && isset($wanted[$slug])) {
+                $ids[] = $id;
             }
         }
-        $this->permissionRepository->setPermissionsForRole($roleId, $ids);
+
+        return $ids;
+    }
+
+    /**
+     * Réinjecte les droits indispensables du Gestionnaire s’ils manquent.
+     *
+     * @param list<int> $permissionIds
+     * @return list<int>
+     */
+    public function withManagerProtectedPermissions(int $tenantId, string $roleSlug, array $permissionIds): array
+    {
+        if (strtolower(trim($roleSlug)) !== CommunityAccessProfiles::SLUG_MANAGER) {
+            return $permissionIds;
+        }
+        $ids = array_values(array_unique(array_filter(
+            array_map('intval', $permissionIds),
+            static fn (int $id): bool => $id > 0
+        )));
+        foreach ($this->managerProtectedPermissionIdsForTenant($tenantId) as $keep) {
+            if (!in_array($keep, $ids, true)) {
+                $ids[] = $keep;
+            }
+        }
+
+        return $ids;
     }
 
     /**

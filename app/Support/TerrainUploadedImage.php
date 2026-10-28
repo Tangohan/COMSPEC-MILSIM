@@ -12,6 +12,13 @@ final class TerrainUploadedImage
 {
     public const MAX_RAW_BYTES = 16 * 1024 * 1024;
 
+    /**
+     * Garde-fou applicatif d'une capture terrain (PHP n'en pose pas, cf. .user.ini).
+     * Une capture PNG native Arma en 4K/5K dépasse largement 12 Mo ;
+     * elle est ensuite ramenée à 1920 px JPEG par StoredPhotoCompressor.
+     */
+    public const MAX_FILE_BYTES = 96 * 1024 * 1024;
+
     /** @var list<string> */
     private const FILE_KEYS = ['image', 'photo', 'file', 'piece'];
 

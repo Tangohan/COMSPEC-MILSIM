@@ -52,7 +52,7 @@ $lessonTypeLabels = function_exists('training_lesson_type_labels_fr') ? training
     'audio' => 'Audio',
     'scorm_like' => 'SCORM',
     'checklist' => 'Liste de contrôle',
-    'external_link' => 'Lien externe',
+    'external_link' => 'Lien web (Docs, Sheets, Slides, draw.io…)',
     'canvas' => 'Parcours visuel',
     'quiz' => 'Quiz',
     'modals' => 'Modales',
@@ -1017,7 +1017,7 @@ $defaultCanvasJson = json_encode([
                                         <label class="block text-xs font-bold text-slate-700 mb-1">Que souhaitez-vous lier ?</label>
                                         <select name="resource_add_mode" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" data-lms-resource-mode>
                                             <option value="image">Une image (JPG, PNG, WebP)</option>
-                                            <option value="link">Une adresse web (site, article, vidéo en ligne…)</option>
+                                            <option value="link">Une adresse web (Google Docs, Sheets, Slides, draw.io, site, vidéo…)</option>
                                             <option value="file">Un autre fichier (PDF, archive, audio…)</option>
                                             <option value="library">Un document du centre documentaire de la communauté</option>
                                             <option value="library_upload">Bibliothèque d’assets (upload type YouTube Studio)</option>
@@ -1039,7 +1039,7 @@ $defaultCanvasJson = json_encode([
                                         <div>
                                             <label class="block text-xs font-bold text-slate-700 mb-1">Adresse web</label>
                                             <input type="text" name="resource_external_url" inputmode="url" autocomplete="off" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="https://…">
-                                            <p class="mt-1 text-[11px] text-slate-500">Collez l’adresse complète affichée dans le navigateur (de préférence en https).</p>
+                                            <p class="mt-1 text-[11px] text-slate-500">Collez l’adresse complète affichée dans le navigateur. Google Docs, Sheets, Slides, Drawings, draw.io et Figma s’affichent directement dans la leçon (pensez à partager le document en lecture « à toute personne disposant du lien »).</p>
                                         </div>
                                     </div>
                                     <div class="space-y-2 hidden" data-lms-res-panel="file">

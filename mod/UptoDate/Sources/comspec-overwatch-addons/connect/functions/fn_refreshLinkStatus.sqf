@@ -28,7 +28,8 @@ _key = trim _key;
 missionNamespace setVariable ["COMSPEC_LinkState", "connecting", false];
 [] call comspec_overwatch_connect_fnc_updateStatusBadges;
 
-private _raw = ["COMSPECExtension" callExtension ["GetClientIp", []]] call comspec_overwatch_connect_fnc_extResult;
+// extAwait : asynchrone quand l'appelant est en spawn (requête HTTP synchrone dans la DLL), appel direct sinon.
+private _raw = [["COMSPECExtension", "GetClientIp", []] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _raw splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 private _payload = if (count _parts >= 2) then { _parts select 1 } else { _raw };
@@ -38,7 +39,8 @@ private _detail = "";
 
 if (_prefix == "OK") then {
     if (!(_payload isEqualTo "") && {!(_payload isEqualTo "—")}) then {
-        missionNamespace setVariable ["COMSPEC_userIp", _payload, true];
+        // Locale : lue seulement par ce client (la diffusion écrasait l'IP des autres et l'exposait à tous).
+        missionNamespace setVariable ["COMSPEC_userIp", _payload, false];
     };
     // whoami public ≠ auth : sans clé, portail joignable seulement.
     if ((count _key) < 4) then {

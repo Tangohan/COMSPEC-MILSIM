@@ -17,11 +17,21 @@ private _bs = toString [92];
 private _fncEsc = {
     params ["_s"];
     if (!(_s isEqualType "")) then { _s = str _s; };
-    _s = (_s splitString _bs) joinString (_bs + _bs);
-    _s = (_s splitString _dq) joinString (_bs + _dq);
-    _s = (_s splitString toString [10]) joinString "\\n";
-    _s = (_s splitString toString [13]) joinString "";
-    _dq + _s + _dq
+    // Caractère par caractère : SQF n'a pas d'échappement (« \\n » = 3 caractères), et
+    // splitString écarte les segments vides (guillemets en tête / doublés perdus).
+    private _out = [];
+    {
+        switch (true) do {
+            case (_x == 34): { _out append [92, 34] };
+            case (_x == 92): { _out append [92, 92] };
+            case (_x == 10): { _out append [92, 110] };
+            case (_x == 13): { _out append [92, 114] };
+            case (_x == 9): { _out append [92, 116] };
+            case (_x < 32): { _out pushBack 32 };
+            default { _out pushBack _x };
+        };
+    } forEach (toArray _s);
+    _dq + (toString _out) + _dq
 };
 
 switch (typeName _value) do {

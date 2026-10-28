@@ -1,0 +1,1201 @@
+/**
+ * Back-office — Équipement des joueurs et Kits par rôle
+ * (views/admin/organization/game_equipment.php, game_role_kits.php, game_role_kit_form.php).
+ * Couleurs : jetons --ath-* du shell (le mode nuit les redéfinit) ; ajustements nuit en fin de fichier.
+ */
+
+.bo-ge {
+  --ge-radius: 12px;
+  --ge-radius-sm: var(--ath-radius, 8px);
+  --ge-accent: var(--ath-accent, #0b8a5c);
+  --ge-accent-soft: rgba(18, 209, 142, 0.12);
+  --ge-bar: rgba(11, 138, 92, 0.55);
+  --ge-side-top: calc(var(--ath-topbar-h, 54px) + 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  color: var(--ath-ink);
+}
+
+.ath-main:has(.bo-ge) {
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+.bo-ge-icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  vertical-align: -3px;
+}
+
+.bo-ge-mono {
+  font-family: var(--ath-mono);
+  font-size: 11.5px;
+  color: var(--ath-subtle);
+  background: none;
+  padding: 0;
+  word-break: break-all;
+}
+
+.bo-ge-empty {
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed var(--ath-line);
+  border-radius: var(--ge-radius-sm);
+  color: var(--ath-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.bo-ge-empty--sm {
+  padding: 12px;
+  font-size: 12.5px;
+}
+
+.bo-ge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  margin-left: auto;
+  border-radius: 999px;
+  background: var(--ath-line-soft);
+  font-family: var(--ath-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ath-muted);
+}
+
+.bo-ge .ath-btn--sm {
+  min-height: 30px;
+  padding: 4px 10px;
+  font-size: 12.5px;
+}
+
+.bo-ge .ath-btn .bo-ge-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+}
+
+.bo-ge-inline {
+  display: inline;
+  margin: 0;
+}
+
+.bo-ge-linkbtn {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ge-accent);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bo-ge-linkbtn:hover {
+  text-decoration: underline;
+}
+
+.bo-ge-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: 1px solid var(--ath-line);
+  border-radius: 8px;
+  background: var(--ath-surface);
+  color: var(--ath-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.bo-ge-iconbtn:hover {
+  background: var(--ath-row-hover);
+  color: var(--ath-ink);
+}
+
+/* ── Barre d’outils ────────────────────────────────────────────────── */
+
+.bo-ge__toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+.bo-ge__spacer {
+  flex: 1;
+}
+
+.bo-ge__window {
+  font-size: 12.5px;
+  color: var(--ath-muted);
+}
+
+.bo-ge-seg {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--ath-surface);
+  border: 1px solid var(--ath-line);
+  border-radius: 10px;
+}
+
+.bo-ge-seg__opt {
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ath-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.bo-ge-seg__opt:hover {
+  background: var(--ath-row-hover);
+  color: var(--ath-ink);
+}
+
+.bo-ge-seg__opt[aria-current] {
+  background: var(--ath-ink);
+  color: var(--ath-surface);
+}
+
+/* ── Encadrés ──────────────────────────────────────────────────────── */
+
+.bo-ge-note {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--ath-info-bg, rgba(30, 111, 191, 0.08));
+  border: 1px solid var(--ath-line);
+  border-radius: var(--ge-radius);
+  color: var(--ath-ink);
+}
+
+.bo-ge-note > .bo-ge-icon {
+  margin-top: 2px;
+  color: var(--ath-info, #1e6fbf);
+}
+
+.bo-ge-note--warn {
+  background: var(--ath-warn-bg, #fdf3e2);
+  border-color: var(--ath-warn-bd, #f2ddb4);
+}
+
+.bo-ge-note--warn > .bo-ge-icon {
+  color: var(--ath-warn, #c98a12);
+}
+
+.bo-ge-note__title {
+  margin: 0 0 2px;
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.bo-ge-note__text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ath-muted);
+}
+
+.bo-ge-note code {
+  font-family: var(--ath-mono);
+  font-size: 12px;
+}
+
+/* ── En bref ───────────────────────────────────────────────────────── */
+
+.bo-ge-brief {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.bo-ge-brief__card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 16px 18px;
+  background: var(--ath-surface);
+  border: 1px solid var(--ath-line);
+  border-radius: var(--ge-radius);
+  color: inherit;
+  text-decoration: none;
+}
+
+.bo-ge-brief__card--link:hover {
+  border-color: var(--ge-accent);
+}
+
+.bo-ge-brief__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ath-muted);
+}
+
+.bo-ge-brief__value {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.bo-ge-brief__hint {
+  font-size: 12px;
+  color: var(--ath-subtle);
+}
+
+/* ── Sections ──────────────────────────────────────────────────────── */
+
+.bo-ge-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 20px 22px;
+  background: var(--ath-surface);
+  border: 1px solid var(--ath-line);
+  border-radius: var(--ge-radius);
+}
+
+.bo-ge-section__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.bo-ge-section__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--ge-accent-soft);
+  color: var(--ge-accent);
+}
+
+.bo-ge-section__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.bo-ge-section__lead {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--ath-muted);
+}
+
+.bo-ge-subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ath-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Classements ───────────────────────────────────────────────────── */
+
+.bo-ge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.bo-ge-grid--main {
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+}
+
+.bo-ge-rank {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--ath-line);
+  border-radius: var(--ge-radius-sm);
+  background: var(--ath-bg, transparent);
+}
+
+.bo-ge-rank__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.bo-ge-rank__icon {
+  display: inline-flex;
+  color: var(--ge-accent);
+}
+
+.bo-ge-rank__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.bo-ge-rank__list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bo-ge-rank__row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--ath-line-soft);
+}
+
+.bo-ge-rank__row:first-child {
+  border-top: 0;
+}
+
+.bo-ge-rank__row.is-extra {
+  display: none;
+}
+
+.bo-ge-rank.is-open .bo-ge-rank__row.is-extra {
+  display: grid;
+}
+
+.bo-ge-rank__pos {
+  font-family: var(--ath-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ath-subtle);
+  text-align: center;
+}
+
+.bo-ge-rank__row:first-child .bo-ge-rank__pos {
+  color: var(--ge-accent);
+}
+
+.bo-ge-rank__body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.bo-ge-rank__name {
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-ge-rank--big .bo-ge-rank__name {
+  font-size: 14px;
+}
+
+.bo-ge-rank__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.bo-ge-rank__bar {
+  display: block;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--ath-line-soft);
+  overflow: hidden;
+}
+
+.bo-ge-rank__bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ge-bar);
+}
+
+.bo-ge-rank__row:first-child .bo-ge-rank__bar > span {
+  background: var(--ge-accent);
+}
+
+.bo-ge-rank__value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.1;
+  cursor: help;
+}
+
+.bo-ge-rank__value strong {
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.bo-ge-rank__value small {
+  font-size: 11px;
+  color: var(--ath-subtle);
+}
+
+.bo-ge-mod {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--ge-accent-soft);
+  color: var(--ge-accent);
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Puces ─────────────────────────────────────────────────────────── */
+
+.bo-ge-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bo-ge-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--ath-line);
+  border-radius: 999px;
+  background: var(--ath-surface);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.bo-ge-chip small {
+  font-weight: 500;
+  color: var(--ath-subtle);
+}
+
+.bo-ge-chip--soft {
+  border-style: dashed;
+  color: var(--ath-muted);
+  font-weight: 600;
+}
+
+/* ── Table des mods ────────────────────────────────────────────────── */
+
+.bo-ge-tablebar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+.bo-ge-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 240px;
+  max-width: 360px;
+  padding: 0 10px;
+  border: 1px solid var(--ath-line);
+  border-radius: 9px;
+  background: var(--ath-surface);
+  color: var(--ath-subtle);
+}
+
+.bo-ge-search input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  border: 0;
+  background: none;
+  color: var(--ath-ink);
+  font-size: 13px;
+  outline: none;
+}
+
+.bo-ge-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ath-muted);
+}
+
+.bo-ge-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--ath-line);
+  border-radius: var(--ge-radius-sm);
+}
+
+.bo-ge-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.bo-ge-table th {
+  padding: 9px 12px;
+  background: var(--ath-table-head, var(--ath-bg));
+  color: var(--ath-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bo-ge-table td {
+  padding: 9px 12px;
+  border-top: 1px solid var(--ath-line-soft);
+  vertical-align: middle;
+}
+
+.bo-ge-table tbody tr:hover {
+  background: var(--ath-row-hover);
+}
+
+.bo-ge-modname {
+  font-weight: 700;
+}
+
+.bo-ge-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--ath-line-soft);
+  color: var(--ath-muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.bo-ge-ext {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  color: var(--ge-accent);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bo-ge-ext .bo-ge-icon {
+  width: 13px;
+  height: 13px;
+}
+
+.bo-ge-meter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 140px;
+}
+
+.bo-ge-meter__bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ath-line-soft);
+  overflow: hidden;
+}
+
+.bo-ge-meter__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--ge-accent);
+}
+
+.bo-ge-meter__val {
+  min-width: 56px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.bo-ge-meter__val small {
+  font-weight: 500;
+  color: var(--ath-subtle);
+}
+
+/* ── Liste des kits ────────────────────────────────────────────────── */
+
+.bo-ge-kits {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.bo-ge-kit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--ath-line);
+  border-radius: var(--ge-radius-sm);
+  background: var(--ath-bg, transparent);
+}
+
+.bo-ge-kit__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bo-ge-kit__name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.bo-ge-kit__name a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.bo-ge-kit__name a:hover {
+  color: var(--ge-accent);
+}
+
+.bo-ge-kit__desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ath-muted);
+  white-space: pre-line;
+}
+
+.bo-ge-kit__meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ath-subtle);
+}
+
+.bo-ge-kit__mods {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.bo-ge-kit__label {
+  margin-right: 2px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ath-muted);
+}
+
+.bo-ge-kit__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--ath-line-soft);
+}
+
+.bo-ge-status {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.bo-ge-status--ok {
+  background: var(--ge-accent-soft);
+  color: var(--ge-accent);
+}
+
+.bo-ge-status--warn {
+  background: var(--ath-warn-bg, #fdf3e2);
+  color: var(--ath-warn, #c98a12);
+}
+
+/* ── Formulaire de kit ─────────────────────────────────────────────── */
+
+.bo-ge-form__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  align-items: start;
+  gap: 16px;
+}
+
+.bo-ge-form__main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.bo-ge-form__side {
+  position: sticky;
+  top: var(--ge-side-top);
+}
+
+.bo-ge-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.bo-ge-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.bo-ge-field--wide {
+  grid-column: 1 / -1;
+}
+
+.bo-ge-field__label,
+.bo-ge-slot__label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ath-muted);
+}
+
+.bo-ge-field__label small {
+  font-weight: 500;
+  color: var(--ath-subtle);
+}
+
+.bo-ge-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid var(--ath-line);
+  border-radius: 8px;
+  background: var(--ath-surface);
+  color: var(--ath-ink);
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.bo-ge-input:focus {
+  outline: 2px solid var(--ge-accent-soft);
+  border-color: var(--ge-accent);
+}
+
+.bo-ge-input--mono {
+  font-family: var(--ath-mono);
+  font-size: 12.5px;
+}
+
+textarea.bo-ge-input {
+  resize: vertical;
+}
+
+.bo-ge-weapon {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px 14px;
+  border: 1px solid var(--ath-line);
+  border-radius: var(--ge-radius-sm);
+}
+
+.bo-ge-weapon__legend {
+  padding: 0 6px;
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.bo-ge-weapon__att {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  padding-left: 12px;
+  border-left: 3px solid var(--ath-line-soft);
+}
+
+.bo-ge-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.bo-ge-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bo-ge-slot__row {
+  display: flex;
+  gap: 6px;
+}
+
+.bo-ge-slot__name {
+  min-height: 15px;
+  overflow: hidden;
+  font-size: 11.5px;
+  color: var(--ath-subtle);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-ge-slot__name.is-unknown {
+  color: var(--ath-warn, #c98a12);
+}
+
+.bo-ge-cargo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.bo-ge-cargo__box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bo-ge-cargo__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bo-ge-cargo__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px auto;
+  align-items: start;
+  gap: 6px;
+}
+
+.bo-ge-cargo__count {
+  display: flex;
+  flex-direction: column;
+}
+
+.bo-ge-cargo__count > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.bo-ge-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  background: var(--ath-surface);
+  border: 1px solid var(--ath-line);
+  border-radius: var(--ge-radius);
+}
+
+.bo-ge-summary__kicker {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ath-subtle);
+}
+
+.bo-ge-summary__count {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ath-muted);
+}
+
+.bo-ge-summary__count strong {
+  font-size: 22px;
+  color: var(--ath-ink);
+}
+
+.bo-ge-summary__label {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ath-muted);
+}
+
+.bo-ge-summary__warn {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--ath-warn-bg, #fdf3e2);
+  color: var(--ath-warn, #c98a12);
+  font-size: 12.5px;
+}
+
+.bo-ge-summary__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.bo-ge-summary__hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ath-subtle);
+}
+
+/* ── Sélecteur ─────────────────────────────────────────────────────── */
+
+.bo-ge-picker {
+  width: min(720px, calc(100vw - 32px));
+  max-height: min(80vh, 760px);
+  padding: 0;
+  border: 1px solid var(--ath-line);
+  border-radius: var(--ge-radius);
+  background: var(--ath-surface);
+  color: var(--ath-ink);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+}
+
+.bo-ge-picker::backdrop {
+  background: rgba(10, 14, 20, 0.45);
+}
+
+.bo-ge-picker__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: min(80vh, 760px);
+  padding: 16px;
+}
+
+.bo-ge-picker__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bo-ge-picker__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.bo-ge-picker__filters {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.bo-ge-picker__info {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ath-subtle);
+}
+
+.bo-ge-picker__list {
+  flex: 1;
+  min-height: 120px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--ath-line-soft);
+  border-radius: 8px;
+}
+
+.bo-ge-picker__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'name players' 'meta players';
+  width: 100%;
+  gap: 2px 10px;
+  padding: 8px 12px;
+  border: 0;
+  border-top: 1px solid var(--ath-line-soft);
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bo-ge-picker__list li:first-child .bo-ge-picker__item {
+  border-top: 0;
+}
+
+.bo-ge-picker__item:hover,
+.bo-ge-picker__item:focus-visible {
+  background: var(--ath-row-hover);
+  outline: none;
+}
+
+.bo-ge-picker__name {
+  grid-area: name;
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-ge-picker__meta {
+  grid-area: meta;
+  overflow: hidden;
+  font-family: var(--ath-mono);
+  font-size: 11.5px;
+  color: var(--ath-subtle);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-ge-picker__players {
+  grid-area: players;
+  align-self: center;
+  min-width: 28px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--ge-accent-soft);
+  color: var(--ge-accent);
+  font-size: 11.5px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.bo-ge-picker__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────── */
+
+@media (max-width: 1100px) {
+  .bo-ge-form__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bo-ge-form__side {
+    position: static;
+  }
+
+  .bo-ge-cargo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .bo-ge-brief {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bo-ge-grid,
+  .bo-ge-grid--main,
+  .bo-ge-kits {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .bo-ge-section {
+    padding: 16px 14px;
+  }
+
+  .bo-ge-brief__value {
+    font-size: 26px;
+  }
+
+  .bo-ge__spacer,
+  .bo-ge-hide-sm {
+    display: none;
+  }
+
+  .bo-ge-fields,
+  .bo-ge-picker__filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bo-ge-weapon__att {
+    padding-left: 8px;
+  }
+
+  .bo-ge-search {
+    max-width: none;
+  }
+}
+
+/* ── Mode nuit ─────────────────────────────────────────────────────── */
+
+html[data-bo-theme="dark"] .bo-ge {
+  --ge-accent: var(--ath-accent-bright, #12d18e);
+  --ge-accent-soft: rgba(18, 209, 142, 0.14);
+  --ge-bar: rgba(18, 209, 142, 0.5);
+}
+
+html[data-bo-theme="dark"] .bo-ge-picker::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+html[data-bo-theme="dark"] .bo-ge-picker {
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* Icônes des objets (textures du jeu converties, COMSPEC Link 2.0.88). Fond sombre : beaucoup d'icônes Arma
+   sont claires sur fond transparent, comme dans l'arsenal. */
+.bo-ge-rank__row:has(> .bo-ge-itemico) {
+  grid-template-columns: 22px 48px minmax(0, 1fr) auto;
+}
+
+.bo-ge-itemico,
+.bo-ge-kit__icons img {
+  display: block;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  padding: 3px;
+  border-radius: 6px;
+  background: #1d2125;
+  box-sizing: border-box;
+}
+
+.bo-ge-kit__icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 2px;
+}
+
+.bo-ge-kit__icons img {
+  width: 40px;
+  height: 40px;
+}

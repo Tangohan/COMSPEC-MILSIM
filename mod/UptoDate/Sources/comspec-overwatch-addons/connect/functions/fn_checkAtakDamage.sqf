@@ -26,12 +26,16 @@ if (_atakState getOrDefault ["device_destroyed", false]) exitWith {};
 // comspec_atak_native_fnc_deviceImpact) remplacent les chocs et blessures au torse ci-dessous, qui cassaient le
 // téléphone même quand le gilet avait arrêté la balle. Il respecte le niveau de réalisme et recopie un appareil
 // détruit dans COMSPEC_AtakState.
+// SQF-C04 (A2) : sortir avant getAllHitPointsDamage / KAT — le travail lourd était encore fait puis ignoré.
 private _native = !isNil "comspec_atak_native_fnc_deviceImpact";
+if (_native) exitWith {
+    missionNamespace setVariable ["COMSPEC_LastAtakImpact", 0, false];
+    missionNamespace setVariable ["COMSPEC_AtakState", _atakState, false];
+};
 
 // Choc / explosion récente (définie par EH Hit / Explosion)
 private _impact = missionNamespace getVariable ["COMSPEC_LastAtakImpact", 0];
-if (_native) then { missionNamespace setVariable ["COMSPEC_LastAtakImpact", 0, false]; };
-if (_impact > 0.25 && {!_native}) then {
+if (_impact > 0.25) then {
     missionNamespace setVariable ["COMSPEC_LastAtakImpact", 0, false];
     if (_realism >= 2 && {random 100 < (_impact * 50)}) then {
         _atakState set ["screen_destroyed", true];
@@ -117,8 +121,6 @@ if (_armDamage > 0.65 && {_realism >= 1} && {random 100 < 25}) then {
     };
 };
 
-if (_native) exitWith { missionNamespace setVariable ["COMSPEC_AtakState", _atakState, false]; };
-
 private _wasPowered = _atakState getOrDefault ["powered_on", true];
 private _wasScreenDestroyed = _atakState getOrDefault ["screen_destroyed", false];
 
@@ -169,7 +171,10 @@ switch (_realism) do {
                 format ["dommages torse=%1", (_chestDamage toFixed 2)]
             ] call comspec_overwatch_connect_fnc_logAtakEvent;
             [true] call comspec_overwatch_connect_fnc_logAtakStateChange;
-            [] call comspec_overwatch_connect_fnc_disconnect;
+            // Pas de fn_disconnect ici (réservé à Ended / Unload display 46) : il armerait
+            // COMSPEC_DisconnectSent pour toute la mission. Liaison hors ligne seulement ;
+            // refreshLinkState la maintient via device_destroyed jusqu'à réparation.
+            missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
         };
     };
 };

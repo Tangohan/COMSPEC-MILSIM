@@ -54,7 +54,7 @@ final class PlatformReviewAssetTest extends TestCase
         $footer = (string) file_get_contents($root . '/views/partials/portal_footer.php');
         $layout = (string) file_get_contents($root . '/views/layout/main.php');
         $migration = (string) file_get_contents($root . '/bootstrap/platform_review_translation_migration.php');
-        $runner = (string) file_get_contents($root . '/run-migrations.php');
+        $runner = (string) \Tests\Support\MigrationPipelineSource::read($root);
         $container = (string) file_get_contents($root . '/app/Core/Container.php');
         $js = (string) file_get_contents($root . '/public/assets/js/platform-review-modal.js');
 

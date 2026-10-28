@@ -9,6 +9,31 @@ if (isServer) then {
     [] call comspec_overwatch_connect_fnc_initProxyTrackServer;
     [] call comspec_overwatch_connect_fnc_initServerHub;
 };
+// Profil : les écritures regroupées (fn_saveProfile, une par minute au plus) sont vidées en fin de mission.
+{
+    addMissionEventHandler [_x, { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_overwatch_connect_fnc_saveProfile; }; }];
+} forEach ["Ended", "MPEnded"];
+if (hasInterface) then {
+    [{ !isNull (findDisplay 46) }, {
+        (findDisplay 46) displayAddEventHandler ["Unload", { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_overwatch_connect_fnc_saveProfile; }; }];
+    }] call CBA_fnc_waitUntilAndExecute;
+};
+// Serveur dédié : sans gestionnaire de rappel, fn_extAwait retombait sur un callExtension direct et chaque
+// requête serveur (GetAiOrders, UpdateOrderStatus, GetRoleplayConfig) figeait la simulation de tous.
+// Seules les réponses « async: » sont traitées ici (le reste de fn_extensionCallback est côté joueur).
+if (!hasInterface && {isNil "COMSPEC_ExtensionCallbackEH"}) then {
+    COMSPEC_ExtensionCallbackEH = addMissionEventHandler ["ExtensionCallback", {
+        params ["_name", "_function", ["_data", ""]];
+        if (_name != "comspec") exitWith {};
+        if (!(_function isEqualType "")) then { _function = str _function; };
+        if ((_function select [0, 6]) isNotEqualTo "async:") exitWith {};
+        if (!(_data isEqualType "")) then { _data = str _data; };
+        private _pending = missionNamespace getVariable ["COMSPEC_ExtPending", createHashMap];
+        private _ticket = _function select [6];
+        if (_ticket in _pending) then { _pending set [_ticket, [_data]]; };
+    }];
+    ["DEBUG", "Boot", "ExtensionCallback EH serveur enregistré (réponses async)"] call comspec_overwatch_connect_fnc_log;
+};
 if (!hasInterface) exitWith {};
 
 ["INFO", "Boot", "PostInit client — warmup extension"] call comspec_overwatch_connect_fnc_log;
@@ -56,6 +81,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
     if (isNil "COMSPEC_MapMarkerEHs") then {
         private _resyncSoon = {
             params ["_marker"];
+            if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
             if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
             if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
@@ -66,7 +92,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
                 params ["_m"];
                 if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
                 if ([_m] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
-                if (!(_m in allMapMarkers)) exitWith {};
+                if ((getMarkerColor _m) isEqualTo "") exitWith {};
                 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
                 if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
                 private _forceLater = [_m] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
@@ -81,6 +107,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
                 private _ch = _this param [1, -1];
                 private _own = _this param [2, -1];
                 private _local = _this param [3, false];
+                private _hub = missionNamespace getVariable ["COMSPEC_ServerHubActive", false];
                 if (_local isEqualTo true) then {
                     private _st = systemTime;
                     private _hh = str (_st select 3);
@@ -91,14 +118,21 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
                     missionNamespace setVariable [
                         format ["COMSPEC_UserMkMeta_%1", _marker],
                         [_ch, _by, format ["%1:%2", _hh, _mm], _own],
-                        false
+                        _hub
                     ];
                 };
+                // Hub actif : seul le serveur envoie. Le poste auteur ne double plus.
+                if (_hub) exitWith {};
+                if (!(_local isEqualTo true) && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]}) exitWith {};
                 [_marker] call (missionNamespace getVariable ["COMSPEC_MarkerResyncSoon", {}]);
             }],
             addMissionEventHandler ["MarkerUpdated", {
                 private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
                 if (_marker isEqualTo "") exitWith {};
+                // Drapeau « local » (dernier booléen des paramètres) : repère distant → laissé au hub serveur.
+                if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
+                private _local = (_this select {_x isEqualType true}) param [0, true];
+                if (!_local && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]}) exitWith {};
                 if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
                 if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
                 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
@@ -109,6 +143,9 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
             addMissionEventHandler ["MarkerDeleted", {
                 private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
                 if (_marker isEqualTo "") exitWith {};
+                if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
+                private _local = (_this select {_x isEqualType true}) param [0, true];
+                if (!_local && {missionNamespace getVariable ["COMSPEC_ServerHubOwnsMissionPoll", false]}) exitWith {};
                 if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
                 if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
                 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
@@ -127,6 +164,7 @@ if (isNil "COMSPEC_MapClosedEh") then {
     COMSPEC_MapClosedEh = addMissionEventHandler ["Map", {
         params ["_mapIsOpened"];
         if (_mapIsOpened) exitWith {};
+        if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
         [{
             if (!isNil "comspec_overwatch_connect_fnc_syncUserMapMarkers") then {
                 [] call comspec_overwatch_connect_fnc_syncUserMapMarkers;
@@ -204,13 +242,60 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     ["DEBUG", "Boot", "ExtensionCallback EH enregistré"] call comspec_overwatch_connect_fnc_log;
 };
 
+// Affichage situation JVN (Draw3D) — OFF par défaut ; profil ATAK si présent ; pas de conflit F-PANO.
+// Hors du bloc de démarrage Athena : celui-ci sort tout de suite quand Overwatch est coupé (service Athéna
+// « Non », mode full local / TOC), et l'affichage, entièrement local, ne s'enregistrait alors jamais.
+if (isNil "COMSPEC_EcotiBootEh") then {
+COMSPEC_EcotiBootEh = ["CBA_settingsInitialized", {
+    if (missionNamespace getVariable ["COMSPEC_EcotiBootDone", false]) exitWith {};
+    missionNamespace setVariable ["COMSPEC_EcotiBootDone", true, false];
+    [{
+        private _raw = profileNamespace getVariable ["COMSPEC_EcotiHudEnabled", "UNSET"];
+        if (_raw isEqualType true) then {
+            [_raw, false] call comspec_overwatch_connect_fnc_ecotiApplyHudSetting;
+        };
+        private _cut = profileNamespace getVariable ["COMSPEC_EcotiCutawayEnabled", "UNSET"];
+        if (_cut isEqualType true) then {
+            [_cut, true] call comspec_overwatch_connect_fnc_ecotiApplyCutawaySetting;
+            profileNamespace setVariable ["COMSPEC_EcotiCutawayEnabled", nil];
+            [] call comspec_overwatch_connect_fnc_saveProfile;
+        };
+        private _theme = profileNamespace getVariable ["COMSPEC_EcotiTheme", "UNSET"];
+        if (_theme isEqualType "" && {_theme isNotEqualTo "UNSET"}) then {
+            [_theme, false] call comspec_overwatch_connect_fnc_ecotiApplyThemeSetting;
+        };
+        private _render = profileNamespace getVariable ["COMSPEC_EcotiRenderMode", "UNSET"];
+        if (_render isEqualType "" && {_render isNotEqualTo "UNSET"}) then {
+            [_render, false] call comspec_overwatch_connect_fnc_ecotiApplyRenderModeSetting;
+        };
+        private _tubeInfo = profileNamespace getVariable ["COMSPEC_EcotiTubeInfo", "UNSET"];
+        if (_tubeInfo isEqualType "" && {_tubeInfo isNotEqualTo "UNSET"}) then {
+            [_tubeInfo, false] call comspec_overwatch_connect_fnc_ecotiApplyTubeInfoSetting;
+        };
+        if (!isNil "comspec_overwatch_connect_fnc_ecotiInit") then {
+            [] call comspec_overwatch_connect_fnc_ecotiInit;
+        };
+    }, [], 3] call CBA_fnc_waitAndExecute;
+}] call CBA_fnc_addEventHandler;
+};
+
 if (isNil "COMSPEC_CbaSettingsEhArmed") then {
-COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
+// Bloc de démarrage gardé dans une variable : fn_athenaApply le rejoue (COMSPEC_CbaSettingsBootReplay)
+// quand le joueur passe Athéna à « Oui » en mission alors qu'il était coupé au démarrage.
+COMSPEC_CbaSettingsBootCode = {
     if (missionNamespace getVariable ["COMSPEC_CbaSettingsBootArmed", false]) exitWith {};
-    missionNamespace setVariable ["COMSPEC_CbaSettingsBootArmed", true, false];
+    missionNamespace setVariable ["COMSPEC_CbaSettingsBootFired", true, false];
 
     if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {
         ["WARN", "Boot", "Overwatch désactivé — pas de sync / ACE"] call comspec_overwatch_connect_fnc_log;
+    };
+    // Armé seulement une fois Overwatch actif : sinon un « Non » au démarrage empêchait tout rejeu.
+    missionNamespace setVariable ["COMSPEC_CbaSettingsBootArmed", true, false];
+    // Rejeu en cours de mission : fn_athenaApply mène lui-même le handshake et les boucles de sync.
+    private _bootReplay = missionNamespace getVariable ["COMSPEC_CbaSettingsBootReplay", false];
+    if (_bootReplay) then {
+        COMSPEC_BootHandshakeSpawn = true;
+        missionNamespace setVariable ["COMSPEC_BootHandshakeDone", true, false];
     };
     [] call comspec_overwatch_connect_fnc_applyNetworkProfile;
 
@@ -258,6 +343,14 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
             if (isNull player || {!alive player}) exitWith {};
             if !(missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false]) exitWith {
                 if (isNull player || {!([player] call comspec_overwatch_connect_fnc_hasTerminal)}) exitWith {};
+                // Laisser le spawn de boot finir sa stabilisation JIP (90 s + 15 s + grâce) : démarrer les
+                // boucles avant, c'est la fenêtre du CTD. Respecter aussi la pause API (reopen la lève).
+                if !(missionNamespace getVariable ["COMSPEC_BootHandshakeDone", false]) exitWith {};
+                if (missionNamespace getVariable ["COMSPEC_BootSpawnStabilising", false]) exitWith {};
+                if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_ApiBackoffUntil", 0])) exitWith {};
+                private _lastReopen = missionNamespace getVariable ["COMSPEC_WatchdogReopenAt", -1e9];
+                if ((diag_tickTime - _lastReopen) < 30) exitWith {};
+                missionNamespace setVariable ["COMSPEC_WatchdogReopenAt", diag_tickTime, false];
                 if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel") then {
                     [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
                 };
@@ -268,12 +361,12 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
                 _stale = (diag_tickTime - _lastPos) > 60;
             };
             if (!_stale) exitWith {};
+            // Pause demandée par Athena (429 / Retry-After / SendBackoff) : on la respecte, pas de forçage.
+            if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_ApiBackoffUntil", 0])) exitWith {};
             private _lastTry = missionNamespace getVariable ["COMSPEC_PosWatchdogForceAt", -1e9];
             if ((diag_tickTime - _lastTry) < 20) exitWith {};
             missionNamespace setVariable ["COMSPEC_PosWatchdogForceAt", diag_tickTime, false];
-            // Comme Resynch : lever les freins API sinon la force échoue encore.
-            missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
-            missionNamespace setVariable ["COMSPEC_SendBackoffSec", 0, false];
+            // Ne pas lever les freins API ici (réservé au Resynch manuel).
             if (!isNil "comspec_overwatch_connect_fnc_updatePosition") then {
                 [player, true] call comspec_overwatch_connect_fnc_updatePosition;
             };
@@ -296,37 +389,13 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
         [] call comspec_overwatch_connect_fnc_initATAKMenu;
     }, [], 8] call CBA_fnc_waitAndExecute;
 
-    // Affichage situation JVN (Draw3D) — OFF par défaut ; profil ATAK si présent ; pas de conflit F-PANO.
+    // Liaison (bandeau, simulation de dégradation). L'affichage situation JVN a son propre démarrage
+    // plus haut (COMSPEC_EcotiBootEh) : il doit aussi marcher sans Athena.
     [{
-        private _raw = profileNamespace getVariable ["COMSPEC_EcotiHudEnabled", "UNSET"];
-        if (_raw isEqualType true) then {
-            [_raw, false] call comspec_overwatch_connect_fnc_ecotiApplyHudSetting;
-        };
-        private _cut = profileNamespace getVariable ["COMSPEC_EcotiCutawayEnabled", "UNSET"];
-        if (_cut isEqualType true) then {
-            [_cut, true] call comspec_overwatch_connect_fnc_ecotiApplyCutawaySetting;
-            profileNamespace setVariable ["COMSPEC_EcotiCutawayEnabled", nil];
-            saveProfileNamespace;
-        };
-        private _theme = profileNamespace getVariable ["COMSPEC_EcotiTheme", "UNSET"];
-        if (_theme isEqualType "" && {_theme isNotEqualTo "UNSET"}) then {
-            [_theme, false] call comspec_overwatch_connect_fnc_ecotiApplyThemeSetting;
-        };
-        private _render = profileNamespace getVariable ["COMSPEC_EcotiRenderMode", "UNSET"];
-        if (_render isEqualType "" && {_render isNotEqualTo "UNSET"}) then {
-            [_render, false] call comspec_overwatch_connect_fnc_ecotiApplyRenderModeSetting;
-        };
-        private _tubeInfo = profileNamespace getVariable ["COMSPEC_EcotiTubeInfo", "UNSET"];
-        if (_tubeInfo isEqualType "" && {_tubeInfo isNotEqualTo "UNSET"}) then {
-            [_tubeInfo, false] call comspec_overwatch_connect_fnc_ecotiApplyTubeInfoSetting;
-        };
         [false, true] call comspec_overwatch_connect_fnc_linkStripApplySetting;
         private _linkSim = profileNamespace getVariable ["COMSPEC_LinkDegradeSimEnabled", "UNSET"];
         if (_linkSim isEqualType true) then {
             [_linkSim, false] call comspec_overwatch_connect_fnc_linkDegradeSimApplySetting;
-        };
-        if (!isNil "comspec_overwatch_connect_fnc_ecotiInit") then {
-            [] call comspec_overwatch_connect_fnc_ecotiInit;
         };
     }, [], 3] call CBA_fnc_waitAndExecute;
 
@@ -343,6 +412,18 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
     if (isNil "COMSPEC_BootHandshakeSpawn") then {
         COMSPEC_BootHandshakeSpawn = true;
         0 spawn {
+        // Service Athéna : attendre la réponse du joueur (écran ouvert par XEH_postInitClient au premier lancement).
+        if (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "") then {
+            missionNamespace setVariable ["COMSPEC_AthenaChoiceWaiting", true, false];
+            ["INFO", "Athena", "Service Athéna pas encore choisi — attente de la réponse du joueur"] call comspec_overwatch_connect_fnc_log;
+            waitUntil { uiSleep 0.5; ([] call comspec_overwatch_connect_fnc_athenaMode) isNotEqualTo "" };
+            missionNamespace setVariable ["COMSPEC_AthenaChoiceWaiting", false, false];
+        };
+        if (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "off") exitWith {
+            ["INFO", "Athena", "Service Athéna refusé — ATAK local, aucune connexion"] call comspec_overwatch_connect_fnc_log;
+            missionNamespace setVariable ["COMSPEC_BootHandshakeDone", true, false];
+            missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", true, false];
+        };
         ["INFO", "Athena", "Handshake démarré"] call comspec_overwatch_connect_fnc_log;
         private _ok = [] call comspec_overwatch_connect_fnc_waitAthenaReady;
         ["INFO", "Athena", format ["Handshake terminé ok=%1", _ok]] call comspec_overwatch_connect_fnc_log;
@@ -350,6 +431,14 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         if !([] call comspec_overwatch_connect_fnc_isReady) then {
             ["WARN", "Boot", "Session Athena absente — attente d’une connexion"] call comspec_overwatch_connect_fnc_log;
+            // ATAK natif : un code de connexion au compte et une notification, à chaque partie sans session.
+            if (!isNil "comspec_atak_native_fnc_athenaLink") then { ["offer", false] call comspec_atak_native_fnc_athenaLink; };
+            // « Oui » au service Athéna sans session : proposer tout de suite de lier le compte.
+            // Sans ATAK natif : pas de fenêtre ouverte d'office par-dessus le jeu (waitAthenaReady a déjà posté l'alerte
+            // « Connexion Athena » dans le téléphone) ; la fenêtre s'ouvre sur action du joueur.
+            if (!isNil "comspec_atak_native_fnc_athenaLink") then {
+                [] call comspec_overwatch_connect_fnc_athenaOfferLink;
+            };
             private _loginUntil = diag_tickTime + 600;
             waitUntil {
                 ([] call comspec_overwatch_connect_fnc_isReady)
@@ -361,6 +450,8 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
             missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", true, false];
         };
 
+        // Fenêtre de stabilisation : le watchdog de position ne relance pas les boucles pendant ce temps.
+        missionNamespace setVariable ["COMSPEC_BootSpawnStabilising", true, false];
         private _deadline = diag_tickTime + 90;
         waitUntil {
             (
@@ -390,6 +481,7 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
             || {diag_tickTime > (_deadline + 60)}
         };
         uiSleep 3;
+        missionNamespace setVariable ["COMSPEC_BootSpawnStabilising", false, false];
 
         if (isNull player || {!alive player} || {isNull findDisplay 46}) exitWith {
             ["WARN", "Boot", "Spawn non stabilisé — sync différée annulée"] call comspec_overwatch_connect_fnc_log;
@@ -475,7 +567,9 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
     };
     0 spawn {
         uiSleep 2;
-        waitUntil { missionNamespace getVariable ["COMSPEC_AthenaReady", false] || {diag_tickTime > 90} };
+        // Délai relatif : diag_tickTime compte depuis le lancement du jeu, pas depuis la mission.
+        private _t0 = diag_tickTime;
+        waitUntil { missionNamespace getVariable ["COMSPEC_AthenaReady", false] || {diag_tickTime - _t0 > 90} };
         [false] call comspec_overwatch_connect_fnc_syncCallsignFromAthena;
     };
 
@@ -530,7 +624,6 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
     [{
         [] call comspec_overwatch_connect_fnc_registerZenRoleplayModules;
         [] call comspec_overwatch_connect_fnc_registerZenAtakPlayerActions;
-        [] call comspec_overwatch_connect_fnc_registerZenSseModules;
         [] call comspec_overwatch_connect_fnc_registerZenTrackActions;
         [] call comspec_overwatch_connect_fnc_registerZenTheaterSurvey;
         [] call comspec_overwatch_connect_fnc_registerZeusAttributeButtons;
@@ -542,7 +635,6 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
     }, {
         [] call comspec_overwatch_connect_fnc_registerZenRoleplayModules;
         [] call comspec_overwatch_connect_fnc_registerZenAtakPlayerActions;
-        [] call comspec_overwatch_connect_fnc_registerZenSseModules;
         [] call comspec_overwatch_connect_fnc_registerZenTrackActions;
         [] call comspec_overwatch_connect_fnc_registerZenTheaterSurvey;
     }, [], 60] call CBA_fnc_waitUntilAndExecute;
@@ -557,12 +649,15 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
         };
         if ((count _outboxKeep) isNotEqualTo (count _outboxNow)) then {
             profileNamespace setVariable ["COMSPEC_Outbox", _outboxKeep];
-            saveProfileNamespace;
+            [] call comspec_overwatch_connect_fnc_saveProfile;
         };
     };
     if (isNil "COMSPEC_OutboxFlushPFH") then {
+        // Rejeu en spawn (envois via extAwait, sans figer le jeu), un seul à la fois, et seulement si la file n'est pas vide.
         COMSPEC_OutboxFlushPFH = [{
-            [] call comspec_overwatch_connect_fnc_outboxFlush;
+            if (missionNamespace getVariable ["COMSPEC_OutboxBusy", false]) exitWith {};
+            if ((profileNamespace getVariable ["COMSPEC_Outbox", []]) isEqualTo []) exitWith {};
+            0 spawn { [] call comspec_overwatch_connect_fnc_outboxFlush; };
         }, 10, []] call CBA_fnc_addPerFrameHandler;
     };
 
@@ -601,6 +696,8 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
     // Déconnexion ATAK à la sortie mission / quit Arma (sync extension, timeout court).
     // Réinitialiser à chaque mission (missionNamespace survit au changement de mission).
     // Si le client crash ou quitte sans Unload : le portail expire la liaison (TTL heartbeat).
+    // Rejeu en cours de mission (fn_athenaApply) : ne pas écraser l'état déjà en place.
+    if (!_bootReplay) then {
     missionNamespace setVariable ["COMSPEC_DisconnectSent", false, false];
     missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", false, false];
     missionNamespace setVariable ["COMSPEC_MedicalAlertsSeen", [], false];
@@ -617,6 +714,7 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
     missionNamespace setVariable ["COMSPEC_VehicleTrackingInited", false, false];
     missionNamespace setVariable ["COMSPEC_VehTrackPlayer", objNull, false];
     missionNamespace setVariable ["COMSPEC_VehicleTrackingBootMsg", false, false];
+    };
     if (isNil "COMSPEC_DisconnectEHs") then {
         COMSPEC_DisconnectEHs = true;
         addMissionEventHandler ["Ended", {
@@ -633,7 +731,8 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
             }];
         };
     };
-}] call CBA_fnc_addEventHandler;
+};
+COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", COMSPEC_CbaSettingsBootCode] call CBA_fnc_addEventHandler;
 };
 
 // Sync multi-clients du briefing Google Slides (URL + index).

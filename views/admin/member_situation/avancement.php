@@ -27,7 +27,10 @@ $renderTargets = static function (string $id) use ($h, $targetGroups): void {
     if (!$hasAny) {
         echo '<option value="" disabled>Aucun poste, AAV ni offre disponible</option>';
     } else {
-        $groups = ['postes' => 'Postes', 'aav' => 'AAV · Appels à volontaire', 'offres' => 'Offres'];
+        // Libellés de groupe (optgroup) : la traduction de la page ne les voit pas.
+        $groups = locale() === 'en'
+            ? ['postes' => 'Positions', 'aav' => 'Calls for volunteers', 'offres' => 'Offers']
+            : ['postes' => 'Postes', 'aav' => 'AAV · Appels à volontaire', 'offres' => 'Offres'];
         foreach ($groups as $key => $label) {
             $rows = is_array($targetGroups[$key] ?? null) ? $targetGroups[$key] : [];
             if ($rows === []) {

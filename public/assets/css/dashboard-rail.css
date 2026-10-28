@@ -1,0 +1,296 @@
+/* --------------------------------------------------------------------------
+ * Tableau de bord membre — aside (#dash-rail).
+ * Desktop : rail d’icônes lisible au repos (rubriques, rubrique active,
+ * pastilles), libellés au survol / focus. Mobile : tiroir à gauche ouvert
+ * par le bouton « Rubriques ». Chargé après dashboard-impact.css.
+ * -------------------------------------------------------------------------- */
+
+.dash-rail-fab,
+.dash-rail-scrim,
+#dash-rail .dash-rail__close {
+  display: none;
+}
+
+/* ——— Desktop : rail d’icônes ——— */
+@media (min-width: 1024px) {
+  #dash-rail .dash-rail__compact {
+    display: none;
+  }
+
+  #dash-rail .dash-rail__inner {
+    border-left-width: 3px;
+    transition: width 0.26s cubic-bezier(0.2, 1, 0.2, 1) 0s, box-shadow 0.2s ease;
+  }
+
+  #dash-rail:hover .dash-rail__inner {
+    transition-delay: 0.08s;
+  }
+
+  /* Le panneau garde toujours sa largeur dépliée : le rail le découpe au repos,
+     les icônes restent donc exactement à la même place quand il s’ouvre. */
+  #dash-rail .dash-rail__panel {
+    inset: 0 auto 0 0;
+    width: var(--dash-rail-open, 22rem);
+    padding: 0.9rem 0.75rem 0.9rem 0.5rem;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+  }
+
+  #dash-rail .dash-rail__brand {
+    padding-left: 0.4rem;
+  }
+
+  #dash-rail .dash-rail__tile.is-active::before {
+    left: -0.5rem;
+  }
+
+  #dash-rail .dash-rail__copy,
+  #dash-rail .dash-rail__end,
+  #dash-rail .dash-rail__brand-text,
+  #dash-rail .dash-rail__foot {
+    transition: opacity 0.18s ease;
+  }
+
+  #dash-rail:not(:hover):not(:focus-within):not(.is-expanded) .dash-rail__copy,
+  #dash-rail:not(:hover):not(:focus-within):not(.is-expanded) .dash-rail__end,
+  #dash-rail:not(:hover):not(:focus-within):not(.is-expanded) .dash-rail__brand-text,
+  #dash-rail:not(:hover):not(:focus-within):not(.is-expanded) .dash-rail__foot {
+    opacity: 0;
+  }
+
+  /* Intitulés de section → filet court sous la colonne d’icônes */
+  #dash-rail .dash-rail__section {
+    position: relative;
+    transition: color 0.18s ease;
+  }
+
+  #dash-rail .dash-rail__section::before {
+    content: '';
+    position: absolute;
+    left: 0.6rem;
+    top: 50%;
+    width: 2.1rem;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.14);
+    opacity: 0;
+    transition: opacity 0.18s ease;
+  }
+
+  #dash-rail .dash-rail__section--bo::before { background: rgba(251, 146, 60, 0.45); }
+  #dash-rail .dash-rail__section--admin::before { background: rgba(248, 113, 113, 0.5); }
+
+  #dash-rail:not(:hover):not(:focus-within):not(.is-expanded) .dash-rail__section {
+    color: transparent;
+  }
+
+  #dash-rail:not(:hover):not(:focus-within):not(.is-expanded) .dash-rail__section::before {
+    opacity: 1;
+  }
+
+  /* Pastille « à traiter » visible sur l’icône quand le rail est replié */
+  #dash-rail .dash-rail__tile-icon,
+  #dash-rail .dash-rail__tile-avatar {
+    position: relative;
+  }
+
+  #dash-rail .dash-rail__tile:has(.dash-rail__meta--badge) .dash-rail__tile-icon::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    border: 2px solid #050505;
+    background: #12d18e;
+    transition: opacity 0.18s ease;
+  }
+
+  #dash-rail .dash-rail__tile--bo:has(.dash-rail__meta--badge) .dash-rail__tile-icon::after {
+    background: #fb923c;
+  }
+
+  #dash-rail:is(:hover, :focus-within, .is-expanded) .dash-rail__tile-icon::after {
+    opacity: 0;
+  }
+
+  /* Rubrique active : l’icône reste marquée même replié */
+  #dash-rail .dash-rail__tile.is-active .dash-rail__tile-icon {
+    background: rgba(5, 150, 105, 0.32);
+    color: #6ee7b7;
+  }
+}
+
+/* ——— Mobile / tablette : tiroir ——— */
+@media (max-width: 1023.98px) {
+  aside#dash-rail.dash-rail {
+    display: block;
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1300;
+    width: min(22rem, 88vw);
+    max-width: 100%;
+    height: 100dvh;
+    margin: 0;
+    transform: translateX(-104%);
+    visibility: hidden;
+    transition: transform 0.26s cubic-bezier(0.2, 1, 0.2, 1), visibility 0s linear 0.26s;
+  }
+
+  aside#dash-rail.dash-rail.is-mobile-open {
+    transform: none;
+    visibility: visible;
+    transition: transform 0.26s cubic-bezier(0.2, 1, 0.2, 1), visibility 0s;
+    box-shadow: 12px 0 32px rgba(0, 0, 0, 0.45);
+  }
+
+  #dash-rail .dash-rail__inner {
+    position: relative;
+    height: 100%;
+    border-left: 3px solid #059669;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    background: #050505;
+  }
+
+  #dash-rail .dash-rail__compact {
+    display: none;
+  }
+
+  #dash-rail .dash-rail__panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: max(0.85rem, env(safe-area-inset-top)) 0.75rem max(1rem, env(safe-area-inset-bottom));
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    color-scheme: dark;
+  }
+
+  #dash-rail .dash-rail__brand {
+    position: relative;
+    padding-right: 3rem;
+  }
+
+  #dash-rail .dash-rail__close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.04);
+    color: #fff;
+    cursor: pointer;
+  }
+
+  #dash-rail .dash-rail__close:focus-visible {
+    outline: 2px solid #34d399;
+    outline-offset: 2px;
+  }
+
+  #dash-rail .dash-rail__close svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  /* Cibles tactiles ≥ 44 px */
+  #dash-rail .dash-rail__tile {
+    min-height: 3rem;
+  }
+
+  #dash-rail .dash-rail__link {
+    min-height: 2.75rem;
+  }
+
+  #dash-rail .dash-rail__back {
+    min-height: 2.5rem;
+  }
+
+  #dash-rail .dash-rail__tile.is-active::before {
+    left: -0.75rem;
+  }
+
+  .dash-rail-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1290;
+    background: rgba(2, 6, 23, 0.6);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .dash-rail-scrim.is-on {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .dash-rail-fab {
+    position: fixed;
+    left: max(1rem, env(safe-area-inset-left));
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    z-index: 1280;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 3rem;
+    padding: 0 1.05rem 0 0.9rem;
+    border: 1px solid rgba(52, 211, 153, 0.35);
+    border-radius: 999px;
+    background: #050505;
+    color: #fff;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    box-shadow: 0 10px 26px rgba(2, 6, 23, 0.35);
+    cursor: pointer;
+  }
+
+  .dash-rail-fab svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    color: #34d399;
+  }
+
+  .dash-rail-fab:focus-visible {
+    outline: 2px solid #34d399;
+    outline-offset: 3px;
+  }
+
+  .dash-rail-fab__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 0.35rem;
+    border-radius: 999px;
+    background: #12d18e;
+    color: #04130d;
+    font-size: 0.6875rem;
+    font-weight: 900;
+  }
+
+  html.dash-rail-locked,
+  html.dash-rail-locked body {
+    overflow: hidden !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  aside#dash-rail.dash-rail,
+  .dash-rail-scrim,
+  #dash-rail .dash-rail__inner {
+    transition: none !important;
+  }
+}

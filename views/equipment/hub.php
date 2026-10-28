@@ -5,6 +5,15 @@ $mineWardrobes = $mineWardrobes ?? [];
 $collections = $collections ?? [];
 $equipmentClasses = $equipmentClasses ?? [];
 $dotationItems = $dotationItems ?? [];
+$roleKits = is_array($roleKits ?? null) ? $roleKits : [];
+$myGameKit = is_array($myGameKit ?? null) ? $myGameKit : null;
+$myGameKitWardrobeId = 0;
+foreach ($mineWardrobes as $mw) {
+    if ((string) ($mw['slug'] ?? '') === \App\Services\GameEquipment\PlayerKitService::MEMBER_SLUG) {
+        $myGameKitWardrobeId = (int) ($mw['id'] ?? 0);
+        break;
+    }
+}
 $canManageCatalog = !empty($canManageCatalog);
 $canManageDotation = !empty($canManageDotation);
 $equipmentKindLabels = is_array($equipmentKindLabels ?? null) ? $equipmentKindLabels : \App\Support\ArsenalLoadoutItems::kindLabels();
@@ -87,6 +96,7 @@ $catalogPayload = [
         'fiche' => url('equipment/fiches/'),
         'dotation' => url('equipment/dotation/'),
         'hub' => url('equipment'),
+        'aceExport' => url('equipment/ace-export'),
         'storeCollection' => url('equipment/collections'),
         'storeFiche' => url('equipment/fiches'),
         'storeDotation' => url('equipment/dotation'),
@@ -131,6 +141,67 @@ $mineCatalog = array_map(static function (array $w): array {
         <?php if ($migrationMissing): ?>
         <p class="eq-hub__empty">Cette page n’est pas encore prête sur cette instance. Demandez à l’administration d’appliquer la mise à jour, puis rechargez.</p>
         <?php else: ?>
+
+        <?php if ($roleKits !== []): ?>
+        <section class="eq-rolekits" aria-labelledby="eq-rolekits-heading">
+            <div class="eq-hub__section-head">
+                <h2 id="eq-rolekits-heading">Kits proposés pour mon rôle</h2>
+            </div>
+            <ul class="eq-rolekits__list">
+                <?php foreach ($roleKits as $rk): ?>
+                <?php $rkUrl = !empty($rk['wardrobe_id']) ? url('equipment/tenues/' . (int) $rk['wardrobe_id']) : ''; ?>
+                <li>
+                    <<?= $rkUrl !== '' ? 'a href="' . $h($rkUrl) . '"' : 'div' ?> class="eq-rolekits__card">
+                        <span class="eq-rolekits__role" translate="no"><?= $h((string) ($rk['role_name'] ?? '') !== '' ? (string) $rk['role_name'] : 'Tous les rôles') ?></span>
+                        <span class="eq-rolekits__name" translate="no"><?= $h((string) ($rk['name'] ?? '')) ?></span>
+                        <?php if (trim((string) ($rk['description'] ?? '')) !== ''): ?>
+                        <span class="eq-rolekits__mods"><?= $h(mb_strimwidth((string) $rk['description'], 0, 140, '…')) ?></span>
+                        <?php endif; ?>
+                        <span class="eq-rolekits__mods">Mods requis : <?= ($rk['required_mods'] ?? []) === [] ? 'aucun' : '<span translate="no">' . $h(implode(', ', (array) $rk['required_mods'])) . '</span>' ?></span>
+                    </<?= $rkUrl !== '' ? 'a' : 'div' ?>>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+        </section>
+        <?php endif; ?>
+
+        <?php if ($myGameKit !== null): ?>
+        <?php $mkWhen = strtotime((string) ($myGameKit['last_seen_at'] ?? '')) ?: null; ?>
+        <section class="eq-mykit" aria-labelledby="eq-mykit-heading">
+            <div class="eq-hub__section-head">
+                <h2 id="eq-mykit-heading">Mon kit en jeu</h2>
+            </div>
+            <div class="eq-mykit__card">
+                <div class="eq-mykit__top">
+                    <p class="eq-mykit__lead">
+                        Dernier équipement que vous avez porté en jeu<?= $mkWhen !== null ? ', le ' . $h(date('d/m/Y à H:i', $mkWhen)) : '' ?><?= (string) ($myGameKit['role'] ?? '') !== '' ? ' (<span translate="no">' . $h((string) $myGameKit['role']) . '</span>)' : '' ?>.
+                        Remonté automatiquement par le mod, rien à saisir.
+                    </p>
+                    <div class="eq-mykit__actions">
+                        <form method="post" action="<?= $h(url('equipment/mon-kit/tenue')) ?>">
+                            <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                            <button type="submit" class="eq-hub__btn"><?= $myGameKitWardrobeId > 0 ? 'Mettre à jour ma tenue' : 'Enregistrer dans mes tenues' ?></button>
+                        </form>
+                        <?php if ($myGameKitWardrobeId > 0): ?>
+                        <a class="eq-hub__btn eq-hub__btn--ghost" href="<?= $h(url('equipment') . '?tenue=' . $myGameKitWardrobeId) ?>">Voir la tenue</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="eq-mykit__sections">
+                    <?php foreach ($myGameKit['sections'] as $sec): ?>
+                    <div class="eq-mykit__sec">
+                        <h3><?= $h((string) $sec['title']) ?></h3>
+                        <ul>
+                            <?php foreach ($sec['items'] as $it): ?>
+                            <li><span translate="no"><?= $h((string) $it['name']) ?></span><?php if ((int) $it['qty'] > 1): ?> <em>×<?= (int) $it['qty'] ?></em><?php endif; ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
 
         <section class="eq-hub__collections" aria-labelledby="eq-collections-heading">
             <div class="eq-hub__section-head">
@@ -236,11 +307,32 @@ $mineCatalog = array_map(static function (array $w): array {
                 </div>
 
                 <div class="eq-hub__active-filters" data-eq-active-filters hidden></div>
-                <p class="eq-hub__hint" data-eq-edit-collection-wrap hidden>
-                    <button type="button" class="eq-hub__link-btn" data-eq-edit-collection>Modifier cette collection</button>
-                </p>
+                <section class="eq-hub__coll-head" data-eq-coll-head hidden aria-live="polite">
+                    <div class="eq-hub__coll-head-copy">
+                        <p class="eq-hub__kicker" data-eq-coll-head-meta></p>
+                        <h2 data-eq-coll-head-title></h2>
+                        <p class="eq-hub__coll-head-desc" data-eq-coll-head-desc hidden></p>
+                    </div>
+                    <p class="eq-hub__hint" data-eq-edit-collection-wrap hidden>
+                        <button type="button" class="eq-hub__link-btn" data-eq-edit-collection>Modifier cette collection</button>
+                    </p>
+                </section>
+                <div class="eq-hub__ace-bar">
+                    <p>
+                        <strong>Arsenal ACE</strong>
+                        <span data-eq-ace-label>Toutes les tenues, prêtes à importer dans « Mes équipements » d’ACE en jeu.</span>
+                    </p>
+                    <a class="eq-hub__btn" href="<?= $h(url('equipment/ace-export')) ?>" data-eq-ace-export download>Exporter pour ACE</a>
+                    <button type="button" class="eq-hub__link-btn" data-eq-ace-help-toggle aria-expanded="false" aria-controls="eq-ace-help">Comment importer ?</button>
+                    <ol class="eq-hub__ace-help" id="eq-ace-help" hidden>
+                        <li>Téléchargez le fichier, ouvrez-le et copiez tout son texte (Ctrl+A puis Ctrl+C).</li>
+                        <li>En jeu, ouvrez l’arsenal ACE, puis « Mes équipements » (Loadouts), onglet de vos équipements.</li>
+                        <li>Cliquez sur Importer : chaque tenue apparaît sous son nom. Une tenue seule (bouton « Copier pour ACE » de son aperçu) s’importe depuis l’écran principal de l’arsenal et s’enfile directement.</li>
+                        <li>Le bandeau « Athena · Tenues » de l’arsenal fait la même chose sans copier-coller : « Tout basculer dans l’arsenal ACE ».</li>
+                    </ol>
+                </div>
 
-                <h2 class="eq-hub__grid-title">Toutes les tenues</h2>
+                <h2 class="eq-hub__grid-title" data-eq-grid-title>Toutes les tenues</h2>
                 <?php if ($wardrobes === []): ?>
                 <p class="eq-hub__empty">Aucune tenue n’a encore été envoyée depuis l’arsenal.</p>
                 <?php else: ?>
@@ -250,6 +342,8 @@ $mineCatalog = array_map(static function (array $w): array {
                         $display = (string) ($w['display_name'] ?? \App\Support\ArsenalLoadoutItems::formatWardrobeTitle((string) ($w['name'] ?? '')));
                         $kinds = is_array($w['kinds'] ?? null) ? $w['kinds'] : [];
                         $cid = (int) ($w['collection_id'] ?? 0);
+                        $preview = is_array($w['preview'] ?? null) ? $w['preview'] : [];
+                        $previewNames = implode(' · ', array_slice(array_map(static fn (array $p): string => (string) ($p['name'] ?? ''), $preview), 0, 3));
                     ?>
                     <li
                         data-eq-card
@@ -261,11 +355,25 @@ $mineCatalog = array_map(static function (array $w): array {
                         data-kinds="<?= $h(implode(',', $kinds)) ?>"
                         data-created="<?= $h($w['created_at'] ?? '') ?>"
                         data-owner="<?= $h($lower((string) ($w['owner_label'] ?? ''))) ?>"
+                        data-items="<?= $h($lower($previewNames)) ?>"
                     >
                         <button type="button" class="eq-hub__card" data-eq-quickview="<?= (int) $w['id'] ?>">
                             <span class="eq-hub__media eq-hub__media--portrait">
                                 <?php if (!empty($w['cover_url'])): ?>
                                 <img class="eq-hub__img" src="<?= $h($w['cover_url']) ?>" alt="" loading="lazy" decoding="async">
+                                <?php elseif ($preview !== []): ?>
+                                <span class="eq-hub__kit" aria-hidden="true">
+                                    <?php foreach (array_slice($preview, 0, 4) as $p): ?>
+                                    <span class="eq-hub__kit-cell">
+                                        <?php if (!empty($p['icon'])): ?>
+                                        <img src="<?= $h($p['icon']) ?>" alt="" loading="lazy" decoding="async">
+                                        <?php else: ?>
+                                        <span class="eq-hub__kit-ph"><?= $h(strtoupper(substr((string) preg_replace('/[^A-Za-z0-9]/', '', (string) ($p['name'] ?? '')), 0, 1)) ?: '?') ?></span>
+                                        <?php endif; ?>
+                                        <em translate="no"><?= $h($p['name'] ?? '') ?></em>
+                                    </span>
+                                    <?php endforeach; ?>
+                                </span>
                                 <?php else: ?>
                                 <span class="eq-hub__ph" aria-hidden="true">
                                     <svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -281,6 +389,9 @@ $mineCatalog = array_map(static function (array $w): array {
                                 <strong><?= $h($display) ?><?php if (!empty($w['is_favorite'])): ?> ★<?php endif; ?></strong>
                                 <span><?= $h(($w['owner_label'] ?? '') !== '' ? $w['owner_label'] : 'Membre') ?>
                                     · <?= $h($w['collection_name'] ?? 'Sans collection') ?></span>
+                                <?php if ($previewNames !== ''): ?>
+                                <small class="eq-hub__card-items" translate="no"><?= $h($previewNames) ?></small>
+                                <?php endif; ?>
                             </span>
                         </button>
                     </li>
@@ -388,8 +499,10 @@ $mineCatalog = array_map(static function (array $w): array {
                     <p class="eq-hub__qv-desc" data-eq-qv-desc hidden></p>
                     <p class="eq-hub__qv-hint" data-eq-qv-hint></p>
                     <div class="eq-hub__qv-items" data-eq-qv-items></div>
+                    <p class="eq-hub__qv-ace-status" data-eq-qv-ace-status role="status" hidden></p>
                     <div class="eq-hub__qv-actions">
-                        <p class="eq-hub__btn eq-hub__btn--primary-static" title="Action disponible depuis l’arsenal en jeu">Récupérer en jeu</p>
+                        <button type="button" class="eq-hub__btn" data-eq-qv-ace-copy hidden>Copier pour ACE</button>
+                        <a class="eq-hub__btn eq-hub__btn--outline" data-eq-qv-ace-download hidden download>Télécharger (.txt)</a>
                         <button type="button" class="eq-hub__btn eq-hub__btn--ghost" data-eq-qv-edit hidden>Modifier</button>
                     </div>
                 </div>

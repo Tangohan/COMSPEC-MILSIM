@@ -30,17 +30,17 @@ private _srcLabel = createHashMapFromArray [["builtin", "intégré"], ["mission"
 private _lb = _display displayCtrl 93031;
 {
     private _src = _x getOrDefault ["source", "?"];
-    private _idx = _lb lbAdd format ["%1", _x getOrDefault ["name", "?"]];
+    private _idx = _lb lbAdd ((format ["%1", _x getOrDefault ["name", "?"]]) call comspec_sse_fnc_tr);
     _lb lbSetData [_idx, _x getOrDefault ["id", ""]];
     _lb lbSetTextRight [_idx, _srcLabel getOrDefault [toLower _src, _src]];
-    _lb lbSetTooltip [_idx, format ["%1 — %2 / %3", _x getOrDefault ["id", ""], _x getOrDefault ["profile", "?"], _x getOrDefault ["theme", "?"]]];
+    _lb lbSetTooltip (([_idx, format ["%1 — %2 / %3", _x getOrDefault ["id", ""], _x getOrDefault ["profile", "?"], _x getOrDefault ["theme", "?"]]]) call comspec_sse_fnc_tr);
 } forEach _models;
 _lb lbSetCurSel 0;
 
-(_display displayCtrl 93034) ctrlSetText (if (_targets isEqualTo []) then {
+(_display displayCtrl 93034) ctrlSetText (((if (_targets isEqualTo []) then {
     "Aucune cible : posez le module sur une personne ou un objet."
 } else {
     format ["%1 cible(s) sélectionnée(s)", count _targets]
-});
+})) call comspec_sse_fnc_tr);
 
 true

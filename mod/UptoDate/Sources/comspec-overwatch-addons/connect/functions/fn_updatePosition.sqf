@@ -18,6 +18,8 @@ if (!_canalOk && {!([ ] call comspec_overwatch_connect_fnc_isReady)}) exitWith {
 };
 // Quit jeu / fin mission : ne plus pousser position ni évaluer d’alerte médicale
 if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { if (_force) then { "" } else { nil } };
+// Envoi précédent encore en vol (spawn + extAwait) : tick sauté, la DLL regroupe les positions.
+if (!_force && {(diag_tickTime - (missionNamespace getVariable ["COMSPEC_PosTxBusyAt", -1e9])) < 30}) exitWith { nil };
 
 // Log skip throttlé (RPT) — évite le spam PFH
 private _fnc_skip = {
@@ -361,8 +363,10 @@ if (!_shouldSend) exitWith {};
 private _txGate = [false] call comspec_overwatch_connect_fnc_canTransmit;
 if !(_txGate getOrDefault ["can_transmit", true]) exitWith {
     // Répercuter l’état réel sur le bandeau (sinon OK + sync 2m alors que rien ne part).
+    // Sauf perte de paquet tirée au sort (zone, simulation) : un paquet perdu n'est pas une liaison perdue,
+    // et l'écrire faisait alterner l'état avec fn_refreshLinkState (bip et notifications en boucle).
     private _ls = _txGate getOrDefault ["link_state", "offline"];
-    if (_ls isEqualType "" && {_ls isNotEqualTo ""}) then {
+    if (_ls isEqualType "" && {_ls isNotEqualTo ""} && {!((_txGate getOrDefault ["reason", ""]) in ["zone_packet_loss", "sim_packet_loss"])}) then {
         private _prev = missionNamespace getVariable ["COMSPEC_LinkState", "linked"];
         if (_prev isNotEqualTo _ls) then {
             missionNamespace setVariable ["COMSPEC_LinkState", _ls, false];
@@ -541,8 +545,9 @@ if (_vehDmg >= 0) then {
 if (isClass (configFile >> "CfgPatches" >> "tfar_core") && {!isNil "TFAR_fnc_getLrFrequency"}) then {
     private _lrFreq = "";
     private _lrRadio = if (!isNil "TFAR_fnc_activeLrRadio") then { _unit call TFAR_fnc_activeLrRadio } else { nil };
-    if (!isNil "_lrRadio") then {
-        _lrFreq = str (_unit call TFAR_fnc_getLrFrequency);
+    if (!isNil "_lrRadio" && {_lrRadio isEqualType []} && {_lrRadio isNotEqualTo []}) then {
+        // TFAR attend la radio LR ([objet, qualificatif]) renvoyée par activeLrRadio, pas l'unité.
+        _lrFreq = str (_lrRadio call TFAR_fnc_getLrFrequency);
         _lrFreq = (_lrFreq splitString """" joinString "");
     };
     if (!(_lrFreq isEqualTo "") && {!(_lrFreq in ["any", "<null>", "nil"])}) then {
@@ -647,6 +652,11 @@ if (_sendBackFlag >= 45) then {
 } else {
     _vehJson = _vehJson + ",""deferred"":false";
 };
+// Clé de la session jouée (ATAK natif, « nom@carte#UTC ») : relecture du site filtrée par mission.
+private _missionKey = missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", ""];
+if (_missionKey isEqualType "" && {_missionKey isNotEqualTo ""}) then {
+    _vehJson = _vehJson + format [",""mission_key"":""%1""", (_missionKey splitString """\" joinString "")];
+};
 private _combatFrag = [] call comspec_overwatch_connect_fnc_combatEventsJson;
 if (_combatFrag isEqualType "" && {_combatFrag isNotEqualTo ""}) then {
     _vehJson = _vehJson + _combatFrag;
@@ -658,8 +668,15 @@ if ((count _steamUid) < 15) then {
     _steamUid = profileNamespace getVariable ["comspec_overwatch_saved_steam_uid", ""];
 };
 
-_unit setVariable ["COMSPEC_PliAt", time, true];
-"COMSPECExtension" callExtension ["UpdatePosition", [
+// Horodatage PLI lu par atak_athena (seuil périmé 30 s) : diffusé au plus toutes les 5 s au lieu de
+// chaque envoi de position (jusqu'à ~2/s en aéronef), sinon trafic réseau constant par joueur.
+if ((time - (_unit getVariable ["COMSPEC_PliAt", -1e9])) >= 5) then {
+    _unit setVariable ["COMSPEC_PliAt", time, true];
+};
+// POST hors du thread de jeu (spawn + extAwait) : l'appel synchrone du timer 1 s figeait le jeu.
+// Retour inutilisé ; un seul envoi en vol (COMSPEC_PosTxBusyAt, libéré au retour).
+missionNamespace setVariable ["COMSPEC_PosTxBusyAt", diag_tickTime, false];
+[
     [_reportedPos select 0, 2] call _fnc_num,
     [_reportedPos select 1, 2] call _fnc_num,
     [_heading, 2] call _fnc_num,
@@ -667,7 +684,10 @@ _unit setVariable ["COMSPEC_PliAt", time, true];
     [_aslZ, 3] call _fnc_num,
     _modVersion,
     _grid
-]];
+] spawn {
+    ["COMSPECExtension", "UpdatePosition", _this] call comspec_overwatch_connect_fnc_extAwait;
+    missionNamespace setVariable ["COMSPEC_PosTxBusyAt", -1e9, false];
+};
 if (_radioTxFlag) then {
     [_unit, _callSign] call comspec_overwatch_connect_fnc_reportRelaySigint;
 };
@@ -677,7 +697,9 @@ _trail pushBack [_now, _callSign, [_pos select 0, _pos select 1, _aslZ], _speed,
 if (count _trail > 150) then {
     _trail deleteRange [0, (count _trail) - 150];
 };
-missionNamespace setVariable ["COMSPEC_PositionTrail", _trail, true];
+// Variables de suivi locales (lues seulement sur ce client) : diffusées, chaque client écrasait
+// celles des autres et inondait le réseau à chaque envoi de position.
+missionNamespace setVariable ["COMSPEC_PositionTrail", _trail, false];
 
 private _immobileTime = missionNamespace getVariable ["COMSPEC_ImmobileSince", _now];
 if (_distance < 0.5 && {_speed < 0.2}) then {
@@ -686,7 +708,7 @@ if (_distance < 0.5 && {_speed < 0.2}) then {
     _immobileTime = _now;
     missionNamespace setVariable ["COMSPEC_ImmobileAlerted", false, false];
 };
-missionNamespace setVariable ["COMSPEC_ImmobileSince", _immobileTime, true];
+missionNamespace setVariable ["COMSPEC_ImmobileSince", _immobileTime, false];
 
 // Anomalies de suivi = polish UI : coupées en mode milsim / réalisme communauté.
 private _realism = missionNamespace getVariable ["COMSPEC_TenantRealism", false];
@@ -710,15 +732,15 @@ if (!_realism && !_milsimUi) then {
     };
 };
 
-missionNamespace setVariable ["COMSPEC_lastPos", _pos, true];
-missionNamespace setVariable ["COMSPEC_lastName", _callSign, true];
-missionNamespace setVariable ["COMSPEC_lastRole", _role, true];
-missionNamespace setVariable ["COMSPEC_lastRadio", _radioSig, true];
-missionNamespace setVariable ["COMSPEC_lastMedical", _medicalSig, true];
-missionNamespace setVariable ["COMSPEC_lastGroup", _groupName, true];
-missionNamespace setVariable ["COMSPEC_lastHeading", _heading, true];
-missionNamespace setVariable ["COMSPEC_lastVehSig", _vehSig, true];
-missionNamespace setVariable ["COMSPEC_lastSendTime", _now, true];
+missionNamespace setVariable ["COMSPEC_lastPos", _pos, false];
+missionNamespace setVariable ["COMSPEC_lastName", _callSign, false];
+missionNamespace setVariable ["COMSPEC_lastRole", _role, false];
+missionNamespace setVariable ["COMSPEC_lastRadio", _radioSig, false];
+missionNamespace setVariable ["COMSPEC_lastMedical", _medicalSig, false];
+missionNamespace setVariable ["COMSPEC_lastGroup", _groupName, false];
+missionNamespace setVariable ["COMSPEC_lastHeading", _heading, false];
+missionNamespace setVariable ["COMSPEC_lastVehSig", _vehSig, false];
+missionNamespace setVariable ["COMSPEC_lastSendTime", _now, false];
 missionNamespace setVariable ["COMSPEC_LastPositionSync", _now, false];
 
 // Trace session (throttlée) pour diagnostiquer les disparitions au poste sans Resynch.
@@ -733,8 +755,8 @@ if (_atakSync isEqualType createHashMap) then {
     if (_linkState in ["linked", "degraded", "connecting"]) then {
         missionNamespace setVariable ["COMSPEC_LinkState", _linkState, false];
     };
-    player setVariable ["COMSPEC_AtakState", _atakSync, true];
-    player setVariable ["COMSPEC_LinkState", _linkState, true];
+    // Diffusion (Zeus) déléguée à syncPlayerAtakPublicVars, qui ne publie que si la valeur a changé :
+    // ces deux setVariable publics partaient à chaque envoi de position (et étaient aussitôt réécrits par lui).
     [] call comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars;
 };
 

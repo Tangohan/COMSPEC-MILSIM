@@ -113,6 +113,11 @@ final class AtakBridgeModulesService
                 'label' => 'Routage des rapports tactiques',
                 'description' => 'Applique les règles de distribution aux rapports, sans masquer les données existantes.',
             ],
+            [
+                'id' => 'jnet_bridge',
+                'label' => 'Reco terrain → JNET',
+                'description' => 'Publie dans l’espace JNET de l’unité de l’opérateur ses notes de reco, photos et rapports envoyés depuis le jeu, remontés vers l’échelon supérieur. Photos confidentielles : lien seulement, jamais l’image.',
+            ],
         ];
     }
 
@@ -157,13 +162,21 @@ final class AtakBridgeModulesService
         ];
     }
 
+    public function isEnabled(int $tenantId, string $moduleId): bool
+    {
+        $modules = $this->get($tenantId)['modules'];
+
+        return !array_key_exists($moduleId, $modules) || $modules[$moduleId];
+    }
+
     /**
      * @param array<string, bool> $modules
      * @return array{modules: array<string, bool>, updated_at: string}
      */
     public function put(int $tenantId, array $modules): array
     {
-        $merged = $this->defaultEnabledMap();
+        // Part de l'état enregistré : un envoi partiel ne réactive pas les modules absents.
+        $merged = $this->get($tenantId)['modules'];
         foreach ($merged as $id => $_) {
             if (array_key_exists($id, $modules)) {
                 $merged[$id] = (bool) $modules[$id];

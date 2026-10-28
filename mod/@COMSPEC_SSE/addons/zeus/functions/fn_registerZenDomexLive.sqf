@@ -94,7 +94,7 @@ private _openAddIntel = {
         _onConfirm,
         {},
         [_entity]
-    ] call zen_dialog_fnc_create;
+    ] call comspec_sse_fnc_zenDialog;
 };
 
 private _openStage = {
@@ -148,7 +148,7 @@ private _openStage = {
         },
         {},
         [_entity]
-    ] call zen_dialog_fnc_create;
+    ] call comspec_sse_fnc_zenDialog;
 };
 
 private _openMapPoint = {
@@ -208,7 +208,7 @@ private _openMapPoint = {
         },
         {},
         [_pos, _entity]
-    ] call zen_dialog_fnc_create;
+    ] call comspec_sse_fnc_zenDialog;
 };
 
 uiNamespace setVariable ["COMSPEC_SSE_DomexOpenAddIntel", _openAddIntel];
@@ -228,31 +228,31 @@ uiNamespace setVariable ["COMSPEC_SSE_DomexInvokeOpener", _invokeOpener];
 if (!isNil "zen_custom_modules_fnc_register") then {
     private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
     [
-        "COMSPEC SSE",
+        "COMSPEC SSE · Numérique",
         "Ajouter un renseignement",
         {
             (["COMSPEC_SSE_DomexOpenAddIntel"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
         },
         _icon
-    ] call zen_custom_modules_fnc_register;
+    ] call comspec_sse_fnc_zenModule;
 
     [
-        "COMSPEC SSE",
+        "COMSPEC SSE · Numérique",
         "Fixer le palier d’accès",
         {
             (["COMSPEC_SSE_DomexOpenStage"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
         },
         "\A3\ui_f\data\igui\cfg\simpletasks\types\use_ca.paa"
-    ] call zen_custom_modules_fnc_register;
+    ] call comspec_sse_fnc_zenModule;
 
     [
-        "COMSPEC SSE",
+        "COMSPEC SSE · Numérique",
         "Poser un point carte",
         {
             (["COMSPEC_SSE_DomexOpenMapPoint"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
         },
         "\A3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa"
-    ] call zen_custom_modules_fnc_register;
+    ] call comspec_sse_fnc_zenModule;
 };
 
 if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_addAction"}) then {
@@ -268,7 +268,7 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
         _icon,
         {},
         { true }
-    ] call zen_context_menu_fnc_createAction;
+    ] call comspec_sse_fnc_zenAction;
     [_root, [], 5] call zen_context_menu_fnc_addAction;
 
     private _add = [
@@ -279,7 +279,7 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
             (["COMSPEC_SSE_DomexOpenAddIntel"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
         },
         _hasObj
-    ] call zen_context_menu_fnc_createAction;
+    ] call comspec_sse_fnc_zenAction;
     [_add, ["comspec_sse_domex_live"], 0] call zen_context_menu_fnc_addAction;
 
     private _stg = [
@@ -290,7 +290,7 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
             (["COMSPEC_SSE_DomexOpenStage"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
         },
         _hasObj
-    ] call zen_context_menu_fnc_createAction;
+    ] call comspec_sse_fnc_zenAction;
     [_stg, ["comspec_sse_domex_live"], 1] call zen_context_menu_fnc_addAction;
 
     private _pin = [
@@ -301,7 +301,7 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
             (["COMSPEC_SSE_DomexOpenMapPoint"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
         },
         { true }
-    ] call zen_context_menu_fnc_createAction;
+    ] call comspec_sse_fnc_zenAction;
     [_pin, ["comspec_sse_domex_live"], 2] call zen_context_menu_fnc_addAction;
 };
 

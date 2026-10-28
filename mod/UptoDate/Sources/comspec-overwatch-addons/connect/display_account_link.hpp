@@ -2,7 +2,7 @@
 class COMSPEC_AccountLink_Dialog {
     idd = 9972;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_AccountLink_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_accountLinkOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_AccountLink_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_accountLinkOnLoad;";
     onUnload = "uiNamespace setVariable ['COMSPEC_AccountLink_Display', displayNull]; missionNamespace setVariable ['COMSPEC_AccountLink_StatusToken', -1, false];";
 
     class Controls {
@@ -11,7 +11,7 @@ class COMSPEC_AccountLink_Dialog {
             x = 0.32 * safezoneW + safezoneX;
             y = 0.14 * safezoneH + safezoneY;
             w = 0.36 * safezoneW;
-            h = 0.66 * safezoneH;
+            h = 0.60 * safezoneH;
             colorBackground[] = {0.015, 0.04, 0.08, 0.96};
         };
 
@@ -101,31 +101,11 @@ class COMSPEC_AccountLink_Dialog {
             autocomplete = "";
         };
 
-        class UrlLabel: RscStructuredText {
-            idc = -1;
-            text = "<t size='0.55' color='#5a9e88'>ADRESSE DU PORTAIL (laisser tel quel sauf consigne)</t>";
-            x = 0.34 * safezoneW + safezoneX;
-            y = 0.415 * safezoneH + safezoneY;
-            w = 0.32 * safezoneW;
-            h = 0.018 * safezoneH;
-        };
-
-        class UrlEdit: RscEdit {
-            idc = 9201;
-            x = 0.34 * safezoneW + safezoneX;
-            y = 0.435 * safezoneH + safezoneY;
-            w = 0.32 * safezoneW;
-            h = 0.030 * safezoneH;
-            colorBackground[] = {0.04, 0.08, 0.12, 1};
-            colorText[] = {0.9, 0.95, 0.95, 1};
-            autocomplete = "";
-        };
-
         class StatusText: RscStructuredText {
             idc = 9203;
             text = "";
             x = 0.34 * safezoneW + safezoneX;
-            y = 0.475 * safezoneH + safezoneY;
+            y = 0.415 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;
             h = 0.050 * safezoneH;
         };
@@ -134,7 +114,7 @@ class COMSPEC_AccountLink_Dialog {
             idc = 9204;
             text = "Valider la liaison";
             x = 0.34 * safezoneW + safezoneX;
-            y = 0.540 * safezoneH + safezoneY;
+            y = 0.480 * safezoneH + safezoneY;
             w = 0.195 * safezoneW;
             h = 0.038 * safezoneH;
             colorBackground[] = {0.08, 0.32, 0.28, 0.95};
@@ -146,7 +126,7 @@ class COMSPEC_AccountLink_Dialog {
             idc = 9205;
             text = "Fermer";
             x = 0.545 * safezoneW + safezoneX;
-            y = 0.540 * safezoneH + safezoneY;
+            y = 0.480 * safezoneH + safezoneY;
             w = 0.115 * safezoneW;
             h = 0.038 * safezoneH;
             colorBackground[] = {0.12, 0.08, 0.08, 0.95};
@@ -158,7 +138,7 @@ class COMSPEC_AccountLink_Dialog {
             idc = -1;
             text = "<t align='center' size='0.48' color='#4a5c6e'>Portail : carte ATAK → Appairer → Générer un code. Si Steam est déjà lié au profil, vous pouvez laisser le code vide.</t>";
             x = 0.34 * safezoneW + safezoneX;
-            y = 0.595 * safezoneH + safezoneY;
+            y = 0.535 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;
             h = 0.040 * safezoneH;
         };
@@ -167,7 +147,7 @@ class COMSPEC_AccountLink_Dialog {
             idc = -1;
             text = "<t align='center' size='0.45' color='#3a4c5e'>La barre du haut indique l’état de transmission et le délai (ms) vers Athena.</t>";
             x = 0.34 * safezoneW + safezoneX;
-            y = 0.640 * safezoneH + safezoneY;
+            y = 0.580 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;
             h = 0.028 * safezoneH;
         };

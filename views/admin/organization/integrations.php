@@ -2,11 +2,11 @@
 declare(strict_types=1);
 
 /**
- * Centre d’intégrations — charte ATHENA.
+ * Intégrations de la communauté (back-office) : Discord, e-mails, transmissions terrain, jetons d'accès.
+ * Les réglages de la plateforme sont dans l'administration (admin/system/integrations).
  *
- * L’en-tête de page est rendu par la coque back-office. Les jetons restent présentés
- * en fiches : chacun porte son propre formulaire de réglage (nom, quota, portées),
- * ce qu’un tableau ne saurait pas contenir.
+ * Sommaire à sections, vue d'ensemble de l'état de chaque connexion, explications pas à pas.
+ * Comportements : public/assets/js/back-office-integrations.js. Styles : back-office-integrations.css.
  *
  * @var list<array<string, mixed>> $integration_keys
  * @var string|null $new_integration_key_plain
@@ -17,6 +17,9 @@ declare(strict_types=1);
  * @var list<array{id:string,label:string,masked:string}> $discord_relays
  * @var bool $use_community_relay
  * @var bool $community_relay_ready
+ * @var array<string, mixed> $mail_sender
+ * @var array<string, array{label:string, host:string, port:int, encryption:string, username:string}> $mail_providers
+ * @var string $admin_email
  */
 
 $keys = is_array($integration_keys ?? null) ? $integration_keys : [];
@@ -28,15 +31,34 @@ $discordState = is_array($discord_state ?? null) ? $discord_state : ['default_ur
 $sseRelays = is_array($discord_relays ?? null) ? $discord_relays : [];
 $useCommunityRelay = !empty($use_community_relay);
 $communityRelayReady = !empty($community_relay_ready);
+$mailSender = is_array($mail_sender ?? null) ? $mail_sender : [];
+$mailProviders = is_array($mail_providers ?? null) ? $mail_providers : [];
+$adminEmail = (string) ($admin_email ?? '');
 $discordDefaultUrl = (string) ($discordState['default_url'] ?? '');
 $discordEventState = is_array($discordState['events'] ?? null) ? $discordState['events'] : [];
-$discordGroups = [];
-foreach ($discordEvents as $ev) {
-    $g = (string) ($ev['group'] ?? 'Autres');
-    $discordGroups[$g][] = $ev;
-}
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+
+$icon = static function (string $name): string {
+    $paths = match ($name) {
+        'overview' => '<path d="M4 13h6V4H4zM14 20h6v-9h-6zM14 4v4h6V4zM4 20h6v-3H4z"/>',
+        'discord' => '<path d="M8 17c-2.5-.4-4-1.3-5-2.3.2-4 1.5-7.4 3.4-9.5A15 15 0 0110 4l.6 1.3a12 12 0 012.8 0L14 4a15 15 0 013.6 1.2c1.9 2.1 3.2 5.5 3.4 9.5-1 1-2.5 1.9-5 2.3l-1-1.8"/><path d="M8 15.5c2.6 1 5.4 1 8 0"/><circle cx="9" cy="11.5" r="1.2"/><circle cx="15" cy="11.5" r="1.2"/>',
+        'mail' => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+        'radio' => '<path d="M5 12a7 7 0 0114 0M8 12a4 4 0 018 0"/><circle cx="12" cy="12" r="1.3"/><path d="M12 13.5V21M9 21h6"/>',
+        'key' => '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/>',
+        'game' => '<rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 11v4M5 13h4M15.5 12.5h.01M18 14h.01"/>',
+        'search' => '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+        'chevron' => '<path d="M9 6l6 6-6 6"/>',
+        'warn' => '<path d="M12 3l10 18H2z"/><path d="M12 10v4M12 17.5v.01"/>',
+        'check' => '<path d="M5 12l5 5 9-10"/>',
+        'send' => '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>',
+        'link' => '<path d="M10 14a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 10a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/>',
+        'info' => '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.01"/>',
+        default => '<circle cx="12" cy="12" r="9"/>',
+    };
+
+    return '<svg class="bo-int-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $paths . '</svg>';
+};
 
 /** @return list<string> */
 $decodeScopes = static function (mixed $raw): array {
@@ -71,6 +93,37 @@ $fmtDt = static function (mixed $raw, string $fallback = '—'): string {
     return $t ? date('d/m/Y H:i', $t) : $fallback;
 };
 
+/** Lien webhook raccourci pour l'affichage : discord.com/api/webhooks/1234…/•••• */
+$maskWebhook = static function (string $url): string {
+    if (preg_match('#webhooks/(\d{4})\d*/#', $url, $m) === 1) {
+        return 'discord.com/api/webhooks/' . $m[1] . '…/••••';
+    }
+
+    return $url !== '' ? 'lien enregistré' : '';
+};
+
+// Discord : événements par groupe, compteurs de publication.
+$discordGroups = [];
+$publishedCount = 0;
+$customCount = 0;
+foreach ($discordEvents as $ev) {
+    $g = (string) ($ev['group'] ?? 'Autres');
+    $discordGroups[$g][] = $ev;
+    $mode = (string) ($discordEventState[(string) ($ev['key'] ?? '')]['mode'] ?? ($ev['default_mode'] ?? 'off'));
+    if ($mode !== 'off') {
+        $publishedCount++;
+    }
+    if ($mode === 'custom') {
+        $customCount++;
+    }
+}
+$discordLinked = $discordDefaultUrl !== '' || $customCount > 0;
+$groupIcons = [
+    'Portail' => '📣', 'Téléphone ATAK' => '📱', 'Effectifs' => '🪖', 'Recrutement' => '📝', 'Opérations' => '🎯',
+    'Formation' => '🎓', 'Modération' => '🛡️', 'Renseignement' => '🛰️', 'Accès' => '🔑',
+];
+
+// Jetons.
 $activeCount = 0;
 $revokedCount = 0;
 $todayTotal = 0;
@@ -86,386 +139,515 @@ foreach ($keys as $k) {
 }
 $usageRatio = $quotaTotal > 0 ? (int) round($todayTotal / $quotaTotal * 100) : 0;
 
+// Vue d'ensemble : un état par connexion.
+$mailState = !empty($mailSender['ready']) ? 'ok' : (!empty($mailSender['enabled']) ? 'warn' : 'off');
+$tiles = [
+    [
+        'href' => '#relais-discord',
+        'icon' => 'discord',
+        'title' => 'Discord',
+        'state' => $discordLinked ? ($publishedCount > 0 ? 'ok' : 'warn') : 'off',
+        'value' => $discordLinked ? $publishedCount . ' / ' . count($discordEvents) : 'Non relié',
+        'note' => $discordLinked ? 'événements publiés' : 'aucun salon renseigné',
+    ],
+    [
+        'href' => '#emails-communaute',
+        'icon' => 'mail',
+        'title' => 'E-mails',
+        'state' => $mailState,
+        'value' => match ($mailState) { 'ok' => 'Votre compte', 'warn' => 'Incomplet', default => 'Envoi commun' },
+        'note' => $mailState === 'ok' ? (string) ($mailSender['from_address'] ?? '') : ($mailState === 'warn' ? 'expéditeur ou serveur manquant' : 'partent avec Athena'),
+    ],
+    [
+        'href' => '#relais-transmissions',
+        'icon' => 'radio',
+        'title' => 'Transmissions',
+        'state' => ($sseRelays !== [] || $useCommunityRelay) ? 'ok' : 'off',
+        'value' => (string) (count($sseRelays) + ($useCommunityRelay ? 1 : 0)),
+        'note' => (count($sseRelays) + ($useCommunityRelay ? 1 : 0)) > 1 ? 'salons du journal SSE' : 'salon du journal SSE',
+    ],
+    [
+        'href' => '#jetons',
+        'icon' => 'key',
+        'title' => 'Jetons',
+        'state' => !$apiKeysAllowed ? 'lock' : ($activeCount > 0 ? 'ok' : 'off'),
+        'value' => !$apiKeysAllowed ? 'Formule Pro+' : (string) $activeCount,
+        'note' => !$apiKeysAllowed ? 'non inclus dans votre formule' : ($activeCount > 1 ? 'jetons actifs' : 'jeton actif'),
+    ],
+];
+$stateLabel = ['ok' => 'Actif', 'warn' => 'À vérifier', 'off' => 'Coupé', 'lock' => 'Formule'];
+
+$nav = [
+    ['href' => '#vue-ensemble', 'icon' => 'overview', 'label' => 'Vue d’ensemble'],
+    ['href' => '#relais-discord', 'icon' => 'discord', 'label' => 'Discord', 'count' => $publishedCount],
+    ['href' => '#emails-communaute', 'icon' => 'mail', 'label' => 'E-mails'],
+    ['href' => '#relais-transmissions', 'icon' => 'radio', 'label' => 'Transmissions terrain', 'count' => count($sseRelays)],
+    ['href' => '#jetons', 'icon' => 'key', 'label' => 'Jetons d’accès', 'count' => $apiKeysAllowed ? $activeCount : null],
+];
+$nav[] = ['href' => '#arma-overwatch', 'icon' => 'game', 'label' => 'Arma 3 / Overwatch'];
+
 $flashError = \App\Core\Session::getFlash('error');
 $flashSuccess = \App\Core\Session::getFlash('success');
 ?>
+<div class="bo-int" data-bo-int>
 <?php if ($flashError): ?>
-<p class="ath-flash ath-flash--err" role="alert"><?= $h((string) $flashError) ?></p>
+<p class="bo-int-flash bo-int-flash--err" role="alert"><?= $icon('warn') ?><span><?= $h((string) $flashError) ?></span></p>
 <?php endif; ?>
 <?php if ($flashSuccess): ?>
-<p class="ath-flash ath-flash--ok" role="status"><?= $h((string) $flashSuccess) ?></p>
+<p class="bo-int-flash bo-int-flash--ok" role="status"><?= $icon('check') ?><span><?= $h((string) $flashSuccess) ?></span></p>
 <?php endif; ?>
 
 <?php if ($newKeyPlain): ?>
-<div class="ath-secret ath-rise" role="alert">
-    <p class="ath-secret__title">Copiez ce jeton maintenant : il ne sera plus affiché en clair.</p>
-    <code class="ath-secret__value"><?= $h((string) $newKeyPlain) ?></code>
-    <p class="ath-secret__note">Conservez-le dans un gestionnaire de secrets, jamais en clair dans du code source.</p>
+<div class="bo-int-secret" role="alert">
+    <p class="bo-int-secret__title">Copiez ce jeton maintenant : il ne sera plus affiché en clair.</p>
+    <code class="bo-int-secret__value"><?= $h((string) $newKeyPlain) ?></code>
+    <p class="bo-int-secret__note">Conservez-le dans un gestionnaire de secrets, jamais en clair dans du code source.</p>
 </div>
 <?php endif; ?>
 
-<div class="ath-note">
-    <p class="ath-note__title">Fonctionnement</p>
-    <p class="ath-note__text">
-        Reliez Discord à votre communauté : un salon commun pour ce qui n’a pas de salon à part,
-        puis un choix pour chaque type d’événement (candidatures, effectifs, opérations, photos Quick Picture…).
-        Les transmissions terrain peuvent viser des salons supplémentaires. Les jetons d’accès servent aux outils qui viennent lire le calendrier.
-    </p>
-</div>
+<div class="bo-int__layout">
+    <nav class="bo-int-nav" aria-label="Sections des intégrations">
+        <p class="bo-int-nav__title">Sections</p>
+        <?php foreach ($nav as $item): ?>
+            <a class="bo-int-nav__link" href="<?= $h($item['href']) ?>" data-int-nav>
+                <?= $icon($item['icon']) ?>
+                <span><?= $h($item['label']) ?></span>
+                <?php if (isset($item['count']) && $item['count'] !== null && (int) $item['count'] > 0): ?>
+                    <span class="bo-int-nav__count"><?= (int) $item['count'] ?></span>
+                <?php endif; ?>
+            </a>
+        <?php endforeach; ?>
+    </nav>
 
-<section id="arma-overwatch" class="ath-card ath-rise" style="padding:18px 20px;margin-bottom:22px;">
-    <h2 class="ath-section-title" style="margin-top:0;">Arma 3 / Overwatch</h2>
-    <p class="ath-item__meta" style="margin:0 0 12px;">
-        L’expérience en jeu (image de connexion, méthodes d’accès, fonctions Overwatch) se règle dans la configuration ATAK.
-        Les opérateurs s’identifient avec leur compte Athena : la communauté n’est plus saisie dans le jeu.
-    </p>
-    <a class="ath-btn ath-btn--solid" href="<?= $h(url('admin/atak-config')) ?>#overwatch-game-experience">Ouvrir l’expérience en jeu</a>
-</section>
+    <div class="bo-int__main">
 
-<section id="relais-discord" class="ath-card ath-rise" style="padding:18px 20px;margin-bottom:22px;">
-    <h2 class="ath-section-title" style="margin-top:0;">Relais Discord</h2>
-    <div class="ath-discord-howto">
-        <p class="ath-discord-howto__title">Ce qu’il faut coller : le lien webhook du salon</p>
-        <ol class="ath-discord-howto__list">
-            <li>Dans Discord : clic droit sur le salon → <strong>Modifier le salon</strong> → <strong>Intégrations</strong> → <strong>Webhooks</strong> → <strong>Nouveau webhook</strong>.</li>
-            <li>Cliquez sur <strong>Copier l’URL du webhook</strong>. Le lien ressemble à <code>https://discord.com/api/webhooks/1234…/AbCd…</code>.</li>
-            <li>Collez-le dans <strong>Salon commun</strong> (utilisé par tout événement réglé sur « Salon commun »), ou dans <strong>Autre salon</strong> pour un événement précis.</li>
-        </ol>
-        <p class="ath-discord-howto__note">
-            L’identifiant du salon (le grand nombre obtenu par « Copier l’identifiant du salon ») ou le lien
-            <code>discord.com/channels/…</code> ne suffisent pas : Athena publie sans bot, Discord n’accepte que le lien webhook.
-            Si vous choisissez « Autre salon », le message part uniquement dans ce salon-là, plus dans le salon commun.
-        </p>
-    </div>
-    <form method="post" action="<?= $h(url('back-office/integrations/discord')) ?>" id="form-relais-discord">
-        <?= \App\Core\Csrf::field() ?>
-        <label class="ath-field">
-            <span class="ath-field__label">Salon commun — URL du webhook</span>
-            <input type="text" inputmode="url" autocomplete="off" spellcheck="false" name="discord_webhook_url" maxlength="500" class="ath-field__input" value="<?= $h($discordDefaultUrl) ?>" placeholder="https://discord.com/api/webhooks/…">
-            <span class="ath-field__help">Tous les événements réglés sur « Salon commun » partent ici. Laissez vide si vous n’utilisez que des salons à part.</span>
-        </label>
-        <?php foreach ($discordGroups as $groupLabel => $groupEvents): ?>
-            <h3 class="ath-form__title" style="margin:18px 0 8px;"><?= $h((string) $groupLabel) ?></h3>
-            <?php if ($groupLabel === 'Téléphone ATAK'): ?>
-                <p class="ath-item__meta" id="relais-discord-atak" style="margin:0 0 10px;">
-                    Réglages Discord du téléphone en jeu : l’<strong>App Discord du téléphone</strong> ne fonctionne qu’une fois un salon choisi ici
-                    (le lien reste sur Athena, il n’est jamais envoyé au jeu). Enregistrez, puis utilisez « Vérifier un salon » plus bas pour envoyer un message d’essai.
-                </p>
-            <?php endif; ?>
-            <div class="ath-stack">
-                <?php foreach ($groupEvents as $ev): ?>
-                    <?php
-                    $ek = (string) ($ev['key'] ?? '');
-                    $st = is_array($discordEventState[$ek] ?? null) ? $discordEventState[$ek] : [];
-                    $mode = (string) ($st['mode'] ?? ($ev['default_mode'] ?? 'off'));
-                    $dedicatedUrl = (string) ($st['url'] ?? '');
-                    $destHint = match ($mode) {
-                        'custom' => 'Publié dans un salon à part.',
-                        'default' => 'Publié dans le salon commun.',
-                        default => 'Rien n’est envoyé sur Discord.',
-                    };
-                    ?>
-                    <article class="ath-item ath-discord-event" data-discord-event>
-                        <p class="ath-item__name"><?= $h((string) ($ev['label'] ?? '')) ?></p>
-                        <p class="ath-item__meta"><?= $h((string) ($ev['hint'] ?? '')) ?></p>
-                        <p class="ath-discord-event__status" data-discord-status><?= $h($destHint) ?></p>
-                        <div class="ath-form__grid" style="margin-top:10px;">
-                            <label class="ath-field">
-                                <span class="ath-field__label">Où publier</span>
-                                <select name="discord_event[<?= $h($ek) ?>][mode]" class="ath-field__input js-discord-mode">
-                                    <option value="off" <?= $mode === 'off' ? 'selected' : '' ?>>Ne pas publier</option>
-                                    <option value="default" <?= $mode === 'default' ? 'selected' : '' ?>>Salon commun</option>
-                                    <option value="custom" <?= $mode === 'custom' ? 'selected' : '' ?>>Autre salon</option>
-                                </select>
-                            </label>
-                            <label class="ath-field ath-discord-custom js-discord-custom"<?= $mode === 'custom' ? '' : ' hidden' ?>>
-                                <span class="ath-field__label">Autre salon — URL du webhook</span>
-                                <input type="text" inputmode="url" autocomplete="off" spellcheck="false" name="discord_event[<?= $h($ek) ?>][url]" maxlength="500" class="ath-field__input" value="<?= $h($dedicatedUrl) ?>" placeholder="https://discord.com/api/webhooks/…">
-                                <span class="ath-field__help">Modifier le salon → Intégrations → Webhooks → Copier l’URL du webhook. Pas l’identifiant du salon.</span>
+    <!-- ── Vue d'ensemble ─────────────────────────────────────────── -->
+    <section id="vue-ensemble" class="bo-int-section" data-int-section>
+        <header class="bo-int-section__head">
+            <span class="bo-int-section__icon"><?= $icon('overview') ?></span>
+            <div>
+                <h2 class="bo-int-section__title">Vue d’ensemble</h2>
+                <p class="bo-int-section__desc">Tout ce qui relie votre communauté au reste du monde, réglé ici et propre à votre communauté : aucune clé à demander à l’administrateur du serveur.</p>
+            </div>
+        </header>
+        <div class="bo-int-tiles">
+            <?php foreach ($tiles as $tile): ?>
+                <a class="bo-int-tile bo-int-tile--<?= $h($tile['state']) ?>" href="<?= $h($tile['href']) ?>">
+                    <span class="bo-int-tile__head">
+                        <?= $icon($tile['icon']) ?>
+                        <span class="bo-int-tile__title"><?= $h($tile['title']) ?></span>
+                    </span>
+                    <span class="bo-int-tile__value"><?= $h($tile['value']) ?></span>
+                    <span class="bo-int-tile__note"><?= $h($tile['note']) ?></span>
+                    <span class="bo-int-badge bo-int-badge--<?= $h($tile['state']) ?>"><?= $h($stateLabel[$tile['state']] ?? '') ?></span>
+                </a>
+            <?php endforeach; ?>
+        </div>
+        <div class="bo-int-concepts">
+            <div class="bo-int-concept">
+                <p class="bo-int-concept__title"><?= $icon('link') ?> Un webhook, c’est quoi ?</p>
+                <p class="bo-int-concept__text">Un lien secret, créé dans un salon Discord, qui permet à Athena d’y publier des messages sans bot ni invitation. Un salon = un lien. Quiconque a le lien peut écrire dans le salon : gardez-le pour vous.</p>
+            </div>
+            <div class="bo-int-concept">
+                <p class="bo-int-concept__title"><?= $icon('send') ?> Salon commun ou autre salon</p>
+                <p class="bo-int-concept__text">Le salon commun reçoit tout ce que vous réglez sur « Salon commun ». Pour envoyer un événement ailleurs (photos dans #renseignement, candidatures dans #recrutement), choisissez « Autre salon » et collez le lien de ce salon.</p>
+            </div>
+            <div class="bo-int-concept">
+                <p class="bo-int-concept__title"><?= $icon('mail') ?> Votre propre adresse d’envoi</p>
+                <p class="bo-int-concept__text">Les e-mails de la communauté (invitations, candidatures, codes de connexion…) peuvent partir de votre domaine, à votre nom et sur votre quota, au lieu de l’envoi commun d’Athena.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Discord ─────────────────────────────────────────────────── -->
+    <section id="relais-discord" class="bo-int-section" data-int-section>
+        <header class="bo-int-section__head">
+            <span class="bo-int-section__icon bo-int-section__icon--discord"><?= $icon('discord') ?></span>
+            <div>
+                <h2 class="bo-int-section__title">Discord</h2>
+                <p class="bo-int-section__desc">Choisissez ce qu’Athena publie dans vos salons : annonces, photos du téléphone, notes de reco, candidatures, effectifs, opérations…</p>
+            </div>
+        </header>
+
+        <details class="bo-int-guide"<?= $discordLinked ? '' : ' open' ?>>
+            <summary class="bo-int-guide__summary"><?= $icon('info') ?> Créer le lien webhook d’un salon (30 secondes)</summary>
+            <ol class="bo-int-guide__steps">
+                <li><span class="bo-int-step">1</span><span>Dans Discord : clic droit sur le salon › <strong>Modifier le salon</strong> › <strong>Intégrations</strong> › <strong>Webhooks</strong>.</span></li>
+                <li><span class="bo-int-step">2</span><span><strong>Nouveau webhook</strong>, donnez-lui un nom (par exemple « Athena »), puis <strong>Copier l’URL du webhook</strong>.</span></li>
+                <li><span class="bo-int-step">3</span><span>Collez-le dans <strong>Salon commun</strong> ci-dessous, ou dans <strong>Autre salon</strong> pour un événement précis, puis enregistrez.</span></li>
+                <li><span class="bo-int-step">4</span><span>Bouton <strong>Essai</strong> à côté de l’événement : un court message doit apparaître dans le salon.</span></li>
+            </ol>
+            <div class="bo-int-anatomy" aria-label="Forme d’un lien webhook">
+                <code><span class="bo-int-anatomy__base">https://discord.com/api/webhooks/</span><span class="bo-int-anatomy__id">1290000000000000001</span>/<span class="bo-int-anatomy__token">AbCdEf…</span></code>
+                <span class="bo-int-anatomy__legend"><span class="bo-int-anatomy__dot bo-int-anatomy__dot--id"></span>numéro du webhook <span class="bo-int-anatomy__dot bo-int-anatomy__dot--token"></span>jeton secret</span>
+            </div>
+            <p class="bo-int-guide__note"><?= $icon('warn') ?> L’identifiant du salon (le grand nombre de « Copier l’identifiant du salon ») et le lien <code>discord.com/channels/…</code> ne suffisent pas : Athena publie sans bot, Discord n’accepte que le lien webhook.</p>
+        </details>
+
+        <p class="bo-int-guide__note"><?= $icon('send') ?> Pour présenter votre communauté sur le Discord Athena (salon des communautés), voyez <a href="<?= $h(url('back-office/community/discord')) ?>">Annoncer sur Discord</a>.</p>
+
+        <form method="post" action="<?= $h(url('back-office/integrations/discord')) ?>" id="form-relais-discord" class="bo-int-discord" data-discord-form>
+            <?= \App\Core\Csrf::field() ?>
+            <div class="bo-int-common">
+                <label class="bo-int-field">
+                    <span class="bo-int-field__label">Salon commun · lien webhook</span>
+                    <input type="text" inputmode="url" autocomplete="off" spellcheck="false" name="discord_webhook_url" maxlength="500" class="bo-int-input bo-int-mono" value="<?= $h($discordDefaultUrl) ?>" placeholder="https://discord.com/api/webhooks/…" data-webhook-input>
+                    <span class="bo-int-check-msg" data-webhook-msg aria-live="polite"></span>
+                    <span class="bo-int-field__help">Tous les événements réglés sur « Salon commun » partent ici. Laissez vide si vous n’utilisez que des salons à part.</span>
+                </label>
+            </div>
+
+            <div class="bo-int-toolbar">
+                <label class="bo-int-search">
+                    <?= $icon('search') ?>
+                    <span class="bo-int-sr">Chercher un événement</span>
+                    <input type="search" class="bo-int-search__input" placeholder="Chercher un événement (photo, candidature, reco…)" data-discord-search>
+                </label>
+                <div class="bo-int-filter" role="group" aria-label="Filtrer les événements">
+                    <button type="button" class="bo-int-filter__btn is-active" data-discord-filter="all">Tous</button>
+                    <button type="button" class="bo-int-filter__btn" data-discord-filter="on">Publiés <span data-discord-count-on><?= (int) $publishedCount ?></span></button>
+                    <button type="button" class="bo-int-filter__btn" data-discord-filter="off">Coupés</button>
+                </div>
+            </div>
+            <p class="bo-int-empty" data-discord-empty hidden>Aucun événement ne correspond.</p>
+
+            <?php foreach ($discordGroups as $groupLabel => $groupEvents): ?>
+                <?php
+                $groupOn = 0;
+                foreach ($groupEvents as $gev) {
+                    if ((string) ($discordEventState[(string) ($gev['key'] ?? '')]['mode'] ?? ($gev['default_mode'] ?? 'off')) !== 'off') {
+                        $groupOn++;
+                    }
+                }
+                ?>
+                <details class="bo-int-group" data-discord-group<?= $groupLabel === 'Téléphone ATAK' ? ' id="relais-discord-atak"' : '' ?><?= ($groupOn > 0 || $groupLabel === 'Téléphone ATAK') ? ' open' : '' ?>>
+                    <summary class="bo-int-group__head">
+                        <span class="bo-int-group__caret" aria-hidden="true"><?= $icon('chevron') ?></span>
+                        <span class="bo-int-group__emoji" aria-hidden="true"><?= $h($groupIcons[$groupLabel] ?? '•') ?></span>
+                        <h3 class="bo-int-group__title"><?= $h((string) $groupLabel) ?></h3>
+                        <span class="bo-int-group__count"><span data-group-on><?= $groupOn ?></span> / <?= count($groupEvents) ?> publiés</span>
+                        <span class="bo-int-group__bulk">
+                            <button type="button" class="bo-int-link-btn" data-group-set="default">Tout sur le salon commun</button>
+                            <button type="button" class="bo-int-link-btn" data-group-set="off">Tout couper</button>
+                        </span>
+                    </summary>
+                    <?php if ($groupLabel === 'Téléphone ATAK'): ?>
+                        <p class="bo-int-group__note">Le lien du salon reste sur Athena : il n’est jamais envoyé au jeu. L’<strong>App Discord du téléphone</strong> ne fonctionne qu’une fois un salon choisi ici. Pour vérifier le téléphone, essayez « App Discord du téléphone » ou « Photos Quick Picture ».</p>
+                    <?php endif; ?>
+                    <?php foreach ($groupEvents as $ev): ?>
+                        <?php
+                        $ek = (string) ($ev['key'] ?? '');
+                        $st = is_array($discordEventState[$ek] ?? null) ? $discordEventState[$ek] : [];
+                        $mode = (string) ($st['mode'] ?? ($ev['default_mode'] ?? 'off'));
+                        $dedicatedUrl = (string) ($st['url'] ?? '');
+                        $search = mb_strtolower((string) ($ev['label'] ?? '') . ' ' . (string) ($ev['hint'] ?? '') . ' ' . (string) $groupLabel);
+                        ?>
+                        <div class="bo-int-event" data-discord-event data-mode="<?= $h($mode) ?>" data-search="<?= $h($search) ?>">
+                            <div class="bo-int-event__text">
+                                <p class="bo-int-event__name"><?= $h((string) ($ev['label'] ?? '')) ?></p>
+                                <p class="bo-int-event__hint"><?= $h((string) ($ev['hint'] ?? '')) ?></p>
+                            </div>
+                            <div class="bo-int-event__ctrl">
+                                <div class="bo-int-seg" role="radiogroup" aria-label="Où publier « <?= $h((string) ($ev['label'] ?? '')) ?> »">
+                                    <?php foreach (['off' => 'Ne pas publier', 'default' => 'Salon commun', 'custom' => 'Autre salon'] as $mv => $ml): ?>
+                                        <label class="bo-int-seg__opt bo-int-seg__opt--<?= $h($mv) ?>">
+                                            <input type="radio" class="js-discord-mode" name="discord_event[<?= $h($ek) ?>][mode]" value="<?= $h($mv) ?>" <?= $mode === $mv ? 'checked' : '' ?>>
+                                            <span><?= $h($ml) ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                                <button type="submit" form="form-discord-test" name="event_key" value="<?= $h($ek) ?>" class="bo-int-btn bo-int-btn--sm" data-discord-test title="Envoyer un message d’essai dans le salon enregistré"><?= $icon('send') ?><span>Essai</span></button>
+                            </div>
+                            <label class="bo-int-field bo-int-event__custom js-discord-custom"<?= $mode === 'custom' ? '' : ' hidden' ?>>
+                                <span class="bo-int-field__label">Autre salon · lien webhook</span>
+                                <input type="text" inputmode="url" autocomplete="off" spellcheck="false" name="discord_event[<?= $h($ek) ?>][url]" maxlength="500" class="bo-int-input bo-int-mono" value="<?= $h($dedicatedUrl) ?>" placeholder="https://discord.com/api/webhooks/…" data-webhook-input>
+                                <span class="bo-int-check-msg" data-webhook-msg aria-live="polite"></span>
                             </label>
                         </div>
-                    </article>
-                <?php endforeach; ?>
-            </div>
-        <?php endforeach; ?>
-        <div class="ath-form__actions" style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;">
-            <button type="submit" class="ath-btn ath-btn--solid">Enregistrer les relais</button>
-        </div>
-    </form>
-    <form method="post" action="<?= $h(url('back-office/integrations/discord/essai')) ?>" class="ath-discord-test" style="margin-top:14px;">
-        <?= \App\Core\Csrf::field() ?>
-        <label class="ath-field">
-            <span class="ath-field__label">Vérifier un salon</span>
-            <select name="event_key" class="ath-field__input">
-                <?php foreach ($discordEvents as $ev): ?>
-                    <?php $ek = (string) ($ev['key'] ?? ''); ?>
-                    <option value="<?= $h($ek) ?>" <?= $ek === 'announcements' ? 'selected' : '' ?>><?= $h((string) ($ev['label'] ?? '')) ?></option>
-                <?php endforeach; ?>
-            </select>
-            <span class="ath-field__help">Un court message part dans le salon actuellement choisi pour cet événement (pensez à enregistrer d’abord). Pour le téléphone, choisissez « App Discord du téléphone » ou « Photos Quick Picture ».</span>
-        </label>
-        <div class="ath-form__actions" style="margin-top:10px;">
-            <button type="submit" class="ath-btn">Envoyer un message d’essai</button>
-        </div>
-    </form>
-</section>
-
-<section id="relais-transmissions" class="ath-card ath-rise" style="padding:18px 20px;margin-bottom:22px;">
-    <h2 class="ath-section-title" style="margin-top:0;">Transmissions terrain</h2>
-    <p class="ath-item__meta" style="margin:0 0 14px;">
-        Salons supplémentaires pour le journal SSE. Vous pouvez aussi les gérer depuis le bureau renseignement.
-    </p>
-    <form method="post" action="<?= $h(url('back-office/integrations/sse-relais/communaute')) ?>" style="margin-bottom:14px;">
-        <?= \App\Core\Csrf::field() ?>
-        <label class="ath-check">
-            <input type="hidden" name="use_community_relay" value="0">
-            <input type="checkbox" name="use_community_relay" value="1" <?= $useCommunityRelay ? 'checked' : '' ?> <?= $communityRelayReady ? '' : 'disabled' ?>>
-            <span>
-                Publier aussi sur le salon commun
-                <?php if (!$communityRelayReady): ?>
-                    <small> — renseignez d’abord le salon commun ci-dessus, puis enregistrez.</small>
-                <?php endif; ?>
-            </span>
-        </label>
-        <div class="ath-form__actions" style="margin-top:10px;">
-            <button type="submit" class="ath-btn" <?= $communityRelayReady ? '' : 'disabled' ?>>Enregistrer</button>
-        </div>
-    </form>
-    <?php if ($sseRelays !== []): ?>
-        <div class="ath-stack" style="margin-bottom:14px;">
-            <?php foreach ($sseRelays as $relay): ?>
-                <article class="ath-item">
-                    <p class="ath-item__name"><?= $h((string) ($relay['label'] ?? '')) ?></p>
-                    <p class="ath-item__meta"><?= $h((string) ($relay['masked'] ?? '')) ?></p>
-                    <div class="ath-item__actions">
-                        <form method="post" action="<?= $h(url('back-office/integrations/sse-relais/' . rawurlencode((string) ($relay['id'] ?? '')) . '/essai')) ?>">
-                            <?= \App\Core\Csrf::field() ?>
-                            <button type="submit" class="ath-btn">Essai</button>
-                        </form>
-                        <form method="post" action="<?= $h(url('back-office/integrations/sse-relais/' . rawurlencode((string) ($relay['id'] ?? '')) . '/supprimer')) ?>" onsubmit="return confirm('Retirer ce salon du journal des transmissions ?');">
-                            <?= \App\Core\Csrf::field() ?>
-                            <button type="submit" class="ath-row-action ath-row-action--danger">Retirer</button>
-                        </form>
-                    </div>
-                </article>
+                    <?php endforeach; ?>
+                </details>
             <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
-    <form method="post" action="<?= $h(url('back-office/integrations/sse-relais')) ?>" class="ath-form">
-        <?= \App\Core\Csrf::field() ?>
-        <div class="ath-form__grid">
-            <label class="ath-field">
-                <span class="ath-field__label">Intitulé du salon</span>
-                <input type="text" name="label" maxlength="80" class="ath-field__input" placeholder="Renseignement, TOC…">
-            </label>
-            <label class="ath-field">
-            <span class="ath-field__label">URL du webhook du salon</span>
-            <input type="text" inputmode="url" autocomplete="off" spellcheck="false" name="discord_url" required maxlength="500" class="ath-field__input" placeholder="https://discord.com/api/webhooks/…">
-            </label>
-        </div>
-        <div class="ath-form__actions">
-            <button type="submit" class="ath-btn ath-btn--solid">Ajouter un salon</button>
-        </div>
-    </form>
-</section>
 
-
-<?php if ($apiKeysAllowed): ?>
-<?php
-$athKpis = [
-    [
-        'label' => 'JETONS ACTIFS',
-        'value' => (string) $activeCount,
-        'delta' => '',
-        'tone' => $activeCount > 0 ? '#0b8a5c' : '#8c979b',
-        'pct' => count($keys) > 0 ? (string) (int) round($activeCount / max(1, count($keys)) * 100) . '%' : '0%',
-        'note' => 'outils raccordés',
-    ],
-    [
-        'label' => 'RÉVOQUÉS',
-        'value' => (string) $revokedCount,
-        'delta' => '',
-        'tone' => $revokedCount === 0 ? '#0b8a5c' : '#64748b',
-        'pct' => count($keys) > 0 ? (string) (int) round($revokedCount / max(1, count($keys)) * 100) . '%' : '0%',
-        'note' => 'définitivement hors service',
-    ],
-    [
-        'label' => 'REQUÊTES DU JOUR',
-        'value' => number_format($todayTotal, 0, ',', ' '),
-        'delta' => '',
-        'tone' => $usageRatio < 80 ? '#0b8a5c' : ($usageRatio < 95 ? '#c98a12' : '#c72e2e'),
-        'pct' => (string) max(0, min(100, $usageRatio)) . '%',
-        'note' => 'sur ' . number_format($quotaTotal, 0, ',', ' ') . ' autorisées',
-    ],
-    [
-        'label' => 'CHARGE DU QUOTA',
-        'value' => $quotaTotal > 0 ? $usageRatio . ' %' : '—',
-        'delta' => '',
-        'tone' => $usageRatio < 80 ? '#0b8a5c' : ($usageRatio < 95 ? '#c98a12' : '#c72e2e'),
-        'pct' => (string) max(0, min(100, $usageRatio)) . '%',
-        'note' => 'tous jetons actifs confondus',
-    ],
-];
-require base_path('views/partials/ath_kpis.php');
-?>
-
-<form method="post" action="<?= $h(url('back-office/integrations/api-keys')) ?>" class="ath-form ath-rise">
-    <div class="ath-form__head">
-        <span class="ath-form__title">Nouveau jeton d’accès</span>
-        <span class="ath-form__hint">Le secret n’est affiché qu’une seule fois, juste après la création.</span>
-    </div>
-    <?= \App\Core\Csrf::field() ?>
-    <div class="ath-form__grid">
-        <label class="ath-field">
-            <span class="ath-field__label">Nom du service</span>
-            <input type="text" name="name" maxlength="120" required placeholder="Site vitrine, outil logistique…" class="ath-field__input">
-        </label>
-        <label class="ath-field">
-            <span class="ath-field__label">Quota par jour</span>
-            <input type="number" name="quota_per_day" min="100" max="500000" value="10000" class="ath-field__input">
-            <span class="ath-field__help">Entre 100 et 500 000 requêtes.</span>
-        </label>
-    </div>
-    <fieldset style="border:0;margin:14px 0 0;padding:0;">
-        <legend class="ath-field__label" style="padding:0;margin-bottom:7px;">Types de données autorisés</legend>
-        <div class="ath-check-grid">
-            <?php foreach ($availableScopes as $scope): ?>
-            <label class="ath-check">
-                <input type="checkbox" name="scopes[]" value="<?= $h((string) $scope) ?>" checked>
-                <span><?= $h($scopeLabelFr((string) $scope)) ?></span>
-            </label>
-            <?php endforeach; ?>
-        </div>
-    </fieldset>
-    <div class="ath-form__actions">
-        <button type="submit" class="ath-btn ath-btn--solid">Créer le jeton</button>
-    </div>
-</form>
-
-<h2 class="ath-section-title">Jetons existants</h2>
-
-<?php if ($keys === []): ?>
-<div class="ath-card" style="padding:18px 20px;">
-    <p class="ath-item__meta" style="margin:0;">Aucun jeton pour l’instant : créez-en un avec le formulaire ci-dessus.</p>
-</div>
-<?php else: ?>
-<div class="ath-stack">
-    <?php foreach ($keys as $k): ?>
-        <?php
-        $keyId = (int) ($k['id'] ?? 0);
-        $quota = max(1, (int) ($k['quota_per_day'] ?? 10000));
-        $today = max(0, (int) ($k['today_request_count'] ?? 0));
-        $ratio = min(100, (int) round($today / $quota * 100));
-        $isRevoked = !empty($k['revoked_at']);
-        $scopes = $decodeScopes($k['scopes_json'] ?? '');
-        $fillClass = $ratio < 80 ? '' : ($ratio < 95 ? ' ath-meter__fill--warn' : ' ath-meter__fill--bad');
-        ?>
-        <article class="ath-item ath-rise">
-            <div class="ath-item__head">
-                <div style="min-width:0;">
-                    <p class="ath-item__name"><?= $h((string) ($k['name'] ?? '')) ?></p>
-                    <p class="ath-item__meta">
-                        Préfixe <span class="ath-mono"><?= $h((string) ($k['key_prefix'] ?? '—')) ?>…</span><br>
-                        Créé le <?= $h($fmtDt($k['created_at'] ?? null)) ?>
-                        · dernière utilisation <?= $h($fmtDt($k['last_used_at'] ?? null, 'jamais')) ?>
-                    </p>
-                </div>
-                <span class="ath-tag <?= $isRevoked ? 'ath-tag--bad' : 'ath-tag--ok' ?>"><?= $isRevoked ? 'Révoqué' : 'Actif' ?></span>
+            <div class="bo-int-savebar" data-savebar>
+                <span class="bo-int-savebar__state" data-savebar-state>Tout est enregistré.</span>
+                <button type="reset" class="bo-int-btn" data-savebar-reset disabled>Annuler</button>
+                <button type="submit" class="bo-int-btn bo-int-btn--solid">Enregistrer les relais</button>
             </div>
+        </form>
+        <form method="post" action="<?= $h(url('back-office/integrations/discord/essai')) ?>" id="form-discord-test" hidden>
+            <?= \App\Core\Csrf::field() ?>
+        </form>
+    </section>
 
-            <div class="ath-meter" style="margin-top:12px;">
-                <div class="ath-meter__head">
-                    <span>Consommation du jour</span>
-                    <span class="ath-meter__value"><?= number_format($today, 0, ',', ' ') ?> / <?= number_format($quota, 0, ',', ' ') ?></span>
-                </div>
-                <div class="ath-meter__track">
-                    <span class="ath-meter__fill<?= $fillClass ?>" style="width:<?= $ratio ?>%"></span>
-                </div>
+    <!-- ── E-mails ─────────────────────────────────────────────────── -->
+    <section id="emails-communaute" class="bo-int-section" data-int-section>
+        <header class="bo-int-section__head">
+            <span class="bo-int-section__icon"><?= $icon('mail') ?></span>
+            <div>
+                <h2 class="bo-int-section__title">E-mails de la communauté</h2>
+                <p class="bo-int-section__desc">Invitations, candidatures, effectifs, codes de connexion, mots de passe… partent de <strong>votre</strong> compte d’envoi : à votre nom, depuis votre adresse, sur votre quota.</p>
             </div>
+        </header>
 
-            <?php if ($scopes !== []): ?>
-            <div class="ath-item__tags">
-                <?php foreach ($scopes as $scope): ?>
-                <span class="ath-tag ath-tag--neut"><?= $h($scopeLabelFr($scope)) ?></span>
-                <?php endforeach; ?>
+        <div class="bo-int-route">
+            <div class="bo-int-route__step<?= $mailState === 'ok' ? ' is-active' : '' ?>">
+                <span class="bo-int-route__num">1</span>
+                <span class="bo-int-route__text"><strong>Votre compte d’envoi</strong><small><?= $mailState === 'ok' ? $h((string) ($mailSender['from_address'] ?? '')) : 'utilisé dès qu’il est actif' ?></small></span>
             </div>
+            <span class="bo-int-route__arrow" aria-hidden="true"><?= $icon('chevron') ?></span>
+            <div class="bo-int-route__step<?= $mailState !== 'ok' ? ' is-active' : '' ?>">
+                <span class="bo-int-route__num">2</span>
+                <span class="bo-int-route__text"><strong>Envoi commun d’Athena</strong><small>sinon, s’il est réglé</small></span>
+            </div>
+            <span class="bo-int-route__arrow" aria-hidden="true"><?= $icon('chevron') ?></span>
+            <div class="bo-int-route__step">
+                <span class="bo-int-route__num">3</span>
+                <span class="bo-int-route__text"><strong>Rien ne part</strong><small>si aucun des deux n’existe</small></span>
+            </div>
+        </div>
+
+        <div class="bo-int-status bo-int-status--<?= $h($mailState) ?>">
+            <?php if ($mailState === 'ok'): ?>
+                <?= $icon('check') ?><span><strong>Actif</strong> : les e-mails partent de <?= $h((string) ($mailSender['from_address'] ?? '')) ?>.</span>
+            <?php elseif ($mailState === 'warn'): ?>
+                <?= $icon('warn') ?><span><strong>Incomplet</strong> : renseignez l’expéditeur et le serveur, puis enregistrez.</span>
+            <?php else: ?>
+                <?= $icon('info') ?><span><strong>Coupé</strong> : aucun compte d’envoi propre à la communauté, l’envoi commun d’Athena s’applique.</span>
             <?php endif; ?>
+        </div>
 
-            <?php if (!$isRevoked): ?>
-            <form method="post" action="<?= $h(url('back-office/integrations/api-keys/' . $keyId . '/update')) ?>" style="margin-top:13px;">
-                <?= \App\Core\Csrf::field() ?>
-                <div class="ath-form__grid">
-                    <label class="ath-field">
-                        <span class="ath-field__label">Nom du service</span>
-                        <input type="text" name="name" maxlength="120" required value="<?= $h((string) ($k['name'] ?? '')) ?>" class="ath-field__input">
-                    </label>
-                    <label class="ath-field">
-                        <span class="ath-field__label">Quota par jour</span>
-                        <input type="number" name="quota_per_day" min="100" max="500000" value="<?= $quota ?>" class="ath-field__input">
-                    </label>
+        <?php
+        $mailFormState = $mailSender;
+        $mailFormProviders = $mailProviders;
+        $mailFormAction = url('back-office/integrations/emails');
+        $mailFormTestAction = url('back-office/integrations/emails/essai');
+        $mailFormId = 'mail-community';
+        $mailFormWho = 'la communauté';
+        $mailFormFromPlaceholder = 'no-reply@votre-communaute.fr';
+        $mailFormNamePlaceholder = 'Votre communauté';
+        $mailFormTestTo = $adminEmail;
+        require base_path('views/admin/organization/partials/integrations_mail_form.php');
+        ?>
+        <p class="bo-int-guide__note"><?= $icon('info') ?> Pour ne pas finir en indésirables, déclarez le service d’envoi dans le DNS de votre domaine (enregistrements SPF et DKIM indiqués par le service).</p>
+    </section>
+
+    <!-- ── Transmissions terrain ──────────────────────────────────── -->
+    <section id="relais-transmissions" class="bo-int-section" data-int-section>
+        <header class="bo-int-section__head">
+            <span class="bo-int-section__icon"><?= $icon('radio') ?></span>
+            <div>
+                <h2 class="bo-int-section__title">Transmissions terrain</h2>
+                <p class="bo-int-section__desc">Le journal SSE (transmissions saisies au bureau renseignement) peut être recopié dans un ou plusieurs salons, en plus du salon commun. Vous pouvez aussi les gérer depuis le bureau renseignement.</p>
+            </div>
+        </header>
+        <form method="post" action="<?= $h(url('back-office/integrations/sse-relais/communaute')) ?>" class="bo-int-inline">
+            <?= \App\Core\Csrf::field() ?>
+            <label class="bo-int-switch">
+                <input type="hidden" name="use_community_relay" value="0">
+                <input type="checkbox" name="use_community_relay" value="1" class="bo-int-switch__input" <?= $useCommunityRelay ? 'checked' : '' ?> <?= $communityRelayReady ? '' : 'disabled' ?>>
+                <span class="bo-int-switch__track" aria-hidden="true"><span class="bo-int-switch__thumb"></span></span>
+                <span class="bo-int-switch__text">
+                    <strong>Publier aussi sur le salon commun</strong>
+                    <small><?= $communityRelayReady ? 'Le salon commun de la section Discord reçoit chaque transmission.' : 'Renseignez d’abord le salon commun dans la section Discord, puis enregistrez.' ?></small>
+                </span>
+            </label>
+            <button type="submit" class="bo-int-btn" <?= $communityRelayReady ? '' : 'disabled' ?>>Enregistrer</button>
+        </form>
+
+        <?php if ($sseRelays !== []): ?>
+            <ul class="bo-int-list">
+                <?php foreach ($sseRelays as $relay): ?>
+                    <li class="bo-int-list__item">
+                        <span class="bo-int-list__icon" aria-hidden="true">#</span>
+                        <span class="bo-int-list__text">
+                            <strong><?= $h((string) ($relay['label'] ?? '')) ?></strong>
+                            <small class="bo-int-mono"><?= $h((string) ($relay['masked'] ?? '')) ?></small>
+                        </span>
+                        <span class="bo-int-list__actions">
+                            <form method="post" action="<?= $h(url('back-office/integrations/sse-relais/' . rawurlencode((string) ($relay['id'] ?? '')) . '/essai')) ?>">
+                                <?= \App\Core\Csrf::field() ?>
+                                <button type="submit" class="bo-int-btn bo-int-btn--sm"><?= $icon('send') ?><span>Essai</span></button>
+                            </form>
+                            <form method="post" action="<?= $h(url('back-office/integrations/sse-relais/' . rawurlencode((string) ($relay['id'] ?? '')) . '/supprimer')) ?>" onsubmit="return confirm('Retirer ce salon du journal des transmissions ?');">
+                                <?= \App\Core\Csrf::field() ?>
+                                <button type="submit" class="bo-int-btn bo-int-btn--sm bo-int-btn--danger">Retirer</button>
+                            </form>
+                        </span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p class="bo-int-empty">Aucun salon supplémentaire pour l’instant.</p>
+        <?php endif; ?>
+
+        <form method="post" action="<?= $h(url('back-office/integrations/sse-relais')) ?>" class="bo-int-add">
+            <?= \App\Core\Csrf::field() ?>
+            <p class="bo-int-add__title">Ajouter un salon</p>
+            <div class="bo-int-grid">
+                <label class="bo-int-field">
+                    <span class="bo-int-field__label">Intitulé du salon</span>
+                    <input type="text" name="label" maxlength="80" class="bo-int-input" placeholder="Renseignement, TOC…">
+                </label>
+                <label class="bo-int-field">
+                    <span class="bo-int-field__label">Lien webhook du salon</span>
+                    <input type="text" inputmode="url" autocomplete="off" spellcheck="false" name="discord_url" required maxlength="500" class="bo-int-input bo-int-mono" placeholder="https://discord.com/api/webhooks/…" data-webhook-input>
+                    <span class="bo-int-check-msg" data-webhook-msg aria-live="polite"></span>
+                </label>
+            </div>
+            <div class="bo-int-actions">
+                <button type="submit" class="bo-int-btn bo-int-btn--solid">Ajouter le salon</button>
+            </div>
+        </form>
+    </section>
+
+    <!-- ── Jetons d'accès ─────────────────────────────────────────── -->
+    <section id="jetons" class="bo-int-section" data-int-section>
+        <header class="bo-int-section__head">
+            <span class="bo-int-section__icon"><?= $icon('key') ?></span>
+            <div>
+                <h2 class="bo-int-section__title">Jetons d’accès</h2>
+                <p class="bo-int-section__desc">Pour qu’un site vitrine ou un outil externe lise votre calendrier d’événements. Chaque jeton a son quota et ses droits ; il se renouvelle ou se révoque à tout moment.</p>
+            </div>
+        </header>
+        <?php if ($apiKeysAllowed): ?>
+            <div class="bo-int-kpis">
+                <div class="bo-int-kpi"><span class="bo-int-kpi__label">Jetons actifs</span><span class="bo-int-kpi__value"><?= (int) $activeCount ?></span></div>
+                <div class="bo-int-kpi"><span class="bo-int-kpi__label">Révoqués</span><span class="bo-int-kpi__value"><?= (int) $revokedCount ?></span></div>
+                <div class="bo-int-kpi"><span class="bo-int-kpi__label">Requêtes du jour</span><span class="bo-int-kpi__value"><?= $h(number_format($todayTotal, 0, ',', ' ')) ?></span><span class="bo-int-kpi__note">sur <?= $h(number_format($quotaTotal, 0, ',', ' ')) ?> autorisées</span></div>
+                <div class="bo-int-kpi"><span class="bo-int-kpi__label">Charge du quota</span><span class="bo-int-kpi__value"><?= $quotaTotal > 0 ? (int) $usageRatio . ' %' : '—' ?></span>
+                    <span class="bo-int-meter"><span class="bo-int-meter__fill<?= $usageRatio >= 95 ? ' is-bad' : ($usageRatio >= 80 ? ' is-warn' : '') ?>" style="width:<?= max(0, min(100, $usageRatio)) ?>%"></span></span>
                 </div>
-                <div class="ath-check-grid" style="margin-top:11px;">
-                    <?php foreach ($availableScopes as $scope): ?>
-                    <label class="ath-check">
-                        <input type="checkbox" name="scopes[]" value="<?= $h((string) $scope) ?>" <?= in_array((string) $scope, $scopes, true) ? 'checked' : '' ?>>
-                        <span><?= $h($scopeLabelFr((string) $scope)) ?></span>
-                    </label>
+            </div>
+
+            <?php if ($keys === []): ?>
+                <p class="bo-int-empty">Aucun jeton pour l’instant : créez-en un avec le formulaire ci-dessous.</p>
+            <?php else: ?>
+                <div class="bo-int-keys">
+                    <?php foreach ($keys as $k): ?>
+                        <?php
+                        $keyId = (int) ($k['id'] ?? 0);
+                        $quota = max(1, (int) ($k['quota_per_day'] ?? 10000));
+                        $today = max(0, (int) ($k['today_request_count'] ?? 0));
+                        $ratio = min(100, (int) round($today / $quota * 100));
+                        $isRevoked = !empty($k['revoked_at']);
+                        $scopes = $decodeScopes($k['scopes_json'] ?? '');
+                        ?>
+                        <article class="bo-int-key<?= $isRevoked ? ' is-revoked' : '' ?>">
+                            <div class="bo-int-key__head">
+                                <div class="bo-int-key__id">
+                                    <p class="bo-int-key__name"><?= $h((string) ($k['name'] ?? '')) ?></p>
+                                    <p class="bo-int-key__meta">
+                                        <span class="bo-int-mono"><?= $h((string) ($k['key_prefix'] ?? '—')) ?>…</span>
+                                        · créé le <?= $h($fmtDt($k['created_at'] ?? null)) ?>
+                                        · dernière utilisation <?= $h($fmtDt($k['last_used_at'] ?? null, 'jamais')) ?>
+                                    </p>
+                                </div>
+                                <span class="bo-int-badge <?= $isRevoked ? 'bo-int-badge--bad' : 'bo-int-badge--ok' ?>"><?= $isRevoked ? 'Révoqué' : 'Actif' ?></span>
+                            </div>
+                            <div class="bo-int-key__usage">
+                                <span>Consommation du jour</span>
+                                <span class="bo-int-mono"><?= number_format($today, 0, ',', ' ') ?> / <?= number_format($quota, 0, ',', ' ') ?></span>
+                                <span class="bo-int-meter"><span class="bo-int-meter__fill<?= $ratio >= 95 ? ' is-bad' : ($ratio >= 80 ? ' is-warn' : '') ?>" style="width:<?= $ratio ?>%"></span></span>
+                            </div>
+                            <?php if ($scopes !== []): ?>
+                                <div class="bo-int-key__tags">
+                                    <?php foreach ($scopes as $scope): ?>
+                                        <span class="bo-int-tag"><?= $h($scopeLabelFr($scope)) ?></span>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (!$isRevoked): ?>
+                                <details class="bo-int-key__edit">
+                                    <summary>Modifier le nom, le quota ou les droits</summary>
+                                    <form method="post" action="<?= $h(url('back-office/integrations/api-keys/' . $keyId . '/update')) ?>">
+                                        <?= \App\Core\Csrf::field() ?>
+                                        <div class="bo-int-grid">
+                                            <label class="bo-int-field">
+                                                <span class="bo-int-field__label">Nom du service</span>
+                                                <input type="text" name="name" maxlength="120" required value="<?= $h((string) ($k['name'] ?? '')) ?>" class="bo-int-input">
+                                            </label>
+                                            <label class="bo-int-field">
+                                                <span class="bo-int-field__label">Quota par jour</span>
+                                                <input type="number" name="quota_per_day" min="100" max="500000" value="<?= $quota ?>" class="bo-int-input">
+                                            </label>
+                                        </div>
+                                        <div class="bo-int-checks">
+                                            <?php foreach ($availableScopes as $scope): ?>
+                                                <label class="bo-int-check">
+                                                    <input type="checkbox" name="scopes[]" value="<?= $h((string) $scope) ?>" <?= in_array((string) $scope, $scopes, true) ? 'checked' : '' ?>>
+                                                    <span><?= $h($scopeLabelFr((string) $scope)) ?></span>
+                                                </label>
+                                            <?php endforeach; ?>
+                                        </div>
+                                        <div class="bo-int-actions">
+                                            <button type="submit" class="bo-int-btn">Enregistrer les réglages</button>
+                                        </div>
+                                    </form>
+                                </details>
+                                <div class="bo-int-actions">
+                                    <form method="post" action="<?= $h(url('back-office/integrations/api-keys/' . $keyId . '/rotate')) ?>"
+                                          onsubmit="return confirm('Renouveler ce jeton ? Un nouveau secret sera généré et l’ancien cessera de fonctionner immédiatement.');">
+                                        <?= \App\Core\Csrf::field() ?>
+                                        <button type="submit" class="bo-int-btn bo-int-btn--sm">Renouveler le secret</button>
+                                    </form>
+                                    <form method="post" action="<?= $h(url('back-office/integrations/api-keys/' . $keyId . '/revoke')) ?>"
+                                          onsubmit="return confirm('Révoquer ce jeton ? Les outils qui l’utilisent cesseront de fonctionner.');">
+                                        <?= \App\Core\Csrf::field() ?>
+                                        <button type="submit" class="bo-int-btn bo-int-btn--sm bo-int-btn--danger">Révoquer</button>
+                                    </form>
+                                </div>
+                            <?php endif; ?>
+                        </article>
                     <?php endforeach; ?>
                 </div>
-                <div class="ath-item__actions">
-                    <button type="submit" class="ath-btn">Enregistrer les réglages</button>
+            <?php endif; ?>
+
+            <form method="post" action="<?= $h(url('back-office/integrations/api-keys')) ?>" class="bo-int-add">
+                <?= \App\Core\Csrf::field() ?>
+                <p class="bo-int-add__title">Nouveau jeton d’accès <small>Le secret n’est affiché qu’une seule fois, juste après la création.</small></p>
+                <div class="bo-int-grid">
+                    <label class="bo-int-field">
+                        <span class="bo-int-field__label">Nom du service</span>
+                        <input type="text" name="name" maxlength="120" required placeholder="Site vitrine, outil logistique…" class="bo-int-input">
+                    </label>
+                    <label class="bo-int-field">
+                        <span class="bo-int-field__label">Quota par jour</span>
+                        <input type="number" name="quota_per_day" min="100" max="500000" value="10000" class="bo-int-input">
+                        <span class="bo-int-field__help">Entre 100 et 500 000 requêtes.</span>
+                    </label>
+                </div>
+                <div class="bo-int-checks">
+                    <?php foreach ($availableScopes as $scope): ?>
+                        <label class="bo-int-check">
+                            <input type="checkbox" name="scopes[]" value="<?= $h((string) $scope) ?>" checked>
+                            <span><?= $h($scopeLabelFr((string) $scope)) ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+                <div class="bo-int-actions">
+                    <button type="submit" class="bo-int-btn bo-int-btn--solid">Créer le jeton</button>
                 </div>
             </form>
-
-            <div class="ath-item__actions">
-                <form method="post" action="<?= $h(url('back-office/integrations/api-keys/' . $keyId . '/rotate')) ?>"
-                      onsubmit="return confirm('Renouveler ce jeton ? Un nouveau secret sera généré et l’ancien cessera de fonctionner immédiatement.');">
-                    <?= \App\Core\Csrf::field() ?>
-                    <button type="submit" class="ath-row-action">Renouveler le secret</button>
-                </form>
-                <form method="post" action="<?= $h(url('back-office/integrations/api-keys/' . $keyId . '/revoke')) ?>"
-                      onsubmit="return confirm('Révoquer ce jeton ? Les outils qui l’utilisent cesseront de fonctionner.');">
-                    <?= \App\Core\Csrf::field() ?>
-                    <button type="submit" class="ath-row-action ath-row-action--danger">Révoquer</button>
-                </form>
+        <?php else: ?>
+            <div class="bo-int-status bo-int-status--lock">
+                <?= $icon('key') ?><span>Les jetons pour relier un site vitrine ou un outil externe au calendrier sont proposés avec une formule supérieure. Discord, e-mails et transmissions terrain restent disponibles pour votre communauté.</span>
             </div>
-            <?php endif; ?>
-        </article>
-    <?php endforeach; ?>
+        <?php endif; ?>
+    </section>
+
+    <!-- ── Arma 3 / Overwatch ─────────────────────────────────────── -->
+    <section id="arma-overwatch" class="bo-int-section bo-int-section--compact" data-int-section>
+        <header class="bo-int-section__head">
+            <span class="bo-int-section__icon"><?= $icon('game') ?></span>
+            <div>
+                <h2 class="bo-int-section__title">Arma 3 / Overwatch</h2>
+                <p class="bo-int-section__desc">L’expérience en jeu (image de connexion, méthodes d’accès, fonctions Overwatch) se règle dans la configuration ATAK. Les opérateurs s’identifient avec leur compte Athena : la communauté n’est plus saisie dans le jeu.</p>
+            </div>
+            <a class="bo-int-btn" href="<?= $h(url('back-office/ressources/atak-config')) ?>#overwatch-game-experience">Ouvrir l’expérience en jeu <?= $icon('chevron') ?></a>
+        </header>
+    </section>
+
+    </div>
 </div>
-<?php endif; ?>
-<?php else: ?>
-<div class="ath-card ath-rise" style="padding:18px 20px;">
-    <h2 class="ath-section-title" style="margin-top:0;">Jetons d’accès</h2>
-    <p class="ath-item__meta" style="margin:0;">
-        Les jetons pour relier un site vitrine ou un outil externe au calendrier sont proposés avec une formule supérieure.
-        Les relais Discord ci-dessus restent disponibles pour votre communauté.
-    </p>
 </div>
-<?php endif; ?>
-<script>
-(function () {
-    var hints = {
-        off: 'Rien n’est envoyé sur Discord.',
-        default: 'Publié dans le salon commun.',
-        custom: 'Publié dans un salon à part.'
-    };
-    function syncCard(select) {
-        var card = select.closest('[data-discord-event]');
-        if (!card) return;
-        var custom = card.querySelector('.js-discord-custom');
-        var status = card.querySelector('[data-discord-status]');
-        var mode = select.value;
-        if (custom) {
-            custom.hidden = mode !== 'custom';
-        }
-        if (status && hints[mode]) {
-            status.textContent = hints[mode];
-        }
-    }
-    document.querySelectorAll('.js-discord-mode').forEach(function (select) {
-        syncCard(select);
-        select.addEventListener('change', function () { syncCard(select); });
-    });
-})();
-</script>
+<script src="<?= $h(asset_url('assets/js/back-office-integrations.js')) ?>" defer></script>

@@ -66,7 +66,8 @@ final class AdminAtakOperatorsController
             return $forbidden;
         }
 
-        $roster = $this->buildRoster($tenantId, $request);
+        // Toutes les unités de la carte, hors ligne comprises : sinon un opérateur déconnecté perd son identité sur sa fiche.
+        $roster = $this->buildRoster($tenantId, $request, 'tous');
         $this->realismRepository->repairCorruptIdentitiesForTenant($tenantId);
         $terminals = $this->realismRepository->listTerminals($tenantId);
         $certificates = $this->realismRepository->listCertificates($tenantId);
@@ -83,6 +84,7 @@ final class AdminAtakOperatorsController
                 'label' => $cs . (trim((string) ($row['linked_display_name'] ?? '')) !== ''
                     ? ' — ' . trim((string) $row['linked_display_name'])
                     : ''),
+                'status' => (string) ($row['status'] ?? 'offline'),
             ];
         }
         foreach ($terminals as $terminal) {
@@ -98,6 +100,7 @@ final class AdminAtakOperatorsController
             $choices[$key] = [
                 'call_sign' => $cs,
                 'label' => $cs . ($display !== '' ? ' — ' . $display : ''),
+                'status' => 'offline',
             ];
         }
         ksort($choices, SORT_NATURAL | SORT_FLAG_CASE);
@@ -149,6 +152,63 @@ final class AdminAtakOperatorsController
             : null;
 
         $titleCall = $requested !== '' ? $requested : 'opérateur';
+        $linkedUid = is_array($live) ? (int) ($live['linked_user_id'] ?? 0) : 0;
+        if ($linkedUid < 1 && is_array($opId)) {
+            $linkedUid = (int) ($opId['user_id'] ?? 0);
+        }
+        if ($linkedUid < 1 && is_array($terminal)) {
+            $linkedUid = (int) ($terminal['user_id'] ?? 0);
+        }
+        $roleTimes = [];
+        $playStats = null;
+        if ($linkedUid > 0) {
+            try {
+                $screenTime = new \App\Repositories\AtakScreenTimeRepository();
+                $roleTimes = $screenTime->rolesForUser($tenantId, $linkedUid);
+                $playStats = $screenTime->playStatsForUser($tenantId, $linkedUid);
+            } catch (\Throwable) {
+                $roleTimes = [];
+                $playStats = null;
+            }
+        }
+
+        $portraitUrl = '';
+        if ($linkedUid > 0) {
+            try {
+                $portraitUrl = (string) (\App\Support\OperatorPortraits::forUser($tenantId, $linkedUid) ?? '');
+            } catch (\Throwable) {
+                $portraitUrl = '';
+            }
+        }
+
+        // Derniers événements de l'appareil (même source que la page Journal).
+        $journal = ['rows' => [], 'total' => 0];
+        $terminalUid = is_array($terminal) ? trim((string) ($terminal['terminal_uid'] ?? '')) : '';
+        if ($terminalUid !== '') {
+            try {
+                $logs = new \App\Repositories\AtakDeviceLogRepository();
+                $journal = [
+                    'rows' => $logs->listForTerminal($tenantId, $terminalUid, 6),
+                    'total' => $logs->countForTerminal($tenantId, $terminalUid),
+                ];
+            } catch (\Throwable) {
+                $journal = ['rows' => [], 'total' => 0];
+            }
+        }
+
+        $position = null;
+        foreach ($choiceList as $i => $choice) {
+            if (strtoupper((string) $choice['call_sign']) === $requestedKey) {
+                $position = $i;
+                break;
+            }
+        }
+        $neighbours = [
+            'prev' => $position !== null && $position > 0 ? (string) $choiceList[$position - 1]['call_sign'] : '',
+            'next' => $position !== null && $position < count($choiceList) - 1 ? (string) $choiceList[$position + 1]['call_sign'] : '',
+            'index' => $position !== null ? $position + 1 : 0,
+            'count' => count($choiceList),
+        ];
 
         return Response::view('layout.main', [
             'content' => 'admin.atak_operators.profile',
@@ -158,9 +218,17 @@ final class AdminAtakOperatorsController
             'atakOperatorLive' => $live,
             'atakOperatorTerminal' => $terminal,
             'atakOperatorCertificate' => $certificate,
+            'atakOperatorRoleTimes' => $roleTimes,
             'atakOperatorMilitaryId' => is_array($opId) ? (string) ($opId['military_id'] ?? '') : '',
             'atakOperatorMaps' => $roster['maps'],
             'atakOperatorMapId' => $roster['mapId'],
+            'atakOperatorUserId' => $linkedUid,
+            'atakOperatorPortraitUrl' => $portraitUrl,
+            'atakOperatorPlayStats' => $playStats,
+            'atakOperatorJournal' => $journal,
+            'atakOperatorNeighbours' => $neighbours,
+            'backOfficePageCss' => ['back-office-atak-operator.css'],
+            'boSkipPageHead' => true,
         ]);
     }
 
@@ -193,7 +261,7 @@ final class AdminAtakOperatorsController
             'Steam',
             'Dernière mise à jour',
             'Carte',
-        ], $sep);
+        ], $sep, '"', '\\');
 
         foreach ($bundle['rows'] as $row) {
             fputcsv($fh, [
@@ -209,7 +277,7 @@ final class AdminAtakOperatorsController
                 (string) ($row['steam_id'] ?? ''),
                 (string) ($row['updated_at_label'] ?? ''),
                 (string) ($row['map_label'] ?? ''),
-            ], $sep);
+            ], $sep, '"', '\\');
         }
         rewind($fh);
         $csv = "\xEF\xBB\xBF" . (stream_get_contents($fh) ?: '');
@@ -234,7 +302,7 @@ final class AdminAtakOperatorsController
      *   q: string
      * }
      */
-    private function buildRoster(int $tenantId, Request $request): array
+    private function buildRoster(int $tenantId, Request $request, ?string $forceFilter = null): array
     {
         $mapsRaw = $this->atakMapRepository->getAll();
         $maps = [];
@@ -266,11 +334,11 @@ final class AdminAtakOperatorsController
             }
         }
 
-        $filter = strtolower(trim((string) ($request->query('statut') ?? 'liaison')));
+        $filter = strtolower(trim((string) ($forceFilter ?? $request->query('statut') ?? 'liaison')));
         if (!in_array($filter, ['liaison', 'tous', 'hors_ligne'], true)) {
             $filter = 'liaison';
         }
-        $q = trim((string) ($request->query('q') ?? ''));
+        $q = $forceFilter !== null ? '' : trim((string) ($request->query('q') ?? ''));
 
         $units = $this->atak->getUnits($tenantId, $mapId);
         $callsignUsers = $this->callsignUserIndex($tenantId);

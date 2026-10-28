@@ -10,7 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AdminActionRepository;
 use App\Repositories\AuditLogRepository;
-use App\Repositories\ForumReportRepository;
+use App\Repositories\ContentReportRepository;
 use App\Repositories\ModerationRepository;
 use App\Repositories\SecurityEventRepository;
 use App\Services\Admin\UndoService;
@@ -20,14 +20,14 @@ final class SystemCommandCenterController
     public function __construct(
         private ?AdminActionRepository $adminActions = null,
         private ?AuditLogRepository $auditLogs = null,
-        private ?ForumReportRepository $forumReports = null,
+        private ?ContentReportRepository $contentReports = null,
         private ?ModerationRepository $moderation = null,
         private ?SecurityEventRepository $securityEvents = null,
         private ?UndoService $undoService = null,
     ) {
         $this->adminActions ??= new AdminActionRepository();
         $this->auditLogs ??= new AuditLogRepository();
-        $this->forumReports ??= new ForumReportRepository();
+        $this->contentReports ??= new ContentReportRepository();
         $this->moderation ??= new ModerationRepository();
         $this->securityEvents ??= new SecurityEventRepository();
         $this->undoService ??= new UndoService();
@@ -48,11 +48,11 @@ final class SystemCommandCenterController
             'actor_id' => $actorId,
         ], $page, $perPage);
 
-        $forumPending = 0;
+        $reportsPending = 0;
         try {
-            $forumPending = $this->forumReports->countPendingAllTenants();
+            $reportsPending = $this->contentReports->countPendingAllTenants();
         } catch (\Throwable) {
-            $forumPending = 0;
+            $reportsPending = 0;
         }
 
         $activeSanctions = 0;
@@ -75,7 +75,7 @@ final class SystemCommandCenterController
                 'actor_id' => $actorId,
             ],
             'commandCenterKpis' => [
-                'forum_pending' => $forumPending,
+                'reports_pending' => $reportsPending,
                 'admin_actions_24h' => count($this->auditLogs->recentSystemByActions(['site_role.assigned', 'site_role.revoked', 'moderation.action_applied', 'moderation.action_revoked'], 200)),
                 'security_events_recent' => count($this->securityEvents->recent(20)),
                 'sanctions_recent' => $activeSanctions,

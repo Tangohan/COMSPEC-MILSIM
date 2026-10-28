@@ -111,7 +111,6 @@ final class ModerationOrganizationController
 
         $restrictions = [
             'account_lock' => false,
-            'forum' => 'full_access',
             'messages_blocked' => false,
             'join_blocked' => false,
             'modules_blocked' => $modsClean,

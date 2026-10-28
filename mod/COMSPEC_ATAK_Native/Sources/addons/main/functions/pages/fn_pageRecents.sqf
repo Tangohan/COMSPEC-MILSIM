@@ -10,7 +10,7 @@ private _rows = [["section", "Apps récentes", ["Aucune app ouverte.", format ["
 {
     private _p = _x;
     private _a = (_apps select { (_x get "page") isEqualTo _p }) param [0, createHashMap];
-    _rows pushBack ["person", _a getOrDefault ["icon", ""], format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2</t>", _a getOrDefault ["name", _p], _a getOrDefault ["section", ""]],
+    _rows pushBack ["person", _a getOrDefault ["icon", ""], format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2</t>", _a getOrDefault ["name", _p], _a getOrDefault ["section", ""]],
         [["OUVRIR", compile format ["[{ ['%1'] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;", _p], true],
          ["FERMER", compile format ["private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['history', (_s getOrDefault ['history', []]) - ['%1']]; [{ ['RECENTS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _p]]],
         [0.90, 0.94, 0.91, 1]];

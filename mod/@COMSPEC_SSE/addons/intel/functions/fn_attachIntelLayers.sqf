@@ -1,9 +1,12 @@
 /*
     Attache les couches d'intel progressives + états preuve à une entité déjà générée.
-    [_entity] call comspec_sse_fnc_attachIntelLayers
+    [_entity, _force] call comspec_sse_fnc_attachIntelLayers
+    Idempotent : ne reconstruit pas des couches déjà posées (sauf _force),
+    sinon le niveau d'exploitation et l'identité seraient réinitialisés à chaque avancée.
 */
 params [
-    ["_entity", objNull, [objNull, []]]
+    ["_entity", objNull, [objNull, []]],
+    ["_force", false, [false]]
 ];
 
 if (_entity isEqualType []) then {
@@ -20,6 +23,7 @@ private _seed = [_data, "seed", 0] call comspec_sse_fnc_getPair;
 private _type = [_data, "type", "OBJECT"] call comspec_sse_fnc_getPair;
 private _sections = [_data, "sections", createHashMap] call comspec_sse_fnc_getPair;
 if !(_sections isEqualType createHashMap) then { _sections = createHashMap; };
+if (!_force && {(_sections getOrDefault ["intelLayers", 0]) isEqualType createHashMap}) exitWith { true };
 
 // États preuve / accès
 private _evState = [_seed, _type] call comspec_sse_fnc_applyEvidenceState;
@@ -60,7 +64,7 @@ if (_phone != "") then {
     _detailed pushBack ([format ["Numéro associé : %1", _phone], [
         ["INTEL_VALUE", 75], ["TIME_SENSITIVITY", 50], ["CONFIDENCE", 70], ["RELEVANCE", 80],
         ["confidenceKind", "EXTRACTED"], ["levelRequired", "DETAILED"], ["triage", "EXPLOIT_NOW"],
-        ["tags", ["COMMS", "PERSON"]], ["actionable", true], ["id", format ["SSE-INTEL-PHONE-%1", _seed]]
+        ["tags", ["COMMS", "PERSON"]], ["actionable", true], ["id", format ["SSE-INTEL-PHONE-%1", [_seed, "phone"] call comspec_sse_fnc_idToken]]
     ]] call comspec_sse_fnc_createIntelDatum);
 
     // Entité logique
@@ -86,7 +90,7 @@ if (_docs isEqualType [] && {count _docs > 0}) then {
                 ["INTEL_VALUE", 70], ["TIME_SENSITIVITY", 60], ["CONFIDENCE", 55], ["RELEVANCE", 75],
                 ["confidenceKind", "PROBABLE"], ["levelRequired", "DETAILED"], ["triage", "EXPLOIT_NOW"],
                 ["tags", ["LOCATION"]], ["actionable", true],
-                ["expiresAt", time + 1200]
+                ["ttl", 1200]
             ]] call comspec_sse_fnc_createIntelDatum);
         };
     };
@@ -113,7 +117,7 @@ if (_clusterName != "" && {_alias != ""}) then {
 if ((([_seed, "cache"] call comspec_sse_fnc_hash) mod 100) < 40) then {
     _sections set ["hiddenCaches", [
         createHashMapFromArray [
-            ["id", format ["CACHE-%1", _seed]],
+            ["id", format ["CACHE-%1", [_seed, "cache"] call comspec_sse_fnc_idToken]],
             ["label", "Compartiment dissimulé"],
             ["requires", "DETAILED"],
             ["tool", "COMSPEC_SSE_EvidenceBag"],
@@ -127,13 +131,24 @@ if ((([_seed, "cache"] call comspec_sse_fnc_hash) mod 100) < 40) then {
 if (_type in ["PHONE", "SMARTPHONE", "COMPUTER", "LAPTOP", "PERSON"]) then {
     _sections set ["deletedData", [
         createHashMapFromArray [
-            ["id", format ["DEL-%1", _seed]],
+            ["id", format ["DEL-%1", [_seed, "deleted"] call comspec_sse_fnc_idToken]],
             ["label", "Messages / fichiers marqués supprimés"],
             ["recoverableAt", "DETAILED"],
             ["recovered", false]
         ]
     ]];
 };
+
+// Identifiants stables : dérivés de la graine et du texte (mêmes IDs sur toutes les machines).
+{
+    _x params ["_lvl", "_items"];
+    {
+        if (_x getOrDefault ["autoId", false]) then {
+            _x set ["id", format ["SSE-INTEL-%1", [_seed, format ["%1|%2|%3", _lvl, _forEachIndex, _x getOrDefault ["text", ""]]] call comspec_sse_fnc_idToken]];
+            _x deleteAt "autoId";
+        };
+    } forEach _items;
+} forEach [["TACTICAL", _tactical], ["FIELD", _field], ["DETAILED", _detailed], ["FUSION", _fusion]];
 
 _sections set ["intelLayers", createHashMapFromArray [
     ["TACTICAL", _tactical],
@@ -144,8 +159,8 @@ _sections set ["intelLayers", createHashMapFromArray [
 _sections set ["exploitationLevel", "NONE"];
 _sections set ["evidenceLabel", [_entity] call comspec_sse_fnc_makeEvidenceLabel];
 
-// Personnes inconnues
-if (_type == "PERSON" && {(([_seed, "unk"] call comspec_sse_fnc_hash) mod 100) < 25}) then {
+// Personnes inconnues (jamais sur une identité écrite par le mission maker)
+if (_type == "PERSON" && {!(_entity getVariable ["comspec_sse_identityAuthored", false])} && {(([_seed, "unk"] call comspec_sse_fnc_hash) mod 100) < 25}) then {
     if (_identity isEqualType createHashMap) then {
         private _unkId = format ["UNKNOWN %1 %2", ["MALE", "FEMALE"] select (([_seed, "sex"] call comspec_sse_fnc_hash) mod 2), 10 + (_seed mod 89)];
         _identity set ["name", _unkId];

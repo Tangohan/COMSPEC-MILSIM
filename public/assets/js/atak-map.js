@@ -49,6 +49,7 @@ window.ATAKMap = (function () {
     packetLossPercent: 25,
     showSseOverlay: true,
     showMissionOverlay: true,
+    showBriefingPlan: true,
     showSseLayer_cases: true,
     showSseLayer_pir: true,
     showSseLayer_taskings: true,
@@ -138,6 +139,7 @@ window.ATAKMap = (function () {
       packetLossPercent: Math.round(clampNum(src.packetLossPercent, 5, 80, DISPLAY_PREFS_DEFAULT.packetLossPercent)),
       showSseOverlay: src.showSseOverlay !== false,
       showMissionOverlay: src.showMissionOverlay !== false,
+      showBriefingPlan: src.showBriefingPlan !== false,
       showSseLayer_cases: src.showSseLayer_cases !== false,
       showSseLayer_pir: src.showSseLayer_pir !== false,
       showSseLayer_taskings: src.showSseLayer_taskings !== false,
@@ -219,6 +221,10 @@ window.ATAKMap = (function () {
       return false;
     }
   }
+
+  // Paliers « Donateur Athena » (window.ATAK_CALLSIGN_TO_USER[...].donorTier, App\Support\DonorGamePerk).
+  var DONOR_LABELS = { soutien: 'Soutien', allie: 'Allié', pilier: 'Pilier' };
+  var DONOR_HEART = '<svg viewBox="0 0 24 24" width="9" height="9" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z" fill="currentColor"/></svg>';
 
   function unitBillboardLabel(callSign) {
     var cs = String(callSign || '').trim();
@@ -424,6 +430,8 @@ window.ATAKMap = (function () {
     if (sseOverlay) sseOverlay.checked = !!p.showSseOverlay;
     var missionOverlay = document.getElementById('atak-show-mission-overlay');
     if (missionOverlay) missionOverlay.checked = !!p.showMissionOverlay;
+    var briefingPlan = document.getElementById('atak-show-briefing-plan');
+    if (briefingPlan) briefingPlan.checked = !!p.showBriefingPlan;
     var sseCases = document.getElementById('atak-sse-layer-cases');
     if (sseCases) sseCases.checked = !!p.showSseLayer_cases;
     var ssePir = document.getElementById('atak-sse-layer-pir');
@@ -574,6 +582,7 @@ window.ATAKMap = (function () {
     }
     bindSseToggle('atak-show-sse-overlay', 'showSseOverlay');
     bindSseToggle('atak-show-mission-overlay', 'showMissionOverlay');
+    bindSseToggle('atak-show-briefing-plan', 'showBriefingPlan');
     bindSseToggle('atak-sse-layer-cases', 'showSseLayer_cases');
     bindSseToggle('atak-sse-layer-pir', 'showSseLayer_pir');
     bindSseToggle('atak-sse-layer-taskings', 'showSseLayer_taskings');
@@ -941,6 +950,7 @@ window.ATAKMap = (function () {
     airAssetsById = {};
 
     map.setView(config.center, config.defaultZoom);
+    focusFromQuery();
     L.control.scale({ maxWidth: 160, imperial: false, metric: true, position: 'bottomleft' }).addTo(map);
 
     // Actions popup (suppression marqueur / retrait charge)
@@ -1045,6 +1055,21 @@ window.ATAKMap = (function () {
       window.dispatchEvent(new CustomEvent('atak:mapready', { detail: { map: map, mapId: mapId } }));
     } catch (e) {}
     return map;
+  }
+
+  /** /atak?focus=X,Y (lien « Voir sur la carte » du lecteur d'images) : centre la carte et marque le point. */
+  function focusFromQuery() {
+    var m = null;
+    try {
+      m = /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(new URLSearchParams(window.location.search).get('focus') || '');
+    } catch (e) {}
+    if (!m || !map) return;
+    var a = applyOffset(parseFloat(m[2]), parseFloat(m[1]));
+    var ll = L.latLng(a[0], a[1]);
+    map.setView(ll, Math.max(config.defaultZoom || 3, (config.maxNativeZoom || 6) - 1));
+    L.circleMarker(ll, { radius: 10, color: '#f59e0b', weight: 3, fillColor: '#f59e0b', fillOpacity: 0.2 })
+      .bindTooltip('Position du cliché', { direction: 'top' })
+      .addTo(map);
   }
 
   function getMap() { return map; }
@@ -1554,7 +1579,9 @@ window.ATAKMap = (function () {
           iconAnchor: [5, 5]
         });
     var marker = L.marker(latlng, { icon: icon });
-    marker.bindPopup('<img src="' + fullUrl + '" alt="Intel" style="max-width:280px;max-height:200px;display:block;" />');
+    // Clic sur l'aperçu : lecteur d'images (atak-cams.js, data-atak-cam-full).
+    var safeUrl = String(fullUrl).replace(/"/g, '&quot;');
+    marker.bindPopup('<img src="' + safeUrl + '" alt="Intel" style="max-width:280px;max-height:200px;display:block;cursor:zoom-in;" data-atak-cam-full="' + safeUrl + '" data-recon-id="' + String(id).replace(/[^\w-]/g, '') + '" title="Agrandir" />');
     bindMarkerChrome(marker, 'Photo terrain', []);
     marker._atakIntelId = id;
     marker.addTo(layer);
@@ -2405,6 +2432,7 @@ window.ATAKMap = (function () {
         ? window.ATAK_CALLSIGN_TO_USER[callsignKey]
         : null;
       if (isPhone && (!rev || !rev.identity)) profile = null;
+      var donorTier = profile && DONOR_LABELS[profile.donorTier] ? profile.donorTier : '';
       var headingRounded = u.heading != null && u.heading !== '' ? Math.round(Number(u.heading)) : '';
       if (isPhone && (!rev || !rev.heading)) headingRounded = '';
       var markerPriority = getUnitMarkerPriority();
@@ -2435,7 +2463,8 @@ window.ATAKMap = (function () {
         isPhone ? JSON.stringify(rev || {}) : '',
         inclinedView() ? '3d' : '2d',
         tenantMarkerUrl(unitKindFromExtra(extra)),
-        lastKnown ? 'lk' : ''
+        lastKnown ? 'lk' : '',
+        donorTier
       ].join('|');
       var posSig = Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
       if (existing && existing._atakIconSig === iconSig && existing._atakPosSig === posSig) {
@@ -2509,6 +2538,12 @@ window.ATAKMap = (function () {
         if (prefs.showFtFrame && safeFt && prefs.styleMode === 'nato' && icon && icon.options) {
           icon.options.className = (icon.options.className || '') + ' atak-ft-marker';
           icon.options.html = '<div class="atak-ft-marker-wrap" style="--ft-color:' + safeFt + '">' + (icon.options.html || '') + '</div>';
+        }
+        // Donateur Athena : anneau au palier et petit cœur (atak-donor.css).
+        if (donorTier && icon && icon.options) {
+          icon.options.className = (icon.options.className || '') + ' atak-donor atak-donor--' + donorTier;
+          icon.options.html = (icon.options.html || '') +
+            '<span class="atak-donor-badge" title="Donateur Athena · ' + DONOR_LABELS[donorTier] + '" aria-label="Donateur Athena">' + DONOR_HEART + '</span>';
         }
       }
       if (!existing) {

@@ -12,6 +12,7 @@ switch (_key) do {
         private _n = (count (missionNamespace getVariable ["COMSPEC_DangerZones", []])) + (count (missionNamespace getVariable ["COMSPEC_RoleplayZones", []]));
         ["INFO", if (_on) then { [format ["Zones tactiques affichées (%1)", _n], "Zones tactiques affichées : aucune zone reçue d'Athena pour cette carte"] select (_n isEqualTo 0) } else { format ["Zones tactiques masquées (%1)", _n] }, 3, 20] call comspec_atak_native_fnc_notify;
     };
+    case "SEARCH": { _s set ["mapToolsOpen", false]; ["open"] call comspec_atak_native_fnc_mapSearch; };
     case "SIGINT": { profileNamespace setVariable ["COMSPEC_ATAK_SigintLayer", !(profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true])]; [] spawn comspec_atak_native_fnc_sigintPoll; };
     case "GRID": {
         private _d = profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6];
@@ -19,7 +20,7 @@ switch (_key) do {
     };
     case "CLEAR": {
         ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
-        { _s set [_x, []]; } forEach ["mapMeasure", "mapHouses", "mapHeights", "mapFlat", "mapLos"];
+        { _s set [_x, []]; } forEach ["mapMeasure", "mapHouses", "mapHeights", "mapFlat", "mapLos", "jtacTool"];
     };
     default {
         private _cur = _s getOrDefault ["mapMode", "SELECT"];

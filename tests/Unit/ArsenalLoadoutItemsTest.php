@@ -57,6 +57,69 @@ final class ArsenalLoadoutItemsTest extends TestCase
         self::assertSame([], ArsenalLoadoutItems::grouped('not-an-array'));
     }
 
+    public function testSqfTextAndAceExtendedInfoAreRead(): void
+    {
+        $inner = '[["arifle_MX_F","","","",["30Rnd_65x39_caseless_mag",30],[],""],[],[],["U_B_CombatUniform_mcam",[]],[],[],"H_HelmetB","",[],["ItemMap","","","","",""]]';
+        // `str` SQF : infos étendues ACE (true), guillemets doublés dans une chaîne — pas du JSON.
+        $sqf = '[' . $inner . ',[["ace_earplugs",true],["ace_insignia","Say ""hi"""]]]';
+        $titles = array_column(ArsenalLoadoutItems::grouped($sqf), 'title');
+        self::assertContains('Arme', $titles);
+        self::assertContains('Casque', $titles);
+        // Export ACE « Mes équipements » : [nom, tenue].
+        self::assertContains('Tenue', array_column(ArsenalLoadoutItems::grouped('["Kit A",' . $inner . ']'), 'title'));
+    }
+
+    public function testPayloadWithQuotesDoubledByCallExtensionIsRead(): void
+    {
+        // SyncWardrobe : Arma passe l’argument en str, chaque guillemet du str du loadout arrive doublé.
+        $inner = '[["arifle_MX_F","","","",["30Rnd_65x39_caseless_mag",30],[],""],[],[],["U_B_CombatUniform_mcam",[]],[],[],"H_HelmetB","",[],["ItemMap","","","","",""]]';
+        $sent = '[' . $inner . ',[["ace_insignia","Say ""hi"""]]]';
+        $stored = str_replace('"', '""', $sent);
+
+        $titles = array_column(ArsenalLoadoutItems::grouped($stored), 'title');
+        self::assertContains('Arme', $titles);
+        self::assertContains('Casque', $titles);
+        self::assertContains('helmet', ArsenalLoadoutItems::presentKinds($stored));
+        self::assertSame($inner, ArsenalLoadoutItems::aceExport($stored));
+        self::assertSame($inner, ArsenalLoadoutItems::aceExport('"' . $stored . '"'));
+        self::assertSame(['Say "hi"'], array_slice(ArsenalLoadoutItems::decode($stored)[1][0] ?? [], 1));
+    }
+
+    public function testUnknownShapeStillListsItems(): void
+    {
+        $sections = ArsenalLoadoutItems::grouped('[["arifle_MX_F","H_HelmetB"]]');
+        self::assertSame('Contenu', $sections[0]['title'] ?? null);
+        self::assertCount(2, $sections[0]['items']);
+    }
+
+    public function testAceExportIsSqfForTheArsenal(): void
+    {
+        $inner = '[["arifle_MX_F","","","",["30Rnd_65x39_caseless_mag",30],[],""],[],[],["U_B_CombatUniform_mcam",[]],[],[],"H_HelmetB","",[],["ItemMap","","","","",""]]';
+        self::assertSame($inner, ArsenalLoadoutItems::aceExport('[' . $inner . ',2]'));
+        self::assertNull(ArsenalLoadoutItems::aceExport('pas une tenue'));
+
+        $list = ArsenalLoadoutItems::aceExportList([
+            ['name' => 'Kit "A"', 'payload' => $inner],
+            ['name' => 'Kit "A"', 'payload' => $inner],
+            ['name' => 'Illisible', 'payload' => 'x'],
+        ]);
+        self::assertStringStartsWith('[["Kit ""A""",[["arifle_MX_F"', $list);
+        self::assertStringContainsString('["Kit ""A"" (2)",', $list);
+        self::assertStringNotContainsString('Illisible', $list);
+        self::assertSame('[1.5,0,-2,"",false]', ArsenalLoadoutItems::sqf([1.5, 0.0, -2, null, false]));
+    }
+
+    public function testPreviewPicksMainPieces(): void
+    {
+        $inner = '[["arifle_MX_F","","","",[],[],""],[],["hgun_P07_F","","","",[],[],""],["U_B_CombatUniform_mcam",[]],["V_PlateCarrier1_rgr",[]],["B_AssaultPack_rgr",[]],"H_HelmetB","",[],["","","","","",""]]';
+        self::assertSame(
+            ['arifle_MX_F', 'U_B_CombatUniform_mcam', 'V_PlateCarrier1_rgr', 'H_HelmetB', 'B_AssaultPack_rgr'],
+            ArsenalLoadoutItems::previewClasses($inner),
+        );
+        $items = ArsenalLoadoutItems::previewItems(['arifle_MX_F'], ['arifle_mx_f' => ['name' => 'MX 6,5 mm']]);
+        self::assertSame('MX 6,5 mm', $items[0]['name']);
+    }
+
     public function testDisplayNameDropsConfigNoise(): void
     {
         self::assertSame('MX GL', ArsenalLoadoutItems::displayName('arifle_MX_GL_F'));

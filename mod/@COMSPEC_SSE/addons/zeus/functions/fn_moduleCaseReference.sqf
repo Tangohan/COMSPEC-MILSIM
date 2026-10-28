@@ -3,11 +3,10 @@
     Fixe la référence de dossier utilisée pour les transmissions (Athena).
     Même rôle que « Dossier SSE actif » d'Overwatch, pour le pack autonome.
 */
-params [
-    ["_logic", objNull, [objNull]],
-    ["_units", [], [[]]],
-    ["_activated", true, [true]]
-];
+// Aussi appelé par l'ancien module Eden « Dossier SSE actif » (is3DEN = 1) : ["init", [logic, activé, Zeus]].
+private _args = _this call comspec_sse_fnc_moduleArgs;
+if (_args isEqualTo []) exitWith { true };
+_args params ["_logic", "_units", "_activated"];
 
 private _ctx = [_logic, _units, _activated] call comspec_sse_fnc_moduleContext;
 if !(_ctx get "run") exitWith { true };
@@ -16,7 +15,7 @@ private _apply = {
     params ["_ref"];
     _ref = toUpper (trim _ref);
     // Diffusé à tous (et aux joueurs qui rejoignent ensuite).
-    [_ref] remoteExecCall ["comspec_sse_fnc_setCaseReference", 0, "comspec_sse_caseReferenceJIP"];
+    [_ref] remoteExecCall ["comspec_sse_fnc_setCaseReference", 2];
     if (_ref isEqualTo "") then {
         ["Référence de dossier effacée : les fiches partent sans dossier.", "warn"] call comspec_sse_fnc_zeusNotify;
     } else {

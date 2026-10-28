@@ -5,6 +5,7 @@
         Évite de spammer le portail / le scheduler tant que la liaison n’est pas prête.
 */
 if (!hasInterface) exitWith {};
+if (([] call comspec_overwatch_connect_fnc_athenaMode) isNotEqualTo "on") exitWith {};
 if !([] call comspec_overwatch_connect_fnc_canStartSync) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false]) exitWith {};
 
@@ -44,6 +45,13 @@ if (isNull player || {!([player] call comspec_overwatch_connect_fnc_hasTerminal)
 
 missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
 
+// SyncLoopsStarted peut être remis à false (XEH_postInit, relance canal) alors que les PFH tournent déjà :
+// un 2e passage empilait une seconde série complète de PFH / boucles (CPU + appels Athena doublés).
+if (!isNil "COMSPEC_SyncLoopsInstalled") exitWith {
+    ["INFO", "Boot", "Boucles de sync déjà installées — pas de doublon"] call comspec_overwatch_connect_fnc_log;
+};
+COMSPEC_SyncLoopsInstalled = true;
+
 // Faction settings / fiche : différés — HTTP sync au même frame que l’open ATAK = gel.
 [{
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
@@ -57,6 +65,11 @@ missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
 }, [], 5] call CBA_fnc_waitAndExecute;
 [] call comspec_overwatch_connect_fnc_pollModModules;
 [] call comspec_overwatch_connect_fnc_pollExperience;
+[] call comspec_overwatch_connect_fnc_pollDataFlows;
+// Données remontées choisies par la communauté : relues toutes les 30 s (elle peut changer d'avis en cours de partie).
+if (isNil "COMSPEC_DataFlowsPfh") then {
+    COMSPEC_DataFlowsPfh = [{ [] call comspec_overwatch_connect_fnc_pollDataFlows; }, 30] call CBA_fnc_addPerFrameHandler;
+};
 // Les GET d’Athena sont asynchrones (cache) : relancer vite après le premier tick vide.
 0 spawn {
     private _i = 0;
@@ -66,6 +79,7 @@ missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
         [] call comspec_overwatch_connect_fnc_pollModModules;
         [] call comspec_overwatch_connect_fnc_pollExperience;
         [] call comspec_overwatch_connect_fnc_pollRoleplayConfig;
+        [] call comspec_overwatch_connect_fnc_pollDataFlows;
     };
 };
 0 spawn {
@@ -118,10 +132,16 @@ if (isNil "COMSPEC_WebNotifMirrorPfh") then {
     }, 10] call CBA_fnc_addPerFrameHandler;
 };
 
+// SyncProfile : toutes les 5 min (au lieu de 60 s) et hors du PFH — l'appel HTTP figeait le jeu (extAwait en spawn).
 [{
     if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {};
-    [] call comspec_overwatch_connect_fnc_syncProfile;
-}, 60] call CBA_fnc_addPerFrameHandler;
+    if (missionNamespace getVariable ["COMSPEC_SyncProfileBusy", false]) exitWith {};
+    missionNamespace setVariable ["COMSPEC_SyncProfileBusy", true, false];
+    0 spawn {
+        [] call comspec_overwatch_connect_fnc_syncProfile;
+        missionNamespace setVariable ["COMSPEC_SyncProfileBusy", false, false];
+    };
+}, 300] call CBA_fnc_addPerFrameHandler;
 
 if (isNil "COMSPEC_MapMarkerEHs") then {
     private _resyncSoon = {
@@ -136,7 +156,7 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
                 params ["_m"];
                 if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
                 if ([_m] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
-                if (!(_m in allMapMarkers)) exitWith {};
+                if ((getMarkerColor _m) isEqualTo "") exitWith {};
                 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
                 if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
                 private _forceLater = [_m] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
@@ -164,6 +184,10 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
                     false
                 ];
             };
+            // Marqueur joueur posé par un autre client : c'est son poste qui le relaie (sinon N envois).
+            // Tout autre marqueur global non local est déjà relayé par le hub serveur (sinon N+1 envois).
+            if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
+            if (_local isNotEqualTo true && {((toLower _marker) find "_defined") >= 0}) exitWith {};
             [_marker] call (missionNamespace getVariable ["COMSPEC_MarkerResyncSoon", {}]);
         }],
         addMissionEventHandler ["MarkerUpdated", {
@@ -174,6 +198,10 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
             if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
             private _force = [_marker] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
+            // Dernier paramètre = changement local : seul le poste auteur relaie un marqueur joueur (_USER_DEFINED, _DEFINED #, cTab).
+            private _local = _this param [(count _this) - 1, true];
+            if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
+            if (_local isEqualTo false && {((toLower _marker) find "_defined") >= 0}) exitWith {};
             [_marker, false, _force] call comspec_overwatch_connect_fnc_syncMapMarker;
         }],
         addMissionEventHandler ["MarkerDeleted", {
@@ -184,6 +212,10 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
             if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
             private _force = [_marker] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
+            // Dernier paramètre = changement local : seul le poste auteur relaie un marqueur joueur (_USER_DEFINED, _DEFINED #, cTab).
+            private _local = _this param [(count _this) - 1, true];
+            if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
+            if (_local isEqualTo false && {((toLower _marker) find "_defined") >= 0}) exitWith {};
             [_marker, true, _force] call comspec_overwatch_connect_fnc_syncMapMarker;
         }]
     ];
@@ -250,34 +282,42 @@ private _fnc_addPoll = {
             if (_callsign isEqualTo "") exitWith {};
             private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
             if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
-            private _raw = ["COMSPECExtension" callExtension ["GetCASForCallsign", [_callsign, _mapId]]] call comspec_overwatch_connect_fnc_extResult;
-            if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
-            private _payload = _raw select [3, count _raw - 3];
-            private _trimmed = trim _payload;
-            if (
-                _trimmed isEqualTo ""
-                || {_trimmed isEqualTo "[]"}
-                || {_trimmed isEqualTo "null"}
-                || {_trimmed isEqualTo "{}"}
-            ) exitWith {
-                private _lastEmpty = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
-                if (_payload != _lastEmpty) then {
-                    missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
-                    missionNamespace setVariable ["COMSPEC_CAS_Raw", ""];
-                    missionNamespace setVariable ["COMSPEC_CurrentCASId", ""];
-                    missionNamespace setVariable ["COMSPEC_LastCASOpenedId", ""];
-                };
-            };
-            private _lastPayload = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
-            if (_payload != "" && {_payload != _lastPayload}) then {
-                missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
-                missionNamespace setVariable ["COMSPEC_CAS_Raw", _payload];
-                private _prevId = missionNamespace getVariable ["COMSPEC_LastCASOpenedId", ""];
-                [] call comspec_overwatch_connect_fnc_receiveCASRequest;
-                private _newId = missionNamespace getVariable ["COMSPEC_CurrentCASId", ""];
-                if (_newId != "" && {_newId != _prevId}) then {
-                    ["COMSPEC_Info", ["Nouvelle demande d’appui aérien reçue"]] call comspec_overwatch_connect_fnc_showNotification;
-                    ["[CAS] Nouvelle demande d’appui aérien reçue.", "cas"] call comspec_overwatch_connect_fnc_appendLinkLog;
+            // GET CAS hors du thread de jeu : spawn + extAwait, un seul en vol ; traitement non planifié au retour (isNil).
+            if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_CasPollBusyAt", -1e9])) < 60) exitWith {};
+            missionNamespace setVariable ["COMSPEC_CasPollBusyAt", diag_tickTime, false];
+            [_callsign, _mapId] spawn {
+                private _raw = [["COMSPECExtension", "GetCASForCallsign", _this] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
+                missionNamespace setVariable ["COMSPEC_CasPollBusyAt", -1e9, false];
+                isNil {
+                    if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
+                    private _payload = _raw select [3, count _raw - 3];
+                    private _trimmed = trim _payload;
+                    if (
+                        _trimmed isEqualTo ""
+                        || {_trimmed isEqualTo "[]"}
+                        || {_trimmed isEqualTo "null"}
+                        || {_trimmed isEqualTo "{}"}
+                    ) exitWith {
+                        private _lastEmpty = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
+                        if (_payload != _lastEmpty) then {
+                            missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
+                            missionNamespace setVariable ["COMSPEC_CAS_Raw", ""];
+                            missionNamespace setVariable ["COMSPEC_CurrentCASId", ""];
+                            missionNamespace setVariable ["COMSPEC_LastCASOpenedId", ""];
+                        };
+                    };
+                    private _lastPayload = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
+                    if (_payload != "" && {_payload != _lastPayload}) then {
+                        missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
+                        missionNamespace setVariable ["COMSPEC_CAS_Raw", _payload];
+                        private _prevId = missionNamespace getVariable ["COMSPEC_LastCASOpenedId", ""];
+                        [] call comspec_overwatch_connect_fnc_receiveCASRequest;
+                        private _newId = missionNamespace getVariable ["COMSPEC_CurrentCASId", ""];
+                        if (_newId != "" && {_newId != _prevId}) then {
+                            ["COMSPEC_Info", ["Nouvelle demande d’appui aérien reçue"]] call comspec_overwatch_connect_fnc_showNotification;
+                            ["[CAS] Nouvelle demande d’appui aérien reçue.", "cas"] call comspec_overwatch_connect_fnc_appendLinkLog;
+                        };
+                    };
                 };
             };
         }, [], "casPoll"] call comspec_overwatch_connect_fnc_profileWrap;
@@ -415,7 +455,10 @@ private _fnc_addPoll = {
         "FIRETEAM",
         _target
     ];
-    missionNamespace setVariable ["COMSPEC_OrderPropagationLog", _chainLog, true];
+    // Journal local (lu nulle part ailleurs) : la diffusion réseau du tableau entier à chaque ordre était inutile ;
+    // borné à 100 entrées pour ne pas grossir toute la partie.
+    if (count _chainLog > 100) then { _chainLog deleteRange [0, (count _chainLog) - 100]; };
+    missionNamespace setVariable ["COMSPEC_OrderPropagationLog", _chainLog, false];
 
     [_order] call comspec_overwatch_connect_fnc_receiveOrder;
 }] call comspec_overwatch_connect_fnc_registerEventHandler;
@@ -430,16 +473,35 @@ private _fnc_addPoll = {
     if (!(_orders isEqualType [])) exitWith {};
     private _seen = missionNamespace getVariable ["COMSPEC_OrdersSeen", []];
     if (!(_seen isEqualType [])) then { _seen = []; };
-    _seen = _seen apply { trim (str _x) };
+    // Ids déjà en chaîne : str y ajoutait des guillemets (aucun id ne correspondait).
+    private _fnc_oidText = { params [["_v", ""]]; if (_v isEqualType "") then { trim _v } else { trim (str _v) } };
+    _seen = _seen apply { [_x] call _fnc_oidText };
+    // Ordres écartés par receiveOrder (pas pour ce joueur, émis par lui) : sans cette liste, le même ordre
+    // était repris toutes les 5 s et bloquait ceux placés derrière lui.
+    // id -> diag_tickTime : un ordre écarté est repris après 45 s (PHONE_GEOLOC en échec, ordre qui concerne
+    // le joueur une fois l'indicatif / le groupe synchronisé) au lieu d'être écarté pour toute la partie.
+    private _skip = missionNamespace getVariable ["COMSPEC_OrdersFallbackSkip", createHashMap];
+    if (!(_skip isEqualType createHashMap)) then { _skip = createHashMap; };
+    private _nowSkip = diag_tickTime;
+    {
+        if ((_nowSkip - (_skip get _x)) >= 45) then { _skip deleteAt _x; };
+    } forEach (keys _skip);
     private _pending = _orders select {
         (_x isEqualType createHashMap)
         && {
-            private _oid = trim (str (_x getOrDefault ["id", ""]));
-            _oid isNotEqualTo "" && {!(_oid in _seen)}
+            private _oid = [_x getOrDefault ["id", ""]] call _fnc_oidText;
+            _oid isNotEqualTo "" && {!(_oid in _seen)} && {!(_oid in _skip)}
         }
     };
     if ((count _pending) < 1) exitWith {};
-    [_pending select 0] call comspec_overwatch_connect_fnc_receiveOrder;
+    private _next = _pending select 0;
+    private _nextId = [_next getOrDefault ["id", ""]] call _fnc_oidText;
+    [_next] call comspec_overwatch_connect_fnc_receiveOrder;
+    private _seenAfter = (missionNamespace getVariable ["COMSPEC_OrdersSeen", []]) apply { [_x] call _fnc_oidText };
+    if (!(_nextId in _seenAfter)) then {
+        _skip set [_nextId, _nowSkip];
+    };
+    missionNamespace setVariable ["COMSPEC_OrdersFallbackSkip", _skip, false];
 }, 5, []] call CBA_fnc_addPerFrameHandler;
 
 [{

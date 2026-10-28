@@ -51,8 +51,14 @@ foreach (array_keys($byModule) as $k) {
         </div>
     </div>
 
-    <form method="post" action="<?= url('back-office/roles/' . $rid . '/permissions') ?>" class="space-y-8">
+    <form method="post" action="<?= url('back-office/roles/' . $rid . '/permissions') ?>" class="space-y-8" data-perm-form>
         <?= \App\Core\Csrf::field() ?>
+        <?php if ($allPermissions !== []): ?>
+        <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm">
+            <input type="checkbox" data-perm-all class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+            <span>Tout cocher (puis décochez ce qui ne convient pas)</span>
+        </label>
+        <?php endif; ?>
         <?php foreach ($sortedKeys as $moduleKey):
             $perms = $byModule[$moduleKey] ?? [];
             if ($perms === []) {
@@ -60,8 +66,13 @@ foreach (array_keys($byModule) as $k) {
             }
             $sectionTitle = $moduleLabels[$moduleKey] ?? ($moduleKey === 'autre' ? 'Autres' : ucfirst(str_replace('_', ' ', $moduleKey)));
             ?>
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-500 mb-4"><?= htmlspecialchars($sectionTitle) ?></h2>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" data-perm-scope>
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-500 mb-4">
+                <label class="inline-flex cursor-pointer items-center gap-2">
+                    <input type="checkbox" data-perm-group aria-label="Tout cocher dans cette section" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                    <span><?= htmlspecialchars($sectionTitle) ?></span>
+                </label>
+            </h2>
             <ul class="grid gap-3 sm:grid-cols-1 md:grid-cols-2">
                 <?php foreach ($perms as $p):
                     $pid = (int) $p['id'];
@@ -91,3 +102,4 @@ foreach (array_keys($byModule) as $k) {
         </div>
     </form>
 </div>
+<script src="<?= htmlspecialchars(asset_url('assets/js/perm-check-all.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>

@@ -1,12 +1,27 @@
 /*
     Draw3D — alliés, marqueurs, véhicules, contours, itinéraires, bâtiment marqué.
     Pastilles : mode world3d (drawIcon3D) ou screen2d (HUD écran anti-chevauchement).
+
+    Params: [_buildCache]
+      true  — PFH 0,12 s (fn_ecotiInit) : état actif + listes candidates mises en cache.
+      false — Draw3D : dessine depuis le cache (positions visuelles recalculées à chaque image).
+    Avant : allUnits / nearestObjects / allMapMarkers + lectures config à CHAQUE image (chute de FPS),
+    et test « actif » + masquage HUD à chaque image même JVN coupée.
 */
-if (!([] call comspec_overwatch_connect_fnc_ecotiIsActive)) exitWith {
-    [] call comspec_overwatch_connect_fnc_ecotiHudHide;
+params [["_buildCache", false, [false]]];
+
+// PFH avec affichage coupé (cas normal) : sortir avant le thème / icône (config, fileExists, A3TI) recalculés à 8 Hz.
+if (_buildCache && {!([] call comspec_overwatch_connect_fnc_ecotiIsActive)}) exitWith {
+    missionNamespace setVariable ["COMSPEC_EcotiDrawActive", false, false];
 };
 
-missionNamespace setVariable ["COMSPEC_EcotiBadgeQueue", [], false];
+if (!_buildCache && {!(missionNamespace getVariable ["COMSPEC_EcotiDrawActive", false])}) exitWith {
+    // Inactif : masquer le HUD une seule fois (à la transition), plus aucun travail par image.
+    if (missionNamespace getVariable ["COMSPEC_EcotiHudShownByDraw", true]) then {
+        missionNamespace setVariable ["COMSPEC_EcotiHudShownByDraw", false, false];
+        [] call comspec_overwatch_connect_fnc_ecotiHudHide;
+    };
+};
 
 private _camPos = positionCameraToWorld [0, 0, 0];
 private _maxDist = missionNamespace getVariable ["comspec_overwatch_ecoti_max_dist", 1200];
@@ -17,21 +32,34 @@ private _showVehicles = missionNamespace getVariable ["comspec_overwatch_ecoti_s
 private _showOutline = missionNamespace getVariable ["comspec_overwatch_ecoti_show_outline", true];
 private _showRoute = missionNamespace getVariable ["comspec_overwatch_ecoti_show_route", true];
 private _showUnitOutline = missionNamespace getVariable ["comspec_overwatch_ecoti_show_unit_outline", true];
-private _icon = [] call comspec_overwatch_connect_fnc_ecotiIconPath;
-private _drawn = 0;
-private _theme = [] call comspec_overwatch_connect_fnc_ecotiThemeColors;
+private _cache = missionNamespace getVariable ["COMSPEC_EcotiDrawCache", createHashMap];
 private _fusionOn = missionNamespace getVariable ["comspec_overwatch_ecoti_fusion", true];
 if (!(_fusionOn isEqualType true)) then { _fusionOn = true; };
-private _colAllies = _theme getOrDefault ["allies", [0.75, 1, 0.95, 1]];
-private _colVeh = _theme getOrDefault ["vehicles", [0.7, 0.95, 1, 1]];
-private _colOutline = _theme getOrDefault ["outline", [1, 1, 0.7, 0.95]];
-private _colUnit = _theme getOrDefault ["unit", [0.8, 1, 0.95, 0.98]];
-private _colBldg = _theme getOrDefault ["building", [0.65, 1, 0.9, 0.98]];
-if (_fusionOn && {!([] call comspec_overwatch_connect_fnc_ecotiA3tiPresent)}) then {
-    private _hot = _theme getOrDefault ["thermal", [1, 0.96, 0.86, 0.95]];
-    _colOutline = [_hot select 0, _hot select 1, _hot select 2, 0.96];
-    _colBldg = [_hot select 0, _hot select 1, _hot select 2, 0.98];
+// Icône (fileExists) + thème (config) : recalculés par le PFH, plus à chaque image.
+if (_buildCache || {!("icon" in _cache)}) then {
+    private _theme = [] call comspec_overwatch_connect_fnc_ecotiThemeColors;
+    private _colOutlineC = _theme getOrDefault ["outline", [1, 1, 0.7, 0.95]];
+    private _colBldgC = _theme getOrDefault ["building", [0.65, 1, 0.9, 0.98]];
+    if (_fusionOn && {!([] call comspec_overwatch_connect_fnc_ecotiA3tiPresent)}) then {
+        private _hot = _theme getOrDefault ["thermal", [1, 0.96, 0.86, 0.95]];
+        _colOutlineC = [_hot select 0, _hot select 1, _hot select 2, 0.96];
+        _colBldgC = [_hot select 0, _hot select 1, _hot select 2, 0.98];
+    };
+    _cache set ["icon", [] call comspec_overwatch_connect_fnc_ecotiIconPath];
+    _cache set ["colAllies", _theme getOrDefault ["allies", [0.75, 1, 0.95, 1]]];
+    _cache set ["colVeh", _theme getOrDefault ["vehicles", [0.7, 0.95, 1, 1]]];
+    _cache set ["colOutline", _colOutlineC];
+    _cache set ["colUnit", _theme getOrDefault ["unit", [0.8, 1, 0.95, 0.98]]];
+    _cache set ["colBldg", _colBldgC];
+    missionNamespace setVariable ["COMSPEC_EcotiDrawCache", _cache, false];
 };
+private _icon = _cache get "icon";
+private _drawn = 0;
+private _colAllies = _cache get "colAllies";
+private _colVeh = _cache get "colVeh";
+private _colOutline = _cache get "colOutline";
+private _colUnit = _cache get "colUnit";
+private _colBldg = _cache get "colBldg";
 
 private _bldg = missionNamespace getVariable ["COMSPEC_EcotiMarkedBuilding", objNull];
 private _bldgMk = missionNamespace getVariable ["COMSPEC_EcotiBuildingMarker", ""];
@@ -112,14 +140,88 @@ private _fnc_drawSorted = {
     } forEach _entries;
 };
 
+// --- PFH : scans lourds (unités, véhicules, marqueurs + config) une fois / 0,12 s ---
+if (_buildCache) exitWith {
+    // État actif déjà vérifié en tête (sortie si coupé).
+    missionNamespace setVariable ["COMSPEC_EcotiDrawActive", true, false];
+    _cache set ["units", if (_showAllies) then {
+        allUnits select {
+            alive _x
+            && {_x != player}
+            && {side group _x == side group player}
+            && {(_x distance _camPos) <= (_maxDist min 800)}
+        }
+    } else { [] }];
+    private _vehList = [];
+    if (_showVehicles) then {
+        {
+            private _dn = getText (configFile >> "CfgVehicles" >> typeOf _x >> "displayName");
+            if (_dn isEqualTo "") then { _dn = typeOf _x };
+            _vehList pushBack [_x, _dn];
+        } forEach ((nearestObjects [_camPos, ["LandVehicle", "Air", "Ship"], _maxDist]) select {
+            alive _x
+            && {count (crew _x) > 0}
+            && {side group _x == side group player || {side _x == side group player}}
+        });
+    };
+    _cache set ["vehicles", _vehList];
+    private _mkEntries = [];
+    if (_showMarkers) then {
+        {
+            private _m = _x;
+            if (_m isEqualTo "") then { continue };
+            // Marqueur ECOTI du bâtiment déjà géré à part (silhouette + un libellé).
+            if (_bldgMk isNotEqualTo "" && {_m isEqualTo _bldgMk}) then { continue };
+            if (((toLower _m) find "comspec_ecoti_bldg_") == 0) then { continue };
+
+            private _alpha = markerAlpha _m;
+            if (_alpha <= 0.05) then { continue };
+            private _pos = markerPos _m;
+            if (!(_pos isEqualType []) || {(count _pos) < 2}) then { continue };
+            if ((_pos select 0) == 0 && {(_pos select 1) == 0}) then { continue };
+            if ((_camPos distance2D _pos) > _maxDist) then { continue };
+
+            // Déjà couvert par le bâtiment désigné.
+            if ((count _bldgPos) >= 2 && {(_pos distance2D _bldgPos) <= 18}) then { continue };
+
+            private _z = _pos select 2;
+            if (_z < 0.5) then {
+                _pos = [_pos select 0, _pos select 1, (getTerrainHeightASL [_pos select 0, _pos select 1]) + 2];
+                _pos = ASLToAGL _pos;
+            };
+            private _dist = _camPos distance _pos;
+            private _txt = markerText _m;
+            if (_txt isEqualTo "") then { _txt = markerType _m };
+            private _col = getArray (configFile >> "CfgMarkerColors" >> markerColor _m >> "color");
+            _col = [_col] call comspec_overwatch_connect_fnc_ecotiNormalizeColor;
+            private _lum = ((_col select 0) + (_col select 1) + (_col select 2)) / 3;
+            if (_lum < 0.45) then {
+                _col = [
+                    ((_col select 0) + 0.35) min 1,
+                    ((_col select 1) + 0.35) min 1,
+                    ((_col select 2) + 0.35) min 1,
+                    1
+                ];
+            } else {
+                _col set [3, 1];
+            };
+            private _mIcon = getText (configFile >> "CfgMarkers" >> markerType _m >> "icon");
+            if (_mIcon isEqualTo "") then { _mIcon = _icon };
+            _mkEntries pushBack [_pos, _mIcon, _col, _txt, _dist, 0.48];
+        } forEach allMapMarkers;
+        _mkEntries = [_mkEntries, 16] call _fnc_dedupSpatial;
+    };
+    _cache set ["markers", _mkEntries];
+    missionNamespace setVariable ["COMSPEC_EcotiDrawCache", _cache, false];
+};
+
+// --- Draw3D : dessin depuis le cache ---
+missionNamespace setVariable ["COMSPEC_EcotiHudShownByDraw", true, false];
+missionNamespace setVariable ["COMSPEC_EcotiBadgeQueue", [], false];
+
 if (_showAllies) then {
     private _entries = [];
-    private _units = allUnits select {
-        alive _x
-        && {_x != player}
-        && {side group _x == side group player}
-        && {(_x distance _camPos) <= (_maxDist min 800)}
-    };
+    private _units = (_cache getOrDefault ["units", []]) select { alive _x };
     {
         private _pos = _x modelToWorldVisual [0, 0, 1.7];
         if (!([_pos] call _fnc_screenOk)) then { continue };
@@ -139,74 +241,31 @@ if (_showAllies) then {
 
 if (_showVehicles && {_drawn < _maxIcons}) then {
     private _entries = [];
-    private _vehs = (nearestObjects [_camPos, ["LandVehicle", "Air", "Ship"], _maxDist]) select {
-        alive _x
-        && {count (crew _x) > 0}
-        && {side group _x == side group player || {side _x == side group player}}
-    };
+    // Véhicules + noms (config) listés par le PFH ; ici position visuelle / écran seulement.
     {
-        private _pos = getPosASLVisual _x;
+        _x params ["_veh", "_dn"];
+        if (!alive _veh) then { continue };
+        private _pos = getPosASLVisual _veh;
         _pos = ASLToAGL _pos;
         _pos set [2, (_pos select 2) + 2];
         if (!([_pos] call _fnc_screenOk)) then { continue };
         private _dist = _camPos distance _pos;
-        private _dn = getText (configFile >> "CfgVehicles" >> typeOf _x >> "displayName");
-        if (_dn isEqualTo "") then { _dn = typeOf _x };
-        if (_fusionOn && {isEngineOn _x}) then {
+        if (_fusionOn && {isEngineOn _veh}) then {
             [_pos, _dist, "vehicle"] call comspec_overwatch_connect_fnc_ecotiDrawFusion;
         };
         _entries pushBack [_pos, "\a3\ui_f\data\map\markers\nato\b_armor.paa", _colVeh, _dn, _dist, 0.52];
-    } forEach _vehs;
+    } forEach (_cache getOrDefault ["vehicles", []]);
     [[_entries] call _fnc_dedupSpatial] call _fnc_drawSorted;
 };
 
 if (_showMarkers && {_drawn < _maxIcons}) then {
+    // Entrées préparées (filtres, couleurs, config, dédoublonnage) par le PFH ; ici écran + distance seulement.
     private _entries = [];
     {
-        private _m = _x;
-        if (_m isEqualTo "") then { continue };
-        // Marqueur ECOTI du bâtiment déjà géré à part (silhouette + un libellé).
-        if (_bldgMk isNotEqualTo "" && {_m isEqualTo _bldgMk}) then { continue };
-        if (((toLower _m) find "comspec_ecoti_bldg_") == 0) then { continue };
-
-        private _alpha = markerAlpha _m;
-        if (_alpha <= 0.05) then { continue };
-        private _pos = markerPos _m;
-        if (!(_pos isEqualType []) || {(count _pos) < 2}) then { continue };
-        if ((_pos select 0) == 0 && {(_pos select 1) == 0}) then { continue };
-        if ((_camPos distance2D _pos) > _maxDist) then { continue };
-
-        // Déjà couvert par le bâtiment désigné.
-        if ((count _bldgPos) >= 2 && {(_pos distance2D _bldgPos) <= 18}) then { continue };
-
-        private _z = _pos select 2;
-        if (_z < 0.5) then {
-            _pos = [_pos select 0, _pos select 1, (getTerrainHeightASL [_pos select 0, _pos select 1]) + 2];
-            _pos = ASLToAGL _pos;
-        };
+        _x params ["_pos", "_mIcon", "_col", "_txt"];
         if (!([_pos] call _fnc_screenOk)) then { continue };
-        private _dist = _camPos distance _pos;
-        private _txt = markerText _m;
-        if (_txt isEqualTo "") then { _txt = markerType _m };
-        private _col = getArray (configFile >> "CfgMarkerColors" >> markerColor _m >> "color");
-        _col = [_col] call comspec_overwatch_connect_fnc_ecotiNormalizeColor;
-        private _lum = ((_col select 0) + (_col select 1) + (_col select 2)) / 3;
-        if (_lum < 0.45) then {
-            _col = [
-                ((_col select 0) + 0.35) min 1,
-                ((_col select 1) + 0.35) min 1,
-                ((_col select 2) + 0.35) min 1,
-                1
-            ];
-        } else {
-            _col set [3, 1];
-        };
-        private _mIcon = getText (configFile >> "CfgMarkers" >> markerType _m >> "icon");
-        if (_mIcon isEqualTo "") then { _mIcon = _icon };
-        _entries pushBack [_pos, _mIcon, _col, _txt, _dist, 0.48];
-    } forEach allMapMarkers;
-
-    _entries = [_entries, 16] call _fnc_dedupSpatial;
+        _entries pushBack [_pos, _mIcon, _col, _txt, _camPos distance _pos, 0.48];
+    } forEach (_cache getOrDefault ["markers", []]);
     [_entries] call _fnc_drawSorted;
 };
 

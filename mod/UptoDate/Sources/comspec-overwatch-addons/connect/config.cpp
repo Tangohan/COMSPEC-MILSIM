@@ -11,15 +11,20 @@ class CfgPatches {
             "COMSPEC_Module_SSE_Profile",
             "COMSPEC_Module_SSE_Equip",
             "COMSPEC_Module_TheaterSurvey",
+            "COMSPEC_Module_GeoNetwork",
             "COMSPEC_Module_AtakShowEnemyAi"
         };
         weapons[] = {};
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.615;
-        versionStr = "1.6.15";
-        versionAr[] = {1, 6, 15};
+        version = 1.621;
+        versionStr = "1.6.21";
+        versionAr[] = {1, 6, 21};
+        // 1.6.18 : écusson « Donateur Athena » (CfgUnitInsignia COMSPEC_Donor_*, fn_applyDonorPerk).
+        // 1.6.19 : correctif de sécurité 2.4.1 (adresse d'Athena vérifiée avant la connexion, fn_connect).
+        // 1.6.20 : revue du mod, tours 4 et 5 (regroupement ATAK natif 2.5.0).
+        // 1.6.21 : revue du mod, tours 6 et 7 (regroupement ATAK natif 2.6.0).
     };
 };
 
@@ -30,12 +35,17 @@ class CfgFunctions {
         class connect {
             file = "z\comspec_overwatch\addons\connect\functions";
             class connect {};
+            class tr {};
+            class trDisplay {};
+            class aceAction {};
+            class zenAction {};
+            class zenModule {};
+            class addSetting {};
             class waitAthenaReady {};
             class setPlainText {};
             class startSyncLoops {};
             class sendFactionSettings {};
             class sendTacticalAlert {};
-            class tacticalAlertDialogShow {};
             class saluteDialogShow {};
             class saluteDialogSubmit {};
             class ssePersonDialogShow {};
@@ -43,6 +53,9 @@ class CfgFunctions {
             class ssePersonDialogSubmit {};
             class ssePersonRefreshPanels {};
             class sseCaptureFacePhoto {};
+            class sseFaceFraming {};
+            class sseFaceStudio {};
+            class sseFaceViewfinder {};
             class sseCollectMedical {};
             class sseBiometricSample {};
             class sseSignAtak {};
@@ -50,13 +63,16 @@ class CfgFunctions {
             class sseOpenFromKeybind {};
             class sseHasTerminalItem {};
             class sseIdentityQuery {};
+            class sseLinkState {};
+            class sseKeyBlock {};
+            class sseTerminalGuard {};
+            class sseUploadFacePhoto {};
             class sseUnitSeed {};
             class sseTerminalPage {};
             class sseActiveCase {};
             class sseApplyProfile {};
             class sseProfilePreset {};
             class sseEdenWriteField {};
-            class sseModuleTargets {};
             // Fiches de renseignement simplifiées (rédacteur plein cadre ATAK)
             class intelNoteCatalog {};
             class intelNoteCache {};
@@ -77,11 +93,6 @@ class CfgFunctions {
             class intelNoteSubmit {};
             class intelNoteClose {};
             class intelNoteApplyGeometry {};
-            class moduleSseCase {};
-            class moduleSseProfile {};
-            class moduleSseEquip {};
-            class moduleSseDocChrome {};
-            class registerZenSseModules {};
             class giveSeekTerminal {};
             class medevacDialogShow {};
             class medevacDialogSubmit {};
@@ -94,6 +105,7 @@ class CfgFunctions {
             class reportDiag {};
             class bugReportShow {};
             class bugReportSubmit {};
+            class bugReportPick {};
             class diagIsolateAllows {};
             class diagIsolateCatalog {};
             class diagIsolateProbe {};
@@ -102,8 +114,10 @@ class CfgFunctions {
             class diagIsolateLaunch {};
             class diagIsolateStart {};
             class diagIsolateStop {};
-            class diagIsolateShow {};
             class diagIsolateOnLoad {};
+            class diagChecks {};
+            class diagSelfTest {};
+            class diagAction {};
             class collectBugReportLog {};
             class disconnect {};
             class playtimeTracker {};
@@ -124,6 +138,8 @@ class CfgFunctions {
             class theaterSurveyResend {};
             class moduleTheaterSurvey {};
             class registerZenTheaterSurvey {};
+            class moduleGeoNetwork {};
+            class zeusFeedback {};
             class forceSyncData {};
             class arsenalLocalLoadouts {};
             class arsenalNormalizeLoadout {};
@@ -134,17 +150,23 @@ class CfgFunctions {
             class arsenalApplyLoadout {};
             class arsenalPushAll {};
             class arsenalPullAll {};
+            class arsenalSyncAll {};
             class arsenalApplyCloud {};
             class arsenalOverlayShow {};
             class arsenalOverlayBeginLoad {};
             class arsenalOverlayRefresh {};
             class arsenalOverlayPreview {};
             class arsenalOverlayFill {};
+            class arsenalOverlayMark {};
             class arsenalOverlayAction {};
             class arsenalCollectionName {};
             class arsenalDeleteLocal {};
             class arsenalDeleteCloud {};
             class arsenalInitOverlay {};
+            class arsenalHash {};
+            class arsenalLedger {};
+            class arsenalStateInfo {};
+            class arsenalMarkSeen {};
             class sendIntel {};
             class initACE {};
             class initACEAthena {};
@@ -176,23 +198,21 @@ class CfgFunctions {
             class noteUplinkReturn {};
             class noteLinkTraffic {};
             class uplinkQuiet {};
+            class arsenalOpen {};
             class startLogSession {};
             class logTransmission {};
             class logFnError {};
             class callExtLogged {};
             class outboxPush {};
             class outboxFlush {};
+            class saveProfile {};
             class outboxState {};
             class wallClockSeconds {};
-            class submitChat {};
-            class submitChatPhoto {};
-            class openHub {};
             class openTabletView {};
             class tabletChatSend {};
             class tabletChatLines {};
             class tabletChatPush {};
             class tabletFlightManifestSend {};
-            class hubSelect {};
             class getRadioState {};
             class getRadioTxState {};
             class scanRadioProximity {};
@@ -222,14 +242,9 @@ class CfgFunctions {
             class submitFlightManifest {};
             class manifestCtrl {};
             class collectAircraftLoadout {};
-            class requestFireSolution {};
-            class receiveFireSolution {};
-            class displayFireSolution {};
             class pilotResponse {};
-            class openCASDialog {};
             class receiveCASRequest {};
             class updateCASState {};
-            class checkCASLine {};
             class sendCASAck {};
             class sendCASStatus {};
             class receiveMapShape {};
@@ -247,16 +262,12 @@ class CfgFunctions {
             class markBcePhotoCapture {};
             class syncLaserCode {};
             class receiveDangerZone {};
-            class updateDangerZone {};
             class deleteDangerZone {};
             class checkPlayerInDangerZone {};
             class warnDangerZoneEntry {};
             class pollTacticalZones {};
             class sendLogisticsStatus {};
             class initLogisticsLoop {};
-            class receiveIFFChallenge {};
-            class submitIFFResponse {};
-            class updateIFFMarkerState {};
             class registerEventHandler {};
             class publishEvent {};
             class issueOrder {};
@@ -297,10 +308,10 @@ class CfgFunctions {
             class getFireTeams {};
             class downloadBriefingSlide {};
             class openBriefingBoard {};
+            class openNativePage {};
             class briefingBoardShow {};
             class briefingBoardStep {};
             class refreshBriefingSlides {};
-            class setBriefingScreens {};
             class loadGoogleBriefing {};
             class applyGoogleBriefingSlide {};
             class googleBriefingStep {};
@@ -314,12 +325,19 @@ class CfgFunctions {
             class accountLinkSubmit {};
             class measureLatency {};
             class refreshAccountLinkStatusBar {};
-            class showAthenaLinkHelp {};
             class showBetaAccessNote {};
             class openNdaDialog {};
             class decorateMainMenu {};
             class refreshMainMenuBetaBanner {};
             class ndaTexts {};
+            class athenaMode {};
+            class athenaApply {};
+            class athenaChoiceShow {};
+            class athenaChoiceOnLoad {};
+            class athenaChoiceLanguage {};
+            class athenaChoiceTexts {};
+            class athenaChoicePick {};
+            class athenaOfferLink {};
             class ndaOnLoad {};
             class ndaSetLanguage {};
             class ndaAccept {};
@@ -337,6 +355,9 @@ class CfgFunctions {
             class collectOperatorFace {};
             class collectOperatorMedical {};
             class collectOperatorLoadout {};
+            class collectItemCatalog {};
+            class collectLoadedMods {};
+            class sendItemIcons {};
             class collectOperatorVersions {};
             class collectOperatorEnvironment {};
             class operatorProfileFingerprint {};
@@ -409,9 +430,6 @@ class CfgFunctions {
             class syncAtakRealism {};
             class realismErrorMessage {};
             class certStatusLabel {};
-            class callsignDialogShow {};
-            class callsignDialogOnLoad {};
-            class callsignDialogSubmit {};
             class playAtakNotification {};
             class getAtakSoundVolume {};
             class setAtakSoundSetting {};
@@ -424,6 +442,7 @@ class CfgFunctions {
             class getUnitRole {};
             class setUnitRole {};
             class extResult {};
+            class extAwait {};
             class parseAtakExtResponse {};
             class atakExtFailMessage {};
             class openAthenaFeature {};
@@ -433,7 +452,6 @@ class CfgFunctions {
             class detectLoadedMods {};
             class refreshLinkStatus {};
             class updateStatusBadges {};
-            class chatDialogOnLoad {};
             class appendLinkLog {};
             class appendModuleLog {};
             class isModModuleEnabled {};
@@ -460,6 +478,7 @@ class CfgFunctions {
             class atakSignalState {};
             class pendingSyncCount {};
             class seekHistoryPush {};
+            class sseTeamLog {};
             class ecotiIlluminateZone {};
             class ecotiRouteEdit {};
             class ecotiApplyHudSetting {};
@@ -483,12 +502,12 @@ class CfgFunctions {
             class linkDegradeSimApplySetting {};
             class isLinkDegradeSimActive {};
             class pollModModules {};
+            class pollDataFlows {};
             class pollExperience {};
             class applyTenantExperience {};
+            class applyDonorPerk {};
             class showExperienceGuide {};
             class portalLabel {};
-            class toggleLogCategory {};
-            class showDebugInfo {};
             class profileWrap {};
             class profileReport {};
             class getPlayerAvatarInfo {};
@@ -541,12 +560,10 @@ class CfgFunctions {
             class sendLocalTacticalMarker {};
             class resyncAllMapMarkers {};
             class gridPosition {};
+            class mgrsGrid {};
             class formatHeading {};
-            class trackPacketLoss {};
-            class recordPacketSent {};
             class recordPacketReceived {};
             class getPacketLossStats {};
-            class handlePositionUpdateCallback {};
             class simulateNetworkDisconnect {};
             class isNetworkDisconnected {};
             class refreshLinkState {};
@@ -643,15 +660,17 @@ class CfgFunctions {
     };
 };
 
+// Pas de mode / jip au niveau addon : ils s'appliqueraient à tout le jeu (liste blanche stricte imposée aux autres mods,
+// à Zeus et au vanilla). Seules les classes COMSPEC sont déclarées : elles servent quand une mission active la liste blanche.
 class CfgRemoteExec {
     class Functions {
-        mode = 1;
-        jip = 0;
         class comspec_overwatch_connect_fnc_applyZeusAtakEffect { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_relayZeusAtakEffect { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_giveSeekTerminal { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_sseApplyProfile { allowedTargets = 0; };
+        // Module Zeus « Biométrie du sujet » → serveur (moteur du pack SSE).
+        class comspec_sse_fnc_bioSetProfile { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_sseActiveCase { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_setGpsBeacon { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_setPhoneTrack { allowedTargets = 0; };
@@ -659,8 +678,8 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_setAtakShowEnemyAi { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_forceSyncData { allowedTargets = 0; };
 
-        // Ces cinq-là étaient appelées via remoteExec sans figurer ici. « mode = 1 »
-        // étant une liste blanche stricte, les appels étaient rejetés en silence :
+        // Ces cinq-là étaient appelées via remoteExec sans figurer ici. Avec une liste
+        // blanche stricte (« mode = 1 » posé par la mission), les appels étaient rejetés en silence :
         // les ordres n'arrivaient pas, les zones posées depuis Zeus ne se créaient
         // pas, et la reprise de session après plantage ne se faisait pas.
         // allowedTargets reprend la cible réelle de chaque appel, au plus juste.
@@ -671,10 +690,6 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_clearDisconnectedAtakState { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_detonateChargeLocal { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_applyAiMoveOrder { allowedTargets = 0; };
-    };
-    class Commands {
-        mode = 1;
-        jip = 0;
     };
 };
 
@@ -688,6 +703,29 @@ class CfgCommands {
         "http://localhost:*/*",
         "http://127.0.0.1:*/*",
         "file://z/comspec_overwatch/addons/connect/web/*"
+    };
+};
+
+// Écussons « Donateur Athena » : appliqués au joueur local par fn_applyDonorPerk selon le palier reçu d'Athena.
+// Sources : mod\UptoDate\Sources\art\donor_insignia (SVG + PNG 256x256, hors PBO) ; PAA DXT5 générés par mod\UptoDate\tools\png2paa.py.
+class CfgUnitInsignia {
+    class COMSPEC_Donor_soutien {
+        displayName = "Donateur Athena · Soutien";
+        author = "COMSPEC";
+        texture = "\z\comspec_overwatch\addons\connect\img\donor\donor_soutien_ca.paa";
+        textureVehicle = "";
+    };
+    class COMSPEC_Donor_allie {
+        displayName = "Donateur Athena · Allié";
+        author = "COMSPEC";
+        texture = "\z\comspec_overwatch\addons\connect\img\donor\donor_allie_ca.paa";
+        textureVehicle = "";
+    };
+    class COMSPEC_Donor_pilier {
+        displayName = "Donateur Athena · Pilier";
+        author = "COMSPEC";
+        texture = "\z\comspec_overwatch\addons\connect\img\donor\donor_pilier_ca.paa";
+        textureVehicle = "";
     };
 };
 
@@ -799,8 +837,8 @@ class CfgWeapons
     {
         scope = 2;
         author = "COMSPEC";
-        displayName = "Terminal biométrique SEEK";
-        descriptionShort = "Terminal d’enrôlement biométrique de terrain. Permet d’ouvrir une fiche de renseignement interpersonnel (SSE) sur une personne contrôlée.";
+        displayName = "$STR_COMSPEC_OW_CFG_DEFCAEDD09";
+        descriptionShort = "$STR_COMSPEC_OW_CFG_D5C520E67E";
         picture = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
         model = "\A3\weapons_F\ammo\mag_univ.p3d";
 
@@ -818,25 +856,19 @@ class CfgFactionClasses
     class NO_CATEGORY;
     class COMSPEC_Roleplay : NO_CATEGORY
     {
-        displayName = "COMSPEC Roleplay";
-        priority = 2;
-        side = 7;
-    };
-    class COMSPEC_SSE : NO_CATEGORY
-    {
-        displayName = "COMSPEC SSE";
+        displayName = "$STR_COMSPEC_OW_CFG_72D54FC9E9";
         priority = 2;
         side = 7;
     };
     class COMSPEC_Outils : NO_CATEGORY
     {
-        displayName = "COMSPEC Outils";
+        displayName = "$STR_COMSPEC_OW_CFG_00AE881D17";
         priority = 2;
         side = 7;
     };
     class COMSPEC_ATAK : NO_CATEGORY
     {
-        displayName = "COMSPEC ATAK";
+        displayName = "$STR_COMSPEC_OW_CFG_AE461ABCB5";
         priority = 2;
         side = 7;
         icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
@@ -844,8 +876,6 @@ class CfgFactionClasses
 };
 
 #include "ui_base.hpp"
-#include "display.hpp"
-#include "display_hub.hpp"
 #include "display_cas.hpp"
 #include "display_cas_request.hpp"
 #include "display_flight_manifest.hpp"
@@ -854,7 +884,7 @@ class CfgFactionClasses
 #include "display_account_link.hpp"
 #include "display_athena_auth.hpp"
 #include "display_nda.hpp"
-#include "display_callsign.hpp"
+#include "display_athena_choice.hpp"
 #include "display_salute.hpp"
 #include "display_sse_person.hpp"
 #include "display_intel_note.hpp"
@@ -881,11 +911,13 @@ class CfgVehicles
     // Zones roleplay (sans couverture, brouillage, etc.)
     #include "modules\module_roleplay_zone.hpp"
 
-    // Exploitation SSE
-    #include "modules\module_sse.hpp"
+    // Exploitation SSE : modules Eden et Zeus dans le pack COMSPEC SSE (zeus\modules_seek.hpp).
 
     // Relevé de carte (Eden)
     #include "modules\module_theater_survey.hpp"
+
+    // Routes et villes seulement (Eden ; Zeus via ZEN / ACE Zeus)
+    #include "modules\module_geo_network.hpp"
 
     // Contacts ennemis sur le poste ATAK (Eden)
     #include "modules\module_atak_show_enemy_ai.hpp"
@@ -899,7 +931,7 @@ class CfgVehicles
     // Modules Zeus pour gestion des relais en jeu
     class COMSPEC_ModuleScanRelays: Module_F {
         scope = 2;
-        displayName = "Scanner réseau relais";
+        displayName = "$STR_COMSPEC_OW_CFG_D04248E677";
         icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
         category = "COMSPEC_ATAK";
         function = "comspec_overwatch_connect_fnc_zeusModuleScanRelays";
@@ -910,28 +942,30 @@ class CfgVehicles
         
         class Arguments {
             class ScanRadius {
-                displayName = "Rayon de scan (m)";
-                description = "Distance maximum pour détecter les relais";
+                displayName = "$STR_COMSPEC_OW_CFG_64CDA735DA";
+                description = "$STR_COMSPEC_OW_CFG_F5B75017DE";
                 typeName = "NUMBER";
                 defaultValue = 5000;
             };
             class AutoUpload {
-                displayName = "Upload automatique";
-                description = "Remonter automatiquement les relais détectés";
+                displayName = "$STR_COMSPEC_OW_CFG_EA0A853A02";
+                description = "$STR_COMSPEC_OW_CFG_22E71CD3F3";
                 typeName = "BOOL";
                 defaultValue = 1;
             };
         };
         
         class ModuleDescription {
-            description = "Scanne tous les relais radio dans un rayon et les remonte vers le serveur ATHENA. Affiche un rapport style relevé terrain avec feedback visuel.";
+            description = "$STR_COMSPEC_OW_CFG_3EA68EFD33";
             sync[] = {};
         };
     };
     
+    // Ancien tableau des relais (fenêtre par-dessus le jeu au lancement) : masqué dans Eden, remplacé par le module
+    // ATAK · Relais et le tableau TBR de l'ATAK natif. Les missions qui l'ont déjà posé se chargent toujours.
     class COMSPEC_ModuleRelayDashboard: Module_F {
-        scope = 2;
-        displayName = "Tableau de bord relais";
+        scope = 1;
+        displayName = "$STR_COMSPEC_OW_CFG_5A2FEC5375";
         icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
         category = "COMSPEC_ATAK";
         function = "comspec_overwatch_connect_fnc_openRelayDashboard";
@@ -941,14 +975,14 @@ class CfgVehicles
         isDisposable = 0;
         
         class ModuleDescription {
-            description = "Ouvre le tableau de bord des relais radio avec statut en temps réel, détection d'erreurs, et actions de gestion.";
+            description = "$STR_COMSPEC_OW_CFG_1B834F3DE2";
             sync[] = {};
         };
     };
     
     class COMSPEC_ModuleResyncRelay: Module_F {
         scope = 2;
-        displayName = "Resync relais";
+        displayName = "$STR_COMSPEC_OW_CFG_9BE0C2885D";
         icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\upload_ca.paa";
         category = "COMSPEC_ATAK";
         function = "comspec_overwatch_connect_fnc_zeusResyncRelay";
@@ -958,7 +992,7 @@ class CfgVehicles
         isDisposable = 0;
         
         class ModuleDescription {
-            description = "Resynchronise immédiatement un relais spécifique vers le serveur ATHENA. Placez le module sur le relais.";
+            description = "$STR_COMSPEC_OW_CFG_3D21C9B243";
             sync[] = {};
         };
     };
@@ -1005,33 +1039,70 @@ class RscTitles
         name = "COMSPEC_DiagIsolateHud";
         onLoad = "uiNamespace setVariable ['COMSPEC_DiagIsolateHudDisp', _this select 0];";
         onUnload = "uiNamespace setVariable ['COMSPEC_DiagIsolateHudDisp', displayNull];";
+        // Bandeau du pas à pas (fn_diagIsolateHud) : haut centre, couleurs de l'ATAK natif.
         class controls
         {
             class Bg: RscText
             {
                 idc = -1;
-                x = 0.28 * safezoneW + safezoneX;
-                y = 0.03 * safezoneH + safezoneY;
-                w = 0.44 * safezoneW;
-                h = 0.36 * safezoneH;
-                colorBackground[] = {0.02, 0.06, 0.08, 0.92};
+                x = 0.33 * safezoneW + safezoneX;
+                y = 0.025 * safezoneH + safezoneY;
+                w = 0.34 * safezoneW;
+                h = 0.16 * safezoneH;
+                colorBackground[] = {0.025, 0.030, 0.027, 0.93};
+            };
+            class Accent: RscText
+            {
+                idc = -1;
+                x = 0.33 * safezoneW + safezoneX;
+                y = 0.025 * safezoneH + safezoneY;
+                w = 0.34 * safezoneW;
+                h = 0.003 * safezoneH;
+                colorBackground[] = {0.95, 0.67, 0.20, 1};
             };
             class Title: RscStructuredText
             {
                 idc = 10;
-                x = 0.29 * safezoneW + safezoneX;
-                y = 0.035 * safezoneH + safezoneY;
-                w = 0.42 * safezoneW;
-                h = 0.028 * safezoneH;
+                x = 0.338 * safezoneW + safezoneX;
+                y = 0.032 * safezoneH + safezoneY;
+                w = 0.324 * safezoneW;
+                h = 0.03 * safezoneH;
                 text = "";
             };
             class Body: RscStructuredText
             {
                 idc = 11;
-                x = 0.29 * safezoneW + safezoneX;
+                x = 0.338 * safezoneW + safezoneX;
                 y = 0.062 * safezoneH + safezoneY;
-                w = 0.42 * safezoneW;
-                h = 0.318 * safezoneH;
+                w = 0.324 * safezoneW;
+                h = 0.07 * safezoneH;
+                text = "";
+            };
+            class ProgressBg: RscText
+            {
+                idc = 13;
+                x = 0.338 * safezoneW + safezoneX;
+                y = 0.135 * safezoneH + safezoneY;
+                w = 0.324 * safezoneW;
+                h = 0.006 * safezoneH;
+                colorBackground[] = {0.070, 0.082, 0.072, 1};
+            };
+            class ProgressFill: RscText
+            {
+                idc = 12;
+                x = 0.338 * safezoneW + safezoneX;
+                y = 0.135 * safezoneH + safezoneY;
+                w = 0;
+                h = 0.006 * safezoneH;
+                colorBackground[] = {0.95, 0.67, 0.20, 1};
+            };
+            class Foot: RscStructuredText
+            {
+                idc = 14;
+                x = 0.338 * safezoneW + safezoneX;
+                y = 0.145 * safezoneH + safezoneY;
+                w = 0.324 * safezoneW;
+                h = 0.036 * safezoneH;
                 text = "";
             };
         };

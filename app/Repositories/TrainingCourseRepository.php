@@ -48,6 +48,23 @@ class TrainingCourseRepository
         return $this->lessonPlayerModeColumn;
     }
 
+    /** Colonnes formation « lien » (delivery_mode / delivery_url) présentes ? Non mis en cache : appelé après TrainingUrlDeliverySchema::ensure. */
+    public function hasDeliveryColumns(): bool
+    {
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT COUNT(*) FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'training_courses'
+                   AND COLUMN_NAME IN ('delivery_mode', 'delivery_url')"
+            );
+            $st->execute();
+
+            return (int) $st->fetchColumn() === 2;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     /** @return list<string> valeurs distinctes de category pour autocomplétion, sans catalogue dédié. */
     public function listDistinctCategoriesForTenant(int $tenantId): array
     {
@@ -195,7 +212,79 @@ class TrainingCourseRepository
         $stmt->execute([$tenantId, $tenantId]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+        $rows = self::withoutHiddenPlatformRows($rows, $tenantId);
+
         return array_slice(self::collapseDuplicateCatalogRows($rows, $tenantId), 0, $limit);
+    }
+
+    /** Clé des réglages communauté : parcours plateforme retirés du catalogue et du tableau de bord. */
+    public const HIDDEN_PLATFORM_SETTING = 'training_hidden_platform_slugs';
+
+    /** @return list<string> slugs (minuscules) des parcours plateforme masqués par la communauté */
+    public static function hiddenPlatformSlugs(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        try {
+            $settings = (new TenantRepository())->getSettings($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+        $raw = $settings[self::HIDDEN_PLATFORM_SETTING] ?? [];
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $slug) {
+            $slug = strtolower(trim((string) $slug));
+            if ($slug !== '') {
+                $out[$slug] = $slug;
+            }
+        }
+
+        return array_values($out);
+    }
+
+    /** Masque ou réaffiche un parcours plateforme pour une communauté. */
+    public static function setPlatformSlugHidden(int $tenantId, string $slug, bool $hidden): void
+    {
+        $slug = strtolower(trim($slug));
+        if ($tenantId < 1 || $slug === '') {
+            return;
+        }
+        $repo = new TenantRepository();
+        $settings = $repo->getSettings($tenantId);
+        $list = self::hiddenPlatformSlugs($tenantId);
+        $list = array_values(array_filter($list, static fn (string $s): bool => $s !== $slug));
+        if ($hidden) {
+            $list[] = $slug;
+        }
+        $settings[self::HIDDEN_PLATFORM_SETTING] = $list;
+        $repo->replaceSettings($tenantId, $settings);
+    }
+
+    /**
+     * Retire les parcours plateforme que la communauté a masqués (ou supprimés de son Studio).
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    public static function withoutHiddenPlatformRows(array $rows, int $tenantId): array
+    {
+        $hidden = self::hiddenPlatformSlugs($tenantId);
+        if ($hidden === []) {
+            return array_values($rows);
+        }
+        $hidden = array_flip($hidden);
+
+        return array_values(array_filter($rows, static function (array $row) use ($hidden, $tenantId): bool {
+            if ((string) ($row['lms_scope'] ?? '') !== self::LMS_SCOPE_PLATFORM || (int) ($row['tenant_id'] ?? 0) === $tenantId) {
+                return true;
+            }
+
+            return !isset($hidden[strtolower(trim((string) ($row['slug'] ?? '')))]);
+        }));
     }
 
     public function findById(int $id, ?int $tenantId = null): ?array
@@ -388,7 +477,7 @@ class TrainingCourseRepository
     {
         $fields = [];
         $params = [];
-        $allowed = ['title', 'slug', 'course_code', 'short_description', 'description', 'learning_objectives', 'theme_json', 'enrollment_policy_json', 'enrollment_share_code', 'instruction_audio_url', 'instruction_audio_instructor_optional', 'instruction_audio_notes', 'thumbnail_path', 'banner_path', 'showcase_cycle_date', 'showcase_location', 'showcase_badge', 'showcase_card_style', 'showcase_sort_order', 'category', 'level', 'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying', 'validity_days', 'visibility', 'updated_by', 'lms_created_with_version', 'lms_last_saved_with_version', 'lms_scope', 'pedagogical_owner_user_id', 'final_validator_user_id', 'lesson_player_mode'];
+        $allowed = ['title', 'slug', 'course_code', 'short_description', 'description', 'learning_objectives', 'theme_json', 'enrollment_policy_json', 'enrollment_share_code', 'instruction_audio_url', 'instruction_audio_instructor_optional', 'instruction_audio_notes', 'thumbnail_path', 'banner_path', 'showcase_cycle_date', 'showcase_location', 'showcase_badge', 'showcase_card_style', 'showcase_sort_order', 'category', 'level', 'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying', 'validity_days', 'visibility', 'updated_by', 'lms_created_with_version', 'lms_last_saved_with_version', 'lms_scope', 'pedagogical_owner_user_id', 'final_validator_user_id', 'lesson_player_mode', 'delivery_mode', 'delivery_url'];
         foreach ($allowed as $k) {
             if (array_key_exists($k, $data)) {
                 $fields[] = "`$k` = ?";

@@ -20,10 +20,17 @@ final class PlatformAdminSkinAssetTest extends TestCase
         self::assertStringContainsString('.pa-skin > :not(.pa)', $css);
 
         // Chaque page plateforme écrite en utilitaires marque son en-tête pour le bandeau commun.
-        $paShell = ['dashboard', 'platform_review_index', 'tenant_recovery', 'tenants_index', 'tenants_plan_form', 'ux_feedback_index'];
+        // Les pages refondues sur la coque « .pa » (bandeau pa-hero) en sont exemptées : le skin
+        // ne s'applique qu'aux enfants :not(.pa).
+        $paShell = ['contributors', 'dashboard', 'discord_showcase', 'mail_traffic', 'name_filter', 'ops_console', 'plan_gifts', 'plan_payments', 'platform_review_index', 'registry_pins', 'tenant_recovery', 'tenant_removal', 'tenants_index', 'tenants_plan_form', 'users', 'ux_feedback_index', 'year_review'];
         foreach (glob($root . '/views/admin/system/*.php') ?: [] as $file) {
             $view = (string) file_get_contents($file);
-            if (!str_contains($view, '<h1') || in_array(basename($file, '.php'), $paShell, true)) {
+            if (!str_contains($view, '<h1')) {
+                continue;
+            }
+            if (in_array(basename($file, '.php'), $paShell, true)) {
+                self::assertMatchesRegularExpression('/<div class="pa[ "]/', $view, basename($file));
+                self::assertStringContainsString('pa-hero__title', $view, basename($file));
                 continue;
             }
             self::assertStringContainsString('pa-head', $view, basename($file));
@@ -51,15 +58,19 @@ final class PlatformAdminSkinAssetTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $nav = (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php');
-        $context = (string) file_get_contents($root . '/app/Support/BackOfficePageContext.php');
+        $platformNav = (string) file_get_contents($root . '/views/partials/platform_admin_sidebar.php');
         $pages = (string) file_get_contents($root . '/config/back_office_pages.php');
 
-        foreach (['admin/atak/realism/config', 'admin/atak-beta', 'admin/atak-mod-reports', 'admin/atak-mod-blocks', 'admin/atak-diffusion-rapports', 'admin/forum-config'] as $path) {
+        foreach (['back-office/ressources/atak-realism/config', 'back-office/ressources/atak-mod-blocks', 'back-office/ressources/atak-diffusion-rapports', 'back-office/content-moderation'] as $path) {
             self::assertStringContainsString("url('" . $path . "')", $nav, $path);
         }
-        foreach (['admin/atak-mod-blocks', 'admin/atak-diffusion-rapports', 'admin/atak/realism'] as $path) {
-            self::assertStringContainsString("'" . $path . "'", $context, $path);
+        foreach (['back-office/ressources/atak-mod-blocks', 'back-office/ressources/atak-diffusion-rapports', 'back-office/ressources/atak-realism'] as $path) {
             self::assertStringContainsString("'path' => '" . $path . "'", $pages, $path);
+        }
+        // Données de toutes les communautés : administration plateforme seulement, jamais dans le back-office.
+        foreach (['admin/atak-beta', 'admin/atak-mod-reports'] as $path) {
+            self::assertStringNotContainsString($path, $nav, $path);
+            self::assertStringContainsString("'path' => '" . $path . "'", $platformNav, $path);
         }
         self::assertStringContainsString('back-office-atak-routing.css', $pages);
         self::assertFileExists($root . '/public/assets/css/back-office-atak-routing.css');

@@ -205,7 +205,7 @@ foreach (['created_by' => 'Rédacteur', 'validated_by' => 'Validateur', 'signed_
                             <?= $previewHtml ?>
                             <?php else: ?>
                             <div class="prose prose-slate max-w-none text-sm p-4">
-                                <?= !empty(trim(strip_tags($doc['body_rendered'] ?? ''))) ? $doc['body_rendered'] : '<p class="text-slate-400">Aucun contenu.</p>' ?>
+                                <?= !empty(trim(strip_tags($doc['body_rendered'] ?? ''))) ? \App\Support\SafeHtml::clean((string) $doc['body_rendered'], \App\Support\SafeHtml::documentProfile()) : '<p class="text-slate-400">Aucun contenu.</p>' ?>
                             </div>
                             <?php endif; ?>
                         </div>

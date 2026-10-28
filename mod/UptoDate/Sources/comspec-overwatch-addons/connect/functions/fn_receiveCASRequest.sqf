@@ -210,6 +210,13 @@ if (_id isEqualTo _lastOpenedId) exitWith {
 
 missionNamespace setVariable ["COMSPEC_LastCASOpenedId", _id, false];
 
+// ATAK natif : jamais l'ancien viewer 9-lignes plein écran par-dessus le jeu ; une notification du téléphone mène à l'app CAS.
+if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) exitWith {
+    if (hasInterface) then {
+        ["TACTICAL", "Nouvelle demande CAS reçue : ouvrez l'app CAS.", 8, 40, "FIRES"] call comspec_atak_native_fnc_notify;
+    };
+};
+
 if (hasInterface && {!isNil "comspec_overwatch_connect_fnc_casDialogShow"}) then {
 
     [] call comspec_overwatch_connect_fnc_casDialogShow;

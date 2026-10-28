@@ -157,12 +157,19 @@ final class OverwatchIntelRepository
     public function acks(int $tenantId, int $mapId): array
     {
         $out = [];
+        $hasDismiss = in_array('dismissed_at', $this->columns('atak_overwatch_alert_acks'), true);
         foreach ($this->safeFetch(
-            'SELECT alert_key, acked_by, acked_at FROM atak_overwatch_alert_acks
+            'SELECT alert_key, acked_by, acked_at' . ($hasDismiss ? ', dismissed_at, dismissed_by' : '') . '
+             FROM atak_overwatch_alert_acks
              WHERE tenant_id = :t AND map_id = :m AND acked_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)',
             ['t' => $tenantId, 'm' => $mapId]
         ) as $row) {
-            $out[(string) $row['alert_key']] = ['by' => (string) $row['acked_by'], 'at' => (string) $row['acked_at']];
+            $out[(string) $row['alert_key']] = [
+                'by' => (string) $row['acked_by'],
+                'at' => (string) $row['acked_at'],
+                'dismissed' => !empty($row['dismissed_at']),
+                'dismissed_by' => (string) ($row['dismissed_by'] ?? ''),
+            ];
         }
 
         return $out;
@@ -202,6 +209,91 @@ final class OverwatchIntelRepository
         } catch (Throwable) {
             return false;
         }
+    }
+
+    /**
+     * Supprime l'alerte au poste (retirée pour tous) ; l'acquitte au passage si besoin.
+     * $undo : la remet en place (l'acquittement reste).
+     */
+    public function dismiss(int $tenantId, int $mapId, string $key, string $by, ?int $userId, bool $undo = false): bool
+    {
+        $key = mb_substr(trim($key), 0, 96);
+        if ($key === '') {
+            return false;
+        }
+        try {
+            if ($undo) {
+                $this->db->execute(
+                    "UPDATE atak_overwatch_alert_acks SET dismissed_at = NULL, dismissed_by = ''
+                     WHERE tenant_id = :t AND map_id = :m AND alert_key = :k",
+                    ['t' => $tenantId, 'm' => $mapId, 'k' => $key]
+                );
+
+                return true;
+            }
+            $this->db->execute(
+                'INSERT INTO atak_overwatch_alert_acks (tenant_id, map_id, alert_key, acked_by, acked_by_user_id, dismissed_at, dismissed_by)
+                 VALUES (:t, :m, :k, :b, :u, NOW(), :b2)
+                 ON DUPLICATE KEY UPDATE dismissed_at = NOW(), dismissed_by = VALUES(dismissed_by)',
+                ['t' => $tenantId, 'm' => $mapId, 'k' => $key, 'b' => mb_substr($by, 0, 120), 'u' => $userId, 'b2' => mb_substr($by, 0, 120)]
+            );
+
+            return true;
+        } catch (Throwable $e) {
+            error_log('[overwatch-intel] dismiss ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Accusés de lecture des postes Athena, par clé d'alerte.
+     *
+     * @return array<string, list<array{viewer:string, at:string, user_id:int}>>
+     */
+    public function seenBy(int $tenantId, int $mapId): array
+    {
+        $out = [];
+        foreach ($this->safeFetch(
+            'SELECT alert_key, user_id, viewer, seen_at FROM atak_overwatch_alert_seen
+             WHERE tenant_id = :t AND map_id = :m AND seen_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)
+             ORDER BY seen_at ASC',
+            ['t' => $tenantId, 'm' => $mapId]
+        ) as $row) {
+            $out[(string) $row['alert_key']][] = [
+                'viewer' => (string) $row['viewer'],
+                'at' => (string) $row['seen_at'],
+                'user_id' => (int) $row['user_id'],
+            ];
+        }
+
+        return $out;
+    }
+
+    /** @param list<string> $keys */
+    public function markSeen(int $tenantId, int $mapId, array $keys, int $userId, string $viewer): int
+    {
+        $n = 0;
+        foreach (array_slice(array_values(array_unique($keys)), 0, 80) as $key) {
+            $key = mb_substr(trim((string) $key), 0, 96);
+            if ($key === '') {
+                continue;
+            }
+            try {
+                $this->db->execute(
+                    'INSERT IGNORE INTO atak_overwatch_alert_seen (tenant_id, map_id, alert_key, user_id, viewer)
+                     VALUES (:t, :m, :k, :u, :v)',
+                    ['t' => $tenantId, 'm' => $mapId, 'k' => $key, 'u' => $userId, 'v' => mb_substr($viewer, 0, 120)]
+                );
+                $n++;
+            } catch (Throwable $e) {
+                error_log('[overwatch-intel] seen ' . $e->getMessage());
+
+                break;
+            }
+        }
+
+        return $n;
     }
 
     // ------------------------------------------------------------------ Anneaux de géolocalisation

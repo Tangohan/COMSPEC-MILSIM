@@ -14,7 +14,7 @@ switch (_tab) do {
         _rows pushBack ["text", "<t size='0.8' color='#8a9a93'>Ce que rapportent les habitants des localités à moins de 5 km : chiffres approximatifs, mis à jour toutes les 5 min, sans camp ni position exacte.</t>"];
         {
             _x params ["_name", "_d", "_b", "_civ", "_armTxt", "_milTxt"];
-            _rows pushBack ["person", "\A3\ui_f\data\map\mapcontrol\Tourism_CA.paa", format ["<t font='RobotoCondensedBold'>%1</t>  <t size='0.8' color='#8a9a93'>%2 · %3° %4</t><br/><t size='0.85'>%5 civil(s)%6%7</t>",
+            _rows pushBack ["person", "\A3\ui_f\data\map\mapcontrol\Tourism_CA.paa", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='#8a9a93'>%2 · %3° %4</t><br/><t size='0.85'>%5 civil(s)%6%7</t>",
                 [_name] call _esc, [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 1]] select (_d >= 1000), round _b, [_b] call _card, _civ,
                 ["", format [" · <t color='#f2ab33'>%1 hommes armés</t>", _armTxt]] select (_armTxt isNotEqualTo ""),
                 ["", format [" · <t color='#e5483a'>%1 véhicules militaires</t>", _milTxt]] select (_milTxt isNotEqualTo "")], [], [0.9, 0.94, 0.91, 1]];
@@ -36,7 +36,7 @@ switch (_tab) do {
         _feed append (_gen apply { [_x select 0, _x select 1, _x select 2, _x select 3, false] });
         {
             _x params ["_who", "_txt", "_when", "_loc", "_player"];
-            _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\app_osint.paa", format ["<t font='RobotoCondensedBold' color='%1'>%2</t>  <t size='0.75' color='#8a9a93'>%3</t><br/><t size='0.9'>%4</t>",
+            _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\app_osint.paa", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t size='0.75' color='#8a9a93'>%3</t><br/><t size='0.9'>%4</t>",
                 ["#7fb6e6", "#e8b84a"] select _player, [_who] call _esc, [_when] call _esc, [_txt] call _esc], [], [0.9, 0.94, 0.91, 1]];
         } forEach (_feed select [0, 30]);
         if ((count _feed) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Rien sur le fil public pour l'instant.</t>"]; };

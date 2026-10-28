@@ -301,7 +301,6 @@ final class TenantInitialSetupController
 
         $existingModules = is_array($community['public_modules'] ?? null) ? $community['public_modules'] : [];
         $community['public_modules'] = [
-            'forum' => (string) $request->input('public_mod_forum', '0') === '1',
             'documents' => (string) $request->input('public_mod_documents', '0') === '1',
             'events' => (string) $request->input('public_mod_events', '0') === '1',
             'roster' => (string) $request->input('public_mod_roster', '0') === '1',

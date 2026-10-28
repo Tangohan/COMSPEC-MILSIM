@@ -5110,6 +5110,35 @@ body:not(.ath-shell) .pjr-assign-slot {
   font-size: 13px;
   color: #5c6b73;
 }
+.ath-bo-search__empty p + p {
+  margin-top: 0.4rem;
+  font-size: 12px;
+}
+.ath-bo-search__empty a {
+  color: #0f7a55;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.ath-bo-search__results a.is-active {
+  background: #ecfdf5;
+  box-shadow: inset 3px 0 0 #12d18e;
+}
+.ath-bo-search__results mark {
+  background: #d1fae5;
+  color: inherit;
+  border-radius: 2px;
+}
+.ath-bo-search__hint kbd {
+  display: inline-block;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  background: #fff;
+  padding: 0 0.25rem;
+  font-size: 10px;
+  font-family: inherit;
+  color: #3c474c;
+}
 
 /* ——— Avancement / décorations / dotation (admin) ——— */
 .bo-adv { display: grid; gap: 18px; }
@@ -5210,3 +5239,380 @@ body:not(.ath-shell) .pjr-assign-slot {
 .bo-adv__score.is-ok { background: #e5f3ec; color: #1f7a4d; }
 .bo-adv__score.is-warn { background: #fbf1dc; color: #a5760b; }
 .bo-adv__score.is-bad { background: #fdecec; color: #9b1c1c; }
+
+/* ==========================================================================
+ * Mobile et tablette (< 1024 px) — shell back-office et administration du site
+ * Barre compacte collante (menu, page, recherche, thème), menu en tiroir,
+ * contenu pleine largeur, cibles tactiles ≥ 40 px, aucun défilement horizontal.
+ * ========================================================================== */
+@media (max-width: 1023.98px) {
+  html.ath-nav-locked,
+  html.ath-nav-locked body {
+    overflow: hidden !important;
+    overscroll-behavior: none;
+  }
+
+  /* — Barre compacte — */
+  .ath-mobile-bar {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    height: 52px;
+    padding: 0 8px 0 6px;
+    padding-top: env(safe-area-inset-top);
+    box-sizing: content-box;
+    gap: 6px;
+  }
+
+  .ath-mobile-bar__menu,
+  .ath-mobile-bar__icon,
+  .ath-mobile-bar .ath-theme-toggle,
+  html[data-bo-theme="dark"] .ath-mobile-bar .ath-theme-toggle {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #23292c;
+    border-radius: 0;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    transform: none;
+  }
+
+  .ath-mobile-bar__menu:hover,
+  .ath-mobile-bar__icon:hover {
+    background: var(--ath-sidebar-hover);
+  }
+
+  .ath-mobile-bar__menu:focus-visible,
+  .ath-mobile-bar__icon:focus-visible {
+    outline: 2px solid var(--ath-accent-bright);
+    outline-offset: -2px;
+  }
+
+  .ath-mobile-bar__titles {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+    padding: 0 4px;
+    line-height: 1.2;
+  }
+
+  .ath-mobile-bar__kicker {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ath-sidebar-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ath-mobile-bar__title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  /* — Topbar : la barre compacte porte déjà menu, recherche et thème ;
+       il ne reste que les alertes (défilables) et l’action de page. — */
+  .ath-topbar {
+    position: static;
+  }
+
+  .ath-topbar__inner {
+    height: auto;
+    min-height: 0;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .ath-topbar__crumb,
+  .ath-topbar__spacer,
+  .ath-topbar .ath-theme-toggle,
+  .ath-topbar__portal,
+  .ath-topbar__divider,
+  .ath-topbar__search {
+    display: none !important;
+  }
+
+  .ath-topbar__alerts {
+    display: flex !important;
+    flex: 1;
+    min-width: 0;
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .ath-topbar__alerts::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ath-topbar__alert {
+    flex-shrink: 0;
+    min-height: 32px;
+  }
+
+  .ath-topbar__action {
+    flex-shrink: 0;
+    min-height: 36px;
+    margin-left: auto;
+  }
+
+  .ath-topbar:not(:has(.ath-topbar__alerts, .ath-topbar__action)) {
+    display: none;
+  }
+
+  /* — Menu en tiroir — */
+  #back-office-sidebar.ath-sidebar-aside,
+  #platform-admin-sidebar.ath-sidebar-aside {
+    width: min(88vw, 320px) !important;
+    min-width: 0 !important;
+    max-width: min(88vw, 320px) !important;
+    height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .ath-sidebar-aside .ath-drawer-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--ath-sidebar);
+    padding-top: max(8px, env(safe-area-inset-top));
+  }
+
+  .ath-sidebar-aside .ath-drawer-head__close:focus-visible {
+    outline: 2px solid var(--ath-accent-bright);
+    outline-offset: -2px;
+  }
+
+  .ath-sidebar__toggle {
+    display: none !important;
+  }
+
+  .ath-sidebar__head {
+    padding: 12px 14px;
+  }
+
+  .ath-sidebar__item {
+    min-height: 42px;
+    font-size: 14px;
+  }
+
+  .ath-sidebar__child {
+    min-height: 38px;
+    font-size: 12.5px;
+    white-space: normal;
+  }
+
+  .ath-sidebar__group-head {
+    min-height: 36px;
+  }
+
+  .ath-sidebar__filter input {
+    min-height: 38px;
+    font-size: 16px;
+  }
+
+  .ath-sidebar__foot {
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+
+  /* — Contenu — */
+  .ath-main__body {
+    padding: 14px 12px 96px;
+    gap: 12px;
+  }
+
+  .ath-main__body > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ath-main__body :where(img, video, canvas, iframe, svg:not([width])) {
+    max-width: 100%;
+  }
+
+  .ath-main__body :where(img, video) {
+    height: auto;
+  }
+
+  .ath-page-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .ath-page-head__title {
+    font-size: 23px;
+    overflow-wrap: anywhere;
+  }
+
+  .ath-page-head__sub {
+    font-size: 13px;
+  }
+
+  .ath-page-head__actions {
+    width: 100%;
+  }
+
+  .ath-page-head__actions > .ath-btn,
+  .ath-page-head__actions > a,
+  .ath-page-head__actions > button,
+  .ath-page-head__actions > form {
+    flex: 1 1 auto;
+  }
+
+  .ath-page-head__actions > form > .ath-btn {
+    width: 100%;
+  }
+
+  .ath-page-head__actions .ath-btn,
+  .ath-table-toolbar .ath-btn,
+  .ath-main__body form .ath-btn {
+    min-height: 40px;
+    height: auto;
+    white-space: normal;
+  }
+
+  /* KPI */
+  .ath-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .ath-kpi {
+    padding: 11px 12px;
+    min-width: 0;
+  }
+
+  .ath-kpi__value {
+    font-size: 21px;
+  }
+
+  /* Tableaux : barre d’outils sur plusieurs lignes, défilement horizontal du tableau seul */
+  .ath-table-toolbar {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .ath-table-toolbar__spacer {
+    display: none;
+  }
+
+  .ath-table-toolbar__search {
+    order: 5;
+    flex: 1 1 100%;
+    width: 100%;
+    height: 40px;
+  }
+
+  .ath-table-toolbar__filter,
+  .ath-table-toolbar__export {
+    height: 40px;
+    justify-content: center;
+  }
+
+  .ath-table-toolbar__filter {
+    flex: 1 1 auto;
+  }
+
+  .ath-table-toolbar__export {
+    margin-left: auto;
+  }
+
+  /* Formulaires de filtres (libellé puis champ) : une colonne */
+  .ath-main__body form:is([class*="-filters"], [class*="__filters"], .ath-filters) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    align-items: stretch;
+  }
+
+  .ath-main__body form:is([class*="-filters"], [class*="__filters"], .ath-filters) > :is(input, select, .bo-select) {
+    width: 100%;
+    margin-bottom: 6px;
+  }
+
+  /* Tiroir fermé : hors écran, sans ombre visible ni liens atteignables au clavier */
+  .bo-shell-row > aside.-translate-x-full,
+  .bo-shell-row > aside.translate-x-full {
+    box-shadow: none !important;
+    visibility: hidden;
+    transition: transform 0.2s ease-out, visibility 0s linear 0.2s;
+  }
+
+  .ath-table-wrap,
+  .ath-scroll-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    max-width: 100%;
+  }
+
+  .ath-scroll-x {
+    display: block;
+  }
+
+  .ath-table tbody td {
+    height: 42px;
+  }
+
+  .ath-table-foot {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Formulaires : champs pleine largeur, 16 px (pas de zoom automatique iOS) */
+  .ath-main__body :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="hidden"]), select, textarea) {
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .ath-main__body :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]), select) {
+    min-height: 40px;
+  }
+
+  .ath-main__body :where(label):has(> input[type="checkbox"], > input[type="radio"]) {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ath-main__body :where(.bo-settings-grid, .ath-grid-2, .ath-grid-3) {
+    grid-template-columns: 1fr;
+  }
+
+  .ath-main__flashes {
+    padding: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .ath-kpi-grid {
+    gap: 6px;
+  }
+
+  .ath-kpi__label {
+    letter-spacing: 0.1em;
+  }
+
+  .ath-page-head__actions {
+    flex-direction: column;
+  }
+
+  .ath-page-head__actions > * {
+    width: 100%;
+  }
+}

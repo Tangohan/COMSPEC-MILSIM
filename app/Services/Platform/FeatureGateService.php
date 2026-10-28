@@ -12,6 +12,9 @@ use App\Repositories\TenantRepository;
 use App\Repositories\TenantUsageCounterRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\UserRepository;
+use App\Services\Billing\SubscriptionPlanFeaturesCatalog;
+use App\Support\PlanAccessWindow;
+use App\Support\PlanGift;
 
 /**
  * Fonctionnalités par plan (JSON subscription_plans.features_json), quotas (limits_json + tenant_usage_counters).
@@ -27,6 +30,8 @@ final class FeatureGateService
         private CommunityEventRepository $communityEventRepository,
         private TrainingCourseRepository $trainingCourseRepository,
         private ?PlatformFeatureDeploymentEvaluator $deploymentEvaluator = null,
+        /** Jours de grâce imposés (tests) ; null = réglage plateforme. */
+        private ?int $graceDays = null,
     ) {}
 
     /**
@@ -38,20 +43,20 @@ final class FeatureGateService
         if (!$tenant) {
             return false;
         }
-        if (($tenant['subscription_status'] ?? '') === 'past_due') {
-            return $feature === 'forum' || $feature === 'documents';
+        if ($this->isPastDueWithoutGift($tenant)) {
+            return $feature === 'documents';
         }
         $planSlug = $this->effectivePlanSlug($tenant);
         $plan = $this->planRepository->findBySlug($planSlug);
         if (!$plan) {
-            return $feature === 'forum';
+            return false;
         }
         $features = json_decode((string) ($plan['features_json'] ?? '{}'), true);
         if (!is_array($features)) {
             $features = [];
         }
         $base = !empty($features[$feature]) || $this->quotaConfigForFeature($plan, $feature) !== null;
-        if (!$base) {
+        if (!$base && !$this->graceAllows($tenant, $feature)) {
             return false;
         }
 
@@ -67,13 +72,13 @@ final class FeatureGateService
         if (!$tenant) {
             return false;
         }
-        if (($tenant['subscription_status'] ?? '') === 'past_due') {
-            return $feature === 'forum' || $feature === 'documents';
+        if ($this->isPastDueWithoutGift($tenant)) {
+            return $feature === 'documents';
         }
         $planSlug = $this->effectivePlanSlug($tenant);
         $plan = $this->planRepository->findBySlug($planSlug);
         if (!$plan) {
-            return $feature === 'forum';
+            return false;
         }
         $features = json_decode((string) ($plan['features_json'] ?? '{}'), true);
         if (!is_array($features)) {
@@ -81,11 +86,31 @@ final class FeatureGateService
         }
 
         $allowed = !empty($features[$feature]) || $this->hasRemainingQuota($tenantId, $plan, $feature);
-        if (!$allowed) {
+        if (!$allowed && !$this->graceAllows($tenant, $feature)) {
             return false;
         }
 
         return $this->applyDeploymentChannelGate($tenantId, $feature);
+    }
+
+    /**
+     * Fonctionnalité de la formule appliquée ; si la formule n'a pas encore la clé (ajoutée après sa création,
+     * migration pas relancée), la valeur par défaut du catalogue pour ce palier s'applique.
+     */
+    public function allowsWithCatalogDefault(int $tenantId, string $feature): bool
+    {
+        $tenant = $this->tenantRepository->findById($tenantId);
+        if (!$tenant || $this->isPastDueWithoutGift($tenant)) {
+            return false;
+        }
+        $planSlug = $this->effectivePlanSlug($tenant);
+        $plan = $this->planRepository->findBySlug($planSlug);
+        $features = $plan ? json_decode((string) ($plan['features_json'] ?? '{}'), true) : [];
+        if (is_array($features) && array_key_exists($feature, $features)) {
+            return !empty($features[$feature]);
+        }
+
+        return !empty(SubscriptionPlanFeaturesCatalog::defaultsForSlug($planSlug)[$feature] ?? false);
     }
 
     private function applyDeploymentChannelGate(int $tenantId, string $feature): bool
@@ -120,7 +145,7 @@ final class FeatureGateService
         if (!$tenant) {
             return null;
         }
-        if (($tenant['subscription_status'] ?? '') === 'past_due') {
+        if ($this->isPastDueWithoutGift($tenant)) {
             return null;
         }
         $planSlug = $this->effectivePlanSlug($tenant);
@@ -212,6 +237,10 @@ final class FeatureGateService
             return;
         }
         Session::start();
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            // Session en lecture seule (sondage du jeu) : le dédoublonnage ne serait pas enregistré.
+            return;
+        }
         $dedup = 'quota_soft_block_' . $tenantId . '_' . $feature . '_' . ($status['period_start'] ?? '');
         if (Session::get($dedup)) {
             return;
@@ -225,27 +254,37 @@ final class FeatureGateService
      */
     public function effectivePlanSlug(array $tenant): string
     {
-        $status = (string) ($tenant['subscription_status'] ?? 'none');
-        if (in_array($status, ['active', 'trialing'], true)) {
-            return (string) ($tenant['plan_slug'] ?? 'free');
-        }
-        $raw = $tenant['settings'] ?? null;
-        $decoded = [];
-        if (is_string($raw) && trim($raw) !== '') {
-            $decoded = json_decode($raw, true);
-            if (!is_array($decoded)) {
-                $decoded = [];
-            }
-        }
-        $end = $decoded['founder_trial_ends_at'] ?? null;
-        if (is_string($end) && $end !== '') {
-            $ts = strtotime($end);
-            if ($ts !== false && $ts > time()) {
-                return 'pro';
-            }
-        }
+        // Formule offerte en cours > abonnement actif > essai fondateur Pro > formule de base (voir PlanGift).
+        return PlanGift::effectivePlanSlug($tenant);
+    }
 
-        return (string) ($tenant['plan_slug'] ?? 'free');
+    /**
+     * Période de grâce (réglage plateforme, désactivée par défaut) : pendant N jours après la fin d'un essai
+     * fondateur ou d'une formule offerte, les modules de la formule terminée restent ouverts.
+     *
+     * @param array<string, mixed> $tenant
+     */
+    private function graceAllows(array $tenant, string $feature): bool
+    {
+        $days = $this->graceDays ?? PlanEndWarningService::cachedGraceDays();
+        $grace = PlanAccessWindow::grace($tenant, $days);
+        if ($grace === null) {
+            return false;
+        }
+        $plan = $this->planRepository->findBySlug($grace['plan_slug']);
+        if (!$plan) {
+            return false;
+        }
+        $features = json_decode((string) ($plan['features_json'] ?? '{}'), true);
+
+        return is_array($features) && !empty($features[$feature]);
+    }
+
+    /** Paiement en retard : accès réduit, sauf si une formule offerte court. */
+    private function isPastDueWithoutGift(array $tenant): bool
+    {
+        return ($tenant['subscription_status'] ?? '') === 'past_due'
+            && PlanGift::activeFromSettings($tenant['settings'] ?? null) === null;
     }
 
     public function maxMembers(int $tenantId): int
@@ -254,7 +293,7 @@ final class FeatureGateService
         if (!$tenant) {
             return 0;
         }
-        if (($tenant['subscription_status'] ?? '') === 'past_due') {
+        if ($this->isPastDueWithoutGift($tenant)) {
             $plan = $this->planRepository->findBySlug($tenant['plan_slug'] ?? 'free');
             $features = $plan ? json_decode((string) ($plan['features_json'] ?? '{}'), true) : [];
             if (!is_array($features)) {
@@ -295,7 +334,7 @@ final class FeatureGateService
         if (!$tenant) {
             return 0;
         }
-        if (($tenant['subscription_status'] ?? '') === 'past_due') {
+        if ($this->isPastDueWithoutGift($tenant)) {
             return $this->maxTrainingCoursesFromTenantRow($tenant);
         }
         $planSlug = $this->effectivePlanSlug($tenant);

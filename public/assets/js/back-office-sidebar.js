@@ -254,3 +254,50 @@
     }
   });
 })();
+
+/**
+ * Mobile (< 1024 px) : un tableau plus large que son conteneur défile seul,
+ * au lieu d’être coupé par le contenu principal (overflow-x masqué).
+ */
+(function () {
+  'use strict';
+
+  var mq = window.matchMedia ? window.matchMedia('(max-width: 1023.98px)') : null;
+
+  function scrollsX(el) {
+    var ox = window.getComputedStyle(el).overflowX;
+    return ox === 'auto' || ox === 'scroll';
+  }
+
+  function wrapWideTables() {
+    if (!mq || !mq.matches) return;
+    var body = document.querySelector('.ath-main__body');
+    if (!body) return;
+    body.querySelectorAll('table').forEach(function (table) {
+      if (table.closest('.ath-scroll-x')) return;
+      var parent = table.parentElement;
+      if (!parent) return;
+      // Déjà dans un conteneur défilant (jusqu’au corps de page) : rien à faire.
+      for (var p = parent; p && p !== body; p = p.parentElement) {
+        if (scrollsX(p)) return;
+      }
+      if (table.scrollWidth <= parent.clientWidth + 1) return;
+      var wrap = document.createElement('div');
+      wrap.className = 'ath-scroll-x';
+      parent.insertBefore(wrap, table);
+      wrap.appendChild(table);
+    });
+  }
+
+  function run() {
+    wrapWideTables();
+    window.setTimeout(wrapWideTables, 600);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    run();
+  }
+  if (mq && mq.addEventListener) mq.addEventListener('change', wrapWideTables);
+})();

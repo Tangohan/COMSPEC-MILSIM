@@ -44,7 +44,19 @@ if (!(_sessionStart isEqualType "") || {_sessionStart isEqualTo ""}) then {
     missionNamespace setVariable ["COMSPEC_OrdersSessionStartedAt", _sessionStart, false];
 };
 
-private _raw = ["COMSPECExtension" callExtension ["GetAiOrders", [_mapId, _sessionStart]]] call comspec_overwatch_connect_fnc_extResult;
+// GET HTTP hors du thread de jeu : spawn + extAwait (un seul en vol, libéré au retour), puis relance
+// de cette fonction avec la réponse, traitée en non planifié comme avant (isNil).
+private _raw = _this param [0, nil, [""]];
+if (isNil "_raw") exitWith {
+    if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_AiOrdersBusyAt", -1e9])) < 60) exitWith { false };
+    missionNamespace setVariable ["COMSPEC_AiOrdersBusyAt", diag_tickTime, false];
+    [_mapId, _sessionStart] spawn {
+        private _r = [["COMSPECExtension", "GetAiOrders", _this] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
+        missionNamespace setVariable ["COMSPEC_AiOrdersBusyAt", -1e9, false];
+        isNil { [_r] call comspec_overwatch_connect_fnc_pollAiOrders };
+    };
+    false
+};
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
 if ((_raw select [0, 3]) != "OK|") exitWith { false };
 
@@ -89,15 +101,13 @@ private _n = 0;
             _by = [] call comspec_overwatch_connect_fnc_getCallsign;
             if (_by isEqualTo "") then { _by = name player; };
         };
-        ["COMSPECExtension" callExtension ["UpdateOrderStatus", [_oid, "ACK", _by, _mapId, "Deplacement IA"]]] call comspec_overwatch_connect_fnc_extResult;
-        [
-            {
-                params ["_id", "_by", "_map"];
-                ["COMSPECExtension" callExtension ["UpdateOrderStatus", [_id, "EXEC", _by, _map, "En route"]]] call comspec_overwatch_connect_fnc_extResult;
-            },
-            [_oid, _by, _mapId],
-            0.45
-        ] call CBA_fnc_waitAndExecute;
+        // ACK puis EXEC en spawn via extAwait : deux POST synchrones par ordre figeaient le jeu (retour inutilisé).
+        [_oid, _by, _mapId] spawn {
+            params ["_id", "_by", "_map"];
+            ["COMSPECExtension", "UpdateOrderStatus", [_id, "ACK", _by, _map, "Deplacement IA"]] call comspec_overwatch_connect_fnc_extAwait;
+            sleep 0.45;
+            ["COMSPECExtension", "UpdateOrderStatus", [_id, "EXEC", _by, _map, "En route"]] call comspec_overwatch_connect_fnc_extAwait;
+        };
     };
 } forEach _lines;
 

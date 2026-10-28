@@ -34,7 +34,7 @@ class COMSPEC_SSE_TerminalDialog {
     idd = 93200;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "['terminal'] call comspec_sse_fnc_uiOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['terminal'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
         SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93201,"TERMINAL SSE — TERRAIN",93202,"  Record lié · collecte · transmission");
@@ -134,7 +134,7 @@ class COMSPEC_SSE_DigitalDialog {
     idd = 93250;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "['digital'] call comspec_sse_fnc_uiOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['digital'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
         SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93251,"EXPLOITATION NUMÉRIQUE",-1,"  Support numérique lié au record");
@@ -178,7 +178,7 @@ class COMSPEC_SSE_SiteDialog {
     idd = 93300;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "['site'] call comspec_sse_fnc_uiOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['site'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
         SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93301,"EXPLOITATION DE SITE",-1,"  Complétude · priorités · éléments non traités");
@@ -204,7 +204,7 @@ class COMSPEC_SSE_GraphDialog {
     idd = 93350;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "['graph'] call comspec_sse_fnc_uiOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['graph'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
         SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93351,"GRAPHE DE RENSEIGNEMENT",-1,"  Nœuds et relations établies sur le terrain");
@@ -227,7 +227,7 @@ class COMSPEC_SSE_EvidenceDialog {
     idd = 93400;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "['evidence'] call comspec_sse_fnc_uiOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['evidence'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
         SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93401,"PREUVES — CHAÎNE DE CONSERVATION",-1,"  Pièces saisies · scellés · traçabilité");
@@ -250,7 +250,7 @@ class COMSPEC_SSE_MissionIntelDialog {
     idd = 93450;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "['mission'] call comspec_sse_fnc_uiOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['mission'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
         SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93451,"RENSEIGNEMENT MISSION — FUSION",-1,"  Ensemble des renseignements recueillis · filtre par fiabilité");
@@ -270,28 +270,30 @@ class COMSPEC_SSE_MissionIntelDialog {
 };
 
 // ============================================================
-// CONTRÔLE ZEUS SSE (idd 93500)
+// CONTRÔLE ZEUS SSE (idd 93550)
+// Numéros propres (93550-93574) : 93500 et 93510-93524 sont ceux du tableau des liens (analysis/dialogs/chart.hpp).
 // ============================================================
 class COMSPEC_SSE_ZeusControlDialog {
-    idd = 93500;
+    idd = 93550;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "['zeus'] call comspec_sse_fnc_uiOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; uiNamespace setVariable ['comspec_sse_zeusControlDisplay', _this select 0]; ['zeus'] call comspec_sse_fnc_uiOnLoad";
+    onUnload = "uiNamespace setVariable ['comspec_sse_zeusControlDisplay', displayNull]";
 
     class controlsBackground {
-        SSE_FRAME(COMSPEC_SSE_RscHeaderZeus,COMSPEC_SSE_RscAccentLineZeus,93501,"CONTRÔLE ZEUS SSE — VÉRITÉ / CONNU JOUEURS",-1,"  Réservé au chef de mission · ne pas afficher aux joueurs");
+        SSE_FRAME(COMSPEC_SSE_RscHeaderZeus,COMSPEC_SSE_RscAccentLineZeus,93551,"CONTRÔLE ZEUS SSE — VÉRITÉ / CONNU JOUEURS",-1,"  Réservé au chef de mission · ne pas afficher aux joueurs");
         SSE_SECTION(SecKnown,"CE QUE SAVENT LES JOUEURS",0.5,3.1,17.25);
         SSE_SECTION(SecTruth,"VÉRITÉ COMPLÈTE",18.25,3.1,17.25);
         SSE_SECTION(SecList,"ENTITÉS SSE À PROXIMITÉ",0.5,13.1,35);
     };
     class controls {
-        class Known: COMSPEC_SSE_RscStructuredText { idc = 93510; SSE_POS(0.5,4,17.25,8.8); };
-        class Truth: COMSPEC_SSE_RscStructuredText { idc = 93511; colorBackground[] = {0.14,0.07,0.06,0.94}; SSE_POS(18.25,4,17.25,8.8); };
-        class List: COMSPEC_SSE_RscListBox { idc = 93512; SSE_POS(0.5,14,35,5.7); };
-        class BtnGen: COMSPEC_SSE_RscButtonZeus { idc = 93520; text = "BRIEF / GÉNÉRER"; tooltip = "Applique le dataset FALCON autour de vous (ou un brief par défaut)"; action = "[] call comspec_sse_fnc_uiZeusGenerate"; SSE_POS(0.5,20.75,7,1.5); };
-        class BtnLink: COMSPEC_SSE_RscButtonZeus { idc = 93521; text = "LIER (PIVOT)"; tooltip = "Crée / affiche les liens pivot du record courant"; action = "[] call comspec_sse_fnc_uiZeusLink"; SSE_POS(7.8,20.75,7,1.5); };
-        class BtnExport: COMSPEC_SSE_RscButtonZeus { idc = 93522; text = "EXPORTER LE GRAPHE"; action = "[] call comspec_sse_fnc_uiZeusExport"; SSE_POS(15.1,20.75,7,1.5); };
-        class BtnAAR: COMSPEC_SSE_RscButtonZeus { idc = 93523; text = "AAR"; tooltip = "Compte rendu de fin de mission"; action = "[] call comspec_sse_fnc_uiZeusAAR"; SSE_POS(22.4,20.75,5,1.5); };
-        class BtnClose: COMSPEC_SSE_RscButtonClose { idc = 93524; text = "FERMER"; action = "closeDialog 0"; SSE_POS(29.5,20.75,6,1.5); };
+        class Known: COMSPEC_SSE_RscStructuredText { idc = 93560; SSE_POS(0.5,4,17.25,8.8); };
+        class Truth: COMSPEC_SSE_RscStructuredText { idc = 93561; colorBackground[] = {0.14,0.07,0.06,0.94}; SSE_POS(18.25,4,17.25,8.8); };
+        class List: COMSPEC_SSE_RscListBox { idc = 93562; SSE_POS(0.5,14,35,5.7); };
+        class BtnGen: COMSPEC_SSE_RscButtonZeus { idc = 93570; text = "BRIEF / GÉNÉRER"; tooltip = "Applique le dataset FALCON autour de vous (ou un brief par défaut)"; action = "[] call comspec_sse_fnc_uiZeusGenerate"; SSE_POS(0.5,20.75,7,1.5); };
+        class BtnLink: COMSPEC_SSE_RscButtonZeus { idc = 93571; text = "LIER (PIVOT)"; tooltip = "Crée / affiche les liens pivot du record courant"; action = "[] call comspec_sse_fnc_uiZeusLink"; SSE_POS(7.8,20.75,7,1.5); };
+        class BtnExport: COMSPEC_SSE_RscButtonZeus { idc = 93572; text = "EXPORTER LE GRAPHE"; action = "[] call comspec_sse_fnc_uiZeusExport"; SSE_POS(15.1,20.75,7,1.5); };
+        class BtnAAR: COMSPEC_SSE_RscButtonZeus { idc = 93573; text = "AAR"; tooltip = "Compte rendu de fin de mission"; action = "[] call comspec_sse_fnc_uiZeusAAR"; SSE_POS(22.4,20.75,5,1.5); };
+        class BtnClose: COMSPEC_SSE_RscButtonClose { idc = 93574; text = "FERMER"; action = "closeDialog 0"; SSE_POS(29.5,20.75,6,1.5); };
     };
 };

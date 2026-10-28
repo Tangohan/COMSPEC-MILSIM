@@ -154,11 +154,16 @@ final class TacticalTrackRepository
     /**
      * @return list<array<string, mixed>>
      */
-    public function listTracks(int $tenantId, int $mapId, int $limit = 100, ?string $layer = null): array
+    public function listTracks(int $tenantId, int $mapId, int $limit = 100, ?string $layer = null, ?string $uidPrefix = null): array
     {
         $limit = max(1, min(300, $limit));
         $sql = 'SELECT * FROM tactical_tracks WHERE tenant_id = ? AND map_id = ?';
         $params = [$tenantId, $mapId];
+        // Préfixe de piste (ex. « DRN- » : contacts vus par la caméra d'un drone de l'ATAK natif).
+        if ($uidPrefix !== null && preg_match('/^[A-Z]{2,8}-$/', $uidPrefix)) {
+            $sql .= ' AND track_uid LIKE ?';
+            $params[] = $uidPrefix . '%';
+        }
         if ($layer !== null && $layer !== '') {
             $sql .= ' AND layer = ?';
             $params[] = strtolower($layer);

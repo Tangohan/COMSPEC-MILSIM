@@ -6,7 +6,7 @@ namespace App\Support;
 
 /**
  * Rendu Markdown léger et sûr pour la page de maintenance publique.
- * Indépendant du forum (pas de dépendance ExternalLeave / BDD).
+ * Autonome (pas de dépendance ExternalLeave / BDD).
  */
 final class MaintenanceMarkdown
 {

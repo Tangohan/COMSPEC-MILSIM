@@ -138,6 +138,9 @@ final class AdvancementAdminController
         [$tenantId] = $ctx;
         $this->repository->archiveGrade((int) ($params['id'] ?? 0), $tenantId);
         Session::flash('success', 'Grade archivé. L’historique des personnels qui le détiennent est conservé.');
+        if ((string) $request->input('return_to') === 'referentiel') {
+            return Response::redirect(url('back-office/referentiels/grades') . '?tab=perso');
+        }
 
         return Response::redirect(url('back-office/organisation/grades'));
     }
@@ -253,7 +256,7 @@ final class AdvancementAdminController
         }
         $this->templates->ensureForTenant($tenantId);
 
-        return $this->page('Avancement', 'RH · AVANCEMENT', 'Campagnes au choix, par année, grade et filière.', 'admin.advancement.campaigns_index', [
+        return $this->page('Avancement', 'RH · AVANCEMENT', 'Les campagnes au choix : un grade, une année, une période de candidatures.', 'admin.advancement.campaigns_index', [
             'campaigns' => $this->repository->listCampaigns($tenantId),
         ]);
     }

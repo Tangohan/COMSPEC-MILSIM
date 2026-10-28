@@ -24,13 +24,7 @@ private _lastOpen = missionNamespace getVariable ["COMSPEC_WebBrowser_AthenaOpen
 if ((_now - _lastOpen) < 2.5) exitWith {};
 missionNamespace setVariable ["COMSPEC_WebBrowser_AthenaOpenAt", _now];
 
-private _url = trim (missionNamespace getVariable ["comspec_overwatch_api_url", ""]);
-if (_url isEqualTo "") then {
-    _url = trim (profileNamespace getVariable ["comspec_overwatch_saved_api_url", ""]);
-};
-if (_url isEqualTo "") then {
-    _url = "https://athena.ttrd.fr/public";
-};
+private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
 
 while {(_url select [(count _url) - 1, 1]) isEqualTo "/"} do {
     _url = _url select [0, (count _url) - 1];
@@ -43,7 +37,7 @@ if ((count _atakUrl) < 16) exitWith {
     if (!isNull _displayErr) then {
         private _hintErr = _displayErr displayCtrl 9403;
         if (!isNull _hintErr) then {
-            _hintErr ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#ff8a7a'>Adresse portail invalide</t>";
+            _hintErr ctrlSetStructuredText parseText (("<t align='right' size='0.5' color='#ff8a7a'>Adresse portail invalide</t>") call comspec_overwatch_connect_fnc_tr);
         };
     };
     private _lastErr = missionNamespace getVariable ["COMSPEC_WebBrowser_AthenaNotifyAt", -1e9];
@@ -57,7 +51,8 @@ if ((count _atakUrl) < 16) exitWith {
 missionNamespace setVariable ["COMSPEC_WebBrowser_SystemOpenAt", _now];
 
 // Priorite 1 : navigateur systeme (Windows)
-openURL _atakUrl;
+// openURL n'existe pas en SQF : COMSPEC Link ouvre le navigateur (adresse du portail seulement).
+"COMSPECExtension" callExtension ["OpenAthenaLink", [_atakUrl]];
 
 // Sur Stable, l’embarqué ne charge pas /atak : rester en mode local (radar tablette).
 private _branch = "";
@@ -80,7 +75,7 @@ if (!isNull _display) then {
         } else {
             "<t align='right' size='0.5' color='#7dffb3'>Carte ouverte dans le navigateur PC</t>"
         };
-        _hint ctrlSetStructuredText parseText _hintTxt;
+        _hint ctrlSetStructuredText parseText ((_hintTxt) call comspec_overwatch_connect_fnc_tr);
     };
 };
 

@@ -129,7 +129,46 @@
     );
   }
 
+  // Collection choisie : en-tête (nom, visibilité, description) et export ACE de cette collection seule.
+  function renderCollectionHead() {
+    var keys = selectedKeys(state.collections);
+    var c = null;
+    if (keys.length === 1) {
+      c = (catalog.collections || []).find(function (x) {
+        return String(x.id) === String(keys[0]);
+      });
+    }
+    var head = root.querySelector('[data-eq-coll-head]');
+    if (head) {
+      head.hidden = !c;
+      if (c) {
+        var t = head.querySelector('[data-eq-coll-head-title]');
+        var m = head.querySelector('[data-eq-coll-head-meta]');
+        var d = head.querySelector('[data-eq-coll-head-desc]');
+        var n = c.wardrobe_count || 0;
+        if (t) t.textContent = c.name || 'Collection';
+        if (m) m.textContent = (c.visibility_label || 'Collection') + ' · ' + n + ' ' + (n > 1 ? 'tenues' : 'tenue');
+        if (d) {
+          d.textContent = (c.description || '').trim();
+          d.hidden = !d.textContent;
+        }
+      }
+    }
+    var gridTitle = root.querySelector('[data-eq-grid-title]');
+    if (gridTitle) gridTitle.textContent = c ? 'Tenues de la collection' : 'Toutes les tenues';
+    var ace = root.querySelector('[data-eq-ace-export]');
+    var aceLabel = root.querySelector('[data-eq-ace-label]');
+    var aceBase = (catalog.urls && catalog.urls.aceExport) || '/equipment/ace-export';
+    if (ace) ace.setAttribute('href', c ? aceBase + '?collection=' + encodeURIComponent(c.id) : aceBase);
+    if (aceLabel) {
+      aceLabel.textContent = c
+        ? 'Les tenues de cette collection, prêtes à importer dans « Mes équipements » d’ACE en jeu.'
+        : 'Toutes les tenues, prêtes à importer dans « Mes équipements » d’ACE en jeu.';
+    }
+  }
+
   function renderActiveFilters() {
+    renderCollectionHead();
     if (!activeFilters || !clearBtn) return;
     activeFilters.innerHTML = '';
     var on = hasActiveFilters();
@@ -185,7 +224,9 @@
         ' ' +
         (card.getAttribute('data-collection-name') || '') +
         ' ' +
-        (card.getAttribute('data-owner') || '');
+        (card.getAttribute('data-owner') || '') +
+        ' ' +
+        (card.getAttribute('data-items') || '');
       if (hay.indexOf(q) === -1) return false;
     }
 
@@ -470,13 +511,42 @@
       var ul = document.createElement('ul');
       items.forEach(function (it) {
         var li = document.createElement('li');
+        // Pastille de repli (initiale) tant que l’icône du jeu n’est pas arrivée ou si elle ne charge pas.
+        var ph = document.createElement('span');
+        ph.className = 'eq-hub__item-ico eq-hub__item-ico--ph';
+        ph.setAttribute('aria-hidden', 'true');
+        ph.textContent = ((it.name || it.class || '?').replace(/[^A-Za-z0-9À-ÿ]/g, '').charAt(0) || '?').toUpperCase();
+        if (it.icon) {
+          var img = document.createElement('img');
+          img.className = 'eq-hub__item-ico';
+          img.src = it.icon;
+          img.alt = '';
+          img.loading = 'lazy';
+          img.width = 32;
+          img.height = 32;
+          img.addEventListener('error', function () {
+            img.replaceWith(ph);
+          });
+          li.appendChild(img);
+        } else {
+          li.appendChild(ph);
+        }
         var span = document.createElement('span');
         span.textContent = it.name || '';
+        span.setAttribute('translate', 'no');
+        if (it.class) span.title = it.class;
         li.appendChild(span);
         if ((it.qty || 1) > 1) {
           var em = document.createElement('em');
           em.textContent = '× ' + it.qty;
           li.appendChild(em);
+        }
+        // Objet vu en jeu : nombre de joueurs qui l’ont porté ces 90 derniers jours.
+        if ((it.players || 0) > 0) {
+          var seen = document.createElement('small');
+          seen.className = 'eq-hub__item-seen';
+          seen.textContent = it.players > 1 ? it.players + ' joueurs en jeu' : '1 joueur en jeu';
+          li.appendChild(seen);
         }
         ul.appendChild(li);
       });
@@ -545,6 +615,74 @@
     });
   }
 
+  var qvAceCopy = root.querySelector('[data-eq-qv-ace-copy]');
+  var qvAceDownload = root.querySelector('[data-eq-qv-ace-download]');
+  var qvAceStatus = root.querySelector('[data-eq-qv-ace-status]');
+  var qvAceText = '';
+
+  function aceStatus(text) {
+    if (!qvAceStatus) return;
+    qvAceStatus.textContent = text || '';
+    qvAceStatus.hidden = !text;
+  }
+
+  function renderAceActions(w) {
+    qvAceText = (w && w.ace_export) || '';
+    if (qvAceCopy) qvAceCopy.hidden = !qvAceText;
+    if (qvAceDownload) {
+      qvAceDownload.hidden = !(w && w.ace_export_url);
+      if (w && w.ace_export_url) qvAceDownload.setAttribute('href', w.ace_export_url);
+    }
+    aceStatus(qvAceText ? '' : w ? 'Cette tenue ne peut pas être exportée pour ACE.' : '');
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try {
+        ok = document.execCommand('copy');
+      } catch (e) {
+        ok = false;
+      }
+      ta.remove();
+      if (ok) resolve();
+      else reject(new Error('copy'));
+    });
+  }
+
+  if (qvAceCopy) {
+    qvAceCopy.addEventListener('click', function () {
+      if (!qvAceText) return;
+      copyText(qvAceText).then(
+        function () {
+          aceStatus('Copiée. En jeu : arsenal ACE, bouton Importer (écran principal) pour l’enfiler sur le mannequin.');
+        },
+        function () {
+          aceStatus('Copie impossible ici : utilisez « Télécharger (.txt) ».');
+        }
+      );
+    });
+  }
+
+  var aceHelpToggle = root.querySelector('[data-eq-ace-help-toggle]');
+  var aceHelp = document.getElementById('eq-ace-help');
+  if (aceHelpToggle && aceHelp) {
+    aceHelpToggle.addEventListener('click', function () {
+      aceHelp.hidden = !aceHelp.hidden;
+      aceHelpToggle.setAttribute('aria-expanded', aceHelp.hidden ? 'false' : 'true');
+    });
+  }
+
   function openQuickView(id) {
     id = parseInt(id, 10);
     if (!id) return;
@@ -555,6 +693,7 @@
     if (qvTitle) qvTitle.textContent = 'Chargement…';
     if (qvHint) qvHint.textContent = '';
     if (qvItems) qvItems.innerHTML = '<p class="eq-hub__qv-empty">Chargement de l’équipement…</p>';
+    renderAceActions(null);
     if (qvEditBtn) qvEditBtn.hidden = true;
     if (qvCollection) qvCollection.hidden = true;
 
@@ -585,6 +724,7 @@
         }
         renderGallery(w.gallery && w.gallery.length ? w.gallery : w.cover_url ? [w.cover_url] : []);
         renderLoadout(w.loadout_items || []);
+        renderAceActions(w);
         if (qvCollection) {
           if (w.collection_id && w.collection_name) {
             qvCollection.hidden = false;

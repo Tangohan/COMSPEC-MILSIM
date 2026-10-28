@@ -76,7 +76,7 @@ if (
         _icon,
         {},
         _hasPlayer
-    ] call zen_context_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_zenAction;
     [_root, [], 6] call zen_context_menu_fnc_addAction;
 
     private _panel = [
@@ -89,7 +89,7 @@ if (
             [_unit] call (missionNamespace getVariable ["COMSPEC_ZeusOpenPlayerAtak", {}]);
         },
         { true }
-    ] call zen_context_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_zenAction;
     [_panel, ["comspec_atak_player"], 0] call zen_context_menu_fnc_addAction;
 
     {
@@ -104,7 +104,7 @@ if (
                 _dur
             ],
             { true }
-        ] call zen_context_menu_fnc_createAction;
+        ] call comspec_overwatch_connect_fnc_zenAction;
         [_child, ["comspec_atak_player"], _forEachIndex + 1] call zen_context_menu_fnc_addAction;
     } forEach [
         ["jam", "Brouiller (45 s)", "jam", 45],
@@ -135,7 +135,7 @@ if (
             [_unit] call (missionNamespace getVariable ["COMSPEC_ZeusOpenPlayerAtak", {}]);
         },
         "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa"
-    ] call zen_custom_modules_fnc_register;
+    ] call comspec_overwatch_connect_fnc_zenModule;
 };
 
 // --- Dotation du terminal SEEK ---
@@ -169,7 +169,7 @@ if (
             [_unit] call (uiNamespace getVariable ["COMSPEC_ZeusGiveSeek", {}]);
         },
         "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa"
-    ] call zen_custom_modules_fnc_register;
+    ] call comspec_overwatch_connect_fnc_zenModule;
 };
 
 if (!isNil "zen_custom_modules_fnc_register") then {
@@ -242,7 +242,7 @@ if (
         "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa",
         {},
         _hasPlayer
-    ] call ace_interact_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_aceAction;
     _root = [_root] call comspec_overwatch_connect_fnc_acePadAction;
     [["ACE_ZeusActions"], _root] call ace_interact_menu_fnc_addActionToZeus;
 
@@ -252,7 +252,7 @@ if (
         "",
         { [] call (missionNamespace getVariable "COMSPEC_ZeusOpenPlayerAtak"); },
         { true }
-    ] call ace_interact_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_aceAction;
     _panel = [_panel] call comspec_overwatch_connect_fnc_acePadAction;
     [["ACE_ZeusActions", "comspec_atak_zeus_root"], _panel] call ace_interact_menu_fnc_addActionToZeus;
 
@@ -274,7 +274,7 @@ if (
             { true },
             {},
             [_act, _dur]
-        ] call ace_interact_menu_fnc_createAction;
+        ] call comspec_overwatch_connect_fnc_aceAction;
         _a = [_a] call comspec_overwatch_connect_fnc_acePadAction;
         [["ACE_ZeusActions", "comspec_atak_zeus_root"], _a] call ace_interact_menu_fnc_addActionToZeus;
     } forEach [
@@ -302,9 +302,11 @@ if (missionNamespace getVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", fal
 }] call CBA_fnc_addEventHandler;
 
 [{
+    params ["_args", "_pfhId"];
     private _disp = findDisplay 46;
     if (isNull _disp) exitWith {};
-    if !(isNil "COMSPEC_ZeusCtrlKeyEH") exitWith {};
+    // Installation faite : retirer ce PFH (il tournait toutes les secondes jusqu'à la fin de la partie).
+    if !(isNil "COMSPEC_ZeusCtrlKeyEH") exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler; };
     COMSPEC_ZeusCtrlKeyEH = _disp displayAddEventHandler ["KeyDown", {
         params ["", "_key"];
         if (_key in [29, 157]) then {
@@ -319,6 +321,7 @@ if (missionNamespace getVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", fal
         };
         false
     }];
+    [_pfhId] call CBA_fnc_removePerFrameHandler;
 }, 1, []] call CBA_fnc_addPerFrameHandler;
 
 missionNamespace setVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", true];

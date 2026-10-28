@@ -32,8 +32,9 @@ switch (_tool) do {
             private _lz = _cur deleteAt _hit;
             _s set ["mapFlat", _cur];
             private _index = (missionNamespace getVariable ["COMSPEC_ATAK_MarkerIndex", 0]) + 1;
+            private _channel = ["channel"] call comspec_atak_native_fnc_markerPlace;
             missionNamespace setVariable ["COMSPEC_ATAK_MarkerIndex", _index];
-            private _m = createMarker [format ["_USER_DEFINED #%1/%2/%3", clientOwner, 9000 + _index, currentChannel], _lz, currentChannel, player];
+            private _m = ["create", [format ["_USER_DEFINED #%1/%2/%3", clientOwner, 9000 + _index, _channel], _lz, _channel]] call comspec_atak_native_fnc_markerNet;
             if (_m isEqualTo "") exitWith { ["WARNING", "Marqueur refusé sur ce canal", 3, 20] call comspec_atak_native_fnc_notify; };
             _m setMarkerTypeLocal (["mil_pickup", "mil_flag"] select !(isClass (configFile >> "CfgMarkers" >> "mil_pickup")));
             _m setMarkerColorLocal "ColorGreen";
@@ -54,16 +55,7 @@ switch (_tool) do {
         _s set ["mapFlat", _found];
         ["TACTICAL", ["Aucune zone plate trouvée à 200 m", format ["%1 zone(s) plate(s) trouvée(s)", count _found]] select ((count _found) > 0), 3, 20] call comspec_atak_native_fnc_notify;
     };
-    case "LOS": {
-        private _from = eyePos player;
-        private _to = AGLToASL [_pos select 0, _pos select 1, 1.7];
-        private _hits = lineIntersectsSurfaces [_from, _to, player, vehicle player, true, 1, "VIEW", "FIRE"];
-        private _terrain = terrainIntersectAtASL [_from, _to];
-        private _block = [];
-        if ((count _hits) > 0) then { _block = (_hits select 0) select 0; };
-        if (_terrain isNotEqualTo [0, 0, 0] && {(count _block) isEqualTo 0 || {(_from distance _terrain) < (_from distance _block)}}) then { _block = _terrain; };
-        _s set ["mapLos", [ASLToAGL _from, _pos, _block]];
-        ["TACTICAL", ["Ligne de vue dégagée", format ["Vue bloquée à %1 m", round (_from distance2D _block)]] select ((count _block) > 0), 3, 20] call comspec_atak_native_fnc_notify;
-    };
+    // Même calcul que l'app Relief (profil, nature de l'obstacle), résultat repris dans l'app.
+    case "LOS": { ["los", "pos", _pos] call comspec_atak_native_fnc_reliefAction; };
 };
 true

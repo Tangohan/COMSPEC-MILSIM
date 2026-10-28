@@ -94,7 +94,8 @@ if (!(_uidForApi isEqualType "") || {_uidForApi isEqualTo ""}) exitWith {
 
 
 
-private _extRet = "COMSPECExtension" callExtension ["GetTerminalRealism", [_uidForApi]];
+// GET HTTP synchrone côté DLL : extAwait ne fige plus le jeu quand l'appelant est en spawn (direct sinon).
+private _extRet = ["COMSPECExtension", "GetTerminalRealism", [_uidForApi]] call comspec_overwatch_connect_fnc_extAwait;
 
 private _raw = [_extRet] call comspec_overwatch_connect_fnc_extResult;
 

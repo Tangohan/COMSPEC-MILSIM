@@ -34,6 +34,7 @@ switch (_act) do {
     case "follow": { _p set ["follow", !(_p getOrDefault ["follow", false])]; call _render; };
     case "clear": {
         missionNamespace setVariable ["COMSPEC_ATAK_Aar", []];
+        missionNamespace setVariable ["COMSPEC_ATAK_AarStr", createHashMap];
         missionNamespace setVariable ["COMSPEC_ATAK_AarEvents", []];
         _p set ["idx", 0]; _p set ["playing", false];
         ["INFO", "Enregistrement de mission effacé", 3, 10] call comspec_atak_native_fnc_notify;
@@ -57,7 +58,10 @@ switch (_act) do {
         if (!isNull _label && {(count _f) > 0}) then {
             private _t0 = (_log select 0) select 0;
             private _el = round (((_f select 0) - _t0) / 60);
-            _label ctrlSetStructuredText parseText format ["<t font='RobotoCondensedBold'>%1</t>  <t color='#8a9a93' size='0.85'>H+%2 min · image %3 / %4 · %5 unités</t>", _f select 1, _el, _i + 1, count _log, count (_f select 2)];
+            // Date réelle de l'image (enregistrements récents) ; heure du jeu à côté.
+            private _real = _f param [4, ""];
+            _label ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='#8a9a93' size='0.85'>%6heure jeu %2 · H+%3 min · image %4 / %5</t>",
+                [_real, _f select 1] select (_real isEqualTo ""), _f select 1, _el, _i + 1, count _log, ["", format ["début %1 · ", ((_log select 0) param [4, ""]) select [0, 16]]] select (((_log select 0) param [4, ""]) isNotEqualTo "" && {_i > 0})]) call comspec_atak_native_fnc_tr);
         };
         if (!isNull _map && {_p getOrDefault ["follow", false]} && {(count _f) > 0}) then {
             private _me = (_f select 2) select { _x select 5 };

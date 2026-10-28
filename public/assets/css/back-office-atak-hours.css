@@ -1,0 +1,96 @@
+/**
+ * Back-office ATAK — Heures de jeu (tableur), en complément de back-office-atak-squads.css (préfixe akhr-).
+ * Pleine largeur (la marge vient déjà du corps du back-office). En-tête et première colonne figés ; seul le tableau défile horizontalement sur téléphone.
+ */
+.akhr .aksq__frame { grid-template-columns: minmax(0, 1fr); max-width: none; gap: 1rem; padding: 0 0 1.5rem; }
+.akhr .aksq__hero { padding: 1.1rem 1.25rem 1.2rem; }
+.akhr .aksq__lead { max-width: 72rem; }
+.akhr__kpi-text { font-size: 0.95rem !important; line-height: 1.3; display: block; padding-top: 0.25rem; }
+
+.akhr__filters, .akhr__toolbar { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-end; }
+.akhr__filters { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--aksq-line); }
+.akhr__field { display: grid; gap: 0.2rem; font-size: 0.72rem; font-weight: 600; color: var(--aksq-muted); min-width: 0; }
+.akhr__field--wide { min-width: min(100%, 14rem); }
+.akhr__field--grow { flex: 1 1 14rem; }
+.akhr__field input, .akhr__field select {
+  border: 1px solid var(--aksq-line); border-radius: 0.5rem; background: var(--aksq-surface); color: var(--aksq-text);
+  padding: 0.38rem 0.55rem; font-size: 0.85rem; font-weight: 400; min-width: 0; max-width: 100%;
+}
+.akhr__field input:focus-visible, .akhr__field select:focus-visible { outline: 2px solid var(--aksq-accent); outline-offset: 1px; }
+.akhr__btn {
+  display: inline-flex; align-items: center; border: 1px solid var(--aksq-accent); border-radius: 0.5rem; background: var(--aksq-accent);
+  color: #fff; padding: 0.42rem 0.9rem; font-size: 0.82rem; font-weight: 700; text-decoration: none; cursor: pointer;
+}
+.akhr__btn:hover { filter: brightness(0.95); }
+.akhr__btn:focus-visible { outline: 2px solid var(--aksq-accent); outline-offset: 2px; }
+.akhr__btn--export { background: var(--aksq-surface); color: var(--aksq-accent); }
+.akhr__reset { font-size: 0.8rem; color: var(--aksq-muted); align-self: center; }
+
+.akhr__sheet { display: grid; gap: 0.75rem; min-width: 0; }
+.akhr__bar { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: space-between; align-items: center; }
+.akhr__tabs { display: inline-flex; border: 1px solid var(--aksq-line); border-radius: 0.6rem; background: var(--aksq-surface); padding: 0.2rem; gap: 0.2rem; }
+.akhr__tab { border-radius: 0.45rem; padding: 0.32rem 0.8rem; font-size: 0.82rem; font-weight: 700; color: var(--aksq-muted); text-decoration: none; }
+.akhr__tab.is-active { background: var(--aksq-accent-soft); color: var(--aksq-accent); }
+.akhr__tab:focus-visible { outline: 2px solid var(--aksq-accent); outline-offset: 1px; }
+.akhr__count { margin: 0 0 0.35rem auto; font-size: 0.78rem; color: var(--aksq-muted); font-variant-numeric: tabular-nums; }
+
+.akhr__wrap {
+  overflow: auto; max-height: min(75vh, 48rem); border: 1px solid var(--aksq-line); border-radius: 0.75rem; background: var(--aksq-surface);
+  -webkit-overflow-scrolling: touch;
+}
+.akhr__table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.82rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.akhr__table th, .akhr__table td { padding: 0.42rem 0.65rem; border-bottom: 1px solid var(--aksq-line); border-right: 1px solid var(--aksq-line); text-align: left; vertical-align: middle; }
+.akhr__table th:last-child, .akhr__table td:last-child { border-right: 0; }
+.akhr__table .is-num { text-align: right; }
+.akhr__table thead th {
+  position: sticky; top: 0; z-index: 2; background: #f1f5f9; color: #334155; font-size: 0.7rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.06em; padding: 0;
+}
+.akhr__table thead th:not(:has(.akhr__sort)) { padding: 0.5rem 0.65rem; }
+.akhr__sort {
+  all: unset; box-sizing: border-box; display: flex; width: 100%; gap: 0.3rem; align-items: center; padding: 0.5rem 0.65rem; cursor: pointer;
+}
+.akhr__table thead th.is-num .akhr__sort { justify-content: flex-end; }
+.akhr__sort::after { content: '↕'; opacity: 0.35; font-size: 0.75rem; }
+.akhr__table th[aria-sort='ascending'] .akhr__sort::after { content: '↑'; opacity: 1; color: var(--aksq-accent); }
+.akhr__table th[aria-sort='descending'] .akhr__sort::after { content: '↓'; opacity: 1; color: var(--aksq-accent); }
+.akhr__sort:focus-visible { outline: 2px solid var(--aksq-accent); outline-offset: -2px; }
+
+/* Première colonne figée (joueur). */
+.akhr__table thead th:first-child, .akhr__table tbody th, .akhr__table tfoot th { position: sticky; left: 0; z-index: 1; }
+.akhr__table thead th:first-child { z-index: 3; }
+.akhr__table tbody th { background: var(--aksq-surface); font-weight: 600; box-shadow: 1px 0 0 var(--aksq-line); }
+.akhr__table tbody th a { color: var(--aksq-text); text-decoration: none; }
+.akhr__table tbody th a:hover { color: var(--aksq-accent); text-decoration: underline; }
+
+/* Lignes alternées, survol. */
+.akhr__table tbody tr:nth-child(even) td, .akhr__table tbody tr:nth-child(even) th { background: #f8fafc; }
+.akhr__table tbody tr:hover td, .akhr__table tbody tr:hover th { background: #ecfdf5; }
+
+.akhr__table tfoot th, .akhr__table tfoot td {
+  position: sticky; bottom: 0; background: #f1f5f9; font-weight: 800; border-top: 2px solid #cbd5e1; border-bottom: 0; white-space: normal;
+}
+.akhr__table tfoot th { z-index: 3; }
+.akhr__table tfoot td.aksq__muted { font-weight: 500; font-size: 0.72rem; }
+
+.akhr__type, .akhr__det { display: inline-block; border-radius: 999px; padding: 0.05rem 0.5rem; font-size: 0.72rem; font-weight: 700; background: rgba(100, 116, 139, 0.12); color: #334155; }
+.akhr__type--play { background: rgba(5, 150, 105, 0.12); color: #047857; }
+.akhr__type--role { background: rgba(37, 99, 235, 0.1); color: #1d4ed8; }
+.akhr__det--crew { background: rgba(217, 119, 6, 0.12); color: #b45309; }
+.akhr__det--team { background: rgba(37, 99, 235, 0.1); color: #1d4ed8; }
+.akhr__det--specialty { background: rgba(124, 58, 237, 0.1); color: #6d28d9; }
+.akhr__det--slot { background: rgba(100, 116, 139, 0.14); color: #475569; }
+.akhr__det--manual { background: rgba(225, 29, 72, 0.1); color: #be123c; }
+
+.akhr__empty-filter { margin: 0; text-align: center; font-size: 0.85rem; color: var(--aksq-muted); }
+
+.akhr__legend dl { margin: 0; display: grid; gap: 0.5rem; border: 1px solid var(--aksq-line); border-radius: 0.9rem; background: var(--aksq-surface); padding: 0.9rem; font-size: 0.82rem; }
+.akhr__legend dl > div { display: grid; grid-template-columns: minmax(9rem, 13rem) 1fr; gap: 0.75rem; align-items: baseline; }
+.akhr__legend dd { margin: 0; color: var(--aksq-muted); }
+
+@media (max-width: 640px) {
+  .akhr__legend dl > div { grid-template-columns: 1fr; gap: 0.2rem; }
+  .akhr__count { margin-left: 0; }
+  .akhr__filters .akhr__field, .akhr__toolbar .akhr__field { flex: 1 1 45%; }
+  .akhr__field input, .akhr__field select { width: 100%; }
+}

@@ -306,6 +306,8 @@ final class EnlistmentAcceptanceProvisioningService
             ]
         );
 
+        $this->applyOnboardingFollowUp($tenantId, $userId, $actorUserId, $options);
+
         $warn = trim((string) ($sync['message'] ?? ''));
         $extraWarn = trim((string) ($extras['message'] ?? ''));
         $combined = trim($warn . ($warn !== '' && $extraWarn !== '' ? ' ' : '') . $extraWarn);
@@ -343,6 +345,10 @@ final class EnlistmentAcceptanceProvisioningService
         if ($callsign !== null) {
             $userPatch['callsign'] = $callsign !== '' ? $callsign : null;
         }
+        // Grade affiché (vérifié contre les grades de la communauté par le contrôleur).
+        if (isset($options['grade_id']) && (int) $options['grade_id'] > 0) {
+            $userPatch['grade_id'] = (int) $options['grade_id'];
+        }
 
         $steamRaw = trim((string) ($options['steam_profile'] ?? ''));
         if ($steamRaw !== '') {
@@ -379,6 +385,17 @@ final class EnlistmentAcceptanceProvisioningService
         }
         if ($callsign !== null) {
             $ppPatch['callsign'] = $callsign !== '' ? $callsign : null;
+        }
+        // État civil RP et date d’engagement : seules les valeurs renseignées sont écrites.
+        foreach (['nickname_primary', 'nationality', 'birth_place', 'sex', 'blood_type', 'enlistment_date'] as $key) {
+            $value = trim((string) ($options['profile'][$key] ?? ''));
+            if ($value !== '') {
+                $ppPatch[$key] = $value;
+            }
+        }
+        $referentId = (int) ($options['referent_user_id'] ?? 0);
+        if ($referentId > 0 && $referentId !== $userId) {
+            $ppPatch['rp_tutor_user_id'] = $referentId;
         }
 
         $roleIds = $this->normalizeAssignableRoleIds($tenantId, $options['role_ids'] ?? null);
@@ -471,6 +488,43 @@ final class EnlistmentAcceptanceProvisioningService
             'steam_id' => $steamId,
             'steam_synced' => $steamSynced,
         ];
+    }
+
+    /**
+     * Après ouverture du suivi d’intégration : référent choisi et position de service.
+     * « En service actif » sert aux transferts (joueur déjà formé ailleurs).
+     *
+     * @param array<string, mixed> $options
+     */
+    private function applyOnboardingFollowUp(int $tenantId, int $userId, int $actorUserId, array $options): void
+    {
+        $referentId = (int) ($options['referent_user_id'] ?? 0);
+        if ($referentId > 0 && $referentId !== $userId) {
+            try {
+                $integrations = \App\Core\Container::get(\App\Repositories\MemberIntegrationRepository::class);
+                if ($integrations->tablesExist()) {
+                    $active = $integrations->findActiveForUser($tenantId, $userId);
+                    if (is_array($active) && (int) ($active['id'] ?? 0) > 0) {
+                        $integrationId = (int) $active['id'];
+                        $secondary = [];
+                        foreach ($integrations->listReferents($tenantId, $integrationId) as $ref) {
+                            $secondary[] = (int) ($ref['user_id'] ?? 0);
+                        }
+                        $integrations->setReferents($tenantId, $integrationId, $referentId, $secondary);
+                    }
+                }
+            } catch (Throwable $e) {
+                error_log('[recruitment-onboarding] referent: ' . $e->getMessage());
+            }
+        }
+        if ((string) ($options['duty'] ?? '') === 'active') {
+            try {
+                \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class)
+                    ->applyActiveDuty($tenantId, $userId, $actorUserId, true);
+            } catch (Throwable $e) {
+                error_log('[recruitment-onboarding] duty: ' . $e->getMessage());
+            }
+        }
     }
 
     /**

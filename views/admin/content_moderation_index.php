@@ -6,9 +6,8 @@ use App\Services\Moderation\ModerationRestrictionsCatalog;
 use App\Services\Moderation\ModerationSourceType;
 
 $baseUrl = url('');
-$contentModerationUrl = rtrim(url('admin/content-moderation'), '/');
+$contentModerationUrl = rtrim(url('back-office/content-moderation'), '/');
 $artifacts = $artifacts ?? [];
-$recentForumPublished = $recentForumPublished ?? [];
 $moduleLabels = $moduleLabels ?? ModerationRestrictionsCatalog::moduleLabels();
 $viewerUserId = (int) (\App\Core\Session::get('user_id') ?? 0);
 $total = (int) ($total ?? 0);
@@ -31,7 +30,6 @@ $stateLabel = static function (string $state): string {
 /** @param non-empty-string $type */
 $sourceLabel = static function (string $type): string {
     return match ($type) {
-        ModerationSourceType::FORUM_UPLOAD => 'Pièce jointe (forum)',
         ModerationSourceType::DOCUMENT_VERSION => 'Document (version)',
         ModerationSourceType::COURRIER_DOCUMENT => 'Courrier',
         default => $type,
@@ -48,8 +46,7 @@ $sourceLabel = static function (string $type): string {
   <header class="mb-8 border-b border-slate-200 pb-6">
     <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">File d’attente et quarantaine</h1>
     <p class="mt-2 text-base text-slate-600 max-w-2xl leading-relaxed">
-      Cette page liste d’abord les éléments <strong class="font-semibold text-slate-800">en quarantaine ou en analyse</strong> (décision humaine requise).
-      Les pièces jointes forum jugées sûres automatiquement n’y figurent pas : elles apparaissent plus bas dans le suivi récent, avec aperçu lorsque c’est possible.
+      Cette page liste les éléments <strong class="font-semibold text-slate-800">en quarantaine ou en analyse</strong> (décision humaine requise).
     </p>
   </header>
 
@@ -67,7 +64,7 @@ $sourceLabel = static function (string $type): string {
     </p>
   <?php elseif (empty($artifacts)): ?>
     <p class="rounded-xl border border-emerald-200 bg-white px-5 py-6 text-base font-medium text-slate-800 shadow-sm">
-      Aucun élément en file d’attente pour l’instant. Si vous venez de joindre une image au forum et qu’elle s’affiche déjà dans le sujet, l’analyse automatique l’a probablement acceptée sans quarantaine : consultez la section « Suivi des pièces jointes forum » ci-dessous.
+      Aucun élément en file d’attente pour l’instant.
     </p>
   <?php else: ?>
     <p class="text-sm text-slate-600 mb-5">
@@ -85,33 +82,11 @@ $sourceLabel = static function (string $type): string {
         $displaySource = $rawSource !== '' ? $sourceLabel($rawSource) : '—';
         $uploaderId = (int) ($a['user_id'] ?? 0);
         $uploaderLabel = isset($a['uploader_label']) && is_string($a['uploader_label']) && $a['uploader_label'] !== '' ? $a['uploader_label'] : null;
-        $forumCtx = isset($a['forum_context']) && is_array($a['forum_context']) ? $a['forum_context'] : null;
-        $topicLink = '';
-        if ($forumCtx !== null && (int) ($forumCtx['topic_id'] ?? 0) > 0 && (int) ($forumCtx['post_id'] ?? 0) > 0) {
-            $topicLink = rtrim($baseUrl, '/') . '/forum/topic/' . (int) $forumCtx['topic_id'] . '#post-' . (int) $forumCtx['post_id'];
-        }
         $canSanctionUploader = $uploaderId > 0 && $uploaderId !== $viewerUserId;
         ?>
         <li class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0 flex-1 space-y-2">
-              <?php
-              $mime = (string) ($a['mime'] ?? '');
-              $isImage = str_starts_with($mime, 'image/');
-              $isPdf = $mime === 'application/pdf';
-              $securePreview = $contentModerationUrl . '/' . $id . '/preview';
-              ?>
-              <?php if ($isImage): ?>
-                <div class="mb-3">
-                  <img src="<?= htmlspecialchars($securePreview, ENT_QUOTES, 'UTF-8') ?>" alt="" class="max-h-48 max-w-full rounded-lg border border-slate-200 bg-slate-50 object-contain shadow-inner" loading="lazy" width="320" height="240" />
-                </div>
-              <?php elseif ($isPdf): ?>
-                <div class="mb-3">
-                  <a href="<?= htmlspecialchars($securePreview, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-white">
-                    Ouvrir l’aperçu du PDF
-                  </a>
-                </div>
-              <?php endif; ?>
               <p class="text-xs font-bold uppercase tracking-wide text-amber-800">
                 Dossier n°<?= $id ?> · <?= htmlspecialchars($displaySource) ?>
               </p>
@@ -147,27 +122,6 @@ $sourceLabel = static function (string $type): string {
               <?php endif; ?>
               <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50/80 p-4 space-y-3">
                 <p class="text-xs font-bold uppercase tracking-wide text-slate-600">Contexte</p>
-                <?php if ($rawSource === ModerationSourceType::FORUM_UPLOAD): ?>
-                  <?php if ($forumCtx !== null && $topicLink !== ''): ?>
-                    <p class="text-sm text-slate-800">
-                      <span class="text-slate-500">Discussion :</span>
-                      <strong class="text-slate-900"><?= htmlspecialchars((string) ($forumCtx['topic_title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
-                    </p>
-                    <p>
-                      <a href="<?= htmlspecialchars($topicLink, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1.5 text-sm font-semibold text-sky-700 hover:text-sky-900 hover:underline">
-                        Ouvrir le message dans la discussion
-                      </a>
-                    </p>
-                  <?php else: ?>
-                    <p class="text-sm text-slate-700 leading-relaxed">
-                      Le fichier n’est pas encore relié à un message visible (publication ou rattachement en cours). Après publication, le lien vers la discussion apparaîtra ici.
-                    </p>
-                  <?php endif; ?>
-                <?php else: ?>
-                  <p class="text-sm text-slate-700 leading-relaxed">
-                    Hors pièce jointe forum : pas de lien vers une discussion.
-                  </p>
-                <?php endif; ?>
                 <p class="text-sm text-slate-800 pt-1 border-t border-slate-200/80">
                   <span class="text-slate-500">Auteur du fichier :</span>
                   <?php if ($uploaderLabel !== null): ?>
@@ -257,48 +211,4 @@ $sourceLabel = static function (string $type): string {
     </ul>
   <?php endif; ?>
 
-  <?php if (!$missingTables && $recentForumPublished !== []): ?>
-    <section class="mt-12 border-t border-slate-200 pt-10" aria-labelledby="forum-recent-heading">
-      <h2 id="forum-recent-heading" class="text-lg font-bold text-slate-900">Suivi des pièces jointes forum (récentes)</h2>
-      <p class="mt-2 text-sm text-slate-600 max-w-2xl">
-        Fichiers déjà publiés ou validés après quarantaine. Aucune action requise ici ; l’aperçu sert au contrôle visuel.
-      </p>
-      <ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <?php foreach ($recentForumPublished as $r): ?>
-          <?php
-          $rid = (int) ($r['id'] ?? 0);
-          $fn = basename(str_replace('\\', '/', (string) ($r['file_path'] ?? '')));
-          $pubUrl = $fn !== '' && $fn !== '.' && $fn !== '..' ? url('uploads/forum/' . $fn) : '';
-          $rmime = (string) ($r['mime'] ?? '');
-          $rIsImage = str_starts_with($rmime, 'image/');
-          $rFc = isset($r['forum_context']) && is_array($r['forum_context']) ? $r['forum_context'] : null;
-          $rTopicLink = '';
-          if ($rFc !== null && (int) ($rFc['topic_id'] ?? 0) > 0 && (int) ($rFc['post_id'] ?? 0) > 0) {
-              $rTopicLink = rtrim($baseUrl, '/') . '/forum/topic/' . (int) $rFc['topic_id'] . '#post-' . (int) $rFc['post_id'];
-          }
-          ?>
-          <li class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col gap-2">
-            <?php if ($rIsImage && $pubUrl !== ''): ?>
-              <a href="<?= htmlspecialchars($pubUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="block overflow-hidden rounded-lg border border-slate-100 bg-slate-50 aspect-video">
-                <img src="<?= htmlspecialchars($pubUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-full w-full object-contain" loading="lazy" />
-              </a>
-            <?php elseif ($rmime === 'application/pdf' && $pubUrl !== ''): ?>
-              <a href="<?= htmlspecialchars($pubUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-8 text-sm font-semibold text-slate-700 hover:bg-white">
-                Document PDF
-              </a>
-            <?php endif; ?>
-            <?php if (!empty($r['original_name'])): ?>
-              <p class="text-xs text-slate-700 truncate" title="<?= htmlspecialchars((string) $r['original_name'], ENT_QUOTES, 'UTF-8') ?>">
-                <?= htmlspecialchars((string) $r['original_name']) ?>
-              </p>
-            <?php endif; ?>
-            <?php if ($rTopicLink !== ''): ?>
-              <a href="<?= htmlspecialchars($rTopicLink, ENT_QUOTES, 'UTF-8') ?>" class="text-xs font-semibold text-sky-700 hover:underline">Voir dans la discussion</a>
-            <?php endif; ?>
-            <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Réf. <?= $rid ?></p>
-          </li>
-        <?php endforeach; ?>
-      </ul>
-    </section>
-  <?php endif; ?>
 </div>

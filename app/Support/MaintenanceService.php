@@ -131,7 +131,7 @@ final class MaintenanceService
     }
 
     /**
-     * Accepte les préfixes saisis avec ou sans /public (ex. /public/forum → /forum).
+     * Accepte les préfixes saisis avec ou sans /public (ex. /public/documents → /documents).
      */
     private function normalizeRoutePrefix(string $raw): string
     {
@@ -164,11 +164,15 @@ final class MaintenanceService
         return false;
     }
 
+    /**
+     * Administrateur de la plateforme seulement : les gestionnaires de communauté (admin.access) restent
+     * soumis à la maintenance comme les autres membres.
+     */
     private function isAdminBypass(): bool
     {
         $gate = Gate::getInstance();
 
-        return $gate->allows('admin.system') || $gate->allows('admin.access');
+        return $gate->isPlatformAdmin() || $gate->allows('admin.system');
     }
 
     /**

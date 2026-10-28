@@ -1,6 +1,6 @@
 /*
 
-    Lit URL + Steam + code du dialog — ou params tablette [_url, _code, _steam].
+    Lit Steam + code du dialog — ou params tablette [_url, _code, _steam] (_url ignorée : portail fixe).
 
     Code vide → liaison par Steam (champ 9206 ou getPlayerUID).
 
@@ -26,8 +26,6 @@ if (isNull _display && {!_fromTablet}) exitWith {};
 
 
 
-private _urlCtrl = if (!isNull _display) then { _display displayCtrl 9201 } else { controlNull };
-
 private _codeCtrl = if (!isNull _display) then { _display displayCtrl 9202 } else { controlNull };
 
 private _status = if (!isNull _display) then { _display displayCtrl 9203 } else { controlNull };
@@ -52,11 +50,8 @@ private _stripQuotes = {
     _s
 };
 
-private _url = if ((trim _urlIn) isNotEqualTo "") then {
-    [trim _urlIn] call _stripQuotes
-} else {
-    if (!isNull _urlCtrl) then { [ctrlText _urlCtrl] call _stripQuotes } else { "" }
-};
+// Portail Athena fixe : l’adresse éventuellement passée (_urlIn, ancienne tablette) est ignorée.
+private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
 private _code = if ((trim _codeIn) isNotEqualTo "") then {
     toUpper (trim _codeIn)
 } else {
@@ -77,14 +72,7 @@ private _setStatus = {
     };
 };
 
-if (_url isEqualTo "") exitWith {
-    ["Indiquez l’adresse du portail Athena.", "#ff8a7a"] call _setStatus;
-};
-private _urlLower = toLower _url;
-if (((_urlLower find "https://") != 0) && {(_urlLower find "http://") != 0}) exitWith {
-    ["Adresse invalide — utilisez https://athena.ttrd.fr/public", "#ff8a7a"] call _setStatus;
-};
-// Garde l’URL saisie (source de vérité) si le portail renvoie une adresse tronquée.
+// Garde l’adresse du portail si la réponse renvoie une adresse tronquée.
 private _dialogUrl = _url;
 
 
@@ -167,7 +155,7 @@ if (_useSteam) then {
 
     [format ["[Athena] Liaison Steam (%1) vers %2…", _steamUid, [_url] call comspec_overwatch_connect_fnc_portalLabel]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
-    _raw = ["COMSPECExtension" callExtension ["LinkBySteam", [_url, _steamUid]]] call comspec_overwatch_connect_fnc_extResult;
+    _raw = [["COMSPECExtension", "LinkBySteam", [_url, _steamUid]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 
 } else {
 
@@ -175,7 +163,7 @@ if (_useSteam) then {
 
     [format ["[Athena] Échange du code vers %1…", [_url] call comspec_overwatch_connect_fnc_portalLabel]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
-    _raw = ["COMSPECExtension" callExtension ["RedeemGameLink", [_url, _code, _steamUid]]] call comspec_overwatch_connect_fnc_extResult;
+    _raw = [["COMSPECExtension", "RedeemGameLink", [_url, _code, _steamUid]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 
 };
 
@@ -254,6 +242,8 @@ if (_prefix != "OK") exitWith {
         case "http_503": { "Liaison pas encore activée sur le portail. Contactez un administrateur Athena." };
 
         case "http_500": { "Erreur interne du portail. Réessayez dans un instant." };
+
+        case "client_untrusted": { "Ce module n’est pas reconnu. Installez la version officielle du pack, puis relancez Arma." };
 
         case "unauthorized";
         case "http_401": {
@@ -353,7 +343,7 @@ if (!(_tenantId isEqualTo "")) then {
 
 
 
-profileNamespace setVariable ["comspec_overwatch_saved_api_url", _apiUrl];
+profileNamespace setVariable ["comspec_overwatch_saved_api_url", nil];
 
 profileNamespace setVariable ["comspec_overwatch_saved_api_key", _apiKey];
 
@@ -365,14 +355,13 @@ if (!(_steamUid isEqualTo "")) then {
 
 };
 
-saveProfileNamespace;
+[] call comspec_overwatch_connect_fnc_saveProfile;
 
 
 
-// CBA : URL + community seulement. Ne PAS pousser la clé dans un EDITBOX CBA
+// CBA : communauté seulement (l’adresse du portail n’est plus un réglage). Ne PAS pousser la clé dans un EDITBOX CBA
 // (troncature / sync → écrase missionNamespace → Connect 401 juste après redeem OK).
 if (!isNil "cba_settings_fnc_set") then {
-    ["comspec_overwatch_api_url", _apiUrl, 0, "client", true] call cba_settings_fnc_set;
     if (!(_tenantId isEqualTo "")) then {
         ["comspec_overwatch_tenant_id", _tenantId, 0, "client", true] call cba_settings_fnc_set;
     };
@@ -386,7 +375,7 @@ if (_useSteam) then {
 
 // DLL 1.14+ a déjà validé client-init pendant Redeem/Steam et détient la bonne clé.
 // Connect avec clé vide : ne pas réécrire la clé DLL avec une valeur SQF/CBA potentiellement tronquée.
-private _connectRaw = ["COMSPECExtension" callExtension ["Connect", [_apiUrl, "", _tenantId]]] call comspec_overwatch_connect_fnc_extResult;
+private _connectRaw = [["COMSPECExtension", "Connect", [_apiUrl, "", _tenantId]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 private _mapIdLink = missionNamespace getVariable ["comspec_overwatch_map_id", 1];
 if (!(_mapIdLink isEqualType 0)) then { _mapIdLink = 1; };
 _mapIdLink = round _mapIdLink;

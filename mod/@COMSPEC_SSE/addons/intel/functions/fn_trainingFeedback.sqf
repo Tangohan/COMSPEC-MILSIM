@@ -9,5 +9,5 @@ private _tips = switch (_level) do {
     case "DETAILED": { "Astuce : Fusion croise les sources et augmente la confiance." };
     default { "Procédure SSE : Tactical → Field → Detailed → Fusion." };
 };
-hint format ["SSE Entraînement\nNiveau %1 — %2", _level, _tips];
+[format ["SSE Entraînement\nNiveau %1 — %2", _level, _tips], "INFO"] call comspec_sse_fnc_notify;
 true

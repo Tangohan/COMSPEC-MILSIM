@@ -10,7 +10,15 @@ use PDO;
 
 class TenantMessageRepository
 {
+    /**
+     * Fil non lu pour le membre « tu » : un message d’une autre personne posté après sa dernière lecture.
+     * Règle unique pour les badges, la messagerie, la boîte de réception et JNET.
+     */
+    private const UNREAD_PREDICATE = "EXISTS (SELECT 1 FROM tenant_messages um WHERE um.thread_id = t.id AND um.sender_user_id <> tu.user_id AND um.created_at > COALESCE(tu.last_read_at, '1970-01-01'))";
+
     private PDO $pdo;
+
+    private ?bool $hideReady = null;
 
     public function __construct()
     {
@@ -190,10 +198,14 @@ class TenantMessageRepository
                 (SELECT body FROM tenant_messages WHERE thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_preview,
                 (SELECT sender_user_id FROM tenant_messages WHERE thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_sender_id,
                 tu.last_read_at,
-                (t.updated_at > COALESCE(tu.last_read_at, '1970-01-01')) AS thread_unread
+                EXISTS (
+                    SELECT 1 FROM tenant_messages um
+                    WHERE um.thread_id = t.id AND um.sender_user_id <> tu.user_id
+                      AND um.created_at > COALESCE(tu.last_read_at, '1970-01-01')
+                ) AS thread_unread
                 FROM tenant_message_threads t
                 INNER JOIN tenant_message_thread_users tu ON tu.thread_id = t.id AND tu.user_id = ?
-                WHERE t.tenant_id = ?
+                WHERE t.tenant_id = ?" . $this->notHiddenSql() . "
                 ORDER BY t.updated_at DESC, t.id DESC
                 LIMIT {$lim}"
             );
@@ -215,10 +227,10 @@ class TenantMessageRepository
             $stmt = $this->pdo->prepare(
                 'SELECT t.id, t.subject, t.created_at, t.updated_at,
                 (SELECT body FROM tenant_messages WHERE thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_preview,
-                (t.updated_at > COALESCE(tu.last_read_at, \'1970-01-01\')) AS has_unread
+                ' . self::UNREAD_PREDICATE . ' AS has_unread
                 FROM tenant_message_threads t
                 INNER JOIN tenant_message_thread_users tu ON tu.thread_id = t.id AND tu.user_id = ?
-                WHERE t.tenant_id = ?
+                WHERE t.tenant_id = ?' . $this->notHiddenSql() . '
                 ORDER BY t.updated_at DESC, t.id DESC
                 LIMIT 100'
             );
@@ -378,7 +390,7 @@ class TenantMessageRepository
     public function listMessages(int $threadId): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT m.*, u.display_name, u.email FROM tenant_messages m
+            'SELECT m.*, u.display_name, u.callsign FROM tenant_messages m
             INNER JOIN users u ON u.id = m.sender_user_id
             WHERE m.thread_id = ?
             ORDER BY m.id ASC'
@@ -388,6 +400,10 @@ class TenantMessageRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Fils non lus : au moins un message d’une autre personne posté après la dernière lecture.
+     * Même règle que listInboxThreadsForUser() (page Messagerie) et que la boîte de réception.
+     */
     public function unreadCountForUser(int $tenantId, int $userId): int
     {
         try {
@@ -395,7 +411,11 @@ class TenantMessageRepository
                 'SELECT COUNT(*) FROM tenant_message_threads t
                 INNER JOIN tenant_message_thread_users tu ON tu.thread_id = t.id AND tu.user_id = ?
                 WHERE t.tenant_id = ?
-                AND t.updated_at > COALESCE(tu.last_read_at, \'1970-01-01\')'
+                AND EXISTS (
+                    SELECT 1 FROM tenant_messages um
+                    WHERE um.thread_id = t.id AND um.sender_user_id <> tu.user_id
+                      AND um.created_at > COALESCE(tu.last_read_at, \'1970-01-01\')
+                )'
             );
             $stmt->execute([$userId, $tenantId]);
 
@@ -403,6 +423,63 @@ class TenantMessageRepository
         } catch (\PDOException $e) {
             return 0;
         }
+    }
+
+    /**
+     * Retire des conversations de la boîte d'un membre (lues au passage). Elles restent pour les autres participants
+     * et réapparaissent à l'arrivée d'un nouveau message.
+     *
+     * @param list<int> $threadIds vide = toutes les conversations du membre dans la communauté
+     */
+    public function hideThreadsForUser(int $tenantId, int $userId, array $threadIds): int
+    {
+        if (!$this->hideColumnReady()) {
+            return 0;
+        }
+        $threadIds = array_values(array_filter(array_map('intval', $threadIds), static fn (int $i): bool => $i > 0));
+        $sql = 'UPDATE tenant_message_thread_users tu INNER JOIN tenant_message_threads t ON t.id = tu.thread_id
+                SET tu.hidden_at = NOW(), tu.last_read_at = NOW()
+                WHERE tu.user_id = ? AND t.tenant_id = ?';
+        $args = [$userId, $tenantId];
+        if ($threadIds !== []) {
+            $sql .= ' AND tu.thread_id IN (' . implode(',', array_fill(0, count($threadIds), '?')) . ')';
+            $args = array_merge($args, $threadIds);
+        }
+        $st = $this->pdo->prepare($sql);
+        $st->execute($args);
+
+        return $st->rowCount();
+    }
+
+    /** Annule le retrait (bouton « Annuler » de la boîte de réception). */
+    public function unhideThreadsForUser(int $tenantId, int $userId, array $threadIds): void
+    {
+        $threadIds = array_values(array_filter(array_map('intval', $threadIds), static fn (int $i): bool => $i > 0));
+        if ($threadIds === [] || !$this->hideColumnReady()) {
+            return;
+        }
+        $st = $this->pdo->prepare('UPDATE tenant_message_thread_users tu INNER JOIN tenant_message_threads t ON t.id = tu.thread_id
+            SET tu.hidden_at = NULL WHERE tu.user_id = ? AND t.tenant_id = ? AND tu.thread_id IN (' . implode(',', array_fill(0, count($threadIds), '?')) . ')');
+        $st->execute(array_merge([$userId, $tenantId], $threadIds));
+    }
+
+    private function hideColumnReady(): bool
+    {
+        if ($this->hideReady === null) {
+            try {
+                \App\Support\SilentSchemaMigration::run(base_path('bootstrap/inbox_hide_threads_migration.php'), $this->pdo);
+            } catch (\Throwable) {
+            }
+            $this->hideReady = $this->hasColumn('tenant_message_thread_users', 'hidden_at');
+        }
+
+        return $this->hideReady;
+    }
+
+    /** Conversation retirée par le membre et sans nouveau message depuis. */
+    private function notHiddenSql(): string
+    {
+        return $this->hideColumnReady() ? ' AND (tu.hidden_at IS NULL OR t.updated_at > tu.hidden_at)' : '';
     }
 
     public function markThreadRead(int $threadId, int $userId): void
@@ -451,7 +528,7 @@ class TenantMessageRepository
         $metaSelect = $meta ? 't.precedence, t.recipients_summary, t.origin,' : '';
         $where = '';
         if ($box === 'unread') {
-            $where = " AND t.updated_at > COALESCE(tu.last_read_at, '1970-01-01')";
+            $where = ' AND ' . self::UNREAD_PREDICATE;
         } elseif ($box === 'sent') {
             $where = ' AND EXISTS (SELECT 1 FROM tenant_messages ms WHERE ms.thread_id = t.id AND ms.sender_user_id = tu.user_id)';
         }
@@ -463,7 +540,7 @@ class TenantMessageRepository
                 (SELECT sender_user_id FROM tenant_messages WHERE thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_sender_id,
                 (SELECT COUNT(*) FROM tenant_messages WHERE thread_id = t.id) AS message_count,
                 (SELECT COUNT(*) FROM tenant_message_thread_users WHERE thread_id = t.id) AS participant_count,
-                (t.updated_at > COALESCE(tu.last_read_at, '1970-01-01')) AS has_unread
+                " . self::UNREAD_PREDICATE . " AS has_unread
                 FROM tenant_message_threads t
                 INNER JOIN tenant_message_thread_users tu ON tu.thread_id = t.id AND tu.user_id = ?
                 WHERE t.tenant_id = ?{$where}
@@ -492,7 +569,7 @@ class TenantMessageRepository
         $select = $meta ? 'tu.recipient_kind, tu.via_label,' : '';
         try {
             $stmt = $this->pdo->prepare(
-                "SELECT tu.user_id, {$select} u.display_name, u.email
+                "SELECT tu.user_id, {$select} u.display_name, u.callsign, u.email
                 FROM tenant_message_thread_users tu
                 INNER JOIN users u ON u.id = tu.user_id
                 WHERE tu.thread_id = ?

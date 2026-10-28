@@ -18,8 +18,18 @@ if (_targets isEqualTo []) exitWith {
     false
 };
 
-{ [_x, _id, "ZEUS"] call comspec_sse_fnc_applyModel; } forEach _targets;
-[_targets, 2] call comspec_sse_fnc_zeusBroadcastEnabled;
+// Étalé (generateData + ACE par entité) : même file que zeusGenerateTargets.
+private _interval = 0.28;
+[
+    _targets apply { [_x, _id, "ZEUS"] },
+    {
+        params ["_ent", "_modelId", "_by"];
+        if (isNull _ent) exitWith {};
+        [_ent, _modelId, _by] call comspec_sse_fnc_applyModel;
+    },
+    _interval
+] call comspec_sse_fnc_queueEntityJobs;
+[_targets, (count _targets) * _interval + 2] call comspec_sse_fnc_zeusBroadcastEnabled;
 missionNamespace setVariable ["comspec_sse_zeusPendingTargets", []];
 
 closeDialog 1;

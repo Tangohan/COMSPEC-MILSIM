@@ -31,6 +31,7 @@ final class ReconPhotoHudService
             'show_grid' => true,
             'show_heading' => false,
             'show_altitude' => false,
+            'show_logo' => true,
             'updated_at' => '',
         ];
     }
@@ -55,7 +56,7 @@ final class ReconPhotoHudService
         $merged['style'] = $this->normalizeStyle((string) $merged['style']);
         $merged['agency'] = $this->clip((string) $merged['agency'], 80);
         $merged['custom_line'] = $this->clip((string) $merged['custom_line'], 80);
-        foreach (['show_datetime', 'show_callsign', 'show_device', 'show_grid', 'show_heading', 'show_altitude'] as $flag) {
+        foreach (['show_datetime', 'show_callsign', 'show_device', 'show_grid', 'show_heading', 'show_altitude', 'show_logo'] as $flag) {
             $merged[$flag] = !empty($merged[$flag]);
         }
         if (trim((string) $merged['agency']) === '') {
@@ -78,7 +79,7 @@ final class ReconPhotoHudService
         $merged['style'] = $this->normalizeStyle((string) ($incoming['style'] ?? 'axon'));
         $merged['agency'] = $this->clip(trim((string) ($incoming['agency'] ?? '')), 80);
         $merged['custom_line'] = $this->clip(trim((string) ($incoming['custom_line'] ?? '')), 80);
-        foreach (['show_datetime', 'show_callsign', 'show_device', 'show_grid', 'show_heading', 'show_altitude'] as $flag) {
+        foreach (['show_datetime', 'show_callsign', 'show_device', 'show_grid', 'show_heading', 'show_altitude', 'show_logo'] as $flag) {
             $merged[$flag] = !empty($incoming[$flag]);
         }
         $merged['updated_at'] = gmdate('c');
@@ -142,6 +143,7 @@ final class ReconPhotoHudService
 
         imagealphablending($im, true);
         $this->paint($im, $w, $h, $cfg, $meta);
+        $this->paintLogo($im, $w, $h, $cfg, $tenantId);
 
         $ok = $this->saveSameFormat($im, $absolutePath, $magic);
         imagedestroy($im);
@@ -179,6 +181,7 @@ final class ReconPhotoHudService
             'altitude' => 18,
             'captured_at' => time(),
         ]);
+        $this->paintLogo($im, $w, $h, $cfg, $tenantId);
 
         ob_start();
         imagepng($im, null, 6);
@@ -224,6 +227,87 @@ final class ReconPhotoHudService
     }
 
     /**
+     * Logo de l'unité (PNG du site, Paramètres de l'organisation) en filigrane dans le coin opposé au bandeau,
+     * avec « © nom de l'unité » dessous, façon marquage de caméra-piéton.
+     *
+     * @param \GdImage $im
+     * @param array<string, mixed> $cfg
+     */
+    private function paintLogo($im, int $w, int $h, array $cfg, int $tenantId): void
+    {
+        if (empty($cfg['show_logo'])) {
+            return;
+        }
+        $path = $this->tenantLogoPath($tenantId);
+        $logo = $path !== null ? @imagecreatefromstring((string) @file_get_contents($path)) : false;
+        $agency = trim((string) ($cfg['agency'] ?? ''));
+        $position = $this->normalizePosition((string) ($cfg['position'] ?? 'top'));
+        $barH = max(28, min(110, (int) round($h * 0.078)));
+        $pad = max(10, (int) round($w * 0.016));
+        $font = $this->resolveFont();
+        $fontSize = max(9, min(18, (int) round($h * 0.018)));
+        $textH = $agency !== '' ? $fontSize + (int) round($fontSize * 0.8) : 0;
+        // En bas à droite, sauf si le bandeau occupe le bas (alors en haut à droite, sous rien).
+        $atTop = $position === 'bottom';
+        $boxH = max(24, (int) round($h * 0.11));
+        $y0 = $atTop ? $pad : $h - $pad - $boxH - $textH - ($position === 'both' ? $barH : 0);
+        if ($logo !== false) {
+            $lw = imagesx($logo);
+            $lh = imagesy($logo);
+            $scale = $boxH / max(1, $lh);
+            $dw = max(1, (int) round($lw * $scale));
+            if ($dw > $w * 0.22) {
+                $scale = ($w * 0.22) / max(1, $lw);
+                $dw = max(1, (int) round($lw * $scale));
+            }
+            $dh = max(1, (int) round($lh * $scale));
+            $tmp = imagecreatetruecolor($dw, $dh);
+            imagealphablending($tmp, false);
+            imagesavealpha($tmp, true);
+            imagefill($tmp, 0, 0, imagecolorallocatealpha($tmp, 0, 0, 0, 127));
+            imagecopyresampled($tmp, $logo, 0, 0, 0, 0, $dw, $dh, $lw, $lh);
+            // Filigrane : opacité réduite en gardant la transparence du PNG.
+            imagefilter($tmp, IMG_FILTER_COLORIZE, 0, 0, 0, 40);
+            imagecopy($im, $tmp, $w - $pad - $dw, $y0 + ($boxH - $dh), 0, 0, $dw, $dh);
+            imagedestroy($tmp);
+            imagedestroy($logo);
+        }
+        if ($agency !== '') {
+            $txt = '© ' . mb_strtoupper($agency);
+            $tw = $this->textWidth($font, $fontSize, $txt);
+            $shadow = imagecolorallocatealpha($im, 0, 0, 0, 70);
+            $white = imagecolorallocatealpha($im, 240, 244, 247, 30);
+            $ty = $y0 + $boxH + $fontSize + (int) round($fontSize * 0.4);
+            $this->text($im, $font, $fontSize, $w - $pad - $tw + 1, $ty + 1, $txt, $shadow);
+            $this->text($im, $font, $fontSize, $w - $pad - $tw, $ty, $txt, $white);
+        }
+    }
+
+    /** Fichier local du logo de l'unité (logo_url du tenant), ou null. */
+    private function tenantLogoPath(int $tenantId): ?string
+    {
+        if ($tenantId < 1) {
+            return null;
+        }
+        try {
+            $url = trim((string) ((new TenantRepository())->findById($tenantId)['logo_url'] ?? ''));
+        } catch (\Throwable) {
+            return null;
+        }
+        if ($url === '') {
+            return null;
+        }
+        $rel = (string) (parse_url($url, PHP_URL_PATH) ?? '');
+        $rel = preg_replace('#^/public/#', '/', $rel) ?? $rel;
+        if ($rel === '' || str_contains($rel, '..')) {
+            return null;
+        }
+        $abs = base_path('public' . $rel);
+
+        return is_file($abs) && is_readable($abs) && filesize($abs) < 4 * 1024 * 1024 ? $abs : null;
+    }
+
+    /**
      * @param \GdImage $im
      * @param list<string> $partsLeft
      * @param array{left: list<string>, right: string} $pack
@@ -247,8 +331,14 @@ final class ReconPhotoHudService
             $x += $this->textWidth($font, $fontSize, 'REC') + (int) round($barH * 0.35);
         }
 
+        // Texte de gauche trop long : police réduite pour ne pas chevaucher l'heure à droite.
+        $rightW = $right !== '' ? $this->textWidth($font, $fontSize, $right) + $padX : 0;
+        $leftSize = $fontSize;
+        while ($left !== '' && $leftSize > 9 && $x + $this->textWidth($font, $leftSize, $left) > $w - $padX - $rightW) {
+            $leftSize--;
+        }
         if ($left !== '') {
-            $this->text($im, $font, $fontSize, $x, $textY, $left, $white);
+            $this->text($im, $font, $leftSize, $x, $textY, $left, $white);
         }
         if ($right !== '') {
             $rw = $this->textWidth($font, $fontSize, $right);
@@ -269,7 +359,7 @@ final class ReconPhotoHudService
         $grid = preg_replace('/\s+/', ' ', $grid) ?? $grid;
         $agency = trim((string) ($cfg['agency'] ?? ''));
         $custom = trim((string) ($cfg['custom_line'] ?? ''));
-        $when = $this->formatStamp($meta['captured_at'] ?? null);
+        $when = $this->formatStamp($meta);
 
         $identity = [];
         if (!empty($cfg['show_device']) && $device !== '') {
@@ -365,9 +455,23 @@ final class ReconPhotoHudService
         return $text;
     }
 
-    private function formatStamp(mixed $capturedAt): string
+    /**
+     * Date et heure Zulu du bandeau : celles du jeu quand le téléphone les envoie (game_date « AAAA-MM-JJ »,
+     * game_time « HH:MM[:SS] », COMSPEC Link 2.0.74), sinon l'heure réelle de la prise de vue.
+     *
+     * @param array<string, mixed> $meta
+     */
+    public function formatStamp(array $meta): string
     {
-        $ts = ReconCapturedAt::unixFromPosted($capturedAt);
+        $date = trim((string) ($meta['game_date'] ?? ''));
+        $time = trim((string) ($meta['game_time'] ?? ''));
+        if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})$/', $date, $d) === 1
+            && preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $time, $t) === 1
+            && checkdate((int) $d[2], (int) $d[3], (int) $d[1])
+            && (int) $t[1] < 24 && (int) $t[2] < 60 && (int) ($t[3] ?? 0) < 60) {
+            return sprintf('%02d/%02d/%04d  %02d:%02d:%02d Z', (int) $d[3], (int) $d[2], (int) $d[1], (int) $t[1], (int) $t[2], (int) ($t[3] ?? 0));
+        }
+        $ts = ReconCapturedAt::unixFromPosted($meta['captured_at'] ?? null);
 
         return gmdate('d/m/Y  H:i:s', $ts) . ' Z';
     }

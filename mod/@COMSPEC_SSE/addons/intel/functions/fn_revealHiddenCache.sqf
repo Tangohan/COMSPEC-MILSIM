@@ -14,7 +14,7 @@ private _revealed = false;
         if (_ok) then {
             _x set ["revealed", true];
             _revealed = true;
-            hint format ["Cache révélée : %1 — %2", _x getOrDefault ["label", "?"], _x getOrDefault ["content", ""]];
+            [format ["Cache révélée : %1 — %2", _x getOrDefault ["label", "?"], _x getOrDefault ["content", ""]], "TACTICAL"] call comspec_sse_fnc_notify;
             ["SSE_IntelDiscovered", [_entity, _x getOrDefault ["id", ""], _x]] call comspec_sse_fnc_emitEvent;
         };
     };

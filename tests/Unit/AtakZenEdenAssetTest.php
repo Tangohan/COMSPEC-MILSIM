@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakZenEdenAssetTest extends TestCase
 {
@@ -21,9 +22,6 @@ final class AtakZenEdenAssetTest extends TestCase
             'COMSPEC_Module_Interference',
             'COMSPEC_Module_Degraded',
             'COMSPEC_Module_Jammer',
-            'COMSPEC_Module_SSE_Case',
-            'COMSPEC_Module_SSE_Profile',
-            'COMSPEC_Module_SSE_Equip',
             'COMSPEC_Module_TheaterSurvey',
             'COMSPEC_Module_AtakShowEnemyAi',
         ] as $cls) {
@@ -32,20 +30,35 @@ final class AtakZenEdenAssetTest extends TestCase
         }
 
         self::assertStringContainsString('class COMSPEC_Roleplay', $cfg);
-        self::assertStringContainsString('class COMSPEC_SSE', $cfg);
+        // La catégorie Eden/Zeus COMSPEC_SSE vit désormais dans le mod SSE (addon main).
+        self::assertStringNotContainsString('class COMSPEC_SSE', $cfg);
+        self::assertStringContainsString(
+            'class COMSPEC_SSE: NO_CATEGORY',
+            (string) file_get_contents(dirname(__DIR__, 2) . '/mod/@COMSPEC_SSE/addons/main/config.cpp')
+        );
         self::assertStringContainsString('class COMSPEC_Outils', $cfg);
         self::assertStringContainsString('module_roleplay_zone.hpp', $cfg);
-        self::assertStringContainsString('module_sse.hpp', $cfg);
+        // Les modules SSE (dossier, profil, équipement) et leur enregistrement Zeus
+        // ont été déplacés dans le mod SSE (addon zeus).
+        $sseZeus = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/@COMSPEC_SSE/addons/zeus/config.cpp');
+        $sseModules = $sseZeus . (string) file_get_contents(dirname(__DIR__, 2) . '/mod/@COMSPEC_SSE/addons/zeus/modules_seek.hpp');
+        foreach (['COMSPEC_Module_SSE_Case', 'COMSPEC_Module_SSE_Profile', 'COMSPEC_Module_SSE_Equip'] as $cls) {
+            self::assertStringContainsString('"' . $cls . '"', $sseZeus, $cls);
+            self::assertStringContainsString('class ' . $cls, $sseModules, $cls);
+        }
+        self::assertStringContainsString('modules_seek.hpp', $sseZeus);
+        self::assertStringContainsString('class registerZenSseModules {};', $sseZeus);
+        self::assertStringNotContainsString('module_sse.hpp', $cfg);
+        self::assertStringNotContainsString('class registerZenSseModules {};', $cfg);
         self::assertStringContainsString('module_theater_survey.hpp', $cfg);
         self::assertStringContainsString('module_atak_show_enemy_ai.hpp', $cfg);
         self::assertStringContainsString('display_theater_survey.hpp', $cfg);
         self::assertStringContainsString('class registerZenRoleplayModules {};', $cfg);
         self::assertStringContainsString('class registerZenAtakPlayerActions {};', $cfg);
-        self::assertStringContainsString('class registerZenSseModules {};', $cfg);
         self::assertStringContainsString('class registerZenTrackActions {};', $cfg);
         self::assertStringContainsString('class registerZenTheaterSurvey {};', $cfg);
         self::assertStringContainsString('class moduleAtakShowEnemyAi {};', $cfg);
-        self::assertStringContainsString('1.5.16', $cfg);
+        ModVersion::assertAtLeast('1.5.16', ModVersion::fromConfigCpp($cfg));
     }
 
     public function testZeusRegistrationWaitsForEnhancedAndKeepsRetrySafe(): void
@@ -53,7 +66,9 @@ final class AtakZenEdenAssetTest extends TestCase
         $post = (string) file_get_contents($this->connectRoot() . '/XEH_postInit.sqf');
         self::assertStringContainsString('registerZenRoleplayModules', $post);
         self::assertStringContainsString('registerZenAtakPlayerActions', $post);
-        self::assertStringContainsString('registerZenSseModules', $post);
+        // Les modules Zeus SSE vivent dans le mod SSE (addon zeus), plus dans connect.
+        self::assertStringNotContainsString('registerZenSseModules', $post);
+        self::assertStringContainsString('registerZenSseModules', (string) file_get_contents(dirname(__DIR__, 2) . '/mod/@COMSPEC_SSE/addons/zeus/XEH_postInit.sqf'));
         self::assertStringContainsString('registerZenTrackActions', $post);
         self::assertStringContainsString('registerZenTheaterSurvey', $post);
         self::assertStringContainsString('COMSPEC_ZenRegisterDeadline', $post);
@@ -81,7 +96,7 @@ final class AtakZenEdenAssetTest extends TestCase
         self::assertStringContainsString('isNil "zen_custom_modules_fnc_register"', $role);
         self::assertStringContainsString('Brouilleur ATAK actif', $role);
 
-        $sse = (string) file_get_contents($this->connectRoot() . '/functions/fn_registerZenSseModules.sqf');
+        $sse = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/@COMSPEC_SSE/addons/zeus/functions/fn_registerZenSseModules.sqf');
         self::assertStringContainsString('Dossier SSE actif', $sse);
         self::assertStringContainsString('Profil d\'identité SSE', $sse);
     }
@@ -114,7 +129,8 @@ final class AtakZenEdenAssetTest extends TestCase
 
     public function testEdenObjectAttributesCoverGpsPhoneAndAlly(): void
     {
-        $eden = (string) file_get_contents($this->connectRoot() . '/modules/eden_sse_attributes.hpp');
+        $eden = (string) file_get_contents($this->connectRoot() . '/modules/eden_sse_attributes.hpp')
+            . (string) file_get_contents($this->connectRoot() . '/stringtable.xml');
         self::assertStringContainsString('Téléphone visible sur l’ATAK', $eden);
         self::assertStringContainsString('IA alliée visible sur l’ATAK', $eden);
         self::assertStringContainsString('Balise GPS (suivi ATAK)', $eden);

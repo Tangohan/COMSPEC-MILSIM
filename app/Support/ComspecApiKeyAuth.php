@@ -8,6 +8,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TacticalPhonePairingRepository;
 use App\Repositories\TenantAtakConfigRepository;
+use App\Repositories\TenantRepository;
 use App\Services\Tactical\AtakActivityLogService;
 
 /**
@@ -25,6 +26,17 @@ final class ComspecApiKeyAuth
     /** @var int|null Utilisateur lié à la session jeu acceptée. */
     private static ?int $matchedUserId = null;
 
+    /** @var bool Clé plateforme acceptée pour la requête en cours. */
+    private static bool $matchedPlatformKey = false;
+
+    /**
+     * Vérification de la clé impossible pour la requête en cours (base indisponible) : la clé n’a pas pu
+     * être comparée, ce n’est pas une clé fausse. enforceForTacticalPath répond alors 503
+     * database_unavailable (passager pour la DLL) au lieu du 401 « unauthorized » qu’elle prend pour un
+     * refus définitif (NET-001).
+     */
+    private static bool $verificationUnavailable = false;
+
     /** @var string|null php://input lu une fois (middleware + contrôleurs). */
     private static ?string $rawJsonCache = null;
 
@@ -33,6 +45,14 @@ final class ComspecApiKeyAuth
 
     /** @var array<string, mixed>|null Config tactique (évite require répété / TypeError si non-array). */
     private static ?array $tacticalConfigCache = null;
+
+    /**
+     * Résultat de requestPresentsValidKey pour la requête en cours (middleware puis authArma) :
+     * empreinte des candidats + état matched* obtenu. Évite de revalider la clé deux fois.
+     *
+     * @var array{key: string, ok: bool, unavailable: bool, tenant: ?int, steam: ?string, user: ?int, platform: bool}|null
+     */
+    private static ?array $resolvedKeyCache = null;
 
     public static function isAppProduction(): bool
     {
@@ -55,28 +75,85 @@ final class ComspecApiKeyAuth
 
     /**
      * Clé à renvoyer au mod lors d’une liaison réussie pour une communauté.
-     * Préfère la clé générée en admin ; sinon la clé plateforme.
+     * Clé générée en admin ; à défaut, une clé de communauté est générée à la volée.
+     * Jamais la clé plateforme : elle ouvre toutes les communautés (tenant_id lu dans la requête).
+     * Vide si la clé ne peut être ni lue ni générée (l’appelant répond alors 503).
      */
     public static function secretForTenant(int $tenantId): string
     {
-        if ($tenantId > 0) {
-            try {
-                $tenantKey = (new TenantAtakConfigRepository())->getAccessKey($tenantId);
-                if ($tenantKey !== '') {
-                    return $tenantKey;
-                }
-            } catch (\Throwable) {
-                // Fall through to platform secret.
-            }
+        if ($tenantId < 1) {
+            return '';
         }
-
-        return self::expectedSecret();
+        try {
+            // Génération conditionnelle : deux liaisons simultanées reçoivent la même clé.
+            return (new TenantAtakConfigRepository())->ensureAccessKey($tenantId);
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     /** Tenant reconnu via clé de communauté (null si clé plateforme ou échec). */
     public static function matchedTenantId(): ?int
     {
         return self::$matchedTenantId;
+    }
+
+    /** Requête authentifiée par la clé plateforme (X_COMSPEC_KEY / ATAK_INTEL_SECRET). */
+    public static function matchedPlatformKey(): bool
+    {
+        return self::$matchedPlatformKey;
+    }
+
+    /** Dernière vérification refusée faute de base (clé non comparée), et non pour une clé fausse. */
+    public static function verificationUnavailable(): bool
+    {
+        return self::$verificationUnavailable;
+    }
+
+    /**
+     * Clé plateforme + tenant_id / tenant_slug fournis par le client : refusé par défaut,
+     * sauf si le tenant demandé est ATAK_DEFAULT_TENANT_ID (mono-communauté) ou si
+     * l’exploitant l’autorise explicitement (X_COMSPEC_KEY_ALLOW_TENANT_PARAM=true,
+     * intégrations serveur de confiance uniquement). Sans paramètre de communauté,
+     * la clé plateforme reste acceptée (outils d’exploitation, communauté par défaut).
+     */
+    private static function platformKeyMayUseRequestTenant(): bool
+    {
+        $raw = (string) (($_ENV['X_COMSPEC_KEY_ALLOW_TENANT_PARAM'] ?? null) ?: (getenv('X_COMSPEC_KEY_ALLOW_TENANT_PARAM') ?: ''));
+        if (filter_var($raw, FILTER_VALIDATE_BOOLEAN)) {
+            return true;
+        }
+        $body = self::peekJsonObject();
+        $slugs = [$_GET['tenant_slug'] ?? null, $_POST['tenant_slug'] ?? null, $body['tenant_slug'] ?? null];
+        foreach ($slugs as $slug) {
+            if ($slug === null || $slug === '') {
+                continue;
+            }
+            // Valeur non scalaire (tableau, objet JSON) : communauté choisie par le client, refusée.
+            if (!is_scalar($slug) || trim((string) $slug) !== '') {
+                return false;
+            }
+        }
+        $default = (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: getenv('APP_ATAK_DEFAULT_TENANT_ID') ?: 0);
+        $ids = [$_GET['tenant_id'] ?? null, $_POST['tenant_id'] ?? null, $body['tenant_id'] ?? null];
+        foreach ($ids as $id) {
+            if ($id === null || $id === '') {
+                continue;
+            }
+            // tenant_id[]=x ou {"tenant_id":[5]} : les contrôleurs font (int) d'un tableau non vide = 1,
+            // ce qui ouvrirait le tenant 1. Toute valeur non scalaire est refusée.
+            if (!is_scalar($id)) {
+                return false;
+            }
+            if ((int) $id < 1) {
+                continue;
+            }
+            if ($default < 1 || (int) $id !== $default) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /** Steam porté par la session jeu validée (null si auth hors session jeu ou Steam absent). */
@@ -200,9 +277,12 @@ final class ComspecApiKeyAuth
         self::$matchedTenantId = null;
         self::$matchedSteamId = null;
         self::$matchedUserId = null;
+        self::$matchedPlatformKey = false;
+        self::$verificationUnavailable = false;
         self::$rawJsonCache = null;
         self::$jsonObjectCache = null;
         self::$tacticalConfigCache = null;
+        self::$resolvedKeyCache = null;
     }
 
     public static function requestPresentsValidKey(): bool
@@ -210,14 +290,65 @@ final class ComspecApiKeyAuth
         self::$matchedTenantId = null;
         self::$matchedSteamId = null;
         self::$matchedUserId = null;
+        self::$matchedPlatformKey = false;
+        self::$verificationUnavailable = false;
         $candidates = self::presentedAuthCandidates();
         if ($candidates === []) {
             return false;
         }
 
         $secret = self::expectedSecret();
+        // Mêmes candidats déjà validés dans cette requête : on rend le même résultat sans requête SQL.
+        // Clé plateforme : pas de mémoire (dépend des paramètres tenant_* ; contrôle sans SQL de toute façon).
+        $memoKey = hash('sha256', implode("\n", $candidates) . "\n" . $secret);
+        $memo = self::$resolvedKeyCache;
+        if ($memo !== null && !$memo['platform'] && hash_equals($memo['key'], $memoKey)) {
+            self::$matchedTenantId = $memo['tenant'];
+            self::$matchedSteamId = $memo['steam'];
+            self::$matchedUserId = $memo['user'];
+            self::$matchedPlatformKey = $memo['platform'];
+            self::$verificationUnavailable = $memo['unavailable'];
+
+            return $memo['ok'];
+        }
+        $ok = self::resolvePresentedCandidates($candidates, $secret);
+        // Clé acceptée par un autre candidat : une erreur de base sur les précédents ne compte plus.
+        if ($ok) {
+            self::$verificationUnavailable = false;
+        }
+        self::$resolvedKeyCache = [
+            'key' => $memoKey,
+            'ok' => $ok,
+            'unavailable' => self::$verificationUnavailable,
+            'tenant' => self::$matchedTenantId,
+            'steam' => self::$matchedSteamId,
+            'user' => self::$matchedUserId,
+            'platform' => self::$matchedPlatformKey,
+        ];
+
+        return $ok;
+    }
+
+    /**
+     * @param list<string> $candidates
+     */
+    private static function resolvePresentedCandidates(array $candidates, string $secret): bool
+    {
         foreach ($candidates as $presented) {
             if ($secret !== '' && hash_equals($secret, $presented)) {
+                // Clé plateforme : la communauté ne doit pas être choisie par le client
+                // (elle a été distribuée aux joueurs des communautés sans clé dédiée).
+                if (self::platformKeyMayUseRequestTenant()) {
+                    self::$matchedPlatformKey = true;
+
+                    return true;
+                }
+                continue;
+            }
+
+            // Jeton jeu (64 hex, cas normal de la DLL) : essayé d’abord, sans balayer les clés communauté.
+            $looksLikeGameToken = preg_match('/^[0-9a-f]{64}$/', $presented) === 1;
+            if ($looksLikeGameToken && self::acceptGameSessionToken($presented)) {
                 return true;
             }
 
@@ -229,10 +360,12 @@ final class ComspecApiKeyAuth
                     return true;
                 }
             } catch (\Throwable) {
-                // Ignore DB errors — try next candidate.
+                // Base indisponible : clé non vérifiée, ce n’est pas une clé fausse. On essaie les autres
+                // candidats ; si aucun n’est accepté, la garde répond 503 et non 401 (NET-001).
+                self::$verificationUnavailable = true;
             }
 
-            if (self::acceptGameSessionToken($presented)) {
+            if (!$looksLikeGameToken && self::acceptGameSessionToken($presented)) {
                 return true;
             }
         }
@@ -267,6 +400,11 @@ final class ComspecApiKeyAuth
      */
     public static function enforceForTacticalPath(string $path): ?Response
     {
+        $untrusted = self::rejectUntrustedGameClient($path);
+        if ($untrusted !== null) {
+            return $untrusted;
+        }
+
         $cfg = self::tacticalConfig();
         if (!self::pathRequiresProtection($path, $cfg)) {
             return null;
@@ -289,9 +427,37 @@ final class ComspecApiKeyAuth
             return null;
         }
 
+        // Base indisponible pendant la vérification : réponse passagère (503 + Retry-After), sans journal de
+        // refus ni écriture en base. Une clé absente ou fausse garde le 401 ci-dessous (NET-001).
+        if (self::$verificationUnavailable) {
+            return self::json503DatabaseUnavailable();
+        }
+
         self::logAuthFailure($path, $presented !== '' ? 'invalid_key' : 'missing_key');
 
         return self::json401();
+    }
+
+    /**
+     * Module de jeu : preuve officielle obligatoire dès que le secret est configuré.
+     * Session du portail sans cette preuve : la carte et le bureau restent utilisables.
+     * Preuve présente mais fausse : refus, même si une session navigateur existe.
+     */
+    private static function rejectUntrustedGameClient(string $path): ?Response
+    {
+        if (!OfficialClientAttestation::pathRequiresProof($path)) {
+            return null;
+        }
+        $status = OfficialClientAttestation::presentedStatus();
+        if ($status === 'valid') {
+            return null;
+        }
+        if ($status === 'absent' && self::authenticatedBrowserSessionMayAccessTactical()) {
+            return null;
+        }
+        self::logAuthFailure($path, 'client_untrusted');
+
+        return OfficialClientAttestation::rejection();
     }
 
     /**
@@ -364,12 +530,15 @@ final class ComspecApiKeyAuth
         try {
             $row = (new \App\Repositories\AthenaAccountRepository())->findSessionByAccessHash(hash('sha256', $presented));
         } catch (\Throwable) {
+            // Base indisponible : jeton non vérifié (voir $verificationUnavailable).
+            self::$verificationUnavailable = true;
+
             return false;
         }
         if ($row === null) {
             return false;
         }
-        if (strtotime((string) ($row['expires_at'] ?? '')) < time()) {
+        if (UtcDateTime::isPast($row['expires_at'] ?? null)) {
             return false;
         }
         $tid = (int) ($row['tenant_id'] ?? 0);
@@ -393,6 +562,18 @@ final class ComspecApiKeyAuth
         ], 401);
     }
 
+    /**
+     * Même contrat que les autres réponses « base indisponible » du site (TenantTypeModuleAccessMiddleware).
+     * Le message évite les mots que la DLL lit comme un refus (« unauthorized », « maintenance »…).
+     */
+    private static function json503DatabaseUnavailable(): Response
+    {
+        return Response::json([
+            'error' => 'database_unavailable',
+            'message' => 'Vérification de la clé d’accès momentanément impossible. Réessayez dans quelques secondes.',
+        ], 503)->header('Retry-After', '30');
+    }
+
     private static function logAuthFailure(string $path, string $reason): void
     {
         try {
@@ -401,7 +582,9 @@ final class ComspecApiKeyAuth
                 return;
             }
             $pathHint = self::pathHintForLog($path);
-            if ($pathHint === 'connexion_telephone') {
+            if ($reason === 'client_untrusted') {
+                $label = 'Tentative de connexion refusée — module non reconnu';
+            } elseif ($pathHint === 'connexion_telephone') {
                 $label = $reason === 'missing_key'
                     ? 'Connexion téléphone refusée — compte non lié (clé manquante)'
                     : 'Connexion téléphone refusée — clé d’accès incorrecte';
@@ -410,9 +593,9 @@ final class ComspecApiKeyAuth
                     ? 'Tentative de connexion refusée — clé d’accès manquante'
                     : 'Tentative de connexion refusée — clé d’accès incorrecte';
             }
-            (new AtakActivityLogService())->recordAuthAttempt(
+            // Ni clé valide ni session : la communauté n’est pas prouvée, le refus est limité à une entrée par minute.
+            (new AtakActivityLogService())->recordUnverifiedAuthFailure(
                 $tenantId,
-                false,
                 $label,
                 [
                     'reason' => $reason,
@@ -425,7 +608,13 @@ final class ComspecApiKeyAuth
         }
     }
 
-    private static function guessTenantIdForLog(): int
+    /**
+     * Communauté à qui journaliser un refus SANS preuve : la garde des routes tactiques, et la liaison en jeu
+     * refusée (AtakApiController : code inconnu, Steam non reconnu). Une seule règle : clé reconnue, session,
+     * tenant_id de l’URL seulement s’il s’écrit en chiffres et désigne une communauté qui existe, puis la
+     * communauté par défaut configurée. 0 : rien à journaliser.
+     */
+    public static function guessTenantIdForLog(): int
     {
         $matched = self::$matchedTenantId;
         if ($matched !== null && $matched > 0) {
@@ -436,8 +625,10 @@ final class ComspecApiKeyAuth
         if ($sid !== null && $sid !== '' && (int) $sid > 0) {
             return (int) $sid;
         }
+        // tenant_id de l’URL : choisi par le client. Seulement une communauté qui existe, sinon chaque requête
+        // anonyme créait un journal (t{N}_m1.json) pour un identifiant inventé, jamais purgé.
         $q = $_GET['tenant_id'] ?? null;
-        if ($q !== null && $q !== '' && (int) $q > 0) {
+        if (is_string($q) && ctype_digit($q) && (int) $q > 0 && self::tenantExistsForLog((int) $q)) {
             return (int) $q;
         }
         $env = getenv('ATAK_DEFAULT_TENANT_ID') ?: getenv('APP_ATAK_DEFAULT_TENANT_ID');
@@ -446,6 +637,16 @@ final class ComspecApiKeyAuth
         }
 
         return 0;
+    }
+
+    /** Communauté connue ; base injoignable : non (le journal des refus est best-effort). */
+    private static function tenantExistsForLog(int $tenantId): bool
+    {
+        try {
+            return (new TenantRepository())->findById($tenantId) !== null;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     private static function pathHintForLog(string $path): string

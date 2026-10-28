@@ -5,8 +5,13 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Repositories\EmailDeliveryRepository;
+use App\Repositories\EmailDigestRepository;
 use App\Services\Email\EmailEvents;
+use App\Services\Email\MailBudget;
+use App\Services\Email\MailBudgetGate;
+use App\Services\Email\TenantMailSender;
 use App\Services\Integrations\DiscordEventRelayService;
+use App\Support\HtmlTranslator;
 
 final class EmailService
 {
@@ -15,7 +20,10 @@ final class EmailService
     public function __construct(
         private EmailTransportResolver $transportResolver,
         private EmailTemplateEngine $templateEngine,
-        private EmailDeliveryRepository $deliveryRepository
+        private EmailDeliveryRepository $deliveryRepository,
+        private ?MailBudgetGate $budgetGate = null,
+        private ?EmailDigestRepository $digestRepository = null,
+        private ?TenantMailSender $tenantSender = null
     ) {}
 
     /** Dernier message d’erreur après un envoi échoué (même requête HTTP). */
@@ -27,6 +35,11 @@ final class EmailService
     /**
      * @param array<string, mixed> $payloadSummary
      * @param bool $forceImmediate Si true, ignore MAIL_QUEUE (alertes incident, etc.)
+     * @param bool $fromQueue Envoi tiré de la file async_jobs : ne pas la réalimenter via MAIL_QUEUE.
+     * @param list<array{name: string, content: string, mime?: string}> $attachments pièces jointes (ex. .txt du récapitulatif)
+     *
+     * Le quota quotidien (MailBudget) s'applique au moment de l'envoi : un e-mail regroupé dans le récapitulatif,
+     * reporté au lendemain ou coupé par l'administration renvoie true (rien n'est perdu côté appelant).
      */
     public function send(
         string $eventCode,
@@ -38,10 +51,16 @@ final class EmailService
         ?string $replyTo = null,
         ?array $payloadSummary = null,
         ?int $campaignId = null,
-        bool $forceImmediate = false
+        bool $forceImmediate = false,
+        bool $fromQueue = false,
+        array $attachments = []
     ): bool {
         $this->lastSendError = null;
-        if (!$forceImmediate && filter_var((string) env('MAIL_QUEUE', ''), FILTER_VALIDATE_BOOLEAN)) {
+        if (\App\Support\RosterOnlyMember::isRosterEmail($to)) {
+            // Fiche sans compte : personne derrière l’adresse, rien à envoyer.
+            return true;
+        }
+        if (!$fromQueue && !$forceImmediate && filter_var((string) env('MAIL_QUEUE', ''), FILTER_VALIDATE_BOOLEAN)) {
             try {
                 $repo = \App\Core\Container::get(\App\Repositories\AsyncJobRepository::class);
                 if ($repo->tableExists()) {
@@ -55,6 +74,7 @@ final class EmailService
                         'replyTo' => $replyTo,
                         'payloadSummary' => $payloadSummary,
                         'campaignId' => $campaignId,
+                        'attachments' => self::queueAttachments($attachments),
                     ], JSON_UNESCAPED_UNICODE));
 
                     return true;
@@ -72,12 +92,26 @@ final class EmailService
         $cfg = \email_config();
         $mailerType = (string) ($cfg['default_mailer'] ?? 'file');
         $reply = $replyTo !== null && trim((string) $replyTo) !== '' ? trim((string) $replyTo) : null;
-        $result = $this->transportResolver->sendMessage(
+
+        // Compte d'envoi de la communauté : son expéditeur, son serveur, son quota (pas celui de la plateforme).
+        $community = $this->communityTransport($tenantId);
+        if ($community !== null) {
+            $transport = $community;
+            $mailerType = 'community';
+        } else {
+            $transport = $this->transportResolver;
+            if ($mailerType !== 'file'
+                && $this->holdForBudget($eventCode, $to, $subject, $htmlBody, $textBody, $tenantId, $reply, $payloadSummary, $campaignId, $mailerType, $attachments)) {
+                return true;
+            }
+        }
+        $result = $transport->sendMessage(
             $to,
             $subject,
             $htmlBody,
             $textBody,
-            $reply
+            $reply,
+            $attachments
         );
 
         $status = $result['ok'] ? 'sent' : 'failed';
@@ -109,8 +143,134 @@ final class EmailService
     }
 
     /**
+     * Pièces jointes stockées dans la file (JSON) : contenu en base64.
+     *
+     * @param list<array{name: string, content: string, mime?: string}> $attachments
+     * @return list<array{name: string, content_b64: string, mime: string}>
+     */
+    public static function queueAttachments(array $attachments): array
+    {
+        $out = [];
+        foreach ($attachments as $file) {
+            if (!isset($file['name'], $file['content'])) {
+                continue;
+            }
+            $out[] = [
+                'name' => (string) $file['name'],
+                'content_b64' => base64_encode((string) $file['content']),
+                'mime' => (string) ($file['mime'] ?? 'application/octet-stream'),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param mixed $stored pièces jointes lues dans la file
+     * @return list<array{name: string, content: string, mime: string}>
+     */
+    public static function attachmentsFromQueue(mixed $stored): array
+    {
+        $out = [];
+        foreach (is_array($stored) ? $stored : [] as $file) {
+            if (!is_array($file) || !isset($file['name'], $file['content_b64'])) {
+                continue;
+            }
+            $content = base64_decode((string) $file['content_b64'], true);
+            if ($content === false) {
+                continue;
+            }
+            $out[] = ['name' => (string) $file['name'], 'content' => $content, 'mime' => (string) ($file['mime'] ?? 'application/octet-stream')];
+        }
+
+        return $out;
+    }
+
+    private function communityTransport(?int $tenantId): ?EmailTransportResolver
+    {
+        if ($tenantId === null || $tenantId < 2) {
+            return null;
+        }
+        try {
+            $config = ($this->tenantSender ??= new TenantMailSender())->transportConfig($tenantId);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $config !== null ? new EmailTransportResolver($config) : null;
+    }
+
+    /**
+     * Quota quotidien : regroupe, reporte ou coupe l'e-mail au lieu de l'envoyer. true = pris en charge (pas d'envoi maintenant).
+     *
+     * @param array<string, mixed>|null $payloadSummary
+     */
+    private function holdForBudget(
+        string $eventCode,
+        string $to,
+        string $subject,
+        string $htmlBody,
+        string $textBody,
+        ?int $tenantId,
+        ?string $replyTo,
+        ?array $payloadSummary,
+        ?int $campaignId,
+        string $mailerType,
+        array $attachments = []
+    ): bool {
+        $gate = $this->budgetGate ??= new MailBudgetGate($this->deliveryRepository);
+        $check = $gate->check($eventCode, $to);
+        $decision = $check['decision'];
+        if ($decision === MailBudget::SEND) {
+            return false;
+        }
+        $summary = ($payloadSummary ?? []) + ['budget' => $decision, 'sent_today' => $check['sent_today']];
+
+        try {
+            if ($decision === MailBudget::GROUP) {
+                $text = $textBody !== '' ? $textBody : trim(html_entity_decode(strip_tags($htmlBody), ENT_QUOTES, 'UTF-8'));
+                ($this->digestRepository ??= new EmailDigestRepository())->add($to, $eventCode, $subject, $text, $tenantId);
+                $this->deliveryRepository->insert($tenantId, $eventCode, $to, $subject, $mailerType, 'digest', null, null, $summary, $campaignId);
+
+                return true;
+            }
+            if ($decision === MailBudget::MUTE) {
+                $this->deliveryRepository->insert($tenantId, $eventCode, $to, $subject, $mailerType, 'muted', null, null, $summary, $campaignId);
+
+                return true;
+            }
+            // DEFER : quota du jour atteint, l'e-mail repart demain depuis la file (tâche « mail_queue »).
+            $jobs = \App\Core\Container::get(\App\Repositories\AsyncJobRepository::class);
+            if (!$jobs->tableExists()) {
+                return false;
+            }
+            $jobs->enqueue('email_send', json_encode([
+                'eventCode' => $eventCode,
+                'to' => $to,
+                'subject' => $subject,
+                'htmlBody' => $htmlBody,
+                'textBody' => $textBody,
+                'tenantId' => $tenantId,
+                'replyTo' => $replyTo,
+                'payloadSummary' => $payloadSummary,
+                'campaignId' => $campaignId,
+                'attachments' => self::queueAttachments($attachments),
+            ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), $tenantId, MailBudget::nextWindow());
+            $this->deliveryRepository->insert($tenantId, $eventCode, $to, $subject, $mailerType, 'deferred', null, null, $summary, $campaignId);
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
      * @param array<string, mixed> $templateVars
      * @param array<string, mixed> $payloadSummary
+     * @param bool $forceImmediate Messages attendus dans la minute (lien d'inscription, code de connexion,
+     *                             mot de passe) : ne jamais dépendre du worker MAIL_QUEUE.
+     * @param string|null $locale langue dans laquelle le modèle est déjà écrit (fr|en) ; null = langue du profil
+     *                            du destinataire, modèle français traduit si besoin
      */
     public function sendTemplated(
         string $eventCode,
@@ -120,7 +280,9 @@ final class EmailService
         array $templateVars,
         ?int $tenantId = null,
         ?string $replyTo = null,
-        ?array $payloadSummary = null
+        ?array $payloadSummary = null,
+        bool $forceImmediate = false,
+        ?string $locale = null
     ): bool {
         $this->lastSendError = null;
         $parts = $this->templateEngine->render($templateName, $templateVars);
@@ -128,6 +290,19 @@ final class EmailService
             $this->lastSendError = 'Modèle e-mail introuvable ou vide.';
 
             return false;
+        }
+
+        // Destinataire dont le profil est en anglais : modèle (écrit en français) traduit comme une page du site.
+        // $locale donné : le modèle est déjà écrit dans cette langue ; en anglais, seul le gabarit commun
+        // (lien de secours, pied de page) reste à traduire.
+        if (($locale !== null ? \App\Services\I18n\LocaleService::normalize($locale) : $this->recipientLocale($to)) !== 'fr') {
+            try {
+                $subject = HtmlTranslator::translateText($subject);
+                $parts['html'] = HtmlTranslator::translate($parts['html']);
+                $parts['text'] = HtmlTranslator::translateText($parts['text']);
+            } catch (\Throwable) {
+                // E-mail laissé en français plutôt que pas d'e-mail.
+            }
         }
 
         return $this->send(
@@ -138,8 +313,32 @@ final class EmailService
             $parts['text'] !== '' ? $parts['text'] : strip_tags($parts['html']),
             $tenantId,
             $replyTo,
-            $payloadSummary
+            $payloadSummary,
+            null,
+            $forceImmediate
         );
+    }
+
+    /**
+     * Langue d'un destinataire : celle de son profil Athena (choisie dans le sélecteur du site), sinon celle de la
+     * page qui déclenche l'envoi (connexion, inscription…), sinon le français.
+     */
+    public function recipientLocale(string $to): string
+    {
+        try {
+            $user = \App\Core\Container::get(\App\Repositories\UserRepository::class)->findFirstByEmailGlobal($to);
+            if ($user !== null) {
+                $row = (new \App\Repositories\UserProfileRepository())->getByUserId((int) $user['id']);
+                $lang = trim((string) ($row['language'] ?? ''));
+                if ($lang !== '') {
+                    return \App\Services\I18n\LocaleService::normalize($lang);
+                }
+            }
+        } catch (\Throwable) {
+            // Pas de base ou pas de profil : langue de la page en cours.
+        }
+
+        return function_exists('locale') ? (string) locale() : 'fr';
     }
 
     /**
@@ -181,7 +380,8 @@ final class EmailService
             ['resetUrl' => $resetUrl, 'hoursValid' => $hoursValid],
             $tenantId,
             null,
-            ['purpose' => 'password_reset']
+            ['purpose' => 'password_reset'],
+            true
         );
     }
 
@@ -241,7 +441,8 @@ final class EmailService
             ],
             $tenantId,
             null,
-            ['purpose' => 'register']
+            ['purpose' => 'register'],
+            true
         );
     }
 
@@ -301,6 +502,82 @@ final class EmailService
             $tenantId,
             null,
             ['purpose' => 'register_security_companion']
+        );
+    }
+
+    /**
+     * Formule offerte à une communauté : e-mail à un gestionnaire, rédigé dans sa langue ($lang fr|en).
+     */
+    public function sendPlanGiftGranted(
+        string $to,
+        string $lang,
+        string $displayName,
+        string $tenantName,
+        string $planName,
+        ?string $endsAt,
+        string $adminMessage,
+        string $manageUrl,
+        int $tenantId,
+        int $giftId
+    ): bool {
+        $copy = \App\Support\PlanGift::copy($lang, $tenantName, $planName, $endsAt);
+
+        return $this->sendTemplated(
+            EmailEvents::PLAN_GIFT_GRANTED,
+            'plan_gift_granted',
+            $to,
+            $copy['subject'],
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'planName' => $planName,
+                'endsAt' => $endsAt,
+                'adminMessage' => $adminMessage,
+                'manageUrl' => $manageUrl,
+                'lang' => $lang,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'plan_gift_granted', 'gift_id' => $giftId]
+        );
+    }
+
+    public function sendPlanEndWarning(
+        string $to,
+        string $lang,
+        string $displayName,
+        string $tenantName,
+        string $planName,
+        string $kind,
+        string $endsAt,
+        bool $atakLost,
+        int $graceDays,
+        string $plansUrl,
+        int $tenantId
+    ): bool {
+        $copy = \App\Support\PlanAccessWindow::copy($lang, $tenantName, $planName, $kind, $endsAt, $atakLost, $graceDays);
+
+        return $this->sendTemplated(
+            EmailEvents::PLAN_END_WARNING,
+            'plan_end_warning',
+            $to,
+            $copy['subject'],
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'planName' => $planName,
+                'kind' => $kind,
+                'endsAt' => $endsAt,
+                'atakLost' => $atakLost,
+                'graceDays' => $graceDays,
+                'plansUrl' => $plansUrl,
+                'lang' => $lang,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'plan_end_warning', 'kind' => $kind, 'ends_at' => $endsAt],
+            false,
+            $lang
         );
     }
 
@@ -380,7 +657,8 @@ final class EmailService
             ],
             $tenantId,
             null,
-            ['purpose' => 'login_security_otp']
+            ['purpose' => 'login_security_otp'],
+            true
         );
     }
 
@@ -1271,6 +1549,37 @@ final class EmailService
         );
     }
 
+    public function sendTrainingPedagogyDesignation(
+        string $to,
+        string $displayName,
+        string $actorDisplayName,
+        string $tenantName,
+        string $stepTitle,
+        string $stepDetail,
+        string $actionUrl,
+        string $actionLabel,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::TRAINING_PEDAGOGY_DESIGNATION,
+            'training_pedagogy_designation',
+            $to,
+            'Vous êtes nommé — ' . $stepTitle,
+            [
+                'displayName' => $displayName,
+                'actorDisplayName' => $actorDisplayName,
+                'tenantName' => $tenantName,
+                'stepTitle' => $stepTitle,
+                'stepDetail' => $stepDetail,
+                'actionUrl' => $actionUrl,
+                'actionLabel' => $actionLabel,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'training_pedagogy_designation', 'step' => $stepTitle]
+        );
+    }
+
     public function sendEffectifsElevationRequest(
         string $to,
         string $staffDisplayName,
@@ -1634,7 +1943,7 @@ final class EmailService
                 'displayName' => $displayName,
                 'tenantName' => $tenantName,
                 'summaryLine' => $summaryLine,
-                'moderationUrl' => \url('back-office/forum-moderation'),
+                'moderationUrl' => \url('back-office/signalements'),
             ],
             $tenantId,
             null,
@@ -1659,7 +1968,7 @@ final class EmailService
                 'displayName' => $displayName,
                 'tenantName' => $tenantName,
                 'summaryLine' => $summaryLine,
-                'moderationUrl' => \url('back-office/forum-moderation'),
+                'moderationUrl' => \url('back-office/signalements'),
             ],
             $tenantId,
             null,

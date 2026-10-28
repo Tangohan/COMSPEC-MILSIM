@@ -72,11 +72,11 @@ private _sig = [3] call _fncCtrl;
 private _sat = [4] call _fncCtrl;
 if (!isNull _sig) then {
     _sig ctrlSetTextColor _color;
-    _sig ctrlSetTooltip _tip;
+    _sig ctrlSetTooltip ((_tip) call comspec_overwatch_connect_fnc_tr);
 };
 if (!isNull _sat) then {
     _sat ctrlSetTextColor _color;
-    _sat ctrlSetTooltip _tip;
+    _sat ctrlSetTooltip ((_tip) call comspec_overwatch_connect_fnc_tr);
 };
 
 private _anchor = _sig;
@@ -98,9 +98,9 @@ if (!isNull _badge) then {
         if (!(fileExists _tex)) then {
             _tex = "\a3\ui_f\data\map\diary\signal_ca.paa";
         };
-        _badge ctrlSetText _tex;
+        _badge ctrlSetText ((_tex) call comspec_overwatch_connect_fnc_tr);
         _badge ctrlSetTextColor [1, 0.28, 0.22, 1];
-        _badge ctrlSetTooltip _tip;
+        _badge ctrlSetTooltip ((_tip) call comspec_overwatch_connect_fnc_tr);
         _badge ctrlEnable false;
         _badge ctrlShow true;
         _badge ctrlCommit 0;
@@ -134,7 +134,7 @@ if (!isNull _sig && {_showBars}) then {
         private _by = _sy + (_sh - _bh);
         _bar ctrlSetPosition [_baseX + (_i * (_bw + _gap)), _by, _bw, _bh];
         _bar ctrlSetBackgroundColor (if (_i < _barN) then { _barCol } else { _emptyCol });
-        _bar ctrlSetTooltip _tip;
+        _bar ctrlSetTooltip ((_tip) call comspec_overwatch_connect_fnc_tr);
         _bar ctrlEnable false;
         _bar ctrlShow true;
         _bar ctrlCommit 0;

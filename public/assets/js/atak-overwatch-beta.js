@@ -444,6 +444,175 @@
     if (!text) return '';
     return '<span class="ow-pill is-' + escapeHtml(kind || 'ok') + '">' + escapeHtml(text) + '</span>';
   }
+  // Commandes sur un contact (comme le menu de l'ancien ATAK web) : terminal, indicatif, liaison.
+  function unitCaps() { return window.ATAK_CAPS || {}; }
+  function unitDbId(unit) {
+    var id = Number(unit && unit.id);
+    return Number.isFinite(id) && id > 0 ? id : 0;
+  }
+  function isOwnUnit(unit) {
+    var mine = [user.callsign, user.armaCallsign].map(function (v) { return String(v || '').trim().toUpperCase(); }).filter(Boolean);
+    return mine.indexOf(callsign(unit).trim().toUpperCase()) >= 0;
+  }
+  function canDeleteThisUnit(unit) {
+    var c = unitCaps();
+    return !!c.canDeleteUnitStaff || (!!c.canDeleteOwnUnit && isOwnUnit(unit));
+  }
+  function unitCommandsHtml(unit) {
+    if (!unitDbId(unit)) return '';
+    var c = unitCaps();
+    var linked = !isDisconnected(unit);
+    function cmd(action, label, enabled, title, danger) {
+      return '<button type="button" class="ow-secondary' + (danger ? ' is-danger' : '') + '" data-unit-cmd="' + action + '"' +
+        (enabled ? '' : ' disabled') + (title ? ' title="' + escapeHtml(title) + '"' : '') + '>' + escapeHtml(label) + '</button>';
+    }
+    var offline = 'Hors liaison : le terminal ne peut pas recevoir la demande.';
+    var html = '<div class="ow-btn-row">' +
+      cmd('vibrate', 'Faire vibrer', linked && !!c.loggedIn, linked ? 'Fait vibrer le téléphone ATAK du joueur' : offline) +
+      cmd('notify', 'Notification…', linked && !!c.loggedIn, linked ? 'Affiche une notification sur le terminal' : offline) +
+      '</div><div class="ow-btn-row">' +
+      cmd('helmet-snap', 'Photo casque', linked && !!c.loggedIn, linked ? 'Le terminal envoie un cliché au poste' : offline) +
+      cmd('helmet-snap-hd', 'Photo casque HD', linked && !!c.loggedIn, linked ? 'Cliché haute définition' : offline) +
+      '</div><div class="ow-btn-row">' +
+      cmd('rename', 'Renommer…', !!c.canRenameUnit, c.canRenameUnit ? 'Changer l’indicatif du contact' : 'Connexion requise pour renommer') +
+      (c.canLinkPersonnel ? cmd('link-fiche', 'Lier une fiche…', true, 'Rattacher ce contact à une fiche personnel de la communauté') : '') +
+      '</div>';
+    var asg = window.OverwatchTeams && window.OverwatchTeams.assignmentFor ? window.OverwatchTeams.assignmentFor(unit) : null;
+    var canAssign = !!c.loggedIn && !c.phoneSession;
+    html += '<div class="ow-btn-row">' +
+      cmd('assign', asg ? 'Changer de destination' : 'Assigner une destination', canAssign, canAssign ? 'Cliquez ensuite la destination sur la carte' : 'Connexion requise') +
+      (asg && asg.id ? cmd('detach', 'Détacher', canAssign, 'Retirer la destination de ' + callsign(unit)) : '') +
+      '</div>' +
+      (asg ? '<p class="ow-help">Destination : ' + escapeHtml(String(asg.destination_label || 'en cours')) + '</p>' : '') +
+      '<div id="ow-unit-link-picker" hidden></div>';
+    if (canDeleteThisUnit(unit)) {
+      html += '<div class="ow-btn-row">' +
+        cmd('disconnect', 'Couper la liaison', linked, linked ? 'Marquer ce contact hors liaison (carte et effectifs)' : 'Ce contact est déjà hors liaison', true) +
+        cmd('delete', 'Supprimer', true, 'Retirer ce contact de la carte et des effectifs', true) +
+        '</div>';
+    }
+    return discBlock('Commandes du contact', html);
+  }
+  function unitRequest(unit, suffix, method, body) {
+    var headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
+    var csrf = csrfToken();
+    if (csrf) headers['X-CSRF-TOKEN'] = csrf;
+    return fetch(apiBase + '/api/units/' + encodeURIComponent(unitDbId(unit)) + suffix, {
+      method: method,
+      credentials: 'include',
+      headers: headers,
+      body: method === 'DELETE' ? undefined : JSON.stringify(Object.assign({ _csrf_token: csrf }, body || {}))
+    }).then(function (response) {
+      if (response.status === 204) return {};
+      return response.json().catch(function () { return {}; }).then(function (payload) {
+        if (!response.ok) throw new Error((payload && payload.message) || 'La commande a échoué.');
+        return payload || {};
+      });
+    });
+  }
+  function runUnitCommand(action, unit) {
+    if (!unit || !unitDbId(unit)) return;
+    var cs = callsign(unit);
+    var job = null;
+    var done = '';
+    if (action === 'vibrate') { job = unitRequest(unit, '/vibrate', 'POST'); done = 'Vibration envoyée au terminal de ' + cs + '.'; }
+    if (action === 'notify') {
+      var msg = window.prompt('Notification à afficher sur le terminal de ' + cs + ' :', '');
+      if (!msg || !msg.trim()) return;
+      job = unitRequest(unit, '/notify', 'POST', { message: msg.trim() });
+      done = 'Notification envoyée à ' + cs + '.';
+    }
+    if (action === 'helmet-snap' || action === 'helmet-snap-hd') {
+      job = unitRequest(unit, '/request-helmet-media', 'POST', { mode: action === 'helmet-snap-hd' ? 'snap_hd' : 'snap' });
+      done = 'Photo casque demandée à ' + cs + ' : elle arrivera dans Photos.';
+    }
+    if (action === 'rename') {
+      var next = window.prompt('Nouvel indicatif pour ' + cs + ' :', cs);
+      if (!next || !next.trim() || next.trim() === cs) return;
+      job = unitRequest(unit, '', 'PATCH', { call_sign: next.trim() });
+      done = cs + ' renommé en ' + next.trim() + '.';
+    }
+    if (action === 'disconnect') {
+      if (!window.confirm('Couper la liaison de ' + cs + ' ? Le contact passe hors liaison sur la carte et dans les effectifs.')) return;
+      job = unitRequest(unit, '/disconnect', 'POST');
+      done = 'Liaison de ' + cs + ' coupée.';
+    }
+    if (action === 'assign') {
+      if (window.OverwatchTeams) window.OverwatchTeams.beginPick(unit);
+      return;
+    }
+    if (action === 'detach') {
+      var asg = window.OverwatchTeams ? window.OverwatchTeams.assignmentFor(unit) : null;
+      if (asg && asg.id) window.OverwatchTeams.detach(asg.id).then(function () { refreshAll(); });
+      return;
+    }
+    if (action === 'link-fiche') {
+      openPersonnelPicker(unit);
+      return;
+    }
+    if (action === 'delete') {
+      if (!window.confirm('Supprimer ' + cs + ' de la carte et des effectifs ?')) return;
+      job = unitRequest(unit, '', 'DELETE');
+      done = cs + ' supprimé.';
+    }
+    if (!job) return;
+    job.then(function () {
+      toast(done);
+      if (action === 'delete') document.getElementById('ow-drawer').hidden = true;
+      refreshAll();
+    }).catch(function (err) { toast(err && err.message ? err.message : 'La commande a échoué.'); });
+  }
+
+  /* Fiche personnel : liste filtrable sous les commandes du contact, puis PATCH link_user_id. */
+  var personnelItems = [];
+  function personnelListHtml(q) {
+    var needle = String(q || '').toLowerCase().trim();
+    var rows = personnelItems.filter(function (it) {
+      if (!needle) return true;
+      return ((it.label || '') + ' ' + (it.callsign || '') + ' ' + (it.characterName || '')).toLowerCase().indexOf(needle) >= 0;
+    }).slice(0, 40);
+    if (!rows.length) return '<p class="ow-help">Aucune fiche ne correspond.</p>';
+    return rows.map(function (it) {
+      var sub = [it.characterName, it.callsign].filter(Boolean).join(' · ');
+      return '<button type="button" class="ow-event ow-link-item" data-ow-link-user="' + escapeHtml(String(it.id)) + '">' +
+        '<span>' + escapeHtml(it.label || ('Fiche ' + it.id)) + (sub ? '<small class="ow-net-meta">' + escapeHtml(sub) + '</small>' : '') + '</span></button>';
+    }).join('');
+  }
+  function openPersonnelPicker(unit) {
+    var host = document.getElementById('ow-unit-link-picker');
+    if (!host) return;
+    host.hidden = false;
+    host.innerHTML = '<p class="ow-help">Chargement des fiches…</p>';
+    api('/api/atak/personnel').then(function (data) {
+      if (data && data.canLink === false) {
+        host.innerHTML = '<p class="ow-help">' + escapeHtml(data.message || 'Vous n’avez pas l’autorisation de lier une fiche.') + '</p>';
+        return;
+      }
+      personnelItems = Array.isArray(data && data.items) ? data.items : [];
+      host.innerHTML = '<label class="ow-search"><span>⌕</span><input id="ow-link-q" placeholder="Rechercher une fiche…"></label>' +
+        '<label class="ow-check"><input type="checkbox" id="ow-link-apply-cs" checked> Reprendre l’indicatif de la fiche</label>' +
+        '<div id="ow-link-list">' + personnelListHtml('') + '</div>';
+      var input = document.getElementById('ow-link-q');
+      if (input) {
+        input.addEventListener('input', function () {
+          var list = document.getElementById('ow-link-list');
+          if (list) list.innerHTML = personnelListHtml(input.value);
+        });
+        input.focus();
+      }
+    }).catch(function () { host.innerHTML = '<p class="ow-help">Impossible de charger les fiches personnel.</p>'; });
+  }
+  function linkPersonnel(unit, userId) {
+    var apply = document.getElementById('ow-link-apply-cs');
+    unitRequest(unit, '', 'PATCH', { link_user_id: Number(userId), apply_profile_callsign: apply ? !!apply.checked : true })
+      .then(function (row) {
+        var linked = row && row.linked_personnel;
+        toast('Fiche liée' + (linked && linked.label ? ' : ' + linked.label : '') + '.');
+        refreshAll();
+      })
+      .catch(function (err) { toast(err && err.message ? err.message : 'Impossible de lier la fiche.'); });
+  }
+
   function discBlock(title, inner, warn) {
     return '<details class="ow-disc">' +
       '<summary' + (warn ? ' class="is-warn"' : '') + '>' + escapeHtml(title) +
@@ -788,25 +957,83 @@
     renderGroupTaskLists();
     fillFsAlertSelects();
   }
+  /* Tâches transmises : cartes avec étapes (transmis, vu, reçu, en cours, terminé), réponses de chaque joueur
+     et tâches créées en jeu (ordres du terrain). Filtre : en cours, terrain, toutes. */
+  var groupTaskFilter = 'open';
+  var TASK_STEPS = [['PENDING', 'Transmis'], ['DELIVERED', 'Vu'], ['ACK', 'Reçu'], ['EXEC', 'En cours'], ['DONE', 'Terminé']];
+  var TASK_STATUS_FR = { PENDING: 'Transmis', DELIVERED: 'Vu', ACK: 'Reçu', EXEC: 'En cours', DONE: 'Terminé', FAILED: 'Impossible', CANCELLED: 'Annulé' };
+  function taskTone(status) {
+    if (status === 'DONE') return 'ok';
+    if (status === 'FAILED' || status === 'CANCELLED') return 'off';
+    if (status === 'ACK' || status === 'EXEC') return 'run';
+    return 'new';
+  }
+  function taskWhen(ts) {
+    var s = String(ts || '').trim();
+    if (!s) return '';
+    var iso = s.indexOf('T') >= 0 ? s : s.replace(' ', 'T');
+    if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)) iso += 'Z';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    var today = new Date();
+    var day = d.toDateString() === today.toDateString() ? '' : p(d.getDate()) + '/' + p(d.getMonth() + 1) + ' ';
+    return day + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function taskIsOpen(row) {
+    var st = String(row.status || '').toUpperCase();
+    return st !== 'CANCELLED' && st !== 'FAILED' && st !== 'DONE';
+  }
   function renderGroupTaskLists() {
-    var html = groupTasks.slice(0, 12).map(function (row) {
-      var status = String(row.status || '').toUpperCase();
-      var open = status !== 'CANCELLED' && status !== 'FAILED' && status !== 'DONE';
-      var text = String(row.payload_display || '').trim();
-      var who = String(row.ack_by || row.status_by || '').trim();
-      var statusText = clean(row.status_label, 'Transmis');
-      if (who && (status === 'ACK' || status === 'EXEC' || status === 'DONE' || status === 'DELIVERED')) {
-        statusText += ' · ' + who;
+    var rows = groupTasks.filter(function (row) {
+      if (groupTaskFilter === 'open') return taskIsOpen(row);
+      if (groupTaskFilter === 'game') return String(row.source || '') === 'game';
+      return true;
+    });
+    var counts = {
+      open: groupTasks.filter(taskIsOpen).length,
+      game: groupTasks.filter(function (row) { return String(row.source || '') === 'game'; }).length,
+      all: groupTasks.length
+    };
+    var tabs = '<div class="ow-task-filter" role="group" aria-label="Filtrer les tâches">' +
+      [['open', 'En cours'], ['game', 'Créées en jeu'], ['all', 'Toutes']].map(function (t) {
+        return '<button type="button" class="ow-task-filter-btn' + (groupTaskFilter === t[0] ? ' is-active' : '') +
+          '" data-task-filter="' + t[0] + '" aria-pressed="' + (groupTaskFilter === t[0]) + '">' + t[1] +
+          ' <span>' + counts[t[0]] + '</span></button>';
+      }).join('') + '</div>';
+    var cards = rows.slice(0, 20).map(function (row) {
+      var status = String(row.status || 'PENDING').toUpperCase();
+      var tone = taskTone(status);
+      var fromGame = String(row.source || '') === 'game';
+      var text = String(row.payload_display || row.payload || '').trim();
+      var stepIdx = -1;
+      TASK_STEPS.forEach(function (step, i) { if (step[0] === status) stepIdx = i; });
+      var steps = (status === 'FAILED' || status === 'CANCELLED') ? '' : '<ol class="ow-task-steps">' + TASK_STEPS.map(function (step, i) {
+        return '<li class="' + (i <= stepIdx ? 'is-done' : '') + (i === stepIdx ? ' is-now' : '') + '">' + step[1] + '</li>';
+      }).join('') + '</ol>';
+      var responses = Array.isArray(row.responses) ? row.responses.slice() : [];
+      if (!responses.length && (row.ack_by || row.status_by) && status !== 'PENDING' && status !== 'DELIVERED') {
+        responses.push({ by: row.ack_by || row.status_by, status: status, note: row.note || '', at: row.updated_at || '' });
       }
-      return '<div class="ow-event"><span>' + escapeHtml(clean(row.type_label, 'Tâche')) +
-        ' · ' + escapeHtml(clean(row.target_label, 'Groupe')) +
-        '</span><strong>' + escapeHtml(statusText) +
-        (row.priority_label ? ' · ' + escapeHtml(row.priority_label) : '') +
-        '</strong>' +
-        (open && canIssueGroupTasks ? '<button type="button" class="ow-tag" data-cancel-task="' +
-          escapeHtml(String(row.id || '')) + '">Annuler</button>' : '') +
-        '</div>' + (text ? '<p class="ow-help">' + escapeHtml(text) + '</p>' : '');
-    }).join('') || '<p class="ow-help">Aucune tâche transmise pour cette mission.</p>';
+      var who = responses.length ? '<ul class="ow-task-who">' + responses.map(function (r) {
+        var st = String(r.status || '').toUpperCase();
+        return '<li><span class="ow-task-dot is-' + taskTone(st) + '"></span><strong>' + escapeHtml(clean(r.by, '—')) + '</strong> ' +
+          escapeHtml(TASK_STATUS_FR[st] || st) + (r.at ? ' · ' + escapeHtml(taskWhen(r.at)) : '') +
+          (r.note ? '<em>' + escapeHtml(r.note) + '</em>' : '') + '</li>';
+      }).join('') + '</ul>' : '<p class="ow-task-none">Personne n’a encore répondu.</p>';
+      var canCancel = taskIsOpen(row) && canIssueGroupTasks;
+      return '<article class="ow-task-card is-' + tone + '">' +
+        '<header><div><strong>' + escapeHtml(clean(row.type_label, 'Tâche')) + '</strong> <span>→ ' + escapeHtml(clean(row.target_label, 'Groupe')) + '</span></div>' +
+        '<span class="ow-task-status is-' + tone + '">' + escapeHtml(clean(row.status_label, TASK_STATUS_FR[status] || 'Transmis')) + '</span></header>' +
+        '<p class="ow-task-meta">' + (fromGame ? '<span class="ow-task-src is-game">Créée en jeu</span>' : '<span class="ow-task-src">Poste</span>') +
+        (row.issuer ? ' par ' + escapeHtml(row.issuer) : '') + (row.created_at ? ' · ' + escapeHtml(taskWhen(row.created_at)) : '') +
+        (row.priority_label ? ' · ' + escapeHtml(row.priority_label) : '') + '</p>' +
+        (text ? '<p class="ow-task-text">' + escapeHtml(text) + '</p>' : '') + steps + who +
+        (canCancel ? '<footer><button type="button" class="ow-tag" data-cancel-task="' + escapeHtml(String(row.id || '')) + '">Annuler</button></footer>' : '') +
+        '</article>';
+    }).join('');
+    var empty = '<p class="ow-help">' + (groupTaskFilter === 'open' ? 'Aucune tâche en cours.' : groupTaskFilter === 'game' ? 'Aucune tâche créée en jeu pour cette mission.' : 'Aucune tâche transmise pour cette mission.') + '</p>';
+    var html = tabs + (cards || empty);
     document.querySelectorAll('.ow-group-task-list').forEach(function (host) {
       host.innerHTML = html;
     });
@@ -900,9 +1127,11 @@
   function loadGroupTasks() {
     return api('/api/atak/orders?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
       var rows = asList(payload, 'orders');
+      // Tâches de groupe et toutes les tâches créées en jeu (ordres du terrain), sauf alertes plein écran.
       groupTasks = rows.filter(function (row) {
         var kind = String(row.target_type || '').toLowerCase();
-        return kind === 'group' || kind === 'fire_team';
+        if (String(row.type || '').toUpperCase() === 'NOTIFY_FULL') return false;
+        return kind === 'group' || kind === 'fire_team' || String(row.source || '') === 'game';
       }).sort(function (a, b) {
         return String(b.created_at || b.updated_at || '').localeCompare(String(a.created_at || a.updated_at || ''));
       });
@@ -1413,6 +1642,15 @@
         return;
       }
       seen[id] = true;
+      // Forme (zone, trait, dessin libre du téléphone) : si elle change, la couche est refaite. Le téléphone pose
+      // parfois d'abord un point puis la polyligne sous le même nom : sans cela le point restait affiché.
+      var shapeSig = (helper.isAreaShape && helper.isAreaShape(data))
+        ? JSON.stringify([data.shape, data.polyline || data.points || null, data.size || null, data.dir || 0, data.color || '', data.brush || '', data.alpha])
+        : 'icon';
+      if (armaMarkerLayers[id] && armaMarkerLayers[id]._owShapeSig !== shapeSig) {
+        map.removeLayer(armaMarkerLayers[id]);
+        delete armaMarkerLayers[id];
+      }
       var title = helper.displayLabelOf ? helper.displayLabelOf(data) : (data.label || data.text || 'Repère');
       if (buildingLike) title = '';
       var desc = String(data.description || '').trim();
@@ -1440,6 +1678,7 @@
       if (!layer) return;
       if (tip && layer.bindTooltip) layer.bindTooltip(tip, { permanent: false, direction: 'top' });
       else if (layer.unbindTooltip) layer.unbindTooltip();
+      layer._owShapeSig = shapeSig;
       layer.addTo(map);
       armaMarkerLayers[id] = layer;
       bindLayerContext(layer, 'arma', id, title);
@@ -1880,6 +2119,110 @@
       }
     });
   }
+  // Géométrie des appuis JTAC (app JTAC du téléphone ATAK natif, objet « geo » du 9-LINE) : cible, IP et axe d'entrée,
+  // cône de l'axe final d'attaque (FAH), distance de risque, JTAC et ligne laser, ami le plus proche, appareil.
+  var jtacGeoLayer = null;
+  function jtacGeoPoint(p) {
+    if (!Array.isArray(p) || p.length < 2) return null;
+    var x = Number(p[0]);
+    var y = Number(p[1]);
+    if (!Number.isFinite(x) || !Number.isFinite(y) || (Math.abs(x) < 0.5 && Math.abs(y) < 0.5)) return null;
+    return { x: x, y: y };
+  }
+  function jtacGeoOffset(pt, dist, bearing) {
+    var r = bearing * Math.PI / 180;
+    return { x: pt.x + Math.sin(r) * dist, y: pt.y + Math.cos(r) * dist };
+  }
+  function jtacGeoLabel(pt, text, cls) {
+    return L.marker(worldToLatLng(pt.x, pt.y), {
+      interactive: false,
+      keyboard: false,
+      icon: L.divIcon({ className: 'ow-jtac-geo-label ' + (cls || ''), html: '<span>' + escapeHtml(text) + '</span>', iconSize: null })
+    });
+  }
+  function jtacGeoActive(row) {
+    var st = String(row.status || '').toUpperCase();
+    if (st === 'COMPLETE' || st === 'ABORTED' || st === 'CANCELLED') return false;
+    var t = Date.parse(String(row.updated_at || row.created_at || '').replace(' ', 'T'));
+    return !Number.isFinite(t) || (Date.now() - t) < 6 * 3600 * 1000;
+  }
+  function renderJtacGeoOnMap() {
+    if (jtacGeoLayer) { map.removeLayer(jtacGeoLayer); jtacGeoLayer = null; }
+    if (hiddenLayers.jtac) return;
+    var group = L.layerGroup();
+    var amber = '#f2ab33';
+    var red = '#e5483a';
+    var green = '#5cc76b';
+    var cyan = '#33e6f2';
+    var ll = function (pt) { return worldToLatLng(pt.x, pt.y); };
+    jtacRows().forEach(function (row) {
+      var g = row && row.geo;
+      if (!g || typeof g !== 'object' || !jtacGeoActive(row)) return;
+      var tgt = jtacGeoPoint(g.target);
+      if (!tgt) return;
+      var dc = !!g.dangerClose;
+      var ip = jtacGeoPoint(g.ip);
+      var who = String(row.author || row.jtac || 'JTAC');
+      // Cône FAH : l'appareil vole au cap FAH vers la cible, il arrive donc du côté opposé.
+      var win = Array.isArray(g.fahWindow) && g.fahWindow.length === 2 ? g.fahWindow.map(Number) : null;
+      if (win && Number.isFinite(win[0]) && Number.isFinite(win[1])) {
+        var span = Math.max(2, ((win[1] - win[0]) % 360 + 360) % 360);
+        var rad = ip ? Math.min(15000, Math.max(3000, Math.hypot(ip.x - tgt.x, ip.y - tgt.y) * 1.1)) : 6000;
+        var cone = [ll(tgt)];
+        for (var a = 0; a <= span; a += Math.max(1, span / 12)) cone.push(ll(jtacGeoOffset(tgt, rad, win[0] + a + 180)));
+        L.polygon(cone, { color: amber, weight: 1.5, fillColor: amber, fillOpacity: 0.12, interactive: false }).addTo(group);
+        jtacGeoLabel(jtacGeoOffset(tgt, rad * 0.7, win[0] + span / 2 + 180), 'FAH ' + (g.fah || ''), 'is-amber').addTo(group);
+      }
+      // Distance de risque de l'armement (rouge si DANGER CLOSE).
+      var risk = Number(g.risk || 0);
+      if (risk > 0) {
+        var ring = [];
+        for (var d = 0; d < 360; d += 10) ring.push(ll(jtacGeoOffset(tgt, risk, d)));
+        L.polygon(ring, { color: dc ? red : amber, weight: 1.5, dashArray: '6 4', fill: false, interactive: false }).addTo(group);
+        jtacGeoLabel(jtacGeoOffset(tgt, risk, 135), 'RED ' + Math.round(risk) + ' m', dc ? 'is-red' : 'is-amber').addTo(group);
+      }
+      // IP et axe d'entrée (cap et distance).
+      if (ip) {
+        L.polyline([ll(ip), ll(tgt)], { color: green, weight: 2, interactive: false }).addTo(group);
+        var hdg = Math.round((Math.atan2(tgt.x - ip.x, tgt.y - ip.y) * 180 / Math.PI + 360) % 360);
+        var nm = (Math.hypot(tgt.x - ip.x, tgt.y - ip.y) / 1852).toFixed(1);
+        jtacGeoLabel({ x: (ip.x + tgt.x) / 2, y: (ip.y + tgt.y) / 2 }, String(hdg).padStart(3, '0') + '° · ' + nm + ' NM', 'is-green').addTo(group);
+        L.circleMarker(ll(ip), { radius: 6, color: green, weight: 2, fillColor: green, fillOpacity: 0.35 })
+          .bindTooltip(g.ipName || 'IP', { permanent: true, direction: 'right', className: 'ow-jtac-geo-tip is-green' }).addTo(group);
+      }
+      // Ami le plus proche relié à la cible.
+      var fr = jtacGeoPoint(g.friendly);
+      if (fr) {
+        L.polyline([ll(tgt), ll(fr)], { color: dc ? red : green, weight: 1.5, dashArray: '3 4', interactive: false }).addTo(group);
+        jtacGeoLabel({ x: (fr.x + tgt.x) / 2, y: (fr.y + tgt.y) / 2 }, Math.round(Math.hypot(fr.x - tgt.x, fr.y - tgt.y)) + ' m', dc ? 'is-red' : 'is-green').addTo(group);
+      }
+      // JTAC et ligne laser-cible.
+      var jt = jtacGeoPoint(g.jtac);
+      if (jt) {
+        if (g.laser) L.polyline([ll(jt), ll(tgt)], { color: red, weight: 1.5, opacity: 0.75, interactive: false }).addTo(group);
+        L.circleMarker(ll(jt), { radius: 5, color: cyan, weight: 2, fillColor: cyan, fillOpacity: 0.5 })
+          .bindTooltip(who, { permanent: true, direction: 'right', className: 'ow-jtac-geo-tip is-cyan' }).addTo(group);
+      }
+      // Appareil au moment du 9-LINE.
+      var ac = jtacGeoPoint(g.aircraftPos);
+      if (ac) {
+        L.polyline([ll(ac), ll(tgt)], { color: green, weight: 1, dashArray: '2 6', opacity: 0.7, interactive: false }).addTo(group);
+        L.circleMarker(ll(ac), { radius: 5, color: green, weight: 2, fillColor: '#0b120e', fillOpacity: 0.8 })
+          .bindTooltip(g.aircraft || 'ACFT', { permanent: true, direction: 'top', className: 'ow-jtac-geo-tip is-green' }).addTo(group);
+      }
+      // Cible : losange, grille (ligne 6) et fiche du 9-LINE au clic.
+      var tip = 'TGT · ' + who + (row.line6 ? ' · ' + row.line6 : '') + (g.laser && g.laserCode ? ' · LSR ' + g.laserCode : '');
+      L.marker(ll(tgt), {
+        zIndexOffset: 600,
+        icon: L.divIcon({ className: 'ow-jtac-geo-target' + (dc ? ' is-dc' : ''), html: '<span></span>', iconSize: [18, 18], iconAnchor: [9, 9] })
+      }).bindTooltip(tip, { permanent: true, direction: 'right', offset: [10, 0], className: 'ow-jtac-geo-tip is-red' })
+        .bindPopup('<strong>9-LINE ' + escapeHtml(who) + '</strong><br>' + [1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (n) {
+          return n + '. ' + escapeHtml(row['line' + n] || '—');
+        }).join('<br>') + (dc ? '<br><strong>DANGER CLOSE</strong>' : ''))
+        .addTo(group);
+    });
+    jtacGeoLayer = group.addTo(map);
+  }
   function renderPresenceHeat() {
     if (presenceLayer) { map.removeLayer(presenceLayer); presenceLayer = null; }
     var box = document.getElementById('ow-presence-heat');
@@ -2215,6 +2558,22 @@
       return other && stackBucketKey(other) === key;
     });
   }
+  // « Grille sous l'indicatif » (Calques) : coordonnées de grille affichées sous le nom du contact.
+  var LABEL_GRID_KEY = 'athena:ow-label-grid';
+  function labelGridOn() {
+    var box = document.getElementById('ow-label-grid');
+    return !!(box && box.checked);
+  }
+  (function bindLabelGrid() {
+    var box = document.getElementById('ow-label-grid');
+    if (!box) return;
+    try { box.checked = localStorage.getItem(LABEL_GRID_KEY) === '1'; } catch (e) {}
+    box.addEventListener('change', function () {
+      try { localStorage.setItem(LABEL_GRID_KEY, box.checked ? '1' : '0'); } catch (e) {}
+      renderMap();
+    });
+  })();
+
   function markerIcon(unit, opts) {
     opts = opts || {};
     // Curseur personnalisé de mon propre contact (atak-overwatch-intel.js).
@@ -2247,7 +2606,12 @@
     var hint = '';
     if (disc) hint = 'Dernière position connue' + (age ? ' · ' + age : '');
     else if (stalePos || lagging) hint = 'Différé' + (age ? ' · ' + age : '');
-    var label = showLabel ? '<span class="ow-cs">' + escapeHtml(callsign(unit)) + '</span>' : '';
+    var gridLine = '';
+    if (showLabel && labelGridOn()) {
+      var gLoc = point(unit);
+      if (gLoc) gridLine = '<small class="ow-cs-grid">' + escapeHtml(gridLabel(gLoc).replace(/^Grille /, '')) + '</small>';
+    }
+    var label = showLabel ? '<span class="ow-cs">' + escapeHtml(callsign(unit)) + gridLine + '</span>' : '';
     var badge = (opts.forceLabel && stackCount > 1) ? '<b class="ow-stack-n">+' + (stackCount - 1) + '</b>' : '';
     return L.divIcon({
       className: 'ow-marker ow-mark-' + prefs.style + extra,
@@ -2255,6 +2619,19 @@
       iconAnchor: [8, 8],
       html: '<div' + (hint ? ' title="' + escapeHtml(hint) + '"' : '') + ' style="--ow-iff:' + escapeHtml(stateColor) + ';--ow-state:' + escapeHtml(stateColor) + ';--ow-squad:' + escapeHtml(squad) + '"><i></i>' + label + badge + '</div>'
     });
+  }
+
+  // « Ma position » : centre sur sa propre unité BFT (indicatif du compte), sinon sur le théâtre.
+  function locateSelf() {
+    var mine = String(user.callsign || user.displayName || '').trim().toLowerCase();
+    var own = mine ? units.find(function (unit) { return callsign(unit).trim().toLowerCase() === mine && point(unit); }) : null;
+    if (own) {
+      selectUnit(own);
+      map.setView(point(own), Math.max(map.getZoom(), 5));
+      return;
+    }
+    map.setView(center, Math.max(map.getZoom(), 4));
+    toast('Votre position n’est pas reçue (ATAK hors liaison) : recentrage sur le théâtre.');
   }
 
   function selectUnit(unit) {
@@ -2357,6 +2734,7 @@
         : '') +
       '</div>' +
       discBlock('Téléphone ATAK', phoneHtml) +
+      unitCommandsHtml(unit) +
       discBlock('Alerte plein écran', fullscreenAlertFormHtml({ dest: 'unit:' + callsign(unit), solo: true }), true);
     document.getElementById('ow-drawer').hidden = false;
     bindFsAlertForms(document.getElementById('ow-drawer'));
@@ -2384,9 +2762,24 @@
     }
   }
 
+  // Opérateurs masqués localement depuis l'ORBAT (Masquer / afficher), par identifiant BFT.
+  var locallyHiddenUnits = {};
+  function isUnitHidden(unit) {
+    return !!locallyHiddenUnits[unitId(unit)];
+  }
+  function setUnitsHidden(list, hidden) {
+    (list || []).forEach(function (unit) {
+      var id = unitId(unit);
+      if (!id) return;
+      if (hidden) locallyHiddenUnits[id] = true; else delete locallyHiddenUnits[id];
+    });
+    renderMap();
+  }
+
   function layerVisible(unit) {
     if (tooOldToShow(unit)) return false;
     if (hiddenLayers.units) return false;
+    if (isUnitHidden(unit)) return false;
     if (isAir(unit) && hiddenLayers.air) return false;
     if (isVehicle(unit) && hiddenLayers.vehicles) return false;
     return true;
@@ -2442,6 +2835,7 @@
     Object.keys(markers).forEach(function (id) {
       if (!alive[id]) { map.removeLayer(markers[id]); delete markers[id]; }
     });
+    renderSelectionHalo();
     renderSquadLinks();
     renderHud();
     renderRangeRings();
@@ -2454,6 +2848,25 @@
       if (loc) map.panTo(loc);
     }
     if (window.OverwatchOps && window.OverwatchOps.afterRenderMap) window.OverwatchOps.afterRenderMap();
+  }
+
+  /* Halo sous le contact sélectionné : sa position reste repérable même si son icône est couverte par un autre repère. */
+  var selectionHalo = null;
+  function renderSelectionHalo() {
+    var cur = selected ? (units.find(function (u) { return unitId(u) === unitId(selected); }) || selected) : null;
+    var loc = cur && layerVisible(cur) ? point(cur) : null;
+    if (!loc) {
+      if (selectionHalo) { map.removeLayer(selectionHalo); selectionHalo = null; }
+      return;
+    }
+    if (!selectionHalo) {
+      selectionHalo = L.circleMarker(loc, {
+        radius: 18, color: '#ffffff', weight: 2, opacity: 0.9, fillColor: '#00d69a', fillOpacity: 0.12,
+        dashArray: '4 4', interactive: false, className: 'ow-selection-halo'
+      }).addTo(map);
+    } else {
+      selectionHalo.setLatLng(loc);
+    }
   }
 
   function clearSquadLinks() {
@@ -2547,6 +2960,44 @@
     if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.35));
   }
 
+  /* Image opérateur des membres du groupe (portrait de la fiche), initiales à défaut. */
+  function squadFacesHtml(rows, color) {
+    var list = rows.slice().sort(function (a, b) {
+      var pa = profileOf(a), pb = profileOf(b);
+      return (pb && pb.avatarUrl ? 1 : 0) - (pa && pa.avatarUrl ? 1 : 0);
+    }).slice(0, 3);
+    return '<span class="ow-squad-faces" style="--ow-squad:' + escapeHtml(color) + '">' + list.map(function (unit) {
+      var profile = profileOf(unit);
+      return '<span class="ow-squad-face" title="' + escapeHtml(callsign(unit)) + '">' +
+        (profile && profile.avatarUrl
+          ? '<img src="' + escapeHtml(profile.avatarUrl) + '" alt="" width="28" height="28" loading="lazy">'
+          : escapeHtml(initials(callsign(unit)))) + '</span>';
+    }).join('') + (rows.length > 3 ? '<span class="ow-squad-face is-more">+' + (rows.length - 3) + '</span>' : '') + '</span>';
+  }
+
+  /* Pourquoi un contact en liaison n'a pas de repère sur la carte : calque coupé, masqué à la main, sans position. */
+  function mapHiddenReason(unit) {
+    if (!point(unit)) return 'Aucune position reçue';
+    if (hiddenLayers.units) return 'Calque Unités coupé';
+    if (isUnitHidden(unit)) return 'Masqué depuis l’ORBAT';
+    if (isAir(unit) && hiddenLayers.air) return 'Calque Aérien coupé';
+    if (isVehicle(unit) && hiddenLayers.vehicles) return 'Calque Véhicules coupé';
+    return '';
+  }
+  function showUnitOnMap(unit) {
+    var layers = [];
+    if (hiddenLayers.units) layers.push('units');
+    if (isAir(unit) && hiddenLayers.air) layers.push('air');
+    if (isVehicle(unit) && hiddenLayers.vehicles) layers.push('vehicles');
+    layers.forEach(function (name) {
+      var box = document.querySelector('[data-ow-layer="' + name + '"]');
+      if (box && !box.checked) { box.checked = true; box.dispatchEvent(new Event('change')); }
+    });
+    if (isUnitHidden(unit)) setUnitsHidden([unit], false);
+    renderMap();
+    renderList();
+  }
+
   function renderSquadList() {
     var host = document.getElementById('ow-squad-list');
     if (!host) return;
@@ -2568,8 +3019,8 @@
       var label = key === 'none' ? 'Sans groupe' : group(rows[0]);
       var taskBtn = key === 'none' ? '' : '<button type="button" class="ow-tag" data-squad-task="' + escapeHtml(key) + '">Tâche</button>';
       return '<div class="ow-squad-row">' +
-        '<button type="button" class="ow-contact" data-squad-key="' + escapeHtml(key) + '"><span class="cicon" style="border-color:' +
-        escapeHtml(key === 'none' ? '#2b3531' : squadColor(rows[0])) + '"></span><span><div class="cname">' +
+        '<button type="button" class="ow-contact" data-squad-key="' + escapeHtml(key) + '">' +
+        squadFacesHtml(rows, key === 'none' ? '#2b3531' : squadColor(rows[0])) + '<span><div class="cname">' +
         escapeHtml(label) + '</div><div class="cmeta">' + rows.length + ' opérateur' + (rows.length > 1 ? 's' : '') +
         (span ? ' · ' + formatMeters(span) : '') + '</div></span><em class="online">' + locates.length + ' POS</em></button>' +
         taskBtn + '</div>';
@@ -2688,6 +3139,11 @@
         '" title="Centrer la carte sur la dernière position connue" aria-label="Dernière position connue">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></button>'
       : '';
+    var hiddenWhy = disc ? '' : mapHiddenReason(unit);
+    if (hiddenWhy) {
+      chan += '<button type="button" class="ow-bft-chan is-hidden-map" data-bft-show="' + escapeHtml(unitId(unit)) +
+        '" title="' + escapeHtml(hiddenWhy + ' : cliquez pour l’afficher') + '">MASQUÉ</button>';
+    }
     var grp = group(unit);
     var avatarInner = (profile && profile.avatarUrl)
       ? '<img class="ow-bft-avatar-img" src="' + escapeHtml(profile.avatarUrl) + '" alt="" width="32" height="32" loading="lazy">'
@@ -2845,6 +3301,8 @@
     renderList();
     syncStatus(true);
     window.dispatchEvent(new CustomEvent('overwatch:units-updated', { detail: { units: units } }));
+    // Nom historique attendu par les modules partagés (anneaux de géolocalisation, messages du poste…).
+    try { window.dispatchEvent(new CustomEvent('atak:units-updated', { detail: { units: units } })); } catch (e0) {}
     try {
       window.dispatchEvent(new CustomEvent('atak:units-markers-updated', { detail: { units: units } }));
     } catch (e) {}
@@ -4105,9 +4563,7 @@
     map.getContainer().style.cursor = tool === 'cursor' ? '' : 'crosshair';
     if (tool === 'center') map.fitBounds(bounds);
     if (tool === 'refresh') refreshAll();
-    if (tool === 'locate' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(function () { map.setView(center, Math.max(map.getZoom(), 4)); toast('Recentrage théâtre.'); });
-    }
+    if (tool === 'locate') locateSelf();
     if (tool === 'eta') toast('Maintenez du départ à l’arrivée, ou cliquez les points puis double-clic.');
     if (tool === 'profile') toast('Maintenez pour tracer le profil, relâchez pour relever le relief.');
     if (tool === 'circle') toast('Maintenez au centre et glissez le rayon.');
@@ -5132,6 +5588,7 @@
     ll = asMapLatLng(ll);
     if (!ll) return false;
     if (window.OverwatchTacmap && typeof window.OverwatchTacmap.consumeMapClick === 'function' && window.OverwatchTacmap.consumeMapClick(ll)) return true;
+    if (window.OverwatchTeams && typeof window.OverwatchTeams.consumeMapClick === 'function' && window.OverwatchTeams.consumeMapClick(ll)) return true;
     var fake = { latlng: ll, originalEvent: originalEvent || null };
     if (activeTool && activeTool !== 'cursor' && activeTool !== 'freehand' && activeTool !== 'goto' && activeTool !== 'range') {
       onMapClick(fake);
@@ -5619,6 +6076,7 @@
   document.querySelectorAll('[data-ow-layer]').forEach(function (input) {
     input.addEventListener('change', function () {
       hiddenLayers[input.dataset.owLayer] = !input.checked;
+      try { localStorage.setItem('athena:ow-layer-' + input.dataset.owLayer, input.checked ? '1' : '0'); } catch (e) {}
       if (input.dataset.owLayer === 'tracks') {
         tracksOn = input.checked;
         Object.keys(trackLines).forEach(function (id) {
@@ -5631,6 +6089,7 @@
       if (input.dataset.owLayer === 'vehicles') renderGpsVehiclesOnMap(gpsVehicles);
       if (input.dataset.owLayer === 'air') renderAirAssetsOnMap(airAssets);
       if (input.dataset.owLayer === 'arma-markers') renderArmaMarkers();
+      if (input.dataset.owLayer === 'jtac') renderJtacGeoOnMap();
       renderMap();
     });
   });
@@ -5650,7 +6109,7 @@
 
   function photosSignature(list) {
     return (list || []).map(function (row) {
-      return [row.id, row.is_blurred, row.sse_case_id || row.sse_transferred_at || '', row.caption || ''].join(':');
+      return [row.id, row.is_blurred, row.sse_case_id || row.sse_transferred_at || '', row.caption || '', row.title || '', row.is_sse || 0, row.is_confidential || 0].join(':');
     }).join('|');
   }
 
@@ -5707,7 +6166,8 @@
     return api('/api/cas?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
       casRows = asList(payload, 'items');
       paintAirLists();
-    }).catch(function () { casRows = []; });
+      renderJtacGeoOnMap();
+    }).catch(function () { casRows = []; renderJtacGeoOnMap(); });
   }
 
   function loadAirAssets() {
@@ -5931,11 +6391,45 @@
     if (grid) kv += '<span>Point initial</span><span>' + escapeHtml(grid) + '</span>';
     if (target) kv += '<span>Objectif</span><span>' + escapeHtml(target) + '</span>';
     if (row.line7) kv += '<span>Type</span><span>' + escapeHtml(String(row.line7)) + '</span>';
+    var actions = casRows.indexOf(row) >= 0 && row.id ? nineLineFlowHtml('cas', row) : '';
     return '<div class="ow-card">' +
       '<div class="ow-card-head"><span>' + escapeHtml(author) +
       '</span><span class="ow-tag">' + escapeHtml(jtacStatusLabel(row.status)) + '</span></div>' +
-      (kv ? '<div class="ow-card-body"><div class="ow-kv">' + kv + '</div></div>' : '') +
+      (kv || actions ? '<div class="ow-card-body">' + (kv ? '<div class="ow-kv">' + kv + '</div>' : '') + actions + '</div>' : '') +
       '</div>';
+  }
+
+  // Suivi d'une demande 9-line (CAS dans Air, CASEVAC dans Mission) : mêmes statuts que l'ATAK natif.
+  function nineLineTerminal(status) {
+    var st = String(status || '').toUpperCase();
+    return st === 'COMPLETE' || st === 'ABORTED' || st === 'CANCELLED';
+  }
+  function nineLineFlowHtml(kind, row) {
+    var id = escapeHtml(String(row.id));
+    function b(status, label) {
+      return '<button type="button" class="ow-tag" data-ow-nine-status="' + status + '" data-ow-nine-kind="' + kind + '" data-ow-nine-id="' + id + '">' + escapeHtml(label) + '</button>';
+    }
+    var html = '<div class="ow-btn-row">';
+    if (!nineLineTerminal(row.status)) {
+      html += b('ACKNOWLEDGED', 'Prise en compte') + b('INBOUND', 'En approche') + b('COMPLETE', 'Terminée') + b('ABORTED', 'Annuler');
+    }
+    if (kind === 'medevac') {
+      html += '<button type="button" class="ow-tag" data-ow-medevac-delete="' + id + '">Supprimer</button>';
+    }
+    return html + '</div>';
+  }
+  function refreshMissionDrawer() {
+    var drawer = document.getElementById('ow-drawer');
+    var title = document.getElementById('ow-drawer-title');
+    if (drawer && !drawer.hidden && title && title.textContent === 'Mission') openView('mission');
+  }
+  function setNineLineStatus(kind, id, status) {
+    var path = kind === 'medevac' ? '/api/atak/medevac/' : '/api/cas/';
+    api(path + encodeURIComponent(id) + '/status', { method: 'POST', body: { status: status } }).then(function () {
+      toast('Demande ' + (kind === 'medevac' ? 'CASEVAC' : 'd’appui') + ' : ' + jtacStatusLabel(status) + '.');
+      if (kind === 'medevac') return loadMedevac().then(refreshMissionDrawer);
+      return loadCas();
+    }).catch(function () { toast('Le statut n’a pas pu être mis à jour.'); });
   }
 
   function nineFormHtml() {
@@ -6083,8 +6577,47 @@
     }).catch(function () { return null; });
   }
 
+  // Plan de mission publié (bureau Opérations) : en-tête de Mission et poste prévu dans la fiche contact.
+  var missionPlanSnap = null;
+  function loadMissionPlan() {
+    return api('/api/atak/mission-plan?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
+      missionPlanSnap = payload && typeof payload === 'object' ? payload : null;
+      return missionPlanSnap;
+    }).catch(function () { return missionPlanSnap; });
+  }
+  if (!window.ATAKMissionPlan) {
+    window.ATAKMissionPlan = {
+      refresh: loadMissionPlan,
+      snapshot: function () { return missionPlanSnap; },
+      slotFor: function (cs) {
+        var slots = missionPlanSnap && missionPlanSnap.slots;
+        return slots ? (slots[String(cs || '').toUpperCase()] || null) : null;
+      }
+    };
+    loadMissionPlan();
+    window.setInterval(loadMissionPlan, 30000);
+  }
+  function missionPlanHtml() {
+    var plan = missionPlanSnap && missionPlanSnap.plan;
+    if (!plan || !plan.id) {
+      return '<p class="ow-kicker">Plan de mission</p><p class="ow-help">Aucun ordre de mission publié pour cette carte. Il se prépare dans le bureau Opérations.</p>';
+    }
+    var next = (missionPlanSnap.next_events || []).slice(0, 4).map(function (ev) {
+      return '<div class="ow-event"><span>' + escapeHtml(String(ev.clock || '')) + '</span><strong>' + escapeHtml(String(ev.label || '')) + '</strong></div>';
+    }).join('');
+    var statusRows = (missionPlanSnap.unit_status || []).slice(0, 8).map(function (u) {
+      return '<div class="ow-event"><span>' + escapeHtml(String(u.code || '')) + '</span><strong>' + escapeHtml(String(u.status_label || '')) + '</strong></div>';
+    }).join('');
+    return '<p class="ow-kicker">Plan de mission</p>' +
+      card(clean(plan.operation_name || plan.title, 'Opération'), clean(plan.phase_label, 'Phase'),
+        '<div class="ow-event"><span>En liaison</span><strong>' + escapeHtml(String(plan.live || 0)) + '</strong></div>' +
+        '<div class="ow-event"><span>Hors liaison</span><strong>' + escapeHtml(String(plan.offline || 0)) + '</strong></div>' +
+        statusRows) +
+      (next ? '<p class="ow-help">Prochains jalons</p>' + next : '');
+  }
+
   function missionHtml() {
-    return card('Opération', 'Actif',
+    return missionPlanHtml() + card('Opération', 'Actif',
       '<div class="ow-event"><span>Contacts</span><strong>' + units.length + '</strong></div>' +
       '<div class="ow-event"><span>Tracés</span><strong>' + shapes.length + '</strong></div>' +
       '<div class="ow-event"><span>Photos</span><strong>' + photos.length + '</strong></div>') +
@@ -6120,7 +6653,8 @@
       '<div id="ow-logistics-host"><p class="ow-help">Chargement…</p></div>' +
       '<p class="ow-kicker">CASEVAC</p>' +
       (medevacs.slice(0, 5).map(function (row) {
-        return '<div class="ow-event"><span>' + escapeHtml(clean(row.call_sign || row.author, 'MEDEVAC')) + '</span><span class="ow-tag amber">' + escapeHtml(clean(row.status, 'OPEN')) + '</span></div>';
+        return '<div class="ow-card"><div class="ow-card-head"><span>' + escapeHtml(clean(row.call_sign || row.author, 'MEDEVAC')) + '</span><span class="ow-tag amber">' + escapeHtml(jtacStatusLabel(row.status || 'SUBMITTED')) + '</span></div>' +
+          (row.id ? '<div class="ow-card-body">' + nineLineFlowHtml('medevac', row) + '</div>' : '') + '</div>';
       }).join('') || '<p class="ow-help">Aucune évacuation ouverte.</p>') +
       '<form class="ow-form-grid" id="ow-medevac-form">' +
       '<label>Indicatif<input name="callsign" value="' + escapeHtml(authorName) + '"></label>' +
@@ -6191,6 +6725,31 @@
     });
   }
 
+  /** Lecteur d'images (assets/js/recon-viewer.js) sur une liste de /api/recon/images ; repli : simple agrandissement. */
+  function openReconViewer(list, match, fallbackSrc, blurred) {
+    if (!window.ReconViewer || !list || !list.length) {
+      openPhotoLightbox(fallbackSrc, blurred);
+      return;
+    }
+    var index = 0;
+    list.forEach(function (row, i) { if (match(row, i)) index = i; });
+    window.ReconViewer.open(list, index, {
+      recon: true,
+      theme: 'dark',
+      resolveUrl: function (u, row) {
+        var url = resolvePhotoUrl(row.url || row.path || '');
+        if (!url && row.image_path && String(row.image_path).indexOf('recon-private/') !== 0) {
+          url = resolvePhotoUrl('/uploads/recon/' + String(row.image_path).split('/').pop());
+        }
+        return url;
+      },
+      onLocate: function (x, y, row) {
+        var loc = point(row || {});
+        if (loc && map) map.setView(loc, Math.max(map.getZoom(), 4));
+      }
+    });
+  }
+
   // Live cam : dernière image de chaque flux caméra (téléphone ATAK « chest: », casque, drone) des 10 dernières minutes.
   var camFeeds = [];
   var camFetchedAt = 0;
@@ -6227,7 +6786,45 @@
     return 'il y a ' + Math.floor(sec / 3600) + ' h';
   }
 
+  /* Caméras déclarées par le jeu (casque, drone, véhicule) : en ligne ou non, même sans image récente. */
+  var declaredFeeds = [];
+  function loadDeclaredFeeds() {
+    return api('/api/atak/video-feeds?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
+      declaredFeeds = Array.isArray(payload && payload.feeds) ? payload.feeds : [];
+    }).catch(function () { declaredFeeds = []; });
+  }
+  function unitByCallsign(cs) {
+    var key = String(cs || '').trim().toUpperCase();
+    if (!key) return null;
+    var hit = null;
+    units.some(function (u) {
+      if (callsign(u).toUpperCase() === key) { hit = u; return true; }
+      return false;
+    });
+    return hit;
+  }
+  function declaredFeedsHtml() {
+    if (!declaredFeeds.length) return '';
+    var rows = declaredFeeds.map(function (f) {
+      var online = !!f.online;
+      var kind = String(f.kind || 'helmet').toLowerCase();
+      var unit = unitByCallsign(f.callsign);
+      var canSnap = online && kind !== 'drone' && kind !== 'uav' && unit && unitDbId(unit) && !isDisconnected(unit) && !!unitCaps().loggedIn;
+      var label = clean(f.label || f.kind_label, 'Caméra');
+      var meta = [f.kind_label || '', f.callsign || '', online ? 'En ligne' : 'Hors ligne'].filter(Boolean).join(' · ');
+      return '<div class="ow-event ow-feed-row">' +
+        '<span>' + escapeHtml(label) + '<small class="ow-net-meta">' + escapeHtml(meta) + '</small></span>' +
+        (canSnap ? '<button type="button" class="ow-tag" data-cam-request="' + escapeHtml(String(f.callsign)) + '">Demander une photo</button>' : '') +
+        '</div>';
+    }).join('');
+    return '<p class="ow-kicker">Caméras déclarées en jeu</p>' + rows;
+  }
+
   function loadCamFeeds() {
+    loadDeclaredFeeds().then(function () {
+      var host = document.getElementById('ow-cams-declared');
+      if (host) host.innerHTML = declaredFeedsHtml();
+    });
     return api('/api/recon/images?limit=200&feeds=only').then(function (payload) {
       var seen = {};
       var out = [];
@@ -6247,7 +6844,7 @@
 
   function camTileHtml(row, index) {
     var url = resolvePhotoUrl(row.url || row.path || '');
-    if (!url && row.image_path) url = resolvePhotoUrl('/uploads/recon/' + String(row.image_path).split('/').pop());
+    if (!url && row.image_path && String(row.image_path).indexOf('recon-private/') !== 0) url = resolvePhotoUrl('/uploads/recon/' + String(row.image_path).split('/').pop());
     var age = camAgeSec(row);
     var stale = age != null && age > CAM_STALE_SEC;
     var grid = String(row.grid_ref || '').trim();
@@ -6282,6 +6879,7 @@
 
   function camsHtml() {
     return '<p class="ow-help">Dernière image de chaque flux reçu ces 10 dernières minutes. Actualisé toutes les 5 secondes tant que ce panneau est ouvert. Cliquez une image pour l’agrandir.</p>' +
+      '<div id="ow-cams-declared">' + declaredFeedsHtml() + '</div>' +
       '<div id="ow-cams">' + camsBodyHtml() + '</div>';
   }
 
@@ -6321,7 +6919,8 @@
       '<button class="ow-primary" type="submit">Déposer la photo</button></form>' +
       photos.slice(0, 24).map(function (row) {
         var url = resolvePhotoUrl(row.url || row.path || '');
-        if (!url && row.image_path) {
+        // recon-private/… : cliché confidentiel servi seulement par /api/recon/images/{id}/file.
+        if (!url && row.image_path && String(row.image_path).indexOf('recon-private/') !== 0) {
           url = resolvePhotoUrl('/uploads/recon/' + String(row.image_path).split('/').pop());
         }
         var id = String(row.id || '');
@@ -6330,6 +6929,23 @@
         var caption = String(row.caption || '').trim();
         var blurred = !!Number(row.is_blurred || 0);
         var transferred = !!(row.sse_case_id || row.sse_transferred_at);
+        // Fiche du cliché (drone de l'ATAK natif) : titre, description, SSE, confidentiel.
+        var photoTitle = String(row.title || '').trim();
+        var photoDesc = String(row.description || '').trim();
+        var isSse = !!Number(row.is_sse || 0);
+        var isConf = !!Number(row.is_confidential || 0);
+        var restricted = !!row.restricted;
+        var caseRef = String(row.sse_case_ref || '').trim();
+        var caseUrl = String(row.sse_case_url || '').trim();
+        var badges = '';
+        if (isConf) badges += '<span class="ow-tag red" title="' + (restricted ? 'Habilitation confidentiel requise' : 'Cliché confidentiel') + '">CONFIDENTIEL</span> ';
+        if (isSse) {
+          var sseLabel = 'SSE' + (caseRef ? ' ' + caseRef : '');
+          badges += caseUrl
+            ? '<a class="ow-tag" href="' + escapeHtml(caseUrl) + '" target="_blank" rel="noopener" title="' + escapeHtml(row.sse_case_title || 'Ouvrir le dossier SSE') + '">' + escapeHtml(sseLabel) + '</a> '
+            : '<span class="ow-tag">' + escapeHtml(sseLabel) + '</span> ';
+        }
+        if (row.drone_name) badges += '<span class="ow-tag">' + escapeHtml(row.drone_name) + '</span> ';
         return '<div class="ow-card' + (blurred ? ' is-blurred' : '') + '" data-photo-card="' + escapeHtml(id) + '">' +
           '<div class="ow-card-head"><span>' + escapeHtml(title) +
           '</span><span class="ow-tag">' + escapeHtml(clean(row.device_label, 'PHOTO')) + '</span></div>' +
@@ -6337,8 +6953,13 @@
             ? '<div class="ow-thumb" style="background-image:url(\'' + escapeHtml(url) + '\')" data-photo-op="open" data-photo-id="' + escapeHtml(id) + '" data-photo-url="' + escapeHtml(url) + '" role="button" tabindex="0" title="Ouvrir en grand"></div>'
             : '') +
           '<div class="ow-card-body">' +
+          (badges ? '<p class="ow-photo-badges">' + badges + '</p>' : '') +
+          (restricted ? '<p class="ow-help">Cliché confidentiel : image et fiche réservées aux habilitations « confidentiel » et plus.</p>' : '') +
+          (photoTitle ? '<p><strong>' + escapeHtml(photoTitle) + '</strong></p>' : '') +
+          (photoDesc ? '<p class="ow-help">' + escapeHtml(photoDesc) + '</p>' : '') +
           (caption ? '<p class="ow-help">' + escapeHtml(caption) + '</p>' : '') +
-          (transferred ? '<p class="ow-help">Classée dans un dossier SSE</p>' : '') +
+          (transferred && !caseUrl ? '<p class="ow-help">Classée dans un dossier SSE</p>' : '') +
+          (transferred && caseUrl && !isSse ? '<p class="ow-help"><a href="' + escapeHtml(caseUrl) + '" target="_blank" rel="noopener">Classée dans le dossier SSE ' + escapeHtml(caseRef) + '</a></p>' : '') +
           '<div class="ow-event"><span>' + escapeHtml(stamp) + '</span></div>' +
           '<div class="ow-photo-actions">' +
           '<button type="button" class="ow-tag" data-send-photo="' + escapeHtml(id) + '">Envoyer</button>' +
@@ -6612,7 +7233,86 @@
     var seen = formatSeen(t.last_seen_at) || (unit ? formatSeen(unit.updated_at) : '');
     if (seen) html += networkKv('Dernière activité', seen);
 
-    return html ? '<div class="ow-kv ow-net-kv">' + html + '</div>' : '';
+    return (html ? '<div class="ow-kv ow-net-kv">' + html + '</div>' : '') + networkTerminalActionsHtml(t, compromiseRaw);
+  }
+
+  function canManageCertificates() {
+    var c = unitCaps();
+    if (c.phoneSession) return false;
+    if (typeof c.canManageCertificates === 'boolean') return c.canManageCertificates;
+    return !!c.loggedIn;
+  }
+
+  function networkTerminalActionsHtml(t, compromiseRaw) {
+    if (!canManageCertificates()) return '';
+    var id = Number(t.id || 0);
+    var uid = String(t.terminal_uid || '').trim();
+    var call = clean(t.operator_callsign || t.callsign || t.terminal_label, 'Terminal');
+    var hasCert = !!String(t.certificate_ref || '').trim();
+    var btns = '';
+    if (id > 0) {
+      btns += '<button type="button" class="ow-secondary" data-ow-term="cert" data-term-id="' + id + '" data-term-call="' + escapeHtml(call) +
+        '" data-term-has="' + (hasCert ? '1' : '0') + '">' + (hasCert ? 'Renouveler le certificat' : 'Émettre un certificat') + '</button>';
+    }
+    if (uid) {
+      var flagged = compromiseRaw === 'captured' || compromiseRaw === 'compromised';
+      btns += flagged
+        ? '<button type="button" class="ow-secondary" data-ow-term="clear" data-term-uid="' + escapeHtml(uid) + '" data-term-call="' + escapeHtml(call) + '">Lever la compromission</button>'
+        : '<button type="button" class="ow-secondary is-danger" data-ow-term="captured" data-term-uid="' + escapeHtml(uid) + '" data-term-call="' + escapeHtml(call) + '">Déclarer saisi</button>';
+    }
+    return btns ? '<div class="ow-btn-row ow-term-actions">' + btns + '</div>' : '';
+  }
+
+  function runTerminalAction(btn) {
+    var kind = btn.getAttribute('data-ow-term');
+    var call = btn.getAttribute('data-term-call') || 'ce terminal';
+    var path = '';
+    var body = { map_id: mapId };
+    var done = '';
+    if (kind === 'cert') {
+      var has = btn.getAttribute('data-term-has') === '1';
+      if (!window.confirm(has ? 'Renouveler le certificat de ' + call + ' ? L’ancien ne sera plus accepté.' : 'Émettre un certificat pour ' + call + ' ?')) return;
+      path = '/api/atak/terminals/' + encodeURIComponent(btn.getAttribute('data-term-id')) + '/certificate/regenerate';
+      done = 'Certificat mis à jour pour ' + call + '.';
+    } else if (kind === 'captured') {
+      var reason = window.prompt('Déclarer ' + call + ' saisi par l’ennemi ? Ses certificats seront révoqués. Motif (facultatif) :', '');
+      if (reason === null) return;
+      path = '/api/atak/terminals/compromise';
+      body.terminal_uid = btn.getAttribute('data-term-uid');
+      body.state = 'captured';
+      body.reason = reason.trim();
+      done = call + ' déclaré saisi.';
+    } else if (kind === 'clear') {
+      if (!window.confirm('Lever la compromission de ' + call + ' ?')) return;
+      path = '/api/atak/terminals/clear-compromise';
+      body.terminal_uid = btn.getAttribute('data-term-uid');
+      done = 'Compromission levée pour ' + call + '.';
+    }
+    if (!path) return;
+    btn.disabled = true;
+    var headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
+    var csrf = csrfToken();
+    if (csrf) headers['X-CSRF-TOKEN'] = csrf;
+    fetch(apiBase + path, {
+      method: 'POST',
+      credentials: 'include',
+      headers: headers,
+      body: JSON.stringify(Object.assign({ _csrf_token: csrf }, body))
+    }).then(function (response) {
+      return response.json().catch(function () { return {}; }).then(function (payload) {
+        if (!response.ok || !payload || payload.ok === false) {
+          throw new Error((payload && (payload.message || payload.error)) || 'La demande a échoué.');
+        }
+        toast((payload && payload.message) || done);
+        return loadTerminals().then(function () {
+          var host = document.getElementById('ow-network-terminals');
+          if (host) host.innerHTML = networkTerminalsListHtml();
+        });
+      });
+    }).catch(function (err) {
+      toast(err && err.message ? err.message : 'La demande a échoué.');
+      btn.disabled = false;
+    });
   }
 
   function networkTerminalRowHtml(t) {
@@ -6658,17 +7358,13 @@
       : 'Par défaut, le téléphone transmet sans exiger un relais. Un responsable peut imposer le passage par antenne dans les réglages de la communauté.';
     return card('Situation réseau', String(relayCount + terminals.length),
       '<div class="ow-event"><span>Relais</span><strong>' + relayCount + '</strong></div>' +
-      '<div class="ow-event"><span>Terminaux ATAK</span><strong>' + terminals.length + '</strong></div>' +
-      '<div class="ow-event"><span>Satellites</span><strong>0</strong></div>') +
+      '<div class="ow-event"><span>Terminaux ATAK</span><strong>' + terminals.length + '</strong></div>') +
       '<p class="ow-kicker">Relais</p>' +
       '<p class="ow-help">' + escapeHtml(modeHelp) + '</p>' +
       '<div id="ow-network-relays">' + networkRelaysListHtml() + '</div>' +
       '<p class="ow-kicker">Terminaux ATAK</p>' +
       '<p class="ow-help">Appareils qui ont déjà contacté le poste : certificat, liaison, transmission, versions et adresse quand elles sont connues.</p>' +
-      '<div id="ow-network-terminals">' + networkTerminalsListHtml() + '</div>' +
-      '<p class="ow-kicker">Satellites</p>' +
-      '<p class="ow-help">Aucun catalogue satellitaire n’est fourni pour ce théâtre. Rien n’est inventé.</p>' +
-      '<div id="ow-network-sats"><p class="ow-help">La liste restera vide tant qu’aucune orbite n’est déclarée pour la mission.</p></div>';
+      '<div id="ow-network-terminals">' + networkTerminalsListHtml() + '</div>';
   }
 
   function layersHtml() {
@@ -6861,7 +7557,7 @@
         var photo = photos.filter(function (row) { return String(row.id) === id; })[0] || {};
         if (!url) url = String(photo.url || '');
         if (op === 'open') {
-          openPhotoLightbox(url, !!(card && card.classList.contains('is-blurred')) || !!Number(photo.is_blurred || 0));
+          openReconViewer(photos, function (row) { return String(row.id) === id; }, url, !!(card && card.classList.contains('is-blurred')) || !!Number(photo.is_blurred || 0));
           return;
         }
         if (!id) return;
@@ -7090,7 +7786,7 @@
     if (name === 'comms') { switchChatTab('channels'); map.invalidateSize(); return; }
     if (name === 'layers') { restoreOpsPanels(); openDrawer('Cartographie', 'Calques', layersHtml()); bindDrawerForms(); map.invalidateSize(); return; }
     if (name === 'mission') {
-      Promise.all([loadNine(), loadCas(), loadMedevac()]).then(function () {
+      Promise.all([loadNine(), loadCas(), loadMedevac(), loadMissionPlan()]).then(function () {
         restoreOpsPanels();
         openDrawer('Opérations', 'Mission', missionHtml());
         bindDrawerForms();
@@ -7107,6 +7803,12 @@
         bindDrawerForms();
         map.invalidateSize();
       });
+      return;
+    }
+    if (name === 'teams') {
+      restoreOpsPanels();
+      if (window.OverwatchTeams && typeof window.OverwatchTeams.open === 'function') window.OverwatchTeams.open();
+      map.invalidateSize();
       return;
     }
     if (name === 'network') {
@@ -7195,6 +7897,7 @@
     ['Ouvrir la mission', 'Mission', function () { openView('mission'); }],
     ['Ouvrir Air', 'Air', function () { openView('air'); }],
     ['Ouvrir le réseau', 'Réseau', function () { openView('network'); }],
+    ['Ouvrir les équipes de feu', 'Équipes', function () { openView('teams'); }],
     ['Préparer un SITREP', 'Mission', function () { setTool('cursor'); toast('Clic droit sur la carte → compte rendu géolocalisé.'); }],
     ['Préparer un SALUTE', 'Mission', function () { openView('mission'); toast('Clic droit sur la carte pour préremplir la grille, puis remplissez le compte rendu.'); }],
     ['Tracer une route', 'Carte', function () { setTool('route'); toast('Cliquez les points, double-clic pour terminer.'); }],
@@ -7365,6 +8068,10 @@
     mapPingMarkers[id] = marker;
   }
   function setPingsOnMap(list) {
+    // Super ping reçu : pulse + son (le premier lot ne sert qu'à mémoriser les pings déjà présents).
+    if (window.ATAKSuperPing && typeof window.ATAKSuperPing.ingest === 'function') {
+      try { window.ATAKSuperPing.ingest(list); } catch (e) {}
+    }
     var seen = {};
     (Array.isArray(list) ? list : []).forEach(function (p) {
       if (!p || p.pos_x == null || p.pos_y == null) return;
@@ -7608,6 +8315,11 @@
     if (!row) return;
     var unit = units.find(function (item) { return unitId(item) === row.dataset.unitId; });
     if (!unit) return;
+    if (event.target.closest('[data-bft-show]')) {
+      var why = mapHiddenReason(unit);
+      if (why && why !== 'Aucune position reçue') { showUnitOnMap(unit); toast(callsign(unit) + ' : de nouveau affiché sur la carte.'); }
+      else if (why) toast(callsign(unit) + ' : ' + why.toLowerCase() + ', impossible de le placer.');
+    }
     selectUnit(unit);
     var location = point(unit);
     if (location) map.panTo(location);
@@ -7738,6 +8450,31 @@
       var location = selected && point(selected);
       if (location) map.setView(location, Math.max(map.getZoom(), 4));
     }
+    var nineBtn = event.target.closest('[data-ow-nine-status]');
+    if (nineBtn) {
+      setNineLineStatus(nineBtn.getAttribute('data-ow-nine-kind'), nineBtn.getAttribute('data-ow-nine-id'), nineBtn.getAttribute('data-ow-nine-status'));
+      return;
+    }
+    var medDel = event.target.closest('[data-ow-medevac-delete]');
+    if (medDel) {
+      if (!window.confirm('Supprimer définitivement cette demande CASEVAC ?')) return;
+      api('/api/atak/medevac/' + encodeURIComponent(medDel.getAttribute('data-ow-medevac-delete')), { method: 'DELETE' }).then(function () {
+        toast('Demande CASEVAC supprimée.');
+        return loadMedevac().then(refreshMissionDrawer);
+      }).catch(function () { toast('La demande n’a pas pu être supprimée.'); });
+      return;
+    }
+    var unitCmdBtn = event.target.closest('[data-unit-cmd]');
+    if (unitCmdBtn && selected && !unitCmdBtn.disabled) runUnitCommand(unitCmdBtn.getAttribute('data-unit-cmd'), selected);
+    var linkUserBtn = event.target.closest('[data-ow-link-user]');
+    if (linkUserBtn && selected) linkPersonnel(selected, linkUserBtn.getAttribute('data-ow-link-user'));
+    var camReq = event.target.closest('[data-cam-request]');
+    if (camReq) {
+      var camUnit = unitByCallsign(camReq.getAttribute('data-cam-request'));
+      if (camUnit) runUnitCommand('helmet-snap', camUnit);
+    }
+    var termBtn = event.target.closest('[data-ow-term]');
+    if (termBtn && !termBtn.disabled) runTerminalAction(termBtn);
     if (event.target.matches('[data-fit-squad]') && selected) fitSquad(selected);
     if (event.target.matches('[data-squad-task-from-unit]') && selected) {
       var unitKey = squadKey(selected);
@@ -7775,6 +8512,13 @@
     if (first) { selectUnit(first); if (key !== 'none') fitSquad(first); }
   });
   function handleGroupTaskClick(event) {
+    var filter = event.target.closest('[data-task-filter]');
+    if (filter) {
+      event.preventDefault();
+      groupTaskFilter = filter.getAttribute('data-task-filter') || 'open';
+      renderGroupTaskLists();
+      return;
+    }
     var btn = event.target.closest('[data-cancel-task]');
     if (!btn) return;
     event.preventDefault();
@@ -7807,7 +8551,9 @@
     camDrawer.addEventListener('click', function (event) {
       var open = event.target.closest('[data-cam-open]');
       if (open) {
-        openPhotoLightbox(open.getAttribute('data-cam-open'), false);
+        var camTile = open.closest('[data-cam-index]');
+        var camIndex = camTile ? Number(camTile.getAttribute('data-cam-index')) : -1;
+        openReconViewer(camFeeds, function (row, i) { return i === camIndex; }, open.getAttribute('data-cam-open'), false);
         return;
       }
       var locate = event.target.closest('[data-cam-locate]');
@@ -8240,6 +8986,10 @@
     csrf: csrfToken,
     commands: commands,
     getUnits: function () { return units; },
+    isUnitHidden: isUnitHidden,
+    isDisconnected: isDisconnected,
+    setUnitsHidden: setUnitsHidden,
+    openSquadTaskForm: openSquadTaskForm,
     getShapes: function () { return shapes; },
     getShapeLayers: function () { return shapeLayers; },
     getTrackSamples: function () { return trackSamples; },
@@ -8326,52 +9076,13 @@
     toggleSettingsBtn.addEventListener('click', toggleSettingsAside);
   }
 
-  restoreSettingsCollapsed();
-
-  // Gestion des calques (layers)
-  document.querySelectorAll('[data-ow-layer]').forEach(function(checkbox) {
-    // Restaurer l'état sauvegardé
-    var layer = checkbox.getAttribute('data-ow-layer');
-    try {
-      var saved = localStorage.getItem('athena:ow-layer-' + layer);
-      if (saved !== null) {
-        checkbox.checked = saved === '1';
-      }
-    } catch(e) {}
-    
-    // Event listener pour changements
-    checkbox.addEventListener('change', function() {
-      var visible = checkbox.checked;
-      
-      switch(layer) {
-        case 'units':
-          hiddenLayers.units = !visible;
-          renderMap();
-          break;
-        case 'labels':
-          document.body.classList.toggle('ow-labels-hidden', !visible);
-          break;
-        case 'shapes':
-          hiddenLayers.shapes = !visible;
-          Object.keys(shapeLayers).forEach(function(id) {
-            var shapeLayer = shapeLayers[id];
-            if (visible) {
-              if (!map.hasLayer(shapeLayer)) map.addLayer(shapeLayer);
-            } else {
-              if (map.hasLayer(shapeLayer)) map.removeLayer(shapeLayer);
-            }
-          });
-          break;
-        case 'aerial-view':
-          applyLook(visible ? 'aerial' : 'classic');
-          break;
-      }
-      
-      // Sauvegarder la préférence
-      try {
-        localStorage.setItem('athena:ow-layer-' + layer, visible ? '1' : '0');
-      } catch(e) {}
-    });
+  // Calques : restaure la préférence enregistrée et la rejoue dans le gestionnaire unique (hiddenLayers, tracksOn).
+  document.querySelectorAll('[data-ow-layer]').forEach(function (input) {
+    var saved = null;
+    try { saved = localStorage.getItem('athena:ow-layer-' + input.dataset.owLayer); } catch (e) {}
+    if (saved === null || (saved === '1') === input.checked) return;
+    input.checked = saved === '1';
+    input.dispatchEvent(new Event('change'));
   });
 
   window.addEventListener('resize', function () { map.invalidateSize({ animate: false }); });

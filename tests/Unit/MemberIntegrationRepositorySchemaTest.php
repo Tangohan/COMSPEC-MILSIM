@@ -74,7 +74,7 @@ final class MemberIntegrationRepositorySchemaTest extends TestCase
     {
         $boot = (string) file_get_contents($this->root() . '/bootstrap/users_member_photo_columns_migration.php');
         $sql = (string) file_get_contents($this->root() . '/migrations/20260902140000_users_member_photo_columns.sql');
-        $runner = (string) file_get_contents($this->root() . '/run-migrations.php');
+        $runner = (string) \Tests\Support\MigrationPipelineSource::read($this->root());
 
         self::assertStringContainsString('avatar_url', $boot);
         self::assertStringContainsString('character_portrait_path', $boot);

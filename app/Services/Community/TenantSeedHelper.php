@@ -13,93 +13,32 @@ use PDO;
 use PDOException;
 
 /**
- * Reprise des seeds run-migrations.php pour un nouveau tenant (forum, documents, permissions admin de base).
+ * Reprise des seeds run-migrations.php pour un nouveau tenant (documents, permissions admin de base).
  */
 final class TenantSeedHelper
 {
-    public static function seedForumAndRoles(PDO $pdo, int $tenantId): void
+    public static function seedBaseRoles(PDO $pdo, int $tenantId): void
     {
         $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-        $stmt->execute([$tenantId, 'forum.view']);
-        $hasForumView = (bool) $stmt->fetch();
+        $stmt->execute([$tenantId, 'admin.access']);
+        $hasAdminAccess = (bool) $stmt->fetch();
 
-        if (!$hasForumView) {
-            $permissions = [
-                ['admin.access', 'Accès administration', 'admin'],
-                ['forum.view', 'Voir le forum', 'forum'],
-                ['forum.create_topic', 'Créer un sujet', 'forum'],
-                ['forum.reply', 'Répondre', 'forum'],
-                ['forum.edit_own', 'Modifier son message', 'forum'],
-                ['forum.delete_own', 'Supprimer son message', 'forum'],
-                ['forum.moderate', 'Modérer le forum', 'forum'],
-                ['forum.moderate_organization', 'Modérer la section forum de l\'organisation', 'forum'],
-                ['forum.manage_categories', 'Gérer les catégories', 'forum'],
-            ];
-
-            $permIds = [];
-            foreach ($permissions as $p) {
-                $permIds[$p[0]] = self::insertPermission($pdo, $tenantId, $p[1], $p[0], $p[2]);
-            }
+        if (!$hasAdminAccess) {
+            $adminAccessId = self::insertPermission($pdo, $tenantId, 'Accès administration', 'admin.access', 'admin');
 
             self::ensureAccessProfilesForTenant($pdo, $tenantId);
+            // Administration réservée au niveau qui la demande (jamais à tous les membres).
+            $sensitive = TenantTypeConfig::sensitivePermissionLevels();
             $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-            foreach (CommunityAccessProfiles::slugs() as $roleSlug) {
-                $rs = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-                $rs->execute([$tenantId, $roleSlug]);
-                $roleId = (int) ($rs->fetchColumn() ?: 0);
+            foreach (CommunityAccessProfiles::definitions() as $def) {
+                $roleId = self::roleId($pdo, $tenantId, $def['slug']);
                 if ($roleId < 1) {
                     continue;
                 }
-                foreach ($permIds as $pid) {
-                    $link->execute([$roleId, $pid]);
+                if (TenantTypeConfig::levelRank($sensitive['admin.access'] ?? 'member') <= TenantTypeConfig::levelRank($def['key'])) {
+                    $link->execute([$roleId, $adminAccessId]);
                 }
             }
-        } else {
-            // Permissions déjà présentes : rattacher le minimum aux rôles simplifiés + gouvernance.
-            $forumSlugs = ['forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own'];
-            $permIds = [];
-            foreach ($forumSlugs as $slug) {
-                $s = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-                $s->execute([$tenantId, $slug]);
-                $id = (int) ($s->fetchColumn() ?: 0);
-                if ($id > 0) {
-                    $permIds[$slug] = $id;
-                }
-            }
-            if ($permIds !== []) {
-                foreach (CommunityAccessProfiles::slugs() as $roleSlug) {
-                    $rs = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-                    $rs->execute([$tenantId, $roleSlug]);
-                    $roleId = (int) ($rs->fetchColumn() ?: 0);
-                    if ($roleId < 1) {
-                        continue;
-                    }
-                    $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-                    foreach ($permIds as $pid) {
-                        $link->execute([$roleId, $pid]);
-                    }
-                }
-            }
-        }
-
-        $stmt = $pdo->prepare('SELECT 1 FROM forum_categories WHERE tenant_id = ? LIMIT 1');
-        $stmt->execute([$tenantId]);
-        if ($stmt->fetch()) {
-            self::ensurePedagogyMandatoryUnits($tenantId);
-
-            return;
-        }
-
-        $categories = [
-            ['Communiqués officiels', 'annonces', 'Annonces et communiqués de l\'équipe.', 'orange', 10],
-            ['Général', 'general', 'Discussions générales et présentation.', 'indigo', 20],
-            ['Missions & Opérations', 'missions', 'Briefs et retours d\'opérations.', 'violet', 30],
-            ['Support & Technique', 'support', 'Aide, ATAK, équipement, technique.', 'rose', 40],
-            ['Hors sujet', 'hors-sujet', 'Échanges informels.', 'emerald', 50],
-        ];
-        $insCat = $pdo->prepare('INSERT INTO forum_categories (tenant_id, parent_id, name, slug, description, color_theme, display_order, is_locked, created_at, updated_at) VALUES (?, NULL, ?, ?, ?, ?, ?, 0, NOW(), NOW())');
-        foreach ($categories as $c) {
-            $insCat->execute([$tenantId, $c[0], $c[1], $c[2], $c[3], $c[4]]);
         }
 
         self::ensurePedagogyMandatoryUnits($tenantId);
@@ -113,53 +52,6 @@ final class TenantSeedHelper
         try {
             (new TenantPedagogyStructureService(new UnitRepository()))->ensureMandatorySectionsForTenant($tenantId);
         } catch (\Throwable $_) {
-        }
-    }
-
-    /**
-     * Catégorie forum « organisation » (section dédiée) — idempotent.
-     */
-    public static function ensureOrganizationForumSection(PDO $pdo, int $tenantId): void
-    {
-        $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forum_categories' AND COLUMN_NAME = 'scope' LIMIT 1");
-        if (!$stmt || !$stmt->fetchColumn()) {
-            return;
-        }
-        $st = $pdo->prepare('SELECT name, slug FROM tenants WHERE id = ? LIMIT 1');
-        $st->execute([$tenantId]);
-        $row = $st->fetch(PDO::FETCH_ASSOC);
-        if (!$row || ($row['slug'] ?? '') === 'default') {
-            // Tenant système « pas d’organisation » : jamais de section forum dédiée (ce n’est pas une vraie communauté).
-            return;
-        }
-        $slug = 'org-' . preg_replace('/[^a-z0-9-]+/', '-', strtolower((string) ($row['slug'] ?? '')));
-        $slug = trim($slug, '-');
-        if ($slug === 'org') {
-            $slug = 'org-' . $tenantId;
-        }
-        if (strlen($slug) > 100) {
-            $slug = substr('org-' . $tenantId . '-' . md5((string) ($row['slug'] ?? '')), 0, 100);
-            $slug = rtrim($slug, '-');
-        }
-        $chkSlug = $pdo->prepare('SELECT 1 FROM forum_categories WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
-        $chkSlug->execute([$tenantId, $slug]);
-        if ($chkSlug->fetch()) {
-            return;
-        }
-        $chk = $pdo->prepare("SELECT 1 FROM forum_categories WHERE tenant_id = ? AND scope = 'organization' LIMIT 1");
-        $chk->execute([$tenantId]);
-        if ($chk->fetch()) {
-            return;
-        }
-        $name = trim((string) $row['name']) . ' — Espace dédié';
-        if (strlen($name) > 255) {
-            $name = substr($name, 0, 252) . '…';
-        }
-        $ins = $pdo->prepare('INSERT INTO forum_categories (tenant_id, scope, owner_tenant_id, parent_id, name, slug, description, color_theme, display_order, is_locked, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, 0, NOW(), NOW())');
-        try {
-            $ins->execute([$tenantId, 'organization', $tenantId, $name, $slug, 'Section forum de votre organisation.', 'slate', 15]);
-        } catch (\PDOException $e) {
-            // Idempotence / contraintes (slug, scope migré, etc.) — ne pas faire échouer le flux d’invitation.
         }
     }
 
@@ -282,7 +174,7 @@ final class TenantSeedHelper
     }
 
     /**
-     * Libellés métier et rôles suggérés après seed forum / permissions (wizard onboarding).
+     * Libellés métier et rôles suggérés après seed des permissions (wizard onboarding).
      */
     public static function applyWizardCommunityRoles(PDO $pdo, int $tenantId, string $template): void
     {
@@ -303,7 +195,7 @@ final class TenantSeedHelper
 
     /**
      * Insère ou met à jour le catalogue de permissions (slug, module, action) pour un tenant
-     * et rattache les rôles système (admin, propriétaire, modérateur forum).
+     * et rattache les rôles système (admin, propriétaire, responsable communication).
      */
     public static function ensureTenantPermissionCatalog(PDO $pdo, int $tenantId): void
     {
@@ -581,6 +473,76 @@ final class TenantSeedHelper
         $r = $st->fetch(PDO::FETCH_ASSOC);
 
         return $r ? (int) $r['id'] : 0;
+    }
+
+    /**
+     * Aligne les trois niveaux d’accès (Membre, RH, Gestionnaire) sur le profil de la communauté :
+     *  - catalogue des habilitations présent, quel que soit le profil (les menus et routes hors profil
+     *    restent masqués par TenantTypeModuleAccessMiddleware) ;
+     *  - jeu standard de chaque niveau + habilitations de base du profil, ajoutés s’ils manquent ;
+     *  - administration, gestion et modération retirées des niveaux Membre et RH quand elles
+     *    n’appartiennent pas à leur jeu standard (anciennes bascules qui les donnaient à tous).
+     * Les niveaux personnalisés (access-custom-*) ne sont pas touchés.
+     * $revokeFromHr = false : seul le niveau Membre est nettoyé (rattrapage automatique des
+     * communautés existantes, sans retirer à la RH un accès dont elle se servait peut-être).
+     *
+     * @return array{granted: int, revoked: int}
+     */
+    public static function alignAccessProfilesForType(PDO $pdo, int $tenantId, string $tenantType, bool $revokeFromHr = true): array
+    {
+        if ($tenantId <= 0) {
+            return ['granted' => 0, 'revoked' => 0];
+        }
+        $tenantType = TenantTypeConfig::normalizeType($tenantType);
+        self::ensureAccessProfilesForTenant($pdo, $tenantId);
+        self::ensureSystemAdminPermissions($pdo, $tenantId);
+        self::ensureTenantPermissionCatalog($pdo, $tenantId);
+        foreach (TenantTypeConfig::basePermissionsByType()[$tenantType] ?? [] as $p) {
+            self::insertPermission($pdo, $tenantId, (string) $p['name'], (string) $p['slug'], (string) $p['module']);
+        }
+
+        $permId = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
+        $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+        $unlink = $pdo->prepare('DELETE FROM role_permissions WHERE role_id = ? AND permission_id = ?');
+        $granted = 0;
+        $revoked = 0;
+        foreach (CommunityAccessProfiles::definitions() as $def) {
+            $roleId = self::roleId($pdo, $tenantId, $def['slug']);
+            if ($roleId < 1) {
+                continue;
+            }
+            $key = (string) $def['key'];
+            $wanted = array_values(array_unique(array_merge(
+                CommunityAccessProfiles::permissionSlugsFor($key),
+                TenantTypeConfig::basePermissionSlugsForLevel($tenantType, $key),
+                $key === CommunityAccessProfiles::MANAGER ? ['admin.access', 'admin.organization'] : []
+            )));
+            foreach ($wanted as $slug) {
+                $permId->execute([$tenantId, $slug]);
+                $pid = (int) ($permId->fetchColumn() ?: 0);
+                if ($pid > 0) {
+                    $link->execute([$roleId, $pid]);
+                    $granted += $link->rowCount();
+                }
+            }
+            if ($key === CommunityAccessProfiles::MANAGER || ($key === CommunityAccessProfiles::HR && !$revokeFromHr)) {
+                continue;
+            }
+            $rank = TenantTypeConfig::levelRank($key);
+            foreach (TenantTypeConfig::sensitivePermissionLevels() as $slug => $level) {
+                if (TenantTypeConfig::levelRank($level) <= $rank || in_array($slug, $wanted, true)) {
+                    continue;
+                }
+                $permId->execute([$tenantId, $slug]);
+                $pid = (int) ($permId->fetchColumn() ?: 0);
+                if ($pid > 0) {
+                    $unlink->execute([$roleId, $pid]);
+                    $revoked += $unlink->rowCount();
+                }
+            }
+        }
+
+        return ['granted' => $granted, 'revoked' => $revoked];
     }
 
     public static function ensurePersonnelPanelsAndMatricule(PDO $pdo, int $tenantId): void

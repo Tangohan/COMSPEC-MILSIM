@@ -12,7 +12,6 @@ $owStamp = (string) max(
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-gotak.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-aerial.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tools.js'),
-    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-gotak.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-ops.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tracks.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-telemetry.js'),
@@ -57,7 +56,7 @@ $icon = static function (string $path): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#050505">
-  <title>Athena — Overwatch Beta</title>
+  <title>Athena — Overwatch</title>
   <link rel="icon" href="<?= $h($base) ?>/assets/icons/athena-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -91,14 +90,15 @@ $icon = static function (string $path): string {
 <body>
 <div class="ow-shell">
   <header class="ow-topbar">
-    <a class="ow-brand" href="<?= $h(url('-ATAK-OVERWATCH-Beta')) ?>"><b>A</b><span class="ow-brand-word">ATHENA<small>Comspec / Overwatch Beta</small></span></a>
+    <a class="ow-brand" href="<?= $h(url('atak')) ?>"><b>A</b><span class="ow-brand-word">ATHENA<small>Comspec / Overwatch</small></span></a>
     <nav class="ow-nav" aria-label="Espaces de travail">
       <button type="button" class="is-active" data-view="overwatch" title="La carte et la situation en direct">Overwatch</button>
       <button type="button" data-view="orbat" title="L’organigramme prévu, comparé aux positions réellement reçues">ORBAT</button>
       <button type="button" data-view="comms" title="Canaux, contacts, groupes et tchat opérationnel">Transmissions</button>
       <button type="button" data-view="mission" title="Bilan, comptes rendus SALUTE, santé, logistique et CASEVAC">Mission</button>
       <button type="button" class="ow-nav-secondary" data-view="air" title="Aéronefs, manifestes et demandes d’appui aérien (JTAC)">Air</button>
-      <button type="button" class="ow-nav-secondary" data-view="network" title="Relais posés, terminaux ATAK et état satellite">Réseau</button>
+      <button type="button" class="ow-nav-secondary" data-view="network" title="Relais posés et terminaux ATAK">Réseau</button>
+      <button type="button" class="ow-nav-secondary" data-view="teams" title="Équipes de feu et destinations assignées aux unités">Équipes</button>
       <button type="button" data-view="layers" title="Fonds de carte, relief et couches affichées">Calques</button>
       <button type="button" data-view="intel" title="Observations, évaluations et dossiers de renseignement">Renseignement</button>
       <button type="button" data-view="cams" title="Vues caméra partagées depuis les téléphones ATAK, actualisées toutes les quelques secondes">Live cam</button>
@@ -112,6 +112,7 @@ $icon = static function (string $path): string {
       <div class="ow-more-menu" id="ow-more-menu" hidden>
         <button type="button" class="ow-more-secondary" data-view="air">Air</button>
         <button type="button" class="ow-more-secondary" data-view="network">Réseau</button>
+        <button type="button" class="ow-more-secondary" data-view="teams">Équipes</button>
         <button type="button" class="ow-more-secondary" data-view="radio">Radio</button>
         <button type="button" class="ow-more-secondary" data-view="iff">Identification</button>
         <button type="button" class="ow-more-secondary" data-view="pings">Pings</button>
@@ -178,6 +179,68 @@ $icon = static function (string $path): string {
         <div id="ow-orbat-tree" class="ow-orbat-tree" aria-label="Arbre ORBAT"></div>
       </div>
       <div class="ow-settings-body">
+        <?php
+        // Messages du poste : maintenance, session téléphone, accès incomplets, codes de secours, liaison du jeu.
+        $owPhone = is_array($phoneOperatorSession ?? null) ? $phoneOperatorSession : null;
+        $owGap = is_array($atakAccessGap ?? null) ? $atakAccessGap : [];
+        $owGaps = (!empty($owGap['offer']) && is_array($owGap['gaps'] ?? null)) ? $owGap['gaps'] : [];
+        $owSecurity = is_array($atakDeviceSecurity ?? null) ? $atakDeviceSecurity : [];
+        $owPhoneExpires = '';
+        if ($owPhone && !empty($owPhone['expires_at'])) {
+            $owTs = strtotime((string) $owPhone['expires_at']);
+            $owPhoneExpires = $owTs ? date('H:i', $owTs) : '';
+        }
+        ?>
+        <div class="ow-session-notices" id="ow-session-notices">
+          <?php if (!empty($atakMaintenanceActive) && !empty($canAccessAdminAtakConfig)): ?>
+            <div class="ow-session-notice is-warn">
+              <strong>Maintenance ATAK active</strong>
+              <span>Les membres voient la page de maintenance ; vous voyez la carte en tant qu’administrateur.</span>
+              <?php if (!empty($atakMaintenanceMessage)): ?><span translate="no"><?= $h((string) $atakMaintenanceMessage) ?></span><?php endif; ?>
+              <a href="<?= $h(url('back-office/ressources/atak-config')) ?>">Réglages ATAK</a>
+            </div>
+          <?php endif; ?>
+          <?php if ($owPhone): ?>
+            <div class="ow-session-notice">
+              <strong>Session téléphone</strong>
+              <span translate="no"><?= $h((string) ($owPhone['label'] ?? 'Opérateur téléphone')) ?></span>
+              <?php if ($owPhoneExpires !== ''): ?><span>Valable jusqu’à <?= $h($owPhoneExpires) ?></span><?php endif; ?>
+              <span>Sans compte membre, l’ORBAT et les commandes du poste restent fermés.</span>
+            </div>
+          <?php endif; ?>
+          <?php if ($owGaps !== [] && empty($owGap['pending'])): ?>
+            <div class="ow-session-notice" id="ow-access-gap" data-request-url="<?= $h((string) ($owGap['requestUrl'] ?? url('atak/demande-acces'))) ?>">
+              <strong>Certaines vues ne vous sont pas ouvertes</strong>
+              <ul>
+                <?php foreach ($owGaps as $gap): ?>
+                  <li><?= $h((string) ($gap['label'] ?? 'Vue indisponible')) ?><?= !empty($gap['hint']) ? ' : ' . $h((string) $gap['hint']) : '' ?></li>
+                <?php endforeach; ?>
+              </ul>
+              <button type="button" class="ow-secondary" data-ow-access-request>Demander les autorisations d’accès</button>
+              <span class="ow-help" data-ow-access-status role="status"></span>
+            </div>
+          <?php elseif (!empty($owGap['pending'])): ?>
+            <div class="ow-session-notice">
+              <strong>Demande d’accès en cours</strong>
+              <span>L’encadrement de votre communauté doit la valider depuis le bureau effectifs.</span>
+            </div>
+          <?php endif; ?>
+          <?php if (!empty($owSecurity['needsRecoveryCodes'])): ?>
+            <div class="ow-session-notice">
+              <strong>Codes de secours ATAK</strong>
+              <span>Créez vos codes de secours pour récupérer votre terminal si vous changez de PC.</span>
+              <a href="<?= $h((string) ($owSecurity['setupUrl'] ?? url('account/security/devices'))) ?>">Créer mes codes</a>
+            </div>
+          <?php endif; ?>
+          <?php if (!empty($atakCaps['loggedIn'])): ?>
+            <div class="ow-session-notice is-quiet">
+              <strong>Liaison avec le jeu</strong>
+              <span>Liez votre ATAK en jeu à votre compte pour apparaître sur la carte.</span>
+              <a href="<?= $h(url('atak/premiere-liaison')) ?>">Lier mon jeu</a>
+              <?php if (!empty($atakModDownloadUrl)): ?><a href="<?= $h((string) $atakModDownloadUrl) ?>">Télécharger le mod</a><?php endif; ?>
+            </div>
+          <?php endif; ?>
+        </div>
         <p class="ow-kicker">Situation</p>
         <div class="ow-stats" id="ow-stats">
           <div class="ow-stat"><b id="ow-stat-contacts">0</b><span>Contacts</span></div>
@@ -194,6 +257,21 @@ $icon = static function (string $path): string {
           <div class="ow-event"><span>Opérateurs en liaison</span><strong id="ow-traffic-ops">—</strong></div>
           <div class="ow-event"><span>Repères carte</span><strong id="ow-traffic-markers">—</strong></div>
         </div>
+
+        <?php $owWorkspaces = is_array($atakWorkspaces ?? null) ? $atakWorkspaces : []; ?>
+        <?php if (count($owWorkspaces) > 1): ?>
+        <form class="ow-map-picker" method="get" action="<?= $h(url('atak')) ?>">
+          <p class="ow-kicker">Théâtre</p>
+          <label class="ow-select-label">Carte du jeu
+            <select name="mapId" onchange="this.form.submit()">
+              <?php foreach ($owWorkspaces as $ws): ?>
+                <option value="<?= (int) $ws['mapId'] ?>"<?= (int) $ws['mapId'] === (int) ($atakDefaultMapId ?? 0) ? ' selected' : '' ?>><?= $h((string) $ws['label']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </label>
+          <noscript><button type="submit" class="ow-secondary">Ouvrir cette carte</button></noscript>
+        </form>
+        <?php endif; ?>
 
         <p class="ow-kicker">Fond de carte</p>
         <fieldset class="ow-looks" id="atak-settings-fond">
@@ -312,6 +390,7 @@ $icon = static function (string $path): string {
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="shapes" checked> Tracés et zones</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="tracks"> Trajectoires</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="arma-markers" id="ow-arma-markers" checked> Marqueurs du théâtre</label>
+        <label class="ow-toggle"><input type="checkbox" data-ow-layer="jtac" checked> Appuis JTAC (cible, IP, FAH)</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="tactical-obs" checked> Observations terrain</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="tactical-assess" checked> Évaluations confirmées</label>
         <p class="ow-help" id="ow-tactical-tracks-help">Aucune piste d’observation pour le moment.</p>
@@ -747,11 +826,15 @@ $icon = static function (string $path): string {
           <option value="session">Session en cours</option>
           <option value="mission">Mission enregistrée</option>
         </select></span>
+        <span class="ow-select" id="ow-replay-session-wrap" hidden><select id="ow-replay-session" aria-label="Session jouée">
+          <option value="">Toutes les sessions</option>
+        </select></span>
         <span class="ow-green" id="ow-replay-live">Direct</span>
         <input type="range" id="ow-replay-scrub" min="0" max="100" value="100" aria-label="Rejouer les trajectoires">
         <span id="ow-replay-now">Maintenant</span>
         <button type="button" class="ow-replay-play" data-ow-debrief>Exporter le bilan</button>
       </div>
+      <div class="ow-replay-events" id="ow-replay-events" hidden></div>
       <div class="ow-north" id="ow-north" aria-hidden="true">N</div>
       <div class="ow-live-measure" id="ow-live-measure" hidden></div>
       <div class="ow-data-hud" id="ow-data-hud">Groupes — · Ami 0 · Hostile 0</div>
@@ -872,7 +955,7 @@ $icon = static function (string $path): string {
     <span id="ow-map-name"><?= $h(ucfirst($slug)) ?></span>
     <span id="ow-weather-chip">Météo —</span>
     <span id="ow-cache-label" title="Fonds de carte enregistrés dans ce navigateur">Fonds</span>
-    <span class="ow-footer-end">Overwatch Beta</span>
+    <span class="ow-footer-end">Overwatch</span>
   </footer>
 </div>
 
@@ -1119,6 +1202,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/atak-aerial.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/overwatch-gl/OverwatchTileCache.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-reach-overlay.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/recon-viewer.js?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/js/recon-viewer.js')) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-beta.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-intel.js?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-intel.js')) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-orbat.js?v=<?= $h($owAsset) ?>"></script>
@@ -1131,6 +1215,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/atak-super-ping.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-pings.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-tools.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-overwatch-teams.js?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-teams.js')) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-terrain.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/vendor/maplibre-gl/maplibre-gl.js"></script>
 <script src="<?= $h($base) ?>/assets/vendor/deck.gl/deck.min.js"></script>
@@ -1148,6 +1233,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-c2.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-tacmap.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-realtime.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-overwatch-session.js?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-session.js')) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-sounds.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-p2.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-settings.js?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-settings.js')) ?>"></script>

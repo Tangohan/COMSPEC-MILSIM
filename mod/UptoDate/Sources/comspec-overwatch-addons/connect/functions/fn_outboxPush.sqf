@@ -45,7 +45,7 @@ _queue = _queue select {
 
 if ((toLower _cmd) in ["syncwardrobe", "syncwardrobesbatch"]) exitWith {
     profileNamespace setVariable ["COMSPEC_Outbox", _queue];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
     false
 };
 
@@ -74,7 +74,7 @@ if (_dup >= 0) exitWith { true };
 private _now = [] call comspec_overwatch_connect_fnc_wallClockSeconds;
 _queue pushBack [_cmd, _args, _label, _linkCat, _now, 0];
 profileNamespace setVariable ["COMSPEC_Outbox", _queue];
-saveProfileNamespace;
+[] call comspec_overwatch_connect_fnc_saveProfile;
 
 ["DEBUG", "Outbox", format ["En attente : %1 (%2 au total)", _label, count _queue]] call comspec_overwatch_connect_fnc_log;
 

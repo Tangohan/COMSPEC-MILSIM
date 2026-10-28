@@ -14,7 +14,8 @@
 
   function resolveUrl(apiBase, p) {
     var u = (p && (p.url || p.path)) || '';
-    if (!u && p && p.image_path) {
+    // recon-private/… : cliché confidentiel, jamais sous /uploads (url = route authentifiée).
+    if (!u && p && p.image_path && String(p.image_path).indexOf('recon-private/') !== 0) {
       u = '/uploads/recon/' + String(p.image_path).split('/').pop();
     }
     if (!u) return '';
@@ -51,20 +52,62 @@
       var caption = p.caption || '';
       var grid = p.grid_ref || p.grid || '';
       var clickable = hasPos(p);
+      // Fiche du cliché : titre, description, SSE (lien vers le dossier), confidentiel.
+      var photoTitle = String(p.title || '').trim();
+      var photoDesc = String(p.description || '').trim();
+      var caseRef = String(p.sse_case_ref || '').trim();
+      var caseUrl = String(p.sse_case_url || '').trim();
+      var sseLabel = 'SSE' + (caseRef ? ' ' + caseRef : '');
+      var badges = (Number(p.is_confidential || 0) ? '<span class="tacmap-recon-badge tacmap-recon-badge--conf">CONFIDENTIEL</span> ' : '') +
+        (Number(p.is_sse || 0) ? (caseUrl
+          ? '<a class="tacmap-recon-badge" href="' + escapeHtml(caseUrl) + '" target="_blank" rel="noopener">' + escapeHtml(sseLabel) + '</a>'
+          : '<span class="tacmap-recon-badge">' + escapeHtml(sseLabel) + '</span>') : '');
       return (
         '<article class="tacmap-recon-item' + (clickable ? ' tacmap-recon-item--locate' : '') + '"' +
           (p.id != null ? ' data-photo-id="' + escapeHtml(p.id) + '"' : '') +
           (clickable ? ' data-pos-x="' + escapeHtml(p.pos_x) + '" data-pos-y="' + escapeHtml(p.pos_y) + '" tabindex="0" role="button"' : '') +
           '>' +
-          (src ? '<img src="' + escapeHtml(src) + '" alt="" loading="lazy" />' : '') +
+          (src ? '<img src="' + escapeHtml(src) + '" alt="" loading="lazy" data-recon-open="' + escapeHtml(p.id != null ? p.id : '') + '" title="Agrandir" />' : '') +
           '<div class="tacmap-recon-meta">' +
             '<strong>' + escapeHtml(author || 'Recon') + '</strong>' +
             (grid ? '<span>Grille ' + escapeHtml(grid) + '</span>' : '') +
+            (badges ? '<span>' + badges + '</span>' : '') +
+            (p.restricted ? '<p>Cliché confidentiel — habilitation requise.</p>' : '') +
+            (photoTitle ? '<p><strong>' + escapeHtml(photoTitle) + '</strong></p>' : '') +
+            (photoDesc ? '<p>' + escapeHtml(photoDesc) + '</p>' : '') +
             (caption ? '<p>' + escapeHtml(caption) + '</p>' : '') +
           '</div>' +
         '</article>'
       );
     }).join('');
+
+    el._reconPhotos = list.slice(0, 24);
+    el._reconApiBase = apiBase;
+    el._reconOpts = opts;
+    if (!el.getAttribute('data-recon-viewer-bound')) {
+      el.setAttribute('data-recon-viewer-bound', '1');
+      // Clic sur la vignette : lecteur d'images (assets/js/recon-viewer.js) ; ailleurs sur la carte : localiser.
+      el.addEventListener('click', function (ev) {
+        var img = ev.target && ev.target.closest ? ev.target.closest('[data-recon-open]') : null;
+        if (!img || !global.ReconViewer) return;
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        var photos = el._reconPhotos || [];
+        var id = img.getAttribute('data-recon-open');
+        var index = 0;
+        for (var i = 0; i < photos.length; i++) {
+          if (String(photos[i].id) === id) { index = i; break; }
+        }
+        var o = el._reconOpts || {};
+        global.ReconViewer.open(photos, index, {
+          recon: true,
+          resolveUrl: function (u, p) { return resolveUrl(el._reconApiBase, p); },
+          onLocate: typeof o.onLocate === 'function'
+            ? function (x, y, p) { o.onLocate(x, y, p && p.id != null ? String(p.id) : null); }
+            : null
+        });
+      });
+    }
 
     if (typeof opts.onLocate === 'function' && !el.getAttribute('data-recon-bound')) {
       el.setAttribute('data-recon-bound', '1');

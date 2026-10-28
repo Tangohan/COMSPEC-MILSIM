@@ -19,7 +19,7 @@ if (isNull player) exitWith {
 // Version de structure : forcer le rebuild si l’arbre change (évite l’ancien menu plat).
 // v5 : un seul bouton Cartographie (fenêtre de relevé) à la place des trois envois séparés.
 private _menuVer = 9;
-if ((uiNamespace getVariable ["COMSPEC_ACEClassTreeVer", 0]) isEqualTo _menuVer) exitWith {
+if ((missionNamespace getVariable ["COMSPEC_ACEClassTreeVer", 0]) isEqualTo _menuVer) exitWith {
     missionNamespace setVariable ["COMSPEC_ACEMenuReady", true, false];
     missionNamespace setVariable ["COMSPEC_ACEMenuStructureVer", _menuVer, false];
     missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];
@@ -62,7 +62,7 @@ private _legacyFlat = [
     "COMSPEC_Terrain", "COMSPEC_Scene", "COMSPEC_GeoNetwork", "COMSPEC_Recon", "COMSPEC_ReconNote",
     "COMSPEC_CAS", "COMSPEC_Manifest", "COMSPEC_OrderMenu", "COMSPEC_OrderCompose",
     "COMSPEC_OrderFrago", "COMSPEC_OrderMove", "COMSPEC_OrderHold", "COMSPEC_OrderRecon",
-    "COMSPEC_OrderQRF", "COMSPEC_WardrobePush", "COMSPEC_WardrobePull",
+    "COMSPEC_OrderQRF", "COMSPEC_WardrobePush", "COMSPEC_WardrobePull", "COMSPEC_WardrobeSyncAll",
     "COMSPEC_Callsign", "COMSPEC_BugReport", "COMSPEC_DisableOwnPhoneGps",
     "COMSPEC_ChargesAtak", "COMSPEC_RepairAtakPower", "COMSPEC_RepairAtakScreen",
     "COMSPEC_DiagnosticAtak"
@@ -112,20 +112,32 @@ private _root = ["ACE_SelfActions", "COMSPEC_Main"];
 
 private _fnc_folder = {
     params ["_id", "_label", "_path", ["_cond", { missionNamespace getVariable ["comspec_overwatch_enabled", true] }]];
-    private _a = [_id, _label, "", {}, _cond, { [] }] call ace_interact_menu_fnc_createAction;
+    private _a = [_id, _label, "", {}, _cond, { [] }] call comspec_overwatch_connect_fnc_aceAction;
     [_a, _path] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 };
+
+// ATAK natif : plus les entrées qui ouvraient une ancienne fenêtre plein écran par-dessus le jeu, ni celles qui
+// cherchaient l'ancien ATAK (toast « ATAK Enhanced non disponible ») ; tout cela est dans les apps du téléphone.
+// Restent les actions sans fenêtre et sans équivalent au téléphone (ECOTI, ping, bilan santé, photos Recon/casque/drone,
+// code laser, tenues, resynchro, ordres rapides). Un dossier vidé (Appui & mission) disparaît de lui-même dans ACE.
+private _nativeDrop = if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) then { [
+    "COMSPEC_Account", "COMSPEC_Tablet", "COMSPEC_OrderInbox", "COMSPEC_Messages", "COMSPEC_Photos",
+    "COMSPEC_Briefing", "COMSPEC_IntelNote", "COMSPEC_MedInbox", "COMSPEC_ReconNote", "COMSPEC_TheaterSurvey",
+    "COMSPEC_CAS", "COMSPEC_Manifest", "COMSPEC_OrderCompose", "COMSPEC_OrderFrago", "COMSPEC_Callsign",
+    "COMSPEC_BugReport", "COMSPEC_DiagIsolate"
+] } else { [] };
 
 private _fnc_leaf = {
     params ["_id", "_label", "_stmt", "_path", ["_cond", {
         (missionNamespace getVariable ["comspec_overwatch_enabled", true])
         && { [player] call comspec_overwatch_connect_fnc_hasTerminal }
     }]];
-    private _a = [_id, _label, "", _stmt, _cond, { [] }] call ace_interact_menu_fnc_createAction;
+    if (_id in _nativeDrop) exitWith {};
+    private _a = [_id, _label, "", _stmt, _cond, { [] }] call comspec_overwatch_connect_fnc_aceAction;
     [_a, _path] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 };
 
-private _mainAction = ["COMSPEC_Main", "COMSPEC Athena", "", {}, _condEnabled, _noChildren] call ace_interact_menu_fnc_createAction;
+private _mainAction = ["COMSPEC_Main", "COMSPEC Athena", "", {}, _condEnabled, _noChildren] call comspec_overwatch_connect_fnc_aceAction;
 [_mainAction, ["ACE_SelfActions"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 ["COMSPEC_Account", "Connexion Athena", {
@@ -137,7 +149,7 @@ private _mainAction = ["COMSPEC_Main", "COMSPEC Athena", "", {}, _condEnabled, _
 }, _root, _condSync] call _fnc_leaf;
 
 ["COMSPEC_Apps", "Applications", _root] call _fnc_folder;
-["COMSPEC_Situation", "Affichage situation", _root, _condEcoti] call _fnc_folder;
+["COMSPEC_Situation", "Infos tactiques JVN", _root, _condEcoti] call _fnc_folder;
 ["COMSPEC_Transmit", "Transmission", _root] call _fnc_folder;
 ["COMSPEC_MapSurvey", "Cartographie", _root] call _fnc_folder;
 ["COMSPEC_Support", "Appui & mission", _root] call _fnc_folder;
@@ -374,7 +386,7 @@ private _ord = _sup + ["COMSPEC_OrderMenu"];
         _condCommander,
         _noChildren,
         [_type, _announce]
-    ] call ace_interact_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_aceAction;
     [_a, _ord] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 } forEach [
     ["COMSPEC_OrderMove", "Déplacement (rapide)", "MOVE", "déplacement"],
@@ -387,8 +399,13 @@ private _ord = _sup + ["COMSPEC_OrderMenu"];
     [] spawn { [] call comspec_overwatch_connect_fnc_arsenalPushAll; };
 }, _load] call _fnc_leaf;
 
+// Import sans écraser : une tenue locale différente du même nom reste, la version du site arrive sous « nom · Athena ».
 ["COMSPEC_WardrobePull", "Charger tenues depuis Athena", {
-    [] spawn { [] call comspec_overwatch_connect_fnc_arsenalPullAll; };
+    [] spawn { ["", [], true] call comspec_overwatch_connect_fnc_arsenalPullAll; };
+}, _load] call _fnc_leaf;
+
+["COMSPEC_WardrobeSyncAll", "Tout basculer dans l'arsenal ACE", {
+    [] spawn { [] call comspec_overwatch_connect_fnc_arsenalSyncAll; };
 }, _load] call _fnc_leaf;
 
 ["COMSPEC_Callsign", "Mon indicatif / liaison", {
@@ -446,7 +463,7 @@ private _captureAtakAction = [
         }
     },
     _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 _captureAtakAction = [_captureAtakAction] call comspec_overwatch_connect_fnc_acePadAction;
 if (
     _captureAtakAction isNotEqualTo []
@@ -478,7 +495,7 @@ private _disablePhoneAction = [
         && { [_target, "COMSPEC_PhoneTrack"] call comspec_overwatch_connect_fnc_isObjectFlag }
     },
     _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 _disablePhoneAction = [_disablePhoneAction] call comspec_overwatch_connect_fnc_acePadAction;
 if (
     _disablePhoneAction isNotEqualTo []
@@ -496,7 +513,7 @@ if (
 [] call comspec_overwatch_connect_fnc_initChargeAceActions;
 
 missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];
-uiNamespace setVariable ["COMSPEC_ACEClassTreeVer", _menuVer];
+missionNamespace setVariable ["COMSPEC_ACEClassTreeVer", _menuVer, false]; // par mission : ACE vide ses actions de classe à chaque mission
 
 if (!isNil "comspec_overwatch_connect_fnc_getBloodType") then {
     private _bt = [] call comspec_overwatch_connect_fnc_getBloodType;

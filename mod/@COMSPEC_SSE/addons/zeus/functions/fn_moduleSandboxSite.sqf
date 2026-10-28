@@ -16,7 +16,7 @@ private _apply = {
     if (_pack in ["", "RANDOM"]) then {
         _pack = selectRandom ["INSURGENT_CELL", "SAFEHOUSE", "IED_WORKSHOP", "WEAPONS_DEPOT", "FINANCIAL_NODE"];
     };
-    [_pack, _pos, _radius] call comspec_sse_fnc_loadScenarioPack;
+    [_pack, _pos, _radius, false] call comspec_sse_fnc_loadScenarioPack;
     [nearestObjects [_pos, ["ThingX", "ReammoBox_F", "WeaponHolder", "LandVehicle", "Static"], _radius], 8] call comspec_sse_fnc_zeusBroadcastEnabled;
     [format ["Site d'entraînement : %1 — rayon %2 m", _pack, _radius]] call comspec_sse_fnc_zeusNotify;
 };

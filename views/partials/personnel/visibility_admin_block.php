@@ -41,6 +41,10 @@ $consequencesMap = [];
 foreach (array_keys($visibilityLevelOptions) as $lvl) {
     $consequencesMap[$lvl] = VisibilityLevel::consequence((string) $lvl, 'personnel');
 }
+// Textes repris par le script depuis data-consequences : la traduction de la page ne les voit pas.
+if (locale() === 'en') {
+    $consequencesMap = array_map([\App\Support\HtmlTranslator::class, 'translateText'], $consequencesMap);
+}
 $h = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 $ajaxUrl = $visibilityTargetUserId > 0 ? url('personnel/' . $visibilityTargetUserId . '/visibility') : '';
 ?>
@@ -50,14 +54,14 @@ $ajaxUrl = $visibilityTargetUserId > 0 ? url('personnel/' . $visibilityTargetUse
   data-personnel-visibility-admin
   data-consequences="<?= $h(json_encode($consequencesMap, JSON_UNESCAPED_UNICODE) ?: '{}') ?>"
   <?php if ($visibilityStandaloneForm && $ajaxUrl !== ''): ?>
-  x-data="personnelVisibilityAdmin({
-    url: <?= json_encode($ajaxUrl, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP) ?>,
-    csrf: <?= json_encode(\App\Core\Csrf::token(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP) ?>,
-    visibility: <?= json_encode($curVis, JSON_UNESCAPED_UNICODE) ?>,
-    assignment: <?= json_encode($curAssign, JSON_UNESCAPED_UNICODE) ?>,
-    label: <?= json_encode($anonLabel, JSON_UNESCAPED_UNICODE) ?>,
-    consequences: <?= json_encode($consequencesMap, JSON_UNESCAPED_UNICODE) ?>
-  })"
+  x-data="personnelVisibilityAdmin(<?= $h((string) json_encode([
+    'url' => $ajaxUrl,
+    'csrf' => \App\Core\Csrf::token(),
+    'visibility' => $curVis,
+    'assignment' => $curAssign,
+    'label' => $anonLabel,
+    'consequences' => $consequencesMap,
+  ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?>)"
   <?php endif; ?>
 >
   <div class="border-b border-slate-100 bg-slate-50/80 px-5 py-4 sm:px-6">

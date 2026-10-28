@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class OverwatchReconPhotoDateActionsAssetTest extends TestCase
 {
@@ -22,7 +23,7 @@ final class OverwatchReconPhotoDateActionsAssetTest extends TestCase
         self::assertStringContainsString('wallClockSeconds', $capture);
         self::assertStringContainsString('2440588', $capture);
         self::assertStringNotContainsString('private _capturedAt = str (floor time);', $capture);
-        self::assertStringContainsString('versionStr = "1.6.9"', $cfg);
+        ModVersion::assertAtLeast('1.6.9', ModVersion::fromConfigCpp($cfg));
         self::assertStringContainsString('ReconCapturedAt::unixFromPosted', $ctrl);
         self::assertStringContainsString('ReconCapturedAt::displayFromRow', $ctrl);
         self::assertStringContainsString('ReconCapturedAt::sqlDateTime', $repo);

@@ -26,7 +26,7 @@ if (!isNil "comspec_sse_fnc_requestServerOp") then {
 
 private _quality = 55;
 if (!isNil "comspec_sse_fnc_calcQuality") then {
-    _quality = [55, true, 0.85, 1] call comspec_sse_fnc_calcQuality;
+    _quality = [55, true, 0.85, 1, 1, _player, _target, "dogtag"] call comspec_sse_fnc_calcQuality;
 };
 
 private _fog = [_target, "dogtag", _quality] call comspec_sse_fnc_revealFog;
@@ -48,7 +48,7 @@ if ((count _lines) > 0 && {!(missionNamespace getVariable ["comspec_sse_milsimQu
     private _extra = _lines select {(_x find "Identité") >= 0 || {(_x find "Nationalité") >= 0} || {(_x find "Groupe") >= 0}};
     if ((count _extra) == 0) then { _extra = _lines select [0, (count _lines) min 2]; };
     if ((count _extra) > 0) then {
-        hintSilent format ["SSE — plaque :\n%1", _extra joinString "\n"];
+        [format ["SSE — plaque :\n%1", _extra joinString "\n"], "INFO"] call comspec_sse_fnc_notify;
     };
 };
 

@@ -19,14 +19,14 @@ private _font = _l get "font";
 private _fs = _l get "fontSmall";
 private _pad = (_l get "pad") * 2;
 private _mini = _l get "mini";
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 private _dir = "\z\comspec_atak_native\addons\main\data\";
 private _mk = { params ["_c", "_p", ["_t", ""]]; [_c, _p, _t] call comspec_atak_native_fnc_pageCtrl };
 private _btn = {
     params ["_rect", "_code", ["_tip", ""]];
     private _b = ["COMSPEC_RscButtonInvisible", _rect] call _mk;
     _b ctrlAddEventHandler ["ButtonClick", _code];
-    if (_tip isNotEqualTo "") then { _b ctrlSetTooltip _tip; };
+    if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
     _b
 };
 private _esc = { params ["_t"]; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
@@ -57,14 +57,14 @@ private _hdrH = _fs * 2.9;
 private _hdr = ["COMSPEC_RscText", [0, 0, _bw, _hdrH]] call _mk;
 _hdr ctrlSetBackgroundColor [0.07, 0.07, 0.07, 1];
 private _dateC = ["COMSPEC_RscText", [_pad, 0, _bw * 0.45, _fs * 1.3], (_draft get "date") splitString " " param [0, ""]] call _mk;
-_dateC ctrlSetFontHeight (_fs * 0.85); _dateC ctrlSetTextColor [0.6, 0.6, 0.6, 1];
+_dateC ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin); _dateC ctrlSetTextColor [0.6, 0.6, 0.6, 1];
 private _placeC = ["COMSPEC_RscTextRight", [_bw * 0.45, 0, _bw * 0.55 - _pad, _fs * 1.3], [_draft getOrDefault ["place", ""], [_draft get "grid"] call _esc] select ((_draft getOrDefault ["place", ""]) isEqualTo "")] call _mk;
-_placeC ctrlSetFontHeight (_fs * 0.85); _placeC ctrlSetTextColor [0.6, 0.6, 0.6, 1];
+_placeC ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin); _placeC ctrlSetTextColor [0.6, 0.6, 0.6, 1];
 private _chipX = _pad;
 private _chip = {
     params ["_text", "_rgb"];
     private _c = ["COMSPEC_RscTextCenter", [_chipX, _fs * 1.35, 0.1, _fs * 1.25], _text] call _mk;
-    _c ctrlSetFontHeight (_fs * 0.8);
+    _c ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin);
     private _w = (ctrlTextWidth _c) + _pad;
     _c ctrlSetPosition [_chipX, _fs * 1.35, _w, _fs * 1.25]; _c ctrlCommit 0;
     _c ctrlSetBackgroundColor _rgb; _c ctrlSetTextColor [1, 1, 1, 1];
@@ -81,7 +81,7 @@ private _urg = _draft getOrDefault ["urgency", "routine"];
 if (_urg isNotEqualTo "routine") then { [toUpper ((((_cat get "urgencies") select { (_x select 0) isEqualTo _urg }) param [0, [_urg, _urg]]) select 1), [0.85, 0.45, 0.1, 1]] call _chip; };
 if ((count _themes) isEqualTo 0) then {
     private _c = ["COMSPEC_RscText", [_chipX, _fs * 1.35, _bw * 0.5, _fs * 1.25], "Aucun thème : ouvrez l'Entête"] call _mk;
-    _c ctrlSetFontHeight (_fs * 0.75); _c ctrlSetTextColor [0.55, 0.55, 0.55, 1];
+    _c ctrlSetFontHeight ((_fs * 0.75) max COMSPEC_ATAK_FontMin); _c ctrlSetTextColor [0.55, 0.55, 0.55, 1];
 };
 
 // Barre du bas (bandeau violet à creux) : dimensions communes.
@@ -99,21 +99,21 @@ private _tbg = ["COMSPEC_RscText", [_tx, _ty, _tw, _th]] call _mk;
 _tbg ctrlSetBackgroundColor [0.235, 0.235, 0.235, 1];
 private _body = _draft getOrDefault ["body", ""];
 private _ph = ["COMSPEC_RscStructuredText", [_tx + _pad / 2, _ty + _pad / 3, _tw - _pad, _fs * 2.6]] call _mk;
-_ph ctrlSetStructuredText parseText "<t size='0.8' color='#8c8c8c' font='RobotoCondensedLight'>Veuillez inscrire vos informations dans ce cadre. N'hésitez pas à modifier la date, les thèmes ou le lieu (Entête) en fonction de l'événement.</t>";
+_ph ctrlSetStructuredText parseText (("<t size='0.8' color='#8c8c8c' font='COMSPEC_BarlowLight'>Veuillez inscrire vos informations dans ce cadre. N'hésitez pas à modifier la date, les thèmes ou le lieu (Entête) en fonction de l'événement.</t>") call comspec_atak_native_fnc_tr);
 _ph ctrlShow (_body isEqualTo "");
 private _edit = ["COMSPEC_RscEditMulti", [_tx, _ty, _tw, _th], _body] call _mk;
 _edit ctrlSetBackgroundColor [0, 0, 0, 0];
 _edit ctrlSetFontHeight _font;
 (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) set ["body", _edit];
 private _cnt = ["COMSPEC_RscTextCenter", [_tx + _tw - _fs * 4.2 * _ratio, _ty + _th, _fs * 4.2 * _ratio, _cntH]] call _mk;
-_cnt ctrlSetFontHeight (_fs * 0.85);
+_cnt ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
 _cnt ctrlSetTextColor [1, 1, 1, 1];
 uiNamespace setVariable ["COMSPEC_ATAK_FrsCount", [_cnt, _ph, _max]];
 private _upd = {
     params ["_e"];
     (uiNamespace getVariable ["COMSPEC_ATAK_FrsCount", []]) params [["_c", controlNull], ["_p", controlNull], ["_m", 1000]];
     private _n = count (ctrlText _e);
-    _c ctrlSetText format ["%1/%2", _n, _m];
+    _c ctrlSetText ((format ["%1/%2", _n, _m]) call comspec_atak_native_fnc_tr);
     _c ctrlSetBackgroundColor ([[0.93, 0.1, 0.1, 1], [0.27, 0.22, 0.62, 1]] select (_n >= 10 && {_n <= _m}));
     _p ctrlShow (_n isEqualTo 0);
 };
@@ -125,7 +125,7 @@ _edit ctrlAddEventHandler ["KeyUp", { params ["_e"]; [_e] call (_e getVariable [
 _edit ctrlAddEventHandler ["SetFocus", { params ["_e"]; ((uiNamespace getVariable ["COMSPEC_ATAK_FrsCount", []]) param [1, controlNull]) ctrlShow false; }];
 if ((_hint select 0) isNotEqualTo "") then {
     private _h = ["COMSPEC_RscStructuredText", [_tx, _ty + _th, _tw - _fs * 4.4 * _ratio, _cntH * 1.6]] call _mk;
-    _h ctrlSetStructuredText parseText format ["<t size='0.8' color='%1'>%2</t>", ["#7aa89a", "#e8b84a"] select (_hint select 1), [_hint select 0] call _esc];
+    _h ctrlSetStructuredText parseText ((format ["<t size='0.8' color='%1'>%2</t>", ["#7aa89a", "#e8b84a"] select (_hint select 1), [_hint select 0] call _esc]) call comspec_atak_native_fnc_tr);
 };
 
 // Poignées des volets (texte vertical lettre par lettre).
@@ -141,7 +141,7 @@ private _handle = {
     _c ctrlSetBackgroundColor ([[0.30, 0.30, 0.30, 1], [0.27, 0.22, 0.62, 1]] select _on);
     private _t = ["COMSPEC_RscStructuredText", [_x0, _hy + _pad / 3, _w, _hh]] call _mk;
     // Lettres passées une à une : splitString "" coupe les caractères accentués (Ê) en octets.
-    _t ctrlSetStructuredText parseText format ["<t align='center' size='0.62' color='#e6e6e6'>%1</t>", _label joinString "<br/>"];
+    _t ctrlSetStructuredText parseText ((format ["<t align='center' size='0.62' color='#e6e6e6'>%1</t>", _label joinString "<br/>"]) call comspec_atak_native_fnc_tr);
     [[_x0, _hy, _w, _hh], _code, _label joinString ""] call _btn;
 };
 
@@ -201,10 +201,10 @@ if (_pjOn && {_view isEqualTo ""}) then {
     private _gw = _pw - 2 * _pad;
     private _titleH = _fs * 1.6;
     private _tt = ["COMSPEC_RscText", [_gx, _pad / 2, _gw, _titleH], "PIÈCES JOINTES"] call _mk;
-    _tt ctrlSetFont "RobotoCondensedBold"; _tt ctrlSetFontHeight (_fs * 0.95); _tt ctrlSetTextColor [0.9, 0.9, 0.9, 1];
+    _tt ctrlSetFont (COMSPEC_ATAK_FontSet select 1); _tt ctrlSetFontHeight (_fs * 0.95); _tt ctrlSetTextColor [0.9, 0.9, 0.9, 1];
     private _cw = _fs * 2.6 / _ratio;
     private _cc = ["COMSPEC_RscTextCenter", [_gx + _gw - _cw, _pad / 2 + _titleH * 0.12, _cw, _titleH * 0.76], format ["%1/4", _np]] call _mk;
-    _cc ctrlSetFontHeight (_fs * 0.8); _cc ctrlSetTextColor [1, 1, 1, 1];
+    _cc ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin); _cc ctrlSetTextColor [1, 1, 1, 1];
     _cc ctrlSetBackgroundColor ([[0.27, 0.22, 0.62, 1], [0.85, 0.45, 0.1, 1]] select (_np >= 4));
     private _closeH = _fs * 1.5;
     private _helpH = _fs * 1.2;
@@ -246,9 +246,9 @@ if (_pjOn && {_view isEqualTo ""}) then {
                 _ic ctrlSetTextColor [0.62, 0.62, 0.66, 1];
             };
             private _lab = ["COMSPEC_RscText", [_cx, _cy + _tileH - _labH, _tw, _labH], format ["%1 %2", ["Photo ·", "Capture ·"] select (_kind isEqualTo "capture"), _name]] call _mk;
-            _lab ctrlSetFontHeight (_fs * 0.72); _lab ctrlSetTextColor [0.92, 0.92, 0.92, 1];
+            _lab ctrlSetFontHeight ((_fs * 0.72) max COMSPEC_ATAK_FontMin); _lab ctrlSetTextColor [0.92, 0.92, 0.92, 1];
             _lab ctrlSetBackgroundColor [0, 0, 0, 0.65];
-            _lab ctrlSetTooltip format ["%1%2", _name, ["", format [" · %1", _grid]] select (_grid isNotEqualTo "")];
+            _lab ctrlSetTooltip ((format ["%1%2", _name, ["", format [" · %1", _grid]] select (_grid isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
             // Croix de retrait (coin haut droit).
             private _xs = (_fs * 1.35) min (_tileH * 0.35);
             private _xw = _xs / _ratio;
@@ -262,7 +262,7 @@ if (_pjOn && {_view isEqualTo ""}) then {
             [_cx, _cy, _tw, _tileH] call _dash;
             private _plusH = _tileH * 0.42;
             private _pl = ["COMSPEC_RscTextCenter", [_cx, _cy + _tileH * 0.04, _tw, _plusH], "+"] call _mk;
-            _pl ctrlSetFontHeight (_plusH * 0.85); _pl ctrlSetTextColor [0.5, 0.5, 0.56, 1];
+            _pl ctrlSetFontHeight ((_plusH * 0.85) max COMSPEC_ATAK_FontMin); _pl ctrlSetTextColor [0.5, 0.5, 0.56, 1];
             // Trois sources compactes (mêmes actions que le bouton rond).
             private _srcs = [
                 ["ui_photocam.paa", "Caméra", { ["camera"] call comspec_atak_native_fnc_frsAction; }, "Caméra : capture de la vue jointe à la fiche"],
@@ -283,7 +283,7 @@ if (_pjOn && {_view isEqualTo ""}) then {
                 (["COMSPEC_RscPicture", [_sx + (_sw - _ih / _ratio) / 2, _iy, _ih / _ratio, _ih], _dir + _file] call _mk) ctrlSetTextColor [1, 1, 1, 1];
                 if (_labels) then {
                     private _t = ["COMSPEC_RscTextCenter", [_sx, _iy + _ih, _sw, _sh - _ih - _sh * 0.12], _name] call _mk;
-                    _t ctrlSetFontHeight ((_fs * 0.62) min ((_sh - _ih) * 0.7)); _t ctrlSetTextColor [0.85, 0.85, 0.9, 1];
+                    _t ctrlSetFontHeight (((_fs * 0.62) min ((_sh - _ih) * 0.7)) max COMSPEC_ATAK_FontMin); _t ctrlSetTextColor [0.85, 0.85, 0.9, 1];
                 };
                 [[_sx, _sy, _sw, _sh], _code, _tip] call _btn;
             } forEach _srcs;
@@ -295,11 +295,11 @@ if (_pjOn && {_view isEqualTo ""}) then {
         "4 pièces au plus, envoyées avec la fiche. La croix en retire une.",
         "Maximum atteint : retirez une pièce (croix) pour en joindre une autre."
     ] select (_np >= 4)] call _mk;
-    _help ctrlSetFontHeight (_fs * 0.7); _help ctrlSetTextColor [0.6, 0.6, 0.64, 1];
-    _help ctrlSetTooltip "Caméra : capture de la vue · Galerie : photothèque du poste · Athena : fiches envoyées et leurs photos";
+    _help ctrlSetFontHeight ((_fs * 0.7) max COMSPEC_ATAK_FontMin); _help ctrlSetTextColor [0.6, 0.6, 0.64, 1];
+    _help ctrlSetTooltip (("Caméra : capture de la vue · Galerie : photothèque du poste · Athena : fiches envoyées et leurs photos") call comspec_atak_native_fnc_tr);
     private _fw0 = (_gw * 0.5) max ((_fs * 6 / _ratio) min _gw);
     private _close = ["COMSPEC_RscButtonPrimary", [_x0 + (_pw - _fw0) / 2, _barTop - _closeH - _pad, _fw0, _closeH], "FERMER"] call _mk;
-    _close ctrlSetFontHeight (_fs * 0.85);
+    _close ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
     _close ctrlAddEventHandler ["ButtonClick", { ["pj"] call comspec_atak_native_fnc_frsAction; }];
 };
 if (_pjOn && {_view isNotEqualTo ""}) then {
@@ -315,6 +315,7 @@ if (_pjOn && {_view isNotEqualTo ""}) then {
                 _rows pushBack ["person", _dir + "ui_gallery.paa", format ["%1<br/><t size='0.75' color='#9a9a9a'>%2</t>", [_name] call _esc, ["", "déjà jointe"] select _in],
                     [["JOINDRE", compile format ["['add', %1] call comspec_atak_native_fnc_frsAction;", _i], true, !_in]], [0.8, 0.8, 0.8, 1]];
             };
+            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["FRS", { ["back"] call comspec_atak_native_fnc_frsAction; }]];
             _rows pushBack ["buttons", [["RETOUR AUX PIÈCES", { ["back"] call comspec_atak_native_fnc_frsAction; }]]];
         };
         case "sent": {
@@ -332,7 +333,7 @@ if (_pjOn && {_view isNotEqualTo ""}) then {
                 if ((count _sent) isEqualTo 0) then { _rows pushBack ["text", "<t color='#9a9a9a'>Aucune fiche envoyée pendant cette session.</t>"]; };
                 {
                     _x params ["_time", "_kind", "_ref", "_status", "_excerpt", ["_np", 0]];
-                    _rows pushBack ["text", format ["<t color='#7d6ff0' font='RobotoCondensedBold'>%1</t>  %2  <t color='#9a9a9a'>%3 · %4%5</t><br/><t size='0.85'>%6</t>", _kind, _ref, _time, _status, ["", format [" · %1 pièce(s)", _np]] select (_np > 0), [_excerpt] call _esc]];
+                    _rows pushBack ["text", format ["<t color='#7d6ff0' font='COMSPEC_BarlowBold'>%1</t>  %2  <t color='#9a9a9a'>%3 · %4%5</t><br/><t size='0.85'>%6</t>", _kind, _ref, _time, _status, ["", format [" · %1 pièce(s)", _np]] select (_np > 0), [_excerpt] call _esc]];
                 } forEach (+_sent call { reverse _this; _this });
             } else {
                 if !(_scope in _lib) then { [{ ["load", _this] call comspec_atak_native_fnc_frsLibrary; }, _scope] call CBA_fnc_execNextFrame; };
@@ -344,7 +345,7 @@ if (_pjOn && {_view isNotEqualTo ""}) then {
                     _note params ["_id", "_ref", "_kind", "_title", "_grid", "_urg", "_status", "_when", "_author", "_body", "_urls"];
                     _rows append [
                         ["title", format ["%1 · %2", _kind, _ref]],
-                        ["text", format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#9a9a9a'>%2 · %3 · %4%5%6</t>", [_title] call _esc, _when, _urg, _status, ["", format [" · %1", _grid]] select (_grid isNotEqualTo ""), ["", format [" · %1", [_author] call _esc]] select (_author isNotEqualTo "")]],
+                        ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#9a9a9a'>%2 · %3 · %4%5%6</t>", [_title] call _esc, _when, _urg, _status, ["", format [" · %1", _grid]] select (_grid isNotEqualTo ""), ["", format [" · %1", [_author] call _esc]] select (_author isNotEqualTo "")]],
                         ["text", format ["<t size='0.9'>%1</t>", [([_body] call _esc), " ¶ ", "<br/>"] call CBA_fnc_replace]]
                     ];
                     if ((count _urls) > 0) then {
@@ -356,6 +357,7 @@ if (_pjOn && {_view isNotEqualTo ""}) then {
                             { if (_x isEqualTo "") then { _rows pushBack ["text", "<t size='0.8' color='#9a9a9a'>Photo au format PNG : visible sur Athena seulement.</t>"]; } else { _rows pushBack ["image", _x]; }; } forEach _imgs;
                         };
                     };
+                    (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["FRS", { ["libOpen", ""] call comspec_atak_native_fnc_frsAction; }]];
                     _rows pushBack ["buttons", [["RETOUR À LA LISTE", { ["libOpen", ""] call comspec_atak_native_fnc_frsAction; }]]];
                 } else {
                     _rows pushBack ["title", format ["Fiches Athena (%1)", count _notes]];
@@ -365,12 +367,13 @@ if (_pjOn && {_view isNotEqualTo ""}) then {
                     {
                         _x params ["_id", "_ref", "_kind", "_title", "_grid", "_urg", "_status", "_when", "_author", "_body", "_urls"];
                         _rows pushBack ["person", _dir + (["ui_folder.paa", "ui_gallery.paa"] select ((count _urls) > 0)),
-                            format ["<t color='#7d6ff0' font='RobotoCondensedBold'>%1</t>  %2<br/><t size='0.85'>%3</t><br/><t size='0.75' color='#9a9a9a'>%4 · %5%6</t>", _kind, _ref, [_title] call _esc, _when, _status, ["", format [" · %1 photo(s)", count _urls]] select ((count _urls) > 0)],
+                            format ["<t color='#7d6ff0' font='COMSPEC_BarlowBold'>%1</t>  %2<br/><t size='0.85'>%3</t><br/><t size='0.75' color='#9a9a9a'>%4 · %5%6</t>", _kind, _ref, [_title] call _esc, _when, _status, ["", format [" · %1 photo(s)", count _urls]] select ((count _urls) > 0)],
                             [["OUVRIR", compile format ["['libOpen', %1] call comspec_atak_native_fnc_frsAction;", str _id], true, true]], [0.8, 0.8, 0.8, 1]];
                     } forEach _notes;
                     _rows pushBack ["buttons", [[format ["ACTUALISER%1", ["", format [" (%1)", _at]] select (_at isNotEqualTo "")], compile format ["['load', %1] call comspec_atak_native_fnc_frsLibrary;", str _scope]]]];
                 };
             };
+            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["FRS", { ["back"] call comspec_atak_native_fnc_frsAction; }]];
             _rows pushBack ["buttons", [["RETOUR AUX PIÈCES", { ["back"] call comspec_atak_native_fnc_frsAction; }]]];
         };
     };

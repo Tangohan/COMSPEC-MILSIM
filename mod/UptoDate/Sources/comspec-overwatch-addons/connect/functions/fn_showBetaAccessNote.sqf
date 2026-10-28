@@ -7,6 +7,7 @@
 params [["_force", false]];
 
 if (!hasInterface) exitWith {};
+if (([] call comspec_overwatch_connect_fnc_athenaMode) isNotEqualTo "on") exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 
 private _fnc_isTrue = {
@@ -22,7 +23,7 @@ private _betaAck = [profileNamespace getVariable ["comspec_overwatch_beta_note_a
 if (!_force && {_cguAck}) exitWith {
     if (!_betaAck) then {
         profileNamespace setVariable ["comspec_overwatch_beta_note_ack", true];
-        saveProfileNamespace;
+        [] call comspec_overwatch_connect_fnc_saveProfile;
     };
     if (!(profileNamespace getVariable ["comspec_overwatch_beta_registered", false])) then {
         [] call comspec_overwatch_connect_fnc_registerBetaClient;
@@ -64,7 +65,7 @@ private _action = if (count _parts >= 2) then { toLower (_parts select 1) } else
 if (_prefix isEqualTo "OK" && {_action in ["ack", "dismissed"]}) exitWith {
     profileNamespace setVariable ["comspec_overwatch_cgu_ack", true];
     profileNamespace setVariable ["comspec_overwatch_beta_note_ack", true];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
     [] call comspec_overwatch_connect_fnc_registerBetaClient;
     [] call comspec_overwatch_connect_fnc_refreshMainMenuBetaBanner;
 };

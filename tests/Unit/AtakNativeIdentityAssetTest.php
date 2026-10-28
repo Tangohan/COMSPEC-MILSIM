@@ -32,7 +32,8 @@ final class AtakNativeIdentityAssetTest extends TestCase
         self::assertStringContainsString('"COMSPECATAKNativeExtension" callExtension', $sqf);
         self::assertStringNotContainsString('comspec_overwatch_connect_fnc_', $remoteSync);
         self::assertStringContainsString('comspec_atak_native_fnc_pollUnits', $remoteSync);
-        self::assertStringContainsString('["GetUnits",[]]', $pollUnits);
+        // Sans COMSPEC Link, l'appel passe par le wrapper natif ; avec Link, on reprend sa liste d'effectifs.
+        self::assertStringContainsString('["GetUnits", []] call comspec_atak_native_fnc_extensionCall', $pollUnits);
         self::assertStringContainsString('["GetMarkers",["world:" + worldName]]', $pollMarkers);
         self::assertStringContainsString('["GetOrders",', $pollOrders);
         self::assertStringContainsString('["GetChatMessages",', $pollChat);

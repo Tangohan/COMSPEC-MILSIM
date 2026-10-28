@@ -66,14 +66,39 @@ $stateIcon = static fn (string $s): string => match ($s) {
     'en_cours' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>',
     'exploitee' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.8" fill="currentColor"/><path d="M5 8.2l2 2 4-4.2" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     'non_exploitable' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4.2 11.8l7.6-7.6" stroke="currentColor" stroke-width="1.6"/></svg>',
+    'transmise' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5.3 8h5.2M8.4 5.8 10.6 8l-2.2 2.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    'doublon' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.1" cy="8" r="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="9.9" cy="8" r="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
     default => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.8" fill="currentColor"/><path d="M5.5 5.5l5 5m0-5l-5 5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>',
 };
 $initials = static fn (string $s): string => mb_strtoupper(mb_substr(trim($s) !== '' ? trim($s) : '?', 0, 2));
-$eventLine = static function (array $e) use ($h): string {
+// Lien vers une autre remontée (doublon) ou vers le dossier SSE destinataire (transmise).
+$refLink = static function (array $ref) use ($h): string {
+    $src = (string) ($ref['source'] ?? '');
+    $id = (int) ($ref['id'] ?? 0);
+    if (!isset(IntelIntakeService::SOURCES[$src]) || $id < 1) {
+        return '';
+    }
+
+    return '<a href="' . $h(url('back-office/remontees/' . $src . '/' . $id)) . '">' . $h((string) ($ref['ref'] ?? ($src . '/' . $id))) . '</a>';
+};
+$stateTarget = static function (array $m) use ($h, $refLink): string {
+    if (!empty($m['duplicate_of']) && is_array($m['duplicate_of'])) {
+        return ' — doublon de ' . $refLink($m['duplicate_of']);
+    }
+    if (!empty($m['forwarded_to'])) {
+        $label = $h((string) $m['forwarded_to']);
+
+        return ' — à ' . (!empty($m['case_id']) ? '<a href="' . $h(url('atak/sse/dossiers/' . (int) $m['case_id'])) . '">' . $label . '</a>' : '<strong>' . $label . '</strong>');
+    }
+
+    return '';
+};
+$eventLine = static function (array $e) use ($h, $refLink, $stateTarget): string {
     $m = $e['meta'];
 
     return match ($e['kind']) {
-        'state' => 'a passé l’état de <strong>' . $h(IntelIntakeService::STATES[$m['from'] ?? ''] ?? '?') . '</strong> à <strong>' . $h(IntelIntakeService::STATES[$m['to'] ?? ''] ?? '?') . '</strong>',
+        'state' => 'a passé l’état de <strong>' . $h(IntelIntakeService::STATES[$m['from'] ?? ''] ?? '?') . '</strong> à <strong>' . $h(IntelIntakeService::STATES[$m['to'] ?? ''] ?? '?') . '</strong>' . $stateTarget($m),
+        'duplicate' => 'a rattaché un doublon : ' . (is_array($m['duplicate'] ?? null) ? $refLink($m['duplicate']) : ''),
         'assign' => !empty($m['to']) ? 'a attribué la remontée à <strong>' . $h($m['to']) . '</strong>' : 'a retiré l’attribution',
         'type' => 'a changé le type de <strong>' . $h($m['from'] ?? '') . '</strong> en <strong>' . $h($m['to'] ?? '') . '</strong>',
         'edit' => 'a modifié : ' . $h(implode(', ', (array) ($m['fields'] ?? []))),
@@ -85,25 +110,53 @@ $fieldsShown = $src === 'cr'
     ? ['summary' => 'Résumé', 'details' => 'Détails', 'remarks' => 'Remarques', 'location_description' => 'Lieu']
     : ['body' => 'Texte', 'place_label' => 'Lieu'];
 $titleHtml = $src === 'fiche' && trim((string) ($row['title'] ?? '')) !== '' ? $text('title') : $h($it['type_label']);
+// Position : carroyage, coordonnées carte (X/Y Arma) et GPS quand la source les porte.
+$xy = static function (mixed $x, mixed $y): string {
+    if ($x === null || $y === null || $x === '' || $y === '' || ((float) $x === 0.0 && (float) $y === 0.0)) {
+        return '';
+    }
+
+    return 'X ' . (int) round((float) $x) . ' / Y ' . (int) round((float) $y);
+};
+$latlng = !empty($row['lat']) && !empty($row['lng']) ? round((float) $row['lat'], 5) . ', ' . round((float) $row['lng'], 5) : '';
 $facts = $src === 'cr'
     ? array_filter([
         'Priorité' => (string) ($row['priority'] ?? ''),
         'Diffusion' => (string) ($row['classification'] ?? ''),
         'Carroyage' => (string) ($row['grid_reference'] ?? ''),
+        'Coordonnées' => $xy($row['pos_x'] ?? null, $row['pos_y'] ?? null),
+        'Mission' => (string) ($row['mission_key'] ?? ''),
         'DTG' => (string) ($row['dtg'] ?? ''),
         'Unité' => (string) ($row['submitter_unit'] ?? ''),
         'Événement' => !empty($row['event_timestamp']) ? $when((string) $row['event_timestamp']) : '',
+        'Statut d’origine' => (string) ($row['status'] ?? ''),
+        'Visibilité' => (string) ($row['visibility'] ?? ''),
+        'Message source' => !empty($row['source_chat_id']) ? 'Messagerie #' . (int) $row['source_chat_id'] : '',
     ])
     : array_filter([
         'Urgence' => SseFieldNoteCatalog::urgencyLabel((string) ($row['urgency'] ?? '')),
         'Diffusion' => SseRedactionService::levelLabel((string) ($row['classification'] ?? 'interne')),
         'Observée' => $when((string) ($row['observed_at'] ?? '')),
         'Carroyage' => (string) ($row['grid_reference'] ?? ''),
+        'Coordonnées' => $xy($row['pos_x'] ?? null, $row['pos_y'] ?? null),
+        'GPS' => $latlng,
+        'Thèmes' => (string) ($row['themes'] ?? ''),
         'Source' => SseFieldNoteCatalog::sourceLabel((string) ($row['intel_source'] ?? '')),
         'Fiabilité' => trim((string) ($row['source_reliability'] ?? '') . (string) ($row['info_credibility'] ?? '')),
         'Origine' => SseFieldNoteCatalog::originLabel((string) ($row['origin'] ?? '')),
         'Unité' => (string) ($row['author_unit'] ?? ''),
+        'Statut d’origine' => SseFieldNoteCatalog::STATUSES[(string) ($row['status'] ?? '')] ?? (string) ($row['status'] ?? ''),
+        'Dossier SSE' => !empty($row['case_id']) ? '#' . (int) $row['case_id'] : '',
+        'Dossier d’intérêt' => !empty($row['interest_case_id']) ? '#' . (int) $row['interest_case_id'] : '',
     ]);
+if ($src === 'cr') {
+    $fieldsShown['action_taken'] = 'Suite donnée';
+} else {
+    $fieldsShown['triage_note'] = 'Note de tri';
+}
+$sender = is_array($it['sender'] ?? null) ? $it['sender'] : ['callsign' => (string) $it['author'], 'unit' => '', 'steam' => '', 'user_id' => null, 'account' => null];
+$senderKey = isset($intakeSenderKey) && is_string($intakeSenderKey) && $intakeSenderKey !== '' && $intakeSenderKey !== 'inconnu' ? $intakeSenderKey : null;
+$stateInfo = is_array($it['state_info'] ?? null) ? $it['state_info'] : [];
 $isOpen = in_array($it['state'], IntelIntakeService::OPEN_STATES, true);
 ?>
 <div class="rmt">
@@ -113,7 +166,8 @@ $isOpen = in_array($it['state'], IntelIntakeService::OPEN_STATES, true);
         <header class="rmt__pr-head">
             <h1 class="rmt__pr-title"><?= $titleHtml ?> <span class="rmt__pr-ref"><?= $h($it['ref']) ?></span></h1>
             <div class="rmt__pr-sub">
-                <span class="rmt__pill rmt__pill--<?= $h($it['state']) ?>"><?= $stateIcon((string) $it['state']) ?><?= $h($it['state_label']) ?></span>
+                <span class="rmt__pill rmt__pill--<?= $h($it['state']) ?>" title="<?= $h(IntelIntakeService::STATE_HINTS[$it['state']] ?? '') ?>"><?= $stateIcon((string) $it['state']) ?><?= $h($it['state_label']) ?></span>
+                <?php if ($stateInfo !== [] && ($t = $stateTarget($stateInfo)) !== ''): ?><span class="rmt__pr-target"><?= ltrim($t, ' —') ?></span><?php endif; ?>
                 <?php if (!empty($it['deleted'])): ?><span class="rmt__pill rmt__pill--deleted">Supprimée</span><?php endif; ?>
                 <span><strong><?= $h($it['author'] !== '' ? $it['author'] : 'Terrain') ?></strong> a remonté <?= $src === 'cr' ? 'ce compte rendu' : 'cette fiche' ?> <?= $h($ago((string) $it['at'])) ?> · <?= $h($it['source_label']) ?> <span class="rmt__label rmt__label--<?= $h($src) ?>"><?= $h($it['type']) ?></span> <?= $h($it['type_label']) ?></span>
             </div>
@@ -157,18 +211,20 @@ $isOpen = in_array($it['state'], IntelIntakeService::OPEN_STATES, true);
                                     <?php foreach ($it['attachments'] as $a): ?>
                                         <li class="rmt__att<?= $a['blurred'] ? ' is-blurred' : '' ?>">
                                             <?php if ($a['is_image'] && $a['url']): ?>
-                                                <a href="<?= $h($a['url']) ?>" target="_blank" rel="noopener" class="rmt__att-img"><img src="<?= $h($a['url']) ?>" alt="<?= $h($a['caption'] !== '' ? $a['caption'] : 'Pièce jointe') ?>" loading="lazy"></a>
+                                                <a href="<?= $h($a['url']) ?>" target="_blank" rel="noopener" class="rmt__att-img" data-recon-viewer="rmt-att" data-title="<?= $h($a['caption'] !== '' ? $a['caption'] : ($a['original_name'] !== '' ? $a['original_name'] : 'Pièce jointe')) ?>" data-source="<?= $h($a['kind_label']) ?>" data-blurred="<?= $a['blurred'] ? '1' : '0' ?>"><img src="<?= $h($a['url']) ?>" alt="<?= $h($a['caption'] !== '' ? $a['caption'] : 'Pièce jointe') ?>" loading="lazy"></a>
                                             <?php elseif ($a['url']): ?>
                                                 <a href="<?= $h($a['url']) ?>" target="_blank" rel="noopener" class="rmt__att-file"><?= $h($a['original_name'] !== '' ? $a['original_name'] : 'Document') ?></a>
                                             <?php endif; ?>
                                             <div class="rmt__att-meta">
-                                                <span><?= $h($a['kind_label']) ?><?= $a['caption'] !== '' ? ' · ' . $h($a['caption']) : '' ?></span>
+                                                <span><?= $h($a['kind_label']) ?><?= $a['caption'] !== '' ? ' · ' . $h($a['caption']) : '' ?><?= !empty($a['taken_at']) ? ' · ' . $h($when((string) $a['taken_at'])) : '' ?></span>
+                                                <?php if (empty($a['readonly'])): ?>
                                                 <form method="post" action="<?= $h($base . '/blur') ?>">
                                                     <?= $csrf ?>
                                                     <input type="hidden" name="attachment_id" value="<?= (int) $a['id'] ?>">
                                                     <input type="hidden" name="blurred" value="<?= $a['blurred'] ? '0' : '1' ?>">
                                                     <button type="submit" class="rmt__link-btn"><?= $a['blurred'] ? 'Retirer le flou' : 'Flouter' ?></button>
                                                 </form>
+                                                <?php endif; ?>
                                             </div>
                                         </li>
                                     <?php endforeach; ?>
@@ -219,6 +275,25 @@ $isOpen = in_array($it['state'], IntelIntakeService::OPEN_STATES, true);
                             <?php if (!$isOpen): ?><button name="state" value="a_traiter" class="rmt__btn">Rouvrir</button><?php endif; ?>
                         </div>
                     </form>
+                    <div class="rmt__card-body rmt__decide-more">
+                        <form method="post" action="<?= $h($base . '/state') ?>" class="rmt__decide-row">
+                            <?= $csrf ?>
+                            <input type="hidden" name="state" value="transmise">
+                            <label for="rmt-fwd"><span class="rmt__state rmt__state--transmise"><?= $stateIcon('transmise') ?></span> Transmettre à</label>
+                            <input id="rmt-fwd" type="text" name="target" maxlength="160" required placeholder="Échelon, cellule ou référence du dossier SSE" value="<?= $h($it['state'] === 'transmise' ? (string) ($stateInfo['forwarded_to'] ?? '') : '') ?>">
+                            <input type="text" name="note" maxlength="400" placeholder="Motif (facultatif)" aria-label="Motif de la transmission">
+                            <button type="submit" class="rmt__btn rmt__btn--fwd"><?= $it['state'] === 'transmise' ? 'Mettre à jour' : 'Transmettre' ?></button>
+                        </form>
+                        <form method="post" action="<?= $h($base . '/state') ?>" class="rmt__decide-row">
+                            <?= $csrf ?>
+                            <input type="hidden" name="state" value="doublon">
+                            <label for="rmt-dup"><span class="rmt__state rmt__state--doublon"><?= $stateIcon('doublon') ?></span> Doublon de</label>
+                            <input id="rmt-dup" type="text" name="target" maxlength="80" required placeholder="CR-12, FRM-2026-004 ou lien …/cr/12" value="<?= $h($it['state'] === 'doublon' ? (string) ($stateInfo['duplicate_of']['ref'] ?? '') : '') ?>">
+                            <input type="text" name="note" maxlength="400" placeholder="Motif (facultatif)" aria-label="Motif du doublon">
+                            <button type="submit" class="rmt__btn"><?= $it['state'] === 'doublon' ? 'Changer l’origine' : 'Marquer doublon' ?></button>
+                        </form>
+                        <p class="rmt__hint">Une référence de dossier SSE existante (ex. SSE-2026-004) est reliée au dossier. Le doublon est aussi noté dans le fil de la remontée d’origine.</p>
+                    </div>
                 </section>
 
                 <details class="rmt__card rmt__fold">
@@ -278,6 +353,32 @@ $isOpen = in_array($it['state'], IntelIntakeService::OPEN_STATES, true);
 
             <aside class="rmt__aside" aria-label="Propriétés">
                 <section class="rmt__prop">
+                    <h2>Émetteur</h2>
+                    <p class="rmt__person"><span class="rmt__avatar"><?= $h($initials((string) ($sender['callsign'] ?: $it['author']))) ?></span><?= $h($sender['callsign'] !== '' ? $sender['callsign'] : 'Terrain') ?></p>
+                    <dl class="rmt__kv">
+                        <?php if ($sender['unit'] !== ''): ?><div><dt>Unité</dt><dd><?= $h($sender['unit']) ?></dd></div><?php endif; ?>
+                        <div><dt>Compte</dt><dd>
+                            <?php if (is_array($sender['account'])): ?>
+                                <?php if (!empty($intakeCanSeeMembers)): ?><a href="<?= $h(url('back-office/users/' . (int) $sender['account']['id'])) ?>"><?= $h($sender['account']['name'] !== '' ? $sender['account']['name'] : $sender['account']['label']) ?></a><?php else: ?><?= $h($sender['account']['name'] !== '' ? $sender['account']['name'] : $sender['account']['label']) ?><?php endif; ?>
+                            <?php elseif ($sender['user_id'] !== null): ?>Compte #<?= (int) $sender['user_id'] ?>
+                            <?php else: ?><span class="rmt__muted">Non rattaché</span><?php endif; ?>
+                        </dd></div>
+                        <div><dt>Steam</dt><dd><?= $sender['steam'] !== '' ? '<span class="rmt__mono">' . $h($sender['steam']) . '</span>' : '<span class="rmt__muted">Inconnu</span>' ?></dd></div>
+                    </dl>
+                    <?php if ($senderKey !== null): ?><p><a class="rmt__link-btn" href="<?= $h(url('back-office/remontees/joueurs/' . rawurlencode($senderKey))) ?>">Tout ce que ce joueur a remonté →</a></p><?php endif; ?>
+                </section>
+
+                <section class="rmt__prop">
+                    <h2>Horodatage</h2>
+                    <dl class="rmt__kv">
+                        <?php foreach ($it['timestamps'] ?? [] as $label => $ts): ?>
+                            <div><dt><?= $h($label) ?></dt><dd title="<?= $h($ts) ?>"><?= $h($when((string) $ts)) ?></dd></div>
+                        <?php endforeach; ?>
+                        <?php if (!empty($it['triaged_by'])): ?><div><dt>Prise en compte par</dt><dd><?= $h($it['triaged_by']['label']) ?></dd></div><?php endif; ?>
+                    </dl>
+                </section>
+
+                <section class="rmt__prop">
                     <h2>Attribuée à</h2>
                     <?php if ($it['assignee'] !== null): ?>
                         <p class="rmt__person"><span class="rmt__avatar"><?= $h($initials($it['assignee']['label'])) ?></span><?= $h($it['assignee']['label']) ?></p>
@@ -311,6 +412,20 @@ $isOpen = in_array($it['state'], IntelIntakeService::OPEN_STATES, true);
                 <section class="rmt__prop">
                     <h2>Exploitation</h2>
                     <p><span class="rmt__pill rmt__pill--<?= $h($it['state']) ?>"><?= $stateIcon((string) $it['state']) ?><?= $h($it['state_label']) ?></span></p>
+                    <?php if ($stateInfo !== [] && ($t = $stateTarget($stateInfo)) !== ''): ?><p class="rmt__muted rmt__prop-note"><?= ltrim($t, ' —') ?></p><?php endif; ?>
+                    <p class="rmt__hint"><?= $h(IntelIntakeService::STATE_HINTS[$it['state']] ?? '') ?></p>
+                    <?php $history = is_array($it['state_history'] ?? null) ? $it['state_history'] : []; ?>
+                    <?php if ($history !== []): ?>
+                        <h3 class="rmt__prop-sub">Historique des états</h3>
+                        <ol class="rmt__history">
+                            <?php foreach (array_reverse($history) as $e): $to = (string) ($e['meta']['to'] ?? ''); ?>
+                                <li>
+                                    <span class="rmt__state rmt__state--<?= $h($to) ?>"><?= $stateIcon($to) ?></span>
+                                    <span><strong><?= $h(IntelIntakeService::STATES[$to] ?? $to) ?></strong><?= $stateTarget($e['meta']) ?><br><span class="rmt__muted"><?= $h($e['actor']) ?> · <?= $h($when($e['at'])) ?></span><?php if ($e['body'] !== ''): ?><br><em class="rmt__muted"><?= $h($e['body']) ?></em><?php endif; ?></span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ol>
+                    <?php endif; ?>
                 </section>
 
                 <section class="rmt__prop">
@@ -370,3 +485,4 @@ $isOpen = in_array($it['state'], IntelIntakeService::OPEN_STATES, true);
         </div>
     </div>
 </div>
+<script src="<?= $h(asset_url('assets/js/recon-viewer.js')) ?>" defer></script>

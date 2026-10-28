@@ -33,7 +33,7 @@ private _from = (((_w select 0) atan2 (_w select 1)) + 180) mod 360;
 private _gust = _spd * (1 + gusts);
 private _hum = if (!isNil "ace_weather_currentHumidity") then { ace_weather_currentHumidity } else { humidity };
 private _alt = (getPosASL player) select 2;
-private _press = if (!isNil "ace_weather_fnc_calculateBarometricPressure") then { [_alt] call ace_weather_fnc_calculateBarometricPressure } else { 1013.25 * (1 - 0.0065 * _alt / 288.15) ^ 5.255 };
+private _press = if (!isNil "ace_weather_fnc_calculateBarometricPressure") then { _alt call ace_weather_fnc_calculateBarometricPressure } else { 1013.25 * (1 - 0.0065 * _alt / 288.15) ^ 5.255 };
 private _aceWx = !isNil "ace_weather_fnc_calculateBarometricPressure";
 // Lever et coucher calculés ici (déclinaison solaire et latitude de la carte) : la fonction BIS
 // n'a pas la même signature selon les versions et cassait la page.
@@ -141,7 +141,7 @@ switch (_tab) do {
                 private _drift = abs _cross * (_tof - _x / _v0);
                 _cells pushBack format ["%1 m : %2 m (%3 mrad)", _x, _drift toFixed 2, ((_drift / _x) * 1000) toFixed 1];
             } forEach [300, 600, 1000];
-            _rows pushBack ["text", format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.85'>%2</t>", _cal, _cells joinString "  ·  "]];
+            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.85'>%2</t>", _cal, _cells joinString "  ·  "]];
         } forEach [["5,56 mm (V0 940 m/s)", 940, 1080], ["7,62 mm (V0 840 m/s)", 840, 1230], [".338 LM (V0 900 m/s)", 900, 2000], ["12,7 mm (V0 890 m/s)", 890, 2600]];
     };
     default {
@@ -167,7 +167,7 @@ switch (_tab) do {
             default { "Pas de lune (nuit noire)" };
         };
         _rows append [
-            ["hero", "\z\comspec_atak_native\addons\main\data\app_weather.paa", format ["<t size='1.6' font='RobotoCondensedBold'>%1 °C</t>  <t size='1.1'>%2</t><br/><t color='#8a9a93'>Vent du %3 (%4°) · %5 m/s (%6 km/h)</t><br/><t size='0.85' color='#8a9a93'>%7 · %8</t>",
+            ["hero", "\z\comspec_atak_native\addons\main\data\app_weather.paa", format ["<t size='1.6' font='COMSPEC_BarlowBold'>%1 °C</t>  <t size='1.1'>%2</t><br/><t color='#8a9a93'>Vent du %3 (%4°) · %5 m/s (%6 km/h)</t><br/><t size='0.85' color='#8a9a93'>%7 · %8</t>",
                 round _temp, _sky, [_from] call _card, round _from, _spd toFixed 1, round (_spd * 3.6),
                 [getPosASL player] call comspec_atak_native_fnc_gridRef, [dayTime] call _hhmm]],
             ["section", "Conditions", ["Valeurs estimées (ACE Weather absent)", "ACE Weather"] select _aceWx],

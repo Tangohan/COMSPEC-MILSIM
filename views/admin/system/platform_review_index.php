@@ -17,8 +17,15 @@ $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
 
 $member = static function (array $row) use ($h): string {
+    $pseudo = trim((string) ($row['public_name'] ?? ''));
     $name = trim((string) ($row['display_name'] ?? ''));
     $call = trim((string) ($row['callsign'] ?? ''));
+    if ($pseudo !== '') {
+        // Pseudo public d'abord, puis l'identité pour retrouver le compte.
+        $detail = array_values(array_filter([$name, $call], static fn (string $v): bool => $v !== '' && $v !== $pseudo));
+
+        return $h($pseudo . ($detail !== [] ? ' (' . implode(', ', $detail) . ')' : ''));
+    }
     if ($name !== '' && $call !== '') {
         return $h($name . ' (' . $call . ')');
     }

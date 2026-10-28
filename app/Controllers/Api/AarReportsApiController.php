@@ -9,6 +9,8 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AarReportRepository;
+use App\Services\Rbac\RolePermissionMatrixCatalog;
+use App\Support\ModuleFeatureAccess;
 
 final class AarReportsApiController
 {
@@ -24,10 +26,13 @@ final class AarReportsApiController
         if ($tenantId < 1) {
             return Response::json(['ok' => false, 'error' => 'Connexion requise.'], 401);
         }
+        if (!ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'view')) {
+            return Response::json(['ok' => false, 'error' => 'Accès refusé.'], 403);
+        }
 
         return Response::json([
             'ok' => true,
-            'reports' => $this->reports->listForTenant($tenantId, ['status' => (string) $request->query('status', '')]),
+            'reports' => $this->reports->listForTenant($tenantId, ['status' => $request->queryString('status', '')]),
         ]);
     }
 
@@ -40,6 +45,10 @@ final class AarReportsApiController
         }
         if (!$this->csrfOk($request)) {
             return Response::json(['ok' => false, 'error' => 'Session expirée.'], 419);
+        }
+        // Même droit que le back-office : rédiger ou modifier un compte rendu demande la gestion ATAK.
+        if (!ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'manage')) {
+            return Response::json(['ok' => false, 'error' => 'Droit insuffisant pour modifier les comptes rendus.'], 403);
         }
 
         $body = $this->body() + [
@@ -57,7 +66,12 @@ final class AarReportsApiController
             'closed_actions' => $request->input('closed_actions'),
         ];
         $id = isset($params['id']) ? (int) $params['id'] : ((int) ($body['id'] ?? 0));
-        $report = $this->reports->save($tenantId, $id > 0 ? $id : null, $userId, $body);
+        try {
+            $report = $this->reports->save($tenantId, $id > 0 ? $id : null, $userId, $body);
+        } catch (\DomainException $e) {
+            // Cycle de mission d'une autre communauté : refusé, rien n'est enregistré (SEC-032).
+            return Response::json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
 
         return Response::json(['ok' => true, 'report' => $report], $id > 0 ? 200 : 201);
     }
@@ -68,7 +82,7 @@ final class AarReportsApiController
         if ($tenantId < 1) {
             return Response::redirect(url('dashboard'));
         }
-        $rows = $this->reports->listForTenant($tenantId, ['status' => (string) $request->query('status', '')]);
+        $rows = $this->reports->listForTenant($tenantId, ['status' => $request->queryString('status', '')]);
         $json = json_encode(['generated_at' => gmdate('c'), 'reports' => $rows], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         $response = new Response();
         $response->setStatusCode(200)

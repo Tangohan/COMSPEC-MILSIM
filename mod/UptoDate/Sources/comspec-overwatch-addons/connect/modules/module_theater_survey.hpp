@@ -11,7 +11,7 @@
         scope = 2;
         scopeCurator = 0;
         category = "COMSPEC_Outils";
-        displayName = "Relever la carte du théâtre";
+        displayName = "$STR_COMSPEC_OW_CFG_23009D76F3";
         function = "comspec_overwatch_connect_fnc_moduleTheaterSurvey";
         functionPriority = 1;
         isGlobal = 1;
@@ -29,8 +29,8 @@
         {
             class RunAtStart
             {
-                displayName = "Au début de la mission";
-                tooltip = "Choisir si le relevé complet part tout seul au lancement, ou seulement depuis Zeus et cette fenêtre.";
+                displayName = "$STR_COMSPEC_OW_CFG_0A8F3CF162";
+                tooltip = "$STR_COMSPEC_OW_CFG_7CE39D8F2A";
                 property = "COMSPEC_TheaterSurvey_RunAtStart";
                 control = "Combo";
                 expression = "_this setVariable ['RunAtStart',_value,true];";
@@ -39,8 +39,8 @@
 
                 class Values
                 {
-                    class Manual { name = "Uniquement depuis Zeus ou la fenêtre de relevé"; value = "manual"; default = 1; };
-                    class Start { name = "Lancer au début de la mission (Zeus / chef de mission)"; value = "start"; };
+                    class Manual { name = "$STR_COMSPEC_OW_CFG_F3B177121B"; value = "manual"; default = 1; };
+                    class Start { name = "$STR_COMSPEC_OW_CFG_104A74EE1A"; value = "start"; };
                 };
             };
         };
@@ -49,21 +49,21 @@
         {
             class RunAtStart
             {
-                displayName = "Au début de la mission";
-                description = "Lancer le relevé au début de partie, ou seulement à la demande.";
+                displayName = "$STR_COMSPEC_OW_CFG_0A8F3CF162";
+                description = "$STR_COMSPEC_OW_CFG_1B837A0BAC";
                 typeName = "STRING";
                 defaultValue = "manual";
                 class values
                 {
-                    class Manual { name = "Uniquement depuis Zeus ou la fenêtre de relevé"; value = "manual"; default = 1; };
-                    class Start { name = "Lancer au début de la mission (Zeus / chef de mission)"; value = "start"; };
+                    class Manual { name = "$STR_COMSPEC_OW_CFG_F3B177121B"; value = "manual"; default = 1; };
+                    class Start { name = "$STR_COMSPEC_OW_CFG_104A74EE1A"; value = "start"; };
                 };
             };
         };
 
         class ModuleDescription
         {
-            description = "Parcourt tout le théâtre : bâtiments, forêts et relief. Une fenêtre indique la durée, le nombre d’éléments collectés et le secteur en cours. Athena doit être liée. Le parcours est découpé pour ne pas figer Zeus.";
+            description = "$STR_COMSPEC_OW_CFG_EA54D6AD87";
             position = 0;
             direction = 0;
             optional = 1;

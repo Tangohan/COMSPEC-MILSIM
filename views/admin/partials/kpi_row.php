@@ -3,25 +3,41 @@
 /** @var string|null $blockError */
 $kpis = $kpis ?? [];
 $blockError = $blockError ?? null;
+$kpiLabels = ['tenants' => 'Communautés'];
+$reportsPending = isset($adminReportsSnapshotError) && $adminReportsSnapshotError ? null : (int) ($adminReportsPendingTotal ?? 0);
+$filesPending = isset($adminContentQueueSnapshotError) && $adminContentQueueSnapshotError ? null : (int) ($adminContentQueueTotal ?? 0);
+$e = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 ?>
 <?php if ($blockError): ?>
-    <div class="rounded-lg border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 mb-6">
-        <?= htmlspecialchars($blockError, ENT_QUOTES, 'UTF-8') ?>
-    </div>
-<?php elseif (!empty($kpis)): ?>
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <?php foreach ($kpis as $k): ?>
-            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1"><?= htmlspecialchars($k['label'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
-                <?php if (!empty($k['error'])): ?>
-                    <p class="text-sm text-rose-600"><?= htmlspecialchars($k['error'], ENT_QUOTES, 'UTF-8') ?></p>
-                <?php else: ?>
-                    <p class="text-2xl font-black text-slate-900 tabular-nums"><?= htmlspecialchars((string) ($k['value'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
-                <?php endif; ?>
-                <?php if (!empty($k['hint'])): ?>
-                    <p class="text-xs text-slate-500 mt-1"><?= htmlspecialchars($k['hint'], ENT_QUOTES, 'UTF-8') ?></p>
-                <?php endif; ?>
-            </div>
-        <?php endforeach; ?>
-    </div>
+    <p class="pa-flash pa-flash--warn"><?= $e($blockError) ?></p>
 <?php endif; ?>
+<ul class="pa-kpi-strip">
+    <?php foreach ($kpis as $k): ?>
+        <?php $id = (string) ($k['id'] ?? ''); ?>
+        <li class="pa-kpi">
+            <span class="pa-kpi__label"><?= $e($kpiLabels[$id] ?? (string) ($k['label'] ?? '')) ?></span>
+            <?php if (!empty($k['error'])): ?>
+                <span class="pa-kpi__err"><?= $e((string) $k['error']) ?></span>
+            <?php else: ?>
+                <span class="pa-kpi__value"><?= $e((string) ($k['value'] ?? '—')) ?></span>
+            <?php endif; ?>
+            <?php if (!empty($k['hint'])): ?>
+                <span class="pa-kpi__hint"><?= $e((string) $k['hint']) ?></span>
+            <?php endif; ?>
+        </li>
+    <?php endforeach; ?>
+    <?php if ($reportsPending !== null): ?>
+        <li><a class="pa-kpi<?= $reportsPending > 0 ? ' pa-kpi--alert' : '' ?>" href="<?= $e(url('back-office/signalements')) ?>">
+            <span class="pa-kpi__label">Signalements membres</span>
+            <span class="pa-kpi__value"><?= $reportsPending ?></span>
+            <span class="pa-kpi__hint">À traiter, toutes communautés</span>
+        </a></li>
+    <?php endif; ?>
+    <?php if ($filesPending !== null): ?>
+        <li><a class="pa-kpi<?= $filesPending > 0 ? ' pa-kpi--warn' : '' ?>" href="<?= $e(url('back-office/content-moderation')) ?>">
+            <span class="pa-kpi__label">Fichiers en attente</span>
+            <span class="pa-kpi__value"><?= $filesPending ?></span>
+            <span class="pa-kpi__hint">Quarantaine ou analyse</span>
+        </a></li>
+    <?php endif; ?>
+</ul>

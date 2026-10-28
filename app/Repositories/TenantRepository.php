@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Services\Community\TenantArchiveState;
 use App\Support\LazyDatabaseConnection;
 use App\Support\SqlText;
 
@@ -40,21 +41,109 @@ class TenantRepository
         return $this->hasTenantTypeColumn;
     }
 
+    /** @var array<string, bool> */
+    private array $tableReady = [];
+
+    private function scalarIfTable(string $table, string $sql, string $fallback): string
+    {
+        if (!isset($this->tableReady[$table])) {
+            try {
+                $st = $this->pdo()->prepare(
+                    'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+                );
+                $st->execute([$table]);
+                $this->tableReady[$table] = (bool) $st->fetchColumn();
+            } catch (\Throwable) {
+                $this->tableReady[$table] = false;
+            }
+        }
+
+        return $this->tableReady[$table] ? '(' . $sql . ')' : $fallback;
+    }
+
+    private static function nullableDate(mixed $raw): ?string
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+
+        return (string) $raw;
+    }
+
+    private static function latestDate(mixed $left, mixed $right): ?string
+    {
+        $a = self::nullableDate($left);
+        $b = self::nullableDate($right);
+        if ($a === null) {
+            return $b;
+        }
+        if ($b === null) {
+            return $a;
+        }
+
+        return strtotime($a) >= strtotime($b) ? $a : $b;
+    }
+
+    /**
+     * Cache de requête de findById() (singleton du Container : la même ligne est relue par les middlewares,
+     * l’en-tête, la navigation, les bandeaux…). Vidé par chaque écriture de ce dépôt ; désactivé en CLI
+     * (crons et workers longs).
+     *
+     * @var array<int, array<string, mixed>|null>
+     */
+    private array $findByIdCache = [];
+
     public function findById(int $id): ?array
     {
+        $useCache = PHP_SAPI !== 'cli';
+        if ($useCache && array_key_exists($id, $this->findByIdCache)) {
+            return $this->findByIdCache[$id];
+        }
         $stmt = $this->pdo()->prepare('SELECT * FROM tenants WHERE id = ? LIMIT 1');
         $stmt->execute([$id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ?: null;
+        $row = $row ?: null;
+        if ($useCache) {
+            $this->findByIdCache[$id] = $row;
+        }
+
+        return $row;
     }
 
+    /** Vide le cache de findById() (à appeler après une écriture directe sur tenants hors de ce dépôt). */
+    public function forgetCache(): void
+    {
+        $this->findByIdCache = [];
+    }
+
+    /**
+     * Communautés portant exactement ce nom (le jeu ne connaît que le nom affiché de la communauté liée).
+     *
+     * @return list<int>
+     */
+    public function findIdsByName(string $name, int $limit = 2): array
+    {
+        $stmt = $this->pdo()->prepare('SELECT id FROM tenants WHERE name = ? ORDER BY id LIMIT ' . max(1, min(10, $limit)));
+        $stmt->execute([$name]);
+
+        return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    /**
+     * Une communauté archivée par l’administration du site n’est plus trouvée par son adresse
+     * (page publique, recrutement…). L’adresse reste réservée (slugExists).
+     */
     public function findBySlug(string $slug): ?array
     {
         $slugEq = SqlText::equals($this->pdo(), 'slug');
         $stmt = $this->pdo()->prepare('SELECT * FROM tenants WHERE ' . $slugEq . ' LIMIT 1');
         $stmt->execute([$slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ?: null;
+        if (!$row || TenantArchiveState::isArchived($row)) {
+            return null;
+        }
+
+        return $row;
     }
 
     /**
@@ -67,7 +156,7 @@ class TenantRepository
     public function listForRegistry(): array
     {
         $stmt = $this->pdo()->query(
-            'SELECT id, name, slug, community_code, logo_url, settings FROM tenants ORDER BY name ASC'
+            'SELECT * FROM tenants ORDER BY name ASC'
         );
         if ($stmt === false) {
             return [];
@@ -78,7 +167,7 @@ class TenantRepository
         }
         $out = [];
         foreach ($rows as $row) {
-            if (strtolower(trim((string) ($row['slug'] ?? ''))) === 'default') {
+            if (strtolower(trim((string) ($row['slug'] ?? ''))) === 'default' || TenantArchiveState::isArchived($row)) {
                 continue;
             }
             $community = [];
@@ -103,8 +192,13 @@ class TenantRepository
             $row['registry_locale_label'] = (string) ($meta['locale_label'] ?? '');
             $row['registry_locked'] = !empty($community['community_locked']);
             $row['registry_simple_reg'] = ($community['registration_mode'] ?? 'milsim') === 'simple';
-            $row['registry_featured'] = !empty($meta['featured']);
+            // Mise en avant : seulement si la formule de la communauté l’inclut.
+            $row['registry_featured'] = !empty($meta['featured']) && \App\Support\RegistryFeatured::planAllows($row);
             $row['registry_recruitment_open'] = !empty($meta['recruitment_open']);
+            // Pays de l'unité réelle rattachée (filtre « Pays » de l'annuaire).
+            $affiliation = is_array($community['unit_affiliation'] ?? null) ? $community['unit_affiliation'] : [];
+            $row['registry_country'] = !empty($affiliation['is_real']) ? strtoupper(trim((string) ($affiliation['country'] ?? ''))) : '';
+            $row['registry_country_label'] = $row['registry_country'] !== '' ? trim((string) ($affiliation['country_label'] ?? $row['registry_country'])) : '';
             $welcome = trim((string) ($community['welcome_text'] ?? ''));
             $excerpt = $meta['tagline'];
             if ($excerpt === '' && $welcome !== '') {
@@ -153,8 +247,11 @@ class TenantRepository
         $stmt = $this->pdo()->prepare('SELECT * FROM tenants WHERE ' . $codeEq . ' LIMIT 1');
         $stmt->execute([$norm]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row || TenantArchiveState::isArchived($row)) {
+            return null;
+        }
 
-        return $row ?: null;
+        return $row;
     }
 
     public function isCommunityCodeTaken(string $normalizedCode, ?int $exceptTenantId = null): bool
@@ -180,6 +277,7 @@ class TenantRepository
     {
         $stmt = $this->pdo()->prepare('UPDATE tenants SET community_code = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$normalized === '' ? null : $normalized, $tenantId]);
+        $this->forgetCache();
     }
 
     public function getDefaultTenant(): ?array
@@ -210,12 +308,15 @@ class TenantRepository
     {
         $stmt = $this->pdo()->prepare('UPDATE tenants SET slug = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$slug, $tenantId]);
+        $this->forgetCache();
     }
 
     public function updateName(int $tenantId, string $name): void
     {
         $stmt = $this->pdo()->prepare('UPDATE tenants SET name = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$name, $tenantId]);
+        $this->forgetCache();
+        \App\Services\Moderation\NameModerationService::afterSave('tenant', $tenantId, $tenantId, $name);
     }
 
     public function getTenantType(int $tenantId): string
@@ -236,6 +337,7 @@ class TenantRepository
         $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType($tenantType);
         $stmt = $this->pdo()->prepare('UPDATE tenants SET tenant_type = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$tenantType, $tenantId]);
+        $this->forgetCache();
     }
 
     public function updateLogoUrl(int $tenantId, ?string $url): void
@@ -249,6 +351,7 @@ class TenantRepository
         }
         $stmt = $this->pdo()->prepare('UPDATE tenants SET logo_url = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$url, $tenantId]);
+        $this->forgetCache();
     }
 
     /** Retire explicitement le logo (contrairement à updateLogoUrl(), qui ignore les valeurs vides). */
@@ -256,6 +359,7 @@ class TenantRepository
     {
         $stmt = $this->pdo()->prepare('UPDATE tenants SET logo_url = NULL, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$tenantId]);
+        $this->forgetCache();
     }
 
     /** @return int id du tenant créé */
@@ -281,13 +385,17 @@ class TenantRepository
             $stmt->execute([$name, $slug, $planSlug]);
         }
 
-        return (int) $this->pdo()->lastInsertId();
+        $tenantId = (int) $this->pdo()->lastInsertId();
+        \App\Services\Moderation\NameModerationService::afterSave('tenant', $tenantId, $tenantId, $name, true);
+
+        return $tenantId;
     }
 
     public function setOwner(int $tenantId, int $ownerUserId): void
     {
         $stmt = $this->pdo()->prepare('UPDATE tenants SET owner_user_id = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$ownerUserId, $tenantId]);
+        $this->forgetCache();
     }
 
     /** @return array<string,mixed> */
@@ -308,10 +416,13 @@ class TenantRepository
     /** @param array<string,mixed> $settings */
     public function updateSettings(int $tenantId, array $settings): void
     {
+        // Lecture fraîche avant fusion (pas de cache de requête pour une lecture-écriture).
+        $this->forgetCache();
         $current = $this->getSettings($tenantId);
         $merged = array_replace_recursive($current, $settings);
         $stmt = $this->pdo()->prepare('UPDATE tenants SET settings = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([json_encode($merged, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $tenantId]);
+        $this->forgetCache();
     }
 
     /**
@@ -323,6 +434,7 @@ class TenantRepository
     {
         $stmt = $this->pdo()->prepare('UPDATE tenants SET settings = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([json_encode($settings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $tenantId]);
+        $this->forgetCache();
     }
 
     public function updateSubscriptionFromStripe(
@@ -352,6 +464,7 @@ class TenantRepository
             $periodEnd ?? $row['subscription_current_period_end'] ?? null,
             $tenantId,
         ]);
+        $this->forgetCache();
     }
 
     public function updateSubscriptionFromPayPal(
@@ -381,6 +494,7 @@ class TenantRepository
                 $periodEnd ?? $row['subscription_current_period_end'] ?? null,
                 $tenantId,
             ]);
+            $this->forgetCache();
 
             return;
         }
@@ -395,6 +509,7 @@ class TenantRepository
             $periodEnd ?? $row['subscription_current_period_end'] ?? null,
             $tenantId,
         ]);
+        $this->forgetCache();
     }
 
     /** @return array<string, mixed>|null */
@@ -427,6 +542,8 @@ class TenantRepository
     /** Fusionne un objet JSON dans tenants.settings. */
     public function mergeSettings(int $tenantId, array $patch): void
     {
+        // Lecture fraîche avant fusion (pas de cache de requête pour une lecture-écriture).
+        $this->forgetCache();
         $row = $this->findById($tenantId);
         if (!$row) {
             return;
@@ -441,6 +558,7 @@ class TenantRepository
         $merged = array_merge($current, $patch);
         $stmt = $this->pdo()->prepare('UPDATE tenants SET settings = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([json_encode($merged, JSON_THROW_ON_ERROR), $tenantId]);
+        $this->forgetCache();
     }
 
     /**
@@ -529,13 +647,23 @@ class TenantRepository
      *   plan_slug: string,
      *   subscription_status: string,
      *   subscription_current_period_end: string|null,
-     *   stripe_subscription_id: string|null
+     *   stripe_subscription_id: string|null,
+     *   effective_plan_slug: string,
+     *   plan_gift: array{gift_id: int, plan_slug: string, ends_at: ?string}|null
      * }>
      */
     public function listOverviewForPlatform(): array
     {
         $humanUsers = UserRepository::sqlLiteralExcludeTechnicalInternalEmails('u');
+        $humanLogin = UserRepository::sqlLiteralExcludeTechnicalInternalEmails('u2');
         $typeSelect = $this->hasTenantTypeColumn() ? 't.tenant_type,' : "'full' AS tenant_type,";
+        $lastLogin = $this->scalarIfTable('users', "SELECT MAX(u2.last_login_at) FROM users u2 WHERE u2.tenant_id = t.id AND {$humanLogin}", 'NULL');
+        $lastIngest = $this->scalarIfTable('atak_ingest_traffic', 'SELECT MAX(x.bucket_ts) FROM atak_ingest_traffic x WHERE x.tenant_id = t.id', 'NULL');
+        $lastProfile = $this->scalarIfTable('operator_game_profiles', 'SELECT MAX(o.last_seen_at) FROM operator_game_profiles o WHERE o.tenant_id = t.id', 'NULL');
+        $terminals = $this->scalarIfTable('atak_terminals', 'SELECT COUNT(*) FROM atak_terminals a WHERE a.tenant_id = t.id', '0');
+        $units = $this->scalarIfTable('atak_units', 'SELECT COUNT(*) FROM atak_units a WHERE a.tenant_id = t.id', '0');
+        $profiles = $this->scalarIfTable('operator_game_profiles', 'SELECT COUNT(*) FROM operator_game_profiles o WHERE o.tenant_id = t.id', '0');
+        $sessions = $this->scalarIfTable('game_sessions', 'SELECT COUNT(*) FROM game_sessions g WHERE g.tenant_id = t.id', '0');
         $sql = <<<SQL
 SELECT t.id,
        t.name,
@@ -546,7 +674,15 @@ SELECT t.id,
        t.subscription_status,
        t.subscription_current_period_end,
        t.stripe_subscription_id,
-       (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id AND {$humanUsers}) AS user_count
+       t.settings,
+       (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id AND {$humanUsers}) AS user_count,
+       {$lastLogin} AS last_login_at,
+       {$lastIngest} AS last_ingest_at,
+       {$lastProfile} AS last_profile_at,
+       {$terminals} AS terminal_count,
+       {$units} AS unit_count,
+       {$profiles} AS profile_count,
+       {$sessions} AS session_count
 FROM tenants t
 WHERE t.id > 1
 ORDER BY t.name ASC
@@ -577,10 +713,44 @@ SQL;
                     ? (string) $row['subscription_current_period_end']
                     : null,
                 'stripe_subscription_id' => $stripeSub !== '' ? $stripeSub : null,
+                // Formule réellement appliquée (formule offerte, essai fondateur) : c'est elle que l'annuaire affiche.
+                'effective_plan_slug' => \App\Support\PlanGift::effectivePlanSlug($row),
+                'plan_gift' => \App\Support\PlanGift::activeFromSettings($row['settings'] ?? null),
+                // Seules les clés utiles aux fins de formule (essai fondateur, formule offerte même terminée).
+                'plan_window' => self::planWindowSettings($row['settings'] ?? null),
+                'archive' => TenantArchiveState::infoFromSettings($row['settings'] ?? null),
+                'last_login_at' => self::nullableDate($row['last_login_at'] ?? null),
+                'last_game_at' => self::latestDate($row['last_ingest_at'] ?? null, $row['last_profile_at'] ?? null),
+                'terminal_count' => (int) ($row['terminal_count'] ?? 0),
+                'unit_count' => (int) ($row['unit_count'] ?? 0),
+                'profile_count' => (int) ($row['profile_count'] ?? 0),
+                'session_count' => (int) ($row['session_count'] ?? 0),
             ];
         }
 
         return $out;
+    }
+
+    /**
+     * @return array{founder_trial_ends_at: ?string, plan_gift: ?array<string, mixed>, plan_end_warning_sent: ?string, manual_billing: ?array<string, mixed>}
+     */
+    private static function planWindowSettings(mixed $raw): array
+    {
+        $s = is_string($raw) && trim($raw) !== '' ? json_decode($raw, true) : (is_array($raw) ? $raw : []);
+        if (!is_array($s)) {
+            $s = [];
+        }
+        $trial = $s['founder_trial_ends_at'] ?? null;
+        $gift = $s[\App\Support\PlanGift::SETTINGS_KEY] ?? null;
+        $warned = $s[\App\Support\PlanAccessWindow::WARNED_KEY] ?? null;
+        $manual = $s[\App\Support\ManualBilling::SETTINGS_KEY] ?? null;
+
+        return [
+            'founder_trial_ends_at' => is_string($trial) && $trial !== '' ? $trial : null,
+            'plan_gift' => is_array($gift) ? $gift : null,
+            'plan_end_warning_sent' => is_string($warned) ? $warned : null,
+            'manual_billing' => is_array($manual) ? $manual : null,
+        ];
     }
 
     /**
@@ -596,6 +766,9 @@ SQL;
             'UPDATE tenants SET plan_slug = ?, subscription_status = ?, updated_at = NOW() WHERE id = ?'
         );
 
-        return $stmt->execute([$planSlug, $subscriptionStatus, $tenantId]);
+        $ok = $stmt->execute([$planSlug, $subscriptionStatus, $tenantId]);
+        $this->forgetCache();
+
+        return $ok;
     }
 }

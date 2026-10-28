@@ -11,7 +11,7 @@ private _member = {
     params ["_u"];
     private _i = [_u] call comspec_atak_native_fnc_ftInfo;
     createHashMapFromArray [
-        ["callsign", [_u] call comspec_atak_native_fnc_unitCallsign], ["name", name _u], ["uid", [getPlayerUID _u, ""] select !isPlayer _u],
+        ["callsign", [_u] call comspec_atak_native_fnc_unitCallsign], ["callsign_custom", (_u getVariable ["COMSPEC_ATAK_CsCustom", ""]) isNotEqualTo ""], ["name", name _u], ["uid", [getPlayerUID _u, ""] select !isPlayer _u],
         ["player", isPlayer _u], ["role", _i get "role"], ["role_label", _i get "roleLabel"], ["role_pref", _u getVariable ["COMSPEC_FTRolePref", ""]], ["leader", _i get "lead"],
         ["alive", alive _u], ["online", _u getVariable ["COMSPEC_ATAK_Beacon", false]], ["grid", mapGridPosition _u]
     ]

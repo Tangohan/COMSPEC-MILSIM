@@ -13,25 +13,17 @@ declare(strict_types=1);
  * Production : copier les données avant d’exécuter ce script :
  *   php scripts/data-snapshot.php create --label=avant-migration
  *
- * Enchaînement :
+ * Enchaînement : run-migrations.php charge .env, se connecte, puis exécute dans l’ordre les étapes du registre
+ * database/steps/registry.php (`php run-migrations.php --list` pour les voir) :
  *
- *  1. Chargement `.env` et connexion MySQL
- *  2. Import `migrations/schema.sql` (schéma métier)
- *  2b. Ensure colonnes critiques absentes sur tables déjà existantes
- *     (`bootstrap/schema_ensure_column.php`, ex. `atak_units.military_id` / `pos_x` / `pos_y`)
- *  3. `run_core_schema_extensions_migration()` — DDL étendue (`bootstrap/core_schema_extensions_migration.php`, ex. tableau opérationnel, ORBAT)
- *  4. `run_community_platform_migration()` — plans d’abonnement, colonnes `tenants` (facturation / owner)
- *  5. `run_platform_unit_commander_migration()` — invitations, modération, événements, usage,
- *     codes communauté, parrainage (`referral_*`), sécurité, etc.
- *  6. `run_production_import_gap_migrations()` — écarts après import SQL partiel (ex. `u416380327_BDD_PROD.sql`),
- *     refonte courrier, index manquants.
- *  7. `run_rbac_three_layer_migration()` — RBAC 3 couches (rôles site globaux, `role_layer` / `scope`,
- *     table `site_role_assignments`, migration `super_admin` tenant → `community_owner` + rôles site), défini dans
- *     `bootstrap/rbac_three_layer_migration.php` (appelé depuis `run-migrations.php`).
- *  8. ALTERs et tables conditionnelles (enlistments Olympus, ATAK, courrier, …) ; juste après le bootstrap,
- *     migrations LMS sur `training_courses` (thème, vitrine, `enrollment_policy_json`, audio, tables sociales)
- *     pour que les colonnes existent même si la suite du script est longue ou interrompue.
- *  9. Seed : tenant `default`, compte admin, forum, rôles, permissions…
+ *  - Schéma : migrations/schema.sql, colonnes critiques manquantes, fichiers migrations/*.sql en attente ;
+ *  - Migrations : migrations PHP de bootstrap/ (plateforme, RBAC, LMS, ATAK, SSE, courrier…) ;
+ *  - Référentiels : données indispensables seulement (cartes ATAK, grades, formats courrier, communauté système
+ *    « default » et premier administrateur — mot de passe via ATHENA_FIRST_ADMIN_PASSWORD, jamais « admin ») ;
+ *  - Maintenance : rattrapages et nettoyages de données.
+ *
+ * Plus aucun contenu de démonstration n’est injecté (parcours de formation, modèles CERBERE, renommages ponctuels).
+ * Chaque étape est notée dans schema_migration_runs ; l’interface web /run-migrations.php l’affiche.
  *
  * Idempotent : relancer met à jour ce qui manque sans tout casser. Les fichiers migrations/*.sql
  * sont suivis dans la table `comspec_schema_migrations` (voir bootstrap/migration_runner.php) ;

@@ -6,7 +6,7 @@ if ((count _steam) >= 8) then {
     ["COMSPECExtension" callExtension ["SetSteamId", [_steam]]] call comspec_overwatch_connect_fnc_extResult;
 };
 missionNamespace setVariable ["comspec_overwatch_auth_state", "RESTORING_SESSION", false];
-private _raw = ["COMSPECExtension" callExtension ["RestoreSession", [_url, _modVer, _steam]]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [["COMSPECExtension", "RestoreSession", [_url, _modVer, _steam], 40] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 if (_raw find "OK|READY" == 0) then {
     [] call comspec_overwatch_connect_fnc_applyBootstrap;
     true

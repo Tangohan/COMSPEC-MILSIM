@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakC2OrderIssueAssetTest extends TestCase
 {
@@ -20,14 +21,15 @@ final class AtakC2OrderIssueAssetTest extends TestCase
         $api = (string) file_get_contents($root . '/app/Controllers/Api/AtakApiController.php');
         $repo = (string) file_get_contents($root . '/app/Repositories/AtakDataRepository.php');
 
-        self::assertStringContainsString('versionStr = "1.6.9"', $cfg);
+        ModVersion::assertAtLeast('1.6.9', ModVersion::fromConfigCpp($cfg));
         self::assertStringContainsString('class orderIssuerLabel', $cfg);
 
         self::assertStringContainsString('toFixed 0', $issue);
         self::assertStringContainsString('orderIssuerLabel', $issue);
         self::assertStringNotContainsString('_issuer = name player', $issue);
         self::assertStringContainsString('setVariable ["COMSPEC_Orders", _orders, false]', $issue);
-        self::assertStringContainsString('remoteExecCall ["comspec_overwatch_connect_fnc_receiveOrder", -2, false]', $issue);
+        // Cible 0 : -2 excluait l'hôte d'une partie hébergée ; receiveOrder écarte l'émetteur et le serveur dédié.
+        self::assertStringContainsString('remoteExecCall ["comspec_overwatch_connect_fnc_receiveOrder", 0, false]', $issue);
         self::assertStringNotContainsString('[_order] remoteExecCall', $issue);
 
         self::assertStringContainsString('comspec_profile_name', $issuer);

@@ -12,13 +12,15 @@ $statusLabels = [
     'reviewed' => 'Acceptée',
     'rejected' => 'Refusée',
     'blocked' => 'Non admis',
+    'cancelled' => 'Annulée',
 ];
 $statusLabel = $statusLabels[$statusRaw] ?? $statusRaw;
 if ($statusRaw === 'rejected' && !empty($e['auto_rejected'])) {
     $statusLabel = 'Refusée automatiquement';
 }
-// Dossier clos = décision rendue (acceptée, refusée ou non admis) : plus d’instruction à mener, UI allégée.
-$dossierClosedStatuses = ['reviewed', 'rejected', 'blocked'];
+// Dossier clos = décision rendue (acceptée, refusée, non admis ou annulée) : plus d’instruction à mener, UI allégée.
+// Le bilan 30 jours reste affiché pour une candidature acceptée (voir plus bas).
+$dossierClosedStatuses = ['reviewed', 'rejected', 'blocked', 'cancelled'];
 $isDossierClos = in_array($statusRaw, $dossierClosedStatuses, true);
 $portalJourneyStepsForNotes = is_array($portalJourneyStepsForNotes ?? null) ? $portalJourneyStepsForNotes : [];
 $instructionFollowup = '';
@@ -48,6 +50,8 @@ $currentStaffUserId = (int) ($currentStaffUserId ?? 0);
 $enlistmentAgeDays = isset($enlistmentAgeDays) ? (int) $enlistmentAgeDays : null;
 $retroWindowEligible = !empty($retroWindowEligible);
 $retroNotApplicable = !empty($retroNotApplicable);
+$retroDaysSinceAcceptance = isset($retroDaysSinceAcceptance) ? (int) $retroDaysSinceAcceptance : null;
+$retroDueDate = is_string($retroDueDate ?? null) ? $retroDueDate : null;
 $enlistmentEngagementTablesReady = !empty($enlistmentEngagementTablesReady);
 $recruiterPicksTableReady = !empty($recruiterPicksTableReady);
 $staffRetroFeedback = is_array($staffRetroFeedback ?? null) ? $staffRetroFeedback : null;
@@ -236,68 +240,17 @@ $statusBand = match ($statusRaw) {
     'reviewed' => 'from-emerald-600 to-emerald-700',
     'rejected' => 'from-rose-500 to-rose-600',
     'blocked' => 'from-slate-600 to-slate-800',
+    'cancelled' => 'from-stone-400 to-stone-500',
     default => 'from-stone-400 to-stone-600',
 };
 
-$recapMeta = match ($statusRaw) {
-    'submitted' => $instructionFollowup === 'pending'
-        ? [
-            'step' => 'Étape 2 sur 3',
-            'title' => 'Dossier mis en attente',
-            'bar' => 'w-2/3',
-            'barColor' => 'bg-sky-400',
-            'hint' => 'Le traitement est temporairement suspendu. Le candidat a été informé ; vous pouvez reprendre l’instruction quand vous voulez.',
-        ]
-        : ($instructionFollowup === 'interview'
-            ? [
-                'step' => 'Étape 2 sur 3',
-                'title' => 'Entretien proposé',
-                'bar' => 'w-2/3',
-                'barColor' => 'bg-violet-400',
-                'hint' => 'Un entretien a été proposé au candidat. La décision finale reste à rendre après l’échange.',
-            ]
-            : [
-                'step' => 'Étape 2 sur 3',
-                'title' => 'En cours de traitement',
-                'bar' => 'w-2/3',
-                'barColor' => 'bg-amber-400',
-                'hint' => 'Étape suivante : décision finale et notification candidat.',
-            ]),
-    'reviewed' => [
-        'step' => 'Étape 3 sur 3',
-        'title' => 'Candidature acceptée',
-        'bar' => 'w-full',
-        'barColor' => 'bg-emerald-500',
-        'hint' => 'Décision positive enregistrée. Vérifiez le rattachement au compte membre si besoin.',
-    ],
-    'rejected' => [
-        'step' => 'Dossier clos',
-        'title' => 'Candidature refusée',
-        'bar' => 'w-full',
-        'barColor' => 'bg-rose-500',
-        'hint' => 'Décision négative enregistrée. Le journal conserve la trace des échanges.',
-    ],
-    'blocked' => [
-        'step' => 'Dossier clos',
-        'title' => 'Non admis',
-        'bar' => 'w-full',
-        'barColor' => 'bg-stone-500',
-        'hint' => 'Candidature écartée sans suite d’adhésion.',
-    ],
-    default => [
-        'step' => 'Étape 1 sur 3',
-        'title' => 'Réception du dossier',
-        'bar' => 'w-1/3',
-        'barColor' => 'bg-stone-400',
-        'hint' => 'Statut à préciser côté instruction.',
-    ],
-};
-
-$showRetroBlockNav = $retroWindowEligible || $retroNotApplicable || $staffRetroFeedback !== null || $candidateRetroFeedback !== null;
+// Bilan 30 jours : visible pour toute candidature acceptée (formulaire à J+30 après l’acceptation),
+// ou dès qu’un bilan existe. Jamais pour un dossier refusé, non admis ou annulé.
+$showRetroBlockNav = $statusRaw === 'reviewed' || $staffRetroFeedback !== null || $candidateRetroFeedback !== null;
 $dossierNavItems = [
-    ['id' => 'recap-dossier', 'label' => 'Récapitulatif', 'num' => '01', 'show' => true],
+    ['id' => 'recap-dossier', 'label' => 'Pilotage du dossier', 'num' => '01', 'show' => true],
     ['id' => 'coordination-dossier', 'label' => 'Coordination', 'num' => '02', 'show' => !$isDossierClos],
-    ['id' => 'bilan-recrutement', 'label' => 'Bilan 30 jours', 'num' => '03', 'show' => $showRetroBlockNav && !$isDossierClos],
+    ['id' => 'bilan-recrutement', 'label' => 'Bilan 30 jours', 'num' => '03', 'show' => $showRetroBlockNav],
     ['id' => 'activite-dossier', 'label' => 'Activité récente', 'num' => '04', 'show' => $analyticsMergedRows !== [] && !$isDossierClos],
     ['id' => 'couverture-dossier', 'label' => 'En-tête candidat', 'num' => '05', 'show' => true],
     ['id' => 'portail-candidat', 'label' => 'Portail candidat', 'num' => '06', 'show' => !$isDossierClos],
@@ -328,6 +281,8 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
 
         <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem] xl:grid-cols-[minmax(0,1fr)_17rem]">
             <div class="space-y-6 min-w-0 order-1">
+                <?php require base_path('views/admin/recruitments/partials/dossier_pilot_bar.php'); ?>
+
                 <?php if ($isDossierClos): ?>
                 <section class="scroll-mt-28 overflow-hidden rounded-2xl border border-stone-300/80 bg-gradient-to-br <?= htmlspecialchars($statusBand, ENT_QUOTES, 'UTF-8') ?> px-6 py-5 text-white shadow-sm sm:px-8">
                     <div class="flex flex-wrap items-center gap-3">
@@ -372,6 +327,15 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                         <a href="#rattachement-membre" class="mt-3 inline-flex min-h-[2.5rem] items-center justify-center rounded-xl border-2 border-white/50 bg-white px-4 text-xs font-black uppercase tracking-wide text-emerald-900 shadow-sm transition hover:bg-emerald-50">
                             <?= $submitterId > 0 ? 'Vérifier le rattachement membre' : 'Rattacher la personne' ?>
                         </a>
+                        <a href="#bilan-recrutement" class="mt-3 inline-flex min-h-[2.5rem] items-center justify-center rounded-xl border-2 border-white/40 bg-white/10 px-4 text-xs font-black uppercase tracking-wide text-white shadow-sm transition hover:bg-white/20">
+                            <?php if ($staffRetroFeedback !== null): ?>
+                                Voir le bilan 30 jours
+                            <?php elseif ($retroWindowEligible): ?>
+                                Renseigner le bilan 30 jours
+                            <?php else: ?>
+                                Bilan 30 jours<?= $retroDueDate !== null ? ' — prévu le ' . htmlspecialchars($retroDueDate, ENT_QUOTES, 'UTF-8') : '' ?>
+                            <?php endif; ?>
+                        </a>
                     <?php endif; ?>
                 </section>
                 <?php endif; ?>
@@ -407,22 +371,6 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                 </section>
                 <?php endif; ?>
 
-                <section id="recap-dossier" class="scroll-mt-28 overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
-                    <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
-                        <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500"><?= htmlspecialchars($recapMeta['step'], ENT_QUOTES, 'UTF-8') ?></p>
-                        <h2 class="mt-1 text-xl font-black tracking-tight text-stone-900"><?= htmlspecialchars($recapMeta['title'], ENT_QUOTES, 'UTF-8') ?></h2>
-                        <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-stone-200">
-                            <div class="h-full <?= htmlspecialchars($recapMeta['bar'], ENT_QUOTES, 'UTF-8') ?> rounded-full <?= htmlspecialchars($recapMeta['barColor'], ENT_QUOTES, 'UTF-8') ?>"></div>
-                        </div>
-                        <p class="mt-3 text-xs leading-relaxed text-stone-600"><?= htmlspecialchars($recapMeta['hint'], ENT_QUOTES, 'UTF-8') ?></p>
-                    </div>
-                    <div class="grid gap-4 px-6 py-4 text-sm text-stone-800 md:grid-cols-2 xl:grid-cols-4">
-                        <div><p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">N° de dossier</p><p class="mt-1 font-semibold text-stone-900">#<?= $id ?></p></div>
-                        <div><p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">Statut</p><p class="mt-1 font-semibold text-stone-900"><?= htmlspecialchars($statusLabel ?: '—', ENT_QUOTES, 'UTF-8') ?></p></div>
-                        <div><p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">Attribué à</p><p class="mt-1 font-semibold text-stone-900"><?= htmlspecialchars($assigneeLabel, ENT_QUOTES, 'UTF-8') ?></p></div>
-                        <div><p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">Nature</p><p class="mt-1 font-semibold text-stone-900"><?= $isInternalOpeningApplication ? 'Mobilité interne' : 'Candidature externe' ?></p></div>
-                    </div>
-                </section>
 
                 <?php if (!$isDossierClos): ?>
                 <section id="coordination-dossier" class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40">
@@ -527,21 +475,26 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                 <?php endif; ?>
 
                 <?php
-                $showRetroBlock = $retroWindowEligible || $retroNotApplicable || $staffRetroFeedback !== null || $candidateRetroFeedback !== null;
+                $showRetroBlock = $showRetroBlockNav;
                 $retroLabels = [5 => 'Très satisfaisant', 4 => 'Bon', 3 => 'Correct', 2 => 'En-dessous des attentes', 1 => 'À améliorer'];
-                $retroNotApplicableMessage = $statusRaw === 'blocked'
-                    ? 'Pas de bilan pour une candidature non admise.'
-                    : 'Pas de bilan pour une candidature refusée.';
+                $retroDaysLeft = $retroDaysSinceAcceptance !== null ? max(0, \App\Support\EnlistmentStatusCatalog::RETRO_DELAY_DAYS - $retroDaysSinceAcceptance) : null;
+                $retroNotApplicableMessage = match ($statusRaw) {
+                    'blocked' => 'Pas de bilan pour une candidature non admise.',
+                    'cancelled' => 'Pas de bilan pour une candidature annulée.',
+                    default => 'Pas de bilan pour une candidature refusée.',
+                };
                 ?>
-                <?php if ($showRetroBlock && !$isDossierClos): ?>
+                <?php if ($showRetroBlock): ?>
                 <section id="bilan-recrutement" class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40">
                     <div class="border-b border-slate-100 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 px-6 py-5 text-white sm:px-8">
                         <div class="flex flex-wrap items-center gap-2">
-                            <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-300/90">Après 30 jours</p>
+                            <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-300/90">30 jours après l’acceptation</p>
                             <?php if ($retroNotApplicable && !$staffRetroFeedback && !$candidateRetroFeedback): ?>
                                 <span class="rounded-full bg-stone-400/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-stone-200">Non concerné</span>
                             <?php elseif ($retroWindowEligible && !$staffRetroFeedback): ?>
                                 <span class="rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200">Bilan attendu</span>
+                            <?php elseif (!$staffRetroFeedback && $statusRaw === 'reviewed'): ?>
+                                <span class="rounded-full bg-sky-400/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-200">Prévu<?= $retroDueDate !== null ? ' le ' . htmlspecialchars($retroDueDate, ENT_QUOTES, 'UTF-8') : '' ?></span>
                             <?php elseif ($staffRetroFeedback): ?>
                                 <span class="rounded-full bg-emerald-400/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-200">Bilan enregistré</span>
                             <?php endif; ?>
@@ -550,7 +503,7 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                         <?php if ($retroNotApplicable && !$staffRetroFeedback && !$candidateRetroFeedback): ?>
                             <p class="mt-2 max-w-2xl text-sm leading-relaxed text-white/65"><?= htmlspecialchars($retroNotApplicableMessage, ENT_QUOTES, 'UTF-8') ?></p>
                         <?php else: ?>
-                            <p class="mt-2 max-w-2xl text-sm leading-relaxed text-white/65">Après un mois, l’équipe et le candidat peuvent laisser une courte note pour améliorer l’accueil et le suivi.</p>
+                            <p class="mt-2 max-w-2xl text-sm leading-relaxed text-white/65">Un mois après l’acceptation, l’équipe note le déroulé du recrutement et de l’intégration ; le candidat peut aussi laisser son retour depuis son suivi.</p>
                         <?php endif; ?>
                     </div>
                     <div class="space-y-6 p-5 sm:p-6">
@@ -577,7 +530,13 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                             <?php endif; ?>
                         </div>
                         <?php endif; ?>
-                        <?php if ($retroWindowEligible): ?>
+                        <?php if (!$retroWindowEligible && !$staffRetroFeedback && $statusRaw === 'reviewed'): ?>
+                            <div class="rounded-xl border border-sky-200 bg-sky-50/70 px-4 py-3 text-sm text-sky-950">
+                                <p class="font-bold">Bilan d’équipe prévu<?= $retroDueDate !== null ? ' le ' . htmlspecialchars($retroDueDate, ENT_QUOTES, 'UTF-8') : '' ?><?= $retroDaysLeft !== null ? ' (dans ' . (int) $retroDaysLeft . ' j)' : '' ?>.</p>
+                                <p class="mt-1 text-sky-900/80">Le formulaire s’ouvrira ici 30 jours après l’acceptation : le temps de voir le nouveau membre en mission.</p>
+                            </div>
+                        <?php endif; ?>
+                        <?php if ($retroWindowEligible || $staffRetroFeedback): ?>
                             <?php if (!$enlistmentEngagementTablesReady): ?>
                                 <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Le formulaire de bilan sera disponible après la prochaine mise à jour technique côté hébergement.</p>
                             <?php else: ?>

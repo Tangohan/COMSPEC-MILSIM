@@ -3,7 +3,7 @@
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 0;
-        displayName = "Émetteur RF Fieldwatch";
+        displayName = "$STR_COMSPEC_OW_CFG_C24C84F979";
         category = "COMSPEC_Roleplay";
         function = "comspec_overwatch_connect_fnc_moduleRfEmitter";
         functionPriority = 1;
@@ -22,8 +22,8 @@
         {
             class EmitterLabel
             {
-                displayName = "Nom / SSID";
-                tooltip = "Nom affiché dans Fieldwatch (ex. IPCam-Lobby, Tile-AirTag).";
+                displayName = "$STR_COMSPEC_OW_CFG_973FF69E5D";
+                tooltip = "$STR_COMSPEC_OW_CFG_B82F20C673";
                 property = "COMSPEC_RfEmitter_Label";
                 control = "Edit";
                 expression = "_this setVariable ['EmitterLabel',_value,true];";
@@ -32,8 +32,8 @@
             };
             class EmitterBand
             {
-                displayName = "Bande";
-                tooltip = "wifi | ble | tracker | camera | phone | unknown";
+                displayName = "$STR_COMSPEC_OW_CFG_BC8407E188";
+                tooltip = "$STR_COMSPEC_OW_CFG_1CD1CF102B";
                 property = "COMSPEC_RfEmitter_Band";
                 control = "Edit";
                 expression = "_this setVariable ['EmitterBand',_value,true];";
@@ -42,8 +42,8 @@
             };
             class EmitterSignature
             {
-                displayName = "Signature";
-                tooltip = "Identifiant de signature (ex. wifi_ipcam, ble_tile).";
+                displayName = "$STR_COMSPEC_OW_CFG_2F32BE1DC7";
+                tooltip = "$STR_COMSPEC_OW_CFG_7859D4AA38";
                 property = "COMSPEC_RfEmitter_Signature";
                 control = "Edit";
                 expression = "_this setVariable ['EmitterSignature',_value,true];";
@@ -52,8 +52,8 @@
             };
             class RangeM
             {
-                displayName = "Portée scan (m)";
-                tooltip = "Distance max à laquelle Fieldwatch peut entendre cet émetteur.";
+                displayName = "$STR_COMSPEC_OW_CFG_18D6665128";
+                tooltip = "$STR_COMSPEC_OW_CFG_422DDCE9D2";
                 property = "COMSPEC_RfEmitter_Range";
                 control = "Edit";
                 expression = "_this setVariable ['RangeM',_value,true];";
@@ -63,8 +63,8 @@
             };
             class PowerDbm
             {
-                displayName = "Puissance (dBm)";
-                tooltip = "Puissance d’émission simulée à la source (typ. -30 à 20).";
+                displayName = "$STR_COMSPEC_OW_CFG_E5BA13EC2E";
+                tooltip = "$STR_COMSPEC_OW_CFG_65886348E8";
                 property = "COMSPEC_RfEmitter_Power";
                 control = "Edit";
                 expression = "_this setVariable ['PowerDbm',_value,true];";
@@ -74,8 +74,8 @@
             };
             class EmitterMac
             {
-                displayName = "Adresse MAC simulée";
-                tooltip = "Vide = générée à la pose.";
+                displayName = "$STR_COMSPEC_OW_CFG_CB02AF8FD8";
+                tooltip = "$STR_COMSPEC_OW_CFG_30F065336E";
                 property = "COMSPEC_RfEmitter_Mac";
                 control = "Edit";
                 expression = "_this setVariable ['EmitterMac',_value,true];";
@@ -88,43 +88,43 @@
         {
             class EmitterLabel
             {
-                displayName = "Nom / SSID";
-                description = "Nom affiché dans Fieldwatch";
+                displayName = "$STR_COMSPEC_OW_CFG_973FF69E5D";
+                description = "$STR_COMSPEC_OW_CFG_73D04CF29E";
                 typeName = "STRING";
                 defaultValue = "IPCam-Lobby";
             };
             class EmitterBand
             {
-                displayName = "Bande";
-                description = "wifi | ble | tracker | camera | phone";
+                displayName = "$STR_COMSPEC_OW_CFG_BC8407E188";
+                description = "$STR_COMSPEC_OW_CFG_B994CF0483";
                 typeName = "STRING";
                 defaultValue = "wifi";
             };
             class EmitterSignature
             {
-                displayName = "Signature";
-                description = "Identifiant de signature";
+                displayName = "$STR_COMSPEC_OW_CFG_2F32BE1DC7";
+                description = "$STR_COMSPEC_OW_CFG_14746B633E";
                 typeName = "STRING";
                 defaultValue = "wifi_ipcam";
             };
             class RangeM
             {
-                displayName = "Portée scan (m)";
-                description = "Distance max de détection";
+                displayName = "$STR_COMSPEC_OW_CFG_18D6665128";
+                description = "$STR_COMSPEC_OW_CFG_BAA720E660";
                 typeName = "NUMBER";
                 defaultValue = "80";
             };
             class PowerDbm
             {
-                displayName = "Puissance (dBm)";
-                description = "Puissance à la source";
+                displayName = "$STR_COMSPEC_OW_CFG_E5BA13EC2E";
+                description = "$STR_COMSPEC_OW_CFG_9E50BCCB02";
                 typeName = "NUMBER";
                 defaultValue = "10";
             };
             class EmitterMac
             {
-                displayName = "MAC simulée";
-                description = "Vide = générée";
+                displayName = "$STR_COMSPEC_OW_CFG_B357F1231D";
+                description = "$STR_COMSPEC_OW_CFG_F651847795";
                 typeName = "STRING";
                 defaultValue = "";
             };
@@ -132,7 +132,7 @@
 
         class ModuleDescription
         {
-            description = "Émetteur RF Fieldwatch. Posez le module, choisissez bande (Wi‑Fi / BLE / tracker / caméra) et portée. En jeu, l’app Fieldwatch du téléphone scanne les émetteurs à proximité et remonte les hits au poste ATAK.";
+            description = "$STR_COMSPEC_OW_CFG_2DDF4339A8";
             position = 1;
             direction = 0;
             optional = 1;

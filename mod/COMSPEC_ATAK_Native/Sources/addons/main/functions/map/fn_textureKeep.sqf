@@ -19,16 +19,24 @@ private _tex = ("true" configClasses (configFile >> "COMSPEC_ATAK_Apps")) apply 
     "nav_arrive", "nav_left", "nav_right", "nav_slight_left", "nav_slight_right", "nav_straight", "nav_uturn",
     "ui_apps", "ui_back", "ui_bell", "ui_camera", "ui_check", "ui_clip", "ui_close", "ui_collapse", "ui_comspec_link", "ui_disc",
     "ui_expand", "ui_folder", "ui_gallery", "ui_gps", "ui_home", "ui_link", "ui_minus", "ui_photocam", "ui_rotate", "ui_send",
-    "ui_vibrate", "ui_weather", "ui_wind", "sig_0", "sig_1", "sig_2", "sig_3", "sig_4", "bat_10", "bat_25", "bat_50", "bat_75", "bat_100"
+    "ui_vibrate", "ui_weather", "ui_wind", "ui_chevron_down", "ui_chevron_up", "ui_dot", "ui_headphones", "ui_mute", "ui_next",
+    "ui_pause_circle", "ui_play_circle", "ui_prev", "ui_repeat", "ui_repeat_one", "ui_shuffle", "ui_speaker", "sig_0", "sig_1", "sig_2", "sig_3", "sig_4", "bat_10", "bat_25", "bat_50", "bat_75", "bat_100"
 ];
 _tex = (_tex select { _x isNotEqualTo "" }) arrayIntersect (_tex select { _x isNotEqualTo "" });
-{
-    private _c = _d ctrlCreate ["RscPicture", -1];
-    _c ctrlSetPosition [safeZoneX - 1, safeZoneY - 1, 0.001, 0.001];
-    _c ctrlSetText _x;
-    _c ctrlSetTextColor [1, 1, 1, 0.01];
-    _c ctrlEnable false;
-    _c ctrlCommit 0;
-} forEach _tex;
+// Chargées par lots de 8 images par image de jeu (une centaine d'icônes d'un coup à l'arrivée : à-coup au spawn).
 _d setVariable ["COMSPEC_ATAK_TexKeep", count _tex];
+[{
+    params ["_args", "_h"];
+    _args params ["_d", "_tex"];
+    if (isNull _d || {(count _tex) isEqualTo 0}) exitWith { [_h] call CBA_fnc_removePerFrameHandler; };
+    {
+        private _c = _d ctrlCreate ["RscPicture", -1];
+        _c ctrlSetPosition [safeZoneX - 1, safeZoneY - 1, 0.001, 0.001];
+        _c ctrlSetText _x; // i18n:brut (chemins des icônes)
+        _c ctrlSetTextColor [1, 1, 1, 0.01];
+        _c ctrlEnable false;
+        _c ctrlCommit 0;
+    } forEach (_tex select [0, 8]);
+    _tex deleteRange [0, 8];
+}, 0, [_d, _tex]] call CBA_fnc_addPerFrameHandler;
 true

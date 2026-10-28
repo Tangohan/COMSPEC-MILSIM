@@ -21,9 +21,9 @@ private _esc = {
     if (isNil "_s") exitWith { """""" };
     if (!(_s isEqualType "")) then { _s = format ["%1", _s]; };
     private _b = toString [92];
-    _s = _s replaceString [_b, _b + _b];
-    _s = _s replaceString ["""", _b + """"];
-    _s = _s replaceString [endl, _b + "n"];
+    _s = [_s, _b, _b + _b] call CBA_fnc_replace;
+    _s = [_s, """", _b + """"] call CBA_fnc_replace;
+    _s = [_s, endl, _b + "n"] call CBA_fnc_replace;
     format ["""%1""", _s]
 };
 
@@ -44,8 +44,9 @@ if (_isContainer) then {
         };
     } forEach _visited;
     if (!_circular) then {
-        // Copie du chemin courant : les frères ne s'infectent pas mutuellement
-        _visited = +_visited;
+        // Copie superficielle du chemin courant : les frères ne s'infectent pas mutuellement, et les ancêtres restent
+        // les mêmes références (isEqualRef), sans recopier toute la fiche à chaque nœud.
+        _visited = _visited apply { _x };
         _visited pushBack _value;
     };
 };

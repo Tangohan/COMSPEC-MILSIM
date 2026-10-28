@@ -311,6 +311,78 @@ final class SsePersonRepository
     /**
      * @param array<string, mixed> $fields
      */
+    /**
+     * Retransmission d'une personne déjà au registre : ce que la nouvelle fiche
+     * apporte est versé sur la fiche existante au lieu d'en créer une seconde.
+     * Les champs vides sont complétés (jamais écrasés), la dernière requête
+     * d'identité et la signature remplacent les précédentes.
+     *
+     * @param array<string, mixed> $data Corps transmis par le terminal.
+     * @return list<string> Colonnes réellement complétées.
+     */
+    public function mergeRetransmission(int $personId, int $tenantId, array $data): array
+    {
+        $current = $this->db->fetchOne(
+            'SELECT * FROM sse_persons WHERE id = :id AND tenant_id = :t LIMIT 1',
+            ['id' => $personId, 't' => $tenantId]
+        );
+        if (!$current) {
+            return [];
+        }
+
+        $sets = [];
+        $params = ['id' => $personId, 't' => $tenantId];
+        $filled = [];
+        foreach ([
+            'last_name', 'first_name', 'alias', 'sex_apparent', 'nationality', 'language_spoken',
+            'distinguishing_marks', 'affiliation', 'statements', 'grid_reference',
+        ] as $col) {
+            $incoming = trim((string) ($data[$col] ?? ''));
+            if ($incoming === '' || trim((string) ($current[$col] ?? '')) !== '') {
+                continue;
+            }
+            $sets[] = "{$col} = :{$col}";
+            $params[$col] = $incoming;
+            $filled[] = $col;
+        }
+        $age = $data['age_estimated'] ?? null;
+        if ($age !== null && $age !== '' && (int) $age >= 0 && ($current['age_estimated'] ?? null) === null) {
+            $sets[] = 'age_estimated = :age_estimated';
+            $params['age_estimated'] = (int) $age;
+            $filled[] = 'age_estimated';
+        }
+        if (is_array($data['identity_query'] ?? null) && $data['identity_query'] !== []) {
+            $sets[] = 'identity_query_json = :identity_query_json';
+            $params['identity_query_json'] = json_encode($data['identity_query'], JSON_UNESCAPED_UNICODE);
+            $filled[] = 'identity_query';
+        }
+        $signature = is_array($data['signature'] ?? null) ? $data['signature'] : [];
+        if ($signature !== [] && trim((string) ($current['signed_by_callsign'] ?? '')) === '') {
+            $sets[] = 'signed_by_callsign = :signed_by_callsign';
+            $sets[] = 'signed_terminal_uid = :signed_terminal_uid';
+            $sets[] = 'signed_atak_id = :signed_atak_id';
+            $sets[] = 'signed_at = :signed_at';
+            $params['signed_by_callsign'] = $this->nullIfEmpty($signature['callsign'] ?? null);
+            $params['signed_terminal_uid'] = $this->nullIfEmpty($signature['terminal_uid'] ?? null);
+            $params['signed_atak_id'] = $this->nullIfEmpty($signature['atak_id'] ?? null);
+            $params['signed_at'] = date('Y-m-d H:i:s');
+            $filled[] = 'signature';
+        }
+        if ($sets === []) {
+            return [];
+        }
+        try {
+            $this->db->execute(
+                'UPDATE sse_persons SET ' . implode(', ', $sets) . ' WHERE id = :id AND tenant_id = :t',
+                $params
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return $filled;
+    }
+
     public function updateTerrainFields(int $personId, int $tenantId, array $fields): bool
     {
         $sets = [];
@@ -434,6 +506,8 @@ final class SsePersonRepository
             'Photo du visage jointe',
             (string) ($data['author_callsign'] ?? $data['author'] ?? '')
         );
+        // Photo des avis de recherche du téléphone en jeu : copie .paa faite dès l'envoi.
+        \App\Support\AtakGameImage::prepare((string) ($data['image_path'] ?? ''), \App\Support\AtakGameImage::FIT_PHOTO);
 
         return $photoId;
     }

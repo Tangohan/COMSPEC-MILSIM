@@ -558,6 +558,8 @@ final class RhDossierWorkspaceController
             'rhProlongedAbsences' => $this->rhAlerts->listProlongedAbsences($tenantId, 40, $absence),
             'rhInactivityDays' => $inactivity,
             'rhProlongedAbsenceDays' => $absence,
+            'rhExpiringQualifications' => $this->rhAlerts->listExpiringQualifications($tenantId, 60, 12),
+            'rhVacantBillets' => $this->rhAlerts->listVacantBillets($tenantId, 20),
         ]);
     }
 
@@ -578,6 +580,7 @@ final class RhDossierWorkspaceController
             'effectifsNav' => 'rh_inbox',
             'rhActionInbox' => $inbox,
             'rhInboxActionCount' => (int) ($inbox['total'] ?? 0),
+            'csrfToken' => Csrf::token(),
         ]);
     }
 
@@ -822,7 +825,7 @@ final class RhDossierWorkspaceController
             'effectifsContent' => $content,
             'isBackOfficeShell' => true,
             'boSkipPageHead' => true,
-            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css'],
             'showPortalFooter' => false,
             'rosterCounts' => [
                 'total' => $this->userRepository->countListForTenant($tenantId, null, null, null, true),

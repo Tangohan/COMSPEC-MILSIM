@@ -13,7 +13,19 @@ if (
     && {[] call comspec_overwatch_connect_fnc_uplinkQuiet}
 ) exitWith {};
 
-private _raw = ["COMSPECExtension" callExtension ["GetMarkers", ["world:" + worldName]]] call comspec_overwatch_connect_fnc_extResult;
+// GET HTTP hors du thread de jeu : spawn + extAwait (un seul en vol, libéré au retour), puis relance
+// de cette fonction avec la réponse, traitée en non planifié comme avant (isNil).
+private _raw = _this param [0, nil, [""]];
+if (isNil "_raw") exitWith {
+    if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_WebMarkersBusyAt", -1e9])) < 60) exitWith { nil };
+    missionNamespace setVariable ["COMSPEC_WebMarkersBusyAt", diag_tickTime, false];
+    ["world:" + worldName] spawn {
+        private _r = [["COMSPECExtension", "GetMarkers", _this] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
+        missionNamespace setVariable ["COMSPEC_WebMarkersBusyAt", -1e9, false];
+        isNil { [_r] call comspec_overwatch_connect_fnc_pollAthenaMarkers };
+    };
+    nil
+};
 if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {
     ["marqueurs", 0, " (vide ou erreur)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
 };
@@ -22,8 +34,10 @@ if (_body isEqualTo "" || {_body isEqualTo "[]"}) exitWith {
     ["marqueurs", 0, " (aucun)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
 };
 
-// Skip si payload inchangé (évite de rejouer tout l’historique à chaque poll)
-private _sig = format ["%1:%2", count _body, _body select [0, ((count _body) min 48)]];
+// Skip si payload inchangé (évite de rejouer tout l’historique à chaque poll).
+// Corps complet comparé : longueur + 48 premiers caractères laissaient passer un déplacement
+// (coordonnées de même longueur) ou toute modification après la première ligne.
+private _sig = _body;
 if (_sig isEqualTo (missionNamespace getVariable ["COMSPEC_WebMarkersSig", ""])) exitWith {
     ["marqueurs", 0, " (inchangé)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
 };
@@ -31,15 +45,19 @@ missionNamespace setVariable ["COMSPEC_WebMarkersSig", _sig, false];
 
 private _seen = [];
 private _created = 0;
+private _capped = false;
 private _nl = toString [10];
 private _tab = toString [9];
 private _lines = _body splitString _nl;
+// Index des marqueurs existants (hashmap) : « in allMapMarkers » dans la boucle recopiait toute la liste à chaque ligne.
+private _mkIndex = createHashMapFromArray (allMapMarkers apply { [_x, true] });
 private _bootMk = missionNamespace getVariable ["COMSPEC_WebMarkersBootstrapped", false];
 if (!_bootMk) then {
     missionNamespace setVariable ["COMSPEC_WebMarkersBootstrapped", true, false];
 };
 {
-    private _cols = _x splitString _tab;
+    // splitKeepEmpty : libellé / couleur vides ne décalent plus la colonne source (sinon marqueur web ignoré).
+    private _cols = [_x, _tab] call comspec_overwatch_connect_fnc_splitKeepEmpty;
     if ((count _cols) < 6) then { continue };
     if ((_cols select 0) != "M") then { continue };
 
@@ -67,29 +85,38 @@ if (!_bootMk) then {
     };
     if (_text isEqualTo "") then { _text = "Repère poste"; };
 
-    if (!(_name in allMapMarkers) && {_created >= 25}) then { continue };
+    if (!(_name in _mkIndex) && {_created >= 25}) then { _capped = true; };
+    if (!(_name in _mkIndex) && {_created >= 25}) then { continue };
 
     private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
     missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
-    if (_name in allMapMarkers) then {
-        _name setMarkerPos [_xPos, _yPos];
-        _name setMarkerText _text;
-        _name setMarkerType _type;
-        _name setMarkerColor _color;
+    if (_name in _mkIndex) then {
+        // Marqueurs globaux conservés (visibles aussi des joueurs sans terminal, qui ne font pas ce poll),
+        // mais seuls les champs qui diffèrent sont réécrits : chaque setMarker* global partait sur le réseau,
+        // répété par chaque client équipé ; le premier à mettre à jour suffit, les autres ne voient plus d'écart.
+        if (((getMarkerPos _name) distance2D [_xPos, _yPos]) > 0.5) then { _name setMarkerPos [_xPos, _yPos]; };
+        if ((markerText _name) isNotEqualTo _text) then { _name setMarkerText _text; };
+        if ((markerType _name) isNotEqualTo _type) then { _name setMarkerType _type; };
+        if ((markerColor _name) isNotEqualTo _color) then { _name setMarkerColor _color; };
     } else {
         private _mk = createMarker [_name, [_xPos, _yPos]];
         if (_mk isEqualTo "") then { _mk = _name; };
-        _mk setMarkerType _type;
-        _mk setMarkerColor _color;
-        _mk setMarkerText _text;
-        _mk setMarkerSize [0.85, 0.85];
+        // Champs posés en local puis un seul setter global final : il diffuse l'état complet en un message
+        // au lieu de cinq.
+        _mk setMarkerTypeLocal _type;
+        _mk setMarkerColorLocal _color;
+        _mk setMarkerTextLocal _text;
+        _mk setMarkerSizeLocal [0.85, 0.85];
         _mk setMarkerAlpha 1;
+        _mkIndex set [_mk, true];
         _created = _created + 1;
     };
     private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
     if (_unmute < 0) then { _unmute = 0; };
     missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _unmute, false];
 } forEach _lines;
+// Plafond de 25 créations atteint : signature oubliée pour créer le reste au passage suivant.
+if (_capped) then { missionNamespace setVariable ["COMSPEC_WebMarkersSig", "", false]; };
 
 ["marqueurs", count _seen, format [
     " · lignes %1%2",
@@ -103,7 +130,7 @@ if ((count _raw) < 7990) then {
     {
         if (!(_x in _seen)) then {
             private _n = format ["comspec_webmk_%1", _x];
-            if (_n in allMapMarkers) then {
+            if (_n in _mkIndex) then {
                 private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
                 missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
                 deleteMarker _n;

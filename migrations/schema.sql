@@ -152,6 +152,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `password_hash` varchar(255) NOT NULL,
   `display_name` varchar(100) DEFAULT NULL,
   `callsign` varchar(50) DEFAULT NULL,
+  `public_name` varchar(40) DEFAULT NULL COMMENT 'Pseudo public (pages publiques)',
   `profile_slug` varchar(40) DEFAULT NULL,
   `athena_identifier` char(9) DEFAULT NULL,
   `steam_id` varchar(20) DEFAULT NULL,
@@ -431,14 +432,6 @@ CREATE TABLE IF NOT EXISTS `user_profiles` (
 
 CREATE TABLE IF NOT EXISTS `user_profile_display_settings` (
   `user_id` int unsigned NOT NULL,
-  `forum_alias` varchar(80) DEFAULT NULL,
-  `forum_label_mode` varchar(32) NOT NULL DEFAULT 'display_name',
-  `forum_visible_role_id` int unsigned DEFAULT NULL COMMENT 'Rôle org affiché sur carte forum (NULL = rôle principal du compte)',
-  `show_matricule_forum` tinyint(1) NOT NULL DEFAULT 1,
-  `show_grade_forum` tinyint(1) NOT NULL DEFAULT 1,
-  `show_unit_forum` tinyint(1) NOT NULL DEFAULT 1,
-  `show_bio_forum` tinyint(1) NOT NULL DEFAULT 1,
-  `hide_forum_level` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = masquer LVL_ sur carte forum',
   `fiche_show_email_to_others` tinyint(1) NOT NULL DEFAULT 0,
   `fiche_show_matricule_to_others` tinyint(1) NOT NULL DEFAULT 1,
   `public_roster_opt_in` tinyint(1) NOT NULL DEFAULT 0,
@@ -1033,6 +1026,7 @@ CREATE TABLE IF NOT EXISTS `atak_nine_line` (
   `line8` varchar(255) DEFAULT NULL,
   `line9` text DEFAULT NULL,
   `lines_checked` json DEFAULT NULL,
+  `geo_json` text DEFAULT NULL,
   `status` varchar(50) DEFAULT 'DRAFT',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -1319,119 +1313,62 @@ CREATE TABLE IF NOT EXISTS `personnel_admin_data` (
   CONSTRAINT `personnel_admin_data_panel_id_fk` FOREIGN KEY (`panel_id`) REFERENCES `personnel_admin_panels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Forum
-CREATE TABLE IF NOT EXISTS `forum_categories` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `tenant_id` int unsigned NOT NULL,
-  `parent_id` int unsigned DEFAULT NULL,
-  `name` varchar(255) NOT NULL,
-  `slug` varchar(100) NOT NULL,
-  `description` text,
-  `icon` varchar(50) DEFAULT NULL,
-  `color_theme` varchar(50) DEFAULT 'slate',
-  `display_order` int DEFAULT 0,
-  `is_locked` tinyint(1) DEFAULT 0,
-  `min_role_id` int unsigned DEFAULT NULL,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `tenant_id` (`tenant_id`),
-  KEY `parent_id` (`parent_id`),
-  UNIQUE KEY `tenant_id_slug` (`tenant_id`,`slug`),
-  CONSTRAINT `forum_categories_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `forum_categories_parent_id_fk` FOREIGN KEY (`parent_id`) REFERENCES `forum_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `forum_categories_min_role_id_fk` FOREIGN KEY (`min_role_id`) REFERENCES `roles` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS `forum_topics` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `tenant_id` int unsigned NOT NULL,
-  `category_id` int unsigned NOT NULL,
-  `user_id` int unsigned NOT NULL,
-  `title` varchar(500) NOT NULL,
-  `slug` varchar(255) NOT NULL,
-  `is_pinned` tinyint(1) DEFAULT 0,
-  `is_locked` tinyint(1) DEFAULT 0,
-  `is_archived` tinyint(1) DEFAULT 0,
-  `is_hidden` tinyint(1) DEFAULT 0,
-  `view_count` int unsigned DEFAULT 0,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `tenant_id` (`tenant_id`),
-  KEY `category_id` (`category_id`),
-  KEY `category_updated` (`category_id`,`updated_at`),
-  CONSTRAINT `forum_topics_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `forum_topics_category_id_fk` FOREIGN KEY (`category_id`) REFERENCES `forum_categories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `forum_topics_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS `forum_posts` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `tenant_id` int unsigned NOT NULL,
-  `topic_id` int unsigned NOT NULL,
-  `user_id` int unsigned NOT NULL,
-  `body` text NOT NULL,
-  `body_format` varchar(20) NOT NULL DEFAULT 'markdown',
-  `is_hidden` tinyint(1) DEFAULT 0,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `tenant_id` (`tenant_id`),
-  KEY `topic_id` (`topic_id`),
-  KEY `topic_created` (`topic_id`,`created_at`),
-  CONSTRAINT `forum_posts_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `forum_posts_topic_id_fk` FOREIGN KEY (`topic_id`) REFERENCES `forum_topics` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `forum_posts_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS `forum_topic_subscriptions` (
-  `user_id` int unsigned NOT NULL,
-  `topic_id` int unsigned NOT NULL,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`user_id`,`topic_id`),
-  CONSTRAINT `forum_topic_subscriptions_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `forum_topic_subscriptions_topic_id_fk` FOREIGN KEY (`topic_id`) REFERENCES `forum_topics` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS `forum_category_subscriptions` (
-  `user_id` int unsigned NOT NULL,
-  `category_id` int unsigned NOT NULL,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`user_id`,`category_id`),
-  CONSTRAINT `forum_category_subscriptions_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `forum_category_subscriptions_category_id_fk` FOREIGN KEY (`category_id`) REFERENCES `forum_categories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS `forum_reports` (
+-- Signalements des membres (fiches, photos, formations, pages d’aide…) et notifications du portail
+CREATE TABLE IF NOT EXISTS `content_reports` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `tenant_id` int unsigned NOT NULL,
   `reporter_id` int unsigned NOT NULL,
-  `post_id` int unsigned DEFAULT NULL,
-  `topic_id` int unsigned DEFAULT NULL,
   `reason` text,
+  `report_type` varchar(32) NOT NULL DEFAULT 'other',
+  `comment` text,
+  `reported_url` varchar(2048) DEFAULT NULL,
   `content_kind` varchar(64) DEFAULT NULL,
   `status` varchar(20) DEFAULT 'pending',
+  `assigned_to` int unsigned DEFAULT NULL,
+  `assigned_at` datetime DEFAULT NULL,
   `handled_by` int unsigned DEFAULT NULL,
   `handled_at` datetime DEFAULT NULL,
+  `last_follow_up_action` varchar(80) DEFAULT NULL,
+  `resolution_note` text,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `tenant_id` (`tenant_id`),
   KEY `status` (`status`),
-  CONSTRAINT `forum_reports_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `forum_reports_reporter_id_fk` FOREIGN KEY (`reporter_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `forum_reports_post_id_fk` FOREIGN KEY (`post_id`) REFERENCES `forum_posts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `forum_reports_topic_id_fk` FOREIGN KEY (`topic_id`) REFERENCES `forum_topics` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `forum_reports_handled_by_fk` FOREIGN KEY (`handled_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `content_reports_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `content_reports_reporter_id_fk` FOREIGN KEY (`reporter_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `content_reports_assigned_to_fk` FOREIGN KEY (`assigned_to`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `content_reports_handled_by_fk` FOREIGN KEY (`handled_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS `forum_read` (
+CREATE TABLE IF NOT EXISTS `content_report_timeline` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `report_id` int unsigned NOT NULL,
+  `actor_user_id` int unsigned DEFAULT NULL,
+  `event_type` varchar(60) NOT NULL,
+  `event_label` varchar(160) NOT NULL,
+  `event_detail` text,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_content_report_timeline_lookup` (`tenant_id`,`report_id`,`id`),
+  KEY `idx_content_report_timeline_actor` (`actor_user_id`),
+  CONSTRAINT `fk_content_report_timeline_report` FOREIGN KEY (`report_id`) REFERENCES `content_reports` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_content_report_timeline_actor` FOREIGN KEY (`actor_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `member_notifications` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
   `user_id` int unsigned NOT NULL,
-  `topic_id` int unsigned NOT NULL,
-  `read_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`user_id`,`topic_id`),
-  CONSTRAINT `forum_read_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `forum_read_topic_id_fk` FOREIGN KEY (`topic_id`) REFERENCES `forum_topics` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  `type` varchar(40) NOT NULL,
+  `payload_json` json DEFAULT NULL,
+  `read_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `tenant_user` (`tenant_id`,`user_id`),
+  KEY `read_at` (`read_at`),
+  CONSTRAINT `member_notifications_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `member_notifications_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Modpacks (par tenant)
@@ -1535,7 +1472,7 @@ CREATE TABLE IF NOT EXISTS `user_ui_tours` (
   CONSTRAINT `user_ui_tours_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Paramètres par tenant (clé/valeur, ex. forum_*)
+-- Paramètres par tenant (clé/valeur)
 CREATE TABLE IF NOT EXISTS `site_settings` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `tenant_id` int unsigned NOT NULL,
@@ -1547,29 +1484,6 @@ CREATE TABLE IF NOT EXISTS `site_settings` (
   UNIQUE KEY `tenant_key` (`tenant_id`,`key`),
   KEY `tenant_id` (`tenant_id`),
   CONSTRAINT `site_settings_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Mots bannis (modération forum)
-CREATE TABLE IF NOT EXISTS `forum_banned_words` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `tenant_id` int unsigned NOT NULL,
-  `word` varchar(255) NOT NULL,
-  `severity` varchar(20) DEFAULT 'block',
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `tenant_id` (`tenant_id`),
-  CONSTRAINT `forum_banned_words_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Domaines blacklistés (liens dans les messages)
-CREATE TABLE IF NOT EXISTS `forum_blacklisted_domains` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `tenant_id` int unsigned NOT NULL,
-  `domain` varchar(255) NOT NULL,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `tenant_id` (`tenant_id`),
-  CONSTRAINT `forum_blacklisted_domains_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Demandes d'élévation (grade / rôle / droits) — machine à états consultable par le demandeur et la cible.

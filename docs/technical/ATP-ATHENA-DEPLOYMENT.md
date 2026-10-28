@@ -59,7 +59,7 @@ A channel is not a second PHP cluster by itself. The same database can hold modu
 | Database | MySQL/MariaDB, `utf8mb4` |
 | Web | Nginx document root `…/public` (`docs/nginx.example.conf`) |
 | TLS | Expected in production (`SESSION_SECURE_COOKIE`) |
-| DNS | Instance host (workflow example `athena.ttrd.fr`) |
+| DNS | Instance host (workflow example `athena-comspec.eu`, legacy `athena.ttrd.fr` still served) |
 | FPM | `php8.4-fpm` reload after deploy |
 
 Nginx example rewrites `/public/…` to `/` so Workshop clients calling `/public` still hit the app. Do not set `APP_BASE_PATH=/public` on that VPS layout.

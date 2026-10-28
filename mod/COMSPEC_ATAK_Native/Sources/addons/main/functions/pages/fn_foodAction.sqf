@@ -38,7 +38,9 @@ switch (_act) do {
     };
     case "cancel": {
         private _o = missionNamespace getVariable ["COMSPEC_ATAK_FoodOrder", createHashMap];
-        if ((_o getOrDefault ["step", ""]) isNotEqualTo "PREP") exitWith { ["WARNING", "Trop tard : le drone est déjà parti", 3, 20] call comspec_atak_native_fnc_notify; };
+        // QUEUED (en attente de réseau) s'annule aussi : le renvoi tardif voit l'étape vide et ne lance rien.
+        if !((_o getOrDefault ["step", ""]) in ["PREP", "QUEUED"]) exitWith { ["WARNING", "Trop tard : le drone est déjà parti", 3, 20] call comspec_atak_native_fnc_notify; };
+        if ((_o getOrDefault ["step", ""]) isEqualTo "QUEUED") then { missionNamespace setVariable ["COMSPEC_ATAK_FoodNextAt", 0]; };
         missionNamespace setVariable ["COMSPEC_ATAK_FoodOrder", createHashMap];
         ["INFO", "Commande annulée", 3, 20] call comspec_atak_native_fnc_notify;
         call _rerender;
@@ -46,15 +48,25 @@ switch (_act) do {
     case "order": {
         if ((count _cart) isEqualTo 0) exitWith {};
         private _o = missionNamespace getVariable ["COMSPEC_ATAK_FoodOrder", createHashMap];
-        if ((_o getOrDefault ["step", ""]) in ["PREP", "FLIGHT"]) exitWith { ["WARNING", "Une commande est déjà en cours", 3, 20] call comspec_atak_native_fnc_notify; };
+        // QUEUED : commande en attente de réseau ; elle ne bloque que pendant le délai de 10 min (pas de verrou éternel sans signal).
+        private _st = _o getOrDefault ["step", ""];
+        if (_st in ["PREP", "FLIGHT"] || {_st isEqualTo "QUEUED" && {time < (missionNamespace getVariable ["COMSPEC_ATAK_FoodNextAt", 0])}}) exitWith { ["WARNING", "Une commande est déjà en cours", 3, 20] call comspec_atak_native_fnc_notify; };
         private _next = missionNamespace getVariable ["COMSPEC_ATAK_FoodNextAt", 0];
         if (time < _next) exitWith { ["WARNING", format ["Prochaine commande possible dans %1 min", ceil ((_next - time) / 60)], 3, 20] call comspec_atak_native_fnc_notify; };
         if ((vehicle player) isNotEqualTo player) exitWith { ["WARNING", "Descendez du véhicule : le drone livre au sol", 3, 20] call comspec_atak_native_fnc_notify; };
         private _items = []; { for "_i" from 1 to _y do { _items pushBack _x; }; } forEach _cart;
         _s set ["foodCart", createHashMap];
         // La commande part par le réseau simulé : sans signal, elle attend.
+        // Verrous posés tout de suite : une commande en attente de réseau en bloque une autre.
+        // Numéro de commande : un renvoi tardif d'une ancienne commande remplacée ne livre pas ses articles périmés.
+        private _oid = format ["%1-%2", floor diag_tickTime, floor random 1e5];
+        missionNamespace setVariable ["COMSPEC_ATAK_FoodOrder", createHashMapFromArray [["step", "QUEUED"], ["items", _items], ["oid", _oid]]];
+        missionNamespace setVariable ["COMSPEC_ATAK_FoodNextAt", time + 600];
         [{
-            params ["_items"];
+            params ["_items", ["_oid", ""]];
+            // Commande en attente remplacée ou déjà lancée entre-temps : ce renvoi tardif ne l'écrase pas.
+            private _cur = missionNamespace getVariable ["COMSPEC_ATAK_FoodOrder", createHashMap];
+            if ((_cur getOrDefault ["step", ""]) isNotEqualTo "QUEUED" || {(_cur getOrDefault ["oid", ""]) isNotEqualTo _oid}) exitWith {};
             private _prep = 30 + random 30;
             private _fly = 60 + random 90;
             missionNamespace setVariable ["COMSPEC_ATAK_FoodOrder", createHashMapFromArray [["step", "PREP"], ["items", _items], ["eta", time + _prep + _fly], ["launch", time + _prep], ["ref", format ["RX-%1", 1000 + floor random 9000]]]];
@@ -62,7 +74,7 @@ switch (_act) do {
             ["SUCCESS", format ["Commande acceptée : livraison dans %1 min environ", ceil ((_prep + _fly) / 60)], 4, 30] call comspec_atak_native_fnc_notify;
             [{ ["launch"] call comspec_atak_native_fnc_foodAction; }, [], _prep] call CBA_fnc_waitAndExecute;
             [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FOOD") then { ["FOOD"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
-        }, [_items], "Commande UberEats", 2] call comspec_atak_native_fnc_netSend;
+        }, [_items, _oid], "Commande UberEats", 2, 1, "food"] call comspec_atak_native_fnc_netSend;
         call _rerender;
     };
     case "launch": {
@@ -78,7 +90,8 @@ switch (_act) do {
         if ((_o getOrDefault ["step", ""]) isNotEqualTo "FLIGHT") exitWith {};
         // Point de largage : à côté du joueur, sur un sol dégagé.
         private _pos = [getPosATL player, 15, 40, 3, 0, 0.4, 0, [], [getPosATL player, getPosATL player]] call BIS_fnc_findSafePos;
-        if ((count _pos) < 2) then { _pos = player getRelPos [20, random 360]; };
+        // Aucun point dégagé trouvé (défaut = position du joueur, ou [0,0,0] / point aberrant) : largage à 20 m, jamais sur le joueur.
+        if ((count _pos) < 2 || {(_pos distance2D player) < 10} || {(_pos distance2D player) > 60}) then { _pos = player getRelPos [20, random 360]; };
         _pos = [_pos select 0, _pos select 1, 0];
         private _box = createVehicle ["Box_NATO_Support_F", [_pos select 0, _pos select 1, 120], [], 0, "CAN_COLLIDE"];
         clearItemCargoGlobal _box; clearMagazineCargoGlobal _box; clearWeaponCargoGlobal _box; clearBackpackCargoGlobal _box;
@@ -93,9 +106,8 @@ switch (_act) do {
             _box setPosATL [_p select 0, _p select 1, 0];
             if (!isNull _chute) then { deleteVehicle _chute; };
             createVehicle ["SmokeShellPurple", getPosATL _box, [], 0, "CAN_COLLIDE"];
-            // Caisse vide ou oubliée : retirée au bout de 20 min.
-            sleep 1200;
-            if (!isNull _box) then { deleteVehicle _box; };
+            // Caisse vide ou oubliée : retirée au bout de 20 min par le serveur, même si le demandeur a quitté la partie.
+            ["comspec_atak_native_deleteLater", [[_box], 1200]] call CBA_fnc_serverEvent;
         };
         _o set ["step", "DONE"];
         _o set ["pos", _pos];

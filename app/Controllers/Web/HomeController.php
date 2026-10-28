@@ -18,7 +18,6 @@ class HomeController
         $platformKpis = [
             'communities_total' => 0,
             'users_active_total' => 0,
-            'forum_posts_in_period' => 0,
             'training_completions_in_period' => 0,
             'enlistments_created_in_period' => 0,
             'usage_events_in_period' => 0,
@@ -30,7 +29,6 @@ class HomeController
             $raw = $analyticsRepo->getPlatformOperationalKpis($days);
             $platformKpis['communities_total'] = (int) ($raw['communities_total'] ?? 0);
             $platformKpis['users_active_total'] = (int) ($raw['users_active_total'] ?? 0);
-            $platformKpis['forum_posts_in_period'] = (int) ($raw['forum_posts_in_period'] ?? 0);
             $platformKpis['training_completions_in_period'] = (int) ($raw['training_completions_in_period'] ?? 0);
             $platformKpis['enlistments_created_in_period'] = (int) ($raw['enlistments_created_in_period'] ?? 0);
             $platformKpis['usage_events_in_period'] = (int) ($raw['usage_events_in_period'] ?? 0);
@@ -38,32 +36,94 @@ class HomeController
             // La home publique doit rester disponible même si les tables analytics ne sont pas prêtes.
         }
 
+        $fieldMetrics = ['phones' => 0, 'play_hours' => 0, 'distance_km' => 0];
+        try {
+            $fieldMetrics = (new \App\Services\Ecosystem\PlatformFieldMetricsService())->totals();
+        } catch (\Throwable) {
+        }
+
         $featuredUnits = [];
         try {
             /** @var \App\Repositories\TenantRepository $tenantRepo */
             $tenantRepo = \App\Core\Container::get(\App\Repositories\TenantRepository::class);
-            foreach ($tenantRepo->listForRegistry() as $row) {
-                $slug = trim((string) ($row['slug'] ?? ''));
-                if ($slug === '') {
-                    continue;
-                }
-                $featuredUnits[] = [
-                    'name' => community_display_name($row),
-                    'slug' => $slug,
-                    'logo_url' => trim((string) ($row['logo_url'] ?? '')),
-                    'href' => url('c/' . rawurlencode($slug)),
-                ];
+            $registry = $tenantRepo->listForRegistry();
+        } catch (\Throwable) {
+            $registry = [];
+        }
+        // Habillage et chiffres des cartes : facultatifs, la carte reste lisible sans eux.
+        $branding = [];
+        try {
+            /** @var \App\Repositories\TenantBrandingRepository $brandingRepo */
+            $brandingRepo = \App\Core\Container::get(\App\Repositories\TenantBrandingRepository::class);
+            $branding = $brandingRepo->listCardBrandingByTenant();
+        } catch (\Throwable) {
+        }
+        $stats = [];
+        try {
+            /** @var \App\Services\Ecosystem\CommunityStatsService $statsService */
+            $statsService = \App\Core\Container::get(\App\Services\Ecosystem\CommunityStatsService::class);
+            foreach ($statsService->all() as $s) {
+                $stats[(string) $s['slug']] = $s;
             }
         } catch (\Throwable) {
-            $featuredUnits = [];
+        }
+        foreach ($registry as $row) {
+            $slug = trim((string) ($row['slug'] ?? ''));
+            if ($slug === '') {
+                continue;
+            }
+            $brand = $branding[(int) ($row['id'] ?? 0)] ?? [];
+            $logo = trim((string) ($brand['logo_url'] ?? ''));
+            if ($logo === '') {
+                $logo = trim((string) ($row['logo_url'] ?? ''));
+            }
+            $s = $stats[$slug] ?? [];
+            $featuredUnits[] = [
+                'name' => community_display_name($row),
+                'slug' => $slug,
+                'logo_url' => $logo,
+                'banner_url' => self::cardBanner($slug, (string) ($brand['banner_url'] ?? '')),
+                'accent' => self::cardColor((string) ($brand['accent_color'] ?? '')) ?? self::cardColor((string) ($brand['primary_color'] ?? '')),
+                'href' => url('c/' . rawurlencode($slug)),
+                'tagline' => trim((string) ($row['registry_tagline'] ?? '')),
+                'game' => trim((string) ($row['game_label'] ?? '')),
+                'locale_label' => trim((string) ($row['registry_locale_label'] ?? '')),
+                'affiliation' => trim((string) ($row['registry_unit_affiliation_label'] ?? '')),
+                'featured' => !empty($row['registry_featured']),
+                'recruitment_open' => !empty($row['registry_recruitment_open']) && empty($row['registry_locked']),
+                'members' => (int) ($s['members'] ?? 0),
+                'units' => (int) ($s['units'] ?? 0),
+                'ops_per_month' => (float) ($s['ops_per_month'] ?? 0),
+            ];
         }
 
         return Response::view('home.index', [
             'title' => 'Athena Comspec — Portail MILSIM',
             'platformKpis' => $platformKpis,
             'platformKpiDays' => $days,
+            'fieldMetrics' => $fieldMetrics,
             'featuredUnits' => $featuredUnits,
         ]);
+    }
+
+    /** Bannière de carte : celle de la marque, sinon la couverture déposée dans assets/img/communities. */
+    private static function cardBanner(string $slug, string $banner): string
+    {
+        $banner = trim($banner);
+        if ($banner !== '' && (preg_match('#^https?://#i', $banner) === 1 || str_starts_with($banner, '/'))) {
+            return $banner;
+        }
+        $rel = 'assets/img/communities/' . $slug . '-cover.jpg';
+
+        return is_file(base_path('public/' . $rel)) ? (string) url($rel) : '';
+    }
+
+    /** Couleur de marque utilisable en CSS (#rgb ou #rrggbb), sinon null. */
+    private static function cardColor(string $color): ?string
+    {
+        $color = trim($color);
+
+        return preg_match('/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i', $color) === 1 ? strtolower($color) : null;
     }
 
     /** Page d’information sur les offres (fondateurs, essai Pro, Stripe). */
@@ -117,8 +177,8 @@ class HomeController
                 $usage->record((int) $tenantId, $uid, 'dashboard_visit', 'view');
             } catch (\Throwable) {
             }
-            $modpackRepo = \App\Core\Container::get(\App\Repositories\ModpackRepository::class);
-            $modpack = $modpackRepo->getPrimaryForTenant((int) $tenantId);
+            // Mods servis par le Steam Workshop (plus de modpack hébergé par le site).
+            $modpack = \App\Support\SteamWorkshop::modset((int) $tenantId);
             $auth = \App\Core\Container::get(\App\Services\Auth\AuthService::class);
             $currentUser = $auth->user();
             if ($currentUser) {
@@ -144,7 +204,8 @@ class HomeController
                         }
                     }
                     $end = $decoded['founder_trial_ends_at'] ?? null;
-                    if ($owner && ! $paid && is_string($end) && $end !== '') {
+                    $gifted = \App\Support\PlanGift::activeFromSettings($decoded) !== null;
+                    if ($owner && ! $paid && ! $gifted && is_string($end) && $end !== '') {
                         $ts = strtotime($end);
                         if ($ts !== false && $ts > time()) {
                             $founderTrialEndsAt = $end;
@@ -153,10 +214,8 @@ class HomeController
                     }
                 }
             }
-            $modPath = dirname(__DIR__, 2) . '/../storage/atak-mod/' . $tenantId . '/comspec-overwatch.zip';
-            if (is_file($modPath) && is_readable($modPath)) {
-                $atakModDownloadUrl = url('atak/mod');
-            }
+            // Mod distribué par le Steam Workshop : la page d'installation est toujours disponible.
+            $atakModDownloadUrl = url('atak/mod');
         }
 
         $dashboardTenantLabel = null;
@@ -172,7 +231,6 @@ class HomeController
         $dashboardAnnounceItems = [];
         $dashboardPopupItems = [];
         $dashboardMiniArticles = [];
-        $followedChannels = [];
         $missionBriefing = null;
         $dashboardTesterProgram = null;
         $candidateEnlistmentTracking = [];
@@ -221,7 +279,6 @@ class HomeController
             }
             $allowsTraining = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'training');
             $allowsRecruitment = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'recruitment');
-            $allowsForum = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'forum');
             $allowsPersonnel = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'personnel');
             $allowsAtak = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'atak');
 
@@ -259,21 +316,41 @@ class HomeController
                 $enlistRepo = \App\Core\Container::get(\App\Repositories\EnlistmentRepository::class);
                 if ($allowsRecruitment) {
                     $myEnlistmentsPending = $enlistRepo->listPendingSubmittedForSubmitter($tid, $uid, $uemail);
+
+                    // Une seule lecture des candidatures (limite 20) : les 8 premières alimentent le suivi candidat,
+                    // les jetons de suivi sont chargés en une requête et mémoïsés pour les deux blocs.
+                    try {
+                        $myApplicationsRows = $enlistRepo->listRecentForSubmitterAcrossTenants($uid, $uemail, 20);
+                    } catch (\Throwable) {
+                        $myApplicationsRows = [];
+                    }
+                    try {
+                        $candidatePortalTokens = $enlistRepo->findValidCandidatePortalTokensForEnlistments(array_map(
+                            static fn (array $r): array => [(int) ($r['tenant_id'] ?? 0), (int) ($r['id'] ?? 0)],
+                            $myApplicationsRows
+                        ));
+                    } catch (\Throwable) {
+                        $candidatePortalTokens = [];
+                    }
+                    $candidatePortalHref = static function (int $rowTid, int $rowId) use ($enlistRepo, &$candidatePortalTokens): ?string {
+                        $key = $rowTid . ':' . $rowId;
+                        if (!array_key_exists($key, $candidatePortalTokens)) {
+                            $candidatePortalTokens[$key] = $enlistRepo->ensureCandidatePortalToken($rowTid, $rowId, 24 * 7);
+                        }
+                        $token = $candidatePortalTokens[$key];
+
+                        return $token !== null ? url('enlistment/suivi/' . rawurlencode($token)) : null;
+                    };
+
                     if ($dashboardIsDefaultTenant) {
-                        $candidateRows = $enlistRepo->listRecentForSubmitterAcrossTenants($uid, $uemail, 8);
+                        $candidateRows = array_slice($myApplicationsRows, 0, 8);
                         foreach ($candidateRows as $row) {
                             $candidateTid = (int) ($row['tenant_id'] ?? 0);
                             $candidateId = (int) ($row['id'] ?? 0);
                             if ($candidateTid < 1 || $candidateId < 1) {
                                 continue;
                             }
-                            $token = $enlistRepo->findValidCandidatePortalTokenForEnlistment($candidateTid, $candidateId);
-                            if ($token === null) {
-                                $token = $enlistRepo->ensureCandidatePortalToken($candidateTid, $candidateId, 24 * 7);
-                            }
-                            $row['candidate_portal_href'] = $token !== null
-                                ? url('enlistment/suivi/' . rawurlencode($token))
-                                : null;
+                            $row['candidate_portal_href'] = $candidatePortalHref($candidateTid, $candidateId);
                             $candidateEnlistmentTracking[] = $row;
                         }
                     }
@@ -282,31 +359,30 @@ class HomeController
                     try {
                         $openingRepoForMine = \App\Core\Container::get(\App\Repositories\RecruitmentOpeningRepository::class);
                         $openingsTableReady = $openingRepoForMine->tablesExist();
-                        $myApplicationsRows = $enlistRepo->listRecentForSubmitterAcrossTenants($uid, $uemail, 20);
+                        $openingTitles = [];
                         foreach ($myApplicationsRows as $row) {
                             $appTid = (int) ($row['tenant_id'] ?? 0);
                             $appId = (int) ($row['id'] ?? 0);
                             if ($appTid < 1 || $appId < 1) {
                                 continue;
                             }
-                            $appToken = $enlistRepo->findValidCandidatePortalTokenForEnlistment($appTid, $appId);
-                            if ($appToken === null) {
-                                $appToken = $enlistRepo->ensureCandidatePortalToken($appTid, $appId, 24 * 7);
-                            }
-                            $row['candidate_portal_href'] = $appToken !== null
-                                ? url('enlistment/suivi/' . rawurlencode($appToken))
-                                : null;
+                            $row['candidate_portal_href'] = $candidatePortalHref($appTid, $appId);
                             $row['opening_title'] = null;
                             $openingId = (int) ($row['recruitment_opening_id'] ?? 0);
                             if ($openingId > 0 && $openingsTableReady) {
-                                try {
-                                    $openingRow = $openingRepoForMine->findByIdForTenant($openingId, $appTid);
-                                    if ($openingRow) {
-                                        $row['opening_title'] = trim((string) ($openingRow['title'] ?? '')) ?: null;
+                                // Ouvertures mémoïsées : plusieurs candidatures pointent souvent la même.
+                                $openingKey = $appTid . ':' . $openingId;
+                                if (!array_key_exists($openingKey, $openingTitles)) {
+                                    try {
+                                        $openingRow = $openingRepoForMine->findByIdForTenant($openingId, $appTid);
+                                        $openingTitles[$openingKey] = $openingRow
+                                            ? (trim((string) ($openingRow['title'] ?? '')) ?: null)
+                                            : null;
+                                    } catch (\Throwable) {
+                                        $openingTitles[$openingKey] = null;
                                     }
-                                } catch (\Throwable) {
-                                    $row['opening_title'] = null;
                                 }
+                                $row['opening_title'] = $openingTitles[$openingKey];
                             }
                             $myApplicationsAll[] = $row;
                         }
@@ -547,28 +623,6 @@ class HomeController
                     $dashboardPins = [];
                 }
 
-                if ($allowsForum) {
-                    try {
-                        $followedChannelsRows = \App\Core\Container::get(\App\Repositories\ForumCategoryRepository::class)
-                            ->listSubscribedForUser($uid, $tid);
-                        foreach ($followedChannelsRows as $fc) {
-                            $lastTopicId = (int) ($fc['last_topic_id'] ?? 0);
-                            $followedChannels[] = [
-                                'name' => (string) ($fc['name'] ?? ''),
-                                'slug' => (string) ($fc['slug'] ?? ''),
-                                'href' => url('forum/category/' . rawurlencode((string) ($fc['slug'] ?? ''))),
-                                'icon' => (string) ($fc['icon'] ?? ''),
-                                'unread_count' => (int) ($fc['unread_count'] ?? 0),
-                                'last_topic_title' => trim((string) ($fc['last_topic_title'] ?? '')),
-                                'last_topic_href' => $lastTopicId > 0 ? url('forum/topic/' . $lastTopicId) : null,
-                                'last_activity_at' => $fc['last_activity_at'] ?? null,
-                            ];
-                        }
-                    } catch (\Throwable) {
-                        $followedChannels = [];
-                    }
-                }
-
                 try {
                     $alertRows = \App\Core\Container::get(\App\Services\Alerts\AlertPresentationService::class)
                         ->forCurrentRequest();
@@ -625,34 +679,6 @@ class HomeController
                         'cta_label' => null,
                         'cta_url' => null,
                     ];
-                }
-
-                if ($allowsForum) {
-                    try {
-                        /** @var \App\Repositories\ForumTopicRepository $forumTopicRepo */
-                        $forumTopicRepo = \App\Core\Container::get(\App\Repositories\ForumTopicRepository::class);
-                        $forumDashPins = $forumTopicRepo->listPinnedOnDashboardForTenant($tid, 8);
-                        foreach ($forumDashPins as $ftPin) {
-                            $title = trim((string) ($ftPin['title'] ?? ''));
-                            if ($title === '') {
-                                continue;
-                            }
-                            $rawBody = trim((string) ($ftPin['first_post_body'] ?? ''));
-                            $excerpt = self::plainTextExcerpt($rawBody, 220);
-                            $topicId = (int) ($ftPin['id'] ?? 0);
-                            $dashboardAnnounceItems[] = [
-                                'kind' => 'forum_pin',
-                                'category' => 'Message épinglé',
-                                'title' => $title,
-                                'body' => $excerpt,
-                                'cta_label' => 'Ouvrir le message',
-                                'cta_url' => $topicId > 0 ? url('forum/topic/' . $topicId) : null,
-                                'scope' => 'tenant',
-                            ];
-                        }
-                    } catch (\Throwable) {
-                        // Optionnel si le schéma forum n’est pas prêt.
-                    }
                 }
 
                 if ($showcaseTrainingFeature && $showcaseItems !== []) {
@@ -753,10 +779,10 @@ class HomeController
 
                 if ($gate->allows('documents.view') || $gate->allows('doctrine.view')) {
                     try {
-                        $doctrinePending = \App\Core\Container::get(\App\Services\Doctrine\DocumentComplianceService::class)
-                            ->listPendingActionsForUser($tid, $uid, 6);
+                        // Une seule passe : dashboardSummary() fournit déjà les actions en attente (mêmes 6 éléments).
                         $documentInboxSummary = \App\Core\Container::get(\App\Services\Doctrine\DocumentInboxService::class)
                             ->dashboardSummary($tid, $uid, 6);
+                        $doctrinePending = $documentInboxSummary['items'];
                     } catch (\Throwable) {
                         $doctrinePending = [];
                         $documentInboxSummary = ['mandatory' => 0, 'overdue' => 0, 'to_read' => 0, 'items' => []];
@@ -811,6 +837,27 @@ class HomeController
             );
         }
 
+        // Compte simple : choix « utiliser Athena seul » (sans organisation) et proposition au fondateur resté seul.
+        $accountIsSolo = false;
+        $simpleAccountOffer = null;
+        $soloOverview = null;
+        if ($tenantId && $currentUser) {
+            try {
+                $usage = \App\Core\Container::get(\App\Services\Account\AccountUsageService::class);
+                $usageUid = (int) Session::get('user_id');
+                if ($dashboardIsDefaultTenant) {
+                    $accountIsSolo = $usage->isSolo($usageUid);
+                    if ($accountIsSolo) {
+                        $soloOverview = (new \App\Services\Account\SoloAccountOverviewService())->forUser($usageUid);
+                    }
+                } else {
+                    $simpleAccountOffer = $usage->singleMemberOffer($usageUid, (int) $tenantId);
+                }
+            } catch (\Throwable) {
+                // Optionnel : colonne users.account_mode absente tant que la migration n’a pas tourné.
+            }
+        }
+
         return Response::view(\App\Services\Community\TenantTypeConfig::dashboardView($dashboardTenantType), [
             'title' => match ($dashboardTenantType) {
                 \App\Services\Community\TenantTypeConfig::TYPE_ATAK => 'Carte ATAK — Athena',
@@ -828,6 +875,9 @@ class HomeController
             'show_founder_trial_banner' => $showFounderTrialBanner,
             'dashboard_tenant_label' => $dashboardTenantLabel,
             'dashboard_is_default_tenant' => $dashboardIsDefaultTenant,
+            'account_is_solo' => $accountIsSolo,
+            'simple_account_offer' => $simpleAccountOffer,
+            'solo_overview' => $soloOverview,
             'dashboard_tenant_type' => $dashboardTenantType,
             'showcase_training_feature' => $showcaseTrainingFeature,
             'showcase_items' => $showcaseItems,
@@ -840,7 +890,6 @@ class HomeController
             'dashboard_pins' => $dashboardPins,
             'dashboard_announce_items' => $dashboardAnnounceItems,
             'dashboard_popup_items' => $dashboardPopupItems,
-            'followed_channels' => $followedChannels,
             'mission_briefing' => $missionBriefing,
             'dashboard_tester_program' => $dashboardTesterProgram,
             'dashboard_next_steps' => $dashboardNextSteps,
@@ -882,32 +931,6 @@ class HomeController
     }
 
     /**
-     * Extrait texte brut pour tuiles dashboard (messages forum épinglés).
-     */
-    private static function plainTextExcerpt(string $raw, int $maxLen = 220): string
-    {
-        $text = trim(strip_tags($raw));
-        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $text = preg_replace('/\s+/u', ' ', $text) ?? $text;
-        $text = trim($text);
-        if ($text === '') {
-            return '';
-        }
-        if (function_exists('mb_strlen') && function_exists('mb_substr')) {
-            if (mb_strlen($text) > $maxLen) {
-                return rtrim(mb_substr($text, 0, $maxLen - 1)) . '…';
-            }
-
-            return $text;
-        }
-        if (strlen($text) > $maxLen) {
-            return rtrim(substr($text, 0, $maxLen - 1)) . '…';
-        }
-
-        return $text;
-    }
-
-    /**
      * @param array<string, mixed>|null $currentUser
      * @return array{enabled: bool, key: string, dismissed: bool, csrf: string, save_url: string}
      */
@@ -936,8 +959,7 @@ class HomeController
 
     /**
      * Enrichit les candidatures « tableau de bord staff » avec les mêmes signaux que le bureau
-     * recrutement (délai/alerte, instructeur, affectation prévue, bilan) — sans rien inventer :
-     * uniquement des données déjà présentes en base ou déjà calculées côté back-office.
+     * recrutement (étape, délai, instructeur, affectation, bilan 30 jours) : un seul calcul partagé.
      *
      * @param list<array<string, mixed>> $rows
      * @return list<array<string, mixed>>
@@ -956,193 +978,7 @@ class HomeController
             $slaHours = 72;
         }
 
-        $reviewerIds = [];
-        $openingIds = [];
-        $enlistmentIds = [];
-        foreach ($rows as $r) {
-            $rid = (int) ($r['reviewed_by'] ?? 0);
-            if ($rid > 0) {
-                $reviewerIds[$rid] = $rid;
-            }
-            $oid = (int) ($r['recruitment_opening_id'] ?? 0);
-            if ($oid > 0) {
-                $openingIds[$oid] = $oid;
-            }
-            $eid = (int) ($r['id'] ?? 0);
-            if ($eid > 0) {
-                $enlistmentIds[] = $eid;
-            }
-        }
-
-        $reviewerUsers = [];
-        try {
-            if ($reviewerIds !== []) {
-                $reviewerUsers = \App\Core\Container::get(\App\Repositories\UserRepository::class)
-                    ->findByIdsForTenant($tenantId, array_values($reviewerIds));
-            }
-        } catch (\Throwable) {
-            $reviewerUsers = [];
-        }
-
-        $openingsById = [];
-        $jobRoleLabels = [];
-        try {
-            $openingRepo = \App\Core\Container::get(\App\Repositories\RecruitmentOpeningRepository::class);
-            if ($openingIds !== [] && $openingRepo->tablesExist()) {
-                $jobRoleRepo = new \App\Repositories\PersonnelJobRoleRepository();
-                foreach ($openingIds as $oid) {
-                    $orow = $openingRepo->findByIdForTenant((int) $oid, $tenantId);
-                    if (!$orow) {
-                        continue;
-                    }
-                    $openingsById[(int) $oid] = $orow;
-                    $jrid = (int) ($orow['personnel_job_role_id'] ?? 0);
-                    if ($jrid > 0 && !isset($jobRoleLabels[$jrid])) {
-                        $jr = $jobRoleRepo->findRoleById($jrid, $tenantId);
-                        $lab = trim((string) (($jr ?? [])['name'] ?? ''));
-                        if ($lab === '') {
-                            $lab = trim((string) (($jr ?? [])['title'] ?? ''));
-                        }
-                        $jobRoleLabels[$jrid] = $lab;
-                    }
-                }
-            }
-        } catch (\Throwable) {
-            $openingsById = [];
-            $jobRoleLabels = [];
-        }
-
-        $staffRetroDoneMap = [];
-        $retroTableReady = false;
-        try {
-            $engagementRepo = \App\Core\Container::get(\App\Repositories\EnlistmentRecruitmentEngagementRepository::class);
-            $retroTableReady = $engagementRepo->retroTableExists();
-            if ($retroTableReady && $enlistmentIds !== []) {
-                $staffRetroDoneMap = $engagementRepo->mapStaffRetroDoneIds($tenantId, $enlistmentIds);
-            }
-        } catch (\Throwable) {
-            $staffRetroDoneMap = [];
-            $retroTableReady = false;
-        }
-
-        foreach ($rows as &$row) {
-            $isSubmitted = ((string) ($row['status'] ?? '')) === 'submitted';
-            $ageHours = self::enlistmentSubmittedAgeHours($row);
-            $row['submitted_age_hours'] = $ageHours;
-            $row['submitted_sla_breached'] = $isSubmitted && $ageHours !== null && $ageHours > $slaHours;
-            $row['enlistment_sla_hours'] = $slaHours;
-
-            $lastAction = trim((string) ($row['updated_at'] ?? ''));
-            if ($lastAction === '') {
-                $lastAction = trim((string) ($row['created_at'] ?? ''));
-            }
-            $row['last_action_at'] = $lastAction !== '' ? $lastAction : null;
-
-            $ageDays = self::enlistmentAgeDaysFromRow($row);
-            $row['enlistment_age_days'] = $ageDays;
-
-            $eid = (int) ($row['id'] ?? 0);
-            $doneAt = $eid > 0 && array_key_exists($eid, $staffRetroDoneMap)
-                ? trim((string) $staffRetroDoneMap[$eid])
-                : null;
-            $row['staff_retro_done_at'] = $doneAt !== null && $doneAt !== '' ? $doneAt : null;
-            $statusForRetro = (string) ($row['status'] ?? '');
-            if ($doneAt !== null) {
-                $row['staff_retro_status'] = 'done';
-            } elseif (\App\Repositories\EnlistmentRecruitmentEngagementRepository::isRetroExcludedStatus($statusForRetro)) {
-                $row['staff_retro_status'] = 'not_applicable';
-            } elseif (!$retroTableReady) {
-                $row['staff_retro_status'] = 'unavailable';
-            } elseif ($ageDays !== null && $ageDays >= 30) {
-                $row['staff_retro_status'] = 'due';
-            } else {
-                $row['staff_retro_status'] = 'waiting';
-            }
-
-            $reviewedById = (int) ($row['reviewed_by'] ?? 0);
-            $row['instructor_user_id'] = $reviewedById > 0 ? $reviewedById : null;
-            $row['instructor_label'] = $reviewedById > 0
-                ? self::displayLabelForTenantUserRow($reviewerUsers[$reviewedById] ?? null, $reviewedById)
-                : '';
-
-            $oid = (int) ($row['recruitment_opening_id'] ?? 0);
-            $opening = $oid > 0 ? ($openingsById[$oid] ?? null) : null;
-            $unitLabel = $opening ? trim((string) ($opening['unit_name'] ?? '')) : '';
-            $jrid = $opening ? (int) ($opening['personnel_job_role_id'] ?? 0) : 0;
-            $roleLabel = $jrid > 0 ? trim((string) ($jobRoleLabels[$jrid] ?? '')) : '';
-            if ($roleLabel === '') {
-                $roleLabel = trim((string) ($row['specialty'] ?? ''));
-            }
-            $row['assignment_unit_label'] = $unitLabel;
-            $row['assignment_role_label'] = $roleLabel;
-            $row['assignment_opening_title'] = $opening ? trim((string) ($opening['title'] ?? '')) : '';
-            $row['assignment_define_url'] = url('back-office/recruitments/' . $eid . '?dossier=1#coordination-dossier');
-        }
-        unset($row);
-
-        return $rows;
-    }
-
-    private static function enlistmentSubmittedAgeHours(array $enlistment): ?int
-    {
-        $base = trim((string) ($enlistment['updated_at'] ?? ''));
-        if ($base === '') {
-            $base = trim((string) ($enlistment['created_at'] ?? ''));
-        }
-        if ($base === '') {
-            return null;
-        }
-        $ts = strtotime($base);
-        if ($ts === false || $ts <= 0) {
-            return null;
-        }
-        $delta = time() - $ts;
-        if ($delta < 0) {
-            return 0;
-        }
-
-        return (int) floor($delta / 3600);
-    }
-
-    private static function enlistmentAgeDaysFromRow(array $enlistment): ?int
-    {
-        $base = trim((string) ($enlistment['created_at'] ?? ''));
-        if ($base === '') {
-            return null;
-        }
-        $ts = strtotime($base);
-        if ($ts === false || $ts <= 0) {
-            return null;
-        }
-        try {
-            $start = (new \DateTimeImmutable('@' . $ts))->setTimezone(new \DateTimeZone(date_default_timezone_get()));
-            $end = new \DateTimeImmutable('now');
-            $startDay = $start->setTime(0, 0, 0);
-            $endDay = $end->setTime(0, 0, 0);
-
-            return max(0, (int) $startDay->diff($endDay)->days);
-        } catch (\Throwable) {
-            return max(0, (int) floor((time() - $ts) / 86400));
-        }
-    }
-
-    private static function displayLabelForTenantUserRow(?array $urow, int $userId): string
-    {
-        if ($userId < 1) {
-            return '';
-        }
-        if (!is_array($urow)) {
-            return 'Membre n°' . $userId;
-        }
-        $lab = trim((string) ($urow['display_name'] ?? ''));
-        if ($lab === '') {
-            $lab = trim((string) ($urow['callsign'] ?? ''));
-        }
-        if ($lab === '') {
-            $lab = trim((string) ($urow['email'] ?? ''));
-        }
-
-        return $lab !== '' ? $lab : ('Membre n°' . $userId);
+        return (new \App\Services\Recruitment\EnlistmentStaffRowEnricher())->enrich($tenantId, $rows, $slaHours);
     }
 
     /**
@@ -1392,9 +1228,15 @@ class HomeController
         }
         $repo = \App\Core\Container::get(\App\Repositories\ArsenalWardrobeRepository::class);
         $kindLabels = \App\Support\ArsenalLoadoutItems::kindLabels();
-        foreach (array_slice(array_keys($kits), 0, 16) as $i) {
+        $keys = array_slice(array_keys($kits), 0, 16);
+        // Tenues chargées en une requête (au lieu d’un findWardrobe par tenue).
+        $wardrobes = $repo->findWardrobesByIds($tenantId, array_map(
+            static fn ($i): int => (int) ($kits[$i]['wardrobe_id'] ?? 0),
+            $keys
+        ));
+        foreach ($keys as $i) {
             $kits[$i] += ['item_count' => 0, 'kinds' => [], 'primary_weapon' => '', 'sections' => []];
-            $row = $repo->findWardrobe($tenantId, (int) ($kits[$i]['wardrobe_id'] ?? 0));
+            $row = $wardrobes[(int) ($kits[$i]['wardrobe_id'] ?? 0)] ?? null;
             if ($row === null) {
                 continue;
             }

@@ -37,6 +37,14 @@ class TenantAnalyticsRepository
         return $st && (bool) $st->fetchColumn();
     }
 
+    /**
+     * Prédicat « membre actif de la communauté » partagé avec l’annuaire du personnel.
+     */
+    private function memberOfTenantPredicate(string $alias, int $tenantId): string
+    {
+        return (new UserRepository($this->pdo))->sqlMemberOfTenantPredicate($alias, $tenantId);
+    }
+
     private function hasTable(string $table): bool
     {
         $st = $this->pdo->query('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ' . $this->pdo->quote($table) . ' LIMIT 1');
@@ -428,8 +436,6 @@ class TenantAnalyticsRepository
      *   users_registered_in_period: int,
      *   audit_actions_in_period: int,
      *   enlistments_created_in_period: int,
-     *   forum_topics_in_period: int,
-     *   forum_posts_in_period: int,
      *   training_enrollments_assigned_in_period: int,
      *   training_completions_in_period: int,
      *   usage_events_in_period: int,
@@ -447,8 +453,6 @@ class TenantAnalyticsRepository
             'users_registered_in_period' => 0,
             'audit_actions_in_period' => 0,
             'enlistments_created_in_period' => 0,
-            'forum_topics_in_period' => 0,
-            'forum_posts_in_period' => 0,
             'training_enrollments_assigned_in_period' => 0,
             'training_completions_in_period' => 0,
             'usage_events_in_period' => 0,
@@ -491,16 +495,6 @@ class TenantAnalyticsRepository
             $st = $this->pdo->prepare('SELECT COUNT(*) FROM enlistments WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)');
             $st->execute([$days]);
             $empty['enlistments_created_in_period'] = (int) $st->fetchColumn();
-        }
-        if ($this->hasTable('forum_topics')) {
-            $st = $this->pdo->prepare('SELECT COUNT(*) FROM forum_topics WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)');
-            $st->execute([$days]);
-            $empty['forum_topics_in_period'] = (int) $st->fetchColumn();
-        }
-        if ($this->hasTable('forum_posts')) {
-            $st = $this->pdo->prepare('SELECT COUNT(*) FROM forum_posts WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)');
-            $st->execute([$days]);
-            $empty['forum_posts_in_period'] = (int) $st->fetchColumn();
         }
         if ($this->hasTable('training_enrollments')) {
             $st = $this->pdo->prepare('SELECT COUNT(*) FROM training_enrollments WHERE assigned_at >= DATE_SUB(NOW(), INTERVAL ? DAY)');
@@ -646,6 +640,7 @@ class TenantAnalyticsRepository
      * @return array{
      *   total_events: int,
      *   distinct_actors: int,
+     *   external_actors: int,
      *   events_with_duration: int,
      *   avg_duration_seconds: ?float
      * }
@@ -655,6 +650,7 @@ class TenantAnalyticsRepository
         $empty = [
             'total_events' => 0,
             'distinct_actors' => 0,
+            'external_actors' => 0,
             'events_with_duration' => 0,
             'avg_duration_seconds' => null,
         ];
@@ -679,10 +675,21 @@ class TenantAnalyticsRepository
              WHERE tenant_id = ? AND created_at >= ? AND actor_user_id IS NOT NULL'
         );
         $st->execute([$tenantId, $sinceIso]);
-        $row = $st->fetch(PDO::FETCH_ASSOC);
-        if (is_array($row)) {
-            $empty['distinct_actors'] = (int) ($row['distinct_actors'] ?? 0);
+        $allActors = (int) $st->fetchColumn();
+        $empty['distinct_actors'] = $allActors;
+        if ($this->hasTable('users')) {
+            // Membres de la communauté uniquement ; les comptes d’autres communautés restent anonymes (compteur seul).
+            $st = $this->pdo->prepare(
+                'SELECT COUNT(DISTINCT e.actor_user_id)
+                 FROM usage_analytics_events e
+                 INNER JOIN users u ON u.id = e.actor_user_id
+                 WHERE e.tenant_id = ? AND e.created_at >= ? AND e.actor_user_id IS NOT NULL
+                   AND ' . $this->memberOfTenantPredicate('u', $tenantId)
+            );
+            $st->execute([$tenantId, $sinceIso]);
+            $empty['distinct_actors'] = (int) $st->fetchColumn();
         }
+        $empty['external_actors'] = max(0, $allActors - $empty['distinct_actors']);
 
         $st = $this->pdo->prepare(
             'SELECT COUNT(*) AS cnt, ROUND(AVG(NULLIF(duration_seconds, 0))) AS avg_d
@@ -796,10 +803,13 @@ class TenantAnalyticsRepository
         }
         $limit = max(1, min(50, $limit));
         $actorExpr = 'COALESCE(NULLIF(TRIM(u.display_name), \'\'), NULLIF(TRIM(u.callsign), \'\'), u.email, CONCAT(\'#\', e.actor_user_id))';
+        // Seuls les membres de la communauté sont nommés : un joueur connecté d’une autre communauté
+        // qui consulte la fiche publique produit un événement de ce tenant, mais son identité ne le regarde pas.
         $sql = 'SELECT ' . $actorExpr . ' AS actor_label, COUNT(*) AS cnt
                 FROM usage_analytics_events e
-                LEFT JOIN users u ON u.id = e.actor_user_id
+                INNER JOIN users u ON u.id = e.actor_user_id
                 WHERE e.tenant_id = ? AND e.created_at >= ? AND e.actor_user_id IS NOT NULL
+                  AND ' . $this->memberOfTenantPredicate('u', $tenantId) . '
                 GROUP BY e.actor_user_id, ' . $actorExpr . '
                 ORDER BY cnt DESC, actor_label ASC
                 LIMIT ' . $limit;
@@ -866,8 +876,6 @@ class TenantAnalyticsRepository
      *   members_registered_in_period: int,
      *   audit_actions_in_period: int,
      *   enlistments_created_in_period: int,
-     *   forum_topics_in_period: int,
-     *   forum_posts_in_period: int,
      *   training_enrollments_assigned_in_period: int,
      *   training_completions_in_period: int
      * }
@@ -879,8 +887,6 @@ class TenantAnalyticsRepository
             'members_registered_in_period' => 0,
             'audit_actions_in_period' => 0,
             'enlistments_created_in_period' => 0,
-            'forum_topics_in_period' => 0,
-            'forum_posts_in_period' => 0,
             'training_enrollments_assigned_in_period' => 0,
             'training_completions_in_period' => 0,
         ];
@@ -915,16 +921,6 @@ class TenantAnalyticsRepository
             $st = $this->pdo->prepare('SELECT COUNT(*) FROM enlistments WHERE tenant_id = ? AND created_at >= ?');
             $st->execute([$tenantId, $sinceIso]);
             $empty['enlistments_created_in_period'] = (int) $st->fetchColumn();
-        }
-        if ($this->hasTable('forum_topics')) {
-            $st = $this->pdo->prepare('SELECT COUNT(*) FROM forum_topics WHERE tenant_id = ? AND created_at >= ?');
-            $st->execute([$tenantId, $sinceIso]);
-            $empty['forum_topics_in_period'] = (int) $st->fetchColumn();
-        }
-        if ($this->hasTable('forum_posts')) {
-            $st = $this->pdo->prepare('SELECT COUNT(*) FROM forum_posts WHERE tenant_id = ? AND created_at >= ?');
-            $st->execute([$tenantId, $sinceIso]);
-            $empty['forum_posts_in_period'] = (int) $st->fetchColumn();
         }
         if ($this->hasTable('training_enrollments')) {
             $st = $this->pdo->prepare('SELECT COUNT(*) FROM training_enrollments WHERE tenant_id = ? AND assigned_at >= ?');
@@ -968,7 +964,6 @@ class TenantAnalyticsRepository
 
         return $out;
     }
-
 
     /**
      * @return array{
@@ -1066,5 +1061,4 @@ class TenantAnalyticsRepository
 
         return $empty;
     }
-
 }

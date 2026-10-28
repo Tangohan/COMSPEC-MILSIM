@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Cooperation;
 
 use App\Repositories\CooperationAnnouncementTemplateRepository;
-use App\Repositories\CooperationForumAnnouncementLogRepository;
-use App\Repositories\ForumNotificationRepository;
-use App\Repositories\ForumPostRepository;
-use App\Repositories\ForumTopicRepository;
+use App\Repositories\MemberNotificationRepository;
 use App\Repositories\InterteamMissionRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
@@ -17,7 +14,7 @@ use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 
 /**
- * Applique les gabarits d’annonces coopération (courriel, portail, forum) après une action métier.
+ * Applique les gabarits d’annonces coopération (courriel, portail) après une action métier.
  */
 final class CooperationAnnouncementDispatcher
 {
@@ -40,10 +37,7 @@ final class CooperationAnnouncementDispatcher
         private UserRepository $userRepository,
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
         private EmailService $emailService,
-        private ForumNotificationRepository $forumNotificationRepository,
-        private ForumPostRepository $forumPostRepository,
-        private ForumTopicRepository $forumTopicRepository,
-        private CooperationForumAnnouncementLogRepository $forumAnnouncementLogRepository
+        private MemberNotificationRepository $memberNotificationRepository,
     ) {}
 
     /**
@@ -63,7 +57,7 @@ final class CooperationAnnouncementDispatcher
             return;
         }
         $vars = $this->buildVars($mission, $actorUserId, $actorTenantId, $extra + ['__event' => $eventKey]);
-        foreach (['email', 'in_app', 'forum'] as $channel) {
+        foreach (['email', 'in_app'] as $channel) {
             $tpl = $this->resolveTemplate($leadTid, $eventKey, $channel);
             if (!$tpl) {
                 continue;
@@ -71,7 +65,6 @@ final class CooperationAnnouncementDispatcher
             match ($channel) {
                 'email' => $this->dispatchEmail($eventKey, $tpl, $vars, $mission, $extra),
                 'in_app' => $this->dispatchInApp($eventKey, $tpl, $vars, $mission, $extra),
-                'forum' => $this->dispatchForum($eventKey, $tpl, $vars, $mission, $actorUserId, $leadTid),
                 default => null,
             };
         }
@@ -207,7 +200,7 @@ final class CooperationAnnouncementDispatcher
     /** @param array<string, mixed> $extra */
     private function dispatchInApp(string $eventKey, array $tpl, array $vars, array $mission, array $extra): void
     {
-        if (!$this->forumNotificationRepository->tableExists()) {
+        if (!$this->memberNotificationRepository->tableExists()) {
             return;
         }
         $raw = $this->renderer->render((string) ($tpl['body'] ?? ''), $vars);
@@ -233,66 +226,12 @@ final class CooperationAnnouncementDispatcher
             if ($tid < 1) {
                 continue;
             }
-            $this->forumNotificationRepository->create($tid, $uid, 'cooperation_announcement', [
+            $this->memberNotificationRepository->create($tid, $uid, 'cooperation_announcement', [
                 'title' => $title,
                 'detail' => $detail,
                 'href' => $href !== '' ? $href : url('back-office/cooperation/missions'),
                 'mission_id' => (int) ($mission['id'] ?? 0),
             ]);
-        }
-    }
-
-    private function dispatchForum(string $eventKey, array $tpl, array $vars, array $mission, int $actorUserId, int $leadTid): void
-    {
-        $body = $this->renderer->render((string) ($tpl['body'] ?? ''), $vars);
-        if (trim($body) === '') {
-            return;
-        }
-        $mid = (int) ($mission['id'] ?? 0);
-        $minH = max(0, (int) ($tpl['min_interval_hours'] ?? 24));
-        if ($minH > 0 && $this->forumAnnouncementLogRepository->tableExists()) {
-            $elapsed = $this->forumAnnouncementLogRepository->secondsSinceLastPost($mid, $eventKey);
-            if ($elapsed !== null && $elapsed < $minH * 3600) {
-                return;
-            }
-        }
-        $rawSettings = $tpl['forum_settings_json'] ?? null;
-        $settings = [];
-        if (is_string($rawSettings) && $rawSettings !== '') {
-            $d = json_decode($rawSettings, true);
-            $settings = is_array($d) ? $d : [];
-        }
-        $topicId = (int) ($settings['topic_id'] ?? 0);
-        if ($topicId < 1) {
-            $fresh = $this->missionRepository->findById($mid);
-            if ($fresh) {
-                $topicId = (int) ($fresh['coop_forum_topic_id'] ?? 0);
-            }
-        }
-        if ($topicId < 1) {
-            return;
-        }
-        $topic = $this->forumTopicRepository->findById($topicId, $leadTid);
-        if (!$topic) {
-            return;
-        }
-        $asDraft = !empty($settings['as_draft']);
-        if ($actorUserId < 1) {
-            return;
-        }
-        $this->forumPostRepository->create(
-            $leadTid,
-            $topicId,
-            $actorUserId,
-            $body,
-            null,
-            $leadTid,
-            'info',
-            $asDraft,
-            null
-        );
-        if ($this->forumAnnouncementLogRepository->tableExists()) {
-            $this->forumAnnouncementLogRepository->touch($mid, $eventKey);
         }
     }
 

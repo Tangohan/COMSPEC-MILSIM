@@ -56,7 +56,7 @@ final class RhDossierIndividuelAssetTest extends TestCase
         self::assertStringContainsString('downloadDocument', $ctrl);
         self::assertFileExists($root . '/app/Services/Effectifs/RhAlertAggregatorService.php');
 
-        $migrate = (string) file_get_contents($root . '/run-migrations.php');
+        $migrate = (string) \Tests\Support\MigrationPipelineSource::read($root);
         self::assertStringContainsString('rh_dossier_individuel_migration.php', $migrate);
 
         $routes = (string) file_get_contents($root . '/routes/web.php');

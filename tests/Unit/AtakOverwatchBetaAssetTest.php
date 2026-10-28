@@ -19,10 +19,14 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertIsString($view);
         self::assertIsString($dashboardAside);
         self::assertIsString($sidebar);
+        // Overwatch en production : /atak le sert, les anciennes adresses beta redirigent, plus de badge BETA.
         self::assertStringContainsString("'/-ATAK-OVERWATCH-Beta'", $routes);
         self::assertStringContainsString("'/atak-overwatch-beta'", $routes);
-        self::assertStringContainsString("url('-ATAK-OVERWATCH-Beta')", $dashboardAside);
-        self::assertStringContainsString("'Overwatch Beta'", $sidebar);
+        self::assertStringContainsString("['label' => 'Overwatch', 'href' => url('atak')", $dashboardAside);
+        self::assertStringNotContainsString('Overwatch Beta', $dashboardAside);
+        self::assertStringContainsString("['label' => 'Overwatch', 'href' => url('atak')", $sidebar);
+        self::assertStringNotContainsString("'badge' => 'BETA'", $sidebar);
+        self::assertStringNotContainsString('Overwatch Beta', $view);
         self::assertStringNotContainsString("require base_path('views/atak.php')", $view);
         self::assertStringContainsString('class="ow-shell"', $view);
         self::assertStringContainsString('id="ow-map"', $view);
@@ -42,8 +46,9 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertIsString($realtimeJs);
         self::assertIsString($p2Js);
         self::assertIsString($recipe);
-        self::assertStringContainsString("\$params['_overwatch_beta'] = true", $atakController);
-        self::assertStringContainsString("'atakOverwatchBeta' => !empty(\$params['_overwatch_beta'])", $atakController);
+        self::assertStringContainsString("Response::view('atak-overwatch-beta', [", $atakController);
+        self::assertStringContainsString("Response::redirect(url('atak')", $atakController);
+        self::assertStringNotContainsString("? 'atak-overwatch-beta' : 'atak'", $atakController);
         self::assertStringContainsString('window.ATAK_OVERWATCH_BETA = true', $view);
         self::assertStringContainsString('atak-overwatch-beta.css', $view);
         self::assertStringContainsString("'/api/units?mapId='", $overwatchJs);
@@ -66,9 +71,9 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('atak-overwatch-gotak.js', $view);
         self::assertStringContainsString("'/api/nine-line'", $overwatchJs);
         self::assertStringContainsString('patients_t1_urgent', $overwatchJs);
-        self::assertStringContainsString("'/api/sse/notes/web'", $gotakJs);
+        self::assertStringContainsString("'/api/sse/notes/web?mapId='", $gotakJs);
         self::assertStringContainsString("'/api/atak/terrain/profile'", $gotakJs);
-        self::assertStringContainsString("'/api/atak/activity'", $gotakJs);
+        self::assertStringContainsString("'/api/atak/activity?mapId='", $gotakJs);
         self::assertStringContainsString('data-tool="eta"', $view);
         self::assertStringContainsString('id="ow-geofence"', $view);
         self::assertStringContainsString('id="ow-squad-links"', $view);
@@ -162,7 +167,9 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('ow-unread', $overwatchJs);
         self::assertStringContainsString('deleteOwnChat', $overwatchJs);
         self::assertStringContainsString('/api/chat/purge', $overwatchJs);
-        self::assertStringContainsString('Vider le fil', $view);
+        // « Vider le fil » est devenu « Vider le canal » (purge du canal courant pour tout le poste).
+        self::assertStringContainsString('id="ow-chat-purge"', $view);
+        self::assertStringContainsString('Vider le canal', $view);
         self::assertStringContainsString("delete('/api/chat/{id}'", $routes);
         self::assertStringContainsString("'/api/pings'", $overwatchJs);
         self::assertStringContainsString('renderMap();', $overwatchJs);
@@ -182,7 +189,9 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString("event: units", $recipe);
         self::assertStringNotContainsString('ALPHA 1-1', $view);
         self::assertStringNotContainsString('CONTACT C-018', $view);
-        self::assertStringContainsString('Space+Grotesk', $view);
+        // La vue charge IBM Plex ; Space Grotesk n'est plus qu'une police optionnelle chargée à la demande.
+        self::assertStringContainsString('family=IBM+Plex+Sans', $view);
+        self::assertStringContainsString("grotesk: 'Space+Grotesk", (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-overwatch-tools.js'));
         self::assertStringContainsString('IBM+Plex+Sans', $view);
         self::assertStringContainsString('data-ow-collapse-settings', $view);
         self::assertStringContainsString('id="ow-stats"', $view);
@@ -247,7 +256,11 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('is-offline', $overwatchJs);
         self::assertStringContainsString('is-stale-pos', $overwatchJs);
         self::assertStringContainsString("is-delayed", $overwatchJs);
-        self::assertStringContainsString('var DELAYED_SEC = 72', $overwatchJs);
+        // Le seuil « retardé » a été relevé depuis (72 s → 108 s) : il ne doit pas redescendre sous 72 s.
+        self::assertMatchesRegularExpression('/var DELAYED_SEC = (\d+);/', $overwatchJs);
+        preg_match('/var DELAYED_SEC = (\d+);/', $overwatchJs, $delayed);
+        self::assertGreaterThanOrEqual(72, (int) $delayed[1]);
+        self::assertStringContainsString('DELAYED_SEC: DELAYED_SEC', $overwatchJs);
         self::assertStringContainsString('var LIVE_TTL_SEC = 180', $overwatchJs);
         self::assertStringContainsString('stampUnitAges', $overwatchJs);
         self::assertStringContainsString('ageSec >= DELAYED_SEC', $overwatchJs);
@@ -260,7 +273,10 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('data-ow-replay', $view);
         self::assertStringNotContainsString('class="ow-map-tools"', $view);
         self::assertStringContainsString('ow-map-tools{display:none', $view);
-        self::assertStringContainsString('Assistance technique', $view);
+        // L'onglet d'assistance s'appelle désormais « Support » (canal séparé de la mission).
+        self::assertStringContainsString('data-chat-tab="support"', $view);
+        self::assertStringContainsString('data-chat-panel="support"', $view);
+        self::assertStringContainsString('id="ow-support-form"', $view);
         self::assertStringContainsString('ow-fil-empty', $overwatchJs);
         self::assertStringContainsString('id="ow-chat-purge-box"', $view);
         self::assertStringContainsString('prioLabel', $overwatchJs);
@@ -315,7 +331,7 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('/api/atak/tiles', $overwatchJs);
         self::assertStringContainsString('Suivi des forces', $view);
         self::assertStringContainsString('id="ow-bft-sub"', $view);
-        self::assertStringContainsString('class="ow-bft"', $view);
+        self::assertStringContainsString('class="ow-chat-main ow-bft"', $view);
         self::assertStringContainsString('bftContactHtml', $overwatchJs);
         self::assertStringContainsString('data-bft-locate', $overwatchJs);
         self::assertStringContainsString('En liaison', $overwatchJs);
@@ -334,7 +350,8 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('limit=40000', $overwatchJs);
         self::assertStringContainsString('.ow-scene-footprints', (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-overwatch-beta.css'));
         self::assertStringContainsString('.ow-i', (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-overwatch-beta.css'));
-        self::assertStringContainsString('emprise au sol', $view);
+        // L'aide décrit désormais le 2D immersif comme « les bâtiments dessinés au sol, vus du dessus ».
+        self::assertStringContainsString('les bâtiments dessinés au sol', $view);
         self::assertStringContainsString('isBuildingLikeArea', $overwatchJs);
         self::assertStringContainsString('rgba(196,206,214,.52)', $overwatchJs);
         $armaMarkersJs = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/arma-map-markers.js');

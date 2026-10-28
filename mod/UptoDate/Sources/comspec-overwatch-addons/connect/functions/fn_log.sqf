@@ -60,7 +60,10 @@ if (hasInterface && {missionNamespace getVariable ["comspec_overwatch_log_to_fil
     if (!(_termUid isEqualType "")) then { _termUid = ""; };
     _termUid = trim _termUid;
     private _det = if (isNil "_detail") then { "" } else { str _detail };
+    // Appel direct gardé : LogWrite ne fait que mettre la ligne en file dans la DLL, et les dernières lignes
+    // avant un crash doivent arriver dans le fichier. Forme tableau [résultat, code, erreur] lue aussi.
     private _res = "COMSPECExtension" callExtension ["LogWrite", [_line, _levelKey, _channel, _message, _det, _termUid]];
+    if (_res isEqualType []) then { _res = _res param [0, ""]; };
     if (_res isEqualType "" && {(_res select [0, 3]) == "OK|"}) then {
         if (!(missionNamespace getVariable ["COMSPEC_LogFilePathLogged", false])) then {
             missionNamespace setVariable ["COMSPEC_LogFilePathLogged", true, false];
@@ -74,8 +77,9 @@ if (hasInterface && {missionNamespace getVariable ["comspec_overwatch_log_to_fil
     };
 };
 
-// Remontée Athena (erreurs / alertes uniquement, anti-spam côté reportDiag)
-if (hasInterface && {_levelNum <= 2} && {!isNil "comspec_overwatch_connect_fnc_reportDiag"}) then {
+// Remontée Athena (erreurs uniquement, anti-spam côté reportDiag) : les WARN déclenchaient un appel HTTP
+// à chaque alerte, ce qui saturait la DLL et figeait le jeu.
+if (hasInterface && {_levelNum <= 1} && {!isNil "comspec_overwatch_connect_fnc_reportDiag"}) then {
     [_levelKey, _channel, _message, if (isNil "_detail") then { "" } else { str _detail }, "auto"] spawn {
         params ["_lvl", "_ch", "_msg", "_det", "_src"];
         uiSleep 0.05;

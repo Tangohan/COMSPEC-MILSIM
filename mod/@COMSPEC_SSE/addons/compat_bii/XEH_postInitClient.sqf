@@ -22,6 +22,7 @@ if (!_biiEnabled) exitWith {
 [] spawn {
     // Laisser BII / cTab finir leur postInit
     uiSleep 1.5;
+    missionNamespace setVariable ["comspec_sse_biiPostInitDone", true];
     if !(missionNamespace getVariable ["comspec_sse_biiBridgeEnabled", true]) exitWith {
         diag_log "[SSE][POSTINIT][compat_bii] END (bridge off)";
     };

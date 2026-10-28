@@ -30,7 +30,35 @@ window.ATAKSIGINT = (function () {
     return Math.round(n) + '°';
   }
 
+  /* Lignes de relèvement (goniométrie GE et détecteur de drones de l'ATAK natif : position du récepteur + gisement),
+     3 km, sur les 40 derniers signalements. Deux lignes du même émetteur se recoupent sur la carte. */
+  var bearingLayer = null;
+  var BEARING_LEN_M = 3000;
+
+  function drawBearings(rows) {
+    var map = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
+    if (!map || typeof L === 'undefined' || !window.ATAKMap.latLngFromWorld) return;
+    if (!bearingLayer) bearingLayer = L.layerGroup().addTo(map);
+    bearingLayer.clearLayers();
+    rows.forEach(function (r) {
+      var b = Number(r.bearing);
+      var x = Number(r.pos_x);
+      var y = Number(r.pos_y);
+      if (r.bearing == null || r.bearing === '' || isNaN(b) || isNaN(x) || isNaN(y)) return;
+      var rad = b * Math.PI / 180;
+      var drone = String(r.call_sign || '').indexOf('DRONE-') === 0;
+      var color = drone ? '#f97316' : '#ef4444';
+      var from = window.ATAKMap.latLngFromWorld(x, y);
+      var to = window.ATAKMap.latLngFromWorld(x + Math.sin(rad) * BEARING_LEN_M, y + Math.cos(rad) * BEARING_LEN_M);
+      L.polyline([from, to], { color: color, weight: 2, opacity: 0.75, dashArray: '8 6' })
+        .bindTooltip(escapeHtml((r.call_sign || 'Émetteur') + ' · ' + bearingLabel(r.bearing) + (r.created_at ? ' · ' + formatWhen(r.created_at) : '')))
+        .addTo(bearingLayer);
+      L.circleMarker(from, { radius: 3, color: color, weight: 1, fillOpacity: 0.8 }).addTo(bearingLayer);
+    });
+  }
+
   function render(rows) {
+    drawBearings(rows);
     var el = document.getElementById('atak-sigint-list');
     if (!el) return;
     if (!rows.length) {
@@ -79,6 +107,11 @@ window.ATAKSIGINT = (function () {
     var list = document.getElementById('atak-sigint-list');
     if (btn) btn.addEventListener('click', refresh);
     if (list) list.addEventListener('click', onListClick);
+    // Lignes de relèvement tenues à jour sur la carte (toutes les 30 s, onglet visible seulement).
+    if (list) {
+      setTimeout(refresh, 5000);
+      setInterval(function () { if (!document.hidden) refresh(); }, 30000);
+    }
   });
 
   return { refresh: refresh };

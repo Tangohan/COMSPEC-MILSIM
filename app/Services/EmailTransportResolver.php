@@ -14,12 +14,16 @@ final class EmailTransportResolver
     /** @var array<string, mixed> */
     private array $config;
 
-    public function __construct()
+    /**
+     * @param array<string, mixed>|null $config autre configuration que celle du .env (compte d'envoi d'une communauté)
+     */
+    public function __construct(?array $config = null)
     {
-        $this->config = \email_config();
+        $this->config = $config ?? \email_config();
     }
 
     /**
+     * @param list<array{name: string, content: string, mime?: string}> $attachments pièces jointes en mémoire
      * @return array{ok: bool, transport: string, error?: string, provider_id?: string}
      */
     public function sendMessage(
@@ -27,7 +31,8 @@ final class EmailTransportResolver
         string $subject,
         string $htmlBody,
         string $textBody,
-        ?string $replyTo = null
+        ?string $replyTo = null,
+        array $attachments = []
     ): array {
         $fromEmail = (string) ($this->config['from_address'] ?? 'noreply@localhost');
         $fromName = (string) ($this->config['from_name'] ?? '');
@@ -63,6 +68,18 @@ final class EmailTransportResolver
             if ($effectiveReply !== null && $effectiveReply !== '') {
                 $mail->addReplyTo($effectiveReply);
             }
+            foreach ($attachments as $file) {
+                $name = trim((string) ($file['name'] ?? ''));
+                if ($name === '' || !isset($file['content'])) {
+                    continue;
+                }
+                $mail->addStringAttachment(
+                    (string) $file['content'],
+                    $name,
+                    PHPMailer::ENCODING_BASE64,
+                    (string) ($file['mime'] ?? 'application/octet-stream')
+                );
+            }
         } catch (\Throwable $e) {
             return ['ok' => false, 'transport' => 'phpmailer', 'error' => $e->getMessage()];
         }
@@ -77,12 +94,20 @@ final class EmailTransportResolver
             $this->configureSmtp($mail, $mailerType);
             $mail->send();
 
-            return ['ok' => true, 'transport' => $mailerType, 'provider_id' => null];
+            return ['ok' => true, 'transport' => $this->transportLabel($mailerType), 'provider_id' => null];
         } catch (\Throwable $e) {
             $err = $mail->ErrorInfo !== '' ? $mail->ErrorInfo : $e->getMessage();
 
-            return ['ok' => false, 'transport' => $mailerType, 'error' => $err];
+            return ['ok' => false, 'transport' => $this->transportLabel($mailerType), 'error' => $err];
         }
+    }
+
+    /** « community:brevo » pour un compte de communauté : il ne compte pas dans le quota de la plateforme. */
+    private function transportLabel(string $mailerType): string
+    {
+        $label = (string) ($this->config['transport_label'] ?? '');
+
+        return $label !== '' ? $label : $mailerType;
     }
 
     /**
@@ -119,8 +144,9 @@ final class EmailTransportResolver
         $pass = trim((string) ($smtp['password'] ?? ''));
         $enc = strtolower((string) ($smtp['encryption'] ?? 'tls'));
 
-        if ($host === '' && in_array($mailerType, ['sendgrid', 'mailgun', 'ses'], true)) {
+        if ($host === '' && in_array($mailerType, ['brevo', 'sendgrid', 'mailgun', 'ses'], true)) {
             $host = match ($mailerType) {
+                'brevo' => 'smtp-relay.brevo.com',
                 'sendgrid' => 'smtp.sendgrid.net',
                 'mailgun' => 'smtp.mailgun.org',
                 'ses' => trim((string) \env('AWS_SES_SMTP_HOST', 'email-smtp.eu-west-1.amazonaws.com')),

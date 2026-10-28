@@ -15,7 +15,7 @@ declare(strict_types=1);
  * @var array<string,mixed>|null $currentUser Alias optionnel
  * @var bool|null $show_staff_enlistments
  * @var string|null $athena_header_section  Sous-ligne brand (ex. Tableau de bord)
- * @var string|null $athena_header_current Clé lien actif (dashboard|hub|forum|formations|effectifs|recrutement|admin|…)
+ * @var string|null $athena_header_current Clé lien actif (dashboard|hub|formations|effectifs|recrutement|admin|…)
  */
 
 $h = static function (string $value): string {
@@ -49,8 +49,6 @@ if ($currentKey === '') {
         $currentKey = 'dashboard';
     } elseif (str_starts_with($currentPath, 'hub')) {
         $currentKey = 'hub';
-    } elseif (str_starts_with($currentPath, 'forum')) {
-        $currentKey = 'forum';
     } elseif (str_starts_with($currentPath, 'formations')) {
         $currentKey = 'formations';
     } elseif (str_starts_with($currentPath, 'personnel') || str_starts_with($currentPath, 'orbat')) {
@@ -65,17 +63,19 @@ if ($currentKey === '') {
         $currentKey = 'admin';
     } elseif (str_starts_with($currentPath, 'evenements')) {
         $currentKey = 'events';
+    } elseif ($currentPath === 'communities' || (str_starts_with($currentPath, 'communities/') && !str_starts_with($currentPath, 'communities/create'))) {
+        $currentKey = 'registre';
     }
 }
 $sectionLabelByKey = [
     'dashboard' => 'Tableau de bord',
     'hub' => 'Hub',
-    'forum' => 'Forum',
     'formations' => 'Formations',
     'effectifs' => 'Effectifs',
     'recrutement' => 'Recrutement',
-    'admin' => 'Administration',
+    'admin' => 'Gestion',
     'events' => 'Manœuvres',
+    'registre' => 'Registre des unités',
 ];
 $sectionLabel = (string) ($athena_header_section ?? ($sectionLabelByKey[$currentKey] ?? 'Espace membre'));
 if (function_exists('i18n_phrase')) {
@@ -97,7 +97,14 @@ $headerTenantType = function_exists('navigation_current_tenant_type')
     ? navigation_current_tenant_type()
     : \App\Services\Community\TenantTypeConfig::TYPE_FULL;
 $headerTypeLabel = \App\Services\Community\TenantTypeConfig::label($headerTenantType);
-$headerAllowsPath = static function (string $path) use ($headerTenantType): bool {
+// Compte sans organisation : seules les pages utiles restent (tableau de bord, registre,
+// création de communauté, compte). Suit l’appartenance à chaque requête.
+$headerNoOrg = class_exists(\App\Support\PortalAccessChoice::class)
+    && \App\Support\PortalAccessChoice::restrictsNavigationToNoOrganization();
+$headerAllowsPath = static function (string $path) use ($headerTenantType, $headerNoOrg): bool {
+    if ($headerNoOrg && !\App\Support\PortalAccessChoice::noOrganizationAllowsPath($path)) {
+        return false;
+    }
     if (
         ($path === 'jnet' || str_starts_with($path, 'jnet/'))
         && class_exists(\App\Support\PortalAccessChoice::class)
@@ -120,11 +127,11 @@ $navItems = [
     ['key' => 'dashboard', 'label' => 'Dashboard', 'href' => url('dashboard'), 'path' => 'dashboard'],
     ['key' => 'hub', 'label' => 'Hub', 'href' => url('hub'), 'path' => 'hub'],
 ];
-if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()) {
-    $navItems[] = ['key' => 'forum', 'label' => 'Forum', 'href' => url('forum'), 'path' => 'forum'];
-}
 $navItems[] = ['key' => 'formations', 'label' => 'Formations', 'href' => url('formations'), 'path' => 'formations'];
 $navItems[] = ['key' => 'effectifs', 'label' => 'Effectifs', 'href' => url('personnel'), 'path' => 'personnel'];
+if ($headerNoOrg) {
+    $navItems[] = ['key' => 'registre', 'label' => 'Registre des unités', 'href' => url('communities'), 'path' => 'communities'];
+}
 if ($canRecruit) {
     $navItems[] = [
         'key' => 'recrutement',
@@ -134,7 +141,7 @@ if ($canRecruit) {
     ];
 }
 if ($canOpenBackOffice) {
-    $navItems[] = ['key' => 'admin', 'label' => $canAdmin ? 'Administration' : 'Mon espace', 'href' => url('back-office'), 'path' => 'back-office'];
+    $navItems[] = ['key' => 'admin', 'label' => $canAdmin ? 'Gestion' : 'Mon espace', 'href' => url('back-office'), 'path' => 'back-office'];
 }
 $navItems = array_values(array_filter(
     $navItems,
@@ -161,6 +168,11 @@ if (!$headerAllowsPath('evenements') && !$headerAllowsPath('atak')) {
     $ctaLabel = 'Tableau de bord';
     $ctaActive = $currentKey === 'dashboard';
 }
+if ($headerNoOrg) {
+    $ctaHref = url('communities/create');
+    $ctaLabel = 'Créer ma communauté';
+    $ctaActive = str_starts_with($currentPath, 'communities/create');
+}
 if (function_exists('i18n_phrase')) {
     $ctaLabel = i18n_phrase('nav', (string) $ctaLabel);
 }
@@ -172,6 +184,8 @@ $espaceLinks = [
     ['abbr' => 'ORB', 'label' => 'ORBAT', 'desc' => 'Structure et effectifs', 'href' => url('orbat'), 'path' => 'orbat'],
     ['abbr' => 'ATK', 'label' => 'ATAK', 'desc' => 'Carte tactique', 'href' => url('atak'), 'path' => 'atak'],
     ['abbr' => 'FRM', 'label' => 'Formations', 'desc' => 'Catalogue et parcours', 'href' => url('formations'), 'path' => 'formations'],
+    // Accès direct à son parcours (sinon : Formations › catalogue › onglet), filtré comme le reste.
+    ['abbr' => 'MES', 'label' => 'Mes formations', 'desc' => 'Mon parcours et mes inscriptions', 'href' => url('formations/mes-formations'), 'path' => 'formations/mes-formations'],
 ];
 if ($canRecruit) {
     $espaceLinks[] = [
@@ -186,7 +200,7 @@ if ($canOpenBackOffice) {
     $espaceLinks[] = [
         'abbr' => 'BO',
         'label' => $canAdmin ? 'Back-office' : 'Mon back-office',
-        'desc' => $canAdmin ? 'Administration de la communauté' : 'Synthèse opérationnelle personnelle',
+        'desc' => $canAdmin ? 'Gestion de la communauté' : 'Synthèse opérationnelle personnelle',
         'href' => url('back-office'),
         'path' => 'back-office',
     ];
@@ -316,6 +330,14 @@ if (is_array($pp)) {
     }
 }
 
+// Communauté sans grades (« Aucun ») : la fonction, ou « Membre », prend la place du grade.
+$headerGradesHidden = $athenaTenantIdForHeader > 0 && \App\Support\TenantGrades::hidden($athenaTenantIdForHeader);
+if ($headerGradesHidden) {
+    $headerGradeLabel = $fonctionLabel !== null && $fonctionLabel !== '' ? $fonctionLabel : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Membre') : 'Membre');
+    $headerGradeLong = $headerGradeLabel;
+    $headerGradeOtan = null;
+}
+
 $affectationLabel = null;
 if (is_array($pp) && !empty($pp['primary_unit_id']) && $athenaTenantIdForHeader > 0) {
     try {
@@ -393,6 +415,9 @@ $profileFacts = [
     ['label' => 'Statut', 'value' => $statutLabel],
     ['label' => 'Communauté', 'value' => $unitLabel],
 ];
+if ($headerGradesHidden) {
+    array_shift($profileFacts);
+}
 if ($affectationLabel !== null && strcasecmp($affectationLabel, $unitLabel) !== 0) {
     $profileFacts[] = ['label' => 'Affectation', 'value' => $affectationLabel];
 }
@@ -457,7 +482,7 @@ if (function_exists('i18n_phrase')) {
 >
     <div class="athena-header__inner">
         <a href="<?= $h(url('dashboard')) ?>" class="athena-header__brand">
-            <span class="athena-header__brand-mark" aria-hidden="true">A</span>
+            <span class="athena-header__brand-mark" aria-hidden="true"><span class="athena-header__brand-emblem"></span></span>
             <span class="athena-header__brand-text">
                 <span class="athena-header__brand-title">Athena<span class="athena-header__brand-dot">.</span></span>
                 <span class="athena-header__brand-sub"><?= $h($sectionLabel) ?> · <?= $h($unitLabel) ?><?php if ($headerTenantType !== \App\Services\Community\TenantTypeConfig::TYPE_FULL): ?> · <?= $h($headerTypeLabel) ?><?php endif; ?></span>
@@ -481,8 +506,9 @@ if (function_exists('i18n_phrase')) {
 
         <div class="athena-header__actions" id="dash-tour-nav-actions">
             <?php if (!empty(($dashboard_ui_tour ?? [])['enabled'])): ?>
-            <button type="button" class="athena-header__guide-btn" id="dash-tour-start" data-dash-tour-start title="Guide du tableau de bord">
-                Guide
+            <button type="button" class="athena-header__guide-btn" id="dash-tour-start" data-dash-tour-start title="Guide du tableau de bord" aria-label="<?= $n('Guide du tableau de bord') ?>">
+                <svg class="athena-header__btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-width="1.8"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.4M12 16.8h.01"/></svg>
+                <span class="athena-header__guide-label"><?= $n('Guide') ?></span>
             </button>
             <?php endif; ?>
             <a
@@ -501,6 +527,7 @@ if (function_exists('i18n_phrase')) {
                 <?php $localeSwitcherVariant = 'dark'; require base_path('views/partials/language_switcher.php'); ?>
             </div>
 
+            <?php if ($espaceLinks !== []): ?>
             <div class="athena-header__menu relative hidden md:block">
                 <button
                     type="button"
@@ -510,7 +537,8 @@ if (function_exists('i18n_phrase')) {
                     aria-haspopup="true"
                     aria-controls="athena-header-espaces"
                 >
-                    <?= $n('Espaces') ?>
+                    <svg class="athena-header__btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linejoin="round" stroke-width="1.8" d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg>
+                    <span><?= $n('Espaces') ?></span>
                     <svg class="athena-header__chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="m6 9 6 6 6-6"/>
                     </svg>
@@ -533,6 +561,7 @@ if (function_exists('i18n_phrase')) {
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
 
             <div class="relative">
                 <button
@@ -623,7 +652,7 @@ if (function_exists('i18n_phrase')) {
                     aria-controls="athena-header-profile"
                 >
                     <span class="athena-header__profile-identity">
-                        <span class="athena-header__profile-name"><?= $h($headerDisplayName) ?></span>
+                        <span class="athena-header__profile-name"><?= staff_name($headerDisplayName, (int) (\App\Core\Session::get('user_id') ?? 0)) ?></span>
                         <span class="athena-header__profile-title">
                             <?= $h($headerGradeLabel) ?><?php if ($headerGradeOtan !== null): ?> · <?= $h($headerGradeOtan) ?><?php endif; ?>
                         </span>
@@ -653,7 +682,7 @@ if (function_exists('i18n_phrase')) {
                             <div class="athena-header__profile-cover-shade"></div>
                             <div class="athena-header__profile-topline">
                                 <span>Session active</span>
-                                <b><?= $h($headerDisplayName) ?></b>
+                                <b><?= staff_name($headerDisplayName, (int) (\App\Core\Session::get('user_id') ?? 0), true) ?></b>
                             </div>
                         </div>
                         <div class="athena-header__profile-body">
@@ -665,7 +694,7 @@ if (function_exists('i18n_phrase')) {
                                 require base_path('views/partials/ui/user_avatar.php');
                                 ?>
                                 <div class="athena-header__profile-name-block">
-                                    <strong><?= $h($headerDisplayName) ?></strong>
+                                    <strong><?= staff_name($headerDisplayName, (int) (\App\Core\Session::get('user_id') ?? 0), true) ?></strong>
                                     <span>
                                         <?= $h($headerGradeLong) ?><?php if ($headerGradeOtan !== null): ?> · <?= $h($headerGradeOtan) ?><?php endif; ?>
                                         · <?= $h($headerMatriculeLabel) ?>

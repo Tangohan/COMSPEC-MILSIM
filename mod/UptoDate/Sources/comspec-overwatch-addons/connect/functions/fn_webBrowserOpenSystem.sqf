@@ -4,13 +4,7 @@
 */
 if (!hasInterface) exitWith {};
 
-private _url = trim (missionNamespace getVariable ["comspec_overwatch_api_url", ""]);
-if (_url isEqualTo "") then {
-    _url = trim (profileNamespace getVariable ["comspec_overwatch_saved_api_url", ""]);
-};
-if (_url isEqualTo "") then {
-    _url = "https://athena.ttrd.fr/public";
-};
+private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
 
 while {(_url select [(count _url) - 1, 1]) isEqualTo "/"} do {
     _url = _url select [0, (count _url) - 1];
@@ -24,13 +18,14 @@ if ((_now - _last) < 3) exitWith {};
 missionNamespace setVariable ["COMSPEC_WebBrowser_SystemOpenAt", _now];
 missionNamespace setVariable ["COMSPEC_WebBrowser_AthenaOpenAt", _now];
 
-openURL _atakUrl;
+// openURL n'existe pas en SQF : COMSPEC Link ouvre le navigateur (adresse du portail seulement).
+"COMSPECExtension" callExtension ["OpenAthenaLink", [_atakUrl]];
 
 private _display = findDisplay 9974;
 if (!isNull _display) then {
     private _hint = _display displayCtrl 9403;
     if (!isNull _hint) then {
-        _hint ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#7dffb3'>Ouverture sur le PC…</t>";
+        _hint ctrlSetStructuredText parseText (("<t align='right' size='0.5' color='#7dffb3'>Ouverture sur le PC…</t>") call comspec_overwatch_connect_fnc_tr);
     };
 };
 

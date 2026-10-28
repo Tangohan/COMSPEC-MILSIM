@@ -39,6 +39,11 @@ $wizardSteps = [
     4 => 'Grades',
     5 => 'Accès & offre',
 ];
+/** @var list<array<string,mixed>> $orbatPresets */
+$orbatPresets = is_array($orbatPresets ?? null) ? $orbatPresets : \App\Services\Community\WizardOrbatPresets::forWizard();
+$officialKits = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::officialKits();
+$jobDoctrineKits = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::jobDoctrineCodes();
+$guideUrl = url('communities/create/guide');
 ?>
 <link href="<?= htmlspecialchars(asset_url('assets/css/community-create.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 
@@ -49,6 +54,11 @@ $wizardSteps = [
                 <p class="cc-brand">Athena<span>.</span></p>
                 <p class="cc-kicker">Nouvelle communauté</p>
                 <p class="cc-lead">Donnez un nom, choisissez le profil adapté, préparez l’organisation, puis ouvrez les candidatures. Cinq étapes, une seule décision à la fois.</p>
+                <div class="cc-hero__actions">
+                    <button type="button" class="cc-hero__btn" data-cc-tutorial-open>Tutoriel en 2 minutes</button>
+                    <a class="cc-hero__link" href="<?= htmlspecialchars($guideUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener">Guide complet des champs</a>
+                </div>
+                <p class="cc-hero__meta">Comptez 5 à 10 minutes. Seul le nom est obligatoire : tout le reste a une valeur par défaut et se modifie ensuite dans le back-office.</p>
             </div>
         </header>
 
@@ -65,7 +75,7 @@ $wizardSteps = [
         <div class="cc-board">
             <nav class="cc-stepper" aria-label="Étapes de création">
                 <?php foreach ($wizardSteps as $i => $label): ?>
-                <button type="button" class="cc-stepper__btn wizard-step-tab" data-step-tab="<?= (int) $i ?>" data-active="<?= $i === 1 ? '1' : '0' ?>">
+                <button type="button" class="cc-stepper__btn wizard-step-tab" data-step-tab="<?= (int) $i ?>" data-active="<?= $i === 1 ? '1' : '0' ?>" data-done="0">
                     <span class="cc-stepper__num">Étape <?= (int) $i ?></span>
                     <span class="cc-stepper__label"><?= htmlspecialchars($label) ?></span>
                 </button>
@@ -84,17 +94,32 @@ $wizardSteps = [
                         <p class="cc-panel-head__text">Le nom public, la langue et le fuseau horaire. L’adresse web peut être générée automatiquement ou choisie par vous.</p>
                     </div>
 
+                    <aside class="cc-tip" aria-label="Conseils pour cette étape">
+                        <p class="cc-tip__title">À retenir</p>
+                        <ul>
+                            <li>Le <strong>nom affiché</strong> est le seul champ obligatoire de tout l’assistant.</li>
+                            <li>L’adresse web est la seule donnée difficile à changer ensuite : prenez une forme courte et stable.</li>
+                            <li>La vitrine publique peut rester vide : vous la compléterez dans <em>Paramètres de la communauté</em>.</li>
+                        </ul>
+                    </aside>
+
                     <section class="cc-section">
                         <h2 class="cc-section__title">Nom et adresse</h2>
                         <p class="cc-section__text">Ce que les visiteurs et les membres verront en premier sur Athena.</p>
                         <div class="mt-5 grid gap-5 md:grid-cols-2">
                             <div class="md:col-span-2">
                                 <label class="cc-label" for="cc-name">Nom affiché</label>
-                                <input id="cc-name" type="text" name="name" required maxlength="255" class="cc-field" placeholder="92e Régiment d’infanterie">
+                                <input id="cc-name" type="text" name="name" required maxlength="255" class="cc-field" placeholder="92e Régiment d’infanterie" aria-describedby="cc-name-error cc-slug-preview">
+                                <p id="cc-name-error" class="cc-error hidden" role="alert">Indiquez le nom de la communauté pour continuer.</p>
+                                <p class="cc-hint" id="cc-slug-preview">Adresse publique : <span class="font-mono" data-slug-preview><?= htmlspecialchars(rtrim(url('c/'), '/'), ENT_QUOTES, 'UTF-8') ?>/…</span></p>
+                                <details class="cc-help">
+                                    <summary>Comment bien choisir le nom&nbsp;?</summary>
+                                    <p>C’est le titre de la fiche registre, de la page publique, des e-mails et de la fenêtre de connexion Overwatch. Préférez le nom sous lequel vos joueurs vous connaissent déjà (ex. «&nbsp;Task Force Phoenix&nbsp;», «&nbsp;2e Compagnie — 13e BCA&nbsp;»). Il reste modifiable dans le back-office.</p>
+                                </details>
                             </div>
                             <div class="md:col-span-2">
                                 <label class="cc-checkrow">
-                                    <input type="checkbox" name="wizard_custom_community_slug" value="1" id="wizard-custom-community-slug" class="h-4 w-4 rounded border-slate-300 text-emerald-600">
+                                    <input type="checkbox" name="wizard_custom_community_slug" value="1" id="wizard-custom-community-slug">
                                     <span>
                                         <strong>Choisir une adresse web personnalisée</strong>
                                         <span>Sinon, Athena dérive l’adresse du nom affiché (lettres minuscules et tirets).</span>
@@ -103,7 +128,7 @@ $wizardSteps = [
                                 <div id="wizard-community-slug-wrap" class="mt-3 hidden">
                                     <label class="cc-label" for="wizard-community-slug-input">Adresse courte dans le lien public</label>
                                     <input type="text" name="slug" id="wizard-community-slug-input" pattern="[a-z0-9]([-a-z0-9]*[a-z0-9])?" class="cc-field font-mono" placeholder="ex. mon-unite">
-                                    <p class="cc-hint">Lettres minuscules, chiffres et tirets uniquement.</p>
+                                    <p class="cc-hint">Lettres minuscules, chiffres et tirets uniquement. Exemple&nbsp;: <span class="font-mono">tf-phoenix</span>. Évitez les dates et les numéros de saison : l’adresse figure dans les liens partagés sur Discord et dans les invitations.</p>
                                 </div>
                             </div>
                             <div>
@@ -111,7 +136,10 @@ $wizardSteps = [
                                 <select id="cc-locale" name="wizard_default_locale" class="cc-select">
                                     <option value="fr" selected>Français</option>
                                     <option value="en">English</option>
+                                    <option value="ru">Русский</option>
+                                    <option value="es">Español</option>
                                 </select>
+                                <p class="cc-hint">Langue de travail de l’unité (ORBAT, annuaire). Le site s’affiche en français ou en anglais, au choix de chaque membre.</p>
                             </div>
                             <div>
                                 <label class="cc-label" for="cc-tz">Fuseau horaire</label>
@@ -120,6 +148,7 @@ $wizardSteps = [
                                     <option value="<?= htmlspecialchars($z, ENT_QUOTES, 'UTF-8') ?>" <?= $z === 'Europe/Paris' ? 'selected' : '' ?>><?= htmlspecialchars($z, ENT_QUOTES, 'UTF-8') ?></option>
                                     <?php endforeach; ?>
                                 </select>
+                                <p class="cc-hint">Sert à afficher les heures des opérations, des rappels et des pointages. Choisissez celui de la majorité de vos joueurs.</p>
                             </div>
                         </div>
                     </section>
@@ -134,7 +163,7 @@ $wizardSteps = [
                                 <label class="cc-choice">
                                     <input type="radio" name="wizard_represents_real_unit" value="1" class="sr-only" data-unit-affiliation-mode="real">
                                     <span class="cc-choice__title">Oui</span>
-                                    <span class="cc-choice__text">Unité ou composante existante (forces spéciales).</span>
+                                    <span class="cc-choice__text">Unité, régiment ou composante existante (forces spéciales, troupes aéroportées, infanterie…).</span>
                                 </label>
                                 <label class="cc-choice">
                                     <input type="radio" name="wizard_represents_real_unit" value="0" class="sr-only" data-unit-affiliation-mode="fictional">
@@ -162,10 +191,15 @@ $wizardSteps = [
                                 <p class="cc-hint">Vous pouvez sélectionner plusieurs unités, mais uniquement au sein d’un même pays.</p>
                             </div>
 
+                            <details class="cc-help">
+                                <summary>Pourquoi déclarer une unité réelle&nbsp;?</summary>
+                                <p>L’unité apparaît sur la fiche registre et aide les candidats à trouver une communauté qui joue «&nbsp;leur&nbsp;» unité. C’est une indication d’inspiration, pas une affiliation officielle. Votre unité manque&nbsp;? Choisissez «&nbsp;Non&nbsp;» et saisissez son nom comme unité fictive.</p>
+                            </details>
+
                             <div id="unit-affiliation-real-picker" class="hidden">
                                 <label class="cc-label" for="wizard-real-unit-search">Rechercher une unité</label>
                                 <input type="search" id="wizard-real-unit-search" class="cc-field" placeholder="Ex. Hubert, 1RPIMA, USASOC, plongée…" autocomplete="off">
-                                <p class="cc-hint mt-1">Liste issue du référentiel militaire (commandements, composantes, régiments, commandos…). La recherche inclut les alias.</p>
+                                <p class="cc-hint mt-1">Liste issue du référentiel militaire (commandements, composantes, régiments, commandos…). La recherche tolère les accents et inclut les sigles, surnoms et anciens noms (ex. «&nbsp;Green Berets&nbsp;», «&nbsp;BFST&nbsp;»).</p>
                                 <div class="cc-unit-affiliation-list mt-3" id="wizard-real-unit-list" role="group" aria-label="Unités de forces spéciales"></div>
 
                                 <p class="cc-hint mt-2" id="wizard-real-unit-selection-summary">Aucune unité sélectionnée.</p>
@@ -284,6 +318,17 @@ $wizardSteps = [
                         <p class="cc-panel-head__text">Chaque profil ouvre un périmètre d’outils différent. Vous pourrez faire évoluer l’organisation plus tard ; le type fixe le point de départ.</p>
                     </div>
 
+                    <aside class="cc-tip" aria-label="Conseils pour cette étape">
+                        <p class="cc-tip__title">À retenir</p>
+                        <ul>
+                            <li><strong>Complet</strong> convient à la plupart des unités MilSim : formations, recrutement, effectifs, opérations et carte.</li>
+                            <li><strong>Bureau des effectifs</strong> et <strong>Carte ATAK</strong> masquent des modules pour garder une interface simple.</li>
+                            <li>Le type se change plus tard : les données déjà saisies ne sont jamais supprimées, seulement masquées.</li>
+                            <li>Les membres arrivent au niveau d’accès <strong>Membre</strong> : ils utilisent les outils sans rien administrer. Vous restez <strong>Gestionnaire</strong>.</li>
+                            <li><a href="<?= htmlspecialchars(url('documentation/profils'), ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener">Comparer les profils en détail</a></li>
+                        </ul>
+                    </aside>
+
                     <section class="cc-section">
                         <h2 class="cc-section__title">Quel usage visez-vous&nbsp;?</h2>
                         <p class="cc-section__text">Choisissez le cadre le plus proche de votre besoin réel — pas le plus large « au cas où ».</p>
@@ -294,8 +339,35 @@ $wizardSteps = [
                                 <span class="cc-choice__eyebrow">Profil</span>
                                 <span class="cc-choice__title"><?= htmlspecialchars($typeInfo['label'], ENT_QUOTES, 'UTF-8') ?></span>
                                 <span class="cc-choice__text"><?= htmlspecialchars($typeInfo['description'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php
+                                $ccTypeModules = \App\Services\Community\TenantTypeConfig::allowedModulesByType()[$typeSlug] ?? [];
+                                $ccModuleLabels = [];
+                                foreach (\App\Services\Community\TenantTypeConfig::moduleCatalog() as $ccMod => $ccMeta) {
+                                    if (in_array($ccMod, $ccTypeModules, true)) {
+                                        $ccModuleLabels[] = $ccMeta['label'];
+                                    }
+                                }
+                                ?>
+                                <span class="cc-choice__note">Inclus : <?= htmlspecialchars(implode(' · ', $ccModuleLabels), ENT_QUOTES, 'UTF-8') ?>.</span>
+                                <span class="cc-choice__note"><?= htmlspecialchars(\App\Services\Community\TenantTypeConfig::profileGuide($typeSlug)['ideal_for'][0] ?? '', ENT_QUOTES, 'UTF-8') ?></span>
                             </label>
                             <?php endforeach; ?>
+                        </div>
+                        <div class="cc-soft mt-5 hidden" data-cc-type-note="effectifs">
+                            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-900">Bureau des effectifs : comment ça marche</p>
+                            <ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed text-slate-700">
+                                <li><strong>Vous tenez le registre comme un tableur.</strong> Vos membres n’ont pas besoin de compte : vous créez leurs fiches, ou vous importez votre fichier Excel (une ligne par membre).</li>
+                                <li><strong>Recrutement uniquement sur Discord.</strong> Pas de formulaire de candidature sur le site : le bouton de votre page publique ouvre votre serveur Discord. Une fois la recrue acceptée, vous ajoutez sa fiche.</li>
+                                <li><strong>Seuls ceux qui tiennent les fiches se connectent</strong> (état-major, RH). Le menu de gestion ne montre que les outils du registre.</li>
+                            </ul>
+                        </div>
+                        <div class="cc-soft cc-soft--muted mt-5 hidden" data-cc-type-note="atak">
+                            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-600">Carte ATAK : comment ça marche</p>
+                            <ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed text-slate-700">
+                                <li>Vos joueurs créent un compte par invitation pour relier leur téléphone en jeu.</li>
+                                <li><strong>Recrutement uniquement sur Discord</strong> : pas de formulaire de candidature sur le site, le bouton de votre page publique ouvre votre serveur.</li>
+                                <li>Le menu de gestion ne garde que la carte, les terminaux, le matériel et les membres.</li>
+                            </ul>
                         </div>
                     </section>
                 </div>
@@ -308,45 +380,55 @@ $wizardSteps = [
                         <p class="cc-panel-head__text">Définissez les rôles de départ et la structure des unités. Tout restera modifiable dans l’administration après la création.</p>
                     </div>
 
+                    <aside class="cc-tip" aria-label="Conseils pour cette étape">
+                        <p class="cc-tip__title">Trois notions à ne pas confondre</p>
+                        <ul>
+                            <li><strong>Rôles</strong> : ce qu’un membre a le droit de faire sur le site (modérer, recruter, administrer).</li>
+                            <li><strong>Fonctions</strong> (emplois) : le métier affiché dans le dossier — chef de groupe, infirmier, pilote. Elles ne donnent aucun droit.</li>
+                            <li><strong>Unités</strong> : l’organigramme (ORBAT) dans lequel les membres sont affectés.</li>
+                        </ul>
+                    </aside>
+
                     <section class="cc-section">
                         <h2 class="cc-section__title">Rôles et droits</h2>
-                        <p class="cc-section__text">Ces modèles créent les profils de départ de votre organisation (commandement, ressources humaines, instruction, membres, invités et modération du forum). Vous pourrez les ajuster à tout moment après la création.</p>
+                        <p class="cc-section__text">Ces modèles créent les profils de départ de votre organisation (commandement, ressources humaines, instruction, membres, invités et modération). Vous pourrez les ajuster à tout moment après la création.</p>
                         <div class="mt-5 space-y-3">
                             <label class="cc-choice">
                                 <input type="radio" name="wizard_roles_template" value="quick" class="sr-only" checked>
                                 <span class="cc-choice__eyebrow">Recommandé</span>
                                 <span class="cc-choice__title">Démarrage rapide</span>
-                                <span class="cc-choice__text">Convient à la plupart des unités. Les droits sont équilibrés dès le départ&nbsp;: le modérateur du forum peut gérer les échanges courants, sans étendre sa portée à tout l’espace forum de l’organisation.</span>
+                                <span class="cc-choice__text">Convient à la plupart des unités. Les droits sont équilibrés dès le départ.</span>
                             </label>
                             <label class="cc-choice">
                                 <input type="radio" name="wizard_roles_template" value="standard" class="sr-only">
                                 <span class="cc-choice__eyebrow">Alternative</span>
                                 <span class="cc-choice__title">Modération élargie</span>
-                                <span class="cc-choice__text">Même profils de base, avec un droit supplémentaire&nbsp;: le modérateur du forum peut aussi intervenir sur l’espace forum de l’organisation (annonces, sections réservées, supervision plus large).</span>
+                                <span class="cc-choice__text">Même profils de base, avec une modération plus large des signalements des membres.</span>
                             </label>
                         </div>
 
                         <details class="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
                             <summary class="cursor-pointer text-sm font-bold text-slate-800">Comparer les rôles inclus</summary>
-                            <p class="mt-3 text-xs leading-relaxed text-slate-600">Aperçu des accès principaux. La seule différence entre les deux modèles concerne le rôle de modération du forum.</p>
+                            <p class="mt-3 text-xs leading-relaxed text-slate-600">Le compte fondateur reçoit le rôle «&nbsp;Fondateur&nbsp;». Les nouveaux membres reçoivent «&nbsp;Membre&nbsp;» une fois acceptés ; les visiteurs connectés non membres sont «&nbsp;Invités&nbsp;».</p>
+                            <p class="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-xs leading-relaxed text-emerald-900 hidden" data-cc-type-note="effectifs"><strong>Bureau des effectifs :</strong> ces rôles ne concernent que les personnes qui se connectent (état-major, RH). Les membres dont vous tenez la fiche sans compte n’ont aucun rôle à gérer, et le recrutement se fait sur Discord, pas sur le site.</p>
+                            <p class="mt-3 text-xs leading-relaxed text-slate-600">Aperçu des accès principaux. La seule différence entre les deux modèles concerne le rôle de modération.</p>
                             <div class="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-white">
                                 <table class="min-w-full text-left text-xs">
                                     <thead>
                                         <tr class="border-b border-slate-200 bg-slate-50">
                                             <th class="px-3 py-2 font-black text-slate-600">Rôle</th>
-                                            <th class="px-3 py-2 font-black text-slate-600">Forum</th>
                                             <th class="px-3 py-2 font-black text-slate-600">Documents et formation</th>
                                             <th class="px-3 py-2 font-black text-slate-600">Particularité</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-100 text-slate-700">
-                                        <tr><td class="px-3 py-2 font-semibold">Fondateur</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Pilotage de l’organisation</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">État-major</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Encadrement</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">Ressources humaines</td><td class="px-3 py-2">Lecture et sujets</td><td class="px-3 py-2">Consultation</td><td class="px-3 py-2">Effectifs et recrutement</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">Instructeur</td><td class="px-3 py-2">Participation</td><td class="px-3 py-2">Gestion des formations</td><td class="px-3 py-2">Instruction</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">Membre</td><td class="px-3 py-2">Participation</td><td class="px-3 py-2">Selon affectation</td><td class="px-3 py-2">Profil de base</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">Invité</td><td class="px-3 py-2">Lecture seule</td><td class="px-3 py-2">Sans accès dédié</td><td class="px-3 py-2">Accès limité</td></tr>
-                                        <tr class="bg-emerald-50/50"><td class="px-3 py-2 font-semibold">Modérateur forum</td><td class="px-3 py-2">Modération des échanges</td><td class="px-3 py-2">Sans accès dédié</td><td class="px-3 py-2 font-semibold text-emerald-800">Portée élargie avec le modèle «&nbsp;Modération élargie&nbsp;»</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Fondateur</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Pilotage de l’organisation</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">État-major</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Encadrement</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Ressources humaines</td><td class="px-3 py-2">Consultation</td><td class="px-3 py-2">Effectifs et recrutement</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Instructeur</td><td class="px-3 py-2">Gestion des formations</td><td class="px-3 py-2">Instruction</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Membre</td><td class="px-3 py-2">Selon affectation</td><td class="px-3 py-2">Profil de base</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Invité</td><td class="px-3 py-2">Sans accès dédié</td><td class="px-3 py-2">Accès limité</td></tr>
+                                        <tr class="bg-emerald-50/50"><td class="px-3 py-2 font-semibold">Modérateur</td><td class="px-3 py-2">Sans accès dédié</td><td class="px-3 py-2 font-semibold text-emerald-800">Portée élargie avec le modèle «&nbsp;Modération élargie&nbsp;»</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -399,21 +481,36 @@ $wizardSteps = [
                     <section class="cc-section">
                         <h2 class="cc-section__title">Démarrer avec un modèle</h2>
                         <p class="cc-section__text">En plus de la structure que vous composez ci-dessous, vous pouvez copier un modèle officiel. Les éléments déjà présents restent inchangés ; seuls ceux qui manquent sont ajoutés. Aucun membre n’est créé.</p>
-                        <div class="mt-5 space-y-3">
+                        <details class="cc-help">
+                            <summary>Que contient un modèle&nbsp;?</summary>
+                            <p>Un modèle ajoute des <strong>unités</strong> à l’organigramme, un catalogue de <strong>fonctions</strong> (emplois du dossier) et parfois des <strong>rôles</strong> d’accès. Les modèles marqués «&nbsp;Catalogue d’emplois&nbsp;» n’ajoutent aucun droit. Un seul modèle peut être choisi ici ; les autres restent disponibles dans <em>Back-office → Catalogue de l’organisation</em>, avec un aperçu avant application.</p>
+                        </details>
+                        <div class="mt-4">
+                            <label class="cc-label" for="cc-kit-filter">Filtrer les modèles</label>
+                            <input type="search" id="cc-kit-filter" class="cc-field" placeholder="Ex. infanterie, hélicoptère, SOF, gaming…" autocomplete="off">
+                        </div>
+                        <div class="mt-4 space-y-3" id="cc-kit-list">
                             <label class="cc-choice">
                                 <input type="radio" name="wizard_catalog_kit_code" value="" class="sr-only" checked>
                                 <span class="cc-choice__eyebrow">Par défaut</span>
                                 <span class="cc-choice__title">Sans modèle supplémentaire</span>
                                 <span class="cc-choice__text">Vous gardez uniquement la structure et les rôles définis dans cet assistant. Le catalogue restera disponible plus tard dans le back-office.</span>
                             </label>
-                            <?php foreach (\App\Services\OrganizationCatalog\OrganizationKitDefinitions::officialKits() as $kit): ?>
-                            <label class="cc-choice">
+                            <?php foreach ($officialKits as $kit): ?>
+                            <?php
+                            $kitIsJobCatalog = in_array((string) ($kit['code'] ?? ''), $jobDoctrineKits, true);
+                            $kitGrades = ((string) ($kit['grade_system_code'] ?? '')) === 'US_CLASSIC' ? 'Grades américains' : 'Grades français';
+                            $kitSearch = mb_strtolower((string) ($kit['title'] ?? '') . ' ' . (string) ($kit['summary'] ?? '') . ' ' . implode(' ', array_column($kit['job_roles'] ?? [], 'name')));
+                            ?>
+                            <label class="cc-choice" data-kit-search="<?= htmlspecialchars($kitSearch, ENT_QUOTES, 'UTF-8') ?>">
                                 <input type="radio" name="wizard_catalog_kit_code" value="<?= htmlspecialchars((string) ($kit['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="sr-only">
-                                <span class="cc-choice__eyebrow">Modèle officiel</span>
+                                <span class="cc-choice__eyebrow"><?= $kitIsJobCatalog ? 'Catalogue d’emplois' : 'Modèle officiel' ?> · <?= htmlspecialchars($kitGrades, ENT_QUOTES, 'UTF-8') ?></span>
                                 <span class="cc-choice__title"><?= htmlspecialchars((string) ($kit['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                <span class="cc-choice__text"><?= htmlspecialchars((string) ($kit['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars(\App\Services\OrganizationCatalog\OrganizationKitDefinitions::volumeLabel($kit), ENT_QUOTES, 'UTF-8') ?>.</span>
+                                <span class="cc-choice__text"><?= htmlspecialchars((string) ($kit['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="cc-choice__meta"><?= htmlspecialchars(\App\Services\OrganizationCatalog\OrganizationKitDefinitions::volumeLabel($kit), ENT_QUOTES, 'UTF-8') ?></span>
                             </label>
                             <?php endforeach; ?>
+                            <p class="cc-hint hidden" id="cc-kit-empty">Aucun modèle ne correspond. Effacez le filtre pour tout afficher.</p>
                         </div>
                     </section>
 
@@ -423,27 +520,73 @@ $wizardSteps = [
 
                         <label class="cc-checkrow mt-5">
                             <input type="hidden" name="wizard_founder_commands_root" value="0">
-                            <input type="checkbox" name="wizard_founder_commands_root" value="1" id="wizard-founder-commands-root" class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600" checked>
+                            <input type="checkbox" name="wizard_founder_commands_root" value="1" id="wizard-founder-commands-root" checked>
                             <span>
                                 <strong>Vous êtes le chef de l’unité principale</strong>
                                 <span>Les autres postes restent vacants jusqu’à ce que vous les attribuiez dans Effectifs.</span>
                             </span>
                         </label>
 
+                        <div class="mt-5">
+                            <p class="cc-label">Partir d’une structure type</p>
+                            <p class="cc-hint mt-0">Choisissez la forme la plus proche de votre communauté : elle remplace l’arborescence ci-dessous, que vous pourrez ensuite renommer, compléter ou élaguer.</p>
+                            <div class="cc-preset-grid mt-3" id="cc-orbat-presets" role="list">
+                                <?php foreach ($orbatPresets as $preset): ?>
+                                <?php
+                                // Échelons du modèle : nombre d’unités par niveau, dessinés en mini organigramme.
+                                $presetDepth = [];
+                                $presetLevels = [];
+                                foreach ((array) ($preset['units'] ?? []) as $pu) {
+                                    $pk = (string) ($pu['parent_key'] ?? '');
+                                    $lvl = $pk === '' ? 0 : (($presetDepth[$pk] ?? 0) + 1);
+                                    $presetDepth[(string) ($pu['key'] ?? '')] = $lvl;
+                                    $presetLevels[$lvl] = ($presetLevels[$lvl] ?? 0) + 1;
+                                }
+                                ksort($presetLevels);
+                                ?>
+                                <button type="button" class="cc-preset" role="listitem" aria-pressed="false" data-orbat-preset="<?= htmlspecialchars((string) $preset['id'], ENT_QUOTES, 'UTF-8') ?>">
+                                    <span class="cc-preset__head">
+                                        <span class="cc-preset__audience"><?= htmlspecialchars((string) $preset['audience'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="cc-preset__check" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 10.5l3.2 3.2L15 7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                                    </span>
+                                    <span class="cc-preset__title"><?= htmlspecialchars((string) $preset['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="cc-preset__tree" aria-hidden="true">
+                                        <?php foreach ($presetLevels as $lvlCount): ?>
+                                        <span class="cc-preset__tier">
+                                            <?php for ($pi = 0; $pi < min(12, $lvlCount); $pi++): ?><i></i><?php endfor; ?>
+                                            <?php if ($lvlCount > 12): ?><em>+<?= (int) ($lvlCount - 12) ?></em><?php endif; ?>
+                                        </span>
+                                        <?php endforeach; ?>
+                                    </span>
+                                    <span class="cc-preset__text"><?= htmlspecialchars((string) $preset['description'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="cc-preset__meta">
+                                        <span><?= (int) $preset['count'] ?> unités</span>
+                                        <span><?= count($presetLevels) ?> niveaux</span>
+                                    </span>
+                                </button>
+                                <?php endforeach; ?>
+                            </div>
+                            <p class="cc-hint" id="cc-orbat-preset-status" aria-live="polite"></p>
+                        </div>
                         <label class="cc-checkrow mt-3">
-                            <input type="checkbox" name="wizard_quick_fill" value="1" id="wizard-quick-fill" class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600">
-                            <span>
-                                <strong>Insérer une structure de départ</strong>
-                                <span>Un groupe racine, une section et une équipe — modifiables ci-dessous.</span>
-                            </span>
-                        </label>
-                        <label class="cc-checkrow mt-3">
-                            <input type="checkbox" name="wizard_orbat_custom_slug" value="1" id="wizard-orbat-custom-slug" class="h-4 w-4 rounded border-slate-300 text-emerald-600">
+                            <input type="checkbox" name="wizard_orbat_custom_slug" value="1" id="wizard-orbat-custom-slug">
                             <span>
                                 <strong>Adresses courtes par unité</strong>
                                 <span>Sinon, chaque adresse est dérivée du nom de l’unité.</span>
                             </span>
                         </label>
+
+                        <details class="cc-help">
+                            <summary>Lire l’arborescence et les types d’unité</summary>
+                            <p>Chaque ligne est une unité : <strong>nom</strong>, adresse courte, <strong>type</strong>, ordre d’affichage et unité parente. «&nbsp;+ Sous-unité&nbsp;» crée un niveau en dessous, «&nbsp;Suppr.&nbsp;» retire l’unité et toutes ses sous-unités.</p>
+                            <ul>
+                                <li><strong>Groupe</strong> : grande formation (compagnie, groupement, communauté).</li>
+                                <li><strong>Section</strong> : niveau intermédiaire (section, peloton, pôle).</li>
+                                <li><strong>Escouade</strong> : groupe de combat de 6 à 12 joueurs.</li>
+                                <li><strong>Équipe</strong> : plus petit échelon (binôme, équipe de feu, équipage).</li>
+                            </ul>
+                            <p>Il faut au moins une unité racine. Les postes restent vacants : les affectations se font ensuite dans <em>Effectifs → Affectations</em>.</p>
+                        </details>
 
                         <div class="mt-4 flex flex-wrap gap-2">
                             <button type="button" id="orbat-add-root" class="cc-btn cc-btn--ink">+ Unité racine</button>
@@ -454,7 +597,7 @@ $wizardSteps = [
                             <summary class="cursor-pointer text-sm font-bold text-slate-700">Mode expert : arborescence avancée</summary>
                             <label class="mt-3 mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Données structurées des unités</label>
                             <textarea id="wizard-units-editor" rows="8" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"><?= htmlspecialchars($defaultWizardUnitsJson, ENT_QUOTES, 'UTF-8') ?></textarea>
-                            <p class="mt-2 text-xs text-slate-500">Synchronisé avec le constructeur ci-dessus ; réservé aux parcours avancés.</p>
+                            <p class="mt-2 text-xs text-slate-500">Synchronisé avec le constructeur ci-dessus ; réservé aux parcours avancés. Chaque unité attend <span class="font-mono">key</span>, <span class="font-mono">parent_key</span> (vide pour une racine), <span class="font-mono">name</span>, <span class="font-mono">slug</span> et <span class="font-mono">type</span> (group, section, squad ou team).</p>
                         </details>
                     </section>
                 </div>
@@ -466,6 +609,15 @@ $wizardSteps = [
                         <h1 class="cc-panel-head__title">Référentiel de grades</h1>
                         <p class="cc-panel-head__text">Choisissez le jeu de grades affiché dans votre communauté, puis le grade initial du compte fondateur.</p>
                     </div>
+
+                    <aside class="cc-tip" aria-label="Conseils pour cette étape">
+                        <p class="cc-tip__title">À retenir</p>
+                        <ul>
+                            <li>Prenez le référentiel de l’armée que vous jouez : il s’affiche sur les profils, l’ORBAT et les courriers.</li>
+                            <li>Les grades sont des repères d’ancienneté et de commandement ; ils ne donnent aucun droit d’accès.</li>
+                            <li>Si un modèle d’organisation est choisi à l’étape précédente, vérifiez que son référentiel (indiqué sur la carte) correspond.</li>
+                        </ul>
+                    </aside>
 
                     <section class="cc-section">
                         <h2 class="cc-section__title">Modèle</h2>
@@ -482,9 +634,16 @@ $wizardSteps = [
                                 <span class="cc-choice__title">United States</span>
                                 <span class="cc-choice__text">Grades classiques des forces armées américaines.</span>
                             </label>
+                            <label class="cc-choice min-w-[12rem] flex-1">
+                                <input type="radio" name="wizard_grade_system_code" value="NONE" class="sr-only" data-grade-system>
+                                <span class="cc-choice__eyebrow">Sans grades</span>
+                                <span class="cc-choice__title">Aucun</span>
+                                <span class="cc-choice__text">Aucun grade affiché : profils, en-tête et tableau de bord restent sobres. Idéal pour une association ou une communauté de joueurs.</span>
+                            </label>
                         </div>
+                        <p class="cc-hint hidden" id="cc-grades-none-note">Aucun grade ne sera affiché dans la communauté. Vous pourrez en activer un plus tard dans <em>Back-office → Référentiel des grades</em>, sans rien perdre.</p>
 
-                        <div class="mt-6 grid gap-4 md:grid-cols-2">
+                        <div class="mt-6 grid gap-4 md:grid-cols-2" id="cc-grade-previews">
                             <div id="preview-fr" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 max-h-80 overflow-y-auto">
                                 <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Aperçu français</p>
                                 <div class="mt-3 space-y-3 text-xs text-slate-700">
@@ -493,8 +652,16 @@ $wizardSteps = [
                                         <div>
                                             <p class="font-black text-slate-800"><?= htmlspecialchars($block['label'], ENT_QUOTES, 'UTF-8') ?></p>
                                             <ul class="mt-1 space-y-0.5 pl-2 border-l-2 border-emerald-200">
+                                                <?php $seenGrades = []; ?>
                                                 <?php foreach ($block['grades'] as $g): ?>
-                                                <li><?= htmlspecialchars((string) ($g['label_short'] ?? $g['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars((string) ($g['label_long'] ?? ''), ENT_QUOTES, 'UTF-8') ?></li>
+                                                <?php
+                                                $gShort = trim((string) ($g['label_short'] ?? $g['code'] ?? ''));
+                                                $gLong = trim((string) ($g['label_long'] ?? ''));
+                                                $gKey = mb_strtolower($gLong !== '' ? $gLong : $gShort);
+                                                if (isset($seenGrades[$gKey])) { continue; }
+                                                $seenGrades[$gKey] = true;
+                                                ?>
+                                                <li><?php if ($gShort !== '' && mb_strtolower($gShort) !== mb_strtolower($gLong)): ?><span class="cc-grade-code"><?= htmlspecialchars($gShort, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?><?= htmlspecialchars($gLong !== '' ? $gLong : $gShort, ENT_QUOTES, 'UTF-8') ?></li>
                                                 <?php endforeach; ?>
                                             </ul>
                                         </div>
@@ -509,8 +676,16 @@ $wizardSteps = [
                                         <div>
                                             <p class="font-black text-slate-800"><?= htmlspecialchars($block['label'], ENT_QUOTES, 'UTF-8') ?></p>
                                             <ul class="mt-1 space-y-0.5 pl-2 border-l-2 border-slate-300">
+                                                <?php $seenGrades = []; ?>
                                                 <?php foreach ($block['grades'] as $g): ?>
-                                                <li><?= htmlspecialchars((string) ($g['label_short'] ?? $g['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars((string) ($g['label_long'] ?? ''), ENT_QUOTES, 'UTF-8') ?></li>
+                                                <?php
+                                                $gShort = trim((string) ($g['label_short'] ?? $g['code'] ?? ''));
+                                                $gLong = trim((string) ($g['label_long'] ?? ''));
+                                                $gKey = mb_strtolower($gLong !== '' ? $gLong : $gShort);
+                                                if (isset($seenGrades[$gKey])) { continue; }
+                                                $seenGrades[$gKey] = true;
+                                                ?>
+                                                <li><?php if ($gShort !== '' && mb_strtolower($gShort) !== mb_strtolower($gLong)): ?><span class="cc-grade-code"><?= htmlspecialchars($gShort, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?><?= htmlspecialchars($gLong !== '' ? $gLong : $gShort, ENT_QUOTES, 'UTF-8') ?></li>
                                                 <?php endforeach; ?>
                                             </ul>
                                         </div>
@@ -519,8 +694,9 @@ $wizardSteps = [
                             </div>
                         </div>
 
-                        <div class="mt-6">
+                        <div class="mt-6" id="cc-founder-grade">
                             <label class="cc-label" for="founder-grade-fr">Grade du fondateur</label>
+                            <p class="cc-hint mt-0 mb-2">Le grade affiché sur votre propre dossier. Les grades des membres s’attribuent ensuite dans Effectifs.</p>
                             <select name="wizard_founder_grade_id" id="founder-grade-fr" class="cc-select founder-grade-select">
                                 <?php foreach ($gradesFrGrouped as $block): ?>
                                     <?php if (empty($block['grades'])) { continue; } ?>
@@ -553,10 +729,23 @@ $wizardSteps = [
                         <p class="cc-panel-head__text">Dernière étape : comment les candidats arrivent, quelle formule vous choisissez, puis le récapitulatif avant création.</p>
                     </div>
 
+                    <aside class="cc-tip" aria-label="Conseils pour cette étape">
+                        <p class="cc-tip__title">À retenir</p>
+                        <ul>
+                            <li>Pas encore prêt à recruter&nbsp;? Cochez «&nbsp;Fermer le recrutement&nbsp;» : la vitrine reste visible, les candidatures attendront.</li>
+                            <li>Le bouton <strong>Aperçu</strong> montre la page publique sans rien créer.</li>
+                            <li>Le récapitulatif en bas liste vos choix : cliquez sur une étape du bandeau pour corriger avant de valider.</li>
+                        </ul>
+                    </aside>
+
                     <section class="cc-section">
                         <h2 class="cc-section__title">Mode d’inscription</h2>
-                        <p class="cc-section__text">Ce choix définit le parcours candidat sur la page d’enrôlement public. Vous pourrez le modifier ensuite.</p>
-                        <div class="cc-choice-grid cc-choice-grid--3 mt-5">
+                        <p class="cc-section__text" data-cc-reg-full>Ce choix définit le parcours candidat sur la page d’enrôlement public. Vous pourrez le modifier ensuite.</p>
+                        <div class="cc-soft mt-5 hidden" data-cc-reg-discord-only>
+                            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-900">Recrutement uniquement sur Discord</p>
+                            <p class="mt-3 text-xs leading-relaxed text-slate-700">Avec le profil choisi, personne ne candidate sur le site. Le bouton de votre page publique devient « Rejoindre sur Discord » et ouvre votre serveur. Pensez à renseigner le lien d’invitation Discord après la création (Paramètres → Inscription). Pour un formulaire de candidature sur le site, choisissez le profil « Complet ».</p>
+                        </div>
+                        <div class="cc-choice-grid cc-choice-grid--3 mt-5" data-cc-reg-full>
                             <label class="cc-choice">
                                 <input type="radio" name="registration_mode" value="milsim" class="sr-only" checked id="registration_mode_milsim">
                                 <span class="cc-choice__eyebrow">Sélection</span>
@@ -602,6 +791,11 @@ $wizardSteps = [
                             </div>
                         </div>
 
+                        <details class="cc-help">
+                            <summary>Quel mode choisir&nbsp;?</summary>
+                            <p><strong>Dossier MilSim</strong> si vous sélectionnez vos joueurs (matériel, expérience, disponibilités). <strong>Formulaire court</strong> pour une communauté ouverte où l’on rejoint vite. <strong>Discord</strong> si l’entretien se fait déjà sur votre serveur : Athena garde la trace des candidatures. Le mode se change à tout moment dans <em>Paramètres → Inscription</em>.</p>
+                        </details>
+
                         <div class="mt-5">
                             <label class="cc-label" for="wizard-welcome-text">Message d’accueil</label>
                             <textarea id="wizard-welcome-text" name="welcome_text" rows="3" maxlength="500" class="cc-area" placeholder="Texte visible sur la page publique de la communauté."></textarea>
@@ -610,21 +804,21 @@ $wizardSteps = [
 
                         <div class="mt-5 grid gap-3 md:grid-cols-2">
                             <label class="cc-checkrow">
-                                <input type="checkbox" name="community_locked" value="1" class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600">
+                                <input type="checkbox" name="community_locked" value="1">
                                 <span>
                                     <strong>Fermer le recrutement</strong>
                                     <span>Les nouvelles candidatures ne sont pas acceptées pour le moment.</span>
                                 </span>
                             </label>
                             <label class="cc-checkrow">
-                                <input type="checkbox" name="require_ai_ack" value="1" checked class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600">
+                                <input type="checkbox" name="require_ai_ack" value="1" checked>
                                 <span>
                                     <strong>Exiger la confirmation « sans IA »</strong>
                                     <span>Le candidat atteste avoir rédigé sa candidature lui-même.</span>
                                 </span>
                             </label>
                             <label class="cc-checkrow md:col-span-2">
-                                <input type="checkbox" name="refuse_other_community_members" value="1" class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600">
+                                <input type="checkbox" name="refuse_other_community_members" value="1">
                                 <span>
                                     <strong>Refuser les comptes déjà rattachés à une autre communauté</strong>
                                     <span>Un compte Athena déjà membre d’une autre communauté ne pourra pas candidater ici. Les visiteurs sans compte, et les comptes sans communauté (espace « Pas d’organisation »), restent acceptés.</span>
@@ -674,12 +868,13 @@ $wizardSteps = [
                                 <option value="members" selected>Réservée aux membres</option>
                                 <option value="command">Réservée au commandement</option>
                             </select>
+                            <p class="cc-hint">«&nbsp;Visible par tous&nbsp;» montre l’organigramme sur la page publique, utile pour recruter sur des postes précis. Les noms des membres ne s’affichent qu’aux personnes autorisées.</p>
                         </div>
                     </section>
 
                     <section class="cc-section">
                         <h2 class="cc-section__title">Formule</h2>
-                        <p class="cc-section__text">Choisissez la formule adaptée à votre unité. Les restrictions de capacité et d’accès dépendent de l’offre retenue.</p>
+                        <p class="cc-section__text">Choisissez la formule adaptée à votre unité. Les restrictions de capacité et d’accès dépendent de l’offre retenue. Vous pouvez commencer gratuitement et changer de formule plus tard sans perdre vos données.</p>
                         <div class="cc-choice-grid cc-choice-grid--3 mt-5">
                             <?php foreach ($subscriptionOfferCards as $idx => $offer): ?>
                             <?php
@@ -720,7 +915,7 @@ $wizardSteps = [
                             <?php endforeach; ?>
                         </div>
                         <div id="paid-hint" class="cc-soft cc-soft--rose mt-4 hidden">
-                            Après validation, vous serez redirigé vers une page de paiement sécurisée pour finaliser l’abonnement ou le soutien choisi. Les limitations du site restent ensuite alignées sur la formule active.
+                            Votre communauté est créée tout de suite. Vous arrivez ensuite sur la page de paiement d’Athena : payez par PayPal avec la référence affichée, l’équipe Athena active la formule dès réception (en attendant, l’essai fondateur Pro est actif).
                         </div>
                     </section>
 
@@ -789,6 +984,58 @@ $wizardSteps = [
             </form>
         </div>
     </div>
+
+    <div class="cc-tutorial hidden" id="cc-tutorial" role="dialog" aria-modal="true" aria-labelledby="cc-tutorial-title">
+        <div class="cc-tutorial__backdrop" data-cc-tutorial-close></div>
+        <div class="cc-tutorial__card">
+            <div class="cc-tutorial__head">
+                <p class="cc-tutorial__kicker">Tutoriel · <span data-cc-tutorial-count>1 / 6</span></p>
+                <button type="button" class="cc-tutorial__x" data-cc-tutorial-close aria-label="Fermer le tutoriel">×</button>
+            </div>
+            <div class="cc-tutorial__slides">
+                <section class="cc-tutorial__slide" data-cc-slide="0">
+                    <h2 id="cc-tutorial-title">Créer votre communauté en cinq étapes</h2>
+                    <p>L’assistant prépare tout ce dont une unité a besoin le premier soir : page publique, recrutement, organigramme, rôles et grades. Rien n’est définitif : chaque choix se retrouve dans le back-office.</p>
+                    <ol class="cc-tutorial__list">
+                        <li><strong>Identité</strong> — nom, adresse, langue, unité représentée.</li>
+                        <li><strong>Type</strong> — l’étendue des outils activés.</li>
+                        <li><strong>Organisation</strong> — rôles, modèle et organigramme.</li>
+                        <li><strong>Grades</strong> — référentiel et grade du fondateur.</li>
+                        <li><strong>Accès &amp; offre</strong> — inscription, formule, récapitulatif.</li>
+                    </ol>
+                </section>
+                <section class="cc-tutorial__slide hidden" data-cc-slide="1" data-cc-goto="1">
+                    <h2>1. Identité</h2>
+                    <p>Seul le <strong>nom affiché</strong> est obligatoire. L’adresse web (<span class="font-mono">/c/votre-unite</span>) est calculée à partir du nom ; cochez «&nbsp;adresse personnalisée&nbsp;» pour la choisir.</p>
+                    <p>Si vous jouez une unité réelle, déclarez-la : les candidats la retrouvent dans le registre. La vitrine (logo, bannière, textes) peut attendre.</p>
+                </section>
+                <section class="cc-tutorial__slide hidden" data-cc-slide="2" data-cc-goto="2">
+                    <h2>2. Type de communauté</h2>
+                    <p><strong>Complet</strong> active tous les modules. Les profils <strong>Bureau des effectifs</strong> et <strong>Carte ATAK</strong> allègent l’interface pour les communautés qui n’utilisent qu’une partie d’Athena.</p>
+                    <p>Changer de type plus tard masque ou affiche des modules, sans jamais effacer de données.</p>
+                </section>
+                <section class="cc-tutorial__slide hidden" data-cc-slide="3" data-cc-goto="3">
+                    <h2>3. Organisation</h2>
+                    <p>Choisissez un jeu de <strong>rôles</strong> (les droits sur le site), éventuellement un <strong>modèle officiel</strong> (unités, fonctions et grades types), puis une <strong>structure type</strong> : escouade, section, peloton US, compagnie, détachement SOF…</p>
+                    <p>L’arborescence se modifie ligne par ligne : renommez, ajoutez des sous-unités, supprimez une branche.</p>
+                </section>
+                <section class="cc-tutorial__slide hidden" data-cc-slide="4" data-cc-goto="4">
+                    <h2>4. Grades</h2>
+                    <p>Référentiel français ou américain, puis votre propre grade. Les grades servent d’affichage et d’ancienneté ; les droits viennent des rôles.</p>
+                </section>
+                <section class="cc-tutorial__slide hidden" data-cc-slide="5" data-cc-goto="5">
+                    <h2>5. Accès &amp; offre, puis après la création</h2>
+                    <p>Choisissez comment les candidats postulent, qui voit l’organigramme et la formule. Vérifiez le récapitulatif, puis «&nbsp;Créer la communauté&nbsp;».</p>
+                    <p class="cc-tutorial__next">Ensuite, dans le back-office&nbsp;: <strong>Configuration initiale</strong> pour la liste de démarrage, <strong>Invitations</strong> pour faire venir vos premiers membres, et la recherche <kbd>Ctrl</kbd>&nbsp;+&nbsp;<kbd>K</kbd> pour retrouver n’importe quelle page ou guide.</p>
+                </section>
+            </div>
+            <div class="cc-tutorial__foot">
+                <button type="button" class="cc-btn cc-btn--ghost" data-cc-tutorial-prev>Précédent</button>
+                <a class="cc-tutorial__guide" href="<?= htmlspecialchars($guideUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener">Guide complet</a>
+                <button type="button" class="cc-btn cc-btn--next" data-cc-tutorial-next>Suivant</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -841,6 +1088,30 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
     });
     syncRegistrationModeUi();
 
+    // Profils sans recrutement (Bureau des effectifs, Carte ATAK) : Discord uniquement, expliqué à chaque étape.
+    function syncTenantTypeUi() {
+        var type = (form.querySelector('input[name="tenant_type"]:checked') || {}).value || 'full';
+        var discordOnly = type !== 'full';
+        form.querySelectorAll('[data-cc-type-note]').forEach(function (el) {
+            el.classList.toggle('hidden', el.getAttribute('data-cc-type-note') !== type);
+        });
+        form.querySelectorAll('[data-cc-reg-full]').forEach(function (el) { el.classList.toggle('hidden', discordOnly); });
+        form.querySelectorAll('[data-cc-reg-discord-only]').forEach(function (el) { el.classList.toggle('hidden', !discordOnly); });
+        if (discordOnly) {
+            var d = document.getElementById('registration_mode_discord');
+            if (d) { d.checked = true; }
+            if (detailMilsim) detailMilsim.classList.add('hidden');
+            if (detailSimple) detailSimple.classList.add('hidden');
+            if (detailDiscord) detailDiscord.classList.add('hidden');
+        } else {
+            syncRegistrationModeUi();
+        }
+    }
+    form.querySelectorAll('input[name="tenant_type"]').forEach(function (el) {
+        el.addEventListener('change', syncTenantTypeUi);
+    });
+    syncTenantTypeUi();
+
     function closeMilsimModal() {
         if (milsimModal) milsimModal.classList.add('hidden');
     }
@@ -880,7 +1151,6 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
     var tabs = document.querySelectorAll('.community-create [data-step-tab]');
     var unitsHidden = document.getElementById('wizard-units-json');
     var unitsEditor = document.getElementById('wizard-units-editor');
-    var quickFill = document.getElementById('wizard-quick-fill');
     var defaultUnits = <?= json_encode($quickUnitsArr, JSON_UNESCAPED_UNICODE) ?>;
     var orbatBuilder = typeof initOrbatBuilder === 'function'
         ? initOrbatBuilder('orbat-builder-root', 'wizard-units-json', { defaultUnits: defaultUnits })
@@ -922,6 +1192,8 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         }
         var fgText = '';
         var fgSel = form.querySelector('select.founder-grade-select:not(.hidden)');
+        var gsPicked = form.querySelector('input[name="wizard_grade_system_code"]:checked');
+        if (gsPicked && gsPicked.value === 'NONE') fgSel = null;
         if (fgSel && fgSel.selectedIndex >= 0) {
             fgText = fgSel.options[fgSel.selectedIndex].text;
         }
@@ -968,7 +1240,7 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         } else {
             lines.push('Ancienneté : commence aujourd’hui');
         }
-        lines.push('Grades : ' + (gs === 'US_CLASSIC' ? 'United States' : 'Français'));
+        lines.push('Grades : ' + (gs === 'US_CLASSIC' ? 'United States' : (gs === 'NONE' ? 'aucun' : 'Français')));
         if (fgText) lines.push('Grade fondateur : ' + fgText);
         lines.push('Inscription : ' + regLabel);
         lines.push('Recrutement fermé : ' + (locked ? 'oui' : 'non'));
@@ -1017,17 +1289,70 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         el.addEventListener('change', syncPaid);
     });
 
+    var nameInput = document.getElementById('cc-name');
+    var nameError = document.getElementById('cc-name-error');
+    var reservedSlugs = <?= json_encode(\App\Services\Community\TenantSlugService::RESERVED) ?>;
+    function previewSlug(name) {
+        var t = String(name || '').toLowerCase();
+        if (t.normalize) t = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        t = t.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        if (t.length > 50) t = t.substring(0, 50).replace(/-+$/g, '');
+        return t;
+    }
+    var slugPreviewEl = document.querySelector('[data-slug-preview]');
+    var slugPreviewBase = <?= json_encode(rtrim(url('c/'), '/') . '/') ?>;
+    function syncSlugPreview() {
+        if (!slugPreviewEl) return;
+        var custom = customCommunitySlugCb && customCommunitySlugCb.checked && communitySlugInput && communitySlugInput.value.trim() !== '';
+        var slug = custom ? communitySlugInput.value.trim().toLowerCase() : previewSlug(nameInput ? nameInput.value : '');
+        var note = '';
+        if (slug && reservedSlugs.indexOf(slug) !== -1) note = ' — adresse réservée, un suffixe sera ajouté';
+        slugPreviewEl.textContent = slugPreviewBase + (slug || '…') + note;
+    }
+    if (nameInput) nameInput.addEventListener('input', function () {
+        syncSlugPreview();
+        if (nameInput.value.trim() !== '' && nameError) {
+            nameError.classList.add('hidden');
+            nameInput.removeAttribute('aria-invalid');
+        }
+    });
+    if (communitySlugInput) communitySlugInput.addEventListener('input', syncSlugPreview);
+    if (customCommunitySlugCb) customCommunitySlugCb.addEventListener('change', syncSlugPreview);
+
+    function validateStep(n) {
+        if (n === 1 && nameInput && nameInput.value.trim() === '') {
+            if (nameError) nameError.classList.remove('hidden');
+            nameInput.setAttribute('aria-invalid', 'true');
+            nameInput.focus();
+            return false;
+        }
+        if (n === 1 && customCommunitySlugCb && customCommunitySlugCb.checked && communitySlugInput && !communitySlugInput.checkValidity()) {
+            communitySlugInput.reportValidity();
+            return false;
+        }
+        return true;
+    }
+    function markDone(n) {
+        tabs.forEach(function (t) {
+            if (parseInt(t.getAttribute('data-step-tab'), 10) === n) t.setAttribute('data-done', '1');
+        });
+    }
+
     nextBtn.addEventListener('click', function () {
+        if (!validateStep(step)) return;
         if (step === 3) {
             syncUnitsFromOrgStep();
             if (unitsEditor && unitsHidden) unitsEditor.value = unitsHidden.value;
         }
+        markDone(step);
         showStep(step + 1);
     });
     prevBtn.addEventListener('click', function () { showStep(step - 1); });
     tabs.forEach(function (t) {
         t.addEventListener('click', function () {
             var n = parseInt(t.getAttribute('data-step-tab'), 10);
+            if (n > step && !validateStep(step)) return;
+            if (n > step) markDone(step);
             if (step === 3) {
                 syncUnitsFromOrgStep();
                 if (unitsEditor && unitsHidden) unitsEditor.value = unitsHidden.value;
@@ -1036,12 +1361,49 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         });
     });
 
-    if (quickFill && orbatBuilder) {
-        quickFill.addEventListener('change', function () {
-            if (quickFill.checked) {
-                orbatBuilder.loadUnits(defaultUnits);
-                if (unitsEditor) unitsEditor.value = JSON.stringify(defaultUnits, null, 2);
+    var orbatPresets = <?= json_encode($orbatPresets, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>;
+    var presetStatus = document.getElementById('cc-orbat-preset-status');
+    document.querySelectorAll('[data-orbat-preset]').forEach(function (presetBtn) {
+        presetBtn.addEventListener('click', function () {
+            if (!orbatBuilder) return;
+            var id = presetBtn.getAttribute('data-orbat-preset');
+            var preset = null;
+            orbatPresets.forEach(function (p) { if (p.id === id) preset = p; });
+            if (!preset) return;
+            var current = [];
+            try { current = JSON.parse(unitsHidden ? unitsHidden.value : '[]') || []; } catch (e) { current = []; }
+            if (current.length > 0 && !window.confirm('Remplacer l’arborescence actuelle (' + current.length + ' unités) par « ' + preset.label + ' » ?')) {
+                return;
             }
+            orbatBuilder.loadUnits(preset.units);
+            if (unitsEditor) unitsEditor.value = JSON.stringify(preset.units, null, 2);
+            document.querySelectorAll('[data-orbat-preset]').forEach(function (b) {
+                b.setAttribute('aria-pressed', b === presetBtn ? 'true' : 'false');
+            });
+            if (presetStatus) presetStatus.textContent = '« ' + preset.label + ' » chargé : ' + preset.units.length + ' unités. Renommez-les librement ci-dessous.';
+        });
+    });
+
+    var kitFilter = document.getElementById('cc-kit-filter');
+    var kitEmpty = document.getElementById('cc-kit-empty');
+    function normalizeText(v) {
+        var t = String(v || '').toLowerCase();
+        if (t.normalize) t = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return t.trim();
+    }
+    if (kitFilter) {
+        kitFilter.addEventListener('input', function () {
+            var q = normalizeText(kitFilter.value);
+            var tokens = q ? q.split(/\s+/) : [];
+            var shown = 0;
+            document.querySelectorAll('#cc-kit-list [data-kit-search]').forEach(function (card) {
+                var hay = normalizeText(card.getAttribute('data-kit-search'));
+                var ok = tokens.every(function (tok) { return hay.indexOf(tok) !== -1; });
+                var checked = card.querySelector('input:checked');
+                card.classList.toggle('hidden', !ok && !checked);
+                if (ok) shown++;
+            });
+            if (kitEmpty) kitEmpty.classList.toggle('hidden', shown > 0 || tokens.length === 0);
         });
     }
     if (unitsEditor && orbatBuilder) {
@@ -1053,7 +1415,13 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         });
     }
 
-    form.addEventListener('submit', function () {
+    form.addEventListener('submit', function (ev) {
+        if (nameInput && nameInput.value.trim() === '') {
+            ev.preventDefault();
+            showStep(1);
+            validateStep(1);
+            return;
+        }
         if (customCommunitySlugCb && !customCommunitySlugCb.checked && communitySlugInput) {
             communitySlugInput.value = '';
         }
@@ -1083,8 +1451,15 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
     gradeRadios.forEach(function (r) {
         r.addEventListener('change', function () {
             var us = r.value === 'US_CLASSIC';
+            var none = r.value === 'NONE';
             if (previewFr) previewFr.classList.toggle('opacity-60', us);
             if (previewUs) previewUs.classList.toggle('opacity-60', !us);
+            ['cc-grade-previews', 'cc-founder-grade'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.classList.toggle('hidden', none);
+            });
+            var noneNote = document.getElementById('cc-grades-none-note');
+            if (noneNote) noneNote.classList.toggle('hidden', !none);
             var frSel = document.getElementById('founder-grade-fr');
             var usSel = document.getElementById('founder-grade-us');
             if (frSel && usSel) {
@@ -1198,8 +1573,64 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         el.addEventListener('change', syncFoundingUi);
     });
 
+    var tutorial = document.getElementById('cc-tutorial');
+    var tutorialIdx = 0;
+    var tutorialSlides = tutorial ? tutorial.querySelectorAll('[data-cc-slide]') : [];
+    function renderTutorial() {
+        tutorialSlides.forEach(function (sl, i) { sl.classList.toggle('hidden', i !== tutorialIdx); });
+        var count = tutorial.querySelector('[data-cc-tutorial-count]');
+        if (count) count.textContent = (tutorialIdx + 1) + ' / ' + tutorialSlides.length;
+        var prev = tutorial.querySelector('[data-cc-tutorial-prev]');
+        var next = tutorial.querySelector('[data-cc-tutorial-next]');
+        if (prev) prev.disabled = tutorialIdx === 0;
+        if (next) next.textContent = tutorialIdx >= tutorialSlides.length - 1 ? 'Commencer' : 'Suivant';
+    }
+    function openTutorial() {
+        if (!tutorial) return;
+        tutorialIdx = 0;
+        renderTutorial();
+        tutorial.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+        var nb = tutorial.querySelector('[data-cc-tutorial-next]');
+        if (nb) nb.focus();
+    }
+    function closeTutorial() {
+        if (!tutorial) return;
+        tutorial.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+        try { window.localStorage.setItem('athena.ccTutorialSeen', '1'); } catch (e) { /* stockage indisponible */ }
+    }
+    if (tutorial) {
+        tutorial.querySelectorAll('[data-cc-tutorial-close]').forEach(function (el) { el.addEventListener('click', closeTutorial); });
+        var tPrev = tutorial.querySelector('[data-cc-tutorial-prev]');
+        var tNext = tutorial.querySelector('[data-cc-tutorial-next]');
+        if (tPrev) tPrev.addEventListener('click', function () { tutorialIdx = Math.max(0, tutorialIdx - 1); renderTutorial(); });
+        if (tNext) tNext.addEventListener('click', function () {
+            if (tutorialIdx >= tutorialSlides.length - 1) {
+                closeTutorial();
+                showStep(1);
+                if (nameInput) nameInput.focus();
+                return;
+            }
+            tutorialIdx += 1;
+            renderTutorial();
+        });
+        tutorial.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeTutorial();
+            if (e.key === 'ArrowRight' && tNext) tNext.click();
+            if (e.key === 'ArrowLeft' && tPrev && !tPrev.disabled) tPrev.click();
+        });
+    }
+    document.querySelectorAll('[data-cc-tutorial-open]').forEach(function (b) { b.addEventListener('click', openTutorial); });
+
     restoreWizardDraft();
     syncFoundingUi();
+    syncSlugPreview();
     showStep(resumeWizardStep);
+
+    var hasDraft = wizardDraft && typeof wizardDraft === 'object' && Object.keys(wizardDraft).length > 0;
+    var tutorialSeen = false;
+    try { tutorialSeen = window.localStorage.getItem('athena.ccTutorialSeen') === '1'; } catch (e) { tutorialSeen = true; }
+    if (!hasDraft && !tutorialSeen && resumeWizardStep === 1) openTutorial();
 })();
 </script>

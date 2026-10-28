@@ -1,13 +1,25 @@
 params [["_page", "LAUNCHER"]];
+private _perfT = diag_tickTime;
 disableSerialization;
 private _d = ([] call comspec_atak_native_fnc_display);
 if (isNull _d) exitWith { false };
+// Rendus comptés : fn_layoutApply (mise en page seule) ne redessine pas la page si un rendu a suivi.
+uiNamespace setVariable ["COMSPEC_ATAK_RenderSeq", (uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]) + 1];
 // Garder la saisie en cours de l'app Athena quand la page se redessine.
 private _form = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
 if ("email" in _form || {"pair" in _form} || {"otp" in _form}) then {
     private _draft = uiNamespace getVariable ["COMSPEC_ATAK_AthenaDraft", createHashMap];
     { if (_x in _form) then { _draft set [_x, [_x] call comspec_atak_native_fnc_formValue]; }; } forEach ["email", "otp", "pair"];
     uiNamespace setVariable ["COMSPEC_ATAK_AthenaDraft", _draft];
+};
+// App JTAC : saisie du brief gardée (un appel radio reçu redessine la page).
+if ("j5" in _form || {"jBda" in _form}) then { ["save"] call comspec_atak_native_fnc_jtacAction; };
+// Rédacteur d'ordre (TASK) : saisie gardée quand la page se redessine (ordre reçu, retour de liaison, mise en page, redémarrage).
+private _st0 = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+if ((_st0 getOrDefault ["orderCompose", false]) && {(_st0 getOrDefault ["pageDrawn", ""]) isEqualTo "TASK"} && {"text" in _form || {"sit" in _form}}) then {
+    private _od = uiNamespace getVariable ["COMSPEC_ATAK_OrderDraft", createHashMap];
+    { if (!isNull (_form getOrDefault [_x, controlNull])) then { _od set [_x, [_x] call comspec_atak_native_fnc_formValue]; }; } forEach ["target", "grid", "text", "sit", "mis", "exe", "sup", "cmd", "sseCase"];
+    uiNamespace setVariable ["COMSPEC_ATAK_OrderDraft", _od];
 };
 // Défilement de la page affichée gardé (par page) : rendu de la même page (rafraîchissement) ou retour arrière
 // (fn_back, fn_navigate sans empilement) le retrouvent au lieu de remonter en haut.
@@ -16,14 +28,25 @@ private _scrollMem = _st getOrDefault ["scrollMem", createHashMap];
 private _drawn = _st getOrDefault ["pageDrawn", ""];
 if (_drawn isNotEqualTo "") then { _scrollMem set [_drawn, ctrlScrollValues (_d displayCtrl 88531)]; };
 _st set ["scrollMem", _scrollMem];
-private _restore = (_drawn isEqualTo _page || {_st getOrDefault ["scrollRestore", false]}) && {!(_page in ["MAP", "CHAT"])};
+// Groupes défilants internes d'une page (liste et fil de la messagerie) : position relevée par nom avant l'effacement.
+private _grpMem = _st getOrDefault ["scrollGroups", createHashMap];
+{ _x params ["_n", "_c"]; if (!isNull _c) then { _grpMem set [_n, ctrlScrollValues _c]; }; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []]);
+uiNamespace setVariable ["COMSPEC_ATAK_ScrollGroups", []];
+_st set ["scrollGroups", _grpMem];
+// Accueil et Réglages : toujours rouverts à la position quittée (retour d'une app du bas de la liste, réglage qui
+// recrée l'écran).
+private _restore = (_drawn isEqualTo _page || {_st getOrDefault ["scrollRestore", false]} || {_page in ["LAUNCHER", "SETTINGS"]}) && {!(_page in ["MAP", "CHAT"])};
 _st set ["scrollRestore", false];
 _st set ["pageDrawn", _page];
+_st set ["pagePrev", _drawn]; // page dessinée juste avant (centre de notifications : « nouveau » à l'entrée seulement)
+// Sous-écran déclaré pour la touche retour (fn_back) : la page le redéclare pendant son dessin si elle en affiche un.
+_st deleteAt "backSub";
 [] call comspec_atak_native_fnc_frsDraftSave;
 [] call comspec_atak_native_fnc_recoDraftSave;
 [] call comspec_atak_native_fnc_firesSave;
 [] call comspec_atak_native_fnc_pageClear;
-[] call comspec_atak_native_fnc_layoutApply;
+// Calques hors zone de contenu : recréés plus bas, après la page.
+[createHashMap, false] call comspec_atak_native_fnc_layoutApply;
 
 private _title = "APPLICATIONS";
 if (_page isNotEqualTo "LAUNCHER") then {
@@ -32,10 +55,16 @@ if (_page isNotEqualTo "LAUNCHER") then {
 };
 if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; };
 if (_page isEqualTo "NOTIFS") then { _title = "NOTIFICATIONS"; };
-(_d displayCtrl 88518) ctrlSetText _title;
+if (_page isEqualTo "PATCHES") then { _title = "PATCH AU DOS"; };
+if (_page isEqualTo "FOLDER") then {
+    private _f = ["get", uiNamespace getVariable ["COMSPEC_ATAK_FolderId", ""]] call comspec_atak_native_fnc_appFolders;
+    _title = toUpper ([_f param [1, "Groupe"], "GROUPE"] select ((count _f) isEqualTo 0));
+};
+(_d displayCtrl 88518) ctrlSetText ((_title) call comspec_atak_native_fnc_tr);
 
 switch (_page) do {
     case "LAUNCHER": { [] call comspec_atak_native_fnc_launcherRender; };
+    case "FOLDER": { [] call comspec_atak_native_fnc_pageFolder; };
     case "MAP": { [] call comspec_atak_native_fnc_pageMap; };
     case "CHAT": { [] call comspec_atak_native_fnc_pageChat; };
     case "GROUP": { [] call comspec_atak_native_fnc_pageGroup; };
@@ -59,6 +88,8 @@ switch (_page) do {
     case "SNIPER": { [] call comspec_atak_native_fnc_pageSniper; };
     case "JTAC": { [] call comspec_atak_native_fnc_pageJtac; };
     case "MUSIC": { [] call comspec_atak_native_fnc_pageMusic; };
+    case "CALC": { [] call comspec_atak_native_fnc_pageCalc; };
+    case "NOTES": { [] call comspec_atak_native_fnc_pageNotes; };
     case "GPS": { [] call comspec_atak_native_fnc_pageGps; };
     case "WAYPOINTS": { [] call comspec_atak_native_fnc_pageWaypoints; };
     case "DEBUG": { [] call comspec_atak_native_fnc_pageDebug; };
@@ -73,14 +104,17 @@ switch (_page) do {
     case "ATHENA": { [] call comspec_atak_native_fnc_pageAthena; };
     case "NETWORK": { [] call comspec_atak_native_fnc_pageNetwork; };
     case "SETTINGS": { [] call comspec_atak_native_fnc_pageSettings; };
+    case "PATCHES": { ["page"] call comspec_atak_native_fnc_pagePatches; };
     case "PHOTOS": { [] call comspec_atak_native_fnc_pagePhotos; };
     case "FRS": { [] call comspec_atak_native_fnc_pageFrs; };
     case "RECO": { [] call comspec_atak_native_fnc_pageReco; };
     case "FIRES": { [] call comspec_atak_native_fnc_pageFires; };
     case "ALERTS": { [] call comspec_atak_native_fnc_pageAlerts; };
+    case "SALUTE": { [] call comspec_atak_native_fnc_pageSalute; };
     case "MEDICAL": { [] call comspec_atak_native_fnc_pageMedical; };
     case "PROFILE": { [] call comspec_atak_native_fnc_pageProfile; };
     case "LIVECAM": { [] call comspec_atak_native_fnc_pageLivecam; };
+    case "VIEW3D": { [] call comspec_atak_native_fnc_pageView3d; };
     case "BRIEFING": { [] call comspec_atak_native_fnc_pageBriefing; };
     default {
         // Modules externes (COMSPEC Modules) : une app déclarée par un autre addon avec function="tag_fnc_page"
@@ -97,9 +131,27 @@ switch (_page) do {
 };
 // Événement pour les modules : une app vient de s'afficher.
 ["comspec_atak_native_pageOpened", [_page]] call CBA_fnc_localEvent;
-// Dégâts de l'écran par-dessus la page.
+// Dégâts de l'écran par-dessus la page. Surface du verre, effets d'écran et calque Zeus aussi recréés : fn_pageClear
+// vient de masquer et désactiver leurs contrôles (supprimés à l'image suivante) ; gardés tels quels (même signature),
+// saleté, brouillage et verrouillage Zeus disparaissaient jusqu'au prochain fn_statusUpdate.
+private _killOv = {
+    {
+        if (_x isEqualType controlNull) then { ctrlDelete _x; } else {
+            if (_x isEqualType []) then { _x call _killOv; };
+        };
+    } forEach _this;
+};
+(uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []]) call _killOv;
+(((uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []]) apply { _x param [1, controlNull] }) call _killOv;
+(((uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []]) apply { _x param [1, controlNull] }) call _killOv;
+(uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]) call _killOv;
 uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
+uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]];
+uiNamespace setVariable ["COMSPEC_ATAK_ScreenFx", ["", []]];
+uiNamespace setVariable ["COMSPEC_ATAK_ZeusOv", []];
 [] call comspec_atak_native_fnc_deviceOverlay;
+// Effets recréés après la page : déjà au-dessus de tout ce qu'elle vient de créer (fn_overlayRaise n'a rien à faire).
+uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
 // Défilement retrouvé (et encore à l'image suivante, quand la hauteur du contenu est connue).
 private _sv = _scrollMem getOrDefault [_page, []];
 if (_restore && {_sv isEqualType []} && {(count _sv) isEqualTo 2} && {(_sv select 0) > 0}) then {
@@ -113,4 +165,7 @@ if (_restore && {_sv isEqualType []} && {(count _sv) isEqualTo 2} && {(_sv selec
 };
 // Toasts recréés après la page pour rester au premier plan.
 [] call comspec_atak_native_fnc_notificationsRender;
+// Écran de verrouillage, volet rapide et toast Android remis devant la page redessinée (fn_fx).
+["raise"] call comspec_atak_native_fnc_fx;
+[format ["page %1 (dessin)", _page], _perfT] call comspec_atak_native_fnc_perfAcc;
 true

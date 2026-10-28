@@ -17,6 +17,13 @@ class IffController
 {
     private const DEFAULT_MAP_ID = 1;
 
+    /** Bornes des colonnes iff_asset_status (migrations/c2_pillars.sql). */
+    private const MAX_MISSION_ID = 128;
+    private const MAX_ASSET_ID = 128;
+    private const MAX_CALLSIGN = 128;
+    private const MAX_PLATFORM_TYPE = 64;
+    private const MAX_RESPONSE_CODE = 64;
+
     public function __construct(
         private IffChallengeService $challengeService,
         private IffValidationService $validationService,
@@ -50,7 +57,7 @@ class IffController
     {
         $expectedPrefix = 'mission_' . $tenantId . '_map_';
         $missionId = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id');
-        if (is_string($missionId) && $missionId !== '' && str_starts_with($missionId, $expectedPrefix)) {
+        if (is_string($missionId) && $missionId !== '' && strlen($missionId) <= self::MAX_MISSION_ID && str_starts_with($missionId, $expectedPrefix)) {
             return $missionId;
         }
         $mapId = $body['mapId'] ?? $body['map_id'] ?? $request->query('mapId') ?? $request->query('map_id');
@@ -60,6 +67,48 @@ class IffController
         }
 
         return 'mission_' . $tenantId . '_map_' . $mid;
+    }
+
+    /**
+     * Champ au-delà de sa colonne varchar : 400 explicite au lieu d’un « Data too long »
+     * (PDOException, 500) en mode SQL strict.
+     *
+     * @param array<string, array{0:string,1:int}> $fields nom => [valeur, longueur max]
+     */
+    private function tooLong(array $fields): ?Response
+    {
+        foreach ($fields as $name => [$value, $max]) {
+            if (mb_strlen($value) > $max) {
+                return Response::json([
+                    'error' => 'field_too_long',
+                    'field' => $name,
+                    'message' => 'Le champ ' . $name . ' est trop long (' . $max . ' caractères maximum).',
+                ], 400);
+            }
+        }
+
+        return null;
+    }
+
+    /** Même contrôle pour chaque unité d’une liste (défi ou synchronisation). */
+    private function assetListTooLong(array $assets): ?Response
+    {
+        foreach ($assets as $a) {
+            if (!is_array($a)) {
+                continue;
+            }
+            $assetId = trim((string) ($a['assetId'] ?? $a['asset_id'] ?? $a['id'] ?? ''));
+            $err = $this->tooLong([
+                'assetId' => [$assetId, self::MAX_ASSET_ID],
+                'callsign' => [trim((string) ($a['callsign'] ?? $a['call_sign'] ?? '')), self::MAX_CALLSIGN],
+                'platformType' => [(string) ($a['platformType'] ?? $a['platform_type'] ?? ''), self::MAX_PLATFORM_TYPE],
+            ]);
+            if ($err !== null) {
+                return $err;
+            }
+        }
+
+        return null;
     }
 
     private function jsonBody(Request $request): array
@@ -122,6 +171,10 @@ class IffController
                 'message' => 'Le code ne peut contenir que des lettres, chiffres et - _ .',
             ], 400);
         }
+        $assets = $body['assets'] ?? null;
+        if (is_array($assets) && ($err = $this->assetListTooLong($assets)) !== null) {
+            return $err;
+        }
         $validMinutes = (int) ($body['validMinutes'] ?? $body['valid_minutes'] ?? 30);
         if ($validMinutes < 5) {
             $validMinutes = 5;
@@ -134,7 +187,6 @@ class IffController
 
         $synced = 0;
         $syncUnits = !empty($body['syncUnits']) || !empty($body['sync_units']);
-        $assets = $body['assets'] ?? null;
         if (is_array($assets)) {
             $synced = $this->syncAssetList($missionId, $assets, $id);
         } elseif ($syncUnits) {
@@ -171,6 +223,9 @@ class IffController
                 'error' => 'invalid_assets',
                 'message' => 'La liste des unités est invalide.',
             ], 400);
+        }
+        if (($err = $this->assetListTooLong($assets)) !== null) {
+            return $err;
         }
         $count = $this->syncAssetList($missionId, $assets, $challengeId);
         return Response::json(['ok' => true, 'count' => $count]);
@@ -221,6 +276,15 @@ class IffController
             ], 400);
         }
         $callsign = trim((string) ($body['callsign'] ?? $body['call_sign'] ?? $assetId));
+        $err = $this->tooLong([
+            'assetId' => [$assetId, self::MAX_ASSET_ID],
+            'callsign' => [$callsign, self::MAX_CALLSIGN],
+            'platformType' => [isset($body['platformType']) ? (string) $body['platformType'] : '', self::MAX_PLATFORM_TYPE],
+            'responseCode' => [$responseCode, self::MAX_RESPONSE_CODE],
+        ]);
+        if ($err !== null) {
+            return $err;
+        }
         $challenge = $this->challengeService->getCurrent($missionId);
         $challengeId = $challenge ? (int) $challenge['id'] : null;
         $this->assetRepository->upsert(

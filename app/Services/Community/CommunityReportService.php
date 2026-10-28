@@ -4,24 +4,24 @@ declare(strict_types=1);
 
 namespace App\Services\Community;
 
-use App\Repositories\ForumReportRepository;
+use App\Repositories\ContentReportRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\UserRepository;
-use App\Support\ForumReportReason;
+use App\Support\ContentReportReason;
 
 /**
- * Signalements membres hors fil de forum (formations, fiches, images, pages d’aide, anomalies d’organisation).
+ * Signalements membres (formations, fiches, images, pages d’aide, anomalies d’organisation).
  */
 final class CommunityReportService
 {
     /** @var list<string> */
     private const HELP_DOC_KEYS = [
         'routes', 'inventaire', 'navigation', 'back-office', 'premiers-pas', 'connexion-compte',
-        'faq', 'formations', 'forum', 'recherche', 'technique-readme', 'modules',
+        'faq', 'formations', 'recherche', 'technique-readme', 'modules',
     ];
 
     public function __construct(
-        private ForumReportRepository $reportRepository,
+        private ContentReportRepository $reportRepository,
         private TrainingCourseRepository $courseRepository,
         private UserRepository $userRepository,
     ) {}
@@ -44,7 +44,7 @@ final class CommunityReportService
         $category = trim((string) ($input['reason'] ?? $input['reason_category'] ?? 'other'));
         $details = trim((string) ($input['details'] ?? $input['comment'] ?? ''));
 
-        $normalized = ForumReportReason::fromCategory($category !== '' ? $category : 'other', $details);
+        $normalized = ContentReportReason::fromCategory($category !== '' ? $category : 'other', $details);
         $reportType = $normalized['report_type'];
         $reasonSuffix = $normalized['reason'];
         $comment = $normalized['comment'];
@@ -236,8 +236,6 @@ final class CommunityReportService
         $reportId = $this->reportRepository->create(
             $tenantId,
             $reporterId,
-            null,
-            null,
             $reasonBody,
             $reportType,
             $comment,

@@ -1,4 +1,7 @@
-private _disp = findDisplay 93500;
+// Écran de contrôle Zeus (idd 93550), lu par uiNamespace : findDisplay 93500 tombait sur le tableau des liens
+// (même idd), et l'écriture visait une carte au lieu du texte.
+private _disp = uiNamespace getVariable ["comspec_sse_zeusControlDisplay", displayNull];
+if (isNull _disp) then { _disp = findDisplay 93550; };
 if (isNull _disp) exitWith { false };
 
 private _isZeus = !isNull (getAssignedCuratorLogic player)
@@ -6,9 +9,9 @@ private _isZeus = !isNull (getAssignedCuratorLogic player)
     || {!isMultiplayer};
 
 if (!_isZeus) exitWith {
-    (_disp displayCtrl 93510) ctrlSetStructuredText parseText "<t color='#f88'>Accès réservé au Zeus.</t>";
-    (_disp displayCtrl 93511) ctrlSetStructuredText parseText "";
-    lbClear (_disp displayCtrl 93512);
+    (_disp displayCtrl 93560) ctrlSetStructuredText parseText (("<t color='#f88'>Accès réservé au Zeus.</t>") call comspec_sse_fnc_tr);
+    (_disp displayCtrl 93561) ctrlSetStructuredText parseText (("") call comspec_sse_fnc_tr);
+    lbClear (_disp displayCtrl 93562);
     false
 };
 
@@ -77,10 +80,10 @@ private _site = if (!isNil "comspec_sse_fnc_listSiteEntities") then {
     ];
 } forEach _site;
 
-(_disp displayCtrl 93510) ctrlSetStructuredText parseText _knownTxt;
-(_disp displayCtrl 93511) ctrlSetStructuredText parseText _truthTxt;
-private _lb = _disp displayCtrl 93512;
+(_disp displayCtrl 93560) ctrlSetStructuredText parseText ((_knownTxt) call comspec_sse_fnc_tr);
+(_disp displayCtrl 93561) ctrlSetStructuredText parseText ((_truthTxt) call comspec_sse_fnc_tr);
+private _lb = _disp displayCtrl 93562;
 lbClear _lb;
-{ _lb lbAdd _x; } forEach _rows;
-if (_rows isEqualTo []) then { _lb lbAdd "(aucune entité SSE proche)"; };
+{ _lb lbAdd ((_x) call comspec_sse_fnc_tr); } forEach _rows;
+if (_rows isEqualTo []) then { _lb lbAdd (("(aucune entité SSE proche)") call comspec_sse_fnc_tr); };
 true

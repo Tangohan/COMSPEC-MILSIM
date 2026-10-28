@@ -583,10 +583,13 @@ class UserAdminController
         $roles = $this->roleRepository->forTenantOrganization($tenantId);
         $roleMatrix = $this->roleRepository->organizationRolesPermissionMatrix($tenantId);
         $grades = $this->gradeRepository->listActiveForDoctrinePicker($tenantId);
-        $gradeCategories = $this->gradeCategoryRepository->listActive();
+        $gradeCategories = $this->gradeCategoryRepository->listForTenant($tenantId);
+        $tenantRowCreate = $this->tenantRepository->findById($tenantId);
+        $rosterWithoutAccounts = \App\Services\Community\TenantTypeConfig::rosterWithoutAccounts((string) ($tenantRowCreate['tenant_type'] ?? 'full'));
         return Response::view('layout.main', [
             'content' => 'admin.organization.users.create',
-            'title' => 'Nouvel utilisateur',
+            'title' => $rosterWithoutAccounts ? 'Nouvelle fiche' : 'Nouvel utilisateur',
+            'rosterWithoutAccounts' => $rosterWithoutAccounts,
             'roles' => $roles,
             'roleMatrix' => $roleMatrix,
             'grades' => $grades,
@@ -632,6 +635,12 @@ class UserAdminController
             $preferredGradeFormat = 'classic';
         }
         $professionalCategoryCode = trim((string) $request->input('professional_category_code')) ?: null;
+
+        $tenantTypeRow = $this->tenantRepository->findById($tenantId);
+        $rosterWithoutAccounts = \App\Services\Community\TenantTypeConfig::rosterWithoutAccounts((string) ($tenantTypeRow['tenant_type'] ?? 'full'));
+        if ($rosterWithoutAccounts && ($request->input('roster_only') === '1' || $email === '')) {
+            return $this->storeRosterOnlyMember($request, $tenantId, $actorUserId, $createUrl, $gradeId);
+        }
 
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             Session::flash('error', 'Une adresse e-mail valide est requise.');
@@ -699,6 +708,7 @@ class UserAdminController
             ]);
         } catch (\Throwable) {
         }
+        \App\Services\Personnel\NewMemberNumbers::assign($userId, $tenantId);
         try {
             $this->userRepository->syncOrganizationRoles($userId, $tenantId, $roleIds, $actorUserId);
         } catch (\InvalidArgumentException $e) {
@@ -765,6 +775,61 @@ class UserAdminController
         return Response::redirect(effectifs_workspace_url('membres/' . $userId));
     }
 
+    /**
+     * Profil « Bureau des effectifs » : fiche tenue par l’état-major, sans compte ni e-mail pour le membre.
+     */
+    private function storeRosterOnlyMember(Request $request, int $tenantId, int $actorUserId, string $createUrl, ?int $gradeId): Response
+    {
+        $firstName = trim((string) $request->input('first_name'));
+        $lastName = trim((string) $request->input('last_name'));
+        if ($firstName === '' && $lastName === '') {
+            Session::flash('error', 'Indiquez au moins le nom du membre.');
+
+            return Response::redirect($createUrl);
+        }
+        $gate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
+        if (!$gate->canAddMember($tenantId)) {
+            Session::flash('error', 'Limite de membres du plan atteinte.');
+
+            return Response::redirect($createUrl);
+        }
+        $steamResult = $this->resolveSteamIdInput((string) $request->input('steam_id', ''), $tenantId);
+        if ($steamResult['ok'] === false) {
+            Session::flash('error', $steamResult['error']);
+
+            return Response::redirect($createUrl);
+        }
+        try {
+            $userId = $this->rosterOnlyMembers()->create($tenantId, $actorUserId, [
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'callsign' => trim((string) $request->input('callsign')),
+                'grade_id' => $gradeId,
+                'steam_id' => (string) ($steamResult['steam_id'] ?? ''),
+            ]);
+        } catch (\Throwable $e) {
+            Session::flash('error', 'Impossible de créer la fiche : ' . $e->getMessage());
+
+            return Response::redirect($createUrl);
+        }
+        $this->adminAuditService->logUserCreated($tenantId, $actorUserId, $userId, \App\Support\RosterOnlyMember::label());
+        Session::flash('success', 'Fiche créée. Ce membre n’a pas de compte : il n’a rien à faire, vous tenez sa fiche ici.');
+
+        return Response::redirect(effectifs_workspace_url('membres/' . $userId));
+    }
+
+    private function rosterOnlyMembers(): \App\Services\Effectifs\RosterOnlyMemberService
+    {
+        return new \App\Services\Effectifs\RosterOnlyMemberService(
+            $this->userRepository,
+            $this->userProfileRepository,
+            $this->personnelProfileRepository,
+            \App\Core\Container::get(\App\Repositories\PersonnelAssignmentRepository::class),
+            $this->gradeRepository,
+            \App\Core\Container::get(\App\Repositories\UnitRepository::class),
+        );
+    }
+
     public function edit(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
@@ -794,7 +859,7 @@ class UserAdminController
             $selectedRoleIds = [(int) $user['role_id']];
         }
         $grades = $this->gradeRepository->listActiveForDoctrinePicker($tenantId);
-        $gradeCategories = $this->gradeCategoryRepository->listActive();
+        $gradeCategories = $this->gradeCategoryRepository->listForTenant($tenantId);
         $gradeValidationIssues = $this->gradeValidationService->validateUserProfile($user);
         $positions = $this->positionRepository->listForTenant($tenantId);
         $userActivePositions = $this->positionRepository->listActiveForUser($tenantId, $id);
@@ -1037,7 +1102,7 @@ class UserAdminController
 
         if ($request->input('nationality_code') !== null) {
             $v = trim((string) $request->input('nationality_code'));
-            if ($v !== '' && !in_array($v, ['FR', 'US'], true)) {
+            if ($v !== '' && !in_array($v, ['FR', 'US', \App\Support\CustomGradeTemplates::COUNTRY], true)) {
                 Session::flash('error', 'La nationalité / doctrine choisie n’est pas reconnue.');
 
                 return Response::redirect($editUrl);
@@ -1678,26 +1743,10 @@ class UserAdminController
         }
         $rawToken = bin2hex(random_bytes(32));
         $tokenHash = hash('sha256', $rawToken);
-        $expires = new \DateTimeImmutable('+15 minutes');
+        $expires = new \DateTimeImmutable('+' . EmailTokenPurpose::REGISTER_CONFIRM_TTL_MINUTES . ' minutes');
         $verifyUrl = url('verify-email') . '?token=' . rawurlencode($rawToken);
-        $ok = $this->emailService->sendUserRegisterConfirmation(
-            $email,
-            (string) ($user['display_name'] ?? 'Membre'),
-            $tenantName,
-            $verifyUrl,
-            15,
-            $tenantId
-        );
-        if (!$ok) {
-            Session::flash(
-                'error',
-                'L’e-mail n’a pas pu être envoyé. Vérifiez la configuration d’envoi des courriels ou réessayez plus tard.'
-            );
-
-            return Response::redirect($returnList ? $backUsers : $backUser);
-        }
-        $this->emailTokenRepository->deletePendingForUserPurpose($id, EmailTokenPurpose::REGISTER_CONFIRM);
-        $this->emailTokenRepository->create(
+        // Le jeton doit exister avant l'envoi : un clic immédiat sur le lien ne doit pas tomber sur « lien invalide ».
+        $tokenId = $this->emailTokenRepository->create(
             $tenantId,
             $id,
             EmailTokenPurpose::REGISTER_CONFIRM,
@@ -1705,6 +1754,25 @@ class UserAdminController
             bin2hex(random_bytes(16)),
             $expires
         );
+        $ok = $this->emailService->sendUserRegisterConfirmation(
+            $email,
+            (string) ($user['display_name'] ?? 'Membre'),
+            $tenantName,
+            $verifyUrl,
+            EmailTokenPurpose::REGISTER_CONFIRM_TTL_MINUTES,
+            $tenantId
+        );
+        if (!$ok) {
+            // L'ancien lien reste utilisable si le nouveau message n'est jamais parti.
+            $this->emailTokenRepository->deleteById($tokenId);
+            Session::flash(
+                'error',
+                'L’e-mail n’a pas pu être envoyé. Vérifiez la configuration d’envoi des courriels ou réessayez plus tard.'
+            );
+
+            return Response::redirect($returnList ? $backUsers : $backUser);
+        }
+        $this->emailTokenRepository->deleteOtherPendingForUserPurpose($id, EmailTokenPurpose::REGISTER_CONFIRM, $tokenId);
         $notice = \email_file_mailer_notice();
         if ($notice !== '') {
             Session::flash('warning', $notice);

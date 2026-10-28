@@ -151,6 +151,56 @@ window.ATAKCams = (function () {
     window.ATAKMap.addIntelPhotoMarker(photo.id || photo.snapshot_id, py, px, src);
   }
 
+  function photoSrc(p) {
+    var src = resolveMediaUrl(p.url || p.path || '');
+    if (!src && p.image_path && String(p.image_path).indexOf('recon-private/') !== 0) {
+      src = resolveMediaUrl('/uploads/recon/' + String(p.image_path).split('/').pop());
+    }
+    return src;
+  }
+
+  /** Lecteur d'images (assets/js/recon-viewer.js) : album des photos reçues, ou le seul aperçu d'une caméra. */
+  function openReconViewer(thumb, src) {
+    if (!window.ReconViewer) return false;
+    var opts = {
+      resolveUrl: function (u, p) { return p && p.src ? p.src : photoSrc(p || {}); },
+      onLocate: function (x, y) {
+        if (window.ATAKMap && typeof window.ATAKMap.centerOn === 'function') window.ATAKMap.centerOn(y, x);
+      }
+    };
+    var article = thumb.closest ? thumb.closest('.atak-cam-photo') : null;
+    var id = (article && article.getAttribute('data-id')) || thumb.getAttribute('data-recon-id') || '';
+    var list = lastPhotos.filter(function (p) { return p && !isHiddenLocally(p.id); });
+    var index = -1;
+    if (id) {
+      for (var i = 0; i < list.length; i++) {
+        if (String(list[i].id) === String(id)) { index = i; break; }
+      }
+    }
+    if (index >= 0) {
+      window.ReconViewer.open(list, index, opts);
+      return true;
+    }
+    var tile = thumb.closest ? thumb.closest('[data-feed-id]') : null;
+    var feedId = tile ? tile.getAttribute('data-feed-id') : '';
+    var feed = lastFeeds.filter(function (f) { return f && String(f.id) === String(feedId); })[0] || {};
+    window.ReconViewer.open([{
+      id: feed.snapshot_id || null,
+      _recon: !!feed.snapshot_id,
+      caption: feed.snapshot_caption || '',
+      src: src,
+      title: feed.label || '',
+      author_callsign: feed.callsign || '',
+      device_label: feed.kind_label || '',
+      grid_ref: feed.grid || '',
+      pos_x: feed.pos_x,
+      pos_y: feed.pos_y,
+      captured_at: feed.snapshot_at || feed.updated_at || '',
+      _blurred: !!(article && article.classList.contains('is-blurred'))
+    }], 0, opts);
+    return true;
+  }
+
   function ensureLightbox() {
     if (lightboxBound) return;
     lightboxBound = true;
@@ -165,6 +215,7 @@ window.ATAKCams = (function () {
         lightboxClass += ' is-blurred';
       }
       ev.preventDefault();
+      if (openReconViewer(thumb, src)) return;
       var existing = document.getElementById('atak-cam-lightbox');
       if (existing) existing.remove();
       var overlay = document.createElement('div');
@@ -384,10 +435,7 @@ window.ATAKCams = (function () {
       '</div>' +
       '<div class="atak-cams-photos">';
     list.forEach(function (p) {
-      var src = resolveMediaUrl(p.url || p.path || '');
-      if (!src && p.image_path) {
-        src = resolveMediaUrl('/uploads/recon/' + String(p.image_path).split('/').pop());
-      }
+      var src = photoSrc(p);
       var author = p.author_callsign || p.author || '';
       var caption = p.caption || '';
       var comment = p.operator_comment || '';
@@ -397,16 +445,34 @@ window.ATAKCams = (function () {
       var blurred = !!Number(p.is_blurred || 0);
       var transferred = !!(p.sse_case_id || p.sse_transferred_at);
       var fxClass = photoFxClass(p);
+      // Fiche du cliché (drone de l'ATAK natif) : titre, description, SSE (lien vers le dossier), confidentiel.
+      var photoTitle = String(p.title || '').trim();
+      var photoDesc = String(p.description || '').trim();
+      var isSse = !!Number(p.is_sse || 0);
+      var isConf = !!Number(p.is_confidential || 0);
+      var restricted = !!p.restricted;
+      var caseRef = String(p.sse_case_ref || '').trim();
+      var caseUrl = String(p.sse_case_url || '').trim();
+      var sseLabel = 'SSE' + (caseRef ? ' ' + caseRef : '');
+      var badges = (isConf ? '<span class="atak-cam-photo-flag atak-cam-photo-flag--conf">CONFIDENTIEL</span>' : '') +
+        (isSse ? (caseUrl
+          ? '<a class="atak-cam-photo-flag" href="' + escapeHtml(caseUrl) + '" target="_blank" rel="noopener">' + escapeHtml(sseLabel) + '</a>'
+          : '<span class="atak-cam-photo-flag">' + escapeHtml(sseLabel) + '</span>') : '');
       html +=
         '<article class="atak-cam-photo' + (blurred ? ' is-blurred' : '') + fxClass + '" data-id="' + escapeHtml(p.id || '') + '">' +
           (src
             ? '<img src="' + escapeHtml(src) + '" alt="" loading="lazy" data-atak-cam-full="' + escapeHtml(src) + '" />'
-            : '<div class="atak-cam-photo-missing" role="status">Image indisponible — lien dégradé ou fichier manquant.</div>') +
+            : '<div class="atak-cam-photo-missing" role="status">' + (restricted
+              ? 'Cliché confidentiel — réservé aux habilitations « confidentiel » et plus.'
+              : 'Image indisponible — lien dégradé ou fichier manquant.') + '</div>') +
           '<div class="atak-cam-photo-meta">' +
             '<span class="atak-cam-photo-kind">' + escapeHtml(label) + '</span>' +
             (stamp ? '<time class="atak-cam-photo-stamp" datetime="">' + escapeHtml(stamp) + '</time>' : '') +
             (author ? '<strong>' + escapeHtml(author) + '</strong>' : '') +
             (grid ? '<span>Grille ' + escapeHtml(grid) + '</span>' : '') +
+            (badges ? '<p class="atak-cam-photo-badges">' + badges + '</p>' : '') +
+            (photoTitle ? '<p><strong>' + escapeHtml(photoTitle) + '</strong></p>' : '') +
+            (photoDesc ? '<p>' + escapeHtml(photoDesc) + '</p>' : '') +
             (caption ? '<p>' + escapeHtml(caption) + '</p>' : '') +
             (comment ? '<p class="atak-cam-photo-comment">Commentaire: ' + escapeHtml(comment) + '</p>' : '') +
             (transferred ? '<p class="atak-cam-photo-flag">Archivée dans SSE</p>' : '') +
@@ -478,7 +544,11 @@ window.ATAKCams = (function () {
   function fetchReconImages() {
     return fetchWithMapFallback('/api/recon/images?limit=200&feeds=exclude&night=' + encodeURIComponent(nightQueryValue()), function (data) {
       return Array.isArray(data) ? data : [];
-    }).then(function (list) { return list || []; });
+    }).then(function (list) {
+      // Clichés de /api/recon/images : le lecteur peut ouvrir leur page /recon/images/{id}.
+      (list || []).forEach(function (p) { if (p) p._recon = true; });
+      return list || [];
+    });
   }
 
   function fetchIntelPhotos() {

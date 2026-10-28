@@ -1,14 +1,22 @@
 /*
     Notification du téléphone : toast quelques secondes, gardée dans le centre de notifications (60 dernières).
-    Params : [type (INFO, SUCCESS, WARNING, ERROR, MESSAGE, TACTICAL), texte, durée en s, priorité]
+    Params : [type (INFO, SUCCESS, WARNING, ERROR, MESSAGE, TACTICAL), texte, durée en s, priorité, page de l'app à ouvrir au clic]
+    Centre : un texte identique déjà présent remonte en tête avec un compteur (« ×3 ») au lieu d'être empilé ; chaque
+    entrée garde un identifiant (fermeture une par une) et l'instant de réception (« il y a 3 min »).
     File des toasts (état « notifications ») : un seul affiché à la fois (fn_notificationsRender) ; la durée ne court
     qu'à partir de son affichage, et un toast qui attend depuis plus de 30 s est abandonné (il reste dans le centre).
 */
-params [["_type","INFO"],["_message",""],["_duration",5],["_priority",10]];
+params [["_type","INFO"],["_message",""],["_duration",5],["_priority",10],["_app",""]];
 if (_message isEqualTo "" || {missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false]}) exitWith {false};
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _hist = _s getOrDefault ["notifHistory", []];
-_hist pushBack createHashMapFromArray [["type", toUpper _type], ["message", _message], ["time", [dayTime, "HH:MM"] call BIS_fnc_timeToString]];
+private _hid = (_s getOrDefault ["notifHistSeq", 0]) + 1;
+_s set ["notifHistSeq", _hid];
+private _same = _hist findIf { (_x getOrDefault ["message", ""]) isEqualTo _message && {(_x getOrDefault ["type", ""]) isEqualTo (toUpper _type)} };
+private _times = 1;
+if (_same >= 0) then { _times = ((_hist select _same) getOrDefault ["count", 1]) + 1; _hist deleteAt _same; };
+_hist pushBack createHashMapFromArray [["id", _hid], ["type", toUpper _type], ["message", _message], ["app", toUpper _app], ["count", _times],
+    ["time", (["now"] call comspec_atak_native_fnc_clockFmt)], ["tick", diag_tickTime]];
 while {count _hist > 60} do { _hist deleteAt 0; };
 _s set ["notifHistory", _hist];
 _s set ["notifUnread", (_s getOrDefault ["notifUnread", 0]) + 1];

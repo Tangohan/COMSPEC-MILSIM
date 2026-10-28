@@ -14,7 +14,7 @@ use App\Repositories\UserRepository;
  * Ordre de décision : owner → collaborateur → classification → permission explicite → visibilité → statut.
  *
  * Visibilité « par rôles » : uniquement les slugs cochés (intra-tenant) ;
- * commandement et modération forum voient toujours les documents publiés (lecture/commentaire), sous réserve de la classification.
+ * commandement et responsables communication voient toujours les documents publiés (lecture/commentaire), sous réserve de la classification.
  */
 class DocumentAccessService
 {

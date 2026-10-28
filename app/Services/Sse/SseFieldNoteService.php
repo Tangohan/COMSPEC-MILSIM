@@ -431,7 +431,7 @@ final class SseFieldNoteService
             return $caseId;
         }
 
-        $code = strtoupper(trim((string) ($input['case_code'] ?? '')));
+        $code = strtoupper(trim((string) ($input['case_code'] ?? $input['case_reference'] ?? '')));
         if ($code === '') {
             return null;
         }

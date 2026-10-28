@@ -43,7 +43,7 @@ final class PlatformSiteAdminAssetTest extends TestCase
         self::assertStringContainsString('Récupération communauté', $sidebar);
         self::assertStringContainsString('Communautés de test', $sidebar);
         self::assertStringContainsString('Administration complète du site', $directory);
-        self::assertStringContainsString('Quatre postes, tout le site', $directory);
+        self::assertStringContainsString('Tous les outils du site', $directory);
         self::assertStringContainsString('admin/system/demo-nda', $quick);
         self::assertStringContainsString('admin/system/updates', $quick);
         self::assertStringContainsString('admin/system/advanced-fiche-edit', $quick);
@@ -71,7 +71,7 @@ final class PlatformSiteAdminAssetTest extends TestCase
         $helpers = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/helpers.php');
 
         self::assertMatchesRegularExpression(
-            "/\\$prefixes\\s*=\\s*\\[[^;]*'users'[^;]*\\];/s",
+            '/\$prefixes\s*=\s*\[[^;]*\'users\'[^;]*\];/s',
             $helpers,
             'Les pages /admin/users et leurs sous-routes doivent conserver la navigation plateforme.'
         );
@@ -103,6 +103,13 @@ final class PlatformSiteAdminAssetTest extends TestCase
         self::assertStringContainsString('Administrer', $index);
         self::assertStringContainsString("url('admin/system/tenants/' . \$id . '/intervention')", $index);
         self::assertStringContainsString('Accès super tenant', $index);
+        self::assertStringContainsString('data-pa-sheet', $index);
+        self::assertStringContainsString('Rechercher', $index);
+        self::assertStringContainsString('Inactivité', $index);
+        self::assertStringContainsString('Corrélations', $index);
+        self::assertStringContainsString('pa--wide', $index);
+        self::assertStringContainsString('platform-tenants-sheet.js', $index);
+        self::assertFileExists($root . '/public/assets/js/platform-tenants-sheet.js');
         self::assertStringNotContainsString('Changer la formule', $index);
         self::assertSame('platform.tenant_identity_updated', AuditAction::TENANT_IDENTITY_UPDATED);
         self::assertSame('platform.tenant_type_assigned', AuditAction::TENANT_TYPE_ASSIGNED);

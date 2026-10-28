@@ -33,6 +33,10 @@ final class AtakChatToastAssetTest extends TestCase
         self::assertStringContainsString('getMyCallsigns()', $js);
         self::assertStringContainsString('lastIncomingSeenId', $js);
         self::assertStringContainsString('if (id > 0 && id > lastIncomingSeenId)', $js);
-        self::assertStringContainsString("Premier chargement : mémoriser sans toast", $js);
+        // Premier chargement : mémoriser le dernier id vu sans toast (le commentaire a disparu, le code reste).
+        self::assertMatchesRegularExpression(
+            '/lastIncomingSeenId = newestId;\\s*if \\(!opts\\.notify \\|\\| !incomingHistorySeeded\\) \\{\\s*incomingHistorySeeded = true;\\s*return;\\s*\\}/',
+            $js
+        );
     }
 }

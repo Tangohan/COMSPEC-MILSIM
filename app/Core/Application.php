@@ -27,7 +27,12 @@ class Application
 
     public function run(): void
     {
-        \App\Core\Session::start();
+        // Sondages en lecture seule (/api/system/version, GET du jeu avec clé ou jeton) : verrou de session libéré tout de suite.
+        $method = $this->request->method();
+        $path = $this->request->path();
+        $gameKey = strtoupper($method) === 'GET' && str_starts_with($path, '/api/')
+            && \App\Support\ComspecApiKeyAuth::extractPresentedKey() !== '';
+        \App\Core\Session::start(\App\Core\Session::isReadOnlyRequest($method, $path, $gameKey));
         $runner = fn (\App\Core\Request $req): \App\Core\Response => $this->router->dispatch();
         $global = [
             new \App\Middleware\RequestIdMiddleware(),
@@ -43,6 +48,8 @@ class Application
             new \App\Middleware\SecurityHeadersMiddleware(),
             new \App\Middleware\RateLimitMiddleware(),
             new \App\Middleware\CsrfPostMiddleware(),
+            // Accès refusé : retour à la page précédente avec un toast, plutôt que vers le tableau de bord.
+            new \App\Middleware\AccessDeniedStayMiddleware(),
             // Lazy : ne pas Container::get(DemoNda…) au boot — sinon DemoNdaVisitRepository
             // ouvre PDO sur *chaque* requête (y compris /api/atak/* exemptés), et une panne
             // BDD se présente comme une erreur Demo NDA hors sujet.
@@ -94,6 +101,34 @@ class Application
             while (ob_get_level() > $outputGuardLevel) {
                 ob_end_clean();
             }
+        }
+        // Visiteur en anglais : la page HTML (vues écrites en français) et les messages JSON des API sont traduits
+        // à l'affichage.
+        if (function_exists('locale') && locale() === 'en') {
+            $type = (string) ($response->headerValue('Content-Type') ?? '');
+            try {
+                if (str_starts_with($type, 'text/html')) {
+                    $html = \App\Support\HtmlTranslator::translate($response->body());
+                    $response->setBody(\App\Support\HtmlTranslator::withDomScripts($html));
+                } elseif (str_starts_with($type, 'application/json')) {
+                    $response->setBody(\App\Support\HtmlTranslator::translateJson($response->body()));
+                }
+            } catch (\Throwable) {
+                // Réponse laissée en français plutôt qu'une erreur.
+            }
+        }
+        // Toutes les pages HTML : fenêtre « Mise à jour disponible » + CSS/JS versionnés par déploiement.
+        try {
+            $pageType = (string) ($response->headerValue('Content-Type') ?? '');
+            if ($pageType === '' || str_starts_with($pageType, 'text/html')) {
+                $response->setBody(\App\Support\SiteUpdateInjector::apply($response->body()));
+            }
+        } catch (\Throwable) {
+        }
+        // Réponses au jeu (COMSPEC Link) : 304 si rien n'a changé depuis le dernier passage, sinon gzip.
+        try {
+            \App\Support\GameApiResponseCompactor::apply($this->request, $response);
+        } catch (\Throwable) {
         }
         $response->send();
         try {

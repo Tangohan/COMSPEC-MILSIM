@@ -12,4 +12,7 @@ if (_want isEqualTo "") exitWith { false };
 
 private _rev = _unit getVariable ["COMSPEC_PhoneReveal", []];
 if (!(_rev isEqualType [])) exitWith { false };
-(_rev findIf { (toLower (trim (str _x))) isEqualTo _want }) >= 0
+(_rev findIf {
+    private _k = if (_x isEqualType "") then { _x } else { str _x };
+    (toLower (trim _k)) isEqualTo _want
+}) >= 0

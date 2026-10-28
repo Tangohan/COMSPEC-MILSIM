@@ -13,7 +13,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _fs = _l get "fontSmall";
 private _pad = (_l get "pad") * 2;
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 private _now = time;
 private _auto = profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false];
 private _layer = profileNamespace getVariable ["COMSPEC_ATAK_LayerDrone", true];
@@ -74,20 +74,20 @@ private _summary = {
     private _s = round ((diag_tickTime - _at) max 0);
     private _d3 = str ((round _hd) mod 360);
     while { (count _d3) < 3 } do { _d3 = "0" + _d3; };
-    format ["<t size='0.75' color='#8a9a93'>CAP</t><br/><t size='1.6' font='RobotoCondensedBold'>%1°</t> <t color='#8a9a93'>%2</t><br/>%3<br/><t size='0.8' color='#8a9a93'>%4<br/>%5</t>",
+    format ["<t size='0.75' color='#8a9a93'>CAP</t><br/><t size='1.6' font='COMSPEC_BarlowBold'>%1°</t> <t color='#8a9a93'>%2</t><br/>%3<br/><t size='0.8' color='#8a9a93'>%4<br/>%5</t>",
         _d3, ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_hd / 45)) mod 8),
-        [format ["<t color='#e5483a' font='RobotoCondensedBold'>%1 DRONE(S) INCONNU(S)</t>", _unk], "<t color='#5cc76b'>Aucun drone inconnu</t>"] select (_unk isEqualTo 0),
+        [format ["<t color='#e5483a' font='COMSPEC_BarlowBold'>%1 DRONE(S) INCONNU(S)</t>", _unk], "<t color='#5cc76b'>Aucun drone inconnu</t>"] select (_unk isEqualTo 0),
         ["Balayage manuel", "<t color='#5cc76b'>● Balayage automatique</t>"] select (profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]),
         ["Pas encore balayé", format ["Dernier balayage il y a %1", [format ["%1 s", _s], format ["%1 min %2 s", floor (_s / 60), _s mod 60]] select (_s >= 60)]] select (_at >= 0)]
 };
-_side ctrlSetStructuredText parseText ([_h] call _summary);
+_side ctrlSetStructuredText parseText ((([_h] call _summary)) call comspec_atak_native_fnc_tr);
 uiNamespace setVariable ["COMSPEC_ATAK_DroneRadar", [_ring, _needles, _side, _summary]];
 
 // --- Liste ---
 private _rows = [
     ["buttons", [["BALAYER", { ["manual"] call comspec_atak_native_fnc_droneDetectScan; }, true], ["EFFACER", compile format ["['clear'] call comspec_atak_native_fnc_droneDetectScan; %1", _rerender]]]],
-    ["switch", "Balayage automatique", _auto, compile format ["profileNamespace setVariable ['COMSPEC_ATAK_DroneAuto', %1]; saveProfileNamespace; %2", !_auto, _rerender], "Toutes les 5 s, même l'app fermée ; alerte et vibration si un drone inconnu est proche"],
-    ["switch", "Relèvements sur la carte", _layer, compile format ["profileNamespace setVariable ['COMSPEC_ATAK_LayerDrone', %1]; saveProfileNamespace; %2", !_layer, _rerender], "Cône d'erreur tracé depuis le point de relevé"],
+    ["switch", "Balayage automatique", _auto, compile format ["profileNamespace setVariable ['COMSPEC_ATAK_DroneAuto', %1]; [] call comspec_atak_native_fnc_saveProfile; %2", !_auto, _rerender], "Toutes les 5 s, même l'app fermée ; alerte et vibration si un drone inconnu est proche"],
+    ["switch", "Relèvements sur la carte", _layer, compile format ["profileNamespace setVariable ['COMSPEC_ATAK_LayerDrone', %1]; [] call comspec_atak_native_fnc_saveProfile; %2", !_layer, _rerender], "Cône d'erreur tracé depuis le point de relevé"],
     ["section", "Détections", format ["%1 liaison(s) · récepteur passif, n'émet rien", count _list]]
 ];
 {
@@ -97,7 +97,7 @@ private _rows = [
     private _clock = (round (_rel / 30)) mod 12;
     if (_clock isEqualTo 0) then { _clock = 12; };
     private _barTxt = format ["<t color='%1'>%2</t><t color='#3a4440'>%3</t>", ["#5cc76b", "#8a9a93"] select _lost, ["", "●", "●●", "●●●", "●●●●"] select _bars, ["", "●", "●●", "●●●", "●●●●"] select (4 - _bars)];
-    _rows pushBack ["text", format ["<t font='RobotoCondensedBold' color='%1'>%2</t>  <t size='1.15' font='RobotoCondensedBold'>%3° %4</t>  <t color='#8a9a93'>±%5°</t>  <t size='0.9'>à %6 h</t><br/><t size='0.9'>%7  %8 dBm · %9</t><br/><t size='0.8' color='#8a9a93'>%10 · entendu depuis %11 · %12</t>",
+    _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t size='1.15' font='COMSPEC_BarlowBold'>%3° %4</t>  <t color='#8a9a93'>±%5°</t>  <t size='0.9'>à %6 h</t><br/><t size='0.9'>%7  %8 dBm · %9</t><br/><t size='0.8' color='#8a9a93'>%10 · entendu depuis %11 · %12</t>",
         ["#e5483a", "#4d9aff"] select _friend, ["INCONNU", "AMI"] select _friend, [_brg] call _deg3, [_brg] call _card, round _err, _clock,
         _barTxt, _dbm, _band,
         [format ["distance estimée %1", _rb], "distance inconnue (signal trop faible)"] select (_rb isEqualTo ""),
@@ -130,7 +130,7 @@ if ((uiNamespace getVariable ["COMSPEC_ATAK_DronePfh", -1]) < 0) then {
         if (!isNull _ring) then {
             _ring ctrlSetAngle [-_hd, 0.5, 0.5];
             { (_x select 0) ctrlSetAngle [(_x select 1) - _hd, 0.5, 0.5]; } forEach _needles;
-            _side ctrlSetStructuredText parseText ([_hd] call _summary);
+            _side ctrlSetStructuredText parseText ((([_hd] call _summary)) call comspec_atak_native_fnc_tr);
         };
         if !(profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]) exitWith {};
         if (diag_tickTime < (uiNamespace getVariable ["COMSPEC_ATAK_DronePageScan", 0])) exitWith {};

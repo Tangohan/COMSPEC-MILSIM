@@ -26,11 +26,8 @@ if (!isNil "_existing") exitWith {
     true
 };
 
-private _seed = floor random 2147483647;
-if (!isNull _entity) then {
-    private _pos = getPosASL _entity;
-    _seed = [_seed, format ["%1_%2_%3", typeOf _entity, round (_pos select 0), round (_pos select 1)]] call comspec_sse_fnc_hash;
-};
+// Graine déterministe (mission + classe + position) : même fiche sur toutes les machines.
+private _seed = [_entity] call comspec_sse_fnc_entitySeed;
 
 private _data = [_type, "SCRIPT", _profile, _complexity, _seed] call comspec_sse_fnc_createDataModel;
 // lazyReady=false → contenu détaillé généré au premier examen

@@ -39,6 +39,7 @@ $athKpis = [
         </a>
         <a href="<?= $h(url('back-office/referentiels/qualifications/attribuer')) ?>" class="ath-btn">Attribuer à un membre</a>
         <a href="<?= $h(url('back-office/referentiels/qualifications/emetteurs')) ?>" class="ath-btn">Organismes émetteurs</a>
+        <a href="<?= $h(url('back-office/referentiels/qualifications/cursus-pilote')) ?>" class="ath-btn">Cursus pilote</a>
     </div>
 
     <?php require base_path('views/partials/ath_kpis.php'); ?>

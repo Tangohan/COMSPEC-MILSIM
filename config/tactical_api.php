@@ -9,10 +9,17 @@ return [
     'atak_exempt_paths' => [
         '/api/atak/ping',
         '/api/atak/whoami',
+        // Dernières versions publiées (contrôle de mise à jour du mod au démarrage, avant toute liaison).
+        '/api/atak/version',
+        // Check de démarrage du mod (salon Discord de debug) : avant toute liaison, rate-limité.
+        '/api/atak/startup-check',
         // Relais same-origin des tuiles Atlas / Arma3Map (Leaflet img + crossOrigin=anonymous
         // n’envoie ni cookie de session ni clé). Les hôtes sont déjà allowlistés dans
         // AtakRemoteTileGuard — voir AtakMapDataController::proxy.
         '/api/atak/tiles',
+        // Fonds « Photo COMSPEC » publiés (fond PHOTO du téléphone, proposé avant toute liaison ; tuiles déjà publiques
+        // sous /map-photo).
+        '/api/atak/map-photo/list',
         // Code court à usage unique : le secret est le code lui-même (TTL court).
         '/api/atak/game-link/redeem',
         // Steam déjà lié au compte : l’UID Steam du client Arma fait office de preuve (pas de clé ATAK).

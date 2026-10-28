@@ -1,5 +1,21 @@
 params ["_name","_function",["_payload",""]];
 if (_name isNotEqualTo "comspec") exitWith {};
+// Réponse d'un appel non bloquant (fn_extAwait), quelle que soit la DLL qui rappelle.
+if (_function isEqualType "" && {(_function select [0, 6]) isEqualTo "async:"}) exitWith {
+    private _pending = missionNamespace getVariable ["COMSPEC_ATAK_ExtPending", createHashMap];
+    private _ticket = _function select [6];
+    if (_ticket in _pending) then { _pending set [_ticket, [_payload]]; };
+};
+// Présentation Google chargée depuis l'engrenage de l'app Briefing (fn_briefingCfg) : l'erreur est gardée pour
+// l'expliquer dans le panneau, et l'ancien tableau de briefing ouvert par Overwatch sur google_deck_ready est refermé
+// (le téléphone affiche déjà la diapositive). Le rappel reste traité par Overwatch ensuite.
+if (_function isEqualTo "google_deck_error") then {
+    private _e = parseSimpleArray _payload;
+    if ((_e param [0, ""]) isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BriefOwnLoad", "-"])) then { uiNamespace setVariable ["COMSPEC_ATAK_BriefGErr", _e]; };
+};
+if (_function isEqualTo "google_deck_ready" && {((parseSimpleArray _payload) param [0, ""]) isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BriefOwnLoad", "-"])}) then {
+    [{ [{ if (!isNull (findDisplay 9970) && {!isNull ([] call comspec_atak_native_fnc_display)}) then { (findDisplay 9970) closeDisplay 2; }; }] call CBA_fnc_execNextFrame; }] call CBA_fnc_execNextFrame;
+};
 // Les deux DLL rappellent sous le même nom : avec Overwatch, ces rappels sont les siens, pas ceux du natif.
 if ([] call comspec_atak_native_fnc_bridge) exitWith {};
 

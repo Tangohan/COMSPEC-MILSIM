@@ -11,7 +11,6 @@ namespace App\Services\Billing;
 final class SubscriptionPlanFeaturesCatalog
 {
     public const BOOL_FEATURES = [
-        'forum',
         'documents',
         'messages',
         'personnel',
@@ -24,9 +23,14 @@ final class SubscriptionPlanFeaturesCatalog
         'cooperation',
         'alerts',
         'atak',
+        'atak_link_basic',
         'analytics',
         'advanced_integrations',
         'community_create',
+        'registry_featured',
+        'pdf_exports',
+        'year_review_collective',
+        'pilot_qualifications',
     ];
 
     public const INT_FEATURES = [
@@ -40,11 +44,6 @@ final class SubscriptionPlanFeaturesCatalog
     public static function definitions(): array
     {
         return [
-            'forum' => [
-                'label' => 'Forum communauté',
-                'help' => 'Sujets, réponses et moderation du forum.',
-                'type' => 'bool',
-            ],
             'documents' => [
                 'label' => 'Documents',
                 'help' => 'Bibliothèque documentaire et pieces jointes.',
@@ -105,6 +104,11 @@ final class SubscriptionPlanFeaturesCatalog
                 'help' => 'Carte, unites terrain et outils ATAK.',
                 'type' => 'bool',
             ],
+            'atak_link_basic' => [
+                'label' => 'Liaison jeu de base',
+                'help' => 'Positions, comptes rendus et briefing envoyés depuis le jeu, même sans la carte tactique complète.',
+                'type' => 'bool',
+            ],
             'analytics' => [
                 'label' => 'Analytics organisation',
                 'help' => 'Tableaux de bord et metriques de pilotage.',
@@ -118,6 +122,26 @@ final class SubscriptionPlanFeaturesCatalog
             'community_create' => [
                 'label' => 'Creation de communauté',
                 'help' => 'Autorise la creation d’une nouvelle communauté via ce palier.',
+                'type' => 'bool',
+            ],
+            'registry_featured' => [
+                'label' => 'Mise en avant dans le registre',
+                'help' => 'Badge « mise en avant » sur la carte de la communauté et place parmi les premières du registre des unités.',
+                'type' => 'bool',
+            ],
+            'pdf_exports' => [
+                'label' => 'Exports PDF des tableaux',
+                'help' => 'Télécharger les tableaux du back-office (effectifs, dossier médical, heures de vol…) en PDF prêt à imprimer ou à envoyer.',
+                'type' => 'bool',
+            ],
+            'year_review_collective' => [
+                'label' => 'Rétrospective annuelle de l’unité',
+                'help' => 'Bilan de l’année de toute la communauté (heures, kilomètres, SSE, tableau d’honneur) dans la rétrospective des joueurs. La rétrospective individuelle reste gratuite.',
+                'type' => 'bool',
+            ],
+            'pilot_qualifications' => [
+                'label' => 'Cursus pilote automatique',
+                'help' => 'Qualifications de pilote attribuées ou proposées aux instructeurs d’après les heures de vol relevées en jeu.',
                 'type' => 'bool',
             ],
             'max_members' => [
@@ -142,7 +166,6 @@ final class SubscriptionPlanFeaturesCatalog
     {
         return [
             'free' => [
-                'forum' => true,
                 'documents' => true,
                 'messages' => true,
                 'personnel' => true,
@@ -155,14 +178,18 @@ final class SubscriptionPlanFeaturesCatalog
                 'cooperation' => false,
                 'alerts' => false,
                 'atak' => false,
+                'atak_link_basic' => true,
                 'analytics' => false,
                 'advanced_integrations' => false,
                 'community_create' => true,
+                'registry_featured' => false,
+                'pdf_exports' => false,
+                'year_review_collective' => false,
+                'pilot_qualifications' => false,
                 'max_members' => 10,
                 'max_training_courses' => 5,
             ],
             'standard' => [
-                'forum' => true,
                 'documents' => true,
                 'messages' => true,
                 'personnel' => true,
@@ -175,14 +202,18 @@ final class SubscriptionPlanFeaturesCatalog
                 'cooperation' => false,
                 'alerts' => true,
                 'atak' => true,
+                'atak_link_basic' => true,
                 'analytics' => false,
                 'advanced_integrations' => false,
                 'community_create' => true,
+                'registry_featured' => false,
+                'pdf_exports' => true,
+                'year_review_collective' => true,
+                'pilot_qualifications' => true,
                 'max_members' => 25,
                 'max_training_courses' => 25,
             ],
             'pro' => [
-                'forum' => true,
                 'documents' => true,
                 'messages' => true,
                 'personnel' => true,
@@ -195,14 +226,18 @@ final class SubscriptionPlanFeaturesCatalog
                 'cooperation' => true,
                 'alerts' => true,
                 'atak' => true,
+                'atak_link_basic' => true,
                 'analytics' => true,
                 'advanced_integrations' => false,
                 'community_create' => true,
+                'registry_featured' => true,
+                'pdf_exports' => true,
+                'year_review_collective' => true,
+                'pilot_qualifications' => true,
                 'max_members' => 50,
                 'max_training_courses' => 100,
             ],
             'pro_plus' => [
-                'forum' => true,
                 'documents' => true,
                 'messages' => true,
                 'personnel' => true,
@@ -215,9 +250,14 @@ final class SubscriptionPlanFeaturesCatalog
                 'cooperation' => true,
                 'alerts' => true,
                 'atak' => true,
+                'atak_link_basic' => true,
                 'analytics' => true,
                 'advanced_integrations' => true,
                 'community_create' => true,
+                'registry_featured' => true,
+                'pdf_exports' => true,
+                'year_review_collective' => true,
+                'pilot_qualifications' => true,
                 'max_members' => 80,
                 'max_training_courses' => 0,
             ],

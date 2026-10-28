@@ -293,10 +293,22 @@ if (!$privatePersonnelIdentity) {
         $displayName = $dn !== '' ? $dn : $missingLabel;
     }
 }
-$rScore = (int) ($personnelProfile['readiness_score'] ?? 0);
-$rExtra = (int) ($personnelExtras['readiness_percent'] ?? 0);
-$readinessMerged = max($rScore, $rExtra);
-$readiness = $readinessMerged > 0 ? $readinessMerged : null;
+$memberAvailability = is_array($memberAvailability ?? null) ? $memberAvailability : [
+    'percent' => null,
+    'sample' => 0,
+    'checked' => 0,
+    'committed' => 0,
+    'basis' => 'none',
+];
+$availabilityMeasured = ($memberAvailability['basis'] ?? '') === 'operations' && (int) ($memberAvailability['sample'] ?? 0) > 0;
+$readiness = $availabilityMeasured ? (int) $memberAvailability['percent'] : null;
+$availabilityPresenceCount = (int) ($memberAvailability['checked'] ?? 0);
+$availabilityOperationCount = (int) ($memberAvailability['sample'] ?? 0);
+$availabilitySentence = $availabilityMeasured
+    ? $availabilityPresenceCount . ' présence' . ($availabilityPresenceCount > 1 ? 's' : '')
+        . ' sur ' . $availabilityOperationCount . ' opération' . ($availabilityOperationCount > 1 ? 's' : '')
+        . ' des 45 derniers jours'
+    : 'Aucune opération sur les 45 derniers jours';
 $adminNotes = trim((string)($personnelProfile['command_notes'] ?? '')) ?: ($personnelExtras['admin_notes'] ?? null);
 
 $portraitUrl = null;
@@ -432,6 +444,11 @@ $effectiveRankDisplay = function_exists('personnel_assigned_grade_label')
         'role_name' => $platformRoleName,
     ], $platformRoleName)
     : ($gradeLabel !== '' ? $gradeLabel : $gradeShortLabel);
+// Communauté sans grades (« Aucun » au référentiel) : ni pastille Grade ni encart Avancement.
+$personnelGradesHidden = \App\Support\TenantGrades::hidden();
+if ($personnelGradesHidden) {
+    $effectiveRankDisplay = '';
+}
 $gradeCodeBeside = $rankOverride !== '' ? $rankOverride : $gradeOtanCode;
 // Libellé de référence (toujours le long si dispo) pour la colonne Détail.
 $gradeReferenceLabel = $gradeLabel !== '' ? $gradeLabel : $gradeShortLabel;
@@ -457,7 +474,7 @@ $completenessCheckLabels = [
     'identity_enlistment' => 'Date d’incorporation',
     'assignment_role' => 'Rôle dans l’organigramme',
     'qualifications' => 'Qualification ou formation certifiée',
-    'readiness' => 'Indicateur de disponibilité',
+    'readiness' => 'Disponibilité sur les opérations récentes',
     'contact_email' => 'Adresse e-mail de contact',
 ];
 $bannerPath = trim((string) ($personnelProfile['character_banner_path'] ?? ''));
@@ -492,15 +509,19 @@ $profilePublicSegment = trim((string) ($targetUser['profile_slug'] ?? ''));
 $profilePublicSegment = $profilePublicSegment !== '' ? $profilePublicSegment : null;
 $squadronExtra = trim((string) ($personnelExtras['squadron'] ?? ''));
 
-$enlistmentAppStatusFr = static function (?string $s): string {
-    return match (trim((string) $s)) {
-        'submitted' => 'Dossier transmis',
-        'reviewed' => 'Examinée (suite à traiter ou compte à rattacher)',
-        'rejected' => 'Non retenue',
-        'blocked' => 'Dossier bloqué',
-        'withdrawn' => 'Retirée par le candidat',
-        default => $s !== '' ? 'Statut à confirmer auprès du recrutement' : '—',
-    };
+$latestEnlistmentStage = (is_array($latestEnlistment ?? null) && $latestEnlistment !== [])
+    ? \App\Support\EnlistmentStatusCatalog::stage($latestEnlistment)
+    : null;
+if (is_array($latestEnlistmentStage) && ($latestEnlistmentStage['key'] ?? '') === 'unknown' && (string) ($latestEnlistment['status'] ?? '') === 'withdrawn') {
+    $latestEnlistmentStage['label'] = 'Retirée par le candidat';
+    $latestEnlistmentStage['hint'] = 'Candidature retirée';
+}
+$enlistmentStageToneClass = match ((string) ($latestEnlistmentStage['tone'] ?? '')) {
+    'emerald' => 'text-emerald-800',
+    'amber', 'orange' => 'text-amber-800',
+    'rose' => 'text-rose-800',
+    'sky' => 'text-sky-800',
+    default => 'text-slate-900',
 };
 $enlistmentSubmittedViaFr = static function (?string $s): string {
     return match (trim((string) $s)) {
@@ -578,7 +599,9 @@ if ($personnelFileIsRhFull) {
         <div class="personnel-file-hero__inner">
             <div class="personnel-file-hero__identity">
                 <p class="personnel-file-hero__eyebrow">Dossier personnel</p>
-                <h1 class="personnel-file-hero__name"><?= htmlspecialchars($displayName) ?></h1>
+                <?php $pfDonorUid = (int) (is_array($targetUser) ? ($targetUser['id'] ?? 0) : 0); $pfDonorTier = \App\Services\Billing\DonorService::userTier($pfDonorUid); ?>
+                <h1 class="personnel-file-hero__name" data-donor-skip data-staff-skip><?= staff_name((string) $displayName, $pfDonorUid, true) ?><?= \App\Services\Billing\DonorService::mark($pfDonorUid, true) ?></h1>
+                <?php if ($pfDonorTier !== null): ?><p class="personnel-file-hero__donor"><a href="<?= htmlspecialchars(url('soutenir-atak') . '#donateurs') ?>">Donateur Athena · <?= htmlspecialchars(\App\Services\Billing\DonorService::tierLabel($pfDonorTier)) ?></a> — merci pour votre soutien au projet.</p><?php endif; ?>
                 <?php if ($callsign || !empty($effectiveRankDisplay) || $nicknamePrimary !== '' || ($matricule && !empty($showMatriculePublic))): ?>
                 <ul class="personnel-file-hero__meta">
                     <?php if ($callsign): ?>
@@ -709,15 +732,19 @@ if ($personnelFileIsRhFull) {
         </div>
     </section>
 
+    <div class="personnel-file-lead">
     <?php
     $personnelFileNoticesIncludeRhSwitcher = false;
     $personnelFileNoticesIncludeOperatorTabs = false;
+    $personnelFileNoticesBare = true;
     require base_path('views/partials/personnel/file_page_notices.php');
-    require base_path('views/partials/personnel/advancement_panel.php');
+    if (!$personnelGradesHidden) {
+        require base_path('views/partials/personnel/advancement_panel.php');
+    }
     ?>
 
     <?php if (!empty($visibilityPreviewAs)): ?>
-    <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
+    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
       <p class="font-semibold">Aperçu de visibilité actif</p>
       <p class="mt-1">
         Affichage simulé en tant que
@@ -732,15 +759,14 @@ if ($personnelFileIsRhFull) {
     <?php endif; ?>
 
     <?php if (!empty($canManageVisibility)): ?>
-    <div class="mb-6">
       <?php
         $visibilityTargetUserId = (int) ($targetUser['id'] ?? 0);
         $visibilityStandaloneForm = true;
         $visibilityPreviewBaseUrl = url('personnel/' . $visibilityTargetUserId);
         require base_path('views/partials/personnel/visibility_admin_block.php');
       ?>
-    </div>
     <?php endif; ?>
+    </div>
 
     <div class="personnel-file-hub" data-file-hub x-data="personnelFileTabs('<?= htmlspecialchars($personnelFileInitialTab, ENT_QUOTES, 'UTF-8') ?>')">
 
@@ -795,23 +821,11 @@ if ($personnelFileIsRhFull) {
                     <?php
                     $memberFollowup = is_array($memberFollowup ?? null) ? $memberFollowup : [];
                     $phaseChecklist = is_array($phaseChecklist ?? null) ? $phaseChecklist : null;
-                    $armaAct = is_array($armaSessionActivity ?? null) ? $armaSessionActivity : null;
                     $suiviCompletMode = 'compact';
                     $suiviCompletUseAlpineTab = true;
                     require base_path('views/partials/personnel/file_suivi_complet.php');
                     ?>
-                    <?php if ($armaAct): ?>
-                    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-                        <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Activité Arma (30 jours)</h2>
-                        <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Temps brut</p><p class="mt-1 text-sm font-semibold"><?= htmlspecialchars(function_exists('format_arma_playtime_french') ? format_arma_playtime_french((int) ($armaAct['raw'] ?? 0)) : ((int) ($armaAct['raw'] ?? 0) . ' s')) ?></p></div>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Temps retenu</p><p class="mt-1 text-sm font-semibold"><?= htmlspecialchars(function_exists('format_arma_playtime_french') ? format_arma_playtime_french((int) ($armaAct['validated'] ?? 0)) : ((int) ($armaAct['validated'] ?? 0) . ' s')) ?></p></div>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Sessions</p><p class="mt-1 text-sm font-semibold"><?= (int) ($armaAct['sessions'] ?? 0) ?></p></div>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Présences pointées</p><p class="mt-1 text-sm font-semibold"><?= (int) ($armaAct['presences'] ?? 0) ?></p></div>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"><p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Taux de présence</p><p class="mt-1 text-sm font-semibold"><?= htmlspecialchars((string) ($armaAct['rate'] ?? 0)) ?> %</p></div>
-                        </div>
-                    </section>
-                    <?php endif; ?>
+                    <?php require base_path('views/partials/personnel/file_playtime.php'); ?>
                     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
                         <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-5">Synthèse</h2>
                         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -829,6 +843,19 @@ if ($personnelFileIsRhFull) {
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Déployabilité</p>
                                 <p class="mt-1 text-sm font-bold <?= $isDeployableFile ? 'text-emerald-700' : 'text-amber-800' ?>"><?= $isDeployableFile ? 'Oui' : 'Non' ?></p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Disponibilité</p>
+                                <?php if ($availabilityMeasured): ?>
+                                <p class="mt-1 text-sm font-bold tabular-nums text-slate-900"><?= (int) $readiness ?> %</p>
+                                <p class="mt-1 text-[11px] leading-snug text-slate-500"><?= htmlspecialchars($availabilitySentence, ENT_QUOTES, 'UTF-8') ?>.</p>
+                                <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200" aria-hidden="true">
+                                    <div class="h-full rounded-full bg-emerald-500" style="width: <?= min(100, max(0, (int) $readiness)) ?>%"></div>
+                                </div>
+                                <?php else: ?>
+                                <p class="mt-1 text-sm font-bold text-slate-900">Pas encore mesurée</p>
+                                <p class="mt-1 text-[11px] leading-snug text-slate-500"><?= htmlspecialchars($availabilitySentence, ENT_QUOTES, 'UTF-8') ?>. Le pourcentage apparaîtra avec les premières présences.</p>
+                                <?php endif; ?>
                             </div>
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Incorporation</p>
@@ -862,40 +889,6 @@ if ($personnelFileIsRhFull) {
                                     <button type="submit" class="inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 sm:w-auto">Importer photo depuis Steam</button>
                                     <p class="text-[10px] text-slate-500">Met à jour la photo uniquement. Le prénom et le nom du personnage se règlent dans le dossier ou les préférences.</p>
                                 </form>
-                                <?php endif; ?>
-                            </div>
-                            <?php endif; ?>
-                            <?php if (is_array($armaPlaytime ?? null)): ?>
-                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:col-span-2 xl:col-span-1">
-                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Temps de jeu en mission</p>
-                                <?php if (!empty($armaPlaytime['show_steam_hint_self'])): ?>
-                                    <p class="mt-2 text-sm text-slate-700">Indiquez dans les préférences du compte le même identifiant que dans le jeu pour que le cumul puisse être rattaché à votre dossier.</p>
-                                <?php elseif (!empty($armaPlaytime['no_steam_staff'])): ?>
-                                    <p class="mt-2 text-sm text-slate-600">Non renseigné sur ce dossier.</p>
-                                <?php elseif (!empty($armaPlaytime['schema_ready']) && $steamId !== null && ($armaPlaytime['hours_label'] ?? null) !== null): ?>
-                                    <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars((string) $armaPlaytime['hours_label'], ENT_QUOTES, 'UTF-8') ?></p>
-                                    <?php if (!empty($armaPlaytime['server_label']) || !empty($armaPlaytime['zeus_label']) || !empty($armaPlaytime['editor_label'])): ?>
-                                        <ul class="mt-2 space-y-0.5 text-xs text-slate-600">
-                                            <?php if (!empty($armaPlaytime['server_label'])): ?>
-                                                <li>En serveur : <?= htmlspecialchars((string) $armaPlaytime['server_label'], ENT_QUOTES, 'UTF-8') ?></li>
-                                            <?php endif; ?>
-                                            <?php if (!empty($armaPlaytime['zeus_label'])): ?>
-                                                <li>En Zeus : <?= htmlspecialchars((string) $armaPlaytime['zeus_label'], ENT_QUOTES, 'UTF-8') ?></li>
-                                            <?php endif; ?>
-                                            <?php if (!empty($armaPlaytime['editor_label'])): ?>
-                                                <li>Dans l’éditeur : <?= htmlspecialchars((string) $armaPlaytime['editor_label'], ENT_QUOTES, 'UTF-8') ?></li>
-                                            <?php endif; ?>
-                                        </ul>
-                                    <?php endif; ?>
-                                    <?php if (!empty($armaPlaytime['last_sync_label'])): ?>
-                                        <p class="mt-2 text-xs text-slate-500">Dernière remontée : <?= htmlspecialchars((string) $armaPlaytime['last_sync_label'], ENT_QUOTES, 'UTF-8') ?></p>
-                                    <?php endif; ?>
-                                    <p class="mt-2 text-[10px] text-slate-500">Cumul issu des sessions avec le mod connecté au portail. Le détail (serveur, Zeus, éditeur) se complète au fil des prochaines sessions.</p>
-                                    <?php if (!empty($viewerIsPersonnelSubject)): ?>
-                                        <p class="mt-3 rounded-lg border border-sky-200/80 bg-sky-50/90 px-3 py-2 text-[11px] leading-snug text-slate-700">Pour forcer une remontée depuis le jeu : téléphone Athena → <span class="font-semibold">Remonter le temps</span>, ou Resynch Athena. Rechargez ensuite cette page.</p>
-                                    <?php endif; ?>
-                                <?php elseif ($steamId !== null): ?>
-                                    <p class="mt-2 text-sm text-slate-600">Le cumul sera affiché après mise à jour du suivi côté portail.</p>
                                 <?php endif; ?>
                             </div>
                             <?php endif; ?>
@@ -944,53 +937,56 @@ if ($personnelFileIsRhFull) {
                     </section>
                     <?php endif; ?>
                     <?php if ($privatePersonnelIdentity && is_array($latestEnlistment) && $latestEnlistment !== []): ?>
+                    <?php
+                    $enlistmentRows = [];
+                    $pushEnlistmentRow = static function (string $label, string $value, bool $multiline = false) use (&$enlistmentRows): void {
+                        $value = trim($value);
+                        if ($value === '') {
+                            return;
+                        }
+                        $enlistmentRows[] = ['label' => $label, 'value' => $value, 'multiline' => $multiline];
+                    };
+                    $pushEnlistmentRow('Prénom et nom', trim((string) ($latestEnlistment['first_name'] ?? '') . ' ' . (string) ($latestEnlistment['last_name'] ?? '')));
+                    if (!empty($latestEnlistment['created_at']) && ($sentTs = strtotime((string) $latestEnlistment['created_at'])) !== false) {
+                        $pushEnlistmentRow('Envoyée le', date('d/m/Y', $sentTs));
+                    }
+                    if (!empty($latestEnlistment['reviewed_at']) && ($reviewedTs = strtotime((string) $latestEnlistment['reviewed_at'])) !== false) {
+                        $pushEnlistmentRow('Examinée le', date('d/m/Y', $reviewedTs));
+                    }
+                    $pushEnlistmentRow('Indicatif indiqué', (string) ($latestEnlistment['callsign'] ?? ''));
+                    if (!empty($showEmailInContact)) {
+                        $pushEnlistmentRow('E-mail de contact', (string) ($latestEnlistment['email'] ?? ''));
+                    }
+                    $pushEnlistmentRow('Pays', (string) ($latestEnlistment['country'] ?? ''));
+                    $pushEnlistmentRow('Spécialité', (string) ($latestEnlistment['specialty'] ?? ''));
+                    $pushEnlistmentRow('Plateforme', (string) ($latestEnlistment['platform'] ?? ''));
+                    $pushEnlistmentRow('Expérience', (string) ($latestEnlistment['experience'] ?? ''), true);
+                    $pushEnlistmentRow('Disponibilités', (string) ($latestEnlistment['availability'] ?? ''), true);
+                    $pushEnlistmentRow('Message', (string) ($latestEnlistment['notes'] ?? ''), true);
+                    $pushEnlistmentRow('Mode de transmission', $enlistmentSubmittedViaFr((string) ($latestEnlistment['submitted_via'] ?? '')));
+                    $enlistmentStageLabel = (string) ($latestEnlistmentStage['label'] ?? '—');
+                    $enlistmentStageHint = trim((string) ($latestEnlistmentStage['hint'] ?? ''));
+                    ?>
                     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-                        <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Dernière candidature recrutement</h2>
-                        <p class="text-xs text-slate-600 mb-4">Résumé issu du dernier dossier transmis (identité telle que saisie à l’époque).</p>
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Prénom et nom</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars(trim((string) ($latestEnlistment['first_name'] ?? '') . ' ' . (string) ($latestEnlistment['last_name'] ?? ''))) ?></p></div>
-                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">État du dossier</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($enlistmentAppStatusFr((string) ($latestEnlistment['status'] ?? ''))) ?></p></div>
-                            <?php if (!empty($latestEnlistment['created_at'])): ?>
-                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Envoyée le</p><p class="text-sm text-slate-800"><?= htmlspecialchars(date('d/m/Y', strtotime((string) $latestEnlistment['created_at']))) ?></p></div>
-                            <?php endif; ?>
-                            <?php if (!empty($latestEnlistment['reviewed_at'])): ?>
-                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Examinée le</p><p class="text-sm text-slate-800"><?= htmlspecialchars(date('d/m/Y', strtotime((string) $latestEnlistment['reviewed_at']))) ?></p></div>
-                            <?php endif; ?>
-                            <?php
-                            $enrCall = trim((string) ($latestEnlistment['callsign'] ?? ''));
-                            $enrMail = trim((string) ($latestEnlistment['email'] ?? ''));
-                            ?>
-                            <?php if ($enrCall !== ''): ?>
-                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Indicatif indiqué</p><p class="text-sm text-slate-800"><?= htmlspecialchars($enrCall) ?></p></div>
-                            <?php endif; ?>
-                            <?php if ($enrMail !== '' && !empty($showEmailInContact)): ?>
-                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">E-mail de contact (dossier)</p><p class="text-sm text-slate-800 break-all"><?= htmlspecialchars($enrMail) ?></p></div>
-                            <?php endif; ?>
-                            <?php if (!empty(trim((string) ($latestEnlistment['country'] ?? '')))): ?>
-                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Pays / fuseau indiqué</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $latestEnlistment['country'])) ?></p></div>
-                            <?php endif; ?>
-                            <?php if (!empty(trim((string) ($latestEnlistment['experience'] ?? '')))): ?>
-                            <div class="sm:col-span-2"><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Expérience décrite</p><p class="text-sm text-slate-800 leading-relaxed"><?= nl2br(htmlspecialchars(trim((string) $latestEnlistment['experience']))) ?></p></div>
-                            <?php endif; ?>
-                            <?php if (!empty(trim((string) ($latestEnlistment['specialty'] ?? '')))): ?>
-                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Spécialité indiquée</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $latestEnlistment['specialty'])) ?></p></div>
-                            <?php endif; ?>
-                            <?php if (!empty(trim((string) ($latestEnlistment['platform'] ?? '')))): ?>
-                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Plateforme de jeu</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $latestEnlistment['platform'])) ?></p></div>
-                            <?php endif; ?>
-                            <?php if (!empty(trim((string) ($latestEnlistment['availability'] ?? '')))): ?>
-                            <div class="sm:col-span-2"><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Disponibilités indiquées</p><p class="text-sm text-slate-800 leading-relaxed"><?= nl2br(htmlspecialchars(trim((string) $latestEnlistment['availability']))) ?></p></div>
-                            <?php endif; ?>
-                            <?php if (!empty(trim((string) ($latestEnlistment['notes'] ?? '')))): ?>
-                            <div class="sm:col-span-2"><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Message joint au dossier</p><p class="text-sm text-slate-800 leading-relaxed"><?= nl2br(htmlspecialchars(trim((string) $latestEnlistment['notes']))) ?></p></div>
-                            <?php endif; ?>
-                            <?php
-                            $viaFr = $enlistmentSubmittedViaFr((string) ($latestEnlistment['submitted_via'] ?? ''));
-                            ?>
-                            <?php if ($viaFr !== ''): ?>
-                            <div><p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Mode de transmission</p><p class="text-sm text-slate-800"><?= htmlspecialchars($viaFr) ?></p></div>
-                            <?php endif; ?>
-                        </div>
+                        <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Dernière candidature recrutement</h2>
+                        <p class="mt-2 text-sm text-slate-600">Identité telle qu’elle a été saisie dans le dossier, au moment de l’envoi.</p>
+                        <dl class="mt-4 divide-y divide-slate-100 border-y border-slate-100">
+                            <div class="grid gap-0.5 py-3 sm:grid-cols-[12rem_minmax(0,1fr)] sm:items-baseline sm:gap-6">
+                                <dt class="text-xs font-medium text-slate-500">État du dossier</dt>
+                                <dd class="text-sm font-semibold <?= htmlspecialchars($enlistmentStageToneClass, ENT_QUOTES, 'UTF-8') ?>">
+                                    <?= htmlspecialchars($enlistmentStageLabel, ENT_QUOTES, 'UTF-8') ?>
+                                    <?php if ($enlistmentStageHint !== ''): ?>
+                                    <span class="mt-0.5 block text-xs font-normal text-slate-500"><?= htmlspecialchars($enlistmentStageHint, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
+                                </dd>
+                            </div>
+                            <?php foreach ($enlistmentRows as $enlistmentRow): ?>
+                            <div class="grid gap-0.5 py-3 sm:grid-cols-[12rem_minmax(0,1fr)] sm:items-baseline sm:gap-6">
+                                <dt class="text-xs font-medium text-slate-500"><?= htmlspecialchars($enlistmentRow['label'], ENT_QUOTES, 'UTF-8') ?></dt>
+                                <dd class="min-w-0 text-sm text-slate-900 <?= !empty($enlistmentRow['multiline']) ? 'whitespace-pre-line leading-relaxed' : 'font-medium' ?>"><?= htmlspecialchars($enlistmentRow['value'], ENT_QUOTES, 'UTF-8') ?></dd>
+                            </div>
+                            <?php endforeach; ?>
+                        </dl>
                     </section>
                     <?php endif; ?>
                     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
@@ -1128,7 +1124,7 @@ if ($personnelFileIsRhFull) {
 
                 <section class="bg-white border border-slate-200 rounded-3xl p-8">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Emploi</h2>
-                    <p class="mb-6 max-w-3xl text-sm leading-relaxed text-slate-600">La fonction tenue, distincte de l’équipe. L’emploi principal apparaît sur la fiche, l’organigramme et le forum. Il n’ouvre aucun droit d’accès.</p>
+                    <p class="mb-6 max-w-3xl text-sm leading-relaxed text-slate-600">La fonction tenue, distincte de l’équipe. L’emploi principal apparaît sur la fiche et l’organigramme. Il n’ouvre aucun droit d’accès.</p>
                     <?php if ($personnelJobRoleAssignments !== []): ?>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <?php foreach ($personnelJobRoleAssignments as $jr):
@@ -1563,18 +1559,15 @@ if ($personnelFileIsRhFull) {
 
                 <!-- Préparation opérationnelle -->
                 <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6 flex flex-wrap items-center justify-between gap-3">
-                        Préparation opérationnelle
-                        <div class="flex items-center gap-2">
-                            <span class="text-sm font-black italic tabular-nums"><?= $readiness !== null ? $readiness : '—' ?><?= $readiness !== null ? ' %' : '' ?></span>
-                            <?php if ($readiness !== null): ?>
-                            <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full bg-emerald-500 rounded-full" style="width: <?= min(100, max(0, $readiness)) ?>%"></div>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                    </h2>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Préparation opérationnelle</h2>
+                    <p class="mt-3 text-sm leading-relaxed text-slate-700">
+                        <?php if ($availabilityMeasured): ?>
+                        Disponibilité : <span class="font-semibold tabular-nums"><?= (int) $readiness ?> %</span> — <?= htmlspecialchars($availabilitySentence, ENT_QUOTES, 'UTF-8') ?>.
+                        <?php else: ?>
+                        Disponibilité pas encore mesurée. <?= htmlspecialchars($availabilitySentence, ENT_QUOTES, 'UTF-8') ?>.
+                        <?php endif; ?>
+                    </p>
+                    <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-6">
                         <?php if ($flightHours !== null && $flightHours !== ''): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase mb-1">Heures de vol</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars((string)$flightHours) ?></p></div>
                         <?php endif; ?>
@@ -1620,7 +1613,7 @@ if ($personnelFileIsRhFull) {
                                 </div>
                                 <p class="pf-timeline__title"><?= htmlspecialchars((string) ($event['title'] ?? '')) ?></p>
                                 <?php if ($evReason !== ''): ?><p class="pf-timeline__text">Motif : <?= htmlspecialchars($evReason, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
-                                <?php if (!empty($event['description'])): ?><p class="pf-timeline__text"><?= nl2br(htmlspecialchars((string) $event['description'])) ?></p><?php endif; ?>
+                                <?php if (!empty($event['description'])): ?><p class="pf-timeline__text"><?= nl2br(htmlspecialchars(\App\Support\HrHistoryLabel::forPage((string) $event['description']))) ?></p><?php endif; ?>
                             </div>
                         </li>
                         <?php endforeach; ?>
@@ -1790,7 +1783,7 @@ if ($personnelFileIsRhFull) {
                 <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Compte</h2>
                     <?php if ($civilSourceLabel): ?>
-                    <p class="text-[10px] text-slate-500 mb-6">Source prénom / nom du personnage : <span class="font-semibold text-slate-700"><?= htmlspecialchars($civilSourceLabel) ?></span><?php if (($civilIdentity['source'] ?? null) === 'enlistment' && is_array($latestEnlistment) && $latestEnlistment !== []): ?> · Dossier de recrutement associé : <span class="font-semibold text-slate-700"><?= htmlspecialchars($enlistmentAppStatusFr((string) ($latestEnlistment['status'] ?? ''))) ?></span><?php if (!empty($latestEnlistment['created_at'])): ?> (transmis le <?= htmlspecialchars(date('d/m/Y', strtotime((string) $latestEnlistment['created_at']))) ?>)<?php endif; ?><?php endif; ?>.</p>
+                    <p class="text-[10px] text-slate-500 mb-6">Source prénom / nom du personnage : <span class="font-semibold text-slate-700"><?= htmlspecialchars($civilSourceLabel) ?></span><?php if (($civilIdentity['source'] ?? null) === 'enlistment' && is_array($latestEnlistment) && $latestEnlistment !== []): ?> · Dossier de recrutement associé : <span class="font-semibold text-slate-700"><?= htmlspecialchars((string) ($latestEnlistmentStage['label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></span><?php if (!empty($latestEnlistment['created_at'])): ?> (transmis le <?= htmlspecialchars(date('d/m/Y', strtotime((string) $latestEnlistment['created_at']))) ?>)<?php endif; ?><?php endif; ?>.</p>
                     <?php endif; ?>
                     <div class="grid md:grid-cols-2 gap-6">
                         <?php if (!empty($showEmailInContact)): ?>

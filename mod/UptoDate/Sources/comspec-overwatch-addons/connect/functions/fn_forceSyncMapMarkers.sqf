@@ -7,6 +7,7 @@
 params [["_announce", false, [true]]];
 
 if (!hasInterface) exitWith { 0 };
+if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith { 0 };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { 0 };
 if (!(missionNamespace getVariable ["comspec_overwatch_sync_map_markers", true])) exitWith {
     if (_announce) then {
@@ -19,6 +20,7 @@ if (!(missionNamespace getVariable ["comspec_overwatch_sync_map_markers", true])
 missionNamespace setVariable ["COMSPEC_Athena_MapMarkerSnap", createHashMap, false];
 missionNamespace setVariable ["COMSPEC_Athena_BceMarkerQuickSnap", createHashMap, false];
 missionNamespace setVariable ["COMSPEC_Athena_CtabMarkerSnap", createHashMap, false];
+missionNamespace setVariable ["COMSPEC_MarkerSentSig", createHashMap, false];
 
 private _count = 0;
 private _markers = allMapMarkers;
@@ -51,6 +53,14 @@ if (!(_markers isEqualType [])) then { _markers = []; };
         };
     };
     if (!_isBce) then { continue };
+
+    // Repère posé par une autre machine : son poseur l'envoie déjà. Le forcer ici le
+    // réattribuait à l'indicatif local sur Athena (même filtre que resyncAllMapMarkers).
+    if (isMultiplayer && {(_n find "#") >= 0} && {!isNil "comspec_overwatch_connect_fnc_userMapMarkerMeta"}) then {
+        private _ownId = ([_n] call comspec_overwatch_connect_fnc_userMapMarkerMeta) getOrDefault ["owner_id", -1];
+        if (_ownId isEqualType 0 && {_ownId >= 0} && {_ownId isNotEqualTo clientOwner}) then { _n = ""; };
+    };
+    if (_n isEqualTo "") then { continue };
 
     // Envoi forcé : contourne hasTerminal / canTransmit (tablette déjà ouverte)
     [_n, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;

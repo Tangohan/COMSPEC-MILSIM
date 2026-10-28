@@ -13,6 +13,14 @@ final class ContainerIntegrations
     {
         return match ($id) {
             Gate::class => Gate::getInstance(),
+            \App\Services\Community\CommunityPageEditorAccess::class => new \App\Services\Community\CommunityPageEditorAccess(
+                Container::get(\App\Repositories\UserRepository::class),
+                Container::get(\App\Services\Rbac\RbacService::class),
+            ),
+            \App\Controllers\Web\CommunityPageEditorController::class => new \App\Controllers\Web\CommunityPageEditorController(
+                Container::get(\App\Repositories\TenantRepository::class),
+                Container::get(\App\Services\Community\CommunityPageEditorAccess::class),
+            ),
             \App\Controllers\Admin\Organization\OrganizationProgressionHubController::class => new \App\Controllers\Admin\Organization\OrganizationProgressionHubController(
                 Container::get(\App\Services\Auth\AuthService::class),
                 Gate::getInstance(),
@@ -44,10 +52,16 @@ final class ContainerIntegrations
                 Gate::getInstance(),
             ),
             \App\Services\Notifications\ActivityHubPresentationService::class => new \App\Services\Notifications\ActivityHubPresentationService(),
+            \App\Repositories\CommunityEcosystemRepository::class => new \App\Repositories\CommunityEcosystemRepository(),
+            \App\Services\Ecosystem\CommunityStatsService::class => new \App\Services\Ecosystem\CommunityStatsService(
+                Container::get(\App\Repositories\TenantRepository::class),
+                Container::get(\App\Repositories\UserRepository::class),
+                Container::get(\App\Repositories\CommunityEcosystemRepository::class),
+            ),
             \App\Repositories\AsyncJobRepository::class => new \App\Repositories\AsyncJobRepository(),
             \App\Repositories\TenantApiKeyRepository::class => new \App\Repositories\TenantApiKeyRepository(),
             \App\Controllers\Web\ActivityHubController::class => new \App\Controllers\Web\ActivityHubController(
-                Container::get(\App\Repositories\ForumNotificationRepository::class),
+                Container::get(\App\Repositories\MemberNotificationRepository::class),
                 Container::get(\App\Repositories\Courrier\CourrierDocumentNotificationRepository::class),
                 Container::get(\App\Repositories\TenantMessageRepository::class),
                 Container::get(\App\Services\Notifications\ActivityHubPresentationService::class),
@@ -56,7 +70,6 @@ final class ContainerIntegrations
             \App\Services\Alerts\MemberAlertsPageService::class => new \App\Services\Alerts\MemberAlertsPageService(
                 Container::get(\App\Services\Alerts\AlertPresentationService::class),
                 Container::get(\App\Services\Dashboard\TenantDashboardPinService::class),
-                Container::get(\App\Repositories\ForumTopicRepository::class),
             ),
             \App\Controllers\Web\MemberAlertsController::class => new \App\Controllers\Web\MemberAlertsController(
                 Container::get(\App\Services\Alerts\MemberAlertsPageService::class),
@@ -67,7 +80,6 @@ final class ContainerIntegrations
             ),
             \App\Controllers\Web\OperateurTerrainController::class => new \App\Controllers\Web\OperateurTerrainController(
                 Container::get(\App\Services\Auth\AuthService::class),
-                Container::get(\App\Repositories\ModpackRepository::class),
                 Container::get(\App\Services\Dashboard\TenantDashboardPinService::class),
             ),
             \App\Controllers\Api\IntegrationsPublicEventsController::class => new \App\Controllers\Api\IntegrationsPublicEventsController(
@@ -160,6 +172,18 @@ final class ContainerIntegrations
                 Container::get(\App\Repositories\AtakRealismRepository::class),
                 Container::get(\App\Repositories\UserRepository::class),
                 Container::get(\App\Services\Audit\AuditService::class),
+            ),
+            \App\Repositories\PlanPaymentRequestRepository::class => new \App\Repositories\PlanPaymentRequestRepository(),
+            \App\Services\Billing\PlanPaymentService::class => new \App\Services\Billing\PlanPaymentService(
+                Container::get(\App\Repositories\PlanPaymentRequestRepository::class),
+                Container::get(\App\Repositories\SubscriptionPlanRepository::class),
+                Container::get(\App\Repositories\TenantRepository::class),
+                Container::get(\App\Repositories\UserRepository::class),
+            ),
+            \App\Services\Account\AccountUsageService::class => new \App\Services\Account\AccountUsageService(
+                Container::get(\App\Repositories\UserRepository::class),
+                Container::get(\App\Repositories\TenantRepository::class),
+                Container::get(\App\Repositories\RoleRepository::class),
             ),
             default => null,
         };

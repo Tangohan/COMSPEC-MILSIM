@@ -94,7 +94,7 @@ $navIndex = 0;
             <a class="jnet-btn" href="<?= $h(url('jnet/courrier')) ?>">Messagerie<?= $unreadMail > 0 ? ' <b>' . min(99, $unreadMail) . '</b>' : '' ?></a>
             <a class="jnet-btn jnet-btn--solid" href="<?= $h(url('jnet/operations')) ?>">Opérations</a>
             <?php if ($canTba): ?>
-                <a class="jnet-btn jnet-btn--ghost" href="<?= $h(url('back-office')) ?>">Administration</a>
+                <a class="jnet-btn jnet-btn--ghost" href="<?= $h(url('back-office')) ?>">Back-office</a>
             <?php endif; ?>
             <a class="jnet-btn jnet-btn--ghost" href="<?= $h(url('dashboard')) ?>">Quitter</a>
         </div>
@@ -144,5 +144,6 @@ $navIndex = 0;
         </main>
     </div>
 </div>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

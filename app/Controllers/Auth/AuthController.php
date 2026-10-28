@@ -291,7 +291,14 @@ class AuthController
 
     public function showLogin(Request $request, array $params = []): Response
     {
+        $back = LoginIntendedDestination::suffixFromRedirect((string) $request->query('redirect', ''));
+        if ($back !== null && !$this->authService->check()) {
+            LoginIntendedDestination::rememberSuffix($back);
+        }
         if ($this->authService->check()) {
+            if ($back !== null) {
+                return Response::redirect(url($back));
+            }
             if (LoginWelcomeGate::isPending()) {
                 return Response::redirect(url('login/accueil'));
             }
@@ -305,6 +312,15 @@ class AuthController
 
             return Response::redirect(url('login/choisir-espace'));
         }
+        if ((string) $request->query('autre-compte', '') === '1') {
+            // Lien « Se connecter avec un autre compte » : sans cela, l'étape en cours
+            // (code de sécurité, choix de communauté) renvoyait en boucle vers elle-même.
+            Session::forget('pending_login_security_otp');
+            Session::forget('pending_community_selection');
+            Session::forget('pending_verification_email');
+
+            return Response::redirect(url('login'));
+        }
         $pendingOtp = Session::get('pending_login_security_otp');
         if (is_array($pendingOtp) && (int) ($pendingOtp['expires_at'] ?? 0) >= time()) {
             return Response::redirect(url('login/otp'));
@@ -317,8 +333,11 @@ class AuthController
         ) {
             return Response::redirect(url('login/select-community'));
         }
+        $oldEmail = Session::getFlash('login_old_email');
+
         return Response::view('auth.login', [
             'title' => __('auth.title_login'),
+            'oldEmail' => is_string($oldEmail) ? $oldEmail : '',
         ]);
     }
 
@@ -338,6 +357,13 @@ class AuthController
         if ($email === '' || $password === '') {
             Session::flash('error', __('auth.flash_email_password_required'));
             return Response::redirect(url('login'));
+        }
+
+        // Délai de rétractation dépassé : le compte est supprimé, pas rouvert par la connexion.
+        try {
+            \App\Core\Container::get(\App\Services\Account\AccountDeletionService::class)->eraseOverdueForEmail($email);
+        } catch (\Throwable $e) {
+            error_log('[auth.login] suppression en retard : ' . $e->getMessage());
         }
 
         $candidates = $this->userRepository->listUsersForLoginByEmail($email);
@@ -368,6 +394,7 @@ class AuthController
                 substr($email, 0, 120)
             );
             $this->loginSecurityNotifications->onFailedLogin($request, $email);
+            Session::flash('login_old_email', $email);
             Session::flash('error', __('auth.flash_invalid_credentials'));
             return Response::redirect(url('login'));
         }
@@ -397,7 +424,7 @@ class AuthController
                 Session::flash('error', __('auth.flash_account_not_found'));
                 return Response::redirect(url('login'));
             }
-            if ($this->loginSecurityOtpService->isLoginEmailOtpRequired($user)) {
+            if ($this->loginSecurityOtpService->needsChallengeNow($user)) {
                 return $this->loginSecurityOtpService->beginLoginChallenge($user);
             }
             return $this->redirectToDashboardAfterLogin($user, $request);
@@ -427,6 +454,7 @@ class AuthController
                 return Response::redirect(url('login'));
             }
             if (($user['status'] ?? '') === 'pending_verification') {
+                Session::set('pending_verification_email', $emailNorm);
                 Session::flash('error', __('auth.flash_confirm_email'));
                 return Response::redirect(url('login'));
             }
@@ -434,7 +462,7 @@ class AuthController
                 Session::flash('error', __('auth.flash_account_unavailable'));
                 return Response::redirect(url('login'));
             }
-            if (($user['status'] ?? '') === 'active' && $this->loginSecurityOtpService->isLoginEmailOtpRequired($user)) {
+            if (($user['status'] ?? '') === 'active' && $this->loginSecurityOtpService->needsChallengeNow($user)) {
                 return $this->loginSecurityOtpService->beginLoginChallenge($user);
             }
 
@@ -547,7 +575,7 @@ class AuthController
 
         Session::forget('pending_community_selection');
         Session::forget('pending_verification_email');
-        if ($this->loginSecurityOtpService->isLoginEmailOtpRequired($user)) {
+        if ($this->loginSecurityOtpService->needsChallengeNow($user)) {
             return $this->loginSecurityOtpService->beginLoginChallenge($user);
         }
 
@@ -575,6 +603,10 @@ class AuthController
             'canFallbackEmail' => !empty($pending['can_fallback_email']),
             'canFallbackTotp' => !empty($pending['can_fallback_totp']),
             'canResend' => ((string) ($pending['channel'] ?? '')) !== LoginSecurityOtpService::CHANNEL_TOTP,
+            'canUseRecovery' => !empty($pending['can_use_recovery']),
+            'canRemember' => !empty($pending['can_remember']),
+            'generatedAt' => (int) ($pending['generated_at'] ?? 0),
+            'resendIntervalSec' => LoginSecurityOtpService::RESEND_INTERVAL_SEC,
         ]);
     }
 
@@ -582,8 +614,11 @@ class AuthController
     {
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', __('auth.flash_session_expired'));
+            // Plus d'étape en cours : renvoyer directement à la connexion plutôt que
+            // d'enchaîner « Session expirée » puis « Ce code a expiré ».
+            $pending = Session::get('pending_login_security_otp');
 
-            return Response::redirect(url('login/otp'));
+            return Response::redirect(url(is_array($pending) ? 'login/otp' : 'login'));
         }
         $pending = Session::get('pending_login_security_otp');
         if (!is_array($pending) || (int) ($pending['expires_at'] ?? 0) < time()) {
@@ -592,8 +627,13 @@ class AuthController
 
             return Response::redirect(url('login'));
         }
-        $code = preg_replace('/\D/', '', (string) $request->input('otp_code', '')) ?? '';
-        $result = $this->loginSecurityOtpService->verifyPendingChallenge($pending, $code);
+        $useRecovery = (string) $request->input('use_recovery', '') === '1';
+        if ($useRecovery) {
+            $result = $this->loginSecurityOtpService->verifyPendingRecoveryCode($pending, (string) $request->input('recovery_code', ''));
+        } else {
+            $code = preg_replace('/\D/', '', (string) $request->input('otp_code', '')) ?? '';
+            $result = $this->loginSecurityOtpService->verifyPendingChallenge($pending, $code);
+        }
         if (!$result['ok']) {
             $msg = (string) ($result['message'] ?? __('auth.flash_wrong_code'));
             if (str_contains($msg, 'Trop de tentatives') || str_contains($msg, 'Reconnectez')) {
@@ -603,13 +643,30 @@ class AuthController
             }
             Session::flash('error', $msg);
 
-            return Response::redirect(url('login/otp'));
+            return Response::redirect(url('login/otp') . ($useRecovery ? '#secours' : ''));
         }
         $user = $result['user'] ?? null;
         if (!is_array($user) || ($user['status'] ?? '') !== 'active') {
             Session::flash('error', __('auth.flash_account_unavailable'));
 
             return Response::redirect(url('login'));
+        }
+        if ((string) $request->input('remember_device', '') === '1' && $this->loginSecurityOtpService->canTrustDevice($user)) {
+            $this->loginSecurityOtpService->trustedDevices()->remember($user, $request->userAgent(), $request->ip());
+        }
+        if ($useRecovery) {
+            $left = (int) ($result['remaining'] ?? 0);
+            $this->auditService->log(
+                AuditAction::AUTH_RECOVERY_CODE_USED,
+                (int) $user['tenant_id'],
+                (int) $user['id'],
+                'user',
+                (int) $user['id'],
+                null,
+                'remaining:' . $left
+            );
+            // Affiché sur la page suivante : il faut régénérer avant d'être à court.
+            Session::set('recovery_code_used_notice', $left);
         }
 
         return $this->redirectToDashboardAfterLogin($user, $request);

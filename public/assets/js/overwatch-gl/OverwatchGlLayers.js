@@ -147,7 +147,7 @@ window.OverwatchGlLayers = (function () {
     var longEdge = Math.max(w, d);
     var area = w * d;
     if (shortEdge < 1.15 && h >= 3.2 && h >= longEdge * 1.15) return 'pole';
-    if (shortEdge < 1.0 && h > shortEdge * 3.5) return 'pole';
+    if (shortEdge < 1.0 && h > shortEdge * 3.5 && h >= longEdge) return 'pole';
     if (shortEdge < 1.55 && longEdge / Math.max(0.01, shortEdge) >= 4) return 'ribbon';
     if (area < 9 && h > 2.8 && shortEdge < 2.2) return 'panel';
     return 'building';
@@ -584,7 +584,9 @@ window.OverwatchGlLayers = (function () {
     var samples = clock != null && ow.getTrackSamples ? ow.getTrackSamples() : null;
     var selected = selectedUnitId();
     var zoom = glMap && glMap.getZoom ? glMap.getZoom() : 14;
-    return (ow.getUnits() || []).map(function (unit) {
+    return (ow.getUnits() || []).filter(function (unit) {
+      return !(ow.isUnitHidden && ow.isUnitHidden(unit));
+    }).map(function (unit) {
       var x = Number(unit.pos_x != null ? unit.pos_x : unit.x);
       var y = Number(unit.pos_y != null ? unit.pos_y : unit.y);
       if (clock != null && samples && ow.unitId) {

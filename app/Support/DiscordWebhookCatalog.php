@@ -22,6 +22,12 @@ final class DiscordWebhookCatalog
     public const KEY_ATAK_DISCORD_APP = 'atak_discord_app';
     /** Alertes terrain graves (opérateur à terre, panique) recopiées dans le salon. */
     public const KEY_ATAK_TACTICAL_ALERTS = 'atak_tactical_alerts';
+    /** Notes de l'app Reco du téléphone (type, observation, carroyage, auteur). */
+    public const KEY_ATAK_RECON_NOTES = 'atak_recon_notes';
+    /** Check de démarrage du mod de chaque joueur de la communauté (étapes, versions, carte). */
+    public const KEY_ATAK_STARTUP_CHECK = 'atak_startup_check';
+    /** Signalements du mod envoyés par les joueurs de la communauté (Échap > Signaler, erreurs du mod). */
+    public const KEY_ATAK_MOD_REPORTS = 'atak_mod_reports';
 
     public const MODE_OFF = 'off';
     public const MODE_DEFAULT = 'default';
@@ -51,7 +57,7 @@ final class DiscordWebhookCatalog
                 'key' => self::KEY_QUICK_PICTURE,
                 'group' => 'Téléphone ATAK',
                 'label' => 'Photos Quick Picture',
-                'hint' => 'Quand un opérateur prend une photo depuis le téléphone en jeu : la photo est publiée avec l’indicatif, la grille, la carte, la date et l’heure (en jeu et réelles).',
+                'hint' => 'Quand un opérateur prend une photo depuis le téléphone en jeu : la photo est publiée avec l’indicatif, la grille, la carte, la date et l’heure (en jeu et réelles). Les clichés du drone partent aussi ici : image floutée si SSE, aucune image si confidentiel (message, lien de lecture sur Athena et note de confidentialité).',
                 'default_mode' => self::MODE_OFF,
             ],
             [
@@ -66,6 +72,27 @@ final class DiscordWebhookCatalog
                 'group' => 'Téléphone ATAK',
                 'label' => 'Alertes graves du terrain',
                 'hint' => 'Opérateur à terre, PANIQUE et rapports de décès remontés par les téléphones : recopiés dans le salon choisi.',
+                'default_mode' => self::MODE_OFF,
+            ],
+            [
+                'key' => self::KEY_ATAK_RECON_NOTES,
+                'group' => 'Téléphone ATAK',
+                'label' => 'Notes de reco',
+                'hint' => 'Chaque note envoyée depuis l’app Reco du téléphone : type (véhicule, groupe armé…), observation, fiabilité, carroyage et auteur. Mentions et liens retirés.',
+                'default_mode' => self::MODE_OFF,
+            ],
+            [
+                'key' => self::KEY_ATAK_STARTUP_CHECK,
+                'group' => 'Téléphone ATAK',
+                'label' => 'Check de démarrage du mod',
+                'hint' => 'Quand un joueur de la communauté lie son téléphone en jeu : étapes vérifiées (mod, DLL, compte, téléphone, terminal…), versions et carte, en français et en anglais. Utile pour aider un joueur bloqué. Liens, adresses IP et dossiers Windows retirés.',
+                'default_mode' => self::MODE_OFF,
+            ],
+            [
+                'key' => self::KEY_ATAK_MOD_REPORTS,
+                'group' => 'Téléphone ATAK',
+                'label' => 'Signalements du mod',
+                'hint' => 'Quand un joueur de la communauté signale un problème depuis le jeu (Échap > Signaler un problème) ou que le mod remonte une erreur : gravité, indicatif, module, message et versions. Les incidents passagers ne sont pas postés. Ni Steam, ni adresse IP, ni lien.',
                 'default_mode' => self::MODE_OFF,
             ],
             [

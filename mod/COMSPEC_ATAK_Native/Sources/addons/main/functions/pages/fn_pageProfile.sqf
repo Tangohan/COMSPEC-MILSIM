@@ -17,7 +17,7 @@ if (_unitFull isEqualTo "") then { _unitShort = ""; };
 // Opérateur
 private _logo = [player] call comspec_atak_native_fnc_avatarPath;
 if (_logo isEqualTo "") then { _logo = "\z\comspec_atak_native\addons\main\data\logo_atak.paa"; };
-_rows pushBack ["hero", _logo, format ["<t size='1.3' font='RobotoCondensedBold' color='#5cc76b'>%1</t>  <t size='1.05'>%2</t><br/><t color='#c9d4cf'>%3 · %4</t><br/><t size='0.85' color='#8a9a93'>%5</t>",
+_rows pushBack ["hero", _logo, format ["<t size='1.3' font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  <t size='1.05'>%2</t><br/><t color='#c9d4cf'>%3 · %4</t><br/><t size='0.85' color='#8a9a93'>%5</t>",
     ["comspec_profile_callsign", [player, true] call comspec_atak_native_fnc_unitCallsign] call _v, ["comspec_profile_name", name player] call _v,
     ["comspec_profile_grade"] call _v, [["comspec_profile_role", roleDescription player] call _v, [_unitFull]] call comspec_atak_native_fnc_abbrev, ["comspec_tenant_name", "Hors ligne"] call _v]];
 // Unité et fonction abrégées (règle Athena) ; le nom complet suit quand il diffère.
@@ -35,7 +35,7 @@ _rows append [
 _rows append [
     ["section", "Mon téléphone", (if (((missionNamespace getVariable ["comspec_profile_phone", []]) param [0, ""]) isEqualTo "") then { "Hors ligne : numéro provisoire, gardé dans Athena à la connexion" } else { format ["Attribué par Athena, modèle %1", (missionNamespace getVariable ["comspec_profile_phone", []]) param [3, "FR"]] })],
     ["info", "Numéro", _num], ["info", "IMEI", _imei], ["info", "Adresse MAC", _mac],
-    ["buttons", [["COPIER LE NUMÉRO", compile format ["copyToClipboard %1; ['INFO', 'Numéro copié', 2, 10] call comspec_atak_native_fnc_notify;", str _num]]]]
+    ["buttons", [["COPIER LE NUMÉRO", compile format ["copyToClipboard %1; ['Numéro copié', 2] call comspec_atak_native_fnc_toast;", str _num]]]]
 ];
 
 // Qualifications Athena (référentiel de la communauté, attributions en cours de validité)
@@ -102,17 +102,25 @@ _rows pushBack ["section", "Diagnostic du téléphone", "Écran, batterie, haut-
 _rows append (["rows"] call comspec_atak_native_fnc_deviceReport);
 _rows pushBack ["buttons", [
     ["RÉPARER", { [{ ["start"] call comspec_atak_native_fnc_repairStart; }] call CBA_fnc_execNextFrame; }, true, ["can"] call comspec_atak_native_fnc_repairStart],
-    ["NETTOYER L'ÉCRAN", { [{ ["start"] call comspec_atak_native_fnc_screenClean; }] call CBA_fnc_execNextFrame; }, false, ["can"] call comspec_atak_native_fnc_screenClean]
+    ["NETTOYER L'ÉCRAN", { [{ ["start"] call comspec_atak_native_fnc_screenClean; }] call CBA_fnc_execNextFrame; }, false, ["can"] call comspec_atak_native_fnc_screenClean],
+    ["NETTOYAGE COMPLET", { [{ ["deep"] call comspec_atak_native_fnc_screenClean; }] call CBA_fnc_execNextFrame; }, false, ["can"] call comspec_atak_native_fnc_screenClean]
 ]];
 
 // Batterie
 private _bat = [] call comspec_atak_native_fnc_battery;
-private _charging = (vehicle player) isNotEqualTo player;
-private _spares = { (toLower _x) in (((missionNamespace getVariable ["comspec_atak_native_battery_items", "ACE_UAVBattery"]) splitString ", ") apply { toLower _x }) } count (items player);
+// Recharge réelle (fn_battery : véhicule moteur allumé, batterie externe) et autonomie au rythme mesuré, comme l'app Réseau.
+(missionNamespace getVariable ["COMSPEC_ATAK_BatteryInfo", [0, []]]) params [["_rate", 0]];
+private _charging = _rate < 0;
+private _left = switch (true) do {
+    case _charging: { "en charge" };
+    case (_rate <= 0.01): { "—" };
+    default { private _m = round (_bat / _rate); format ["≈ %1 h %2 min", floor (_m / 60), _m mod 60] };
+};
+private _spares = [player, true] call comspec_atak_native_fnc_batteryItem;
 _rows append [
-    ["section", "Batterie", ["Simulation coupée (réglages)", "Recharge à bord d'un véhicule"] select (profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true])],
+    ["section", "Batterie", ["Simulation coupée (réglages)", "Recharge : véhicule moteur allumé, batterie externe ou socle CS-10"] select (profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true])],
     ["info", "Niveau", format ["<t color='%1'>%2 %%</t>", ["#e5483a", "#f2ab33", "#5cc76b"] select ((floor (_bat / 25)) min 2), round _bat]],
-    ["info", "Autonomie", [format ["≈ %1 h %2 min", floor (_bat * 3 / 60), round ((_bat * 3) mod 60)], "en charge"] select _charging],
+    ["info", "Autonomie", _left],
     ["info", "Batteries de rechange", str _spares],
     ["buttons", [["CHANGER LA BATTERIE", { ["battery"] call comspec_atak_native_fnc_profileAction; }, _spares > 0]]]
 ];
@@ -124,7 +132,7 @@ if (_bridge && {!isNil "comspec_overwatch_connect_fnc_getNearestAtakRelay"}) the
     if (_r isEqualType createHashMap && {(count _r) > 0}) then {
         _rows append [
             ["info", "Relais", format ["%1 · %2", _r getOrDefault ["name", "?"], _r getOrDefault ["grid", ""]]],
-            ["info", "Distance", format ["%1 m / portée %2 m %3", round (_r getOrDefault ["dist", 0]), round (_r getOrDefault ["range", 0]), ["<t color='#e5483a'>hors portée</t>", "<t color='#5cc76b'>couvert</t>"] select (_r getOrDefault ["in_range", false])]],
+            ["info", "Distance", format ["%1 m / portée %2 m %3", round (_r getOrDefault ["dist", 0]), round (_r getOrDefault ["range", 0]), ["<t color='#e5483a'>hors portée</t>", "<t color='#5cc76b'>à portée</t>"] select (_r getOrDefault ["in_range", false])]],
             ["info", "Charge", format ["%1 / %2 postes · %3 %%", _r getOrDefault ["used", 0], _r getOrDefault ["slots", 0], _r getOrDefault ["reliability_pct", 100]]]
         ];
     } else { _rows pushBack ["text", "<t color='#8a9a93'>Aucun relais déployé.</t>"]; };

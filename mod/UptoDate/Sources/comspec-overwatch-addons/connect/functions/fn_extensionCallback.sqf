@@ -9,7 +9,39 @@ if (_name != "comspec") exitWith {};
 if (!(_function isEqualType "")) then { _function = str _function; };
 if (!(_data isEqualType "")) then { _data = str _data; };
 
+// Réponse d'un appel non bloquant (fn_extAwait).
+if ((_function select [0, 6]) isEqualTo "async:") exitWith {
+    private _pending = missionNamespace getVariable ["COMSPEC_ExtPending", createHashMap];
+    private _ticket = _function select [6];
+    if (_ticket in _pending) then { _pending set [_ticket, [_data]]; };
+};
+
 switch (_function) do {
+    case "PhoneHandset": {
+        // Numéro du terminal attribué au joueur. L'e-mail et le nom civil ne passent pas ici.
+        if (!hasInterface || {isNull player}) exitWith {};
+        private _parts = [_data, toString [9]] call comspec_overwatch_connect_fnc_splitKeepEmpty;
+        private _cell = {
+            params ["_i"];
+            private _s = _parts param [_i, ""];
+            if (_s isEqualTo "-") then { "" } else { _s }
+        };
+        private _db = [[0] call _cell, [1] call _cell, [2] call _cell, [3] call _cell];
+        if ((_db select 0) isEqualTo "") exitWith {};
+        private _gen = player getVariable ["COMSPEC_ATAK_PhoneGen", 0];
+        private _old = missionNamespace getVariable ["comspec_profile_phone", []];
+        if !(_old isEqualType []) then { _old = []; };
+        if (_old isEqualTo _db) exitWith {};
+        missionNamespace setVariable ["comspec_profile_phone", _db, false];
+        if ((count _old) > 0) then {
+            private _devChanged = ((_old param [1, ""]) isNotEqualTo (_db select 1)) || {(_old param [2, ""]) isNotEqualTo (_db select 2)};
+            private _fromSwap = _devChanged && {_gen > 0} && {(_old param [0, ""]) isEqualTo (_db select 0)};
+            if (_devChanged) then { player setVariable ["COMSPEC_ATAK_PhoneGen", 0, true]; };
+            if (!_fromSwap && {!isNil "comspec_atak_native_fnc_notify"}) then {
+                ["INFO", format ["Téléphone mis à jour par Athena : %1", _db select 0], 5, 20] call comspec_atak_native_fnc_notify;
+            };
+        };
+    };
     case "Connected": {
         // N'ecrase pas un echec auth deja constate (race async ancienne DLL).
         private _keyLen = count (missionNamespace getVariable ["comspec_overwatch_api_key", ""]);
@@ -21,10 +53,13 @@ switch (_function) do {
         private _label = [_uri] call comspec_overwatch_connect_fnc_portalLabel;
         [format ["[Athena] Connecte a %1", _label], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
         // Pas de bandeau / chat pendant le handshake au démarrage (1 message max ailleurs)
+        // Un bandeau (et son bip) par 30 s au plus : une liaison qui bat ne doit pas notifier en boucle.
         if (
             !(missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false])
             && {[] call comspec_overwatch_connect_fnc_shouldShowScreenNotification}
+            && {(diag_tickTime - (missionNamespace getVariable ["COMSPEC_LinkNotifAt", -1e9])) >= 30}
         ) then {
+            missionNamespace setVariable ["COMSPEC_LinkNotifAt", diag_tickTime, false];
             ["COMSPEC_Info", [format ["Connecte a %1", _label]]] call comspec_overwatch_connect_fnc_showNotification;
         };
         [] call comspec_overwatch_connect_fnc_updateLinkDiary;
@@ -37,7 +72,10 @@ switch (_function) do {
         missionNamespace setVariable ["COMSPEC_LinkDetail", _msg, false];
         ["WARN", "Athena", format ["Extension Error: %1", _msg]] call comspec_overwatch_connect_fnc_log;
         [format ["[Athena] %1", _msg], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
-        ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
+        if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_LinkNotifAt", -1e9])) >= 30) then {
+            missionNamespace setVariable ["COMSPEC_LinkNotifAt", diag_tickTime, false];
+            ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
+        };
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     };
     case "AccessDenied": {
@@ -80,7 +118,21 @@ switch (_function) do {
         missionNamespace setVariable ["comspec_overwatch_auth_state", "C2_UNAUTHORIZED", false];
         missionNamespace setVariable ["comspec_overwatch_auth_error", "C2_UNAUTHORIZED", false];
         missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
-        missionNamespace setVariable ["COMSPEC_LinkDetail", "Session Athena refusée — reconnectez-vous", false];
+        // Cause du refus (code Athena dans _data) : mêmes libellés que fn_connect, lus par le Dépannage liaison
+        // pour proposer la bonne correction. Refus définitif : la DLL ne sonde plus rien jusqu'à la prochaine
+        // session valide, donc pas de réouverture automatique (avant : un essai toutes les 48 s, à l'infini).
+        private _low = toLower _data;
+        private _permDetail = switch (true) do {
+            case (_low find "mod_steam_blocked" >= 0): { "Acces mod refuse — Steam restreint" };
+            case (_low find "mod_ip_blocked" >= 0): { "Acces mod refuse — reseau restreint" };
+            case (_low find "account_disabled" >= 0 || {_low find "atak_blocked" >= 0}): { "Compte Athena non autorise" };
+            case (_low find "steam_not_linked" >= 0): { "Compte Athena non lie a ce Steam" };
+            case (_low find "steam_required" >= 0): { "Identifiant Steam requis" };
+            case (_low find "tenant_" >= 0): { "Communaute manquante — refaites la liaison" };
+            case (_low find "unauthorized" >= 0): { "Acces refuse — cle Athena invalide" };
+            default { "" };
+        };
+        missionNamespace setVariable ["COMSPEC_LinkDetail", [_permDetail, "Session Athena refusée — reconnectez-vous"] select (_permDetail isEqualTo ""), false];
         // Pause courte : un appairage juste après doit pouvoir rouvrir le canal.
         missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + 45, false];
         missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", diag_tickTime + 45, false];
@@ -91,7 +143,10 @@ switch (_function) do {
         [] call comspec_overwatch_connect_fnc_updateLinkDiary;
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
         ["COMSPEC_AthenaLinkChanged", ["offline"]] call CBA_fnc_localEvent;
-        // Après la pause, retenter l’ouverture du canal (souvent un 401 précoce, pas une vraie déconnexion).
+        if (_permDetail isNotEqualTo "") exitWith {
+            [format ["[Athena] Refus d'Athena (%1) : plus d'envoi jusqu'à une nouvelle liaison ou Reconnecter Athena.", _permDetail], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
+        };
+        // Cause inconnue : après la pause, retenter l’ouverture du canal (souvent un 401 précoce).
         [{
             if (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith {};
             if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel") then {
@@ -230,9 +285,8 @@ switch (_function) do {
         missionNamespace setVariable ["COMSPEC_GoogleBriefingPath", _path];
         missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", ""];
 
-        if (isNull (findDisplay 9970)) then {
-            createDialog "COMSPEC_Briefing_Dialog";
-        };
+        // Aucun dialogue ouvert ici (le callback arrive aussi sur les clients qui reçoivent une diffusion) :
+        // loadGoogleBriefing ouvre le tableau uniquement sur action locale ; sinon la diapositive est seulement mémorisée.
 
         [
             _path,
@@ -292,7 +346,10 @@ switch (_function) do {
             case "cancelled": { "Chargement annulé." };
             default { if (_message isEqualTo "") then { "Échec du chargement Google Slides." } else { _message } };
         };
-        ["google_deck_error", _human, format ["%1|%2", _code, _message], "Athena", "ERROR"] call comspec_overwatch_connect_fnc_logFnError;
+        // Présentation non partagée / introuvable : réglage de la communauté (vérifié sur le site), pas une erreur du mod
+        // → WARN, donc pas de rapport automatique à chaque joueur et à chaque session.
+        private _level = ["ERROR", "WARN"] select (_code in ["private", "not_found"]);
+        ["google_deck_error", _human, format ["%1|%2", _code, _message], "Athena", _level] call comspec_overwatch_connect_fnc_logFnError;
         ["COMSPEC_Warning", [_human]] call comspec_overwatch_connect_fnc_showNotification;
     };
     case "SseNoteAttachment": {
@@ -377,6 +434,8 @@ switch (_function) do {
         private _fileHint = if ((count _parts) > 2) then { _parts select 2 } else { _detail };
         if (_fileHint isEqualTo "") then { _fileHint = _detail; };
         private _hintLow = toLower _fileHint;
+        // Refus de la formule (403 feature_unavailable) : attendu, la communauté n'a pas la carte et les liaisons.
+        private _planRefused = (_parts param [3, ""]) isEqualTo "feature_unavailable";
 
         private _fnc_matchKeys = {
             params ["_list", "_hint"];
@@ -463,18 +522,20 @@ switch (_function) do {
                     if (_hintLow isNotEqualTo "" && {!(_hintLow in _dead)}) then { _dead pushBack _hintLow; };
                     while { (count _dead) > 200 } do { _dead deleteAt 0; };
                     profileNamespace setVariable ["COMSPEC_Athena_PhotoDead", _dead];
-                    saveProfileNamespace;
+                    [] call comspec_overwatch_connect_fnc_saveProfile;
                     // Coupe le spam d’aperçus auto (COMSPEC_AthenaFeed / stems sans fichier).
                     missionNamespace setVariable ["COMSPEC_FeedSnapFailUntil", diag_tickTime + 300, false];
                 };
                 private _txPhase = if (
-                    (_detail find "http_503") == 0
+                    _planRefused
+                    || {(_detail find "http_503") == 0}
                     || {(_detail find "network") == 0}
                     || {(_detail find "http_429") == 0}
                     || {(_detail find "file_empty") == 0}
                 ) then { "warn" } else { "fail" };
                 ["PhotoUpload", _txPhase, format ["%1 · %2", _detail, _fileHint], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
                 private _msg = switch (true) do {
+                    case (_planRefused): { "Photo non envoyée. La formule de votre communauté n’inclut pas la carte et les liaisons Athena, prévenez son administrateur." };
                     case ((_detail find "file_not_found") == 0): { "Photo introuvable sur le disque — capturez à nouveau." };
                     case ((_detail find "file_empty") == 0): { "La capture n’était pas encore prête — reprenez la photo." };
                     case ((_detail find "not_connected") == 0): { "Pas de liaison Athena — reconnectez-vous puis renvoyez." };
@@ -486,7 +547,8 @@ switch (_function) do {
                 missionNamespace setVariable ["COMSPEC_LastReconUploadResult", ["ERR", _msg, format ["%1 · %2", _detail, _fileHint], [daytime, "HH:MM:SS"] call BIS_fnc_timeToString], false];
                 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback") then {
                     private _fbKind = if (
-                        (_detail find "http_503") == 0
+                        _planRefused
+                        || {(_detail find "http_503") == 0}
                         || {(_detail find "http_429") == 0}
                         || {(_detail find "network") == 0}
                     ) then { "warn" } else { "error" };
@@ -509,6 +571,8 @@ switch (_function) do {
         private _baseLow = toLower _name;
         if (_baseLow find "comspec_sse_face" >= 0) exitWith {};
         if (_baseLow find "comspec_fiche_" >= 0) exitWith {};
+        // Clichés du drone (ATAK natif) : envoyés par leur fiche (titre obligatoire), jamais remontés seuls depuis le disque.
+        if (_baseLow find "comspec_drone_" >= 0) exitWith {};
         // Anti double miroir Captures / Screenshots (même nom, chemins distincts).
         private _seen = missionNamespace getVariable ["COMSPEC_Athena_PhotoDiskSeen", []];
         if (!(_seen isEqualType [])) then { _seen = []; };
@@ -530,20 +594,25 @@ switch (_function) do {
     };
     case "PostError": {
         // DLL → échec HTTP fire-and-forget (position, marqueurs, chat async…)
-        // data = "code|path|ageSec"
+        // data = "code|path|ageSec[|détail]" — détail (COMSPEC Link 2.0.82) : motif du refus renvoyé par Athena
+        // et début du corps envoyé pour un 400 / 422.
         private _parts = _data splitString "|";
         private _code = if ((count _parts) > 0) then { _parts select 0 } else { "?" };
         private _path = if ((count _parts) > 1) then { _parts select 1 } else { "" };
         private _age = if ((count _parts) > 2) then { _parts select 2 } else { "0" };
+        private _detail = if ((count _parts) > 3) then { (_parts select [3]) joinString "/" } else { "" };
         private _label = if (_path isEqualTo "") then { "POST" } else { _path };
         if ((_path find "terrain") >= 0) then {
             missionNamespace setVariable ["COMSPEC_TerrainAbort", true, false];
         };
-        // 401 / 403 / 429 / 503 / coupure : WARN, pas ERROR spam.
+        // 401 / 403 / 429 / 502 / 503 / 504 / coupure : WARN, pas ERROR spam ni rapport automatique.
+        // 502 / 504 = passerelle nginx (PHP-FPM rechargé au déploiement, délai) : la DLL réessaie seule.
         private _phase = if (
-            (_code in ["0", "-1", "401", "403", "429", "503"])
+            (_code in ["0", "-1", "401", "403", "429", "502", "503", "504"])
         ) then { "warn" } else { "fail" };
-        ["HTTP POST", _phase, format ["code %1 · %2 (il y a %3 s)", _code, _label, _age], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+        private _summary = format ["code %1 · %2 (il y a %3 s)", _code, _label, _age];
+        if (_detail isNotEqualTo "") then { _summary = format ["%1 — %2", _summary, _detail]; };
+        ["HTTP POST", _phase, _summary, (_parts select [0, 3]) joinString "|", true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
         if ((_path find "weather") >= 0) then {
             missionNamespace setVariable ["COMSPEC_Athena_LastWeatherSig", "", false];
         };
@@ -560,12 +629,17 @@ switch (_function) do {
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     };
     case "NetworkReconnected": {
-        missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
-        missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
-        missionNamespace setVariable ["COMSPEC_LastHealthOk", diag_tickTime, false];
-        ["INFO", "Athena", "Liaison rétablie"] call comspec_overwatch_connect_fnc_log;
-        [format ["[Athena] Liaison rétablie"], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
-        ["reconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
+        // Fin de coupure simulée : ne pas forcer « linked » (appareil détruit, zone sans couverture, pas de
+        // session) → recalcul réel ; son et santé seulement si la liaison est effectivement revenue.
+        missionNamespace setVariable ["COMSPEC_LinkStateRefreshedAt", -99, false];
+        private _st = [] call comspec_overwatch_connect_fnc_refreshLinkState;
+        ["INFO", "Athena", format ["Fin de coupure réseau — état %1", _st]] call comspec_overwatch_connect_fnc_log;
+        if (_st in ["linked", "degraded"]) then {
+            missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
+            missionNamespace setVariable ["COMSPEC_LastHealthOk", diag_tickTime, false];
+            [format ["[Athena] Liaison rétablie"], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
+            ["reconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
+        };
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     };
     default {};

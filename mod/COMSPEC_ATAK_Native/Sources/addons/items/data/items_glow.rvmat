@@ -1,0 +1,9 @@
+// Objets d'inventaire 3D : voyants (batterie externe, câble DL-7, kit véhicule) et projecteurs IR de la caméra, lumineux la nuit.
+ambient[]={1,1,1,1};
+diffuse[]={1,1,1,1};
+forcedDiffuse[]={0,0,0,0};
+emmisive[]={0.6,0.6,0.6,1};
+specular[]={0.4,0.4,0.4,1};
+specularPower=60;
+PixelShaderID="Normal";
+VertexShaderID="Basic";

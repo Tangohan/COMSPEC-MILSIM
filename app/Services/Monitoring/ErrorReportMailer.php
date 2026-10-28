@@ -451,6 +451,7 @@ final class ErrorReportMailer
             'Environnement (APP_ENV) : ' . ($appEnv !== '' ? $appEnv : '—'),
             'Adresse IP du client : ' . $ip,
             'En-tête Accept : ' . ($accept !== '' ? $accept : '—'),
+            'Client (User-Agent, version du mod) : ' . self::clientAgent(),
             'Compte connecté (identifiant interne) : ' . ($userId !== null && $userId !== '' ? (string) $userId : '—'),
             'Communauté active (identifiant interne) : ' . ($tenantId !== null && $tenantId !== '' ? (string) $tenantId : '—'),
             '',
@@ -541,6 +542,7 @@ final class ErrorReportMailer
             ['Environnement', $h($appEnv !== '' ? $appEnv : '—')],
             ['Adresse IP du client', $h($ip)],
             ['En-tête Accept', $h($accept !== '' ? $accept : '—')],
+            ['Client (User-Agent, version du mod)', $h(self::clientAgent())],
             ['Compte connecté (réf. interne)', $userId !== null && $userId !== '' ? $h((string) $userId) : '—'],
             ['Communauté active (réf. interne)', $tenantId !== null && $tenantId !== '' ? $h((string) $tenantId) : '—'],
         ];
@@ -667,14 +669,22 @@ final class ErrorReportMailer
         );
     }
 
-    private function clientIp(): string
+    /** User-Agent du client (le Link du mod envoie « produit/version »), coupé pour rester lisible. */
+    private static function clientAgent(): string
     {
-        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '0';
-        if (is_string($ip) && str_contains($ip, ',')) {
-            return trim(explode(',', $ip)[0]);
+        $ua = trim(str_replace(["\r", "\n"], ' ', (string) ($_SERVER['HTTP_USER_AGENT'] ?? '')));
+        if ($ua === '') {
+            return '—';
         }
 
-        return is_string($ip) ? $ip : '0';
+        return mb_strlen($ua) > 160 ? mb_substr($ua, 0, 159) . '…' : $ua;
+    }
+
+    private function clientIp(): string
+    {
+        $ip = \App\Support\ClientIp::resolve();
+
+        return $ip !== '' ? $ip : '0';
     }
 
     private function sanitizeUri(string $uri): string

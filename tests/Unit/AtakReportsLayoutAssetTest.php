@@ -63,8 +63,12 @@ final class AtakReportsLayoutAssetTest extends TestCase
         self::assertStringContainsString('athena_hideForeignPages', $cfg);
         self::assertStringContainsString('athena_resolveAthenaGroup', $cfg);
         self::assertStringContainsString('athena_installReportsLayout', $post);
-        self::assertStringContainsString('athena_fixReportsLayout', $check);
-        self::assertStringContainsString('athena_hideForeignPages', $check);
+        // fn_ATAK_Check_Layout ne gère plus que l'animation du tiroir : la remise en
+        // page des Comptes-rendus passe par les crochets IceMan d'installReportsLayout,
+        // et le masquage des pages étrangères par le post-init client.
+        self::assertStringContainsString('athena_layoutAppDrawer', $check);
+        self::assertStringContainsString('comspec_overwatch_atak_athena_fnc_athena_fixReportsLayout', $install);
+        self::assertStringContainsString('comspec_overwatch_atak_athena_fnc_athena_hideForeignPages', $post);
 
         self::assertStringContainsString('Iceman_ATAK_Reports_form', $fix);
         self::assertStringContainsString('EAGLE_DOWN', $fix);

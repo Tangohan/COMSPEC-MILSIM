@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class HatchetCockpitAceGuardAssetTest extends TestCase
 {
@@ -27,6 +28,6 @@ final class HatchetCockpitAceGuardAssetTest extends TestCase
         self::assertStringContainsString('class isHatchetVehicle {};', $cfg);
         self::assertStringContainsString('class hideAceMenu {};', $cfg);
         self::assertStringContainsString('class isHatchetVehicle {};', $sseCfg);
-        self::assertStringContainsString('versionStr = "1.5.16"', $cfg);
+        ModVersion::assertAtLeast('1.5.16', ModVersion::fromConfigCpp($cfg));
     }
 }

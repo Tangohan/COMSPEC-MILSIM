@@ -1,15 +1,20 @@
 /*
     Wave Relay : réseau maillé (MANET) entre les téléphones du camp.
-      "scan"      : recalcule le maillage (cache 3 s, "force" pour ignorer le cache). Renvoie un HashMap :
+      "scan"      : recalcule le maillage (cache 3 s, puis recalcul en arrière-plan jusqu'à 30 s ; "force" pour ignorer le cache). Renvoie un HashMap :
                     nodes [[objet, position antenne ASL, indicatif, type ("me", "node", "gw")]...],
                     links [[index A, index B, qualité %]...], hops [sauts jusqu'à la passerelle, -1 si coupé],
                     me (mon index), gw (index de la passerelle ou -1), gwLabel.
-                    Lien si la distance est sous la portée (COMSPEC_ATAK_MeshRange, 3 000 m par défaut),
-                    portée réduite à 35 % quand le relief coupe la ligne entre les deux antennes.
-                    Passerelle : relais Overwatch le plus proche s'il existe et est intact, sinon le chef de groupe.
+                    Lien si la distance est sous la portée (COMSPEC_ATAK_MeshRange, 3 000 m par défaut ; nœud qui porte une
+                    MPU5 : réglage comspec_atak_native_mpu5_range, 6 000 m par défaut, fn_mpu5),
+                    qualité tirée du bilan radio entre les deux antennes (fn_radioLink : relief, zone de Fresnel) ;
+                    réglage comspec_atak_native_net_realism à 0 : portée réduite à 35 % quand le relief coupe la ligne.
+                    Passerelles : tous les relais Overwatch intacts et passerelles de véhicule / PC mobiles (fn_relayNet,
+                    sans les MPU5 des équipiers, déjà nœuds du maillage) ;
+                    la principale est le relais le plus proche, sinon la passerelle de véhicule, sinon le chef de groupe.
       "talkgroup" : choisit le talkgroup data (variable publique COMSPEC_ATAK_Talkgroup) quand ACRE2 est absent.
       "channel"   : [id radio ACRE, canal] change le canal d'une radio ACRE2.
       "mapLinks"  : affiche / masque les liens du maillage sur la carte.
+      "mapRelays" : affiche / masque le calque Relais (pastilles des relais) sur la carte.
 */
 params [["_act", "scan"], ["_k", ""], ["_v", 0]];
 private _render = { if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY") then { [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }; };
@@ -17,30 +22,54 @@ switch (_act) do {
     case "scan": {
         private _cache = uiNamespace getVariable ["COMSPEC_ATAK_Mesh", []];
         if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < 3} && {_k isNotEqualTo "force"}) exitWith { _cache select 1 };
+        // Hors contexte suspendable (Draw de la carte, rendu de page) : O(n²) appels à fn_radioLink figeaient l'image.
+        // Le cache (ou, sans cache récent, un maillage réduit à mon nœud) est rendu tel quel et le recalcul part dans un
+        // spawn (un seul à la fois) ; "force" seul calcule sur place.
+        if (!canSuspend && {_k isNotEqualTo "force"}) exitWith {
+            private _cold = !((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < 30});
+            if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_MeshBusy", -100]) > 15) then {
+                uiNamespace setVariable ["COMSPEC_ATAK_MeshBusy", diag_tickTime];
+                [_cold] spawn {
+                    params ["_cold"];
+                    ["scan", "force"] call comspec_atak_native_fnc_waveRelayAction;
+                    uiNamespace setVariable ["COMSPEC_ATAK_MeshBusy", -100];
+                    // Premier calcul : l'app Wave Relay ouverte affichait le maillage provisoire, elle se redessine.
+                    if (_cold && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY"}) then {
+                        [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                    };
+                };
+            };
+            if (!_cold) exitWith { _cache select 1 };
+            createHashMapFromArray [
+                ["nodes", [[player, (eyePos player) vectorAdd [0, 0, 0.5], [player, true] call comspec_atak_native_fnc_unitCallsign, "me", ["range", [player]] call comspec_atak_native_fnc_mpu5]]],
+                ["links", []], ["hops", [-1]], ["me", 0], ["gw", -1], ["gwLabel", ""], ["range", missionNamespace getVariable ["COMSPEC_ATAK_MeshRange", 3000]]
+            ]
+        };
         private _range = missionNamespace getVariable ["COMSPEC_ATAK_MeshRange", 3000];
         private _side = side group player;
         private _units = (allPlayers select { alive _x && {side group _x isEqualTo _side} && {_x isNotEqualTo player} && {[_x] call comspec_atak_native_fnc_hasDevice} }) select [0, 63];
         private _ant = { params ["_u"]; (eyePos _u) vectorAdd [0, 0, 0.5] };
-        private _nodes = [[player, [player] call _ant, [player, true] call comspec_atak_native_fnc_unitCallsign, "me", _range]];
-        { _nodes pushBack [_x, [_x] call _ant, [_x, true] call comspec_atak_native_fnc_unitCallsign, "node", _range]; } forEach _units;
-        // Passerelle : relais Overwatch intact, sinon chef de groupe (s'il porte un téléphone).
+        // Radio maillée MPU5 portée (fn_mpu5) : portée du nœud relevée (réglage comspec_atak_native_mpu5_range).
+        private _nodes = [[player, [player] call _ant, [player, true] call comspec_atak_native_fnc_unitCallsign, "me", ["range", [player]] call comspec_atak_native_fnc_mpu5]];
+        { _nodes pushBack [_x, [_x] call _ant, [_x, true] call comspec_atak_native_fnc_unitCallsign, "node", ["range", [_x]] call comspec_atak_native_fnc_mpu5]; } forEach _units;
+        // Passerelles : tous les relais Overwatch intacts (le plus proche d'abord), puis passerelles de véhicule et PC mobiles
+        // du camp (fn_relayNet "list"). La passerelle principale est la plus proche ; à défaut, le chef de groupe.
         private _gw = -1;
         private _gwLabel = "";
-        if (!isNil "comspec_overwatch_connect_fnc_getNearestAtakRelay") then {
-            private _r = [] call comspec_overwatch_connect_fnc_getNearestAtakRelay;
-            if (_r isEqualType createHashMap && {(count _r) > 0} && {_r getOrDefault ["alive", false]}) then {
-                private _o = _r get "obj";
-                _gwLabel = _r getOrDefault ["name", "Relais"];
-                _nodes pushBack [_o, (getPosASL _o) vectorAdd [0, 0, 4], _gwLabel, "gw", _r getOrDefault ["range", _range]];
-                _gw = (count _nodes) - 1;
-            };
-        };
+        private _rl = ((["list"] call comspec_atak_native_fnc_relayNet) select { (_x select 6) && {(_x select 3) isNotEqualTo "mpu5"} }) apply { [[player distance2D (_x select 0), 1e6 + (player distance2D (_x select 0))] select ((_x select 3) isNotEqualTo "relay"), _x] };
+        _rl sort true;
+        {
+            (_x select 1) params ["_o", "_ap", "_n", "_k", "_r"];
+            _nodes pushBack [_o, _ap, _n, "gw", _r];
+            if (_gw < 0) then { _gw = (count _nodes) - 1; _gwLabel = [format ["%1 %2", ["Passerelle", "PC mobile"] select (_k isEqualTo "cp"), _n], _n] select (_k isEqualTo "relay"); };
+        } forEach _rl;
         if (_gw < 0) then {
             private _lead = leader group player;
             _gw = _nodes findIf { (_x select 0) isEqualTo _lead };
             if (_gw >= 0) then { _gwLabel = format ["Chef de groupe (%1)", (_nodes select _gw) select 2]; };
         };
-        // Liens : portée de la paire = la plus petite des deux, réduite si le relief masque, pluie en léger malus.
+        // Liens : portée de la paire = la plus petite des deux ; qualité = marge du bilan radio sur 20 dB.
+        private _real = (["realism"] call comspec_atak_native_fnc_netCond);
         private _links = [];
         private _adj = _nodes apply { [] };
         private _n = count _nodes;
@@ -52,10 +81,18 @@ switch (_act) do {
                 private _pb = _b select 1;
                 private _d = _pa distance _pb;
                 private _eff = (_a select 4) min (_b select 4);
-                if (_d > _eff) then { continue };
-                if (terrainIntersectASL [_pa, _pb]) then { _eff = _eff * 0.35; };
-                if (_d > _eff) then { continue };
-                private _q = round (100 * (1 - (_d / _eff) ^ 2) * (1 - 0.15 * rain));
+                if (_d > 2 * _eff) then { continue };
+                // Bilan radio téléphone à téléphone (fn_radioLink, profil grossier) : relief, zone de Fresnel au ras du sol.
+                // Modèle simplifié : portée x 0,35 derrière le relief, petit malus de pluie.
+                private _q = 0;
+                if (_real isEqualTo 0) then {
+                    if (_d > _eff) then { continue };
+                    if (terrainIntersectASL [_pa, _pb]) then { _eff = _eff * 0.35; };
+                    if (_d > _eff) then { continue };
+                    _q = round (100 * (1 - (_d / _eff) ^ 2) * (1 - 0.15 * rain));
+                } else {
+                    _q = round (100 * (((([_pa, _pb, _eff, "coarse"] call comspec_atak_native_fnc_radioLink) select 0) / 20) min 1));
+                };
                 if (_q < 1) then { continue };
                 _links pushBack [_i, _j, _q];
                 (_adj select _i) pushBack _j;
@@ -65,8 +102,9 @@ switch (_act) do {
         // Sauts jusqu'à la passerelle : parcours en largeur depuis elle.
         private _hops = _nodes apply { -1 };
         if (_gw >= 0) then {
-            _hops set [_gw, 0];
-            private _queue = [_gw];
+            // Toutes les passerelles comptent : un nœud raccroché à n'importe quel relais n'est pas isolé.
+            private _queue = [];
+            { if ((_x select 3) isEqualTo "gw" || {_forEachIndex isEqualTo _gw}) then { _hops set [_forEachIndex, 0]; _queue pushBack _forEachIndex; }; } forEach _nodes;
             while { _queue isNotEqualTo [] } do {
                 private _c = _queue deleteAt 0;
                 {
@@ -80,7 +118,7 @@ switch (_act) do {
     };
     case "talkgroup": {
         player setVariable ["COMSPEC_ATAK_Talkgroup", _k, true];
-        ["INFO", format ["Talkgroup %1", _k], 3, 20] call comspec_atak_native_fnc_notify;
+        ["INFO", ["Talkgroup quitté", format ["Talkgroup %1", _k]] select (_k isNotEqualTo ""), 3, 20] call comspec_atak_native_fnc_notify;
         call _render;
     };
     case "channel": {
@@ -92,6 +130,11 @@ switch (_act) do {
     };
     case "mapLinks": {
         profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", !(profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false])];
+        call _render;
+    };
+    case "mapRelays": {
+        profileNamespace setVariable ["COMSPEC_ATAK_RelaysLayer", !(profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true])];
+        [] call comspec_atak_native_fnc_saveProfile;
         call _render;
     };
 };

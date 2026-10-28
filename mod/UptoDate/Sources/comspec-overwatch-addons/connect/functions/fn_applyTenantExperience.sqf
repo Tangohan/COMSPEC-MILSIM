@@ -42,13 +42,25 @@ private _applyTri = {
 ["order_compose", "comspec_overwatch_order_compose_enabled"] call _applyTri;
 ["sse_require_item", "comspec_sse_require_item"] call _applyTri;
 ["playtime", "comspec_overwatch_playtime_enabled"] call _applyTri;
-["athena_feed", "comspec_overwatch_athena_feed_snapshot"] call _applyTri;
 ["rp_enabled", "comspec_overwatch_roleplay_enabled"] call _applyTri;
 ["rp_network_failures", "comspec_overwatch_roleplay_network_failures"] call _applyTri;
 ["rp_sensor_failures", "comspec_overwatch_roleplay_sensor_failures"] call _applyTri;
 ["rp_visual_effects", "comspec_overwatch_roleplay_visual_effects"] call _applyTri;
 ["rp_link_degrade", "comspec_overwatch_link_degrade_sim"] call _applyTri;
 ["rp_data_bar", "comspec_overwatch_show_link_strip"] call _applyTri;
+["athena_feed", "comspec_overwatch_athena_feed_snapshot"] call _applyTri;
+
+// Fréquence d'envoi des positions imposée par la communauté (Configuration ATAK > Connexion en jeu).
+private _posInterval = _map getOrDefault ["net_position_interval", "player"];
+if (_posInterval isNotEqualTo "player") then {
+    private _sec = parseNumber _posInterval;
+    if (_sec >= 2 && {_sec <= 60}) then {
+        missionNamespace setVariable ["comspec_overwatch_position_interval", _sec, false];
+        if (!isNil "CBA_fnc_setSetting") then {
+            ["comspec_overwatch_position_interval", _sec, 2, "mission", true] call CBA_fnc_setSetting;
+        };
+    };
+};
 
 private _dmg = _map getOrDefault ["atak_realism", "player"];
 if (_dmg isNotEqualTo "player") then {

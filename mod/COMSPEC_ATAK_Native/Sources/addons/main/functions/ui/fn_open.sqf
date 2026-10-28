@@ -12,7 +12,9 @@ _s set ["suppressHudRestore", true];
 [] call comspec_atak_native_fnc_close;
 _s set ["suppressHudRestore", false];
 // Menu d'actions d'Arma masqué tant que le téléphone est affiché (COMSPEC_ATAK_ActionBlock, XEH_postInitClient).
-// Réinstallé à chaque ouverture : une mission ou un autre mod a pu le remplacer.
+// Réinstallé à chaque ouverture : une mission ou un autre mod a pu le remplacer. Remis à vide à la fermeture
+// (fn_displayUnload) : téléphone rangé, le gestionnaire d'une mission ou d'un autre mod n'est plus écrasé pour la session.
+uiNamespace setVariable ["COMSPEC_ATAK_OpenSeq", (uiNamespace getVariable ["COMSPEC_ATAK_OpenSeq", 0]) + 1];
 inGameUISetEventHandler ["PrevAction", "[false] call (missionNamespace getVariable ['COMSPEC_ATAK_ActionBlock', { false }])"];
 inGameUISetEventHandler ["NextAction", "[false] call (missionNamespace getVariable ['COMSPEC_ATAK_ActionBlock', { false }])"];
 inGameUISetEventHandler ["Action", "[true] call (missionNamespace getVariable ['COMSPEC_ATAK_ActionBlock', { false }])"];
@@ -26,6 +28,8 @@ if (_interactive) exitWith {
     if (!isNull _disp) then {
         _disp displayAddEventHandler ["KeyDown", {
             params ["", "_key", "_shift", "_ctrl", "_alt"];
+            // Touche prise pour un raccourci en cours de réglage (fn_keybinds) : rien d'autre ne part.
+            if (["key", _this] call comspec_atak_native_fnc_keybinds) exitWith { true };
             private _hit = {
                 params ["_action", "_default"];
                 private _kb = ["COMSPEC ATAK", _action] call CBA_fnc_getKeybind;
@@ -36,10 +40,13 @@ if (_interactive) exitWith {
             if (["PhoneMain", [0x16, [false, false, true]]] call _hit) exitWith { [{ [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyMain", {}]); }] call CBA_fnc_execNextFrame; true };
             if (["PhoneOrient", [0x16, [false, true, true]]] call _hit) exitWith { [{ [] call comspec_atak_native_fnc_orientationToggle; }] call CBA_fnc_execNextFrame; true };
             if (["PhonePosition", [0x16, [true, false, true]]] call _hit) exitWith { [{ [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyPosition", {}]); }] call CBA_fnc_execNextFrame; true };
-            false
+            // Saisie dans un champ du téléphone : la touche ne part pas au jeu (fn_keyBlock).
+            _this call comspec_atak_native_fnc_keyBlock
         }];
     };
     !isNull _disp
 };
+// Style « porté » JPC : l'ATAK s'affiche sur l'écran 3D de la tablette du gilet (fn_jpcScreen), sinon miniature.
+if (["active"] call comspec_atak_native_fnc_jpcScreen) exitWith { ["open"] call comspec_atak_native_fnc_jpcScreen };
 ("COMSPEC_ATAK_Hud" call BIS_fnc_rscLayer) cutRsc ["COMSPEC_RscTitleATAK", "PLAIN", 0, false];
 true

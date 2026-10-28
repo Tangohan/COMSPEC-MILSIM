@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakLostLinkOverlayAssetTest extends TestCase
 {
@@ -32,7 +33,7 @@ final class AtakLostLinkOverlayAssetTest extends TestCase
         self::assertStringNotContainsString('LIAISON ATAK PERDUE', $view);
         self::assertSame(1, substr_count($view, 'id="atak-connection-lost-msg"'));
         self::assertStringContainsString('atak-connection-lost__timer', $view);
-        self::assertStringContainsString('Reconnexion en cours…', $view);
+        self::assertStringContainsString('Reconnexion en coursâ€¦', $view);
 
         self::assertStringContainsString('function formatReconnectLabel', $js);
         self::assertStringContainsString("return 'Reconnexion dans ' + match[1] + ' s'", $js);
@@ -49,7 +50,7 @@ final class AtakLostLinkOverlayAssetTest extends TestCase
             $view
         );
         self::assertStringContainsString('window.ATAKSocket.isApiPaused()', $view);
-        self::assertStringContainsString('Reconnexion en cours…', $view);
+        self::assertStringContainsString('Reconnexion en coursâ€¦', $view);
     }
 
     public function testConcurrentOrIsolatedPingFailureDoesNotReportAnOutage(): void
@@ -89,11 +90,13 @@ final class AtakLostLinkOverlayAssetTest extends TestCase
         self::assertStringContainsString('updateAtakLinkChrome', $overlay);
         self::assertStringNotContainsString('comspec_overlay_no_signal_ca', $overlay);
 
-        self::assertStringContainsString('displayCtrl 3', $chrome);
+        // L'icÃ´ne signal (IDC 3, ou 17000 + 3 sur la tablette V2) passe par un rÃ©solveur commun.
+        self::assertStringContainsString('_disp displayCtrl (17000 + _idc)', $chrome);
+        self::assertStringContainsString('private _sig = [3] call _fncCtrl;', $chrome);
         self::assertStringContainsString('Liaison perdue', $chrome);
         self::assertStringContainsString('99887710', $chrome);
         self::assertStringContainsString('class updateAtakLinkChrome', $cfg);
-        self::assertStringContainsString('1.6.4', $cfg);
+        ModVersion::assertAtLeast('1.6.4', ModVersion::fromConfigCpp($cfg));
 
         self::assertStringNotContainsString('comspec_overlay_no_signal_ca', $roleplay);
         self::assertStringContainsString('fn_updateDeviceOverlay', $roleplay);
@@ -104,6 +107,6 @@ final class AtakLostLinkOverlayAssetTest extends TestCase
         self::assertStringContainsString('cTab_Android_dlg', $inject);
         self::assertStringNotContainsString('Liaison ATAK perdue', $inject);
         self::assertStringNotContainsString('applyMapInterference(0.6)', $inject);
-        self::assertStringContainsString('barre d’état', $note);
+        self::assertStringContainsString('barre dâ€™Ã©tat', $note);
     }
 }

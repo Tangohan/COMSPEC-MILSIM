@@ -132,6 +132,8 @@ final class AtakMarkerDetectionService
 
     /**
      * @param array<string, mixed> $extra
+     * @param list<array<string, mixed>>|null $markerRows marqueurs déjà lus par l’appelant (une lecture par position
+     *                                                     partagée avec l’autre service), null = lecture ici
      * @return list<array{id:int, label:string, distance_m:float, reached_by:string}>
      */
     public function confirmFromOperatorPosition(
@@ -141,6 +143,7 @@ final class AtakMarkerDetectionService
         float $posX,
         float $posY,
         array $extra = [],
+        ?array $markerRows = null,
     ): array {
         $callSign = trim($callSign);
         if ($callSign === '' || $tenantId < 1 || $mapId < 1) {
@@ -159,7 +162,7 @@ final class AtakMarkerDetectionService
             return [];
         }
         try {
-            $rows = $this->atak->getMarkers($tenantId, $mapId);
+            $rows = $markerRows ?? $this->atak->getMarkers($tenantId, $mapId);
         } catch (\Throwable) {
             return [];
         }

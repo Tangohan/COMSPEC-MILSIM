@@ -13,12 +13,15 @@ if (!hasInterface) exitWith { [] };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { [] };
 
 private _tenantId = missionNamespace getVariable ["comspec_overwatch_tenant_id", ""];
-private _raw = ["COMSPECExtension" callExtension ["GetBriefingSlides", [_tenantId]]] call comspec_overwatch_connect_fnc_extResult;
+// Appel non bloquant quand le contexte peut attendre (fn_extAwait) : la requête pouvait figer le jeu jusqu'à 8 s.
+private _raw = [["COMSPECExtension", "GetBriefingSlides", [_tenantId]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _raw splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 
+// Échec (timeout, joueur non lié, coupure) : rien n'est diffusé. Vider la liste publique ici effaçait les
+// diapositives de tous les joueurs (et des arrivants) dès qu'un seul spectateur échouait sa relecture.
 if (_prefix != "OK") exitWith {
-    missionNamespace setVariable ["COMSPEC_BriefingSlides", [], true];
+    ["WARN", "Briefing", format ["GetBriefingSlides échoué (%1) — liste partagée conservée", _prefix]] call comspec_overwatch_connect_fnc_log;
     []
 };
 
@@ -48,6 +51,8 @@ private _googleUrl = "";
     };
 } forEach _lines;
 
-missionNamespace setVariable ["COMSPEC_CommunityGoogleSlidesUrl", _googleUrl, true];
-missionNamespace setVariable ["COMSPEC_BriefingSlides", _slides, true];
+// Diffusé seulement s'il change : chaque joueur qui suit une présentation relit la liste, et chaque relecture
+// renvoyait toute la liste à tous les joueurs (et aux arrivants).
+if ((missionNamespace getVariable ["COMSPEC_CommunityGoogleSlidesUrl", ""]) isNotEqualTo _googleUrl) then { missionNamespace setVariable ["COMSPEC_CommunityGoogleSlidesUrl", _googleUrl, true]; };
+if ((missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) isNotEqualTo _slides) then { missionNamespace setVariable ["COMSPEC_BriefingSlides", _slides, true]; };
 _slides

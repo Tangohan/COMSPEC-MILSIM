@@ -36,7 +36,10 @@ final class GameOverwatchExperienceService
             'sync_c2' => true,
             'min_mod_version' => '1.5.0',
             'channel' => 'PROD',
-            'update_interval' => 5,
+            // 0 = réglage du pack (3 s) ; 2 à 60 = fréquence imposée à la communauté.
+            'update_interval' => 0,
+            'update_interval_set' => false,
+            'min_mod_version_admin' => false,
             'bft_enabled' => true,
             'chat_enabled' => true,
             'intel_enabled' => true,
@@ -62,7 +65,22 @@ final class GameOverwatchExperienceService
             }
         }
 
+        // Ancien défaut (5 s) enregistré sans choix explicite : on laisse le réglage du pack.
+        if (empty($merged['update_interval_set'])) {
+            $merged['update_interval'] = 0;
+        }
+
         return $merged;
+    }
+
+    /** Méthodes de connexion autorisées en jeu. */
+    public static function authMethods(array $cfg): array
+    {
+        return [
+            'password' => !array_key_exists('auth_password', $cfg) || !empty($cfg['auth_password']),
+            'otp' => !array_key_exists('auth_otp', $cfg) || !empty($cfg['auth_otp']),
+            'steam' => !array_key_exists('auth_steam', $cfg) || !empty($cfg['auth_steam']),
+        ];
     }
 
     /**
@@ -89,6 +107,16 @@ final class GameOverwatchExperienceService
         if (isset($incoming['welcome_message'])) {
             $merged['welcome_message'] = mb_substr(trim((string) $incoming['welcome_message']), 0, 280);
         }
+        // Au moins une méthode de connexion : sinon plus personne ne peut se lier en jeu.
+        if (empty($merged['auth_password']) && empty($merged['auth_otp']) && empty($merged['auth_steam'])) {
+            $merged['auth_password'] = true;
+        }
+        if (!empty($incoming['remove_login_image'])) {
+            $merged['login_image_path'] = '';
+        }
+        if (!empty($incoming['remove_logo'])) {
+            $merged['logo_path'] = '';
+        }
         if (isset($incoming['login_image_path'])) {
             $merged['login_image_path'] = trim((string) $incoming['login_image_path']);
         }
@@ -98,11 +126,16 @@ final class GameOverwatchExperienceService
         if (isset($incoming['min_mod_version'])) {
             $ver = trim((string) $incoming['min_mod_version']);
             $merged['min_mod_version'] = preg_match('/^\d+\.\d+(\.\d+)?$/', $ver) ? $ver : $merged['min_mod_version'];
+            // Valeur choisie par l'administration : la migration ATHENA ne la ramène plus à 1.5.0.
+            $merged['min_mod_version_admin'] = true;
         }
         $channel = strtoupper(trim((string) ($incoming['channel'] ?? $merged['channel'])));
         $merged['channel'] = in_array($channel, ['PROD', 'BETA', 'DEV'], true) ? $channel : 'PROD';
-        $interval = (int) ($incoming['update_interval'] ?? $merged['update_interval']);
-        $merged['update_interval'] = max(2, min(60, $interval));
+        if (array_key_exists('update_interval', $incoming)) {
+            $interval = (int) $incoming['update_interval'];
+            $merged['update_interval'] = $interval <= 0 ? 0 : max(2, min(60, $interval));
+            $merged['update_interval_set'] = true;
+        }
         $merged['reviewed'] = true;
         $this->repo()->saveOverwatchGameExperience($tenantId, $merged);
 

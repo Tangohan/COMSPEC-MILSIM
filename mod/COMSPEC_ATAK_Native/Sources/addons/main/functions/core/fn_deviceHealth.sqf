@@ -25,7 +25,7 @@ if ((missionNamespace getVariable ["comspec_overwatch_atak_realism", 0]) > 0 && 
     if (_ow getOrDefault ["device_destroyed", false]) then { _out set ["state", "BROKEN"]; _out set ["damage", 1]; _out set ["crack", 3]; _out set ["reason", "Appareil détruit"]; };
 };
 private _batteryEmpty = {
-    if ((_out get "state") isNotEqualTo "BROKEN" && {profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true]} && {missionNamespace getVariable ["comspec_atak_native_battery_sim", true]} && {(missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) <= 0}) then {
+    if ((_out get "state") isNotEqualTo "BROKEN" && {profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true]} && {["battery"] call comspec_atak_native_fnc_netCond} && {(missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) <= 0}) then {
         _out set ["state", "OFF"]; _out set ["offLeft", 0]; _out set ["reason", "Batterie vide"];
     };
     _out

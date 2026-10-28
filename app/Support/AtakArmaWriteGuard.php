@@ -45,7 +45,8 @@ final class AtakArmaWriteGuard
 
         $steamRaw = $this->extractSteamRaw($request, $body);
         $steam = $steamRaw !== '' ? SteamId::normalize($steamRaw) : null;
-        if ($steamRaw !== '' && $steam === null) {
+        // _SP_PLAYER_ (solo / hôte local) : pas d'identifiant, on poursuit comme sans Steam au lieu d'un 400 répété.
+        if ($steamRaw !== '' && $steam === null && !SteamId::isPlaceholder($steamRaw)) {
             $this->log($tenantId, false, 'Données jeu refusées — identifiant Steam invalide', [
                 'reason' => 'invalid_steam_uid',
             ]);
@@ -109,6 +110,7 @@ final class AtakArmaWriteGuard
             $steam = $bound;
         }
 
+        $user = null;
         if ($steam !== null) {
             $user = $this->users->findBySteamIdForTenant($tenantId, $steam);
             if ($user === null) {
@@ -152,6 +154,17 @@ final class AtakArmaWriteGuard
                 'error' => 'steam_required',
                 'message' => 'Identifiant Steam requis. Mettez à jour le mod Overwatch, puis reconnectez-vous.',
             ], 403);
+        }
+
+        // Blocage décidé par l'administration du site (/admin/parc-atak) : par compte, Steam ou ATAK.
+        $blockedUserId = $user !== null ? (int) ($user['id'] ?? 0) : (int) (ComspecApiKeyAuth::matchedUserId() ?? 0);
+        $adminBlock = AtakAdminBlockGate::deny($tenantId, $blockedUserId ?: null, $steam);
+        if ($adminBlock instanceof Response) {
+            $this->log($tenantId, false, 'Accès jeu refusé — ATAK bloqué par l’administration', [
+                'reason' => 'atak_blocked',
+            ]);
+
+            return $adminBlock;
         }
 
         $modBlock = $this->assertModNotBlocked($tenantId, $steam);
@@ -288,7 +301,7 @@ final class AtakArmaWriteGuard
                 'channel' => $channel,
             ]);
 
-            return $this->rateLimitedResponse(60);
+            return $this->rateLimitedResponse($this->limiter->secondsUntilReset($writeKey, 60));
         }
         if ($channel === 'position') {
             $posKey = 'atak:pos:' . $tenantId . ':' . $actor;
@@ -297,7 +310,7 @@ final class AtakArmaWriteGuard
                     'reason' => 'rate_limited_position',
                 ]);
 
-                return $this->rateLimitedResponse(60);
+                return $this->rateLimitedResponse($this->limiter->secondsUntilReset($posKey, 60));
             }
             $burstKey = 'atak:posburst:' . $tenantId . ':' . $actor;
             if ($this->limiter->tooManyAttempts($burstKey, 10, 5)) {
@@ -305,13 +318,17 @@ final class AtakArmaWriteGuard
                     'reason' => 'rate_limited_position_burst',
                 ]);
 
-                return $this->rateLimitedResponse(5);
+                return $this->rateLimitedResponse($this->limiter->secondsUntilReset($burstKey, 5));
             }
         }
 
         return null;
     }
 
+    /**
+     * @param int $retryAfter temps qui reste avant la remise à zéro de la fenêtre qui refuse (NET-027), annoncé à
+     *                        l'identique dans l'en-tête Retry-After et dans retry_after
+     */
     private function rateLimitedResponse(int $retryAfter): Response
     {
         $retryAfter = max(1, min(120, $retryAfter));
@@ -328,6 +345,14 @@ final class AtakArmaWriteGuard
      */
     public function assertModNotBlocked(int $tenantId, ?string $steamUid, ?string $clientIp = null): ?Response
     {
+        $adminBlock = AtakAdminBlockGate::deny($tenantId, null, $steamUid);
+        if ($adminBlock instanceof Response) {
+            $this->log($tenantId, false, 'Accès jeu refusé — ATAK bloqué par l’administration', [
+                'reason' => 'atak_blocked',
+            ]);
+
+            return $adminBlock;
+        }
         $blocklist = $this->blocklist;
         if ($blocklist === null) {
             try {
@@ -357,12 +382,7 @@ final class AtakArmaWriteGuard
 
     public function clientIp(): string
     {
-        $ip = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '');
-        if (str_contains($ip, ',')) {
-            $ip = trim(explode(',', $ip)[0]);
-        }
-
-        return trim($ip);
+        return \App\Support\ClientIp::resolve();
     }
 
     /** @param array<string, mixed> $meta */

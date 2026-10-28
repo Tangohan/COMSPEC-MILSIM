@@ -59,7 +59,9 @@ final class OperatorGameRegistryContractTest extends TestCase
         $columns = array_values(array_filter(array_map('trim', explode(',', $insert[1]))));
         self::assertCount(32, $columns);
         $values = [];
-        self::assertSame(1, preg_match('/VALUES \(([^)]+)\)/s', $repo, $values));
+        // `NOW()` contient une parenthèse fermante : l’extraction doit l’accepter, sinon la liste
+        // s’arrête au premier `NOW(` et aucun NOW() n’est compté.
+        self::assertSame(1, preg_match('/VALUES \(((?:[^()]|\(\))+)\)/s', $repo, $values));
         $slots = array_map('trim', explode(',', $values[1]));
         $placeholders = count(array_filter($slots, static fn (string $s): bool => $s === '?'));
         $nows = count(array_filter($slots, static fn (string $s): bool => str_contains($s, 'NOW()')));

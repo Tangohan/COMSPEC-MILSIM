@@ -31,6 +31,11 @@ final class PayPalWebhookController
         if (!\App\Services\Billing\BillingProvider::paypalConfigured()) {
             return Response::json(['error' => 'PayPal non configuré'], 503);
         }
+        // Comme Stripe : sans identifiant de webhook, la signature est invérifiable → refus.
+        // Sinon un corps forgé (custom_id « t<tenant>:<plan> ») activerait un abonnement sans paiement.
+        if (trim((string) (getenv('PAYPAL_WEBHOOK_ID') ?: '')) === '') {
+            return Response::json(['error' => 'PAYPAL_WEBHOOK_ID non configuré'], 503);
+        }
 
         $payload = file_get_contents('php://input');
         if ($payload === false || $payload === '') {
@@ -54,11 +59,8 @@ final class PayPalWebhookController
             }
         }
 
-        $webhookId = trim((string) (getenv('PAYPAL_WEBHOOK_ID') ?: ''));
-        if ($webhookId !== '') {
-            if (!$this->payPalCheckoutService->verifyWebhookSignature($payload, $headers)) {
-                return Response::json(['error' => 'Invalid signature'], 400);
-            }
+        if (!$this->payPalCheckoutService->verifyWebhookSignature($payload, $headers)) {
+            return Response::json(['error' => 'Invalid signature'], 400);
         }
 
         try {

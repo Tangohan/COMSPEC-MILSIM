@@ -18,11 +18,15 @@ use App\Repositories\AtakOrderTemplateRepository;
 use App\Repositories\AtakOrderTypeRepository;
 use App\Repositories\FireTeamRepository;
 use App\Support\AtakPlanAccess;
+use App\Support\OperatorPortraits;
+use App\Support\BriefingSlideGameImage;
+use App\Support\AtakGameImage;
 use App\Support\ComspecApiKeyAuth;
 use App\Repositories\CasNineLineRepository;
 use App\Repositories\ReconImageRepository;
 use App\Repositories\ReconNoteRepository;
 use App\Support\ReconNoteCatalog;
+use App\Services\Monitoring\ReconNoteDiscordService;
 use App\Repositories\MapShapeRepository;
 use App\Repositories\LaserCodeRepository;
 use App\Repositories\TenantRepository;
@@ -51,6 +55,7 @@ use App\Support\AtakPlayNight;
 use App\Support\ReconCapturedAt;
 use App\Support\AtakGameSession;
 use App\Support\ChatMentionParser;
+use App\Support\GameApiResponseCompactor;
 use App\Support\GroupMessageParser;
 use App\Support\MpMessageParser;
 use App\Support\OperatorTacticalIdentity;
@@ -64,6 +69,7 @@ use App\Repositories\AtakDeviceLogRepository;
 use App\Repositories\AtakRealismRepository;
 use App\Services\Tactical\MissionDisplaySettingsService;
 use App\Repositories\OperatorGameProfileRepository;
+use App\Services\GameEquipment\GameItemUsageRecorder;
 use App\Services\OperatorGame\OperatorGameObservationNormalizer;
 use App\Services\OperatorGame\OperatorGameReconciliationService;
 
@@ -73,6 +79,9 @@ class AtakApiController
 
     /** @var array<string, mixed>|null Cache php://input (une seule lecture par requête). */
     private ?array $jsonBodyCache = null;
+
+    /** @var array<string, list<array<string, mixed>>> Unités lues pour les alias d’ordres (ordersIndex). */
+    private array $orderAliasUnitsCache = [];
 
     private AtakArmaWriteGuard $armaGuard;
     private RoleplaySimulationService $roleplaySim;
@@ -146,6 +155,43 @@ class AtakApiController
 
     private ?ReconNoteRepository $reconNoteRepo = null;
 
+    private ?\App\Services\Jnet\JnetFieldReportBridge $jnetBridgeService = null;
+
+    private function jnetBridge(): \App\Services\Jnet\JnetFieldReportBridge
+    {
+        return $this->jnetBridgeService ??= new \App\Services\Jnet\JnetFieldReportBridge();
+    }
+
+    /**
+     * Compte Athena de l'opérateur pour le relais JNET : clé API personnelle du joueur, sinon Steam d'une
+     * session de jeu vérifiée. Un Steam seulement déclaré dans le message (clé API commune, session absente
+     * ou expirée) n'est jamais accepté : il permettrait de publier dans JNET au nom d'un autre joueur.
+     */
+    private function jnetGameUserId(int $tenantId, mixed $actor, string $declaredSteam = ''): ?int
+    {
+        try {
+            if (\App\Support\ComspecApiKeyAuth::matchedTenantId() === $tenantId) {
+                $uid = \App\Support\ComspecApiKeyAuth::matchedUserId();
+                if ($uid !== null && $uid > 0) {
+                    return $uid;
+                }
+            }
+            if (!is_array($actor) || empty($actor['session_ok'])) {
+                return null;
+            }
+            $steam = is_string($actor['steam_uid'] ?? null) ? trim($actor['steam_uid']) : '';
+            if ($steam === '' || ($declaredSteam !== '' && $declaredSteam !== $steam)) {
+                return null;
+            }
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $steam);
+            $uid = $user ? (int) ($user['id'] ?? 0) : 0;
+
+            return $uid > 0 ? $uid : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     private function ingestTrafficRepo(): AtakIngestTrafficRepository
     {
         return $this->ingestTrafficRepo ??= new AtakIngestTrafficRepository();
@@ -160,7 +206,7 @@ class AtakApiController
     private ?AtakRelayRepository $relayRepo = null;
     private bool $ingestRecorded = false;
 
-    private function recordGameIngest(int $tenantId, int $mapId, bool $isPhoto = false): void
+    private function recordGameIngest(int $tenantId, int $mapId, bool $isPhoto = false, ?string $steamUid = null, ?string $callsign = null): void
     {
         if ($this->ingestRecorded || $tenantId < 1) {
             return;
@@ -178,11 +224,15 @@ class AtakApiController
         }
         $this->ingestRecorded = true;
         $this->ingestTrafficRepo()->record($tenantId, $mapId, $len, $isPhoto);
+        // Data Inspector : débit par joueur (best-effort).
+        (new \App\Repositories\AtakIngestPlayerStatsRepository())->recordRequest($tenantId, $steamUid, $callsign, $len, $isPhoto);
     }
 
     private ?AtakDeviceLogRepository $deviceLogRepository = null;
     private ?AtakRealismRepository $realismRegistry = null;
     private ?OperatorGameProfileRepository $operatorGameProfiles = null;
+
+    private ?GameItemUsageRecorder $gameItemUsage = null;
 
     /** Register/sync is deliberately separate from the high-frequency position channel. */
     public function operatorRegister(Request $request, array $params = []): Response
@@ -218,6 +268,8 @@ class AtakApiController
             $reference = [];
         }
         $profile = $repo->upsertProfile($tenantId, $reference, $steamId, $payload);
+        // Équipement porté et mods chargés (classements back-office, kits par rôle). Ne lève jamais.
+        ($this->gameItemUsage ??= new GameItemUsageRecorder())->record($tenantId, $steamId, $payload);
         if (!$linked) {
             if ($profile['first_seen']) {
                 $repo->event($tenantId, $profile['id'], $steamId, 'STEAM_ACCOUNT_NOT_FOUND', [
@@ -293,6 +345,8 @@ class AtakApiController
         }
         $tenantId = $r;
         $rows = $this->briefingSlideRepository->listActiveForTenant($tenantId);
+        // COMSPEC Link 2.0.95+ : copie .paa (texture Arma) à la place de la copie JPEG.
+        $paa = AtakGameImage::clientAcceptsPaa();
         $out = [];
         foreach ($rows as $row) {
             $imagePath = trim((string) ($row['image_path'] ?? ''));
@@ -311,7 +365,8 @@ class AtakApiController
                 'title' => trim((string) ($row['title'] ?? '')),
                 'detail' => trim((string) ($row['detail_text'] ?? '')),
                 'sort_order' => (int) ($row['sort_order'] ?? 0),
-                'image_url' => url($imagePath),
+                'image_url' => ($paa ? AtakGameImage::urlFor(url(ltrim($imagePath, '/')), AtakGameImage::FIT_SLIDE) : null)
+                    ?? url(BriefingSlideGameImage::path($imagePath)),
                 'updated_at' => (string) ($row['updated_at'] ?? $row['created_at'] ?? ''),
                 'operation' => $operation,
             ];
@@ -501,7 +556,7 @@ class AtakApiController
     }
 
     /**
-     * Profil public d'un joueur (nom d'affichage, callsign, photo) identifié par son SteamUID,
+     * Profil public d'un joueur (nom d'affichage, callsign, portrait opérateur) identifié par son SteamUID,
      * consommé par l'extension Arma (fonction native GetPlayerAvatarInfo) pour affichage en jeu.
      * Ne renvoie jamais l'état civil (prénom/nom légal) — uniquement l'identité de jeu.
      */
@@ -582,11 +637,21 @@ class AtakApiController
             }
         }
 
+        // Portrait opérateur seulement (règle du site), en vignette JPEG carrée lisible par Arma.
+        // Sans image, la raison part au jeu (avatar_status) et dans le journal du serveur.
+        $portrait = AtakGameImage::clientAcceptsPaa()
+            ? OperatorPortraits::gamePaa($tenantId, $userId)
+            : OperatorPortraits::gameThumbnail($tenantId, $userId);
+        if (!in_array($portrait['status'], ['ok', 'no_portrait'], true)) {
+            error_log(sprintf('[atak/player-profile] portrait opérateur indisponible pour le jeu (user=%d, tenant=%d) : %s', $userId, $tenantId, $portrait['status']));
+        }
+
         return Response::json([
             'ok' => true,
             'display_name' => (string) ($user['display_name'] ?? ''),
             'callsign' => $callsign,
-            'avatar_url' => (string) ($user['avatar_url'] ?? ''),
+            'avatar_url' => (string) ($portrait['url'] ?? ''),
+            'avatar_status' => $portrait['status'],
             'unit_name' => $unitName,
             'unit_short' => $unitName !== '' ? \App\Support\UnitAbbreviation::standalone($unitName, $tenantId) : '',
             'atak_id' => $atakId,
@@ -821,18 +886,17 @@ class AtakApiController
         $row = $this->gameLinkRepository->findValidByCode($code);
         if ($row === null) {
             $reason = $this->gameLinkRepository->explainInvalidCode($code);
-            $failTenant = $this->resolveTenantId($request) ?? (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: 0);
+            // Même règle que la garde : resolveTenantId() lisait (int) tenant_id (« tenant_id[]=N » donnait 1).
+            $failTenant = ComspecApiKeyAuth::guessTenantIdForLog();
             $failLabel = match ($reason) {
                 'already_used' => 'Liaison en jeu refusée — code déjà utilisé',
                 'expired' => 'Liaison en jeu refusée — code expiré',
                 default => 'Liaison en jeu refusée — code inconnu',
             };
-            if ($failTenant > 0) {
-                $this->activityLog?->recordAuthAttempt($failTenant, false, $failLabel, [
-                    'reason' => $reason !== '' ? $reason : 'unknown_code',
-                    'method' => 'code',
-                ]);
-            }
+            $this->logUnverifiedLinkRefusal($failTenant, $failLabel, [
+                'reason' => $reason !== '' ? $reason : 'unknown_code',
+                'method' => 'code',
+            ]);
             if ($reason === 'already_used') {
                 return Response::json([
                     'error' => 'code_already_used',
@@ -916,9 +980,24 @@ class AtakApiController
     /**
      * Liaison Arma sans code court : le Steam ID du joueur doit déjà être enregistré sur le compte Athena.
      * POST JSON { steam_uid } — même forme de réponse que gameLinkRedeem.
+     *
+     * Sécurité : un SteamID64 est public (profil, liste des joueurs) ; il ne prouve pas la possession
+     * du compte. Renvoyer la clé de communauté sur cette seule base revient à la donner à n’importe qui.
+     * Désactivé par défaut : seul le code de liaison à usage unique (/game-link/redeem) délivre une clé.
+     * ATAK_GAME_LINK_BY_STEAM=1 ne doit être posé que sur un portail privé (réseau de confiance).
      */
     public function gameLinkBySteam(Request $request, array $params = []): Response
     {
+        $bySteamFlag = strtolower(trim((string) (($_ENV['ATAK_GAME_LINK_BY_STEAM'] ?? null) ?: (getenv('ATAK_GAME_LINK_BY_STEAM') ?: ''))));
+        if (!in_array($bySteamFlag, ['1', 'true', 'on', 'yes'], true)) {
+            // « unauthorized » : le mod affiche alors « … ou utilisez un code » (server_outdated).
+            return Response::json([
+                'error' => 'unauthorized',
+                'reason' => 'steam_link_disabled',
+                'message' => 'La liaison par Steam seul est désactivée. Générez un code de connexion en jeu sur Athena.',
+            ], 403);
+        }
+
         $body = $this->jsonBody($request);
         $steamUid = SteamId::normalize((string) ($body['steam_uid'] ?? $body['player_uid'] ?? $body['steam_id'] ?? $request->input('steam_uid') ?? ''));
         if ($steamUid === null) {
@@ -930,13 +1009,11 @@ class AtakApiController
 
         $user = $this->userRepository->findBySteamId($steamUid);
         if ($user === null) {
-            $failTenant = $this->resolveTenantId($request) ?? (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: 0);
-            if ($failTenant > 0) {
-                $this->activityLog?->recordAuthAttempt($failTenant, false, 'Liaison en jeu refusée — Steam non reconnu', [
-                    'reason' => 'steam_not_linked',
-                    'method' => 'steam',
-                ]);
-            }
+            $failTenant = ComspecApiKeyAuth::guessTenantIdForLog();
+            $this->logUnverifiedLinkRefusal($failTenant, 'Liaison en jeu refusée — Steam non reconnu', [
+                'reason' => 'steam_not_linked',
+                'method' => 'steam',
+            ]);
 
             return Response::json([
                 'error' => 'steam_not_linked',
@@ -1065,6 +1142,30 @@ class AtakApiController
     }
 
     /**
+     * Liaison refusée avant toute preuve (code inconnu, Steam non reconnu) : la communauté vient de la même règle
+     * que la garde (ComspecApiKeyAuth::guessTenantIdForLog : tenant_id de l’URL en chiffres seulement, le corps
+     * n’est pas lu). Journalisé seulement si elle existe, et au plus une fois par minute pour un même refus
+     * (AtakActivityLogService::recordUnverifiedAuthFailure).
+     *
+     * @param array<string, mixed> $meta
+     */
+    private function logUnverifiedLinkRefusal(int $tenantId, string $label, array $meta): void
+    {
+        $log = $this->activityLog;
+        if ($tenantId < 1 || $log === null) {
+            return;
+        }
+        try {
+            if ($this->tenantRepository->findById($tenantId) === null) {
+                return;
+            }
+        } catch (\Throwable) {
+            return;
+        }
+        $log->recordUnverifiedAuthFailure($tenantId, $label, $meta);
+    }
+
+    /**
      * Résout le tenant pour l’API ATAK : clé de communauté (access_key), session, query/body,
      * tenant_slug, puis env explicite. Ne retombe plus silencieusement sur le tenant 1.
      */
@@ -1139,11 +1240,126 @@ class AtakApiController
             ], 503);
         }
 
+        $feature = \App\Support\GameFeatureGate::featureFor((string) $request->method(), (string) $request->path());
+        if ($feature !== null && \App\Support\GameFeatureGate::isGameClient()) {
+            try {
+                $denied = \App\Support\GameFeatureGate::denial((new \App\Services\Game\GameOverwatchExperienceService())->get($id), $feature);
+            } catch (\Throwable) {
+                $denied = null;
+            }
+            if ($denied !== null) {
+                return Response::json($denied, 403);
+            }
+        }
+
         if (!AtakPlanAccess::allows($id)) {
-            return AtakPlanAccess::deniedJson();
+            // Liaison de base (formule Gratuit) : positions, comptes rendus et briefing passent quand même.
+            $basic = AtakPlanAccess::allowsBasic($id);
+            if (!$basic || !AtakPlanAccess::isBasicPath($request->path())) {
+                return AtakPlanAccess::deniedJson($basic);
+            }
         }
 
         return $id;
+    }
+
+    /**
+     * Téléphone de l'opérateur qui envoie la photo (session jeu) : numéro, IMEI, MAC, modèle et version de l'ATAK,
+     * batterie. Affiché flouté (spoiler) sous la photo publiée sur Discord. Vide si l'opérateur est inconnu.
+     *
+     * @return array<string, string>
+     */
+    /**
+     * Unité de l'opérateur sur le site (unité principale, sinon celle de sa fiche personnel), sinon le nom de l'organisation.
+     * Pour les photos du jeu : le nom envoyé par Arma est le pseudo du profil, pas l'unité.
+     */
+    private function operatorSiteUnitName(int $tenantId, int $userId): string
+    {
+        $unitName = '';
+        try {
+            $unitIds = $this->unitRepository->unitIdsForUser($tenantId, $userId);
+            $primaryUnitId = (int) ($unitIds[0] ?? 0);
+            if ($primaryUnitId > 0) {
+                $unit = $this->unitRepository->findById($primaryUnitId, $tenantId);
+                $unitName = $unit ? trim((string) ($unit['name'] ?? '')) : '';
+            }
+            if ($unitName === '') {
+                $personnel = (new \App\Repositories\PersonnelProfileRepository())->getByUserId($userId) ?? [];
+                $profileUnitId = (int) ($personnel['primary_unit_id'] ?? 0);
+                if ($profileUnitId > 0) {
+                    $fromProfile = $this->unitRepository->findById($profileUnitId, $tenantId);
+                    $unitName = $fromProfile ? trim((string) ($fromProfile['name'] ?? '')) : '';
+                }
+            }
+        } catch (\Throwable) {
+            $unitName = '';
+        }
+        $tenantName = '';
+        try {
+            $tenantRow = $this->tenantRepository->findById($tenantId);
+            if (is_array($tenantRow)) {
+                $tenantName = function_exists('community_display_name')
+                    ? community_display_name($tenantRow)
+                    : trim((string) ($tenantRow['name'] ?? ''));
+            }
+        } catch (\Throwable) {
+        }
+
+        $unit = OperatorTacticalIdentity::unitAssignment($unitName, $tenantName, $tenantName);
+
+        return $unit !== '' ? $unit : $tenantName;
+    }
+
+    private function reconPhoneIdent(int $tenantId, ?int $userId = null): array
+    {
+        try {
+            if ($userId === null && \App\Support\ComspecApiKeyAuth::matchedTenantId() === $tenantId) {
+                $userId = \App\Support\ComspecApiKeyAuth::matchedUserId();
+            }
+            if ($userId === null || $userId < 1) {
+                return [];
+            }
+            $row = (new \App\Repositories\GamePhoneIdentityRepository())->findRow($tenantId, $userId);
+            if ($row === null) {
+                return [];
+            }
+            $pick = static fn (string ...$keys): string => (string) (array_values(array_filter(
+                array_map(static fn (string $k): string => trim((string) ($row[$k] ?? '')), $keys),
+                static fn (string $v): bool => $v !== ''
+            ))[0] ?? '');
+
+            return array_filter([
+                'number' => $pick('live_number', 'phone_number'),
+                'imei' => $pick('live_imei', 'imei'),
+                'mac' => $pick('live_mac', 'mac'),
+                'model' => $pick('device_model'),
+                'battery' => isset($row['battery_pct']) && $row['battery_pct'] !== null ? (int) $row['battery_pct'] . ' %' : '',
+            ], static fn (string $v): bool => $v !== '');
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** Grade court de l'auteur d'un cliché (fiche du personnel), pour l'embed Discord. */
+    private function reconAuthorGrade(int $tenantId, int $userId): string
+    {
+        try {
+            $st = \App\Core\Database::getPdo()->prepare(
+                'SELECT COALESCE(NULLIF(g.label_short, \'\'), g.label_long, \'\') AS grade
+                 FROM users u LEFT JOIN grades g ON g.id = u.grade_id
+                 WHERE u.id = ? AND u.tenant_id = ? LIMIT 1'
+            );
+            $st->execute([$userId, $tenantId]);
+            $grade = trim((string) ($st->fetchColumn() ?: ''));
+            if ($grade === '') {
+                $personnel = (new \App\Repositories\PersonnelProfileRepository())->getByUserId($userId) ?? [];
+                $grade = trim((string) ($personnel['rank_display_override'] ?? '') ?: (string) ($personnel['rank_display'] ?? ''));
+            }
+
+            return mb_substr($grade, 0, 40);
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     private function recompressIntelPhotoToJpeg(string $path): string
@@ -1194,6 +1410,29 @@ class AtakApiController
         return $mapId < 1 ? self::DEFAULT_MAP_ID : $mapId;
     }
 
+    /**
+     * Répare un corps JSON produit par le SQF : caractères de contrôle bruts → espace,
+     * nombres non finis (nan, inf, 1.#INF, -nan(ind)) → 0, puis virgule décimale → point si encore illisible.
+     */
+    public static function sanitizeArmaJson(string $raw): string
+    {
+        $out = preg_replace('/[\x00-\x1F]/', ' ', $raw);
+        $out = is_string($out) ? $out : $raw;
+        $fixed = preg_replace(
+            '/([:\[,]\s*)-?(?:1\.#(?:INF|IND|QNAN)\d*|nan(?:\(ind\))?|inf(?:inity)?)(?=\s*[,}\]])/i',
+            '${1}0',
+            $out
+        );
+        $out = is_string($fixed) ? $fixed : $out;
+        if (json_decode($out, true) !== null) {
+            return $out;
+        }
+        // Virgule décimale seulement en dernier recours : elle fusionnerait [1,2] en [1.2].
+        $fixed = preg_replace('/(?<=[:\[\s])(-?\d+),(\d{1,6})(?=[,}\]\s])/', '$1.$2', $out);
+
+        return is_string($fixed) ? $fixed : $out;
+    }
+
     private function jsonBody(Request $request): array
     {
         if ($this->jsonBodyCache !== null) {
@@ -1220,6 +1459,13 @@ class AtakApiController
             $commaFixed = preg_replace('/(?<=[:\[\s])(-?\d+),(\d{1,6})(?=[,}\]\s])/', '$1.$2', $raw);
             if (is_string($commaFixed) && $commaFixed !== $raw) {
                 $decoded = json_decode($commaFixed, true);
+            }
+        }
+        if (!is_array($decoded)) {
+            // Saut de ligne brut dans un nom, « nan » / « 1.#INF » d'un nombre SQF : JSON illisible.
+            $cleaned = self::sanitizeArmaJson($raw);
+            if ($cleaned !== $raw) {
+                $decoded = json_decode($cleaned, true);
             }
         }
         unset($raw);
@@ -2228,11 +2474,7 @@ class AtakApiController
 
     public function whoami(Request $request, array $params = []): Response
     {
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $forwarded = $_SERVER['HTTP_X_FORWARDED_FOR'];
-            $ip = is_string($forwarded) ? trim(explode(',', $forwarded)[0]) : trim($forwarded[0]);
-        }
+        $ip = \App\Support\ClientIp::resolve();
         $tenantId = $this->resolveTenantId($request);
         if ($tenantId !== null) {
             try {
@@ -2280,11 +2522,7 @@ class AtakApiController
             ], 400);
         }
 
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $forwarded = $_SERVER['HTTP_X_FORWARDED_FOR'];
-            $ip = is_string($forwarded) ? trim(explode(',', $forwarded)[0]) : trim((string) $forwarded[0]);
-        }
+        $ip = \App\Support\ClientIp::resolve();
         $ip = trim((string) $ip);
         if (strlen($ip) > 45) {
             $ip = substr($ip, 0, 45);
@@ -2337,6 +2575,7 @@ class AtakApiController
         $extVersion = trim((string) ($body['extension_version'] ?? ''));
         $armaBuild = trim((string) ($body['arma_build'] ?? ''));
         $contextRaw = $body['context'] ?? $body['context_json'] ?? null;
+        $gravity = trim((string) ($body['gravity'] ?? ''));
 
         if ($message === '') {
             return Response::json([
@@ -2361,19 +2600,45 @@ class AtakApiController
             $contextJson = trim($contextRaw);
         }
 
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $forwarded = $_SERVER['HTTP_X_FORWARDED_FOR'];
-            $ip = is_string($forwarded) ? trim(explode(',', $forwarded)[0]) : trim((string) $forwarded[0]);
-        }
+        $ip = \App\Support\ClientIp::resolve();
         $ip = trim((string) $ip);
         if (strlen($ip) > 45) {
             $ip = substr($ip, 0, 45);
         }
 
+        // Accès refusé par Athena (unauthorized, session refusée) : le mod ne voit qu'un 401/403,
+        // le diagnostic serveur (session jeu, compte, clé) est ajouté au détail du rapport.
+        $authNotifier = null;
+        $authDiagnosis = null;
+        if ($steam !== null && \App\Services\Monitoring\AtakAuthFailureNotifier::isAuthFailure($source, $message, $detail)) {
+            try {
+                $authNotifier = new \App\Services\Monitoring\AtakAuthFailureNotifier(\App\Core\Database::getPdo(), $this->modReports());
+                $accounts = $this->modReports()->linkedAccountsBySteam([$steam]);
+                $tenantForKey = isset($accounts[$steam]) && $accounts[$steam]['tenant_id'] > 0 ? $accounts[$steam]['tenant_id'] : null;
+                $authDiagnosis = $authNotifier->diagnose($steam, $tenantForKey);
+                $detail = trim($detail . "\nDiagnostic Athena : " . $authDiagnosis['text']
+                    . ($authDiagnosis['no_access_key'] ? ' Aucune clé d’accès ATAK configurée pour la communauté.' : ''));
+            } catch (\Throwable) {
+                $authNotifier = null;
+            }
+        }
+
+        // Refus « formule sans la carte » : on dit quelle communauté et quelle formule, pour la débloquer.
+        if ($steam !== null && AtakPlanAccess::isDenialReport($message, $detail)) {
+            try {
+                $accounts = $this->modReports()->linkedAccountsBySteam([$steam]);
+                $planDiag = AtakPlanAccess::diagnosis((int) ($accounts[$steam]['tenant_id'] ?? 0));
+                if ($planDiag !== '') {
+                    $detail = trim($detail . "\nDiagnostic Athena : " . $planDiag);
+                }
+            } catch (\Throwable) {
+            }
+        }
+
         try {
             $result = $this->modReports()->upsert([
                 'severity' => $severity,
+                'gravity' => $gravity !== '' ? $gravity : null,
                 'channel' => $channel,
                 'message' => $message,
                 'detail_text' => $detail !== '' ? $detail : null,
@@ -2402,11 +2667,76 @@ class AtakApiController
             ], 503);
         }
 
+        // Ticket Discord (ouverture, compteur ×N), après la réponse au jeu ; jamais bloquant.
+        $reportId = (int) $result['id'];
+        \App\Services\Monitoring\AtakModReportDiscordTicketService::defer(
+            static fn (\App\Services\Monitoring\AtakModReportDiscordTicketService $t) => $t->onReport($reportId)
+        );
+
+        // Copie dans le salon Discord de la communauté du joueur (« Signalements du mod »), après la réponse au jeu.
+        if ($result['created'] && $steam !== null) {
+            try {
+                $accounts = $this->modReports()->linkedAccountsBySteam([$steam]);
+                \App\Services\Integrations\CommunityModReportRelay::defer((int) ($accounts[$steam]['tenant_id'] ?? 0), [
+                    'gravity' => $result['gravity'],
+                    'source' => $source,
+                    'channel' => $channel,
+                    'message' => $message,
+                    'callsign' => $callsign,
+                    'player_name' => $playerName,
+                    'mod_version' => $modVersion,
+                    'extension_version' => $extVersion,
+                ]);
+            } catch (\Throwable) {
+            }
+        }
+
+        // Signalement joueur (Échap > Signaler un problème) ou erreur automatique critique : e-mail à
+        // l'exploitation, jamais bloquant. Les autres détections automatiques restent sur la page.
+        if ($result['created']) {
+            try {
+                (new \App\Services\Monitoring\AtakModReportMailer($this->modReports()))->notify([
+                    'id' => $result['id'],
+                    'gravity' => $result['gravity'],
+                    'channel' => $channel,
+                    'message' => $message,
+                    'detail' => $detail,
+                    'source' => $source,
+                    'steam_uid' => $steam,
+                    'player_name' => $playerName,
+                    'callsign' => $callsign,
+                    'client_ip' => $ip,
+                    'mod_version' => $modVersion,
+                    'extension_version' => $extVersion,
+                    'arma_build' => $armaBuild,
+                ]);
+            } catch (\Throwable) {
+            }
+        }
+
+        // Prévenir le joueur par e-mail (Steam lié, au plus une fois par jour, jamais pour une gravité faible),
+        // jamais bloquant.
+        if ($authNotifier !== null && \App\Services\Monitoring\AtakModReportGravity::mailsPlayer($result['gravity'])) {
+            try {
+                $authNotifier->handle([
+                    'id' => $result['id'],
+                    'steam_uid' => $steam,
+                    'message' => $message,
+                    'player_name' => $playerName,
+                    'callsign' => $callsign,
+                    'mod_version' => $modVersion,
+                    'extension_version' => $extVersion,
+                ], $authDiagnosis);
+            } catch (\Throwable) {
+            }
+        }
+
         return Response::json([
             'ok' => true,
             'created' => $result['created'],
             'id' => $result['id'],
             'hit_count' => $result['hit_count'],
+            'gravity' => $result['gravity'],
         ]);
     }
 
@@ -3044,6 +3374,14 @@ class AtakApiController
         }
         try {
             $row = $this->casRepo->createMedevac($tenantId, $mapId, $author, $body);
+        } catch (\PDOException $e) {
+            // Erreur base (communauté supprimée, donnée refusée) : réponse explicite plutôt que 503 générique.
+            error_log('medevacStore: ' . $e->getMessage());
+
+            return Response::json([
+                'error' => 'medevac_store_failed',
+                'message' => 'La demande MEDEVAC n’a pas pu être enregistrée sur Athena. Réessayez ; si cela continue, prévenez l’administration.',
+            ], 500);
         } catch (\RuntimeException $e) {
             if ($e->getMessage() === 'migration_required') {
                 return Response::json([
@@ -3205,6 +3543,21 @@ class AtakApiController
             . ($posX !== null && $posX !== '' ? (string) $posX : '') . '|'
             . ($posY !== null && $posY !== '' ? (string) $posY : '') . '|'
             . $saluteBody;
+        // NET-028 : ce que la relève du tchat masquerait n'est pas stocké, avec la même règle que POST /api/chat.
+        // L'indicatif, la grille, la position et cinq des six champs précèdent un « | » : un indicatif « ORDER »
+        // rendait la ligne invisible pour tous, et 650 lignes de suite figeaient la relève avec curseur de COMSPEC Link.
+        if (AtakDataRepository::isProtocolOrderChatBody($msg)) {
+            return Response::json([
+                'error' => 'order_incomplete',
+                'message' => 'Compte rendu refusé : un indicatif, une grille, une position ou un champ qui se termine par le mot « order » est réservé au protocole des ordres C2. Reformulez-le.',
+            ], 422);
+        }
+        if (TacticalAlertParser::isHiddenSystemChatBody($msg)) {
+            return Response::json([
+                'error' => 'reserved_settings',
+                'message' => 'Compte rendu refusé : « REGLAGES AFFICHAGE » est réservé aux réglages d’affichage des camps. Reformulez l’indicatif ou le champ.',
+            ], 422);
+        }
         $source = ComspecApiKeyAuth::extractPresentedKey() !== '' ? 'game' : 'web';
         $row = $this->atak->addChatMessage($tenantId, $mapId, $callSign, $msg, $source);
         $parsed = TacticalAlertParser::enrichChatRow(is_array($row) ? $row : []);
@@ -6023,7 +6376,8 @@ class AtakApiController
         if ($mapId < 1) {
             $mapId = self::DEFAULT_MAP_ID;
         }
-        $this->recordGameIngest($tenantId, $mapId, false);
+        $actorSteam = is_array($actor) && is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null;
+        $this->recordGameIngest($tenantId, $mapId, false, $actorSteam, $this->batchCallsign($body));
 
         $ingest = new \App\Services\Tactical\AtakTelemetryBatchIngest(
             $this->atak,
@@ -6059,6 +6413,14 @@ class AtakApiController
         if (($result['accepted'] ?? 0) === 0 && ($result['rejected'] ?? 0) > 0) {
             $http = 422;
         }
+        (new \App\Repositories\AtakIngestPlayerStatsRepository())->recordBatchOutcome(
+            $tenantId,
+            $actorSteam,
+            $actorCs !== '' ? $actorCs : $this->batchCallsign($body),
+            (int) ($result['accepted'] ?? 0),
+            (int) ($result['rejected'] ?? 0),
+            is_array($result['results'] ?? null) ? $result['results'] : []
+        );
 
         return Response::json([
             'ok' => (bool) ($result['ok'] ?? false),
@@ -6074,6 +6436,26 @@ class AtakApiController
                 'sigint' => '/api/atak/sigint',
             ],
         ], $http);
+    }
+
+    /**
+     * Indicatif de l'émetteur d'un lot : premier événement position/heartbeat qui en porte un.
+     *
+     * @param array<string, mixed> $body
+     */
+    private function batchCallsign(array $body): ?string
+    {
+        foreach ((array) ($body['events'] ?? []) as $ev) {
+            if (!is_array($ev)) {
+                continue;
+            }
+            $cs = trim((string) ($ev['call_sign'] ?? $ev['cs'] ?? ''));
+            if ($cs !== '') {
+                return $cs;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -6146,7 +6528,8 @@ class AtakApiController
         $limit = min(300, max(1, (int) ($request->query('limit') ?: 100)));
         try {
             $repo = new \App\Repositories\TacticalTrackRepository();
-            $tracks = $repo->listTracks($tenantId, $mapId, $limit, $layer !== '' ? $layer : null);
+            $prefix = strtoupper(trim((string) ($request->query('prefix') ?? '')));
+            $tracks = $repo->listTracks($tenantId, $mapId, $limit, $layer !== '' ? $layer : null, $prefix !== '' ? $prefix : null);
         } catch (\Throwable) {
             $tracks = [];
         }
@@ -6229,8 +6612,8 @@ class AtakApiController
     private function ingestPositionPayload(int $tenantId, array $actor, array $body): Response
     {
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
-        $this->recordGameIngest($tenantId, $mapId, false);
         $callSign = trim((string) ($body['call_sign'] ?? $body['callsign'] ?? ''));
+        $this->recordGameIngest($tenantId, $mapId, false, is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null, $callSign);
         $steamNorm = $actor['steam_uid'] ?? null;
         $rawExtra = $body['extra'] ?? null;
         $extraEarly = AtakDataRepository::decodeExtra($rawExtra);
@@ -6379,6 +6762,21 @@ class AtakApiController
         }
         $upsert = $this->atak->upsertUnitPosition($tenantId, $mapId, $callSign, $posX, $posY, $heading, $role, json_encode($extra));
         if (!$isProxyTerrain) {
+            // Marqueurs lus une seule fois pour les deux contrôles (PO puis points suivis : ensembles disjoints).
+            // Position 0,0 / invalide : les services sortent avant toute lecture, ne rien charger.
+            $markerRowsPos = null;
+            // Contacts IA / relayés : les deux services sortent aussi avant toute lecture.
+            $extraArrPos = is_array($extra) ? $extra : [];
+            if (is_finite($posX) && is_finite($posY) && (abs($posX) >= 0.5 || abs($posY) >= 0.5)
+                && !AtakDataRepository::isProxyContactExtra($extraArrPos)
+                && !AtakDataRepository::callSignLooksLikeProxy($callSign)
+                && !AtakDataRepository::shouldHideEnemyAiContact($extraArrPos, $callSign)) {
+                try {
+                    $markerRowsPos = $this->atak->getMarkers($tenantId, $mapId);
+                } catch (\Throwable) {
+                    $markerRowsPos = null;
+                }
+            }
             try {
                 $this->poArrivalService()->confirmFromOperatorPosition(
                     $tenantId,
@@ -6386,7 +6784,8 @@ class AtakApiController
                     $callSign,
                     $posX,
                     $posY,
-                    is_array($extra) ? $extra : []
+                    is_array($extra) ? $extra : [],
+                    $markerRowsPos
                 );
                 try {
                     $this->markerDetectionService()->confirmFromOperatorPosition(
@@ -6395,7 +6794,8 @@ class AtakApiController
                         $callSign,
                         $posX,
                         $posY,
-                        is_array($extra) ? $extra : []
+                        is_array($extra) ? $extra : [],
+                        $markerRowsPos
                     );
                 } catch (\Throwable) {
                 }
@@ -6423,11 +6823,17 @@ class AtakApiController
                 $existing = $realism->findTerminalByUid($tenantId, $terminalUidPos);
                 $prev = strtolower((string) ($existing['compromise_state'] ?? 'none'));
                 if ($existing !== null && $prev !== $compromisePos) {
-                    $realism->setTerminalCompromise(
+                    $updated = $realism->setTerminalCompromise(
                         $tenantId,
                         $terminalUidPos,
                         $compromisePos,
                         $compromisePos === 'none' ? null : 'Remonté depuis le terrain'
+                    );
+                    (new \App\Repositories\AtakAdminControlRepository())->recordCompromise(
+                        $updated ?? $existing,
+                        $compromisePos,
+                        $compromisePos === 'none' ? null : 'Remonté depuis le terrain',
+                        'position'
                     );
                     if ($compromisePos !== 'none') {
                         $this->activityLog->record(
@@ -6470,11 +6876,19 @@ class AtakApiController
                     is_array($extra) ? $extra : [],
                     (string) $callSign
                 );
-                if (!$hideEnemyAi) {
+                $clientKeyPos = $this->activityLog->clientKeyFromRequest();
+                // Session déjà à jour (même indicatif, < 20 s) : ni journal ni métadonnées à construire.
+                if (!$hideEnemyAi && !$this->activityLog->positionSessionFresh(
+                    $tenantId,
+                    $mapId,
+                    $clientKeyPos,
+                    (string) $callSign,
+                    !empty($upsert['created'])
+                )) {
                     $this->activityLog->recordFromPosition(
                         $tenantId,
                         $mapId,
-                        $this->activityLog->clientKeyFromRequest(),
+                        $clientKeyPos,
                         (string) $callSign,
                         !empty($upsert['created']),
                         $this->buildActivityMeta(
@@ -6494,16 +6908,39 @@ class AtakApiController
         static $lastReplayLog = [];
         $key = $missionId . ':' . $callSign;
         $now = time();
-        if (!isset($lastReplayLog[$key]) || ($now - $lastReplayLog[$key]) >= 2) {
+        if ((!isset($lastReplayLog[$key]) || ($now - $lastReplayLog[$key]) >= 2) && $this->replayStepDue($key, $now)) {
             $lastReplayLog[$key] = $now;
             try {
                 $replay = \App\Core\Container::get(\App\Services\Replay\ReplayService::class);
                 $speed = isset($extra['speed']) && is_numeric($extra['speed']) ? (float) $extra['speed'] : null;
-                $replay->logPosition($missionId, $callSign, $callSign, $posX, $posY, $posZ, $heading, null, null, $speed, $extra);
+                // Clé de la session jouée (ATAK natif, via le JSON véhicule de fn_updatePosition) : relecture par mission.
+                $missionKey = \App\Support\AtakMissionKey::normalize($extra['mission_key'] ?? $body['mission_key'] ?? null);
+                $replay->logPosition($missionId, $callSign, $callSign, $posX, $posY, $posZ, $heading, null, null, $speed, $extra, $missionKey);
             } catch (\Throwable) {
             }
         }
         return Response::json(['ok' => true]);
+    }
+
+    /**
+     * Pas de 2 s du replay par indicatif, entre requêtes : sous PHP-FPM le `static` ne vit que le temps
+     * d’une requête. Fichier témoin par indicatif (mtime) ; en cas d’erreur disque, on journalise comme avant.
+     */
+    private function replayStepDue(string $key, int $now): bool
+    {
+        $dir = base_path('storage/cache/replay-step');
+        $path = $dir . '/' . md5($key) . '.t';
+        $mtime = @filemtime($path);
+        if ($mtime !== false && ($now - $mtime) < 2) {
+            return false;
+        }
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+            return true;
+        }
+        @touch($path, $now);
+        \App\Support\StaleFileSweeper::maybe($dir, '*.t', 86400);
+
+        return true;
     }
 
     /**
@@ -6627,6 +7064,70 @@ class AtakApiController
     }
 
     /**
+     * Plan de briefing partagé d'un camp (app Plan de l'ATAK natif, COMSPEC Link « BriefingPlan.Push »), envoyé en entier.
+     * Corps : side, owner (brouillon d'un joueur quand le serveur n'a pas le mod, vide sinon), rev, mission_key, world, name, reported_by, items [{id, kind, pts, text, color, dashed, arrow, width, num, author}].
+     */
+    public function briefingPlanStore(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $body = $this->jsonBody($request);
+        $side = strtoupper(trim((string) ($body['side'] ?? '')));
+        if (!in_array($side, \App\Repositories\AtakBriefingPlanRepository::SIDES, true)) {
+            return Response::json(['ok' => false, 'error' => 'invalid_side'], 400);
+        }
+        $repo = new \App\Repositories\AtakBriefingPlanRepository();
+        $items = \App\Repositories\AtakBriefingPlanRepository::normalizeItems($body['items'] ?? []);
+        $clean = static fn (mixed $v, int $max): string => mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]/u', ' ', is_scalar($v) ? (string) $v : '') ?? ''), 0, $max);
+        $owner = preg_replace('/[^0-9A-Za-z_:-]/', '', $clean($body['owner'] ?? '', 32)) ?? '';
+        $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
+        if (is_string($sessionSteam) && $sessionSteam !== '' && $owner !== '' && !hash_equals($sessionSteam, $owner)) {
+            $owner = $sessionSteam;
+        }
+        $saved = $repo->save(
+            $tenantId,
+            (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID),
+            $side,
+            $owner,
+            $clean($body['mission_key'] ?? '', 190),
+            $clean($body['world'] ?? '', 64),
+            max(0, (int) ($body['rev'] ?? 0)),
+            $clean($body['name'] ?? '', 64),
+            $items,
+            $clean($body['reported_by'] ?? '', 64),
+            ComspecApiKeyAuth::matchedUserId()
+        );
+
+        return Response::json(['ok' => true, 'saved' => $saved, 'items' => count($items)]);
+    }
+
+    /** Plans de briefing récents de la carte, un par camp (calque en lecture seule de la carte du site). */
+    public function briefingPlanIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        try {
+            $plans = (new \App\Repositories\AtakBriefingPlanRepository())->recent($r, $this->mapId($request));
+        } catch (\Throwable) {
+            return Response::json(['ok' => false, 'error' => 'database_unavailable'], 503);
+        }
+
+        return Response::json(['ok' => true, 'plans' => $plans]);
+    }
+
+    /**
      * Temps d'écran du téléphone et temps par rôle (COMSPEC Link « ScreenTime.Report »).
      * Corps : player_uid, call_sign, items [{kind: screen|app|role, key, label, seconds}].
      */
@@ -6667,7 +7168,56 @@ class AtakApiController
             return Response::json(['ok' => true, 'matched' => false, 'recorded' => 0]);
         }
 
-        return Response::json(['ok' => true, 'matched' => true, 'recorded' => $repo->addItems($tenantId, (int) $user['id'], $items)]);
+        $missionKey = \App\Support\AtakMissionKey::normalize($body['mission_key'] ?? null);
+
+        return Response::json(['ok' => true, 'matched' => true, 'recorded' => $repo->addItems($tenantId, (int) $user['id'], $items, null, $missionKey, \App\Repositories\AtakScreenTimeRepository::SOURCE_PHONE)]);
+    }
+
+    /**
+     * Téléphone ATAK natif (COMSPEC Link « Garmin.Report », 2.0.87) : la montre de l'app Garmin du joueur, envoyée en
+     * entier toutes les 5 min. Corps : {player_uid, call_sign, status: {bb, hr, stress, rest_hr, goal},
+     * days: [{day, steps, foot_m, …}], acts: [{day, at, type, place, world, m, sec}]}.
+     */
+    public function garmin(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $requireSteam = ComspecApiKeyAuth::matchedUserId() === null;
+        $actor = $this->guardArmaWrite($request, $tenantId, $requireSteam);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $repo = new \App\Repositories\AtakGarminRepository();
+        if (!$repo->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+        $body = $this->jsonBody($request);
+        $user = null;
+        $sessionUserId = ComspecApiKeyAuth::matchedUserId();
+        if ($sessionUserId !== null) {
+            $user = $this->userRepository->findById($sessionUserId, $tenantId);
+        }
+        $uid = $actor['steam_uid'] ?? SteamId::normalize((string) ($body['player_uid'] ?? $body['steam_uid'] ?? ''));
+        if ($user === null && $uid !== null) {
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $uid);
+        }
+        if ($user === null) {
+            return Response::json(['ok' => true, 'matched' => false]);
+        }
+        $report = \App\Repositories\AtakGarminRepository::normalizeReport($body);
+
+        return Response::json([
+            'ok' => $repo->saveReport($tenantId, (int) $user['id'], $report),
+            'matched' => true,
+            'days' => count($report['days']),
+            'activities' => count($report['activities']),
+        ]);
     }
 
     /**
@@ -6694,10 +7244,28 @@ class AtakApiController
             return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
         }
         $body = $this->jsonBody($request);
+        $missionKey = \App\Support\AtakMissionKey::normalize($body['mission_key'] ?? null);
         $matched = 0;
         $recorded = 0;
         $unmatched = 0;
-        foreach (\App\Repositories\AtakScreenTimeRepository::normalizeBatch($body['players'] ?? []) as $p) {
+        $players = \App\Repositories\AtakScreenTimeRepository::normalizeBatch($body['players'] ?? []);
+        // Session joueur : uniquement son Steam (SEC-042). Sans session, source client → Steam du signataire seulement.
+        $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
+        if (is_string($sessionSteam) && $sessionSteam !== '') {
+            $players = array_values(array_filter(
+                $players,
+                static fn (array $p): bool => $p['player_uid'] === $sessionSteam
+            ));
+        } elseif (($body['source'] ?? '') === 'client') {
+            $clientSteam = is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null;
+            $players = $clientSteam === null || $clientSteam === ''
+                ? []
+                : array_values(array_filter(
+                    $players,
+                    static fn (array $p): bool => $p['player_uid'] === $clientSteam
+                ));
+        }
+        foreach ($players as $p) {
             $uid = SteamId::normalize($p['player_uid']);
             $user = $uid !== null ? $this->userRepository->findBySteamIdForTenant($tenantId, $uid) : null;
             if ($user === null) {
@@ -6705,10 +7273,651 @@ class AtakApiController
                 continue;
             }
             $matched++;
-            $recorded += $repo->addItems($tenantId, (int) $user['id'], $p['items']);
+            $recorded += $repo->addItems($tenantId, (int) $user['id'], $p['items'], null, $missionKey, \App\Repositories\AtakScreenTimeRepository::SOURCE_SERVER);
         }
 
         return Response::json(['ok' => true, 'matched' => $matched, 'unmatched' => $unmatched, 'recorded' => $recorded]);
+    }
+
+    /**
+     * Serveur Arma (COMSPEC Link « Distance.Batch », app Distances de l'ATAK natif) : distances parcourues et heures de
+     * pilote de tous les joueurs, comptées par le serveur et envoyées toutes les 10 min.
+     * Corps : {mission_key, players: [{player_uid, call_sign, steps, foot_m, foot_s, land_m, land_s, sea_m, sea_s, air_m,
+     * air_s, halo_m, halo_s, halo_jumps, pilot: [{class, label, kind: heli|plane, seconds, meters}]}], source?}.
+     * source = « client » : envoi du téléphone d'un joueur quand le serveur n'est pas relié à Athena (lui seul est gardé).
+     */
+    public function distanceBatch(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $repo = new \App\Repositories\AtakDistanceRepository();
+        if (!$repo->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+        $body = $this->jsonBody($request);
+        $missionKey = \App\Support\AtakMissionKey::normalize($body['mission_key'] ?? null);
+        $batch = \App\Repositories\AtakDistanceRepository::normalizeBatch($body['players'] ?? []);
+        // Session de joueur : uniquement son Steam, quelle que soit la source annoncée.
+        // Serveur dédié (clé de communauté, pas de session joueur) : le camp entier.
+        $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
+        if (is_string($sessionSteam) && $sessionSteam !== '') {
+            $batch = \App\Repositories\AtakDistanceRepository::onlyPlayer($batch, $sessionSteam);
+        } elseif (($body['source'] ?? '') === 'client') {
+            $batch = \App\Repositories\AtakDistanceRepository::onlyPlayer($batch, is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null);
+        }
+        $matched = 0;
+        $unmatched = 0;
+        foreach ($batch as $p) {
+            $uid = SteamId::normalize($p['player_uid']);
+            $user = $uid !== null ? $this->userRepository->findBySteamIdForTenant($tenantId, $uid) : null;
+            if ($user === null) {
+                $unmatched++;
+                continue;
+            }
+            if ($repo->addSession($tenantId, (int) $user['id'], $missionKey, $p['stats'], $p['pilot'])) {
+                $matched++;
+            }
+        }
+
+        return Response::json(['ok' => true, 'matched' => $matched, 'unmatched' => $unmatched]);
+    }
+
+    /**
+     * Serveur Arma : ce que l'administration du site impose aux joueurs connectés (/admin/parc-atak).
+     * Corps : {players: [steam…]} (vide = toute la communauté). Réponse : {ok, messages: [{id, steam_uid, title, body,
+     * level, require_ack, created_at}], blocked: [{steam_uid, message, until}]}. Le serveur affiche les messages au joueur
+     * puis appelle /api/atak/admin-control/ack ; un joueur bloqué voit son ATAK verrouillé.
+     */
+    public function adminControlPending(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $body = $this->jsonBody($request);
+        $steams = [];
+        $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
+        if (is_string($sessionSteam) && $sessionSteam !== '') {
+            $steams[$sessionSteam] = $sessionSteam;
+        } else {
+            foreach (is_array($body['players'] ?? null) ? array_slice($body['players'], 0, 300) : [] as $p) {
+                $s = SteamId::normalize(is_array($p) ? (string) ($p['player_uid'] ?? $p['steam_uid'] ?? '') : (string) $p);
+                if ($s !== null) {
+                    $steams[$s] = $s;
+                }
+            }
+        }
+        $repo = new \App\Repositories\AtakAdminControlRepository();
+        $messages = [];
+        foreach ($repo->pendingForTenant($tenantId, array_values($steams)) as $m) {
+            $messages[] = [
+                'id' => (int) $m['id'],
+                'steam_uid' => (string) ($m['steam_uid'] ?? ''),
+                'kind' => (string) ($m['kind'] ?? 'message'),
+                'title' => (string) $m['title'],
+                'body' => (string) $m['body'],
+                'level' => (string) $m['level'],
+                'require_ack' => (int) $m['require_ack'] === 1,
+                'created_at' => (string) $m['created_at'],
+            ];
+        }
+        $blocked = [];
+        foreach ($steams as $s) {
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $s);
+            $block = $repo->activeBlockFor($tenantId, $user !== null ? (int) $user['id'] : null, $s);
+            if ($block !== null) {
+                $blocked[] = [
+                    'steam_uid' => $s,
+                    'message' => \App\Support\AtakAdminBlockGate::playerMessage($block),
+                    'until' => (string) ($block['expires_at'] ?? ''),
+                ];
+            }
+        }
+
+        return Response::json(['ok' => true, 'messages' => $messages, 'blocked' => $blocked]);
+    }
+
+    /** Serveur Arma : messages imposés affichés ({ids, state: "delivered"}) ou validés par le joueur ({ids, state: "acked"}). */
+    public function adminControlAck(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $body = $this->jsonBody($request);
+        $ids = is_array($body['ids'] ?? null) ? array_slice($body['ids'], 0, 200) : [];
+        $state = ($body['state'] ?? '') === 'acked' ? 'acked' : 'delivered';
+        $repo = new \App\Repositories\AtakAdminControlRepository();
+        $sessionUser = \App\Support\ComspecApiKeyAuth::matchedUserId();
+        $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
+        $n = ($sessionUser !== null || (is_string($sessionSteam) && $sessionSteam !== ''))
+            ? $repo->markMessagesForPlayer($r, $sessionUser, is_string($sessionSteam) ? $sessionSteam : null, array_map('intval', $ids), $state)
+            : $repo->markMessages($r, array_map('intval', $ids), $state);
+
+        return Response::json(['ok' => true, 'updated' => $n]);
+    }
+
+    /**
+     * ATAK du joueur (COMSPEC Link « AdminControl.Poll ») : ses messages et avis de l'administration pas encore validés
+     * (compromission, annulation, données réinitialisées, certificat, numéro, message imposé). Corps : {player_uid?}.
+     * Réponse : {ok, messages: [{id, kind, level, title, body, require_ack, created_at}]}.
+     */
+    public function adminControlMine(Request $request, array $params = []): Response
+    {
+        $ctx = $this->adminControlPlayer($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $steam] = $ctx;
+        $messages = [];
+        $fleet = new \App\Repositories\AtakAdminControlRepository();
+        $events = [];
+        foreach ($fleet->pendingForPlayer($tenantId, $userId, $steam) as $m) {
+            // Compromission : origine, état et certificats révoqués pour le mode « terminal compromis » de l'ATAK.
+            $meta = '';
+            $uid = trim((string) ($m['terminal_uid'] ?? ''));
+            if (in_array((string) ($m['kind'] ?? ''), ['compromise', 'compromise_cleared'], true)) {
+                $events[$uid] ??= $uid !== '' ? $fleet->compromiseEventsFor($tenantId, $uid, 10) : [];
+                $meta = \App\Support\AtakCompromiseNoticeMeta::build($m, $events[$uid]);
+            }
+            $messages[] = [
+                'id' => (int) $m['id'],
+                'kind' => (string) ($m['kind'] ?? 'message'),
+                'level' => (string) $m['level'],
+                'title' => (string) $m['title'],
+                'body' => (string) $m['body'],
+                'require_ack' => (int) $m['require_ack'] === 1,
+                'created_at' => (string) $m['created_at'],
+                'meta' => $meta,
+            ];
+        }
+        // CR de fin d'opération : fiche dans le texte de l'avis et réglages de la communauté, pour un ATAK qui sait les lire.
+        $caps = (string) ($this->jsonBody($request)['caps'] ?? '');
+        try {
+            $messages = (new \App\Services\Atak\AtakDebriefService(null, $fleet))->decoratePoll(
+                $tenantId,
+                $userId,
+                $steam,
+                $messages,
+                in_array(\App\Services\Atak\AtakDebriefService::CAPABILITY, explode(',', $caps), true)
+            );
+        } catch (\Throwable) {
+        }
+
+        return Response::json(['ok' => true, 'messages' => $messages]);
+    }
+
+    /** ATAK du joueur (« AdminControl.Ack ») : {ids, state: "delivered" | "acked"}, sur ses propres messages seulement. */
+    public function adminControlMineAck(Request $request, array $params = []): Response
+    {
+        $ctx = $this->adminControlPlayer($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $steam] = $ctx;
+        $body = $this->jsonBody($request);
+        $ids = is_array($body['ids'] ?? null) ? array_slice($body['ids'], 0, 50) : [];
+        $state = ($body['state'] ?? '') === 'acked' ? 'acked' : 'delivered';
+        $n = (new \App\Repositories\AtakAdminControlRepository())->markMessagesForPlayer($tenantId, $userId, $steam, array_map('intval', $ids), $state);
+        if ($n > 0) {
+            // CR de fin d'opération : affiché, ou lu pour une demande « à lire ».
+            (new \App\Repositories\AtakDebriefRepository())->markMessages(array_map('intval', $ids), $state);
+        }
+
+        return Response::json(['ok' => true, 'updated' => $n]);
+    }
+
+    /**
+     * App « Admin » de l'ATAK natif (COMSPEC Link « GameAdmin.Fleet ») : parc ATAK de la communauté pour le gestionnaire
+     * connecté en jeu par sa propre session. {q, offset} -> {role, total, rows}. Joueur sans droit : role "none", aucune fiche.
+     */
+    public function gameAdminFleet(Request $request, array $params = []): Response
+    {
+        $ctx = $this->gameAdminCaller($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, , $role] = $ctx;
+        if ($role === null) {
+            return Response::json(['ok' => true, 'role' => 'none', 'total' => 0, 'rows' => []]);
+        }
+        $body = $this->jsonBody($request);
+        $fleet = (new \App\Services\Atak\AtakGameAdminService())->fleet(
+            $tenantId,
+            mb_substr(trim((string) ($body['q'] ?? '')), 0, 80),
+            max(0, (int) ($body['offset'] ?? 0))
+        );
+
+        return Response::json(['ok' => true, 'role' => $role] + $fleet);
+    }
+
+    /** App « Admin » de l'ATAK natif (COMSPEC Link « GameAdmin.Action ») : {action, terminal_id | block_id, ...}. */
+    public function gameAdminAction(Request $request, array $params = []): Response
+    {
+        $ctx = $this->gameAdminCaller($request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $user, $role] = $ctx;
+        if ($role === null) {
+            return Response::json(['ok' => false, 'error' => 'forbidden', 'message' => 'Réservé à la gestion de la communauté.'], 403);
+        }
+        $body = $this->jsonBody($request);
+        $name = trim((string) ($user['callsign'] ?? '')) ?: trim((string) ($user['display_name'] ?? '')) ?: 'Gestion';
+        $out = (new \App\Services\Atak\AtakGameAdminService())->act($tenantId, $role, [(int) $user['id'], $name], (string) ($body['action'] ?? ''), $body);
+
+        return Response::json($out, $out['ok'] ? 200 : 422);
+    }
+
+    /**
+     * App Médical de l'ATAK natif (COMSPEC Link « MedicalRoster ») : fiches médicales des membres de la communauté
+     * (groupe sanguin, poids, taille, intolérances, allergies), pour le joueur connecté en jeu par sa propre session
+     * qui est gestionnaire, au pilotage des effectifs ou titulaire d'une fonction médicale.
+     * -> {ok, role, generated_at, count, rows}. Joueur sans droit : 403 « forbidden ».
+     */
+    public function medicalRoster(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        // La clé d'accès commune du serveur ne dit pas qui joue : la session de jeu du joueur est exigée.
+        $userId = ComspecApiKeyAuth::matchedUserId();
+        $user = $userId !== null ? $this->userRepository->findById($userId) : null;
+        if ($user === null) {
+            return Response::json(['ok' => false, 'error' => 'session_required', 'message' => 'Reliez votre compte Athena en jeu.'], 403);
+        }
+        $service = new \App\Services\Atak\AtakMedicalRosterService($this->userRepository);
+        $role = $service->role($r, $userId, $user);
+        if ($role === null) {
+            return Response::json(['ok' => false, 'error' => 'forbidden', 'message' => 'Fiches médicales réservées aux médecins, à la gestion et au pilotage des effectifs.'], 403);
+        }
+        $rows = $service->rows($r);
+
+        return Response::json(['ok' => true, 'role' => $role, 'generated_at' => gmdate('Y-m-d H:i:s'), 'count' => count($rows), 'rows' => $rows]);
+    }
+
+    /**
+     * Gestionnaire qui appelle depuis le jeu : il faut sa session de jeu (la clé du serveur ne dit pas qui joue).
+     *
+     * @return array{0: int, 1: array<string, mixed>, 2: ?string}|Response
+     */
+    private function gameAdminCaller(Request $request): array|Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $userId = ComspecApiKeyAuth::matchedUserId();
+        $user = $userId !== null ? $this->userRepository->findById($userId) : null;
+        if ($user === null) {
+            return Response::json(['ok' => false, 'error' => 'session_required', 'message' => 'Reliez votre compte Athena en jeu.'], 403);
+        }
+
+        return [$r, $user, (new \App\Services\Atak\AtakGameAdminService())->role($r, $userId, $user)];
+    }
+
+    /**
+     * Joueur qui appelle : compte de la session de jeu, sinon Steam du corps.
+     *
+     * @return array{0: int, 1: ?int, 2: ?string}|Response
+     */
+    private function adminControlPlayer(Request $request): array|Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $sessionUserId = ComspecApiKeyAuth::matchedUserId();
+        $actor = $this->guardArmaWrite($request, $tenantId, $sessionUserId === null);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $body = $this->jsonBody($request);
+        $steam = $actor['steam_uid'] ?? SteamId::normalize((string) ($body['player_uid'] ?? $body['steam_uid'] ?? ''));
+        $userId = $sessionUserId;
+        if ($userId === null && $steam !== null) {
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $steam);
+            $userId = $user !== null ? (int) $user['id'] : null;
+        }
+        if ($userId === null && $steam === null) {
+            return Response::json(['ok' => true, 'messages' => []]);
+        }
+
+        return [$tenantId, $userId, $steam];
+    }
+
+    /**
+     * COMSPEC Link (« Item.Icons », 2.0.88) : parmi les classes portées par le joueur, celles dont la communauté n'a
+     * pas encore l'icône. Corps : {classes: [classe…]} (200 au plus). Réponse : {ok, missing: [classe…]} (25 au plus).
+     */
+    public function itemIconsMissing(Request $request, array $params = []): Response
+    {
+        $ctx = $this->itemIconsContext($request, 64 * 1024);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $repo] = $ctx;
+        $classes = $this->jsonBody($request)['classes'] ?? [];
+
+        return Response::json(['ok' => true, 'missing' => $repo->missing($tenantId, is_array($classes) ? array_values($classes) : [])]);
+    }
+
+    /**
+     * COMSPEC Link (« Item.Icons ») : icône d'une classe, une seule fois. Corps : {class, picture, paa (base64 du .paa
+     * lu dans le PBO, réduit par la DLL au mipmap utile, 1 Mo au plus)} ou {class, picture, status: not_found} quand le fichier est introuvable chez le
+     * joueur. Le .paa est décodé ici (pas de fichier client stocké tel quel) puis rangé en PNG par empreinte.
+     */
+    public function itemIconUpload(Request $request, array $params = []): Response
+    {
+        $ctx = $this->itemIconsContext($request, HttpJsonBody::MAX_BYTES);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $repo] = $ctx;
+        $body = $this->jsonBody($request);
+        $class = \App\Repositories\GameItemIconRepository::validClass($body['class'] ?? null);
+        if ($class === null) {
+            return Response::json(['ok' => false, 'error' => 'invalid_class'], 400);
+        }
+        $picture = is_string($body['picture'] ?? null) ? $body['picture'] : '';
+        $paaB64 = is_string($body['paa'] ?? null) ? $body['paa'] : '';
+        try {
+            if ($paaB64 === '') {
+                $status = ($body['status'] ?? '') === 'not_found' ? 'not_found' : 'invalid';
+                $repo->mark($tenantId, $class, $status, null, null, null, $picture);
+
+                return Response::json(['ok' => true, 'status' => $status]);
+            }
+            $paa = base64_decode($paaB64, true);
+            if ($paa === false || $paa === '') {
+                return Response::json(['ok' => false, 'error' => 'invalid_base64'], 400);
+            }
+            $res = $repo->storePaa($tenantId, $class, $paa, $picture);
+        } catch (\Throwable $e) {
+            error_log('[item-icons] ' . $class . ' ' . $e->getMessage());
+
+            return Response::json(['ok' => false, 'error' => 'store_failed'], 500);
+        }
+
+        return Response::json(['ok' => true] + $res);
+    }
+
+    /**
+     * @return array{0: int, 1: \App\Repositories\GameItemIconRepository}|Response
+     */
+    private function itemIconsContext(Request $request, int $maxBytes): array|Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > $maxBytes || strlen(HttpJsonBody::rawJson()) > $maxBytes) {
+            return Response::json(['ok' => false, 'error' => 'payload_too_large'], 413);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $actor = $this->guardArmaWrite($request, $r, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $repo = new \App\Repositories\GameItemIconRepository();
+        if (!$repo->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+
+        return [$r, $repo];
+    }
+
+    /**
+     * File d'envoi de COMSPEC Link (« SendQueue.Report ») : bilan de la file d'un joueur ou d'un serveur Arma,
+     * envoyé toutes les ~30 s quand quelque chose a changé. Corps : steam_uid, call_sign, client_kind (client|server),
+     * extension_version, mod_version, summary {queued, sending, retry, failed, done, overload…}, items (100 au plus).
+     * Lu par le back-office « Files d'envoi Athena » (/back-office/atak/files-envoi).
+     */
+    public function sendQueueReport(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $max = \App\Repositories\AtakSendQueueRepository::MAX_BODY_BYTES;
+        if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > $max || strlen(HttpJsonBody::rawJson()) > $max) {
+            return Response::json(['ok' => false, 'error' => 'payload_too_large', 'message' => 'Bilan trop gros (256 Ko au plus).'], 413);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $repo = new \App\Repositories\AtakSendQueueRepository();
+        if (!$repo->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+        $body = $this->jsonBody($request);
+        $steam = isset($actor['steam_uid']) && is_string($actor['steam_uid']) ? $actor['steam_uid'] : null;
+        $report = \App\Repositories\AtakSendQueueRepository::normalizeReport($body, $steam);
+        if ($report === null) {
+            return Response::json(['ok' => false, 'error' => 'invalid_payload', 'message' => 'steam_uid est requis pour un client.'], 400);
+        }
+        try {
+            $repo->record($tenantId, $report);
+        } catch (\Throwable $e) {
+            error_log('[atak send-queue] ' . $e->getMessage());
+
+            return Response::json(['ok' => false, 'error' => 'store_failed'], 500);
+        }
+
+        return Response::json(['ok' => true]);
+    }
+
+    /** Fenêtre lue en base par relève de tchat avec curseur (le dépôt borne de son côté à 200). */
+    private const CHAT_FETCH_MAX = 200;
+
+    /**
+     * Fenêtres enchaînées au plus par relève : traverse un bloc de messages cachés sans bloquer le curseur.
+     * La première fait 2 × limit (cas normal : une seule lecture), les suivantes CHAT_FETCH_MAX : au plus
+     * 2 × limit + 600 lignes brutes par relève (650 pour COMSPEC Link, 680 pour l'ATAK natif).
+     */
+    private const CHAT_SCAN_MAX_PASSES = 4;
+
+    /**
+     * Octets de sortie DLL visés par relève avec curseur. La DLL du jeu (COMSPECExtension, GetChatMessages, même
+     * Extension.cs pour COMSPEC Link et l'ATAK natif) écrit une ligne « id\tauteur\tcorps\tcreated_at\tcanal\n »
+     * par message, corps coupé à 280 caractères, et coupe le tout à 7 996 octets UTF-8 en gardant les lignes les
+     * PLUS RÉCENTES : les plus anciennes étaient perdues pour de bon, puisque le client avance son curseur au plus
+     * grand id reçu. Marge d'environ 500 octets sous cette limite.
+     */
+    private const GAME_CHAT_OUTPUT_BUDGET = 7500;
+
+    /** Auteur réservé au transport des réglages d'affichage des camps (« REGLAGES AFFICHAGE|… »). */
+    private static function isReservedSettingsAuthor(string $author): bool
+    {
+        return mb_strtoupper(trim($author)) === 'REGLAGES';
+    }
+
+    /**
+     * Messages à montrer : sans le bruit technique déjà en base, et sans les MP qui ne concernent pas l'indicatif.
+     *
+     * @param list<mixed> $raw
+     * @return list<array<string, mixed>>
+     */
+    private static function visibleChatRows(array $raw, string $mpCallsign): array
+    {
+        $out = [];
+        foreach ($raw as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $body = (string) ($row['body'] ?? '');
+            $author = (string) ($row['author'] ?? '');
+            // Protocole d'ordres C2 : la relève avec curseur lit la fenêtre brute et le masque ici.
+            if (AtakDataRepository::isProtocolOrderChatBody($body)) {
+                continue;
+            }
+            // Anciens messages parfois découpés (auteur REGLAGES / corps AFFICHAGE|…)
+            if (TacticalAlertParser::isHiddenSystemChatBody($body)) {
+                continue;
+            }
+            if (
+                self::isReservedSettingsAuthor($author)
+                && str_starts_with(mb_strtoupper(trim($body)), 'AFFICHAGE|')
+            ) {
+                continue;
+            }
+            if ($mpCallsign !== '') {
+                $mp = MpMessageParser::parse(isset($row['body']) ? (string) $row['body'] : null);
+                if ($mp !== null && !MpMessageParser::concernsCallSign($mp, $mpCallsign)) {
+                    continue;
+                }
+            }
+            $out[] = $row;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Relève de tchat avec curseur : les messages visibles les PLUS ANCIENS après $afterId, $limit au plus.
+     *
+     * Le client (COMSPEC Link, ATAK natif) avance son curseur au plus grand id REÇU. Renvoyer les plus récents
+     * d'une rafale faisait donc sauter définitivement les plus anciens (TEST-006). On enchaîne jusqu'à
+     * CHAT_SCAN_MAX_PASSES fenêtres pour qu'un bloc de messages cachés, ou de MP qui ne concernent pas cet
+     * indicatif, ne laisse pas le curseur sur une réponse vide, ce qui aurait figé la relève.
+     *
+     * $fetch doit rendre la fenêtre BRUTE (lignes « ORDER|… » comprises) : « pleine » et « jusqu'où avancer » se
+     * jugent sur les lignes lues en base, le masquage vient après (visibleChatRows). Après la première fenêtre, on lit
+     * CHAT_FETCH_MAX lignes à la fois : un bloc caché se traverse en peu de lectures.
+     *
+     * @param callable(int, int): mixed $fetch (curseur, taille de fenêtre) → lignes brutes, ordre id croissant
+     * @return list<array<string, mixed>>
+     */
+    private static function scanChatAfter(
+        callable $fetch,
+        int $afterId,
+        int $limit,
+        int $fetchLimit,
+        string $mpCallsign
+    ): array {
+        $limit = max(1, $limit);
+        $fetchLimit = max(1, $fetchLimit);
+        $cursor = max(0, $afterId);
+        $rows = [];
+        for ($pass = 0; $pass < self::CHAT_SCAN_MAX_PASSES; $pass++) {
+            $window = $pass === 0 ? $fetchLimit : max($fetchLimit, self::CHAT_FETCH_MAX);
+            $raw = $fetch($cursor, $window);
+            $raw = is_array($raw) ? array_values($raw) : [];
+            if ($raw === []) {
+                break;
+            }
+            $maxId = 0;
+            foreach ($raw as $rawRow) {
+                if (is_array($rawRow)) {
+                    $maxId = max($maxId, (int) ($rawRow['id'] ?? 0));
+                }
+            }
+            foreach (self::visibleChatRows($raw, $mpCallsign) as $visibleRow) {
+                $rows[] = $visibleRow;
+            }
+            if (count($rows) >= $limit || count($raw) < $window || $maxId <= $cursor) {
+                break;
+            }
+            $cursor = $maxId;
+        }
+
+        return count($rows) > $limit ? array_slice($rows, 0, $limit) : $rows;
+    }
+
+    /**
+     * Relève avec curseur : les plus anciens messages, tant que la sortie de la DLL du jeu tient dans
+     * GAME_CHAT_OUTPUT_BUDGET. La suite part à la relève suivante (le client repart du plus grand id reçu).
+     * Toujours au moins un message, sinon un message trop long immobiliserait le curseur.
+     *
+     * @param list<mixed> $rows messages prêts à envoyer, ordre id croissant
+     * @return list<mixed>
+     */
+    private static function keepWithinGameChatOutput(array $rows, int $budget = self::GAME_CHAT_OUTPUT_BUDGET): array
+    {
+        $kept = [];
+        $bytes = 0;
+        foreach ($rows as $row) {
+            $lineBytes = is_array($row) ? self::gameChatLineBytes($row) : 0;
+            if ($kept !== [] && $bytes + $lineBytes > $budget) {
+                break;
+            }
+            $kept[] = $row;
+            $bytes += $lineBytes;
+        }
+
+        return $kept;
+    }
+
+    /**
+     * Octets UTF-8 de la ligne que la DLL écrit pour ce message (SimplifyChatMessagesJson). Estimation par excès :
+     * la DLL coupe le corps à 280 unités UTF-16, 280 caractères en gardent au moins autant d'octets.
+     *
+     * @param array<string, mixed> $row
+     */
+    private static function gameChatLineBytes(array $row): int
+    {
+        $body = self::gameChatField($row['body'] ?? '');
+        if (mb_strlen($body, 'UTF-8') > 280) {
+            $body = mb_substr($body, 0, 280, 'UTF-8');
+        }
+        $channel = self::gameChatField($row['channel_key'] ?? ($row['channel'] ?? ''));
+        if (trim($channel) === '') {
+            $channel = 'general';
+        }
+
+        // 4 tabulations et le saut de ligne final.
+        return 5
+            + self::gameChatFieldBytes(self::gameChatField($row['id'] ?? ''))
+            + self::gameChatFieldBytes(self::gameChatField($row['author'] ?? ''))
+            + self::gameChatFieldBytes($body)
+            + self::gameChatFieldBytes(self::gameChatField($row['created_at'] ?? ''))
+            + self::gameChatFieldBytes($channel);
+    }
+
+    private static function gameChatField(mixed $value): string
+    {
+        return is_scalar($value) ? (string) $value : '';
+    }
+
+    /** Champ nettoyé comme par la DLL : tabulation → espace, saut de ligne → « — » entre espaces, \r retiré. */
+    private static function gameChatFieldBytes(string $value): int
+    {
+        return strlen(str_replace(["\t", "\n", "\r"], [' ', ' — ', ''], $value));
     }
 
     public function chatIndex(Request $request, array $params = []): Response
@@ -6731,57 +7940,40 @@ class AtakApiController
         $afterId = ($afterRaw !== null && $afterRaw !== '') ? (int) $afterRaw : 0;
         $channelRaw = trim((string) ($request->query('channel') ?? $request->query('channel_key') ?? ''));
         $channelKey = $channelRaw !== '' ? \App\Support\AtakChatChannel::normalizeKey($channelRaw) : null;
-        // Sur-échantillonner puis filtrer le bruit technique (réglages camps) déjà en base.
-        $fetchLimit = min(max((int) ($limit * 2), $limit), 500);
-        try {
-            if ($afterId > 0) {
-                $rows = $this->atak->getChatMessagesAfter($tenantId, $mapId, $afterId, $fetchLimit, $channelKey);
-            } else {
-                $rows = $this->atak->getChatMessages($tenantId, $mapId, $fetchLimit, $channelKey);
-            }
-        } catch (\Throwable) {
-            return Response::json([]);
-        }
-        $rows = array_values(array_filter(
-            is_array($rows) ? $rows : [],
-            static function ($row): bool {
-                if (!is_array($row)) {
-                    return false;
-                }
-                $body = (string) ($row['body'] ?? '');
-                $author = (string) ($row['author'] ?? '');
-                // Anciens messages parfois découpés (auteur REGLAGES / corps AFFICHAGE|…)
-                if (TacticalAlertParser::isHiddenSystemChatBody($body)) {
-                    return false;
-                }
-                if (
-                    mb_strtoupper(trim($author)) === 'REGLAGES'
-                    && str_starts_with(mb_strtoupper(trim($body)), 'AFFICHAGE|')
-                ) {
-                    return false;
-                }
-
-                return true;
-            }
-        ));
-
-        // Filtrage MP P2P : TOC voit tout ; ?callsign= ne remonte que les fils où l’indicatif est partie.
+        // Filtrage MP P2P : TOC voit tout ; ?callsign= ne remonte que les fils où l'indicatif est partie.
         $mpCallsign = trim((string) ($request->query('callsign') ?? $request->query('for_callsign') ?? ''));
-        if ($mpCallsign !== '') {
-            $rows = array_values(array_filter(
-                $rows,
-                static function ($row) use ($mpCallsign): bool {
-                    if (!is_array($row)) {
-                        return false;
-                    }
-                    $mp = MpMessageParser::parse(isset($row['body']) ? (string) $row['body'] : null);
-                    if ($mp === null) {
-                        return true;
-                    }
-
-                    return MpMessageParser::concernsCallSign($mp, $mpCallsign);
-                }
-            ));
+        // Sur-échantillonner puis filtrer le bruit technique (réglages camps) déjà en base.
+        if ($afterId > 0) {
+            // Relève du jeu : on renvoie les messages les PLUS ANCIENS après le curseur, pas les plus récents.
+            // Le client avance « after » au plus grand id reçu : garder les plus récents d'une rafale faisait
+            // sauter définitivement les plus anciens (TEST-006). Il récupère la suite à la relève suivante.
+            // Plusieurs fenêtres : un bloc de messages cachés, ou qui ne concernent pas cet indicatif, ne doit
+            // pas immobiliser le curseur sur une réponse vide.
+            $fetchLimit = min(max((int) ($limit * 2), $limit), self::CHAT_FETCH_MAX);
+            try {
+                $rows = self::scanChatAfter(
+                    fn (int $cursor, int $window): array
+                        => $this->atak->getChatMessagesAfter($tenantId, $mapId, $cursor, $window, $channelKey, true),
+                    $afterId,
+                    $limit,
+                    $fetchLimit,
+                    $mpCallsign
+                );
+            } catch (\Throwable) {
+                return Response::json([]);
+            }
+        } else {
+            // Premier instantané, sans curseur : les plus RÉCENTS, c'est ce que le joueur veut voir à l'ouverture.
+            $fetchLimit = min(max((int) ($limit * 2), $limit), 500);
+            try {
+                $raw = $this->atak->getChatMessages($tenantId, $mapId, $fetchLimit, $channelKey);
+            } catch (\Throwable) {
+                return Response::json([]);
+            }
+            $rows = self::visibleChatRows(is_array($raw) ? array_values($raw) : [], $mpCallsign);
+            if (count($rows) > $limit) {
+                $rows = array_slice($rows, -$limit);
+            }
         }
 
         // Enrichissement léger pour l’UI (groupe / MP / tactique déjà parsé côté JS aussi).
@@ -6813,14 +8005,14 @@ class AtakApiController
         }
         unset($chatRow);
 
-        if (count($rows) > $limit) {
-            $rows = array_slice($rows, -$limit);
-        }
-
         try {
             $rows = $this->applyIntelScramble($request, $tenantId, $mapId, 'chat', $rows);
         } catch (\Throwable) {
             // Un brouillage intel défaillant ne doit pas couper le journal radio.
+        }
+        if ($afterId > 0) {
+            // Relève du jeu : pas plus que ce que la DLL rend sans couper, mesuré sur le texte réellement envoyé.
+            $rows = self::keepWithinGameChatOutput(array_values($rows));
         }
 
         return Response::json($rows);
@@ -6871,9 +8063,11 @@ class AtakApiController
         } catch (\Throwable) {
         }
         $alerts = $this->enrichMedicalAlertsWithTriage($tenantId, $alerts);
-        $alerts = $this->reconcileMedicalAlertsWithUnitHealth($tenantId, $mapId, $alerts);
+        // Une seule lecture des unités pour la réconciliation et les blessés (sondé toutes les 8 s par joueur).
+        $mapUnits = $this->atak->getUnits($tenantId, $mapId);
+        $alerts = $this->reconcileMedicalAlertsWithUnitHealth($tenantId, $mapId, $alerts, $mapUnits);
         $alerts = MedicalAlertParser::collapseToHighestSeverityPerCallSign($alerts);
-        $criticalUnits = $this->atak->getUnitsWithCriticalHealth($tenantId, $mapId);
+        $criticalUnits = $this->atak->getUnitsWithCriticalHealth($tenantId, $mapId, $mapUnits);
         $emergencyCount = 0;
         foreach ($alerts as $a) {
             if (($a['severity'] ?? '') === 'critical' && empty($a['triage']['is_resolved'])) {
@@ -7139,8 +8333,12 @@ class AtakApiController
             if ($row === null && $cs !== '' && isset($byAuthorAny[$cs])) {
                 $row = $byAuthorAny[$cs];
             }
+            // Cliché confidentiel : pas de vignette ni de légende sans l'habilitation (même règle que les flux photo).
+            if (is_array($row) && !empty($row['is_confidential']) && !$this->canViewConfidentialRecon()) {
+                $row = null;
+            }
             if (is_array($row)) {
-                $feed['snapshot_url'] = \App\Support\ReconImageStorage::publicUrl(basename((string) ($row['image_path'] ?? '')));
+                $feed['snapshot_url'] = \App\Support\ReconImageStorage::urlForRow($row);
                 $feed['snapshot_id'] = (int) ($row['id'] ?? 0);
                 $feed['snapshot_at'] = $row['created_at'] ?? $row['captured_at'] ?? null;
                 $feed['snapshot_caption'] = $row['caption'] ?? null;
@@ -7173,6 +8371,20 @@ class AtakApiController
     /**
      * Modules pont ATAK Enhanced / cTab (activables par communauté).
      */
+    /**
+     * GET /api/atak/data-flows : données que le jeu remonte à Athena, choisies par la communauté (COMSPEC Link 2.0.94+,
+     * toutes les 30 s). Réglage : back-office, Configuration ATAK > Données remontées.
+     */
+    public function dataFlows(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+
+        return Response::json((new \App\Services\Tactical\AtakDataFlowsService())->get($r));
+    }
+
     public function modModules(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);
@@ -7260,8 +8472,58 @@ class AtakApiController
         }
 
         $payload = $svc->payloadForGame($tenantId);
+        // Palier « Donateur Athena » du joueur de la session jeu (écusson en jeu, overlay ATAK).
+        $gameUserId = ComspecApiKeyAuth::matchedUserId();
+        if ($gameUserId === null && ($steam = ComspecApiKeyAuth::matchedSteamId()) !== null) {
+            $row = $this->userRepository->findBySteamIdForTenant($tenantId, $steam);
+            $gameUserId = $row !== null ? (int) $row['id'] : null;
+        }
+        $payload += \App\Support\DonorGamePerk::payload($gameUserId);
 
         return Response::json($payload);
+    }
+
+    /**
+     * Conditions réseau appliquées en jeu depuis le menu Échap de l'ATAK natif (COMSPEC Link « NetConditions.Report »).
+     * Gardées pour la page Contrôle serveur (bloc « Appliquées en jeu ») ; les règles de la communauté ne changent pas.
+     * GET : dernières conditions reçues.
+     */
+    public function netConditions(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $svc = new \App\Services\Tactical\AtakExperienceService();
+        $method = strtoupper((string) ($request->method() ?? 'GET'));
+        if ($method === 'POST') {
+            if (!$this->authArma()) {
+                return Response::json(['error' => 'Unauthorized'], 401);
+            }
+            $actor = $this->guardArmaWrite($request, $tenantId, false);
+            if ($actor instanceof Response) {
+                return $actor;
+            }
+            $sessionUser = \App\Support\ComspecApiKeyAuth::matchedUserId();
+            if ($sessionUser !== null) {
+                $user = $this->userRepository->findById($sessionUser);
+                $role = (new \App\Services\Atak\AtakGameAdminService())->role($tenantId, $sessionUser, is_array($user) ? $user : null);
+                if ($role === null) {
+                    return Response::json([
+                        'ok' => false,
+                        'error' => 'forbidden',
+                        'message' => 'Seul un gestionnaire de la communauté peut enregistrer les conditions appliquées en jeu.',
+                    ], 403);
+                }
+            }
+            $steam = is_array($actor) && is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null;
+            $live = $svc->recordLiveNetwork($tenantId, $this->jsonBody($request), $steam);
+
+            return Response::json(['ok' => true, 'net_live' => $live]);
+        }
+
+        return Response::json(['net_live' => $svc->get($tenantId)['settings']['net_live'] ?? []]);
     }
 
     /**
@@ -7483,13 +8745,13 @@ class AtakApiController
      * @param list<array<string, mixed>> $alerts
      * @return list<array<string, mixed>>
      */
-    private function reconcileMedicalAlertsWithUnitHealth(int $tenantId, int $mapId, array $alerts): array
+    private function reconcileMedicalAlertsWithUnitHealth(int $tenantId, int $mapId, array $alerts, ?array $units = null): array
     {
         if ($alerts === []) {
             return $alerts;
         }
 
-        $unitsByCallSign = $this->buildUnitHealthByCallSign($tenantId, $mapId);
+        $unitsByCallSign = $this->buildUnitHealthByCallSign($tenantId, $mapId, $units);
         if ($unitsByCallSign === []) {
             return $alerts;
         }
@@ -7666,10 +8928,10 @@ class AtakApiController
     /**
      * @return array<string, array{health: string, status: string}>
      */
-    private function buildUnitHealthByCallSign(int $tenantId, int $mapId): array
+    private function buildUnitHealthByCallSign(int $tenantId, int $mapId, ?array $units = null): array
     {
         $out = [];
-        foreach ($this->atak->getUnits($tenantId, $mapId) as $unit) {
+        foreach ($units ?? $this->atak->getUnits($tenantId, $mapId) as $unit) {
             if (!is_array($unit)) {
                 continue;
             }
@@ -7915,6 +9177,22 @@ class AtakApiController
                 'hidden_from_chat' => true,
                 'order' => is_array($orderRow) ? $this->serializeOrder($orderRow) : null,
             ], 201);
+        }
+
+        // Ce que la lecture masquerait ensuite n'est plus stocké : invisible pour tous, une suite de ces lignes figeait
+        // la relève avec curseur de tous les clients du jeu (50 messages suffisaient pour COMSPEC Link). Les ordres
+        // complets et les réglages reconnus sont interceptés plus haut et ne passent pas par ici.
+        if (is_string($bodyText) && AtakDataRepository::isProtocolOrderChatBody($bodyText)) {
+            return Response::json([
+                'error' => 'order_incomplete',
+                'message' => 'Message refusé : « ORDER| » est réservé aux ordres complets (ORDER|identifiant|type|cible|priorité|émetteur).',
+            ], 422);
+        }
+        if (is_string($author) && self::isReservedSettingsAuthor($author)) {
+            return Response::json([
+                'error' => 'reserved_author',
+                'message' => 'Message refusé : l’auteur « REGLAGES » est réservé aux réglages d’affichage des camps.',
+            ], 422);
         }
 
         // Dédup alertes auto (KO / arrêt cardiaque) : ne pas réinsérer la même alerte en boucle.
@@ -8647,6 +9925,7 @@ class AtakApiController
      */
     public function ordersIndex(Request $request, array $params = []): Response
     {
+        $this->orderAliasUnitsCache = [];
         $r = $this->requireTenant($request);
         if ($r instanceof Response) {
             return $r;
@@ -8760,18 +10039,31 @@ class AtakApiController
             }
         }
 
+        // Web : réponses par joueur jointes à chaque ordre (le jeu n’en a pas besoin, la DLL ne lit que ses colonnes).
+        if (!$forGame && $orders !== []) {
+            $responses = $this->orderRepository->responsesForOrders($r, array_map(static fn (array $o): int => (int) ($o['db_id'] ?? 0), $orders));
+            foreach ($orders as &$serialized) {
+                $serialized['responses'] = $responses[(int) ($serialized['db_id'] ?? 0)] ?? [];
+            }
+            unset($serialized);
+        }
+
         $serverTime = date('Y-m-d H:i:s');
-        $cursor = $maxUpdated !== '' ? $maxUpdated : ($isDelta ? $since : $serverTime);
+        // COMSPEC Link (poll jeu toutes les 8 s) : il ne lit ni server_time ni cursor (SimplifyOrdersJson).
+        // Corps stable tant que les ordres ne changent pas → l’ETag de GameApiResponseCompactor peut renvoyer 304.
+        // L’heure serveur passe alors en en-tête X-Server-Time.
+        $stableForGame = $forGame && GameApiResponseCompactor::isGameClient($request->userAgent());
+        $cursor = $maxUpdated !== '' ? $maxUpdated : ($isDelta ? $since : ($stableForGame ? null : $serverTime));
         $orders = $this->applyIntelScramble($request, $r, $mapId, 'order', $orders);
 
-        return Response::json([
+        $payload = [
             'ok' => true,
             'mapId' => $mapId,
             'orders' => $orders,
             'delta' => $isDelta,
             'since' => $isDelta ? $since : null,
             'created_after' => $createdAfter !== '' ? $createdAfter : null,
-            'server_time' => $serverTime,
+            'server_time' => $stableForGame ? null : $serverTime,
             'cursor' => $cursor,
             'counts' => $counts,
             'canIssue' => $this->canIssueOrdersFromWeb(),
@@ -8785,7 +10077,13 @@ class AtakApiController
                 'custom_types' => $this->orderTypeRepository?->tablesReady() ?? false,
             ],
             'intel_view' => $this->resolveIntelView($request, $r, $mapId),
-        ]);
+        ];
+        $response = Response::json($payload);
+        if ($stableForGame) {
+            $response->header('X-Server-Time', $serverTime);
+        }
+
+        return $response;
     }
 
     /**
@@ -9510,10 +10808,19 @@ class AtakApiController
             }
         }
 
+        // Réponse de ce joueur gardée à part (qui a reçu, exécute, terminé), même si l’ordre est déjà plus avancé.
+        $this->orderRepository->recordResponse($r, (int) ($existing['id'] ?? 0), $by, $normalized, $note);
+
         $row = null;
         try {
             $row = $this->orderRepository->updateStatus($r, $orderMapId, $externalId, $normalized, $by, $note);
         } catch (\InvalidArgumentException $e) {
+            if ($e->getMessage() === 'invalid_transition'
+                && $normalized !== 'CANCELLED'
+                && $this->orderRepository->statusRank((string) ($existing['status'] ?? '')) >= $this->orderRepository->statusRank($normalized)) {
+                // Un autre membre est déjà plus loin (ex. REÇU après EN COURS) : réponse notée, ordre inchangé.
+                return Response::json(['ok' => true, 'order' => $this->serializeOrder($existing), 'response_only' => true]);
+            }
             if ($e->getMessage() === 'invalid_transition') {
                 return Response::json([
                     'error' => 'invalid_transition',
@@ -9710,7 +11017,7 @@ class AtakApiController
             }
         } elseif ($targetType === 'ally') {
             $found = null;
-            foreach ($this->atak->getUnits($tenantId, $mapId) as $unit) {
+            foreach ($this->orderAliasUnits($tenantId, $mapId) as $unit) {
                 if (!$this->unitIsAllyAi($unit)) {
                     continue;
                 }
@@ -10173,6 +11480,22 @@ class AtakApiController
     }
 
     /**
+     * Unités de la carte pour le calcul des alias d’ordres : lues une seule fois par appel de ordersIndex
+     * (au lieu d’une lecture complète, avec passage hors ligne des obsolètes, pour chaque ordre).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function orderAliasUnits(int $tenantId, int $mapId): array
+    {
+        $key = $tenantId . ':' . $mapId;
+        if (!isset($this->orderAliasUnitsCache[$key])) {
+            $this->orderAliasUnitsCache[$key] = $this->atak->getUnits($tenantId, $mapId);
+        }
+
+        return $this->orderAliasUnitsCache[$key];
+    }
+
+    /**
      * Alias matchables pour un ordre (callsign, MID, steam, user:id, fire team…).
      *
      * @param array<string, mixed> $row
@@ -10221,7 +11544,7 @@ class AtakApiController
         } elseif ($targetType === 'solo') {
             $cs = $targetRef !== '' ? $targetRef : trim((string) ($row['target'] ?? ''));
             $add($cs);
-            foreach ($this->atak->getUnits($tenantId, $mapId) as $unit) {
+            foreach ($this->orderAliasUnits($tenantId, $mapId) as $unit) {
                 if (strcasecmp((string) ($unit['call_sign'] ?? ''), $cs) !== 0) {
                     continue;
                 }
@@ -10323,7 +11646,7 @@ class AtakApiController
             $add('steam:' . $steam);
             $user = $this->userRepository->findBySteamIdForTenant($tenantId, $steam)
                 ?? $this->userRepository->findBySteamId($steam);
-            foreach ($this->atak->getUnits($tenantId, $mapId) as $unit) {
+            foreach ($this->orderAliasUnits($tenantId, $mapId) as $unit) {
                 $extra = $this->parseUnitExtra($unit);
                 $unitSteam = SteamId::normalize((string) ($extra['steam_uid'] ?? $extra['steamId'] ?? ''));
                 if ($unitSteam === null || $unitSteam !== $steam) {
@@ -11164,14 +12487,25 @@ class AtakApiController
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }
-        $ext = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION) ?: 'jpg';
-        $filename = date('YmdHis') . '-' . ($_FILES['photo']['name'] ?: 'photo.' . $ext);
+        // Extension tirée du contenu réel (jpg/png/webp) — jamais du nom client (dépôt de .php sous public/).
+        $ext = \App\Support\TerrainUploadedImage::detectExtension((string) ($_FILES['photo']['tmp_name'] ?? ''));
+        if ($ext === null) {
+            return Response::json([
+                'error' => 'invalid_image',
+                'message' => 'Le fichier reçu n’est pas une image (JPEG, PNG ou WebP attendu).',
+            ], 400);
+        }
+        $filename = date('YmdHis') . '-' . bin2hex(random_bytes(6)) . '.' . $ext;
         $path = $dir . '/' . $filename;
         if (!move_uploaded_file($_FILES['photo']['tmp_name'], $path)) {
             return Response::json([
                 'error' => 'save_failed',
                 'message' => 'La photo n’a pas pu être enregistrée côté poste de commandement. Réessayez.',
             ], 500);
+        }
+        try {
+            \App\Support\PhotoAutoLevel::applyFile($path, \App\Support\ReconImageStorage::originalsDir());
+        } catch (\Throwable) {
         }
         $path = $this->recompressIntelPhotoToJpeg($path);
         $filename = basename($path);
@@ -11465,6 +12799,9 @@ class AtakApiController
         $text = trim((string) ($body['text'] ?? ''));
         $tag = ReconNoteCatalog::normalizeTag((string) ($body['tag'] ?? ''));
         if ($text === '' && $tag === '') {
+            // Corps illisible (guillemets doublés d'une ancienne DLL) ou note vide : tracé, sinon la reco disparaît sans bruit.
+            error_log('[atak/recon-notes] note refusée (vide ou illisible), tenant ' . $tenantId . ', ' . strlen(HttpJsonBody::rawJson()) . ' octets reçus');
+
             return Response::json([
                 'error' => 'empty',
                 'message' => 'Indiquez une observation ou un type.',
@@ -11509,7 +12846,30 @@ class AtakApiController
             'pos_y' => $y,
             'pos_z' => $z,
         ]);
-        $this->recordGameIngest($tenantId, max(1, $mapId), false);
+        $this->recordGameIngest($tenantId, max(1, $mapId), false, $authorUid !== '' ? (string) $authorUid : null, (string) ($body['author'] ?? ''));
+        if ($row !== []) {
+            // Relais JNET : la reco remonte de l'unité de l'opérateur vers son échelon supérieur.
+            $this->jnetBridge()->relayReconNote($tenantId, $this->jnetGameUserId($tenantId, $actor, $authorUid), $row);
+            if ($existing === null) {
+                // Journal Activité (admin) et salon Discord des recos, une fois par note (pas aux renvois).
+                $author = trim((string) ($row['author'] ?? ''));
+                $tagLabel = ReconNoteCatalog::tagLabel((string) ($row['tag'] ?? ''));
+                $this->activityLog->record(
+                    $tenantId,
+                    max(1, $mapId),
+                    AtakActivityLogService::TYPE_INTEL,
+                    'Reco ' . $tagLabel . ($text !== '' ? ' — ' . $text : '') . ' (' . ReconNoteDiscordService::grid($row) . ')',
+                    $author !== '' ? $author : null,
+                    $this->buildActivityMeta($tenantId, max(1, $mapId), $body, is_array($actor) ? $actor : null, null, [
+                        'kind' => 'recon_note',
+                        'tag' => (string) ($row['tag'] ?? ''),
+                        'confidence' => (string) ($row['confidence'] ?? ''),
+                        'source_id' => $sourceId,
+                    ])
+                );
+                ReconNoteDiscordService::defer($tenantId, $row);
+            }
+        }
 
         return Response::json(['ok' => true, 'note' => $row]);
     }
@@ -11544,23 +12904,212 @@ class AtakApiController
             } else {
                 $rows = $this->applyPlayNightFilter($rows, 'all', ['captured_at', 'created_at']);
             }
-            foreach ($rows as &$row) {
-                $row['url'] = \App\Support\ReconImageStorage::publicUrl(basename((string) ($row['image_path'] ?? '')));
-                $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
-                $row['captured_at'] = ReconCapturedAt::displayFromRow($row);
-                $row['author'] = (string) ($row['author_callsign'] ?? $row['author'] ?? '');
-                // Âge calculé ici : les dates SQL n'ont pas de fuseau, le navigateur peut être décalé.
-                $stamp = strtotime((string) $row['captured_at']);
-                $row['age_sec'] = $stamp !== false ? max(0, time() - $stamp) : null;
-            }
-            unset($row);
-
-            return Response::json($rows);
+            return Response::json($this->presentReconRows($tenantId, $rows));
         } catch (\Throwable $e) {
             error_log('[atak/recon-images] index ' . $e->getMessage());
 
             return Response::json([]);
         }
+    }
+
+    /**
+     * Lignes recon_images telles que les lit le poste : URL d'affichage, libellé d'appareil, heure, auteur, âge,
+     * puis fiche du cliché et masquage des confidentiels (presentReconPhotoMeta).
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function presentReconRows(int $tenantId, array $rows): array
+    {
+        foreach ($rows as &$row) {
+            $row['url'] = \App\Support\ReconImageStorage::urlForRow($row);
+            $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
+            $row['captured_at'] = ReconCapturedAt::displayFromRow($row);
+            $row['author'] = (string) ($row['author_callsign'] ?? $row['author'] ?? '');
+            // Âge calculé ici : les dates SQL n'ont pas de fuseau, le navigateur peut être décalé.
+            $stamp = strtotime((string) $row['captured_at']);
+            $row['age_sec'] = $stamp !== false ? max(0, time() - $stamp) : null;
+        }
+        unset($row);
+
+        return $this->presentReconPhotoMeta($tenantId, $rows);
+    }
+
+    /**
+     * Fiche du cliché envoyée par le jeu (NotifyNewPhoto de COMSPEC Link 2.0.66, arguments 17 à 23).
+     * Champs absents (DLL plus ancienne, autres appareils) : valeurs par défaut, la légende reste seule.
+     *
+     * @param array<string, mixed> $post
+     * @return array<string, mixed>
+     */
+    public static function reconPhotoMetaFromPost(array $post): array
+    {
+        $text = static function (string $key, int $max) use ($post): ?string {
+            if (!isset($post[$key]) || !is_scalar($post[$key])) {
+                return null;
+            }
+            $v = trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string) $post[$key]) ?? '');
+
+            return $v !== '' ? mb_substr($v, 0, $max) : null;
+        };
+        $flag = static function (string $key) use ($post): int {
+            $v = strtolower(trim(is_scalar($post[$key] ?? null) ? (string) $post[$key] : ''));
+
+            return in_array($v, ['1', 'true', 'yes', 'oui', 'on'], true) ? 1 : 0;
+        };
+        $caseRef = $text('sse_case_ref', 64);
+        $caseRef = $caseRef !== null ? strtoupper($caseRef) : null;
+        $source = $text('photo_source', 16);
+        $source = $source !== null ? (strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', $source) ?? '') ?: null) : null;
+
+        return [
+            'title' => $text('title', 120),
+            'description' => $text('description', 2000),
+            'is_sse' => ($flag('is_sse') === 1 || $caseRef !== null) ? 1 : 0,
+            'sse_case_ref' => $caseRef,
+            'is_confidential' => $flag('is_confidential'),
+            'photo_source' => $source,
+            'drone_name' => $text('drone_name', 120),
+        ];
+    }
+
+    /**
+     * Fiche du cliché pour le poste : drapeaux en entiers, lien vers le dossier SSE quand la référence
+     * existe sur le site, et clichés confidentiels réservés à la même audience que le renseignement
+     * confidentiel (habilitation SSE « confidentiel » ou plus, voir IntelRedaction / SseClearanceService).
+     * Les autres lecteurs gardent la carte (auteur, heure, position) sans image ni texte.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function presentReconPhotoMeta(int $tenantId, array $rows): array
+    {
+        $canConfidential = null;
+        $cases = [];
+        $caseRepo = null;
+        foreach ($rows as &$row) {
+            $row['is_sse'] = (int) !empty($row['is_sse']);
+            $row['is_confidential'] = (int) !empty($row['is_confidential']);
+            $ref = strtoupper(trim((string) ($row['sse_case_ref'] ?? '')));
+            $row['sse_case_url'] = null;
+            $row['sse_case_title'] = null;
+            if ($ref !== '' || !empty($row['sse_case_id'])) {
+                $key = $ref !== '' ? 'ref:' . $ref : 'id:' . (int) $row['sse_case_id'];
+                if (!array_key_exists($key, $cases)) {
+                    $cases[$key] = null;
+                    try {
+                        $caseRepo ??= new \App\Repositories\SseCaseRepository();
+                        $cases[$key] = $ref !== ''
+                            ? $caseRepo->findByReferenceCode($tenantId, $ref)
+                            : $caseRepo->findById((int) $row['sse_case_id'], $tenantId);
+                    } catch (\Throwable) {
+                        $cases[$key] = null;
+                    }
+                }
+                $case = $cases[$key];
+                if (is_array($case) && (int) ($case['id'] ?? 0) > 0) {
+                    $row['sse_case_url'] = url('atak/sse/dossiers/' . (int) $case['id']);
+                    $row['sse_case_title'] = (string) ($case['title'] ?? '');
+                    if ($ref === '') {
+                        $row['sse_case_ref'] = (string) ($case['reference_code'] ?? '');
+                    }
+                }
+            }
+            $row['restricted'] = false;
+            if ($row['is_confidential'] === 1) {
+                $canConfidential ??= $this->canViewConfidentialRecon();
+                if (!$canConfidential) {
+                    $row['restricted'] = true;
+                    $row['url'] = null;
+                    $row['image_path'] = '';
+                    $row['thumb_path'] = null;
+                    $row['source_name'] = null;
+                    $row['caption'] = null;
+                    $row['title'] = null;
+                    $row['description'] = null;
+                    $row['operator_comment'] = null;
+                }
+            }
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    private ?bool $confidentialReconAllowed = null;
+
+    /**
+     * Clichés confidentiels : même audience que le renseignement confidentiel
+     * (habilitation SSE « confidentiel » ou plus). Mémorisé pour la requête.
+     */
+    private function canViewConfidentialRecon(): bool
+    {
+        if ($this->confidentialReconAllowed === null) {
+            try {
+                $this->confidentialReconAllowed = (new \App\Services\Sse\SseClearanceService())
+                    ->allows(\App\Repositories\SseCaseRepository::CLASS_CONFIDENTIAL);
+            } catch (\Throwable) {
+                $this->confidentialReconAllowed = false;
+            }
+        }
+
+        return $this->confidentialReconAllowed;
+    }
+
+    /**
+     * GET /api/recon/images/{id}/file : fichier d'un cliché, seule voie vers un cliché confidentiel
+     * (rangé hors racine web, storage/private/recon). Communauté de la session, même habilitation
+     * que les flux ; 404 (jamais 403) pour qui n'y a pas droit, pour ne pas confirmer l'existence.
+     */
+    public function reconImagesFile(Request $request, array $params = []): Response
+    {
+        $notFound = static fn (): Response => (new Response())
+            ->setStatusCode(404)
+            ->header('Content-Type', 'text/plain; charset=utf-8')
+            ->header('Cache-Control', 'no-store, private, max-age=0')
+            ->setBody('Not found');
+        $id = (int) ($params['id'] ?? 0);
+        $download = $request->query('download') !== null;
+        // Lien ouvert dans le navigateur : le lecteur. ?raw=1 (ou ?download=1) garde le fichier nu.
+        if ($id > 0 && !$download && $request->query('raw') === null && $request->isBrowserNavigation()) {
+            return $this->reconViewerRedirect($id);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            // Maintenance (503) : dit tel quel, le lecteur l'affiche ; le reste reste un 404 muet.
+            return $r->statusCode() === 503 ? $r->header('Cache-Control', 'no-store') : $notFound();
+        }
+        $row = $id > 0 ? $this->reconImages()->get($r, $id) : null;
+        if ($row === null || !empty($row['deleted_at'])) {
+            return $notFound();
+        }
+        $imagePath = (string) ($row['image_path'] ?? '');
+        $confidential = !empty($row['is_confidential']) || \App\Support\ReconImageStorage::isPrivatePath($imagePath);
+        if ($confidential && !$this->canViewConfidentialRecon()) {
+            return $notFound();
+        }
+        $abs = \App\Support\ReconImageStorage::absoluteReadable($imagePath);
+        if ($abs === null) {
+            return $notFound();
+        }
+        $response = new Response();
+        $response->header('Content-Type', \App\Support\ReconImageStorage::mimeType($abs));
+        $response->header('Content-Length', (string) filesize($abs));
+        $ext = strtolower(pathinfo($abs, PATHINFO_EXTENSION)) ?: 'jpg';
+        $response->header('Content-Disposition', ($download ? 'attachment' : 'inline') . '; filename="recon-' . $id . '.' . preg_replace('/[^a-z0-9]/', '', $ext) . '"');
+        $response->header('Cache-Control', 'no-store, private, max-age=0');
+        $response->header('Pragma', 'no-cache');
+        $response->header('X-Content-Type-Options', 'nosniff');
+        $response->header('Referrer-Policy', 'no-referrer');
+        $response->setBodyStream(static function () use ($abs): void {
+            $h = fopen($abs, 'rb');
+            if ($h) {
+                fpassthru($h);
+                fclose($h);
+            }
+        });
+
+        return $response;
     }
 
     private function reconDeviceLabel(string $deviceType): string
@@ -11630,11 +13179,29 @@ class AtakApiController
                 return Response::json(['error' => 'upload_failed', 'message' => $msg], 400);
             }
 
-            $ext = pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION) ?: 'jpg';
-            $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext) ?: 'jpg';
-            // Suffixe aléatoire : deux photos du même auteur dans la même seconde ne s'écrasent plus.
-            $filename = 'recon_' . date('YmdHis') . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($_POST['author'] ?? 'unknown')) . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
-            $path = \App\Support\ReconImageStorage::storeFromTemp((string) $file['tmp_name'], $filename);
+            // Extension tirée du contenu réel (jpg/png/webp) — jamais du nom client (dépôt de .php sous public/).
+            $ext = \App\Support\TerrainUploadedImage::detectExtension((string) ($file['tmp_name'] ?? ''));
+            if ($ext === null) {
+                return Response::json([
+                    'error' => 'invalid_image',
+                    'message' => 'Le fichier reçu n’est pas une image (JPEG, PNG ou WebP attendu).',
+                ], 400);
+            }
+            // Capture 4K en PNG (~10 Mo) : 1920 px, JPEG 80 avant rangement.
+            if (\App\Support\StoredPhotoCompressor::compressUploadToJpeg((string) $file['tmp_name'])) {
+                $ext = 'jpg';
+            }
+            $photoMeta = self::reconPhotoMetaFromPost($_POST);
+            $storeConfidential = !empty($photoMeta['is_confidential']);
+            // Confidentiel : hors racine web, nom aléatoire (32 hex), servi par reconImagesFile seulement.
+            // Sinon suffixe aléatoire : deux photos du même auteur dans la même seconde ne s'écrasent plus.
+            $filename = $storeConfidential
+                ? \App\Support\ReconImageStorage::privateFileName($ext)
+                : 'recon_' . date('YmdHis') . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($_POST['author'] ?? 'unknown')) . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+            $storedImagePath = $storeConfidential
+                ? \App\Support\ReconImageStorage::privateRelativeImagePath($filename)
+                : \App\Support\ReconImageStorage::relativeImagePath($filename);
+            $path = \App\Support\ReconImageStorage::storeFromTemp((string) $file['tmp_name'], $filename, $storeConfidential);
             if ($path === null) {
                 error_log('[atak/recon-images] store failed for ' . $filename);
 
@@ -11655,8 +13222,28 @@ class AtakApiController
             if (($unitName === null || $unitName === '') && $feedId !== '') {
                 $unitName = $feedId;
             }
+            // Photo prise avec son propre téléphone ou sa tablette : l'unité vient du site (Arma envoie le pseudo
+            // du profil). Les flux drone et caméra casque d'un autre joueur gardent le nom envoyé.
+            $gameUserId = \App\Support\ComspecApiKeyAuth::matchedTenantId() === $tenantId
+                ? \App\Support\ComspecApiKeyAuth::matchedUserId()
+                : null;
+            // Session de jeu sans clé API (cas courant) : compte retrouvé par le Steam vérifié de la session.
+            if ($gameUserId === null && is_array($actor) && is_string($actor['steam_uid'] ?? null) && $actor['steam_uid'] !== '') {
+                try {
+                    $steamUser = $this->userRepository->findBySteamIdForTenant($tenantId, $actor['steam_uid']);
+                    $gameUserId = $steamUser ? ((int) ($steamUser['id'] ?? 0) ?: null) : null;
+                } catch (\Throwable) {
+                    $gameUserId = null;
+                }
+            }
+            if ($feedId === '' && $gameUserId !== null) {
+                $siteUnit = $this->operatorSiteUnitName($tenantId, $gameUserId);
+                if ($siteUnit !== '') {
+                    $unitName = $siteUnit;
+                }
+            }
             $data = [
-                'image_path' => \App\Support\ReconImageStorage::relativeImagePath($filename),
+                'image_path' => $storedImagePath,
                 'source_name' => mb_substr(basename(str_replace('\\', '/', (string) ($file['name'] ?? ''))), 0, 190) ?: null,
                 'author_callsign' => $_POST['author'] ?? $_POST['author_callsign'] ?? 'Unknown',
                 'unit_name' => $unitName,
@@ -11673,15 +13260,37 @@ class AtakApiController
                 'altitude' => isset($_POST['altitude']) && is_numeric($_POST['altitude']) ? (float) $_POST['altitude'] : null,
                 'device_type' => $deviceNorm !== '' ? $deviceNorm : 'CTAB',
                 'captured_at' => ReconCapturedAt::unixFromPosted($_POST['capturedAt'] ?? $_POST['captured_at'] ?? null),
-            ];
+            ] + $photoMeta;
+            // Visages floutés par le mode photo du téléphone (cadres envoyés par le jeu), avant tout le reste :
+            // l'original gardé par la correction de couleur ne doit pas montrer les visages.
+            $faceBlur = \App\Support\PhotoFaceBlur::fromExtra((string) ($_POST['photo_extra'] ?? ''));
+            if ($faceBlur !== null) {
+                try {
+                    \App\Support\PhotoFaceBlur::applyFile($path, $faceBlur);
+                } catch (\Throwable $blurErr) {
+                    error_log('[atak/recon-images] face blur ' . $blurErr->getMessage());
+                }
+            }
+            // Captures d'Arma délavées : niveaux et tons moyens corrigés avant l'incrustation (original gardé à côté).
+            if (!\App\Support\PhotoAutoLevel::skipsProfile($data['fx_profile'] ?? null, $deviceNorm)) {
+                try {
+                    \App\Support\PhotoAutoLevel::applyFile($path, \App\Support\ReconImageStorage::originalsDir());
+                } catch (\Throwable $lvlErr) {
+                    error_log('[atak/recon-images] auto level ' . $lvlErr->getMessage());
+                }
+            }
             try {
-                (new \App\Services\Media\ReconPhotoHudService())->applyToFile($tenantId, $path, $data);
+                // Bandeau de la photo à l'heure du jeu (COMSPEC Link 2.0.74), sinon à l'heure réelle de la prise.
+                (new \App\Services\Media\ReconPhotoHudService())->applyToFile($tenantId, $path, $data + [
+                    'game_date' => mb_substr(trim((string) ($_POST['game_date'] ?? $_POST['gameDate'] ?? '')), 0, 40),
+                    'game_time' => mb_substr(trim((string) ($_POST['game_time'] ?? $_POST['gameTime'] ?? '')), 0, 16),
+                ]);
             } catch (\Throwable $hudErr) {
                 error_log('[atak/recon-images] photo hud ' . $hudErr->getMessage());
             }
             $row = $this->reconImages()->create($tenantId, $data);
             if ($row === []) {
-                \App\Support\ReconImageStorage::delete($filename);
+                \App\Support\ReconImageStorage::delete($storedImagePath);
                 error_log('[atak/recon-images] create failed for ' . $filename);
 
                 return Response::json([
@@ -11689,28 +13298,48 @@ class AtakApiController
                     'message' => 'La photo a été reçue mais n’a pas pu être indexée. Réessayez dans un instant.',
                 ], 503);
             }
-            $row['url'] = \App\Support\ReconImageStorage::publicUrl($filename);
+            $row['url'] = \App\Support\ReconImageStorage::urlForRow($row);
             $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
+            // Relais JNET : photo prise par le joueur lui-même (compte retrouvé). Vignette seulement pour un
+            // cliché ni confidentiel ni SSE ; sinon lien vers le lecteur du site, qui contrôle l'accès.
+            $jnetUserId = $this->jnetGameUserId($tenantId, $actor);
+            if ($jnetUserId !== null) {
+                $this->jnetBridge()->relayReconImage($tenantId, $jnetUserId, $row + $data);
+            }
+            $isConfidential = !empty($data['is_confidential']);
             $mapId = (int) ($_POST['mapId'] ?? $_POST['map_id'] ?? self::DEFAULT_MAP_ID);
             try {
                 $this->activityLog->record(
                     $tenantId,
                     $mapId > 0 ? $mapId : self::DEFAULT_MAP_ID,
                     AtakActivityLogService::TYPE_INTEL,
-                    $row['device_label'] . ' reçue — ' . ($data['author_callsign'] ?? 'Inconnu'),
+                    $row['device_label'] . ($isConfidential ? ' confidentielle' : '') . ' reçue — ' . ($data['author_callsign'] ?? 'Inconnu'),
                     (string) ($data['author_callsign'] ?? '')
                 );
             } catch (\Throwable $logErr) {
                 error_log('[atak/recon-images] activity ' . $logErr->getMessage());
             }
             // Relais Discord après l'enregistrement : photo jointe + carte, lieu, date/heure (champs facultatifs du jeu).
+            // Clichés du drone compris (flux drone:<netId>). read_url : lecture sur Athena (route habilitée si confidentiel).
+            // Détails de la prise de vue (COMSPEC Link 2.0.81) : visée, distance, météo, mission, zoom… (Discord seulement).
             $discordMeta = $data + [
+                'photo_id' => (int) ($row['id'] ?? 0),
+                'author_grade' => $gameUserId !== null && ($feedId === '' || str_starts_with(strtolower($feedId), 'drone:'))
+                    ? $this->reconAuthorGrade($tenantId, $gameUserId)
+                    : '',
+                'extra' => \App\Support\QuickPictureDiscordEmbed::parseExtra((string) ($_POST['photo_extra'] ?? '')),
+                'link_version' => mb_substr(trim((string) ($_POST['link_version'] ?? '')), 0, 16),
+                'device_ident' => $this->reconPhoneIdent($tenantId, $gameUserId),
+                'feed_id' => mb_substr($feedId, 0, 120),
+                'read_url' => (string) ($row['url'] ?? ''),
                 'map_id' => $mapId > 0 ? $mapId : self::DEFAULT_MAP_ID,
                 'world_name' => mb_substr(trim((string) ($_POST['world_name'] ?? $_POST['worldName'] ?? '')), 0, 64),
                 'location' => mb_substr(trim((string) ($_POST['location'] ?? $_POST['nearest_location'] ?? $_POST['place'] ?? '')), 0, 120),
                 'game_date' => mb_substr(trim((string) ($_POST['game_date'] ?? $_POST['gameDate'] ?? '')), 0, 40),
                 'game_time' => mb_substr(trim((string) ($_POST['game_time'] ?? $_POST['gameTime'] ?? $_POST['daytime'] ?? '')), 0, 16),
             ];
+            // Cliché confidentiel : message, lien de lecture et note seulement, jamais l'image (salon ouvert à
+            // toute la communauté) ; cliché SSE : image floutée. Voir DiscordEventRelayService::notifyQuickPicture.
             register_shutdown_function(static function () use ($tenantId, $path, $discordMeta): void {
                 try {
                     // Réponse rendue au jeu d'abord : l'envoi Discord (photo) ne retarde pas l'accusé d'upload.
@@ -11736,6 +13365,10 @@ class AtakApiController
 
     public function reconImagesShow(Request $request, array $params = []): Response
     {
+        // Lien ouvert dans le navigateur : le lecteur. Les clients API (fetch, jeu) gardent le JSON ; ?format=json le force.
+        if ($request->query('format') !== 'json' && $request->isBrowserNavigation() && (int) ($params['id'] ?? 0) > 0) {
+            return $this->reconViewerRedirect((int) $params['id']);
+        }
         $r = $this->requireTenant($request);
         if ($r instanceof Response) {
             return $r;
@@ -11746,8 +13379,134 @@ class AtakApiController
         if ($row === null) {
             return Response::json(['error' => 'Not found'], 404);
         }
-        $row['url'] = \App\Support\ReconImageStorage::publicUrl(basename((string) ($row['image_path'] ?? '')));
+        $row['url'] = \App\Support\ReconImageStorage::urlForRow($row);
+        $row = $this->presentReconPhotoMeta($tenantId, [$row])[0] ?? $row;
+
         return Response::json($row);
+    }
+
+    private function reconViewerRedirect(int $id): Response
+    {
+        return Response::redirect(url('recon/images/' . $id))
+            ->header('Cache-Control', 'no-store, private, max-age=0')
+            ->header('Referrer-Policy', 'no-referrer');
+    }
+
+    /**
+     * GET /recon/images/{id} : lecteur d'un cliché (zoom, rotation, plein écran, fiche, mini-carte, album de la même
+     * mission). Mêmes droits que GET /api/recon/images : communauté de la session, clichés confidentiels réservés à
+     * l'habilitation « confidentiel » (fiche visible, image masquée). Le fichier reste servi par …/file.
+     */
+    public function reconImagesViewer(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $data = [
+            'photoId' => $id,
+            'items' => [],
+            'index' => 0,
+            'error' => null,
+            'errorMessage' => '',
+            'mapConfig' => null,
+            'mapUrl' => url('atak'),
+        ];
+        $status = 200;
+        try {
+            if ($this->resolveTenantId($request) === null) {
+                // Pas connecté (lien Discord, navigateur intégré) : connexion, puis retour sur ce cliché.
+                if (!\App\Core\Session::get('user_id') && $id > 0) {
+                    \App\Support\LoginIntendedDestination::rememberFromRequest($request);
+
+                    return Response::redirect(url('login'))->header('Cache-Control', 'no-store, private, max-age=0');
+                }
+                $data['error'] = 'tenant';
+                $status = 403;
+            } else {
+                $r = $this->requireTenant($request);
+                if ($r instanceof Response) {
+                    $data['error'] = $r->statusCode() === 503 ? 'maintenance' : 'tenant';
+                    $payload = json_decode($r->body(), true);
+                    $data['errorMessage'] = is_array($payload) ? (string) ($payload['message'] ?? '') : '';
+                    $status = $r->statusCode();
+                } else {
+                    $tenantId = $r;
+                    $row = $id > 0 ? $this->reconImages()->get($tenantId, $id) : null;
+                    if ($row === null || !empty($row['deleted_at'])) {
+                        $data['error'] = 'not_found';
+                        $status = 404;
+                    } else {
+                        $unit = strtolower((string) ($row['unit_name'] ?? ''));
+                        $isFeed = (bool) preg_match('/^(chest|helmet|drone):/', $unit);
+                        $mission = trim((string) ($row['mission_id'] ?? ''));
+                        $album = $this->reconImages()->list($tenantId, $mission !== '' ? $mission : null, null, null, null, 200, $isFeed ? 'only' : 'exclude');
+                        $found = false;
+                        foreach ($album as $a) {
+                            if ((int) ($a['id'] ?? 0) === $id) {
+                                $found = true;
+                                break;
+                            }
+                        }
+                        if (!$found) {
+                            $album = [$row];
+                        }
+                        $album = $this->presentReconRows($tenantId, $album);
+                        foreach ($album as $i => &$a) {
+                            $a['_recon'] = true;
+                            if ((int) ($a['id'] ?? 0) === $id) {
+                                $data['index'] = $i;
+                            }
+                        }
+                        unset($a);
+                        $data['items'] = $album;
+                        $data['mapConfig'] = $this->reconViewerMapConfig($tenantId);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('[atak/recon-images] viewer ' . $id . ' ' . $e->getMessage());
+            $data['error'] = 'server';
+            $status = 500;
+        }
+
+        return Response::view('recon-viewer', $data)
+            ->setStatusCode($status)
+            ->header('Cache-Control', 'no-store, private, max-age=0')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('X-Frame-Options', 'SAMEORIGIN')
+            ->header('Referrer-Policy', 'no-referrer');
+    }
+
+    /** Fond de carte de la communauté (comme /atak) pour la mini-carte du lecteur ; null si indisponible. */
+    private function reconViewerMapConfig(int $tenantId): ?array
+    {
+        try {
+            $repo = new \App\Repositories\AtakMapRepository();
+            $map = $repo->getDefaultForTenant($tenantId) ?: $repo->getBySlug('altis');
+            if (!is_array($map) || !function_exists('atak_resolve_tile_pattern')) {
+                return null;
+            }
+            $c = is_array($map['config'] ?? null) ? $map['config'] : [];
+            $slug = (string) ($map['slug'] ?? 'altis');
+            $pattern = atak_resolve_tile_pattern((string) ($map['tile_pattern'] ?? ''), $slug);
+            if ($pattern === '') {
+                return null;
+            }
+
+            return [
+                'title' => (string) ($map['label'] ?? $slug),
+                'tilePattern' => $pattern,
+                'minZoom' => (int) ($c['minZoom'] ?? 0),
+                'maxZoom' => (int) ($c['maxZoom'] ?? 6),
+                'tileSize' => (int) ($c['tileSize'] ?? 212),
+                'worldSize' => (int) ($c['worldSize'] ?? 30720),
+                'crs' => $c['crs'] ?? ['factorx' => 0.006839, 'factory' => 0.006836, 'tileWidth' => 212],
+                'offsetX' => isset($c['offset_x']) ? (float) $c['offset_x'] : 0.0,
+                'offsetY' => isset($c['offset_y']) ? (float) $c['offset_y'] : 0.0,
+            ];
+        } catch (\Throwable $e) {
+            error_log('[atak/recon-images] viewer map ' . $e->getMessage());
+
+            return null;
+        }
     }
 
     /**
@@ -11866,7 +13625,8 @@ class AtakApiController
                 return Response::json(['error' => 'storage', 'message' => 'Impossible de préparer l’archive SSE.'], 500);
             }
             $ext = pathinfo($srcAbs, PATHINFO_EXTENSION) ?: 'jpg';
-            $destName = sprintf('recon_%d_%d.%s', $id, time(), strtolower((string) preg_replace('/[^a-z0-9]/i', '', $ext)));
+            // Pièce SSE servie sous /uploads/sse : nom imprévisible (un cliché confidentiel y est copié aussi).
+            $destName = sprintf('recon_%d_%d_%s.%s', $id, time(), bin2hex(random_bytes(16)), strtolower((string) preg_replace('/[^a-z0-9]/i', '', $ext)));
             $destAbs = $destDir . DIRECTORY_SEPARATOR . $destName;
             if (!@copy($srcAbs, $destAbs)) {
                 return Response::json(['error' => 'copy_failed', 'message' => 'Impossible de copier la photo vers l’espace SSE.'], 500);
@@ -11900,7 +13660,7 @@ class AtakApiController
             return Response::json(['error' => 'update_failed', 'message' => 'Impossible de mettre à jour la photo.'], 500);
         }
 
-        $updated['url'] = \App\Support\ReconImageStorage::publicUrl(basename((string) ($updated['image_path'] ?? '')));
+        $updated['url'] = \App\Support\ReconImageStorage::urlForRow($updated);
         $updated['device_label'] = $this->reconDeviceLabel((string) ($updated['device_type'] ?? 'CTAB'));
 
         return Response::json(['ok' => true, 'message' => $message, 'photo' => $updated]);
@@ -11979,7 +13739,17 @@ class AtakApiController
         $mapId = $this->mapId($request);
         $missionId = $request->query('mission_id') ?? $request->query('missionId');
         $since = $request->query('since');
-        $rows = $this->mapShapeRepo->list($tenantId, $mapId, $missionId, $since);
+        // ?mission_id[]=… : refusé (422) comme sur les autres routes C2, au lieu d'une TypeError (500) dans le dépôt.
+        if ($missionId !== null && !is_scalar($missionId)) {
+            return \App\Support\TacticalMissionScope::invalidMissionIdResponse();
+        }
+        // ?since[]=… : ignoré (liste complète), comme pour les ordres.
+        $rows = $this->mapShapeRepo->list(
+            $tenantId,
+            $mapId,
+            $missionId === null ? null : (string) $missionId,
+            is_scalar($since) ? (string) $since : null
+        );
         return Response::json($rows);
     }
 
@@ -12264,6 +14034,17 @@ class AtakApiController
             }
         }
         $knownTypes = \App\Support\AtakIcemanReportCatalog::knownTypeCodes();
+        // CR de fin d'opération imposé (app CR de fin d'op du téléphone) : seules les réponses deviennent une remontée.
+        $debriefSvc = null;
+        if ($rawType === 'DEBRIEF') {
+            $debriefSvc = new \App\Services\Atak\AtakDebriefService();
+            $event = strtolower((string) (($body['structured_data'] ?? [])['debrief_event'] ?? 'submitted'));
+            if ($event !== 'submitted') {
+                $done = $debriefSvc->handleGameReport($tenantId, $body, is_array($actor) ? $actor : null);
+
+                return Response::json(['success' => true, 'debrief' => $done['debrief_id'], 'handled' => $done['handled']]);
+            }
+        }
         $summary = trim((string) ($body['summary'] ?? ''));
         $details = trim((string) ($body['details'] ?? ''));
         $hasStructured = is_array($body['structured_data'] ?? null) && $body['structured_data'] !== [];
@@ -12334,6 +14115,25 @@ class AtakApiController
         }
 
         $reportId = $repo->create($data);
+        if ($reportId > 0) {
+            $this->jnetBridge()->relayTacticalReport(
+                $tenantId,
+                $this->jnetGameUserId($tenantId, $actor, (string) ($data['submitter_steam_id'] ?? '')),
+                $reportId,
+                $data
+            );
+        }
+        $reportMissionKey = \App\Support\AtakMissionKey::normalize($body['mission_key'] ?? null);
+        if ($reportMissionKey !== '' && $reportId > 0) {
+            $repo->setMissionKey($reportId, $reportMissionKey);
+        }
+        if ($debriefSvc !== null) {
+            try {
+                $debriefSvc->handleGameReport($tenantId, $body, is_array($actor) ? $actor : null, $reportId > 0 ? $reportId : null);
+            } catch (\Throwable $e) {
+                error_log('[atak_debrief] tenant=' . $tenantId . ' ' . $e->getMessage());
+            }
+        }
         $routing = [
             'enabled' => false,
             'rules_applied' => 0,
@@ -12785,13 +14585,13 @@ class AtakApiController
             $data['reported_by_callsign'] ?? 'Unknown'
         );
 
-        $poi = $repo->findById($poiId);
+        $poi = $repo->findById($poiId, $tenantId);
         
         return Response::json($poi, 201);
     }
 
     /**
-     * Met à jour un POI
+     * Met à jour un POI de la communauté appelante (celui d'une autre communauté : 404 comme un id inconnu)
      * PUT /api/atak/poi/:id
      */
     public function poiUpdate(Request $request, array $params = []): Response
@@ -12812,13 +14612,13 @@ class AtakApiController
         $repo = new \App\Repositories\AtakPoiRepository();
         $body['updated_by_user_id'] = $actor['user_id'] ?? null;
         
-        $success = $repo->update($id, $body);
+        $success = $repo->update($id, $r, $body);
         
         if (!$success) {
             return Response::json(['error' => 'POI not found'], 404);
         }
         
-        $poi = $repo->findById($id);
+        $poi = $repo->findById($id, $r);
         return Response::json($poi);
     }
 
@@ -13026,6 +14826,8 @@ class AtakApiController
     // =============================================================================
 
     // --- MEDEVAC 9-Line étendu (liste/création via casRepo plus haut ; détail ci-dessous) ---
+    // Chaque demande est cherchée dans la communauté appelante : celle d'une autre communauté
+    // répond 404 comme un id inconnu, et rien n'y est lu ni écrit.
 
     /**
      * Récupère une demande MEDEVAC
@@ -13040,14 +14842,14 @@ class AtakApiController
         
         $id = (int) ($params['id'] ?? 0);
         $repo = new \App\Repositories\AtakMedevacRepository();
-        $medevac = $repo->findById($id);
+        $medevac = $repo->findById($id, $r);
         
         if (!$medevac) {
             return Response::json(['error' => 'MEDEVAC not found'], 404);
         }
         
         // Récupérer les patients
-        $medevac['patients'] = $repo->getPatients($id);
+        $medevac['patients'] = $repo->getPatients($id, $r);
         
         return Response::json($medevac);
     }
@@ -13072,7 +14874,7 @@ class AtakApiController
         }
 
         $repo = new \App\Repositories\AtakMedevacRepository();
-        $success = $repo->updateStatus($id, $newStatus, $body['message'] ?? null);
+        $success = $repo->updateStatus($id, $r, $newStatus, $body['message'] ?? null);
         
         if (!$success) {
             return Response::json(['error' => 'MEDEVAC not found'], 404);
@@ -13106,7 +14908,7 @@ class AtakApiController
         }
 
         $repo = new \App\Repositories\AtakMedevacRepository();
-        $success = $repo->assignAsset($id, $assetCallsign, $actor['user_id'] ?? null);
+        $success = $repo->assignAsset($id, $r, $assetCallsign, $actor['user_id'] ?? null);
         
         if (!$success) {
             return Response::json(['error' => 'MEDEVAC not found'], 404);
@@ -13130,7 +14932,10 @@ class AtakApiController
         $body = $this->jsonBody($request);
 
         $repo = new \App\Repositories\AtakMedevacRepository();
-        $patientId = $repo->addPatient($id, $body);
+        $patientId = $repo->addPatient($id, $r, $body);
+        if ($patientId < 1) {
+            return Response::json(['error' => 'MEDEVAC not found'], 404);
+        }
         
         return Response::json(['patient_id' => $patientId], 201);
     }
@@ -13293,7 +15098,7 @@ class AtakApiController
         }
 
         $repo = new \App\Repositories\AtakQrfRepository();
-        $success = $repo->assignQrf($id, $qrfUnit, $qrfCallsign, $actor['user_id'] ?? null);
+        $success = $repo->assignQrf($id, $r, $qrfUnit, $qrfCallsign, $actor['user_id'] ?? null);
         
         if (!$success) {
             return Response::json(['error' => 'QRF request not found'], 404);
@@ -13328,7 +15133,7 @@ class AtakApiController
         }
 
         $repo = new \App\Repositories\AtakQrfRepository();
-        $success = $repo->updateQrfPosition($id, (float) $posX, (float) $posY, $body['eta'] ?? null);
+        $success = $repo->updateQrfPosition($id, $r, (float) $posX, (float) $posY, $body['eta'] ?? null);
         
         if (!$success) {
             return Response::json(['error' => 'QRF request not found'], 404);
@@ -13361,10 +15166,13 @@ class AtakApiController
         $body = $this->jsonBody($request);
 
         $repo = new \App\Repositories\AtakQrfRepository();
-        $updateId = $repo->addSitrepUpdate($id, array_merge($body, [
+        $updateId = $repo->addSitrepUpdate($id, $r, array_merge($body, [
             'updated_by_user_id' => $actor['user_id'] ?? null,
             'updated_by_callsign' => $actor['callsign'] ?? null,
         ]));
+        if ($updateId < 1) {
+            return Response::json(['error' => 'QRF request not found'], 404);
+        }
         
         return Response::json(['update_id' => $updateId], 201);
     }
@@ -13433,8 +15241,32 @@ class AtakApiController
             'tenant_id' => $tenantId,
             'context_id' => $mapId,
         ]);
+        // Corps vide ou JSON illisible, ou véhicule sans indicatif : refus clair plutôt qu'une erreur 500.
+        // Le motif part dans la réponse (journal du jeu, COMSPEC Link 2.0.82) et dans error_log.
+        if (\App\Repositories\AtakVehicleTrackingRepository::resolveCallsign($data) === '') {
+            if ($body === []) {
+                $raw = \App\Support\HttpJsonBody::rawJson();
+                $reason = $raw === '' ? 'corps vide' : 'JSON illisible (' . json_last_error_msg() . ')';
+                error_log('[atak/vehicles] 400 ' . $reason . ' : ' . mb_substr(preg_replace('/\s+/', ' ', $raw) ?? '', 0, 300));
+
+                return Response::json([
+                    'error' => 'invalid_json',
+                    'message' => 'Véhicule refusé : ' . $reason . '.',
+                ], 400);
+            }
+            $keys = implode(',', array_slice(array_map('strval', array_keys($body)), 0, 30));
+            error_log('[atak/vehicles] 400 indicatif absent, clés reçues : ' . $keys);
+
+            return Response::json([
+                'error' => 'vehicle_callsign requis',
+                'message' => 'Véhicule refusé : aucun indicatif (vehicle_callsign, callsign, vehicle_name, vehicle_id). Clés reçues : ' . $keys,
+            ], 400);
+        }
 
         $vehicleId = $repo->upsert($data);
+        if ($vehicleId === 0) {
+            return Response::json(['ok' => true, 'skipped' => 'vehicule_inconnu_sans_position']);
+        }
         $vehicle = $repo->findById($vehicleId);
         
         return Response::json($vehicle);
@@ -13464,9 +15296,12 @@ class AtakApiController
         $body = $this->jsonBody($request);
 
         $repo = new \App\Repositories\AtakVehicleTrackingRepository();
-        $serviceId = $repo->createServiceRequest($id, array_merge($body, [
+        $serviceId = $repo->createServiceRequest($id, $r, array_merge($body, [
             'requested_by_callsign' => $actor['callsign'] ?? null,
         ]));
+        if ($serviceId < 1) {
+            return Response::json(['error' => 'Vehicle not found'], 404);
+        }
         
         return Response::json(['service_request_id' => $serviceId], 201);
     }
@@ -13549,5 +15384,93 @@ class AtakApiController
         }
 
         return Response::json($out);
+    }
+
+    /**
+     * Serveur de jeu du joueur comparé aux serveurs déclarés par sa communauté (Gestion › Serveurs de jeu).
+     * Corps : server_ip (adresse publique du serveur si connue), server_name, mission, world, player_name.
+     * Réponse : state ok | away | none, server_label, community, message (affiché sur le téléphone).
+     */
+    public function serverPresence(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $body = $this->jsonBody($request);
+        $clip = static fn (mixed $v, int $n): string => mb_substr(trim(is_scalar($v) ? (string) $v : ''), 0, $n, 'UTF-8');
+        [$serverIp, $serverPort] = \App\Services\Atak\CommunityServerMatcher::splitAddress($clip($body['server_ip'] ?? '', 80));
+        $bodyPort = (int) ($body['server_port'] ?? 0);
+        if ($bodyPort > 0 && $bodyPort < 65536) {
+            $serverPort = $bodyPort;
+        }
+        $serverName = $clip($body['server_name'] ?? '', 190);
+        $repo = \App\Core\Container::get(\App\Repositories\TenantGameServerRepository::class);
+        // Serveur sans COMSPEC Link et joueur entré sans -connect : adresse retrouvée par le nom (liste Steam, BattleMetrics).
+        if ($serverIp === '' && $serverName !== '') {
+            $found = $repo->addressLookup()->lookupByName($serverName);
+            if ($found !== null) {
+                $serverIp = $found['ip'];
+                $serverPort ??= $found['port'];
+            }
+        }
+        $community = '';
+        try {
+            $community = (string) ($this->tenantRepository->findById($tenantId)['name'] ?? '');
+        } catch (\Throwable) {
+        }
+
+        $servers = $repo->listForTenant($tenantId, true);
+        $match = $servers === [] ? null : (new \App\Services\Atak\CommunityServerMatcher())->match($servers, $serverIp, $serverName, $serverPort);
+        // Serveur déclaré par son seul nom : l'adresse vue par le joueur complète la fiche.
+        if ($match !== null && $serverIp !== '' && trim((string) ($match['ip_address'] ?? '')) === '') {
+            $repo->fillAddress($tenantId, (int) $match['id'], $serverIp, $serverPort);
+        }
+        $steam = is_array($actor) ? (string) ($actor['steam_uid'] ?? '') : '';
+        if ($steam === '') {
+            $steam = \App\Support\SteamId::normalize($clip($body['steam_uid'] ?? '', 32)) ?? '';
+        }
+        if ($steam !== '') {
+            $repo->recordPresence(
+                $tenantId,
+                $steam,
+                $clip($body['player_name'] ?? '', 120) ?: null,
+                $serverIp !== '' ? $serverIp : null,
+                $serverName !== '' ? $serverName : null,
+                $clip($body['mission'] ?? '', 190) ?: null,
+                $clip($body['world'] ?? '', 64) ?: null,
+                $match !== null ? (int) $match['id'] : null,
+                $serverPort
+            );
+        }
+
+        if ($servers === []) {
+            return Response::json(['state' => 'none', 'server_label' => '', 'community' => $community, 'message' => '']);
+        }
+        if ($match !== null) {
+            return Response::json([
+                'state' => 'ok',
+                'server_label' => (string) $match['label'],
+                'community' => $community,
+                'message' => 'Serveur de la communauté : ' . (string) $match['label'],
+            ]);
+        }
+        $labels = array_map(static fn (array $s): string => (string) $s['label'], array_slice($servers, 0, 3));
+
+        return Response::json([
+            'state' => 'away',
+            'server_label' => '',
+            'community' => $community,
+            'message' => 'Vous êtes connecté à Athena' . ($community !== '' ? ' (' . $community . ')' : '')
+                . ' mais pas sur un serveur de votre communauté. Serveurs déclarés : ' . implode(', ', $labels) . '.',
+        ]);
     }
 }

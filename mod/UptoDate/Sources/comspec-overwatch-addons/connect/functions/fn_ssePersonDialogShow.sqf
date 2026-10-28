@@ -33,11 +33,18 @@ if (!_resume) then {
     uiNamespace setVariable ["COMSPEC_SsePerson_BioPending", false];
     uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", false];
     uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", ""];
+    uiNamespace setVariable ["COMSPEC_SsePerson_PhotoAngle", "face"];
     if (!isNull _target) then {
+        // Cliché déjà pris sur ce sujet (SEEK ou app SSE de l'ATAK) : il partira avec la fiche.
         private _priorStem = _target getVariable ["comspec_sse_facePhotoStem", ""];
-        if (_priorStem isEqualType "" && {_priorStem isNotEqualTo ""}) then {
+        // Un cliché déjà joint à la fiche (fn_sseUploadFacePhoto) ne repart pas à chaque réouverture.
+        if (_priorStem isEqualType "" && {_priorStem isNotEqualTo ""} && {_priorStem isNotEqualTo (_target getVariable ["comspec_sse_facePhotoSentStem", ""])}) then {
             uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", true];
             uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", _priorStem];
+            private _meta = _target getVariable ["comspec_sse_facePhotoMeta", []];
+            if ((_meta isEqualType []) && {(count _meta) >= 2}) then {
+                uiNamespace setVariable ["COMSPEC_SsePerson_PhotoAngle", format ["%1@portrait,q=%2", _meta select 0, _meta select 1]];
+            };
         };
     };
 } else {

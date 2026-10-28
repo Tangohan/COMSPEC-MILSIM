@@ -23,7 +23,23 @@ addMissionEventHandler ["EntityKilled", { params ["_unit", "_killer", "_inst"]; 
 // Téléphone posé dans une caisse ou au sol : on retient son propriétaire pour pouvoir s'y relier.
 ["CAManBase", "Put", {
     params ["_unit", "_container", "_item"];
-    if ((toLower _item) in ([] call comspec_atak_native_fnc_deviceCatalog)) then { _container setVariable ["COMSPEC_ATAK_PhoneOwner", _unit, true]; };
+    if ((toLower _item) in ([] call comspec_atak_native_fnc_deviceCatalog)) then {
+        _container setVariable ["COMSPEC_ATAK_PhoneOwner", _unit, true];
+        // Au sol : seul notre S7 couché (un téléphone d'un autre mod est échangé, fn_droppedPhone).
+        if (local _unit && {_unit isEqualTo player}) then {
+            [_container, _item] call comspec_atak_native_fnc_droppedPhone;
+            // Posé au sol : l'IA ennemie peut venir le ramasser (fn_captureServer).
+            if (_container isKindOf "WeaponHolder" || {_container isKindOf "WeaponHolderSimulated"}) then {
+                _container setVariable ["COMSPEC_ATAK_PhoneTag", _unit getVariable ["COMSPEC_ATAK_PhoneTag", []], true];
+                ["comspec_atak_native_captureSrv", ["dropped", [_container]]] call CBA_fnc_serverEvent;
+            };
+        };
+    };
+}] call CBA_fnc_addClassEventHandler;
+// Ramassé : on rend l'objet d'origine d'un téléphone échangé au sol.
+["CAManBase", "Take", {
+    params ["_unit", "_container", "_item"];
+    if (local _unit && {(toLower _item) isEqualTo "comspec_atak_phone"}) then { ["take", [_unit, _container, _item]] call comspec_atak_native_fnc_droppedPhone; };
 }] call CBA_fnc_addClassEventHandler;
 
 // Tick : barre de progression, lien coupé si l'on s'éloigne, liste à portée remise à jour.
@@ -58,7 +74,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         params ["_target"];
         _target isNotEqualTo player && {(player distance _target) < 2.2} && {[player] call comspec_atak_native_fnc_hasDevice} && {[_target] call comspec_atak_native_fnc_hasDevice}
         && {((uiNamespace getVariable ["COMSPEC_ATAK_LinkAlly", createHashMap]) getOrDefault ["phase", ""]) isEqualTo ""}
-    }] call ace_interact_menu_fnc_createAction;
+    }] call comspec_atak_native_fnc_aceAction;
     ["CAManBase", 0, ["ACE_MainActions"], _act, true] call ace_interact_menu_fnc_addActionToClass;
 };
 true

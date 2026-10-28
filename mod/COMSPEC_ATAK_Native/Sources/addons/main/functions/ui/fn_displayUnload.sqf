@@ -2,9 +2,28 @@ params ["_display", ["_exitCode", 0]];
 private _state = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // Un autre display du terminal a déjà pris la place (bascule HUD / en main) : rien à nettoyer.
 if ((uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull]) isNotEqualTo _display) exitWith {};
+// Défilement de la page affichée gardé : un réglage qui recrée l'écran (taille, police…) la rouvre au même endroit.
+private _drawnPage = _state getOrDefault ["pageDrawn", ""];
+if (_drawnPage isNotEqualTo "") then {
+    private _mem = _state getOrDefault ["scrollMem", createHashMap];
+    _mem set [_drawnPage, ctrlScrollValues (_display displayCtrl 88531)];
+    _state set ["scrollMem", _mem];
+};
 [] call comspec_atak_native_fnc_livecamStop;
+// Écran 3D du JPC : la caméra de la vue aérienne (fn_jpcMap) ne doit pas survivre au display.
+if (_state getOrDefault ["texture", false]) then { ["close"] call comspec_atak_native_fnc_jpcMap; };
 private _wasInteractive = _state getOrDefault ["interactive", false];
+// Alternat radio encore appuyé (fn_keyPass) : relâché, sinon la radio resterait en émission téléphone rangé.
+if (_wasInteractive) then { ["release"] call comspec_atak_native_fnc_keyPass; };
 [] call comspec_atak_native_fnc_schedulerStop;
+// Menu d'actions (fn_open) : gestionnaires inGameUI retirés une fois le téléphone rangé, sauf s'il a été rouvert entre-temps
+// (bascule HUD / en main : fn_open les a déjà réinstallés).
+[{
+    if ((uiNamespace getVariable ["COMSPEC_ATAK_OpenSeq", 0]) isNotEqualTo _this) exitWith {};
+    if (!isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
+    { inGameUISetEventHandler [_x, ""]; } forEach ["PrevAction", "NextAction", "Action"];
+}, uiNamespace getVariable ["COMSPEC_ATAK_OpenSeq", 0]] call CBA_fnc_execNextFrame;
+["stop"] call comspec_atak_native_fnc_foreignHud;
 _state set ["display", displayNull];
 private _chat = uiNamespace getVariable ["COMSPEC_ATAK_ChatEdit", controlNull];
 if (!isNull _chat) then { uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ctrlText _chat]; };
@@ -12,9 +31,14 @@ uiNamespace setVariable ["COMSPEC_ATAK_ChatEdit", controlNull];
 uiNamespace setVariable ["COMSPEC_ATAK_PageControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_ToastControls", []];
-profileNamespace setVariable ["COMSPEC_ATAK_LastPage", _state getOrDefault ["activePage", "MAP"]];
-saveProfileNamespace;
+// Profil réécrit sur disque seulement si la dernière page a changé (chaque bascule HUD / en main ferme un display).
+private _lastPage = _state getOrDefault ["activePage", "MAP"];
+if ((profileNamespace getVariable ["COMSPEC_ATAK_LastPage", "MAP"]) isNotEqualTo _lastPage) then {
+    profileNamespace setVariable ["COMSPEC_ATAK_LastPage", _lastPage];
+    [] call comspec_atak_native_fnc_saveProfile;
+};
 uiNamespace setVariable ["COMSPEC_ATAK_Display", displayNull];
+uiNamespace setVariable ["COMSPEC_ATAK_Ratio", nil];
 ["INFO", "UI", format ["Display closed (%1); handlers cleaned", _exitCode]] call comspec_atak_native_fnc_log;
 
 // Téléphone reposé (Échap ou Ctrl+Maj+U) : il revient en HUD s'il était sorti.

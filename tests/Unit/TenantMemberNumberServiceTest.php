@@ -75,7 +75,7 @@ final class TenantMemberNumberServiceTest extends TestCase
         self::assertStringContainsString('tenant_member_number_audit', $migration);
         self::assertStringContainsString('uniq_users_tenant_member_number', $migration);
 
-        $run = (string) file_get_contents($root . '/run-migrations.php');
+        $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
         self::assertStringContainsString('tenant_member_number_migration.php', $run);
         self::assertStringContainsString('run_tenant_member_number_migration', $run);
 

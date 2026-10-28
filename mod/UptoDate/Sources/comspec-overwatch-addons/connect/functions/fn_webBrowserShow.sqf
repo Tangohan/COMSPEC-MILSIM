@@ -43,7 +43,7 @@ if (!_ok) exitWith {
     private _display = findDisplay 9974;
     private _hint = _display displayCtrl 9403;
     if (!isNull _hint) then {
-        _hint ctrlSetStructuredText parseText "<t align='right' size='0.55' color='#ffd27a'>Chargement prolongé…</t>";
+        _hint ctrlSetStructuredText parseText (("<t align='right' size='0.55' color='#ffd27a'>Chargement prolongé…</t>") call comspec_overwatch_connect_fnc_tr);
     };
     private _ctrl = _display displayCtrl 9401;
     // Ne pas forcer PageReady : laisse onLoad retenter LoadFile / base64.
@@ -51,7 +51,7 @@ if (!_ok) exitWith {
     if (isNull _ctrl) then {
         private _help = _display displayCtrl 9430;
         if (!isNull _help && {!(ctrlShown _help)}) then {
-            _hint ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#ff8a7a'>Écran intégré indisponible</t>";
+            _hint ctrlSetStructuredText parseText (("<t align='right' size='0.5' color='#ff8a7a'>Écran intégré indisponible</t>") call comspec_overwatch_connect_fnc_tr);
         };
     };
 };

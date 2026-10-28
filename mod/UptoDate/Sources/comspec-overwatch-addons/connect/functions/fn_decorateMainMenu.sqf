@@ -23,7 +23,7 @@ if (isNull _bg) then {
     _accent ctrlCommit 0;
 
     private _icon = _display ctrlCreate ["RscPicture", 9610];
-    _icon ctrlSetText "\z\comspec_overwatch\addons\connect\img\comspec_atak_logo.paa";
+    _icon ctrlSetText (("\z\comspec_overwatch\addons\connect\img\comspec_atak_logo.paa") call comspec_overwatch_connect_fnc_tr);
     private _iconS = 0.028 * safezoneH;
     _icon ctrlSetPosition [
         _barX + (0.008 * safezoneW),
@@ -44,10 +44,10 @@ if (isNull _bg) then {
 
     private _hit = _display ctrlCreate ["COMSPEC_RscInvisibleButton", 9614];
     _hit ctrlSetPosition [_barX, _barY, _barW, _barH];
-    _hit ctrlSetText "";
+    _hit ctrlSetText (("") call comspec_overwatch_connect_fnc_tr);
     _hit ctrlSetBackgroundColor [0, 0, 0, 0];
     _hit ctrlSetTextColor [0, 0, 0, 0];
-    _hit ctrlSetTooltip "";
+    _hit ctrlSetTooltip (("") call comspec_overwatch_connect_fnc_tr);
     _hit ctrlAddEventHandler ["ButtonClick", {
         [true] call comspec_overwatch_connect_fnc_showBetaAccessNote;
     }];

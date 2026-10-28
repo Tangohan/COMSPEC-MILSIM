@@ -12,7 +12,7 @@ final class AdvancedFicheEditGrantAssetTest extends TestCase
     {
         $migration = (string) file_get_contents(dirname(__DIR__, 2) . '/bootstrap/user_advanced_edit_grants_migration.php');
         $repo = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/UserAdvancedEditGrantRepository.php');
-        $runner = (string) file_get_contents(dirname(__DIR__, 2) . '/run-migrations.php');
+        $runner = (string) \Tests\Support\MigrationPipelineSource::read(dirname(__DIR__, 2));
 
         self::assertStringContainsString('user_advanced_edit_grants', $migration);
         self::assertStringContainsString('run_user_advanced_edit_grants_migration', $migration);
@@ -75,11 +75,16 @@ final class AdvancedFicheEditGrantAssetTest extends TestCase
         $controller = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/PersonnelController.php');
 
         self::assertStringContainsString('advancedEditActive', $edit);
-        self::assertStringNotContainsString('name="clearance_level"', $edit);
+        // Le niveau de diffusion SSE (clearance_level) est revenu sur la fiche, mais réservé à
+        // l'encadrement ($canStaffEdit) : le grant d'édition avancée ne le débloque pas.
+        self::assertStringContainsString('$canEditSseClearance = !empty($canStaffEdit);', $edit);
+        self::assertMatchesRegularExpression('/<\?php if \(\$canEditSseClearance\): \?>\s*<div[^>]*>\s*<label for="clearance_level"/', $edit);
+        self::assertStringNotContainsString('$canEditSseClearance = !empty($advancedEditActive)', $edit);
         self::assertStringContainsString('name="matricule_internal"', $edit);
         self::assertStringContainsString('Matricule dossier (système)', $edit);
         self::assertStringContainsString('advancedEditActive', $controller);
-        self::assertStringNotContainsString("data['clearance_level']", $controller);
+        self::assertStringContainsString("if (\$canStaffEdit && \$request->input('clearance_level') !== null)", $controller);
+        self::assertMatchesRegularExpression("/'clearance_level',\\s*'command_notes',\\s*\\];/", $controller);
         self::assertStringContainsString("data['matricule_internal']", $controller);
         self::assertStringContainsString('athena_identifier volontairement ignoré', $controller);
     }

@@ -115,7 +115,12 @@ final class AtakWardrobeApiController
         }
 
         $body = $this->body($request);
+        $namesSaved = $this->recordItemCatalog($ctx['tenant_id'], $body['item_catalog'] ?? null);
         $items = $body['wardrobes'] ?? null;
+        if ($items === [] && $namesSaved > 0) {
+            // Envoi des seuls noms d’objets (mod : après les tenues) : rien d’autre à enregistrer.
+            return Response::json(['ok' => true, 'saved' => 0, 'item_names' => $namesSaved, 'wardrobes' => []]);
+        }
         if (!is_array($items)) {
             // Single wardrobe upsert
             if (isset($body['name']) || isset($body['payload']) || isset($body['payload_text'])) {
@@ -153,6 +158,28 @@ final class AtakWardrobeApiController
             'saved' => $result['saved'],
             'wardrobes' => $public,
         ]);
+    }
+
+    /**
+     * Noms affichés en jeu des objets des tenues envoyées (« item_catalog » : [{class, name, kind, mod}]), pour que
+     * la page Équipement montre le vrai nom de chaque objet, même s’il n’a encore été porté par personne.
+     */
+    private function recordItemCatalog(int $tenantId, mixed $catalog): int
+    {
+        if (!is_array($catalog) || $catalog === []) {
+            return 0;
+        }
+        try {
+            $items = (new \App\Services\GameEquipment\GameItemUsageExtractor())->extract(['item_catalog' => array_slice($catalog, 0, 400)])['items'];
+            $items = array_values(array_filter($items, static fn (array $it): bool => $it['name'] !== ''));
+            (new \App\Repositories\GameEquipmentRepository())->recordCatalog($tenantId, $items, date('Y-m-d H:i:s'));
+
+            return count($items);
+        } catch (\Throwable $e) {
+            error_log('[wardrobes] item_catalog ignored: ' . $e->getMessage());
+
+            return 0;
+        }
     }
 
     public function destroy(Request $request, array $params = []): Response
@@ -239,9 +266,14 @@ final class AtakWardrobeApiController
             'collection_name' => $row['collection_name'] ?? null,
             'collection_slug' => $row['collection_slug'] ?? null,
             'owner_label' => (string) ($row['owner_label'] ?? ''),
+            'owner_avatar_url' => (string) ($row['owner_avatar_url'] ?? ''),
             'mine' => !empty($row['mine']),
             'notes' => $row['notes'] ?? null,
             'is_favorite' => !empty($row['is_favorite']),
+            'featured' => !empty($row['featured']),
+            'mandatory' => !empty($row['mandatory']),
+            'badge_label' => (string) ($row['badge_label'] ?? ''),
+            'cover_url' => (string) ($row['cover_url'] ?? ''),
             'last_synced_at' => $row['last_synced_at'] ?? null,
             'updated_at' => $row['updated_at'] ?? null,
         ];

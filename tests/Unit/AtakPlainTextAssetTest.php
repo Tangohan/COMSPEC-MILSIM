@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
+use Tests\Support\ModVersion;
 
 final class AtakPlainTextAssetTest extends TestCase
 {
@@ -26,6 +25,12 @@ final class AtakPlainTextAssetTest extends TestCase
         $theme = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/ui/atak_theme.hpp'
         );
+        $page = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/ui/athena_page.hpp'
+        );
+        $hub = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/ui/message_hub_page.hpp'
+        );
 
         self::assertStringContainsString('ctrlSetStructuredText parseText', $helper);
         self::assertStringContainsString('case 38:', $helper);
@@ -33,21 +38,21 @@ final class AtakPlainTextAssetTest extends TestCase
         self::assertStringContainsString('case 62:', $helper);
         self::assertStringContainsString('_w < 0.02', $helper);
         self::assertStringContainsString('class setPlainText {}', $connectCfg);
-        self::assertStringContainsString('1.0.165', $athenaCfg);
-        self::assertStringContainsString('COMSPEC_ATAK_StructuredText: RscStructuredText', $theme);
-        self::assertStringContainsString('Iceman_ReportsDetailText', $theme);
+        ModVersion::assertAtLeast('1.0.165', ModVersion::fromConfigCpp($athenaCfg));
+        // La classe de thème COMSPEC_ATAK_StructuredText a été retirée : les pages
+        // déclarent désormais directement des cadres RscStructuredText (rendu IceMan).
+        self::assertStringNotContainsString('class COMSPEC_ATAK_StructuredText', $theme);
+        self::assertStringContainsString('class Detail: RscStructuredText', $page);
+        self::assertStringContainsString('class Feedback: RscStructuredText', $page);
+        self::assertStringContainsString('class Hint: RscStructuredText', $hub);
 
-        $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($fnDir));
-        foreach ($it as $file) {
-            if (!$file->isFile() || strtolower($file->getExtension()) !== 'sqf') {
-                continue;
-            }
-            $src = (string) file_get_contents($file->getPathname());
-            self::assertStringNotContainsString(
-                'ctrlSetStructuredText parseText',
-                $src,
-                $file->getFilename()
-            );
-        }
+        // Le helper n'est plus la seule voie : les pages Athena écrivent désormais
+        // directement leur HTML IceMan dans des cadres RscStructuredText déclarés
+        // (hpp). Le helper reste obligatoire pour les cadres créés à chaud, dont
+        // la taille n'est pas garantie (alerte plein écran).
+        $alert = (string) file_get_contents($fnDir . '/fn_athena_paintFullscreenAlert.sqf');
+        self::assertStringContainsString('ctrlCreate ["RscStructuredText"', $alert);
+        self::assertStringContainsString('call comspec_overwatch_connect_fnc_setPlainText', $alert);
+        self::assertStringNotContainsString('ctrlSetStructuredText parseText', $alert);
     }
 }

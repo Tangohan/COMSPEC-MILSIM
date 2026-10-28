@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakRealismRepository;
 use App\Repositories\UserRepository;
+use App\Services\Atak\OperatorDeviceActivityService;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Auth\AuthService;
@@ -42,12 +43,22 @@ final class AtakDeviceSecurityController
             $user = array_merge($user, $fresh);
         }
 
+        $devices = $this->realism->listPhysicalTerminalsForUser($tenantId, $userId);
+        // Mêmes fiches que « Mes appareils » du back-office membre, avec l'onglet Liaison en plus.
+        $overview = (new OperatorDeviceActivityService())
+            ->overviewForUser($tenantId, $userId, $devices, (string) ($user['callsign'] ?? ''), true);
+
         return Response::view('layout.main', [
-            'title' => 'Appareils liés',
+            'title' => 'Appareils ATAK',
             'content' => 'account.devices',
             'accountHubPage' => true,
+            'backOfficePageCss' => ['back-office-member-situation.css', 'back-office-atak-devices.css'],
             'user' => $user,
-            'devices' => $this->realism->listPhysicalTerminalsForUser($tenantId, $userId),
+            'devices' => $devices,
+            'gamePhone' => $overview['gamePhone'],
+            'deviceLogDigests' => $overview['deviceLogDigests'],
+            'appActivity' => $overview['appActivity'],
+            'linkEvents' => $overview['linkEvents'],
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]);

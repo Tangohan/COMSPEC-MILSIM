@@ -27,9 +27,8 @@ $tocGroups = [
     [
         'label' => 'Échanges & doctrine',
         'items' => [
-            ['id' => 'forum-et-briefings', 'title' => 'Forum & briefings'],
             ['id' => 'cooperations-inter-unites', 'title' => 'Coopérations inter-unités'],
-            ['id' => 'moderation-forum', 'title' => 'Modération & signalements'],
+            ['id' => 'moderation-signalements', 'title' => 'Modération & signalements'],
             ['id' => 'formations', 'title' => 'Formations (LMS & Studio)'],
             ['id' => 'documents', 'title' => 'Documents'],
             ['id' => 'courrier-officiel', 'title' => 'Courrier officiel'],
@@ -70,7 +69,7 @@ $tocGroups = [
             <?php endif; ?>
             <p>
                 Manuel complet du portail <strong>Athena</strong> : compte et sécurité, droits et rôles, mur opérationnel,
-                effectifs et ORBAT, forum, formations, documents, courrier, outils tactiques (ATAK, Overwatch, TACMAP),
+                effectifs et ORBAT, formations, documents, courrier, outils tactiques (ATAK, Overwatch, TACMAP),
                 recrutement, coopérations entre communautés et pilotage d’organisation.
                 Chaque chapitre se lit indépendamment ; les écrans exacts dépendent de vos habilitations et du plan de votre unité.
             </p>
@@ -101,6 +100,9 @@ $tocGroups = [
                 </ul>
             </div>
             <?php endforeach; ?>
+            <p class="site-docs__ref-link">
+                <a href="<?= htmlspecialchars(url('documentation/profils'), ENT_QUOTES, 'UTF-8') ?>">Profils de communauté et accès</a>
+            </p>
             <p class="site-docs__ref-link">
                 <a href="<?= htmlspecialchars(url('documentation/marqueurs'), ENT_QUOTES, 'UTF-8') ?>">Bibliothèque de marqueurs</a>
             </p>

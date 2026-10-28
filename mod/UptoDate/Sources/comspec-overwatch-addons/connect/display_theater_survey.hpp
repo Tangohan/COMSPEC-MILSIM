@@ -3,7 +3,7 @@ class COMSPEC_TheaterSurvey_Dialog {
     idd = 9994;
     movingEnable = 1;
     enableSimulation = 1;
-    onLoad = "_this call comspec_overwatch_connect_fnc_theaterSurveyOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; _this call comspec_overwatch_connect_fnc_theaterSurveyOnLoad;";
     onUnload = "uiNamespace setVariable ['COMSPEC_TheaterSurvey_Display', displayNull];";
 
     class Controls {

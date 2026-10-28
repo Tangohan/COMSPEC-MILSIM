@@ -36,7 +36,7 @@ if (isNull _map) then {
 if (isNull _map) exitWith {
     private _hint = _display displayCtrl 9403;
     if (!isNull _hint) then {
-        _hint ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#ff8a7a'>Carte terrain indisponible</t>";
+        _hint ctrlSetStructuredText parseText (("<t align='right' size='0.5' color='#ff8a7a'>Carte terrain indisponible</t>") call comspec_overwatch_connect_fnc_tr);
     };
     ["COMSPEC_Warning", ["Carte terrain indisponible. Utilisez « Ouvrir sur le PC » pour le portail Athena."]] call comspec_overwatch_connect_fnc_showNotification;
 };
@@ -77,5 +77,5 @@ ctrlSetFocus _map;
 
 private _hint = _display displayCtrl 9403;
 if (!isNull _hint) then {
-    _hint ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#7dffb3'>Carte terrain</t>";
+    _hint ctrlSetStructuredText parseText (("<t align='right' size='0.5' color='#7dffb3'>Carte terrain</t>") call comspec_overwatch_connect_fnc_tr);
 };

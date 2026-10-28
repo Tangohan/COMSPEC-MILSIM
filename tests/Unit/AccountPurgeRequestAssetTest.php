@@ -48,7 +48,7 @@ final class AccountPurgeRequestAssetTest extends TestCase
         self::assertFileExists($root . '/bootstrap/account_purge_requests_migration.php');
         self::assertFileExists($root . '/migrations/20260829180000_account_purge_requests.sql');
 
-        $migration = (string) file_get_contents($root . '/run-migrations.php');
+        $migration = (string) \Tests\Support\MigrationPipelineSource::read($root);
         self::assertStringContainsString('account_purge_requests_migration.php', $migration);
 
         $orgCtrl = (string) file_get_contents($root . '/app/Controllers/Admin/Organization/UserAdminController.php');
@@ -78,9 +78,9 @@ final class AccountPurgeRequestAssetTest extends TestCase
         $platUsers = (string) file_get_contents($root . '/views/admin/system/users.php');
         self::assertStringContainsString('Demandes de suppression de compte', $platUsers);
         self::assertStringContainsString('purge-requests/approve', $platUsers);
-        self::assertStringContainsString('Approuver &amp; purger', $platUsers);
+        self::assertStringContainsString('Accepter et effacer la fiche', $platUsers);
         self::assertStringContainsString('Ancien membre', $platUsers);
-        self::assertStringContainsString('Retirer les fiches anonymisées', $platUsers);
+        self::assertStringContainsString('Nettoyer les comptes anonymisés', $platUsers);
 
         $container = (string) file_get_contents($root . '/app/Core/Container.php');
         self::assertStringContainsString('AccountPurgeRequestRepository::class', $container);

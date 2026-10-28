@@ -12,15 +12,33 @@ $holdersByRole = is_array($jobHoldersByRole ?? null) ? $jobHoldersByRole : [];
 $selectedId = (int) ($selected['id'] ?? 0);
 $catalogUrl = effectifs_workspace_url('fonctions');
 $assignUrl = $catalogUrl . '?vue=attributions';
+// Liste rangée par catégorie ; les postes générés par l'organigramme (ORBAT) sont regroupés à part, en dernier.
+$orbatGroup = 'Postes de l’ORBAT';
+$railGroups = [];
+foreach ($roles as $row) {
+    $group = (int) ($row['source_unit_id'] ?? 0) > 0
+        ? $orbatGroup
+        : (trim((string) ($row['category_name'] ?? '')) ?: 'Sans catégorie');
+    $railGroups[$group][] = $row;
+}
+if (isset($railGroups[$orbatGroup])) {
+    $orbatRows = $railGroups[$orbatGroup];
+    unset($railGroups[$orbatGroup]);
+    $railGroups[$orbatGroup] = $orbatRows;
+}
 ?>
 <div class="eff-roles-page">
 <section class="eff-page-head">
     <p class="eff-page-kicker">Emplois du dossier</p>
     <h1 class="eff-page-title">Emplois</h1>
     <p class="eff-page-lead">
-        Un emploi décrit la fonction sur le dossier (radio, médic, chef d’équipe…). Ce ne sont pas des droits d’accès.
-        Créer une unité dans l’organigramme (ORBAT) prépare déjà un emploi du même nom. Vous pouvez en ajouter d’autres ici, puis les attribuer aux membres.
+        Un emploi (ou fonction) décrit le poste tenu par un membre : radio, médecin, chef de groupe… Ce n’est pas un droit d’accès.
     </p>
+    <ul class="eff-jobs-explain">
+        <li><strong>Catégorie</strong> Un simple rangement par métier (Santé, Transmissions…). Elle ne change rien aux droits.</li>
+        <li><strong>Référentiel militaire</strong> Environ 150 fonctions classées par domaine sont proposées directement dans la fiche membre ; dès qu’un membre en reçoit une, elle apparaît ici.</li>
+        <li><strong>Postes de l’ORBAT</strong> Chaque unité créée dans l’organigramme génère un poste du même nom, rangé à part en bas de la liste.</li>
+    </ul>
 </section>
 
 <div class="eff-jobs-tabs" role="tablist" aria-label="Vues des emplois">
@@ -33,22 +51,30 @@ $assignUrl = $catalogUrl . '?vue=attributions';
 <?php else: ?>
 <div class="eff-access-layout">
     <aside class="eff-access-rail" aria-label="Liste des emplois">
-        <ul class="eff-access-rail__list">
-            <?php foreach ($roles as $row):
-                $rid = (int) ($row['id'] ?? 0);
-                $isOn = $rid === $selectedId && !$creating;
-                $href = $catalogUrl . ($rid > 0 ? '?emploi=' . $rid : '');
-                $nHolders = count($holdersByRole[$rid] ?? []);
-                $cat = trim((string) ($row['category_name'] ?? ''));
-                ?>
-            <li>
-                <a class="eff-access-rail__item<?= $isOn ? ' is-current' : '' ?>" href="<?= htmlspecialchars($href, ENT_QUOTES, 'UTF-8') ?>">
-                    <strong><?= htmlspecialchars((string) ($row['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
-                    <span><?= $cat !== '' ? htmlspecialchars($cat, ENT_QUOTES, 'UTF-8') . ' · ' : '' ?><?= $nHolders ?> personne<?= $nHolders > 1 ? 's' : '' ?></span>
-                </a>
-            </li>
-            <?php endforeach; ?>
-        </ul>
+        <input type="search" class="eff-jobs-search" placeholder="Rechercher un emploi…" aria-label="Rechercher un emploi" data-filter-input>
+        <div data-filter-scope>
+        <?php foreach ($railGroups as $groupName => $groupRows): ?>
+        <details class="eff-jobs-group" data-filter-group open>
+            <summary><?= htmlspecialchars((string) $groupName, ENT_QUOTES, 'UTF-8') ?> <small><?= count($groupRows) ?></small></summary>
+            <ul class="eff-access-rail__list">
+                <?php foreach ($groupRows as $row):
+                    $rid = (int) ($row['id'] ?? 0);
+                    $isOn = $rid === $selectedId && !$creating;
+                    $href = $catalogUrl . ($rid > 0 ? '?emploi=' . $rid : '');
+                    $nHolders = count($holdersByRole[$rid] ?? []);
+                    ?>
+                <li data-filter-item data-filter-text="<?= htmlspecialchars(mb_strtolower((string) ($row['name'] ?? '') . ' ' . $groupName, 'UTF-8'), ENT_QUOTES, 'UTF-8') ?>">
+                    <a class="eff-access-rail__item<?= $isOn ? ' is-current' : '' ?>" href="<?= htmlspecialchars($href, ENT_QUOTES, 'UTF-8') ?>">
+                        <strong><?= htmlspecialchars((string) ($row['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
+                        <span><?= $nHolders ?> personne<?= $nHolders > 1 ? 's' : '' ?></span>
+                    </a>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+        </details>
+        <?php endforeach; ?>
+        </div>
+        <p class="eff-card__hint" data-filter-empty hidden>Aucun emploi ne correspond.</p>
         <?php if ($canManage): ?>
         <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('fonctions/nouveau'), ENT_QUOTES, 'UTF-8') ?>" class="eff-access-create">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
@@ -98,10 +124,10 @@ $assignUrl = $catalogUrl . '?vue=attributions';
 
     <div class="eff-access-main">
         <?php if ($roles === [] && !$canManage): ?>
-            <p class="eff-page-lead">Aucun emploi pour l’instant. Les responsables peuvent en créer ici, ou depuis l’organigramme.</p>
+            <p class="eff-page-lead">Aucun emploi pour l’instant. Les responsables peuvent en créer ici, en attribuer depuis la fiche d’un membre, ou ajouter des unités dans l’organigramme.</p>
         <?php elseif ($selected === null): ?>
             <p class="eff-page-lead">
-                Aucun emploi pour l’instant. Créez-en un à gauche, ou ajoutez une unité dans l’organigramme : un emploi du même nom est proposé.
+                Aucun emploi pour l’instant. Créez-en un à gauche, attribuez une fonction du référentiel depuis la fiche d’un membre, ou ajoutez une unité dans l’organigramme.
             </p>
         <?php elseif ($canManage): ?>
             <form method="post" action="<?= htmlspecialchars($catalogUrl, ENT_QUOTES, 'UTF-8') ?>" class="eff-access-editor">
@@ -176,3 +202,4 @@ $assignUrl = $catalogUrl . '?vue=attributions';
 </div>
 <?php endif; ?>
 </div>
+<script src="<?= htmlspecialchars(asset_url('assets/js/eff-member.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>

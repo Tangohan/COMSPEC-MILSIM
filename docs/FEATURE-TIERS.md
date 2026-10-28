@@ -160,3 +160,18 @@ Ajuster `limits_json` (sans redéploiement si édition SQL/admin futur) ; docume
 - **API** : appliquer les mêmes contrôles sur tous les endpoints JSON (création d’événements, etc.).
 - **Autres surcharges env** : par ex. `FREE_MAX_MEMBERS` aligné sur `max_members` pour tests A/B.
 - **Essai contextualisé** : webhook ou bannière à l’atteinte du soft-block avec coupon Stripe / trial 7 jours.
+
+## Fins de formule (essai fondateur, formule offerte)
+
+- `App\Support\PlanAccessWindow` : ce qui donne la formule actuelle (`gift`, `paid`, `trial`, `base`), fin prochaine, dernière fin passée, période de grâce.
+- Réglages `platform_settings` (Administration > Formules offertes, section « Fins de formule ») :
+  `plan_end_warning_days` (7), `plan_end_warning_email` (0), `plan_grace_enabled` (0), `plan_grace_days` (7).
+- Bandeau `views/partials/plan_end_banner.php` pour le propriétaire, les fondateurs et les administrateurs de la communauté.
+- E-mail `plan_end_warning` (tâche `plan_end_warning`, toutes les 6 h), une fois par fin (`tenants.settings.plan_end_warning_sent`).
+- Grâce : `FeatureGateService::allows` / `allowsLimitedFeatureModule` laissent ouverts, pendant N jours après la fin, les modules de la formule terminée (dont `atak`, donc la liaison avec le jeu). Désactivée par défaut.
+
+## Liaison jeu de base (décision TTRD 2026-10-14, variante B)
+
+- Clé `atak_link_basic` (vraie sur toutes les formules, Gratuit compris). Clé absente d'une formule existante = défaut du catalogue (`FeatureGateService::allowsWithCatalogDefault`), donc aucune migration à lancer.
+- `AtakApiController::requireTenant` : sans `atak`, seuls les chemins `AtakPlanAccess::BASIC_PATHS` passent (connexion du lien, positions, comptes rendus, briefing). Le reste (photos, vidéo, drone, commandes web, IFF, marqueurs, CAS…) répond 403 `feature_unavailable` avec un message qui renvoie à Standard.
+- La page « Première liaison » s'ouvre avec la liaison de base ; la carte web et le téléphone web restent réservés à `atak`.

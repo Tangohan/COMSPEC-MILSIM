@@ -13,6 +13,8 @@ use App\Repositories\TenantAnalyticsRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Platform\AthenaHeritageService;
+use App\Support\AtakReleaseInfo;
+use App\Support\AtakTranslationTemplate;
 use App\Support\ChangelogCatalog;
 use App\Support\DevDispatchCatalog;
 
@@ -28,6 +30,7 @@ final class SitePagesController
             'title' => __('site.about_meta_title'),
             'meta_description' => __('site.about_meta_description'),
             'marketingActive' => 'about',
+            'marketingStyles' => [asset_url('assets/css/site-about.css')],
         ]);
     }
 
@@ -299,8 +302,20 @@ final class SitePagesController
             'meta_description' => __('site.atakn_meta_description'),
             'marketingActive' => 'atak-natif',
             'og_image' => asset_url('assets/atak-native/atak-natif-poster.jpg'),
-            'marketingStyles' => [asset_url('assets/css/atak-native.css')],
+            'marketingStyles' => [asset_url('assets/css/atak-showcase.css')],
+            'marketingScripts' => [asset_url('assets/js/atak-showcase.js')],
             'jsonLdExtra' => [
+                [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'SoftwareApplication',
+                    'name' => 'COMSPEC ATAK',
+                    'applicationCategory' => 'GameApplication',
+                    'operatingSystem' => 'Windows (Arma 3)',
+                    'description' => __('site.atakn_meta_description'),
+                    'image' => asset_url('assets/atak-native/v2/phone-s7.webp'),
+                    'url' => $pageUrl,
+                    'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'EUR'],
+                ],
                 [
                     '@context' => 'https://schema.org',
                     '@type' => 'VideoObject',
@@ -315,5 +330,46 @@ final class SitePagesController
                 ],
             ],
         ]);
+    }
+
+    /**
+     * Atelier public : téléphone ATAK et écrans du mod SSE. Un visiteur garde le travail sur son appareil.
+     * Un membre connecté le retrouve sur son compte. Un pack partagé s'ouvre toujours par son lien.
+     */
+    public function translateAtak(Request $request, array $params = []): Response
+    {
+        // /traduire-atak/p/{id} : pack partagé (le jeton reste dans le fragment #, lu par la page).
+        $packId = \App\Repositories\AtakTranslationPackRepository::validPublicId($params['id'] ?? null) ?? '';
+
+        return Response::view('layout.marketing', [
+            'content' => 'site.atak_translate',
+            'packId' => $packId,
+            'title' => __('site.atakt_meta_title'),
+            'meta_description' => __('site.atakt_meta_description'),
+            'marketingActive' => 'traduire-atak',
+            'marketingStyles' => [asset_url('assets/css/atak-native.css'), asset_url('assets/css/atak-translate.css') . '?v=4'],
+            'marketingScripts' => [asset_url('assets/js/atak-translate.js') . '?v=6'],
+        ]);
+    }
+
+    /** Modèle de traduction de la version publiée, avec catégories (voir AtakTranslationTemplate::catalog). */
+    public function translateAtakTemplate(Request $request, array $params = []): Response
+    {
+        $etag = '"' . AtakTranslationTemplate::fingerprint() . '"';
+        if (trim((string) $request->header('If-None-Match')) === $etag) {
+            return (new Response())->setStatusCode(304)->header('ETag', $etag)->header('Cache-Control', 'public, max-age=600');
+        }
+        $release = AtakReleaseInfo::latest();
+
+        $catalog = AtakTranslationTemplate::catalog();
+
+        return Response::json([
+            'version' => $release['atak_native'],
+            'categories' => $catalog['categories'],
+            // [clé, français, anglais, catégorie, fichier source]
+            'entries' => $catalog['entries'],
+            // [clé $STR_, texte original, anglais] : noms d'objets et de modules, stringtable.xml du mod de langue
+            'stringtable' => AtakTranslationTemplate::stringtable(),
+        ])->header('ETag', $etag)->header('Cache-Control', 'public, max-age=600');
     }
 }

@@ -4,7 +4,7 @@
 class COMSPEC_CAS_Dialog {
     idd = 9980;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_CAS_Display', _this select 0]; (_this select 0) displayCtrl 8001 ctrlSetText 'CAS 9-Line';";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_CAS_Display', _this select 0]; (_this select 0) displayCtrl 8001 ctrlSetText 'CAS 9-Line';";
     onUnload = "uiNamespace setVariable ['COMSPEC_CAS_Display', displayNull];";
 
     class Controls {

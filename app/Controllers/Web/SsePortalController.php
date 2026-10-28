@@ -152,8 +152,9 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/operations'));
         }
 
-        // Commandement / membre habilité : entrée directe sans code.
-        if ($this->access->canEnterWithoutCode()) {
+        // Commandement / membre habilité : entrée directe sans code — sauf s'il vient de
+        // quitter le bureau : il voit alors le sas et choisit de rentrer (ou d'utiliser un code).
+        if ($this->access->canEnterWithoutCode() && !$this->access->hasLeft()) {
             $tenantId = (int) Session::get('tenant_id');
             if ($this->access->canEnterAsStaff()) {
                 $this->access->establishStaffClearance($tenantId);
@@ -240,13 +241,24 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse'));
         }
+        $this->access->clearLeft();
+        // Session déjà ouverte et engagement signé : on ne remet rien à zéro.
+        if ($this->access->hasActiveClearance() && !$this->access->isGuest() && $this->access->hasAcceptedConfidentiality()) {
+            return Response::redirect(url($this->access->canEnterAsStaff() && $this->canGrant() ? 'atak/sse/acces' : 'atak/sse/operations'));
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($this->access->canEnterAsStaff()) {
             $this->access->establishStaffClearance($tenantId);
+            if ($this->access->hasAcceptedConfidentiality()) {
+                return Response::redirect(url($this->canGrant() ? 'atak/sse/acces' : 'atak/sse/operations'));
+            }
             Session::set('sse_post_ack_redirect', 'acces');
             Session::flash('success', 'Session commandement ouverte — validez l’engagement de confidentialité.');
         } else {
             $this->access->establishMemberClearance($tenantId);
+            if ($this->access->hasAcceptedConfidentiality()) {
+                return Response::redirect(url('atak/sse/operations'));
+            }
             Session::flash('success', 'Session ouverte — validez l’engagement de confidentialité.');
         }
 
@@ -278,6 +290,9 @@ final class SsePortalController
             : trim((string) $request->input('guest_name', 'Invité'));
 
         $result = $this->access->redeem($code, $userId > 0 ? $userId : null, $hasPerm, $label);
+        if ($result['ok']) {
+            $this->access->clearLeft();
+        }
         if (!$result['ok']) {
             Session::flash('error', $result['message']);
 
@@ -291,9 +306,9 @@ final class SsePortalController
 
     public function logout(Request $request, array $params = []): Response
     {
-        $this->access->clearSession();
+        $this->access->leave();
         Session::forget('sse_post_ack_redirect');
-        Session::flash('success', 'Session de renseignement fermée.');
+        Session::flash('success', 'Session de renseignement fermée. Vous pouvez rentrer à tout moment depuis ce sas.');
 
         return Response::redirect(url('atak/sse'));
     }
@@ -486,11 +501,21 @@ final class SsePortalController
 
         $payloadRows = SseIntelEventRepository::flattenPayloadRows($payload);
         $clientLabel = (string) ($event['client_label'] ?? SseIntelEventRepository::clientSoftwareLabel($payload));
+        // Images transmises (URL ou fichier du portail) : affichées comme images, pas comme texte.
+        $payloadImages = [];
         $sections = [];
         foreach ($payloadRows as $row) {
+            $val = trim((string) ($row['value'] ?? ''));
+            if (\App\Support\SseTransmissionView::isImageValue($val)) {
+                $payloadImages[] = ['src' => $val, 'label' => (string) ($row['label'] ?? 'Image')];
+                continue;
+            }
             $sec = (string) ($row['section'] ?? 'Compléments');
             $sections[$sec][] = $row;
         }
+
+        // Identité liée : photo, relevés biométriques (empreintes, iris, ADN) — comme sur sa fiche.
+        $linkedPerson = $this->transmissionLinkedPerson($personId);
 
         return $this->portalView('atak.sse.transmission_show', [
             'title' => 'Fiche de transmission',
@@ -500,10 +525,64 @@ final class SsePortalController
             'relatedLabel' => $relatedLabel,
             'payloadRows' => $payloadRows,
             'payloadSections' => $sections,
+            'payloadImages' => $payloadImages,
+            'linkedPerson' => $linkedPerson,
             'clientLabel' => $clientLabel,
             'canManage' => $this->canManage(),
             'activeNav' => 'transmissions',
         ]);
+    }
+
+    /**
+     * Identité liée à une transmission (photo, relevés biométriques) — page et PDF.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function transmissionLinkedPerson(int $personId): ?array
+    {
+        $linkedPerson = null;
+        if ($personId > 0) {
+            try {
+                $person = $this->persons->findById($personId, $this->tenantId());
+                if ($person !== null) {
+                    $person = $this->clearance->redactPeopleForScreens([$person], $this->tenantId(), null)[0] ?? $person;
+                    $terrain = [];
+                    try {
+                        $terrain = $this->terrain->personTerrainDossier($this->tenantId(), $person);
+                    } catch (\Throwable) {
+                        $terrain = [];
+                    }
+                    $samples = is_array($terrain['biometric_samples'] ?? null) ? $terrain['biometric_samples'] : [];
+                    $photos = [];
+                    foreach ((array) ($person['photos'] ?? []) as $ph) {
+                        $u = is_array($ph) ? trim((string) ($ph['url'] ?? '')) : '';
+                        if ($u !== '') {
+                            $photos[] = ['src' => $u, 'label' => (string) ($ph['caption'] ?? $ph['kind_label'] ?? 'Photographie')];
+                        }
+                    }
+                    $primary = is_array($person['primary_photo'] ?? null) ? trim((string) ($person['primary_photo']['url'] ?? '')) : '';
+                    $linkedPerson = [
+                        'id' => $personId,
+                        'href' => url('atak/sse/identites/' . $personId),
+                        'ref' => 'IDN-' . str_pad((string) $personId, 5, '0', STR_PAD_LEFT),
+                        'name' => (string) ($person['display_name'] ?? ''),
+                        'alias' => (string) ($person['alias'] ?? ''),
+                        'photo' => $primary,
+                        'photos' => $photos,
+                        'prints' => SseTerrainService::biometricModalityLabel($samples, 'empreintes'),
+                        'iris' => SseTerrainService::biometricModalityLabel($samples, 'iris'),
+                        'dna' => SseTerrainService::biometricModalityLabel($samples, 'adn'),
+                        'quality' => ($terrain['acquisition_quality_avg'] ?? null) !== null ? (int) $terrain['acquisition_quality_avg'] : null,
+                        'terminal' => SseTerrainService::personTerminalLabel($person),
+                        'samples' => $samples,
+                    ];
+                }
+            } catch (\Throwable) {
+                $linkedPerson = null;
+            }
+        }
+
+        return $linkedPerson;
     }
 
     public function transmissionsPdf(Request $request, array $params = []): Response
@@ -523,13 +602,21 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/transmissions'));
         }
         $payload = is_array($event['payload'] ?? null) ? $event['payload'] : [];
-        $sections = [];
+        $images = [];
         foreach (SseIntelEventRepository::flattenPayloadRows($payload) as $row) {
-            $sec = (string) ($row['section'] ?? 'Compléments');
-            $sections[$sec][] = $row;
+            $val = trim((string) ($row['value'] ?? ''));
+            if (\App\Support\SseTransmissionView::isImageValue($val)) {
+                $images[] = ['src' => $val, 'label' => (string) ($row['label'] ?? 'Image')];
+            }
         }
+        $event['client_label'] = (string) ($event['client_label'] ?? SseIntelEventRepository::clientSoftwareLabel($payload));
 
-        return (new SseTransmissionPdfService())->exportEvent($event, $sections);
+        return (new SseTransmissionPdfService())->exportEvent(
+            $event,
+            $payload,
+            $this->transmissionLinkedPerson((int) ($payload['person_id'] ?? 0)),
+            $images
+        );
     }
 
     public function transmissionDiscordStore(Request $request, array $params = []): Response
@@ -3835,6 +3922,62 @@ final class SsePortalController
         return $this->personsIndex($request, array_merge($params, ['_nav' => 'identites']));
     }
 
+    /**
+     * Fiabilité de la source, crédibilité de l'information et corroboration d'une fiche
+     * identité (grille OTAN A-F / 1-6), tirées de ce que le terrain a réellement transmis.
+     *
+     * @param array<string, mixed> $person
+     * @param list<array<string, mixed>> $samples
+     * @return array{source: string, credibility: string, technical: ?int, corroboration: ?int, global: ?int}
+     */
+    public static function identityConfidence(array $person, array $samples, ?int $tech): array
+    {
+        $terminal = SseTerrainService::personTerminalLabel($person);
+        $source = match ($terminal) {
+            'Signé depuis le terrain' => 'B — Terrain, terminal signé',
+            'Terminal terrain' => 'C — Terrain, non signé',
+            default => '—',
+        };
+
+        $kinds = [];
+        foreach ($samples as $s) {
+            $k = strtolower((string) ($s['kind'] ?? ''));
+            if ($k !== '') {
+                $kinds[$k] = true;
+            }
+        }
+        $query = is_array($person['identity_query'] ?? null) ? $person['identity_query'] : [];
+        $result = strtolower((string) ($query['result'] ?? ''));
+        $matched = in_array($result, ['confirmed', 'match', 'hit'], true);
+        $tier = strtoupper((string) ($person['identity_tier'] ?? 'DECLARED'));
+        $credibility = match (true) {
+            $tier === 'CONFIRMED' || $matched => '2 — Probable',
+            $tier === 'DOCUMENTARY' || $kinds !== [] => '3 — Possible',
+            $source !== '—' => '4 — Douteuse',
+            default => '—',
+        };
+
+        // Éléments indépendants qui se recoupent : photo, empreintes, iris, ADN, document, ABIS.
+        $elements = [
+            !empty($person['primary_photo']) || !empty($person['primary_photo_id']),
+            isset($kinds['empreintes']) || isset($kinds['fingerprint']) || isset($kinds['fingerprints']),
+            isset($kinds['iris']),
+            isset($kinds['adn']) || isset($kinds['dna']),
+            !empty($person['id_document_present']),
+            $matched,
+        ];
+        $n = count(array_filter($elements));
+        $corroboration = $n > 0 ? (int) round($n / count($elements) * 100) : null;
+
+        return [
+            'source' => $source,
+            'credibility' => $credibility,
+            'technical' => $tech,
+            'corroboration' => $corroboration,
+            'global' => $tech,
+        ];
+    }
+
     public function identityShow(Request $request, array $params = []): Response
     {
         $id = (int) ($params['id'] ?? 0);
@@ -3911,13 +4054,7 @@ final class SsePortalController
                 'Organisations' => !empty($person['affiliation']) ? 1 : 0,
                 'Événements' => count($timeline),
             ],
-            'confidence' => [
-                'source' => '—',
-                'credibility' => '—',
-                'technical' => $tech,
-                'corroboration' => null,
-                'global' => $tech,
-            ],
+            'confidence' => self::identityConfidence($person, $samples, $tech),
             'reasoning' => [
                 'conclusion' => $samples !== [] || !empty($person['primary_photo'])
                     ? 'Éléments transmis par le terrain — à croiser, sans confirmation automatique.'
@@ -4866,31 +5003,15 @@ final class SsePortalController
 
     // ─────────────────────────────────────────── Lecture du dossier à l'écran
 
+    /**
+     * Ancienne « lecture complète » : la vue n'existe plus. On renvoie à la fiche du dossier,
+     * qui affiche tout ce que la lecture montrait, plutôt qu'une page d'erreur.
+     */
     public function caseReader(Request $request, array $params = []): Response
     {
         $id = (int) ($params['id'] ?? 0);
-        if (!$this->canExport()) {
-            Session::flash('error', 'Lecture du dossier complet non autorisée.');
 
-            return Response::redirect(url('atak/sse/dossiers/' . $id));
-        }
-        $case = $this->requireCase($id);
-        if ($case === null) {
-            return Response::redirect(url('atak/sse/dossiers'));
-        }
-        if ($locked = $this->redirectIfCaseLocked($case)) {
-            return $locked;
-        }
-
-        return $this->portalView('atak.sse.case_reader', [
-            'title' => 'Lecture — ' . (string) ($case['reference_code'] ?? ''),
-            'case' => $case,
-            'levelLabel' => SseRedactionService::levelLabel($this->clearance->maxLevel()),
-            'streamUrl' => url('atak/sse/dossiers/' . $id . '/pdf/flux'),
-            'downloadUrl' => url('atak/sse/dossiers/' . $id . '/pdf'),
-            'canManage' => $this->canManage(),
-            'activeNav' => 'dossiers',
-        ]);
+        return Response::redirect(url($id > 0 ? 'atak/sse/dossiers/' . $id : 'atak/sse/dossiers'));
     }
 
     /** Même document que l'export, servi pour lecture à l'écran plutôt qu'en téléchargement. */

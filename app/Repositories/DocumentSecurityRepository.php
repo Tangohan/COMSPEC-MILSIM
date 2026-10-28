@@ -20,7 +20,7 @@ class DocumentSecurityRepository
     {
         $token = hash('sha256', $tenantId . '|' . $documentId . '|' . $userId . '|' . bin2hex(random_bytes(20)) . '|' . microtime(true));
         $stmt = $this->pdo->prepare('INSERT INTO document_access_sessions (tenant_id, document_id, user_id, session_token, signature_required, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)');
-        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null;
+        $ip = \App\Support\ClientIp::resolve() ?: null;
         $ua = $_SERVER['HTTP_USER_AGENT'] ?? null;
         if (is_string($ip) && strpos($ip, ',') !== false) {
             $ip = trim(explode(',', $ip)[0]);

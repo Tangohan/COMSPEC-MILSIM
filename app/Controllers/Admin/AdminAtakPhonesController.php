@@ -61,6 +61,12 @@ final class AdminAtakPhonesController
             Session::flash('error', (string) ($result['error'] ?? 'Régénération impossible.'));
         } else {
             Session::flash('success', 'Nouveau numéro attribué : ' . (string) ($result['number'] ?? '') . '.');
+            (new \App\Repositories\AtakAdminControlRepository())->notifyPlayer(
+                ['tenant_id' => $guard, 'user_id' => $userId],
+                'phone',
+                'Nouveau numéro de téléphone',
+                'Numéro : ' . (string) ($result['number'] ?? '')
+            );
         }
 
         return Response::redirect(url(self::BACK));

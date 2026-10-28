@@ -1,6 +1,6 @@
 <?php
 $base = url('');
-$assetVer = platform_app_version();
+$assetVer = \App\Support\BuildVersion::id(); // cache-busting : change à chaque déploiement
 $atakToken = $atakToken ?? '';
 $nodeAtakUrl = $nodeAtakUrl ?? '';
 $visitorIp = $visitorIp ?? '';
@@ -77,7 +77,7 @@ if ($atakMapConfig) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><?= $atakOverwatchBeta ? 'ATHENA | Overwatch Beta' : ($atakPopout === 'left' ? 'Panneau ATAK' : ($atakPopout === 'right' ? 'Effectifs ATAK' : 'COMSPEC ATAK | Carte tactique Arma 3')) ?></title>
   <link rel="icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png" type="image/png">
-  <link rel="apple-touch-icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png">
+  <link rel="apple-touch-icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-180.png">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <script>
@@ -103,6 +103,7 @@ if ($atakMapConfig) {
   <link href="<?= $base ?>/assets/css/atak-roleplay-effects.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-ctab.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-c2-shell.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-donor.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-c2-v2.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-c2-live.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-terrain3d-premium.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
@@ -664,6 +665,20 @@ if ($atakMapConfig) {
             <span>Afficher les repères de planification sur la carte</span>
           </span>
         </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-briefing-plan">
+          <span class="atak-sound-pref-key">Plan de briefing</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-show-briefing-plan" checked />
+            <span>Afficher les zones, lignes et points dessinés dans l'app Plan du téléphone</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-drone-contacts">
+          <span class="atak-sound-pref-key">Contacts vus par drone</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-show-drone-contacts" checked />
+            <span>Pistes de la caméra des drones de l’ATAK natif (losange orange, croix si détruit)</span>
+          </span>
+        </label>
         <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-sse-layer-cases">
           <span class="atak-sound-pref-key">Dossiers</span>
           <span class="atak-sound-pref-check">
@@ -985,7 +1000,7 @@ if ($atakMapConfig) {
       <details class="atak-details">
         <summary>Pack Overwatch</summary>
         <div class="atak-details-body">
-          <p><a href="<?= htmlspecialchars($atakModDownloadUrl) ?>" class="atak-game-config-download">Télécharger le pack Overwatch</a></p>
+          <p><a href="<?= htmlspecialchars($atakModDownloadUrl) ?>" class="atak-game-config-download">Installer le mod (Steam Workshop)</a></p>
         </div>
       </details>
       <?php endif; ?>
@@ -2764,6 +2779,12 @@ if ($atakMapConfig) {
           </label>
           <div class="atak-replay-explore" role="group" aria-label="Filtres de la chronologie">
             <label class="atak-replay-speed-wrap">
+              <span class="atak-replay-speed-label">Mission</span>
+              <select id="atak-replay-mission-filter" class="atak-replay-speed" title="Session jouée à relire (clé de mission de l’ATAK natif)">
+                <option value="all">Toutes les sessions</option>
+              </select>
+            </label>
+            <label class="atak-replay-speed-wrap">
               <span class="atak-replay-speed-label">Date</span>
               <select id="atak-replay-date-filter" class="atak-replay-speed" title="Journée à relire">
                 <option value="all">Toute la période</option>
@@ -3040,7 +3061,7 @@ if ($atakMapConfig) {
         <p class="atak-route-panel__hint" id="atak-route-panel-hint">Cliquez au moins deux points sur la carte, puis transmettez l’itinéraire aux opérateurs.</p>
         <div id="atak-gps-route-box" hidden>
           <label class="atak-route-panel__field" for="atak-gps-route-name">Nom de l’itinéraire
-            <input type="text" id="atak-gps-route-name" maxlength="80" value="Itinéraire" autocomplete="off" />
+            <input type="text" id="atak-gps-route-name" maxlength="80" value="<?= locale() === 'en' ? 'Route' : 'Itinéraire' ?>" autocomplete="off" />
           </label>
           <div class="atak-gps-route-actions">
             <button type="button" class="atak-route-panel__close" id="atak-gps-route-send">Transmettre aux opérateurs</button>
@@ -3309,6 +3330,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-sse-layers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-mission-plan.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-mission-overlay.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-briefing-plan.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-map-tools.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-socket.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-web-log.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -3346,9 +3368,11 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-iff.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-sigint.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-rf-hits.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-drone-contacts.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-sitrep.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-ops-status.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-transmissions.js"></script>
+  <script src="<?= $base ?>/assets/js/recon-viewer.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-cams.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-sse-persons.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-frs.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>

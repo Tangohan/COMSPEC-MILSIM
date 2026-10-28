@@ -6,7 +6,7 @@
 class COMSPEC_PauseManager_Dialog {
     idd = 9979;
     movingEnable = 1;
-    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_pauseManagerOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; (_this select 0) call comspec_overwatch_connect_fnc_pauseManagerOnLoad;";
     onUnload = "uiNamespace setVariable ['COMSPEC_PauseManager_Display', displayNull]; missionNamespace setVariable ['COMSPEC_PauseManager_PageReady', false, false]; missionNamespace setVariable ['COMSPEC_PauseManager_RefreshToken', -1, false];";
 
     class ControlsBackground {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class OverwatchOperatorGameProfileAssetTest extends TestCase
 {
@@ -21,7 +22,7 @@ final class OverwatchOperatorGameProfileAssetTest extends TestCase
     public function testConnectRegistersOperatorProfileFunctionsAndBumpsVersion(): void
     {
         $cfg = $this->connect('config.cpp');
-        self::assertStringContainsString('versionStr = "1.5.17"', $cfg);
+        ModVersion::assertAtLeast('1.5.17', ModVersion::fromConfigCpp($cfg));
         foreach ([
             'class jsonValue',
             'class collectOperatorIdentity',
@@ -137,9 +138,14 @@ final class OverwatchOperatorGameProfileAssetTest extends TestCase
     public function testExtensionOperatorHandlersKeepSteamAndTenantAndTolerateMissingRoute(): void
     {
         $dll = (string) file_get_contents($this->root() . '/mod/UptoDate/COMSPECExtension/Extension.cs');
-        self::assertStringContainsString('private const string ExtensionVersion = "1.18.12"', $dll);
+        ModVersion::assertAtLeast(
+            '1.18.12',
+            ModVersion::match('/private const string ExtensionVersion = "([0-9][0-9.]*)"/', $dll)
+        );
         self::assertGreaterThanOrEqual(2, substr_count($dll, 'ApplySteamUid(args[3])'));
-        self::assertStringContainsString('if (!isProxyContact && steamNorm.Length == 0)', $dll);
+        // Intégration #740 : la position n’est plus jetée sans Steam ; le steam_uid n’est simplement
+        // pas posté (jamais pour un contact relais) et le serveur s’appuie sur la liaison Athena.
+        self::assertStringContainsString('var steamJson = (!isProxyContact && steamNorm.Length > 0)', $dll);
         self::assertStringContainsString('OperatorRegister', $dll);
         self::assertStringContainsString('OperatorSync', $dll);
         self::assertStringContainsString('HandleOperatorProfile', $dll);

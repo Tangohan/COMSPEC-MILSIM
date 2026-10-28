@@ -1340,6 +1340,47 @@ final class AtakRealismRepository
         return $this->findCertificateById($tenantId, $certificateId);
     }
 
+    /**
+     * Révoque les certificats encore valides d’un terminal (compromission validée sur le terrain).
+     * Retourne le nombre de certificats révoqués.
+     */
+    public function revokeCertificatesForTerminal(int $tenantId, int $terminalId, string $reason = 'keyCompromise'): int
+    {
+        return count($this->revokeCertificateIdsForTerminal($tenantId, $terminalId, $reason));
+    }
+
+    /**
+     * Comme revokeCertificatesForTerminal, mais retourne les identifiants révoqués
+     * (gardés dans l’historique des compromissions pour pouvoir les rétablir).
+     *
+     * @return list<int>
+     */
+    public function revokeCertificateIdsForTerminal(int $tenantId, int $terminalId, string $reason = 'keyCompromise'): array
+    {
+        if (!$this->tablesReady() || $tenantId < 1 || $terminalId < 1) {
+            return [];
+        }
+        $st = $this->pdo->prepare(
+            "SELECT id FROM atak_certificates WHERE tenant_id = ? AND terminal_id = ? AND status IN ('active', 'issued')"
+        );
+        $st->execute([$tenantId, $terminalId]);
+        $ids = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
+        if ($ids === []) {
+            return [];
+        }
+        $marks = implode(',', array_fill(0, count($ids), '?'));
+        $this->pdo->prepare(
+            "UPDATE atak_certificates
+             SET status = 'revoked',
+                 revoked_at = UTC_TIMESTAMP(),
+                 revoked_reason = ?,
+                 updated_at = UTC_TIMESTAMP()
+             WHERE tenant_id = ? AND terminal_id = ? AND id IN ({$marks}) AND status IN ('active', 'issued')"
+        )->execute(array_merge([$this->nullableString($reason, 255), $tenantId, $terminalId], $ids));
+
+        return $ids;
+    }
+
     public function deleteCertificate(int $tenantId, int $certificateId): bool
     {
         if (!$this->tablesReady() || $tenantId < 1 || $certificateId < 1) {

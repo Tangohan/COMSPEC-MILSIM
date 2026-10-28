@@ -29,10 +29,12 @@ private _wantDigital = _opt getOrDefault ["digital", true];
 private _wantDocs = _opt getOrDefault ["documents", true];
 private _wantNetwork = _opt getOrDefault ["network", true];
 
-private _seed = [round ((_pos select 0) * 10), format ["site_%1_%2", round (_pos select 1), _radius]] call comspec_sse_fnc_hash;
-private _cluster = [_seed, _profile, _complexity] call comspec_sse_fnc_generateCluster;
+private _seed = [[] call comspec_sse_fnc_missionSeed, format ["site_%1_%2_%3", round ((_pos select 0) * 10), round ((_pos select 1) * 10), _radius]] call comspec_sse_fnc_hash;
+private _region = _opt getOrDefault ["region", missionNamespace getVariable ["comspec_sse_region", "IRAQ"]];
+private _cluster = [_seed, _profile, _complexity, _region] call comspec_sse_fnc_generateCluster;
 
-private _nearMen = nearestObjects [_pos, ["CAManBase"], _radius];
+// Ni joueurs (ni Zeus incarné), ni unités jouables : même filtre qu'applyDataset / generateFromBrief.
+private _nearMen = (nearestObjects [_pos, ["CAManBase"], _radius]) select { alive _x && {!isPlayer _x} && {!(_x in playableUnits)} };
 private _nearVehicles = nearestObjects [_pos, ["LandVehicle"], _radius];
 private _nearStuff = nearestObjects [_pos, ["ThingX", "ReammoBox_F", "WeaponHolder"], _radius];
 
@@ -56,7 +58,8 @@ if (_center isEqualType objNull && {!isNull _center}) then {
 // État partagé entre les jobs CBA (référence HashMap).
 private _state = createHashMapFromArray [
     ["processed", []],
-    ["phoneDone", false]
+    ["phoneDone", false],
+    ["links", []]
 ];
 
 private _processOne = {
@@ -64,15 +67,23 @@ private _processOne = {
     if (isNull _ent) exitWith {};
     if (!isNil "comspec_sse_fnc_isHatchetVehicle" && {[_ent] call comspec_sse_fnc_isHatchetVehicle}) exitWith {};
     if (_ent getVariable ["comspec_sse_generating", false]) exitWith {};
+    // Fiche déjà générée : on la garde (identité et exploitation joueurs conservées).
+    private _existing = [_ent] call comspec_sse_fnc_getData;
+    if (!isNil "_existing" && {[_existing, "generated", false] call comspec_sse_fnc_getPair}) exitWith {};
 
     private _processed = _state getOrDefault ["processed", []];
 
     if (_ent isKindOf "CAManBase") then {
         [_ent, _profile, _complexity, "SITE", _cluster] call comspec_sse_fnc_generateData;
-        if (_wantNetwork && {count _processed > 0}) then {
-            private _other = _processed select 0;
-            if (!isNull _other && {_other isKindOf "CAManBase"}) then {
-                [_ent, _other, "CONTACT", 0.75, "SITE"] call comspec_sse_fnc_linkEntities;
+        // Organigramme : le premier homme est le chef ; les deux suivants lui sont subordonnés,
+        // les autres sont en contact avec un membre déjà traité (choix déterministe).
+        private _men = _processed select { !isNull _x && {_x isKindOf "CAManBase"} };
+        if (_wantNetwork && {_men isNotEqualTo []}) then {
+            if (count _men < 3) then {
+                (_state get "links") pushBack [_ent, _men select 0, "SUBORDINATE", 0.8, "SITE"];
+            } else {
+                private _pick = ([[_ent] call comspec_sse_fnc_entitySeed, "contact"] call comspec_sse_fnc_hash) mod (count _men);
+                (_state get "links") pushBack [_ent, _men select _pick, "CONTACT", 0.7, "SITE"];
             };
         };
     } else {
@@ -81,7 +92,7 @@ private _processOne = {
             [_ent, _profile, _complexity, "SITE", _cluster] call comspec_sse_fnc_generateData;
             private _men = _processed select { !isNull _x && {_x isKindOf "CAManBase"} };
             if (count _men > 0) then {
-                [_ent, _men select 0, "REFERENCES", 0.7, "SITE"] call comspec_sse_fnc_linkEntities;
+                (_state get "links") pushBack [_ent, _men select 0, "REFERENCES", 0.7, "SITE"];
             };
         } else {
             if (_wantDigital && {!(_state getOrDefault ["phoneDone", false])}) then {
@@ -90,7 +101,7 @@ private _processOne = {
                 [_ent, _profile, _complexity, "SITE", _cluster] call comspec_sse_fnc_generateData;
                 private _men = _processed select { !isNull _x && {_x isKindOf "CAManBase"} };
                 if (count _men > 0) then {
-                    [_ent, _men select 0, "OWNER", 0.9, "SITE"] call comspec_sse_fnc_linkEntities;
+                    (_state get "links") pushBack [_ent, _men select 0, "OWNER", 0.9, "SITE"];
                 };
             } else {
                 if (_wantDocs) then {
@@ -108,8 +119,22 @@ private _processOne = {
     _state set ["processed", _processed];
 };
 
+// Liens créés une fois les fiches publiées : linkEntities part au serveur, qui sinon créerait une fiche
+// PERSON/SCRIPT vide (fiche encore locale côté Zeus distant) puis l'écraserait chez le Zeus.
+private _runLinks = {
+    params ["_st"];
+    {
+        _x params ["_a", "_b", "_rel", "_conf", "_by"];
+        if (!isNull _a && {!isNull _b}) then {
+            [_a, _b, _rel, _conf, _by] call comspec_sse_fnc_linkEntities;
+        };
+    } forEach (_st getOrDefault ["links", []]);
+    _st set ["links", []];
+};
+
 if (isNil "CBA_fnc_waitAndExecute") then {
     { [_x, _profile, _complexity, _cluster, _wantDigital, _wantDocs, _wantNetwork, _state] call _processOne; } forEach _targets;
+    [_state] call _runLinks;
 } else {
     {
         private _delay = _forEachIndex * 0.28;
@@ -118,6 +143,11 @@ if (isNil "CBA_fnc_waitAndExecute") then {
             [_ent, _profile, _complexity, _cluster, _wantDigital, _wantDocs, _wantNetwork, _state] call _fn;
         }, [_x, _profile, _complexity, _cluster, _wantDigital, _wantDocs, _wantNetwork, _state, _processOne], _delay] call CBA_fnc_waitAndExecute;
     } forEach _targets;
+    // Même délai de stabilisation que zeusGenerateTargets (dernier publish différé à +0,25 s).
+    [{
+        params ["_st", "_fn"];
+        [_st] call _fn;
+    }, [_state, _runLinks], (count _targets) * 0.28 + 1.5] call CBA_fnc_waitAndExecute;
 };
 
 [format ["generateSite pos=%1 radius=%2 entities=%3 cluster=%4 (queued)", _pos, _radius, count _targets, _cluster getOrDefault ["clusterId", "?"]]] call comspec_sse_fnc_log;

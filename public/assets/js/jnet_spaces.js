@@ -84,6 +84,25 @@
   // Retour arrière (cache navigateur) : on remet l'interface au repos.
   window.addEventListener('pageshow', stopLoading);
 
+  // Unités : mémoriser la vue choisie (cartes ou organigramme).
+  root.querySelectorAll('[data-jn-views]').forEach(function (views) {
+    var viewKey = 'jnet.view.' + views.getAttribute('data-jn-views');
+    try {
+      var saved = window.localStorage.getItem(viewKey);
+      var radio = saved ? views.querySelector('.jn-views__radio[value="' + saved + '"]') : null;
+      if (radio) {
+        radio.checked = true;
+      }
+    } catch (err) { /* stockage indisponible : vue par défaut */ }
+    views.addEventListener('change', function (e) {
+      if (e.target.classList && e.target.classList.contains('jn-views__radio')) {
+        try {
+          window.localStorage.setItem(viewKey, e.target.value);
+        } catch (err) { /* ignore */ }
+      }
+    });
+  });
+
   // Guide : mémoriser l'état replié.
   var guide = root.querySelector('[data-jn-guide]');
   if (guide) {

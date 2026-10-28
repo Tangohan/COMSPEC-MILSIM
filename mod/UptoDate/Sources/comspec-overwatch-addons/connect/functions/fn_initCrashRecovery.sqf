@@ -13,24 +13,24 @@ addMissionEventHandler ["HandleDisconnect", {
     params ["_unit", "_id", "_uid", "_name"];
     if (_uid isEqualTo "" || {isNull _unit}) exitWith { false };
 
-    private _callsign = "";
-    if (local _unit) then {
-        _callsign = trim (missionNamespace getVariable ["COMSPEC_Callsign", ""]);
-    };
-    if (_callsign isEqualTo "") then {
-        _callsign = trim (groupId (group _unit));
-    };
+    // Indicatif publié par le client sur son unité (fn_syncPlayerAtakPublicVars) : le missionNamespace du serveur
+    // donnait celui de l'hôte (ou rien en dédié) et le repli groupId (« Alpha 1-1 ») écrasait le vrai indicatif
+    // au retour JIP. Vide → fn_restoreAtakSession se rabat sur le portail.
+    private _callsign = _unit getVariable ["COMSPEC_CallsignPublic", ""];
+    _callsign = if (_callsign isEqualType "") then { trim _callsign } else { "" };
 
     private _state = createHashMap;
     _state set ["callsign", _callsign];
     _state set ["atak_state", _unit getVariable ["COMSPEC_AtakState", createHashMap]];
-    _state set ["link_state", _unit getVariable ["COMSPEC_LinkState", "linked"]];
+    // Jamais « linked » au retour : aucune liaison n'existe encore, refreshLinkState recalcule l'état réel.
+    _state set ["link_state", "offline"];
     _state set ["position", getPosATL _unit];
     _state set ["direction", getDir _unit];
     _state set ["time", time];
 
     COMSPEC_DisconnectedAtakState set [_uid, _state];
-    publicVariable "COMSPEC_DisconnectedAtakState";
+    // Plus de publicVariable : seul le serveur lit cette table (restauration JIP via remoteExec) ;
+    // la diffuser envoyait tout l'état ATAK des déconnectés à chaque client à chaque départ.
     false
 }];
 

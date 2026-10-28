@@ -5,7 +5,7 @@
 */
 params [["_factor", 0.5]];
 disableSerialization;
-private _m = ([] call comspec_atak_native_fnc_display) displayCtrl 88530;
+private _m = ([] call comspec_atak_native_fnc_mapCtrl);
 if (isNull _m) exitWith { false };
 private _z = (((ctrlMapScale _m) * _factor) max 0.001) min 1;
 uiNamespace setVariable ["COMSPEC_ATAK_MapScale", _z];

@@ -89,7 +89,7 @@ final class PlatformStorageCatalog
                 'blurb' => 'Clichés casque, reconnaissance et pièces associées. Les fichiers sur le disque sont aussi retirés.',
                 'severity' => 'critical',
                 'tables' => ['atak_poi_photos', 'atak_intel_photos', 'recon_images'],
-                'directories' => ['public/uploads/recon', 'storage/uploads/recon', 'public/uploads/intel'],
+                'directories' => ['public/uploads/recon', 'storage/uploads/recon', 'storage/private/recon', 'public/uploads/intel'],
             ],
             [
                 'key' => 'atak_analysis',
@@ -140,14 +140,16 @@ final class PlatformStorageCatalog
             ['path' => 'storage/atak_terrain', 'label' => 'Relief relevé', 'purgeable' => true],
             ['path' => 'public/uploads/recon', 'label' => 'Photos de reconnaissance', 'purgeable' => true],
             ['path' => 'storage/uploads/recon', 'label' => 'Photos de reconnaissance (repli)', 'purgeable' => true],
+            ['path' => 'storage/private/recon', 'label' => 'Photos de reconnaissance confidentielles', 'purgeable' => true],
             ['path' => 'public/uploads/intel', 'label' => 'Photos du poste', 'purgeable' => true],
             ['path' => 'public/uploads/sse', 'label' => 'Pièces SSE', 'purgeable' => false],
             ['path' => 'public/uploads/login-accueil', 'label' => 'Photos d’accueil après connexion', 'purgeable' => false],
             ['path' => 'storage/documents', 'label' => 'Documents des communautés', 'purgeable' => false],
+            ['path' => 'storage/private/partage', 'label' => 'Fichiers partagés des communautés', 'purgeable' => false],
             ['path' => 'storage/logs', 'label' => 'Journaux serveur', 'purgeable' => true],
             ['path' => 'storage/cache', 'label' => 'Cache', 'purgeable' => true],
             ['path' => 'storage/updates', 'label' => 'Paquets de mise à jour', 'purgeable' => false],
-            ['path' => 'storage/atak-mod', 'label' => 'Packs jeu des communautés', 'purgeable' => false],
+            ['path' => 'storage/atak-mod', 'label' => 'Anciennes archives du mod (avant Steam)', 'purgeable' => false],
         ];
     }
 }

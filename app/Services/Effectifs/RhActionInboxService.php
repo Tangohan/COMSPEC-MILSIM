@@ -8,6 +8,8 @@ use App\Repositories\ElevationRequestRepository;
 use App\Repositories\PersonnelCorrectionRequestRepository;
 use App\Repositories\PersonnelMobilityRequestRepository;
 use App\Repositories\PersonnelQualificationRepository;
+use App\Services\Personnel\PersonnelCorrectionRequestService;
+use App\Services\Personnel\PersonnelFieldValueFormatter;
 use App\Services\Personnel\PersonnelProfileGapScanService;
 
 /**
@@ -23,6 +25,7 @@ final class RhActionInboxService
         private PersonnelProfileGapScanService $gaps,
         private ?PersonnelQualificationRepository $qualifications = null,
         private ?PersonnelMobilityRequestRepository $mobility = null,
+        private ?PersonnelFieldValueFormatter $fieldFormatter = null,
     ) {
         $this->qualifications ??= new PersonnelQualificationRepository();
         $this->mobility ??= new PersonnelMobilityRequestRepository();
@@ -70,6 +73,8 @@ final class RhActionInboxService
                     (string) ($row['target_callsign'] ?? ''),
                     $uid
                 );
+                $note = trim((string) ($row['note'] ?? ''));
+                $changes = $this->correctionChanges($row, $tenantId);
                 $actions[] = [
                     'id' => 'corr-' . (int) ($row['id'] ?? 0),
                     'bucket' => 'corrections',
@@ -77,9 +82,14 @@ final class RhActionInboxService
                     'member_id' => $uid,
                     'member_label' => $label,
                     'title' => 'Demande de correction',
-                    'detail' => $this->truncate((string) ($row['note'] ?? 'Le membre propose une mise à jour de son dossier.')),
+                    'detail' => $note !== '' ? $this->truncate($note) : $this->changesSummary($changes),
                     'cta_label' => 'Traiter',
                     'href' => url('back-office/personnel/corrections'),
+                    // Décision directe depuis « À traiter » (fenêtre Confirmer / Refuser).
+                    'decide_url' => url('back-office/personnel/corrections/' . (int) ($row['id'] ?? 0) . '/decide'),
+                    'requested_by' => trim((string) ($row['requester_display_name'] ?? '')),
+                    'member_note' => $note,
+                    'changes' => $changes,
                 ];
             }
         } catch (\Throwable) {
@@ -204,6 +214,7 @@ final class RhActionInboxService
                     'href' => $uid > 0
                         ? effectifs_workspace_url('membres/' . $uid)
                         : effectifs_workspace_url(),
+                    'issues' => $uid > 0 ? $this->issueLinks($uid, $issueKeys) : [],
                 ];
             }
         } catch (\Throwable) {
@@ -299,6 +310,90 @@ final class RhActionInboxService
             'buckets' => $buckets,
             'actions' => array_slice($actions, 0, 40),
         ];
+    }
+
+    /**
+     * Champs proposés par une demande de correction, en langage métier.
+     *
+     * @param array<string, mixed> $row
+     * @return list<array{label: string, before: list<string>, after: list<string>, blank: string}>
+     */
+    private function correctionChanges(array $row, int $tenantId): array
+    {
+        $proposed = is_array($row['proposed'] ?? null) ? $row['proposed'] : [];
+        $before = is_array($row['before'] ?? null) ? $row['before'] : [];
+        $labels = PersonnelCorrectionRequestService::fieldLabels(true);
+        $formatter = $this->fieldFormatter ??= new PersonnelFieldValueFormatter();
+        $out = [];
+        foreach ($proposed as $key => $value) {
+            $key = (string) $key;
+            $out[] = [
+                'label' => $labels[$key] ?? 'Information du dossier',
+                'before' => $formatter->lines($key, $before[$key] ?? '', $tenantId),
+                'after' => $formatter->lines($key, $value, $tenantId),
+                'blank' => PersonnelFieldValueFormatter::emptyPhrase($key),
+            ];
+            if (count($out) >= 8) {
+                break;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<array{label?: string}> $changes
+     */
+    private function changesSummary(array $changes): string
+    {
+        $labels = [];
+        foreach ($changes as $change) {
+            $label = trim((string) ($change['label'] ?? ''));
+            if ($label !== '' && $label !== 'Information du dossier') {
+                $labels[] = $label;
+            }
+        }
+        if ($labels === []) {
+            return 'Le membre propose une mise à jour de son dossier.';
+        }
+        if (count($labels) === 1) {
+            return 'Le membre propose de modifier : ' . $labels[0] . '.';
+        }
+        $last = array_pop($labels);
+
+        return 'Le membre propose de modifier : ' . implode(', ', $labels) . ' et ' . $last . '.';
+    }
+
+    /**
+     * Raccourcis vers la partie de la fiche qui corrige chaque manque.
+     *
+     * @param list<mixed> $issueKeys
+     * @return list<array{key: string, label: string, href: string}>
+     */
+    private function issueLinks(int $userId, array $issueKeys): array
+    {
+        $anchors = [
+            'function' => 'eff-dlg-jobs',
+            'rank' => 'grade',
+            'role' => 'acces',
+            'operator_image' => 'eff-dlg-portrait',
+            'absence' => 'absences',
+        ];
+        $base = effectifs_workspace_url('membres/' . $userId);
+        $out = [];
+        foreach ($issueKeys as $key) {
+            $key = (string) $key;
+            if (!isset(PersonnelProfileGapScanService::ISSUE_LABELS[$key])) {
+                continue;
+            }
+            $out[] = [
+                'key' => $key,
+                'label' => PersonnelProfileGapScanService::ISSUE_LABELS[$key],
+                'href' => $base . '#' . ($anchors[$key] ?? 'dossier'),
+            ];
+        }
+
+        return $out;
     }
 
     private function memberLabel(string $displayName, string $callsign, int $userId): string

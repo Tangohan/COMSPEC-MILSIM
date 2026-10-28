@@ -20,13 +20,13 @@ private _isFrago = (_kind isEqualTo "FRAGO");
 
 private _title = _disp displayCtrl 9500;
 if (_isFrago) then {
-    _title ctrlSetStructuredText parseText "<t font='RobotoCondensedBold' size='1' align='center' color='#e8f4f0'>Ordre fragmentaire</t>";
+    _title ctrlSetStructuredText parseText (("<t font='RobotoCondensedBold' size='1' align='center' color='#e8f4f0'>Ordre fragmentaire</t>") call comspec_overwatch_connect_fnc_tr);
 } else {
-    _title ctrlSetStructuredText parseText "<t font='RobotoCondensedBold' size='1' align='center' color='#e8f4f0'>Émettre un ordre</t>";
+    _title ctrlSetStructuredText parseText (("<t font='RobotoCondensedBold' size='1' align='center' color='#e8f4f0'>Émettre un ordre</t>") call comspec_overwatch_connect_fnc_tr);
 };
 
 private _hint = _disp displayCtrl 9530;
 private _tgtIdx = lbCurSel (_disp displayCtrl 9504);
 private _tgtLabel = if (_tgtIdx < 0) then { "groupe" } else { (_disp displayCtrl 9504) lbText _tgtIdx };
-_hint ctrlSetStructuredText parseText "";
+_hint ctrlSetStructuredText parseText (("") call comspec_overwatch_connect_fnc_tr);
 

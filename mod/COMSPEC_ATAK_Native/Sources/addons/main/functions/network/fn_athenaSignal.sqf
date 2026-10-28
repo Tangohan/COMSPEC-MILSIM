@@ -5,7 +5,9 @@
       "notify", ordre NOTIFY_FULL → alerte plein écran, plus le SMS
       "vibrate", ordre VIBRATE    → vibration et notification
       "health", [type, unité, position, indicatif, libellé] → alerte santé (inconscient, arrêt cardiaque, KIA) :
-                                     plein écran, journal de l'app Alertes, position sur la carte
+                                     notification et vibration du téléphone, journal de l'app Alertes, position sur la carte.
+                                     Plus de bandeau sur tout l'écran de jeu (retour de jeu 1.97.0 : visible sans
+                                     téléphone en main, et même sans téléphone) ; seulement pour qui porte un téléphone.
 */
 params [["_kind", ""], ["_arg", createHashMap]];
 if (!hasInterface) exitWith {};
@@ -28,9 +30,9 @@ if (_key isNotEqualTo "") then {
     _seen pushBack _key;
     if ((count _seen) > 300) then { _seen deleteRange [0, (count _seen) - 300]; };
     profileNamespace setVariable ["COMSPEC_ATAK_AlertsSeen", _seen];
-    saveProfileNamespace;
+    [] call comspec_atak_native_fnc_saveProfile;
 };
-private _time = [dayTime, "HH:MM"] call BIS_fnc_timeToString;
+private _time = (["now"] call comspec_atak_native_fnc_clockFmt);
 switch (_kind) do {
     case "notify": {
         private _type = toUpper (_arg getOrDefault ["type", "NOTIFY"]);
@@ -58,7 +60,10 @@ switch (_kind) do {
         private _grid = if ((count _pos) >= 2) then { [_pos, 8] call comspec_atak_native_fnc_gridRef } else { "-" };
         private _dist = if ((count _pos) >= 2) then { format [" · %1 m au %2°", round (player distance2D _pos), round (player getDir _pos)] } else { "" };
         ["MEDICAL", _name, _pos, _grid, format ["%1%2", _what, ["", " · " + _label] select (_label isNotEqualTo "")]] call comspec_atak_native_fnc_alertsLog;
-        [format ["SANTÉ : %1", _what], format ["%1 · %2%3", _name, _grid, _dist], "Alerte santé", [0.62, 0.05, 0.12, 0.9], 10] call comspec_atak_native_fnc_fullAlert;
+        // Alerte reçue sur le téléphone, pas sur l'écran de jeu : notification (ouvre l'app Alertes) et vibration.
+        if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
+        ["WARNING", format ["Santé : %1 · %2 · %3%4", _what, _name, _grid, _dist], 8, 90, "ALERTS"] call comspec_atak_native_fnc_notify;
+        [] call comspec_atak_native_fnc_vibrate;
     };
 };
 true

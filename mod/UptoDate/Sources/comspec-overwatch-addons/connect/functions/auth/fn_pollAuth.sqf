@@ -95,11 +95,11 @@ if (!isNull _pic) then {
     if (_ready && {!(_avatar isEqualTo "")}) then {
         private _cached = missionNamespace getVariable ["comspec_profile_avatar_local", ""];
         if (!(_cached isEqualTo "")) then {
-            _pic ctrlSetText _cached;
+            _pic ctrlSetText ((_cached) call comspec_overwatch_connect_fnc_tr);
             _pic ctrlShow true;
         } else {
             _pic ctrlShow false;
-            _pic ctrlSetText "";
+            _pic ctrlSetText (("") call comspec_overwatch_connect_fnc_tr);
             if (!(missionNamespace getVariable ["comspec_profile_avatar_loading", false])) then {
                 missionNamespace setVariable ["comspec_profile_avatar_loading", true, false];
                 [_d, _avatar] spawn {
@@ -119,7 +119,7 @@ if (!isNull _pic) then {
                     if (isNull _disp) exitWith {};
                     private _p = _disp displayCtrl 9431;
                     if (!isNull _p) then {
-                        _p ctrlSetText _local;
+                        _p ctrlSetText ((_local) call comspec_overwatch_connect_fnc_tr);
                         _p ctrlShow true;
                     };
                     private _loader = _disp displayCtrl 9413;
@@ -137,7 +137,7 @@ if (!isNull _pic) then {
         };
     } else {
         _pic ctrlShow false;
-        _pic ctrlSetText "";
+        _pic ctrlSetText (("") call comspec_overwatch_connect_fnc_tr);
     };
 };
 
@@ -175,6 +175,7 @@ private _errTxt = switch (_err) do {
     case "ACCOUNT_DISABLED": { "Ce compte n’est plus autorisé." };
     case "TENANT_DISABLED": { "Cette communauté n’est plus accessible." };
     case "NO_TENANT": { "Aucune communauté n’est rattachée à ce compte." };
+    case "CLIENT_UNTRUSTED": { "Ce module n’est pas reconnu. Installez la version officielle du pack, puis relancez Arma." };
     case "MOD_OUTDATED": {
         if (_modMin isEqualTo "") then {
             "Cette version du pack n’est plus acceptée. Installez la mise à jour."

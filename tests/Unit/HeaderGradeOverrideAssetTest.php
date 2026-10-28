@@ -17,7 +17,10 @@ final class HeaderGradeOverrideAssetTest extends TestCase
         self::assertStringContainsString('headerShortCode', $header);
         self::assertStringContainsString('headerTitle', $header);
         self::assertStringContainsString('headerShortCode', $sidebar);
-        self::assertStringContainsString('rank_display_override', $edit);
-        self::assertStringContainsString('code affiché à côté du grade', $edit);
+        // The override field moved into the ORBAT section partial included by the edit page.
+        $orbat = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/personnel/edit_orbat_section.php');
+        self::assertStringContainsString("views/partials/personnel/edit_orbat_section.php", $edit);
+        self::assertStringContainsString('name="rank_display_override"', $orbat);
+        self::assertStringContainsString('code affiché à côté du grade', $orbat);
     }
 }

@@ -8,9 +8,11 @@ use App\Core\Session;
 use App\Repositories\UserProfileRepository;
 
 /**
- * Résolution et persistance de la locale UI (fr|en).
+ * Résolution et persistance de la locale UI (fr|en, plus les langues publiées par la communauté, CommunityLanguages).
  *
  * Ordre : cookie explicite → session → profil connecté → Accept-Language → APP_LOCALE.
+ * Une langue de la communauté (« es ») se comporte comme l'anglais (locale() = en : dates, formats, textes non
+ * traduits en anglais), avec son dictionnaire par-dessus ; site_lang() et html_lang() donnent son code.
  */
 final class LocaleService
 {
@@ -38,13 +40,42 @@ final class LocaleService
         if ($locale === 'en-us' || $locale === 'en-gb' || str_starts_with($locale, 'en')) {
             return 'en';
         }
+        $locale = str_replace('_', '-', $locale);
+        if (CommunityLanguages::isPublished($locale)) {
+            return $locale;
+        }
+        // « es-ES », « es-419 » : langue de base publiée.
+        $base = substr($locale, 0, 2);
+        if (strlen($locale) > 2 && CommunityLanguages::isPublished($base)) {
+            return $base;
+        }
 
         return in_array($locale, self::SUPPORTED, true) ? $locale : 'fr';
     }
 
     public static function isSupported(string $locale): bool
     {
-        return in_array(self::normalize($locale), self::SUPPORTED, true);
+        return in_array(self::normalize($locale), self::available(), true);
+    }
+
+    /**
+     * Langues proposées dans les sélecteurs : français, anglais, puis les langues publiées par la communauté.
+     *
+     * @return list<string>
+     */
+    public static function available(): array
+    {
+        return array_merge(self::SUPPORTED, array_keys(CommunityLanguages::published()));
+    }
+
+    /** Nom d'une langue dans cette langue (sélecteurs). */
+    public static function nativeName(string $code): string
+    {
+        return match ($code) {
+            'fr' => 'Français',
+            'en' => 'English',
+            default => CommunityLanguages::published()[$code] ?? strtoupper($code),
+        };
     }
 
     public function current(): string
@@ -54,7 +85,7 @@ final class LocaleService
 
     public function htmlLang(): string
     {
-        return $this->current() === 'en' ? 'en' : 'fr';
+        return function_exists('html_lang') ? html_lang() : ($this->current() === 'en' ? 'en' : 'fr');
     }
 
     public function resolve(): string
@@ -90,7 +121,9 @@ final class LocaleService
         $locale = self::normalize($locale);
         $this->translator->setLocale($locale);
         Session::set(self::SESSION_KEY, $locale);
-        $GLOBALS['__app_locale'] = $locale;
+        // Langue de la communauté : tout le reste du site la traite comme l'anglais (locale()), site_lang() la garde.
+        $GLOBALS['__app_locale'] = $locale === 'fr' ? 'fr' : 'en';
+        $GLOBALS['__app_site_lang'] = $locale;
         $GLOBALS['__app_translator'] = $this->translator;
     }
 
@@ -121,9 +154,57 @@ final class LocaleService
         }
     }
 
+    /**
+     * À la connexion : un choix de langue fait avant (bandeau cookies, sélecteur) remplit le profil s'il est vide ;
+     * sinon la langue du profil devient celle du site. Les e-mails suivent la langue du profil.
+     */
+    public function syncAfterLogin(int $userId): void
+    {
+        if ($userId < 1) {
+            return;
+        }
+        $chosen = $this->readCookie();
+        $profile = $this->profileLanguage($userId);
+        try {
+            if ($chosen !== null && $profile === null) {
+                $repo = $this->profiles ?? new UserProfileRepository();
+                $repo->ensureRow($userId);
+                $repo->upsert($userId, ['language' => $chosen]);
+            } elseif ($chosen === null && $profile !== null) {
+                $this->apply($profile);
+                $this->writeCookie($profile);
+            }
+        } catch (\Throwable) {
+            // Ne bloque jamais une connexion.
+        }
+    }
+
     public function boot(): void
     {
+        // ?lang=fr|en (liens hreflang, partage) : impose la langue de la page et la garde pour la suite de la visite.
+        $fromQuery = self::fromQuery();
+        if ($fromQuery !== null) {
+            if ($this->readCookie() !== $fromQuery) {
+                $this->setUserLocale($fromQuery, false);
+            } else {
+                $this->apply($fromQuery);
+            }
+
+            return;
+        }
         $this->apply($this->resolve());
+    }
+
+    /** Langue demandée par le paramètre d'URL `lang` (null si absent ou non pris en charge). */
+    public static function fromQuery(): ?string
+    {
+        $raw = $_GET['lang'] ?? null;
+        if (!is_string($raw)) {
+            return null;
+        }
+        $raw = strtolower(trim($raw));
+
+        return in_array($raw, self::available(), true) ? $raw : null;
     }
 
     private function readCookie(): ?string
@@ -187,6 +268,10 @@ final class LocaleService
             }
             if (str_starts_with($tag, 'en')) {
                 return 'en';
+            }
+            $norm = self::normalize($tag);
+            if ($norm !== 'fr' && $norm !== 'en') {
+                return $norm;
             }
         }
 

@@ -10,7 +10,8 @@ private _say = {
     uiNamespace setVariable ["COMSPEC_ATAK_FrsHint", [_t, _warn]];
     // Fiche partie : on vide le brouillon sans que le redessin ne reprenne les champs affichés.
     if (_clear) then { uiNamespace setVariable ["COMSPEC_ATAK_FrsDraft", createHashMap]; uiNamespace setVariable ["COMSPEC_ATAK_FrsClearing", true]; };
-    [{ ["FRS"] call comspec_atak_native_fnc_pageRender; uiNamespace setVariable ["COMSPEC_ATAK_FrsClearing", false]; }] call CBA_fnc_execNextFrame;
+    // Réponse lente (appel en spawn) : on ne redessine que si l'app FRS est encore ouverte.
+    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FRS") then { ["FRS"] call comspec_atak_native_fnc_pageRender; }; uiNamespace setVariable ["COMSPEC_ATAK_FrsClearing", false]; }] call CBA_fnc_execNextFrame;
 };
 private _body = trim (_d getOrDefault ["body", ""]);
 if ((count _body) > (_cat getOrDefault ["body_max", 1000])) then { _body = _body select [0, _cat getOrDefault ["body_max", 1000]]; };
@@ -110,7 +111,7 @@ if (_noteId > 0 && {(count _pieces) > 0}) then {
             _x params ["_kind", "_path", "_name", "_grid", ["_author", ""], ["_caption", ""]];
             private _target = _path;
             if (_kind isEqualTo "capture" && {!isNil "comspec_overwatch_connect_fnc_extResult"}) then {
-                private _staged = ["COMSPECExtension" callExtension ["StageCapture", [_target]]] call comspec_overwatch_connect_fnc_extResult;
+                private _staged = [(["COMSPECExtension", "StageCapture", [_target]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
                 if ((_staged isEqualType "") && {(count _staged) >= 4} && {(_staged select [0, 3]) isEqualTo "OK|"}) then {
                     private _b = trim (_staged select [3, (count _staged) - 3]);
                     if (_b isNotEqualTo "") then { _target = _b; };

@@ -13,6 +13,16 @@ final class EmailEvents
     public const PLATFORM_ACCOUNT_EMAIL_VERIFIED = 'PLATFORM_ACCOUNT_EMAIL_VERIFIED';
     public const REGISTER_SECURITY_COMPANION = 'REGISTER_SECURITY_COMPANION';
     public const COMMUNITY_CREATION_CHECKLIST = 'COMMUNITY_CREATION_CHECKLIST';
+    /** Formule offerte à la communauté par l'administration de la plateforme — e-mail aux gestionnaires. */
+    public const PLAN_GIFT_GRANTED = 'PLAN_GIFT_GRANTED';
+    /** Paiement PayPal d’une formule déclaré par la personne — e-mail à l’administration du site. */
+    public const PLAN_PAYMENT_DECLARED = 'PLAN_PAYMENT_DECLARED';
+    /** Paiement PayPal activé ou refusé par l’administration — e-mail à la personne qui a payé. */
+    public const PLAN_PAYMENT_DECIDED = 'PLAN_PAYMENT_DECIDED';
+    /** Essai fondateur ou formule offerte qui se termine bientôt — e-mail aux gestionnaires. */
+    public const PLAN_END_WARNING = 'PLAN_END_WARNING';
+    /** Rétrospective annuelle publiée — e-mail au joueur (une fois par année). */
+    public const YEAR_REVIEW_READY = 'YEAR_REVIEW_READY';
     public const NEW_COMMUNITY_MEMBER = 'NEW_COMMUNITY_MEMBER';
     /** Membre a quitté la communauté — notification aux responsables. */
     public const MEMBER_LEFT_COMMUNITY_STAFF = 'MEMBER_LEFT_COMMUNITY_STAFF';
@@ -75,6 +85,8 @@ final class EmailEvents
     public const TRAINING_COURSE_SESSION_SCHEDULED_LEARNER = 'TRAINING_COURSE_SESSION_SCHEDULED_LEARNER';
     /** Demande d’élévation pour publier une fiche Studio — notification aux personnes habilitées. */
     public const TRAINING_PUBLISH_ELEVATION_REQUEST = 'TRAINING_PUBLISH_ELEVATION_REQUEST';
+    /** Membre nommé à une étape de la chaîne pédagogique (conception, animation, validation, gouvernance). */
+    public const TRAINING_PEDAGOGY_DESIGNATION = 'TRAINING_PEDAGOGY_DESIGNATION';
     /** Demande d’élévation RH (grade / rôle / droits) depuis le bureau effectifs. */
     public const EFFECTIFS_ELEVATION_REQUEST = 'EFFECTIFS_ELEVATION_REQUEST';
     /** Demande de correction RH fiche opérateur — notification organisateurs. */
@@ -131,6 +143,18 @@ final class EmailEvents
 
     /** Annonce plateforme diffusée par e-mail aux membres. */
     public const PLATFORM_ALERT_BROADCAST = 'PLATFORM_ALERT_BROADCAST';
+
+    /** Signalement joueur envoyé depuis le mod (Échap > Signaler un problème) — alerte à l'exploitation. */
+    public const ATAK_MOD_PLAYER_REPORT = 'ATAK_MOD_PLAYER_REPORT';
+
+    /** Réponse de l'exploitation au joueur qui a signalé un problème du mod (page /admin/atak-mod-reports). */
+    public const ATAK_MOD_REPORT_REPLY = 'ATAK_MOD_REPORT_REPLY';
+
+    /** E-mail automatique au joueur dont le jeu se voit refuser l'accès par Athena (rapport auto « unauthorized »). */
+    public const ATAK_PLAYER_ACCESS_REFUSED = 'ATAK_PLAYER_ACCESS_REFUSED';
+
+    /** Récapitulatif des alertes d'exploitation regroupées (incidents, nouveaux comptes, signalements…). */
+    public const OPS_DIGEST = 'OPS_DIGEST';
 
     /** Nouvelle communauté créée — alerte à la boîte technique des incidents. */
     public const PLATFORM_NEW_COMMUNITY = 'PLATFORM_NEW_COMMUNITY';
@@ -209,6 +233,7 @@ final class EmailEvents
         self::TRAINING_MODULE_BLOCKED_STAFF,
         self::TRAINING_COURSE_SESSION_SCHEDULED_LEARNER,
         self::TRAINING_PUBLISH_ELEVATION_REQUEST,
+        self::TRAINING_PEDAGOGY_DESIGNATION,
         self::EFFECTIFS_ELEVATION_REQUEST,
         self::PERSONNEL_CORRECTION_REQUEST_STAFF,
         self::PERSONNEL_CORRECTION_REQUEST_MEMBER,
@@ -250,5 +275,6 @@ final class EmailEvents
         self::MEMBER_INTEGRATION_REMINDER,
         self::MEMBER_INTEGRATION_REFERENT_MESSAGE,
         self::MEMBER_INTEGRATION_COMPLETED,
+        self::YEAR_REVIEW_READY,
     ];
 }

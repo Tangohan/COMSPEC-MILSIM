@@ -57,7 +57,7 @@ final class CallsignSequenceServiceTest extends TestCase
         self::assertStringContainsString('personnel_progression_tracks', $migration);
         self::assertStringContainsString('personnel_career_events', $migration);
 
-        $run = (string) file_get_contents(dirname(__DIR__, 2) . '/run-migrations.php');
+        $run = (string) \Tests\Support\MigrationPipelineSource::read(dirname(__DIR__, 2));
         self::assertStringContainsString('personnel_progression_engine_migration.php', $run);
         self::assertStringContainsString('run_personnel_progression_engine_migration', $run);
 

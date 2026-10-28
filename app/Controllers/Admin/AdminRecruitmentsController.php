@@ -12,7 +12,9 @@ use App\Repositories\EnlistmentCannedMessageRepository;
 use App\Repositories\EnlistmentRecruitmentEngagementRepository;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\EnlistmentTimelineRepository;
+use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelJobRoleRepository;
+use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\RecruitmentTeamWallRepository;
 use App\Repositories\RoleRepository;
@@ -27,10 +29,10 @@ use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Recruitment\EnlistmentAcceptanceProvisioningService;
 use App\Services\Recruitment\EnlistmentCandidatePortalJourneyService;
+use App\Services\Recruitment\EnlistmentOnboardingFormService;
 use App\Services\Recruitment\EnlistmentPortalAttachmentService;
 use App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator;
 use App\Services\Recruitment\TenantRecruitmentSettings;
-use App\Services\Rbac\MilitaryOperationalRoleCatalog;
 use App\Support\EnlistmentAcceptedIdentity;
 
 class AdminRecruitmentsController
@@ -61,166 +63,64 @@ class AdminRecruitmentsController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $statusFilter = $request->query('status');
+        $statusFilter = trim((string) $request->query('status', ''));
+        $statusFilter = in_array($statusFilter, ['submitted', 'reviewed', 'rejected', 'blocked', 'cancelled'], true) ? $statusFilter : null;
         $stageFilter = trim((string) $request->query('stage', ''));
         $stageFilterActive = in_array($stageFilter, ['interview_scheduled', 'on_hold'], true);
-        $enlistments = $stageFilterActive
-            ? $this->enlistmentRepository->allForTenant((int) $tenantId, 'submitted')
-            : $this->enlistmentRepository->allForTenant((int) $tenantId, $statusFilter ?: null);
         $enlistmentCounts = $this->enlistmentRepository->countsByStatusForTenant((int) $tenantId);
 
+        // Tous les dossiers sont chargés une fois : le tableau en colonnes et les filtres rapides
+        // portent sur l’ensemble, la vue liste applique ensuite le filtre de statut ou d’étape.
+        $allRows = $this->enlistmentRepository->allForTenant((int) $tenantId);
         $stageCounts = ['interview_scheduled' => 0, 'on_hold' => 0];
-        if (($enlistmentCounts['submitted'] ?? 0) > 0) {
-            $submittedRows = $stageFilterActive ? $enlistments : $this->enlistmentRepository->allForTenant((int) $tenantId, 'submitted');
-            foreach ($submittedRows as $sr) {
-                $stg = EnlistmentRepository::effectivePipelineStage($sr);
-                if (isset($stageCounts[$stg])) {
-                    $stageCounts[$stg]++;
-                }
+        foreach ($allRows as $sr) {
+            if ((string) ($sr['status'] ?? '') !== 'submitted') {
+                continue;
             }
-        }
-        if ($stageFilterActive) {
-            $enlistments = array_values(array_filter(
-                $enlistments,
-                static fn (array $row): bool => EnlistmentRepository::effectivePipelineStage($row) === $stageFilter
-            ));
+            $stg = EnlistmentRepository::effectivePipelineStage($sr);
+            if (isset($stageCounts[$stg])) {
+                $stageCounts[$stg]++;
+            }
         }
         $tenantSettings = $this->tenantRepository->getSettings((int) $tenantId);
         $slaHours = TenantRecruitmentSettings::enlistmentSlaHoursFromSettings($tenantSettings);
-        $submittedOlderThanSla = 0;
+        $allRows = (new \App\Services\Recruitment\EnlistmentStaffRowEnricher())->enrich((int) $tenantId, $allRows, $slaHours);
+        $submittedOlderThanSla = count(array_filter(
+            $allRows,
+            static fn (array $row): bool => !empty($row['submitted_sla_breached'])
+        ));
 
-        $staffRetroDoneMap = [];
-        $retroTableReady = false;
-        $listIds = [];
-        foreach ($enlistments as $er) {
-            $eid = (int) ($er['id'] ?? 0);
-            if ($eid > 0) {
-                $listIds[] = $eid;
+        $query = [
+            'vue' => (string) $request->query('vue', ''),
+            'filtre' => (string) $request->query('filtre', ''),
+            'q' => (string) $request->query('q', ''),
+            'status' => (string) ($statusFilter ?? ''),
+            'stage' => $stageFilterActive ? $stageFilter : '',
+        ];
+        $pipelineView = \App\Support\EnlistmentPipelineBoard::view($query);
+        $rowsForView = $allRows;
+        if ($pipelineView === 'liste') {
+            if ($stageFilterActive) {
+                $rowsForView = array_values(array_filter(
+                    $allRows,
+                    static fn (array $row): bool => (string) ($row['status'] ?? '') === 'submitted'
+                        && EnlistmentRepository::effectivePipelineStage($row) === $stageFilter
+                ));
+            } elseif ($statusFilter !== null) {
+                $rowsForView = array_values(array_filter(
+                    $allRows,
+                    static fn (array $row): bool => (string) ($row['status'] ?? '') === $statusFilter
+                ));
             }
         }
-        try {
-            $retroTableReady = $this->recruitmentEngagementRepository->retroTableExists();
-            if ($retroTableReady && $listIds !== []) {
-                $staffRetroDoneMap = $this->recruitmentEngagementRepository->mapStaffRetroDoneIds((int) $tenantId, $listIds);
-            }
-        } catch (\Throwable) {
-            $staffRetroDoneMap = [];
-            $retroTableReady = false;
-        }
-        // File de secours : bilans journalisés dans le chronologie même si la table rétro diverge.
-        if ($listIds !== []) {
-            try {
-                if ($this->enlistmentTimelineRepository->tableExists()) {
-                    foreach ($this->enlistmentTimelineRepository->mapStaffRetroDoneFromTimeline((int) $tenantId, $listIds) as $tid => $doneAt) {
-                        $tid = (int) $tid;
-                        if ($tid < 1 || array_key_exists($tid, $staffRetroDoneMap)) {
-                            continue;
-                        }
-                        $staffRetroDoneMap[$tid] = (string) $doneAt;
-                    }
-                }
-            } catch (\Throwable) {
-            }
-        }
-
-        $reviewerIds = [];
-        $openingIds = [];
-        foreach ($enlistments as $er) {
-            $rid = (int) ($er['reviewed_by'] ?? 0);
-            if ($rid > 0) {
-                $reviewerIds[$rid] = $rid;
-            }
-            $oid = (int) ($er['recruitment_opening_id'] ?? 0);
-            if ($oid > 0) {
-                $openingIds[$oid] = $oid;
-            }
-        }
-        $reviewerUsers = $reviewerIds !== []
-            ? $this->userRepository->findByIdsForTenant((int) $tenantId, array_values($reviewerIds))
-            : [];
-        $openingsById = [];
-        if ($openingIds !== [] && $this->recruitmentOpeningRepository->tablesExist()) {
-            foreach ($openingIds as $oid) {
-                $orow = $this->recruitmentOpeningRepository->findByIdForTenant((int) $oid, (int) $tenantId);
-                if ($orow) {
-                    $openingsById[(int) $oid] = $orow;
-                }
-            }
-        }
-        $jobRoleLabels = [];
-        try {
-            $jobRoleRepo = new \App\Repositories\PersonnelJobRoleRepository();
-            foreach ($openingsById as $orow) {
-                $jrid = (int) ($orow['personnel_job_role_id'] ?? 0);
-                if ($jrid > 0 && !isset($jobRoleLabels[$jrid])) {
-                    $jr = $jobRoleRepo->findRoleById($jrid, (int) $tenantId);
-                    $lab = trim((string) (($jr ?? [])['name'] ?? ''));
-                    if ($lab === '') {
-                        $lab = trim((string) (($jr ?? [])['title'] ?? ''));
-                    }
-                    $jobRoleLabels[$jrid] = $lab !== '' ? $lab : '';
-                }
-            }
-        } catch (\Throwable) {
-            $jobRoleLabels = [];
-        }
-
-        foreach ($enlistments as &$row) {
-            $isSubmitted = ((string) ($row['status'] ?? '')) === 'submitted';
-            $ageHours = $this->submittedAgeHours($row);
-            $row['submitted_age_hours'] = $ageHours;
-            $row['submitted_sla_breached'] = $isSubmitted && $ageHours !== null && $ageHours > $slaHours;
-            if (!empty($row['submitted_sla_breached'])) {
-                $submittedOlderThanSla++;
-            }
-
-            $lastAction = trim((string) ($row['updated_at'] ?? ''));
-            if ($lastAction === '') {
-                $lastAction = trim((string) ($row['created_at'] ?? ''));
-            }
-            $row['last_action_at'] = $lastAction !== '' ? $lastAction : null;
-
-            $ageDays = $this->enlistmentAgeDays($row);
-            $row['enlistment_age_days'] = $ageDays;
-            $eid = (int) ($row['id'] ?? 0);
-            $doneAt = $eid > 0 && array_key_exists($eid, $staffRetroDoneMap)
-                ? trim((string) $staffRetroDoneMap[$eid])
-                : null;
-            $row['staff_retro_done_at'] = $doneAt !== null && $doneAt !== '' ? $doneAt : null;
-            $statusForRetro = (string) ($row['status'] ?? '');
-            if ($doneAt !== null) {
-                // Bilan déjà enregistré (aujourd’hui ou avant) — prioritaire sur le calendrier 30 j.
-                $row['staff_retro_status'] = 'done';
-            } elseif (EnlistmentRecruitmentEngagementRepository::isRetroExcludedStatus($statusForRetro)) {
-                $row['staff_retro_status'] = 'not_applicable';
-            } elseif (!$retroTableReady) {
-                $row['staff_retro_status'] = 'unavailable';
-            } elseif ($ageDays !== null && $ageDays >= 30) {
-                $row['staff_retro_status'] = 'due';
-            } else {
-                $row['staff_retro_status'] = 'waiting';
-            }
-
-            $reviewedById = (int) ($row['reviewed_by'] ?? 0);
-            $row['instructor_user_id'] = $reviewedById > 0 ? $reviewedById : null;
-            $row['instructor_label'] = $reviewedById > 0
-                ? $this->displayLabelForTenantUser($reviewerUsers[$reviewedById] ?? null, $reviewedById)
-                : '';
-
-            $oid = (int) ($row['recruitment_opening_id'] ?? 0);
-            $opening = $oid > 0 ? ($openingsById[$oid] ?? null) : null;
-            $unitLabel = $opening ? trim((string) ($opening['unit_name'] ?? '')) : '';
-            $jrid = $opening ? (int) ($opening['personnel_job_role_id'] ?? 0) : 0;
-            $roleLabel = $jrid > 0 ? trim((string) ($jobRoleLabels[$jrid] ?? '')) : '';
-            if ($roleLabel === '') {
-                $roleLabel = trim((string) ($row['specialty'] ?? ''));
-            }
-            $row['assignment_unit_label'] = $unitLabel;
-            $row['assignment_role_label'] = $roleLabel;
-            $row['assignment_opening_title'] = $opening ? trim((string) ($opening['title'] ?? '')) : '';
-            $row['assignment_define_url'] = url('back-office/recruitments/' . $eid . '?dossier=1#coordination-dossier');
-        }
-        unset($row);
+        $viewerUserId = (int) Session::get('user_id');
+        $pipelineVars = \App\Support\EnlistmentPipelineBoard::viewVars($rowsForView, $query, $viewerUserId, $slaHours);
+        // Compteurs des filtres rapides : toujours sur l’ensemble des dossiers, quelle que soit la vue.
+        $pipelineVars['pipelineCounts'] = \App\Support\EnlistmentPipelineBoard::counts(
+            \App\Support\EnlistmentNextAction::annotate($allRows, $slaHours, $viewerUserId),
+            $viewerUserId
+        );
+        $retroTableReady = $this->recruitmentEngagementRepository->retroTableExists();
 
         $staffRetrosDueCount = 0;
         $staffRetrosDueFirstId = 0;
@@ -241,7 +141,6 @@ class AdminRecruitmentsController
             'content' => 'admin.recruitments.index',
             'title' => 'Candidatures',
             'recruitmentLmsTitle' => 'File des candidatures',
-            'enlistments' => $enlistments,
             'statusFilter' => $statusFilter,
             'stageFilter' => $stageFilterActive ? $stageFilter : null,
             'stageCounts' => $stageCounts,
@@ -253,7 +152,7 @@ class AdminRecruitmentsController
             'staffRetrosDueFirstId' => $staffRetrosDueFirstId,
             'recruitmentAdminNav' => 'queue',
             'showPortalFooter' => false,
-        ]);
+        ] + $pipelineVars);
     }
 
     public function show(Request $request, array $params = []): Response
@@ -357,15 +256,18 @@ class AdminRecruitmentsController
         }
 
         $enlistmentAgeDays = $this->enlistmentAgeDays($row);
+        // Bilan 30 jours : uniquement pour une candidature acceptée, compté depuis l’acceptation.
         $statusForRetro = (string) ($row['status'] ?? '');
-        $retroExcludedStatus = EnlistmentRecruitmentEngagementRepository::isRetroExcludedStatus($statusForRetro);
-        $retroWindowEligible = !$retroExcludedStatus
-            && $enlistmentAgeDays !== null
-            && $enlistmentAgeDays >= 30;
-        // Message « pas de bilan » si l’âge atteintrait sinon la fenêtre (ex. ancre #bilan-recrutement).
-        $retroNotApplicable = $retroExcludedStatus
-            && $enlistmentAgeDays !== null
-            && $enlistmentAgeDays >= 30;
+        $retroAnchor = \App\Support\EnlistmentStatusCatalog::retroAnchor($row);
+        $retroDaysSinceAcceptance = \App\Support\EnlistmentStatusCatalog::daysSince($retroAnchor);
+        $retroDueDate = null;
+        if ($retroAnchor !== null && ($anchorTs = strtotime($retroAnchor)) !== false) {
+            $retroDueDate = date('d/m/Y', strtotime('+' . \App\Support\EnlistmentStatusCatalog::RETRO_DELAY_DAYS . ' days', $anchorTs));
+        }
+        $retroWindowEligible = $statusForRetro === 'reviewed'
+            && $retroDaysSinceAcceptance !== null
+            && $retroDaysSinceAcceptance >= \App\Support\EnlistmentStatusCatalog::RETRO_DELAY_DAYS;
+        $retroNotApplicable = \App\Support\EnlistmentStatusCatalog::isClosed($statusForRetro);
         $engagementTablesReady = $this->recruitmentEngagementRepository->engagementReady();
         $staffRetroRow = $engagementTablesReady
             ? $this->recruitmentEngagementRepository->findRetro((int) $tenantId, $id, EnlistmentRecruitmentEngagementRepository::SCOPE_STAFF_ONE_MONTH)
@@ -452,6 +354,8 @@ class AdminRecruitmentsController
             'enlistmentAgeDays' => $enlistmentAgeDays,
             'retroWindowEligible' => $retroWindowEligible,
             'retroNotApplicable' => $retroNotApplicable,
+            'retroDaysSinceAcceptance' => $retroDaysSinceAcceptance,
+            'retroDueDate' => $retroDueDate,
             'enlistmentEngagementTablesReady' => $engagementTablesReady,
             'recruiterPicksTableReady' => $this->recruitmentEngagementRepository->picksTableExists(),
             'staffRetroFeedback' => $staffRetroRow,
@@ -511,8 +415,12 @@ class AdminRecruitmentsController
         if ($returnTo === 'dossier') {
             return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
+        // Retour à la file dans la même vue (tableau / liste, filtre, recherche) : clés connues uniquement.
+        parse_str((string) $request->input('return_qs', ''), $returnQs);
+        $keep = array_intersect_key(is_array($returnQs) ? $returnQs : [], array_flip(['vue', 'filtre', 'q', 'status', 'stage']));
+        $keep = array_filter(array_map(static fn ($v): string => is_scalar($v) ? mb_substr((string) $v, 0, 80) : '', $keep), static fn (string $v): bool => $v !== '');
 
-        return Response::redirect(url('back-office/recruitments'));
+        return Response::redirect(url('back-office/recruitments') . ($keep !== [] ? '?' . http_build_query($keep) : ''));
     }
 
     public function recruiterPick(Request $request, array $params = []): Response
@@ -610,11 +518,8 @@ class AdminRecruitmentsController
         if (!$row) {
             return Response::redirect(url('back-office/recruitments'));
         }
-        if (EnlistmentRecruitmentEngagementRepository::isRetroExcludedStatus((string) ($row['status'] ?? ''))) {
-            $statusMsg = ((string) ($row['status'] ?? '')) === 'blocked'
-                ? 'Pas de bilan pour une candidature non admise.'
-                : 'Pas de bilan pour une candidature refusée.';
-            Session::flash('error', $statusMsg);
+        if ((string) ($row['status'] ?? '') !== 'reviewed') {
+            Session::flash('error', 'Le bilan 30 jours ne concerne que les candidatures acceptées.');
 
             return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
@@ -623,14 +528,14 @@ class AdminRecruitmentsController
 
             return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
-        $ageDays = $this->enlistmentAgeDays($row);
+        $daysSinceAcceptance = \App\Support\EnlistmentStatusCatalog::daysSince(\App\Support\EnlistmentStatusCatalog::retroAnchor($row));
         $existingStaffRetro = $this->recruitmentEngagementRepository->findRetro(
             (int) $tenantId,
             $id,
             EnlistmentRecruitmentEngagementRepository::SCOPE_STAFF_ONE_MONTH
         );
-        if (($ageDays === null || $ageDays < 30) && $existingStaffRetro === null) {
-            Session::flash('error', 'Le bilan équipe n’est proposé qu’à partir de 30 jours après la réception du dossier.');
+        if (($daysSinceAcceptance === null || $daysSinceAcceptance < \App\Support\EnlistmentStatusCatalog::RETRO_DELAY_DAYS) && $existingStaffRetro === null) {
+            Session::flash('error', 'Le bilan équipe est proposé 30 jours après l’acceptation du candidat.');
 
             return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
@@ -1091,15 +996,19 @@ class AdminRecruitmentsController
 
         $defaultUnitId = is_array($linkedOpening) ? (int) ($linkedOpening['unit_id'] ?? 0) : 0;
         $defaultJobRoleId = is_array($linkedOpening) ? (int) ($linkedOpening['personnel_job_role_id'] ?? 0) : 0;
+        // L’emploi de l’offre est pré-choisi, y compris une fonction du référentiel (MilitaryOperationalRoleCatalog) :
+        // la liste propose désormais tout le référentiel, plus seulement les emplois déjà créés.
         if ($defaultJobRoleId > 0) {
             try {
-                $linkedJob = $this->personnelJobRoleRepository->findRoleById($defaultJobRoleId, (int) $tenantId);
-                $linkedSlug = strtolower(trim((string) ($linkedJob['slug'] ?? '')));
-                if ($linkedSlug !== '' && isset(MilitaryOperationalRoleCatalog::catalogSlugSet()[$linkedSlug])) {
+                if (!$this->personnelJobRoleRepository->findRoleById($defaultJobRoleId, (int) $tenantId)) {
                     $defaultJobRoleId = 0;
                 }
             } catch (\Throwable) {
+                $defaultJobRoleId = 0;
             }
+        }
+        if ($defaultUnitId < 1 && is_array($linkedUser)) {
+            $defaultUnitId = (int) ($linkedUser['primary_unit_id'] ?? 0);
         }
         $memberRoleId = $this->roleRepository->getIdBySlug((int) $tenantId, 'member');
         $selectedRoleIds = [];
@@ -1110,14 +1019,7 @@ class AdminRecruitmentsController
             $selectedRoleIds = [$memberRoleId];
         }
 
-        $jobRoleOptions = [];
-        try {
-            if ($this->personnelJobRoleRepository->tablesExist()) {
-                $jobRoleOptions = $this->personnelJobRoleRepository->listRoleOptionsForSelect((int) $tenantId, false, false);
-            }
-        } catch (\Throwable) {
-            $jobRoleOptions = [];
-        }
+        $form = $this->onboardingFormService()->build((int) $tenantId, $row, $linkedUser, $selectedRoleIds);
 
         $defaultAssignmentLabel = '';
         if ($defaultJobRoleId < 1 && is_array($linkedOpening)) {
@@ -1141,10 +1043,15 @@ class AdminRecruitmentsController
                 'personnel_job_role_id' => $defaultJobRoleId,
                 'assignment_label' => $defaultAssignmentLabel,
                 'role_ids' => $selectedRoleIds,
-            ],
-            'orgRoles' => $this->roleRepository->forTenantOrganization((int) $tenantId),
-            'units' => $this->unitRepository->allForTenant((int) $tenantId),
-            'jobRoleOptions' => $jobRoleOptions,
+                'access_role_id' => $form['accessRoleId'],
+                'grade_id' => $form['gradeId'],
+            ] + $form['profile'],
+            'accessRoles' => $form['accessRoles'],
+            'units' => $form['units'],
+            'gradeGroups' => $form['gradeGroups'],
+            'jobRoleGroups' => $form['jobRoleGroups'],
+            'referentOptions' => $form['referents'],
+            'civilOptions' => $form['civilOptions'],
             'linkedRecruitmentOpening' => $linkedOpening,
             'linkedUser' => $linkedUser,
             'needsAcceptanceOnboarding' => $needsOnboarding,
@@ -1182,21 +1089,21 @@ class AdminRecruitmentsController
             return Response::redirect(url('back-office/recruitments'));
         }
 
-        $roleIdsRaw = $request->input('role_ids', []);
-        if (!is_array($roleIdsRaw)) {
-            $roleIdsRaw = [];
+        $input = [];
+        foreach ([
+            'first_name', 'last_name', 'callsign', 'steam_profile', 'unit_id', 'personnel_job_role_id', 'role_ids',
+            'access_role_id', 'assignment_label', 'grade_id', 'duty', 'referent_user_id', 'nickname_primary',
+            'nationality', 'birth_place', 'sex', 'blood_type', 'enlistment_date',
+        ] as $key) {
+            $input[$key] = $request->input($key, '');
         }
+        $normalized = $this->onboardingFormService()->normalizeSubmission((int) $tenantId, $input);
+        if ($normalized['error'] !== null) {
+            Session::flash('error', $normalized['error']);
 
-        $options = [
-            'first_name' => trim((string) $request->input('first_name', '')),
-            'last_name' => trim((string) $request->input('last_name', '')),
-            'callsign' => trim((string) $request->input('callsign', '')),
-            'steam_profile' => trim((string) $request->input('steam_profile', '')),
-            'unit_id' => (int) $request->input('unit_id', 0),
-            'personnel_job_role_id' => (int) $request->input('personnel_job_role_id', 0),
-            'role_ids' => $roleIdsRaw,
-            'assignment_label' => trim((string) $request->input('assignment_label', '')),
-        ];
+            return Response::redirect(url('back-office/recruitments/' . $id . '/onboarding'));
+        }
+        $options = $normalized['options'];
 
         $result = $this->enlistmentAcceptanceProvisioningService->completeAcceptanceOnboarding(
             (int) $tenantId,
@@ -1230,6 +1137,19 @@ class AdminRecruitmentsController
         );
 
         return Response::redirect($this->recruitmentDossierShowUrl($id));
+    }
+
+    private function onboardingFormService(): EnlistmentOnboardingFormService
+    {
+        return new EnlistmentOnboardingFormService(
+            $this->roleRepository,
+            $this->unitRepository,
+            new GradeRepository(),
+            $this->personnelJobRoleRepository,
+            $this->userRepository,
+            \App\Core\Container::get(PersonnelProfileRepository::class),
+            $this->tenantRepository,
+        );
     }
 
     public function cannedMessagesIndex(Request $request, array $params = []): Response

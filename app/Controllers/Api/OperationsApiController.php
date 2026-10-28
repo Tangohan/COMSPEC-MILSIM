@@ -14,6 +14,7 @@ use App\Services\Logistics\AssetLogisticsEvaluator;
 use App\Services\Replay\ReplayAarPdfService;
 use App\Services\Replay\ReplayService;
 use App\Support\MedicalAlertParser;
+use App\Support\TacticalMissionScope;
 
 class OperationsApiController
 {
@@ -36,6 +37,9 @@ class OperationsApiController
     public function missionsTimeline(Request $request, array $params = []): Response
     {
         $missionId = $this->resolveMissionId($request, $params);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         if ($missionId === null) {
             return $this->error(
                 'operations.missions.mission_id_required',
@@ -58,6 +62,9 @@ class OperationsApiController
     public function missionsEvents(Request $request, array $params = []): Response
     {
         $missionId = $this->resolveMissionId($request, $params);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         if ($missionId === null) {
             return $this->error(
                 'operations.missions.mission_id_required',
@@ -81,14 +88,9 @@ class OperationsApiController
     public function sitrepReport(Request $request, array $params = []): Response
     {
         $body = $this->jsonBody();
-        $missionId = $this->missionIdFromInput($request, $body);
-        if ($missionId === null) {
-            return $this->error(
-                'operations.sitrep.mission_id_required',
-                'missionId requis.',
-                400,
-                ['domain' => 'operations.sitrep', 'param' => 'missionId']
-            );
+        $missionId = $this->scopedMissionId($request, $body, true);
+        if ($missionId instanceof Response) {
+            return $missionId;
         }
 
         $report = $this->intelFusion->ingestReport($missionId, $body);
@@ -111,7 +113,10 @@ class OperationsApiController
 
     public function sitrepFused(Request $request, array $params = []): Response
     {
-        $missionId = $this->missionIdFromInput($request, $this->jsonBody()) ?? $this->defaultMissionId($request);
+        $missionId = $this->scopedMissionId($request, $this->jsonBody());
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         $status = $this->nullableQuery($request, 'status');
 
         return $this->success([
@@ -124,6 +129,9 @@ class OperationsApiController
     public function aar(Request $request, array $params = []): Response
     {
         $missionId = $this->resolveMissionId($request, $params);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         if ($missionId === null) {
             return $this->error(
                 'operations.aar.mission_id_required',
@@ -150,6 +158,9 @@ class OperationsApiController
     public function aarExportPdf(Request $request, array $params = []): Response
     {
         $missionId = $this->resolveMissionId($request, $params);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         if ($missionId === null) {
             return $this->error(
                 'operations.aar.mission_id_required',
@@ -160,7 +171,7 @@ class OperationsApiController
         }
 
         $aar = $this->replayService->buildAfterActionReview($missionId, $this->nullableQuery($request, 'from'), $this->nullableQuery($request, 'to'));
-        $title = trim((string) $request->query('title'));
+        $title = trim($request->queryString('title'));
         $pdf = ReplayAarPdfService::response($aar, $title);
         if ($pdf->statusCode() === 503) {
             return $this->error(
@@ -177,6 +188,9 @@ class OperationsApiController
     public function readiness(Request $request, array $params = []): Response
     {
         $missionId = $this->resolveMissionId($request, $params);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         if ($missionId === null) {
             return $this->error(
                 'operations.readiness.mission_id_required',
@@ -211,6 +225,9 @@ class OperationsApiController
     public function medical(Request $request, array $params = []): Response
     {
         $missionId = $this->resolveMissionId($request, $params);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         if ($missionId === null) {
             return $this->error(
                 'operations.medical.mission_id_required',
@@ -280,7 +297,10 @@ class OperationsApiController
 
     public function logisticsAssets(Request $request, array $params = []): Response
     {
-        $missionId = $this->missionIdFromInput($request, $this->jsonBody()) ?? $this->defaultMissionId($request);
+        $missionId = $this->scopedMissionId($request, $this->jsonBody());
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         $list = $this->assetLogisticsRepository->listByMission($missionId);
         $evaluated = [];
         foreach ($list as $row) {
@@ -297,7 +317,10 @@ class OperationsApiController
     public function logisticsUpdate(Request $request, array $params = []): Response
     {
         $body = $this->jsonBody();
-        $missionId = $this->missionIdFromInput($request, $body) ?? $this->defaultMissionId($request);
+        $missionId = $this->scopedMissionId($request, $body);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         $assetId = trim((string) ($body['assetId'] ?? $body['asset_id'] ?? ''));
         if ($assetId === '') {
             return $this->error(
@@ -320,6 +343,9 @@ class OperationsApiController
     public function comms(Request $request, array $params = []): Response
     {
         $missionId = $this->resolveMissionId($request, $params);
+        if ($missionId instanceof Response) {
+            return $missionId;
+        }
         if ($missionId === null) {
             return $this->error(
                 'operations.comms.mission_id_required',
@@ -363,14 +389,30 @@ class OperationsApiController
         ]);
     }
 
-    private function resolveMissionId(Request $request, array $params): ?string
+    /**
+     * missionId de l’URL (ou de la requête) cloisonné par communauté comme scopedMissionId : null
+     * si absent (chaque route garde son 400) ; communauté non identifiée → 403, valeur invalide →
+     * 422, mission d’une autre communauté → 403 operations.mission_forbidden au lieu d’être relue.
+     */
+    private function resolveMissionId(Request $request, array $params): string|Response|null
     {
-        $missionId = $params['missionId'] ?? $request->query('missionId') ?? $request->query('mission_id') ?? null;
-        if ($missionId === null) {
+        $raw = $params['missionId'] ?? $request->query('missionId') ?? $request->query('mission_id') ?? null;
+        if ($raw === null || (is_scalar($raw) && trim((string) $raw) === '')) {
             return null;
         }
-        $missionId = trim((string) $missionId);
-        return $missionId !== '' ? $missionId : null;
+        $tenantId = TacticalMissionScope::tenantId();
+        if ($tenantId === null) {
+            return TacticalMissionScope::tenantRequiredResponse();
+        }
+        if (!TacticalMissionScope::isAcceptableRaw($raw)) {
+            return $this->error('operations.mission_id_invalid', 'missionId invalide.', 422, ['param' => 'missionId']);
+        }
+        $missionId = trim((string) $raw);
+        if (!TacticalMissionScope::belongsTo($missionId, $tenantId)) {
+            return $this->error('operations.mission_forbidden', 'Mission hors du périmètre de votre communauté.', 403, ['param' => 'missionId']);
+        }
+
+        return $missionId;
     }
 
     private function jsonBody(): array
@@ -383,26 +425,40 @@ class OperationsApiController
         return is_array($decoded) ? $decoded : [];
     }
 
-    private function missionIdFromInput(Request $request, array $body): ?string
+    /**
+     * Bac de mission de la communauté appelante (voir TacticalMissionScope). $required : un
+     * missionId absent renvoie 400 au lieu du bac par défaut ; un missionId d’une autre
+     * communauté est refusé (403) au lieu d’être lu ou écrit.
+     */
+    private function scopedMissionId(Request $request, array $body, bool $required = false): string|Response
     {
-        $missionId = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id') ?? null;
-        if ($missionId === null) {
-            return null;
+        $tenantId = TacticalMissionScope::tenantId();
+        if ($tenantId === null) {
+            return TacticalMissionScope::tenantRequiredResponse();
         }
-        $missionId = trim((string) $missionId);
-        return $missionId !== '' ? $missionId : null;
-    }
+        $raw = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id') ?? null;
+        if (!TacticalMissionScope::isAcceptableRaw($raw)) {
+            return $this->error('operations.mission_id_invalid', 'missionId invalide.', 422, ['param' => 'missionId']);
+        }
+        $missionId = $raw !== null ? trim((string) $raw) : '';
+        if ($missionId === '') {
+            if ($required) {
+                return $this->error('operations.sitrep.mission_id_required', 'missionId requis.', 400, ['domain' => 'operations.sitrep', 'param' => 'missionId']);
+            }
 
-    private function defaultMissionId(Request $request): string
-    {
-        $tenantId = (int) (Session::get('tenant_id') ?? 1);
-        $mapId = (int) ($request->query('mapId') ?: self::DEFAULT_MAP_ID);
-        return 'mission_' . $tenantId . '_map_' . $mapId;
+            return TacticalMissionScope::defaultFor($tenantId, $request->query('mapId'), self::DEFAULT_MAP_ID);
+        }
+        if (!TacticalMissionScope::belongsTo($missionId, $tenantId)) {
+            return $this->error('operations.mission_forbidden', 'Mission hors du périmètre de votre communauté.', 403, ['param' => 'missionId']);
+        }
+
+        return $missionId;
     }
 
     private function nullableQuery(Request $request, string $key): ?string
     {
-        $v = trim((string) ($request->query($key) ?? ''));
+        // queryString : une valeur en tableau (?from[]=x) vaut '' au lieu de « Array to string conversion » (500).
+        $v = trim($request->queryString($key));
         return $v === '' ? null : $v;
     }
 

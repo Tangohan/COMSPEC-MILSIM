@@ -1,5 +1,11 @@
 /*
-    Attributs Eden — exploitation SSE, directement sur l'unité.
+    Attributs Eden d'Overwatch : suivi ATAK et balise GPS.
+
+    Les attributs SSE (identité, verdict de requête, biométrie) sont dans le pack
+    COMSPEC SSE, catégorie « COMSPEC SSE — Renseignement » : une seule catégorie,
+    plus de doublon « COMSPEC — Exploitation SSE ».
+
+    Historique : attributs Eden — exploitation SSE, directement sur l'unité.
 
     Le module « Profil d'identité SSE » sert à Zeus, en cours de partie. En
     préparation de mission, poser un module par PNJ est intenable : un chef de
@@ -20,128 +26,9 @@ class Cfg3DEN
     {
         class AttributeCategories
         {
-            class COMSPEC_Overwatch_Seek
-            {
-                displayName = "COMSPEC — Exploitation SSE";
-                collapsed = 1;
-                condition = "objectBrain";
-
-                class Attributes
-                {
-                    class COMSPEC_SSE_Profile_Preset
-                    {
-                        displayName = "Ce que la base doit répondre";
-                        tooltip = "Génération automatique : verdict stable dérivé de la graine du sujet. Les trois autres imposent le résultat de la requête d'identité du terminal SEEK.";
-                        property = "COMSPEC_SSE_Profile_Preset";
-                        control = "Combo";
-                        expression = "[_this, 'Preset', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
-                        defaultValue = "'auto'";
-                        typeName = "STRING";
-
-                        class values
-                        {
-                            class Auto      { name = "Génération automatique (défaut)";      value = "auto"; default = 1; };
-                            class Inconnu   { name = "Inconnu des bases";                    value = "inconnu"; };
-                            class Signale   { name = "Signalé — correspondance partielle";   value = "signale"; };
-                            class Recherche { name = "Recherché — correspondance confirmée"; value = "recherche"; };
-                        };
-                    };
-
-                    class COMSPEC_SSE_LastName
-                    {
-                        displayName = "Nom";
-                        tooltip = "Si renseigné, SEEK et les fiches utilisent ce nom. Vide = nom de l’identité Eden (panneau Identité), sinon génération automatique.";
-                        property = "COMSPEC_SSE_LastName";
-                        control = "Edit";
-                        expression = "[_this, 'LastName', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
-                        defaultValue = "''";
-                        typeName = "STRING";
-                    };
-
-                    class COMSPEC_SSE_FirstName
-                    {
-                        displayName = "Prénom";
-                        tooltip = "Si renseigné, SEEK et les fiches utilisent ce prénom. Vide = prénom de l’identité Eden, sinon génération automatique.";
-                        property = "COMSPEC_SSE_FirstName";
-                        control = "Edit";
-                        expression = "[_this, 'FirstName', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
-                        defaultValue = "''";
-                        typeName = "STRING";
-                    };
-
-                    class COMSPEC_SSE_Alias
-                    {
-                        displayName = "Alias connu";
-                        tooltip = "Surnom sous lequel le sujet est connu. C'est souvent le seul élément dont dispose le terrain.";
-                        property = "COMSPEC_SSE_Alias";
-                        control = "Edit";
-                        expression = "[_this, 'Alias', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
-                        defaultValue = "''";
-                        typeName = "STRING";
-                    };
-
-                    class COMSPEC_SSE_Nationality
-                    {
-                        displayName = "Nationalité déclarée";
-                        tooltip = "Ce que le sujet déclare, pas ce qui est établi.";
-                        property = "COMSPEC_SSE_Nationality";
-                        control = "Edit";
-                        expression = "[_this, 'Nationality', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
-                        defaultValue = "''";
-                        typeName = "STRING";
-                    };
-
-                    class COMSPEC_SSE_Language
-                    {
-                        displayName = "Langue parlée";
-                        tooltip = "Détermine si un interprète est nécessaire pour l'entretien.";
-                        property = "COMSPEC_SSE_Language";
-                        control = "Edit";
-                        expression = "[_this, 'Language', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
-                        defaultValue = "''";
-                        typeName = "STRING";
-                    };
-
-                    class COMSPEC_SSE_RecordRef
-                    {
-                        displayName = "Référence de dossier antérieur";
-                        tooltip = "Affichée par le terminal en cas de correspondance. Laisser vide pour génération automatique.";
-                        property = "COMSPEC_SSE_RecordRef";
-                        control = "Edit";
-                        expression = "[_this, 'RecordRef', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
-                        defaultValue = "''";
-                        typeName = "STRING";
-                    };
-
-                    class COMSPEC_SSE_Confidence
-                    {
-                        displayName = "Indice de confiance imposé (-1 = automatique)";
-                        tooltip = "Pourcentage affiché par le terminal après requête. -1 laisse le calcul dépendre de la qualité réelle des relevés, ce qui est le comportement souhaitable dans la plupart des scénarios.";
-                        property = "COMSPEC_SSE_Confidence";
-                        control = "Edit";
-                        expression = "[_this, 'Confidence', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
-                        defaultValue = "-1";
-                        validate = "number";
-                        typeName = "NUMBER";
-                    };
-
-                    class COMSPEC_SSE_Seed
-                    {
-                        displayName = "Graine (0 = automatique)";
-                        tooltip = "Fixer la graine rend le sujet identique d'une session à l'autre — utile pour un scénario rejoué ou une séance de formation. 0 laisse dériver de l'identifiant réseau.";
-                        property = "COMSPEC_SSE_Seed";
-                        control = "Edit";
-                        expression = "[_this, 'Seed', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
-                        defaultValue = "0";
-                        validate = "number";
-                        typeName = "NUMBER";
-                    };
-                };
-            };
-
             class COMSPEC_Overwatch_PhoneTrack
             {
-                displayName = "COMSPEC — Suivi ATAK";
+                displayName = "$STR_COMSPEC_OW_CFG_C49FBE77F5";
                 collapsed = 1;
                 condition = "objectBrain";
 
@@ -149,8 +36,8 @@ class Cfg3DEN
                 {
                     class COMSPEC_PhoneTrack
                     {
-                        displayName = "Téléphone visible sur l’ATAK";
-                        tooltip = "La position de cette personne apparaît sur la carte de commandement, comme si elle portait un téléphone. Par défaut, aucun détail (nom, grille, cap…) n’est publié : le Zeus choisit ensuite ce qui apparaît, en jeu.";
+                        displayName = "$STR_COMSPEC_OW_CFG_CCCD375186";
+                        tooltip = "$STR_COMSPEC_OW_CFG_B84B3FD620";
                         property = "COMSPEC_PhoneTrack";
                         control = "Checkbox";
                         expression = "[_this, _value] call comspec_overwatch_connect_fnc_setPhoneTrack;";
@@ -160,8 +47,8 @@ class Cfg3DEN
 
                     class COMSPEC_PhoneCallsign
                     {
-                        displayName = "Nom affiché sur la carte";
-                        tooltip = "Laisser vide : le nom de la personne est utilisé. Renseignez un indicatif si plusieurs contacts ont le même nom.";
+                        displayName = "$STR_COMSPEC_OW_CFG_3EB5598FA5";
+                        tooltip = "$STR_COMSPEC_OW_CFG_C6E6AC49A8";
                         property = "COMSPEC_PhoneCallsign";
                         control = "Edit";
                         expression = "if (_value != '') then { _this setVariable ['COMSPEC_PhoneCallsign', _value, true]; };";
@@ -171,8 +58,8 @@ class Cfg3DEN
 
                     class COMSPEC_AllyTrack
                     {
-                        displayName = "IA alliée visible sur l’ATAK";
-                        tooltip = "Cette IA apparaît sur la carte de commandement comme une unité de terrain (pas comme un téléphone). Utile pour une section d’accompagnement, un QRF ou un élément ami. Sans effet sur un joueur : il est déjà suivi s’il a une tablette.";
+                        displayName = "$STR_COMSPEC_OW_CFG_05CF37BCCA";
+                        tooltip = "$STR_COMSPEC_OW_CFG_D87EDC6B9C";
                         property = "COMSPEC_AllyTrack";
                         control = "Checkbox";
                         expression = "[_this, _value] call comspec_overwatch_connect_fnc_setAllyTrack;";
@@ -182,8 +69,8 @@ class Cfg3DEN
 
                     class COMSPEC_AllyCallsign
                     {
-                        displayName = "Indicatif";
-                        tooltip = "Nom court affiché sur la carte et dans les effectifs (ex. RAVEN). Laisser vide : le nom du groupe, sinon le nom de l’IA.";
+                        displayName = "$STR_COMSPEC_OW_CFG_E1829FA177";
+                        tooltip = "$STR_COMSPEC_OW_CFG_73B225B539";
                         property = "COMSPEC_AllyCallsign";
                         control = "Edit";
                         expression = "if (_value != '') then { _this setVariable ['COMSPEC_AllyCallsign', _value, true]; };";
@@ -195,7 +82,7 @@ class Cfg3DEN
 
             class COMSPEC_Overwatch_GpsBeacon
             {
-                displayName = "COMSPEC — Balise GPS";
+                displayName = "$STR_COMSPEC_OW_CFG_C032C6FDD9";
                 collapsed = 1;
                 condition = "objectVehicle";
 
@@ -203,8 +90,8 @@ class Cfg3DEN
                 {
                     class COMSPEC_GpsBeacon
                     {
-                        displayName = "Balise GPS (suivi ATAK)";
-                        tooltip = "Le véhicule apparaît sur la carte de commandement même sans joueur à bord (convoi IA, véhicule volé, balise posée par le chef de mission).";
+                        displayName = "$STR_COMSPEC_OW_CFG_6525C816AC";
+                        tooltip = "$STR_COMSPEC_OW_CFG_91EE3FBA4C";
                         property = "COMSPEC_GpsBeacon";
                         control = "Checkbox";
                         expression = "[_this, _value] call comspec_overwatch_connect_fnc_setGpsBeacon;";
@@ -214,8 +101,8 @@ class Cfg3DEN
 
                     class COMSPEC_GpsCallsign
                     {
-                        displayName = "Nom affiché sur la carte";
-                        tooltip = "Laisser vide : le modèle du véhicule est utilisé. Utile pour distinguer deux véhicules du même type (ex. Convoi 1).";
+                        displayName = "$STR_COMSPEC_OW_CFG_3EB5598FA5";
+                        tooltip = "$STR_COMSPEC_OW_CFG_88F89B739E";
                         property = "COMSPEC_GpsCallsign";
                         control = "Edit";
                         expression = "if (_value != '') then { _this setVariable ['COMSPEC_GpsCallsign', _value, true]; };";

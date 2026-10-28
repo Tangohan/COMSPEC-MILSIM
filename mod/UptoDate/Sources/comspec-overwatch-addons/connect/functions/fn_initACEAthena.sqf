@@ -3,6 +3,8 @@
     Les rapports, l’appui et la réparation sont installés à part (initACE / initATAKMenu).
 */
 if (!hasInterface) exitWith {};
+// ATAK natif : connexion Athena et téléphone passent par le téléphone (app ATHENA, touches CBA), pas par ce menu ACE.
+if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) exitWith {};
 if (!isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) exitWith {};
 if (isNil "ace_interact_menu_fnc_createAction") exitWith {};
 if (isNil "comspec_overwatch_connect_fnc_aceAddSelfAction") exitWith {};
@@ -11,7 +13,7 @@ if (isNull player) exitWith {
     [{ [] call comspec_overwatch_connect_fnc_initACEAthena }, [], 2] call CBA_fnc_waitAndExecute;
 };
 
-if (uiNamespace getVariable ["COMSPEC_ACEAthenaClassReady", false]) exitWith {
+if (missionNamespace getVariable ["COMSPEC_ACEAthenaClassReady", false]) exitWith {
     missionNamespace setVariable ["COMSPEC_ACEAthenaReady", true, false];
 };
 if (missionNamespace getVariable ["COMSPEC_ACEAthenaReady", false]) exitWith {};
@@ -26,23 +28,23 @@ private _noChildren = { [] };
 
 private _mainAction = [
     "COMSPEC_Main", "COMSPEC Athena", "", {}, _condEnabled, _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 [_mainAction, ["ACE_SelfActions"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _accountAction = [
     "COMSPEC_Account", "Connexion Athena", "", {
         [] call comspec_overwatch_connect_fnc_openLogin;
     }, _condEnabled, _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 [_accountAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _tabletAction = [
     "COMSPEC_Tablet", "Ouvrir téléphone ATAK", "", {
         ["all"] call comspec_overwatch_connect_fnc_openAthenaFeature;
     }, _condPhone, _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 [_tabletAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
-uiNamespace setVariable ["COMSPEC_ACEAthenaClassReady", true];
+missionNamespace setVariable ["COMSPEC_ACEAthenaClassReady", true, false]; // par mission : ACE vide ses actions de classe à chaque mission
 ["INFO", "ACE", "Menu ACE COMSPEC Athena installé"] call comspec_overwatch_connect_fnc_log;
 true

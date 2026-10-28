@@ -195,9 +195,10 @@ final class SseAutomationService
     /**
      * A1 — Classement automatique.
      *
-     * Rattache la fiche seulement s'il n'existe **qu'un seul** dossier ouvert :
-     * dès qu'il y a un choix à faire, se tromper de dossier est pire que ne rien
-     * classer, parce que personne ne va relire un rattachement qui a l'air correct.
+     * Rattache la fiche au dossier ouvert s'il n'y en a **qu'un seul**. Sinon
+     * (aucun, ou un choix à faire), le système ouvre lui-même son dossier du jour,
+     * AUTO-AAMMJJ : se tromper de dossier est pire que ne rien classer, mais une
+     * fiche sans dossier se perd. Le dossier du jour se lit comme « à trier ».
      *
      * @param list<array{rule: string, label: string, detail: string}> $applied
      */
@@ -216,7 +217,7 @@ final class SseAutomationService
             }
         }
         if (count($open) !== 1) {
-            return null;
+            return $this->autoFileDaily($tenantId, $personId, $name, $mapId, $actor, $applied);
         }
 
         $case = $open[0];
@@ -231,6 +232,51 @@ final class SseAutomationService
             $name,
             (string) ($case['reference_code'] ?? '')
         );
+        $this->activityLog->record($tenantId, $mapId, 'SSE_AUTO', $detail, $actor ?? self::RULE_AUTHOR);
+        $applied[] = ['rule' => 'A1', 'label' => 'Classement automatique', 'detail' => $detail];
+
+        return $caseId;
+    }
+
+    /**
+     * A1 bis — Dossier ouvert par le système, un par jour : AUTO-AAMMJJ.
+     *
+     * @param list<array{rule: string, label: string, detail: string}> $applied
+     */
+    private function autoFileDaily(
+        int $tenantId,
+        int $personId,
+        string $name,
+        int $mapId,
+        ?string $actor,
+        array &$applied
+    ): ?int {
+        $ref = 'AUTO-' . date('ymd');
+        $found = $this->cases->findOrCreateByReference(
+            $tenantId,
+            $mapId,
+            $ref,
+            sprintf('Contrôles du %s (à trier)', date('d/m/Y')),
+            'Dossier ouvert par le système : fiches transmises sans code de dossier ce jour-là. Reclassez-les dans le bon dossier.'
+        );
+        if ($found === null) {
+            return null;
+        }
+        $caseId = (int) ($found['case']['id'] ?? 0);
+        if ($caseId < 1) {
+            return null;
+        }
+        if ($found['created']) {
+            $this->activityLog->record(
+                $tenantId,
+                $mapId,
+                'SSE_AUTO',
+                sprintf('Dossier %s ouvert par le système pour les fiches sans dossier du jour.', $ref),
+                $actor ?? self::RULE_AUTHOR
+            );
+        }
+        $this->cases->linkPerson($caseId, $personId, $tenantId, null, 'Classement automatique — dossier du jour');
+        $detail = sprintf('%s classée au dossier %s (dossier du jour ouvert par le système).', $name, $ref);
         $this->activityLog->record($tenantId, $mapId, 'SSE_AUTO', $detail, $actor ?? self::RULE_AUTHOR);
         $applied[] = ['rule' => 'A1', 'label' => 'Classement automatique', 'detail' => $detail];
 

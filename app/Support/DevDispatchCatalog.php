@@ -293,6 +293,426 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+
+            $pr(1189, '2026-10-27', 'Pack téléphone 2.9.9 : apps, écrans ACE et carte sans doublon', 'Le pack 2.9.9 regroupe les groupes d’apps, Calculette et Bloc-notes, l’affichage TOC et diapositives via ACE sur les écrans du jeu, le nettoyage mémoire de la carte, et la fin des doublons pseudo Steam / indicatif. Quittez Arma complètement, puis relancez.', [
+                'Groupes d’apps, Calculette, Bloc-notes',
+                'ACE Écran COMSPEC : TOC, PIP du poste, diapositives',
+                'Carte : un seul symbole par allié (indicatif)',
+                'Moins de rétention inutile sur la carte et les diapositives',
+            ], [], [], ['atak'], [
+                'Mettez à jour le pack Workshop, quittez Arma, relancez. Vérifiez l’accueil (groupes), un écran ACE, et la carte sans doublon.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1188, '2026-10-27', 'Carte : plus de doublon pseudo Steam et indicatif', 'Sur la carte, un allié n’apparaît plus deux fois — une fois sous son pseudo Steam et une fois sous son indicatif. Le téléphone et la liaison partagent le même indicatif. Quittez Arma complètement, puis relancez après republier le pack et Overwatch Connect.', [
+                'Un seul symbole par allié (indicatif tactique)',
+                'Indicatif du téléphone aussi publié pour la liaison',
+            ], [], [
+                'Certains alliés apparaissaient en double (pseudo + indicatif)',
+            ], ['atak'], [
+                'Ouvrez la carte avec un allié qui a un indicatif. Une seule icône doit rester, libellée avec l’indicatif.',
+            ], 'Pack téléphone + Overwatch Connect à republier'),
+            $pr(1187, '2026-10-27', 'Carte et mémoire : moins de rétention inutile', 'Sur la carte du téléphone, les dalles et les animations de signal ne restent plus en mémoire après un panoramique ou un changement de monde. Le centre de liaison compte les dalles sans les recharger. Les diapositives libèrent l’image précédente. La musique et les transferts Bluetooth ne gardent plus une file sans limite. Quittez Arma complètement, puis relancez après republier le pack.', [
+                'Dalles de carte : arrêt des téléchargements dès qu’elles quittent l’écran',
+                'Plafond et nettoyage des dalles gardées en mémoire',
+                'Centre de liaison : comptage des dalles sans recharger les images',
+                'Diapositives : libération de l’image précédente',
+                'Musique et Bluetooth : files bornées',
+            ], [], [
+                'Sessions longues sur la carte pouvaient alourdir le téléphone sans que l’opérateur le voie',
+            ], ['atak'], [
+                'Ouvrez la carte, pansez rapidement, changez de monde. Ouvrez le centre de liaison : le compteur de dalles reste cohérent. Enchaînez des diapositives : l’écran ne doit pas garder les anciennes images.',
+            ], 'Pack téléphone (+ liaison native) à republier'),
+            $pr(1186, '2026-10-27', 'Écrans : PIP du poste et diapositives via ACE', 'Sur une TV, un écran sur trépied ou un projecteur, le menu ACE « Écran COMSPEC » affiche le réseau du poste, le PIP de ce que voit l’opérateur du PC, ou vos diapositives de briefing. Plus besoin de poser un module Zeus pour chaque dalle. Quittez Arma complètement, puis relancez.', [
+                'ACE sur les écrans du jeu : réseau TOC, PIP du poste, diapositives',
+                'La dalle reçoit bien l’image (plus d’écran TOC noir sur le châssis)',
+                'Pendant les diapositives, le TOC s’efface ; il revient à l’arrêt',
+            ], [], [
+                'Certains écrans TOC restaient noirs ; les diapositives n’étaient pas proposées sur le même moniteur',
+            ], ['atak'], [
+                'Approchez un écran. ACE → Écran COMSPEC → Afficher le PIP du poste (ouvrez d’abord le PC du poste). Puis Diffuser mes diapositives depuis Briefing.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1185, '2026-10-27', 'Téléphone : groupes d’apps, calculette et bloc-notes', 'Sur l’accueil du téléphone, vous créez des groupes pour ranger vos applications. Clic droit sur une app pour l’épingler ou l’ajouter à un groupe. Deux apps civiles s’ajoutent : Calculette (opérations courantes) et Bloc-notes (notes locales sur ce poste). Quittez Arma complètement, puis relancez.', [
+                'Groupes d’applications personnels (créer, renommer, supprimer, ajouter / retirer une app)',
+                'Filtre GROUPES et section Mes groupes sur l’accueil',
+                'Clic droit sur une tuile : épingler, ajouter au groupe, fermer',
+                'App Calculette',
+                'App Bloc-notes (notes enregistrées sur ce poste)',
+            ], [
+                'Accueil des apps : feuille d’actions et groupes toujours visibles',
+            ], [], ['atak'], [
+                'Ouvrez l’accueil. Créez un groupe via Mes groupes ou clic droit sur une app. Ouvrez Calculette et Bloc-notes dans Civil.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1184, '2026-10-27', 'Intégration : la fiche d’un parcours se lit d’un coup d’œil', 'Dans Intégration des recrues, la fiche d’un membre montre d’abord ce qu’il reste à faire : statut, avancement, référent, et l’étape en cours. Les étapes se suivent en chronologie. Vous validez directement, ou malgré tout avec un motif. Les rendez-vous et l’annulation restent à portée, sans encombrer la page. Rechargez le portail (Ctrl+F5).', [
+                'Bandeau de synthèse : prochaine étape, référent, reste à faire',
+                'Étapes en chronologie, avec validation de l’étape en cours',
+            ], [], [], ['personnel'], [
+                'Ouvrez Intégration des recrues, puis un parcours. Lisez « À faire maintenant », validez l’étape, puis consultez le journal.',
+            ], 'Portail Athena'),
+            $pr(1183, '2026-10-27', 'Liaison : moins d’attente sur le fil de jeu', 'La liaison Athena évite désormais de figer la partie quand une commande réseau est appelée hors du chemin asynchrone : les demandes lourdes passent en arrière-plan ou sont refusées jusqu’à un appel correct. Le dénombrement des cartes hors ligne est mis en cache. Republiez la liaison, quittez Arma complètement, puis reconnectez-vous.', [
+                'Commandes réseau lourdes hors fil de jeu',
+                'Comptage des cartes hors ligne mis en cache',
+            ], [], [
+                'Certaines commandes réseau pouvaient encore attendre jusqu’à plusieurs secondes sur le fil de jeu',
+            ], ['atak'], [
+                'Reconnectez la liaison. Ouvrez le téléphone, carte et avis d’administration : la partie ne doit plus se figer sur ces appels.',
+            ], 'Liaison Athena à republier'),
+            $pr(1182, '2026-10-27', 'Combat : la télémétrie ne fige plus l’image à la perte', 'Les envois de télémétrie pendant le combat et à la perte ne bloquent plus l’image : ils partent en arrière-plan. Avec le téléphone du pack, le contrôle des chocs ne refait plus le travail du téléphone natif. Republiez le pack et la liaison, quittez Arma complètement, puis retestez un engagement puis une perte.', [
+                'Télémétrie de combat et de perte sans figer l’image',
+            ], [], [
+                'À-coups possibles à la perte ou pendant les rafales liés aux envois synchrones',
+            ], ['atak'], [
+                'Engagez, puis simulez une perte : l’image ne doit plus se figer au moment de l’envoi. Le pack natif reste le référent pour les dégâts de l’appareil.',
+            ], 'Pack téléphone + liaison Athena à republier'),
+            $pr(1181, '2026-10-27', 'Moins d’à-coups en combat avec le téléphone porté', 'Pendant un engagement, la petite carte du téléphone porté et le calque des relais coûtent moins d’images : les noms de lieux ne sont plus redessinés en continu sur le HUD, et les liaisons radio s’affichent en trait simple. Les envois de marqueurs ne figent plus l’image le temps de la liaison. Quittez Arma complètement, republiez le pack et la liaison, puis retestez un engagement.', [
+                'Carte portée : moins de dessin inutile en combat',
+                'Marqueurs transmis sans figer l’image',
+            ], [], [
+                'À-coups ressentis surtout en tirant avec le téléphone ou le calque Relais',
+            ], ['atak'], [
+                'Portez le téléphone, engagez 30 à 60 s, puis rangez-le. L’image doit rester plus stable qu’avant. Les toponymes restent sur la carte en plein écran hors combat.',
+            ], 'Pack téléphone + liaison Athena à republier'),
+            $pr(1180, '2026-10-27', 'Vidéo live : plus de clignotement en bâtiment sur ma caméra', 'Dans Vidéo live, Ma caméra reste stable à l’intérieur : plus de voile « signal instable » ni de pertes inventées, car l’image est locale sur le téléphone. Les flux d’équipiers ou de caméras posées peuvent encore baisser de qualité sous un toit, sans clignoter en permanence. Quittez Arma complètement, puis relancez.', [
+                'Ma caméra : image locale stable en bâtiment',
+                'Décrochages des autres flux espacés, moins agressifs sous un toit',
+            ], [], [
+                'Ma caméra clignotait en intérieur avec un faux signal instable',
+            ], ['atak'], [
+                'Entrez dans un bâtiment. Ouvrez Vidéo live, Ma caméra : l’image ne clignote plus. Pour un intérieur sombre, passez en Vision nocturne.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1179, '2026-10-27', 'Montre : la boussole suit le regard sans à-coups', 'Sur la montre Garmin, l’écran Boussole fait tourner la couronne en continu quand vous changez de cap. Les points cardinaux et le point marqué suivent le regard sans sauter. Quittez Arma complètement, puis relancez.', [
+                'Couronne de la boussole fluide au changement de cap',
+            ], [], [
+                'La boussole avançait par à-coups',
+            ], ['atak'], [
+                'Ouvrez la montre, écran Boussole. Tournez-vous : la couronne suit le regard sans saccades.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1178, '2026-10-27', 'Montre : carte centrée et vue agrandie à la souris', 'Sur la montre Garmin, la carte remplit le cadran et votre point reste au centre. En vue agrandie (Ctrl+Maj+O), vous cliquez les boutons LIGHT, UP, DOWN, START et BACK, et la molette zoome sur la carte ou change d’écran. Échap ramène la montre au poignet. Quittez Arma complètement, puis relancez.', [
+                'Carte de la montre centrée sur votre position, sans bandes noires dans le cadran',
+                'Vue agrandie pilotable à la souris : boutons et molette',
+                'Échap quitte la vue agrandie',
+            ], [], [
+                'La carte restait décalée et la vue agrandie n’acceptait ni clic ni molette',
+            ], ['atak'], [
+                'Ouvrez la montre, écran Carte. Ctrl+Maj+O pour agrandir. Vérifiez le centrage, cliquez START ou tournez la molette, puis Échap.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1177, '2026-10-27', 'Tenues Athena : fiche complète et Enfiler ferme le panneau', 'Dans l’arsenal, le panneau Tenues Athena montre enfin les pièces de la tenue, l’auteur, les favoris, les tenues mises en avant ou obligatoires, et le portrait de l’opérateur comme sur le téléphone. L’état de la copie locale dans Documents est visible. Enfiler applique la tenue et ferme le panneau. Quittez Arma complètement, puis relancez.', [
+                'Aperçu des pièces (arme, tenue, gilet, casque…) sur la fiche',
+                'Auteur, favori, mise en avant et pastille obligatoire lisibles dans la liste et la fiche',
+                'Portrait opérateur récupéré depuis le site',
+                'Indication de la copie locale dans Documents',
+                'Enfiler ferme le panneau après avoir habillé le mannequin',
+            ], [
+                'Filtres Favoris, Mises en avant et Obligatoires',
+            ], [
+                'Certaines tenues affichaient « Équipement non disponible » alors qu’elles s’enfilaient',
+            ], ['atak', 'command'], [
+                'Ouvrez l’arsenal, puis Athena · Tenues. Sélectionnez une tenue : la fiche montre les pièces, l’auteur et le portrait. Enfiler ferme le panneau. Actualiser crée ou met à jour la copie locale dans Documents.',
+            ], 'Pack Overwatch / Connect à republier'),
+            $pr(1025, '2026-10-27', 'Avancement : campagnes et avis lisibles', 'Dans Ressources humaines, Avancement, la liste des campagnes se lit en fiches (année, grade, filière, période, places, statut). Sur une campagne, chaque candidature montre l’avis et la décision en clair : Proposé, Inscrit au tableau, Pas encore d’avis, En attente. Rechargez le portail (Ctrl+F5).', [
+                'Liste des campagnes en fiches, sans tableau serré',
+                'Avis et décisions en libellés métier',
+            ], [], [
+                'Les codes internes d’avis et de décision apparaissaient tels quels',
+            ], ['personnel'], [
+                'Ouvrez RH → Avancement. Parcourez la liste, puis ouvrez une campagne : chaque candidature affiche un avis lisible.',
+            ], 'Portail Athena'),
+            $pr(1190, '2026-10-27', 'Annuaire des communautés : un tableur sur toute la largeur', 'Dans Administration du site, l’annuaire des communautés occupe toute la largeur. Vous voyez l’inactivité, la dernière connexion, l’activité en jeu, et ce qui est rattaché à chaque communauté. Corrélations ouvre le détail. Vous cherchez, filtrez et triez chaque colonne. Rechargez le portail (Ctrl+F5).', [
+                'Tableur en pleine largeur : inactivité, dernière connexion, activité en jeu',
+                'Colonne Rattachés et fenêtre Corrélations : comptes, ATAK, carte, profils, sessions',
+                'Signaux : actives, inactives, jamais vues, sans compte, archivées',
+
+            ], [], [], ['platform'], [
+                'Ouvrez Administration du site, Communautés. Triez la colonne Inactivité, puis ouvrez Corrélations sur une ligne.',
+            ], 'Portail Athena'),
+            $pr(1176, '2026-10-27', 'Corrections de fiches : l’actuel et le proposé se lisent clairement', 'Dans Effectifs, À traiter, la fenêtre Décider indique l’équipe et l’emploi en clair : ce qui est en place, et ce que le membre propose. Une absence se lit « Aucune équipe » ou « Aucun emploi ». La page Corrections de fiches présente les deux côte à côte. Rechargez le portail (Ctrl+F5).', [], [
+                'Chaque changement se lit en deux volets : Actuellement et Proposé',
+                'La fenêtre Décider nomme les équipes, précise l’équipe principale, et nomme les emplois',
+            ], [
+                'La fenêtre Décider montrait les équipes et les emplois sous une forme illisible',
+            ], ['personnel'], [
+                'Ouvrez Effectifs, À traiter, puis Décider sur une demande de correction. Les équipes et les emplois sont en clair. La page Corrections de fiches montre l’actuel à gauche et le proposé à droite.',
+            ], 'Portail Athena'),
+            $pr(1016, '2026-10-27', 'Le téléphone garde l’identité du compte, et la carte suit la liaison', 'Pack 2.8.3. Le raccourci Overwatch ouvre le téléphone du pack. Les positions déjà tenues par la liaison apparaissent sur sa carte. Un joueur relié ne peut plus réécrire le temps de jeu ou les distances des autres. Après une coupure, le téléphone reprend de lui-même dans la minute et demie. Si le portail demande d’attendre plus longtemps, ce délai est respecté. Quittez Arma complètement, puis relancez.', [
+                'Le raccourci « Ouvrir le téléphone ATAK » ouvre le téléphone du pack',
+                'Les opérateurs connus de la liaison apparaissent sur la carte du téléphone',
+                'Le temps de jeu et les distances d’un autre opérateur ne peuvent plus être réécrits depuis un poste joueur',
+            ], [
+                'Après une coupure, la reprise se fait dans la minute et demie, ou selon le délai demandé par le portail',
+                'L’ancienne tablette libère les images de carte quand on se déplace',
+            ], [], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez. Le portail doit être à jour pour le temps de jeu et les distances.',
+            ], 'Pack du téléphone et portail'),
+            $pr(1015, '2026-10-27', 'Les diapositives diffusées s’affichent sur les écrans', 'Une diapositive visible sur le téléphone restait absente de l’écran du terrain, qui gardait son image d’origine. La diffusion montre maintenant cette diapositive sur l’écran. Quittez Arma complètement, puis relancez.', [
+                'Diffuser une diapositive l’affiche sur l’écran désigné',
+                'Changer de diapositive sur le téléphone met l’écran à jour',
+            ], [], [
+                'L’écran ne garde plus son image d’origine pendant une diffusion',
+            ], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1014, '2026-10-27', 'Le chargement ne plante plus sur le numéro, Zeus et les tenues', 'À l’arrivée en mission, le numéro du téléphone, la copie des identifiants depuis Zeus et la liste des tenues dans l’arsenal plantaient. Ces trois actions aboutissent. Quittez Arma complètement, puis relancez.', [
+                'Le numéro du téléphone est posé à l’arrivée en mission',
+                'Zeus peut copier les identifiants d’un opérateur',
+                'La liste des tenues s’affiche dans l’arsenal',
+            ], [], [
+                'Ces trois actions ne plantent plus au chargement',
+            ], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1013, '2026-10-27', 'La montre Garmin s’ouvre de nouveau', 'La touche de la montre et la vue agrandie ne montraient plus rien : le cadran plantait au dessin. Un appui bref sur la touche Montre allume de nouveau la montre, et Ctrl+Maj+O l’affiche en grand. Quittez Arma complètement, puis relancez.', [
+                'La montre s’allume avec un appui bref sur la touche Montre',
+                'Ctrl+Maj+O affiche la montre en grand au centre',
+            ], [], [
+                'Le cadran ne plante plus au moment de s’afficher',
+            ], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1012, '2026-10-27', 'Chaque téléphone est un objet', 'Le modèle et la couleur du téléphone viennent de l’objet dans les poches. On ne les change plus dans les réglages. Samsung S7 coyote, olive ou noir, Samsung S23, iPhone 17 Pro, V2 Enhanced, Xiaomi X3D, Sonim XP8 et la tablette durcie sont chacun un objet. L’ancien téléphone COMSPEC reste le Samsung S7 coyote.', [
+                'Prendre un Samsung S7 olive ou noir affiche cette coque',
+                'Prendre un iPhone 17 Pro, un S23 ou un autre modèle affiche ce modèle',
+                'Les réglages du téléphone ne proposent plus de changer le modèle ni la couleur',
+            ], [], [], ['atak'], [
+                'Installez le pack, quittez Arma complètement, puis relancez. Équipez l’objet du téléphone voulu.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1011, '2026-10-27', 'Registre des données : Steam par adresse de profil et mods proches', 'Dans le registre des données, vous collez l’adresse d’un profil Steam pour retrouver le compte. Un onglet liste les mods vus chez les joueurs qui ressemblent au pack officiel sans en porter la fiche Workshop. Ce sont des signaux à vérifier, pas une preuve de copie. Rechargez le portail (Ctrl+F5).', [
+                'Repérage d’un compte à partir de l’adresse steamcommunity.com/profiles/… ou /id/…',
+                'Onglet Mods proches : packs au nom proche du nôtre, sans fiche Workshop officielle',
+                'Filtres comptes sans Steam, e-mail à vérifier, et ouverture directe de la fiche',
+            ], [
+                'La recherche des comptes et des joueurs Steam accepte aussi une adresse de profil',
+                'Les statuts de compte s’affichent en libellés lisibles',
+            ], [], ['platform'], [
+                'Ouvrez Administration plateforme → Registre des données. Collez une adresse de profil Steam dans l’outil en haut de page, ou ouvrez l’onglet Mods proches.',
+            ], 'Portail Athena'),
+            $pr(1010, '2026-10-27', 'Gestionnaire : les clés de la communauté ne se retirent plus', 'Sur les niveaux d’accès, le niveau Gestionnaire garde toujours l’administration de la communauté et la gestion des niveaux d’accès. Ces cases restent cochées et ne peuvent plus être retirées, ce qui évite de se couper soi-même de l’administration. Les autres droits du niveau restent ajustables. Rechargez le portail (Ctrl+F5).', [
+                'Les clés du Gestionnaire restent toujours cochées sur l’écran Accès',
+                'Un responsable peut encore ajuster les autres droits du niveau Gestionnaire',
+            ], [], [
+                'Il n’est plus possible de retirer au Gestionnaire l’administration de la communauté ou la gestion des niveaux d’accès',
+            ], ['platform'], [
+                'Ouvrez Effectifs → Accès → Gestionnaire. Les cases marquées « toujours requis » restent cochées après enregistrement.',
+            ], 'Portail Athena'),
+            $pr(1009, '2026-10-27', 'La montre Garmin affiche de nouveau le cadran', 'La montre au poignet montrait seulement un disque vert. Elle affiche de nouveau le boîtier, l’heure et les écrans. Quittez Arma complètement après l’installation du pack, puis relancez.', [
+                'Le cadran, les icônes et le boîtier de la montre sont de nouveau visibles',
+                'Le coloris de la montre portée est toujours celui qui s’affiche',
+            ], [], [
+                'La montre n’affiche plus un disque vert à la place du cadran',
+            ], ['atak'], [
+                'Installez le nouveau pack, quittez Arma complètement, puis relancez.',
+            ], 'Pack du téléphone à republier'),
+            $pr(1008, '2026-10-27', 'Seul le module officiel peut encore joindre le poste', 'Une fois le pack officiel publié, la liaison, le suivi et le téléphone ne répondent qu’à ce pack. Une copie modifiée est écartée, même si elle reprend une clé d’accès déjà obtenue. Installez ce pack, puis relancez Arma complètement.', [
+                'Le poste reconnaît le module officiel et refuse une copie',
+            ], [], [], ['atak', 'platform'], [
+                'Mettez le portail à jour et publiez le pack officiel en même temps. Avant ce pack, les joueurs déjà en ligne ne sont pas coupés.',
+                'Après l’installation, quittez Arma complètement, puis relancez. Une copie modifiée du module ne peut plus ouvrir la liaison.',
+            ], 'Portail Athena, puis pack du téléphone à republier'),
+            $pr(1007, '2026-10-25', 'Data Inspector : l’onglet Mods ne contredit plus les versions', 'L’onglet Mods sépare le nom de chaque mod des versions vues en jeu. Si les noms ne sont pas disponibles, la page le dit et continue d’afficher les listes transmises par les joueurs, ainsi que les versions du mod COMSPEC et de COMSPEC Link. Rechargez le portail (Ctrl+F5).', [
+                'Un rappel distingue les listes reçues, toutes connexions confondues, et les versions de la période choisie',
+            ], [
+                'Les quatre chiffres, les versions en jeu et le détail des noms se lisent dans cet ordre',
+                'Le bouton d’export du Data Inspector s’intitule « Exporter le tableau »',
+            ], [
+                'Le bandeau ne dit plus que tout l’onglet est vide lorsque des versions et des listes sont déjà affichées',
+                'La mention « Aucun mod déclaré par les joueurs » ne s’affiche plus quand des versions sont déjà visibles',
+            ], ['atak'], [
+                'Ouvrez Data Inspector, onglet Mods. Les chiffres sont en haut, puis les versions du mod COMSPEC et de COMSPEC Link, puis le détail des noms.',
+                'Choisissez Ma communauté ou Plateforme, puis 1 h ou 24 h. Les versions suivent la période. La recherche et l’export du tableau restent disponibles.',
+            ], 'Portail Athena'),
+            $pr(1006, '2026-10-25', 'Atelier du téléphone : le mod SSE, et la traduction sur le compte', 'L’atelier de traduction du téléphone ATAK couvre aussi les écrans du mod SSE : Bureau SSE, SEEK II, terminal, numérique, site, graphe, preuves, mission, Zeus, tableau de bord et campagne. Les textes encore seulement en français, y compris ceux de ces écrans, restent en tête et dans le filtre « Seulement en français ». Sans compte, le travail reste sur l’appareil. Un membre connecté le retrouve sur son compte Athena, sur un autre appareil. Le mod téléchargé emporte les phrases du téléphone et celles du mod SSE. Rechargez l’atelier (Ctrl+F5).', [
+                'Les écrans du mod SSE apparaissent comme leurs propres applications : Bureau SSE, SEEK II, terminal SSE, numérique, site, graphe, preuves, mission, Zeus, tableau de bord SSE, campagne',
+                'Un membre connecté enregistre la traduction sur son compte et la reprend sur un autre appareil',
+                'Le mod téléchargé contient les phrases du téléphone et celles du mod SSE',
+            ], [
+                'Sans compte, le travail reste sur cet appareil, avec un lien pour se connecter et le retrouver ailleurs',
+                'Les applications sans anglais, y compris celles du mod SSE, passent en premier et portent la mention « Sans anglais »',
+                'Chaque phrase du mod SSE indique l’écran auquel elle appartient',
+            ], [
+                'Après connexion, le retour mène de nouveau vers l’atelier',
+            ], ['atak', 'platform'], [
+                'Ouvrez Traduire l’ATAK. Sans compte, une phrase propose de se connecter. Avec un compte, la langue choisie est indiquée « Sur votre compte ».',
+                'Dans la liste des applications, Bureau SSE, SEEK II et les autres écrans du mod SSE sont à part. Le filtre « Seulement en français » les inclut.',
+                'Téléchargez le mod : les phrases du téléphone et celles du mod SSE partent ensemble.',
+            ], 'Portail Athena'),
+            $pr(1005, '2026-10-25', 'Site public : le bas de page regroupe le nom et les liens', 'Le bas des pages publiques d’Athena change de forme. On y lit l’année, le nom Athena, la phrase de présentation du portail, et le choix de langue déjà proposé en haut de page. Trois colonnes mènent aux pages déjà en ligne : mentions et données, vie de la communauté, assistance. Le grand nom Athena apparaît en dessous, dans le vert du site, sans recouvrir les liens. Sur un petit écran, les colonnes se placent les unes sous les autres. Rechargez la page d’accueil (Ctrl+F5).', [
+                'Année, nom, phrase de présentation et choix de langue regroupés à gauche',
+                'Colonnes Mentions légales, Communauté et Assistance, vers des pages déjà en ligne',
+                'Grand nom Athena en bas de page, recadré, sans gêner les liens',
+            ], [
+                'Sur téléphone, les colonnes passent les unes sous les autres et le nom rétrécit',
+            ], [], ['platform'], [
+                'Ouvrez la page d’accueil ou À propos, descendez en bas. Le choix de langue propose Français et English. Les liens mènent aux pages déjà connues. Le lien Ops reste en haut de page.',
+            ], 'Portail Athena'),
+            $pr(1004, '2026-10-25', 'Messagerie : une conversation se lit comme un échange', 'Ouvrir une conversation affiche vos messages à droite et ceux des autres à gauche, avec l’heure sur chaque message. Le dernier message est visible dès l’ouverture, et la zone d’écriture reste accessible, y compris sur téléphone. Rechargez le portail (Ctrl+F5).', [
+                'Heure lisible sur chaque message, et vos messages alignés à droite',
+            ], [
+                'La zone d’écriture et le bouton Envoyer restent visibles au-dessus de la navigation du téléphone',
+                'Les retours à la ligne d’un message sont conservés',
+            ], [
+                'L’ouverture d’une conversation ne descend plus jusqu’au bas de la page',
+                'Un message vide explique quoi écrire, au lieu de disparaître',
+                'Un participant sans nom affiché n’apparaît plus avec son adresse de courriel',
+            ], ['platform'], [
+                'Ouvrez Messagerie, puis une conversation. Le dernier message est en bas. Écrivez une réponse et envoyez-la. Sur téléphone, le bouton Envoyer reste au-dessus de la barre de navigation.',
+            ], 'Portail Athena'),
+            $pr(1003, '2026-10-25', 'Contributeurs : plusieurs rôles, et les personnes d’abord', 'L’administration des contributeurs met les personnes au premier plan. Une même personne peut demander plusieurs rôles d’un coup, et l’équipe peut les lui accorder sans retirer ceux qu’elle a déjà. Refuser ou retirer un rôle laisse les autres en place. Les trois premiers traducteurs restent mis en avant, sur la page Contribuer et dans l’espace de traduction. Rechargez le portail (Ctrl+F5).', [
+                'Demande de plusieurs rôles en une fois : traducteur, testeur, créateur de contenu, développeur, support',
+                'Attribution de plusieurs rôles à une même personne, sans effacer les rôles déjà actifs',
+                'Les contributeurs qui acceptent d’être cités sont mis en avant, avec tous leurs rôles',
+            ], [
+                'Les demandes et les contributeurs actifs passent avant les langues',
+                'Premier, deuxième et troisième traducteur se distinguent, avec leur part du catalogue',
+            ], [
+                'Le classement ne compte plus plusieurs fois les textes d’une personne qui a aussi d’autres rôles',
+                'Le nom affiché est le pseudo choisi, ou l’indicatif',
+            ], ['platform'], [
+                'Ouvrez Administration du site, Contributeurs : les demandes sont en haut. Sur Contribuer, cochez plusieurs rôles. Sur Traduire le site, les trois premiers traducteurs sont en évidence.',
+            ], 'Portail Athena'),
+            $pr(1002, '2026-10-25', 'Traduction du site : la phrase, son écran, et des outils à côté', 'L’atelier de traduction du site reprend le rythme de l’atelier du téléphone : grand titre, trois étapes, bouton vert. Chaque texte indique l’écran où il apparaît. Quand ce n’est qu’un morceau de phrase, le passage autour est montré. À côté : copier le français, passer au texte suivant encore seulement en français, ou ouvrir l’atelier du téléphone. Rechargez le portail (Ctrl+F5).', [
+                'Contexte de chaque texte : l’écran, et la phrase autour quand elle existe',
+                'Outils à côté du texte : copier le français, écran suivant sans anglais, atelier du téléphone',
+                'Rappel, seulement si le texte contient une valeur ou une balise, de les conserver',
+            ], [
+                'L’atelier du site suit les étapes Choisir la langue, Traduire, Relire',
+                'Dans l’atelier du téléphone, chaque phrase indique son application et, quand elles existent, les phrases voisines',
+            ], [], ['platform'], [
+                'Ouvrez Traduire le site, puis une langue. Le texte à traduire reste au centre. L’écran et les outils sont à côté. Le filtre « Seulement en français » est inchangé.',
+            ], 'Portail Athena'),
+            $pr(1000, '2026-10-25', 'Lier le jeu : le code au centre, vous autorisez vous-même', 'La page pour relier Arma à votre compte Athena est recentrée. Le code du jeu s’affiche en grand, en deux groupes de quatre caractères. Vous voyez d’où vient la demande — téléphone ATAK, éditeur Eden ou pack Overwatch — puis vous l’autorisez. Rien ne se valide tout seul. Rechargez le portail (Ctrl+F5).', [
+                'Le code du jeu s’affiche en grand, en deux groupes de quatre caractères',
+                'L’origine de la demande est indiquée : téléphone ATAK, éditeur Eden ou pack Overwatch',
+            ], [
+                'Écran sombre et centré, lisible sur téléphone comme sur ordinateur',
+                'Les trois étapes restent visibles : le code dans le jeu, l’autorisation ici, puis la connexion du jeu',
+                'Vous voyez la demande, puis vous choisissez Autoriser ce jeu',
+            ], [], ['platform'], [
+                'Ouvrez la page depuis le jeu, avec le code ou le QR code. Vérifiez le code et l’origine, puis Autoriser ce jeu. Sans ce clic, le jeu reste déconnecté.',
+            ], 'Portail Athena'),
+            $pr(999, '2026-10-25', 'Hub : la fiche d’une communauté se lit comme un portrait', 'Ouvrir une communauté depuis le hub ne montre plus une grille de chiffres identiques. Le nom, le recrutement et les actions (page publique, recommandation, comparaison, coopération) sont regroupés. Chaque indicateur se compare à la médiane du réseau et indique le rang. L’organigramme sépare les volumes par niveau du détail des unités, affiché seulement quand la communauté le publie. Rechargez le portail (Ctrl+F5).', [
+                'Portrait de la communauté : identité, recrutement et actions',
+                'Indicateurs groupés, avec une barre, la médiane et le rang dans le réseau',
+            ], [
+                'Organigramme : volumes par niveau, types d’unités, et noms seulement s’ils sont publics',
+                'Avis des partenaires à part, avec un état clair quand aucun avis n’a encore été laissé',
+            ], [], ['platform'], [
+                'Ouvrez Hub des communautés, puis une fiche. Le portrait est en haut. Les indicateurs suivent, puis la structure et les avis.',
+            ], 'Portail Athena'),
+            $pr(998, '2026-10-25', 'Traduction : d’abord les textes encore seulement en français', 'L’espace de traduction du site et l’atelier du téléphone proposent une file « Seulement en français ». Ce sont les textes qui n’ont pas encore d’anglais, à traiter avant de relire ce qui existe déjà. Les applications du jeu sans anglais, comme le bureau SSE, passent en tête. La page des contributeurs affiche le taux de chaque langue et met en avant les traducteurs qui ont le plus avancé. Rechargez le portail (Ctrl+F5).', [
+                'File « Seulement en français » sur le site et dans l’atelier du téléphone',
+                'Applications du jeu sans anglais signalées et placées en premier',
+                'Classement des traducteurs, avec un taux de complétion',
+            ], [
+                'Page des langues : outils pour le site, le jeu et le rôle de traducteur',
+            ], [], ['platform', 'atak'], [
+                'Ouvrez Traduire le site, puis English : le filtre « Seulement en français » est déjà choisi. Dans Traduire l’ATAK, le même filtre isole les phrases sans anglais, et les applications concernées portent la mention « Sans anglais ».',
+            ], 'Portail Athena'),
+            $pr(997, '2026-10-25', 'Fiche personnel : disponibilité, temps de jeu et candidature', 'La fiche d’un membre affiche une disponibilité calculée sur les présences aux opérations des 45 derniers jours. Le temps de jeu a sa propre zone, avec le cumul, les dernières semaines et le détail par rôle. La dernière candidature reprend l’état réel du dossier, chaque information à côté de son intitulé. Rechargez le portail (Ctrl+F5).', [
+                'Disponibilité en pourcentage, avec le nombre de présences et d’opérations sur 45 jours',
+            ], [
+                'Le temps de jeu est regroupé : cumul, 7 et 30 jours, répartition, semaines et rôles',
+                'La dernière candidature aligne chaque intitulé avec sa valeur, et l’état suit le parcours du recrutement',
+            ], [
+                'Le pourcentage de disponibilité ne reprend plus le chiffre posé à l’intégration',
+                'Une candidature déjà rattachée à un compte n’apparaît plus comme « compte à rattacher »',
+            ], ['personnel'], [
+                'Ouvrez une fiche personnel, onglet Portrait. La disponibilité est dans la synthèse. Le temps de jeu est au-dessus. La dernière candidature, quand elle existe, est sous les décorations.',
+            ], 'Portail Athena'),
+            $pr(996, '2026-10-19', 'Bureau SSE : fiche de transmission lisible, avec photo et iris', 'La fiche d’une transmission terrain redevient lisible : une seule valeur longue (les échantillons biométriques, par exemple) poussait toutes les autres hors de l’écran. Les champs s’affichent maintenant en liste nom / valeur, et les valeurs très longues se replient. Quand la transmission concerne une identité, sa photo, ses autres clichés et ses relevés biométriques (empreintes, iris, ADN, qualité de capture, terminal) s’affichent à côté, avec un lien vers sa fiche. Les images transmises s’affichent comme images et s’ouvrent dans la galerie 3D. Rechargez le portail (Ctrl+F5).', [
+                'Identité liée sur la fiche de transmission : photo, clichés, empreintes, iris, ADN, qualité, terminal et relevés',
+                'Images transmises affichées en vignettes, ouvertes dans la galerie',
+            ], [
+                'Champs transmis en liste nom / valeur lisible ; valeurs très longues repliées',
+            ], [
+                'Une valeur longue rendait illisible tout le tableau de la fiche de transmission',
+                'Même correctif pour les autres tableaux nom / valeur du bureau SSE',
+            ], ['atak'], [
+                'Ouvrez Bureau SSE → Transmissions terrain → une fiche biométrique : la photo et l’iris s’affichent à gauche, les champs à droite.',
+            ], 'Portail Athena'),
+            $pr(994, '2026-10-19', 'Bureau SSE : navigation rangée, accès corrigé, animations de déchiffrement', 'Le bureau de renseignement gagne une navigation claire : une trentaine d’entrées numérotées dans le désordre deviennent huit sections repliables qui suivent le cycle du renseignement (pilotage, collecte, dossiers, référentiel, analyse, production, préparation), sans doublon. Ctrl+K ouvre une palette pour aller à n’importe quelle page ou lancer une action. Le bandeau rouge affiche désormais votre vraie habilitation. « Quitter » ferme vraiment la session, et l’engagement de confidentialité n’est plus redemandé toutes les quatre heures. Les titres se déchiffrent à l’ouverture, un rideau couvre le passage d’une page à l’autre, et les photos d’un dossier se parcourent dans une galerie 3D. Rechargez le portail (Ctrl+F5).', [
+                'Palette Ctrl+K : toutes les pages du bureau et les actions (fiche, dossier, investigation, objet)',
+                'Galerie 3D des pièces d’un dossier et des pièces jointes d’une fiche (clavier, molette, glisser)',
+                'Menu « Nouveau » : investigation, dossier, dossier d’intérêt, objet, document',
+                'Tiroir de navigation sur téléphone',
+                'Heure Zulu et temps de session restant mis à jour en direct',
+            ], [
+                'Navigation en 8 sections repliables, mémorisées, avec la page courante toujours en évidence',
+                'Bandeau d’habilitation à la couleur du niveau réel de la session',
+                'Titres « déchiffrés » et rideau de transition entre les pages (désactivés si vous réduisez les animations)',
+                'Le sas explique enfin qu’un compte non habilité a besoin d’un code invité',
+            ], [
+                '« Quitter » rouvrait aussitôt la session d’un compte habilité',
+                'L’engagement de confidentialité était redemandé à chaque renouvellement de session',
+                'Le lien « commandement » effaçait l’engagement d’une session déjà ouverte',
+                'La lecture complète d’un dossier menait à une page d’erreur',
+                'Les registres Organisations, Véhicules, Matériels et Pièces n’étaient jamais mis en évidence dans le menu',
+                'Fausses pastilles « Athena / Arma / 3 src » retirées de la barre du haut',
+            ], ['atak'], [
+                'Ouvrez le bureau SSE : le menu est rangé en sections, Ctrl+K ouvre la palette. Dans un dossier avec des photos, « Parcourir en galerie » ouvre la galerie 3D. Cliquez « Quitter » : vous restez sur le sas jusqu’à « Entrer sans code ».',
+            ], 'Portail Athena'),
+            $pr(973, '2026-10-19', 'Grades : changer le système de la communauté en un clic', 'Le référentiel des grades indique désormais quel système la communauté utilise (français ou américain) et permet de passer à l’autre directement depuis l’onglet, sans repasser par l’assistant de création. Les grades déjà attribués aux membres sont conservés ; les listes proposent ensuite les grades du nouveau système. Rechargez le portail (Ctrl+F5).', [
+                'Bandeau « Votre communauté utilise les grades … » sous les onglets du référentiel',
+                'Bouton « Utiliser les grades américains / français pour la communauté », avec confirmation',
+            ], [], [], ['personnel'], [
+                'Back-office → Référentiels → Grades, onglet Grades américains : cliquez « Utiliser les grades américains pour la communauté ». Le badge « Système de la communauté » passe sur cet onglet.',
+            ], 'Portail Athena'),
+            $pr(934, '2026-10-19', 'Annuaire des communautés : des cartes qui mettent les unités en valeur', 'Les cartes de l’annuaire public montrent enfin la vie de chaque unité. La bannière et la couleur de la communauté habillent la carte, et quatre chiffres apparaissent sous l’en-tête : membres, actifs sur 30 jours, unités de l’ORBAT et opérations par mois. Les opérations à venir, la note des avis et l’ancienneté sur Athena s’affichent quand elles existent. Une communauté épinglée passe en vitrine pleine largeur. Rechargez le portail (Ctrl+F5).', [
+                'Chiffres sur chaque carte : membres, actifs 30 jours, unités ORBAT, opérations par mois',
+                'Bannière et couleur de marque de la communauté sur sa carte',
+                'Opérations à venir, note des avis et ancienneté sur Athena',
+                'Communauté épinglée en vitrine pleine largeur',
+            ], [
+                'Code d’accès sur une seule ligne avec bouton Copier, au lieu de deux blocs',
+                'Présentations limitées à quatre lignes : les cartes d’une même rangée restent alignées',
+                'Pastilles limitées à quatre, les suivantes regroupées en « +N »',
+            ], [
+                'Une présentation qui répétait seulement le nom du jeu s’affichait comme texte de la carte',
+            ], ['platform'], [
+                'Ouvrez Communautés & unités depuis l’accueil : chaque carte affiche ses chiffres sous la bannière, et la communauté épinglée occupe toute la largeur.',
+            ], 'Portail Athena'),
+            $pr(924, '2026-10-19', 'Accueil : aperçu de la plateforme avec une unité fictive', 'La page d’accueil publique montre enfin Athena en action. Une nouvelle section « Voyez-le tourner » présente six écrans d’une unité imaginaire, TF ORION : son ORBAT avec les effectifs par unité, un tableau des opérateurs (qualifications, présence, statut), le centre de commandement, une formation en cours, le briefing d’une manœuvre avec carte et slots, et l’extranet JNET alimenté par l’ATAK en jeu. Toutes les données sont inventées et signalées comme telles. Rechargez le portail (Ctrl+F5).', [
+                'Section « Voyez-le tourner » sur l’accueil : six écrans de démonstration à onglets',
+                'ORBAT, personnel, commandement, formation, manœuvre et JNET d’une unité fictive',
+                'Version anglaise de la démonstration',
+            ], [
+                'Onglets utilisables au clavier (flèches, Début, Fin) et lien direct #apercu-orbat, #apercu-jnet…',
+            ], [], ['platform'], [
+                'Ouvrez l’accueil public, descendez sous « Un portail pensé pour commander » et parcourez les six onglets de l’aperçu.',
+            ], 'Portail Athena'),
+            $pr(866, '2026-10-18', 'Bureau recrutement : la file se range par prochaine action', 'La file des candidatures devient un tableau en colonnes : À prendre, En instruction, Entretien, En attente, Intégration et Bilan 30 jours. Chaque carte dit ce qu’il faut faire, qui le porte et si c’est en retard, avec un bouton qui mène au bon endroit de la fiche. Des filtres rapides isolent vos dossiers, ceux sans recruteur et ceux en retard ; la liste complète reste disponible. La fiche candidat s’ouvre sur une barre de pilotage : frise des 4 étapes, prochaine action, référent et délai. Rechargez le portail (Ctrl+F5).', [
+                'Tableau en colonnes par prochaine action, trié du plus urgent au moins urgent',
+                'Filtres rapides « Mes dossiers », « Sans recruteur », « En retard » et recherche par nom, e-mail ou n° de dossier',
+                '« Me désigner » directement depuis une carte, sans quitter la file',
+                'Barre de pilotage en tête de la fiche candidat : étapes, prochaine action, référent, délai',
+            ], [
+                'Un entretien passé sans décision est signalé « Conclure l’entretien » au lieu de rester « dans les délais »',
+                'La liste complète gagne une colonne « Prochaine action »',
+                'Le délai d’alerte se règle depuis un menu compact en tête de file',
+            ], [
+                'Les candidatures acceptées en cours d’intégration s’affichaient « Statut à vérifier » dans la liste',
+                'Le récapitulatif de la fiche indiquait l’étape 2 sur 4 pour un dossier encore sans référent',
+            ], ['personnel'], [
+                'Ouvrez Bureau recrutement → File des dossiers : les dossiers sont rangés par colonne. Cliquez « Sans recruteur » puis « Me désigner » sur une carte : elle passe dans « En instruction » et dans « Mes dossiers ».',
+            ], 'Portail Athena'),
+            $pr(758,'2026-10-18', 'Portail Athena 1.7.0 « Denver » : chaque version porte un nom de ville', 'Le portail passe en version 1.7.0 et s’appelle Denver. Désormais, chaque nouvelle version du site reçoit le nom d’une ville américaine, jamais réutilisé ; les correctifs gardent le nom de leur version. Toutes les versions jusqu’à 1.6 restent Phoenix, la prochaine sera Austin. La bannière « Production en ligne » affiche le nom de ville et les versions à jour de l’ATAK en jeu, de COMSPEC Link et d’Overwatch. Rechargez le portail (Ctrl+F5).', [
+                'Nom de ville à côté du numéro de version du portail (Phoenix, Denver, puis Austin…)',
+                'Versions de COMSPEC ATAK et COMSPEC Link lues directement dans le mod, toujours à jour',
+            ], [
+                'La bannière affiche le nom de ville seul, sans le mot « Opération »',
+                'Les cartes de la bannière suivent l’ATAK en jeu, COMSPEC Link et le poste de commandement Overwatch',
+            ], [
+                'La date de dernière mise en production restait bloquée au 28 septembre',
+            ], ['atak', 'command'], [
+                'Ouvrez Nouveautés de l’organisation : la bannière indique Portail Athena v1.7.0 et Denver, avec ATAK 1.96.0 et Link 2.0.86.',
+            ], 'Portail Athena'),
+            $pr(757, '2026-10-14', 'JNET : les reco du jeu remontent dans l’espace de l’unité', 'Les notes de reco, photos et rapports envoyés depuis l’ATAK en jeu arrivent désormais dans JNET. Chacun devient un échange de l’unité de l’opérateur, remonté vers son échelon supérieur : la chaîne de commandement le voit dans « Remonté » et dans le flux commun. Une reco modifiée en jeu met à jour son échange. Les photos confidentielles ou liées au bureau SSE ne montrent jamais l’image, seulement un lien d’ouverture sur Athena. Rechargez le portail (Ctrl+F5).', [
+                'Reco, photos et rapports ATAK (Contact, SALUTE, BDA, FRAGO…) relayés dans l’espace JNET de l’unité',
+                'Badge d’origine « Reco terrain », « Photo terrain » ou « Rapport ATAK », vignette de la photo et lien vers la carte',
+                'Un FRAGO envoyé du jeu descend vers les sous-unités, avec accusé de lecture',
+                'Réglage « Reco terrain → JNET » dans les modules ATAK pour couper le relais',
+            ], [
+                'Membres d’une unité en liste compacte (photo, grade, fonction)',
+                'En-tête des échanges sur deux lignes, plus lisible dans les colonnes étroites',
+            ], [], ['atak', 'command'], [
+                'Envoyez une note de reco ou une photo depuis l’ATAK en jeu, puis ouvrez JNET → l’espace de votre unité : elle apparaît dans « Remonté ». Votre échelon supérieur la voit aussi. Un joueur sans compte Athena lié ou sans unité n’est pas relayé.',
+            ], 'Portail Athena'),
             $pr(756, '2026-10-02', 'Compétences : les organisations créent leurs modules et valident leurs membres', 'Le parcours compétences ALPHA → DELTA n’était alimenté par aucun écran : aucune organisation ne pouvait créer de module ni enregistrer une validation. Le pilotage des formations gagne une rubrique Compétences : créer et modifier les modules par phase, fixer les prérequis et le renouvellement, puis valider les membres module par module. La page « Mon parcours compétences » est refaite : progression globale, frise des phases, modules avec statut, prérequis et échéances. Rechargez le portail (Ctrl+F5).', [
                 'Pilotage des formations → Compétences : modules ALPHA, BRAVO, CHARLIE, DELTA',
                 'Prérequis entre modules (boucles refusées) et renouvellement en jours',

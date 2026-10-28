@@ -140,14 +140,11 @@ final class MissionCycleApiController
 
     private function csrfOk(Request $request): bool
     {
-        $token = (string) (
-            $_SERVER['HTTP_X_CSRF_TOKEN']
-            ?? $request->input('_csrf_token')
-            ?? ''
-        );
+        // Jeton en tableau (_csrf_token[]=…) : refusé proprement au lieu d’un 500.
+        $token = (string) ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? $request->inputString('_csrf_token'));
         if ($token === '') {
             $body = $this->jsonBody($request);
-            $token = (string) ($body['_csrf_token'] ?? '');
+            $token = is_scalar($body['_csrf_token'] ?? null) ? (string) $body['_csrf_token'] : '';
         }
 
         return Csrf::validate($token);

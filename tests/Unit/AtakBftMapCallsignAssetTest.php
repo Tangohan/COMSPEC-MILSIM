@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakBftMapCallsignAssetTest extends TestCase
 {
@@ -44,7 +45,7 @@ final class AtakBftMapCallsignAssetTest extends TestCase
         self::assertStringContainsString('athena_installBftLabels', $post);
         self::assertStringContainsString('athena_bftUnitLabel', $cfg);
         self::assertStringContainsString('athena_fillIdentityOverlay', $cfg);
-        self::assertStringContainsString('1.0.84', $cfg);
+        ModVersion::assertAtLeast('1.0.84', ModVersion::fromConfigCpp($cfg));
         self::assertStringContainsString('COMSPEC_BftLabelMode', $label);
         self::assertStringContainsString('cs_role', $label);
         self::assertStringContainsString('01', $note);
@@ -72,7 +73,7 @@ final class AtakBftMapCallsignAssetTest extends TestCase
         self::assertStringContainsString('class applyCtabBftCallsign', $cfgConnect);
         self::assertStringContainsString('cTab_groupId', $applyCtab);
         self::assertStringContainsString('COMSPEC_CtabBftCallsign', $applyCtab);
-        self::assertStringContainsString('saveProfileNamespace', $applyCtab);
+        self::assertStringContainsString('fnc_saveProfile', $applyCtab);
         self::assertStringContainsString('applyCtabBftCallsign', $set);
         self::assertStringContainsString('applyCtabBftCallsign', $sync);
         self::assertStringContainsString('GetInMan', $veh);

@@ -58,7 +58,7 @@ switch (_tab) do {
             ["info", "Init DLL native", [["COMSPEC_ATAK_NativeExtensionInit"] call _q] call _esc],
             ["info", "Session restaurée", [["COMSPEC_ATAK_NativeAuthRestore"] call _q] call _esc],
             ["section", "Versions et simulations", ""],
-            ["info", "COMSPEC ATAK", ["COMSPEC_ATAK_NativeVersion"] call _q],
+            ["info", "COMSPEC ATAK", ["COMSPEC_ATAK_NativeBuild"] call _q],
             ["info", "Communauté", ["comspec_tenant_name", "—"] call _q],
             ["info", "Dégâts / débit / apps civiles", format ["%1 / %2 / %3", ["comspec_atak_native_damage_sim", true] call _q, ["comspec_atak_native_net_sim", true] call _q, ["comspec_atak_native_civil_apps", true] call _q]],
             ["info", "Téléphone", (([] call comspec_atak_native_fnc_deviceHealth) get "state") + format [" · batterie %1 %%", round (missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100])]],
@@ -82,14 +82,15 @@ switch (_tab) do {
             ["BriefingPresence", "Présence au briefing sur Athena"],
             ["BriefingComments", "Questions sur les diapositives"],
             ["PhoneIdentity", "Numéro de téléphone Athena"],
-            ["DownloadBriefingSlideImage", "Images (diapositives, fiches, photos)"]
+            ["DownloadBriefingSlideImage", "Images (diapositives, fiches, photos)"],
+            ["MedicalRoster", "Fiches médicales (app Médical)"]
         ];
         private _missing = _want select { !((_x select 0) in _have) };
         private _ok = { params ["_b"]; ["<t color='#e5483a'>MANQUANT</t>", "<t color='#5cc76b'>OK</t>"] select _b };
         _rows append [
             ["section", "Extension", ""],
             ["info", "DLL chargée", ["<t color='#e5483a'>non (aucune réponse)</t>", [(_ver splitString "|") param [1, _ver]] call _esc] select (_ver isNotEqualTo "")],
-            ["info", "COMSPEC ATAK", [missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "—"]] call _esc],
+            ["info", "COMSPEC ATAK", [missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"]]] call _esc],
             ["info", "COMSPEC Link", [[] call comspec_atak_native_fnc_bridge] call _ok],
             ["info", "Fonctions Overwatch récentes", [!isNil "comspec_overwatch_connect_fnc_splitKeepEmpty"] call _ok],
             ["info", "Identité téléphone reçue", [(count (missionNamespace getVariable ["comspec_profile_phone", []])) > 0] call _ok],
@@ -103,6 +104,23 @@ switch (_tab) do {
             "<t color='#5cc76b'>La DLL est à jour pour cette version de COMSPEC ATAK.</t>",
             "<t color='#f2ab33'>Recompilez la DLL COMSPECExtension (version 2.0.58 ou plus) et relancez Arma : les écrans concernés affichent sinon « mettez la DLL à jour ».</t>"
         ] select ((count _missing) > 0)];
+        // Contrôle de l'installation (fn_integrityCheck) : PBO en double, versions incohérentes, mises à jour.
+        private _issues = missionNamespace getVariable ["COMSPEC_ATAK_Integrity", []];
+        (missionNamespace getVariable ["COMSPEC_ATAK_LatestRemote", ["", "", -1]]) params ["_lAtak", "_lLink", "_lAt"];
+        private _integrity = [
+            ["section", "Installation", format ["%1 anomalie(s)", count _issues]],
+            ["info", "DLL attendue par ce main.pbo", [missionNamespace getVariable ["COMSPEC_ATAK_LinkExpected", "—"]] call _esc],
+            ["info", "Dernières versions sur Athena", [format ["ATAK %1 · COMSPEC Link %2", _lAtak, _lLink], "pas encore vérifié"] select (_lAt < 0)]
+        ];
+        { _integrity pushBack ["text", format ["<t color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select ((_x select 1) isEqualTo "ERROR"), [_x select 2] call _esc]]; } forEach _issues;
+        _rows append _integrity;
+        // Check de démarrage (fn_startupCheck) : étapes envoyées au salon Discord de debug et réponse d'Athena.
+        private _check = missionNamespace getVariable ["COMSPEC_ATAK_StartupCheck", []];
+        _rows pushBack ["section", "Check de démarrage", [format ["%1 étape(s)", count _check], "pas encore fait"] select (_check isEqualTo [])];
+        if (_check isNotEqualTo []) then {
+            _rows pushBack ["info", "Envoi au Discord", [missionNamespace getVariable ["COMSPEC_ATAK_StartupCheckSent", "en cours"]] call _esc];
+            { if ((_x select 1) in ["warn", "fail"]) then { _rows pushBack ["text", format ["<t color='%1'>%2 : %3</t>", ["#f2ab33", "#e5483a"] select ((_x select 1) isEqualTo "fail"), _x select 0, [_x select 2] call _esc]]; }; } forEach _check;
+        };
         _rows pushBack ["buttons", [["RELANCER LE TEST", { [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true]]];
     };
     case "TOOLS": {
@@ -111,7 +129,7 @@ switch (_tab) do {
             ["buttons", [["COPIER LE JOURNAL", {
                 private _lines = ([] call (uiNamespace getVariable ["COMSPEC_ATAK_DbgMerged", { [] }])) apply { format ["%1 [%2][%3] %4", (_x select 0) toFixed 1, _x select 1, _x select 2, _x select 3] };
                 copyToClipboard (_lines joinString endl);
-                ["SUCCESS", format ["%1 ligne(s) copiée(s) dans le presse-papiers", count _lines], 3, 20] call comspec_atak_native_fnc_notify;
+                [format ["%1 ligne(s) copiée(s) dans le presse-papiers", count _lines], 2.5] call comspec_atak_native_fnc_toast;
             }, true], ["VIDER", { missionNamespace setVariable ["COMSPEC_ATAK_Log", []]; missionNamespace setVariable ["COMSPEC_ATAK_NetLog", []]; ["INFO", "Journaux natifs vidés", 2, 10] call comspec_atak_native_fnc_notify; }]]],
             ["buttons", [["TEST DE DÉBIT", { uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", []]; private _q = [] call comspec_atak_native_fnc_linkQuality; ["INFO", format ["%1 kbit/s, %2 ms, perte %3 %%", _q get "kbps", _q get "latency", _q get "loss"], 4, 10] call comspec_atak_native_fnc_notify; }],
                 ["MESURER LA LATENCE", { if (isNil "comspec_overwatch_connect_fnc_measureLatency") exitWith { ["WARNING", "Overwatch non chargé", 3, 10] call comspec_atak_native_fnc_notify; }; [] call comspec_overwatch_connect_fnc_measureLatency; }]]],

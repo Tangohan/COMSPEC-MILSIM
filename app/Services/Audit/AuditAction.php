@@ -20,6 +20,9 @@ final class AuditAction
     public const AUTH_TOTP_ENABLED = 'auth.totp_enabled';
     public const AUTH_TOTP_DISABLED = 'auth.totp_disabled';
     public const AUTH_EMAIL_LOGIN_OTP_TOGGLED = 'auth.email_login_otp_toggled';
+    public const AUTH_RECOVERY_CODE_USED = 'auth.recovery_code_used';
+    public const AUTH_RECOVERY_CODES_GENERATED = 'auth.recovery_codes_generated';
+    public const AUTH_TRUSTED_DEVICES_REVOKED = 'auth.trusted_devices_revoked';
     public const AUTH_PORTAL_SELECTED = 'auth.portal_selected';
     public const USER_STEAM_LINKED = 'user.steam_linked';
 
@@ -48,7 +51,7 @@ final class AuditAction
 
     public const MODERATION_ACTION = 'moderation.action_applied';
     public const MODERATION_REVOKED = 'moderation.action_revoked';
-    public const FORUM_MODERATION = 'forum.moderation_action';
+    public const REPORT_MODERATION = 'report.moderation_action';
 
     public const SECURITY_EVENT = 'security.event';
 
@@ -75,6 +78,27 @@ final class AuditAction
      */
     public const USER_PURGED = 'user.purged';
 
+    /** Bannissement d’une personne sur tout le site (fiches inactives + liste de restriction). */
+    public const USER_BANNED = 'user.banned';
+
+    /** Levée d’un bannissement site : fiches remises dans leur état d’avant. */
+    public const USER_UNBANNED = 'user.unbanned';
+
+    /** Retrait d’une personne d’une communauté (réversible, fiche conservée). */
+    public const USER_MEMBERSHIP_REMOVED = 'user.membership_removed';
+
+    /** Réintégration d’une personne dans une communauté qu’elle avait quittée. */
+    public const USER_MEMBERSHIP_RESTORED = 'user.membership_restored';
+
+    /** Suppression définitive d’une communauté et de ses données (administration du site). */
+    public const TENANT_DELETED = 'platform.tenant_deleted';
+
+    /** Archivage réversible d’une communauté (administration du site). */
+    public const TENANT_ARCHIVED = 'platform.tenant_archived';
+
+    /** Restauration d’une communauté archivée (administration du site). */
+    public const TENANT_RESTORED = 'platform.tenant_restored';
+
     public const MEMBER_INTEGRATION_CREATED = 'member_integration.created';
     public const MEMBER_INTEGRATION_STEP_FORCED = 'member_integration.step_forced';
     public const MEMBER_INTEGRATION_APPOINTMENT = 'member_integration.appointment';
@@ -85,13 +109,36 @@ final class AuditAction
 
     public const PLATFORM_SETTINGS_UPDATED = 'platform.settings_updated';
 
+    /** Plancher de version des DLL du jeu (réglage game_min_link_version : administration du site ou tools/game-client-gate.php). */
+    public const PLATFORM_GAME_CLIENT_FLOOR_UPDATED = 'platform.game_client_floor_updated';
+
     /** Vidage d’un lot d’historiques volumineux (administration du site). */
     public const PLATFORM_STORAGE_PURGED = 'platform.storage_purged';
+
+    /** Console d'exploitation (/admin/system/exploitation). */
+    public const PLATFORM_OPS_UNLOCKED = 'platform.ops_console_unlocked';
+    public const PLATFORM_OPS_MIGRATIONS_LAUNCHED = 'platform.ops_migrations_launched';
+    public const PLATFORM_OPS_BACKUP_CREATED = 'platform.ops_backup_created';
+    public const PLATFORM_OPS_BACKUP_DOWNLOADED = 'platform.ops_backup_downloaded';
+    public const PLATFORM_OPS_BACKUP_RESTORED = 'platform.ops_backup_restored';
+    public const PLATFORM_OPS_BACKUP_DELETED = 'platform.ops_backup_deleted';
+    public const PLATFORM_OPS_DELETION_SCHEDULED = 'platform.ops_account_deletion_scheduled';
+    public const PLATFORM_OPS_DELETION_CANCELLED = 'platform.ops_account_deletion_cancelled';
+    public const PLATFORM_OPS_DELETION_EXECUTED = 'platform.ops_account_deletion_executed';
+    public const PLATFORM_DATA_TABLE_EMPTIED = 'platform.data_table_emptied';
+    public const PLATFORM_DATA_ROW_UPDATED = 'platform.data_row_updated';
+    public const PLATFORM_DATA_ROW_DELETED = 'platform.data_row_deleted';
 
     public const SUBSCRIPTION_PLAN_UPDATED = 'platform.subscription_plan_updated';
 
     /** Affectation manuelle d’une formule à une communauté (opérateur plateforme). */
     public const TENANT_PLAN_ASSIGNED = 'platform.tenant_plan_assigned';
+
+    /** Formule offerte à une communauté (durée ou sans limite, e-mail + fenêtre aux gestionnaires). */
+    public const TENANT_PLAN_GIFTED = 'platform.tenant_plan_gifted';
+
+    /** Formule offerte retirée avant son terme. */
+    public const TENANT_PLAN_GIFT_REVOKED = 'platform.tenant_plan_gift_revoked';
 
     /** Identité d’une communauté (nom, adresse publique) depuis l’administration du site. */
     public const TENANT_IDENTITY_UPDATED = 'platform.tenant_identity_updated';
@@ -126,4 +173,6 @@ final class AuditAction
 
     public const PLATFORM_TRANSLATION_ACCEPTED = 'platform.translation_accepted';
     public const PLATFORM_TRANSLATION_DECLINED = 'platform.translation_declined';
+    public const PLATFORM_NAME_FILTER_UPDATED = 'platform.name_filter_updated';
+    public const PLATFORM_NAME_ALERT_RESOLVED = 'platform.name_alert_resolved';
 }

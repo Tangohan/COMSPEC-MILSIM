@@ -1,9 +1,11 @@
-params ["_display", ["_interactive", true]];
+// _texture : écran 3D de la tablette sur le JPC (texture UI, fn_jpcScreen), non interactif comme le HUD.
+params ["_display", ["_interactive", true], ["_texture", false]];
 disableSerialization;
 if (!hasInterface || {isNull _display}) exitWith {};
 private _state = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 _state set ["display", _display];
 _state set ["interactive", _interactive];
+_state set ["texture", _texture];
 _state set ["history", []];
 _state set ["pageSig", []];
 _state set ["pageSigPage", ""];
@@ -11,20 +13,48 @@ _state set ["mapCentered", false];
 _state set ["drag", []];
 _state set ["pageDrawn", ""];
 uiNamespace setVariable ["COMSPEC_ATAK_Display", _display];
+// Proportions d'un carré (hauteur / largeur en unités d'interface) : écran du joueur, ou texture 1024 x 576 du JPC.
+uiNamespace setVariable ["COMSPEC_ATAK_Ratio", [pixelH / pixelW, 1024 / (missionNamespace getVariable ["COMSPEC_ATAK_JpcTexH", 576])] select _texture];
 uiNamespace setVariable ["COMSPEC_ATAK_PageControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_ToastControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_BadgeSig", []];
+// Calques Android (fn_lockScreen, fn_quickSettings, fn_toast) : leurs contrôles sont morts avec l'ancien display.
+uiNamespace setVariable ["COMSPEC_ATAK_LockUp", false];
+uiNamespace setVariable ["COMSPEC_ATAK_LockCtrls", []];
+uiNamespace setVariable ["COMSPEC_ATAK_ShadeOpen", false];
+uiNamespace setVariable ["COMSPEC_ATAK_ShadeCtrls", []];
+uiNamespace setVariable ["COMSPEC_ATAK_ShadeHandle", []];
+uiNamespace setVariable ["COMSPEC_ATAK_ToastPill", []];
+// Mode disposition (fn_phoneDrag) : terminé quand le téléphone se referme.
+uiNamespace setVariable ["COMSPEC_ATAK_Arrange", false];
+uiNamespace setVariable ["COMSPEC_ATAK_ArrangeCtrls", []];
+// Écran 3D du JPC : une carte ne se dessine pas dans une texture UI, vue aérienne à la place (fn_jpcMap).
+if (_texture) then { ["init", _display] call comspec_atak_native_fnc_jpcMap; };
+// Textes fixes de l'écran (ui/displays.hpp) dans la langue du téléphone (fn_tr ; sans effet sans dictionnaire chargé).
+if ((missionNamespace getVariable ["COMSPEC_ATAK_I18nN", 0]) > 0) then {
+    { if (ctrlType _x in [0, 1, 16]) then { private _t = ctrlText _x; if (_t isNotEqualTo "") then { _x ctrlSetText (_t call comspec_atak_native_fnc_tr); }; }; } forEach (allControls _display); // i18n:brut
+    // Infobulles fixes (flèche Retour, Centrer la carte sur moi…) : relues dans la config, aucune commande ne les lit sur le contrôle.
+    if (_interactive) then {
+        {
+            private _tip = getText (_x >> "tooltip");
+            private _idc = getNumber (_x >> "idc");
+            if (_tip isNotEqualTo "" && {_idc > 0}) then { (_display displayCtrl _idc) ctrlSetTooltip (_tip call comspec_atak_native_fnc_tr); };
+        } forEach ("true" configClasses (configFile >> "COMSPEC_RscDisplayATAK" >> "controls")); // i18n:brut
+    };
+};
 
 // Les raccourcis CBA ne passent pas quand le téléphone est en main : on reprend ici les touches « porter » et « interagir ».
 if (_interactive) then {
     _display displayAddEventHandler ["KeyDown", {
         params ["", "_key", "_shift", "_ctrl"];
+        // Réglages > Accès et touches : nouvelle touche attendue pour un raccourci (fn_keybinds), prise avant tout le reste.
+        if (["key", _this] call comspec_atak_native_fnc_keybinds) exitWith { true };
         // Suppr : efface le marqueur pointé (ou sélectionné), sauf pendant la saisie d'un texte.
         if (_key isEqualTo 0xD3 && {(ctrlType (focusedCtrl (_this select 0))) isNotEqualTo 2}) exitWith {
             private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
             if ((_s getOrDefault ["activePage", ""]) isNotEqualTo "MAP") exitWith { false };
-            private _map = (_this select 0) displayCtrl 88530;
+            private _map = [_this select 0] call comspec_atak_native_fnc_mapCtrl;
             private _m = [_map, getMousePosition] call comspec_atak_native_fnc_markerAt;
             if (_m isEqualTo "") then { _m = _s getOrDefault ["selectedMarker", ""]; };
             if (_m isEqualTo "") exitWith { false };
@@ -50,11 +80,45 @@ if (_interactive) then {
             [{ [] call comspec_atak_native_fnc_hudToggle; }] call CBA_fnc_execNextFrame;
             true
         };
-        false
+        // Touches d'autres mods (alternat radio TFAR / ACRE2…) : leurs raccourcis CBA ne passent pas sans ce relais (fn_keyPass).
+        if (["down", _this] call comspec_atak_native_fnc_keyPass) exitWith { true };
+        // Saisie dans un champ du téléphone (« a », « e »… faisaient pencher le personnage) : touche gardée (fn_keyBlock).
+        _this call comspec_atak_native_fnc_keyBlock
     }];
+    // Alternat relâché : fin d'émission radio (fn_keyPass).
+    ["reset"] call comspec_atak_native_fnc_keyPass;
+    _display displayAddEventHandler ["KeyUp", { ["up", _this] call comspec_atak_native_fnc_keyPass }];
+    // Même garde sur le display de mission, si la touche y passe quand même (posée une fois par partie).
+    private _d46 = findDisplay 46;
+    if (!isNull _d46 && {(_d46 getVariable ["COMSPEC_KeyBlockEh", -1]) < 0}) then {
+        _d46 setVariable ["COMSPEC_KeyBlockEh", _d46 displayAddEventHandler ["KeyDown", { _this call comspec_atak_native_fnc_keyBlock }]];
+    };
     _display displayAddEventHandler ["MouseButtonDown", { params ["", "_button"]; ["DOWN", _button] call comspec_atak_native_fnc_phoneDrag; }];
     _display displayAddEventHandler ["MouseMoving", { ["MOVE"] call comspec_atak_native_fnc_phoneDrag; }];
     _display displayAddEventHandler ["MouseButtonUp", { ["UP"] call comspec_atak_native_fnc_phoneDrag; }];
+    // Appui sur l'écran (fn_fx « tap ») : onde, clic doux, vibration légère. Pas après un glissé (carte, curseur) :
+    // la position du bouton enfoncé est gardée, au-delà de quelques pixels le relâchement n'est pas un appui.
+    _display displayAddEventHandler ["MouseButtonDown", {
+        params ["", "_button", "_mx", "_my"];
+        if (_button isEqualTo 0) then { uiNamespace setVariable ["COMSPEC_ATAK_TapDown", [_mx, _my, diag_tickTime]]; };
+        false
+    }];
+    _display displayAddEventHandler ["MouseButtonUp", {
+        params ["", "_button", "_mx", "_my"];
+        if (_button isNotEqualTo 0) exitWith { false };
+        (uiNamespace getVariable ["COMSPEC_ATAK_TapDown", [_mx, _my, -10]]) params ["_ix", "_iy", "_it"];
+        private _moved = (diag_tickTime - _it) < 2 && {((abs (_mx - _ix)) / pixelW) + ((abs (_my - _iy)) / pixelH) > 12};
+        if (!_moved) then {
+            ["tap", [_mx, _my]] call comspec_atak_native_fnc_fx;
+            // Mains en sang : empreinte de doigt à l'endroit touché (fn_screenDirt « tap »).
+            if ((missionNamespace getVariable ["COMSPEC_ATAK_HandsBlood", 0]) > 0.08) then { ["tap", [_mx, _my]] call comspec_atak_native_fnc_screenDirt; };
+        };
+        // Volet rapide ou écran de verrouillage affiché : ils repassent devant l'app cliquée.
+        if ((uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]) || {uiNamespace getVariable ["COMSPEC_ATAK_ShadeOpen", false]}) then {
+            [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame;
+        };
+        false
+    }];
     // Après un clic dans une app : effets d'écran (fêlures, filtre de nuit) remis devant (fn_overlayFront).
     _display displayAddEventHandler ["MouseButtonUp", {
         if (uiNamespace getVariable ["COMSPEC_ATAK_DevFront", false]) then { [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame; };
@@ -63,7 +127,28 @@ if (_interactive) then {
 };
 
 [] call comspec_atak_native_fnc_schedulerStart;
-[profileNamespace getVariable ["COMSPEC_ATAK_LastPage", "MAP"]] call comspec_atak_native_fnc_navigate;
+// HUD des autres mods (F-PANO / ECOTI...) masqué sous le téléphone tant qu'il est affiché (fn_foreignHud).
+["start"] call comspec_atak_native_fnc_foreignHud;
+private _page = profileNamespace getVariable ["COMSPEC_ATAK_LastPage", "MAP"];
+// Première sortie en main de la mission, jeu pas encore relié à un compte Athena (service Athena « Oui ») :
+// le téléphone s'ouvre sur l'app Athena, onglet COMPTE, avec un code déjà demandé, à saisir sur le site (/lier).
+// Réglage CBA « Proposer la liaison Athena à la sortie du téléphone » (comspec_atak_native_link_offer) pour s'en passer.
+// Rien en mode local (service « Non », comspec_atak_native_local_only) ni quand BattlEye bloque la DLL.
+if (_interactive && {missionNamespace getVariable ["comspec_atak_native_link_offer", true]} && {!(missionNamespace getVariable ["COMSPEC_ATAK_LinkOffered", false])}) then {
+    missionNamespace setVariable ["COMSPEC_ATAK_LinkOffered", true];
+    private _st = [] call comspec_atak_native_fnc_athenaStatus;
+    if (!(_st get "logged") && {(_st get "key") in ["disconnected", "unlinked", "code", "error"]}) then {
+        _page = "ATHENA";
+        uiNamespace setVariable ["COMSPEC_ATAK_AthenaTab", "account"];
+        private _ls = (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLink", [""]]) param [0, ""];
+        if !(_ls in ["asking", "pending"]) then { ["start"] call comspec_atak_native_fnc_athenaLink; };
+        ["INFO", "ATHENA", "Première sortie du téléphone sans compte Athena : app Athena ouverte avec un code"] call comspec_atak_native_fnc_log;
+    };
+};
+[_page] call comspec_atak_native_fnc_navigate;
+// Écran de verrouillage : première sortie de la mission, après une minute rangé ou un redémarrage (fn_lockScreen).
+// Avant fn_statusUpdate, qui note l'heure du dernier affichage.
+["check"] call comspec_atak_native_fnc_lockScreen;
 [] call comspec_atak_native_fnc_statusUpdate;
 
-["INFO", "UI", format ["display_created (%1)", ["HUD", "en main"] select _interactive]] call comspec_atak_native_fnc_log;
+["INFO", "UI", format ["display_created (%1)", [["HUD", "écran JPC"] select _texture, "en main"] select _interactive]] call comspec_atak_native_fnc_log;

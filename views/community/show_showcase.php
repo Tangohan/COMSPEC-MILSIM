@@ -9,7 +9,6 @@
 /** @var array<int,int> $unitMemberCounts */
 /** @var array<int,string> $commanderNames */
 /** @var bool $hasMembershipInTenant */
-/** @var bool $showForumCta */
 $slug = $tenant['slug'] ?? '';
 $name = $tenant['name'] ?? '';
 $cp = $communityProfile ?? \App\Services\Community\TenantCommunityProfileService::getPublicViewModel($communityConfig ?? [], (string) ($tenant['slug'] ?? ''));
@@ -19,11 +18,15 @@ $publicRosterRows = is_array($publicRosterRows ?? null) ? $publicRosterRows : []
 $unitMemberCounts = is_array($unitMemberCounts ?? null) ? $unitMemberCounts : [];
 $commanderNames = is_array($commanderNames ?? null) ? $commanderNames : [];
 $hasMembershipInTenant = $hasMembershipInTenant ?? false;
-$showForumCta = $showForumCta ?? true;
 $communityCode = trim((string) ($tenant['community_code'] ?? ''));
 $flashSuccess = \App\Core\Session::getFlash('success');
 $flashError = \App\Core\Session::getFlash('error');
 $recruitmentPublishedOpenings = is_array($recruitmentPublishedOpenings ?? null) ? $recruitmentPublishedOpenings : [];
+/* Profils « Bureau des effectifs » / « Carte ATAK » : on rejoint par Discord, jamais par un formulaire du site. */
+$discordOnlyRecruit = \App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly((string) ($tenant['tenant_type'] ?? 'full'));
+if ($discordOnlyRecruit) {
+    $recruitmentPublishedOpenings = [];
+}
 $recruitmentProspectionRef = trim((string) ($recruitmentProspectionRef ?? ''));
 $recruitmentListUpdatedAt = trim((string) ($recruitmentListUpdatedAt ?? ''));
 $publicUpcomingEvents = is_array($publicUpcomingEvents ?? null) ? $publicUpcomingEvents : [];
@@ -51,10 +54,6 @@ $publicMission = trim((string) ($sv['publicMission'] ?? ''));
 $publicDoctrine = trim((string) ($sv['publicDoctrine'] ?? ''));
 $contactIntro = trim((string) ($cp['contactIntro'] ?? ''));
 $publicModuleCatalog = [
-    'forum' => [
-        'label' => 'Forum communautaire',
-        'desc' => 'Briefings, discussions et annonces ouvertes aux visiteurs ou aux membres selon la configuration.',
-    ],
     'documents' => [
         'label' => 'Documents',
         'desc' => 'Doctrine, consignes et ressources partagées une fois intégré à la communauté.',
@@ -74,9 +73,6 @@ $publicModuleCatalog = [
 ];
 $enabledPublicModules = [];
 foreach ($publicModuleCatalog as $moduleKey => $moduleMeta) {
-    if ($moduleKey === 'forum' && function_exists('forum_public_nav_visible') && !forum_public_nav_visible()) {
-        continue;
-    }
     if (empty($mods[$moduleKey])) {
         continue;
     }
@@ -323,7 +319,9 @@ if ($foundedLabel !== '') {
 }
 
 $enlistUrl = url('c/' . $slug . '/enlistment');
-$forumUrl = url('c/' . $slug . '/forum');
+if ($discordOnlyRecruit && $discordUrl !== '') {
+    $enlistUrl = $discordUrl;
+}
 $mediasUrl = url('c/' . rawurlencode((string) $slug) . '/medias');
 $reelsUrl = url('c/' . rawurlencode((string) $slug) . '/reels');
 
@@ -348,10 +346,6 @@ if ($ctaPrimaryLabel === null || $ctaPrimaryHref === null) {
         $primaryCta = 'contacter';
         $ctaPrimaryLabel = 'Nous contacter';
         $ctaPrimaryHref = '#contact';
-    } elseif ($showForumCta) {
-        $primaryCta = 'forum';
-        $ctaPrimaryLabel = 'Voir le forum';
-        $ctaPrimaryHref = $forumUrl;
     } else {
         $primaryCta = 'medias';
         $ctaPrimaryLabel = 'Voir les médias';
@@ -362,11 +356,16 @@ $ctaPrimaryLabel = trim((string) $ctaPrimaryLabel);
 if ($ctaPrimaryLabel === '') {
     $ctaPrimaryLabel = !$isLocked ? 'Rejoindre' : 'En savoir plus';
 }
-$ctaPrimaryHint = match ((string) $primaryCta) {
+if ($discordOnlyRecruit && in_array((string) $primaryCta, ['rejoindre', 'candidater'], true)) {
+    $ctaPrimaryLabel = 'Rejoindre sur Discord';
+}
+$ctaPrimaryHint = $discordOnlyRecruit && in_array((string) $primaryCta, ['rejoindre', 'candidater'], true)
+    ? 'Le recrutement se fait sur notre Discord, pas sur ce site : présentez-vous dans le salon d’accueil.'
+    : null;
+$ctaPrimaryHint ??= match ((string) $primaryCta) {
     'rejoindre' => 'Accès membres : code communauté ou inscription.',
     'candidater' => 'Déposez une candidature pour intégrer l’unité.',
     'contacter' => 'Écrivez à l’état-major sans engagement.',
-    'forum' => 'Échanges ouverts sur le forum de la communauté.',
     'medias' => 'Parcourez les publications publiques.',
     default => '',
 };
@@ -374,7 +373,6 @@ $navCtaLabel = match ((string) $primaryCta) {
     'rejoindre' => 'Rejoindre',
     'candidater' => 'Candidater',
     'contacter' => 'Contacter',
-    'forum' => 'Forum',
     'medias' => 'Médias',
     default => $ctaPrimaryLabel,
 };
@@ -497,10 +495,6 @@ $rosterIndicatif = static function (array $r): string {
     if ($cs !== '') {
         return $cs;
     }
-    $fa = trim((string) ($r['forum_alias'] ?? ''));
-    if ($fa !== '') {
-        return $fa;
-    }
     $dn = trim((string) ($r['display_name'] ?? ''));
     return $dn !== '' ? $dn : '—';
 };
@@ -554,36 +548,95 @@ $showcaseBackUrl = trim((string) ($showcaseBackUrl ?? ''));
 if ($showcaseBackUrl === '') {
     $showcaseBackUrl = url('communities');
 }
-?>
-<div class="community-public-vitrine community-landing cl-vitrine"<?= $clStyle !== '' ? ' style="' . htmlspecialchars($clStyle, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
 
-  <header class="cl-nav" role="banner">
+/* —— Mise en page personnalisable (PublicPageBuilder) et édition en place —— */
+$pageLayout = is_array($pageLayout ?? null)
+    ? $pageLayout
+    : \App\Services\Community\PublicPageBuilder::resolve(is_array($communityConfig ?? null) ? $communityConfig : []);
+$pageEditor = is_array($pageEditor ?? null) ? $pageEditor : [];
+$pbCanEdit = !empty($pageEditor['canEdit']);
+$pbEditing = $pbCanEdit && !empty($pageEditor['editing']);
+$pbHeader = $pageLayout['header'];
+$pbSections = [];
+foreach ($pageLayout['blocks'] as $pbBlk) {
+    if ($pbBlk['type'] === 'section') {
+        $pbSections[$pbBlk['key']] = $pbBlk;
+    }
+}
+unset($pbBlk);
+/* Titre de section : texte propre à la communauté, sinon libellé par défaut. */
+$clT = static function (string $section, string $prop, string $default) use ($pbSections): string {
+    $v = trim((string) ($pbSections[$section]['props'][$prop] ?? ''));
+
+    return $v !== '' ? $v : $default;
+};
+/* Attribut d’édition en place (vide hors mode édition). */
+$clE = static fn (string $attr): string => $pbEditing ? ' ' . $attr . ' translate="no"' : '';
+$clEs = static fn (string $section, string $prop): string => $pbEditing
+    ? ' data-cl-sprop="' . htmlspecialchars($section . '.' . $prop, ENT_QUOTES, 'UTF-8') . '" translate="no"'
+    : '';
+$clF = static fn (string $field): string => $pbEditing
+    ? ' data-cl-field="' . htmlspecialchars($field, ENT_QUOTES, 'UTF-8') . '" translate="no"'
+    : '';
+$clUp = static fn (string $s): string => $pbEditing ? $s : mb_strtoupper($s);
+$pbTagline = trim((string) ($pbHeader['tagline'] ?? ''));
+$pbNavSub = $pbTagline !== '' ? $pbTagline : $navSub;
+$pbNavCtaLabel = trim((string) ($pbHeader['cta_label'] ?? '')) !== '' ? (string) $pbHeader['cta_label'] : (string) $navCtaLabel;
+$pbNavCtaHref = trim((string) ($pbHeader['cta_url'] ?? '')) !== '' ? (string) $pbHeader['cta_url'] : (string) $ctaPrimaryHref;
+$pbPageTheme = (string) ($pageLayout['theme'] ?? 'light');
+?>
+<div id="top" class="community-public-vitrine community-landing cl-vitrine" data-pb-theme="<?= htmlspecialchars($pbPageTheme, ENT_QUOTES, 'UTF-8') ?>"<?= $pbEditing ? ' data-cl-editing="1"' : '' ?><?= $clStyle !== '' ? ' style="' . htmlspecialchars($clStyle, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
+<?php
+foreach (['community-page-builder', 'community-orbat-styles', 'community-vitrine-day'] as $pbCssName) {
+    $pbCssFile = base_path('public/assets/css/' . $pbCssName . '.css');
+    if (is_readable($pbCssFile)) {
+        echo '<style id="' . $pbCssName . '-css">' . (string) file_get_contents($pbCssFile) . '</style>';
+    }
+}
+unset($pbCssFile, $pbCssName);
+?>
+<?php if ($pbPageTheme === 'auto'): ?>
+<script>(function(){var r=document.currentScript.parentNode,m=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');function a(){r.classList.toggle('pb-dark',!!(m&&m.matches));}a();if(m&&m.addEventListener){m.addEventListener('change',a);}})();</script>
+<?php endif; ?>
+
+  <?php ob_start(); ?>
+  <header class="cl-nav pb-nav" role="banner" data-cl-nav
+    data-pb-header-style="<?= htmlspecialchars((string) $pbHeader['style'], ENT_QUOTES, 'UTF-8') ?>"
+    data-pb-header-layout="<?= htmlspecialchars((string) $pbHeader['layout'], ENT_QUOTES, 'UTF-8') ?>"
+    data-pb-show-back="<?= !empty($pbHeader['show_back']) ? '1' : '0' ?>"
+    data-pb-show-nav="<?= !empty($pbHeader['show_nav']) ? '1' : '0' ?>"
+    data-pb-show-badges="<?= !empty($pbHeader['show_badges']) ? '1' : '0' ?>">
     <div class="cl-nav__start">
-      <a href="<?= htmlspecialchars($showcaseBackUrl, ENT_QUOTES, 'UTF-8') ?>" class="cl-back" aria-label="Retour">
+      <a href="<?= htmlspecialchars($showcaseBackUrl, ENT_QUOTES, 'UTF-8') ?>" class="cl-back pb-nav__back" aria-label="Retour">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg>
         <span>Retour</span>
       </a>
-      <div class="cl-nav__brand">
+      <a class="cl-nav__brand pb-nav__brand" href="#top" aria-label="Haut de page">
         <?php if ($brandLogo !== ''): ?>
         <img class="cl-nav__logo" src="<?= htmlspecialchars($brandLogo, ENT_QUOTES, 'UTF-8') ?>" alt="" data-img-fallback="logo" data-img-label="Emblème indisponible">
         <?php else: ?>
         <span class="cl-nav__mark" aria-hidden="true"><?= htmlspecialchars($nameInitials) ?></span>
         <?php endif; ?>
-        <div class="cl-nav__titles">
-          <div class="cl-nav__name"><?= htmlspecialchars($name) ?></div>
-          <div class="cl-nav__sub"><?= htmlspecialchars(mb_strtoupper($navSub)) ?></div>
-        </div>
-      </div>
+        <span class="cl-nav__titles">
+          <span class="cl-nav__name"><?= name_blur_html($name) ?></span>
+          <span class="cl-nav__sub" <?= $pbTagline !== '' && !$pbEditing ? ' translate="no"' : '' ?><?= $clE('data-cl-hprop="tagline" data-placeholder="Sous-titre de l’en-tête"') ?>><?= htmlspecialchars($pbEditing ? $pbNavSub : mb_strtoupper($pbNavSub)) ?></span>
+        </span>
+      </a>
     </div>
-    <nav class="cl-nav__links" aria-label="Sections de la vitrine">
-      <a href="#presentation">L’unité</a>
-      <?php if ($showUnits): ?><a href="#organisation">Organisation</a><?php endif; ?>
-      <?php if ($showAgenda): ?><a href="#agenda">Agenda</a><?php endif; ?>
-      <?php if (!$isLocked || $showOpenings): ?><a href="#recrutement">Recrutement</a><?php endif; ?>
-      <?php if ($showMedia): ?><a href="#medias">Médias</a><?php endif; ?>
-      <?php if ($showForumCta): ?><a href="<?= htmlspecialchars($forumUrl) ?>">Forum</a><?php endif; ?>
-    </nav>
-    <a href="<?= htmlspecialchars((string) $ctaPrimaryHref) ?>" class="cl-btn cl-btn--accent cl-nav__cta comspec-analytics-cta" data-comspec-zone="vitrine_nav" data-comspec-cta="<?= htmlspecialchars((string) $primaryCta) ?>"><?= htmlspecialchars(mb_strtoupper((string) $navCtaLabel)) ?></a>
+    <nav class="cl-nav__links pb-nav__links" aria-label="Sections de la vitrine"><!--pb-nav-links--></nav>
+    <div class="pb-nav__end">
+      <?php if ($publicAudience !== 'platform' && !empty($sv['recruitmentBadgeOpen']) && !$isLocked): ?>
+      <span class="pb-nav__badge"><span class="cl-pulse" aria-hidden="true"></span>Recrutement ouvert</span>
+      <?php endif; ?>
+      <a href="<?= htmlspecialchars($pbNavCtaHref) ?>" class="cl-btn cl-btn--accent cl-nav__cta comspec-analytics-cta" data-comspec-zone="vitrine_nav" data-comspec-cta="<?= htmlspecialchars((string) $primaryCta) ?>"<?= $clE('data-cl-hprop="cta_label"') ?>><?= htmlspecialchars($pbEditing ? $pbNavCtaLabel : mb_strtoupper($pbNavCtaLabel)) ?></a>
+      <button type="button" class="pb-nav__toggle" aria-expanded="false" aria-controls="pb-nav-drawer" aria-label="Ouvrir le menu" data-pb-nav-toggle>
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="pb-nav__drawer" id="pb-nav-drawer" hidden data-pb-nav-drawer>
+      <nav aria-label="Menu de la vitrine"><!--pb-nav-links--></nav>
+      <a href="<?= htmlspecialchars($pbNavCtaHref) ?>" class="cl-btn cl-btn--accent cl-btn--block"><?= htmlspecialchars(mb_strtoupper($pbNavCtaLabel)) ?></a>
+    </div>
   </header>
 
   <?php if ($flashSuccess): ?>
@@ -593,11 +646,17 @@ if ($showcaseBackUrl === '') {
   <div class="cl-flash cl-flash--err"><?= htmlspecialchars($flashError) ?></div>
   <?php endif; ?>
 
+  <?php $pbTop = (string) ob_get_clean(); $pbBuf = []; ob_start(); ?>
   <section class="cl-hero cl-rise" aria-labelledby="cl-hero-title">
     <div class="cl-hero__media" aria-hidden="true">
       <?php
       $heroRendered = false;
-      if (is_array($heroMediaItem)) {
+      $heroSectionImage = trim((string) ($pbSections['hero']['props']['image'] ?? ''));
+      if ($heroSectionImage !== '') {
+          echo '<img src="' . htmlspecialchars(\App\Services\Community\PublicPageBuilder::imageUrl($heroSectionImage), ENT_QUOTES, 'UTF-8') . '" alt="">';
+          $heroRendered = true;
+      }
+      if (!$heroRendered && is_array($heroMediaItem)) {
           $hk = (string) ($heroMediaItem['media_kind'] ?? '');
           $hPath = \App\Support\CommunityMediaDetails::publicUrl(isset($heroMediaItem['storage_path']) ? (string) $heroMediaItem['storage_path'] : null);
           if ($hk === 'image' && $hPath) {
@@ -618,9 +677,17 @@ if ($showcaseBackUrl === '') {
       ?>
     </div>
     <div class="cl-hero__scrim" aria-hidden="true"></div>
+    <?php if ($pbEditing): ?>
+    <button type="button" class="cl-edit-img" data-cl-img="image" title="Choisir, remplacer ou retirer l’image du bandeau">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>
+      <span>Image du bandeau</span>
+    </button>
+    <?php endif; ?>
     <div class="cl-hero__inner">
       <div class="cl-hero__copy">
-        <?php if ($publicAudience !== 'platform' && !empty($sv['recruitmentBadgeOpen']) && !$isLocked): ?>
+        <?php if ($publicAudience !== 'platform' && $discordOnlyRecruit && !$isLocked): ?>
+        <div class="cl-pill cl-pill--live"><span class="cl-pulse" aria-hidden="true"></span><span>RECRUTEMENT SUR DISCORD</span></div>
+        <?php elseif ($publicAudience !== 'platform' && !empty($sv['recruitmentBadgeOpen']) && !$isLocked): ?>
         <div class="cl-pill cl-pill--live">
           <span class="cl-pulse" aria-hidden="true"></span>
           <span><?= htmlspecialchars(mb_strtoupper($recruitSessionLabel !== '' ? ('Recrutement ouvert · ' . $recruitSessionLabel) : 'Recrutement ouvert')) ?></span>
@@ -631,9 +698,12 @@ if ($showcaseBackUrl === '') {
         <div class="cl-pill cl-pill--live"><span class="cl-pulse" aria-hidden="true"></span><span><?= htmlspecialchars(mb_strtoupper($accessLabel)) ?></span></div>
         <?php endif; ?>
 
-        <h1 id="cl-hero-title" class="cl-hero__title"><?= nl2br(htmlspecialchars($heroHeadline)) ?></h1>
-        <?php if ($heroLead !== '' && $heroLead !== $heroHeadline): ?>
-        <p class="cl-hero__lead"><?= nl2br(htmlspecialchars($heroLead)) ?></p>
+        <?php $clSupport = \App\Services\Billing\DonorService::tenantSupport((int) ($tenant['id'] ?? 0)); if ($clSupport !== null): ?>
+        <a class="cl-pill cl-pill--supporter" href="<?= htmlspecialchars(url('soutenir-atak') . '#donateurs') ?>" title="Cette communauté soutient le développement d’Athena"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z" fill="currentColor"/></svg><span>SOUTIENT ATHENA</span></a>
+        <?php endif; ?>
+        <h1 id="cl-hero-title" class="cl-hero__title"<?= $clF('public_hero_headline') ?>><?= $pbEditing ? nl2br(htmlspecialchars($heroHeadline)) : nl2br(name_blur_html($heroHeadline)) ?></h1>
+        <?php if (($heroLead !== '' && $heroLead !== $heroHeadline) || $pbEditing): ?>
+        <p class="cl-hero__lead"<?= $clF('public_hero_subtitle') ?><?= $clE('data-placeholder="Phrase d’accroche"') ?>><?= nl2br(htmlspecialchars($heroLead !== $heroHeadline ? $heroLead : '')) ?></p>
         <?php endif; ?>
 
         <div class="cl-hero__actions">
@@ -647,12 +717,11 @@ if ($showcaseBackUrl === '') {
           </a>
           <?php elseif ($showMedia && (string) $primaryCta !== 'medias'): ?>
           <a href="#medias" class="cl-btn cl-btn--ghost">Voir les médias</a>
-          <?php elseif ($showForumCta && (string) $primaryCta !== 'forum'): ?>
-          <a href="<?= htmlspecialchars($forumUrl) ?>" class="cl-btn cl-btn--ghost">Voir le forum</a>
           <?php endif; ?>
         </div>
-        <?php if ($ctaPrimaryHint !== ''): ?>
-        <p class="cl-hero__cta-hint"><?= htmlspecialchars($ctaPrimaryHint) ?></p>
+        <?php $ctaPrimaryHint = $clT('hero', 'lead', $ctaPrimaryHint); ?>
+        <?php if ($ctaPrimaryHint !== '' || $pbEditing): ?>
+        <p class="cl-hero__cta-hint"<?= $clEs('hero', 'lead') ?>><?= htmlspecialchars($ctaPrimaryHint) ?></p>
         <?php endif; ?>
       </div>
     </div>
@@ -670,6 +739,7 @@ if ($showcaseBackUrl === '') {
     <?php endif; ?>
   </section>
 
+  <?php $pbBuf['hero'] = (string) ob_get_clean(); ob_start(); ?>
   <?php if ($showHighlight || $showSchedule || $socialLinks !== []): ?>
   <div class="cl-signals cl-rise" aria-label="Informations clés">
     <div class="cl-wrap cl-signals__inner">
@@ -678,10 +748,10 @@ if ($showcaseBackUrl === '') {
         <span class="cl-alert__mark" aria-hidden="true"></span>
         <div class="cl-alert__body">
           <?php if ($highlightTitle !== ''): ?>
-          <p class="cl-alert__kicker"><?= htmlspecialchars(mb_strtoupper($highlightTitle)) ?></p>
+          <p class="cl-alert__kicker"<?= $clF('public_highlight_title') ?>><?= htmlspecialchars($clUp($highlightTitle)) ?></p>
           <?php endif; ?>
           <?php if ($highlightBody !== ''): ?>
-          <p class="cl-alert__text"><?= nl2br(htmlspecialchars($highlightBody)) ?></p>
+          <p class="cl-alert__text"<?= $clF('public_highlight_body') ?>><?= nl2br(htmlspecialchars($highlightBody)) ?></p>
           <?php endif; ?>
         </div>
       </aside>
@@ -689,9 +759,9 @@ if ($showcaseBackUrl === '') {
 
       <?php if ($showSchedule): ?>
       <div class="cl-schedule">
-        <p class="cl-schedule__kicker"><?= htmlspecialchars(mb_strtoupper($scheduleLabel !== '' ? $scheduleLabel : 'Créneaux')) ?></p>
+        <p class="cl-schedule__kicker"<?= $clF('public_schedule_label') ?>><?= htmlspecialchars($clUp($scheduleLabel !== '' ? $scheduleLabel : 'Créneaux')) ?></p>
         <?php if ($scheduleBody !== ''): ?>
-        <p class="cl-schedule__text"><?= htmlspecialchars($scheduleBody) ?></p>
+        <p class="cl-schedule__text"<?= $clF('public_schedule_body') ?>><?= htmlspecialchars($scheduleBody) ?></p>
         <?php endif; ?>
       </div>
       <?php endif; ?>
@@ -711,6 +781,7 @@ if ($showcaseBackUrl === '') {
   </div>
   <?php endif; ?>
 
+  <?php $pbBuf['signals'] = (string) ob_get_clean(); ob_start(); ?>
   <?php
   $settingsVideoEmbed = $videoUrlSetting !== ''
       ? \App\Support\CommunityMediaDetails::embedUrl($videoUrlSetting)
@@ -750,10 +821,10 @@ if ($showcaseBackUrl === '') {
         <?php endif; ?>
       </div>
       <div class="cl-video__copy">
-        <p class="cl-kicker cl-kicker--on-dark">En images</p>
-        <h2 id="cl-video-title" class="cl-h2 cl-h2--on-dark"><?= htmlspecialchars($pvTitle !== '' ? $pvTitle : 'À quoi ressemble une soirée chez nous') ?></h2>
-        <?php if ($pvCap !== ''): ?>
-        <p class="cl-video__lead"><?= nl2br(htmlspecialchars($pvCap)) ?></p>
+        <p class="cl-kicker cl-kicker--on-dark"<?= $clEs('video', 'kicker') ?>><?= htmlspecialchars($clT('video', 'kicker', 'En images')) ?></p>
+        <h2 id="cl-video-title" class="cl-h2 cl-h2--on-dark"<?= $clF('public_video_title') ?>><?= htmlspecialchars($pvTitle !== '' ? $pvTitle : 'À quoi ressemble une soirée chez nous') ?></h2>
+        <?php if ($pvCap !== '' || $pbEditing): ?>
+        <p class="cl-video__lead"<?= $clF('public_video_body') ?><?= $clE('data-placeholder="Légende de la vidéo"') ?>><?= nl2br(htmlspecialchars($pvCap)) ?></p>
         <?php endif; ?>
         <?php if ($videoChapters !== []): ?>
         <div class="cl-video__chapters">
@@ -771,6 +842,7 @@ if ($showcaseBackUrl === '') {
   </section>
   <?php endif; ?>
 
+  <?php $pbBuf['video'] = (string) ob_get_clean(); ob_start(); ?>
   <?php if ($statCards !== []): ?>
   <div class="cl-stats">
     <div class="cl-stats__grid<?= $statCols < 3 ? ' cl-stats__grid--compact' : '' ?>" style="--cl-stats-cols:<?= (int) $statCols ?>" data-cols="<?= (int) $statCols ?>">
@@ -786,84 +858,107 @@ if ($showcaseBackUrl === '') {
   </div>
   <?php endif; ?>
 
-  <div class="cl-body">
+  <?php $pbBuf['stats'] = (string) ob_get_clean(); ?>
 
-    <section id="presentation" class="cl-about cl-rise" aria-labelledby="cl-about-title">
+    <?php ob_start(); ?>
+    <?php
+        // Galerie : images choisies dans l’éditeur, sinon médias de la page, sinon photo mise en avant ou bannière.
+        $gal = [];
+        $galFromEditor = is_array($pbSections['about']['props']['gallery'] ?? null) ? $pbSections['about']['props']['gallery'] : [];
+        foreach ($galFromEditor as $gItem) {
+            $gSrc = \App\Services\Community\PublicPageBuilder::imageUrl((string) ($gItem['image'] ?? ''));
+            if ($gSrc !== '') {
+                $gal[] = ['url' => $gSrc, 'title' => trim((string) ($gItem['alt'] ?? '')), 'caption' => trim((string) ($gItem['caption'] ?? ''))];
+            }
+        }
+        if ($gal === []) {
+            foreach (array_slice($galleryImages, 0, 3) as $gItem) {
+                if (!is_array($gItem)) {
+                    continue;
+                }
+                $gUrl = \App\Support\CommunityMediaDetails::publicUrl(isset($gItem['storage_path']) ? (string) $gItem['storage_path'] : null);
+                if (!$gUrl) {
+                    continue;
+                }
+                $gal[] = ['url' => $gUrl, 'title' => trim((string) ($gItem['title'] ?? '')), 'caption' => ''];
+            }
+        }
+        if ($gal === [] && is_array($heroMediaItem) && ($heroMediaItem['media_kind'] ?? '') === 'image') {
+            $gUrl = \App\Support\CommunityMediaDetails::publicUrl(isset($heroMediaItem['storage_path']) ? (string) $heroMediaItem['storage_path'] : null);
+            if ($gUrl) {
+                $gal[] = ['url' => $gUrl, 'title' => trim((string) ($heroMediaItem['title'] ?? '')), 'caption' => ''];
+            }
+        }
+        if ($gal === [] && $brandBanner !== '') {
+            $gal[] = ['url' => $brandBanner, 'title' => 'Bannière de la communauté', 'caption' => ''];
+        }
+        $gal = array_slice($gal, 0, 3);
+        // Hors édition, on n’affiche jamais de case vide : la galerie prend la place disponible ou disparaît.
+        $galSlots = $pbEditing ? 3 : count($gal);
+        $pbAboutNoGallery = $galSlots === 0;
+    ?>
+    <section id="presentation" class="cl-about cl-rise<?= $pbAboutNoGallery ? ' cl-about--solo' : '' ?>" aria-labelledby="cl-about-title">
       <div class="cl-about__text">
-        <p class="cl-kicker">Qui nous sommes</p>
-        <h2 id="cl-about-title" class="cl-h2"><?= htmlspecialchars($aboutTitle) ?></h2>
+        <p class="cl-kicker"<?= $clEs('about', 'kicker') ?>><?= htmlspecialchars($clT('about', 'kicker', 'Qui nous sommes')) ?></p>
+        <h2 id="cl-about-title" class="cl-h2"<?= $clF('public_about_title') ?>><?= $pbEditing ? htmlspecialchars($aboutTitle) : name_blur_html($aboutTitle) ?></h2>
         <?php if ($aboutBody !== ''): ?>
-        <p class="cl-prose"><?= nl2br(htmlspecialchars($aboutBody)) ?></p>
+        <p class="cl-prose"<?= $clF('public_about_body') ?>><?= nl2br(htmlspecialchars($aboutBody)) ?></p>
         <?php endif; ?>
-        <?php if ($aboutBodySecondary !== ''): ?>
-        <p class="cl-prose"><?= nl2br(htmlspecialchars($aboutBodySecondary)) ?></p>
+        <?php if ($aboutBodySecondary !== '' || $pbEditing): ?>
+        <p class="cl-prose"<?= $clF('public_about_body_secondary') ?><?= $clE('data-placeholder="Second paragraphe (facultatif)"') ?>><?= nl2br(htmlspecialchars($aboutBodySecondary)) ?></p>
         <?php endif; ?>
         <?php if ($expectations !== '' && $prereqItems === []): ?>
         <p class="cl-prose"><?= nl2br(htmlspecialchars($expectations)) ?></p>
         <?php endif; ?>
         <?php if ($pitchPoints !== []): ?>
-        <div class="cl-pitch">
+        <div class="cl-pitch"<?= $pbEditing && is_array($sv['pitch'] ?? null) && $sv['pitch'] !== [] ? ' data-cl-list="public_pitch"' : '' ?>>
           <?php foreach ($pitchPoints as $pp): ?>
-          <div class="cl-pitch__item">
-            <div class="cl-pitch__t"><?= htmlspecialchars($pp['t']) ?></div>
-            <?php if ($pp['b'] !== ''): ?>
-            <div class="cl-pitch__b"><?= nl2br(htmlspecialchars($pp['b'])) ?></div>
+          <div class="cl-pitch__item" data-cl-item>
+            <div class="cl-pitch__t"<?= $clE('data-cl-sub="title"') ?>><?= htmlspecialchars($pp['t']) ?></div>
+            <?php if ($pp['b'] !== '' || $pbEditing): ?>
+            <div class="cl-pitch__b"<?= $clE('data-cl-sub="body"') ?>><?= nl2br(htmlspecialchars($pp['b'])) ?></div>
             <?php endif; ?>
           </div>
           <?php endforeach; ?>
         </div>
         <?php endif; ?>
       </div>
-      <div class="cl-about__gallery">
-        <?php
-        $gal = [];
-        foreach (array_slice($galleryImages, 0, 3) as $gItem) {
-            if (!is_array($gItem)) {
-                continue;
-            }
-            $gUrl = \App\Support\CommunityMediaDetails::publicUrl(isset($gItem['storage_path']) ? (string) $gItem['storage_path'] : null);
-            if (!$gUrl) {
-                continue;
-            }
-            $gal[] = ['url' => $gUrl, 'title' => trim((string) ($gItem['title'] ?? ''))];
-        }
-        if ($gal === [] && is_array($heroMediaItem) && ($heroMediaItem['media_kind'] ?? '') === 'image') {
-            $gUrl = \App\Support\CommunityMediaDetails::publicUrl(isset($heroMediaItem['storage_path']) ? (string) $heroMediaItem['storage_path'] : null);
-            if ($gUrl) {
-                $gal[] = ['url' => $gUrl, 'title' => trim((string) ($heroMediaItem['title'] ?? ''))];
-            }
-        }
-        if ($gal === [] && $brandBanner !== '') {
-            $gal[] = ['url' => $brandBanner, 'title' => 'Bannière de la communauté'];
-        }
-        for ($gi = 0; $gi < 3; $gi++):
+      <?php if ($galSlots > 0): ?>
+      <div class="cl-about__gallery cl-about__gallery--n<?= (int) $galSlots ?>"<?= $clE('data-cl-gallery') ?>>
+        <?php for ($gi = 0; $gi < $galSlots; $gi++):
             $slot = $gal[$gi] ?? null;
             $shotClass = 'cl-about__shot' . ($gi === 0 ? ' cl-about__shot--wide' : '');
         ?>
           <?php if (is_array($slot)): ?>
-          <figure class="<?= htmlspecialchars($shotClass) ?>">
+          <figure class="<?= htmlspecialchars($shotClass) ?>"<?= $clE('data-cl-img="gallery" data-cl-img-index="' . $gi . '" title="Modifier les images de la présentation"') ?>>
             <img src="<?= htmlspecialchars($slot['url'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($slot['title'] !== '' ? $slot['title'] : 'Image de la communauté') ?>" loading="lazy">
+            <?php if ($slot['caption'] !== ''): ?><figcaption class="cl-about__caption"><?= htmlspecialchars($slot['caption']) ?></figcaption><?php endif; ?>
           </figure>
           <?php else: ?>
-          <div class="cl-ph <?= htmlspecialchars($shotClass) ?>" aria-hidden="true"><?= $gi === 0 ? 'Galerie' : '—' ?></div>
+          <button type="button" class="cl-about__add <?= htmlspecialchars($shotClass) ?>" data-cl-img="gallery" data-cl-img-index="<?= (int) $gi ?>">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/><path d="M12 2v4M10 4h4" stroke-linecap="round"/></svg>
+            <span>Ajouter une image</span>
+          </button>
           <?php endif; ?>
         <?php endfor; ?>
       </div>
+      <?php endif; ?>
     </section>
 
+  <?php $pbBuf['about'] = (string) ob_get_clean(); ob_start(); ?>
     <?php if ($publicMission !== '' || $publicDoctrine !== '' || $specialties !== []): ?>
     <section id="mission" class="cl-rise" aria-labelledby="cl-mission-title">
       <div class="cl-section-head">
         <div>
-          <p class="cl-kicker">Identité opérationnelle</p>
-          <h2 id="cl-mission-title" class="cl-h2">Mission &amp; doctrine</h2>
+          <p class="cl-kicker"<?= $clEs('mission', 'kicker') ?>><?= htmlspecialchars($clT('mission', 'kicker', 'Identité opérationnelle')) ?></p>
+          <h2 id="cl-mission-title" class="cl-h2"<?= $clEs('mission', 'title') ?>><?= htmlspecialchars($clT('mission', 'title', 'Mission & doctrine')) ?></h2>
         </div>
-        <?php if ($publicDoctrine !== ''): ?>
-        <p class="cl-section-aside"><strong>Doctrine :</strong> <?= htmlspecialchars($publicDoctrine) ?></p>
-        <?php endif; ?>
       </div>
+      <?php if ($publicDoctrine !== ''): ?>
+      <p class="cl-doctrine"><strong>Doctrine</strong> <span<?= $clF('public_doctrine') ?>><?= htmlspecialchars($publicDoctrine) ?></span></p>
+      <?php endif; ?>
       <?php if ($publicMission !== ''): ?>
-      <p class="cl-prose"><?= nl2br(htmlspecialchars($publicMission)) ?></p>
+      <p class="cl-prose"<?= $clF('public_mission') ?>><?= nl2br(htmlspecialchars($publicMission)) ?></p>
       <?php endif; ?>
       <?php if ($specialties !== []): ?>
       <div class="cl-chips" aria-label="Spécialités">
@@ -876,14 +971,15 @@ if ($showcaseBackUrl === '') {
     </section>
     <?php endif; ?>
 
+  <?php $pbBuf['mission'] = (string) ob_get_clean(); ob_start(); ?>
     <?php if ($enabledPublicModules !== []): ?>
     <section id="modules" class="cl-rise" aria-labelledby="cl-modules-title">
       <div class="cl-section-head">
         <div>
-          <p class="cl-kicker">Portail Athena</p>
-          <h2 id="cl-modules-title" class="cl-h2">Features &amp; accès</h2>
+          <p class="cl-kicker"<?= $clEs('modules', 'kicker') ?>><?= htmlspecialchars($clT('modules', 'kicker', 'Portail Athena')) ?></p>
+          <h2 id="cl-modules-title" class="cl-h2"<?= $clEs('modules', 'title') ?>><?= htmlspecialchars($clT('modules', 'title', 'Features & accès')) ?></h2>
         </div>
-        <p class="cl-section-aside">Ce que la communauté met à disposition — et comment y accéder.</p>
+        <p class="cl-section-aside"<?= $clEs('modules', 'lead') ?>><?= htmlspecialchars($clT('modules', 'lead', 'Ce que la communauté met à disposition — et comment y accéder.')) ?></p>
       </div>
       <div class="cl-feature-grid" aria-label="Modules et accès publics">
         <?php foreach ($enabledPublicModules as $moduleKey => $moduleMeta):
@@ -891,10 +987,7 @@ if ($showcaseBackUrl === '') {
           $moduleDesc = (string) ($moduleMeta['desc'] ?? '');
           $moduleHref = null;
           $moduleCta = 'En savoir plus';
-          if ($moduleKey === 'forum' && $showForumCta) {
-              $moduleHref = $forumUrl;
-              $moduleCta = 'Ouvrir le forum';
-          } elseif ($moduleKey === 'events' && $showAgenda) {
+          if ($moduleKey === 'events' && $showAgenda) {
               $moduleHref = '#agenda';
               $moduleCta = 'Voir l’agenda';
           } elseif ($moduleKey === 'roster' && $showRoster) {
@@ -923,12 +1016,13 @@ if ($showcaseBackUrl === '') {
     </section>
     <?php endif; ?>
 
+  <?php $pbBuf['modules'] = (string) ob_get_clean(); ob_start(); ?>
     <?php if ($commandChain !== []): ?>
     <section id="commandement" class="cl-rise" aria-labelledby="cl-command-title">
       <div class="cl-section-head">
         <div>
-          <p class="cl-kicker">Encadrement</p>
-          <h2 id="cl-command-title" class="cl-h2">Chaîne de commandement</h2>
+          <p class="cl-kicker"<?= $clEs('command', 'kicker') ?>><?= htmlspecialchars($clT('command', 'kicker', 'Encadrement')) ?></p>
+          <h2 id="cl-command-title" class="cl-h2"<?= $clEs('command', 'title') ?>><?= htmlspecialchars($clT('command', 'title', 'Chaîne de commandement')) ?></h2>
         </div>
       </div>
       <div class="cl-units">
@@ -950,8 +1044,13 @@ if ($showcaseBackUrl === '') {
     </section>
     <?php endif; ?>
 
+  <?php $pbBuf['command'] = (string) ob_get_clean(); ob_start(); ?>
     <?php if ($showUnits): ?>
     <?php
+      /* ORBAT public : un seul balisage, mis en forme par le style choisi dans l’éditeur
+         (data-pb-orbat-* sur la section, voir community-orbat-styles.css) : l’aperçu change sans recharger. */
+      $orbLang = \App\Support\PublicOrbat::language(is_array($communityConfig ?? null) ? $communityConfig : []);
+      $orbL = \App\Support\PublicOrbat::labels($orbLang);
       $publicUnitsById = [];
       $publicUnitChildIds = [];
       foreach ($publicUnits as $puRow) {
@@ -981,15 +1080,40 @@ if ($showcaseBackUrl === '') {
               break;
           }
       }
+      $orbCommanders = \App\Support\PublicOrbat::commanders(
+          (int) ($tenant['id'] ?? 0),
+          array_map(static fn (array $u): int => (int) ($u['commander_user_id'] ?? 0), array_values($publicUnitsById))
+      );
+      $orbUnitTone = static function (array $unit): string {
+          $tone = trim((string) ($unit['public_accent_color'] ?? ''));
+          if (preg_match('/^#[0-9A-Fa-f]{6}$/', $tone)) {
+              return $tone;
+          }
+          $typeRaw = strtolower((string) ($unit['type'] ?? ''));
+          if (str_contains($typeRaw, 'support') || str_contains($typeRaw, 'log')) {
+              return '#c98a12';
+          }
+          if (str_contains($typeRaw, 'instruct') || str_contains($typeRaw, 'école') || str_contains($typeRaw, 'ecole')) {
+              return '#1e6fbf';
+          }
+
+          return '#0b8a5c';
+      };
+      /* Style « liste par branche » : une seule unité racine → ses sous-unités font les branches. */
+      $orbBranchDepth = count($publicUnitRoots) === 1 && $publicOrbatHasTree ? 1 : 0;
       $renderPublicUnitCard = null;
-      $renderPublicUnitCard = static function (int $unitId, int $depth = 0) use (
+      $renderPublicUnitCard = static function (int $unitId, int $depth = 0, string $branchTone = '', string $parentName = '') use (
           &$renderPublicUnitCard,
           $publicUnitsById,
           $publicUnitChildIds,
           $unitMemberCounts,
           $commanderNames,
-          $slug,
-          $publicOrbatHasTree
+          $orbCommanders,
+          $orbUnitTone,
+          $orbL,
+          $orbLang,
+          $orbBranchDepth,
+          $slug
       ): void {
           $unit = $publicUnitsById[$unitId] ?? null;
           if (!is_array($unit)) {
@@ -999,9 +1123,12 @@ if ($showcaseBackUrl === '') {
           $mc = (int) ($unitMemberCounts[$uid] ?? 0);
           $blurb = trim((string) ($unit['public_blurb'] ?? ''));
           $code = trim((string) ($unit['code'] ?? ''));
+          $unitName = (string) ($unit['name'] ?? '');
           $unitSlugForLink = trim((string) ($unit['slug'] ?? ''));
           $cmdId = (int) ($unit['commander_user_id'] ?? 0);
           $cmdName = $cmdId > 0 ? ($commanderNames[$cmdId] ?? '') : '';
+          $cmdGrade = $cmdName !== '' ? (string) ($orbCommanders[$cmdId]['grade'] ?? '') : '';
+          $cmdPortrait = $cmdName !== '' ? ($orbCommanders[$cmdId]['portrait'] ?? null) : null;
           $capacity = isset($unit['public_capacity']) && $unit['public_capacity'] !== null && $unit['public_capacity'] !== ''
               ? (int) $unit['public_capacity']
               : null;
@@ -1011,27 +1138,27 @@ if ($showcaseBackUrl === '') {
           if ($openSlotsRaw !== null && $openSlotsRaw !== '') {
               $os = (int) $openSlotsRaw;
               if ($os === -1) {
-                  $openSlotsLabel = 'Ouvert';
+                  $openSlotsLabel = $orbL['open'];
                   $slotsTone = 'info';
               } elseif ($os === 0) {
-                  $openSlotsLabel = 'Complet';
+                  $openSlotsLabel = $orbL['full'];
                   $slotsTone = 'warn';
               } else {
-                  $openSlotsLabel = $os . ' place' . ($os > 1 ? 's' : '');
+                  $openSlotsLabel = $os . ' ' . ($os > 1 ? $orbL['slots_n'] : $orbL['slot']);
                   $slotsTone = $os <= 2 ? 'warn' : 'ok';
               }
           }
           $strengthLabel = $capacity !== null && $capacity > 0
               ? $mc . ' / ' . $capacity
-              : ($mc . ' membre' . ($mc > 1 ? 's' : ''));
-          $tone = trim((string) ($unit['public_accent_color'] ?? ''));
-          if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $tone)) {
-              $tone = '#0b8a5c';
-              $typeRaw = strtolower((string) ($unit['type'] ?? ''));
-              if (str_contains($typeRaw, 'support') || str_contains($typeRaw, 'log')) {
-                  $tone = '#c98a12';
-              } elseif (str_contains($typeRaw, 'instruct') || str_contains($typeRaw, 'école') || str_contains($typeRaw, 'ecole')) {
-                  $tone = '#1e6fbf';
+              : ($mc . ' ' . ($mc > 1 ? $orbL['members'] : $orbL['member']));
+          $strengthPct = $capacity !== null && $capacity > 0 ? (int) max(0, min(100, round($mc * 100 / $capacity))) : null;
+          $tone = $orbUnitTone($unit);
+          $branchTone = $branchTone !== '' ? $branchTone : $tone;
+          $typeLabel = trim((string) ($unit['type'] ?? ''));
+          if ($typeLabel !== '' && class_exists('App\\Support\\OrbatSheetLabels') && method_exists('App\\Support\\OrbatSheetLabels', 'typeLabel')) {
+              try {
+                  $typeLabel = (string) \App\Support\OrbatSheetLabels::typeLabel($typeLabel, $orbLang) ?: $typeLabel;
+              } catch (\Throwable) {
               }
           }
           $childIds = $publicUnitChildIds[$uid] ?? [];
@@ -1040,48 +1167,69 @@ if ($showcaseBackUrl === '') {
           if ($unitFoundedRaw !== '' && preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $unitFoundedRaw, $ufm)) {
               $unitFoundedDisp = ((int) $ufm[3]) . '/' . $ufm[2] . '/' . $ufm[1];
           }
+          $unitHref = $unitSlugForLink !== '' ? url('c/' . rawurlencode((string) $slug) . '/unite/' . rawurlencode($unitSlugForLink)) : '';
+          $cardStyle = '--cl-unit-tone:' . $tone . ';--orb-branch:' . $branchTone . ';--orb-depth:' . $depth . ';--orb-rel:' . max(0, $depth - $orbBranchDepth);
+          $branchAttr = $depth === $orbBranchDepth ? ' data-branch-head="1"' : ($depth < $orbBranchDepth ? ' data-branch-root="1"' : '');
           ?>
-      <li class="cl-orbat-node" data-depth="<?= (int) $depth ?>">
-        <article class="cl-unit<?= $depth > 0 ? ' cl-unit--child' : '' ?>" style="--cl-unit-tone:<?= htmlspecialchars($tone, ENT_QUOTES, 'UTF-8') ?>">
-          <?php if ($code !== ''): ?>
-          <div class="cl-unit__code"><?= htmlspecialchars(mb_strtoupper($code)) ?></div>
-          <?php else: ?>
-          <div class="cl-unit__code"><?= htmlspecialchars(mb_strtoupper((string) ($unit['type'] ?? 'Unité'))) ?></div>
-          <?php endif; ?>
-          <h3 class="cl-unit__name"><?= htmlspecialchars((string) ($unit['name'] ?? '')) ?></h3>
+      <li class="cl-orbat-node" data-depth="<?= (int) $depth ?>"<?= $branchAttr ?>>
+        <article class="cl-unit<?= $depth > 0 ? ' cl-unit--child' : '' ?>" style="<?= htmlspecialchars($cardStyle, ENT_QUOTES, 'UTF-8') ?>">
+          <div class="orb-top">
+            <span class="orb-badge" aria-hidden="true"><?= htmlspecialchars(\App\Support\PublicOrbat::insignia($code, name_mask_text($unitName))) ?></span>
+            <div class="orb-titles">
+              <div class="cl-unit__code"><?= htmlspecialchars(mb_strtoupper($code !== '' ? $code : ($typeLabel !== '' ? $typeLabel : $orbL['unit']))) ?></div>
+              <h3 class="cl-unit__name"><?= name_blur_html($unitName) ?></h3>
+              <?php if ($parentName !== ''): ?>
+              <p class="orb-parent"><?= htmlspecialchars($orbL['under']) ?> <?= name_blur_html($parentName) ?></p>
+              <?php endif; ?>
+            </div>
+            <span class="orb-count">
+              <span class="orb-count__n cl-mono"><?= htmlspecialchars($strengthLabel) ?></span>
+              <?php if ($openSlotsLabel !== null): ?>
+              <span class="orb-count__slots cl-badge cl-badge--<?= htmlspecialchars($slotsTone) ?>"><?= htmlspecialchars($openSlotsLabel) ?></span>
+              <?php endif; ?>
+            </span>
+          </div>
           <?php if ($blurb !== ''): ?>
           <p class="cl-unit__desc"><?= nl2br(htmlspecialchars($blurb)) ?></p>
-          <?php elseif ($cmdName !== ''): ?>
-          <p class="cl-unit__desc">Chef d’unité : <?= htmlspecialchars($cmdName) ?></p>
-          <?php elseif ($cmdId < 1): ?>
-          <p class="cl-unit__desc cl-unit__desc--vacant">Responsable non publié</p>
-          <?php else: ?>
-          <p class="cl-unit__desc">Unité visible sur la page publique.</p>
           <?php endif; ?>
-          <div class="cl-unit__meta">
-            <span>Effectif</span>
+          <?php if ($cmdName !== ''): ?>
+          <div class="orb-cmd">
+            <span class="orb-cmd__face"><?php if ($cmdPortrait): ?><img src="<?= htmlspecialchars((string) $cmdPortrait, ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" decoding="async"><?php else: ?><?= htmlspecialchars(mb_strtoupper(mb_substr($cmdName, 0, 1))) ?><?php endif; ?></span>
+            <span class="orb-cmd__txt">
+              <span class="orb-cmd__k"><?= htmlspecialchars($orbL['leader']) ?></span>
+              <span class="orb-cmd__v"><?php if ($cmdGrade !== ''): ?><span class="orb-cmd__grade"><?= htmlspecialchars($cmdGrade) ?></span> <?php endif; ?><?= htmlspecialchars($cmdName) ?></span>
+            </span>
+          </div>
+          <?php elseif ($cmdId < 1 && $blurb === ''): ?>
+          <p class="cl-unit__desc cl-unit__desc--vacant"><?= htmlspecialchars($orbL['vacant']) ?></p>
+          <?php endif; ?>
+          <div class="cl-unit__meta orb-meta--strength">
+            <span><?= htmlspecialchars($orbL['strength']) ?></span>
             <span class="cl-mono"><?= htmlspecialchars($strengthLabel) ?></span>
           </div>
+          <?php if ($strengthPct !== null): ?>
+          <div class="orb-bar" role="img" aria-label="<?= htmlspecialchars($orbL['strength'] . ' ' . $strengthLabel, ENT_QUOTES, 'UTF-8') ?>"><span style="width:<?= (int) $strengthPct ?>%"></span></div>
+          <?php endif; ?>
           <?php if ($unitFoundedDisp !== ''): ?>
-          <div class="cl-unit__meta">
-            <span>Création</span>
+          <div class="cl-unit__meta orb-meta--founded">
+            <span><?= htmlspecialchars($orbL['founded']) ?></span>
             <span class="cl-mono"><?= htmlspecialchars($unitFoundedDisp) ?></span>
           </div>
           <?php endif; ?>
           <?php if ($openSlotsLabel !== null): ?>
-          <div class="cl-unit__meta">
-            <span>Places</span>
+          <div class="cl-unit__meta orb-meta--slots">
+            <span><?= htmlspecialchars($orbL['slots']) ?></span>
             <span class="cl-badge cl-badge--<?= htmlspecialchars($slotsTone) ?>"><?= htmlspecialchars($openSlotsLabel) ?></span>
           </div>
           <?php endif; ?>
-          <?php if ($unitSlugForLink !== ''): ?>
-          <a class="cl-unit__link" href="<?= htmlspecialchars(url('c/' . rawurlencode((string) $slug) . '/unite/' . rawurlencode($unitSlugForLink)), ENT_QUOTES, 'UTF-8') ?>">Voir la fiche →</a>
+          <?php if ($unitHref !== ''): ?>
+          <a class="cl-unit__link" href="<?= htmlspecialchars($unitHref, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($orbL['record']) ?></a>
           <?php endif; ?>
         </article>
         <?php if ($childIds !== []): ?>
-        <ul class="cl-orbat-children" aria-label="Sous-unités de <?= htmlspecialchars((string) ($unit['name'] ?? 'unité'), ENT_QUOTES, 'UTF-8') ?>">
+        <ul class="cl-orbat-children" aria-label="<?= htmlspecialchars($orbL['subunits'] . ' ' . name_mask_text($unitName), ENT_QUOTES, 'UTF-8') ?>">
           <?php foreach ($childIds as $childId): ?>
-            <?php $renderPublicUnitCard((int) $childId, $depth + 1); ?>
+            <?php $renderPublicUnitCard((int) $childId, $depth + 1, $branchTone, $unitName); ?>
           <?php endforeach; ?>
         </ul>
         <?php endif; ?>
@@ -1089,26 +1237,29 @@ if ($showcaseBackUrl === '') {
           <?php
       };
     ?>
-    <section id="organisation" class="cl-rise" aria-labelledby="cl-org-title">
+    <section id="organisation" class="cl-rise" aria-labelledby="cl-org-title"<?= $orbLang !== 'fr' ? ' data-orb-lang="' . htmlspecialchars($orbLang, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
       <div class="cl-section-head">
         <div>
-          <p class="cl-kicker">Organisation</p>
-          <h2 id="cl-org-title" class="cl-h2"><?= htmlspecialchars($sectionsTitle !== '' ? $sectionsTitle : (count($publicUnits) === 1 ? 'Une unité structurée' : (count($publicUnits) . ' unités, une communauté'))) ?></h2>
+          <p class="cl-kicker"<?= $clEs('organisation', 'kicker') ?>><?= htmlspecialchars($clT('organisation', 'kicker', 'Organisation')) ?></p>
+          <h2 id="cl-org-title" class="cl-h2"<?= $clF('public_sections_title') ?>><?= htmlspecialchars($sectionsTitle !== '' ? $sectionsTitle : (count($publicUnits) === 1 ? 'Une unité structurée' : (count($publicUnits) . ' unités, une communauté'))) ?></h2>
         </div>
-        <p class="cl-section-aside"><?= htmlspecialchars($sectionsLead !== '' ? $sectionsLead : ($publicOrbatHasTree ? 'Hiérarchie publique des unités et places ouvertes.' : 'Les places ouvertes sont indiquées par unité.')) ?></p>
+        <p class="cl-section-aside"<?= $clF('public_sections_lead') ?>><?= htmlspecialchars($sectionsLead !== '' ? $sectionsLead : ($publicOrbatHasTree ? 'Hiérarchie publique des unités et places ouvertes.' : 'Les places ouvertes sont indiquées par unité.')) ?></p>
       </div>
-      <ul class="cl-units<?= $publicOrbatHasTree ? ' cl-units--orbat' : '' ?>"<?= $publicOrbatHasTree ? ' aria-label="Chaîne de commandement publique"' : '' ?>>
+      <div class="orb-scroll">
+      <ul class="cl-units<?= $publicOrbatHasTree ? ' cl-units--orbat' : '' ?>" aria-label="<?= htmlspecialchars($orbL['chain'], ENT_QUOTES, 'UTF-8') ?>">
         <?php foreach ($publicUnitRoots as $rootId): ?>
           <?php $renderPublicUnitCard((int) $rootId, 0); ?>
         <?php endforeach; ?>
       </ul>
+      </div>
     </section>
     <?php endif; ?>
 
+  <?php $pbBuf['organisation'] = (string) ob_get_clean(); ob_start(); ?>
     <?php if ($showAgenda): ?>
     <section id="agenda" class="cl-rise" aria-labelledby="cl-agenda-title">
-      <p class="cl-kicker">Agenda public</p>
-      <h2 id="cl-agenda-title" class="cl-h2">Les prochains rendez-vous</h2>
+      <p class="cl-kicker"<?= $clEs('agenda', 'kicker') ?>><?= htmlspecialchars($clT('agenda', 'kicker', 'Agenda public')) ?></p>
+      <h2 id="cl-agenda-title" class="cl-h2"<?= $clEs('agenda', 'title') ?>><?= htmlspecialchars($clT('agenda', 'title', 'Les prochains rendez-vous')) ?></h2>
       <div class="cl-table-wrap">
         <table class="cl-table">
           <thead>
@@ -1152,10 +1303,11 @@ if ($showcaseBackUrl === '') {
     </section>
     <?php endif; ?>
 
+  <?php $pbBuf['agenda'] = (string) ob_get_clean(); ob_start(); ?>
     <section id="recrutement" class="cl-recruit cl-rise" aria-labelledby="cl-recruit-title">
       <div class="cl-recruit__prereq">
-        <p class="cl-kicker">Ce qu’il faut</p>
-        <h2 id="cl-recruit-title" class="cl-h2">Prérequis</h2>
+        <p class="cl-kicker"<?= $clEs('recruitment', 'kicker') ?>><?= htmlspecialchars($clT('recruitment', 'kicker', 'Ce qu’il faut')) ?></p>
+        <h2 id="cl-recruit-title" class="cl-h2"<?= $clEs('recruitment', 'title') ?>><?= htmlspecialchars($clT('recruitment', 'title', 'Prérequis')) ?></h2>
         <?php if ($prereqItems !== []): ?>
         <div class="cl-prereq">
           <?php foreach ($prereqItems as $pi): ?>
@@ -1175,21 +1327,21 @@ if ($showcaseBackUrl === '') {
         <?php endif; ?>
       </div>
       <div class="cl-recruit__steps">
-        <p class="cl-kicker">Comment ça se passe</p>
-        <h2 class="cl-h2">De la candidature au terrain</h2>
-        <ol class="cl-steps">
+        <p class="cl-kicker"<?= $clEs('recruitment', 'kicker2') ?>><?= htmlspecialchars($clT('recruitment', 'kicker2', 'Comment ça se passe')) ?></p>
+        <h2 class="cl-h2"<?= $clEs('recruitment', 'title2') ?>><?= htmlspecialchars($clT('recruitment', 'title2', 'De la candidature au terrain')) ?></h2>
+        <ol class="cl-steps"<?= $pbEditing ? ' data-cl-list="public_process_steps"' : '' ?>>
           <?php foreach ($recruitSteps as $st): ?>
-          <li class="cl-steps__item">
+          <li class="cl-steps__item" data-cl-item<?= !empty($st['accent']) ? ' data-cl-item-hl="1"' : '' ?>>
             <div class="cl-steps__rail">
               <span class="cl-steps__n<?= !empty($st['accent']) ? ' cl-steps__n--accent' : '' ?>"><?= htmlspecialchars($st['n']) ?></span>
               <span class="cl-steps__line" aria-hidden="true"></span>
             </div>
             <div class="cl-steps__body">
               <div class="cl-steps__head">
-                <span class="cl-steps__t"><?= htmlspecialchars($st['t']) ?></span>
-                <span class="cl-steps__delay cl-mono"><?= htmlspecialchars($st['delay']) ?></span>
+                <span class="cl-steps__t"<?= $clE('data-cl-sub="title"') ?>><?= htmlspecialchars($st['t']) ?></span>
+                <span class="cl-steps__delay cl-mono"<?= $clE('data-cl-sub="delay"') ?>><?= htmlspecialchars($st['delay']) ?></span>
               </div>
-              <p class="cl-steps__b"><?= htmlspecialchars($st['b']) ?></p>
+              <p class="cl-steps__b"<?= $clE('data-cl-sub="body"') ?>><?= htmlspecialchars($st['b']) ?></p>
             </div>
           </li>
           <?php endforeach; ?>
@@ -1197,6 +1349,7 @@ if ($showcaseBackUrl === '') {
       </div>
     </section>
 
+  <?php $pbBuf['recruitment'] = (string) ob_get_clean(); ob_start(); ?>
     <?php if ($showOpenings): ?>
     <section id="carrieres" class="cl-rise cl-openings bg-slate-50 relative" aria-labelledby="cl-openings-title">
       <div class="community-showcase-grain pointer-events-none absolute inset-0" aria-hidden="true"></div>
@@ -1285,6 +1438,7 @@ if ($showcaseBackUrl === '') {
     </section>
     <?php endif; ?>
 
+  <?php $pbBuf['openings'] = (string) ob_get_clean(); ob_start(); ?>
     <?php if ($showMedia): ?>
     <section
       id="medias"
@@ -1301,12 +1455,41 @@ if ($showcaseBackUrl === '') {
     >
       <div class="cl-section-head">
         <div>
-          <p class="cl-kicker">Photos récentes</p>
-          <h2 id="medias-title" class="cl-h2">Nos dernières opérations</h2>
+          <p class="cl-kicker"<?= $clEs('media', 'kicker') ?>><?= htmlspecialchars($clT('media', 'kicker', 'Photos récentes')) ?></p>
+          <h2 id="medias-title" class="cl-h2"<?= $clEs('media', 'title') ?>><?= htmlspecialchars($clT('media', 'title', 'Nos dernières opérations')) ?></h2>
         </div>
         <div class="cl-media__actions">
           <a class="cl-btn cl-btn--accent" href="<?= htmlspecialchars($reelsUrl, ENT_QUOTES, 'UTF-8') ?>">Voir le fil</a>
+          <?php
+          // Badge « images » vers la galerie : seulement des photos sans zone floutée (visages, plaques…).
+          $mediaBadgeItems = [];
+          foreach ($galleryImages as $gbItem) {
+              if (\App\Support\CommunityMediaDetails::parseBlurRegions($gbItem['blur_regions_json'] ?? null) !== []) {
+                  continue;
+              }
+              $gbUrl = \App\Support\CommunityMediaDetails::publicUrl(isset($gbItem['storage_path']) ? (string) $gbItem['storage_path'] : null);
+              if ($gbUrl) {
+                  $mediaBadgeItems[] = ['src' => $gbUrl];
+              }
+              if (count($mediaBadgeItems) >= 3) {
+                  break;
+              }
+          }
+          ?>
+          <?php if (count($mediaBadgeItems) >= 2): ?>
+          <?php
+          $ibItems = $mediaBadgeItems;
+          $ibCount = $mediaCount;
+          $ibLabel = $mediaCount === 1 ? 'média' : 'médias';
+          $ibHref = $mediasUrl;
+          $ibTone = 'light';
+          $ibAria = 'Ouvrir la galerie complète';
+          require base_path('views/partials/images_badge.php');
+          unset($ibItems, $ibCount, $ibLabel, $ibHref, $ibTone, $ibAria);
+          ?>
+          <?php else: ?>
           <a class="cl-btn cl-btn--light" href="<?= htmlspecialchars($mediasUrl, ENT_QUOTES, 'UTF-8') ?>">Galerie complète</a>
+          <?php endif; ?>
         </div>
       </div>
       <?php if ($publicMediaCollections !== []): ?>
@@ -1413,12 +1596,13 @@ if ($showcaseBackUrl === '') {
     </section>
     <?php endif; ?>
 
+  <?php $pbBuf['media'] = (string) ob_get_clean(); ob_start(); ?>
     <?php if ($showRoster): ?>
     <section id="roster" class="cl-rise" aria-labelledby="cl-roster-title">
       <div class="cl-section-head">
         <div>
-          <p class="cl-kicker">Effectifs publics</p>
-          <h2 id="cl-roster-title" class="cl-h2">Membres visibles</h2>
+          <p class="cl-kicker"<?= $clEs('roster', 'kicker') ?>><?= htmlspecialchars($clT('roster', 'kicker', 'Effectifs publics')) ?></p>
+          <h2 id="cl-roster-title" class="cl-h2"<?= $clEs('roster', 'title') ?>><?= htmlspecialchars($clT('roster', 'title', 'Membres visibles')) ?></h2>
         </div>
         <label class="cl-search">
           <span class="sr-only">Filtrer le roster</span>
@@ -1457,37 +1641,39 @@ if ($showcaseBackUrl === '') {
     </section>
     <?php endif; ?>
 
+  <?php $pbBuf['roster'] = (string) ob_get_clean(); ob_start(); ?>
     <?php if ($faqItems !== []): ?>
     <section id="faq" class="cl-rise" aria-labelledby="cl-faq-title">
-      <p class="cl-kicker">Questions fréquentes</p>
-      <h2 id="cl-faq-title" class="cl-h2">Avant de candidater</h2>
-      <div class="cl-faq">
+      <p class="cl-kicker"<?= $clEs('faq', 'kicker') ?>><?= htmlspecialchars($clT('faq', 'kicker', 'Questions fréquentes')) ?></p>
+      <h2 id="cl-faq-title" class="cl-h2"<?= $clEs('faq', 'title') ?>><?= htmlspecialchars($clT('faq', 'title', 'Avant de candidater')) ?></h2>
+      <div class="cl-faq"<?= $pbEditing ? ' data-cl-list="public_faq"' : '' ?>>
         <?php foreach ($faqItems as $fi): ?>
           <?php if (!is_array($fi)) { continue; } ?>
-        <article class="cl-faq__card">
-          <h3 class="cl-faq__q"><?= htmlspecialchars((string) ($fi['q'] ?? '')) ?></h3>
-          <p class="cl-faq__a"><?= nl2br(htmlspecialchars((string) ($fi['a'] ?? ''))) ?></p>
+        <article class="cl-faq__card" data-cl-item>
+          <h3 class="cl-faq__q"<?= $clE('data-cl-sub="q"') ?>><?= htmlspecialchars((string) ($fi['q'] ?? '')) ?></h3>
+          <p class="cl-faq__a"<?= $clE('data-cl-sub="a"') ?>><?= nl2br(htmlspecialchars((string) ($fi['a'] ?? ''))) ?></p>
         </article>
         <?php endforeach; ?>
       </div>
     </section>
     <?php endif; ?>
 
+  <?php $pbBuf['faq'] = (string) ob_get_clean(); ob_start(); ?>
     <?php if ($testimonialItems !== []): ?>
-    <section class="cl-rise" aria-labelledby="cl-quotes-title">
-      <p class="cl-kicker">Témoignages</p>
-      <h2 id="cl-quotes-title" class="cl-h2">Ce qu’en disent les membres</h2>
-      <div class="cl-quotes">
+    <section id="temoignages" class="cl-rise" aria-labelledby="cl-quotes-title">
+      <p class="cl-kicker"<?= $clEs('testimonials', 'kicker') ?>><?= htmlspecialchars($clT('testimonials', 'kicker', 'Témoignages')) ?></p>
+      <h2 id="cl-quotes-title" class="cl-h2"<?= $clEs('testimonials', 'title') ?>><?= htmlspecialchars($clT('testimonials', 'title', 'Ce qu’en disent les membres')) ?></h2>
+      <div class="cl-quotes"<?= $pbEditing ? ' data-cl-list="public_testimonials"' : '' ?>>
         <?php foreach ($testimonialItems as $qi): ?>
           <?php if (!is_array($qi)) { continue; } ?>
-        <blockquote class="cl-quotes__card">
-          <p class="cl-quotes__text"><?= nl2br(htmlspecialchars((string) ($qi['text'] ?? ''))) ?></p>
+        <blockquote class="cl-quotes__card" data-cl-item>
+          <p class="cl-quotes__text"<?= $clE('data-cl-sub="text"') ?>><?= nl2br(htmlspecialchars((string) ($qi['text'] ?? ''))) ?></p>
           <footer class="cl-quotes__foot">
             <span class="cl-quotes__av" aria-hidden="true"><?= htmlspecialchars((string) ($qi['initials'] ?? '·')) ?></span>
             <div>
-              <div class="cl-quotes__name"><?= htmlspecialchars((string) ($qi['name'] ?? '')) ?></div>
-              <?php if (trim((string) ($qi['meta'] ?? '')) !== ''): ?>
-              <div class="cl-quotes__meta cl-mono"><?= htmlspecialchars((string) $qi['meta']) ?></div>
+              <div class="cl-quotes__name"<?= $clE('data-cl-sub="name"') ?>><?= htmlspecialchars((string) ($qi['name'] ?? '')) ?></div>
+              <?php if (trim((string) ($qi['meta'] ?? '')) !== '' || $pbEditing): ?>
+              <div class="cl-quotes__meta cl-mono"<?= $clE('data-cl-sub="meta"') ?>><?= htmlspecialchars((string) ($qi['meta'] ?? '')) ?></div>
               <?php endif; ?>
             </div>
           </footer>
@@ -1497,9 +1683,10 @@ if ($showcaseBackUrl === '') {
     </section>
     <?php endif; ?>
 
+  <?php $pbBuf['testimonials'] = (string) ob_get_clean(); ob_start(); ?>
     <?php if ($partnerItems !== []): ?>
     <section class="cl-partners cl-rise" aria-label="Unités alliées et partenaires">
-      <p class="cl-partners__label">Unités alliées &amp; partenaires</p>
+      <p class="cl-partners__label"<?= $clEs('partners', 'kicker') ?>><?= htmlspecialchars($clT('partners', 'kicker', 'Unités alliées & partenaires')) ?></p>
       <div class="cl-partners__grid">
         <?php foreach ($partnerItems as $partner): ?>
           <?php if (!is_string($partner) || trim($partner) === '') { continue; } ?>
@@ -1509,10 +1696,11 @@ if ($showcaseBackUrl === '') {
     </section>
     <?php endif; ?>
 
+  <?php $pbBuf['partners'] = (string) ob_get_clean(); ob_start(); ?>
     <section id="contact" class="cl-cta cl-rise" aria-labelledby="cl-cta-title">
       <div class="cl-cta__copy">
-        <p class="cl-kicker cl-kicker--on-dark"><?= htmlspecialchars(mb_strtoupper($ctaKicker !== '' ? $ctaKicker : ($isLocked ? 'Contact' : 'Recrutement'))) ?></p>
-        <h2 id="cl-cta-title" class="cl-h2 cl-h2--on-dark">
+        <p class="cl-kicker cl-kicker--on-dark"<?= $clF('public_cta_kicker') ?>><?= htmlspecialchars($clUp($ctaKicker !== '' ? $ctaKicker : ($isLocked ? 'Contact' : 'Recrutement'))) ?></p>
+        <h2 id="cl-cta-title" class="cl-h2 cl-h2--on-dark"<?= $clF('public_cta_title') ?>>
           <?php if ($ctaTitle !== ''): ?>
             <?= htmlspecialchars($ctaTitle) ?>
           <?php elseif ($primaryCta === 'rejoindre' || $primaryCta === 'candidater'): ?>
@@ -1520,10 +1708,10 @@ if ($showcaseBackUrl === '') {
           <?php elseif ($primaryCta === 'contacter'): ?>
             Une question ? Contactez-nous
           <?php else: ?>
-            <?= htmlspecialchars($name) ?>
+            <?= name_blur_html($name) ?>
           <?php endif; ?>
         </h2>
-        <p class="cl-cta__lead">
+        <p class="cl-cta__lead"<?= $clF('public_cta_body') ?>>
           <?php if ($ctaBody !== ''): ?>
             <?= nl2br(htmlspecialchars($ctaBody)) ?>
           <?php elseif ($accessLabel !== ''): ?>
@@ -1534,8 +1722,9 @@ if ($showcaseBackUrl === '') {
             Écrivez-nous ou rejoignez le canal Discord pour en savoir plus.
           <?php endif; ?>
         </p>
-        <?php if ($contactIntro !== ''): ?>
-        <p class="cl-cta__lead"><?= nl2br(htmlspecialchars($contactIntro)) ?></p>
+        <?php $pbShowIntro = $pbEditing; if ($contactIntro !== '') { $pbShowIntro = true; } ?>
+        <?php if ($pbShowIntro): ?>
+        <p class="cl-cta__lead"<?= $clF('contact_intro') ?><?= $clE('data-placeholder="Mot d’accueil pour le contact (facultatif)"') ?>><?= nl2br(htmlspecialchars($contactIntro)) ?></p>
         <?php endif; ?>
         <?php if ($communityCode !== '' && !$isLocked): ?>
         <div class="cl-cta__code">
@@ -1553,9 +1742,6 @@ if ($showcaseBackUrl === '') {
         <?php if ($contactEmail !== ''): ?>
         <a href="mailto:<?= htmlspecialchars($contactEmail) ?>" class="cl-btn cl-btn--ghost">Écrire un e-mail</a>
         <?php endif; ?>
-        <?php if ($showForumCta): ?>
-        <a href="<?= htmlspecialchars($forumUrl) ?>" class="cl-btn cl-btn--ghost">Forum</a>
-        <?php endif; ?>
       </div>
       <?php if ($contactFormEnabled): ?>
       <form method="post" action="<?= htmlspecialchars(url('c/' . rawurlencode((string) $slug) . '/contact')) ?>" class="cl-contact-form">
@@ -1572,11 +1758,13 @@ if ($showcaseBackUrl === '') {
       </form>
       <?php endif; ?>
     </section>
-  </div>
+    <?php $pbBuf['contact'] = (string) ob_get_clean(); ?>
+
+  <?php require base_path('views/community/partials/page_sections.php'); ?>
 
   <footer class="cl-footer">
     <div class="cl-footer__inner">
-      <div class="cl-footer__brand"><?= htmlspecialchars(mb_strtoupper($name)) ?> · Propulsé par Athena</div>
+      <div class="cl-footer__brand"><?= name_blur_html(mb_strtoupper($name)) ?> · Propulsé par Athena</div>
       <div class="cl-footer__links">
         <a href="<?= htmlspecialchars(url('communities')) ?>">Registre</a>
         <a href="<?= htmlspecialchars(url('mentions-legales')) ?>">Mentions légales</a>
@@ -1591,16 +1779,53 @@ if ($showcaseBackUrl === '') {
   <div class="cl-sticky-cta" data-cl-sticky-cta hidden>
     <div class="cl-sticky-cta__inner">
       <div class="cl-sticky-cta__copy">
-        <p class="cl-sticky-cta__kicker"><?= htmlspecialchars(mb_strtoupper($name)) ?></p>
+        <p class="cl-sticky-cta__kicker"><?= name_blur_html(mb_strtoupper($name)) ?></p>
         <p class="cl-sticky-cta__title"><?= htmlspecialchars((string) ($ctaPrimaryLabel ?? 'Rejoindre')) ?></p>
       </div>
       <a href="<?= htmlspecialchars((string) $ctaPrimaryHref) ?>" class="cl-btn cl-btn--accent comspec-analytics-cta" data-comspec-zone="vitrine_sticky" data-comspec-cta="<?= htmlspecialchars((string) $primaryCta) ?>"><?= htmlspecialchars(mb_strtoupper((string) ($ctaPrimaryLabel ?? 'Rejoindre'))) ?></a>
     </div>
   </div>
   <?php endif; ?>
+  <?php if ($pbCanEdit) { require base_path('views/community/partials/page_editor.php'); } ?>
 </div>
 <script>
   (function () {
+  /* En-tête : état au défilement, menu mobile, lien de la section en cours. */
+  var nav = document.querySelector('[data-cl-nav]');
+  if (nav) {
+    var onScroll = function () { nav.classList.toggle('is-scrolled', window.scrollY > 24); };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    var tgl = nav.querySelector('[data-pb-nav-toggle]');
+    var drawer = nav.querySelector('[data-pb-nav-drawer]');
+    if (tgl && drawer) {
+      tgl.addEventListener('click', function () {
+        var open = drawer.hidden;
+        drawer.hidden = !open;
+        tgl.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+      drawer.addEventListener('click', function (e) {
+        if (e.target.closest('a')) { drawer.hidden = true; tgl.setAttribute('aria-expanded', 'false'); }
+      });
+    }
+    var links = Array.prototype.slice.call(nav.querySelectorAll('.pb-nav__links a[href^="#"]'));
+    if (links.length && 'IntersectionObserver' in window) {
+      var byId = {};
+      links.forEach(function (a) {
+        var t = document.getElementById(a.getAttribute('href').slice(1));
+        if (t) { byId[t.id] = a; }
+      });
+      var spy = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (en.isIntersecting && byId[en.target.id]) {
+            links.forEach(function (a) { a.classList.remove('is-active'); });
+            byId[en.target.id].classList.add('is-active');
+          }
+        });
+      }, { rootMargin: '-45% 0px -50% 0px' });
+      Object.keys(byId).forEach(function (id) { spy.observe(document.getElementById(id)); });
+    }
+  }
   var btn = document.querySelector('[data-copy-code]');
   if (btn && navigator.clipboard) {
     btn.addEventListener('click', function () {

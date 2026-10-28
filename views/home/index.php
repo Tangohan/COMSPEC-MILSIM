@@ -128,13 +128,23 @@ $homeUnits = array_slice($featuredUnits, 0, $homeUnitsLimit);
 $kpis = [
     ['v' => $kpiValue('communities_total'), 'l' => __('home.kpi_communities')],
     ['v' => $kpiValue('users_active_total'), 'l' => __('home.kpi_members')],
-    ['v' => $kpiValue('forum_posts_in_period'), 'l' => __('home.kpi_forum')],
     ['v' => $kpiValue('training_completions_in_period'), 'l' => __('home.kpi_training')],
     ['v' => $kpiValue('enlistments_created_in_period'), 'l' => __('home.kpi_enlistments')],
     ['v' => $kpiValue('usage_events_in_period'), 'l' => __('home.kpi_interactions')],
 ];
 /* Un compteur à zéro n’apporte rien au visiteur : on n’affiche que les chiffres réels non nuls. */
 $kpisShown = array_values(array_filter($kpis, static fn (array $k): bool => $k['v'] > 0));
+/* Chiffres de terrain cumulés depuis le mod (totaux plateforme, jamais par joueur). */
+$fieldMetrics = is_array($fieldMetrics ?? null) ? $fieldMetrics : [];
+$fieldStats = [
+    ['key' => 'phones', 'v' => max(0, (int) ($fieldMetrics['phones'] ?? 0)), 'unit' => '', 'l' => __('home.field_phones'), 'd' => __('home.field_phones_d'),
+        'icon' => '<rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M10.5 18.5h3"/><path d="M9.5 6h5"/>'],
+    ['key' => 'hours', 'v' => max(0, (int) ($fieldMetrics['play_hours'] ?? 0)), 'unit' => __('home.field_hours_unit'), 'l' => __('home.field_hours'), 'd' => __('home.field_hours_d'),
+        'icon' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>'],
+    ['key' => 'km', 'v' => max(0, (int) ($fieldMetrics['distance_km'] ?? 0)), 'unit' => __('home.field_km_unit'), 'l' => __('home.field_km'), 'd' => __('home.field_km_d'),
+        'icon' => '<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3.5 3.5 0 0 0 0-7h-7a3.5 3.5 0 0 1 0-7H16"/>'],
+];
+$fieldShown = array_values(array_filter($fieldStats, static fn (array $f): bool => $f['v'] > 0));
 ?>
 <!DOCTYPE html>
 <html lang="<?= $e(html_lang()) ?>" class="scroll-smooth">
@@ -149,7 +159,8 @@ $kpisShown = array_values(array_filter($kpis, static fn (array $k): bool => $k['
     require base_path('views/partials/seo_meta.php');
 ?>
     <meta name="theme-color" content="#050505">
-    <link rel="apple-touch-icon" href="<?= $e($base) ?>/assets/icons/athena-192.png">
+    <link rel="apple-touch-icon" href="<?= $e($base) ?>/assets/icons/athena-180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="<?= $e($base) ?>/assets/icons/athena-192.png">
     <link rel="preload" as="image" href="<?= $e($heroPosterUrl) ?>" fetchpriority="high">
     <script type="application/ld+json"><?= json_encode([
         '@context' => 'https://schema.org',
@@ -196,6 +207,7 @@ $kpisShown = array_values(array_filter($kpis, static fn (array $k): bool => $k['
     <?php endif; ?>
     <link href="<?= $e($base) ?>/assets/css/styles.css" rel="stylesheet">
     <link href="<?= $e(asset_url('assets/css/home-impact.css')) ?>" rel="stylesheet">
+    <link href="<?= $e(asset_url('assets/css/public-site-footer.css')) ?>" rel="stylesheet">
 </head>
 <body class="home-impact layout-light bg-[var(--hi-void)] text-[var(--hi-ink)] antialiased selection:bg-emerald-500 selection:text-slate-950 overflow-x-hidden">
 
@@ -214,7 +226,7 @@ $kpisShown = array_values(array_filter($kpis, static fn (array $k): bool => $k['
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
                 </button>
-                <a href="<?= $e($base) ?>/" class="hi-wordmark" aria-label="Athena — <?= $e(__('common.home')) ?>">Athena<span class="hi-wordmark__dot" aria-hidden="true">.</span></a>
+                <a href="<?= $e($base) ?>/" class="hi-wordmark" aria-label="Athena — <?= $e(__('common.home')) ?>"><img src="<?= $e($base) ?>/assets/brand/athena-embleme-blanc.svg" alt="" class="hi-wordmark__emblem" width="30" height="26">Athena<span class="hi-wordmark__dot" aria-hidden="true">.</span></a>
             </div>
             <nav class="hi-topbar__nav" aria-label="<?= $e(__('home.nav_aria')) ?>">
                 <a href="<?= $e(url('communities')) ?>"><?= $e(__('common.communities')) ?></a>
@@ -366,62 +378,171 @@ $kpisShown = array_values(array_filter($kpis, static fn (array $k): bool => $k['
         </section>
 
         <!-- Preuve : unités présentes + activité réelle de la plateforme -->
-        <section class="hi-proof hi-block--tight" aria-labelledby="units-heading">
+        <section class="hi-proof hi-block--tight" aria-labelledby="units-heading" data-hi-units-section>
+            <div class="hi-proof__aura" aria-hidden="true"></div>
             <div class="hi-wrap">
                 <div class="hi-proof__head">
-                    <h2 id="units-heading" class="hi-kicker text-white"><?= $e(__('home.units_title')) ?></h2>
-                    <a href="<?= $e(url('communities')) ?>" class="hi-link text-emerald-300 hover:text-emerald-200"><?= $e(__($homeUnits !== [] ? 'home.see_all_communities' : 'home.communities_registry')) ?> <span aria-hidden="true">→</span></a>
+                    <div class="hi-proof__titles">
+                        <p class="hi-kicker text-emerald-400"><?= $e(__('home.units_title')) ?></p>
+                        <h2 id="units-heading" class="hi-proof__title"><?= $e(__('home.units_headline')) ?></h2>
+                        <?php if ($homeUnits !== []): ?>
+                        <p class="hi-proof__lead"><?= $e(__(count($featuredUnits) > 1 ? 'home.units_lead' : 'home.units_lead_one', ['count' => $formatInt(count($featuredUnits))])) ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <div class="hi-proof__tools">
+                        <?php if (count($homeUnits) > 3): ?>
+                        <div class="hi-uview" role="group" aria-label="<?= $e(__('home.units_view_label')) ?>" data-hi-uview hidden>
+                            <button type="button" class="hi-uview__btn" data-hi-uview-set="grid" aria-pressed="true">
+                                <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M1 1h6v6H1zm8 0h6v6H9zM1 9h6v6H1zm8 0h6v6H9z"/></svg>
+                                <span><?= $e(__('home.units_view_grid')) ?></span>
+                            </button>
+                            <button type="button" class="hi-uview__btn" data-hi-uview-set="carousel" aria-pressed="false">
+                                <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4 2h8v12H4zM0 4h3v8H0zm13 0h3v8h-3z"/></svg>
+                                <span><?= $e(__('home.units_view_carousel')) ?></span>
+                            </button>
+                        </div>
+                        <?php endif; ?>
+                        <a href="<?= $e(url('communities')) ?>" class="hi-link text-emerald-300 hover:text-emerald-200"><?= $e(__($homeUnits !== [] ? 'home.see_all_communities' : 'home.communities_registry')) ?> <span aria-hidden="true">→</span></a>
+                    </div>
                 </div>
                 <?php if ($homeUnits !== []): ?>
-                <ul class="hi-units">
-                    <?php foreach ($homeUnits as $unit): ?>
-                        <?php
-                        $logoSrc = $resolveLogo((string) ($unit['logo_url'] ?? ''));
-                        $unitName = (string) ($unit['name'] ?? __('home.unit_fallback'));
-                        $initials = '';
-                        foreach (preg_split('/\s+/u', $unitName) ?: [] as $part) {
-                            $part = trim((string) $part);
-                            if ($part === '') {
-                                continue;
+                <div class="hi-units-stage" data-hi-units data-layout="grid">
+                    <ul class="hi-units" data-hi-units-track>
+                        <?php foreach ($homeUnits as $i => $unit): ?>
+                            <?php
+                            $logoSrc = $resolveLogo((string) ($unit['logo_url'] ?? ''));
+                            $bannerSrc = $resolveLogo((string) ($unit['banner_url'] ?? ''));
+                            $unitName = (string) ($unit['name'] ?? __('home.unit_fallback'));
+                            $unitSlug = (string) ($unit['slug'] ?? $unitName);
+                            $initials = '';
+                            foreach (preg_split('/\s+/u', $unitName) ?: [] as $part) {
+                                // Seules les lettres et chiffres comptent : « [CCO] - SPARTA™ » donne « CS ».
+                                $part = (string) preg_replace('/[^\p{L}\p{N}]+/u', '', (string) $part);
+                                if ($part === '') {
+                                    continue;
+                                }
+                                $initials .= function_exists('mb_strtoupper')
+                                    ? mb_strtoupper(mb_substr($part, 0, 1))
+                                    : strtoupper(substr($part, 0, 1));
+                                if ((function_exists('mb_strlen') ? mb_strlen($initials) : strlen($initials)) >= 2) {
+                                    break;
+                                }
                             }
-                            $initials .= function_exists('mb_strtoupper')
-                                ? mb_strtoupper(mb_substr($part, 0, 1))
-                                : strtoupper(substr($part, 0, 1));
-                            if ((function_exists('mb_strlen') ? mb_strlen($initials) : strlen($initials)) >= 2) {
-                                break;
+                            if ($initials === '') {
+                                $initials = 'C';
                             }
-                        }
-                        if ($initials === '') {
-                            $initials = 'C';
-                        }
-                        ?>
-                        <li>
-                            <a href="<?= $e((string) ($unit['href'] ?? url('communities'))) ?>" class="hi-unit">
-                                <?php if ($logoSrc !== ''): ?>
-                                <img src="<?= $e($logoSrc) ?>" alt="" class="hi-unit__logo" width="44" height="44" loading="lazy" decoding="async">
-                                <?php else: ?>
-                                <span class="hi-unit__initials who-item__initials" aria-hidden="true"><?= $e($initials) ?></span>
-                                <?php endif; ?>
-                                <span class="min-w-0">
-                                    <span class="hi-unit__name"><?= $e($unitName) ?></span>
-                                    <span class="hi-unit__meta"><?= $e(__('home.public_sheet')) ?></span>
-                                </span>
-                            </a>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
+                            /* Teinte stable par unité : sert de repli de bannière et de lueur sans couleur de marque. */
+                            $hue = crc32($unitSlug) % 360;
+                            $accent = (string) ($unit['accent'] ?? '');
+                            $cardStyle = '--i:' . (int) $i . ';--u-hue:' . $hue . ($accent !== '' ? ';--u-accent:' . $accent : '');
+                            $metaBits = array_values(array_filter([
+                                (string) ($unit['game'] ?? ''),
+                                (string) ($unit['locale_label'] ?? ''),
+                            ], static fn (string $v): bool => trim($v) !== ''));
+                            $tagline = trim((string) ($unit['tagline'] ?? ''));
+                            if ($tagline === '') {
+                                $tagline = trim((string) ($unit['affiliation'] ?? ''));
+                            }
+                            $unitStats = array_values(array_filter([
+                                ['v' => (int) ($unit['members'] ?? 0), 'l' => __('home.units_stat_members')],
+                                ['v' => (int) ($unit['units'] ?? 0), 'l' => __('home.units_stat_orbat')],
+                                ['v' => (int) round((float) ($unit['ops_per_month'] ?? 0)), 'l' => __('home.units_stat_ops')],
+                            ], static fn (array $s): bool => $s['v'] > 0));
+                            $recruiting = !empty($unit['recruitment_open']);
+                            ?>
+                            <li class="hi-units__item" style="<?= $e($cardStyle) ?>">
+                                <a href="<?= $e((string) ($unit['href'] ?? url('communities'))) ?>" class="hi-ucard<?= !empty($unit['featured']) ? ' hi-ucard--featured' : '' ?>" data-hi-tilt>
+                                    <span class="hi-ucard__cover" aria-hidden="true">
+                                        <?php if ($bannerSrc !== ''): ?>
+                                        <img src="<?= $e($bannerSrc) ?>" alt="" class="hi-ucard__banner" loading="lazy" decoding="async">
+                                        <?php else: ?>
+                                        <span class="hi-ucard__banner hi-ucard__banner--generated" data-initials="<?= $e($initials) ?>"></span>
+                                        <?php endif; ?>
+                                        <span class="hi-ucard__scan"></span>
+                                    </span>
+                                    <?php if ($unitStats !== []): ?>
+                                    <span class="hi-ucard__stats">
+                                        <?php foreach ($unitStats as $si => $st): ?>
+                                        <span class="hi-ucard__stat" style="--s:<?= (int) $si ?>"><strong><?= $e($formatInt($st['v'])) ?></strong> <span><?= $e($st['l']) ?></span></span>
+                                        <?php endforeach; ?>
+                                    </span>
+                                    <?php endif; ?>
+                                    <span class="hi-ucard__flags">
+                                        <?php if (!empty($unit['featured'])): ?>
+                                        <span class="hi-uflag hi-uflag--featured"><?= $e(__('home.units_featured')) ?></span>
+                                        <?php endif; ?>
+                                        <span class="hi-uflag <?= $recruiting ? 'hi-uflag--live' : 'hi-uflag--closed' ?>">
+                                            <?php if ($recruiting): ?><span class="hi-uflag__pulse" aria-hidden="true"></span><?php endif; ?>
+                                            <?= $e(__($recruiting ? 'home.units_recruiting' : 'home.units_invite_only')) ?>
+                                        </span>
+                                    </span>
+                                    <span class="hi-ucard__body">
+                                        <span class="hi-ucard__badge">
+                                            <?php if ($logoSrc !== ''): ?>
+                                            <img src="<?= $e($logoSrc) ?>" alt="" class="hi-ucard__logo" width="64" height="64" loading="lazy" decoding="async">
+                                            <?php else: ?>
+                                            <span class="hi-ucard__initials" aria-hidden="true"><?= $e($initials) ?></span>
+                                            <?php endif; ?>
+                                        </span>
+                                        <span class="hi-ucard__name"><?= name_blur_html($unitName) ?></span>
+                                        <?php if ($metaBits !== []): ?>
+                                        <span class="hi-ucard__meta"><?= $e(implode(' · ', $metaBits)) ?></span>
+                                        <?php endif; ?>
+                                        <?php if ($tagline !== ''): ?>
+                                        <span class="hi-ucard__tagline"><?= $e($tagline) ?></span>
+                                        <?php endif; ?>
+                                        <span class="hi-ucard__cta"><?= $e(__('home.units_open_sheet')) ?> <span class="hi-ucard__arrow" aria-hidden="true">→</span></span>
+                                    </span>
+                                    <span class="hi-ucard__glare" aria-hidden="true"></span>
+                                </a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <div class="hi-units-nav" data-hi-units-nav hidden>
+                        <button type="button" class="hi-units-nav__btn" data-hi-units-step="-1" aria-label="<?= $e(__('home.units_prev')) ?>">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7"/></svg>
+                        </button>
+                        <div class="hi-units-nav__bar" aria-hidden="true"><span data-hi-units-progress></span></div>
+                        <button type="button" class="hi-units-nav__btn" data-hi-units-step="1" aria-label="<?= $e(__('home.units_next')) ?>">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                    </div>
+                </div>
                 <?php else: ?>
                 <p class="hi-body mt-4 max-w-xl text-white/70"><?= $e(__('home.communities_empty_body')) ?></p>
+                <?php endif; ?>
+
+                <?php if ($fieldShown !== []): ?>
+                <div class="hi-field" aria-labelledby="field-heading">
+                    <div class="hi-field__head">
+                        <p class="hi-kicker text-emerald-400"><?= $e(__('home.field_kicker')) ?></p>
+                        <h3 id="field-heading" class="hi-field__title"><?= $e(__('home.field_title')) ?></h3>
+                    </div>
+                    <dl class="hi-field__grid">
+                        <?php foreach ($fieldShown as $fi => $f): ?>
+                        <div class="hi-fstat hi-fstat--<?= $e($f['key']) ?>" style="--i:<?= (int) $fi ?>">
+                            <dt>
+                                <svg class="hi-fstat__icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><?= $f['icon'] ?></svg>
+                                <span class="hi-fstat__label"><?= $e($f['l']) ?></span>
+                            </dt>
+                            <dd>
+                                <span class="hi-fstat__value"><span data-hi-count="<?= (int) $f['v'] ?>"><?= $e($formatInt($f['v'])) ?></span><?php if ($f['unit'] !== ''): ?><span class="hi-fstat__unit"><?= $e($f['unit']) ?></span><?php endif; ?></span>
+                                <span class="hi-fstat__desc"><?= $e($f['d']) ?></span>
+                            </dd>
+                        </div>
+                        <?php endforeach; ?>
+                    </dl>
+                </div>
                 <?php endif; ?>
 
                 <?php if ($kpisShown !== []): ?>
                 <div class="hi-kpis">
                     <p class="hi-kicker text-white/60"><?= $e(__('home.kpi_kicker', ['days' => (int) $platformKpiDays])) ?></p>
                     <dl class="hi-kpis__grid">
-                        <?php foreach ($kpisShown as $k): ?>
-                        <div class="hi-kpi">
+                        <?php foreach ($kpisShown as $ki => $k): ?>
+                        <div class="hi-kpi" style="--i:<?= (int) $ki ?>">
                             <dt><?= $e($k['l']) ?></dt>
-                            <dd><?= $e($formatInt($k['v'])) ?></dd>
+                            <dd data-hi-count="<?= (int) $k['v'] ?>"><?= $e($formatInt($k['v'])) ?></dd>
                         </div>
                         <?php endforeach; ?>
                     </dl>
@@ -575,6 +696,9 @@ $kpisShown = array_values(array_filter($kpis, static fn (array $k): bool => $k['
             </div>
         </section>
 
+        <!-- Aperçu : écrans de la plateforme avec des données fictives -->
+        <?php require base_path('views/home/partials/demo_showcase.php'); ?>
+
         <!-- Modules -->
         <section class="bg-[var(--hi-paper)] text-slate-900 hi-block" aria-labelledby="modules-heading">
             <div class="hi-wrap">
@@ -710,7 +834,6 @@ $kpisShown = array_values(array_filter($kpis, static fn (array $k): bool => $k['
                             ['hub', __('home.eye_ops'), __('home.strip_ops')],
                             ['manoeuvres', __('home.eye_presence'), __('home.strip_presence')],
                             ['communities', __('home.eye_units'), __('home.strip_units')],
-                            ['forum', __('home.eye_info'), __('home.strip_info')],
                             ['orbat', __('home.eye_structure'), __('home.strip_structure')],
                             ['c2', __('home.eye_c2'), __('home.strip_c2')],
                             ['formations', __('home.eye_lms'), __('home.strip_lms')],
@@ -887,26 +1010,7 @@ $kpisShown = array_values(array_filter($kpis, static fn (array $k): bool => $k['
         </div>
     </dialog>
 
-    <footer class="hi-footer border-t border-white/10 bg-black py-10 text-white">
-        <div class="hi-wrap flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
-            <div>
-                <p class="text-sm font-black uppercase tracking-[0.22em]">Athena<span class="text-emerald-400" aria-hidden="true">.</span></p>
-                <p class="hi-body-sm mt-3 max-w-xs text-white/60"><?= $e(__('home.footer_tagline')) ?></p>
-            </div>
-            <nav class="flex max-w-xl flex-wrap gap-x-5 gap-y-1 text-xs" aria-label="<?= $e(__('home.footer_legal_aria')) ?>">
-                <a href="<?= $e(url('a-propos')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.about')) ?></a>
-                <a href="<?= $e(url('notre-histoire')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.history')) ?></a>
-                <a href="<?= $e(url('sse')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.sse')) ?></a>
-                <a href="<?= $e(url('atak-natif')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.atak_native')) ?></a>
-                <a href="<?= $e(url('contact')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.contact')) ?></a>
-                <a href="<?= $e(url('nouveautes')) ?>" class="font-medium text-white/65 transition hover:text-emerald-400"><?= $e(__('site.changelog')) ?></a>
-                <?php
-                $legal_link_class = 'text-white/65 transition hover:text-emerald-400 font-medium';
-                require base_path('views/partials/legal_site_links.php');
-                ?>
-            </nav>
-        </div>
-    </footer>
+    <?php require base_path('views/partials/public_site_footer.php'); ?>
 
     <?php require base_path('views/partials/cookie_banner.php'); ?>
     <?php require base_path('views/partials/demo_nda_session_widget.php'); ?>

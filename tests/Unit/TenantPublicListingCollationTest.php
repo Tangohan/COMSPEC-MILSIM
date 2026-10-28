@@ -52,7 +52,7 @@ final class TenantPublicListingCollationTest extends TestCase
         self::assertStringContainsString('listForRegistry()', $home);
         self::assertStringNotContainsString('count($featuredUnits) >= 10', $home);
         $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/home/index.php');
-        self::assertStringContainsString('who-item__initials', $view);
+        self::assertStringContainsString('hi-ucard__initials', $view);
     }
 
     public function testCountActiveMembersRunsOnSqlite(): void
@@ -127,7 +127,7 @@ final class TenantPublicListingCollationTest extends TestCase
             'app/Repositories/TenantMessageRepository.php',
             'app/Repositories/InterteamMissionRepository.php',
             'app/Repositories/Courrier/DocumentTemplateRepository.php',
-            'app/Services/Community/TenantTypeSwitchService.php',
+            'app/Services/Community/TenantSeedHelper.php',
             'app/Services/Rbac/RoleDefinitionCatalog.php',
             'app/Services/Doctrine/DocumentAudienceResolver.php',
         ];

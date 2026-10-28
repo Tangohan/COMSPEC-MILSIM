@@ -17,6 +17,9 @@ if (
     ["COMSPEC Outils", "Relever la carte du théâtre", {
         [] call (missionNamespace getVariable ["COMSPEC_ZeusOpenTheaterSurvey", {}]);
     }, _icon] call ace_zeus_fnc_addModule;
+    ["COMSPEC Outils", "Relever routes et villes", {
+        ["zeus"] call comspec_overwatch_connect_fnc_moduleGeoNetwork;
+    }, "\A3\ui_f\data\igui\cfg\simpletasks\types\move_ca.paa"] call ace_zeus_fnc_addModule;
     missionNamespace setVariable ["COMSPEC_AceTheaterSurveyRegistered", true];
 };
 
@@ -30,7 +33,17 @@ if (missionNamespace getVariable ["COMSPEC_ZenTheaterSurveyRegistered", false]) 
         [] call (missionNamespace getVariable ["COMSPEC_ZeusOpenTheaterSurvey", {}]);
     },
     _icon
-] call zen_custom_modules_fnc_register;
+] call comspec_overwatch_connect_fnc_zenModule;
+
+// Routes et villes seulement, sans le relevé complet (bâtiments, forêts, relief).
+[
+    "COMSPEC Outils",
+    "Relever routes et villes",
+    {
+        ["zeus"] call comspec_overwatch_connect_fnc_moduleGeoNetwork;
+    },
+    "\A3\ui_f\data\igui\cfg\simpletasks\types\move_ca.paa"
+] call comspec_overwatch_connect_fnc_zenModule;
 
 if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_addAction"}) then {
     private _ctx = [
@@ -41,7 +54,7 @@ if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_
             [] call (missionNamespace getVariable ["COMSPEC_ZeusOpenTheaterSurvey", {}]);
         },
         { true }
-    ] call zen_context_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_zenAction;
     [_ctx, [], 8] call zen_context_menu_fnc_addAction;
 };
 

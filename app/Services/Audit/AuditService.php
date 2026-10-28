@@ -50,7 +50,7 @@ class AuditService
         $action = substr($action, 0, 100);
         $oldValue = self::truncateAuditText($oldValue);
         $newValue = self::truncateAuditText($newValue);
-        $ip = $ip ?? ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null);
+        $ip = $ip ?? (\App\Support\ClientIp::resolve() ?: null);
         $userAgent = $userAgent ?? ($_SERVER['HTTP_USER_AGENT'] ?? null);
         if (is_string($ip) && strpos($ip, ',') !== false) {
             $ip = trim(explode(',', $ip)[0]);

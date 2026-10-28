@@ -171,6 +171,18 @@ $quizQuestionCount = ($quizData && !empty($quizData['questions']) && is_array($q
     ? count(array_filter($quizData['questions'], 'is_array'))
     : 0;
 
+/* Lien collé seul dans « Contenu » (Google Docs, Sheets, Slides, draw.io…) : on l’affiche en visionneuse. */
+$lessonBareContentUrl = in_array($lessonType, ['richtext', 'checklist'], true) && function_exists('training_url_from_bare_content')
+    ? training_url_from_bare_content((string) ($lesson['content'] ?? ''))
+    : null;
+/* « URL externe » renseignée sur un type qui ne la lit pas lui-même : elle s’affiche sous le contenu. */
+$lessonExternalUrl = trim((string) ($lesson['external_url'] ?? ''));
+$lessonTypesUsingExternalUrl = ['video', 'video_integrated', 'video_embed', 'audio', 'pdf', 'external_link'];
+$lessonExtraViewerUrl = ($lessonExternalUrl !== '' && !in_array($lessonType, $lessonTypesUsingExternalUrl, true)
+    && $lessonExternalUrl !== (string) $lessonBareContentUrl)
+    ? $lessonExternalUrl
+    : '';
+
 $autoLessonComplete = false;
 if (!$lessonAlreadyCompleted) {
     if ($lessonType === 'canvas' && $canvasDeck && !empty($canvasDeck['slides'])) {
@@ -185,7 +197,7 @@ if (!$lessonAlreadyCompleted) {
         $autoLessonComplete = true;
     } elseif ($lessonType === 'audio' && !empty($lesson['external_url'])) {
         $autoLessonComplete = true;
-    } elseif ($lessonType === 'richtext' && !empty($lesson['content'])) {
+    } elseif ($lessonType === 'richtext' && !empty($lesson['content']) && $lessonBareContentUrl === null) {
         $autoLessonComplete = true;
     }
 }
@@ -310,6 +322,14 @@ $headHtml = ob_get_clean();
                                     require base_path($useStagePlayer
                                         ? 'views/training/partials/lesson_stage_player.php'
                                         : 'views/training/partials/lesson_slideshow_player.php'); ?>
+                                <?php elseif ($lessonBareContentUrl !== null): ?>
+                                    <?php
+                                    $viewerUrl = $lessonBareContentUrl;
+                                    $viewerTitle = (string) ($lesson['title'] ?? '');
+                                    $viewerForceFrame = true;
+                                    $viewerCompact = false;
+                                    require base_path('views/training/partials/url_viewer.php');
+                                    ?>
                                 <?php elseif ($lessonType === 'richtext' && !empty($lesson['content'])): ?>
                                     <div class="prose prose-slate max-w-none">
                                         <?= $lesson['content'] ?>
@@ -339,17 +359,31 @@ $headHtml = ob_get_clean();
                                         <p class="text-xs text-slate-500"><a href="<?= htmlspecialchars($pdfUrl) ?>" class="text-emerald-600 font-semibold hover:underline" target="_blank" rel="noopener">Ouvrir le document</a></p>
                                     </div>
                                 <?php elseif ($lessonType === 'external_link' && !empty($lesson['external_url'])): ?>
-                                    <?php $externalLessonHref = training_lms_resource_external_href((string) $lesson['external_url']); ?>
-                                    <?php if ($externalLessonHref !== null): ?>
-                                    <p class="mb-4">Ressource externe :</p>
-                                    <a href="<?= htmlspecialchars($externalLessonHref, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="text-emerald-600 font-bold hover:underline">Ouvrir la ressource</a>
-                                    <?php else: ?>
-                                    <p class="text-rose-600 text-sm">Le lien indiqué pour cette leçon n’est pas utilisable.</p>
+                                    <?php if (trim(strip_tags((string) ($lesson['content'] ?? ''))) !== ''): ?>
+                                    <div class="prose prose-slate max-w-none mb-4"><?= $lesson['content'] ?></div>
                                     <?php endif; ?>
+                                    <?php
+                                    $viewerUrl = (string) $lesson['external_url'];
+                                    $viewerTitle = (string) ($lesson['title'] ?? '');
+                                    $viewerForceFrame = true;
+                                    $viewerCompact = false;
+                                    require base_path('views/training/partials/url_viewer.php');
+                                    ?>
                                 <?php elseif ($lessonType === 'checklist' && !empty($lesson['content'])): ?>
                                     <div class="prose prose-slate max-w-none"><?= $lesson['content'] ?></div>
-                                <?php else: ?>
+                                <?php elseif ($lessonExtraViewerUrl === ''): ?>
                                     <p class="text-slate-500">Le contenu de cette leçon n’est pas encore disponible.</p>
+                                <?php endif; ?>
+                                <?php if ($lessonExtraViewerUrl !== ''): ?>
+                                <div class="mt-5">
+                                    <?php
+                                    $viewerUrl = $lessonExtraViewerUrl;
+                                    $viewerTitle = (string) ($lesson['title'] ?? '');
+                                    $viewerForceFrame = true;
+                                    $viewerCompact = in_array($lessonType, ['quiz', 'modals', 'slideshow'], true);
+                                    require base_path('views/training/partials/url_viewer.php');
+                                    ?>
+                                </div>
                                 <?php endif; ?>
                             </div>
                         <?php endif; ?>
@@ -493,5 +527,6 @@ window.__LMS_LESSON_PROGRESS__ = <?= json_encode([
 <?php require base_path('views/training/partials/lms_lesson_reperes_modal.php'); ?>
 <?php require base_path('views/training/partials/lms_lesson_feedback_modal.php'); ?>
 <?php require base_path('views/partials/cookie_banner.php'); ?>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

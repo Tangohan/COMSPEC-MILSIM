@@ -22,6 +22,54 @@ final class DocumentComplianceService
     ) {}
 
     /**
+     * Accusés et vues préchargés pour un membre (primeForUser), le temps d’une passe sur toutes les doctrines.
+     *
+     * @var array{tenant_id: int, user_id: int, ack_by_version: array<int, array<string, mixed>>, latest_ack_by_document: array<int, array<string, mixed>>, viewed_versions: array<int, true>}|null
+     */
+    private ?array $primed = null;
+
+    /**
+     * Précharge en quelques requêtes les accusés, les vues et les audiences d’un membre, pour éviter
+     * 6 à 8 requêtes par doctrine publiée. À libérer avec releasePrimed() (try/finally) : les données
+     * ne reflètent pas une écriture faite pendant la passe.
+     *
+     * @param list<int> $documentIds
+     */
+    public function primeForUser(int $tenantId, int $userId, array $documentIds): void
+    {
+        if ($tenantId < 1 || $userId < 1) {
+            return;
+        }
+        $ackByVersion = [];
+        $latestByDocument = [];
+        // Trié par signed_at DESC : la première ligne d’un document est la plus récente.
+        foreach ($this->acknowledgmentRepository->listForUser($tenantId, $userId) as $ack) {
+            $vid = (int) ($ack['version_id'] ?? 0);
+            $did = (int) ($ack['document_id'] ?? 0);
+            if ($vid > 0 && !isset($ackByVersion[$vid])) {
+                $ackByVersion[$vid] = $ack;
+            }
+            if ($did > 0 && !isset($latestByDocument[$did])) {
+                $latestByDocument[$did] = $ack;
+            }
+        }
+        $this->primed = [
+            'tenant_id' => $tenantId,
+            'user_id' => $userId,
+            'ack_by_version' => $ackByVersion,
+            'latest_ack_by_document' => $latestByDocument,
+            'viewed_versions' => array_fill_keys($this->viewRepository->listViewedVersionIdsForUser($tenantId, $userId), true),
+        ];
+        $this->audienceResolver->primeAudiences($tenantId, $documentIds);
+    }
+
+    public function releasePrimed(): void
+    {
+        $this->primed = null;
+        $this->audienceResolver->releasePrimedAudiences();
+    }
+
+    /**
      * @param array<string, mixed> $doctrine Doctrine row with version_id, acknowledgment_required, etc.
      */
     public function statusForUser(int $tenantId, int $userId, array $doctrine, int $currentVersionId): string
@@ -42,9 +90,16 @@ final class DocumentComplianceService
         $requirement = (string) ($doctrine['requirement_level'] ?? 'informative');
         $ackRequired = !empty($doctrine['acknowledgment_required']) || $requirement === 'mandatory';
 
-        $latestAck = $this->acknowledgmentRepository->findLatestForUserDocument($tenantId, $userId, $documentId);
-        $viewed = $this->viewRepository->hasViewed($tenantId, $userId, $currentVersionId);
-        $ackCurrent = $this->acknowledgmentRepository->findForUserVersion($tenantId, $userId, $currentVersionId);
+        $primed = $this->primed;
+        if ($primed !== null && $primed['tenant_id'] === $tenantId && $primed['user_id'] === $userId) {
+            $latestAck = $primed['latest_ack_by_document'][$documentId] ?? null;
+            $viewed = isset($primed['viewed_versions'][$currentVersionId]);
+            $ackCurrent = $primed['ack_by_version'][$currentVersionId] ?? null;
+        } else {
+            $latestAck = $this->acknowledgmentRepository->findLatestForUserDocument($tenantId, $userId, $documentId);
+            $viewed = $this->viewRepository->hasViewed($tenantId, $userId, $currentVersionId);
+            $ackCurrent = $this->acknowledgmentRepository->findForUserVersion($tenantId, $userId, $currentVersionId);
+        }
 
         if ($ackRequired) {
             if ($ackCurrent !== null) {
@@ -160,26 +215,77 @@ final class DocumentComplianceService
                 continue;
             }
             $badge = $this->memberBadge($tenantId, $userId, $row, $versionId);
-            if (!in_array($badge['badge'], [
-                DoctrineComplianceStatus::ACK_REQUIRED,
-                DoctrineComplianceStatus::ACK_OUTDATED,
-                DoctrineComplianceStatus::OVERDUE,
-                DoctrineComplianceStatus::UNREAD,
-            ], true)) {
-                continue;
+            $item = $this->pendingActionItem($row, $badge);
+            if ($item !== null) {
+                $pending[] = $item;
             }
-            $pending[] = [
-                'document_id' => $documentId,
-                'reference' => (string) ($row['reference_code'] ?? ''),
-                'title' => (string) ($row['title'] ?? ''),
-                'badge' => $badge,
-                'deadline_label' => $this->deadlineLabel($row['acknowledgment_deadline_at'] ?? null),
-                'href' => \url('documents/doctrine/' . $documentId),
-                'sort_priority' => (int) ($badge['sort_priority'] ?? 8),
-            ];
         }
+
+        return $this->sortAndSlicePending($pending, $limit);
+    }
+
+    /**
+     * Élément « action en attente » pour une doctrine publiée, ou null si le badge n’en demande pas.
+     *
+     * @param array<string, mixed> $row
+     * @param array{badge: string, label: string, tone: string, sort_priority: int} $badge
+     * @return array<string, mixed>|null
+     */
+    public function pendingActionItem(array $row, array $badge): ?array
+    {
+        $documentId = (int) ($row['document_id'] ?? 0);
+        $versionId = (int) ($row['version_id'] ?? 0);
+        if ($documentId < 1 || $versionId < 1) {
+            return null;
+        }
+        if (!in_array($badge['badge'], [
+            DoctrineComplianceStatus::ACK_REQUIRED,
+            DoctrineComplianceStatus::ACK_OUTDATED,
+            DoctrineComplianceStatus::OVERDUE,
+            DoctrineComplianceStatus::UNREAD,
+        ], true)) {
+            return null;
+        }
+
+        return [
+            'document_id' => $documentId,
+            'reference' => (string) ($row['reference_code'] ?? ''),
+            'title' => (string) ($row['title'] ?? ''),
+            'badge' => $badge,
+            'deadline_label' => $this->deadlineLabel($row['acknowledgment_deadline_at'] ?? null),
+            'deadline_at' => $row['acknowledgment_deadline_at'] ?? null,
+            'version_id' => $versionId,
+            'version_label' => $this->versionLabelForRow($row),
+            'mandatory' => (string) ($row['requirement_level'] ?? '') === 'mandatory',
+            'needs_signature' => !empty($row['acknowledgment_required']),
+            'summary' => trim((string) ($row['summary'] ?? '')),
+            'href' => \url('documents/doctrine/' . $documentId),
+            'ack_url' => \url('documents/doctrine/' . $documentId . '/acknowledge'),
+            'sort_priority' => (int) ($badge['sort_priority'] ?? 8),
+        ];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $pending
+     * @return list<array<string, mixed>>
+     */
+    public function sortAndSlicePending(array $pending, int $limit): array
+    {
         usort($pending, static fn (array $a, array $b): int => ($a['sort_priority'] <=> $b['sort_priority']) ?: strcmp($a['reference'], $b['reference']));
 
         return array_slice($pending, 0, max(1, $limit));
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function versionLabelForRow(array $row): string
+    {
+        $label = trim((string) ($row['version_label'] ?? ''));
+        if ($label === '' && isset($row['version_major'], $row['version_minor'])) {
+            $label = 'v' . (int) $row['version_major'] . '.' . (int) $row['version_minor'];
+        }
+
+        return $label;
     }
 }

@@ -6,7 +6,7 @@ class CfgPatches {
         units[] = {};
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"comspec_sse_core"};
+        requiredAddons[] = {"comspec_sse_core", "comspec_atak_native_main"};
         author = "COMSPEC";
         VERSION_CONFIG;
     };
@@ -39,6 +39,7 @@ class CfgFunctions {
             class resolveComplexity {};
             class getNarrativePools {};
             class getThemePack {};
+            class seededMapGrid {};
             class createModel {};
             class registerBuiltinModels {};
             class saveModel {};
@@ -55,7 +56,23 @@ class CfgFunctions {
             class loadDataset {};
             class applyDatasetRole {};
             class applyDataset {};
+            // Sites et kits préfabriqués (serveur).
+            class compositionData {};
+            class spawnComposition {};
+            class siteProcess {};
+            class siteDossier {};
+            class spawnSiteNetwork {};
+            class seedEvidence {};
+            class spawnKitBox {};
+            class siteRequest {};
         };
+    };
+};
+
+// Sites et kits : les modules Zeus demandent la création au serveur (liste blanche d'Overwatch).
+class CfgRemoteExec {
+    class Functions {
+        class comspec_sse_fnc_siteRequest { allowedTargets = 2; jip = 0; };
     };
 };
 

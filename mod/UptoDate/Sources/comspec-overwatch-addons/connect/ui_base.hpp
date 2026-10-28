@@ -8,10 +8,12 @@ class RscPicture;
 class RscPictureKeepAspect;
 class RscListBox;
 class RscCombo;
+class RscListNBox;
 class RscWebBrowser;
 class RscMapControl;
 class RscHTML;
 class RscControlsGroup;
+class RscCheckBox;
 
 class COMSPEC_RscButton: RscButton {
     access = 0;
@@ -63,4 +65,46 @@ class COMSPEC_RscInvisibleButton: COMSPEC_RscButton {
     colorFocused[] = {0, 0, 0, 0};
     colorShadow[] = {0, 0, 0, 0};
     colorBorder[] = {0, 0, 0, 0};
+};
+
+// Palette de l'ATAK natif (ui/colors.hpp) : menu Échap et dépannage liaison.
+class COMSPEC_RscButtonAtak: COMSPEC_RscButton {
+    shadow = 0;
+    sizeEx = "(((((safezoneW / safezoneH) min 1.2) / 1.2) / 25) * 0.85)";
+    colorText[] = {0.90, 0.94, 0.91, 1};
+    colorBackground[] = {0.070, 0.082, 0.072, 0.96};
+    colorBackgroundActive[] = {0.18, 0.38, 0.21, 1};
+    colorFocused[] = {0.12, 0.24, 0.14, 1};
+    colorBackgroundDisabled[] = {0.045, 0.055, 0.048, 0.7};
+    colorDisabled[] = {0.40, 0.45, 0.42, 1};
+};
+class COMSPEC_RscButtonAtakPrimary: COMSPEC_RscButtonAtak {
+    colorText[] = {0.025, 0.030, 0.027, 1};
+    colorBackground[] = {0.36, 0.78, 0.42, 0.96};
+    colorBackgroundActive[] = {0.46, 0.88, 0.52, 1};
+    colorFocused[] = {0.46, 0.88, 0.52, 1};
+};
+class COMSPEC_RscButtonAtakDanger: COMSPEC_RscButtonAtak {
+    colorText[] = {0.98, 0.90, 0.88, 1};
+    colorBackground[] = {0.42, 0.11, 0.10, 0.96};
+    colorBackgroundActive[] = {0.60, 0.17, 0.15, 1};
+    colorFocused[] = {0.60, 0.17, 0.15, 1};
+};
+
+// Panneau Tenues Athena (ACE Arsenal) : liste à lignes hautes, sélection verte COMSPEC (#5cc76b).
+class COMSPEC_RscArsenalOutfitList: RscListNBox {
+    rowHeight = "(((((safezoneW / safezoneH) min 1.2) / 1.2) / 25) * 1.5)";
+    sizeEx = "(((((safezoneW / safezoneH) min 1.2) / 1.2) / 25) * 0.86)";
+    colorBackground[] = {0, 0, 0, 0};
+    colorText[] = {0.90, 0.94, 0.91, 1};
+    colorDisabled[] = {0.55, 0.60, 0.57, 1};
+    colorSelect[] = {1, 1, 1, 1};
+    colorSelect2[] = {1, 1, 1, 1};
+    colorSelectBackground[] = {0.36, 0.78, 0.42, 0.24};
+    colorSelectBackground2[] = {0.36, 0.78, 0.42, 0.24};
+    colorPictureSelected[] = {1, 1, 1, 1};
+    period = 0;
+    drawSideArrows = 0;
+    idcLeft = -1;
+    idcRight = -1;
 };

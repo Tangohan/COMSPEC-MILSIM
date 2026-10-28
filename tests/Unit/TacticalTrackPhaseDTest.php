@@ -7,6 +7,7 @@ namespace Tests\Unit;
 use App\Repositories\TacticalTrackRepository;
 use App\Services\Tactical\TacticalTrackService;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class TacticalTrackPhaseDTest extends TestCase
 {
@@ -88,7 +89,7 @@ final class TacticalTrackPhaseDTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $extension = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
-        self::assertStringContainsString('ExtensionVersion = "2.0.56"', $extension);
+        ModVersion::assertAtLeast('2.0.56', ModVersion::match('/ExtensionVersion\s*=\s*"([0-9][0-9.]*)"/', $extension));
         self::assertFileExists($root . '/docs/technique/telemetry-bus-phase-d.md');
     }
 }

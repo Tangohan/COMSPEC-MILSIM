@@ -479,6 +479,8 @@ button.ow-air-card .ow-card-head{pointer-events:none}
 .ow-card.is-blurred .ow-thumb{filter:blur(14px)}
 .ow-photo-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .ow-photo-actions .ow-tag{cursor:pointer}
+.ow-photo-badges{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+.ow-photo-badges a.ow-tag{text-decoration:none;cursor:pointer}
 .ow-photo-lightbox{position:fixed;inset:0;z-index:80;background:#000c;display:flex;align-items:center;justify-content:center}
 .ow-photo-lightbox img{max-width:92vw;max-height:90vh;object-fit:contain;box-shadow:0 8px 40px #0008}
 .ow-photo-lightbox.is-blurred img{filter:blur(18px)}
@@ -1448,3 +1450,48 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-air-sheet .ow-air-card.is-sheet .ow-card-body{padding:10px 12px}
 .ow-air-sheet .ow-kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12px}
 .ow-air-sheet .ow-kv>span:nth-child(odd){color:var(--athena-muted)}
+
+/* Tâches transmises : cartes, étapes et réponses par joueur */
+.ow-task-filter{display:flex;gap:4px;margin:0 0 8px}
+.ow-task-filter-btn{flex:1;border:1px solid var(--athena-line);background:transparent;color:var(--athena-muted);border-radius:6px;padding:5px 6px;font-size:11px;font-weight:700;cursor:pointer}
+.ow-task-filter-btn span{opacity:.7;font-weight:600}
+.ow-task-filter-btn.is-active{border-color:var(--athena-green);color:var(--athena-text);background:rgba(0,214,154,.1)}
+.ow-task-card{border:1px solid var(--athena-line);border-left:3px solid var(--athena-red);border-radius:8px;padding:9px 10px;margin:0 0 8px;background:rgba(255,255,255,.015);font-size:12px}
+.ow-task-card.is-run{border-left-color:var(--athena-amber)}
+.ow-task-card.is-ok{border-left-color:var(--athena-green)}
+.ow-task-card.is-off{border-left-color:var(--athena-muted);opacity:.75}
+.ow-task-card header{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.ow-task-card header strong{color:var(--athena-text)}
+.ow-task-card header span{color:var(--athena-soft)}
+.ow-task-status{flex:0 0 auto;border-radius:999px;padding:1px 8px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;background:rgba(224,91,99,.15);color:var(--athena-red)}
+.ow-task-status.is-run{background:rgba(231,177,77,.15);color:var(--athena-amber)}
+.ow-task-status.is-ok{background:rgba(0,214,154,.15);color:var(--athena-green)}
+.ow-task-status.is-off{background:rgba(125,136,131,.15);color:var(--athena-muted)}
+.ow-task-meta{margin:4px 0 0;color:var(--athena-muted);font-size:11px}
+.ow-task-src{border:1px solid var(--athena-line);border-radius:4px;padding:0 5px;font-weight:700;color:var(--athena-soft)}
+.ow-task-src.is-game{border-color:var(--athena-blue);color:var(--athena-blue)}
+.ow-task-text{margin:6px 0 0;color:var(--athena-soft);white-space:pre-line;line-height:1.45}
+.ow-task-steps{display:flex;list-style:none;margin:8px 0 0;padding:0;gap:2px}
+.ow-task-steps li{flex:1;text-align:center;font-size:9.5px;color:var(--athena-muted);padding-top:5px;border-top:3px solid var(--athena-line)}
+.ow-task-steps li.is-done{border-top-color:var(--athena-green);color:var(--athena-soft)}
+.ow-task-steps li.is-now{color:var(--athena-text);font-weight:800}
+.ow-task-who{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:3px}
+.ow-task-who li{color:var(--athena-soft);font-size:11px}
+.ow-task-who li strong{color:var(--athena-text)}
+.ow-task-who em{display:block;margin-left:14px;color:var(--athena-muted);font-style:normal;font-size:10.5px}
+.ow-task-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;background:var(--athena-red)}
+.ow-task-dot.is-run{background:var(--athena-amber)}
+.ow-task-dot.is-ok{background:var(--athena-green)}
+.ow-task-dot.is-off{background:var(--athena-muted)}
+.ow-task-none{margin:8px 0 0;color:var(--athena-muted);font-size:11px}
+.ow-task-card footer{margin-top:8px;display:flex;justify-content:flex-end}
+/* Géométrie des appuis JTAC (cible, IP, FAH, distance de risque) */
+.ow-jtac-geo-label{background:transparent;border:0;pointer-events:none}
+.ow-jtac-geo-label span{display:inline-block;transform:translate(-50%,-50%);white-space:nowrap;font:700 11px/1.2 ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;padding:1px 4px;border-radius:3px;background:rgba(8,12,10,.72);color:#e6ece9}
+.ow-jtac-geo-label.is-amber span{color:#f2ab33}.ow-jtac-geo-label.is-red span{color:#ff6a5c}.ow-jtac-geo-label.is-green span{color:#5cc76b}
+.ow-jtac-geo-target{background:transparent;border:0}
+.ow-jtac-geo-target span{display:block;width:12px;height:12px;margin:3px;transform:rotate(45deg);border:2px solid #e5483a;background:rgba(229,72,58,.35);box-shadow:0 0 0 2px rgba(0,0,0,.45)}
+.ow-jtac-geo-target.is-dc span{background:#e5483a}
+.leaflet-tooltip.ow-jtac-geo-tip{background:rgba(8,12,10,.85);border:1px solid rgba(255,255,255,.12);color:#e6ece9;font:700 11px/1.2 ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;padding:2px 5px;box-shadow:none}
+.leaflet-tooltip.ow-jtac-geo-tip::before{display:none}
+.leaflet-tooltip.ow-jtac-geo-tip.is-red{color:#ff6a5c}.leaflet-tooltip.ow-jtac-geo-tip.is-green{color:#5cc76b}.leaflet-tooltip.ow-jtac-geo-tip.is-cyan{color:#33e6f2}

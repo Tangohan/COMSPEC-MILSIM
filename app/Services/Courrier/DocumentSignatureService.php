@@ -41,6 +41,11 @@ class DocumentSignatureService
         if (!$doc) {
             throw new \RuntimeException('Document introuvable.');
         }
+        // Défense en profondeur : seul un document validé et non encore signé se signe.
+        if ((string) ($doc['status'] ?? '') !== DocumentWorkflowService::STATUS_VALIDATED
+            || !empty($doc['signed_by']) || !empty($doc['signed_at'])) {
+            throw new \RuntimeException('Le document doit être validé et non signé.');
+        }
 
         $signedAt = date('Y-m-d H:i:s');
         $signatureImagePath = null;

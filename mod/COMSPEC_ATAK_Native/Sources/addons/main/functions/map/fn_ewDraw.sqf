@@ -3,7 +3,8 @@
     - relèvements de goniométrie : trait depuis le point de relevé, cône d'erreur, bande de distance estimée en surbrillance ;
       ils pâlissent puis disparaissent au bout de 15 min ;
     - brouilleurs de mon camp : cercle violet du rayon brouillé ;
-    - mon erreur GPS sous brouillage : cercle d'incertitude autour de la position affichée.
+    - mon erreur GPS (brouillage, dégâts, ciel masqué, pas de fix) : cercle d'incertitude autour de la position affichée,
+      gris sans fix (dernière position connue ou position par le réseau).
 */
 params ["_map"];
 if (isNull _map) exitWith {};
@@ -23,7 +24,7 @@ private _none = "#(argb,8,8,3)color(0,0,0,0)";
     // Bande de distance : rectangle orienté sur le relèvement, largeur = cône d'erreur à mi-bande.
     private _midD = (_b0 + _b1) / 2;
     _map drawRectangle [_from getPos [_midD, _brg], (_midD * tan _err) max 25, (_b1 - _b0) / 2, _brg, _rgb + [_a * 0.22], _fill];
-    _map drawIcon [_none, _c, _from getPos [_b1, _brg], 0, 0, 0, format ["%1 %2°", _kind, round _brg], 1, 0.024 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), "RobotoCondensedBold", "right"];
+    _map drawIcon [_none, _c, _from getPos [_b1, _brg], 0, 0, 0, format ["%1 %2°", _kind call comspec_atak_native_fnc_tr, round _brg], 1, 0.024 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), (COMSPEC_ATAK_FontSet select 1), "right"];
     _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _c, _from, 10, 10, 0, "", 0];
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []]);
 // Géolocalisations : cercle d'incertitude orange, plein si le suivi est actif.
@@ -34,21 +35,26 @@ private _none = "#(argb,8,8,3)color(0,0,0,0)";
     private _r = (_x getOrDefault ["rad", 100]) max 10;
     _map drawEllipse [_p, _r, _r, 0, _rgb + [0.95], ""];
     _map drawEllipse [_p, _r, _r, 0, _rgb + [[0.08, 0.18] select (_x getOrDefault ["track", false])], _fill];
-    _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _rgb + [1], _p, 12, 12, 0, format ["GÉOLOC %1 · %2", _x get "q", _x getOrDefault ["hour", ""]], 1, 0.026 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), "RobotoCondensedBold", "right"];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _rgb + [1], _p, 12, 12, 0, (format ["GÉOLOC %1 · %2", _x get "q", _x getOrDefault ["hour", ""]]) call comspec_atak_native_fnc_tr, 1, 0.026 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), (COMSPEC_ATAK_FontSet select 1), "right"];
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_GeoTracks", []]);
 private _now = [time, serverTime] select isMultiplayer;
 private _side = str side group player;
 {
     _x params [["_pos", [0, 0, 0]], ["_rad", 500], ["_uid", ""], ["_s", ""], ["_until", 1e9]];
     if (_s isEqualTo _side && {_until >= _now}) then {
-        if (_pos isEqualType objNull) then { _pos = getPosATL _pos; };
+        // Objet supprimé (Zeus, nettoyage) : rien dessiné (getPosATL objNull = origine de la carte).
+        if (_pos isEqualType objNull) then { if (isNull _pos) then { continue; }; _pos = getPosATL _pos; };
         _map drawEllipse [[_pos select 0, _pos select 1, 0], _rad, _rad, 0, [0.85, 0.25, 0.95, 0.9], ""];
         _map drawEllipse [[_pos select 0, _pos select 1, 0], _rad, _rad, 0, [0.85, 0.25, 0.95, 0.08], _fill];
-        _map drawIcon [_none, [0.85, 0.25, 0.95, 1], [_pos select 0, _pos select 1, 0], 0, 0, 0, "BROUILLEUR", 2, 0.024 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), "RobotoCondensedBold", "center"];
+        _map drawIcon [_none, [0.85, 0.25, 0.95, 1], [_pos select 0, _pos select 1, 0], 0, 0, 0, ("BROUILLEUR") call comspec_atak_native_fnc_tr, 2, 0.024 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), (COMSPEC_ATAK_FontSet select 1), "center"];
     };
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
-([] call comspec_atak_native_fnc_ewEffects) params ["_gpsErr", "", "_off"];
-if (_gpsErr > 0) then {
-    private _p = (getPosATL player) vectorAdd _off;
-    _map drawEllipse [[_p select 0, _p select 1, 0], _gpsErr, _gpsErr, 0, [0.95, 0.67, 0.20, 0.8], ""];
+([] call comspec_atak_native_fnc_ewEffects) params ["", "", "", "", "_gpsErr", "_off", "_gpsSt"];
+if (_gpsErr > 0 && {profileNamespace getVariable ["COMSPEC_ATAK_AccRings", true]}) then {
+    // Même point que mon icône (fn_mapOnDraw, position lissée de l'image) : le cercle reste centré sur le point affiché.
+    private _p = uiNamespace getVariable ["COMSPEC_ATAK_SelfGpsPos", (getPosATL player) vectorAdd _off];
+    // Erreur de quelques mètres : pas de cercle (plus petit que l'icône).
+    if (_gpsErr >= 8 || {_gpsSt isNotEqualTo "FIX"}) then {
+        _map drawEllipse [[_p select 0, _p select 1, 0], _gpsErr, _gpsErr, 0, [[0.95, 0.67, 0.20, 0.8], [0.62, 0.66, 0.64, 0.8]] select (_gpsSt isNotEqualTo "FIX"), ""];
+    };
 };

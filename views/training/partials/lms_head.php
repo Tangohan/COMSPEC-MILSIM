@@ -17,6 +17,9 @@ $lmsExtraHead = $lmsExtraHead ?? '';
 <?php if (is_file(base_path('public/assets/css/training_lms.css'))): ?>
 <link href="<?= htmlspecialchars(asset_url('assets/css/training_lms.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 <?php endif; ?>
+<?php if (is_file(base_path('public/assets/css/lms-nav.css'))): ?>
+<link href="<?= htmlspecialchars(asset_url('assets/css/lms-nav.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+<?php endif; ?>
 <?php if ($lmsThemeVars !== ''): ?>
 <style>:root { <?= $lmsThemeVars ?> }</style>
 <?php endif; ?>

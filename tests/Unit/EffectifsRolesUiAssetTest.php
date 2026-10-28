@@ -18,9 +18,16 @@ final class EffectifsRolesUiAssetTest extends TestCase
         self::assertStringContainsString('Comme un rôle Discord', $view);
         self::assertStringContainsString('permission_ids[]', $view);
         self::assertStringContainsString('Nouveau niveau', $view);
+        self::assertStringContainsString('toujours requis', $view);
+        self::assertStringContainsString('data-perm-locked', $view);
+        self::assertStringContainsString('clés de la communauté', $view);
         self::assertStringNotContainsString('endpoint', $view);
         self::assertStringNotContainsString('JSON', $view);
         self::assertStringNotContainsString('slug', strtolower($view));
+
+        $js = (string) file_get_contents($root . '/public/assets/js/perm-check-all.js');
+        self::assertStringContainsString('data-perm-locked', $js);
+        self::assertStringContainsString('toggleable', $js);
 
         self::assertStringContainsString('name="access_role_id"', $member);
         self::assertStringContainsString('type="radio"', $member);
@@ -46,7 +53,7 @@ final class EffectifsRolesUiAssetTest extends TestCase
 
         self::assertStringContainsString('organigramme', $view);
         self::assertStringContainsString('ORBAT', $view);
-        self::assertStringContainsString('Ce ne sont pas des droits d’accès', $view);
+        self::assertStringContainsString('Ce n’est pas un droit d’accès', $view);
         self::assertStringContainsString('Nouvel emploi', $view);
         self::assertStringContainsString('Qui tient quel emploi', $view);
         self::assertStringContainsString('effectifs_workspace_url(\'fonctions/nouveau\')', $view);

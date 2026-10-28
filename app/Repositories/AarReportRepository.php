@@ -10,6 +10,9 @@ use PDO;
 
 final class AarReportRepository
 {
+    /** Message de refus d'un cycle de mission que la communauté ne possède pas (SEC-032). */
+    public const UNKNOWN_MISSION_MESSAGE = 'Cette mission est introuvable dans votre communauté.';
+
     private PDO $pdo;
     private bool $ensured = false;
 
@@ -71,7 +74,7 @@ final class AarReportRepository
                 FROM aar_reports r
                 LEFT JOIN users u ON u.id = r.author_user_id
                 LEFT JOIN users uv ON uv.id = r.validated_by_user_id
-                LEFT JOIN theatre_mission_cycles m ON m.id = r.mission_cycle_id
+                LEFT JOIN theatre_mission_cycles m ON m.id = r.mission_cycle_id AND m.tenant_id = r.tenant_id
                 WHERE ' . implode(' AND ', $where) . '
                 ORDER BY COALESCE(r.reported_at, r.created_at) DESC, r.id DESC';
         $st = $this->pdo->prepare($sql);
@@ -139,7 +142,7 @@ final class AarReportRepository
              FROM aar_reports r
              LEFT JOIN users u ON u.id = r.author_user_id
              LEFT JOIN users uv ON uv.id = r.validated_by_user_id
-             LEFT JOIN theatre_mission_cycles m ON m.id = r.mission_cycle_id
+             LEFT JOIN theatre_mission_cycles m ON m.id = r.mission_cycle_id AND m.tenant_id = r.tenant_id
              WHERE r.tenant_id = ? AND r.id = ? LIMIT 1'
         );
         $st->execute([$tenantId, $id]);
@@ -151,11 +154,20 @@ final class AarReportRepository
     /**
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
+     *
+     * @throws \DomainException mission_cycle_id d'un cycle que la communauté ne possède pas (message
+     *                          UNKNOWN_MISSION_MESSAGE) ; rien n'est alors écrit
      */
     public function save(int $tenantId, ?int $id, int $authorUserId, array $payload): array
     {
         $status = $this->allowed((string) ($payload['status'] ?? 'pending'));
         $missionId = (int) ($payload['mission_cycle_id'] ?? 0);
+        // SEC-032 : un cycle de mission d'une autre communauté, ou disparu, est refusé avant toute écriture. Avant,
+        // son identifiant était enregistré tel quel et les lectures affichaient le titre de ce cycle.
+        $mission = $missionId > 0 ? (new TheatreMissionCycleRepository($this->pdo))->findForTenant($tenantId, $missionId) : null;
+        if ($missionId > 0 && $mission === null) {
+            throw new \DomainException(self::UNKNOWN_MISSION_MESSAGE);
+        }
         $title = $this->clip((string) ($payload['title'] ?? ($payload['operation_label'] ?? 'Compte rendu post-op')), 200);
         $operationLabel = $this->nullableString($payload['operation_label'] ?? null, 200);
         $existing = ($id !== null && $id > 0) ? $this->findForTenant($tenantId, $id) : null;
@@ -165,19 +177,28 @@ final class AarReportRepository
         $validatedAt = $status === 'validated'
             ? ($this->dateValue($payload['validated_at'] ?? null) ?? ($existing['validated_at'] ?? null) ?? gmdate('Y-m-d H:i:s'))
             : null;
-        $validatorId = $status === 'validated' ? $authorUserId : null;
+        // Un rapport déjà validé garde son relecteur d'origine quand on le retouche.
+        $validatorId = $status === 'validated'
+            ? (($existing['status'] ?? '') === 'validated' && (int) ($existing['validated_by_user_id'] ?? 0) > 0
+                ? (int) $existing['validated_by_user_id']
+                : $authorUserId)
+            : null;
         $summaryText = $this->nullableText($payload['summary_text'] ?? null, 20000);
 
         $scores = $this->normalizeScores($payload['scores'] ?? []);
-        $metrics = $this->normalizeMetrics($payload['metrics'] ?? []);
+        // Les indicateurs posés à l'ouverture (brouillon de planification) ne sont pas perdus à l'édition.
+        $metrics = $this->normalizeMetrics(array_merge(
+            is_array($existing['metrics'] ?? null) ? $existing['metrics'] : [],
+            is_array($payload['metrics'] ?? null) ? $payload['metrics'] : []
+        ));
         $strengths = $this->normalizeStringList($payload['strengths'] ?? []);
         $weaknesses = $this->normalizeStringList($payload['weaknesses'] ?? []);
-        $openActions = $this->normalizeActionList($payload['open_actions'] ?? []);
-        $closedActions = $this->normalizeActionList($payload['closed_actions'] ?? []);
+        $openActions = $this->normalizeActionList($payload['open_actions'] ?? [], 'open');
+        $closedActions = $this->normalizeActionList($payload['closed_actions'] ?? [], 'closed');
         $templateId = (int) ($payload['template_id'] ?? ($existing['template_id'] ?? 0));
         $customAnswersJson = $this->encodeCustomAnswers($payload['custom_answers'] ?? ($existing['custom_answers_raw'] ?? null));
 
-        $missionWindow = $this->missionWindow($tenantId, $missionId);
+        $missionWindow = $this->missionWindow($mission);
         $hasCustom = $this->hasCustomColumns();
         if ($id !== null && $id > 0) {
             if ($hasCustom) {
@@ -341,6 +362,10 @@ final class AarReportRepository
             'mission_started_at' => $row['mission_started_at'] ?? null,
             'mission_ended_at' => $row['mission_ended_at'] ?? null,
             'summary_text' => $row['summary_text'] ?? null,
+            'author_user_id' => isset($row['author_user_id']) ? (int) $row['author_user_id'] : null,
+            'validated_by_user_id' => isset($row['validated_by_user_id']) ? (int) $row['validated_by_user_id'] : null,
+            'created_at' => $row['created_at'] ?? null,
+            'updated_at' => $row['updated_at'] ?? null,
             'author_name' => (string) ($row['author_name'] ?? ''),
             'validator_name' => (string) ($row['validator_name'] ?? ''),
             'mission_title' => (string) ($row['mission_title'] ?? ''),
@@ -372,13 +397,69 @@ final class AarReportRepository
         ];
     }
 
-    private function missionWindow(int $tenantId, int $missionId): array
+    /**
+     * Change le statut sans toucher au contenu (circuit de relecture).
+     */
+    public function setStatus(int $tenantId, int $id, string $status, int $userId): bool
     {
-        if ($missionId < 1) {
-            return ['mission_started_at' => null, 'mission_ended_at' => null];
+        if (!$this->tablesReady() || $tenantId < 1 || $id < 1) {
+            return false;
         }
-        $repo = new TheatreMissionCycleRepository($this->pdo);
-        $mission = $repo->findForTenant($tenantId, $missionId);
+        $status = $this->allowed($status);
+        $validated = $status === 'validated';
+        $st = $this->pdo->prepare(
+            'UPDATE aar_reports
+             SET status = ?, validated_at = ' . ($validated ? 'UTC_TIMESTAMP()' : 'NULL') . ',
+                 validated_by_user_id = ?, updated_at = UTC_TIMESTAMP()
+             WHERE tenant_id = ? AND id = ?'
+        );
+        $st->execute([$status, $validated && $userId > 0 ? $userId : null, $tenantId, $id]);
+
+        return $st->rowCount() > 0;
+    }
+
+    /**
+     * Remplace les listes d'actions (suivi : clôture / réouverture).
+     *
+     * @param list<array<string, mixed>> $open
+     * @param list<array<string, mixed>> $closed
+     */
+    public function saveActions(int $tenantId, int $id, array $open, array $closed): bool
+    {
+        if (!$this->tablesReady() || $tenantId < 1 || $id < 1) {
+            return false;
+        }
+        $st = $this->pdo->prepare(
+            'UPDATE aar_reports SET open_actions_json = ?, closed_actions_json = ?, updated_at = UTC_TIMESTAMP()
+             WHERE tenant_id = ? AND id = ?'
+        );
+        $st->execute([
+            $this->json($this->normalizeActionList($open, 'open')),
+            $this->json($this->normalizeActionList($closed, 'closed')),
+            $tenantId,
+            $id,
+        ]);
+
+        return $st->rowCount() > 0;
+    }
+
+    public function delete(int $tenantId, int $id): bool
+    {
+        if (!$this->tablesReady() || $tenantId < 1 || $id < 1) {
+            return false;
+        }
+        $st = $this->pdo->prepare('DELETE FROM aar_reports WHERE tenant_id = ? AND id = ?');
+        $st->execute([$tenantId, $id]);
+
+        return $st->rowCount() > 0;
+    }
+
+    /**
+     * @param array<string, mixed>|null $mission cycle de la communauté (findForTenant), null sans mission liée
+     * @return array{mission_started_at: mixed, mission_ended_at: mixed}
+     */
+    private function missionWindow(?array $mission): array
+    {
         if (!is_array($mission)) {
             return ['mission_started_at' => null, 'mission_ended_at' => null];
         }
@@ -451,11 +532,14 @@ final class AarReportRepository
     /**
      * @return list<array{label:string,status:string,owner:?string,due_at:?string}>
      */
-    private function normalizeActionList(mixed $value): array
+    private function normalizeActionList(mixed $value, ?string $force = null): array
     {
         if (is_string($value)) {
             $lines = preg_split('/\r\n|\r|\n/', $value) ?: [];
-            $value = array_map(static fn ($line) => ['label' => $line], $lines);
+            $value = array_map(
+                static fn ($line) => \App\Services\Aar\AarReportAdminService::parseActionLine((string) $line),
+                $lines
+            );
         }
         if (!is_array($value)) {
             return [];
@@ -470,12 +554,17 @@ final class AarReportRepository
                 continue;
             }
             $status = strtolower(trim((string) ($item['status'] ?? 'open')));
-            $out[] = [
+            $entry = [
                 'label' => $this->clip($label, 500),
-                'status' => in_array($status, ['open', 'closed'], true) ? $status : 'open',
+                'status' => $force ?? (in_array($status, ['open', 'closed'], true) ? $status : 'open'),
                 'owner' => $this->nullableString($item['owner'] ?? null, 160),
                 'due_at' => $this->dateValue($item['due_at'] ?? null),
             ];
+            $closedAt = $this->dateValue($item['closed_at'] ?? null);
+            if ($closedAt !== null) {
+                $entry['closed_at'] = $closedAt;
+            }
+            $out[] = $entry;
         }
 
         return array_values(array_slice($out, 0, 30));
@@ -595,7 +684,7 @@ final class AarReportRepository
              FROM aar_reports r
              LEFT JOIN users u ON u.id = r.author_user_id
              LEFT JOIN users uv ON uv.id = r.validated_by_user_id
-             LEFT JOIN theatre_mission_cycles m ON m.id = r.mission_cycle_id
+             LEFT JOIN theatre_mission_cycles m ON m.id = r.mission_cycle_id AND m.tenant_id = r.tenant_id
              WHERE r.tenant_id = ? AND r.mission_plan_id = ?
              ORDER BY r.id DESC LIMIT 1'
         );

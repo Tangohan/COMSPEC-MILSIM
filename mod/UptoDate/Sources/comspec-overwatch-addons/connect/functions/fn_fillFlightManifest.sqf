@@ -131,7 +131,7 @@ if (!isNull _comboType) then {
     lbClear _comboType;
     {
         _x params ["_label", "_code"];
-        private _i = _comboType lbAdd _label;
+        private _i = _comboType lbAdd ((_label) call comspec_overwatch_connect_fnc_tr);
         _comboType lbSetData [_i, _code];
     } forEach [
         ["Hélicoptère", "helicopter"],
@@ -153,7 +153,7 @@ if (!isNull _comboRole) then {
     lbClear _comboRole;
     {
         _x params ["_label", "_code"];
-        private _i = _comboRole lbAdd _label;
+        private _i = _comboRole lbAdd ((_label) call comspec_overwatch_connect_fnc_tr);
         _comboRole lbSetData [_i, _code];
     } forEach [
         ["Transport", "transport"],
@@ -183,7 +183,7 @@ if (!(_abort isEqualType "")) then { _abort = ""; };
 private _setTxt = {
     params ["_idc", "_txt"];
     private _c = [_idc] call comspec_overwatch_connect_fnc_manifestCtrl;
-    if (!isNull _c) then { _c ctrlSetText _txt; };
+    if (!isNull _c) then { _c ctrlSetText ((_txt) call comspec_overwatch_connect_fnc_tr); };
 };
 [1501, _callsign] call _setTxt;
 [1502, _model] call _setTxt;
@@ -206,11 +206,11 @@ private _setTxt = {
 
 private _l6 = [1556] call comspec_overwatch_connect_fnc_manifestCtrl;
 if (!isNull _l6 && {trim (ctrlText _l6) isEqualTo ""}) then {
-    _l6 ctrlSetText (mapGridPosition _veh);
+    _l6 ctrlSetText (((mapGridPosition _veh)) call comspec_overwatch_connect_fnc_tr);
 };
 private _l2 = [1552] call comspec_overwatch_connect_fnc_manifestCtrl;
 if (!isNull _l2 && {trim (ctrlText _l2) isEqualTo ""} && {_inAir}) then {
-    _l2 ctrlSetText _hdgTxt;
+    _l2 ctrlSetText ((_hdgTxt) call comspec_overwatch_connect_fnc_tr);
 };
 
 private _hint = [1540] call comspec_overwatch_connect_fnc_manifestCtrl;
@@ -224,7 +224,7 @@ if (!isNull _hint) then {
     } else {
         "Déclaration depuis le sol : indiquez l'appareil, le rôle et les codes, puis transmettez."
     };
-    _hint ctrlSetStructuredText parseText format ["<t color='#E8F2FA'>%1</t>", _msg];
+    _hint ctrlSetStructuredText parseText ((format ["<t color='#E8F2FA'>%1</t>", _msg]) call comspec_overwatch_connect_fnc_tr);
 };
 
 uiNamespace setVariable ["COMSPEC_FlightManifest_AircraftType", _aircraftType];

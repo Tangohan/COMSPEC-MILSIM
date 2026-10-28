@@ -46,10 +46,10 @@ if (_isCrashed && {!isNull _ctrlScreenBroken}) then {
     if (!_wasCrashed) then {
         missionNamespace setVariable ["COMSPEC_Roleplay_WasCrashed", true];
     };
-    _ctrlScreenBroken ctrlSetStructuredText parseText (
+    _ctrlScreenBroken ctrlSetStructuredText parseText (((
         "<t align='center' size='1.4' color='#cccccc'>TERMINAL BLOQUÉ</t><br/>" +
         "<t align='center' size='0.9' color='#888888'>Redémarrage automatique en cours…</t>"
-    );
+    )) call comspec_overwatch_connect_fnc_tr);
     _ctrlScreenBroken ctrlShow true;
     {
         private _ctrl = _display displayCtrl _x;
@@ -71,10 +71,10 @@ if (!(_atakStatus get "can_display")) then {
     if (!isNull _ctrlScreenBroken) then {
         if (!(_atakStatus get "powered_on")) then {
             _ctrlScreenBroken ctrlSetBackgroundColor [0.02, 0.02, 0.02, 0.88];
-            _ctrlScreenBroken ctrlSetStructuredText parseText format [
+            _ctrlScreenBroken ctrlSetStructuredText parseText ((format [
                 "<t align='center' size='2' color='#666666'>ATAK ÉTEINT</t><br/>" +
                 "<t align='center' size='1' color='#888888'>ACE Self Interact → Rallumer</t>"
-            ];
+            ]) call comspec_overwatch_connect_fnc_tr);
         } else {
             // Cracks transparents (atak-fx) — laisse la carte / position lisible.
             private _fx = uiNamespace getVariable ["COMSPEC_Hub_ScreenBrokenFx", controlNull];
@@ -88,16 +88,16 @@ if (!(_atakStatus get "can_display")) then {
                 _fx ctrlSetPosition (ctrlPosition _ctrlScreenBroken);
                 _fx ctrlCommit 0;
             };
-            _fx ctrlSetText _brokenTex;
+            _fx ctrlSetText ((_brokenTex) call comspec_overwatch_connect_fnc_tr);
             _fx ctrlSetFade 0;
             _fx ctrlShow true;
             _fx ctrlEnable false;
             _fx ctrlCommit 0;
             _ctrlScreenBroken ctrlSetBackgroundColor [0.02, 0.02, 0.02, 0.08];
-            _ctrlScreenBroken ctrlSetStructuredText parseText format [
+            _ctrlScreenBroken ctrlSetStructuredText parseText ((format [
                 "<t align='center' size='0.95' color='#F4F7FA'>ÉCRAN ENDOMMAGÉ</t><br/>" +
                 "<t align='center' size='0.72' color='#C9D4DC'>Position seule — réparez avec un toolkit</t>"
-            ];
+            ]) call comspec_overwatch_connect_fnc_tr);
         };
         _ctrlScreenBroken ctrlShow true;
     };
@@ -160,11 +160,11 @@ if (!isNil "_zoneInfo" && {!isNull _ctrlZoneWarning}) then {
         default { "#ffffff" };
     };
     
-    _ctrlZoneWarning ctrlSetStructuredText parseText format [
+    _ctrlZoneWarning ctrlSetStructuredText parseText ((format [
         "<t size='0.8' color='%1'>📡 %2</t><br/>" +
         "<t size='0.6' color='#ffffff'>Intensité: %3%%</t>",
         _color, _zoneName, _intensity
-    ];
+    ]) call comspec_overwatch_connect_fnc_tr);
     _ctrlZoneWarning ctrlShow true;
 } else {
     // Sortie de zone
@@ -180,10 +180,10 @@ if (!isNil "_zoneInfo" && {!isNull _ctrlZoneWarning}) then {
 // === INDICATEUR PACKET LOSS ===
 if (_packetLoss > 5 && {!isNull _ctrlPacketLoss}) then {
     private _color = if (_packetLoss > 10) then {"#ff4444"} else {"#ffaa00"};
-    _ctrlPacketLoss ctrlSetStructuredText parseText format [
+    _ctrlPacketLoss ctrlSetStructuredText parseText ((format [
         "<t align='center' size='0.7' color='%1'>⚠ Pertes: %2%%</t>",
         _color, (_packetLoss toFixed 1)
-    ];
+    ]) call comspec_overwatch_connect_fnc_tr);
     _ctrlPacketLoss ctrlShow true;
 } else {
     if (!isNull _ctrlPacketLoss) then {

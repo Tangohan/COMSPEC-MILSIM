@@ -1,6 +1,9 @@
 /*
     Ajoute le kit SSE de base à l'inventaire du joueur (si place).
     [] call comspec_sse_fnc_equipSseKit
+    Ancien kit « qui apparaît » : remplacé par les caisses de kit réelles (COMSPEC_SSE_Box_Team,
+    _Biometrics, _Digital, COMSPEC_SSE_DomexCase ; module « Poser une caisse de kit »). Gardé pour les
+    scripts de mission qui l'appellent encore.
 */
 private _items = [
     "COMSPEC_SSE_EvidenceBag",
@@ -28,6 +31,6 @@ private _msg = format ["Kit SSE : %1 élément(s) ajouté(s).", count _added];
 if (count _skipped > 0) then {
     _msg = _msg + format [" %1 non placé(s) (inventaire plein).", count _skipped];
 };
-hint _msg;
+[_msg, ["SUCCESS", "WARNING"] select (count _skipped > 0)] call comspec_sse_fnc_notify;
 ["equipSseKit", format ["+%1 / skip %2", count _added, count _skipped]] call comspec_sse_fnc_log;
 count _added

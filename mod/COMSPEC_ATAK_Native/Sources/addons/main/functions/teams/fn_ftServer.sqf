@@ -66,7 +66,8 @@ private _setTeam = {
     _u setVariable ["COMSPEC_FT", _tid, true];
     // Rôle de chef d'équipe : seulement dans une équipe.
     if (_tid isEqualTo "" && {(_u getVariable ["COMSPEC_FTRole", ""]) isEqualTo "CDE"}) then { _u setVariable ["COMSPEC_FTRole", [_u] call _fallback, true]; };
-    [_u, [_tid] call _armaTeam] remoteExecCall ["assignTeam", 0];
+    // assignTeam n'agit que sur la machine qui l'exécute : file JIP par unité (clé = l'unité : écrasée à chaque appel, retirée à la suppression du corps).
+    [_u, [_tid] call _armaTeam] remoteExecCall ["assignTeam", 0, _u];
 };
 private _setRole = {
     params ["_u", "_r"];
@@ -115,7 +116,7 @@ switch (_op) do {
         _g setVariable ["COMSPEC_FireTeams", _teams, true];
         // Nouvelle couleur : équipe Arma des membres à jour.
         private _at = [_tid] call _armaTeam;
-        { if ((_x getVariable ["COMSPEC_FT", ""]) isEqualTo _tid) then { [_x, _at] remoteExecCall ["assignTeam", 0]; }; } forEach units _g;
+        { if ((_x getVariable ["COMSPEC_FT", ""]) isEqualTo _tid) then { [_x, _at] remoteExecCall ["assignTeam", 0, _x]; }; } forEach units _g;
         _changed = true;
         _msg = format ["Équipe %1 modifiée par %2", _t select 1, name _by];
     };

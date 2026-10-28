@@ -1,0 +1,149 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Étape « Refonte module documentaire : colonnes et tables (si classification_level absente) » (Schéma).
+ *
+ * Exécutée par run-migrations.php dans la portée du pipeline : $pdo, $root, $migrationRunner, $migrationFlush,
+ * $migrationEnsurePdo et les helpers de database/steps/_context.php sont disponibles.
+ */
+
+// Refonte module documentaire : colonnes et tables (si classification_level absente)
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'documents' AND COLUMN_NAME = 'classification_level'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Refonte module documentaire : extension documents...\n";
+    $pdo->exec("ALTER TABLE documents
+        ADD COLUMN uuid CHAR(36) NULL UNIQUE AFTER id,
+        ADD COLUMN short_description VARCHAR(500) NULL AFTER slug,
+        ADD COLUMN document_type VARCHAR(100) NULL AFTER short_description,
+        ADD COLUMN classification_level VARCHAR(50) NOT NULL DEFAULT 'interne' AFTER document_category_id,
+        ADD COLUMN visibility_scope VARCHAR(50) NOT NULL DEFAULT 'private' AFTER classification_level,
+        ADD COLUMN owner_user_id INT UNSIGNED NULL AFTER visibility_scope,
+        ADD COLUMN author_user_id INT UNSIGNED NULL AFTER owner_user_id,
+        ADD COLUMN parent_document_id INT UNSIGNED NULL AFTER author_user_id,
+        ADD COLUMN relation_type VARCHAR(50) NULL AFTER parent_document_id,
+        ADD COLUMN version_label VARCHAR(50) NULL AFTER relation_type,
+        ADD COLUMN sort_order INT UNSIGNED NOT NULL DEFAULT 0 AFTER version_label,
+        ADD COLUMN current_file_id INT UNSIGNED NULL AFTER sort_order,
+        ADD COLUMN formation_id INT UNSIGNED NULL AFTER current_file_id,
+        ADD COLUMN equipment_class_id INT UNSIGNED NULL AFTER formation_id,
+        ADD COLUMN unit_id INT UNSIGNED NULL AFTER equipment_class_id,
+        ADD COLUMN operator_id INT UNSIGNED NULL AFTER unit_id,
+        ADD COLUMN mission_id VARCHAR(128) NULL AFTER operator_id,
+        ADD COLUMN effective_at DATETIME NULL AFTER mission_id,
+        ADD COLUMN review_due_at DATETIME NULL AFTER effective_at,
+        ADD COLUMN expires_at DATETIME NULL AFTER review_due_at,
+        ADD COLUMN download_allowed TINYINT(1) NOT NULL DEFAULT 1 AFTER expires_at,
+        ADD COLUMN print_allowed TINYINT(1) NOT NULL DEFAULT 1 AFTER download_allowed,
+        ADD COLUMN locked TINYINT(1) NOT NULL DEFAULT 0 AFTER print_allowed,
+        ADD COLUMN tags JSON NULL AFTER locked,
+        ADD COLUMN inherit_parent_security TINYINT(1) NOT NULL DEFAULT 0 AFTER tags,
+        ADD INDEX idx_documents_status (status),
+        ADD INDEX idx_documents_owner (owner_user_id),
+        ADD INDEX idx_documents_parent (parent_document_id),
+        ADD INDEX idx_documents_classification (classification_level),
+        ADD INDEX idx_documents_visibility (visibility_scope)");
+    $pdo->exec("UPDATE documents SET owner_user_id = created_by WHERE owner_user_id IS NULL AND created_by IS NOT NULL AND EXISTS (SELECT 1 FROM users u WHERE u.id = documents.created_by)");
+    $pdo->exec("UPDATE documents SET author_user_id = created_by WHERE author_user_id IS NULL AND created_by IS NOT NULL AND EXISTS (SELECT 1 FROM users u WHERE u.id = documents.created_by)");
+    $stmt2 = $pdo->query("SELECT id FROM documents WHERE uuid IS NULL LIMIT 1");
+    if ($stmt2 && $stmt2->fetch()) {
+        $pdo->exec("UPDATE documents SET uuid = LOWER(UUID()) WHERE uuid IS NULL");
+    }
+    try {
+        $pdo->exec("ALTER TABLE documents ADD CONSTRAINT documents_owner_user_id_fk FOREIGN KEY (owner_user_id) REFERENCES users (id) ON DELETE SET NULL ON UPDATE CASCADE");
+    } catch (Throwable $e) { /* ignore if exists */ }
+    try {
+        $pdo->exec("ALTER TABLE documents ADD CONSTRAINT documents_author_user_id_fk FOREIGN KEY (author_user_id) REFERENCES users (id) ON DELETE SET NULL ON UPDATE CASCADE");
+    } catch (Throwable $e) { /* ignore */ }
+    try {
+        $pdo->exec("ALTER TABLE documents ADD CONSTRAINT documents_parent_document_id_fk FOREIGN KEY (parent_document_id) REFERENCES documents (id) ON DELETE SET NULL ON UPDATE CASCADE");
+    } catch (Throwable $e) { /* ignore */ }
+    try {
+        $pdo->exec("ALTER TABLE documents ADD CONSTRAINT documents_current_file_id_fk FOREIGN KEY (current_file_id) REFERENCES document_versions (id) ON DELETE SET NULL ON UPDATE CASCADE");
+    } catch (Throwable $e) { /* ignore */ }
+}
+$stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_versions' AND COLUMN_NAME = 'original_name'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Refonte module documentaire : extension document_versions...\n";
+    $pdo->exec("ALTER TABLE document_versions ADD COLUMN original_name VARCHAR(255) NULL AFTER file_path, ADD COLUMN version_label VARCHAR(50) NULL AFTER change_notes");
+}
+$stmt = $pdo->query("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_versions' AND COLUMN_NAME = 'file_path'");
+$filePathNullable = $stmt ? $stmt->fetchColumn() : null;
+if (is_string($filePathNullable) && strtoupper($filePathNullable) === 'NO') {
+    echo "document_versions.file_path : NULL autorisé (retrait de pièce jointe)...\n";
+    try {
+        $pdo->exec('ALTER TABLE document_versions MODIFY file_path VARCHAR(500) NULL');
+        echo "  [OK] document_versions.file_path nullable\n";
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] document_versions.file_path nullable : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('document_versions.file_path nullable', $e);
+    }
+}
+$stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_collaborators'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Création table document_collaborators...\n";
+    $pdo->exec("CREATE TABLE document_collaborators (
+        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        document_id INT UNSIGNED NOT NULL,
+        user_id INT UNSIGNED NOT NULL,
+        role VARCHAR(50) NOT NULL,
+        granted_by INT UNSIGNED NULL,
+        granted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uk_document_collaborator (document_id, user_id, role),
+        KEY idx_document_collaborators_user (user_id),
+        CONSTRAINT fk_document_collaborators_document FOREIGN KEY (document_id) REFERENCES documents (id) ON DELETE CASCADE,
+        CONSTRAINT fk_document_collaborators_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
+$stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_permissions'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Création table document_permissions...\n";
+    $pdo->exec("CREATE TABLE document_permissions (
+        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        document_id INT UNSIGNED NOT NULL,
+        permission_type VARCHAR(50) NOT NULL,
+        permission_value VARCHAR(190) NOT NULL,
+        access_level VARCHAR(50) NOT NULL DEFAULT 'read',
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY idx_document_permissions_lookup (permission_type, permission_value, access_level),
+        CONSTRAINT fk_document_permissions_document FOREIGN KEY (document_id) REFERENCES documents (id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
+$stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_relations'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Création table document_relations...\n";
+    $pdo->exec("CREATE TABLE document_relations (
+        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        parent_document_id INT UNSIGNED NOT NULL,
+        child_document_id INT UNSIGNED NOT NULL,
+        relation_type VARCHAR(50) NOT NULL,
+        sort_order INT UNSIGNED NOT NULL DEFAULT 0,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uk_document_relation (parent_document_id, child_document_id, relation_type),
+        CONSTRAINT fk_document_relations_parent FOREIGN KEY (parent_document_id) REFERENCES documents (id) ON DELETE CASCADE,
+        CONSTRAINT fk_document_relations_child FOREIGN KEY (child_document_id) REFERENCES documents (id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
+$stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_audit_log'");
+if ($stmt && !$stmt->fetch()) {
+    echo "Création table document_audit_log...\n";
+    $pdo->exec("CREATE TABLE document_audit_log (
+        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        document_id INT UNSIGNED NOT NULL,
+        user_id INT UNSIGNED NULL,
+        action VARCHAR(100) NOT NULL,
+        old_value JSON NULL,
+        new_value JSON NULL,
+        ip_address VARCHAR(45) NULL,
+        user_agent VARCHAR(500) NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY idx_document_audit_log_document (document_id),
+        KEY idx_document_audit_log_user (user_id),
+        CONSTRAINT fk_document_audit_log_document FOREIGN KEY (document_id) REFERENCES documents (id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}

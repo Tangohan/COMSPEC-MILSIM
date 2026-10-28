@@ -45,11 +45,34 @@ private _geoFix = {
         case (isNull _u || {!alive _u}): { "LOST" };
         case !((_e get "qn") in ([_u, "norm"] call comspec_atak_native_fnc_phoneIdent)): { "LOST" };
         case !([_u] call comspec_atak_native_fnc_hasDevice): { "OFF" };
+        // Batterie vide : la carte SIM en mode secours s'annonce encore aux relais (fn_simSos).
+        case (["active", _u] call comspec_atak_native_fnc_simSos): { "SOS" };
         case (isPlayer _u && {!(_u getVariable ["COMSPEC_ATAK_Beacon", true])}): { "OFF" };
         default { "OK" };
     };
     _e set ["status", _st];
     _e set ["checked", time];
+    if (_st isEqualTo "SOS") exitWith {
+        private _fx = ["fix", _u] call comspec_atak_native_fnc_simSos;
+        if (_fx isEqualTo []) exitWith {
+            if (_prev isNotEqualTo "SOSNOREL") then {
+                ["WARNING", format ["GÉOLOC %1 : batterie vide, aucun relais n'entend sa carte SIM. Dernière position conservée", _e get "q"], 5, 40] call comspec_atak_native_fnc_notify;
+            };
+            _e set ["status", "SOSNOREL"];
+            false
+        };
+        _fx params ["_p", "_r", "_n"];
+        _e set ["pos", _p];
+        _e set ["rad", _r];
+        _e set ["t", time];
+        _e set ["hour", _hour];
+        _e set ["relays", _n];
+        if (_prev isNotEqualTo "SOS") then {
+            ["WARNING", format ["GÉOLOC %1 : batterie vide, localisé par la carte SIM en mode secours (%2)", _e get "q",
+                [format ["%1 relais", _n], "antennes"] select (_n isEqualTo 0)], 6, 50] call comspec_atak_native_fnc_notify;
+        };
+        true
+    };
     if (_st isNotEqualTo "OK") exitWith {
         if (_prev isNotEqualTo _st) then {
             ["WARNING", format ["GÉOLOC %1 : %2", _e get "q", ["téléphone éteint ou hors réseau, dernière position conservée", "abonné introuvable (appareil changé ou détruit)"] select (_st isEqualTo "LOST")], 5, 40] call comspec_atak_native_fnc_notify;
@@ -121,7 +144,10 @@ switch (_act) do {
         };
         private _list = missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []];
         private _kept = _list select { (_x param [4, 1e9]) >= _now };
-        private _changed = (count _kept) isNotEqualTo (count _list);
+        // Brouilleur expiré : retiré par son propriétaire ou par le serveur seulement (tous les clients republiaient
+        // la liste au même moment).
+        private _changed = (count _kept) isNotEqualTo (count _list)
+            && {isServer || {(_list select { (_x param [4, 1e9]) < _now }) findIf { (_x param [2, ""]) isEqualTo _uid } >= 0}};
         if ((count _mine) > 0 && {(_kept findIf { (_x param [2, ""]) isEqualTo _uid && {(_x param [4, 0]) isEqualTo (_mine select 4)} }) < 0}) then {
             _kept pushBack _mine;
             _changed = true;
@@ -130,13 +156,13 @@ switch (_act) do {
         // Brouillage subi : alerte à l'entrée et à la sortie de zone.
         if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
         ([] call comspec_atak_native_fnc_ewEffects) params ["_err", "_bft"];
-        private _was = uiNamespace getVariable ["COMSPEC_ATAK_EwWas", false];
+        private _was = missionNamespace getVariable ["COMSPEC_ATAK_EwWas", false];
         if (_err > 0 && {!_was}) then {
             ["WARNING", format ["Brouillage détecté : GPS imprécis (environ %1 m)%2", _err, ["", ", suivi des forces dégradé"] select _bft], 6, 60] call comspec_atak_native_fnc_notify;
             [] call comspec_atak_native_fnc_vibrate;
         };
         if (_err isEqualTo 0 && {_was}) then { ["INFO", "Fin du brouillage : GPS et réseau rétablis", 4, 30] call comspec_atak_native_fnc_notify; };
-        uiNamespace setVariable ["COMSPEC_ATAK_EwWas", _err > 0];
+        missionNamespace setVariable ["COMSPEC_ATAK_EwWas", _err > 0];
     };
     case "scan": {
         if !(call _allowed) exitWith { ["WARNING", "Goniométrie réservée aux opérateurs de guerre électronique", 3, 20] call comspec_atak_native_fnc_notify; };
@@ -153,24 +179,32 @@ switch (_act) do {
             if (alive _x && {_x isNotEqualTo player} && {(side group _x) isNotEqualTo _mySide} && {(_x distance2D _from) < 3000} && {[_x] call comspec_atak_native_fnc_hasDevice}) then {
                 private _loud = (_x getVariable ["COMSPEC_ATAK_EwScanUntil", -1]) > _now;
                 // Un téléphone au repos n'émet que par intermittence : 70 % de chances de le relever.
-                if (_loud || {(random 1) < 0.7}) then { _hits pushBack [getPosATL _x, ["TÉLÉPHONE", "GONIO"] select _loud]; };
+                if (_loud || {(random 1) < 0.7}) then { _hits pushBack [getPosATL _x, ["TÉLÉPHONE", "GONIO"] select _loud, getPlayerUID _x]; };
             };
         } forEach allPlayers;
         {
             _x params [["_pos", [0, 0, 0]], ["_rad", 500], ["_owner", ""], ["_side", ""], ["_until", 1e9]];
             if (_pos isEqualType objNull) then { _pos = if (isNull _pos) then { [] } else { getPosATL _pos }; };
-            if ((count _pos) >= 2 && {_owner isNotEqualTo _uid} && {_until >= _now} && {(_from distance2D _pos) < (3000 + _rad)}) then { _hits pushBack [_pos, "BROUILLEUR"]; };
+            if ((count _pos) >= 2 && {_owner isNotEqualTo _uid} && {_until >= _now} && {(_from distance2D _pos) < (3000 + _rad)}) then { _hits pushBack [_pos, "BROUILLEUR", _owner]; };
         } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
         private _bearings = missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []];
         private _hour = [dayTime, "HH:MM"] call BIS_fnc_timeToString;
+        // Relèvements envoyés au poste (SendSigint : position du goniomètre + gisement, 8 au plus par balayage) :
+        // lignes de relèvement de la carte SIGINT d'Athena, recoupées par émetteur (indicatif anonyme stable).
+        private _tx = [] call comspec_atak_native_fnc_bridge;
         {
-            _x params ["_pos", "_kind"];
+            _x params ["_pos", "_kind", ["_id", ""]];
             private _d = _from distance2D _pos;
             // Erreur angulaire croissante avec la distance (2 à 12 degrés), distance donnée par bande seulement.
             private _err = 2 + 10 * ((_d / 3000) min 1.5);
             private _brg = ((_from getDir _pos) + (random [-_err, 0, _err]) + 360) mod 360;
             private _band = switch (true) do { case (_d < 500): { [0, 500] }; case (_d < 1000): { [500, 1000] }; case (_d < 2000): { [1000, 2000] }; case (_d < 3000): { [2000, 3000] }; default { [3000, 4500] }; };
             _bearings pushBack [_from, _brg, _band select 0, _band select 1, _kind, time, _err, _hour];
+            if (_tx && {_forEachIndex < 8}) then {
+                private _code = 0;
+                { _code = (_code * 31 + _x) mod 9973; } forEach (toArray _id);
+                "COMSPECExtension" callExtension ["SendSigint", [format ["GE %1-%2", ["EMETTEUR", "BROUILLEUR"] select (_kind isEqualTo "BROUILLEUR"), _code], str round (_from select 0), str round (_from select 1), str round _brg]];
+            };
         } forEach _hits;
         while { (count _bearings) > 15 } do { _bearings deleteAt 0; };
         missionNamespace setVariable ["COMSPEC_ATAK_EwBearings", _bearings];
@@ -208,7 +242,7 @@ switch (_act) do {
         };
         private _ts = side group _target;
         private _sideKey = switch (_ts) do { case west: { "west" }; case east: { "east" }; case resistance: { "guer" }; default { "civ" }; };
-        if (_ts isEqualTo (side group player) && {_target isNotEqualTo player} && {!(missionNamespace getVariable ["comspec_atak_native_geoloc_own", false])}) exitWith {
+        if (_ts isEqualTo (side group player) && {_target isNotEqualTo player} && {!(missionNamespace getVariable ["comspec_atak_native_geoloc_own", false])} && {!(["ownOk", _target] call comspec_atak_native_fnc_simSos)}) exitWith {
             ["WARNING", "GÉOLOC : numéro de votre camp, traçage non autorisé", 4, 30] call comspec_atak_native_fnc_notify;
         };
         if !(missionNamespace getVariable [format ["comspec_atak_native_geoloc_%1", _sideKey], true]) exitWith {

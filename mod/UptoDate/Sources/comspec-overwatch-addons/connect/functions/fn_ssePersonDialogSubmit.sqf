@@ -2,6 +2,18 @@
     Soumet la fiche SSE (identité + armes) puis photo / biométrie optionnelles.
 */
 if (!hasInterface) exitWith {};
+// Bouton = contexte non planifié : SubmitSsePerson est un POST synchrone (jusqu'à 8 s), on passe en
+// spawn pour que extAwait ne fige pas le jeu. Le verrou évite une fiche en double si le bouton est
+// recliqué pendant l'attente.
+if (!canSuspend) exitWith {
+    // Verrou horodaté (uiNamespace survit à la mission : un spawn tué en fin de partie ne doit pas bloquer le bouton).
+    if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_SsePerson_Submitting", -1e9]) < 90) exitWith {};
+    uiNamespace setVariable ["COMSPEC_SsePerson_Submitting", diag_tickTime];
+    [] spawn {
+        [] call comspec_overwatch_connect_fnc_ssePersonDialogSubmit;
+        uiNamespace setVariable ["COMSPEC_SsePerson_Submitting", -1e9];
+    };
+};
 
 private _disp = uiNamespace getVariable ["COMSPEC_SsePerson_Display", displayNull];
 if (isNull _disp) then { _disp = findDisplay 9991; };
@@ -65,7 +77,7 @@ if (_last isEqualTo "" && {_first isEqualTo ""} && {_alias isEqualTo ""}) then {
 
 if (_last isEqualTo "" && {_first isEqualTo ""} && {_alias isEqualTo ""}) exitWith {
     ["Indiquez au moins un nom, un prénom ou un alias — page Sujet.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
-    (_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.44' color='#ff8a4a' align='center'>Nom, prénom ou alias requis.</t>";
+    (_disp displayCtrl 9513) ctrlSetStructuredText parseText (("<t size='0.44' color='#b3261e' align='center'>Nom, prénom ou alias requis.</t>") call comspec_overwatch_connect_fnc_tr);
     [1] call comspec_overwatch_connect_fnc_sseTerminalPage;
 };
 
@@ -168,7 +180,7 @@ if (_caseCode isEqualTo "") then {
 };
 if (_caseCode isNotEqualTo "") then {
     profileNamespace setVariable ["COMSPEC_SseLastCaseCode", _caseCode];
-    saveProfileNamespace;
+    [] call comspec_overwatch_connect_fnc_saveProfile;
 };
 
 private _sig = uiNamespace getVariable ["COMSPEC_SsePerson_Signature", []];
@@ -219,6 +231,64 @@ private _sampleArr = [];
     };
 } forEach _samples;
 
+// Enrôlement dans la base biométrique de la mission (moteur du pack SSE) : le sujet
+// sera reconnu au prochain contrôle. L'écouvillon ADN part au laboratoire.
+if (!isNull _target && {!isNil "comspec_sse_fnc_bioRequest"} && {missionNamespace getVariable ["comspec_sse_bio_enabled", true]}) then {
+    private _lastEnroll = _target getVariable ["comspec_sse_bioEnrolledAt", -1e9];
+    private _probe = createHashMapFromArray [
+        ["unit", _target], ["key", [_target] call comspec_sse_fnc_bioPersonKey],
+        ["nfiqs", []], ["eyes", []], ["face", -1], ["by", _callsign], ["grid", _grid]
+    ];
+    {
+        if ((_x isEqualType []) && {(count _x) >= 4}) then {
+            switch (_x select 0) do {
+                case "empreintes": { _probe set ["nfiqs", _x select 3]; };
+                case "iris": { _probe set ["eyes", _x select 3]; };
+                case "adn": { _probe set ["dna", _x select 1]; _probe set ["dnaRef", _x select 2]; };
+            };
+        };
+    } forEach _samples;
+    private _meta = _target getVariable ["comspec_sse_facePhotoMeta", []];
+    if ((_meta isEqualType []) && {(count _meta) >= 3}) then { _probe set ["face", _meta select 1]; };
+    // Une seule rencontre par contrôle (une retransmission ne compte pas double).
+    if ((time - _lastEnroll) > 300 || {(_probe getOrDefault ["dna", -1]) >= 0}) then {
+        _target setVariable ["comspec_sse_bioEnrolledAt", time];
+        ["enroll", _probe, {
+            params ["_res"];
+            if (_res getOrDefault ["dnaPending", false]) then {
+                ["ADN expédié au laboratoire : le résultat vous parviendra.", "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
+            };
+        }] call comspec_sse_fnc_bioRequest;
+    };
+};
+
+// Ce que l'opérateur voit du sujet sans le lui demander : sexe apparent, âge estimé
+// (profil biologique du pack SSE, arrondi à 5 ans) et appartenance déjà connue des
+// joueurs (organisation soupçonnée ou confirmée). Ces champs partaient vides.
+private _sexApparent = "";
+if (!isNull _target) then {
+    _sexApparent = ["Masculin", "Féminin"] select ((getNumber ((configOf _target) >> "woman")) == 1);
+    if (_age < 0 && {!isNil "comspec_sse_fnc_bioProfile"}) then {
+        private _prof = [_target] call comspec_sse_fnc_bioProfile;
+        private _pa = _prof getOrDefault ["age", -1];
+        if (_pa isEqualType 0 && {_pa > 0}) then { _age = 5 * round (_pa / 5); };
+    };
+    if (_affil isEqualTo "" && {!isNil "comspec_sse_fnc_orgOp"} && {!isNil "comspec_sse_orgs"}) then {
+        private _of = ["orgOf", [_target]] call comspec_sse_fnc_orgOp;
+        if ((_of isEqualType []) && {(count _of) >= 1}) then {
+            private _org = comspec_sse_orgs getOrDefault [_of select 0, createHashMap];
+            private _mem = if (isNil "comspec_sse_orgMembers") then { createHashMap } else {
+                comspec_sse_orgMembers getOrDefault [[_target] call comspec_sse_fnc_bioPersonKey, createHashMap]
+            };
+            private _known = (_org getOrDefault ["known", 0]) max (_mem getOrDefault ["known", 0]);
+            if (_known >= 1) then {
+                _affil = _org getOrDefault ["name", ""];
+                if (_known == 1 && {_affil isNotEqualTo ""}) then { _affil = _affil + " (soupçonnée)"; };
+            };
+        };
+    };
+};
+
 // Verdict de la requête d'identité, s'il y en a eu une.
 private _q = uiNamespace getVariable ["COMSPEC_SsePerson_Query", []];
 if (!(_q isEqualType [])) then { _q = []; };
@@ -263,7 +333,7 @@ if (_alreadySent) then {
 };
 if (_alreadySent && {!_hasNewKind} && {!_photoPending}) exitWith {
     (_disp displayCtrl 9513) ctrlSetStructuredText parseText
-        "<t size='0.44' color='#e0a233' align='center'>Déjà au registre — transmettez un iris, des empreintes ou de l’ADN pour enrichir la fiche.</t>";
+        (("<t size='0.44' color='#9a5b00' align='center'>Déjà au registre — transmettez un iris, des empreintes ou de l’ADN pour enrichir la fiche.</t>") call comspec_overwatch_connect_fnc_tr);
     [
         "Cette personne est déjà au registre. Ajoutez un iris, des empreintes ou de l’ADN avant de retransmettre.",
         "tactical",
@@ -271,7 +341,7 @@ if (_alreadySent && {!_hasNewKind} && {!_photoPending}) exitWith {
     ] call comspec_overwatch_connect_fnc_announce;
 };
 
-(_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.44' color='#8aa0b4' align='center'>Transmission en cours…</t>";
+(_disp displayCtrl 9513) ctrlSetStructuredText parseText (("<t size='0.44' color='#44515c' align='center'>Transmission en cours…</t>") call comspec_overwatch_connect_fnc_tr);
 
 // Construction par morceaux (%1 seul) : un seul format à 26 args peut corrompre
 // le JSON (ambiguïté %10/%2, guillemets), et le serveur répond alors identity_required.
@@ -285,6 +355,7 @@ private _parts = [
     format ['"first_name":"%1"', _eFirst],
     format ['"alias":"%1"', _eAlias],
     format ['"age_estimated":%1', _ageJson],
+    format ['"sex_apparent":"%1"', [_sexApparent] call _escape],
     format ['"nationality":"%1"', [_nat] call _escape],
     format ['"language_spoken":"%1"', [_lang] call _escape],
     format ['"distinguishing_marks":"%1"', [_marks] call _escape],
@@ -331,9 +402,43 @@ private _json = "{" + (_parts joinString ",") + "}";
 // Garde-fou : ne jamais poster un corps sans identité exploitable.
 if (_eLast isEqualTo "" && {_eFirst isEqualTo ""} && {_eAlias isEqualTo ""}) exitWith {
     ["Indiquez au moins un nom, un prénom ou un alias — page Sujet.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
-    (_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.44' color='#ff8a4a' align='center'>Nom, prénom ou alias requis.</t>";
+    (_disp displayCtrl 9513) ctrlSetStructuredText parseText (("<t size='0.44' color='#b3261e' align='center'>Nom, prénom ou alias requis.</t>") call comspec_overwatch_connect_fnc_tr);
     [1] call comspec_overwatch_connect_fnc_sseTerminalPage;
 };
+
+// Fiche SSE gardée sur le poste (COMSPEC_SSE_Sheets, mission) : l'app Bluetooth du téléphone peut l'envoyer à un
+// équipier, même hors liaison. Une fiche par sujet : une retransmission remplace la précédente.
+private _who = trim format ["%1 %2", _first, _last];
+if (_who isEqualTo "") then { _who = [_alias, "Sujet inconnu"] select (_alias isEqualTo ""); };
+private _sheetLines = [];
+{
+    _x params ["_lab", "_val"];
+    if (_val isEqualType 0) then { _val = [str _val, ""] select (_val < 0); };
+    if (_val isNotEqualTo "") then { _sheetLines pushBack [_lab, _val]; };
+} forEach [
+    ["Nom", _last], ["Prénom", _first], ["Alias", _alias], ["Âge", _age], ["Nationalité", _nat], ["Langue", _lang],
+    ["Signes particuliers", _marks], ["Affiliation", _affil], ["Déclaration", _stmt], ["Circonstance", _circ],
+    ["Dossier", _caseCode], ["Grille", _grid]
+];
+{
+    if ((_x isEqualType []) && {(count _x) >= 3}) then { _sheetLines pushBack [toUpper (_x select 0), format ["qualité %1 · %2", _x select 1, _x select 2]]; };
+} forEach _samples;
+if (!isNull _target) then {
+    private _fm = _target getVariable ["comspec_sse_facePhotoMeta", []];
+    if ((_fm isEqualType []) && {(count _fm) >= 3}) then { _sheetLines pushBack ["Photo du visage", format ["%1 · qualité %2 · %3", _fm select 0, _fm select 1, _fm select 2]]; };
+    private _lq = (_target getVariable ["comspec_sse_seekLastQuery", []]) param [1, []];
+    if ((_lq isEqualType []) && {(count _lq) >= 3}) then { _sheetLines pushBack ["Interrogation SEEK", format ["%1 · score %2 · %3", _lq select 0, _lq select 1, _lq select 2]]; };
+};
+if ((count _sig) >= 4) then { _sheetLines pushBack ["Signé", format ["%1 · %2", _sig select 0, _sig select 3]]; };
+private _st = systemTime;
+private _sheetClock = format ["%1:%2", [str (_st select 3), "0" + str (_st select 3)] select ((_st select 3) < 10), [str (_st select 4), "0" + str (_st select 4)] select ((_st select 4) < 10)];
+private _sheets = missionNamespace getVariable ["COMSPEC_SSE_Sheets", []];
+if !(_sheets isEqualType []) then { _sheets = []; };
+_sheets = _sheets select { (_x isEqualType []) && {(_x param [0, ""]) isNotEqualTo _idKey} };
+_sheets pushBack [_idKey, _who, _sheetLines, _callsign, _sheetClock, _grid, ""];
+if ((count _sheets) > 40) then { _sheets deleteAt 0; };
+missionNamespace setVariable ["COMSPEC_SSE_Sheets", _sheets];
+[_target, "Fiche SSE transmise", [_caseCode, "sans dossier"] select (_caseCode isEqualTo "")] call comspec_overwatch_connect_fnc_sseTeamLog;
 
 ["ssePersonDialogSubmit", format ["TX identité L=%1 F=%2 A=%3 octets=%4", count _eLast, count _eFirst, count _eAlias, count _json], "", "Fn", "INFO"] call comspec_overwatch_connect_fnc_logFnError;
 
@@ -354,7 +459,7 @@ _parsed params ["_ok", "_status", "_detail"];
 // comme doublon.
 if (!_ok && { _status isEqualTo "QUEUED" }) exitWith {
     (_disp displayCtrl 9513) ctrlSetStructuredText parseText
-        "<t size='0.44' color='#e0a233' align='center'>Liaison coupée — fiche conservée, elle partira au rétablissement. Ne la ressaisissez pas.</t>";
+        (("<t size='0.44' color='#9a5b00' align='center'>Liaison coupée — fiche conservée, elle partira au rétablissement. Ne la ressaisissez pas.</t>") call comspec_overwatch_connect_fnc_tr);
     [
         "Fiche SSE conservée hors ligne — transmission au rétablissement de la liaison.",
         "tactical",
@@ -380,10 +485,10 @@ if (!_ok) exitWith {
     if ((_d find "http 5") >= 0) then {
         _reason = "Le poste de commandement est en erreur — signalez-le à l’administrateur.";
     };
-    (_disp displayCtrl 9513) ctrlSetStructuredText parseText format [
-        "<t size='0.44' color='#ff8a4a' align='center'>%1</t>",
+    (_disp displayCtrl 9513) ctrlSetStructuredText parseText ((format [
+        "<t size='0.44' color='#b3261e' align='center'>%1</t>",
         _reason
-    ];
+    ]) call comspec_overwatch_connect_fnc_tr);
     [([
         _detail,
         "Impossible d’enregistrer la personne — vérifiez la liaison Athena."
@@ -438,48 +543,16 @@ if (_photoPending && { _personId isNotEqualTo "" }) then {
         screenshot _stem;
         uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", _stem];
     };
-    ["UploadSsePhoto", "attempt", format ["personne %1 stem=%2", _personId, _stem], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-    // File async : la DLL attend le PNG (jusqu’à ~12 s) hors thread jeu.
-    [_personId, _stem, _callsign, _posX, _posY, _posZ, _grid] spawn {
-        params ["_pid", "_stem", "_cs", "_px", "_py", "_pz", "_gridRef"];
-        uiSleep 0.35;
-        if (!isNil "comspec_overwatch_connect_fnc_extResult") then {
-            private _staged = ["COMSPECExtension" callExtension ["StageCapture", [_stem]]] call comspec_overwatch_connect_fnc_extResult;
-            if ((_staged isEqualType "") && {(count _staged) >= 4} && {(_staged select [0, 3]) isEqualTo "OK|"}) then {
-                private _body = trim (_staged select [3, (count _staged) - 3]);
-                if (_body isNotEqualTo "") then { _stem = _body; };
-            };
-        };
-        private _shot = [
-            "COMSPECExtension" callExtension ["UploadSsePhoto", [
-                _pid,
-                _stem,
-                _cs,
-                "face",
-                _px,
-                _py,
-                _pz,
-                "Photo du visage",
-                _gridRef
-            ]]
-        ] call comspec_overwatch_connect_fnc_extResult;
-        private _parsed = [_shot] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
-        _parsed params ["_ok", "_status", "_detail"];
-        private _u = toUpper (str _shot);
-        if (!_ok && { ((_u find "OK|QUEUED") == 0) || {(_u find "OK|DUPLICATE") == 0} }) then { _ok = true; };
-        if (!_ok) then {
-            ["UploadSsePhoto", "fail", _shot, _shot, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-            [
-                "Fiche enregistrée, mais la photo du visage n’a pas pu être mise en file — refaites PHOTO DU VISAGE puis retransmettez si besoin.",
-                "tactical",
-                "warn"
-            ] call comspec_overwatch_connect_fnc_announce;
-        } else {
-            ["UploadSsePhoto", "ok", format ["personne %1 · %2", _pid, _detail], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-        };
-        uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", false];
-        uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", ""];
-    };
+    // « face@portrait,q=88 » : le site recadre la capture en portrait et garde la qualité.
+    private _angle = uiNamespace getVariable ["COMSPEC_SsePerson_PhotoAngle", "face"];
+    if (!(_angle isEqualType "") || {_angle isEqualTo ""}) then { _angle = "face"; };
+    [_personId, _stem, _callsign, _posX, _posY, _posZ, _grid, _angle, _target] call comspec_overwatch_connect_fnc_sseUploadFacePhoto;
+};
+
+// Identifiant Athena de la fiche : une photo prise plus tard sur ce sujet part tout de suite
+// sur la même fiche (fn_sseCaptureFacePhoto), sans retransmettre la fiche entière.
+if (!isNull _target && {_personId isNotEqualTo ""}) then {
+    _target setVariable ["comspec_sse_athenaPersonId", _personId];
 };
 
 ["Personne enregistrée — fiche transmise au poste de commandement.", "tactical", "info"] call comspec_overwatch_connect_fnc_announce;

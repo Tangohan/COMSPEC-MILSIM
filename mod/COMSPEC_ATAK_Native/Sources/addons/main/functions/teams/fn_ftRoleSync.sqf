@@ -3,7 +3,7 @@
     Params : [action, argument]
       "init"            : à l'arrivée (XEH client) : écouteurs, réapparition, puis "load"
       "load"            : relit sur Athena les fonctions de la communauté et les rôles créés en jeu, plus le rôle mémorisé
-                          et la fonction principale du joueur (COMSPEC Link 2.0.63, GetFireTeams [tenant, "roles:<steam>"],
+                          et la fonction principale du joueur, et l'indicatif de sa fiche (ligne CS) (COMSPEC Link 2.0.63, GetFireTeams [tenant, "roles:<steam>"],
                           sans nouvelle commande DLL), les donne au serveur (fn_ftServer « roles ») puis lance "auto"
       "auto"            : sans rôle, applique le rôle mémorisé (profil, puis Athena), sinon celui de la fonction Athena
       "remember" [clé]  : mémorise le rôle choisi (profil COMSPEC_ATAK_MyRole, à vie ; Athena via Squad.Sync role_pref)
@@ -39,7 +39,7 @@ switch (_act) do {
             };
             private _tn = missionNamespace getVariable ["comspec_overwatch_tenant_id", ""];
             if !(_tn isEqualType "") then { _tn = str _tn; };
-            private _r = "COMSPECExtension" callExtension ["GetFireTeams", [_tn, "roles:" + getPlayerUID player]];
+            private _r = (["COMSPECExtension", "GetFireTeams", [_tn, "roles:" + getPlayerUID player]] call comspec_atak_native_fnc_extAwait);
             if (_r isEqualType []) then { _r = _r param [0, ""]; };
             if !(_r isEqualType "") then { _r = ""; };
             if ((_r select [0, 3]) isNotEqualTo "OK|") exitWith {
@@ -61,6 +61,8 @@ switch (_act) do {
                     };
                     if (_team isEqualTo "2" && {_key isEqualTo "PREF"}) then { _pref = _val; };
                     if (_team isEqualTo "2" && {_key isEqualTo "JOB"}) then { _job = _val; _jobLabel = _label; };
+                    // Indicatif de la fiche Athena (fn_callsignAction « web »).
+                    if (_team isEqualTo "2" && {_key isEqualTo "CS"}) then { ["web", _val] call comspec_atak_native_fnc_callsignAction; };
                 };
             } forEach ((_r select [3]) splitString (toString [10]));
             missionNamespace setVariable ["COMSPEC_ATAK_RoleAthena", ["OK", _pref, _job, _jobLabel, count _roles]];
@@ -90,7 +92,7 @@ switch (_act) do {
         // Chef d'équipe : dépend de l'équipe, jamais mémorisé.
         if (_k isEqualTo "CDE") exitWith {};
         profileNamespace setVariable ["COMSPEC_ATAK_MyRole", [_k, "NONE"] select (_k isEqualTo "")];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         player setVariable ["COMSPEC_FTRolePref", _k, true];
     };
     case "respawn": {

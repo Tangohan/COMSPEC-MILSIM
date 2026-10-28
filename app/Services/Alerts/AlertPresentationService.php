@@ -41,7 +41,9 @@ final class AlertPresentationService
             $row = $this->tenants->findById($tenantId);
             if ($row) {
                 $st = (string) ($row['subscription_status'] ?? 'none');
-                $hasPaid = in_array($st, ['active', 'trialing'], true);
+                // Formule offerte en cours : la communauté est traitée comme abonnée.
+                $hasPaid = in_array($st, ['active', 'trialing'], true)
+                    || \App\Support\PlanGift::activeFromSettings($row['settings'] ?? null) !== null;
             }
         }
 
@@ -117,7 +119,9 @@ final class AlertPresentationService
             $row = $this->tenants->findById($tenantId);
             if ($row) {
                 $st = (string) ($row['subscription_status'] ?? 'none');
-                $hasPaid = in_array($st, ['active', 'trialing'], true);
+                // Formule offerte en cours : la communauté est traitée comme abonnée.
+                $hasPaid = in_array($st, ['active', 'trialing'], true)
+                    || \App\Support\PlanGift::activeFromSettings($row['settings'] ?? null) !== null;
             }
         }
 
@@ -171,7 +175,9 @@ final class AlertPresentationService
             $row = $this->tenants->findById($tenantId);
             if ($row) {
                 $st = (string) ($row['subscription_status'] ?? 'none');
-                $hasPaid = in_array($st, ['active', 'trialing'], true);
+                // Formule offerte en cours : la communauté est traitée comme abonnée.
+                $hasPaid = in_array($st, ['active', 'trialing'], true)
+                    || \App\Support\PlanGift::activeFromSettings($row['settings'] ?? null) !== null;
             }
         }
 

@@ -29,7 +29,10 @@ final class EffectifsProfileEditingAssetTest extends TestCase
         self::assertStringContainsString('id="modifier-dossier"', $member);
         self::assertStringContainsString("url('personnel/' . \$id)", $member);
         self::assertStringContainsString('Voir la fiche', $member);
-        self::assertStringContainsString('<?= \$memberEditorHtml ?>', $member);
+        // #855: the embedded personnel editor was replaced by an in-page civil-status dialog.
+        self::assertStringContainsString('id="eff-dlg-civil"', $member);
+        self::assertStringContainsString("effectifs_workspace_url('membres/' . \$id . '/etat-civil')", $member);
+        self::assertStringContainsString("'/back-office/ressources/effectifs/membres/{id}/etat-civil', [EffectifsWorkspaceController::class, 'updateMemberCivilStatus']", $routes);
         self::assertIsString($roster);
         self::assertStringContainsString("\$personnelEditUrl = effectifs_workspace_url('membres/' . \$id) . '#modifier-dossier';", $roster);
         self::assertIsString($edit);

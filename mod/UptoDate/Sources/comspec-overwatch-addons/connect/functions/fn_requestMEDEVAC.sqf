@@ -16,6 +16,9 @@ params [
 ];
 
 if (!hasInterface) exitWith { false };
+// RequestMEDEVAC est un POST synchrone côté DLL (jusqu'à 8 s) : hors contexte planifié, on relance
+// en spawn pour que extAwait ne fige pas le jeu.
+if (!canSuspend) exitWith { _this spawn comspec_overwatch_connect_fnc_requestMEDEVAC; true };
 
 private _totalPatients = _patientsT1 + _patientsT2 + _patientsT3;
 if (_totalPatients isEqualTo 0) exitWith {
@@ -101,18 +104,16 @@ if (_ok) then {
         default { toLower _lzMarkingColor };
     };
 
-    if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {
-        hint parseText format [
-            "<t color='#ff3333' size='1.5' align='center'>ÉVACUATION DEMANDÉE</t><br/>" +
-            "<t size='1.1'>Marquez la zone avec %1 %2</t><br/>" +
-            "<t size='1.1'>Sécurisez le périmètre</t><br/>" +
-            "<t size='1'>Blessés : %3 urgents / %4 prioritaires / %5 différés</t>",
+    // Bandeau dans le téléphone ATAK natif (plus de hint par-dessus l'écran de jeu).
+    if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification && {!isNil "comspec_atak_native_fnc_notify"}) then {
+        ["TACTICAL", format [
+            "ÉVACUATION DEMANDÉE · Marquez la zone avec %1 %2 · Sécurisez le périmètre · Blessés : %3 urgents / %4 prioritaires / %5 différés",
             _markLabel,
             _colorLabel,
             _patientsT1,
             _patientsT2,
             _patientsT3
-        ];
+        ], 10, 40] call comspec_atak_native_fnc_notify;
     };
 
     playSound "RadioAmbient1";

@@ -1,5 +1,5 @@
 #define COMPONENT main
-#include "\z\comspec_sse\addons\main\script_mod.hpp"
+#include "script_mod.hpp"
 
 #ifdef DEBUG_ENABLED_MAIN
     #define DEBUG_MODE_FULL

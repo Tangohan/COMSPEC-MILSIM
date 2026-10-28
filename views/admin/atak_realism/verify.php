@@ -101,7 +101,7 @@
     <nav class="navbar navbar-dark">
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1">🔬 ATHENA C2 — Vérification Migration Réalisme</span>
-            <a href="/admin/atak/realism/config" class="btn btn-outline-success btn-sm">← Retour Config</a>
+            <a href="/back-office/ressources/atak-realism/config" class="btn btn-outline-success btn-sm">← Retour Config</a>
         </div>
     </nav>
 
@@ -164,7 +164,7 @@
                         <p><strong>Migration complétée avec succès !</strong></p>
                         <p>Vous pouvez maintenant :</p>
                         <ol>
-                            <li>Configurer les paramètres réalisme via <a href="/admin/atak/realism/config" style="color: #00ff00;">l'interface admin</a></li>
+                            <li>Configurer les paramètres réalisme via <a href="/back-office/ressources/atak-realism/config" style="color: #00ff00;">l'interface admin</a></li>
                             <li>Tester en jeu les nouveaux paramètres</li>
                             <li>Supprimer les anciens scripts de migration :
                                 <ul>

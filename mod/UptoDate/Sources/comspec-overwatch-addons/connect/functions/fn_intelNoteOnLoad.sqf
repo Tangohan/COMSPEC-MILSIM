@@ -10,6 +10,9 @@ if (isNull _disp) exitWith {};
 
 [] call comspec_overwatch_connect_fnc_intelNoteApplyGeometry;
 
+// Verrou anti double clic : uiNamespace survit à la mission, un envoi coupé (fin de mission) le laissait levé.
+uiNamespace setVariable ["COMSPEC_IntelNote_Submitting", false];
+
 // Mémoire des champs de la fiche précédente : elle ne doit pas déteindre.
 ["clear"] call comspec_overwatch_connect_fnc_intelNoteCache;
 
@@ -23,9 +26,9 @@ private _kindCombo = _disp displayCtrl 9656;
 lbClear _kindCombo;
 {
     _x params ["_code", "_label"];
-    private _i = _kindCombo lbAdd _label;
+    private _i = _kindCombo lbAdd ((_label) call comspec_overwatch_connect_fnc_tr);
     _kindCombo lbSetData [_i, _code];
-    _kindCombo lbSetTooltip [_i, _x param [2, ""]];
+    _kindCombo lbSetTooltip (([_i, _x param [2, ""]]) call comspec_overwatch_connect_fnc_tr);
 } forEach _kinds;
 
 // --- Urgence ---
@@ -33,7 +36,7 @@ private _urgencyCombo = _disp displayCtrl 9657;
 lbClear _urgencyCombo;
 {
     _x params ["_code", "_label"];
-    private _i = _urgencyCombo lbAdd _label;
+    private _i = _urgencyCombo lbAdd ((_label) call comspec_overwatch_connect_fnc_tr);
     _urgencyCombo lbSetData [_i, _code];
 } forEach _urgencies;
 
@@ -41,11 +44,11 @@ lbClear _urgencyCombo;
 private _sourceCombo = _disp displayCtrl 9658;
 if (!isNull _sourceCombo) then {
     lbClear _sourceCombo;
-    private _none = _sourceCombo lbAdd "Non précisé";
+    private _none = _sourceCombo lbAdd (("Non précisé") call comspec_overwatch_connect_fnc_tr);
     _sourceCombo lbSetData [_none, ""];
     {
         _x params ["_code", "_label"];
-        private _i = _sourceCombo lbAdd (_code + " — " + _label);
+        private _i = _sourceCombo lbAdd (((_code + " — " + _label)) call comspec_overwatch_connect_fnc_tr);
         _sourceCombo lbSetData [_i, _code];
     } forEach _sources;
 };
@@ -121,8 +124,8 @@ uiNamespace setVariable ["COMSPEC_IntelNote_Themes", _selected];
 uiNamespace setVariable ["COMSPEC_IntelNote_Pieces", []];
 
 // --- Texte, lieu, date, repère ---
-(_disp displayCtrl 9616) ctrlSetText _draftBody;
-(_disp displayCtrl 9653) ctrlSetText _draftPlace;
+(_disp displayCtrl 9616) ctrlSetText ((_draftBody) call comspec_overwatch_connect_fnc_tr);
+(_disp displayCtrl 9653) ctrlSetText ((_draftPlace) call comspec_overwatch_connect_fnc_tr);
 
 // L’heure de mission est la référence : c’est elle que lira l’analyste.
 private _pad = {
@@ -130,21 +133,21 @@ private _pad = {
     if (_n < 10) then { format ["0%1", floor _n] } else { str (floor _n) }
 };
 date params ["_year", "_month", "_day", "_hour", "_minute"];
-(_disp displayCtrl 9652) ctrlSetText format [
+(_disp displayCtrl 9652) ctrlSetText ((format [
     "%1/%2/%3 %4:%5",
     [_day] call _pad,
     [_month] call _pad,
     _year,
     [_hour] call _pad,
     [_minute] call _pad
-];
+]) call comspec_overwatch_connect_fnc_tr);
 
 private _grid = mapGridPosition player;
-(_disp displayCtrl 9654) ctrlSetText _grid;
+(_disp displayCtrl 9654) ctrlSetText ((_grid) call comspec_overwatch_connect_fnc_tr);
 
 private _lastCase = ["get"] call comspec_overwatch_connect_fnc_sseActiveCase;
 if (_lastCase isEqualType "") then {
-    (_disp displayCtrl 9655) ctrlSetText _lastCase;
+    (_disp displayCtrl 9655) ctrlSetText ((_lastCase) call comspec_overwatch_connect_fnc_tr);
 };
 
 // Compteur vivant : sans handler, l’opérateur écrit à l’aveugle et découvre la

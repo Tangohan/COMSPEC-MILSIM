@@ -7,6 +7,7 @@ namespace App\Services\Personnel;
 use App\Core\Database;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Services\Rbac\MilitaryOperationalRoleCatalog;
+use App\Support\SqlText;
 use PDO;
 
 /**
@@ -49,7 +50,7 @@ final class UnitJobRoleSyncService
             return null;
         }
         $st = $this->pdo->prepare(
-            'SELECT id FROM personnel_job_role_categories WHERE tenant_id = ? AND slug = ? LIMIT 1'
+            'SELECT id FROM personnel_job_role_categories WHERE tenant_id = ? AND ' . SqlText::equals($this->pdo, 'slug') . ' LIMIT 1'
         );
         $st->execute([$tenantId, self::CATEGORY_SLUG]);
         $id = (int) ($st->fetchColumn() ?: 0);
@@ -337,7 +338,7 @@ final class UnitJobRoleSyncService
             }
         }
         $st = $this->pdo->prepare(
-            'SELECT id FROM personnel_job_roles WHERE tenant_id = ? AND slug = ? LIMIT 1'
+            'SELECT id FROM personnel_job_roles WHERE tenant_id = ? AND ' . SqlText::equals($this->pdo, 'slug') . ' LIMIT 1'
         );
         $st->execute([$tenantId, self::slugForUnit($unitId)]);
         $id = (int) ($st->fetchColumn() ?: 0);

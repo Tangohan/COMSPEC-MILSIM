@@ -16,7 +16,7 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
 $pageGroup = isset($boPageGroup)
     ? trim((string) $boPageGroup)
-    : (isset($platformAdminCrumbGroup) ? 'Plateforme · ' . trim((string) $platformAdminCrumbGroup) : 'Administration');
+    : (isset($platformAdminCrumbGroup) ? 'Plateforme · ' . trim((string) $platformAdminCrumbGroup) : 'Gestion');
 $pageTitle = isset($boPageTitle) ? trim((string) $boPageTitle) : (isset($title) ? trim((string) $title) : 'Back-office');
 $pageAction = isset($boPageAction) ? trim((string) $boPageAction) : '';
 $pageActionUrl = isset($boPageActionUrl) ? trim((string) $boPageActionUrl) : '';
@@ -33,7 +33,7 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
     $topAlerts = $boTopAlerts;
 } else {
     $boRecN = (int) ($boBadges['recruitments_submitted'] ?? 0);
-    $boModN = (int) ($boBadges['forum_moderation_total'] ?? 0);
+    $boModN = (int) ($boBadges['reports_moderation_total'] ?? 0);
     $boMsgN = (int) ($boBadges['messages_unread'] ?? 0);
     $boEvtN = (int) ($boBadges['events_rsvp_pending'] ?? 0);
     $boQualN = (int) ($boBadges['qualifications_expiring'] ?? 0);
@@ -85,16 +85,16 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
             'href' => url('back-office/recruitments'),
         ];
     }
-    if ($boModN > 0 && (!function_exists('forum_public_nav_visible') || forum_public_nav_visible())) {
+    if ($boModN > 0) {
         $topAlerts[] = [
-            'label' => 'FORUM',
+            'label' => 'SIGNALEMENTS',
             'n' => $boModN,
             'dot' => '#c72e2e',
             'fg' => '#a32222',
             'bg' => '#fdecec',
             'bd' => '#f6cccc',
-            'title' => $boModN . ' ' . (function_exists('i18n_phrase') ? i18n_phrase('nav', 'signalement(s) forum') : 'signalement(s) forum'),
-            'href' => url('back-office/forum-moderation'),
+            'title' => $boModN . ' ' . (function_exists('i18n_phrase') ? i18n_phrase('nav', 'signalement(s) à traiter') : 'signalement(s) à traiter'),
+            'href' => url('back-office/signalements'),
         ];
     }
 }

@@ -504,3 +504,48 @@ kbd {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+.ow-marker .ow-cs .ow-cs-grid{display:block;margin-top:1px;font-size:.82em;font-weight:500;opacity:.78}
+.ow-session-notices{display:grid;gap:8px;margin:0 0 12px}
+.ow-session-notices:empty{display:none}
+.ow-session-notice{display:grid;gap:4px;padding:8px 10px;border:1px solid var(--athena-line,#2a3a36);border-left:3px solid var(--athena-green,#00d69a);border-radius:6px;background:rgba(255,255,255,.03);font-size:12px;line-height:1.45}
+.ow-session-notice.is-warn{border-left-color:#e7b14d}
+.ow-session-notice.is-quiet{border-left-color:var(--athena-line,#2a3a36)}
+.ow-session-notice[hidden]{display:none}
+.ow-session-notice strong{font-size:12px}
+.ow-session-notice span{color:var(--athena-muted,#9aa5a2)}
+.ow-session-notice ul{margin:0;padding-left:16px}
+.ow-session-notice a{color:var(--athena-green,#00d69a);font-weight:600}
+/* Équipes de feu, destinations, relecture, caméras déclarées, terminaux */
+.ow-select[hidden]{display:none}
+.ow-ft-card{margin:0 0 10px;padding:8px 10px;border:1px solid var(--athena-line,#2a3a36);border-left:3px solid var(--ft-color,#2563eb);border-radius:6px;background:rgba(255,255,255,.03)}
+.ow-ft-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.ow-ft-head small{color:var(--athena-muted,#9aa5a2);font-size:11px}
+.ow-ft-chip{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:12px}
+.ow-ft-chip i{width:9px;height:9px;border-radius:50%;background:var(--ft-color,#2563eb)}
+.ow-ft-list{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:4px}
+.ow-ft-member{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12px}
+.ow-ft-cs{font-weight:600}
+.ow-ft-role{padding:0 6px;border-radius:8px;background:rgba(0,214,154,.12);color:var(--athena-green,#00d69a);font-size:10px;text-transform:uppercase}
+.ow-ft-live{color:var(--athena-muted,#9aa5a2);font-size:11px}
+.ow-ft-live.is-ok{color:var(--athena-green,#00d69a)}
+.ow-ft-actions{margin-left:auto;display:inline-flex;gap:4px}
+.ow-ft-add{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+.ow-ft-add input{flex:1;min-width:90px}
+.ow-asg-row small,.ow-feed-row small{display:block}
+.ow-assign-banner{position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:9;display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);padding:8px 12px;border:1px solid var(--athena-green,#00d69a);border-radius:6px;background:#080b0a;font-size:12px;box-shadow:var(--shadow)}
+.ow-assign-banner[hidden]{display:none}
+.ow-replay-events{position:absolute;left:52px;bottom:100px;z-index:7;width:min(360px,calc(100% - 66px));max-height:220px;overflow:auto;padding:6px 10px;border:1px solid #27302d;background:#080b0a;font-size:12px;box-shadow:var(--shadow)}
+.ow-replay-events[hidden],.ow-timeline[hidden]+.ow-replay-events{display:none}
+.ow-replay-ev{width:100%;text-align:left;justify-content:flex-start;gap:6px}
+.ow-replay-ev.is-medevac{border-left:3px solid #e05b63}
+.ow-replay-ev.is-order{border-left:3px solid #e7b14d}
+.ow-link-item{width:100%;text-align:left}
+.ow-term-actions{margin-top:6px}
+/* Groupes : image opérateur des membres ; contact en liaison sans repère sur la carte */
+.ow-squad-faces{display:inline-flex;align-items:center;flex:0 0 auto;margin-right:8px;padding:2px;border:2px solid var(--ow-squad,#2b3531);border-radius:16px}
+.ow-squad-face{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;margin-left:-8px;border-radius:50%;overflow:hidden;border:1px solid #0a0e0d;background:#16201d;color:#cfd8d4;font-size:10px;font-weight:700}
+.ow-squad-face:first-child{margin-left:0}
+.ow-squad-face img{width:100%;height:100%;object-fit:cover;display:block}
+.ow-squad-face.is-more{background:#0f1513;color:var(--athena-muted,#9aa5a2)}
+.ow-bft-chan.is-hidden-map{border:1px solid #e7b14d;color:#e7b14d;background:rgba(231,177,77,.1);cursor:pointer;font:inherit}
+.ow-selection-halo{pointer-events:none}

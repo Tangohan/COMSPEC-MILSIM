@@ -82,7 +82,7 @@ switch (toLower _source) do {
             {
                 _x params [["_path", ""], ["_name", ""]];
                 if (_name isEqualTo "") then { _name = "photographie" };
-                private _i = _lb lbAdd _name;
+                private _i = _lb lbAdd ((_name) call comspec_overwatch_connect_fnc_tr);
                 private _uiPath = (_path splitString "\") joinString "/";
                 if (_uiPath isNotEqualTo "") then { _lb lbSetPicture [_i, _uiPath] };
             } forEach _available;

@@ -10,6 +10,8 @@ $competencySchemaAvailable = !empty($competencySchemaAvailable);
 $competencyTrainerSchemaReady = !empty($competencyTrainerSchemaReady);
 $competencyMatricesSchemaReady = !empty($competencyMatricesSchemaReady);
 $pedagogyChainAssess = $pedagogyChainAssess ?? ['ok' => true, 'gaps' => []];
+$pedagogySteps = is_array($pedagogySteps ?? null) ? $pedagogySteps : [];
+$pedagogyDesignations = is_array($pedagogyDesignations ?? null) ? $pedagogyDesignations : [];
 $matrixCount = count($competencyMatrices);
 $userCount = count($competencyUsers);
 $assignedTotal = 0;
@@ -57,7 +59,7 @@ $ruleSummary = static function (array $parsed): string {
     <p class="tc-kicker">Vue commandement</p>
     <h1 class="tc-hero-title mb-4">Pilotage des compétences</h1>
     <p class="text-slate-600 text-sm max-w-3xl leading-relaxed">
-        Préparez la chaîne pédagogique, puis créez des <strong>groupes de suivi</strong> pour classer vos membres
+        Nommez d’abord qui conçoit, anime et valide les formations, puis créez si besoin des <strong>groupes de suivi</strong> pour classer vos membres
         (cadres, animateurs, parcours confirmés…). Ces groupes aident le commandement à voir qui est où — ils ne remplacent pas les droits ni les prérequis de formation.
     </p>
 </header>
@@ -103,54 +105,77 @@ $ruleSummary = static function (array $parsed): string {
     </article>
 </section>
 
-<section class="tc-panel p-6 space-y-3">
-    <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">1 · Préparer la chaîne pédagogique</h2>
-    <p class="text-sm text-slate-600 max-w-3xl leading-relaxed">
-        Avant de classer les membres, vérifiez que l’organisation a les sections utiles et un référent capable de valider les encadrants.
-        Cette étape concerne la gouvernance — pas les groupes de suivi ci-dessous.
-    </p>
-    <?php if (!empty($pedagogyChainAssess['ok'])): ?>
-    <p class="text-sm text-emerald-800 font-medium">Les profils clés attendus sont présents dans votre organisation.</p>
-    <?php else: ?>
+<section class="tc-panel p-6 space-y-4">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="max-w-3xl">
+            <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">1 · Qui fait quoi dans la formation</h2>
+            <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                La chaîne pédagogique compte quatre étapes. À chacune, vous <strong>nommez des personnes</strong> directement :
+                plus besoin de créer des rôles. La personne nommée reçoit un e-mail qui lui explique ce qu’elle peut faire.
+            </p>
+        </div>
+        <a href="<?= htmlspecialchars(training_lms_admin_url('competences/formateur'), ENT_QUOTES, 'UTF-8') ?>" class="tc-btn-primary tc-btn-emerald text-sm">Nommer une personne à chaque étape</a>
+    </div>
+
+    <?php if ($pedagogySteps !== []): ?>
+    <ol class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <?php foreach ($pedagogySteps as $kind => $step):
+            $named = $pedagogyDesignations[$kind] ?? [];
+            $names = array_map(static fn (array $d): string => trim((string) ($d['display_name'] ?? '')) ?: trim((string) ($d['email'] ?? '')), $named);
+            ?>
+        <li class="rounded-xl border <?= $named !== [] ? 'border-emerald-200 bg-emerald-50/50' : 'border-amber-200 bg-amber-50/50' ?> p-4">
+            <p class="text-[11px] font-black uppercase tracking-[0.2em] <?= $named !== [] ? 'text-emerald-700' : 'text-amber-800' ?>">Étape <?= htmlspecialchars($step['step'], ENT_QUOTES, 'UTF-8') ?></p>
+            <h3 class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars($step['title'], ENT_QUOTES, 'UTF-8') ?></h3>
+            <p class="mt-1 text-xs text-slate-600 leading-relaxed"><?= htmlspecialchars($step['lead'], ENT_QUOTES, 'UTF-8') ?></p>
+            <p class="mt-2 text-xs font-semibold <?= $named !== [] ? 'text-emerald-900' : 'text-amber-900' ?>">
+                <?= $named !== []
+                    ? htmlspecialchars(implode(', ', array_slice($names, 0, 4)) . (count($names) > 4 ? ' +' . (count($names) - 4) : ''), ENT_QUOTES, 'UTF-8')
+                    : 'Personne n’est nommé.' ?>
+            </p>
+            <a href="<?= htmlspecialchars(training_lms_admin_url('competences/formateur') . '#etape-' . $kind, ENT_QUOTES, 'UTF-8') ?>" class="mt-2 inline-block text-xs font-bold text-emerald-700 hover:underline"><?= $named !== [] ? 'Modifier' : 'Nommer quelqu’un' ?> →</a>
+        </li>
+        <?php endforeach; ?>
+    </ol>
+    <?php endif; ?>
+
+    <?php if (empty($pedagogyChainAssess['ok'])): ?>
     <ul class="list-disc pl-5 text-sm text-amber-900 space-y-1">
         <?php foreach ($pedagogyChainAssess['gaps'] as $gap): ?>
         <li><?= htmlspecialchars((string) $gap, ENT_QUOTES, 'UTF-8') ?></li>
         <?php endforeach; ?>
     </ul>
     <?php endif; ?>
-    <div class="flex flex-wrap gap-2 items-center">
-        <form method="post" class="inline">
-            <?= \App\Core\Csrf::field() ?>
-            <input type="hidden" name="action" value="ensure_org_sections">
-            <button type="submit" class="tc-btn-primary tc-btn-ghost text-sm">Vérifier les sections « pilotage » et « bureau des compétences »</button>
-        </form>
-    </div>
+
     <?php if ($competencyUsers !== []): ?>
-    <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-2">
-        <h3 class="text-xs font-black uppercase tracking-[0.15em] text-slate-700">Désigner un référent rapidement</h3>
+    <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-2">
+        <h3 class="text-xs font-black uppercase tracking-[0.15em] text-slate-700">Raccourci : nommer le référent formation</h3>
         <p class="text-xs text-slate-600 leading-relaxed max-w-2xl">
-            Choisissez la personne qui valide les encadrants et assure la gouvernance des concepteurs.
-            Des habilitations de validation lui seront ajoutées ; vous pourrez les ajuster ensuite dans l’espace formateur.
+            Le référent couvre les étapes 3 et 4 : il valide les encadrants et supervise les concepteurs.
+            Choisissez la personne par son nom ; aucun rôle n’est modifié.
         </p>
-        <form method="post" class="flex flex-wrap gap-2 items-end">
+        <form method="post" class="flex flex-wrap gap-3 items-end">
             <?= \App\Core\Csrf::field() ?>
-            <input type="hidden" name="action" value="quick_chain_referent">
-            <div class="min-w-[220px] flex-1">
-                <label class="block text-xs font-bold text-slate-600 mb-1">Membre</label>
-                <select name="target_user_id" required class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                    <option value="">— Choisir —</option>
-                    <?php foreach ($competencyUsers as $u): ?>
-                    <option value="<?= (int) $u['id'] ?>"><?= htmlspecialchars((string) ($u['display_name'] ?? $u['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <button type="submit" class="tc-btn-primary tc-btn-emerald text-sm">Désigner ce référent</button>
+            <input type="hidden" name="action" value="designate_referent">
+            <?php
+            $pickerUsers = $competencyUsers;
+            $pickerId = 'referent-target';
+            $pickerExcludeIds = [];
+            require base_path('views/admin/training/partials/pedagogy_member_picker.php');
+            ?>
+            <label class="inline-flex items-center gap-2 text-xs text-slate-700 pb-2">
+                <input type="checkbox" name="notify_email" value="1" checked>
+                Prévenir par e-mail
+            </label>
+            <button type="submit" class="tc-btn-primary tc-btn-emerald text-sm">Nommer ce référent</button>
         </form>
-        <?php if (!$competencyTrainerSchemaReady): ?>
-        <p class="text-xs text-slate-500">Une fois l’installation complète, l’espace formateur reflétera automatiquement cette désignation.</p>
-        <?php endif; ?>
     </div>
     <?php endif; ?>
+
+    <form method="post" class="inline">
+        <?= \App\Core\Csrf::field() ?>
+        <input type="hidden" name="action" value="ensure_org_sections">
+        <button type="submit" class="tc-btn-primary tc-btn-ghost text-sm">Vérifier les sections « pilotage » et « bureau des compétences »</button>
+    </form>
 </section>
 
 <?php if ($competencyMatricesSchemaReady): ?>

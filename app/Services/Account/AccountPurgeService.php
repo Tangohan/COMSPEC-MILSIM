@@ -133,11 +133,21 @@ final class AccountPurgeService
         'personnel_extras',
         'personnel_media',
         'personnel_admin_data',
-        'user_forum_stats',
         'user_alert_dismissals',
         'user_ui_tours',
         'user_roles',
         'recruitment_presets',
+        // Appartenances, rôles et affectations : « Ancien membre » ne doit pas devenir membre
+        // actif d’une communauté ni occuper un poste de l’ORBAT à la place de la personne.
+        'user_community_memberships',
+        'user_community_profiles',
+        'tenant_user_roles',
+        'user_units',
+        'user_notification_preferences',
+        'account_tenant_memberships',
+        'game_sessions',
+        'email_tokens',
+        'password_resets',
     ];
 
     /**
@@ -197,6 +207,14 @@ final class AccountPurgeService
      */
     public function purge(int $userId, array $siblingIds = []): array
     {
+        // Avant la suppression de la fiche : les tables de jeu sans user_id (Steam, indicatif) sont retrouvées par elle.
+        foreach (array_unique(array_merge([$userId], array_map('intval', $siblingIds))) as $pid) {
+            try {
+                (new \App\Services\Admin\PlayerTracePurgeService())->purgeUser((int) $pid, null);
+            } catch (\Throwable) {
+            }
+        }
+
         $report = [
             'ok' => true,
             'purged_user_ids' => [],
@@ -750,6 +768,23 @@ final class AccountPurgeService
 
             return $affected;
         } catch (Throwable $e) {
+            // Clé unique (une ligne par membre) déjà tenue par « Ancien membre » : les lignes
+            // qui passent sont réassignées, les doublons restants sont ceux de la personne
+            // et disparaissent avec elle, sans laisser de référence vers un compte effacé.
+            try {
+                $driver = (string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                $ignore = $driver === 'sqlite' ? 'UPDATE OR IGNORE' : 'UPDATE IGNORE';
+                $stmt = $pdo->prepare(
+                    $ignore . ' `' . $table . '` SET `' . $column . '` = ? WHERE `' . $column . '` IN (' . $placeholders . ')'
+                );
+                $stmt->execute(array_merge([$ghostId], $ids));
+                $affected = $stmt->rowCount();
+                $report['rows_reassigned'] = ($report['rows_reassigned'] ?? 0) + $affected;
+                $this->deleteRows($pdo, $table, $column, $ids, $report);
+
+                return $affected;
+            } catch (Throwable) {
+            }
             $report['errors'][] = $table . '.' . $column . ' (réassignation) : ' . $e->getMessage();
 
             return 0;

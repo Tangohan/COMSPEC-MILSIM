@@ -2,13 +2,13 @@
     <h2>Introduction</h2>
     <p class="site-docs__lead">
         Athena est le portail qui rassemble, pour une communauté milsim, tout ce qui se trouvait auparavant éparpillé entre un serveur de discussion, quelques fichiers partagés et des tableurs personnels :
-        les effectifs, les rôles et les droits, le forum, les documents officiels, les formations, le courrier, et le pilotage des activités au jour le jour via le mur opérationnel. Ce chapitre pose les repères
+        les effectifs, les rôles et les droits, les documents officiels, les formations, le courrier, et le pilotage des activités au jour le jour via le mur opérationnel. Ce chapitre pose les repères
         indispensables avant de parcourir le reste du guide.
     </p>
 
     <h3>Présentation générale</h3>
     <p>
-        Concrètement, le portail sert deux publics à la fois. D’un côté, les <strong>membres</strong> qui viennent consulter une consigne, s’inscrire à une formation, lire un sujet de forum ou vérifier
+        Concrètement, le portail sert deux publics à la fois. D’un côté, les <strong>membres</strong> qui viennent consulter une consigne, s’inscrire à une formation, lire une annonce ou vérifier
         leur fiche personnel. De l’autre, l’<strong>encadrement</strong> (état-major, cadres, référents de pôle) qui prépare le contenu, valide les décisions et pilote la vie de l’unité : publication d’une
         situation sur le mur, mise en ligne d’une formation, gestion des accès, suivi du recrutement. Le même site sert donc à la fois de vitrine de consultation et d’outil de gestion, la différence entre
         les deux tenant presque toujours à une question de <strong>droits</strong>, pas de compte différent.
@@ -22,7 +22,7 @@
     <h3>Fonctionnement</h3>
     <p>
         Deux principes structurent presque tous les modules du portail, et les comprendre une bonne fois vous fera gagner beaucoup de temps par la suite. Le premier est celui de la <strong>communauté active</strong> :
-        tout ce que vous voyez (personnel, documents, forum, formations, mur opérationnel) est rattaché à l’organisation dans laquelle vous êtes actuellement connecté ; ce point est détaillé dans le chapitre
+        tout ce que vous voyez (personnel, documents, formations, mur opérationnel) est rattaché à l’organisation dans laquelle vous êtes actuellement connecté ; ce point est détaillé dans le chapitre
         <a href="#communaute-et-contexte">Communauté &amp; contexte</a>. Le second est celui du <strong>cycle brouillon → publié</strong> : que ce soit une fiche du mur opérationnel, une formation dans le Studio
         ou un courrier officiel, le contenu passe presque toujours par une phase de préparation invisible du grand public avant d’être diffusé de façon contrôlée. Une fois ce schéma reconnu dans un module,
         vous le retrouverez presque à l’identique dans les autres.
@@ -41,7 +41,7 @@
     </p>
     <p>
         La plupart des membres n’ont besoin de lire en détail que quelques chapitres : compte et sécurité, navigation, tableau de bord, et le ou les modules réellement utilisés par leur unité (mur
-        opérationnel, formations, forum, personnel…). Les chapitres orientés pilotage (droits et rôles, back-office, administration) intéressent surtout l’état-major et les référents de pôle.
+        opérationnel, formations, personnel…). Les chapitres orientés pilotage (droits et rôles, back-office, administration) intéressent surtout l’état-major et les référents de pôle.
     </p>
     <div class="site-docs__callout site-docs__callout--tip">
         <strong>À retenir.</strong> Gardez votre adresse courriel à jour dans votre profil : elle sert à confirmer les actions sensibles, à recevoir les rappels importants et, le cas échéant,
@@ -131,7 +131,7 @@
 
     <h3>Présentation générale</h3>
     <p>
-        Une communauté correspond, dans le vocabulaire du site, à votre <strong>unité</strong> ou <strong>organisation</strong> : elle possède ses propres membres, ses propres rôles, son propre forum, ses
+        Une communauté correspond, dans le vocabulaire du site, à votre <strong>unité</strong> ou <strong>organisation</strong> : elle possède ses propres membres, ses propres rôles, ses
         propres documents, ses propres formations et son propre mur opérationnel. Deux communautés distinctes ne partagent en principe aucune de ces données entre elles, sauf lorsqu’un module de
         collaboration explicite (comme les coopérations inter-unités) est utilisé pour ouvrir un espace commun limité et encadré.
     </p>
@@ -143,7 +143,7 @@
     <h3>Fonctionnement</h3>
     <p>
         Lorsque vous êtes connecté, le site retient quelle communauté est actuellement <strong>active</strong> pour votre session : c’est cette communauté qui déterminera les menus affichés, les
-        permissions appliquées, et le contenu que vous verrez dans chaque module (personnel, forum, mur opérationnel, formations, documents…). Si votre compte n’est associé qu’à une seule communauté,
+        permissions appliquées, et le contenu que vous verrez dans chaque module (personnel, mur opérationnel, formations, documents…). Si votre compte n’est associé qu’à une seule communauté,
         cette étape est invisible et se fait automatiquement.
     </p>
     <p>
@@ -184,7 +184,7 @@
 
     <h3>Présentation générale</h3>
     <p>
-        Mettre en service le portail consiste, dans l’ordre, à installer le cadre (organisation, rôles), puis à peupler les espaces de contenu (forum, documents, formations), puis à faire entrer les
+        Mettre en service le portail consiste, dans l’ordre, à installer le cadre (organisation, rôles), puis à peupler les espaces de contenu (documents, formations), puis à faire entrer les
         effectifs, avant de basculer en exploitation courante. Respecter globalement cet ordre évite l’écueil le plus fréquent des déploiements précipités : inviter tous les membres avant que les rôles et
         les règles de base ne soient prêts, ce qui génère de la confusion et des demandes de support répétées.
     </p>
@@ -192,7 +192,7 @@
     <h3>Fonctionnement</h3>
     <p>
         Chaque étape du parcours dépend en partie de la précédente. Les rôles doivent exister avant que les invitations n’aient un sens, puisque c’est le rôle qui détermine ce qu’un nouveau membre pourra
-        faire dès sa première connexion. De la même façon, les catégories de forum et les dossiers documentaires gagnent à être définis avant l’arrivée massive de membres, pour éviter que chacun ne crée
+        faire dès sa première connexion. De la même façon, les dossiers documentaires gagnent à être définis avant l’arrivée massive de membres, pour éviter que chacun ne crée
         ses propres repères de façon désordonnée.
     </p>
     <p>
@@ -216,8 +216,8 @@
             envoie les invitations et valide les comptes créés. Prendre le temps de bien calibrer les rôles à ce stade évite d’avoir à corriger des dizaines de comptes individuellement plus tard.
         </li>
         <li>
-            <strong>Forum et documents</strong>
-            Mise en place des catégories de discussion et des règles de publication, puis des dossiers documentaires et de leurs niveaux d’accès. Ces deux espaces servent de socle d’information stable
+            <strong>Documents</strong>
+            Mise en place des dossiers documentaires et de leurs niveaux d’accès. Cet espace sert de socle d’information stable
             pour toute la suite du déploiement.
         </li>
         <li>
@@ -237,7 +237,7 @@
         </li>
     </ol>
     <div class="site-docs__callout">
-        <strong>Remarque.</strong> Rien n’empêche de mener plusieurs étapes en parallèle (par exemple préparer le forum pendant que les formations sont encore en rédaction) : l’ordre proposé ici sert de
+        <strong>Remarque.</strong> Rien n’empêche de mener plusieurs étapes en parallèle (par exemple préparer les documents pendant que les formations sont encore en rédaction) : l’ordre proposé ici sert de
         repère logique, pas de contrainte rigide imposée par le site.
     </div>
 
@@ -247,7 +247,7 @@
         progressivement une fois vérifié, plutôt que de tout exposer d’un coup à des membres qui découvrent le nouvel outil.
     </p>
     <p>
-        Une réorganisation ultérieure (fusion de rôles, refonte des catégories de forum, changement de structure hiérarchique) reste toujours possible après la mise en service initiale ; elle demande
+        Une réorganisation ultérieure (fusion de rôles, changement de structure hiérarchique) reste toujours possible après la mise en service initiale ; elle demande
         simplement plus de coordination puisque des membres actifs utilisent déjà l’outil au quotidien. Une unité peut également choisir de n’activer qu’une partie des modules (par exemple sans mur
         opérationnel dans un premier temps) : le parcours ci-dessus s’applique alors uniquement aux étapes réellement utilisées.
     </p>
@@ -274,7 +274,7 @@
 
     <h3>Fonctionnement</h3>
     <p>
-        Les permissions sont regroupées par grands domaines fonctionnels : forum (lire, écrire, modérer), documents (consulter, déposer, gérer les accès), formations (suivre un parcours, être assigné,
+        Les permissions sont regroupées par grands domaines fonctionnels : modération (traiter les signalements), documents (consulter, déposer, gérer les accès), formations (suivre un parcours, être assigné,
         corriger des rendus, publier du contenu), personnel (consulter ou modifier des fiches, informations sensibles, affectations), mur opérationnel (consulter, créer et modifier les entrées),
         invitations et gestion des membres, courrier officiel, et ainsi de suite. Les libellés exacts affichés à l’écran restent d’ordre métier, jamais des codes techniques.
     </p>
@@ -293,7 +293,7 @@
             <tbody>
                 <tr>
                     <td>Organisation (communauté)</td>
-                    <td>La quasi-totalité des actions du quotidien : forum, personnel, formations, documents, mur opérationnel, invitations, back-office de l’unité.</td>
+                    <td>La quasi-totalité des actions du quotidien : personnel, formations, documents, mur opérationnel, invitations, back-office de l’unité.</td>
                     <td>État-major, cadres, référents de pôle, membres selon leur rôle dans <em>votre</em> communauté.</td>
                 </tr>
                 <tr>
@@ -313,7 +313,7 @@
     <p>
         Attribuer une permission par une permission à chaque nouveau compte serait long et source d’erreurs ; c’est pourquoi l’administration peut appliquer des <strong>profils prédéfinis</strong> qui
         activent d’un coup un ensemble cohérent de permissions adapté à une fonction courante. On retrouve par exemple des profils comme <em>Membre actif</em>, <em>Instructeur / formateur</em>,
-        <em>RH &amp; recrutement</em>, <em>Modérateur forum (organisation)</em>, <em>Gestion documentaire</em>, <em>Commandement unité</em>, <em>Pôle formation</em>, <em>Cellule recrutement</em> ou
+        <em>RH &amp; recrutement</em>, <em>Modérateur (organisation)</em>, <em>Gestion documentaire</em>, <em>Commandement unité</em>, <em>Pôle formation</em>, <em>Cellule recrutement</em> ou
         <em>Administration organisation (complète)</em>. Ces profils accélèrent la mise en place ; des ajustements fins restent toujours possibles ensuite pour un compte précis, sans devoir repartir de
         zéro.
     </p>
@@ -359,15 +359,15 @@
         le socle de gouvernance ; tous les autres rôles opérationnels s’organisent en dessous.
     </p>
     <p>
-        Les rôles opérationnels, quant à eux, correspondent chacun à une fonction précise et reconnaissable dans une unité milsim. L’<strong>Opérateur</strong> est le membre titulaire type, avec accès au
-        forum, aux documents standards et aux formations selon son affectation. Le <strong>Cadre</strong> assure l’encadrement et la coordination d’équipe, avec une visibilité renforcée sur les ressources
-        utiles au commandement. Le <strong>Modérateur forum</strong> gère les espaces de discussion de l’unité — épinglage, signalements, catégories — mais uniquement à l’échelle de son organisation, pas
+        Les rôles opérationnels, quant à eux, correspondent chacun à une fonction précise et reconnaissable dans une unité milsim. L’<strong>Opérateur</strong> est le membre titulaire type, avec accès aux
+        documents standards et aux formations selon son affectation. Le <strong>Cadre</strong> assure l’encadrement et la coordination d’équipe, avec une visibilité renforcée sur les ressources
+        utiles au commandement. L’<strong>Officier communication</strong> porte les annonces et traite les signalements des membres, uniquement à l’échelle de son organisation, pas
         de la plateforme entière. Le <strong>RH (S1)</strong> tient les dossiers personnel, les grades et le suivi administratif des effectifs, tandis que le <strong>Recruteur</strong> anime le pipeline
         de recrutement et les échanges avec les candidats, en liaison avec le commandement. Le <strong>Visiteur</strong> dispose d’un accès limité, en attente d’intégration ou en tant que compte
         prospect, avec une lecture ciblée. L’<strong>Instructeur</strong> pilote le pôle formation : parcours, assignations, correction des rendus et suivi des qualifications. L’<strong>OPSAN</strong>
         couvre le volet santé et secours, avec une visibilité sur les informations médicales autorisées lorsque la politique de l’unité le permet. La <strong>Logistique</strong> gère le soutien matériel,
         les fiches équipement et la documentation associée, tandis que le <strong>R2 (transmissions)</strong> diffuse les informations officielles et coordonne les annonces. Enfin, la <strong>Période
-        d’essai</strong> encadre la participation d’un nouveau membre au forum en attendant sa titularisation complète.
+        d’essai</strong> encadre la participation d’un nouveau membre en attendant sa titularisation complète.
     </p>
     <div class="site-docs__table-wrap">
         <table class="site-docs__table">
@@ -381,16 +381,16 @@
             <tbody>
                 <tr><td>Fondateur</td><td>Vision et validation stratégique</td><td>Gouvernance de l’unité</td></tr>
                 <tr><td>État-major</td><td>Direction courante et pilotage</td><td>Organisation entière</td></tr>
-                <tr><td>Opérateur</td><td>Membre titulaire</td><td>Forum, documents, formations selon affectation</td></tr>
+                <tr><td>Opérateur</td><td>Membre titulaire</td><td>Documents, formations selon affectation</td></tr>
                 <tr><td>Cadre</td><td>Encadrement et coordination</td><td>Équipe / section</td></tr>
-                <tr><td>Modérateur forum</td><td>Modération des discussions</td><td>Forum de l’organisation</td></tr>
+                <tr><td>Officier communication</td><td>Annonces et signalements</td><td>Organisation</td></tr>
                 <tr><td>RH (S1)</td><td>Suivi administratif des effectifs</td><td>Personnel de l’organisation</td></tr>
                 <tr><td>Recruteur</td><td>Pipeline de recrutement</td><td>Candidatures et enrôlement</td></tr>
                 <tr><td>Instructeur</td><td>Pôle formation</td><td>Parcours, assignations, qualifications</td></tr>
                 <tr><td>OPSAN</td><td>Santé et secours</td><td>Informations médicales autorisées</td></tr>
                 <tr><td>Logistique</td><td>Soutien matériel</td><td>Équipement et documentation associée</td></tr>
                 <tr><td>R2 (transmissions)</td><td>Diffusion officielle</td><td>Annonces et coordination</td></tr>
-                <tr><td>Période d’essai</td><td>Intégration encadrée</td><td>Forum, en attente de titularisation</td></tr>
+                <tr><td>Période d’essai</td><td>Intégration encadrée</td><td>Accès limité, en attente de titularisation</td></tr>
             </tbody>
         </table>
     </div>
@@ -473,7 +473,7 @@
 
     <h3>Présentation générale</h3>
     <p>
-        Sa raison d’être est de faire gagner du temps : plutôt que de vérifier tour à tour le forum, les formations, les événements et le mur opérationnel, le tableau de bord met en avant les éléments qui
+        Sa raison d’être est de faire gagner du temps : plutôt que de vérifier tour à tour les formations, les événements et le mur opérationnel, le tableau de bord met en avant les éléments qui
         vous concernent directement — rappels, dossiers à suivre pour les équipes habilitées, liens vers les modules que vous utilisez le plus souvent. Il ne remplace aucun module en détail ; il en est le
         point d’entrée synthétique.
     </p>
@@ -507,13 +507,13 @@
     <h2>Mur &amp; tableau opérationnel</h2>
     <p class="site-docs__lead">
         Le mur opérationnel est le tableau de situation de votre communauté : permanences, consignes, informations flash, missions, formations et tâches internes y sont rassemblées pour que chacun sache,
-        d’un coup d’œil, quoi regarder sans fouiller le forum ou la messagerie. Ce chapitre en détaille le fonctionnement complet : c’est, avec les droits et rôles, le module le plus riche du portail.
+        d’un coup d’œil, quoi regarder sans fouiller la messagerie. Ce chapitre en détaille le fonctionnement complet : c’est, avec les droits et rôles, le module le plus riche du portail.
     </p>
 
     <h3>Présentation générale</h3>
     <p>
         Ce module répond à un besoin très concret dans une unité milsim : centraliser en un seul endroit une situation qui évolue en permanence — qui tient une permanence aujourd’hui, quelle mission est
-        en cours, quelle consigne vient de changer — plutôt que de la faire circuler de façon dispersée entre le forum, la messagerie interne et le bouche-à-oreille. L’état-major y <strong>publie une
+        en cours, quelle consigne vient de changer — plutôt que de la faire circuler de façon dispersée entre la messagerie interne et le bouche-à-oreille. L’état-major y <strong>publie une
         situation claire</strong> ; les membres y consultent <strong>ce qui les concerne</strong>, filtré selon leur unité, leur emploi et le niveau de sensibilité de l’information.
     </p>
 

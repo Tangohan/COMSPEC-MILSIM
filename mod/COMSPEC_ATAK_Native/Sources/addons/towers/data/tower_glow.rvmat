@@ -1,0 +1,9 @@
+// Pylône de 50 m : feu de balisage rouge (lumineux la nuit).
+ambient[]={1,1,1,1};
+diffuse[]={1,1,1,1};
+forcedDiffuse[]={0,0,0,0};
+emmisive[]={1,0.08,0.04,1};
+specular[]={0.08,0.08,0.08,1};
+specularPower=30;
+PixelShaderID="Normal";
+VertexShaderID="Basic";

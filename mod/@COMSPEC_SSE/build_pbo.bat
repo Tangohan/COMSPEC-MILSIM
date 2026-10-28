@@ -24,10 +24,18 @@ if not exist "%BUILDER_PATH%" (
 
 if exist "%TMP_DIR%" rd /s /q "%TMP_DIR%"
 mkdir "%TMP_DIR%"
+REM AddonBuilder copie chaque addon dans %TEMP%\<nom du dossier> sans jamais le vider : le "main" du SSE reprenait les
+REM fichiers du "main" de l'ATAK natif (comspec_sse_main.pbo de 119 Mo au lieu de 360 Ko, publie le 2026-10-26).
+REM Chaque addon a donc son propre dossier temporaire, vide a chaque build (-clear -temp), comme build_mod.bat.
+set "ABTMP=%TEMP%\comspec_sse_ab"
+if exist "%ABTMP%" rd /s /q "%ABTMP%"
 
-set "COMPONENTS=main core generator evidence intel interaction zeus eden ui network digital biometrics compat_bii compat_ace"
+REM Copies locales des en-tetes partages (pas d'#include entre PBO dans les config.cpp)
+where python >nul 2>&1 && python "%PROJECT_DIR%tools\sync_headers.py"
+
+set "COMPONENTS=main core generator evidence intel interaction zeus eden ui network digital biometrics analysis campaign guide compat_bii compat_ace compat_atak"
 REM debug optionnel : build_pbo.bat debug
-if /I "%~1"=="debug" set "COMPONENTS=main debug core generator evidence intel interaction zeus eden ui network digital biometrics compat_bii compat_ace"
+if /I "%~1"=="debug" set "COMPONENTS=main debug core generator evidence intel interaction zeus eden ui network digital biometrics analysis campaign guide compat_bii compat_ace compat_atak"
 set "FAILED=0"
 
 for %%C in (%COMPONENTS%) do (
@@ -38,7 +46,7 @@ for %%C in (%COMPONENTS%) do (
     ) else (
         echo [BUILD] comspec_sse_%%C ...
         echo [BUILD] comspec_sse_%%C ... >> "%BUILD_LOG%"
-        "%BUILDER_PATH%" "%ADDONS_DIR%\%%C" "%TMP_DIR%" -packonly -prefix=z\comspec_sse\addons\%%C >> "%BUILD_LOG%" 2>&1
+        "%BUILDER_PATH%" "%ADDONS_DIR%\%%C" "%TMP_DIR%" -packonly -clear -temp="%ABTMP%\%%C" -prefix=z\comspec_sse\addons\%%C >> "%BUILD_LOG%" 2>&1
         if errorlevel 1 (
             echo [ERREUR] AddonBuilder a echoue pour %%C
             echo [ERREUR] AddonBuilder a echoue pour %%C >> "%BUILD_LOG%"

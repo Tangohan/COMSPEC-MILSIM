@@ -1,0 +1,9 @@
+// Pylônes relais : radômes, béton, gaines de câbles (mat).
+ambient[]={1,1,1,1};
+diffuse[]={1,1,1,1};
+forcedDiffuse[]={0,0,0,0};
+emmisive[]={0,0,0,1};
+specular[]={0.06,0.06,0.06,1};
+specularPower=12;
+PixelShaderID="Normal";
+VertexShaderID="Basic";

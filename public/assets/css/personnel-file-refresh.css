@@ -26,10 +26,98 @@
   --pf-ease: cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
+/* ——— Colonne de page ———
+ * Le bandeau, les encarts (avancement, visibilité, avis) et les onglets partagent
+ * la même colonne centrée : plus rien ne colle au bord de la fenêtre. */
+.personnel-file--public {
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+  /* Respiration sous la barre du haut : le bandeau ne colle plus à l’en-tête. */
+  padding-top: 20px;
+}
+@media (min-width: 640px) {
+  .personnel-file--public { padding-left: 24px; padding-right: 24px; padding-top: 28px; }
+}
+@media (min-width: 768px) {
+  .personnel-file--public { padding-left: 32px; padding-right: 32px; }
+}
+.personnel-file--public .personnel-file-hub {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Encarts entre le bandeau et les onglets */
+.personnel-file-lead {
+  display: grid;
+  gap: 14px;
+}
+.personnel-file-lead:not(:has(*)) { display: none; }
+
+.personnel-file-lead .adv-panel--fiche {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 18px;
+  padding: 16px 20px;
+  background: #fff;
+  border: 1px solid var(--pf-line);
+  border-radius: 14px;
+  color: var(--pf-text);
+}
+.adv-panel--fiche .adv-kicker {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pf-muted);
+}
+.adv-panel--fiche h2 {
+  margin: 0;
+  font-family: var(--pf-display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--pf-ink);
+}
+.adv-panel--fiche p { margin: 0; font-size: 14px; }
+.adv-panel--fiche p:has(> a:only-child) { margin-left: auto; }
+.adv-panel--fiche p a {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid var(--pf-line);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pf-green-dark);
+  text-decoration: none;
+}
+.adv-panel--fiche p a:hover { background: var(--pf-green-soft); border-color: var(--pf-green); }
+.adv-panel--fiche .adv-timeline {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+.adv-panel--fiche .adv-timeline span { color: var(--pf-muted); margin-left: 4px; }
+.adv-panel--fiche form { margin: 0; }
+
 /* ——— En-tête ——— */
 .personnel-file-hero {
   border-radius: 16px;
-  overflow: hidden;
+  /* Pas de overflow: hidden : il coupait le menu « Signaler un problème » qui déborde sous l’en-tête. */
+  position: relative;
+  z-index: 5;
   background-image:
     radial-gradient(120% 140% at 100% 0%, rgba(18, 209, 142, 0.18) 0%, rgba(18, 209, 142, 0) 55%),
     linear-gradient(135deg, #0b0f12 0%, #131b20 60%, #0f1f1a 100%);

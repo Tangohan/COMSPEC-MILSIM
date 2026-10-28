@@ -6,9 +6,14 @@ _ctx params ["_disp", "_idcSum", "_idcList", "_idcDetail", "_isSeek"];
 if (isNull _disp) exitWith { false };
 
 private _rec = [] call comspec_sse_fnc_uiGetRecord;
+// Terminal SEEK : sans record ciblé, la personne de la fiche en cours sert de record.
+if (isNull _rec && {_isSeek}) then {
+    private _p = uiNamespace getVariable ["COMSPEC_SsePerson_Target", objNull];
+    if (!isNull _p && {_p isKindOf "CAManBase"}) then { _rec = _p; };
+};
 private _nav = "<t size='0.85' color='#8f8'>TERMINAL</t>  ·  Digital · SEEK · Site · Graph · Preuves · Mission";
 if (!_isSeek) then {
-    (_disp displayCtrl 93210) ctrlSetStructuredText parseText _nav;
+    (_disp displayCtrl 93210) ctrlSetStructuredText parseText ((_nav) call comspec_sse_fnc_tr);
 };
 
 private _sum = "";
@@ -20,10 +25,17 @@ if (isNull _rec) then {
     private _journal = if (!isNil "comspec_sse_fnc_getJournal") then { [] call comspec_sse_fnc_getJournal } else { [] };
     {
         if (_x isEqualType createHashMap) then {
-            _entries pushBack format ["%1 | %2", _x getOrDefault ["action", "?"], _x getOrDefault ["detail", ""]];
+            // Clés écrites par fn_addJournalEntry (clock, type, summary) ; les 20 entrées les plus récentes.
+            _entries pushBack format ["%1 | %2 | %3", _x getOrDefault ["clock", ""], _x getOrDefault ["type", "?"], _x getOrDefault ["summary", ""]];
         };
-    } forEach (_journal select [0, (count _journal) min 20]);
+    } forEach (_journal select [((count _journal) - 20) max 0, 20]);
     _detail = format ["<t color='#8f8'>Journal local</t><br/>%1 entrée(s)", count _journal];
+    if (_isSeek) then {
+        // Écran du SEEK : trois lignes au plus, police réduite — le texte complet était tronqué.
+        _sum = "<t size='0.5' color='#1d6b34'>Aucun record ciblé.</t><br/>"
+            + "<t size='0.42' color='#33414c'>Visez une cible SSE puis rouvrez le SEEK.</t>";
+        _detail = format ["<t size='0.42' color='#5a6670'>Journal local : %1 entrée(s)</t>", count _journal];
+    };
 } else {
     [_rec] call comspec_sse_fnc_ensureGenerated;
     private _data = [_rec] call comspec_sse_fnc_getData;
@@ -59,16 +71,29 @@ if (isNull _rec) then {
         _tx = if ([] call comspec_sse_fnc_isOnline) then {"ONLINE"} else {"OFFLINE QUEUE"};
     };
     _detail = format ["<t color='#8f8'>Transmission</t><br/>Statut: %1<br/>Intel révélé: %2<br/>Classe: %3", _tx, count _intel, typeOf _rec];
+    if (_isSeek) then {
+        // Écran du SEEK : résumé compact sur trois lignes (le détail complet débordait).
+        private _who = if (_name isNotEqualTo "") then { _name } else { if (_alias isNotEqualTo "") then { _alias } else { _type } };
+        _sum = format [
+            "<t size='0.5' color='#1d6b34'>%1</t> <t size='0.42' color='#5a6670'>· %2 · niv. %3</t><br/>"
+            + "<t size='0.42' color='#33414c'>Accès %4  ·  état %5</t>",
+            _who, _uid, _lvl, _acc, _estate
+        ];
+        if (_label isNotEqualTo "" && {_label isNotEqualTo _uid}) then { _entries = [format ["LABEL | %1", _label]] + _entries; };
+        _detail = format ["<t size='0.42' color='#5a6670'>Transmission %1  ·  intel révélé %2</t>", _tx, count _intel];
+    };
 };
 
-(_disp displayCtrl _idcSum) ctrlSetStructuredText parseText _sum;
+(_disp displayCtrl _idcSum) ctrlSetStructuredText parseText ((_sum) call comspec_sse_fnc_tr);
 if (!_isSeek) then {
-    (_disp displayCtrl _idcDetail) ctrlSetStructuredText parseText _detail;
+    (_disp displayCtrl _idcDetail) ctrlSetStructuredText parseText ((_detail) call comspec_sse_fnc_tr);
 } else {
-    (_disp displayCtrl _idcSum) ctrlSetStructuredText parseText (_sum + "<br/>" + _detail);
+    (_disp displayCtrl _idcSum) ctrlSetStructuredText parseText (((_sum + "<br/>" + _detail)) call comspec_sse_fnc_tr);
 };
 private _lb = _disp displayCtrl _idcList;
 lbClear _lb;
-{ _lb lbAdd _x; } forEach _entries;
-if (_entries isEqualTo []) then { _lb lbAdd "(aucun élément listé)"; };
+{ _lb lbAdd ((_x) call comspec_sse_fnc_tr); } forEach _entries;
+if (_entries isEqualTo []) then {
+    _lb lbAdd (((["(aucun élément listé)", "Rien à afficher pour l'instant."] select _isSeek)) call comspec_sse_fnc_tr);
+};
 true

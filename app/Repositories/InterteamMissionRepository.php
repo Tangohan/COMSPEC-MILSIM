@@ -140,74 +140,6 @@ class InterteamMissionRepository
         return $out;
     }
 
-    /**
-     * @return list<array<string, mixed>>
-     */
-    public function listGrantsForMission(int $missionId): array
-    {
-        if (!$this->tableExists() || $missionId <= 0) {
-            return [];
-        }
-        $stmt = $this->pdo->prepare(
-            'SELECT g.*, tn.name AS consumer_tenant_name
-             FROM interteam_mission_forum_grants g
-             INNER JOIN tenants tn ON tn.id = g.consumer_tenant_id
-             WHERE g.mission_id = ?
-             ORDER BY g.grant_type ASC, g.resource_id ASC'
-        );
-        $stmt->execute([$missionId]);
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-    }
-
-    /**
-     * Sujets partagés avec un tenant consommateur (mission active).
-     *
-     * @return list<array<string, mixed>>
-     */
-    public function listSharedTopicsForConsumer(int $consumerTenantId, int $limit = 50): array
-    {
-        if (!$this->tableExists() || $consumerTenantId <= 0) {
-            return [];
-        }
-        $limit = max(1, min(200, $limit));
-        $missionActive = SqlText::equalsLiteral($this->pdo, 'm.status', 'active');
-        $partActive = SqlText::equalsLiteral($this->pdo, 'p.status', 'active');
-        $sql = "SELECT g.mission_id, g.resource_id AS topic_id, g.home_tenant_id, m.slug AS mission_slug, m.title AS mission_title,
-                t.title AS topic_title, t.slug AS topic_slug
-            FROM interteam_mission_forum_grants g
-            INNER JOIN interteam_missions m ON m.id = g.mission_id AND {$missionActive}
-            INNER JOIN interteam_mission_participants p ON p.mission_id = g.mission_id AND p.tenant_id = ? AND {$partActive}
-            INNER JOIN forum_topics t ON t.id = g.resource_id AND t.tenant_id = g.home_tenant_id
-            WHERE g.grant_type = 'topic' AND g.consumer_tenant_id = ?
-            ORDER BY m.title ASC, t.updated_at DESC
-            LIMIT {$limit}";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$consumerTenantId, $consumerTenantId]);
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-    }
-
-    public function findTopicGrantForConsumer(string $missionSlug, int $topicId, int $consumerTenantId): ?array
-    {
-        if (!$this->tableExists() || $missionSlug === '' || $topicId <= 0 || $consumerTenantId <= 0) {
-            return null;
-        }
-        $slugEq = SqlText::equals($this->pdo, 'm.slug');
-        $missionActive = SqlText::equalsLiteral($this->pdo, 'm.status', 'active');
-        $partActive = SqlText::equalsLiteral($this->pdo, 'p.status', 'active');
-        $sql = "SELECT g.* FROM interteam_mission_forum_grants g
-            INNER JOIN interteam_missions m ON m.id = g.mission_id AND {$slugEq} AND {$missionActive}
-            INNER JOIN interteam_mission_participants p ON p.mission_id = g.mission_id AND p.tenant_id = ? AND {$partActive}
-            WHERE g.grant_type = 'topic' AND g.resource_id = ? AND g.consumer_tenant_id = ?
-            LIMIT 1";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$missionSlug, $consumerTenantId, $topicId, $consumerTenantId]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        return $row ?: null;
-    }
-
     public function createMission(string $title, string $slug, int $createdByTenantId, int $createdByUserId): int
     {
         $stmt = $this->pdo->prepare(
@@ -573,20 +505,6 @@ class InterteamMissionRepository
     }
 
     /**
-     * Retire les autorisations d’accès au brief accordées à une unité (retrait de la coopération).
-     */
-    public function deleteGrantsForConsumer(int $missionId, int $consumerTenantId): int
-    {
-        if (!$this->tableExists() || $missionId <= 0 || $consumerTenantId <= 0) {
-            return 0;
-        }
-        $stmt = $this->pdo->prepare('DELETE FROM interteam_mission_forum_grants WHERE mission_id = ? AND consumer_tenant_id = ?');
-        $stmt->execute([$missionId, $consumerTenantId]);
-
-        return $stmt->rowCount();
-    }
-
-    /**
      * Annulation d’une proposition (avant lancement) : status archived + phase cancelled.
      */
     public function markCancelled(int $missionId): void
@@ -616,42 +534,10 @@ class InterteamMissionRepository
         $stmt->execute([$status, $missionId, $tenantId]);
     }
 
-    public function addForumGrant(
-        int $missionId,
-        string $grantType,
-        int $resourceId,
-        int $homeTenantId,
-        int $consumerTenantId
-    ): void {
-        if (!in_array($grantType, ['category', 'topic'], true)) {
-            return;
-        }
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO interteam_mission_forum_grants (mission_id, grant_type, resource_id, home_tenant_id, consumer_tenant_id, created_at)
-             VALUES (?, ?, ?, ?, ?, NOW())
-             ON DUPLICATE KEY UPDATE home_tenant_id = VALUES(home_tenant_id)'
-        );
-        $stmt->execute([$missionId, $grantType, $resourceId, $homeTenantId, $consumerTenantId]);
-    }
-
     /**
-     * Supprime une autorisation, uniquement si elle appartient bien à la coopération indiquée.
+     * Unité porteuse de la coopération (celle qui l’a créée).
      */
-    public function deleteGrant(int $grantId, int $missionId): bool
-    {
-        if ($grantId <= 0 || $missionId <= 0) {
-            return false;
-        }
-        $stmt = $this->pdo->prepare('DELETE FROM interteam_mission_forum_grants WHERE id = ? AND mission_id = ? LIMIT 1');
-        $stmt->execute([$grantId, $missionId]);
-
-        return $stmt->rowCount() > 0;
-    }
-
-    /**
-     * Unité qui héberge le brief partagé (catégorie / sujets).
-     */
-    public function tenantIsForumHost(int $missionId, int $tenantId): bool
+    public function tenantIsLead(int $missionId, int $tenantId): bool
     {
         $m = $this->findById($missionId);
         if (!$m) {
@@ -659,12 +545,6 @@ class InterteamMissionRepository
         }
 
         return (int) ($m['created_by_tenant_id'] ?? 0) === $tenantId;
-    }
-
-    /** @deprecated Utiliser {@see tenantIsForumHost} */
-    public function tenantIsLead(int $missionId, int $tenantId): bool
-    {
-        return $this->tenantIsForumHost($missionId, $tenantId);
     }
 
     /**
@@ -697,14 +577,6 @@ class InterteamMissionRepository
         $stmt->execute([$missionId, $partnerTenantId]);
 
         return $stmt->rowCount() > 0;
-    }
-
-    public function deleteAllGrantsForMission(int $missionId): void
-    {
-        if (!$this->tableExists() || $missionId <= 0) {
-            return;
-        }
-        $this->pdo->prepare('DELETE FROM interteam_mission_forum_grants WHERE mission_id = ?')->execute([$missionId]);
     }
 
     /**
@@ -1152,7 +1024,7 @@ class InterteamMissionRepository
     }
 
     /**
-     * Duplique une coopération clôturée ou brouillon vers un nouveau brouillon (sans participants ni forum).
+     * Duplique une coopération clôturée ou brouillon vers un nouveau brouillon (sans participants).
      */
     public function duplicateMissionAsDraft(int $sourceId, int $creatorTenantId, int $creatorUserId, string $newTitle, string $newSlug): int
     {
@@ -1259,17 +1131,6 @@ class InterteamMissionRepository
         $this->pdo->prepare($sql)->execute($params);
     }
 
-    public function setCoopForumIds(int $missionId, ?int $categoryId, ?int $topicId): void
-    {
-        if (!$this->tableExists() || !$this->columnExists('interteam_missions', 'coop_forum_category_id')) {
-            return;
-        }
-        $stmt = $this->pdo->prepare(
-            'UPDATE interteam_missions SET coop_forum_category_id = ?, coop_forum_topic_id = ?, cooperation_starts_at = COALESCE(cooperation_starts_at, NOW()), updated_at = NOW() WHERE id = ? LIMIT 1'
-        );
-        $stmt->execute([$categoryId, $topicId, $missionId]);
-    }
-
     public function columnExists(string $table, string $column): bool
     {
         try {
@@ -1339,7 +1200,7 @@ class InterteamMissionRepository
         if (!$m || ($m['status'] ?? '') !== 'pending') {
             return false;
         }
-        if ($this->tenantIsForumHost($missionId, $tenantId)) {
+        if ($this->tenantIsLead($missionId, $tenantId)) {
             return false;
         }
         $stmt = $this->pdo->prepare(

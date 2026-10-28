@@ -1,0 +1,102 @@
+#include "script_component.hpp"
+/*
+    Analyse : relais serveur, notes aux joueurs, menus ACE et Zeus.
+*/
+if (isServer) then {
+    // Organisations, génération et scellés : appels distants (liste blanche CfgRemoteExec), demandeur retrouvé par
+    // remoteExecutedOwner. Plus de relais CBA anonyme : les opérations de Zeus sont réservées aux Zeus et administrateurs.
+    {
+        if (isNil _x) then { missionNamespace setVariable [_x, createHashMap]; publicVariable _x; };
+    } forEach ["comspec_sse_orgs", "comspec_sse_orgMembers", "comspec_sse_anaSeen", "comspec_sse_custody"];
+    // Après l'attribution des clés biométriques (une image après l'apparition).
+    [{ [] call comspec_sse_fnc_orgApplyEden; }, [], 1.5] call CBA_fnc_waitAndExecute;
+};
+
+// Sachets scellés remis à un équipier (custody « transfer », serveur) : inventaire modifié là où l'unité est locale.
+["comspec_sse_custodyBags", {
+    params [["_unit", objNull], ["_n", 0]];
+    if (isNull _unit || {!local _unit}) exitWith {};
+    for "_i" from 1 to (abs _n) do {
+        if (_n < 0) then { _unit removeItem "COMSPEC_SSE_EvidenceBag"; } else {
+            if (_unit canAdd "COMSPEC_SSE_EvidenceBag") then { _unit addItem "COMSPEC_SSE_EvidenceBag"; } else {
+                // Inventaire plein : le sachet est posé aux pieds du destinataire plutôt que perdu.
+                private _h = createVehicle ["GroundWeaponHolder", getPosATL _unit, [], 0, "CAN_COLLIDE"];
+                _h addItemCargoGlobal ["COMSPEC_SSE_EvidenceBag", 1];
+            };
+        };
+    };
+}] call CBA_fnc_addEventHandler;
+
+if (!hasInterface) exitWith {};
+
+["comspec_sse_anaNote", {
+    params [["_msg", "", [""]]];
+    if (_msg isEqualTo "") exitWith {};
+    // Notification du téléphone (bulle si fermé), traduite avant la mise en forme.
+    [_msg, "INFO", "SSE · Analyse"] call comspec_sse_fnc_notify;
+}] call CBA_fnc_addEventHandler;
+
+// Tableau des liens et registre ouverts : suivent l'état diffusé par le serveur
+// (l'événement part après les publicVariable, qui arrivent dans l'ordre).
+// Regroupé : une génération de réseau publie une fois par membre.
+["comspec_sse_anaChanged", {
+    if (missionNamespace getVariable ["comspec_sse_anaRefreshQueued", false]) exitWith {};
+    missionNamespace setVariable ["comspec_sse_anaRefreshQueued", true];
+    [{
+        missionNamespace setVariable ["comspec_sse_anaRefreshQueued", false];
+        if (!isNull (uiNamespace getVariable ["comspec_sse_chartDisplay", displayNull])) then { [false] call comspec_sse_fnc_chartRefresh; };
+        if ((missionNamespace getVariable ["comspec_sse_uiScreen", ""]) isEqualTo "evidence" && {!isNil "comspec_sse_fnc_uiRefresh"}) then { ["evidence"] call comspec_sse_fnc_uiRefresh; };
+    }, [], 0.5] call CBA_fnc_waitAndExecute;
+}] call CBA_fnc_addEventHandler;
+
+// ---------------------------------------------------------------- ACE
+[{ !isNil "ace_interact_menu_fnc_createAction" && {!isNull player} }, {
+    private _p = [false, false, false, false, true];
+    private _none = { [] };
+    // Tableau des liens, registre et pièces détenues : app « SSE terrain » du téléphone ATAK (onglets SITE et SCELLÉS).
+    // Remise des pièces à un équipier : inscrite au journal de chacune.
+    private _give = [
+        "COMSPEC_SSE_GiveSeals", "Remettre mes pièces scellées", "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
+        {
+            params ["_target", "_player"];
+            [5, "Remise des scellés, émargement...", {
+                params ["_target", "_player"];
+                ["transfer", [_player, _target]] call comspec_sse_fnc_custody;
+            }, [_target, _player]] call comspec_sse_fnc_progressAction;
+        },
+        {
+            params ["_target", "_player"];
+            isPlayer _target && {alive _target} && {_target != _player} && {(["held", [_player]] call comspec_sse_fnc_custody) isNotEqualTo []}
+        },
+        _none, [], {[0, 0, 0]}, 3, _p
+    ] call comspec_sse_fnc_aceAction;
+    ["CAManBase", 0, ["ACE_MainActions"], _give, true] call ace_interact_menu_fnc_addActionToClass;
+}, [], 60] call CBA_fnc_waitUntilAndExecute;
+
+// ---------------------------------------------------------------- Zeus (ZEN)
+[{ !isNil "zen_custom_modules_fnc_register" }, {
+    private _sel = {
+        params ["_obj"];
+        private _s = [] call comspec_sse_fnc_curatorSelectedObjects;
+        if (!isNull _obj) then { _s pushBackUnique _obj; };
+        _s
+    };
+    missionNamespace setVariable ["comspec_sse_anaZenSel", _sel];
+    {
+        _x params ["_cat", "_name", "_code", "_icon"];
+        [_cat, _name, _code, _icon] call comspec_sse_fnc_zenModule;
+    } forEach [
+        ["COMSPEC SSE · Personnes", "Organisation : affecter", { params ["_pos", "_obj"]; ["assign", [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel")] call comspec_sse_fnc_orgZeusForm; }, "\A3\ui_f\data\map\markers\nato\o_hq.paa"],
+        ["COMSPEC SSE · Personnes", "Organisation : générer un réseau", { params ["_pos", "_obj"]; private _s = [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel"); if (count _s == 1 && {(_s select 0) isKindOf "CAManBase"}) then { _s = units group (_s select 0); }; ["generate", _s] call comspec_sse_fnc_orgZeusForm; }, "\A3\ui_f\data\map\markers\nato\o_hq.paa"],
+        ["COMSPEC SSE · Personnes", "Organisation : rattacher des objets", { params ["_pos", "_obj"]; ["link", [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel")] call comspec_sse_fnc_orgZeusForm; }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\box_ca.paa"],
+        ["COMSPEC SSE · Personnes", "Organisation : révéler aux joueurs", { params ["_pos", "_obj"]; ["reveal", [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel")] call comspec_sse_fnc_orgZeusForm; }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\intel_ca.paa"],
+        ["COMSPEC SSE · Personnes", "Organisation : retirer", { params ["_pos", "_obj"]; ["remove", [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel")] call comspec_sse_fnc_orgZeusForm; }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\exit_ca.paa"],
+        ["COMSPEC SSE · Personnes", "Tableau des liens (vue Zeus)", { [true] call comspec_sse_fnc_chartOpen; }, "\A3\ui_f\data\map\markers\nato\o_hq.paa"],
+        ["COMSPEC SSE · Mission", "Scellé : altérer le journal (exercice)", {
+            params ["_pos", "_obj"];
+            private _done = 0;
+            { if ((_x getVariable ["COMSPEC_SSE_PieceId", ""]) isNotEqualTo "") then { ["tamper", [_x]] call comspec_sse_fnc_custody; _done = _done + 1; }; } forEach ([_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel"));
+            [[format ["%1 journal(aux) altéré(s) : la vérification du registre le signalera.", _done], "Aucune pièce saisie dans la sélection."] select (_done isEqualTo 0)] call comspec_sse_fnc_zeusNotify;
+        }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\danger_ca.paa"]
+    ];
+}, [], 45] call CBA_fnc_waitUntilAndExecute;

@@ -8,7 +8,10 @@
       "follow"  [cible, altitude, km/h]     suit une unité (le pilote ou un autre joueur), 15 m derrière ;
       "home"    [pilote, altitude, km/h]    revient au pilote puis se pose à côté ;
       "land"    []                          se pose sur place ;
-      "manual"  []                          rend la main au terminal UAV du pilote : le drone reste en stationnaire ;
+      "manual"  []                          rend la main au terminal UAV du pilote : le drone obéit aux points de passage
+                                            du terminal (plus de doStop) ;
+      "release" []                          drone désappairé : même remise aux ordres de son groupe, mode effacé ;
+      "stick"   []                          manette du téléphone : pilotage direct par COMSPEC_DroneStick (voir plus bas) ;
       "rth"     [position ASL]              liaison perdue : retour au point de décollage et atterrissage ;
       "alt"     [altitude] / "speed" [km/h] réglages en vol ;
       "cqb"     [actif, altitude, km/h]     profil CQB (2 à 8 m, 5 à 15 km/h) : vol bas piloté par une boucle à nous
@@ -17,8 +20,10 @@
                                             escorte, aller et retour. Orbite, observation, recherche et frappe en sortent ;
                                             liaison perdue en CQB : le drone se pose sur place (pas de remontée sous un toit).
       "strike"  [cible (position ASL ou objet), pilote]   tir et oublie : approche puis piqué final ;
-      "hunt"    [rayon, pilote]             recherche : orbite et premier ennemi vu, frappé si armé, signalé sinon ;
-      "goto"    [position ASL]              tâche ALLER : rejoint le point puis passe en stationnaire ;
+      "hunt"    [rayon, pilote]             recherche : balayage en bandes parallèles puis croisées (vol piloté par notre
+                                            boucle, montée en avançant), premier ennemi vu frappé si armé, signalé sinon ;
+      "goto"    [position ASL(, fin)]       tâche ALLER : rejoint le point puis passe en stationnaire ; fin "HOVER" se cale
+                                            au-dessus du point (à 6 m près) avant le stationnaire, fin "LAND" s'y pose ;
       "loiter"  [position ASL, rayon]       tâche ORBITE : tourne autour du point au rayon donné ;
       "observe" [position ASL, rayon]       tâche OBSERVER : même orbite, la caméra du pilote reste pointée sur le point ;
       "escort"  [unité]                     tâche ESCORTE : suit l'unité (ou son véhicule) 30 m en arrière ;
@@ -42,6 +47,7 @@
     COMSPEC_DroneTask ([tâche, position ASL, rayon] de la tâche en cours, [] sinon),
     COMSPEC_DroneRoute ([positions, mode, étape en cours] de la route, pour la carte),
     COMSPEC_DroneEvt ([n°, type, position ASL, quoi] : dernier événement de la recherche, lu par le journal du pilote),
+    COMSPEC_DroneSlot (rang dans la flotte du pilote, fn_droneFleet : suivi décalé sur le côté), COMSPEC_DroneRole (rôle tenu seul),
     COMSPEC_DroneAckN (compteur d'ordres traités), COMSPEC_DroneStandby ("LAND" | "HOVER" en veille), COMSPEC_DroneForced (time du
     dernier FORCER L'EXÉCUTION). Posées par le téléphone : COMSPEC_DroneOwner, COMSPEC_DroneLock, COMSPEC_DroneName, COMSPEC_DroneIcon.
 */
@@ -89,7 +95,9 @@ private _routeNext = {
 private _crew = {
     if (!isNull driver _d && {alive driver _d}) exitWith {};
     { if (!alive _x) then { _d deleteVehicleCrew _x; }; } forEach (crew _d);
-    createVehicleCrew _d;
+    // Groupe d'origine supprimé une fois vide (sinon un groupe vide de plus par prise du drone, plafond de 288 par camp).
+    private _cg = createVehicleCrew _d;
+    if (!isNull _cg) then { _cg deleteGroupWhenEmpty true; };
     private _side = _d getVariable ["COMSPEC_DroneSide", sideUnknown];
     if (_side in [west, east, independent] && {(side group driver _d) isNotEqualTo _side}) then { (crew _d) joinSilent (createGroup [_side, true]); };
 };
@@ -109,15 +117,15 @@ private _start = {
     };
     true
 };
-// Charge militaire : munition créée à l'impact et déclenchée aussitôt.
+// Charge militaire : munition créée à l'impact et déclenchée aussitôt (une seule fois : la charge est retirée avant
+// que le drone soit détruit, ses gestionnaires « touché » et « détruit » ne la relancent pas).
 private _detonate = {
     private _ammo = _d getVariable ["COMSPEC_DroneArmed", ""];
-    if (_ammo isNotEqualTo "") then {
-        private _a = createVehicle [_ammo, ASLToAGL (getPosASL _d), [], 0, "CAN_COLLIDE"];
-        triggerAmmo _a;
-    };
+    if (_ammo isEqualTo "") exitWith {};
     _d setVariable ["COMSPEC_DroneArmed", "", true];
-    _d setDamage 1;
+    private _a = createVehicle [_ammo, ASLToAGL (getPosASL _d), [], 0, "CAN_COLLIDE"];
+    triggerAmmo _a;
+    if (alive _d) then { _d setDamage 1; };
 };
 // FORCER L'EXÉCUTION : on remet l'IA de vol d'aplomb, puis l'ordre est rejoué comme s'il arrivait.
 if (_cmd isEqualTo "force") then {
@@ -140,9 +148,9 @@ if (_cmd isEqualTo "force") then {
     _args = _fa;
 };
 // Veille quittée par un ordre de vol : consommation normale.
-if (_cmd in ["takeoff", "hover", "follow", "home", "land", "hunt", "goto", "loiter", "observe", "escort", "route", "rth", "strike", "manual"]) then { _d setVariable ["COMSPEC_DroneStandby", nil, true]; };
+if (_cmd in ["takeoff", "hover", "follow", "home", "land", "hunt", "goto", "loiter", "observe", "escort", "route", "rth", "strike", "manual", "release", "stick"]) then { _d setVariable ["COMSPEC_DroneStandby", nil, true]; };
 // Ordre de vol donné au sol : décollage d'abord (le retour au pilote d'un drone déjà posé ne le fait pas redécoller).
-if (_cmd in ["takeoff", "hover", "follow", "escort", "goto", "loiter", "observe", "strike", "hunt", "route"]) then { call _start; };
+if (_cmd in ["takeoff", "hover", "follow", "escort", "goto", "loiter", "observe", "strike", "hunt", "route", "stick"]) then { call _start; };
 // Profil CQB : l'IA de vol ne sait pas passer une porte, notre boucle prend la main ; les ordres « hauts » en sortent.
 private _cqb = _d getVariable ["COMSPEC_DroneCqb", false];
 if (_cqb && {_cmd in ["loiter", "observe", "hunt", "strike"]}) then {
@@ -156,6 +164,7 @@ if (!isNull driver _d) then { if (_cqb && {_cmd in ["takeoff", "hover", "follow"
 if (_cqb && {_cmd in ["takeoff", "hover", "follow", "escort", "goto", "home", "route"]}) exitWith {
     private _t = _args param [0, objNull];
     private _rmode = _args param [1, "ONCE"];
+    private _end = [_args param [1, ""], ""] select (_cmd isNotEqualTo "goto");
     if (_cmd isEqualTo "route" && {!(_t isEqualType []) || {(count _t) isEqualTo 0}}) exitWith {};
     if (_cmd in ["follow", "escort", "home"] && {!(_t isEqualType objNull) || {isNull _t}}) exitWith {};
     if (_cmd isEqualTo "home" && {((getPosATL _d) select 2) < 1}) exitWith {};
@@ -168,26 +177,29 @@ if (_cqb && {_cmd in ["takeoff", "hover", "follow", "escort", "goto", "home", "r
     private _goal = switch (_kind) do { case "HOLD": { getPosASL _d }; case "ROUTE": { _t select 0 }; default { _t }; };
     private _loop = _d getVariable ["COMSPEC_DroneLoop", 0];
     doStop _d;
-    [_d, _goal, _kind, _loop, [_t, []] select (_kind isNotEqualTo "ROUTE"), _rmode, _routeNext] spawn {
-        params ["_d", "_goal", "_kind", "_loop", "_route", "_rmode", "_routeNext"];
+    [_d, _goal, _kind, _loop, [_t, []] select (_kind isNotEqualTo "ROUTE"), _rmode, _routeNext, _end] spawn {
+        params ["_d", "_goal", "_kind", "_loop", "_route", "_rmode", "_routeNext", "_end"];
         private _blocked = 0;
         private _ri = 0;
         private _rdir = 1;
         private _ign = if (_goal isEqualType objNull) then { vehicle _goal } else { objNull };
-        while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+        while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
             private _pos = getPosASL _d;
             // Point visé : la cible suivie (5 m derrière elle, à hauteur d'homme) ou le point fixe.
             private _g = if (_goal isEqualType objNull) then {
                 if (!alive _goal) then { _pos } else {
                     private _dir = getDir (vehicle _goal);
                     private _off = [5, 0] select (_kind isEqualTo "HOME");
-                    (getPosASL _goal) vectorAdd [-_off * sin _dir, -_off * cos _dir, 0]
+                    // Flotte : chaque drone de rang > 0 se tient sur le côté (2,5 m par rang, alternativement à droite et à gauche).
+                    private _sl = _d getVariable ["COMSPEC_DroneSlot", 0];
+                    private _lat = [0, 2.5 * ceil (_sl / 2) * ([-1, 1] select ((_sl mod 2) isEqualTo 1))] select (_kind isNotEqualTo "HOME");
+                    (getPosASL _goal) vectorAdd [-_off * sin _dir + _lat * cos _dir, -_off * cos _dir - _lat * sin _dir, 0]
                 }
             } else { _goal };
             private _h = [(_g select 0) - (_pos select 0), (_g select 1) - (_pos select 1), 0];
             private _dist = vectorMagnitude _h;
             if (_kind isEqualTo "HOME" && {_dist < 4}) exitWith { _d setVariable ["COMSPEC_DroneMode", "LAND", true]; (driver _d) enableAI "MOVE"; _d land "LAND"; };
-            if (_kind isEqualTo "GOTO" && {_dist < 1}) exitWith { [_d, "hover", []] call comspec_atak_native_fnc_droneCmd; };
+            if (_kind isEqualTo "GOTO" && {_dist < 1}) exitWith { [_d, ["hover", "land"] select (_end isEqualTo "LAND"), []] call comspec_atak_native_fnc_droneCmd; };
             if (_kind isEqualTo "ROUTE" && {_dist < 1}) then {
                 ([_ri, count _route, _rmode, _rdir] call _routeNext) params ["_ni", "_nd"];
                 _ri = _ni; _rdir = _nd;
@@ -256,22 +268,72 @@ switch (_cmd) do {
             private _f0 = fuel _d;
             private _t0 = time;
             private _rate = [0.10, 0.02] select (_kind isEqualTo "LAND");
-            while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
                 // Posé : moteurs coupés une fois au sol.
                 if (_kind isEqualTo "LAND" && {isEngineOn _d} && {((getPosATL _d) select 2) < 0.6} && {(speed _d) < 2}) then { _d engineOn false; };
-                _d setFuel ((_f0 - _rate * (time - _t0) / 3600) max 0);
+                // setFuel est diffusé à tous : seulement quand l'écart dépasse 0,2 % (moteur coupé : quelques fois par heure).
+                private _f = (_f0 - _rate * (time - _t0) / 3600) max 0;
+                if (abs ((fuel _d) - _f) > 0.002) then { _d setFuel _f; };
                 sleep 5;
             };
         };
     };
-    case "manual": { ["MANUAL"] call _setMode; doStop _d; _d flyInHeight [_alt, true]; };
+    // Main rendue au terminal UAV (manuel) ou drone libéré (désappairage) : plus de doStop ni de boucle à nous. Un doStop
+    // laissé en place faisait ignorer au drone les points de passage du terminal (clic droit « aller ici » sans effet,
+    // retour d'un joueur, 19/10) ; doFollow le rend aux ordres de son groupe, ceux que pose le terminal.
+    case "manual";
+    case "release": {
+        ["MANUAL"] call _setMode;
+        if (_cmd isEqualTo "release") then { _d setVariable ["COMSPEC_DroneMode", nil, true]; _d setVariable ["COMSPEC_DroneStick", nil, true]; };
+        { _x enableAI "MOVE"; _x enableAI "PATH"; _x doFollow (leader group _x); } forEach (crew _d);
+        _d land "NONE";
+        _d flyInHeight [_alt, true];
+    };
+    // Manette du téléphone : pilotage direct, comme au terminal. COMSPEC_DroneStick [avant, droite, montée, lacet] de -1
+    // à 1, posé par le téléphone (fn_droneAction "stickSet") ; vitesse au plus celle choisie, lacet 60 °/s, montée 3 m/s.
+    // Sans montée demandée, l'altitude est tenue ; jamais sous 1 m du sol, arrêt devant un obstacle (comme le CQB).
+    case "stick": {
+        ["STICK"] call _setMode;
+        _d setVariable ["COMSPEC_DroneStick", [0, 0, 0, 0], true];
+        if (!isNull driver _d) then { (driver _d) disableAI "MOVE"; };
+        doStop _d;
+        private _loop = _d getVariable ["COMSPEC_DroneLoop", 0];
+        [_d, _loop] spawn {
+            params ["_d", "_loop"];
+            // Posé : il monte d'abord à 3 m, puis tient son altitude.
+            private _holdZ = ((getPosASL _d) select 2) max ((getTerrainHeightASL (getPosASL _d)) + 3);
+            private _t0 = time;
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+                private _dt = ((time - _t0) max 0.01) min 0.2;
+                _t0 = time;
+                (_d getVariable ["COMSPEC_DroneStick", [0, 0, 0, 0]]) params [["_f", 0], ["_r", 0], ["_u", 0], ["_y", 0]];
+                private _pos = getPosASL _d;
+                private _agl = (getPosATL _d) select 2;
+                // Au sol avec montée demandée : moteurs d'abord.
+                if (_u > 0 && {!isEngineOn _d}) then { _d engineOn true; };
+                private _dir = (getDir _d) + _y * 60 * _dt;
+                private _spd = (_d getVariable ["COMSPEC_DroneSpd", 40]) / 3.6;
+                private _vh = ([sin _dir, cos _dir, 0] vectorMultiply (_f * _spd)) vectorAdd ([cos _dir, -sin _dir, 0] vectorMultiply (_r * _spd));
+                private _m = vectorMagnitude _vh;
+                if (_m > 0.1 && {(count (lineIntersectsSurfaces [_pos, _pos vectorAdd ((vectorNormalized _vh) vectorMultiply (2 + 0.5 * _m)), _d, objNull, true, 1])) > 0}) then { _vh = [0, 0, 0]; };
+                private _vz = if (_u isNotEqualTo 0) then { _holdZ = _pos select 2; _u * 3 } else { ((_holdZ - (_pos select 2)) * 1.5) max -2 min 2 };
+                if (_agl < 1 && {_vz < 0}) then { _vz = 0; _holdZ = _pos select 2; };
+                if (_vz > 0 && {(count (lineIntersectsSurfaces [_pos, _pos vectorAdd [0, 0, 0.8], _d, objNull, true, 1])) > 0}) then { _vz = 0; _holdZ = _pos select 2; };
+                if (isEngineOn _d && {_agl > 0.3 || {_vz > 0}}) then {
+                    _d setVectorDirAndUp [[sin _dir, cos _dir, 0], [0, 0, 1]];
+                    _d setVelocity [_vh select 0, _vh select 1, _vz];
+                };
+                sleep 0.02;
+            };
+        };
+    };
     case "rth": {
         _args params [["_home", getPosASL _d]];
         ["RTH"] call _setMode;
         private _loop = _d getVariable ["COMSPEC_DroneLoop", 0];
         [_d, _home, _loop] spawn {
             params ["_d", "_home", "_loop"];
-            while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
                 if ((_d distance2D _home) < 15) exitWith { _d land "LAND"; };
                 _d flyInHeight [(_d getVariable ["COMSPEC_DroneAlt", 40]) max 40, true];
                 _d doMove (ASLToAGL _home);
@@ -293,13 +355,36 @@ switch (_cmd) do {
             params ["_d", "_t", "_loop", "_cmd"];
             // Escorte : plus loin en arrière, pour voir le convoi et ce qui l'attend devant.
             private _off = [15, 30] select (_cmd isEqualTo "escort");
-            while { alive _d && {alive _t} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
-                private _dir = getDir (vehicle _t);
-                private _p = (getPosASL _t) vectorAdd [-_off * sin _dir, -_off * cos _dir, 0];
+            // Cap de référence : celui du déplacement de la cible, gardé quand elle s'arrête (sinon le point visé tournait
+            // avec son regard et l'IA de vol décrivait des cercles sans fin autour d'un joueur immobile).
+            private _ref = getDir (vehicle _t);
+            private _held = false;
+            while { alive _d && {local _d} && {alive _t} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+                private _vt = velocity (vehicle _t);
+                private _moving = (vectorMagnitude [_vt select 0, _vt select 1, 0]) > 1;
+                if (_moving) then { _ref = (_vt select 0) atan2 (_vt select 1); };
+                // Flotte : rang > 0 décalé sur le côté (8 m par rang, alternativement à droite et à gauche) pour ne pas se gêner.
+                private _sl = _d getVariable ["COMSPEC_DroneSlot", 0];
+                private _lat = [0, 8 * ceil (_sl / 2) * ([-1, 1] select ((_sl mod 2) isEqualTo 1))] select (_cmd isNotEqualTo "home");
+                private _p = (getPosASL _t) vectorAdd [-_off * sin _ref + _lat * cos _ref, -_off * cos _ref - _lat * sin _ref, 0];
                 if (_cmd isEqualTo "home" && {(_d distance2D _t) < 25}) exitWith { _d setVariable ["COMSPEC_DroneMode", "LAND", true]; _d land "LAND"; };
                 _d flyInHeight [_d getVariable ["COMSPEC_DroneAlt", 40], true];
                 _d limitSpeed (_d getVariable ["COMSPEC_DroneSpd", 40]);
-                _d doMove (ASLToAGL _p);
+                // Cible immobile et drone déjà près de son point : stationnaire sur place, nez vers elle, au lieu d'un
+                // nouveau doMove (que l'IA d'un hélicoptère transforme en orbite autour du point).
+                if (!_moving && {_cmd isNotEqualTo "home"} && {(_d distance2D _p) < 15}) then {
+                    if (!_held) then {
+                        _held = true;
+                        doStop _d;
+                        _d doMove (getPosATL _d);
+                    };
+                    _d doWatch _t;
+                    private _vd = velocity _d;
+                    if ((vectorMagnitude [_vd select 0, _vd select 1, 0]) > 1.5) then { _d setVelocity [(_vd select 0) * 0.6, (_vd select 1) * 0.6, _vd select 2]; };
+                } else {
+                    _held = false;
+                    _d doMove (ASLToAGL _p);
+                };
                 sleep 1;
             };
         };
@@ -309,29 +394,60 @@ switch (_cmd) do {
         if ((_d getVariable ["COMSPEC_DroneArmed", ""]) isEqualTo "") exitWith {};
         ["STRIKE"] call _setMode;
         private _loop = _d getVariable ["COMSPEC_DroneLoop", 0];
+        // Drone touché ou détruit pendant la frappe (tir, arbre, mur, la cible elle-même) : la charge part sur place.
+        _d setVariable ["COMSPEC_DroneDetonateFn", _detonate];
+        if !(_d getVariable ["COMSPEC_DroneStrikeEh", false]) then {
+            _d setVariable ["COMSPEC_DroneStrikeEh", true];
+            private _boom = {
+                params ["_d"];
+                if (local _d && {(_d getVariable ["COMSPEC_DroneArmed", ""]) isNotEqualTo ""} && {(_d getVariable ["COMSPEC_DroneMode", ""]) isEqualTo "STRIKE"}) then {
+                    call (_d getVariable ["COMSPEC_DroneDetonateFn", {}]);
+                };
+            };
+            _d setVariable ["COMSPEC_DroneBoomFn", _boom];
+            _d addEventHandler ["Killed", { [_this select 0] call ((_this select 0) getVariable ["COMSPEC_DroneBoomFn", {}]); }];
+            _d addEventHandler ["Dammaged", { if ((_this select 2) > 0.02) then { [_this select 0] call ((_this select 0) getVariable ["COMSPEC_DroneBoomFn", {}]); }; }];
+        };
         [_d, _tgt, _loop, _detonate, _pilot] spawn {
             params ["_d", "_tgt", "_loop", "_detonate", "_pilot"];
             // Tir et oublie : un point laser éteint en route laisse la dernière position connue ; une cible détruite arrête la frappe.
             private _last = if (_tgt isEqualType objNull) then { getPosASL _tgt } else { _tgt };
             private _isUnit = _tgt isEqualType objNull && {_tgt isKindOf "AllVehicles"};
-            while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+            // Point publié seulement s'il bouge de plus de 5 m : en piqué il partait 20 fois par seconde à tous.
+            private _sent = [];
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
                 if (_isUnit && {!alive _tgt}) exitWith { [_d, "hover", []] call comspec_atak_native_fnc_droneCmd; };
                 if (_tgt isEqualType objNull && {!isNull _tgt}) then { _last = [getPosASL _tgt, aimPos _tgt] select _isUnit; };
                 private _p = _last;
-                _d setVariable ["COMSPEC_DroneTgt", _p, true];
-                if ((_d distance2D _p) > 120) then {
-                    _d flyInHeight [(_d getVariable ["COMSPEC_DroneAlt", 40]) max 50, true];
-                    _d limitSpeed 150;
-                    _d doMove (ASLToAGL _p);
-                    sleep 1;
-                } else {
-                    // Piqué final piloté : vitesse dirigée vers la cible, impact ou passage à moins de 3 m.
-                    private _v = vectorNormalized (_p vectorDiff (getPosASL _d));
-                    _d setVectorDir _v;
-                    _d setVelocity (_v vectorMultiply 28);
-                    if ((_d distance _p) < 3 || {((getPosATL _d) select 2) < 1.2}) exitWith { call _detonate; };
-                    sleep 0.05;
+                if (_sent isEqualTo [] || {(_sent distance _p) > 5}) then { _sent = _p; _d setVariable ["COMSPEC_DroneTgt", _p, true]; };
+                if ((_d distance2D _p) <= 120) exitWith {
+                    // Piqué final piloté à chaque image (et non plus dans cette boucle, qui prenait du retard quand le jeu est
+                    // chargé : le drone traversait la cible entre deux passages sans exploser, les hélices la tuaient, puis la
+                    // frappe s'arrêtait ; retour de TTRD, 13/10). Fusée de proximité : moins de 3,5 m, sol touché, point le
+                    // plus proche dépassé à moins de 12 m, ou cible tuée (par les hélices) alors que le drone est à moins de 25 m.
+                    _d setVariable ["COMSPEC_DroneTgt", _p, true];
+                    [{
+                        params ["_a", "_h"];
+                        _a params ["_d", "_tgt", "_isUnit", "_loop", "_detonate", "_p", "_prev"];
+                        if (!alive _d || {!local _d} || {(_d getVariable ["COMSPEC_DroneLoop", 0]) isNotEqualTo _loop}) exitWith { [_h] call CBA_fnc_removePerFrameHandler; };
+                        private _dead = _isUnit && {!alive _tgt};
+                        if (_tgt isEqualType objNull && {!isNull _tgt} && {!_dead}) then { _p = [getPosASL _tgt, aimPos _tgt] select _isUnit; _a set [5, _p]; };
+                        private _dd = _d distance _p;
+                        _a set [6, _dd];
+                        if (_dd < 3.5 || {((getPosATL _d) select 2) < 1.2} || {_dd < 12 && {_dd > _prev + 0.2}} || {_dead && {_dd < 25}}) exitWith {
+                            [_h] call CBA_fnc_removePerFrameHandler;
+                            call _detonate;
+                        };
+                        if (_dead) exitWith { [_h] call CBA_fnc_removePerFrameHandler; [_d, "hover", []] call comspec_atak_native_fnc_droneCmd; };
+                        private _v = vectorNormalized (_p vectorDiff (getPosASL _d));
+                        _d setVectorDir _v;
+                        _d setVelocity (_v vectorMultiply 28);
+                    }, 0, [_d, _tgt, _isUnit, _loop, _detonate, _p, 1e9]] call CBA_fnc_addPerFrameHandler;
                 };
+                _d flyInHeight [(_d getVariable ["COMSPEC_DroneAlt", 40]) max 50, true];
+                _d limitSpeed 150;
+                _d doMove (ASLToAGL _p);
+                sleep 1;
             };
         };
     };
@@ -345,7 +461,7 @@ switch (_cmd) do {
             params ["_d", "_pts", "_rmode", "_loop", "_routeNext"];
             private _i = 0;
             private _dir = 1;
-            while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
                 private _p = _pts select _i;
                 if ((_d distance2D _p) < 25) then {
                     ([_i, count _pts, _rmode, _dir] call _routeNext) params ["_ni", "_nd"];
@@ -371,75 +487,145 @@ switch (_cmd) do {
         call _crew;
         private _g = group driver _d;
         if (!isNull _g) then { _g setBehaviour "CARELESS"; _g setCombatMode "BLUE"; };
+        // Vol de recherche piloté par notre boucle (comme le CQB) : l'IA de vol d'un hélicoptère montait d'abord à la
+        // verticale jusqu'à l'altitude, lentement, avant de partir (retour de TTRD, 13/10 : « longtemps à monter »).
+        if (!isNull driver _d) then { (driver _d) disableAI "MOVE"; };
+        doStop _d;
         [_d, _center, _rad, _loop, _pilot, _area] spawn {
             params ["_d", "_center", "_rad", "_loop", "_pilot", "_area"];
             private _side = _d getVariable ["COMSPEC_DroneSide", sideUnknown];
             if !(_side in [west, east, independent]) then { _side = side group _pilot; };
             if !(_side in [west, east, independent]) then { _side = side group driver _d; };
-            // Parcours de recherche : anneaux concentriques (1/3, 2/3 puis tout le rayon), 8 points par anneau,
-            // point suivant une fois le précédent atteint (ou après 25 s) ; en boucle tant que rien n'est trouvé.
-            private _pts = [];
-            {
-                private _r = _rad * _x;
-                for "_a" from 0 to 315 step 45 do {
-                    private _p = _center vectorAdd [_r * sin (_a + 22.5 * _forEachIndex), _r * cos (_a + 22.5 * _forEachIndex), 0];
-                    if ((count _area) isEqualTo 0 || {_p inArea _area}) then { _pts pushBack _p; };
+            // Hauteur de recherche : celle choisie, 25 m au moins (sous les arbres, la caméra ne voit rien).
+            private _alt = (_d getVariable ["COMSPEC_DroneAlt", 40]) max 25;
+            // Vitesse de recherche : 50 km/h au moins (14 m/s), celle choisie si elle est plus haute.
+            private _ms = ((_d getVariable ["COMSPEC_DroneSpd", 40]) max 50) / 3.6;
+            // Balayage en bandes parallèles (« tondeuse », méthode de recherche de zone) : l'écart entre deux bandes vient de
+            // ce que la caméra couvre de chaque côté à cette hauteur (3 fois la hauteur, entre 80 et 200 m), avec 20 %
+            // de recouvrement. Bandes perpendiculaires à l'arrivée du drone, première bande de son côté : il part tout
+            // de suite en avançant. Chaque passage complet est suivi d'un passage croisé (bandes tournées de 90°) pour
+            // retrouver ce qui a bougé entre-temps.
+            private _sw = ((_alt * 3) max 80) min 200;
+            private _gap = _sw * 1.6;
+            private _lanes = {
+                params ["_hdg", "_from"];
+                private _ax = [sin _hdg, cos _hdg, 0];
+                private _px = [cos _hdg, -(sin _hdg), 0];
+                private _pts = [];
+                private _n = (ceil ((2 * _rad) / _gap)) max 1;
+                private _st = (2 * _rad) / _n;
+                private _flip = 0;
+                for "_i" from 0 to (_n - 1) do {
+                    // Distance de la bande au centre (première bande du côté du drone), puis demi-longueur de la corde
+                    // du cercle à cette distance.
+                    private _o = _rad - _st * (_i + 0.5);
+                    private _h = sqrt ((_rad * _rad - _o * _o) max 0);
+                    private _a = _center vectorAdd (_ax vectorMultiply _o) vectorAdd (_px vectorMultiply -_h);
+                    private _b = _center vectorAdd (_ax vectorMultiply _o) vectorAdd (_px vectorMultiply _h);
+                    // Première bande prise par son bout le plus proche du drone, puis aller-retour.
+                    if (_i isEqualTo 0 && {(_b distance2D _from) < (_a distance2D _from)}) then { _flip = 1; };
+                    if (((_i + _flip) mod 2) isEqualTo 1) then { private _t = _a; _a = _b; _b = _t; };
+                    {
+                        // Zone tracée sur la carte : seuls les points dedans (ou le centre de la bande s'ils en sortent tous).
+                        if ((count _area) isEqualTo 0 || {_x inArea _area}) then { _pts pushBack _x; };
+                    } forEach [_a, _b];
                 };
-            } forEach [0.33, 0.66, 1];
-            if ((count _pts) isEqualTo 0) then { _pts = [_center]; };
-            private _i = -1;
-            private _goal = [];
-            private _t0 = 0;
-            while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
-                if (_goal isEqualTo [] || {(_d distance2D _goal) < 30} || {(time - _t0) > 25}) then {
-                    _i = (_i + 1) mod (count _pts);
-                    _goal = _pts select _i;
-                    _t0 = time;
-                    _d setVariable ["COMSPEC_DroneTgt", _goal, true];
-                    _d flyInHeight [_d getVariable ["COMSPEC_DroneAlt", 40], true];
-                    _d limitSpeed (_d getVariable ["COMSPEC_DroneSpd", 40]);
-                    _d doMove (ASLToAGL _goal);
+                if ((count _pts) isEqualTo 0) then { _pts = [_center]; };
+                _pts
+            };
+            private _hdg = _center getDir _d;
+            if ((_d distance2D _center) < 5) then { _hdg = getDir _d; };
+            private _pts = [_hdg, getPosASL _d] call _lanes;
+            private _i = 0;
+            private _nextScan = 0;
+            _d setVariable ["COMSPEC_DroneTgt", _pts select 0, true];
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+                private _pos = getPosASL _d;
+                private _g = _pts select _i;
+                private _h = [(_g select 0) - (_pos select 0), (_g select 1) - (_pos select 1), 0];
+                private _dist = vectorMagnitude _h;
+                // Point atteint : le suivant ; bout du balayage : passage croisé.
+                if (_dist < 20) then {
+                    _i = _i + 1;
+                    if (_i >= (count _pts)) then {
+                        // Bandes tournées de 90°, du côté où se trouve le drone : pas de traversée de la zone à vide.
+                        private _h2 = _hdg + 90;
+                        if ((abs ((((_center getDir _d) - _h2 + 540) mod 360) - 180)) > 90) then { _h2 = _hdg - 90; };
+                        _hdg = _h2;
+                        _pts = [_hdg, _pos] call _lanes;
+                        _i = 0;
+                    };
+                    _g = _pts select _i;
+                    _d setVariable ["COMSPEC_DroneTgt", _g, true];
+                    _h = [(_g select 0) - (_pos select 0), (_g select 1) - (_pos select 1), 0];
+                    _dist = vectorMagnitude _h;
                 };
-                // Ennemi vu par la caméra : à moins de 400 m, en vue directe (œil sous le drone), véhicule avec équipage vivant.
-                private _eye = _d modelToWorldWorld [0, 0, -0.4];
-                private _seen = (_d nearEntities [["CAManBase", "LandVehicle", "Ship"], 400]) select {
-                    alive _x
-                    && {if (_x isKindOf "CAManBase") then { !captive _x } else { ({alive _x} count (crew _x)) > 0 }}
-                    && {[_side, side group _x] call BIS_fnc_sideIsEnemy}
-                    && {(count _area) isEqualTo 0 || {_x inArea _area}}
-                    && {([_d, "VIEW", _x] checkVisibility [_eye, aimPos _x]) > 0.25}
-                };
-                if ((count _seen) > 0) exitWith {
-                    private _t = _seen select 0;
-                    { if ((_x distance _d) < (_t distance _d)) then { _t = _x; }; } forEach _seen;
-                    private _armed = (_d getVariable ["COMSPEC_DroneArmed", ""]) isNotEqualTo "";
-                    private _what = getText (configOf _t >> "displayName");
-                    _d setVariable ["COMSPEC_DroneEvt", [((_d getVariable ["COMSPEC_DroneEvt", [0]]) select 0) + 1, ["SPOT", "ENGAGE"] select _armed, getPosASL _t, _what], true];
-                    if (!isNull _pilot) then { ["comspec_atak_native_droneEvent", [_d, ["SPOT", "ENGAGE"] select _armed, getPosASL _t, _what], _pilot] call CBA_fnc_targetEvent; };
-                    // Armé : frappe ; sinon le drone garde la cible à l'œil (observation en orbite au-dessus d'elle).
-                    if (_armed) then { [_d, "strike", [_t, _pilot]] call comspec_atak_native_fnc_droneCmd; } else {
-                        [_d, "observe", [getPosASL _t, 120]] call comspec_atak_native_fnc_droneCmd;
+                // Hauteur tenue au-dessus du relief, sous le drone et 60 m devant (on monte avant la colline, pas dedans).
+                private _n = [vectorNormalized _h, vectorDir _d] select (_dist < 0.5);
+                private _ahead = _pos vectorAdd (_n vectorMultiply 60);
+                private _gnd = (getTerrainHeightASL _pos) max (getTerrainHeightASL _ahead) max 0;
+                private _agl = (_pos select 2) - ((getTerrainHeightASL _pos) max 0);
+                // Montée franche (6 m/s) en même temps que le déplacement ; descente douce.
+                private _vz = ((_gnd + _alt - (_pos select 2)) * 0.8) max -3 min 6;
+                // Près du sol (moins de 10 m) : on avance au pas le temps de dégager les obstacles.
+                private _vh = [_ms, 4] select (_agl < 10);
+                // Obstacle devant (arbre, bâtiment, pylône) : on monte au-dessus au lieu de foncer dedans.
+                if ((count (lineIntersectsSurfaces [_pos, _pos vectorAdd (_n vectorMultiply 25) vectorAdd [0, 0, -2], _d, objNull, true, 1])) > 0) then { _vz = 6; _vh = 2; };
+                private _v = _n vectorMultiply (_vh min (_dist * 0.8 + 2));
+                private _dir = (_n select 0) atan2 (_n select 1);
+                _d setVectorDirAndUp [[sin _dir, cos _dir, 0], [0, 0, 1]];
+                _d setVelocity [_v select 0, _v select 1, _vz];
+                // Ennemi vu par la caméra (deux fois par seconde) : à moins de 400 m, en vue directe (œil sous le drone),
+                // véhicule avec équipage vivant.
+                if (time >= _nextScan) then {
+                    _nextScan = time + 0.5;
+                    private _eye = _d modelToWorldWorld [0, 0, -0.4];
+                    private _seen = (_d nearEntities [["CAManBase", "LandVehicle", "Ship"], 400]) select {
+                        alive _x
+                        && {if (_x isKindOf "CAManBase") then { !captive _x } else { ({alive _x} count (crew _x)) > 0 }}
+                        && {[_side, side group _x] call BIS_fnc_sideIsEnemy}
+                        && {(count _area) isEqualTo 0 || {_x inArea _area}}
+                        && {([_d, "VIEW", _x] checkVisibility [_eye, aimPos _x]) > 0.25}
+                    };
+                    if ((count _seen) > 0) then {
+                        private _t = _seen select 0;
+                        { if ((_x distance _d) < (_t distance _d)) then { _t = _x; }; } forEach _seen;
+                        private _armed = (_d getVariable ["COMSPEC_DroneArmed", ""]) isNotEqualTo "";
+                        private _what = getText (configOf _t >> "displayName");
+                        _d setVariable ["COMSPEC_DroneEvt", [((_d getVariable ["COMSPEC_DroneEvt", [0]]) select 0) + 1, ["SPOT", "ENGAGE"] select _armed, getPosASL _t, _what], true];
+                        if (!isNull _pilot) then { ["comspec_atak_native_droneEvent", [_d, ["SPOT", "ENGAGE"] select _armed, getPosASL _t, _what], _pilot] call CBA_fnc_targetEvent; };
+                        // Armé : frappe ; sinon le drone garde la cible à l'œil (observation en orbite au-dessus d'elle).
+                        // L'ordre suivant change le compteur de boucle : ce balayage s'arrête au passage suivant.
+                        if (_armed) then { [_d, "strike", [_t, _pilot]] call comspec_atak_native_fnc_droneCmd; } else {
+                            [_d, "observe", [getPosASL _t, 120]] call comspec_atak_native_fnc_droneCmd;
+                        };
                     };
                 };
-                sleep 1;
+                sleep 0.05;
             };
         };
     };
     case "goto": {
-        _args params [["_p", []]];
+        _args params [["_p", []], ["_end", ""]];
         if ((count _p) < 3) exitWith {};
         ["GOTO"] call _setMode;
         _d setVariable ["COMSPEC_DroneTask", ["GOTO", _p, 0], true];
         private _loop = _d getVariable ["COMSPEC_DroneLoop", 0];
-        [_d, _p, _loop] spawn {
-            params ["_d", "_p", "_loop"];
-            while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
-                // Arrivé : stationnaire au-dessus du point (le journal du pilote note le passage GOTO → HOVER).
-                if ((_d distance2D _p) < 20) exitWith { [_d, "hover", []] call comspec_atak_native_fnc_droneCmd; };
+        [_d, _p, _loop, _end] spawn {
+            params ["_d", "_p", "_loop", "_end"];
+            // Stationnaire ou atterrissage sur le point (clic droit de la carte) : il faut être juste au-dessus.
+            private _near = [20, 6] select (_end in ["HOVER", "LAND"]);
+            private _n = 0;
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+                // Arrivé : stationnaire au-dessus du point (le journal du pilote note le passage GOTO → HOVER), ou atterrissage.
+                // L'IA de vol s'arrête parfois à quelques mètres de son but : arrêtée à moins de 25 m, on considère qu'elle y est.
+                private _dd = _d distance2D _p;
+                _n = _n + 1;
+                if (_dd < _near || {_near < 20 && {_n > 6} && {_dd < 25} && {(speed _d) < 3}}) exitWith { [_d, ["hover", "land"] select (_end isEqualTo "LAND"), []] call comspec_atak_native_fnc_droneCmd; };
                 _d flyInHeight [_d getVariable ["COMSPEC_DroneAlt", 40], true];
                 _d limitSpeed (_d getVariable ["COMSPEC_DroneSpd", 40]);
                 _d doMove (ASLToAGL _p);
-                sleep 2;
+                sleep ([2, 0.5] select (_dd < 60));
             };
         };
     };
@@ -455,7 +641,7 @@ switch (_cmd) do {
             params ["_d", "_c", "_rad", "_loop"];
             // Orbite : on entre sur le cercle du côté où se trouve le drone, puis un nouveau point toutes les 3 s.
             private _a = _c getDir _d;
-            while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
                 private _ms = (_d getVariable ["COMSPEC_DroneSpd", 40]) / 3.6;
                 // Pas angulaire : l'arc parcouru en 3 s (borné pour garder un cercle propre sur les petits rayons).
                 if ((_d distance2D _c) < (_rad + 60)) then { _a = (_a + ((deg (_ms * 3 / (_rad max 30))) max 8 min 45)) mod 360; };

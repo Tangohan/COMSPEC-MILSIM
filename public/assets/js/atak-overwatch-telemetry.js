@@ -267,6 +267,7 @@
         ((alerts.low || 0) > 0 ? '<span class="ow-tag">' + alerts.low + ' bas</span>' : '') +
         '</div>';
     }
+    head = resupplyRequestsHtml() + head;
     var needy = rows.filter(function (r) {
       return r && r.needs_resupply;
     });
@@ -458,7 +459,67 @@
       });
   }
 
+  // Demandes de ravitaillement saisies dans l'ATAK natif (journal) et leur dernier état (mêmes codes que le téléphone).
+  var resupplyRequests = [];
+  var RESUPPLY_LABELS = { DEMANDEE: 'Demandée', VALIDEE: 'Validée', REFUSEE: 'Refusée', EN_ROUTE: 'En route', LIVREE: 'Livrée', ANNULEE: 'Annulée' };
+  function refreshResupplyRequests() {
+    var q = '?mapId=' + encodeURIComponent(mapId());
+    return Promise.all([
+      api('/api/atak/activity' + q + '&type=toc_note&limit=200').catch(function () { return {}; }),
+      api('/api/atak/logistics/resupply/status' + q).catch(function () { return {}; })
+    ]).then(function (res) {
+      var events = Array.isArray(res[0] && res[0].events) ? res[0].events : [];
+      var states = (res[1] && res[1].states) || {};
+      var seen = {};
+      resupplyRequests = [];
+      events.forEach(function (ev) {
+        var meta = ev && ev.meta ? ev.meta : {};
+        var gid = String(meta.game_id || '');
+        if (meta.kind !== 'resupply_request' || !gid || seen[gid]) return;
+        seen[gid] = true;
+        var st = states[gid] || {};
+        resupplyRequests.push({
+          id: gid,
+          call_sign: meta.call_sign || ev.actor || '',
+          need: meta.need || 'Ravitaillement',
+          qty: meta.qty || 0,
+          grid: meta.grid_ref || '',
+          priority: meta.priority || '',
+          status: String(st.status || meta.status || 'DEMANDEE').toUpperCase(),
+          by: st.by || ''
+        });
+      });
+    });
+  }
+  function resupplyRequestsHtml() {
+    var open = resupplyRequests.filter(function (r) { return ['LIVREE', 'ANNULEE', 'REFUSEE'].indexOf(r.status) < 0; }).slice(0, 8);
+    if (!open.length) return '';
+    return '<p class="ow-kicker">Demandes reçues du terrain</p>' + open.map(function (r) {
+      function b(status, label) {
+        return '<button type="button" class="ow-tag" data-ow-resupply-status="' + esc(status) + '" data-ow-resupply-id="' + esc(r.id) + '">' + esc(label) + '</button>';
+      }
+      var flow = r.status === 'DEMANDEE'
+        ? b('VALIDEE', 'Valider') + b('REFUSEE', 'Refuser')
+        : (r.status === 'VALIDEE' ? b('EN_ROUTE', 'En route') : b('LIVREE', 'Livrée'));
+      return '<div class="ow-event"><span><strong>' + esc(clean(r.call_sign, '—')) + '</strong><small> ' + esc(r.need) +
+        (r.qty ? ' × ' + esc(String(r.qty)) : '') + (r.grid ? ' · ' + esc(r.grid) : '') +
+        ' · ' + esc(RESUPPLY_LABELS[r.status] || r.status) + (r.by ? ' (' + esc(r.by) + ')' : '') + '</small></span>' +
+        '<span class="ow-btn-row">' + flow + '</span></div>';
+    }).join('');
+  }
+  function setResupplyStatus(id, status) {
+    var b = beta();
+    return api('/api/atak/logistics/resupply/status', {
+      method: 'POST',
+      body: { mapId: mapId(), game_id: id, status: status, by: (b && b.authorName) || 'Poste', source: 'web' }
+    }).then(function () {
+      toast('Ravitaillement : ' + (RESUPPLY_LABELS[status] || status) + '.');
+      return refreshLogistics();
+    }).catch(function () { toast('L’état du ravitaillement n’a pas pu être changé.'); });
+  }
+
   function refreshLogistics() {
+    refreshResupplyRequests().then(paintLogisticsHost);
     return api('/api/atak/logistics?mapId=' + encodeURIComponent(mapId()))
       .then(function (payload) {
         logisticsCache = payload || { units: [], alerts: {} };
@@ -556,6 +617,11 @@
     document.addEventListener('click', function (ev) {
       var t = ev.target;
       if (!t || !t.closest) return;
+      var resSt = t.closest('[data-ow-resupply-status]');
+      if (resSt) {
+        setResupplyStatus(resSt.getAttribute('data-ow-resupply-id'), resSt.getAttribute('data-ow-resupply-status'));
+        return;
+      }
       var res = t.closest('[data-ow-resupply]');
       if (res) {
         requestResupply(res.getAttribute('data-ow-resupply'));

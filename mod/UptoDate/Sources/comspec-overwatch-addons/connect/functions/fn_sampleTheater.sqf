@@ -510,7 +510,7 @@ missionNamespace setVariable ["COMSPEC_TheaterSampleToken", _bootToken, false];
             profileNamespace setVariable [_wdKey, true];
             missionNamespace setVariable ["COMSPEC_SceneWorldDone", true, false];
         };
-        saveProfileNamespace;
+        [] call comspec_overwatch_connect_fnc_saveProfile;
         missionNamespace setVariable ["COMSPEC_TheaterLastText", _lastTxt, false];
     };
 

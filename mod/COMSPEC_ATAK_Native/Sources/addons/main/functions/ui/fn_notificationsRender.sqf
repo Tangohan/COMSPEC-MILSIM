@@ -18,7 +18,11 @@ private _q = (_s getOrDefault ["notifications", []]) select {
 _s set ["notifications", _q];
 // Écran éteint, en animation d'arrêt ou de démarrage : pas de toast.
 private _hidden = ((uiNamespace getVariable ["COMSPEC_ATAK_PowerFx", []]) param [1, -1]) > _now
-    || {((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"])};
+    || {((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"])}
+    // Écran de verrouillage affiché (fn_lockScreen) : il montre lui-même les dernières notifications.
+    || {uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]}
+    // Verrou à distance du Zeus (écran rouge de fn_zeusOverlay) : rien par-dessus.
+    || {(["lock", ""] call comspec_atak_native_fnc_zeusFx) isNotEqualTo ""};
 private _show = createHashMap;
 if (!_hidden && {(count _q) > 0}) then {
     private _best = 0;
@@ -37,7 +41,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_ToastControls", []];
 if ((count _show) isEqualTo 0) exitWith {};
 
 // Place : la barre d'app, sans couvrir le bouton retour ni les boutons de droite quand on a la souris.
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 (_l get "appbar") params ["_ax", "_ay", "_aw", "_ah"];
 private _pad = _l get "pad";
 private _fs = _l get "fontSmall";
@@ -74,18 +78,20 @@ private _mk = {
     params ["_class", "_pos", ["_text", ""]];
     private _c = _d ctrlCreate [_class, -1];
     _c ctrlSetPosition _pos;
-    if (_text isNotEqualTo "") then { _c ctrlSetText _text; };
+    if (_text isNotEqualTo "") then { _c ctrlSetText ((_text) call comspec_atak_native_fnc_tr); };
     _c ctrlCommit 0;
     _made pushBack _c;
     _c
 };
 private _bg = ["COMSPEC_RscText", [_x0, _y, _w, _h]] call _mk;
 _bg ctrlSetBackgroundColor [0.05, 0.065, 0.06, 0.97];
+// Bandeau sous les bris d'écran, comme le reste de l'affichage (fn_overlayRaise, à l'image suivante).
+[] call comspec_atak_native_fnc_overlayRaise;
 private _bar = ["COMSPEC_RscText", [_x0, _y, _pad * 0.6, _h]] call _mk;
 _bar ctrlSetBackgroundColor _color;
 private _tx = _x0 + _pad * 1.4;
 private _lb = ["COMSPEC_RscText", [_tx, _y, _w * 0.3, _h], _label] call _mk;
-_lb ctrlSetFont "RobotoCondensedBold";
+_lb ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
 _lb ctrlSetFontHeight _fs;
 _lb ctrlSetTextColor _color;
 private _lw = (ctrlTextWidth _lb) + _pad * 0.6;
@@ -106,17 +112,18 @@ private _m = ["COMSPEC_RscText", [_mx, _y, _mw, _h], _plain] call _mk;
 _m ctrlSetFontHeight _fs;
 // Coupe au dernier mot qui tient, avec « … ».
 if ((ctrlTextWidth _m) > _mw) then {
-    private _codes = toArray _plain;
+    // Coupe sur le texte déjà traduit (chaque morceau passait sinon par fn_tr et remplissait son cache).
+    private _codes = toArray ((_plain) call comspec_atak_native_fnc_tr);
     private _n = floor ((count _codes) * _mw / (ctrlTextWidth _m)) max 1;
     while {_n > 1} do {
-        _m ctrlSetText ((toString (_codes select [0, _n])) + "…");
+        _m ctrlSetText ((toString (_codes select [0, _n])) + "…"); // i18n:brut
         if ((ctrlTextWidth _m) <= _mw) exitWith {};
         _n = _n - 2;
     };
 };
 // Bouton invisible sur tout le toast : clic = masquer ; info-bulle = texte complet.
 private _btn = ["COMSPEC_RscButtonInvisible", [_x0, _y, _w, _h]] call _mk;
-_btn ctrlSetTooltip format ["%1 (clic : masquer)", _plain];
+_btn ctrlSetTooltip ((format ["%1 (clic : masquer)", _plain]) call comspec_atak_native_fnc_tr);
 _btn setVariable ["toastId", _show getOrDefault ["id", -1]];
 _btn ctrlAddEventHandler ["ButtonClick", {
     params ["_c"];

@@ -37,7 +37,7 @@ private _post = {
         params ["_id", "_json"];
         [_id, _json] spawn {
             params ["_id", "_json"];
-            private _raw = "COMSPECExtension" callExtension ["DiscordSend", [_json]];
+            private _raw = (["COMSPECExtension", "DiscordSend", [_json]] call comspec_atak_native_fnc_extAwait);
             private _r = [_raw] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
             _r params ["_ok", "_status", "_detail"];
             if (_status isEqualTo "") then { _detail = "COMSPEC Link à mettre à jour (envoi Discord absent de cette version)."; };
@@ -59,15 +59,16 @@ switch (_action) do {
     case "grid": { call _saveDraft; _s set ["discordGrid", !(_s getOrDefault ["discordGrid", true])]; call _render; };
     case "quick": {
         call _saveDraft;
+        // Texte posté sur Discord : dans la langue du téléphone (fn_tr), pas seulement à l'affichage.
         private _txt = switch (_arg) do {
-            case "CONTACT": { "Contact ennemi." };
+            case "CONTACT": { "Contact ennemi." call comspec_atak_native_fnc_tr };
             case "SITREP": {
                 private _u = units group player;
                 private _ko = { !alive _x || {lifeState _x isEqualTo "INCAPACITATED"} } count _u;
-                format ["%1 : %2 personnel(s), %3 valide(s), %4 hors de combat.", groupId group player, count _u, (count _u) - _ko, _ko]
+                format [("%1 : %2 personnel(s), %3 valide(s), %4 hors de combat." call comspec_atak_native_fnc_tr), groupId group player, count _u, (count _u) - _ko, _ko]
             };
-            case "SUPPORT": { "Besoin de soutien." };
-            case "RTB": { "Retour à la base." };
+            case "SUPPORT": { "Besoin de soutien." call comspec_atak_native_fnc_tr };
+            case "RTB": { "Retour à la base." call comspec_atak_native_fnc_tr };
             default { "" };
         };
         [_arg, _txt] call _post;

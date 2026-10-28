@@ -11,7 +11,9 @@ if (
 private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
 if !(_txGate getOrDefault ["can_transmit", true]) exitWith {};
 
-private _raw = ["COMSPECExtension" callExtension ["GetMapShapes", ["1", ""]]] call comspec_overwatch_connect_fnc_extResult;
+private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
+if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
+private _raw = ["COMSPECExtension" callExtension ["GetMapShapes", [_mapId, ""]]] call comspec_overwatch_connect_fnc_extResult;
 if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {
     ["formes", 0, " (vide ou erreur)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
 };
@@ -19,9 +21,23 @@ private _json = _raw select [3, count _raw - 3];
 private _seenIds = [];
 private _shaped = 0;
 private _bootSh = missionNamespace getVariable ["COMSPEC_MapShapesBootstrapped", false];
+// Réponse identique au dernier passage traité : formes déjà posées, rien à refaire (le parse caractère par
+// caractère de toute la réponse tournait toutes les 10 s dans le thread du jeu).
+if (_bootSh && {_json isEqualTo (missionNamespace getVariable ["COMSPEC_MapShapesLastJson", ""])}) exitWith {
+    ["formes", 0, " (inchangé)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
+};
 if (!_bootSh) then {
     missionNamespace setVariable ["COMSPEC_MapShapesBootstrapped", true, false];
 };
+// Reprise : 6 formes posées au plus par passage. Si la réponse n'a pas changé depuis un passage plafonné,
+// on reprend après la dernière forme posée (sinon les formes 7+ ne seraient jamais tracées).
+private _resume = 0;
+if (_json isEqualTo (missionNamespace getVariable ["COMSPEC_MapShapesPendingJson", ""])) then {
+    _resume = missionNamespace getVariable ["COMSPEC_MapShapesResumeOrd", 0];
+    if (!(_resume isEqualType 0)) then { _resume = 0; };
+};
+private _ord = -1;
+private _capped = false;
 private _idx = 0;
 private _qq = toString [34]; // "
 
@@ -76,6 +92,7 @@ while {_idx >= 0} do {
     if (isNil "_num" || {_num <= 0}) then { _idx = _idPos + 1; continue; };
     private _idStr = str (round _num);
     _seenIds pushBack _idStr;
+    _ord = _ord + 1;
     private _type = "POINT";
     private _typePos = _json find [_qq + "type" + _qq, _idPos];
     if (_typePos >= 0 && _typePos < _idPos + 200) then {
@@ -125,21 +142,34 @@ while {_idx >= 0} do {
         if (isNil "_radius" || {_radius <= 0}) then { _radius = 100 };
     };
 
-    private _flat = [_json, _idPos, 1200, _qq] call _fnc_parseFlatCoords;
-    if ((count _flat) >= 4 && {_x == 0} && {_y == 0}) then {
-        _x = _flat select 0;
-        _y = _flat select 1;
-    };
+    if (_bootSh && {_ord >= _resume} && {_shaped >= 6}) then { _capped = true; };
+    if (_bootSh && {_ord >= _resume} && {_shaped < 6}) then {
+        // Coordonnées lues seulement pour les formes réellement posées (lecture caractère par caractère coûteuse).
+        private _flat = [_json, _idPos, 1200, _qq] call _fnc_parseFlatCoords;
+        if ((count _flat) >= 4 && {_x == 0} && {_y == 0}) then {
+            _x = _flat select 0;
+            _y = _flat select 1;
+        };
 
-    if ((count _flat) >= 4 && {((count _flat) % 2) == 1}) then {
-        _flat deleteAt ((count _flat) - 1);
-    };
+        if ((count _flat) >= 4 && {((count _flat) % 2) == 1}) then {
+            _flat deleteAt ((count _flat) - 1);
+        };
 
-    if (_bootSh && {_shaped < 6}) then {
         [_num, _type, _label, _color, _x, _y, _radius, _flat] call comspec_overwatch_connect_fnc_receiveMapShape;
         _shaped = _shaped + 1;
     };
     _idx = _idPos + 1;
+};
+if (_bootSh) then {
+    if (_capped) then {
+        // Réponse pas entièrement traitée : pas de LastJson (sinon sortie « inchangé »), reprise au prochain passage.
+        missionNamespace setVariable ["COMSPEC_MapShapesPendingJson", _json, false];
+        missionNamespace setVariable ["COMSPEC_MapShapesResumeOrd", _resume + _shaped, false];
+    } else {
+        missionNamespace setVariable ["COMSPEC_MapShapesLastJson", _json, false];
+        missionNamespace setVariable ["COMSPEC_MapShapesPendingJson", "", false];
+        missionNamespace setVariable ["COMSPEC_MapShapesResumeOrd", 0, false];
+    };
 };
 
 ["formes", count _seenIds, if (_bootSh) then { "" } else { " · première lecture" }] call comspec_overwatch_connect_fnc_noteUplinkReturn;

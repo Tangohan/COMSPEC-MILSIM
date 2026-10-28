@@ -10,15 +10,69 @@ namespace App\Support;
 final class ArsenalLoadoutItems
 {
     /**
-     * @return list<array{title: string, items: list<array{name: string, qty: int}}}>
+     * Catalogue des objets vus en jeu (clé = classe en minuscules), actif le temps d’un appel à grouped().
+     *
+     * @var array<string, array{name?: string, players?: int}>
      */
-    public static function grouped(string $payload): array
+    private static array $catalog = [];
+
+    /**
+     * @param array<string, array{name?: string, players?: int}> $catalog noms affichés en jeu et nombre de joueurs
+     *        qui portent l’objet (GameEquipmentRepository::catalogueFor), clé = classe en minuscules
+     * @return list<array{title: string, items: list<array{name: string, qty: int, class: string, players?: int}>}>
+     */
+    public static function grouped(string $payload, array $catalog = []): array
     {
         $loadout = self::parse($payload);
-        if ($loadout === []) {
-            return [];
-        }
+        self::$catalog = $catalog;
+        try {
+            if ($loadout === []) {
+                // Forme inconnue mais lisible : on liste au moins les objets plutôt qu’une fiche vide.
+                $items = self::mergeQty(array_map(static fn (string $c): array => self::item($c), self::classes($payload)));
 
+                return $items === [] ? [] : [['title' => 'Contenu', 'items' => $items]];
+            }
+
+            return self::sections($loadout);
+        } finally {
+            self::$catalog = [];
+        }
+    }
+
+    /**
+     * Toutes les classes d’objets d’une tenue (armes, accessoires, chargeurs, contenus, objets assignés).
+     *
+     * @return list<string>
+     */
+    public static function classes(string $payload): array
+    {
+        $out = [];
+        $walk = static function (mixed $node) use (&$walk, &$out): void {
+            if (is_string($node)) {
+                $c = trim($node);
+                if ($c !== '' && strlen($c) <= 128 && preg_match('/^[A-Za-z0-9_.\-]+$/', $c) === 1) {
+                    $out[strtolower($c)] = $c;
+                }
+
+                return;
+            }
+            if (is_array($node)) {
+                foreach ($node as $child) {
+                    $walk($child);
+                }
+            }
+        };
+        $walk(self::parse($payload) ?: (self::decode($payload) ?? []));
+
+        return array_values($out);
+    }
+
+    /**
+     * @param list<mixed> $loadout
+     * @return list<array{title: string, items: list<array{name: string, qty: int, class: string, players?: int}>}>
+     */
+    private static function sections(array $loadout): array
+    {
         $sections = [];
         self::pushWeapon($sections, 'Arme', $loadout[0] ?? null);
         self::pushWeapon($sections, 'Lanceur', $loadout[1] ?? null);
@@ -35,32 +89,280 @@ final class ArsenalLoadoutItems
     }
 
     /**
+     * Tableau getUnitLoadout d’une tenue, quel que soit l’emballage envoyé : JSON ou texte SQF (`str`, guillemets
+     * doublés, true/false), [loadout, version] ou [loadout, infos étendues ACE], [nom, loadout] (export ACE).
+     *
      * @return list<mixed>
      */
     public static function parse(string $payload): array
     {
-        $payload = trim($payload);
-        if ($payload === '' || $payload[0] !== '[') {
+        $decoded = self::decode($payload);
+        if ($decoded === null) {
             return [];
         }
-        $decoded = json_decode($payload, true);
-        if (!is_array($decoded)) {
-            return [];
+        for ($depth = 0; $depth < 3; $depth++) {
+            if (count($decoded) !== 2 || !is_array($decoded[1] ?? null) && !is_numeric($decoded[1] ?? null)) {
+                break;
+            }
+            if (is_array($decoded[0] ?? null) && count($decoded[0]) >= 9) {
+                $decoded = $decoded[0];
+                break;
+            }
+            if (is_string($decoded[0] ?? null) && is_array($decoded[1])) {
+                $decoded = $decoded[1];
+                continue;
+            }
+            break;
         }
-        if (
-            count($decoded) === 2
-            && isset($decoded[0])
-            && is_array($decoded[0])
-            && count($decoded[0]) >= 9
-            && is_numeric($decoded[1] ?? null)
-        ) {
-            $decoded = $decoded[0];
-        }
-        if (count($decoded) < 9) {
+        if (count($decoded) < 9 || array_is_list($decoded) === false) {
             return [];
         }
 
         return $decoded;
+    }
+
+    /**
+     * Texte de tenue → tableau PHP (JSON d’abord, sinon lecture du texte SQF). null si illisible.
+     *
+     * @return array<int|string, mixed>|null
+     */
+    public static function decode(string $payload): ?array
+    {
+        $payload = trim($payload);
+        $value = self::decodeText($payload);
+        if ($value !== null || !str_contains($payload, '""')) {
+            return $value;
+        }
+        // Texte passé par callExtension (COMSPEC Link → SyncWardrobe) : Arma refait un str de l’argument, donc
+        // chaque guillemet du str du loadout arrive doublé ([[""arifle_MX_F"",""""…). On défait ce second niveau.
+        if (strlen($payload) >= 2 && $payload[0] === '"' && $payload[strlen($payload) - 1] === '"') {
+            $payload = substr($payload, 1, -1);
+        }
+
+        return self::decodeText(str_replace('""', '"', $payload));
+    }
+
+    /**
+     * @return array<int|string, mixed>|null
+     */
+    private static function decodeText(string $payload): ?array
+    {
+        if ($payload === '' || $payload[0] !== '[') {
+            return null;
+        }
+        $decoded = json_decode($payload, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+        if (strlen($payload) > 600000) {
+            return null;
+        }
+        $pos = 0;
+        try {
+            $value = self::sqfValue($payload, $pos, 0);
+        } catch (\UnexpectedValueException) {
+            return null;
+        }
+        if (!is_array($value)) {
+            return null;
+        }
+
+        return $value;
+    }
+
+    /**
+     * Lecture d’une valeur SQF (`str` d’un tableau) : tableaux, chaînes "…" ou '…' (guillemet doublé = guillemet),
+     * nombres, true/false ; tout autre mot (nil, any, objNull…) vaut null.
+     */
+    private static function sqfValue(string $s, int &$pos, int $depth): mixed
+    {
+        $len = strlen($s);
+        while ($pos < $len && ctype_space($s[$pos])) {
+            $pos++;
+        }
+        if ($pos >= $len || $depth > 32) {
+            throw new \UnexpectedValueException('sqf_eof');
+        }
+        $c = $s[$pos];
+        if ($c === '[') {
+            $pos++;
+            $out = [];
+            while (true) {
+                while ($pos < $len && ctype_space($s[$pos])) {
+                    $pos++;
+                }
+                if ($pos < $len && $s[$pos] === ']') {
+                    $pos++;
+
+                    return $out;
+                }
+                $out[] = self::sqfValue($s, $pos, $depth + 1);
+                while ($pos < $len && ctype_space($s[$pos])) {
+                    $pos++;
+                }
+                if ($pos < $len && $s[$pos] === ',') {
+                    $pos++;
+                    continue;
+                }
+                if ($pos < $len && $s[$pos] === ']') {
+                    $pos++;
+
+                    return $out;
+                }
+                throw new \UnexpectedValueException('sqf_array');
+            }
+        }
+        if ($c === '"' || $c === "'") {
+            $pos++;
+            $buf = '';
+            while ($pos < $len) {
+                $ch = $s[$pos];
+                if ($ch === $c) {
+                    if ($pos + 1 < $len && $s[$pos + 1] === $c) {
+                        $buf .= $c;
+                        $pos += 2;
+                        continue;
+                    }
+                    $pos++;
+
+                    return $buf;
+                }
+                $buf .= $ch;
+                $pos++;
+            }
+            throw new \UnexpectedValueException('sqf_string');
+        }
+        if (preg_match('/\G-?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/', $s, $m, 0, $pos) === 1) {
+            $pos += strlen($m[0]);
+
+            return $m[0] + 0;
+        }
+        if (preg_match('/\G[A-Za-z_][A-Za-z0-9_<>]*/', $s, $m, 0, $pos) === 1) {
+            $pos += strlen($m[0]);
+            $w = strtolower($m[0]);
+
+            return $w === 'true' ? true : ($w === 'false' ? false : null);
+        }
+        if ($c === '<') {
+            // <null>, <NULL-object> : valeurs vides affichées par str.
+            $end = strpos($s, '>', $pos);
+            if ($end !== false) {
+                $pos = $end + 1;
+
+                return null;
+            }
+        }
+        throw new \UnexpectedValueException('sqf_token');
+    }
+
+    /**
+     * Pièces principales d’une tenue pour sa carte du catalogue (arme, tenue, gilet, casque, sac, lanceur), 5 au plus.
+     *
+     * @return list<string>
+     */
+    public static function previewClasses(string $payload): array
+    {
+        $lo = self::parse($payload);
+        if ($lo === []) {
+            return array_slice(self::classes($payload), 0, 5);
+        }
+        $pick = [
+            is_array($lo[0] ?? null) ? ($lo[0][0] ?? '') : '',
+            is_array($lo[3] ?? null) ? ($lo[3][0] ?? '') : '',
+            is_array($lo[4] ?? null) ? ($lo[4][0] ?? '') : '',
+            $lo[6] ?? '',
+            is_array($lo[5] ?? null) ? ($lo[5][0] ?? '') : '',
+            is_array($lo[1] ?? null) ? ($lo[1][0] ?? '') : '',
+            is_array($lo[2] ?? null) ? ($lo[2][0] ?? '') : '',
+        ];
+        $out = [];
+        foreach ($pick as $c) {
+            if (is_string($c) && trim($c) !== '' && !in_array(trim($c), $out, true)) {
+                $out[] = trim($c);
+            }
+        }
+
+        return array_slice($out, 0, 5);
+    }
+
+    /**
+     * Lignes d’aperçu (nom, classe, icône) pour une liste de classes, avec les noms vus en jeu si connus.
+     *
+     * @param list<string> $classes
+     * @param array<string, array{name?: string, players?: int}> $catalog
+     * @return list<array{name: string, qty: int, class: string, players?: int, icon?: string}>
+     */
+    public static function previewItems(array $classes, array $catalog = []): array
+    {
+        self::$catalog = $catalog;
+        try {
+            return array_map(static fn (string $c): array => self::item($c), $classes);
+        } finally {
+            self::$catalog = [];
+        }
+    }
+
+    /**
+     * Texte à coller dans l’arsenal ACE (bouton Importer, mannequin) : le getUnitLoadout de la tenue en SQF.
+     * null si la tenue est illisible.
+     */
+    public static function aceExport(string $payload): ?string
+    {
+        $loadout = self::parse($payload);
+
+        return $loadout === [] ? null : self::sqf($loadout);
+    }
+
+    /**
+     * Liste à coller dans « Mes équipements » d’ACE (onglet Mes équipements, Importer) : [[nom, loadout], …].
+     * Les tenues illisibles sont laissées de côté.
+     *
+     * @param list<array{name: string, payload: string}> $wardrobes
+     */
+    public static function aceExportList(array $wardrobes): string
+    {
+        $out = [];
+        $seen = [];
+        foreach ($wardrobes as $w) {
+            $loadout = self::parse((string) ($w['payload'] ?? ''));
+            $name = trim(preg_replace('/\s+/u', ' ', (string) ($w['name'] ?? '')) ?? '');
+            if ($loadout === [] || $name === '') {
+                continue;
+            }
+            // ACE range ses tenues par nom : un doublon écraserait la première.
+            $base = $name;
+            for ($n = 2; isset($seen[mb_strtolower($name)]); $n++) {
+                $name = $base . ' (' . $n . ')';
+            }
+            $seen[mb_strtolower($name)] = true;
+            $out[] = [$name, $loadout];
+        }
+
+        return self::sqf($out);
+    }
+
+    /**
+     * Valeur PHP → texte SQF lisible par parseSimpleArray (guillemets doublés dans les chaînes).
+     */
+    public static function sqf(mixed $v): string
+    {
+        if (is_array($v)) {
+            return '[' . implode(',', array_map([self::class, 'sqf'], array_values($v))) . ']';
+        }
+        if (is_bool($v)) {
+            return $v ? 'true' : 'false';
+        }
+        if (is_int($v)) {
+            return (string) $v;
+        }
+        if (is_float($v)) {
+            return is_finite($v) ? rtrim(rtrim(sprintf('%.6F', $v), '0'), '.') : '0';
+        }
+        if ($v === null) {
+            return '""';
+        }
+
+        return '"' . str_replace('"', '""', (string) $v) . '"';
     }
 
     /**
@@ -127,6 +429,34 @@ final class ArsenalLoadoutItems
         ];
     }
 
+    /**
+     * Ligne d’objet : nom affiché en jeu s’il est connu, sinon nom déduit de la classe.
+     *
+     * @return array{name: string, qty: int, class: string, players?: int, icon?: string}
+     */
+    private static function item(string $class, int $qty = 1, string $fallback = ''): array
+    {
+        $known = self::$catalog[strtolower(trim($class))] ?? null;
+        $name = trim((string) ($known['name'] ?? ''));
+        if ($name === '') {
+            $name = self::displayName($class);
+            if ($fallback !== '' && ($name === '' || strcasecmp($name, 'Item') === 0)) {
+                $name = $fallback;
+            }
+        }
+        $row = ['name' => $name, 'qty' => max(1, $qty), 'class' => trim($class)];
+        if ($known !== null && isset($known['players'])) {
+            $row['players'] = (int) $known['players'];
+        }
+        // Icône de l’objet (texture du jeu convertie, envoyée par COMSPEC Link 2.0.88), absente tant qu’elle n’est pas arrivée.
+        $icon = \App\Repositories\GameItemIconRepository::urlFor($row['class']);
+        if ($icon !== null) {
+            $row['icon'] = $icon;
+        }
+
+        return $row;
+    }
+
     public static function displayName(string $class): string
     {
         $class = trim($class);
@@ -186,7 +516,7 @@ final class ArsenalLoadoutItems
         $items = [];
         $container = $slot[0] ?? '';
         if (is_string($container) && $container !== '') {
-            $items[] = ['name' => self::displayName($container), 'qty' => 1];
+            $items[] = self::item($container);
         }
         $cargo = $slot[1] ?? [];
         foreach (self::cargoItems($cargo) as $row) {
@@ -208,7 +538,7 @@ final class ArsenalLoadoutItems
         }
         $sections[] = [
             'title' => $title,
-            'items' => [['name' => self::displayName($value), 'qty' => 1]],
+            'items' => [self::item($value)],
         ];
     }
 
@@ -227,11 +557,7 @@ final class ArsenalLoadoutItems
             if (!is_string($cls) || trim($cls) === '') {
                 continue;
             }
-            $name = self::displayName($cls);
-            if ($name === '' || strcasecmp($name, 'Item') === 0) {
-                $name = $fallback;
-            }
-            $items[] = ['name' => $name, 'qty' => 1];
+            $items[] = self::item($cls, 1, $fallback);
         }
         $items = self::mergeQty($items);
         if ($items !== []) {
@@ -251,12 +577,13 @@ final class ArsenalLoadoutItems
         if (!is_string($weapon) || $weapon === '') {
             return [];
         }
-        $weaponName = self::displayName($weapon);
-        $items = [['name' => $weaponName, 'qty' => 1]];
+        $first = self::item($weapon);
+        $weaponName = $first['name'];
+        $items = [$first];
         foreach ([1, 2, 3, 6] as $i) {
             $acc = $slot[$i] ?? '';
             if (is_string($acc) && $acc !== '') {
-                $items[] = ['name' => self::displayName($acc), 'qty' => 1];
+                $items[] = self::item($acc);
             }
         }
         foreach ([4, 5] as $i) {
@@ -268,11 +595,11 @@ final class ArsenalLoadoutItems
             if (!is_string($cls) || $cls === '') {
                 continue;
             }
-            $magName = self::displayName($cls);
-            if ($magName === '' || strcasecmp($magName, $weaponName) === 0) {
+            $mag = self::item($cls);
+            if ($mag['name'] === '' || strcasecmp($mag['name'], $weaponName) === 0) {
                 continue;
             }
-            $items[] = ['name' => $magName, 'qty' => 1];
+            $items[] = $mag;
         }
 
         return self::mergeQty($items);
@@ -306,7 +633,7 @@ final class ArsenalLoadoutItems
             if ($qty < 1) {
                 $qty = 1;
             }
-            $items[] = ['name' => self::displayName($first), 'qty' => $qty];
+            $items[] = self::item($first, $qty);
         }
 
         return $items;
@@ -358,14 +685,16 @@ final class ArsenalLoadoutItems
                 $qty = 1;
             }
             if (!isset($acc[$name])) {
-                $acc[$name] = 0;
+                $acc[$name] = $row;
+                $acc[$name]['name'] = $name;
+                $acc[$name]['qty'] = 0;
                 $order[] = $name;
             }
-            $acc[$name] += $qty;
+            $acc[$name]['qty'] += $qty;
         }
         $out = [];
         foreach ($order as $name) {
-            $out[] = ['name' => $name, 'qty' => $acc[$name]];
+            $out[] = $acc[$name];
         }
 
         return $out;

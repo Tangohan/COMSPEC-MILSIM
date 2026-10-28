@@ -43,7 +43,9 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('loginSteam', $sqfInit);
         $sqfSteam = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_loginSteam.sqf');
         self::assertStringContainsString('Connexion Steam — %1', $sqfSteam);
-        self::assertStringContainsString('plus une saisie joueur', $sqfConnect);
+        // The Steam identity is read from the game (getPlayerUID) and passed to Connect, never typed by the player.
+        self::assertStringContainsString('private _steamForConnect = getPlayerUID player;', $sqfConnect);
+        self::assertStringContainsString('_tenant, _steamForConnect,', $sqfConnect);
         self::assertStringNotContainsString('LinkBySteam', $sqfConnect);
         self::assertStringContainsString('CryptProtectData', $dll);
         self::assertStringContainsString('AuthPassword', $dll);
@@ -103,7 +105,10 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringNotContainsString('return "ERR|C2_UNAVAILABLE";', $dll);
         // READY = compte/profil ; les Tx exigent aussi canStartSync (isC2Ok).
         self::assertStringContainsString('isEqualTo "READY"', $isReady);
-        self::assertStringNotContainsString('isC2Ok', $isReady);
+        // isC2Ok may be mentioned in the header comment, but never called by isReady itself.
+        $isReadyCode = (string) preg_replace('#/\*.*?\*/#s', '', $isReady);
+        self::assertStringContainsString('isEqualTo "READY"', $isReadyCode);
+        self::assertStringNotContainsString('isC2Ok', $isReadyCode);
         self::assertStringContainsString('C2_', $isC2);
         $canStart = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/auth/fn_canStartSync.sqf');
         self::assertStringContainsString('isC2Ok', $canStart);
@@ -114,7 +119,11 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString('EnsureFreshAtakSession', $attach);
         self::assertStringContainsString('RememberAtakSessionToken', $attach);
         self::assertStringContainsString('_sessionExpiresAt', $attach);
-        self::assertStringContainsString('Ne jamais coller X-COMSPEC-KEY', $attach);
+        // With a game token, Bearer <game token> is the primary credential (mirrored in X-ATAK-TOKEN);
+        // the community key now rides along only as a fallback for proxies that drop Authorization.
+        self::assertStringContainsString('Jeton jeu : Bearer prioritaire', $attach);
+        self::assertStringContainsString('req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + gameTok);', $attach);
+        self::assertStringContainsString('req.Headers.TryAddWithoutValidation("X-ATAK-TOKEN", gameTok);', $attach);
         self::assertStringContainsString('presentedAuthCandidates', $authPhp);
         self::assertStringContainsString('matchedUserId', $authPhp);
         self::assertStringContainsString("'expires_in' => self::ACCESS_TTL_SEC", $svc);
@@ -129,7 +138,10 @@ final class GameAuthAssetTest extends TestCase
         $dll = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
         $callback = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_extensionCallback.sqf');
 
-        self::assertStringContainsString('InvokeCallback("AuthInvalidated", verify)', $dll);
+        // Refus définitif de la réauthentification : verrou commun (Extension_RefusalLatch.cs), qui prévient le SQF.
+        $latch = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension_RefusalLatch.cs');
+        self::assertStringContainsString('LatchAuthRefusal(refused, verify)', $dll);
+        self::assertStringContainsString('InvokeCallback("AuthInvalidated", detail)', $latch);
         self::assertStringContainsString('MaybeReauthAfter401(uri.AbsoluteUri)', $dll);
         self::assertStringContainsString('case "AuthInvalidated"', $callback);
         self::assertStringContainsString('["COMSPEC_AthenaReady", false, false]', $callback);
@@ -243,5 +255,21 @@ final class GameAuthAssetTest extends TestCase
         self::assertStringContainsString("\$body['_verify_restored_steam'] = true;", $source);
         self::assertStringContainsString('membershipHasSteam', $source);
         self::assertStringContainsString('steamNoticesForAccount', $source);
+    }
+
+    public function testNonNumericModVersionSkipsMinimumPackCheck(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $svc = (string) file_get_contents($root . '/app/Services/Game/GameAuthService.php');
+        $link = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/network/fn_athenaLink.sqf');
+        $status = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/network/fn_athenaStatus.sqf');
+
+        // L'ATAK natif sans Overwatch envoie mod_version « native » : jamais comparé au pack minimal (426 après /lier).
+        self::assertStringContainsString('preg_match(\'/^\d+(\.\d+)*$/\', $modVersion) === 1', $svc);
+        self::assertTrue(version_compare('native', '1.5.0', '<'));
+        self::assertSame(0, preg_match('/^\d+(\.\d+)*$/', 'native'));
+        // Le téléphone garde le code HTTP du refus et ne dit plus « serveur injoignable » quand Athena a répondu.
+        self::assertStringContainsString('_fail = (_r splitString "|") param [1, "http_4xx"];', $link);
+        self::assertStringContainsString('private _refused = _ls isEqualTo "error" && {(_ld find "http_4") isEqualTo 0};', $status);
     }
 }

@@ -102,7 +102,7 @@ $enforcedNowCount = count(array_filter($rules, static fn (array $r): bool => \Ap
                         </td>
                         <td class="px-4 py-3">
                             <p class="font-semibold text-slate-900"><?= htmlspecialchars((string) ($r['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                            <p class="mt-1 text-xs text-slate-500">preset: <?= htmlspecialchars((string) ($r['message_preset'] ?? '—'), ENT_QUOTES, 'UTF-8') ?> · ui: <?= htmlspecialchars((string) ($r['ui_variant'] ?? 'military'), ENT_QUOTES, 'UTF-8') ?><?= ((int) ($r['ui_animation'] ?? 1)) === 1 ? ' (animé)' : '' ?></p>
+                            <p class="mt-1 text-xs text-slate-500">preset: <?= htmlspecialchars((string) ($r['message_preset'] ?? '—'), ENT_QUOTES, 'UTF-8') ?> · apparence : <?= htmlspecialchars(\App\Support\MaintenanceThemes::label($r['ui_variant'] ?? null), ENT_QUOTES, 'UTF-8') ?><?= ((int) ($r['ui_animation'] ?? 1)) === 1 ? ' (animé)' : '' ?></p>
                         </td>
                         <td class="px-4 py-3 text-xs text-slate-600">
                             <p><strong>IPs:</strong> <?= htmlspecialchars((string) ($r['allowed_ips'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>

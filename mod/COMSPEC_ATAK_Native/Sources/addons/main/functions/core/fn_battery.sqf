@@ -1,15 +1,20 @@
 /*
-    Batterie simulée du téléphone (profil COMSPEC_ATAK_BatterySim et réglage serveur comspec_atak_native_battery_sim).
+    Batterie simulée du téléphone (profil COMSPEC_ATAK_BatterySim et condition « battery » de fn_netCond : réglage serveur comspec_atak_native_battery_sim, profil de réalisme, menu Échap, site).
     Consommation par minute selon l'usage : veille, écran porté ou en main, mode nuit (écran sombre),
-    appareil photo, live cam, guidage GPS, envois de données de la dernière minute, recherche de réseau
-    quand le signal est faible, brouilleur actif ; multiplicateur serveur comspec_atak_native_battery_drain.
-    Recharge à bord d'un véhicule moteur allumé. Alertes à 20 % et 5 % ; à 0 % le téléphone s'éteint (animation fn_powerFx)
+    appareil photo, live cam, app ouverte (carte et GPS, flux vidéo, traitement de données), musique, guidage GPS, envois de données de la dernière minute, recherche de réseau
+    quand le signal est faible, brouilleur actif. Réglages serveur : autonomie écran en main comspec_atak_native_battery_hours
+    (3 h par défaut, tous les usages suivent la même proportion), charge de départ comspec_atak_native_battery_start,
+    recharge en véhicule comspec_atak_native_battery_vehicle.
+    Recharge à bord d'un véhicule moteur allumé ou par la batterie externe (fn_powerBank) . Alertes à 20 % et 5 % ; à 0 % le téléphone s'éteint (animation fn_powerFx)
     et reste inutilisable jusqu'à la recharge ou au changement de batterie (fn_batterySwap).
     Appelée chaque seconde écran ouvert (barre d'état) et toutes les 10 s sinon. Retourne le niveau 0–100.
     Détail de la dernière mesure : missionNamespace COMSPEC_ATAK_BatteryInfo = [% consommé par minute (négatif = recharge), [[facteur, % / min]...]].
 */
+if (isNil { missionNamespace getVariable "COMSPEC_ATAK_Battery" }) then {
+    missionNamespace setVariable ["COMSPEC_ATAK_Battery", 5 max (missionNamespace getVariable ["comspec_atak_native_battery_start", 100]) min 100];
+};
 private _level = missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100];
-if !((profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true]) && {missionNamespace getVariable ["comspec_atak_native_battery_sim", true]}) exitWith { 100 };
+if !((profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true]) && {["battery"] call comspec_atak_native_fnc_netCond}) exitWith { 100 };
 if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { _level };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _now = diag_tickTime;
@@ -22,9 +27,28 @@ private _night = profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"];
 if (_open) then {
     private _scr = [0.35, 0.55] select (_s getOrDefault ["interactive", false]);
     if (_night isNotEqualTo "OFF") then { _scr = _scr * 0.6; };
+    // Luminosité baissée (volet rapide) : l'écran consomme moins.
+    _scr = _scr * (0.6 + 0.4 * ((profileNamespace getVariable ["COMSPEC_ATAK_Brightness", 1]) max 0.2 min 1));
     _f pushBack [["Écran porté", "Écran en main"] select (_s getOrDefault ["interactive", false]), _scr];
 } else {
     _f pushBack ["Veille", 0.12];
+};
+// App au premier plan : la carte et le GPS, un flux vidéo (drone, poursuite, JTAC) ou un traitement de données tirent plus.
+if (_open) then {
+    private _page = _s getOrDefault ["activePage", ""];
+    private _app = switch (true) do {
+        case (_page in ["DRONE", "LIVECAM", "TRACKING", "JTAC"]): { ["Flux vidéo", 0.3] };
+        case (_page in ["MAP", "BFT", "PLAN", "RELIEF", "GPS", "WAYPOINTS", "FIRES"]): { ["Carte et GPS", 0.1] };
+        case (_page in ["SSE", "DATALINK", "RECO", "GALLERY"]): { ["Traitement de données", 0.08] };
+        default { [] };
+    };
+    if (_app isNotEqualTo []) then { _f pushBack [format ["App : %1", _app select 0], _app select 1]; };
+};
+// Musique en lecture, aussi téléphone rangé ; le haut-parleur consomme plus que les écouteurs.
+private _mus = missionNamespace getVariable ["COMSPEC_ATAK_Music", createHashMap];
+if ((_mus getOrDefault ["kind", ""]) isNotEqualTo "" && {!(_mus getOrDefault ["paused", false])}) then {
+    private _spk = _mus getOrDefault ["speaker", false];
+    _f pushBack [["Musique (écouteurs)", "Musique (haut-parleur)"] select _spk, [0.06, 0.18] select _spk];
 };
 if (uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) then { _f pushBack ["Appareil photo", 0.7]; };
 if (!isNull (missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull])) then { _f pushBack ["Live cam", 1.0]; };
@@ -39,14 +63,24 @@ if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap]))
 private _uid = getPlayerUID player;
 private _t = [time, serverTime] select isMultiplayer;
 if (((missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) findIf { _x isEqualType [] && {(_x param [2, ""]) isEqualTo _uid} && {(_x param [4, 1e9]) > _t} }) >= 0) then { _f pushBack ["Brouilleur", 0.8]; };
+// Contrôle Zeus (fn_zeusFx) : surchauffe (1 chaud, 2 brûlant) et décharge forcée (% / min).
+private _heat = ["heat", 0] call comspec_atak_native_fnc_zeusFx;
+if (_heat isEqualType 0 && {_heat > 0}) then { _f pushBack [["Appareil chaud", "Surchauffe", "Surchauffe critique"] select ((_heat min 3) - 1), [0.3, 0.9, 0.3] select ((_heat min 3) - 1)]; };
+private _drain = ["drain", 0] call comspec_atak_native_fnc_zeusFx;
+if (_drain isEqualType 0 && {_drain > 0}) then { _f pushBack ["Décharge anormale", _drain]; };
 private _rate = 0;
 { _rate = _rate + (_x select 1); } forEach _f;
-_rate = _rate * (missionNamespace getVariable ["comspec_atak_native_battery_drain", 1]);
+// Les taux ci-dessus donnent environ 3 h écran en main (0,55 % / min) ; l'admin règle cette autonomie.
+_rate = _rate * 3 / ((missionNamespace getVariable ["comspec_atak_native_battery_hours", 3]) max 0.5);
 // Cellule abîmée (choc, balle, eau : fn_deviceDamage) : elle se vide jusqu'à trois fois plus vite.
 private _wear = ((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["battery", 0]) * ([0, 1] select (missionNamespace getVariable ["comspec_atak_native_damage_sim", true]));
-if (_wear > 0 && {_rate > 0}) then { _f pushBack ["Batterie endommagée", (_rate * 2 * _wear) toFixed 2]; _rate = _rate * (1 + 2 * _wear); };
+if (_wear > 0 && {_rate > 0}) then { _f pushBack ["Batterie endommagée", round (_rate * 2 * _wear * 100) / 100]; _rate = _rate * (1 + 2 * _wear); };
+// Batterie externe fixée sur la plaque (fn_powerBank).
+private _pb = ["rate", [_dt, _level]] call comspec_atak_native_fnc_powerBank;
+if (_pb < 0) then { _f pushBack [["label"] call comspec_atak_native_fnc_powerBank, _pb]; _rate = _rate + _pb; };
 private _veh = vehicle player;
-if (_veh isNotEqualTo player && {isEngineOn _veh}) then { _f pushBack ["Recharge véhicule", -3]; _rate = _rate - 3; };
+private _vr = missionNamespace getVariable ["comspec_atak_native_battery_vehicle", 3];
+if (_vr > 0 && {_veh isNotEqualTo player} && {isEngineOn _veh}) then { _f pushBack ["Recharge véhicule", -_vr]; _rate = _rate - _vr; };
 missionNamespace setVariable ["COMSPEC_ATAK_BatteryInfo", [_rate, _f]];
 
 private _old = _level;
@@ -59,7 +93,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_Battery", _level];
     };
 } forEach [20, 5];
 if (_old > 0 && {_level <= 0}) then {
-    ["WARNING", "Batterie vide : le téléphone s'éteint", 6, 70] call comspec_atak_native_fnc_notify;
+    ["WARNING", ["Batterie vide : le téléphone s'éteint", "Batterie vide : le téléphone s'éteint. Mode secours SIM : les relais peuvent encore le localiser par son numéro ou son IMEI"] select (missionNamespace getVariable ["comspec_atak_native_sim_sos", true]), 6, 70] call comspec_atak_native_fnc_notify;
+    ["publish"] call comspec_atak_native_fnc_simSos;
     // Écran qui baisse, icône « batterie vide », puis noir et téléphone rangé (fn_powerFx).
     ["empty"] call comspec_atak_native_fnc_powerFx;
 };

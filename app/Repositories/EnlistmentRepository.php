@@ -530,34 +530,16 @@ class EnlistmentRepository
 
     /**
      * Dernières candidatures (tous statuts), pour tableau de bord org.
-     * Colonnes larges (dossier, canal, affectation, portail) pour alimenter un tableau dense.
+     * Toutes les colonnes : le tableau staff s'appuie sur les mêmes champs que le bureau recrutement
+     * (étape de pipeline, date d'entretien, date de décision, rattachement, portail).
      *
      * @return list<array<string, mixed>>
      */
     public function recentForTenantDashboard(int $tenantId, int $limit = 12): array
     {
         $limit = max(1, min(50, $limit));
-        $cols = [
-            'id', 'first_name', 'last_name', 'email', 'callsign', 'country', 'experience',
-            'specialty', 'platform', 'availability', 'status', 'reviewed_by', 'reviewed_at',
-            'reviewer_comment', 'submitter_user_id', 'created_at', 'updated_at',
-        ];
-        if ($this->hasAccountColumns()) {
-            $cols[] = 'submitted_via';
-            $cols[] = 'consent_sharing_at';
-        }
-        if ($this->hasRecruitmentOpeningIdColumn()) {
-            $cols[] = 'recruitment_opening_id';
-        }
-        if ($this->hasPortalStatusDisplayColumns()) {
-            $cols[] = 'candidate_portal_status_mode';
-            $cols[] = 'candidate_portal_status_manual_text';
-            $cols[] = 'candidate_portal_status_manual_band';
-        }
-        $select = implode(', ', $cols);
         $stmt = $this->pdo->prepare(
-            "SELECT {$select}
-             FROM enlistments WHERE tenant_id = ?
+            "SELECT * FROM enlistments WHERE tenant_id = ?
              ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
              LIMIT {$limit}"
         );
@@ -792,8 +774,18 @@ class EnlistmentRepository
             'UPDATE enlistments SET submitter_user_id = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ? AND status = \'reviewed\''
         );
         $stmt->execute([$userId, $tenantId, $enlistmentId]);
+        if ($stmt->rowCount() > 0) {
+            return true;
+        }
+        // MySQL ne compte que les lignes réellement modifiées : déjà liée au même compte (updated_at posé dans la
+        // même seconde par la mise à jour d'identité de l'onboarding) donnait 0 et « compte local déjà présent ».
+        $check = $this->pdo->prepare(
+            'SELECT submitter_user_id FROM enlistments WHERE tenant_id = ? AND id = ? AND status = \'reviewed\' LIMIT 1'
+        );
+        $check->execute([$tenantId, $enlistmentId]);
+        $current = $check->fetchColumn();
 
-        return $stmt->rowCount() > 0;
+        return $current !== false && (int) $current === $userId;
     }
 
     /**
@@ -950,6 +942,44 @@ class EnlistmentRepository
         $row = $this->findActiveCandidatePortalAccessRow($tenantId, $enlistmentId);
 
         return $row !== null ? (string) $row['access_token'] : null;
+    }
+
+    /**
+     * Jetons de suivi encore valides pour plusieurs dossiers, en une requête (tableau de bord).
+     *
+     * @param list<array{0: int, 1: int}> $pairs liste de [tenant_id, enlistment_id]
+     * @return array<string, string> "tenantId:enlistmentId" => access_token
+     */
+    public function findValidCandidatePortalTokensForEnlistments(array $pairs): array
+    {
+        $wanted = [];
+        foreach ($pairs as [$tid, $eid]) {
+            if ((int) $tid > 0 && (int) $eid > 0) {
+                $wanted[(int) $tid . ':' . (int) $eid] = (int) $eid;
+            }
+        }
+        if ($wanted === [] || !$this->hasCandidatePortalTables()) {
+            return [];
+        }
+        $ids = array_values(array_unique($wanted));
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT tenant_id, enlistment_id, access_token
+             FROM enlistment_candidate_tokens
+             WHERE enlistment_id IN ($placeholders) AND expires_at > NOW()"
+        );
+        $stmt->execute($ids);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $key = (int) ($row['tenant_id'] ?? 0) . ':' . (int) ($row['enlistment_id'] ?? 0);
+            $tok = trim((string) ($row['access_token'] ?? ''));
+            // Même filtre que findActiveCandidatePortalAccessRow() : couple tenant/dossier exact, jeton non vide.
+            if ($tok !== '' && isset($wanted[$key]) && !isset($out[$key])) {
+                $out[$key] = $tok;
+            }
+        }
+
+        return $out;
     }
 
     /**

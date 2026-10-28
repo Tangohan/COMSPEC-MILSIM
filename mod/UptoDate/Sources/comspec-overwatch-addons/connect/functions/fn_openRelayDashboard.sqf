@@ -31,20 +31,17 @@ _bg ctrlCommit 0;
 // Header
 private _header = _display ctrlCreate ["RscStructuredText", 1001];
 _header ctrlSetPosition [0.3, 0.15, 0.4, 0.08];
-_header ctrlSetStructuredText parseText format [
+_header ctrlSetStructuredText parseText ((format [
     "<t size='1.5' color='#FFD700' align='center' font='PuristaBold'>TABLEAU DE BORD RELAIS ATAK</t><br/>" +
     "<t size='0.8' color='#AAAAAA' align='center'>Réseau radio tactique — Statut temps réel</t>"
-];
+]) call comspec_overwatch_connect_fnc_tr);
 _header ctrlSetBackgroundColor [0.1, 0.1, 0.1, 0.9];
 _header ctrlCommit 0;
 
-// Trouver tous les relais
-private _allRelays = [];
-{
-    if (_x getVariable ["COMSPEC_AtakRelayUid", ""] != "") then {
-        _allRelays pushBack _x;
-    };
-} forEach (entities "All");
+// Trouver tous les relais (registre placeAtakRelay : pas de balayage de toutes les entités)
+private _allRelays = (missionNamespace getVariable ["COMSPEC_AtakRelays", []]) select {
+    (_x isEqualType objNull) && {!isNull _x} && {(_x getVariable ["COMSPEC_AtakRelayUid", ""]) != ""}
+};
 
 // Trier par distance
 _allRelays = [_allRelays, [], {player distance2D _x}, "ASCEND"] call BIS_fnc_sortBy;
@@ -77,7 +74,7 @@ private _statsText = format [
     _errorsCount,
     _totalRelays
 ];
-_statsBar ctrlSetStructuredText parseText _statsText;
+_statsBar ctrlSetStructuredText parseText ((_statsText) call comspec_overwatch_connect_fnc_tr);
 _statsBar ctrlSetBackgroundColor [0.05, 0.05, 0.05, 0.9];
 _statsBar ctrlCommit 0;
 
@@ -145,7 +142,7 @@ _listBox ctrlSetFontHeight 0.03;
         _errorTag
     ];
     
-    private _index = _listBox lbAdd _lineText;
+    private _index = _listBox lbAdd ((_lineText) call comspec_overwatch_connect_fnc_tr);
     _listBox lbSetColor [_index, _colorCode];
     _listBox lbSetData [_index, netId _relay];
     
@@ -154,7 +151,7 @@ _listBox ctrlSetFontHeight 0.03;
 // Bouton "Resync tous"
 private _btnResync = _display ctrlCreate ["RscButton", 1004];
 _btnResync ctrlSetPosition [0.32, 0.77, 0.15, 0.04];
-_btnResync ctrlSetText "🔄 RESYNC TOUS";
+_btnResync ctrlSetText (("🔄 RESYNC TOUS") call comspec_overwatch_connect_fnc_tr);
 _btnResync ctrlSetBackgroundColor [0.2, 0.4, 0.8, 0.9];
 _btnResync ctrlSetTextColor [1, 1, 1, 1];
 _btnResync ctrlAddEventHandler ["ButtonClick", {
@@ -163,14 +160,18 @@ _btnResync ctrlAddEventHandler ["ButtonClick", {
     // Resync tous les relais
     private _count = 0;
     {
-        if (_x getVariable ["COMSPEC_AtakRelayUid", ""] != "") then {
-            [_x, true] call ATHENA_fnc_syncAtakRelay;
+        if ((_x isEqualType objNull) && {!isNull _x} && {(_x getVariable ["COMSPEC_AtakRelayUid", ""]) != ""}) then {
+            [_x, true] call comspec_overwatch_connect_fnc_syncAtakRelay;
             _x setVariable ["COMSPEC_AtakRelayLastSync", time, true];
             _count = _count + 1;
         };
-    } forEach (entities "All");
+    } forEach (missionNamespace getVariable ["COMSPEC_AtakRelays", []]);
     
-    hint format ["✅ %1 relais resynchronisés", _count];
+    // Alerte rendue dans le téléphone ATAK (journal HTML), jamais par-dessus l'écran de jeu.
+    private _resyncMsg = (format ["✅ %1 relais resynchronisés", _count]) call comspec_overwatch_connect_fnc_tr;
+    [_resyncMsg, "system", "info"] call comspec_overwatch_connect_fnc_announce;
+    // Le journal est masqué par ce tableau plein écran : retour aussi dans le pied du tableau rouvert.
+    uiNamespace setVariable ["COMSPEC_RelayDashboard_Feedback", _resyncMsg];
     
     // Fermer et rouvrir pour refresh
     call (uiNamespace getVariable ["COMSPEC_RelayDashboard_Close", {}]);
@@ -183,14 +184,19 @@ _btnResync ctrlAddEventHandler ["ButtonClick", {
 // Bouton "Téléporter"
 private _btnTeleport = _display ctrlCreate ["RscButton", 1005];
 _btnTeleport ctrlSetPosition [0.48, 0.77, 0.15, 0.04];
-_btnTeleport ctrlSetText "📍 TÉLÉPORTER";
+_btnTeleport ctrlSetText (("📍 TÉLÉPORTER") call comspec_overwatch_connect_fnc_tr);
 _btnTeleport ctrlSetBackgroundColor [0.8, 0.4, 0.2, 0.9];
 _btnTeleport ctrlSetTextColor [1, 1, 1, 1];
+// Téléportation réservée au Zeus / à l'admin (ou en solo) : sinon n'importe quel joueur pouvait s'y téléporter.
+private _canTeleport = !isMultiplayer || {!isNull (getAssignedCuratorLogic player)} || {serverCommandAvailable "#kick"};
+_btnTeleport ctrlEnable _canTeleport;
 _btnTeleport ctrlAddEventHandler ["ButtonClick", {
     params ["_ctrl"];
+    if !(!isMultiplayer || {!isNull (getAssignedCuratorLogic player)} || {serverCommandAvailable "#kick"}) exitWith {};
     private _display = ctrlParent _ctrl;
     private _listBox = _display displayCtrl 1003;
     private _selectedIndex = lbCurSel _listBox;
+    private _footer = _display displayCtrl 1007;
     
     if (_selectedIndex >= 0) then {
         private _netId = _listBox lbData _selectedIndex;
@@ -198,17 +204,21 @@ _btnTeleport ctrlAddEventHandler ["ButtonClick", {
         
         if (!isNull _relay) then {
             player setPos ((getPosATL _relay) vectorAdd [0, 5, 0]);
-            hint "✈️ Téléporté au relais";
+            private _msg = ("✈️ Téléporté au relais") call comspec_overwatch_connect_fnc_tr;
+            [_msg, "system", "info"] call comspec_overwatch_connect_fnc_announce;
+            if (!isNull _footer) then { _footer ctrlSetStructuredText parseText format ["<t size='0.7' color='#FFD700' align='center'>%1</t>", _msg]; };
         };
     } else {
-        hint "⚠️ Sélectionnez un relais dans la liste";
+        private _msg = ("⚠️ Sélectionnez un relais dans la liste") call comspec_overwatch_connect_fnc_tr;
+        [_msg, "system", "warn"] call comspec_overwatch_connect_fnc_announce;
+        if (!isNull _footer) then { _footer ctrlSetStructuredText parseText format ["<t size='0.7' color='#FFD700' align='center'>%1</t>", _msg]; };
     };
 }];
 
 // Bouton "Fermer"
 private _btnClose = _display ctrlCreate ["RscButton", 1006];
 _btnClose ctrlSetPosition [0.64, 0.77, 0.05, 0.04];
-_btnClose ctrlSetText "✖";
+_btnClose ctrlSetText (("✖") call comspec_overwatch_connect_fnc_tr);
 _btnClose ctrlSetBackgroundColor [0.6, 0.1, 0.1, 0.9];
 _btnClose ctrlSetTextColor [1, 1, 1, 1];
 _btnClose ctrlAddEventHandler ["ButtonClick", {
@@ -218,7 +228,13 @@ _btnClose ctrlAddEventHandler ["ButtonClick", {
 // Info footer
 private _footer = _display ctrlCreate ["RscStructuredText", 1007];
 _footer ctrlSetPosition [0.3, 0.82, 0.4, 0.03];
-_footer ctrlSetStructuredText parseText "<t size='0.7' color='#666666' align='center'>Double-cliquez sur un relais pour plus de détails | ESC pour fermer</t>";
+_footer ctrlSetStructuredText parseText (("<t size='0.7' color='#666666' align='center'>Double-cliquez sur un relais pour plus de détails | ESC pour fermer</t>") call comspec_overwatch_connect_fnc_tr);
+// Retour d'un « Resync tous » (le tableau vient d'être rouvert) : affiché ici, le journal du téléphone étant masqué.
+private _feedback = uiNamespace getVariable ["COMSPEC_RelayDashboard_Feedback", ""];
+if (_feedback isEqualType "" && {_feedback isNotEqualTo ""}) then {
+    uiNamespace setVariable ["COMSPEC_RelayDashboard_Feedback", ""];
+    _footer ctrlSetStructuredText parseText format ["<t size='0.7' color='#FFD700' align='center'>%1</t>", _feedback];
+};
 _footer ctrlCommit 0;
 
 // Double-clic pour détails
@@ -266,7 +282,7 @@ _listBox ctrlAddEventHandler ["LBDblClick", {
             round ((damage _relay) * 100)
         ];
         
-        hint _detailsText;
+        [(_detailsText) call comspec_overwatch_connect_fnc_tr, "system", "info"] call comspec_overwatch_connect_fnc_announce;
     };
 }];
 

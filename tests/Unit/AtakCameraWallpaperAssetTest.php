@@ -36,7 +36,8 @@ final class AtakCameraWallpaperAssetTest extends TestCase
         self::assertStringContainsString('class cameraOpen', $cfg);
         self::assertStringContainsString('class cameraShot', $cfg);
         self::assertStringContainsString('class cameraClose', $cfg);
-        self::assertStringContainsString('ui/camera.hpp', $cfg);
+        // Include Arma : séparateur « \\ » ou « / » selon les versions du config.
+        self::assertMatchesRegularExpression('~#include\\s+"ui[\\\\/]camera\\.hpp"~', $cfg);
         self::assertStringContainsString('1.8.22', $cfg);
 
         $cameraUi = (string) file_get_contents($addon . '/ui/camera.hpp');

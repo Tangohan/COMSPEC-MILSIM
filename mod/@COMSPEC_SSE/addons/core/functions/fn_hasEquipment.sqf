@@ -58,10 +58,13 @@ private _needOwBridge = false;
     };
 } forEach _roles;
 
+// Téléphone ATAK natif (dépendance) : photo, SEEK et terminal passent par lui ; repli Overwatch connect.
 if (
     _needOwBridge
-    && {!isNil "comspec_overwatch_connect_fnc_hasTerminal"}
-    && {[_unit] call comspec_overwatch_connect_fnc_hasTerminal}
+    && {
+        [_unit, true] call comspec_atak_native_fnc_hasDevice
+        || {!isNil "comspec_overwatch_connect_fnc_hasTerminal" && {[_unit] call comspec_overwatch_connect_fnc_hasTerminal}}
+    }
 ) exitWith { true };
 
 private _fnc_gearMatches = {

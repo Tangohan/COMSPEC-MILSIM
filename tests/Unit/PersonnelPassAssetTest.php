@@ -18,7 +18,7 @@ final class PersonnelPassAssetTest extends TestCase
         $root = $this->root();
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $migration = (string) file_get_contents($root . '/bootstrap/personnel_pass_migration.php');
-        $runner = (string) file_get_contents($root . '/run-migrations.php');
+        $runner = (string) \Tests\Support\MigrationPipelineSource::read($root);
         $nav = (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php');
         $index = (string) file_get_contents($root . '/views/admin/organization/passes_index.php');
         $form = (string) file_get_contents($root . '/views/admin/organization/passes_form.php');
@@ -40,8 +40,14 @@ final class PersonnelPassAssetTest extends TestCase
         self::assertStringContainsString('PersonnelPassAdminController', $container);
         self::assertStringContainsString('PASS RH', $nav);
         self::assertStringContainsString('PASS JTAC', $index);
-        self::assertStringContainsString('Avis hiérarchique', $form);
-        self::assertStringContainsString('Formation suivie', $form);
+        // Le champ « avis hiérarchique » est rendu dans chaque condition (libellé du type : catalogue du moteur).
+        self::assertStringContainsString('data-pass-field="avis"', $form);
+        // Les libellés de type viennent désormais du catalogue du moteur, rendu dans le formulaire.
+        self::assertStringContainsString('foreach ($catalog as $opt)', $form);
+        self::assertStringContainsString('data-pass-field="training"', $form);
+        $catalogLabels = array_column(\App\Services\Personnel\Pass\PassConditionEngine::catalog(), 'label');
+        self::assertContains('Formation suivie', $catalogLabels);
+        self::assertContains('Avis hiérarchique', $catalogLabels);
         self::assertStringContainsString('required_pass_id', $gradeForm);
         self::assertStringContainsString('required_pass_id', $offerForm);
     }

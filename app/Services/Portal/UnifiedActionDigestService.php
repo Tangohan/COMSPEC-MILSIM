@@ -24,7 +24,7 @@ final class UnifiedActionDigestService
 
     /**
      * @return array{
-     *   forum_unread: int,
+     *   notifications_unread: int,
      *   courrier_unread: int,
      *   tenant_messages_unread: int,
      *   my_enlistments_pending: int,
@@ -41,7 +41,7 @@ final class UnifiedActionDigestService
         bool $showStaffRecruitment,
     ): array {
         $msg = $this->personalMessageUnreadCounter->countsForUser($tenantId, $userId, $gate);
-        $forumUnread = $msg['forum_unread'];
+        $notificationsUnread = $msg['notifications_unread'];
         $courrierUnread = $msg['courrier_unread'];
         $tenantMessagesUnread = $msg['tenant_messages_unread'];
 
@@ -56,12 +56,12 @@ final class UnifiedActionDigestService
         $sections = [];
 
         $personal = [];
-        if ($forumUnread > 0) {
+        if ($notificationsUnread > 0) {
             $personal[] = [
                 'label' => 'Notifications à lire',
                 'href' => url('activite'),
-                'hint' => 'Forum, suivi roleplay et autres alertes non lues dans Mon activité.',
-                'count' => $forumUnread,
+                'hint' => 'Suivi roleplay, signalements et autres alertes non lues dans Mon activité.',
+                'count' => $notificationsUnread,
                 'priority' => 'normal',
                 'action' => 'Consulter',
             ];
@@ -169,17 +169,17 @@ final class UnifiedActionDigestService
             'items' => [
                 ['label' => 'Centre opérationnel', 'href' => url('hub'), 'hint' => 'Vue d’ensemble des modules.'],
                 ['label' => 'Recherche portail', 'href' => url('search'), 'hint' => 'Recherche unifiée sur les contenus autorisés.'],
-                ['label' => 'Mon activité', 'href' => url('activite'), 'hint' => 'Historique récent des échanges.'],
+                ['label' => 'Boîte de réception', 'href' => url('boite-reception'), 'hint' => 'Messages, courrier et annonces.'],
             ],
         ];
 
         return [
-            'forum_unread' => $forumUnread,
+            'notifications_unread' => $notificationsUnread,
             'courrier_unread' => $courrierUnread,
             'tenant_messages_unread' => $tenantMessagesUnread,
             'my_enlistments_pending' => $myPendingN,
             'staff_enlistments_pending' => $staffPendingN,
-            'total_attention' => $forumUnread + $courrierUnread + $tenantMessagesUnread + $myPendingN + $staffPendingN + $scheduleAttention,
+            'total_attention' => $notificationsUnread + $courrierUnread + $tenantMessagesUnread + $myPendingN + $staffPendingN + $scheduleAttention,
             'sections' => $sections,
         ];
     }
@@ -216,7 +216,7 @@ final class UnifiedActionDigestService
     ): array {
         $d = $this->buildActionCenter($tenantId, $userId, $userEmail, $gate, $showStaffRecruitment);
         $lines = [];
-        if ($d['forum_unread'] > 0) {
+        if ($d['notifications_unread'] > 0) {
             $lines[] = 'Vous avez des notifications non lues : ouvrez « Mon activité » pour les traiter.';
         }
         if ($d['courrier_unread'] > 0) {

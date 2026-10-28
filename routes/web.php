@@ -16,7 +16,6 @@ use App\Controllers\Web\ArsenalWardrobeController;
 use App\Controllers\Web\TrainingController;
 use App\Controllers\Web\TrainingCompetencyController;
 use App\Controllers\Web\AtakController;
-use App\Controllers\Web\AtakOverwatchBetaController;
 use App\Controllers\Web\OverwatchModDocController;
 use App\Controllers\Web\AtakMapGatewayController;
 use App\Controllers\Web\AtakSupportController;
@@ -25,30 +24,18 @@ use App\Controllers\Web\SseIntelligenceWorkspaceController;
 use App\Controllers\Web\JnetPortalController;
 use App\Controllers\Web\SseDigitalLabController;
 use App\Controllers\Web\SseArmaModelsController;
+use App\Controllers\Web\SseCampaignController;
 use App\Controllers\Web\SseFieldNoteController;
 use App\Controllers\Web\AccountController;
 use App\Controllers\Web\AccountPrivacyController;
 use App\Controllers\Web\HrCharterController;
 use App\Controllers\Web\RhWorkspaceController;
 use App\Controllers\Admin\System\PlatformDeploymentAdminController;
-use App\Controllers\Web\ModpackController;
-use App\Controllers\Web\ForumController;
-use App\Controllers\Web\ForumCategoryController;
-use App\Controllers\Web\ForumTopicController;
-use App\Controllers\Web\ForumNewTopicController;
-use App\Controllers\Web\ForumCoopTopicController;
 use App\Controllers\Web\InterteamMissionWebController;
 use App\Controllers\Web\CooperationCatalogWebController;
 use App\Controllers\Web\CooperationAnnouncementsWebController;
-use App\Controllers\Web\ForumModerationController;
 use App\Controllers\Web\ExternalLeaveController;
-use App\Controllers\Web\ForumModerationDashboardController;
 use App\Controllers\Web\ContentModerationController;
-use App\Controllers\Api\ForumApiController;
-use App\Controllers\Api\ForumModerationApiController;
-use App\Controllers\Api\ForumModerationReportInsightApiController;
-use App\Controllers\Api\ForumUploadController;
-use App\Controllers\Api\ForumRestController;
 use App\Controllers\Api\CommunityReportController;
 use App\Controllers\Api\OrbatApiController;
 use App\Controllers\Api\AtakIntelController;
@@ -58,6 +45,9 @@ use App\Controllers\Api\AtakPingController;
 use App\Controllers\Api\AthenaDataApiController;
 use App\Controllers\Web\AthenaDataInspectorController;
 use App\Controllers\Api\SseApiController;
+use App\Controllers\Api\MusicLibraryApiController;
+use App\Controllers\Web\MusicLibraryController;
+use App\Controllers\Admin\MusicAdminController;
 use App\Controllers\Api\SseFieldNoteApiController;
 use App\Controllers\Api\SseIntelApiController;
 use App\Controllers\Api\FireSupportController;
@@ -74,7 +64,6 @@ use App\Controllers\Web\PlatformSubscriptionController;
 use App\Controllers\Web\CommunityController;
 use App\Controllers\Web\AnalyticsBeaconController;
 use App\Controllers\Admin\AdminUnitsController;
-use App\Controllers\Admin\AdminModpackController;
 use App\Controllers\Admin\AdminAtakConfigController;
 use App\Controllers\Admin\AdminAtakReportRoutingController;
 use App\Controllers\Admin\AdminBriefingSlidesController;
@@ -153,6 +142,8 @@ use App\Controllers\Admin\Organization\GradeReferentielController;
 use App\Controllers\Admin\Organization\AdvancementAdminController;
 use App\Controllers\Admin\Organization\MemberAdvancementController;
 use App\Controllers\Api\AdvancementApiController;
+use App\Controllers\Admin\Organization\PilotLogbookController;
+use App\Controllers\Admin\Organization\PilotSyllabusController;
 use App\Controllers\Admin\Organization\QualificationReferentielController;
 use App\Controllers\Admin\Organization\RankCatalogAdminController;
 use App\Controllers\Admin\Organization\AwardReferentielController;
@@ -193,6 +184,7 @@ use App\Controllers\Web\TenantMessagesController;
 use App\Controllers\Admin\Organization\InvitationAdminController;
 use App\Controllers\Admin\Organization\DashboardPinsAdminController;
 use App\Controllers\Admin\Organization\DashboardWardrobePinsAdminController;
+use App\Controllers\Admin\Organization\GameEquipmentAdminController;
 use App\Controllers\Admin\Organization\ModerationOrganizationController;
 use App\Controllers\Admin\Organization\OrganizationSecurityIndicatorsController;
 use App\Controllers\Admin\Organization\OrganizationAnalyticsController;
@@ -223,7 +215,6 @@ use App\Controllers\Api\TrainingApiController;
 use App\Core\Router;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\GuestMiddleware;
-use App\Middleware\ForumModerateMiddleware;
 use App\Middleware\SystemAdminMiddleware;
 use App\Middleware\PlatformHubMiddleware;
 use App\Controllers\Admin\Organization\MemberSituationController;
@@ -236,12 +227,10 @@ use App\Middleware\NonDefaultTenantMiddleware;
 use App\Middleware\TrainingTenantResourceMiddleware;
 use App\Middleware\TenantResourceAdminMiddleware;
 use App\Middleware\InterteamMissionsAccessMiddleware;
-use App\Middleware\InterteamCooperationConsentMiddleware;
 use App\Middleware\InvitationSenderMiddleware;
 use App\Middleware\IntegrationsApiAuthMiddleware;
-use App\Middleware\ForumModerationConsoleMiddleware;
-use App\Middleware\ForumPublicMaintenanceMiddleware;
-use App\Middleware\ForumSanctionMiddleware;
+use App\Middleware\ModerationConsoleMiddleware;
+use App\Controllers\Web\ReportsModerationController;
 use App\Middleware\TenantMessagesSanctionMiddleware;
 use App\Middleware\DocumentsModuleSanctionMiddleware;
 use App\Middleware\TrainingModuleSanctionMiddleware;
@@ -269,8 +258,6 @@ use App\Controllers\Web\SitePagesController;
 use App\Controllers\Web\PersonnelDeploymentController;
 
 return function (Router $router) {
-    $mwForum = [AuthMiddleware::class, ForumPublicMaintenanceMiddleware::class, ForumSanctionMiddleware::class];
-    $mwForumCoop = [AuthMiddleware::class, ForumPublicMaintenanceMiddleware::class, ForumSanctionMiddleware::class, InterteamCooperationConsentMiddleware::class];
     $mwMessages = [AuthMiddleware::class, TenantMessagesSanctionMiddleware::class];
     $mwDocuments = [AuthMiddleware::class, DocumentsModuleSanctionMiddleware::class];
     $mwTraining = [AuthMiddleware::class, TrainingModuleSanctionMiddleware::class];
@@ -306,6 +293,47 @@ return function (Router $router) {
     $router->get('/nouveautes/{kind}/{number}', [SitePagesController::class, 'dispatch']);
     $router->get('/sse', [SitePagesController::class, 'sse']);
     $router->get('/atak-natif', [SitePagesController::class, 'atakNative']);
+    $router->get('/traduire-atak', [SitePagesController::class, 'translateAtak']);
+    $router->get('/traduire-atak/modele.json', [SitePagesController::class, 'translateAtakTemplate']);
+    // Packs de langue partagés : la page s'ouvre par le lien (jeton dans le fragment #), l'API lit X-Pack-Token.
+    $router->get('/traduire-atak/p/{id}', [SitePagesController::class, 'translateAtak']);
+    $router->post('/api/traduire-atak/packs', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'create']);
+    $router->get('/api/traduire-atak/compte', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'mine']);
+    $router->post('/api/traduire-atak/compte', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'saveMine']);
+    $router->post('/api/traduire-atak/packs/{id}/liens', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'links']);
+    $router->get('/api/traduire-atak/packs/{id}', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'show']);
+    $router->get('/api/traduire-atak/packs/{id}/history', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'history']);
+    $router->post('/api/traduire-atak/packs/{id}/strings', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'write']);
+    $router->post('/api/traduire-atak/packs/{id}/bulk', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'bulk']);
+    $router->post('/api/traduire-atak/packs/{id}/suggestions/{sid}', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'decide']);
+    $router->post('/api/traduire-atak/packs/{id}/revert', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'revert']);
+    $router->post('/api/traduire-atak/packs/{id}/settings', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'settings']);
+    $router->post('/api/traduire-atak/packs/{id}/rotate', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'rotate']);
+    $router->post('/api/traduire-atak/packs/{id}/delete', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'delete']);
+    $router->post('/api/traduire-atak/packs/{id}/publish', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'publish']);
+    $router->post('/api/traduire-atak/packs/{id}/listing', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'listing']);
+    // Contributeurs (rôles demandés par les membres, validés dans /admin/system/contributeurs) et traduction
+    // communautaire du site (/traduire-site : langues, espace de traduction, API, dictionnaire des scripts).
+    $router->get('/contribuer', [\App\Controllers\Web\ContributorController::class, 'index']);
+    $router->post('/contribuer/demande', [\App\Controllers\Web\ContributorController::class, 'apply'], [AuthMiddleware::class]);
+    $router->post('/contribuer/retirer', [\App\Controllers\Web\ContributorController::class, 'withdraw'], [AuthMiddleware::class]);
+    // Rôles liés de Discord : adresse de vérification déclarée à Discord, retour OAuth, Mon compte.
+    $router->get('/discord/roles-lies', [\App\Controllers\Web\DiscordLinkedRolesController::class, 'start'], [AuthMiddleware::class]);
+    $router->get('/discord/roles-lies/retour', [\App\Controllers\Web\DiscordLinkedRolesController::class, 'callback'], [AuthMiddleware::class]);
+    $router->post('/account/discord/actualiser', [\App\Controllers\Web\DiscordLinkedRolesController::class, 'sync'], [AuthMiddleware::class]);
+    $router->post('/account/discord/delier', [\App\Controllers\Web\DiscordLinkedRolesController::class, 'unlink'], [AuthMiddleware::class]);
+    $router->get('/traduire-site', [\App\Controllers\Web\SiteTranslationController::class, 'hub']);
+    $router->get('/traduire-site/dico/{code}.js', [\App\Controllers\Web\SiteTranslationController::class, 'dictionary']);
+    $router->post('/traduire-site/propositions/{id}', [\App\Controllers\Web\SiteTranslationController::class, 'decide']);
+    $router->get('/traduire-site/{code}', [\App\Controllers\Web\SiteTranslationController::class, 'workspace']);
+    $router->get('/traduire-site/{code}/phrases', [\App\Controllers\Web\SiteTranslationController::class, 'phrases']);
+    $router->post('/traduire-site/{code}/phrases', [\App\Controllers\Web\SiteTranslationController::class, 'save']);
+    $router->post('/traduire-site/{code}/phrases/effacer', [\App\Controllers\Web\SiteTranslationController::class, 'clear']);
+    // Workshop des langues : catalogue public des packs publiés, fiche, téléchargement direct, retrait par l'administration.
+    $router->get('/traduire-atak/workshop', [\App\Controllers\Web\AtakTranslationWorkshopController::class, 'catalog']);
+    $router->get('/traduire-atak/workshop/{id}', [\App\Controllers\Web\AtakTranslationWorkshopController::class, 'item']);
+    $router->get('/traduire-atak/workshop/{id}/telecharger', [\App\Controllers\Web\AtakTranslationWorkshopController::class, 'download']);
+    $router->post('/traduire-atak/workshop/{id}/moderer', [\App\Controllers\Web\AtakTranslationWorkshopController::class, 'moderate']);
     $router->get('/renseignement-sse', fn () => \App\Core\Response::redirect(url('sse')));
 
     $router->get('/acces-demonstration', [DemoNdaController::class, 'show']);
@@ -323,10 +351,16 @@ return function (Router $router) {
     $router->post('/c/{slug}/medias/{id}/like', [CommunityController::class, 'toggleMediaLike']);
     $router->get('/reels', [CommunityController::class, 'reelsRedirect']);
     $router->post('/c/{slug}/contact', [CommunityController::class, 'contactPublic']);
-    $router->get('/c/{slug}/forum', [CommunityController::class, 'enterForum'], $mwForum);
+    // Édition en place de la vitrine (gestionnaires de la communauté) : brouillon, publication, images.
+    $router->post('/c/{slug}/page-editor/draft', [\App\Controllers\Web\CommunityPageEditorController::class, 'saveDraft'], [AuthMiddleware::class]);
+    $router->post('/c/{slug}/page-editor/publish', [\App\Controllers\Web\CommunityPageEditorController::class, 'publish'], [AuthMiddleware::class]);
+    $router->post('/c/{slug}/page-editor/discard', [\App\Controllers\Web\CommunityPageEditorController::class, 'discard'], [AuthMiddleware::class]);
+    $router->post('/c/{slug}/page-editor/block', [\App\Controllers\Web\CommunityPageEditorController::class, 'renderBlock'], [AuthMiddleware::class]);
+    $router->post('/c/{slug}/page-editor/image', [\App\Controllers\Web\CommunityPageEditorController::class, 'uploadImage'], [AuthMiddleware::class]);
     $router->get('/c/{slug}/enlistment/enter', [CommunityController::class, 'enterEnlistment'], [AuthMiddleware::class, EnlistmentModuleSanctionMiddleware::class]);
     $router->get('/c/{slug}/setup', [CommunityController::class, 'setupForm'], [AuthMiddleware::class]);
     $router->post('/c/{slug}/setup', [CommunityController::class, 'setupStore'], [AuthMiddleware::class]);
+    $router->get('/communities/create/guide', [CommunityController::class, 'createGuide']);
     $router->get('/communities/create', [CommunityController::class, 'createForm'], [AuthMiddleware::class]);
     $router->post('/communities/create', [CommunityController::class, 'create'], [AuthMiddleware::class]);
     $router->get('/communities/create/preview', [CommunityController::class, 'createPreview'], [AuthMiddleware::class]);
@@ -341,13 +375,18 @@ return function (Router $router) {
     $router->get('/platform/upgrade', [PlatformSubscriptionController::class, 'upgrade'], [AuthMiddleware::class]);
     $router->post('/platform/upgrade/checkout', [PlatformSubscriptionController::class, 'checkout'], [AuthMiddleware::class]);
     $router->get('/platform/upgrade/complete', [PlatformSubscriptionController::class, 'complete'], [AuthMiddleware::class]);
+    // Page de paiement PayPal d’Athena (référence ATH-…).
+    $router->get('/paiement/{reference}', [\App\Controllers\Web\PlanPaymentController::class, 'show'], [AuthMiddleware::class]);
+    $router->get('/paiement/{reference}/qr.png', [\App\Controllers\Web\PlanPaymentController::class, 'qr'], [AuthMiddleware::class]);
+    $router->post('/paiement/{reference}/declarer', [\App\Controllers\Web\PlanPaymentController::class, 'declare'], [AuthMiddleware::class]);
     $router->get('/cron/run', [\App\Controllers\Web\CronController::class, 'run']);
     $router->post('/cron/run', [\App\Controllers\Web\CronController::class, 'run']);
     $router->post('/analytics/beacon', [AnalyticsBeaconController::class, 'post']);
     $router->get('/register', [RegisterController::class, 'show'], [GuestMiddleware::class]);
     $router->post('/register', [RegisterController::class, 'store'], [GuestMiddleware::class]);
     $router->get('/register/check-email', [VerifyEmailController::class, 'showCheckEmail'], [GuestMiddleware::class]);
-    $router->get('/verify-email', [VerifyEmailController::class, 'verify'], [GuestMiddleware::class]);
+    // Sans GuestMiddleware : un membre déjà connecté (autre compte, autre onglet) doit pouvoir confirmer son adresse.
+    $router->get('/verify-email', [VerifyEmailController::class, 'verify']);
     $router->post('/resend-verification', [VerifyEmailController::class, 'resendVerification'], [GuestMiddleware::class]);
     $router->get('/security/device-deny', [SecurityDeviceController::class, 'denyDevice'], [GuestMiddleware::class]);
     $router->get('/join', [JoinController::class, 'show']);
@@ -355,7 +394,9 @@ return function (Router $router) {
     $router->get('/soutenir-atak', [AtakSupportController::class, 'index']);
     $router->get('/soutenir-atak/connexion', [AtakSupportController::class, 'loginGate']);
     $router->post('/soutenir-atak/checkout', [AtakSupportController::class, 'checkout'], [AuthMiddleware::class]);
+    $router->post('/soutenir-atak/mur', [AtakSupportController::class, 'wallVisibility'], [AuthMiddleware::class]);
     $router->get('/soutenir-atak/merci', [AtakSupportController::class, 'thanks']);
+    $router->get('/soutenir-atak/paypal-qr.png', [AtakSupportController::class, 'paypalQr']);
     $router->get('/platform/invite-unit', [ReferralInviteController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/invitations/accept', [InvitationAcceptController::class, 'show']);
     $router->post('/invitations/accept', [InvitationAcceptController::class, 'accept']);
@@ -432,7 +473,6 @@ return function (Router $router) {
     $router->post('/deploiement/{id}/checkup', [PersonnelDeploymentController::class, 'saveCheckup'], [AuthMiddleware::class]);
     $router->post('/deploiement/{id}/anomalie', [PersonnelDeploymentController::class, 'reportAnomaly'], [AuthMiddleware::class]);
     $router->get('/activite', [ActivityHubController::class, 'index'], [AuthMiddleware::class]);
-    $router->post('/activite/forum/lu', [ActivityHubController::class, 'markForumRead'], $mwForum);
     $router->post('/activite/courrier/lu', [ActivityHubController::class, 'markCourrierRead'], $mwCourrier);
     $router->post('/activite/messages/lu', [ActivityHubController::class, 'markTenantMessagesRead'], [AuthMiddleware::class]);
     $router->get('/calendrier/abonnement/{token}', [CommunityCalendarFeedController::class, 'ics']);
@@ -470,6 +510,7 @@ return function (Router $router) {
     $router->get('/search', [PortalSearchController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/documentation', [DocumentationController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/documentation/marqueurs', [DocumentationController::class, 'markersLibrary'], [AuthMiddleware::class]);
+    $router->get('/documentation/profils', [DocumentationController::class, 'profiles'], [AuthMiddleware::class]);
     $router->get('/documentation/references', [DocumentationController::class, 'references'], [AuthMiddleware::class]);
     $router->get('/documentation/fichier/{key}', [DocumentationController::class, 'file'], [AuthMiddleware::class]);
     $router->get('/api/operations/doctrine/documents', [DoctrineApiController::class, 'list'], [AuthMiddleware::class]);
@@ -479,6 +520,15 @@ return function (Router $router) {
     $router->get('/api/portal/search', [PortalSearchController::class, 'apiSearch'], [AuthMiddleware::class]);
     $router->get('/api/back-office/search', [\App\Controllers\Admin\Organization\BackOfficeSearchController::class, 'api'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/hub', [HubController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/hub/comparer', [HubController::class, 'compare'], [AuthMiddleware::class]);
+    $router->get('/hub/c/{slug}', [HubController::class, 'community'], [AuthMiddleware::class]);
+    $router->post('/hub/c/{slug}/recommander', [HubController::class, 'recommend'], [AuthMiddleware::class]);
+    $router->post('/hub/avis', [HubController::class, 'review'], [AuthMiddleware::class]);
+    $router->get('/hub/bourse', [HubController::class, 'board'], [AuthMiddleware::class]);
+    $router->post('/hub/bourse', [HubController::class, 'boardStore'], [AuthMiddleware::class]);
+    $router->post('/hub/bourse/{id}/repondre', [HubController::class, 'boardRespond'], [AuthMiddleware::class]);
+    $router->post('/hub/bourse/{id}/cloturer', [HubController::class, 'boardClose'], [AuthMiddleware::class]);
+    $router->post('/hub/bourse/reponses/{id}', [HubController::class, 'boardDecide'], [AuthMiddleware::class]);
     $router->get('/operations', [OperationWorkspaceController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/operations', [OperationWorkspaceController::class, 'store'], [AuthMiddleware::class]);
     $router->get('/operations/{uuid}', [OperationWorkspaceController::class, 'show'], [AuthMiddleware::class]);
@@ -507,6 +557,8 @@ return function (Router $router) {
     $router->post('/pointage/check-in', [PointageController::class, 'checkIn'], [AuthMiddleware::class]);
     $router->get('/manoeuvres', [PointageController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/boite-reception', [InboxController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/boite-reception/lu', [InboxController::class, 'markRead'], [AuthMiddleware::class]);
+    $router->post('/boite-reception/supprimer', [InboxController::class, 'delete'], [AuthMiddleware::class]);
     $router->get('/onboarding', [OnboardingController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/onboarding/persona', [OnboardingController::class, 'choosePersona'], [AuthMiddleware::class]);
     $router->post('/onboarding/step', [OnboardingController::class, 'toggleStep'], [AuthMiddleware::class]);
@@ -527,7 +579,19 @@ return function (Router $router) {
     $router->get('/formations/creer', [TrainingWizardController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account/acces', [AccountController::class, 'access'], [AuthMiddleware::class]);
+    // Rétrospective annuelle du joueur (stories, cartes à partager) et bilan de l'unité (formules payantes).
+    $router->get('/retrospective', [\App\Controllers\Web\YearReviewController::class, 'latest'], [AuthMiddleware::class]);
+    $router->get('/retrospective/{year}', [\App\Controllers\Web\YearReviewController::class, 'show'], [AuthMiddleware::class]);
+    $router->get('/retrospective/{year}/unite', [\App\Controllers\Web\YearReviewController::class, 'community'], [AuthMiddleware::class]);
+    $router->post('/retrospective/{year}/vu', [\App\Controllers\Web\YearReviewController::class, 'dismiss'], [AuthMiddleware::class]);
+    $router->post('/compte/formule-offerte/{id}/vu', [\App\Controllers\Web\PlanGiftNoticeController::class, 'dismiss'], [AuthMiddleware::class]);
+    $router->post('/compte/retours-signalement/vu', [\App\Controllers\Web\ModReportReplyNoticeController::class, 'dismiss'], [AuthMiddleware::class]);
     $router->post('/account/quitter-communaute', [AccountController::class, 'leaveCommunity'], [AuthMiddleware::class]);
+    // Compte simple (usage sans organisation).
+    $router->post('/account/usage-solo', [\App\Controllers\Web\AccountUsageController::class, 'chooseSolo'], [AuthMiddleware::class]);
+    $router->post('/account/usage-solo/annuler', [\App\Controllers\Web\AccountUsageController::class, 'leaveSolo'], [AuthMiddleware::class]);
+    $router->post('/account/compte-simple', [\App\Controllers\Web\AccountUsageController::class, 'convert'], [AuthMiddleware::class]);
+    $router->post('/account/compte-simple/plus-tard', [\App\Controllers\Web\AccountUsageController::class, 'dismissOffer'], [AuthMiddleware::class]);
     $router->post('/account/sessions/fermer-les-autres', [AccountController::class, 'revokeOtherSessions'], [AuthMiddleware::class]);
     $router->get('/account/donnees', [AccountPrivacyController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/account/donnees/export', [AccountPrivacyController::class, 'export'], [AuthMiddleware::class]);
@@ -546,6 +610,17 @@ return function (Router $router) {
     $router->get('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
     $router->post('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
     $router->get('/account/security/devices', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'index'], [AuthMiddleware::class]);
+    // Liaison du jeu par code affiché dans Arma (connexion au compte Athena, sans clé de communauté).
+    $router->get('/lier', [\App\Controllers\Web\AtakQuickLinkController::class, 'show']);
+    $router->post('/lier', [\App\Controllers\Web\AtakQuickLinkController::class, 'confirm'], [AuthMiddleware::class, AtakModuleSanctionMiddleware::class]);
+    $router->get('/lier/etat', [\App\Controllers\Web\AtakQuickLinkController::class, 'state'], [AuthMiddleware::class]);
+    // Télécommande drone sur le vrai téléphone (QR code de l'app Drone en jeu ou du panneau Drones d'Overwatch).
+    $router->get('/telecommande-drone', [\App\Controllers\Web\AtakDroneRemoteController::class, 'show']);
+    $router->get('/telecommande-drone/qr.png', [\App\Controllers\Web\AtakDroneRemoteController::class, 'qr']);
+    // 9-LINE du JTAC sur un autre écran (QR code et bouton de l'app JTAC de l'ATAK natif).
+    $router->get('/9-line', [\App\Controllers\Web\AtakNineLineViewController::class, 'show']);
+    $router->get('/9-line/feed', [\App\Controllers\Web\AtakNineLineViewController::class, 'feed'], [AuthMiddleware::class]);
+    $router->get('/9-line/qr.png', [\App\Controllers\Web\AtakNineLineViewController::class, 'qr']);
     $router->post('/account/security/devices/revoke', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'revoke'], [AuthMiddleware::class]);
     $router->get('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->post('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
@@ -601,6 +676,8 @@ return function (Router $router) {
     $router->post('/personnel/{id}/member-number/regenerate', [PersonnelController::class, 'regenerateMemberNumber'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/sync-steam', [PersonnelController::class, 'syncSteamProfile'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/notes', [PersonnelController::class, 'updateNotes'], [AuthMiddleware::class]);
+    $router->post('/personnel/{id}/temps-par-role/deplacer', [PersonnelController::class, 'moveRoleTime'], [AuthMiddleware::class]);
+    $router->post('/personnel/{id}/temps-par-role/{moveId}/annuler', [PersonnelController::class, 'revertRoleTimeMove'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/bilans', [PersonnelController::class, 'storeStageBilan'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/phase', [PersonnelPhaseAdminController::class, 'applyMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/orbat', [PersonnelController::class, 'orbat'], [AuthMiddleware::class]);
@@ -665,6 +742,20 @@ return function (Router $router) {
     $router->get('/documents/gestion/{id}/historique', [AdminDocumentsController::class, 'history'], $mwDocuments);
     $router->get('/documents/gestion/{id}/acces', [AdminDocumentsController::class, 'access'], $mwDocuments);
     $router->get('/documents/mes-documents', [\App\Controllers\Web\DocumentInboxController::class, 'index'], $mwDocuments);
+    // Fichiers partagés de la communauté : rien n'est visible sans partage (contrôle dans le contrôleur, élément par élément).
+    $router->get('/partage', [\App\Controllers\Web\FileShareController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/partage/fichiers/{id}', [\App\Controllers\Web\FileShareController::class, 'download'], [AuthMiddleware::class]);
+    $router->post('/partage/fichiers/{id}/renommer', [\App\Controllers\Web\FileShareController::class, 'renameFile'], [AuthMiddleware::class]);
+    $router->post('/partage/fichiers/{id}/supprimer', [\App\Controllers\Web\FileShareController::class, 'deleteFile'], [AuthMiddleware::class]);
+    $router->post('/partage/dossiers', [\App\Controllers\Web\FileShareController::class, 'createFolder'], [AuthMiddleware::class]);
+    $router->post('/partage/dossiers/{id}/modifier', [\App\Controllers\Web\FileShareController::class, 'updateFolder'], [AuthMiddleware::class]);
+    $router->post('/partage/dossiers/{id}/supprimer', [\App\Controllers\Web\FileShareController::class, 'deleteFolder'], [AuthMiddleware::class]);
+    $router->post('/partage/dossiers/{id}/fichiers', [\App\Controllers\Web\FileShareController::class, 'upload'], [AuthMiddleware::class]);
+    $router->post('/partage/dossiers/{id}/reprendre', [\App\Controllers\Web\FileShareController::class, 'takeOver'], [AuthMiddleware::class]);
+    $router->post('/partage/acces', [\App\Controllers\Web\FileShareController::class, 'share'], [AuthMiddleware::class]);
+    $router->post('/partage/acces/{id}/retirer', [\App\Controllers\Web\FileShareController::class, 'unshare'], [AuthMiddleware::class]);
+    $router->post('/partage/corbeille/{type}/{id}/restaurer', [\App\Controllers\Web\FileShareController::class, 'restore'], [AuthMiddleware::class]);
+    $router->post('/partage/corbeille/{type}/{id}/supprimer', [\App\Controllers\Web\FileShareController::class, 'purge'], [AuthMiddleware::class]);
     $router->get('/documents/doctrine/{id}', [DoctrineDocumentsController::class, 'show'], $mwDocuments);
     $router->post('/documents/doctrine/{id}/acknowledge', [DoctrineDocumentsController::class, 'acknowledge'], $mwDocuments);
     $router->post('/documents/{id}/unlock', [DocumentsController::class, 'unlock'], $mwDocuments);
@@ -674,8 +765,10 @@ return function (Router $router) {
     $router->get('/documents/{id}/download', [DocumentsController::class, 'download'], $mwDocuments);
     $router->get('/documents/{slug}', [DocumentsController::class, 'show'], $mwDocuments);
     $router->get('/equipment', [ArsenalWardrobeController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/equipment/icones/{file}', [GameEquipmentAdminController::class, 'memberIcon'], [AuthMiddleware::class]);
     $router->get('/equipment/covers/{tenantId}/{file}', [ArsenalWardrobeController::class, 'streamCover'], [AuthMiddleware::class]);
     $router->get('/equipment/wardrobes', [ArsenalWardrobeController::class, 'redirectHub'], [AuthMiddleware::class]);
+    $router->get('/equipment/ace-export', [ArsenalWardrobeController::class, 'aceExport'], [AuthMiddleware::class]);
     $router->post('/equipment/collections', [ArsenalWardrobeController::class, 'storeCollection'], [AuthMiddleware::class]);
     $router->post('/equipment/collections/{id}', [ArsenalWardrobeController::class, 'updateCollection'], [AuthMiddleware::class]);
     $router->post('/equipment/collections/{id}/delete', [ArsenalWardrobeController::class, 'destroyCollection'], [AuthMiddleware::class]);
@@ -683,6 +776,7 @@ return function (Router $router) {
     $router->post('/equipment/tenues/{id}', [ArsenalWardrobeController::class, 'updateWardrobe'], [AuthMiddleware::class]);
     $router->post('/equipment/tenues/{id}/delete', [ArsenalWardrobeController::class, 'destroyWardrobe'], [AuthMiddleware::class]);
     $router->get('/equipment/tenues/{id}', [ArsenalWardrobeController::class, 'showWardrobe'], [AuthMiddleware::class]);
+    $router->post('/equipment/mon-kit/tenue', [ArsenalWardrobeController::class, 'saveMyGameKit'], [AuthMiddleware::class]);
     $router->post('/equipment/fiches', [ArsenalWardrobeController::class, 'storeFiche'], [AuthMiddleware::class]);
     $router->post('/equipment/fiches/{id}', [ArsenalWardrobeController::class, 'updateFiche'], [AuthMiddleware::class]);
     $router->get('/equipment/fiches/{id}', [ArsenalWardrobeController::class, 'showFiche'], [AuthMiddleware::class]);
@@ -693,10 +787,10 @@ return function (Router $router) {
     $router->post('/equipment/wardrobes/collections/{id}/delete', [ArsenalWardrobeController::class, 'destroyCollection'], [AuthMiddleware::class]);
     $router->post('/equipment/wardrobes/{id}/delete', [ArsenalWardrobeController::class, 'destroyWardrobe'], [AuthMiddleware::class]);
     $router->get('/equipment/{slug}', [EquipmentController::class, 'show'], [AuthMiddleware::class]);
-    $router->get('/modpacks', [ModpackController::class, 'index'], [AuthMiddleware::class]);
-    $router->get('/modpacks/images/{id}', [ModpackController::class, 'image'], [AuthMiddleware::class]);
-    $router->get('/modpacks/{id}/download', [ModpackController::class, 'download'], [AuthMiddleware::class]);
-    $router->get('/modpacks/{slug}', [ModpackController::class, 'show'], [AuthMiddleware::class]);
+    // Modpacks retirés : les mods sont servis par le Steam Workshop, les anciennes adresses mènent au guide d'installation.
+    foreach (['/modpacks', '/modpacks/images/{id}', '/modpacks/{id}/download', '/modpacks/{slug}'] as $legacyModpack) {
+        $router->get($legacyModpack, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('atak/mod')), [AuthMiddleware::class]);
+    }
     $router->get('/formations', [TrainingController::class, 'index'], $mwTraining);
     $router->post('/formations/enroll', [TrainingController::class, 'postEnroll'], $mwTraining);
     $router->post('/formations/inscription/annuler', [TrainingController::class, 'postWithdrawEnrollment'], $mwTraining);
@@ -767,6 +861,14 @@ return function (Router $router) {
     $router->post('/atak/sse/rapprochements/{id}/rejeter', [SsePortalController::class, 'suggestionReject'], $mwSsePortal);
     $router->post('/atak/sse/moteur/executer', [SsePortalController::class, 'engineRunNow'], $mwSsePortal);
     // Fiches de renseignement simplifiées — rédacteur plein écran (portail et ATAK)
+    // Campagnes du mod COMSPEC SSE : gestion Athena et catalogue partagé entre communautés.
+    $router->get('/atak/sse/campagnes', [SseCampaignController::class, 'index'], $mwSsePortal);
+    $router->post('/atak/sse/campagnes/importer', [SseCampaignController::class, 'import'], $mwSsePortal);
+    $router->get('/atak/sse/campagnes/partagees', [SseCampaignController::class, 'catalog'], $mwSsePortal);
+    $router->post('/atak/sse/campagnes/partagees/{id}/copier', [SseCampaignController::class, 'catalogImport'], $mwSsePortal);
+    $router->get('/atak/sse/campagnes/{id}', [SseCampaignController::class, 'show'], $mwSsePortal);
+    $router->get('/atak/sse/campagnes/{id}/texte', [SseCampaignController::class, 'export'], $mwSsePortal);
+    $router->post('/atak/sse/campagnes/{id}', [SseCampaignController::class, 'action'], $mwSsePortal);
     $router->get('/atak/sse/fiches', [SseFieldNoteController::class, 'index'], $mwSsePortal);
     $router->get('/atak/sse/fiches/nouvelle', [SseFieldNoteController::class, 'composer'], $mwSsePortal);
     $router->post('/atak/sse/fiches', [SseFieldNoteController::class, 'store'], $mwSsePortal);
@@ -912,9 +1014,8 @@ return function (Router $router) {
     $router->get('/atak/sse/guide', [SsePortalController::class, 'guide'], $mwSsePortal);
     $router->get('/atak/sse/documentation', [SsePortalController::class, 'guide'], $mwSsePortal);
     $router->get('/atak', [AtakController::class, 'index'], $mwAtakWeb);
-    // Workspace cartographique expérimental, volontairement isolé de l'interface ATAK historique.
+    // Anciennes adresses de l'Overwatch Beta : redirection permanente vers /atak (Overwatch en production).
     $router->get('/-ATAK-OVERWATCH-Beta', [AtakController::class, 'overwatchBeta'], $mwAtakWeb);
-    // Alias mémorisables : l'URL beta reste accessible même si le serveur normalise la casse.
     $router->get('/atak-overwatch-beta', [AtakController::class, 'overwatchBeta'], $mwAtakWeb);
     $router->get('/ATAK-OVERWATCH-Beta', [AtakController::class, 'overwatchBeta'], $mwAtakWeb);
     $router->get('/atak/mobile', [\App\Controllers\Web\AtakMobileController::class, 'index'], $mwAtakWeb);
@@ -937,7 +1038,29 @@ return function (Router $router) {
     $router->get('/admin/roles/{id}/edit', [SystemRoleController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/roles/{id}/update', [SystemRoleController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/settings', [SystemSettingsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
-    $router->get('/admin/system/brief', [\App\Controllers\Admin\System\SystemBriefSettingsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Plancher de version des DLL du jeu (SEC-001) : réglage, abaissement ou retrait en un clic.
+    $router->post('/admin/settings/version-dll', [SystemSettingsController::class, 'saveGameClientGate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/annuaire', [\App\Controllers\Admin\System\SystemRegistryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/epingler', [\App\Controllers\Admin\System\SystemRegistryController::class, 'pin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/retirer', [\App\Controllers\Admin\System\SystemRegistryController::class, 'unpin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Intégrations de la plateforme (salons Discord de l'équipe, rôles liés de Discord, envoi commun des e-mails).
+    $router->get('/admin/system/integrations', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/integrations/discord', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'saveDiscord'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/integrations/discord/essai', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'testDiscord'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/integrations/roles-lies', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'saveLinkedRoles'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/integrations/emails', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'saveMail'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/integrations/emails/essai', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'testMail'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/contributeurs', [\App\Controllers\Admin\System\SystemContributorsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/contributeurs/role', [\App\Controllers\Admin\System\SystemContributorsController::class, 'role'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/contributeurs/langue', [\App\Controllers\Admin\System\SystemContributorsController::class, 'language'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/annuaire/discord', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/discord/valider', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'approve'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/discord/refuser', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'reject'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/discord/bloquer', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'block'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/discord/debloquer', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'unblock'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/discord/retirer', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'remove'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/discord/reglages', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'settings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/annuaire/discord/verifier', [\App\Controllers\Admin\System\SystemDiscordShowcaseController::class, 'check'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/blocklist', [SystemIndicatorBlocklistController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/blocklist/add', [SystemIndicatorBlocklistController::class, 'add'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/blocklist/revoke', [SystemIndicatorBlocklistController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -947,12 +1070,32 @@ return function (Router $router) {
     $router->post('/admin/system/demo-nda/remove-bypass', [SystemDemoNdaController::class, 'removeBypassIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/demo-nda/add-my-ip', [SystemDemoNdaController::class, 'addMyIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/demo-nda/reset-visit', [SystemDemoNdaController::class, 'resetVisit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/e-mails', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/retrospective', [\App\Controllers\Admin\System\SystemYearReviewController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/retrospective/reglages', [\App\Controllers\Admin\System\SystemYearReviewController::class, 'save'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/retrospective/recalculer', [\App\Controllers\Admin\System\SystemYearReviewController::class, 'refresh'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/e-mails/reglages', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/e-mails/recapitulatif', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'sendDigestNow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Registre des données (tableaux, corrélations, purge des joueurs fantômes).
+    $router->get('/admin/system/donnees', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/donnees/api', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'api'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/donnees/outils', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'tools'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/donnees/correlations', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'correlations'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/donnees/action', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'action'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cron', [SystemCronController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/run', [SystemCronController::class, 'runNow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/retours-interface', [SystemUxFeedbackController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/avis-plateforme', [\App\Controllers\Admin\System\SystemPlatformReviewController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/avis-plateforme/traductions/{id}/reprendre', [\App\Controllers\Admin\System\SystemPlatformReviewController::class, 'acceptTranslation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/avis-plateforme/traductions/{id}/ecarter', [\App\Controllers\Admin\System\SystemPlatformReviewController::class, 'declineTranslation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/noms-inappropries', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/noms-inappropries/mots', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'addWord'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/noms-inappropries/mots/defaut', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'restoreDefaults'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/noms-inappropries/mots/{id}/modifier', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'updateWord'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/noms-inappropries/alertes/{id}/renommer', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'renameSubject'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/noms-inappropries/mots/{id}/supprimer', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'deleteWord'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/noms-inappropries/analyser', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'scan'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/noms-inappropries/alertes/{id}/traiter', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'resolveAlert'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/install-vps', [SystemCronController::class, 'installVps'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/uninstall-vps', [SystemCronController::class, 'uninstallVps'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/recruitment-portal-tools', [SystemRecruitmentPortalToolsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1021,6 +1164,39 @@ return function (Router $router) {
     $router->post('/admin/tenants/{id}/identity', [SystemTenantsController::class, 'updateIdentity'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/profil', [SystemTenantsController::class, 'updateType'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/plan', [SystemTenantsController::class, 'updatePlan'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/tenants/{id}/retrait', [SystemTenantsController::class, 'removal'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/tenants/{id}/archiver', [SystemTenantsController::class, 'archive'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/tenants/{id}/restaurer', [SystemTenantsController::class, 'restore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/tenants/{id}/supprimer', [SystemTenantsController::class, 'destroy'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Paiements PayPal des formules : vérification et activation manuelle.
+    $router->get('/admin/paiements', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/paiements/export.csv', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'export'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/paiements/membres', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'searchMembers'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/dons', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'recordDonation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/dons/{id}/rembourser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'refundDonation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/dons-stripe/{id}/annuler', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'stripeDonationCancel'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/dons-stripe/{id}/refuser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'stripeDonationReject'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/dons-stripe/{id}/encaisser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'stripeDonationMarkPaid'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/dons-stripe/{id}/rembourser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'stripeDonationRefund'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/donateurs/attribuer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorGrant'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/donateurs/retirer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorRevoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/donateurs/retablir', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorRestore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/donateurs/mur', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorWall'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/donateurs/recalculer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'donorRebuild'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/communaute/{tenantId}/prolonger', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'extend'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/communaute/{tenantId}/renouveler', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'renew'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/{id}/relancer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'remind'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/{id}/note', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'addNote'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/reglages', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/{id}/activer', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'activate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/{id}/refuser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'reject'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/{id}/annuler', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'cancel'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/{id}/rembourser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'refund'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/communaute/{tenantId}/arreter', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'endPlan'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/formules-offertes', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/formules-offertes', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/formules-offertes/reglages', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/formules-offertes/{id}/retirer', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/tenant-recovery', [SystemTenantRecoveryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/tenant-recovery/parse-dump', [SystemTenantRecoveryController::class, 'parseDump'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/tenant-recovery/restore', [SystemTenantRecoveryController::class, 'restore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1029,6 +1205,7 @@ return function (Router $router) {
     $router->post('/admin/audit/{id}/rollback', [SystemAuditController::class, 'rollback'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/audit/{id}/alert', [SystemAuditController::class, 'alert'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance/create', [SystemMaintenanceController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/maintenance/apercu', [SystemMaintenanceController::class, 'preview'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/maintenance', [SystemMaintenanceController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance/{id}/audit', [SystemMaintenanceController::class, 'audit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance/{id}/edit', [SystemMaintenanceController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1037,8 +1214,31 @@ return function (Router $router) {
     $router->post('/admin/maintenance/{id}/toggle', [SystemMaintenanceController::class, 'toggle'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/maintenance/{id}/notify', [SystemMaintenanceController::class, 'notifyMembers'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance', [SystemMaintenanceController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
+    // Ancienne page « Dons » : le compte PayPal se règle désormais dans Admin > Paiements (un seul réglage).
+    $router->get('/admin/system/dons', fn () => \App\Core\Response::redirect(url('admin/paiements') . '?vue=dons'), [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Console d'exploitation : état du site, migrations, sauvegardes, suppressions de comptes (double vérification).
+    $router->get('/admin/system/exploitation', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/code', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'sendCode'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/verifier', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'verify'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/verrouiller', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'lock'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/migrations/lancer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'launchMigrations'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/sauvegardes/creer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'createBackup'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/sauvegardes/verifier', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'verifyBackup'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/sauvegardes/telecharger', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'downloadBackup'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/sauvegardes/restaurer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'restoreBackup'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/sauvegardes/supprimer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'deleteBackup'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/comptes/programmer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'scheduleDeletion'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/comptes/annuler', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'cancelDeletion'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/exploitation/comptes/supprimer', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'executeDeletion'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/storage', [SystemStorageController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/storage/purge', [SystemStorageController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Explorateur de données (administration du site) : lire, chercher, modifier, supprimer, vider.
+    $router->get('/admin/system/storage/donnees', [SystemStorageController::class, 'tables'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/storage/donnees/{table}', [SystemStorageController::class, 'table'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/storage/donnees/{table}/ligne', [SystemStorageController::class, 'row'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/storage/donnees/{table}/ligne', [SystemStorageController::class, 'updateRow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/storage/donnees/{table}/ligne/supprimer', [SystemStorageController::class, 'deleteRow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/storage/donnees/{table}/vider', [SystemStorageController::class, 'emptyTable'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/api/admin/user-search', [SystemUserLookupApiController::class, 'search'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users', [SystemUsersController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/administrateurs-site', [SystemUsersController::class, 'platformAdmins'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1047,12 +1247,18 @@ return function (Router $router) {
     $router->post('/admin/users/merge', [SystemUsersController::class, 'mergeAccounts'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users/{id}/edit', [SystemUsersController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/{id}/update', [SystemUsersController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/{id}/atak/{action}', [\App\Controllers\Admin\System\SystemUserAtakController::class, 'action'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/set-status', [SystemUsersController::class, 'setStatus'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/delete', [SystemUsersController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/purge', [SystemUsersController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/purge-anonymises', [SystemUsersController::class, 'purgeAnonymized'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/purge-requests/approve', [SystemUsersController::class, 'approvePurgeRequest'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/purge-requests/reject', [SystemUsersController::class, 'rejectPurgeRequest'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/retirer-communaute', [SystemUsersController::class, 'removeMembership'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/reintegrer-communaute', [SystemUsersController::class, 'restoreMembership'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/bannir', [SystemUsersController::class, 'ban'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/lever-bannissement', [SystemUsersController::class, 'unban'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/bloquer-ip', [SystemUsersController::class, 'blockIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/site-roles', [SystemSiteRoleAssignmentController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/assign', [SystemSiteRoleAssignmentController::class, 'assign'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/revoke', [SystemSiteRoleAssignmentController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1062,8 +1268,37 @@ return function (Router $router) {
     $router->get('/admin/ops-center', [SystemOpsCenterController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     // Back-office communauté (tenant) — préfixe /back-office
     $router->get('/back-office', [OrganizationDashboardController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, ConfigurationUpdateIntroMiddleware::class]);
+    $router->get('/back-office/ma-situation/carnet-de-vol', [PilotLogbookController::class, 'mine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/carnet-de-vol/ajouter', [PilotLogbookController::class, 'add'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/carnet-de-vol/{entryId}/modifier', [PilotLogbookController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/carnet-de-vol/{entryId}/supprimer', [PilotLogbookController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/liaison-atak', [MemberSituationController::class, 'liaisonAtak'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/appareils', [MemberSituationController::class, 'appareils'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Musique (Mon espace) : bibliothèque musicale partagée avec l'app Musique de l'ATAK natif (MusicLibraryController).
+    $router->get('/back-office/ma-situation/musique', [MusicLibraryController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/envoyer', [MusicLibraryController::class, 'upload'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/musique/ecouter/{id}', [MusicLibraryController::class, 'listen'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/morceaux/{id}/modifier', [MusicLibraryController::class, 'trackUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/morceaux/{id}/supprimer', [MusicLibraryController::class, 'trackDelete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/morceaux/{id}/moderer', [MusicLibraryController::class, 'trackModerate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/morceaux/{id}/duree', [MusicLibraryController::class, 'trackDuration'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/playlists/creer', [MusicLibraryController::class, 'playlistCreate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/playlists/{id}/modifier', [MusicLibraryController::class, 'playlistUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/playlists/{id}/supprimer', [MusicLibraryController::class, 'playlistDelete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Administration de la musique : plateforme (toutes organisations) et gestionnaires (leur organisation).
+    $router->get('/admin/musique', [MusicAdminController::class, 'platform'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/musique/actions', [MusicAdminController::class, 'platformBulk'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/musique/envoyer', [MusicAdminController::class, 'platformUpload'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/musique/doublons', [MusicAdminController::class, 'platformDuplicates'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/musique/playlists/{id}/supprimer', [MusicAdminController::class, 'platformPlaylistDelete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/back-office/ressources/musique', [MusicAdminController::class, 'tenant'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/musique/actions', [MusicAdminController::class, 'tenantBulk'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/musique/envoyer', [MusicAdminController::class, 'tenantUpload'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/musique/doublons', [MusicAdminController::class, 'tenantDuplicates'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/musique/playlists/{id}/supprimer', [MusicAdminController::class, 'tenantPlaylistDelete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/playlists/{id}/ajouter', [MusicLibraryController::class, 'playlistAdd'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/playlists/{id}/retirer', [MusicLibraryController::class, 'playlistRemove'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/playlists/{id}/deplacer', [MusicLibraryController::class, 'playlistMove'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/appareils/retirer', [MemberSituationController::class, 'revokeAppareil'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/premiere-liaison', [MemberSituationController::class, 'premiereLiaison'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/ma-fiche', [MemberSituationController::class, 'maFiche'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1106,6 +1341,7 @@ return function (Router $router) {
     $router->get('/back-office/organisation/passes/create', [PersonnelPassAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/passes/store', [PersonnelPassAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/passes/{id}/edit', [PersonnelPassAdminController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/passes/{id}/test', [PersonnelPassAdminController::class, 'test'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/passes/{id}/update', [PersonnelPassAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/passes/{id}/delete', [PersonnelPassAdminController::class, 'destroy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/indicatifs', [OrganizationCallsignSequencesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1142,6 +1378,10 @@ return function (Router $router) {
     $router->post('/back-office/mise-a-niveau/rouvrir', [ConfigurationUpdateController::class, 'reopen'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentationUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/community/discord', [\App\Controllers\Admin\Organization\OrganizationDiscordShowcaseController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/community/discord/demander', [\App\Controllers\Admin\Organization\OrganizationDiscordShowcaseController::class, 'request'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/community/discord/annuler', [\App\Controllers\Admin\Organization\OrganizationDiscordShowcaseController::class, 'cancel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/community/discord/retirer', [\App\Controllers\Admin\Organization\OrganizationDiscordShowcaseController::class, 'withdraw'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/media', [CommunityMediaAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/media', [CommunityMediaAdminController::class, 'storeItem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/media/{id}', [CommunityMediaAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1203,6 +1443,17 @@ return function (Router $router) {
     $router->post('/back-office/dashboard-tenues/{id}/update', [DashboardWardrobePinsAdminController::class, 'update'], [AuthMiddleware::class]);
     $router->post('/back-office/dashboard-tenues/{id}/delete', [DashboardWardrobePinsAdminController::class, 'delete'], [AuthMiddleware::class]);
     $router->post('/back-office/dashboard-tenues/{id}/move', [DashboardWardrobePinsAdminController::class, 'move'], [AuthMiddleware::class]);
+    // Équipement remonté par le mod et kits par rôle (publiés comme tenues d’arsenal).
+    $router->get('/back-office/equipement-joueurs', [GameEquipmentAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/equipement-joueurs/kits/{steam}/tenue', [GameEquipmentAdminController::class, 'saveKit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/equipement-joueurs/icones/{file}', [GameEquipmentAdminController::class, 'icon'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/kits-roles', [GameEquipmentAdminController::class, 'kits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/kits-roles/nouveau', [GameEquipmentAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/kits-roles', [GameEquipmentAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/kits-roles/{id}', [GameEquipmentAdminController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/kits-roles/{id}', [GameEquipmentAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/kits-roles/{id}/supprimer', [GameEquipmentAdminController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/kits-roles/{id}/publier', [GameEquipmentAdminController::class, 'publish'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $mwTenantMemberModeration = [AuthMiddleware::class, OrganizationAdminMiddleware::class, TenantMemberModerationMiddleware::class];
     $router->get('/back-office/moderation', [ModerationOrganizationController::class, 'index'], $mwTenantMemberModeration);
     $router->get('/back-office/audit', [OrganizationAuditController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1217,6 +1468,8 @@ return function (Router $router) {
     $router->get('/back-office/integrations', [OrganizationIntegrationsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord', [OrganizationIntegrationsController::class, 'saveDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord/essai', [OrganizationIntegrationsController::class, 'testDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/emails', [OrganizationIntegrationsController::class, 'saveMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/emails/essai', [OrganizationIntegrationsController::class, 'testMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/sse-relais', [OrganizationIntegrationsController::class, 'storeSseRelay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/sse-relais/communaute', [OrganizationIntegrationsController::class, 'saveSseCommunity'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/sse-relais/{relayId}/supprimer', [OrganizationIntegrationsController::class, 'deleteSseRelay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1295,9 +1548,9 @@ return function (Router $router) {
     $router->post('/back-office/roles-permissions/assign', [\App\Controllers\Admin\Organization\RolePermissionMatrixController::class, 'assign'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-permissions/revue', [\App\Controllers\Admin\Organization\RolePermissionMatrixController::class, 'markReviewed'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-permissions/export', [\App\Controllers\Admin\Organization\RolePermissionMatrixController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/api/admin/roles-permissions', [\App\Controllers\Api\RolePermissionMatrixApiController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/api/admin/roles-permissions/export', [\App\Controllers\Api\RolePermissionMatrixApiController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->post('/api/admin/roles-permissions/{id}', [\App\Controllers\Api\RolePermissionMatrixApiController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/api/back-office/roles-permissions', [\App\Controllers\Api\RolePermissionMatrixApiController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/api/back-office/roles-permissions/export', [\App\Controllers\Api\RolePermissionMatrixApiController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/api/back-office/roles-permissions/{id}', [\App\Controllers\Api\RolePermissionMatrixApiController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles', [RoleAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/presets', [RoleAdminController::class, 'presets'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/presets/preview', [RoleAdminController::class, 'presetsPreview'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1329,11 +1582,27 @@ return function (Router $router) {
     $router->get('/back-office/referentiels/grades', [GradeReferentielController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/grades/catalogue', [RankCatalogAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/catalogue/audit', [RankCatalogAdminController::class, 'runAudit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/systeme', [GradeReferentielController::class, 'setSystem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/grades/create', [GradeReferentielController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/store', [GradeReferentielController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/grades/{id}/edit', [GradeReferentielController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/{id}/update', [GradeReferentielController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/{id}/deactivate', [GradeReferentielController::class, 'deactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/{id}/reactivate', [GradeReferentielController::class, 'reactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Grades sur mesure (SCP, Star Wars…) : systèmes, catégories et grades créés par la communauté.
+    $router->post('/back-office/referentiels/grades/sur-mesure/systeme', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'storeSystem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/systeme/{id}/update', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'updateSystem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/systeme/{id}/utiliser', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'useSystemAction'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/systeme/{id}/delete', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'deleteSystem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/categorie', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'storeCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/categorie/{id}/update', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'updateCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/categorie/{id}/move', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'moveCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/categorie/{id}/delete', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'deleteCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/grade', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'storeGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/grade/{id}/update', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'updateGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/grade/{id}/move', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'moveGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/grade/{id}/delete', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'deleteGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/sur-mesure/grade/{id}/restore', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'restoreGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
 
     $router->get('/back-office/organisation/grades', [AdvancementAdminController::class, 'grades'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/grades/create', [AdvancementAdminController::class, 'gradeCreate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1381,6 +1650,13 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/qualifications/emetteurs', [QualificationReferentielController::class, 'storeIssuer'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/categories', [QualificationReferentielController::class, 'storeCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/types', [QualificationReferentielController::class, 'storeType'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/referentiels/qualifications/cursus-pilote/carnet/{userId}', [PilotLogbookController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/carnet/vols/{entryId}', [PilotLogbookController::class, 'review'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/referentiels/qualifications/cursus-pilote', [PilotSyllabusController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/installer', [PilotSyllabusController::class, 'install'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/evaluer', [PilotSyllabusController::class, 'evaluate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/paliers/{ruleId}', [PilotSyllabusController::class, 'updateRule'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/propositions/{awardId}', [PilotSyllabusController::class, 'decide'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/attribuer', [QualificationReferentielController::class, 'awardForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/attribuer', [QualificationReferentielController::class, 'awardStore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/brevets/lot', [QualificationReferentielController::class, 'generateCertificateBatch'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1520,6 +1796,9 @@ return function (Router $router) {
     $router->get('/back-office/ressources/effectifs/nouveau', [UserAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/nouveau', [UserAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/export', [EffectifsWorkspaceController::class, 'exportCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/export.pdf', [EffectifsWorkspaceController::class, 'exportPdf'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/importer', [EffectifsWorkspaceController::class, 'importRoster'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/modele-tableur', [EffectifsWorkspaceController::class, 'rosterTemplate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/doublons', [EffectifsWorkspaceController::class, 'duplicateSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/doublons', [EffectifsWorkspaceController::class, 'saveDuplicateSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/roles', [EffectifsWorkspaceController::class, 'roles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1527,6 +1806,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/roles/nouveau', [EffectifsWorkspaceController::class, 'createAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/retablir', [EffectifsWorkspaceController::class, 'restoreAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/supprimer', [EffectifsWorkspaceController::class, 'deleteAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/roles/reafficher', [EffectifsWorkspaceController::class, 'showAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/droits', [EffectifsWorkspaceController::class, 'droits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/fonctions', [EffectifsWorkspaceController::class, 'fonctions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions', [EffectifsWorkspaceController::class, 'saveJobRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1547,6 +1827,8 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/membres/{id}/anciennete', [EffectifsWorkspaceController::class, 'updateMemberSeniority'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/roles', [EffectifsWorkspaceController::class, 'updateMemberRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/fonctions', [EffectifsWorkspaceController::class, 'updateMemberJobRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/etat-civil', [EffectifsWorkspaceController::class, 'updateMemberCivilStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/langues', [EffectifsWorkspaceController::class, 'updateMemberLanguages'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/grade', [EffectifsWorkspaceController::class, 'updateMemberGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/affectation', [EffectifsWorkspaceController::class, 'quickAssignment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/elevation', [EffectifsWorkspaceController::class, 'requestElevation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1660,38 +1942,54 @@ return function (Router $router) {
     $router->get('/admin/units', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/groups')), [AuthMiddleware::class]);
     $router->get('/admin/units/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/organisation/structure?ouvrir=groupe')), [AuthMiddleware::class]);
     $router->get('/admin/units/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/groups/' . ($p['id'] ?? '') . '/edit')), [AuthMiddleware::class]);
-    $router->post('/admin/units/store', [AdminUnitsController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/units/{id}/update', [AdminUnitsController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/units/{id}/delete', [AdminUnitsController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/modpacks', [AdminModpackController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/modpacks/create', [AdminModpackController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/modpacks/store', [AdminModpackController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/modpacks/upload/init', [AdminModpackController::class, 'uploadInit'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/modpacks/upload/chunk', [AdminModpackController::class, 'uploadChunk'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/modpacks/upload/finalize', [AdminModpackController::class, 'uploadFinalize'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/modpacks/{id}/edit', [AdminModpackController::class, 'edit'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/modpacks/{id}/update', [AdminModpackController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/modpacks/{id}/delete', [AdminModpackController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak-diffusion-rapports', [AdminAtakReportRoutingController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-diffusion-rapports', [AdminAtakReportRoutingController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-diffusion-rapports/{id}/etat', [AdminAtakReportRoutingController::class, 'toggle'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-diffusion-rapports/{id}/supprimer', [AdminAtakReportRoutingController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak-config', [AdminAtakConfigController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-config', [AdminAtakConfigController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-config/access-key', [AdminAtakConfigController::class, 'regenerateAccessKey'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-config/maintenance', [AdminAtakConfigController::class, 'setMaintenance'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-config/modules', [AdminAtakConfigController::class, 'storeModules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-config/experience', [AdminAtakConfigController::class, 'storeExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-config/game-experience', [AdminAtakConfigController::class, 'storeGameExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-config/photo-hud', [AdminAtakConfigController::class, 'storePhotoHud'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-config/marker-icons', [AdminAtakConfigController::class, 'storeMarkerIcons'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-config/marker-icons/upload', [AdminAtakConfigController::class, 'uploadMarkerIcon'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-config/marker-icons/delete', [AdminAtakConfigController::class, 'deleteMarkerIcon'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak-config/export', [AdminAtakConfigController::class, 'exportData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-config/purge', [AdminAtakConfigController::class, 'purgeData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    // Outils de la communauté sortis de /admin (réservé à l’administrateur de la plateforme) :
+    // les anciennes adresses renvoient vers le back-office, qui applique ses propres contrôles.
+    $legacyTenantTools = [
+        '/admin/modpacks' => 'back-office/ressources/atak-mod',
+        '/admin/modpacks/create' => 'back-office/ressources/atak-mod',
+        '/back-office/ressources/modpacks' => 'back-office/ressources/atak-mod',
+        '/back-office/ressources/modpacks/create' => 'back-office/ressources/atak-mod',
+        '/admin/atak-config' => 'back-office/ressources/atak-config',
+        '/admin/atak-mod' => 'back-office/ressources/atak-mod',
+        '/admin/atak-mod-blocks' => 'back-office/ressources/atak-mod-blocks',
+        '/admin/atak-diffusion-rapports' => 'back-office/ressources/atak-diffusion-rapports',
+        '/admin/atak/realism/config' => 'back-office/ressources/atak-realism/config',
+        '/admin/atak/realism/history' => 'back-office/ressources/atak-realism/history',
+        '/admin/atak/realism/verify' => 'back-office/ressources/atak-realism/verify',
+        '/admin/content-moderation' => 'back-office/content-moderation',
+    ];
+    foreach ($legacyTenantTools as $legacyPath => $target) {
+        $router->get($legacyPath, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url($target)), [AuthMiddleware::class]);
+    }
+    $router->get('/admin/modpacks/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/ressources/atak-mod')), [AuthMiddleware::class]);
+    $router->get('/back-office/ressources/modpacks/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/ressources/atak-mod')), [AuthMiddleware::class]);
+    $router->get('/back-office/ressources/atak-diffusion-rapports', [AdminAtakReportRoutingController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-diffusion-rapports', [AdminAtakReportRoutingController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-diffusion-rapports/{id}/etat', [AdminAtakReportRoutingController::class, 'toggle'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-diffusion-rapports/ordre', [AdminAtakReportRoutingController::class, 'reorder'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-diffusion-rapports/simuler', [AdminAtakReportRoutingController::class, 'simulate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-diffusion-rapports/{id}/dupliquer', [AdminAtakReportRoutingController::class, 'duplicate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-diffusion-rapports/{id}/supprimer', [AdminAtakReportRoutingController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/ressources/atak-config', [AdminAtakConfigController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config', [AdminAtakConfigController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/access-key', [AdminAtakConfigController::class, 'regenerateAccessKey'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/maintenance', [AdminAtakConfigController::class, 'setMaintenance'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/modules', [AdminAtakConfigController::class, 'storeModules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/data-flows', [AdminAtakConfigController::class, 'storeDataFlows'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/experience', [AdminAtakConfigController::class, 'storeExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/game-experience', [AdminAtakConfigController::class, 'storeGameExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/first-login-link', [AdminAtakConfigController::class, 'storeFirstLoginLink'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/photo-hud', [AdminAtakConfigController::class, 'storePhotoHud'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/marker-icons', [AdminAtakConfigController::class, 'storeMarkerIcons'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/marker-icons/upload', [AdminAtakConfigController::class, 'uploadMarkerIcon'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/marker-icons/delete', [AdminAtakConfigController::class, 'deleteMarkerIcon'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/ressources/atak-config/export', [AdminAtakConfigController::class, 'exportData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-config/purge', [AdminAtakConfigController::class, 'purgeData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/controle-serveur', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/regles', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeRules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/controle-serveur/reseau-adopter', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'adoptNetwork'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/fonctions', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeModules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/controle-serveur/apps', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeApps'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/relais', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeRelays'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/relays-network', [\App\Controllers\Admin\AdminAtakRelaysController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/api/atak/relays/{mapId}/{uid}', [\App\Controllers\Admin\AdminAtakRelaysController::class, 'show'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1703,17 +2001,13 @@ return function (Router $router) {
     $router->post('/api/atak/roleplay/server-tests', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'serverTests'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak/roleplay', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/atak/roleplay')), [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak/roleplay/intel-scramble', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/atak/roleplay') . '#intel-scramble'), [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak/roleplay', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak/roleplay/reset', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'reset'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/api/atak/roleplay/server-tests', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'serverTests'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/back-office/atak/relays-network', [\App\Controllers\Admin\AdminAtakRelaysController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/api/atak/relays/{mapId}/{uid}', [\App\Controllers\Admin\AdminAtakRelaysController::class, 'show'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->delete('/api/atak/relays/{mapId}/{uid}', [\App\Controllers\Admin\AdminAtakRelaysController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak/realism/config', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak/realism/save', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'save'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak/realism/history', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'history'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak/realism/version/{id}', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'getVersion'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak/realism/verify', [\App\Controllers\Admin\AdminAtakRealismVerifyController::class, 'verify'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    // ARCH-006 : second enregistrement identique relays GET/DELETE + roleplay server-tests retiré.
+    $router->get('/back-office/ressources/atak-realism/config', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-realism/save', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'save'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/ressources/atak-realism/history', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'history'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/ressources/atak-realism/version/{id}', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'getVersion'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-realism/version/{id}/restaurer', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'restore'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/ressources/atak-realism/verify', [\App\Controllers\Admin\AdminAtakRealismVerifyController::class, 'verify'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/briefing-slides/google-url', [AdminBriefingSlidesController::class, 'updateGoogleUrl'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1728,8 +2022,15 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/cycle-mission/{id}/cloturer', [AdminMissionCycleController::class, 'close'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/escouades', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/temps-ecran', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'screenTime'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/metriques-joueurs', [\App\Controllers\Admin\AdminPlayerMetricsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/partage', [\App\Controllers\Web\FileShareController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/heures', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'hours'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/files-envoi', [\App\Controllers\Admin\AdminAtakSendQueueController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     // Remontées : comptes rendus et fiches de renseignement suivis comme des pull requests (contrôle d'accès dans le contrôleur).
     $router->get('/back-office/remontees', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'index'], [AuthMiddleware::class]);
+    // Par joueur : déclaré AVANT {source}/{id}, le routeur prend la première route qui correspond.
+    $router->get('/back-office/remontees/joueurs', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'players'], [AuthMiddleware::class]);
+    $router->get('/back-office/remontees/joueurs/{key}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'player'], [AuthMiddleware::class]);
     $router->get('/back-office/remontees/{source}/{id}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'show'], [AuthMiddleware::class]);
     $router->post('/back-office/remontees/{source}/{id}/{action}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'action'], [AuthMiddleware::class]);
     $router->get('/back-office/atak/fire-teams', [AdminFireTeamsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1758,7 +2059,20 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/reseaux-chiffrement', [\App\Controllers\Admin\AdminAtakRealismController::class, 'storeCryptoDomain'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/certificats/{id}/revoquer', [\App\Controllers\Admin\AdminAtakRealismController::class, 'revokeCertificate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/certificats/{id}/supprimer', [\App\Controllers\Admin\AdminAtakRealismController::class, 'deleteCertificate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    // CR de fin d'opération imposé sur les téléphones ATAK : suivi par joueur, envoi, relance, réglages du jeu.
+    $router->get('/back-office/atak/suivi-cr', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/imposer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'force'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/reglages', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'settings'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/renommer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'rename'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/retirer-session', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'hideSession'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/effacer-historique', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'clearHistory'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/{id}/supprimer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/suivi-cr/{id}/export.csv', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/{id}/relancer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'remind'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/suivi-cr/{id}/cloturer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'close'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus', [\App\Controllers\Admin\AdminAarReportsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/comptes-rendus/nouveau', [\App\Controllers\Admin\AdminAarReportsController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/comptes-rendus/export.csv', [\App\Controllers\Admin\AdminAarReportsController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/modeles', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesIndex'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/modeles/nouveau', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesCreate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/comptes-rendus/modeles', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesStore'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1766,25 +2080,65 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/comptes-rendus/modeles/{id}', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesUpdate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/comptes-rendus/modeles/{id}/archiver', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesArchive'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/comptes-rendus/modeles/{id}/reactiver', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesRestore'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/comptes-rendus/modeles/{id}/dupliquer', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesDuplicate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/{id}', [\App\Controllers\Admin\AdminAarReportsController::class, 'show'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/{id}/edit', [\App\Controllers\Admin\AdminAarReportsController::class, 'edit'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/comptes-rendus/{id}/pdf', [\App\Controllers\Admin\AdminAarReportsController::class, 'pdf'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/comptes-rendus/{id}/statut', [\App\Controllers\Admin\AdminAarReportsController::class, 'status'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/comptes-rendus/{id}/actions/basculer', [\App\Controllers\Admin\AdminAarReportsController::class, 'toggleAction'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/comptes-rendus/{id}/supprimer', [\App\Controllers\Admin\AdminAarReportsController::class, 'destroy'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/comptes-rendus', [\App\Controllers\Admin\AdminAarReportsController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/comptes-rendus/{id}', [\App\Controllers\Admin\AdminAarReportsController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak-mod', [AdminAtakModController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-mod/upload', [AdminAtakModController::class, 'upload'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-mod/delete', [AdminAtakModController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak-mod-blocks', [AdminAtakModBlocklistController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-mod-blocks/add', [AdminAtakModBlocklistController::class, 'add'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-mod-blocks/revoke', [AdminAtakModBlocklistController::class, 'revoke'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/api/admin/atak-mod-blocks/members', [AdminAtakModBlocklistController::class, 'searchMembers'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak-beta', [\App\Controllers\Admin\AdminAtakBetaRegistrationsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-beta/clear-acknowledgement', [\App\Controllers\Admin\AdminAtakBetaRegistrationsController::class, 'clearAcknowledgement'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-beta/restrict-steam', [\App\Controllers\Admin\AdminAtakBetaRegistrationsController::class, 'restrictSteam'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-beta/delete', [\App\Controllers\Admin\AdminAtakBetaRegistrationsController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-beta/bulk', [\App\Controllers\Admin\AdminAtakBetaRegistrationsController::class, 'bulk'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak-mod-reports', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-mod-reports/status', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'updateStatus'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/admin/atak-mod-reports/delete', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/ressources/atak-mod', [AdminAtakModController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-mod/steam', [AdminAtakModController::class, 'saveSteam'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-mod/annoncer', [AdminAtakModController::class, 'announce'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-mod/delete', [AdminAtakModController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/ressources/serveurs-de-jeu', [\App\Controllers\Admin\AdminGameServersController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/serveurs-de-jeu/enregistrer', [\App\Controllers\Admin\AdminGameServersController::class, 'save'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/serveurs-de-jeu/activer', [\App\Controllers\Admin\AdminGameServersController::class, 'toggle'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/serveurs-de-jeu/supprimer', [\App\Controllers\Admin\AdminGameServersController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/ressources/atak-mod-blocks', [AdminAtakModBlocklistController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-mod-blocks/add', [AdminAtakModBlocklistController::class, 'add'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-mod-blocks/revoke', [AdminAtakModBlocklistController::class, 'revoke'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/api/back-office/atak-mod-blocks/members', [AdminAtakModBlocklistController::class, 'searchMembers'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak-beta', [\App\Controllers\Admin\AdminAtakBetaRegistrationsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/atak-beta/clear-acknowledgement', [\App\Controllers\Admin\AdminAtakBetaRegistrationsController::class, 'clearAcknowledgement'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/atak-beta/restrict-steam', [\App\Controllers\Admin\AdminAtakBetaRegistrationsController::class, 'restrictSteam'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/atak-beta/delete', [\App\Controllers\Admin\AdminAtakBetaRegistrationsController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/atak-beta/bulk', [\App\Controllers\Admin\AdminAtakBetaRegistrationsController::class, 'bulk'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/atak-mod-reports', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/atak-mod-reports/status', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'updateStatus'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/atak-mod-reports/delete', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/atak-mod-reports/bulk', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'bulk'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/atak-mod-reports/reply', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'reply'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/atak-mod-reports/gravity', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'updateGravity'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Parc ATAK des joueurs, toutes communautés : chiffres de jeu, blocage appliqué par l'API, retrait, messages imposés.
+    $router->get('/admin/parc-atak', [\App\Controllers\Admin\AdminAtakFleetController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/parc-atak/fiche', [\App\Controllers\Admin\AdminAtakFleetController::class, 'show'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/bloquer', [\App\Controllers\Admin\AdminAtakFleetController::class, 'block'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/debloquer', [\App\Controllers\Admin\AdminAtakFleetController::class, 'unblock'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/retirer', [\App\Controllers\Admin\AdminAtakFleetController::class, 'retire'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/deconnecter', [\App\Controllers\Admin\AdminAtakFleetController::class, 'disconnect'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/message', [\App\Controllers\Admin\AdminAtakFleetController::class, 'message'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/message/annuler', [\App\Controllers\Admin\AdminAtakFleetController::class, 'cancelMessage'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/compromission', [\App\Controllers\Admin\AdminAtakFleetController::class, 'compromise'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/compromission/annuler', [\App\Controllers\Admin\AdminAtakFleetController::class, 'undoCompromise'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/certificat', [\App\Controllers\Admin\AdminAtakFleetController::class, 'certificate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/note', [\App\Controllers\Admin\AdminAtakFleetController::class, 'note'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Même parc côté gestion, limité aux ATAK de la communauté active (pas de retrait ni de blocage toutes communautés).
+    $boFleet = \App\Controllers\Admin\BackOfficeAtakFleetController::class;
+    $boFleetMw = [AuthMiddleware::class, TenantResourceAdminMiddleware::class];
+    $router->get('/back-office/atak/parc-atak', [$boFleet, 'index'], $boFleetMw);
+    $router->get('/back-office/atak/parc-atak/fiche', [$boFleet, 'show'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/bloquer', [$boFleet, 'block'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/debloquer', [$boFleet, 'unblock'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/deconnecter', [$boFleet, 'disconnect'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/message', [$boFleet, 'message'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/message/annuler', [$boFleet, 'cancelMessage'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/compromission', [$boFleet, 'compromise'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/compromission/annuler', [$boFleet, 'undoCompromise'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/certificat', [$boFleet, 'certificate'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/note', [$boFleet, 'note'], $boFleetMw);
     $lmsAdminMw = [AuthMiddleware::class, NonDefaultTenantMiddleware::class];
     $router->get('/admin/training', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, ''), $lmsAdminMw);
     $router->get('/admin/training/courses', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'courses'), $lmsAdminMw);
@@ -1808,7 +2162,6 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/admin/training/studio/{id}/echange', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url(($p['id'] ?? '') . '/echange')), $studioMw);
     $router->get('/admin/training/studio/{id}/echange/export', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url(($p['id'] ?? '') . '/echange/export')), $studioMw);
     $router->get('/admin/training/studio/{id}', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url((string) ($p['id'] ?? ''))), $studioMw);
-    $router->get('/admin/forum-config', [\App\Controllers\Admin\AdminForumConfigController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $interteamMw = [AuthMiddleware::class, NonDefaultTenantMiddleware::class, InterteamMissionsAccessMiddleware::class];
     $router->get('/back-office/cooperation/catalog', [CooperationCatalogWebController::class, 'index'], $interteamMw);
     $router->get('/back-office/cooperation/catalog/create', [CooperationCatalogWebController::class, 'create'], $interteamMw);
@@ -1851,12 +2204,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/cooperation/missions/{id}/remind', [InterteamMissionWebController::class, 'remindPartner'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/operational-stage', [InterteamMissionWebController::class, 'updateOperationalStage'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/sitrep', [InterteamMissionWebController::class, 'addSitrep'], $interteamMw);
-    $router->post('/back-office/cooperation/missions/{id}/grant-topic', [InterteamMissionWebController::class, 'grantTopic'], $interteamMw);
-    $router->post('/back-office/cooperation/missions/{id}/grants/{grantId}/revoke', [InterteamMissionWebController::class, 'revokeGrant'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/close', [InterteamMissionWebController::class, 'close'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/meta', [InterteamMissionWebController::class, 'saveMeta'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/promote-co-lead', [InterteamMissionWebController::class, 'promoteCoLead'], $interteamMw);
-    $router->post('/back-office/cooperation/missions/{id}/exchange-lock', [InterteamMissionWebController::class, 'saveExchangeLock'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/duplicate', [InterteamMissionWebController::class, 'duplicateMission'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/assign-member', [InterteamMissionWebController::class, 'assignMissionMember'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/meeting-start', [InterteamMissionWebController::class, 'startMeeting'], $interteamMw);
@@ -1875,25 +2225,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/admin/interteam-missions/{id}/rex', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_rex_url((int) ($p['id'] ?? 0))), $interteamMw);
     $router->get('/admin/interteam-missions/{id}/consent', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_consent_url((int) ($p['id'] ?? 0))), $interteamMw);
     $router->get('/admin/interteam-missions/{id}', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_show_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->post('/admin/interteam-missions', [InterteamMissionWebController::class, 'store'], $interteamMw);
-    $router->post('/admin/interteam-missions/{id}/invite', [InterteamMissionWebController::class, 'invite'], $interteamMw);
-    $router->post('/admin/interteam-missions/{id}/accept', [InterteamMissionWebController::class, 'accept'], $interteamMw);
-    $router->post('/admin/interteam-missions/{id}/decline', [InterteamMissionWebController::class, 'decline'], $interteamMw);
-    $router->post('/admin/interteam-missions/{id}/activate', [InterteamMissionWebController::class, 'activate'], $interteamMw);
-    $router->post('/admin/interteam-missions/{id}/grant-topic', [InterteamMissionWebController::class, 'grantTopic'], $interteamMw);
-    $router->post('/admin/interteam-missions/{id}/grants/{grantId}/revoke', [InterteamMissionWebController::class, 'revokeGrant'], $interteamMw);
 
     // Alias canoniques : back-office → modules métier du tenant (mêmes cibles que /admin/…)
     $tenantResMw = [AuthMiddleware::class, TenantResourceAdminMiddleware::class];
     $trainingResMw = [AuthMiddleware::class, TrainingTenantResourceMiddleware::class];
-    $router->get('/back-office/ressources/modpacks', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/modpacks')), $tenantResMw);
-    $router->get('/back-office/ressources/modpacks/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/modpacks/create')), $tenantResMw);
-    $router->get('/back-office/ressources/modpacks/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/modpacks/' . ($p['id'] ?? '') . '/edit')), $tenantResMw);
-    $router->get('/back-office/ressources/atak-config', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/atak-config')), $tenantResMw);
-    $router->get('/back-office/ressources/atak-mod', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/atak-mod')), $tenantResMw);
-    $router->get('/back-office/ressources/atak-mod-blocks', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/atak-mod-blocks')), $tenantResMw);
-    $router->get('/back-office/ressources/atak-beta', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/atak-beta')), $tenantResMw);
-    $router->get('/back-office/ressources/forum-config', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/forum-config')), $tenantResMw);
     $router->get('/back-office/ressources/interteam-missions', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_index_url()), $interteamMw);
     $router->get('/back-office/ressources/interteam-missions/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_create_url()), $interteamMw);
     $router->get('/back-office/ressources/interteam-missions/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_edit_url((int) ($p['id'] ?? 0))), $interteamMw);
@@ -1929,6 +2264,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/formation/courses/{id}/showcase', [AdminTrainingController::class, 'courseShowcase'], $trainingResMw);
     $router->get('/formation/courses/{id}/export', [AdminTrainingController::class, 'exportCourse'], $trainingResMw);
     $router->post('/formation/courses/{id}/unpublish', [AdminTrainingController::class, 'courseUnpublish'], $trainingResMw);
+    $router->post('/formation/courses/plateforme/visibilite', [AdminTrainingController::class, 'coursePlatformVisibility'], $trainingResMw);
     $router->post('/formation/courses/{id}/delete', [AdminTrainingController::class, 'courseDelete'], $trainingResMw);
     $router->get('/formation/courses', [AdminTrainingController::class, 'courses'], $trainingResMw);
     $router->post('/formation/enrollments/{id}/approve', [AdminTrainingController::class, 'approveEnrollment'], $trainingResMw);
@@ -2068,46 +2404,22 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // Sortie vers lien externe (interstitiel sécurité)
     $router->get('/leave', [ExternalLeaveController::class, 'show'], [AuthMiddleware::class]);
 
-    // Forum
-    $router->get('/forum', [ForumController::class, 'index'], $mwForum);
-    $router->get('/forum/category/{slug}', [ForumCategoryController::class, 'show'], $mwForum);
-    $router->get('/forum/topic/{id}', [ForumTopicController::class, 'show'], $mwForum);
-    $router->get('/forum/coop/{missionSlug}/sujet/{id}', [ForumCoopTopicController::class, 'show'], $mwForum);
-    $router->post('/forum/coop/{missionSlug}/sujet/{id}/repondre', [ForumCoopTopicController::class, 'reply'], $mwForumCoop);
-    $router->post('/forum/topic/{id}/reply', [ForumTopicController::class, 'reply'], $mwForum);
-    $router->post('/forum/topic/{id}/subscribe', [ForumTopicController::class, 'subscribe'], $mwForum);
-    $router->post('/forum/topic/{id}/unsubscribe', [ForumTopicController::class, 'unsubscribe'], $mwForum);
-    $router->get('/forum/new-topic', [ForumNewTopicController::class, 'form'], $mwForum);
-    $router->post('/forum/new-topic', [ForumNewTopicController::class, 'store'], $mwForum);
-    $router->get('/back-office/forum/priorite-mission/nouveau', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('forum/new-topic?mission_priority_level=high')), $mwForum);
-    $router->get('/back-office/forum-moderation', [ForumModerationDashboardController::class, 'index'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
-    $router->get('/api/back-office/forum-report/{id}/insight', [ForumModerationReportInsightApiController::class, 'show'], [AuthMiddleware::class]);
-    $router->post('/api/back-office/forum-moderation/manual-scan', [ForumModerationReportInsightApiController::class, 'manualScan'], [AuthMiddleware::class]);
-    /** Console modération fichiers / quarantaine : URL canonique /admin/… (alias /back-office/… pour anciens liens). */
-    $router->get('/admin/content-moderation', [ContentModerationController::class, 'index'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
-    $router->get('/admin/content-moderation/{id}/preview', [ContentModerationController::class, 'preview'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
-    $router->post('/admin/content-moderation/{id}/approve', [ContentModerationController::class, 'approve'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
-    $router->post('/admin/content-moderation/{id}/reject', [ContentModerationController::class, 'reject'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
-    $router->post('/admin/content-moderation/{id}/warn-uploader', [ContentModerationController::class, 'warnUploader'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
-    $router->post('/admin/content-moderation/{id}/restrict-uploader', [ContentModerationController::class, 'restrictUploader'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
-    $router->get('/back-office/content-moderation', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/content-moderation')), [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
-    $router->get('/back-office/content-moderation/{id}/preview', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/content-moderation/' . rawurlencode((string) ($p['id'] ?? '')) . '/preview')), [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
-    $router->post('/back-office/content-moderation/{id}/approve', [ContentModerationController::class, 'approve'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
-    $router->post('/back-office/content-moderation/{id}/reject', [ContentModerationController::class, 'reject'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
-    $router->post('/back-office/content-moderation/{id}/warn-uploader', [ContentModerationController::class, 'warnUploader'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
-    $router->post('/back-office/content-moderation/{id}/restrict-uploader', [ContentModerationController::class, 'restrictUploader'], [AuthMiddleware::class, ForumModerationConsoleMiddleware::class]);
-    $router->get('/admin/forum-moderation', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/forum-moderation')), [AuthMiddleware::class]);
-    $router->get('/forum/moderation', [ForumModerationController::class, 'index'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
-    $router->post('/forum/report/{id}/handle', [ForumModerationController::class, 'handleReport'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
-    $router->post('/forum/report/{id}/claim', [ForumModerationController::class, 'claimReport'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
-    $router->post('/forum/report/{id}/unclaim', [ForumModerationController::class, 'unclaimReport'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
-    $router->post('/forum/report/{id}/comment', [ForumModerationController::class, 'addReportComment'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
-    $router->post('/forum/report/{id}/reopen', [ForumModerationController::class, 'reopenReport'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
-    $router->post('/forum/report/{id}/post-close-follow-up', [ForumModerationController::class, 'postCloseFollowUp'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
-    $router->post('/forum/topic/{id}/lock', [ForumModerationController::class, 'lockTopic'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
-    $router->post('/forum/topic/{id}/unlock', [ForumModerationController::class, 'unlockTopic'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
-    $router->post('/forum/topic/{id}/pin', [ForumModerationController::class, 'pinTopic'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
-    $router->post('/forum/topic/{id}/unpin', [ForumModerationController::class, 'unpinTopic'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
+    /** Console modération fichiers / quarantaine de la communauté active (anciennes URL /admin/… redirigées plus haut). */
+    // Signalements membres (fiches, photos, formations, pages d’aide…)
+    $router->get('/back-office/signalements', [ReportsModerationController::class, 'index'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
+    $router->post('/back-office/signalements/{id}/traiter', [ReportsModerationController::class, 'handleReport'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
+    $router->post('/back-office/signalements/{id}/prendre', [ReportsModerationController::class, 'claimReport'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
+    $router->post('/back-office/signalements/{id}/liberer', [ReportsModerationController::class, 'unclaimReport'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
+    $router->post('/back-office/signalements/{id}/commenter', [ReportsModerationController::class, 'addReportComment'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
+    $router->post('/back-office/signalements/{id}/rouvrir', [ReportsModerationController::class, 'reopenReport'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
+    foreach (['/back-office/forum-moderation', '/admin/forum-moderation'] as $legacyModerationPath) {
+        $router->get($legacyModerationPath, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/signalements')), [AuthMiddleware::class]);
+    }
+    $router->get('/back-office/content-moderation', [ContentModerationController::class, 'index'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
+    $router->post('/back-office/content-moderation/{id}/approve', [ContentModerationController::class, 'approve'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
+    $router->post('/back-office/content-moderation/{id}/reject', [ContentModerationController::class, 'reject'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
+    $router->post('/back-office/content-moderation/{id}/warn-uploader', [ContentModerationController::class, 'warnUploader'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
+    $router->post('/back-office/content-moderation/{id}/restrict-uploader', [ContentModerationController::class, 'restrictUploader'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
 
     // API Health (BDD) — pour la page ATAK État de santé
     $router->get('/api/health', [HealthController::class, 'index'], [AuthMiddleware::class]);
@@ -2173,14 +2485,27 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
 
     // Athena Data Inspector — accès opérationnel réservé aux administrateurs du tenant.
     $athenaInspectorMw = [AuthMiddleware::class, TenantResourceAdminMiddleware::class];
-    $router->get('/athena/data-inspector', [AthenaDataInspectorController::class, 'index'], $athenaInspectorMw);
+    $router->get('/back-office/atak/data-inspector', [AthenaDataInspectorController::class, 'index'], $athenaInspectorMw);
+    // Ancienne adresse (hors coque back-office) : redirection.
+    $router->get('/athena/data-inspector', [AthenaDataInspectorController::class, 'legacyRedirect'], $athenaInspectorMw);
     $router->get('/api/athena/v2/inspector', [AthenaDataApiController::class, 'dashboard'], $athenaInspectorMw);
+    $router->get('/api/athena/inspector/metrics', [\App\Controllers\Api\AthenaInspectorMetricsController::class, 'metrics'], $athenaInspectorMw);
     $router->post('/api/athena/v2/dev/seed', [AthenaDataApiController::class, 'devSeed'], $athenaInspectorMw);
 
     // API ATAK Full PHP (parité Node — polling, pas de Socket.IO)
     $router->get('/api/atak/ping', [AtakPingController::class, 'ping']);
+    // Dernières versions de l'ATAK natif et de COMSPEC Link (contrôle de mise à jour du mod, public).
+    $router->get('/api/atak/version', [\App\Controllers\Api\AtakVersionController::class, 'latest']);
+    // Check de démarrage du mod relayé dans le salon Discord de debug (public, rate-limité, rien n'est enregistré).
+    $router->post('/api/atak/startup-check', [\App\Controllers\Api\AtakStartupCheckController::class, 'store']);
     $router->get('/map-data/{world}/{z}/{x}/{file}', [\App\Controllers\Api\AtakMapDataController::class, 'tile']);
     $router->get('/api/atak/tiles', [\App\Controllers\Api\AtakMapDataController::class, 'proxy']);
+    // Fond « Photo COMSPEC » : capture de la carte du mod (tools/map_stitch.py --pyramid --upload, clé plateforme).
+    // Tuiles .webp (site) et .jpg (téléphone ATAK, téléchargées en jeu par la DLL), meta.json, index-jpg.txt et liste : publics.
+    $router->get('/map-photo/{world}/{mode}/{z}/{x}/{file}', [\App\Controllers\Api\AtakMapPhotoController::class, 'tile']);
+    $router->get('/map-photo/{world}/{mode}/{file}', [\App\Controllers\Api\AtakMapPhotoController::class, 'file']);
+    $router->get('/api/atak/map-photo/list', [\App\Controllers\Api\AtakMapPhotoController::class, 'list']);
+    $router->post('/api/atak/map-photo/upload', [\App\Controllers\Api\AtakMapPhotoController::class, 'upload']);
     $tacticalApi = \App\Controllers\Api\AthenaTacticalApiController::class;
     $router->get('/api/athena/tactical/markers', [$tacticalApi, 'index']);
     $router->post('/api/athena/tactical/markers', [$tacticalApi, 'store']);
@@ -2208,6 +2533,11 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/game/v1/operations/{uuid}/tactical', [$gameOps, 'tactical']);
 
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
+    // Auto-test de la liaison (Dépannage liaison en jeu) : contrôles serveur, lecture seule.
+    $router->get('/api/atak/diag/selftest', [\App\Controllers\Api\AtakLinkSelfTestController::class, 'selfTest']);
+    // App Musique de l'ATAK natif (COMSPEC Link AthenaMusic) ; flux audio par URL signée, sans en-tête Athena.
+    $router->get('/api/atak/music', [MusicLibraryApiController::class, 'index']);
+    $router->get('/api/music/stream/{file}', [MusicLibraryApiController::class, 'stream']);
     $router->post('/api/atak/beta-register', [AtakApiController::class, 'betaRegister']);
     $router->post('/api/atak/mod-report', [AtakApiController::class, 'modReport']);
     $router->post('/api/atak/device-logs', [AtakApiController::class, 'deviceLogsStore']);
@@ -2307,10 +2637,29 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/operator/sync', [AtakApiController::class, 'operatorSync']);
     $router->post('/api/atak/playtime', [AtakApiController::class, 'playtime']);
     $router->post('/api/atak/squads/sync', [AtakApiController::class, 'squadSync']);
+    $router->get('/api/atak/briefing-plan', [AtakApiController::class, 'briefingPlanIndex']);
+    $router->post('/api/atak/briefing-plan', [AtakApiController::class, 'briefingPlanStore']);
     $router->post('/api/atak/screen-time', [AtakApiController::class, 'screenTime']);
     $router->post('/api/atak/screen-time/batch', [AtakApiController::class, 'screenTimeBatch']);
+    $router->post('/api/atak/distance/batch', [AtakApiController::class, 'distanceBatch']);
+    // Serveur Arma : messages imposés et blocages décidés dans /admin/parc-atak.
+    $router->post('/api/atak/admin-control/pending', [AtakApiController::class, 'adminControlPending']);
+    $router->post('/api/atak/admin-control/ack', [AtakApiController::class, 'adminControlAck']);
+    // ATAK du joueur : ses propres messages et avis de l'administration (COMSPEC Link AdminControl.Poll / AdminControl.Ack).
+    $router->post('/api/atak/admin-control/mine', [AtakApiController::class, 'adminControlMine']);
+    $router->post('/api/atak/admin-control/mine/ack', [AtakApiController::class, 'adminControlMineAck']);
+    // App Admin de l'ATAK natif : parc de la communauté géré en jeu par un gestionnaire (COMSPEC Link GameAdmin.*).
+    $router->post('/api/atak/game-admin/fleet', [AtakApiController::class, 'gameAdminFleet']);
+    $router->post('/api/atak/game-admin/action', [AtakApiController::class, 'gameAdminAction']);
+    // App Médical de l'ATAK natif : fiches médicales de la communauté (COMSPEC Link MedicalRoster, cache sur le PC).
+    $router->post('/api/atak/medical-roster', [AtakApiController::class, 'medicalRoster']);
+    $router->post('/api/atak/item-icons/missing', [AtakApiController::class, 'itemIconsMissing']);
+    $router->post('/api/atak/item-icons', [AtakApiController::class, 'itemIconUpload']);
+    $router->post('/api/atak/garmin', [AtakApiController::class, 'garmin']);
+    $router->post('/api/atak/send-queue/report', [AtakApiController::class, 'sendQueueReport']);
     $router->post('/api/atak/game-session/discover', [AtakApiController::class, 'gameSessionDiscover']);
     $router->post('/api/atak/game-session/join', [AtakApiController::class, 'gameSessionJoin']);
+    $router->post('/api/atak/server-presence', [AtakApiController::class, 'serverPresence']);
     $router->post('/api/atak/game-session/heartbeat', [AtakApiController::class, 'gameSessionHeartbeat']);
     $router->post('/api/atak/game-session/check-in', [AtakApiController::class, 'gameSessionCheckIn']);
     $router->post('/api/atak/game-session/check-out', [AtakApiController::class, 'gameSessionCheckOut']);
@@ -2335,10 +2684,13 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/weather', [AtakApiController::class, 'weather']);
     $router->get('/api/atak/video-feeds', [AtakApiController::class, 'videoFeeds']);
     $router->post('/api/atak/video-feeds', [AtakApiController::class, 'videoFeeds']);
+    $router->get('/api/atak/data-flows', [AtakApiController::class, 'dataFlows']);
     $router->get('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
     $router->post('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
     $router->get('/api/atak/experience', [AtakApiController::class, 'experience']);
     $router->post('/api/atak/experience', [AtakApiController::class, 'experience']);
+    $router->get('/api/atak/net-conditions', [AtakApiController::class, 'netConditions']);
+    $router->post('/api/atak/net-conditions', [AtakApiController::class, 'netConditions']);
     $router->get('/api/atak/orders', [AtakApiController::class, 'ordersIndex']);
     $router->post('/api/atak/orders', [AtakApiController::class, 'ordersStore']);
     $router->get('/api/atak/orders/recipients', [AtakApiController::class, 'ordersRecipients']);
@@ -2392,6 +2744,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/recon/images/sse-cases', [AtakApiController::class, 'reconImagesSseCases']);
     $router->get('/api/recon/images/known', [AtakApiController::class, 'reconImagesKnown']);
     $router->get('/api/recon/images/{id}', [AtakApiController::class, 'reconImagesShow']);
+    $router->get('/api/recon/images/{id}/file', [AtakApiController::class, 'reconImagesFile']);
+    // Lecteur d'un cliché (zoom, plein écran, fiche, album) ; …/file reste le fichier brut.
+    $router->get('/recon/images/{id}', [AtakApiController::class, 'reconImagesViewer']);
     $router->post('/api/recon/images/{id}/ops', [AtakApiController::class, 'reconImagesOps']);
     $router->post('/api/recon/images/{id}/link-cas', [AtakApiController::class, 'reconImagesLinkCas']);
     // Map shapes (live drawing)
@@ -2511,6 +2866,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/sse/notes/{id}/pieces', [SseFieldNoteApiController::class, 'attachmentStore']);
     // Avis de recherche (téléphone en jeu).
     $router->get('/api/sse/wanted', [SseApiController::class, 'wanted']);
+    $router->get('/api/sse/campaigns', [\App\Controllers\Api\SseCampaignApiController::class, 'index']);
+    $router->post('/api/sse/campaigns/sync', [\App\Controllers\Api\SseCampaignApiController::class, 'sync']);
+    $router->get('/api/sse/campaigns/{key}/text', [\App\Controllers\Api\SseCampaignApiController::class, 'text']);
     // Avant /{id} : « by-unit » ne doit pas être capté comme identifiant.
     $router->get('/api/sse/persons/by-unit', [SseApiController::class, 'personsByUnit']);
     $router->get('/api/sse/persons/{id}', [SseApiController::class, 'personsShow']);
@@ -2635,6 +2993,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // API C2 — Replay
     $router->get('/api/replay/mission/{missionId}', [ReplayController::class, 'mission']);
     $router->get('/api/replay/events/{missionId}', [ReplayController::class, 'events']);
+    $router->get('/api/replay/sessions/{missionId}', [ReplayController::class, 'sessions']);
     $router->get('/api/replay/aar/{missionId}', [ReplayController::class, 'aar']);
     $router->get('/api/replay/aar/{missionId}/export.pdf', [ReplayController::class, 'aarExportPdf']);
 
@@ -2671,29 +3030,12 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // API ATAK Intel (legacy — redirige vers atak_intel, gardé pour compat)
     $router->post('/api/atak/intel', [AtakIntelController::class, 'storeIntel']);
 
-    // API Forum — REST structurée (prioritaire sur le handler legacy)
-    $router->get('/api/forum/topics', [ForumRestController::class, 'listTopics'], $mwForum);
-    $router->get('/api/forum/topics/{id}', [ForumRestController::class, 'showTopic'], $mwForum);
-    $router->get('/api/forum/topics/{topicId}/posts', [ForumRestController::class, 'listPosts'], $mwForum);
-    $router->post('/api/forum/posts/{postId}/vote', [ForumRestController::class, 'votePost'], $mwForum);
-    $router->post('/api/forum/report', [ForumRestController::class, 'report'], $mwForum);
     $router->post('/api/community/report', [CommunityReportController::class, 'submit'], [AuthMiddleware::class]);
-    $router->get('/api/forum/search', [ForumRestController::class, 'search'], $mwForum);
 
-    // API Forum (JSON, actions legacy)
-    $router->get('/api/forum', [ForumApiController::class, 'handle'], $mwForum);
-    $router->post('/api/forum', [ForumApiController::class, 'handle'], $mwForum);
-    $router->post('/api/forum-moderation', [ForumModerationApiController::class, 'handle'], [AuthMiddleware::class, ForumModerateMiddleware::class]);
-    $router->post('/api/forum-upload', [ForumUploadController::class, 'handle'], $mwForum);
-    $router->post('/api/admin/forum-categories', [\App\Controllers\Admin\ForumCategoriesApiController::class, 'handle'], [AuthMiddleware::class]);
-    $router->post('/api/admin/site-settings', [\App\Controllers\Admin\SiteSettingsApiController::class, 'handle'], [AuthMiddleware::class]);
-    $router->post('/api/admin/platform-brief-settings', [\App\Controllers\Admin\PlatformBriefSettingsApiController::class, 'handle'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/api/back-office/runtime-settings', [\App\Controllers\Admin\Organization\AdminRuntimeSettingsApiController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/api/back-office/runtime-settings', [\App\Controllers\Admin\Organization\AdminRuntimeSettingsApiController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/api/alerts/dismiss', [AlertDismissController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/ui-tours/dismiss', [UiTourController::class, 'dismiss'], [AuthMiddleware::class]);
-    $router->post('/api/back-office/forum-moderation', [\App\Controllers\Admin\ForumModerationAdminApiController::class, 'handle'], [AuthMiddleware::class]);
-    $router->post('/api/admin/forum-moderation', [\App\Controllers\Admin\ForumModerationAdminApiController::class, 'handle'], [AuthMiddleware::class]);
     // App Discord du téléphone ATAK : message court publié dans le salon relié sur Athena (lien jamais envoyé au jeu).
     $router->post('/api/atak/discord/send', [\App\Controllers\Api\AtakDiscordApiController::class, 'send']);
     // Parc de terminaux · téléphones des opérateurs : type de numéro, numéro, IMEI, MAC gardés dans Athena.
@@ -2702,6 +3044,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // Overwatch Beta — alertes tactiques et balises, applications synchronisées, fil de renseignement, anneaux de géolocalisation.
     $router->get('/api/atak/overwatch/alerts', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'alerts']);
     $router->post('/api/atak/overwatch/alerts/ack', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'alertAck']);
+    $router->post('/api/atak/overwatch/alerts/dismiss', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'alertDismiss']);
+    $router->post('/api/atak/overwatch/alerts/seen', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'alertSeen']);
     $router->get('/api/atak/overwatch/apps-sync', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'appsSync']);
     $router->get('/api/atak/overwatch/intel-feed', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'intelFeed']);
     $router->get('/api/atak/overwatch/geoloc-rings', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'ringsIndex']);

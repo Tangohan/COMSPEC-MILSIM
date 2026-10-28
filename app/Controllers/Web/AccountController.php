@@ -125,6 +125,7 @@ class AccountController
         ];
 
         return $this->accountView('account.index', 'Mon compte', [
+            'accountYearReview' => $this->yearReviewCard($tenantId, $uid),
             'accountUser' => $accountUser,
             'accountProfile' => $accountProfile,
             'accountSnapshot' => $accountSnapshot,
@@ -137,6 +138,41 @@ class AccountController
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]);
+    }
+
+    /**
+     * Carte « Ma rétrospective » : la dernière année publiée (avec ou sans chiffres), sinon la date de la prochaine.
+     *
+     * @return array{year: int, published: bool, has_data: bool, publish_at: int, collective: bool, years: list<int>}|null
+     */
+    private function yearReviewCard(int $tenantId, int $userId): ?array
+    {
+        try {
+            $calendar = \App\Services\Community\YearReviewAccess::calendar();
+            if (!$calendar->enabled() || $tenantId < 1) {
+                return null;
+            }
+            $now = time();
+            $year = $calendar->currentYear($now);
+            if ($year === null) {
+                $year = $calendar->publishesInYear() ? (int) date('Y', $now) : (int) date('Y', $now) - 1;
+                $year = max(\App\Support\YearReviewCalendar::FIRST_YEAR, $year);
+
+                return ['year' => $year, 'published' => false, 'has_data' => false, 'publish_at' => $calendar->publishAt($year), 'collective' => false, 'years' => []];
+            }
+            $player = (new \App\Services\Community\YearReviewService())->forUser($tenantId, $userId, $year, $now);
+
+            return [
+                'year' => $year,
+                'published' => true,
+                'has_data' => $player !== null,
+                'publish_at' => $calendar->publishAt($year),
+                'collective' => \App\Services\Community\YearReviewAccess::collectiveAllowed($tenantId),
+                'years' => $calendar->publishedYears($now),
+            ];
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /** Ferme toutes les autres sessions du compte ; celle en cours reste ouverte. */
@@ -159,6 +195,8 @@ class AccountController
             return Response::redirect(url('account'));
         }
         Session::set('auth_issued_at', $epoch);
+        // « Fermer les autres sessions » vaut aussi pour les navigateurs mémorisés.
+        $this->loginSecurityOtpService->trustedDevices()->revokeAll($uid);
         $this->auditService->log(AuditAction::AUTH_SESSIONS_REVOKED, (int) ($user['tenant_id'] ?? 0), $uid, 'user', $uid);
         Session::flash('success', 'Toutes vos autres sessions sont fermées. Seule celle-ci reste ouverte.');
 
@@ -419,11 +457,18 @@ class AccountController
                 if ($rawSteam !== '' && $resolvedSteam === null) {
                     Session::flash(
                         'error',
-                        'Impossible de reconnaître cet identifiant Steam. Indiquez le numéro affiché en jeu (souvent 17 chiffres), un identifiant Steam classique (STEAM_0:… ou [U:1:…]), ou une adresse de profil public'
+                        'Impossible de reconnaître cet identifiant Steam. Indiquez le numéro affiché en jeu (souvent 17 chiffres), un identifiant Steam classique (STEAM_0:… ou [U:1:…]), ou l’adresse de votre profil Steam'
                         . ($this->steamWebApiService->isConfigured() ? ' (y compris un lien avec votre pseudo).' : '.')
                     );
 
                     return Response::redirect(url('account/preferences'));
+                }
+                $publicName = \App\Support\UserPublicName::normalize((string) $request->input('public_name', ''));
+                $publicNameError = \App\Support\UserPublicName::validationError($publicName);
+                if ($publicNameError !== null) {
+                    Session::flash('error', __($publicNameError));
+
+                    return Response::redirect(url('account/preferences') . '#section-profil');
                 }
                 $firstName = trim((string) $request->input('first_name'));
                 $lastName = trim((string) $request->input('last_name'));
@@ -453,6 +498,10 @@ class AccountController
                     $updateUser['profile_slug'] = $ps;
                 }
                 $this->userRepository->update($uid, $tenantId, $updateUser);
+                try {
+                    \App\Support\UserPublicName::save(\App\Core\Database::getPdo(), $uid, $publicName);
+                } catch (\Throwable) {
+                }
                 $language = strtolower(trim((string) $request->input('language')));
                 if (!\App\Services\I18n\LocaleService::isSupported($language)) {
                     $language = 'fr';
@@ -463,6 +512,8 @@ class AccountController
                     'timezone' => trim((string) $request->input('timezone')),
                     'language' => $language,
                 ]);
+                // La langue du profil devient aussi celle du site (pages et e-mails suivent le même choix).
+                (new \App\Services\I18n\LocaleService())->setUserLocale($language, false);
                 try {
                     $this->personnelProfileRepository->ensureRecord($uid);
                     $primaryCs = trim((string) $request->input('callsign'));
@@ -510,8 +561,15 @@ class AccountController
         }
         $extraCallsigns = array_slice($extraCallsigns, 0, $extraCallsignSlots);
 
+        try {
+            $publicName = \App\Support\UserPublicName::get(\App\Core\Database::getPdo(), $uid);
+        } catch (\Throwable) {
+            $publicName = '';
+        }
+
         return $this->accountView('account.preferences', 'Préférences', [
             'user' => $user,
+            'publicName' => $publicName,
             'profile' => $profile,
             'uiPrefs' => $uiPrefs,
             'extraCallsigns' => $extraCallsigns,
@@ -642,6 +700,12 @@ class AccountController
                 'group' => 'Événements',
             ],
             [
+                'key' => EmailEvents::YEAR_REVIEW_READY,
+                'label' => 'Rétrospective de l’année',
+                'hint' => 'Une fois par an, quand le bilan de votre année de jeu est prêt.',
+                'group' => 'Événements',
+            ],
+            [
                 'key' => EmailEvents::COMMUNITY_REPORT_RECEIPT,
                 'label' => 'Accusé de réception de votre signalement',
                 'hint' => 'Confirmation que votre signalement ou demande a bien été transmis à l’équipe.',
@@ -660,7 +724,7 @@ class AccountController
                 'group' => 'Signalements et modération',
             ],
         ];
-        if (function_exists('forum_user_can_moderate') && forum_user_can_moderate()) {
+        if (function_exists('moderation_user_can_moderate') && moderation_user_can_moderate()) {
             $items[] = [
                 'key' => EmailEvents::COMMUNITY_REPORT_NEW_STAFF,
                 'label' => 'Nouveaux signalements pour l’équipe',
@@ -743,6 +807,11 @@ class AccountController
                 'key' => EmailEvents::TRAINING_PUBLISH_ELEVATION_REQUEST,
                 'label' => 'Demande de droit de publication (Studio)',
                 'hint' => 'Lorsqu’un concepteur demande à pouvoir publier une fiche formation.',
+            ],
+            [
+                'key' => EmailEvents::TRAINING_PEDAGOGY_DESIGNATION,
+                'label' => 'Nomination dans la chaîne pédagogique',
+                'hint' => 'Lorsque vous êtes nommé concepteur, animateur, validateur d’encadrants ou référent de gouvernance.',
             ],
             [
                 'key' => EmailEvents::EFFECTIFS_ELEVATION_REQUEST,
@@ -1244,6 +1313,14 @@ class AccountController
             $pendingSetup = null;
         }
 
+        // Codes de secours en clair : montrés une seule fois, juste après leur création.
+        $freshRecoveryCodes = [];
+        $fresh = Session::get('fresh_recovery_codes');
+        if (is_array($fresh) && (int) ($fresh['user_id'] ?? 0) === $uid && !$request->isPost()) {
+            $freshRecoveryCodes = array_values(array_map('strval', (array) ($fresh['codes'] ?? [])));
+            Session::forget('fresh_recovery_codes');
+        }
+
         $totpQrDataUri = null;
         $totpSecretDisplay = null;
         if (is_array($pendingSetup)) {
@@ -1353,10 +1430,40 @@ class AccountController
                         'user',
                         $uid
                     );
-                    Session::flash('success', 'Application d’authentification activée. Un code de l’application sera demandé à chaque connexion.');
+                    $this->storeFreshRecoveryCodes($uid, $tenantId);
+                    Session::flash('success', 'Application d’authentification activée. Gardez vos codes de secours en lieu sûr : ils sont affichés une seule fois.');
 
                     return Response::redirect(url('account/security'));
                 }
+            } elseif ($section === 'recovery_regenerate') {
+                if (!$totpEnabled) {
+                    Session::flash('error', 'Activez d’abord l’application d’authentification.');
+
+                    return Response::redirect(url('account/security'));
+                }
+                if ($password === '' || !password_verify($password, (string) ($user['password_hash'] ?? ''))) {
+                    $errors['recovery_password'] = ['Mot de passe actuel incorrect.'];
+                } else {
+                    $this->storeFreshRecoveryCodes($uid, $tenantId);
+                    Session::flash('success', 'Nouveaux codes de secours générés. Les anciens ne fonctionnent plus.');
+
+                    return Response::redirect(url('account/security') . '#codes-secours');
+                }
+            } elseif ($section === 'trusted_revoke') {
+                if ($this->loginSecurityOtpService->trustedDevices()->revoke($uid, (int) $request->input('device_id', 0))) {
+                    $this->auditService->log(AuditAction::AUTH_TRUSTED_DEVICES_REVOKED, $tenantId, $uid, 'user', $uid, null, 'one');
+                    Session::flash('success', 'Appareil retiré : le code sera de nouveau demandé sur ce navigateur.');
+                }
+
+                return Response::redirect(url('account/security') . '#appareils-confiance');
+            } elseif ($section === 'trusted_revoke_all') {
+                $n = $this->loginSecurityOtpService->trustedDevices()->revokeAll($uid);
+                if ($n > 0) {
+                    $this->auditService->log(AuditAction::AUTH_TRUSTED_DEVICES_REVOKED, $tenantId, $uid, 'user', $uid, null, 'all:' . $n);
+                }
+                Session::flash('success', 'Tous les appareils de confiance sont retirés : le code sera demandé partout à la prochaine connexion.');
+
+                return Response::redirect(url('account/security') . '#appareils-confiance');
             } elseif ($section === 'totp_cancel') {
                 Session::forget('pending_totp_setup');
                 Session::flash('success', 'Configuration annulée.');
@@ -1382,6 +1489,9 @@ class AccountController
                             'totp_confirmed_at' => null,
                         ]);
                         Session::forget('pending_totp_setup');
+                        // Sans application, les codes de secours et les appareils mémorisés n'ont plus lieu d'être.
+                        $this->loginSecurityOtpService->recoveryCodes()->deleteAll($uid);
+                        $this->loginSecurityOtpService->trustedDevices()->revokeAll($uid);
                         $this->auditService->log(
                             AuditAction::AUTH_TOTP_DISABLED,
                             $tenantId,
@@ -1432,7 +1542,24 @@ class AccountController
             'totpQrDataUri' => $totpQrDataUri,
             'totpSecretDisplay' => $totpSecretDisplay,
             'loginOtpTtlMinutes' => LoginSecurityOtpService::TTL_MINUTES,
+            'recoveryAvailable' => $this->loginSecurityOtpService->recoveryCodes()->isAvailable(),
+            'recoveryRemaining' => $this->loginSecurityOtpService->recoveryCodes()->remaining($uid),
+            'freshRecoveryCodes' => $freshRecoveryCodes,
+            'trustedAvailable' => $this->loginSecurityOtpService->canTrustDevice($user),
+            'trustedDevices' => $this->loginSecurityOtpService->trustedDevices()->listForUser($uid),
+            'trustedTtlDays' => \App\Services\Auth\TrustedDeviceService::TTL_DAYS,
         ]);
+    }
+
+    /** Nouvelle série de codes de secours, gardée en session pour un seul affichage. */
+    private function storeFreshRecoveryCodes(int $uid, int $tenantId): void
+    {
+        $codes = $this->loginSecurityOtpService->recoveryCodes()->regenerate($uid);
+        if ($codes === []) {
+            return;
+        }
+        Session::set('fresh_recovery_codes', ['user_id' => $uid, 'codes' => $codes]);
+        $this->auditService->log(AuditAction::AUTH_RECOVERY_CODES_GENERATED, $tenantId, $uid, 'user', $uid);
     }
 
     public function password(Request $request, array $params = []): Response

@@ -9,7 +9,7 @@ if !([] call comspec_atak_native_fnc_bridge) exitWith { false };
 if (isNil "comspec_overwatch_connect_fnc_hashMapToJson") exitWith { false };
 private _call = {
     params ["_cmd", "_json"];
-    private _r = "COMSPECExtension" callExtension [_cmd, [_json]];
+    private _r = ["COMSPECExtension", _cmd, [_json]] call comspec_atak_native_fnc_extAwait;
     if (_r isEqualType []) then { _r = _r param [0, ""]; };
     _r
 };
@@ -51,7 +51,7 @@ switch (_act) do {
             // Décision du poste web encore inconnue en jeu : diffusée au camp (sans renvoi au web).
             if ((count _r) > 0 && {(_r getOrDefault ["status", ""]) isNotEqualTo _st} && {!((_r getOrDefault ["status", ""]) in ["LIVREE", "ANNULEE", "REFUSEE"])}) then {
                 _r set ["status", _st];
-                ["comspec_atak_native_logi", ["STATUS", _r get "side", [_id, _st, format ["%1 (web)", _by], []]]] call CBA_fnc_globalEvent;
+                ["comspec_atak_native_sideEvent", ["comspec_atak_native_logi", ["STATUS", _r get "side", [_id, _st, format ["%1 (web)", _by], []]], _r get "side"]] call CBA_fnc_serverEvent;
             };
         } forEach ((_res select [3]) splitString ";");
     };

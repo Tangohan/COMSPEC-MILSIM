@@ -71,6 +71,18 @@ class AuthMiddleware
         $rbac->setPermissionsForGateFromUserRow($user, $userRepo);
         Session::set('rbac_unit_map', json_encode(\App\Core\Gate::getInstance()->getUnitPermissionMap()) ?: '{}');
 
+        // Maintenance globale : les sessions ouvertes avant son début sont fermées, sauf celles des administrateurs
+        // plateforme (MaintenanceGuard déconnecte celles qui se présentent pendant la maintenance).
+        $maintenanceEpoch = \App\Support\MaintenanceSessionEpoch::epoch();
+        if ($maintenanceEpoch > 0
+            && (int) Session::get('auth_issued_at', 0) < $maintenanceEpoch
+            && !\App\Core\Gate::getInstance()->isPlatformAdmin()) {
+            $this->clearAuthSession();
+            Session::flash('error', 'Une maintenance d’Athena a fermé toutes les sessions. Merci de vous reconnecter.');
+
+            return Response::redirect(url('login'));
+        }
+
         $tenantId = (int) $user['tenant_id'];
         try {
             $resolver = Container::get(\App\Services\Moderation\ModerationRestrictionResolver::class);
@@ -98,6 +110,11 @@ class AuthMiddleware
             }
         }
 
+        $linkStep = $this->firstLoginGameLink($request, $user, $tenantId);
+        if ($linkStep instanceof Response) {
+            return $linkStep;
+        }
+
         $context = \App\Services\Tenant\TenantContext::class;
         $originalTenantId = (int) $user['tenant_id'];
         if (\App\Core\Gate::getInstance()->allows('admin.system')
@@ -119,6 +136,41 @@ class AuthMiddleware
             Session::set('tenant_id', $originalTenantId);
             $context::clearVerification();
         }
+    }
+
+    /**
+     * Nouveau membre sans jeu relié : les pages du site renvoient vers /lier (code affiché par ATAK dans Arma),
+     * si la communauté garde ce réglage actif. Vérifié une seule fois par session une fois l'étape franchie.
+     *
+     * @param array<string, mixed> $user
+     */
+    private function firstLoginGameLink(Request $request, array $user, int $tenantId): ?Response
+    {
+        $gate = \App\Services\Game\FirstLoginGameLinkGate::class;
+        $key = (int) ($user['id'] ?? 0) . ':' . $tenantId;
+        if (Session::get($gate::SESSION_CLEAR) === $key) {
+            return null;
+        }
+        try {
+            $required = (new $gate())->mustLink($user, $tenantId);
+        } catch (\Throwable) {
+            return null;
+        }
+        if (!$required) {
+            Session::set($gate::SESSION_CLEAR, $key);
+            Session::forget($gate::SESSION_REQUIRED);
+
+            return null;
+        }
+        Session::set($gate::SESSION_REQUIRED, true);
+        $path = $request->path();
+        if ($request->method() !== 'GET' || $gate::pathIsOpen($path) || !$request->isBrowserNavigation()) {
+            return null;
+        }
+        $query = (string) ($_SERVER['QUERY_STRING'] ?? '');
+        Session::set($gate::SESSION_AFTER, $path . ($query !== '' ? '?' . $query : ''));
+
+        return Response::redirect(url('lier'));
     }
 
     private function clearAuthSession(): void

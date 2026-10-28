@@ -3,6 +3,8 @@
     Pas de fenêtre de connexion ici (menu Connexion Athena en secours).
 */
 if (!hasInterface) exitWith {};
+// Service Athéna : rien tant que le joueur n'a pas répondu « Oui » (fn_athenaChoiceShow).
+if (([] call comspec_overwatch_connect_fnc_athenaMode) isNotEqualTo "on") exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_AuthInitStarted", false]) exitWith {};
 missionNamespace setVariable ["COMSPEC_AuthInitStarted", true, false];
 missionNamespace setVariable ["comspec_overwatch_auth_state", "INITIALIZING", false];
@@ -12,7 +14,8 @@ private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
 missionNamespace setVariable ["comspec_overwatch_api_url", _url];
 
 "COMSPECExtension" callExtension "Warmup";
-private _init = ["COMSPECExtension" callExtension ["Init", [_url]]] call comspec_overwatch_connect_fnc_extResult;
+// extAwait (dans un spawn) : Init, reprise de session, Connect et IP ne figent plus le jeu pendant leurs requêtes HTTP.
+private _init = [["COMSPECExtension", "Init", [_url]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 ["INFO", "Athena", format ["Init extension %1", _init]] call comspec_overwatch_connect_fnc_log;
 
 if ([] call comspec_overwatch_connect_fnc_restoreSession) exitWith { true };

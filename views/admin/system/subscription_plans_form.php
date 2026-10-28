@@ -17,10 +17,16 @@ $slug = (string) ($row['slug'] ?? '');
 $sort = (int) ($row['sort_order'] ?? 0);
 $fj = $row['features_json'] ?? null;
 $lj = $row['limits_json'] ?? null;
-$sm = (string) ($row['stripe_price_id_monthly'] ?? '');
-$sy = (string) ($row['stripe_price_id_yearly'] ?? '');
-$pm = (string) ($row['paypal_plan_id_monthly'] ?? '');
-$py = (string) ($row['paypal_plan_id_yearly'] ?? '');
+$centsToEuros = static function ($cents): string {
+    $cents = is_numeric($cents) ? (int) $cents : 0;
+    if ($cents <= 0) {
+        return '';
+    }
+
+    return $cents % 100 === 0 ? (string) intdiv($cents, 100) : number_format($cents / 100, 2, ',', '');
+};
+$priceM = $centsToEuros($row['price_monthly_cents'] ?? null);
+$priceY = $centsToEuros($row['price_yearly_cents'] ?? null);
 
 $features = [];
 if (is_string($fj) && trim($fj) !== '') {
@@ -87,7 +93,8 @@ $limitsVal = $prettyJson(is_string($lj) ? $lj : null);
                     <?php foreach (SubscriptionPlanFeaturesCatalog::BOOL_FEATURES as $key): ?>
                         <?php
                         $def = $defs[$key] ?? ['label' => $key, 'help' => ''];
-                        $checked = !empty($features[$key]);
+                        // Clé absente de la formule (ajoutée depuis) : la valeur par défaut du catalogue s'applique déjà.
+                        $checked = array_key_exists($key, $features) ? !empty($features[$key]) : !empty(SubscriptionPlanFeaturesCatalog::defaultsForSlug((string) ($row['slug'] ?? 'free'))[$key] ?? false);
                         ?>
                         <label class="flex gap-3 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm hover:border-emerald-300">
                             <input type="checkbox" name="feature_<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" value="1" class="mt-1 rounded border-slate-300 text-emerald-700 focus:ring-emerald-500" <?= $checked ? 'checked' : '' ?> />
@@ -128,31 +135,16 @@ $limitsVal = $prettyJson(is_string($lj) ? $lj : null);
             </div>
 
             <fieldset>
-                <legend class="text-sm font-semibold text-slate-800">Paiement PayPal</legend>
-                <p class="mt-1 text-xs text-slate-500">Identifiants des plans d’abonnement créés dans le tableau de bord PayPal (Billing Plans).</p>
+                <legend class="text-sm font-semibold text-slate-800">Prix (paiement PayPal)</legend>
+                <p class="mt-1 text-xs text-slate-500">Montants en euros demandés sur la page de paiement d’Athena (lien paypal.me pré-rempli). Laissez vide pour ne pas proposer la période. Chaque paiement couvre un mois ou un an ; vous l’activez dans Admin &gt; Paiements.</p>
                 <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                        <label for="sp_paypal_m" class="block text-sm font-semibold text-slate-800">Plan mensuel</label>
-                        <input id="sp_paypal_m" name="paypal_plan_id_monthly" type="text" maxlength="100" value="<?= htmlspecialchars($pm, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" placeholder="P-…" />
+                        <label for="sp_price_m" class="block text-sm font-semibold text-slate-800">Prix pour 1 mois (€)</label>
+                        <input id="sp_price_m" name="price_monthly" type="text" inputmode="decimal" maxlength="10" value="<?= htmlspecialchars($priceM, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" placeholder="Ex. 9,99" />
                     </div>
                     <div>
-                        <label for="sp_paypal_y" class="block text-sm font-semibold text-slate-800">Plan annuel</label>
-                        <input id="sp_paypal_y" name="paypal_plan_id_yearly" type="text" maxlength="100" value="<?= htmlspecialchars($py, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" placeholder="P-…" />
-                    </div>
-                </div>
-            </fieldset>
-
-            <fieldset>
-                <legend class="text-sm font-semibold text-slate-800">Paiement Stripe (secours)</legend>
-                <p class="mt-1 text-xs text-slate-500">Utilisé uniquement si PayPal n’est pas configuré, ou en repli.</p>
-                <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                        <label for="sp_stripe_m" class="block text-sm font-semibold text-slate-800">Prix mensuel</label>
-                        <input id="sp_stripe_m" name="stripe_price_id_monthly" type="text" maxlength="100" value="<?= htmlspecialchars($sm, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" placeholder="price_…" />
-                    </div>
-                    <div>
-                        <label for="sp_stripe_y" class="block text-sm font-semibold text-slate-800">Prix annuel</label>
-                        <input id="sp_stripe_y" name="stripe_price_id_yearly" type="text" maxlength="100" value="<?= htmlspecialchars($sy, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" placeholder="price_…" />
+                        <label for="sp_price_y" class="block text-sm font-semibold text-slate-800">Prix pour 1 an (€)</label>
+                        <input id="sp_price_y" name="price_yearly" type="text" inputmode="decimal" maxlength="10" value="<?= htmlspecialchars($priceY, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" placeholder="Ex. 99" />
                     </div>
                 </div>
             </fieldset>

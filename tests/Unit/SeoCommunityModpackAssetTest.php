@@ -21,10 +21,11 @@ final class SeoCommunityModpackAssetTest extends TestCase
     {
         $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/SeoController.php');
         self::assertStringContainsString("'/medias'", $src);
-        self::assertStringContainsString("'/reels'", $src);
         self::assertStringContainsString('listPublicForTenant', $src);
-        self::assertStringContainsString("Disallow: /admin/", $src);
-        self::assertStringContainsString("Disallow: /modpacks/", $src);
+        self::assertStringContainsString('Seo::PRIVATE_PREFIXES', $src);
+        self::assertStringContainsString('xhtml:link', $src);
+        self::assertContains('/admin/', \App\Support\Seo::PRIVATE_PREFIXES);
+        self::assertContains('/modpacks/', \App\Support\Seo::PRIVATE_PREFIXES);
     }
 
     public function testCommunityShowcaseCtaLabelsAreDistinct(): void
@@ -44,7 +45,8 @@ final class SeoCommunityModpackAssetTest extends TestCase
         self::assertStringContainsString('buildCommunityPublicJsonLd', $src);
         self::assertStringContainsString("'@type' => 'FAQPage'", $src);
         self::assertStringContainsString("'@type' => 'CollectionPage'", $src);
-        self::assertStringContainsString("'@type' => 'JobPosting'", $src);
+        self::assertStringNotContainsString("'@type' => 'JobPosting'", $src);
+        self::assertStringContainsString('tenantIndexable', $src);
         self::assertStringContainsString("'meta_description' => \$unitDesc", $src);
         self::assertStringContainsString("'meta_description' => \$mediaDesc", $src);
     }
@@ -56,26 +58,15 @@ final class SeoCommunityModpackAssetTest extends TestCase
         self::assertStringContainsString('$isBackOfficeShell', $layout);
     }
 
-    public function testModpackAdminChunkedUploadIsWired(): void
+    public function testHostedModpacksAreGoneAndRedirectToSteamWorkshopPage(): void
     {
-        $controller = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Admin/AdminModpackController.php');
-        $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
-        $js = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/modpack-admin-upload.js');
-        $create = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/modpacks/create.php');
-        $download = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/ModpackController.php');
+        $root = dirname(__DIR__, 2);
+        $routes = (string) file_get_contents($root . '/routes/web.php');
 
-        self::assertStringContainsString('function uploadInit', $controller);
-        self::assertStringContainsString('function uploadChunk', $controller);
-        self::assertStringContainsString('function uploadFinalize', $controller);
-        self::assertStringContainsString('staged_upload_id', $controller);
-        self::assertStringContainsString("normalizeExternalUrl", $controller);
-        self::assertStringContainsString('/admin/modpacks/upload/init', $routes);
-        self::assertStringContainsString('/admin/modpacks/upload/chunk', $routes);
-        self::assertStringContainsString('/admin/modpacks/upload/finalize', $routes);
-        self::assertStringContainsString('data-modpack-upload', $create);
-        self::assertStringContainsString('name="url"', $create);
-        self::assertStringContainsString('uploadChunked', $js);
-        self::assertStringContainsString('setBodyStream', $download);
+        self::assertFileDoesNotExist($root . '/app/Controllers/Admin/AdminModpackController.php');
+        self::assertFileDoesNotExist($root . '/public/assets/js/modpack-admin-upload.js');
+        self::assertStringNotContainsString('/back-office/ressources/modpacks/upload/init', $routes);
+        self::assertStringContainsString("'/admin/modpacks' => 'back-office/ressources/atak-mod'", $routes);
     }
 
     public function testPortalSearchCoversAllScopesAndJobRoles(): void

@@ -38,7 +38,7 @@ if (!isNil "comspec_overwatch_atak_athena_fnc_athena_applyBriefingSlide") then {
 
         private _ctrlPic = _display displayCtrl 9001;
 
-        if (!isNull _ctrlPic) then { _ctrlPic ctrlSetText _path; };
+        if (!isNull _ctrlPic) then { _ctrlPic ctrlSetText ((_path) call comspec_overwatch_connect_fnc_tr); };
 
         private _ctrlTitle = _display displayCtrl 9002;
 
@@ -54,7 +54,7 @@ if (!isNil "comspec_overwatch_atak_athena_fnc_athena_applyBriefingSlide") then {
 
             };
 
-            _ctrlTitle ctrlSetText _label;
+            _ctrlTitle ctrlSetText ((_label) call comspec_overwatch_connect_fnc_tr);
 
         };
 
@@ -62,7 +62,7 @@ if (!isNil "comspec_overwatch_atak_athena_fnc_athena_applyBriefingSlide") then {
 
         if (!isNull _ctrlIndex) then {
 
-            _ctrlIndex ctrlSetText format ["%1 / %2", _index + 1, _total max 1];
+            _ctrlIndex ctrlSetText ((format ["%1 / %2", _index + 1, _total max 1]) call comspec_overwatch_connect_fnc_tr);
 
         };
 
@@ -80,7 +80,16 @@ private _screens = missionNamespace getVariable ["COMSPEC_BriefingScreens", []];
 
     if (!isNull _object) then {
 
-        _object setObjectTexture [_selection, _path];
+        // Un fichier hors du jeu ne s'affiche pas : le poser écrasait la diffusion et laissait l'image d'origine.
+        private _cur = _object getVariable ["COMSPEC_ATAK_ScreenCur", ""];
+        if (_cur isEqualType "" && {(_cur select [0, 2]) isEqualTo "#("}) then { continue };
+        private _tex = _path;
+        if (!isNil "comspec_atak_native_fnc_texUsable") then {
+            private _use = [_path] call comspec_atak_native_fnc_texUsable;
+            if (_use isEqualTo "") then { continue };
+            _tex = _use;
+        };
+        _object setObjectTexture [_selection, _tex];
 
     };
 

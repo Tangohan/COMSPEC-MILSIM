@@ -24,7 +24,10 @@ final class SseIndependentEdenContractAssetTest extends TestCase
         self::assertStringContainsString("[_this, 'Preset', _value] call comspec_sse_fnc_edenWriteField", $eden);
         self::assertStringContainsString("[_this, 'LastName', _value] call comspec_sse_fnc_edenWriteField", $eden);
         self::assertStringContainsString("[_this, 'Nationality', _value] call comspec_sse_fnc_edenWriteField", $eden);
-        self::assertStringContainsString('Recherché — correspondance confirmée', $eden);
+        // Libellés de liste traduits : la valeur reste dans la config, le texte dans le stringtable.
+        $strings = (string) file_get_contents($root . '/mod/@COMSPEC_SSE/addons/main/stringtable.xml');
+        self::assertStringContainsString('value = "recherche"', $eden);
+        self::assertStringContainsString('Recherché — correspondance confirmée', $strings);
 
         self::assertStringContainsString('COMSPEC_SSE_MatchResult', $helper);
         self::assertStringContainsString('comspec_sse_fnc_setIdentity', $helper);
@@ -39,6 +42,6 @@ final class SseIndependentEdenContractAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_SSE_FirstName', $content);
 
         self::assertStringContainsString('comspec_sse_fnc_edenWriteField', $owHelper);
-        self::assertStringContainsString('0.8.0', $ver);
+        self::assertStringContainsString('1.0.0', $ver);
     }
 }

@@ -37,12 +37,19 @@ if ($founderTrialEndsAt !== '') {
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $publicUrl = $slug !== '' ? url('c/' . rawurlencode($slug)) : '';
 $usersUrl = $tenantId > 0 ? url('admin/users') . '?tenant_id=' . $tenantId : url('admin/users');
-$currentPlanLabel = $currentPlan;
+// La pastille montre la formule réellement appliquée (formule offerte, essai fondateur) ; le formulaire garde la formule de base.
+$effectivePlan = \App\Support\PlanGift::effectivePlanSlug($tenant);
+$planGift = \App\Support\PlanGift::activeFromSettings($tenant['settings'] ?? null);
+$planNames = [];
 foreach ($plans as $p) {
-    if ((string) ($p['slug'] ?? '') === $currentPlan) {
-        $currentPlanLabel = (string) ($p['name'] ?? $currentPlan);
-        break;
-    }
+    $planNames[(string) ($p['slug'] ?? '')] = (string) ($p['name'] ?? '');
+}
+$currentPlanLabel = ($planNames[$effectivePlan] ?? '') !== '' ? $planNames[$effectivePlan] : $effectivePlan;
+$basePlanLabel = ($planNames[$currentPlan] ?? '') !== '' ? $planNames[$currentPlan] : $currentPlan;
+$giftEndLabel = '';
+if ($planGift !== null && !empty($planGift['ends_at'])) {
+    $giftEndTs = strtotime((string) $planGift['ends_at']);
+    $giftEndLabel = $giftEndTs ? date('d/m/Y', $giftEndTs) : (string) $planGift['ends_at'];
 }
 $currentTypeLabel = (string) ($typeOptions[$currentType]['label'] ?? $currentType);
 $ok = \App\Core\Session::getFlash('success');
@@ -65,6 +72,9 @@ $err = \App\Core\Session::getFlash('error');
             <div class="pa-chips">
                 <span class="pa-pill pa-pill--slate"><?= $h($currentTypeLabel) ?></span>
                 <span class="pa-pill pa-pill--mint"><?= $h($currentPlanLabel) ?></span>
+                <?php if ($planGift !== null): ?>
+                    <span class="pa-pill pa-pill--mint">Offerte <?= $giftEndLabel !== '' ? 'jusqu’au ' . $h($giftEndLabel) : 'sans limite' ?></span>
+                <?php endif; ?>
                 <span class="pa-pill pa-pill--amber"><?= $h((string) ($statusLabels[$currentStatus] ?? 'Inconnu')) ?></span>
                 <?php if ($trialActive): ?>
                     <span class="pa-pill pa-pill--mint">Essai fondateur en cours</span>
@@ -75,6 +85,7 @@ $err = \App\Core\Session::getFlash('error');
                     <a class="pa-btn pa-btn--solid" href="<?= $h($publicUrl) ?>" target="_blank" rel="noopener">Page publique</a>
                 <?php endif; ?>
                 <a class="pa-btn pa-btn--ghost" href="<?= $h($usersUrl) ?>">Comptes</a>
+                <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/formules-offertes') . '?tenant_id=' . $tenantId) ?>">Offrir une formule</a>
                 <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/audit')) ?>">Journal d’audit</a>
             </div>
         </header>
@@ -174,6 +185,13 @@ $err = \App\Core\Session::getFlash('error');
                     <h2 class="pa-card__title">Formule d’accès</h2>
                     <p class="pa-card__help">Le palier détermine les modules et les plafonds. Le changement s’applique immédiatement.</p>
 
+                    <?php if ($planGift !== null): ?>
+                        <p class="pa-flash pa-flash--ok" style="margin-top:1rem;">
+                            Formule offerte en cours : <?= $h($currentPlanLabel) ?>, <?= $giftEndLabel !== '' ? 'jusqu’au ' . $h($giftEndLabel) : 'sans limite' ?>.
+                            Elle prime sur la formule de base ci-dessous (<?= $h($basePlanLabel) ?>), qui reprend à la fin de l’offre.
+                            <a href="<?= $h(url('admin/formules-offertes')) ?>">Gérer les formules offertes</a>
+                        </p>
+                    <?php endif; ?>
                     <?php if ($plansError !== ''): ?>
                         <p class="pa-flash pa-flash--warn" style="margin-top:1rem;"><?= $h($plansError) ?></p>
                     <?php else: ?>
@@ -186,7 +204,7 @@ $err = \App\Core\Session::getFlash('error');
                         <form method="post" action="<?= $h($formAction) ?>">
                             <?= \App\Core\Csrf::field() ?>
                             <div class="pa-field">
-                                <label for="plan_slug">Formule d’accès</label>
+                                <label for="plan_slug"><?= $planGift !== null ? 'Formule de base' : 'Formule d’accès' ?></label>
                                 <select id="plan_slug" name="plan_slug" required>
                                     <?php if ($plans === []): ?>
                                         <option value="">Aucune formule disponible</option>
@@ -229,6 +247,27 @@ $err = \App\Core\Session::getFlash('error');
                         </form>
                     <?php endif; ?>
                 </section>
+
+                <?php
+                $removalArchive = is_array($platformTenantArchive ?? null) ? $platformTenantArchive : null;
+                $removalUrl = (string) ($platformTenantRemovalUrl ?? '');
+                ?>
+                <?php if ($removalUrl !== '' && $tenantId > 1 && $slug !== 'default'): ?>
+                    <section id="retrait" class="pa-card scroll-mt-24">
+                        <p class="pa-card__kicker">04 · Retrait</p>
+                        <h2 class="pa-card__title">Archiver ou supprimer la communauté</h2>
+                        <p class="pa-card__help">
+                            <?php if ($removalArchive !== null): ?>
+                                Cette communauté est archivée : elle n’est plus visible, ses données sont intactes. Vous pouvez la restaurer ou la supprimer définitivement.
+                            <?php else: ?>
+                                L’archivage ferme la communauté sans rien effacer (réversible). La suppression définitive vient ensuite, après sauvegarde. Les comptes des joueurs sont toujours conservés.
+                            <?php endif; ?>
+                        </p>
+                        <div class="pa-actions">
+                            <a class="pa-btn pa-btn--line" href="<?= $h($removalUrl) ?>">Voir ce qui serait retiré</a>
+                        </div>
+                    </section>
+                <?php endif; ?>
             </div>
         </div>
     </div>

@@ -63,14 +63,20 @@ class PersonnelExtrasRepository
         return (int) $st->fetchColumn();
     }
 
+    /** Mémoïsé pour la durée de la requête (appelé par l’en-tête de chaque page). */
+    private static ?bool $hasTenantIdColumnCache = null;
+
     private function hasTenantIdColumn(): bool
     {
-        $st = $this->pdo->query(
-            "SELECT 1 FROM information_schema.COLUMNS
-             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_extras' AND COLUMN_NAME = 'tenant_id' LIMIT 1"
-        );
+        if (self::$hasTenantIdColumnCache === null) {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_extras' AND COLUMN_NAME = 'tenant_id' LIMIT 1"
+            );
+            self::$hasTenantIdColumnCache = $st !== false && (bool) $st->fetchColumn();
+        }
 
-        return $st !== false && (bool) $st->fetchColumn();
+        return self::$hasTenantIdColumnCache;
     }
 
     public function getProfileByUserId(int $userId): ?array
@@ -84,6 +90,12 @@ class PersonnelExtrasRepository
     /** Crée une ligne personnel_extras si elle n'existe pas. */
     public function ensureRecord(int $userId): void
     {
+        // Pas de doublon quand la clé unique inclut un tenant_id NULL.
+        $exists = $this->pdo->prepare('SELECT 1 FROM personnel_extras WHERE user_id = ? LIMIT 1');
+        $exists->execute([$userId]);
+        if ($exists->fetchColumn()) {
+            return;
+        }
         $stmt = $this->pdo->prepare('INSERT IGNORE INTO personnel_extras (user_id, created_at, updated_at) VALUES (?, NOW(), NOW())');
         $stmt->execute([$userId]);
     }

@@ -459,6 +459,8 @@ class AtakReportRoutingRepository
             'trigger_conditions' => json_encode($conditions, JSON_UNESCAPED_UNICODE),
             'roles' => $json($data['auto_assign_to_roles'] ?? null),
             'units' => $json($data['auto_assign_to_units'] ?? null),
+            'users' => $json($data['auto_assign_to_users'] ?? null),
+            'escalate_roles' => $json($data['escalate_to_roles'] ?? null),
             'send_notification' => !empty($data['send_notification']) ? 1 : 0,
             'escalate' => !empty($data['escalate_after_minutes'])
                 ? max(1, (int) $data['escalate_after_minutes'])
@@ -475,8 +477,10 @@ class AtakReportRoutingRepository
                         trigger_conditions = :trigger_conditions,
                         auto_assign_to_roles = :roles,
                         auto_assign_to_units = :units,
+                        auto_assign_to_users = :users,
                         send_notification = :send_notification,
-                        escalate_after_minutes = :escalate
+                        escalate_after_minutes = :escalate,
+                        escalate_to_roles = :escalate_roles
                   WHERE id = :id AND tenant_id = :tenant_id",
                 $params
             );
@@ -487,12 +491,28 @@ class AtakReportRoutingRepository
         return (int) $this->db->insert(
             "INSERT INTO atak_report_routing_rules
                 (tenant_id, rule_name, is_active, priority_order, trigger_conditions,
-                 auto_assign_to_roles, auto_assign_to_units, send_notification, escalate_after_minutes)
+                 auto_assign_to_roles, auto_assign_to_units, auto_assign_to_users, send_notification,
+                 escalate_after_minutes, escalate_to_roles)
              VALUES
                 (:tenant_id, :rule_name, :is_active, :priority_order, :trigger_conditions,
-                 :roles, :units, :send_notification, :escalate)",
+                 :roles, :units, :users, :send_notification, :escalate, :escalate_roles)",
             $params
         );
+    }
+
+    /**
+     * Fixe l'ordre d'application de plusieurs règles (glisser / monter / descendre).
+     *
+     * @param array<int, int> $orders id => priority_order
+     */
+    public function reorderRules(int $tenantId, array $orders): void
+    {
+        foreach ($orders as $id => $order) {
+            $this->db->execute(
+                'UPDATE atak_report_routing_rules SET priority_order = :o WHERE id = :id AND tenant_id = :t',
+                ['o' => max(1, min(9999, (int) $order)), 'id' => (int) $id, 't' => $tenantId]
+            );
+        }
     }
 
     public function deleteRule(int $id, int $tenantId): bool

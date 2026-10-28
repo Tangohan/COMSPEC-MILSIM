@@ -383,9 +383,9 @@ $latestLabel = $latestAt ? date('d.m.Y', strtotime($latestAt)) : '—';
             <p class="text-sm text-slate-500">
                 Registre documentaire opérationnel et administratif.
             </p>
-            <a href="<?= url('admin') ?>"
+            <a href="<?= url('back-office') ?>"
                class="text-sm font-semibold text-slate-700 transition hover:text-slate-950">
-                Retour administration
+                Retour au back-office
             </a>
         </div>
     </div>

@@ -67,7 +67,7 @@ switch (_action) do {
             _st set ["phase", "ACE"];
             [_dur, [_obj], { ["linked", (_this select 0) select 0] call comspec_atak_native_fnc_linkAllyAction; },
                 { (uiNamespace getVariable ["COMSPEC_ATAK_LinkAlly", createHashMap]) set ["phase", ""]; ["WARNING", "Liaison ATAK interrompue", 3, 20] call comspec_atak_native_fnc_notify; },
-                format ["Liaison ATAK (%1)…", _mode], { (player distance ((_this select 0) select 0)) < 2.6 }] call ace_common_fnc_progressBar;
+                (format ["Liaison ATAK (%1)…", _mode]) call comspec_atak_native_fnc_tr, { (player distance ((_this select 0) select 0)) < 2.6 }] call ace_common_fnc_progressBar;
             true
         };
         _st set ["phase", "LINKING"];
@@ -178,7 +178,16 @@ switch (_action) do {
         if (isNull player) exitWith { false };
         if ((player getVariable ["COMSPEC_ATAK_LinkUid", ""]) isNotEqualTo getPlayerUID player) then { player setVariable ["COMSPEC_ATAK_LinkUid", getPlayerUID player, true]; };
         private _snap = ["snapshot", true] call comspec_atak_native_fnc_linkAllyAction;
-        private _sig = _snap select { (_x select 0) isNotEqualTo "readAt" };
+        // Batterie comptée par tranche de 10 % : la copie (diffusée à tous, gardée pour les arrivants) partait
+        // à chaque point de batterie perdu, soit environ une fois par minute et par joueur.
+        private _sig = (_snap select { (_x select 0) isNotEqualTo "readAt" }) apply {
+            _x params ["_k", "_v"];
+            switch (_k) do {
+                case "battery": { [_k, round (_v / 10)] };
+                case "device": { [_k, _v select { (_x select 0) isNotEqualTo "level" }] };
+                default { _x };
+            }
+        };
         if (_sig isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_LinkMirrorSig", []])) exitWith { false };
         missionNamespace setVariable ["COMSPEC_ATAK_LinkMirrorSig", _sig];
         player setVariable ["COMSPEC_ATAK_LinkMirror", [_snap, [dayTime, "HH:MM"] call BIS_fnc_timeToString], true];
@@ -195,7 +204,8 @@ switch (_action) do {
         private _photos = 0;
         if ([] call comspec_atak_native_fnc_bridge && {!isNil "comspec_overwatch_connect_fnc_captureReconImage"}) then {
             private _failed = (missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []]) select { _x isEqualType "" };
-            missionNamespace setVariable ["COMSPEC_Athena_PhotoFailed", []];
+            // Au-delà de 20, les photos restent en file pour un prochain renvoi (pas d'effacement silencieux).
+            missionNamespace setVariable ["COMSPEC_Athena_PhotoFailed", _failed select [20]];
             {
                 private _p = _x splitString "\/";
                 [_x, format ["%1 · récupérée sur l'ATAK de %2 par %3 · %4", [player, true] call comspec_atak_native_fnc_unitCallsign, name player, _by, _p select ((count _p) - 1)], "CTAB", "", true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
@@ -309,14 +319,18 @@ switch (_action) do {
         { if (_x isEqualType [] && {(_x param [0, ""]) isEqualType ""}) then { _meds pushBackUnique (_x select 0); }; } forEach (_u getVariable ["ace_medical_medications", []]);
         private _tri = _u getVariable ["ace_medical_triageLevel", 0];
         if !(_tri isEqualType 0) then { _tri = 0; };
+        // Constantes cohérentes (fn_medVitals) : pas de tension ni de SpO2 sans pouls, perte de sang en classes ATLS.
+        private _mv = [_u] call comspec_atak_native_fnc_medVitals;
         // Lignes du bilan, réduites aux données affichées.
         private _lines = [
             ["state", "Conscience", _consc],
             ["bleed", "Hémorragie", _bleedTxt],
             ["tq", "Garrots", [_tqTxt, "aucun"] select (_tqTxt isEqualTo "")],
             ["fractures", "Fractures", [_frTxt, "aucune"] select (_frTxt isEqualTo "")],
-            ["hr", "Pouls", [format ["%1/min", round _hr], "non mesurable"] select !_ace],
-            ["blood", "Volume sanguin", format ["%1 %%", round ((_bv / 6) * 100)]],
+            ["hr", "Pouls", [[format ["%1/min", _mv get "hr"], "absent"] select ((_mv get "hr") <= 0), "non mesurable"] select !_ace],
+            ["bp", "Tension", [[format ["%1/%2", _mv get "sys", _mv get "dia"], "imprenable"] select ((_mv get "sys") < 0), "non mesurée"] select !(_mv getOrDefault ["measured", false])],
+            ["spo2", "SpO2", [[format ["%1 %%", _mv get "spo2"], "pas de signal"] select ((_mv get "spo2") < 0), "non mesurée"] select !(_mv getOrDefault ["measured", false])],
+            ["blood", "Perte sanguine estimée", [["< 15 % (classe I)", "15-30 % (classe II)", "30-40 % (classe III)", "> 40 % (classe IV)"] select (((_mv get "hemClass") - 1) max 0), "aucune"] select ((_mv get "hemClass") isEqualTo 0)],
             ["pain", "Douleur", _painTxt],
             ["meds", "Médicaments", [_meds joinString ", ", "aucun relevé"] select ((count _meds) isEqualTo 0)],
             ["triage", "Triage", ["non posé", "T3 (mineur, vert)", "T2 (différé, jaune)", "T1 (immédiat, rouge)", "T4 (décédé, noir)"] param [_tri, "non posé"]],
@@ -339,7 +353,7 @@ switch (_action) do {
         // Camp : alerte par le réseau simulé (marche sans Athena) ; poste : rapport structuré + alerte « opérateur à terre ».
         [{
             params ["_kind", "_summary", "_details", "_fields", "_pos", "_grid", "_me"];
-            ["comspec_atak_native_alert", [_kind, _me, _pos, _grid, _summary, str side group player]] call CBA_fnc_globalEvent;
+            ["comspec_atak_native_sideEvent", ["comspec_atak_native_alert", [_kind, _me, _pos, _grid, _summary, str side group player], str side group player]] call CBA_fnc_serverEvent;
             if ([] call comspec_atak_native_fnc_bridge) then {
                 [{
                     params ["_kind", "_summary", "_details", "_fields", "_pos"];

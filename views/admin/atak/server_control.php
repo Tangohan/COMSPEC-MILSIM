@@ -12,6 +12,15 @@ $enabledModulesCount = (int) ($enabledModulesCount ?? 0);
 $bridgeModulesTotal = (int) ($bridgeModulesTotal ?? 0);
 $maintenanceEnabled = !empty($maintenanceEnabled);
 $experienceSchemaReady = !empty($experienceSchemaReady);
+$netLive = is_array($netLive ?? null) ? $netLive : [];
+$phoneApps = is_array($phoneApps ?? null) ? $phoneApps : [];
+$appsPolicy = is_array($appsPolicy ?? null) ? $appsPolicy : [];
+$appsBySection = [];
+foreach ($phoneApps as $app) {
+    $appsBySection[(string) ($app['section'] ?? '')][] = $app;
+}
+$appsRequired = count(array_filter($appsPolicy, static fn ($r): bool => $r === 'required'));
+$appsForbidden = count(array_filter($appsPolicy, static fn ($r): bool => $r === 'forbidden'));
 $success = $success ?? null;
 $error = $error ?? null;
 $linkViaRelays = !empty($roleplay['link_via_relays']);
@@ -38,7 +47,7 @@ foreach ($relays as $r) {
                 <div class="mt-5 flex flex-wrap gap-2">
                     <a href="<?= $h(url('back-office/atak/roleplay')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Simulation réseau et capteurs</a>
                     <a href="<?= $h(url('back-office/atak/relays-network')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Réseau de relais</a>
-                    <a href="<?= $h(url('admin/atak-config')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Liaison technique</a>
+                    <a href="<?= $h(url('back-office/ressources/atak-config')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Liaison technique</a>
                     <a href="<?= $h(url('back-office/atak/realisme')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Parc de terminaux</a>
                 </div>
             </div>
@@ -91,6 +100,51 @@ foreach ($relays as $r) {
                         <?php if ($rows === []) { continue; } ?>
                         <div>
                             <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3"><?= $h($glabel) ?></h3>
+                            <?php if ($gid === 'reseau'): ?>
+                                <?php
+                                $liveCond = is_array($netLive['conditions'] ?? null) ? $netLive['conditions'] : [];
+                                $liveLabels = [];
+                                foreach ($rows as $nr) {
+                                    $nid = (string) ($nr['id'] ?? '');
+                                    if (!array_key_exists($nid, $liveCond)) {
+                                        continue;
+                                    }
+                                    $vl = (string) $liveCond[$nid];
+                                    foreach (($nr['choices'] ?? []) as $ch) {
+                                        if ((string) ($ch['value'] ?? '') === (string) $liveCond[$nid]) {
+                                            $vl = (string) ($ch['label'] ?? $vl);
+                                        }
+                                    }
+                                    $liveLabels[] = [(string) ($nr['label'] ?? $nid), $vl, (string) ($nr['value'] ?? 'player') !== 'player'];
+                                }
+                                $liveAt = (string) ($netLive['at'] ?? '');
+                                $liveTs = $liveAt !== '' ? strtotime($liveAt) : false;
+                                ?>
+                                <p class="text-xs text-slate-500 mb-3 leading-relaxed">« Laisser au serveur » : un administrateur du serveur ou un Zeus règle ces conditions en partie (menu Échap &gt; Conditions réseau). Une autre valeur s’impose à tous les joueurs de la communauté et se verrouille dans ce menu (COMSPEC Link 2.0.89 ou plus récent).</p>
+                                <div class="rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-3 mb-3" id="conditions-en-jeu">
+                                    <p class="text-sm font-semibold text-slate-800">Conditions appliquées en jeu</p>
+                                    <?php if ($liveTs === false): ?>
+                                        <p class="text-xs text-slate-600 mt-1">Aucune pour l’instant. Elles apparaissent ici dès qu’un administrateur les applique depuis le menu Échap.</p>
+                                    <?php else: ?>
+                                        <p class="text-xs text-slate-600 mt-1">
+                                            <?= !empty($netLive['reset']) ? 'Retour aux réglages du serveur' : 'Appliquées' ?>
+                                            par <strong><?= $h((string) ($netLive['applied_by'] ?? '?')) ?></strong>
+                                            le <?= $h(date('d/m/Y à H:i', (int) $liveTs)) ?>
+                                            <?php if ((string) ($netLive['mission'] ?? '') !== ''): ?> · mission <?= $h((string) $netLive['mission']) ?><?php endif; ?>
+                                            <?php if ((string) ($netLive['world'] ?? '') !== ''): ?> (<?= $h((string) $netLive['world']) ?>)<?php endif; ?>
+                                            <?php if ((string) ($netLive['server'] ?? '') !== ''): ?> · <?= $h((string) $netLive['server']) ?><?php endif; ?>
+                                        </p>
+                                        <?php if ($liveLabels !== []): ?>
+                                            <ul class="mt-2 grid sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700">
+                                                <?php foreach ($liveLabels as [$ll, $lv, $locked]): ?>
+                                                    <li><?= $h($ll) ?> : <strong><?= $h($lv) ?></strong><?= $locked ? ' <span class="text-amber-700">(règle du site prioritaire)</span>' : '' ?></li>
+                                                <?php endforeach; ?>
+                                            </ul>
+                                            <button type="submit" form="net-adopt" class="mt-3 inline-flex px-3 py-1.5 bg-emerald-700 text-white text-xs font-semibold rounded-lg hover:bg-emerald-800">Garder ces conditions comme règles de la communauté</button>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
                             <div class="grid sm:grid-cols-2 gap-3">
                                 <?php foreach ($rows as $exp): ?>
                                     <?php
@@ -136,6 +190,9 @@ foreach ($relays as $r) {
                         <button type="submit" class="inline-flex px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer les règles</button>
                     </div>
                 </form>
+                <form method="post" action="<?= $h(url('back-office/atak/controle-serveur/reseau-adopter')) ?>" id="net-adopt" class="hidden">
+                    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                </form>
             <?php endif; ?>
         </section>
 
@@ -166,6 +223,56 @@ foreach ($relays as $r) {
                 </div>
                 <button type="submit" class="inline-flex px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer les fonctions</button>
             </form>
+        </section>
+
+        <section id="apps" class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-sm font-black text-slate-900 tracking-tight">Apps du téléphone</h2>
+                        <p class="mt-1 text-xs text-slate-600 leading-relaxed max-w-2xl">Chaque opérateur installe et désinstalle ses apps dans l’App Store de son ATAK. Ici, vous pouvez rendre une app <strong>obligatoire</strong> (installée chez tous, impossible à désinstaller) ou <strong>interdite</strong> (retirée des téléphones, ne s’ouvre plus). Le Zeus et l’admin du serveur peuvent en ajouter pour une partie.</p>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-600 whitespace-nowrap"><span class="text-amber-700"><?= $appsRequired ?> obligatoire(s)</span> · <span class="text-red-700"><?= $appsForbidden ?> interdite(s)</span></p>
+                </div>
+            </div>
+            <?php if (!$experienceSchemaReady): ?>
+                <p class="px-5 py-5 text-sm text-amber-900">La base n’est pas à jour : les règles d’apps ne peuvent pas encore être enregistrées.</p>
+            <?php else: ?>
+                <form method="post" action="<?= $h(url('back-office/atak/controle-serveur/apps')) ?>" class="px-5 py-5 space-y-6">
+                    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                    <?php foreach ($appsBySection as $section => $apps): ?>
+                        <div>
+                            <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3"><?= $h($section) ?></h3>
+                            <div class="grid sm:grid-cols-2 gap-3">
+                                <?php foreach ($apps as $app): ?>
+                                    <?php
+                                    $aid = (string) $app['id'];
+                                    $rule = (string) ($appsPolicy[$aid] ?? 'player');
+                                    $tone = match ($rule) {
+                                        'required' => 'border-amber-300 bg-amber-50/60',
+                                        'forbidden' => 'border-red-300 bg-red-50/60',
+                                        default => 'border-slate-200',
+                                    };
+                                    ?>
+                                    <div class="flex items-center gap-3 rounded-lg border <?= $tone ?> px-3 py-3">
+                                        <div class="min-w-0 flex-1">
+                                            <label for="app-<?= $h($aid) ?>" class="block text-sm font-medium text-slate-800"><?= $h((string) $app['name']) ?></label>
+                                            <span class="block text-xs text-slate-500 mt-0.5 leading-relaxed"><?= $h((string) ($app['description'] ?? '')) ?></span>
+                                        </div>
+                                        <select id="app-<?= $h($aid) ?>" name="app_<?= $h($aid) ?>" class="shrink-0 border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white">
+                                            <option value="player"<?= $rule === 'player' ? ' selected' : '' ?>>Au choix</option>
+                                            <option value="required"<?= $rule === 'required' ? ' selected' : '' ?>>Obligatoire</option>
+                                            <option value="forbidden"<?= $rule === 'forbidden' ? ' selected' : '' ?>>Interdite</option>
+                                        </select>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                    <p class="text-xs text-slate-500">Réglages, App Store et Alertes font partie du téléphone : toujours installés.</p>
+                    <button type="submit" class="inline-flex px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer les apps</button>
+                </form>
+            <?php endif; ?>
         </section>
 
         <section id="relais" class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">

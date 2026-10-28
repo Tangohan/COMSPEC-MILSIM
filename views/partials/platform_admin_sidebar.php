@@ -7,8 +7,7 @@ declare(strict_types=1);
  * Chaque entrée déclare son niveau d’accès (aligné sur le middleware de la route) :
  * - system : administrateur plateforme (SystemAdminMiddleware)
  * - hub    : administrateur ou assistance plateforme (PlatformHubMiddleware)
- * - org    : accès au back-office d’une communauté
- * - forum  : console de modération des fichiers
+ * - org    : sortie vers le back-office de sa propre communauté (gestion, pas administration)
  *
  * Expose aussi $platformAdminCrumbGroup (rubrique de la page courante) pour le fil d’Ariane.
  */
@@ -17,14 +16,12 @@ $gate = \App\Core\Gate::getInstance();
 $isPlatformAdmin = $gate->allows('admin.system');
 $isSupportHub = $gate->allows('site.support') && !$isPlatformAdmin;
 $hasOrgPath = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support');
-$canForumModConsole = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
 $h = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 
 $accessOk = [
     'system' => $isPlatformAdmin,
     'hub' => $isPlatformAdmin || $isSupportHub,
     'org' => $hasOrgPath,
-    'forum' => $canForumModConsole,
 ];
 
 $icons = [
@@ -55,11 +52,14 @@ $icons = [
     'rocket' => 'M12 2c3 2 5 5.5 5 9.5L12 16l-5-4.5C7 7.5 9 4 12 2M9 17l-2 4 5-2 5 2-2-4',
     'flag' => 'M5 21V4M5 4h11l-2 4 2 4H5',
     'flask' => 'M9 3h6M10 3v6L4 19a1.5 1.5 0 0 0 1.3 2h13.4a1.5 1.5 0 0 0 1.3-2L14 9V3M7 15h10',
+    'heart' => 'M12 20.5s-7.5-4.6-9.2-9.4C1.6 7.7 3.9 4.5 7.2 4.5c2 0 3.6 1.1 4.8 2.8 1.2-1.7 2.8-2.8 4.8-2.8 3.3 0 5.6 3.2 4.4 6.6-1.7 4.8-9.2 9.4-9.2 9.4z',
     'disk' => 'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3v12c0 1.7-3.6 3-8 3s-8-1.3-8-3zM4 6c0 1.7 3.6 3 8 3s8-1.3 8-3M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3',
     'wrench' => 'M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z',
     'audit' => 'M9 3h6M4 6h16v15H4zM8 11h8M8 15h5',
     'file-check' => 'M6 3h9l4 4v14H6zM9 14l2 2 4-4',
     'home' => 'M4 11l8-7 8 7v9H4zM10 20v-6h4v6',
+    'phone' => 'M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2',
+    'music' => 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0M20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
 ];
 $icon = static fn (string $key): string => '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' . ($icons[$key] ?? $icons['gear']) . '"></path></svg>';
 $under = static fn (string $path): bool => $p === $path || str_starts_with($p, $path . '/');
@@ -78,8 +78,13 @@ $platformNav = [
     ]],
     ['key' => 'communautes', 'label' => 'Communautés', 'items' => [
         ['path' => 'admin/tenants', 'label' => 'Annuaire des communautés', 'icon' => 'globe', 'access' => 'system', 'also' => ['admin/system/tenants'], 'desc' => 'Fiches, formules, interventions'],
+        ['path' => 'admin/system/annuaire', 'label' => 'Annuaire public', 'icon' => 'star', 'access' => 'system', 'not' => ['admin/system/annuaire/discord'], 'desc' => 'Épinglage et unités en tendance'],
+        ['path' => 'admin/system/annuaire/discord', 'label' => 'Vitrine Discord', 'icon' => 'megaphone', 'access' => 'system', 'desc' => 'Annonces des communautés sur le Discord Athena'],
+        ['path' => 'admin/system/contributeurs', 'label' => 'Contributeurs', 'icon' => 'globe', 'access' => 'system', 'desc' => 'Rôles de contributeur et traduction du site'],
         ['path' => 'admin/system/tenant-recovery', 'label' => 'Récupération communauté', 'icon' => 'lifebuoy', 'access' => 'system', 'desc' => 'Rendre la main à une communauté bloquée'],
         ['path' => 'admin/system/subscription-plans', 'label' => 'Formules d’accès', 'icon' => 'layers', 'access' => 'system', 'desc' => 'Paliers, modules et plafonds'],
+        ['path' => 'admin/paiements', 'label' => 'Paiements PayPal', 'icon' => 'file-check', 'access' => 'system', 'desc' => 'Paiements des formules, compte PayPal du site (aussi utilisé par la page de dons)'],
+        ['path' => 'admin/formules-offertes', 'label' => 'Formules offertes', 'icon' => 'star', 'access' => 'system', 'desc' => 'Offrir une formule à une communauté, e-mail et fenêtre aux gestionnaires'],
         ['path' => 'admin/system/demo-nda', 'label' => 'Accès démo du site', 'icon' => 'key', 'access' => 'system', 'desc' => 'Codes et engagements de confidentialité'],
     ]],
     ['key' => 'securite', 'label' => 'Comptes & accès', 'items' => [
@@ -92,19 +97,22 @@ $platformNav = [
     ]],
     ['key' => 'moderation', 'label' => 'Modération & sécurité', 'items' => [
         ['path' => 'admin/system/blocklist', 'label' => 'Liste de restriction', 'icon' => 'ban', 'access' => 'system', 'desc' => 'E-mails et réseaux bloqués sur tout le site'],
-        ['path' => 'admin/system/member-sanctions', 'label' => 'Sanctions du site', 'icon' => 'gavel', 'access' => 'system', 'desc' => 'Restrictions de compte, forum, messagerie'],
-        ['path' => 'admin/content-moderation', 'label' => 'Modération des fichiers', 'icon' => 'file-check', 'access' => 'forum', 'desc' => 'Pièces jointes en quarantaine'],
+        ['path' => 'admin/system/member-sanctions', 'label' => 'Sanctions du site', 'icon' => 'gavel', 'access' => 'system', 'desc' => 'Restrictions de compte, messagerie, modules'],
+        ['path' => 'admin/system/noms-inappropries', 'label' => 'Noms inappropriés', 'icon' => 'flag', 'access' => 'system', 'desc' => 'Mots floutés dans les noms d’unités, alertes à traiter'],
     ]],
     ['key' => 'communication', 'label' => 'Communication', 'items' => [
         ['path' => 'admin/system/alerts', 'label' => 'Alertes plateforme', 'icon' => 'megaphone', 'access' => 'hub', 'desc' => 'Bandeaux et annonces sur le portail'],
+        ['path' => 'admin/system/e-mails', 'label' => 'Envois d’e-mails', 'icon' => 'mail', 'access' => 'system', 'desc' => 'Quota quotidien, alertes regroupées, volume par type'],
+        ['path' => 'admin/system/retrospective', 'label' => 'Rétrospective annuelle', 'icon' => 'star', 'access' => 'system', 'desc' => 'Bilan de l’année des joueurs et des unités : date de publication, aperçu'],
         ['path' => 'admin/newsletter', 'label' => 'Lettre d’information', 'icon' => 'mail', 'access' => 'system', 'desc' => 'Inscrits depuis la page d’accueil'],
-        ['path' => 'admin/system/brief', 'label' => 'Brief membres', 'icon' => 'book', 'access' => 'system', 'desc' => 'Message de bienvenue des membres'],
         ['path' => 'admin/system/cooperation/catalog', 'label' => 'Types de coopération', 'icon' => 'coop', 'access' => 'system', 'desc' => 'Catalogue des coopérations entre unités'],
         ['path' => 'admin/system/cooperation/announcements', 'label' => 'Annonces de coopération', 'icon' => 'megaphone', 'access' => 'system', 'desc' => 'Messages diffusés aux communautés'],
+        ['path' => 'admin/musique', 'label' => 'Musique', 'icon' => 'music', 'access' => 'system', 'desc' => 'Bibliothèque du site et de l’app Musique de l’ATAK, playlist globale'],
     ]],
     ['key' => 'configuration', 'label' => 'Configuration', 'items' => [
-        ['path' => 'admin/settings', 'label' => 'Paramètres système', 'icon' => 'gear', 'access' => 'system', 'desc' => 'Configuration effective, en lecture seule'],
+        ['path' => 'admin/settings', 'label' => 'Paramètres système', 'icon' => 'gear', 'access' => 'system', 'desc' => 'Configuration effective, version minimale des DLL du jeu'],
         ['path' => 'admin/system/military-referential', 'label' => 'Référentiel militaire', 'icon' => 'orbat', 'access' => 'system', 'desc' => 'Organisations, commandements, unités'],
+        ['path' => 'admin/system/integrations', 'label' => 'Intégrations de la plateforme', 'icon' => 'megaphone', 'access' => 'system', 'desc' => 'Salons Discord de l’équipe, rôles liés de Discord, envoi commun des e-mails'],
         ['path' => 'admin/system/cron', 'label' => 'Tâches automatiques', 'icon' => 'clock', 'access' => 'system', 'desc' => 'Travaux récurrents et leur dernier passage'],
     ]],
     ['key' => 'publication', 'label' => 'Versions & publication', 'items' => [
@@ -113,11 +121,18 @@ $platformNav = [
         ['path' => 'admin/system/deployment/campaigns', 'label' => 'Campagnes de publication', 'icon' => 'flag', 'access' => 'system', 'desc' => 'Déploiements progressifs en cours'],
         ['path' => 'admin/system/deployment/communities', 'label' => 'Communautés de test', 'icon' => 'flask', 'access' => 'system', 'desc' => 'Communautés qui reçoivent les préversions'],
     ]],
+    ['key' => 'overwatch', 'label' => 'Mod Overwatch', 'items' => [
+        ['path' => 'admin/parc-atak', 'label' => 'Parc ATAK des joueurs', 'icon' => 'phone', 'access' => 'system', 'desc' => 'Tous les ATAK, chiffres de jeu, blocage, retrait, messages imposés'],
+        ['path' => 'admin/atak-beta', 'label' => 'Accès anticipé', 'icon' => 'flag', 'access' => 'system', 'desc' => 'Joueurs inscrits au pack bêta, toutes communautés'],
+        ['path' => 'admin/atak-mod-reports', 'label' => 'Rapports d’erreurs du mod', 'icon' => 'audit', 'access' => 'system', 'desc' => 'Erreurs remontées par le pack, toutes communautés'],
+    ]],
     ['key' => 'exploitation', 'label' => 'Exploitation', 'items' => [
+        ['path' => 'admin/system/exploitation', 'label' => 'Console d’exploitation', 'icon' => 'ops', 'access' => 'system', 'desc' => 'État du site, migrations, sauvegardes, suppressions de comptes'],
+        ['path' => 'admin/system/donnees', 'label' => 'Registre des données', 'icon' => 'layers', 'access' => 'system', 'desc' => 'Comptes, joueurs, ATAK, mods proches, sessions : recherche Steam par profil, corrélations, export, purge'],
         ['path' => 'admin/system/storage', 'label' => 'Espace disque', 'icon' => 'disk', 'access' => 'system', 'desc' => 'Occupation et vidage des historiques'],
         ['path' => 'admin/maintenance', 'label' => 'Maintenance des données', 'icon' => 'wrench', 'access' => 'hub', 'desc' => 'Fenêtres de maintenance planifiées'],
         ['path' => 'admin/audit', 'label' => 'Journal d’audit', 'icon' => 'audit', 'access' => 'hub', 'desc' => 'Toutes les actions sensibles'],
-        ['path' => 'back-office', 'label' => 'Back-office communauté', 'icon' => 'home', 'access' => 'org', 'desc' => 'Administration de votre communauté'],
+        ['path' => 'back-office', 'label' => 'Gestion de ma communauté', 'icon' => 'home', 'access' => 'org', 'desc' => 'Back-office de votre communauté (hors administration plateforme)'],
     ]],
 ];
 

@@ -396,7 +396,6 @@ final class TenantCommunityProfileService
         $c['registration_mode'] = self::normalizeRegistrationMode($request->input('registration_mode', self::REGISTRATION_MODE_MILSIM));
 
         $c['registry_listed'] = (string) $request->input('registry_listed', '1') !== '0';
-        $c['forum_members_only'] = (string) $request->input('forum_members_only', '0') === '1';
 
         $c['game_label'] = $this->clip((string) $request->input('game_label', ''), 120);
         $c['main_mods'] = $this->clip((string) $request->input('main_mods', ''), 4000);
@@ -461,7 +460,6 @@ final class TenantCommunityProfileService
         $c['public_roster_enabled'] = (string) $request->input('public_roster_enabled', '0') === '1';
         $c['public_recruitment_badge_open'] = (string) $request->input('public_recruitment_badge_open', '0') === '1';
         $mods = [
-            'forum' => (string) $request->input('public_mod_forum', '0') === '1',
             'documents' => (string) $request->input('public_mod_documents', '0') === '1',
             'events' => (string) $request->input('public_mod_events', '0') === '1',
             'roster' => (string) $request->input('public_mod_roster', '0') === '1',
@@ -522,7 +520,10 @@ final class TenantCommunityProfileService
         $c['public_meta_title'] = $this->clip((string) $request->input('public_meta_title', ''), 120);
         $c['public_meta_description'] = $this->clip((string) $request->input('public_meta_description', ''), 320);
         $c['registry_tagline'] = $this->clip((string) $request->input('registry_tagline', ''), 220);
-        $c['registry_featured'] = (string) $request->input('registry_featured', '0') === '1';
+        // Réglage gardé tel quel si la formule ne l’inclut pas (il reprend effet dès que la formule le permet).
+        if (self::registryFeaturedAllowedForSession()) {
+            $c['registry_featured'] = (string) $request->input('registry_featured', '0') === '1';
+        }
         $c['public_sticky_cta_enabled'] = (string) $request->input('public_sticky_cta_enabled', '1') !== '0';
 
         $hlStyle = strtolower(trim((string) $request->input('public_highlight_style', 'info')));
@@ -643,7 +644,6 @@ final class TenantCommunityProfileService
         }
         $mods = is_array($community['public_modules'] ?? null) ? $community['public_modules'] : [];
         $modules = [
-            'forum' => !empty($mods['forum']),
             'documents' => !empty($mods['documents']),
             'events' => !empty($mods['events']),
             'roster' => !empty($mods['roster']),
@@ -990,6 +990,10 @@ final class TenantCommunityProfileService
         if ($raw === 'en' || str_starts_with($raw, 'en-')) {
             return ['en', 'English'];
         }
+        $code = \App\Support\CommunityLanguages::normalize($raw);
+        if ($code !== null) {
+            return [$code, \App\Support\CommunityLanguages::nativeLabel($code)];
+        }
 
         return ['', ''];
     }
@@ -1016,6 +1020,22 @@ final class TenantCommunityProfileService
         $fict = trim((string) ($aff['fictional_label'] ?? ''));
 
         return $fict !== '' ? 'Unité fictive : ' . $fict : '';
+    }
+
+    /** La formule de la communauté ouverte inclut-elle la mise en avant dans le registre ? */
+    public static function registryFeaturedAllowedForSession(): bool
+    {
+        $tenantId = (int) (\App\Core\Session::get('tenant_id') ?? 0);
+        if ($tenantId < 1) {
+            return false;
+        }
+        try {
+            $tenant = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tenantId);
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return is_array($tenant) && \App\Support\RegistryFeatured::planAllows($tenant);
     }
 
     private function clip(string $s, int $max): string

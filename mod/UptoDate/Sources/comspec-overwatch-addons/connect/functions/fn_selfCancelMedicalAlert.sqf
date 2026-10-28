@@ -16,6 +16,14 @@ if (_silent && {!(missionNamespace getVariable ["COMSPEC_MedicalAlertsArmed", fa
     missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
 };
 
+// TriageMedicalAlert peut prendre plusieurs secondes : appelé depuis le PFH médical / un EH CBA, il figeait
+// le jeu. On se relance en spawn (aucun appelant n'utilise le retour) et un seul envoi à la fois.
+if (!canSuspend) exitWith { _this spawn comspec_overwatch_connect_fnc_selfCancelMedicalAlert; };
+if (missionNamespace getVariable ["COMSPEC_MedicalCancelBusy", false]) exitWith {};
+missionNamespace setVariable ["COMSPEC_MedicalCancelBusy", true, false];
+[_silent] call {
+params ["_silent"];
+
 private _alert = [] call comspec_overwatch_connect_fnc_hasOwnActiveMedicalAlert;
 private _alertId = if (_alert isEqualType createHashMap) then { _alert getOrDefault ["id", ""] } else { "" };
 if (_alertId isEqualTo "") exitWith {
@@ -39,7 +47,8 @@ if (!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent") then {
     ], 1] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
 };
 
-private _raw = ["COMSPECExtension" callExtension ["TriageMedicalAlert", [_alertId, "annule", _by]]] call comspec_overwatch_connect_fnc_extResult;
+// extAwait : attente non bloquante (thread DLL) au lieu d'un callExtension qui fige la partie.
+private _raw = [["COMSPECExtension", "TriageMedicalAlert", [_alertId, "annule", _by]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith {
     if (!_silent) then {
         ["COMSPEC_Warning", ["Impossible de joindre Athena pour annuler l’alerte."]] call comspec_overwatch_connect_fnc_showNotification;
@@ -49,6 +58,11 @@ if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith {
 private _parts = _raw splitString "|";
 private _prefix = if ((count _parts) >= 1) then { _parts select 0 } else { "" };
 if (_prefix != "OK") exitWith {
+    // Alerte déjà close / expirée côté Athena : la marquer close localement, sinon la clôture auto réessayait sans fin.
+    if (_silent && {((_parts param [1, ""]) isEqualTo "not_found")}) then {
+        missionNamespace setVariable ["COMSPEC_MedicalSilentClosedId", _alertId, false];
+        missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
+    };
     if (!_silent) then {
         private _err = if ((count _parts) >= 2) then { _parts select 1 } else { "" };
         private _msg = switch (_err) do {
@@ -62,7 +76,9 @@ if (_prefix != "OK") exitWith {
 
 {
     if (!(_x isEqualType createHashMap)) then { continue };
-    if ((str (_x getOrDefault ["id", ""])) isEqualTo _alertId) then {
+    private _aid = _x getOrDefault ["id", ""];
+    if (!(_aid isEqualType "")) then { _aid = str _aid; };
+    if (_aid isEqualTo _alertId) then {
         _x set ["triage_status", "annule"];
         _x set ["triage_label", "Cancelled"];
     };
@@ -86,3 +102,5 @@ if (!_silent) then {
         "medical"
     ] call comspec_overwatch_connect_fnc_logAtakEvent;
 };
+};
+missionNamespace setVariable ["COMSPEC_MedicalCancelBusy", false, false];

@@ -39,7 +39,8 @@ final class SseDocumentChromeAssetTest extends TestCase
         $root = $this->root();
         $view = (string) file_get_contents($root . '/views/atak/sse/document_presentation.php');
         $paper = (string) file_get_contents($root . '/views/atak/sse/partials/document_paper.php');
-        $layout = (string) file_get_contents($root . '/views/atak/sse/_layout.php');
+        // La navigation du bureau est définie une seule fois (barre latérale + palette).
+        $layout = (string) file_get_contents($root . '/app/Support/SsePortalNav.php');
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $css = (string) file_get_contents($root . '/public/assets/css/sse_portal.css');
         $controller = (string) file_get_contents($root . '/app/Controllers/Web/SsePortalController.php');
@@ -69,15 +70,19 @@ final class SseDocumentChromeAssetTest extends TestCase
         $fill = (string) file_get_contents($root . '/mod/@COMSPEC_SSE/addons/ui/functions/fn_fillResultDialog.sqf');
         $chrome = (string) file_get_contents($root . '/mod/@COMSPEC_SSE/addons/ui/functions/fn_getDocumentChrome.sqf');
         $dialog = (string) file_get_contents($root . '/mod/@COMSPEC_SSE/addons/ui/dialogs/resultDialog.hpp');
-        $module = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/modules/module_sse.hpp');
-        $zen = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_registerZenSseModules.sqf');
+        // Modules SSE repris par le mod SSE (addon zeus), mêmes noms de classe.
+        $module = (string) file_get_contents($root . '/mod/@COMSPEC_SSE/addons/zeus/modules_seek.hpp');
+        $zen = (string) file_get_contents($root . '/mod/@COMSPEC_SSE/addons/zeus/functions/fn_registerZenSseModules.sqf');
+        // Noms affichés des modules : clés $STR_ résolues dans le stringtable du SSE.
+        $strings = (string) file_get_contents($root . '/mod/@COMSPEC_SSE/addons/main/stringtable.xml');
 
         self::assertStringContainsString('getDocumentChrome', $fill);
         self::assertStringContainsString('footer', $fill);
         self::assertStringContainsString('terrain_tache', $chrome);
         self::assertStringContainsString('idc = 93019', $dialog);
-        self::assertStringContainsString('Présentation des documents SSE', $module);
+        self::assertStringContainsString('$STR_COMSPEC_SSE_CFG_', $module);
+        self::assertStringContainsString('Présentation des documents SSE', $strings);
         self::assertStringContainsString('Présentation des documents', $zen);
-        self::assertFileExists($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_moduleSseDocChrome.sqf');
+        self::assertFileExists($root . '/mod/@COMSPEC_SSE/addons/zeus/functions/fn_moduleDocChrome.sqf');
     }
 }

@@ -56,7 +56,7 @@ class COMSPEC_TabletMap: RscMapControl {
 class COMSPEC_WebBrowser_Dialog {
     idd = 9974;
     movingEnable = 1;
-    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_webBrowserOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; (_this select 0) call comspec_overwatch_connect_fnc_webBrowserOnLoad;";
     onUnload = "uiNamespace setVariable ['COMSPEC_WebBrowser_Display', displayNull]; missionNamespace setVariable ['COMSPEC_WebBrowser_Mode', '']; missionNamespace setVariable ['COMSPEC_WebBrowser_RefreshToken', -1]; missionNamespace setVariable ['COMSPEC_WebBrowser_PageReady', false]; missionNamespace setVariable ['COMSPEC_WebBrowser_MapVisible', false]; missionNamespace setVariable ['COMSPEC_WebBrowser_MapAutoOpened', false]; missionNamespace setVariable ['COMSPEC_WebBrowser_BrowserPos', []];";
 
     class ControlsBackground {

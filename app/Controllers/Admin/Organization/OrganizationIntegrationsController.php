@@ -10,8 +10,11 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantApiKeyRepository;
+use App\Repositories\TenantRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Email\TenantMailSender;
 use App\Services\Integrations\DiscordEventRelayService;
+use App\Services\Integrations\DiscordWebhookService;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Sse\SseTransmissionDiscordService;
 use App\Support\DiscordWebhookCatalog;
@@ -45,6 +48,7 @@ final class OrganizationIntegrationsController
         $flashKey = Session::getFlash('new_integration_key');
         $discord = new DiscordEventRelayService();
         $sse = new SseTransmissionDiscordService();
+        $mailer = new TenantMailSender();
 
         return Response::view('layout.main', [
             'title' => 'Intégrations',
@@ -58,7 +62,51 @@ final class OrganizationIntegrationsController
             'discord_relays' => $sse->publicRelays($tenantId),
             'use_community_relay' => $sse->usesCommunityRelay($tenantId),
             'community_relay_ready' => $sse->communityRelayReady($tenantId),
+            'mail_sender' => $mailer->state($tenantId),
+            'mail_providers' => TenantMailSender::PROVIDERS,
+            'admin_email' => (string) ($user['email'] ?? ''),
         ]);
+    }
+
+    public function saveMail(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/integrations'));
+        }
+        $denied = $this->guardOrg();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $input = [];
+        foreach (['enabled', 'provider', 'host', 'port', 'encryption', 'username', 'password', 'clear_password', 'from_address', 'from_name', 'reply_to'] as $field) {
+            $input[$field] = $request->input($field, '');
+        }
+        $result = (new TenantMailSender())->save((int) Session::get('tenant_id'), $input);
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('back-office/integrations') . '#emails-communaute');
+    }
+
+    public function testMail(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/integrations'));
+        }
+        $denied = $this->guardOrg();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $user = $this->auth->user() ?? [];
+        $tenant = (new TenantRepository())->findById($tenantId) ?? [];
+        $result = (new TenantMailSender())->sendTest($tenantId, trim((string) ($user['email'] ?? '')), (string) ($tenant['name'] ?? 'Athena'));
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('back-office/integrations') . '#emails-communaute');
     }
 
     public function saveDiscord(Request $request, array $params = []): Response

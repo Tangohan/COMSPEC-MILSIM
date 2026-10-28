@@ -198,7 +198,7 @@ final class AtakExperienceService
             ],
             [
                 'id' => 'native_marker_tags',
-                'label' => 'Cartouches des repères',
+                'label' => 'Coordonnées des repères',
                 'description' => 'Encadré nom et coordonnées E / N sous les repères de la carte du téléphone.',
                 'type' => 'tri',
                 'default' => 'player',
@@ -226,6 +226,20 @@ final class AtakExperienceService
                 'surface' => 'control',
                 'choices' => $tri('Toujours activer', 'Toujours désactiver'),
             ],
+            [
+                'id' => 'native_jtac_autofill',
+                'label' => 'JTAC : complétion automatique du 9-LINE',
+                'description' => 'Par défaut, le JTAC saisit lui-même l’IP, les lignes 5 et 9 et les remarques (réalisme). Activé, le téléphone propose l’appareil, la cible laser, l’IP, la description, les menaces, le FAH et le dégagement.',
+                'type' => 'list',
+                'default' => 'off',
+                'group' => 'realisme',
+                'surface' => 'control',
+                'choices' => [
+                    ['value' => 'off', 'label' => 'Saisie manuelle (réalisme)'],
+                    ['value' => 'on', 'label' => 'Complétion automatique'],
+                ],
+            ],
+            ...$this->networkCatalog(),
             [
                 'id' => 'radio_proximity',
                 'label' => 'Écoute radio à proximité',
@@ -290,6 +304,147 @@ final class AtakExperienceService
     }
 
     /**
+     * Conditions réseau de l'ATAK natif (simulation radio : météo, surcharge, pertes de paquets…).
+     * « Laisser au serveur » : le serveur décide (réglages CBA, ou menu Échap > Conditions réseau en partie) ;
+     * toute autre valeur s'impose à tous les joueurs de la communauté (COMSPEC Link 2.0.89, clés net_*).
+     * Les valeurs sont celles que le jeu envoie (on / off, nombres en texte) : NetConditions.Report.
+     *
+     * @return list<array{id: string, label: string, description: string, type: string, default: mixed, group: string, surface: string, choices: list<array{value: string, label: string}>}>
+     */
+    public function networkCatalog(): array
+    {
+        $server = ['value' => 'player', 'label' => 'Laisser au serveur (menu Échap en jeu)'];
+        $onOff = fn (string $on, string $off): array => [
+            $server,
+            ['value' => 'on', 'label' => $on],
+            ['value' => 'off', 'label' => $off],
+        ];
+        $nums = function (array $values, string $unit) use ($server): array {
+            $out = [$server];
+            foreach ($values as $v => $label) {
+                $out[] = ['value' => (string) $v, 'label' => $label !== '' ? $label : $v . ' ' . $unit];
+            }
+
+            return $out;
+        };
+        $row = fn (string $id, string $label, string $description, array $choices): array => [
+            'id' => $id,
+            'label' => $label,
+            'description' => $description,
+            'type' => 'list',
+            'default' => 'player',
+            'group' => 'reseau',
+            'surface' => 'control',
+            'choices' => $choices,
+        ];
+
+        return [
+            $row('net_sim', 'Débit réseau simulé', 'Bâtiments, relief, météo, brouilleurs, relais et dégâts réduisent le débit : les envois partent avec un délai, se perdent ou attendent le retour du réseau.', $onOff('Toujours simuler', 'Couper la simulation (débit plein)')),
+            $row('net_profile', 'Profil de réalisme', 'Milsim (par défaut en jeu) : toutes les simulations à leur valeur réelle. Standard : en plus doux. Arcade : réseau parfait, BFT en direct, GPS exact, batterie infinie. Personnalisé : seuls les réglages du serveur comptent. Chaque règle ci-dessous reste modifiable avec n’importe quel profil et l’emporte sur lui.', [
+                $server,
+                ['value' => '3', 'label' => 'Milsim'],
+                ['value' => '2', 'label' => 'Standard'],
+                ['value' => '1', 'label' => 'Arcade'],
+                ['value' => '0', 'label' => 'Personnalisé (réglages du serveur)'],
+            ]),
+            $row('net_realism', 'Réalisme de la simulation radio', 'Réaliste : bilan radio en dB (relief, Fresnel, forêt, bâtiments). Exigeant : forêt et bâtiments comptés en entier. Simplifié : ancien modèle.', [
+                $server,
+                ['value' => '1', 'label' => 'Réaliste'],
+                ['value' => '2', 'label' => 'Exigeant'],
+                ['value' => '0', 'label' => 'Simplifié (ancien modèle)'],
+            ]),
+            $row('net_weather', 'Météo sur le réseau', 'Pluie sur le trajet, antennes mouillées, bruit des orages et vent fort réduisent la marge radio ; orage et vent font perdre des paquets par rafales.', $onOff('Toujours compter la météo', 'Ignorer la météo')),
+            $row('net_weather_k', 'Intensité de la météo', '100 % : valeurs réelles à 4,9 GHz. Au-dessus, la météo pèse davantage (scénario dégradé).', $nums([0 => '', 50 => '', 100 => '100 % (réel)', 150 => '', 200 => ''], '%')),
+            $row('net_congestion', 'Surcharge du réseau', 'Les téléphones à portée d’un même relais se partagent son canal : débit en baisse, latence et collisions quand il se remplit.', $onOff('Toujours simuler la surcharge', 'Ignorer la surcharge')),
+            $row('net_bg_load', 'Trafic de fond', 'Part de la capacité de chaque relais déjà occupée par d’autres utilisateurs (vidéo, synchronisations, unités hors jeu).', $nums([0 => '', 10 => '', 25 => '', 50 => '', 75 => '', 90 => ''], '%')),
+            $row('net_loss', 'Pertes de paquets', 'Des envois se perdent par rafales selon la qualité du lien et repartent automatiquement.', $onOff('Toujours simuler les pertes', 'Aucune perte')),
+            $row('net_loss_floor', 'Perte minimale', 'Pertes imposées partout, même avec un excellent signal (zone dégradée).', $nums([0 => '', 1 => '', 3 => '', 5 => '', 10 => '', 20 => ''], '%')),
+            $row('net_latency_add', 'Latence ajoutée', 'Délai ajouté à chaque envoi, par exemple une liaison satellite vers le poste (600 ms).', $nums([0 => '', 50 => '', 150 => '', 300 => '', 600 => '600 ms (satellite)', 1200 => '1 200 ms'], 'ms')),
+            $row('net_relay_only', 'Réseau exclusivement par relais', 'Hors de portée de tout relais de la mission, aucun réseau.', $onOff('Toujours exiger un relais', 'Garder la liaison directe')),
+            $row('net_gateways', 'Passerelles de véhicule et PC mobile', 'L’équipage peut faire d’un véhicule un relais ATAK ou un poste de commandement à mât.', $onOff('Toujours autoriser', 'Toujours interdire')),
+            $row('net_offline_hold', 'Fonctionnement hors connexion', 'Sans signal, le téléphone garde ses données et retient ce qui arrive jusqu’au retour du réseau.', $onOff('Toujours activer', 'Toujours couper')),
+            $row('net_video_relays', 'Flux vidéo selon les relais', 'Débit, définition et latence des flux vidéo suivent les relais de la mission.', $onOff('Toujours activer', 'Toujours couper')),
+            $row('net_pli', 'Positions BFT par points', 'Comme un vrai ATAK : chaque téléphone envoie sa position à intervalle régulier, telle que son GPS la voit. Les alliés avancent par bonds et passent en gris quand leurs points n’arrivent plus.', $onOff('Toujours par points', 'Positions exactes en direct')),
+            $row('net_pli_rate', 'Intervalle des positions BFT', 'Temps entre deux points de position d’un téléphone (deux fois plus souvent s’il bouge).', $nums([2 => '', 5 => '', 10 => '10 s (Milsim)', 15 => '', 30 => '', 60 => ''], 's')),
+            $row('net_gps', 'GPS réaliste', 'Précision selon le ciel visible : quelques mètres à découvert, plus en forêt, rue étroite ou vallée, beaucoup plus dans un bâtiment, aucun fix en sous-sol.', $onOff('Toujours simuler le GPS', 'GPS exact')),
+            $row('net_gps_k', 'Force des erreurs GPS', '100 % : erreurs réalistes d’un téléphone. 50 % : moitié moins.', $nums([50 => '', 100 => '100 % (réel)', 150 => '', 200 => ''], '%')),
+            $row('net_gps_fix', 'Attente des satellites', 'Au démarrage du téléphone, le GPS cherche les satellites de quelques secondes à environ 40 s.', $onOff('Toujours attendre les satellites', 'Position tout de suite')),
+            $row('net_gps_loss', 'Pertes de fix GPS', 'Part des satellites masqués (toit, forêt, immeubles, relief) qui compte vraiment. 100 % : plus de fix dans un bâtiment ou en sous-sol, comme un vrai téléphone. 0 % : le fix tient partout, seule la précision baisse.', $nums([0 => '0 % (fix partout)', 50 => '', 100 => '100 % (réel)', 150 => '', 200 => ''], '%')),
+            $row('net_gps_rel', 'Fiabilité du GPS', 'Décrochages du fix de quelques secondes et sauts de position de 15 à 60 m (reflets du signal). Bonne : environ une fois toutes les 20 min ; Médiocre : toutes les 2 min.', [
+                $server,
+                ['value' => '0', 'label' => 'Parfaite'],
+                ['value' => '1', 'label' => 'Bonne (réel)'],
+                ['value' => '2', 'label' => 'Moyenne'],
+                ['value' => '3', 'label' => 'Médiocre'],
+            ]),
+            $row('net_battery', 'Batterie réaliste', 'La batterie se vide selon l’usage et se recharge en véhicule ; à 0 % le téléphone s’éteint.', $onOff('Toujours simuler la batterie', 'Batterie infinie')),
+        ];
+    }
+
+    /**
+     * Conditions réseau appliquées en jeu (menu Échap de l'ATAK natif, via COMSPEC Link) : gardées pour la page
+     * Contrôle serveur, sans toucher aux règles de la communauté.
+     *
+     * @param array<string, mixed> $body
+     * @return array<string, mixed>
+     */
+    public function recordLiveNetwork(int $tenantId, array $body, ?string $steamUid = null): array
+    {
+        $choices = [];
+        foreach ($this->networkCatalog() as $row) {
+            $choices[$row['id']] = array_column($row['choices'], 'value');
+        }
+        $in = is_array($body['conditions'] ?? null) ? $body['conditions'] : [];
+        $conditions = [];
+        foreach ($choices as $id => $allowed) {
+            if (!array_key_exists($id, $in) || !is_scalar($in[$id])) {
+                continue;
+            }
+            $val = (string) $in[$id];
+            if ($val !== 'player' && in_array($val, $allowed, true)) {
+                $conditions[$id] = $val;
+            }
+        }
+        $text = static fn (mixed $v, int $max): string => mb_substr(trim(is_scalar($v) ? (string) $v : ''), 0, $max);
+        $live = [
+            'conditions' => $conditions,
+            'applied_by' => $text($body['applied_by'] ?? '', 64),
+            'steam_uid' => $steamUid !== null ? $text($steamUid, 32) : '',
+            'mission' => $text($body['mission'] ?? '', 120),
+            'world' => $text($body['world'] ?? '', 64),
+            'server' => $text($body['server'] ?? '', 120),
+            'reset' => !empty($body['reset']),
+            'at' => gmdate('c'),
+        ];
+
+        $repo = new \App\Repositories\TenantAtakConfigRepository();
+        $raw = $repo->getExperienceConfigRaw($tenantId);
+        $raw = is_array($raw) ? $raw : [];
+        $raw['net_live'] = $live;
+        $repo->saveExperienceConfig($tenantId, $raw);
+
+        return $live;
+    }
+
+    /**
+     * Reprend comme règles de la communauté les conditions appliquées en dernier en jeu.
+     *
+     * @return int nombre de conditions reprises
+     */
+    public function adoptLiveNetwork(int $tenantId): int
+    {
+        $settings = $this->get($tenantId)['settings'];
+        $live = is_array($settings['net_live'] ?? null) ? $settings['net_live'] : [];
+        $conditions = is_array($live['conditions'] ?? null) ? $live['conditions'] : [];
+        if ($conditions === []) {
+            return 0;
+        }
+        $this->put($tenantId, $conditions);
+
+        return count($conditions);
+    }
+
+    /**
      * @return array<string, string>
      */
     public function groupLabels(): array
@@ -299,8 +454,113 @@ final class AtakExperienceService
             'liaison' => 'Liaison et équipement',
             'carte' => 'Carte du poste',
             'realisme' => 'Réalisme du téléphone',
+            'reseau' => 'Réseau et simulation radio',
             'fonctions' => 'Fonctions de mission',
         ];
+    }
+
+    /**
+     * Apps du téléphone ATAK natif que la communauté peut imposer ou interdire (App Store du téléphone).
+     * Miroir de COMSPEC_ATAK_Apps (config.cpp) sans les apps système (Réglages, App Store, Alertes), Admin et Poste TOC.
+     *
+     * @return list<array{id: string, name: string, description: string, section: string}>
+     */
+    public function phoneApps(): array
+    {
+        return [
+            ['id' => 'Map', 'name' => 'Carte', 'description' => 'Carte tactique : unités amies, marqueurs, mesures et dessins partagés', 'section' => 'Navigation'],
+            ['id' => 'Gps', 'name' => 'GPS', 'description' => 'Position, grille, altitude et précision du GPS', 'section' => 'Navigation'],
+            ['id' => 'Waypoints', 'name' => 'Itinéraire', 'description' => 'Points de passage et itinéraire guidé', 'section' => 'Navigation'],
+            ['id' => 'Relief', 'name' => 'Relief', 'description' => 'Relief, pentes et lignes de vue du terrain', 'section' => 'Navigation'],
+            ['id' => 'Weather', 'name' => 'Météo', 'description' => 'Vent, visibilité, températures et prévisions', 'section' => 'Navigation'],
+            ['id' => 'Distance', 'name' => 'Distances', 'description' => 'Distances parcourues à pied et en véhicule', 'section' => 'Navigation'],
+            ['id' => 'Garmin', 'name' => 'Garmin', 'description' => 'Montre Garmin : pas, cardio, stress, sommeil', 'section' => 'Navigation'],
+            ['id' => 'Chat', 'name' => 'Messages', 'description' => 'Canaux de l\'unité et SMS entre joueurs', 'section' => 'Communication'],
+            ['id' => 'Group', 'name' => 'Groupe', 'description' => 'Composition du groupe, rôles et indicatifs', 'section' => 'Communication'],
+            ['id' => 'Bft', 'name' => 'BFT', 'description' => 'Suivi des forces amies (Blue Force Tracking)', 'section' => 'Communication'],
+            ['id' => 'InterTeam', 'name' => 'Inter-team', 'description' => 'Liaison entre équipes et fire teams', 'section' => 'Communication'],
+            ['id' => 'C2', 'name' => 'C2', 'description' => 'Commandement : ordres, situation et unités', 'section' => 'Communication'],
+            ['id' => 'WaveRelay', 'name' => 'Wave Relay', 'description' => 'Réseau maillé radio : relais et qualité de liaison', 'section' => 'Communication'],
+            ['id' => 'Numbers', 'name' => 'Numéros', 'description' => 'Annuaire des numéros de téléphone', 'section' => 'Communication'],
+            ['id' => 'Discord', 'name' => 'Discord', 'description' => 'Messages du Discord de la communauté', 'section' => 'Communication'],
+            ['id' => 'Fires', 'name' => 'CAS', 'description' => 'Demande d\'appui aérien rapproché (9-LINE)', 'section' => 'Appui et feux'],
+            ['id' => 'Jtac', 'name' => 'JTAC', 'description' => 'Guidage des appuis, cibles et cartes IP', 'section' => 'Appui et feux'],
+            ['id' => 'Drone', 'name' => 'Drone', 'description' => 'Pilotage et caméra des drones', 'section' => 'Appui et feux'],
+            ['id' => 'Medical', 'name' => 'Médical', 'description' => 'Fiches médicales, triage et évacuation', 'section' => 'Spécialités'],
+            ['id' => 'Sniper', 'name' => 'Sniper', 'description' => 'Calculs de tir longue distance', 'section' => 'Spécialités'],
+            ['id' => 'Breach', 'name' => 'Brèche', 'description' => 'Préparation des brèches et entrées', 'section' => 'Spécialités'],
+            ['id' => 'Explo', 'name' => 'Explosifs', 'description' => 'Charges explosives et minuteries', 'section' => 'Spécialités'],
+            ['id' => 'Ew', 'name' => 'GE', 'description' => 'Guerre électronique : détection et brouillage', 'section' => 'Spécialités'],
+            ['id' => 'DroneDetect', 'name' => 'Anti-drone', 'description' => 'Détection des drones à proximité', 'section' => 'Spécialités'],
+            ['id' => 'LinkAlly', 'name' => 'Liaison allié', 'description' => 'Liaison avec une unité alliée', 'section' => 'Spécialités'],
+            ['id' => 'Intel', 'name' => 'FRS / FRM', 'description' => 'Fiches de renseignement FRS / FRM', 'section' => 'Renseignement'],
+            ['id' => 'Reco', 'name' => 'Reco', 'description' => 'Comptes rendus de reconnaissance', 'section' => 'Renseignement'],
+            ['id' => 'Salute', 'name' => 'SALUTE', 'description' => 'Rapport d\'observation SALUTE', 'section' => 'Renseignement'],
+            ['id' => 'Photos', 'name' => 'Photo', 'description' => 'Appareil photo du téléphone', 'section' => 'Renseignement'],
+            ['id' => 'Gallery', 'name' => 'Galerie', 'description' => 'Photos prises et reçues', 'section' => 'Renseignement'],
+            ['id' => 'Livecam', 'name' => 'Vidéo live', 'description' => 'Vidéo en direct partagée', 'section' => 'Renseignement'],
+            ['id' => 'Tracking', 'name' => 'Marquer tracking', 'description' => 'Marquer et suivre une cible à l\'image', 'section' => 'Renseignement'],
+            ['id' => 'Sse', 'name' => 'SSE', 'description' => 'Exploitation de site (SSE) : indices et saisies', 'section' => 'Renseignement'],
+            ['id' => 'DataLink', 'name' => 'Extraction', 'description' => 'Extraction de données au câble DL-7', 'section' => 'Renseignement'],
+            ['id' => 'Osint', 'name' => 'OSINT', 'description' => 'Renseignement en sources ouvertes', 'section' => 'Renseignement'],
+            ['id' => 'Wanted', 'name' => 'Recherchés', 'description' => 'Personnes recherchées (HVT) de la communauté', 'section' => 'Renseignement'],
+            ['id' => 'Tasks', 'name' => 'Tâches', 'description' => 'Tâches et ordres reçus', 'section' => 'Mission'],
+            ['id' => 'Reports', 'name' => 'Comptes rendus', 'description' => 'Comptes rendus de fin de mission', 'section' => 'Mission'],
+            ['id' => 'Briefing', 'name' => 'Briefing', 'description' => 'Diapositives et consignes de la mission', 'section' => 'Mission'],
+            ['id' => 'Plan', 'name' => 'Plan', 'description' => 'Plan de manœuvre et phases', 'section' => 'Mission'],
+            ['id' => 'Logistics', 'name' => 'Logistique', 'description' => 'Demandes de ravitaillement et logistique', 'section' => 'Mission'],
+            ['id' => 'Aar', 'name' => 'Rejeu', 'description' => 'Rejeu de la mission (AAR)', 'section' => 'Mission'],
+            ['id' => 'Athena', 'name' => 'Athena', 'description' => 'Liaison au site Athena de la communauté', 'section' => 'Système'],
+            ['id' => 'Network', 'name' => 'Réseau', 'description' => 'État du réseau et de la liaison', 'section' => 'Système'],
+            ['id' => 'Bluetooth', 'name' => 'Bluetooth', 'description' => 'Jumelage et partage avec les téléphones proches', 'section' => 'Système'],
+            ['id' => 'Resynch', 'name' => 'Synchro', 'description' => 'Resynchronisation avec Athena', 'section' => 'Système'],
+            ['id' => 'Status', 'name' => 'Statut', 'description' => 'État du téléphone et du joueur', 'section' => 'Système'],
+            ['id' => 'Profile', 'name' => 'Profil', 'description' => 'Profil de l\'opérateur', 'section' => 'Système'],
+            ['id' => 'Accessories', 'name' => 'Accessoires', 'description' => 'Antennes, batteries et accessoires montés', 'section' => 'Système'],
+            ['id' => 'ScreenTime', 'name' => 'Temps d\'écran', 'description' => 'Temps passé sur le téléphone et en jeu', 'section' => 'Système'],
+            ['id' => 'Debug', 'name' => 'Debug', 'description' => 'Diagnostic technique du téléphone', 'section' => 'Système'],
+            ['id' => 'Credits', 'name' => 'Crédits', 'description' => 'Auteurs et remerciements', 'section' => 'Système'],
+            ['id' => 'Music', 'name' => 'Musique', 'description' => 'Lecteur de musique', 'section' => 'Civil'],
+            ['id' => 'Food', 'name' => 'UberEats', 'description' => 'Rations livrées par drone', 'section' => 'Civil'],
+            ['id' => 'Dating', 'name' => 'Tinder', 'description' => 'Rencontres entre joueurs', 'section' => 'Civil'],
+        ];
+    }
+
+    /**
+     * Règles de la communauté pour l'App Store du téléphone : id d'app => required | forbidden (absent = au choix du joueur).
+     *
+     * @param mixed $raw
+     * @return array<string, string>
+     */
+    public function sanitizeAppPolicy(mixed $raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $known = array_column($this->phoneApps(), 'id');
+        $out = [];
+        foreach ($known as $id) {
+            $rule = $raw[$id] ?? null;
+            if ($rule === 'required' || $rule === 'forbidden') {
+                $out[$id] = $rule;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $rules id d'app => required | forbidden | player
+     * @return array<string, string>
+     */
+    public function putAppPolicy(int $tenantId, array $rules): array
+    {
+        $settings = $this->get($tenantId)['settings'];
+        $settings['apps_policy'] = $this->sanitizeAppPolicy($rules);
+        $settings['updated_at'] = gmdate('c');
+        (new \App\Repositories\TenantAtakConfigRepository())->saveExperienceConfig($tenantId, $settings);
+
+        return $settings['apps_policy'];
     }
 
     /**
@@ -314,6 +574,8 @@ final class AtakExperienceService
         }
         $out['guide_custom'] = '';
         $out['server_control_reviewed'] = false;
+        $out['net_live'] = [];
+        $out['apps_policy'] = [];
 
         return $out;
     }
@@ -336,6 +598,7 @@ final class AtakExperienceService
         if (!empty($merged['realism']) && !empty($merged['troll'])) {
             $merged['troll'] = false;
         }
+        $merged['apps_policy'] = $this->sanitizeAppPolicy($merged['apps_policy']);
 
         return [
             'settings' => $merged,
@@ -438,6 +701,21 @@ final class AtakExperienceService
                 $out[$id] = (string) ($s[$id] ?? $row['default']);
             }
         }
+        // Fréquence d'envoi des positions (Configuration ATAK > Connexion en jeu). Préfixe net_ : la DLL relaie
+        // toutes les clés net_* sans nouvelle version ; le pack l'applique à comspec_overwatch_position_interval.
+        try {
+            $interval = (int) ((new \App\Services\Game\GameOverwatchExperienceService())->get($tenantId)['update_interval'] ?? 0);
+        } catch (\Throwable) {
+            $interval = 0;
+        }
+        $out['net_position_interval'] = $interval >= 2 ? (string) $interval : 'player';
+        // App Store du téléphone (Contrôle serveur > Apps du téléphone) : noms de classe séparés par des virgules.
+        // Préfixe net_ : la DLL COMSPEC Link relaie toutes les clés net_* sans nouvelle version (fn_appInstall les lit).
+        $policy = $this->sanitizeAppPolicy($s['apps_policy'] ?? []);
+        $required = array_keys(array_filter($policy, static fn (string $r): bool => $r === 'required'));
+        $forbidden = array_keys(array_filter($policy, static fn (string $r): bool => $r === 'forbidden'));
+        $out['net_apps_required'] = $required === [] ? 'player' : implode(',', $required);
+        $out['net_apps_forbidden'] = $forbidden === [] ? 'player' : implode(',', $forbidden);
 
         return $out;
     }
@@ -452,7 +730,7 @@ final class AtakExperienceService
         $lines[] = '';
         $lines[] = '1. Lier votre compte';
         $lines[] = '   • Ouvrez la Tacmap sur le portail et utilisez « Connexion en jeu », ou';
-        $lines[] = '   • Saisissez l’adresse du portail, la clé d’accès et l’identifiant de communauté dans Options → Mods → COMSPEC Overwatch → Connexion.';
+        $lines[] = '   • Saisissez la clé d’accès et l’identifiant de communauté dans Options → Mods → COMSPEC Overwatch → Connexion.';
         $lines[] = '';
         $lines[] = '2. Tablette en mission';
         $lines[] = '   • Touche K : ouvrir la tablette Athena.';

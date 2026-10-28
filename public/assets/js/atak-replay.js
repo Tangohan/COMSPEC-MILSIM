@@ -13,6 +13,10 @@ window.ATAKReplay = (function () {
   var dateFilter = 'all';
   var operatorFilter = 'all';
   var eventWindowSeconds = 90;
+  var missionKeyFilter = '';
+  var casualties = [];
+  var vehicleTracks = [];
+  var overlay = null;
 
   function apiRoot() {
     var base = '';
@@ -84,15 +88,36 @@ window.ATAKReplay = (function () {
     return Math.max(40, Math.round(500 / sp));
   }
 
-  function formatTs(ts) {
+  /* Date et heure locales (fuseau du navigateur) : la base est en UTC, l'heure seule ne disait pas quel jour. */
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function formatTs(ts, withSeconds) {
     if (!ts) return '—';
-    var s = String(ts).replace(' ', 'T');
-    var d = new Date(s);
-    if (isNaN(d.getTime())) return String(ts);
-    var hh = d.getUTCHours();
-    var mm = d.getUTCMinutes();
-    var ss = d.getUTCSeconds();
-    return (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm + ':' + (ss < 10 ? '0' : '') + ss + ' Z';
+    var ms = parseTsMs(ts);
+    if (isNaN(ms)) return String(ts);
+    var d = new Date(ms);
+    return pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes())
+      + (withSeconds === false ? '' : ':' + pad2(d.getSeconds()));
+  }
+  function formatClock(ts) {
+    var ms = parseTsMs(ts);
+    if (isNaN(ms)) return '';
+    var d = new Date(ms);
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+  var WEEKDAYS = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+  /* « lun. 12/10/2026 22:14 → 22:46 (32 min) » : jour, début, fin et durée d'une session jouée. */
+  function formatRange(from, to) {
+    var a = parseTsMs(from);
+    var b = parseTsMs(to);
+    if (isNaN(a)) return '';
+    var out = WEEKDAYS[new Date(a).getDay()] + ' ' + formatTs(from, false);
+    if (!isNaN(b) && b > a) {
+      var min = Math.round((b - a) / 60000);
+      var sameDay = new Date(a).toDateString() === new Date(b).toDateString();
+      out += ' → ' + (sameDay ? formatClock(to) : formatTs(to, false))
+        + ' (' + (min >= 60 ? Math.floor(min / 60) + ' h ' + pad2(min % 60) : min + ' min') + ')';
+    }
+    return out;
   }
 
   function frameToUnits(frame) {
@@ -360,6 +385,7 @@ window.ATAKReplay = (function () {
     renderEventsList(true);
     if (!opts.previewOnly) {
       if (!active) setActive(true);
+      drawOverlay(frame && frame.timestamp);
       if (window.ATAKMap && window.ATAKMap.setUnitsMarkers) {
         window.ATAKMap.setUnitsMarkers(frameToUnits(frame), { fromReplay: true });
       }
@@ -396,7 +422,62 @@ window.ATAKReplay = (function () {
     var parts = [];
     if (from) parts.push('from=' + encodeURIComponent(String(from)));
     if (to) parts.push('to=' + encodeURIComponent(String(to)));
+    if (missionKeyFilter) parts.push('mission_key=' + encodeURIComponent(missionKeyFilter));
     return parts.length ? ('?' + parts.join('&')) : '';
+  }
+
+  /* Sessions jouées (clé de mission de l'ATAK natif) : sélecteur « Mission ». */
+  function loadSessions() {
+    var sel = el('atak-replay-mission-filter');
+    if (!sel || tenantId() < 1) return;
+    fetch(apiRoot() + '/api/replay/sessions/' + encodeURIComponent(missionId()), { credentials: 'include' })
+      .then(function (r) { return r.ok ? r.json() : { sessions: [] }; })
+      .then(function (data) {
+        var list = Array.isArray(data && data.sessions) ? data.sessions : [];
+        fillSelect(sel, list.map(function (m) {
+          return { value: String(m.key), label: String(m.label || m.key) + ' · ' + formatRange(m.from, m.to) };
+        }), missionKeyFilter, 'Toutes les sessions');
+      })
+      .catch(function () { /* sélecteur laissé tel quel */ });
+  }
+
+  /* Couches de la relecture : trajets des véhicules et drones (tracés une fois), pertes amies jusqu'à l'instant affiché
+     (redessinées seulement quand leur nombre change). */
+  var vehDrawn = false;
+  var kiaShown = -1;
+
+  function clearOverlay() {
+    if (overlay) {
+      try { overlay.veh.clearLayers(); overlay.kia.clearLayers(); } catch (e) { /* ignore */ }
+    }
+    vehDrawn = false;
+    kiaShown = -1;
+  }
+
+  function drawOverlay(frameTs) {
+    var map = window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
+    if (!map || typeof L === 'undefined' || !window.ATAKMap.latLngFromWorld) return;
+    if (!overlay) overlay = { veh: L.layerGroup().addTo(map), kia: L.layerGroup().addTo(map) };
+    var toLl = window.ATAKMap.latLngFromWorld;
+    if (!vehDrawn) {
+      vehDrawn = true;
+      vehicleTracks.forEach(function (t) {
+        var pts = t.points || [];
+        if (pts.length < 2) return;
+        L.polyline(pts.map(function (p) { return toLl(p[0], p[1]); }), {
+          color: t.air ? '#38bdf8' : '#a3a3a3', weight: 2, opacity: 0.8, dashArray: t.air ? '6 4' : null
+        }).bindTooltip(escapeHtml(t.callsign + (t.name ? ' · ' + t.name : '') + (t.pilot ? ' · ' + t.pilot : ''))).addTo(overlay.veh);
+      });
+    }
+    var ts = String(frameTs || '');
+    var visible = casualties.filter(function (c) { return !ts || String(c.timestamp) <= ts; });
+    if (visible.length === kiaShown) return;
+    kiaShown = visible.length;
+    overlay.kia.clearLayers();
+    visible.forEach(function (c) {
+      L.circleMarker(toLl(c.x, c.y), { radius: 6, color: '#ef4444', fillColor: '#7f1d1d', fillOpacity: 0.9, weight: 2 })
+        .bindTooltip(escapeHtml('Perte amie · ' + c.callsign + ' · ' + formatTs(c.timestamp))).addTo(overlay.kia);
+    });
   }
 
   function loadEvents() {
@@ -438,6 +519,9 @@ window.ATAKReplay = (function () {
       .then(function (pair) {
         var data = pair[0];
         sourceTimeline = Array.isArray(data && data.timeline) ? data.timeline : [];
+        casualties = Array.isArray(data && data.casualties) ? data.casualties : [];
+        vehicleTracks = Array.isArray(data && data.vehicleTracks) ? data.vehicleTracks : [];
+        clearOverlay();
         loaded = true;
         index = 0;
         stopTimer();
@@ -467,7 +551,17 @@ window.ATAKReplay = (function () {
       + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Évacuations</span><strong>' + (s.medevacEvents || 0) + '</strong></div>'
       + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Ordres</span><strong>' + (s.orderEvents || 0) + '</strong></div>'
       + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Repères</span><strong>' + (s.markerEvents || 0) + '</strong></div>'
+      + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Pertes amies</span><strong>' + (s.friendlyKia || 0) + '</strong></div>'
       + '</div>';
+    var flights = (data && data.flightTime) || [];
+    if (flights.length) {
+      html += '<div class="atak-replay-errors"><p class="atak-replay-errors-title">Temps de vol par pilote</p><ul>';
+      flights.slice(0, 12).forEach(function (f) {
+        var min = Math.round((Number(f.seconds) || 0) / 60);
+        html += '<li>' + escapeHtml(f.callsign) + ' : ' + (min >= 60 ? Math.floor(min / 60) + ' h ' + (min % 60) + ' min' : min + ' min') + '</li>';
+      });
+      html += '</ul></div>';
+    }
     if (errors.length) {
       html += '<div class="atak-replay-errors"><p class="atak-replay-errors-title">Points d’attention</p><ul>';
       errors.forEach(function (e) {
@@ -522,6 +616,7 @@ window.ATAKReplay = (function () {
   function exitReplay() {
     pause();
     setActive(false);
+    clearOverlay();
     if (window.ATAKUnits && typeof window.ATAKUnits.fetchUnits === 'function') {
       window.ATAKUnits.fetchUnits();
     }
@@ -542,6 +637,7 @@ window.ATAKReplay = (function () {
 
   function onTabActivated() {
     if (!loaded) {
+      loadSessions();
       loadTimeline();
       loadAar();
     }
@@ -563,6 +659,7 @@ window.ATAKReplay = (function () {
     var dateSel = el('atak-replay-date-filter');
     var opSel = el('atak-replay-operator-filter');
     var zoom = el('atak-replay-zoom');
+    var missionSel = el('atak-replay-mission-filter');
 
     if (playBtn) playBtn.addEventListener('click', play);
     if (pauseBtn) pauseBtn.addEventListener('click', pause);
@@ -597,6 +694,16 @@ window.ATAKReplay = (function () {
       dateSel.addEventListener('change', function () {
         dateFilter = String(dateSel.value || 'all');
         applyFilters();
+        loadAar();
+      });
+    }
+    if (missionSel) {
+      missionSel.addEventListener('change', function () {
+        missionKeyFilter = String(missionSel.value === 'all' ? '' : (missionSel.value || ''));
+        dateFilter = 'all';
+        operatorFilter = 'all';
+        loaded = false;
+        loadTimeline();
         loadAar();
       });
     }
@@ -641,12 +748,16 @@ window.ATAKReplay = (function () {
       ws.addEventListener('change', function () {
         if (active) exitReplay();
         loaded = false;
+        missionKeyFilter = '';
+        casualties = [];
+        vehicleTracks = [];
         timeline = [];
         sourceTimeline = [];
         sourceEvents = [];
         events = [];
         var content = el('tab-replay');
         if (content && content.classList.contains('active')) {
+          loadSessions();
           loadTimeline();
           loadAar();
         }

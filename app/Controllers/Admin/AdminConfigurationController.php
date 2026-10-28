@@ -9,6 +9,7 @@ use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\AuditLogRepository;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelAdminPanelRepository;
@@ -19,12 +20,19 @@ use App\Repositories\TenantMatriculeConfigRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
+use App\Services\Audit\AuditService;
 use App\Services\Community\TenantOnboardingHealthService;
+use App\Support\Audit\AuditFieldSnapshot;
 use App\Support\OrganizationRoleLabels;
 use Throwable;
 
 class AdminConfigurationController
 {
+    /** Préfixe des actions du journal d’audit écrites par cette page. */
+    public const AUDIT_ACTION_PREFIX = 'configuration.';
+
+    private const ROLE_DISPLAY_KEYS = ['member_can_choose_display_role', 'display_badges_mode', 'organization_role_labels'];
+
     public function __construct(
         private UnitRepository $unitRepository,
         private GradeRepository $gradeRepository,
@@ -71,9 +79,21 @@ class AdminConfigurationController
         $slug = (string) ($tenant['slug'] ?? '');
         $publicCommunityUrl = $slug !== '' ? url('c/' . $slug) : '';
 
+        $configHistory = [];
+        try {
+            $configHistory = (new AuditLogRepository())->listForTenant(
+                $tenantId,
+                ['action' => self::AUDIT_ACTION_PREFIX],
+                1,
+                8
+            )['rows'];
+        } catch (Throwable) {
+            $configHistory = [];
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.configuration',
-            'title' => 'Configuration organisationnelle',
+            'title' => 'Configuration',
             'tenant' => $tenant,
             'settings' => $settings,
             'community' => $community,
@@ -84,6 +104,7 @@ class AdminConfigurationController
             'grades' => $grades,
             'matriculeConfig' => $matriculeConfig,
             'adminPanels' => $adminPanels,
+            'configHistory' => $configHistory,
             'appDebug' => (bool) config('app.debug', false),
         ]);
     }
@@ -205,15 +226,46 @@ class AdminConfigurationController
         if (!in_array($orgRoleLabels, [OrganizationRoleLabels::MODE_FR, OrganizationRoleLabels::MODE_EN], true)) {
             $orgRoleLabels = OrganizationRoleLabels::MODE_FR;
         }
-        $this->tenantRepository->updateSettings($tenantId, [
-            'community' => [
-                'member_can_choose_display_role' => $memberChoose ? 1 : 0,
-                'display_badges_mode' => $mode,
-                'organization_role_labels' => $orgRoleLabels,
-            ],
-        ]);
-        Session::flash('success', 'Préférences d’affichage des rôles enregistrées.');
+        $before = $this->tenantRepository->getSettings($tenantId);
+        $beforeCommunity = is_array($before['community'] ?? null) ? $before['community'] : [];
+        $beforeValues = [
+            'member_can_choose_display_role' => !empty($beforeCommunity['member_can_choose_display_role']) ? 1 : 0,
+            'display_badges_mode' => ($beforeCommunity['display_badges_mode'] ?? 'primary_only') === 'multi' ? 'multi' : 'primary_only',
+            'organization_role_labels' => ($beforeCommunity['organization_role_labels'] ?? OrganizationRoleLabels::MODE_FR) === OrganizationRoleLabels::MODE_EN
+                ? OrganizationRoleLabels::MODE_EN
+                : OrganizationRoleLabels::MODE_FR,
+        ];
+        $afterValues = [
+            'member_can_choose_display_role' => $memberChoose ? 1 : 0,
+            'display_badges_mode' => $mode,
+            'organization_role_labels' => $orgRoleLabels,
+        ];
+        [$changedOld, $changedNew] = AuditFieldSnapshot::diffOnly($beforeValues, $afterValues, self::ROLE_DISPLAY_KEYS);
+        if ($changedNew === []) {
+            Session::flash('success', 'Aucune modification : l’affichage des rôles était déjà réglé ainsi.');
 
-        return Response::redirect(url('back-office/configuration'));
+            return Response::redirect(url('back-office/configuration') . '#cfg-affichage');
+        }
+
+        $this->tenantRepository->updateSettings($tenantId, [
+            'community' => $afterValues,
+        ]);
+        try {
+            (new AuditService())->logChange(
+                self::AUDIT_ACTION_PREFIX . 'member_role_display',
+                $tenantId,
+                (int) Session::get('user_id') ?: null,
+                'tenant',
+                $tenantId,
+                $changedOld,
+                $changedNew
+            );
+        } catch (Throwable) {
+            // Le journal ne doit jamais bloquer l’enregistrement d’un réglage.
+        }
+        Session::flash('success', 'Préférences d’affichage des rôles enregistrées.');
+        Session::flash('config_saved_section', 'affichage');
+
+        return Response::redirect(url('back-office/configuration') . '#cfg-affichage');
     }
 }

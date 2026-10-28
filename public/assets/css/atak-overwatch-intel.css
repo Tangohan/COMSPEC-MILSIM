@@ -130,3 +130,24 @@ body.ow-labels-hidden .owi-self-label{display:none}
   .owi-alerts-btn{right:12px}
   .owi-alerts-panel{right:8px;left:8px;width:auto;max-width:none}
 }
+
+/* Alertes : suppression, accusés de réception */
+.owi-alert-head .owi-row-del{margin-left:6px;padding:0 4px;border:0;background:none;color:#7d8883;font-size:16px;line-height:1;cursor:pointer}
+.owi-alert-head .owi-row-del:hover{color:#e05b63}
+.ow-tag.owi-del{border-color:rgba(224,91,99,.5);color:#f0a0a6}
+.ow-tag.owi-del:hover{border-color:#e05b63;color:#fff;background:#5a1f24}
+.owi-pop-acts{display:flex;gap:6px;margin-top:6px}
+.owi-alert-row>.owi-acked{margin:4px 0 2px}
+.owi-sub-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.owi-receipt{margin:4px 0;font-size:11.5px;color:#9aa5a0}
+.owi-receipt summary{cursor:pointer;list-style:none}
+.owi-receipt summary::-webkit-details-marker{display:none}
+.owi-receipt summary::before{content:'▸ ';color:#56605c}
+.owi-receipt[open] summary::before{content:'▾ '}
+.owi-receipt p{margin:3px 0 0 10px;font-size:11.5px;color:#c5cbc8}
+.owi-receipt i{color:#7d8883;font-style:normal}
+.owi-rc-ok{color:#5cc76b}
+.owi-rc-miss{color:#e7b14d}
+.owi-rc-note{color:#6b7570!important;font-size:10.5px!important}
+.owi-chat-alert.is-dismissed{opacity:.4}
+.owi-chat-alert.is-dismissed .owi-alert-foot button{display:none}

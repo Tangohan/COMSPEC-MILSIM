@@ -15,10 +15,10 @@ if !(_ctx get "run") exitWith { true };
 private _apply = {
     params ["_pos", "_brief", "_pack", "_radius"];
     if (_pack isNotEqualTo "") then {
-        [_pack, _pos, _radius] call comspec_sse_fnc_loadScenarioPack;
+        [_pack, _pos, _radius, false] call comspec_sse_fnc_loadScenarioPack;
     } else {
         if ((trim _brief) isEqualTo "") then { _brief = "cellule logistique de 5 personnes"; };
-        [_brief, _pos, _radius] call comspec_sse_fnc_generateFromBrief;
+        [_brief, _pos, _radius, createHashMap, false] call comspec_sse_fnc_generateFromBrief;
     };
     // Menus ACE des objets tagués chez les autres joueurs (filtrés à l'envoi).
     [nearestObjects [_pos, ["ThingX", "ReammoBox_F", "WeaponHolder", "LandVehicle", "Static"], _radius], 8] call comspec_sse_fnc_zeusBroadcastEnabled;

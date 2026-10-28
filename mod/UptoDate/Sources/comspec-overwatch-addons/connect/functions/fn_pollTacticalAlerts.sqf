@@ -25,6 +25,8 @@ if (!(_inbox isEqualType [])) then { _inbox = []; };
 
 private _seen = missionNamespace getVariable ["COMSPEC_Athena_RemoteAlertIds", []];
 if (!(_seen isEqualType [])) then { _seen = []; };
+// Premier passage de la session : peuplement silencieux (pas de replay des 40 alertes passées au join / JIP).
+private _bootTa = missionNamespace getVariable ["COMSPEC_TacticalAlertsBootstrapped", false];
 
 private _myCs = "";
 if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
@@ -39,7 +41,8 @@ private _playUnconscious = false;
 {
     private _line = _x;
     if (_line isEqualTo "") then { continue };
-    private _cols = _line splitString _tab;
+    // splitKeepEmpty : la DLL n'écrit pas de marqueur pour les cellules vides (splitString décalerait les colonnes).
+    private _cols = [_line, _tab] call comspec_overwatch_connect_fnc_splitKeepEmpty;
     if ((count _cols) < 6) then { continue };
 
     private _id = _cols select 0;
@@ -85,13 +88,17 @@ private _playUnconscious = false;
     if (_timeStr isEqualTo "") then {
         _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString;
     };
+    // ATAK natif : l'heure d'Athena est en UTC ; affichée selon le réglage « Heure des alertes » (heure du PC par défaut).
+    if (_created isNotEqualTo "" && {!isNil "comspec_atak_native_fnc_clockFmt"}) then {
+        _timeStr = [_created] call comspec_atak_native_fnc_clockFmt;
+    };
 
     _seen pushBack _id;
     _inbox pushBack [_kindKey, _kindLabel, _summary, _grid, _timeStr, _from, _id];
     _added = _added + 1;
 
     private _fromMe = (toLower _from) isEqualTo (toLower _myCs) || {(toLower _from) isEqualTo (toLower (name player))};
-    if (!_fromMe) then {
+    if (!_fromMe && {_bootTa}) then {
         _notifyTitles pushBack format ["%1 — %2", _kindLabel, if (_from isEqualTo "") then { "Athena" } else { _from }];
         if (_kindKey isEqualTo "EAGLE_DOWN") then { _playUnconscious = true; };
         private _detail = format [
@@ -118,6 +125,18 @@ while { (count _inbox) > 40 } do { _inbox deleteAt 0; };
 
 missionNamespace setVariable ["COMSPEC_Athena_RemoteAlertIds", _seen, false];
 missionNamespace setVariable ["COMSPEC_Athena_AlertInbox", _inbox, false];
+// La DLL rend d'abord un « OK| » vide (cache pas encore rempli, lecture en arrière-plan) : le peuplement
+// silencieux ne se clôt qu'avec au moins une ligne reçue, ou 45 s après le premier OK (tableau vraiment vide).
+if (!_bootTa) then {
+    private _t0 = missionNamespace getVariable ["COMSPEC_TacticalAlertsFirstOkAt", -1];
+    if (_t0 < 0) then {
+        _t0 = diag_tickTime;
+        missionNamespace setVariable ["COMSPEC_TacticalAlertsFirstOkAt", _t0, false];
+    };
+    if (({ _x isNotEqualTo "" } count _lines) > 0 || {(diag_tickTime - _t0) >= 45}) then {
+        missionNamespace setVariable ["COMSPEC_TacticalAlertsBootstrapped", true, false];
+    };
+};
 
 if (_added > 0) then {
     ["COMSPEC_AthenaInboxUpdated", []] call CBA_fnc_localEvent;

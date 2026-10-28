@@ -4,12 +4,18 @@
       "list"    : relit le disque (DLL) et met la liste en cache, renvoie [[chemin, nom]...]
       "send"    : retransmet la photo n° arg de la liste en cache
       "sendAll" : retransmet toutes les photos de la liste en cache (une toutes les 2 s)
+      "sendNew" : envoie seulement celles qui ne sont ni transmises ni visibles sur Athena
+                  (sendAll et sendNew laissent de côté les clichés du drone : ils partent avec leur fiche, fn_dronePhoto)
       "check"   : demande à Athena lesquelles sont visibles (DLL ReconImagesKnown, 2.0.59+) ;
                   uiNamespace COMSPEC_ATAK_PhotoKnown = noms en minuscules, ou nil si Athena n'a pas pu répondre
       "delete"  : supprime du poste la photo n° arg (second appui dans les 4 s pour confirmer)
-      "deleteAll" : supprime du poste toutes les photos listées (second appui dans les 4 s pour confirmer)
+      "deleteAll" : supprime du poste toutes les photos listées et les clichés du drone (fichier et fiche), sauf un cliché
+                    en cours d'envoi (second appui dans les 4 s)
 */
 params [["_action", "list"], ["_arg", -1]];
+// Clichés du drone (profil COMSPEC_ATAK_DronePhotos) : fichiers du dossier Screenshots, gérés par leur fiche.
+private _droneFiles = (profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []]) apply { if (_x isEqualType [] && {(_x param [0, ""]) isEqualType ""}) then { toLower (_x select 0) } else { "" } };
+private _phoneOnly = { params ["_l"]; _l select { !((toLower (_x select 1)) in _droneFiles) } };
 private _fnc_send = {
     params ["_path", "_name"];
     // Un renvoi manuel doit repartir même si la photo a déjà été tentée.
@@ -22,7 +28,12 @@ private _fnc_send = {
         };
     } forEach [["COMSPEC_Athena_PhotoDead", "profile"], ["COMSPEC_Athena_PhotoFailed", "mission"], ["COMSPEC_Athena_PhotoSeen", "mission"], ["COMSPEC_Athena_PhotoUploaded", "mission"]];
     private _caption = format ["%1 · retransmise · %2", [player] call comspec_atak_native_fnc_unitCallsign, _name];
-    [_path, _caption, "CTAB", "", true, false, false] call comspec_overwatch_connect_fnc_captureReconImage
+    // Visages repérés à la prise (photo gardée faute de réseau, fn_photoMode) : floutés aussi au renvoi.
+    private _kept = profileNamespace getVariable ["COMSPEC_ATAK_PhotoFaces", []];
+    private _i = if (_kept isEqualType []) then { _kept findIf { (_x param [0, ""]) isEqualTo (toLower _name) } } else { -1 };
+    private _meta = if (_i >= 0) then { ["", "", false, "", false, "phone", "", [], -1, (_kept select _i) param [1, []]] } else { [] };
+    if (isNil "comspec_overwatch_connect_fnc_captureReconImage") exitWith { false };
+    [_path, _caption, "CTAB", "", true, false, false, _meta] call comspec_overwatch_connect_fnc_captureReconImage
 };
 switch (_action) do {
     case "list": {
@@ -31,7 +42,16 @@ switch (_action) do {
         private _out = (_raw select { _x isEqualType [] && {(count _x) >= 2} }) apply { [_x select 0, _x select 1] };
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoLib", _out];
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoLibAt", diag_tickTime];
-        ["check"] call comspec_atak_native_fnc_photoLibrary;
+        // Requête Athena hors du dessin (spawn) : appelée depuis un rendu ou un clic, extAwait figeait le jeu. Une à la fois
+        // (repère daté, périmé après 30 s), puis la page est redessinée.
+        if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PhotoCheckBusy", -100]) > 30) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_PhotoCheckBusy", diag_tickTime];
+            [] spawn {
+                ["check"] call comspec_atak_native_fnc_photoLibrary;
+                uiNamespace setVariable ["COMSPEC_ATAK_PhotoCheckBusy", -100];
+                [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            };
+        };
         _out
     };
     case "check": {
@@ -39,7 +59,7 @@ switch (_action) do {
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoKnown", nil];
         if ((count _lib) isEqualTo 0 || {!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])}) exitWith { false };
         private _names = (_lib apply { _x select 1 }) select [0, 200];
-        private _raw = "COMSPECExtension" callExtension ["ReconImagesKnown", [_names joinString "|"]];
+        private _raw = (["COMSPECExtension", "ReconImagesKnown", [_names joinString "|"]] call comspec_atak_native_fnc_extAwait);
         if (!isNil "comspec_overwatch_connect_fnc_extResult") then { _raw = [_raw] call comspec_overwatch_connect_fnc_extResult; };
         if (_raw isEqualType []) then { _raw = _raw param [0, ""]; };
         if !(_raw isEqualType "") then { _raw = str _raw; };
@@ -56,12 +76,32 @@ switch (_action) do {
         // Premier appui : le bouton passe en CONFIRMER pendant 4 s.
         if ((_armed select 0) isNotEqualTo _key || {diag_tickTime - (_armed select 1) > 4}) exitWith {
             uiNamespace setVariable ["COMSPEC_ATAK_PhotoDelArm", [_key, diag_tickTime]];
-            [{ ["PHOTOS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
-            [{ if (diag_tickTime - ((uiNamespace getVariable ["COMSPEC_ATAK_PhotoDelArm", ["", -10]]) select 1) >= 4 && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "PHOTOS"}) then { ["PHOTOS"] call comspec_atak_native_fnc_pageRender; }; }, [], 4.1] call CBA_fnc_waitAndExecute;
+            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            [{ if (diag_tickTime - ((uiNamespace getVariable ["COMSPEC_ATAK_PhotoDelArm", ["", -10]]) select 1) >= 4 && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "GALLERY"}) then { ["GALLERY"] call comspec_atak_native_fnc_pageRender; }; }, [], 4.1] call CBA_fnc_waitAndExecute;
             true
         };
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoDelArm", ["", -10]];
         private _todo = if (_action isEqualTo "deleteAll") then { +_lib } else { [_lib select _arg] };
+        // Tout supprimer : les clichés du drone partent aussi (fichier et fiche), sauf un envoi en cours.
+        if (_action isEqualTo "deleteAll") then {
+            private _dl = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
+            if !(_dl isEqualType []) then { _dl = []; };
+            private _onDisk = _lib apply { toLower (_x select 1) };
+            private _keep = [];
+            {
+                if (_x isEqualType [] && {(_x param [8, ""]) isEqualTo "SENDING"}) then {
+                    _keep pushBack _x;
+                    private _f = toLower (_x param [0, ""]);
+                    _todo = _todo select { (toLower (_x select 1)) isNotEqualTo _f };
+                } else {
+                    private _f = if (_x isEqualType []) then { _x param [0, ""] } else { "" };
+                    if (_f isEqualType "" && {_f isNotEqualTo ""} && {!((toLower _f) in _onDisk)}) then { "COMSPECExtension" callExtension ["DeleteLocalFile", [_f]]; };
+                };
+            } forEach _dl;
+            profileNamespace setVariable ["COMSPEC_ATAK_DronePhotos", _keep];
+            [] call comspec_atak_native_fnc_saveProfile;
+            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["dronePhEdit", -1];
+        };
         private _done = 0;
         {
             _x params ["_path", "_name"];
@@ -72,7 +112,7 @@ switch (_action) do {
         private _fail = (count _todo) - _done;
         [["SUCCESS", "WARNING"] select (_fail > 0), if (_fail > 0) then { format ["%1 photo(s) supprimée(s), %2 refusée(s) (fichier hors des dossiers COMSPEC ou déjà ouvert).", _done, _fail] } else { format ["%1 photo(s) supprimée(s) du poste.", _done] }, 4, 20] call comspec_atak_native_fnc_notify;
         ["list"] call comspec_atak_native_fnc_photoLibrary;
-        [{ ["PHOTOS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
         _done > 0
     };
     case "send": {
@@ -82,19 +122,25 @@ switch (_action) do {
         [{
             params ["_rec", "_fnc_send"];
             private _ok = _rec call _fnc_send;
-            [["INFO", "WARNING"] select !_ok, ["Photo transmise vers Athena.", "Retransmission refusée : voir le détail dans Photos."] select !_ok, 4, 20] call comspec_atak_native_fnc_notify;
-            [{ ["PHOTOS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [["INFO", "WARNING"] select !_ok, ["Photo transmise vers Athena.", "Retransmission refusée : voir le détail dans l'app Galerie."] select !_ok, 4, 20] call comspec_atak_native_fnc_notify;
+            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
         }, [_lib select _arg, _fnc_send], "Photo", 600] call comspec_atak_native_fnc_netSend;
         true
     };
+    case "sendNew";
     case "sendAll": {
-        private _lib = +(uiNamespace getVariable ["COMSPEC_ATAK_PhotoLib", []]);
-        if ((count _lib) isEqualTo 0) exitWith { false };
+        private _lib = [+(uiNamespace getVariable ["COMSPEC_ATAK_PhotoLib", []])] call _phoneOnly;
+        if (_action isEqualTo "sendNew") then {
+            private _sent = ((missionNamespace getVariable ["COMSPEC_Athena_PhotoUploaded", []]) select { _x isEqualType "" }) apply { toLower _x };
+            private _known = uiNamespace getVariable ["COMSPEC_ATAK_PhotoKnown", []];
+            _lib = _lib select { !((toLower (_x select 0)) in _sent) && {!((toLower (_x select 1)) in _sent)} && {!((toLower (_x select 1)) in _known)} };
+        };
+        if ((count _lib) isEqualTo 0) exitWith { ["INFO", "Aucune photo à envoyer : tout est déjà sur Athena.", 4, 20] call comspec_atak_native_fnc_notify; false };
         ["INFO", format ["%1 photo(s) remises en file, une toutes les 2 s.", count _lib], 4, 20] call comspec_atak_native_fnc_notify;
         [_lib, _fnc_send] spawn {
             params ["_lib", "_fnc_send"];
             { [{ (_this select 0) call (_this select 1); }, [_x, _fnc_send], format ["Photo %1/%2", _forEachIndex + 1, count _lib], 600] call comspec_atak_native_fnc_netSend; uiSleep 2; } forEach _lib;
-            [{ ["PHOTOS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
         };
         true
     };

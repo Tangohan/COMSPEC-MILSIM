@@ -45,12 +45,22 @@ final class AtakAthenaLoginOnDemandAssetTest extends TestCase
         self::assertStringNotContainsString('openLogin', $restore);
         self::assertStringNotContainsString('openLogin', $logout);
         self::assertStringContainsString('createDisplay "COMSPEC_AthenaAuth_Dialog"', $open);
-        self::assertStringContainsString('jamais au démarrage', $open);
-        self::assertStringContainsString('ctrlDelete', $desk);
-        self::assertStringContainsString('desktopShortcutsDef', $desk);
+        // openLogin passe d'abord par la connexion native du téléphone (app Athena), plus par un écran au démarrage.
+        self::assertStringContainsString('["show", true] call comspec_atak_native_fnc_athenaLink', $open);
+        self::assertStringContainsString('comspec_overwatch_atak_athena_fnc_athena_authFocus', $open);
+        self::assertStringNotContainsString('openLogin', $post);
+        self::assertStringNotContainsString('openLogin', $init);
+        // Raccourcis de bureau : plus aucun bouton créé (IceMan pose les apps dans le menu).
+        self::assertStringContainsString('ne plus les créer', $desk);
+        self::assertStringNotContainsString('ctrlCreate', $desk);
         self::assertStringNotContainsString('Connexion<br/>Athena', $desk);
         self::assertStringContainsString('comspec_overwatch_connect_fnc_openLogin', $ace);
-        self::assertStringContainsString('comspec_overwatch_connect_fnc_openLogin', $page);
+        // Page Athena : la connexion s'ouvre à la demande via le bouton Connexion (homeAction → authFocus).
+        self::assertStringContainsString('onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_homeAction"', $page);
+        $home = (string) file_get_contents(
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_homeAction.sqf'
+        );
+        self::assertStringContainsString('comspec_overwatch_atak_athena_fnc_athena_authFocus', $home);
         self::assertStringNotContainsString('accountLinkShow', $ace);
         self::assertStringNotContainsString('athena_showLinkDialog', $page);
         self::assertStringContainsString('menu d’applications, Connexion Athena', $wait);

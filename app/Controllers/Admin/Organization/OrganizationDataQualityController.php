@@ -9,6 +9,7 @@ use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\UserRepository;
 use App\Services\Organization\OrbatBilletService;
 use App\Support\BilletOccupancyType;
 use App\Support\OrgDomainModel;
@@ -20,6 +21,7 @@ final class OrganizationDataQualityController
 {
     public function __construct(
         private OrbatBilletService $billetService,
+        private ?UserRepository $users = null,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -59,12 +61,59 @@ final class OrganizationDataQualityController
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.data_quality',
-            'title' => 'Qualité des données ORBAT',
+            'title' => 'Qualité des données',
             'summary' => $summary,
+            'peopleNames' => $this->peopleNames($tenantId, $summary),
             'occupancyTypes' => BilletOccupancyType::options(),
             'schemaReady' => $this->billetService->schemaReady(),
             'csrfToken' => Csrf::token(),
         ]);
+    }
+
+    /**
+     * Noms affichés des membres cités par la page (mouvements, auteurs de snapshots, anomalies),
+     * pour ne plus montrer de simples numéros « user #12 ». Jamais l’adresse e-mail.
+     *
+     * @param array<string, mixed> $summary
+     * @return array<int, string>
+     */
+    private function peopleNames(int $tenantId, array $summary): array
+    {
+        if ($this->users === null) {
+            return [];
+        }
+        $ids = [];
+        foreach ((array) ($summary['movements'] ?? []) as $m) {
+            $ids[] = (int) ($m['user_id'] ?? 0);
+            $ids[] = (int) ($m['actor_user_id'] ?? 0);
+        }
+        foreach ((array) ($summary['snapshots'] ?? []) as $s) {
+            $ids[] = (int) ($s['created_by'] ?? 0);
+        }
+        foreach ((array) ($summary['anomalies'] ?? []) as $a) {
+            $ids[] = (int) ($a['meta']['user_id'] ?? 0);
+        }
+        $ids = array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        try {
+            $rows = $this->users->findByIdsForTenant($tenantId, $ids);
+        } catch (\Throwable) {
+            return [];
+        }
+        $names = [];
+        foreach ($rows as $uid => $row) {
+            foreach (['display_name', 'callsign', 'name', 'username'] as $col) {
+                $v = trim((string) ($row[$col] ?? ''));
+                if ($v !== '') {
+                    $names[(int) $uid] = $v;
+                    break;
+                }
+            }
+        }
+
+        return $names;
     }
 
     public function snapshot(Request $request, array $params = []): Response

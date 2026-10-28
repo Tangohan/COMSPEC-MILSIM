@@ -43,9 +43,9 @@ switch (_tab) do {
             private _d = (leader _g) distance2D player;
             private _btns = [["CARTE", "mapGroup", [netId _g]] call _act];
             if (isPlayer leader _g && {leader _g isNotEqualTo player}) then {
-                _btns pushBack ["SMS", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['chatPeer', '%1']; ['CHAT'] call comspec_atak_native_fnc_navigate;", name leader _g]];
+                _btns pushBack ["SMS", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['chatPeer', %1]; (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['chatView', 'CONV']; ['CHAT'] call comspec_atak_native_fnc_navigate;", str (name leader _g)]];
             };
-            _rows pushBack ["person", _t select 2, format ["<t font='RobotoCondensedBold' size='1.1'>%1</t>%2  <t size='0.8' color='#7fb6e6'>%3</t><br/><t size='0.8' color='#8a9a93'>Chef %4 · %5 membre(s) · %6 BFT en ligne · %7</t>",
+            _rows pushBack ["person", _t select 2, format ["<t font='COMSPEC_BarlowBold' size='1.1'>%1</t>%2  <t size='0.8' color='#7fb6e6'>%3</t><br/><t size='0.8' color='#8a9a93'>Chef %4 · %5 membre(s) · %6 BFT en ligne · %7</t>",
                 [groupId _g] call _esc, ["", " <t color='#e8b84a'>● mon groupe</t>"] select (_g isEqualTo _mine), _t select 1,
                 [[leader _g] call comspec_atak_native_fnc_unitCallsign] call _esc, count _us, [_us] call _online, ["moi", [_d] call _dist] select (_g isNotEqualTo _mine || {leader _g isNotEqualTo player})], _btns, [0.28, 0.70, 1, 1]];
             private _all = [_g] call comspec_atak_native_fnc_ftTeams;
@@ -59,7 +59,7 @@ switch (_tab) do {
                     private _r = [_x] call comspec_atak_native_fnc_ftInfo;
                     format ["%1%2%3", ["", format ["<t color='#7fb6e6'>%1</t> ", _r get "roleShort"]] select ((_r get "roleShort") isNotEqualTo ""), [name _x] call _esc, ["", " <t color='#6c7671'>○</t>"] select !(_x getVariable ["COMSPEC_ATAK_Beacon", false])]
                 }) joinString " · ";
-                _rows pushBack ["person", _tm get "icon", format ["<t color='%1' font='RobotoCondensedBold'>   ● %2</t>  <t size='0.8' color='#8a9a93'>%3 · chef %4%5</t>%6<br/><t size='0.8'>   %7</t>",
+                _rows pushBack ["person", _tm get "icon", format ["<t color='%1' font='COMSPEC_BarlowBold'>   ● %2</t>  <t size='0.8' color='#8a9a93'>%3 · chef %4%5</t>%6<br/><t size='0.8'>   %7</t>",
                     _tm get "hex", [_tm get "name"] call _esc, count _m, [["—", name _lead] select !isNull _lead] call _esc,
                     if ((count _c) > 0) then { format [" · %1 %2°", [player distance2D _c] call _dist, round (player getDir _c)] } else { "" },
                     ["", format ["<br/><t size='0.8' color='#b8c4bd'>   %1</t>", [_tm get "desc"] call _esc]] select ((_tm get "desc") isNotEqualTo ""),
@@ -93,7 +93,7 @@ switch (_tab) do {
                 _btns pushBack (["CARTE", "mapTeam", [netId _g, _tm get "id"]] call _act);
                 _btns pushBack (["Y ALLER", "routeTeam", [netId _g, _tm get "id"], true] call _act);
             };
-            _rows pushBack ["person", _tm get "icon", format ["<t color='%1' font='RobotoCondensedBold'>%2</t>  <t size='0.8' color='#8a9a93'>%3</t><br/><t size='0.8' color='#8a9a93'>%4 membre(s) · %5 en ligne%6 · %7</t>",
+            _rows pushBack ["person", _tm get "icon", format ["<t color='%1' font='COMSPEC_BarlowBold'>%2</t>  <t size='0.8' color='#8a9a93'>%3</t><br/><t size='0.8' color='#8a9a93'>%4 membre(s) · %5 en ligne%6 · %7</t>",
                 _tm get "hex", [_tm get "name"] call _esc, [groupId _g] call _esc, count _m, [_m] call _online,
                 ["", format [" · <t color='#e5483a'>%1 hors de combat</t>", _dead]] select (_dead > 0),
                 if ((count _c) > 0) then { format ["%1 · %2 %3° · dispersion %4", mapGridPosition _c, [_d] call _dist, round (player getDir _c), [_spread] call _dist] } else { "position inconnue" }],
@@ -115,7 +115,7 @@ switch (_tab) do {
             ["info", "Révision serveur", str (missionNamespace getVariable ["COMSPEC_ATAK_SquadRev", 0])],
             ["info", "Révision de mon groupe", str (_mine getVariable ["COMSPEC_FTRev", 0])],
             ["info", "Escouades / équipes", format ["%1 / %2", count _groups, _nTeams]],
-            ["info", "Joueurs en équipe", format ["%1 sur %2", _inTeam, _total]],
+            ["info", "Joueurs en équipe", format ["%1 / %2", _inTeam, _total]],
             ["info", "Pistes BFT", format ["%1 directes · %2 anciennes · %3 perdues", _fresh select 0, _fresh select 1, _fresh select 2]],
             ["section", "Athena", "Escouades et équipes visibles sur le site (back-office, Escouades en jeu)"],
             ["info", "Envoi par", [format ["%1 (chef ou premier joueur du groupe)", name _reporter], "moi"] select (_reporter isEqualTo player)],

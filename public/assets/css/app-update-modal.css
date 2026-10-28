@@ -207,6 +207,40 @@
   background: #f6f6f6;
 }
 
+.ds-app-update__warn {
+  margin: 1rem 0 0;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid #b45309;
+  border-radius: 4px;
+  background: #fffbeb;
+  color: #78350f;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.ds-app-update--atak .ds-app-update__warn {
+  background: rgba(245, 158, 11, 0.12);
+  border-left-color: #f59e0b;
+  color: #fcd34d;
+}
+
+body.atak-theme-light .ds-app-update--atak .ds-app-update__warn {
+  background: #fffbeb;
+  border-left-color: #b45309;
+  color: #78350f;
+}
+
+.ds-app-update__btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+@media print {
+  .ds-app-update {
+    display: none !important;
+  }
+}
+
 html.ds-app-update-open,
 html.ds-app-update-open body {
   overflow: hidden;

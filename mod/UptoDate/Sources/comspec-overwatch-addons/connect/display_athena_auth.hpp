@@ -2,7 +2,7 @@
 class COMSPEC_AthenaAuth_Dialog {
     idd = 9981;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_AthenaAuth_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_pollAuth;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_AthenaAuth_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_pollAuth;";
     onUnload = "uiNamespace setVariable ['COMSPEC_AthenaAuth_Display', displayNull];";
 
     class Controls {
@@ -143,7 +143,7 @@ class COMSPEC_AthenaAuth_Dialog {
             w = 0.34 * safezoneW;
             h = 0.034 * safezoneH;
             tooltip = "Saisir le code généré sur le portail (Appairer). Écran natif — pas de navigateur.";
-            action = "private _d = uiNamespace getVariable ['COMSPEC_AthenaAuth_Display', displayNull]; if (!isNull _d) then { _d closeDisplay 1; }; [] spawn { uiSleep 0.05; [] call comspec_overwatch_connect_fnc_accountLinkShow; };";
+            action = "private _d = uiNamespace getVariable ['COMSPEC_AthenaAuth_Display', displayNull]; if (!isNull _d) then { _d closeDisplay 1; }; [] spawn { uiSleep 0.05; [true] call comspec_overwatch_connect_fnc_accountLinkShow; };";
         };
         class OperatorPortrait: RscPictureKeepAspect {
             idc = 9431;

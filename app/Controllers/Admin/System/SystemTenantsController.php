@@ -12,6 +12,8 @@ use App\Repositories\SubscriptionPlanRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
+use App\Services\Community\TenantArchiveState;
+use App\Services\Community\TenantRemovalService;
 use App\Services\Community\TenantSlugService;
 use App\Services\Community\TenantTypeConfig;
 use App\Services\Community\TenantTypeSwitchService;
@@ -33,10 +35,12 @@ final class SystemTenantsController
         private ?SubscriptionPlanRepository $subscriptionPlans = null,
         private ?AuditService $audit = null,
         private ?TenantTypeSwitchService $tenantTypeSwitch = null,
+        private ?TenantRemovalService $removal = null,
     ) {
         $this->subscriptionPlans ??= new SubscriptionPlanRepository();
         $this->audit ??= new AuditService();
         $this->tenantTypeSwitch ??= new TenantTypeSwitchService($this->tenants);
+        $this->removal ??= new TenantRemovalService();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -65,7 +69,8 @@ final class SystemTenantsController
             'platformSubscriptionPlansError' => $plansError,
             'platformPlanNameBySlug' => $planNameBySlug,
             'platformSubscriptionStatusLabels' => self::subscriptionStatusLabels(),
-            'backOfficePageCss' => ['platform-admin.css'],
+            'platformCorrelationUrl' => url('admin/system/donnees/correlations'),
+            'backOfficePageCss' => ['platform-admin.css', 'admin-data-registry.css'],
         ]);
     }
 
@@ -111,6 +116,8 @@ final class SystemTenantsController
             'platformTenantIdentityFormAction' => url('admin/tenants/' . $tenantId . '/identity'),
             'platformTenantTypeFormAction' => url('admin/tenants/' . $tenantId . '/profil'),
             'platformTenantPlanFormAction' => url('admin/tenants/' . $tenantId . '/plan'),
+            'platformTenantArchive' => TenantArchiveState::info($tenant),
+            'platformTenantRemovalUrl' => url('admin/tenants/' . $tenantId . '/retrait'),
             'backOfficePageCss' => ['platform-admin.css'],
         ]);
     }
@@ -326,6 +333,187 @@ final class SystemTenantsController
         Session::flash('success', 'Formule d’accès mise à jour pour cette communauté.');
 
         return Response::redirect($editUrl);
+    }
+
+    /**
+     * Archiver, restaurer ou supprimer définitivement : récapitulatif de ce qui part et de ce qui reste.
+     */
+    public function removal(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) ($params['id'] ?? 0);
+        $preview = $tenantId > 1 ? $this->removal->preview($tenantId) : null;
+        if ($preview === null) {
+            Session::flash('error', 'Communauté introuvable.');
+
+            return Response::redirect(url('admin/tenants'));
+        }
+        $name = (string) ($preview['tenant']['name'] ?? 'Communauté');
+
+        return Response::view('layout.main', [
+            'title' => 'Retirer une communauté — ' . $name,
+            'content' => 'admin.system.tenant_removal',
+            'removalPreview' => $preview,
+            'removalArchiveAction' => url('admin/tenants/' . $tenantId . '/archiver'),
+            'removalRestoreAction' => url('admin/tenants/' . $tenantId . '/restaurer'),
+            'removalDeleteAction' => url('admin/tenants/' . $tenantId . '/supprimer'),
+            'removalEditUrl' => url('admin/tenants/' . $tenantId . '/edit'),
+            'backOfficePageCss' => ['platform-admin.css'],
+        ]);
+    }
+
+    public function archive(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) ($params['id'] ?? 0);
+        $back = url('admin/tenants/' . max(0, $tenantId) . '/retrait');
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        $before = $tenantId > 1 ? $this->tenants->findById($tenantId) : null;
+        if ($before === null) {
+            Session::flash('error', 'Communauté introuvable.');
+
+            return Response::redirect(url('admin/tenants'));
+        }
+        if ((string) $request->input('confirm_archive', '') !== '1') {
+            Session::flash('error', 'Cochez la confirmation avant d’archiver la communauté.');
+
+            return Response::redirect($back);
+        }
+        $reason = trim((string) $request->input('archive_reason', ''));
+        $result = $this->removal->archive($tenantId, $this->actorId(), $reason);
+        if (!$result['ok']) {
+            Session::flash('error', (string) ($result['error'] ?? 'Archivage impossible.'));
+
+            return Response::redirect($back);
+        }
+
+        $this->audit->logChange(
+            AuditAction::TENANT_ARCHIVED,
+            $tenantId,
+            $this->actorId(),
+            'tenant',
+            $tenantId,
+            ['name' => (string) ($before['name'] ?? ''), 'slug' => (string) ($before['slug'] ?? ''), 'archived' => false],
+            [
+                'archived' => true,
+                'reason' => $reason,
+                'memberships_archived' => (int) ($result['memberships'] ?? 0),
+                'accounts_moved_to_other_community' => (int) ($result['moved_other'] ?? 0),
+                'accounts_moved_to_no_community' => (int) ($result['moved_no_org'] ?? 0),
+            ],
+        );
+
+        $msg = 'Communauté archivée : ' . (int) ($result['memberships'] ?? 0) . ' appartenance(s) mises en sommeil, '
+            . ((int) ($result['moved_other'] ?? 0) + (int) ($result['moved_no_org'] ?? 0)) . ' compte(s) relogé(s). Aucune donnée supprimée.';
+        if ((int) ($result['not_moved'] ?? 0) > 0) {
+            $msg .= ' ' . (int) $result['not_moved'] . ' compte(s) n’ont pas pu être relogés (voir le récapitulatif).';
+        }
+        Session::flash('success', $msg);
+
+        return Response::redirect($back);
+    }
+
+    public function restore(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) ($params['id'] ?? 0);
+        $back = url('admin/tenants/' . max(0, $tenantId) . '/retrait');
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        $before = $tenantId > 1 ? $this->tenants->findById($tenantId) : null;
+        if ($before === null) {
+            Session::flash('error', 'Communauté introuvable.');
+
+            return Response::redirect(url('admin/tenants'));
+        }
+        $result = $this->removal->restore($tenantId);
+        if (!$result['ok']) {
+            Session::flash('error', (string) ($result['error'] ?? 'Restauration impossible.'));
+
+            return Response::redirect($back);
+        }
+
+        $this->audit->logChange(
+            AuditAction::TENANT_RESTORED,
+            $tenantId,
+            $this->actorId(),
+            'tenant',
+            $tenantId,
+            ['archived' => true, 'archive' => TenantArchiveState::info($before)],
+            ['archived' => false, 'memberships_restored' => (int) ($result['memberships'] ?? 0), 'moved_back' => (int) ($result['moved_back'] ?? 0)],
+        );
+        Session::flash(
+            'success',
+            'Communauté restaurée : ' . (int) ($result['memberships'] ?? 0) . ' appartenance(s) réactivée(s), '
+            . (int) ($result['moved_back'] ?? 0) . ' compte(s) ramené(s) dans la communauté.'
+        );
+
+        return Response::redirect($back);
+    }
+
+    public function destroy(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) ($params['id'] ?? 0);
+        $back = url('admin/tenants/' . max(0, $tenantId) . '/retrait');
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        if ($tenantId < 2) {
+            Session::flash('error', 'Communauté introuvable.');
+
+            return Response::redirect(url('admin/tenants'));
+        }
+        if ((string) $request->input('confirm_delete', '') !== '1') {
+            Session::flash('error', 'Cochez la confirmation avant la suppression définitive.');
+
+            return Response::redirect($back);
+        }
+
+        $result = $this->removal->delete($tenantId, (string) $request->input('confirm_slug', ''));
+        if (!$result['ok']) {
+            Session::flash('error', (string) ($result['error'] ?? 'Suppression impossible.'));
+
+            return Response::redirect($back);
+        }
+
+        $tenant = is_array($result['tenant'] ?? null) ? $result['tenant'] : [];
+        // Journal plateforme (tenant_id NULL) : l’entrée survit à la communauté.
+        $this->audit->logChange(
+            AuditAction::TENANT_DELETED,
+            null,
+            $this->actorId(),
+            'tenant',
+            $tenantId,
+            [
+                'name' => (string) ($tenant['name'] ?? ''),
+                'slug' => (string) ($tenant['slug'] ?? ''),
+                'tenant_type' => (string) ($tenant['tenant_type'] ?? ''),
+                'plan_slug' => (string) ($tenant['plan_slug'] ?? ''),
+                'created_at' => (string) ($tenant['created_at'] ?? ''),
+                'archive' => TenantArchiveState::info($tenant),
+            ],
+            [
+                'deleted' => true,
+                'backup_file' => (string) ($result['backup'] ?? ''),
+                'rows_deleted' => (int) ($result['rows_deleted'] ?? 0),
+                'tables' => (int) ($result['tables'] ?? 0),
+                'accounts' => $result['accounts'] ?? [],
+            ],
+        );
+
+        Session::flash(
+            'success',
+            'Communauté « ' . (string) ($tenant['name'] ?? '') . ' » supprimée définitivement. Sauvegarde : '
+            . (string) ($result['backup'] ?? '') . '. Les comptes des joueurs sont conservés.'
+        );
+
+        return Response::redirect(url('admin/tenants'));
     }
 
     private function actorId(): ?int

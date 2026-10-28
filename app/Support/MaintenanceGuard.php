@@ -6,7 +6,22 @@ namespace App\Support;
 
 final class MaintenanceGuard
 {
+    /** Aucune fin annoncée : les clients reviennent dans 15 min (la DLL plafonne à 10 min). */
     private const DEFAULT_RETRY_AFTER = 900;
+
+    /** Fin imminente : jamais moins, pour ne pas faire revenir tous les clients en rafale. */
+    private const MIN_RETRY_AFTER = 15;
+    /** Étalement des retours après une fin annoncée (secondes ajoutées au hasard, 0 à 15). */
+    private const RETURN_SPREAD = 15;
+
+    /**
+     * Ancienne maintenance par fichier (storage/maintenance.json, posé par les mises à jour et restaurations lancées
+     * depuis l'administration) : opération courte, sans heure de fin. Les API reviennent après 30 à 60 s.
+     */
+    private const LEGACY_FILE_RETRY_AFTER = 30;
+
+    /** Étalement des retours pendant l'ancienne maintenance par fichier (0 à 30 s ajoutées au hasard). */
+    private const LEGACY_FILE_RETURN_SPREAD = 30;
 
     public function __construct(
         private MaintenanceService $maintenanceService
@@ -48,6 +63,37 @@ final class MaintenanceGuard
     }
 
     /**
+     * Pages de connexion laissées ouvertes pendant une maintenance qui laisse passer les administrateurs plateforme :
+     * sans elles, un administrateur déconnecté ne pourrait plus rentrer. Un membre qui s'y connecte quand même est
+     * déconnecté dès la page suivante (enforce).
+     */
+    public static function isAdminLoginPath(string $requestPath): bool
+    {
+        $path = '/' . trim($requestPath, '/');
+
+        return in_array($path, [
+            '/login',
+            '/login/otp',
+            '/login/otp/resend',
+            '/login/otp/switch',
+            '/login/select-community',
+            '/logout',
+        ], true);
+    }
+
+    /** Appel d'API (mod, DLL COMSPEC Link, Overwatch web) : réponse JSON lisible par le client, pas la page HTML. */
+    public static function wantsJson(string $requestPath): bool
+    {
+        $path = '/' . ltrim($requestPath, '/');
+        if (str_starts_with($path, '/api/')) {
+            return true;
+        }
+        $accept = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
+
+        return str_contains($accept, 'application/json') && !str_contains($accept, 'text/html');
+    }
+
+    /**
      * @param array<string, mixed>|null $userContext role_slug, etc.
      */
     public function enforce(string $requestPath, ?string $module = null, ?array $userContext = null): void
@@ -67,6 +113,28 @@ final class MaintenanceGuard
             return;
         }
 
+        // Maintenance globale : tout le monde est déconnecté, sauf les administrateurs plateforme (passés plus haut).
+        // Les sessions qui ne se présentent qu'après la réouverture sont fermées par AuthMiddleware.
+        $global = (string) ($maintenance['scope'] ?? '') === 'global';
+        $loggedOut = false;
+        if ($global) {
+            MaintenanceSessionEpoch::mark($maintenance);
+            if ((int) ($userContext['user_id'] ?? 0) > 0) {
+                self::closeSession();
+                $loggedOut = true;
+            }
+        }
+        $adminLogin = (int) ($maintenance['allow_admin_bypass'] ?? 0) === 1;
+        if (!$loggedOut && $adminLogin && self::isAdminLoginPath($requestPath) && !self::wantsJson($requestPath)) {
+            // Formulaire de connexion affiché avec un bandeau « réservé aux administrateurs » (views/auth/login.php).
+            $GLOBALS['__maintenance_admin_login'] = [
+                'title' => (string) ($maintenance['title'] ?? ''),
+                'ends_at' => $maintenance['ends_at'] ?? null,
+            ];
+
+            return;
+        }
+
         $status = (int) ($maintenance['http_status'] ?? 503);
         if ($status < 100 || $status > 599) {
             $status = 503;
@@ -79,14 +147,30 @@ final class MaintenanceGuard
             exit;
         }
 
+        // Calculé une fois : l'en-tête et le corps JSON annoncent le même délai.
+        $retryAfter = self::retryAfterSeconds($maintenance, time(), random_int(0, self::RETURN_SPREAD));
         http_response_code($status);
-        header('Retry-After: ' . self::DEFAULT_RETRY_AFTER);
+        header('Retry-After: ' . $retryAfter);
+        header('X-Athena-Maintenance: 1');
 
         $title = $maintenance['title'] ?: 'Maintenance en cours';
         $message = self::humanMessage($maintenance['message'] ?? null);
         $endsAt = $maintenance['ends_at'] ?? null;
         $code = $maintenance['maintenance_code'] ?? null;
         $appName = function_exists('config') ? (string) config('app.name', 'Athena') : 'Athena';
+        $uiVariant = MaintenanceThemes::normalize($maintenance['ui_variant'] ?? null);
+        $uiAnimation = (int) ($maintenance['ui_animation'] ?? 1) === 1;
+
+        if (self::wantsJson($requestPath)) {
+            // Le mod et la DLL reconnaissent la maintenance (HTTP 503 + error « maintenance ») au lieu d'un
+            // « serveur injoignable » : l'app Athena du téléphone l'annonce telle quelle.
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-store');
+            echo json_encode(self::jsonPayload($maintenance, $message, $retryAfter), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            exit;
+        }
+
+        $adminLoginUrl = $adminLogin && function_exists('url') ? url('login') : '';
 
         $viewPath = base_path('views/errors/maintenance.php');
         if (is_file($viewPath)) {
@@ -99,6 +183,97 @@ final class MaintenanceGuard
             echo '</body></html>';
         }
         exit;
+    }
+
+    /**
+     * Corps JSON d'une API en maintenance.
+     *
+     * @param array<string, mixed> $maintenance
+     * @return array<string, mixed>
+     */
+    public static function jsonPayload(array $maintenance, string $message, ?int $retryAfter = null): array
+    {
+        $endsAt = trim((string) ($maintenance['ends_at'] ?? ''));
+        $endsTs = $endsAt !== '' ? strtotime($endsAt) : false;
+
+        return [
+            'ok' => false,
+            'error' => 'maintenance',
+            'code' => 'MAINTENANCE',
+            'maintenance' => true,
+            'title' => (string) ($maintenance['title'] ?: 'Maintenance en cours'),
+            'message' => $message,
+            'ends_at' => $endsTs !== false ? gmdate('c', $endsTs) : null,
+            'retry_after' => $retryAfter ?? self::retryAfterSeconds($maintenance),
+        ];
+    }
+
+    /**
+     * Délai de retour annoncé aux clients (en-tête Retry-After et champ retry_after) : le temps qui reste jusqu'à la
+     * fin prévue, au lieu de 15 min fixes. La DLL COMSPEC Link et l'Overwatch web suspendent leurs envois pendant ce
+     * délai : avec 900 s fixes, une maintenance de 2 min figeait les positions près de 10 min après sa fin.
+     * `$spread` (0 à RETURN_SPREAD, tiré par requête) étale les retours : sans lui, tous les clients reviendraient
+     * à la même seconde, celle de la fin annoncée.
+     *
+     * @param array<string, mixed> $maintenance
+     */
+    public static function retryAfterSeconds(array $maintenance, ?int $now = null, int $spread = 0): int
+    {
+        $endsAt = trim((string) ($maintenance['ends_at'] ?? ''));
+        $endsTs = $endsAt !== '' ? strtotime($endsAt) : false;
+        if ($endsTs === false) {
+            return self::DEFAULT_RETRY_AFTER;
+        }
+
+        return min(self::DEFAULT_RETRY_AFTER, max(self::MIN_RETRY_AFTER, $endsTs - ($now ?? time())) + $spread);
+    }
+
+    /** Délai de retour pendant l'ancienne maintenance par fichier : 30 s, plus $spread (borné à 0..30). */
+    public static function legacyFileRetryAfter(int $spread = 0): int
+    {
+        return self::LEGACY_FILE_RETRY_AFTER + max(0, min(self::LEGACY_FILE_RETURN_SPREAD, $spread));
+    }
+
+    /**
+     * API pendant l'ancienne maintenance par fichier (public/index.php) : le JSON de la maintenance planifiée
+     * (error « maintenance », retry_after) au lieu de la page HTML, et un délai court étalé. La DLL et l'application
+     * du téléphone reconnaissent alors la maintenance ; avec « Retry-After: 300 », la DLL suspendait ses envois
+     * 5 min dès le troisième échec, quelle que soit la durée réelle de la mise à jour.
+     */
+    public static function sendLegacyFileApiResponse(string $message): never
+    {
+        $retryAfter = self::legacyFileRetryAfter(random_int(0, self::LEGACY_FILE_RETURN_SPREAD));
+        http_response_code(503);
+        header('Retry-After: ' . $retryAfter);
+        header('X-Athena-Maintenance: 1');
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store');
+        echo json_encode(
+            self::jsonPayload(['title' => '', 'ends_at' => null], self::humanMessage($message), $retryAfter),
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+        );
+        exit;
+    }
+
+    /** Ferme la session du visiteur (données et cookie) : il devra se reconnecter après la maintenance. */
+    private static function closeSession(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $_SESSION = [];
+            if (!headers_sent()) {
+                $params = session_get_cookie_params();
+                setcookie(session_name(), '', [
+                    'expires' => time() - 3600,
+                    'path' => $params['path'] ?: '/',
+                    'domain' => $params['domain'] ?? '',
+                    'secure' => (bool) ($params['secure'] ?? false),
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                ]);
+            }
+        }
+        \App\Core\Session::destroy();
+        $GLOBALS['__maintenance_logged_out'] = true;
     }
 
     private static function humanMessage(mixed $raw): string
@@ -133,25 +308,8 @@ final class MaintenanceGuard
 
     public static function resolveClientIp(): string
     {
-        $keys = [
-            'HTTP_CF_CONNECTING_IP',
-            'HTTP_X_FORWARDED_FOR',
-            'REMOTE_ADDR',
-        ];
+        $ip = ClientIp::resolve();
 
-        foreach ($keys as $key) {
-            if (!empty($_SERVER[$key])) {
-                $value = trim((string) $_SERVER[$key]);
-                if ($key === 'HTTP_X_FORWARDED_FOR' && str_contains($value, ',')) {
-                    $parts = explode(',', $value);
-
-                    return trim($parts[0]);
-                }
-
-                return $value;
-            }
-        }
-
-        return '0.0.0.0';
+        return $ip !== '' ? $ip : '0.0.0.0';
     }
 }

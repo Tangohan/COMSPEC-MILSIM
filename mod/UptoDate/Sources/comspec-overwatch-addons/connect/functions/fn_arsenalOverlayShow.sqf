@@ -1,10 +1,20 @@
 /*
     Bouton Athena de l'ACE Arsenal et panneau « Tenues Athena ».
 
-    Fermé par défaut ; aucune synchronisation tant qu'il n'est pas ouvert. Une seule liste à la fois,
-    en onglets (Communauté / Mes tenues), avec recherche et filtre par collection ; à droite la fiche
-    de la tenue choisie (équipement en icônes, actions Enfiler / Importer / Partager / Supprimer) ;
-    en bas les actions groupées et l'enregistrement de la tenue portée.
+    Fermé par défaut ; aucune synchronisation tant qu'il n'est pas ouvert. Charte du téléphone ATAK natif (vert
+    #5cc76b, polices COMSPEC_ATAK_FontSet) :
+      en-tête    titre, sous-titre, heure de chargement, Actualiser, Fermer
+      onglets    Mes tenues / Communauté avec compteurs, pastilles « à envoyer » et « nouvelles » (cliquables)
+      filtres    recherche, état de synchro, tri ; collections en pastilles (défilent avec ‹ ›)
+      corps      liste (pastille d'état, nom, collection, état) et fiche de la tenue (état expliqué, pièces en
+                 icônes légendées, contenu, actions Enfiler / Envoyer ou Importer / Supprimer)
+      sélection  Mes tenues : sélection multiple (cases à cocher), tout cocher (filtre appliqué), supprimer la
+                 sélection en une fois, annuler la dernière suppression
+      pied       action groupée (envoyer les tenues pas encore sur le site / importer), tout basculer dans l'arsenal
+                 ACE (arsenalSyncAll), enregistrer la tenue portée
+    Champs de saisie : ACE les prend pour sa barre de recherche (ace_arsenal_leftSearchbarFocus) tant qu'ils ont le
+    focus, sinon ses raccourcis partaient pendant la frappe (Retour arrière masquait l'interface au lieu d'effacer,
+    Ctrl+C / Ctrl+V exportaient ou importaient). Entrée enregistre la tenue (champ du nom) ou relance la recherche.
     Le panneau se place entre les deux colonnes de l'arsenal pour ne rien masquer.
     Actions : comspec_overwatch_connect_fnc_arsenalOverlayAction. Contenu : arsenalOverlayRefresh / arsenalOverlayFill.
 */
@@ -14,43 +24,45 @@ if (isNull _display) exitWith {};
 { private _c = _display getVariable [_x, controlNull]; if (!isNull _c) then { ctrlDelete _c; }; } forEach ["COMSPEC_ArsenalOverlay", "COMSPEC_ArsenalToggle"];
 uiNamespace setVariable ["ace_arsenal_display", _display];
 
+(missionNamespace getVariable ["COMSPEC_ATAK_FontSet", ["RobotoCondensed", "RobotoCondensedBold", "RobotoCondensedLight"]]) params [["_fR", "RobotoCondensed"], ["_fB", "RobotoCondensedBold"], ["_fL", "RobotoCondensedLight"]];
 private _gridW = ((safeZoneW / safeZoneH) min 1.2) / 40;
 private _sideW = 13 * _gridW;
-private _gap = 0.010;
+private _gap = 0.008;
 private _guiH = ((((safezoneW / safezoneH) min 1.2) / 1.2) / 25);
-private _fs = _guiH * 0.78;
-private _fsS = _guiH * 0.66;
+private _fs = _guiH * 0.86;
+private _fsS = _guiH * 0.74;
 private _pxW = pixelW; private _pxH = pixelH;
+private _green = [0.36, 0.78, 0.42, 1];
+private _muted = [0.56, 0.65, 0.59, 1];
 
 // Bouton d'ouverture : en haut, entre les deux colonnes de l'arsenal.
 private _btnW = 0.16 * safezoneW;
 private _btnH = _guiH * 1.15;
 private _btnX = safeZoneX + (safeZoneW - _btnW) / 2;
 private _btnY = safeZoneY + 0.008;
-private _tog = _display ctrlCreate ["RscButton", 884400];
+private _tog = _display ctrlCreate ["COMSPEC_RscButtonAtakPrimary", 884400];
 _tog ctrlSetPosition [_btnX, _btnY, _btnW, _btnH];
-_tog ctrlSetText "ATHENA · TENUES";
-_tog ctrlSetTooltip "Tenues de votre organisation : importer, partager, enfiler. Rien n'est synchronisé tant que le panneau est fermé.";
-_tog ctrlSetFont "PuristaSemibold";
+_tog ctrlSetText (("ATHENA · TENUES") call comspec_overwatch_connect_fnc_tr);
+_tog ctrlSetTooltip (("Tenues de votre organisation : importer, partager, enfiler. Rien n'est synchronisé tant que le panneau est fermé.") call comspec_overwatch_connect_fnc_tr);
+_tog ctrlSetFont _fB;
 _tog ctrlSetFontHeight _fs;
-_tog ctrlSetBackgroundColor [0.09, 0.30, 0.25, 0.96];
-_tog ctrlSetTextColor [0.88, 1, 0.95, 1];
 _tog ctrlAddEventHandler ["ButtonClick", { ["toggle"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
 _tog ctrlCommit 0;
 _display setVariable ["COMSPEC_ArsenalToggle", _tog];
 
 // Panneau.
-private _x = safeZoneX + _sideW + _gap;
+private _px0 = safeZoneX + _sideW + _gap;
 private _w = ((safeZoneW - 2 * (_sideW + _gap)) max (0.5 * safezoneW)) min (safeZoneW - 2 * _gap);
-if ((_x + _w) > (safeZoneX + safeZoneW)) then { _x = safeZoneX + (safeZoneW - _w) / 2; };
+if ((_px0 + _w) > (safeZoneX + safeZoneW)) then { _px0 = safeZoneX + (safeZoneW - _w) / 2; };
 private _y = _btnY + _btnH + 0.006;
 private _h = (safeZoneY + safeZoneH) - _y - (_guiH * 2.6);
 private _grp = _display ctrlCreate ["RscControlsGroupNoScrollbars", 884401];
-_grp ctrlSetPosition [_x, _y, _w, _h];
+_grp ctrlSetPosition [_px0, _y, _w, _h];
 _grp ctrlShow false;
 _grp ctrlCommit 0;
 _display setVariable ["COMSPEC_ArsenalOverlay", _grp];
 _display setVariable ["COMSPEC_ArsenalOverlayOpen", false];
+_grp setVariable ["COMSPEC_ArsenalFonts", [_fR, _fB, _fL]];
 
 private _mk = {
     params ["_cls", "_pos", ["_idc", -1]];
@@ -59,135 +71,277 @@ private _mk = {
     _c ctrlCommit 0;
     _c
 };
+private _txt = {
+    params ["_pos", "_text", ["_font", _fR], ["_size", _fsS], ["_rgba", [0.90, 0.94, 0.91, 1]], ["_bg", [0, 0, 0, 0]]];
+    private _c = ["RscText", _pos] call _mk;
+    _c ctrlSetFont _font;
+    _c ctrlSetFontHeight _size;
+    _c ctrlSetTextColor _rgba;
+    _c ctrlSetBackgroundColor _bg;
+    if (_text isNotEqualTo "") then { _c ctrlSetText ((_text) call comspec_overwatch_connect_fnc_tr); };
+    _c
+};
+// Bouton : classe de la charte ATAK (neutre, Primary vert, Danger rouge), texte traduit, action par variable.
 private _btn = {
-    params ["_pos", "_text", "_act", "_rgba", ["_tip", ""], ["_font", "PuristaMedium"]];
-    private _b = ["RscButton", _pos] call _mk;
-    _b ctrlSetText _text;
+    params ["_pos", "_text", "_act", ["_cls", "COMSPEC_RscButtonAtak"], ["_tip", ""], ["_font", _fR]];
+    private _b = [_cls, _pos] call _mk;
+    if (_text isNotEqualTo "") then { _b ctrlSetText ((_text) call comspec_overwatch_connect_fnc_tr); };
     _b ctrlSetFont _font;
     _b ctrlSetFontHeight _fsS;
-    _b ctrlSetBackgroundColor _rgba;
-    _b ctrlSetTextColor [0.92, 0.97, 0.95, 1];
-    if (_tip isNotEqualTo "") then { _b ctrlSetTooltip _tip; };
+    if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_overwatch_connect_fnc_tr); };
     _b setVariable ["act", _act];
-    _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [_c getVariable "act"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
+    _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [_c getVariable "act", _c getVariable ["arg", ""]] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
     _b
 };
 private _pad = 0.012;
-private _bg = ["RscText", [0, 0, _w, _h]] call _mk;
-_bg ctrlSetBackgroundColor [0.035, 0.045, 0.05, 0.97];
-private _acc = ["RscText", [0, 0, _w, 2 * _pxH]] call _mk;
-_acc ctrlSetBackgroundColor [0.32, 0.78, 0.66, 1];
+private _rowH = _guiH * 1.15;
+(["RscText", [0, 0, _w, _h]] call _mk) ctrlSetBackgroundColor [0.030, 0.037, 0.033, 0.97];
+(["RscText", [0, 0, _w, 2 * _pxH]] call _mk) ctrlSetBackgroundColor _green;
 
-// En-tête : titre, état, actualiser, fermer.
-private _rowH = _guiH * 1.1;
-private _title = ["RscStructuredText", [_pad, _pad * 0.6, _w * 0.6, _guiH * 1.6]] call _mk;
-_title ctrlSetStructuredText parseText "<t size='1.15' font='PuristaBold' color='#e2f7ef'>TENUES ATHENA</t><br/><t size='0.8' color='#7f9c94'>Collection de votre organisation</t>";
-private _status = ["RscStructuredText", [_w * 0.45, _pad * 0.6, _w * 0.55 - _pad - 2 * (_rowH * _pxW / _pxH) - _pad * 2 - 0.09, _guiH * 1.6]] call _mk;
-_grp setVariable ["COMSPEC_ArsenalStatus", _status];
+// En-tête : titre et sous-titre sur deux lignes séparées (le sous-titre n'est plus rogné), état, actualiser, fermer.
+private _hy = _pad * 0.8;
+[[_pad, _hy, _w * 0.5, _guiH * 1.3], "TENUES ATHENA", _fB, _guiH * 1.15, [0.93, 0.97, 0.94, 1]] call _txt;
+[[_pad, _hy + _guiH * 1.3, _w * 0.55, _guiH * 0.95], "Votre arsenal et les tenues partagées par votre organisation", _fR, _guiH * 0.74, _muted] call _txt;
 private _sq = _rowH * _pxW / _pxH;
-[[_w - _pad - _sq, _pad * 0.6, _sq, _rowH], "✕", "close", [0.25, 0.10, 0.10, 1], "Fermer"] call _btn;
-[[_w - _pad * 2 - _sq - 0.09, _pad * 0.6, 0.09, _rowH], "ACTUALISER", "reload", [0.10, 0.17, 0.20, 1], "Recharger les tenues depuis Athena"] call _btn;
+private _refW = 0.085 * safezoneW;
+[[_w - _pad - _sq, _hy, _sq, _rowH], "✕", "close", "COMSPEC_RscButtonAtak", "Fermer"] call _btn;
+[[_w - _pad - _sq - _gap - _refW, _hy, _refW, _rowH], "ACTUALISER", "reload", "COMSPEC_RscButtonAtak", "Recharger la liste des tenues depuis Athena (sinon, celle gardée sur ce PC)"] call _btn;
+private _status = ["RscStructuredText", [_w * 0.42, _hy + _rowH + 0.002, _w * 0.58 - _pad, _guiH * 1.55]] call _mk;
+_grp setVariable ["COMSPEC_ArsenalStatus", _status];
+private _hb = _hy + _guiH * 2.85;
+(["RscText", [_pad, _hb, _w - 2 * _pad, _pxH]] call _mk) ctrlSetBackgroundColor [0.14, 0.19, 0.16, 1];
 
-// Onglets, recherche, collection.
-private _tabY = _pad * 0.6 + _guiH * 1.75;
-private _tabW = 0.12 * safezoneW;
-private _tabC = [[_pad, _tabY, _tabW, _rowH], "COMMUNAUTÉ", "tabCloud", [0.10, 0.17, 0.20, 1], "Tenues partagées par l'organisation", "PuristaSemibold"] call _btn;
-private _tabL = [[_pad + _tabW + 0.004, _tabY, _tabW, _rowH], "MES TENUES", "tabLocal", [0.10, 0.17, 0.20, 1], "Tenues enregistrées dans votre arsenal ACE, sur cet ordinateur", "PuristaSemibold"] call _btn;
-_grp setVariable ["COMSPEC_ArsenalTabs", [_tabC, _tabL]];
-private _sx = _pad + 2 * _tabW + 0.016;
-private _comboW = 0.13 * safezoneW;
-private _searchW = _w - _sx - _comboW - _pad - 0.008;
-private _sbg = ["RscText", [_sx, _tabY, _searchW, _rowH]] call _mk;
-_sbg ctrlSetBackgroundColor [0.02, 0.026, 0.03, 1];
-private _search = ["RscEdit", [_sx + 0.004, _tabY, _searchW - 0.008, _rowH], 884420] call _mk;
+// Onglets (soulignés en vert quand actifs) et pastilles de synchro.
+private _tabY = _hb + _pad * 0.7;
+private _tabW = 0.11 * safezoneW;
+private _tabL = [[_pad, _tabY, _tabW, _rowH], "MES TENUES", "tabLocal", "COMSPEC_RscButtonAtak", "Tenues enregistrées dans votre arsenal ACE, sur cet ordinateur", _fB] call _btn;
+private _tabC = [[_pad + _tabW + _gap, _tabY, _tabW, _rowH], "COMMUNAUTÉ", "tabCloud", "COMSPEC_RscButtonAtak", "Tenues partagées par l'organisation sur le site", _fB] call _btn;
+private _ulL = ["RscText", [_pad, _tabY + _rowH - 2 * _pxH, _tabW, 2 * _pxH]] call _mk;
+private _ulC = ["RscText", [_pad + _tabW + _gap, _tabY + _rowH - 2 * _pxH, _tabW, 2 * _pxH]] call _mk;
+{ _x ctrlSetBackgroundColor _green; } forEach [_ulL, _ulC];
+_grp setVariable ["COMSPEC_ArsenalTabs", [_tabC, _tabL, _ulC, _ulL]];
+private _pillPend = [[_w - _pad - 0.2, _tabY + _rowH * 0.1, 0.2, _rowH * 0.8], "", "pillPending", "COMSPEC_RscButtonAtak", "Afficher les tenues de votre arsenal qui ne sont pas à jour sur le site"] call _btn;
+private _pillNew = [[_w - _pad - 0.4, _tabY + _rowH * 0.1, 0.18, _rowH * 0.8], "", "pillNew", "COMSPEC_RscButtonAtak", "Afficher les tenues partagées depuis votre dernière visite"] call _btn;
+_grp setVariable ["COMSPEC_ArsenalPills", [_pillPend, _pillNew]];
+
+// Filtres : recherche, état, tri.
+private _fy = _tabY + _rowH + _pad * 0.7;
+private _stateW = 0.12 * safezoneW;
+private _sortW = 0.095 * safezoneW;
+private _searchW = _w - 2 * _pad - _stateW - _sortW - 2 * _gap;
+(["RscText", [_pad, _fy, _searchW, _rowH]] call _mk) ctrlSetBackgroundColor [0.065, 0.078, 0.07, 1];
+(["RscText", [_pad, _fy + _rowH - _pxH, _searchW, _pxH]] call _mk) ctrlSetBackgroundColor [0.20, 0.28, 0.23, 1];
+private _search = ["RscEdit", [_pad + 0.004, _fy, _searchW - 0.008, _rowH], 884420] call _mk;
+_search ctrlSetFont _fR;
 _search ctrlSetFontHeight _fsS;
-_search ctrlSetTooltip "Rechercher une tenue (nom, collection, auteur)";
+_search ctrlSetTooltip (("Rechercher une tenue (nom, collection, auteur, état)") call comspec_overwatch_connect_fnc_tr);
 _search ctrlAddEventHandler ["KeyUp", { ["filter"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
+// Focus dans un de nos champs : ACE garde ses raccourcis pour lui (voir l'en-tête).
+private _typing = {
+    params ["_e"];
+    _e ctrlAddEventHandler ["SetFocus", { ace_arsenal_leftSearchbarFocus = true; }];
+    _e ctrlAddEventHandler ["KillFocus", { ace_arsenal_leftSearchbarFocus = false; }];
+};
+[_search] call _typing;
 _grp setVariable ["COMSPEC_ArsenalSearch", _search];
-private _ph = ["RscText", [_sx + 0.006, _tabY, _searchW - 0.012, _rowH]] call _mk;
-_ph ctrlSetText "Rechercher…";
-_ph ctrlSetFontHeight _fsS;
-_ph ctrlSetTextColor [0.5, 0.6, 0.57, 1];
+private _ph = [[_pad + 0.006, _fy, _searchW - 0.012, _rowH], "Rechercher une tenue, une collection, un auteur…", _fR, _fsS, [0.45, 0.53, 0.48, 1]] call _txt;
 _ph ctrlEnable false;
 _grp setVariable ["COMSPEC_ArsenalSearchPh", _ph];
-private _combo = ["RscCombo", [_w - _pad - _comboW, _tabY, _comboW, _rowH], 884421] call _mk;
-_combo ctrlSetFontHeight _fsS;
-_combo ctrlAddEventHandler ["LBSelChanged", { ["filter"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
-_grp setVariable ["COMSPEC_ArsenalCombo", _combo];
+private _stateCombo = ["RscCombo", [_pad + _searchW + _gap, _fy, _stateW, _rowH], 884421] call _mk;
+_stateCombo ctrlSetFont _fR;
+_stateCombo ctrlSetFontHeight _fsS;
+_stateCombo ctrlSetTooltip (("Filtrer par état de synchronisation avec le site") call comspec_overwatch_connect_fnc_tr);
+_stateCombo ctrlAddEventHandler ["LBSelChanged", { ["stateFilter"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
+_grp setVariable ["COMSPEC_ArsenalStateCombo", _stateCombo];
+private _sortCombo = ["RscCombo", [_w - _pad - _sortW, _fy, _sortW, _rowH], 884423] call _mk;
+_sortCombo ctrlSetFont _fR;
+_sortCombo ctrlSetFontHeight _fsS;
+{
+    _x params ["_k", "_label"];
+    private _i = _sortCombo lbAdd ((_label) call comspec_overwatch_connect_fnc_tr);
+    _sortCombo lbSetData [_i, _k];
+} forEach [["coll", "Tri : collection"], ["name", "Tri : nom"], ["state", "Tri : état"], ["recent", "Tri : plus récentes"]];
+private _sortKey = profileNamespace getVariable ["COMSPEC_ArsenalSort", "coll"];
+_sortCombo lbSetCurSel ((["coll", "name", "state", "recent"] find _sortKey) max 0);
+_sortCombo ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ["sort", _c lbData _i] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
+_grp setVariable ["COMSPEC_ArsenalSort", _sortKey];
 
-// Corps : liste à gauche, fiche à droite.
-private _bodyY = _tabY + _rowH + _pad * 0.6;
-private _footH = _rowH * 2 + 0.006;
+// Collections en pastilles : posées par arsenalOverlayFill dans cette bande, flèches si elles débordent.
+private _cy = _fy + _rowH + _pad * 0.6;
+private _chipH = _rowH * 0.9;
+_grp setVariable ["COMSPEC_ArsenalChipBand", [_pad, _cy, _w - 2 * _pad, _chipH]];
+private _arrW = _chipH * _pxW / _pxH;
+_grp setVariable ["COMSPEC_ArsenalChipArrows", [
+    [[_pad, _cy, _arrW, _chipH], "‹", "chipPrev", "COMSPEC_RscButtonAtak", "Collections précédentes"] call _btn,
+    [[_w - _pad - _arrW, _cy, _arrW, _chipH], "›", "chipNext", "COMSPEC_RscButtonAtak", "Collections suivantes"] call _btn
+]];
+_grp setVariable ["COMSPEC_ArsenalChips", []];
+
+// Corps : liste à gauche (en-têtes de colonnes), fiche à droite.
+private _bodyY = _cy + _chipH + _pad * 0.7;
+private _footH = _rowH * 2 + _gap + _guiH * 0.2;
 private _bodyH = _h - _bodyY - _footH - _pad;
-private _listW = _w * 0.56;
-private _list = ["RscListNBox", [_pad, _bodyY, _listW - _pad, _bodyH], 884404] call _mk;
-_list ctrlSetBackgroundColor [0.022, 0.03, 0.034, 1];
+private _listW = (_w - 2 * _pad - _gap) * 0.55;
+(["RscText", [_pad, _bodyY, _listW, _bodyH]] call _mk) ctrlSetBackgroundColor [0.045, 0.055, 0.05, 1];
+private _colPos = [0, 0.045, 0.58, 0.79];
+_grp setVariable ["COMSPEC_ArsenalColPos", _colPos];
+private _lhH = _guiH * 0.95;
+private _colHead = [];
+{
+    private _cx = _pad + (_colPos select (_forEachIndex + 1)) * _listW + 0.004;
+    private _nx = if (_forEachIndex < 2) then { _pad + (_colPos select (_forEachIndex + 2)) * _listW } else { _pad + _listW };
+    _colHead pushBack ([[_cx, _bodyY + 0.002, _nx - _cx - 0.004, _lhH], _x, _fB, _guiH * 0.66, [0.50, 0.60, 0.54, 1]] call _txt);
+} forEach ["TENUE", "COLLECTION", "ÉTAT"];
+_grp setVariable ["COMSPEC_ArsenalColHead", _colHead];
+(["RscText", [_pad, _bodyY + _lhH + 0.002, _listW, _pxH]] call _mk) ctrlSetBackgroundColor [0.14, 0.19, 0.16, 1];
+// Barre de sélection (Mes tenues) sous la liste.
+private _tbH = _rowH * 0.9;
+private _list = ["COMSPEC_RscArsenalOutfitList", [_pad, _bodyY + _lhH + 0.004, _listW, _bodyH - _lhH - 0.006 - _tbH - _gap], 884404] call _mk;
+_list ctrlSetFont _fR;
 _list ctrlSetFontHeight _fs;
-_list lnbSetColumnsPos [0, 0.5, 0.78];
+_list lnbSetColumnsPos _colPos;
 _list ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ["select", _i] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
 _list ctrlAddEventHandler ["LBDblClick", { params ["_c", "_i"]; ["apply", _i] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
 _grp setVariable ["COMSPEC_ArsenalList", _list];
+private _tby = _bodyY + _bodyH - _tbH;
+private _tbx = _pad;
+private _pickBtns = [];
+{
+    _x params ["_share", "_act", "_cls", "_tip"];
+    private _bw = (_listW - 3 * 0.004) * _share;
+    _pickBtns pushBack ([[_tbx, _tby, _bw, _tbH], "", _act, _cls, _tip, _fB] call _btn);
+    _tbx = _tbx + _bw + 0.004;
+} forEach [
+    [0.28, "pick", "COMSPEC_RscButtonAtak", "Cocher plusieurs tenues pour les supprimer en une fois"],
+    [0.22, "markAll", "COMSPEC_RscButtonAtak", "Coche toutes les tenues affichées (recherche, état et collection appliqués)"],
+    [0.32, "deleteMarked", "COMSPEC_RscButtonAtakDanger", "Supprime de votre arsenal, sur cet ordinateur, les tenues cochées. Celles déjà sur le site y restent."],
+    [0.18, "undoDelete", "COMSPEC_RscButtonAtak", "Remet dans votre arsenal les tenues de la dernière suppression"]
+];
+_grp setVariable ["COMSPEC_ArsenalPickBtns", _pickBtns];
+_grp setVariable ["COMSPEC_ArsenalPickMode", false];
+_grp setVariable ["COMSPEC_ArsenalMarked", []];
+// Textes et états de la barre de sélection (cochées, mode, annulation possible).
+_grp setVariable ["COMSPEC_ArsenalPickRefresh", {
+    params ["_g"];
+    (_g getVariable ["COMSPEC_ArsenalPickBtns", []]) params [["_bPick", controlNull], ["_bAll", controlNull], ["_bDel", controlNull], ["_bUndo", controlNull]];
+    private _local = (_g getVariable ["COMSPEC_ArsenalTab", "local"]) isEqualTo "local";
+    private _mode = _local && {_g getVariable ["COMSPEC_ArsenalPickMode", false]};
+    private _marked = _g getVariable ["COMSPEC_ArsenalMarked", []];
+    private _shown = (_g getVariable ["COMSPEC_ArsenalShown", []]) apply { toLower (_x select 0) };
+    private _allOn = _shown isNotEqualTo [] && {(_shown findIf { !(_x in _marked) }) < 0};
+    private _trash = profileNamespace getVariable ["COMSPEC_ArsenalTrash", []];
+    { _x ctrlShow _local; } forEach [_bPick, _bAll, _bDel, _bUndo];
+    if (!_local) exitWith {};
+    _bPick ctrlSetText ((["SÉLECTION MULTIPLE", "TERMINER"] select _mode) call comspec_overwatch_connect_fnc_tr);
+    _bAll ctrlSetText ((["TOUT COCHER", "TOUT DÉCOCHER"] select _allOn) call comspec_overwatch_connect_fnc_tr);
+    _bAll ctrlEnable (_mode && {_shown isNotEqualTo []});
+    _bDel ctrlSetText (format [("SUPPRIMER LA SÉLECTION (%1)") call comspec_overwatch_connect_fnc_tr, count _marked]);
+    _bDel ctrlEnable (_mode && {_marked isNotEqualTo []});
+    _bUndo ctrlSetText (format [("ANNULER (%1)") call comspec_overwatch_connect_fnc_tr, count _trash]);
+    _bUndo ctrlEnable (_trash isNotEqualTo []);
+}];
 
-private _dx = _listW + 0.004;
+private _dx = _pad + _listW + _gap;
 private _dw = _w - _dx - _pad;
-private _dbg = ["RscText", [_dx, _bodyY, _dw, _bodyH]] call _mk;
-_dbg ctrlSetBackgroundColor [0.05, 0.065, 0.07, 1];
-private _dHead = ["RscStructuredText", [_dx + _pad * 0.6, _bodyY + _pad * 0.5, _dw - _pad * 1.2, _guiH * 2.4]] call _mk;
+private _ip = 0.010;
+(["RscText", [_dx, _bodyY, _dw, _bodyH]] call _mk) ctrlSetBackgroundColor [0.055, 0.067, 0.06, 1];
+private _iw = _dw - 2 * _ip;
+private _ix = _dx + _ip;
+// Portrait opérateur (comme ATAK) à droite du titre.
+private _avS = (_guiH * 3.2) min (_iw * 0.22);
+private _dHead = ["RscStructuredText", [_ix, _bodyY + _ip * 0.6, _iw - _avS - _gap, _guiH * 2.5]] call _mk;
 _grp setVariable ["COMSPEC_ArsenalDetailHead", _dHead];
-// Icônes d'équipement : 2 rangées de 4 cases.
-private _cell = ((_dw - _pad * 1.2 - 3 * 0.006) / 4) min (_guiH * 3.2 * _pxW / _pxH);
-private _cellH = _cell * _pxH / _pxW;
-private _iy = _bodyY + _pad * 0.5 + _guiH * 2.5;
+private _avBg = ["RscText", [_ix + _iw - _avS, _bodyY + _ip * 0.6, _avS, _avS]] call _mk;
+_avBg ctrlSetBackgroundColor [0.075, 0.09, 0.08, 1];
+private _avPic = ["RscPictureKeepAspect", [_ix + _iw - _avS + _pxW, _bodyY + _ip * 0.6 + _pxH, _avS - 2 * _pxW, _avS - 2 * _pxH], 884430] call _mk;
+_avPic ctrlShow false;
+_grp setVariable ["COMSPEC_ArsenalAvatar", [_avBg, _avPic]];
+// Badge d'état et phrase qui l'explique.
+private _by = _bodyY + _ip * 0.6 + (_avS max (_guiH * 2.5)) + 0.006;
+private _badge = [[_ix, _by, 0.1, _guiH * 1.0], "", _fB, _guiH * 0.7, [0.03, 0.04, 0.035, 1], _green] call _txt;
+_badge ctrlSetText "";
+_grp setVariable ["COMSPEC_ArsenalBadge", _badge];
+private _flags = ["RscStructuredText", [_ix, _by + _guiH * 1.05, _iw, _guiH * 1.05]] call _mk;
+_grp setVariable ["COMSPEC_ArsenalDetailFlags", _flags];
+private _note = ["RscStructuredText", [_ix, _by + _guiH * 2.15, _iw, _guiH * 1.55]] call _mk;
+_grp setVariable ["COMSPEC_ArsenalBadgeNote", _note];
+private _syncLine = ["RscStructuredText", [_ix, _by + _guiH * 3.7, _iw, _guiH * 1.05]] call _mk;
+_grp setVariable ["COMSPEC_ArsenalDetailSync", _syncLine];
+// Pièces de la tenue : 2 rangées de 4 cases, icône et légende (Arme, Tenue…).
+private _cg = 0.006;
+private _cellW = (_iw - 3 * _cg) / 4;
+private _picH = (_cellW * _pxH / _pxW * 0.55) min (_guiH * 2.2);
+private _capH = _guiH * 0.72;
+private _cellH = _picH + _capH;
+private _gy = _by + _guiH * 4.85;
 private _pics = [];
 for "_i" from 0 to 7 do {
-    private _cx = _dx + _pad * 0.6 + (_i mod 4) * (_cell + 0.006);
-    private _cy = _iy + (floor (_i / 4)) * (_cellH + 0.006);
-    private _cb = ["RscText", [_cx, _cy, _cell, _cellH]] call _mk;
-    _cb ctrlSetBackgroundColor [0.08, 0.1, 0.11, 1];
-    _cb ctrlShow false;
-    private _p = ["RscPictureKeepAspect", [_cx + _cell * 0.08, _cy + _cellH * 0.08, _cell * 0.84, _cellH * 0.84], 884408 + _i] call _mk;
-    _p ctrlShow false;
-    _pics pushBack [_cb, _p];
+    private _cx = _ix + (_i mod 4) * (_cellW + _cg);
+    private _cy2 = _gy + (floor (_i / 4)) * (_cellH + _cg);
+    private _cb = ["RscText", [_cx, _cy2, _cellW, _cellH]] call _mk;
+    _cb ctrlSetBackgroundColor [0.075, 0.09, 0.08, 1];
+    private _p = ["RscPictureKeepAspect", [_cx + _cellW * 0.08, _cy2 + _picH * 0.06, _cellW * 0.84, _picH * 0.88], 884408 + _i] call _mk;
+    private _cap = [[_cx, _cy2 + _picH, _cellW, _capH], "", _fR, _guiH * 0.58, [0.62, 0.70, 0.65, 1]] call _txt;
+    _cap ctrlSetText "";
+    { _x ctrlShow false; } forEach [_cb, _p, _cap];
+    _pics pushBack [_cb, _p, _cap];
 };
 _grp setVariable ["COMSPEC_ArsenalPreviewPics", _pics];
-private _actY = _bodyY + _bodyH - (_rowH * 3 + 0.012) - _pad * 0.5;
-private _ny = _iy + 2 * (_cellH + 0.006) + 0.004;
-private _names = ["RscStructuredText", [_dx + _pad * 0.6, _ny, _dw - _pad * 1.2, (_actY - _ny - 0.004) max _guiH]] call _mk;
+// Actions de la fiche : Enfiler (pleine largeur), puis Envoyer / Importer et Supprimer côte à côte.
+private _actY = _bodyY + _bodyH - _ip - (_rowH * 2 + _gap);
+private _ny = _gy + 2 * (_cellH + _cg) + 0.004;
+private _namesGrp = ["RscControlsGroup", [_ix, _ny, _iw, (_actY - _ny - _gap) max _guiH]] call _mk;
+private _names = _display ctrlCreate ["RscStructuredText", -1, _namesGrp];
+_names ctrlSetPosition [0, 0, _iw - 0.012, _guiH];
+_names ctrlCommit 0;
 _grp setVariable ["COMSPEC_ArsenalPreviewNames", _names];
-private _aw = _dw - _pad * 1.2;
-private _ax = _dx + _pad * 0.6;
+private _half = (_iw - _gap) / 2;
 _grp setVariable ["COMSPEC_ArsenalDetailBtns", [
-    [[_ax, _actY, _aw, _rowH], "ENFILER", "apply", [0.12, 0.42, 0.30, 1], "Mettre cette tenue sur le mannequin (double-clic dans la liste)", "PuristaSemibold"] call _btn,
-    [[_ax, _actY + _rowH + 0.006, _aw, _rowH], "", "keep", [0.12, 0.22, 0.38, 1]] call _btn,
-    [[_ax, _actY + 2 * (_rowH + 0.006), _aw, _rowH], "", "remove", [0.32, 0.12, 0.12, 1]] call _btn
+    [[_ix, _actY, _iw, _rowH], "ENFILER", "apply", "COMSPEC_RscButtonAtakPrimary", "Mettre cette tenue sur le mannequin et fermer le panneau", _fB] call _btn,
+    [[_ix, _actY + _rowH + _gap, _half, _rowH], "", "keep", "COMSPEC_RscButtonAtak", "", _fB] call _btn,
+    [[_ix + _half + _gap, _actY + _rowH + _gap, _half, _rowH], "", "remove", "COMSPEC_RscButtonAtakDanger"] call _btn
 ]];
 
-// Pied : actions groupées et enregistrement de la tenue portée.
-private _fy = _h - _footH - _pad * 0.5;
-private _fw = (_w - 2 * _pad - 0.008) / 2;
-_grp setVariable ["COMSPEC_ArsenalBulk", [[_pad, _fy, _fw, _rowH], "", "bulk", [0.10, 0.17, 0.20, 1]] call _btn];
-private _nbg = ["RscText", [_pad + _fw + 0.008, _fy, _fw * 0.6, _rowH]] call _mk;
-_nbg ctrlSetBackgroundColor [0.02, 0.026, 0.03, 1];
-private _nameEdit = ["RscEdit", [_pad + _fw + 0.012, _fy, _fw * 0.6 - 0.008, _rowH], 884422] call _mk;
+// Pied : action groupée, enregistrement de la tenue portée, aide.
+private _fty = _h - _pad * 0.6 - _footH;
+private _fw = (_w - 2 * _pad - _gap) / 2;
+private _syncW = _fw * 0.46;
+_grp setVariable ["COMSPEC_ArsenalBulk", [[_pad, _fty, _fw - _syncW - _gap, _rowH], "", "bulk", "COMSPEC_RscButtonAtak", "", _fB] call _btn];
+// Tout basculer : toutes les tenues de l'organisation dans l'arsenal ACE, les miennes vers le site, sans rien écraser.
+[[_pad + _fw - _syncW, _fty, _syncW, _rowH], "TOUT BASCULER DANS L'ARSENAL ACE", "syncAll", "COMSPEC_RscButtonAtakPrimary", "Récupère toutes les tenues de l'organisation dans « Mes équipements » d'ACE et envoie au site celles qui n'y sont pas. Rien n'est supprimé ni remplacé.", _fB] call _btn;
+private _sx = _pad + _fw + _gap;
+private _saveW = 0.12 * safezoneW;
+private _editW = _fw - _saveW - _gap;
+(["RscText", [_sx, _fty, _editW, _rowH]] call _mk) ctrlSetBackgroundColor [0.065, 0.078, 0.07, 1];
+(["RscText", [_sx, _fty + _rowH - _pxH, _editW, _pxH]] call _mk) ctrlSetBackgroundColor [0.20, 0.28, 0.23, 1];
+private _nameEdit = ["RscEdit", [_sx + 0.004, _fty, _editW - 0.008, _rowH], 884422] call _mk;
+_nameEdit ctrlSetFont _fR;
 _nameEdit ctrlSetFontHeight _fsS;
-_nameEdit ctrlSetText (profileNamespace getVariable ["COMSPEC_ArsenalLastSaveName", ""]);
-_nameEdit ctrlSetTooltip "Nom de la tenue à enregistrer (ex. SOAR - Breacher). Le préfixe avant « - » sert de collection.";
+_nameEdit ctrlSetText (profileNamespace getVariable ["COMSPEC_ArsenalLastSaveName", ""]); // i18n:brut
+_nameEdit ctrlSetTooltip (("Nom de la tenue à enregistrer (ex. SOAR - Breacher). Le préfixe avant « - » sert de collection.") call comspec_overwatch_connect_fnc_tr);
 _grp setVariable ["COMSPEC_ArsenalSaveName", _nameEdit];
-private _nph = ["RscText", [_pad + _fw + 0.014, _fy, _fw * 0.6 - 0.012, _rowH]] call _mk;
-_nph ctrlSetText "Nom de la tenue à enregistrer…";
-_nph ctrlSetFontHeight _fsS;
-_nph ctrlSetTextColor [0.5, 0.6, 0.57, 1];
+[_nameEdit] call _typing;
+// Entrée : enregistre la tenue portée sous ce nom (même effet que le bouton).
+_nameEdit ctrlAddEventHandler ["KeyDown", {
+    params ["", "_key"];
+    if (_key in [28, 156]) then { [{ ["saveCurrent"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }] call CBA_fnc_execNextFrame; };
+    false
+}];
+private _nph = [[_sx + 0.006, _fty, _editW - 0.012, _rowH], "Nom de la tenue portée (ex. SOAR - Breacher)…", _fR, _fsS, [0.45, 0.53, 0.48, 1]] call _txt;
 _nph ctrlEnable false;
 _nph ctrlShow ((ctrlText _nameEdit) isEqualTo "");
 _nameEdit setVariable ["ph", _nph];
 _nameEdit ctrlAddEventHandler ["KeyUp", { params ["_c"]; (_c getVariable ["ph", controlNull]) ctrlShow ((ctrlText _c) isEqualTo ""); }];
-[[_pad + _fw * 1.6 + 0.012, _fy, _fw * 0.4 - 0.004, _rowH], "ENREGISTRER ET PARTAGER", "saveCurrent", [0.12, 0.42, 0.30, 1], "Enregistre la tenue portée par le mannequin dans votre arsenal et la partage à l'organisation"] call _btn;
-private _help = ["RscStructuredText", [_pad, _fy + _rowH + 0.004, _w - 2 * _pad, _rowH]] call _mk;
+[[_w - _pad - _saveW, _fty, _saveW, _rowH], "ENREGISTRER ET ENVOYER", "saveCurrent", "COMSPEC_RscButtonAtakPrimary", "Enregistre la tenue portée par le mannequin dans votre arsenal et l'envoie au site pour l'organisation", _fB] call _btn;
+private _help = ["RscStructuredText", [_pad, _fty + _rowH + _gap, _w - 2 * _pad, _rowH]] call _mk;
 _grp setVariable ["COMSPEC_ArsenalHint", _help];
 _grp setVariable ["COMSPEC_ArsenalSetHint", {
     params ["_g", "_text"];
     private _c = _g getVariable ["COMSPEC_ArsenalHint", controlNull];
-    if (!isNull _c) then { _c ctrlSetStructuredText parseText format ["<t size='0.78' color='#8aa8a0'>%1</t>", _text]; };
+    if (!isNull _c) then { _c ctrlSetStructuredText parseText (format ["<t size='0.8' color='#8fa596'>%1</t>", (_text) call comspec_overwatch_connect_fnc_tr]); };
 }];
-_grp setVariable ["COMSPEC_ArsenalTab", profileNamespace getVariable ["COMSPEC_ArsenalTab", "cloud"]];
+_grp setVariable ["COMSPEC_ArsenalTab", profileNamespace getVariable ["COMSPEC_ArsenalTab", "local"]];
+_grp setVariable ["COMSPEC_ArsenalColl", ""];
+_grp setVariable ["COMSPEC_ArsenalStateKey", "all"];
+_grp setVariable ["COMSPEC_ArsenalChipOffset", 0];
 [_display, [], ""] call comspec_overwatch_connect_fnc_arsenalOverlayPreview;

@@ -1,9 +1,9 @@
 /*
-    Affiche le journal SSE du joueur (hint structuré V0.1).
+    Affiche le journal SSE du joueur (notification du téléphone ATAK : rien par-dessus l'écran de jeu).
 */
 private _journal = [] call comspec_sse_fnc_getJournal;
 if (count _journal == 0) exitWith {
-    hint "Journal SSE vide.";
+    ["Journal SSE vide.", "INFO"] call comspec_sse_fnc_notify;
 };
 
 private _lines = ["=== JOURNAL SSE ==="];
@@ -23,5 +23,5 @@ private _slice = _journal select [((count _journal) - 12) max 0, 12];
     };
 } forEach _slice;
 
-hint (_lines joinString endl);
+[_lines joinString endl, "INFO"] call comspec_sse_fnc_notify;
 ["Journal SSE ouvert"] call comspec_sse_fnc_log;

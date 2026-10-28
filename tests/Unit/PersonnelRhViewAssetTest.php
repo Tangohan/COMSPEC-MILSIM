@@ -50,7 +50,7 @@ final class PersonnelRhViewAssetTest extends TestCase
         self::assertStringContainsString("\$returnView === 'rh'", $controller);
         self::assertStringContainsString('$returnToEffectifs', $controller);
         self::assertStringContainsString("\$returnView === 'rh' && EffectifsLmsAccess::allows", $controller);
-        self::assertStringContainsString('$canSensitive || $isForumMod', $controller);
+        self::assertStringContainsString('$canSensitive || $isReportModerator', $controller);
         self::assertStringContainsString('layoutMainCompact', $controller);
         self::assertStringContainsString("['rh', 'commandement']", $controller);
         self::assertStringContainsString("\$personnelViewMode === 'rh'", $controller);

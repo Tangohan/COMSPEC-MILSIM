@@ -30,8 +30,12 @@ final class OverwatchAceAthenaMenuAssetTest extends TestCase
         self::assertStringContainsString('Connexion Athena', $ace);
         self::assertStringContainsString('openLogin', $ace);
         self::assertStringNotContainsString('"COMSPEC Overwatch"', $ace);
-        self::assertStringContainsString('Menus ACE Overwatch étendus', $pre);
-        self::assertMatchesRegularExpression('/"comspec_overwatch_ace_menus"[\s\S]{0,900},\s*true\s*\]\s*call CBA_fnc_addSetting/', $pre);
+        self::assertStringContainsString('Menus ACE Overwatch complets', $pre);
+        // Les réglages passent désormais par le wrapper i18n fnc_addSetting, qui délègue à CBA_fnc_addSetting.
+        self::assertMatchesRegularExpression('/"comspec_overwatch_ace_menus"[\s\S]{0,900},\s*true\s*\]\s*call (?:CBA_fnc_addSetting|comspec_overwatch_connect_fnc_addSetting)/', $pre);
+        $addSetting = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_addSetting.sqf');
+        self::assertStringContainsString('_a call CBA_fnc_addSetting', $addSetting);
+        self::assertStringContainsString('class addSetting', $cfg);
         self::assertStringContainsString('[] call comspec_overwatch_connect_fnc_initACE;', $post);
         self::assertStringContainsString('[] call comspec_overwatch_connect_fnc_initATAKMenu;', $post);
         self::assertStringContainsString('addAtakRepairAction', $post);

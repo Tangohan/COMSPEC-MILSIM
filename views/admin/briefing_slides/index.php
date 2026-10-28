@@ -180,8 +180,8 @@ require base_path('views/partials/ath_kpis.php');
                     <span class="ath-field__label">Lien de la présentation</span>
                     <input type="url" name="google_slides_url" maxlength="512" value="<?= $h($googleSlidesUrl) ?>" class="ath-field__input" placeholder="https://docs.google.com/presentation/d/…">
                     <span class="ath-field__help">
-                        Dans Google Slides : Partager → « Toute personne disposant du lien ».
-                        Laissez vide pour retirer le lien.
+                        Dans Google Slides : Partager → Accès général → « Toute personne disposant du lien », puis copiez le lien de la barre d’adresse (…/presentation/d/…/edit).
+                        Les liens « Publier sur le Web » (…/d/e/…) ne sont pas lisibles par la tablette. Le lien est vérifié à l’enregistrement. Laissez vide pour retirer le lien.
                     </span>
                 </label>
             </div>
@@ -447,7 +447,7 @@ require base_path('views/partials/ath_kpis.php');
     <?php endif; ?>
 
     <div class="ath-form__actions">
-        <a href="<?= $h(url('admin/atak-config')) ?>" class="ath-btn">Configuration ATAK</a>
+        <a href="<?= $h(url('back-office/ressources/atak-config')) ?>" class="ath-btn">Configuration ATAK</a>
         <a href="<?= $h(url('atak/setup')) ?>" class="ath-btn">Assistant d’installation du mod</a>
     </div>
 </div>

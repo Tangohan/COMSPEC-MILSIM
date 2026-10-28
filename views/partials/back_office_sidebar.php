@@ -19,7 +19,7 @@ $tenantType = \App\Services\Community\TenantTypeConfig::TYPE_FULL;
 try {
     $tid = (int) \App\Core\Session::get('tenant_id');
     if ($tid > 0) {
-        $tr = (new \App\Repositories\TenantRepository())->findById($tid);
+        $tr = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
         if ($tr !== null) {
             $tenantLabel = trim((string) ($tr['name'] ?? ''));
             $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType(
@@ -36,7 +36,7 @@ $boHrefAllowed = static function (string $href) use ($tenantType): bool {
         : trim((string) $href, '/');
     if ($path !== '' && !\App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, $path)) {
         $tenantOk = false;
-        foreach (['back-office/', 'admin/', 'formation/', 'formations/', 'documents/', 'forum/', 'atak/', 'personnel/', 'enlistment/', 'jnet/'] as $needle) {
+        foreach (['back-office/', 'admin/', 'formation/', 'formations/', 'documents/', 'atak/', 'personnel/', 'enlistment/', 'jnet/'] as $needle) {
             $pos = strpos($path, $needle);
             if ($pos !== false) {
                 $tenantOk = \App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, substr($path, $pos));
@@ -46,6 +46,9 @@ $boHrefAllowed = static function (string $href) use ($tenantType): bool {
         if (!$tenantOk) {
             return false;
         }
+    }
+    if ($path !== '' && \App\Services\Community\TenantTypeConfig::backOfficePathHidden($tenantType, $path)) {
+        return false;
     }
 
     // Masquer les entrées sans droit (Gate), pas seulement filtrer par type de communauté.
@@ -67,7 +70,7 @@ try {
 
 $boBadges = [
     'recruitments_submitted' => 0,
-    'forum_moderation_total' => 0,
+    'reports_moderation_total' => 0,
     'personal_inbox' => 0,
     'messages_unread' => 0,
     'events_rsvp_pending' => 0,
@@ -127,6 +130,7 @@ $boNavAudit = str_starts_with($p, 'back-office/audit');
 $boNavMod = str_starts_with($p, 'back-office/moderation');
 $boNavEventInsights = str_starts_with($p, 'back-office/events/insights');
 $boNavAar = str_starts_with($p, 'back-office/atak/comptes-rendus');
+$boNavDebrief = str_starts_with($p, 'back-office/atak/suivi-cr');
 $boNavPlanning = str_starts_with($p, 'back-office/planification');
 $boNavMissionsPortal = $p === 'back-office/missions' || str_starts_with($p, 'back-office/missions/');
 $boNavCooperation = $p === 'back-office/cooperation' || str_starts_with($p, 'back-office/cooperation/');
@@ -184,7 +188,7 @@ try {
     $boTidSide = (int) \App\Core\Session::get('tenant_id');
     $boUserName = trim((string) (\App\Core\Session::get('display_name') ?? \App\Core\Session::get('callsign') ?? ''));
     if ($boUserName === '') {
-        $boUserName = 'Administrateur';
+        $boUserName = 'Gestionnaire';
     }
     $parts = preg_split('/\s+/u', $boUserName) ?: [];
     if (count($parts) >= 2) {
@@ -197,7 +201,7 @@ try {
     }
     if ($boTidSide > 0 && $boUidSide > 0) {
         $uSide = \App\Core\Container::get(\App\Repositories\UserRepository::class)->findById($boUidSide, $boTidSide);
-        if (is_array($uSide) && !empty($uSide['grade_id'])) {
+        if (is_array($uSide) && !empty($uSide['grade_id']) && !\App\Support\TenantGrades::hidden($boTidSide)) {
             $grSide = \App\Core\Container::get(\App\Repositories\GradeRepository::class)
                 ->findById((int) $uSide['grade_id'], $boTidSide);
             if (is_array($grSide)) {
@@ -243,7 +247,7 @@ try {
 } catch (\Throwable) {
 }
 
-$tenantShort = $tenantLabel !== '' ? mb_strtoupper($tenantLabel, 'UTF-8') : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'ADMINISTRATION') : 'ADMINISTRATION');
+$tenantShort = $tenantLabel !== '' ? mb_strtoupper($tenantLabel, 'UTF-8') : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'GESTION') : 'GESTION');
 
 require __DIR__ . '/ath_sidebar_nav.php';
 
@@ -253,7 +257,7 @@ require __DIR__ . '/ath_sidebar_nav.php';
         <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__logo" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au tableau de bord') : 'Retour au tableau de bord') ?>" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au tableau de bord') : 'Retour au tableau de bord') ?>">A</a>
         <div class="ath-sidebar__brand">
             <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__brand-name" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au tableau de bord') : 'Retour au tableau de bord') ?>">ATHENA<span>.</span></a>
-            <div class="ath-sidebar__brand-sub"><?= $h(!empty($isOperatorBoNav) ? 'ESPACE OPÉRATEUR' : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'ADMINISTRATION') : 'ADMINISTRATION')) ?> · <?= $h($tenantShort) ?></div>
+            <div class="ath-sidebar__brand-sub"><?= $h(!empty($isOperatorBoNav) ? 'ESPACE OPÉRATEUR' : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'GESTION') : 'GESTION')) ?> · <?= $h($tenantShort) ?></div>
         </div>
         <button type="button" class="ath-sidebar__toggle" data-ath-sidebar-toggle title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Plier le menu') : 'Plier le menu') ?>" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Plier le menu') : 'Plier le menu') ?>">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
@@ -320,7 +324,7 @@ require __DIR__ . '/ath_sidebar_nav.php';
             <?php endif; ?>
         </div>
         <div class="ath-sidebar__user-meta">
-            <div class="ath-sidebar__user-name"><?= $h(mb_strtoupper($boUserName, 'UTF-8')) ?></div>
+            <div class="ath-sidebar__user-name"><span class="<?= trim(staff_name_class((int) (\App\Core\Session::get('user_id') ?? 0))) ?>" data-staff-done><?= $h(mb_strtoupper($boUserName, 'UTF-8')) ?></span><?= staff_mark((int) (\App\Core\Session::get('user_id') ?? 0)) ?><?= \App\Services\Billing\DonorService::mark((int) (\App\Core\Session::get('user_id') ?? 0)) ?></div>
             <?php if ($boUserGradeLine !== ''): ?>
             <div class="ath-sidebar__user-role"><?= $h(mb_strtoupper($boUserGradeLine, 'UTF-8')) ?></div>
             <?php endif; ?>

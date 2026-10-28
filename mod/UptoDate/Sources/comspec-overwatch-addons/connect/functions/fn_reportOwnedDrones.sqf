@@ -17,6 +17,11 @@ if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", 
 private _backUntil = missionNamespace getVariable ["COMSPEC_ApiBackoffUntil", 0];
 if ((_backUntil isEqualType 0) && {diag_tickTime < _backUntil}) exitWith { 0 };
 if (isNull player) exitWith { 0 };
+// Drones non remontés par choix de la communauté (fn_pollDataFlows).
+if !((missionNamespace getVariable ["COMSPEC_DataFlows", createHashMap]) getOrDefault ["vehicles", true]) exitWith { 0 };
+// Téléphone cassé / éteint / brouillé / hors couverture : pas de piste drone (même règle que updatePosition).
+private _tx = [false] call comspec_overwatch_connect_fnc_canTransmit;
+if !(_tx getOrDefault ["can_transmit", true]) exitWith { 0 };
 
 private _uid = getPlayerUID player;
 private _now = diag_tickTime;
@@ -79,7 +84,8 @@ private _fnc_send = {
     private _json = [_data] call comspec_overwatch_connect_fnc_hashMapToJson;
     if (!(_json isEqualType "") || {_json isEqualTo ""}) exitWith { false };
     private _r = "COMSPECExtension" callExtension ["UpdateVehicleTracking", [_json]];
-    (_r isEqualType []) && {(_r param [0, ""]) isEqualTo "OK"}
+    // La DLL renvoie ["OK","queued"] dans _r select 0 : passer par le parseur commun.
+    (_r isEqualType []) && {(([_r] call comspec_overwatch_connect_fnc_parseAtakExtResponse) param [0, false]) isEqualTo true}
 };
 
 private _sent = 0;
@@ -153,13 +159,31 @@ private _next = [];
         };
     };
 
+    // Charges du drone : batterie (carburant) + munitions emportées (bombes, grenades largables…).
+    private _battery = round ((fuel _d) * 100);
+    private _payloadMap = createHashMap;
+    {
+        _x params ["_mag", "", ["_cnt", 0]];
+        if (_cnt <= 0) then { continue };
+        private _mcfg = configFile >> "CfgMagazines" >> _mag;
+        private _lbl = getText (_mcfg >> "displayNameShort");
+        if (_lbl isEqualTo "") then { _lbl = getText (_mcfg >> "displayName"); };
+        if (_lbl isEqualTo "") then { _lbl = _mag; };
+        private _cur = _payloadMap getOrDefault [_lbl, [0, 0]];
+        _payloadMap set [_lbl, [(_cur select 0) + _cnt, (_cur select 1) max (getNumber (_mcfg >> "count"))]];
+    } forEach (magazinesAllTurrets _d);
+    private _payload = [];
+    { _payload pushBack [_x, _y select 0, _y select 1]; } forEach _payloadMap;
+    private _payloadSig = _payload apply { _x select 1 };
+
     private _side = _d getVariable ["COMSPEC_DroneSide", sideUnknown];
     if (!(_side isEqualType sideUnknown) || {_side in [sideUnknown, civilian]}) then { _side = side group player; };
 
     // Delta (≈5 m, 2 m d’altitude, 5°)
-    private _sig = format ["%1|%2|%3|%4|%5|%6|%7|%8|%9",
+    private _sig = format ["%1|%2|%3|%4|%5|%6|%7|%8|%9|%10|%11",
         round ((_pos select 0) / 5), round ((_pos select 1) / 5), round (_agl / 2),
-        round (_dir / 5), _mode, _tgt apply { round (_x / 5) }, _taskKind, _custom, _icon];
+        round (_dir / 5), _mode, _tgt apply { round (_x / 5) }, _taskKind, _custom, _icon,
+        round (_battery / 5), _payloadSig];
     private _last = _d getVariable ["COMSPEC_UavTrackLastAt", -1e9];
     private _changed = _sig isNotEqualTo (_d getVariable ["COMSPEC_UavTrackSig", ""]);
     if ((_now - _last) < _gap) then { continue };
@@ -185,6 +209,9 @@ private _next = [];
         ["name", _custom],
         ["icon", _icon],
         ["task_radius", _taskRad],
+        ["battery", _battery],
+        ["health", round ((1 - (damage _d)) * 100)],
+        ["payload", _payload apply { createHashMapFromArray [["label", _x select 0], ["count", _x select 1], ["max", _x select 2]] }],
         ["seq", _seq]
     ];
     if (_tgt isNotEqualTo []) then {

@@ -17,7 +17,7 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
 missionNamespace setVariable ["COMSPEC_PhoneConnectLastError", "", false];
 
 private _tenantId = missionNamespace getVariable ["comspec_overwatch_tenant_id", ""];
-private _raw = ["COMSPECExtension" callExtension ["GetPhoneConnectInfo", [_tenantId]]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [["COMSPECExtension", "GetPhoneConnectInfo", [_tenantId]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _raw splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 
@@ -27,6 +27,7 @@ if (_prefix != "OK") exitWith {
         case "not_connected": { "Liaison Athena non établie — liez votre compte (téléphone ATAK → Compte Athena) ou vérifiez l’URL du mod, puis réessayez." };
         case "not_found": { "Adresse Athena incorrecte ou service indisponible (page introuvable). Utilisez https://athena.ttrd.fr/public sans slash final." };
         case "unauthorized": { "Accès refusé — liez votre compte Athena en jeu, ou renseignez la clé d’accès fournie par votre admin." };
+        case "client_untrusted": { "Ce module n’est pas reconnu. Installez la version officielle du pack, puis relancez Arma." };
         case "mod_steam_blocked": { "Accès au mod refusé pour cet identifiant Steam — contactez un administrateur de la communauté." };
         case "mod_ip_blocked": { "Accès au mod refusé depuis cette adresse réseau — contactez un administrateur de la communauté." };
         case "no_tenant": { "Communauté non reconnue — reliez votre compte Athena en jeu (code de liaison), puis réessayez « Connecter mon téléphone »." };

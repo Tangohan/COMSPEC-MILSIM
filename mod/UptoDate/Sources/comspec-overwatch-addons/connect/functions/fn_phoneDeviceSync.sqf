@@ -1,11 +1,8 @@
 /*
     Téléphone en jeu ↔ Athena (back-office, Parc de terminaux). Lancé une fois au démarrage (postInit).
     Toutes les 15 s, sur un client avec interface et une session Athena prête :
-    1. Relit l'identité gardée dans Athena (GetAuthState, cellules 26 à 29 : numéro, IMEI, MAC, type de numéro ;
-       l'extension les rafraîchit par SyncProfile chaque minute) et met à jour comspec_profile_phone, que
-       fn_phoneIdent du téléphone préfère au calcul local. Si l'IMEI ou la MAC changent côté Athena, l'appareil
-       en main reprend ces valeurs (COMSPEC_ATAK_PhoneGen remis à 0).
-    2. Remonte l'état du téléphone (télémétrie « phone », lot /api/atak/telemetry/batch) quand il change,
+    Le numéro attribué arrive par le rappel PhoneHandset (fn_extensionCallback), pas par une commande.
+    Remonte l'état du téléphone (télémétrie « phone », lot /api/atak/telemetry/batch) quand il change,
        sinon toutes les 2 minutes : batterie, état matériel, barres de signal, modèle, numéro / IMEI / MAC
        affichés, nombre de changements d'appareil. Vue d'administration hors jeu : le téléphone n'en sait rien.
 */
@@ -17,28 +14,7 @@ COMSPEC_PhoneDeviceSyncPfh = [{
     if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {};
     if (isNull player) exitWith {};
 
-    // 1. Identité Athena → téléphone.
-    private _gen = player getVariable ["COMSPEC_ATAK_PhoneGen", 0];
-    private _auth = [] call comspec_overwatch_connect_fnc_authStateCells;
-    private _db = ["phone_number", "phone_imei", "phone_mac", "phone_format"] apply { _auth getOrDefault [_x, ""] };
-    if ((_db select 0) isNotEqualTo "") then {
-        private _old = missionNamespace getVariable ["comspec_profile_phone", []];
-        if !(_old isEqualType []) then { _old = []; };
-        if (_old isNotEqualTo _db) then {
-            missionNamespace setVariable ["comspec_profile_phone", _db, false];
-            if ((count _old) > 0) then {
-                private _devChanged = ((_old param [1, ""]) isNotEqualTo (_db select 1)) || {(_old param [2, ""]) isNotEqualTo (_db select 2)};
-                // Un appareil changé en jeu vient d'être adopté par Athena : rien à annoncer au joueur.
-                private _fromSwap = _devChanged && {_gen > 0} && {(_old param [0, ""]) isEqualTo (_db select 0)};
-                if (_devChanged) then { player setVariable ["COMSPEC_ATAK_PhoneGen", 0, true]; _gen = 0; };
-                if (!_fromSwap && {!isNil "comspec_atak_native_fnc_notify"}) then {
-                    ["INFO", format ["Téléphone mis à jour par Athena : %1", _db select 0], 5, 20] call comspec_atak_native_fnc_notify;
-                };
-            };
-        };
-    };
-
-    // 2. État du téléphone → Athena (seulement avec le mod téléphone natif).
+    // État du téléphone → Athena (seulement avec le mod téléphone natif).
     if (isNil "comspec_atak_native_fnc_phoneIdent" || {isNil "comspec_atak_native_fnc_deviceHealth"}) exitWith {};
     private _has = if (isNil "comspec_atak_native_fnc_hasDevice") then { true } else { [player] call comspec_atak_native_fnc_hasDevice };
     private _health = [] call comspec_atak_native_fnc_deviceHealth;
@@ -57,8 +33,12 @@ COMSPEC_PhoneDeviceSyncPfh = [{
         };
     };
     private _ident = [player] call comspec_atak_native_fnc_phoneIdent;
+    // Version de l'ATAK natif jointe au modèle (affichée, floutée, sous les photos publiées sur Discord).
+    private _ver = getText (configFile >> "CfgPatches" >> "comspec_atak_native_main" >> "versionStr");
+    if (_ver isNotEqualTo "") then { _model = [format ["%1 · ATAK %2", _model, _ver], format ["ATAK %1", _ver]] select (_model isEqualTo ""); };
 
     // Envoi au changement (batterie par paliers de 5 %) ou toutes les 2 minutes.
+    private _gen = player getVariable ["COMSPEC_ATAK_PhoneGen", 0];
     private _sig = [_state, floor (_battery / 5), _bars, _model, _ident, _gen];
     private _now = diag_tickTime;
     private _last = missionNamespace getVariable ["COMSPEC_PhoneDeviceSyncLast", [[], -1e9]];

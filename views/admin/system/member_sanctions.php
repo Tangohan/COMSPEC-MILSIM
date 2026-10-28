@@ -18,7 +18,7 @@ $actionTypeLabel = static function (string $t): string {
     };
 };
 
-$forumLabel = static function (?string $json): string {
+$scopeLabel = static function (?string $json): string {
     if ($json === null || $json === '') {
         return '—';
     }
@@ -26,14 +26,21 @@ $forumLabel = static function (?string $json): string {
     if (!is_array($d)) {
         return '—';
     }
-    $f = (string) ($d['forum'] ?? '');
+    $parts = [];
+    if (!empty($d['account_lock'])) {
+        $parts[] = 'Compte verrouillé';
+    }
+    if (!empty($d['messages_blocked'])) {
+        $parts[] = 'Messagerie bloquée';
+    }
+    if (!empty($d['join_blocked'])) {
+        $parts[] = 'Inscription bloquée';
+    }
+    if (!empty($d['modules_blocked']) && is_array($d['modules_blocked'])) {
+        $parts[] = count($d['modules_blocked']) . ' domaine(s) limité(s)';
+    }
 
-    return match ($f) {
-        'read_only' => 'Forum : lecture seule',
-        'none' => 'Forum : aucun accès',
-        'full_access' => 'Forum : accès complet',
-        default => '—',
-    };
+    return $parts !== [] ? implode(' · ', $parts) : '—';
 };
 
 /** Libellé lisible pour le select « Membre concerné » : indicatif / identité civile, e-mail en secondaire. */
@@ -70,7 +77,7 @@ $memberOptionLabel = static function (array $u): string {
         <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Administration plateforme</p>
         <h1 class="text-2xl font-black text-slate-900">Sanctions membres (niveau site)</h1>
         <p class="mt-2 text-sm text-slate-600 leading-relaxed">
-            Mesures d’accès au compte, au forum, à la messagerie et aux domaines du portail, pour un membre d’une communauté donnée.
+            Mesures d’accès au compte, à la messagerie et aux domaines du portail, pour un membre d’une communauté donnée.
             Les <strong class="font-semibold text-slate-800">limitations « organisation »</strong> (formations, documents sans toucher au compte) restent du ressort des personnes habilitées dans chaque communauté.
         </p>
         <div class="mt-4 flex flex-wrap gap-3 text-sm">
@@ -141,14 +148,6 @@ $memberOptionLabel = static function (array $u): string {
         <div class="md:col-span-2" id="sys_mod_scope_wrap">
             <p class="text-xs font-semibold text-slate-600 mb-2">Portée (hors simple avertissement)</p>
             <div class="grid sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs text-slate-500 mb-1">Forum</label>
-                    <select name="forum_access" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
-                        <option value="full_access">Lecture et publication</option>
-                        <option value="read_only">Lecture seule</option>
-                        <option value="none">Aucun accès</option>
-                    </select>
-                </div>
                 <div class="space-y-2">
                     <label class="flex items-center gap-2 text-sm">
                         <input type="checkbox" name="messages_blocked" value="1" class="rounded border-slate-300"> Messagerie interne : envoi bloqué
@@ -189,7 +188,7 @@ $memberOptionLabel = static function (array $u): string {
                 <th class="text-left p-2">Date</th>
                 <th class="text-left p-2">Cible</th>
                 <th class="text-left p-2">Mesure</th>
-                <th class="text-left p-2">Forum</th>
+                <th class="text-left p-2">Portée</th>
                 <th class="text-left p-2">Acteur</th>
                 <th class="text-left p-2"></th>
             </tr>
@@ -205,7 +204,7 @@ $memberOptionLabel = static function (array $u): string {
                 <td class="p-2"><?= htmlspecialchars((string) ($a['created_at'] ?? '')) ?></td>
                 <td class="p-2"><?= htmlspecialchars((string) ($a['target_email'] ?? '')) ?></td>
                 <td class="p-2"><?= htmlspecialchars($actionTypeLabel((string) ($a['action_type'] ?? ''))) ?></td>
-                <td class="p-2"><?= htmlspecialchars($forumLabel(isset($a['restrictions_json']) ? (is_string($a['restrictions_json']) ? $a['restrictions_json'] : null) : null)) ?></td>
+                <td class="p-2"><?= htmlspecialchars($scopeLabel(isset($a['restrictions_json']) ? (is_string($a['restrictions_json']) ? $a['restrictions_json'] : null) : null)) ?></td>
                 <td class="p-2"><?= htmlspecialchars((string) ($a['actor_email'] ?? '—')) ?></td>
                 <td class="p-2">
                     <?php if (empty($a['revoked_at']) && in_array((string) ($a['action_type'] ?? ''), ['mute', 'suspend', 'ban'], true)): ?>

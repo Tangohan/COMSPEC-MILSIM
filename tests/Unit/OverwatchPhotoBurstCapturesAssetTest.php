@@ -19,13 +19,22 @@ final class OverwatchPhotoBurstCapturesAssetTest extends TestCase
         self::assertStringContainsString('2.8', $capture);
         self::assertStringContainsString('comspec_', $capture);
         self::assertStringContainsString('_skipArmaShot = true;', $capture);
-        self::assertStringContainsString('(_lowGiven find ".jpg") >= 0', $capture);
+        // Un PNG COMSPEC_* déjà pris n’est pas recliché ; les JPEG passent par _fnc_isJpegPath
+        // (le pont IceMan les envoie déjà avec skipArmaShot=true, voir ci-dessous).
+        self::assertStringContainsString('(_givenBase select [0, 8]) isEqualTo "comspec_" && {(_givenBase find ".png") >= 0}', $capture);
+        self::assertStringContainsString('private _fnc_isJpegPath', $capture);
         self::assertStringContainsString('_path isEqualTo "" && {_skipArmaShot}', $capture);
         self::assertStringNotContainsString('BCE_fnc_screenShot', $capture);
 
         self::assertStringContainsString('private _skipShot = true;', $bridge);
+        // Depuis docs/bugs/2026-09-13-quick-picture-discord-coupe.md, un JPEG BCE part tel quel
+        // (skipArmaShot=true) : aucun PNG Arma supplémentaire, donc plus de rafale.
         self::assertStringContainsString(
-            '[_path, _caption, _device, _feedId, false, true, false] call comspec_overwatch_connect_fnc_captureReconImage',
+            '[_filePath, _caption, _device, _feedId, true, false, true] call comspec_overwatch_connect_fnc_captureReconImage',
+            $bridge
+        );
+        self::assertStringNotContainsString(
+            'false, true, false] call comspec_overwatch_connect_fnc_captureReconImage',
             $bridge
         );
 

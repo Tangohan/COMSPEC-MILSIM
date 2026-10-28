@@ -134,6 +134,17 @@ if ($enrollment && $canAccessLearning && $firstLesson) {
 } elseif ($enrollment && $canAccessLearning) {
     $lmsOpeningCtaMode = 'open_fiche';
 }
+$courseDelivery = is_array($courseDelivery ?? null) ? $courseDelivery : null;
+$courseDeliveryOpenUrl = '';
+$courseDeliveryLabel = '';
+if ($courseDelivery !== null) {
+    $courseDeliveryLabel = ($courseDelivery['mode'] ?? '') === 'url_viewer' ? 'Ouvrir la visionneuse' : 'Ouvrir le lien';
+    if ($enrollment && $canAccessLearning && $slugForForms !== '') {
+        $courseDeliveryOpenUrl = url('formations/' . rawurlencode($slugForForms));
+        $lmsOpeningCtaMode = 'lesson';
+        $lmsOpeningLessonUrl = $courseDeliveryOpenUrl;
+    }
+}
 $lmsOpeningCtaLabel = ($enrollment && $canAccessLearning)
     ? ($hasCompletedAnyLesson ? 'Continuer' : 'Continuer vers le module')
     : 'Continuer';
@@ -224,6 +235,11 @@ $lmsPassedQuizIds = is_array($lmsPassedQuizIds ?? null) ? $lmsPassedQuizIds : []
                             <?php if (!empty($course['short_description'])): ?>
                             <p class="lms-fiche__lead"><?= htmlspecialchars((string) $course['short_description']) ?></p>
                             <?php endif; ?>
+                            <?php if ($courseDelivery !== null): ?>
+                            <p class="lms-fiche__lead text-sm"><?= ($courseDelivery['mode'] ?? '') === 'url_viewer'
+                                ? 'Cette formation s’ouvre dans une visionneuse intégrée à Athena.'
+                                : 'Cette formation ouvre directement un lien externe.' ?></p>
+                            <?php endif; ?>
 
                             <?php if ($enrollment && $canAccessLearning): ?>
                             <div class="lms-fiche__status">
@@ -233,7 +249,9 @@ $lmsPassedQuizIds = is_array($lmsPassedQuizIds ?? null) ? $lmsPassedQuizIds : []
                                         <p class="lms-fiche__status-value"><?= (int) $progressPercent ?> %</p>
                                     </div>
                                     <div class="lms-fiche__status-actions">
-                                        <?php if ($continueLesson && (int) $progressPercent < 100): ?>
+                                        <?php if ($courseDeliveryOpenUrl !== ''): ?>
+                                        <a href="<?= htmlspecialchars($courseDeliveryOpenUrl, ENT_QUOTES, 'UTF-8') ?>" class="lms-fiche__cta"><?= htmlspecialchars($courseDeliveryLabel) ?> →</a>
+                                        <?php elseif ($continueLesson && (int) $progressPercent < 100): ?>
                                         <a href="<?= url('formations/lesson/' . (int) $continueLesson['id'] . '?enrollment_id=' . (int) $enrollment['id']) ?>" class="lms-fiche__cta">
                                             <?= $hasCompletedAnyLesson ? 'Continuer' : 'Commencer' ?> →
                                         </a>
@@ -585,5 +603,6 @@ $lmsPassedQuizIds = is_array($lmsPassedQuizIds ?? null) ? $lmsPassedQuizIds : []
     <?php if (!empty($viewerLoggedIn)) { require base_path('views/partials/community_report_modal.php'); } ?>
     <?php require base_path('views/partials/analytics_beacon.php'); ?>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
+<?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>

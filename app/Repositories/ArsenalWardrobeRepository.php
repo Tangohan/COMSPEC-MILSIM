@@ -7,6 +7,7 @@ namespace App\Repositories;
 use App\Core\Database;
 use App\Support\ArsenalLoadoutItems;
 use App\Support\EquipmentCoverStorage;
+use App\Support\OperatorPortraits;
 use App\Support\SilentSchemaMigration;
 use App\Support\SqlText;
 use PDO;
@@ -72,32 +73,115 @@ final class ArsenalWardrobeRepository
      */
     public function listAccessibleWardrobes(int $tenantId, int $userId): array
     {
+        $pinJoin = '';
+        $pinSelect = 'NULL AS pin_badge_label, NULL AS pin_figure_path, 0 AS is_featured';
+        try {
+            $pinTable = $this->pdo->query(
+                "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_dashboard_wardrobe_pins' LIMIT 1"
+            );
+            if ($pinTable && $pinTable->fetchColumn()) {
+                $pinJoin = 'LEFT JOIN tenant_dashboard_wardrobe_pins p ON p.wardrobe_id = w.id AND p.tenant_id = w.tenant_id';
+                $pinSelect = 'p.badge_label AS pin_badge_label, p.figure_path AS pin_figure_path, (p.id IS NOT NULL) AS is_featured';
+            }
+        } catch (\Throwable) {
+            // Table absente : pas de mise en avant.
+        }
+
         $st = $this->pdo->prepare(
-            'SELECT w.id, w.tenant_id, w.user_id, w.steam_uid, w.collection_id, w.name, w.slug,
+            "SELECT w.id, w.tenant_id, w.user_id, w.steam_uid, w.collection_id, w.name, w.slug,
                     w.source, w.payload_format, w.payload_sha256, CHAR_LENGTH(w.payload_text) AS payload_bytes,
                     w.payload_text, w.notes, w.description, w.cover_image_path, w.gallery_json,
                     w.is_favorite, w.last_synced_at, w.created_at, w.updated_at,
                     c.name AS collection_name, c.slug AS collection_slug, c.visibility AS collection_visibility,
-                    COALESCE(NULLIF(TRIM(u.callsign), \'\'), NULLIF(TRIM(u.display_name), \'\'), \'Membre\') AS owner_label
+                    COALESCE(NULLIF(TRIM(u.callsign), ''), NULLIF(TRIM(u.display_name), ''), 'Membre') AS owner_label,
+                    {$pinSelect}
              FROM arsenal_wardrobes w
              LEFT JOIN arsenal_equipment_collections c ON c.id = w.collection_id
              LEFT JOIN users u ON u.id = w.user_id
+             {$pinJoin}
              WHERE w.tenant_id = ?
-             ORDER BY w.is_favorite DESC, w.name ASC, w.id ASC'
+             ORDER BY is_featured DESC, w.is_favorite DESC, w.name ASC, w.id ASC"
         );
         $st->execute([$tenantId]);
 
         $rows = array_map([$this, 'mapWardrobe'], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
+        $ownerIds = [];
+        foreach ($rows as $row) {
+            $oid = (int) ($row['user_id'] ?? 0);
+            if ($oid > 0) {
+                $ownerIds[] = $oid;
+            }
+        }
+        $portraits = [];
+        try {
+            $portraits = OperatorPortraits::forUsers($tenantId, $ownerIds);
+        } catch (\Throwable) {
+            $portraits = [];
+        }
+
         foreach ($rows as &$row) {
             $row['mine'] = (int) ($row['user_id'] ?? 0) === $userId;
             $payload = (string) ($row['payload_text'] ?? '');
             $row['kinds'] = ArsenalLoadoutItems::presentKinds($payload);
+            $row['preview_classes'] = ArsenalLoadoutItems::previewClasses($payload);
             $row['display_name'] = ArsenalLoadoutItems::formatWardrobeTitle((string) ($row['name'] ?? ''));
-            unset($row['payload_text']);
+            $featured = !empty($row['is_featured']);
+            $badge = trim((string) ($row['pin_badge_label'] ?? ''));
+            $row['featured'] = $featured;
+            $row['badge_label'] = $badge;
+            $row['mandatory'] = $featured && $badge !== '' && (bool) preg_match(
+                '/obligatoire|r[eé]glementaire|reglementaire|mission|doctrine/iu',
+                $badge
+            );
+            $figure = EquipmentCoverStorage::publicUrl(
+                isset($row['pin_figure_path']) ? (string) $row['pin_figure_path'] : null
+            );
+            if (is_string($figure) && $figure !== '') {
+                $row['cover_url'] = $figure;
+            }
+            $uid = (int) ($row['user_id'] ?? 0);
+            $avatar = '';
+            if ($uid > 0) {
+                try {
+                    $thumb = OperatorPortraits::gameThumbnailUrl($tenantId, $uid);
+                    $avatar = is_string($thumb) ? $thumb : '';
+                } catch (\Throwable) {
+                    $avatar = (string) ($portraits[$uid] ?? '');
+                }
+            }
+            $row['owner_avatar_url'] = $avatar;
+            unset($row['payload_text'], $row['pin_badge_label'], $row['pin_figure_path'], $row['is_featured']);
         }
         unset($row);
 
         return $rows;
+    }
+
+    /**
+     * Nom et contenu des tenues de la communauté (export pour l’arsenal ACE), d’une collection ou toutes.
+     *
+     * @return list<array{id: int, name: string, payload: string}>
+     */
+    public function exportPayloads(int $tenantId, ?int $collectionId = null): array
+    {
+        $sql = 'SELECT id, name, payload_text FROM arsenal_wardrobes WHERE tenant_id = ?';
+        $params = [$tenantId];
+        if ($collectionId !== null && $collectionId > 0) {
+            $sql .= ' AND collection_id = ?';
+            $params[] = $collectionId;
+        }
+        $st = $this->pdo->prepare($sql . ' ORDER BY name ASC, id ASC LIMIT 500');
+        $st->execute($params);
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $out[] = [
+                'id' => (int) $row['id'],
+                'name' => ArsenalLoadoutItems::formatWardrobeTitle((string) ($row['name'] ?? '')),
+                'payload' => (string) ($row['payload_text'] ?? ''),
+            ];
+        }
+
+        return $out;
     }
 
     public function findWardrobe(int $tenantId, int $id, ?int $userId = null): ?array
@@ -116,6 +200,34 @@ final class ArsenalWardrobeRepository
         $row = $st->fetch(PDO::FETCH_ASSOC);
 
         return $row ? $this->mapWardrobe($row) : null;
+    }
+
+    /**
+     * Plusieurs tenues d’un tenant en une requête (vitrine du tableau de bord).
+     *
+     * @param list<int> $ids
+     * @return array<int, array<string, mixed>> id => tenue (mêmes champs que findWardrobe)
+     */
+    public function findWardrobesByIds(int $tenantId, array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($tenantId < 1 || $ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $st = $this->pdo->prepare(
+            "SELECT w.*, c.name AS collection_name, c.slug AS collection_slug
+             FROM arsenal_wardrobes w
+             LEFT JOIN arsenal_equipment_collections c ON c.id = w.collection_id
+             WHERE w.tenant_id = ? AND w.id IN ($placeholders)"
+        );
+        $st->execute(array_merge([$tenantId], $ids));
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $out[(int) $row['id']] = $this->mapWardrobe($row);
+        }
+
+        return $out;
     }
 
     /**
@@ -156,22 +268,27 @@ final class ArsenalWardrobeRepository
 
         $existing = $this->findBySlug($tenantId, $userId, $slug);
         if ($existing !== null) {
+            // Renvoi depuis le jeu : seuls le nom et le contenu changent. Collection, note, favori, source, description
+            // et photos posés sur le site restent tels quels tant que l’envoi ne les fournit pas (jamais de WIPE).
             $st = $this->pdo->prepare(
+                // updated_at d’abord : MySQL applique les SET dans l’ordre, l’empreinte comparée est encore l’ancienne.
                 'UPDATE arsenal_wardrobes SET
-                    name = ?, collection_id = ?, source = ?, payload_format = ?,
-                    payload_text = ?, payload_sha256 = ?, notes = ?, is_favorite = ?,
-                    steam_uid = COALESCE(?, steam_uid), last_synced_at = NOW(), updated_at = NOW()
+                    updated_at = IF(payload_sha256 <=> ?, updated_at, NOW()),
+                    name = ?, collection_id = COALESCE(?, collection_id), source = ?, payload_format = ?,
+                    payload_text = ?, payload_sha256 = ?, notes = COALESCE(?, notes), is_favorite = ?,
+                    steam_uid = COALESCE(?, steam_uid), last_synced_at = NOW()
                  WHERE id = ? AND tenant_id = ? AND user_id = ?'
             );
             $st->execute([
+                $hash,
                 $name,
                 $collectionId,
-                $source,
-                $format,
+                array_key_exists('source', $data) ? $source : (string) ($existing['source'] ?? $source),
+                array_key_exists('payload_format', $data) ? $format : (string) ($existing['payload_format'] ?? $format),
                 $payload,
                 $hash,
                 $notes,
-                $favorite,
+                array_key_exists('is_favorite', $data) ? $favorite : (!empty($existing['is_favorite']) ? 1 : 0),
                 $steam,
                 (int) $existing['id'],
                 $tenantId,
@@ -341,6 +458,35 @@ final class ArsenalWardrobeRepository
             'name' => $name,
             'slug' => $slug,
         ];
+    }
+
+    /**
+     * Collection gérée par la plateforme (sans propriétaire, visible de toute la communauté), créée au besoin.
+     * Utilisée pour les « Kits par rôle » publiés depuis le back-office.
+     *
+     * @param list<string> $tags
+     */
+    public function ensureTenantCollection(int $tenantId, string $slug, string $name, string $description, array $tags): int
+    {
+        $slug = self::slugify($slug);
+        $tagsJson = json_encode(array_values(array_map('strval', $tags)), JSON_UNESCAPED_UNICODE) ?: '[]';
+        $existing = $this->findCollectionBySlug($tenantId, $slug);
+        if ($existing !== null) {
+            $id = (int) ($existing['id'] ?? 0);
+            $this->pdo->prepare(
+                'UPDATE arsenal_equipment_collections SET tags_json = ?, visibility = \'tenant\', updated_at = NOW()
+                 WHERE id = ? AND tenant_id = ?'
+            )->execute([$tagsJson, $id, $tenantId]);
+
+            return $id;
+        }
+        $this->pdo->prepare(
+            'INSERT INTO arsenal_equipment_collections
+                (tenant_id, owner_user_id, name, slug, description, visibility, tags_json, sort_order, created_at, updated_at)
+             VALUES (?, NULL, ?, ?, ?, \'tenant\', ?, -10, NOW(), NOW())'
+        )->execute([$tenantId, mb_substr($name, 0, 120), $slug, mb_substr($description, 0, 500), $tagsJson]);
+
+        return (int) $this->pdo->lastInsertId();
     }
 
     public function deleteCollection(int $tenantId, int $userId, int $id): bool

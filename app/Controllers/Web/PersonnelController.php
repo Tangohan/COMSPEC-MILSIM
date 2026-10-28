@@ -39,6 +39,8 @@ use App\Repositories\RoleRepository;
 use App\Repositories\SseCaseRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\ArmaPlaytimeRepository;
+use App\Repositories\AtakRoleTimeCorrectionRepository;
+use App\Services\Audit\AuditService;
 use App\Repositories\PersonnelOrgHistoryRepository;
 use App\Repositories\PersonnelRoleplayTimelineRepository;
 use App\Repositories\PersonnelStageBilanRepository;
@@ -69,8 +71,9 @@ class PersonnelController
         return \App\Services\Personnel\RoleplayFollowupSettings::forTenant($tenantId, $this->tenantRepository);
     }
 
-    /** @return array{eligible: bool, checks: list<array{label: string, ok: bool}>} */
-    private function roleplayFollowupEligibility(array $cfg, int $completenessScore, ?int $readinessScore, array $personnelProfile): array
+    /** @param array{percent:?int,sample:int,checked:int,committed:int,basis:string} $availability
+     * @return array{eligible: bool, checks: list<array{label: string, ok: bool}>} */
+    private function roleplayFollowupEligibility(array $cfg, int $completenessScore, array $availability, array $personnelProfile): array
     {
         $rules = is_array($cfg['eligibility'] ?? null) ? $cfg['eligibility'] : [];
         $checks = [];
@@ -78,10 +81,19 @@ class PersonnelController
             'label' => 'Complétude dossier ≥ ' . max(0, min(100, (int) ($rules['min_completeness'] ?? 50))) . '%',
             'ok' => $completenessScore >= max(0, min(100, (int) ($rules['min_completeness'] ?? 50))),
         ];
-        $checks[] = [
-            'label' => 'Disponibilité ≥ ' . max(0, min(100, (int) ($rules['min_readiness'] ?? 30))) . '%',
-            'ok' => ($readinessScore ?? 0) >= max(0, min(100, (int) ($rules['min_readiness'] ?? 30))),
-        ];
+        $minAvailability = max(0, min(100, (int) ($rules['min_readiness'] ?? 30)));
+        $measured = ($availability['basis'] ?? '') === 'operations';
+        if (!$measured) {
+            $checks[] = [
+                'label' => 'Disponibilité : aucune opération sur 45 jours',
+                'ok' => false,
+            ];
+        } else {
+            $checks[] = [
+                'label' => 'Disponibilité ≥ ' . $minAvailability . ' % (' . (int) ($availability['checked'] ?? 0) . ' présences sur ' . (int) ($availability['sample'] ?? 0) . ' opérations)',
+                'ok' => (int) ($availability['percent'] ?? 0) >= $minAvailability,
+            ];
+        }
         if (!empty($rules['require_unit'])) {
             $checks[] = ['label' => 'Affectation unité renseignée', 'ok' => !empty($personnelProfile['primary_unit_id'])];
         }
@@ -100,6 +112,39 @@ class PersonnelController
         }
 
         return ['eligible' => $eligible, 'checks' => $checks];
+    }
+
+    /**
+     * Disponibilité affichée sur la fiche : présences réelles sur 45 jours.
+     * Le chiffre stocké à l’intégration (souvent 1) n’est pas une mesure.
+     *
+     * @return array{percent:?int,sample:int,checked:int,committed:int,basis:string}
+     */
+    private function memberAvailability(int $tenantId, int $userId): array
+    {
+        $empty = ['percent' => null, 'sample' => 0, 'checked' => 0, 'committed' => 0, 'basis' => 'none'];
+        if ($tenantId < 1 || $userId < 1) {
+            return $empty;
+        }
+        try {
+            $pack = $this->unitRepository->readinessByUsersForTenant($tenantId, [$userId])[$userId] ?? null;
+        } catch (\Throwable) {
+            return $empty;
+        }
+        $components = is_array($pack['components'] ?? null) ? $pack['components'] : [];
+        $sample = (int) ($components['presence_sample'] ?? 0);
+        $checked = (int) ($components['presence_checked'] ?? 0);
+        if ($sample < 1) {
+            return $empty;
+        }
+
+        return [
+            'percent' => (int) round(100 * $checked / $sample),
+            'sample' => $sample,
+            'checked' => $checked,
+            'committed' => (int) ($components['presence_committed'] ?? 0),
+            'basis' => 'operations',
+        ];
     }
 
     /** Résout /personnel/{id} (numérique) ou /personnel/{slug} (profile_slug). */
@@ -203,6 +248,18 @@ class PersonnelController
     }
 
     /** Formulaire d’édition : sa propre fiche se modifie dans le back-office. */
+    /** @return array<string, mixed> */
+    private function communitySettingsForLanguages(int $tenantId): array
+    {
+        try {
+            $settings = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->getSettings($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return is_array($settings['community'] ?? null) ? $settings['community'] : [];
+    }
+
     private function personnelEditUrl(array $target, bool $isSelf): string
     {
         return $isSelf
@@ -627,7 +684,15 @@ class PersonnelController
 
             return strcmp((string) ($b['assigned_at'] ?? ''), (string) ($a['assigned_at'] ?? ''));
         });
-        $completeness = $this->completenessService->getScoreWithMissingLabels($uid, $target, $mergedProfileForScore, $extras, (int) $tenantId);
+        $memberAvailability = $this->memberAvailability((int) $tenantId, $uid);
+        $completeness = $this->completenessService->getScoreWithMissingLabels(
+            $uid,
+            $target,
+            $mergedProfileForScore,
+            $extras,
+            (int) $tenantId,
+            (int) ($memberAvailability['sample'] ?? 0)
+        );
         $gradeValidationIssues = [];
         try {
             $gradeValidationIssues = Container::get(\App\Services\GradeValidationService::class)->validateUserProfile($target);
@@ -638,7 +703,7 @@ class PersonnelController
         $roleplayEligibility = $this->roleplayFollowupEligibility(
             $roleplayFollowupConfig,
             (int) ($completeness['score'] ?? 0),
-            isset($personnelProfile['readiness_score']) ? (int) $personnelProfile['readiness_score'] : null,
+            $memberAvailability,
             is_array($personnelProfile) ? $personnelProfile : []
         );
         $rpTutorLabel = null;
@@ -679,7 +744,7 @@ class PersonnelController
         if ($roleplayFollowupConfig['enabled'] && ($isSelf || $canStaffView || $canStaffEdit) && $this->personnelRoleplayTimelineRepository->tableExists()) {
             $roleplayTimelineEvents = $this->personnelRoleplayTimelineRepository->listForUser((int) $tenantId, $uid, 80);
         }
-        $isForumMod = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
+        $isReportModerator = function_exists('moderation_user_can_moderate') && moderation_user_can_moderate();
         /** Accès commandement : tableau de suivi sur la même fiche (sans écran de choix). */
         $canAccessRhView = $canStaffView || $canStaffEdit || $canSensitive;
         $personnelViewRaw = strtolower(trim((string) ($request->query('view', '') ?? '')));
@@ -695,7 +760,7 @@ class PersonnelController
         $canViewCommandNotes = $isSelf || $canStaffEdit;
         $displaySettings = $this->displaySettingsRepository->getOrDefaults((int) $target['id']);
         $hidePersonalInfo = (int) ($displaySettings['hide_personal_info'] ?? 0) === 1;
-        $viewerPrivilegedForPersonal = $isSelf || $canStaffView || $canStaffEdit || $canSensitive || $isForumMod;
+        $viewerPrivilegedForPersonal = $isSelf || $canStaffView || $canStaffEdit || $canSensitive || $isReportModerator;
         $redactPersonalPresentation = $hidePersonalInfo && !$viewerPrivilegedForPersonal;
         $canViewCivilSection = $canViewCivil && !$redactPersonalPresentation;
         $gateInst = Gate::getInstance();
@@ -705,7 +770,7 @@ class PersonnelController
             || $gateInst->allows('admin.system')
         );
         $showEmailInContact = $canViewMemberEmail;
-        $showMatriculePublic = $isSelf || $canStaffView || $canSensitive || $isForumMod || (int) ($displaySettings['fiche_show_matricule_to_others'] ?? 1) === 1;
+        $showMatriculePublic = $isSelf || $canStaffView || $canSensitive || $isReportModerator || (int) ($displaySettings['fiche_show_matricule_to_others'] ?? 1) === 1;
 
         if ($personnelAnonymizedForViewer) {
             $anonLabel = $visibilityMeta['anonymized_label'] !== ''
@@ -816,6 +881,14 @@ class PersonnelController
 
         $steamIdResolved = trim((string) ($target['steam_id'] ?? ''));
         $steamIdResolved = $steamIdResolved !== '' ? $steamIdResolved : null;
+        // Fiche lisible (pas anonymisée) : temps de jeu, distances et montre pour tout lecteur du dossier.
+        // L’anonymisation coupe ces blocs (et l’identifiant Steam affiché) — ne pas s’appuyer sur canStaffView,
+        // qui est forcé à false dans ce cas et masquerait aussi une fiche nominative pour un membre sans droit RH.
+        $canSeePlayMetrics = !$personnelAnonymizedForViewer;
+        if (!$canSeePlayMetrics) {
+            $steamIdResolved = null;
+            $target['steam_id'] = null;
+        }
 
         $steamProfileSyncOffered = $this->steamWebApiService->isConfigured()
             && $steamIdResolved !== null
@@ -824,7 +897,7 @@ class PersonnelController
             && $personnelViewMode === 'rh';
 
         $armaPlaytime = null;
-        if ($isSelf || $canStaffView) {
+        if ($canSeePlayMetrics) {
             $ready = $this->armaPlaytimeRepository->schemaReady();
             $armaPlaytime = [
                 'show_steam_hint_self' => $isSelf && $steamIdResolved === null,
@@ -836,6 +909,12 @@ class PersonnelController
                 'editor_label' => null,
                 'breakdown_label' => null,
                 'last_sync_label' => null,
+                // Secondes brutes pour la barre serveur / Zeus / éditeur / avant le détail de la synthèse.
+                'total_seconds' => 0,
+                'server_seconds' => 0,
+                'zeus_seconds' => 0,
+                'editor_seconds' => 0,
+                'unsplit_seconds' => 0,
             ];
             if ($steamIdResolved !== null && $ready) {
                 $ptRow = $this->armaPlaytimeRepository->getSummaryForUser((int) $tenantId, $uid);
@@ -853,6 +932,12 @@ class PersonnelController
                 if ($editorSecs > 0) {
                     $armaPlaytime['editor_label'] = $this->formatArmaPlaytimeFrench($editorSecs);
                 }
+                $armaPlaytime['total_seconds'] = $ptSecs;
+                $armaPlaytime['server_seconds'] = $serverSecs;
+                $armaPlaytime['zeus_seconds'] = $zeusSecs;
+                $armaPlaytime['editor_seconds'] = $editorSecs;
+                // Sessions remontées avant les colonnes serveur / Zeus / éditeur : comptées dans le cumul seulement.
+                $armaPlaytime['unsplit_seconds'] = max(0, $ptSecs - $serverSecs - $zeusSecs - $editorSecs);
                 if (function_exists('format_arma_playtime_breakdown_french') && is_array($ptRow)) {
                     $breakdown = format_arma_playtime_breakdown_french($ptRow);
                     $armaPlaytime['breakdown_label'] = $breakdown !== '' ? $breakdown : null;
@@ -863,6 +948,56 @@ class PersonnelController
                         $armaPlaytime['last_sync_label'] = date('d/m/Y \à H:i', $tsPt);
                     }
                 }
+            }
+        }
+
+        // Temps passé dans chaque rôle en jeu (pilote, chef, médecin, rôle du slot…), compté par le serveur Arma
+        // (ou le téléphone ATAK), avec la façon dont le rôle a été détecté.
+        $atakRoleTimes = [];
+        $atakPlayStats = null;
+        if ($canSeePlayMetrics) {
+            try {
+                $screenTimeRepo = new \App\Repositories\AtakScreenTimeRepository();
+                $atakRoleTimes = $screenTimeRepo->rolesForUser((int) $tenantId, $uid);
+                $atakPlayStats = $screenTimeRepo->playStatsForUser((int) $tenantId, $uid);
+            } catch (\Throwable) {
+                $atakRoleTimes = [];
+                $atakPlayStats = null;
+            }
+        }
+
+        // Distances parcourues en jeu et heures de pilote par type d'appareil (app Distances de l'ATAK natif).
+        $atakDistance = null;
+        $atakDistanceSchemaReady = false;
+        if ($canSeePlayMetrics) {
+            try {
+                $distanceRepo = new \App\Repositories\AtakDistanceRepository();
+                $atakDistanceSchemaReady = $distanceRepo->schemaReady();
+                $atakDistance = $distanceRepo->summaryForUser((int) $tenantId, $uid);
+            } catch (\Throwable) {
+                $atakDistance = null;
+                $atakDistanceSchemaReady = false;
+            }
+        }
+
+        // Montre de l'app Garmin de l'ATAK natif (Body Battery, pas, sommeil, activités), envoyée par le PC du joueur.
+        $atakGarmin = null;
+        if ($canSeePlayMetrics) {
+            try {
+                $atakGarmin = (new \App\Repositories\AtakGarminRepository())->summaryForUser((int) $tenantId, $uid);
+            } catch (\Throwable) {
+                $atakGarmin = null;
+            }
+        }
+
+        // Encadrement : corriger le temps par rôle (déplacer vers le bon rôle) et voir le journal des corrections.
+        $canCorrectRoleTime = $previewAs === null && $this->canCorrectRoleTime();
+        $roleTimeMoves = [];
+        if ($canCorrectRoleTime) {
+            try {
+                $roleTimeMoves = (new AtakRoleTimeCorrectionRepository())->listForUser((int) $tenantId, $uid);
+            } catch (\Throwable) {
+                $roleTimeMoves = [];
             }
         }
 
@@ -878,6 +1013,8 @@ class PersonnelController
             } catch (\Throwable) {
                 $phaseChecklist = null;
             }
+        }
+        if ($canSeePlayMetrics) {
             try {
                 $armaSessionActivity = Container::get(\App\Repositories\RoleplayGameSessionRepository::class)
                     ->memberActivity30d((int) $tenantId, $uid);
@@ -1021,6 +1158,7 @@ class PersonnelController
             'civilIdentity' => $civilIdentity,
             'civilSourceLabel' => $civilSourceLabel,
             'latestEnlistment' => $latestEnlistment,
+            'memberAvailability' => $memberAvailability,
             'primaryUnitFallbackName' => $primaryUnitFallbackName,
             'rpDossierNeedsAttention' => $rpDossierNeedsAttention,
             'grade' => $grade,
@@ -1065,6 +1203,14 @@ class PersonnelController
             'seniorityGlobal' => is_array($seniorityGlobal) ? $seniorityGlobal : null,
             'seniorityDetailLines' => $seniorityDetailLines,
             'armaPlaytime' => $armaPlaytime,
+            'atakRoleTimes' => $atakRoleTimes,
+            'atakDistance' => $atakDistance,
+            'atakDistanceSchemaReady' => $atakDistanceSchemaReady,
+            'atakGarmin' => $atakGarmin,
+            'atakPlayStats' => $atakPlayStats,
+            'canCorrectRoleTime' => $canCorrectRoleTime,
+            'roleTimeMoves' => $roleTimeMoves,
+            'roleTimePathSegment' => $this->personPathSegment($target),
             'steamProfileSyncOffered' => $steamProfileSyncOffered,
             'personnelOrgHistory' => $personnelOrgHistory,
             'personnelOrgHistorySection' => $personnelOrgHistorySection,
@@ -1182,6 +1328,7 @@ class PersonnelController
         );
         $returnTo = trim((string) ($request->input('return_to') ?? ''));
         if ($returnTo === 'edit') {
+            $isSelf = $actorId === (int) $target['id'];
             return Response::redirect($this->personnelEditUrl($target, $isSelf));
         }
 
@@ -1237,6 +1384,101 @@ class PersonnelController
         }
 
         return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
+    }
+
+    /**
+     * Encadrement : déplacer le temps d'un rôle en jeu vers un autre sur la fiche d'un membre
+     * (perte de synchro qui a fait tomber le rôle). Réversible, journalisé.
+     */
+    public function moveRoleTime(Request $request, array $params = []): Response
+    {
+        [$tenantId, $target, $deny] = $this->roleTimeCorrectionContext($request, $params);
+        if ($deny !== null) {
+            return $deny;
+        }
+        $back = url('personnel/' . $this->personPathSegment($target)) . '#temps-par-role';
+        $fromKey = trim((string) $request->input('from_key', ''));
+        $toKey = trim((string) $request->input('to_key', ''));
+        $newLabel = trim((string) $request->input('to_label', ''));
+        if ($toKey === '__new') {
+            $toKey = AtakRoleTimeCorrectionRepository::keyForLabel($newLabel);
+        }
+        $minutesRaw = trim((string) $request->input('minutes', ''));
+        $seconds = $minutesRaw === '' ? null : max(0, (int) $minutesRaw) * 60;
+        $reason = trim((string) $request->input('reason', ''));
+        $actorId = (int) Session::get('user_id');
+        $repo = new AtakRoleTimeCorrectionRepository();
+        $result = $repo->move($tenantId, (int) $target['id'], $fromKey, $toKey, $newLabel, $seconds, $actorId, $reason);
+        if (empty($result['ok'])) {
+            Session::flash('error', (string) ($result['error'] ?? 'Échec.'));
+
+            return Response::redirect($back);
+        }
+        try {
+            (new AuditService())->logChange('personnel_role_time_moved', $tenantId, $actorId, 'user', (int) $target['id'],
+                ['role' => $fromKey], ['role' => $toKey, 'seconds' => (int) $result['seconds'], 'move_id' => (int) $result['id'], 'reason' => $reason]);
+        } catch (\Throwable) {
+            // Le journal propre à la correction suffit.
+        }
+        Session::flash('success', 'Temps déplacé (' . intdiv((int) $result['seconds'], 60) . ' min). La correction reste annulable sur la fiche.');
+
+        return Response::redirect($back);
+    }
+
+    public function revertRoleTimeMove(Request $request, array $params = []): Response
+    {
+        [$tenantId, $target, $deny] = $this->roleTimeCorrectionContext($request, $params);
+        if ($deny !== null) {
+            return $deny;
+        }
+        $back = url('personnel/' . $this->personPathSegment($target)) . '#temps-par-role';
+        $actorId = (int) Session::get('user_id');
+        $moveId = (int) ($params['moveId'] ?? 0);
+        $result = (new AtakRoleTimeCorrectionRepository())->revert($tenantId, (int) $target['id'], $moveId, $actorId);
+        if (empty($result['ok'])) {
+            Session::flash('error', (string) ($result['error'] ?? 'Échec.'));
+
+            return Response::redirect($back);
+        }
+        try {
+            (new AuditService())->logChange('personnel_role_time_move_reverted', $tenantId, $actorId, 'user', (int) $target['id'],
+                ['move_id' => $moveId], ['seconds' => (int) $result['seconds']]);
+        } catch (\Throwable) {
+        }
+        Session::flash('success', 'Correction annulée : le temps est revenu à son rôle d’origine.');
+
+        return Response::redirect($back);
+    }
+
+    /** Peut corriger le temps par rôle d'une fiche : encadrement qui édite les fiches, ou gestion de l'organisation. */
+    private function canCorrectRoleTime(): bool
+    {
+        return $this->canStaffEditPersonnel() || Gate::getInstance()->allows('admin.organization');
+    }
+
+    /**
+     * @return array{0: int, 1: array<string, mixed>, 2: ?Response}
+     */
+    private function roleTimeCorrectionContext(Request $request, array $params): array
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return [0, [], Response::redirect(url('login'))];
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return [0, [], Response::redirect(url('personnel'))];
+        }
+        $target = $this->resolvePersonnelTarget((string) ($params['id'] ?? ''), $tenantId);
+        if (!$target) {
+            return [0, [], $this->personnelMissingResponse(true)];
+        }
+        if (!$this->canCorrectRoleTime()) {
+            return [0, [], $this->personnelForbiddenResponse(true, url('personnel/' . $this->personPathSegment($target)))];
+        }
+
+        return [$tenantId, $target, null];
     }
 
     public function updateNotes(Request $request, array $params = []): Response
@@ -1472,6 +1714,12 @@ class PersonnelController
 
         $service = new \App\Services\Organization\OrbatChartPdfService();
 
+        // Langue de la feuille : ?lang= du lecteur, sinon la langue ORBAT de la communauté.
+        $orbatCommunity = $this->communitySettingsForLanguages($tid);
+        $sheetLang = \App\Support\CommunityLanguages::normalize($request->query('lang', ''))
+            ?? \App\Support\CommunityLanguages::orbatLanguage($orbatCommunity);
+        $sheetCountry = \App\Support\CommunityLanguages::unitCountry($orbatCommunity);
+
         $paper = strtoupper(trim((string) $request->query('paper', '')));
         if (!in_array($paper, ['A3', 'A2', 'A1', 'A0'], true)) {
             $paper = '';
@@ -1486,6 +1734,9 @@ class PersonnelController
             'include_notes' => (string) $request->query('notes', '0') === '1',
             'include_legend' => (string) $request->query('legend', '1') === '1',
             'paper' => $paper,
+            'lang' => $sheetLang,
+            'country' => $sheetCountry,
+            'country_label' => \App\Support\CommunityLanguages::countryLabel($sheetCountry),
         ]);
     }
 
@@ -1611,28 +1862,17 @@ class PersonnelController
         $tenantSettingsForJobRoles = $this->tenantRepository->getSettings($tenantId);
         $maxJobRolesPerMember = \App\Services\Personnel\PersonnelJobRoleAssignmentsSettings::resolve($tenantSettingsForJobRoles)['max_roles_per_member'];
 
-        $forumQuickMode = trim((string) $request->query('forum_mode', ''));
-        if (!in_array($forumQuickMode, ['display_name', 'callsign', 'character_name', 'forum_alias'], true)) {
-            $forumQuickMode = '';
+        $displayRoleChoices = [];
+        foreach ($this->userRepository->listOrganizationRoleIdsForUser($uid) as $rid) {
+            $rid = (int) $rid;
+            $row = $rid > 0 ? $this->roleRepository->findById($rid, $tenantId) : null;
+            if ($row === null) {
+                continue;
+            }
+            $displayRoleChoices[$rid] = ['id' => $rid, 'name' => trim((string) ($row['name'] ?? '')) ?: 'Rôle'];
         }
-        $forumFocus = trim((string) $request->query('forum_focus', ''));
-        if (!in_array($forumFocus, ['label', 'hide_level'], true)) {
-            $forumFocus = '';
-        }
-        $forumPreHideLevel = (string) $request->query('forum_hide_level', '') === '1';
-
-        $targetEmail = strtolower(trim((string) ($target['email'] ?? '')));
-        $siteRoleRepo = Container::get(\App\Repositories\SiteRoleAssignmentRepository::class);
-        $forumOrgRoleChoices = function_exists('forum_build_visible_role_choices')
-            ? forum_build_visible_role_choices(
-                $uid,
-                $tenantId,
-                $targetEmail,
-                $this->userRepository,
-                $this->roleRepository,
-                $siteRoleRepo
-            )
-            : [];
+        $displayRoleChoices = array_values($displayRoleChoices);
+        usort($displayRoleChoices, static fn (array $x, array $y): int => strcasecmp($x['name'], $y['name']));
 
         $settings = $this->tenantRepository->getSettings($tenantId);
         $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
@@ -1708,8 +1948,15 @@ class PersonnelController
         $canStaffEditNow = $this->canStaffEditPersonnel();
         $advancedEditNow = $isSelf && function_exists('user_has_advanced_fiche_edit') && user_has_advanced_fiche_edit($uid);
 
+        $gameLanguageCommunity = $this->communitySettingsForLanguages($tenantId);
+        $gameLanguage = \App\Core\Container::get(\App\Repositories\MemberLanguageRepository::class)
+            ->resolvedForUsers($tenantId, [$uid], $gameLanguageCommunity)[$uid]
+            ?? \App\Support\CommunityLanguages::resolveMember(null, null, $gameLanguageCommunity);
+
         return Response::view($embeddedInEffectifs ? 'personnel.edit' : ($fromEffectifs ? 'layout.effectifs_lms' : 'layout.main'), [
             'content' => 'personnel.edit',
+            'gameLanguage' => $gameLanguage,
+            'gameLanguageCodes' => \App\Support\CommunityLanguages::communityLanguages($gameLanguageCommunity),
             'title' => 'Modifier ma fiche',
             'isBackOfficeShell' => $inBackOffice,
             'boPageGroup' => 'Opérateur',
@@ -1725,9 +1972,6 @@ class PersonnelController
             'targetUser' => $target,
             'personnelProfile' => $personnelProfile,
             'displaySettings' => $displaySettings,
-            'forumQuickMode' => $forumQuickMode,
-            'forumFocus' => $forumFocus,
-            'forumPreHideLevel' => $forumPreHideLevel,
             'units' => $units,
             'userProfile' => $userProfile,
             'grades' => $grades,
@@ -1758,7 +2002,7 @@ class PersonnelController
             'currentJobRoles' => $currentJobRoles,
             'maxJobRolesPerMember' => $maxJobRolesPerMember,
             'maxUnitAssignmentsPerMember' => 8,
-            'forumOrgRoleChoices' => $forumOrgRoleChoices,
+            'displayRoleChoices' => $displayRoleChoices,
             'memberCanChooseDisplayRole' => $memberCanChooseDisplayRole,
             'roleplayFollowupConfig' => $roleplayFollowupConfig,
             'rpTutorChoices' => $rpTutorChoices,
@@ -1807,7 +2051,9 @@ class PersonnelController
             return $this->personnelMissingResponse(true);
         }
         $isSelf = (int) $currentUser['id'] === (int) $target['id'];
-        $canStaffEdit = $this->canStaffEditPersonnel();
+        // Gérants et RH changent l'image opérateur depuis la fiche Effectifs : même règle que l'édition des dossiers.
+        $canStaffEdit = $this->canStaffEditPersonnel()
+            || \App\Support\EffectifsLmsAccess::canEditProfiles(Gate::getInstance());
         if (!$isSelf && !$canStaffEdit) {
             return $this->personnelForbiddenResponse(true, url('personnel'));
         }
@@ -2070,10 +2316,11 @@ class PersonnelController
             } else {
                 $tutorId = null;
             }
+            $eligAvailability = $this->memberAvailability((int) $tenantId, (int) $target['id']);
             $elig = $this->roleplayFollowupEligibility(
                 $roleplayFollowupConfig,
-                (int) ($this->completenessService->getScore((int) $target['id'], $target, $this->userProfileRepository->getByUserId((int) $target['id']) ?? [], $this->personnelExtrasRepository->getByUserId((int) $target['id']) ?? [], $tenantId)['score'] ?? 0),
-                $readinessScore,
+                (int) ($this->completenessService->getScore((int) $target['id'], $target, $this->userProfileRepository->getByUserId((int) $target['id']) ?? [], $this->personnelExtrasRepository->getByUserId((int) $target['id']) ?? [], $tenantId, (int) ($eligAvailability['sample'] ?? 0))['score'] ?? 0),
+                $eligAvailability,
                 ['primary_unit_id' => $primaryUnitId, 'callsign' => trim((string) $request->input('callsign')), 'rp_tutor_user_id' => $tutorId]
             );
             $snap = [
@@ -2468,6 +2715,20 @@ class PersonnelController
                     PlatformUserProfileService::interfaceLanguageOptions(),
                     (string) ($existingUserProfile['language'] ?? '')
                 );
+                if ((string) $request->input('game_language_form', '') === '1') {
+                    $gameOthers = $request->input('game_other_langs', []);
+                    try {
+                        \App\Core\Container::get(\App\Repositories\MemberLanguageRepository::class)->save(
+                            $tenantId,
+                            (int) $target['id'],
+                            \App\Support\CommunityLanguages::normalize($request->input('game_primary_lang', '')),
+                            \App\Support\CommunityLanguages::normalizeList(is_array($gameOthers) ? $gameOthers : []),
+                            (int) $target['id']
+                        );
+                    } catch (\Throwable) {
+                        // La langue de jeu est secondaire : la fiche s’enregistre quand même.
+                    }
+                }
             }
             $this->userProfileRepository->upsert((int) $target['id'], $profileUpsert);
             $derivedDn = trim($firstName . ' ' . $lastName);
@@ -2489,15 +2750,7 @@ class PersonnelController
         }
 
         if ($isSelf || $canStaffEdit) {
-            $mode = 'character_name';
             $displayUpsert = [
-                'forum_alias' => null,
-                'forum_label_mode' => $mode,
-                'show_matricule_forum' => $request->input('show_matricule_forum') ? 1 : 0,
-                'show_grade_forum' => $request->input('show_grade_forum') ? 1 : 0,
-                'show_unit_forum' => $request->input('show_unit_forum') ? 1 : 0,
-                'show_bio_forum' => $request->input('show_bio_forum') ? 1 : 0,
-                'hide_forum_level' => $request->input('hide_forum_level') ? 1 : 0,
                 'fiche_show_email_to_others' => $request->input('fiche_show_email_to_others') ? 1 : 0,
                 'fiche_show_matricule_to_others' => $request->input('fiche_show_matricule_to_others') ? 1 : 0,
                 'public_roster_opt_in' => $request->input('public_roster_opt_in') ? 1 : 0,
@@ -2505,25 +2758,6 @@ class PersonnelController
             if ($isSelf) {
                 $displayUpsert['hide_personal_info'] = $request->input('hide_personal_info') ? 1 : 0;
             }
-            $forumVisibleRoleRaw = $request->input('forum_visible_role_id');
-            $forumVisibleRoleId = ($forumVisibleRoleRaw === null || $forumVisibleRoleRaw === '') ? null : (int) $forumVisibleRoleRaw;
-            if ($forumVisibleRoleId !== null && $forumVisibleRoleId <= 0) {
-                $forumVisibleRoleId = null;
-            }
-            $targetMail = strtolower(trim((string) ($target['email'] ?? '')));
-            $siteRoleRepo = Container::get(\App\Repositories\SiteRoleAssignmentRepository::class);
-            if ($forumVisibleRoleId !== null && !forum_user_may_set_visible_role_id(
-                (int) $target['id'],
-                $targetMail,
-                $forumVisibleRoleId,
-                $this->userRepository,
-                $siteRoleRepo
-            )) {
-                Session::flash('error', 'Le rôle affiché sur le forum doit correspondre à un rôle réellement attribué à ce compte (communauté ou plateforme).');
-
-                return Response::redirect($this->personnelEditUrl($target, $isSelf));
-            }
-            $displayUpsert['forum_visible_role_id'] = $forumVisibleRoleId;
             $this->displaySettingsRepository->upsert((int) $target['id'], $displayUpsert);
         }
         if ($isSelf) {

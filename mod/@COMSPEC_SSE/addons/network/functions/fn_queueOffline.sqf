@@ -46,6 +46,9 @@ if (_idemKey isNotEqualTo "") then {
 
 _payload set ["txStatus", "QUEUED"];
 _payload set ["queuedAt", time];
+// Origine de l'envoi : une entrée d'une autre opération n'est jamais rejouée (restoreQueue).
+_payload set ["txMission", missionName];
+_payload set ["txCase", [] call comspec_sse_fnc_getCaseReference];
 _payload set ["txAttempts", _payload getOrDefault ["txAttempts", 0]];
 if (_idemKey isNotEqualTo "") then { _payload set ["idempotency_key", _idemKey]; };
 
@@ -61,7 +64,7 @@ while { count comspec_sse_txQueue > _maxQueue } do {
 };
 
 missionNamespace setVariable ["comspec_sse_txQueue", comspec_sse_txQueue];
-[] call comspec_sse_fnc_persistQueue;
+// Sauvegarde du profil (écriture disque) laissée à la boucle de 3 min (network XEH_postInit).
 private _kindLog = _payload getOrDefault ["kind", "?"];
 [format ["queueOffline size=%1 kind=%2 idem=%3", count comspec_sse_txQueue, _kindLog, _idemKey]] call comspec_sse_fnc_log;
 true

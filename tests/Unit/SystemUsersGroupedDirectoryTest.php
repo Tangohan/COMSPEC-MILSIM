@@ -22,11 +22,11 @@ final class SystemUsersGroupedDirectoryTest extends TestCase
         self::assertStringContainsString('softDeleteMembership', $ctrl);
         self::assertStringContainsString('function softDeleteMembership', $svc);
         self::assertStringContainsString('platformUserGroups', $view);
-        self::assertStringContainsString('scope" value="org"', $view);
-        self::assertStringContainsString('scope" value="site"', $view);
-        self::assertStringContainsString('Retirer de l’orga', $view);
-        self::assertStringContainsString('Anonymiser (site)', $view);
-        self::assertStringContainsString('Supprimer définitivement (site)', $view);
+        self::assertStringContainsString("'scope' => 'org'", $view);
+        self::assertStringContainsString("'scope' => 'site'", $view);
+        self::assertStringContainsString('admin/users/retirer-communaute', $view);
+        self::assertStringContainsString('Supprimer le compte', $view);
+        self::assertStringContainsString('Supprimer définitivement', $view);
     }
 
     public function testPlatformDirectoryUsesMembershipRowsWhenAvailable(): void

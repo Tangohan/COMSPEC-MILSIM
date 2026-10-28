@@ -41,7 +41,7 @@ class ArsenalWardrobeController
         if (!$this->repo->tablesReady()) {
             return $this->hubView(true, [], [], [], []);
         }
-        $wardrobes = $this->repo->listAccessibleWardrobes($tenantId, $userId);
+        $wardrobes = $this->attachPreviews($tenantId, $this->repo->listAccessibleWardrobes($tenantId, $userId));
         $collections = $this->repo->listCollections($tenantId, $userId);
         $collections = $this->attachCollectionMosaics($collections, $wardrobes);
         $classes = [];
@@ -57,7 +57,68 @@ class ArsenalWardrobeController
             $dotation = [];
         }
 
-        return $this->hubView(false, $wardrobes, $collections, $classes, $dotation);
+        return $this->hubView(
+            false,
+            $wardrobes,
+            $collections,
+            $classes,
+            $dotation,
+            $this->roleKitsForMember($tenantId, $userId),
+            $this->playerKits()?->forUser($tenantId, $userId),
+        );
+    }
+
+    /**
+     * « Mon kit en jeu » → tenue personnelle (mise à jour à chaque enregistrement, jamais dupliquée).
+     */
+    public function saveMyGameKit(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate();
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId, $userId] = $gate;
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Rechargez la page et recommencez.');
+
+            return Response::redirect(url('equipment'));
+        }
+        $result = $this->playerKits()?->saveAsWardrobe($tenantId, $userId, '', false)
+            ?? ['ok' => false, 'error' => 'Enregistrement impossible.'];
+        if (!$result['ok']) {
+            Session::flash('error', (string) ($result['error'] ?? 'Enregistrement impossible.'));
+
+            return Response::redirect(url('equipment'));
+        }
+        Session::flash('success', 'Votre kit en jeu est enregistré dans vos tenues.');
+
+        return Response::redirect(url('equipment') . '?tenue=' . (int) $result['id']);
+    }
+
+    private function playerKits(): ?\App\Services\GameEquipment\PlayerKitService
+    {
+        try {
+            return \App\Core\Container::get(\App\Services\GameEquipment\PlayerKitService::class);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Kits proposés pour les fonctions du membre (back-office › Kits par rôle). Jamais bloquant.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function roleKitsForMember(int $tenantId, int $userId): array
+    {
+        try {
+            /** @var \App\Services\GameEquipment\RoleKitService $service */
+            $service = \App\Core\Container::get(\App\Services\GameEquipment\RoleKitService::class);
+
+            return $service->listForMember($tenantId, $userId);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     public function redirectHub(Request $request, array $params = []): Response
@@ -143,6 +204,58 @@ class ArsenalWardrobeController
         return Response::redirect(url('equipment') . '?collection=' . $id . $editQs);
     }
 
+    /**
+     * Export pour l’arsenal ACE (texte SQF) : ?tenue=ID → une tenue (Importer, mannequin) ; sinon la liste
+     * [[nom, tenue], …] des tenues de la communauté, ou d’une collection (?collection=ID), pour « Mes équipements ».
+     * ?inline=1 affiche le texte au lieu de le télécharger.
+     */
+    public function aceExport(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate();
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId, $userId] = $gate;
+        if (!$this->repo->tablesReady()) {
+            return Response::redirect(url('equipment'));
+        }
+        $tenueId = (int) $request->query('tenue', 0);
+        $collectionId = (int) $request->query('collection', 0);
+        $label = 'tenues-athena';
+        if ($tenueId > 0) {
+            $row = $this->repo->findWardrobe($tenantId, $tenueId);
+            $text = $row !== null ? ArsenalLoadoutItems::aceExport((string) ($row['payload_text'] ?? '')) : null;
+            if ($text === null) {
+                Session::flash('error', 'Cette tenue ne peut pas être exportée pour ACE.');
+
+                return Response::redirect(url('equipment'));
+            }
+            $label = 'tenue-' . ArsenalWardrobeRepository::slugify((string) ($row['name'] ?? 'tenue'));
+        } else {
+            if ($collectionId > 0) {
+                $collection = $this->repo->findCollection($tenantId, $collectionId);
+                $ownerId = (int) ($collection['owner_user_id'] ?? 0);
+                if ($collection === null || ($ownerId > 0 && $ownerId !== $userId && (string) ($collection['visibility'] ?? 'personal') === 'personal')) {
+                    Session::flash('error', 'Cette collection n’existe pas ou n’est pas partagée.');
+
+                    return Response::redirect(url('equipment'));
+                }
+                $label = 'collection-' . ArsenalWardrobeRepository::slugify((string) ($collection['name'] ?? 'collection'));
+            }
+            $text = ArsenalLoadoutItems::aceExportList($this->repo->exportPayloads($tenantId, $collectionId > 0 ? $collectionId : null));
+        }
+
+        $inline = $request->query('inline') === '1';
+        $response = new Response();
+        $response->header('Content-Type', 'text/plain; charset=UTF-8');
+        $response->header('Cache-Control', 'no-store');
+        $response->header('X-Content-Type-Options', 'nosniff');
+        $response->header('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="ace-' . $label . '.txt"');
+        $response->setBody($text);
+
+        return $response;
+    }
+
     public function showWardrobe(Request $request, array $params = []): Response
     {
         $gate = $this->gate();
@@ -161,8 +274,13 @@ class ArsenalWardrobeController
             return Response::redirect(url('equipment'));
         }
         $row['mine'] = (int) ($row['user_id'] ?? 0) === $userId;
-        $loadoutItems = ArsenalLoadoutItems::grouped((string) ($row['payload_text'] ?? ''));
+        $payloadText = (string) ($row['payload_text'] ?? '');
+        $loadoutItems = ArsenalLoadoutItems::grouped(
+            $payloadText,
+            $this->playerKits()?->catalogFor($tenantId, ArsenalLoadoutItems::classes($payloadText)) ?? [],
+        );
         $kinds = ArsenalLoadoutItems::presentKinds((string) ($row['payload_text'] ?? ''));
+        $aceExport = ArsenalLoadoutItems::aceExport($payloadText);
         unset($row['payload_text']);
 
         if ($this->wantsJson($request)) {
@@ -195,7 +313,9 @@ class ArsenalWardrobeController
                     'can_edit' => !empty($row['mine']),
                     'kinds' => $kinds,
                     'loadout_items' => $loadoutItems,
-                    'usage_hint' => 'Cette tenue s’envoie et se récupère depuis l’arsenal en jeu, bandeau Athena en haut de l’écran d’équipement.',
+                    'ace_export' => $aceExport,
+                    'ace_export_url' => $aceExport !== null ? url('equipment/ace-export') . '?tenue=' . $id : null,
+                    'usage_hint' => 'En jeu : arsenal ACE, bandeau « Athena · Tenues » en haut de l’écran, ou « Copier pour ACE » puis Importer dans l’arsenal.',
                 ],
                 'collections' => array_map(static function (array $c): array {
                     return [
@@ -687,6 +807,8 @@ class ArsenalWardrobeController
      * @param list<array<string, mixed>> $collections
      * @param list<array<string, mixed>> $classes
      * @param list<array<string, mixed>> $dotation
+     * @param list<array<string, mixed>> $roleKits
+     * @param array<string, mixed>|null $myGameKit dernier kit porté en jeu (PlayerKitService::forUser)
      */
     private function hubView(
         bool $migrationMissing,
@@ -694,6 +816,8 @@ class ArsenalWardrobeController
         array $collections,
         array $classes,
         array $dotation = [],
+        array $roleKits = [],
+        ?array $myGameKit = null,
     ): Response {
         $mine = array_values(array_filter($wardrobes, static fn (array $w): bool => !empty($w['mine'])));
 
@@ -707,6 +831,8 @@ class ArsenalWardrobeController
             'collections' => $collections,
             'equipmentClasses' => $classes,
             'dotationItems' => $dotation,
+            'roleKits' => $roleKits,
+            'myGameKit' => $myGameKit,
             'canManageCatalog' => $this->canManageCatalog(),
             'canManageDotation' => $this->canManageDotation(),
             'equipmentKindLabels' => ArsenalLoadoutItems::kindLabels(),
@@ -715,6 +841,30 @@ class ArsenalWardrobeController
             'flash_error' => Session::getFlash('error'),
             'coverHint' => EquipmentCoverStorage::hintText(),
         ]);
+    }
+
+    /**
+     * Pièces principales de chaque tenue (nom vu en jeu, icône) pour sa carte : une seule lecture du catalogue.
+     *
+     * @param list<array<string, mixed>> $wardrobes
+     * @return list<array<string, mixed>>
+     */
+    private function attachPreviews(int $tenantId, array $wardrobes): array
+    {
+        $all = [];
+        foreach ($wardrobes as $w) {
+            foreach ($w['preview_classes'] ?? [] as $c) {
+                $all[strtolower((string) $c)] = (string) $c;
+            }
+        }
+        $catalog = $all === [] ? [] : ($this->playerKits()?->catalogFor($tenantId, array_values($all)) ?? []);
+        foreach ($wardrobes as &$w) {
+            $w['preview'] = ArsenalLoadoutItems::previewItems(array_values($w['preview_classes'] ?? []), $catalog);
+            unset($w['preview_classes']);
+        }
+        unset($w);
+
+        return $wardrobes;
     }
 
     /**

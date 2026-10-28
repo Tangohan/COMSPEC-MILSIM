@@ -22,6 +22,12 @@ $recruitmentAthUi = !empty($recruitmentAthUi);
 <?php if (is_file(base_path('public/assets/css/recruitment_lms_overrides.css'))): ?>
 <link href="<?= htmlspecialchars(asset_url('assets/css/recruitment_lms_overrides.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 <?php endif; ?>
+<?php if (is_file(base_path('public/assets/css/lms-nav.css'))): ?>
+<link href="<?= htmlspecialchars(asset_url('assets/css/lms-nav.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+<?php endif; ?>
+<?php if (is_file(base_path('public/assets/css/recruitment_pipeline.css'))): ?>
+<link href="<?= htmlspecialchars(asset_url('assets/css/recruitment_pipeline.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+<?php endif; ?>
 <?php if ($recruitmentAthUi && is_file(base_path('public/assets/css/back-office-shell.css'))): ?>
 <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-shell.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 <link href="<?= htmlspecialchars(asset_url('assets/css/recruitment_offers_ath.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">

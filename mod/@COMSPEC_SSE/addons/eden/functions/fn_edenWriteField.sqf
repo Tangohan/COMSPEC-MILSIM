@@ -17,6 +17,12 @@ params [
 if (isNull _obj) exitWith { false };
 if (!(_field isEqualType "") || {_field isEqualTo ""}) exitWith { false };
 
+// L'attribut s'exécute sur chaque machine (JIP compris) : seul le serveur écrit et diffuse la fiche ; un client
+// (JIP compris) n'écrit rien, même localement, sinon il réimposerait chez lui les valeurs d'origine (verdict,
+// confiance, identité…) modifiées depuis par le Zeus ou applyProfile. Les valeurs publiques du serveur suffisent.
+if (!isServer) exitWith { true };
+private _pub = true;
+
 private _person = _obj isKindOf "CAManBase";
 private _name = _field;
 if ((toLower _name) isEqualTo "lastname") then { _name = "LastName"; };
@@ -29,7 +35,7 @@ if ((toLower _name) isEqualTo "confidence") then { _name = "Confidence"; };
 private _prefixed = format ["COMSPEC_SSE_%1", _name];
 
 private _fnc_pushIdentity = {
-    if (!_person) exitWith {};
+    if (!_person || {!isServer}) exitWith {};
     if (isNil "comspec_sse_fnc_setIdentity") exitWith {};
     private _first = trim (_obj getVariable ["COMSPEC_SSE_FirstName", ""]);
     private _last = trim (_obj getVariable ["COMSPEC_SSE_LastName", ""]);
@@ -52,29 +58,29 @@ private _fnc_pushIdentity = {
 if (_name isEqualTo "Preset") exitWith {
     private _preset = if (_value isEqualType "") then { toLower (trim _value) } else { "auto" };
     if (_preset isEqualTo "") then { _preset = "auto"; };
-    _obj setVariable ["Preset", _preset, true];
-    _obj setVariable ["COMSPEC_SSE_Preset", _preset, true];
+    _obj setVariable ["Preset", _preset, _pub];
+    _obj setVariable ["COMSPEC_SSE_Preset", _preset, _pub];
     if (_person) then {
-        _obj setVariable ["comspec_sse_enabled", true, true];
-        if (!isNil "comspec_overwatch_connect_fnc_sseProfilePreset" && {!isNil "comspec_overwatch_connect_fnc_sseApplyProfile"} && {_preset isNotEqualTo "auto"}) then {
-            [_obj, ([_preset] call comspec_overwatch_connect_fnc_sseProfilePreset)] call comspec_overwatch_connect_fnc_sseApplyProfile;
+        _obj setVariable ["comspec_sse_enabled", true, _pub];
+        if (isServer && {!isNil "comspec_sse_fnc_applyProfile"} && {_preset isNotEqualTo "auto"}) then {
+            [_obj, ([_preset] call comspec_sse_fnc_profilePreset)] call comspec_sse_fnc_applyProfile;
         } else {
             switch (_preset) do {
                 case "inconnu": {
-                    _obj setVariable ["COMSPEC_SSE_MatchResult", "none", true];
-                    _obj setVariable ["COMSPEC_SSE_Confidence", 0, true];
+                    _obj setVariable ["COMSPEC_SSE_MatchResult", "none", _pub];
+                    _obj setVariable ["COMSPEC_SSE_Confidence", 0, _pub];
                 };
                 case "signale": {
-                    _obj setVariable ["COMSPEC_SSE_MatchResult", "possible", true];
-                    _obj setVariable ["COMSPEC_SSE_Confidence", 58, true];
+                    _obj setVariable ["COMSPEC_SSE_MatchResult", "possible", _pub];
+                    _obj setVariable ["COMSPEC_SSE_Confidence", 58, _pub];
                 };
                 case "recherche": {
-                    _obj setVariable ["COMSPEC_SSE_MatchResult", "confirmed", true];
-                    _obj setVariable ["COMSPEC_SSE_Confidence", 93, true];
+                    _obj setVariable ["COMSPEC_SSE_MatchResult", "confirmed", _pub];
+                    _obj setVariable ["COMSPEC_SSE_Confidence", 93, _pub];
                 };
                 default {
-                    _obj setVariable ["COMSPEC_SSE_MatchResult", nil, true];
-                    _obj setVariable ["COMSPEC_SSE_Confidence", nil, true];
+                    _obj setVariable ["COMSPEC_SSE_MatchResult", nil, _pub];
+                    _obj setVariable ["COMSPEC_SSE_Confidence", nil, _pub];
                 };
             };
         };
@@ -86,14 +92,15 @@ if (_name isEqualTo "Preset") exitWith {
 if (_name isEqualTo "Seed") exitWith {
     if (!(_value isEqualType 0) || {_value <= 0}) exitWith { false };
     private _seed = round _value;
-    if (!_person) then { _obj setVariable ["Seed", _seed, true]; };
-    _obj setVariable ["COMSPEC_SSE_Seed", _seed, true];
+    if (!_person) then { _obj setVariable ["Seed", _seed, _pub]; };
+    _obj setVariable ["COMSPEC_SSE_Seed", _seed, _pub];
+    _obj setVariable ["COMSPEC_SSE_SeedAuthored", true, _pub];
     true
 };
 
 if (_name isEqualTo "Confidence") exitWith {
     if (!(_value isEqualType 0) || {_value < 0}) exitWith { false };
-    _obj setVariable ["COMSPEC_SSE_Confidence", ((round _value) max 0) min 100, true];
+    _obj setVariable ["COMSPEC_SSE_Confidence", ((round _value) max 0) min 100, _pub];
     true
 };
 
@@ -101,18 +108,18 @@ if (!(_value isEqualType "")) exitWith { false };
 private _text = trim _value;
 if (_text isEqualTo "") exitWith { false };
 
-if (!_person) then { _obj setVariable [_name, _text, true]; };
-_obj setVariable [_prefixed, _text, true];
+if (!_person) then { _obj setVariable [_name, _text, _pub]; };
+_obj setVariable [_prefixed, _text, _pub];
 if (_person) then {
-    _obj setVariable ["comspec_sse_enabled", true, true];
+    _obj setVariable ["comspec_sse_enabled", true, _pub];
     if (_name isEqualTo "Nationality") then {
-        _obj setVariable ["comspec_sse_personNationality", _text, true];
+        _obj setVariable ["comspec_sse_personNationality", _text, _pub];
     };
     if (_name isEqualTo "Language") then {
-        _obj setVariable ["comspec_sse_personLanguage", _text, true];
+        _obj setVariable ["comspec_sse_personLanguage", _text, _pub];
     };
     if (_name in ["LastName", "FirstName"]) then {
-        _obj setVariable ["COMSPEC_SSE_NameAuthored", true, true];
+        _obj setVariable ["COMSPEC_SSE_NameAuthored", true, _pub];
     };
     if (_name in ["LastName", "FirstName", "Alias", "Nationality", "Language"]) then {
         call _fnc_pushIdentity;

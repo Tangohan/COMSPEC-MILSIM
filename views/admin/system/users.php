@@ -2,26 +2,6 @@
 declare(strict_types=1);
 
 $groups = is_array($platformUserGroups ?? null) ? $platformUserGroups : [];
-// Repli si une ancienne clé plate est encore fournie.
-if ($groups === [] && is_array($platformUsers ?? null) && $platformUsers !== []) {
-    foreach ($platformUsers as $u) {
-        $key = strtolower(trim((string) ($u['email'] ?? '')));
-        if ($key === '') {
-            continue;
-        }
-        if (!isset($groups[$key])) {
-            $groups[$key] = [
-                'email' => (string) ($u['email'] ?? ''),
-                'display_name' => (string) ($u['display_name'] ?? ''),
-                'callsign' => (string) ($u['callsign'] ?? ''),
-                'memberships' => [],
-            ];
-        }
-        $groups[$key]['memberships'][] = $u;
-    }
-    $groups = array_values($groups);
-}
-
 $total = (int) ($platformUsersTotal ?? 0);
 $page = max(1, (int) ($platformUsersPage ?? 1));
 $pages = max(1, (int) ($platformUsersPages ?? 1));
@@ -29,41 +9,31 @@ $q = (string) ($platformUsersQ ?? '');
 $statusFilter = (string) ($platformUsersStatus ?? '');
 $tenantFilter = (int) ($platformUsersTenantId ?? 0);
 $tenants = is_array($platformTenants ?? null) ? $platformTenants : [];
-
-$statusLabel = static function (string $status): string {
-    return match ($status) {
-        'active' => 'Compte actif',
-        'inactive' => 'Compte inactif',
-        'pending_verification' => 'En attente de vérification de l’e-mail',
-        default => 'Inconnu',
-    };
-};
-
-$statusBadgeClass = static function (string $status): string {
-    return match ($status) {
-        'active' => 'bg-emerald-50 text-emerald-950',
-        'inactive' => 'bg-rose-50 text-rose-950',
-        'pending_verification' => 'bg-amber-50 text-amber-950',
-        default => 'bg-slate-100 text-slate-700',
-    };
-};
+$bansCount = (int) ($platformBansCount ?? 0);
+$pendingPurgeRequests = is_array($pendingPurgeRequests ?? null) ? $pendingPurgeRequests : [];
+$pendingPurgeRequestsCount = (int) ($pendingPurgeRequestsCount ?? count($pendingPurgeRequests));
 
 $currentActorId = (int) \App\Core\Session::get('user_id');
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $csrf = $h(\App\Core\Csrf::token());
+$flashOk = \App\Core\Session::getFlash('success');
+$flashErr = \App\Core\Session::getFlash('error');
 
-$returnCtx = [
-    'q' => $q,
-    'status' => $statusFilter,
-    'tenant_id' => $tenantFilter > 0 ? (string) $tenantFilter : '',
-    'page' => (string) $page,
+$statusOptions = [
+    '' => 'Tous les comptes',
+    'active' => 'Actifs',
+    'inactive' => 'Accès suspendu',
+    'pending_verification' => 'E-mail pas encore vérifié',
+    'no_org' => 'Sans communauté',
+    'banned' => 'Bannis du site',
+    'deleted' => 'Comptes anonymisés',
 ];
 
-$hiddenReturns = static function () use ($h, $returnCtx): string {
-    return '<input type="hidden" name="return_q" value="' . $h((string) $returnCtx['q']) . '">'
-        . '<input type="hidden" name="return_status" value="' . $h((string) $returnCtx['status']) . '">'
-        . '<input type="hidden" name="return_tenant_id" value="' . $h((string) $returnCtx['tenant_id']) . '">'
-        . '<input type="hidden" name="return_page" value="' . $h((string) $returnCtx['page']) . '">';
+$hiddenReturns = static function () use ($h, $q, $statusFilter, $tenantFilter, $page): string {
+    return '<input type="hidden" name="return_q" value="' . $h($q) . '">'
+        . '<input type="hidden" name="return_status" value="' . $h($statusFilter) . '">'
+        . '<input type="hidden" name="return_tenant_id" value="' . ($tenantFilter > 0 ? $tenantFilter : '') . '">'
+        . '<input type="hidden" name="return_page" value="' . $page . '">';
 };
 
 $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFilter, $page): string {
@@ -85,426 +55,590 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
 
     return $bits === [] ? $base : $base . '?' . implode('&', $bits);
 };
+
+$fmtDate = static function (?string $raw): string {
+    $ts = $raw !== null && $raw !== '' ? strtotime($raw) : false;
+
+    return $ts ? date('d/m/Y', $ts) : '';
+};
+
+/** Formulaire POST discret ; la confirmation (fenêtre) est gérée par le script en bas de page. */
+$actionForm = static function (string $action, array $fields, string $label, string $btnClass, array $confirm = []) use ($h, $csrf, $hiddenReturns): string {
+    $attrs = '';
+    foreach ($confirm as $k => $v) {
+        $attrs .= ' data-confirm-' . $k . '="' . $h((string) $v) . '"';
+    }
+    $html = '<form method="post" action="' . $h(url($action)) . '" class="pu-inline"' . ($confirm !== [] ? ' data-pu-confirm="1"' : '') . $attrs . '>'
+        . '<input type="hidden" name="_csrf_token" value="' . $csrf . '">';
+    foreach ($fields as $name => $value) {
+        $html .= '<input type="hidden" name="' . $h((string) $name) . '" value="' . $h((string) $value) . '">';
+    }
+
+    return $html . $hiddenReturns() . '<button type="submit" class="' . $h($btnClass) . '">' . $h($label) . '</button></form>';
+};
 ?>
-<div class="min-h-0 flex-1 bg-slate-50">
-    <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-        <nav class="text-sm text-slate-500">
-            <a href="<?= $h(url('admin')) ?>" class="font-semibold text-emerald-800 hover:text-emerald-950">Administration plateforme</a>
-            <span class="mx-2" aria-hidden="true">/</span>
-            <span class="text-slate-800">Comptes utilisateurs</span>
-        </nav>
-
-        <?php $ok = \App\Core\Session::getFlash('success'); ?>
-        <?php if ($ok): ?>
-            <p class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900"><?= $h((string) $ok) ?></p>
-        <?php endif; ?>
-        <?php $err = \App\Core\Session::getFlash('error'); ?>
-        <?php if ($err): ?>
-            <p class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900"><?= $h((string) $err) ?></p>
-        <?php endif; ?>
-
-        <header class="pa-head">
-            <h1 class="text-2xl font-black text-slate-900">Comptes utilisateurs (toutes communautés)</h1>
-            <p class="mt-2 max-w-3xl text-sm text-slate-600 leading-relaxed">
-                Une personne = une ligne (regroupée par e-mail), avec toutes ses appartenances.
-                Actions possibles&nbsp;: désactiver / réactiver une communauté, retirer d’une organisation,
-                ou supprimer sur tout le site (anonymisation ou suppression définitive).
-                Les comptes sans appartenance active à une vraie communauté restent visibles
-                (badge « Orphelin » sur le dossier complet).
-                Ouvrez le <strong>dossier complet</strong> pour voir chaque communauté en détail.
+<div class="pa pu">
+    <div class="pa__frame">
+        <header class="pa-hero">
+            <p class="pa-crumb">
+                <a href="<?= $h(url('admin')) ?>">Administration du site</a>
+                <span aria-hidden="true"> / </span>
+                Comptes utilisateurs
             </p>
+            <div class="pa-hero__row">
+                <div>
+                    <p class="pa-hero__kicker">Comptes &amp; accès</p>
+                    <h1 class="pa-hero__title">Comptes utilisateurs</h1>
+                    <p class="pa-hero__lead">
+                        Une carte par personne, regroupée par adresse e-mail, avec chacune de ses communautés.
+                        Les actions vont de la plus douce (suspendre l’accès à une communauté) à la plus lourde
+                        (supprimer le compte) : chacune explique ce qu’elle fait avant de s’exécuter.
+                    </p>
+                    <div class="pa-hero__actions">
+                        <button type="button" class="pa-btn pa-btn--solid" data-pu-open="pu-guide">Quelle action choisir ?</button>
+                        <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/system/blocklist')) ?>">Adresses IP et e-mails bloqués</a>
+                        <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/tenants')) ?>">Communautés</a>
+                    </div>
+                </div>
+                <aside class="pa-hero__meta">
+                    <p class="pa-hero__meta-kicker">Aperçu</p>
+                    <dl>
+                        <div class="pa-hero__meta-row">
+                            <dt>Personnes trouvées</dt>
+                            <dd><?= number_format($total, 0, ',', ' ') ?></dd>
+                        </div>
+                        <div class="pa-hero__meta-row">
+                            <dt>Bannies du site</dt>
+                            <dd><a class="pu-meta-link" href="<?= $h($queryUrl(['status' => 'banned', 'page' => 1])) ?>"><?= $bansCount ?></a></dd>
+                        </div>
+                        <div class="pa-hero__meta-row">
+                            <dt>Demandes de suppression</dt>
+                            <dd><?= $pendingPurgeRequestsCount ?></dd>
+                        </div>
+                    </dl>
+                </aside>
+            </div>
         </header>
 
-        <?php
-        $pendingPurgeRequests = is_array($pendingPurgeRequests ?? null) ? $pendingPurgeRequests : [];
-        $pendingPurgeRequestsCount = (int) ($pendingPurgeRequestsCount ?? count($pendingPurgeRequests));
-        ?>
-        <?php if ($pendingPurgeRequests !== []): ?>
-        <section class="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-4" aria-labelledby="purge-requests-title">
-            <div>
-                <h2 id="purge-requests-title" class="text-base font-semibold text-amber-950">
-                    Demandes de suppression de compte
-                    <span class="ml-2 inline-flex rounded-md bg-amber-200 px-2 py-0.5 text-xs font-bold text-amber-950"><?= $pendingPurgeRequestsCount ?></span>
-                </h2>
-                <p class="mt-2 max-w-3xl text-sm text-amber-900">
-                    Émises par des organisateurs pour retirer un compte de leur communauté.
-                    Approuver anonymise le compte s’il est encore actif, puis le retire des annuaires tout en conservant l’historique sous « Ancien membre ».
-                </p>
-            </div>
-            <ul class="space-y-3">
-                <?php foreach ($pendingPurgeRequests as $req): ?>
-                    <?php
-                    $reqId = (int) ($req['id'] ?? 0);
-                    $reqTenant = (string) ($req['tenant_name'] ?? '');
-                    $reqTarget = (string) ($req['target_display_name'] ?? 'Compte supprimé');
-                    $reqEmail = (string) ($req['target_email'] ?? '');
-                    $reqBy = (string) ($req['requester_display_name'] ?? '');
-                    if ($reqBy === '') {
-                        $reqBy = (string) ($req['requester_email'] ?? 'Organisateur');
-                    }
-                    $reqNote = trim((string) ($req['note'] ?? ''));
-                    $reqAt = (string) ($req['created_at'] ?? '');
-                    $reqUid = (int) ($req['target_user_id'] ?? 0);
-                    $reqTid = (int) ($req['tenant_id'] ?? 0);
-                    ?>
-                    <li class="rounded-xl border border-amber-200 bg-white p-4">
-                        <div class="flex flex-wrap items-start justify-between gap-3">
-                            <div class="min-w-0 flex-1">
-                                <p class="font-semibold text-slate-900">
-                                    <?= $h($reqTarget) ?>
-                                    <span class="text-xs font-normal text-slate-500">#<?= $reqUid ?></span>
-                                </p>
-                                <p class="text-xs text-slate-600 mt-1">
-                                    Communauté&nbsp;: <strong><?= $h($reqTenant !== '' ? $reqTenant : '—') ?></strong>
-                                    <?php if ($reqTid > 0): ?> · tenant #<?= $reqTid ?><?php endif; ?>
-                                </p>
-                                <?php if ($reqEmail !== ''): ?>
-                                    <p class="text-xs font-mono text-slate-500"><?= $h($reqEmail) ?></p>
-                                <?php endif; ?>
-                                <p class="text-xs text-slate-600 mt-1">
-                                    Demandé par <?= $h($reqBy) ?>
-                                    <?php if ($reqAt !== ''): ?> · <?= $h($reqAt) ?><?php endif; ?>
-                                </p>
-                                <?php if ($reqNote !== ''): ?>
-                                    <p class="mt-2 text-sm text-slate-700 border-l-2 border-amber-300 pl-3"><?= $h($reqNote) ?></p>
-                                <?php endif; ?>
-                            </div>
-                            <div class="flex flex-wrap gap-2">
-                                <form method="post" action="<?= $h(url('admin/users/purge-requests/approve')) ?>"
-                                      onsubmit="return confirm('Approuver et purger définitivement cette fiche de la communauté ?');">
-                                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                                    <input type="hidden" name="request_id" value="<?= $reqId ?>">
-                                    <?= $hiddenReturns() ?>
-                                    <button type="submit" class="rounded-lg border border-rose-700 bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800">
-                                        Approuver &amp; purger
-                                    </button>
-                                </form>
-                                <form method="post" action="<?= $h(url('admin/users/purge-requests/reject')) ?>"
-                                      onsubmit="return confirm('Refuser cette demande ?');">
-                                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                                    <input type="hidden" name="request_id" value="<?= $reqId ?>">
-                                    <?= $hiddenReturns() ?>
-                                    <button type="submit" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">
-                                        Refuser
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        </section>
+        <?php if (is_string($flashOk) && trim($flashOk) !== ''): ?>
+            <p class="pa-flash pa-flash--ok" role="status"><?= $h($flashOk) ?></p>
+        <?php endif; ?>
+        <?php if (is_string($flashErr) && trim($flashErr) !== ''): ?>
+            <p class="pa-flash pa-flash--err" role="alert"><?= $h($flashErr) ?></p>
         <?php endif; ?>
 
-        <div class="flex flex-wrap gap-3 text-sm">
-            <a href="<?= $h(url('admin/system/member-sanctions')) ?>" class="font-semibold text-rose-800 hover:underline">Sanctions à l’échelle du site</a>
-            <a href="<?= $h(url('admin/site-roles')) ?>" class="text-slate-600 hover:underline">Affectations rôles site</a>
-            <a href="<?= $h(url('admin/tenants')) ?>" class="text-slate-600 hover:underline">Annuaire des communautés</a>
-        </div>
+        <?php if ($pendingPurgeRequests !== []): ?>
+            <section class="pa-card pu-requests" aria-labelledby="purge-requests-title">
+                <p class="pa-card__kicker">À traiter</p>
+                <h2 id="purge-requests-title" class="pa-card__title">
+                    Demandes de suppression de compte
+                    <span class="pa-pill pa-pill--amber"><?= $pendingPurgeRequestsCount ?></span>
+                </h2>
+                <p class="pa-card__help">
+                    Un gestionnaire de communauté demande à effacer la fiche d’un ancien membre de sa communauté.
+                    « Accepter » efface cette fiche dans cette communauté seulement : les messages et événements restent signés
+                    « Ancien membre ». Les autres communautés de la personne ne bougent pas.
+                </p>
+                <ul class="pu-requests__list">
+                    <?php foreach ($pendingPurgeRequests as $req): ?>
+                        <?php
+                        $reqId = (int) ($req['id'] ?? 0);
+                        $reqTenant = (string) ($req['tenant_name'] ?? '');
+                        $reqTarget = (string) ($req['target_display_name'] ?? 'Compte supprimé');
+                        $reqEmail = (string) ($req['target_email'] ?? '');
+                        $reqBy = (string) ($req['requester_display_name'] ?? '');
+                        if ($reqBy === '') {
+                            $reqBy = (string) ($req['requester_email'] ?? 'Gestionnaire');
+                        }
+                        $reqNote = trim((string) ($req['note'] ?? ''));
+                        ?>
+                        <li class="pu-request">
+                            <div class="pu-request__body">
+                                <p class="pu-request__who"><?= $h($reqTarget) ?> <span class="pu-muted">· <?= $h($reqTenant !== '' ? $reqTenant : '—') ?></span></p>
+                                <?php if ($reqEmail !== ''): ?>
+                                    <p class="pu-mono"><?= $h($reqEmail) ?></p>
+                                <?php endif; ?>
+                                <p class="pu-muted">Demandé par <?= $h($reqBy) ?> le <?= $h($fmtDate((string) ($req['created_at'] ?? ''))) ?></p>
+                                <?php if ($reqNote !== ''): ?>
+                                    <p class="pu-request__note"><?= $h($reqNote) ?></p>
+                                <?php endif; ?>
+                            </div>
+                            <div class="pu-actions">
+                                <?= $actionForm('admin/users/purge-requests/approve', ['request_id' => $reqId], 'Accepter et effacer la fiche', 'pa-btn pa-btn--sm pu-btn-danger', [
+                                    'title' => 'Effacer la fiche de ' . $reqTarget . ' dans « ' . $reqTenant . ' » ?',
+                                    'body' => "La fiche de cette communauté est effacée définitivement.\nL’historique reste signé « Ancien membre ».\nLes autres communautés de la personne ne changent pas.",
+                                    'tone' => 'danger',
+                                    'ok' => 'Effacer la fiche',
+                                ]) ?>
+                                <?= $actionForm('admin/users/purge-requests/reject', ['request_id' => $reqId], 'Refuser', 'pa-btn pa-btn--sm pa-btn--line') ?>
+                            </div>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </section>
+        <?php endif; ?>
 
-        <form method="get" action="<?= $h(url('admin/users')) ?>" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div class="grid gap-3 md:grid-cols-4">
-                <div class="md:col-span-2">
-                    <label for="platform-users-q" class="block text-xs font-medium text-slate-500 mb-1">Rechercher</label>
-                    <input id="platform-users-q" type="search" name="q" value="<?= $h($q) ?>"
-                           placeholder="Adresse e-mail, nom affiché ou indicatif"
-                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <form method="get" action="<?= $h(url('admin/users')) ?>" class="pa-filters pu-filters">
+            <div class="pu-filters__grid">
+                <div class="pa-field pu-filters__q">
+                    <label for="platform-users-q">Rechercher une personne</label>
+                    <input id="platform-users-q" type="search" name="q" value="<?= $h($q) ?>" placeholder="E-mail, nom ou indicatif">
                 </div>
-                <div>
-                    <label for="platform-users-tenant" class="block text-xs font-medium text-slate-500 mb-1">Communauté</label>
-                    <select id="platform-users-tenant" name="tenant_id" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <div class="pa-field">
+                    <label for="platform-users-tenant">Communauté</label>
+                    <select id="platform-users-tenant" name="tenant_id">
                         <option value="">Toutes</option>
                         <?php foreach ($tenants as $t): ?>
                             <?php $tid = (int) ($t['id'] ?? 0); ?>
-                            <option value="<?= $tid ?>" <?= $tid === $tenantFilter ? 'selected' : '' ?>>
-                                <?= $h((string) ($t['name'] ?? '')) ?>
-                            </option>
+                            <option value="<?= $tid ?>" <?= $tid === $tenantFilter ? 'selected' : '' ?>><?= $h(community_display_name($t)) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div>
-                    <label for="platform-users-status" class="block text-xs font-medium text-slate-500 mb-1">État du compte</label>
-                    <select id="platform-users-status" name="status" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                        <option value="">Tous</option>
-                        <option value="active" <?= $statusFilter === 'active' ? 'selected' : '' ?>>Compte actif</option>
-                        <option value="inactive" <?= $statusFilter === 'inactive' ? 'selected' : '' ?>>Compte inactif</option>
-                        <option value="pending_verification" <?= $statusFilter === 'pending_verification' ? 'selected' : '' ?>>En attente de vérification de l’e-mail</option>
-                        <option value="deleted" <?= $statusFilter === 'deleted' ? 'selected' : '' ?>>Comptes supprimés</option>
+                <div class="pa-field">
+                    <label for="platform-users-status">État</label>
+                    <select id="platform-users-status" name="status">
+                        <?php foreach ($statusOptions as $value => $label): ?>
+                            <option value="<?= $h($value) ?>" <?= $statusFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
+                <div class="pu-filters__buttons">
+                    <button type="submit" class="pa-btn pa-btn--solid">Filtrer</button>
+                    <?php if ($q !== '' || $statusFilter !== '' || $tenantFilter > 0): ?>
+                        <a href="<?= $h(url('admin/users')) ?>" class="pa-btn pa-btn--line">Tout afficher</a>
+                    <?php endif; ?>
+                </div>
             </div>
-            <div class="mt-4 flex flex-wrap gap-2">
-                <button type="submit" class="inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Filtrer</button>
-                <a href="<?= $h(url('admin/users')) ?>" class="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Réinitialiser</a>
-            </div>
+            <?php if ($tenantFilter > 0): ?>
+                <p class="pu-filters__note">Le filtre par communauté montre ses membres actuels. Une personne retirée de cette communauté reste visible sans ce filtre, avec la mention « Retiré ».</p>
+            <?php endif; ?>
         </form>
 
-        <p class="text-sm text-slate-600">
-            <?= $total === 0 ? 'Aucune personne trouvée.' : ($total === 1 ? '1 personne trouvée.' : number_format($total, 0, ',', ' ') . ' personnes trouvées.') ?>
+        <p class="pu-count">
+            <?= $total === 0 ? 'Aucune personne trouvée.' : ($total === 1 ? '1 personne' : number_format($total, 0, ',', ' ') . ' personnes') ?>
             <?php if ($pages > 1): ?>
-                <span class="text-slate-400">— page <?= $page ?> / <?= $pages ?></span>
+                <span class="pu-muted">· page <?= $page ?> sur <?= $pages ?></span>
             <?php endif; ?>
         </p>
 
-        <div class="space-y-4">
-            <?php if ($groups === []): ?>
-                <div class="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-slate-500 shadow-sm">
-                    Aucun compte ne correspond à ces critères.
-                </div>
-            <?php else: ?>
-                <?php foreach ($groups as $group): ?>
-                    <?php
-                    $email = (string) ($group['email'] ?? '');
-                    $display = trim((string) ($group['display_name'] ?? ''));
-                    $callsign = trim((string) ($group['callsign'] ?? ''));
-                    $memberships = is_array($group['memberships'] ?? null) ? $group['memberships'] : [];
-                    $primary = $callsign !== '' ? $callsign : ($display !== '' ? $display : $email);
-                    $isSelf = false;
-                    foreach ($memberships as $m) {
-                        if ((int) ($m['id'] ?? 0) === $currentActorId) {
-                            $isSelf = true;
-                            break;
-                        }
+        <?php if ($groups === []): ?>
+            <div class="pa-card pu-empty">
+                <p>Aucun compte ne correspond à ces critères.</p>
+            </div>
+        <?php endif; ?>
+
+        <div class="pu-list">
+            <?php foreach ($groups as $gi => $group): ?>
+                <?php
+                $email = (string) ($group['email'] ?? '');
+                $display = trim((string) ($group['display_name'] ?? ''));
+                $callsign = trim((string) ($group['callsign'] ?? ''));
+                $memberships = is_array($group['memberships'] ?? null) ? $group['memberships'] : [];
+                $anchor = is_array($group['account_anchor'] ?? null) ? $group['account_anchor'] : null;
+                $primary = $callsign !== '' ? $callsign : ($display !== '' ? $display : $email);
+                $ban = is_array($group['ban'] ?? null) ? $group['ban'] : null;
+                $noOrg = !empty($group['no_org']);
+                $knownIps = is_array($group['known_ips'] ?? null) ? $group['known_ips'] : [];
+                $anchorId = (int) ($anchor['id'] ?? 0);
+                $anchorTid = (int) ($anchor['tenant_id'] ?? 0);
+                $isSelf = $anchorId === $currentActorId;
+                foreach ($memberships as $m) {
+                    if ((int) ($m['id'] ?? 0) === $currentActorId) {
+                        $isSelf = true;
                     }
-                    $alive = [];
-                    foreach ($memberships as $m) {
-                        if (empty($m['deleted_at'])) {
-                            $alive[] = $m;
-                        }
+                }
+                $isAnonymized = $anchor !== null && !empty($anchor['deleted_at']);
+                $distinctLive = [];
+                foreach ($memberships as $m) {
+                    if ((int) ($m['id'] ?? 0) > 0 && empty($m['deleted_at']) && (string) ($m['status'] ?? '') !== 'merged') {
+                        $distinctLive[(int) $m['id']] = true;
                     }
-                    $distinctLiveUserIds = [];
-                    foreach ($memberships as $m) {
-                        $uid = (int) ($m['id'] ?? 0);
-                        $st = (string) ($m['status'] ?? '');
-                        if ($uid > 0 && $st !== 'merged' && empty($m['deleted_at'])) {
-                            $distinctLiveUserIds[$uid] = true;
-                        }
-                    }
-                    $needsAccountMerge = count($distinctLiveUserIds) > 1;
-                    $siteAnchor = $alive[0] ?? ($memberships[0] ?? null);
-                    $siteUid = (int) ($siteAnchor['id'] ?? 0);
-                    $siteTid = (int) ($siteAnchor['tenant_id'] ?? 0);
-                    $emailJs = htmlspecialchars(json_encode($email, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '""', ENT_QUOTES, 'UTF-8');
-                    ?>
-                    <article class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                        <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 bg-slate-50">
-                            <div>
-                                <h2 class="text-base font-bold text-slate-900">
-                                    <a href="<?= $h(url('admin/users/person') . '?email=' . rawurlencode($email)) ?>" class="hover:text-emerald-800 hover:underline">
-                                        <?= $h($primary) ?>
-                                    </a>
-                                </h2>
+                }
+                $personUrl = url('admin/users/person') . '?email=' . rawurlencode($email);
+                $banDialogId = 'pu-ban-' . $gi;
+                $initial = mb_strtoupper(mb_substr($primary !== '' ? $primary : '?', 0, 1));
+                ?>
+                <article class="pu-person<?= $ban !== null ? ' is-banned' : '' ?>">
+                    <header class="pu-person__head">
+                        <span class="pu-avatar" aria-hidden="true"><?= $h($initial) ?></span>
+                        <div class="pu-person__id">
+                            <h2 class="pu-person__name">
+                                <a class="pu-person__link<?= staff_name_class($anchorId) ?>" href="<?= $h($personUrl) ?>" data-staff-done><?= $h($primary) ?></a><?= staff_mark($anchorId, true) ?>
+                                <?php if ($ban !== null): ?>
+                                    <span class="pa-pill pa-pill--rose">Banni du site</span>
+                                <?php endif; ?>
+                                <?php if ($noOrg && !$isAnonymized): ?>
+                                    <span class="pa-pill pa-pill--slate" title="Aucune communauté active : la personne a un compte seul, elle peut rejoindre ou créer une communauté.">Sans communauté</span>
+                                <?php endif; ?>
+                                <?php if ($isAnonymized): ?>
+                                    <span class="pa-pill pa-pill--slate">Compte anonymisé</span>
+                                <?php endif; ?>
+                            </h2>
+                            <p class="pu-person__sub">
                                 <?php if ($display !== '' && strcasecmp($display, $primary) !== 0): ?>
-                                    <p class="text-xs text-slate-600"><?= $h($display) ?></p>
+                                    <span><?= $h($display) ?></span>
                                 <?php endif; ?>
-                                <?php if ($email !== ''): ?>
-                                    <p class="text-xs text-slate-500 font-mono"><?= $h($email) ?></p>
+                                <span class="pu-mono"><?= $h($email) ?></span>
+                            </p>
+                            <p class="pu-person__links">
+                                <a class="pu-link" href="<?= $h($personUrl) ?>">Dossier complet</a>
+                                <?php if ($anchorId > 0 && !$isAnonymized): ?>
+                                    <a class="pu-link" href="<?= $h(url('admin/users/' . $anchorId . '/edit')) ?>">Modifier le compte</a>
                                 <?php endif; ?>
-                                <p class="mt-1 text-xs text-slate-500">
-                                    <?= count($memberships) ?> communauté<?= count($memberships) > 1 ? 's' : '' ?>
-                                    · <a href="<?= $h(url('admin/users/person') . '?email=' . rawurlencode($email)) ?>" class="font-semibold text-emerald-800 hover:underline">Dossier complet</a>
-                                    <?php if ($needsAccountMerge): ?>
-                                        · <a href="<?= $h(url('admin/users/person') . '?email=' . rawurlencode($email) . '#fusion-comptes') ?>" class="font-semibold text-amber-800 hover:underline">Fusionner les comptes</a>
-                                    <?php endif; ?>
-                                    <?php if ($siteUid > 0): ?>
-                                        · <a href="<?= $h(url('admin/users/' . $siteUid . '/edit')) ?>" class="font-semibold text-emerald-800 hover:underline">Modifier</a>
+                                <?php if (count($distinctLive) > 1): ?>
+                                    <a class="pu-link pu-link--warn" href="<?= $h($personUrl . '#fusion-comptes') ?>">Réunir ses <?= count($distinctLive) ?> comptes</a>
+                                <?php endif; ?>
+                            </p>
+                            <?php if ($ban !== null): ?>
+                                <p class="pu-ban-note">
+                                    Banni le <?= $h($fmtDate((string) ($ban['created_at'] ?? ''))) ?>
+                                    <?php if (trim((string) ($ban['reason'] ?? '')) !== ''): ?>
+                                        · motif : <?= $h((string) $ban['reason']) ?>
                                     <?php endif; ?>
                                 </p>
-                            </div>
-                            <?php if (!$isSelf && $siteUid > 0 && $siteTid > 0 && $alive !== []): ?>
-                                <div class="flex flex-wrap gap-2">
-                                    <form method="post" action="<?= $h(url('admin/users/delete')) ?>"
-                                          onsubmit="return confirm('Anonymiser <?= $h(addslashes($primary)) ?> sur TOUT LE SITE ?\n\nToutes les communautés de cette adresse seront retirées (fiches « Compte supprimé »).');">
-                                        <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                                        <input type="hidden" name="user_id" value="<?= $siteUid ?>">
-                                        <input type="hidden" name="tenant_id" value="<?= $siteTid ?>">
-                                        <input type="hidden" name="scope" value="site">
-                                        <?= $hiddenReturns() ?>
-                                        <button type="submit" class="rounded-lg border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-950 hover:bg-rose-100">
-                                            Anonymiser (site)
-                                        </button>
-                                    </form>
-                                    <form method="post" action="<?= $h(url('admin/users/purge')) ?>"
-                                          onsubmit="return athPurgeConfirm(this, <?= $emailJs ?>, 'site');">
-                                        <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                                        <input type="hidden" name="user_id" value="<?= $siteUid ?>">
-                                        <input type="hidden" name="tenant_id" value="<?= $siteTid ?>">
-                                        <input type="hidden" name="scope" value="site">
-                                        <input type="hidden" name="confirm_email" value="">
-                                        <?= $hiddenReturns() ?>
-                                        <button type="submit" class="rounded-lg border border-rose-700 bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800">
-                                            Supprimer définitivement (site)
-                                        </button>
-                                    </form>
-                                </div>
-                            <?php elseif ($isSelf): ?>
-                                <p class="text-xs text-slate-400">C’est votre propre compte.</p>
                             <?php endif; ?>
                         </div>
-
-                        <div class="divide-y divide-slate-100">
-                            <?php foreach ($memberships as $m): ?>
-                                <?php
-                                $uid = (int) ($m['id'] ?? 0);
-                                $tid = (int) ($m['tenant_id'] ?? 0);
-                                $tenantName = (string) ($m['tenant_name'] ?? '');
-                                $roleName = trim((string) ($m['role_name'] ?? ''));
-                                $st = (string) ($m['status'] ?? '');
-                                $isDeleted = !empty($m['deleted_at']);
-                                $mCallsign = trim((string) ($m['callsign'] ?? ''));
-                                $sanctionsUrl = url('admin/system/member-sanctions') . ($tid > 0 ? '?tenant_id=' . $tid : '');
-                                ?>
-                                <div class="grid gap-3 px-4 py-3 md:grid-cols-[1.2fr_1fr_auto] md:items-center">
-                                    <div>
-                                        <p class="font-semibold text-slate-900"><?= $h($tenantName !== '' ? $tenantName : '—') ?></p>
-                                        <p class="text-xs text-slate-500">
-                                            <?= $h($roleName !== '' ? $roleName : 'Sans rôle') ?>
-                                            <?php if ($mCallsign !== ''): ?>
-                                                · <?= $h($mCallsign) ?>
-                                            <?php endif; ?>
-                                            · #<?= $uid ?>
-                                        </p>
+                        <div class="pu-person__actions">
+                            <?php if ($isSelf): ?>
+                                <span class="pu-muted">C’est votre compte</span>
+                            <?php elseif (!$isAnonymized && $anchorId > 0): ?>
+                                <?php if ($ban !== null): ?>
+                                    <?= $actionForm('admin/users/lever-bannissement', ['email' => $email], 'Lever le bannissement', 'pa-btn pa-btn--sm pa-btn--line', [
+                                        'title' => 'Lever le bannissement de ' . $primary . ' ?',
+                                        'body' => "La personne peut de nouveau se connecter et s’inscrire.\nSes fiches retrouvent l’état qu’elles avaient avant le bannissement.\nLes blocages (e-mail, Steam, IP) créés par ce bannissement sont retirés.",
+                                        'ok' => 'Lever le bannissement',
+                                    ]) ?>
+                                <?php else: ?>
+                                    <button type="button" class="pa-btn pa-btn--sm pu-btn-danger-soft" data-pu-open="<?= $h($banDialogId) ?>">Bannir du site</button>
+                                <?php endif; ?>
+                                <details class="pu-more">
+                                    <summary class="pa-btn pa-btn--sm pa-btn--line" aria-label="Autres actions sur le compte">Supprimer…</summary>
+                                    <div class="pu-more__menu">
+                                        <p class="pu-more__title">Actions sur tout le compte</p>
+                                        <?= $actionForm('admin/users/delete', ['user_id' => $anchorId, 'tenant_id' => $anchorTid, 'scope' => 'site'], 'Supprimer le compte', 'pu-menu-item', [
+                                            'title' => 'Supprimer le compte de ' . $primary . ' ?',
+                                            'body' => "Le compte, son compte de jeu, ses rôles et ses données personnelles sont effacés dans toutes ses communautés.\nSes communautés passent au membre suivant, ou sont supprimées s’il était seul.\nCe que d’autres membres partagent (messages, comptes rendus) reste, signé « Ancien membre ».\nUne nouvelle inscription avec cette adresse repart de zéro. On ne peut pas revenir en arrière.",
+                                            'tone' => 'danger',
+                                            'ok' => 'Supprimer le compte',
+                                        ]) ?>
+                                        <p class="pu-more__hint">Efface la personne, garde ce que les autres membres partagent. Pour une demande RGPD.</p>
+                                        <?= $actionForm('admin/users/purge', ['user_id' => $anchorId, 'tenant_id' => $anchorTid, 'scope' => 'site', 'confirm_email' => ''], 'Supprimer définitivement', 'pu-menu-item pu-menu-item--danger', [
+                                            'title' => 'Supprimer définitivement le compte de ' . $primary . ' ?',
+                                            'body' => "Toutes les fiches de cette adresse sont effacées de la base, dans toutes ses communautés.\nRien ne peut être restauré.",
+                                            'tone' => 'danger',
+                                            'type' => $email,
+                                            'ok' => 'Supprimer définitivement',
+                                        ]) ?>
+                                        <p class="pu-more__hint">Efface tout. À réserver aux faux comptes et comptes de test.</p>
                                     </div>
-                                    <div>
-                                        <?php if ($isDeleted): ?>
-                                            <span class="inline-flex rounded-md px-2 py-1 text-xs font-semibold bg-slate-200 text-slate-700">Compte supprimé</span>
-                                        <?php else: ?>
-                                            <span class="inline-flex rounded-md px-2 py-1 text-xs font-semibold <?= $h($statusBadgeClass($st)) ?>">
-                                                <?= $h($statusLabel($st)) ?>
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="flex flex-wrap gap-2 justify-start md:justify-end">
-                                        <?php if ($uid === $currentActorId): ?>
-                                            <span class="text-xs text-slate-400 self-center">Vous</span>
-                                        <?php elseif ($isDeleted): ?>
-                                            <form method="post" action="<?= $h(url('admin/users/purge')) ?>"
-                                                  onsubmit="return athPurgeConfirm(this, <?= $emailJs ?>, 'org');">
-                                                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                                                <input type="hidden" name="user_id" value="<?= $uid ?>">
-                                                <input type="hidden" name="tenant_id" value="<?= $tid ?>">
-                                                <input type="hidden" name="scope" value="org">
-                                                <input type="hidden" name="confirm_email" value="">
-                                                <?= $hiddenReturns() ?>
-                                                <button type="submit" class="rounded-lg border border-rose-700 bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800">
-                                                    Purger cette communauté
-                                                </button>
-                                            </form>
-                                        <?php else: ?>
-                                            <a href="<?= $h(url('admin/users/' . $uid . '/edit')) ?>" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-950 hover:bg-emerald-100">Modifier</a>
-                                            <?php if ($st === 'active'): ?>
-                                                <form method="post" action="<?= $h(url('admin/users/set-status')) ?>"
-                                                      onsubmit="return confirm('Désactiver l’accès dans <?= $h(addslashes($tenantName)) ?> ?');">
-                                                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                                                    <input type="hidden" name="user_id" value="<?= $uid ?>">
-                                                    <input type="hidden" name="tenant_id" value="<?= $tid ?>">
-                                                    <input type="hidden" name="status" value="inactive">
-                                                    <?= $hiddenReturns() ?>
-                                                    <button type="submit" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-950 hover:bg-amber-100">Désactiver</button>
-                                                </form>
-                                            <?php else: ?>
-                                                <form method="post" action="<?= $h(url('admin/users/set-status')) ?>">
-                                                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                                                    <input type="hidden" name="user_id" value="<?= $uid ?>">
-                                                    <input type="hidden" name="tenant_id" value="<?= $tid ?>">
-                                                    <input type="hidden" name="status" value="active">
-                                                    <?= $hiddenReturns() ?>
-                                                    <button type="submit" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-950 hover:bg-emerald-100">Réactiver</button>
-                                                </form>
-                                            <?php endif; ?>
-                                            <form method="post" action="<?= $h(url('admin/users/delete')) ?>"
-                                                  onsubmit="return confirm('Retirer <?= $h(addslashes($primary)) ?> de « <?= $h(addslashes($tenantName)) ?> » uniquement ?\n\nLes autres communautés restent intactes.');">
-                                                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                                                <input type="hidden" name="user_id" value="<?= $uid ?>">
-                                                <input type="hidden" name="tenant_id" value="<?= $tid ?>">
-                                                <input type="hidden" name="scope" value="org">
-                                                <?= $hiddenReturns() ?>
-                                                <button type="submit" class="rounded-lg border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-950 hover:bg-rose-100">
-                                                    Retirer de l’orga
-                                                </button>
-                                            </form>
-                                            <form method="post" action="<?= $h(url('admin/users/purge')) ?>"
-                                                  onsubmit="return athPurgeConfirm(this, <?= $emailJs ?>, 'org');">
-                                                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                                                <input type="hidden" name="user_id" value="<?= $uid ?>">
-                                                <input type="hidden" name="tenant_id" value="<?= $tid ?>">
-                                                <input type="hidden" name="scope" value="org">
-                                                <input type="hidden" name="confirm_email" value="">
-                                                <?= $hiddenReturns() ?>
-                                                <button type="submit" class="rounded-lg border border-rose-700 bg-white px-3 py-1.5 text-xs font-semibold text-rose-800 hover:bg-rose-50">
-                                                    Purger orga
-                                                </button>
-                                            </form>
-                                        <?php endif; ?>
-                                        <a href="<?= $h($sanctionsUrl) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Sanctions</a>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
+                                </details>
+                            <?php endif; ?>
                         </div>
-                    </article>
-                <?php endforeach; ?>
-            <?php endif; ?>
+                    </header>
+
+                    <div class="pu-rows">
+                        <?php if ($memberships === []): ?>
+                            <div class="pu-row pu-row--solo">
+                                <div class="pu-row__main">
+                                    <p class="pu-row__name">Aucune communauté</p>
+                                    <p class="pu-muted">Compte seul : la personne peut rejoindre une communauté avec un code ou en créer une.</p>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                        <?php foreach ($memberships as $m): ?>
+                            <?php
+                            $uid = (int) ($m['id'] ?? 0);
+                            $tid = (int) ($m['tenant_id'] ?? 0);
+                            $tenantName = (string) ($m['tenant_name'] ?? '');
+                            $roleName = trim((string) ($m['role_name'] ?? ''));
+                            $st = (string) ($m['status'] ?? '');
+                            $ms = (string) ($m['membership_status'] ?? 'active');
+                            $isDeleted = !empty($m['deleted_at']);
+                            $isLeft = !$isDeleted && $ms !== 'active';
+                            $mCallsign = trim((string) ($m['callsign'] ?? ''));
+                            $fields = ['user_id' => $uid, 'tenant_id' => $tid];
+                            if ($isDeleted) {
+                                [$pill, $pillText] = ['pa-pill--slate', 'Compte anonymisé'];
+                            } elseif ($isLeft) {
+                                $leftAt = $fmtDate((string) ($m['membership_left_at'] ?? ''));
+                                [$pill, $pillText] = ['pa-pill--slate', 'Retiré' . ($leftAt !== '' ? ' le ' . $leftAt : '')];
+                            } elseif ($st === 'active') {
+                                [$pill, $pillText] = ['pa-pill--mint', 'Membre actif'];
+                            } elseif ($st === 'pending_verification') {
+                                [$pill, $pillText] = ['pa-pill--amber', 'E-mail pas encore vérifié'];
+                            } else {
+                                [$pill, $pillText] = ['pa-pill--amber', 'Accès suspendu'];
+                            }
+                            ?>
+                            <div class="pu-row<?= $isLeft || $isDeleted ? ' is-past' : '' ?>">
+                                <div class="pu-row__main">
+                                    <p class="pu-row__name"><?= $h($tenantName !== '' ? $tenantName : '—') ?></p>
+                                    <p class="pu-muted">
+                                        <?= $h($roleName !== '' ? $roleName : 'Sans rôle') ?>
+                                        <?php if ($mCallsign !== '' && $mCallsign !== 'Compte supprimé'): ?>
+                                            · <?= $h($mCallsign) ?>
+                                        <?php endif; ?>
+                                    </p>
+                                </div>
+                                <span class="pa-pill <?= $h($pill) ?> pu-row__state"><?= $h($pillText) ?></span>
+                                <div class="pu-actions pu-row__actions">
+                                    <?php if ($uid === $currentActorId): ?>
+                                        <span class="pu-muted">Vous</span>
+                                    <?php elseif ($isDeleted): ?>
+                                        <?= $actionForm('admin/users/purge', $fields + ['scope' => 'org', 'confirm_email' => ''], 'Effacer cette fiche', 'pa-btn pa-btn--sm pa-btn--line', [
+                                            'title' => 'Effacer la fiche anonymisée dans « ' . $tenantName . ' » ?',
+                                            'body' => "La fiche « Compte supprimé » disparaît de l’annuaire de cette communauté.\nRien ne peut être restauré.",
+                                            'tone' => 'danger',
+                                            'type' => $email,
+                                            'ok' => 'Effacer',
+                                        ]) ?>
+                                    <?php elseif ($isLeft): ?>
+                                        <?php if ($ban === null): ?>
+                                            <?= $actionForm('admin/users/reintegrer-communaute', $fields, 'Réintégrer', 'pa-btn pa-btn--sm pa-btn--line', [
+                                                'title' => 'Réintégrer ' . $primary . ' dans « ' . $tenantName . ' » ?',
+                                                'body' => "La personne redevient membre avec sa fiche, son rôle et son historique d’avant.",
+                                                'ok' => 'Réintégrer',
+                                            ]) ?>
+                                        <?php endif; ?>
+                                        <?= $actionForm('admin/users/purge', $fields + ['scope' => 'org', 'confirm_email' => ''], 'Effacer sa fiche ici', 'pa-btn pa-btn--sm pu-btn-ghost-danger', [
+                                            'title' => 'Effacer la fiche de ' . $primary . ' dans « ' . $tenantName . ' » ?',
+                                            'body' => "Sa fiche dans cette communauté est effacée de la base (grade, dossier, rôle…).\nSes autres communautés et son compte ne changent pas.\nRien ne peut être restauré.",
+                                            'tone' => 'danger',
+                                            'type' => $email,
+                                            'ok' => 'Effacer la fiche',
+                                        ]) ?>
+                                    <?php else: ?>
+                                        <a class="pa-btn pa-btn--sm pa-btn--line" href="<?= $h(url('admin/users/' . $uid . '/edit')) ?>">Modifier</a>
+                                        <?php if ($ban === null): ?>
+                                            <?php if ($st === 'active'): ?>
+                                                <?= $actionForm('admin/users/set-status', $fields + ['status' => 'inactive'], 'Suspendre', 'pa-btn pa-btn--sm pa-btn--line', [
+                                                    'title' => 'Suspendre l’accès de ' . $primary . ' à « ' . $tenantName . ' » ?',
+                                                    'body' => "La personne reste membre mais ne peut plus entrer dans cette communauté.\nSes autres communautés ne changent pas. « Rétablir » annule.",
+                                                    'ok' => 'Suspendre',
+                                                ]) ?>
+                                            <?php else: ?>
+                                                <?= $actionForm('admin/users/set-status', $fields + ['status' => 'active'], 'Rétablir l’accès', 'pa-btn pa-btn--sm pa-btn--line') ?>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
+                                        <?= $actionForm('admin/users/retirer-communaute', $fields, 'Retirer', 'pa-btn pa-btn--sm pu-btn-ghost-danger', [
+                                            'title' => 'Retirer ' . $primary . ' de « ' . $tenantName . ' » ?',
+                                            'body' => "La personne ne fait plus partie de cette communauté et n’y a plus accès.\nRien n’est effacé : sa fiche reste ici avec la mention « Retiré », et « Réintégrer » annule.",
+                                            'ok' => 'Retirer',
+                                        ]) ?>
+                                    <?php endif; ?>
+                                    <a class="pu-icon-link" href="<?= $h(url('admin/system/member-sanctions') . ($tid > 0 ? '?tenant_id=' . $tid : '')) ?>" title="Sanctions dans cette communauté (avertissement, restriction de messagerie…)">Sanctions</a>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <?php if ($ban === null && !$isSelf && !$isAnonymized && $anchorId > 0): ?>
+                        <dialog id="<?= $h($banDialogId) ?>" class="pu-dialog" aria-labelledby="<?= $h($banDialogId) ?>-title">
+                            <form method="post" action="<?= $h(url('admin/users/bannir')) ?>" class="pu-dialog__form">
+                                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                                <input type="hidden" name="email" value="<?= $h($email) ?>">
+                                <?= $hiddenReturns() ?>
+                                <p class="pu-dialog__kicker">Bannir du site</p>
+                                <h3 id="<?= $h($banDialogId) ?>-title" class="pu-dialog__title"><?= $h($primary) ?></h3>
+                                <ul class="pu-dialog__facts">
+                                    <li>Ses sessions sont fermées et ses fiches passent « inactif » dans toutes ses communautés.</li>
+                                    <li>L’adresse <strong><?= $h($email) ?></strong> ne peut plus se connecter ni créer de compte.</li>
+                                    <li>Rien n’est effacé. « Lever le bannissement » remet tout comme avant.</li>
+                                </ul>
+                                <label class="pu-dialog__field">
+                                    <span>Motif (gardé dans le journal)</span>
+                                    <textarea name="reason" rows="2" required maxlength="500" placeholder="Ex. insultes répétées, triche"></textarea>
+                                </label>
+                                <fieldset class="pu-dialog__field">
+                                    <legend>Bloquer aussi</legend>
+                                    <label class="pu-check"><input type="checkbox" name="block_steam" value="1" checked> Son Steam ID dans le mod (s’il est lié)</label>
+                                    <?php foreach ($knownIps as $ipRow): ?>
+                                        <label class="pu-check">
+                                            <input type="checkbox" name="block_ips[]" value="<?= $h((string) $ipRow['ip']) ?>">
+                                            Adresse IP <span class="pu-mono"><?= $h((string) $ipRow['ip']) ?></span>
+                                            <span class="pu-muted">· dernière connexion <?= $h($fmtDate((string) $ipRow['last_seen'])) ?>, <?= (int) $ipRow['logins'] ?> fois</span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                    <?php if ($knownIps === []): ?>
+                                        <p class="pu-muted">Aucune adresse IP de connexion connue sur les 6 derniers mois.</p>
+                                    <?php endif; ?>
+                                    <label class="pu-dialog__sub">
+                                        <span>Autre adresse IP (facultatif)</span>
+                                        <input type="text" name="extra_ips" placeholder="Ex. 88.163.184.156" autocomplete="off" inputmode="decimal">
+                                    </label>
+                                    <p class="pu-muted">Une adresse IP peut être partagée (box familiale, partage de connexion) : ne la bloquez que si vous êtes sûr.</p>
+                                </fieldset>
+                                <div class="pu-dialog__buttons">
+                                    <button type="button" class="pa-btn pa-btn--line" data-pu-close>Annuler</button>
+                                    <button type="submit" class="pa-btn pu-btn-danger">Bannir du site</button>
+                                </div>
+                            </form>
+                        </dialog>
+                    <?php endif; ?>
+                </article>
+            <?php endforeach; ?>
         </div>
 
         <?php if ($pages > 1): ?>
-            <nav class="flex flex-wrap items-center justify-between gap-3 text-sm" aria-label="Pagination">
+            <nav class="pu-pager" aria-label="Pagination">
                 <?php if ($page > 1): ?>
-                    <a href="<?= $h($queryUrl(['page' => $page - 1])) ?>" class="rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold text-slate-800 hover:bg-slate-50">Page précédente</a>
+                    <a href="<?= $h($queryUrl(['page' => $page - 1])) ?>" class="pa-btn pa-btn--line">Page précédente</a>
                 <?php else: ?>
-                    <span class="text-slate-400">Page précédente</span>
+                    <span></span>
                 <?php endif; ?>
-                <span class="text-slate-600">Page <?= $page ?> sur <?= $pages ?></span>
+                <span class="pu-muted">Page <?= $page ?> sur <?= $pages ?></span>
                 <?php if ($page < $pages): ?>
-                    <a href="<?= $h($queryUrl(['page' => $page + 1])) ?>" class="rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold text-slate-800 hover:bg-slate-50">Page suivante</a>
+                    <a href="<?= $h($queryUrl(['page' => $page + 1])) ?>" class="pa-btn pa-btn--line">Page suivante</a>
                 <?php else: ?>
-                    <span class="text-slate-400">Page suivante</span>
+                    <span></span>
                 <?php endif; ?>
             </nav>
         <?php endif; ?>
 
-        <section class="rounded-2xl border border-rose-200 bg-rose-50 p-5">
-            <h2 class="text-base font-semibold text-rose-950">Retrait des fiches anonymisées</h2>
-            <p class="mt-2 max-w-3xl text-sm text-rose-900">
-                Les comptes anonymisés restent visibles en annuaire sous « Compte supprimé ». Cette action les
-                retire tous d’un coup de chaque communauté : l’historique (forum, événements, etc.) est conservé
-                et affiché sous « Ancien membre », sans laisser de fiche inexplicable dans le back-office.
+        <section class="pa-card pu-cleanup">
+            <p class="pa-card__kicker">Entretien</p>
+            <h2 class="pa-card__title">Nettoyer les comptes anonymisés</h2>
+            <p class="pa-card__help">
+                Après une anonymisation, une fiche « Compte supprimé » reste dans l’annuaire de chaque communauté.
+                Ce nettoyage les retire toutes d’un coup. Les messages, événements et participations restent,
+                signés « Ancien membre ». Aucun compte actif n’est touché.
             </p>
-            <form method="post" action="<?= $h(url('admin/users/purge-anonymises')) ?>"
-                  class="mt-4 flex flex-wrap items-end gap-3">
-                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                <?= $hiddenReturns() ?>
-                <label class="flex-1 min-w-[16rem]">
-                    <span class="block text-xs font-semibold uppercase tracking-wide text-rose-900">Tapez « supprimer definitivement » pour confirmer</span>
-                    <input type="text" name="confirm_phrase" autocomplete="off" required
-                           class="mt-1 w-full rounded-lg border border-rose-300 bg-white px-3 py-2 text-sm text-slate-900">
-                </label>
-                <button type="submit" class="rounded-lg border border-rose-700 bg-rose-700 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-800">
-                    Retirer les fiches anonymisées
-                </button>
-            </form>
+            <?= $actionForm('admin/users/purge-anonymises', ['confirm_phrase' => ''], 'Nettoyer les fiches anonymisées', 'pa-btn pa-btn--line', [
+                'title' => 'Retirer toutes les fiches « Compte supprimé » ?',
+                'body' => "Les fiches anonymisées disparaissent des annuaires de toutes les communautés.\nL’historique reste, signé « Ancien membre ». Aucun compte actif n’est touché.",
+                'tone' => 'danger',
+                'type' => 'supprimer definitivement',
+                'ok' => 'Nettoyer',
+            ]) ?>
         </section>
     </div>
+
+    <dialog id="pu-guide" class="pu-dialog pu-dialog--wide" aria-labelledby="pu-guide-title">
+        <div class="pu-dialog__form">
+            <p class="pu-dialog__kicker">Aide</p>
+            <h3 id="pu-guide-title" class="pu-dialog__title">Quelle action choisir ?</h3>
+            <div class="pu-guide">
+                <section>
+                    <h4>Dans une communauté</h4>
+                    <dl>
+                        <div><dt>Suspendre <span class="pa-pill pa-pill--mint">réversible</span></dt><dd>La personne reste membre mais ne peut plus entrer dans cette communauté. Pour une pause ou une enquête.</dd></div>
+                        <div><dt>Retirer <span class="pa-pill pa-pill--mint">réversible</span></dt><dd>Elle ne fait plus partie de la communauté. Sa fiche reste visible ici avec « Retiré » et peut être réintégrée.</dd></div>
+                        <div><dt>Effacer sa fiche ici <span class="pa-pill pa-pill--rose">définitif</span></dt><dd>Efface son dossier dans cette communauté (grade, rôle, dossier). Ses autres communautés et son compte restent.</dd></div>
+                        <div><dt>Sanctions</dt><dd>Avertissement, restriction de la messagerie ou des modules, dans une communauté donnée.</dd></div>
+                    </dl>
+                </section>
+                <section>
+                    <h4>Sur tout le site</h4>
+                    <dl>
+                        <div><dt>Bannir du site <span class="pa-pill pa-pill--mint">réversible</span></dt><dd>Bloque la connexion et l’inscription (e-mail, Steam ID, IP au choix) sans rien effacer. Pour un fauteur de troubles.</dd></div>
+                        <div><dt>Supprimer le compte <span class="pa-pill pa-pill--rose">définitif</span></dt><dd>Efface la personne partout (compte de jeu, rôles, données personnelles) ; ses communautés passent au membre suivant, ou sont supprimées s’il était seul. Ce que les autres membres partagent reste sous « Ancien membre ». Pour une demande de suppression des données.</dd></div>
+                        <div><dt>Supprimer définitivement <span class="pa-pill pa-pill--rose">définitif</span></dt><dd>Efface tout de la base. Pour les faux comptes et comptes de test.</dd></div>
+                        <div><dt>Bloquer une adresse IP</dt><dd>Dans le dossier complet (rubrique Réseau) ou la liste « Adresses IP et e-mails bloqués ».</dd></div>
+                    </dl>
+                </section>
+                <section>
+                    <h4>Les communautés</h4>
+                    <p>« Sans communauté » signale un compte seul, sans communauté active : il n’y a plus de fausse communauté « pas d’organisation » à gérer.
+                        Une personne retirée d’une communauté reste dans l’annuaire avec son nom et la mention « Retiré le … » : « Réintégrer » la remet en place.</p>
+                </section>
+            </div>
+            <div class="pu-dialog__buttons">
+                <button type="button" class="pa-btn pa-btn--solid" data-pu-close>J’ai compris</button>
+            </div>
+        </div>
+    </dialog>
+
+    <dialog id="pu-confirm" class="pu-dialog" aria-labelledby="pu-confirm-title">
+        <form method="dialog" class="pu-dialog__form">
+            <p class="pu-dialog__kicker" id="pu-confirm-kicker">Confirmer</p>
+            <h3 id="pu-confirm-title" class="pu-dialog__title"></h3>
+            <ul class="pu-dialog__facts" id="pu-confirm-body"></ul>
+            <label class="pu-dialog__field" id="pu-confirm-type-wrap" hidden>
+                <span>Pour confirmer, tapez <strong class="pu-mono" id="pu-confirm-type-expected"></strong></span>
+                <input type="text" id="pu-confirm-type" autocomplete="off" spellcheck="false">
+            </label>
+            <div class="pu-dialog__buttons">
+                <button type="button" class="pa-btn pa-btn--line" data-pu-close>Annuler</button>
+                <button type="button" class="pa-btn pa-btn--solid" id="pu-confirm-ok">Confirmer</button>
+            </div>
+        </form>
+    </dialog>
 </div>
 
 <script>
-function athPurgeConfirm(form, expectedEmail, scope) {
-    var scopeLabel = scope === 'org'
-        ? 'cette communauté uniquement'
-        : 'TOUT LE SITE (toutes les communautés de cette adresse)';
-    var saisi = window.prompt(
-        'Suppression DÉFINITIVE — ' + scopeLabel + '.\n\n'
-        + 'Compte : ' + expectedEmail + '\n\n'
-        + 'Aucune restauration n’est possible.\n\n'
-        + 'Retapez l’adresse exacte pour confirmer :'
-    );
-    if (saisi === null) {
-        return false;
+(function () {
+    function open(id) {
+        var d = document.getElementById(id);
+        if (d && typeof d.showModal === 'function') { d.showModal(); }
     }
-    if (saisi.trim().toLowerCase() !== String(expectedEmail).trim().toLowerCase()) {
-        window.alert('Adresse incorrecte : le compte n’a pas été touché.');
-        return false;
+    document.addEventListener('click', function (e) {
+        var opener = e.target.closest('[data-pu-open]');
+        if (opener) { e.preventDefault(); open(opener.getAttribute('data-pu-open')); return; }
+        var closer = e.target.closest('[data-pu-close]');
+        if (closer) { e.preventDefault(); var d = closer.closest('dialog'); if (d) { d.close(); } }
+    });
+    document.querySelectorAll('.pu-dialog').forEach(function (d) {
+        d.addEventListener('click', function (e) { if (e.target === d) { d.close(); } });
+    });
+
+    var dlg = document.getElementById('pu-confirm');
+    if (!dlg || typeof dlg.showModal !== 'function') { return; }
+    var title = document.getElementById('pu-confirm-title');
+    var body = document.getElementById('pu-confirm-body');
+    var kicker = document.getElementById('pu-confirm-kicker');
+    var typeWrap = document.getElementById('pu-confirm-type-wrap');
+    var typeInput = document.getElementById('pu-confirm-type');
+    var typeExpected = document.getElementById('pu-confirm-type-expected');
+    var okBtn = document.getElementById('pu-confirm-ok');
+    var pending = null;
+
+    function norm(v) { return String(v || '').trim().toLowerCase(); }
+    function refresh() {
+        if (!pending) { return; }
+        var expected = pending.getAttribute('data-confirm-type');
+        okBtn.disabled = !!expected && norm(typeInput.value) !== norm(expected);
     }
-    form.querySelector('input[name="confirm_email"]').value = saisi.trim();
-    return true;
-}
+    typeInput.addEventListener('input', refresh);
+
+    document.addEventListener('submit', function (e) {
+        var form = e.target;
+        if (!form || form.getAttribute('data-pu-confirm') !== '1') { return; }
+        if (form.getAttribute('data-pu-confirmed') === '1') { form.removeAttribute('data-pu-confirmed'); return; }
+        e.preventDefault();
+        pending = form;
+        var danger = form.getAttribute('data-confirm-tone') === 'danger';
+        kicker.textContent = danger ? 'Action définitive' : 'Confirmer';
+        kicker.classList.toggle('is-danger', danger);
+        title.textContent = form.getAttribute('data-confirm-title') || 'Confirmer ?';
+        body.innerHTML = '';
+        String(form.getAttribute('data-confirm-body') || '').split('\n').forEach(function (line) {
+            if (line.trim() === '') { return; }
+            var li = document.createElement('li');
+            li.textContent = line;
+            body.appendChild(li);
+        });
+        var expected = form.getAttribute('data-confirm-type');
+        typeWrap.hidden = !expected;
+        typeInput.value = '';
+        typeExpected.textContent = expected || '';
+        okBtn.textContent = form.getAttribute('data-confirm-ok') || 'Confirmer';
+        okBtn.className = 'pa-btn ' + (danger ? 'pu-btn-danger' : 'pa-btn--solid');
+        dlg.showModal();
+        refresh();
+        if (expected) { typeInput.focus(); }
+    }, true);
+
+    okBtn.addEventListener('click', function () {
+        if (!pending || okBtn.disabled) { return; }
+        var form = pending;
+        pending = null;
+        form.querySelectorAll('input[name="confirm_email"], input[name="confirm_phrase"]').forEach(function (typed) {
+            typed.value = typeInput.value.trim();
+        });
+        dlg.close();
+        form.setAttribute('data-pu-confirmed', '1');
+        if (typeof form.requestSubmit === 'function') { form.requestSubmit(); } else { form.submit(); }
+    });
+    dlg.addEventListener('close', function () { pending = null; });
+})();
 </script>

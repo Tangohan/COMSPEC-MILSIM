@@ -24,7 +24,7 @@ private _isKia = _kindNorm isEqualTo "kia";
 if (!_isKia && {!alive _unit}) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_DeathThenRespawn", false]) exitWith {};
 if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
-if (!_isKia && {![] call comspec_overwatch_connect_fnc_isPlayerSpawnStable}) exitWith {};
+if (!_isKia && {!([] call comspec_overwatch_connect_fnc_isPlayerSpawnStable)}) exitWith {};
 if (!_isKia && {missionNamespace getVariable ["COMSPEC_MedicalAlertBusy", false]}) exitWith {};
 
 private _allowed = ["unconscious", "cardiac_arrest", "kia"];

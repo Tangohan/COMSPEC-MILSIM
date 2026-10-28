@@ -20,6 +20,8 @@ params [
 
 // Validation
 if (isNull _vehicle) exitWith {false};
+// Véhicules non remontés par choix de la communauté (fn_pollDataFlows) : rien à calculer.
+if !((missionNamespace getVariable ["COMSPEC_DataFlows", createHashMap]) getOrDefault ["vehicles", true]) exitWith {false};
 if (_vehicle isEqualTo player) exitWith {false}; // Pas un véhicule
 if (
     !isNil "comspec_overwatch_connect_fnc_shouldSkipEnemyAiTransmit"
@@ -69,9 +71,11 @@ private _crew = crew _vehicle;
 private _commander = commander _vehicle;
 private _occupants = [_vehicle] call comspec_overwatch_connect_fnc_collectVehicleOccupants;
 _vehicleData set ["crew_count", count _crew];
-private _crewMax = [_vehicle, true] call bis_fnc_crewCount;
-if (_crewMax isEqualType []) then { _crewMax = _crewMax param [0, count _crew]; };
-if (!(_crewMax isEqualType 0)) then { _crewMax = count _crew; };
+// Places du véhicule via fullCrew (BIS_fnc_crewCount attend une classe STRING et renvoie
+// un nombre : lui passer l'objet affichait une erreur à l'écran tant qu'on était à bord).
+private _seats = fullCrew [_vehicle, "", true];
+private _cargoSeats = { (_x select 1) isEqualTo "cargo" } count _seats;
+private _crewMax = (count _seats) max (count _crew);
 _vehicleData set ["crew_max", _crewMax];
 if (!isNull _commander) then {
     private _cmdName = name _commander;
@@ -92,9 +96,7 @@ private _cargoCount = {
     _s isEqualTo "cargo"
 } count _occupants;
 _vehicleData set ["passenger_count", _cargoCount];
-private _passMax = [_vehicle, true] call bis_fnc_crewCount;
-if (_passMax isEqualType []) then { _passMax = _passMax param [2, _cargoCount]; };
-if (!(_passMax isEqualType 0)) then { _passMax = _cargoCount; };
+private _passMax = _cargoSeats max _cargoCount;
 _vehicleData set ["passenger_max", _passMax];
 if ((count _occupants) > 0) then {
     _vehicleData set ["passengers_json", _occupants];
@@ -163,7 +165,12 @@ if (!isNull _group) then {
 
 // Envoyer via extension (upsert)
 private _jsonString = [_vehicleData] call comspec_overwatch_connect_fnc_hashMapToJson;
-private _result = "COMSPECExtension" callExtension ["UpdateVehicleTracking", [_jsonString]];
+// Envoi hors du thread de jeu (spawn + extAwait) : appelé depuis un PFH toutes les ~3 s en véhicule,
+// un callExtension synchrone figeait le jeu. Aucun appelant n'utilise le retour.
+[_jsonString] spawn {
+    params ["_json"];
+    ["COMSPECExtension", "UpdateVehicleTracking", [_json]] call comspec_overwatch_connect_fnc_extAwait;
+};
 
 // Vérifier alertes critiques (fuel/ammo)
 if ((fuel _vehicle) < 0.15) then {
@@ -179,7 +186,15 @@ if ((fuel _vehicle) < 0.15) then {
     };
 };
 
-if (!isNull (gunner _vehicle) && {(ammo (gunner _vehicle)) < 0.2}) then {
+// « ammo (gunner _vehicle) » n'est pas du SQF valide (ammo est binaire : unité ammo arme) : erreur de
+// compilation, toute la fonction était inopérante. Ratio munitions restantes / capacité des chargeurs du véhicule.
+private _ammoNow = 0;
+private _ammoMax = 0;
+{
+    _ammoNow = _ammoNow + (_x select 2);
+    _ammoMax = _ammoMax + getNumber (configFile >> "CfgMagazines" >> (_x select 0) >> "count");
+} forEach (magazinesAllTurrets _vehicle);
+if (!isNull (gunner _vehicle) && {_ammoMax > 0} && {(_ammoNow / _ammoMax) < 0.2}) then {
     // Munitions critiques
     private _lastAmmoAlert = _vehicle getVariable ["COMSPEC_LastAmmoAlert", 0];
     if (time - _lastAmmoAlert > 300) then {
@@ -192,4 +207,4 @@ if (!isNull (gunner _vehicle) && {(ammo (gunner _vehicle)) < 0.2}) then {
     };
 };
 
-(_result select 0) isEqualTo "OK"
+true

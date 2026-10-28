@@ -27,7 +27,10 @@ private _now = diag_tickTime;
 private _lastMap = missionNamespace getVariable ["COMSPEC_AtakMalfunctionSoundAt", createHashMap];
 if (!(_lastMap isEqualType createHashMap)) then { _lastMap = createHashMap; };
 private _prev = _lastMap getOrDefault [_kind, -1e9];
-if ((_now - _prev) < 8) exitWith {};
+// Coupure / retour de liaison : un son par 30 s au plus, et pas de son de retour après une micro-coupure
+// (moins de 8 s depuis le son de perte) : une liaison qui bat ne doit pas sonner en boucle.
+if ((_now - _prev) < ([8, 30] select (_kind in ["down", "up"]))) exitWith {};
+if (_kind isEqualTo "up" && {(_now - (_lastMap getOrDefault ["down", -1e9])) < 8}) exitWith {};
 _lastMap set [_kind, _now];
 missionNamespace setVariable ["COMSPEC_AtakMalfunctionSoundAt", _lastMap, false];
 

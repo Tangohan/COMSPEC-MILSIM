@@ -56,15 +56,19 @@ final class GameAtakPairingService
             return $this->fail('unavailable', 503, 'Impossible de créer le code. Réessayez.');
         }
 
+        $display = substr($userCode, 0, 4) . '-' . substr($userCode, 4, 4);
+
         return [
             'ok' => true,
             'status' => 200,
             'payload' => [
                 'device_code' => $deviceCode,
-                'user_code' => substr($userCode, 0, 4) . '-' . substr($userCode, 4, 4),
+                'user_code' => $display,
                 'expires_in' => GameAtakPairingRepository::TTL_SECONDS,
                 'interval' => 2,
-                'verification_uri' => 'Carte ATAK → Compte → Lier le jeu',
+                // Page courte où le joueur, connecté à Athena, autorise le jeu (AtakQuickLinkController).
+                'verification_uri' => url('lier'),
+                'verification_uri_complete' => url('lier') . '?code=' . $display,
             ],
         ];
     }
@@ -83,7 +87,7 @@ final class GameAtakPairingService
             return ['ok' => true, 'status' => 200, 'payload' => ['status' => 'pending']];
         }
         $status = strtolower(trim((string) ($row['status'] ?? 'pending')));
-        if ($this->isExpiredRow($row)) {
+        if (self::isExpiredRow($row)) {
             $this->challenges->markExpired((int) $row['id']);
 
             return ['ok' => true, 'status' => 200, 'payload' => ['status' => 'expired']];
@@ -98,6 +102,13 @@ final class GameAtakPairingService
             return $this->fail('invalid', 400, 'Appairage refusé.');
         }
 
+        // Même contrôle que le code du portail : un Steam ou une adresse bannis du mod ne reçoivent pas de session.
+        $blocked = $this->modBlocked((int) ($row['tenant_id'] ?? 0), SteamId::normalize((string) ($row['steam_id'] ?? '')));
+        if ($blocked !== null) {
+            error_log('[atak/pair] session refusée challenge=' . (int) $row['id'] . ' : ' . (string) ($blocked['payload']['error'] ?? 'mod_blocked'));
+
+            return $blocked;
+        }
         $issued = $this->issueFromChallenge($row, [
             'steam_uid' => (string) ($row['steam_id'] ?? ''),
             'mod_version' => (string) ($row['mod_version'] ?? ''),
@@ -105,6 +116,8 @@ final class GameAtakPairingService
             'terminal_uid' => (string) ($row['terminal_uid'] ?? ''),
         ]);
         if (!$issued['ok']) {
+            error_log('[atak/pair] session refusée challenge=' . (int) $row['id'] . ' : ' . (string) ($issued['payload']['error'] ?? $issued['status']));
+
             return $issued;
         }
         $this->challenges->markConsumed((int) $row['id']);
@@ -129,7 +142,7 @@ final class GameAtakPairingService
             return $this->fail('unavailable', 503, 'La validation n’est pas encore disponible sur ce serveur.');
         }
         $row = $this->challenges->findPendingByUserHash(hash('sha256', $code));
-        if ($row === null || $this->isExpiredRow($row) || (string) ($row['status'] ?? '') !== 'pending') {
+        if ($row === null || self::isExpiredRow($row) || (string) ($row['status'] ?? '') !== 'pending') {
             return $this->fail('invalid_code', 404, 'Ce code est inconnu ou a déjà expiré. Générez-en un nouveau dans Arma.');
         }
         $user = $this->users->findById($userId, $tenantId);
@@ -141,14 +154,28 @@ final class GameAtakPairingService
             return $this->fail('unavailable', 503, 'Ce compte ne peut pas encore lier un terminal de jeu.');
         }
         $steam = SteamId::normalize((string) ($row['steam_id'] ?? ''));
+        $blocked = $this->modBlocked($tenantId, $steam);
+        if ($blocked !== null) {
+            return $blocked;
+        }
+        // Le jeu serait refusé juste après (403 sans motif dans le téléphone) : le dire ici, en clair.
+        $problem = $this->auth->gameAccessProblem($userId, $tenantId);
+        if ($problem !== null) {
+            error_log('[atak/pair] autorisation refusée user=' . $userId . ' tenant=' . $tenantId . ' : ' . $problem['code']);
+
+            return $this->fail(strtolower($problem['code']), 403, $problem['message']);
+        }
+        if (!$this->challenges->approve((int) $row['id'], (int) $account['id'], $userId, $tenantId)) {
+            return $this->fail('invalid_code', 409, 'Ce code a déjà été utilisé.');
+        }
+        $moved = [];
         if ($steam !== null) {
+            // Le joueur qui saisit le code tient le jeu : son Steam passe sur ce compte, et seulement celui-ci.
+            $moved = $this->users->detachSteamFromOtherUsers($tenantId, $steam, $userId);
             $existing = SteamId::normalize((string) ($user['steam_id'] ?? ''));
             if ($existing !== $steam) {
                 $this->users->update($userId, $tenantId, ['steam_id' => $steam]);
             }
-        }
-        if (!$this->challenges->approve((int) $row['id'], (int) $account['id'], $userId, $tenantId)) {
-            return $this->fail('invalid_code', 409, 'Ce code a déjà été utilisé.');
         }
 
         return [
@@ -157,8 +184,83 @@ final class GameAtakPairingService
             'payload' => [
                 'ok' => true,
                 'message' => 'Terminal validé. Le téléphone termine la liaison tout seul.',
+                'challenge_id' => (int) $row['id'],
+                'steam_moved_from' => $moved,
             ],
         ];
+    }
+
+    /**
+     * Ce que le jeu a demandé, montré sur /lier avant d'autoriser : le joueur vérifie que c'est bien son jeu
+     * (un code reçu d'un tiers donnerait sa session à ce tiers).
+     *
+     * @return array{state: string, steam: string, steam_elsewhere: bool, steam_here: bool, mod_version: string, source: string, asked_min: int, left_min: int, left_sec: int}|null
+     */
+    public function describePending(string $userCode, int $userId, int $tenantId): ?array
+    {
+        $code = $this->normalizeCode($userCode);
+        if (strlen($code) < 6 || !$this->challenges->isReady()) {
+            return null;
+        }
+        $row = $this->challenges->findPendingByUserHash(hash('sha256', $code));
+        if ($row === null) {
+            return null;
+        }
+        $state = strtolower((string) ($row['status'] ?? ''));
+        if ($state === 'pending' && self::isExpiredRow($row)) {
+            $state = 'expired';
+        }
+        $steam = SteamId::normalize((string) ($row['steam_id'] ?? '')) ?? '';
+        $owner = $steam !== '' && $tenantId > 0 ? $this->users->findBySteamIdForTenant($tenantId, $steam) : null;
+        $created = strtotime(((string) ($row['created_at'] ?? '')) . ' UTC') ?: time();
+        $expires = strtotime(((string) ($row['expires_at'] ?? '')) . ' UTC') ?: time();
+
+        return [
+            'state' => $state,
+            'steam' => $steam,
+            'steam_here' => $owner !== null && (int) ($owner['id'] ?? 0) === $userId,
+            'steam_elsewhere' => $owner !== null && (int) ($owner['id'] ?? 0) !== $userId,
+            'mod_version' => (string) ($row['mod_version'] ?? ''),
+            'source' => self::requestSource((string) ($row['mod_version'] ?? '')),
+            'asked_min' => max(0, intdiv(time() - $created, 60)),
+            'left_min' => max(0, (int) ceil(($expires - time()) / 60)),
+            'left_sec' => max(0, $expires - time()),
+        ];
+    }
+
+    /**
+     * D'où vient le code, d'après la version envoyée par le mod : « eden » (COMSPEC SSE, éditeur Eden),
+     * « overwatch » (pack Overwatch, numéro de version), « phone » (ATAK natif sans Overwatch, « native »).
+     */
+    public static function requestSource(string $modVersion): string
+    {
+        $v = strtolower(trim($modVersion));
+        if ($v === 'sse-eden' || str_starts_with($v, 'sse')) {
+            return 'eden';
+        }
+        if ($v !== '' && $v !== 'native' && preg_match('/^\d/', $v) === 1) {
+            return 'overwatch';
+        }
+
+        return 'phone';
+    }
+
+    /**
+     * Suivi après autorisation (/lier/etat) : « approved » tant que le jeu n'a pas repris sa session,
+     * « consumed » dès qu'il l'a reprise. Seul le compte qui a autorisé le code peut le suivre.
+     */
+    public function approvalProgress(int $challengeId, int $userId): string
+    {
+        $row = $this->challenges->findById($challengeId);
+        if ($row === null || (int) ($row['user_id'] ?? 0) !== $userId || $userId < 1) {
+            return 'unknown';
+        }
+        $state = strtolower((string) ($row['status'] ?? ''));
+        if ($state === 'approved' && self::isExpiredRow($row)) {
+            return 'expired';
+        }
+
+        return in_array($state, ['approved', 'consumed', 'expired'], true) ? $state : 'unknown';
     }
 
     /**
@@ -194,17 +296,9 @@ final class GameAtakPairingService
             return $this->fail('invalid', 404, 'Code invalide.');
         }
         $steam = SteamId::normalize((string) ($body['steam_uid'] ?? $body['steam_id'] ?? $body['player_uid'] ?? ''));
-        $modBlock = $this->armaGuard->assertModNotBlocked($tenantId, $steam);
+        $modBlock = $this->modBlocked($tenantId, $steam);
         if ($modBlock !== null) {
-            $decoded = json_decode($modBlock->body(), true);
-
-            return [
-                'ok' => false,
-                'status' => $modBlock->statusCode(),
-                'payload' => is_array($decoded)
-                    ? $decoded
-                    : ['error' => 'mod_blocked', 'message' => 'Pack non autorisé pour cette communauté.'],
-            ];
+            return $modBlock;
         }
         if ($steam !== null) {
             $user = $this->users->findById($userId, $tenantId);
@@ -222,6 +316,26 @@ final class GameAtakPairingService
         $this->gameLinks->markRedeemed((int) $row['id'], $steam);
 
         return $this->withLegacyFields($issued, $tenantId, (string) ($body['terminal_uid'] ?? ''));
+    }
+
+    /**
+     * @return array{ok: bool, status: int, payload: array<string, mixed>}|null
+     */
+    private function modBlocked(int $tenantId, ?string $steam): ?array
+    {
+        $modBlock = $this->armaGuard->assertModNotBlocked($tenantId, $steam);
+        if ($modBlock === null) {
+            return null;
+        }
+        $decoded = json_decode($modBlock->body(), true);
+
+        return [
+            'ok' => false,
+            'status' => $modBlock->statusCode(),
+            'payload' => is_array($decoded)
+                ? $decoded
+                : ['error' => 'mod_blocked', 'message' => 'Pack non autorisé pour cette communauté.'],
+        ];
     }
 
     /**
@@ -273,13 +387,20 @@ final class GameAtakPairingService
     }
 
     /**
+     * expires_at est écrit en UTC (UTC_TIMESTAMP() dans le dépôt). Lu sans fuseau, strtotime() le prendrait
+     * à l'heure de Paris (APP_TIMEZONE) : en été le code paraissait expiré depuis 1 h 50 dès sa création.
+     *
      * @param array<string, mixed> $row
      */
-    private function isExpiredRow(array $row): bool
+    public static function isExpiredRow(array $row, ?int $now = null): bool
     {
-        $expires = strtotime((string) ($row['expires_at'] ?? '')) ?: 0;
+        $raw = trim((string) ($row['expires_at'] ?? ''));
+        if ($raw === '') {
+            return false;
+        }
+        $expires = strtotime($raw . ' UTC') ?: 0;
 
-        return $expires > 0 && $expires < time();
+        return $expires > 0 && $expires < ($now ?? time());
     }
 
     public function normalizeCode(string $code): string
@@ -299,7 +420,7 @@ final class GameAtakPairingService
                 $code .= self::USER_CODE_ALPHABET[random_int(0, $max)];
             }
             $existing = $this->challenges->findPendingByUserHash(hash('sha256', $code));
-            if ($existing === null || $this->isExpiredRow($existing) || (string) ($existing['status'] ?? '') !== 'pending') {
+            if ($existing === null || self::isExpiredRow($existing) || (string) ($existing['status'] ?? '') !== 'pending') {
                 return $code;
             }
         }

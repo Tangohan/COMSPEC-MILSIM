@@ -6,7 +6,7 @@ $haloLoaderSeenKey = $haloLoaderSeenKey ?? 'athena-halo-loader-tacmap';
 $baseUrl = $baseUrl ?? url('');
 $haloLoaderAssetVer = $haloLoaderAssetVer
     ?? (isset($assetVer) ? (string) $assetVer : null)
-    ?? (function_exists('platform_app_version') ? (string) platform_app_version() : '1');
+    ?? \App\Support\BuildVersion::id();
 $haloJsStamp = (string) (@filemtime(dirname(__DIR__, 2) . '/public/assets/js/halo-loader.js') ?: time());
 $haloCssStamp = (string) (@filemtime(dirname(__DIR__, 2) . '/public/assets/css/halo-loader.css') ?: time());
 $haloLoaderVer = $haloLoaderAssetVer . '.' . $haloJsStamp . '.' . $haloCssStamp;

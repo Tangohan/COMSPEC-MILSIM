@@ -20,6 +20,7 @@ use App\Support\ComspecApiKeyAuth;
 use App\Support\OperatorTacticalIdentity;
 use App\Support\SilentSchemaMigration;
 use App\Support\SteamId;
+use App\Support\UtcDateTime;
 
 final class GameAuthService
 {
@@ -75,6 +76,7 @@ final class GameAuthService
         if ((string) ($account['status'] ?? '') !== 'active') {
             return $this->fail('ACCOUNT_DISABLED', 403);
         }
+        $body['_auth_method'] = 'password';
 
         return $this->issueForAccount($account, $body, null, true);
     }
@@ -136,7 +138,7 @@ final class GameAuthService
         if ($row === null) {
             return $this->fail('OTP_EXPIRED', 401);
         }
-        if (strtotime((string) ($row['expires_at'] ?? '')) < time()) {
+        if (UtcDateTime::isPast($row['expires_at'] ?? null)) {
             return $this->fail('OTP_EXPIRED', 401);
         }
         if ((int) ($row['attempts'] ?? 0) >= 8) {
@@ -158,6 +160,7 @@ final class GameAuthService
         if ((string) ($account['status'] ?? '') !== 'active') {
             return $this->fail('ACCOUNT_DISABLED', 403);
         }
+        $body['_auth_method'] = 'otp';
 
         return $this->issueForAccount($account, $body, null, true);
     }
@@ -213,6 +216,7 @@ final class GameAuthService
             }
         }
         $body['steam_id'] = $steamId;
+        $body['_auth_method'] = 'steam';
 
         return $this->issueForAccount($account, $body);
     }
@@ -245,6 +249,49 @@ final class GameAuthService
         $this->accounts->ensureMembership((int) $account['id'], $tenantId, $userId);
 
         return $account;
+    }
+
+    /**
+     * Ce qui refuserait la session du jeu à ce membre (mêmes contrôles qu'issueForUser), dit en clair.
+     * Vérifié sur /lier avant d'autoriser le code : sinon le site annonçait « jeu lié » et le jeu recevait
+     * un 403 sans motif.
+     *
+     * @return array{code: string, message: string}|null null : rien ne bloque
+     */
+    public function gameAccessProblem(int $userId, int $tenantId): ?array
+    {
+        $user = $this->users->findById($userId, $tenantId);
+        if ($user === null) {
+            return ['code' => 'INVALID_CREDENTIALS', 'message' => 'Fiche membre introuvable : reconnectez-vous sur le site.'];
+        }
+        $userStatus = (string) ($user['status'] ?? 'active');
+        if ($userStatus !== 'active') {
+            return ['code' => 'ACCOUNT_DISABLED', 'message' => 'La fiche membre avec laquelle vous êtes connecté n’est pas active (' . $userStatus . '). Déconnectez-vous du site, reconnectez-vous, puis réessayez ; sinon votre staff doit réactiver la fiche.'];
+        }
+        $account = $this->ensureAccountForUser($userId, $tenantId);
+        if ($account === null) {
+            return ['code' => 'INVALID_CREDENTIALS', 'message' => 'Aucun compte Athena pour l’e-mail de cette fiche.'];
+        }
+        $accountStatus = (string) ($account['status'] ?? '');
+        if ($accountStatus !== 'active') {
+            return ['code' => 'ACCOUNT_DISABLED', 'message' => 'Le compte Athena de cet e-mail est « ' . ($accountStatus !== '' ? $accountStatus : 'sans statut') . ' » : un administrateur du site doit le réactiver.'];
+        }
+        $member = false;
+        foreach ($this->accounts->listActiveMemberships((int) $account['id']) as $row) {
+            if ((int) ($row['tenant_id'] ?? 0) === $tenantId && (string) ($row['status'] ?? '') === 'active') {
+                $member = true;
+                break;
+            }
+        }
+        if (!$member) {
+            return ['code' => 'NO_TENANT', 'message' => 'Le compte Athena n’est pas rattaché à cette communauté (fiche inactive ou remplacée). Votre staff doit vérifier votre fiche membre.'];
+        }
+        $block = \App\Support\AtakAdminBlockGate::find($tenantId, $userId, SteamId::normalize((string) ($user['steam_id'] ?? '')));
+        if ($block !== null) {
+            return ['code' => 'ATAK_BLOCKED', 'message' => \App\Support\AtakAdminBlockGate::payload($block)['message']];
+        }
+
+        return null;
     }
 
     /**
@@ -287,7 +334,7 @@ final class GameAuthService
         if ($session === null) {
             return $this->fail('SESSION_EXPIRED', 401);
         }
-        if (strtotime((string) ($session['refresh_expires_at'] ?? '')) < time()) {
+        if (UtcDateTime::isPast($session['refresh_expires_at'] ?? null)) {
             return $this->fail('SESSION_EXPIRED', 401);
         }
         $account = $this->accounts->findById((int) $session['account_id']);
@@ -298,6 +345,7 @@ final class GameAuthService
         $body['preferred_tenant_id'] = (int) $session['tenant_id'];
         $this->carrySteamIdFromSession($body, $session);
         $body['_verify_restored_steam'] = true;
+        $body['_auth_method'] = 'restore';
 
         return $this->issueForAccount($account, $body, (int) $session['id']);
     }
@@ -372,7 +420,7 @@ final class GameAuthService
         if ($row === null) {
             return null;
         }
-        if (strtotime((string) ($row['expires_at'] ?? '')) < time()) {
+        if (UtcDateTime::isPast($row['expires_at'] ?? null)) {
             return null;
         }
 
@@ -401,6 +449,7 @@ final class GameAuthService
             'login_image' => $image,
             'logo' => $logo,
             'welcome_message' => (string) ($exp['welcome_message'] ?? ''),
+            'auth_methods' => GameOverwatchExperienceService::authMethods($exp),
             'generic' => false,
         ];
     }
@@ -451,9 +500,20 @@ final class GameAuthService
             }
         }
         $exp = $this->experience->get($tenantId);
+        $gate = $this->communityGate($exp, (string) ($body['_auth_method'] ?? ''), $tenantId, (int) $chosen['user_id'], (string) ($account['email'] ?? ''));
+        if ($gate !== null) {
+            if ($rotateSessionId !== null && $rotateSessionId > 0 && ($gate['payload']['error'] ?? '') === 'SESSION_EXPIRED') {
+                $this->accounts->revokeSession($rotateSessionId);
+            }
+
+            return $gate;
+        }
         $modVersion = trim((string) ($body['mod_version'] ?? ''));
         $min = trim((string) ($exp['min_mod_version'] ?? ''));
-        if ($modVersion !== '' && $min !== '' && version_compare($modVersion, $min, '<')) {
+        // « Pack Overwatch minimal » : seul un numéro de pack est comparé. L'ATAK natif sans Overwatch envoie « native »,
+        // que version_compare() classe sous toute version : le code autorisé sur /lier finissait refusé en 426.
+        if ($modVersion !== '' && $min !== '' && preg_match('/^\d+(\.\d+)*$/', $modVersion) === 1
+            && version_compare($modVersion, $min, '<')) {
             return $this->fail('MOD_OUTDATED', 426, [
                 'min_mod_version' => $min,
                 'detected_mod_version' => $modVersion,
@@ -471,6 +531,21 @@ final class GameAuthService
             }
         }
         $steamId = $this->resolveSteamId($body, $account, $chosen);
+        // ATAK bloqué par l'administration du site (/admin/parc-atak) : ni connexion ni reprise de session.
+        $block = \App\Support\AtakAdminBlockGate::find(
+            $tenantId,
+            (int) $chosen['user_id'],
+            $this->hasSteamId($steamId) ? (string) $steamId : null,
+            $deviceId
+        );
+        if ($block !== null) {
+            if ($rotateSessionId !== null && $rotateSessionId > 0) {
+                $this->accounts->revokeSession($rotateSessionId);
+            }
+            $deny = \App\Support\AtakAdminBlockGate::payload($block);
+
+            return $this->fail('ATAK_BLOCKED', 403, ['message' => $deny['message'], 'blocked_until' => $deny['blocked_until']]);
+        }
         $access = bin2hex(random_bytes(32));
         $refresh = bin2hex(random_bytes(32));
         $pairingPlain = null;
@@ -612,6 +687,28 @@ final class GameAuthService
         $avatar = $identity['avatar'];
         $role = $identity['role'];
         $function = $identity['function'];
+        // Synchronisation choisie par la communauté : un champ non transmis reste à la valeur réglée dans le mod.
+        $sync = static fn (string $k): bool => !array_key_exists($k, $exp) || !empty($exp[$k]);
+        if (!$sync('sync_profile')) {
+            $first = '';
+            $last = '';
+        }
+        if (!$sync('sync_grade')) {
+            $grade = '';
+        }
+        if (!$sync('sync_unit')) {
+            $unit = '';
+        }
+        if (!$sync('sync_callsign')) {
+            $callsign = '';
+        }
+        if (!$sync('sync_avatar')) {
+            $avatar = '';
+        }
+        if (!$sync('sync_clearances')) {
+            $role = '';
+            $function = '';
+        }
         $rev = $this->profileRevision($user, $profileRow);
         $loginImage = $this->experience->loginImageUrl(
             $tenantId,
@@ -620,7 +717,7 @@ final class GameAuthService
         );
         $logo = CommunityMediaDetails::publicUrl((string) ($exp['logo_path'] ?? ''))
             ?: (string) ($mergedBrand['logo_url'] ?? $tenant['logo_url'] ?? '');
-        $expiresIso = gmdate('c', strtotime((string) ($session['expires_at'] ?? 'now')) ?: time());
+        $expiresIso = gmdate('c', UtcDateTime::timestamp($session['expires_at'] ?? null) ?? time());
         $phone = ['number' => '', 'imei' => '', 'mac' => '', 'format' => ''];
         try {
             $phone = (new GamePhoneIdentityRepository())->forUser($tenantId, $userId);
@@ -1508,6 +1605,61 @@ final class GameAuthService
      * @param array<string, mixed> $extra
      * @return array{ok: bool, status: int, payload: array<string, mixed>}
      */
+    /**
+     * Règles de la communauté (Configuration ATAK > Connexion en jeu) appliquées avant d'ouvrir la session :
+     * méthodes de connexion autorisées, reconnexion automatique, maintenance.
+     *
+     * @param array<string, mixed> $exp
+     * @return array{ok: bool, status: int, payload: array<string, mixed>}|null
+     */
+    private function communityGate(array $exp, string $method, int $tenantId, int $userId, string $email): ?array
+    {
+        $methods = GameOverwatchExperienceService::authMethods($exp);
+        if (isset($methods[$method]) && !$methods[$method]) {
+            return $this->fail('AUTH_METHOD_DISABLED', 403, [
+                'method' => $method,
+                'allowed_methods' => array_keys(array_filter($methods)),
+                'message' => 'Votre communauté n’autorise pas ce mode de connexion en jeu. Utilisez : '
+                    . implode(', ', array_map(static fn (string $m): string => ['password' => 'e-mail et mot de passe', 'otp' => 'code par e-mail', 'steam' => 'Steam'][$m], array_keys(array_filter($methods)))) . '.',
+            ]);
+        }
+        if ($method === 'restore' && array_key_exists('allow_auto_reconnect', $exp) && empty($exp['allow_auto_reconnect'])) {
+            return $this->fail('SESSION_EXPIRED', 401, [
+                'message' => 'Votre communauté demande une nouvelle connexion à chaque lancement.',
+            ]);
+        }
+        try {
+            $atak = new \App\Repositories\TenantAtakConfigRepository();
+            if ($atak->isMaintenanceEnabled($tenantId) && !$this->userBypassesMaintenance($userId, $tenantId, $email)) {
+                $message = trim((string) $atak->getMaintenanceMessage($tenantId));
+
+                return $this->fail('MAINTENANCE', 503, [
+                    'message' => $message !== '' ? $message : 'La liaison est suspendue pour maintenance. Réessayez plus tard.',
+                ]);
+            }
+        } catch (\Throwable) {
+            // Schéma maintenance absent : pas de blocage.
+        }
+
+        return null;
+    }
+
+    /** Les administrateurs de la communauté gardent l'accès pendant la maintenance (comme sur la Tacmap). */
+    private function userBypassesMaintenance(int $userId, int $tenantId, string $email): bool
+    {
+        try {
+            $rbac = new \App\Services\Rbac\RbacService();
+            $perms = array_merge(
+                $rbac->loadPermissionsForRoles($this->users->listOrganizationRoleIdsForUser($userId, $tenantId)),
+                $rbac->loadSitePermissionsForEmail($email)
+            );
+
+            return in_array('admin.access', $perms, true) || in_array('admin.system', $perms, true);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     private function fail(string $code, int $status, array $extra = []): array
     {
         return [

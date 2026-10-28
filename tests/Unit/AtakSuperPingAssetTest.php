@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class AtakSuperPingAssetTest extends TestCase
 {
@@ -61,8 +62,8 @@ final class AtakSuperPingAssetTest extends TestCase
         self::assertStringContainsString('superPingSend', $install);
         self::assertStringContainsString('_shift', $install);
         self::assertStringContainsString('class superPingDraw', $cfgC);
-        self::assertMatchesRegularExpression('/versionStr = "1\\.5\\.\\d+"/', $cfgC);
-        self::assertMatchesRegularExpression('/versionStr = "1\\.0\\.\\d+"/', $cfgA);
+        ModVersion::assertAtLeast('1.5.0', ModVersion::fromConfigCpp($cfgC));
+        ModVersion::assertAtLeast('1.0.0', ModVersion::fromConfigCpp($cfgA));
         self::assertStringContainsString('superPingInstall', $post);
     }
 }

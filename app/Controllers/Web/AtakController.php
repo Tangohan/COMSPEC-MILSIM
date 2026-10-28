@@ -50,11 +50,14 @@ class AtakController
      * Charge Overwatch avec exactement le même contexte, les mêmes droits et les
      * mêmes services temps réel que l'ATAK historique. Seule la composition UI change.
      */
+    /**
+     * Anciennes adresses de l'Overwatch Beta : Overwatch est désormais la carte ATAK web (/atak).
+     */
     public function overwatchBeta(Request $request, array $params = []): Response
     {
-        $params['_overwatch_beta'] = true;
+        $query = (string) ($_SERVER['QUERY_STRING'] ?? '');
 
-        return $this->index($request, $params);
+        return Response::redirect(url('atak') . ($query !== '' ? '?' . $query : ''), 301);
     }
 
     public function index(Request $request, array $params = []): Response
@@ -86,16 +89,23 @@ class AtakController
 
         $nodeUrl = atak_client_base_url($config);
 
-        $visitorIp = $_SERVER['REMOTE_ADDR'] ?? '';
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $visitorIp = trim(explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]);
-        }
+        $visitorIp = \App\Support\ClientIp::resolve();
 
         $jwtSecret = isset($config['jwt_secret']) && $config['jwt_secret'] !== '' ? $config['jwt_secret'] : null;
         $token = $this->atakTokenService->generate($jwtSecret);
 
         $atakMap = $tenantId ? $this->atakMapRepository->getDefaultForTenant($tenantId) : $this->atakMapRepository->getBySlug('altis');
         $atakMapsList = $this->atakMapRepository->getAll();
+        // ?mapId=N (liens du back-office, sélecteur de carte d'Overwatch) : seulement une carte connue.
+        $requestedMapId = (int) ($_GET['mapId'] ?? 0);
+        if ($requestedMapId > 0) {
+            foreach ($atakMapsList as $m) {
+                if ((int) ($m['id'] ?? 0) === $requestedMapId) {
+                    $atakMap = $m;
+                    break;
+                }
+            }
+        }
         $atakWorkspaces = [];
         foreach ($atakMapsList as $m) {
             $atakWorkspaces[] = [
@@ -111,6 +121,15 @@ class AtakController
         $atakCallsignToUser = [];
         if ($tenantId) {
             $users = $this->userRepository->allForTenant($tenantId);
+            // Image opérateur (portrait de la fiche personnel), jamais la photo du compte : initiales sinon.
+            try {
+                $portraits = \App\Support\OperatorPortraits::forUsers(
+                    (int) $tenantId,
+                    array_map(static fn (array $u): int => (int) ($u['id'] ?? 0), $users)
+                );
+            } catch (\Throwable) {
+                $portraits = [];
+            }
             foreach ($users as $u) {
                 $userId = (int) ($u['id'] ?? 0);
                 $profile = $this->userProfileRepository->getByUserId($userId);
@@ -119,12 +138,14 @@ class AtakController
                 $personnelUrl = url('personnel/' . $userId);
                 $effective = $callsign !== '' ? $callsign : $legacyArma;
                 if ($effective !== '') {
-                    $avatar = trim((string) ($u['avatar_url'] ?? ''));
+                    $avatar = trim((string) ($portraits[$userId] ?? ''));
                     $atakCallsignToUser[strtoupper($effective)] = [
                         'userId' => $userId,
                         'url' => $personnelUrl,
                         'avatarUrl' => $avatar !== '' ? $avatar : null,
                         'displayName' => trim((string) ($u['display_name'] ?? '')),
+                        // Palier « Donateur Athena » seulement (jamais de montant) : anneau et cœur sur la Tacmap.
+                        'donorTier' => \App\Support\DonorGamePerk::payload($userId)['donor_tier'] ?: null,
                     ];
                 }
             }
@@ -181,10 +202,8 @@ class AtakController
 
         $atakModDownloadUrl = null;
         if ($tenantId) {
-            $modPath = dirname(__DIR__, 2) . '/../storage/atak-mod/' . $tenantId . '/comspec-overwatch.zip';
-            if (is_file($modPath) && is_readable($modPath)) {
-                $atakModDownloadUrl = url('atak/mod');
-            }
+            // Mod distribué par le Steam Workshop : la page d'installation est toujours disponible.
+            $atakModDownloadUrl = url('atak/mod');
         }
 
         $atakCaps = [
@@ -303,8 +322,9 @@ class AtakController
             }
         }
 
-        return Response::view(!empty($params['_overwatch_beta']) ? 'atak-overwatch-beta' : 'atak', [
-            'atakOverwatchBeta' => !empty($params['_overwatch_beta']),
+        // Overwatch remplace l'ancienne interface ATAK web (views/atak.php n'est plus servie).
+        return Response::view('atak-overwatch-beta', [
+            'atakOverwatchBeta' => true,
             'atakToken' => $token,
             'atakTenantId' => $tenantId,
             'nodeAtakUrl' => $nodeUrl,
@@ -568,38 +588,15 @@ class AtakController
         return null;
     }
 
+    /** Ancienne adresse de téléchargement de l'archive : le mod est désormais servi par le Steam Workshop. */
     public function downloadMod(Request $request, array $params = []): Response
     {
-        $block = $this->requireAtakFeature();
-        if ($block !== null) {
-            return $block;
-        }
-        $tenantId = (int) Session::get('tenant_id');
-        if (!$tenantId) {
-            return Response::redirect(url('login'));
-        }
-        $modPath = dirname(__DIR__, 2) . '/../storage/atak-mod/' . $tenantId . '/comspec-overwatch.zip';
-        if (!is_file($modPath) || !is_readable($modPath)) {
-            return Response::redirect(url('atak/mod'));
-        }
-        $name = 'COMSPEC-Overwatch.zip';
-        $response = new \App\Core\Response();
-        $response->header('Content-Type', 'application/zip');
-        $response->header('Content-Disposition', 'attachment; filename="' . str_replace('"', '\\"', $name) . '"');
-        $response->header('Content-Length', (string) filesize($modPath));
-        $response->header('Cache-Control', 'private, no-cache');
-        $response->setBodyStream(static function () use ($modPath): void {
-            $h = fopen($modPath, 'rb');
-            if ($h) {
-                fpassthru($h);
-                fclose($h);
-            }
-        });
-        return $response;
+        return Response::redirect(url('atak/mod'));
     }
 
     /**
-     * Page membre : présentation + téléchargement du pack Overwatch.
+     * Page membre : installer le mod Athena depuis le Steam Workshop (plus d'archive hébergée par le site),
+     * collection Steam de la communauté, version publiée, prérequis, dépannage.
      */
     public function modPage(Request $request, array $params = []): Response
     {
@@ -612,63 +609,38 @@ class AtakController
             return Response::redirect(url('login'));
         }
 
-        $modPath = dirname(__DIR__, 2) . '/../storage/atak-mod/' . $tenantId . '/comspec-overwatch.zip';
-        $hasMod = is_file($modPath) && is_readable($modPath);
-        $sizeLabel = null;
-        $updatedAt = null;
-        $version = null;
-        if ($hasMod) {
-            $bytes = (int) filesize($modPath);
-            if ($bytes < 1024) {
-                $sizeLabel = $bytes . ' o';
-            } elseif ($bytes < 1024 * 1024) {
-                $sizeLabel = number_format($bytes / 1024, 1, ',', ' ') . ' Ko';
-            } else {
-                $sizeLabel = number_format($bytes / (1024 * 1024), 1, ',', ' ') . ' Mo';
-            }
-            $updatedAt = date('d/m/Y H:i', (int) filemtime($modPath));
-            if (class_exists(\ZipArchive::class)) {
-                $zip = new \ZipArchive();
-                if ($zip->open($modPath, \ZipArchive::RDONLY) === true) {
-                    for ($i = 0; $i < $zip->numFiles; $i++) {
-                        $name = $zip->getNameIndex($i);
-                        if ($name === false) {
-                            continue;
-                        }
-                        $norm = str_replace('\\', '/', $name);
-                        if (!preg_match('#(^|/)mod\.cpp$#i', $norm)) {
-                            continue;
-                        }
-                        $content = $zip->getFromIndex($i);
-                        if (is_string($content)
-                            && (
-                                preg_match('/version\s*=\s*"([^"]+)"/i', $content, $m)
-                                || preg_match('/version\s*=\s*\'([^\']+)\'/i', $content, $m)
-                                || preg_match('/version\s*=\s*([0-9][0-9.\-]*)/i', $content, $m)
-                            )
-                        ) {
-                            $version = trim($m[1]);
-                        }
-                        break;
-                    }
-                    $zip->close();
-                }
-            }
+        $release = \App\Support\AtakReleaseInfo::latest();
+        $version = (string) ($release['atak_native'] ?? '');
+        $en = function_exists('locale') && locale() === 'en';
+        $notes = $version !== '' ? \App\Support\AtakReleaseInfo::playerNotes($version)[$en ? 'en' : 'fr'] : ['title' => '', 'bullets' => []];
+        $minVersion = '';
+        try {
+            $minVersion = (string) ((new \App\Services\Game\GameOverwatchExperienceService())->get($tenantId)['min_mod_version'] ?? '');
+        } catch (\Throwable) {
         }
+        $maintenance = false;
+        try {
+            $maintenance = $this->atakConfigRepository->isMaintenanceEnabled($tenantId);
+        } catch (\Throwable) {
+        }
+        $user = $this->authService->user();
 
         return Response::view('layout.main', [
             'content' => 'atak.mod',
-            'title' => 'Télécharger le pack Overwatch',
-            'hasMod' => $hasMod,
-            'modSizeLabel' => $sizeLabel,
-            'modUpdatedAt' => $updatedAt,
+            'title' => 'Installer le mod Athena',
+            'meta_description' => $en
+                ? 'Install the Athena mod for Arma 3 from the Steam Workshop: subscribe, enable it in the launcher, link your account.'
+                : 'Installer le mod Athena pour Arma 3 depuis le Steam Workshop : s’abonner, l’activer dans le launcher, lier son compte.',
+            'modItems' => \App\Support\SteamWorkshop::items(),
+            'modSet' => \App\Support\SteamWorkshop::modset($tenantId),
             'modVersion' => $version,
-            'modDownloadUrl' => $hasMod ? url('atak/mod/download') : null,
-            'atakSetupUrl' => url('atak/setup'),
-            'atakUrl' => url('atak'),
-            'docsUrl' => url('documentation') . '#diapositives-briefing-eden',
-            'canManageMod' => function_exists('can') && (can('admin.access') || can('admin.organization')),
-            'adminModUrl' => url('admin/atak-mod'),
+            'modVersionName' => (string) (\App\Support\AtakReleaseInfo::versionName() ?? ''),
+            'modLinkVersion' => (string) ($release['link'] ?? ''),
+            'modNotes' => $notes,
+            'modMinVersion' => $minVersion,
+            'modMaintenance' => $maintenance,
+            'modSteamLinked' => is_array($user) && trim((string) ($user['steam_id'] ?? '')) !== '',
+            'modCanManage' => function_exists('can') && (can('admin.access') || can('admin.organization')),
         ]);
     }
 

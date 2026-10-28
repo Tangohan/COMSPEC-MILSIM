@@ -58,6 +58,8 @@ final class GamePhoneIdentityFormatTest extends TestCase
             self::assertMatchesRegularExpression('/^07[1-57-9]\d{2} \d{6}$/', GamePhoneIdentityRepository::newNumber('UK'));
             self::assertMatchesRegularExpression('/^01[567]\d \d{7}$/', GamePhoneIdentityRepository::newNumber('DE'));
             self::assertMatchesRegularExpression('/^04[6-9]\d( \d{2}){3}$/', GamePhoneIdentityRepository::newNumber('BE'));
+            self::assertMatchesRegularExpression('/^\+7 9\d{2} \d{3}-\d{2}-\d{2}$/', GamePhoneIdentityRepository::newNumber('RU'));
+            self::assertMatchesRegularExpression('/^(6\d{2}|7[1-4]\d) \d{3} \d{3}$/', GamePhoneIdentityRepository::newNumber('ES'));
         }
         foreach (array_keys(GamePhoneIdentityRepository::FORMATS) as $f) {
             self::assertTrue(GamePhoneIdentityRepository::isPlausibleNumber(GamePhoneIdentityRepository::newNumber($f)));

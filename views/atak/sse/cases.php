@@ -350,7 +350,7 @@ $viewStatus = (string) ($filters['status'] ?? '');
         <strong>Acquisitions terrain</strong>
         <span>Signalements reçus et sujets à qualifier</span>
     </a>
-    <a href="<?= $h(url('atak/sse/personnes')) ?>">
+    <a href="<?= $h(url('atak/sse/identites')) ?>">
         <strong>Contrôles récents</strong>
         <span>Personnes et observations disponibles</span>
     </a>

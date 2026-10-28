@@ -18,7 +18,7 @@ $homeUrl = url('');
 <header class="relative z-20 border-b border-slate-200/90 bg-white/90 backdrop-blur-md">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-4">
         <a href="<?= htmlspecialchars($homeUrl, ENT_QUOTES, 'UTF-8') ?>" class="group flex items-center gap-3">
-            <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-[11px] font-black text-white shadow-sm group-hover:bg-emerald-600 transition-colors">A</span>
+            <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm group-hover:bg-emerald-600 transition-colors" aria-hidden="true"><img src="<?= htmlspecialchars(asset_url('assets/brand/athena-embleme-blanc.svg'), ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-7 w-7 object-contain" width="28" height="28"></span>
             <span class="text-lg font-black italic tracking-tight text-slate-900 uppercase leading-none">Athena</span>
         </a>
         <nav class="flex flex-wrap items-center gap-4 sm:gap-8">

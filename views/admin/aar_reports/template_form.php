@@ -26,16 +26,12 @@ if (!is_string($initialJson)) {
     $initialJson = '[]';
 }
 
-$s = \App\Core\Session::getFlash('success');
-$e = \App\Core\Session::getFlash('error');
 $action = $isEdit
     ? url('back-office/atak/comptes-rendus/modeles/' . (int) $template['id'])
     : url('back-office/atak/comptes-rendus/modeles');
 ?>
-<?php if ($s): ?><div class="ath-banner-warn ath-rise" style="background:#e6f8f0;border-color:#bfe9d8;margin-bottom:16px;" role="status"><div class="ath-banner-warn__text" style="color:#0b6b47;"><?= $h((string) $s) ?></div></div><?php endif; ?>
-<?php if ($e): ?><div class="ath-banner-warn ath-rise" style="margin-bottom:16px;" role="alert"><div class="ath-banner-warn__text"><?= $h((string) $e) ?></div></div><?php endif; ?>
 
-<form method="post" action="<?= $h($action) ?>" class="ath-card ath-aar-form-card ath-aar-builder ath-rise" x-data="aarTemplateBuilder(<?= $initialJson ?>)">
+<form method="post" action="<?= $h($action) ?>" class="ath-panel ath-aar-builder bo-aar-builder ath-rise" x-data="aarTemplateBuilder(<?= $h($initialJson) ?>)">
     <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
 
     <label for="tpl-title">Nom du modèle</label>

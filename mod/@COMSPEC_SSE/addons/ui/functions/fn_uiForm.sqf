@@ -25,7 +25,7 @@ params [
 if (!hasInterface) exitWith { false };
 
 if !(createDialog "COMSPEC_SSE_FormDialog") exitWith {
-    hint "COMSPEC SSE : impossible d'ouvrir le formulaire.";
+    ["COMSPEC SSE : impossible d'ouvrir le formulaire.", "WARNING"] call comspec_sse_fnc_notify;
     false
 };
 
@@ -35,12 +35,12 @@ uiNamespace setVariable ["COMSPEC_SSE_FormDisplay", _display];
 
 ([] call comspec_sse_fnc_uiGrid) params ["", "", "_gw", "_gh"];
 
-(_display displayCtrl 93601) ctrlSetText (toUpper _title);
+(_display displayCtrl 93601) ctrlSetText (((toUpper _title)) call comspec_sse_fnc_tr);
 private _desc = _display displayCtrl 93602;
 if (_description isEqualTo "") then {
-    _desc ctrlSetStructuredText parseText "<t color='#9FAAA2'>Réglez les champs puis validez. Survolez un libellé pour son aide.</t>";
+    _desc ctrlSetStructuredText parseText (("<t color='#9FAAA2'>Réglez les champs puis validez. Survolez un libellé pour son aide.</t>") call comspec_sse_fnc_tr);
 } else {
-    _desc ctrlSetStructuredText parseText format ["<t color='#C8D2CA'>%1</t>", _description];
+    _desc ctrlSetStructuredText parseText ((format ["<t color='#C8D2CA'>%1</t>", _description]) call comspec_sse_fnc_tr);
 };
 
 private _group = _display displayCtrl 93610;
@@ -62,8 +62,8 @@ private _fieldW = 11.6;
 
     private _lbl = _display ctrlCreate ["COMSPEC_SSE_RscText", -1, _group];
     _lbl ctrlSetPosition [0, _y, _labelW * _gw, 1.15 * _gh];
-    _lbl ctrlSetText _label;
-    if (_tip isNotEqualTo "") then { _lbl ctrlSetTooltip _tip; };
+    _lbl ctrlSetText ((_label) call comspec_sse_fnc_tr);
+    if (_tip isNotEqualTo "") then { _lbl ctrlSetTooltip ((_tip) call comspec_sse_fnc_tr); };
     _lbl ctrlCommit 0;
 
     private _ctrl = controlNull;
@@ -76,7 +76,7 @@ private _fieldW = 11.6;
             {
                 private _txt = _labs param [_forEachIndex, str _x];
                 if !(_txt isEqualType "") then { _txt = str _txt; };
-                _ctrl lbAdd _txt;
+                _ctrl lbAdd ((_txt) call comspec_sse_fnc_tr);
             } forEach _vals;
             if (_vals isNotEqualTo []) then {
                 _ctrl lbSetCurSel ((_def max 0) min ((count _vals) - 1));
@@ -98,7 +98,7 @@ private _fieldW = 11.6;
 
             private _val = _display ctrlCreate ["COMSPEC_SSE_RscText", -1, _group];
             _val ctrlSetPosition [(_fieldX + _fieldW - 2.4) * _gw, _y, 2.4 * _gw, 1.15 * _gh];
-            _val ctrlSetText (((_def max _min) min _max) toFixed _dec);
+            _val ctrlSetText (((((_def max _min) min _max) toFixed _dec)) call comspec_sse_fnc_tr);
             _val ctrlCommit 0;
             _ctrl setVariable ["comspec_sse_valueCtrl", _val];
             _ctrl setVariable ["comspec_sse_decimals", _dec];
@@ -106,24 +106,24 @@ private _fieldW = 11.6;
                 params ["_c", "_v"];
                 private _out = _c getVariable ["comspec_sse_valueCtrl", controlNull];
                 if (!isNull _out) then {
-                    _out ctrlSetText (_v toFixed (_c getVariable ["comspec_sse_decimals", 0]));
+                    _out ctrlSetText (((_v toFixed (_c getVariable ["comspec_sse_decimals", 0]))) call comspec_sse_fnc_tr);
                 };
             }];
         };
         case "NUMBER": {
             _data params [["_def", 0, [0]], ["_min", -1e9, [0]], ["_max", 1e9, [0]]];
             _ctrl = _display ctrlCreate ["COMSPEC_SSE_RscEdit", -1, _group];
-            _ctrl ctrlSetText str _def;
+            _ctrl ctrlSetText (str _def); // i18n:brut
         };
         default {
             _type = "EDIT";
             _ctrl = _display ctrlCreate ["COMSPEC_SSE_RscEdit", -1, _group];
-            _ctrl ctrlSetText (if (_data isEqualType "") then { _data } else { str _data });
+            _ctrl ctrlSetText ((if (_data isEqualType "") then { _data } else { str _data })); // i18n:brut
         };
     };
 
     _ctrl ctrlSetPosition _pos;
-    if (_tip isNotEqualTo "") then { _ctrl ctrlSetTooltip _tip; };
+    if (_tip isNotEqualTo "") then { _ctrl ctrlSetTooltip ((_tip) call comspec_sse_fnc_tr); };
     _ctrl ctrlCommit 0;
     _entries pushBack [_type, _ctrl, _data];
 } forEach _rows;

@@ -7,7 +7,7 @@ namespace App\Controllers\Admin\System;
 use App\Core\Request;
 use App\Core\Response;
 use App\Repositories\AuditLogRepository;
-use App\Repositories\ForumReportRepository;
+use App\Repositories\ContentReportRepository;
 use App\Repositories\MaintenanceRepository;
 use App\Repositories\ModerationArtifactRepository;
 use App\Repositories\PlatformAlertRepository;
@@ -15,13 +15,13 @@ use App\Repositories\PlatformAlertRepository;
 final class SystemOpsCenterController
 {
     public function __construct(
-        private ?ForumReportRepository $forumReports = null,
+        private ?ContentReportRepository $contentReports = null,
         private ?ModerationArtifactRepository $moderationArtifacts = null,
         private ?PlatformAlertRepository $platformAlerts = null,
         private ?MaintenanceRepository $maintenance = null,
         private ?AuditLogRepository $auditLogs = null,
     ) {
-        $this->forumReports ??= new ForumReportRepository();
+        $this->contentReports ??= new ContentReportRepository();
         $this->moderationArtifacts ??= new ModerationArtifactRepository();
         $this->platformAlerts ??= new PlatformAlertRepository();
         $this->maintenance ??= new MaintenanceRepository();
@@ -30,11 +30,11 @@ final class SystemOpsCenterController
 
     public function index(Request $request, array $params = []): Response
     {
-        $forumPendingTotal = 0;
+        $reportsPendingTotal = 0;
         try {
-            $forumPendingTotal = $this->forumReports->countPendingAllTenants();
+            $reportsPendingTotal = $this->contentReports->countPendingAllTenants();
         } catch (\Throwable) {
-            $forumPendingTotal = 0;
+            $reportsPendingTotal = 0;
         }
 
         $contentPendingTotal = 0;
@@ -75,11 +75,11 @@ final class SystemOpsCenterController
         $actions = [
             [
                 'role' => 'moderator',
-                'status' => $forumPendingTotal > 0 ? 'open' : 'monitor',
-                'priority' => $forumPendingTotal > 20 ? 'high' : 'medium',
-                'title' => 'Traiter les signalements forum en attente',
-                'description' => sprintf('%d signalement(s) forum à traiter au niveau plateforme.', $forumPendingTotal),
-                'link' => url('back-office/forum-moderation'),
+                'status' => $reportsPendingTotal > 0 ? 'open' : 'monitor',
+                'priority' => $reportsPendingTotal > 20 ? 'high' : 'medium',
+                'title' => 'Traiter les signalements membres en attente',
+                'description' => sprintf('%d signalement(s) membre à traiter au niveau plateforme.', $reportsPendingTotal),
+                'link' => url('back-office/signalements'),
                 'link_label' => 'Ouvrir la console modération',
             ],
             [
@@ -88,7 +88,7 @@ final class SystemOpsCenterController
                 'priority' => $contentPendingTotal > 10 ? 'high' : 'low',
                 'title' => 'Valider la file de modération de contenu',
                 'description' => sprintf('%d élément(s) en quarantaine fichier/contenu.', $contentPendingTotal),
-                'link' => url('admin/content-moderation'),
+                'link' => url('back-office/content-moderation'),
                 'link_label' => 'Ouvrir la quarantaine',
             ],
             [
@@ -96,7 +96,7 @@ final class SystemOpsCenterController
                 'status' => 'monitor',
                 'priority' => 'medium',
                 'title' => 'Sanctions membres au niveau site',
-                'description' => 'Mesures sur le compte, le forum, la messagerie ou plusieurs domaines du portail — après choix de la communauté et du membre.',
+                'description' => 'Mesures sur le compte, la messagerie ou plusieurs domaines du portail — après choix de la communauté et du membre.',
                 'link' => url('admin/system/member-sanctions'),
                 'link_label' => 'Ouvrir l’écran sanctions site',
             ],
@@ -214,7 +214,7 @@ final class SystemOpsCenterController
                 'code' => 'FOR-007',
                 'priority' => 'P1',
                 'title' => 'Digest hebdo des contenus prioritaires',
-                'outcome' => 'Accélérer la lecture des sujets critiques du forum.',
+                'outcome' => 'Accélérer la lecture des contenus critiques.',
                 'deliverable' => 'Digest hebdomadaire personnalisé par rôle.',
             ],
             [
@@ -255,7 +255,7 @@ final class SystemOpsCenterController
             'opsCenterCrossLinks' => [
                 'user_lookup' => url('api/admin/user-search'),
                 'audit' => url('admin/audit'),
-                'moderation' => url('back-office/forum-moderation'),
+                'moderation' => url('back-office/signalements'),
             ],
         ]);
     }

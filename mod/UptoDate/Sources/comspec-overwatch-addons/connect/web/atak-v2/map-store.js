@@ -130,11 +130,61 @@
             return row || cached || null;
         });
     }
+    function trimMem(store, max, keep) {
+        var bag = mem[store];
+        if (!bag)
+            return;
+        var keys = Object.keys(bag);
+        if (keys.length <= max)
+            return;
+        keys.sort(function (a, b) {
+            var ra = bag[a] || {};
+            var rb = bag[b] || {};
+            // Tuiles : horodatage numérique `at` ; événements / file : ISO ou epoch.
+            var ta = ra.at != null ? Number(ra.at) : Date.parse(ra.queuedAt || ra.timestamp || ra.savedAt || "") || 0;
+            var tb = rb.at != null ? Number(rb.at) : Date.parse(rb.queuedAt || rb.timestamp || rb.savedAt || "") || 0;
+            if (ta === tb)
+                return a < b ? -1 : 1;
+            return ta < tb ? -1 : 1;
+        });
+        var guard = 0;
+        while (keys.length > max && guard < keys.length + 2) {
+            guard += 1;
+            var k = keys.shift();
+            if (k === keep) {
+                keys.push(k);
+                continue;
+            }
+            del(store, k);
+        }
+    }
+    function count(store) {
+        var bag = mem[store] || {};
+        var n = Object.keys(bag).length;
+        if (n > 0)
+            return Promise.resolve(n);
+        return openDb().then(function (d) {
+            if (!d)
+                return store === "tiles" ? 0 : lsAll(store).length;
+            return new Promise(function (resolve) {
+                try {
+                    var t = d.transaction(store, "readonly");
+                    var r = t.objectStore(store).count();
+                    r.onsuccess = function () { resolve(Number(r.result) || 0); };
+                    r.onerror = function () { resolve(0); };
+                }
+                catch (e) {
+                    resolve(0);
+                }
+            });
+        }).then(function (v) { return v; }, function () { return 0; });
+    }
     function put(store, key, value) {
         if (store === "events" || store === "queue") {
             if (!value || !value.event_id)
                 return Promise.resolve(false);
             mem[store][value.event_id] = value;
+            trimMem(store, 800, value.event_id);
             lsWrite(store, value.event_id, value);
             return tx(store, "readwrite", function (s) {
                 if (!s)
@@ -142,7 +192,11 @@
                 return s.put(value);
             });
         }
+        if (store === "tiles" && value && typeof value === "object" && value.at == null)
+            value.at = Date.now();
         mem[store][key] = value;
+        if (store === "tiles")
+            trimMem(store, 400, key);
         lsWrite(store, key, value);
         return tx(store, "readwrite", function (s) {
             if (!s)
@@ -179,6 +233,7 @@
         get: get,
         put: put,
         del: del,
-        all: getAll
+        all: getAll,
+        count: count
     };
 })();

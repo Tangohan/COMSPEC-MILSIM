@@ -10,7 +10,7 @@ $chLabels = $cooperationAnnouncementChannelLabels ?? [];
         <h1 class="text-2xl font-black text-slate-900">Messages types — coopération</h1>
         <a href="<?= url('admin') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">Retour</a>
     </div>
-    <p class="text-sm text-slate-600 mb-6 max-w-3xl">Définissez les textes par défaut pour les courriels, les notifications du portail et, le cas échéant, les publications forum. Les communautés peuvent ensuite ajuster leurs propres réglages.</p>
+    <p class="text-sm text-slate-600 mb-6 max-w-3xl">Définissez les textes par défaut pour les courriels et les notifications du portail. Les communautés peuvent ensuite ajuster leurs propres réglages.</p>
     <?php $s = \App\Core\Session::getFlash('success'); $e = \App\Core\Session::getFlash('error'); ?>
     <?php if ($s): ?><p class="text-emerald-700 text-sm mb-4"><?= htmlspecialchars($s, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
     <?php if ($e): ?><p class="text-red-600 text-sm mb-4"><?= htmlspecialchars($e, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>

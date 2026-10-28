@@ -35,7 +35,6 @@ final class PlanFeaturesSchemaTest extends TestCase
     public function testFreePlanKeepsCoreModulesWithoutPremium(): void
     {
         $f = SubscriptionPlanFeaturesCatalog::defaultsForSlug('free');
-        self::assertTrue($f['forum']);
         self::assertTrue($f['messages']);
         self::assertTrue($f['recruitment']);
         self::assertFalse($f['atak']);
@@ -54,6 +53,24 @@ final class PlanFeaturesSchemaTest extends TestCase
         foreach (SubscriptionPlanFeaturesCatalog::INT_FEATURES as $key) {
             self::assertArrayHasKey($key, $defs);
             self::assertSame('int', $defs[$key]['type']);
+        }
+    }
+
+    public function testRegistryFeaturedIsAPaidPlanFeature(): void
+    {
+        self::assertContains('registry_featured', SubscriptionPlanFeaturesCatalog::BOOL_FEATURES);
+        self::assertFalse(SubscriptionPlanFeaturesCatalog::defaultsForSlug('free')['registry_featured']);
+        self::assertFalse(SubscriptionPlanFeaturesCatalog::defaultsForSlug('standard')['registry_featured']);
+        self::assertTrue(SubscriptionPlanFeaturesCatalog::defaultsForSlug('pro')['registry_featured']);
+        self::assertTrue(SubscriptionPlanFeaturesCatalog::defaultsForSlug('pro_plus')['registry_featured']);
+    }
+
+    public function testPdfExportsArePaidPlanModule(): void
+    {
+        self::assertContains('pdf_exports', SubscriptionPlanFeaturesCatalog::BOOL_FEATURES);
+        self::assertFalse(SubscriptionPlanFeaturesCatalog::defaultsForSlug('free')['pdf_exports']);
+        foreach (['standard', 'pro', 'pro_plus'] as $slug) {
+            self::assertTrue(SubscriptionPlanFeaturesCatalog::defaultsForSlug($slug)['pdf_exports'], $slug);
         }
     }
 }

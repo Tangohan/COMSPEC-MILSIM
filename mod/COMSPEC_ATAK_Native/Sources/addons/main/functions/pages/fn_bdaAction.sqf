@@ -23,14 +23,17 @@ switch (_act) do {
             private _p = ([_g] call BIS_fnc_gridToPos) param [0, []];
             if ((count _p) >= 2) then { _pos = [_p select 0, _p select 1, 0]; };
         };
-        private _id = format ["BDA%1", floor (random 90000) + 10000];
+        // Id unique : poste du joueur + compteur local (l'ancien tirage à 5 chiffres pouvait se répéter et le BDA était ignoré).
+        private _seq = (missionNamespace getVariable ["COMSPEC_ATAK_BdaSeq", 0]) + 1;
+        missionNamespace setVariable ["COMSPEC_ATAK_BdaSeq", _seq];
+        private _id = format ["BDA%1-%2", clientOwner, _seq];
         private _r = createHashMapFromArray [
             ["id", _id], ["by", [player, true] call comspec_atak_native_fnc_unitCallsign], ["time", [dayTime, "HH:MM"] call BIS_fnc_timeToString],
             ["type", _f getOrDefault ["type", "PERS"]], ["res", _f getOrDefault ["res", "DESTROYED"]], ["reatk", _f getOrDefault ["reatk", "NO"]],
             ["ekia", _f getOrDefault ["ekia", ""]], ["equip", _f getOrDefault ["equip", ""]], ["ammo", _f getOrDefault ["ammo", ""]],
             ["rem", _f getOrDefault ["rem", ""]], ["pos", [_pos select 0, _pos select 1, 0]], ["grid", [_pos, 8] call comspec_atak_native_fnc_gridRef]
         ];
-        [{ params ["_r", "_side"]; ["comspec_atak_native_bda", [_r, _side]] call CBA_fnc_globalEvent; }, [_r, str side group player], "BDA", 1] call comspec_atak_native_fnc_netSend;
+        [{ params ["_r", "_side"]; ["comspec_atak_native_sideEvent", ["comspec_atak_native_bda", [_r, _side], _side]] call CBA_fnc_serverEvent; }, [_r, str side group player], "BDA", 1] call comspec_atak_native_fnc_netSend;
         { _f deleteAt _x; } forEach ["ekia", "equip", "ammo", "rem"];
         ["SUCCESS", "Bilan des dégâts transmis au camp", 4, 40] call comspec_atak_native_fnc_notify;
         // Avec Overwatch : rapport BDA au poste web.

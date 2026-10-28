@@ -18,8 +18,6 @@ $fmt = static fn (?int $b): string => PlatformStorageService::formatBytes($b);
 $pct = $disk['percent_used'] ?? null;
 $bar = is_numeric($pct) ? max(0, min(100, (float) $pct)) : 0;
 $barTone = $bar >= 90 ? 'bg-rose-600' : ($bar >= 75 ? 'bg-amber-500' : 'bg-emerald-600');
-$flashErr = \App\Core\Session::getFlash('error');
-$flashOk = \App\Core\Session::getFlash('success');
 $csrf = \App\Core\Csrf::token();
 ?>
 <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-10">
@@ -31,15 +29,17 @@ $csrf = \App\Core\Csrf::token();
             Les comptes, les communautés et les documents officiels ne peuvent pas être vidés ici.
             Un vidage s’applique à <strong class="font-semibold text-slate-800">toutes</strong> les communautés.
         </p>
-        <a href="<?= url('admin') ?>" class="inline-block mt-4 text-sm text-slate-600 hover:underline">Retour au centre opérateur site</a>
     </header>
+    <?php $storageTab = 'overview'; require base_path('views/admin/system/partials/storage_nav.php'); ?>
 
-    <?php if ($flashErr): ?>
-        <p class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900"><?= htmlspecialchars((string) $flashErr, ENT_QUOTES, 'UTF-8') ?></p>
-    <?php endif; ?>
-    <?php if ($flashOk): ?>
-        <p class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"><?= htmlspecialchars((string) $flashOk, ENT_QUOTES, 'UTF-8') ?></p>
-    <?php endif; ?>
+    <a href="<?= htmlspecialchars(url('admin/system/storage/donnees'), ENT_QUOTES, 'UTF-8') ?>" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-5 text-white shadow-sm hover:from-slate-800">
+        <span>
+            <span class="block text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-300">Explorateur de données</span>
+            <span class="mt-1 block text-lg font-black">Chercher, lire, modifier une ligne ou vider une table</span>
+            <span class="mt-1 block text-sm text-white/70"><?= (int) ($tableCount ?? 0) ?> tables · secrets masqués · chaque modification inscrite au journal d’audit</span>
+        </span>
+        <span class="rounded-lg bg-white px-4 py-2 text-sm font-bold text-slate-900">Ouvrir l’explorateur →</span>
+    </a>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
         <h2 class="text-sm font-black uppercase tracking-[0.18em] text-slate-500">Disque du serveur</h2>
@@ -91,7 +91,7 @@ $csrf = \App\Core\Csrf::token();
 
     <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-sm font-black uppercase tracking-[0.18em] text-slate-500 mb-2">Plus volumineux en base</h2>
-        <p class="text-sm text-slate-600 mb-4">Estimation. Les comptes et les communautés n’apparaissent ici qu’à titre d’information : ils ne sont pas vidables.</p>
+        <p class="text-sm text-slate-600 mb-4">Estimation. Cliquez sur une ligne pour l’ouvrir dans l’explorateur. Les comptes et les communautés ne sont pas vidables.</p>
         <?php if ($largestTables === []): ?>
             <p class="text-sm text-slate-500">Aucune mesure disponible.</p>
         <?php else: ?>
@@ -124,7 +124,10 @@ $csrf = \App\Core\Csrf::token();
                             };
                             ?>
                             <tr>
-                                <td class="py-2.5 pr-4 font-medium text-slate-800"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="py-2.5 pr-4 font-medium text-slate-800">
+                                    <a href="<?= htmlspecialchars(url('admin/system/storage/donnees/' . rawurlencode($name)), ENT_QUOTES, 'UTF-8') ?>" class="hover:text-emerald-700 hover:underline"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></a>
+                                    <span class="block font-mono text-[11px] text-slate-400"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></span>
+                                </td>
                                 <td class="py-2.5 pr-4 tabular-nums text-slate-600"><?= number_format((int) ($t['rows'] ?? 0), 0, ',', ' ') ?></td>
                                 <td class="py-2.5 tabular-nums text-slate-700"><?= htmlspecialchars($fmt((int) ($t['bytes'] ?? 0)), ENT_QUOTES, 'UTF-8') ?></td>
                             </tr>

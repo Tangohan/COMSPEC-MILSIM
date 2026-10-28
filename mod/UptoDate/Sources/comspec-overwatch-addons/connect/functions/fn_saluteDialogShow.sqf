@@ -32,5 +32,5 @@ uiNamespace setVariable ["COMSPEC_Salute_Display", _disp];
 private _grid = mapGridPosition player;
 private _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString;
 
-(_disp displayCtrl 9403) ctrlSetText format ["Grille %1", _grid];
-(_disp displayCtrl 9405) ctrlSetText _timeStr;
+(_disp displayCtrl 9403) ctrlSetText ((format ["Grille %1", _grid]) call comspec_overwatch_connect_fnc_tr);
+(_disp displayCtrl 9405) ctrlSetText ((_timeStr) call comspec_overwatch_connect_fnc_tr);

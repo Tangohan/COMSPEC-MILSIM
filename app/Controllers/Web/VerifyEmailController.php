@@ -39,8 +39,7 @@ final class VerifyEmailController
         $hash = hash('sha256', $token);
         $row = $this->emailTokens->findValidByHash($hash);
         if (!$row || ($row['purpose'] ?? '') !== EmailTokenPurpose::REGISTER_CONFIRM) {
-            Session::flash('error', 'Lien invalide ou expiré.');
-            return Response::redirect(url('login'));
+            return $this->explainUnusableLink($hash);
         }
         $userId = (int) ($row['user_id'] ?? 0);
         $tenantId = (int) ($row['tenant_id'] ?? 0);
@@ -107,6 +106,44 @@ final class VerifyEmailController
         return Response::redirect(url('login'));
     }
 
+    /**
+     * Lien déjà utilisé ou expiré : dire au membre où il en est plutôt qu'un « lien invalide » sec.
+     * Les antivirus de messagerie ouvrent souvent le lien avant le membre : le compte est alors déjà
+     * actif et le second clic ne doit pas ressembler à un échec.
+     */
+    private function explainUnusableLink(string $hash): Response
+    {
+        $row = $this->emailTokens->findAnyByHash($hash);
+        if (!$row || ($row['purpose'] ?? '') !== EmailTokenPurpose::REGISTER_CONFIRM) {
+            Session::flash('error', 'Ce lien de confirmation n’est plus valide (un lien plus récent a peut-être été envoyé). Utilisez le dernier e-mail reçu, ou connectez-vous pour demander un nouveau lien.');
+
+            return Response::redirect(url('login'));
+        }
+        $user = $this->userRepository->findById((int) ($row['user_id'] ?? 0), (int) ($row['tenant_id'] ?? 0));
+        if (!$user) {
+            Session::flash('error', 'Compte introuvable. Il a peut-être été supprimé : vous pouvez créer un nouveau compte.');
+
+            return Response::redirect(url('login'));
+        }
+        if (($user['status'] ?? '') !== 'pending_verification') {
+            Session::forget('pending_verification_email');
+            Session::flash('success', 'Votre adresse e-mail est déjà confirmée. Vous pouvez vous connecter.');
+
+            return Response::redirect(url('login'));
+        }
+        // Compte toujours en attente : proposer le renvoi directement sur la page de connexion.
+        Session::set('pending_verification_email', strtolower(trim((string) ($user['email'] ?? ''))));
+        $expired = !empty($row['expires_at']) && \App\Support\DbTime::utcToTimestamp((string) $row['expires_at']) <= time();
+        Session::flash(
+            'error',
+            $expired
+                ? 'Ce lien de confirmation a expiré. Cliquez sur « Renvoyer le lien de confirmation » ci-dessous pour en recevoir un nouveau.'
+                : 'Ce lien n’est plus valide. Cliquez sur « Renvoyer le lien de confirmation » ci-dessous pour en recevoir un nouveau.'
+        );
+
+        return Response::redirect(url('login'));
+    }
+
     public function showCheckEmail(Request $request, array $params = []): Response
     {
         $email = Session::get('register_pending_email');
@@ -119,6 +156,7 @@ final class VerifyEmailController
             'email' => (string) $email,
             'error' => Session::getFlash('error'),
             'warning' => Session::getFlash('warning'),
+            'success' => Session::getFlash('success'),
         ]);
     }
 
@@ -133,7 +171,9 @@ final class VerifyEmailController
             return Response::redirect(url('login'));
         }
 
-        $raw = Session::get('pending_verification_email') ?? Session::get('register_pending_email');
+        $raw = (string) $request->input('from') === 'check-email'
+            ? (Session::get('register_pending_email') ?? Session::get('pending_verification_email'))
+            : (Session::get('pending_verification_email') ?? Session::get('register_pending_email'));
         $email = strtolower(trim((string) (($raw !== null && $raw !== '') ? $raw : $request->input('email'))));
         if ($email === '') {
             Session::flash('error', 'Saisissez d’abord votre identifiant sur la page de connexion, puis réessayez.');
@@ -148,6 +188,11 @@ final class VerifyEmailController
             return Response::redirect(url('login'));
         }
 
+        // Depuis l'écran « Confirmez votre e-mail », rester sur cet écran plutôt que renvoyer vers la connexion.
+        $fromCheckEmail = strtolower(trim((string) (Session::get('register_pending_email') ?? ''))) === $email
+            && (string) $request->input('from') === 'check-email';
+        $back = $fromCheckEmail ? url('register/check-email') : url('login');
+
         $candidates = $this->userRepository->listUsersForLoginByEmail($email);
         $pending = array_values(array_filter(
             $candidates,
@@ -160,7 +205,7 @@ final class VerifyEmailController
                 'Si un compte en attente de confirmation existe pour cette adresse, un nouveau lien vient d’être envoyé.'
             );
 
-            return Response::redirect(url('login'));
+            return Response::redirect($back);
         }
 
         $sent = 0;
@@ -182,7 +227,7 @@ final class VerifyEmailController
             $tenantName = email_community_label(is_array($tenant) ? $tenant : null, (string) ($tenant['name'] ?? ''));
             $rawToken = bin2hex(random_bytes(32));
             $tokenHash = hash('sha256', $rawToken);
-            $expires = new \DateTimeImmutable('+15 minutes');
+            $expires = new \DateTimeImmutable('+' . EmailTokenPurpose::REGISTER_CONFIRM_TTL_MINUTES . ' minutes');
             $verifyUrl = url('verify-email') . '?token=' . rawurlencode($rawToken);
             try {
                 // Créer avant l'envoi empêche qu'un message délivré immédiatement pointe
@@ -207,7 +252,7 @@ final class VerifyEmailController
                 (string) ($row['display_name'] ?? 'Membre'),
                 $tenantName,
                 $verifyUrl,
-                15,
+                EmailTokenPurpose::REGISTER_CONFIRM_TTL_MINUTES,
                 $tenantId
             );
             if (!$ok) {
@@ -237,25 +282,25 @@ final class VerifyEmailController
                 'Un nouveau lien de confirmation a été envoyé. Vérifiez votre boîte e-mail (et les courriers indésirables).'
             );
 
-            return Response::redirect(url('login'));
+            return Response::redirect($back);
         }
 
         if ($attemptedSend && $lastMailError !== null && $lastMailError !== '') {
             Session::flash('error', 'L’e-mail n’a pas pu être envoyé. Réessayez dans quelques minutes ou contactez le support.');
 
-            return Response::redirect(url('login'));
+            return Response::redirect($back);
         }
 
         if ($attemptedSend) {
             Session::flash('error', 'L’e-mail n’a pas pu être envoyé pour le moment. Réessayez dans quelques minutes ou contactez le support.');
 
-            return Response::redirect(url('login'));
+            return Response::redirect($back);
         }
 
         if ($rateLimited) {
-            Session::flash('error', 'Veuillez patienter une minute avant de redemander un lien.');
+            Session::flash('error', 'Un lien vient déjà d’être envoyé. Patientez environ une minute avant d’en redemander un, et vérifiez vos courriers indésirables.');
 
-            return Response::redirect(url('login'));
+            return Response::redirect($back);
         }
 
         Session::flash(
@@ -263,6 +308,6 @@ final class VerifyEmailController
             'Si un compte en attente de confirmation existe pour cette adresse, un nouveau lien vient d’être envoyé.'
         );
 
-        return Response::redirect(url('login'));
+        return Response::redirect($back);
     }
 }

@@ -74,15 +74,15 @@ class AdminUnitsController
         ];
         if ($data['name'] === '') {
             Session::set('error', 'Le nom est requis.');
-            return Response::redirect(url('admin/units/create'));
+            return Response::redirect(url('back-office/units/create'));
         }
         if ($this->unitRepository->slugExists((int) $tenantId, $effectiveSlug)) {
             Session::set('error', 'Ce slug existe déjà.');
-            return Response::redirect(url('admin/units/create'));
+            return Response::redirect(url('back-office/units/create'));
         }
         $this->unitRepository->create((int) $tenantId, $data);
         Session::set('success', 'Unité créée.');
-        return Response::redirect(url('admin/units'));
+        return Response::redirect(url('back-office/units'));
     }
 
     public function edit(Request $request, array $params = []): Response
@@ -131,11 +131,11 @@ class AdminUnitsController
         ];
         if ($data['slug'] && $this->unitRepository->slugExists((int) $tenantId, $data['slug'], $id)) {
             Session::set('error', 'Ce slug existe déjà.');
-            return Response::redirect(url('admin/units/' . $id . '/edit'));
+            return Response::redirect(url('back-office/units/' . $id . '/edit'));
         }
         $this->unitRepository->update($id, (int) $tenantId, $data);
         Session::set('success', 'Unité mise à jour.');
-        return Response::redirect(url('admin/units'));
+        return Response::redirect(url('back-office/units'));
     }
 
     public function delete(Request $request, array $params = []): Response
@@ -151,7 +151,7 @@ class AdminUnitsController
         }
         $this->unitRepository->delete($id, (int) $tenantId);
         Session::set('success', 'Unité supprimée.');
-        return Response::redirect(url('admin/units'));
+        return Response::redirect(url('back-office/units'));
     }
 
     private function slugify(string $name): string

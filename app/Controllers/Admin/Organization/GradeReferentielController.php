@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AdvancementRepository;
+use App\Repositories\CustomGradeSystemRepository;
 use App\Repositories\GradeCategoryRepository;
 use App\Repositories\GradeRepository;
 use App\Repositories\GradeSystemRepository;
@@ -16,6 +17,7 @@ use App\Repositories\TenantGradeOverrideRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Advancement\GradeScaleTemplateService;
 use App\Services\GradeDisplayService;
+use App\Support\CustomGradeTemplates;
 
 class GradeReferentielController
 {
@@ -28,6 +30,7 @@ class GradeReferentielController
         private TenantGradeOverrideRepository $overrides,
         private AdvancementRepository $advancement,
         private GradeScaleTemplateService $templates,
+        private CustomGradeSystemRepository $custom,
     ) {
     }
 
@@ -39,7 +42,20 @@ class GradeReferentielController
         }
         $settings = $this->tenantRepository->getSettings($tenantId);
         $systemCode = strtoupper(trim((string) ($settings['grade_system_code'] ?? ''))) ?: 'FR_CLASSIC';
-        $tab = $this->normalizeTab((string) $request->query('tab', 'fr'));
+        // Onglet par défaut : le système de grades choisi par la communauté.
+        $customSystems = $this->custom->listSystems($tenantId);
+        $currentCustom = null;
+        foreach ($customSystems as $cs) {
+            if ((string) $cs['code'] === $systemCode) {
+                $currentCustom = $cs;
+            }
+        }
+        $defaultTab = $currentCustom !== null ? 'custom' : (str_starts_with($systemCode, 'US') ? 'us' : 'fr');
+        $tab = $this->normalizeTab((string) $request->query('tab', $defaultTab));
+        $selectedCustomId = (int) $request->query('systeme', 0);
+        if ($tab === 'custom' && $this->custom->findSystem($tenantId, $selectedCustomId) === null) {
+            $selectedCustomId = $currentCustom !== null ? (int) $currentCustom['id'] : (int) ($customSystems[0]['id'] ?? 0);
+        }
         $categoryFilter = (int) $request->query('categorie', 0);
         $categoryFilter = $categoryFilter > 0 ? $categoryFilter : null;
         $systems = $this->gradeSystemRepository->listActive();
@@ -63,10 +79,101 @@ class GradeReferentielController
             'gradesUs' => $gradesUs,
             'allGrades' => $allGrades,
             'tenantExtras' => $this->tenantExtras($tenantId, $catalogForExtras),
+            'customReady' => $this->custom->ready(),
+            'customSystems' => $customSystems,
+            'customCurrent' => $currentCustom,
+            'customSelected' => $tab === 'custom' && $selectedCustomId > 0 ? $this->custom->findSystem($tenantId, $selectedCustomId) : null,
+            'customTree' => $tab === 'custom' && $selectedCustomId > 0 ? $this->custom->tree($tenantId, $selectedCustomId) : [],
+            'customTemplates' => CustomGradeTemplates::all(),
             'tenantSystemCode' => $systemCode,
+            'gradesHidden' => !empty($settings['grades_hidden']),
             'gradeCategoryFilterId' => $categoryFilter,
             'gradeDisplayService' => $this->gradeDisplayService,
+            'backOfficePageCss' => ['back-office-referentiel-grades.css'],
         ]);
+    }
+
+    /**
+     * Raccourci : change le système de grades de la communauté (français ↔ américain) depuis le référentiel.
+     * Les grades déjà attribués aux membres sont conservés ; les listes proposent ensuite le nouveau système.
+     */
+    public function setSystem(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('login'));
+        }
+        $rawCode = trim((string) $request->input('grade_system_code', ''));
+        $code = strtoupper($rawCode);
+        $tab = str_starts_with($code, 'US') ? 'us' : 'fr';
+        $back = url('back-office/referentiels/grades') . '?tab=' . $tab;
+        // Système sur mesure de la communauté : réglé depuis l’onglet « Sur mesure ».
+        $customSystem = $this->custom->findSystemByCode($tenantId, $rawCode);
+        if ($customSystem !== null) {
+            $back = url('back-office/referentiels/grades') . '?tab=custom&systeme=' . (int) $customSystem['id'];
+            if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+                Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+                return Response::redirect($back);
+            }
+            $this->tenantRepository->mergeSettings($tenantId, ['grades_hidden' => false, 'grade_system_code' => (string) $customSystem['code']]);
+            \App\Support\TenantGrades::forget($tenantId);
+            try {
+                $this->templates->completeForTenant($tenantId, (string) $customSystem['code']);
+            } catch (\Throwable) {
+            }
+            Session::flash('success', 'La communauté utilise maintenant « ' . $customSystem['label'] . ' ». Les grades déjà attribués sont conservés.');
+
+            return Response::redirect($back);
+        }
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($back);
+        }
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $gradesHidden = !empty($settings['grades_hidden']);
+        // « Aucun » : les grades restent attribués en base mais ne s’affichent plus nulle part.
+        if ($code === 'NONE') {
+            if (!$gradesHidden) {
+                $this->tenantRepository->mergeSettings($tenantId, ['grades_hidden' => true]);
+                \App\Support\TenantGrades::forget($tenantId);
+            }
+            Session::flash('success', 'Les grades ne sont plus affichés dans la communauté. Ils restent enregistrés : vous pouvez les réactiver à tout moment.');
+
+            return Response::redirect($back);
+        }
+        if (!in_array($code, ['FR_CLASSIC', 'US_CLASSIC'], true)) {
+            Session::flash('error', 'Système de grades inconnu.');
+
+            return Response::redirect($back);
+        }
+        $current = strtoupper(trim((string) ($settings['grade_system_code'] ?? ''))) ?: 'FR_CLASSIC';
+        if ($gradesHidden) {
+            $this->tenantRepository->mergeSettings($tenantId, ['grades_hidden' => false, 'grade_system_code' => $code]);
+            \App\Support\TenantGrades::forget($tenantId);
+            Session::flash('success', $code === 'US_CLASSIC'
+                ? 'Les grades américains sont de nouveau affichés dans la communauté.'
+                : 'Les grades français sont de nouveau affichés dans la communauté.');
+
+            return Response::redirect($back);
+        }
+        if ($current === $code) {
+            Session::flash('info', 'La communauté utilise déjà ce système de grades.');
+
+            return Response::redirect($back);
+        }
+        $this->tenantRepository->mergeSettings($tenantId, ['grade_system_code' => $code]);
+        try {
+            $this->templates->completeForTenant($tenantId, $code);
+        } catch (\Throwable) {
+            // l’échelle se complète aussi à l’ouverture du référentiel
+        }
+        Session::flash('success', $code === 'US_CLASSIC'
+            ? 'La communauté utilise maintenant les grades américains. Les grades déjà attribués sont conservés.'
+            : 'La communauté utilise maintenant les grades français. Les grades déjà attribués sont conservés.');
+
+        return Response::redirect($back);
     }
 
     public function create(Request $request, array $params = []): Response
@@ -79,7 +186,7 @@ class GradeReferentielController
         $returnTab = $this->normalizeGradeTab((string) $request->query('tab', 'fr'));
         return Response::view('layout.main', [
             'content' => 'admin.organization.referentiels.grades.form',
-            'title' => 'Nouveau grade',
+            'title' => 'Nouveau grade d’avancement',
             'grade' => null,
             'systems' => $systems,
             'categories' => $categories,
@@ -99,7 +206,8 @@ class GradeReferentielController
             return Response::redirect(url('back-office/referentiels/grades/create'));
         }
         $systemId = (int) $request->input('grade_system_id');
-        $returnTab = $this->tabForSystemId($systemId);
+        // Un grade créé par la communauté apparaît dans l'onglet « Grades personnalisés ».
+        $returnTab = 'perso';
         $categoryId = (int) $request->input('grade_category_id');
         $code = strtoupper(trim((string) $request->input('code')));
         $labelShort = trim((string) $request->input('label_short'));
@@ -158,7 +266,7 @@ class GradeReferentielController
         }
         return Response::view('layout.main', [
             'content' => 'admin.organization.referentiels.grades.form',
-            'title' => 'Modifier le grade',
+            'title' => 'Renommer le grade',
             'grade' => $grade,
             'systems' => $systems,
             'categories' => $categories,
@@ -216,22 +324,44 @@ class GradeReferentielController
         $id = (int) ($params['id'] ?? 0);
         $grade = $id ? $this->gradeRepository->findById($id) : null;
         if ($id < 1 || $grade === null) {
-            Session::flash('error', 'Impossible de supprimer le grade.');
+            Session::flash('error', 'Impossible de masquer le grade.');
             return Response::redirect($this->indexUrl($this->tabForGrade($grade)));
         }
         $this->overrides->upsert($tenantId, $id, ['is_enabled' => false]);
-        Session::flash('success', 'Grade masqué pour cette communauté. Le catalogue partagé est inchangé.');
+        Session::flash('success', 'Grade masqué : il n’est plus proposé dans les fiches membres. Vous pouvez le réafficher en bas de la liste.');
+        return Response::redirect($this->indexUrl($this->tabForGrade($grade)));
+    }
+
+    /** Réaffiche un grade du catalogue masqué pour la communauté. */
+    public function reactivate(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
+            return Response::redirect(url('back-office/referentiels/grades'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $grade = $id ? $this->gradeRepository->findById($id) : null;
+        if ($grade === null) {
+            Session::flash('error', 'Grade introuvable.');
+            return Response::redirect(url('back-office/referentiels/grades'));
+        }
+        $this->overrides->upsert($tenantId, $id, ['is_enabled' => true]);
+        Session::flash('success', 'Grade réaffiché : il est de nouveau proposé dans les fiches membres.');
         return Response::redirect($this->indexUrl($this->tabForGrade($grade)));
     }
 
     private function normalizeTab(string $tab): string
     {
-        return in_array($tab, ['fr', 'us', 'otan', 'categories'], true) ? $tab : 'fr';
+        return in_array($tab, ['fr', 'us', 'perso', 'custom'], true) ? $tab : 'fr';
     }
 
     private function normalizeGradeTab(string $tab): string
     {
-        return $tab === 'us' ? 'us' : 'fr';
+        return in_array($tab, ['us', 'perso'], true) ? $tab : 'fr';
     }
 
     /** @param array<string, mixed>|null $grade */
@@ -266,6 +396,10 @@ class GradeReferentielController
             return [];
         }
         $catalog = [];
+        // Les grades d’un système sur mesure sont recopiés dans l’avancement : ce ne sont pas des « extras ».
+        foreach ($this->custom->gradeCodes($tenantId) as $code) {
+            $catalog[strtoupper(trim($code))] = true;
+        }
         foreach ($catalogRows as $row) {
             $code = strtoupper(trim((string) ($row['code'] ?? '')));
             if ($code !== '') {

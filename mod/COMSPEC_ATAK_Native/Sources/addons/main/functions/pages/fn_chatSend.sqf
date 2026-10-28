@@ -8,7 +8,7 @@ if (_message isEqualTo "") exitWith { false };
 ([_message] call comspec_atak_native_fnc_chatCommand) params ["_prio", "_kind", "_text", "_unknown", "_tags", "_help"];
 if (_help) exitWith {
     (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["chatWiki", true];
-    _edit ctrlSetText ""; uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
+    _edit ctrlSetText (("") call comspec_atak_native_fnc_tr); uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
     [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
     false
 };
@@ -25,16 +25,30 @@ if ([] call comspec_atak_native_fnc_bridge) exitWith {
         case "": { _text };
         default { format ["[%1] %2", _kind, _text] };
     };
-    // Débit simulé : le message part après la latence, ou attend le retour du réseau.
-    [{
-        params ["_out", "_prio"];
+    // Débit simulé : le message part après la latence, ou attend le retour du réseau (affiché « En attente de réseau »
+    // dans la conversation, fn_messagesAll « pendingOut », jusqu'au départ de la file).
+    private _pid = format ["pend:%1:%2", diag_tickTime, floor random 1e5];
+    private _chan = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["chatChannel", "general"];
+    private _r = [{
+        params ["_out", "_prio", "_pid", "_chan"];
+        private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
+        _data set ["pendingOut", (_data getOrDefault ["pendingOut", []]) select { (_x getOrDefault ["id", ""]) isNotEqualTo _pid }];
+        missionNamespace setVariable ["COMSPEC_Comms_Channel", _chan];
         private _prevPrio = missionNamespace getVariable ["COMSPEC_Comms_Priority", "ROUTINE"];
         if (_prio isNotEqualTo "") then { missionNamespace setVariable ["COMSPEC_Comms_Priority", _prio]; };
         [_out] call comspec_overwatch_connect_fnc_tabletChatSend;
         missionNamespace setVariable ["COMSPEC_Comms_Priority", _prevPrio];
         if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
-    }, [_out, _prio], "Message", 1] call comspec_atak_native_fnc_netSend;
-    _edit ctrlSetText "";
+    }, [_out, _prio, _pid, _chan], "Message", 1] call comspec_atak_native_fnc_netSend;
+    if (_r isEqualTo "QUEUED") then {
+        private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
+        private _pend = _data getOrDefault ["pendingOut", []];
+        _pend pushBack createHashMapFromArray [["id", _pid], ["author", [] call comspec_atak_native_fnc_unitCallsign], ["body", _out], ["channel", [_chan, "general"] select (_chan isEqualTo "")],
+            ["time", [dayTime, "HH:MM"] call BIS_fnc_timeToString], ["status", "PENDING"], ["mine", true]];
+        while { (count _pend) > 30 } do { _pend deleteAt 0; };
+        _data set ["pendingOut", _pend];
+    };
+    _edit ctrlSetText (("") call comspec_atak_native_fnc_tr);
     uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
     if !(_ok) then { ["WARNING", "Athena non connecté : message affiché ici seulement", 4, 30] call comspec_atak_native_fnc_notify; };
     [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
@@ -56,14 +70,15 @@ private _ok = true;
 [{
     params ["_id", "_author", "_message"];
     private _raw = ["SendChat", [_author, _message]] call comspec_atak_native_fnc_extensionCall;
-    private _ok = (_raw find "OK|") isEqualTo 0;
+    // SendChat part en file dans la DLL et répond "" : seul un retour ERR est un échec.
+    private _ok = (toUpper (_raw select [0, 3])) isNotEqualTo "ERR";
     private _outbox = +((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["outbox", []]);
     { if ((_x getOrDefault ["id", ""]) isEqualTo _id) then { _x set ["status", ["FAILED", "SENT"] select _ok]; }; } forEach _outbox;
     ["outbox", _outbox] call comspec_atak_native_fnc_storeSet;
     if !(_ok) then { ["WARNING", "Athena indisponible : message gardé sur le terminal", 4, 30] call comspec_atak_native_fnc_notify; };
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
 }, [_id, _author, _message], "Message", 1] call comspec_atak_native_fnc_netSend;
-_edit ctrlSetText "";
+_edit ctrlSetText (("") call comspec_atak_native_fnc_tr);
 uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
 [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 _ok

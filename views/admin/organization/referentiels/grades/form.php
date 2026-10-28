@@ -3,17 +3,17 @@ $grade = $grade ?? null;
 $systems = $systems ?? [];
 $categories = $categories ?? [];
 $isEdit = $grade !== null;
-$returnTab = ($returnTab ?? 'fr') === 'us' ? 'us' : 'fr';
+$returnTab = in_array($returnTab ?? 'fr', ['us', 'perso'], true) ? $returnTab : 'fr';
 $flashError = \App\Core\Session::getFlash('error');
 $tenantOwned = !empty($tenantOwned);
 $catalogLocked = $isEdit;
 ?>
 <div class="bo-legacy bo-legacy--2xl">
-    <h1 class="text-2xl font-black text-slate-900 mb-6"><?= $isEdit ? 'Modifier le grade' : 'Nouveau grade' ?></h1>
+    <h1 class="text-2xl font-black text-slate-900 mb-6"><?= $isEdit ? 'Renommer le grade' : 'Nouveau grade d’avancement' ?></h1>
     <?php if ($tenantOwned): ?>
     <p class="mb-4 text-sm text-slate-600"><?= $isEdit
-        ? 'Les libellés et la visibilité s’appliquent à cette communauté. Le catalogue partagé (codes FR/US) est réutilisé, pas recopié.'
-        : 'Ce grade sera propre à la communauté. Le catalogue FR/US des autres communautés n’est pas modifié.' ?></p>
+        ? 'Vous pouvez donner à ce grade le nom de votre choix (libellé court et libellé long), changer son ordre et le masquer : cela ne touche que votre communauté. Le système, la catégorie et le code restent ceux du catalogue partagé, car ils relient le grade à l’avancement et aux fiches existantes. Pour une échelle entièrement différente (univers fictif, unité non militaire…), renommez les grades dont vous avez besoin et masquez les autres.'
+        : 'Ce grade sera propre à la communauté et servira aux règles d’avancement. Il ne s’ajoute pas à la liste « Grade affiché » des fiches membres : pour changer le nom d’un grade existant, utilisez « Renommer » dans le référentiel.' ?></p>
     <?php endif; ?>
     <?php if ($flashError): ?>
     <p class="mb-4 text-sm text-red-700 bg-red-50 px-3 py-2 rounded"><?= htmlspecialchars($flashError) ?></p>
@@ -25,7 +25,7 @@ $catalogLocked = $isEdit;
             <select id="grade_system_id" name="grade_system_id" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" <?= $catalogLocked ? 'disabled' : '' ?>>
                 <option value="">— Choisir —</option>
                 <?php foreach ($systems as $s): ?>
-                <option value="<?= (int) $s['id'] ?>" <?= ($grade['grade_system_id'] ?? '') == $s['id'] ? 'selected' : '' ?>><?= htmlspecialchars($s['label']) ?> (<?= htmlspecialchars($s['code']) ?>)</option>
+                <option value="<?= (int) $s['id'] ?>" <?= ($grade['grade_system_id'] ?? '') == $s['id'] ? 'selected' : '' ?>><?= htmlspecialchars($s['label']) ?></option>
                 <?php endforeach; ?>
             </select>
             <?php if ($catalogLocked): ?>
@@ -37,7 +37,7 @@ $catalogLocked = $isEdit;
             <select id="grade_category_id" name="grade_category_id" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" <?= $catalogLocked ? 'disabled' : '' ?>>
                 <option value="">— Choisir —</option>
                 <?php foreach ($categories as $c): ?>
-                <option value="<?= (int) $c['id'] ?>" <?= ($grade['grade_category_id'] ?? '') == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['label']) ?> (<?= htmlspecialchars($c['code']) ?>)</option>
+                <option value="<?= (int) $c['id'] ?>" <?= ($grade['grade_category_id'] ?? '') == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['label']) ?></option>
                 <?php endforeach; ?>
             </select>
             <?php if ($catalogLocked): ?>
@@ -79,5 +79,5 @@ $catalogLocked = $isEdit;
             <a href="<?= url('back-office/referentiels/grades') ?>?tab=<?= rawurlencode($returnTab) ?>" class="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-medium rounded hover:bg-slate-50">Annuler</a>
         </div>
     </form>
-    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('back-office') ?>" class="underline">Retour administration organisationnelle</a></p>
+    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('back-office') ?>" class="underline">Retour au back-office</a></p>
 </div>

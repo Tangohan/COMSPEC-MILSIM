@@ -3,18 +3,27 @@
       "rename" : nom lu dans le formulaire (chef ou seul dans le groupe)  "type" : clé de fn_groupTypes
       "lock"   : groupe fermé / ouvert aux arrivées                        "leave" : quitter (nouveau groupe à mon nom)
       "join"   : rejoindre le groupe (netId)                              "lead"  : passer le commandement (netId de l'unité)
+      "fold"   : [clé, ouverte par défaut] ouvre ou replie une section de l'app (onglets MON GROUPE et ÉQUIPES)
 */
 params [["_act", ""], ["_arg", ""]];
 private _grp = group player;
 private _isLead = (leader _grp) isEqualTo player || {(count units _grp) isEqualTo 1};
 private _rerender = { [{ ["GROUP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
 switch (_act) do {
+    case "fold": {
+        _arg params [["_k", ""], ["_def", false]];
+        private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        private _key = format ["grpFold_%1", _k];
+        _s set [_key, !(_s getOrDefault [_key, _def])];
+        call _rerender;
+    };
     case "rename": {
         if !(_isLead) exitWith { ["WARNING", "Seul le chef de groupe peut le renommer", 3, 20] call comspec_atak_native_fnc_notify; };
-        private _name = trim (["grpName"] call comspec_atak_native_fnc_formValue);
+        // Coupé à 32 caractères avant le contrôle de doublon : c'est ce nom-là que reçoit setGroupIdGlobal.
+        private _name = (trim (["grpName"] call comspec_atak_native_fnc_formValue)) select [0, 32];
         if (_name isEqualTo "") exitWith { ["WARNING", "Nom de groupe vide", 3, 20] call comspec_atak_native_fnc_notify; };
         if ((allGroups findIf { side _x isEqualTo side _grp && {_x isNotEqualTo _grp} && {(groupId _x) isEqualTo _name} }) >= 0) exitWith { ["WARNING", format ["Le nom %1 est déjà pris dans votre camp", _name], 4, 20] call comspec_atak_native_fnc_notify; };
-        _grp setGroupIdGlobal [_name select [0, 32]];
+        _grp setGroupIdGlobal [_name];
         ["SUCCESS", format ["Groupe renommé : %1", _name], 3, 20] call comspec_atak_native_fnc_notify;
         call _rerender;
     };
@@ -60,7 +69,8 @@ switch (_act) do {
         // selectLeader doit tourner là où le groupe est local (machine du chef actuel).
         [_grp, _u] remoteExec ["selectLeader", leader _grp];
         ["comspec_atak_native_groupNotice", [format ["%1 prend le commandement de %2", name _u, groupId _grp]], units _grp] call CBA_fnc_targetEvent;
-        [{ ["GROUP"] call comspec_atak_native_fnc_pageRender; }, [], 1] call CBA_fnc_waitAndExecute;
+        // Redessin seulement si l'app Groupe est encore ouverte une seconde plus tard.
+        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "GROUP") then { ["GROUP"] call comspec_atak_native_fnc_pageRender; }; }, [], 1] call CBA_fnc_waitAndExecute;
     };
 };
 true

@@ -1,0 +1,265 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Support;
+
+/**
+ * Modèle de traduction communautaire de l'ATAK natif (page publique /traduire-atak).
+ *
+ * Source unique : mod/COMSPEC_ATAK_Native/localisation/template/xx.txt, régénéré à chaque version par
+ * « python3 tools/i18n.py community » (le VPS déploie le dépôt entier, la page suit donc chaque version sans copie).
+ * Une ligne = ["français", "traduction", "anglais"] ; le français est la clé lue par fn_langApply, jamais modifiée.
+ * Mêmes règles de lecture que load_community() de tools/i18n.py (guillemet doublé "" dans un texte).
+ */
+final class AtakTranslationTemplate
+{
+    public const TEMPLATE = 'mod/COMSPEC_ATAK_Native/localisation/template/xx.txt';
+    /** Catégorie et fichier source de chaque phrase (tools/i18n_categories.py) ; facultatif. */
+    public const CATEGORIES = 'mod/COMSPEC_ATAK_Native/localisation/template/categories.json';
+    /** Clés des stringtables (noms d'objets, modules Eden/Zeus de l'ATAK, du SSE et d'Overwatch connect) ; facultatif. */
+    public const STRINGTABLE = 'mod/COMSPEC_ATAK_Native/localisation/template/stringtable.json';
+    /**
+     * Phrases du mod SSE absentes du téléphone (tools/i18n_sse_catalog.py) : elles rejoignent le même
+     * dictionnaire, car l'écran SSE demande sa traduction au téléphone quand celui-ci est chargé.
+     */
+    public const SSE = 'mod/COMSPEC_ATAK_Native/localisation/template/sse.json';
+
+    /** @var array<string, array<string, true>> clés des phrases par empreinte du modèle */
+    private static array $keySets = [];
+
+    /** @var array<string, array{categories: array<string, array{fr: string, en: string}>, place: array<string, array{0: string, 1: string}>, extra: list<array{0: string, 1: string}>}> */
+    private static array $sse = [];
+
+    private const LINE = '/\[\s*"((?:[^"]|"")*)"\s*,\s*"((?:[^"]|"")*)"\s*(?:,\s*"((?:[^"]|"")*)"\s*)?\]/u';
+
+    /**
+     * @return list<array{0: string, 1: string}> [français, anglais] dans l'ordre du modèle
+     */
+    public static function entries(?string $root = null): array
+    {
+        $path = self::path($root);
+        $raw = is_file($path) ? (string) file_get_contents($path) : '';
+        $out = self::parse($raw);
+        $seen = [];
+        foreach ($out as [$fr]) {
+            $seen[$fr] = true;
+        }
+        foreach (self::sseData($root)['extra'] as [$fr, $en]) {
+            if ($fr !== '' && !isset($seen[$fr])) {
+                $seen[$fr] = true;
+                $out[] = [$fr, $en];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{0: string, 1: string}>
+     */
+    public static function parse(string $raw): array
+    {
+        if (str_starts_with($raw, "\xEF\xBB\xBF")) {
+            $raw = substr($raw, 3);
+        }
+        if (preg_match_all(self::LINE, $raw, $m, PREG_SET_ORDER) === false) {
+            return [];
+        }
+        $out = [];
+        $seen = [];
+        foreach ($m as $row) {
+            $fr = str_replace('""', '"', $row[1]);
+            if ($fr === '' || isset($seen[$fr])) {
+                continue;
+            }
+            $seen[$fr] = true;
+            $out[] = [$fr, str_replace('""', '"', (string) ($row[3] ?? ''))];
+        }
+
+        return $out;
+    }
+
+    /** Clé d'une phrase (packs partagés, categories.json) : sha1 du texte français, 16 caractères hexadécimaux. */
+    public static function keyHash(string $fr): string
+    {
+        return substr(sha1($fr), 0, 16);
+    }
+
+    /**
+     * Modèle complet pour l'atelier : [clé, français, anglais, catégorie, fichier source], plus les libellés des
+     * catégories ({id: {fr, en}}). Sans categories.json, tout est dans « other ».
+     *
+     * @return array{entries: list<array{0: string, 1: string, 2: string, 3: string, 4: string}>, categories: array<string, array{fr: string, en: string}>}
+     */
+    public static function catalog(?string $root = null): array
+    {
+        $cats = self::categoryData($root);
+        $sse = self::sseData($root);
+        $out = [];
+        foreach (self::entries($root) as [$fr, $en]) {
+            $h = self::keyHash($fr);
+            $c = $cats['strings'][$h] ?? null;
+            $cat = is_array($c) && is_string($c[0] ?? null) ? $c[0] : 'other';
+            $file = is_array($c) && is_string($c[1] ?? null) ? $c[1] : '';
+            $screen = $sse['place'][$h] ?? null;
+            if (is_array($screen)) {
+                $cat = $screen[0];
+                $file = $screen[1];
+            }
+            $out[] = [$h, $fr, $en, $cat, $file];
+        }
+        $labels = [];
+        foreach ($cats['categories'] as $id => $l) {
+            if (is_string($id) && is_array($l)) {
+                $labels[$id] = ['fr' => (string) ($l['fr'] ?? $id), 'en' => (string) ($l['en'] ?? $id)];
+            }
+        }
+        foreach ($sse['categories'] as $id => $l) {
+            $labels[$id] = $l;
+        }
+        if (!isset($labels['other'])) {
+            $labels['other'] = ['fr' => 'Autres', 'en' => 'Other'];
+        }
+
+        return ['entries' => $out, 'categories' => $labels];
+    }
+
+    /**
+     * Clés des stringtables : [clé $STR_, texte original (= phrase du modèle), anglais]. Le mod de langue livre sa
+     * propre stringtable.xml avec la colonne de la langue du jeu (AtakTranslationModBuilder::buildStringtable).
+     *
+     * @return list<array{0: string, 1: string, 2: string}>
+     */
+    public static function stringtable(?string $root = null): array
+    {
+        $path = rtrim($root ?? base_path(), '/') . '/' . self::STRINGTABLE;
+        $data = is_file($path) ? json_decode((string) file_get_contents($path), true) : null;
+        $out = [];
+        foreach (is_array($data['keys'] ?? null) ? $data['keys'] : [] as $row) {
+            if (is_array($row) && is_string($row[0] ?? null) && is_string($row[1] ?? null) && preg_match('/^[A-Za-z0-9_]+$/', $row[0]) === 1) {
+                $out[] = [$row[0], $row[1], is_string($row[2] ?? null) ? $row[2] : $row[1]];
+            }
+        }
+
+        return $out;
+    }
+
+    /** La phrase de clé $h existe-t-elle dans le modèle publié ? (écritures des packs partagés) */
+    public static function hasKey(string $h, ?string $root = null): bool
+    {
+        $fp = self::fingerprint($root) . '|' . ($root ?? '');
+        if (!isset(self::$keySets[$fp])) {
+            $set = [];
+            foreach (self::entries($root) as [$fr]) {
+                $set[self::keyHash($fr)] = true;
+            }
+            self::$keySets = [$fp => $set];
+        }
+
+        return isset(self::$keySets[$fp][$h]);
+    }
+
+    /**
+     * @return array{categories: array<mixed>, strings: array<mixed>}
+     */
+    private static function categoryData(?string $root): array
+    {
+        $path = rtrim($root ?? base_path(), '/') . '/' . self::CATEGORIES;
+        $data = is_file($path) ? json_decode((string) file_get_contents($path), true) : null;
+
+        return [
+            'categories' => is_array($data['categories'] ?? null) ? $data['categories'] : [],
+            'strings' => is_array($data['strings'] ?? null) ? $data['strings'] : [],
+        ];
+    }
+
+    /** Empreinte du modèle (ETag de GET /traduire-atak/modele.json) : change à chaque régénération. */
+    public static function fingerprint(?string $root = null): string
+    {
+        $path = self::path($root);
+        if (!is_file($path)) {
+            return 'none';
+        }
+
+        $base = rtrim($root ?? base_path(), '/');
+        $cat = $base . '/' . self::CATEGORIES;
+        $st = $base . '/' . self::STRINGTABLE;
+        $sse = $base . '/' . self::SSE;
+
+        return substr(md5((string) md5_file($path) . (is_file($cat) ? (string) md5_file($cat) : '') . (is_file($st) ? (string) md5_file($st) : '') . (is_file($sse) ? (string) md5_file($sse) : '')), 0, 16);
+    }
+
+    /** Configuration du mod qui déclare les langues livrées avec l'ATAK (CfgComspecLanguages). */
+    public const MAIN_CONFIG = 'mod/COMSPEC_ATAK_Native/Sources/addons/main/config.cpp';
+
+    /**
+     * Langues livrées avec le mod lui-même : le français (langue du code) et les classes de CfgComspecLanguages du
+     * main.pbo. Quand une mise à jour du mod en ajoute une, les packs communautaires de ce code passent « officielle ».
+     *
+     * @return array<string, string> code => nom
+     */
+    public static function officialLanguages(?string $root = null): array
+    {
+        $path = rtrim($root ?? base_path(), '/') . '/' . self::MAIN_CONFIG;
+        $raw = is_file($path) ? (string) file_get_contents($path) : '';
+
+        return ['fr' => 'Français'] + self::parseLanguages($raw);
+    }
+
+    /** @return array<string, string> */
+    public static function parseLanguages(string $config): array
+    {
+        $out = [];
+        if (preg_match('/class\s+CfgComspecLanguages\s*\{(.*?)\n\};/s', $config, $m) !== 1) {
+            return $out;
+        }
+        if (preg_match_all('/class\s+([a-z]{2})\s*\{[^}]*?name\s*=\s*"([^"]*)"/', $m[1], $all, PREG_SET_ORDER) > 0) {
+            foreach ($all as $row) {
+                $out[$row[1]] = $row[2];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array{categories: array<string, array{fr: string, en: string}>, place: array<string, array{0: string, 1: string}>, extra: list<array{0: string, 1: string}>}
+     */
+    private static function sseData(?string $root): array
+    {
+        $key = $root ?? '';
+        if (isset(self::$sse[$key])) {
+            return self::$sse[$key];
+        }
+        $path = rtrim($root ?? base_path(), '/') . '/' . self::SSE;
+        $data = is_file($path) ? json_decode((string) file_get_contents($path), true) : null;
+        $categories = [];
+        foreach (is_array($data['categories'] ?? null) ? $data['categories'] : [] as $id => $label) {
+            if (is_string($id) && is_array($label)) {
+                $categories[$id] = ['fr' => (string) ($label['fr'] ?? $id), 'en' => (string) ($label['en'] ?? $id)];
+            }
+        }
+        $place = [];
+        foreach (is_array($data['place'] ?? null) ? $data['place'] : [] as $hash => $row) {
+            if (is_string($hash) && is_array($row) && is_string($row[0] ?? null) && is_string($row[1] ?? null)) {
+                $place[$hash] = [$row[0], $row[1]];
+            }
+        }
+        $extra = [];
+        foreach (is_array($data['extra'] ?? null) ? $data['extra'] : [] as $row) {
+            if (is_array($row) && is_string($row[0] ?? null) && $row[0] !== '') {
+                $extra[] = [$row[0], is_string($row[1] ?? null) ? $row[1] : ''];
+            }
+        }
+        $parsed = ['categories' => $categories, 'place' => $place, 'extra' => $extra];
+        self::$sse = [$key => $parsed];
+
+        return $parsed;
+    }
+
+    private static function path(?string $root): string
+    {
+        return rtrim($root ?? base_path(), '/') . '/' . self::TEMPLATE;
+    }
+}

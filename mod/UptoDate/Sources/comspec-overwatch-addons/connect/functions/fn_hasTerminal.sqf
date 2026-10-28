@@ -38,20 +38,24 @@ private _fnc_isTerminalClass = {
 };
 
 // UI réellement affichée (pas une variable cTabIfOpen orpheline).
+// exitWith dans un bloc then ne quitte que ce bloc : on calcule un booléen puis on sort au niveau du script.
+private _uiOpen = false;
 if (_unit isEqualTo player) then {
-    if (!isNull (uiNamespace getVariable ["cTab_Android_dlg", displayNull])) exitWith { true };
-    if (!isNull (uiNamespace getVariable ["cTab_Android_dsp", displayNull])) exitWith { true };
+    if (!isNull (uiNamespace getVariable ["cTab_Android_dlg", displayNull])) then { _uiOpen = true; };
+    if (!isNull (uiNamespace getVariable ["cTab_Android_dsp", displayNull])) then { _uiOpen = true; };
     if (
-        !isNil "cTabIfOpen"
+        !_uiOpen
+        && {!isNil "cTabIfOpen"}
         && {cTabIfOpen isEqualType []}
         && {(count cTabIfOpen) >= 2}
     ) then {
         private _dispName = cTabIfOpen select 1;
         if (_dispName isEqualType "" && {_dispName isNotEqualTo ""}) then {
-            if (!isNull (uiNamespace getVariable [_dispName, displayNull])) exitWith { true };
+            if (!isNull (uiNamespace getVariable [_dispName, displayNull])) then { _uiOpen = true; };
         };
     };
 };
+if (_uiOpen) exitWith { true };
 
 private _custom = trim (missionNamespace getVariable ["comspec_overwatch_required_item_custom", ""]);
 if (_custom isNotEqualTo "") exitWith {

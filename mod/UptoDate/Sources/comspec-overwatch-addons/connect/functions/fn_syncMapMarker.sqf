@@ -17,8 +17,9 @@ params [
 ];
 
 if (_markerName isEqualTo "") exitWith { false };
-if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
-if (!(missionNamespace getVariable ["comspec_overwatch_sync_map_markers", true])) exitWith { false };
+missionNamespace setVariable ["COMSPEC_LastMarkerSyncSkip", "", false];
+if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { missionNamespace setVariable ["COMSPEC_LastMarkerSyncSkip", "overwatch_off", false]; false };
+if (!(missionNamespace getVariable ["comspec_overwatch_sync_map_markers", true])) exitWith { missionNamespace setVariable ["COMSPEC_LastMarkerSyncSkip", "sync_off", false]; false };
 
 // Joueur Arma / Marker Widget BCE / Dropper TAD — avant le gate téléphone :
 // IceMan compileFinal PlaceMarker, type *Local, coupure simulée.
@@ -37,7 +38,7 @@ if (_isUnderscore) then {
         );
     };
 };
-if (_isUnderscore && {!_underscoreOk}) exitWith { false };
+if (_isUnderscore && {!_underscoreOk}) exitWith { missionNamespace setVariable ["COMSPEC_LastMarkerSyncSkip", "not_syncable", false]; false };
 
 private _isWidget = _isUnderscore && {_underscoreOk};
 if (!_force && {_isWidget}) then { _force = true; };
@@ -66,7 +67,9 @@ if (!_force) then {
 private _mirroredElsewherePrefixes = [
     "poi_local_", "qrf_contact_", "medevac_lz_", "vehicle_service_",
     "comspec_tabletmk_", "comspec_webmk_", "comspec_shape_",
-    "comspec_relay_", "comspec_recon_", "ctab_u_"
+    "comspec_relay_", "comspec_recon_", "ctab_u_",
+    // Calques locaux du mod (zones tactiques, plan de mission, ordres, portée) : jamais renvoyés comme repères joueur.
+    "comspec_tz_", "comspec_mpgfx_", "comspec_ordwp_", "comspec_lk_", "comspec_reach_"
 ];
 private _nameLower = toLower _markerName;
 if (({ (_nameLower find _x) == 0 } count _mirroredElsewherePrefixes) > 0) exitWith { false };
@@ -81,13 +84,33 @@ if ((_wireName find "#") >= 0) then {
 private _fnc_dispatch = {
     params ["_name", "_body", "_del", "_blocked"];
     if (_blocked || {!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])}) exitWith {
+        // Mis en file : l'appelant peut le dire au joueur (fn_markerWeb du téléphone natif).
+        missionNamespace setVariable ["COMSPEC_LastMarkerSyncSkip", ["queued_not_ready", "queued_tx"] select _blocked, false];
         [_name, _body, _del] call comspec_overwatch_connect_fnc_queueMapMarker;
         true
     };
     private _flag = if (_del) then { "1" } else { "0" };
-    "COMSPECExtension" callExtension ["SendMarker", [_name, _body, "1", _flag]];
-    missionNamespace setVariable ["COMSPEC_LastMarkerSyncName", _name, false];
-    missionNamespace setVariable ["COMSPEC_LastMarkerSyncAt", diag_tickTime, false];
+    // Même contenu déjà envoyé il y a moins de 60 s : pas de renvoi. Le rattrapage 8 s (repères joueur),
+    // le PO 45 s et les EH en double renvoyaient chaque marqueur inchangé (un POST par marqueur).
+    private _sentMap = missionNamespace getVariable ["COMSPEC_MarkerSentSig", createHashMap];
+    private _sentPrev = _sentMap getOrDefault [_name, []];
+    if (!_del && {(_sentPrev param [0, ""]) isEqualTo _body} && {(diag_tickTime - (_sentPrev param [1, -1e9])) < 60}) exitWith { true };
+    if (_del) then {
+        _sentMap deleteAt _name;
+    } else {
+        // Mémoire bornée : repart à zéro au-delà de 1500 marqueurs.
+        if ((count _sentMap) > 1500) then { _sentMap = createHashMap; };
+        _sentMap set [_name, [_body, diag_tickTime]];
+    };
+    missionNamespace setVariable ["COMSPEC_MarkerSentSig", _sentMap, false];
+    // Hors du thread image (SQF-007 / SQF-C04) : SendMarker peut faire de l’HTTP ; callExtension synchrone
+    // figeait le client pendant un engagement si des marqueurs partaient en rafale.
+    [_name, _body, _flag] spawn {
+        params ["_name", "_body", "_flag"];
+        ["COMSPECExtension", "SendMarker", [_name, _body, "1", _flag]] call comspec_overwatch_connect_fnc_extAwait;
+        missionNamespace setVariable ["COMSPEC_LastMarkerSyncName", _name, false];
+        missionNamespace setVariable ["COMSPEC_LastMarkerSyncAt", diag_tickTime, false];
+    };
     true
 };
 
@@ -107,7 +130,7 @@ if (_type isEqualTo "" && {!(_shape isEqualTo "POLYLINE")}) then {
 if (!(_shape isEqualTo "POLYLINE") && {_type isEqualTo ""}) exitWith { false };
 
 private _pos = markerPos _markerName;
-if ((abs (_pos select 0) < 0.1) && {(abs (_pos select 1) < 0.1)}) exitWith { false };
+if ((abs (_pos select 0) < 0.1) && {(abs (_pos select 1) < 0.1)}) exitWith { missionNamespace setVariable ["COMSPEC_LastMarkerSyncSkip", "no_pos", false]; false };
 
 private _text = markerText _markerName;
 if (_text isEqualTo "" && {_isUnderscore}) then {
@@ -132,14 +155,17 @@ if (((_size select 0) max (_size select 1)) < 0.05) then { _size = [0.8, 0.8]; }
 private _brush = markerBrush _markerName;
 private _polyJson = "[]";
 
+private _badPoly = false;
 if (_shape isEqualTo "POLYLINE") then {
     private _pts = markerPolyline _markerName;
-    if (!(_pts isEqualType []) || {(count _pts) < 4}) exitWith { false };
+    // exitWith ici ne quittait que le bloc then : la polyligne dégénérée partait quand même.
+    if (!(_pts isEqualType []) || {(count _pts) < 4}) exitWith { _badPoly = true; };
     private _parts = [];
     { _parts pushBack (str _x); } forEach _pts;
     _polyJson = "[" + (_parts joinString ",") + "]";
     _pos = [_pts select 0, _pts select 1, 0];
 };
+if (_badPoly) exitWith { missionNamespace setVariable ["COMSPEC_LastMarkerSyncSkip", "bad_polyline", false]; false };
 
 private _texture = "";
 if (_type isNotEqualTo "" && {!(_shape isEqualTo "POLYLINE")}) then {

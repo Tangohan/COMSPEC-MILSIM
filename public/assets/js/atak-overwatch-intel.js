@@ -111,6 +111,10 @@
   var seenAlertKeys = null;
   var alertsOpen = false;
   var dismissedBeaconKey = 'athena:owi-beacons-hidden';
+  // Actions du poste pas encore confirmées par un rechargement : appliquées par-dessus le poll.
+  var pendingOps = {};
+  var seenSent = {};
+  var seenTimer = null;
 
   function kindMeta(k) { return KIND[k] || { label: String(k || 'ALERTE').toUpperCase(), long: 'Alerte', color: '#e7b14d', pulse: false }; }
 
@@ -123,14 +127,118 @@
   function loadAlerts() {
     if (!B) return Promise.resolve();
     return api('/api/atak/overwatch/alerts?mapId=' + encodeURIComponent(mapId())).then(function (payload) {
+      var now = Date.now();
       alerts = Array.isArray(payload && payload.alerts) ? payload.alerts : [];
       beacons = Array.isArray(payload && payload.beacons) ? payload.beacons : [];
+      alerts.forEach(function (a) { a._recv = now; });
+      applyPending();
+      queueSeen();
       announceNew();
       drawAlerts();
       drawBeacons();
       paintAlertsButton();
       if (alertsOpen) paintAlertsPanel();
+      refreshChatCards();
     }).catch(function () {});
+  }
+
+  function applyPending() {
+    var now = Date.now();
+    Object.keys(pendingOps).forEach(function (k) { if (pendingOps[k].until && pendingOps[k].until < now) delete pendingOps[k]; });
+    var gone = function (x) { return pendingOps[x.key] && pendingOps[x.key].dismissed; };
+    alerts = alerts.filter(function (a) { return !gone(a); });
+    beacons = beacons.filter(function (b) { return !gone(b); });
+    alerts.concat(beacons).forEach(function (a) {
+      var p = pendingOps[a.key];
+      if (!p || !('acked' in p)) return;
+      a.acked = p.acked;
+      if (p.acked && !a.acked_by) { a.acked_by = p.by; a.acked_at = p.at; a.acked_age_sec = 0; a._recv = Date.now(); }
+      if (!p.acked) { a.acked_by = ''; a.acked_at = ''; }
+    });
+  }
+
+  // Âge sur l'horloge du serveur (age_sec), qui avance ensuite côté poste.
+  function alertAge(a) {
+    if (a && a.age_sec != null && Number.isFinite(Number(a.age_sec))) {
+      return Number(a.age_sec) + (Date.now() - (a._recv || Date.now())) / 1000;
+    }
+    return ageFromSql(a && a.created_at);
+  }
+
+  function ackedLine(a) {
+    if (!a.acked) return '';
+    var t = clock(a.acked_at);
+    return 'Acquittée par ' + (a.acked_by || 'le poste') + (t ? ' à ' + t : '');
+  }
+
+  // Accusé de lecture du poste : les alertes reçues sur cette page, une fois par alerte.
+  function queueSeen() {
+    var keys = alerts.map(function (a) { return a.key; }).filter(function (k) { return !seenSent[k]; });
+    if (!keys.length || seenTimer) return;
+    seenTimer = window.setTimeout(function () {
+      seenTimer = null;
+      keys.forEach(function (k) { seenSent[k] = true; });
+      api('/api/atak/overwatch/alerts/seen', { method: 'POST', body: { mapId: mapId(), keys: keys } }).catch(function () {
+        keys.forEach(function (k) { delete seenSent[k]; });
+      });
+    }, 600);
+  }
+
+  function unitExtra(u) {
+    var ex = u && u.extra;
+    if (typeof ex === 'string') { try { ex = JSON.parse(ex); } catch (e) { ex = {}; } }
+    return ex || {};
+  }
+  function normCs(v) { return String(v || '').trim().toUpperCase(); }
+
+  // Terminaux de l'opération : « reçu » si leur dernier signal est postérieur à l'alerte
+  // (le téléphone était en liaison, il a donc tiré le tchat), sinon « pas reçu ».
+  function receiptsOf(a) {
+    var age = alertAge(a);
+    if (age == null) return null;
+    var U = window.ATAKUnits;
+    var list = (B && B.getUnits ? B.getUnits() : []) || [];
+    var author = normCs(a.call_sign || a.author);
+    var side = '';
+    list.forEach(function (u) { if (normCs(u.call_sign || u.callsign) === author && u.side) side = String(u.side).toUpperCase(); });
+    var got = [];
+    var miss = [];
+    var seen = {};
+    list.forEach(function (u) {
+      var ex = unitExtra(u);
+      if (ex.is_ai || ex.ally_ai || ex.enemy_ai || ex.phone_geoloc) return;
+      var cs = String(u.call_sign || u.callsign || '').trim();
+      if (!cs || normCs(cs) === author || seen[normCs(cs)]) return;
+      if (side && u.side && String(u.side).toUpperCase() !== side) return;
+      var ua = U && U.unitAgeSeconds ? U.unitAgeSeconds(u) : Number(u.age_seconds);
+      if (!Number.isFinite(ua) || ua > 2 * 3600) return;
+      seen[normCs(cs)] = true;
+      (ua <= age + 2 ? got : miss).push({ cs: cs, age: ua });
+    });
+    return { got: got, miss: miss };
+  }
+
+  function receiptHtml(a) {
+    var r = receiptsOf(a);
+    var viewers = (a.seen_by || []).map(function (v) { return v.viewer; }).filter(Boolean);
+    if ((!r || (!r.got.length && !r.miss.length)) && !viewers.length) return '';
+    var names = function (l) { return l.map(function (x) { return esc(x.cs); }).join(', '); };
+    var html = '<details class="owi-receipt"><summary>';
+    if (r && (r.got.length || r.miss.length)) {
+      html += '<span class="owi-rc-ok">' + r.got.length + ' reçu' + (r.got.length > 1 ? 's' : '') + '</span>' +
+        (r.miss.length ? ' · <span class="owi-rc-miss">' + r.miss.length + ' pas reçu' + (r.miss.length > 1 ? 's' : '') + '</span>' : '');
+    }
+    if (viewers.length) html += (r && (r.got.length || r.miss.length) ? ' · ' : '') + viewers.length + ' poste' + (viewers.length > 1 ? 's' : '');
+    html += '</summary>';
+    if (r && r.got.length) html += '<p><b class="owi-rc-ok">Reçu</b> ' + names(r.got) + '</p>';
+    if (r && r.miss.length) {
+      html += '<p><b class="owi-rc-miss">Pas reçu</b> ' + r.miss.map(function (x) {
+        return esc(x.cs) + ' <i>(dernier signal ' + esc(ago(x.age)) + ')</i>';
+      }).join(', ') + '</p>';
+    }
+    if (viewers.length) html += '<p><b>Vu au poste</b> ' + viewers.map(esc).join(', ') + '</p>';
+    html += '<p class="owi-rc-note">Terminaux : déduit du dernier signal du téléphone (en liaison après l’alerte = reçu).</p></details>';
+    return html;
   }
 
   function announceNew() {
@@ -152,12 +260,14 @@
 
   function alertPopupHtml(a) {
     var m = kindMeta(a.kind);
-    var age = ageFromSql(a.created_at);
+    var age = alertAge(a);
     return '<div class="owi-pop"><b style="color:' + m.color + '">' + esc(m.label) + '</b> · ' + esc(a.call_sign || a.author || '') +
       '<div class="owi-pop-meta">' + esc(a.grid ? 'Grille ' + a.grid : gridOf(a.pos_x, a.pos_y)) + ' · ' + esc(clock(a.created_at)) + ' (' + esc(ago(age)) + ')</div>' +
       (a.summary ? '<p>' + esc(a.summary) + '</p>' : '') +
-      (a.acked ? '<div class="owi-pop-meta">Acquittée par ' + esc(a.acked_by || 'le poste') + '</div>'
-        : '<button type="button" class="ow-tag" data-owi-ack="' + esc(a.key) + '">Acquitter</button>') + '</div>';
+      (a.acked ? '<div class="owi-pop-meta owi-acked">' + esc(ackedLine(a)) + '</div>' : '') +
+      '<div class="owi-pop-acts">' +
+      (a.acked ? '' : '<button type="button" class="ow-tag owi-ack" data-owi-ack="' + esc(a.key) + '">Acquitter</button>') +
+      '<button type="button" class="ow-tag owi-del" data-owi-dismiss="' + esc(a.key) + '">Supprimer</button></div></div>';
   }
 
   function drawAlerts() {
@@ -208,7 +318,8 @@
       var pop = '<div class="owi-pop"><b style="color:#38bdf8">BALISE GPS</b> · ' + esc(b.label || b.call_sign) +
         '<div class="owi-pop-meta">' + esc(gridOf(b.pos_x, b.pos_y)) + ' · dernier signal ' + esc(ago(b.age_sec)) + '</div>' +
         (b.speed != null ? '<div class="owi-pop-meta">Vitesse ' + esc(Math.round(Number(b.speed))) + ' km/h' + (b.heading != null ? ' · cap ' + esc(Math.round(Number(b.heading))) + '°' : '') + '</div>' : '') +
-        '<button type="button" class="ow-tag" data-owi-beacon-hide="' + esc(b.key) + '">Masquer sur ce poste</button></div>';
+        '<div class="owi-pop-acts"><button type="button" class="ow-tag" data-owi-beacon-hide="' + esc(b.key) + '">Masquer sur ce poste</button>' +
+        '<button type="button" class="ow-tag owi-del" data-owi-dismiss="' + esc(b.key) + '">Retirer pour tous</button></div></div>';
       var mk = beaconLayers[b.key];
       if (!mk) {
         mk = L.marker(ll, { icon: icon, zIndexOffset: 700 }).addTo(B.map);
@@ -224,16 +335,55 @@
     });
   }
 
+  function repaintAlerts() {
+    drawAlerts();
+    drawBeacons();
+    paintAlertsButton();
+    if (alertsOpen) paintAlertsPanel();
+    refreshChatCards();
+  }
+
+  // Acquittement immédiat à l'écran ; le serveur confirme derrière, retour arrière s'il refuse.
   function ackAlert(key, undo) {
+    var me = (window.ATAK_USER && (window.ATAK_USER.displayName || window.ATAK_USER.callsign)) || 'vous';
+    var now = new Date();
+    var at = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    pendingOps[key] = { acked: !undo, by: me, at: at, until: 0 };
     var a = alertById(key);
+    if (a) { a.acked_by = ''; }
+    applyPending();
+    repaintAlerts();
     api('/api/atak/overwatch/alerts/ack', { method: 'POST', body: { mapId: mapId(), key: key, undo: !!undo } }).then(function (res) {
-      if (a) { a.acked = !undo; a.acked_by = res && res.acked_by ? res.acked_by : ''; }
-      drawAlerts();
-      paintAlertsButton();
-      if (alertsOpen) paintAlertsPanel();
-      refreshChatCards();
-      toast(undo ? 'Alerte rouverte.' : 'Alerte acquittée.');
-    }).catch(function () { toast('Acquittement impossible (connexion ou session).'); });
+      if (!res || res.ok === false) throw new Error('refus');
+      var op = pendingOps[key];
+      if (op) { op.by = res.acked_by || op.by; op.until = Date.now() + POLL_ALERTS_MS * 2; }
+      var x = alertById(key);
+      if (x && !undo) { x.acked_by = op ? op.by : x.acked_by; }
+      repaintAlerts();
+    }).catch(function () {
+      delete pendingOps[key];
+      toast('Acquittement non enregistré (connexion ou session) : rétabli.');
+      loadAlerts();
+    });
+  }
+
+  // Suppression pour tous les postes (alerte, panique ou balise) : retirée de la liste et de la carte.
+  function dismissAlerts(keys) {
+    keys = keys.filter(Boolean);
+    if (!keys.length) return;
+    keys.forEach(function (k) { pendingOps[k] = { dismissed: true, until: 0 }; });
+    if (B && B.map) B.map.closePopup();
+    applyPending();
+    repaintAlerts();
+    api('/api/atak/overwatch/alerts/dismiss', { method: 'POST', body: { mapId: mapId(), keys: keys } }).then(function (res) {
+      if (!res || res.ok === false) throw new Error('refus');
+      keys.forEach(function (k) { if (pendingOps[k]) pendingOps[k].until = Date.now() + POLL_ALERTS_MS * 2; });
+      toast(keys.length > 1 ? keys.length + ' alertes supprimées.' : 'Supprimée pour tous les postes.');
+    }).catch(function () {
+      keys.forEach(function (k) { delete pendingOps[k]; });
+      toast('Suppression non enregistrée (connexion ou session) : rétablie.');
+      loadAlerts();
+    });
   }
 
   function mountAlertsUi() {
@@ -271,15 +421,18 @@
 
   function alertRowHtml(a) {
     var m = kindMeta(a.kind);
-    var age = ageFromSql(a.created_at);
+    var age = alertAge(a);
     return '<div class="owi-alert-row' + (a.acked ? ' is-acked' : '') + '" style="--owi-c:' + m.color + '">' +
       '<div class="owi-alert-head"><span class="owi-badge">' + esc(m.label) + '</span><b>' + esc(a.call_sign || a.author || '—') + '</b>' +
-      '<time title="' + esc(a.created_at) + '">' + esc(clock(a.created_at)) + ' · ' + esc(ago(age)) + '</time></div>' +
+      '<time title="' + esc(a.created_at) + '">' + esc(clock(a.created_at)) + ' · ' + esc(ago(age)) + '</time>' +
+      '<button type="button" class="owi-x owi-row-del" data-owi-dismiss="' + esc(a.key) + '" title="Supprimer pour tous les postes" aria-label="Supprimer">×</button></div>' +
       (a.summary ? '<p>' + esc(a.summary) + '</p>' : '') +
+      (a.acked ? '<div class="owi-acked">✓ ' + esc(ackedLine(a)) + '</div>' : '') +
+      receiptHtml(a) +
       '<div class="owi-alert-foot"><span>' + esc(a.grid ? 'Grille ' + a.grid : (gridOf(a.pos_x, a.pos_y) || 'sans position')) + '</span>' +
       (hasPos(a.pos_x, a.pos_y) ? '<button type="button" class="ow-tag" data-owi-goto="' + esc(a.pos_x) + ',' + esc(a.pos_y) + '" data-owi-goto-label="' + esc(m.label) + '">Voir sur la carte</button>' : '') +
       (a.acked
-        ? '<button type="button" class="ow-tag" data-owi-unack="' + esc(a.key) + '" title="Acquittée par ' + esc(a.acked_by || '') + '">Rouvrir</button>'
+        ? '<button type="button" class="ow-tag" data-owi-unack="' + esc(a.key) + '">Rouvrir</button>'
         : '<button type="button" class="ow-tag owi-ack" data-owi-ack="' + esc(a.key) + '">Acquitter</button>') +
       '</div></div>';
   }
@@ -287,21 +440,40 @@
   function paintAlertsPanel() {
     var panel = document.getElementById('owi-alerts-panel');
     if (!panel) return;
+    var keepOpen = {};
+    panel.querySelectorAll('details.owi-receipt[open]').forEach(function (d) {
+      var row = d.closest('.owi-alert-row');
+      var del = row && row.querySelector('[data-owi-dismiss]');
+      if (del) keepOpen[del.getAttribute('data-owi-dismiss')] = true;
+    });
+    var scroll = panel.scrollTop;
     var open = alerts.filter(function (a) { return !a.acked; });
     var done = alerts.filter(function (a) { return a.acked; });
     var hidden = hiddenBeacons();
     var html = '<div class="owi-panel-head"><strong>Alertes tactiques</strong><span>' + open.length + ' à traiter</span>' +
       '<button type="button" class="owi-x" data-owi-close-alerts aria-label="Fermer">×</button></div>';
     html += open.length ? open.map(alertRowHtml).join('') : '<p class="ow-help">Aucune alerte en attente. Les alertes du téléphone (panique, contact, appareil abattu, SALUTE) apparaissent ici.</p>';
-    if (done.length) html += '<p class="owi-sub">Acquittées</p>' + done.slice(0, 15).map(alertRowHtml).join('');
+    if (done.length) {
+      html += '<div class="owi-sub-row"><p class="owi-sub">Acquittées (' + done.length + ')</p>' +
+        '<button type="button" class="ow-tag owi-del" data-owi-dismiss-acked>Tout supprimer</button></div>' +
+        done.slice(0, 15).map(alertRowHtml).join('');
+    }
     html += '<p class="owi-sub">Balises GPS (' + beacons.length + ')</p>';
     html += beacons.length ? beacons.map(function (b) {
       return '<div class="owi-alert-row" style="--owi-c:#38bdf8"><div class="owi-alert-head"><span class="owi-badge">BALISE</span><b>' + esc(b.label || b.call_sign) + '</b>' +
-        '<time>' + esc(ago(b.age_sec)) + '</time></div><div class="owi-alert-foot"><span>' + esc(gridOf(b.pos_x, b.pos_y)) + '</span>' +
+        '<time>' + esc(ago(b.age_sec)) + '</time>' +
+        '<button type="button" class="owi-x owi-row-del" data-owi-dismiss="' + esc(b.key) + '" title="Retirer pour tous les postes" aria-label="Retirer">×</button></div>' +
+        '<div class="owi-alert-foot"><span>' + esc(gridOf(b.pos_x, b.pos_y)) + '</span>' +
         '<button type="button" class="ow-tag" data-owi-goto="' + esc(b.pos_x) + ',' + esc(b.pos_y) + '" data-owi-goto-label="Balise">Voir sur la carte</button>' +
         '<button type="button" class="ow-tag" data-owi-beacon-hide="' + esc(b.key) + '">' + (hidden[b.key] ? 'Afficher' : 'Masquer') + '</button></div></div>';
     }).join('') : '<p class="ow-help">Aucune balise active. Zeus : « Balise GPS » sur un véhicule pour le suivre ici.</p>';
     panel.innerHTML = html;
+    Object.keys(keepOpen).forEach(function (k) {
+      var del = panel.querySelector('[data-owi-dismiss="' + k.replace(/"/g, '') + '"]');
+      var d = del && del.closest('.owi-alert-row') && del.closest('.owi-alert-row').querySelector('details.owi-receipt');
+      if (d) d.open = true;
+    });
+    panel.scrollTop = scroll;
   }
 
   // ------------------------------------------------------------------ Tchat : carte d'alerte
@@ -340,21 +512,29 @@
       (p.label ? '<p>' + esc(p.label) + '</p>' : '') +
       '<div class="owi-alert-foot">' +
       (hasPos(p.pos_x, p.pos_y) ? '<button type="button" class="ow-tag" data-owi-goto="' + esc(p.pos_x) + ',' + esc(p.pos_y) + '" data-owi-goto-label="' + esc(m.label) + '">Voir sur la carte</button>' : '') +
-      (key ? (acked ? '<span class="owi-acked">Acquittée' + (known.acked_by ? ' · ' + esc(known.acked_by) : '') + '</span>'
-        : '<button type="button" class="ow-tag owi-ack" data-owi-ack="' + esc(key) + '">Acquitter</button>') : '') +
+      (key ? (acked ? '<span class="owi-acked">' + esc(ackedLine(known)) + '</span>'
+        : '<button type="button" class="ow-tag owi-ack" data-owi-ack="' + esc(key) + '">Acquitter</button>') +
+        '<button type="button" class="ow-tag owi-del" data-owi-dismiss="' + esc(key) + '">Supprimer</button>' : '') +
       '</div></div>';
   }
 
   // Rafraîchit l'état « acquittée » des cartes déjà affichées dans le tchat.
   function refreshChatCards() {
     document.querySelectorAll('[data-owi-chat-key]').forEach(function (el) {
-      var a = alertById(el.getAttribute('data-owi-chat-key'));
+      var key = el.getAttribute('data-owi-chat-key');
+      var a = alertById(key);
+      var gone = pendingOps[key] && pendingOps[key].dismissed;
+      el.classList.toggle('is-dismissed', !!gone);
       if (!a) return;
       el.classList.toggle('is-acked', !!a.acked);
+      el.classList.toggle('is-live', !a.acked && kindMeta(a.kind).pulse);
+      var b = el.querySelector('[data-owi-ack]');
+      var done = el.querySelector('.owi-acked');
       if (a.acked) {
-        el.classList.remove('is-live');
-        var b = el.querySelector('[data-owi-ack]');
-        if (b) b.outerHTML = '<span class="owi-acked">Acquittée' + (a.acked_by ? ' · ' + esc(a.acked_by) : '') + '</span>';
+        var html = '<span class="owi-acked">' + esc(ackedLine(a)) + '</span>';
+        if (b) b.outerHTML = html; else if (done) done.outerHTML = html;
+      } else if (done) {
+        done.outerHTML = '<button type="button" class="ow-tag owi-ack" data-owi-ack="' + esc(key) + '">Acquitter</button>';
       }
     });
   }
@@ -862,6 +1042,19 @@
     }
     if ((el = t.closest('[data-owi-ack]'))) { ackAlert(el.getAttribute('data-owi-ack'), false); return; }
     if ((el = t.closest('[data-owi-unack]'))) { ackAlert(el.getAttribute('data-owi-unack'), true); return; }
+    if ((el = t.closest('[data-owi-dismiss]'))) {
+      var dk = el.getAttribute('data-owi-dismiss');
+      var da = alertById(dk);
+      if (da && !da.acked && (da.kind === 'panic' || da.kind === 'eagle_down') &&
+        !window.confirm('Supprimer cette ' + kindMeta(da.kind).label + ' non acquittée pour tous les postes ?')) return;
+      dismissAlerts([dk]);
+      return;
+    }
+    if (t.closest('[data-owi-dismiss-acked]')) {
+      var ackedKeys = alerts.filter(function (a) { return a.acked; }).map(function (a) { return a.key; });
+      if (ackedKeys.length && window.confirm('Supprimer les ' + ackedKeys.length + ' alertes acquittées pour tous les postes ?')) dismissAlerts(ackedKeys);
+      return;
+    }
     if ((el = t.closest('[data-owi-close-alerts]'))) {
       alertsOpen = false;
       document.getElementById('owi-alerts-panel').hidden = true;
@@ -959,6 +1152,12 @@
     loadAlerts();
     loadRings();
     window.setInterval(loadAlerts, POLL_ALERTS_MS);
+    // Flux temps réel (atak-realtime.js) : une alerte poussée par le serveur rafraîchit tout de suite la liste.
+    var pushedTimer = null;
+    window.addEventListener('atak:tactical-alerts-updated', function () {
+      if (pushedTimer) return;
+      pushedTimer = window.setTimeout(function () { pushedTimer = null; loadAlerts(); }, 400);
+    });
     window.setInterval(loadRings, POLL_RINGS_MS);
     window.addEventListener('atak:units-updated', function () { drawRings(); });
     window.setInterval(function () { if (phoneRings().length || Object.keys(ringLayers).length) drawRings(); }, 5000);
