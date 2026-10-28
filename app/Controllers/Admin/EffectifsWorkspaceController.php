@@ -3419,8 +3419,13 @@ class EffectifsWorkspaceController
                 'access_role_ids' => $accessRoleIds,
                 'character_portrait_path' => $portraitPath !== '' ? $portraitPath : null,
                 'extra_callsigns_json' => $extraCallsignsJson,
+                'athena_identifier' => trim((string) ($rich['athena_identifier'] ?? $u['athena_identifier'] ?? '')) ?: null,
                 'qualifications_summary' => $qualSummaryByUser[$id]['summary'] ?? '—',
                 'qualifications_alert' => $qualSummaryByUser[$id]['alert'] ?? null,
+                'qualifications_count' => (int) ($qualSummaryByUser[$id]['count'] ?? 0),
+                'qualifications_items' => is_array($qualSummaryByUser[$id]['items'] ?? null)
+                    ? $qualSummaryByUser[$id]['items']
+                    : [],
             ]);
         }
 
@@ -3429,7 +3434,7 @@ class EffectifsWorkspaceController
 
     /**
      * @param list<int> $userIds
-     * @return array<int, array{summary: string, alert: ?string}>
+     * @return array<int, array{summary: string, alert: ?string, count: int, items: list<array{name: string, level: string, admin: string, temporal: string}>}>
      */
     private function rosterQualificationSummaryByUser(int $tenantId, array $userIds): array
     {
@@ -3450,7 +3455,9 @@ class EffectifsWorkspaceController
                 continue;
             }
             $labels = [];
+            $items = [];
             $alert = null;
+            $seen = [];
             foreach ($rows as $row) {
                 $admin = \App\Support\QualificationAdminStatus::normalize(
                     (string) ($row['admin_status'] ?? $row['status'] ?? '')
@@ -3466,7 +3473,19 @@ class EffectifsWorkspaceController
                 if ($name === '') {
                     continue;
                 }
+                $level = trim((string) ($row['level_short_name'] ?? $row['level_name'] ?? ''));
+                $key = mb_strtolower($name . '|' . $level);
+                if (isset($seen[$key])) {
+                    continue;
+                }
+                $seen[$key] = true;
                 $labels[] = $name;
+                $items[] = [
+                    'name' => $name,
+                    'level' => $level,
+                    'admin' => \App\Support\QualificationAdminStatus::label($admin),
+                    'temporal' => trim((string) ($t['label'] ?? '')),
+                ];
                 if ($alert === null && in_array($t['code'], [
                     \App\Services\Personnel\QualificationTemporalStatusService::EXPIRING_SOON,
                     \App\Services\Personnel\QualificationTemporalStatusService::EXPIRED_GRACE,
@@ -3474,10 +3493,12 @@ class EffectifsWorkspaceController
                     $alert = $t['label'];
                 }
             }
-            $labels = array_slice(array_values(array_unique($labels)), 0, 4);
+            $summaryLabels = array_slice($labels, 0, 4);
             $out[$uid] = [
-                'summary' => $labels !== [] ? implode(' · ', $labels) : '—',
+                'summary' => $summaryLabels !== [] ? implode(' · ', $summaryLabels) : '—',
                 'alert' => $alert,
+                'count' => count($items),
+                'items' => $items,
             ];
         }
 
