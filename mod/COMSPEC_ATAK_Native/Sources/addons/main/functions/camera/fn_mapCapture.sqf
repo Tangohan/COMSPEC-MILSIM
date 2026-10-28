@@ -163,42 +163,66 @@ private _shotDir = {
 };
 // Relevé relu sur le disque : images réellement présentes (dossier de capture et Screenshots, celles de Screenshots
 // rangées au passage). Remplace les cases notées : une case notée sans image n'est plus comptée prise.
+// OPT-07 : Scan part en tâche de fond (OK|queued) ; attente ScanPoll hors fil image si le script peut suspendre.
 private _sync = {
-    private _r = ["MapCap.Scan", [worldName]] call comspec_atak_native_fnc_extensionCall;
-    if ((_r select [0, 3]) isNotEqualTo "OK|") exitWith { false };
-    private _found = createHashMap;
-    for "_i" from 0 to ((parseNumber (_r select [3])) - 1) do {
-        private _c = ["MapCap.Chunk", [str _i]] call comspec_atak_native_fnc_extensionCall;
-        if ((_c select [0, 3]) isEqualTo "OK|") then {
-            {
-                (_x splitString "|") params [["_m", ""], ["_h", ""], ["_s", ""], ["_ids", ""]];
-                if (_m isNotEqualTo "") then {
-                    private _k = format ["%1|%2|%3", toLower worldName, _m, _h];
-                    private _bySteps = _found getOrDefault [_k, createHashMap, true];
-                    private _l = _bySteps getOrDefault [parseNumber _s, [], true];
-                    _l append ((_ids splitString ",") apply { parseNumber _x });
+    private _body = {
+        private _r = ["MapCap.Scan", [worldName]] call comspec_atak_native_fnc_extensionCall;
+        // Liaison récente : parcours hors fil jeu → attente du relevé.
+        if ((_r select [0, 10]) isEqualTo "OK|queued" || {(_r select [0, 8]) isEqualTo "OK|busy"}) then {
+            private _t0 = diag_tickTime;
+            waitUntil {
+                sleep 0.12;
+                private _p = ["MapCap.ScanPoll", []] call comspec_atak_native_fnc_extensionCall;
+                if ((_p select [0, 9]) isEqualTo "OK|ready|") exitWith {
+                    _r = "OK|" + (_p select [9]);
+                    true
                 };
-            } forEach ((_c select [3]) splitString endl);
+                if ((_p select [0, 4]) isEqualTo "ERR|") exitWith { _r = _p; true };
+                diag_tickTime - _t0 > 120
+            };
+            if ((_r select [0, 10]) isEqualTo "OK|queued" || {(_r select [0, 8]) isEqualTo "OK|busy"}) then {
+                _r = "ERR|timeout";
+            };
         };
+        if ((_r select [0, 3]) isNotEqualTo "OK|") exitWith { false };
+        private _found = createHashMap;
+        for "_i" from 0 to ((parseNumber (_r select [3])) - 1) do {
+            private _c = ["MapCap.Chunk", [str _i]] call comspec_atak_native_fnc_extensionCall;
+            if ((_c select [0, 3]) isEqualTo "OK|") then {
+                {
+                    (_x splitString "|") params [["_m", ""], ["_h", ""], ["_s", ""], ["_ids", ""]];
+                    if (_m isNotEqualTo "") then {
+                        private _k = format ["%1|%2|%3", toLower worldName, _m, _h];
+                        private _bySteps = _found getOrDefault [_k, createHashMap, true];
+                        private _l = _bySteps getOrDefault [parseNumber _s, [], true];
+                        _l append ((_ids splitString ",") apply { parseNumber _x });
+                    };
+                } forEach ((_c select [3]) splitString endl);
+            };
+        };
+        private _all = call _progAll;
+        {
+            if ((_x find ((toLower worldName) + "|")) isEqualTo 0) then {
+                private _rec = _y;
+                if !(_x in _found) then { _all set [_x, [_rec select 0, [], _rec select 2, _rec select 3]]; };
+            };
+        } forEach +_all;
+        {
+            private _k = _x;
+            // Plusieurs pas pour une hauteur (mesures de séances différentes) : celui qui a le plus d'images.
+            private _best = -1; private _ids = [];
+            { if ((count _y) > (count _ids)) then { _best = _x; _ids = _y; }; } forEach _y;
+            private _rec = _all getOrDefault [_k, []];
+            private _land = if (_rec isNotEqualTo [] && {(_rec select 0) isEqualTo _best} && {(_rec select 2) > 0}) then { _rec select 2 } else { [_best] call _landCount };
+            _all set [_k, [_best, _ids arrayIntersect _ids, _land, if (_rec isEqualTo []) then { call _stamp } else { _rec select 3 }]];
+        } forEach _found;
+        profileNamespace setVariable ["COMSPEC_ATAK_MapCapProg", (keys _all) apply { [_x, _all get _x] }];
+        [] call comspec_atak_native_fnc_saveProfile;
+        true
     };
-    private _all = call _progAll;
-    {
-        if ((_x find ((toLower worldName) + "|")) isEqualTo 0) then {
-            private _rec = _y;
-            if !(_x in _found) then { _all set [_x, [_rec select 0, [], _rec select 2, _rec select 3]]; };
-        };
-    } forEach +_all;
-    {
-        private _k = _x;
-        // Plusieurs pas pour une hauteur (mesures de séances différentes) : celui qui a le plus d'images.
-        private _best = -1; private _ids = [];
-        { if ((count _y) > (count _ids)) then { _best = _x; _ids = _y; }; } forEach _y;
-        private _rec = _all getOrDefault [_k, []];
-        private _land = if (_rec isNotEqualTo [] && {(_rec select 0) isEqualTo _best} && {(_rec select 2) > 0}) then { _rec select 2 } else { [_best] call _landCount };
-        _all set [_k, [_best, _ids arrayIntersect _ids, _land, if (_rec isEqualTo []) then { call _stamp } else { _rec select 3 }]];
-    } forEach _found;
-    profileNamespace setVariable ["COMSPEC_ATAK_MapCapProg", (keys _all) apply { [_x, _all get _x] }];
-    [] call comspec_atak_native_fnc_saveProfile;
+    if (canSuspend) exitWith { call _body };
+    // Bouton / module hors contexte suspendable : relevé complet en spawn (canSuspend).
+    [] spawn _body;
     true
 };
 private _progText = {
@@ -299,6 +323,11 @@ switch (_act) do {
         true
     };
     case "start": {
+        // OPT-07 : le relevé disque attend ScanPoll — il faut un contexte suspendable.
+        if (!canSuspend) exitWith {
+            ["start", _arg] spawn comspec_atak_native_fnc_mapCapture;
+            true
+        };
         if (missionNamespace getVariable ["COMSPEC_ATAK_MapCapRunning", false]) exitWith {
             ["WARNING", "Capture de la carte déjà en cours (Échap pour l'arrêter)", 4, 20] call comspec_atak_native_fnc_notify;
             false

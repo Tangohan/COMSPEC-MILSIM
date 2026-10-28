@@ -1,27 +1,19 @@
-[h1]COMSPEC ATAK — Mise à jour 2.9.9.AE - Denver[/h1]
-[b]Publication : 27/10/2026[/b]
+[h1]COMSPEC ATAK — Mise à jour 2.9.18.AG - Denver[/h1]
+[b]Publication : 28/10/2026[/b]
 [quote]
-[b]Important :[/b] quittez Arma 3 complètement après la mise à jour, puis relancez. Republiez aussi le pack local si vous chargez le dossier à la main.
+[b]Important :[/b] mettez à jour le pack téléphone 2.9.18 (liaison COMSPEC Link 2.0.109 incluse), quittez Arma 3 complètement, puis relancez.
 [/quote]
 
-[h2]Nouveau — Groupes d’applications, Calculette, Bloc-notes[/h2]
-Sur l’accueil, créez des groupes pour ranger vos apps. Clic droit sur une tuile pour épingler ou ajouter au groupe.
+[h2]Amélioration — Connexion sans figer l’image[/h2]
+La connexion au compte depuis le menu (mot de passe, code reçu par e-mail, Steam) et l’ouverture du canal poste n’attendent plus le portail sur le fil du jeu. L’image reste fluide pendant ces échanges.
 [list]
-[*] filtre GROUPES et section Mes groupes ;
-[*] app Calculette (opérations courantes) ;
-[*] app Bloc-notes (notes locales sur ce poste).
+[*] mot de passe, code temporaire et Steam : attente hors image ;
+[*] bouton Entrer / ouverture du canal poste : même traitement ;
+[*] liaison 2.0.109 livrée avec ce pack.
 [/list]
 
-[h2]Nouveau — Écran COMSPEC via ACE[/h2]
-Sur une TV, un écran sur trépied ou un projecteur :
-[list]
-[*] afficher le réseau TOC ou le PIP du poste ;
-[*] diffuser et faire défiler vos diapositives de briefing.
-[/list]
-Plus besoin d’un module Zeus pour chaque dalle. La dalle noire du TOC est corrigée.
+[h2]Amélioration — Capture de carte[/h2]
+Avant de reprendre ou de démarrer une séance de capture, le relevé des images déjà présentes sur le disque se fait en arrière-plan. L’interface Zeus et le jeu ne se figent plus pendant ce parcours.
 
-[h2]Correction — Doublon pseudo Steam et indicatif[/h2]
-Un allié n’apparaît plus deux fois sur la carte (pseudo + indicatif). Une seule icône, avec l’indicatif tactique.
-
-[h2]Amélioration — Carte et mémoire[/h2]
-Les dalles et animations inutiles sont nettoyées après un panoramique ou un changement de monde. Les diapositives libèrent l’image précédente. Musique et Bluetooth ne gardent plus de files sans limite.
+[h2]Rappel — 2.9.17[/h2]
+File d’envoi pour la messagerie, l’appui aérien et le renseignement ; modules signés.

@@ -294,6 +294,127 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1202, '2026-10-28', 'Connexion et relevé carte sans figer le jeu', 'Avec le pack 2.9.18 et la liaison 2.0.109, la connexion au compte (mot de passe, code e-mail, Steam, ouverture du canal poste) ne bloque plus l’image pendant l’attente du portail. Le relevé des images déjà prises pour la capture de carte se fait aussi en arrière-plan : l’interface Zeus et le jeu restent fluides pendant ce parcours.', [
+                'Connexion e-mail, code temporaire, Steam et ouverture du canal poste sans figer l’image',
+                'Relevé des images de capture de carte en arrière-plan avant de reprendre ou démarrer une séance',
+                'Liaison 2.0.109 livrée avec ce pack ; modules toujours signés',
+            ], [], [], ['atak'], [
+                'Mettez à jour le pack 2.9.18, quittez Arma complètement, puis relancez.',
+            ], 'Pack téléphone 2.9.18 et liaison 2.0.109 à republier'),
+            $pr(1201, '2026-10-27', 'Liaison : messagerie et appui sans bloquer la carte', 'Avec le pack 2.9.17 et la liaison 2.0.108, les messages, les demandes d’appui aérien, le renseignement et les pings empruntent la file d’envoi déjà utilisée pour les positions. La carte des alliés reste prioritaire, même quand beaucoup d’échanges partent vers le poste. Les modules du pack sont signés pour les serveurs qui vérifient les signatures.', [
+                'Messages, appui aérien, renseignement et pings passent par la file d’envoi',
+                'La carte des alliés n’est plus retardée par ces envois parallèles',
+                'Modules du pack signés (clé publique dans le dossier keys)',
+            ], [], [], ['atak'], [
+                'Mettez à jour le pack 2.9.17, quittez Arma complètement, puis relancez. Sur un serveur signé, ajoutez la clé publique du pack si besoin.',
+            ], 'Pack téléphone 2.9.17 et liaison 2.0.108 à republier'),
+            $pr(1200, '2026-10-27', 'Carnet de vol sur le téléphone', 'Une nouvelle application, Carnet de vol, est disponible dans le lanceur du téléphone, rubrique Navigation. Elle présente vos heures aux commandes par appareil pour la mission en cours et pour la carrière enregistrée sur ce PC, la répartition entre hélicoptère et avion, ainsi que les dernières missions au cours desquelles vous avez piloté. Les compteurs sont les mêmes que dans Distances. Le carnet officiel, avec contreseing d’instructeur, se gère toujours sur Athena. Pack 2.9.16 ou plus récent.', [
+                'Nouvelle application Carnet de vol : heures par appareil, mission et carrière',
+                'Répartition hélicoptère / avion et distance parcourue en vol',
+                'Liste des dernières missions au cours desquelles vous avez tenu les commandes',
+                'Raccourci vers Distances ; le carnet officiel reste sur Athena',
+            ], [], [], ['atak'], [
+                'Mettez à jour le pack 2.9.16, quittez Arma complètement, puis ouvrez Carnet de vol depuis le lanceur.',
+            ], 'Pack téléphone 2.9.16 à republier'),
+            $pr(1199, '2026-10-27', 'Montres Garmin Instinct Solar, Tactical et 2X', 'Trois nouveaux modèles rejoignent l’arsenal : Instinct Tactical Solar, Instinct Solar et Instinct 2X Solar Tactical. Elles se portent dans l’emplacement montre ou en objet divers, comme les autres Garmin COMSPEC, et ouvrent la même interface au poignet (touche Montre). Pack 2.9.15 ou plus récent.', [
+                'Nouveau modèle : Instinct Tactical Solar',
+                'Nouveau modèle : Instinct Solar',
+                'Nouveau modèle : Instinct 2X Solar Tactical',
+                'Disponibles en montre au poignet et en objet divers',
+            ], [], [], ['atak'], [
+                'Mettez à jour le pack, quittez Arma, prenez un objet Instinct dans l’arsenal puis ouvrez la montre (touche O).',
+            ], 'Pack téléphone avec objets Instinct à republier'),
+            $pr(1198, '2026-10-27', 'Carte et écran : moins de travail à chaque image', 'Sur la carte plein écran, le calque Relais et les cartouches de marqueurs se mettent à jour environ huit fois par seconde au lieu de chaque image, sans changer ce que vous voyez. Le suivi de votre position sur le téléphone porté est un peu moins nerveux. Les écrans partagés gardent mieux leurs images en mémoire. Pack 2.9.15 ; quittez Arma complètement après mise à jour.', [
+                'Calque Relais et titres de marqueurs allégés sur la carte ouverte',
+                'Suivi de position porté : moins de recentrages inutiles',
+                'Écrans partagés : images récentes conservées (moins de rechargements)',
+                'Vue FLIR drone et boucle Mavic allégées hors usage intensif',
+            ], [
+                'Alliés peu mobiles : la carte ne se reconstruit plus à vide deux fois par seconde',
+            ], [], ['atak'], [
+                'Mettez à jour le pack 2.9.15, quittez Arma, relancez. Testez carte plein écran avec Relais et titres, téléphone porté en déplacement, puis un écran partagé briefing.',
+            ], 'Pack téléphone 2.9.15 à republier'),
+            $pr(1197, '2026-10-27', 'Liaison : plafonds réseau et files d’arrière-plan', 'La liaison 2.0.107 limite le nombre d’échanges simultanés avec le poste pour que la carte des alliés reste prioritaire. Temps de jeu, Relais, détections RF et minuteries explosives rejoignent la file d’envoi. Les présentations Google Slides rechargent correctement après annulation. Remplacez la liaison 2.0.107, quittez Arma complètement, puis relancez.', [
+                'Moins d’échanges simultanés : la carte des alliés n’est plus retardée par les envois secondaires',
+                'Temps de jeu, Relais, RF et minuteries explosives passent par la file d’envoi',
+                'Présentations Google Slides : cache des pages rafraîchi après annulation',
+            ], [
+                'Indicateurs mémoire liaison enrichis (profondeur des files) pour le dépannage',
+            ], [], ['atak'], [
+                'Installez la liaison 2.0.107, quittez Arma, relancez. Testez carte alliés sous charge (Relais, briefing Google, temps de jeu).',
+            ], 'Liaison COMSPEC Link 2.0.107 à republier'),
+            $pr(1196, '2026-10-27', 'Liaison : files d’envoi et briefing moins concurrentiels', 'La liaison 2.0.106 envoie temps d’écran, distances, escouade, Garmin et plan de briefing via la même file que les positions, au lieu d’ouvrir des envois parallèles qui retardaient la carte. L’ouverture d’une diapositive de briefing n’occupe plus les créneaux réservés aux autres échanges avec le poste. Remplacez la liaison 2.0.106, quittez Arma complètement, puis relancez.', [
+                'Temps d’écran, distances, escouade et Garmin passent par la file d’envoi (positions d’abord)',
+                'Diapositives de briefing : lecture hors des créneaux saturés des autres échanges',
+            ], [
+                'Plan de briefing partagé aligné sur la même file d’envoi',
+            ], [], ['atak'], [
+                'Installez la liaison 2.0.106, quittez Arma, relancez. Vérifiez la carte des alliés pendant un briefing et après quelques minutes de jeu (temps d’écran / distances).',
+            ], 'Liaison COMSPEC Link 2.0.106 à republier'),
+            $pr(1195, '2026-10-27', 'Carte : mon point, anneaux et fiche Info joueur', 'Sur la carte, vous choisissez la couleur, l’icône et la taille de votre point (Réglages > Carte). Un interrupteur coupe tous les anneaux autour des unités (précision GPS, sélection, équipes de feu), aussi dans les calques. Clic droit sur un joueur ou une piste : Info joueur ouvre une fiche avec indicatif, rang, groupe, téléphone et liaison. Pack 2.9.14 ; quittez Arma complètement après mise à jour.', [
+                'Personnalisation de mon point : couleur, icône (vue par tous), taille',
+                'Interrupteur pour masquer tous les anneaux autour des unités',
+                'Clic droit → Info joueur : fiche détaillée en modal',
+            ], [
+                'Repérage des unités au clic droit aligné sur les symboles affichés',
+            ], [], ['atak'], [
+                'Mettez à jour le pack 2.9.14, quittez Arma, relancez. Réglages > Carte pour mon point et les anneaux ; clic droit sur un allié → Info joueur.',
+            ], 'Pack téléphone 2.9.14 à republier'),
+            $pr(1194, '2026-10-27', 'Carte et liaison : inventaire des allègements anti-figements', 'Le pack 2.9.13 (avec la liaison 2.0.105) regroupe les correctifs anti-à-coups des vagues 2.9.12 et 2.9.13. En téléphone porté, la carte HUD ne redessine plus les calques lourds ; en carte plein écran, les alliés hors vue, Relais et titres sont allégés. Les envois vers le poste (positions, distances, temps d’écran, SIGINT, drones, aéronefs, marqueurs, escouade) passent hors du rythme de jeu. Briefing, notifications et rôles coûtent moins. Republiez le pack 2.9.13 et la liaison 2.0.105, quittez Arma complètement, puis relancez.', [
+                'Carte HUD portée : calques lourds coupés ; alliés, Relais et itinéraire GPS conservés',
+                'Carte plein écran : alliés hors champ non dessinés ; vous et la sélection toujours visibles',
+                'Relais allégé en HUD ; trait plein au zoom large',
+                'Titres de marqueurs : mise à jour seulement si la vue ou la liste change',
+                'Anneau GPS recalculé moins souvent en HUD ou sous le feu',
+                'Données locales carte interactive : deux fois par seconde au lieu de quatre',
+                'Alertes et pastilles du lanceur regroupées (plus de redessin en rafale)',
+                'Pages vivantes (messagerie, tâches, groupe) : reconstruction espacée',
+                'Briefing : diapositives conservées en mémoire (éviction des plus anciennes)',
+                'Positions, distances, temps d’écran, SIGINT, drones et aéronefs hors rythme de jeu',
+                'Marqueurs et télémétrie drones / escouade étalés',
+                'Détection auto de drones : plus proches d’abord, envois non bloquants',
+                'Distances et verrou terminal UAV un peu moins fréquents, moins de travail à vide',
+                'Rôle (temps d’écran) mis en cache quelques secondes',
+                'Cohérence fireteams étalée sur plusieurs passes',
+                'Liaison 2.0.105 : traitements locaux hors fil de jeu ; files d’envoi ; images briefing en mémoire courte',
+            ], [
+                'Pack 2.9.12 déjà : HUD allégé et premiers envois async ; 2.9.13 poursuit carte interactive, briefing et liaison',
+            ], [
+                'À-coups en engagement téléphone porté ou carte chargée (Relais, nombreux marqueurs / alliés)',
+                'Figements lors des envois groupés vers le poste ou du chargement de diapositives',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.13 et la liaison 2.0.105, quittez Arma, relancez. Testez téléphone porté en contact, carte plein écran avec Relais et titres, puis un briefing avec plusieurs diapositives.',
+            ], 'Pack téléphone 2.9.13 + liaison 2.0.105 à republier'),
+            $pr(1193, '2026-10-27', 'Téléphone porté : moins d’à-coups en engagement', 'Le pack 2.9.12 allège la carte quand le téléphone est porté : les calques lourds restent pour la carte plein écran. Les envois vers le poste (positions, distances, temps d’écran, relais, drones, aéronefs) passent hors du rythme de jeu pour éviter les figements. Republiez le pack 2.9.12 et la liaison 2.0.104, quittez Arma complètement, puis relancez.', [
+                'Carte HUD allégée en téléphone porté (calques lourds réservés à la carte interactive)',
+                'Envois positions, distances, temps d’écran, SIGINT, drones et aéronefs hors rythme de jeu',
+                'Liaison COMSPEC Link 2.0.104 : traitements locaux hors fil de jeu',
+            ], [
+                'Pastilles et notifications regroupées pour éviter les redessins en rafale',
+                'Anneau GPS recalculé moins souvent en HUD ou sous le feu',
+            ], [
+                'À-coups quand le téléphone était porté en combat ou avec beaucoup d’alliés / relais',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.12 et la liaison 2.0.104, quittez Arma, relancez. En engagement avec le téléphone porté, la carte HUD doit rester lisible (alliés, Relais, itinéraire) sans calques inutiles ; en carte plein écran, tout reste disponible.',
+            ], 'Pack téléphone 2.9.12 + liaison 2.0.104 à republier'),
+            $pr(1192, '2026-10-27', 'Heures de vol et modèles d’appareil remonteraient enfin', 'Le temps de rôle Pilote pouvait monter alors que les heures de vol et le détail par avion ou hélicoptère restaient vides : le comptage aux commandes n’exige plus un moteur allumé et suit le même siège que le rôle Pilote. Republiez le pack téléphone 2.9.11, quittez Arma complètement, puis refaites un vol. Les anciennes sessions non remontées ne se reconstruisent pas.', [
+                'Heures de vol par appareil alignées sur le siège Pilote',
+                'Plus d’exigence « moteur allumé » pour compter le modèle',
+            ], [], [
+                'Le rôle Pilote montait sans heures ni modèle d’appareil sur la fiche',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.11, quittez Arma, volez aux commandes, puis ouvrez Distances → Actualiser ou attendez l’envoi. Sur la fiche, le modèle et les heures de vol doivent apparaître.',
+            ], 'Pack téléphone à republier'),
+            $pr(1191, '2026-10-27', 'NINE LINE et carte web par QR', 'Sur le téléphone, l’app NINE LINE permet de rédiger des brouillons CAS ou MEDEVAC hors liaison, de les enregistrer, de les recopier en texte radio, puis de les ouvrir dans CAS ou Médical pour transmission. Depuis la carte (menu Outils), Carte sur le web génère un QR qui ouvre la carte mobile dans le navigateur. Sur le poste, le hub QR propose désormais Carte clairement. La vue mobile montre curseur, grille et zoom. Quittez Arma complètement, puis relancez après mise à jour du pack et de la liaison.', [
+                'App NINE LINE : brouillons CAS / MEDEVAC locaux',
+                'Carte sur le web depuis le téléphone (QR + code)',
+                'Hub QR du poste : destination Carte',
+                'Carte mobile : barre de coordonnées et zoom',
+            ], [
+                'Libellés Carte plus clairs sur la coque mobile',
+            ], [], ['atak'], [
+                'Mettez à jour le pack et la liaison, quittez Arma, relancez. Ouvrez NINE LINE, puis Carte → Outils → Carte sur le web. Sur le poste, générez un QR Carte et scannez-le.',
+            ], 'Pack téléphone + liaison COMSPEC Link à republier'),
             $pr(1189, '2026-10-27', 'Pack téléphone 2.9.9 : apps, écrans ACE et carte sans doublon', 'Le pack 2.9.9 regroupe les groupes d’apps, Calculette et Bloc-notes, l’affichage TOC et diapositives via ACE sur les écrans du jeu, le nettoyage mémoire de la carte, et la fin des doublons pseudo Steam / indicatif. Quittez Arma complètement, puis relancez.', [
                 'Groupes d’apps, Calculette, Bloc-notes',
                 'ACE Écran COMSPEC : TOC, PIP du poste, diapositives',
