@@ -122,8 +122,9 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         $refresh = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalOverlayRefresh.sqf'
         );
-        // Colonne auteur (index 7) de ListWardrobes, lue sans splitString.
-        self::assertStringContainsString('["_upd", ""], ["_owner", ""]', $refresh);
+        // Colonne auteur (index 7) de ListWardrobes, lue sans splitString (params éventuellement sur 2 lignes).
+        self::assertStringContainsString('["_upd", ""]', $refresh);
+        self::assertStringContainsString('["_owner", ""]', $refresh);
         self::assertStringContainsString('arsenalCollectionName', $refresh);
         self::assertStringContainsString('arsenalListWardrobes', $refresh);
 
