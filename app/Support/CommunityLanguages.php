@@ -84,9 +84,63 @@ final class CommunityLanguages
 
     public static function flag(string $code): string
     {
-        $country = self::LANGUAGES[$code]['country'] ?? '';
+        $country = self::countryCode($code);
 
         return $country !== '' ? PublicFlagCountryCatalog::flagEmoji($country) : '';
+    }
+
+    /** ISO 3166-1 alpha-2 associé à la langue (FR pour fr, GB pour en…). */
+    public static function countryCode(string $code): string
+    {
+        $normalized = self::normalize($code) ?? strtolower(trim($code));
+
+        return strtoupper((string) (self::LANGUAGES[$normalized]['country'] ?? ''));
+    }
+
+    /**
+     * Drapeau HTML fiable (image flagcdn) — les emoji régionaux cassent sur Edge.
+     *
+     * @param array{class?: string, size?: string, title?: string, label?: string} $opts
+     */
+    public static function flagHtml(string $code, array $opts = []): string
+    {
+        $country = self::countryCode($code);
+        if ($country === '' || !function_exists('athena_flag_html')) {
+            return '';
+        }
+
+        return athena_flag_html($country, [
+            'mode' => 'img',
+            'size' => (string) ($opts['size'] ?? '16x12'),
+            'class' => trim('eff-lang-flag ' . (string) ($opts['class'] ?? '')),
+            'title' => (string) ($opts['title'] ?? self::pageLabel($code)),
+            'label' => (string) ($opts['label'] ?? self::pageLabel($code)),
+        ]);
+    }
+
+    /**
+     * Une image de drapeau par pays distinct, dans l’ordre des codes langue.
+     *
+     * @param list<string> $codes
+     * @param array{class?: string, size?: string} $opts
+     */
+    public static function flagsHtml(array $codes, array $opts = []): string
+    {
+        $seen = [];
+        $parts = [];
+        foreach ($codes as $code) {
+            $country = self::countryCode((string) $code);
+            if ($country === '' || isset($seen[$country])) {
+                continue;
+            }
+            $seen[$country] = true;
+            $html = self::flagHtml((string) $code, $opts);
+            if ($html !== '') {
+                $parts[] = $html;
+            }
+        }
+
+        return implode('', $parts);
     }
 
     /** @return array<string, string> code => « Russe · Русский » */
