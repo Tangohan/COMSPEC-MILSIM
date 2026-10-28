@@ -140,8 +140,9 @@
         keys.sort(function (a, b) {
             var ra = bag[a] || {};
             var rb = bag[b] || {};
-            var ta = ra.queuedAt || ra.timestamp || ra.savedAt || "";
-            var tb = rb.queuedAt || rb.timestamp || rb.savedAt || "";
+            // Tuiles : horodatage numérique `at` ; événements / file : ISO ou epoch.
+            var ta = ra.at != null ? Number(ra.at) : Date.parse(ra.queuedAt || ra.timestamp || ra.savedAt || "") || 0;
+            var tb = rb.at != null ? Number(rb.at) : Date.parse(rb.queuedAt || rb.timestamp || rb.savedAt || "") || 0;
             if (ta === tb)
                 return a < b ? -1 : 1;
             return ta < tb ? -1 : 1;
@@ -157,6 +158,27 @@
             del(store, k);
         }
     }
+    function count(store) {
+        var bag = mem[store] || {};
+        var n = Object.keys(bag).length;
+        if (n > 0)
+            return Promise.resolve(n);
+        return openDb().then(function (d) {
+            if (!d)
+                return store === "tiles" ? 0 : lsAll(store).length;
+            return new Promise(function (resolve) {
+                try {
+                    var t = d.transaction(store, "readonly");
+                    var r = t.objectStore(store).count();
+                    r.onsuccess = function () { resolve(Number(r.result) || 0); };
+                    r.onerror = function () { resolve(0); };
+                }
+                catch (e) {
+                    resolve(0);
+                }
+            });
+        }).then(function (v) { return v; }, function () { return 0; });
+    }
     function put(store, key, value) {
         if (store === "events" || store === "queue") {
             if (!value || !value.event_id)
@@ -170,6 +192,8 @@
                 return s.put(value);
             });
         }
+        if (store === "tiles" && value && typeof value === "object" && value.at == null)
+            value.at = Date.now();
         mem[store][key] = value;
         if (store === "tiles")
             trimMem(store, 400, key);
@@ -209,6 +233,7 @@
         get: get,
         put: put,
         del: del,
-        all: getAll
+        all: getAll,
+        count: count
     };
 })();

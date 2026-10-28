@@ -1,7 +1,7 @@
 /*
     Fiche de la tenue choisie : nom, collection, auteur, date, badge d'état de synchro et sa phrase d'explication,
-    pièces en icônes légendées (8 cases), contenu, boutons d'action adaptés à l'onglet et à l'état (Envoyer au site,
-    Mettre à jour le site, Prendre la version du site, Importer…). Sans tenue : invite à choisir.
+    pastilles (favori / mise en avant / obligatoire), portrait opérateur, pièces en icônes légendées (8 cases),
+    contenu, état de la copie Documents, boutons d'action. Sans tenue : invite à choisir.
     Params : [display, loadout, titre, méta (texte structuré)] ; l'état vient de la ligne sélectionnée.
 */
 params [["_display", displayNull, [displayNull]], ["_loadout", [], [[]]], ["_caption", "", [""]], ["_meta", "", [""]]];
@@ -20,43 +20,124 @@ private _state = switch (true) do {
 private _info = [_state, _isCloud] call comspec_overwatch_connect_fnc_arsenalStateInfo;
 _info params ["_label", "_rgba", "_note", "_hex"];
 
+private _fav = if (_row isEqualTo []) then { false } else { if (_isCloud) then { _row select 6 } else { _row param [7, false] } };
+private _feat = if (_row isEqualTo []) then { false } else { if (_isCloud) then { _row param [12, false] } else { _row param [8, false] } };
+private _mand = if (_row isEqualTo []) then { false } else { if (_isCloud) then { _row param [13, false] } else { _row param [9, false] } };
+private _badgeTxt = if (_row isEqualTo []) then { "" } else { if (_isCloud) then { _row param [14, ""] } else { _row param [10, ""] } };
+private _avatarUrl = if (_row isEqualTo []) then { "" } else { if (_isCloud) then { _row param [15, ""] } else { _row param [11, ""] } };
+private _author = if (_row isEqualTo []) then { "" } else { if (_isCloud) then { _row select 4 } else { _row param [6, ""] } };
+
 private _head = _grp getVariable ["COMSPEC_ArsenalDetailHead", controlNull];
 if (!isNull _head) then {
     _head ctrlSetStructuredText parseText (if (_has) then {
-        format ["<t size='1.2' font='%3' color='#eef7f1'>%1</t><br/><t size='0.8' color='#8fa596'>%2</t>", _caption, (_meta) call comspec_overwatch_connect_fnc_tr, (_grp getVariable ["COMSPEC_ArsenalFonts", ["", "RobotoCondensedBold"]]) select 1]
+        format ["<t size='1.15' font='%3' color='#eef7f1'>%1</t><br/><t size='0.78' color='#8fa596'>%2</t>", _caption, (_meta) call comspec_overwatch_connect_fnc_tr, (_grp getVariable ["COMSPEC_ArsenalFonts", ["", "RobotoCondensedBold"]]) select 1]
     } else {
-        ("<t size='1.05' color='#b5c7bb'>Choisissez une tenue dans la liste</t><br/><t size='0.8' color='#8fa596'>Ses pièces, son contenu et son état sur le site s'affichent ici.</t>") call comspec_overwatch_connect_fnc_tr
+        ("<t size='1.05' color='#b5c7bb'>Choisissez une tenue dans la liste</t><br/><t size='0.8' color='#8fa596'>Ses pièces, son auteur, son portrait et son état s'affichent ici.</t>") call comspec_overwatch_connect_fnc_tr
     });
+};
+
+// Portrait opérateur (téléchargé comme sur ATAK).
+(_grp getVariable ["COMSPEC_ArsenalAvatar", [controlNull, controlNull]]) params [["_avBg", controlNull], ["_avPic", controlNull]];
+if (!isNull _avBg) then { _avBg ctrlShow _has; };
+if (!isNull _avPic) then {
+    _avPic ctrlShow false;
+    _avPic ctrlSetText "";
+    if (_has && {_avatarUrl isNotEqualTo ""}) then {
+        private _cacheKey = format ["wardrobe_av_%1", [_avatarUrl] call comspec_overwatch_connect_fnc_arsenalHash];
+        private _cached = missionNamespace getVariable ["COMSPEC_ArsenalAvatarCache", createHashMap];
+        if (!(_cached isEqualType createHashMap)) then { _cached = createHashMap; };
+        if (_cacheKey in _cached) then {
+            private _local = _cached get _cacheKey;
+            if (_local isNotEqualTo "") then { _avPic ctrlSetText _local; _avPic ctrlShow true; };
+        } else {
+            [_display, _avatarUrl, _cacheKey, _avPic] spawn {
+                params ["_d", "_url", "_key", "_pic"];
+                private _raw = [["COMSPECExtension", "DownloadBriefingSlideImage", [_url, _key]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
+                private _local = "";
+                if ((_raw isEqualType "") && {(_raw find "OK|") isEqualTo 0}) then { _local = _raw select [3]; };
+                private _map = missionNamespace getVariable ["COMSPEC_ArsenalAvatarCache", createHashMap];
+                if (!(_map isEqualType createHashMap)) then { _map = createHashMap; };
+                _map set [_key, _local];
+                missionNamespace setVariable ["COMSPEC_ArsenalAvatarCache", _map, false];
+                if (isNull _d || {isNull _pic} || {_local isEqualTo ""}) exitWith {};
+                private _g = _d getVariable ["COMSPEC_ArsenalOverlay", controlNull];
+                if (isNull _g) exitWith {};
+                private _r = (_g getVariable ["COMSPEC_ArsenalShown", []]) param [_g getVariable ["COMSPEC_ArsenalSelected", -1], []];
+                private _still = if ((_g getVariable ["COMSPEC_ArsenalTab", "local"]) isEqualTo "cloud") then {
+                    (_r param [15, ""]) isEqualTo _url
+                } else {
+                    (_r param [11, ""]) isEqualTo _url
+                };
+                if (!_still) exitWith {};
+                _pic ctrlSetText _local;
+                _pic ctrlShow true;
+            };
+        };
+    };
 };
 
 // Badge d'état, à la largeur de son texte, et la phrase qui dit quoi faire.
 private _badge = _grp getVariable ["COMSPEC_ArsenalBadge", controlNull];
 private _noteC = _grp getVariable ["COMSPEC_ArsenalBadgeNote", controlNull];
+private _flagsC = _grp getVariable ["COMSPEC_ArsenalDetailFlags", controlNull];
 private _showBadge = _has && {_label isNotEqualTo ""};
 if (!isNull _badge) then {
     _badge ctrlShow _showBadge;
     if (_showBadge) then {
         _badge ctrlSetText (" " + toUpper ((_label) call comspec_overwatch_connect_fnc_tr) + " ");
         _badge ctrlSetBackgroundColor _rgba;
-        (ctrlPosition _badge) params ["_bx", "_by", "", "_bh"];
-        _badge ctrlSetPosition [_bx, _by, (ctrlTextWidth _badge) + 0.012, _bh];
+        (ctrlPosition _badge) params ["_bx", "_by2", "", "_bh"];
+        _badge ctrlSetPosition [_bx, _by2, (ctrlTextWidth _badge) + 0.012, _bh];
         _badge ctrlCommit 0;
     };
 };
+if (!isNull _flagsC) then {
+    private _chips = [];
+    if (_has && {_mand}) then { _chips pushBack format ["<t color='#f2ab33'>%1</t>", if (_badgeTxt isNotEqualTo "") then { _badgeTxt } else { ("Obligatoire") call comspec_overwatch_connect_fnc_tr }]; };
+    if (_has && {_feat} && {!_mand}) then { _chips pushBack format ["<t color='#7ec8ff'>%1</t>", ("Mise en avant") call comspec_overwatch_connect_fnc_tr]; };
+    if (_has && {_fav}) then { _chips pushBack format ["<t color='#f0d060'>%1</t>", ("Favori") call comspec_overwatch_connect_fnc_tr]; };
+    if (_has && {_author isNotEqualTo ""}) then { _chips pushBack format ["<t color='#b5c7bb'>%1</t>", format [("Envoyée par %1") call comspec_overwatch_connect_fnc_tr, _author]]; };
+    _flagsC ctrlSetStructuredText parseText (if (_chips isEqualTo []) then { "" } else { format ["<t size='0.78'>%1</t>", _chips joinString "  ·  "] });
+};
 if (!isNull _noteC) then {
-    _noteC ctrlSetStructuredText parseText (if (_has) then { format ["<t size='0.8' color='#c4d2c8'>%1</t>", (_note) call comspec_overwatch_connect_fnc_tr] } else { "" });
+    _noteC ctrlSetStructuredText parseText (if (_has) then { format ["<t size='0.78' color='#c4d2c8'>%1</t>", (_note) call comspec_overwatch_connect_fnc_tr] } else { "" });
+};
+
+// Copie locale Documents (liste site gardée sur ce PC).
+private _syncC = _grp getVariable ["COMSPEC_ArsenalDetailSync", controlNull];
+if (!isNull _syncC) then {
+    (_grp getVariable ["COMSPEC_ArsenalLocalSync", [false, "", ""]]) params [["_syncOk", false], ["_syncPath", ""], ["_syncAt", ""]];
+    private _txt = switch (true) do {
+        case (!_has): { "" };
+        case (_syncOk): {
+            format ["<t size='0.72' color='#5cc76b'>%1</t>", format [
+                ("Copie locale Documents prête%1") call comspec_overwatch_connect_fnc_tr,
+                if (_syncAt isEqualTo "") then { "" } else { format [" · %1", _syncAt] }
+            ]]
+        };
+        default {
+            format ["<t size='0.72' color='#e0a050'>%1</t>", ("Pas encore de copie locale dans Documents (Actualiser pour la créer)") call comspec_overwatch_connect_fnc_tr]
+        };
+    };
+    if (_has && {_syncPath isNotEqualTo ""}) then {
+        _syncC ctrlSetTooltip format [("Emplacement : %1") call comspec_overwatch_connect_fnc_tr, _syncPath];
+    } else {
+        _syncC ctrlSetTooltip "";
+    };
+    _syncC ctrlSetStructuredText parseText _txt;
 };
 
 // Pièces : icône et légende (traduite) ; info-bulle avec le nom de l'objet.
+// Afficher aussi sans image (mods absents) : la case reste utile avec le libellé.
 private _icons = [_loadout] call comspec_overwatch_connect_fnc_arsenalLoadoutIcons;
-private _withPic = _icons select { (_x select 2) isNotEqualTo "" };
+private _slots = _icons select { (_x select 1) isNotEqualTo "" || {(_x select 3) isNotEqualTo ""} };
 {
     _x params ["_cb", "_p", "_cap"];
-    private _on = _forEachIndex < (count _withPic);
+    private _on = _forEachIndex < (count _slots);
     { _x ctrlShow _on; } forEach [_cb, _p, _cap];
     if (_on) then {
-        (_withPic select _forEachIndex) params ["_kind", "", "_pic", "_dn"];
-        _p ctrlSetText _pic;
+        (_slots select _forEachIndex) params ["_kind", "", "_pic", "_dn"];
+        if (_pic isNotEqualTo "") then { _p ctrlSetText _pic; } else { _p ctrlSetText ""; };
         _p ctrlSetTooltip format ["%1 : %2", (_kind) call comspec_overwatch_connect_fnc_tr, _dn];
         _cap ctrlSetText toUpper ((_kind) call comspec_overwatch_connect_fnc_tr);
         _cap ctrlSetTooltip _dn;

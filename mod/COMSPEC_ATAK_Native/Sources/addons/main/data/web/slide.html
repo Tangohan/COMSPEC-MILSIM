@@ -7,9 +7,11 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
 </style></head><body><img id="s" alt=""><script>
 var cs={p:[],reset:function(){cs.p=[];},add:function(t){cs.p.push(t);},show:function(m){
 var b=cs.p.join(''),i=document.getElementById('s');cs.p=[];
+function rev(){var u=i.dataset.blob;if(u){try{URL.revokeObjectURL(u);}catch(e){}delete i.dataset.blob;}}
 i.onload=function(){i.style.visibility='visible';};
 i.style.visibility='visible';
-// Image data: refusée : même image par une adresse blob:.
-i.onerror=function(){i.onerror=null;try{var r=atob(b),a=new Uint8Array(r.length);for(var k=0;k<r.length;k++){a[k]=r.charCodeAt(k);}i.src=URL.createObjectURL(new Blob([a],{type:'image/'+m}));}catch(e){}};
+// Image data: refusée : même image par une adresse blob: (révoquer l'ancienne avant).
+i.onerror=function(){i.onerror=null;try{var r=atob(b),a=new Uint8Array(r.length);for(var k=0;k<r.length;k++){a[k]=r.charCodeAt(k);}rev();var u=URL.createObjectURL(new Blob([a],{type:'image/'+m}));i.dataset.blob=u;i.src=u;}catch(e){}};
+rev();
 i.src='data:image/'+m+';base64,'+b;}};
 </script></body></html>

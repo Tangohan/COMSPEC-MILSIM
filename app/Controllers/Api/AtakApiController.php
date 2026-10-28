@@ -7249,12 +7249,21 @@ class AtakApiController
         $recorded = 0;
         $unmatched = 0;
         $players = \App\Repositories\AtakScreenTimeRepository::normalizeBatch($body['players'] ?? []);
+        // Session joueur : uniquement son Steam (SEC-042). Sans session, source client → Steam du signataire seulement.
         $sessionSteam = \App\Support\ComspecApiKeyAuth::matchedSteamId();
         if (is_string($sessionSteam) && $sessionSteam !== '') {
             $players = array_values(array_filter(
                 $players,
                 static fn (array $p): bool => $p['player_uid'] === $sessionSteam
             ));
+        } elseif (($body['source'] ?? '') === 'client') {
+            $clientSteam = is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null;
+            $players = $clientSteam === null || $clientSteam === ''
+                ? []
+                : array_values(array_filter(
+                    $players,
+                    static fn (array $p): bool => $p['player_uid'] === $clientSteam
+                ));
         }
         foreach ($players as $p) {
             $uid = SteamId::normalize($p['player_uid']);

@@ -132,6 +132,10 @@
         lastWorld = "";
         lastSize = 0;
         didCenter = false;
+        if (window.COMSPEC_MapTiles && typeof window.COMSPEC_MapTiles.clearKept === "function") {
+            try { window.COMSPEC_MapTiles.clearKept(); }
+            catch (eK) { }
+        }
     }
     function ringLatLngs(y, x, r, n) {
         n = n || 48;
@@ -171,6 +175,12 @@
                 map.removeLayer(halo);
             }
             catch (e2) { }
+            // UI-008 : lâcher les références JS après retrait de la carte.
+            var i;
+            for (i = pingMarkers.length - 1; i >= 0; i -= 1) {
+                if (pingMarkers[i] === marker || pingMarkers[i] === halo)
+                    pingMarkers.splice(i, 1);
+            }
         }, 3600);
     }
     function refreshGrid() {

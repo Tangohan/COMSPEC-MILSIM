@@ -56,10 +56,15 @@ if (_page isNotEqualTo "LAUNCHER") then {
 if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; };
 if (_page isEqualTo "NOTIFS") then { _title = "NOTIFICATIONS"; };
 if (_page isEqualTo "PATCHES") then { _title = "PATCH AU DOS"; };
+if (_page isEqualTo "FOLDER") then {
+    private _f = ["get", uiNamespace getVariable ["COMSPEC_ATAK_FolderId", ""]] call comspec_atak_native_fnc_appFolders;
+    _title = toUpper ([_f param [1, "Groupe"], "GROUPE"] select ((count _f) isEqualTo 0));
+};
 (_d displayCtrl 88518) ctrlSetText ((_title) call comspec_atak_native_fnc_tr);
 
 switch (_page) do {
     case "LAUNCHER": { [] call comspec_atak_native_fnc_launcherRender; };
+    case "FOLDER": { [] call comspec_atak_native_fnc_pageFolder; };
     case "MAP": { [] call comspec_atak_native_fnc_pageMap; };
     case "CHAT": { [] call comspec_atak_native_fnc_pageChat; };
     case "GROUP": { [] call comspec_atak_native_fnc_pageGroup; };
@@ -83,6 +88,8 @@ switch (_page) do {
     case "SNIPER": { [] call comspec_atak_native_fnc_pageSniper; };
     case "JTAC": { [] call comspec_atak_native_fnc_pageJtac; };
     case "MUSIC": { [] call comspec_atak_native_fnc_pageMusic; };
+    case "CALC": { [] call comspec_atak_native_fnc_pageCalc; };
+    case "NOTES": { [] call comspec_atak_native_fnc_pageNotes; };
     case "GPS": { [] call comspec_atak_native_fnc_pageGps; };
     case "WAYPOINTS": { [] call comspec_atak_native_fnc_pageWaypoints; };
     case "DEBUG": { [] call comspec_atak_native_fnc_pageDebug; };

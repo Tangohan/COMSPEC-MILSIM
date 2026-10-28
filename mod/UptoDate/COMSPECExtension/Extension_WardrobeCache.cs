@@ -160,7 +160,8 @@ public static partial class Extension
     }
 
     /// <summary>
-    /// « WardrobesCacheInfo » : OK|savedAt\tcount (savedAt vide = jamais chargé sur ce PC).
+    /// « WardrobesCacheInfo » : OK|savedAt\tcount\tlocalOk\tpathHint
+    /// savedAt vide = jamais chargé sur ce PC ; localOk = 1 si wardrobes.json est présent dans Documents.
     /// </summary>
     private static string WardrobeCacheInfo()
     {
@@ -171,6 +172,9 @@ public static partial class Extension
             if (list.Length > 0) _wardrobesListCache = list;
         }
         var count = string.IsNullOrEmpty(_wardrobesListCache) ? 0 : _wardrobesListCache.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length;
-        return "OK|" + _wardrobeCacheSavedAt + "\t" + count;
+        var path = WardrobeCachePath();
+        var localOk = path is not null && File.Exists(path) ? "1" : "0";
+        var hint = "Documents\\Arma 3 - COMSPEC\\Sync";
+        return "OK|" + _wardrobeCacheSavedAt + "\t" + count + "\t" + localOk + "\t" + hint;
     }
 }

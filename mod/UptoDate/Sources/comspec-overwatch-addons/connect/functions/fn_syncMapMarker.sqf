@@ -103,9 +103,14 @@ private _fnc_dispatch = {
         _sentMap set [_name, [_body, diag_tickTime]];
     };
     missionNamespace setVariable ["COMSPEC_MarkerSentSig", _sentMap, false];
-    "COMSPECExtension" callExtension ["SendMarker", [_name, _body, "1", _flag]];
-    missionNamespace setVariable ["COMSPEC_LastMarkerSyncName", _name, false];
-    missionNamespace setVariable ["COMSPEC_LastMarkerSyncAt", diag_tickTime, false];
+    // Hors du thread image (SQF-007 / SQF-C04) : SendMarker peut faire de l’HTTP ; callExtension synchrone
+    // figeait le client pendant un engagement si des marqueurs partaient en rafale.
+    [_name, _body, _flag] spawn {
+        params ["_name", "_body", "_flag"];
+        ["COMSPECExtension", "SendMarker", [_name, _body, "1", _flag]] call comspec_overwatch_connect_fnc_extAwait;
+        missionNamespace setVariable ["COMSPEC_LastMarkerSyncName", _name, false];
+        missionNamespace setVariable ["COMSPEC_LastMarkerSyncAt", diag_tickTime, false];
+    };
     true
 };
 

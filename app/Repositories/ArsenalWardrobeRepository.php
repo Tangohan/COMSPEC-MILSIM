@@ -7,6 +7,7 @@ namespace App\Repositories;
 use App\Core\Database;
 use App\Support\ArsenalLoadoutItems;
 use App\Support\EquipmentCoverStorage;
+use App\Support\OperatorPortraits;
 use App\Support\SilentSchemaMigration;
 use App\Support\SqlText;
 use PDO;
@@ -72,29 +73,84 @@ final class ArsenalWardrobeRepository
      */
     public function listAccessibleWardrobes(int $tenantId, int $userId): array
     {
+        $pinJoin = '';
+        $pinSelect = 'NULL AS pin_badge_label, NULL AS pin_figure_path, 0 AS is_featured';
+        try {
+            $pinTable = $this->pdo->query(
+                "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_dashboard_wardrobe_pins' LIMIT 1"
+            );
+            if ($pinTable && $pinTable->fetchColumn()) {
+                $pinJoin = 'LEFT JOIN tenant_dashboard_wardrobe_pins p ON p.wardrobe_id = w.id AND p.tenant_id = w.tenant_id';
+                $pinSelect = 'p.badge_label AS pin_badge_label, p.figure_path AS pin_figure_path, (p.id IS NOT NULL) AS is_featured';
+            }
+        } catch (\Throwable) {
+            // Table absente : pas de mise en avant.
+        }
+
         $st = $this->pdo->prepare(
-            'SELECT w.id, w.tenant_id, w.user_id, w.steam_uid, w.collection_id, w.name, w.slug,
+            "SELECT w.id, w.tenant_id, w.user_id, w.steam_uid, w.collection_id, w.name, w.slug,
                     w.source, w.payload_format, w.payload_sha256, CHAR_LENGTH(w.payload_text) AS payload_bytes,
                     w.payload_text, w.notes, w.description, w.cover_image_path, w.gallery_json,
                     w.is_favorite, w.last_synced_at, w.created_at, w.updated_at,
                     c.name AS collection_name, c.slug AS collection_slug, c.visibility AS collection_visibility,
-                    COALESCE(NULLIF(TRIM(u.callsign), \'\'), NULLIF(TRIM(u.display_name), \'\'), \'Membre\') AS owner_label
+                    COALESCE(NULLIF(TRIM(u.callsign), ''), NULLIF(TRIM(u.display_name), ''), 'Membre') AS owner_label,
+                    {$pinSelect}
              FROM arsenal_wardrobes w
              LEFT JOIN arsenal_equipment_collections c ON c.id = w.collection_id
              LEFT JOIN users u ON u.id = w.user_id
+             {$pinJoin}
              WHERE w.tenant_id = ?
-             ORDER BY w.is_favorite DESC, w.name ASC, w.id ASC'
+             ORDER BY is_featured DESC, w.is_favorite DESC, w.name ASC, w.id ASC"
         );
         $st->execute([$tenantId]);
 
         $rows = array_map([$this, 'mapWardrobe'], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
+        $ownerIds = [];
+        foreach ($rows as $row) {
+            $oid = (int) ($row['user_id'] ?? 0);
+            if ($oid > 0) {
+                $ownerIds[] = $oid;
+            }
+        }
+        $portraits = [];
+        try {
+            $portraits = OperatorPortraits::forUsers($tenantId, $ownerIds);
+        } catch (\Throwable) {
+            $portraits = [];
+        }
+
         foreach ($rows as &$row) {
             $row['mine'] = (int) ($row['user_id'] ?? 0) === $userId;
             $payload = (string) ($row['payload_text'] ?? '');
             $row['kinds'] = ArsenalLoadoutItems::presentKinds($payload);
             $row['preview_classes'] = ArsenalLoadoutItems::previewClasses($payload);
             $row['display_name'] = ArsenalLoadoutItems::formatWardrobeTitle((string) ($row['name'] ?? ''));
-            unset($row['payload_text']);
+            $featured = !empty($row['is_featured']);
+            $badge = trim((string) ($row['pin_badge_label'] ?? ''));
+            $row['featured'] = $featured;
+            $row['badge_label'] = $badge;
+            $row['mandatory'] = $featured && $badge !== '' && (bool) preg_match(
+                '/obligatoire|r[eé]glementaire|reglementaire|mission|doctrine/iu',
+                $badge
+            );
+            $figure = EquipmentCoverStorage::publicUrl(
+                isset($row['pin_figure_path']) ? (string) $row['pin_figure_path'] : null
+            );
+            if (is_string($figure) && $figure !== '') {
+                $row['cover_url'] = $figure;
+            }
+            $uid = (int) ($row['user_id'] ?? 0);
+            $avatar = '';
+            if ($uid > 0) {
+                try {
+                    $thumb = OperatorPortraits::gameThumbnailUrl($tenantId, $uid);
+                    $avatar = is_string($thumb) ? $thumb : '';
+                } catch (\Throwable) {
+                    $avatar = (string) ($portraits[$uid] ?? '');
+                }
+            }
+            $row['owner_avatar_url'] = $avatar;
+            unset($row['payload_text'], $row['pin_badge_label'], $row['pin_figure_path'], $row['is_featured']);
         }
         unset($row);
 

@@ -28,16 +28,26 @@ private _parseGrid = {
     [_gx, _gy]
 };
 
+// Même ordre que le téléphone natif (fn_unitCallsign) : jamais le pseudo Steam comme clé BFT
+// quand un indicatif tactique existe (sinon Adam + « Y 31 » apparaissent tous les deux).
 private _callsignOf = {
     params ["_unit"];
-    if (isNull _unit) exitWith { "Operateur" };
-    if (_unit isEqualTo player) exitWith { [] call comspec_overwatch_connect_fnc_getCallsign };
-    private _cs = _unit getVariable ["COMSPEC_Callsign", ""];
-    if (!(_cs isEqualType "")) then { _cs = str _cs; };
-    _cs = trim _cs;
-    if (_cs isEqualTo "" || {(toLower _cs) in ["unknown", "inconnu"]}) then {
-        _cs = trim (name _unit);
+    if (isNull _unit) exitWith { "" };
+    private _take = {
+        params ["_raw"];
+        if !(_raw isEqualType "") then { _raw = str _raw; };
+        _raw = trim _raw;
+        if (_raw isEqualTo "" || {(toLower _raw) in ["unknown", "inconnu", "operateur", "any", "<null>"]}) then { "" } else { _raw }
     };
+    private _cs = "";
+    { if (_cs isEqualTo "") then { _cs = [_unit getVariable [_x, ""]] call _take; }; } forEach [
+        "COMSPEC_ATAK_CsCustom", "COMSPEC_CallsignPublic", "COMSPEC_Callsign", "COMSPEC_AllyCallsign"
+    ];
+    if (_cs isEqualTo "" && {_unit isEqualTo player}) then {
+        _cs = [[] call comspec_overwatch_connect_fnc_getCallsign] call _take;
+    };
+    // Autre joueur sans indicatif : ne pas inventer le pseudo Steam (doublon avec Athena).
+    if (_cs isEqualTo "" && {!(_unit isEqualTo player)}) exitWith { "" };
     if (_cs isEqualTo "") then { _cs = "Operateur"; };
     _cs
 };
@@ -60,6 +70,8 @@ if ((count _pool) == 0) then { _pool = [player]; };
 {
     private _u = _x;
     private _cs = [_u] call _callsignOf;
+    // Sans indicatif : Athena (étape 2) remplira ; éviter une ligne « Adam » à côté de « Y 31 ».
+    if (_cs isEqualTo "") then { continue };
     private _gridStr = [_u] call comspec_overwatch_connect_fnc_gridPosition;
     if (_gridStr isEqualTo "") then { _gridStr = mapGridPosition _u; };
     private _grid = [_gridStr] call _parseGrid;
@@ -96,6 +108,30 @@ if ((_raw select [0, 3]) isEqualTo "OK|") then {
             private _statusAthena = if ((count _cols) >= 9) then { trim (_cols select 8) } else { "linked" };
             if (_ageAthena < 0) then { _ageAthena = 0; };
             private _existing = _byCs getOrDefault [_key, []];
+            // Piste Athena sous un autre libellé (ex. pseudo Steam) déjà présente localement sous l'indicatif :
+            // rattacher à la ligne locale la plus proche (< 40 m) plutôt que d'en créer une seconde.
+            if ((count _existing) < 7) then {
+                private _wxC = _wxAthena;
+                private _wyC = _wyAthena;
+                if ((abs _wxC) < 1 && {(abs _wyC) < 1}) then {
+                    _wxC = (_myPos select 0) + (_gx - (_myGrid select 0)) * 10;
+                    _wyC = (_myPos select 1) + (_gy - (_myGrid select 1)) * 10;
+                };
+                private _bestK = "";
+                private _bestD = 40;
+                {
+                    private _row = _y;
+                    if ((count _row) >= 7 && {!(_row select 3)}) then {
+                        private _d = ([_row select 4, _row select 5, 0] distance2D [_wxC, _wyC, 0]);
+                        if (_d < _bestD) then { _bestD = _d; _bestK = _x; };
+                    };
+                } forEach _byCs;
+                if (_bestK isNotEqualTo "") then {
+                    _existing = _byCs get _bestK;
+                    // Remplacer la clé locale (éventuellement un vieux libellé) par l'indicatif Athena.
+                    if (_bestK isNotEqualTo _key) then { _byCs deleteAt _bestK; };
+                };
+            };
             if ((count _existing) >= 7) then {
                 private _roleKeep = _existing select 6;
                 if (_roleKeep isEqualTo "" || {_roleKeep isEqualTo "Operator"}) then {

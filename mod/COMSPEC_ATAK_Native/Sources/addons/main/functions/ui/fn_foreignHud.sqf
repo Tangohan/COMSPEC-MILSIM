@@ -22,6 +22,8 @@ switch (_mode) do {
         missionNamespace setVariable ["COMSPEC_ATAK_ForeignNext", 0];
         missionNamespace setVariable ["COMSPEC_ATAK_ForeignNamesNext", 0];
         if ((missionNamespace getVariable ["COMSPEC_ATAK_ForeignPfh", -1]) >= 0) exitWith {};
+        // Cadence 10 Hz (pas chaque image) : remasquer les HUD étrangers reste assez réactif, moins de coût
+        // pendant un engagement avec le téléphone ouvert (SQF-C05).
         private _h = [{
             if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { ["stop"] call comspec_atak_native_fnc_foreignHud; };
             if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_ForeignNext", 0])) then {
@@ -30,7 +32,7 @@ switch (_mode) do {
             } else {
                 ["frame"] call comspec_atak_native_fnc_foreignHud;
             };
-        }, 0] call CBA_fnc_addPerFrameHandler;
+        }, 0.1] call CBA_fnc_addPerFrameHandler;
         missionNamespace setVariable ["COMSPEC_ATAK_ForeignPfh", _h];
     };
     case "stop": {

@@ -40,6 +40,42 @@ Changelog Steam (copier-coller) : [ATAK 2.7.0](docs/dev/STEAM-CHANGELOG-2026-10-
 
 ---
 
+## Pack 2.9.9 : apps, écrans ACE et carte sans doublon (ATAK natif 2.9.9.AE - Denver, COMSPEC Link 2.0.102)
+
+### Résumé joueur
+Type : nouveauté
+FR : Groupes d’apps, écrans ACE et carte sans doublon
+- Sur l’accueil : groupes d’apps, Calculette et Bloc-notes.
+- Sur une TV ou un écran sur trépied, ACE propose le réseau TOC, le PIP du poste et vos diapositives.
+- Sur la carte, un allié n’apparaît plus deux fois (pseudo Steam et indicatif).
+- La carte et les diapositives libèrent mieux la mémoire en session longue.
+EN : App groups, ACE screens and a map without duplicates
+- On the home screen: app groups, Calculator and Notes.
+- On a TV or tripod screen, ACE offers the TOC network, post PIP and your slides.
+- On the map, an ally no longer appears twice (Steam name and callsign).
+- The map and slides free memory better on long sessions.
+
+### Détail technique
+- Apps folders/calc/notes, tocScreen ACE + face remap, screenCast castOn, BFT callsign unify, atak-v2 UI-002/004/005/007/008, MEM-C02 Music/BT caps, Link 2.0.102.
+- UPDATE DevDispatch #1185–#1189.
+
+## Moins d’à-coups en combat et à la liaison (ATAK natif 2.9.6.AB - Denver, COMSPEC Link 2.0.101)
+
+### Résumé joueur
+Type : performance
+FR : L’image tient mieux pendant le tir et à la perte
+- Avec le téléphone porté, la petite carte et le calque Relais coûtent moins d’images en engagement.
+- Les envois de télémétrie et les commandes réseau lourdes ne figent plus la partie sur le fil de jeu.
+- À la perte, l’envoi vers le poste part sans bloquer l’image.
+EN : The picture holds up better while shooting and when you go down
+- With the phone carried, the small map and the Relays overlay cost fewer frames under fire.
+- Telemetry and heavy network commands no longer freeze the game on the game thread.
+- When you go down, the report to the TOC leaves without freezing the picture.
+
+### Détail technique
+- LOT-COMBAT / LOT-DLL / LOT-MEM (audit reprise) : Draw HUD, SendMarker/EmitTelemetry async, InAsyncWorker, MapPack.Count cache, plafonds files.
+- UPDATE DevDispatch #1181–#1183.
+
 ## Pack du téléphone (ATAK natif 2.9.5.AB - Denver, COMSPEC Link 2.0.100)
 
 ### Résumé joueur

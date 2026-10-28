@@ -17,6 +17,7 @@ if (_cs isEqualTo "" && {_unit isEqualTo player} && {!isNil "comspec_overwatch_c
     _cs = [[true] call comspec_overwatch_connect_fnc_getCallsign] call _take;
 };
 if (_cs isEqualTo "" && {!isNull _unit}) then { _cs = [_unit getVariable ["COMSPEC_CallsignPublic", ""]] call _take; };
+if (_cs isEqualTo "" && {!isNull _unit}) then { _cs = [_unit getVariable ["COMSPEC_Callsign", ""]] call _take; };
 if (_cs isEqualTo "" && {!isNull _unit}) then { _cs = [_unit getVariable ["COMSPEC_AllyCallsign", ""]] call _take; };
 if (_cs isNotEqualTo "" || {_allowEmpty}) exitWith { _cs };
 if (isNull _unit) exitWith { "" };

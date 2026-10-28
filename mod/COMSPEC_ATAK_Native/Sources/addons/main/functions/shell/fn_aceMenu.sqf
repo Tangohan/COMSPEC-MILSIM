@@ -219,4 +219,6 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
 
 // Caméras IP fixes : « Caméras > Poser une caméra » et actions sur la caméra posée (fn_camAction).
 ["aceInit"] call comspec_atak_native_fnc_camAction;
+// Écrans du jeu (TV, trépied, projecteur…) : TOC, PIP du poste et diapositives via ACE (fn_tocScreen).
+["aceInit"] call comspec_atak_native_fnc_tocScreen;
 true
