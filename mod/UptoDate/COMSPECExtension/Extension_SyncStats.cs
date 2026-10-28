@@ -46,6 +46,7 @@ public static partial class Extension
     /// <summary>Copie gardée au moment où l'empreinte part : un 304 la ressert même si le cache l'a évincée entre-temps.</summary>
     private static readonly HttpRequestOptionsKey<EtagEntry> EtagSentKey = new("comspec.etag");
     private const int TrafficWindowSeconds = 300;
+    private const int TrafficChannelsMax = 64;
     private static readonly ConcurrentDictionary<string, TrafficChannel> TrafficChannels = new();
     private static readonly ConcurrentDictionary<string, EtagEntry> EtagCache = new();
     private static readonly object TrafficLock = new();
@@ -213,6 +214,7 @@ public static partial class Extension
             }
             c.LastCode = code;
             Interlocked.Exchange(ref c.LastAtMs, now);
+            MaybePruneTrafficChannels();
             lock (TrafficLock)
             {
                 TrafficWindow.Enqueue((now, outBytes, inBytes));
@@ -222,6 +224,19 @@ public static partial class Extension
             }
         }
         catch { /* compteurs best-effort */ }
+    }
+
+    /// <summary>OPT-04 : garde au plus TrafficChannelsMax canaux (évince les plus anciens).</summary>
+    private static void MaybePruneTrafficChannels()
+    {
+        if (TrafficChannels.Count <= TrafficChannelsMax) return;
+        var victims = TrafficChannels
+            .OrderBy(static kv => Interlocked.Read(ref kv.Value.LastAtMs))
+            .Take(TrafficChannels.Count - TrafficChannelsMax)
+            .Select(static kv => kv.Key)
+            .ToList();
+        foreach (var k in victims)
+            TrafficChannels.TryRemove(k, out _);
     }
 
     /// <summary>Requête envoyée hors SendTimed (file d'envoi, télémétrie) : comptée sans toucher à la réponse.</summary>

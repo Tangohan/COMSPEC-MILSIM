@@ -74,5 +74,9 @@ py -3 -c "import sys" >nul 2>nul && set "PY=py -3"
 if not defined PY python -c "import sys; sys.exit(sys.version_info[0] < 3)" >nul 2>nul && set "PY=python"
 if not defined PY echo [ATTENTION] Python 3 introuvable : controle des PBO saute.
 if defined PY %PY% "%ROOT%tools\verify_build.py" "%OUT%\addons" --retire "%TEMP%\comspec_atak_retires" || (echo [ERREUR] PBO non conformes : ne pas publier. & exit /b 1)
+:: Signature BI des PBO (clé privée dans signing\, publique dans keys\).
+:: %ROOT% se termine par \ : les guillemets "%ROOT%" mangeraient le chemin. On retire le slash final.
+set "MODROOT=%ROOT:~0,-1%"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT%tools\sign_pbos.ps1" -ModRoot "%MODROOT%" || (echo [ERREUR] Signature PBO echouee. & exit /b 1)
 echo [OK] Mod autonome: %OUT%
 endlocal

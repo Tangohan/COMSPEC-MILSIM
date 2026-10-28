@@ -8,9 +8,13 @@ if ((count _email) < 5 || {(count _pass) < 1}) exitWith {
 private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
 private _pack = [] call comspec_overwatch_connect_fnc_packVersion;
 private _steam = if (!isNull player) then { getPlayerUID player } else { "" };
-if ((count _steam) >= 8) then {
-    ["COMSPECExtension" callExtension ["SetSteamId", [_steam]]] call comspec_overwatch_connect_fnc_extResult;
-};
 [(_d displayCtrl 9410), "<t align='center' size='0.55' color='#7aa89a'>Authentification en cours…</t>"] call comspec_overwatch_connect_fnc_setPlainText;
-["COMSPECExtension" callExtension ["AuthPassword", [_url, _email, _pass, _pack, _steam]]] call comspec_overwatch_connect_fnc_extResult;
-[] call comspec_overwatch_connect_fnc_pollAuth;
+// OPT-08 : HTTP hors fil jeu (bouton dialog = non suspendable → spawn + extAwait).
+[_url, _email, _pass, _pack, _steam] spawn {
+    params ["_url", "_email", "_pass", "_pack", "_steam"];
+    if ((count _steam) >= 8) then {
+        [["COMSPECExtension", "SetSteamId", [_steam]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
+    };
+    [["COMSPECExtension", "AuthPassword", [_url, _email, _pass, _pack, _steam], 40] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
+    [] call comspec_overwatch_connect_fnc_pollAuth;
+};

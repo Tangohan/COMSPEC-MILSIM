@@ -23,8 +23,9 @@ namespace COMSPECExtension;
 ///   MapCap.Collect [fichier, carte, rendu, hauteur, case, garder le PNG (0 | 1)] → OK|queued (vérification, correction
 ///     et rangement en tâche de fond ; vue plan : PNG gardé tel quel, sans correction)
 ///   MapCap.Poll → OK|&lt;cases rangées, virgules, ou -&gt;|&lt;cases sans image, ou -&gt;|&lt;en attente&gt;|&lt;Go libres&gt;
-///   MapCap.Scan [carte] → OK|&lt;nombre de morceaux&gt; : relit les tuiles de la carte sur le disque (dossier de capture et
-///     Screenshots, sous-dossiers compris ; celles de Screenshots sont rangées au passage)
+///   MapCap.Scan [carte] → OK|queued : relit les tuiles sur un fil à part (dossier de capture et Screenshots ;
+///     celles de Screenshots sont rangées au passage). Ancienne DLL : OK|&lt;nombre de morceaux&gt; synchrone.
+///   MapCap.ScanPoll → OK|busy | OK|ready|&lt;n&gt; | OK|idle | ERR|…
 ///   MapCap.Chunk [n] → morceau n du relevé : lignes « rendu|hauteur|pas|case,case… »
 ///   MapCap.Dir → OK|&lt;dossier de capture&gt;
 /// </summary>
@@ -38,6 +39,10 @@ public static partial class Extension
     private static readonly ConcurrentQueue<string> MapCapFailed = new();
     private static int _mapCapPending;
     private static List<string> _mapCapChunks = new();
+    private static readonly object MapCapScanLock = new();
+    // 0 idle · 1 parcours disque en cours · 2 prêt (chunks) · 3 erreur
+    private static int _mapCapScanState;
+    private static string _mapCapScanErr = "";
     private static string? _mapCapShotDir;
     private static readonly Dictionary<string, List<float[]>> MapCapGrades = new();
     private const int MapCapGradeSamples = 15;
@@ -184,6 +189,88 @@ public static partial class Extension
         return true;
     }
 
+    /// <summary>Parcours disque (dossier de capture + Screenshots) → morceaux pour MapCap.Chunk. Appelé hors fil jeu.</summary>
+    private static List<string> MapCapBuildChunks(string world)
+    {
+        // rendu|hauteur|pas -> cases (colonne × 10000 + ligne dans la grille calée sur les multiples du pas)
+        var layers = new Dictionary<string, HashSet<long>>(StringComparer.OrdinalIgnoreCase);
+        void Add(string path, bool fromShots)
+        {
+            var name = Path.GetFileName(path);
+            var m = MapCapName.Match(name);
+            if (!m.Success || !string.Equals(m.Groups["world"].Value, world, StringComparison.OrdinalIgnoreCase)) return;
+            try { if (new FileInfo(path).Length <= 1024) return; } catch { return; }
+            var mode = m.Groups["mode"].Value.ToLowerInvariant();
+            var h = m.Groups["h"].Value;
+            var step = long.Parse(m.Groups["step"].Value);
+            if (step <= 0) return;
+            var gx = (long)Math.Round(long.Parse(m.Groups["ox"].Value) / (double)step) + long.Parse(m.Groups["ix"].Value);
+            var gy = (long)Math.Round(long.Parse(m.Groups["oy"].Value) / (double)step) + long.Parse(m.Groups["iy"].Value);
+            var key = mode + "|" + h + "|" + step;
+            if (!layers.TryGetValue(key, out var set)) layers[key] = set = new HashSet<long>();
+            set.Add(gx * 10000 + gy);
+            // Tuile restée dans Screenshots (ancienne capture, ou triée à la main) : rangée (corrigée et compressée)
+            // en tâche de fond, sans bloquer le jeu ; le dossier se vide.
+            // Fichier modifié il y a moins de 10 s : le moteur l'écrit peut-être encore (MapCap.Collect le prendra).
+            var fresh = false;
+            if (fromShots)
+            {
+                try { fresh = DateTime.UtcNow - File.GetLastWriteTimeUtc(path) < TimeSpan.FromSeconds(10); } catch { fresh = true; }
+            }
+            if (fromShots && !fresh && MapCapQueued.TryAdd(path, 0))
+            {
+                _ = Task.Run(async () =>
+                {
+                    try { await MapCapStoreAsync(path, world, mode, h, name, false).ConfigureAwait(false); }
+                    catch { /* fichier ouvert : laissé */ }
+                    finally { MapCapQueued.TryRemove(path, out _); }
+                });
+            }
+        }
+        var root = Path.Combine(MapCapRoot(), MapCapSafe(world));
+        if (Directory.Exists(root))
+            foreach (var f in Directory.EnumerateFiles(root, "cmap_*", SearchOption.AllDirectories))
+                if (!f.EndsWith(".part", StringComparison.OrdinalIgnoreCase)) Add(f, false);
+        foreach (var dir in EnumerateScreenshotDirs())
+        {
+            try
+            {
+                // Sous-dossiers sur deux niveaux (tri à la main, ex. Screenshots\300) ; jamais plus profond.
+                var dirs = new List<string> { dir };
+                foreach (var s1 in Directory.EnumerateDirectories(dir))
+                {
+                    dirs.Add(s1);
+                    foreach (var s2 in Directory.EnumerateDirectories(s1)) dirs.Add(s2);
+                }
+                foreach (var d in dirs)
+                    foreach (var f in Directory.EnumerateFiles(d, "cmap_" + world + "_*")) Add(f, true);
+            }
+            catch { /* dossier inaccessible */ }
+        }
+        var chunks = new List<string>();
+        var sb = new StringBuilder();
+        foreach (var (key, set) in layers)
+        {
+            var ids = set.OrderBy(v => v).Select(v => v.ToString(System.Globalization.CultureInfo.InvariantCulture)).ToList();
+            var i = 0;
+            while (i < ids.Count)
+            {
+                var line = new StringBuilder(key + "|");
+                var first = true;
+                while (i < ids.Count && line.Length + ids[i].Length < 7000)
+                {
+                    if (!first) line.Append(',');
+                    line.Append(ids[i++]);
+                    first = false;
+                }
+                if (sb.Length + line.Length + 1 > 7500) { chunks.Add(sb.ToString()); sb.Clear(); }
+                sb.Append(line).Append('\n');
+            }
+        }
+        if (sb.Length > 0) chunks.Add(sb.ToString());
+        return chunks;
+    }
+
     private static string HandleMapCapture(string function, string?[] args)
     {
         switch (function)
@@ -288,89 +375,52 @@ public static partial class Extension
             {
                 if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0])) return "ERR|args";
                 var world = args[0]!;
-                // rendu|hauteur|pas -> cases (colonne × 10000 + ligne dans la grille calée sur les multiples du pas)
-                var layers = new Dictionary<string, HashSet<long>>(StringComparer.OrdinalIgnoreCase);
-                void Add(string path, bool fromShots)
-                {
-                    var name = Path.GetFileName(path);
-                    var m = MapCapName.Match(name);
-                    if (!m.Success || !string.Equals(m.Groups["world"].Value, world, StringComparison.OrdinalIgnoreCase)) return;
-                    try { if (new FileInfo(path).Length <= 1024) return; } catch { return; }
-                    var mode = m.Groups["mode"].Value.ToLowerInvariant();
-                    var h = m.Groups["h"].Value;
-                    var step = long.Parse(m.Groups["step"].Value);
-                    if (step <= 0) return;
-                    var gx = (long)Math.Round(long.Parse(m.Groups["ox"].Value) / (double)step) + long.Parse(m.Groups["ix"].Value);
-                    var gy = (long)Math.Round(long.Parse(m.Groups["oy"].Value) / (double)step) + long.Parse(m.Groups["iy"].Value);
-                    var key = mode + "|" + h + "|" + step;
-                    if (!layers.TryGetValue(key, out var set)) layers[key] = set = new HashSet<long>();
-                    set.Add(gx * 10000 + gy);
-                    // Tuile restée dans Screenshots (ancienne capture, ou triée à la main) : rangée (corrigée et compressée)
-                    // en tâche de fond, sans bloquer le jeu ; le dossier se vide.
-                    // Fichier modifié il y a moins de 10 s : le moteur l'écrit peut-être encore (MapCap.Collect le prendra).
-                    var fresh = false;
-                    if (fromShots)
-                    {
-                        try { fresh = DateTime.UtcNow - File.GetLastWriteTimeUtc(path) < TimeSpan.FromSeconds(10); } catch { fresh = true; }
-                    }
-                    if (fromShots && !fresh && MapCapQueued.TryAdd(path, 0))
-                    {
-                        _ = Task.Run(async () =>
-                        {
-                            try { await MapCapStoreAsync(path, world, mode, h, name, false).ConfigureAwait(false); }
-                            catch { /* fichier ouvert : laissé */ }
-                            finally { MapCapQueued.TryRemove(path, out _); }
-                        });
-                    }
-                }
-                var root = Path.Combine(MapCapRoot(), MapCapSafe(world));
-                if (Directory.Exists(root))
-                    foreach (var f in Directory.EnumerateFiles(root, "cmap_*", SearchOption.AllDirectories))
-                        if (!f.EndsWith(".part", StringComparison.OrdinalIgnoreCase)) Add(f, false);
-                foreach (var dir in EnumerateScreenshotDirs())
+                // OPT-07 : parcours disque hors fil jeu. Un seul Scan à la fois (OK|busy sinon).
+                if (Interlocked.CompareExchange(ref _mapCapScanState, 1, 0) != 0)
+                    return "OK|busy";
+                _mapCapScanErr = "";
+                _ = Task.Run(() =>
                 {
                     try
                     {
-                        // Sous-dossiers sur deux niveaux (tri à la main, ex. Screenshots\300) ; jamais plus profond.
-                        var dirs = new List<string> { dir };
-                        foreach (var s1 in Directory.EnumerateDirectories(dir))
-                        {
-                            dirs.Add(s1);
-                            foreach (var s2 in Directory.EnumerateDirectories(s1)) dirs.Add(s2);
-                        }
-                        foreach (var d in dirs)
-                            foreach (var f in Directory.EnumerateFiles(d, "cmap_" + world + "_*")) Add(f, true);
+                        var chunks = MapCapBuildChunks(world);
+                        lock (MapCapScanLock) { _mapCapChunks = chunks; }
+                        Volatile.Write(ref _mapCapScanState, 2);
                     }
-                    catch { /* dossier inaccessible */ }
-                }
-                var chunks = new List<string>();
-                var sb = new StringBuilder();
-                foreach (var (key, set) in layers)
-                {
-                    var ids = set.OrderBy(v => v).Select(v => v.ToString(System.Globalization.CultureInfo.InvariantCulture)).ToList();
-                    var i = 0;
-                    while (i < ids.Count)
+                    catch
                     {
-                        var line = new StringBuilder(key + "|");
-                        var first = true;
-                        while (i < ids.Count && line.Length + ids[i].Length < 7000)
-                        {
-                            if (!first) line.Append(',');
-                            line.Append(ids[i++]);
-                            first = false;
-                        }
-                        if (sb.Length + line.Length + 1 > 7500) { chunks.Add(sb.ToString()); sb.Clear(); }
-                        sb.Append(line).Append('\n');
+                        _mapCapScanErr = "scan";
+                        Volatile.Write(ref _mapCapScanState, 3);
                     }
+                });
+                return "OK|queued";
+            }
+
+            case "MapCap.ScanPoll":
+            {
+                var st = Volatile.Read(ref _mapCapScanState);
+                if (st == 1) return "OK|busy";
+                if (st == 2)
+                {
+                    int n;
+                    lock (MapCapScanLock) { n = _mapCapChunks.Count; }
+                    Interlocked.CompareExchange(ref _mapCapScanState, 0, 2);
+                    return "OK|ready|" + n.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 }
-                if (sb.Length > 0) chunks.Add(sb.ToString());
-                _mapCapChunks = chunks;
-                return "OK|" + chunks.Count;
+                if (st == 3)
+                {
+                    var err = string.IsNullOrEmpty(_mapCapScanErr) ? "scan" : _mapCapScanErr;
+                    Interlocked.CompareExchange(ref _mapCapScanState, 0, 3);
+                    return "ERR|" + err;
+                }
+                return "OK|idle";
             }
 
             case "MapCap.Chunk":
             {
-                var chunks = _mapCapChunks;
+                if (Volatile.Read(ref _mapCapScanState) == 1) return "ERR|busy";
+                List<string> chunks;
+                lock (MapCapScanLock) { chunks = _mapCapChunks; }
                 if (args.Length < 1 || !int.TryParse(args[0], out var n) || n < 0 || n >= chunks.Count) return "ERR|range";
                 return "OK|" + chunks[n];
             }

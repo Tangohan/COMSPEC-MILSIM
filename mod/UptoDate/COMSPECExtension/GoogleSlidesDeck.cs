@@ -13,7 +13,11 @@ namespace COMSPECExtension;
 internal static class GoogleSlidesDeck
 {
     private static readonly HttpClient Http = CreateClient();
-    private static readonly ConcurrentDictionary<string, IReadOnlyList<string>> PageIdCache = new(StringComparer.Ordinal);
+    /// <summary>OPT-03 : page IDs bornés + TTL (évite diapos stale et croissance illimitée).</summary>
+    private static readonly ConcurrentDictionary<string, (IReadOnlyList<string> Ids, long TouchedMs)> PageIdCache =
+        new(StringComparer.Ordinal);
+    private const int PageIdCacheMax = 8;
+    private const long PageIdCacheTtlMs = 30 * 60 * 1000;
     private static readonly object Gate = new();
     private static CancellationTokenSource? _cts;
     private static string _activeRequestId = "";
@@ -114,7 +118,17 @@ internal static class GoogleSlidesDeck
             _cts?.Cancel();
             _activeRequestId = "";
         }
+        PageIdCache.Clear();
         return "[\"ok\"]";
+    }
+
+    private static void PutPageIds(string presentationId, IReadOnlyList<string> ids)
+    {
+        PageIdCache[presentationId] = (ids, Environment.TickCount64);
+        if (PageIdCache.Count <= PageIdCacheMax) return;
+        foreach (var old in PageIdCache.OrderBy(static kv => kv.Value.TouchedMs)
+                     .Take(PageIdCache.Count - PageIdCacheMax).ToArray())
+            PageIdCache.TryRemove(old.Key, out _);
     }
 
     private static bool IsActive(string requestId)
@@ -221,9 +235,11 @@ internal static class GoogleSlidesDeck
         if (presentationId.Length < 10 || requestId.Length == 0)
             return "[\"rejected\",\"invalid_request\"]";
 
-        if (!PageIdCache.TryGetValue(presentationId, out var pageIds) || pageIds.Count == 0)
+        if (!PageIdCache.TryGetValue(presentationId, out var cached) || cached.Ids.Count == 0)
             return "[\"rejected\",\"no_manifest\"]";
 
+        var pageIds = cached.Ids;
+        PageIdCache[presentationId] = (pageIds, Environment.TickCount64);
         if (index < 0) index = 0;
         if (index >= pageIds.Count) index = pageIds.Count - 1;
 
@@ -275,8 +291,13 @@ internal static class GoogleSlidesDeck
         string presentationId,
         CancellationToken token)
     {
-        if (PageIdCache.TryGetValue(presentationId, out var cached) && cached.Count > 0)
-            return cached;
+        if (PageIdCache.TryGetValue(presentationId, out var cached)
+            && cached.Ids.Count > 0
+            && Environment.TickCount64 - cached.TouchedMs < PageIdCacheTtlMs)
+        {
+            PageIdCache[presentationId] = (cached.Ids, Environment.TickCount64);
+            return cached.Ids;
+        }
 
         var candidates = new List<string>
         {
@@ -316,7 +337,7 @@ internal static class GoogleSlidesDeck
         if (found.Count == 0)
             found.Add(""); // first-slide export without pageid
 
-        PageIdCache[presentationId] = found;
+        PutPageIds(presentationId, found);
         return found;
     }
 

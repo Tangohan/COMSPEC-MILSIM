@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.101";
+    private const string ExtensionVersion = "2.0.109";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -69,7 +69,8 @@ public static partial class Extension
     private static readonly ConcurrentDictionary<string, (string Url, string Body)> PendingMarkersByName =
         new(StringComparer.OrdinalIgnoreCase);
     private static readonly int MaxQueueSize = 500;
-    private static readonly object QueueDrainLock = new();
+    /// <summary>1 = un drain HTTP async en cours (timer ne s’empile pas ; remplace GetResult + QueueDrainLock).</summary>
+    private static int _drainInFlight;
     /// <summary>
     /// Dernière position en attente de retry (coupure / 429). Coalescée : une seule entrée,
     /// toujours la plus récente — évite de rejouer des positions périmées à la reconnexion.
@@ -140,7 +141,15 @@ public static partial class Extension
         // L'API Athena ne redirige jamais ses routes (docs/migration-domaine-athena-comspec.md, étape 6). Seul un
         // client qui n'attache jamais de secret (tuiles publiques : MapPhotoHttp) suit les redirections ; les images
         // de briefing les suivent à la main, sans secret hors Athena (SendImageGetFollowingRedirects).
-        var handler = new SocketsHttpHandler { AllowAutoRedirect = followRedirects };
+        // OPT-01 : plafond de connexions par hôte — sans cela FAF + polls + drain + AsyncGate ouvraient trop
+        // de sockets vers Athena et retardaient le BFT. 8 = AsyncGate(6) + marge drain/poll.
+        var handler = new SocketsHttpHandler
+        {
+            AllowAutoRedirect = followRedirects,
+            MaxConnectionsPerServer = 8,
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+        };
         var client = new HttpClient(handler)
         {
             Timeout = TimeSpan.FromSeconds(timeoutSeconds),
@@ -182,10 +191,17 @@ public static partial class Extension
         var info = GC.GetGCMemoryInfo();
         var heap = info.HeapSizeBytes / (1024d * 1024d);
         var commit = info.TotalCommittedBytes / (1024d * 1024d);
+        var fifo = PendingPosts.Count;
+        var markers = PendingMarkersByName.Count;
+        var tel = TelemetryQueueDepth();
+        var pos = 0;
+        lock (CoalescedPositionLock) { if (_coalescedPosition is not null) pos = 1; }
+        var poll = PollGetCache.Count;
+        var drain = System.Threading.Interlocked.CompareExchange(ref _drainInFlight, 0, 0);
         return string.Format(
             System.Globalization.CultureInfo.InvariantCulture,
-            "ws_mb={0:F0}|gc_mb={1:F0}|heap_mb={2:F0}|commit_mb={3:F0}",
-            ws, gc, heap, commit);
+            "ws_mb={0:F0}|gc_mb={1:F0}|heap_mb={2:F0}|commit_mb={3:F0}|fifo={4}|markers={5}|tel={6}|pos={7}|poll={8}|drain={9}",
+            ws, gc, heap, commit, fifo, markers, tel, pos, poll, drain);
     }
 
     private static void NoteMem(string reason)
@@ -989,6 +1005,44 @@ public static partial class Extension
     private static bool IsTacticalQueuedEndpoint(string url) =>
         IsFlightManifestEndpoint(url) || IsMarkerEndpoint(url);
 
+    /// <summary>
+    /// Analytics périodiques (temps d’écran, distances, escouade, Garmin, conditions réseau) :
+    /// toujours file drainée — un POST FAF concurrent monoplisait HttpClient face au drain positions (F-DLL-11).
+    /// </summary>
+    private static bool IsAnalyticsQueuedEndpoint(string url) =>
+        url.Contains("/api/atak/screen-time", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/distance", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/squads", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/garmin", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/net-conditions", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/briefing-plan", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// BACKGROUND (OPT-02) : remplacables / non urgents — file drainée, jamais de drop silencieux
+    /// (contrairement au best-effort vidéo qui peut être abandonné sous cooldown).
+    /// </summary>
+    private static bool IsBackgroundQueuedEndpoint(string url) =>
+        url.Contains("/api/atak/playtime", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/viewshed", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/relays", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/rf-hits", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/explosive-timers", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// PRIORITY (OPT-06) : messagerie, CAS, renseignement, pings — file drainée (pas de FAF),
+    /// jamais de drop silencieux. Le drain place encore les positions avant ces envois.
+    /// </summary>
+    private static bool IsPriorityQueuedEndpoint(string url) =>
+        url.Contains("/api/chat", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/cas/", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/intel", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/intel/", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/recon/", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/pings", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/designator", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/laser-codes", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("/api/atak/sigint", StringComparison.OrdinalIgnoreCase);
+
     private static bool IsMarkerEndpoint(string url) =>
         url.Contains("/api/atak/marker", StringComparison.OrdinalIgnoreCase)
         && !url.Contains("/api/atak/markers", StringComparison.OrdinalIgnoreCase)
@@ -1030,7 +1084,20 @@ public static partial class Extension
     private static bool IsEndpointCoolingNow(string url)
     {
         if (string.IsNullOrEmpty(url) || EndpointCooldowns.IsEmpty) return false;
+        MaybePruneEndpointCooldowns();
         return EndpointCooldowns.TryGetValue(EndpointKey(url), out var c) && DateTime.UtcNow.Ticks < c.Until;
+    }
+
+    /// <summary>OPT-04 : retire les pauses expirées si la table grossit (session longue).</summary>
+    private static void MaybePruneEndpointCooldowns()
+    {
+        if (EndpointCooldowns.Count < 64) return;
+        var now = DateTime.UtcNow.Ticks;
+        foreach (var kv in EndpointCooldowns)
+        {
+            if (kv.Value.Until < now)
+                EndpointCooldowns.TryRemove(kv.Key, out _);
+        }
     }
 
     /// <summary>503 « maintenance » (site entier en pause) : reste une pause globale.</summary>
@@ -1632,8 +1699,8 @@ public static partial class Extension
             + total.ToString(System.Globalization.CultureInfo.InvariantCulture) + ")");
     }
 
-    /// <summary>Envoi synchrone d’un item de file. false = stop drain (429).</summary>
-    private static bool TrySendQueuedPost((string Url, string Body) item)
+    /// <summary>Envoi async d’un item de file (drain). false = stop drain (429/503/réseau).</summary>
+    private static async Task<bool> TrySendQueuedPostAsync((string Url, string Body) item)
     {
         // SEC-001 : adresse que IsSecretSafeUri refuse, typiquement reprise du disque (queue.jsonl / position.json
         // écrits par une version détournée, ou fichier modifié) : AddQueueSecrets y mettrait la clé et le jeton de
@@ -1666,7 +1733,8 @@ public static partial class Extension
                 Content = JsonContent(AddQueueSecrets(item.Body))
             };
             AttachApiKeyHeader(req);
-            using var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
+            // await : le minuteur / worker ne monopolise plus HttpClient via GetResult (F-DLL-06).
+            using var response = await HttpClient.SendAsync(req).ConfigureAwait(false);
             var sentCode = (int)response.StatusCode;
             JournalHttp(started, sentCode);
             NoteTrafficUntracked(req, response);
@@ -1749,119 +1817,128 @@ public static partial class Extension
         if (IsRateLimitedNow() || IsNetworkBackoffNow()) return;
         // Clé ou compte refusés pour de bon : la file attend la nouvelle liaison au lieu d'être renvoyée chaque seconde.
         if (IsAuthLatched()) return;
-        // Passage précédent encore en cours (Athena lente) : on le laisse finir au lieu d'empiler des threads
-        // sur le verrou (les minuteurs se chevauchent et affamaient les appels Async, sondages et journaux).
-        if (!System.Threading.Monitor.TryEnter(QueueDrainLock)) return;
-        try
+        // Un drain actif max (timer chevauché + HTTP async) : ne pas empiler de workers ni bloquer 8×N s via GetResult.
+        // _drainInFlight remplace Monitor pendant l’await (Exit sur un autre fil après ConfigureAwait casserait le verrou).
+        if (System.Threading.Interlocked.CompareExchange(ref _drainInFlight, 1, 0) != 0) return;
+        _ = Task.Run(async () =>
         {
-            // Phase A : lot priorisé d’abord (compte dans le budget HTTP du tick).
-            // Le lot n'arrête plus le passage : tant que le joueur bouge il n'est jamais vide, et marqueurs,
-            // manifestes et rapports attendaient l'arrêt du joueur (puis partaient en rafale).
-            var telemetrySent = TryDrainTelemetryBatch();
-            if (telemetrySent)
+            try
             {
-                // Re-jitter périodique pour désynchroniser les clients.
-                try { EnsureDrainTimer(rejitter: true); } catch { /* ignore */ }
-                // Athena vient de demander une pause (429/503, réseau) : on s'arrête là, comme avant.
-                if (IsPostPausedNow())
-                {
-                    PersistQueueToDisk();
-                    return;
-                }
+                await DrainQueueCoreAsync().ConfigureAwait(false);
             }
+            finally
+            {
+                System.Threading.Interlocked.Exchange(ref _drainInFlight, 0);
+            }
+        });
+    }
 
-            const int maxPerTick = 3;
-            var sent = telemetrySent ? 1 : 0;
-            // Télémétrie active : un seul envoi de la file par passage (prudence, le lot occupe déjà la connexion).
-            var fifoLeft = telemetrySent ? 1 : maxPerTick;
-            var networkPause = IsNetworkBackoffNow();
-            // Toujours la position coalescée en premier (freshness > ordre FIFO).
-            var hadCoalesced = TryTakeCoalescedPosition(out var posItem);
-            if (hadCoalesced && IsEndpointCoolingNow(posItem.Url))
-            {
-                EnqueueForRetry(posItem.Url, posItem.Body);
-            }
-            else if (hadCoalesced)
-            {
-                if (!TrySendQueuedPost(posItem))
-                    return;
-                sent++;
-            }
-            // Un tour de file au plus : les envois remis en file (adresse en pause) ne sont pas relus.
-            var scanLeft = PendingPosts.Count;
-            while (sent < maxPerTick && fifoLeft > 0 && scanLeft-- > 0 && PendingPosts.TryDequeue(out var item))
-            {
-                if (!TryResolveQueuedUrl(ref item))
-                {
-                    EnqueueForRetry(item.Url, item.Body);
-                    break;
-                }
-                // Positions résiduelles dans l’ancienne FIFO : si le slot coalescé
-                // n’existait pas, on coalesce (dernière gagne) ; sinon ce sont des périmées.
-                if (IsPositionEndpoint(item.Url))
-                {
-                    if (!hadCoalesced)
-                        EnqueueForRetry(item.Url, item.Body);
-                    continue;
-                }
-                if (IsMarkerEndpoint(item.Url))
-                {
-                    EnqueueForRetry(item.Url, item.Body);
-                    continue;
-                }
-                // DLL-007 / NET-007 : déjà retiré de la FIFO — ne pas abandonner météo / flux pendant une pause.
-                if (IsBestEffortEndpoint(item.Url) && (networkPause || IsBestEffortCoolingNow()))
-                {
-                    EnqueueForRetry(item.Url, item.Body);
-                    continue;
-                }
-                if (IsEndpointCoolingNow(item.Url))
-                {
-                    if (!IsBestEffortEndpoint(item.Url))
-                        EnqueueForRetry(item.Url, item.Body);
-                    continue;
-                }
-                if (!TrySendQueuedPost(item))
-                    break;
-                sent++;
-                fifoLeft--;
-            }
-            // Marqueurs coalescés (budget restant).
-            if (sent < maxPerTick && !PendingMarkersByName.IsEmpty)
-            {
-                foreach (var key in PendingMarkersByName.Keys)
-                {
-                    if (sent >= maxPerTick) break;
-                    if (!PendingMarkersByName.TryRemove(key, out var mk)) continue;
-                    if (!TryResolveQueuedUrl(ref mk))
-                    {
-                        EnqueueForRetry(mk.Url, mk.Body);
-                        break;
-                    }
-                    if (IsEndpointCoolingNow(mk.Url))
-                    {
-                        EnqueueForRetry(mk.Url, mk.Body);
-                        break;
-                    }
-                    if (!TrySendQueuedPost(mk))
-                        break;
-                    sent++;
-                }
-            }
-            // Flush d’une position uniquement issue du balayage FIFO (si budget restant).
-            if (!hadCoalesced && sent < maxPerTick && TryTakeCoalescedPosition(out var fromFifo))
-            {
-                if (IsEndpointCoolingNow(fromFifo.Url))
-                    EnqueueForRetry(fromFifo.Url, fromFifo.Body);
-                else
-                    TrySendQueuedPost(fromFifo);
-            }
-            PersistQueueToDisk();
-        }
-        finally
+    /// <summary>Corps du drain HTTP async (un seul via _drainInFlight ; maxPerTick inchangé).</summary>
+    private static async Task DrainQueueCoreAsync()
+    {
+        // Phase A : lot priorisé d’abord (compte dans le budget HTTP du tick).
+        // Le lot n'arrête plus le passage : tant que le joueur bouge il n'est jamais vide, et marqueurs,
+        // manifestes et rapports attendaient l'arrêt du joueur (puis partaient en rafale).
+        var telemetrySent = await TryDrainTelemetryBatchAsync().ConfigureAwait(false);
+        if (telemetrySent)
         {
-            System.Threading.Monitor.Exit(QueueDrainLock);
+            // Re-jitter périodique pour désynchroniser les clients.
+            try { EnsureDrainTimer(rejitter: true); } catch { /* ignore */ }
+            // Athena vient de demander une pause (429/503, réseau) : on s'arrête là, comme avant.
+            if (IsPostPausedNow())
+            {
+                PersistQueueToDisk();
+                return;
+            }
         }
+
+        const int maxPerTick = 3;
+        var sent = telemetrySent ? 1 : 0;
+        // Télémétrie active : un seul envoi de la file par passage (prudence, le lot occupe déjà la connexion).
+        var fifoLeft = telemetrySent ? 1 : maxPerTick;
+        var networkPause = IsNetworkBackoffNow();
+        // Toujours la position coalescée en premier (freshness > ordre FIFO).
+        var hadCoalesced = TryTakeCoalescedPosition(out var posItem);
+        if (hadCoalesced && IsEndpointCoolingNow(posItem.Url))
+        {
+            EnqueueForRetry(posItem.Url, posItem.Body);
+        }
+        else if (hadCoalesced)
+        {
+            if (!await TrySendQueuedPostAsync(posItem).ConfigureAwait(false))
+                return;
+            sent++;
+        }
+        // Un tour de file au plus : les envois remis en file (adresse en pause) ne sont pas relus.
+        var scanLeft = PendingPosts.Count;
+        while (sent < maxPerTick && fifoLeft > 0 && scanLeft-- > 0 && PendingPosts.TryDequeue(out var item))
+        {
+            if (!TryResolveQueuedUrl(ref item))
+            {
+                EnqueueForRetry(item.Url, item.Body);
+                break;
+            }
+            // Positions résiduelles dans l’ancienne FIFO : si le slot coalescé
+            // n’existait pas, on coalesce (dernière gagne) ; sinon ce sont des périmées.
+            if (IsPositionEndpoint(item.Url))
+            {
+                if (!hadCoalesced)
+                    EnqueueForRetry(item.Url, item.Body);
+                continue;
+            }
+            if (IsMarkerEndpoint(item.Url))
+            {
+                EnqueueForRetry(item.Url, item.Body);
+                continue;
+            }
+            // DLL-007 / NET-007 : déjà retiré de la FIFO — ne pas abandonner météo / flux pendant une pause.
+            if (IsBestEffortEndpoint(item.Url) && (networkPause || IsBestEffortCoolingNow()))
+            {
+                EnqueueForRetry(item.Url, item.Body);
+                continue;
+            }
+            if (IsEndpointCoolingNow(item.Url))
+            {
+                if (!IsBestEffortEndpoint(item.Url))
+                    EnqueueForRetry(item.Url, item.Body);
+                continue;
+            }
+            if (!await TrySendQueuedPostAsync(item).ConfigureAwait(false))
+                break;
+            sent++;
+            fifoLeft--;
+        }
+        // Marqueurs coalescés (budget restant).
+        if (sent < maxPerTick && !PendingMarkersByName.IsEmpty)
+        {
+            foreach (var key in PendingMarkersByName.Keys)
+            {
+                if (sent >= maxPerTick) break;
+                if (!PendingMarkersByName.TryRemove(key, out var mk)) continue;
+                if (!TryResolveQueuedUrl(ref mk))
+                {
+                    EnqueueForRetry(mk.Url, mk.Body);
+                    break;
+                }
+                if (IsEndpointCoolingNow(mk.Url))
+                {
+                    EnqueueForRetry(mk.Url, mk.Body);
+                    break;
+                }
+                if (!await TrySendQueuedPostAsync(mk).ConfigureAwait(false))
+                    break;
+                sent++;
+            }
+        }
+        // Flush d’une position uniquement issue du balayage FIFO (si budget restant).
+        if (!hadCoalesced && sent < maxPerTick && TryTakeCoalescedPosition(out var fromFifo))
+        {
+            if (IsEndpointCoolingNow(fromFifo.Url))
+                EnqueueForRetry(fromFifo.Url, fromFifo.Body);
+            else
+                await TrySendQueuedPostAsync(fromFifo).ConfigureAwait(false);
+        }
+        PersistQueueToDisk();
     }
 
     private static int _diskQueueLoaded;
@@ -2429,7 +2506,10 @@ public static partial class Extension
         }
         // Relevés terrain / scène : file drainée (position d’abord). Un POST immédiat
         // pendant un relevé saturait HttpClient → timeout position (−1) puis faux 429.
-        if (IsHeavyIngestEndpoint(url) || IsTacticalQueuedEndpoint(url) || IsVideoFeedsEndpoint(url))
+        // Analytics + BACKGROUND (playtime, relays, RF…) : même file — plus de FAF parallèle (F-DLL-11 / OPT-02).
+        if (IsHeavyIngestEndpoint(url) || IsTacticalQueuedEndpoint(url) || IsVideoFeedsEndpoint(url)
+            || IsAnalyticsQueuedEndpoint(url) || IsBackgroundQueuedEndpoint(url)
+            || IsPriorityQueuedEndpoint(url))
         {
             if (IsVideoFeedsEndpoint(url)
                 && (IsRateLimitedNow() || IsNetworkBackoffNow() || IsBestEffortCoolingNow()))
@@ -2621,6 +2701,30 @@ public static partial class Extension
     }
 
     private static readonly ConcurrentDictionary<string, PollGetSlot> PollGetCache = new();
+    private const int PollGetCacheMaxEntries = 64;
+    private const long PollGetCacheStaleMs = 300_000;
+
+    /// <summary>OPT-04 : évince les sondages inactifs (session longue, changement de carte / tenant).</summary>
+    private static void MaybePrunePollGetCache()
+    {
+        if (PollGetCache.Count <= PollGetCacheMaxEntries) return;
+        var now = Environment.TickCount64;
+        foreach (var kv in PollGetCache)
+        {
+            var s = kv.Value;
+            if (System.Threading.Interlocked.CompareExchange(ref s.InFlight, 0, 0) != 0) continue;
+            if (s.FetchedAtMs != 0 && now - s.FetchedAtMs < PollGetCacheStaleMs) continue;
+            PollGetCache.TryRemove(kv.Key, out _);
+            if (PollGetCache.Count <= PollGetCacheMaxEntries) return;
+        }
+        if (PollGetCache.Count <= PollGetCacheMaxEntries) return;
+        foreach (var kv in PollGetCache.OrderBy(static x => x.Value.FetchedAtMs).ToArray())
+        {
+            if (System.Threading.Interlocked.CompareExchange(ref kv.Value.InFlight, 0, 0) != 0) continue;
+            PollGetCache.TryRemove(kv.Key, out _);
+            if (PollGetCache.Count <= PollGetCacheMaxEntries) break;
+        }
+    }
 
     /// <summary>
     /// Retourne tout de suite le dernier résultat connu et rafraîchit en arrière-plan.
@@ -2637,6 +2741,7 @@ public static partial class Extension
         if (IsFeatureLatched(url))
             return "ERR|" + FeatureLatchCode(url);
 
+        MaybePrunePollGetCache();
         var slot = PollGetCache.GetOrAdd(cacheKey, static _ => new PollGetSlot());
         slot.Url = url;
         var now = Environment.TickCount64;
@@ -3272,7 +3377,8 @@ public static partial class Extension
 
     /// <summary>
     /// Pages que le téléphone ouvre dans le navigateur du joueur. Pas le reste du portail :
-    /// liaison (/lier), carte (/atak), formulaire 9-LINE (/9-line), avec ou sans le préfixe /public.
+    /// liaison (/lier), carte (/atak), formulaire 9-LINE (/9-line), coque mobile et liaisons QR
+    /// (/connect/…, /atak/mobile/…), avec ou sans le préfixe /public.
     /// </summary>
     private static bool IsOpenablePortalPage(Uri uri)
     {
@@ -3280,12 +3386,24 @@ public static partial class Extension
         if (path.Contains("..", StringComparison.Ordinal)) return false;
         path = path.TrimEnd('/');
         if (path.Length == 0) path = "/";
-        return path.Equals("/lier", StringComparison.OrdinalIgnoreCase)
+        if (path.Equals("/lier", StringComparison.OrdinalIgnoreCase)
             || path.Equals("/public/lier", StringComparison.OrdinalIgnoreCase)
             || path.Equals("/atak", StringComparison.OrdinalIgnoreCase)
             || path.Equals("/public/atak", StringComparison.OrdinalIgnoreCase)
             || path.Equals("/9-line", StringComparison.OrdinalIgnoreCase)
-            || path.Equals("/public/9-line", StringComparison.OrdinalIgnoreCase);
+            || path.Equals("/public/9-line", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/connect", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/public/connect", StringComparison.OrdinalIgnoreCase))
+            return true;
+        // Liaison QR (jeton) et coque téléphone : /connect/{token}[/carte|sitac|…], /atak/mobile/{module}
+        if (path.StartsWith("/connect/", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/public/connect/", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/atak/connect/", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/public/atak/connect/", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/atak/mobile", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/public/atak/mobile", StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
     }
 
     private static bool IsSecretSafeUri(string? url) =>
@@ -3490,15 +3608,54 @@ public static partial class Extension
     private static readonly AsyncLocal<bool> InAsyncWorker = new();
 
     /// <summary>
-    /// Commandes reçues par « Async » qui ne font que construire un JSON et le mettre en file (EnqueueOrSend) :
-    /// aucune attente réseau, donc pas de passage par AsyncGate. Ne JAMAIS y ajouter une commande qui appelle
-    /// SendGet / SendJsonPost (elle bloquerait le thread du jeu).
+    /// Commandes reçues par « Async » hors AsyncGate (Task.Run seul) : file locale / parse JSON, ou lecture
+    /// disque (ImageDataChunk). Ne JAMAIS y ajouter une commande qui fait SendGet/SendJsonPost *et* est
+    /// aussi appelée en sync hors Async (le fil jeu bloquerait). ImageDataChunk : offset &gt; 0 = disque ;
+    /// offset 0 HTTP tourne sur le pool sans saturer la porte des 6 slots HTTP (briefing ~200 chunks).
     /// </summary>
     private static readonly HashSet<string> AsyncLocalCommands = new(StringComparer.Ordinal)
     {
         "UpdatePosition", "EmitTelemetry", "SendMarker", "SendFlightManifest", "SendWeather",
-        "Distance.Batch", "Squad.Sync", "ScreenTime.Report", "ScreenTime.Batch", "Garmin.Report", "NetConditions.Report",
+        "SendSigint", "SendRfHit", "UpdateVehicleTracking",
+        "Distance.Batch", "Squad.Sync", "ScreenTime.Report", "ScreenTime.Batch", "Garmin.Report",
+        "NetConditions.Report", "BriefingPlan.Push", "ImageDataChunk",
     };
+
+    /// <summary>Cache octets ImageDataChunk* (évite ReadAllBytes × N chunks, F-DLL-08). Clé = chemin absolu.</summary>
+    private static readonly ConcurrentDictionary<string, (byte[] Bytes, long TouchedMs)> ImageChunkByteCache =
+        new(StringComparer.OrdinalIgnoreCase);
+    private const int ImageChunkCacheTtlMs = 120_000;
+    private const int ImageChunkCacheMaxEntries = 4;
+
+    private static byte[]? TryGetImageChunkBytes(string fullPath)
+    {
+        if (!ImageChunkByteCache.TryGetValue(fullPath, out var slot))
+            return null;
+        if (Environment.TickCount64 - slot.TouchedMs > ImageChunkCacheTtlMs)
+        {
+            ImageChunkByteCache.TryRemove(fullPath, out _);
+            return null;
+        }
+        ImageChunkByteCache[fullPath] = (slot.Bytes, Environment.TickCount64);
+        return slot.Bytes;
+    }
+
+    private static void PutImageChunkBytes(string fullPath, byte[] bytes)
+    {
+        ImageChunkByteCache[fullPath] = (bytes, Environment.TickCount64);
+        if (ImageChunkByteCache.Count <= ImageChunkCacheMaxEntries) return;
+        foreach (var old in ImageChunkByteCache.OrderBy(kv => kv.Value.TouchedMs).Take(ImageChunkByteCache.Count - ImageChunkCacheMaxEntries).ToArray())
+            ImageChunkByteCache.TryRemove(old.Key, out _);
+    }
+
+    private static byte[] LoadImageChunkBytes(string fullPath)
+    {
+        var cached = TryGetImageChunkBytes(fullPath);
+        if (cached != null) return cached;
+        var bytes = File.ReadAllBytes(fullPath);
+        PutImageChunkBytes(fullPath, bytes);
+        return bytes;
+    }
 
     /// <summary>
     /// ImageDataChunk « local:<chemin> » : image déjà téléchargée par la DLL (diapositive Google Slides de comspec_cache),
@@ -3520,7 +3677,7 @@ public static partial class Extension
         }.Select(r => Path.GetFullPath(r).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
         if (!roots.Any(r => full.StartsWith(r, StringComparison.OrdinalIgnoreCase))) return "ERR|path_not_allowed";
         byte[] local;
-        try { local = File.ReadAllBytes(full); }
+        try { local = LoadImageChunkBytes(full); }
         catch (FileNotFoundException) { return "ERR|not_found"; }
         catch (DirectoryNotFoundException) { return "ERR|not_found"; }
         catch (Exception ex) { return "ERR|read_failed_" + ex.GetType().Name; }
@@ -3581,20 +3738,24 @@ public static partial class Extension
             var command = args[1]!;
             if (command == "Async") return "ERR|async_nested";
             var rest = args[2..];
-            // Commandes purement locales (mise en file, aucun appel réseau) : exécutées tout de suite, sans attendre
-            // AsyncGate ni Task.Run. Quand Athena ralentissait, 6 appels HTTP lents bloquaient la porte et la position
-            // (une seule en vol côté SQF) était sautée jusqu'à 8 s. Le rappel part quand même : le SQF ne change pas.
+            // Commandes purement locales (mise en file, aucun HTTP sync) : hors AsyncGate (sinon 6 POST lents
+            // saturaient la porte et sautaient UpdatePosition jusqu'à 8 s). Avant 2.0.104 le corps tournait
+            // inline sous callExtension (JSON + EnrichAtakPayload sur le fil jeu). Task.Run sans gate : le jeu
+            // reçoit QUEUED tout de suite ; parse / offre télémétrie sur un fil à part ; rappel inchangé pour SQF.
             if (AsyncLocalCommands.Contains(command))
             {
-                string localResult;
-                try
+                _ = Task.Run(() =>
                 {
-                    var direct = TryGetSyncResponse(command, rest);
-                    if (direct == null) { RvExtensionArgsImpl(command, rest); direct = ""; }
-                    localResult = direct;
-                }
-                catch (Exception ex) { localResult = FormatCaughtError(ex); }
-                InvokeCallback("async:" + ticket, localResult);
+                    string localResult;
+                    try
+                    {
+                        var direct = TryGetSyncResponse(command, rest);
+                        if (direct == null) { RvExtensionArgsImpl(command, rest); direct = ""; }
+                        localResult = direct;
+                    }
+                    catch (Exception ex) { localResult = FormatCaughtError(ex); }
+                    InvokeCallback("async:" + ticket, localResult);
+                });
                 return "QUEUED|" + ticket;
             }
             _ = Task.Run(async () =>
@@ -6105,7 +6266,9 @@ public static partial class Extension
             if (function == "GetPhoneConnectInfo")
             {
                 // Préfère l’arg SQF ; sinon le tenant mémorisé au redeem / Connect (clé communauté).
+                // args[1] optionnel : destination (c2, sitac, carte, chat…).
                 var tenantId = args.Length > 0 ? (args[0] ?? "") : "";
+                var destination = args.Length > 1 ? (args[1] ?? "").Trim().ToLowerInvariant() : "";
                 if (string.IsNullOrEmpty(tenantId))
                     tenantId = _tenantId;
                 if (!TryBuildRequestUri(_baseUrl, "/api/atak/phone-pairing", out var phoneUri, out _) || phoneUri is null)
@@ -6115,6 +6278,11 @@ public static partial class Extension
                 {
                     var sep = url.Contains('?', StringComparison.Ordinal) ? "&" : "?";
                     url += sep + "tenant_id=" + Uri.EscapeDataString(tenantId);
+                }
+                if (!string.IsNullOrEmpty(destination))
+                {
+                    var sep2 = url.Contains('?', StringComparison.Ordinal) ? "&" : "?";
+                    url += sep2 + "destination=" + Uri.EscapeDataString(destination);
                 }
                 using var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
@@ -6496,10 +6664,11 @@ public static partial class Extension
                     if (bytes.Length > 1_400_000) return "ERR|too_large";
                     try { File.WriteAllBytes(dest, bytes); }
                     catch (Exception ex) { return "ERR|write_failed_" + ex.GetType().Name; }
+                    PutImageChunkBytes(dest, bytes);
                     offset = 0;
                 }
                 byte[] all;
-                try { all = File.ReadAllBytes(dest); }
+                try { all = LoadImageChunkBytes(dest); }
                 catch (Exception ex) { return "ERR|read_failed_" + ex.GetType().Name; }
                 if (offset >= all.Length) return "OK|" + all.Length + "|" + all.Length + "|";
                 // 5940 octets (multiple de 3) = 7920 caractères base64 : tient dans la sortie limitée de la DLL.
@@ -8888,6 +9057,7 @@ public static partial class Extension
             var connectUrl = root.TryGetProperty("connect_url", out var cu) ? (cu.GetString() ?? "") : "";
             var qrImageUrl = root.TryGetProperty("qr_image_url", out var qu) ? (qu.GetString() ?? "") : "";
             var expiresAt = root.TryGetProperty("expires_at", out var ea) ? (ea.GetString() ?? "") : "";
+            var pairUrl = root.TryGetProperty("pair_url", out var pu) ? (pu.GetString() ?? "") : "";
             // Séparateur tab : côté SQF il faut splitString (toString [9]), PAS "\t" (\ + t).
             // Nettoyer | / tab / LF pour ne pas casser le parse pipe+colonnes.
             token = SanitizePhoneField(token);
@@ -8895,6 +9065,7 @@ public static partial class Extension
             connectUrl = SanitizePhoneField(connectUrl);
             qrImageUrl = SanitizePhoneField(qrImageUrl);
             expiresAt = SanitizePhoneField(expiresAt);
+            pairUrl = SanitizePhoneField(pairUrl);
             // Code court obligatoire (alphanumérique) ; URL de connexion obligatoire ; QR optionnel.
             if (token.Length == 0 || code.Length < 4 || code.Length > 12) return "";
             if (connectUrl.Length == 0) return "";
@@ -8904,7 +9075,7 @@ public static partial class Extension
             {
                 if (!char.IsAsciiLetterOrDigit(code[i])) return "";
             }
-            return token + "\t" + code + "\t" + connectUrl + "\t" + qrImageUrl + "\t" + expiresAt;
+            return token + "\t" + code + "\t" + connectUrl + "\t" + qrImageUrl + "\t" + expiresAt + "\t" + pairUrl;
         }
         catch { return ""; }
     }

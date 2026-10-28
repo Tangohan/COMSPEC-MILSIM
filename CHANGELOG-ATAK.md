@@ -34,9 +34,101 @@ EN : The Athena portal address is no longer a setting
 
 Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.md) · [TECHREP #00003](docs/dev/TECHREP-00003.md).
 
-Changelog Steam (copier-coller) : [ATAK 2.7.0](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.7.0.md) · [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-2026-09-22-overwatch-1.6.12.md) · [Overwatch 1.6.9](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.9.md) · [Overwatch 1.6.8](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.8.md) · [Overwatch 1.6.7](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.7.md) · [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md) · [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-2026-09-15-overwatch-1.5.78.md) · [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+Changelog Steam (copier-coller) : [ATAK 2.9.18](docs/dev/STEAM-CHANGELOG-2026-10-28-atak-2.9.18.md) · [ATAK 2.9.17](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.9.17.md) · [ATAK 2.9.16](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.9.16.md) · [ATAK 2.7.0](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.7.0.md) · [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-2026-09-22-overwatch-1.6.12.md) · [Overwatch 1.6.9](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.9.md) · [Overwatch 1.6.8](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.8.md) · [Overwatch 1.6.7](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.7.md) · [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md) · [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-2026-09-15-overwatch-1.5.78.md) · [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
 
 ---
+
+## Pack 2.9.18 : connexion et relevé carte hors fil jeu (ATAK natif 2.9.18.AG - Denver, COMSPEC Link 2.0.109)
+
+### Résumé joueur
+Type : performance
+FR : Connexion et capture de carte plus fluides
+- La connexion (mot de passe, code e-mail, Steam) et l’ouverture du canal poste ne figent plus l’image pendant l’attente du portail.
+- Le relevé des images déjà prises pour la capture de carte se fait en arrière-plan.
+EN : Smoother login and map capture
+- Password, e-mail code, Steam login and opening the command channel no longer freeze the frame while waiting on the portal.
+- Scanning already-captured map tiles runs in the background.
+
+### Détail technique
+- OPT-07 : `MapCap.Scan` → `OK|queued` + `MapCap.ScanPoll` ; SQF `fn_mapCapture` attend hors fil image
+- OPT-08 : auth password / OTP / Steam / ConnectC2 via spawn + `extAwait`
+- Link 2.0.109 ; DevDispatch UPDATE #1202
+
+## Pack 2.9.17 : file d’envoi messagerie / CAS et modules signés (ATAK natif 2.9.17.AG - Denver, COMSPEC Link 2.0.108)
+
+### Résumé joueur
+Type : performance
+FR : Liaison plus stable et modules signés
+- Les messages, l’appui aérien, le renseignement et les pings n’ouvrent plus d’envois parallèles qui retardaient la carte des alliés.
+- Les modules du pack sont signés ; les serveurs qui vérifient les signatures peuvent utiliser la clé fournie.
+EN : Smoother link and signed modules
+- Chat, CAS, intel and pings no longer open parallel sends that delayed the friendly map.
+- Pack modules are signed; servers that check signatures can use the included public key.
+
+### Détail technique
+- Link 2.0.108 : `IsPriorityQueuedEndpoint` (chat, CAS, intel, pings, designator, laser, sigint, recon)
+- `tools/sign_pbos.ps1` + `keys/comspec_atak_native.bikey` ; privée dans `signing/` (gitignorée)
+- DevDispatch UPDATE #1201
+
+---
+
+## Pack 2.9.16 : carnet de vol, Garmin Instinct et liaison (ATAK natif 2.9.16.AF - Denver, COMSPEC Link 2.0.107)
+
+### Résumé joueur
+Type : nouveauté
+FR : Carnet de vol et montres Instinct
+- L’application Carnet de vol regroupe vos heures aux commandes par appareil, pour la mission en cours et la carrière sur ce PC.
+- Trois montres Garmin Instinct (Solar, Tactical Solar, 2X Solar Tactical) rejoignent l’arsenal, comme les autres modèles COMSPEC.
+- La carte et la liaison avec le poste sont un peu plus fluides ; quittez Arma complètement après la mise à jour.
+EN : Flight logbook and Instinct watches
+- The Flight logbook app gathers your time at the controls by aircraft, for the current mission and career on this PC.
+- Three Garmin Instinct watches (Solar, Tactical Solar, 2X Solar Tactical) join the arsenal, like the other COMSPEC models.
+- The map and the link to the command post feel a bit smoother; fully quit Arma after updating.
+
+### Détail technique
+- App `FLIGHTLOG` / `fn_pageFlightLog` + icône `app_flightlog` ; registres Distances inchangés
+- Skins Instinct / Instinct Solar / Instinct 2X (Garmin)
+- SQF carte Relais / tags / screenCast LRU ; Link 2.0.107 (MaxConnections, background queue, Slides cache)
+- DevDispatch UPDATE #1198–#1200
+
+---
+
+## Pack 2.9.11 : heures de vol par appareil (ATAK natif 2.9.11.AE - Denver)
+
+### Résumé joueur
+Type : correctif
+FR : Heures de vol et modèles d’appareil
+- Le temps passé aux commandes d’un avion ou d’un hélicoptère remonte à nouveau avec le modèle de l’appareil.
+- Le rôle Pilote et les heures de vol suivent désormais le même siège ; le moteur n’a plus besoin d’être signalé « allumé » pour compter.
+EN : Flight hours and airframe models
+- Time at the controls of a plane or helicopter is recorded again with the aircraft model.
+- The Pilot role and flight hours now use the same seat; the engine no longer needs to read as “on” to count.
+
+### Détail technique
+- `fn_distanceServer` : siège pilote aligné sur `fn_roleKey` (driver / currentPilot / assigned driver), sans `isEngineOn`
+- `AtakDistanceRepository::normalizeBatch` : classes avec tiret acceptées
+- DevDispatch UPDATE #1192
+
+---
+
+## Pack 2.9.10 : NINE LINE et carte web par QR (ATAK natif 2.9.10.AE - Denver, COMSPEC Link 2.0.103)
+
+### Résumé joueur
+Type : nouveauté
+FR : NINE LINE et carte web par QR
+- L’app NINE LINE permet de rédiger des brouillons CAS ou MEDEVAC hors liaison, de les enregistrer et de les recopier en texte radio.
+- Depuis la carte (Outils), Carte sur le web génère un QR qui ouvre la carte mobile dans le navigateur.
+- Sur le poste, le hub QR propose la destination Carte. La vue mobile montre curseur, grille et zoom.
+EN : NINE LINE pad and web map via QR
+- The NINE LINE app lets you draft CAS or MEDEVAC lines offline, save them, and copy radio text.
+- From the map (Tools), Web map generates a QR that opens the mobile map in a browser.
+- On the command post, the QR hub offers a clear Map destination. The mobile map shows cursor, grid and zoom.
+
+### Détail technique
+- App native NINELINE (profil local) + actions save/delete/copy/toCas/toMed
+- Page MAPWEB + GetPhoneConnectInfo destination carte + allowlist connect/mobile
+- Hub QR destination carte/map ; coque mobile : barre coords + zoom
+- DevDispatch UPDATE #1191
 
 ---
 

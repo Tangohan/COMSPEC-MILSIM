@@ -6,6 +6,11 @@ params [["_action", "", [""]]];
 _action = toLower _action;
 if (_action isEqualTo "") exitWith {};
 
+// OPT-08 : actions HTTP depuis un bouton (non suspendable) → relancer en spawn pour extAwait.
+if (!canSuspend && {_action in ["password", "otp_ask", "otp_ok", "steam", "enter", "pair"]}) exitWith {
+    [_action] spawn comspec_overwatch_atak_athena_fnc_athena_authAction;
+};
+
 private _group = [] call comspec_overwatch_atak_athena_fnc_athena_resolveAthenaGroup;
 if (isNull _group) exitWith {};
 
@@ -68,9 +73,9 @@ switch (_action) do {
         ["Authentification en cours…"] call _setHint;
         private _steam = if (!isNull player) then { getPlayerUID player } else { "" };
         if ((count _steam) >= 8) then {
-            ["COMSPECExtension" callExtension ["SetSteamId", [_steam]]] call comspec_overwatch_connect_fnc_extResult;
+            [["COMSPECExtension", "SetSteamId", [_steam]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
         };
-        ["COMSPECExtension" callExtension ["AuthPassword", [_url, _email, _pass, _pack, _steam]]] call comspec_overwatch_connect_fnc_extResult;
+        [["COMSPECExtension", "AuthPassword", [_url, _email, _pass, _pack, _steam], 40] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
         [] call comspec_overwatch_connect_fnc_pollAuth;
         [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
     };
@@ -80,7 +85,8 @@ switch (_action) do {
         if ((count _email) < 5) exitWith {
             ["Indiquez d’abord votre adresse e-mail.", true] call _setHint;
         };
-        private _raw = ["COMSPECExtension" callExtension ["RequestOtp", [_url, _email]]] call comspec_overwatch_connect_fnc_extResult;
+        ["Envoi du code…"] call _setHint;
+        private _raw = [["COMSPECExtension", "RequestOtp", [_url, _email], 40] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
         if (!(_raw isEqualType "")) then { _raw = str _raw; };
         if ((toLower _raw) find "err|" == 0) exitWith {
             ["Impossible d’envoyer le code. Vérifiez l’adresse e-mail et réessayez.", true] call _setHint;
@@ -108,9 +114,9 @@ switch (_action) do {
         ["Vérification du code…"] call _setHint;
         private _steam = if (!isNull player) then { getPlayerUID player } else { "" };
         if ((count _steam) >= 8) then {
-            ["COMSPECExtension" callExtension ["SetSteamId", [_steam]]] call comspec_overwatch_connect_fnc_extResult;
+            [["COMSPECExtension", "SetSteamId", [_steam]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
         };
-        ["COMSPECExtension" callExtension ["VerifyOtp", [_url, _email, _code, _pack, _steam]]] call comspec_overwatch_connect_fnc_extResult;
+        [["COMSPECExtension", "VerifyOtp", [_url, _email, _code, _pack, _steam], 40] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
         [] call comspec_overwatch_connect_fnc_pollAuth;
         [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
     };
@@ -159,9 +165,9 @@ switch (_action) do {
         ["Ouverture du canal poste…"] call _setHint;
         private _steam = if (!isNull player) then { getPlayerUID player } else { "" };
         if ((count _steam) >= 8) then {
-            ["COMSPECExtension" callExtension ["SetSteamId", [_steam]]] call comspec_overwatch_connect_fnc_extResult;
+            [["COMSPECExtension", "SetSteamId", [_steam]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
         };
-        ["COMSPECExtension" callExtension ["ConnectC2", []]] call comspec_overwatch_connect_fnc_extResult;
+        [["COMSPECExtension", "ConnectC2", [], 40] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
         [] call comspec_overwatch_connect_fnc_pollAuth;
 
         private _opened = false;
