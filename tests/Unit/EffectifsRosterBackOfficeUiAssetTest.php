@@ -53,12 +53,22 @@ final class EffectifsRosterBackOfficeUiAssetTest extends TestCase
         self::assertStringNotContainsString('eff-catalog-checks', $roster);
         self::assertStringContainsString('name="access_role_id"', $roster);
         self::assertStringContainsString('data-img-fallback="portrait"', $roster);
-        self::assertStringContainsString('N° communauté', $roster);
+        self::assertStringContainsString('Matricule Athena', $roster);
+        self::assertStringContainsString('Matricule communauté', $roster);
+        self::assertStringContainsString('>Identité</th>', $roster);
+        self::assertStringContainsString('>Callsign</th>', $roster);
+        self::assertStringContainsString('>Photo</th>', $roster);
+        self::assertStringContainsString('eff-sheets__qual-count', $roster);
+        self::assertStringContainsString('data-eff-qual-open', $roster);
+        self::assertStringContainsString('eff-qual-dialog', $roster);
+        self::assertStringNotContainsString('Qualifications ·', $roster);
         self::assertStringContainsString('eff-sheets__meter', $roster);
         self::assertStringContainsString('Disponibilité', $roster);
 
         $controller = (string) file_get_contents($root . '/app/Controllers/Admin/EffectifsWorkspaceController.php');
         self::assertStringContainsString("'character_portrait_path'", $controller);
         self::assertStringContainsString('listOrganizationRoleIdsForUsers', $controller);
+        self::assertStringContainsString("'qualifications_count'", $controller);
+        self::assertStringContainsString("'qualifications_items'", $controller);
     }
 }
