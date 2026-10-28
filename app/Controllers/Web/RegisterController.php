@@ -219,9 +219,7 @@ final class RegisterController
 
                 return Response::redirect(url('login'));
             }
-            $flashBack(
-                'Un compte existe déjà avec cette adresse e-mail. Connectez-vous (ou utilisez « Mot de passe oublié »), puis rejoignez la communauté via une invitation ou une candidature — ne créez pas un second compte.'
-            );
+            $flashBack(__('auth.flash_email_already_exists'));
 
             return Response::redirect(url('login'));
         }
@@ -284,10 +282,7 @@ final class RegisterController
             $pdo->rollBack();
             error_log('[auth.register] ' . $e->getMessage());
             if (UserFacingExceptionMapper::isDuplicateEmail($e)) {
-                Session::flash(
-                    'error',
-                    'Un compte existe déjà avec cette adresse e-mail. Connectez-vous (ou utilisez « Mot de passe oublié »), puis rejoignez la communauté via une invitation — ne créez pas un second compte.'
-                );
+                Session::flash('error', __('auth.flash_email_already_exists'));
                 Session::flash('login_old_email', $email);
 
                 return Response::redirect(url('login'));

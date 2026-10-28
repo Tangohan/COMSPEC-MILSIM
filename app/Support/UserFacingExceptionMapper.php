@@ -16,7 +16,7 @@ final class UserFacingExceptionMapper
     public static function registrationMessage(Throwable $e): string
     {
         if (self::isDuplicateEmail($e)) {
-            return 'Un compte existe déjà avec cette adresse e-mail. Connectez-vous (ou utilisez « Mot de passe oublié »), puis rejoignez la communauté via une invitation — ne créez pas un second compte.';
+            return __('auth.flash_email_already_exists');
         }
 
         return 'Inscription impossible pour le moment. Réessayez dans quelques instants.';

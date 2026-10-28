@@ -36,7 +36,7 @@ final class CommunityMembershipConsolidationService
         $keepTenantId = (int) ($chosen['tenant_id'] ?? 0);
         $keepUserId = (int) ($chosen['user_id'] ?? 0);
         if ($keepTenantId < 1 || $keepUserId < 1) {
-            return ['ok' => false, 'error' => 'Choix de communauté invalide.'];
+            return ['ok' => false, 'error' => __('auth.select_community_invalid')];
         }
 
         $toLeave = [];
@@ -101,7 +101,7 @@ final class CommunityMembershipConsolidationService
                     $tenantId,
                     'member_left',
                     'Départ d’un membre',
-                    $memberLabel . ' a quitté la communauté (choix définitif à la connexion).',
+                    $memberLabel . ' a quitté la communauté (choix définitif à la connexion).', // site_auto: « %1 a quitté… »
                     null,
                     $userId,
                     null
@@ -136,7 +136,6 @@ final class CommunityMembershipConsolidationService
         }
         $label = $tenantName !== '' ? $tenantName : 'cette communauté';
 
-        return 'Vous êtes le dernier propriétaire de « ' . $label
-            . ' ». Ouvrez temporairement cette communauté, transférez le rôle propriétaire à un autre membre, puis reconnectez-vous pour finaliser votre choix.';
+        return __('auth.select_community_last_owner', ['name' => $label]);
     }
 }

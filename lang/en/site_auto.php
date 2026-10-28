@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// Dictionnaire français -> anglais du site, appliqué à l’affichage par App\Support\HtmlTranslator.
+// Dictionnaire français -> anglais du site, appliqué à l'affichage par App\Support\HtmlTranslator.
 // Tenu par tools/i18n/site_i18n.py (extract, merge). %1, %2... : valeurs insérées par la vue.
 
 return [
@@ -154,6 +154,7 @@ return [
     '%1 : masquée sur votre carte uniquement.' => '%1: hidden on your map only.',
     '%1 : rôles, comptes, groupes et invitations.' => '%1: roles, accounts, groups and invitations.',
     '%1 a mis à jour sa participation à « %2 » (%3).' => '%1 has updated their participation in "%2" (%3).',
+    '%1 a quitté la communauté (choix définitif à la connexion).' => '%1 left the community (definitive choice at sign-in).',
     '%1 a été créée avant l’ajout de plusieurs fonctionnalités. Vous pouvez compléter sa configuration maintenant, ou plus tard depuis Administration → Mise à niveau.' => '%1 was created before several features were added. You can complete its configuration now, or later from Administration → Upgrade.',
     '%1 acceptés · %2 rejetés' => '%1 accepted · %2 rejected',
     '%1 accusés%2' => '%1 acknowledged%2',
@@ -7944,6 +7945,7 @@ return [
     'Ce code reste valable quelques minutes. S’il expire, demandez-en un nouveau dans Arma.' => 'This code stays valid for a few minutes. If it expires, request a new one in Arma.',
     'Ce compte a déjà été anonymisé : il ne peut plus être modifié.' => 'This account has already been anonymized: it can no longer be modified.',
     'Ce compte a déjà été supprimé.' => 'This account has already been deleted.',
+    'Ce compte appartient déjà à une autre communauté. Un compte ne peut plus avoir plusieurs communautés : quittez d’abord l’actuelle depuis Compte → Accès, puis rejoignez celle-ci.' => 'This account already belongs to another community. An account can no longer have several communities: leave the current one first from Account → Access, then join this one.',
     'Ce compte Athena n’est pas autorisé à se lier.' => 'This Athena account is not authorized to link.',
     'Ce compte Athena n’est pas autorisé.' => 'This Athena account is not authorized.',
     'Ce compte est déjà anonymisé (« Compte supprimé »). Demandez plutôt sa suppression définitive.' => 'This account is already anonymized ("Deleted Account"). Request its permanent deletion instead.',
@@ -8548,6 +8550,7 @@ return [
     'Cet assistant repère ce qui manque encore par rapport au parcours de création complet. Complétez la liste ci-dessous, ou appliquez un démarrage type français — sans effacer ce qui existe déjà.' => 'This wizard identifies what is still missing compared with the full creation path. Complete the list below, or apply a standard French starter setup — without erasing what already exists.',
     'Cet ATAK n’est pas compromis.' => 'This ATAK is not compromised.',
     'Cet ATAK n’est rattaché à aucun compte.' => 'This ATAK is not linked to any account.',
+    'Cet e-mail est déjà utilisé par un compte Athena.' => 'This email is already used by an Athena account.',
     'Cet email est déjà utilisé.' => 'This email is already in use.',
     'Cet encadrant n’est pas habilité pour ce parcours ou son habilitation a expiré. Mettez à jour les habilitations ou choisissez un autre membre.' => 'This instructor is not certified for this course or their certification has expired. Update certifications or choose another member.',
     'Cet espace affiche uniquement vos données et les informations partagées par votre communauté. Il ne donne aucun droit d’administration.' => 'This space only shows your data and information shared by your community. It grants no administration rights.',
@@ -9553,6 +9556,7 @@ return [
     'Choisissez-la dans « Opération » ci-dessus : la liste montre qui y était et l’état de son ATAK.' => 'Pick it in “Operation” above: the list shows who was there and the state of their ATAK.',
     'choisit les outils proposés à tous vos membres (menus, modules, permissions). Le' => 'chooses the tools offered to all your members (menus, modules, permissions). The',
     'Choix' => 'Choice',
+    'Choix de communauté invalide.' => 'Invalid community choice.',
     'Choix de la langue' => 'Language choice',
     'Choix de la liste (une option par ligne)' => 'List choices (one option per line)',
     'Choix de la vue du dossier' => 'File view selection',
@@ -19808,12 +19812,14 @@ return [
     'Impossible de vider la carte pour le moment.' => 'Unable to clear the map at the moment.',
     'Impossible de vérifier pour le moment.' => 'Unable to verify at the moment.',
     'Impossible de vérifier votre accès. Réessayez plus tard.' => 'Unable to verify your access. Try again later.',
+    'Impossible d’accepter cette invitation pour le moment.' => 'Unable to accept this invitation right now.',
     'Impossible d’accrocher le départ ou l’arrivée au réseau routier.' => 'Unable to snap the start or end point to the road network.',
     'Impossible d’affecter l’unité :' => 'Unable to assign the unit:',
     'Impossible d’afficher cette carte. Réessayez ou choisissez un autre fond.' => 'Unable to display this map. Try again or choose another basemap.',
     'Impossible d’afficher la carte pour le moment.' => 'Unable to display the map at the moment.',
     'Impossible d’afficher le PDF (CORS ou fichier). Utilisez le lien de téléchargement.' => 'Unable to display the PDF (CORS or file). Use the download link.',
     'Impossible d’afficher les avis et échanges : cette formation n’existe pas dans votre communauté, ou n’est plus publiée.' => 'Unable to display reviews and discussion: this training does not exist in your community, or is no longer published.',
+    'Impossible d’ajouter ce membre pour le moment.' => 'Unable to add this member right now.',
     'Impossible d’ajouter cette rubrique. Le nom est peut-être déjà utilisé.' => 'Unable to add this section. The name may already be in use.',
     'Impossible d’ajouter la règle.' => 'Unable to add the rule.',
     'Impossible d’ajouter le suivi sur ce dossier (introuvable ou déjà traité).' => 'Unable to add the follow-up to this record (not found or already processed).',
@@ -40141,6 +40147,9 @@ return [
     'Un compte existe avec le même e-mail mais en accès limité : finalisez pour le passer membre et lier la candidature.' => 'An account exists with the same email but with limited access: finalize to make it a member and link the application.',
     'Un compte existe déjà avec cet e-mail dans la communauté : rattachez-le à cette candidature.' => 'An account already exists with this email in the community: link it to this application.',
     'Un compte existe déjà avec cette adresse e-mail. Connectez-vous (ou utilisez « Mot de passe oublié »), puis rejoignez la communauté via une invitation ou une candidature — ne créez pas un second compte.' => 'An account already exists with this email address. Log in (or use "Forgot password"), then join the community via an invitation or an application — do not create a second account.',
+    'Un compte existe déjà avec cette adresse e-mail. Connectez-vous (ou utilisez « Mot de passe oublié »), puis rejoignez la communauté via une invitation — ne créez pas un second compte.' => 'An account already exists with this email address. Log in (or use "Forgot password"), then join the community via an invitation — do not create a second account.',
+    'Un compte existe déjà avec cette adresse e-mail. Connectez-vous plutôt que de créer un second compte.' => 'An account already exists with this email address. Sign in instead of creating a second account.',
+    'Un compte existe déjà avec cette adresse e-mail. Connectez-vous plutôt.' => 'An account already exists with this email address. Sign in instead.',
     'Un compte inactif ne peut plus se connecter à cette communauté.' => 'An inactive account can no longer log in to this community.',
     'Un compte marqué comme suspendu ne peut pas conserver un rôle d’autorité. Retirez le statut suspendu ou les rôles de gouvernance.' => 'An account marked as suspended cannot keep an authority role. Remove the suspended status or the governance roles.',
     'Un compte rendu est ouvert pour cette mission (%1). Il n’est pas publié tout seul : complétez-le puis validez-le.' => 'A report is open for this mission (%1). It is not published automatically: complete it, then validate it.',
@@ -42718,6 +42727,8 @@ return [
     'Vous êtes le chef de l’unité principale' => 'You are the commander of the main unit',
     'Vous êtes le dernier propriétaire de cette communauté. Transférez ce rôle à un autre membre avant de partir.' => 'You are the last owner of this community. Transfer this role to another member before leaving.',
     'Vous êtes le dernier propriétaire de cette communauté. Transférez ce rôle à un autre membre avant de pouvoir partir.' => 'You are the last owner of this community. Transfer this role to another member before you can leave.',
+    'Vous êtes le dernier propriétaire de « %1 ». Ouvrez temporairement cette communauté, transférez le rôle propriétaire à un autre membre, puis reconnectez-vous pour finaliser votre choix.' => 'You are the last owner of “%1”. Open that community temporarily, transfer the owner role to another member, then sign in again to finish your choice.',
+    'Vous êtes le dernier propriétaire de « %1 ». Transférez ce rôle avant de créer ou rejoindre une autre communauté.' => 'You are the last owner of “%1”. Transfer this role before creating or joining another community.',
     'Vous êtes le seul membre de %1' => 'You are the only member of %1',
     'Vous êtes maintenant le référent de ce dossier.' => 'You are now the referent for this record.',
     'Vous êtes maintenant propriétaire de ce dossier. La reprise est notée dans son journal.' => 'You now own this folder. The takeover is recorded in its log.',

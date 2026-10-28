@@ -40,7 +40,11 @@ final class EmailUniqueOneCommunityAssetTest extends TestCase
         self::assertStringContainsString('temporary_access', $auth);
         self::assertStringContainsString('confirm_definitive', $view);
         self::assertStringContainsString('select_community_confirm', $fr);
-        self::assertStringContainsString('choix définitif à la connexion', $svc);
+        $en = self::read('lang/en/auth.php');
+        self::assertStringContainsString('select_community_confirm', $en);
+        self::assertStringContainsString('flash_email_already_exists', $en);
+        self::assertStringContainsString('select_community_last_owner', $en);
+        self::assertStringContainsString('auth.select_community_last_owner', $svc);
         self::assertStringContainsString('leaveCommunity', $svc);
     }
 
