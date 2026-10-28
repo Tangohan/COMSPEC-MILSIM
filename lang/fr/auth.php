@@ -215,4 +215,8 @@ return [
     'select_community_temporary' => 'Ouvrir temporairement (pour transférer un rôle propriétaire)',
     'select_community_consolidated' => 'Communauté enregistrée. Les autres appartenances ont été terminées.',
     'select_community_title' => 'Choisir votre communauté définitive',
+    'select_community_invalid' => 'Choix de communauté invalide.',
+    'select_community_last_owner' => 'Vous êtes le dernier propriétaire de « :name ». Ouvrez temporairement cette communauté, transférez le rôle propriétaire à un autre membre, puis reconnectez-vous pour finaliser votre choix.',
+    'flash_email_already_exists' => 'Un compte existe déjà avec cette adresse e-mail. Connectez-vous (ou utilisez « Mot de passe oublié »), puis rejoignez la communauté via une invitation ou une candidature — ne créez pas un second compte.',
+    'flash_email_already_exists_short' => 'Un compte existe déjà avec cette adresse e-mail. Connectez-vous plutôt.',
 ];

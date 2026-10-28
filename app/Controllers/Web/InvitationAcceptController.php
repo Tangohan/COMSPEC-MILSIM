@@ -182,7 +182,7 @@ final class InvitationAcceptController
             Session::flash(
                 'error',
                 \App\Support\UserFacingExceptionMapper::isDuplicateEmail($e)
-                    ? 'Un compte existe déjà avec cette adresse e-mail. Connectez-vous plutôt.'
+                    ? __('auth.flash_email_already_exists_short')
                     : (trim($e->getMessage()) !== '' && !preg_match('/SQLSTATE|PDOException/i', $e->getMessage())
                         ? $e->getMessage()
                         : 'Impossible d’accepter cette invitation pour le moment.')
