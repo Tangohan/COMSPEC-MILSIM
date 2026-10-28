@@ -86,6 +86,9 @@ final class AthenaHeritageAssetTest extends TestCase
         self::assertStringContainsString('hi-display', $view);
         self::assertStringContainsString('hi-cta hi-cta-solid', $view);
         self::assertStringContainsString('fog-team.jpg', $view);
+        // PHP caste '365'/'90' en int : rawurlencode exige string (sinon 500).
+        self::assertStringContainsString('$periodKey = (string) $key', $view);
+        self::assertStringContainsString('rawurlencode($periodKey)', $view);
 
         $css = (string) file_get_contents($root . '/public/assets/css/site-history.css');
         self::assertStringContainsString('.site-history-hero', $css);
