@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// Dictionnaire français -> anglais du site, appliqué à l’affichage par App\Support\HtmlTranslator.
+// Dictionnaire français -> anglais du site, appliqué à l'affichage par App\Support\HtmlTranslator.
 // Tenu par tools/i18n/site_i18n.py (extract, merge). %1, %2... : valeurs insérées par la vue.
 
 return [
@@ -7949,6 +7949,7 @@ return [
     'Ce compte est déjà anonymisé (« Compte supprimé »). Demandez plutôt sa suppression définitive.' => 'This account is already anonymized ("Deleted Account"). Request its permanent deletion instead.',
     'Ce compte est déjà associé à un autre identifiant Steam. L’encadrement a été informé.' => 'This account is already linked to another Steam ID. Leadership has been notified.',
     'Ce compte est déjà supprimé.' => 'This account is already deleted.',
+    'Ce compte est encore rattaché à plusieurs communautés, ce qui n’est plus prévu. Choisissez votre communauté définitive : vous quitterez automatiquement les autres, et votre liaison ATAK / Steam suivra cette communauté.' => 'This account is still linked to several communities, which is no longer supported. Choose your definitive community: you will automatically leave the others, and your ATAK / Steam link will follow that community.',
     'Ce compte ne peut pas encore lier un terminal de jeu.' => 'This account cannot link a game terminal yet.',
     'Ce compte n’a pas d’adresse e-mail : impossible d’envoyer le lien.' => 'This account has no email address: unable to send the link.',
     'Ce compte n’a pas d’identifiant Steam lié. Choisissez un autre compte ou saisissez-le à la main.' => 'This account has no linked Steam ID. Choose another account or enter it by hand.',
@@ -10408,6 +10409,7 @@ return [
     'Communauté débloquée.' => 'Community unblocked.',
     'Communauté désépinglée.' => 'Community unpinned.',
     'communauté d’ouvrir directement la fiche depuis la page de saisie dédiée (pratique pour un affichage en salle, un message d’annonce ou un document papier). Enregistrez la fiche une première fois pour générer le code s’il n’apparaît pas encore. Si quelqu’un saisit un code d’une autre communauté, le portail l’indique clairement sans mélanger les espaces. Pour invalider un code déjà diffusé, utilisez « Régénérer le code » plus bas.' => 'community to open the record directly from the dedicated entry page (handy for a room display, an announcement message or a paper document). Save the record once to generate the code if it does not appear yet. If someone enters a code from another community, the portal states it clearly without mixing spaces. To invalidate a code already distributed, use "Regenerate code" below.',
+    'Communauté enregistrée. Les autres appartenances ont été terminées ; votre ATAK / Steam suit cette communauté (reconnectez le jeu si besoin).' => 'Community saved. Other memberships have been ended; your ATAK / Steam follows this community (reconnect the game if needed).',
     'Communauté gaming' => 'Gaming Community',
     'Communauté inconnue' => 'Unknown community',
     'Communauté introuvable' => 'Community not found',
@@ -20774,6 +20776,7 @@ return [
     'Je comprends que cette opération recrée la fiche' => 'I understand that this operation recreates the record',
     'Je comprends que c’est définitif' => 'I understand this is permanent',
     'Je comprends que toutes les communautés sont concernées et que l’action est irréversible.' => 'I understand that all communities are affected and that the action is irreversible.',
+    'Je confirme : je reste uniquement dans la communauté choisie, je quitte les autres, et ma liaison ATAK / Steam migre avec moi.' => 'I confirm: I stay only in the chosen community, leave the others, and my ATAK / Steam link migrates with me.',
     'Je confirme avoir lu et pris connaissance de cette charte.' => 'I confirm that I have read and acknowledged this charter.',
     'Je confirme avoir rédigé ce dossier sans assistance par IA' => 'I confirm that I wrote this file without AI assistance',
     'Je confirme en cas d’exclusion définitive' => 'I confirm in case of permanent exclusion',
@@ -40133,6 +40136,7 @@ return [
     'Un code à six chiffres vous sera envoyé par e-mail ; il est valable %1 minutes.' => 'A six-digit code will be sent to you by email; it is valid for %1 minutes.',
     'Un commandement de compagnie, trois platoons de combat, un platoon d’armes.' => 'One company headquarters, three combat platoons, one weapons platoon.',
     'Un commandement de section et trois à quatre groupes de combat.' => 'One section command and three to four combat squads.',
+    'Un compte Athena appartient à une seule communauté. Le choix à la connexion est définitif : les autres appartenances sont terminées, et ATAK se reconnecte sur la communauté choisie.' => 'An Athena account belongs to one community only. The choice at sign-in is final: other memberships end, and ATAK reconnects on the chosen community.',
     'Un compte Athena déjà membre d’une autre communauté ne pourra pas candidater ici. Les visiteurs sans compte, et les comptes sans communauté (espace « Pas d’organisation »), restent acceptés.' => 'An Athena account that is already a member of another community cannot apply here. Visitors without an account, and accounts without a community (“No organization” space), are still accepted.',
     'Un compte Athena regroupe trois familles d’informations : des' => 'An Athena account groups three families of information:',
     'Un compte Athena sur le portail de votre communauté, avec Steam renseigné ou code de liaison généré depuis ATAK.' => 'An Athena account on your community’s portal, with Steam set or a link code generated from ATAK.',

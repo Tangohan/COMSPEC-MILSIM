@@ -105,6 +105,13 @@ class Container
                 self::get(UserRepository::class),
                 self::get(AuthService::class),
             ),
+            \App\Services\Community\AtakCommunityMigrationService::class => new \App\Services\Community\AtakCommunityMigrationService(
+                self::get(UserRepository::class),
+                self::get(\App\Services\Game\GameAuthService::class),
+                self::get(\App\Repositories\AthenaAccountRepository::class),
+                self::get(\App\Repositories\AtakAdminControlRepository::class),
+                self::get(\App\Repositories\AtakRealismRepository::class),
+            ),
             \App\Services\Community\LeaveCommunityService::class => new \App\Services\Community\LeaveCommunityService(
                 self::get(UserRepository::class),
                 self::get(TenantRepository::class),
@@ -114,6 +121,7 @@ class Container
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
                 self::get(\App\Repositories\TenantCommunityFeedRepository::class),
                 self::get(\App\Services\Admin\AdminAuditService::class),
+                self::get(\App\Services\Community\AtakCommunityMigrationService::class),
             ),
             \App\Services\Community\CommunityMembershipConsolidationService::class => new \App\Services\Community\CommunityMembershipConsolidationService(
                 self::get(UserRepository::class),
@@ -121,6 +129,7 @@ class Container
                 self::get(\App\Repositories\RoleRepository::class),
                 self::get(\App\Services\Admin\AdminAuditService::class),
                 self::get(\App\Repositories\TenantCommunityFeedRepository::class),
+                self::get(\App\Services\Community\AtakCommunityMigrationService::class),
             ),
             \App\Controllers\Web\CommunityController::class => new \App\Controllers\Web\CommunityController(
                 self::get(TenantRepository::class),

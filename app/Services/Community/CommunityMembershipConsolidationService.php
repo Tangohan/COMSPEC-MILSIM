@@ -24,12 +24,13 @@ final class CommunityMembershipConsolidationService
         private RoleRepository $roleRepository,
         private AdminAuditService $adminAuditService,
         private TenantCommunityFeedRepository $feedRepository,
+        private AtakCommunityMigrationService $atakCommunityMigrationService,
     ) {}
 
     /**
      * @param array{tenant_id: int, user_id: int, tenant_name?: string, tenant_slug?: string} $chosen
      * @param list<array{tenant_id: int, user_id: int, tenant_name?: string, tenant_slug?: string}> $candidates
-     * @return array{ok: bool, error?: string, left_count?: int}
+     * @return array{ok: bool, error?: string, left_count?: int, atak?: array{ok: bool, steam_moved: bool, sessions_revoked: int, terminals_moved: int}}
      */
     public function consolidateToChoice(array $chosen, array $candidates): array
     {
@@ -116,7 +117,18 @@ final class CommunityMembershipConsolidationService
         } catch (\Throwable) {
         }
 
-        return ['ok' => true, 'left_count' => $leftCount];
+        $atak = ['ok' => true, 'steam_moved' => false, 'sessions_revoked' => 0, 'terminals_moved' => 0];
+        try {
+            $atak = $this->atakCommunityMigrationService->migrateToDefinitiveCommunity(
+                $keepUserId,
+                $keepTenantId,
+                $toLeave
+            );
+        } catch (\Throwable $e) {
+            error_log('[community.consolidate.atak] ' . $e->getMessage());
+        }
+
+        return ['ok' => true, 'left_count' => $leftCount, 'atak' => $atak];
     }
 
     private function lastOwnerBlock(int $userId, int $tenantId, string $tenantName): ?string
