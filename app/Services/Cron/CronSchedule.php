@@ -55,6 +55,7 @@ final class CronSchedule
         'mail_queue' => 5,
         // Le récapitulatif vérifie sa propre cadence (Administration > Envois d'e-mails).
         'mail_ops_digest' => 5,
+        'athena_heritage_snapshot' => 1440,
     ];
 
     public static function intervalMinutes(string $jobKey): int

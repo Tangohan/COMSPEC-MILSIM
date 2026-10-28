@@ -657,6 +657,13 @@ class Container
             \App\Services\Cron\Jobs\SseAnalystDigestCronJob::class => new \App\Services\Cron\Jobs\SseAnalystDigestCronJob(
                 self::get(\App\Services\Sse\SseAnalystDigestService::class)
             ),
+            \App\Repositories\AthenaHeritageRepository::class => new \App\Repositories\AthenaHeritageRepository(),
+            \App\Services\Platform\AthenaHeritageService::class => new \App\Services\Platform\AthenaHeritageService(
+                self::get(\App\Repositories\AthenaHeritageRepository::class)
+            ),
+            \App\Services\Cron\Jobs\AthenaHeritageSnapshotCronJob::class => new \App\Services\Cron\Jobs\AthenaHeritageSnapshotCronJob(
+                self::get(\App\Services\Platform\AthenaHeritageService::class)
+            ),
             \App\Services\Cron\CronRunner::class => new \App\Services\Cron\CronRunner(
                 [
                     self::get(\App\Services\Cron\Jobs\TrainingExpireCronJob::class),
@@ -689,6 +696,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\DiscordLinkedRolesSyncCronJob::class),
                     self::get(\App\Services\Cron\Jobs\MailQueueCronJob::class),
                     self::get(\App\Services\Cron\Jobs\OpsMailDigestCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\AthenaHeritageSnapshotCronJob::class),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),

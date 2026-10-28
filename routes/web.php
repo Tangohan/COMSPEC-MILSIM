@@ -286,6 +286,7 @@ return function (Router $router) {
     $router->post('/demande-donnees', [LegalController::class, 'gdprRequestSubmit']);
 
     $router->get('/a-propos', [SitePagesController::class, 'about']);
+    $router->get('/notre-histoire', [SitePagesController::class, 'history']);
     $router->get('/contact', [SitePagesController::class, 'contact']);
     $router->post('/contact', [SitePagesController::class, 'contactSubmit']);
     $router->get('/nouveautes', [SitePagesController::class, 'changelog']);

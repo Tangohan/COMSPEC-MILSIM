@@ -36,6 +36,7 @@ $psfColumns = [
         'title' => __('home.footer_col_community'),
         'links' => [
             ['href' => url('a-propos'), 'label' => __('site.about')],
+            ['href' => url('notre-histoire'), 'label' => __('site.history')],
             ['href' => url('communities'), 'label' => __('common.communities')],
             ['href' => url('nouveautes'), 'label' => __('site.changelog')],
             ['href' => url('sse'), 'label' => __('site.sse')],
