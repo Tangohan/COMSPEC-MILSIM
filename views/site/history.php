@@ -264,7 +264,16 @@ $chartPayload = [
                         <?php if (!empty($ver['features']) && is_array($ver['features'])): ?>
                             <ul>
                                 <?php foreach ($ver['features'] as $feat): ?>
-                                    <li><?= $e($feat) ?></li>
+                                    <?php
+                                    // ChangelogCatalog : ['kind'=>…,'text'=>…] — pas une string.
+                                    $featText = is_array($feat)
+                                        ? (string) ($feat['text'] ?? $feat['label'] ?? '')
+                                        : (string) $feat;
+                                    if ($featText === '') {
+                                        continue;
+                                    }
+                                    ?>
+                                    <li><?= $e($featText) ?></li>
                                 <?php endforeach; ?>
                             </ul>
                         <?php endif; ?>

@@ -614,7 +614,16 @@ final class AthenaHeritageService
             $ref = (string) ($vp['changelog_ref'] ?? '');
             $features = [];
             if ($ref !== '' && isset($changelog[$ref]) && is_array($changelog[$ref]['features'] ?? null)) {
-                $features = array_slice($changelog[$ref]['features'], 0, 6);
+                foreach (array_slice($changelog[$ref]['features'], 0, 6) as $feat) {
+                    if (is_array($feat)) {
+                        $text = trim((string) ($feat['text'] ?? $feat['label'] ?? ''));
+                    } else {
+                        $text = trim((string) $feat);
+                    }
+                    if ($text !== '') {
+                        $features[] = $text;
+                    }
+                }
             }
             $stats = $vp['stats_json'] ?? null;
             if (is_string($stats)) {
