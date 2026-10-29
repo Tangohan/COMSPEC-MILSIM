@@ -47,6 +47,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
 ?>
 <?php
     $crumbName = match ($marketingActive) {
+        'academy' => 'ATHENA Academy',
         'contact' => __('site.contact'),
         'changelog' => __('site.changelog'),
         'history' => __('site.history'),
@@ -59,6 +60,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
         default => __('site.about'),
     };
     $crumbPath = match ($marketingActive) {
+        'academy' => '/academy',
         'contact' => '/contact',
         'changelog' => '/nouveautes',
         'history' => '/notre-histoire',
