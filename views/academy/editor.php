@@ -1,7 +1,7 @@
-<section class="panel authoring"><h2><?= $h($t('authoring')) ?></h2><p><?= $h($t('authoring_form_help')) ?></p>
+<section class="panel authoring"><h2><?= $h($t('authoring')) ?></h2><p><?= $h($t('editor_help')) ?></p>
 <form method="post" action="<?= $h($link('action/create')) ?>" data-course-editor>
-<?= \App\Core\Csrf::field() ?><input type="hidden" name="course" value="fondamentaux">
-<?php $templateCourse=\App\Services\Academy\AcademyCurriculum::demo(); ?>
+<?= \App\Core\Csrf::field() ?><input type="hidden" name="course" value="academy">
+<?php $templateCourse=\App\Services\Academy\AcademyCurriculum::blank(); ?>
 <div class="editor-fields" data-editor-fields hidden>
 <?php foreach (['title'=>'title_label','summary'=>'summary_label'] as $field=>$label): ?><fieldset class="bilingual-fields"><legend><?= $h($t($label)) ?></legend><?php foreach (['fr','en'] as $language): ?><label><?= strtoupper($language) ?><input data-course-field="<?= $field ?>" data-language="<?= $language ?>" value="<?= $h($templateCourse[$field][$language]) ?>" maxlength="2000" required></label><?php endforeach ?></fieldset><?php endforeach ?>
 <div data-chapters>
@@ -13,7 +13,7 @@
 <details class="resource-editor"><summary><?= $h($t('resources_label')) ?></summary><div data-resources></div><button type="button" class="button small outline" data-add-resource><?= $h($t('add_resource')) ?> +</button></details>
 </fieldset>
 <?php endforeach ?></div><button type="button" class="button outline" data-add-chapter><?= $h($t('add_chapter')) ?> +</button></div>
-<details class="advanced" data-advanced><summary><?= $h($t('advanced')) ?></summary><p><?= $h($t('authoring_help')) ?></p><label for="content"><?= $h($t('content_json')) ?></label><textarea id="content" name="content" rows="14" class="code" required><?= $h(json_encode($templateCourse, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)) ?></textarea></details>
+<details class="advanced" data-advanced><summary><?= $h($t('advanced')) ?></summary><p><?= $h($t('editor_help')) ?></p><label for="content"><?= $h($t('content_json')) ?></label><textarea id="content" name="content" rows="14" class="code" required><?= $h(json_encode($templateCourse, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)) ?></textarea></details>
 <label class="checkbox"><input type="checkbox" name="publish" value="1"><?= $h($t('publish')) ?></label><button class="button"><?= $h($t('create')) ?> +</button>
 <template data-resource-template><div class="editor-resource"><label><?= $h($t('resource_type')) ?><select data-resource-type><?php foreach (['document','slides','diagram','audio'] as $type): ?><option value="<?= $type ?>"><?= $h($t($type)) ?></option><?php endforeach ?></select></label><?php foreach (['title'=>'resource_title','url'=>'resource_url'] as $field=>$label): ?><div class="bilingual-fields"><span class="field-title"><?= $h($t($label)) ?></span><?php foreach (['fr','en'] as $language): ?><label><?= strtoupper($language) ?><input data-resource-field="<?= $field ?>" data-language="<?= $language ?>" type="<?= $field==='url'?'url':'text' ?>" <?= $field==='url'?'pattern="https://.*"':'' ?> required></label><?php endforeach ?></div><?php endforeach ?><button type="button" class="remove-link" data-remove-resource><?= $h($t('remove_resource')) ?> ×</button></div></template>
 </form></section>

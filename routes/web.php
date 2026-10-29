@@ -271,7 +271,7 @@ return function (Router $router) {
     $router->get('/', [HomeController::class, 'index']);
     // Academy marketing is public; every learning read/write requires a live paid membership.
     $router->get('/academy', [\App\Controllers\Web\AcademyController::class, 'home']);
-    $academyMw = [AuthMiddleware::class, \App\Middleware\AcademyPaidMiddleware::class];
+    $academyMw = [AuthMiddleware::class, TrainingModuleSanctionMiddleware::class, \App\Middleware\AcademyPaidMiddleware::class];
     $router->get('/academy/qr', [\App\Controllers\Web\AcademyController::class, 'qr'], $academyMw);
     $router->get('/academy/{space}', [\App\Controllers\Web\AcademyController::class, 'space'], $academyMw);
     $router->post('/academy/action/{action}', [\App\Controllers\Web\AcademyController::class, 'action'], $academyMw);

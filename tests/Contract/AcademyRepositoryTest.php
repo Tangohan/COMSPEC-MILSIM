@@ -64,13 +64,13 @@ final class AcademyRepositoryTest extends TestCase
     {
         $course = AcademyCurriculum::demo();
         $this->repository->saveCourse(1, 10, $course, false);
-        self::assertCount(1, $this->repository->courses(1));
-        $draft = $this->repository->courses(1, true)[1];
+        self::assertCount(0, $this->repository->courses(1));
+        $draft = $this->repository->courses(1, true)[0];
         $this->repository->publish(2, $draft['key']);
-        self::assertCount(1, $this->repository->courses(1));
+        self::assertCount(0, $this->repository->courses(1));
         $this->repository->publish(1, $draft['key']);
-        self::assertCount(2, $this->repository->courses(1));
-        self::assertCount(1, $this->repository->courses(2));
+        self::assertCount(1, $this->repository->courses(1));
+        self::assertCount(0, $this->repository->courses(2));
         $this->repository->enroll(1,10,$draft);
         $this->repository->enroll(1,10,array_replace($draft,['title'=>['fr'=>'Nouveau','en'=>'New']]));
         self::assertSame($draft['title'], $this->repository->states(1,10)[$draft['key']]['snapshot']['title']);

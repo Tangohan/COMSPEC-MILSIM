@@ -15,7 +15,7 @@ final class AcademyPaidMiddleware
 {
     public function __invoke(Request $request, callable $next): Response
     {
-        $tenant = Container::get(TenantRepository::class)->findById((int) Session::get('tenant_id'));
+        $tenant = Container::get(TenantRepository::class)->findById(\App\Services\Tenant\TenantContext::id());
         if (!$tenant || !AcademyAccess::paid($tenant)) {
             return Response::redirect(url('academy?access=paid'));
         }

@@ -9,6 +9,15 @@ final class AcademyCurriculum
     public const STAGES = ['theory', 'demonstration', 'guided', 'simulation', 'assessment', 'debrief', 'validation'];
     public const EXAM_SECONDS = 300;
 
+    public static function blank(): array
+    {
+        $text = ['fr'=>'', 'en'=>''];
+        return ['title'=>$text, 'summary'=>$text, 'chapters'=>[
+            ['title'=>$text, 'theory'=>$text, 'demonstration'=>$text, 'question'=>$text,
+             'options'=>[$text,$text,$text], 'answer'=>0, 'feedback'=>$text, 'resources'=>[]],
+        ]];
+    }
+
     public static function demo(): array
     {
         $topics = [

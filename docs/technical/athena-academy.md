@@ -1,65 +1,56 @@
-# ATHENA Academy — préversion 0.1 / pre-release 0.1
+# ATHENA Academy — accueil connecté au LMS / live LMS entrance
 
-## FR — Installation et périmètre
+## FR
 
-L’accueil se trouve sur `/academy`. Les espaces pédagogiques sont accessibles sur `/academy/dashboard`, `/academy/catalogue`, `/academy/courses`, `/academy/classroom`, `/academy/laboratory`, `/academy/simulators`, `/academy/exams`, `/academy/library`, `/academy/notebook`, `/academy/record` et `/academy/instructor`. Les menus invité et membre proposent l’entrée ATHENA Academy. Les pages, messages, cursus de démonstration et formulaires sont disponibles en français et en anglais via le sélecteur habituel d’ATHENA.
+`/academy` est une entrée dans le LMS ATHENA existant, avec une hero photographique pleine largeur, un effet de flou et la DA marketing noir/menthe du site. L’image fournie par l’utilisateur est servie localement depuis `public/assets/images/academy-hero.jpg`. Source : <https://forwardobservations.com/cdn/shop/files/87321613-A40C-4309-AD42-9DF6C492EDB1_4472x.jpg?v=1693081265>.
 
-Cette livraison modifie l’application PHP existante. Elle ne crée pas un nouveau site hébergé et ne modifie pas le simulateur ATAK existant. Elle fournit un espace Academy indépendant, un simulateur pédagogique fictif et un cursus de démonstration en trois chapitres. Les contenus métier JTAC et la migration de scénarios du simulateur existant restent à définir et à faire revoir par les instructeurs. Aucune certification officielle n’est délivrée.
+### Compte, communauté et accès
 
-### Direction artistique
+Les visiteurs voient une invitation à se connecter. Les sessions ouvertes passent par le même `AuthMiddleware` que `/formations` : compte actif, validité de session, communauté, restrictions et permissions sont vérifiés par l’application. L’accueil utilise `TenantContext::id()` pour la communauté effective ; aucun ID de compte ou de tenant transmis dans l’URL n’est utilisé.
 
-L’accueil réutilise `views/layout/marketing.php`, son menu, son pied de page et les médias existants d’ATHENA : registre immersif noir/menthe et typographie Inter. Les espaces membres utilisent le registre LMS clair/émeraude, le bandeau module et l’aside partagé `views/partials/lms_nav_aside.php`, avec son menu mobile. `academy.css` consomme les tokens de `design-system.css` ; aucune palette orange ni identité de marque indépendante n’est ajoutée.
+L’interface distingue les états visiteur, compte sans communauté, communauté sans formule payante active, accès actif et indisponibilité de la vérification. Le nom du compte, la communauté, la formule, les formations publiées et la reprise du cursus proviennent du serveur. Les réponses personnalisées sont `private, no-store`. Les routes pédagogiques conservent le contrôle de formule Standard/Pro payante active ; les restrictions du module formation sont également appliquées. Le prestataire de paiement reste celui déjà configuré dans ATHENA, sans nouvelle intégration.
 
-### Activation
+### Réutilisation du LMS existant
 
-1. Déployer les fichiers de cette livraison dans l’application PHP 8.4 existante.
-2. Appliquer `migrations/20261029130000_athena_academy.sql` au moyen du pipeline de migrations habituel (`php run-migrations.php`). Cette migration ajoute uniquement `academy_courses` et `academy_learners` ; elle ne transforme ni ne supprime les données du LMS existant.
-3. Vérifier un compte actif rattaché à une communauté ayant une formule `standard` ou `pro`, un statut d’abonnement `active`, et une période de paiement manuel non échue lorsqu’elle existe. Les formules gratuites, essais, abonnements échus ou en impayé ne donnent pas accès. L’expiration ou une date manuelle invalide bloque l’accès.
-4. Pour les instructeurs, utiliser les permissions existantes reconnues par `TrainingLmsStaffAccess`. Tester la validation avec deux comptes distincts : l’auto-validation est interdite.
+`AcademyLmsBridge` appelle `TrainingService::getCatalogue()` et `TrainingEnrollmentRepository::listByUserId()` avec le compte et la communauté courants. Il conserve les règles existantes : contenus communauté/plateforme, visibilité, masquage des parcours et priorité aux copies communautaires. La progression vient de `getGlobalProgress()`. Les inscriptions retirées, révoquées ou expirées sont exclues des activités en cours ; les approbations en attente restent à 0 %.
 
-Aucun nouveau prestataire de paiement n’a été configuré : choix reporté à la demande de l’utilisateur. Les boutons de formule conduisent au parcours de facturation existant. Le droit est vérifié côté serveur à chaque lecture et écriture Academy ; le navigateur ne peut pas activer une formule.
+Les anciens modules `legacy_training_modules` sont également récupérés lorsque `TRAINING_LEGACY_ENABLED` l’autorise. Un module ancien ne remplace jamais un parcours LMS moderne portant le même slug. Les cours sont présentés sous forme de listes, sans grille de cartes ni cursus de démonstration injecté.
 
-### Parcours pédagogique
+Les formations s’ouvrent dans le lecteur existant `/formations/{slug}` : inscriptions, leçons, ressources, évaluations, corrections et attestations continuent d’utiliser leurs contrôleurs et leurs règles d’accès habituels. Les outils réutilisés sont le catalogue et sa recherche avancée, les inscriptions personnelles, les sessions, les compétences et les codes d’accès. Les instructeurs disposent des liens vers le Studio, le suivi des inscriptions, les rapports, les attestations et les publications. Leurs routes natives restent responsables de leurs autorisations.
 
-Chaque chapitre suit : théorie → démonstration → exercice guidé → simulation autonome → évaluation → débriefing → validation par un instructeur. Les lectures sont déclaratives ; la pratique et l’évaluation sont corrigées côté serveur. En préversion, chaque chapitre utilise une même question pédagogique à trois options pour les étapes de pratique et d’évaluation. L’évaluation dure cinq minutes avec un seuil de réussite de 100 %. Ce format teste le parcours LMS ; il ne constitue pas un examen de qualification JTAC.
+Aucun cours ni résultat fictif n’est créé à l’ouverture. Un catalogue vide est affiché comme vide. L’auteur d’un cursus Academy supplémentaire part désormais d’un formulaire FR/EN vierge. Les contenus publiés du LMS conservent les langues dans lesquelles leurs auteurs les ont rédigés ; les libellés de l’interface Academy sont FR/EN.
 
-Les tentatives, résultats, débriefings et retours instructeur sont conservés. Une évaluation expirée échoue même si la réponse est correcte. Une validation débloque le chapitre suivant. Chaque inscription conserve une copie de sa version du cursus, afin que les nouvelles publications ne changent pas rétroactivement les questions ou les critères d’une inscription en cours. Les écritures de progression sont transactionnelles avec verrouillage de ligne ; les formulaires portent l’étape et le chapitre attendus pour empêcher les doubles soumissions d’avancer deux fois.
+Les tables `academy_courses` et `academy_learners`, ajoutées par `migrations/20261029130000_athena_academy.sql`, restent utilisées pour les fonctions Academy supplémentaires (carnet privé et cursus en sept étapes). Si ces tables n’ont pas encore été migrées, les formations et outils du LMS existant restent accessibles ; les fonctions supplémentaires signalent leur indisponibilité. Aucune nouvelle migration n’est nécessaire pour cette intégration au LMS existant.
 
-### Création et ressources
+### Disclaimer à l’ouverture
 
-L’instructeur crée un cursus avec un formulaire FR/EN, ajoute ou retire des chapitres et définit une question, trois options et une réponse correcte par chapitre. Il peut ajouter des ressources `document`, `slides`, `diagram` ou `audio`, avec des titres et URL HTTPS dans les deux langues. Les documents, diapositives et schémas s’ouvrent dans un nouvel onglet ; les enregistrements audio disposent d’un lecteur. Les ressources externes doivent autoriser la lecture par le navigateur et respecter la politique CSP de l’hébergement. Aucun téléversement ni exécution de HTML arbitraire n’est ajouté.
+Le composant commun `views/academy/disclaimer.php` utilise un dialogue natif accessible. À la première visite, il affiche le disclaimer de préversion et l’absence de qualification officielle. Après validation explicite, seul le choix `accepted` est écrit dans `localStorage` sous `athena:academy:disclaimer:2026-10-29-v1`.
 
-Une nouvelle version peut être enregistrée en brouillon ou publiée dans le catalogue de la communauté. Un brouillon enregistré peut être publié ensuite. Le mode JSON avancé permet aussi de créer une nouvelle version à partir d’un contenu existant. Le formulaire visuel nécessite JavaScript ; le mode JSON reste utilisable sans JavaScript.
+La version fait partie de la clé : changer `data-disclaimer-version` réaffiche le texte après une modification du disclaimer. Le bouton « Lire l’avertissement » permet de le rouvrir. Fermer avec Échap ne mémorise aucune validation. Un refus du navigateur d’accéder au localStorage ne casse pas la page ; le dialogue peut être validé sans persistance. Le localStorage ne contient aucun identifiant, droit d’accès ou résultat et ne remplace jamais les contrôles côté serveur.
 
-Le simulateur indépendant ne modifie pas le dossier stagiaire. Le carnet est privé, conserve jusqu’à 30 000 caractères, propose l’impression des fiches et un QR code vers la salle de cours, qui reste protégée par les mêmes contrôles d’accès. Les notes personnelles sont exclues de la requête de suivi instructeur.
+### Vérifications
 
-### Vérification et limites
-
-26 tests / 200 assertions passent sous PHP 8.4 et MariaDB 11.4 : droits payants, contrôles GET/POST, traduction FR/EN, rendu des onze espaces, échappement des notes, progression, rejeu, expiration, publication, copies de cursus, isolation stagiaire/communauté et rollback des mutations. La syntaxe PHP et JavaScript a également été contrôlée.
-
-Commande des tests :
+Tests PHP : rendu des onze espaces et des états d’accès de l’accueil en FR/EN, source des formations, portée compte/tenant du bridge, récupération des modules anciens sans doublon, progression, droits payants et isolation des données sur MariaDB jetable. Les tests du repository refusent toute base autre qu’une base isolée nommée `academy_test` et restent facultatifs sans `ACADEMY_TEST_DSN`.
 
 ```sh
 php vendor/phpunit/phpunit/phpunit --no-configuration --bootstrap tests/bootstrap.php \
-  tests/Unit/AcademyCurriculumTest.php \
-  tests/Unit/AcademyViewsTest.php \
-  tests/Unit/AcademyAccessMiddlewareTest.php \
-  tests/Contract/AcademyRepositoryTest.php \
-  tests/Unit/ManualBillingTest.php
+  tests/Unit/AcademyViewsTest.php tests/Unit/AcademyLiveHomeTest.php \
+  tests/Unit/AcademyLmsBridgeTest.php tests/Unit/AcademyCurriculumTest.php \
+  tests/Unit/AcademyAccessMiddlewareTest.php tests/Unit/ManualBillingTest.php \
+  tests/Contract/AcademyRepositoryTest.php
+node tests/Frontend/academy-disclaimer.test.cjs
 ```
 
-Le test de repository est facultatif sans `ACADEMY_TEST_DSN`. Pour l’exécuter, utiliser une base MariaDB jetable nommée strictement `academy_test`, avec l’utilisateur root et sans mot de passe, sur un réseau Docker de test isolé, sans port exposé. Ce test efface uniquement les tables Academy de cette base de test et refuse toute autre base. Ne jamais le diriger vers une base applicative.
+Cinq tests JavaScript vérifient l’ouverture, l’acceptation, la réouverture, le changement de clé de version et le fonctionnement quand le stockage est refusé. Ils exécutent les gestionnaires du script dans un DOM simulé ; ce ne sont pas des tests visuels dans un navigateur.
 
-La migration et les tests ont été exécutés sur une base de test jetable, sans modification de la base applicative. Aucun déploiement en production ni contrôle visuel dans un navigateur n’a été effectué dans cette session. L’interface comprend une mise en page responsive ; la recette visuelle et la validation des contenus métier restent à réaliser sur l’hébergement cible.
+Le lien public `/public/formations` redirige vers la connexion ; l’intégration s’appuie sur les sources de cette même application présentes dans le dépôt. Aucun compte externe n’a été utilisé. Aucun déploiement ni accès à la base de production n’a été effectué ; la recette visuelle et la vérification des comptes réels restent à réaliser sur l’hébergement cible.
 
-## EN — Setup and scope
+## EN
 
-Open `/academy` for the bilingual home page and `/academy/dashboard` for the protected learning space. Deploy the changed files to the existing PHP 8.4 application and apply `migrations/20261029130000_athena_academy.sql` through the normal migration pipeline. The two added tables are isolated from the existing LMS.
+`/academy` now uses the existing ATHENA LMS as its source of courses and progress. The public entrance has a full-width blurred photographic hero using the user-supplied image, editorial lists and the site's existing black/mint marketing design. Signed-in requests reuse the native authentication middleware and effective tenant context. Guest, missing-community, unpaid, active and unavailable states are resolved server-side; account/tenant IDs from the URL cannot select learning data.
 
-Every Academy learning read and write requires an active user session and a current paid Standard or Pro community plan. Free plans, trials, expired manual periods and overdue subscriptions are rejected server-side. No new payment provider has been configured; the choice was deferred by the user. Existing ATHENA billing remains the source of subscription status.
+`AcademyLmsBridge` reuses the native course catalogue, enrolments and progress service. Legacy modules are included when enabled, without overriding modern courses sharing a slug. Courses open in the original player so native enrolment, assessment, resource and certificate policies remain in effect. The Academy links to existing catalogue filters, sessions, skills, access codes and instructor tools. No demonstration course is automatically published or injected; additional Academy curricula start with a blank bilingual form.
 
-The pre-release supplies a three-chapter demonstration curriculum, seven sequential learning stages, a fictional independent practice simulator, server-timed assessments, private notes, a classroom QR code, printable study cards, learner records and instructor review. Instructors create bilingual courses and resource links using a structured form or advanced JSON mode, save drafts and publish them within their community. Enrolments retain immutable content snapshots. Learners cannot validate themselves. Personal notebooks are never returned by the staff-review query.
+A native disclaimer dialog appears on first use. Explicit acknowledgement is stored under a versioned localStorage key. The notice can be reopened, a version change triggers a new acknowledgement, and blocked browser storage does not break the page. Access rights always remain server-controlled. Existing published learning content retains its authored languages; Academy interface labels support French and English.
 
-This is a foundation for the Academy, not an official JTAC qualification programme. Subject-specific content and integration of scenarios from the existing ATAK simulator require separate definition and review. The existing ATAK simulator has not been changed. Documents, slides and interactive diagrams use external HTTPS resources; audio resources have a player, subject to the hosting CSP and resource server permissions.
-
-Validation: 26 tests and 200 assertions passed on PHP 8.4 and disposable MariaDB 11.4, plus PHP/JavaScript syntax checks. Production migration, deployment and visual browser QA have not been performed. Use `ACADEMY_TEST_DSN` only with an isolated disposable database named `academy_test`; the repository tests clear its Academy tables.
+The existing LMS works without the optional Academy tables. Apply the previously supplied Academy migration only for its additional notes/curriculum features. No new schema migration or payment-provider integration is introduced here. PHP tests cover account/tenant scope, real catalogue integration, access states, progress and isolated MariaDB persistence; five JavaScript handler tests cover the disclaimer. No production deployment, live-account verification or visual browser QA was performed.
