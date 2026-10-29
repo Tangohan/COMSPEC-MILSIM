@@ -269,6 +269,13 @@ return function (Router $router) {
     $mwCourrier = [AuthMiddleware::class, CourrierModuleSanctionMiddleware::class];
 
     $router->get('/', [HomeController::class, 'index']);
+    // Academy marketing is public; every learning read/write requires a live paid membership.
+    $router->get('/academy', [\App\Controllers\Web\AcademyController::class, 'home']);
+    $academyMw = [AuthMiddleware::class, \App\Middleware\AcademyPaidMiddleware::class];
+    $router->get('/academy/qr', [\App\Controllers\Web\AcademyController::class, 'qr'], $academyMw);
+    $router->get('/academy/{space}', [\App\Controllers\Web\AcademyController::class, 'space'], $academyMw);
+    $router->post('/academy/action/{action}', [\App\Controllers\Web\AcademyController::class, 'action'], $academyMw);
+
     $router->get('/locale/{locale}', [\App\Controllers\Web\LocaleController::class, 'switch']);
     $router->get('/robots.txt', [SeoController::class, 'robots']);
     $router->get('/sitemap.xml', [SeoController::class, 'sitemap']);

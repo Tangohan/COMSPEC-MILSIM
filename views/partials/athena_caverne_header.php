@@ -127,6 +127,7 @@ $navItems = [
     ['key' => 'dashboard', 'label' => 'Dashboard', 'href' => url('dashboard'), 'path' => 'dashboard'],
     ['key' => 'hub', 'label' => 'Hub', 'href' => url('hub'), 'path' => 'hub'],
 ];
+$navItems[] = ['key' => 'academy', 'label' => 'ATHENA Academy', 'href' => url('academy'), 'path' => 'academy'];
 $navItems[] = ['key' => 'formations', 'label' => 'Formations', 'href' => url('formations'), 'path' => 'formations'];
 $navItems[] = ['key' => 'effectifs', 'label' => 'Effectifs', 'href' => url('personnel'), 'path' => 'personnel'];
 if ($headerNoOrg) {
