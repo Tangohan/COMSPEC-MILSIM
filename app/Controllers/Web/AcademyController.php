@@ -11,6 +11,14 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AcademyRepository;
+use App\Repositories\TenantRepository;
+use App\Repositories\UserRepository;
+use App\Repositories\TrainingEnrollmentRepository;
+use App\Repositories\TrainingRepository;
+use App\Services\Training\TrainingService;
+use App\Services\Tenant\TenantContext;
+use App\Services\Academy\AcademyAccess;
+use App\Services\Academy\AcademyLmsBridge;
 use App\Services\Academy\AcademyCurriculum;
 use App\Support\TrainingLmsStaffAccess;
 
@@ -18,7 +26,51 @@ final class AcademyController
 {
     public function home(Request $request, array $params = []): Response
     {
-        return Response::view('academy.home', ['paidRequired' => $request->query('access') === 'paid']);
+        // Public to guests; signed-in requests use the same account/session validation as /formations.
+        if ((int) Session::get('user_id') > 0) {
+            return (new \App\Middleware\AuthMiddleware())($request, fn (Request $authenticated): Response => (new \App\Middleware\TrainingModuleSanctionMiddleware())($authenticated, fn (Request $allowed): Response => $this->homeForCurrentAccount($allowed)));
+        }
+        return $this->homeForCurrentAccount($request);
+    }
+
+    private function lms(): AcademyLmsBridge
+    {
+        return new AcademyLmsBridge(
+            Container::get(TrainingService::class),
+            Container::get(TrainingEnrollmentRepository::class),
+            training_legacy_enabled() ? Container::get(TrainingRepository::class) : null,
+        );
+    }
+
+    private function homeForCurrentAccount(Request $request): Response
+    {
+        $account = null;
+        $tenant = null;
+        $accessState = 'guest';
+        $legacyCourses = $legacyEnrollments = [];
+        $staff = false;
+        try {
+            $userId = (int) Session::get('user_id');
+            if ($userId > 0) {
+                $account = Container::get(UserRepository::class)->findById($userId);
+                $tenant = Container::get(TenantRepository::class)->findById(TenantContext::id());
+                $accessState = !$tenant || ($tenant['slug'] ?? '') === 'default' ? 'no_tenant' : 'unpaid';
+                if ($account && $tenant && $accessState !== 'no_tenant' && AcademyAccess::paid($tenant)) {
+                    if (!Container::get(\App\Services\Platform\FeatureGateService::class)->allows((int) $tenant['id'], 'training')) {
+                        return Response::view('academy.home', compact('account','tenant','legacyCourses','legacyEnrollments','staff') + ['accessState'=>'unavailable'])->header('Cache-Control','private, no-store');
+                    }
+                    $data = $this->lms()->load((int) $tenant['id'], $userId);
+                    $legacyCourses = $data['legacyCourses'];
+                    $legacyEnrollments = $data['legacyEnrollments'];
+                    $accessState = 'active';
+                    $staff = TrainingLmsStaffAccess::allows(Gate::getInstance());
+                }
+            }
+        } catch (\PDOException | \RuntimeException) {
+            $accessState = 'unavailable';
+        }
+        return Response::view('academy.home', compact('account', 'tenant', 'accessState', 'legacyCourses', 'legacyEnrollments', 'staff'))
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function qr(Request $request, array $params = []): Response
@@ -43,10 +95,24 @@ final class AcademyController
         }
         try {
             $repository = new AcademyRepository();
-            $tenantId = (int) Session::get('tenant_id');
-            $states = $repository->states($tenantId, (int) Session::get('user_id'));
-            $courses = $repository->courses($tenantId, $space === 'instructor');
-            $key = (string) $request->query('course', 'fondamentaux');
+            $tenantId = TenantContext::id();
+            if (!Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tenantId, 'training')) {
+                return $this->error('module_unavailable', 403);
+            }
+            $lmsData = $this->lms()->load($tenantId, (int) Session::get('user_id'));
+            $tenant = Container::get(TenantRepository::class)->findById($tenantId);
+            $account = ['display_name'=>(string) Session::get('display_name',''), 'callsign'=>(string) Session::get('callsign','')];
+            $academyStorageReady = true;
+            try {
+                $states = $repository->states($tenantId, (int) Session::get('user_id'));
+                $courses = $repository->courses($tenantId, $space === 'instructor');
+            } catch (\PDOException) {
+                // Existing LMS remains usable before the optional Academy tables are migrated.
+                $states = $courses = [];
+                $academyStorageReady = false;
+            }
+            $firstEnrollment = array_key_first(array_filter($states, static fn ($key): bool => $key !== '__notes', ARRAY_FILTER_USE_KEY));
+            $key = (string) $request->query('course', $firstEnrollment ?? ($courses[0]['key'] ?? ''));
             $selected = null;
             foreach ($courses as $course) {
                 if ($course['key'] === $key) {
@@ -58,8 +124,9 @@ final class AcademyController
             if ($state !== null) {
                 $selected = $state['snapshot'] ?? $selected;
             }
-            return Response::view('academy.space', compact('space', 'staff', 'states', 'courses', 'selected', 'state') + [
-                'learners' => $space === 'instructor' ? $repository->learners($tenantId) : [],
+            return Response::view('academy.space', compact('space', 'staff', 'states', 'courses', 'selected', 'state', 'account', 'tenant') + $lmsData + [
+                'academyStorageReady' => $academyStorageReady,
+                'learners' => $space === 'instructor' && $academyStorageReady ? $repository->learners($tenantId) : [],
                 'notice' => Session::get('academy_notice', ''),
             ]);
         } catch (\PDOException) {
@@ -73,13 +140,16 @@ final class AcademyController
             return $this->error('csrf', 419);
         }
         $action = (string) ($params['action'] ?? '');
-        $tenantId = (int) Session::get('tenant_id');
+        $tenantId = TenantContext::id();
         $userId = (int) Session::get('user_id');
-        $key = $request->input('course', 'fondamentaux');
+        $key = $request->input('course', 'academy');
         if (!is_string($key) || !preg_match('/\A[a-z0-9-]{1,64}\z/', $key)) {
             return $this->error('invalid_content', 422);
         }
         try {
+            if (!Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tenantId, 'training')) {
+                return $this->error('module_unavailable', 403);
+            }
             $repository = new AcademyRepository();
             $returnSpace = 'classroom';
             if ($action === 'enroll') {

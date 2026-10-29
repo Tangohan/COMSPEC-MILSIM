@@ -3,7 +3,7 @@ const search = document.querySelector('[data-course-search]');
 if (search) search.addEventListener('input', () => {
   const query = search.value.trim().toLocaleLowerCase();
   let visible = 0;
-  document.querySelectorAll('[data-course-card]').forEach(card => {
+  document.querySelectorAll('[data-course-row]').forEach(card => {
     card.hidden = !card.textContent.toLocaleLowerCase().includes(query);
     if (!card.hidden) visible++;
   });
@@ -20,22 +20,6 @@ document.querySelectorAll('[data-countdown]').forEach(clock => {
   };
   const interval = setInterval(update, 1000);
   update();
-});
-document.querySelectorAll('[data-simulator]').forEach(simulator => {
-  const result = simulator.querySelector('[data-sim-result]');
-  simulator.querySelectorAll('[data-sim-answer]').forEach(button => {
-    button.addEventListener('click', () => {
-      const correct = button.dataset.simAnswer === '0';
-      result.textContent = correct ? simulator.dataset.correct : simulator.dataset.wrong;
-      simulator.querySelectorAll('[data-sim-answer]').forEach(answer => answer.removeAttribute('aria-pressed'));
-      button.setAttribute('aria-pressed', 'true');
-    });
-  });
-  simulator.querySelector('[data-sim-reset]').addEventListener('click', () => {
-    result.textContent = '';
-    simulator.querySelectorAll('[data-sim-answer]').forEach(answer => answer.removeAttribute('aria-pressed'));
-    simulator.querySelector('[data-sim-answer]').focus();
-  });
 });
 document.querySelectorAll('[data-print]').forEach(button => button.addEventListener('click', () => {
   const notes = document.querySelector('[name=notes]');
@@ -95,4 +79,24 @@ document.querySelectorAll('[data-course-editor]').forEach(form => {
     fields.querySelectorAll('input,textarea,select').forEach(input => input.disabled = advanced.open);
   });
   form.addEventListener('submit', () => { if (!advanced.open) serialize(); });
+});
+// This stores acknowledgement only. Identity, community and entitlement stay server-side.
+document.querySelectorAll('[data-academy-disclaimer]').forEach(dialog => {
+  const key = `athena:academy:disclaimer:${dialog.dataset.disclaimerVersion}`;
+  const open = () => {
+    if (dialog.open) return;
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+  };
+  let acknowledged = false;
+  try { acknowledged = localStorage.getItem(key) === 'accepted'; } catch { /* Storage may be unavailable in private mode. */ }
+  if (!acknowledged) open();
+  dialog.querySelector('[data-disclaimer-form]').addEventListener('submit', event => {
+    event.preventDefault();
+    if (!event.currentTarget.reportValidity()) return;
+    try { localStorage.setItem(key, 'accepted'); } catch { /* Keep the page usable when persistence is denied. */ }
+    if (typeof dialog.close === 'function') dialog.close();
+    else dialog.removeAttribute('open');
+  });
+  document.querySelectorAll('[data-open-disclaimer]').forEach(button => button.addEventListener('click', open));
 });

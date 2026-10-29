@@ -21,7 +21,7 @@ final class AcademyRepository
     {
         $stmt = $this->pdo->prepare('SELECT course_key, content_json, published FROM academy_courses WHERE tenant_id = ?' . ($drafts ? '' : ' AND published = 1') . ' ORDER BY updated_at DESC');
         $stmt->execute([$tenantId]);
-        $courses = [AcademyCurriculum::demo()];
+        $courses = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $content = json_decode($row['content_json'], true, 64, JSON_THROW_ON_ERROR);
             $content['key'] = $row['course_key'];

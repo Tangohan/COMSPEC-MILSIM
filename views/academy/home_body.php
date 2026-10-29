@@ -1,12 +1,55 @@
-<div id="main" class="academy-content academy-public"><div class="release"><strong><?= $h($t('prerelease')) ?></strong><p><?= $h($t('disclaimer')) ?></p></div>
-<?php if ($paidRequired ?? false): ?><div class="access-alert" role="alert"><?= $h($t('paid_required')) ?> <a href="<?= $h(url('platform/upgrade?from=academy')) ?>"><?= $h($t('offers')) ?> →</a></div><?php endif ?>
-<section class="hero wrap">
-<div class="hero-copy"><p class="eyebrow"><i></i><?= $h($t('eyebrow')) ?></p><h1 class="hi-display hi-display-lg"><?= $h($t('hero1')) ?><br><span><?= $h($t('hero2')) ?></span></h1><p class="lede"><?= $h($t('hero_text')) ?></p><div class="buttons"><a class="button" href="<?= $h($link('dashboard')) ?>"><?= $h($t('enter')) ?> <span>↗</span></a><a class="text-link" href="#program"><?= $h($t('discover')) ?> <span>↓</span></a></div><div class="hero-meta"><span>01 — 07</span><span><?= $h($t('pillar1')) ?></span><span>FR / EN</span></div></div>
-<div class="academy-hero-media"><video autoplay muted loop playsinline preload="metadata" poster="<?= $h(url('assets/images/fog-team.jpg')) ?>" aria-hidden="true"><source src="<?= $h(url('assets/video/hero-athena.mp4')) ?>" type="video/mp4"></video><div class="academy-hero-caption"><span class="pill"><?= $h($t('fictitious')) ?></span><h2><?= $h($t('hero_panel')) ?></h2><p><?= $h($t('hero_panel_text')) ?></p></div></div>
+<?php
+$accessState = $accessState ?? 'guest';
+$account = $account ?? null;
+$tenant = $tenant ?? null;
+$legacyCourses = $legacyCourses ?? [];
+$legacyEnrollments = $legacyEnrollments ?? [];
+$staff = $staff ?? false;
+$hasAccess = $accessState === 'active';
+$primaryHref = match ($accessState) {
+    'active' => $link('dashboard'),
+    'no_tenant' => url('communities'),
+    'unpaid' => url('platform/upgrade?from=academy'),
+    'unavailable' => $link(),
+    default => url('login?redirect=academy'),
+};
+$primaryLabel = match ($accessState) {
+    'active' => 'enter', 'no_tenant'=>'choose_community', 'unpaid'=>'offers', 'unavailable'=>'reload', default=>'login',
+};
+$resume = null;
+foreach ($legacyEnrollments as $enrollment) {
+    if (in_array($enrollment['status'] ?? '', ['assigned','in_progress'], true)) { $resume = $enrollment; break; }
+}
+if ($hasAccess && $resume) { $primaryHref = url('formations/' . rawurlencode($resume['course_slug'])); $primaryLabel = 'continue'; }
+?>
+<div id="main" class="academy-content academy-public academy-live">
+<section class="academy-full-hero" aria-labelledby="academy-title">
+<img class="academy-full-hero__image" src="<?= $h(asset_url('assets/images/academy-hero.jpg')) ?>" alt="" fetchpriority="high" decoding="async" width="1818" height="1256">
+<div class="academy-full-hero__shade"></div>
+<div class="academy-full-hero__content wrap">
+<p class="eyebrow">ATHENA / <?= $h($t('tagline')) ?></p>
+<h1 id="academy-title" class="hi-display">ATHENA<br><span>ACADEMY.</span></h1>
+<p class="academy-hero-intro"><?= $h($t('live_hero')) ?></p>
+<div class="buttons"><a class="button" href="<?= $h($primaryHref) ?>"><?= $h($t($primaryLabel)) ?> ↗</a><a class="text-link" href="#academy-workspace"><?= $h($t('your_workspace')) ?> ↓</a></div>
+<div class="academy-identity" data-access-state="<?= $h($accessState) ?>">
+<span class="academy-identity__state"><i aria-hidden="true"></i><?= $h($t('access_' . $accessState)) ?></span>
+<?php if ($account): ?><span><?= $h(($account['display_name'] ?? '') ?: ($account['callsign'] ?? ('#' . (int)$account['id']))) ?></span><?php endif ?>
+<?php if ($tenant && ($tenant['slug']??'') !== 'default'): ?><span><?= $h($tenant['name']??$tenant['slug']) ?></span><span><?= $h(strtoupper((string)($tenant['plan_slug']??''))) ?></span><?php endif ?>
+<span>FR / EN</span></div>
+</div>
+<div class="academy-hero-foot wrap"><span><?= $h($t('prerelease')) ?></span><span><?= $h($t('not_official')) ?></span><button type="button" data-open-disclaimer><?= $h($t('read_disclaimer')) ?> ↗</button></div>
 </section>
-<div class="pillars wrap"><?php foreach (['pillar1','pillar2','pillar3'] as $i=>$key): ?><span><b>0<?= $i+1 ?></b><?= $h($t($key)) ?><i>↗</i></span><?php endforeach ?></div>
-<section id="program" class="section wrap"><div class="section-heading"><div><p class="eyebrow"><?= $h($t('course_eyebrow')) ?></p><h2><?= $h($t('course_heading')) ?></h2></div><p><?= $h($t('course_intro')) ?></p></div><div class="feature-course"><div class="course-art" aria-hidden="true"><span>FOUNDATIONS / 001</span><div class="art-grid"><b>01</b><i>↗</i></div><small>ATHENA · LEARNING PATH</small></div><div class="feature-body"><span class="pill accent"><?= $h($t('demo')) ?></span><h3><?= $h($t('course_name')) ?></h3><p><?= $h($t('course_desc')) ?></p><div class="course-stats"><span><b>03</b><?= $h($t('chapters')) ?></span><span><b>07</b><?= $h($t('steps')) ?></span><span><b>FR / EN</b></span></div><a class="text-link" href="<?= $h($link('catalogue')) ?>"><?= $h($t('discover')) ?> ↗</a></div></div></section>
+<section id="academy-workspace" class="section wrap academy-editorial">
+<div class="academy-editorial__intro"><p class="eyebrow"><?= $h($t('your_workspace')) ?></p><h2><?= $h($t($hasAccess ? 'workspace_ready' : 'access_heading')) ?></h2><p><?= $h($t('context_' . $accessState)) ?></p><?php if (!$hasAccess): ?><a class="button" href="<?= $h($primaryHref) ?>"><?= $h($t($primaryLabel)) ?> ↗</a><?php endif ?></div>
+<div class="academy-editorial__body">
+<?php if ($hasAccess): ?>
+<div class="academy-live-stats"><span><strong><?= count($legacyCourses) ?></strong><?= $h($t('published_courses')) ?></span><span><strong><?= count($legacyEnrollments) ?></strong><?= $h($t('enrolled')) ?></span><span><strong><?= count(array_filter($legacyEnrollments,static fn(array $e):bool=>($e['status']??'')==='completed')) ?></strong><?= $h($t('completed')) ?></span></div>
+<?php if ($resume): ?><div class="academy-resume"><p class="eyebrow"><?= $h($t('continue')) ?></p><h3><?= $h($resume['course_title']) ?></h3><div class="progress-label"><span><?= $h($t('progress')) ?></span><b><?= (int)$resume['progress_percent'] ?> %</b></div><progress max="100" value="<?= (int)$resume['progress_percent'] ?>"></progress><a class="text-link" href="<?= $h(url('formations/' . rawurlencode($resume['course_slug']))) ?>"><?= $h($t('continue')) ?> →</a></div><?php endif ?>
+<?php require __DIR__ . '/lms_tools.php'; ?>
+<?php else: ?><ol class="academy-access-path"><li><span>01</span><div><h3><?= $h($t('account_step')) ?></h3><p><?= $h($t('account_step_text')) ?></p></div></li><li><span>02</span><div><h3><?= $h($t('tenant_step')) ?></h3><p><?= $h($t('tenant_step_text')) ?></p></div></li><li><span>03</span><div><h3><?= $h($t('training_step')) ?></h3><p><?= $h($t('training_step_text')) ?></p></div></li></ol><?php endif ?>
+</div></section>
+<?php if ($hasAccess): ?><section class="section wrap academy-real-catalogue" id="program"><div class="section-heading"><div><p class="eyebrow"><?= $h($t('catalogue')) ?></p><h2><?= $h($t('your_community_courses')) ?></h2></div><a class="text-link" href="<?= $h($link('catalogue')) ?>"><?= $h($t('all_courses')) ?> ↗</a></div>
+<?php if (!$legacyCourses): ?><p class="academy-empty-line"><?= $h($t('no_published_courses')) ?></p><?php else: ?><ol class="academy-course-list"><?php foreach (array_slice($legacyCourses,0,6) as $index=>$course): ?><li><span class="academy-course-number"><?= str_pad((string)($index+1),2,'0',STR_PAD_LEFT) ?></span><a href="<?= $h(url('formations/' . rawurlencode($course['slug']))) ?>"><h3><?= $h($course['title']) ?></h3><p><?= $h(strip_tags($course['short_description']??'')) ?></p></a><span class="academy-course-detail"><?= (int)($course['estimated_minutes']??0) ?> min</span><a class="text-link" href="<?= $h(url('formations/' . rawurlencode($course['slug']))) ?>" aria-label="<?= $h($t('open').' · '.$course['title']) ?>">↗</a></li><?php endforeach ?></ol><?php endif ?></section><?php endif ?>
 <section id="method" class="method-section"><div class="wrap section"><p class="eyebrow"><?= $h($t('method_eyebrow')) ?></p><h2><?= $h($t('method_heading')) ?></h2><p class="section-intro"><?= $h($t('method_intro')) ?></p><ol class="method-steps"><?php foreach (\App\Services\Academy\AcademyCurriculum::STAGES as $i=>$step): ?><li><span>0<?= $i+1 ?></span><strong><?= $h($t($step)) ?></strong><i aria-hidden="true">→</i></li><?php endforeach ?></ol></div></section>
-<section class="section wrap"><p class="eyebrow"><?= $h($t('ecosystem_eyebrow')) ?></p><h2><?= $h($t('ecosystem_heading')) ?></h2><div class="space-grid"><?php foreach ($allSpaces as $item): ?><a class="space-card" href="<?= $h($link($item)) ?>"><span class="space-icon" aria-hidden="true"><?= $symbols[$item] ?></span><span class="arrow">↗</span><h3><?= $h($t($item)) ?></h3><p><?= $h($t($item . '_desc')) ?></p></a><?php endforeach ?></div></section>
-<section class="access-section wrap" id="access"><div><p class="eyebrow"><?= $h($t('access')) ?></p><h2><?= $h($t('access_heading')) ?></h2><p><?= $h($t('access_text')) ?></p><small><?= $h($t('access_note')) ?></small></div><div class="buttons"><a class="button" href="<?= $h($link('dashboard')) ?>"><?= $h($t('enter')) ?> ↗</a><a class="button outline" href="<?= $h(url('platform/upgrade?from=academy')) ?>"><?= $h($t('offers')) ?></a></div></section>
+<?php require __DIR__ . '/disclaimer.php'; ?>
 </div>
