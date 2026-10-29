@@ -6,7 +6,7 @@ use App\Services\AccessControl\FunctionBasedAccessCatalog;
 
 /**
  * Reversible FBAC v2 transition. The immutable snapshots are deliberately kept after migration.
- * Roles remain as compatibility/display records, but their grants are rebuilt solely from tiers.
+ * Roles and organisation grants remain as compatibility/display records; reserved platform grants are stripped.
  */
 function run_function_based_access_v2_migration(PDO $pdo): void
 {
@@ -95,7 +95,10 @@ function run_function_based_access_v2_migration(PDO $pdo): void
             $roleInsert->execute([$role['label'], $role['role_slug'], 'Rôle d’accès classique ATHENA.']);
         }
 
-        // One classic access role per user. Unknown/custom/military roles map to Member.
+        // Only newly migrated users receive compatibility links. The mapping also acts as a receipt:
+        // replay must not regrant an access role that an administrator has deliberately removed.
+        $newMappings=$pdo->query('SELECT u.tenant_id,u.id FROM users u LEFT JOIN access_control_v2_user_access_roles a ON a.tenant_id=u.tenant_id AND a.user_id=u.id WHERE u.tenant_id IS NOT NULL AND a.user_id IS NULL')->fetchAll(PDO::FETCH_ASSOC);
+        // One initial classic access role per user. Unknown/custom/military roles map to Member.
         $pdo->exec("INSERT INTO access_control_v2_user_access_roles
             (tenant_id,user_id,access_role_slug,legacy_role_id,migrated_at)
             SELECT u.tenant_id,u.id,
@@ -107,27 +110,29 @@ function run_function_based_access_v2_migration(PDO $pdo): void
                    WHEN r.slug='deputy_hr' THEN 'deputy_hr' ELSE 'member' END,
               r.id,NOW()
             FROM users u LEFT JOIN roles r ON r.id=u.role_id WHERE u.tenant_id IS NOT NULL
-            ON DUPLICATE KEY UPDATE access_role_slug=VALUES(access_role_slug),legacy_role_id=VALUES(legacy_role_id),migrated_at=VALUES(migrated_at)");
+            ON DUPLICATE KEY UPDATE tenant_id=VALUES(tenant_id)");
 
         // No platform-wide principal survives. Tenant roles lose reserved/aggregate grants.
         $pdo->exec('DELETE FROM site_role_assignments');
         $pdo->exec("DELETE rp FROM role_permissions rp JOIN permissions p ON p.id=rp.permission_id
             WHERE p.slug='*' OR p.slug='admin.system' OR p.slug='site.support' OR p.slug LIKE 'site.%' OR p.slug LIKE 'platform.%' OR p.slug LIKE 'system.%'");
-        $pdo->exec("DELETE rp FROM role_permissions rp JOIN roles r ON r.id=rp.role_id WHERE r.tenant_id IS NOT NULL");
+        // Preserve organisation-specific grants; only the reserved platform permissions above are removed.
 
-        // Replace only access-role assignments; military/job roles remain attached for display.
+        // Add canonical compatibility links without replacing current assignments.
         $accessSlugs = FunctionBasedAccessCatalog::accessRoleSlugs();
         $quotedSlugs = implode(',', array_map(static fn (string $slug): string => $pdo->quote($slug), $accessSlugs));
-        $pdo->exec("DELETE ur FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE r.slug IN ({$quotedSlugs})");
-        $pdo->exec("INSERT IGNORE INTO user_roles(user_id,role_id)
+        $addUserRole=$pdo->prepare("INSERT IGNORE INTO user_roles(user_id,role_id)
             SELECT a.user_id,r.id FROM access_control_v2_user_access_roles a
-            JOIN roles r ON r.tenant_id=a.tenant_id AND r.slug=a.access_role_slug");
-        $pdo->exec("UPDATE users u JOIN access_control_v2_user_access_roles a ON a.tenant_id=u.tenant_id AND a.user_id=u.id
-            JOIN roles r ON r.tenant_id=a.tenant_id AND r.slug=a.access_role_slug SET u.role_id=r.id");
-        $pdo->exec("DELETE tur FROM tenant_user_roles tur JOIN roles r ON r.id=tur.role_id WHERE r.slug IN ({$quotedSlugs})");
-        $pdo->exec("INSERT IGNORE INTO tenant_user_roles(tenant_id,user_id,role_id,org_unit_id,co_unit_id,created_at)
+            JOIN roles r ON r.tenant_id=a.tenant_id AND r.slug COLLATE utf8mb4_unicode_ci=a.access_role_slug COLLATE utf8mb4_unicode_ci WHERE a.tenant_id=? AND a.user_id=?");
+        $fillPrimary=$pdo->prepare("UPDATE users u JOIN access_control_v2_user_access_roles a ON a.tenant_id=u.tenant_id AND a.user_id=u.id
+            JOIN roles r ON r.tenant_id=a.tenant_id AND r.slug COLLATE utf8mb4_unicode_ci=a.access_role_slug COLLATE utf8mb4_unicode_ci SET u.role_id=r.id WHERE u.role_id IS NULL AND u.tenant_id=? AND u.id=?");
+        $addTenantRole=$pdo->prepare("INSERT IGNORE INTO tenant_user_roles(tenant_id,user_id,role_id,org_unit_id,co_unit_id,created_at)
             SELECT a.tenant_id,a.user_id,r.id,NULL,0,NOW() FROM access_control_v2_user_access_roles a
-            JOIN roles r ON r.tenant_id=a.tenant_id AND r.slug=a.access_role_slug");
+            JOIN roles r ON r.tenant_id=a.tenant_id AND r.slug COLLATE utf8mb4_unicode_ci=a.access_role_slug COLLATE utf8mb4_unicode_ci WHERE a.tenant_id=? AND a.user_id=?");
+        foreach ($newMappings as $newMapping) {
+            $params=[(int)$newMapping['tenant_id'],(int)$newMapping['id']];
+            $addUserRole->execute($params);$fillPrimary->execute($params);$addTenantRole->execute($params);
+        }
         $visualColumn = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='roles' AND COLUMN_NAME='is_visual_only' LIMIT 1")->fetchColumn();
         if ($visualColumn) {
             $pdo->exec("UPDATE roles SET is_visual_only=CASE WHEN slug IN ({$quotedSlugs}) THEN 0 ELSE 1 END WHERE tenant_id IS NOT NULL");

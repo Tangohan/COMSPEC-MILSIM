@@ -6,13 +6,12 @@ namespace App\Services\Personnel;
 
 use App\Core\Database;
 use App\Repositories\PersonnelJobRoleRepository;
-use App\Services\Rbac\MilitaryOperationalRoleCatalog;
 use App\Support\SqlText;
 use PDO;
 
 /**
  * Emplois de dossier dérivés de l’ORBAT : une unité crée un emploi du même nom.
- * Pas de catalogue militaire semé. Les postes nommés à l’affectation sont créés à la demande.
+ * Pas de catalogue militaire semé. La synchronisation des postes nommés à l’affectation est facultative.
  */
 final class UnitJobRoleSyncService
 {
@@ -77,7 +76,7 @@ final class UnitJobRoleSyncService
 
         $existingId = $this->findIdForUnit($tenantId, $unitId);
         if ($existingId !== null) {
-            $this->renameIfNeeded($existingId, $tenantId, $unitName);
+            // The job label may have been customised after creation; unit sync must not overwrite it.
             $this->attachSourceUnit($existingId, $tenantId, $unitId);
 
             return $existingId;
@@ -128,7 +127,16 @@ final class UnitJobRoleSyncService
      */
     public function applyAssignments(int $tenantId, int $userId, array $assignments): void
     {
-        if ($tenantId < 1 || $userId < 1 || !$this->jobRoles->tablesExist() || !$this->jobRoles->pivotTableExists()) {
+        if ($tenantId < 1 || $userId < 1) {
+            return;
+        }
+        $settings = $this->pdo->prepare('SELECT settings FROM tenants WHERE id = ? LIMIT 1');
+        $settings->execute([$tenantId]);
+        $raw = json_decode((string) ($settings->fetchColumn() ?: '{}'), true);
+        if (!PersonnelJobRoleAssignmentsSettings::resolve(is_array($raw) ? $raw : [])['sync_jobs_from_assignments']) {
+            return;
+        }
+        if (!$this->jobRoles->tablesExist() || !$this->jobRoles->pivotTableExists()) {
             return;
         }
         foreach ($assignments as $assignment) {
@@ -164,61 +172,9 @@ final class UnitJobRoleSyncService
      */
     public function purgeUnusedCatalogJobs(int $tenantId): int
     {
-        if ($tenantId < 1 || !$this->jobRoles->tablesExist()) {
-            return 0;
-        }
-
-        $keep = $this->assignedJobRoleIds($tenantId);
-
-        $catalogSlugs = MilitaryOperationalRoleCatalog::catalogSlugSet();
-        $catalogCategories = MilitaryOperationalRoleCatalog::catalogCategoryNameSet();
-        $categoryRootById = $this->categoryRootNameById($tenantId);
-        $sourceSql = $this->hasSourceUnitColumn()
-            ? ' AND (source_unit_id IS NULL OR source_unit_id = 0)'
-            : '';
-        $st = $this->pdo->prepare(
-            'SELECT id, slug, is_system, category_id FROM personnel_job_roles
-             WHERE tenant_id = ? AND slug NOT LIKE \'unit-%\'' . $sourceSql
-        );
-        $st->execute([$tenantId]);
-        $deleted = 0;
-        $delPerms = null;
-        try {
-            $delPerms = $this->pdo->prepare('DELETE FROM personnel_job_role_permissions WHERE personnel_job_role_id = ?');
-        } catch (\Throwable) {
-        }
-        $del = $this->pdo->prepare('DELETE FROM personnel_job_roles WHERE id = ? AND tenant_id = ?');
-        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
-            $id = (int) ($row['id'] ?? 0);
-            $slug = (string) ($row['slug'] ?? '');
-            $isSystem = (int) ($row['is_system'] ?? 0) === 1;
-            if ($id < 1 || isset($keep[$id])) {
-                continue;
-            }
-            $rootCat = $categoryRootById[(int) ($row['category_id'] ?? 0)] ?? '';
-            $fromCatalog = ($slug !== '' && isset($catalogSlugs[$slug]))
-                || ($rootCat !== '' && isset($catalogCategories[$rootCat]));
-            if (!$fromCatalog && !$isSystem) {
-                continue;
-            }
-            if ($delPerms !== null) {
-                try {
-                    $delPerms->execute([$id]);
-                } catch (\Throwable) {
-                }
-            }
-            $del->execute([$id, $tenantId]);
-            $deleted += $del->rowCount();
-        }
-
-        $unlock = $this->pdo->prepare(
-            'UPDATE personnel_job_roles SET is_system = 0 WHERE tenant_id = ? AND is_system = 1 AND slug NOT LIKE \'unit-%\''
-        );
-        $unlock->execute([$tenantId]);
-
-        $this->deleteEmptyCategories($tenantId);
-
-        return $deleted;
+        // Automatic migration/maintenance cleanup must never delete an organisation's reference data.
+        // Deletion is an explicit tenant action; being unused or resembling a seed is not ownership evidence.
+        return 0;
     }
 
     public function purgeAllUnusedCatalogJobs(): int
@@ -237,44 +193,9 @@ final class UnitJobRoleSyncService
      */
     public function purgeUnusedUnitDerivedJobs(int $tenantId): int
     {
-        if ($tenantId < 1 || !$this->jobRoles->tablesExist()) {
-            return 0;
-        }
-
-        $keep = $this->assignedJobRoleIds($tenantId);
-        $sourceSql = $this->hasSourceUnitColumn()
-            ? ' OR (source_unit_id IS NOT NULL AND source_unit_id > 0)'
-            : '';
-        $st = $this->pdo->prepare(
-            "SELECT id FROM personnel_job_roles
-             WHERE tenant_id = ? AND (slug LIKE 'unit-%'" . $sourceSql . ')'
-        );
-        $st->execute([$tenantId]);
-        $deleted = 0;
-        $delPerms = null;
-        try {
-            $delPerms = $this->pdo->prepare('DELETE FROM personnel_job_role_permissions WHERE personnel_job_role_id = ?');
-        } catch (\Throwable) {
-        }
-        $del = $this->pdo->prepare('DELETE FROM personnel_job_roles WHERE id = ? AND tenant_id = ?');
-        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
-            $id = (int) ($row['id'] ?? 0);
-            if ($id < 1 || isset($keep[$id])) {
-                continue;
-            }
-            if ($delPerms !== null) {
-                try {
-                    $delPerms->execute([$id]);
-                } catch (\Throwable) {
-                }
-            }
-            $del->execute([$id, $tenantId]);
-            $deleted += $del->rowCount();
-        }
-
-        $this->deleteEmptyCategories($tenantId);
-
-        return $deleted;
+        // Automatic migration/maintenance cleanup must never delete an organisation's reference data.
+        // Deletion is an explicit tenant action; being unused or resembling a seed is not ownership evidence.
+        return 0;
     }
 
     /**
@@ -346,14 +267,6 @@ final class UnitJobRoleSyncService
         return $id > 0 ? $id : null;
     }
 
-    private function renameIfNeeded(int $jobRoleId, int $tenantId, string $unitName): void
-    {
-        $st = $this->pdo->prepare(
-            'UPDATE personnel_job_roles SET name = ? WHERE id = ? AND tenant_id = ? AND name <> ?'
-        );
-        $st->execute([$unitName, $jobRoleId, $tenantId, $unitName]);
-    }
-
     private function attachSourceUnit(int $jobRoleId, int $tenantId, int $unitId): void
     {
         if (!$this->hasSourceUnitColumn() || $jobRoleId < 1 || $unitId < 1) {
@@ -372,98 +285,6 @@ final class UnitJobRoleSyncService
         $name = $st->fetchColumn();
 
         return is_string($name) ? trim($name) : '';
-    }
-
-    /**
-     * Emplois déjà posés sur un dossier ou un billet d’organigramme.
-     *
-     * @return array<int, true>
-     */
-    private function assignedJobRoleIds(int $tenantId): array
-    {
-        $keep = [];
-        if ($this->jobRoles->pivotTableExists()) {
-            $st = $this->pdo->prepare('SELECT DISTINCT personnel_job_role_id FROM personnel_profile_job_roles WHERE tenant_id = ?');
-            $st->execute([$tenantId]);
-            while ($id = $st->fetchColumn()) {
-                $keep[(int) $id] = true;
-            }
-        }
-        if ($this->tableExists('orbat_billets') && $this->columnExists('orbat_billets', 'job_role_id')) {
-            $st = $this->pdo->prepare(
-                'SELECT DISTINCT job_role_id FROM orbat_billets WHERE tenant_id = ? AND job_role_id IS NOT NULL'
-            );
-            $st->execute([$tenantId]);
-            while ($id = $st->fetchColumn()) {
-                $keep[(int) $id] = true;
-            }
-        }
-
-        return $keep;
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function categoryRootNameById(int $tenantId): array
-    {
-        if (!$this->jobRoles->tablesExist()) {
-            return [];
-        }
-        $cats = $this->jobRoles->listCategories($tenantId);
-        $byId = [];
-        foreach ($cats as $c) {
-            $byId[(int) ($c['id'] ?? 0)] = $c;
-        }
-        $roots = [];
-        foreach ($byId as $id => $c) {
-            if ($id < 1) {
-                continue;
-            }
-            $cur = $c;
-            $guard = 0;
-            while ($cur && $guard++ < 12) {
-                $pid = (int) ($cur['parent_id'] ?? 0);
-                if ($pid < 1 || !isset($byId[$pid])) {
-                    break;
-                }
-                $cur = $byId[$pid];
-            }
-            $roots[$id] = trim((string) ($cur['name'] ?? ''));
-        }
-
-        return $roots;
-    }
-
-    private function deleteEmptyCategories(int $tenantId): void
-    {
-        // MariaDB refuse DELETE + sous-requête sur la même table (erreur 1093 « Table 'c' specified twice »).
-        // On sélectionne les ids puis on DELETE par liste.
-        $guard = 0;
-        while ($guard++ < 20) {
-            $st = $this->pdo->prepare(
-                'SELECT c.id
-                 FROM personnel_job_role_categories c
-                 WHERE c.tenant_id = ?
-                   AND c.slug <> ?
-                   AND NOT EXISTS (SELECT 1 FROM personnel_job_roles r WHERE r.category_id = c.id)
-                   AND NOT EXISTS (SELECT 1 FROM personnel_job_role_categories ch WHERE ch.parent_id = c.id)'
-            );
-            $st->execute([$tenantId, self::CATEGORY_SLUG]);
-            $ids = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
-            $st->closeCursor();
-            if ($ids === []) {
-                break;
-            }
-            $placeholders = implode(',', array_fill(0, count($ids), '?'));
-            $del = $this->pdo->prepare(
-                "DELETE FROM personnel_job_role_categories WHERE tenant_id = ? AND id IN ({$placeholders})"
-            );
-            $del->execute(array_merge([$tenantId], $ids));
-            if ($del->rowCount() < 1) {
-                break;
-            }
-        }
     }
 
     private function hasSourceUnitColumn(): bool

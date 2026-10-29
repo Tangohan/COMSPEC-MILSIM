@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 final class CommunityAccessCollapseAssetTest extends TestCase
 {
-    public function testCollapseDeletesLeftoverTenantRolesAndClearsJobPermissions(): void
+    public function testCollapsePreservesTenantRolesAndJobPermissions(): void
     {
         $root = dirname(__DIR__, 2);
         $collapse = (string) file_get_contents($root . '/app/Services/Rbac/CommunityAccessCollapseService.php');
@@ -16,8 +16,8 @@ final class CommunityAccessCollapseAssetTest extends TestCase
         $jobs = (string) file_get_contents($root . '/app/Repositories/PersonnelJobRoleRepository.php');
         $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
 
-        self::assertStringContainsString('DELETE FROM roles WHERE tenant_id = ? AND id IN', $collapse);
-        self::assertStringContainsString('personnel_job_role_permissions', $collapse);
+        self::assertStringNotContainsString('DELETE FROM roles', $collapse);
+        self::assertStringNotContainsString('DELETE jrp', $collapse);
         self::assertStringNotContainsString('Les anciens rôles restent en base', $collapse);
 
         self::assertStringNotContainsString("'tenant_admin'", $bootstrap);

@@ -444,31 +444,14 @@ class PersonnelJobRoleAdminController
             unset($p);
         }
         try {
-            $pivotResult = $this->jobRoleRepository->replaceUserPivotJobRoles($tenantId, $userId, $parsed);
+            $this->jobRoleRepository->replaceUserPivotJobRoles($tenantId, $userId, $parsed);
         } catch (\Throwable) {
             Session::flash('error', 'Enregistrement impossible (rôles métier).');
 
             return Response::redirect($this->assignmentsRedirectAfterSave($request));
         }
 
-        $secondaryField = $pivotResult['secondary_role_display'];
-        $orbatRole = $pivotResult['primary_role_display'];
-        if ($assignCfg['append_secondaries_to_primary_display'] && $secondaryField !== '') {
-            $orbatRole = $orbatRole !== '' ? $orbatRole . ' · ' . $secondaryField : $secondaryField;
-        }
-        $orbatRole = $this->truncate100($orbatRole);
-
-        $profile = $this->personnelProfileRepository->getByUserId($userId) ?? [];
-        $primaryUnitId = isset($profile['primary_unit_id']) ? (int) $profile['primary_unit_id'] : 0;
-        if ($primaryUnitId > 0) {
-            try {
-                $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier($userId, $primaryUnitId, $orbatRole);
-            } catch (\Throwable) {
-                Session::flash('error', 'Rôle enregistré, mais la synchronisation ORBAT a échoué. Vérifiez l’unité principale du dossier.');
-
-                return Response::redirect($this->assignmentsRedirectAfterSave($request));
-            }
-        }
+        // Dossier jobs describe responsibilities independently from ORBAT posts.
 
         try {
             $actorId = (int) Session::get('user_id');
@@ -695,26 +678,12 @@ class PersonnelJobRoleAdminController
     private function commitJobRoleSlots(int $tenantId, int $userId, string $displayName, array $slots): array
     {
         $structureBefore = $this->structureChangeNotification->snapshot($tenantId, $userId);
-        $assignCfg = PersonnelJobRoleAssignmentsSettings::resolve($this->tenantRepository->getSettings($tenantId));
         try {
-            $pivotResult = $this->jobRoleRepository->replaceUserPivotJobRoles($tenantId, $userId, $slots);
+            $this->jobRoleRepository->replaceUserPivotJobRoles($tenantId, $userId, $slots);
         } catch (\Throwable) {
             return ['ok' => false, 'message' => 'Enregistrement impossible.'];
         }
-        $secondaryField = $pivotResult['secondary_role_display'];
-        $orbatRole = $pivotResult['primary_role_display'];
-        if ($assignCfg['append_secondaries_to_primary_display'] && $secondaryField !== '') {
-            $orbatRole = $orbatRole !== '' ? $orbatRole . ' · ' . $secondaryField : $secondaryField;
-        }
-        $orbatRole = $this->truncate100($orbatRole);
-        $profile = $this->personnelProfileRepository->getByUserId($userId) ?? [];
-        $primaryUnitId = isset($profile['primary_unit_id']) ? (int) $profile['primary_unit_id'] : 0;
-        if ($primaryUnitId > 0) {
-            try {
-                $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier($userId, $primaryUnitId, $orbatRole);
-            } catch (\Throwable) {
-            }
-        }
+        // Adding or removing a job must leave the member's ORBAT post intact.
         try {
             $actorId = (int) Session::get('user_id');
             $this->structureChangeNotification->notifyFromSnapshots(
@@ -729,18 +698,6 @@ class PersonnelJobRoleAdminController
         $who = trim($displayName) !== '' ? trim($displayName) : 'le membre';
 
         return ['ok' => true, 'message' => 'Fonction mise à jour pour ' . $who . '.'];
-    }
-
-    private function truncate100(string $s): string
-    {
-        if (function_exists('mb_strlen') && mb_strlen($s) > 100) {
-            return mb_substr($s, 0, 100);
-        }
-        if (strlen($s) > 100) {
-            return substr($s, 0, 100);
-        }
-
-        return $s;
     }
 
     private function assignmentsRedirectAfterSave(Request $request): string

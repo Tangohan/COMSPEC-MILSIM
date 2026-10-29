@@ -85,7 +85,7 @@ if ($isAthShell && !$jobsWorkspaceEmbed):
             <h1 class="text-2xl font-black text-slate-900">Attributions métier</h1>
             <p class="mt-1 max-w-3xl text-sm text-slate-600">
                 <?php if ($pivotEnabled): ?>
-                Attribuez un ou plusieurs emplois du référentiel à chaque membre. Indiquez l’emploi <strong class="font-semibold">principal</strong> : il sert de référence pour le dossier et l’ordre de bataille.
+                Attribuez un ou plusieurs emplois du référentiel à chaque membre. Indiquez l’emploi <strong class="font-semibold">principal</strong> : il sert de référence pour le dossier. Les affectations ORBAT restent indépendantes.
                 <?php else: ?>
                 Attribuez les emplois du référentiel à chaque membre. L’attribution de plusieurs emplois à une même personne n’est pas encore disponible pour votre communauté.
                 <?php endif; ?>

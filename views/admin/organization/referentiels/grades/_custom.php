@@ -2,7 +2,7 @@
 /**
  * Onglet « Sur mesure » du référentiel des grades : systèmes de grades créés par la communauté
  * (SCP, Star Wars, Warhammer 40k, univers maison…), leurs catégories et leurs grades.
- * Actions : CustomGradeSystemController. Sans JavaScript (formulaires et <details>).
+ * Actions : CustomGradeSystemController. Formulaires natifs, enrichis sans rechargement si JavaScript est disponible.
  *
  * @var list<array<string, mixed>> $customSystems
  * @var array<string, mixed>|null $customSelected
@@ -122,9 +122,9 @@ $catCount = count($customTree);
             <ul class="grd-ref__list">
                 <?php foreach ($grades as $gi => $g): ?>
                     <?php $gid = (int) $g['id']; $n = (int) ($g['holders'] ?? 0); ?>
-                    <li class="grd-ref__row grd-cus__row">
-                        <span class="grd-ref__short" translate="no"><?= $h($g['label_short'] ?? '') ?></span>
-                        <span class="grd-ref__name"><strong translate="no"><?= $h($g['label_long'] ?? '') ?></strong></span>
+                    <li class="grd-ref__row grd-cus__row" data-grade-row>
+                        <span class="grd-ref__short" translate="no"><?= $h(trim((string) ($g['label_short'] ?? '')) ?: trim((string) ($g['code'] ?? ''))) ?></span>
+                        <span class="grd-ref__name"><strong translate="no"><?= $h($g['label_long'] ?? '') ?></strong><code class="grd-ref__code">Code : <?= $h(trim((string) ($g['code'] ?? '')) ?: 'Non renseigné') ?></code></span>
                         <span class="grd-ref__otan"><?= $n > 0 ? $h($n . ' membre' . ($n > 1 ? 's' : '')) : '—' ?></span>
                         <span class="grd-ref__actions">
                             <?php if ($gi > 0): ?>
@@ -140,7 +140,7 @@ $catCount = count($customTree);
                                 <form method="post" action="<?= $h($base . '/grade/' . $gid . '/update') ?>" class="grd-cus__form">
                                     <?= \App\Core\Csrf::field() ?>
                                     <label class="grd-cus__field"><span>Nom complet</span><input type="text" name="label_long" value="<?= $h($g['label_long'] ?? '') ?>" maxlength="150" required></label>
-                                    <label class="grd-cus__field grd-cus__field--short"><span>Abrégé</span><input type="text" name="label_short" value="<?= $h($g['label_short'] ?? '') ?>" maxlength="100"></label>
+                                    <label class="grd-cus__field grd-cus__field--short"><span>Abrégé</span><input type="text" name="label_short" value="<?= $h(trim((string) ($g['label_short'] ?? '')) ?: trim((string) ($g['code'] ?? ''))) ?>" maxlength="100"></label>
                                     <?php if ($catCount > 1): ?>
                                     <label class="grd-cus__field"><span>Catégorie</span>
                                         <select name="grade_category_id">
@@ -169,9 +169,9 @@ $catCount = count($customTree);
                 <ul class="grd-ref__list">
                     <?php foreach ($retired as $g): ?>
                         <?php $n = (int) ($g['holders'] ?? 0); ?>
-                        <li class="grd-ref__row grd-ref__row--hidden">
-                            <span class="grd-ref__short" translate="no"><?= $h($g['label_short'] ?? '') ?></span>
-                            <span class="grd-ref__name"><strong translate="no"><?= $h($g['label_long'] ?? '') ?></strong></span>
+                        <li class="grd-ref__row grd-ref__row--hidden" data-grade-row>
+                            <span class="grd-ref__short" translate="no"><?= $h(trim((string) ($g['label_short'] ?? '')) ?: trim((string) ($g['code'] ?? ''))) ?></span>
+                            <span class="grd-ref__name"><strong translate="no"><?= $h($g['label_long'] ?? '') ?></strong><code class="grd-ref__code">Code : <?= $h(trim((string) ($g['code'] ?? '')) ?: 'Non renseigné') ?></code></span>
                             <span class="grd-ref__otan"><?= $n > 0 ? $h($n . ' membre' . ($n > 1 ? 's' : '')) : '—' ?></span>
                             <span class="grd-ref__actions">
                                 <form method="post" action="<?= $h($base . '/grade/' . (int) $g['id'] . '/restore') ?>">

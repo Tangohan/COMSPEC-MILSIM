@@ -15,6 +15,7 @@ final class PersonnelJobRoleAssignmentsSettings
      * @param array<string, mixed> $tenantSettings résultat de TenantRepository::getSettings
      *
      * @return array{
+     *   sync_jobs_from_assignments: bool,
      *   max_roles_per_member: int,
      *   require_primary_when_multiple: bool,
      *   assignments_page_size: int,
@@ -41,6 +42,7 @@ final class PersonnelJobRoleAssignmentsSettings
         $expand = max(1, min(12, $expand));
 
         return [
+            'sync_jobs_from_assignments' => !empty($raw['sync_jobs_from_assignments']),
             'max_roles_per_member' => $max,
             'require_primary_when_multiple' => array_key_exists('require_primary_when_multiple', $raw)
                 ? (bool) $raw['require_primary_when_multiple']
@@ -67,6 +69,7 @@ final class PersonnelJobRoleAssignmentsSettings
             $current = [];
         }
         $allowed = [
+            'sync_jobs_from_assignments',
             'max_roles_per_member',
             'require_primary_when_multiple',
             'assignments_page_size',

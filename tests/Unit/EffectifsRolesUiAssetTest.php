@@ -44,19 +44,25 @@ final class EffectifsRolesUiAssetTest extends TestCase
         self::assertStringNotContainsString("'droits'", $shell);
     }
 
-    public function testFonctionsPageExplainsJobsComeFromOrbat(): void
+    public function testFonctionsPageExplainsIndependentJobsAndOrbat(): void
     {
         $root = dirname(__DIR__, 2);
-        $view = (string) file_get_contents($root . '/views/admin/effectifs_workspace/fonctions.php');
+        $view = \App\Core\Response::view('admin.effectifs_workspace.fonctions', [
+            'canManageAssignments' => true, 'creatingJobRole' => true, 'csrfToken' => str_repeat('a', 64),
+            'jobStructureOptions' => ['ready' => true, 'roles' => [], 'units' => [], 'grades' => [['id' => 10, 'code' => 'FR_CNE', 'label_long' => 'Capitaine local']], 'specialties' => [], 'kinds' => ['employment' => 'Emploi', 'function' => 'Fonction']],
+        ])->body();
         $ctrl = (string) file_get_contents($root . '/app/Controllers/Admin/EffectifsWorkspaceController.php');
         $pjr = (string) file_get_contents($root . '/app/Controllers/Admin/Organization/PersonnelJobRoleAdminController.php');
 
-        self::assertStringContainsString('organigramme', $view);
         self::assertStringContainsString('ORBAT', $view);
-        self::assertStringContainsString('Ce n’est pas un droit d’accès', $view);
-        self::assertStringContainsString('Nouvel emploi', $view);
+        self::assertStringContainsString('indépendante de ses emplois de dossier', $view);
+        self::assertStringContainsString('Créer un emploi ou une fonction', $view);
         self::assertStringContainsString('Qui tient quel emploi', $view);
-        self::assertStringContainsString('effectifs_workspace_url(\'fonctions/nouveau\')', $view);
+        self::assertStringContainsString('name="parent_job_role_id"', $view);
+        self::assertStringContainsString('name="linked_unit_id"', $view);
+        self::assertStringContainsString('name="grade_id"', $view);
+        self::assertStringContainsString('FR_CNE · Capitaine local', $view);
+        self::assertStringContainsString('name="specialty_id"', $view);
         self::assertStringNotContainsString('Référentiel des emplois', $view);
         self::assertStringNotContainsString('slug', strtolower($view));
         self::assertStringNotContainsString('JSON', $view);
@@ -64,7 +70,6 @@ final class EffectifsRolesUiAssetTest extends TestCase
 
         self::assertStringContainsString("function createJobRole", $ctrl);
         self::assertStringContainsString("function saveJobRole", $ctrl);
-        self::assertStringContainsString("'jobsVue' => 'attributions'", $ctrl);
 
         self::assertStringContainsString("return Response::redirect(effectifs_workspace_url('fonctions'));", $pjr);
         self::assertStringContainsString("return Response::redirect(effectifs_workspace_url('fonctions') . '?vue=attributions');", $pjr);

@@ -2599,30 +2599,9 @@ class PersonnelController
             }
         }
 
-        $assignmentRole = $primaryRoleStr;
-        if ($assignmentRole === '' && $unitAssignmentsParsed !== []) {
-            foreach ($unitAssignmentsParsed as $assignment) {
-                if (!empty($assignment['is_primary'])) {
-                    $assignmentRole = $assignment['role_name'];
-                    break;
-                }
-            }
-        }
         try {
             if ($applyOrbatNow) {
-                if ($unitAssignmentsParsed !== []) {
-                    foreach ($unitAssignmentsParsed as &$assignment) {
-                        if (trim((string) $assignment['role_name']) === '') {
-                            $assignment['role_name'] = !empty($assignment['is_primary']) && $assignmentRole !== ''
-                                ? $assignmentRole
-                                : 'Membre';
-                        }
-                    }
-                    unset($assignment);
-                    $this->personnelAssignmentRepository->replaceActiveAssignmentsFromDossier((int) $target['id'], $unitAssignmentsParsed);
-                } else {
-                    $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier((int) $target['id'], $primaryUnitId, $assignmentRole, $assignmentReason);
-                }
+                $this->saveIndependentUnitAssignments($tenantId, (int) $target['id'], $unitAssignmentsParsed, $primaryUnitId, $assignmentReason);
             }
         } catch (\Throwable) {
             Session::flash('error', 'Le dossier a été enregistré, mais la synchronisation ORBAT / affectation a échoué. Réessayez ou contactez un administrateur.');
@@ -3169,6 +3148,37 @@ class PersonnelController
             }
             $hist->record($tenantId, 'personnel', $subjectUserId, $field, $old, $new, $actorUserId, $reason);
         }
+    }
+
+    /**
+     * Assignment labels belong to the ORBAT, independently of dossier jobs.
+     *
+     * @param list<array<string, mixed>> $assignments
+     */
+    private function saveIndependentUnitAssignments(int $tenantId, int $userId, array $assignments, ?int $primaryUnitId, ?string $reason): void
+    {
+        $needsFallback = $assignments === [];
+        foreach ($assignments as $assignment) {
+            if (!empty($assignment['is_primary']) && trim((string) ($assignment['role_name'] ?? '')) === '') {
+                $needsFallback = true;
+            }
+        }
+        $fallback = 'Membre';
+        if ($needsFallback) {
+            $current = $this->personnelAssignmentRepository->getPrimaryAssignment($userId, $tenantId);
+            $fallback = trim((string) ($current['role_name'] ?? '')) ?: 'Membre';
+        }
+        if ($assignments === []) {
+            $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier($userId, $primaryUnitId, $fallback, $reason);
+            return;
+        }
+        foreach ($assignments as &$assignment) {
+            if (trim((string) ($assignment['role_name'] ?? '')) === '') {
+                $assignment['role_name'] = !empty($assignment['is_primary']) ? $fallback : 'Membre';
+            }
+        }
+        unset($assignment);
+        $this->personnelAssignmentRepository->replaceActiveAssignmentsFromDossier($userId, $assignments);
     }
 
     /**

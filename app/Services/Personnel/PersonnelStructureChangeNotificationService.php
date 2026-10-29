@@ -97,7 +97,19 @@ final class PersonnelStructureChangeNotificationService
         $jobRoleId = null;
         $jobRoleLabel = '';
         $profile = $this->personnelProfileRepository->getByUserId($userId) ?? [];
-        if ($this->personnelJobRoleRepository->tablesExist()) {
+        $hasJobRoles = $this->personnelJobRoleRepository->tablesExist();
+        $pivotIsAuthoritative = $hasJobRoles && $this->personnelJobRoleRepository->pivotTableExists();
+        if ($pivotIsAuthoritative) {
+            $rows = $this->personnelJobRoleRepository->listPivotAssignmentsForUsers($tenantId, [$userId])[$userId] ?? [];
+            $first = $rows[0] ?? null;
+            if ($first !== null) {
+                $jobRoleId = (int) ($first['personnel_job_role_id'] ?? 0) ?: null;
+                $jobRoleLabel = trim((string) ($first['role_name'] ?? ''));
+                $detail = trim((string) ($first['role_detail'] ?? ''));
+                if ($detail !== '') $jobRoleLabel .= ($jobRoleLabel !== '' ? ' — ' : '') . $detail;
+            }
+        }
+        if (!$pivotIsAuthoritative && $hasJobRoles) {
             $jobRoleId = !empty($profile['personnel_job_role_id']) ? (int) $profile['personnel_job_role_id'] : null;
             if ($jobRoleId !== null && $jobRoleId < 1) {
                 $jobRoleId = null;
@@ -107,7 +119,7 @@ final class PersonnelStructureChangeNotificationService
                 $jobRoleLabel = $jr ? trim((string) ($jr['name'] ?? '')) : '';
             }
         }
-        if ($jobRoleLabel === '') {
+        if (!$pivotIsAuthoritative && $jobRoleLabel === '') {
             $jobRoleLabel = trim((string) ($profile['primary_role'] ?? ''));
         }
 
