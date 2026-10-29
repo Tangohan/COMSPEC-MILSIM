@@ -39,6 +39,21 @@ final class AcademyAccessMiddlewareTest extends TestCase
         self::assertSame('private, no-store', $response->headerValue('Cache-Control'));
     }
 
+    public function testProPlusCanReachProtectedReadAndWriteHandlers(): void
+    {
+        $repo = $this->createMock(TenantRepository::class);
+        $repo->expects(self::exactly(2))->method('findById')->with(10)->willReturn(['id'=>10,'plan_slug'=>'PRO_PLUS','subscription_status'=>'active']);
+        $this->instances->setValue(null, [TenantRepository::class => $repo]);
+        foreach (['GET','POST'] as $method) {
+            $_SERVER['REQUEST_METHOD'] = $method;
+            $_SERVER['REQUEST_URI'] = $method === 'GET' ? '/academy/dashboard' : '/academy/action/notes';
+            $response = (new AcademyPaidMiddleware())(new Request(), fn ($request) => (new Response())->setBody('protected'));
+            self::assertSame(200, $response->statusCode());
+            self::assertSame('protected', $response->body());
+            self::assertSame('private, no-store', $response->headerValue('Cache-Control'));
+        }
+    }
+
     public function testFreePlanCannotReachProtectedReadOrWriteHandlers(): void
     {
         $repo = $this->createMock(TenantRepository::class);

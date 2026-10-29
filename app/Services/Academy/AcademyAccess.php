@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Academy;
 
 use App\Support\ManualBilling;
+use App\Services\Billing\PlanPaymentService;
 
 final class AcademyAccess
 {
@@ -16,7 +17,7 @@ final class AcademyAccess
             return false;
         }
         return (int) ($tenant['id'] ?? 0) > 0
-            && in_array(strtolower((string) ($tenant['plan_slug'] ?? '')), ['standard', 'pro'], true)
+            && in_array(strtolower(trim((string) ($tenant['plan_slug'] ?? ''))), PlanPaymentService::PAID_PLANS, true)
             && ($tenant['subscription_status'] ?? '') === 'active'
             && ManualBilling::paidActive($tenant, $now);
     }

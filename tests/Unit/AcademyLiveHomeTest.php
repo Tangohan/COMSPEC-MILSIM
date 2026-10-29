@@ -31,12 +31,13 @@ final class AcademyLiveHomeTest extends TestCase
 
     public function testActiveAccountRendersItsRealCommunityCourseAndResumeLink(): void
     {
-        $data=['accessState'=>'active','account'=>['id'=>7,'display_name'=>'Robin','callsign'=>'R'],'tenant'=>['id'=>42,'slug'=>'team-a','name'=>'Team A','plan_slug'=>'pro'],
+        $data=['accessState'=>'active','account'=>['id'=>7,'display_name'=>'Robin','callsign'=>'R'],'tenant'=>['id'=>42,'slug'=>'team-a','name'=>'Team A','plan_slug'=>'pro_plus'],
             'legacyCourses'=>[['slug'=>'published-course','title'=>'Existing LMS course','estimated_minutes'=>45]],
             'legacyEnrollments'=>[['course_slug'=>'published-course','course_title'=>'Existing LMS course','status'=>'in_progress','progress_percent'=>65]],'staff'=>false];
         $body=Response::view('academy.home',$data)->body();
         self::assertStringContainsString('data-access-state="active"',$body);
         self::assertStringContainsString('Team A',$body);
+        self::assertStringContainsString('PRO_PLUS',$body);
         self::assertStringContainsString('Robin',$body);
         self::assertStringContainsString('formations/published-course',$body);
         self::assertStringContainsString('65 %',$body);
