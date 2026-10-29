@@ -1,0 +1,57 @@
+/* Extend the native effectifs workspace tokens and layout. */
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace [hidden] { display: none !important; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace { min-width: 0; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace[aria-busy="true"] { cursor: progress; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-guide { margin: 0; padding: 0.85rem 1rem; border: 1px solid var(--pg-line); background: var(--pg-surface); color: var(--pg-muted); font-size: 0.8125rem; line-height: 1.6; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-guide summary { cursor: pointer; color: var(--pg-ink); font-weight: 700; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-guide dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.5rem; margin: 1rem 0 0.5rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-guide dt { color: var(--pg-ink); font-weight: 700; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-guide dd { margin: 0.25rem 0 0; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-tabs { max-width: 100%; flex-wrap: wrap; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-tabs__item { min-height: 2.5rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-actions > span { margin-right: auto; color: var(--pg-muted); font-size: 0.8125rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-access-rail { padding: 0; overflow: hidden; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-access-rail__list { margin: 0; max-height: 42rem; overflow-y: auto; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-access-rail__item { flex-direction: column; align-items: stretch; gap: 0.25rem; padding: 0.75rem 0.85rem; overflow-wrap: anywhere; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-access-rail__item strong { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-access-rail__item code { padding: 0.1rem 0.3rem; border: 1px solid var(--pg-line); background: var(--pg-head); color: var(--pg-ink); font-size: 0.7rem; font-weight: 600; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-parent { color: var(--pg-muted); font-size: 0.7rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace label { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; color: var(--pg-ink); font-size: 0.8125rem; font-weight: 600; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace :is(input:not([type="checkbox"]):not([type="hidden"]), select, textarea) { width: 100%; max-width: 100%; box-sizing: border-box; min-height: 2.25rem; padding: 0.5rem 0.6rem; border: 1px solid var(--pg-line); border-radius: 0; background: var(--pg-surface); color: var(--pg-ink); font: inherit; font-weight: 400; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace :is(input,select,textarea):focus-visible { outline: 2px solid var(--pg-accent); outline-offset: 2px; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-search { margin: 0; border-width: 0 0 1px; font-size: 0.8125rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-wide { grid-column: 1 / -1; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-editor-title { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-editor-title h2 { margin: 0; color: var(--pg-ink); font-size: 1.05rem; overflow-wrap: anywhere; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-editor-title > span { color: var(--pg-muted); font-size: 0.75rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-links { min-width: 0; margin: 0; padding: 1rem 0 0; border: 0; border-top: 1px solid var(--pg-line); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-links legend { padding: 0 0.5rem 0 0; color: var(--pg-ink); font-weight: 700; font-size: 0.875rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-links > p { margin: 0 0 1rem; color: var(--pg-muted); font-size: 0.8125rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-checkbox { display: flex; flex-direction: row; align-items: flex-start; gap: 0.6rem; margin: 0.75rem 0; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-checkbox input { margin: 0.3rem 0 0; accent-color: var(--pg-accent); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-categories { display: grid; gap: 1rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-category-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto auto; align-items: end; gap: 0.75rem; margin: 0; padding: 1rem 0; border-bottom: 1px solid var(--pg-line); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-category-row:last-child { border-bottom: 0; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-feedback { padding: 0.75rem 1rem; border: 1px solid var(--pg-ok-bd); background: var(--pg-ok-bg); color: var(--pg-ok); font-size: 0.875rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-feedback.is-error { border-color: var(--pg-bad-bd); background: var(--pg-bad-bg); color: var(--pg-bad); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-btn--danger { border-color: var(--pg-bad-bd); color: var(--pg-bad); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace button:disabled { cursor: wait; opacity: 0.65; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-holders { margin: 1.25rem 0; padding-top: 1rem; border-top: 1px solid var(--pg-line); font-size: 0.8125rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-holders h3 { color: var(--pg-ink); font-size: 0.875rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-holders a { color: var(--pg-accent); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace :is(.eff-jobs-warning,.eff-jobs-empty) { padding: 0.75rem 1rem; border-left: 3px solid var(--pg-warn); background: var(--pg-warn-bg); color: var(--pg-warn); font-size: 0.8125rem; line-height: 1.6; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-recovery-search { display: flex; flex-wrap: wrap; align-items: end; gap: 0.75rem; margin: 1.25rem 0; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-recovery-search label { flex: 1 1 20rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-table-scroll { overflow-x: auto; margin: 1rem 0; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-evidence { width: 100%; border-collapse: collapse; font-size: 0.8125rem; text-align: left; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-evidence :is(th,td) { padding: 0.7rem; border: 1px solid var(--pg-line); vertical-align: top; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-evidence th { background: var(--pg-head); color: var(--pg-muted); font-weight: 700; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-evidence td span { display: block; overflow-wrap: anywhere; }
+@media (max-width: 850px) {
+  :root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace :is(.eff-access-layout,.eff-jobs-fields,.eff-jobs-guide dl,.eff-jobs-category-row) { grid-template-columns: minmax(0,1fr); }
+  :root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-access-rail__list { max-height: 22rem; }
+  :root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-tabs { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); width: 100%; }
+  :root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-tabs__item { border: 0; justify-content: center; text-align: center; }
+}

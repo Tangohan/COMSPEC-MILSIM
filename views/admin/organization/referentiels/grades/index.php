@@ -33,7 +33,9 @@ $renamed = static function (array $g): bool {
 };
 $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades') . '?tab=' . rawurlencode($t);
 ?>
-<div class="bo-legacy bo-legacy--5xl grd-ref">
+<div class="bo-legacy bo-legacy--5xl grd-ref" data-grade-workspace>
+    <div class="grd-ref__status" data-grade-status role="status" aria-live="polite"></div>
+    <?php foreach (($gradeNotices ?? []) as $notice): ?><p class="grd-ref__notice<?= ($notice['level'] ?? '') === 'error' ? ' is-error' : '' ?>" role="<?= ($notice['level'] ?? '') === 'error' ? 'alert' : 'status' ?>"><?= $h($notice['message'] ?? '') ?></p><?php endforeach; ?>
     <header class="grd-ref__head">
         <p class="grd-ref__lead">Les grades proposés dans les fiches membres viennent d’un catalogue commun à toutes les communautés. Ici, vous choisissez lesquels afficher et vous pouvez renommer un grade : les autres communautés ne sont pas touchées. Pour un univers à part (SCP, Star Wars, Warhammer 40k…), créez vos propres grades dans l’onglet « Sur mesure ».</p>
         <nav class="grd-ref__links" aria-label="Pages liées">
@@ -42,7 +44,7 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
         </nav>
     </header>
 
-    <nav class="grd-ref__tabs" aria-label="Systèmes de grades">
+    <nav class="grd-ref__tabs" data-grade-tabs aria-label="Systèmes de grades">
         <?php foreach (['fr' => ['Grades français', count($gradesFr)], 'us' => ['Grades américains', count($gradesUs)], 'custom' => ['Sur mesure', count($customSystems)], 'perso' => ['Grades d’avancement', count($extrasActive)]] as $key => [$label, $count]): ?>
             <a href="<?= $h($tabUrl($key)) ?>" class="<?= $tab === $key ? 'is-active' : '' ?>" <?= $tab === $key ? 'aria-current="page"' : '' ?>>
                 <?= $h($label) ?>
@@ -51,6 +53,12 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
             </a>
         <?php endforeach; ?>
     </nav>
+
+    <div class="grd-ref__toolbar">
+        <label for="grade-filter"><span>Rechercher un grade</span><input id="grade-filter" type="search" data-grade-filter placeholder="Code, abrégé, nom complet…" autocomplete="off"></label>
+        <span data-grade-filter-count aria-live="polite"></span>
+        <p>Le code stable reste affiché, même si le grade a été renommé. Les modifications se font ici sans recharger la page.</p>
+    </div>
 
     <?php if ($tab === 'custom'): ?>
     <?php require __DIR__ . '/_custom.php'; ?>
@@ -61,7 +69,7 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
                 <h2>Grades d’avancement créés par la communauté</h2>
                 <p>Ces grades n’existent pas dans le catalogue. Ils servent aux règles d’avancement et aux campagnes (paliers, conditions, historique). Ils ne remplacent pas les grades affichés sur les fiches : pour renommer un grade, utilisez « Renommer » dans les onglets français ou américain ; pour une échelle entièrement à vous (SCP, Star Wars…), utilisez l’onglet « Sur mesure ».</p>
             </div>
-            <a class="grd-ref__btn" href="<?= $h(url('back-office/referentiels/grades/create') . '?tab=perso') ?>">Créer un grade d’avancement</a>
+            <a class="grd-ref__btn" data-grade-edit href="<?= $h(url('back-office/referentiels/grades/create') . '?tab=perso') ?>">Créer un grade d’avancement</a>
         </div>
         <?php if ($extrasActive === []): ?>
             <p class="grd-ref__empty">Aucun grade personnalisé pour l’instant. « Créer un grade d’avancement » en ajoute un.</p>
@@ -70,10 +78,10 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
             <ul class="grd-ref__list">
                 <?php foreach ($extrasActive as $extra): ?>
                     <?php $eid = (int) ($extra['id'] ?? 0); ?>
-                    <li class="grd-ref__row">
+                    <li class="grd-ref__row" data-grade-row>
                         <span class="grd-ref__short"><?= $h(($extra['short_label'] ?? '') !== '' ? $extra['short_label'] : ($extra['code'] ?? '')) ?></span>
                         <span class="grd-ref__name">
-                            <strong translate="no"><?= $h($extra['label'] ?? '') ?></strong>
+                            <strong translate="no"><?= $h($extra['label'] ?? '') ?></strong><code class="grd-ref__code">Code : <?= $h(trim((string) ($extra['code'] ?? '')) ?: 'Non renseigné') ?></code>
                             <span class="grd-ref__badge grd-ref__badge--community">Créé par la communauté</span>
                         </span>
                         <span class="grd-ref__otan"><?= $h(($extra['filiere_label'] ?? '') !== '' ? $extra['filiere_label'] : '—') ?></span>
@@ -94,9 +102,9 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
                 <summary>Grades archivés : <?= count($extrasArchived) ?></summary>
                 <ul class="grd-ref__list">
                     <?php foreach ($extrasArchived as $extra): ?>
-                        <li class="grd-ref__row grd-ref__row--hidden">
+                        <li class="grd-ref__row grd-ref__row--hidden" data-grade-row>
                             <span class="grd-ref__short"><?= $h(($extra['short_label'] ?? '') !== '' ? $extra['short_label'] : ($extra['code'] ?? '')) ?></span>
-                            <span class="grd-ref__name"><strong translate="no"><?= $h($extra['label'] ?? '') ?></strong> <span class="grd-ref__badge">Archivé</span></span>
+                            <span class="grd-ref__name"><strong translate="no"><?= $h($extra['label'] ?? '') ?></strong><code class="grd-ref__code">Code : <?= $h(trim((string) ($extra['code'] ?? '')) ?: 'Non renseigné') ?></code> <span class="grd-ref__badge">Archivé</span></span>
                             <span class="grd-ref__otan"><?= $h(($extra['filiere_label'] ?? '') !== '' ? $extra['filiere_label'] : '—') ?></span>
                             <span class="grd-ref__actions">
                                 <a href="<?= $h(url('back-office/organisation/grades/' . (int) ($extra['id'] ?? 0) . '/edit')) ?>">Modifier</a>
@@ -166,17 +174,17 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
             <ul class="grd-ref__list">
                 <?php foreach ($group['grades'] as $g): ?>
                     <?php $gid = (int) ($g['id'] ?? 0); ?>
-                    <li class="grd-ref__row">
-                        <span class="grd-ref__short"><?= $h($g['label_short'] ?? '') ?></span>
+                    <li class="grd-ref__row" data-grade-row>
+                        <span class="grd-ref__short"><?= $h(trim((string) ($g['label_short'] ?? '')) ?: trim((string) ($g['code'] ?? ''))) ?></span>
                         <span class="grd-ref__name">
-                            <strong><?= $h($g['label_long'] ?? '') ?></strong>
+                            <strong><?= $h($g['label_long'] ?? '') ?></strong><code class="grd-ref__code">Code : <?= $h(trim((string) ($g['code'] ?? '')) ?: 'Non renseigné') ?></code>
                             <?php if ($renamed($g)): ?>
                                 <span class="grd-ref__badge" title="Nom du catalogue : <?= $h($g['catalog_label_long'] ?? '') ?>">Renommé</span>
                             <?php endif; ?>
                         </span>
                         <span class="grd-ref__otan"><?= $h(($g['label_otan'] ?? '') !== '' ? $g['label_otan'] : '—') ?></span>
                         <span class="grd-ref__actions">
-                            <a href="<?= $h(url('back-office/referentiels/grades/' . $gid . '/edit')) ?>">Renommer</a>
+                            <a data-grade-edit href="<?= $h(url('back-office/referentiels/grades/' . $gid . '/edit')) ?>">Renommer</a>
                             <form action="<?= $h(url('back-office/referentiels/grades/' . $gid . '/deactivate')) ?>" method="post" onsubmit="return confirm('Masquer ce grade ? Il ne sera plus proposé dans les fiches membres (les membres qui l’ont déjà le gardent).');">
                                 <?= \App\Core\Csrf::field() ?>
                                 <button type="submit">Masquer</button>
@@ -193,9 +201,9 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
                 <ul class="grd-ref__list">
                     <?php foreach ($hidden as $g): ?>
                         <?php $gid = (int) ($g['id'] ?? 0); ?>
-                        <li class="grd-ref__row grd-ref__row--hidden">
-                            <span class="grd-ref__short"><?= $h($g['label_short'] ?? '') ?></span>
-                            <span class="grd-ref__name"><strong><?= $h($g['label_long'] ?? '') ?></strong> <span class="grd-ref__muted"><?= $h($g['category_label'] ?? '') ?></span></span>
+                        <li class="grd-ref__row grd-ref__row--hidden" data-grade-row>
+                            <span class="grd-ref__short"><?= $h(trim((string) ($g['label_short'] ?? '')) ?: trim((string) ($g['code'] ?? ''))) ?></span>
+                            <span class="grd-ref__name"><strong><?= $h($g['label_long'] ?? '') ?></strong><code class="grd-ref__code">Code : <?= $h(trim((string) ($g['code'] ?? '')) ?: 'Non renseigné') ?></code> <span class="grd-ref__muted"><?= $h($g['category_label'] ?? '') ?></span></span>
                             <span class="grd-ref__otan"><?= $h(($g['label_otan'] ?? '') !== '' ? $g['label_otan'] : '—') ?></span>
                             <span class="grd-ref__actions">
                                 <form action="<?= $h(url('back-office/referentiels/grades/' . $gid . '/reactivate')) ?>" method="post">
@@ -211,4 +219,6 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
     </section>
 
     <?php endif; ?>
+    <dialog class="grd-ref__dialog" data-grade-dialog aria-label="Modifier un grade"><button type="button" class="grd-ref__dialog-close" data-grade-close>Fermer ×</button><div data-grade-form-slot></div></dialog>
 </div>
+<script src="<?= $h(asset_url('assets/js/back-office-referentiel-grades.js')) ?>" defer></script>

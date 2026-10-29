@@ -528,3 +528,24 @@
 .grd-cus__add-wrap .grd-cus__add { margin-top: 0.2rem; }
 .grd-cus__tpl { align-items: flex-start; }
 .grd-cus__tpl input { margin-top: 0.15rem; }
+
+/* Workspace enhancement: stable identifiers, local filtering and in-place editing. */
+.grd-ref__code { display: block; margin-top: .2rem; color: var(--ath-text-muted, #64748b); font: 600 .6875rem/1.5 ui-monospace, monospace; overflow-wrap: anywhere; }
+.grd-ref__short { overflow-wrap: anywhere; }
+.grd-ref__toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem 1.25rem; margin: 1.25rem 0; }
+.grd-ref__toolbar label { display: grid; gap: .4rem; min-width: min(100%, 20rem); font-size: .75rem; font-weight: 600; color: #334155; }
+.grd-ref__toolbar input { width: 100%; padding: .65rem .8rem; border: 1px solid #cbd5e1; border-radius: .75rem; background: #fff; color: #0f172a; font: inherit; }
+.grd-ref__toolbar > p { flex-basis: 100%; margin: 0; color: #64748b; font-size: .75rem; line-height: 1.6; }
+.grd-ref__toolbar [data-grade-filter-count] { color: #64748b; padding-bottom: .6rem; font-size: .6875rem; }
+.grd-ref__status:empty { display: none; }
+.grd-ref__status, .grd-ref__notice { padding: .75rem 1rem; margin: 0 0 1rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: .75rem; color: #065f46; font-size: .8125rem; line-height: 1.6; }
+.grd-ref__notice.is-error { border-color: #fecaca; color: #991b1b; background: #fef2f2; }
+.grd-ref[aria-busy=true] { cursor: progress; }
+.grd-ref[aria-busy=true] [type=submit] { opacity: .65; }
+[data-grade-row][hidden] { display: none !important; }
+.grd-ref__dialog { position: fixed; margin: auto; padding: 1.5rem; width: min(48rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); color: #0f172a; background: #fff; border: 1px solid #e2e8f0; border-radius: 1.5rem; box-shadow: 0 24px 80px rgba(15,23,42,.3); }
+.grd-ref__dialog::backdrop { background: rgba(15,23,42,.55); backdrop-filter: blur(4px); }
+.grd-ref__dialog-close { display: block; margin: 0 0 1rem auto; border: 0; padding: .4rem .65rem; border-radius: .5rem; background: #f1f5f9; color: #475569; font-size: .75rem; cursor: pointer; }
+.grd-ref__dialog .bo-legacy { width: 100%; max-width: none; margin: 0; }
+.grd-ref__dialog h1 { padding-right: 1rem; }
+@media (max-width: 600px) { .grd-ref__dialog { padding: 1rem; border-radius: 1rem; } .grd-ref__toolbar label { width: 100%; } }

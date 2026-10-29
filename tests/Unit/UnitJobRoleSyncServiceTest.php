@@ -42,18 +42,18 @@ final class UnitJobRoleSyncServiceTest extends TestCase
         self::assertStringContainsString('unused_recreated_job_roles_purge_v1_migration.php', $run);
         self::assertStringContainsString('unused_military_catalog_jobs_purge_v2_migration.php', $run);
         $derived = (string) file_get_contents($root . '/bootstrap/unit_derived_job_roles_migration.php');
-        self::assertStringContainsString('purgeAllUnusedCatalogJobs', $derived);
+        self::assertStringNotContainsString('purgeAllUnusedCatalogJobs', $derived);
         self::assertStringNotContainsString('backfillAllTenants', $derived);
-        self::assertStringContainsString('aucun emploi recréé', $derived);
+        self::assertStringContainsString('attributions conservés', $derived);
         $recreated = (string) file_get_contents($root . '/bootstrap/unused_recreated_job_roles_purge_v1_migration.php');
-        self::assertStringContainsString('purgeAllUnusedAutoCreatedJobs', $recreated);
+        self::assertStringNotContainsString('purgeAllUnusedAutoCreatedJobs', $recreated);
         self::assertStringNotContainsString('backfillAllTenants', $recreated);
         $purge = (string) file_get_contents($root . '/app/Services/Personnel/UnitJobRoleSyncService.php');
-        self::assertStringContainsString('MilitaryOperationalRoleCatalog::catalogSlugSet', $purge);
-        self::assertStringContainsString('catalogCategoryNameSet', $purge);
+        self::assertStringNotContainsString('MilitaryOperationalRoleCatalog::catalogSlugSet', $purge);
+        self::assertStringNotContainsString('catalogCategoryNameSet', $purge);
         self::assertStringContainsString('purgeUnusedUnitDerivedJobs', $purge);
-        self::assertStringContainsString("slug LIKE 'unit-%'", $purge);
-        self::assertStringContainsString('SELECT c.id', $purge);
+        self::assertStringContainsString('return 0;', $purge);
+        self::assertStringNotContainsString('DELETE FROM personnel_job_roles', $purge);
         self::assertStringNotContainsString('DELETE c FROM personnel_job_role_categories c', $purge);
     }
 }

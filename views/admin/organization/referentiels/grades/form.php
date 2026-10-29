@@ -8,7 +8,7 @@ $flashError = \App\Core\Session::getFlash('error');
 $tenantOwned = !empty($tenantOwned);
 $catalogLocked = $isEdit;
 ?>
-<div class="bo-legacy bo-legacy--2xl">
+<div class="bo-legacy bo-legacy--2xl grd-ref-form" data-grade-form-page>
     <h1 class="text-2xl font-black text-slate-900 mb-6"><?= $isEdit ? 'Renommer le grade' : 'Nouveau grade d’avancement' ?></h1>
     <?php if ($tenantOwned): ?>
     <p class="mb-4 text-sm text-slate-600"><?= $isEdit
@@ -76,7 +76,7 @@ $catalogLocked = $isEdit;
         <?php endif; ?>
         <div class="flex gap-3 pt-4">
             <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800"><?= $isEdit ? 'Enregistrer' : 'Créer' ?></button>
-            <a href="<?= url('back-office/referentiels/grades') ?>?tab=<?= rawurlencode($returnTab) ?>" class="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-medium rounded hover:bg-slate-50">Annuler</a>
+            <a data-grade-cancel href="<?= url('back-office/referentiels/grades') ?>?tab=<?= rawurlencode($returnTab) ?>" class="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-medium rounded hover:bg-slate-50">Annuler</a>
         </div>
     </form>
     <p class="mt-6 text-sm text-slate-500"><a href="<?= url('back-office') ?>" class="underline">Retour au back-office</a></p>

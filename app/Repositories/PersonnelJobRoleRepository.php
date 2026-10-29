@@ -484,16 +484,17 @@ class PersonnelJobRoleRepository
         return $stmt->rowCount() > 0;
     }
 
+    /** Explicit deletion must never cascade through a member's job or a structural reference. */
     public function deleteRole(int $id, int $tenantId): bool
     {
-        $row = $this->findRoleById($id, $tenantId);
-        if (!$row || !empty($row['is_system'])) {
-            return false;
-        }
-        $stmt = $this->pdo->prepare('DELETE FROM personnel_job_roles WHERE id = ? AND tenant_id = ? AND is_system = 0');
-        $stmt->execute([$id, $tenantId]);
-
-        return $stmt->rowCount() > 0;
+        return $this->deleteUnreferencedRow('personnel_job_roles', $id, $tenantId, [
+            ['personnel_profile_job_roles', 'personnel_job_role_id'],
+            ['personnel_profiles', 'personnel_job_role_id'],
+            ['orbat_billets', 'job_role_id'],
+            ['personnel_temporary_assignments', 'job_role_id'],
+            ['recruitment_openings', 'personnel_job_role_id'],
+            ['personnel_job_role_structure', 'parent_job_role_id'],
+        ]);
     }
 
     public function findCategoryById(int $id, int $tenantId): ?array
@@ -613,13 +614,89 @@ class PersonnelJobRoleRepository
 
     public function deleteCategory(int $id, int $tenantId): bool
     {
-        if ($this->countChildCategories($id, $tenantId) > 0 || $this->countRolesInCategory($id, $tenantId) > 0) {
+        return $this->deleteUnreferencedRow('personnel_job_role_categories', $id, $tenantId, [
+            ['personnel_job_role_categories', 'parent_id'],
+            ['personnel_job_roles', 'category_id'],
+        ]);
+    }
+
+    /**
+     * The tenant lock also serializes deletion against hierarchy edits. The target row lock
+     * prevents FK-backed inserts from slipping between the usage check and the DELETE.
+     * Locking reference reads deliberately use the current state, including in an outer
+     * transaction that already established an older repeatable-read snapshot.
+     *
+     * @param list<array{0: string, 1: string}> $references Internal, fixed table/column names only.
+     */
+    private function deleteUnreferencedRow(string $table, int $id, int $tenantId, array $references): bool
+    {
+        if ($id < 1 || $tenantId < 1) {
             return false;
         }
-        $stmt = $this->pdo->prepare('DELETE FROM personnel_job_role_categories WHERE id = ? AND tenant_id = ?');
-        $stmt->execute([$id, $tenantId]);
+        $ownsTransaction = !$this->pdo->inTransaction();
+        if ($ownsTransaction) {
+            $this->pdo->beginTransaction();
+        }
+        try {
+            $lock = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite' ? '' : ' FOR UPDATE';
+            $tenant = $this->pdo->prepare('SELECT id FROM tenants WHERE id = ?' . $lock);
+            $tenant->execute([$tenantId]);
+            $allowed = $tenant->fetchColumn() !== false;
+            $isJob = $table === 'personnel_job_roles';
+            if ($allowed) {
+                $row = $this->pdo->prepare('SELECT id' . ($isJob ? ', is_system' : '') . ' FROM ' . $table . ' WHERE id = ? AND tenant_id = ?' . $lock);
+                $row->execute([$id, $tenantId]);
+                $target = $row->fetch(PDO::FETCH_ASSOC);
+                $allowed = is_array($target) && (!$isJob || empty($target['is_system']));
+            }
+            if ($allowed) {
+                foreach ($references as [$referenceTable, $column]) {
+                    if (!$this->deletionColumnExists($referenceTable, $column)) {
+                        continue;
+                    }
+                    // IDs are global. Block malformed cross-tenant references too instead
+                    // of cascading through or orphaning another community's data.
+                    $usage = $this->pdo->prepare('SELECT 1 FROM ' . $referenceTable . ' WHERE ' . $column . ' = ? LIMIT 1' . $lock);
+                    $usage->execute([$id]);
+                    if ($usage->fetchColumn() !== false) {
+                        $allowed = false;
+                        break;
+                    }
+                }
+            }
+            $deleted = false;
+            if ($allowed) {
+                $delete = $this->pdo->prepare('DELETE FROM ' . $table . ' WHERE id = ? AND tenant_id = ?' . ($isJob ? ' AND is_system = 0' : ''));
+                $delete->execute([$id, $tenantId]);
+                $deleted = $delete->rowCount() > 0;
+                if ($deleted && $isJob && $this->deletionColumnExists('personnel_job_role_structure', 'job_role_id')) {
+                    $this->pdo->prepare('DELETE FROM personnel_job_role_structure WHERE tenant_id = ? AND job_role_id = ?')->execute([$tenantId, $id]);
+                }
+            }
+            if ($ownsTransaction) {
+                $this->pdo->commit();
+            }
 
-        return $stmt->rowCount() > 0;
+            return $deleted;
+        } catch (\Throwable $e) {
+            if ($ownsTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /** Optional legacy/extension tables may not have been migrated on this installation. */
+    private function deletionColumnExists(string $table, string $column): bool
+    {
+        if ($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            $columns = $this->pdo->query('PRAGMA table_info(' . $table . ')')->fetchAll(PDO::FETCH_ASSOC);
+            return in_array($column, array_column($columns, 'name'), true);
+        }
+        $stmt = $this->pdo->prepare('SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1');
+        $stmt->execute([$table, $column]);
+
+        return $stmt->fetchColumn() !== false;
     }
 
     /** @return array<int, int> id rôle => nombre de permissions liées */

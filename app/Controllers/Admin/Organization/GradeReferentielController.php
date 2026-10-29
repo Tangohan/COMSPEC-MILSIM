@@ -69,7 +69,7 @@ class GradeReferentielController
             $this->gradeRepository->listBySystemCode('US_CLASSIC')
         );
 
-        return Response::view('layout.main', [
+        return $this->gradeView($request, [
             'content' => 'admin.organization.referentiels.grades.index',
             'title' => 'Référentiel des grades',
             'tab' => $tab,
@@ -184,7 +184,7 @@ class GradeReferentielController
         $systems = $this->gradeSystemRepository->listActive();
         $categories = $this->gradeCategoryRepository->listActive();
         $returnTab = $this->normalizeGradeTab((string) $request->query('tab', 'fr'));
-        return Response::view('layout.main', [
+        return $this->gradeView($request, [
             'content' => 'admin.organization.referentiels.grades.form',
             'title' => 'Nouveau grade d’avancement',
             'grade' => null,
@@ -264,7 +264,7 @@ class GradeReferentielController
         } else {
             $grade['is_active'] = 1;
         }
-        return Response::view('layout.main', [
+        return $this->gradeView($request, [
             'content' => 'admin.organization.referentiels.grades.form',
             'title' => 'Renommer le grade',
             'grade' => $grade,
@@ -352,6 +352,26 @@ class GradeReferentielController
         $this->overrides->upsert($tenantId, $id, ['is_enabled' => true]);
         Session::flash('success', 'Grade réaffiché : il est de nouveau proposé dans les fiches membres.');
         return Response::redirect($this->indexUrl($this->tabForGrade($grade)));
+    }
+
+    /** Return only the protected workspace to progressive-enhancement requests. */
+    private function gradeView(Request $request, array $data): Response
+    {
+        if ($request->header('X-Grade-Fragment') !== '1') {
+            return Response::view('layout.main', $data);
+        }
+        if (($data['content'] ?? '') === 'admin.organization.referentiels.grades.index') {
+            $data['gradeNotices'] = [];
+            foreach (['error', 'success', 'info'] as $level) {
+                $message = Session::getFlash($level);
+                if (is_string($message) && $message !== '') {
+                    $data['gradeNotices'][] = ['level' => $level, 'message' => $message];
+                }
+            }
+        }
+        return Response::view((string) $data['content'], $data)
+            ->header('Cache-Control', 'private, no-store')
+            ->header('Vary', 'X-Grade-Fragment');
     }
 
     private function normalizeTab(string $tab): string

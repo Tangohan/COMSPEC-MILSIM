@@ -61,17 +61,5 @@ return static function (PDO $pdo): void {
         UnitJobRoleSyncService::resetColumnCache();
     }
 
-    if ($hasTable('personnel_job_role_permissions')) {
-        try {
-            $n = $pdo->exec('DELETE FROM personnel_job_role_permissions');
-            echo '  liaisons emploi → droits vidées : ' . (int) $n . "\n";
-        } catch (Throwable $e) {
-            echo '  [ATTENTION] personnel_job_role_permissions : ' . $e->getMessage() . "\n";
-        }
-    }
-
-    $sync = new UnitJobRoleSyncService($pdo);
-    $purged = $sync->purgeAllUnusedCatalogJobs();
-    echo '  emplois catalogue inutilisés retirés : ' . $purged . "\n";
-    echo "  aucun emploi recréé (le référentiel vidé reste vide).\n";
+    echo "  schéma emplois vérifié ; emplois, catégories, droits et attributions conservés.\n";
 };

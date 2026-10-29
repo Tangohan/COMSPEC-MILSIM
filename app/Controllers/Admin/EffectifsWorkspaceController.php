@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Core\Csrf;
+use App\Core\Database;
 use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
@@ -38,6 +39,8 @@ use App\Services\Effectifs\PersonnelCommandChainService;
 use App\Services\Personnel\JobRolePickerService;
 use App\Services\Personnel\PersonnelDuplicateDetectionService;
 use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
+use App\Services\Personnel\PersonnelJobRoleRecoveryService;
+use App\Services\Personnel\PersonnelJobRoleStructureService;
 use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Authorization\SystemReservedPermissions;
 use App\Services\Admin\RolePermissionService;
@@ -1208,14 +1211,8 @@ class EffectifsWorkspaceController
                 $this->personnelProfileRepository->update($id, [
                     'primary_unit_id' => $unitId > 0 ? $unitId : null,
                 ]);
-                $roleName = trim((string) ($user['display_name'] ?? ''));
-                $profile = $this->personnelProfileRepository->getByUserId($id);
-                if ($profile) {
-                    $fromProfile = trim((string) ($profile['primary_role'] ?? ''));
-                    if ($fromProfile !== '') {
-                        $roleName = $fromProfile;
-                    }
-                }
+                $currentAssignment = $this->personnelAssignmentRepository->getPrimaryAssignment($id, $tenantId);
+                $roleName = trim((string) ($currentAssignment['role_name'] ?? ''));
                 $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier(
                     $id,
                     $unitId > 0 ? $unitId : null,
@@ -1471,19 +1468,7 @@ class EffectifsWorkspaceController
             return Response::redirect($redirect);
         }
 
-        $display = (string) $result['primary_role_display'];
-        if ($settings['append_secondaries_to_primary_display'] && $result['secondary_role_display'] !== '') {
-            $display = $display !== '' ? $display . ' · ' . $result['secondary_role_display'] : $result['secondary_role_display'];
-        }
-        try {
-            $profile = $this->personnelProfileRepository->getByUserId($id) ?? [];
-            $unitId = (int) ($profile['primary_unit_id'] ?? 0);
-            if ($unitId > 0) {
-                $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier($id, $unitId, mb_substr($display, 0, 100));
-            }
-        } catch (\Throwable $e) {
-            error_log('Effectifs functions: assignment synchronization failed: ' . $e->getMessage());
-        }
+        // A dossier job is independent from the member’s ORBAT assignment.
 
         if ($before !== null) {
             try {
@@ -2054,14 +2039,8 @@ class EffectifsWorkspaceController
             $this->personnelProfileRepository->update($id, [
                 'primary_unit_id' => $unitId > 0 ? $unitId : null,
             ]);
-            $roleName = trim((string) ($user['display_name'] ?? ''));
-            $profile = $this->personnelProfileRepository->getByUserId($id);
-            if ($profile) {
-                $fromProfile = trim((string) ($profile['primary_role'] ?? ''));
-                if ($fromProfile !== '') {
-                    $roleName = $fromProfile;
-                }
-            }
+            $currentAssignment = $this->personnelAssignmentRepository->getPrimaryAssignment($id, $tenantId);
+            $roleName = trim((string) ($currentAssignment['role_name'] ?? ''));
             $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier(
                 $id,
                 $unitId > 0 ? $unitId : null,
@@ -2463,254 +2442,305 @@ class EffectifsWorkspaceController
 
     public function fonctions(Request $request, array $params = []): Response
     {
-        unset($params);
         $denied = $this->denyUnlessAccess();
-        if ($denied !== null) {
-            return $denied;
-        }
+        if ($denied !== null) return $denied;
         $tenantId = (int) Session::get('tenant_id');
-        $gate = Gate::getInstance();
-        $canManage = EffectifsLmsAccess::canManageAssignments($gate) || EffectifsLmsAccess::canManageRoles($gate);
-        $vue = strtolower(trim((string) $request->query('vue', '')));
+        $canManage = EffectifsLmsAccess::canManageAssignments(Gate::getInstance()) || EffectifsLmsAccess::canManageRoles(Gate::getInstance());
+        $vue = $request->queryString('vue', 'catalogue');
         if ($vue === 'attributions') {
-            return $this->shell('admin.effectifs_workspace.fonctions', array_merge(
-                $this->jobAssignmentPageData($request, $tenantId),
-                [
-                    'title' => 'Emplois',
-                    'effectifsNav' => 'fonctions',
-                    'jobsVue' => 'attributions',
-                    'canManageAssignments' => $canManage,
-                    'rosterCounts' => $this->rosterCounts($tenantId),
-                    'csrfToken' => Csrf::token(),
-                    'jobsWorkspaceEmbed' => true,
-                ]
-            ));
+            return $this->shell('admin.effectifs_workspace.fonctions', $this->jobAssignmentPageData($request, $tenantId) + [
+                'title'=>'Emplois et fonctions', 'effectifsNav'=>'fonctions', 'jobsVue'=>'attributions',
+                'canManageAssignments'=>$canManage, 'csrfToken'=>Csrf::token(), 'jobsWorkspaceEmbed'=>true,
+            ]);
         }
-
-        $jobRoles = [];
-        $categories = [];
-        if ($this->personnelJobRoleRepository->tablesExist()) {
-            $jobRoles = $this->personnelJobRoleRepository->listRolesWithCategory($tenantId);
-            $categories = $this->personnelJobRoleRepository->listCategories($tenantId);
-            try {
-                $kitSvc = \App\Core\Container::get(\App\Services\Personnel\PersonnelFunctionKitService::class);
-                $jobRoles = $kitSvc->filterRolesWithCategory($tenantId, $jobRoles);
-            } catch (\Throwable) {
-            }
-        }
+        if (!in_array($vue, ['catalogue','categories','recuperation'], true)) $vue='catalogue';
+        $roles = $this->personnelJobRoleRepository->tablesExist() ? $this->personnelJobRoleRepository->listRolesWithCategory($tenantId) : [];
+        $categories = $this->personnelJobRoleRepository->tablesExist() ? $this->personnelJobRoleRepository->listCategories($tenantId) : [];
+        $structure = new PersonnelJobRoleStructureService();
+        $options = $structure->options($tenantId);
+        $metadata = $structure->listMetadata($tenantId);
         $creating = $request->query('nouveau') === '1';
-        $selectedId = (int) $request->query('emploi', 0);
         $selected = null;
-        foreach ($jobRoles as $row) {
-            if ((int) ($row['id'] ?? 0) === $selectedId) {
-                $selected = $row;
-                break;
+        $selectedId = (int) $request->queryString('emploi', '0');
+        foreach ($roles as &$role) {
+            $role['structure'] = $metadata[(int)$role['id']] ?? [];
+            if (!$creating && (int)$role['id'] === $selectedId) $selected=$role;
+        }
+        unset($role);
+        if (!$creating && $selected === null && $roles !== []) $selected=$roles[0];
+        $holders = $roles !== [] && $this->personnelJobRoleRepository->pivotTableExists()
+            ? $this->personnelJobRoleRepository->listHoldersByJobRoleIds($tenantId,array_map(static fn(array $r):int=>(int)$r['id'],$roles)) : [];
+        $recovery = null;
+        $recoveryLabels = $this->jobRecoveryLabels($request);
+        if ($vue === 'recuperation' && $canManage) {
+            try {
+                $recovery = (new PersonnelJobRoleRecoveryService(Database::getPdo()))->preview($tenantId, $recoveryLabels);
+            } catch (\Throwable $e) {
+                error_log('Effectifs jobs recovery preview: ' . $e->getMessage());
+                $recovery = ['ready' => false, 'candidates' => [], 'missing_labels' => $recoveryLabels];
             }
         }
-        if ($selected === null && $jobRoles !== []) {
-            $selected = $jobRoles[0];
-            $selectedId = (int) ($selected['id'] ?? 0);
+        $data = ['title'=>'Emplois et fonctions','effectifsNav'=>'fonctions','jobsVue'=>$vue,
+            'jobRoles'=>$roles,'jobCategories'=>$categories,'selectedJobRole'=>$selected,'creatingJobRole'=>$creating,
+            'jobHoldersByRole'=>$holders,'canManageAssignments'=>$canManage,'csrfToken'=>Csrf::token(),
+            'jobStructureOptions'=>$options,'jobRecovery'=>$recovery,'jobTenantId'=>$tenantId,
+            'jobRecoveryLabels'=>$recoveryLabels,
+            'jobsFragment'=>$request->header('X-Effectifs-Fragment')==='jobs',
+            'jobSyncSettings'=>PersonnelJobRoleAssignmentsSettings::resolve($this->tenantRepository->getSettings($tenantId)),
+        ];
+        if ($request->header('X-Effectifs-Fragment') === 'jobs') {
+            return Response::view('admin.effectifs_workspace.fonctions',$data)
+                ->header('Cache-Control','private, no-store')->header('Vary', 'X-Effectifs-Fragment');
         }
-        $holdersByRole = [];
-        if ($this->personnelJobRoleRepository->pivotTableExists() && $jobRoles !== []) {
-            $holdersByRole = $this->personnelJobRoleRepository->listHoldersByJobRoleIds(
-                $tenantId,
-                array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $jobRoles)
-            );
-        }
+        return $this->shell('admin.effectifs_workspace.fonctions',$data)
+            ->header('Cache-Control', 'private, no-store')->header('Vary', 'X-Effectifs-Fragment');
+    }
 
-        return $this->shell('admin.effectifs_workspace.fonctions', [
-            'title' => 'Emplois',
-            'effectifsNav' => 'fonctions',
-            'jobsVue' => 'catalogue',
-            'jobRoles' => $jobRoles,
-            'jobCategories' => $categories,
-            'selectedJobRole' => $selected,
-            'creatingJobRole' => $creating,
-            'jobHoldersByRole' => $holdersByRole,
-            'canManageAssignments' => $canManage,
-            'rosterCounts' => $this->rosterCounts($tenantId),
-            'csrfToken' => Csrf::token(),
-        ]);
+    private function jobWriteGuard(Request $request): ?Response
+    {
+        $denied=$this->denyUnlessAccess();
+        if ($denied !== null) return $denied;
+        $gate=Gate::getInstance();
+        if (!EffectifsLmsAccess::canManageAssignments($gate) && !EffectifsLmsAccess::canManageRoles($gate)) {
+            return $this->jobReply($request,false,'Vous n’êtes pas habilité à modifier les emplois.',[],403);
+        }
+        if (!Csrf::verify($request)) return $this->jobReply($request,false,'Session expirée. Rechargez la page avant de réessayer.',[],419);
+        return null;
+    }
+
+    private function jobReply(Request $request, bool $ok, string $message, array $query = [], int $status = 422): Response
+    {
+        $target=effectifs_workspace_url('fonctions').($query!==[]?'?'.http_build_query($query):'');
+        if ($request->header('X-Effectifs-Fragment') === 'jobs') {
+            return Response::json(['ok'=>$ok,'message'=>$message,'redirect'=>$target],$ok?200:$status)->header('Cache-Control','private, no-store');
+        }
+        Session::flash($ok?'success':'error',$message);
+        return Response::redirect($target,303);
+    }
+
+    private function jobValues(Request $request, int $tenantId, int $roleId): array
+    {
+        $name=$request->input('name','');
+        $description=$request->input('description','');
+        if (!is_string($name) || trim($name)==='' || mb_strlen(trim($name))>120) throw new \InvalidArgumentException('Le nom doit comporter entre 1 et 120 caractères.');
+        if (!is_string($description) || mb_strlen($description)>500) throw new \InvalidArgumentException('La description est limitée à 500 caractères.');
+        $rawCategory=$request->input('category_id','0');
+        if (!is_scalar($rawCategory) || !ctype_digit((string)$rawCategory)) throw new \InvalidArgumentException('Choisissez une catégorie valide.');
+        $categoryId=(int)$rawCategory;
+        if ($categoryId>0 && !$this->personnelJobRoleRepository->findCategoryById($categoryId,$tenantId)) throw new \InvalidArgumentException('Cette catégorie n’appartient pas à votre communauté.');
+        $metadata=null;
+        if ($request->input('structure_enabled') === '1') {
+            $input=[];
+            foreach (['parent_job_role_id','linked_unit_id','grade_id','specialty_id','code','kind'] as $field) $input[$field]=$request->input($field);
+            $check=(new PersonnelJobRoleStructureService())->validate($tenantId,$roleId,$input);
+            if ($check['errors'] !== []) throw new \InvalidArgumentException(implode(' ',array_values($check['errors'])));
+            $metadata=$check['metadata'];
+        }
+        return [trim($name),trim($description),$categoryId,$metadata];
     }
 
     public function createJobRole(Request $request, array $params = []): Response
     {
-        unset($params);
-        $denied = $this->denyUnlessAccess();
-        if ($denied !== null) {
-            return $denied;
+        if ($denied=$this->jobWriteGuard($request)) return $denied;
+        $tenantId=(int)Session::get('tenant_id');
+        $pdo=Database::getPdo();
+        try {
+            $pdo->beginTransaction();
+            $this->lockJobTenant($pdo, $tenantId);
+            [$name,$description,$categoryId,$metadata]=$this->jobValues($request,$tenantId,0);
+            if ($categoryId===0) $categoryId=$this->resolveJobCategoryId($tenantId,0);
+            $slug=$this->personnelJobRoleRepository->uniqueSlugFromName($tenantId,$name);
+            $id=$this->personnelJobRoleRepository->createRole($tenantId,$categoryId,$name,$slug,$description?:null,0,false);
+            if ($metadata!==null) (new PersonnelJobRoleStructureService())->save($tenantId,$id,$metadata);
+            $pdo->commit();
+            return $this->jobReply($request,true,'Emploi créé. Aucun membre ni droit d’accès n’a été modifié.',['emploi'=>$id]);
+        } catch (\InvalidArgumentException $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            return $this->jobReply($request,false,$e->getMessage(),['nouveau'=>1]);
+        } catch (\PDOException $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            error_log('Effectifs jobs create: '.$e->getMessage());
+            return $this->jobReply($request,false,'L’emploi n’a pas été créé. Réessayez après avoir vérifié les migrations.',[],503);
         }
-        $gate = Gate::getInstance();
-        if (!EffectifsLmsAccess::canManageAssignments($gate) && !EffectifsLmsAccess::canManageRoles($gate)) {
-            Session::flash('error', 'Vous n’êtes pas habilité à créer un emploi.');
-
-            return Response::redirect(effectifs_workspace_url('fonctions'));
-        }
-        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
-
-            return Response::redirect(effectifs_workspace_url('fonctions'));
-        }
-        $tenantId = (int) Session::get('tenant_id');
-        if (!$this->personnelJobRoleRepository->tablesExist()) {
-            Session::flash('error', 'Les emplois du dossier ne sont pas encore disponibles pour cette communauté.');
-
-            return Response::redirect(effectifs_workspace_url('fonctions'));
-        }
-        $name = trim((string) $request->input('name', ''));
-        if ($name === '') {
-            Session::flash('error', 'Indiquez le nom de l’emploi.');
-
-            return Response::redirect(effectifs_workspace_url('fonctions') . '?nouveau=1');
-        }
-        $categoryId = $this->resolveJobCategoryId($tenantId, (int) $request->input('category_id', 0));
-        if ($categoryId < 1) {
-            Session::flash('error', 'Choisissez une catégorie, ou créez-en une d’abord.');
-
-            return Response::redirect(effectifs_workspace_url('fonctions') . '?nouveau=1');
-        }
-        $slug = $this->personnelJobRoleRepository->uniqueSlugFromName($tenantId, $name);
-        $newId = $this->personnelJobRoleRepository->createRole(
-            $tenantId,
-            $categoryId,
-            $name,
-            $slug,
-            trim((string) $request->input('description', '')) ?: null,
-            0,
-            false
-        );
-        Session::flash('success', 'Emploi créé. Vous pouvez préciser sa description, puis l’attribuer aux membres.');
-
-        return Response::redirect(effectifs_workspace_url('fonctions') . '?emploi=' . $newId);
     }
 
     public function saveJobRole(Request $request, array $params = []): Response
     {
-        unset($params);
-        $denied = $this->denyUnlessAccess();
-        if ($denied !== null) {
-            return $denied;
+        if ($denied=$this->jobWriteGuard($request)) return $denied;
+        $tenantId=(int)Session::get('tenant_id');
+        $id=(int)$request->inputString('id','0');
+        $pdo=Database::getPdo();
+        try {
+            $pdo->beginTransaction();
+            $this->lockJobTenant($pdo, $tenantId);
+            $existing=$this->personnelJobRoleRepository->findRoleById($id,$tenantId);
+            if (!$existing) {
+                $pdo->rollBack();
+                return $this->jobReply($request,false,'Emploi introuvable.',[],404);
+            }
+            [$name,$description,$categoryId,$metadata]=$this->jobValues($request,$tenantId,$id);
+            if ($categoryId===0) $categoryId=$this->resolveJobCategoryId($tenantId,0);
+            $this->personnelJobRoleRepository->updateRole($id,$tenantId,$categoryId,$name,(string)$existing['slug'],$description?:null,(int)($existing['sort_order']??0),$existing['mos_code']??null,$existing['mos_specialty_title']??null);
+            if ($metadata!==null) (new PersonnelJobRoleStructureService())->save($tenantId,$id,$metadata);
+            $pdo->commit();
+            return $this->jobReply($request,true,'Emploi enregistré. Les affectations et les droits restent indépendants.',['emploi'=>$id]);
+        } catch (\InvalidArgumentException $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            return $this->jobReply($request,false,$e->getMessage(),['emploi'=>$id]);
+        } catch (\PDOException $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            error_log('Effectifs jobs save: '.$e->getMessage());
+            return $this->jobReply($request,false,'Enregistrement impossible. Vos modifications n’ont pas été appliquées.',['emploi'=>$id],503);
         }
-        $gate = Gate::getInstance();
-        if (!EffectifsLmsAccess::canManageAssignments($gate) && !EffectifsLmsAccess::canManageRoles($gate)) {
-            Session::flash('error', 'Vous n’êtes pas habilité à modifier un emploi.');
-
-            return Response::redirect(effectifs_workspace_url('fonctions'));
-        }
-        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
-
-            return Response::redirect(effectifs_workspace_url('fonctions'));
-        }
-        $tenantId = (int) Session::get('tenant_id');
-        $id = (int) $request->input('id', 0);
-        $existing = $id > 0 ? $this->personnelJobRoleRepository->findRoleById($id, $tenantId) : null;
-        if ($id < 1 || !$existing) {
-            Session::flash('error', 'Emploi introuvable.');
-
-            return Response::redirect(effectifs_workspace_url('fonctions'));
-        }
-        $name = trim((string) $request->input('name', ''));
-        if ($name === '') {
-            Session::flash('error', 'Indiquez le nom de l’emploi.');
-
-            return Response::redirect(effectifs_workspace_url('fonctions') . '?emploi=' . $id);
-        }
-        $categoryId = $this->resolveJobCategoryId($tenantId, (int) $request->input('category_id', 0));
-        if ($categoryId < 1) {
-            Session::flash('error', 'Choisissez une catégorie.');
-
-            return Response::redirect(effectifs_workspace_url('fonctions') . '?emploi=' . $id);
-        }
-        $slug = trim((string) ($existing['slug'] ?? ''));
-        if ($slug === '') {
-            $slug = $this->personnelJobRoleRepository->uniqueSlugFromName($tenantId, $name, $id);
-        }
-        $mosCode = isset($existing['mos_code']) ? (is_string($existing['mos_code']) ? trim($existing['mos_code']) : null) : null;
-        $mosCode = $mosCode !== '' ? $mosCode : null;
-        $mosTitle = isset($existing['mos_specialty_title']) ? (is_string($existing['mos_specialty_title']) ? trim($existing['mos_specialty_title']) : null) : null;
-        $mosTitle = $mosTitle !== '' ? $mosTitle : null;
-        $this->personnelJobRoleRepository->updateRole(
-            $id,
-            $tenantId,
-            $categoryId,
-            $name,
-            $slug,
-            trim((string) $request->input('description', '')) ?: null,
-            (int) ($existing['sort_order'] ?? 0),
-            $mosCode,
-            $mosTitle
-        );
-        Session::flash('success', 'Emploi enregistré.');
-
-        return Response::redirect(effectifs_workspace_url('fonctions') . '?emploi=' . $id);
     }
 
     public function deleteJobRole(Request $request, array $params = []): Response
     {
-        unset($params);
-        $denied = $this->denyUnlessAccess();
-        if ($denied !== null) {
-            return $denied;
+        if ($denied=$this->jobWriteGuard($request)) return $denied;
+        $tenantId=(int)Session::get('tenant_id');
+        $id=(int)$request->inputString('id','0');
+        $role=$this->personnelJobRoleRepository->findRoleById($id,$tenantId);
+        if (!$role) return $this->jobReply($request,false,'Emploi introuvable.',[],404);
+        $holders=$this->personnelJobRoleRepository->pivotTableExists()
+            ? $this->personnelJobRoleRepository->listHoldersByJobRoleIds($tenantId,[$id]) : [];
+        $metadata=(new PersonnelJobRoleStructureService())->listMetadata($tenantId);
+        foreach ($metadata as $item) {
+            if ((int)($item['parent_job_role_id']??0)===$id) return $this->jobReply($request,false,'Cet emploi possède des sous-emplois. Rattachez-les ailleurs avant de le retirer.',['emploi'=>$id]);
         }
-        $gate = Gate::getInstance();
-        if (!EffectifsLmsAccess::canManageAssignments($gate) && !EffectifsLmsAccess::canManageRoles($gate)) {
-            Session::flash('error', 'Vous n’êtes pas habilité à retirer un emploi.');
-
-            return Response::redirect(effectifs_workspace_url('fonctions'));
+        if (!empty($holders[$id])) return $this->jobReply($request,false,'Cet emploi est encore attribué. Retirez d’abord ses attributions explicitement.',['emploi'=>$id]);
+        try {
+            if (!$this->personnelJobRoleRepository->deleteRole($id,$tenantId)) {
+                return $this->jobReply($request,false,'Cet emploi est protégé ou encore utilisé (attribution, sous-emploi ou poste ORBAT). Retirez d’abord ces liens explicitement.',['emploi'=>$id]);
+            }
+        } catch (\PDOException $e) {
+            error_log('Effectifs jobs delete: ' . $e->getMessage());
+            return $this->jobReply($request,false,'La suppression n’a pas abouti. Rechargez la liste pour vérifier son état.',['emploi'=>$id],503);
         }
-        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
-
-            return Response::redirect(effectifs_workspace_url('fonctions'));
-        }
-        $tenantId = (int) Session::get('tenant_id');
-        $id = (int) $request->input('id', 0);
-        if ($id > 0 && $this->personnelJobRoleRepository->deleteRole($id, $tenantId)) {
-            Session::flash('success', 'Emploi retiré. Les dossiers concernés n’affichent plus ce libellé.');
-        } else {
-            Session::flash('error', 'Impossible de retirer cet emploi (modèle officiel ou introuvable).');
-        }
-
-        return Response::redirect(effectifs_workspace_url('fonctions'));
+        return $this->jobReply($request,true,'Emploi non attribué retiré du catalogue.');
     }
 
     public function saveJobCategory(Request $request, array $params = []): Response
     {
-        unset($params);
-        $denied = $this->denyUnlessAccess();
-        if ($denied !== null) {
+        if ($denied = $this->jobWriteGuard($request)) {
             return $denied;
         }
-        $gate = Gate::getInstance();
-        if (!EffectifsLmsAccess::canManageAssignments($gate) && !EffectifsLmsAccess::canManageRoles($gate)) {
-            Session::flash('error', 'Vous n’êtes pas habilité à créer une catégorie.');
-
-            return Response::redirect(effectifs_workspace_url('fonctions'));
-        }
-        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
-
-            return Response::redirect(effectifs_workspace_url('fonctions'));
-        }
         $tenantId = (int) Session::get('tenant_id');
-        $name = trim((string) $request->input('category_name', ''));
-        if ($name === '') {
-            Session::flash('error', 'Indiquez le nom de la catégorie.');
-
-            return Response::redirect(effectifs_workspace_url('fonctions') . '?nouveau=1');
+        $id = (int) $request->inputString('category_edit_id', '0');
+        $query = ['vue' => 'categories'];
+        $pdo = Database::getPdo();
+        try {
+            $pdo->beginTransaction();
+            // Serialise parent changes: two concurrent edits must not create a cycle.
+            $this->lockJobTenant($pdo, $tenantId);
+            $existing = $id > 0 ? $this->personnelJobRoleRepository->findCategoryById($id, $tenantId) : null;
+            if ($id > 0 && !$existing) {
+                $pdo->rollBack();
+                return $this->jobReply($request, false, 'Catégorie introuvable.', $query, 404);
+            }
+            if ($request->input('operation') === 'delete') {
+                if ($id < 1 || !$this->personnelJobRoleRepository->deleteCategory($id, $tenantId)) {
+                    throw new \InvalidArgumentException('Une catégorie contenant des emplois ou des sous-catégories ne peut pas être supprimée.');
+                }
+                $pdo->commit();
+                return $this->jobReply($request, true, 'Catégorie vide supprimée.', $query);
+            }
+            $name = $request->input('category_name', '');
+            if (!is_string($name) || trim($name) === '' || mb_strlen(trim($name)) > 120) {
+                throw new \InvalidArgumentException('Le nom de catégorie doit comporter entre 1 et 120 caractères.');
+            }
+            $raw = $request->input('parent_id', '0');
+            if ($raw === '') {
+                $raw = '0';
+            }
+            if (!is_scalar($raw) || !ctype_digit((string) $raw)) {
+                throw new \InvalidArgumentException('Choisissez une catégorie parente valide.');
+            }
+            $parent = (int) $raw;
+            $seen = [];
+            for ($cursor = $parent; $cursor > 0; $cursor = (int) ($row['parent_id'] ?? 0)) {
+                if ($cursor === $id || isset($seen[$cursor])) {
+                    throw new \InvalidArgumentException('Une catégorie ne peut pas être rangée sous elle-même ou un de ses descendants.');
+                }
+                $row = $this->personnelJobRoleRepository->findCategoryById($cursor, $tenantId);
+                if (!$row) {
+                    throw new \InvalidArgumentException('La catégorie parente n’appartient pas à votre communauté.');
+                }
+                $seen[$cursor] = true;
+            }
+            if ($existing) {
+                $this->personnelJobRoleRepository->updateCategory($id, $tenantId, $parent ?: null, trim($name), (string) $existing['slug'], (int) ($existing['sort_order'] ?? 0));
+            } else {
+                $slug = $this->personnelJobRoleRepository->uniqueCategorySlugFromName($tenantId, trim($name));
+                $this->personnelJobRoleRepository->createCategory($tenantId, $parent ?: null, trim($name), $slug, 0);
+            }
+            $pdo->commit();
+            return $this->jobReply($request, true, $existing ? 'Catégorie enregistrée.' : 'Catégorie créée.', $query);
+        } catch (\InvalidArgumentException $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            return $this->jobReply($request, false, $e->getMessage(), $query);
+        } catch (\PDOException $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            error_log('Effectifs job category: ' . $e->getMessage());
+            return $this->jobReply($request, false, 'La catégorie n’a pas été modifiée. Réessayez après avoir rechargé la liste.', $query, 503);
         }
-        $parentRaw = $request->input('parent_id');
-        $parentId = ($parentRaw === null || $parentRaw === '') ? null : (int) $parentRaw;
-        if ($parentId !== null && $parentId <= 0) {
-            $parentId = null;
-        }
-        $slug = $this->personnelJobRoleRepository->uniqueCategorySlugFromName($tenantId, $name);
-        $this->personnelJobRoleRepository->createCategory($tenantId, $parentId, $name, $slug, 0);
-        Session::flash('success', 'Catégorie créée.');
+    }
 
-        return Response::redirect(effectifs_workspace_url('fonctions') . '?nouveau=1');
+    private function lockJobTenant(\PDO $pdo, int $tenantId): void
+    {
+        $sql = 'SELECT id FROM tenants WHERE id = ?';
+        if ($pdo->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'mysql') {
+            $sql .= ' FOR UPDATE';
+        }
+        $lock = $pdo->prepare($sql);
+        $lock->execute([$tenantId]);
+        if (!$lock->fetchColumn()) {
+            throw new \InvalidArgumentException('Communauté introuvable.');
+        }
+    }
+
+    public function saveJobSettings(Request $request, array $params = []): Response
+    {
+        if ($denied = $this->jobWriteGuard($request)) return $denied;
+        $tenantId = (int) Session::get('tenant_id');
+        $pdo = Database::getPdo();
+        try {
+            $pdo->beginTransaction();
+            $this->lockJobTenant($pdo, $tenantId);
+            $settings = PersonnelJobRoleAssignmentsSettings::mergePatch($this->tenantRepository->getSettings($tenantId), [
+                'sync_jobs_from_assignments' => $request->input('sync_jobs_from_assignments') === '1',
+            ]);
+            $this->tenantRepository->updateSettings($tenantId, $settings);
+            $pdo->commit();
+            return $this->jobReply($request, true, 'Réglage enregistré. Aucun emploi existant n’a été retiré.');
+        } catch (\PDOException | \InvalidArgumentException $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            error_log('Effectifs jobs settings: ' . $e->getMessage());
+            return $this->jobReply($request, false, 'Le réglage n’a pas pu être enregistré.', [], 503);
+        }
+    }
+
+    private function jobRecoveryLabels(Request $request): array
+    {
+        $raw=$request->method()==='POST'?$request->input('labels','CNOS,RFL'):$request->query('labels','CNOS,RFL');
+        if (!is_string($raw) || mb_strlen($raw)>1000) return $request->isPost() ? [] : ['CNOS','RFL'];
+        return array_slice(array_values(array_unique(array_filter(array_map('trim',preg_split('/[,;\r\n]+/',$raw)?:[])))),0,20);
+    }
+
+    public function recoverJobRoles(Request $request, array $params = []): Response
+    {
+        if ($denied=$this->jobWriteGuard($request)) return $denied;
+        $tenantId=(int)Session::get('tenant_id');
+        $labels=$this->jobRecoveryLabels($request);
+        if ($labels===[]) return $this->jobReply($request,false,'Indiquez les libellés à rechercher.',['vue'=>'recuperation']);
+        try {
+            $result=(new PersonnelJobRoleRecoveryService(Database::getPdo()))->apply($tenantId,$labels,(int)Session::get('user_id'));
+        } catch (\Throwable $e) {
+            error_log('Effectifs jobs recovery apply: ' . $e->getMessage());
+            return $this->jobReply($request,false,'La récupération n’a pas abouti. Vérifiez les migrations et relancez l’analyse avant de réessayer.',['vue'=>'recuperation','labels'=>implode(',',$labels)],503);
+        }
+        $jobs=(int)($result['restored_jobs']??0);
+        $assignments=(int)($result['restored_assignments']??0);
+        return $this->jobReply($request,true,$jobs.' emploi(s) et '.$assignments.' attribution(s) restaurés depuis les traces conservées. Les éléments sans preuve ou en conflit ne sont pas remplacés.',['vue'=>'recuperation','labels'=>implode(',',$labels)]);
     }
 
     public function affectations(Request $request, array $params = []): Response
@@ -3811,12 +3841,8 @@ class EffectifsWorkspaceController
         if ($categoryId > 0 && $this->personnelJobRoleRepository->findCategoryById($categoryId, $tenantId)) {
             return $categoryId;
         }
-        $categories = $this->personnelJobRoleRepository->listCategories($tenantId);
-        if ($categories !== []) {
-            return (int) ($categories[0]['id'] ?? 0);
-        }
-
-        return $this->personnelJobRoleRepository->createCategory($tenantId, null, 'Organisation', 'organisation', 0);
+        $existing = $this->personnelJobRoleRepository->findCategoryIdBySlug($tenantId, 'organisation');
+        return $existing ?? $this->personnelJobRoleRepository->createCategory($tenantId, null, 'Organisation', 'organisation', 0);
     }
 
     /**

@@ -16,7 +16,6 @@ final class EffectifsMemberFunctionsSaveTest extends TestCase
 
         self::assertStringNotContainsString('Enregistrement impossible (fonctions).', $controller);
         self::assertStringContainsString('Effectifs functions: pivot save failed:', $controller);
-        self::assertStringContainsString('Effectifs functions: assignment synchronization failed:', $controller);
         self::assertStringContainsString('Effectifs functions: post-save notification failed:', $controller);
         self::assertStringContainsString("Session::flash('success', 'Fonctions du membre mises à jour.')", $controller);
     }
