@@ -4,11 +4,13 @@
 
 `/academy` est une entrée dans le LMS ATHENA existant, avec une hero photographique pleine largeur, un effet de flou et la DA marketing noir/menthe du site. L’image fournie par l’utilisateur est servie localement depuis `public/assets/images/academy-hero.jpg`. Source : <https://forwardobservations.com/cdn/shop/files/87321613-A40C-4309-AD42-9DF6C492EDB1_4472x.jpg?v=1693081265>.
 
+Academy couvre l’ensemble des formations et des compétences de la plateforme, sans spécialisation imposée.
+
 ### Compte, communauté et accès
 
 Les visiteurs voient une invitation à se connecter. Les sessions ouvertes passent par le même `AuthMiddleware` que `/formations` : compte actif, validité de session, communauté, restrictions et permissions sont vérifiés par l’application. L’accueil utilise `TenantContext::id()` pour la communauté effective ; aucun ID de compte ou de tenant transmis dans l’URL n’est utilisé.
 
-L’interface distingue les états visiteur, compte sans communauté, communauté sans formule payante active, accès actif et indisponibilité de la vérification. Le nom du compte, la communauté, la formule, les formations publiées et la reprise du cursus proviennent du serveur. Les réponses personnalisées sont `private, no-store`. Les routes pédagogiques conservent le contrôle de formule Standard/Pro payante active ; les restrictions du module formation sont également appliquées. Le prestataire de paiement reste celui déjà configuré dans ATHENA, sans nouvelle intégration.
+L’interface distingue les états visiteur, compte sans communauté, communauté sans formule payante active, accès actif et indisponibilité de la vérification. Le nom du compte, la communauté, la formule, les formations publiées et la reprise du cursus proviennent du serveur. Les réponses personnalisées sont `private, no-store`. Les routes pédagogiques conservent le contrôle de formule payante active (Standard, Pro ou Pro Plus), reconnue via le catalogue de facturation ; les restrictions du module formation sont également appliquées. Le prestataire de paiement reste celui déjà configuré dans ATHENA, sans nouvelle intégration.
 
 ### Réutilisation du LMS existant
 
@@ -24,7 +26,7 @@ Les tables `academy_courses` et `academy_learners`, ajoutées par `migrations/20
 
 ### Disclaimer à l’ouverture
 
-Le composant commun `views/academy/disclaimer.php` utilise un dialogue natif accessible. À la première visite, il affiche le disclaimer de préversion et l’absence de qualification officielle. Après validation explicite, seul le choix `accepted` est écrit dans `localStorage` sous `athena:academy:disclaimer:2026-10-29-v1`.
+Le composant commun `views/academy/disclaimer.php` utilise un dialogue natif accessible. À la première visite, il affiche le disclaimer de préversion et l’absence de qualification officielle. Après validation explicite, seul le choix `accepted` est écrit dans `localStorage` sous `athena:academy:disclaimer:2026-10-29-v2`.
 
 La version fait partie de la clé : changer `data-disclaimer-version` réaffiche le texte après une modification du disclaimer. Le bouton « Lire l’avertissement » permet de le rouvrir. Fermer avec Échap ne mémorise aucune validation. Un refus du navigateur d’accéder au localStorage ne casse pas la page ; le dialogue peut être validé sans persistance. Le localStorage ne contient aucun identifiant, droit d’accès ou résultat et ne remplace jamais les contrôles côté serveur.
 

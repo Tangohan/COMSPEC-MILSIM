@@ -31,6 +31,26 @@ final class AcademyCurriculumTest extends TestCase
         self::assertFalse(AcademyAccess::paid(array_replace($tenant, ['id' => 0]), 1000));
     }
 
+    public function testAllBilledPlansIncludingProPlusAreAccepted(): void
+    {
+        $slugs = array_merge(\App\Services\Billing\PlanPaymentService::PAID_PLANS, ['pro_plus', 'PRO_PLUS', ' pro_plus ']);
+        foreach ($slugs as $slug) {
+            self::assertTrue(AcademyAccess::paid(['id'=>1, 'plan_slug'=>$slug, 'subscription_status'=>'active'], 1000), $slug);
+        }
+    }
+
+    public function testProPlusStillRequiresActiveSubscriptionAndAnUnexpiredManualPeriod(): void
+    {
+        $tenant = ['id'=>1, 'plan_slug'=>'pro_plus', 'subscription_status'=>'active'];
+        self::assertTrue(AcademyAccess::paid($tenant + ['settings'=>['manual_billing'=>['ends_at'=>'1970-01-01 00:20:00 UTC']]], 1000));
+        foreach (['trialing', 'past_due', 'canceled', 'none'] as $status) {
+            self::assertFalse(AcademyAccess::paid(array_replace($tenant, ['subscription_status'=>$status]), 1000));
+        }
+        foreach (['1970-01-01 00:01:00 UTC', 'not-a-date'] as $end) {
+            self::assertFalse(AcademyAccess::paid($tenant + ['settings'=>['manual_billing'=>['ends_at'=>$end]]], 1000));
+        }
+    }
+
     public function testFullCurriculumRequiresPracticeExamDebriefAndInstructorAtEveryChapter(): void
     {
         $course = AcademyCurriculum::demo();
