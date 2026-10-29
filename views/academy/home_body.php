@@ -34,7 +34,7 @@ if ($hasAccess && $resume) { $primaryHref = url('formations/' . rawurlencode($re
 <div class="academy-identity" data-access-state="<?= $h($accessState) ?>">
 <span class="academy-identity__state"><i aria-hidden="true"></i><?= $h($t('access_' . $accessState)) ?></span>
 <?php if ($account): ?><span><?= $h(($account['display_name'] ?? '') ?: ($account['callsign'] ?? ('#' . (int)$account['id']))) ?></span><?php endif ?>
-<?php if ($tenant && ($tenant['slug']??'') !== 'default'): ?><span><?= $h($tenant['name']??$tenant['slug']) ?></span><span><?= $h(strtoupper((string)($tenant['plan_slug']??''))) ?></span><?php endif ?>
+<?php if ($tenant && ($tenant['slug']??'') !== 'default'): ?><span><?= $h($tenant['name']??$tenant['slug']) ?></span><span><?= $h(strtoupper(\App\Services\Academy\AcademyAccess::planSlug($tenant))) ?></span><?php endif ?>
 <span>FR / EN</span></div>
 </div>
 <div class="academy-hero-foot wrap"><span><?= $h($t('prerelease')) ?></span><span><?= $h($t('not_official')) ?></span><button type="button" data-open-disclaimer><?= $h($t('read_disclaimer')) ?> ↗</button></div>

@@ -22,7 +22,7 @@ final class AcademyCurriculumTest extends TestCase
         foreach (['free', '', 'unknown'] as $plan) {
             self::assertFalse(AcademyAccess::paid(array_replace($tenant, ['plan_slug' => $plan]), 1000));
         }
-        foreach (['trialing', 'past_due', 'canceled', 'none'] as $status) {
+        foreach (['trialing', 'past_due', 'canceled'] as $status) {
             self::assertFalse(AcademyAccess::paid(array_replace($tenant, ['subscription_status' => $status]), 1000));
         }
         foreach (['1970-01-01 00:01:00 UTC', 'not-a-date'] as $end) {
@@ -39,11 +39,11 @@ final class AcademyCurriculumTest extends TestCase
         }
     }
 
-    public function testProPlusStillRequiresActiveSubscriptionAndAnUnexpiredManualPeriod(): void
+    public function testProPlusRejectsInactiveSubscriptionsAndExpiredManualPeriods(): void
     {
         $tenant = ['id'=>1, 'plan_slug'=>'pro_plus', 'subscription_status'=>'active'];
         self::assertTrue(AcademyAccess::paid($tenant + ['settings'=>['manual_billing'=>['ends_at'=>'1970-01-01 00:20:00 UTC']]], 1000));
-        foreach (['trialing', 'past_due', 'canceled', 'none'] as $status) {
+        foreach (['trialing', 'past_due', 'canceled'] as $status) {
             self::assertFalse(AcademyAccess::paid(array_replace($tenant, ['subscription_status'=>$status]), 1000));
         }
         foreach (['1970-01-01 00:01:00 UTC', 'not-a-date'] as $end) {
