@@ -12,6 +12,10 @@ Les visiteurs voient une invitation à se connecter. Les sessions ouvertes passe
 
 L’interface distingue les états visiteur, compte sans communauté, communauté sans formule payante active, accès actif et indisponibilité de la vérification. Le nom du compte, la communauté, la formule, les formations publiées et la reprise du cursus proviennent du serveur. Les réponses personnalisées sont `private, no-store`. Les routes pédagogiques conservent le contrôle de formule payante active (Standard, Pro ou Pro Plus), reconnue via le catalogue de facturation ; les restrictions du module formation sont également appliquées. Le prestataire de paiement reste celui déjà configuré dans ATHENA, sans nouvelle intégration.
 
+L’accès au palier utilise la formule effective résolue par `PlanGift::effectivePlanSlug()`, comme le reste d’ATHENA : une formule offerte en cours ou attribuée par l’administration ouvre les mêmes droits Academy que le palier correspondant. Un PRO_PLUS affecté avec `subscription_status=none` reste une attribution valide ; l’absence d’abonnement prestataire ne le transforme pas en formule gratuite. L’accueil affiche cette même formule effective.
+
+Les essais et les périodes manuelles échues sans abonnement prestataire actif restent refusés. Une formule offerte en cours prime sur l’état de facturation du palier de base ; un abonnement Stripe/PayPal actif prime sur une ancienne période manuelle, conformément au résolveur natif. Les abonnements annulés ou en impayé sans attribution active n’ouvrent pas Academy.
+
 ### Réutilisation du LMS existant
 
 `AcademyLmsBridge` appelle `TrainingService::getCatalogue()` et `TrainingEnrollmentRepository::listByUserId()` avec le compte et la communauté courants. Il conserve les règles existantes : contenus communauté/plateforme, visibilité, masquage des parcours et priorité aux copies communautaires. La progression vient de `getGlobalProgress()`. Les inscriptions retirées, révoquées ou expirées sont exclues des activités en cours ; les approbations en attente restent à 0 %.
@@ -38,7 +42,8 @@ Tests PHP : rendu des onze espaces et des états d’accès de l’accueil en FR
 php vendor/phpunit/phpunit/phpunit --no-configuration --bootstrap tests/bootstrap.php \
   tests/Unit/AcademyViewsTest.php tests/Unit/AcademyLiveHomeTest.php \
   tests/Unit/AcademyLmsBridgeTest.php tests/Unit/AcademyCurriculumTest.php \
-  tests/Unit/AcademyAccessMiddlewareTest.php tests/Unit/ManualBillingTest.php \
+  tests/Unit/AcademyAccessMiddlewareTest.php tests/Unit/AcademyEffectiveAccessTest.php \
+  tests/Unit/AcademyHomeAccessTest.php tests/Unit/ManualBillingTest.php \
   tests/Contract/AcademyRepositoryTest.php
 node tests/Frontend/academy-disclaimer.test.cjs
 ```
@@ -49,7 +54,7 @@ Le lien public `/public/formations` redirige vers la connexion ; l’intégratio
 
 ## EN
 
-`/academy` now uses the existing ATHENA LMS as its source of courses and progress. The public entrance has a full-width blurred photographic hero using the user-supplied image, editorial lists and the site's existing black/mint marketing design. Signed-in requests reuse the native authentication middleware and effective tenant context. Guest, missing-community, unpaid, active and unavailable states are resolved server-side; account/tenant IDs from the URL cannot select learning data.
+`/academy` now uses the existing ATHENA LMS as its source of courses and progress. The public entrance has a full-width blurred photographic hero using the user-supplied image, editorial lists and the site's existing black/mint marketing design. Signed-in requests reuse the native authentication middleware and effective tenant context. Guest, missing-community, unpaid, active and unavailable states are resolved server-side; account/tenant IDs from the URL cannot select learning data. Academy uses the same effective plan as ATHENA, including active administrative gifts and assigned paid tiers with no provider subscription. Expired manual periods are superseded by active provider subscriptions; trials and unsupported/inactive tiers remain denied.
 
 `AcademyLmsBridge` reuses the native course catalogue, enrolments and progress service. Legacy modules are included when enabled, without overriding modern courses sharing a slug. Courses open in the original player so native enrolment, assessment, resource and certificate policies remain in effect. The Academy links to existing catalogue filters, sessions, skills, access codes and instructor tools. No demonstration course is automatically published or injected; additional Academy curricula start with a blank bilingual form.
 
