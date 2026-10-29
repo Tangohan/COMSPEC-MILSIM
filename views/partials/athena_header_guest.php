@@ -18,6 +18,7 @@ $newsHref = url('nouveautes');
 $contactHref = url('contact');
 
 $navItems = [
+    ['key' => 'academy', 'label' => 'ATHENA Academy', 'href' => url('academy')],
     ['key' => 'home', 'label' => __('common.home'), 'href' => $homeHref],
     ['key' => 'about', 'label' => __('site.about'), 'href' => $aboutHref],
     ['key' => 'news', 'label' => __('auth.nav_news'), 'href' => $newsHref],
