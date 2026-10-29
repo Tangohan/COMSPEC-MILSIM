@@ -6,6 +6,10 @@ L’accueil se trouve sur `/academy`. Les espaces pédagogiques sont accessibles
 
 Cette livraison modifie l’application PHP existante. Elle ne crée pas un nouveau site hébergé et ne modifie pas le simulateur ATAK existant. Elle fournit un espace Academy indépendant, un simulateur pédagogique fictif et un cursus de démonstration en trois chapitres. Les contenus métier JTAC et la migration de scénarios du simulateur existant restent à définir et à faire revoir par les instructeurs. Aucune certification officielle n’est délivrée.
 
+### Direction artistique
+
+L’accueil réutilise `views/layout/marketing.php`, son menu, son pied de page et les médias existants d’ATHENA : registre immersif noir/menthe et typographie Inter. Les espaces membres utilisent le registre LMS clair/émeraude, le bandeau module et l’aside partagé `views/partials/lms_nav_aside.php`, avec son menu mobile. `academy.css` consomme les tokens de `design-system.css` ; aucune palette orange ni identité de marque indépendante n’est ajoutée.
+
 ### Activation
 
 1. Déployer les fichiers de cette livraison dans l’application PHP 8.4 existante.

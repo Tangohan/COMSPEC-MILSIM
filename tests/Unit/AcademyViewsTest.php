@@ -29,7 +29,7 @@ final class AcademyViewsTest extends TestCase
         foreach (['fr','en'] as $lang) {
             $GLOBALS['__app_locale'] = $lang;
             $home = Response::view('academy.home', ['paidRequired' => true]);
-            self::assertStringContainsString('<html lang="' . $lang . '">', $home->body());
+            self::assertMatchesRegularExpression('/<html\b[^>]*\blang="' . $lang . '"/', $home->body());
             foreach (['dashboard','catalogue','courses','classroom','laboratory','simulators','exams','library','notebook','record','instructor'] as $space) {
                 $response = Response::view('academy.space', ['space' => $space, 'staff' => true, 'states' => ['fondamentaux' => $state], 'courses' => [$course], 'selected' => $course, 'state' => $state, 'learners' => [], 'notice' => '']);
                 self::assertSame(200, $response->statusCode());
