@@ -8,6 +8,7 @@
     let writing = false;
     let catalogSearch = '';
     let categorySearch = '';
+    const collapsedCategories = new Set();
     const dirty = new WeakSet();
     const root = () => document.querySelector('[data-jobs-workspace]');
     const normalize = value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
@@ -57,7 +58,23 @@
                 }
             }
         });
-        rows.forEach(row => { row.hidden = !keep.has(row.dataset.categoryId); });
+        rows.forEach(row => {
+            let parent = byId.get(row.dataset.categoryParent);
+            let collapsed = false;
+            const seen = new Set();
+            while (!query && parent && !seen.has(parent.dataset.categoryId)) {
+                seen.add(parent.dataset.categoryId);
+                if (collapsedCategories.has(parent.dataset.categoryId)) collapsed = true;
+                parent = byId.get(parent.dataset.categoryParent);
+            }
+            row.hidden = !keep.has(row.dataset.categoryId) || collapsed;
+        });
+        scope.querySelectorAll('[data-category-toggle]').forEach(button => {
+            const expanded = Boolean(query) || !collapsedCategories.has(button.dataset.categoryToggle);
+            button.setAttribute('aria-expanded', String(expanded));
+            button.textContent = expanded ? '⌄' : '›';
+            button.setAttribute('aria-label', (expanded ? 'Replier ' : 'Déplier ') + button.dataset.categoryName);
+        });
         const empty = scope.querySelector('[data-category-empty]');
         if (empty) empty.hidden = keep.size > 0;
     }
@@ -69,6 +86,16 @@
         if (help) help.textContent = nested ? 'Elle sera une sous-catégorie de « ' + select.selectedOptions[0].textContent + ' ».' : 'Elle apparaîtra au premier niveau de votre organisation.';
         const create = form.querySelector('[data-category-create]');
         if (create) create.textContent = nested ? 'Créer la sous-catégorie' : 'Créer la catégorie';
+    }
+
+    function jobPreview() {
+        const form = root()?.querySelector('form.eff-access-editor');
+        const target = form?.querySelector('[data-job-preview]');
+        if (!target) return;
+        const name = form.elements.name.value.trim() || 'Nouvel emploi';
+        const category = form.elements.category_id.selectedOptions[0]?.textContent || 'Organisation';
+        const parent = form.elements.parent_job_role_id;
+        target.textContent = category + ' → ' + name + (parent && parent.value !== '0' ? ' · Sous-emploi de « ' + parent.selectedOptions[0].textContent + ' »' : '');
     }
 
     function workspaceUrl(value) {
@@ -91,6 +118,7 @@
         const scroll = [window.scrollX, window.scrollY];
         const search = scope.querySelector('[data-jobs-search]')?.value ?? catalogSearch;
         const categoryQuery = scope.querySelector('[data-category-search]')?.value ?? categorySearch;
+        const paneScroll = new Map(Array.from(scope.querySelectorAll('[data-jobs-scroll]'), pane => [pane.dataset.jobsScroll, pane.scrollTop]));
         const open = new Set(Array.from(scope.querySelectorAll('details[data-jobs-details][open]'), details => details.dataset.jobsDetails));
         scope.setAttribute('aria-busy', 'true');
         try {
@@ -113,13 +141,18 @@
                 if (open.has(details.dataset.jobsDetails)) details.open = true;
             });
             filter();
-            if (options.history !== false) window.history.pushState({personnelJobs: true}, '', url.href);
+            jobPreview();
+            next.querySelectorAll('[data-jobs-scroll]').forEach(pane => { pane.scrollTop = paneScroll.get(pane.dataset.jobsScroll) || 0; });
+            if (options.history !== false) window.history[options.replace ? 'replaceState' : 'pushState']({personnelJobs: true}, '', url.href);
             currentUrl = url.href;
-            const editingCategory = url.searchParams.has('categorie') || url.searchParams.has('nouvelle_categorie');
-            const heading = editingCategory ? next.querySelector('.eff-category-editor h2') : next.querySelector('h2, h1');
-            if (heading) { heading.tabIndex = -1; heading.focus({preventScroll: true}); }
+            const editor = next.querySelector('[data-jobs-editor]');
+            const heading = (url.hash === '#category-placement' ? next.querySelector('#category-placement') : null) || editor?.querySelector('h2') || next.querySelector('.eff-jobs-catalogue h2, h2, h1');
+            if (heading) {
+                if (heading.matches('h1, h2, h3')) heading.tabIndex = -1;
+                heading.focus({preventScroll: true});
+            }
             window.scrollTo(...scroll);
-            if (editingCategory && window.matchMedia('(max-width: 760px)').matches) heading?.scrollIntoView({block: 'start'});
+            if (editor && window.matchMedia('(max-width: 760px)').matches) editor.scrollIntoView({block: 'start'});
             if (options.message) notice(options.message);
             return true;
         } catch (error) {
@@ -138,15 +171,22 @@
         if (event.target.matches('[data-jobs-search]')) filter();
         if (event.target.matches('[data-category-search]')) filterCategories();
         const form = event.target.closest('form[data-jobs-save]');
-        if (form) dirty.add(form);
+        if (form) { dirty.add(form); jobPreview(); }
     });
     document.addEventListener('change', event => {
         const form = event.target.closest('[data-jobs-workspace] form[data-jobs-save]');
-        if (form) dirty.add(form);
+        if (form) { dirty.add(form); jobPreview(); }
         if (event.target.matches('[data-category-placement]')) placement(event.target);
     });
 
     document.addEventListener('click', event => {
+        const toggle = event.target.closest('[data-category-toggle]');
+        if (toggle && toggle.closest('[data-jobs-workspace]')) {
+            const id = toggle.dataset.categoryToggle;
+            if (collapsedCategories.has(id)) collapsedCategories.delete(id); else collapsedCategories.add(id);
+            filterCategories();
+            return;
+        }
         const link = event.target.closest('a[data-jobs-nav]');
         if (!link || !link.closest('[data-jobs-workspace]') || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target === '_blank') return;
         if (!workspaceUrl(link.href)) return;
@@ -154,6 +194,18 @@
         if (writing) return;
         navigate(link.href);
     });
+
+    document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        const menu = event.target.closest('[data-jobs-workspace] .eff-category-menu[open]');
+        if (menu) { menu.open = false; menu.querySelector('summary').focus(); }
+    });
+
+    document.addEventListener('toggle', event => {
+        const menu = event.target;
+        if (!menu.matches?.('[data-jobs-workspace] .eff-category-menu[open]')) return;
+        root()?.querySelectorAll('.eff-category-menu[open]').forEach(other => { if (other !== menu) other.open = false; });
+    }, true);
 
     document.addEventListener('submit', async event => {
         const form = event.target;
@@ -182,6 +234,7 @@
         if (endpoint.origin !== base.origin || !(endpoint.pathname === base.pathname || endpoint.pathname.startsWith(base.pathname + '/'))) return;
         if (navigation) navigation.abort();
         writing = true;
+        notice('Enregistrement en cours…');
         root().setAttribute('aria-busy', 'true');
         const buttons = Array.from(root().querySelectorAll('button, input[type=submit]')).filter(button => !button.disabled);
         buttons.forEach(button => { button.disabled = true; });
@@ -198,7 +251,7 @@
             dirty.delete(form);
             writing = false;
             const destination = workspaceUrl(result.redirect || currentUrl);
-            if (!destination || !await navigate(destination.href, {skipGuard: true, message: result.message || 'Modifications enregistrées.'})) {
+            if (!destination || !await navigate(destination.href, {skipGuard: true, replace: true, message: result.message || 'Modifications enregistrées.'})) {
                 notice((result.message || 'Modifications enregistrées.') + ' Actualisez la page pour afficher le résultat.', true);
             }
         } catch (error) {
@@ -229,4 +282,5 @@
         }
     });
     filter();
+    jobPreview();
 })();

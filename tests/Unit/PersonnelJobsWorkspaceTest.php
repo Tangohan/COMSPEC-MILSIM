@@ -43,7 +43,8 @@ final class PersonnelJobsWorkspaceTest extends TestCase
         $_SERVER['HTTP_X_EFFECTIFS_FRAGMENT'] = 'jobs';
         $this->previousPdo = (new ReflectionProperty(Database::class, 'pdo'))->getValue();
         $this->pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-        $this->pdo->exec("CREATE TABLE tenants(id INTEGER PRIMARY KEY, settings TEXT); INSERT INTO tenants VALUES(14,'{}')");
+        $this->pdo->exec("CREATE TABLE tenants(id INTEGER PRIMARY KEY, settings TEXT); INSERT INTO tenants VALUES(14,'{}');
+            CREATE TABLE audit_logs(id INTEGER PRIMARY KEY AUTOINCREMENT,tenant_id INTEGER,user_id INTEGER,action TEXT,entity_type TEXT,entity_id INTEGER,old_value TEXT,new_value TEXT,created_at TEXT)");
         (new ReflectionProperty(Database::class, 'pdo'))->setValue(null, $this->pdo);
     }
 
@@ -233,13 +234,13 @@ final class PersonnelJobsWorkspaceTest extends TestCase
         self::assertStringContainsString('détacher explicitement', $body);
     }
 
-    public function testCategoryFragmentDoesNotLoadGradesRolesHoldersOrAnyHrWorkspaceService(): void
+    public function testUnifiedCategoryFragmentLoadsJobsWithoutGradesHoldersOrAnyHrWorkspaceService(): void
     {
         $roles=$this->createMock(PersonnelJobRoleRepository::class);
         $roles->expects(self::once())->method('listCategoriesWithJobCounts')->with(14)->willReturn([
             ['id'=>1,'name'=>'Opérations','parent_id'=>null,'job_count'=>2],
         ]);
-        $roles->expects(self::never())->method('listRolesWithCategory');
+        $roles->expects(self::once())->method('listRolesWithCategory')->with(14)->willReturn([]);
         $roles->expects(self::never())->method('listHoldersByJobRoleIds');
         $_GET=['vue'=>'categories','nouvelle_categorie'=>'1','parent'=>'1'];
         $_SERVER['REQUEST_METHOD']='GET';
@@ -263,7 +264,7 @@ final class PersonnelJobsWorkspaceTest extends TestCase
         $id=(int)$this->pdo->query("SELECT id FROM personnel_job_role_categories WHERE name='Radio'")->fetchColumn();
         self::assertGreaterThan(2,$id);
         self::assertSame(2,(int)$this->pdo->query('SELECT parent_id FROM personnel_job_role_categories WHERE id='.$id)->fetchColumn());
-        self::assertStringContainsString('categorie='.$id,json_decode($created->body(),true)['redirect']);
+        self::assertStringContainsString('categorie_emplois='.$id,json_decode($created->body(),true)['redirect']);
         $cycle=$controller->saveJobCategory($this->post(['category_edit_id'=>'1','category_name'=>'Opérations','parent_id'=>(string)$id]));
         self::assertFalse(json_decode($cycle->body(),true)['ok']);
         $saved=$controller->saveJobCategory($this->post(['category_edit_id'=>(string)$id,'category_name'=>'Systèmes radio','parent_id'=>'1']));

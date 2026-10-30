@@ -98,3 +98,76 @@
  :root .bo-eff-workspace .bo-eff-page .eff-category-node__line { flex-wrap: wrap; padding: .65rem .75rem; }
  :root .bo-eff-workspace .bo-eff-page .eff-category-add { padding-left: 0; }
 }
+/* Unified reference browser. These three panes share the native workspace palette. */
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-definitions { margin: .75rem 0; font-size: .8125rem; color: var(--pg-muted); line-height: 1.8; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-definitions strong { color: var(--pg-ink); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-browser { display: grid; grid-template-columns: minmax(14rem,.7fr) minmax(0,2fr); align-items: start; border: 1px solid var(--pg-line); background: var(--pg-surface); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-browser.has-editor { grid-template-columns: minmax(12rem,.65fr) minmax(13rem,.75fr) minmax(19rem,1.4fr); }
+:root .bo-eff-workspace .bo-eff-page :is(.eff-jobs-folders,.eff-jobs-catalogue,.eff-jobs-detail) { min-width: 0; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-catalogue { border-left: 1px solid var(--pg-line); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-pane-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; padding: 1rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-pane-head h2 { margin: 0; font-size: .9375rem; color: var(--pg-ink); overflow-wrap: anywhere; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-pane-head h2 span { margin-left: .35rem; font-size: .75rem; font-weight: 400; color: var(--pg-muted); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-pane-head .eff-category-path { margin: 0 0 .3rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-pane-hint { margin: 0; padding: 0 1rem 1rem; font-size: .75rem; color: var(--pg-muted); line-height: 1.6; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-text-action { color: var(--pg-accent); font-size: .8125rem; text-decoration: none; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-all { display: flex; justify-content: space-between; gap: .5rem; padding: .85rem 1rem; text-decoration: none; color: var(--pg-ink); border-bottom: 1px solid var(--pg-line); font-size: .8125rem; font-weight: 600; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-all span { color: var(--pg-muted); font-weight: 400; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-all.is-current { background: var(--pg-head); box-shadow: inset 3px 0 var(--pg-accent); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-folders .eff-category-tree { max-height: 36rem; overflow: auto; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-folders .eff-category-node { margin-left: calc(var(--category-depth) * .65rem); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-folders .eff-category-node__line { gap: .35rem; padding: .65rem .5rem; flex-wrap: nowrap; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-folders .eff-category-node__name strong { font-size: .8125rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-toggle { flex-shrink: 0; width: 1.5rem; min-height: 2rem; border: 0; background: transparent; color: var(--pg-ink); cursor: pointer; font-size: 1rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-leaf { display: inline-block; flex-shrink: 0; width: 1.5rem; text-align: center; color: var(--pg-muted); }
+:root .bo-eff-workspace .bo-eff-page .eff-category-menu { flex-shrink: 0; position: relative; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-menu summary { display: grid; place-content: center; min-width: 2rem; min-height: 2.25rem; cursor: pointer; font-size: 1.25rem; list-style: none; color: var(--pg-ink); }
+:root .bo-eff-workspace .bo-eff-page .eff-category-menu summary::-webkit-details-marker { display: none; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-menu[open] { z-index: 3; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-menu > div { position: absolute; top: 100%; right: 0; min-width: 12rem; max-width: 16rem; padding: .35rem; background: var(--pg-surface); border: 1px solid var(--pg-line); box-shadow: 0 4px 16px #0002; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-menu a { display: block; padding: .7rem .5rem; color: var(--pg-ink); font-size: .75rem; text-decoration: none; line-height: 1.5; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-menu a:hover { background: var(--pg-head); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-branch-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .65rem; padding: .5rem 1rem 1rem; font-size: .75rem; color: var(--pg-muted); line-height: 1.5; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-branch-actions a { color: var(--pg-accent); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-list { list-style: none; margin: 0; padding: 0; max-height: 40rem; overflow-y: auto; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-list__item { display: grid; gap: .3rem; padding: 1rem; border-bottom: 1px solid var(--pg-line); color: var(--pg-ink); text-decoration: none; overflow-wrap: anywhere; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-list__item strong { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; font-size: .875rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-list__item code { padding: .1rem .3rem; border: 1px solid var(--pg-line); color: var(--pg-muted); font-size: .7rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-list__item > span { font-size: .75rem; color: var(--pg-muted); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-list__item:hover { background: var(--pg-hover); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-list__item.is-current { background: var(--pg-head); box-shadow: inset 3px 0 var(--pg-accent); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-detail { padding: 1.25rem; border-left: 1px solid var(--pg-line); scroll-margin-top: 5rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-close { display: block; width: fit-content; margin: 0 0 1.25rem auto; color: var(--pg-muted); font-size: .75rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-detail .eff-access-editor { padding: 0; border: 0; box-shadow: none; background: transparent; display: grid; gap: 1.25rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-detail .eff-jobs-branch-actions { padding: 0 0 1rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-advanced { border-block: 1px solid var(--pg-line); padding: .85rem 0; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-advanced summary { display: flex; justify-content: space-between; gap: .5rem; color: var(--pg-ink); cursor: pointer; font-size: .8125rem; font-weight: 600; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-advanced summary small { color: var(--pg-muted); font-weight: 400; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-advanced > .eff-jobs-fields { margin-top: 1rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-preview { margin: 0; font-size: .75rem; color: var(--pg-muted); line-height: 1.6; overflow-wrap: anywhere; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-selection-hint { grid-column: 1/-1; margin: 0; padding: 1rem; border-top: 1px solid var(--pg-line); color: var(--pg-muted); font-size: .8125rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-children { display: grid; gap: .75rem; margin-top: 1.5rem; font-size: .8125rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-children h3 { font-size: .875rem; margin: 0; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-relation { color: var(--pg-muted); font-size: .8125rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-history { font-size: .875rem; line-height: 1.7; }
+:root .bo-eff-workspace .bo-eff-page :is(.eff-jobs-archives,.eff-jobs-timeline) { padding: 0; margin: 1rem 0 2rem; list-style: none; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-archives li { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--pg-line); padding: 1rem 0; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-archives small { display: block; color: var(--pg-muted); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-timeline li { padding: 1.25rem 0; border-bottom: 1px solid var(--pg-line); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-event-title { display: flex; gap: 1rem; justify-content: space-between; flex-wrap: wrap; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-event-title time { color: var(--pg-muted); font-size: .75rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-timeline summary { cursor: pointer; color: var(--pg-accent); font-size: .8125rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-diff > div { display: grid; grid-template-columns: 9rem minmax(0,1fr); gap: 1rem; padding: .5rem 0; border-bottom: 1px solid var(--pg-soft); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-diff dt { font-weight: 600; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-diff dd { display: flex; flex-wrap: wrap; gap: .75rem; margin: 0; overflow-wrap: anywhere; }
+@media(max-width:1150px) {
+ :root .bo-eff-workspace .bo-eff-page .eff-jobs-browser.has-editor { grid-template-columns: minmax(12rem,.7fr) minmax(0,1.3fr); }
+ :root .bo-eff-workspace .bo-eff-page .eff-jobs-detail { grid-column: 1/-1; border-left: 0; border-top: 1px solid var(--pg-line); }
+}
+@media(max-width:760px) {
+ :root .bo-eff-workspace .bo-eff-page :is(.eff-jobs-browser,.eff-jobs-browser.has-editor) { grid-template-columns: minmax(0,1fr); }
+ :root .bo-eff-workspace .bo-eff-page .eff-jobs-catalogue { border-left: 0; border-top: 1px solid var(--pg-line); }
+ :root .bo-eff-workspace .bo-eff-page .eff-jobs-folders .eff-category-tree { max-height: 18rem; }
+ :root .bo-eff-workspace .bo-eff-page .eff-jobs-list { max-height: 25rem; }
+ :root .bo-eff-workspace .bo-eff-page .eff-jobs-diff > div { grid-template-columns: minmax(0,1fr); gap: .25rem; }
+}
