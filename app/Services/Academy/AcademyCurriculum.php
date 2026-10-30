@@ -52,45 +52,122 @@ final class AcademyCurriculum
         return ['key' => 'fondamentaux', 'demo' => true, 'title' => ['fr' => 'Fondamentaux de l’apprentissage en simulation', 'en' => 'Foundations of simulation learning'], 'summary' => ['fr' => 'Cursus de démonstration : observation, communication et débriefing dans des situations fictives.', 'en' => 'Demonstration curriculum: observation, communication and debriefing in fictional situations.'], 'chapters' => $topics];
     }
 
-    /** Validate bilingual instructor content; HTML is never executed. */
+    /** Validate bilingual instructor content; all learning text remains plain text. */
     public static function validate(array $course): array
     {
         foreach (['title', 'summary'] as $field) {
             self::bilingual($course[$field] ?? null);
         }
-        if (!is_array($course['chapters'] ?? null) || !array_is_list($course['chapters']) || count($course['chapters']) < 1 || count($course['chapters']) > 20) {
+        if (isset($course['license'])) {
+            self::bilingual($course['license']);
+        }
+        if (isset($course['version']) && (!is_string($course['version']) || !preg_match('/\A[a-zA-Z0-9._-]{1,32}\z/', $course['version']))) {
             throw new \InvalidArgumentException('invalid_content');
         }
+        if (isset($course['duration_minutes']) && (!is_int($course['duration_minutes']) || $course['duration_minutes'] < 5 || $course['duration_minutes'] > 1440)) {
+            throw new \InvalidArgumentException('invalid_content');
+        }
+        self::listSize($course['chapters'] ?? null, 1, 20);
         foreach ($course['chapters'] as $chapter) {
-            foreach (['title', 'theory', 'demonstration', 'question', 'feedback'] as $field) {
+            if (!is_array($chapter)) {
+                throw new \InvalidArgumentException('invalid_content');
+            }
+            foreach (['title', 'theory', 'demonstration'] as $field) {
                 self::bilingual($chapter[$field] ?? null);
             }
-            if (!is_array($chapter['options'] ?? null) || !array_is_list($chapter['options']) || count($chapter['options']) !== 3 || !is_int($chapter['answer'] ?? null) || $chapter['answer'] < 0 || $chapter['answer'] > 2) {
-                throw new \InvalidArgumentException('invalid_content');
+            self::question($chapter);
+            foreach (['guided', 'simulation'] as $stage) {
+                if (isset($chapter[$stage])) {
+                    if (!is_array($chapter[$stage])) {
+                        throw new \InvalidArgumentException('invalid_content');
+                    }
+                    self::bilingual($chapter[$stage]['brief'] ?? null);
+                    self::question($chapter[$stage]);
+                    if (isset($chapter[$stage]['hint'])) {
+                        self::bilingual($chapter[$stage]['hint']);
+                    }
+                }
             }
-            foreach ($chapter['options'] as $option) {
-                self::bilingual($option);
+            if (isset($chapter['assessment'])) {
+                $assessment = $chapter['assessment'];
+                if (!is_array($assessment)) {
+                    throw new \InvalidArgumentException('invalid_content');
+                }
+                self::bilingual($assessment['instructions'] ?? null);
+                if (!is_int($assessment['seconds'] ?? null) || $assessment['seconds'] < 60 || $assessment['seconds'] > 7200
+                    || !is_int($assessment['pass_percent'] ?? null) || $assessment['pass_percent'] < 1 || $assessment['pass_percent'] > 100) {
+                    throw new \InvalidArgumentException('invalid_content');
+                }
+                self::listSize($assessment['questions'] ?? null, 1, 50);
+                foreach ($assessment['questions'] as $question) {
+                    if (!is_array($question)) {
+                        throw new \InvalidArgumentException('invalid_content');
+                    }
+                    self::question($question);
+                }
             }
-            if (isset($chapter['resources']) && (!is_array($chapter['resources']) || !array_is_list($chapter['resources']) || count($chapter['resources']) > 20)) {
-                throw new \InvalidArgumentException('invalid_content');
+            foreach (['debrief' => 'prompt', 'validation' => 'brief'] as $stage => $field) {
+                if (isset($chapter[$stage])) {
+                    if (!is_array($chapter[$stage])) {
+                        throw new \InvalidArgumentException('invalid_content');
+                    }
+                    self::bilingual($chapter[$stage][$field] ?? null);
+                    self::listSize($chapter[$stage]['criteria'] ?? null, 1, 20);
+                    foreach ($chapter[$stage]['criteria'] as $criterion) {
+                        self::bilingual($criterion);
+                    }
+                }
+            }
+            if (isset($chapter['resources'])) {
+                self::listSize($chapter['resources'], 0, 20);
             }
             foreach ($chapter['resources'] ?? [] as $resource) {
-                if (!is_array($resource)) {
+                if (!is_array($resource) || !in_array($resource['type'] ?? '', ['document', 'audio', 'diagram', 'slides'], true)) {
                     throw new \InvalidArgumentException('invalid_content');
                 }
                 self::bilingual($resource['title'] ?? null);
-                if (!in_array($resource['type'] ?? '', ['document', 'audio', 'diagram', 'slides'], true)) {
+                // Inline documents are self-contained, bilingual text. External media retains HTTPS validation.
+                if (isset($resource['body'])) {
+                    self::bilingual($resource['body']);
+                } elseif (!isset($resource['url'])) {
                     throw new \InvalidArgumentException('invalid_content');
                 }
-                foreach (['fr', 'en'] as $language) {
-                    $link = $resource['url'][$language] ?? '';
-                    if (!is_string($link) || !filter_var($link, FILTER_VALIDATE_URL) || parse_url($link, PHP_URL_SCHEME) !== 'https' || parse_url($link, PHP_URL_USER) !== null) {
+                if (isset($resource['url'])) {
+                    if (!is_array($resource['url'])) {
                         throw new \InvalidArgumentException('invalid_content');
+                    }
+                    foreach (['fr', 'en'] as $language) {
+                        $link = $resource['url'][$language] ?? '';
+                        if (!is_string($link) || !filter_var($link, FILTER_VALIDATE_URL) || parse_url($link, PHP_URL_SCHEME) !== 'https'
+                            || parse_url($link, PHP_URL_USER) !== null || parse_url($link, PHP_URL_PASS) !== null) {
+                            throw new \InvalidArgumentException('invalid_content');
+                        }
                     }
                 }
             }
         }
         return $course;
+    }
+
+    private static function listSize(mixed $list, int $minimum, int $maximum): void
+    {
+        if (!is_array($list) || !array_is_list($list) || count($list) < $minimum || count($list) > $maximum) {
+            throw new \InvalidArgumentException('invalid_content');
+        }
+    }
+
+    private static function question(array $question): void
+    {
+        foreach (['question', 'feedback'] as $field) {
+            self::bilingual($question[$field] ?? null);
+        }
+        self::listSize($question['options'] ?? null, 3, 3);
+        if (!is_int($question['answer'] ?? null) || $question['answer'] < 0 || $question['answer'] > 2) {
+            throw new \InvalidArgumentException('invalid_content');
+        }
+        foreach ($question['options'] as $option) {
+            self::bilingual($option);
+        }
     }
 
     private static function bilingual(mixed $value): void
@@ -102,7 +179,37 @@ final class AcademyCurriculum
         }
     }
 
-    /** Sequential progression and server-side assessment. Never accepts a client score. */
+    /** The guided and independent cases may differ; historical courses reuse their chapter question. */
+    public static function questionForStage(array $chapter, int $stage): array
+    {
+        $field = match ($stage) { 2 => 'guided', 3 => 'simulation', default => null };
+        return $field !== null && isset($chapter[$field]) ? $chapter[$field] : $chapter;
+    }
+
+    /** @return list<array<string,mixed>> */
+    public static function examQuestions(array $chapter): array
+    {
+        return $chapter['assessment']['questions'] ?? [$chapter];
+    }
+
+    public static function examSeconds(array $chapter): int
+    {
+        return (int) ($chapter['assessment']['seconds'] ?? self::EXAM_SECONDS);
+    }
+
+    public static function examPassPercent(array $chapter): int
+    {
+        return (int) ($chapter['assessment']['pass_percent'] ?? 100);
+    }
+
+    /** Accept only an exact answer index; malformed, missing or forged values are unanswered. */
+    private static function answerIndex(mixed $answer): ?int
+    {
+        return (is_int($answer) && $answer >= 0 && $answer <= 2)
+            || (is_string($answer) && in_array($answer, ['0', '1', '2'], true)) ? (int) $answer : null;
+    }
+
+    /** Sequential progression and server-side assessment. Never accepts a client score or deadline. */
     public static function transition(array $state, array $course, string $action, array $input, int $now): array
     {
         $chapterIndex = (int) ($state['chapter'] ?? 0);
@@ -110,7 +217,8 @@ final class AcademyCurriculum
         if (!empty($state['completed']) || !isset($course['chapters'][$chapterIndex])) {
             throw new \DomainException('locked');
         }
-        if (!is_scalar($input['expected_stage'] ?? null) || !is_scalar($input['expected_chapter'] ?? null) || (string) $input['expected_stage'] !== (string) $stage || (string) $input['expected_chapter'] !== (string) $chapterIndex) {
+        if (!is_scalar($input['expected_stage'] ?? null) || !is_scalar($input['expected_chapter'] ?? null)
+            || (string) $input['expected_stage'] !== (string) $stage || (string) $input['expected_chapter'] !== (string) $chapterIndex) {
             throw new \DomainException('locked');
         }
         unset($state['feedback']);
@@ -118,21 +226,46 @@ final class AcademyCurriculum
         if ($action === 'advance' && in_array($stage, [0, 1], true)) {
             $state['stage'] = $stage + 1;
         } elseif ($action === 'practice' && in_array($stage, [2, 3], true)) {
-            $answer = $input['answer'] ?? '';
-            $correct = is_scalar($answer) && (string) $answer === (string) $chapter['answer'];
-            $state['practice'][] = ['chapter' => $chapterIndex, 'stage' => $stage, 'correct' => $correct, 'at' => $now];
+            $question = self::questionForStage($chapter, $stage);
+            $answer = self::answerIndex($input['answer'] ?? null);
+            $correct = $answer !== null && $answer === $question['answer'];
+            $state['practice'][] = ['chapter' => $chapterIndex, 'stage' => $stage, 'answer' => $answer, 'correct' => $correct, 'at' => $now];
             if ($correct) {
                 $state['stage'] = $stage + 1;
+                $state['last_practice_feedback'] = $question['feedback'];
+            } else {
+                unset($state['last_practice_feedback']);
             }
             $state['feedback'] = $correct ? 'correct' : 'retry';
         } elseif ($action === 'exam_start' && $stage === 4 && empty($state['exam'])) {
-            $state['exam'] = ['started' => $now, 'deadline' => $now + self::EXAM_SECONDS, 'token' => bin2hex(random_bytes(16))];
+            $state['exam'] = ['started' => $now, 'deadline' => $now + self::examSeconds($chapter), 'token' => bin2hex(random_bytes(16))];
         } elseif ($action === 'exam_submit' && $stage === 4 && !empty($state['exam'])) {
             if (!is_string($input['token'] ?? null) || !hash_equals($state['exam']['token'], $input['token'])) {
                 throw new \DomainException('locked');
             }
-            $passed = $now < $state['exam']['deadline'] && is_scalar($input['answer'] ?? null) && (string) $input['answer'] === (string) $chapter['answer'];
-            $state['attempts'][] = ['chapter' => $chapterIndex, 'score' => $passed ? 100 : 0, 'expired' => $now >= $state['exam']['deadline'], 'at' => $now];
+            $questions = self::examQuestions($chapter);
+            $raw = $input['answers'] ?? null;
+            // The original single-question form keeps its wire format for existing content snapshots.
+            if (!is_array($raw)) {
+                $raw = isset($chapter['assessment']) ? [] : [$input['answer'] ?? null];
+            }
+            $answers = $results = [];
+            $correctCount = 0;
+            foreach ($questions as $index => $question) {
+                $selected = self::answerIndex($raw[$index] ?? null);
+                $correct = $selected !== null && $selected === $question['answer'];
+                $answers[] = $selected;
+                $results[] = ['selected' => $selected, 'correct' => $correct];
+                $correctCount += (int) $correct;
+            }
+            $expired = $now >= $state['exam']['deadline'];
+            $score = $expired ? 0 : intdiv($correctCount * 100, max(1, count($questions)));
+            $passed = !$expired && $score >= self::examPassPercent($chapter);
+            $state['attempts'][] = [
+                'chapter' => $chapterIndex, 'score' => $score, 'expired' => $expired, 'passed' => $passed,
+                'correct_count' => $correctCount, 'question_count' => count($questions),
+                'answers' => $answers, 'results' => $results, 'at' => $now,
+            ];
             unset($state['exam']);
             $state['feedback'] = $passed ? 'passed' : 'failed';
             if ($passed) {
@@ -154,17 +287,40 @@ final class AcademyCurriculum
 
     public static function validateChapter(array $state, array $course, int $instructorId, string $comment, int $now): array
     {
-        if (($state['stage'] ?? 0) !== 6 || !empty($state['completed']) || mb_strlen(trim($comment)) < 10 || mb_strlen($comment) > 5000) {
+        $index = $state['chapter'] ?? null;
+        if (($state['stage'] ?? 0) !== 6 || !is_int($index) || !isset($course['chapters'][$index]) || $instructorId < 1
+            || (int) ($state['learner_id'] ?? 0) === $instructorId
+            || !empty($state['completed']) || mb_strlen(trim($comment)) < 10 || mb_strlen($comment) > 5000) {
             throw new \DomainException('locked');
         }
+        $internalLicense = ($course['key'] ?? '') === 'jtac-licence-ath-academy' && ($course['built_in'] ?? false) === true;
+        if ($internalLicense) {
+            $passingAttempts = array_filter($state['attempts'] ?? [], static fn (array $attempt): bool =>
+                ($attempt['chapter'] ?? null) === $index && empty($attempt['expired'])
+                && (int) ($attempt['score'] ?? 0) >= self::examPassPercent($course['chapters'][$index])
+            );
+            $debrief = $state['debriefs'][$index] ?? '';
+            if ($passingAttempts === [] || !is_string($debrief) || mb_strlen(trim($debrief)) < 20) {
+                throw new \DomainException('locked');
+            }
+        }
         unset($state['feedback']);
-        $index = $state['chapter'];
         $state['validations'][$index] = ['by' => $instructorId, 'comment' => trim($comment), 'at' => $now];
         if ($index + 1 === count($course['chapters'])) {
             $state['completed'] = true;
+            if ($internalLicense) {
+                $state['license'] = [
+                    'number' => 'ATH-ACADEMY-JTAC-' . strtoupper(bin2hex(random_bytes(6))),
+                    'issued_at' => $now,
+                    'validated_by' => $instructorId,
+                    'course_version' => $course['version'] ?? '1.0',
+                    'scope' => 'simulation',
+                ];
+            }
         } else {
             $state['chapter']++;
             $state['stage'] = 0;
+            unset($state['last_practice_feedback']);
         }
         $state['updated'] = $now;
         return $state;

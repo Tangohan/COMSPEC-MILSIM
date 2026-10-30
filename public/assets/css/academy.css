@@ -333,3 +333,39 @@ body:has(.academy-disclaimer[open]){overflow:hidden}
 @media(max-width:767px){.academy-full-hero{min-height:calc(100svh - 56px)}.academy-full-hero__content{padding-top:5rem;padding-bottom:3rem}.academy-full-hero__image{object-position:60% center}.academy-public .academy-full-hero h1{font-size:clamp(3.5rem,15vw,7rem)}.academy-identity{gap:.5rem 1rem;margin-top:2rem;font-size:.625rem}.academy-hero-foot{gap:.5rem 1rem}.academy-hero-foot button{margin-left:0}.academy-editorial{grid-template-columns:1fr}.academy-course-list>li{gap:1rem;flex-wrap:wrap}.academy-course-list>li>.text-link{font-size:.6875rem}.academy-course-detail{display:none}.academy-live-stats{gap:1rem}.academy-live-stats strong{font-size:2rem}.academy-live-stats>span{font-size:.625rem}.academy-disclaimer{border-radius:1.25rem}.academy-disclaimer h2{font-size:1.5rem}}
 .academy-context-label{font-size:.6875rem;color:var(--academy-muted);margin-left:auto;margin-right:1rem;overflow-wrap:anywhere}
 @media(max-width:600px){.academy-context-label{display:none}}
+
+/* Seven-step Academy course reader: plain authored text and persisted assessment evidence. */
+.academy-app .academy-completed-materials { border-top:1px solid var(--academy-border); padding-block:1.5rem; margin-block:1.5rem; }
+.academy-app .academy-completed-materials>summary { cursor:pointer; font-weight:600; }
+.academy-app .academy-completed-materials section { margin-block:1.5rem; }
+.academy-app .academy-license-caption { color:var(--academy-muted); font-size:.75rem; line-height:1.6; max-width:52rem; }
+.academy-app .academy-license-note { border-left:3px solid var(--academy-primary); padding:1rem 1.25rem; background:var(--academy-primary-soft); }
+.academy-app .academy-lesson-resources { margin-block:2rem; border-top:1px solid var(--academy-border); padding-top:1.5rem; }
+.academy-app .academy-reference summary { cursor:pointer; color:var(--academy-text); font-weight:600; line-height:1.6; }
+.academy-app .academy-reference summary span { font-weight:400; color:var(--academy-muted); font-size:.75rem; margin-left:.5rem; }
+.academy-app .academy-reference__body { margin-top:1rem; font-size:.875rem!important; overflow-wrap:anywhere; }
+.academy-app .academy-exam-summary { font-weight:700; color:var(--academy-primary); }
+.academy-app .academy-exam-question { padding:1.5rem 0; margin:0; border:0; border-top:1px solid var(--academy-border); min-width:0; }
+.academy-app .academy-exam-question legend { max-width:100%; font-weight:650; font-size:1rem; line-height:1.6; padding-top:1rem; margin-bottom:1rem; }
+.academy-app .academy-assessment-review { border-block:1px solid var(--academy-border); padding-block:1.25rem; margin-block:1.25rem; }
+.academy-app .academy-assessment-review summary { cursor:pointer; color:var(--academy-primary); font-weight:600; }
+.academy-app .academy-answer-review { padding-left:1.5rem; }
+.academy-app .academy-answer-review li { margin-top:1.5rem; }
+.academy-app .academy-answer-review h4 { font-size:.95rem; line-height:1.6; }
+.academy-app .academy-answer-review p { margin-block:.5rem; }
+.academy-app .academy-rubric { padding-left:1.25rem; line-height:1.9; margin-block:1.25rem; max-width:52rem; }
+.academy-app .academy-license { border:1px solid var(--academy-primary); padding:clamp(1rem,3vw,2rem); margin-block:1.5rem; break-inside:avoid; }
+.academy-app .academy-license__number { font-family:var(--font-mono,monospace); color:var(--academy-primary); font-size:1rem; overflow-wrap:anywhere; }
+.academy-app .academy-license dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.academy-app .academy-license dt { color:var(--academy-muted); font-size:.75rem; }
+.academy-app .academy-license dd { margin:0; font-weight:600; line-height:1.7; }
+.academy-app button:disabled { opacity:.5; cursor:not-allowed; }
+@media(max-width:767px) {
+  .academy-app .academy-license dl { grid-template-columns:1fr; }
+  .academy-app .academy-exam-question .answer-option { padding:.875rem; gap:.75rem; }
+}
+@media print {
+  .academy-app .academy-license { color:black; border:1px solid black; padding:1.5rem; break-inside:avoid; }
+  .academy-app .academy-license .button { display:none; }
+  .academy-app .academy-license__number,.academy-app .academy-license dt { color:black; }
+}

@@ -20,9 +20,9 @@ final class AdvancementCareerWiringAssetTest extends TestCase
         $bootstrap = (string) file_get_contents($root . '/app/Services/Community/TenantBootstrapService.php');
         $careerMigration = (string) file_get_contents($root . '/bootstrap/personnel_career_advancement_migration.php');
 
-        self::assertStringContainsString('personnel_career_advancement_migration.php', $migrations);
+        self::assertFileExists($root . '/bootstrap/personnel_career_advancement_migration.php');
         self::assertStringContainsString('run_personnel_career_advancement_migration', $migrations);
-        self::assertStringContainsString('advancement_grade_migration.php', $migrations);
+        self::assertFileExists($root . '/bootstrap/advancement_grade_migration.php');
         self::assertStringContainsString("'advancement_seniority'", $cron);
 
         self::assertStringContainsString("'/back-office/organisation/grades'", $routes);

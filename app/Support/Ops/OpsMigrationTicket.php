@@ -17,7 +17,7 @@ final class OpsMigrationTicket
     public const TTL_SECONDS = 90;
 
     /** @var list<string> */
-    public const ACTIONS = ['run', 'run_step', 'replay'];
+    public const ACTIONS = ['run', 'run_step'];
 
     public static function dir(string $root): string
     {
@@ -25,7 +25,7 @@ final class OpsMigrationTicket
     }
 
     /**
-     * @param array{action: string, step?: string, replay?: list<string>, user_id?: int, snapshot?: string} $payload
+     * @param array{action: string, step?: string, user_id?: int, snapshot?: string} $payload
      */
     public static function mint(string $root, array $payload, ?int $now = null): string
     {

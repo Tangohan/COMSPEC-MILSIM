@@ -6,6 +6,7 @@ namespace Tests\Contract;
 
 use App\Repositories\AcademyRepository;
 use App\Services\Academy\AcademyCurriculum;
+use App\Services\Academy\AcademyBuiltInCourses;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
@@ -64,15 +65,58 @@ final class AcademyRepositoryTest extends TestCase
     {
         $course = AcademyCurriculum::demo();
         $this->repository->saveCourse(1, 10, $course, false);
-        self::assertCount(0, $this->repository->courses(1));
-        $draft = $this->repository->courses(1, true)[0];
+        self::assertCount(0, $this->communityCourses(1));
+        $draft = $this->communityCourses(1, true)[0];
         $this->repository->publish(2, $draft['key']);
-        self::assertCount(0, $this->repository->courses(1));
+        self::assertCount(0, $this->communityCourses(1));
         $this->repository->publish(1, $draft['key']);
-        self::assertCount(1, $this->repository->courses(1));
-        self::assertCount(0, $this->repository->courses(2));
+        self::assertCount(1, $this->communityCourses(1));
+        self::assertCount(0, $this->communityCourses(2));
         $this->repository->enroll(1,10,$draft);
         $this->repository->enroll(1,10,array_replace($draft,['title'=>['fr'=>'Nouveau','en'=>'New']]));
         self::assertSame($draft['title'], $this->repository->states(1,10)[$draft['key']]['snapshot']['title']);
+    }
+
+    private function communityCourses(int $tenantId, bool $drafts = false): array
+    {
+        return array_values(array_filter($this->repository->courses($tenantId, $drafts), static fn (array $course): bool => empty($course['built_in'])));
+    }
+
+    public function testBuiltInModuleNeedsNoCourseSeedAndItsProgressAndLicenceRemainPrivate(): void
+    {
+        $key = 'jtac-licence-ath-academy';
+        $course = $this->repository->course(14, $key);
+        self::assertSame(AcademyBuiltInCourses::find($key), $course);
+        self::assertSame($course, $this->repository->course(15, $key));
+        self::assertNull($this->repository->course(0, $key));
+        self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM academy_courses')->fetchColumn());
+        $this->repository->enroll(14, 10, $course);
+        $different = array_replace($course, ['version' => '999', 'title' => ['fr' => 'Remplacement', 'en' => 'Replacement']]);
+        $this->repository->enroll(14, 10, $different);
+        self::assertSame($course, $this->repository->states(14, 10)[$key]['snapshot']);
+        $chapter = $course['chapters'][0];
+        foreach (['advance', 'advance', 'practice', 'practice', 'exam_start', 'exam_submit', 'debrief'] as $action) {
+            $this->repository->mutate(14, 10, $key, static function (array $state) use ($action, $course, $chapter): array {
+                $answers = array_column(AcademyCurriculum::examQuestions($chapter), 'answer');
+                $input = ['expected_stage' => $state['stage'], 'expected_chapter' => $state['chapter'],
+                    'answer' => AcademyCurriculum::questionForStage($chapter, (int) $state['stage'])['answer'],
+                    'answers' => $answers, 'token' => $state['exam']['token'] ?? '',
+                    'reflection' => 'J’ai distingué les faits et les hypothèses et je vérifierai les informations ambiguës avant de poursuivre.'];
+                return AcademyCurriculum::transition($state, $course, $action, $input, 1000);
+            });
+        }
+        $pending = $this->repository->states(14, 10)[$key];
+        self::assertSame(6, $pending['stage']);
+        self::assertArrayNotHasKey('license', $pending);
+        $this->repository->mutate(14, 10, $key, static fn (array $state): array => AcademyCurriculum::validateChapter($state, $course, 99, 'Compétences démontrées en simulation et débriefing examiné.', 1100));
+        $finished = $this->repository->states(14, 10)[$key];
+        self::assertTrue($finished['completed']);
+        self::assertMatchesRegularExpression('/^ATH-ACADEMY-JTAC-[A-F0-9]{12}$/', $finished['license']['number']);
+        self::assertSame(99, $finished['license']['validated_by']);
+        self::assertSame('simulation', $finished['license']['scope']);
+        self::assertSame([], $this->repository->states(15, 10));
+        self::assertSame([], $this->repository->states(14, 20));
+        self::assertSame(1, count($this->repository->learners(14)));
+        self::assertSame([], $this->repository->learners(15));
     }
 }

@@ -82,7 +82,7 @@ final class DecorationKitAssetTest extends TestCase
         self::assertStringContainsString('storeMotif', $awardCtrl);
         self::assertStringContainsString('updateMotif', $awardCtrl);
         self::assertStringContainsString('/decorations/motifs', $routes);
-        self::assertStringContainsString('tenant_decoration_motifs_migration.php', $migrations);
+        self::assertFileExists($this->root() . '/bootstrap/tenant_decoration_motifs_migration.php');
         self::assertStringContainsString('run_tenant_decoration_motifs_migration', $migrations);
 
         self::assertStringContainsString('decorations-kit.css', $layout);

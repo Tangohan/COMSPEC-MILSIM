@@ -7,8 +7,8 @@ declare(strict_types=1);
  *
  * - Accès par mot de passe (config/migrations_web.php ou MIGRATIONS_WEB_PASSWORD), verrouillage après
  *   plusieurs échecs (par session et par adresse IP), session courte, jeton CSRF sur chaque action.
- * - Tableau de bord : étapes du registre et dernier résultat de chacune, fichiers SQL, état de la base.
- * - Lancement du pipeline complet ou d'une seule étape, console en direct, journal enregistré.
+ * - Tableau de bord : nouvelles étapes du registre, historique en lecture et état de la base.
+ * - Lancement des nouvelles étapes ou d'une entrée active seule, console en direct, journal enregistré.
  *
  * Appelé au début de run-migrations.php (hors CLI). Ne rend la main que si une exécution est demandée.
  */
@@ -296,7 +296,8 @@ function migrations_web_collect_status(string $root): array
             'connected' => false, 'name' => null, 'host' => null, 'error' => null, 'tables' => null, 'tenants' => null,
             'users' => null, 'demo_accounts' => null, 'has_default_tenant' => null, 'has_tenant_type' => null, 'module_tables' => [],
         ],
-        'sql' => null,
+        // Historical SQL files are archived source, never the active migration queue.
+        'sql' => ['total'=>0, 'applied'=>0, 'excluded'=>0, 'pending'=>[], 'failed'=>[]],
         'steps' => MigrationRegistry::load($root),
         'results' => [],
         'last_db_run' => null,
@@ -357,12 +358,6 @@ function migrations_web_collect_status(string $root): array
             }
         } catch (Throwable) {
         }
-        try {
-            require_once $root . '/bootstrap/migration_runner.php';
-            $status['sql'] = ComspecMigrationRunner::statusReport($pdo, $root . '/migrations');
-        } catch (Throwable) {
-            $status['sql'] = null;
-        }
         $status['results'] = MigrationRunLog::latestByStep($pdo);
         $status['last_db_run'] = MigrationRunLog::lastRun($pdo);
     }
@@ -377,6 +372,37 @@ function migrations_web_collect_status(string $root): array
     }
 
     return $status;
+}
+
+/** Validate launch intent against the future queue, without opening the database. */
+function migrations_web_queue_error(string $root, string $action, string $stepId = ''): ?string
+{
+    if ($action === 'replay') {
+        return 'Le rejeu des migrations historiques est désactivé. Seules les nouvelles étapes inscrites au registre peuvent être exécutées.';
+    }
+    if ($action === 'run_step') {
+        $step = MigrationRegistry::find($root, $stepId);
+        return $step !== null && $step['rerun'] ? null : 'Cette étape ne fait pas partie des nouvelles migrations exécutables seules.';
+    }
+    if ($action !== 'run') {
+        return 'Action inconnue.';
+    }
+
+    return MigrationRegistry::load($root) === [] ? 'Aucune migration en attente. Les migrations historiques restent archivées ; aucune donnée ne sera modifiée.' : null;
+}
+
+/** Past results remain readable even after their steps leave the active queue. */
+function migrations_web_historical_steps(array $steps, array $results): array
+{
+    $active = array_fill_keys(array_column($steps, 'id'), true);
+    $history = [];
+    foreach ($results as $id => $result) {
+        if (!isset($active[$id])) {
+            $history[] = ['id'=>(string)$id, 'label'=>(string)$id, 'index'=>count($history)+1, 'rerun'=>false];
+        }
+    }
+
+    return $history;
 }
 
 /**
@@ -578,7 +604,6 @@ function migrations_web_render_dashboard(array $status, ?string $flash = null, s
     $db = $status['database'];
     $steps = $status['steps'];
     $results = $status['results'];
-    $sql = is_array($status['sql']) ? $status['sql'] : null;
     $lastRun = $status['last_db_run'];
     $lastFile = is_array($status['last_run']) ? $status['last_run'] : null;
 
@@ -593,12 +618,12 @@ function migrations_web_render_dashboard(array $status, ?string $flash = null, s
     echo '<section class="ath-page-head mg-head" aria-labelledby="mg-title"><div class="ath-page-head__copy">';
     echo '<p class="ath-page-head__kicker">ADMINISTRATION DU SITE · BASE DE DONNÉES</p>';
     echo '<h1 class="ath-page-head__title" id="mg-title">Migrations de la base</h1>';
-    echo '<p class="ath-page-head__sub">Le pipeline enchaîne ' . count($steps) . ' étapes : schéma, migrations des modules, référentiels indispensables et maintenance. Chaque étape est idempotente : relancer ne casse rien, seuls les manques sont comblés.</p>';
+    echo '<p class="ath-page-head__sub">Seules les nouvelles migrations inscrites au registre sont exécutables. Les migrations déjà déployées sont archivées ; leurs résultats et journaux restent consultables.</p>';
     echo '</div><div class="ath-page-head__actions">';
     echo '<form method="post" action="' . $self . '"><input type="hidden" name="csrf" value="' . $csrf . '"><input type="hidden" name="action" value="refresh"><button class="ath-btn" type="submit">' . migrations_web_icon('refresh') . '<span>Actualiser</span></button></form>';
     echo '<a class="ath-btn" href="#mg-log">' . migrations_web_icon('log') . '<span>Dernier journal</span></a>';
-    echo '<form method="post" action="' . $self . '" data-mg-confirm="Lancer toutes les migrations maintenant ? Le passage complet prend quelques minutes."><input type="hidden" name="csrf" value="' . $csrf . '"><input type="hidden" name="action" value="run">';
-    echo '<button class="ath-btn ath-btn--solid" type="submit"' . (!$db['connected'] ? ' disabled' : '') . '>' . migrations_web_icon('play') . '<span>Lancer toutes les migrations</span></button></form>';
+    echo '<form method="post" action="' . $self . '" data-mg-confirm="Exécuter les nouvelles migrations maintenant ? Le passage complet prend quelques minutes."><input type="hidden" name="csrf" value="' . $csrf . '"><input type="hidden" name="action" value="run">';
+    echo '<button class="ath-btn ath-btn--solid" type="submit"' . (!$db['connected'] || $steps === [] ? ' disabled' : '') . '>' . migrations_web_icon('play') . '<span>Exécuter les nouvelles migrations</span></button></form>';
     echo '</div></section>';
 
     if ($flash !== null) {
@@ -610,14 +635,11 @@ function migrations_web_render_dashboard(array $status, ?string $flash = null, s
     if (!$db['connected']) {
         $alerts[] = ['bad', 'Connexion à la base impossible', (string) ($db['error'] ?? '') . ' — vérifiez DB_HOST, DB_NAME, DB_USER et DB_PASSWORD dans .env.'];
     }
-    if ($sql !== null && ($sql['failed'] !== [] || $sql['pending'] !== [])) {
-        $alerts[] = [$sql['failed'] !== [] ? 'bad' : 'warn', count($sql['pending']) . ' fichier(s) SQL en attente, ' . count($sql['failed']) . ' en échec', 'Ils seront appliqués au prochain passage (étape « Fichiers migrations/*.sql en attente »).'];
-    }
     if (($db['demo_accounts'] ?? 0) > 0) {
-        $alerts[] = ['warn', 'Comptes de démonstration présents : ' . (int) $db['demo_accounts'], 'Ils seront supprimés par la migration SQL 20260904180000_remove_demo_accounts.sql.'];
+        $alerts[] = ['warn', 'Comptes de démonstration présents : ' . (int) $db['demo_accounts'], 'Diagnostic uniquement : aucune purge automatique n’est programmée.'];
     }
     if ($db['connected'] && $db['has_tenant_type'] === false) {
-        $alerts[] = ['bad', 'Profil de communauté absent (tenants.tenant_type)', 'La création de communauté est bloquée tant que les migrations ne sont pas passées.'];
+        $alerts[] = ['bad', 'Profil de communauté absent (tenants.tenant_type)', 'Diagnostic de l’installation : aucune migration historique ne sera relancée automatiquement.'];
     }
     foreach ($alerts as [$tone, $title, $text]) {
         echo '<div class="mg-alert mg-alert--' . $tone . '"><b>' . migrations_web_h($title) . '</b><span>' . migrations_web_h($text) . '</span></div>';
@@ -639,10 +661,12 @@ function migrations_web_render_dashboard(array $status, ?string $flash = null, s
     echo '<article class="ath-card ath-kpi' . ($counts['warn'] > 0 ? ' mg-kpi--warn' : '') . '"><p class="ath-kpi__label">Avertissements</p><p class="ath-kpi__value">' . $counts['warn'] . '</p><p class="ath-kpi__note">fichier absent, élément déjà présent…</p></article>';
     echo '<article class="ath-card ath-kpi' . ($counts['error'] > 0 ? ' mg-kpi--bad' : '') . '"><p class="ath-kpi__label">Erreurs</p><p class="ath-kpi__value">' . $counts['error'] . '</p><p class="ath-kpi__note">' . ($counts['never'] > 0 ? $counts['never'] . ' jamais lancée(s)' : 'à corriger puis relancer') . '</p></article>';
     echo '<article class="ath-card ath-kpi"><p class="ath-kpi__label">Dernier passage</p><p class="ath-kpi__value mg-kpi__text">' . migrations_web_h($lastLabel) . '</p><p class="ath-kpi__note">' . migrations_web_h($lastNote) . '</p></article>';
-    $sqlValue = $sql !== null ? $sql['applied'] . ' / ' . $sql['total'] : '—';
-    $sqlNote = $sql !== null ? count($sql['pending']) . ' en attente · ' . count($sql['failed']) . ' en échec · ' . (int) $sql['excluded'] . ' exclu(s)' : 'base injoignable';
-    echo '<article class="ath-card ath-kpi' . ($sql !== null && $sql['failed'] !== [] ? ' mg-kpi--bad' : '') . '"><p class="ath-kpi__label">Fichiers SQL appliqués</p><p class="ath-kpi__value">' . migrations_web_h($sqlValue) . '</p><p class="ath-kpi__note">' . migrations_web_h($sqlNote) . '</p></article>';
+    echo '<article class="ath-card ath-kpi"><p class="ath-kpi__label">File active</p><p class="ath-kpi__value">' . count($steps) . '</p><p class="ath-kpi__note">nouvelles étapes uniquement</p></article>';
     echo '</div>';
+
+    if ($steps === []) {
+        echo '<div class="mg-flash mg-flash--ok" role="status">Aucune migration en attente. La file est vide ; aucune donnée ne sera modifiée.</div>';
+    }
 
     // Étapes
     echo '<section class="ath-table-panel mg-steps" id="mg-steps">';
@@ -687,31 +711,18 @@ function migrations_web_render_dashboard(array $status, ?string $flash = null, s
     echo '</table></div><p class="ath-table-empty mg-empty" data-mg-empty hidden>Aucune étape ne correspond.</p>';
     echo '<p class="mg-steps__foot" data-mg-issues-note' . ($issues > 0 ? '' : ' hidden') . '>Seules les étapes à traiter sont affichées. <button type="button" class="mg-linkbtn" data-mg-show-all>Afficher les ' . count($steps) . ' étapes</button></p></section>';
 
-    // Fichiers SQL + état de la base
-    echo '<div class="mg-grid">';
-    echo '<section class="ath-panel mg-card"><header class="ath-panel__head"><h2 class="ath-panel__title">Fichiers SQL</h2></header>';
-    if ($sql === null) {
-        echo '<p class="mg-muted">État indisponible (base injoignable).</p>';
-    } else {
-        echo '<p class="ath-panel__lead">Chaque fichier de migrations/*.sql est appliqué une fois et noté ; il est rejoué s’il change ou s’il a échoué.</p>';
-        echo '<dl class="mg-kv"><div><dt>Total</dt><dd>' . (int) $sql['total'] . '</dd></div><div><dt>Appliqués</dt><dd>' . (int) $sql['applied'] . '</dd></div><div><dt>Exclus</dt><dd>' . (int) $sql['excluded'] . '</dd></div><div><dt>En attente</dt><dd>' . count($sql['pending']) . '</dd></div><div><dt>En échec</dt><dd>' . count($sql['failed']) . '</dd></div></dl>';
-        if ($sql['failed'] !== []) {
-            echo '<ul class="mg-list mg-list--bad">';
-            foreach (array_slice($sql['failed'], 0, 20) as $f) {
-                echo '<li><code>' . migrations_web_h((string) $f['name']) . '</code><span>' . migrations_web_h((string) $f['error']) . '</span></li>';
-            }
-            echo '</ul>';
+    // Historical results are read-only; they never repopulate the execution queue.
+    $history = migrations_web_historical_steps($steps, $results);
+    if ($history !== []) {
+        echo '<section class="ath-panel mg-card"><h2 class="ath-panel__title">Historique des étapes archivées</h2><p>Consultation uniquement ; ces étapes ne peuvent plus être relancées.</p><ul class="mg-list">';
+        foreach ($history as $past) {
+            $result = $results[$past['id']];
+            echo '<li><code>' . migrations_web_h($past['id']) . '</code><span>' . migrations_web_h($result['message'] ?? '') . '</span><a class="ath-btn mg-mini" href="' . $self . '?action=output&amp;step=' . rawurlencode($past['id']) . '">Sortie</a></li>';
         }
-        if ($sql['pending'] !== []) {
-            echo '<ul class="mg-list">';
-            foreach (array_slice($sql['pending'], 0, 20) as $p) {
-                echo '<li><code>' . migrations_web_h((string) $p) . '</code><span class="ath-tag ath-tag--warn">en attente</span></li>';
-            }
-            echo count($sql['pending']) > 20 ? '<li class="mg-muted">… et ' . (count($sql['pending']) - 20) . ' autre(s)</li>' : '';
-            echo '</ul>';
-        }
+        echo '</ul></section>';
     }
-    echo '</section>';
+
+    echo '<div class="mg-grid"><section class="ath-panel mg-card"><header class="ath-panel__head"><h2 class="ath-panel__title">File des nouvelles migrations</h2></header><p>Le dossier historique <code>migrations/</code> n’est plus parcouru. Seules les étapes du registre actif sont proposées.</p><p>' . count($steps) . ' étape(s) inscrite(s).</p></section>';
 
     $bool = static fn (?bool $v, string $yes, string $no): string => $v === null ? '<span class="mg-muted">—</span>' : '<span class="ath-tag ath-tag--' . ($v ? 'ok' : 'bad') . '">' . ($v ? $yes : $no) . '</span>';
     echo '<section class="ath-panel mg-card"><header class="ath-panel__head"><h2 class="ath-panel__title">État de la base</h2>' . $bool($db['connected'], 'Connectée', 'Injoignable') . '</header>';
@@ -771,7 +782,7 @@ function migrations_web_render_dashboard(array $status, ?string $flash = null, s
     }
     echo '</section>';
 
-    echo '<p class="mg-foot">Ligne de commande : <code>php run-migrations.php</code> (tout), <code>--list</code> (étapes), <code>--step=identifiant</code> (une étape), <code>--status</code> (fichiers SQL).</p>';
+    echo '<p class="mg-foot">Ligne de commande : <code>php run-migrations.php</code> (nouvelles étapes uniquement), <code>--list</code> (étapes), <code>--step=identifiant</code> (une étape), <code>--status</code> (file active).</p>';
     migrations_web_layout_end();
 }
 
@@ -802,7 +813,7 @@ function migrations_web_render_output(string $root, string $stepId): void
     $step = MigrationRegistry::find($root, $stepId);
     $error = null;
     $pdo = migrations_web_pdo($error);
-    $output = $pdo !== null && $step !== null ? MigrationRunLog::lastOutput($pdo, $stepId) : null;
+    $output = $pdo !== null ? MigrationRunLog::lastOutput($pdo, $stepId) : null;
     $result = $pdo !== null ? (MigrationRunLog::latestByStep($pdo)[$stepId] ?? null) : null;
     migrations_web_layout_start('Sortie d’étape');
     $self = migrations_web_self();
@@ -829,10 +840,7 @@ function migrations_web_return_url(string $anchor = ''): string
     return migrations_web_self() . $anchor;
 }
 
-/**
- * @param list<string> $replay fichiers SQL à rejouer (passage complet avec --replay)
- */
-function migrations_web_begin_run_console(string $root, ?array $onlyStep = null, array $replay = []): void
+function migrations_web_begin_run_console(string $root, ?array $onlyStep = null): void
 {
     @set_time_limit(0);
     @ini_set('max_execution_time', '0');
@@ -857,15 +865,11 @@ function migrations_web_begin_run_console(string $root, ?array $onlyStep = null,
     if ($onlyStep !== null) {
         $GLOBALS['__migrations_only_step'] = $onlyStep['id'];
     }
-    if ($replay !== []) {
-        $GLOBALS['__migrations_replay'] = $replay;
-    }
 
     migrations_web_layout_start('Migrations en cours');
     $total = count(MigrationRegistry::load($root));
     echo '<section class="ath-page-head mg-head"><div class="ath-page-head__copy"><p class="ath-page-head__kicker">MIGRATIONS · EXÉCUTION EN COURS</p>';
-    $runTitle = $onlyStep !== null ? 'Relance : ' . migrations_web_h($onlyStep['label'])
-        : ($replay !== [] ? 'Passage complet, rejeu de ' . migrations_web_h(implode(', ', $replay)) : 'Passage complet');
+    $runTitle = $onlyStep !== null ? 'Exécution : ' . migrations_web_h($onlyStep['label']) : 'Nouvelles migrations';
     echo '<h1 class="ath-page-head__title">' . $runTitle . '</h1>';
     echo '<p class="ath-page-head__sub">Démarré ' . migrations_web_h(date('d/m/Y à H:i:s')) . ($onlyStep !== null ? ' · étape <code>' . migrations_web_h($onlyStep['id']) . '</code>' : ' · ' . $total . ' étapes') . '. Ne fermez pas la page : le journal est enregistré à la fin.</p></div>';
     echo '<div class="ath-page-head__actions"><a class="ath-btn" href="' . migrations_web_return_url() . '">' . migrations_web_icon('back') . '<span>' . (isset($GLOBALS['__migrations_console_return']) ? 'Console d’exploitation' : 'Tableau de bord') . '</span></a></div></section>';
@@ -952,27 +956,16 @@ function migrations_web_gate(): void
         }
         $return = (string) ($ticket['return'] ?? '');
         $GLOBALS['__migrations_console_return'] = preg_match('#^(https?://[^\s"<>]+|/[^\s"<>]*)$#', $return) === 1 ? $return : '/admin/system/exploitation?onglet=migrations';
+        $queueError = migrations_web_queue_error($root, (string) ($ticket['action'] ?? ''), (string) ($ticket['step'] ?? ''));
+        if ($queueError !== null) {
+            migrations_web_render_login($queueError, $ticket['action'] === 'run' ? 'ok' : 'warn');
+            exit;
+        }
         $only = null;
-        $replay = [];
         if ($ticket['action'] === 'run_step') {
             $only = MigrationRegistry::find($root, (string) ($ticket['step'] ?? ''));
-            if ($only === null || !$only['rerun']) {
-                migrations_web_render_login('Cette étape ne peut pas être relancée seule : lancez toutes les migrations.', 'warn');
-                exit;
-            }
-        } elseif ($ticket['action'] === 'replay') {
-            foreach ((array) ($ticket['replay'] ?? []) as $file) {
-                $file = basename((string) $file);
-                if (preg_match('/^[A-Za-z0-9._-]+\.sql$/', $file) === 1 && is_file($root . '/migrations/' . $file)) {
-                    $replay[] = $file;
-                }
-            }
-            if ($replay === []) {
-                migrations_web_render_login('Fichier SQL introuvable.', 'warn');
-                exit;
-            }
         }
-        migrations_web_begin_run_console($root, $only, $replay);
+        migrations_web_begin_run_console($root, $only);
 
         return; // la suite de run-migrations.php exécute le pipeline
     }
@@ -1011,18 +1004,19 @@ function migrations_web_gate(): void
         exit;
     }
 
-    if (($action === 'run' || $action === 'run_step') && $method === 'POST') {
+    if (in_array($action, ['run', 'run_step', 'replay'], true) && $method === 'POST') {
         if (!migrations_web_csrf_ok($_POST['csrf'] ?? null)) {
             migrations_web_render_dashboard(migrations_web_collect_status($root), 'Jeton de sécurité invalide. Actualisez la page puis réessayez.', 'bad');
+            exit;
+        }
+        $queueError = migrations_web_queue_error($root, $action, (string) ($_POST['step'] ?? ''));
+        if ($queueError !== null) {
+            migrations_web_render_dashboard(migrations_web_collect_status($root), $queueError, $action === 'run' ? 'ok' : 'warn');
             exit;
         }
         $only = null;
         if ($action === 'run_step') {
             $only = MigrationRegistry::find($root, (string) ($_POST['step'] ?? ''));
-            if ($only === null || !$only['rerun']) {
-                migrations_web_render_dashboard(migrations_web_collect_status($root), 'Cette étape ne peut pas être relancée seule : lancez toutes les migrations.', 'warn');
-                exit;
-            }
         }
         migrations_web_begin_run_console($root, $only);
 

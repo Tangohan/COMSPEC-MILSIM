@@ -29,7 +29,7 @@ final class PersonnelPassAssetTest extends TestCase
         self::assertFileExists($root . '/app/Services/Personnel/Pass/PassConditionEngine.php');
         self::assertFileExists($root . '/app/Repositories/PersonnelPassRepository.php');
         self::assertFileExists($root . '/app/Controllers/Admin/Organization/PersonnelPassAdminController.php');
-        self::assertStringContainsString('personnel_pass_migration.php', $runner);
+        self::assertFileExists($root . '/bootstrap/personnel_pass_migration.php');
         self::assertStringContainsString('run_personnel_pass_migration', $runner);
         self::assertStringContainsString('personnel_passes', $migration);
         self::assertStringContainsString('personnel_pass_conditions', $migration);

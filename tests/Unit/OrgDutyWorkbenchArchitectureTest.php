@@ -21,10 +21,10 @@ final class OrgDutyWorkbenchArchitectureTest extends TestCase
         self::assertStringContainsString('assigned_position_slug', $src);
     }
 
-    public function testRunMigrationsRegistersWorkbench(): void
+    public function testArchivedWorkbenchImplementationRemainsAvailable(): void
     {
         $src = (string) \Tests\Support\MigrationPipelineSource::read(dirname(__DIR__, 2));
-        self::assertStringContainsString('org_duty_workbench_migration.php', $src);
+        self::assertFileExists(dirname(__DIR__, 2) . '/bootstrap/org_duty_workbench_migration.php');
         self::assertStringContainsString('run_org_duty_workbench_migration($pdo)', $src);
     }
 

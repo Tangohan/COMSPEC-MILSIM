@@ -145,13 +145,12 @@ $summary = is_array($opsSummary ?? null) ? $opsSummary : null;
 <?php elseif ($tab === 'migrations'): ?>
             <?php
             $m = is_array($opsMigrations ?? null) ? $opsMigrations : [];
-            $sql = is_array($m['sql'] ?? null) ? $m['sql'] : null;
             $steps = is_array($m['steps'] ?? null) ? $m['steps'] : [];
             $results = is_array($m['results'] ?? null) ? $m['results'] : [];
             $last = is_array($m['last_run'] ?? null) ? $m['last_run'] : null;
-            $stepErrors = count(array_filter($results, static fn ($r) => ($r['status'] ?? '') === 'error'));
-            $failedSql = $sql['failed'] ?? [];
-            $pendingSql = $sql['pending'] ?? [];
+            $stepErrors = count(array_filter($steps, static fn ($s) => ($results[$s['id']]['status'] ?? '') === 'error'));
+            $pendingSteps = count(array_filter($steps, static fn ($s) => ($results[$s['id']]['status'] ?? '') !== 'ok'));
+            $historicalSteps = migrations_web_historical_steps($steps, $results);
             ?>
             <ul class="pa-kpi-strip">
                 <li class="pa-kpi<?= $last !== null && empty($last['ok']) ? ' pa-kpi--alert' : '' ?>">
@@ -164,68 +163,31 @@ $summary = is_array($opsSummary ?? null) ? $opsSummary : null;
                     <span class="pa-kpi__value"><?= $stepErrors ?></span>
                     <span class="pa-kpi__hint">sur <?= count($steps) ?> étapes</span>
                 </li>
-                <li class="pa-kpi<?= $failedSql !== [] ? ' pa-kpi--alert' : '' ?>">
-                    <span class="pa-kpi__label">Fichiers SQL en échec</span>
-                    <span class="pa-kpi__value"><?= count($failedSql) ?></span>
-                    <span class="pa-kpi__hint"><?= (int) ($sql['applied'] ?? 0) ?> appliqués sur <?= (int) ($sql['total'] ?? 0) ?></span>
+                <li class="pa-kpi">
+                    <span class="pa-kpi__label">File active</span>
+                    <span class="pa-kpi__value"><?= count($steps) ?></span>
+                    <span class="pa-kpi__hint">nouvelles étapes uniquement</span>
                 </li>
-                <li class="pa-kpi<?= $pendingSql !== [] ? ' pa-kpi--warn' : '' ?>">
+                <li class="pa-kpi<?= $pendingSteps > 0 ? ' pa-kpi--warn' : '' ?>">
                     <span class="pa-kpi__label">En attente</span>
-                    <span class="pa-kpi__value"><?= count($pendingSql) ?></span>
-                    <span class="pa-kpi__hint">appliqués au prochain passage</span>
+                    <span class="pa-kpi__value"><?= $pendingSteps ?></span>
+                    <span class="pa-kpi__hint">hors migrations déjà déployées</span>
                 </li>
             </ul>
 
             <section class="pa-card ops-run">
                 <div>
                     <p class="pa-card__kicker">Lancer</p>
-                    <h2 class="pa-card__title">Passer toutes les migrations</h2>
-                    <p class="pa-card__help">Schéma, fichiers SQL en attente ou en échec, référentiels et maintenance, dans l’ordre. Compter quelques minutes ; la progression s’affiche en direct.</p>
+                    <h2 class="pa-card__title"><?= $steps === [] ? 'Aucune migration en attente' : 'Exécuter les nouvelles migrations' ?></h2>
+                    <p class="pa-card__help">La file contient uniquement les nouvelles étapes inscrites au registre. Les migrations déjà déployées sont archivées ; leurs résultats restent consultables. Si la file est vide, aucune donnée n’est modifiée.</p>
                 </div>
-                <form method="post" action="<?= $h($base . '/migrations/lancer') ?>" class="ops-run__form" data-ops-confirm="Lancer toutes les migrations maintenant ?">
+                <form method="post" action="<?= $h($base . '/migrations/lancer') ?>" class="ops-run__form" data-ops-confirm="Exécuter les nouvelles migrations en attente ?">
                     <?= $csrf ?>
                     <input type="hidden" name="mode" value="run">
-                    <label class="ops-check-input"><input type="checkbox" name="backup" value="1" checked> Sauvegarder la base juste avant</label>
-                    <button class="pa-btn pa-btn--solid" type="submit">Lancer les migrations</button>
+                    <label class="ops-check-input"><input type="checkbox" name="backup" value="1" checked <?= $steps === [] ? 'disabled' : '' ?>> Sauvegarder la base juste avant</label>
+                    <button class="pa-btn pa-btn--solid" type="submit" <?= $steps === [] ? 'disabled' : '' ?>>Exécuter les nouvelles migrations</button>
                 </form>
             </section>
-
-            <?php if ($failedSql !== [] || $pendingSql !== []): ?>
-                <section class="pa-card">
-                    <h2 class="ops-health__title">Fichiers SQL à traiter</h2>
-                    <div class="pa-table-wrap">
-                        <table class="pa-table ops-table">
-                            <thead><tr><th>Fichier</th><th>État</th><th>Détail</th><th class="ops-right">Action</th></tr></thead>
-                            <tbody>
-                            <?php foreach (array_slice($failedSql, 0, 30) as $f): ?>
-                                <tr>
-                                    <td><code><?= $h($f['name']) ?></code></td>
-                                    <td><span class="pa-pill pa-pill--rose">En échec</span></td>
-                                    <td class="ops-msg"><?= $h($f['error'] ?? '') ?></td>
-                                    <td class="ops-right">
-                                        <form method="post" action="<?= $h($base . '/migrations/lancer') ?>" data-ops-confirm="Rejouer <?= $h($f['name']) ?> pendant un passage complet ?">
-                                            <?= $csrf ?>
-                                            <input type="hidden" name="mode" value="replay">
-                                            <input type="hidden" name="file" value="<?= $h($f['name']) ?>">
-                                            <input type="hidden" name="backup" value="1">
-                                            <button class="pa-btn pa-btn--line pa-btn--sm" type="submit">Rejouer</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                            <?php foreach (array_slice($pendingSql, 0, 30) as $p): ?>
-                                <tr>
-                                    <td><code><?= $h($p) ?></code></td>
-                                    <td><span class="pa-pill pa-pill--amber">En attente</span></td>
-                                    <td class="ops-msg">Appliqué au prochain passage complet.</td>
-                                    <td></td>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-            <?php endif; ?>
 
             <?php if (is_array($opsMigrationOutput ?? null)): ?>
                 <section class="pa-card" id="ops-output">
@@ -278,17 +240,25 @@ $summary = is_array($opsSummary ?? null) ? $opsSummary : null;
             };
             ?>
             <section class="pa-card" id="ops-steps">
-                <h2 class="ops-health__title">Étapes à regarder</h2>
+                <h2 class="ops-health__title">Nouvelles étapes</h2>
                 <?php if ($problemSteps === []): ?>
-                    <p class="pa-empty">Aucune étape en erreur ni en avertissement au dernier passage.</p>
+                    <p class="pa-empty"><?= $steps === [] ? 'La file est vide. Aucun schéma, référentiel ou fichier SQL historique ne sera exécuté.' : 'Aucune nouvelle étape en erreur ni en avertissement au dernier passage.' ?></p>
                 <?php else: ?>
                     <?php $stepTable($problemSteps); ?>
                 <?php endif; ?>
                 <details class="ops-details ops-details--inner">
-                    <summary>Toutes les étapes du pipeline (<?= count($steps) ?>)</summary>
+                    <summary>Toutes les étapes de la file active (<?= count($steps) ?>)</summary>
                     <?php $stepTable($steps); ?>
                 </details>
             </section>
+
+            <?php if ($historicalSteps !== []): ?>
+                <details class="pa-card ops-details">
+                    <summary>Historique des étapes archivées (<?= count($historicalSteps) ?>)</summary>
+                    <p>Consultation des résultats et sorties uniquement. Ces étapes ne peuvent plus être relancées.</p>
+                    <?php $stepTable($historicalSteps); ?>
+                </details>
+            <?php endif; ?>
 
             <?php $tail = is_array($m['log_tail'] ?? null) ? $m['log_tail'] : []; ?>
             <?php if ($tail !== []): ?>
@@ -297,7 +267,7 @@ $summary = is_array($opsSummary ?? null) ? $opsSummary : null;
                     <pre class="ops-console"><?= $h(implode("\n", $tail)) ?></pre>
                 </details>
             <?php endif; ?>
-            <p class="ops-links">En ligne de commande sur le VPS : <code>php run-migrations.php</code> (tout), <code>--status</code> (fichiers SQL), <code>--list</code>, <code>--step=identifiant</code>, <code>--replay=fichier.sql</code>. Accès de secours sans le site : <code>/run-migrations.php</code> et son mot de passe.</p>
+            <p class="ops-links">En ligne de commande sur le VPS : <code>php run-migrations.php</code> (nouvelles étapes uniquement), <code>--status</code> (file active), <code>--list</code>, <code>--step=identifiant</code> (étape active). Le rejeu des fichiers SQL historiques est désactivé. Accès de secours sans le site : <code>/run-migrations.php</code> et son mot de passe.</p>
 
 <?php elseif ($tab === 'sauvegardes'): ?>
             <?php $rows = is_array($opsBackups ?? null) ? $opsBackups : []; ?>
