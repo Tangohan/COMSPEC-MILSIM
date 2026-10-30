@@ -232,4 +232,42 @@ final class PersonnelJobsWorkspaceTest extends TestCase
         self::assertStringContainsString('<option value="88" selected>Référence indisponible (#88)</option>', $body);
         self::assertStringContainsString('détacher explicitement', $body);
     }
+
+    public function testCategoryFragmentDoesNotLoadGradesRolesHoldersOrAnyHrWorkspaceService(): void
+    {
+        $roles=$this->createMock(PersonnelJobRoleRepository::class);
+        $roles->expects(self::once())->method('listCategoriesWithJobCounts')->with(14)->willReturn([
+            ['id'=>1,'name'=>'Opérations','parent_id'=>null,'job_count'=>2],
+        ]);
+        $roles->expects(self::never())->method('listRolesWithCategory');
+        $roles->expects(self::never())->method('listHoldersByJobRoleIds');
+        $_GET=['vue'=>'categories','nouvelle_categorie'=>'1','parent'=>'1'];
+        $_SERVER['REQUEST_METHOD']='GET';
+        // No other controller dependency is initialised: any unrelated service access fails.
+        $response=$this->controller(['personnelJobRoleRepository'=>$roles])->fonctions(new Request());
+        self::assertSame(200,$response->statusCode());
+        self::assertSame('private, no-store',$response->headerValue('Cache-Control'));
+        self::assertStringContainsString('Créer la sous-catégorie',$response->body());
+    }
+
+    public function testSubcategoryIsReallyCreatedMovedAndRenamedWithoutAllowingACycle(): void
+    {
+        $this->pdo->exec("CREATE TABLE personnel_job_role_categories(id INTEGER PRIMARY KEY AUTOINCREMENT,tenant_id INTEGER,parent_id INTEGER,name TEXT,slug TEXT,sort_order INTEGER);
+            INSERT INTO personnel_job_role_categories VALUES(1,14,NULL,'Opérations','operations',0),(2,14,1,'Transmissions','transmissions',0);");
+        $roles=$this->getMockBuilder(PersonnelJobRoleRepository::class)->disableOriginalConstructor()->onlyMethods(['tablesExist'])->getMock();
+        $roles->method('tablesExist')->willReturn(true);
+        (new ReflectionProperty(PersonnelJobRoleRepository::class,'pdo'))->setValue($roles,$this->pdo);
+        $controller=$this->controller(['personnelJobRoleRepository'=>$roles]);
+        $created=$controller->saveJobCategory($this->post(['category_name'=>'Radio','parent_id'=>'2']));
+        self::assertTrue(json_decode($created->body(),true)['ok']);
+        $id=(int)$this->pdo->query("SELECT id FROM personnel_job_role_categories WHERE name='Radio'")->fetchColumn();
+        self::assertGreaterThan(2,$id);
+        self::assertSame(2,(int)$this->pdo->query('SELECT parent_id FROM personnel_job_role_categories WHERE id='.$id)->fetchColumn());
+        self::assertStringContainsString('categorie='.$id,json_decode($created->body(),true)['redirect']);
+        $cycle=$controller->saveJobCategory($this->post(['category_edit_id'=>'1','category_name'=>'Opérations','parent_id'=>(string)$id]));
+        self::assertFalse(json_decode($cycle->body(),true)['ok']);
+        $saved=$controller->saveJobCategory($this->post(['category_edit_id'=>(string)$id,'category_name'=>'Systèmes radio','parent_id'=>'1']));
+        self::assertTrue(json_decode($saved->body(),true)['ok']);
+        self::assertSame(['name'=>'Systèmes radio','parent_id'=>1],$this->pdo->query('SELECT name,parent_id FROM personnel_job_role_categories WHERE id='.$id)->fetch(PDO::FETCH_ASSOC));
+    }
 }

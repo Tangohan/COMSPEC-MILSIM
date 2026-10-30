@@ -1,6 +1,6 @@
 /* Athena PWA — cache shell + fonds de carte Overwatch (tuiles / relief).
    Les pages HTML dynamiques et le reste de l’API restent hors cache. */
-const CACHE_NAME = 'athena-shell-v11';
+const CACHE_NAME = 'athena-shell-v12';
 const TILE_CACHE_NAME = 'athena-overwatch-tiles-v2';
 const SHELL = [
   './manifest.webmanifest',
@@ -117,12 +117,19 @@ function shouldBypassServiceWorker(request) {
   if (isNavigationRequest(request)) {
     return true;
   }
+  // Private workspace fragments must fail as network requests, not synthetic offline pages.
+  if (request.headers.get('X-Effectifs-Fragment') || request.headers.get('X-Grade-Fragment')) {
+    return true;
+  }
   var url = request.url || '';
   var path = '';
   try {
     path = new URL(url).pathname || '';
   } catch (e) {
     path = url;
+  }
+  if (/(^|\/)back-office(?:\/|$)/.test(path)) {
+    return true;
   }
   try {
     if (new URL(url).origin !== self.location.origin) {

@@ -233,7 +233,6 @@ $phCsrf = \App\Core\Csrf::token();
                     memberLabel: ''
                 });
             });
-            });
 
             renderResults(items.slice(0, 18));
         }).catch(function () {

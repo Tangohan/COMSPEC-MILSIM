@@ -7,6 +7,7 @@
     let navigation = null;
     let writing = false;
     let catalogSearch = '';
+    let categorySearch = '';
     const dirty = new WeakSet();
     const root = () => document.querySelector('[data-jobs-workspace]');
     const normalize = value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
@@ -35,6 +36,39 @@
         });
         const empty = scope.querySelector('[data-jobs-empty]');
         if (empty) empty.hidden = visible > 0;
+        filterCategories();
+    }
+
+    function filterCategories() {
+        const scope = root();
+        const input = scope?.querySelector('[data-category-search]');
+        if (!input) return;
+        categorySearch = input.value;
+        const query = normalize(categorySearch).trim();
+        const rows = Array.from(scope.querySelectorAll('[data-category-row]'));
+        const byId = new Map(rows.map(row => [row.dataset.categoryId, row]));
+        const keep = new Set();
+        rows.forEach(row => {
+            if (!query || normalize(row.dataset.search).includes(query)) {
+                let current = row;
+                while (current && !keep.has(current.dataset.categoryId)) {
+                    keep.add(current.dataset.categoryId);
+                    current = byId.get(current.dataset.categoryParent);
+                }
+            }
+        });
+        rows.forEach(row => { row.hidden = !keep.has(row.dataset.categoryId); });
+        const empty = scope.querySelector('[data-category-empty]');
+        if (empty) empty.hidden = keep.size > 0;
+    }
+
+    function placement(select) {
+        const form = select.closest('form');
+        const nested = select.value !== '0';
+        const help = form.querySelector('[data-category-placement-help]');
+        if (help) help.textContent = nested ? 'Elle sera une sous-catégorie de « ' + select.selectedOptions[0].textContent + ' ».' : 'Elle apparaîtra au premier niveau de votre organisation.';
+        const create = form.querySelector('[data-category-create]');
+        if (create) create.textContent = nested ? 'Créer la sous-catégorie' : 'Créer la catégorie';
     }
 
     function workspaceUrl(value) {
@@ -56,11 +90,12 @@
         const scope = root();
         const scroll = [window.scrollX, window.scrollY];
         const search = scope.querySelector('[data-jobs-search]')?.value ?? catalogSearch;
+        const categoryQuery = scope.querySelector('[data-category-search]')?.value ?? categorySearch;
         const open = new Set(Array.from(scope.querySelectorAll('details[data-jobs-details][open]'), details => details.dataset.jobsDetails));
         scope.setAttribute('aria-busy', 'true');
         try {
             const response = await fetch(url.href, {
-                credentials: 'same-origin', headers: {'X-Effectifs-Fragment': 'jobs'}, signal: request.signal,
+                credentials: 'same-origin', headers: {'X-Effectifs-Fragment': 'jobs', 'Accept': 'text/html'}, signal: request.signal,
             });
             if (!response.ok) throw new Error('Le contenu n’a pas pu être chargé. Vos modifications restent affichées.');
             if (response.redirected && !workspaceUrl(response.url)) throw new Error('La session ou les autorisations ont changé. Reconnectez-vous pour continuer.');
@@ -72,15 +107,19 @@
             scope.replaceWith(next);
             const nextSearch = next.querySelector('[data-jobs-search]');
             if (nextSearch) nextSearch.value = search;
+            const nextCategorySearch = next.querySelector('[data-category-search]');
+            if (nextCategorySearch) nextCategorySearch.value = categoryQuery;
             next.querySelectorAll('details[data-jobs-details]').forEach(details => {
                 if (open.has(details.dataset.jobsDetails)) details.open = true;
             });
             filter();
             if (options.history !== false) window.history.pushState({personnelJobs: true}, '', url.href);
             currentUrl = url.href;
-            const heading = next.querySelector('h2, h1');
+            const editingCategory = url.searchParams.has('categorie') || url.searchParams.has('nouvelle_categorie');
+            const heading = editingCategory ? next.querySelector('.eff-category-editor h2') : next.querySelector('h2, h1');
             if (heading) { heading.tabIndex = -1; heading.focus({preventScroll: true}); }
             window.scrollTo(...scroll);
+            if (editingCategory && window.matchMedia('(max-width: 760px)').matches) heading?.scrollIntoView({block: 'start'});
             if (options.message) notice(options.message);
             return true;
         } catch (error) {
@@ -97,12 +136,14 @@
     document.addEventListener('input', event => {
         if (!event.target.closest('[data-jobs-workspace]')) return;
         if (event.target.matches('[data-jobs-search]')) filter();
+        if (event.target.matches('[data-category-search]')) filterCategories();
         const form = event.target.closest('form[data-jobs-save]');
         if (form) dirty.add(form);
     });
     document.addEventListener('change', event => {
         const form = event.target.closest('[data-jobs-workspace] form[data-jobs-save]');
         if (form) dirty.add(form);
+        if (event.target.matches('[data-category-placement]')) placement(event.target);
     });
 
     document.addEventListener('click', event => {
