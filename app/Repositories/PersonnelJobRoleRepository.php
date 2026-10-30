@@ -371,6 +371,20 @@ class PersonnelJobRoleRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /** One grouped read for the category screen; never loads member dossiers or role metadata. */
+    public function listCategoriesWithJobCounts(int $tenantId): array
+    {
+        if (!$this->tablesExist()) return [];
+        $stmt = $this->pdo->prepare(
+            'SELECT c.*, COALESCE(j.job_count, 0) AS job_count
+             FROM personnel_job_role_categories c
+             LEFT JOIN (SELECT category_id, COUNT(*) AS job_count FROM personnel_job_roles WHERE tenant_id = ? GROUP BY category_id) j ON j.category_id = c.id
+             WHERE c.tenant_id = ? ORDER BY c.sort_order, c.name, c.id'
+        );
+        $stmt->execute([$tenantId, $tenantId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     /** @return list<array<string, mixed>> */
     public function listRolesWithCategory(int $tenantId): array
     {

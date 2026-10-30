@@ -52,6 +52,7 @@ use App\Support\EffectifsLmsAccess;
 use App\Support\GradeSelectOptions;
 use App\Support\OrganizationRoleLabels;
 use App\Support\PlanFeatureDenial;
+use App\Support\PersonnelJobCategoryTree;
 use DateTimeImmutable;
 
 /**
@@ -2451,11 +2452,37 @@ class EffectifsWorkspaceController
             return $this->shell('admin.effectifs_workspace.fonctions', $this->jobAssignmentPageData($request, $tenantId) + [
                 'title'=>'Emplois et fonctions', 'effectifsNav'=>'fonctions', 'jobsVue'=>'attributions',
                 'canManageAssignments'=>$canManage, 'csrfToken'=>Csrf::token(), 'jobsWorkspaceEmbed'=>true,
+                'jobsReferenceWorkspace'=>true,
             ]);
         }
         if (!in_array($vue, ['catalogue','categories','recuperation'], true)) $vue='catalogue';
+        if ($vue === 'categories') {
+            $categories = $this->personnelJobRoleRepository->listCategoriesWithJobCounts($tenantId);
+            $selectedCategory = null;
+            $categoryId = (int) $request->queryString('categorie', '0');
+            foreach ($categories as $category) {
+                if ((int) $category['id'] === $categoryId) $selectedCategory = $category;
+            }
+            return $this->jobWorkspaceResponse($request, [
+                'title' => 'Catégories d’emplois', 'effectifsNav' => 'fonctions', 'jobsVue' => 'categories',
+                'jobCategories' => $categories, 'categoryTreeRows' => PersonnelJobCategoryTree::rows($categories),
+                'selectedJobCategory' => $selectedCategory,
+                'creatingJobCategory' => $request->query('nouvelle_categorie') === '1',
+                'newCategoryParent' => (int) $request->queryString('parent', '0'),
+                'canManageAssignments' => $canManage, 'csrfToken' => Csrf::token(),
+            ]);
+        }
         $roles = $this->personnelJobRoleRepository->tablesExist() ? $this->personnelJobRoleRepository->listRolesWithCategory($tenantId) : [];
         $categories = $this->personnelJobRoleRepository->tablesExist() ? $this->personnelJobRoleRepository->listCategories($tenantId) : [];
+        $categoryFilter = (int) $request->queryString('categorie_emplois', '0');
+        $filterCategory = null;
+        foreach ($categories as $category) {
+            if ((int) $category['id'] === $categoryFilter) $filterCategory = $category;
+        }
+        if ($vue === 'catalogue' && $filterCategory !== null) {
+            $included = array_fill_keys(PersonnelJobCategoryTree::descendantIds($categories, $categoryFilter), true);
+            $roles = array_values(array_filter($roles, static fn (array $role): bool => isset($included[(int) $role['category_id']])));
+        }
         $structure = new PersonnelJobRoleStructureService();
         $options = $structure->options($tenantId);
         $metadata = $structure->listMetadata($tenantId);
@@ -2485,9 +2512,16 @@ class EffectifsWorkspaceController
             'jobHoldersByRole'=>$holders,'canManageAssignments'=>$canManage,'csrfToken'=>Csrf::token(),
             'jobStructureOptions'=>$options,'jobRecovery'=>$recovery,'jobTenantId'=>$tenantId,
             'jobRecoveryLabels'=>$recoveryLabels,
-            'jobsFragment'=>$request->header('X-Effectifs-Fragment')==='jobs',
+            'jobCatalogueCategory'=>$filterCategory,
             'jobSyncSettings'=>PersonnelJobRoleAssignmentsSettings::resolve($this->tenantRepository->getSettings($tenantId)),
         ];
+        return $this->jobWorkspaceResponse($request, $data);
+    }
+
+    private function jobWorkspaceResponse(Request $request, array $data): Response
+    {
+        $data['jobsReferenceWorkspace'] = true;
+        $data['jobsFragment'] = $request->header('X-Effectifs-Fragment') === 'jobs';
         if ($request->header('X-Effectifs-Fragment') === 'jobs') {
             return Response::view('admin.effectifs_workspace.fonctions',$data)
                 ->header('Cache-Control','private, no-store')->header('Vary', 'X-Effectifs-Fragment');
@@ -2671,9 +2705,10 @@ class EffectifsWorkspaceController
                 $this->personnelJobRoleRepository->updateCategory($id, $tenantId, $parent ?: null, trim($name), (string) $existing['slug'], (int) ($existing['sort_order'] ?? 0));
             } else {
                 $slug = $this->personnelJobRoleRepository->uniqueCategorySlugFromName($tenantId, trim($name));
-                $this->personnelJobRoleRepository->createCategory($tenantId, $parent ?: null, trim($name), $slug, 0);
+                $id = $this->personnelJobRoleRepository->createCategory($tenantId, $parent ?: null, trim($name), $slug, 0);
             }
             $pdo->commit();
+            $query['categorie'] = $id;
             return $this->jobReply($request, true, $existing ? 'Catégorie enregistrée.' : 'Catégorie créée.', $query);
         } catch (\InvalidArgumentException $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
@@ -3065,12 +3100,20 @@ class EffectifsWorkspaceController
     private function shell(string $content, array $extra): Response
     {
         $tenantId = (int) Session::get('tenant_id');
+        $referenceOnly = !empty($extra['jobsReferenceWorkspace']);
+        if ($referenceOnly) {
+            // Reference editing does not need dossier scans, inbox assembly or phase calculations.
+            $extra += ['rosterCounts'=>[], 'qualificationsExpiringCount'=>0, 'personnelDuplicateScan'=>[],
+                'mobilityPendingCount'=>0, 'rhAlertTotalCount'=>0, 'rhInboxActionCount'=>0, 'commandChainMissingCount'=>0];
+        }
         $counts = $extra['rosterCounts'] ?? $this->rosterCounts($tenantId);
         $elevationOpen = 0;
-        try {
-            $elevationOpen = $this->elevationRequestRepository->countOpenForTenant($tenantId);
-        } catch (\Throwable) {
-            $elevationOpen = 0;
+        if (!$referenceOnly) {
+            try {
+                $elevationOpen = $this->elevationRequestRepository->countOpenForTenant($tenantId);
+            } catch (\Throwable) {
+                $elevationOpen = 0;
+            }
         }
 
         // Badge « Qualifications » du rail : visible depuis toutes les pages de l'espace,
@@ -3135,7 +3178,8 @@ class EffectifsWorkspaceController
                 $chainMissing = 0;
             }
         }
-        $extras = \App\Support\EffectifsWorkspaceShellExtras::counts($tenantId);
+        $extras = $referenceOnly ? ['roleplayDueCount'=>0, 'integrationOpenCount'=>0, 'phaseGateCount'=>0, 'phaseAutoErrorCount'=>0]
+            : \App\Support\EffectifsWorkspaceShellExtras::counts($tenantId);
 
         return Response::view('layout.main', array_merge([
             'content' => 'admin.effectifs_workspace.shell',

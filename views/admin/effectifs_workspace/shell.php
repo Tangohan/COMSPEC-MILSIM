@@ -47,6 +47,7 @@ $isMember = $innerContent === 'admin.effectifs_workspace.member';
 $lead = match ($active) {
     'roster' => 'Qui est là, où il est affecté, quel accès il a et ce qu’il reste à compléter.',
     'rh_inbox' => 'Corrections, élévations, échéances et dossiers incomplets : le système propose, vous décidez.',
+    'fonctions' => 'Organisez les emplois, les catégories et les responsabilités de votre communauté.',
     default => 'Dossiers des membres : tableur, accès, emplois et suivi.',
 };
 ?>
@@ -56,20 +57,20 @@ $lead = match ($active) {
             <h1 id="bo-eff-title">Effectifs</h1>
             <?php if (!$isMember): ?><p><?= htmlspecialchars($lead, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
         </div>
-        <p class="bo-eff-head__meta" aria-label="État des effectifs">
+        <?php if (empty($jobsReferenceWorkspace)): ?><p class="bo-eff-head__meta" aria-label="État des effectifs">
             <span><strong><?= $activeCount ?></strong> <?= locale() === 'en' ? 'active' : 'actifs' ?></span>
             <span><strong><?= $total ?></strong> <?= locale() === 'en' ? 'records' : 'dossiers' ?></span>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('a-traiter'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $attentionCount > 0 ? 'is-alert' : '' ?>">
                 <strong><?= $attentionCount ?></strong> à traiter
             </a>
-        </p>
-        <div class="bo-eff-head__actions">
+        </p><?php endif ?>
+        <?php if (empty($jobsReferenceWorkspace)): ?><div class="bo-eff-head__actions">
             <a class="ath-btn ath-btn--solid" href="<?= htmlspecialchars(effectifs_workspace_url('nouveau'), ENT_QUOTES, 'UTF-8') ?>"><?= $effRosterOnly ? 'Ajouter une fiche' : 'Ajouter un membre' ?></a>
             <?php if ($effRosterOnly): ?>
             <button type="button" class="ath-btn" data-eff-import-open>Importer un tableur</button>
             <?php endif; ?>
             <a class="ath-btn" href="<?= htmlspecialchars(effectifs_workspace_url('export'), ENT_QUOTES, 'UTF-8') ?>">Exporter</a>
-        </div>
+        </div><?php endif ?>
     </header>
 
     <?php if ($effRosterOnly): ?>

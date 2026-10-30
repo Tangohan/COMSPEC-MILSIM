@@ -55,3 +55,46 @@
   :root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-tabs { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); width: 100%; }
   :root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-tabs__item { border: 0; justify-content: center; text-align: center; }
 }
+/* Category browser: one hierarchy and one editor, with a single parent selector. */
+:root .bo-eff-workspace .bo-eff-page .eff-category-workspace { display: grid; gap: 1.5rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-intro { display: flex; gap: 2rem; align-items: flex-start; justify-content: space-between; padding-bottom: 1.25rem; border-bottom: 1px solid var(--pg-line); }
+:root .bo-eff-workspace .bo-eff-page .eff-category-intro > div { max-width: 48rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-intro h2 { margin: 0 0 .5rem; font-size: 1rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-intro p { margin: .4rem 0; font-size: .875rem; line-height: 1.6; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-intro > .eff-btn { flex-shrink: 0; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-example { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; color: var(--pg-ink); }
+:root .bo-eff-workspace .bo-eff-page .eff-category-example > span { font-size: .7rem; font-weight: 700; text-transform: uppercase; color: var(--pg-muted); margin-right: .35rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-example b { color: var(--pg-muted); }
+:root .bo-eff-workspace .bo-eff-page .eff-category-layout { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(19rem,.8fr); align-items: start; border: 1px solid var(--pg-line); background: var(--pg-surface); }
+:root .bo-eff-workspace .bo-eff-page .eff-category-browser { min-width: 0; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-browser__head { padding: 1rem 1.25rem; display: grid; gap: .75rem; border-bottom: 1px solid var(--pg-line); }
+:root .bo-eff-workspace .bo-eff-page .eff-category-browser__head h2 { margin: 0; display: flex; gap: .5rem; align-items: center; font-size: .875rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-browser__head h2 span { font-size: .75rem; color: var(--pg-muted); font-weight: 400; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-tree { margin: 0; padding: .5rem 0; list-style: none; max-height: 40rem; overflow-y: auto; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-node { margin: 0 0 0 calc(var(--category-depth) * 1rem); border-left: 1px solid var(--pg-line); }
+:root .bo-eff-workspace .bo-eff-page .eff-category-node__line { display: flex; align-items: center; gap: .5rem; padding: .75rem 1rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-node:hover, :root .bo-eff-workspace .bo-eff-page .eff-category-node.is-current { background: var(--pg-head); }
+:root .bo-eff-workspace .bo-eff-page .eff-category-node.is-current { border-left: 3px solid var(--pg-accent); }
+:root .bo-eff-workspace .bo-eff-page .eff-category-node__name { display: grid; gap: .2rem; flex: 1; min-width: 0; text-decoration: none; color: var(--pg-ink); overflow-wrap: anywhere; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-node__name strong { font-size: .875rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-node__name span { font-size: .72rem; line-height: 1.5; color: var(--pg-muted); }
+:root .bo-eff-workspace .bo-eff-page .eff-category-add { flex-shrink: 0; font-size: .72rem; color: var(--pg-accent); text-decoration: none; padding: .4rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-add:hover { text-decoration: underline; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-editor { min-width: 0; padding: 1.5rem; border-left: 1px solid var(--pg-line); scroll-margin-top: 5rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-editor h2 { margin: .5rem 0 1rem; font-size: 1.125rem; line-height: 1.45; overflow-wrap: anywhere; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-form { display: grid; gap: 1rem; margin: 1.5rem 0 0; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-form__actions { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-path { color: var(--pg-muted); font-size: .75rem; overflow-wrap: anywhere; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-contents { margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--pg-line); font-size: .875rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-contents h3 { margin: 0 0 .5rem; font-size: .875rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-remove { margin-top: 2rem; font-size: .8rem; color: var(--pg-muted); }
+:root .bo-eff-workspace .bo-eff-page .eff-category-remove summary { cursor: pointer; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-empty { padding: 1.25rem; color: var(--pg-muted); font-size: .875rem; line-height: 1.7; }
+:root .bo-eff-workspace .bo-eff-page .eff-category-empty h2, :root .bo-eff-workspace .bo-eff-page .eff-category-empty h3 { color: var(--pg-ink); font-size: 1rem; }
+@media (max-width: 760px) {
+ :root .bo-eff-workspace .bo-eff-page .eff-category-intro { flex-direction: column; gap: 1rem; }
+ :root .bo-eff-workspace .bo-eff-page .eff-category-layout { grid-template-columns: minmax(0,1fr); }
+ :root .bo-eff-workspace .bo-eff-page .eff-category-editor { border-left: 0; border-top: 1px solid var(--pg-line); padding: 1.25rem; }
+ :root .bo-eff-workspace .bo-eff-page .eff-category-node__line { flex-wrap: wrap; padding: .65rem .75rem; }
+ :root .bo-eff-workspace .bo-eff-page .eff-category-add { padding-left: 0; }
+}
