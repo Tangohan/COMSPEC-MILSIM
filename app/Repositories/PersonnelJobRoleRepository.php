@@ -472,6 +472,34 @@ class PersonnelJobRoleRepository
         return (int) $this->pdo->lastInsertId();
     }
 
+    /** Restore a definition only; legacy labels/import references must survive as well. */
+    public function restoreRoleDefinition(int $tenantId, array $saved): int
+    {
+        if ((!empty($saved['mos_code']) || !empty($saved['mos_specialty_title'])) && !$this->jobRolesHaveMosColumns()) {
+            throw new \InvalidArgumentException('Les champs métier d’origine ne sont plus disponibles. L’archive a été conservée.');
+        }
+        $extras = [];
+        foreach (['label_en', 'source_unit_id'] as $column) {
+            if (!array_key_exists($column, $saved) || $saved[$column] === null) continue;
+            if (!$this->deletionColumnExists('personnel_job_roles', $column)) {
+                throw new \InvalidArgumentException('La structure actuelle ne permet pas de restaurer tous les champs de cet emploi. L’archive a été conservée.');
+            }
+            $extras[$column] = $saved[$column];
+        }
+        if (!empty($extras['source_unit_id'])) {
+            $unit = $this->pdo->prepare('SELECT id FROM units WHERE id=? AND tenant_id=?');
+            $unit->execute([(int)$extras['source_unit_id'], $tenantId]);
+            if (!$unit->fetchColumn()) throw new \InvalidArgumentException('L’unité d’origine de cet emploi n’est plus disponible dans votre communauté.');
+        }
+        $id = $this->createRole($tenantId, (int)$saved['category_id'], (string)$saved['name'], (string)$saved['slug'], $saved['description'] ?? null,
+            (int)($saved['sort_order'] ?? 0), false, $saved['mos_code'] ?? null, $saved['mos_specialty_title'] ?? null);
+        if ($extras !== []) {
+            $set = implode(', ', array_map(static fn(string $column):string=>$column.'=?', array_keys($extras)));
+            $this->pdo->prepare('UPDATE personnel_job_roles SET '.$set.' WHERE id=? AND tenant_id=?')->execute([...array_values($extras), $id, $tenantId]);
+        }
+        return $id;
+    }
+
     public function updateRole(
         int $id,
         int $tenantId,

@@ -26,7 +26,7 @@ final class PersonnelJobCategoriesTest extends TestCase
     private function render(array $data = []): string
     {
         return Response::view('admin.effectifs_workspace.fonctions', $data + [
-            'jobsVue'=>'categories', 'jobCategories'=>$this->categories(),
+            'jobsVue'=>'catalogue', 'jobCategories'=>$this->categories(),
             'canManageAssignments'=>true, 'csrfToken'=>str_repeat('a',64), 'jobsFragment'=>true,
         ])->body();
     }
@@ -49,7 +49,9 @@ final class PersonnelJobCategoriesTest extends TestCase
     {
         $body = $this->render();
         self::assertStringContainsString('Des dossiers pour ranger vos emplois',$body);
-        self::assertStringContainsString('sous-catégorie permet',$body);
+        self::assertStringContainsString('un dossier de rangement',$body);
+        self::assertStringContainsString('Emplois et catégories',$body);
+        self::assertStringContainsString('Créer un emploi ici',$body);
         self::assertStringContainsString('nouvelle_categorie=1&amp;parent=2',$body);
         self::assertStringNotContainsString('À la racine',$body);
         self::assertSame(0,substr_count($body,'name="parent_id"'));

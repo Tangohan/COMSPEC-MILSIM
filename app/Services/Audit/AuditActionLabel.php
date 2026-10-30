@@ -36,6 +36,14 @@ final class AuditActionLabel
         'report.moderation_action' => 'Modération des signalements',
         // Sécurité
         'security.event' => 'Événement de sécurité',
+        // Emplois et catégories du dossier (sans droits d’accès).
+        'personnel.job_role.created' => 'Emploi créé',
+        'personnel.job_role.updated' => 'Emploi modifié',
+        'personnel.job_role.archived' => 'Emploi archivé',
+        'personnel.job_role.restored' => 'Emploi restauré',
+        'personnel.job_category.created' => 'Catégorie d’emplois créée',
+        'personnel.job_category.updated' => 'Catégorie d’emplois modifiée',
+        'personnel.job_category.deleted' => 'Catégorie d’emplois vide supprimée',
         // Rôles & permissions
         'role.permissions_updated' => 'Permissions du rôle mises à jour',
         'permission.scope_migration' => 'Migration des périmètres de permissions',
