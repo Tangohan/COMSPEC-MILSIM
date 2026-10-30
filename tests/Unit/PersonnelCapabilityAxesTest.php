@@ -113,7 +113,7 @@ final class PersonnelCapabilityAxesTest extends TestCase
         self::assertStringContainsString('level_rank', $migration);
 
         $run = (string) \Tests\Support\MigrationPipelineSource::read(dirname(__DIR__, 2));
-        self::assertStringContainsString('personnel_capability_axes_migration.php', $run);
+        self::assertFileExists(dirname(__DIR__, 2) . '/bootstrap/personnel_capability_axes_migration.php');
         self::assertStringContainsString('run_personnel_capability_axes_migration', $run);
 
         $container = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Core/Container.php');

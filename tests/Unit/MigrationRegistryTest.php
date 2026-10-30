@@ -8,7 +8,7 @@ use App\Support\Migrations\MigrationRegistry;
 use App\Support\Migrations\MigrationStepTracker;
 use PHPUnit\Framework\TestCase;
 
-/** Registre des étapes du pipeline, classement des sorties, seeds retirés. */
+/** File active et archive historique distinctes, classement des sorties et conservation des sources. */
 final class MigrationRegistryTest extends TestCase
 {
     private function root(): string
@@ -16,42 +16,31 @@ final class MigrationRegistryTest extends TestCase
         return dirname(__DIR__, 2);
     }
 
-    public function testEveryRegisteredStepExistsIsUniqueAndLints(): void
+    public function testActiveQueueIsEmptyAndHistoricalSourcesRemainArchived(): void
     {
-        $steps = MigrationRegistry::load($this->root());
-        self::assertGreaterThan(250, count($steps));
-        $ids = array_column($steps, 'id');
+        self::assertSame([], MigrationRegistry::load($this->root()));
+        self::assertNull(MigrationRegistry::find($this->root(), 'atak_maps'));
+        self::assertNull(MigrationRegistry::find($this->root(), 'sql_files'));
+        $archive = require $this->root() . '/database/steps/registry-archive.php';
+        self::assertGreaterThan(250, count($archive));
+        $ids = array_column($archive, 'id');
         self::assertSame(count($ids), count(array_unique($ids)));
-        foreach ($steps as $i => $s) {
-            self::assertFileExists($s['path'], $s['id']);
-            self::assertArrayHasKey($s['group'], MigrationRegistry::GROUPS);
-            self::assertSame($i + 1, $s['index']);
-            $src = (string) file_get_contents($s['path']);
-            self::assertStringStartsWith("<?php\n\ndeclare(strict_types=1);", $src, $s['file']);
+        foreach ($archive as $step) {
+            self::assertFileExists($this->root() . '/database/steps/' . $step['file']);
         }
-        // Ordre historique : schéma d'abord, fichiers SQL puis FBAC à la fin.
-        self::assertSame('schema', $ids[0]);
-        self::assertLessThan(array_search('function_based_access_v2', $ids, true), array_search('sql_files', $ids, true));
-        self::assertLessThan(array_search('atak_recon_notes', $ids, true), array_search('payments_ledger', $ids, true));
-        self::assertLessThan(array_search('atak_recon_notes', $ids, true), array_search('inbox_hide_threads', $ids, true));
-        self::assertNotNull(MigrationRegistry::find($this->root(), 'atak_maps'));
-        self::assertNull(MigrationRegistry::find($this->root(), 'inconnue'));
     }
 
-    public function testLegacyContentSeedsAreNoLongerInThePipeline(): void
+    public function testArchivedSourcesRemainAvailableWithoutMakingThemActive(): void
     {
-        $src = \Tests\Support\MigrationPipelineSource::read($this->root());
-        foreach (['run_training_onboarding_course_seed', 'run_training_roles_org_course_seed', 'run_training_bureau_recrutement_course_seed',
-            'run_training_atak_course_seed', 'run_training_onboarding_bulk_assign', 'cerbere_officiel', "password_hash('admin'"] as $gone) {
-            self::assertStringNotContainsString($gone, $src, $gone);
+        $source = \Tests\Support\MigrationPipelineSource::read($this->root());
+        self::assertStringContainsString('runPendingSqlFiles', $source);
+        self::assertStringContainsString('ATHENA_FIRST_ADMIN_PASSWORD', $source);
+        $active = (string) file_get_contents($this->root() . '/run-migrations.php');
+        foreach (['runPendingSqlFiles', 'migrations_full_post.php', 'community_platform_migration.php', 'registry-archive.php'] as $retired) {
+            self::assertStringNotContainsString($retired, $active);
         }
-        // Les fichiers restent : la création d'une communauté s'en sert encore (TenantSeedHelper).
         self::assertFileExists($this->root() . '/bootstrap/training_onboarding_course_seed.php');
-        // Référentiels gardés.
-        foreach (['atak_maps', 'grade_referential_seed', 'courrier_presets_variables', 'platform_system_tenant'] as $kept) {
-            self::assertNotNull(MigrationRegistry::find($this->root(), $kept), $kept);
-        }
-        self::assertStringContainsString('ATHENA_FIRST_ADMIN_PASSWORD', $src);
+        self::assertSame([], MigrationRegistry::load($this->root()));
     }
 
     public function testClassifyAndRedact(): void

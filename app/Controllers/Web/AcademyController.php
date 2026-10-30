@@ -20,6 +20,7 @@ use App\Services\Tenant\TenantContext;
 use App\Services\Academy\AcademyAccess;
 use App\Services\Academy\AcademyLmsBridge;
 use App\Services\Academy\AcademyCurriculum;
+use App\Services\Academy\AcademyBuiltInCourses;
 use App\Support\TrainingLmsStaffAccess;
 
 final class AcademyController
@@ -48,6 +49,8 @@ final class AcademyController
         $tenant = null;
         $accessState = 'guest';
         $legacyCourses = $legacyEnrollments = [];
+        $academyCourses = $academyStates = [];
+        $academyStorageReady = true;
         $staff = false;
         try {
             $userId = (int) Session::get('user_id');
@@ -64,12 +67,20 @@ final class AcademyController
                     $legacyEnrollments = $data['legacyEnrollments'];
                     $accessState = 'active';
                     $staff = TrainingLmsStaffAccess::allows(Gate::getInstance());
+                    try {
+                        $repository = new AcademyRepository();
+                        $academyCourses = $repository->courses((int) $tenant['id']);
+                        $academyStates = $repository->states((int) $tenant['id'], $userId);
+                    } catch (\PDOException | \RuntimeException) {
+                        $academyCourses = array_values(AcademyBuiltInCourses::all());
+                        $academyStorageReady = false;
+                    }
                 }
             }
         } catch (\PDOException | \RuntimeException) {
             $accessState = 'unavailable';
         }
-        return Response::view('academy.home', compact('account', 'tenant', 'accessState', 'legacyCourses', 'legacyEnrollments', 'staff'))
+        return Response::view('academy.home', compact('account', 'tenant', 'accessState', 'legacyCourses', 'legacyEnrollments', 'staff', 'academyCourses', 'academyStates', 'academyStorageReady'))
             ->header('Cache-Control', 'private, no-store');
     }
 
@@ -108,11 +119,12 @@ final class AcademyController
                 $courses = $repository->courses($tenantId, $space === 'instructor');
             } catch (\PDOException) {
                 // Existing LMS remains usable before the optional Academy tables are migrated.
-                $states = $courses = [];
+                $states = [];
+                $courses = array_values(AcademyBuiltInCourses::all());
                 $academyStorageReady = false;
             }
             $firstEnrollment = array_key_first(array_filter($states, static fn ($key): bool => $key !== '__notes', ARRAY_FILTER_USE_KEY));
-            $key = (string) $request->query('course', $firstEnrollment ?? ($courses[0]['key'] ?? ''));
+            $key = $request->queryString('course', $firstEnrollment ?? ($courses[0]['key'] ?? ''));
             $selected = null;
             foreach ($courses as $course) {
                 if ($course['key'] === $key) {
@@ -128,7 +140,7 @@ final class AcademyController
                 'academyStorageReady' => $academyStorageReady,
                 'learners' => $space === 'instructor' && $academyStorageReady ? $repository->learners($tenantId) : [],
                 'notice' => Session::get('academy_notice', ''),
-            ]);
+            ])->header('Cache-Control', 'private, no-store');
         } catch (\PDOException) {
             return $this->error('unavailable', 503);
         }
@@ -200,7 +212,7 @@ final class AcademyController
                 }
                 $returnSpace = 'instructor';
             } else {
-                $input = ['answer' => $request->input('answer'), 'token' => $request->input('token'), 'reflection' => $request->input('reflection'), 'expected_stage' => $request->input('expected_stage'), 'expected_chapter' => $request->input('expected_chapter')];
+                $input = ['answer' => $request->input('answer'), 'answers' => $request->input('answers'), 'token' => $request->input('token'), 'reflection' => $request->input('reflection'), 'expected_stage' => $request->input('expected_stage'), 'expected_chapter' => $request->input('expected_chapter')];
                 $repository->mutate($tenantId, $userId, $key, static fn (array $state): array => AcademyCurriculum::transition($state, $state['snapshot'], $action, $input, time()));
             }
             Session::set('academy_notice', 'saved');

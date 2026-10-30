@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Support\Migrations;
 
 /**
- * Registre ordonné des étapes du pipeline de migrations (database/steps/registry.php).
+ * File active des nouvelles migrations (database/steps/registry.php), vide après la baseline du 29 octobre 2026.
  *
  * Chaque étape est un fichier PHP de database/steps/ exécuté par run-migrations.php dans la portée globale
- * du pipeline. L'ordre du registre est l'ordre d'exécution.
+ * du lanceur. Seules ces entrées explicites sont exécutables ; le registre historique reste une archive.
  */
 final class MigrationRegistry
 {

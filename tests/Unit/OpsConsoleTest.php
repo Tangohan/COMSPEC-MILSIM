@@ -142,10 +142,11 @@ final class OpsConsoleTest extends TestCase
         $root = dirname(__DIR__, 2);
         $runner = (string) file_get_contents($root . '/run-migrations.php');
         self::assertStringContainsString("if (PHP_SAPI !== 'cli')", $runner, 'Le CLI ne passe pas par la porte web.');
-        self::assertStringContainsString("'--replay=' . \$migrationReplayFile", $runner);
+        self::assertStringNotContainsString("'--replay=' . \$migrationReplayFile", $runner);
 
         $gate = (string) file_get_contents($root . '/bootstrap/migrations_web_ui.php');
         self::assertStringContainsString('OpsMigrationTicket::consume', $gate);
+        self::assertStringContainsString('migrations_web_queue_error', $gate, 'La porte web refuse les étapes historiques et le rejeu SQL.');
         self::assertStringContainsString("migrations_web_password_ok", $gate, 'L’accès de secours par mot de passe reste en place.');
     }
 }

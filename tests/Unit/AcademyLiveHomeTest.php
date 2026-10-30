@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Core\Response;
+use App\Services\Academy\AcademyBuiltInCourses;
 use PHPUnit\Framework\TestCase;
 
 final class AcademyLiveHomeTest extends TestCase
@@ -62,5 +63,39 @@ final class AcademyLiveHomeTest extends TestCase
         self::assertStringContainsString('&lt;script&gt;bad()&lt;/script&gt;',$body);
         self::assertStringContainsString('formation/studio',$body);
         self::assertStringContainsString('formation/reports',$body);
+    }
+
+    public function testRequestedModuleIsPublishedInBothLanguagesAndEnrolmentUsesAProtectedPost(): void
+    {
+        $course = AcademyBuiltInCourses::find('jtac-licence-ath-academy');
+        foreach (['fr', 'en'] as $language) {
+            $GLOBALS['__app_locale'] = $language;
+            $body = Response::view('academy.home', ['accessState' => 'active', 'academyCourses' => [$course]])->body();
+            self::assertStringContainsString($course['title'][$language], $body);
+            self::assertStringContainsString('method="post" action="' . url('academy/action/enroll') . '"', $body);
+            self::assertStringContainsString('name="_csrf_token"', $body);
+            self::assertStringContainsString('name="course" value="jtac-licence-ath-academy"', $body);
+            self::assertStringNotContainsString($course['chapters'][0]['theory'][$language], $body);
+        }
+    }
+
+    public function testModuleRequiresPaidAccessAndDoesNotPretendStorageIsReady(): void
+    {
+        $course = AcademyBuiltInCourses::find('jtac-licence-ath-academy');
+        $body = Response::view('academy.home', ['accessState' => 'unpaid', 'academyCourses' => [$course]])->body();
+        self::assertStringNotContainsString('name="course"', $body);
+        self::assertStringNotContainsString($course['chapters'][0]['theory']['fr'], $body);
+        $body = Response::view('academy.home', ['accessState' => 'active', 'academyCourses' => [$course], 'academyStorageReady' => false])->body();
+        self::assertStringContainsString('class="button small" disabled', $body);
+    }
+
+    public function testHomeResumesTheCurrentAccountsModuleWithoutCreatingAnotherEnrollment(): void
+    {
+        $course = AcademyBuiltInCourses::find('jtac-licence-ath-academy');
+        $body = Response::view('academy.home', ['accessState' => 'active', 'academyCourses' => [$course],
+            'academyStates' => [$course['key'] => ['chapter' => 0, 'stage' => 3, 'snapshot' => $course]],
+        ])->body();
+        self::assertStringContainsString('academy/classroom?course=jtac-licence-ath-academy', $body);
+        self::assertStringNotContainsString('name="course" value="jtac-licence-ath-academy"', $body);
     }
 }

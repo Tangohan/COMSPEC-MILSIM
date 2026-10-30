@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Services\Academy\AcademyCurriculum;
+use App\Services\Academy\AcademyBuiltInCourses;
 use PDO;
 
 final class AcademyRepository
@@ -19,10 +20,19 @@ final class AcademyRepository
 
     public function courses(int $tenantId, bool $drafts = false): array
     {
+        if ($tenantId < 1) {
+            return [];
+        }
         $stmt = $this->pdo->prepare('SELECT course_key, content_json, published FROM academy_courses WHERE tenant_id = ?' . ($drafts ? '' : ' AND published = 1') . ' ORDER BY updated_at DESC');
         $stmt->execute([$tenantId]);
-        $courses = [];
+        // Published Academy modules are versioned with the application. No migration or
+        // request-time seed is needed; learners still keep a private tenant-scoped snapshot.
+        $courses = array_values(AcademyBuiltInCourses::all());
+        $reserved = array_fill_keys(array_column($courses, 'key'), true);
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if (isset($reserved[$row['course_key']])) {
+                continue;
+            }
             $content = json_decode($row['content_json'], true, 64, JSON_THROW_ON_ERROR);
             $content['key'] = $row['course_key'];
             $content['published'] = (bool) $row['published'];
@@ -47,7 +57,7 @@ final class AcademyRepository
         // Always create a new revision. Existing enrollments retain their content snapshot.
         $key = 'course-' . bin2hex(random_bytes(8));
         $content['key'] = $key;
-        unset($content['demo']);
+        unset($content['demo'], $content['built_in']);
         $stmt = $this->pdo->prepare('INSERT INTO academy_courses (tenant_id, course_key, content_json, published, updated_by) VALUES (?, ?, ?, ?, ?)');
         $stmt->execute([$tenantId, $key, json_encode($content, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), (int) $published, $userId]);
     }
@@ -61,7 +71,7 @@ final class AcademyRepository
     public function enroll(int $tenantId, int $userId, array $course): void
     {
         $stmt = $this->pdo->prepare('INSERT IGNORE INTO academy_learners (tenant_id, user_id, course_key, state_json) VALUES (?, ?, ?, ?)');
-        $stmt->execute([$tenantId, $userId, $course['key'], json_encode(['chapter' => 0, 'stage' => 0, 'snapshot' => $course, 'enrolled' => time(), 'updated' => time()], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)]);
+        $stmt->execute([$tenantId, $userId, $course['key'], json_encode(['chapter' => 0, 'stage' => 0, 'tenant_id' => $tenantId, 'learner_id' => $userId, 'snapshot' => $course, 'enrolled' => time(), 'updated' => time()], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)]);
     }
 
     public function states(int $tenantId, int $userId): array

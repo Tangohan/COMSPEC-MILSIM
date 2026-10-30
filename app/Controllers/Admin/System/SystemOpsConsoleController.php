@@ -158,22 +158,17 @@ final class SystemOpsConsoleController
         if (($deny = $this->guard($request)) !== null) {
             return $deny;
         }
-        $mode = (string) $request->input('mode', 'run');
+        $mode = $request->inputString('mode', 'run');
+        require_once base_path('bootstrap/migrations_web_ui.php');
+        $queueError = migrations_web_queue_error(base_path(), $mode, $request->inputString('step', ''));
+        if ($queueError !== null) {
+            Session::flash($mode === 'run' ? 'success' : 'error', $queueError);
+
+            return $this->back('migrations');
+        }
         $payload = ['action' => $mode, 'user_id' => (int) Session::get('user_id'), 'return' => url('admin/system/exploitation') . '?onglet=migrations'];
         if ($mode === 'run_step') {
             $payload['step'] = trim((string) $request->input('step', ''));
-        } elseif ($mode === 'replay') {
-            $file = basename(trim((string) $request->input('file', '')));
-            if (preg_match('/^[A-Za-z0-9._-]+\.sql$/', $file) !== 1 || !is_file(base_path('migrations/' . $file))) {
-                Session::flash('error', 'Fichier SQL inconnu.');
-
-                return $this->back('migrations');
-            }
-            $payload['replay'] = [$file];
-        } elseif ($mode !== 'run') {
-            Session::flash('error', 'Action inconnue.');
-
-            return $this->back('migrations');
         }
 
         if ($request->input('backup') === '1') {

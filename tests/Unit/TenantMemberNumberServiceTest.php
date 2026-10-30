@@ -76,7 +76,7 @@ final class TenantMemberNumberServiceTest extends TestCase
         self::assertStringContainsString('uniq_users_tenant_member_number', $migration);
 
         $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
-        self::assertStringContainsString('tenant_member_number_migration.php', $run);
+        self::assertFileExists($root . '/bootstrap/tenant_member_number_migration.php');
         self::assertStringContainsString('run_tenant_member_number_migration', $run);
 
         $catalog = (string) file_get_contents($root . '/app/Authorization/TenantPermissionCatalog.php');
