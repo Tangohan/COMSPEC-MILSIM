@@ -127,4 +127,5 @@ return [
 'time_expired'=>'Time expired',
 'review_completed_materials'=>'Review the lesson and demonstration',
 'review_materials_help'=>'You can consult these materials without changing your progress. They are hidden during an active assessment.',
+'back_dashboard'=>'Back to dashboard', 'course_outline'=>'Course outline', 'step_label'=>'Step', 'chapter_of'=>'of',
 ];

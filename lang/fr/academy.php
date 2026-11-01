@@ -127,4 +127,5 @@ return [
 'time_expired'=>'Temps écoulé',
 'review_completed_materials'=>'Revoir le cours et la démonstration',
 'review_materials_help'=>'Ces supports restent consultables sans modifier votre progression. Ils sont masqués pendant une évaluation en cours.',
+'back_dashboard'=>'Retour au tableau de bord', 'course_outline'=>'Sommaire du cours', 'step_label'=>'Étape', 'chapter_of'=>'sur',
 ];
