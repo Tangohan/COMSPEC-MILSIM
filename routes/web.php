@@ -80,6 +80,7 @@ use App\Controllers\Admin\AdminRecruitmentDiscordQuestionsController;
 use App\Controllers\Admin\AdminRecruitmentsController;
 use App\Controllers\Admin\RecruitmentWorkspaceController;
 use App\Controllers\Admin\EffectifsWorkspaceController;
+use App\Controllers\Admin\EffectifsDirectoryController;
 use App\Controllers\Admin\LegacyPersonnelRedirectController;
 use App\Controllers\Admin\RhDossierWorkspaceController;
 use App\Controllers\Admin\Organization\RecruitmentInviteCodesController;
@@ -1828,6 +1829,9 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/fonctions/reglages', [EffectifsWorkspaceController::class, 'saveJobSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/recuperer', [EffectifsWorkspaceController::class, 'recoverJobRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/affectations', [EffectifsWorkspaceController::class, 'affectations'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/recherche', [EffectifsDirectoryController::class, 'search'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/codes/communaute', [EffectifsDirectoryController::class, 'saveCommunityCode'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/codes/unites/{id}', [EffectifsDirectoryController::class, 'saveUnitSegment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/chaine', [EffectifsWorkspaceController::class, 'commandChain'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/chaine', [EffectifsWorkspaceController::class, 'saveCommandChain'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/qualifications', [EffectifsWorkspaceController::class, 'qualifications'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

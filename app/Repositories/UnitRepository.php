@@ -976,6 +976,7 @@ class UnitRepository
         }
         $this->syncDerivedJobRole($tenantId, $id, (string) ($data['name'] ?? ''));
         \App\Services\Moderation\NameModerationService::afterSave('unit', $id, $tenantId, (string) ($data['name'] ?? ''), true);
+        $this->refreshUnitCodes($tenantId);
         $row = $this->findById($id, $tenantId);
         return $row ?? [];
     }
@@ -1141,8 +1142,28 @@ class UnitRepository
             $this->syncDerivedJobRole($tenantId, $id, (string) $data['name']);
             \App\Services\Moderation\NameModerationService::afterSave('unit', $id, $tenantId, (string) $data['name']);
         }
+        if ($ok && array_intersect(['parent_id', 'name', 'code'], array_keys($data)) !== []) {
+            $this->refreshUnitCodes($tenantId);
+        }
 
         return $ok;
+    }
+
+    /**
+     * Recalcule les codes unité (SOAR-B-A-1) après un changement de parent, de nom ou de sigle.
+     * Ne crée pas les tables : elles le sont à la première ouverture des effectifs.
+     */
+    private function refreshUnitCodes(int $tenantId): void
+    {
+        try {
+            $repo = new UnitCodeRepository($this->pdo());
+            if (!$repo->tablesExist()) {
+                return;
+            }
+            \App\Services\Effectifs\UnitCodeService::forget($tenantId);
+            (new \App\Services\Effectifs\UnitCodeService($repo))->sync($tenantId);
+        } catch (\Throwable) {
+        }
     }
 
     private function syncDerivedJobRole(int $tenantId, int $unitId, string $name): void
@@ -1168,7 +1189,12 @@ class UnitRepository
     {
         $stmt = $this->pdo()->prepare('DELETE FROM units WHERE id = ? AND tenant_id = ?');
         $stmt->execute([$id, $tenantId]);
-        return $stmt->rowCount() > 0;
+        $ok = $stmt->rowCount() > 0;
+        if ($ok) {
+            $this->refreshUnitCodes($tenantId);
+        }
+
+        return $ok;
     }
 
     public function findIdByTenantAndSlug(int $tenantId, string $slug): ?int

@@ -131,7 +131,7 @@ final class CommunityLanguagesTest extends TestCase
         $controller = (string) file_get_contents($root . '/app/Controllers/Admin/Organization/OrganizationSettingsController.php');
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $member = (string) file_get_contents($root . '/views/admin/effectifs_workspace/member.php');
-        $roster = (string) file_get_contents($root . '/views/admin/effectifs_workspace/roster.php');
+        $roster = (string) file_get_contents($root . '/views/admin/effectifs_workspace/roster.php') . (string) file_get_contents($root . '/views/admin/effectifs_workspace/partials/roster_toolbar.php');
 
         self::assertStringContainsString('id="pays-langues"', $settings);
         self::assertStringContainsString('name="community_languages[]"', $settings);

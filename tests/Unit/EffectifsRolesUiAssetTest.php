@@ -39,8 +39,8 @@ final class EffectifsRolesUiAssetTest extends TestCase
         self::assertStringContainsString('Accès<em>Niveaux et droits de la communauté</em>', $rail);
         self::assertStringContainsString('Emplois<em>Libellés du dossier, pas des droits</em>', $rail);
         self::assertStringNotContainsString('Droits d’accès<em>', $rail);
-        self::assertStringContainsString("['roles', 'Accès', 'roles', 0]", $shell);
-        self::assertStringContainsString("['fonctions', 'Emplois', 'fonctions', 0]", $shell);
+        self::assertStringContainsString("['roles', 'Accès', 'roles', 0, 'Organisation']", $shell);
+        self::assertStringContainsString("['fonctions', 'Emplois', 'fonctions', 0, 'Organisation']", $shell);
         self::assertStringNotContainsString("'droits'", $shell);
     }
 
