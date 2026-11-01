@@ -6,7 +6,6 @@ declare(strict_types=1);
  *
  * Chaque entrée déclare son niveau d’accès (aligné sur le middleware de la route) :
  * - system : administrateur plateforme (SystemAdminMiddleware)
- * - hub    : administrateur ou assistance plateforme (PlatformHubMiddleware)
  * - org    : sortie vers le back-office de sa propre communauté (gestion, pas administration)
  *
  * Expose aussi $platformAdminCrumbGroup (rubrique de la page courante) pour le fil d’Ariane.
@@ -14,13 +13,11 @@ declare(strict_types=1);
 $p = function_exists('back_office_path_suffix') ? back_office_path_suffix() : '';
 $gate = \App\Core\Gate::getInstance();
 $isPlatformAdmin = $gate->allows('admin.system');
-$isSupportHub = $gate->allows('site.support') && !$isPlatformAdmin;
 $hasOrgPath = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support');
 $h = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 
 $accessOk = [
     'system' => $isPlatformAdmin,
-    'hub' => $isPlatformAdmin || $isSupportHub,
     'org' => $hasOrgPath,
 ];
 
@@ -71,10 +68,9 @@ $under = static fn (string $path): bool => $p === $path || str_starts_with($p, $
  */
 $platformNav = [
     ['key' => 'pilotage', 'label' => 'Pilotage', 'items' => [
-        ['path' => 'admin', 'label' => 'Tableau de bord', 'icon' => 'dash', 'access' => 'hub', 'exact' => true, 'desc' => 'Vue d’ensemble du site'],
+        ['path' => 'admin', 'label' => 'Pilotage du site', 'icon' => 'dash', 'access' => 'system', 'exact' => true, 'desc' => 'Vue d’ensemble, état du site, migrations, sauvegardes, suppressions de comptes'],
         ['path' => 'admin/recherche', 'label' => 'Recherche', 'icon' => 'search', 'access' => 'system', 'desc' => 'Comptes et communautés de tout le site, avec actions rapides'],
-        ['path' => 'admin/analytics', 'label' => 'Indicateurs transverses', 'icon' => 'chart', 'access' => 'hub', 'desc' => 'Usage, communautés actives, comptes'],
-        ['path' => 'admin/ops-center', 'label' => 'Synthèse opérationnelle', 'icon' => 'ops', 'access' => 'hub', 'desc' => 'Modération, support, incidents'],
+        ['path' => 'admin/analytics', 'label' => 'Indicateurs transverses', 'icon' => 'chart', 'access' => 'system', 'desc' => 'Usage, communautés actives, comptes'],
         ['path' => 'admin/system/retours-interface', 'label' => 'Retours interface', 'icon' => 'chat', 'access' => 'system', 'desc' => 'Remarques des membres sur l’interface'],
         ['path' => 'admin/system/avis-plateforme', 'label' => 'Avis et traductions', 'icon' => 'star', 'access' => 'system', 'desc' => 'Avis des communautés et corrections de traduction'],
     ]],
@@ -103,7 +99,7 @@ $platformNav = [
         ['path' => 'admin/system/noms-inappropries', 'label' => 'Noms inappropriés', 'icon' => 'flag', 'access' => 'system', 'desc' => 'Mots floutés dans les noms d’unités, alertes à traiter'],
     ]],
     ['key' => 'communication', 'label' => 'Communication', 'items' => [
-        ['path' => 'admin/system/alerts', 'label' => 'Alertes plateforme', 'icon' => 'megaphone', 'access' => 'hub', 'desc' => 'Bandeaux et annonces sur le portail'],
+        ['path' => 'admin/system/alerts', 'label' => 'Alertes plateforme', 'icon' => 'megaphone', 'access' => 'system', 'desc' => 'Bandeaux et annonces sur le portail'],
         ['path' => 'admin/system/e-mails', 'label' => 'Envois d’e-mails', 'icon' => 'mail', 'access' => 'system', 'desc' => 'Quota quotidien, alertes regroupées, volume par type'],
         ['path' => 'admin/system/retrospective', 'label' => 'Rétrospective annuelle', 'icon' => 'star', 'access' => 'system', 'desc' => 'Bilan de l’année des joueurs et des unités : date de publication, aperçu'],
         ['path' => 'admin/newsletter', 'label' => 'Lettre d’information', 'icon' => 'mail', 'access' => 'system', 'desc' => 'Inscrits depuis la page d’accueil'],
@@ -129,11 +125,10 @@ $platformNav = [
         ['path' => 'admin/atak-mod-reports', 'label' => 'Rapports d’erreurs du mod', 'icon' => 'audit', 'access' => 'system', 'desc' => 'Erreurs remontées par le pack, toutes communautés'],
     ]],
     ['key' => 'exploitation', 'label' => 'Exploitation', 'items' => [
-        ['path' => 'admin/system/exploitation', 'label' => 'Console d’exploitation', 'icon' => 'ops', 'access' => 'system', 'desc' => 'État du site, migrations, sauvegardes, suppressions de comptes'],
         ['path' => 'admin/system/donnees', 'label' => 'Registre des données', 'icon' => 'layers', 'access' => 'system', 'desc' => 'Comptes, joueurs, ATAK, mods proches, sessions : recherche Steam par profil, corrélations, export, purge'],
         ['path' => 'admin/system/storage', 'label' => 'Espace disque', 'icon' => 'disk', 'access' => 'system', 'desc' => 'Occupation et vidage des historiques'],
-        ['path' => 'admin/maintenance', 'label' => 'Maintenance des données', 'icon' => 'wrench', 'access' => 'hub', 'desc' => 'Fenêtres de maintenance planifiées'],
-        ['path' => 'admin/audit', 'label' => 'Journal d’audit', 'icon' => 'audit', 'access' => 'hub', 'desc' => 'Toutes les actions sensibles'],
+        ['path' => 'admin/maintenance', 'label' => 'Maintenance des données', 'icon' => 'wrench', 'access' => 'system', 'desc' => 'Fenêtres de maintenance planifiées'],
+        ['path' => 'admin/audit', 'label' => 'Journal d’audit', 'icon' => 'audit', 'access' => 'system', 'desc' => 'Toutes les actions sensibles'],
         ['path' => 'back-office', 'label' => 'Gestion de ma communauté', 'icon' => 'home', 'access' => 'org', 'desc' => 'Back-office de votre communauté (hors administration plateforme)'],
     ]],
 ];
@@ -172,7 +167,7 @@ $initials = count($words) > 1
 ?>
 <nav class="ath-sidebar ath-sidebar--platform" id="ath-sidebar" aria-label="Navigation administration plateforme">
     <div class="ath-sidebar__head">
-        <a href="<?= $h(url('admin')) ?>" class="ath-sidebar__logo" title="Tableau de bord plateforme" aria-label="Tableau de bord plateforme">A</a>
+        <a href="<?= $h(url('admin')) ?>" class="ath-sidebar__logo" title="Pilotage du site" aria-label="Pilotage du site">A</a>
         <div class="ath-sidebar__brand">
             <a href="<?= $h(url('admin')) ?>" class="ath-sidebar__brand-name">ATHENA<span>.</span></a>
             <div class="ath-sidebar__brand-sub">ADMINISTRATION · PLATEFORME</div>
@@ -218,7 +213,7 @@ $initials = count($words) > 1
         </div>
         <div class="ath-sidebar__user-meta">
             <div class="ath-sidebar__user-name"><?= $h(mb_strtoupper($userName)) ?></div>
-            <div class="ath-sidebar__user-role"><?= $isSupportHub ? 'ASSISTANCE PLATEFORME' : 'ADMINISTRATEUR PLATEFORME' ?></div>
+            <div class="ath-sidebar__user-role">ADMINISTRATEUR PLATEFORME</div>
         </div>
     </div>
 </nav>

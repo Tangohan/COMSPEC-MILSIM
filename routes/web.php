@@ -103,7 +103,6 @@ use App\Controllers\Admin\System\SystemTenantInterventionController;
 use App\Controllers\Admin\System\SystemTenantRecoveryController;
 use App\Controllers\Admin\System\SystemAnalyticsController;
 use App\Controllers\Admin\System\SystemNewsletterAdminController;
-use App\Controllers\Admin\System\SystemOpsCenterController;
 use App\Controllers\Admin\System\SystemRoleController;
 use App\Controllers\Admin\System\SystemSettingsController;
 use App\Controllers\Admin\System\SystemPlatformAlertsController;
@@ -216,7 +215,6 @@ use App\Core\Router;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\GuestMiddleware;
 use App\Middleware\SystemAdminMiddleware;
-use App\Middleware\PlatformHubMiddleware;
 use App\Controllers\Admin\Organization\MemberSituationController;
 use App\Controllers\Admin\Organization\UnitSheetController;
 use App\Middleware\OrganizationAdminMiddleware;
@@ -1125,7 +1123,7 @@ return function (Router $router) {
     $router->post('/admin/system/alerts/{id}/update', [SystemPlatformAlertsController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/alerts/{id}/delete', [SystemPlatformAlertsController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/alerts/{id}/send-email', [SystemPlatformAlertsController::class, 'sendEmail'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
-    $router->get('/admin/system/alerts', [SystemPlatformAlertsController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
+    $router->get('/admin/system/alerts', [SystemPlatformAlertsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cooperation/catalog', [SystemCooperationCatalogController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cooperation/catalog/create', [SystemCooperationCatalogController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cooperation/catalog', [SystemCooperationCatalogController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1214,7 +1212,7 @@ return function (Router $router) {
     $router->get('/admin/system/tenant-recovery', [SystemTenantRecoveryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/tenant-recovery/parse-dump', [SystemTenantRecoveryController::class, 'parseDump'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/tenant-recovery/restore', [SystemTenantRecoveryController::class, 'restore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
-    $router->get('/admin/audit', [SystemAuditController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
+    $router->get('/admin/audit', [SystemAuditController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/audit/{id}', [SystemAuditController::class, 'show'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/audit/{id}/rollback', [SystemAuditController::class, 'rollback'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/audit/{id}/alert', [SystemAuditController::class, 'alert'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1227,11 +1225,12 @@ return function (Router $router) {
     $router->post('/admin/maintenance/{id}/delete', [SystemMaintenanceController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/maintenance/{id}/toggle', [SystemMaintenanceController::class, 'toggle'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/maintenance/{id}/notify', [SystemMaintenanceController::class, 'notifyMembers'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
-    $router->get('/admin/maintenance', [SystemMaintenanceController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
+    $router->get('/admin/maintenance', [SystemMaintenanceController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Ancienne page « Dons » : le compte PayPal se règle désormais dans Admin > Paiements (un seul réglage).
     $router->get('/admin/system/dons', fn () => \App\Core\Response::redirect(url('admin/paiements') . '?vue=dons'), [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Console d'exploitation : état du site, migrations, sauvegardes, suppressions de comptes (double vérification).
-    $router->get('/admin/system/exploitation', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // La console d’exploitation est un onglet de la page de pilotage : l’ancienne adresse y renvoie (même onglet).
+    $router->get('/admin/system/exploitation', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin') . '?' . http_build_query(['onglet' => (string) $r->query('onglet', 'etat')] + array_filter(['q' => (string) $r->query('q', ''), 'sortie' => (string) $r->query('sortie', '')]))), [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/exploitation/code', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'sendCode'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/exploitation/verifier', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'verify'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/exploitation/verrouiller', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'lock'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1276,12 +1275,13 @@ return function (Router $router) {
     $router->get('/admin/site-roles', [SystemSiteRoleAssignmentController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/assign', [SystemSiteRoleAssignmentController::class, 'assign'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/revoke', [SystemSiteRoleAssignmentController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
-    $router->get('/admin', [SystemDashboardController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
+    $router->get('/admin', [SystemDashboardController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Recherche globale (comptes et communautés), réservée aux administrateurs du site.
     $router->get('/admin/recherche', [\App\Controllers\Admin\System\SystemAdminSearchController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
-    $router->get('/admin/analytics', [SystemAnalyticsController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
+    $router->get('/admin/analytics', [SystemAnalyticsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/newsletter', [SystemNewsletterAdminController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
-    $router->get('/admin/ops-center', [SystemOpsCenterController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
+    // Ancienne « synthèse opérationnelle », fusionnée dans la page de pilotage.
+    $router->get('/admin/ops-center', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin')), [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Back-office communauté (tenant) — préfixe /back-office
     $router->get('/back-office', [OrganizationDashboardController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, ConfigurationUpdateIntroMiddleware::class]);
     $router->get('/back-office/ma-situation/carnet-de-vol', [PilotLogbookController::class, 'mine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
