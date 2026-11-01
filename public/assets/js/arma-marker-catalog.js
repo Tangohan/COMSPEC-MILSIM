@@ -201,45 +201,45 @@ window.ArmaMarkerCatalog = (function () {
     'mplus_cordonknock': { kind: 'mplus', label: 'Cordon et frappe', glyph: 'marker', source: 'markersplus' },
     'mplus_cordonsearch': { kind: 'mplus', label: 'Cordon et fouille', glyph: 'marker', source: 'markersplus' },
     'mplus_guard': { kind: 'mplus', label: 'Garde', glyph: 'objective', source: 'markersplus' },
-    'mplus_screen': { kind: 'mplus', label: 'Ã‰cran', glyph: 'objective', source: 'markersplus' },
+    'mplus_screen': { kind: 'mplus', label: 'Écran', glyph: 'objective', source: 'markersplus' },
     'mplus_cover': { kind: 'mplus', label: 'Couverture', glyph: 'objective', source: 'markersplus' },
     'mplus_feintattack': { kind: 'mplus', label: 'Flèche feinte', glyph: 'arrow', source: 'markersplus' },
     'mplus_mainattack': { kind: 'mplus', label: 'Flèche d\'attaque principale', glyph: 'arrow', source: 'markersplus' },
     'mplus_phaseline': { kind: 'mplus', label: 'Ligne de phase', glyph: 'arrow', source: 'markersplus' },
-    'mplus_checkpoint': { kind: 'mplus', label: 'Point de contrÃ´le', glyph: 'circle', source: 'markersplus' },
+    'mplus_checkpoint': { kind: 'mplus', label: 'Point de contrôle', glyph: 'circle', source: 'markersplus' },
     'mplus_linkuppoint': { kind: 'mplus', label: 'Point de jonction', glyph: 'circle', source: 'markersplus' },
     'mplus_passagepoint': { kind: 'mplus', label: 'Point de passage', glyph: 'circle', source: 'markersplus' },
     'mplus_rallypoint': { kind: 'mplus', label: 'Point de ralliement', glyph: 'circle', source: 'markersplus' },
-    'mplus_releasepoint': { kind: 'mplus', label: 'Point de libÃ©ration', glyph: 'circle', source: 'markersplus' },
+    'mplus_releasepoint': { kind: 'mplus', label: 'Point de libération', glyph: 'circle', source: 'markersplus' },
     'mplus_startpoint': { kind: 'mplus', label: 'Point de depart', glyph: 'circle', source: 'markersplus' },
-    'mplus_departurepoint': { kind: 'mplus', label: 'Point de depart opÃ©rationnel', glyph: 'circle', source: 'markersplus' },
+    'mplus_departurepoint': { kind: 'mplus', label: 'Point de depart opérationnel', glyph: 'circle', source: 'markersplus' },
     'mplus_civpoint': { kind: 'mplus', label: 'Point de regroupement civils', glyph: 'circle', source: 'markersplus' },
-    'mplus_iprp': { kind: 'mplus', label: 'Point recuperation personnel isolÃ©', glyph: 'cross', source: 'markersplus' },
+    'mplus_iprp': { kind: 'mplus', label: 'Point recuperation personnel isolé', glyph: 'cross', source: 'markersplus' },
     'mplus_sarpoint': { kind: 'mplus', label: 'Point SAR', glyph: 'circle', source: 'markersplus' },
     'mplus_ammopoint': { kind: 'mplus', label: 'Point munitions', glyph: 'box', source: 'markersplus' },
-    'mplus_ccppoint': { kind: 'mplus', label: 'Point de ramassage blessÃ©s', glyph: 'cross', source: 'markersplus' },
-    'mplus_medevac': { kind: 'mplus', label: 'Point evacuation mÃ©dicale', glyph: 'cross', source: 'markersplus' },
+    'mplus_ccppoint': { kind: 'mplus', label: 'Point de ramassage blessés', glyph: 'cross', source: 'markersplus' },
+    'mplus_medevac': { kind: 'mplus', label: 'Point evacuation médicale', glyph: 'cross', source: 'markersplus' },
     'mplus_r3p': { kind: 'mplus', label: 'Point R3P', glyph: 'box', source: 'markersplus' },
     'mplus_waypoint': { kind: 'mplus', label: 'Waypoint', glyph: 'circle', source: 'markersplus' },
   };
   var METIS_ROLES = {
-    armor: 'BlindÃ©', infantry: 'Infanterie', motorized: 'MotorisÃ©', reconnaissance: 'Reconnaissance',
-    signal_unit: 'Transmissions', anti_armor: 'Anti-char', rotary_wing: 'HÃ©licoptÃ¨re', uav: 'Drone',
+    armor: 'Blindé', infantry: 'Infanterie', motorized: 'Motorisé', reconnaissance: 'Reconnaissance',
+    signal_unit: 'Transmissions', anti_armor: 'Anti-char', rotary_wing: 'Hélicoptère', uav: 'Drone',
     artillery: 'Artillerie', artillery_sp: 'Artillerie automotrice', mortar: 'Mortier', mortar_armored: 'Mortier blinde',
-    air_defence: 'DÃ©fense aÃ©rienne', missile: 'Missile', surface_surface: 'Surface-surface',
-    engineer: 'GÃ©nie', engineer_armored: 'GÃ©nie blinde', maintenance: 'Maintenance', supply: 'Ravitaillement',
+    air_defence: 'Défense aérienne', missile: 'Missile', surface_surface: 'Surface-surface',
+    engineer: 'Génie', engineer_armored: 'Génie blinde', maintenance: 'Maintenance', supply: 'Ravitaillement',
     transportation: 'Transport', cbrn: 'NRBC', combat_service_support: 'Soutien', fixed_wing: 'Aviation',
-    medical: 'SantÃ©', military_police: 'Police militaire', military_intelligence: 'Renseignement',
+    medical: 'Santé', military_police: 'Police militaire', military_intelligence: 'Renseignement',
     amphibious: 'Amphibie', joint_fire_support: 'Appui feu conjoint', naval: 'Naval',
-    special_forces: 'Forces spÃ©ciales', special_operation_forces: 'Forces opÃ©rations spÃ©ciales',
-    combined_arms: 'Armes combinÃ©es', radar: 'Radar', field_artillery_observer: 'Observateur artillerie',
-    eod: 'EOD', ranger: 'Ranger', aviation_composite: 'Aviation composite', electromagnetic_warfare: 'Guerre Ã©lectronique',
-    internal_security_force: 'Forces de sÃ©curitÃ©', isaf: 'ISAF', liaison: 'Liaison', main_gun_system: 'Systeme arme',
+    special_forces: 'Forces spéciales', special_operation_forces: 'Forces opérations spéciales',
+    combined_arms: 'Armes combinées', radar: 'Radar', field_artillery_observer: 'Observateur artillerie',
+    eod: 'EOD', ranger: 'Ranger', aviation_composite: 'Aviation composite', electromagnetic_warfare: 'Guerre électronique',
+    internal_security_force: 'Forces de sécurité', isaf: 'ISAF', liaison: 'Liaison', main_gun_system: 'Systeme arme',
     police: 'Police', search_and_rescue: 'SAR', attack: 'Attaque', air_assault: 'Assaut aerien',
     maintenance_top: 'Maintenance', multiple_rocket_launcher: 'Lance-roquettes multiple',
     single_rocket_launcher: 'Lance-roquettes', sniper: 'Tireur elite', headquarters: 'PC',
-    naval_top: 'Naval', radar_top: 'Radar', bridging: 'Pontage', medevac: 'Ã‰vacuation mÃ©dicale', eod_top: 'EOD',
-    airborne: 'AÃ©roportÃ©', mountain: 'Montagne', light: 'LÃ©ger', medium: 'Moyen', heavy: 'Lourd',
+    naval_top: 'Naval', radar_top: 'Radar', bridging: 'Pontage', medevac: 'Évacuation médicale', eod_top: 'EOD',
+    airborne: 'Aéroporté', mountain: 'Montagne', light: 'Léger', medium: 'Moyen', heavy: 'Lourd',
     vstol: 'VSTOL', wheeled: 'A roues', towed: 'Tracte'
   };
   var METIS_AFF = { blu: 'friend', red: 'hostile', neu: 'neutral', unk: 'unknown', bludash: 'friend', reddash: 'hostile', com: 'friend' };
@@ -277,10 +277,10 @@ window.ArmaMarkerCatalog = (function () {
       roleToken = roleToken.replace(/^hq_/, '').replace(/_preview$/, '');
       var roleFr = METIS_ROLES[roleToken] || METIS_ROLES[rest] || '';
       if (!roleFr && /^dir_/.test(rest)) roleFr = 'Direction';
-      if (!roleFr && /^size_/.test(rest)) roleFr = 'Ã‰chelon ' + rest.replace(/^size_/, '');
+      if (!roleFr && /^size_/.test(rest)) roleFr = 'Échelon ' + rest.replace(/^size_/, '');
       if (!roleFr && rest.indexOf('frameshape') >= 0) roleFr = 'Cadre';
       if (!roleFr && rest === 'hq') roleFr = 'PC';
-      var label = roleFr ? ('Metis â€” ' + roleFr) : 'Symbole Metis';
+      var label = roleFr ? ('Metis — ' + roleFr) : 'Symbole Metis';
       return {
         kind: 'metis',
         typeKey: key,

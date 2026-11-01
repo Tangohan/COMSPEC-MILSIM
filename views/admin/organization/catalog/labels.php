@@ -50,8 +50,8 @@ $onlyUsed = $usedCount > 0;
     <section class="bo-catalog__section" aria-labelledby="bo-labels-title">
         <h2 id="bo-labels-title" class="bo-catalog__section-title">Libellés</h2>
         <p class="bo-catalog__section-lead">
-            <?= $usedCount ?> libellé<?= $usedCount > 1 ? 's' : '' ?> présent<?= $usedCount > 1 ? 's' : '' ?> dans votre communauté
-            · <?= $ownCount ?> personnalisé<?= $ownCount > 1 ? 's' : '' ?>
+            <?= $h(sprintf($usedCount > 1 ? '%d libellés présents dans votre communauté' : '%d libellé présent dans votre communauté', (int) $usedCount)) ?>
+            · <?= $h(sprintf($ownCount > 1 ? '%d personnalisés' : '%d personnalisé', (int) $ownCount)) ?>
             · <?= count($rows) ?> au total. Laissez un champ vide pour garder le libellé du site.
         </p>
 

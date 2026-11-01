@@ -241,7 +241,7 @@ if ($ptReady) {
                         <p class="text-[11px] text-slate-500">Par <?= htmlspecialchars((string) ($mv['actor_name'] ?? '') !== '' ? (string) $mv['actor_name'] : 'inconnu', ENT_QUOTES, 'UTF-8') ?><?= $mvTs ? ' le ' . date('d/m/Y \à H:i', $mvTs) : '' ?><?php if (trim((string) ($mv['reason'] ?? '')) !== ''): ?> · <?= htmlspecialchars((string) $mv['reason'], ENT_QUOTES, 'UTF-8') ?><?php endif; ?></p>
                         <?php if ($mv['reverted_at'] !== null): ?>
                         <?php $rvTs = strtotime((string) $mv['reverted_at']); ?>
-                        <p class="text-[11px] text-slate-500">Annulée<?= trim((string) ($mv['reverted_by_name'] ?? '')) !== '' ? ' par ' . htmlspecialchars((string) $mv['reverted_by_name'], ENT_QUOTES, 'UTF-8') : '' ?><?= $rvTs ? ' le ' . date('d/m/Y \à H:i', $rvTs) : '' ?></p>
+                        <p class="text-[11px] text-slate-500"><span><?= htmlspecialchars(trim((string) ($mv['reverted_by_name'] ?? '')) !== '' ? sprintf('Annulée par %s', (string) $mv['reverted_by_name']) : 'Annulée', ENT_QUOTES, 'UTF-8') ?></span><?php if ($rvTs): ?> <span><?= htmlspecialchars(sprintf('le %s', date('d/m/Y \à H:i', $rvTs)), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?></p>
                         <?php else: ?>
                         <form method="post" action="<?= htmlspecialchars(url('personnel/' . $personSeg . '/temps-par-role/' . (int) $mv['id'] . '/annuler'), ENT_QUOTES, 'UTF-8') ?>" class="mt-1">
                             <?= \App\Core\Csrf::field() ?>

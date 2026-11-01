@@ -28,7 +28,7 @@ $lowOrgsMore = $lowOrgs['count'] - count($lowOrgs['names']);
             <h2 id="low-orgs-heading" class="pa-card__title"><?= (int) $lowOrgs['count'] ?> organisation<?= $lowOrgs['count'] > 1 ? 's' : '' ?> à supprimer</h2>
             <p class="pa-card__help">
                 Toujours un ou deux membres après le rappel à 3 mois et la relance à 4 mois :
-                <?= $hl(implode(', ', $lowOrgs['names'])) ?><?= $lowOrgsMore > 0 ? $hl(' et ' . $lowOrgsMore . ' autre(s)') : '' ?>.
+                <span translate="no"><?= $hl(implode(', ', $lowOrgs['names'])) ?></span><?php if ($lowOrgsMore > 0): ?> <span><?= $hl(sprintf('et %d autre(s)', $lowOrgsMore)) ?></span><?php endif; ?>.
                 Rien n’est supprimé automatiquement.
             </p>
         </div>

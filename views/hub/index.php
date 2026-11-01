@@ -97,7 +97,7 @@ require __DIR__ . '/partials/shell_open.php';
               <?php if ($t['total'] === 0): ?>
               <em>Aucun parcours pour l’instant : ouvrez le catalogue depuis cette page.</em>
               <?php else: ?>
-              <em><?= (int) $t['in_progress'] ?> en cours · <?= (int) $t['assigned'] ?> à commencer · <?= (int) $t['completed'] ?> terminée<?= $t['completed'] > 1 ? 's' : '' ?><?= $t['pending'] > 0 ? ' · ' . (int) $t['pending'] . ' en attente' : '' ?></em>
+              <em><?= (int) $t['in_progress'] ?> en cours · <?= (int) $t['assigned'] ?> à commencer · <?= $h(sprintf($t['completed'] > 1 ? '%d terminées' : '%d terminée', (int) $t['completed'])) ?><?= $t['pending'] > 0 ? ' · ' . (int) $t['pending'] . ' en attente' : '' ?></em>
               <span class="hx-progress" aria-label="<?= (int) $t['pct'] ?> % des parcours terminés"><span style="width: <?= (int) $t['pct'] ?>%"></span></span>
               <?php if ($t['next'] !== null): ?><small><?= $t['next']['status'] === 'in_progress' ? 'Reprendre' : 'Prochain' ?> : <?= $h($t['next']['title']) ?></small><?php endif; ?>
               <?php endif; ?>

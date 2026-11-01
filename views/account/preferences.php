@@ -226,7 +226,7 @@ $saveState = $errors !== [] || $prefsError ? 'error' : ($prefsSuccess ? 'saved' 
                 </div>
                 <div class="ah-pref__row-control">
                     <details class="ah-pref__disclosure"<?= $filledAliases > 0 ? ' open' : '' ?>>
-                        <summary><?= $filledAliases > 0 ? $h($filledAliases . ' alias enregistré' . ($filledAliases > 1 ? 's' : '')) : 'Ajouter des alias' ?></summary>
+                        <summary><?= $filledAliases > 0 ? $h(sprintf($filledAliases > 1 ? '%d alias enregistrés' : '%d alias enregistré', $filledAliases)) : 'Ajouter des alias' ?></summary>
                         <div class="ah-pref__grid-2 ah-pref__aliases">
                             <?php for ($i = 0; $i < $extraCallsignSlots; $i++): ?>
                             <div class="ah-field">

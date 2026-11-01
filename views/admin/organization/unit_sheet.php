@@ -203,7 +203,7 @@ foreach ($derivedCommand as $dc) {
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <p class="text-sm font-bold <?= $bVacant > 0 ? 'text-amber-700' : 'text-emerald-700' ?>"><?= (int) ($b['filled'] ?? 0) ?> / <?= (int) ($b['authorized'] ?? 1) ?> pourvu<?= (int) ($b['filled'] ?? 0) > 1 ? 's' : '' ?></p>
+                            <p class="text-sm font-bold <?= $bVacant > 0 ? 'text-amber-700' : 'text-emerald-700' ?>"><?= $h(sprintf((int) ($b['filled'] ?? 0) > 1 ? '%d / %d pourvus' : '%d / %d pourvu', (int) ($b['filled'] ?? 0), (int) ($b['authorized'] ?? 1))) ?></p>
                         </li>
                     <?php endforeach; ?>
                 </ul>

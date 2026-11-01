@@ -54,7 +54,7 @@ $inProgress = (int) (($stats['by_status'] ?? [])['IN_PROGRESS'] ?? 0);
                     <span class="cp-progress__num"><?= $totalDone ?>/<?= $totalModules ?></span>
                 </div>
                 <p class="cp-help" style="margin:0.35rem 0 0">
-                    modules validés<?= $inProgress > 0 ? ' · ' . $inProgress . ' en cours' : '' ?><?= $toRenew > 0 ? ' · ' . $toRenew . ' à renouveler' : '' ?>
+                    <span>modules validés</span><?php if ($inProgress > 0): ?> · <span><?= $h(sprintf('%d en cours', $inProgress)) ?></span><?php endif; ?><?php if ($toRenew > 0): ?> · <span><?= $h(sprintf('%d à renouveler', $toRenew)) ?></span><?php endif; ?>
                 </p>
             </div>
         <?php endif; ?>

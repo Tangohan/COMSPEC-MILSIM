@@ -35,7 +35,7 @@ $ownerMark = match ($owner) {
         <span class="rp-avatar" aria-hidden="true"><?= $rpH($rpInitials($cfn, $cln)) ?></span>
         <div class="rp-card__id">
             <a class="rp-card__name" href="<?= $rpH($dossier) ?>" title="<?= $rpH($cname) ?>"><?= $rpH($cname) ?></a>
-            <span class="rp-card__sub">#<?= $cid ?> · reçu <?= $rpH($rpAgo((string) ($card['created_at'] ?? ''))) ?><?= empty($card['submitter_user_id']) ? ' · invité' : '' ?></span>
+            <span class="rp-card__sub">#<?= $cid ?> · <span>reçu <?= $rpH($rpAgo((string) ($card['created_at'] ?? ''))) ?></span><?php if (empty($card['submitter_user_id'])): ?> · <span>invité</span><?php endif; ?></span>
         </div>
     </header>
     <div class="rp-card__action">
