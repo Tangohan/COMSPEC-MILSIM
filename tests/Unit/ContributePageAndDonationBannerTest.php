@@ -108,12 +108,14 @@ final class ContributePageAndDonationBannerTest extends TestCase
             'contribShowcase' => $this->showcase(),
         ]);
         self::assertStringContainsString('id="mur"', $html);
-        self::assertStringContainsString('class="cb-wall"', $html);
+        self::assertStringContainsString('class="ctr-wall', $html);
+        self::assertStringContainsString('class="don-hero"', $html, 'Même famille que la page de dons.');
+        self::assertStringContainsString('assets/css/site-support.css', (string) file_get_contents(base_path('app/Controllers/Web/ContributorController.php')));
         self::assertStringContainsString('Ghost', $html);
         self::assertStringContainsString('Viper Six', $html);
         self::assertStringContainsString('Raven', $html);
         self::assertStringContainsString('Español', $html);
-        self::assertStringContainsString('data-cb-filter', $html);
+        self::assertStringContainsString('data-ctr-filter', $html);
         self::assertStringContainsString('traduire-site', $html);
         self::assertStringContainsString('soutenir-atak', $html);
         self::assertStringContainsString('340', $html);
@@ -121,7 +123,7 @@ final class ContributePageAndDonationBannerTest extends TestCase
         self::assertStringNotContainsString('Jean Dupont', $html);
         self::assertStringNotContainsString('Hidden', $html);
         self::assertStringNotContainsString('site.contrib_', $html, 'Aucune clé de traduction brute.');
-        self::assertStringNotContainsString('cb-empty', $html);
+        self::assertStringNotContainsString('ctr-empty', $html);
     }
 
     public function testPageWithoutContributorsInvitesToJoin(): void
@@ -132,11 +134,11 @@ final class ContributePageAndDonationBannerTest extends TestCase
             'contribMine' => [],
             'contribShowcase' => ContributorShowcase::build([], [], [], []),
         ]);
-        self::assertStringContainsString('cb-empty', $html);
+        self::assertStringContainsString('ctr-empty', $html);
         self::assertStringContainsString(__('site.contrib_wall_empty_title'), $html);
-        self::assertStringNotContainsString('class="cb-wall"', $html);
+        self::assertStringNotContainsString('class="ctr-wall', $html);
         self::assertStringNotContainsString('id="donateurs"', $html);
-        self::assertStringNotContainsString('cb-figures', $html, 'Pas de chiffres à zéro.');
+        self::assertStringNotContainsString('ctr-stats', $html, 'Pas de chiffres à zéro.');
         self::assertStringContainsString('id="participer"', $html);
         self::assertStringContainsString(__('site.contrib_login'), $html);
         self::assertStringNotContainsString('site.contrib_', $html);
