@@ -1500,6 +1500,14 @@ class Container
                 self::get(\App\Services\Personnel\UnitReadinessService::class)
             ),
             \App\Repositories\CompetencyGradeRequirementRepository::class => new \App\Repositories\CompetencyGradeRequirementRepository(),
+            \App\Repositories\CompetencyLinkRepository::class => new \App\Repositories\CompetencyLinkRepository(),
+            \App\Repositories\CompetencyPathwayRepository::class => new \App\Repositories\CompetencyPathwayRepository(),
+            \App\Services\Training\CompetencyCatalogService::class => new \App\Services\Training\CompetencyCatalogService(
+                self::get(\App\Repositories\CompetencyGradeRequirementRepository::class),
+                self::get(\App\Repositories\CompetencyLinkRepository::class),
+                new \App\Repositories\CompetencyModuleRepository(),
+                self::get(\App\Repositories\CompetencyPathwayRepository::class),
+            ),
             \App\Controllers\Admin\Organization\CompetencyMatrixController::class => new \App\Controllers\Admin\Organization\CompetencyMatrixController(
                 self::get(\App\Repositories\CompetencyGradeRequirementRepository::class),
                 self::get(\App\Repositories\GradeRepository::class)

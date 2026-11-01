@@ -45,6 +45,7 @@ $inProgress = (int) (($stats['by_status'] ?? [])['IN_PROGRESS'] ?? 0);
                 Quatre phases, de la doctrine à la validation par un instructeur. Votre encadrement enregistre vos validations ;
                 certaines doivent être renouvelées régulièrement.
             </p>
+            <p class="cp-help" style="margin:0.5rem 0 0"><a class="cp-link" href="#generateur">Générer un parcours de compétence ↓</a></p>
         </div>
         <?php if ($schemaOk && !$loadError && $hasModules): ?>
             <div style="flex: 0 1 320px; min-width: 240px">
@@ -164,6 +165,8 @@ $inProgress = (int) (($stats['by_status'] ?? [])['IN_PROGRESS'] ?? 0);
         <?php endforeach; ?>
     <?php endif; ?>
 
-    <p><a class="cp-link" href="<?= $h(url('formations')) ?>">← Retour aux formations</a></p>
+    <?php require base_path('views/training/partials/competency_pathway_generator.php'); ?>
+
+    <p><a class="cp-link" href="<?= $h(url('academy/catalogue')) ?>">← Retour aux formations</a></p>
 </div>
 </div>

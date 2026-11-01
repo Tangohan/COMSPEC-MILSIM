@@ -2398,6 +2398,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/formation/competences/modules/{id}/activation', [\App\Controllers\Web\TrainingCompetencyModulesController::class, 'toggle'], $trainingResMw);
     $router->get('/formation/competences/modules/{id}/suivi', [\App\Controllers\Web\TrainingCompetencyModulesController::class, 'tracking'], $trainingResMw);
     $router->post('/formation/competences/modules/{id}/suivi', [\App\Controllers\Web\TrainingCompetencyModulesController::class, 'record'], $trainingResMw);
+    // Parcours de compétence (générateur de l'Academy) : consultation pour tous, enregistrement réservé au pilotage des formations.
+    $router->post('/academy/formations/competences/parcours', [TrainingCompetencyController::class, 'savePathway'], $trainingResMw);
+    $router->post('/academy/formations/competences/parcours/{id}/supprimer', [TrainingCompetencyController::class, 'deletePathway'], $trainingResMw);
 
     $router->get('/back-office/ressources/training/charte-rh', $lmsBoTrainingLegacyRedirect, $trainingResMw);
     $router->post('/back-office/ressources/training/charte-rh', $lmsBoTrainingLegacyRedirect, $trainingResMw);

@@ -9,11 +9,15 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\CompetencyGradeRequirementRepository;
+use App\Repositories\CompetencyLinkRepository;
 use App\Repositories\GradeRepository;
+use App\Services\Training\CompetencyCatalogService;
+use App\Services\Training\CompetencyPathwayGenerator;
 
 /**
- * Matrice de compétences × grades : catalogue de référence associant chaque compétence/module
- * d'un palier de formation au grade attendu et au niveau d'acquisition visé.
+ * Référentiel des compétences : chaque compétence d'un palier de formation, le grade auquel elle est attendue,
+ * le niveau visé, la façon dont elle est validée et les modules où elle est utilisée (Academy, modules de compétence,
+ * qualifications, emplois et postes ORBAT, dotation).
  */
 class CompetencyMatrixController
 {
@@ -22,8 +26,13 @@ class CompetencyMatrixController
 
     public function __construct(
         private CompetencyGradeRequirementRepository $requirements,
-        private GradeRepository $gradeRepository
-    ) {}
+        private GradeRepository $gradeRepository,
+        private ?CompetencyLinkRepository $links = null,
+        private ?CompetencyCatalogService $catalog = null,
+    ) {
+        $this->links ??= \App\Core\Container::get(CompetencyLinkRepository::class);
+        $this->catalog ??= \App\Core\Container::get(CompetencyCatalogService::class);
+    }
 
     public function index(Request $request, array $params = []): Response
     {
@@ -31,25 +40,29 @@ class CompetencyMatrixController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $rows = $this->requirements->listForTenant($tenantId);
         $grades = $this->gradeRepository->listForTenant($tenantId);
         $gradeLabels = [];
         foreach ($grades as $g) {
             $gradeLabels[(int) $g['id']] = (string) ($g['label_long'] ?? $g['label_short'] ?? '');
         }
+        $catalog = $this->catalog->build($tenantId, true, $gradeLabels);
 
         $byPalier = [];
-        foreach ($rows as $r) {
-            $byPalier[(string) $r['palier']][] = $r;
+        foreach ($catalog['competencies'] as $c) {
+            $c['resolved_links'] = CompetencyPathwayGenerator::resolveLinks($c, $catalog);
+            $c['suggested_links'] = CompetencyPathwayGenerator::suggestLinks($c, $catalog);
+            $byPalier[$c['palier']][] = $c;
         }
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.referentiels.competency_matrix',
-            'title' => 'Matrice de compétences × grades',
+            'title' => 'Référentiel des compétences',
             'competencyByPalier' => $byPalier,
             'competencyGrades' => $grades,
-            'competencyGradeLabels' => $gradeLabels,
             'competencyAcquisitionLevels' => self::ACQUISITION_LEVELS,
+            'competencyCatalog' => $catalog,
+            'competencyUsage' => $this->catalog->usage($tenantId),
+            'competencyLinksReady' => $this->links->schemaReady() && $this->requirements->explanationReady(),
         ]);
     }
 
@@ -74,16 +87,17 @@ class CompetencyMatrixController
         $gradeId = (int) $request->input('grade_id', 0);
         $level = trim((string) $request->input('acquisition_level', ''));
         $userId = (int) (Session::get('user_id') ?? 0);
-        $this->requirements->create($tenantId, [
+        $id = $this->requirements->create($tenantId, [
             'palier' => mb_substr($palier, 0, 120),
             'palier_order' => max(0, (int) $request->input('palier_order', 0)),
             'label' => mb_substr($label, 0, 255),
             'grade_id' => $gradeId > 0 ? $gradeId : null,
             'acquisition_level' => in_array($level, self::ACQUISITION_LEVELS, true) ? $level : null,
-        ], $userId ?: null);
-        Session::flash('success', 'Compétence ajoutée à la matrice.');
+        ] + $this->explanationInput($request), $userId ?: null);
+        $this->links->replaceForRequirement($tenantId, $id, $this->linkInput($request));
+        Session::flash('success', 'Compétence ajoutée au référentiel.');
 
-        return Response::redirect(url('back-office/referentiels/competences'));
+        return Response::redirect(url('back-office/referentiels/competences') . '#competence-' . $id);
     }
 
     public function update(Request $request, array $params = []): Response
@@ -118,10 +132,11 @@ class CompetencyMatrixController
             'label' => mb_substr($label, 0, 255),
             'grade_id' => $gradeId > 0 ? $gradeId : null,
             'acquisition_level' => in_array($level, self::ACQUISITION_LEVELS, true) ? $level : null,
-        ]);
+        ] + $this->explanationInput($request));
+        $this->links->replaceForRequirement($tenantId, $id, $this->linkInput($request));
         Session::flash('success', 'Compétence modifiée.');
 
-        return Response::redirect(url('back-office/referentiels/competences'));
+        return Response::redirect(url('back-office/referentiels/competences') . '#competence-' . $id);
     }
 
     public function destroy(Request $request, array $params = []): Response
@@ -137,8 +152,36 @@ class CompetencyMatrixController
         }
         $id = (int) ($params['id'] ?? 0);
         $deleted = $this->requirements->delete($id, $tenantId);
-        Session::flash($deleted ? 'success' : 'error', $deleted ? 'Compétence retirée de la matrice.' : 'Compétence introuvable.');
+        if ($deleted) {
+            $this->links->deleteForRequirement($tenantId, $id);
+        }
+        Session::flash($deleted ? 'success' : 'error', $deleted ? 'Compétence retirée du référentiel.' : 'Compétence introuvable.');
 
         return Response::redirect(url('back-office/referentiels/competences'));
+    }
+
+    /** @return array{description: ?string, validation_mode: ?string} */
+    private function explanationInput(Request $request): array
+    {
+        $description = trim((string) $request->input('description', ''));
+        $mode = (string) $request->input('validation_mode', '');
+
+        return [
+            'description' => $description !== '' ? mb_substr($description, 0, 2000) : null,
+            'validation_mode' => isset(CompetencyPathwayGenerator::VALIDATION_MODES[$mode]) ? $mode : null,
+        ];
+    }
+
+    /** @return array<string, list<string>> références cochées par type de lien */
+    private function linkInput(Request $request): array
+    {
+        $raw = $request->input('links', []);
+        $out = [];
+        foreach (array_keys(CompetencyPathwayGenerator::LINK_TYPES) as $type) {
+            $refs = is_array($raw) && isset($raw[$type]) ? (array) $raw[$type] : [];
+            $out[$type] = array_values(array_filter(array_map(static fn (mixed $v): string => trim((string) $v), $refs), static fn (string $v): bool => $v !== ''));
+        }
+
+        return $out;
     }
 }
