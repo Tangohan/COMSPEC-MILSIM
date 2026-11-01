@@ -553,6 +553,37 @@ class UnitRepository
         return $out;
     }
 
+    /**
+     * Abréviation du grade (grades.short_name) de chaque membre, pour les cadres affichés sur l’ORBAT.
+     *
+     * @param list<int> $userIds
+     * @return array<int, string>
+     */
+    public function gradeShortNamesForUsers(int $tenantId, array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0)));
+        if ($userIds === [] || !$this->columnExists('users', 'grade_id') || !$this->tableExists('grades')) {
+            return [];
+        }
+        $out = [];
+        foreach (array_chunk($userIds, 500) as $chunk) {
+            $placeholders = implode(',', array_fill(0, count($chunk), '?'));
+            $stmt = $this->pdo()->prepare(
+                'SELECT u.id, g.short_name FROM users u INNER JOIN grades g ON g.id = u.grade_id
+                 WHERE u.tenant_id = ? AND u.id IN (' . $placeholders . ')'
+            );
+            $stmt->execute(array_merge([$tenantId], $chunk));
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $short = trim((string) ($row['short_name'] ?? ''));
+                if ($short !== '') {
+                    $out[(int) $row['id']] = $short;
+                }
+            }
+        }
+
+        return $out;
+    }
+
     private function tableExists(string $table): bool
     {
         static $cache = [];
@@ -966,6 +997,8 @@ class UnitRepository
             'public_founded_on',
             'public_custom_date',
             'public_custom_date_label',
+            'sidc',
+            'echelon',
         ] as $extraCol) {
             if (array_key_exists($extraCol, $data) && $this->columnExists('units', $extraCol)) {
                 $extraPublic[$extraCol] = $data[$extraCol];
@@ -1059,6 +1092,12 @@ class UnitRepository
         }
         if ($this->columnExists('units', 'short_label')) {
             $allowed[] = 'short_label';
+        }
+        // Symbole MIL-STD-2525 et échelon (étape units_military_symbol) : valeurs déjà validées par l’appelant.
+        foreach (['sidc', 'echelon'] as $symbolCol) {
+            if ($this->columnExists('units', $symbolCol)) {
+                $allowed[] = $symbolCol;
+            }
         }
         foreach ($allowed as $key) {
             if (!array_key_exists($key, $data)) {

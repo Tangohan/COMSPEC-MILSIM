@@ -1374,7 +1374,8 @@ return function (Router $router) {
     $router->get('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules/import', [OrganizationMemberNumberController::class, 'importCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/organisation/structure', [OrganizationDashboardController::class, 'structureRecruitmentHub'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Ancien « Structure & recrutement » : l’ORBAT unique fait tout (création, invitation, édition en fenêtres).
+    $router->get('/back-office/organisation/structure', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => (string) $r->query('ouvrir', '')])), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/unites/{id}', [UnitSheetController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/unites/{id}', [UnitSheetController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/unites/{id}/activites', [UnitSheetController::class, 'storeActivity'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1740,17 +1741,18 @@ return function (Router $router) {
     $router->post('/back-office/personnel-job-roles/categories/save', [PersonnelJobRoleAdminController::class, 'saveCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/personnel-job-roles/categories/{id}/delete', [PersonnelJobRoleAdminController::class, 'deleteCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/groups', [GroupAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/groups/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/organisation/structure?ouvrir=groupe')), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/groups/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => 'groupe'])), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/groups/store', [GroupAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/groups/{id}', [GroupAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/groups/{id}/edit', [GroupAdminController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/groups/{id}/update', [GroupAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/groups/{id}/delete', [GroupAdminController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Unités (toutes, pas seulement type « groupe ») — fiche publique / ORBAT
-    $router->get('/back-office/units', [AdminUnitsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/units/create', [AdminUnitsController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Anciennes pages de gestion des unités : tout se fait dans l’ORBAT (URL conservées, redirigées).
+    $router->get('/back-office/units', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url()), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/units/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => 'unite'])), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/units/store', [AdminUnitsController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/units/{id}/edit', [AdminUnitsController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/units/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['unit' => (int) ($p['id'] ?? 0), 'modifier' => 1])), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/units/{id}/update', [AdminUnitsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/units/{id}/delete', [AdminUnitsController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/communications', [TenantCommunicationsController::class, 'compose'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1770,7 +1772,7 @@ return function (Router $router) {
     $router->post('/back-office/communications/groups/{id}/update', [TenantCommunicationsController::class, 'groupUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/communications/groups/{id}/delete', [TenantCommunicationsController::class, 'groupDelete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/teams', [TeamAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/teams/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/organisation/structure?ouvrir=equipe')), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/teams/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => 'equipe'])), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/teams/store', [TeamAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/teams/{id}', [TeamAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/teams/{id}/edit', [TeamAdminController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1976,7 +1978,7 @@ return function (Router $router) {
     $router->get('/admin/users', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/users')), [AuthMiddleware::class]);
     $router->get('/admin/users/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/users/create')), [AuthMiddleware::class]);
     $router->get('/admin/units', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/groups')), [AuthMiddleware::class]);
-    $router->get('/admin/units/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/organisation/structure?ouvrir=groupe')), [AuthMiddleware::class]);
+    $router->get('/admin/units/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => 'groupe'])), [AuthMiddleware::class]);
     $router->get('/admin/units/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/groups/' . ($p['id'] ?? '') . '/edit')), [AuthMiddleware::class]);
     // Outils de la communauté sortis de /admin (réservé à l’administrateur de la plateforme) :
     // les anciennes adresses renvoient vers le back-office, qui applique ses propres contrôles.

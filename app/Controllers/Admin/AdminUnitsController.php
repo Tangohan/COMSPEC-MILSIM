@@ -17,40 +17,6 @@ class AdminUnitsController
         private UserRepository $userRepository
     ) {}
 
-    public function index(Request $request, array $params = []): Response
-    {
-        $tenantId = Session::get('tenant_id');
-        if (!$tenantId) {
-            return Response::redirect(url('login'));
-        }
-        $units = $this->unitRepository->allForTenant((int) $tenantId);
-        $unitTypes = config('units.types', []);
-        return Response::view('layout.main', [
-            'content' => 'admin.units.index',
-            'title' => 'Unités / Équipes / Groupes',
-            'units' => $units,
-            'unitTypes' => $unitTypes,
-        ]);
-    }
-
-    public function create(Request $request, array $params = []): Response
-    {
-        $tenantId = Session::get('tenant_id');
-        if (!$tenantId) {
-            return Response::redirect(url('login'));
-        }
-        $parents = $this->unitRepository->allForTenant((int) $tenantId);
-        $users = $this->userRepository->allForTenant((int) $tenantId);
-        $unitTypes = config('units.types', []);
-        return Response::view('layout.main', [
-            'content' => 'admin.units.create',
-            'title' => 'Nouvelle unité / équipe / groupe',
-            'parents' => $parents,
-            'users' => $users,
-            'unitTypes' => $unitTypes,
-        ]);
-    }
-
     public function store(Request $request, array $params = []): Response
     {
         $tenantId = Session::get('tenant_id');
@@ -83,30 +49,6 @@ class AdminUnitsController
         $this->unitRepository->create((int) $tenantId, $data);
         Session::set('success', 'Unité créée.');
         return Response::redirect(url('back-office/units'));
-    }
-
-    public function edit(Request $request, array $params = []): Response
-    {
-        $tenantId = Session::get('tenant_id');
-        if (!$tenantId) {
-            return Response::redirect(url('login'));
-        }
-        $id = (int) ($params['id'] ?? 0);
-        $unit = $this->unitRepository->findById($id, (int) $tenantId);
-        if (!$unit) {
-            return (new Response())->setStatusCode(404)->setBody('Unité non trouvée.');
-        }
-        $parents = array_filter($this->unitRepository->allForTenant((int) $tenantId), fn ($u) => (int) $u['id'] !== $id);
-        $users = $this->userRepository->allForTenant((int) $tenantId);
-        $unitTypes = config('units.types', []);
-        return Response::view('layout.main', [
-            'content' => 'admin.units.edit',
-            'title' => 'Modifier l\'unité',
-            'unit' => $unit,
-            'parents' => $parents,
-            'users' => $users,
-            'unitTypes' => $unitTypes,
-        ]);
     }
 
     public function update(Request $request, array $params = []): Response

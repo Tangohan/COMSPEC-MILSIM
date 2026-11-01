@@ -54,6 +54,7 @@ Schéma ajouté depuis le 29 octobre, jusque-là créé à la demande, passé à
 | 3220 | `users_steam_id_index` | Index `idx_users_steam_id` sur `users.steam_id`, sauf si un index commence déjà par cette colonne | — |
 | 3230 | `atak_api_hot_indexes` | Index `idx_atak_pings_tenant_map_created`, `idx_atak_units_tenant_map_callsign` (déjà passés à la main en production : constatés) | `scripts/sql/api-hot-indexes.sql` (secours manuel) |
 | 3240 | `user_totp_used_steps` | Table `user_totp_used_steps` (anti-rejeu des codes de double vérification) | `TotpReplayGuard::ensureSchema()` |
+| 3250 | `units_military_symbol` | Colonnes `units.sidc` (symbole MIL-STD-2525) et `units.echelon` (équipe, groupe, section…), NULL = déduits du nom et du type de l’unité | — (l’ORBAT refuse l’enregistrement d’un symbole tant que l’étape n’est pas passée) |
 
 Codes unité : le repère saisi d’une unité reste `units.code`. Les écritures d’unités (`UnitRepository::create/update/delete`) ne recalculent les codes que si les tables existent ; les codes des unités sont calculés par `UnitCodeService` à l’ouverture des effectifs ou de l’ORBAT.
 

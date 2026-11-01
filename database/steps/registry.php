@@ -27,4 +27,5 @@ return [
     ['id' => 'users_steam_id_index', 'label' => 'Index sur le Steam des comptes (détection des doublons)', 'group' => 'schema', 'file' => '3220_users_steam_id_index.php', 'rerun' => true],
     ['id' => 'atak_api_hot_indexes', 'label' => 'Index des lectures fréquentes de la liaison (positions, repères)', 'group' => 'schema', 'file' => '3230_atak_api_hot_indexes.php', 'rerun' => true],
     ['id' => 'user_totp_used_steps', 'label' => 'Double vérification : anti-rejeu des codes de l’application', 'group' => 'schema', 'file' => '3240_user_totp_used_steps.php', 'rerun' => true],
+    ['id' => 'units_military_symbol', 'label' => 'ORBAT : symbole militaire MIL-STD-2525 et échelon des unités (units.sidc, units.echelon)', 'group' => 'schema', 'file' => '3250_units_military_symbol.php', 'rerun' => true],
 ];

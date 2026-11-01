@@ -144,6 +144,8 @@ final class MigrationActiveQueueTest extends TestCase
         }
         self::assertTrue($schema->columnExists('user_public_cv', 'banner_path'));
         self::assertTrue($schema->columnExists('arsenal_wardrobes', 'visibility'));
+        self::assertTrue($schema->columnExists('units', 'sidc'));
+        self::assertTrue($schema->columnExists('units', 'echelon'));
         self::assertTrue($schema->indexExists('users', 'idx_users_steam_id'));
         self::assertTrue($schema->indexExists('atak_pings', 'idx_atak_pings_tenant_map_created'));
         self::assertTrue($schema->indexExists('atak_units', 'idx_atak_units_tenant_map_callsign'));

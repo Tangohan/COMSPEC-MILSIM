@@ -22,7 +22,7 @@ final class DashboardOrbatAssetTest extends TestCase
         $home = (string) file_get_contents($root . '/app/Controllers/Web/HomeController.php');
         $command = (string) file_get_contents($root . '/views/partials/dashboard_command_center.php');
         $dash = (string) file_get_contents($root . '/views/dashboard.php');
-        $canvas = (string) file_get_contents($root . '/views/partials/orbat/orbat_canvas.php');
+        $canvas = (string) file_get_contents($root . '/public/assets/js/orbat-app.js');
         $showcase = (string) file_get_contents($root . '/views/community/show_showcase.php');
         $vitrineCss = (string) file_get_contents($root . '/public/assets/css/community-vitrine.css');
 
@@ -67,10 +67,10 @@ final class DashboardOrbatAssetTest extends TestCase
         self::assertStringContainsString('can_view_orbat', $command);
         self::assertStringContainsString('dashboard-orbat.css', $dash);
 
-        self::assertStringContainsString('focusUnitFromQuery', $canvas);
-        self::assertStringContainsString('params.get("unit")', $canvas);
-        self::assertStringContainsString('orbat-node-card--focus', $canvas);
-        self::assertStringContainsString('dataset.unitId', $canvas);
+        self::assertStringContainsString('function focusFromQuery', $canvas);
+        self::assertStringContainsString("p.get('unit')", $canvas);
+        self::assertStringContainsString("classList.add('flash')", $canvas);
+        self::assertStringContainsString('keyOfUnit', $canvas);
 
         self::assertStringContainsString('cl-units--orbat', $showcase);
         self::assertStringContainsString('publicUnitRoots', $showcase);

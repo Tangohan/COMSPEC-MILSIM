@@ -4,20 +4,16 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin\Organization;
 
-use App\Core\Csrf;
 use App\Core\Container;
 use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
-use App\Repositories\GradeCategoryRepository;
 use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
-use App\Support\OrganizationRoleLabels;
-use App\Support\OrbatRosterPayload;
 use App\Repositories\AuditLogRepository;
 use App\Repositories\AtakRealismRepository;
 use App\Repositories\CommunityEventRepository;
@@ -969,101 +965,6 @@ class OrganizationDashboardController
                 || $gate->allows('personnel.callsign.manage')
                 || $gate->allows('admin.organization')
                 || $gate->allows('admin.access'),
-        ]);
-    }
-
-    /**
-     * Hub ORBAT + invitations / créations regroupements et équipes (back-office communauté).
-     */
-    public function structureRecruitmentHub(Request $request, array $params = []): Response
-    {
-        $tenantId = (int) Session::get('tenant_id');
-        if ($tenantId <= 0) {
-            return Response::redirect(url('login'));
-        }
-        $gate = Gate::getInstance();
-        $canSeeOrbat = $gate->allows('organization.orbat.view')
-            || $gate->allows('organization.orbat.manage')
-            || $gate->allows('admin.organization')
-            || $gate->allows('admin.access')
-            || $gate->allows('site.support');
-        if (!$canSeeOrbat) {
-            Session::flash('error', 'Vous n’avez pas accès à l’organigramme des unités.');
-
-            return Response::redirect(url('back-office'));
-        }
-        $orbatCanManage = $gate->allows('admin.organization') || $gate->allows('admin.access')
-            || $gate->allows('organization.orbat.manage')
-            || $gate->allows('site.support');
-        $viewerId = (int) Session::get('user_id');
-        $unitRepository = new UnitRepository();
-        $userRepository = new UserRepository();
-        $rosterData = OrbatRosterPayload::buildForTenant($unitRepository, $tenantId, $viewerId, $orbatCanManage);
-        $orbatCommanderOptions = [];
-        if ($orbatCanManage) {
-            foreach ($userRepository->allForTenant($tenantId) as $u) {
-                if (($u['status'] ?? '') !== 'active') {
-                    continue;
-                }
-                $id = (int) ($u['id'] ?? 0);
-                if ($id < 1) {
-                    continue;
-                }
-                $dn = trim((string) ($u['display_name'] ?? ''));
-                $cs = trim((string) ($u['callsign'] ?? ''));
-                $em = trim((string) ($u['email'] ?? ''));
-                $label = $dn !== '' ? $dn : ($cs !== '' ? $cs : $em);
-                if ($label === '') {
-                    $label = 'Compte #' . $id;
-                }
-                $orbatCommanderOptions[] = ['id' => $id, 'label' => $label];
-            }
-        }
-        $allUnitsForParent = [];
-        foreach ($unitRepository->allForTenant($tenantId) as $u) {
-            $uid = (int) ($u['id'] ?? 0);
-            $uname = trim((string) ($u['name'] ?? ''));
-            if ($uid < 1 || $uname === '') {
-                continue;
-            }
-            $allUnitsForParent[] = ['id' => $uid, 'name' => $uname];
-        }
-        $tenantRepository = new TenantRepository();
-        $settings = $tenantRepository->getSettings($tenantId);
-        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
-        $tenantRow = $tenantRepository->findById($tenantId) ?: [];
-        $organizationRoleLabelMode = OrganizationRoleLabels::mode($community, $tenantRow);
-
-        $roleRepository = new RoleRepository();
-        $gradeRepository = new GradeRepository();
-        $gradeCategoryRepository = new GradeCategoryRepository();
-
-        $rawOpen = strtolower(trim((string) $request->query('ouvrir', '')));
-        $structureHubOpen = in_array($rawOpen, ['membre', 'groupe', 'equipe'], true) ? $rawOpen : '';
-
-        return Response::view('layout.main', [
-            'content' => 'admin.organization.structure_hub',
-            'title' => 'Structure & recrutement',
-            'isBackOfficeShell' => true,
-            'orbatRosterData' => $rosterData,
-            'orbatCanManage' => $orbatCanManage,
-            'orbatCommanderOptions' => $orbatCommanderOptions,
-            'orbatCsrfToken' => Csrf::token(),
-            'orbatRecruitmentHub' => true,
-            'orbatEmptyStateBackUrl' => url('back-office/organisation/structure'),
-            'orbatPageEyebrow' => 'Structure',
-            'orbatPageTitle' => 'Organigramme',
-            'orbatPageLead' => 'Vue hiérarchique des unités ; clic droit sur une carte pour tout éditer, créer ou rattacher.',
-            'structureHubOpen' => $structureHubOpen,
-            'groupParents' => $allUnitsForParent !== [] ? $allUnitsForParent : $unitRepository->getGroups($tenantId),
-            'teamParents' => $allUnitsForParent !== [] ? $allUnitsForParent : $unitRepository->getTeams($tenantId),
-            'usersForCommander' => $userRepository->allForTenant($tenantId),
-            'roles' => $roleRepository->forTenantOrganization($tenantId),
-            'roleMatrix' => $roleRepository->organizationRolesPermissionMatrix($tenantId),
-            'grades' => $gradeRepository->listActiveForDoctrinePicker($tenantId),
-            'gradeCategories' => $gradeCategoryRepository->listForTenant($tenantId),
-            'organizationRoleLabelMode' => $organizationRoleLabelMode,
-            'steamWebConfigured' => \App\Core\Container::get(\App\Services\Steam\SteamWebApiService::class)->isConfigured(),
         ]);
     }
 }

@@ -264,13 +264,17 @@ window.NatoSidcIcons = (function () {
         designation = opts.uniqueDesignation;
       }
       var heading = headingBucket(opts);
-      var key = sidc + '|' + size + '|' + heading + '|' + designation;
+      // outlineColor : liseré clair autour du symbole, pour que l’échelon et la hampe de QG (traits noirs) restent
+      // lisibles sur fond sombre (ex. ORBAT).
+      var outline = opts.outlineColor ? String(opts.outlineColor) : '';
+      var key = sidc + '|' + size + '|' + heading + '|' + designation + '|' + outline;
       if (svgCache.has(key)) return svgCache.get(key);
       var symOpts = {
         size: size,
         uniqueDesignation: designation,
       };
       if (heading !== '') symOpts.direction = heading;
+      if (outline) { symOpts.outlineColor = outline; symOpts.outlineWidth = 3; }
       var sym = new window.ms.Symbol(sidc, symOpts);
       if (sym.isValid && sym.isValid() === false) return remember(svgCache, key, null);
       var svg = sym.asSVG();
