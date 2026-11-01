@@ -98,10 +98,32 @@
     form.addEventListener('input', apply);
     form.addEventListener('change', apply);
   }
+  // Replier une branche de l'organigramme : ses sous-unités (code qui commence par le sien) disparaissent.
+  var folded = {};
+  function applyFolds() {
+    var codes = Object.keys(folded);
+    unitRows.forEach(function (row) {
+      var code = row.getAttribute('data-code') || '';
+      var hiddenByFold = codes.some(function (c) { return code.indexOf(c + '-') === 0; });
+      row.classList.toggle('is-folded', hiddenByFold);
+    });
+  }
+  root.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-eff-ut-fold]');
+    if (!btn) return;
+    var code = btn.getAttribute('data-eff-ut-fold');
+    if (!code) return;
+    var open = btn.getAttribute('aria-expanded') !== 'true';
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.setAttribute('title', open ? 'Replier les sous-unités' : 'Déplier les sous-unités');
+    if (open) delete folded[code]; else folded[code] = true;
+    applyFolds();
+  });
+
   root.querySelectorAll('[data-eff-aff-view]').forEach(function (b) {
     b.addEventListener('click', function () { setView(b.getAttribute('data-eff-aff-view')); });
   });
   apply();
-  var target = root.querySelector('.eff-aff-unit.is-target');
+  var target = root.querySelector('.eff-ut__unit.is-target, .eff-aff-unit.is-target');
   if (target) target.scrollIntoView({ block: 'center' });
 })();
