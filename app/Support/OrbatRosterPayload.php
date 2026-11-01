@@ -177,7 +177,8 @@ final class OrbatRosterPayload
         ?int $viewerUserId = null,
         ?bool $canBypassMasks = null,
         ?OrgVisibilityCapabilities $caps = null,
-        ?array $adminStatusFilter = null
+        ?array $adminStatusFilter = null,
+        ?UnitCodeService $unitCodeService = null
     ): ?array {
         if ($viewerUserId === null) {
             $viewerUserId = (int) Session::get('user_id');
@@ -194,14 +195,16 @@ final class OrbatRosterPayload
             return null;
         }
         $flat = UnitRepository::flattenTree($tree);
-        $unitCodes = (new UnitCodeService())->sync($tenantId)['units'];
-        $memberCounts = $unitRepository->countDistinctMembersByUnitForTenant($tenantId);
-        $commanderLabels = $unitRepository->commanderLabelByUnitForTenant($tenantId, $flat);
-        $rosterByUnit = $unitRepository->rosterMembersByUnitForTenant($tenantId);
-        $visibilityByUser = $unitRepository->personnelVisibilityByUserIdsForTenant(
+        // Tout ce qui suit l’arbre est de l’enrichissement : une colonne absente ou une donnée inattendue
+        // dans une table annexe ne doit jamais faire tomber l’ORBAT entier (500 sur la page et l’API).
+        $unitCodes = self::attempt('codes unités', static fn (): array => (array) (($unitCodeService ?? new UnitCodeService())->sync($tenantId)['units'] ?? []), []);
+        $memberCounts = self::attempt('effectifs', static fn (): array => $unitRepository->countDistinctMembersByUnitForTenant($tenantId), []);
+        $commanderLabels = self::attempt('chefs d’unité', static fn (): array => $unitRepository->commanderLabelByUnitForTenant($tenantId, $flat), []);
+        $rosterByUnit = self::attempt('membres', static fn (): array => $unitRepository->rosterMembersByUnitForTenant($tenantId), []);
+        $visibilityByUser = self::attempt('confidentialité', static fn (): array => $unitRepository->personnelVisibilityByUserIdsForTenant(
             $tenantId,
             self::collectUserIdsFromRoster($rosterByUnit)
-        );
+        ), []);
         $rosterByUnit = self::enrichAndFilterRosterMembers($rosterByUnit, $visibilityByUser, $caps, $flat);
         $allUserIds = [];
         foreach ($rosterByUnit as $rows) {
@@ -212,7 +215,7 @@ final class OrbatRosterPayload
                 }
             }
         }
-        $readinessByUser = $unitRepository->readinessByUsersForTenant($tenantId, array_map('intval', array_keys($allUserIds)));
+        $readinessByUser = self::attempt('disponibilité opérationnelle', static fn (): array => $unitRepository->readinessByUsersForTenant($tenantId, array_map('intval', array_keys($allUserIds))), []);
         foreach ($rosterByUnit as $unitId => $rows) {
             $enrichedRows = [];
             foreach ($rows as $row) {
@@ -236,7 +239,7 @@ final class OrbatRosterPayload
         }
 
         $viewerUnitIds = $viewerUserId > 0
-            ? $unitRepository->unitIdsForUser($tenantId, $viewerUserId)
+            ? self::attempt('unités du lecteur', static fn (): array => $unitRepository->unitIdsForUser($tenantId, (int) $viewerUserId), [])
             : [];
 
         $root = null;
@@ -291,10 +294,30 @@ final class OrbatRosterPayload
         if ($root !== null) {
             [$root] = self::annotateReadinessAggregation($root);
             $root = self::attachBilletManning($root, $tenantId);
-            $root = self::attachGrades($root, $unitRepository->gradeShortNamesForUsers($tenantId, self::collectPersonIds($root)));
+            $personIds = self::collectPersonIds($root);
+            $root = self::attachGrades($root, self::attempt('grades', static fn (): array => $unitRepository->gradeShortNamesForUsers($tenantId, $personIds), []));
         }
 
         return $root;
+    }
+
+    /**
+     * Exécute une étape d’enrichissement ; en cas d’erreur, consigne et renvoie la valeur de repli.
+     *
+     * @template T
+     * @param callable(): T $step
+     * @param T $fallback
+     * @return T
+     */
+    private static function attempt(string $label, callable $step, mixed $fallback): mixed
+    {
+        try {
+            return $step();
+        } catch (\Throwable $e) {
+            error_log('[orbat] ' . $label . ' indisponible : ' . $e->getMessage());
+
+            return $fallback;
+        }
     }
 
     /**

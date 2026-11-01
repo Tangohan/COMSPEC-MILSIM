@@ -88,6 +88,14 @@ Helper : `TenantMemberNumberService::identityPayload($userRow)`.
 
 - Recherche personnel / portail / listes BO : nom, prénom, `athena_identifier`, `tenant_member_number` (toujours filtrée par `tenant_id`).
 - Import CSV (BO matricules) : colonnes `email` + `tenant_member_number`.
+- Export CSV (BO matricules, `/back-office/organisation/matricules/export`, `?filtre=sans` pour les membres sans matricule) : `nom;indicatif;email;tenant_member_number;matricule_plateforme`, réimportable tel quel (BOM UTF-8, formules neutralisées).
+
+## Page Matricules : contrôle du registre et attribution
+
+- **Contrôle du registre** (`App\Support\MemberNumberAnalysis`, calcul pur) : doublons (insensibles à la casse), membres actifs sans matricule, valeurs hors modèle, numéros sautés dans la séquence, séquence en retard sur le plus grand numéro attribué (bouton « Reprendre à N », route `POST …/matricules/recaler`). La reconnaissance du modèle reproduit exactement `TenantMemberNumberService::format()`.
+- **Registre** : recherche et filtres (sans matricule / doublons / hors modèle), correction d’un matricule (`POST …/matricules/membre`, vide = retirer), attribution du prochain matricule à un membre ou à tous ceux qui n’en ont pas (`POST …/matricules/attribuer`, 200 par passage, modes automatique / assisté uniquement).
+- **Modèle** : éléments insérables au curseur, modèles courants, aperçu en direct des trois prochains matricules. Un mode généré refuse un modèle sans `{NUMBER}` (tous les matricules seraient identiques).
+- **Derniers changements** : 12 dernières lignes de `tenant_member_number_audit` de la communauté.
 - Export effectifs : colonnes séparées `platform_number` et `tenant_member_number`.
 
 ## Audit
@@ -106,3 +114,4 @@ Le matricule organisation est exposé en **métadonnée** (`member_number`) sur 
 ## Tests
 
 `tests/Unit/TenantMemberNumberServiceTest.php` — formats, payload, câblage migration / permission / routes / isolation SQL.
+`tests/Unit/MemberNumberAnalysisTest.php` — reconnaissance du modèle, doublons / trous / séquence en retard, refus d’un modèle sans numéro, rendu de la page, export.

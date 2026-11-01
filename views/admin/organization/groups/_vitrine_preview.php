@@ -8,6 +8,7 @@ declare(strict_types=1);
  */
 
 $vg = is_array($vitrineGroup ?? null) ? $vitrineGroup : [];
+$vUi = isset($ui) && is_array($ui) ? $ui : require __DIR__ . '/_kind.php';
 $vh = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $vAccent = trim((string) ($vg['public_accent_color'] ?? ''));
 $vAccent = preg_match('/^#[0-9a-f]{6}$/i', $vAccent) ? $vAccent : '#1e4f80';
@@ -27,10 +28,10 @@ $vVisible = !array_key_exists('show_on_public_page', $vg) || (int) ($vg['show_on
     <div class="bo-grp-vitrine__band" aria-hidden="true"></div>
     <div class="bo-grp-vitrine__body">
         <div>
-            <h3 class="bo-grp-vitrine__title" data-grp-pv-name><?= $vh((string) (($vg['name'] ?? '') !== '' ? $vg['name'] : 'Nom du groupe')) ?></h3>
+            <h3 class="bo-grp-vitrine__title" data-grp-pv-name><?= $vh((string) (($vg['name'] ?? '') !== '' ? $vg['name'] : 'Nom ' . ($vUi['kind'] === 'team' ? 'de l’équipe' : 'du groupe'))) ?></h3>
             <span class="bo-grp-vitrine__code" data-grp-pv-code><?= $vh((string) ($vg['code'] ?? '')) ?></span>
         </div>
-        <p class="bo-grp-vitrine__blurb<?= $vBlurb === '' ? ' bo-grp-vitrine__blurb--empty' : '' ?>" data-grp-pv-blurb><?= $vBlurb !== '' ? $vh($vBlurb) : 'Pas encore de présentation : écrivez deux phrases sur le rôle du groupe.' ?></p>
+        <p class="bo-grp-vitrine__blurb<?= $vBlurb === '' ? ' bo-grp-vitrine__blurb--empty' : '' ?>" data-grp-pv-blurb><?= $vBlurb !== '' ? $vh($vBlurb) : $vh((string) $vUi['noBlurb']) ?></p>
         <div class="bo-grp-vitrine__tags" data-grp-pv-tags>
             <?php foreach ($vTags as $t): ?><span class="bo-grp-vitrine__tag"><?= $vh($t) ?></span><?php endforeach; ?>
         </div>

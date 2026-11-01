@@ -395,9 +395,10 @@
   }
   function renderStats() {
     var units = visibleUnits();
-    var pax = 0, active = 0, rs = 0, rc = 0;
+    var pax = 0, active = 0, rs = 0, rc = 0, posts = 0, vacant = 0;
     units.forEach(function (n) {
       pax += n.strength || 0;
+      if (n.billetAuthorized > 0) { posts += n.billetAuthorized; vacant += n.billetVacant || 0; }
       if ((n.adminStatus || 'active') === 'active') active++;
       if (typeof n.localReadinessScore === 'number') {
         var w = (n.members || []).length || 1;
@@ -411,6 +412,7 @@
       '<div><span class="orb-k">' + esc(t('stat_strength')) + '</span><b>' + pax + '</b></div>' +
       '<div><span class="orb-k">' + esc(t('stat_active')) + '</span><b>' + active + '</b></div>' +
       '<div><span class="orb-k">' + esc(t('stat_watch')) + '</span><b class="orb-warn">' + (units.length - active) + '</b></div>' +
+      (posts > 0 ? '<div title="' + esc(t('stat_vacant_hint', { n: vacant, total: posts })) + '"><span class="orb-k">' + esc(t('stat_vacant')) + '</span><b' + (vacant > 0 ? ' class="orb-warn"' : '') + '>' + vacant + '</b></div>' : '') +
       '<div><span class="orb-k">' + esc(t('stat_readiness')) + '</span><b style="color:' + (r == null ? 'inherit' : readinessColor(r)) + '">' + (r == null ? '—' : r + ' %') + '</b></div>';
   }
   function renderFilters() {
@@ -645,7 +647,7 @@
       var lead = leaders(n);
       return '<tr data-key="' + esc(n.id) + '"><td><button type="button" class="orb-link" data-go="' + esc(n.id) + '"><span class="orb-sym orb-sym--sm">' + symHtml(n, 12) + '</span>' + esc(n.label) + '</button></td>' +
         '<td class="orb-mono orb-nowrap">' + esc(n.unitCode || '') + (n.adminId ? '<br><small>' + esc(n.adminId) + '</small>' : '') + '</td>' +
-        '<td>' + (edit ? selectHtml('struct_type', structs, n.structType) : esc(n.structType || '')) + '</td>' +
+        '<td>' + (edit ? selectHtml('struct_type', structs, n.structType) : esc(structLabel(n.structType) || '—')) + '</td>' +
         '<td>' + (edit && S.opts && S.opts.capabilities && S.opts.capabilities.military_symbol ? selectHtml('echelon', ech, n.echelonAuto ? '' : n.echelon) : esc(echelonLabel(n.echelon))) + '</td>' +
         '<td>' + (edit ? selectHtml('admin_status', statuses, n.adminStatus || 'active') : esc(n.adminStatusLabel || '')) + '</td>' +
         '<td>' + (edit && vis.length ? selectHtml('visibility_level', vis, n.visibilityLevel || 'normal') : esc(n.visibilityHintLabel || '')) + '</td>' +
@@ -691,11 +693,18 @@
     if (S.previewAs) params.push('preview_as=' + encodeURIComponent(S.previewAs));
     return api('/api/orbat/roster') + '?' + params.join('&');
   }
-  function reloadRoster() {
+  /* quiet : rafraîchissement de fond, sans message si le réseau ou la session lâche. */
+  function reloadRoster(quiet) {
     return fetch(rosterUrl(), { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-      .then(function (r) { return r.json(); })
-      .then(function (j) { if (j && j.success && j.roster) applyServer(j.roster); })
-      .catch(function () {});
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (j) {
+        if (!j || !j.success) throw new Error('roster');
+        if (j.roster) applyServer(j.roster);
+      })
+      .catch(function () { if (!quiet) toast(t('t_reload_error'), null, true); });
   }
   function applyServer(root) {
     var snap = JSON.stringify(root);
@@ -1989,7 +1998,7 @@
   // Rafraîchissement discret (travail à plusieurs) : jamais pendant une saisie, un glisser ou une fenêtre ouverte.
   setInterval(function () {
     if (!B.canManage || document.hidden || S.pending || M || drag || S.inline || !S.root) return;
-    reloadRoster();
+    reloadRoster(true);
   }, 32000);
 
 })();

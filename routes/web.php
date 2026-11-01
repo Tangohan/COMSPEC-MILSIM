@@ -1404,6 +1404,10 @@ return function (Router $router) {
     $router->get('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules/import', [OrganizationMemberNumberController::class, 'importCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/matricules/export', [OrganizationMemberNumberController::class, 'exportCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/attribuer', [OrganizationMemberNumberController::class, 'assignNext'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/membre', [OrganizationMemberNumberController::class, 'updateMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/recaler', [OrganizationMemberNumberController::class, 'realignSequence'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Ancien « Structure & recrutement » : l’ORBAT unique fait tout (création, invitation, édition en fenêtres).
     $router->get('/back-office/organisation/structure', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => (string) $r->query('ouvrir', '')])), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/unites/{id}', [UnitSheetController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

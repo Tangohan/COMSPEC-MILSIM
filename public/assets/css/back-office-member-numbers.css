@@ -1,0 +1,129 @@
+/* Matricules d’organisation (back-office/organisation/matricules) — charte ATHENA : angles carrés, jetons --ath-*. */
+
+.bo-mn { display: flex; flex-direction: column; gap: 18px; }
+.bo-mn-mono { font-family: var(--ath-mono, ui-monospace, monospace); }
+.bo-mn-muted { color: var(--ath-muted, #6d7a80); }
+.bo-mn-spacer { flex: 1 1 auto; }
+
+.bo-mn-panel { background: var(--ath-surface, #fff); border: 1px solid var(--ath-line, #e3e8ea); min-width: 0; }
+.bo-mn-panel__head {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 12px 16px; border-bottom: 1px solid var(--ath-line, #e3e8ea);
+}
+.bo-mn-panel__head form { margin: 0; }
+.bo-mn-panel__title { margin: 0; font-size: 12.5px; font-weight: 900; letter-spacing: 0.02em; color: var(--ath-ink, #0c1116); }
+.bo-mn-panel__hint { font-size: 11px; font-weight: 600; color: var(--ath-subtle, #8c979b); }
+.bo-mn-panel__body { padding: 16px; }
+.bo-mn-panel__foot {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+  padding: 12px 16px; border-top: 1px solid var(--ath-line, #e3e8ea); background: var(--ath-bg, #f6f8f9);
+}
+.bo-mn-text { margin: 0 0 12px; font-size: 12px; line-height: 1.55; color: var(--ath-ink, #0c1116); }
+.bo-mn-sub {
+  margin: 20px 0 10px; font-size: 8.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ath-subtle, #8c979b);
+}
+.bo-mn-gap { margin-top: 18px; }
+
+/* Contrôle du registre */
+.bo-mn-ok { margin: 0; padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 12px; color: var(--ath-ink, #0c1116); }
+.bo-mn-issues { list-style: none; margin: 0; padding: 0; }
+.bo-mn-issue {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
+  padding: 12px 16px 12px 14px; border-left: 3px solid var(--ath-line, #e3e8ea);
+}
+.bo-mn-issue + .bo-mn-issue { border-top: 1px solid var(--ath-line-soft, #f1f4f5); }
+.bo-mn-issue--bad { border-left-color: var(--ath-danger, #c72e2e); }
+.bo-mn-issue--warn { border-left-color: var(--ath-warn, #c98a12); }
+.bo-mn-issue--info { border-left-color: #1e4f80; }
+.bo-mn-issue__body { flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.bo-mn-issue__body strong { font-size: 12.5px; font-weight: 800; color: var(--ath-ink, #0c1116); }
+.bo-mn-issue__body span { font-size: 11.5px; line-height: 1.5; color: var(--ath-muted, #6d7a80); overflow-wrap: anywhere; }
+.bo-mn-issue__acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.bo-mn-issue__acts form { margin: 0; }
+
+/* Règles + aperçu */
+.bo-mn-rules { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr) 280px; align-items: start; margin: 0; }
+@media (max-width: 1080px) { .bo-mn-rules { grid-template-columns: 1fr; } }
+.bo-mn-switch { display: inline-flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 700; color: var(--ath-ink, #0c1116); cursor: pointer; }
+.bo-mn-pattern { display: grid; gap: 14px; grid-template-columns: minmax(0, 1.4fr) minmax(200px, 1fr); }
+@media (max-width: 720px) { .bo-mn-pattern { grid-template-columns: 1fr; } }
+.bo-mn-tokens { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.bo-mn-token {
+  border: 1px dashed var(--ath-line, #cfd8dc); background: var(--ath-bg, #f6f8f9); color: var(--ath-ink, #0c1116);
+  font: 700 11px/1 var(--ath-font, inherit); padding: 7px 9px; cursor: pointer;
+}
+.bo-mn-token:hover, .bo-mn-token:focus-visible { border-style: solid; border-color: var(--ath-accent, #0b8a5c); color: var(--ath-accent, #0b8a5c); outline: none; }
+.bo-mn-warn {
+  margin: 10px 0 0; padding: 8px 10px; font-size: 11.5px; font-weight: 700;
+  color: #8a5a06; background: var(--ath-warn-bg, #fdf3e2); border: 1px solid var(--ath-warn-bd, #f2ddb4);
+}
+.bo-mn-warn[hidden] { display: none; }
+.bo-mn-checks { display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.bo-mn-check { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--ath-ink, #0c1116); cursor: pointer; }
+.bo-mn-check input { accent-color: var(--ath-accent, #0b8a5c); width: 15px; height: 15px; }
+.ath-choice input[type="radio"] { accent-color: var(--ath-accent, #0b8a5c); margin-top: 2px; }
+
+.bo-mn-preview { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 6px; }
+.bo-mn-preview p { margin: 0; }
+.bo-mn-preview__label { font-size: 11px; font-weight: 700; color: #a9b3b7; }
+.bo-mn-preview__value {
+  font: 800 26px/1.15 var(--ath-mono, ui-monospace, monospace); color: #fff; letter-spacing: 0.02em; overflow-wrap: anywhere;
+  padding: 10px 0; border-bottom: 1px solid #263036;
+}
+.bo-mn-preview__then { font-size: 9px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #6b736e; margin-top: 4px !important; }
+.bo-mn-preview__next { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.bo-mn-preview__next li { font: 600 13px/1.4 var(--ath-mono, ui-monospace, monospace); color: #cfd6d9; overflow-wrap: anywhere; }
+.bo-mn-preview__mode { margin-top: 10px !important; font-size: 11px; font-weight: 700; color: var(--ath-accent-bright, #12d18e); }
+
+/* Registre */
+.bo-mn-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 16px;
+  border-bottom: 1px solid var(--ath-line, #e3e8ea); background: var(--ath-table-head, #fafcfc);
+}
+.bo-mn-search { flex: 1 1 260px; max-width: 420px; }
+.bo-mn-search input { width: 100%; }
+.bo-mn-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.bo-mn-chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; cursor: pointer;
+  border: 1px solid var(--ath-line, #e3e8ea); background: var(--ath-surface, #fff); color: var(--ath-muted, #6d7a80);
+  font: 700 11.5px/1 var(--ath-font, inherit);
+}
+.bo-mn-chip span { font-family: var(--ath-mono, ui-monospace, monospace); font-size: 10.5px; color: var(--ath-subtle, #8c979b); }
+.bo-mn-chip[aria-pressed="true"] { background: var(--ath-ink, #0c1116); border-color: var(--ath-ink, #0c1116); color: #fff; }
+.bo-mn-chip[aria-pressed="true"] span { color: var(--ath-accent-bright, #12d18e); }
+.bo-mn-table { min-width: 860px; }
+.bo-mn-table td { vertical-align: middle; }
+.bo-mn-table tr[hidden] { display: none; }
+.bo-mn-name { font-weight: 800; color: var(--ath-ink, #0c1116); text-decoration: none; }
+.bo-mn-name:hover { text-decoration: underline; }
+.bo-mn-callsign { display: block; font-size: 11px; color: var(--ath-muted, #6d7a80); }
+.bo-mn-actions { white-space: nowrap; }
+.bo-mn-actions form { display: inline; margin: 0; }
+.bo-mn-empty { margin: 0; padding: 18px 16px; font-size: 12px; color: var(--ath-muted, #6d7a80); }
+.bo-mn-empty[hidden] { display: none; }
+
+/* Import + historique */
+.bo-mn-split { display: grid; gap: 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+@media (max-width: 960px) { .bo-mn-split { grid-template-columns: 1fr; } }
+.bo-mn-import { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 12px; }
+.bo-mn-import input[type="file"] { font-size: 12px; max-width: 100%; }
+.bo-mn-audit { list-style: none; margin: 0; padding: 0; }
+.bo-mn-audit li { padding: 10px 16px; border-bottom: 1px solid var(--ath-line-soft, #f1f4f5); }
+.bo-mn-audit li:last-child { border-bottom: 0; }
+.bo-mn-audit__line { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 12px; color: var(--ath-ink, #0c1116); }
+.bo-mn-audit__line .bo-mn-mono { font-size: 11.5px; }
+.bo-mn-audit__meta { margin-top: 2px; font-size: 10.5px; color: var(--ath-subtle, #8c979b); }
+
+/* Fenêtre de modification */
+.bo-mn-dialog {
+  width: min(440px, calc(100vw - 32px)); padding: 18px; border: 1px solid var(--ath-line, #e3e8ea);
+  background: var(--ath-surface, #fff); color: var(--ath-ink, #0c1116);
+}
+.bo-mn-dialog::backdrop { background: rgba(12, 17, 22, 0.55); }
+.bo-mn-dialog form { display: flex; flex-direction: column; gap: 14px; margin: 0; }
+
+html[data-bo-theme="dark"] .bo-mn-chip[aria-pressed="true"] { background: #dae1de; border-color: #dae1de; color: #0c1116; }
+html[data-bo-theme="dark"] .bo-mn-chip[aria-pressed="true"] span { color: #0b8a5c; }
+html[data-bo-theme="dark"] .bo-mn-warn { color: #fcd34d; background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.35); }
+html[data-bo-theme="dark"] .bo-mn-issue--info { border-left-color: #5b9bd5; }

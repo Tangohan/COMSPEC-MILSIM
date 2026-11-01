@@ -1771,6 +1771,68 @@ class UserRepository
     }
 
     /**
+     * Membres actifs de la communauté et leur matricule d’organisation (page Matricules du back-office) :
+     * nom, indicatif, e-mail, matricule plateforme et matricule de CETTE communauté.
+     *
+     * @return list<array{id: int, display_name: string, callsign: string, email: string, athena_identifier: string, tenant_member_number: string}>
+     */
+    public function listTenantMemberNumbersForTenant(int $tenantId, int $limit = 5000): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $limit = max(1, min(10000, $limit));
+        $pdo = $this->pdo();
+        $hasTmn = $this->hasTenantMemberNumberColumn();
+        $hasAthena = $this->hasAthenaIdentifierColumn();
+        $hasUcp = $this->hasCommunityMembershipTable() && $this->tableExists('user_community_profiles');
+        $tenantLit = (int) $tenantId;
+        $pack = $this->technicalAccountExclusionPredicate('u');
+
+        $nameExpr = $hasUcp ? 'COALESCE(ucp.display_name, u.display_name)' : 'u.display_name';
+        $callsignExpr = $hasUcp ? 'COALESCE(ucp.callsign, u.callsign)' : 'u.callsign';
+        $athenaSelect = $hasAthena
+            ? ($hasUcp ? 'COALESCE(ucp.athena_identifier, u.athena_identifier)' : 'u.athena_identifier')
+            : "''";
+        $tmnSelect = $hasTmn
+            ? ($hasUcp
+                ? 'COALESCE(ucp.tenant_member_number, CASE WHEN u.tenant_id = ' . $tenantLit . ' THEN u.tenant_member_number END)'
+                : 'u.tenant_member_number')
+            : 'NULL';
+        $where = [$this->sqlMemberOfTenantPredicate('u', $tenantId), $pack['sql']];
+        if ($hasUcp) {
+            $where[] = SqlText::coalesceEqualsLiteral($pdo, 'ucp.status', 'u.status', 'active');
+        } else {
+            $where[] = SqlText::equalsLiteral($pdo, 'u.status', 'active');
+        }
+        if ($this->hasDeletedAtColumn()) {
+            $where[] = 'u.deleted_at IS NULL';
+        }
+        $sql = 'SELECT u.id, ' . $nameExpr . ' AS display_name, ' . $callsignExpr . ' AS callsign, u.email, '
+            . $athenaSelect . ' AS athena_identifier, ' . $tmnSelect . ' AS tenant_member_number
+            FROM users u '
+            . ($hasUcp ? 'LEFT JOIN user_community_profiles ucp ON ucp.user_id = u.id AND ucp.tenant_id = ' . $tenantLit . ' ' : '')
+            . 'WHERE ' . implode(' AND ', $where) . '
+            ORDER BY u.id ASC
+            LIMIT ' . $limit;
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($pack['params']);
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $out[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'display_name' => trim((string) ($row['display_name'] ?? '')),
+                'callsign' => trim((string) ($row['callsign'] ?? '')),
+                'email' => trim((string) ($row['email'] ?? '')),
+                'athena_identifier' => trim((string) ($row['athena_identifier'] ?? '')),
+                'tenant_member_number' => trim((string) ($row['tenant_member_number'] ?? '')),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Annuaire personnel enrichi : grade, affectation principale, matricule, ancienneté, rôle métier —
      * en une seule requête (jointures), sans boucle N+1. Recherche optionnelle (nom affiché, prénom/nom,
      * indicatif, slug, identifiant Athena, nom de personnage).
