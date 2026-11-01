@@ -11,7 +11,8 @@ final class EffectifsRosterBackOfficeUiAssetTest extends TestCase
     public function testRosterUsesLightBackOfficeAlertsMetricsAndHumanCopy(): void
     {
         $root = dirname(__DIR__, 2);
-        $roster = (string) file_get_contents($root . '/views/admin/effectifs_workspace/roster.php');
+        $roster = (string) file_get_contents($root . '/views/admin/effectifs_workspace/roster.php') . (string) file_get_contents($root . '/views/admin/effectifs_workspace/partials/roster_toolbar.php');
+        $shell = (string) file_get_contents($root . '/views/admin/effectifs_workspace/shell.php');
         $css = (string) file_get_contents($root . '/public/assets/css/effectifs_lms.css');
         $dispatch = (string) file_get_contents($root . '/app/Support/DevDispatchCatalog.php');
 
@@ -24,8 +25,8 @@ final class EffectifsRosterBackOfficeUiAssetTest extends TestCase
         self::assertStringNotContainsString('color:#0f172a', $roster);
         self::assertStringNotContainsString('background:#f8fafc', $roster);
 
-        self::assertStringContainsString('eff-metrics--roster', $roster);
-        self::assertStringContainsString('eff-metric--link', $roster);
+        self::assertStringContainsString('bo-eff-hero__sum', $shell);
+        self::assertStringContainsString('bo-eff-sv', $shell);
         self::assertStringContainsString('eff-bulkbar', $roster);
         self::assertStringContainsString('$assignmentLeaf', $roster);
         self::assertStringContainsString('$assignmentParent', $roster);
@@ -46,8 +47,7 @@ final class EffectifsRosterBackOfficeUiAssetTest extends TestCase
         self::assertStringContainsString('$pr(450,', $dispatch);
 
         self::assertStringContainsString('eff-roster-hero', $roster);
-        self::assertStringContainsString('eff-roster-hero--compact', $roster);
-        self::assertStringContainsString('eff-roster-toolbar', $roster);
+        self::assertStringContainsString('eff-mq-bar', $roster);
         self::assertStringContainsString('Ancienneté réelle', $roster);
         self::assertStringContainsString('<details class="eff-roster-hero__seniority', $roster);
         self::assertStringNotContainsString('eff-catalog-checks', $roster);
@@ -55,14 +55,14 @@ final class EffectifsRosterBackOfficeUiAssetTest extends TestCase
         self::assertStringContainsString('data-img-fallback="portrait"', $roster);
         self::assertStringContainsString('Matricule Athena', $roster);
         self::assertStringContainsString('Matricule communauté', $roster);
-        self::assertStringContainsString('>Identité</th>', $roster);
-        self::assertStringContainsString('>Callsign</th>', $roster);
-        self::assertStringContainsString('>Photo</th>', $roster);
+        self::assertStringContainsString('>Membre</th>', $roster);
+        self::assertStringContainsString('eff-mq-cs', $roster);
+        self::assertStringContainsString('eff-mq-av', $roster);
         self::assertStringContainsString('eff-sheets__qual-count', $roster);
         self::assertStringContainsString('data-eff-qual-open', $roster);
         self::assertStringContainsString('eff-qual-dialog', $roster);
         self::assertStringNotContainsString('Qualifications ·', $roster);
-        self::assertStringContainsString('eff-sheets__meter', $roster);
+        self::assertStringContainsString('eff-mq-ring', $roster);
         self::assertStringContainsString('Disponibilité', $roster);
 
         $controller = (string) file_get_contents($root . '/app/Controllers/Admin/EffectifsWorkspaceController.php');

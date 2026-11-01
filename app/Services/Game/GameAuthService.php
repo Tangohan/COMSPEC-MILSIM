@@ -205,6 +205,13 @@ final class GameAuthService
         if ($deviceId === '' || !$this->hasSteamId($steamId)) {
             return $this->fail('STEAM_NOT_LINKED', 401);
         }
+        // Steam sur les comptes de deux personnes : ne pas ouvrir l'un au hasard. Le mod repasse par l'e-mail ou le code.
+        if (self::steamOwnerCount((string) $steamId) > 1) {
+            return $this->fail('STEAM_NOT_LINKED', 401, [
+                'reason' => 'steam_duplicate',
+                'message' => 'Ce compte Steam est relié à deux comptes Athena. Connectez-vous au site Athena et choisissez lequel le garde.',
+            ]);
+        }
         $account = $this->resolveAccountByLinkedSteam($steamId);
         if ($account === null || (string) ($account['status'] ?? '') !== 'active') {
             return $this->fail('STEAM_NOT_LINKED', 401);
@@ -839,6 +846,16 @@ final class GameAuthService
         return $this->promoteAccountFromUsers($email, (string) $matched['password_hash']);
     }
 
+    /** Personnes (e-mails distincts) dont les fiches portent ce Steam ; 0 si le contrôle est impossible. */
+    public static function steamOwnerCount(string $steamId): int
+    {
+        try {
+            return (new \App\Services\Account\SteamConflictService())->ownerCount($steamId);
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
     /**
      * Compte Athena déjà lié à cet identifiant Steam (compte ou fiche Effectifs).
      *
@@ -948,7 +965,8 @@ final class GameAuthService
             return '';
         }
 
-        return $value;
+        // Clé de traduction Arma restée brute (« STR_… ») : traduite ou réduite.
+        return \App\Support\ArmaText::label($value);
     }
 
     /**

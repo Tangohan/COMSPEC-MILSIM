@@ -713,6 +713,8 @@ final class AtakDebriefRepository
     /** « SLOT:Fusilier » → « Fusilier ». */
     private static function roleLabel(string $role): string
     {
+        $role = \App\Support\ArmaText::roleLabel($role);
+
         return str_starts_with($role, 'SLOT:') ? substr($role, 5) : $role;
     }
 

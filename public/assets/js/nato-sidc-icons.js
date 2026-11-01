@@ -177,8 +177,35 @@ window.NatoSidcIcons = (function () {
     return !!(window.ms && typeof window.ms.Symbol === 'function');
   }
 
+  /* Échelon ORBAT (structType) → lettre 2525C du 12e caractère. */
+  var ECHELON_LETTERS = {
+    team: 'A', equipe: 'A', fr_equipe: 'A', fire_team: 'A', us_fire_team: 'A',
+    squad: 'B', escouade: 'B', us_squad: 'B',
+    group: 'C', groupe: 'C', fr_groupe: 'C',
+    section: 'D', platoon: 'D', fr_section: 'D', us_platoon: 'D',
+    company: 'E', compagnie: 'E', fr_compagnie: 'E', us_company: 'E', squadron: 'E', escadron: 'E',
+    battalion: 'F', bataillon: 'F', us_battalion: 'F',
+    regiment: 'G', fr_regiment: 'G',
+    brigade: 'H',
+    division: 'I'
+  };
+
+  /* SIDC 2525C : caractère 11 = QG / force opérationnelle (conservé), 12 = échelon. Unités terrestres seulement. */
+  function applyEchelon(sidc, echelon) {
+    var letter = ECHELON_LETTERS[String(echelon || '').toLowerCase().trim()];
+    var s = String(sidc || '');
+    if (!letter || s.length < 10 || s.charAt(2) !== 'G' || s.charAt(4) !== 'U') return s;
+    s = (s + '-----').slice(0, 15);
+    var mod = s.charAt(10) === '*' ? '-' : s.charAt(10);
+    return s.slice(0, 10) + mod + letter + s.slice(12);
+  }
+
   function resolveSidc(opts) {
     opts = opts || {};
+    return applyEchelon(resolveSidcBase(opts), opts.echelon);
+  }
+
+  function resolveSidcBase(opts) {
     if (opts.sidc) return String(opts.sidc).trim();
     var aff = normAff(opts.affiliation);
     var cat = window.MilstdCatalog;
@@ -203,29 +230,54 @@ window.NatoSidcIcons = (function () {
     return ('S' + letter + dim + 'P' + fid + '-----').slice(0, 15);
   }
 
+  /* Caches bornés (FIFO) : milsymbol et L.divIcon coûtent cher, les mêmes symboles reviennent à chaque rafraîchissement. */
+  var CACHE_MAX = 500;
+  var svgCache = new Map();
+  var divIconCache = new Map();
+
+  function remember(cache, key, value) {
+    if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value);
+    cache.set(key, value);
+    return value;
+  }
+
+  /* Cap arrondi à 10° : au-delà, le symbole ne change pas à l'œil et le cache reste petit. */
+  function headingBucket(opts) {
+    var h = parseFloat(opts && opts.heading);
+    if (isNaN(h)) return '';
+    return ((Math.round(h / 10) * 10) % 360 + 360) % 360;
+  }
+
+  function markerSize(opts) {
+    return opts.size || (window.ATAKMarkerSizes ? window.ATAKMarkerSizes.px('tactical') : 19);
+  }
+
   function milsymbolSvg(opts) {
     if (!hasMilsymbol()) return null;
+    opts = opts || {};
     try {
       var sidc = resolveSidc(opts);
-      var size = opts.size || (window.ATAKMarkerSizes ? window.ATAKMarkerSizes.px('tactical') : 19);
+      var size = markerSize(opts);
       // Jamais graver l’indicatif dans milsymbol : ça gonfle la boîte SVG.
       var designation = '';
       if (opts.uniqueDesignation != null && opts.uniqueDesignation !== '') {
         designation = opts.uniqueDesignation;
       }
+      var heading = headingBucket(opts);
+      var key = sidc + '|' + size + '|' + heading + '|' + designation;
+      if (svgCache.has(key)) return svgCache.get(key);
       var symOpts = {
         size: size,
         uniqueDesignation: designation,
       };
-      var heading = parseFloat(opts.heading);
-      if (!isNaN(heading)) symOpts.direction = heading;
+      if (heading !== '') symOpts.direction = heading;
       var sym = new window.ms.Symbol(sidc, symOpts);
-      if (sym.isValid && sym.isValid() === false) return null;
+      if (sym.isValid && sym.isValid() === false) return remember(svgCache, key, null);
       var svg = sym.asSVG();
-      if (!svg) return null;
+      if (!svg) return remember(svgCache, key, null);
       var anchor = sym.getAnchor ? sym.getAnchor() : { x: size / 2, y: size / 2 };
       var sz = sym.getSize ? sym.getSize() : { width: size, height: size };
-      return { svg: svg, anchor: anchor, size: sz, sidc: sidc };
+      return remember(svgCache, key, { svg: svg, anchor: anchor, size: sz, sidc: sidc });
     } catch (e) {
       return null;
     }
@@ -262,9 +314,8 @@ window.NatoSidcIcons = (function () {
     opts = opts || {};
     var aff = normAff(opts.affiliation);
     var label = String(opts.callSign || opts.label || '').slice(0, 12);
-    var heading = parseFloat(opts.heading);
-    if (isNaN(heading)) heading = 0;
-    var size = opts.size || (window.ATAKMarkerSizes ? window.ATAKMarkerSizes.px('tactical') : 19);
+    var heading = headingBucket(opts);
+    if (heading === '') heading = 0;
     var showLabel = opts.showLabel === true;
     var healthClass = healthClassFromOpts(opts);
 
@@ -302,6 +353,15 @@ window.NatoSidcIcons = (function () {
     var size = S ? S.clampPref(opts.size || S.px('tactical')) : (opts.size || 19);
     opts.size = size;
     opts.showLabel = opts.showLabel === true;
+    // Même clé = même icône partagée (Leaflet crée un élément par marqueur) : ne jamais modifier icon.options.
+    var key = [
+      resolveSidc(opts), size, headingBucket(opts), opts.uniqueDesignation || '',
+      normAff(opts.affiliation), healthClassFromOpts(opts),
+      opts.showLabel ? String(opts.callSign || opts.label || '').slice(0, 12) : '',
+      opts.emitting ? 1 : 0, opts.listening && !opts.emitting ? 1 : 0,
+      hasMilsymbol() ? 'ms' : (opts.roleKey || guessRole(opts.role, opts.aircraftType, opts))
+    ].join('|');
+    if (divIconCache.has(key)) return divIconCache.get(key);
     var mil = milsymbolSvg(opts);
     var iconW = size;
     var iconH = size;
@@ -317,14 +377,14 @@ window.NatoSidcIcons = (function () {
     }
     var html = svgMarkup(opts);
     if (S && S.wrapGlyph) html = S.wrapGlyph(html);
-    return L.divIcon({
+    return remember(divIconCache, key, L.divIcon({
       className: 'nato-sidc-icon atak-compact-marker',
       html: html,
       iconSize: [iconW, iconH],
       iconAnchor: [anchorX, anchorY],
       popupAnchor: [0, -anchorY],
       tooltipAnchor: [0, -anchorY]
-    });
+    }));
   }
 
   function listBadgeHtml(opts) {
@@ -350,6 +410,7 @@ window.NatoSidcIcons = (function () {
     symbolFieldsFromUnit: symbolFieldsFromUnit,
     platformToRoleKey: platformToRoleKey,
     resolveSidc: resolveSidc,
+    applyEchelon: applyEchelon,
     hasMilsymbol: hasMilsymbol,
     milsymbolSvg: milsymbolSvg,
     svgMarkup: svgMarkup,

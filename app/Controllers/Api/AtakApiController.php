@@ -1009,6 +1009,14 @@ class AtakApiController
         }
 
         $user = $this->userRepository->findBySteamId($steamUid);
+        if ($user !== null && \App\Services\Game\GameAuthService::steamOwnerCount($steamUid) > 1) {
+            // Steam sur les comptes de deux personnes : le joueur choisit sur le site avant toute liaison par Steam.
+            return Response::json([
+                'error' => 'steam_not_linked',
+                'reason' => 'steam_duplicate',
+                'message' => 'Ce compte Steam est relié à deux comptes Athena. Connectez-vous au site Athena et choisissez lequel le garde, ou utilisez un code de connexion en jeu.',
+            ], 404);
+        }
         if ($user === null) {
             $failTenant = ComspecApiKeyAuth::guessTenantIdForLog();
             $this->logUnverifiedLinkRefusal($failTenant, 'Liaison en jeu refusée — Steam non reconnu', [

@@ -75,7 +75,10 @@
       window.ATAKMarkerManagerC2 = state.manager;
 
       var trackLayer = window.L.layerGroup().addTo(map);
-      state.tracks = new TrackRenderer({ leafletMap: map });
+      state.tracks = new TrackRenderer({
+        leafletMap: map,
+        renderer: window.ATAKMap.getVectorRenderer ? window.ATAKMap.getVectorRenderer('tracks') : null,
+      });
       state.tracks.setLeafletLayer(trackLayer);
       window.ATAKTrackRendererC2 = state.tracks;
 
@@ -155,7 +158,9 @@
       }
     } catch (e0) { /* ignore */ }
 
-    if (state.tracks && window.ATAKUnits && typeof window.ATAKUnits.getTrailBuffers === 'function') {
+    // En relecture, les traînées viennent de l'enregistrement (atak-replay.js), pas du direct.
+    var replaying = !!(window.ATAKReplay && window.ATAKReplay.isActive && window.ATAKReplay.isActive());
+    if (!replaying && state.tracks && window.ATAKUnits && typeof window.ATAKUnits.getTrailBuffers === 'function') {
       try {
         var trailPrefs = window.ATAKMap && typeof window.ATAKMap.getDisplayPrefs === 'function'
           ? window.ATAKMap.getDisplayPrefs()

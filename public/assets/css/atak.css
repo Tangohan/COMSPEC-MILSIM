@@ -12377,3 +12377,41 @@ body.atak-light .atak-sse-person-card-meta {
   border-color: rgba(244, 197, 66, 0.4);
   color: #f4e4a8;
 }
+
+/* Zones sûres (encoche, barre système) : nulles sans découpe d'écran, effectives avec viewport-fit=cover. */
+body.atak-page {
+  box-sizing: border-box;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+
+/* Toiles canvas des formes / traces sous la couche SVG : le fond vide du SVG laisse passer clics et survols. */
+#atak-map .leaflet-overlay-pane > svg {
+  pointer-events: none;
+}
+
+/* Carte plein écran (mode tablette, atak-collapse.js) : en-tête et panneaux repliés. */
+body.atak-page.atak-map-focus .atak-header,
+body.atak-page.atak-map-focus .atak-v2-layoutbar,
+body.atak-page.atak-map-focus .atak-panel-left,
+body.atak-page.atak-map-focus .atak-panel-right,
+body.atak-page.atak-map-focus .atak-pin-dock {
+  display: none !important;
+}
+.atak-map-focus-exit {
+  display: none;
+}
+body.atak-page.atak-map-focus .atak-map-focus-exit {
+  display: block;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1200;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--atak-border);
+  border-radius: 6px;
+  background: var(--atak-panel);
+  color: var(--atak-text);
+  font: inherit;
+  cursor: pointer;
+}

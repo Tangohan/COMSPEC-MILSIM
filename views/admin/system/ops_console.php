@@ -8,7 +8,8 @@ use App\Services\Platform\PlatformStorageService;
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $ok = \App\Core\Session::getFlash('success');
 $err = \App\Core\Session::getFlash('error');
-$base = url('admin/system/exploitation');
+$base = url('admin/system/exploitation'); // actions (POST)
+$pilot = url('admin'); // pages : onglets de la page de pilotage
 $tab = (string) ($opsTab ?? 'etat');
 $csrf = Csrf::field();
 $toneClass = static fn (string $tone): string => match ($tone) {
@@ -24,12 +25,6 @@ $ago = static function (?string $iso): string {
 
     return $t ? OpsHealthService::formatAge(time() - $t) : 'jamais';
 };
-$tabs = [
-    'etat' => 'État du site',
-    'migrations' => 'Migrations',
-    'sauvegardes' => 'Sauvegardes',
-    'donnees' => 'Comptes et données',
-];
 $summary = is_array($opsSummary ?? null) ? $opsSummary : null;
 ?>
 <div class="pa ops">
@@ -38,11 +33,11 @@ $summary = is_array($opsSummary ?? null) ? $opsSummary : null;
             <p class="pa-crumb">
                 <a href="<?= $h(url('admin')) ?>">Administration du site</a>
                 <span aria-hidden="true"> / </span>
-                Console d’exploitation
+                Exploitation
             </p>
-            <h1 class="pa-hero__title">Console d’exploitation</h1>
+            <h1 class="pa-hero__title">Pilotage du site</h1>
             <p class="pa-hero__lead">
-                L’état du site, les migrations de la base, les sauvegardes et les suppressions de comptes, au même endroit.
+                Exploitation : l’état technique, les migrations de la base, les sauvegardes et les suppressions de comptes.
                 Réservé à l’administration du site, après une double vérification.
             </p>
             <?php if (empty($opsLocked)): ?>
@@ -58,6 +53,8 @@ $summary = is_array($opsSummary ?? null) ? $opsSummary : null;
                 </div>
             <?php endif; ?>
         </header>
+
+        <?php $pilotTab = $tab; require base_path('views/admin/partials/pilotage_tabs.php'); ?>
 
         <div class="pa-panel">
             <?php if ($ok): ?><p class="pa-flash pa-flash--ok" role="status"><?= $h($ok) ?></p><?php endif; ?>
@@ -95,16 +92,6 @@ $summary = is_array($opsSummary ?? null) ? $opsSummary : null;
                 <p class="ops-lock__foot">La console reste ouverte 30 minutes, pour ce navigateur seulement. Chaque action est inscrite au journal d’audit.</p>
             </section>
 <?php else: ?>
-            <nav class="ops-tabs" aria-label="Sections de la console">
-                <?php foreach ($tabs as $key => $label): ?>
-                    <a class="ops-tab<?= $tab === $key ? ' is-active' : '' ?>" href="<?= $h($base . '?onglet=' . $key) ?>"<?= $tab === $key ? ' aria-current="page"' : '' ?>>
-                        <?= $h($label) ?>
-                        <?php if ($key === 'etat' && $summary !== null && ($summary['bad'] + $summary['warn']) > 0): ?>
-                            <span class="pa-pill pa-pill--<?= $summary['bad'] > 0 ? 'rose' : 'amber' ?>"><?= (int) ($summary['bad'] + $summary['warn']) ?></span>
-                        <?php endif; ?>
-                    </a>
-                <?php endforeach; ?>
-            </nav>
 
 <?php if ($tab === 'etat'): ?>
             <?php $sections = is_array($opsHealth ?? null) ? $opsHealth : []; ?>
@@ -114,7 +101,7 @@ $summary = is_array($opsSummary ?? null) ? $opsSummary : null;
                     <strong><?= ($summary['tone'] ?? 'ok') === 'ok' ? 'Tout fonctionne' : (($summary['tone'] ?? '') === 'bad' ? 'Un point bloque' : 'Quelques points à regarder') ?></strong>
                     <span><?= (int) ($summary['ok'] ?? 0) ?> contrôle(s) au vert · <?= (int) ($summary['warn'] ?? 0) ?> à surveiller · <?= (int) ($summary['bad'] ?? 0) ?> en échec · relevé à <?= $h(date('H:i')) ?></span>
                 </div>
-                <a class="pa-btn pa-btn--ghost pa-btn--sm" href="<?= $h($base . '?onglet=etat') ?>">Actualiser</a>
+                <a class="pa-btn pa-btn--ghost pa-btn--sm" href="<?= $h($pilot . '?onglet=etat') ?>">Actualiser</a>
             </div>
             <div class="ops-grid">
                 <?php foreach ($sections as $section): ?>
@@ -193,7 +180,7 @@ $summary = is_array($opsSummary ?? null) ? $opsSummary : null;
                 <section class="pa-card" id="ops-output">
                     <div class="ops-card-head">
                         <h2 class="ops-health__title">Sortie de l’étape <code><?= $h($opsMigrationOutput['step']) ?></code></h2>
-                        <a class="pa-btn pa-btn--ghost pa-btn--sm" href="<?= $h($base . '?onglet=migrations') ?>">Fermer</a>
+                        <a class="pa-btn pa-btn--ghost pa-btn--sm" href="<?= $h($pilot . '?onglet=migrations') ?>">Fermer</a>
                     </div>
                     <pre class="ops-console"><?= $opsMigrationOutput['text'] !== '' ? $h($opsMigrationOutput['text']) : 'Aucune sortie enregistrée pour cette étape.' ?></pre>
                 </section>
@@ -220,7 +207,7 @@ $summary = is_array($opsSummary ?? null) ? $opsSummary : null;
                                 <td class="ops-msg"><?= $h($r['message'] ?? '') ?></td>
                                 <td class="ops-right ops-nowrap">
                                     <?php if ($r !== null): ?>
-                                        <a class="pa-btn pa-btn--ghost pa-btn--sm" href="<?= $h($base . '?onglet=migrations&sortie=' . rawurlencode($s['id']) . '#ops-output') ?>">Sortie</a>
+                                        <a class="pa-btn pa-btn--ghost pa-btn--sm" href="<?= $h($pilot . '?onglet=migrations&sortie=' . rawurlencode($s['id']) . '#ops-output') ?>">Sortie</a>
                                     <?php endif; ?>
                                     <?php if (!empty($s['rerun'])): ?>
                                         <form method="post" action="<?= $h($base . '/migrations/lancer') ?>" class="ops-inline" data-ops-confirm="Relancer seulement « <?= $h($s['label']) ?> » ?">
@@ -359,7 +346,7 @@ $summary = is_array($opsSummary ?? null) ? $opsSummary : null;
                     Par défaut la suppression est <strong>programmée</strong> : le compte ne peut plus se connecter tout de suite et s’efface à la date choisie.
                     Jusque-là, « Annuler » le rétablit comme avant. « Supprimer maintenant » l’efface sans attendre, après une sauvegarde de la base.
                 </p>
-                <form method="get" action="<?= $h($base) ?>" class="ops-search">
+                <form method="get" action="<?= $h($pilot) ?>" class="ops-search">
                     <input type="hidden" name="onglet" value="donnees">
                     <label class="ops-sr" for="ops-q">Adresse, nom ou numéro</label>
                     <input id="ops-q" type="search" name="q" value="<?= $h($q) ?>" placeholder="Adresse e-mail, nom affiché ou n° de compte" minlength="2" required>

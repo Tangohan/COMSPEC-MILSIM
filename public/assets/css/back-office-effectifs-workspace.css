@@ -77,35 +77,11 @@
   gap: 0.5rem;
 }
 
+/* Barre d’onglets : structure de base ; présentation complète dans back-office-effectifs-maquette.css. */
 .bo-eff-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  padding: 0.35rem 0 0.15rem;
-  border-bottom: 1px solid var(--ath-line, #e3e8ea);
-}
-
-.bo-eff-tabs a {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  min-height: 2.15rem;
-  padding: 0 0.75rem;
-  color: var(--ath-muted, #6d7a80);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  text-decoration: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-}
-
-.bo-eff-tabs a:hover {
-  color: var(--ath-ink, #0c1116);
-}
-
-.bo-eff-tabs a.is-active {
-  color: var(--ath-ink, #0c1116);
-  border-bottom-color: var(--ath-accent, #0b8a5c);
+  align-items: stretch;
+  min-width: 0;
 }
 
 .bo-eff-badge {
@@ -433,11 +409,6 @@
   .bo-eff-head {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .bo-eff-tabs a {
-    min-height: 2rem;
-    font-size: 0.75rem;
   }
 
   .eff-editor__summary {

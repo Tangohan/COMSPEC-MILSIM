@@ -70,7 +70,8 @@ final class OperatorGameProfileRepository
             self::text($identity['sex'] ?? $identity['sex_detected'] ?? null, 20),
             self::bloodType($medical['blood_type'] ?? null),
             self::text($identity['face_class'] ?? null, 190), self::text($identity['face_texture'] ?? null, 500),
-            self::text($identity['role'] ?? null, 190),
+            // Clé de traduction Arma non traduite (« STR_… ») : traduite ou réduite, jamais stockée brute.
+            self::text(\App\Support\ArmaText::label(is_scalar($identity['role'] ?? null) ? (string) $identity['role'] : ''), 190),
             self::text($identity['group_name'] ?? null, 190), self::text($identity['faction'] ?? null, 100),
             self::text($identity['side'] ?? null, 30),
             $json($payload['loadout'] ?? $equipment['loadout'] ?? []), $json($equipment), $json($medical), $json($versions),

@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 $contactInboxConfigured = !empty($contactInboxConfigured);
+// Sujet prérempli depuis un lien (?sujet=… : « Signaler un bug », « Proposer une idée » de /contribuer).
+$contactSubject = mb_substr(trim((string) preg_replace('/[\x00-\x1F\x7F<>]+/u', '', (is_string($_GET['sujet'] ?? null) ? $_GET['sujet'] : ''))), 0, 200);
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
 ?>
@@ -36,7 +38,7 @@ $flashErr = \App\Core\Session::getFlash('error');
             </div>
             <div class="site-form__field">
                 <label for="contact-subject"><?= htmlspecialchars(__('site.contact_subject'), ENT_QUOTES, 'UTF-8') ?></label>
-                <input id="contact-subject" name="subject" type="text" required maxlength="200">
+                <input id="contact-subject" name="subject" type="text" required maxlength="200" value="<?= htmlspecialchars($contactSubject, ENT_QUOTES, 'UTF-8') ?>">
             </div>
             <div class="site-form__field">
                 <label for="contact-message"><?= htmlspecialchars(__('site.contact_message'), ENT_QUOTES, 'UTF-8') ?></label>

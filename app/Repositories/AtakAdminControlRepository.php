@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\ArmaText;
 use App\Support\SteamId;
 use PDO;
 
@@ -552,7 +553,7 @@ final class AtakAdminControlRepository
             } elseif ($r['kind'] === 'screen' && strtoupper($key) === 'TOTAL') {
                 $out[$k]['screen'] += $sec;
             } elseif ($r['kind'] === 'role') {
-                $roles[$k][] = ['key' => $key, 'label' => (string) ($r['item_label'] ?? $key), 'seconds' => $sec];
+                $roles[$k][] = ['key' => $key, 'label' => ArmaText::roleLabel((string) ($r['item_label'] ?? $key)) ?: 'Rôle sans nom', 'seconds' => $sec];
             }
         }
         foreach ($roles as $k => $list) {
@@ -600,7 +601,7 @@ final class AtakAdminControlRepository
             $ids
         ) as $r) {
             $k = $row((int) $r['tenant_id'], (int) $r['user_id']);
-            $out[$k]['game_class'] = trim((string) ($r['role'] ?? ''));
+            $out[$k]['game_class'] = ArmaText::label((string) ($r['role'] ?? ''));
             $out[$k]['faction'] = trim((string) ($r['faction'] ?? ''));
             $out[$k]['group'] = trim((string) ($r['group_name'] ?? ''));
             $out[$k]['side'] = trim((string) ($r['side'] ?? ''));
@@ -650,7 +651,7 @@ final class AtakAdminControlRepository
              WHERE tenant_id = ? AND user_id = ? AND kind = 'role' GROUP BY item_key ORDER BY seconds DESC LIMIT 12",
             [$tenantId, $userId]
         ) as $r) {
-            $out[] = ['key' => (string) $r['item_key'], 'label' => (string) ($r['item_label'] ?? $r['item_key']), 'seconds' => (int) $r['seconds']];
+            $out[] = ['key' => (string) $r['item_key'], 'label' => ArmaText::roleLabel((string) ($r['item_label'] ?? $r['item_key'])) ?: 'Rôle sans nom', 'seconds' => (int) $r['seconds']];
         }
 
         return $out;

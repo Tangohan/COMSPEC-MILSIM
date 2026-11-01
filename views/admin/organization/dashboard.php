@@ -1,1339 +1,547 @@
 <?php
 declare(strict_types=1);
 
-$kpis = $adminKpis ?? [];
-$blockError = $adminKpiBlockError ?? null;
-$tenantName = isset($tenantName) ? (string) $tenantName : '';
+/**
+ * Tableau de bord de pilotage (back-office communauté).
+ *
+ * Données mises en forme par App\Support\PilotageDashboardPresenter (contrôleur OrganizationDashboardController).
+ *
+ * @var array<string, mixed> $pilotage
+ * @var array<string, mixed>|null $initialSetupBanner
+ * @var int $configurationUpdateBadge
+ * @var bool $discordInviteMissing
+ * @var int $missingMediaCount
+ * @var array<string, mixed> $orgActivityChart
+ * @var list<array<string, mixed>> $orgMessagesRecent
+ * @var array<string, mixed> $orgProfileGaps
+ */
 
-$gate = \App\Core\Gate::getInstance();
-$canInv = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('invitations.send');
-$canMemberModeration = $gate->allows('admin.members.moderate');
-$canDocs = $gate->allows('documents.upload') || $gate->allows('admin.access');
-$canTraining = $gate->allows('training.manage') || $gate->allows('training.assign') || $gate->allows('admin.access');
-$canTenantTechModules = $gate->allows('admin.system') || $gate->allows('admin.organization') || $gate->allows('admin.access');
-$canSeniorityBoTile = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support');
+$pilH = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$pil = is_array($pilotage ?? null) ? $pilotage : [];
+$pilHello = is_array($pil['hello'] ?? null) ? $pil['hello'] : [];
+$pilHero = is_array($pil['hero'] ?? null) ? $pil['hero'] : null;
+$pilDecisions = is_array($pil['decisions'] ?? null) ? $pil['decisions'] : ['items' => [], 'total' => 0];
+$pilKpis = is_array($pil['kpis'] ?? null) ? $pil['kpis'] : [];
+$pilPart = is_array($pil['participation'] ?? null) ? $pil['participation'] : ['bars' => [], 'scale' => 4, 'gridlines' => [], 'has_checkins' => false];
+$pilUnits = is_array($pil['units'] ?? null) ? $pil['units'] : [];
+$pilPipeline = is_array($pil['pipeline'] ?? null) ? $pil['pipeline'] : null;
+$pilAgenda = is_array($pil['agenda'] ?? null) ? $pil['agenda'] : ['title' => 'Cette semaine', 'items' => []];
+$pilFeed = is_array($pil['feed'] ?? null) ? $pil['feed'] : [];
+$pilLinks = is_array($pil['links'] ?? null) ? $pil['links'] : [];
+$pilKpiError = isset($adminKpiBlockError) && $adminKpiBlockError !== null ? (string) $adminKpiBlockError : '';
 
-$orgFormatDt = static function (?string $raw): string {
-    if ($raw === null || $raw === '') {
-        return '—';
-    }
-    $t = strtotime($raw);
-
-    return $t ? date('d/m/Y H:i', $t) : htmlspecialchars($raw, ENT_QUOTES, 'UTF-8');
-};
-
-/** Libellés métier pour le tableur d’indicateurs (sans jargon technique). */
-$kpiLabelFr = static function (string $id, string $fallback): string {
-    return match ($id) {
-        'members_active' => 'Membres actifs',
-        'members_inactive' => 'Autres statuts',
-        'invites_pending' => 'Invitations en attente',
-        'invites_expired' => 'Invitations expirées',
-        'profiles_incomplete' => 'Profils à compléter',
-        'members_no_unit' => 'Sans unité',
-        'members_no_role' => 'Sans rôle communautaire',
-        'active_30d' => 'Actifs sur 30 jours',
-        'training_expiring' => 'Formations à échéance (30 j.)',
-        'moderation_open' => 'Signalements membres à traiter',
-        default => $fallback !== '' ? $fallback : 'Indicateur',
-    };
-};
-
-$kpiFamilyFr = static function (string $id): string {
-    return match ($id) {
-        'members_active', 'members_inactive', 'profiles_incomplete', 'members_no_unit', 'members_no_role' => 'Effectifs',
-        'active_30d' => 'Activité',
-        'invites_pending', 'invites_expired' => 'Accès',
-        'training_expiring' => 'Formation',
-        'moderation_open' => 'Modération',
-        default => 'Synthèse',
-    };
-};
-
-$kpiStatus = static function (array $k): array {
-    $id = (string) ($k['id'] ?? '');
-    if (!empty($k['error'])) {
-        return ['Indisponible', 'bg-slate-100 text-slate-700 ring-slate-200'];
-    }
-    $n = is_numeric($k['value'] ?? null) ? (int) $k['value'] : null;
-    return match ($id) {
-        'invites_expired' => $n !== null && $n > 0
-            ? ['À traiter', 'bg-amber-50 text-amber-900 ring-amber-200']
-            : ['Rien en attente', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
-        'invites_pending' => $n !== null && $n > 0
-            ? ['En cours', 'bg-amber-50 text-amber-900 ring-amber-200']
-            : ['Rien en attente', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
-        'profiles_incomplete', 'members_no_unit', 'members_no_role' => $n !== null && $n > 0
-            ? ['À corriger', 'bg-amber-50 text-amber-900 ring-amber-200']
-            : ['À jour', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
-        'training_expiring' => $n !== null && $n > 0
-            ? ['À surveiller', 'bg-sky-50 text-sky-900 ring-sky-200']
-            : ['Rien à signaler', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
-        'moderation_open' => $n !== null && $n > 0
-            ? ['À traiter', 'bg-rose-50 text-rose-900 ring-rose-200']
-            : ['Rien à signaler', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
-        'members_active', 'active_30d' => ['Synthèse', 'bg-blue-50 text-blue-900 ring-blue-200'],
-        'members_inactive' => ['Contexte', 'bg-slate-100 text-slate-700 ring-slate-200'],
-        default => ['—', 'bg-slate-100 text-slate-700 ring-slate-200'],
-    };
-};
-
-$rows = $adminRecentActivity ?? [];
-$activityError = $adminRecentActivityError ?? null;
-$moreUrl = $adminRecentActivityMoreUrl ?? url('back-office/audit');
-
-$kpiHref = static function (string $id) use ($moreUrl): array {
-    return match ($id) {
-        'members_active', 'members_inactive' => [url('back-office/users'), 'Voir'],
-        'active_30d' => [$moreUrl, 'Journal'],
-        'invites_pending', 'invites_expired' => [url('back-office/invitations'), 'Gérer'],
-        'profiles_incomplete' => [url('back-office/users') . '?filter_incomplete=1', 'Corriger'],
-        'members_no_unit' => [url('back-office/users') . '?filter_no_unit=1', 'Corriger'],
-        'members_no_role' => [url('back-office/users') . '?filter_no_role=1', 'Corriger'],
-        'training_expiring' => [training_lms_admin_url(), 'Ouvrir'],
-        'moderation_open' => [url('back-office/signalements'), 'Traiter'],
-        default => ['', ''],
-    };
-};
-
-$wq = $orgWorkQueue ?? [
-    'expired_invitations' => [],
-    'training_expiring' => [],
-    'incomplete_profiles' => [],
-    'users_without_unit' => [],
-    'users_without_role' => [],
-    'error_invitations' => null,
-    'error_training' => null,
-    'error_incomplete' => null,
-    'error_no_unit' => null,
-    'error_no_role' => null,
-];
-$mod = $orgModerationRecent ?? [];
-$modErr = $orgModerationError ?? null;
-
-$nowLabel = date('d/m/Y · H:i');
-$showPlatformEnv = $gate->allows('admin.system');
-$envLabel = '';
-if ($showPlatformEnv) {
-    $appEnv = function_exists('env') ? (string) env('APP_ENV', 'local') : 'local';
-    $envLabel = app_environment_label_fr($appEnv);
-}
-
-$modActionLabelFr = static function (string $t): string {
-    $k = strtolower(trim($t));
-
-    return match ($k) {
-        'mute' => 'Limitation des échanges',
-        'suspend' => 'Suspension temporaire',
-        'ban' => 'Exclusion',
-        'warn', 'warning' => 'Avertissement',
-        '' => 'Mesure enregistrée',
-        default => 'Mesure enregistrée',
-    };
-};
-?>
-<style>
-    .bo-sheet { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.8125rem; }
-    .bo-sheet thead th {
-        position: sticky; top: 0; z-index: 2;
-        background: #0f172a; color: #e2e8f0;
-        border-bottom: 1px solid #1e293b;
-        padding: 0.7rem 0.85rem;
-        text-align: left;
-        font-size: 0.625rem;
-        font-weight: 900;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        white-space: nowrap;
-    }
-    .bo-sheet thead th.num { text-align: right; }
-    .bo-sheet tbody td {
-        padding: 0.65rem 0.85rem;
-        border-bottom: 1px solid #e2e8f0;
-        border-right: 1px solid #f1f5f9;
-        vertical-align: middle;
-        color: #0f172a;
-        background: #fff;
-    }
-    .bo-sheet tbody td:last-child { border-right: none; }
-    .bo-sheet tbody tr:nth-child(even) td { background: #f8fafc; }
-    .bo-sheet tbody tr:hover td { background: #eff6ff; }
-    .bo-sheet tbody tr:last-child td { border-bottom: none; }
-    .bo-sheet .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
-    .bo-sheet .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.75rem; }
-    .bo-sheet-wrap {
-        max-height: min(70vh, 42rem);
-        overflow: auto;
-        border: 1px solid #cbd5e1;
-        border-radius: 0.75rem;
-        background: #fff;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
-    }
-    .bo-sheet-toolbar {
-        display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem;
-        padding: 0.85rem 1rem;
-        border: 1px solid #cbd5e1; border-bottom: none;
-        border-radius: 0.75rem 0.75rem 0 0;
-        background: linear-gradient(180deg, #f8fafc, #fff);
-    }
-    .bo-sheet-panel { border-radius: 0.75rem; }
-    .bo-sheet-panel .bo-sheet-wrap { border-radius: 0 0 0.75rem 0.75rem; }
-    .bo-gap-id { display: flex; align-items: center; gap: 0.65rem; min-width: 12rem; }
-    .bo-gap-id__avatar {
-        width: 2rem; height: 2rem; border-radius: 999px; overflow: hidden; flex: 0 0 auto;
-        background: #e2e8f0; color: #334155; display: flex; align-items: center; justify-content: center;
-        font-size: 0.65rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
-    }
-    .bo-gap-id__avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .bo-gap-id__name { display: block; font-weight: 700; color: #0f172a; line-height: 1.2; }
-    .bo-gap-id__meta { display: block; margin-top: 0.1rem; font-size: 0.7rem; color: #64748b; }
-</style>
-<?php
 $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : null;
 $discordInviteMissing = !empty($discordInviteMissing);
 $missingMediaCount = (int) ($missingMediaCount ?? 0);
+$pilCfgCount = (int) ($configurationUpdateBadge ?? 0);
+
+/** Icônes au trait (24×24). */
+$pilIcon = static function (string $name, string $class = 'pil-i'): string {
+    $paths = [
+        'up' => '<path d="m6 15 6-6 6 6"/>',
+        'user' => '<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',
+        'award' => '<circle cx="12" cy="9" r="6"/><path d="m8.5 14-1.5 7 5-3 5 3-1.5-7"/>',
+        'file' => '<path d="M14 3H6v18h12V7zM14 3v4h4"/>',
+        'mail' => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+        'flag' => '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+        'cal' => '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+        'pin' => '<path d="M12 21s-7-6-7-12a7 7 0 0 1 14 0c0 6-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+        'clock' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+        'spark' => '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
+        'warn' => '<path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/>',
+        'x' => '<path d="M18 6 6 18M6 6l12 12"/>',
+        'check' => '<path d="m5 12 5 5 9-10"/>',
+    ];
+
+    return '<svg class="' . $class . '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . ($paths[$name] ?? '') . '</svg>';
+};
+
+/** Petite courbe de tendance (valeurs réelles uniquement). */
+$pilSpark = static function (?array $series, string $tone): string {
+    if ($series === null || count($series) < 2) {
+        return '';
+    }
+    $series = array_values(array_map('intval', $series));
+    $min = min($series);
+    $max = max($series);
+    $range = max(1, $max - $min);
+    $n = count($series);
+    $pts = [];
+    foreach ($series as $i => $v) {
+        $x = round($i / ($n - 1) * 96, 1);
+        $y = round(28 - ($v - $min) / $range * 24, 1);
+        $pts[] = $x . ',' . $y;
+    }
+
+    return '<svg class="pil-spark pil-spark--' . htmlspecialchars($tone, ENT_QUOTES, 'UTF-8') . '" viewBox="0 0 96 32" aria-hidden="true" focusable="false"><polyline points="' . implode(' ', $pts) . '"/></svg>';
+};
+
+$pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' . ($n > 1 ? $many : $one);
 ?>
-<?php if (!empty($isBackOfficeShell)): ?>
-<div class="ath-dash-page">
+<div class="pil" data-pilotage>
+
     <?php if ($discordInviteMissing): ?>
-    <div class="ath-banner-warn ath-rise" role="alert">
-        <div class="ath-banner-warn__kicker">Les candidats ne peuvent pas rejoindre votre Discord</div>
-        <div class="ath-banner-warn__text">Le recrutement passe par Discord, mais aucun lien d’invitation n’est enregistré. Ajoutez-le pour que le formulaire d’inscription y envoie les candidats.</div>
-        <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '?onglet=inscription#coordonnees', ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid" style="margin-top:12px;display:inline-flex;">Ajouter le lien</a>
+    <div class="pil-banner pil-banner--warn" role="alert">
+        <?= $pilIcon('warn') ?>
+        <span class="pil-banner__text"><b>Les candidats ne peuvent pas rejoindre votre Discord.</b> Le recrutement passe par Discord, mais aucun lien d’invitation n’est enregistré.</span>
+        <a class="pil-banner__cta" href="<?= $pilH(url('back-office/organisation/parametres') . '?onglet=inscription#coordonnees') ?>">Ajouter le lien</a>
     </div>
     <?php endif; ?>
+
     <?php if ($missingMediaCount > 0): ?>
-    <div class="ath-banner-warn ath-rise" role="alert">
-        <div class="ath-banner-warn__kicker"><?= $missingMediaCount > 1 ? (int) $missingMediaCount . ' photos de profil ont été perdues' : '1 photo de profil a été perdue' ?> lors de la migration</div>
-        <div class="ath-banner-warn__text">
-            Demandez aux membres concernés de la remettre en ligne depuis Mon compte › Image / Portrait.
-        </div>
-        <a href="<?= htmlspecialchars(url('back-office/centre-operations') . '#anomalies-medias', ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid" style="margin-top:12px;display:inline-flex;">Voir les membres concernés</a>
+    <div class="pil-banner pil-banner--warn" role="alert">
+        <?= $pilIcon('warn') ?>
+        <span class="pil-banner__text"><b><?= $missingMediaCount > 1 ? (int) $missingMediaCount . ' photos de profil ont été perdues' : '1 photo de profil a été perdue' ?> lors de la migration.</b> Demandez aux membres concernés de la remettre en ligne depuis Mon compte › Image / Portrait.</span>
+        <a class="pil-banner__cta" href="<?= $pilH(url('back-office/centre-operations') . '#anomalies-medias') ?>">Voir les membres concernés</a>
     </div>
     <?php endif; ?>
+
     <?php if ($setupBanner !== null): ?>
-    <div class="ath-banner-warn ath-rise" role="status">
-        <div class="ath-banner-warn__kicker">Configuration de la communauté · <?= (int) ($setupBanner['percent'] ?? 0) ?> % terminée</div>
-        <div class="ath-banner-warn__text">Il reste quelques réglages essentiels : logo, contact, mode d’inscription et modules visibles par le public. Comptez cinq minutes.</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
-            <a href="<?= htmlspecialchars(url('back-office/configuration-initiale'), ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid">Reprendre la configuration</a>
-            <form method="post" action="<?= htmlspecialchars(url('back-office/configuration-initiale/dismiss'), ENT_QUOTES, 'UTF-8') ?>" class="inline">
-                <?= \App\Core\Csrf::field() ?>
-                <button type="submit" class="ath-btn">Plus tard</button>
-            </form>
-        </div>
+    <div class="pil-banner pil-banner--warn" role="status">
+        <?= $pilIcon('spark') ?>
+        <span class="pil-banner__text"><b>Configuration de la communauté · <?= (int) ($setupBanner['percent'] ?? 0) ?> % terminée.</b> Il reste quelques réglages essentiels : logo, contact, mode d’inscription et modules visibles par le public.</span>
+        <a class="pil-banner__cta" href="<?= $pilH(url('back-office/configuration-initiale')) ?>">Reprendre la configuration</a>
+        <form method="post" action="<?= $pilH(url('back-office/configuration-initiale/dismiss')) ?>" class="pil-banner__form">
+            <?= \App\Core\Csrf::field() ?>
+            <button type="submit" class="pil-banner__later">Plus tard</button>
+        </form>
     </div>
-    <?php elseif ((int) ($configurationUpdateBadge ?? 0) > 0): ?>
-    <?php
-        $cfgCount = (int) $configurationUpdateBadge;
-        $cfgMsg = $cfgCount . ' configuration' . ($cfgCount > 1 ? 's' : '')
-            . ' disponible' . ($cfgCount > 1 ? 's' : '')
-            . ' pour votre organisation.';
-    ?>
-    <a
-        href="<?= htmlspecialchars(url('back-office/mise-a-niveau'), ENT_QUOTES, 'UTF-8') ?>"
-        class="ath-upgrade-banner ath-rise"
-        role="status"
-        aria-label="Mise à niveau — <?= htmlspecialchars($cfgMsg, ENT_QUOTES, 'UTF-8') ?> Consulter."
-    >
-        <span class="ath-upgrade-banner__pill">
-            <span class="ath-upgrade-banner__dot" aria-hidden="true"></span>
-            <span>Attention</span>
-        </span>
-        <span class="ath-upgrade-banner__track">
-            <span class="ath-upgrade-banner__kicker">Mise à niveau</span>
-            <span class="ath-upgrade-banner__sep" aria-hidden="true">◆</span>
-            <span class="ath-upgrade-banner__text"><?= htmlspecialchars($cfgMsg, ENT_QUOTES, 'UTF-8') ?></span>
-        </span>
-        <span class="ath-upgrade-banner__cta">Voir</span>
-    </a>
+    <?php elseif ($pilCfgCount > 0): ?>
+    <div class="pil-banner pil-banner--info" role="status" data-pil-dismissable="cfg-<?= $pilCfgCount ?>">
+        <?= $pilIcon('spark') ?>
+        <span class="pil-banner__text"><b><?= $pilH($pilPlural($pilCfgCount, 'nouvelle configuration', 'nouvelles configurations')) ?></b> disponible<?= $pilCfgCount > 1 ? 's' : '' ?> pour votre organisation.</span>
+        <a class="pil-banner__cta" href="<?= $pilH(url('back-office/mise-a-niveau')) ?>">Découvrir</a>
+        <button type="button" class="pil-banner__close" data-pil-dismiss title="Masquer jusqu’à la prochaine nouveauté" aria-label="Masquer ce bandeau"><?= $pilIcon('x') ?></button>
+    </div>
     <?php endif; ?>
+
     <?php require base_path('views/partials/bo_atak_light_kit.php'); ?>
-    <?php require base_path('views/partials/ath_dashboard_dash.php'); ?>
-</div>
-<?php else: ?>
-<div class="min-h-0 flex-1 flex flex-col">
-<div
-    class="org-dash"
-    x-data="{ tab: 'overview' }"
-    x-init="if (location.hash === '#rh') { tab = 'rh'; } else if (location.hash === '#watch') { tab = 'watch'; }"
->
-    <div class="org-dash__frame">
 
-        <?php if ($discordInviteMissing): ?>
-        <div class="org-dash__setup org-dash__setup--warn" role="alert">
-            <div class="org-dash__setup-inner">
-                <div class="org-dash__setup-copy">
-                    <p class="org-dash__setup-kicker">Recrutement Discord</p>
-                    <p class="org-dash__setup-title">Lien Discord manquant</p>
-                    <p class="org-dash__setup-lead">Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné. Les candidats ne peuvent pas rejoindre votre serveur depuis le formulaire.</p>
-                </div>
-                <div class="org-dash__setup-actions">
-                    <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '?onglet=inscription#coordonnees', ENT_QUOTES, 'UTF-8') ?>" class="org-dash__btn org-dash__btn--solid">Renseigner le lien</a>
-                </div>
-            </div>
+    <header class="pil-hello">
+        <div class="pil-hello__copy">
+            <p class="pil-kicker"><?= $pilH((string) ($pilHello['date_label'] ?? '')) ?></p>
+            <h1 class="pil-hello__title" id="ath-page-title"><?= $pilH((string) ($pilHello['greeting'] ?? 'Bonjour')) ?><?= ($pilHello['name'] ?? '') !== '' ? ', ' . $pilH((string) $pilHello['name']) : '' ?>.</h1>
+            <p class="pil-hello__lead">
+                <?= $pilH((string) ($pilHello['tenant'] ?? 'Votre communauté')) ?> compte
+                <b><?= $pilH($pilPlural((int) ($pilHello['active'] ?? 0), 'membre actif', 'membres actifs')) ?></b><?php if (isset($pilHello['total']) && $pilHello['total'] !== null && (int) $pilHello['total'] > (int) ($pilHello['active'] ?? 0)): ?> sur <?= (int) $pilHello['total'] ?><?php endif; ?>.
+                <?php $pilNextIn = $pilHello['next_in'] ?? null; ?>
+                <?php if ($pilNextIn === null): ?>
+                    Aucune activité n’est programmée<?php elseif ($pilNextIn === 'en cours'): ?>
+                    <?= $pilH((string) ($pilHello['next_noun'] ?? 'La prochaine activité')) ?> est <b>en cours</b><?php else: ?>
+                    <?= $pilH((string) ($pilHello['next_noun'] ?? 'La prochaine activité')) ?> est dans <b><?= $pilH((string) $pilNextIn) ?></b><?php endif; ?><?php $pilDecN = (int) ($pilHello['decisions'] ?? 0); ?><?php if ($pilDecN > 0): ?>, et <b><?= $pilH($pilPlural($pilDecN, 'décision', 'décisions')) ?></b> vous attend<?= $pilDecN > 1 ? 'ent' : '' ?>.<?php else: ?>, et rien n’attend votre décision.<?php endif; ?>
+            </p>
+        </div>
+        <?php if (!empty($pilHello['actions'])): ?>
+        <div class="pil-hello__actions">
+            <?php foreach ($pilHello['actions'] as $pilAct): ?>
+            <a class="pil-btn<?= !empty($pilAct['accent']) ? ' pil-btn--accent' : '' ?>" href="<?= $pilH((string) $pilAct['href']) ?>"><?= $pilH((string) $pilAct['label']) ?></a>
+            <?php endforeach; ?>
         </div>
         <?php endif; ?>
+    </header>
 
-        <?php if ($missingMediaCount > 0): ?>
-        <div class="org-dash__setup org-dash__setup--warn" role="alert">
-            <div class="org-dash__setup-inner">
-                <div class="org-dash__setup-copy">
-                    <p class="org-dash__setup-kicker">Photos de profil</p>
-                    <p class="org-dash__setup-title"><?= $missingMediaCount > 1 ? (int) $missingMediaCount . ' photos perdues lors de la migration' : '1 photo perdue lors de la migration' ?></p>
-                    <p class="org-dash__setup-lead">Les fichiers n’existent plus sur le serveur. Demandez aux membres concernés de les remettre en ligne depuis Mon compte › Image / Portrait.</p>
+    <div class="pil-row pil-row--wide">
+        <?php if ($pilHero !== null): ?>
+        <section class="pil-op<?= !empty($pilHero['cover_url']) ? ' pil-op--cover' : '' ?>" aria-labelledby="pil-op-title">
+            <?php if (!empty($pilHero['cover_url'])): ?>
+            <div class="pil-op__bg" style="background-image:url('<?= $pilH((string) $pilHero['cover_url']) ?>')" aria-hidden="true"></div>
+            <?php endif; ?>
+            <div class="pil-op__in">
+                <p class="pil-op__kicker"><i aria-hidden="true"></i><?= $pilH((string) $pilHero['kicker']) ?><?= $pilHero['campaign'] !== '' ? ' · ' . $pilH((string) $pilHero['campaign']) : '' ?></p>
+                <h2 class="pil-op__title" id="pil-op-title"><?= $pilH((string) $pilHero['title']) ?></h2>
+                <div class="pil-op__det">
+                    <?php if ($pilHero['date_label'] !== ''): ?>
+                    <span><?= $pilIcon('cal') ?><b><?= $pilH((string) $pilHero['date_label']) ?></b> <?= $pilH((string) $pilHero['time_label']) ?></span>
+                    <?php endif; ?>
+                    <?php if ($pilHero['location'] !== ''): ?>
+                    <span><?= $pilIcon('pin') ?><b><?= $pilH((string) $pilHero['location']) ?></b></span>
+                    <?php endif; ?>
                 </div>
-                <div class="org-dash__setup-actions">
-                    <a href="<?= htmlspecialchars(url('back-office/centre-operations') . '#anomalies-medias', ENT_QUOTES, 'UTF-8') ?>" class="org-dash__btn org-dash__btn--solid">Voir les membres concernés</a>
+                <?php if (!empty($pilHero['ongoing'])): ?>
+                <p class="pil-op__live"><i aria-hidden="true"></i>En cours</p>
+                <?php elseif (is_array($pilHero['countdown'] ?? null)): ?>
+                <div class="pil-cd" data-pil-countdown="<?= $pilH((string) $pilHero['starts_at_iso']) ?>" role="timer" aria-label="Temps restant avant le début">
+                    <div><b data-cd="d"><?= sprintf('%02d', (int) $pilHero['countdown']['days']) ?></b><small>jours</small></div>
+                    <div><b data-cd="h"><?= sprintf('%02d', (int) $pilHero['countdown']['hours']) ?></b><small>heures</small></div>
+                    <div><b data-cd="m"><?= sprintf('%02d', (int) $pilHero['countdown']['minutes']) ?></b><small>min</small></div>
                 </div>
+                <?php endif; ?>
             </div>
-        </div>
-        <?php endif; ?>
-
-        <?php if ($setupBanner !== null): ?>
-        <div class="org-dash__setup">
-            <div class="org-dash__setup-inner">
-                <div class="org-dash__setup-copy">
-                    <p class="org-dash__setup-kicker">Configuration initiale</p>
-                    <p class="org-dash__setup-title">
-                        Finalisez les réglages essentiels
-                        <span class="org-dash__setup-pct"><?= (int) ($setupBanner['percent'] ?? 0) ?>&nbsp;%</span>
-                    </p>
-                    <p class="org-dash__setup-lead">Logo, contact, inscription, modules publics — reportable à tout moment.</p>
-                    <div class="org-dash__setup-bar" role="progressbar" aria-valuenow="<?= (int) ($setupBanner['percent'] ?? 0) ?>" aria-valuemin="0" aria-valuemax="100">
-                        <span style="width:<?= max(0, min(100, (int) ($setupBanner['percent'] ?? 0))) ?>%"></span>
+            <?php $pilR = $pilHero['rsvp']; ?>
+            <div class="pil-op__rsvp">
+                <div>
+                    <p class="pil-op__rsvp-k">Présences confirmées · <?= (int) $pilR['yes'] ?> / <?= (int) $pilR['base'] ?></p>
+                    <div class="pil-rb" role="img" aria-label="<?= (int) $pilR['yes'] ?> confirmés, <?= (int) $pilR['maybe'] ?> peut-être, <?= (int) $pilR['no'] ?> déclinés, <?= (int) $pilR['no_reply'] ?> sans réponse">
+                        <i class="pil-rb__yes" style="width:<?= $pilH((string) $pilR['pct']['yes']) ?>%"></i><i class="pil-rb__maybe" style="width:<?= $pilH((string) $pilR['pct']['maybe']) ?>%"></i><i class="pil-rb__no" style="width:<?= $pilH((string) $pilR['pct']['no']) ?>%"></i>
+                    </div>
+                    <div class="pil-rl">
+                        <span><em class="pil-rl__yes"></em><b><?= (int) $pilR['yes'] ?></b> confirmé<?= (int) $pilR['yes'] > 1 ? 's' : '' ?></span>
+                        <span><em class="pil-rl__maybe"></em><b><?= (int) $pilR['maybe'] ?></b> peut-être</span>
+                        <span><em class="pil-rl__no"></em><b><?= (int) $pilR['no'] ?></b> décliné<?= (int) $pilR['no'] > 1 ? 's' : '' ?></span>
+                        <span><em class="pil-rl__none"></em><b><?= (int) $pilR['no_reply'] ?></b> sans réponse</span>
                     </div>
                 </div>
-                <div class="org-dash__setup-actions">
-                    <a href="<?= htmlspecialchars(url('back-office/configuration-initiale'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__btn org-dash__btn--solid">Continuer</a>
-                    <form method="post" action="<?= htmlspecialchars(url('back-office/configuration-initiale/dismiss'), ENT_QUOTES, 'UTF-8') ?>" class="inline">
-                        <?= \App\Core\Csrf::field() ?>
-                        <button type="submit" class="org-dash__btn org-dash__btn--ghost">Plus tard</button>
-                    </form>
+                <?php if ($pilHero['href'] !== null): ?>
+                <div class="pil-op__acts">
+                    <a class="pil-op__b2" href="<?= $pilH((string) $pilHero['answers_href']) ?>">Voir les réponses</a>
+                    <a class="pil-op__b1" href="<?= $pilH((string) $pilHero['href']) ?>">Ouvrir la fiche</a>
+                </div>
+                <?php endif; ?>
+            </div>
+        </section>
+        <?php else: ?>
+        <section class="pil-op pil-op--empty" aria-labelledby="pil-op-title">
+            <div class="pil-op__in">
+                <p class="pil-op__kicker"><i aria-hidden="true"></i>Prochaine opération</p>
+                <h2 class="pil-op__title" id="pil-op-title">À planifier</h2>
+                <p class="pil-op__empty">Aucune activité n’est programmée. Créez le prochain créneau pour que les membres puissent répondre.</p>
+            </div>
+            <?php if (($pilLinks['events'] ?? null) !== null): ?>
+            <div class="pil-op__rsvp pil-op__rsvp--solo">
+                <div class="pil-op__acts">
+                    <a class="pil-op__b1" href="<?= $pilH((string) $pilLinks['events']) ?>">Programmer une activité</a>
                 </div>
             </div>
-        </div>
+            <?php endif; ?>
+        </section>
         <?php endif; ?>
 
-        <header class="org-dash__hero<?= ($setupBanner !== null || $discordInviteMissing || $missingMediaCount > 0) ? ' org-dash__hero--after-setup' : '' ?>">
-            <div class="org-dash__hero-inner">
+        <section class="pil-card" aria-labelledby="pil-dec-title">
+            <div class="pil-card__h">
                 <div>
-                    <p class="org-dash__brand">Athena · État-major</p>
-                    <h1 class="org-dash__title">Centre de <span>pilotage</span></h1>
-                    <p class="org-dash__lead">
-                        Membres, structure, recrutement et modération pour
-                        <?php if ($tenantName !== ''): ?>
-                            <strong><?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></strong>.
-                        <?php else: ?>
-                            <strong>votre communauté</strong>.
-                        <?php endif; ?>
-                        Consultez les indicateurs, les alertes formation, puis les tableurs RH et surveillance.
-                    </p>
-                    <dl class="org-dash__hero-meta">
-                        <div class="org-dash__meta-pill">
-                            <dt>Affichage</dt>
-                            <dd class="tabular-nums"><?= htmlspecialchars($nowLabel, ENT_QUOTES, 'UTF-8') ?></dd>
-                        </div>
-                        <?php if ($showPlatformEnv && $envLabel !== ''): ?>
-                        <div class="org-dash__meta-pill">
-                            <dt>Mode</dt>
-                            <dd><?= htmlspecialchars($envLabel, ENT_QUOTES, 'UTF-8') ?></dd>
-                        </div>
-                        <?php endif; ?>
-                    </dl>
+                    <p class="pil-kicker">À décider</p>
+                    <h2 class="pil-card__title" id="pil-dec-title">En attente de votre validation</h2>
                 </div>
-                <div class="org-dash__hero-actions">
-                    <a href="<?= url('dashboard') ?>" class="org-dash__btn org-dash__btn--solid">Portail membre</a>
-                    <?php if ($gate->allows('admin.system')): ?>
-                    <a href="<?= url('admin') ?>" class="org-dash__btn org-dash__btn--warn">Plateforme</a>
-                    <?php endif; ?>
-                    <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="org-dash__btn org-dash__btn--ghost">Journal d’audit</a>
-                </div>
+                <?php if ((int) $pilDecisions['total'] > 0): ?>
+                <span class="pil-count" aria-label="<?= (int) $pilDecisions['total'] ?> en attente"><?= (int) $pilDecisions['total'] ?></span>
+                <?php endif; ?>
             </div>
-        </header>
-
-        <nav class="org-dash__tabs" aria-label="Sections du tableau de bord">
-            <button type="button" class="org-dash__tab" :class="tab === 'overview' && 'is-active'" @click="tab = 'overview'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search); }">Synthèse</button>
-            <button type="button" class="org-dash__tab" :class="tab === 'rh' && 'is-active'" @click="tab = 'rh'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search + '#rh'); }">RH &amp; recrutement</button>
-            <button type="button" class="org-dash__tab" :class="tab === 'watch' && 'is-active'" @click="tab = 'watch'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search + '#watch'); }">Surveillance</button>
-        </nav>
-
-        <div x-show="tab === 'overview'">
-
-        <div class="org-dash__deck">
-
-        <?php
-        $orgTrainingFeed = $orgTrainingFeed ?? [];
-        $orgTrainingFeedErr = $orgTrainingFeedError ?? null;
-        $orgTrainingFeedCompletionAnalytics = $orgTrainingFeedCompletionAnalytics ?? [];
-        $orgRoleplayTimelineRows = is_array($orgRoleplayTimelineRows ?? null) ? $orgRoleplayTimelineRows : [];
-        $orgRoleplayTimelineErr = $orgRoleplayTimelineError ?? null;
-        $trainingFeedBadge = static function (string $cat): array {
-            return match ($cat) {
-                'training_enrollment_pending' => ['Inscription', 'bg-violet-100 text-violet-950 ring-violet-200/80'],
-                'training_course_completed' => ['Réussite', 'bg-emerald-100 text-emerald-950 ring-emerald-200/80'],
-                'training_module_blocked' => ['Accompagnement', 'bg-amber-100 text-amber-950 ring-amber-200/80'],
-                default => ['Formation', 'bg-slate-100 text-slate-800 ring-slate-200/80'],
-            };
-        };
-        $trainingFeedCount = is_array($orgTrainingFeed) ? count($orgTrainingFeed) : 0;
-        $roleplayTimelineCount = is_array($orgRoleplayTimelineRows) ? count($orgRoleplayTimelineRows) : 0;
-        $roleplayTimelineUpcomingCount = 0;
-        $roleplayTimelineOverdueCount = 0;
-        foreach ($orgRoleplayTimelineRows as $roleplayTimelineRow) {
-            if (($roleplayTimelineRow['urgency'] ?? '') === 'overdue') {
-                $roleplayTimelineOverdueCount++;
-            } else {
-                $roleplayTimelineUpcomingCount++;
-            }
-        }
-        $roleplayTimelineTypeLabel = static function (string $eventType, string $fallback): array {
-            return match ($eventType) {
-                'entretien' => ['Entretien', 'bg-emerald-100 text-emerald-950 ring-emerald-200/80'],
-                'medical' => ['Médical', 'bg-sky-100 text-sky-950 ring-sky-200/80'],
-                'rotation' => ['Rotation', 'bg-violet-100 text-violet-950 ring-violet-200/80'],
-                'bilan' => ['Bilan RP', 'bg-amber-100 text-amber-950 ring-amber-200/80'],
-                default => [$fallback !== '' ? $fallback : 'Suivi', 'bg-slate-100 text-slate-800 ring-slate-200/80'],
-            };
-        };
-        $kpiRowCount = is_array($kpis) ? count($kpis) : 0;
-        ?>
-
-        <?php require base_path('views/partials/org_dashboard_profile_gaps.php'); ?>
-
-        <section class="org-dash__section" aria-labelledby="org-kpi-heading">
-            <div class="org-dash__section-head">
-                <div>
-                    <p class="org-dash__kicker">En un coup d’œil</p>
-                    <h2 id="org-kpi-heading" class="org-dash__section-title">Chiffres clés</h2>
-                </div>
+            <?php if ($pilDecisions['items'] === []): ?>
+            <div class="pil-done">
+                <?= $pilIcon('check', 'pil-i pil-done__i') ?>
+                <b>Tout est à jour</b>
+                <span>Plus rien n’attend votre validation.</span>
             </div>
-
-            <?php if ($blockError): ?>
-                <div class="org-dash__alert"><?= htmlspecialchars($blockError, ENT_QUOTES, 'UTF-8') ?></div>
             <?php else: ?>
-            <div class="bo-sheet-panel">
-                <div class="bo-sheet-toolbar">
-                    <div>
-                        <h3 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Indicateurs</h3>
-                        <p class="mt-0.5 text-xs text-slate-500">Mis à jour à chaque ouverture de la page.</p>
-                    </div>
-                    <a href="<?= url('back-office/users') ?>" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">Effectifs</a>
+            <ul class="pil-dec">
+                <?php foreach (array_slice($pilDecisions['items'], 0, 5) as $pilItem): ?>
+                <li class="pil-dec__it">
+                    <span class="pil-dec__ic pil-tone--<?= $pilH((string) $pilItem['tone']) ?>"><?= $pilIcon((string) $pilItem['icon']) ?></span>
+                    <span class="pil-dec__txt"><b><?= $pilH((string) $pilItem['title']) ?></b><small><?= $pilH((string) $pilItem['meta']) ?></small></span>
+                    <a class="pil-btn pil-btn--sm" href="<?= $pilH((string) $pilItem['href']) ?>"><?= $pilH((string) $pilItem['cta']) ?></a>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php if (count($pilDecisions['items']) > 5): ?>
+            <p class="pil-more"><?= $pilH($pilPlural(count($pilDecisions['items']) - 5, 'autre point', 'autres points')) ?> dans les listes ci-dessous et dans Effectifs.</p>
+            <?php endif; ?>
+            <?php endif; ?>
+        </section>
+    </div>
+
+    <?php if ($pilKpiError !== ''): ?>
+    <p class="pil-banner pil-banner--warn" role="status"><?= $pilIcon('warn') ?><span class="pil-banner__text"><?= $pilH($pilKpiError) ?></span></p>
+    <?php endif; ?>
+
+    <div class="pil-kpis">
+        <?php foreach ($pilKpis as $pilKpi): ?>
+        <div class="pil-card pil-kpi">
+            <p class="pil-kicker"><?= $pilH((string) $pilKpi['label']) ?></p>
+            <div class="pil-kpi__v">
+                <b><?= $pilH((string) $pilKpi['value']) ?></b>
+                <?php if ((string) $pilKpi['unit'] !== ''): ?><span><?= $pilH((string) $pilKpi['unit']) ?></span><?php endif; ?>
+                <?php if (is_array($pilKpi['badge'] ?? null)): ?><span class="pil-dl pil-dl--<?= $pilH((string) $pilKpi['badge']['tone']) ?>"><?= $pilH((string) $pilKpi['badge']['text']) ?></span><?php endif; ?>
+            </div>
+            <div class="pil-kpi__f">
+                <?php if (!empty($pilKpi['note_href'])): ?>
+                <a href="<?= $pilH((string) $pilKpi['note_href']) ?>"><?= $pilH((string) $pilKpi['note']) ?></a>
+                <?php else: ?>
+                <small><?= $pilH((string) $pilKpi['note']) ?></small>
+                <?php endif; ?>
+                <?= $pilSpark(is_array($pilKpi['spark'] ?? null) ? $pilKpi['spark'] : null, (string) $pilKpi['spark_tone']) ?>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+
+    <div class="pil-row pil-row--wide">
+        <section class="pil-card" aria-labelledby="pil-part-title">
+            <div class="pil-card__h">
+                <div>
+                    <p class="pil-kicker">Participation</p>
+                    <h2 class="pil-card__title" id="pil-part-title">Présents par activité<?= count($pilPart['bars']) > 1 ? ' · ' . count($pilPart['bars']) . ' dernières' : (count($pilPart['bars']) === 1 ? ' · dernière' : '') ?></h2>
                 </div>
-                <div class="bo-sheet-wrap" style="max-height:min(50vh,28rem)">
-                    <table class="bo-sheet min-w-[44rem]">
-                        <thead>
-                            <tr>
-                                <th style="width:2.5rem">#</th>
-                                <th>Famille</th>
-                                <th>Indicateur</th>
-                                <th class="num">Valeur</th>
-                                <th>Situation</th>
-                                <th class="num">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        <?php if (empty($kpis)): ?>
-                            <tr><td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucun indicateur disponible pour le moment.</td></tr>
-                        <?php else: ?>
-                            <?php foreach ($kpis as $i => $k):
-                                $kid = (string) ($k['id'] ?? '');
-                                $lab = $kpiLabelFr($kid, (string) ($k['label'] ?? ''));
-                                [$stLab, $stClass] = $kpiStatus($k);
-                                [$href, $actLab] = $kpiHref($kid);
-                                ?>
-                                <tr>
-                                    <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
-                                    <td class="text-slate-500"><?= htmlspecialchars($kpiFamilyFr($kid), ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td class="font-semibold"><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td class="num">
-                                        <?php if (!empty($k['error'])): ?>
-                                            <span class="text-rose-600"><?= htmlspecialchars((string) $k['error'], ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php else: ?>
-                                            <?= htmlspecialchars((string) ($k['value'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars($stClass, ENT_QUOTES, 'UTF-8') ?>">
-                                            <?= htmlspecialchars($stLab, ENT_QUOTES, 'UTF-8') ?>
-                                        </span>
-                                    </td>
-                                    <td class="num">
-                                        <?php if ($href !== '' && $actLab !== ''): ?>
-                                            <a href="<?= htmlspecialchars($href, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"><?= htmlspecialchars($actLab, ENT_QUOTES, 'UTF-8') ?></a>
-                                        <?php else: ?>
-                                            <span class="text-slate-400">—</span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                        </tbody>
-                    </table>
+                <div class="pil-lg" aria-hidden="true">
+                    <span><em class="pil-lg__present"></em>Présents</span>
+                    <span><em class="pil-lg__reg"></em>Inscrits</span>
                 </div>
             </div>
+            <?php if ($pilPart['bars'] === []): ?>
+            <p class="pil-empty">Aucune activité terminée pour l’instant. Le graphique se remplira après les premiers créneaux pointés.</p>
+            <?php else: ?>
+            <div class="pil-chart" style="--pil-cols:<?= count($pilPart['bars']) ?>" role="list" aria-label="Inscrits et présents des dernières activités">
+                <?php foreach ($pilPart['gridlines'] as $pilGl): ?>
+                <div class="pil-chart__gl" style="bottom:<?= round((int) $pilGl / max(1, (int) $pilPart['scale']) * 100, 2) ?>%" aria-hidden="true"><span><?= (int) $pilGl ?></span></div>
+                <?php endforeach; ?>
+                <?php foreach ($pilPart['bars'] as $pilBar): ?>
+                <?php $pilTip = $pilBar['title'] . ($pilBar['date'] !== '' ? ' (' . $pilBar['date'] . ')' : '') . ' · ' . $pilBar['present'] . ' présent' . ($pilBar['present'] > 1 ? 's' : '') . ' sur ' . $pilBar['registered'] . ' inscrit' . ($pilBar['registered'] > 1 ? 's' : ''); ?>
+                <div class="pil-col" role="listitem" tabindex="0" aria-label="<?= $pilH($pilTip) ?>">
+                    <div class="pil-col__bar" style="height:<?= $pilH((string) $pilBar['outer_pct']) ?>%"><i style="height:<?= $pilH((string) $pilBar['inner_pct']) ?>%"></i></div>
+                    <span class="pil-col__tip" aria-hidden="true"><?= $pilH($pilTip) ?></span>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <div class="pil-xl" style="--pil-cols:<?= count($pilPart['bars']) ?>" aria-hidden="true">
+                <?php foreach ($pilPart['bars'] as $pilBar): ?>
+                <span title="<?= $pilH((string) $pilBar['title']) ?>"><?= $pilH((string) $pilBar['short']) ?></span>
+                <?php endforeach; ?>
+            </div>
+            <?php if (empty($pilPart['has_checkins'])): ?>
+            <p class="pil-note">Aucun pointage enregistré sur ces activités : seuls les inscrits apparaissent.</p>
+            <?php endif; ?>
             <?php endif; ?>
         </section>
 
-        <?php if ($canTraining): ?>
-        <section class="org-dash__section" aria-labelledby="org-training-feed-heading">
-            <div class="org-dash__section-head">
+        <section class="pil-card" aria-labelledby="pil-units-title">
+            <div class="pil-card__h">
                 <div>
-                    <p class="org-dash__kicker">Formations</p>
-                    <h2 id="org-training-feed-heading" class="org-dash__section-title">Ce qui demande votre attention</h2>
+                    <p class="pil-kicker">Disponibilité</p>
+                    <h2 class="pil-card__title" id="pil-units-title">État des unités</h2>
                 </div>
-                <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Voir les inscriptions →</a>
-            </div>
-            <div class="bo-sheet-panel">
-                <div class="bo-sheet-toolbar">
-                    <div>
-                        <h3 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Alertes récentes</h3>
-                        <p class="mt-0.5 text-xs text-slate-500"><?= $trainingFeedCount === 0 ? 'Aucune alerte.' : ((int) $trainingFeedCount . ($trainingFeedCount > 1 ? ' alertes récentes.' : ' alerte récente.')) ?></p>
-                    </div>
-                    <a href="<?= htmlspecialchars(training_lms_admin_url(), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">Ouvrir l’espace formation</a>
-                </div>
-                <?php if ($orgTrainingFeedErr): ?>
-                    <div class="border border-t-0 border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><?= htmlspecialchars($orgTrainingFeedErr, ENT_QUOTES, 'UTF-8') ?></div>
+                <?php if (($pilLinks['readiness'] ?? null) !== null): ?>
+                <a class="pil-link" href="<?= $pilH((string) $pilLinks['readiness']) ?>">Détail par unité</a>
                 <?php endif; ?>
-                <div class="bo-sheet-wrap" style="max-height:min(50vh,28rem)">
-                    <table class="bo-sheet min-w-[52rem]">
-                        <thead>
-                            <tr>
-                                <th style="width:2.5rem">#</th>
-                                <th>Type</th>
-                                <th>Titre</th>
-                                <th>Détail</th>
-                                <th>Date</th>
-                                <th class="num">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        <?php if ($orgTrainingFeedErr): ?>
-                            <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Impossible de charger les alertes de formation. Rechargez la page dans un instant.</td></tr>
-                        <?php elseif ($orgTrainingFeed === []): ?>
-                            <tr><td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucune alerte récente liée aux formations.</td></tr>
-                        <?php else: ?>
-                            <?php foreach ($orgTrainingFeed as $i => $frow):
-                                $cat = (string) ($frow['category'] ?? '');
-                                [$catLab, $catClass] = $trainingFeedBadge($cat);
-                                $fLink = trim((string) ($frow['link_url'] ?? ''));
-                                $fb = trim((string) ($frow['body'] ?? ''));
-                                $feedRowId = (int) ($frow['id'] ?? 0);
-                                $analyticsBlock = $feedRowId > 0 ? ($orgTrainingFeedCompletionAnalytics[$feedRowId] ?? null) : null;
-                                $analyticsLines = is_array($analyticsBlock) ? ($analyticsBlock['lines'] ?? []) : [];
-                                $detailParts = [];
-                                if ($fb !== '') {
-                                    $detailParts[] = $fb;
-                                }
-                                if ($cat === 'training_course_completed' && $analyticsLines !== []) {
-                                    foreach ($analyticsLines as $aline) {
-                                        $aline = trim((string) $aline);
-                                        if ($aline !== '') {
-                                            $detailParts[] = $aline;
-                                        }
-                                    }
-                                }
-                                $detail = $detailParts !== [] ? implode(' · ', $detailParts) : '—';
-                                ?>
-                                <tr>
-                                    <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
-                                    <td>
-                                        <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars($catClass, ENT_QUOTES, 'UTF-8') ?>">
-                                            <?= htmlspecialchars($catLab, ENT_QUOTES, 'UTF-8') ?>
-                                        </span>
-                                    </td>
-                                    <td class="font-semibold"><?= htmlspecialchars((string) ($frow['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td class="text-slate-600 max-w-[18rem]" title="<?= htmlspecialchars($detail, ENT_QUOTES, 'UTF-8') ?>">
-                                        <span class="line-clamp-2"><?= htmlspecialchars($detail, ENT_QUOTES, 'UTF-8') ?></span>
-                                    </td>
-                                    <td class="mono text-slate-500 whitespace-nowrap"><?= htmlspecialchars($orgFormatDt(isset($frow['created_at']) ? (string) $frow['created_at'] : null), ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td class="num">
-                                        <?php if ($fLink !== ''): ?>
-                                            <a href="<?= htmlspecialchars($fLink, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800">Ouvrir</a>
-                                        <?php else: ?>
-                                            <span class="text-slate-400">—</span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
             </div>
+            <?php if ($pilUnits === []): ?>
+            <p class="pil-empty">Aucune unité avec des postes ou des membres pour l’instant. Construisez l’organigramme pour suivre ici le taux de disponibilité.</p>
+            <?php else: ?>
+            <ul class="pil-units">
+                <?php foreach ($pilUnits as $pilUnit): ?>
+                <li class="pil-u pil-u--<?= $pilH((string) $pilUnit['tone']) ?>">
+                    <span class="pil-u__sw" aria-hidden="true"></span>
+                    <div class="pil-u__body">
+                        <p class="pil-u__name"><b><?= $pilH((string) $pilUnit['name']) ?></b><small><?= $pilH((string) $pilUnit['posts']) ?></small></p>
+                        <div class="pil-u__tr" aria-hidden="true"><i style="width:<?= (int) $pilUnit['score'] ?>%"></i></div>
+                    </div>
+                    <span class="pil-u__pc"><?= (int) $pilUnit['score'] ?> %</span>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+            <p class="pil-note">Score : postes pourvus, qualifications à jour et activité récente.</p>
+            <?php endif; ?>
+        </section>
+    </div>
+
+    <div class="pil-row3<?= $pilPipeline === null ? ' pil-row3--two' : '' ?>">
+        <?php if ($pilPipeline !== null): ?>
+        <section class="pil-card" aria-labelledby="pil-rec-title">
+            <div class="pil-card__h">
+                <div>
+                    <p class="pil-kicker">Recrutement</p>
+                    <h2 class="pil-card__title" id="pil-rec-title">Parcours des recrues</h2>
+                </div>
+                <a class="pil-link" href="<?= $pilH((string) $pilLinks['recruitments']) ?>">Tout voir</a>
+            </div>
+            <div class="pil-pipe">
+                <?php foreach ($pilPipeline['tiles'] as $pilTile): ?>
+                <div class="<?= !empty($pilTile['hot']) ? 'is-hot' : '' ?>"><b><?= (int) $pilTile['n'] ?></b><small><?= $pilH((string) $pilTile['label']) ?></small></div>
+                <?php endforeach; ?>
+            </div>
+            <?php if ($pilPipeline['people'] === []): ?>
+            <p class="pil-empty">Aucune candidature en cours.</p>
+            <?php else: ?>
+            <ul class="pil-ppl">
+                <?php foreach ($pilPipeline['people'] as $pilP): ?>
+                <li>
+                    <a class="pil-ppl__p" href="<?= $pilH((string) $pilP['href']) ?>">
+                        <span class="pil-av"><?= $pilH((string) $pilP['initials']) ?></span>
+                        <span class="pil-ppl__txt"><b><?= $pilH((string) $pilP['name']) ?></b><small><?= $pilH((string) $pilP['meta']) ?></small></span>
+                        <span class="pil-tag pil-tone--<?= $pilH((string) $pilP['tone']) ?>"><?= $pilH((string) $pilP['tag']) ?></span>
+                    </a>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php endif; ?>
         </section>
         <?php endif; ?>
 
-        <section class="org-dash__section" aria-labelledby="org-roleplay-heading">
-            <div class="org-dash__section-head">
+        <section class="pil-card" aria-labelledby="pil-ag-title">
+            <div class="pil-card__h">
                 <div>
-                    <p class="org-dash__kicker">Roleplay</p>
-                    <h2 id="org-roleplay-heading" class="org-dash__section-title">Échéances à venir</h2>
+                    <p class="pil-kicker">Agenda</p>
+                    <h2 class="pil-card__title" id="pil-ag-title"><?= $pilH((string) $pilAgenda['title']) ?></h2>
                 </div>
-                <a href="<?= htmlspecialchars(url('back-office/roleplay-followup'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Voir tout le suivi →</a>
-            </div>
-            <div class="bo-sheet-panel" x-data="{ filter: 'all' }">
-                <div class="bo-sheet-toolbar">
-                    <div>
-                        <h3 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Calendrier des dossiers</h3>
-                        <p class="mt-0.5 text-xs text-slate-500"><?= $roleplayTimelineCount === 0 ? 'Rien de prévu' : ((int) $roleplayTimelineCount . ($roleplayTimelineCount > 1 ? ' échéances' : ' échéance')) ?> sur les 3 prochaines semaines.</p>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-1.5">
-                        <button
-                            type="button"
-                            @click="filter = 'all'"
-                            :class="filter === 'all' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
-                            class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide shadow-sm"
-                        >Tout</button>
-                        <button
-                            type="button"
-                            @click="filter = 'upcoming'"
-                            :class="filter === 'upcoming' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
-                            class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide shadow-sm"
-                        >À venir (<?= (int) $roleplayTimelineUpcomingCount ?>)</button>
-                        <button
-                            type="button"
-                            @click="filter = 'overdue'"
-                            :class="filter === 'overdue' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
-                            class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide shadow-sm"
-                        >En retard (<?= (int) $roleplayTimelineOverdueCount ?>)</button>
-                        <a href="<?= htmlspecialchars(url('back-office/roleplay-followup'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">Ouvrir</a>
-                    </div>
-                </div>
-                <?php if ($orgRoleplayTimelineErr): ?>
-                    <div class="border border-t-0 border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><?= htmlspecialchars((string) $orgRoleplayTimelineErr, ENT_QUOTES, 'UTF-8') ?></div>
+                <?php if (($pilLinks['events'] ?? null) !== null): ?>
+                <a class="pil-link" href="<?= $pilH((string) $pilLinks['events']) ?>">Calendrier</a>
                 <?php endif; ?>
-                <div class="bo-sheet-wrap" style="max-height:min(44vh,26rem)">
-                    <table class="bo-sheet min-w-[56rem]">
-                        <thead>
-                            <tr>
-                                <th style="width:2.5rem">#</th>
-                                <th>Situation</th>
-                                <th>Type</th>
-                                <th>Membre</th>
-                                <th>Suivi</th>
-                                <th>Date</th>
-                                <th class="num">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        <?php if ($orgRoleplayTimelineErr): ?>
-                            <tr><td colspan="7" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Impossible de charger le suivi roleplay. Rechargez la page dans un instant.</td></tr>
-                        <?php elseif ($orgRoleplayTimelineRows === []): ?>
-                            <tr><td colspan="7" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucune échéance roleplay proche ou en retard pour le moment.</td></tr>
+            </div>
+            <?php if ($pilAgenda['items'] === []): ?>
+            <p class="pil-empty">Rien n’est prévu pour le moment.</p>
+            <?php else: ?>
+            <ul class="pil-ag">
+                <?php foreach ($pilAgenda['items'] as $pilEv): ?>
+                <li class="pil-ev">
+                    <span class="pil-ev__dt<?= !empty($pilEv['highlight']) ? ' is-op' : '' ?>"><small><?= $pilH((string) $pilEv['day']) ?></small><b><?= $pilH((string) $pilEv['num']) ?></b></span>
+                    <span class="pil-ev__txt">
+                        <?php if (!empty($pilEv['href'])): ?>
+                        <a href="<?= $pilH((string) $pilEv['href']) ?>"><b><?= $pilH((string) $pilEv['title']) ?></b></a>
                         <?php else: ?>
-                            <?php foreach ($orgRoleplayTimelineRows as $i => $rpDashRow):
-                                $urgency = (string) ($rpDashRow['urgency'] ?? 'upcoming');
-                                $isOverdue = $urgency === 'overdue';
-                                [$typeLabel, $typeClass] = $roleplayTimelineTypeLabel((string) ($rpDashRow['event_type'] ?? ''), (string) ($rpDashRow['item_label'] ?? ''));
-                                $dueRaw = trim((string) ($rpDashRow['due_date'] ?? ''));
-                                $dueTs = $dueRaw !== '' ? strtotime($dueRaw) : false;
-                                $dueLabel = $dueTs ? date('d/m/Y', $dueTs) : '—';
-                                $detail = trim((string) ($rpDashRow['item_detail'] ?? ''));
-                                $memberId = (int) ($rpDashRow['user_id'] ?? 0);
-                                ?>
-                                <tr x-show="filter === 'all' || filter === '<?= htmlspecialchars($urgency, ENT_QUOTES, 'UTF-8') ?>'">
-                                    <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
-                                    <td>
-                                        <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= $isOverdue ? 'bg-rose-50 text-rose-900 ring-rose-200' : 'bg-amber-50 text-amber-900 ring-amber-200' ?>">
-                                            <?= $isOverdue ? 'En retard' : 'À venir' ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars($typeClass, ENT_QUOTES, 'UTF-8') ?>">
-                                            <?= htmlspecialchars($typeLabel, ENT_QUOTES, 'UTF-8') ?>
-                                        </span>
-                                    </td>
-                                    <td class="font-semibold"><?= htmlspecialchars((string) ($rpDashRow['member_label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td class="text-slate-600 max-w-[18rem]" title="<?= htmlspecialchars($detail !== '' ? $detail : ((string) ($rpDashRow['item_label'] ?? '')), ENT_QUOTES, 'UTF-8') ?>">
-                                        <span class="line-clamp-2"><?= htmlspecialchars($detail !== '' ? $detail : ((string) ($rpDashRow['item_label'] ?? '—')), ENT_QUOTES, 'UTF-8') ?></span>
-                                    </td>
-                                    <td class="mono whitespace-nowrap <?= $isOverdue ? 'text-rose-700' : 'text-slate-500' ?>"><?= htmlspecialchars($dueLabel, ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td class="num">
-                                        <?php if ($memberId > 0): ?>
-                                            <a href="<?= htmlspecialchars(url('personnel/' . $memberId . '/edit'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800">Dossier</a>
-                                        <?php else: ?>
-                                            <span class="text-slate-400">—</span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
+                        <b><?= $pilH((string) $pilEv['title']) ?></b>
                         <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <section class="org-dash__section" aria-labelledby="org-actions-rapides-heading">
-            <div class="org-dash__section-head">
-                <div>
-                    <p class="org-dash__kicker">Accès rapides</p>
-                    <h2 id="org-actions-rapides-heading" class="org-dash__section-title">Que voulez-vous faire ?</h2>
-                </div>
-            </div>
-            <div class="org-dash__grid org-dash__grid--actions">
-                <a href="<?= url('back-office/users/create') ?>" class="org-dash__action">
-                    <div>
-                        <div class="org-dash__action-top">
-                            <span class="org-dash__action-mark org-dash__action-mark--blue" aria-hidden="true">+</span>
-                            <span class="org-dash__action-tag">Effectifs</span>
-                        </div>
-                        <h3 class="org-dash__action-title">Nouveau membre</h3>
-                        <p class="org-dash__action-text">Créer son compte et préparer son arrivée dans l’unité.</p>
-                    </div>
-                    <span class="org-dash__action-foot">Ajouter un membre →</span>
-                </a>
-                <a href="<?= url('back-office/groups/create') ?>" class="org-dash__action">
-                    <div>
-                        <div class="org-dash__action-top">
-                            <span class="org-dash__action-mark" aria-hidden="true">G</span>
-                            <span class="org-dash__action-tag">Structure</span>
-                        </div>
-                        <h3 class="org-dash__action-title">Nouveau groupe</h3>
-                        <p class="org-dash__action-text">Regrouper des membres en sous-unité ou en cellule.</p>
-                    </div>
-                    <span class="org-dash__action-foot">Créer un groupe →</span>
-                </a>
-                <a href="<?= url('back-office/teams/create') ?>" class="org-dash__action">
-                    <div>
-                        <div class="org-dash__action-top">
-                            <span class="org-dash__action-mark" aria-hidden="true">E</span>
-                            <span class="org-dash__action-tag">Équipes</span>
-                        </div>
-                        <h3 class="org-dash__action-title">Nouvelle équipe</h3>
-                        <p class="org-dash__action-text">Former une équipe pour une mission ou un créneau.</p>
-                    </div>
-                    <span class="org-dash__action-foot">Créer une équipe →</span>
-                </a>
-                <?php if ($canInv): ?>
-                <a href="<?= url('back-office/invitations') ?>" class="org-dash__action">
-                    <div>
-                        <div class="org-dash__action-top">
-                            <span class="org-dash__action-mark org-dash__action-mark--amber" aria-hidden="true">@</span>
-                            <span class="org-dash__action-tag">Accès</span>
-                        </div>
-                        <h3 class="org-dash__action-title">Invitations</h3>
-                        <p class="org-dash__action-text">Envoyer une invitation par e-mail et voir qui l’a acceptée.</p>
-                    </div>
-                    <span class="org-dash__action-foot">Gérer les invitations →</span>
-                </a>
-                <?php endif; ?>
-                <?php if ($canMemberModeration): ?>
-                <a href="<?= url('back-office/moderation') ?>" class="org-dash__action">
-                    <div>
-                        <div class="org-dash__action-top">
-                            <span class="org-dash__action-mark org-dash__action-mark--rose" aria-hidden="true">!</span>
-                            <span class="org-dash__action-tag">Modération</span>
-                        </div>
-                        <h3 class="org-dash__action-title">Restrictions</h3>
-                        <p class="org-dash__action-text">Sanctions et limitations en cours, membre par membre.</p>
-                    </div>
-                    <span class="org-dash__action-foot">Voir les restrictions →</span>
-                </a>
-                <?php endif; ?>
-                <a href="<?= url('back-office/centre-operations') ?>" class="org-dash__action">
-                    <div>
-                        <div class="org-dash__action-top">
-                            <span class="org-dash__action-mark org-dash__action-mark--mint" aria-hidden="true">⌁</span>
-                            <span class="org-dash__action-tag">Opérations</span>
-                        </div>
-                        <h3 class="org-dash__action-title">Centre d’opérations</h3>
-                        <p class="org-dash__action-text">Les demandes à traiter, les incidents en cours et l’historique des actions.</p>
-                    </div>
-                    <span class="org-dash__action-foot">Ouvrir le centre →</span>
-                </a>
-                <a href="<?= url('back-office/tableau-operationnel') ?>" class="org-dash__action">
-                    <div>
-                        <div class="org-dash__action-top">
-                            <span class="org-dash__action-mark org-dash__action-mark--blue" aria-hidden="true">▣</span>
-                            <span class="org-dash__action-tag">Opérations</span>
-                        </div>
-                        <h3 class="org-dash__action-title">Tableau opérationnel</h3>
-                        <p class="org-dash__action-text">Disponibilités, préparation des membres et planning sur un seul écran.</p>
-                    </div>
-                    <span class="org-dash__action-foot">Ouvrir le tableau →</span>
-                </a>
-                <?php if (!empty($orgIntegrationsPlanAllowed)): ?>
-                <a href="<?= url('back-office/integrations') ?>" class="org-dash__action">
-                    <div>
-                        <div class="org-dash__action-top">
-                            <span class="org-dash__action-mark org-dash__action-mark--violet" aria-hidden="true">↗</span>
-                            <span class="org-dash__action-tag">Connexions</span>
-                        </div>
-                        <h3 class="org-dash__action-title">Intégrations</h3>
-                        <p class="org-dash__action-text">Relier Discord et les autres services de votre communauté.</p>
-                    </div>
-                    <span class="org-dash__action-foot">Gérer les intégrations →</span>
-                </a>
-                <?php endif; ?>
-                <?php if (\App\Core\Gate::getInstance()->allows('admin.compliance.export')): ?>
-                <a href="<?= url('back-office/conformite/export-dossier') ?>" class="org-dash__action">
-                    <div>
-                        <div class="org-dash__action-top">
-                            <span class="org-dash__action-mark org-dash__action-mark--outline" aria-hidden="true">D</span>
-                            <span class="org-dash__action-tag">Conformité</span>
-                        </div>
-                        <h3 class="org-dash__action-title">Export dossier</h3>
-                        <p class="org-dash__action-text">Rassembler en un fichier les pièces demandées lors d’un contrôle.</p>
-                    </div>
-                    <span class="org-dash__action-foot">Préparer l’export →</span>
-                </a>
-                <?php endif; ?>
-                <?php if ($canSeniorityBoTile): ?>
-                <a href="<?= url('back-office/organisation/anciennete') ?>" class="org-dash__action">
-                    <div>
-                        <div class="org-dash__action-top">
-                            <span class="org-dash__action-mark org-dash__action-mark--indigo" aria-hidden="true">A</span>
-                            <span class="org-dash__action-tag">Effectifs</span>
-                        </div>
-                        <h3 class="org-dash__action-title">Ancienneté</h3>
-                        <p class="org-dash__action-text">Choisir comment l’ancienneté s’affiche sur les fiches des membres.</p>
-                    </div>
-                    <span class="org-dash__action-foot">Régler l’ancienneté →</span>
-                </a>
-                <?php endif; ?>
-                <?php if ($canTenantTechModules): ?>
-                <a href="<?= url('back-office/ressources/atak-mod') ?>" class="org-dash__action org-dash__action--wide">
-                    <div>
-                        <div class="org-dash__action-top">
-                            <span class="org-dash__action-mark" aria-hidden="true">R</span>
-                            <span class="org-dash__action-tag">Ressources</span>
-                        </div>
-                        <h3 class="org-dash__action-title">Mods Steam &amp; outils terrain</h3>
-                        <p class="org-dash__action-text">Mod Athena et collection Steam de votre communauté, configuration ATAK associée.</p>
-                    </div>
-                    <span class="org-dash__action-foot">Ouvrir les ressources →</span>
-                </a>
-                <?php endif; ?>
-            </div>
-        </section>
-
-        </div><!-- /.org-dash__deck -->
-
-        </div>
-
-        <?php
-        $orgEnlistmentCounts = $orgEnlistmentCounts ?? [];
-        $orgEnlistmentRecent = $orgEnlistmentRecent ?? [];
-        $orgEnlistmentErr = $orgEnlistmentError ?? null;
-        $rhRows = $orgRhRecent ?? [];
-        $rhErr = $orgRhRecentError ?? null;
-        $ecSubmitted = (int) ($orgEnlistmentCounts['submitted'] ?? 0);
-        $ecReviewed = (int) ($orgEnlistmentCounts['reviewed'] ?? 0);
-        $ecRejected = (int) ($orgEnlistmentCounts['rejected'] ?? 0);
-        $enlistStatusBadge = static function (string $status): array {
-            return match ($status) {
-                'submitted' => ['En attente', 'bg-amber-50 text-amber-900 ring-amber-200'],
-                'reviewed' => ['Traitée', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
-                'rejected' => ['Rejetée', 'bg-rose-50 text-rose-900 ring-rose-200'],
-                default => ['Autre état', 'bg-slate-100 text-slate-800 ring-slate-200'],
-            };
-        };
-
-        $rhAlertSheet = [];
-        $pushAlertRows = static function (string $kind, string $kindLabel, string $chip, array $list, string $listUrl) use (&$rhAlertSheet): void {
-            foreach ($list as $row) {
-                $rhAlertSheet[] = [
-                    'kind' => $kind,
-                    'kind_label' => $kindLabel,
-                    'kind_chip' => $chip,
-                    'name' => (string) ($row['display_name'] ?? $row['email'] ?? '—'),
-                    'email' => (string) ($row['email'] ?? ''),
-                    'user_id' => (int) ($row['id'] ?? 0),
-                    'list_url' => $listUrl,
-                ];
-            }
-        };
-        if (empty($wq['error_incomplete'])) {
-            $pushAlertRows('incomplete', 'Profil incomplet', 'bg-amber-50 text-amber-900 ring-amber-200', $wq['incomplete_profiles'] ?? [], url('back-office/users') . '?filter_incomplete=1');
-        }
-        if (empty($wq['error_no_unit'])) {
-            $pushAlertRows('no_unit', 'Sans unité', 'bg-violet-50 text-violet-900 ring-violet-200', $wq['users_without_unit'] ?? [], url('back-office/users') . '?filter_no_unit=1');
-        }
-        if (empty($wq['error_no_role'])) {
-            $pushAlertRows('no_role', 'Sans rôle', 'bg-orange-50 text-orange-900 ring-orange-200', $wq['users_without_role'] ?? [], url('back-office/users') . '?filter_no_role=1');
-        }
-        $rhAlertCount = count($rhAlertSheet);
-        $rhJournalCount = is_array($rhRows) ? count($rhRows) : 0;
-        $rhEnlistCount = is_array($orgEnlistmentRecent) ? count($orgEnlistmentRecent) : 0;
-        ?>
-        <div x-show="tab === 'rh'" x-cloak class="org-dash__deck space-y-8 lg:space-y-10" id="rh">
-
-        <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-                <p class="text-[11px] font-black uppercase tracking-[0.28em] text-blue-700">RH &amp; recrutement</p>
-                <h2 class="mt-1 text-2xl font-black tracking-tight text-slate-900">Tableur RH</h2>
-                <p class="mt-1 max-w-2xl text-sm text-slate-600">Candidatures, mouvements RH et alertes effectifs en vue tableur — pleine largeur.</p>
-                <p class="mt-3">
-                    <a href="<?= htmlspecialchars(function_exists('effectifs_workspace_url') ? effectifs_workspace_url() : url('back-office/ressources/effectifs'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Ouvrir le bureau effectifs →</a>
-                </p>
-            </div>
-            <dl class="flex flex-wrap gap-3 text-xs">
-                <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 shadow-sm">
-                    <dt class="font-bold uppercase tracking-wider text-amber-800">En attente</dt>
-                    <dd class="mt-0.5 text-lg font-black tabular-nums text-amber-950"><?= (int) $ecSubmitted ?></dd>
-                </div>
-                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 shadow-sm">
-                    <dt class="font-bold uppercase tracking-wider text-emerald-800">Traitées</dt>
-                    <dd class="mt-0.5 text-lg font-black tabular-nums text-emerald-950"><?= (int) $ecReviewed ?></dd>
-                </div>
-                <div class="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 shadow-sm">
-                    <dt class="font-bold uppercase tracking-wider text-rose-800">Rejetées</dt>
-                    <dd class="mt-0.5 text-lg font-black tabular-nums text-rose-950"><?= (int) $ecRejected ?></dd>
-                </div>
-                <div class="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                    <dt class="font-bold uppercase tracking-wider text-slate-500">Alertes</dt>
-                    <dd class="mt-0.5 text-lg font-black tabular-nums text-slate-900"><?= (int) $rhAlertCount ?></dd>
-                </div>
-            </dl>
-        </header>
-
-        <section class="bo-sheet-panel" aria-labelledby="org-rh-enlist-heading" x-data="{ filter: 'all' }">
-            <div class="bo-sheet-toolbar">
-                <div>
-                    <h3 id="org-rh-enlist-heading" class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Candidatures</h3>
-                    <p class="mt-0.5 text-xs text-slate-500"><?= $rhEnlistCount === 0 ? 'Aucune candidature récente.' : ((int) $rhEnlistCount . ($rhEnlistCount > 1 ? ' candidatures récentes.' : ' candidature récente.')) ?></p>
-                </div>
-                <div class="flex flex-wrap items-center gap-1.5">
-                    <?php
-                    $enlistFilters = [
-                        'all' => 'Tout',
-                        'submitted' => 'En attente',
-                        'reviewed' => 'Traitées',
-                        'rejected' => 'Rejetées',
-                    ];
-                    foreach ($enlistFilters as $fkey => $flabel):
-                    ?>
-                    <button
-                        type="button"
-                        @click="filter = '<?= htmlspecialchars($fkey, ENT_QUOTES, 'UTF-8') ?>'"
-                        :class="filter === '<?= htmlspecialchars($fkey, ENT_QUOTES, 'UTF-8') ?>' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
-                        class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide shadow-sm"
-                    ><?= htmlspecialchars($flabel, ENT_QUOTES, 'UTF-8') ?></button>
-                    <?php endforeach; ?>
-                    <a href="<?= url('back-office/recruitments') ?>" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">Liste complète</a>
-                </div>
-            </div>
-            <?php if ($orgEnlistmentErr): ?>
-                <div class="border border-t-0 border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><?= htmlspecialchars($orgEnlistmentErr, ENT_QUOTES, 'UTF-8') ?></div>
+                        <small><?= $pilH((string) $pilEv['meta']) ?></small>
+                    </span>
+                </li>
+                <?php endforeach; ?>
+            </ul>
             <?php endif; ?>
-            <div class="bo-sheet-wrap">
-                <table class="bo-sheet min-w-[52rem]">
-                    <thead>
-                        <tr>
-                            <th style="width:2.5rem">#</th>
-                            <th>Candidat</th>
-                            <th>E-mail</th>
-                            <th>État</th>
-                            <th>Mise à jour</th>
-                            <th class="num">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php if ($orgEnlistmentErr): ?>
-                        <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Impossible de charger les candidatures. Vos données ne sont pas perdues : rechargez la page dans un instant.</td></tr>
-                    <?php elseif (empty($orgEnlistmentRecent)): ?>
-                        <tr><td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucune candidature enregistrée pour le moment.</td></tr>
-                    <?php else: ?>
-                        <?php foreach ($orgEnlistmentRecent as $i => $erow):
-                            $st = (string) ($erow['status'] ?? '');
-                            [$stLabel, $stClass] = $enlistStatusBadge($st);
-                            $eid = (int) ($erow['id'] ?? 0);
-                            $name = trim((string) ($erow['first_name'] ?? '') . ' ' . (string) ($erow['last_name'] ?? ''));
-                            if ($name === '') {
-                                $name = (string) ($erow['email'] ?? '—');
-                            }
-                            $filterKey = in_array($st, ['submitted', 'reviewed', 'rejected'], true) ? $st : 'all';
-                            ?>
-                            <tr x-show="filter === 'all' || filter === '<?= htmlspecialchars($filterKey, ENT_QUOTES, 'UTF-8') ?>'">
-                                <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
-                                <td class="font-semibold"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="text-slate-600"><?= htmlspecialchars((string) ($erow['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td>
-                                    <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars($stClass, ENT_QUOTES, 'UTF-8') ?>">
-                                        <?= htmlspecialchars($stLabel, ENT_QUOTES, 'UTF-8') ?>
-                                    </span>
-                                </td>
-                                <td class="mono text-slate-500 whitespace-nowrap"><?= htmlspecialchars($orgFormatDt(isset($erow['updated_at']) ? (string) $erow['updated_at'] : (isset($erow['created_at']) ? (string) $erow['created_at'] : null)), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="num">
-                                    <a href="<?= url('back-office/recruitments/' . $eid . '?dossier=1') ?>" class="inline-flex rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800">Dossier</a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
         </section>
 
-        <section class="bo-sheet-panel" aria-labelledby="org-rh-journal-heading">
-            <div class="bo-sheet-toolbar">
+        <section class="pil-card" aria-labelledby="pil-feed-title">
+            <div class="pil-card__h">
                 <div>
-                    <h3 id="org-rh-journal-heading" class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Fil RH &amp; affectations</h3>
-                    <p class="mt-0.5 text-xs text-slate-500"><?= $rhJournalCount === 0 ? 'Aucun changement récent' : ((int) $rhJournalCount . ($rhJournalCount > 1 ? ' changements récents' : ' changement récent')) ?> : rôles, comptes, groupes et invitations.</p>
+                    <p class="pil-kicker">Communauté</p>
+                    <h2 class="pil-card__title" id="pil-feed-title">Ce qui a bougé</h2>
                 </div>
-                <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">Journal complet</a>
+                <?php if (($pilLinks['journal'] ?? null) !== null): ?>
+                <a class="pil-link" href="<?= $pilH((string) $pilLinks['journal']) ?>">Journal</a>
+                <?php endif; ?>
             </div>
-            <?php if ($rhErr): ?>
-                <div class="border border-t-0 border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><?= htmlspecialchars($rhErr, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php if ($pilFeed === []): ?>
+            <p class="pil-empty">Aucune action récente dans la communauté.</p>
+            <?php else: ?>
+            <ul class="pil-feed">
+                <?php foreach ($pilFeed as $pilF): ?>
+                <li class="pil-fi">
+                    <span class="pil-av pil-av--<?= $pilH((string) $pilF['tone']) ?>"><?= $pilH((string) $pilF['initials']) ?></span>
+                    <p><b><?= $pilH((string) $pilF['actor']) ?></b> · <?= $pilH((string) $pilF['action']) ?><?php if ((string) $pilF['target'] !== ''): ?> <b><?= $pilH((string) $pilF['target']) ?></b><?php endif; ?><?php if ((string) $pilF['when'] !== ''): ?><small><?= $pilH((string) $pilF['when']) ?></small><?php endif; ?></p>
+                </li>
+                <?php endforeach; ?>
+            </ul>
             <?php endif; ?>
-            <div class="bo-sheet-wrap">
-                <table class="bo-sheet min-w-[56rem]">
-                    <thead>
-                        <tr>
-                            <th style="width:2.5rem">#</th>
-                            <th style="width:10rem">Date</th>
-                            <th>Action</th>
-                            <th>Acteur</th>
-                            <th>Ancienne valeur</th>
-                            <th>Nouvelle valeur</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php if ($rhErr): ?>
-                        <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Impossible de charger les derniers changements RH. Rechargez la page dans un instant.</td></tr>
-                    <?php elseif (empty($rhRows)): ?>
-                        <tr><td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucun mouvement RH récent.</td></tr>
-                    <?php else: ?>
-                        <?php foreach ($rhRows as $i => $rrow):
-                            $rhAction = (string) ($rrow['action'] ?? '');
-                            $ov = trim((string) ($rrow['old_value'] ?? ''));
-                            $nv = trim((string) ($rrow['new_value'] ?? ''));
-                            if (($rhAction === 'group_member_added' || $rhAction === 'group_member_removed') && ($nv !== '' || $ov !== '')) {
-                                $ovShow = $ov;
-                                $nvShow = $nv !== '' ? $nv : $ov;
-                            } else {
-                                $ovShow = $ov;
-                                $nvShow = $nv;
-                            }
-                            ?>
-                            <tr>
-                                <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
-                                <td class="mono text-slate-500 whitespace-nowrap"><?= htmlspecialchars($orgFormatDt(isset($rrow['created_at']) ? (string) $rrow['created_at'] : null), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td>
-                                    <span class="inline-flex rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-bold text-indigo-950 ring-1 ring-indigo-200/80">
-                                        <?= htmlspecialchars(audit_action_label_fr($rhAction), ENT_QUOTES, 'UTF-8') ?>
-                                    </span>
-                                </td>
-                                <td class="font-medium"><?= htmlspecialchars((string) ($rrow['actor_email'] ?? ('#' . (string) ($rrow['user_id'] ?? ''))), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="mono text-slate-500 max-w-[14rem] truncate" title="<?= htmlspecialchars($ovShow, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($ovShow !== '' ? $ovShow : '—', ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="mono text-slate-700 max-w-[14rem] truncate" title="<?= htmlspecialchars($nvShow, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($nvShow !== '' ? $nvShow : '—', ENT_QUOTES, 'UTF-8') ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
         </section>
-
-        <section class="bo-sheet-panel" aria-labelledby="org-rh-alerts-heading" x-data="{ filter: 'all' }">
-            <div class="bo-sheet-toolbar">
-                <div>
-                    <h3 id="org-rh-alerts-heading" class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Alertes effectifs</h3>
-                    <p class="mt-0.5 text-xs text-slate-500">
-                        Profils incomplets, sans unité ou sans rôle communautaire
-                        <?php if ($tenantName !== ''): ?>
-                            — communauté <strong class="font-semibold text-slate-700"><?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></strong> uniquement
-                        <?php else: ?>
-                            — communauté active uniquement
-                        <?php endif; ?>.
-                    </p>
-                </div>
-                <div class="flex flex-wrap items-center gap-1.5">
-                    <?php
-                    $alertFilters = [
-                        'all' => 'Tout',
-                        'incomplete' => 'Profils',
-                        'no_unit' => 'Sans unité',
-                        'no_role' => 'Sans rôle',
-                    ];
-                    foreach ($alertFilters as $fkey => $flabel):
-                    ?>
-                    <button
-                        type="button"
-                        @click="filter = '<?= htmlspecialchars($fkey, ENT_QUOTES, 'UTF-8') ?>'"
-                        :class="filter === '<?= htmlspecialchars($fkey, ENT_QUOTES, 'UTF-8') ?>' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
-                        class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide shadow-sm"
-                    ><?= htmlspecialchars($flabel, ENT_QUOTES, 'UTF-8') ?></button>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php
-            $alertErrs = array_filter([
-                $wq['error_incomplete'] ?? null,
-                $wq['error_no_unit'] ?? null,
-                $wq['error_no_role'] ?? null,
-            ]);
-            ?>
-            <?php if ($alertErrs !== []): ?>
-                <div class="border border-t-0 border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                    <?php foreach ($alertErrs as $ae): ?>
-                        <p><?= htmlspecialchars((string) $ae, ENT_QUOTES, 'UTF-8') ?></p>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-            <div class="bo-sheet-wrap">
-                <table class="bo-sheet min-w-[48rem]">
-                    <thead>
-                        <tr>
-                            <th style="width:2.5rem">#</th>
-                            <th>Type d’alerte</th>
-                            <th>Membre</th>
-                            <th>E-mail</th>
-                            <th class="num">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php if ($rhAlertSheet === []): ?>
-                        <tr><td colspan="5" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Tous les profils actifs sont complets. Rien à faire ici.</td></tr>
-                    <?php else: ?>
-                        <?php foreach ($rhAlertSheet as $i => $arow): ?>
-                            <tr x-show="filter === 'all' || filter === '<?= htmlspecialchars((string) $arow['kind'], ENT_QUOTES, 'UTF-8') ?>'">
-                                <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
-                                <td>
-                                    <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars((string) $arow['kind_chip'], ENT_QUOTES, 'UTF-8') ?>">
-                                        <?= htmlspecialchars((string) $arow['kind_label'], ENT_QUOTES, 'UTF-8') ?>
-                                    </span>
-                                </td>
-                                <td class="font-semibold"><?= htmlspecialchars((string) $arow['name'], ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="text-slate-600"><?= htmlspecialchars((string) $arow['email'], ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="num">
-                                    <div class="inline-flex flex-wrap justify-end gap-1.5">
-                                        <?php if ((int) $arow['user_id'] > 0): ?>
-                                            <a href="<?= url('back-office/users/' . (int) $arow['user_id']) ?>" class="inline-flex rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800">Fiche</a>
-                                        <?php endif; ?>
-                                        <a href="<?= htmlspecialchars((string) $arow['list_url'], ENT_QUOTES, 'UTF-8') ?>" class="inline-flex rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800">Liste</a>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        </div>
-
-        <div x-show="tab === 'watch'" x-cloak class="org-dash__deck space-y-8 lg:space-y-10" id="watch">
-        <?php
-        $watchSheetRows = [];
-        $expErr = $wq['error_invitations'] ?? null;
-        $trErr = $wq['error_training'] ?? null;
-        if (empty($expErr) && is_array($wq['expired_invitations'] ?? null)) {
-            foreach ($wq['expired_invitations'] as $inv) {
-                $watchSheetRows[] = [
-                    'kind' => 'invitation',
-                    'kind_label' => 'Invitation expirée',
-                    'kind_chip' => 'bg-amber-50 text-amber-900 ring-amber-200',
-                    'subject' => (string) ($inv['email'] ?? '—'),
-                    'detail' => 'À traiter dans les invitations',
-                    'when' => (string) ($inv['expires_at'] ?? ''),
-                    'when_label' => $orgFormatDt(isset($inv['expires_at']) ? (string) $inv['expires_at'] : null),
-                    'href' => url('back-office/invitations'),
-                    'action_label' => 'Gérer',
-                ];
-            }
-        }
-        if (empty($trErr) && is_array($wq['training_expiring'] ?? null)) {
-            foreach ($wq['training_expiring'] as $trow) {
-                $watchSheetRows[] = [
-                    'kind' => 'formation',
-                    'kind_label' => 'Formation · échéance',
-                    'kind_chip' => 'bg-sky-50 text-sky-900 ring-sky-200',
-                    'subject' => (string) ($trow['email'] ?? '—'),
-                    'detail' => (string) ($trow['course_title'] ?? 'Parcours'),
-                    'when' => (string) ($trow['expires_at'] ?? $trow['due_at'] ?? ''),
-                    'when_label' => $orgFormatDt(isset($trow['expires_at']) ? (string) $trow['expires_at'] : (isset($trow['due_at']) ? (string) $trow['due_at'] : null)),
-                    'href' => training_lms_admin_url(),
-                    'action_label' => 'Ouvrir',
-                ];
-            }
-        }
-        if (empty($modErr) && is_array($mod)) {
-            foreach ($mod as $a) {
-                $watchSheetRows[] = [
-                    'kind' => 'moderation',
-                    'kind_label' => $modActionLabelFr((string) ($a['action_type'] ?? '')),
-                    'kind_chip' => 'bg-rose-50 text-rose-900 ring-rose-200',
-                    'subject' => (string) ($a['target_email'] ?? '—'),
-                    'detail' => !empty($a['actor_email']) ? ('Par ' . (string) $a['actor_email']) : 'Mesure récente',
-                    'when' => (string) ($a['created_at'] ?? ''),
-                    'when_label' => $orgFormatDt(isset($a['created_at']) ? (string) $a['created_at'] : null),
-                    'href' => $canMemberModeration ? url('back-office/moderation') : '',
-                    'action_label' => 'Voir',
-                ];
-            }
-        }
-        $watchCount = count($watchSheetRows);
-        $journalCount = is_array($rows) ? count($rows) : 0;
-        ?>
-
-        <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-                <p class="text-[11px] font-black uppercase tracking-[0.28em] text-blue-700">Surveillance</p>
-                <h2 class="mt-1 text-2xl font-black tracking-tight text-slate-900">Tableur opérationnel</h2>
-                <p class="mt-1 max-w-2xl text-sm text-slate-600">File à traiter et journal d’activité en vue tableur — pleine largeur, colonnes fixes, défilement vertical.</p>
-            </div>
-            <dl class="flex flex-wrap gap-3 text-xs">
-                <div class="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                    <dt class="font-bold uppercase tracking-wider text-slate-500">À traiter</dt>
-                    <dd class="mt-0.5 text-lg font-black tabular-nums text-slate-900"><?= (int) $watchCount ?></dd>
-                </div>
-                <div class="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                    <dt class="font-bold uppercase tracking-wider text-slate-500">Journal</dt>
-                    <dd class="mt-0.5 text-lg font-black tabular-nums text-slate-900"><?= (int) $journalCount ?></dd>
-                </div>
-            </dl>
-        </header>
-
-        <section class="bo-sheet-panel" aria-labelledby="org-watch-sheet-heading" x-data="{ filter: 'all' }">
-            <div class="bo-sheet-toolbar">
-                <div>
-                    <h3 id="org-watch-sheet-heading" class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">File à traiter</h3>
-                    <p class="mt-0.5 text-xs text-slate-500">Invitations expirées, formations à échéance et mesures de modération.</p>
-                </div>
-                <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrer la file">
-                    <?php
-                    $filters = [
-                        'all' => 'Tout',
-                        'invitation' => 'Invitations',
-                        'formation' => 'Formations',
-                        'moderation' => 'Modération',
-                    ];
-                    foreach ($filters as $fkey => $flabel):
-                    ?>
-                    <button
-                        type="button"
-                        @click="filter = '<?= htmlspecialchars($fkey, ENT_QUOTES, 'UTF-8') ?>'"
-                        :class="filter === '<?= htmlspecialchars($fkey, ENT_QUOTES, 'UTF-8') ?>' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
-                        class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide shadow-sm"
-                    ><?= htmlspecialchars($flabel, ENT_QUOTES, 'UTF-8') ?></button>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php if (!empty($expErr) || !empty($trErr) || !empty($modErr)): ?>
-                <div class="border border-t-0 border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                    <?php if (!empty($expErr)): ?><p><?= htmlspecialchars((string) $expErr, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
-                    <?php if (!empty($trErr)): ?><p><?= htmlspecialchars((string) $trErr, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
-                    <?php if (!empty($modErr)): ?><p><?= htmlspecialchars((string) $modErr, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
-                </div>
-            <?php endif; ?>
-            <div class="bo-sheet-wrap">
-                <table class="bo-sheet min-w-[56rem]">
-                    <thead>
-                        <tr>
-                            <th style="width:2.5rem">#</th>
-                            <th>Type</th>
-                            <th>Personne / e-mail</th>
-                            <th>Détail</th>
-                            <th>Date</th>
-                            <th class="num">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php if ($watchSheetRows === []): ?>
-                        <tr>
-                            <td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">
-                                Rien à traiter pour le moment — invitations, formations et modération sont au vert.
-                            </td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($watchSheetRows as $i => $wrow): ?>
-                            <tr
-                                x-show="filter === 'all' || filter === '<?= htmlspecialchars((string) $wrow['kind'], ENT_QUOTES, 'UTF-8') ?>'"
-                                data-kind="<?= htmlspecialchars((string) $wrow['kind'], ENT_QUOTES, 'UTF-8') ?>"
-                            >
-                                <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
-                                <td>
-                                    <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars((string) $wrow['kind_chip'], ENT_QUOTES, 'UTF-8') ?>">
-                                        <?= htmlspecialchars((string) $wrow['kind_label'], ENT_QUOTES, 'UTF-8') ?>
-                                    </span>
-                                </td>
-                                <td class="font-semibold"><?= htmlspecialchars((string) $wrow['subject'], ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="text-slate-600"><?= htmlspecialchars((string) $wrow['detail'], ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="mono text-slate-500 whitespace-nowrap"><?= htmlspecialchars((string) $wrow['when_label'], ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="num">
-                                    <?php if ((string) $wrow['href'] !== ''): ?>
-                                        <a href="<?= htmlspecialchars((string) $wrow['href'], ENT_QUOTES, 'UTF-8') ?>" class="inline-flex rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800">
-                                            <?= htmlspecialchars((string) $wrow['action_label'], ENT_QUOTES, 'UTF-8') ?>
-                                        </a>
-                                    <?php else: ?>
-                                        <span class="text-slate-400">—</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <section class="bo-sheet-panel" aria-labelledby="org-journal-heading">
-            <div class="bo-sheet-toolbar">
-                <div>
-                    <h3 id="org-journal-heading" class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Journal opérationnel</h3>
-                    <p class="mt-0.5 text-xs text-slate-500">Derniers événements enregistrés pour cette communauté.</p>
-                </div>
-                <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">
-                    Journal complet
-                    <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-                </a>
-            </div>
-            <?php if ($activityError): ?>
-                <div class="border border-t-0 border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><?= htmlspecialchars($activityError, ENT_QUOTES, 'UTF-8') ?></div>
-            <?php endif; ?>
-            <div class="bo-sheet-wrap">
-                <table class="bo-sheet min-w-[52rem]">
-                    <thead>
-                        <tr>
-                            <th style="width:2.5rem">#</th>
-                            <th style="width:10rem">Date</th>
-                            <th>Action</th>
-                            <th>Acteur</th>
-                            <th>Ancienne valeur</th>
-                            <th>Nouvelle valeur</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php if ($activityError): ?>
-                        <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Impossible de charger le journal. Rechargez la page dans un instant.</td></tr>
-                    <?php elseif (empty($rows)): ?>
-                        <tr>
-                            <td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">
-                                Aucun événement récent — le journal se remplira au fil des actions administratives.
-                            </td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($rows as $i => $row):
-                            $actionSlug = (string) ($row['action'] ?? '');
-                            $oldVal = trim((string) ($row['old_value'] ?? ''));
-                            $newVal = trim((string) ($row['new_value'] ?? ''));
-                            ?>
-                            <tr>
-                                <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
-                                <td class="mono text-slate-500 whitespace-nowrap"><?= htmlspecialchars($orgFormatDt(isset($row['created_at']) ? (string) $row['created_at'] : null), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td>
-                                    <span class="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-800 ring-1 ring-slate-200/80">
-                                        <?= htmlspecialchars(audit_action_label_fr($actionSlug), ENT_QUOTES, 'UTF-8') ?>
-                                    </span>
-                                </td>
-                                <td class="font-medium"><?= htmlspecialchars((string) ($row['actor_email'] ?? ('#' . (string) ($row['user_id'] ?? ''))), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="mono text-slate-500 max-w-[14rem] truncate" title="<?= htmlspecialchars($oldVal, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($oldVal !== '' ? $oldVal : '—', ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="mono text-slate-700 max-w-[14rem] truncate" title="<?= htmlspecialchars($newVal, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($newVal !== '' ? $newVal : '—', ENT_QUOTES, 'UTF-8') ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        </div>
-
     </div>
+
+    <?php
+    $pilChart = is_array($orgActivityChart ?? null) ? $orgActivityChart : [];
+    $pilPortal = is_array($pilChart['portal'] ?? null) ? $pilChart['portal'] : [];
+    $pilAtak = is_array($pilChart['atak'] ?? null) ? $pilChart['atak'] : [];
+    $pilDays = is_array($pilChart['days'] ?? null) ? $pilChart['days'] : [];
+    $pilMax = max(1, (int) ($pilChart['max'] ?? 1));
+    $pilPeriod = (int) ($pilChart['period_days'] ?? 14);
+    $pilMessages = is_array($orgMessagesRecent ?? null) ? array_slice($orgMessagesRecent, 0, 3) : [];
+    ?>
+    <div class="pil-row pil-row--usage">
+        <section class="pil-card" aria-labelledby="pil-use-title">
+            <div class="pil-card__h">
+                <div>
+                    <p class="pil-kicker">Usage · <?= $pilPeriod ?> derniers jours</p>
+                    <h2 class="pil-card__title" id="pil-use-title">Connexions au site et téléphones ATAK</h2>
+                </div>
+                <div class="pil-lg" aria-hidden="true">
+                    <span><em class="pil-lg__portal"></em>Site</span>
+                    <span><em class="pil-lg__atak"></em>ATAK</span>
+                </div>
+            </div>
+            <?php if ($pilDays === []): ?>
+            <p class="pil-empty">Aucune donnée d’usage sur la période.</p>
+            <?php else: ?>
+            <div class="pil-usage" style="--pil-cols:<?= count($pilDays) ?>" role="img" aria-label="Connexions au site et téléphones ATAK actifs sur <?= $pilPeriod ?> jours">
+                <?php foreach ($pilDays as $pilI => $pilDay): ?>
+                <?php $pilPv = (int) ($pilPortal[$pilI] ?? 0); $pilAv = (int) ($pilAtak[$pilI] ?? 0); ?>
+                <div class="pil-usage__d" title="<?= $pilH('Jour ' . $pilDay . ' · site ' . $pilPv . ' · ATAK ' . $pilAv) ?>">
+                    <i class="pil-usage__p" style="height:<?= round($pilPv / $pilMax * 100, 1) ?>%"></i>
+                    <i class="pil-usage__a" style="height:<?= round($pilAv / $pilMax * 100, 1) ?>%"></i>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <div class="pil-xl pil-xl--days" style="--pil-cols:<?= count($pilDays) ?>" aria-hidden="true">
+                <?php foreach ($pilDays as $pilDay): ?><span><?= $pilH((string) $pilDay) ?></span><?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+        </section>
+
+        <section class="pil-card" aria-labelledby="pil-msg-title">
+            <div class="pil-card__h">
+                <div>
+                    <p class="pil-kicker">Messagerie</p>
+                    <h2 class="pil-card__title" id="pil-msg-title">Derniers messages</h2>
+                </div>
+                <a class="pil-link" href="<?= $pilH((string) ($pilLinks['messages'] ?? url('messages'))) ?>">Ouvrir</a>
+            </div>
+            <?php if ($pilMessages === []): ?>
+            <p class="pil-empty">Aucune conversation récente dans votre messagerie.</p>
+            <?php else: ?>
+            <ul class="pil-msgs">
+                <?php foreach ($pilMessages as $pilMsg): ?>
+                <?php
+                $pilSubject = trim((string) ($pilMsg['subject'] ?? ''));
+                $pilPreview = trim(preg_replace('/\s+/u', ' ', (string) ($pilMsg['last_preview'] ?? '')) ?? '');
+                if (mb_strlen($pilPreview) > 90) {
+                    $pilPreview = mb_substr($pilPreview, 0, 89) . '…';
+                }
+                $pilUpd = strtotime((string) ($pilMsg['updated_at'] ?? '')) ?: null;
+                $pilTid = (int) ($pilMsg['id'] ?? 0);
+                ?>
+                <li>
+                    <a class="pil-msg<?= !empty($pilMsg['thread_unread']) ? ' is-unread' : '' ?>" href="<?= $pilH($pilTid > 0 ? url('messages/' . $pilTid) : url('messages')) ?>">
+                        <b><?= $pilH($pilSubject !== '' ? $pilSubject : 'Conversation') ?><?php if (!empty($pilMsg['thread_unread'])): ?><span class="pil-tag pil-tone--primary">Non lu</span><?php endif; ?></b>
+                        <small><?= $pilH($pilPreview !== '' ? $pilPreview : 'Aucun aperçu') ?><?= $pilUpd !== null ? ' · ' . $pilH(\App\Support\PilotageDashboardPresenter::ago($pilUpd, time())) : '' ?></small>
+                    </a>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php endif; ?>
+        </section>
+    </div>
+
+    <?php $pilGapTotal = (int) (is_array($orgProfileGaps ?? null) ? ($orgProfileGaps['total'] ?? 0) : 0); ?>
+    <details class="pil-gaps" id="dossiers-incomplets">
+        <summary>
+            <span><b>Dossiers à compléter</b><small><?= $pilGapTotal > 0 ? $pilH($pilPlural($pilGapTotal, 'membre actif concerné', 'membres actifs concernés')) : 'Aucun trou de dossier sur les membres actifs' ?></small></span>
+            <span class="pil-gaps__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="pil-gaps__body">
+            <?php require base_path('views/partials/org_dashboard_profile_gaps.php'); ?>
+        </div>
+    </details>
 </div>
-</div>
-<?php endif; ?>
+<script>
+(function () {
+    var root = document.querySelector('[data-pilotage]');
+    if (!root) { return; }
+    // Ouvre la liste des dossiers quand on y arrive par un lien.
+    function openGaps() {
+        if (location.hash === '#dossiers-incomplets') {
+            var d = document.getElementById('dossiers-incomplets');
+            if (d) { d.open = true; }
+        }
+    }
+    openGaps();
+    window.addEventListener('hashchange', openGaps);
+    // Bandeau de nouveautés : masqué jusqu’à ce que leur nombre change.
+    root.querySelectorAll('[data-pil-dismissable]').forEach(function (el) {
+        var key = 'pil-hide-' + el.getAttribute('data-pil-dismissable');
+        try { if (localStorage.getItem(key) === '1') { el.hidden = true; } } catch (e) {}
+        var btn = el.querySelector('[data-pil-dismiss]');
+        if (btn) {
+            btn.addEventListener('click', function () {
+                el.hidden = true;
+                try { localStorage.setItem(key, '1'); } catch (e) {}
+            });
+        }
+    });
+    // Compte à rebours de la prochaine activité.
+    var cd = root.querySelector('[data-pil-countdown]');
+    if (cd) {
+        var target = Date.parse(cd.getAttribute('data-pil-countdown'));
+        var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+        var tick = function () {
+            var d = Math.max(0, target - Date.now());
+            cd.querySelector('[data-cd="d"]').textContent = pad(Math.floor(d / 864e5));
+            cd.querySelector('[data-cd="h"]').textContent = pad(Math.floor(d % 864e5 / 36e5));
+            cd.querySelector('[data-cd="m"]').textContent = pad(Math.floor(d % 36e5 / 6e4));
+        };
+        if (!isNaN(target)) { setInterval(tick, 30000); }
+    }
+})();
+</script>

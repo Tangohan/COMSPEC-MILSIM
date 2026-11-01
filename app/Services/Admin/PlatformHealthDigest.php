@@ -39,11 +39,11 @@ final class PlatformHealthDigest
             'send_queue' => ['Files d’envoi du mod', 'admin/parc-atak', fn () => $this->sendQueue()],
             'mod_version' => ['Version du mod en jeu', 'admin/parc-atak', fn () => $this->modVersion()],
             'mod_reports' => ['Rapports d’erreurs du mod', 'admin/atak-mod-reports?status=new', fn () => $this->modReports()],
-            'site_errors' => ['Pages en erreur (24 h)', 'admin/system/exploitation', fn () => $this->siteErrors()],
+            'site_errors' => ['Pages en erreur (24 h)', 'admin?onglet=etat', fn () => $this->siteErrors()],
             'cron' => ['Tâches automatiques', 'admin/system/cron', fn () => $this->cron()],
-            'migrations' => ['Migrations en attente', 'admin/system/exploitation?onglet=migrations', fn () => $this->migrations()],
+            'migrations' => ['Migrations en attente', 'admin?onglet=migrations', fn () => $this->migrations()],
             'disk' => ['Espace disque', 'admin/system/storage', fn () => $this->disk()],
-            'backup' => ['Dernière sauvegarde', 'admin/system/exploitation?onglet=sauvegardes', fn () => $this->backup()],
+            'backup' => ['Dernière sauvegarde', 'admin?onglet=sauvegardes', fn () => $this->backup()],
         ] as $key => [$label, $href, $fn]) {
             try {
                 [$value, $tone, $hint] = $fn() + [2 => ''];

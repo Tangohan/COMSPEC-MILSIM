@@ -111,6 +111,30 @@ final class PersonnelAbsenceRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Membres absents aujourd’hui (absence déclarée, en cours), par identifiant de membre.
+     *
+     * @return array<int, true>
+     */
+    public function userIdsAbsentToday(int $tenantId): array
+    {
+        if (!$this->tableExists() || $tenantId < 1) {
+            return [];
+        }
+        $day = date('Y-m-d');
+        $stmt = $this->pdo->prepare(
+            'SELECT DISTINCT user_id FROM personnel_absences
+             WHERE tenant_id = ? AND status = \'active\' AND starts_on <= ? AND (ends_on IS NULL OR ends_on >= ?)'
+        );
+        $stmt->execute([$tenantId, $day, $day]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) ?: [] as $uid) {
+            $out[(int) $uid] = true;
+        }
+
+        return $out;
+    }
+
     public function findOwned(int $tenantId, int $userId, int $absenceId): ?array
     {
         if (!$this->tableExists() || $tenantId < 1 || $userId < 1 || $absenceId < 1) {
