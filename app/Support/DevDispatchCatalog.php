@@ -294,6 +294,19 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1241, '2026-11-01', 'Téléphone : plus d’à-coups, carte lisible, anglais complet', 'Avec le pack 2.9.22 et la liaison 2.0.112, plus aucun échange avec Athena ne fige le jeu, même sur un serveur chargé. La carte du téléphone devient lisible de jour comme de nuit (noms qui ne se chevauchent plus, couleurs nettes, réglages d’étiquettes), le multijoueur envoie beaucoup moins de données et toute l’interface est traduite en anglais.', [
+                'Carte : réglages CONFIGURATION > Étiquettes (taille du texte, fond, noms affichés)',
+                'Traduction anglaise complète du téléphone, d’Overwatch et du SSE',
+            ], [
+                'Plus aucun gel pendant les échanges avec Athena',
+                'Moins de trafic en multijoueur (plan du camp, TOC, sang SSE, suivi des alliés)',
+                'Carte et montre : marqueurs relus moins souvent',
+            ], [
+                'Réponses d’Athena perdues quand beaucoup d’informations arrivaient à la fois',
+                'Galerie, Musique et pièces jointes qui figeaient l’image',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.22 (liaison 2.0.112 incluse), quittez Arma complètement, puis relancez.',
+            ], 'Pack téléphone 2.9.22'),
             $pr(1216, '2026-11-01', 'Téléphone : plus de gel, tenues ACE réparées, liaison vraiment coupée', 'Avec le pack 2.9.21 et la liaison 2.0.111, le téléphone ne se fige plus après un moment d’utilisation, la carte suit sans à-coups et les tâches de fond sont étalées pour supprimer les micro-gels. Le panneau Athena · Tenues de l’arsenal ACE est corrigé : plus de tenues en double, plus d’erreur ACE, « Enfiler » et l’import fonctionnent. Liaison Athena désactivée ou téléphone rangé : plus rien n’est transmis.', [
                 'Bandeau bêta du menu principal fermable',
                 'Tenues ACE abîmées ou en double réparées automatiquement au lancement',
