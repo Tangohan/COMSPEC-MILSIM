@@ -14,7 +14,7 @@ namespace App\Services\Academy;
 final class AcademyBuiltInCourses
 {
     public const JTAC_KEY = 'jtac-licence-ath-academy';
-    public const JTAC_VERSION = '2.0';
+    public const JTAC_VERSION = '2.0.1';
 
     /** @return array<string, array<string, mixed>> */
     public static function all(): array
@@ -614,7 +614,7 @@ Le JTAC a le visuel sur la cible ; attaque multiple. Ce type sert pour des cible
 En types 1 et 2, chaque autorisation vaut pour une seule attaque. Relancer une attaque est à l’initiative du JTAC : le pilote ne repasse pas de lui-même.
 
 06 — Méthode d’acquisition
-- Bomb on target : la cible est acquise par un marquage ou un senseur — MI, laser, strobe IR…
+- Bomb on target : la cible est acquise par un marquage ou un senseur — fumigène (fumi), laser, strobe IR…
 - Bomb on coordinate : l’attaque se fait uniquement sur des coordonnées.
 
 07 — Préciser la munition
@@ -645,7 +645,7 @@ The JTAC has eyes on the target; multiple attacks. This type is used for multipl
 In Types 1 and 2, each clearance is valid for one attack only. Launching another attack is the JTAC’s decision: the pilot does not make another pass on their own.
 
 06 — Acquisition method
-- Bomb on target: the target is acquired with a mark or a sensor — MI, laser, IR strobe…
+- Bomb on target: the target is acquired with a mark or a sensor — smoke, laser, IR strobe…
 - Bomb on coordinate: the attack is made on coordinates only.
 
 07 — Specifying the weapon
@@ -801,8 +801,8 @@ EN;
                     self::text('L’attaque se fait uniquement sur des coordonnées.', 'The attack is made on coordinates only.'),
                 ],
                 2,
-                'Le laser, le strobe IR ou le marquage MI relèvent de « bomb on target ». « Bomb on coordinate » n’utilise que des coordonnées.',
-                'Laser, IR strobe or MI marking belong to “bomb on target”. “Bomb on coordinate” uses coordinates only.'
+                'Le laser, le strobe IR ou le marquage au fumigène relèvent de « bomb on target ». « Bomb on coordinate » n’utilise que des coordonnées.',
+                'Laser, IR strobe or smoke marking belong to “bomb on target”. “Bomb on coordinate” uses coordinates only.'
             ),
             self::question(
                 'Par quelle demande se termine le game plan ?',
@@ -1738,8 +1738,8 @@ EN;
                 'title' => self::text('Fiche mémo — Les cinq phases du JTAC', 'Memo card — The five JTAC phases'),
                 'type' => 'document',
                 'body' => self::text(
-                    "FORMATION DE JEU (ARMA 3) — sans valeur de qualification réelle.\n\n1. CONTACT INITIAL\nPrise en charge de la patrouille · menaces immédiates · trafic aérien · check-in (armement ; code laser si armement guidé laser ; senseurs, pods, rover) · code abort.\n\n2. SITUATION UPDATE\nAmis (en général) · ennemi observé ou signalé · menaces · changements. Faits séparés des suppositions, repères visibles du ciel.\n\n3. GAME PLAN\nType de contrôle obligatoire :\n- Type 1 = visuel cible ET attaquant, une attaque.\n- Type 2 = visuel cible OU attaquant, une attaque. JDAM (GBU-38) = forcément type 2.\n- Type 3 = visuel cible, attaques multiples (« Cleared to engage », recontact à l’issue).\nMéthode : bomb on target (MI, laser, strobe IR…) ou bomb on coordinate. Préciser la munition. Fin : « retour radio si prêt pour 9-Line ».\n\n4. CAS BRIEF (9-LINE)\nNeuf lignes, remarques (danger close, code abort unique), collationnement, « Continue ».\n\n5. ATTAQUE TERMINALE ET BDA\nAbort · Continue · Continue dry · Clear hot · Cleared to engage.\nBDA : non détruite → réattaque · détruite, même zone → talk-on et réattaque · détruite, hors secteur → nouvelle 9-Line · détruite, fin du travail → libération de la patrouille.",
-                    "IN-GAME TRAINING (ARMA 3) — no real-world qualification value.\n\n1. INITIAL CONTACT\nTaking control of the flight · immediate threats · air traffic · check-in (weapons; laser code if laser-guided weapons; sensors, pods, rover) · abort code.\n\n2. SITUATION UPDATE\nFriendlies (general) · observed or reported enemy · threats · changes. Facts separated from assumptions, landmarks visible from the air.\n\n3. GAME PLAN\nType of control is mandatory:\n- Type 1 = eyes on target AND attacker, one attack.\n- Type 2 = eyes on target OR attacker, one attack. JDAM (GBU-38) = always Type 2.\n- Type 3 = eyes on target, multiple attacks (“Cleared to engage”, check back in when finished).\nMethod: bomb on target (MI, laser, IR strobe…) or bomb on coordinate. Specify the weapon. End: “call when ready for 9-Line”.\n\n4. CAS BRIEF (9-LINE)\nNine lines, remarks (danger close, unique abort code), readback, “Continue”.\n\n5. TERMINAL ATTACK AND BDA\nAbort · Continue · Continue dry · Clear hot · Cleared to engage.\nBDA: not destroyed → re-attack · destroyed, same area → talk-on and re-attack · destroyed, outside the area → new 9-Line · destroyed, work complete → release the flight."
+                    "FORMATION DE JEU (ARMA 3) — sans valeur de qualification réelle.\n\n1. CONTACT INITIAL\nPrise en charge de la patrouille · menaces immédiates · trafic aérien · check-in (armement ; code laser si armement guidé laser ; senseurs, pods, rover) · code abort.\n\n2. SITUATION UPDATE\nAmis (en général) · ennemi observé ou signalé · menaces · changements. Faits séparés des suppositions, repères visibles du ciel.\n\n3. GAME PLAN\nType de contrôle obligatoire :\n- Type 1 = visuel cible ET attaquant, une attaque.\n- Type 2 = visuel cible OU attaquant, une attaque. JDAM (GBU-38) = forcément type 2.\n- Type 3 = visuel cible, attaques multiples (« Cleared to engage », recontact à l’issue).\nMéthode : bomb on target (fumigène, laser, strobe IR…) ou bomb on coordinate. Préciser la munition. Fin : « retour radio si prêt pour 9-Line ».\n\n4. CAS BRIEF (9-LINE)\nNeuf lignes, remarques (danger close, code abort unique), collationnement, « Continue ».\n\n5. ATTAQUE TERMINALE ET BDA\nAbort · Continue · Continue dry · Clear hot · Cleared to engage.\nBDA : non détruite → réattaque · détruite, même zone → talk-on et réattaque · détruite, hors secteur → nouvelle 9-Line · détruite, fin du travail → libération de la patrouille.",
+                    "IN-GAME TRAINING (ARMA 3) — no real-world qualification value.\n\n1. INITIAL CONTACT\nTaking control of the flight · immediate threats · air traffic · check-in (weapons; laser code if laser-guided weapons; sensors, pods, rover) · abort code.\n\n2. SITUATION UPDATE\nFriendlies (general) · observed or reported enemy · threats · changes. Facts separated from assumptions, landmarks visible from the air.\n\n3. GAME PLAN\nType of control is mandatory:\n- Type 1 = eyes on target AND attacker, one attack.\n- Type 2 = eyes on target OR attacker, one attack. JDAM (GBU-38) = always Type 2.\n- Type 3 = eyes on target, multiple attacks (“Cleared to engage”, check back in when finished).\nMethod: bomb on target (smoke, laser, IR strobe…) or bomb on coordinate. Specify the weapon. End: “call when ready for 9-Line”.\n\n4. CAS BRIEF (9-LINE)\nNine lines, remarks (danger close, unique abort code), readback, “Continue”.\n\n5. TERMINAL ATTACK AND BDA\nAbort · Continue · Continue dry · Clear hot · Cleared to engage.\nBDA: not destroyed → re-attack · destroyed, same area → talk-on and re-attack · destroyed, outside the area → new 9-Line · destroyed, work complete → release the flight."
                 ),
             ],
             [

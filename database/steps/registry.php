@@ -30,5 +30,5 @@ return [
     ['id' => 'units_military_symbol', 'label' => 'ORBAT : symbole militaire MIL-STD-2525 et échelon des unités (units.sidc, units.echelon)', 'group' => 'schema', 'file' => '3250_units_military_symbol.php', 'rerun' => true],
     ['id' => 'member_profile_invites', 'label' => 'Liens pour compléter son profil (invitations des effectifs)', 'group' => 'schema', 'file' => '3260_member_profile_invites.php', 'rerun' => true],
     ['id' => 'academy_course_lifecycle_sharing', 'label' => 'Academy Studio : archivage, corbeille et partage des formations', 'group' => 'schema', 'file' => '3270_academy_course_lifecycle_sharing.php', 'rerun' => true],
-    ['id' => 'academy_jtac_v2_refresh', 'label' => 'Académie : nouvelle version du cours JTAC pour les inscrits qui ne l’ont pas encore commencé', 'group' => 'schema', 'file' => '3280_academy_jtac_v2_refresh.php', 'rerun' => true],
+    ['id' => 'academy_jtac_v2_refresh', 'label' => 'Académie : dernière version du cours JTAC (2.0.1, marquage fumigène) pour les inscrits qui ne l’ont pas encore commencé', 'group' => 'schema', 'file' => '3280_academy_jtac_v2_refresh.php', 'rerun' => true],
 ];
