@@ -204,6 +204,94 @@
   font-weight: 500;
 }
 
+.ath-sidebar__child:focus-visible,
+.ath-sidebar__section-head:focus-visible,
+.ath-sidebar__kids-toggle:focus-visible {
+  outline: 2px solid var(--ath-accent-bright, #3fd69a);
+  outline-offset: -2px;
+}
+
+.ath-sidebar__child-badge {
+  flex-shrink: 0;
+  min-width: 1.1rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: #1c2327;
+  color: #e6ebe8;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.1rem;
+  text-align: center;
+}
+
+.ath-sidebar__child-badge--warn { background: var(--ath-warn, #d4a017); color: #111; }
+
+/* ——— Sous-menus (3e niveau) ——— */
+.ath-sidebar__section { display: flex; flex-direction: column; }
+.ath-sidebar__section[hidden],
+.ath-sidebar__section-body[hidden] { display: none !important; }
+
+.ath-sidebar__section-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 2px 8px 0;
+  padding: 6px 12px 6px 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ath-sidebar-dim);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ath-sidebar__section-head:hover { background: var(--ath-sidebar-hover); color: #fff; }
+.ath-sidebar__section-head svg { flex-shrink: 0; transition: transform 0.2s ease; }
+.ath-sidebar__section.is-expanded > .ath-sidebar__section-head svg { transform: rotate(90deg); }
+.ath-sidebar__section.is-active > .ath-sidebar__section-head { color: #e6ebe8; }
+
+.ath-sidebar__section-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ath-sidebar__section-count {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: #5d6661;
+  font-variant-numeric: tabular-nums;
+}
+
+.ath-sidebar__section-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  animation: athKidsIn 0.2s ease both;
+}
+
+/* Filet vertical qui rattache les pages à leur sous-menu */
+.ath-sidebar__section-body::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  bottom: 4px;
+  left: 46px;
+  width: 1px;
+  background: #222a2e;
+}
+
+.ath-sidebar__child--deep { padding-left: 52px; }
+.ath-sidebar__child--deep .ath-sidebar__child-dot { width: 3px; height: 3px; }
+
+.ath-sidebar.is-collapsed .ath-sidebar__section { display: none; }
+
+@media (max-width: 1023.98px) {
+  .ath-sidebar__section-head { min-height: 38px; font-size: 12px; }
+}
+
 .ath-sidebar__group-label {
   font-size: 10.5px;
   letter-spacing: 0.12em;
