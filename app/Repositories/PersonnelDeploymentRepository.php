@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Services\Identity\UserIdentityMergeRules;
 use PDO;
 
 final class PersonnelDeploymentRepository
@@ -121,8 +122,7 @@ final class PersonnelDeploymentRepository
         }
 
         $sql = 'SELECT u.id AS user_id, u.display_name, u.callsign, u.email,
-                    ' . $jobRoleSelect . ', pp.blood_type AS profile_blood_type, pp.matricule_internal, pp.primary_unit_id, pp.deployable,
-                    un.name AS unit_name,
+                    ' . $jobRoleSelect . ',
                     d.id AS deployment_id, d.status AS deployment_status, d.campaign_tag, d.event_id, d.deployed_at,
                     d.mods_up_to_date, d.role_qualified_authorized, d.recycling_alpha_bravo_up_to_date, d.vmp_up_to_date,
                     d.last_interview_done, d.weight_kg, d.blood_type, d.matricule, d.assignment_label, d.checkup_notes,
@@ -130,9 +130,7 @@ final class PersonnelDeploymentRepository
                     ce.title AS event_title, ce.starts_at AS event_starts_at,
                     r.status AS event_rsvp_status, r.checked_in_at AS event_checked_in_at
                 FROM users u
-                LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
                 ' . $jobRoleJoin . '
-                LEFT JOIN units un ON un.id = pp.primary_unit_id
                 LEFT JOIN personnel_deployments d ON d.user_id = u.id AND d.tenant_id = u.tenant_id
                 LEFT JOIN community_events ce ON ce.id = d.event_id AND ce.tenant_id = u.tenant_id
                 LEFT JOIN community_event_rsvps r ON r.event_id = d.event_id AND r.user_id = u.id
@@ -142,8 +140,86 @@ final class PersonnelDeploymentRepository
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        if ($rows === []) {
+            return [];
+        }
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        // Un membre peut avoir plusieurs dossiers (un par communauté, ou des dossiers vides laissés par une fusion de
+        // comptes). Une jointure directe sur personnel_profiles dupliquait la ligne : on garde un seul dossier, le même
+        // que celui affiché sur la fiche (UserIdentityMergeRules::pickPreferredDossierRow).
+        $userIds = array_values(array_unique(array_map(static fn (array $r): int => (int) $r['user_id'], $rows)));
+        $in = implode(',', array_fill(0, count($userIds), '?'));
+        $pst = $this->pdo->prepare("SELECT * FROM personnel_profiles WHERE user_id IN ({$in})");
+        $pst->execute($userIds);
+        $profileRowsByUser = [];
+        foreach ($pst->fetchAll(PDO::FETCH_ASSOC) ?: [] as $profileRow) {
+            $profileRowsByUser[(int) $profileRow['user_id']][] = $profileRow;
+        }
+        $profiles = self::preferredProfilesByUser($profileRowsByUser, $tenantId);
+
+        $unitIds = array_values(array_unique(array_filter(array_map(static fn (array $p): int => (int) ($p['primary_unit_id'] ?? 0), $profiles), static fn (int $id): bool => $id > 0)));
+        $unitNames = [];
+        if ($unitIds !== []) {
+            $uin = implode(',', array_fill(0, count($unitIds), '?'));
+            $ust = $this->pdo->prepare("SELECT id, name FROM units WHERE id IN ({$uin})");
+            $ust->execute($unitIds);
+            foreach ($ust->fetchAll(PDO::FETCH_ASSOC) ?: [] as $unit) {
+                $unitNames[(int) $unit['id']] = (string) ($unit['name'] ?? '');
+            }
+        }
+
+        return self::mergeProfiles($rows, $profiles, $unitNames);
+    }
+
+    /**
+     * Un dossier par membre parmi ses dossiers (le plus complet, puis celui de la communauté courante).
+     *
+     * @param array<int, list<array<string, mixed>>> $profileRowsByUser
+     * @return array<int, array<string, mixed>>
+     */
+    public static function preferredProfilesByUser(array $profileRowsByUser, int $tenantId): array
+    {
+        $out = [];
+        foreach ($profileRowsByUser as $uid => $candidates) {
+            $picked = UserIdentityMergeRules::pickPreferredDossierRow($candidates, $tenantId);
+            if ($picked !== null) {
+                $out[(int) $uid] = $picked;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Ajoute à chaque ligne (une par membre) les champs du dossier retenu.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @param array<int, array<string, mixed>> $profiles
+     * @param array<int, string> $unitNames
+     * @return list<array<string, mixed>>
+     */
+    public static function mergeProfiles(array $rows, array $profiles, array $unitNames): array
+    {
+        $out = [];
+        $seen = [];
+        foreach ($rows as $row) {
+            $uid = (int) ($row['user_id'] ?? 0);
+            if (isset($seen[$uid])) {
+                continue;
+            }
+            $seen[$uid] = true;
+            $p = $profiles[$uid] ?? [];
+            $unitId = (int) ($p['primary_unit_id'] ?? 0);
+            $row['profile_blood_type'] = $p['blood_type'] ?? null;
+            $row['matricule_internal'] = $p['matricule_internal'] ?? null;
+            $row['primary_unit_id'] = $unitId > 0 ? $unitId : null;
+            $row['deployable'] = $p['deployable'] ?? null;
+            $row['unit_name'] = $unitId > 0 ? ($unitNames[$unitId] ?? null) : null;
+            $out[] = $row;
+        }
+
+        return $out;
     }
 
     public function listCampaignTagsForTenant(int $tenantId, int $limit = 30): array

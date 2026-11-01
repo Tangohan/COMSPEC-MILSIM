@@ -575,6 +575,10 @@
       });
     }
     if (qvNotes) qvNotes.value = w.notes || '';
+    var qvName = root.querySelector('[data-eq-qv-name]');
+    if (qvName) qvName.value = w.name || '';
+    var qvVisibility = root.querySelector('[data-eq-qv-visibility]');
+    if (qvVisibility) qvVisibility.value = w.visibility === 'personal' ? 'personal' : 'tenant';
     if (qvDescription) qvDescription.value = w.description || '';
     if (qvGalleryEdit) {
       qvGalleryEdit.innerHTML = '';
@@ -683,6 +687,9 @@
     });
   }
 
+  // « Modifier » d’une carte : l’aperçu s’ouvre directement sur le formulaire une fois la tenue chargée.
+  var qvOpenInEdit = false;
+
   function openQuickView(id) {
     id = parseInt(id, 10);
     if (!id) return;
@@ -741,6 +748,8 @@
           qvEditBtn.hidden = !w.can_edit;
         }
         if (w.can_edit) fillEditForm(res.body);
+        if (w.can_edit && qvOpenInEdit) showQvEdit();
+        qvOpenInEdit = false;
       })
       .catch(function () {
         if (qvTitle) qvTitle.textContent = 'Erreur';
@@ -751,6 +760,56 @@
   root.querySelectorAll('[data-eq-quickview]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       openQuickView(btn.getAttribute('data-eq-quickview'));
+    });
+  });
+
+  root.querySelectorAll('[data-eq-edit-card]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      qvOpenInEdit = true;
+      openQuickView(btn.getAttribute('data-eq-edit-card'));
+    });
+  });
+
+  // « Copier pour ACE » d’une carte : texte d’UNE tenue, prêt pour le bouton Importer de l’arsenal.
+  var copyStatus = root.querySelector('[data-eq-copy-status]');
+  var copyStatusTimer = null;
+  function cardCopyStatus(text) {
+    if (!copyStatus) return;
+    copyStatus.textContent = text || '';
+    copyStatus.hidden = !text;
+    if (copyStatusTimer) clearTimeout(copyStatusTimer);
+    copyStatusTimer = text ? setTimeout(function () { copyStatus.hidden = true; }, 7000) : null;
+  }
+  root.querySelectorAll('[data-eq-ace-copy-card]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = parseInt(btn.getAttribute('data-eq-ace-copy-card'), 10);
+      if (!id) return;
+      var base = (catalog.urls && catalog.urls.aceExport) || '/equipment/ace-export';
+      var url = base + '?tenue=' + encodeURIComponent(id);
+      btn.disabled = true;
+      fetch(url + '&inline=1', { credentials: 'same-origin', headers: { Accept: 'text/plain' } })
+        .then(function (r) {
+          var type = (r.headers.get('Content-Type') || '').toLowerCase();
+          if (!r.ok || type.indexOf('text/plain') !== 0) throw new Error('export');
+          return r.text();
+        })
+        .then(function (text) {
+          return copyText(text).then(
+            function () {
+              cardCopyStatus('Tenue copiée. En jeu : arsenal ACE, bouton Importer (écran principal) pour l’enfiler.');
+            },
+            function () {
+              cardCopyStatus('Copie impossible ici : le fichier de la tenue va être téléchargé à la place.');
+              window.location.href = url;
+            }
+          );
+        })
+        .catch(function () {
+          cardCopyStatus('Cette tenue ne peut pas être copiée pour ACE.');
+        })
+        .finally(function () {
+          btn.disabled = false;
+        });
     });
   });
 

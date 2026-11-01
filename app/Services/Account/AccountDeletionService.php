@@ -444,6 +444,7 @@ final class AccountDeletionService
         $this->deleteOptionalRowsByUserId($userId, [
             'personnel_media',
             'personnel_admin_data',
+            'user_public_cv',
         ]);
     }
 

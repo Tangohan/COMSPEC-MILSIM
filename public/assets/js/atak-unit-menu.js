@@ -197,10 +197,6 @@ window.ATAKUnitMenu = (function () {
         ? 'Hors liaison — demande impossible'
         : 'Capture haute définition — peut prendre quelques secondes de plus'
     });
-    html += menuItem('helmet-stream', 'Vue casque en temps réel', {
-      disabled: true,
-      title: 'Pas encore au point — utilisez une photo depuis le terminal ATAK, ou l’onglet Photos'
-    });
     html += menuItem('chat', 'Ouvrir la messagerie', { muted: !inLiaison, disabled: !inLiaison, title: inLiaison ? '' : 'Disponible lorsque le contact est en liaison' });
     }
 
@@ -890,13 +886,7 @@ window.ATAKUnitMenu = (function () {
       return;
     }
 
-    if (action === 'helmet-snap' || action === 'helmet-snap-hd' || action === 'helmet-stream') {
-      if (action === 'helmet-stream') {
-        if (window.ATAKShowNotification) {
-          window.ATAKShowNotification('La vue casque en temps réel n’est pas encore au point. Demandez une photo, ou utilisez l’onglet Photos.');
-        }
-        return;
-      }
+    if (action === 'helmet-snap' || action === 'helmet-snap-hd') {
       if (!unit || !unit.id) {
         if (window.ATAKShowError) window.ATAKShowError('Contact non enregistré — demande impossible.');
         return;
@@ -906,20 +896,15 @@ window.ATAKUnitMenu = (function () {
         if (window.ATAKShowNotification) window.ATAKShowNotification('Ce contact n’est plus en liaison.');
         return;
       }
-      var mode = action === 'helmet-snap-hd' ? 'snap_hd' : (action === 'helmet-stream' ? 'stream' : 'snap');
+      var mode = action === 'helmet-snap-hd' ? 'snap_hd' : 'snap';
       var hLabel = unit.call_sign ? String(unit.call_sign) : 'cet opérateur';
-      var confirmMsg = mode === 'stream'
-        ? 'Demander un flux casque à ' + hLabel + ' ?\n\nAperçus toutes les ~5 secondes pendant ~3 minutes. Ce n’est pas une vidéo en direct type RTMP.'
-        : (mode === 'snap_hd'
-          ? 'Demander une photo casque HD à ' + hLabel + ' ?'
-          : 'Demander une photo casque à ' + hLabel + ' ?');
+      var confirmMsg = mode === 'snap_hd'
+        ? 'Demander une photo casque HD à ' + hLabel + ' ?'
+        : 'Demander une photo casque à ' + hLabel + ' ?';
       if (!window.confirm(confirmMsg)) return;
       requestHelmetMedia(unit.id, mode).then(function (res) {
         if (window.ATAKShowNotification) {
           window.ATAKShowNotification((res && res.message) || ('Demande envoyée — ' + hLabel));
-        }
-        if (mode === 'stream' && window.ATAKCams && typeof window.ATAKCams.refresh === 'function') {
-          setTimeout(function () { window.ATAKCams.refresh(); }, 2500);
         }
       }).catch(function (err) {
         if (window.ATAKShowError) {

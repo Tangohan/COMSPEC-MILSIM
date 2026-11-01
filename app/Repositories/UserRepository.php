@@ -1993,6 +1993,8 @@ class UserRepository
             $idParts[] = 'un_uu.id';
         }
         $unitSelect = 'COALESCE(' . implode(', ', $unitParts) . ') AS unit_name, COALESCE(' . implode(', ', $codeParts) . ') AS unit_code, COALESCE(' . implode(', ', $idParts) . ') AS unit_id';
+        // Rôle tenu dans l'unité principale (colonne « Rôle » du tableur).
+        $unitSelect .= $hasPa ? ', CASE WHEN un_pa.id IS NULL THEN NULL ELSE pa.role_name END AS assignment_role_name' : ', NULL AS assignment_role_name';
         $profileExtras = 'pp.character_name, pp.matricule_internal, pp.radio_assigned,
                        pp.enlistment_date, pp.readiness_score';
         if ($this->personnelProfilesHasColumn('character_portrait_path')) {

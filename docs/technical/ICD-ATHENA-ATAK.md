@@ -556,7 +556,7 @@ DLL command `Ping` is extension liveness, not this HTTP route (both exist).
 
 ## Additional tactical routes
 
-`routes/web.php` registers a large `/api/atak/*` surface beyond the sheets above (SOI, medevac extras, fire-teams, wardrobes, terminals, AAR, POI, terrain, scene, geo, QRF, explosive timers, video-feeds, weather, presence, …). New consumers must read the controller method; this ICD does not invent those payloads.
+`routes/web.php` registers a large `/api/atak/*` surface beyond the sheets above (SOI, medevac extras, fire-teams, wardrobes, terminals, AAR, POI, terrain, scene, geo, QRF, explosive timers, weather, presence, …). New consumers must read the controller method; this ICD does not invent those payloads.
 
 Aliases: `/api/markers`, `/api/units`, `/api/nine-line`, `/api/cas`, `/api/fire-support/*`, `/api/danger-zones`, `/api/logistics/*`, `/api/iff/*`, `/api/replay/*`, `/api/operations/*`.
 

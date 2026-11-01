@@ -208,6 +208,12 @@ require base_path('views/partials/account/shell_open.php');
         <p class="account-hub__ov-stat-value is-sm"><?= $h($callsign !== '' ? $callsign : 'Non renseigné') ?></p>
         <p class="account-hub__ov-stat-note"><a href="<?= $h(url('account/preferences')) ?>#section-profil">Modifier le profil</a></p>
     </div>
+    <?php $ovPublicCvUrl = isset($accountPublicCvUrl) && is_string($accountPublicCvUrl) && $accountPublicCvUrl !== '' ? $accountPublicCvUrl : null; ?>
+    <a class="account-hub__ov-stat is-link" href="<?= $h($ovPublicCvUrl ?? url('account/page-publique')) ?>"<?= $ovPublicCvUrl !== null ? ' target="_blank" rel="noopener"' : '' ?>>
+        <p class="account-hub__ov-stat-label">Page publique</p>
+        <p class="account-hub__ov-stat-value is-sm"><?= $ovPublicCvUrl !== null ? 'En ligne' : 'Fermée' ?></p>
+        <p class="account-hub__ov-stat-note"><?= $ovPublicCvUrl !== null ? 'Voir ma page publique' : 'Ouvrir mon C.V. de joueur' ?></p>
+    </a>
     <div class="account-hub__ov-stat">
         <p class="account-hub__ov-stat-label">Membre depuis</p>
         <p class="account-hub__ov-stat-value is-sm"><?= $h($formatDay($accountMemberSince) ?? '—') ?></p>

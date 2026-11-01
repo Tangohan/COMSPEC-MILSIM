@@ -63,12 +63,97 @@ $kindLabel = static function (string $kind): string {
     };
 };
 
-$heroFacts = [
-    ['v' => $fmtNum((int) ($live['operators_total'] ?? 0)), 'k' => (string) __('site.hist_stats_operators')],
-    ['v' => $fmtNum((int) ($live['organizations_total'] ?? 0)), 'k' => (string) __('site.hist_stats_orgs')],
-    ['v' => $fmtNum((int) ($live['sessions_total'] ?? 0)), 'k' => (string) __('site.hist_stats_sessions')],
-    ['v' => $fmtNum((float) ($live['distance_km'] ?? 0), 0) . ' km', 'k' => (string) __('site.hist_stats_distance')],
+$emptyStats = [
+    'scope' => 'platform', 'community_name' => null, 'founded_at' => null, 'members' => 0, 'operations' => 0,
+    'flight_hours' => 0, 'academy_validated' => 0, 'orbat_units' => 0, 'years' => [], 'highlights' => [],
 ];
+$platformStats = is_array($platformStats ?? null) ? $platformStats + $emptyStats : $emptyStats;
+$communityStats = is_array($communityStats ?? null) ? $communityStats + $emptyStats : null;
+
+$platformYear = is_string($platformStats['founded_at']) && preg_match('/^(\d{4})-\d{2}-\d{2}$/', $platformStats['founded_at'], $m) === 1
+    ? $m[1]
+    : null;
+$heroFacts = [
+    ['v' => $platformYear ?? '—', 'k' => (string) __('site.hist_fact_since')],
+    ['v' => $fmtNum((int) $platformStats['members']), 'k' => (string) __('site.hist_key_members')],
+    ['v' => $fmtNum((int) $platformStats['operations']), 'k' => (string) __('site.hist_key_operations')],
+    ['v' => $fmtNum((int) $platformStats['flight_hours']) . ' h', 'k' => (string) __('site.hist_key_flight')],
+];
+
+// Cartes « chiffres clés » : un compteur à zéro affiche « À venir » plutôt qu’un 0 sec.
+$keyCards = static function (array $stats, bool $community) use ($fmtNum, $formatDateLabel): array {
+    $founded = isset($stats['founded_at']) && is_string($stats['founded_at']) ? $stats['founded_at'] : null;
+    $cards = [
+        ['n' => null, 'v' => $founded !== null ? $formatDateLabel($founded . ' 00:00:00', 'exact') : '', 'k' => 'hist_key_founded', 'h' => $community ? 'hist_key_founded_comm_h' : 'hist_key_founded_h', 'icon' => 'flag'],
+        ['n' => (int) ($stats['members'] ?? 0), 'k' => 'hist_key_members', 'h' => 'hist_key_members_h', 'icon' => 'members'],
+        ['n' => (int) ($stats['operations'] ?? 0), 'k' => 'hist_key_operations', 'h' => 'hist_key_operations_h', 'icon' => 'target'],
+        ['n' => (int) ($stats['flight_hours'] ?? 0), 'suffix' => ' h', 'k' => 'hist_key_flight', 'h' => 'hist_key_flight_h', 'icon' => 'flight'],
+        ['n' => (int) ($stats['academy_validated'] ?? 0), 'k' => 'hist_key_academy', 'h' => 'hist_key_academy_h', 'icon' => 'academy'],
+        ['n' => (int) ($stats['orbat_units'] ?? 0), 'k' => 'hist_key_orbat', 'h' => 'hist_key_orbat_h', 'icon' => 'orbat'],
+    ];
+    $out = [];
+    foreach ($cards as $c) {
+        $pending = $c['n'] === null ? ($c['v'] ?? '') === '' : $c['n'] <= 0;
+        $value = $c['n'] === null ? (string) ($c['v'] ?? '') : $fmtNum($c['n']) . ($c['suffix'] ?? '');
+        $out[] = [
+            'v' => $pending ? (string) __('site.hist_key_pending') : $value,
+            'k' => (string) __('site.' . $c['k']),
+            'h' => $pending ? (string) __('site.hist_key_pending_h') : (string) __('site.' . $c['h']),
+            'icon' => $c['icon'],
+            'pending' => $pending,
+        ];
+    }
+
+    return $out;
+};
+
+$icons = [
+    'flag' => '<path d="M5 21V4m0 0h11l-2 4 2 4H5"/>',
+    'members' => '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.4 3-5.4 6-5.4s5.4 2 6 5.4"/><path d="M16 4.6a3 3 0 0 1 0 6M18.5 20c-.3-2-1.2-3.6-2.6-4.6"/>',
+    'target' => '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
+    'flight' => '<path d="M2.5 13.5 21 6l-4.5 13-4-5.5-6 3 1.5-4.5z"/>',
+    'academy' => '<path d="m2.5 9 9.5-4.5L21.5 9 12 13.5z"/><path d="M6.5 11v5c3 2.2 8 2.2 11 0v-5"/>',
+    'orbat' => '<rect x="9" y="3" width="6" height="4.5" rx="1"/><rect x="2.5" y="16.5" width="6" height="4.5" rx="1"/><rect x="15.5" y="16.5" width="6" height="4.5" rx="1"/><path d="M12 7.5V12M5.5 16.5V12h13v4.5"/>',
+];
+
+$renderKeyGrid = static function (array $cards) use ($e, $icons): void {
+    echo '<ul class="site-history-keys" role="list">';
+    foreach ($cards as $card) {
+        echo '<li class="site-history-key' . ($card['pending'] ? ' is-pending' : '') . '">';
+        echo '<span class="site-history-key__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' . ($icons[$card['icon']] ?? '') . '</svg></span>';
+        echo '<span class="site-history-key__k">' . $e($card['k']) . '</span>';
+        echo '<span class="site-history-key__v">' . $e($card['v']) . '</span>';
+        echo '<span class="site-history-key__h">' . $e($card['h']) . '</span>';
+        echo '</li>';
+    }
+    echo '</ul>';
+};
+
+// Frise annuelle : la barre est proportionnelle aux opérations de l’année la plus active.
+$renderYears = static function (array $years) use ($e, $fmtNum): void {
+    $years = array_values(array_filter($years, 'is_array'));
+    if ($years === []) {
+        echo '<p class="site-history__empty">' . $e(__('site.hist_years_empty')) . '</p>';
+
+        return;
+    }
+    $maxOps = max(1, ...array_map(static fn (array $y): int => (int) ($y['operations'] ?? 0), $years));
+    echo '<ol class="site-history-years">';
+    foreach (array_reverse($years) as $y) {
+        $ops = (int) ($y['operations'] ?? 0);
+        $pct = $ops > 0 ? max(4, (int) round(($ops / $maxOps) * 100)) : 0;
+        echo '<li class="site-history-year">';
+        echo '<span class="site-history-year__y">' . $e($y['year'] ?? '') . '</span>';
+        echo '<div class="site-history-year__body">';
+        echo '<span class="site-history-year__bar" aria-hidden="true"><span style="width:' . $pct . '%"></span></span>';
+        echo '<span class="site-history-year__facts">';
+        echo '<span><strong>' . $e($fmtNum($ops)) . '</strong> ' . $e(__('site.hist_years_ops')) . '</span>';
+        echo '<span><strong>' . $e($fmtNum((int) ($y['members'] ?? 0))) . '</strong> ' . $e(__('site.hist_years_members')) . '</span>';
+        echo '<span><strong>' . $e($fmtNum((int) ($y['flight_hours'] ?? 0))) . '</strong> ' . $e(__('site.hist_years_flight')) . '</span>';
+        echo '</span></div></li>';
+    }
+    echo '</ol>';
+};
 
 $chartPayload = [
     'labels' => array_values(is_array($chart['labels'] ?? null) ? $chart['labels'] : []),
@@ -116,6 +201,62 @@ $chartPayload = [
     </section>
 
     <div class="site-page site-page--wide site-history__body">
+        <section id="chiffres" class="site-sse-block site-history-rise" aria-labelledby="hist-keys-title">
+            <p class="hi-kicker text-emerald-400/80"><?= $e(__('site.hist_key_kicker')) ?></p>
+            <h2 id="hist-keys-title" class="site-sse-block__title"><?= $e(__('site.hist_key_title')) ?></h2>
+            <p class="site-sse-block__lead"><?= $e(__('site.hist_key_lead')) ?></p>
+            <?php $renderKeyGrid($keyCards($platformStats, false)); ?>
+        </section>
+
+        <?php if ($communityStats !== null): ?>
+        <section id="communaute" class="site-sse-block site-history-community site-history-rise" aria-labelledby="hist-comm-title">
+            <p class="hi-kicker text-emerald-400/80"><?= $e(__('site.hist_comm_kicker')) ?></p>
+            <h2 id="hist-comm-title" class="site-sse-block__title"><?= $e(
+                !empty($communityStats['community_name'])
+                    ? __('site.hist_comm_title', ['name' => (string) $communityStats['community_name']])
+                    : __('site.hist_comm_title_generic')
+            ) ?></h2>
+            <p class="site-sse-block__lead"><?= $e(__('site.hist_comm_lead')) ?></p>
+            <?php $renderKeyGrid($keyCards($communityStats, true)); ?>
+
+            <h3 class="site-history-community__sub"><?= $e(__('site.hist_comm_highlights')) ?></h3>
+            <?php $highlights = is_array($communityStats['highlights'] ?? null) ? $communityStats['highlights'] : []; ?>
+            <?php if ($highlights === []): ?>
+                <p class="site-history__empty"><?= $e(__('site.hist_comm_empty')) ?></p>
+            <?php else: ?>
+                <ol class="site-history-moments">
+                    <?php foreach ($highlights as $h): ?>
+                        <?php if (!is_array($h)) {
+                            continue;
+                        }
+                        $hKind = ($h['kind'] ?? '') === 'article' ? 'article' : 'operation';
+                        ?>
+                        <li class="site-history-moment site-history-moment--<?= $e($hKind) ?>">
+                            <span class="site-history-moment__meta">
+                                <span class="site-history__chip"><?= $e(__('site.hist_comm_kind_' . $hKind)) ?></span>
+                                <time class="site-history__when" datetime="<?= $e($h['date'] ?? '') ?>"><?= $e($formatDateLabel(((string) ($h['date'] ?? '')) . ' 00:00:00', 'exact')) ?></time>
+                            </span>
+                            <span class="site-history-moment__title"><?= $e($h['title'] ?? '') ?></span>
+                            <?php if (isset($h['value']) && (int) $h['value'] > 0): ?>
+                                <span class="site-history__node-value"><?= $e(__('site.hist_comm_participants', ['value' => $fmtNum((int) $h['value'])])) ?></span>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ol>
+            <?php endif; ?>
+
+            <h3 class="site-history-community__sub"><?= $e(__('site.hist_years_title')) ?></h3>
+            <?php $renderYears(is_array($communityStats['years'] ?? null) ? $communityStats['years'] : []); ?>
+        </section>
+        <?php endif; ?>
+
+        <section id="annees" class="site-sse-block site-history-rise" aria-labelledby="hist-years-title">
+            <p class="hi-kicker text-emerald-400/80"><?= $e(__('site.hist_years_kicker')) ?></p>
+            <h2 id="hist-years-title" class="site-sse-block__title"><?= $e(__('site.hist_years_title')) ?></h2>
+            <p class="site-sse-block__lead"><?= $e(__('site.hist_years_lead')) ?></p>
+            <?php $renderYears(is_array($platformStats['years'] ?? null) ? $platformStats['years'] : []); ?>
+        </section>
+
         <section class="site-sse-block site-history-rise" aria-labelledby="hist-chart-title">
             <p class="hi-kicker text-emerald-400/80"><?= $e(__('site.hist_chart_kicker')) ?></p>
             <h2 id="hist-chart-title" class="site-sse-block__title"><?= $e(__('site.hist_chart_title')) ?></h2>

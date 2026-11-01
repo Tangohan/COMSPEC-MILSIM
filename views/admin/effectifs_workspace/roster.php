@@ -129,6 +129,19 @@ $queryUrlView = static function (string $view) use ($filterQuery): string {
 
     return effectifs_workspace_url() . ($q ? '?' . http_build_query($q) : '');
 };
+// Fenêtres d'édition du tableur (emploi, rôle dans l'unité, niveau d'accès) : une seule par page, remplie au clic.
+$rosterJobsByUserId = is_array($rosterJobsByUserId ?? null) ? $rosterJobsByUserId : [];
+$jobPickerGroups = is_array($rosterJobPickerGroups ?? null) ? $rosterJobPickerGroups : [];
+$jobRoleMax = max(1, (int) ($rosterJobRoleMax ?? 5));
+$editIcon = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+$memberActionTemplate = effectifs_workspace_url('membres/__ID__');
+$assignmentRoleSuggestions = [];
+foreach ($rows as $suggestRow) {
+    $suggest = trim((string) ($suggestRow['assignment_role_name'] ?? ''));
+    if ($suggest !== '') {
+        $assignmentRoleSuggestions[mb_strtolower($suggest, 'UTF-8')] = $suggest;
+    }
+}
 
 $hasActiveFilters = ($filters['q'] ?? '') !== ''
     || ($filters['status'] ?? '') !== ''
@@ -431,7 +444,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         <th class="eff-das__col-identity">Identité</th>
                         <th class="eff-das__col-callsign">Callsign</th>
                         <?php if ($rosterView === 'medical'): ?>
-                            <th>Fonction</th>
+                            <th>Emploi</th>
                             <th class="eff-das__num">Qualifs</th>
                             <th>Groupe sanguin</th>
                             <th class="eff-das__num">Poids</th>
@@ -440,7 +453,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             <th>Intolérances médicamenteuses</th>
                             <th>Allergies</th>
                         <?php elseif ($rosterView === 'aviation'): ?>
-                            <th>Fonction</th>
+                            <th>Emploi</th>
                             <th class="eff-das__num">Qualifs</th>
                             <th>Affectation</th>
                             <th class="eff-das__num">Heures de vol</th>
@@ -451,14 +464,16 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         <?php else: ?>
                             <th>Grade</th>
                             <th>Affectation</th>
-                            <th>Fonction</th>
+                            <th title="Ce que fait la personne : radio, médecin, pilote…">Emploi</th>
+                            <th title="Le poste tenu dans son unité : chef de groupe, tireur, adjoint…">Rôle</th>
                             <th class="eff-das__num">Qualifs</th>
-                            <th>Accès</th>
+                            <th title="Ce que la personne a le droit de faire sur le site">Niveau d’accès</th>
                             <th>Ancienneté</th>
                             <th class="eff-das__num">Temps en mission</th>
                             <th class="eff-das__num" title="Heures aux commandes d'un aéronef, tous appareils confondus">Heures de vol</th>
                             <th title="Disponibilité et présence">Disponibilité</th>
-                            <th>Dossier</th>
+                            <th>Complétion</th>
+                            <th class="eff-das__col-dossier">Dossier</th>
                         <?php endif; ?>
                         <th class="eff-das__actions-col">Fiche</th>
                     </tr>
@@ -645,7 +660,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             $intolerances = trim((string) ($row['drug_intolerances'] ?? ''));
                             $allergies = trim((string) ($row['allergies'] ?? ''));
                             ?>
-                            <td data-label="Fonction"><?= $fonction !== '' ? '<span class="eff-sheets__fonction">' . htmlspecialchars($fonction, ENT_QUOTES, 'UTF-8') . '</span>' : '<span class="eff-das__muted">—</span>' ?></td>
+                            <td data-label="Emploi"><?= $fonction !== '' ? '<span class="eff-sheets__fonction">' . htmlspecialchars($fonction, ENT_QUOTES, 'UTF-8') . '</span>' : '<span class="eff-das__muted">—</span>' ?></td>
                             <td class="eff-das__num" data-label="Qualifs">
                                 <?php if ($qualCount > 0): ?>
                                     <button type="button" class="eff-sheets__qual-count<?= $qualAlert !== '' ? ' is-alert' : '' ?>" data-eff-qual-open data-eff-qual-name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>" data-eff-qual-fiche="<?= htmlspecialchars($ficheUrl . '#qualifications', ENT_QUOTES, 'UTF-8') ?>" data-eff-qual-items="<?= $qualJson ?>" title="<?= $qualAlert !== '' ? htmlspecialchars($qualAlert, ENT_QUOTES, 'UTF-8') : 'Voir les qualifications' ?>"><?= $qualCount ?></button>
@@ -674,7 +689,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             $lastFlown = trim((string) ($row['pilot_last_flown_at'] ?? ''));
                             $lastFlownTs = $lastFlown !== '' ? strtotime($lastFlown) : false;
                             ?>
-                            <td data-label="Fonction"><?= $fonction !== '' ? '<span class="eff-sheets__fonction">' . htmlspecialchars($fonction, ENT_QUOTES, 'UTF-8') . '</span>' : '<span class="eff-das__muted">—</span>' ?></td>
+                            <td data-label="Emploi"><?= $fonction !== '' ? '<span class="eff-sheets__fonction">' . htmlspecialchars($fonction, ENT_QUOTES, 'UTF-8') . '</span>' : '<span class="eff-das__muted">—</span>' ?></td>
                             <td class="eff-das__num" data-label="Qualifs">
                                 <?php if ($qualCount > 0): ?>
                                     <button type="button" class="eff-sheets__qual-count<?= $qualAlert !== '' ? ' is-alert' : '' ?>" data-eff-qual-open data-eff-qual-name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>" data-eff-qual-fiche="<?= htmlspecialchars($ficheUrl . '#qualifications', ENT_QUOTES, 'UTF-8') ?>" data-eff-qual-items="<?= $qualJson ?>" title="<?= $qualAlert !== '' ? htmlspecialchars($qualAlert, ENT_QUOTES, 'UTF-8') : 'Voir les qualifications' ?>"><?= $qualCount ?></button>
@@ -737,12 +752,44 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                 <?php endif; ?>
                             </div>
                         </td>
-                        <td data-label="Fonction">
-                            <?php if ($fonction !== ''): ?>
-                                <span class="eff-sheets__fonction"><?= htmlspecialchars($fonction, ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php else: ?>
-                                <a class="eff-sheets__badge eff-sheets__badge--watch" href="<?= htmlspecialchars($ficheUrl . '#eff-dlg-jobs', ENT_QUOTES, 'UTF-8') ?>">Fonction manquante</a>
-                            <?php endif; ?>
+                        <?php
+                        $rowJobs = is_array($rosterJobsByUserId[$id] ?? null) ? $rosterJobsByUserId[$id] : [];
+                        $rowJobPrimary = 0;
+                        foreach ($rowJobs as $rj) {
+                            if (!empty($rj['primary'])) {
+                                $rowJobPrimary = (int) $rj['id'];
+                                break;
+                            }
+                        }
+                        $rowJobLabel = $rowJobs !== [] ? (string) ($rowJobs[0]['label'] ?? '') : $fonction;
+                        $rowJobTitle = implode(' · ', array_map(static fn (array $rj): string => (string) ($rj['label'] ?? ''), $rowJobs));
+                        $assignmentRole = trim((string) ($row['assignment_role_name'] ?? ''));
+                        $memberData = 'data-eff-member-id="' . $id . '" data-eff-member-name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '"';
+                        ?>
+                        <td data-label="Emploi">
+                            <div class="eff-sheets__assign">
+                                <?php if ($rowJobLabel !== ''): ?>
+                                    <span class="eff-sheets__fonction" title="<?= htmlspecialchars($rowJobTitle !== '' ? $rowJobTitle : $rowJobLabel, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($rowJobLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php if (count($rowJobs) > 1): ?><span class="eff-sheets__badge eff-sheets__badge--info">+<?= count($rowJobs) - 1 ?></span><?php endif; ?>
+                                <?php else: ?>
+                                    <span class="eff-sheets__badge eff-sheets__badge--watch">Sans emploi</span>
+                                <?php endif; ?>
+                                <?php if ($canManageAssignments && $jobPickerGroups !== []): ?>
+                                    <button type="button" class="eff-das__edit" data-eff-edit="emploi" <?= $memberData ?> data-eff-jobs="<?= htmlspecialchars((string) json_encode(array_map(static fn (array $rj): int => (int) $rj['id'], $rowJobs)), ENT_QUOTES, 'UTF-8') ?>" data-eff-job-primary="<?= $rowJobPrimary ?>" title="Modifier l’emploi"><?= $editIcon ?><span class="sr-only">Modifier l’emploi</span></button>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                        <td data-label="Rôle">
+                            <div class="eff-sheets__assign">
+                                <?php if ($assignmentRole !== ''): ?>
+                                    <span class="eff-sheets__fonction"><?= htmlspecialchars($assignmentRole, ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php else: ?>
+                                    <span class="eff-das__muted">—</span>
+                                <?php endif; ?>
+                                <?php if ($canManageAssignments): ?>
+                                    <button type="button" class="eff-das__edit" data-eff-edit="role" <?= $memberData ?> data-eff-role="<?= htmlspecialchars($assignmentRole, ENT_QUOTES, 'UTF-8') ?>" title="Modifier le rôle dans l’unité"><?= $editIcon ?><span class="sr-only">Modifier le rôle</span></button>
+                                <?php endif; ?>
+                            </div>
                         </td>
                         <td class="eff-das__num" data-label="Qualifs">
                             <?php if ($qualCount > 0): ?>
@@ -751,41 +798,24 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                 <span class="eff-das__muted">0</span>
                             <?php endif; ?>
                         </td>
-                        <td data-label="Accès">
+                        <?php
+                        $currentAccessName = '';
+                        foreach ($roles as $accessRole) {
+                            if ((int) ($accessRole['id'] ?? 0) === $currentAccessRoleId) {
+                                $currentAccessName = trim((string) ($accessRole['name'] ?? ''));
+                                break;
+                            }
+                        }
+                        ?>
+                        <td data-label="Niveau d’accès">
                             <div class="eff-sheets__assign">
-                                <?php if ($roleParts === []): ?>
-                                    <span class="eff-sheets__badge eff-sheets__badge--watch">Sans rôle</span>
+                                <?php if ($currentAccessName !== ''): ?>
+                                    <span class="eff-sheets__badge eff-sheets__badge--muted" title="<?= htmlspecialchars($rosterEn ? implode(', ', array_map([\App\Support\HtmlTranslator::class, 'translateText'], $roleParts)) : $rolesDisplay, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($currentAccessName, ENT_QUOTES, 'UTF-8') ?></span>
                                 <?php else: ?>
-                                    <div class="eff-sheets__tags" title="<?= htmlspecialchars($rosterEn ? implode(', ', array_map([\App\Support\HtmlTranslator::class, 'translateText'], $roleParts)) : $rolesDisplay, ENT_QUOTES, 'UTF-8') ?>">
-                                        <?php foreach ($roleVisible as $rn): ?>
-                                            <span class="eff-sheets__badge eff-sheets__badge--muted"><?= htmlspecialchars($rn, ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php endforeach; ?>
-                                        <?php if ($roleExtra > 0): ?>
-                                            <span class="eff-sheets__badge eff-sheets__badge--info">+<?= $roleExtra ?></span>
-                                        <?php endif; ?>
-                                    </div>
+                                    <span class="eff-sheets__badge eff-sheets__badge--watch">Sans niveau</span>
                                 <?php endif; ?>
                                 <?php if ($canManageRoles && $roles !== []): ?>
-                                    <details class="eff-sheets__pop">
-                                        <summary class="eff-das__edit" title="<?= $roleParts !== [] ? 'Modifier l’accès' : 'Attribuer l’accès' ?>"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span class="sr-only"><?= $roleParts !== [] ? 'Modifier l’accès' : 'Attribuer l’accès' ?></span></summary>
-                                        <div class="eff-sheets__pop-panel">
-                                            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/roles'), ENT_QUOTES, 'UTF-8') ?>" class="eff-sheets__pop-form" data-ath-quiet>
-                                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                                                <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
-                                                <label for="eff-access-<?= $id ?>">Niveau d’accès</label>
-                                                <select id="eff-access-<?= $id ?>" name="access_role_id">
-                                                    <?php foreach ($roles as $accessRole): ?>
-                                                        <?php $rid = (int) ($accessRole['id'] ?? 0); ?>
-                                                        <option value="<?= $rid ?>" <?= $currentAccessRoleId === $rid ? 'selected' : '' ?>>
-                                                            <?= htmlspecialchars((string) ($accessRole['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                                <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary">Enregistrer l’accès</button>
-                                                <a class="eff-sheets__pop-link" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>">Ouvrir le dossier</a>
-                                            </form>
-                                        </div>
-                                    </details>
+                                    <button type="button" class="eff-das__edit" data-eff-edit="acces" <?= $memberData ?> data-eff-access="<?= $currentAccessRoleId ?>" title="<?= $currentAccessName !== '' ? 'Modifier le niveau d’accès' : 'Attribuer un niveau d’accès' ?>"><?= $editIcon ?><span class="sr-only">Modifier le niveau d’accès</span></button>
                                 <?php endif; ?>
                             </div>
                         </td>
@@ -842,7 +872,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             </span>
                             <span class="eff-das__sub<?= $presenceScore < 40 ? ' is-low' : '' ?>">Présence <?= $presenceScore ?> %</span>
                         </td>
-                        <td data-label="Dossier">
+                        <td data-label="Complétion">
                             <div class="eff-sheets__meter<?= $completionScore < 40 ? ' is-low' : '' ?>">
                                 <div class="eff-sheets__meter-head">
                                     <span>Complété</span>
@@ -852,6 +882,12 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                     <span style="width:<?= max(0, min(100, $completionScore)) ?>%"></span>
                                 </div>
                             </div>
+                        </td>
+                        <td data-label="Dossier" class="eff-das__col-dossier">
+                            <a class="eff-das__dossier" href="<?= htmlspecialchars(url('personnel/' . $id), ENT_QUOTES, 'UTF-8') ?>" title="Ouvrir le dossier de <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg>
+                                <span class="sr-only">Ouvrir le dossier de <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></span>
+                            </a>
                         </td>
                         <?php endif; ?>
                         <td class="eff-das__actions-col">
@@ -925,6 +961,113 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
         </div>
     </div>
 </dialog>
+
+<?php if ($rosterView === 'general' && $rows !== []): ?>
+<?php if ($canManageAssignments && $jobPickerGroups !== []): ?>
+<dialog class="eff-dialog eff-dialog--wide" id="eff-dlg-roster-job" aria-labelledby="eff-dlg-roster-job-title">
+    <form method="post" action="" data-eff-action="<?= htmlspecialchars($memberActionTemplate . '/fonctions', ENT_QUOTES, 'UTF-8') ?>" class="eff-dialog__body" data-job-picker data-job-max="<?= $jobRoleMax ?>">
+        <header class="eff-dialog__head">
+            <h2 id="eff-dlg-roster-job-title">Emploi de <span data-eff-member-name></span></h2>
+            <button type="button" class="eff-dialog__close" data-dialog-close aria-label="Fermer">×</button>
+        </header>
+        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+        <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
+        <p class="eff-card__hint">Cochez jusqu’à <?= $jobRoleMax ?> emplois et choisissez le principal (★). L’emploi n’ouvre aucun droit sur le site.</p>
+        <div class="eff-dialog__toolbar">
+            <input type="search" placeholder="Rechercher un emploi (ex. médecin, JTAC, pilote)…" aria-label="Rechercher un emploi" data-filter-input>
+            <span class="eff-dialog__counter" data-job-count></span>
+        </div>
+        <div class="eff-job-picker" data-filter-scope>
+            <?php foreach ($jobPickerGroups as $gi => $group): ?>
+                <details class="eff-job-picker__group" data-filter-group <?= $gi === 0 ? 'open' : '' ?>>
+                    <summary><?= htmlspecialchars((string) $group['label'], ENT_QUOTES, 'UTF-8') ?> <small><?= count($group['items']) ?></small></summary>
+                    <div class="eff-job-picker__items">
+                        <?php foreach ($group['items'] as $item): ?>
+                            <?php $val = (string) $item['value']; ?>
+                            <div class="eff-job-picker__item" data-filter-item data-filter-text="<?= htmlspecialchars(mb_strtolower($item['label'] . ' ' . $item['detail'] . ' ' . $group['label'], 'UTF-8'), ENT_QUOTES, 'UTF-8') ?>">
+                                <label class="eff-job-picker__check">
+                                    <input type="checkbox" name="job_role_ids[]" value="<?= htmlspecialchars($val, ENT_QUOTES, 'UTF-8') ?>">
+                                    <span><strong><?= htmlspecialchars((string) $item['label'], ENT_QUOTES, 'UTF-8') ?></strong><?php if ($item['detail'] !== ''): ?><small><?= htmlspecialchars((string) $item['detail'], ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?></span>
+                                </label>
+                                <label class="eff-job-picker__primary" title="Emploi principal">
+                                    <input type="radio" name="primary_job_role_id" value="<?= htmlspecialchars($val, ENT_QUOTES, 'UTF-8') ?>">
+                                    <span aria-hidden="true">★</span><span class="eff-sr-only">Principal</span>
+                                </label>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </details>
+            <?php endforeach; ?>
+            <p class="eff-card__hint" data-filter-empty hidden>Aucun emploi ne correspond. <a href="<?= htmlspecialchars(effectifs_workspace_url('fonctions'), ENT_QUOTES, 'UTF-8') ?>">Créer un emploi pour la communauté</a></p>
+        </div>
+        <footer class="eff-dialog__foot">
+            <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(effectifs_workspace_url('fonctions'), ENT_QUOTES, 'UTF-8') ?>">Gérer les emplois</a>
+            <span class="eff-dialog__spacer"></span>
+            <button type="button" class="eff-btn eff-btn--ghost" data-dialog-close>Annuler</button>
+            <button type="submit" class="eff-btn eff-btn--primary">Enregistrer l’emploi</button>
+        </footer>
+    </form>
+</dialog>
+<?php endif; ?>
+<?php if ($canManageAssignments): ?>
+<dialog class="eff-dialog" id="eff-dlg-roster-role" aria-labelledby="eff-dlg-roster-role-title">
+    <form method="post" action="" data-eff-action="<?= htmlspecialchars($memberActionTemplate . '/role-unite', ENT_QUOTES, 'UTF-8') ?>" class="eff-dialog__body">
+        <header class="eff-dialog__head">
+            <h2 id="eff-dlg-roster-role-title">Rôle de <span data-eff-member-name></span></h2>
+            <button type="button" class="eff-dialog__close" data-dialog-close aria-label="Fermer">×</button>
+        </header>
+        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+        <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
+        <label for="eff-roster-role-input">Rôle tenu dans son unité</label>
+        <input type="text" id="eff-roster-role-input" name="role_name" maxlength="120" required list="eff-roster-role-list" placeholder="Ex. chef de groupe, tireur, adjoint…" data-eff-role-input>
+        <datalist id="eff-roster-role-list">
+            <?php foreach ($assignmentRoleSuggestions as $suggest): ?>
+                <option value="<?= htmlspecialchars($suggest, ENT_QUOTES, 'UTF-8') ?>"></option>
+            <?php endforeach; ?>
+        </datalist>
+        <p class="eff-card__hint">Le changement est conservé dans l’historique des affectations. La personne doit déjà être affectée à une unité.</p>
+        <footer class="eff-dialog__foot">
+            <span class="eff-dialog__spacer"></span>
+            <button type="button" class="eff-btn eff-btn--ghost" data-dialog-close>Annuler</button>
+            <button type="submit" class="eff-btn eff-btn--primary">Enregistrer le rôle</button>
+        </footer>
+    </form>
+</dialog>
+<?php endif; ?>
+<?php if ($canManageRoles && $roles !== []): ?>
+<dialog class="eff-dialog" id="eff-dlg-roster-access" aria-labelledby="eff-dlg-roster-access-title">
+    <form method="post" action="" data-eff-action="<?= htmlspecialchars($memberActionTemplate . '/roles', ENT_QUOTES, 'UTF-8') ?>" class="eff-dialog__body">
+        <header class="eff-dialog__head">
+            <h2 id="eff-dlg-roster-access-title">Niveau d’accès de <span data-eff-member-name></span></h2>
+            <button type="button" class="eff-dialog__close" data-dialog-close aria-label="Fermer">×</button>
+        </header>
+        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+        <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
+        <fieldset class="eff-role-grid">
+            <legend>Un seul niveau par personne</legend>
+            <?php foreach ($roles as $accessRole): ?>
+                <?php $rid = (int) ($accessRole['id'] ?? 0); ?>
+                <label>
+                    <input type="radio" name="access_role_id" value="<?= $rid ?>" required>
+                    <span>
+                        <strong><?= htmlspecialchars((string) ($accessRole['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
+                        <em><?= htmlspecialchars((string) ($accessRole['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></em>
+                    </span>
+                </label>
+            <?php endforeach; ?>
+        </fieldset>
+        <footer class="eff-dialog__foot">
+            <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(effectifs_workspace_url('roles'), ENT_QUOTES, 'UTF-8') ?>">Ce que chaque niveau permet</a>
+            <span class="eff-dialog__spacer"></span>
+            <button type="button" class="eff-btn eff-btn--ghost" data-dialog-close>Annuler</button>
+            <button type="submit" class="eff-btn eff-btn--primary">Enregistrer l’accès</button>
+        </footer>
+    </form>
+</dialog>
+<?php endif; ?>
+<script defer src="<?= htmlspecialchars(asset_url('assets/js/eff-member.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+<script defer src="<?= htmlspecialchars(asset_url('assets/js/eff-roster-edit.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+<?php endif; ?>
 
         <script>
         (function () {

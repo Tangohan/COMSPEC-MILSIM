@@ -251,7 +251,7 @@ final class AtakLinkTrustedHostAssetTest extends TestCase
             'La position écartée au rechargement doit être comptée avec les autres abandons');
 
         // Signalement : libellé fixe dans le 2ᵉ champ, que fn_extensionCallback.sqf lit (« terrain » y arrête le
-        // relevé, « weather » renvoie la météo, « video-feeds » suspend les flux) ; le chemin passe dans le détail.
+        // relevé, « weather » renvoie la météo) ; le chemin passe dans le détail.
         $note = self::blockAfter($ext, 'private static void NoteUntrustedQueueDrop(string url)');
         self::assertStringContainsString('InvokeCallback("PostError", "0|file-hors-athena|0|"', $note,
             'Abandon de file : le 2ᵉ champ du rappel PostError doit rester un libellé fixe');

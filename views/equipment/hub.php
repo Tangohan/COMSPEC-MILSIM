@@ -321,13 +321,14 @@ $mineCatalog = array_map(static function (array $w): array {
                     <p>
                         <strong>Arsenal ACE</strong>
                         <span data-eq-ace-label>Toutes les tenues, prêtes à importer dans « Mes équipements » d’ACE en jeu.</span>
+                        <span class="eq-hub__ace-one">L’import de l’arsenal ACE ne prend qu’une tenue à la fois : utilisez le bouton « Copier pour ACE » de la tenue voulue, puis collez-la avec le bouton Importer de l’arsenal.</span>
                     </p>
                     <a class="eq-hub__btn" href="<?= $h(url('equipment/ace-export')) ?>" data-eq-ace-export download>Exporter pour ACE</a>
                     <button type="button" class="eq-hub__link-btn" data-eq-ace-help-toggle aria-expanded="false" aria-controls="eq-ace-help">Comment importer ?</button>
                     <ol class="eq-hub__ace-help" id="eq-ace-help" hidden>
-                        <li>Téléchargez le fichier, ouvrez-le et copiez tout son texte (Ctrl+A puis Ctrl+C).</li>
-                        <li>En jeu, ouvrez l’arsenal ACE, puis « Mes équipements » (Loadouts), onglet de vos équipements.</li>
-                        <li>Cliquez sur Importer : chaque tenue apparaît sous son nom. Une tenue seule (bouton « Copier pour ACE » de son aperçu) s’importe depuis l’écran principal de l’arsenal et s’enfile directement.</li>
+                        <li>Sous la tenue voulue, cliquez sur « Copier pour ACE » : son texte est copié.</li>
+                        <li>En jeu, ouvrez l’arsenal ACE et cliquez sur Importer (écran principal) : la tenue s’enfile directement. Enregistrez-la ensuite sous le même nom que sur Athena pour qu’elle soit reconnue comme déjà transmise.</li>
+                        <li>Pour une autre tenue, recommencez : l’import ne prend qu’une tenue à la fois.</li>
                         <li>Le bandeau « Athena · Tenues » de l’arsenal fait la même chose sans copier-coller : « Tout basculer dans l’arsenal ACE ».</li>
                     </ol>
                 </div>
@@ -392,11 +393,25 @@ $mineCatalog = array_map(static function (array $w): array {
                                 <?php if ($previewNames !== ''): ?>
                                 <small class="eq-hub__card-items" translate="no"><?= $h($previewNames) ?></small>
                                 <?php endif; ?>
+                                <?php if (!empty($w['mine']) && ($w['visibility'] ?? 'tenant') === 'personal'): ?>
+                                <small class="eq-hub__card-private">Visible par vous seul</small>
+                                <?php endif; ?>
                             </span>
                         </button>
+                        <div class="eq-hub__card-actions">
+                            <button type="button" class="eq-hub__btn eq-hub__btn--sm" data-eq-ace-copy-card="<?= (int) $w['id'] ?>">Copier pour ACE</button>
+                            <?php if (!empty($w['mine'])): ?>
+                            <button type="button" class="eq-hub__btn eq-hub__btn--sm eq-hub__btn--outline" data-eq-edit-card="<?= (int) $w['id'] ?>">Modifier</button>
+                            <form method="post" action="<?= $h(url('equipment/tenues/' . (int) $w['id'] . '/delete')) ?>" data-ui-confirm="1" data-ui-confirm-title="Supprimer la tenue" data-ui-confirm-body="Supprimer « <?= $h($display) ?> » d’Athena ? Elle reste dans votre arsenal ACE si elle y est enregistrée.">
+                                <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                                <button type="submit" class="eq-hub__btn eq-hub__btn--sm eq-hub__btn--ghost">Supprimer</button>
+                            </form>
+                            <?php endif; ?>
+                        </div>
                     </li>
                     <?php endforeach; ?>
                 </ul>
+                <p class="eq-hub__copy-status" data-eq-copy-status role="status" hidden></p>
                 <p class="eq-hub__empty" data-eq-no-results hidden>Aucune tenue ne correspond à ces filtres.</p>
                 <?php endif; ?>
                 </div>
@@ -512,6 +527,16 @@ $mineCatalog = array_map(static function (array $w): array {
                 <form method="post" enctype="multipart/form-data" class="eq-hub__form" data-eq-qv-form>
                     <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
                     <input type="hidden" name="_return" value="hub">
+                    <label>Nom de la tenue
+                        <input type="text" name="name" required maxlength="120" data-eq-qv-name>
+                        <span class="eq-hub__hint">Si vous la renommez, renommez-la aussi dans l’arsenal ACE : le jeu reconnaît vos tenues par leur nom.</span>
+                    </label>
+                    <label>Qui peut voir cette tenue
+                        <select name="visibility" class="bo-select" data-eq-qv-visibility>
+                            <option value="tenant">Toute la communauté</option>
+                            <option value="personal">Moi seul</option>
+                        </select>
+                    </label>
                     <label>Description (visible par tous)
                         <textarea name="description" rows="3" maxlength="1000" data-eq-qv-description placeholder="Quand porter ce kit, contexte d’emploi, particularités…"></textarea>
                     </label>
@@ -536,9 +561,9 @@ $mineCatalog = array_map(static function (array $w): array {
                         <button type="submit" class="eq-hub__btn">Enregistrer</button>
                     </div>
                 </form>
-                <form method="post" class="eq-hub__danger" data-eq-qv-delete data-ui-confirm="1" data-ui-confirm-title="Retirer la tenue" data-ui-confirm-body="Retirer cette tenue d’Athena ?">
+                <form method="post" class="eq-hub__danger" data-eq-qv-delete data-ui-confirm="1" data-ui-confirm-title="Supprimer la tenue" data-ui-confirm-body="Supprimer cette tenue d’Athena ? Elle reste dans votre arsenal ACE si elle y est enregistrée.">
                     <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-                    <button type="submit" class="eq-hub__btn eq-hub__btn--ghost">Retirer la tenue</button>
+                    <button type="submit" class="eq-hub__btn eq-hub__btn--ghost">Supprimer la tenue</button>
                 </form>
             </div>
         </div>
