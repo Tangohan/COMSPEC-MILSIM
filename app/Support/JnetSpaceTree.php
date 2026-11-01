@@ -101,6 +101,7 @@ final class JnetSpaceTree
             'strength' => (int) ($node['strength'] ?? count($members)),
             'members' => $members,
             'mission' => trim((string) ($node['mission'] ?? '')),
+            'confidential' => is_array($node['confidential'] ?? null) ? $node['confidential'] : null,
         ];
         $this->parent[$id] = $parentId;
         $this->children[$parentId][] = $id;

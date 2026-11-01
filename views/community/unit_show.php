@@ -248,6 +248,9 @@ $showChildren = $children !== [];
       <div class="cl-hero__copy">
         <div class="cl-pill cl-pill--muted"><?= htmlspecialchars(mb_strtoupper($typeLine), ENT_QUOTES, 'UTF-8') ?></div>
         <h1 id="cl-unit-hero-title" class="cl-hero__title"><?= name_blur_html($unitName) ?></h1>
+        <?php if (is_array($unit['confidential'] ?? null)): ?>
+        <p class="cl-hero__confidential"><?= \App\Support\ConfidentialDisplay::renderPayload($unit['confidential']) ?></p>
+        <?php endif; ?>
         <p class="cl-hero__lead">
           Unité de <?= name_blur_html($tenantName) ?>
           <?php if ($commanderName !== ''): ?>
@@ -408,7 +411,7 @@ $showChildren = $children !== [];
             <?php foreach ($roster as $i => $r): ?>
             <tr>
               <td class="cl-mono"><?= (int) $i + 1 ?></td>
-              <td><?= htmlspecialchars((string) ($r['label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
+              <td><?= is_array($r['confidential'] ?? null) ? \App\Support\ConfidentialDisplay::renderPayload($r['confidential'], true) : htmlspecialchars((string) ($r['label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
             </tr>
             <?php endforeach; ?>
           </tbody>

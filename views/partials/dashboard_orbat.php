@@ -78,6 +78,18 @@ $renderPerson = static function (?array $person, string $tone = 'member') use ($
     if ($name === '') {
         return;
     }
+    if (is_array($person['confidential'] ?? null)) {
+        // Personne non identifiable pour ce lecteur : pastille commune, ni photo ni lien.
+        ?>
+        <div class="dash-orbat__person dash-orbat__person--<?= $h($tone) ?> dash-orbat__person--confidential">
+            <span class="dash-orbat__avatar" aria-hidden="true"><span class="dash-orbat__initials">·</span></span>
+            <span class="dash-orbat__person-meta">
+                <span class="dash-orbat__person-name"><?= \App\Support\ConfidentialDisplay::renderPayload($person['confidential'], true) ?></span>
+            </span>
+        </div>
+        <?php
+        return;
+    }
     $photo = trim((string) ($person['photo_url'] ?? ''));
     $initials = trim((string) ($person['initials'] ?? ''));
     if ($initials === '') {
@@ -182,6 +194,9 @@ $renderNode = static function (array $node, int $depth = 0) use (&$renderNode, $
                     <?= $h($label) ?>
                     <?php if ($isMine): ?>
                         <span class="dash-orbat__mine-badge">Ma position</span>
+                    <?php endif; ?>
+                    <?php if (is_array($node['confidential'] ?? null)): ?>
+                        <?= \App\Support\ConfidentialDisplay::renderPayload($node['confidential'], true) ?>
                     <?php endif; ?>
                 </span>
                 <span class="dash-orbat__unit-sub" aria-label="Indicateurs d’unité">

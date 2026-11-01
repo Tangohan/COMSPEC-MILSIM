@@ -8,6 +8,10 @@ use App\Core\Database;
 use App\Repositories\OrbatBilletRepository;
 use App\Repositories\QualificationAwardRepository;
 use App\Repositories\UnitRepository;
+use App\Services\Organization\OrgVisibilityService;
+use App\Support\ConfidentialDisplay;
+use App\Support\OrgVisibilityCapabilities;
+use App\Support\VisibilityLevel;
 use PDO;
 
 /**
@@ -44,6 +48,57 @@ final class UnitReadinessService
             $out[] = $this->scoreForUnit($tenantId, $unit);
         }
         usort($out, static fn (array $a, array $b): int => ($b['score'] ?? 0) <=> ($a['score'] ?? 0));
+
+        return $out;
+    }
+
+    /**
+     * Applique la confidentialité des unités au tableau de disponibilité (mêmes règles que l’ORBAT) :
+     * unité masquée retirée, anonymisée sous le libellé commun, pastille de niveau pour les lecteurs habilités.
+     * Ajoute aussi le nom de l’unité parente quand il est affichable.
+     *
+     * @param list<array<string, mixed>> $scores
+     * @param list<array<string, mixed>> $units Lignes {id, name, parent_id, visibility_level?}
+     * @return list<array<string, mixed>>
+     */
+    public static function applyVisibility(array $scores, array $units, OrgVisibilityCapabilities $caps): array
+    {
+        $levels = OrgVisibilityService::effectiveUnitLevels($units);
+        $byId = [];
+        foreach ($units as $u) {
+            $byId[(int) ($u['id'] ?? 0)] = $u;
+        }
+        $staff = $caps->bypassAll || $caps->viewHiddenUnits || $caps->viewRestrictedUnits;
+        $displayName = static function (int $id) use ($levels, $byId, $caps, $staff): ?string {
+            $level = $levels[$id] ?? VisibilityLevel::NORMAL;
+            if ($level === VisibilityLevel::HIDDEN && !$caps->canSeeUnitLevel(VisibilityLevel::HIDDEN)) {
+                return null;
+            }
+            if ($level === VisibilityLevel::ANONYMIZED && !$staff) {
+                return ConfidentialDisplay::label(ConfidentialDisplay::UNIT_ANONYMIZED);
+            }
+
+            return (string) ($byId[$id]['name'] ?? '');
+        };
+        $out = [];
+        foreach ($scores as $s) {
+            $id = (int) ($s['unit_id'] ?? 0);
+            $name = $displayName($id);
+            if ($name === null) {
+                continue;
+            }
+            $level = $levels[$id] ?? VisibilityLevel::NORMAL;
+            $kind = ConfidentialDisplay::kindForLevel($level, 'unit');
+            $s['name'] = $name !== '' ? $name : (string) ($s['name'] ?? 'Unité');
+            $s['confidential'] = $staff
+                ? ConfidentialDisplay::staffPayload($level, 'unit')
+                : ($kind !== null ? ConfidentialDisplay::payload($kind) : null);
+            $s['anonymized'] = $level === VisibilityLevel::ANONYMIZED && !$staff;
+            $parentId = (int) ($byId[$id]['parent_id'] ?? 0);
+            $parentName = $parentId > 0 && isset($byId[$parentId]) ? $displayName($parentId) : null;
+            $s['parent_name'] = $s['anonymized'] ? '' : (string) ($parentName ?? '');
+            $out[] = $s;
+        }
 
         return $out;
     }

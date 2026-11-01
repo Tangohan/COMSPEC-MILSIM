@@ -548,6 +548,7 @@ final class JnetSpaceService
             'subCount' => count($tree->childrenOf($id)),
             'faces' => $this->facesOf($subtreeMembers, $byUserId),
             'href' => $this->spaceUrl($id),
+            'confidential' => is_array($n['confidential'] ?? null) ? $n['confidential'] : null,
         ];
     }
 

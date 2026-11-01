@@ -601,6 +601,9 @@ if ($personnelFileIsRhFull) {
                 <p class="personnel-file-hero__eyebrow">Dossier personnel</p>
                 <?php $pfDonorUid = (int) (is_array($targetUser) ? ($targetUser['id'] ?? 0) : 0); $pfDonorTier = \App\Services\Billing\DonorService::userTier($pfDonorUid); ?>
                 <h1 class="personnel-file-hero__name" data-donor-skip data-staff-skip><?= staff_name((string) $displayName, $pfDonorUid, true) ?><?= \App\Services\Billing\DonorService::mark($pfDonorUid, true) ?></h1>
+                <?php if ($personnelAnonymizedForViewer): ?>
+                <p class="personnel-file-hero__confidential"><?= \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::PERSON_ANONYMIZED, null, true) ?></p>
+                <?php endif; ?>
                 <?php if ($pfDonorTier !== null): ?><p class="personnel-file-hero__donor"><a href="<?= htmlspecialchars(url('soutenir-atak') . '#donateurs') ?>">Donateur Athena · <?= htmlspecialchars(\App\Services\Billing\DonorService::tierLabel($pfDonorTier)) ?></a> — merci pour votre soutien au projet.</p><?php endif; ?>
                 <?php if ($callsign || !empty($effectiveRankDisplay) || $nicknamePrimary !== '' || ($matricule && !empty($showMatriculePublic))): ?>
                 <ul class="personnel-file-hero__meta">
@@ -636,7 +639,7 @@ if ($personnelFileIsRhFull) {
                     <span class="personnel-file-hero__flag" title="Pavillon"><?= htmlspecialchars($publicFlagEmoji, ENT_QUOTES, 'UTF-8') ?></span>
                     <?php endif; ?>
                     <?php if ($unitName): ?>
-                    <span><?= htmlspecialchars($unitName) ?></span>
+                    <span><?= \App\Support\ConfidentialDisplay::text((string) $unitName) ?></span>
                     <?php endif; ?>
                 </p>
                 <?php endif; ?>
@@ -831,7 +834,7 @@ if ($personnelFileIsRhFull) {
                         <div class="grid pf-grid-wide gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Unité indiquée</p>
-                                <p class="mt-1 text-sm font-bold text-slate-900"><?= $unitName ? htmlspecialchars($unitName) : '—' ?></p>
+                                <p class="mt-1 text-sm font-bold text-slate-900"><?= \App\Support\ConfidentialDisplay::text((string) $unitName) ?></p>
                                 <?php if ($squadronExtra !== '' && ($unitName === null || $squadronExtra !== trim((string) $unitName))): ?>
                                 <p class="mt-2 text-[10px] text-slate-600">Mention dossier : <span class="font-semibold"><?= htmlspecialchars($squadronExtra) ?></span></p>
                                 <?php endif; ?>
@@ -1045,7 +1048,7 @@ if ($personnelFileIsRhFull) {
                             <p class="mt-0.5 text-[11px] text-slate-600">Code : <?= htmlspecialchars($gradeOtanCode) ?></p>
                             <?php endif; ?>
                         </div>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= $unitName ? htmlspecialchars($unitName) : htmlspecialchars($missingLabel) ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= \App\Support\ConfidentialDisplay::text((string) $unitName, (string) $missingLabel) ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Chef direct</p><p class="text-sm font-black text-slate-900"><?= $commander ? htmlspecialchars($commander['display_name'] ?? $commander['callsign'] ?? '') : '—' ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Date d'incorporation</p><p class="text-sm font-black text-slate-900"><?= $enlistmentFormatted ?? '—' ?></p></div>
                         <?php if ($showLegacyServiceNumber): ?>
