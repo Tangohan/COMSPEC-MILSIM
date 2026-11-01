@@ -6,6 +6,9 @@ params [["_state", "", [""]], ["_cloud", false, [false]]];
 private _info = switch (true) do {
     case (_cloud && {_state isEqualTo "new"}): { ["Nouvelle", [0.36, 0.78, 0.42, 1], "Partagée depuis votre dernière visite.", 0] };
     case (_cloud && {_state isEqualTo "diff"}): { ["Différente de mon arsenal", [0.93, 0.80, 0.30, 1], "Une tenue du même nom est dans votre arsenal, mais elle n'est pas identique.", 1] };
+    case (_cloud && {_state isEqualTo "check"}): { ["Vérification…", [0.55, 0.60, 0.57, 1], "Comparaison avec la tenue du même nom de votre arsenal en cours.", 2] };
+    case (_state isEqualTo "check"): { ["Vérification…", [0.55, 0.60, 0.57, 1], "Comparaison avec la version du site en cours.", 4] };
+    case (_state isEqualTo "copy"): { ["Copie du site", [0.55, 0.72, 0.66, 1], "Ancienne copie de la version du site, gardée à côté de votre tenue du même nom. Elle ne repart pas sur le site.", 6] };
     case (_cloud && {_state isEqualTo "in"}): { ["Dans mon arsenal", [0.50, 0.66, 0.55, 1], "Déjà dans votre arsenal, identique.", 3] };
     case (_cloud && {_state isEqualTo "mine"}): { ["À moi", [0.56, 0.65, 0.59, 1], "Vous l'avez partagée. Elle n'est pas dans l'arsenal de cet ordinateur.", 2] };
     case (_cloud): { ["", [0.56, 0.65, 0.59, 1], "Pas encore dans votre arsenal : importez-la pour l'avoir hors ligne.", 2] };

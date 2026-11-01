@@ -19,7 +19,7 @@ if ((count _prev) > 0 && {_now - (_prev getOrDefault ["at", -1e9]) < 2}) exitWit
 
 private _head = [];
 if !(missionNamespace getVariable ["COMSPEC_ATAK_SendQNo", false]) then {
-    private _raw = ("COMSPECExtension" callExtension ["SendQueue.Status", []]) select 0;
+    private _raw = ((["COMSPECExtension", "SendQueue.Status", []] call comspec_overwatch_connect_fnc_extDirect)) select 0;
     if ((_raw select [0, 3]) isEqualTo "OK|") then {
         _head = (((_raw select [3]) splitString toString [10]) param [0, ""]) splitString toString [9];
     } else {
@@ -41,7 +41,7 @@ if ((count _head) > 16) then {
         _out set ["lat", parseNumber (_head select 6)];
     };
     // Lots de télémétrie (positions comprises) : « OK|mode=batch|...|latency_ms=…|ok=…|fail=…|… ».
-    private _tm = ("COMSPECExtension" callExtension ["GetTelemetryMetrics", []]) select 0;
+    private _tm = ((["COMSPECExtension", "GetTelemetryMetrics", []] call comspec_overwatch_connect_fnc_extDirect)) select 0;
     if ((_tm select [0, 3]) isEqualTo "OK|") then {
         private _kv = createHashMap;
         { private _i = _x find "="; if (_i > 0) then { _kv set [_x select [0, _i], parseNumber (_x select [_i + 1])]; }; } forEach (_tm splitString "|");

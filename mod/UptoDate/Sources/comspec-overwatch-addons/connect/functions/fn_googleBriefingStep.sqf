@@ -24,7 +24,7 @@ if (_presentationId isEqualTo "") exitWith {
     };
 };
 
-"COMSPECExtension" callExtension ["CancelGoogleDeck", []];
+(["COMSPECExtension", "CancelGoogleDeck", []] call comspec_overwatch_connect_fnc_extDirect);
 
 private _requestId = format [
     "gslide_%1_%2",
@@ -34,10 +34,10 @@ private _requestId = format [
 missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", _requestId];
 missionNamespace setVariable ["COMSPEC_GoogleBriefingPendingIndex", _index];
 
-private _raw = ["COMSPECExtension" callExtension [
+private _raw = [(["COMSPECExtension", 
     "LoadGoogleSlide",
     [_presentationId, str _index, _requestId]
-]] call comspec_overwatch_connect_fnc_extResult;
+] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 
 private _parsed = parseSimpleArray _raw;
 if ((_parsed param [0, ""]) isNotEqualTo "accepted") then {

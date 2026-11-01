@@ -53,21 +53,5 @@ if (isClass (configFile >> "CfgPatches" >> "acre_main")) then {
     };
 };
 
-if (!(missionNamespace getVariable ["comspec_overwatch_radio_proximity_enabled", true])) exitWith {};
-
-private _interval = missionNamespace getVariable ["comspec_overwatch_radio_proximity_interval", 2];
-if (!(_interval isEqualType 0)) then { _interval = 2; };
-_interval = (_interval max 1) min 15;
-
-[{
-    if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-    if (!(missionNamespace getVariable ["comspec_overwatch_radio_proximity_enabled", true])) exitWith {};
-
-    private _list = [] call comspec_overwatch_connect_fnc_scanRadioProximity;
-    missionNamespace setVariable ["COMSPEC_RadioProximityList", _list, false];
-
-    private _txCount = {
-        (_x getOrDefault ["tx", false]) || {_x getOrDefault ["speaking", false]}
-    } count _list;
-    missionNamespace setVariable ["COMSPEC_RadioProximityTxCount", _txCount, false];
-}, _interval, []] call CBA_fnc_addPerFrameHandler;
+// Plus de balayage radio toutes les 2 s (tous les joueurs, ACRE, tri) : sa liste n'était lue que par la tablette web,
+// qui refait son propre balayage à l'ouverture (fn_webBrowserPageLoaded, fn_webBrowserJSDialog « radio:focus »).

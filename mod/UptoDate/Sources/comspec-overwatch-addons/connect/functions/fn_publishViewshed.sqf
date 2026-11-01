@@ -26,8 +26,8 @@ if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
 };
 if (_cs isEqualTo "") then { _cs = name player; };
 
-"COMSPECExtension" callExtension [
+(["COMSPECExtension", 
     "PublishViewshed",
     [_cs, str (_pos select 0), str (_pos select 1), str (round _radiusM)]
-];
+] call comspec_overwatch_connect_fnc_extDirect);
 true

@@ -7,7 +7,7 @@ if (!hasInterface) exitWith {};
 // Quitte le mode Google pour revenir aux diapositives Athena.
 missionNamespace setVariable ["COMSPEC_GoogleBriefingActive", false];
 missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", ""];
-"COMSPECExtension" callExtension ["CancelGoogleDeck", []];
+(["COMSPECExtension", "CancelGoogleDeck", []] call comspec_overwatch_connect_fnc_extDirect);
 
 [] call comspec_overwatch_connect_fnc_getBriefingSlides;
 [0] call comspec_overwatch_connect_fnc_briefingBoardShow;

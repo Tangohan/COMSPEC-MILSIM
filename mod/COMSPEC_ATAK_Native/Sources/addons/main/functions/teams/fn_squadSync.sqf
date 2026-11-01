@@ -25,7 +25,7 @@ if !([] call comspec_atak_native_fnc_bridge) exitWith {
 private _json = [_snap] call comspec_atak_native_fnc_json;
 [_json, _n] spawn {
     params ["_json", "_n"];
-    private _r = "COMSPECExtension" callExtension ["Squad.Sync", [_json]];
+    private _r = (["COMSPECExtension", "Squad.Sync", [_json]] call comspec_overwatch_connect_fnc_extDirect);
     if (_r isEqualType []) then { _r = _r param [0, ""]; };
     // « OK|queued » : envoi en file. Vide : COMSPEC Link plus ancien que 2.0.63 (commande inconnue).
     private _state = switch (true) do {

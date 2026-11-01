@@ -449,8 +449,9 @@ public static partial class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionRegisterCallback")]
     public static void RvExtensionRegisterCallback(nint func)
     {
-        if (func == 0) { _callback = null; return; }
-        _callback = Marshal.GetDelegateForFunctionPointer<ExtensionCallback>(func);
+        // Point d'entrée natif : une exception (initialisation de la classe comprise) tuerait Arma.
+        try { _callback = func == 0 ? null : Marshal.GetDelegateForFunctionPointer<ExtensionCallback>(func); }
+        catch { /* sans rappel : Async répond ERR|no_callback */ }
     }
 
     private static void InvokeCallback(string function, string data)
@@ -874,69 +875,6 @@ public static partial class Extension
         catch (Exception ex)
         {
             return FormatCaughtError(ex);
-        }
-    }
-
-    /// <summary>
-    /// Ancien chemin async (RvExtensionArgsImpl) : notifie SQF sans bloquer.
-    /// Préférer VerifyClientInitSync sur Connect.
-    /// </summary>
-    private static void StartClientInitAsync()
-    {
-        var baseUrl = _baseUrl;
-        if (string.IsNullOrEmpty(baseUrl)) return;
-        if (!TryBuildRequestUri(baseUrl, "/api/atak/client-init", out var initUri, out _) || initUri is null)
-            return;
-
-        try
-        {
-            var initReq = new HttpRequestMessage(HttpMethod.Post, initUri)
-            {
-                Content = JsonContent(BuildClientInitBody())
-            };
-            AttachApiKeyHeader(initReq);
-            _ = HttpClient.SendAsync(initReq).ContinueWith(t =>
-            {
-                try { initReq.Dispose(); } catch { /* ignore */ }
-                try
-                {
-                    if (t.IsFaulted || t.IsCanceled)
-                    {
-                        InvokeCallback("Error", "Portail injoignable");
-                        return;
-                    }
-                    var resp = t.Result;
-                    if (resp.IsSuccessStatusCode)
-                    {
-                        try { TryRememberSessionFromInitBody(ReadContentUtf8(resp, CancellationToken.None)); } catch { /* ignore */ }
-                        InvokeCallback("Connected", baseUrl);
-                    }
-                    else if ((int)resp.StatusCode == 401)
-                        InvokeCallback("Error", "Acces refuse (cle Athena)");
-                    else if ((int)resp.StatusCode == 403)
-                    {
-                        var body403 = "";
-                        try { body403 = ReadContentUtf8(resp, CancellationToken.None); } catch { /* ignore */ }
-                        var modBlock = MapModAccessBlockError(body403);
-                        if (modBlock == "ERR|mod_steam_blocked")
-                            InvokeCallback("Error", "Acces mod refuse — identifiant Steam restreint");
-                        else if (modBlock == "ERR|mod_ip_blocked")
-                            InvokeCallback("Error", "Acces mod refuse — adresse reseau restreinte");
-                        else
-                            InvokeCallback("Error", "Communaute Athena manquante — refaites la liaison");
-                    }
-                    else
-                        InvokeCallback("Error", "HTTP " + (int)resp.StatusCode);
-                }
-                catch
-                {
-                    InvokeCallback("Error", "Portail injoignable");
-                }
-            });
-        }
-        catch
-        {
-            // best effort
         }
     }
 
@@ -1808,12 +1746,44 @@ public static partial class Extension
         return true;
     }
 
+    /// <summary>
+    /// Dernière commande réseau reçue du jeu (Environment.TickCount64). Liaison coupée par fn_uplinkHold, joueur sans
+    /// téléphone, menu : le jeu n'envoie plus rien, et la file, le rapport de file et les journaux ne partent plus
+    /// d'eux-mêmes au bout de UplinkIdleMs (ils restent en file, repris à la prochaine commande).
+    /// </summary>
+    private static long _lastGameUplinkMs = long.MinValue / 2;
+    private const long UplinkIdleMs = 120_000;
+
+    /// <summary>Commandes que fn_uplinkHold laisse passer ou purement locales : elles ne rouvrent pas les envois.</summary>
+    private static readonly HashSet<string> NonUplinkCommands = new(StringComparer.Ordinal)
+    {
+        "Async", "Warmup", "Ping", "GetExtensionVersion", "GetVersion", "HashText", "LogWrite", "LogSessionStart",
+        "GetLogTail", "SendQueue.Status", "SyncStats", "MemStats", "GetPendingQueueCount", "GetSessionTenant",
+        "Init", "Connect", "AuthSteam", "AuthPassword", "RequestOtp", "VerifyOtp", "RestoreSession", "GetSessionRestore",
+        "SetSteamId", "LinkBySteam", "RedeemGameLink", "GetClientIp", "Logout", "Disconnect", "ClientDisconnect",
+    };
+
+    private static void NoteGameCommand(string? function)
+    {
+        if (string.IsNullOrEmpty(function) || NonUplinkCommands.Contains(function)
+            || function.StartsWith("Music", StringComparison.Ordinal) || function.StartsWith("Clip", StringComparison.Ordinal)
+            || function.StartsWith("Bt", StringComparison.Ordinal) || function.StartsWith("Local", StringComparison.Ordinal)
+            || function.StartsWith("MapCap.", StringComparison.Ordinal) || function.StartsWith("MapPhoto.", StringComparison.Ordinal))
+            return;
+        System.Threading.Volatile.Write(ref _lastGameUplinkMs, Environment.TickCount64);
+    }
+
+    private static bool GameUplinkIdle() =>
+        Environment.TickCount64 - System.Threading.Volatile.Read(ref _lastGameUplinkMs) > UplinkIdleMs;
+
     private static void DrainQueue()
     {
         // File modifiée depuis la dernière sauvegarde (EnqueueForRetry) : sauvegardée ici, hors du thread du jeu,
         // même pendant une coupure ou un ralentissement imposé par Athena.
         if (System.Threading.Interlocked.Exchange(ref _queueDirty, 0) == 1)
             PersistQueueToDisk();
+        // Aucune commande réseau du jeu depuis 2 min : rien ne part tout seul vers Athena (ni file, ni rapport).
+        if (GameUplinkIdle()) return;
         // État de la file remonté au site (page admin « Files d'envoi Athena »), même en pause.
         JournalMaybeReport();
         if (string.IsNullOrEmpty(_baseUrl)) return;
@@ -2948,7 +2918,8 @@ public static partial class Extension
     {
             // Tampon de 32 octets côté Arma : la version seule (le nom du produit est déjà celui de la DLL ;
             // « COMSPECATAKNativeExtension 1.0.0-native » était coupé dans le RPT).
-            Output(output, outputSize, CurrentExtensionVersion());
+        try { Output(output, outputSize, CurrentExtensionVersion()); }
+        catch { /* point d'entrée natif : jamais d'exception vers Arma */ }
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -2990,6 +2961,7 @@ public static partial class Extension
         try
         {
             var functionString = Marshal.PtrToStringUTF8(function);
+            NoteGameCommand(functionString);
             if (functionString == "Warmup")
                 KickBackgroundWarmup();
             // Forme chaîne (callExtension "GetUnits", "GetPings"…) : même chemin que RVExtensionArgs, réponse directe
@@ -3116,6 +3088,8 @@ public static partial class Extension
             // X-COMSPEC-KEY: "secret" → 401 sur toutes les routes authentifiées.
             for (var i = 0; i < argsString.Length; i++)
                 argsString[i] = ArmaString(argsString[i]);
+            // « Async » : c'est la commande portée qui compte (fn_extAwait l'a déjà passée par fn_uplinkHold).
+            NoteGameCommand(functionString == "Async" && argsString.Length > 1 ? argsString[1] : functionString);
         }
         catch
         {
@@ -7234,6 +7208,12 @@ public static partial class Extension
 
     private static void DrainDeviceLogs()
     {
+        // Jeu silencieux (liaison coupée, plus de téléphone) : LogWrite continue, les journaux restent en file (bornée).
+        if (GameUplinkIdle())
+        {
+            Interlocked.Exchange(ref _deviceLogDrainScheduled, 0);
+            return;
+        }
         var ok = true;
         try
         {
@@ -9283,37 +9263,6 @@ public static partial class Extension
     {
         try
         {
-            if (function == "Connect")
-            {
-                // Chemin async de secours (TryGetSyncResponse gère normalement Connect).
-                if (args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
-                {
-                    var normalized = NormalizeBaseUrl(args[0]);
-                    if (normalized.Length == 0) return;
-                    // SEC-001 : même point de contrôle que le Connect synchrone — portail non-Athena ignoré.
-                    if (!TrySetSqfBaseUrl(normalized, out _)) return;
-                    EnsureDrainTimer();
-                    var key = args.Length > 1 ? (args[1] ?? "") : "";
-                    // Ne jamais réinjecter une clé CBA si une session jeu est active.
-                    if (_gameAccessToken.Length == 0)
-                        ApplyApiKeyHeaders(key);
-                    if (args.Length > 2 && _gameAccessToken.Length == 0)
-                        ApplyTenantId(args[2]);
-                    // Conserver exactement la même identité que le chemin synchrone. Sans ces
-                    // arguments, un Connect passé par le fallback perdait le SteamID puis chaque
-                    // UpdatePosition était refusé par Athena comme anonyme.
-                    if (args.Length > 3)
-                        ApplySteamUid(args[3]);
-                    if (args.Length > 4)
-                        ApplyModVersion(args[4]);
-                    if (args.Length > 5)
-                        ApplyBloodType(args[5]);
-                    if (_apiKey.Length > 0 || _gameAccessToken.Length > 0)
-                        StartClientInitAsync();
-                }
-                return;
-            }
-
             if (function == "UpdatePosition" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 4)
             {
                 // InvariantCulture + virgule→point : SQF str/format sous locale FR envoie « 1850,12 ».
@@ -9907,20 +9856,6 @@ public static partial class Extension
         catch
         {
             // ignore for now
-        }
-    }
-
-    private static void SendChatMessage(string body)
-    {
-        if (string.IsNullOrEmpty(_baseUrl)) return;
-        try
-        {
-            var payload = $"{{\"mapId\":{CurrentMapId()},\"author\":\"COMSPEC Overwatch\",\"body\":\"{EscapeJson(body)}\"}}";
-            EnqueueOrSend(_baseUrl + "/api/chat", payload);
-        }
-        catch
-        {
-            // ignore
         }
     }
 
@@ -10665,14 +10600,6 @@ public static partial class Extension
             return File.Exists(path) && new FileInfo(path).Length >= minSize;
         }
         catch { return false; }
-    }
-
-    private static byte[]? ReadStableImageBytes(string path, TimeSpan timeout)
-    {
-        if (!WaitUntilImageFileStable(path, timeout))
-            return null;
-        try { return File.ReadAllBytes(path); }
-        catch { return null; }
     }
 
     /// <summary>

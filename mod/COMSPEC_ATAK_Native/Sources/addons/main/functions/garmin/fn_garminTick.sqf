@@ -106,7 +106,7 @@ private _save = {
         ["status", createHashMapFromArray [["bb", round (_gm get "bb")], ["hr", round (_gm getOrDefault ["hr", 0])], ["stress", round (_gm getOrDefault ["stress", 0])], ["rest_hr", _gm getOrDefault ["rest_hr", 60]], ["goal", _gm getOrDefault ["goal", 10000]]]],
         ["days", _dayOut], ["acts", _actOut]
     ];
-    private _r = "COMSPECExtension" callExtension ["Garmin.Report", [[_payload] call comspec_atak_native_fnc_json]];
+    private _r = (["COMSPECExtension", "Garmin.Report", [[_payload] call comspec_atak_native_fnc_json]] call comspec_overwatch_connect_fnc_extDirect);
     if (_r isEqualType []) then { _r = _r param [0, ""]; };
     _gm set ["web", [diag_tickTime, [[format ["ERREUR %1", _r], "COMSPEC Link 2.0.87 requis"] select (_r isEqualTo ""), "OK"] select ((_r select [0, 3]) isEqualTo "OK|")]];
 };

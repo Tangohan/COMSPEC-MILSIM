@@ -7,6 +7,8 @@
 */
 params [["_catalog", [], [[]]]];
 if (!hasInterface || {_catalog isEqualTo []}) exitWith {};
+// Avant le marquage « déjà proposée » : sinon, téléphone repris plus tard, ces icônes ne partaient plus de la partie.
+if (["Item.Icons"] call comspec_overwatch_connect_fnc_uplinkHold) exitWith {};
 
 private _sent = missionNamespace getVariable ["COMSPEC_ItemIconsSent", nil];
 if (isNil "_sent") then {
@@ -29,7 +31,7 @@ private _batch = [];
 } forEach _catalog;
 if (_batch isEqualTo []) exitWith {};
 
-private _r = "COMSPECExtension" callExtension ["Item.Icons", [[createHashMapFromArray [["items", _batch]]] call comspec_overwatch_connect_fnc_jsonValue]];
+private _r = (["COMSPECExtension", "Item.Icons", [[createHashMapFromArray [["items", _batch]]] call comspec_overwatch_connect_fnc_jsonValue]] call comspec_overwatch_connect_fnc_extDirect);
 if ((_r select 0) isEqualTo "") then {
     // Ancienne DLL : pas de nouvel essai pendant cette partie (les classes restent marquées).
     if (isNil "COMSPEC_ItemIconsOldDllLogged") then {

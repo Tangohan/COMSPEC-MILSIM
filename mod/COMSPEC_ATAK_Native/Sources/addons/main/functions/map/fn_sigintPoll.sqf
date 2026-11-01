@@ -6,7 +6,7 @@
 if !([] call comspec_atak_native_fnc_bridge) exitWith { false };
 if !(missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith { false };
 private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
-private _raw = "COMSPECExtension" callExtension ["GetSigintZones", [_mapId]];
+private _raw = (["COMSPECExtension", "GetSigintZones", [_mapId]] call comspec_overwatch_connect_fnc_extDirect);
 if (!isNil "comspec_overwatch_connect_fnc_extResult") then { _raw = [_raw] call comspec_overwatch_connect_fnc_extResult; };
 if !(_raw isEqualType "") exitWith { false };
 if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith { false };

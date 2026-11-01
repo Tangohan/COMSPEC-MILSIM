@@ -79,7 +79,7 @@ switch (_mode) do {
                 ["conditions", _cond], ["applied_by", name player], ["mission", missionName], ["world", worldName],
                 ["server", serverName], ["reset", _a isEqualTo []]
             ];
-            private _r = "COMSPECExtension" callExtension ["NetConditions.Report", [[_p] call comspec_atak_native_fnc_json]];
+            private _r = (["COMSPECExtension", "NetConditions.Report", [[_p] call comspec_atak_native_fnc_json]] call comspec_overwatch_connect_fnc_extDirect);
             ["INFO", "NET", format ["Conditions réseau envoyées au site : %1", _r]] call comspec_atak_native_fnc_log;
         };
     };

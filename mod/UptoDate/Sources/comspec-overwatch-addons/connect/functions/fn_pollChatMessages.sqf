@@ -52,7 +52,7 @@ private _args = if (_bootstrapped && {_afterId isNotEqualTo "0"}) then {
     [_mapId, _limit]
 };
 
-private _raw = ["COMSPECExtension" callExtension ["GetChatMessages", _args]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [(["COMSPECExtension", "GetChatMessages", _args] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith {
     ["messages", 0, " (vide)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
     false

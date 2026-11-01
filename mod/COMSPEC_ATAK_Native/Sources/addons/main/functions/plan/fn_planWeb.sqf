@@ -84,7 +84,7 @@ private _json = format ['{"mission_key":%1,"world":%2,"side":%3,"rev":%4,"name":
     + (_parts joinString ",") + "]}";
 [_json, _rev, _n, _webVar] spawn {
     params ["_json", "_rev", "_n", "_webVar"];
-    private _r = "COMSPECExtension" callExtension ["BriefingPlan.Push", [_json]];
+    private _r = (["COMSPECExtension", "BriefingPlan.Push", [_json]] call comspec_overwatch_connect_fnc_extDirect);
     if (_r isEqualType []) then { _r = _r param [0, ""]; };
     // Vide : COMSPEC Link plus ancien que 2.0.84 (commande inconnue).
     private _ok = (_r select [0, 3]) isEqualTo "OK|";

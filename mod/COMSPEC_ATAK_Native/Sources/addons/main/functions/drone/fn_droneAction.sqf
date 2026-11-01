@@ -641,7 +641,7 @@ private _scan = {
                 ["call_sign", _me], ["mission_key", missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", ""]]
             ];
             if (_bda) then { _pay set ["assessment", "DESTROYED"]; };
-            "COMSPECExtension" callExtension ["EmitTelemetry", [["2", "1"] select _bda, ["obs", "bda"] select _bda, "drntrk:" + _x, [_pay] call comspec_atak_native_fnc_json]];
+            (["COMSPECExtension", "EmitTelemetry", [["2", "1"] select _bda, ["obs", "bda"] select _bda, "drntrk:" + _x, [_pay] call comspec_atak_native_fnc_json]] call comspec_overwatch_connect_fnc_extDirect);
         } forEach _tracks;
         if ((count _sent) > 60) then { { if !(_x in _tracks) then { _sent deleteAt _x; }; } forEach (keys _sent); };
     };

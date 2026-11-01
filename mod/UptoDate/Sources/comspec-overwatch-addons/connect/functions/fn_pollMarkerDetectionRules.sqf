@@ -6,7 +6,7 @@ if (!hasInterface) exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
 
-private _raw = ["COMSPECExtension" callExtension ["GetMarkerDetectionRules", []]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [(["COMSPECExtension", "GetMarkerDetectionRules", []] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith { false };
 
 private _payload = _raw select [3, count _raw - 3];

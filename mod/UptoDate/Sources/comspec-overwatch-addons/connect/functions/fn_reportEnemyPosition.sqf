@@ -126,7 +126,8 @@ private _extra = format [
     _vehName
 ];
 
-"COMSPECExtension" callExtension ["UpdatePosition", [
+if (["UpdatePosition"] call comspec_overwatch_connect_fnc_uplinkHold) exitWith { false };
+(["COMSPECExtension", "UpdatePosition", [
     [_pos select 0, 2] call _fnc_num,
     [_pos select 1, 2] call _fnc_num,
     [_heading, 2] call _fnc_num,
@@ -140,5 +141,5 @@ private _extra = format [
     "",
     _groupName,
     [_aslZ, 3] call _fnc_num
-]];
+]] call comspec_overwatch_connect_fnc_extDirect);
 true

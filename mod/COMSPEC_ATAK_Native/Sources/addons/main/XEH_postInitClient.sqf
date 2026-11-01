@@ -549,8 +549,6 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 addMissionEventHandler ["Ended", { ["MusicStop"] call comspec_atak_native_fnc_extensionCall; }];
 [{ !isNull (findDisplay 46) }, { (findDisplay 46) displayAddEventHandler ["Unload", { ["MusicStop"] call comspec_atak_native_fnc_extensionCall; }]; }] call CBA_fnc_waitUntilAndExecute;
 
-// Live cam partagé vers COMSPEC Overwatch : une image toutes les N s si le joueur l'a activé.
-[{ [] call comspec_atak_native_fnc_livecamShare; }, 2] call COMSPEC_ATAK_PfhSpread;
 // Liaison montante publiée (débit, perte, relais) : les autres téléphones en déduisent la qualité de mon Live cam.
 [{ ["publish"] call comspec_atak_native_fnc_feedLink; }, 10] call COMSPEC_ATAK_PfhSpread;
 
@@ -590,6 +588,9 @@ addMissionEventHandler ["Ended", { ["MusicStop"] call comspec_atak_native_fnc_ex
         if (!isNull _conn) then { if ((count _vw) > 0) then { _conn setVariable ["COMSPEC_UavView", _vw, true]; } else { _conn setVariable ["COMSPEC_UavView", nil, true]; }; };
         missionNamespace setVariable ["COMSPEC_ATAK_UavViewPub", [_conn, _vw]];
     };
+    // Aucun drone dans la mission et rien à débloquer : pas de liste des joueurs deux fois par seconde.
+    private _uavs = allUnitsUAV;
+    if (_uavs isEqualTo [] && {_blocked isEqualTo []}) exitWith {};
     private _online = allPlayers apply { getPlayerUID _x };
     {
         private _lock = _x getVariable "COMSPEC_DroneLock";
@@ -624,7 +625,7 @@ addMissionEventHandler ["Ended", { ["MusicStop"] call comspec_atak_native_fnc_ex
                 };
             };
         };
-    } forEach allUnitsUAV;
+    } forEach _uavs;
     // Verrou levé, rendu à ce joueur, pilote parti ou c'est le mien : connexion rétablie une fois.
     {
         private _lock = _x getVariable "COMSPEC_DroneLock";
@@ -666,7 +667,7 @@ addMissionEventHandler ["EntityKilled", {
         [_pay, _nm] spawn {
             params ["_pay", "_nm"];
             if (isNil "comspec_overwatch_connect_fnc_extAwait") exitWith {
-                "COMSPECExtension" callExtension ["EmitTelemetry", ["1", "combat", format ["kia:%1:%2", _nm, round time], [_pay] call comspec_atak_native_fnc_json]];
+                (["COMSPECExtension", "EmitTelemetry", ["1", "combat", format ["kia:%1:%2", _nm, round time], [_pay] call comspec_atak_native_fnc_json]] call comspec_overwatch_connect_fnc_extDirect);
             };
             ["COMSPECExtension", "EmitTelemetry", ["1", "combat", format ["kia:%1:%2", _nm, round time], [_pay] call comspec_atak_native_fnc_json]] call comspec_overwatch_connect_fnc_extAwait;
         };

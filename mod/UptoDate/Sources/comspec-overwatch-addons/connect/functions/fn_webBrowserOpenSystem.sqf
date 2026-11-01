@@ -19,7 +19,7 @@ missionNamespace setVariable ["COMSPEC_WebBrowser_SystemOpenAt", _now];
 missionNamespace setVariable ["COMSPEC_WebBrowser_AthenaOpenAt", _now];
 
 // openURL n'existe pas en SQF : COMSPEC Link ouvre le navigateur (adresse du portail seulement).
-"COMSPECExtension" callExtension ["OpenAthenaLink", [_atakUrl]];
+(["COMSPECExtension", "OpenAthenaLink", [_atakUrl]] call comspec_overwatch_connect_fnc_extDirect);
 
 private _display = findDisplay 9974;
 if (!isNull _display) then {

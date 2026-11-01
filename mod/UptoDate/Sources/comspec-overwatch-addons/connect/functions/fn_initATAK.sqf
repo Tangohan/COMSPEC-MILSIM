@@ -30,7 +30,7 @@ if (_restoreTeam in ["RED", "GREEN", "BLUE", "YELLOW", "MAIN"]) then {
     player assignTeam _restoreTeam;
 };
 
-private _extensionVersion = "COMSPECExtension" callExtension ["GetVersion", []];
+private _extensionVersion = (["COMSPECExtension", "GetVersion", []] call comspec_overwatch_connect_fnc_extDirect);
 if ((_extensionVersion select 0) isEqualTo "") then {
     diag_log "[COMSPEC ATAK] WARNING: Extension not loaded";
 } else {

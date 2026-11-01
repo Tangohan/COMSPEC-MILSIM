@@ -57,7 +57,7 @@ if (_force && {!isNull findDisplay 46} && {!([] call comspec_overwatch_connect_f
 
 missionNamespace setVariable ["COMSPEC_BetaAccessNoteShown", true, false];
 
-private _raw = ["COMSPECExtension" callExtension ["ShowBetaAccessNote", []]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [(["COMSPECExtension", "ShowBetaAccessNote", []] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _raw splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 private _action = if (count _parts >= 2) then { toLower (_parts select 1) } else { "" };

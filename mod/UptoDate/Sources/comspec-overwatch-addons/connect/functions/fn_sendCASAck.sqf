@@ -3,7 +3,8 @@
 */
 private _id = missionNamespace getVariable ["COMSPEC_CurrentCASId", ""];
 if (_id isEqualTo "") exitWith { ["COMSPEC_Warning", ["No CAS request selected"]] call comspec_overwatch_connect_fnc_showNotification; };
-"COMSPECExtension" callExtension ["SendCASAck", [_id]];
+if (["SendCASAck"] call comspec_overwatch_connect_fnc_uplinkHold) exitWith {};
+(["COMSPECExtension", "SendCASAck", [_id]] call comspec_overwatch_connect_fnc_extDirect);
 missionNamespace setVariable ["COMSPEC_CurrentCASStatus", "ACKNOWLEDGED"];
 ["COMSPEC_Info", ["Roger transmis"]] call comspec_overwatch_connect_fnc_showNotification;
 private _disp = uiNamespace getVariable ["COMSPEC_CAS_Display", displayNull];

@@ -84,7 +84,8 @@ public static partial class Extension
                 if (batch.Count == 0) break;
                 if (_itemIconSent + _itemIconNotFound + _itemIconFailed >= ItemIconMaxPerSession) continue;
                 // Le site a la priorité : en surcharge ou hors ligne, ces icônes attendront une prochaine partie.
-                if (IsRateLimitedNow() || IsNetworkBackoffNow()) continue;
+                // Liaison coupée / plus de téléphone (jeu silencieux) : pas d'envoi tout seul non plus.
+                if (IsRateLimitedNow() || IsNetworkBackoffNow() || GameUplinkIdle()) continue;
 
                 var missing = ItemIconAskMissing(batch);
                 if (missing.Count == 0) continue;
@@ -92,7 +93,7 @@ public static partial class Extension
                 foreach (var (cls, pic) in batch)
                 {
                     if (!missing.Contains(cls)) continue;
-                    if (_itemIconSent + _itemIconNotFound + _itemIconFailed >= ItemIconMaxPerSession) break;
+                    if (_itemIconSent + _itemIconNotFound + _itemIconFailed >= ItemIconMaxPerSession || GameUplinkIdle()) break;
                     byte[]? paa = null;
                     try { paa = ReadPictureFromPbos(pic); } catch { /* fichier illisible : signalé introuvable */ }
                     if (paa != null) paa = TrimPaaToOneMip(paa, ItemIconMaxSide);

@@ -160,9 +160,8 @@ switch (_mode) do {
                 ["INFO", "Ligne de vue effacée", 2, 20] call comspec_atak_native_fnc_notify;
             };
             case "V3D": {
-                private _p = AGLToASL [_pos select 0, _pos select 1, 0];
-                _s set ["v3d", [_p, player getDir _p, 300, 120]];
-                ["VIEW3D"] call comspec_atak_native_fnc_navigate;
+                // W.I.P : ne pas ouvrir la page (fn_navigate bloque aussi VIEW3D).
+                ["Vue 3D en chantier (W.I.P), bientôt disponible", 2] call comspec_atak_native_fnc_toast;
             };
             case "VIEW": { ["compute", [_pos select 0, _pos select 1]] call comspec_atak_native_fnc_reliefAction; };
             case "VIEWU": { ["compute", _c getOrDefault ["unit", ""]] call comspec_atak_native_fnc_reliefAction; };
@@ -226,7 +225,7 @@ switch (_mode) do {
             ["ROUTE", "Y aller", "itinéraire GPS", _dir + "map_route.paa", [0.40, 0.65, 1, 1]],
             ["CENTER", "Centrer ici", "", _dir + "map_center.paa", [0.86, 0.91, 0.88, 1]],
             ["COPY", "Copier la grille", "10 chiffres", _dir + "map_grid.paa", [0.86, 0.91, 0.88, 1]],
-            ["V3D", "Vue 3D ici", "orbite autour du point", _dir + "app_relief.paa", [0.36, 0.78, 0.42, 1]],
+            ["V3D", "Vue 3D ici", "W.I.P — bientôt disponible", _dir + "app_relief.paa", [0.55, 0.6, 0.57, 1]],
             ["VIEW", "Champ de vision ici", format ["rayon %1 m", _s getOrDefault ["rlRadius", 1000]], _dir + "app_relief.paa", [0.36, 0.78, 0.42, 1]]
         ];
         // Montre Garmin portée : le point (ou le marqueur pointé) part sur la boussole de la montre (fn_watch "send").

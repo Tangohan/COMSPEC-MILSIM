@@ -119,7 +119,8 @@ if !(_pins isEqualType []) then { _pins = []; };
 private _secSel = [uiNamespace getVariable ["COMSPEC_ATAK_LauncherSection", ""], ""] select !_searchOn;
 private _sections = [];
 { _sections pushBackUnique (_x get "section"); } forEach _apps;
-if (_secSel isNotEqualTo "" && {_secSel isNotEqualTo "*PIN"} && {!(_secSel in _sections)}) then { _secSel = ""; };
+// Filtre GROUPES (*FOLD) gardé : il était remis à TOUT ici (pas une section d'apps), le filtre ne filtrait rien.
+if (_secSel isNotEqualTo "" && {!(_secSel in ["*PIN", "*FOLD"])} && {!(_secSel in _sections)}) then { _secSel = ""; };
 if (_secSel isEqualTo "*PIN" && {(count _pins) isEqualTo 0}) then { _secSel = ""; };
 if (_searchOn) then {
     private _chips = [["TOUT", ""]];
@@ -163,6 +164,10 @@ if (_searchOn) then {
             params ["_c"];
             private _k = _c getVariable ["key", ""];
             uiNamespace setVariable ["COMSPEC_ATAK_LauncherSection", [_k, ""] select (_k isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_LauncherSection", ""]))];
+            // Changer de filtre ferme la feuille d'actions ouverte (choix ou création de groupe) : elle restait affichée
+            // entre les filtres et les apps sous SUPPORT ET FEUX et les autres catégories.
+            uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
+            uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
             [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
         }];
     } forEach _chips;
@@ -179,6 +184,13 @@ if (_searchOn) then {
 // Feuille d'actions (clic droit sur une app, ou création de groupe).
 private _sheetPage = uiNamespace getVariable ["COMSPEC_ATAK_AppSheet", ""];
 private _sheetMode = uiNamespace getVariable ["COMSPEC_ATAK_AppSheetMode", ""];
+// « Choisir un groupe » n'a de sens que pour une app choisie (clic droit) ; « Nouveau groupe » sans app (tuile
+// « Nouveau groupe ») seulement là où cette tuile existe : TOUT et GROUPES. Hors de ces cas, l'état resté d'une
+// visite précédente est oublié.
+if ((_sheetMode isEqualTo "pick" && {_sheetPage isEqualTo ""}) || {_sheetMode isEqualTo "new" && {_sheetPage isEqualTo ""} && {!(_secSel in ["", "*FOLD"])}}) then {
+    _sheetMode = "";
+    uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
+};
 if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pick"]}}) then {
     private _sheetH = _font * 7.2;
     private _sbg = ["COMSPEC_RscText", [_pad, _y, _gw, _sheetH]] call comspec_atak_native_fnc_pageCtrl;
@@ -266,10 +278,21 @@ if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pic
             }];
             _fy = _fy + _font * 1.55;
         } forEach _folders;
-        private _nb = ["COMSPEC_RscButtonPrimary", [_pad * 1.4, _fy, _gw - _pad * 2.8, _font * 1.45], "+ Nouveau groupe"] call comspec_atak_native_fnc_pageCtrl;
+        // « + Nouveau groupe » et « Annuler » côte à côte : avant, aucun moyen de fermer ce choix sans choisir un
+        // groupe ; il restait affiché entre les filtres et les apps, quel que soit le filtre, même après réouverture.
+        private _nbw = (_gw - _pad * 3.2) * 0.68;
+        private _nb = ["COMSPEC_RscButtonPrimary", [_pad * 1.4, _fy, _nbw, _font * 1.45], "+ Nouveau groupe"] call comspec_atak_native_fnc_pageCtrl;
         _nb ctrlSetFontHeight (_font * 0.9);
         _nb ctrlAddEventHandler ["ButtonClick", {
             uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", "new"];
+            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        }];
+        private _cb = ["COMSPEC_RscButton", [_pad * 1.8 + _nbw, _fy, (_gw - _pad * 3.2) - _nbw, _font * 1.45], "Annuler"] call comspec_atak_native_fnc_pageCtrl;
+        _cb ctrlSetFontHeight (_font * 0.85);
+        _cb ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1];
+        _cb ctrlAddEventHandler ["ButtonClick", {
+            uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
+            uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
             [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
         }];
         _fy = _fy + _font * 1.7;
@@ -325,7 +348,7 @@ switch (true) do {
     case (_filter isNotEqualTo ""): {
         private _f = toLower trim _filter;
         private _base = [_apps, _pinApps] select (_secSel isEqualTo "*PIN");
-        if (_secSel isNotEqualTo "" && {_secSel isNotEqualTo "*PIN"}) then { _base = _apps select { (_x get "section") isEqualTo _secSel }; };
+        if (_secSel isNotEqualTo "" && {!(_secSel in ["*PIN", "*FOLD"])}) then { _base = _apps select { (_x get "section") isEqualTo _secSel }; };
         _groups pushBack ["", format ["Résultats pour « %1 »", _filter], _base select { ((toLower (_x get "name")) find _f) >= 0 || {((toLower (_x get "section")) find _f) >= 0} || {((toLower ((_x get "name") call comspec_atak_native_fnc_tr)) find _f) >= 0} }];
         // Entrée dans la recherche : ouvre ce premier résultat affiché.
         uiNamespace setVariable ["COMSPEC_ATAK_LauncherFirst", [_filter, ((((_groups select 0) select 2) param [0, createHashMap]) getOrDefault ["page", ""])]];

@@ -12,7 +12,7 @@ if !(_txGate getOrDefault ["can_transmit", true]) exitWith { false };
 private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
 if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
 
-private _raw = ["COMSPECExtension" callExtension ["GetMissionPlan", [_mapId]]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [(["COMSPECExtension", "GetMissionPlan", [_mapId]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
 if ((_raw select [0, 3]) != "OK|") exitWith { false };
 
@@ -93,10 +93,11 @@ private _seen = [];
         };
         private _txt = if (_label isEqualTo "") then { _code } else { format ["%1 %2", _code, _label] };
         if ((getMarkerColor _name) isNotEqualTo "") then {
-            _name setMarkerPosLocal [_xPos, _yPos];
-            _name setMarkerTextLocal _txt;
-            _name setMarkerTypeLocal _mkType;
-            _name setMarkerColorLocal _mkColor;
+            // Seuls les champs changés sont réécrits : chaque setter lève MarkerUpdated à chaque passage.
+            if (((markerPos _name) distance2D [_xPos, _yPos]) > 0.5) then { _name setMarkerPosLocal [_xPos, _yPos]; };
+            if ((markerText _name) isNotEqualTo _txt) then { _name setMarkerTextLocal _txt; };
+            if ((markerType _name) isNotEqualTo _mkType) then { _name setMarkerTypeLocal _mkType; };
+            if ((markerColor _name) isNotEqualTo _mkColor) then { _name setMarkerColorLocal _mkColor; };
         } else {
             private _mk = createMarkerLocal [_name, [_xPos, _yPos]];
             _mk setMarkerTypeLocal _mkType;

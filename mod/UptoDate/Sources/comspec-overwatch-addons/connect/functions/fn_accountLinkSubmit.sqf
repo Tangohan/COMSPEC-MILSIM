@@ -380,7 +380,7 @@ private _mapIdLink = missionNamespace getVariable ["comspec_overwatch_map_id", 1
 if (!(_mapIdLink isEqualType 0)) then { _mapIdLink = 1; };
 _mapIdLink = round _mapIdLink;
 if (_mapIdLink < 1) then { _mapIdLink = 1; };
-["COMSPECExtension" callExtension ["SetMapId", [str _mapIdLink]]] call comspec_overwatch_connect_fnc_extResult;
+[(["COMSPECExtension", "SetMapId", [str _mapIdLink]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 private _connectParts = _connectRaw splitString "|";
 private _connectOk = ((count _connectParts >= 1) && {(_connectParts select 0) isEqualTo "OK"});
 

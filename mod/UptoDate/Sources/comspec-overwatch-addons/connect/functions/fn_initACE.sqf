@@ -62,7 +62,7 @@ private _legacyFlat = [
     "COMSPEC_Terrain", "COMSPEC_Scene", "COMSPEC_GeoNetwork", "COMSPEC_Recon", "COMSPEC_ReconNote",
     "COMSPEC_CAS", "COMSPEC_Manifest", "COMSPEC_OrderMenu", "COMSPEC_OrderCompose",
     "COMSPEC_OrderFrago", "COMSPEC_OrderMove", "COMSPEC_OrderHold", "COMSPEC_OrderRecon",
-    "COMSPEC_OrderQRF", "COMSPEC_WardrobePush", "COMSPEC_WardrobePull", "COMSPEC_WardrobeSyncAll",
+    "COMSPEC_OrderQRF", "COMSPEC_Loadout", "COMSPEC_WardrobePush", "COMSPEC_WardrobePull", "COMSPEC_WardrobeSyncAll",
     "COMSPEC_Callsign", "COMSPEC_BugReport", "COMSPEC_DisableOwnPhoneGps",
     "COMSPEC_ChargesAtak", "COMSPEC_RepairAtakPower", "COMSPEC_RepairAtakScreen",
     "COMSPEC_DiagnosticAtak"
@@ -153,7 +153,6 @@ private _mainAction = ["COMSPEC_Main", "COMSPEC Athena", "", {}, _condEnabled, _
 ["COMSPEC_Transmit", "Transmission", _root] call _fnc_folder;
 ["COMSPEC_MapSurvey", "Cartographie", _root] call _fnc_folder;
 ["COMSPEC_Support", "Appui & mission", _root] call _fnc_folder;
-["COMSPEC_Loadout", "Tenues", _root] call _fnc_folder;
 ["COMSPEC_Link", "Compte & liaison", _root] call _fnc_folder;
 
 private _apps = _root + ["COMSPEC_Apps"];
@@ -161,7 +160,6 @@ private _sit = _root + ["COMSPEC_Situation"];
 private _tx = _root + ["COMSPEC_Transmit"];
 private _map = _root + ["COMSPEC_MapSurvey"];
 private _sup = _root + ["COMSPEC_Support"];
-private _load = _root + ["COMSPEC_Loadout"];
 private _link = _root + ["COMSPEC_Link"];
 
 ["COMSPEC_OrderInbox", "Ordres reçus", {
@@ -395,19 +393,6 @@ private _ord = _sup + ["COMSPEC_OrderMenu"];
     ["COMSPEC_OrderQRF", "Renfort (rapide)", "QRF", "renfort"]
 ];
 
-["COMSPEC_WardrobePush", "Envoyer tenues vers Athena", {
-    [] spawn { [] call comspec_overwatch_connect_fnc_arsenalPushAll; };
-}, _load] call _fnc_leaf;
-
-// Import sans écraser : une tenue locale différente du même nom reste, la version du site arrive sous « nom · Athena ».
-["COMSPEC_WardrobePull", "Charger tenues depuis Athena", {
-    [] spawn { ["", [], true] call comspec_overwatch_connect_fnc_arsenalPullAll; };
-}, _load] call _fnc_leaf;
-
-["COMSPEC_WardrobeSyncAll", "Tout basculer dans l'arsenal ACE", {
-    [] spawn { [] call comspec_overwatch_connect_fnc_arsenalSyncAll; };
-}, _load] call _fnc_leaf;
-
 ["COMSPEC_Callsign", "Mon indicatif / liaison", {
     ["liaison"] call comspec_overwatch_connect_fnc_openAthenaFeature;
 }, _link] call _fnc_leaf;
@@ -518,7 +503,7 @@ missionNamespace setVariable ["COMSPEC_ACEClassTreeVer", _menuVer, false]; // pa
 if (!isNil "comspec_overwatch_connect_fnc_getBloodType") then {
     private _bt = [] call comspec_overwatch_connect_fnc_getBloodType;
     if (_bt isNotEqualTo "") then {
-        ["COMSPECExtension" callExtension ["SetBloodType", [_bt]]] call comspec_overwatch_connect_fnc_extResult;
+        [(["COMSPECExtension", "SetBloodType", [_bt]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
         if (!isNil "comspec_overwatch_connect_fnc_operatorProfileTick") then {
             [{
                 ["blood_type_changed"] call comspec_overwatch_connect_fnc_operatorProfileTick;

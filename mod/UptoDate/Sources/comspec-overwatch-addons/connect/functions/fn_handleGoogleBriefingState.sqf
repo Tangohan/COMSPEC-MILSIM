@@ -43,13 +43,13 @@ switch (_command) do {
         private _knownUrl = missionNamespace getVariable ["COMSPEC_GoogleBriefingUrl", ""];
         if (_presentationId isNotEqualTo "" && {_knownUrl isEqualTo _url}) then {
             missionNamespace setVariable ["COMSPEC_GoogleBriefingPendingIndex", floor _index];
-            "COMSPECExtension" callExtension ["CancelGoogleDeck", []];
+            (["COMSPECExtension", "CancelGoogleDeck", []] call comspec_overwatch_connect_fnc_extDirect);
             private _requestId = format ["gslide_%1_%2", clientOwner, floor (diag_tickTime * 1000)];
             missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", _requestId];
-            private _raw = ["COMSPECExtension" callExtension [
+            private _raw = [(["COMSPECExtension", 
                 "LoadGoogleSlide",
                 [_presentationId, str (floor _index), _requestId]
-            ]] call comspec_overwatch_connect_fnc_extResult;
+            ] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
             private _parsed = parseSimpleArray _raw;
             if ((_parsed param [0, ""]) isNotEqualTo "accepted") then {
                 [_url, _index, false] call comspec_overwatch_connect_fnc_loadGoogleBriefing;

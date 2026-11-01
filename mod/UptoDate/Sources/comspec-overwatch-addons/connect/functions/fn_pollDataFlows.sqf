@@ -9,7 +9,7 @@
 if (!hasInterface) exitWith { createHashMap };
 private _cur = missionNamespace getVariable ["COMSPEC_DataFlows", createHashMap];
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { _cur };
-private _raw = ["COMSPECExtension" callExtension ["GetDataFlows", []]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [(["COMSPECExtension", "GetDataFlows", []] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {(_raw select [0, 3]) isNotEqualTo "OK|"}) exitWith { _cur };
 private _payload = _raw select [3];
 if (_payload isEqualTo (missionNamespace getVariable ["COMSPEC_DataFlowsRaw", ""])) exitWith { _cur };
