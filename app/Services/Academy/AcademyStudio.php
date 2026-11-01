@@ -236,8 +236,42 @@ final class AcademyStudio
                     array_splice($course['chapters'][$index]['resources'], $resource, 1);
                 }
                 break;
+            case 'remove_criterion':
+                $stage = $parts[2] ?? '';
+                $criterion = (int) ($parts[3] ?? -1);
+                if (in_array($stage, ['debrief', 'validation'], true) && isset($course['chapters'][$index][$stage]['criteria'][$criterion])) {
+                    array_splice($course['chapters'][$index][$stage]['criteria'], $criterion, 1);
+                }
+                break;
         }
         return $course;
+    }
+
+    /**
+     * Part des textes français déjà traduits en anglais (les deux langues sont exigées à la publication).
+     *
+     * @return array{0:int,1:int} [textes français remplis, dont traduits]
+     */
+    public static function translation(array $course): array
+    {
+        $total = $done = 0;
+        $walk = static function (mixed $node) use (&$walk, &$total, &$done): void {
+            if (!is_array($node)) {
+                return;
+            }
+            if (count($node) === 2 && is_string($node['fr'] ?? null) && is_string($node['en'] ?? null)) {
+                if (trim($node['fr']) !== '') {
+                    $total++;
+                    $done += (int) (trim($node['en']) !== '');
+                }
+                return;
+            }
+            foreach ($node as $child) {
+                $walk($child);
+            }
+        };
+        $walk($course);
+        return [$total, $done];
     }
 
     /** Diapositives encore référencées : les autres fichiers du cours peuvent être supprimés. */

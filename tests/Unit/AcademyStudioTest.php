@@ -21,99 +21,8 @@ use PDO;
 use PHPUnit\Framework\TestCase;
 
 /** Studio : brouillons, publication, droits, et import Google Slides avec un téléchargement simulé. */
-final class AcademyStudioTest extends TestCase
+final class AcademyStudioTest extends AcademyStudioTestCase
 {
-    private const DECK = '1EAYk18WDjIG-zp_0vLm3CsfQh_i8eXc67Jo2O9C6Vuc';
-
-    private PDO $pdo;
-    private string $storage;
-    private array $instances;
-    private ?PDO $previousPdo;
-    /** @var list<string> */
-    private array $fetched = [];
-    private array $nextResponse = [];
-
-    protected function setUp(): void
-    {
-        $this->pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-        $this->pdo->exec('CREATE TABLE academy_courses (tenant_id INTEGER NOT NULL, course_key TEXT NOT NULL, content_json TEXT NOT NULL, published INTEGER NOT NULL DEFAULT 0, updated_by INTEGER NOT NULL, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (tenant_id, course_key))');
-        $pdoProperty = new \ReflectionProperty(Database::class, 'pdo');
-        $this->previousPdo = $pdoProperty->getValue();
-        $pdoProperty->setValue(null, $this->pdo);
-        $this->storage = sys_get_temp_dir() . '/academy-studio-test-' . bin2hex(random_bytes(4));
-        $container = new \ReflectionProperty(Container::class, 'instances');
-        $this->instances = $container->getValue();
-        $feature = $this->createMock(FeatureGateService::class);
-        $feature->method('allows')->willReturn(true);
-        $tenants = $this->createMock(TenantRepository::class);
-        $tenants->method('findById')->willReturn(['id' => 10, 'slug' => 'team-a', 'name' => 'Team A']);
-        $this->nextResponse = $this->pdfResponse('%PDF-1.4 /Type /Pages /Count 3 /Type /Page /Type /Page /Type/Page %%EOF');
-        $importer = new GoogleSlidesImporter(function (string $url): array {
-            $this->fetched[] = $url;
-            return $this->nextResponse;
-        }, $this->storage);
-        $container->setValue(null, [FeatureGateService::class => $feature, TenantRepository::class => $tenants, GoogleSlidesImporter::class => $importer]);
-        Gate::reset();
-        Gate::getInstance()->setPermissions(['training.create']);
-        \App\Core\Session::start();
-        $_SESSION = ['user_id' => 7, 'tenant_id' => 10, '_csrf_token' => str_repeat('a', 64)];
-        $_GET = $_POST = [];
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['REQUEST_URI'] = '/academy/action/studio_new';
-        $GLOBALS['__app_locale'] = 'fr';
-    }
-
-    protected function tearDown(): void
-    {
-        (new \ReflectionProperty(Database::class, 'pdo'))->setValue(null, $this->previousPdo);
-        (new \ReflectionProperty(Container::class, 'instances'))->setValue(null, $this->instances);
-        Gate::reset();
-        foreach (glob($this->storage . '/*/*') ?: [] as $file) {
-            unlink($file);
-        }
-        foreach (glob($this->storage . '/*') ?: [] as $dir) {
-            rmdir($dir);
-        }
-        if (is_dir($this->storage)) {
-            rmdir($this->storage);
-        }
-        $_GET = $_POST = [];
-        unset($GLOBALS['__app_locale']);
-    }
-
-    private function pdfResponse(string $body, string $title = 'Briefing%20radio.pdf'): array
-    {
-        return ['status' => 200, 'type' => 'application/pdf', 'body' => $body, 'disposition' => 'attachment; filename="x.pdf"; filename*=UTF-8\'\'' . $title, 'host' => 'doc-04-bs-slides.googleusercontent.com'];
-    }
-
-    private function post(string $action, array $input): Response
-    {
-        $_POST = $input + ['_csrf_token' => str_repeat('a', 64)];
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['REQUEST_URI'] = '/academy/action/' . $action;
-        return (new AcademyController())->action(new Request(), ['action' => $action]);
-    }
-
-    private function newDraft(): string
-    {
-        $response = $this->post('studio_new', ['course' => 'academy']);
-        self::assertSame(303, $response->statusCode());
-        self::assertMatchesRegularExpression('#/academy/studio\?course=(course-[a-f0-9]{16})$#', (string) $response->headerValue('Location'));
-        preg_match('#course=(course-[a-f0-9]{16})#', (string) $response->headerValue('Location'), $m);
-        return $m[1];
-    }
-
-    private function draft(string $key): array
-    {
-        return (new AcademyRepository($this->pdo))->editable(10, $key);
-    }
-
-    /** Formulaire tel que le Studio l'envoie : le brouillon actuel, champ par champ. */
-    private function form(array $course): array
-    {
-        return array_intersect_key($course, array_flip(['title', 'summary', 'cover', 'license', 'version', 'duration_minutes', 'chapters']));
-    }
-
     public function testUrlValidationAcceptsOnlyGooglePresentationAddresses(): void
     {
         foreach ([
@@ -322,5 +231,46 @@ final class AcademyStudioTest extends TestCase
         self::assertCount(1, AcademyStudio::applyOperation($course, 'remove_chapter:1')['chapters']);
         self::assertCount(3, AcademyStudio::applyOperation($course, 'add_chapter')['chapters']);
         self::assertCount(1, AcademyStudio::applyOperation(['chapters' => [AcademyStudio::blankChapter()]], 'remove_chapter:0')['chapters'], 'Un cours garde au moins un chapitre');
+    }
+
+    public function testNewCourseDialogDuplicateAndHomeCards(): void
+    {
+        $response = $this->post('studio_new', ['course' => 'academy', 'new_title' => 'Appui feu indirect', 'new_summary' => 'Bases du réglage', 'new_cover' => 'fog']);
+        preg_match('#course=(course-[a-f0-9]{16})#', (string) $response->headerValue('Location'), $m);
+        $draft = $this->draft($m[1]);
+        self::assertSame(['fr' => 'Appui feu indirect', 'en' => ''], $draft['title']);
+        self::assertSame('fog', $draft['cover']);
+        $this->post('studio_duplicate', ['course' => $m[1]]);
+        self::assertSame('studio_copied', $_SESSION['academy_notice']);
+        $_GET = [];
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $body = (new AcademyController())->space(new Request(), ['space' => 'studio'])->body();
+        self::assertStringContainsString('Appui feu indirect (copie)', $body);
+        self::assertSame(2, substr_count($body, 'data-course-card data-status="draft"'));
+        self::assertStringContainsString('cover-fog.webp', $body);
+        self::assertStringContainsString('class="ready"', $body, 'Un repère de préparation par chapitre');
+        self::assertStringContainsString('id="sth-new"', $body);
+    }
+
+    public function testEditorShowsOneLanguageAtATimeWithFrenchHintsAndTranslationProgress(): void
+    {
+        $key = $this->newDraft();
+        $form = $this->form($this->draft($key));
+        $form['chapters'][0]['theory'] = ['fr' => 'Observer avant de transmettre.', 'en' => ''];
+        $form['chapters'][0]['validation'] = ['brief' => ['fr' => 'Relire', 'en' => 'Review'], 'criteria' => [['fr' => 'Critère un', 'en' => 'One'], ['fr' => 'Critère deux', 'en' => 'Two']]];
+        $this->post('studio_save', ['course' => $key, 'draft' => $form]);
+        $this->post('studio_save', ['course' => $key, 'draft' => $this->form($this->draft($key)), 'op' => 'remove_criterion:0:validation:0']);
+        self::assertSame([['fr' => 'Critère deux', 'en' => 'Two']], $this->draft($key)['chapters'][0]['validation']['criteria']);
+        self::assertSame([3, 2], \App\Services\Academy\AcademyStudio::translation($this->draft($key)));
+        $_GET = ['course' => $key, 'edit' => 'en'];
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $body = (new AcademyController())->space(new Request(), ['space' => 'studio'])->body();
+        self::assertStringContainsString('data-lang="en"', $body);
+        self::assertStringContainsString('placeholder="FR : Observer avant de transmettre."', $body);
+        self::assertStringContainsString('is-missing', $body);
+        self::assertStringContainsString('EN<small>66 %</small>', $body);
+        self::assertStringContainsString('name="edit_lang" value="en"', $body);
+        $response = $this->post('studio_save', ['course' => $key, 'draft' => $this->form($this->draft($key)), 'edit_lang' => 'en', 'step' => '0.6']);
+        self::assertStringEndsWith('step=0.6&edit=en', (string) $response->headerValue('Location'));
     }
 }

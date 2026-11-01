@@ -91,41 +91,155 @@ document.querySelectorAll('[data-academy-disclaimer]').forEach(dialog => {
   });
 })();
 
-// Studio : une étape visible à la fois, état d'enregistrement, Ctrl+S, confirmations.
+// Studio — fenêtres (nouveau cours, publication, partage) : ouverture, fermeture, ouverture automatique.
+(() => {
+  const open = id => {
+    const dialog = document.getElementById(id);
+    if (!dialog) return false;
+    if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
+    return true;
+  };
+  document.querySelectorAll('[data-open-dialog]').forEach(button => button.addEventListener('click', event => {
+    if (open(button.dataset.openDialog)) event.preventDefault();
+  }));
+  document.querySelectorAll('[data-close-dialog]').forEach(button => button.addEventListener('click', () => {
+    const dialog = button.closest('dialog');
+    if (dialog && typeof dialog.close === 'function') dialog.close(); else dialog?.removeAttribute('open');
+  }));
+  document.querySelectorAll('dialog[data-autoshow]').forEach(dialog => open(dialog.id));
+})();
+
+// Studio — accueil : filtres, recherche et tri des cartes (tout reste affiché sans JavaScript).
+document.querySelectorAll('[data-studio-grid]').forEach(grid => {
+  const cards = [...grid.querySelectorAll('[data-course-card]')];
+  const search = document.querySelector('[data-studio-search]');
+  const sort = document.querySelector('[data-studio-sort]');
+  const empty = grid.querySelector('[data-studio-empty]');
+  const newCard = grid.querySelector('[data-new-card]');
+  let filter = 'all';
+  const apply = () => {
+    const query = (search?.value || '').trim().toLocaleLowerCase();
+    let visible = 0;
+    cards.forEach(card => {
+      const status = card.dataset.status;
+      const byFilter = filter === 'all' || (filter === 'pub' ? status === 'pub' : status === 'draft' || status === 'version');
+      card.hidden = !(byFilter && (!query || card.dataset.title.includes(query)));
+      if (!card.hidden) visible++;
+    });
+    if (newCard) newCard.hidden = query !== '' || filter !== 'all';
+    if (empty) empty.hidden = visible > 0 || cards.length === 0;
+  };
+  document.querySelectorAll('[data-filter]').forEach(button => button.addEventListener('click', () => {
+    filter = button.dataset.filter;
+    document.querySelectorAll('[data-filter]').forEach(item => { item.classList.toggle('on', item === button); item.setAttribute('aria-pressed', String(item === button)); });
+    apply();
+  }));
+  search?.addEventListener('input', apply);
+  sort?.addEventListener('change', () => {
+    const by = sort.value;
+    const ordered = [...cards].sort((a, b) => by === 'title' ? a.dataset.title.localeCompare(b.dataset.title)
+      : by === 'chapters' ? Number(b.dataset.chapters) - Number(a.dataset.chapters) : Number(b.dataset.updated) - Number(a.dataset.updated));
+    ordered.forEach(card => grid.insertBefore(card, newCard || empty));
+  });
+});
+
+// Studio — partage : recherche d'un membre, rôle appliqué aussitôt, lien public en lecture seule, copie du lien.
+(() => {
+  document.querySelectorAll('[data-member-filter]').forEach(input => {
+    const select = input.closest('form')?.querySelector('[data-member-select]');
+    if (!select) return;
+    input.addEventListener('input', () => {
+      const query = input.value.trim().toLocaleLowerCase();
+      let first = null;
+      [...select.options].forEach(option => {
+        if (!option.value) return;
+        option.hidden = query !== '' && !option.textContent.toLocaleLowerCase().includes(query);
+        if (!option.hidden && !first) first = option;
+      });
+      if (first && query !== '') select.value = first.value;
+    });
+  });
+  document.querySelectorAll('[data-autosubmit]').forEach(select => select.addEventListener('change', () => select.form?.requestSubmit()));
+  document.querySelectorAll('[data-link-form]').forEach(form => {
+    const access = form.querySelector('[data-link-access]');
+    const role = form.querySelector('[data-link-role]');
+    const help = form.querySelector('[data-link-help]');
+    const sync = () => {
+      const editor = role?.querySelector('option[value="editor"]');
+      if (editor) editor.disabled = access.value === 'public';
+      if (access.value === 'public' && role) role.value = 'viewer';
+      if (role) role.disabled = access.value === 'off';
+      if (help) help.textContent = access.selectedOptions[0]?.dataset.help || '';
+    };
+    access?.addEventListener('change', sync);
+    if (access) sync();
+  });
+  document.querySelectorAll('[data-copy-link]').forEach(button => button.addEventListener('click', async () => {
+    const input = button.parentElement.querySelector('[data-share-url]');
+    try { await navigator.clipboard.writeText(input.value); } catch { input.select(); document.execCommand?.('copy'); }
+    button.textContent = button.dataset.copied;
+  }));
+})();
+
+// Studio — éditeur : une étape visible à la fois, une langue à la fois, lignes à ajouter, état d'enregistrement, Ctrl+S.
 document.querySelectorAll('[data-studio-form]').forEach(form => {
   const stepInput = form.querySelector('[data-step-input]');
+  const langInput = form.querySelector('[data-edit-lang-input]');
   const state = document.querySelector('[data-save-state]');
   let dirty = false;
   let submitting = false;
-  const showStep = (step, push) => {
+  const setUrl = (name, value) => {
+    const url = new URL(window.location.href);
+    if (value === null) url.searchParams.delete(name); else url.searchParams.set(name, value);
+    history.replaceState(null, '', url);
+  };
+  const showStep = step => {
     const panel = form.querySelector(`[data-step-panel="${step}"]`);
     if (!panel) return false;
     form.querySelectorAll('[data-step-panel]').forEach(item => { item.hidden = item !== panel; });
-    document.querySelectorAll('[data-step-link]').forEach(link => {
+    document.querySelectorAll('.ast-app [data-step-link]').forEach(link => {
       const on = link.dataset.stepLink === step && link.classList.contains('l');
       link.classList.toggle('on', on);
       if (on) link.setAttribute('aria-current', 'true'); else link.removeAttribute('aria-current');
     });
-    const stage = step.split('.')[1];
+    const [chapter, stage] = step.split('.');
     document.querySelectorAll('[data-step-tip]').forEach(tip => { tip.hidden = tip.dataset.stepTip !== stage; });
-    const chapter = step.split('.')[0];
     const target = form.querySelector('[name=slides_target]');
     if (target && target.value !== 'new') target.value = chapter;
     if (stepInput) stepInput.value = step;
-    if (push) {
-      const url = new URL(window.location.href);
-      url.searchParams.set('step', step);
-      history.replaceState(null, '', url);
-    }
+    setUrl('step', step);
     panel.closest('.col')?.scrollTo({ top: 0 });
     return true;
   };
   document.querySelectorAll('[data-step-link]').forEach(link => link.addEventListener('click', event => {
-    if (showStep(link.dataset.stepLink, true)) {
+    if (link.hasAttribute('data-open-course-tab')) return;
+    if (showStep(link.dataset.stepLink)) {
       event.preventDefault();
       link.closest('details')?.removeAttribute('open');
     }
   }));
+  document.querySelectorAll('[data-edit-lang]').forEach(link => link.addEventListener('click', event => {
+    event.preventDefault();
+    const language = link.dataset.editLang;
+    form.dataset.lang = language;
+    if (langInput) langInput.value = language;
+    document.querySelectorAll('.langsw [data-edit-lang]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.editLang === language)));
+    setUrl('edit', language === 'en' ? 'en' : null);
+  }));
+  // Lignes vides (critère, ressource, question) : masquées jusqu'à « Ajouter ».
+  document.querySelectorAll('[data-reveal-slot]').forEach(button => {
+    const slots = [...button.parentElement.querySelectorAll('[data-slot]')];
+    if (!slots.length || form.querySelector('fieldset:disabled')?.contains(button)) return;
+    slots.forEach(slot => { slot.hidden = true; });
+    button.hidden = false;
+    button.addEventListener('click', () => {
+      const slot = slots.find(item => item.hidden);
+      if (!slot) return;
+      slot.hidden = false;
+      slot.querySelector('input:not([type=hidden]),textarea,select')?.focus();
+      button.hidden = !slots.some(item => item.hidden);
+    });
+  });
   form.addEventListener('input', () => {
     if (dirty || !state) return;
     dirty = true;
@@ -137,7 +251,7 @@ document.querySelectorAll('[data-studio-form]').forEach(form => {
     if (button && !window.confirm(button.dataset.confirm)) event.preventDefault();
   });
   form.addEventListener('submit', () => { submitting = true; });
-  document.querySelectorAll('button[form="ast-form"]').forEach(button => button.addEventListener('click', () => { submitting = true; }));
+  document.querySelectorAll('button[form="ast-form"]').forEach(button => button.addEventListener('click', () => { submitting = !button.hasAttribute('data-open-dialog'); }));
   window.addEventListener('beforeunload', event => {
     if (dirty && !submitting) { event.preventDefault(); event.returnValue = ''; }
   });
@@ -149,9 +263,19 @@ document.querySelectorAll('[data-studio-form]').forEach(form => {
       form.requestSubmit();
     }
   });
-  document.querySelectorAll('[data-open-course-tab]').forEach(button => button.addEventListener('click', () => document.querySelector('[data-itab="course"]')?.click()));
-  document.querySelectorAll('[data-itab]').forEach(tab => tab.addEventListener('click', () => {
-    document.querySelectorAll('[data-itab]').forEach(item => item.setAttribute('aria-selected', String(item === tab)));
-    document.querySelectorAll('[data-ipanel]').forEach(panel => { panel.hidden = panel.dataset.ipanel !== tab.dataset.itab; });
+  const showTab = name => {
+    document.querySelectorAll('[data-itab]').forEach(item => item.setAttribute('aria-selected', String(item.dataset.itab === name)));
+    document.querySelectorAll('[data-ipanel]').forEach(panel => { panel.hidden = panel.dataset.ipanel !== name; });
+  };
+  document.querySelectorAll('[data-itab]').forEach(tab => tab.addEventListener('click', () => showTab(tab.dataset.itab)));
+  document.querySelectorAll('[data-open-course-tab]').forEach(button => button.addEventListener('click', event => {
+    event.preventDefault();
+    button.closest('details')?.removeAttribute('open');
+    showTab('course');
+    document.querySelector('[data-ipanel="course"] .in')?.focus();
   }));
 });
+// Confirmation des boutons de partage (hors formulaire principal).
+document.querySelectorAll('.ast-share [data-confirm]').forEach(button => button.addEventListener('click', event => {
+  if (!window.confirm(button.dataset.confirm)) event.preventDefault();
+}));

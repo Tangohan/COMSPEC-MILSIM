@@ -11,6 +11,8 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AcademyRepository;
+use App\Repositories\AcademyCourseShareRepository;
+use App\Services\Audit\AuditService;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\TrainingEnrollmentRepository;
@@ -110,15 +112,16 @@ final class AcademyController
             return (new Response())->setStatusCode(404);
         }
         $staff = TrainingLmsStaffAccess::allows(Gate::getInstance());
-        if (in_array($space, ['instructor', 'studio'], true) && !$staff) {
+        if ($space === 'instructor' && !$staff) {
             return $this->error('forbidden', 403);
         }
         if ($space === 'studio') {
-            return $this->studio($request);
+            return $this->studio($request, $staff);
         }
-        // Aperçu d'un brouillon depuis le Studio : réservé à l'encadrement, sans inscription possible.
-        $preview = $staff && $space === 'classroom' && $request->queryString('preview') === '1';
         try {
+            // Aperçu d'une formation (brouillon compris), sans inscription possible : encadrement, ou lecteur / éditeur invité.
+            $preview = $space === 'classroom' && $request->queryString('preview') === '1'
+                && $this->courseRole(TenantContext::id(), $request->queryString('course'), $staff) !== null;
             $repository = new AcademyRepository();
             $tenantId = TenantContext::id();
             if (!Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tenantId, 'training')) {
@@ -198,9 +201,7 @@ final class AcademyController
                     return Response::redirect($this->classroomUrl($key, $request->inputString('step')), 303);
                 }
             } elseif (str_starts_with($action, 'studio_')) {
-                if (!TrainingLmsStaffAccess::allows(Gate::getInstance())) {
-                    return $this->error('forbidden', 403);
-                }
+                // Droits vérifiés action par action (encadrement, ou éditeur invité sur cette formation).
                 return $this->studioAction($request, $repository, $action, $key, $tenantId, $userId);
             } elseif (in_array($action, ['publish', 'validate'], true)) {
                 if (!TrainingLmsStaffAccess::allows(Gate::getInstance())) {
@@ -244,9 +245,10 @@ final class AcademyController
         return url('academy/classroom?course=' . rawurlencode($key) . (preg_match('/\A\d{1,2}\.\d\z/', $step) ? '&step=' . $step : ''));
     }
 
-    private function studioUrl(string $key, string $step = ''): string
+    private function studioUrl(string $key, string $step = '', string $language = ''): string
     {
-        return url('academy/studio' . ($key !== '' ? '?course=' . rawurlencode($key) . (preg_match('/\A\d{1,2}\.\d\z/', $step) ? '&step=' . $step : '') : ''));
+        return url('academy/studio' . ($key !== '' ? '?course=' . rawurlencode($key) . (preg_match('/\A\d{1,2}\.\d\z/', $step) ? '&step=' . $step : '')
+            . ($language === 'en' ? '&edit=en' : '') : ''));
     }
 
     private function importer(): GoogleSlidesImporter
@@ -254,32 +256,111 @@ final class AcademyController
         return Container::get(GoogleSlidesImporter::class);
     }
 
-    /** Espace de création : liste des cours de la communauté, ou édition d'un cours. */
-    private function studio(Request $request): Response
+    private function shareRepository(): ?AcademyCourseShareRepository
+    {
+        $shares = Container::get(AcademyCourseShareRepository::class);
+        return $shares->ready() ? $shares : null;
+    }
+
+    /**
+     * Droit sur une formation : « owner » pour l'encadrement (droits LMS inchangés), sinon le partage reçu
+     * (personne invitée, ou lien de communauté ouvert dans cette session et toujours valide).
+     */
+    private function courseRole(int $tenantId, string $key, bool $staff): ?string
+    {
+        if ($staff) {
+            return 'owner';
+        }
+        $shares = $this->shareRepository();
+        if ($shares === null || $tenantId < 1) {
+            return null;
+        }
+        $role = $shares->roleFor($tenantId, $key, (int) Session::get('user_id'));
+        $grants = Session::get('academy_link_grants', []);
+        $grant = is_array($grants) ? ($grants[$tenantId . ':' . $key] ?? null) : null;
+        if (is_string($grant)) {
+            $link = $shares->link($tenantId, $key);
+            if ($link !== null && hash_equals($link['token_hash'], $grant) && $link['access'] === 'community'
+                && ($link['expires_at'] === null || strtotime($link['expires_at']) > time()) && ($role === null || $link['role'] === 'editor')) {
+                $role = $link['role'];
+            }
+        }
+        return $role;
+    }
+
+    private function audit(string $action, int $tenantId, string $key, array $details = []): void
+    {
+        try {
+            Container::get(AuditService::class)->logChange($action, $tenantId, (int) Session::get('user_id') ?: null, 'academy_course', null, [], ['course' => $key] + $details);
+        } catch (\Throwable $e) {
+            // Le journal ne bloque jamais l'action elle-même.
+            error_log('[audit] ' . $action . ' : ' . $e->getMessage());
+        }
+    }
+
+    /** Espace de création : accueil (formations de la communauté), ou édition d'une formation. */
+    private function studio(Request $request, bool $staff): Response
     {
         $tenantId = TenantContext::id();
+        $userId = (int) Session::get('user_id');
         try {
             if (!Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tenantId, 'training')) {
                 return $this->error('module_unavailable', 403);
             }
             $repository = new AcademyRepository();
+            $shares = $this->shareRepository();
             $key = $request->queryString('course');
             $course = null;
+            $role = null;
             if ($key !== '') {
                 $course = $repository->editable($tenantId, $key) ?? AcademyBuiltInCourses::find($key);
-                if ($course === null) {
-                    return $this->error('not_found', 404);
+                $role = $course !== null ? $this->courseRole($tenantId, $key, $staff) : null;
+                if ($course === null || $role === null) {
+                    return $this->error($course === null ? 'not_found' : 'forbidden', $course === null ? 404 : 403);
                 }
+                if ($role === 'viewer') {
+                    // Lecteur : il voit l'aperçu stagiaire, pas l'éditeur.
+                    return Response::redirect(url('academy/classroom?course=' . rawurlencode($key) . '&preview=1'), 303);
+                }
+            }
+            $sharedWithMe = !$staff && $shares !== null ? $shares->coursesFor($tenantId, $userId) : [];
+            if (!$staff && $course === null && $sharedWithMe === []) {
+                return $this->error('forbidden', 403);
+            }
+            $list = [];
+            if ($course === null) {
+                if ($staff && $repository->lifecycleReady()) {
+                    foreach ($repository->purgeTrash($tenantId) as $purged) {
+                        $shares?->forget($tenantId, $purged);
+                        $this->audit('academy.course.purged', $tenantId, $purged);
+                    }
+                }
+                $list = array_values(array_filter($repository->studioList($tenantId), static fn (array $item): bool => $staff || isset($sharedWithMe[$item['key']])));
+            }
+            $sharing = null;
+            if ($staff && $course !== null && empty($course['built_in']) && $shares !== null) {
+                $members = [];
+                foreach (Container::get(UserRepository::class)->listForTenant($tenantId, null, 'active', null, 200) as $member) {
+                    $members[(int) $member['id']] = trim((string) ($member['callsign'] ?? '')) !== '' ? (string) $member['callsign']
+                        : (trim(((string) ($member['first_name'] ?? '')) . ' ' . ((string) ($member['last_name'] ?? ''))) ?: '#' . (int) $member['id']);
+                }
+                $sharing = ['shares' => $shares->shares($tenantId, $key), 'link' => $shares->link($tenantId, $key), 'members' => $members];
             }
             $tenant = Container::get(TenantRepository::class)->findById($tenantId);
             $account = ['display_name' => (string) Session::get('display_name', ''), 'callsign' => (string) Session::get('callsign', '')];
             $notice = (string) Session::get('academy_notice', '');
             Session::set('academy_notice', '');
             return Response::view('academy.studio', [
-                'space' => 'studio', 'staff' => true, 'tenant' => $tenant, 'account' => $account, 'notice' => $notice,
-                'course' => $course, 'studioCourses' => $course === null ? $repository->courses($tenantId, true) : [],
+                'space' => 'studio', 'staff' => $staff, 'role' => $role, 'tenant' => $tenant, 'account' => $account, 'notice' => $notice,
+                'course' => $course, 'studioCourses' => $list, 'sharedWithMe' => $sharedWithMe,
+                'builtInCourses' => $course === null && $staff ? array_values(AcademyBuiltInCourses::all()) : [],
                 'issues' => $course !== null ? AcademyStudio::issues($course) : [],
+                'learnerCount' => $course !== null && empty($course['built_in']) ? $repository->learnerCount($tenantId, $key) : 0,
+                'lifecycleReady' => $repository->lifecycleReady(), 'sharing' => $sharing, 'sharingReady' => $shares !== null,
                 'viewStep' => $request->queryString('step'),
+                'editLang' => $request->queryString('edit') === 'en' ? 'en' : 'fr',
+                'openShare' => $request->queryString('share') === '1',
+                'studioView' => $request->queryString('vue'),
             ])->header('Cache-Control', 'private, no-store');
         } catch (\PDOException) {
             // Tables Academy absentes : la création attend l'étape de migration.
@@ -289,26 +370,86 @@ final class AcademyController
 
     private function studioAction(Request $request, AcademyRepository $repository, string $action, string $key, int $tenantId, int $userId): Response
     {
+        $staff = TrainingLmsStaffAccess::allows(Gate::getInstance());
+        // Un éditeur invité modifie le brouillon ; publier, versionner, archiver, supprimer et partager restent à l'encadrement.
+        if (!in_array($action, ['studio_save', 'studio_import'], true) && !$staff) {
+            return $this->error('forbidden', 403);
+        }
+        if (!$staff && $this->courseRole($tenantId, $key, false) !== 'editor') {
+            return $this->error('forbidden', 403);
+        }
         $step = $request->inputString('step');
         if ($action === 'studio_new') {
-            return Response::redirect($this->studioUrl($repository->createDraft($tenantId, $userId, AcademyStudio::blankCourse())), 303);
+            // Fenêtre « Nouveau cours » : titre, présentation et couverture en français, le reste se rédige dans l'éditeur.
+            $blank = AcademyStudio::blankCourse();
+            $start = AcademyStudio::fromForm(['title' => ['fr' => $request->inputString('new_title')], 'summary' => ['fr' => $request->inputString('new_summary')],
+                'cover' => $request->inputString('new_cover'), 'chapters' => $blank['chapters']], []);
+            $created = $repository->createDraft($tenantId, $userId, $start);
+            $this->audit('academy.course.created', $tenantId, $created);
+            return Response::redirect($this->studioUrl($created), 303);
+        }
+        if ($action === 'studio_trash_restore') {
+            $restored = $repository->lifecycleReady() && $repository->restoreFromTrash($tenantId, $key);
+            if ($restored) {
+                $this->audit('academy.course.restored_from_trash', $tenantId, $key);
+            }
+            Session::set('academy_notice', $restored ? 'studio_trash_restored' : 'locked');
+            return Response::redirect($this->studioUrl(''), 303);
         }
         $course = $repository->editable($tenantId, $key);
-        if ($action === 'studio_revise') {
+        if (in_array($action, ['studio_archive', 'studio_unarchive', 'studio_delete'], true)) {
+            if ($course === null || !$repository->lifecycleReady()) {
+                Session::set('academy_notice', $course === null ? 'not_found' : 'studio_lifecycle_pending');
+                return Response::redirect($this->studioUrl(''), 303);
+            }
+            if ($action === 'studio_delete') {
+                $expected = trim((string) ($course['title']['fr'] ?? '')) ?: trim((string) ($course['title']['en'] ?? ''));
+                $typed = trim($request->inputString('confirm_title'));
+                if ($expected === '' || ($typed !== $expected && $typed !== trim((string) ($course['title']['en'] ?? '')))) {
+                    Session::set('academy_notice', 'studio_delete_confirm');
+                    return Response::redirect($this->studioUrl(''), 303);
+                }
+                try {
+                    $repository->trash($tenantId, $key);
+                } catch (\DomainException) {
+                    // Des stagiaires suivent cette formation : on propose l'archivage, qui garde leur accès.
+                    Session::set('academy_notice', 'studio_delete_has_learners');
+                    return Response::redirect($this->studioUrl(''), 303);
+                }
+                $this->audit('academy.course.trashed', $tenantId, $key);
+                Session::set('academy_notice', 'studio_deleted');
+                return Response::redirect($this->studioUrl(''), 303);
+            }
+            $repository->setArchived($tenantId, $key, $action === 'studio_archive');
+            $this->audit($action === 'studio_archive' ? 'academy.course.archived' : 'academy.course.unarchived', $tenantId, $key);
+            Session::set('academy_notice', $action === 'studio_archive' ? 'studio_archived' : 'studio_unarchived');
+            return Response::redirect($this->studioUrl($action === 'studio_archive' ? '' : $key), 303);
+        }
+        if (in_array($action, ['studio_share_add', 'studio_share_remove', 'studio_link_save', 'studio_link_regenerate'], true)) {
+            return $this->shareAction($request, $action, $course, $key, $tenantId, $userId);
+        }
+        if (in_array($action, ['studio_revise', 'studio_duplicate'], true)) {
             $source = $course ?? AcademyBuiltInCourses::find($key);
             if ($source === null) {
                 return $this->error('not_found', 404);
             }
-            // Nouvelle version d'un cours publié (ou copie d'un module intégré) : l'original reste en ligne jusqu'à la publication.
+            // Nouvelle version d'un cours publié : l'original reste en ligne jusqu'à la publication. Copie : cours indépendant.
             $copy = $source;
-            unset($copy['built_in'], $copy['demo']);
-            if ($course !== null) {
+            unset($copy['built_in'], $copy['demo'], $copy['replaces'], $copy['updated_at'], $copy['archived']);
+            $revision = $action === 'studio_revise' && $course !== null && $course['published'];
+            if ($revision) {
                 $copy['replaces'] = $key;
+            } else {
+                foreach (['fr' => ' (copie)', 'en' => ' (copy)'] as $language => $suffix) {
+                    $copy['title'][$language] = trim((string) ($copy['title'][$language] ?? '')) . $suffix;
+                }
             }
-            Session::set('academy_notice', 'studio_revision');
-            return Response::redirect($this->studioUrl($repository->createDraft($tenantId, $userId, $copy), $step), 303);
+            $created = $repository->createDraft($tenantId, $userId, $copy);
+            $this->audit($revision ? 'academy.course.revised' : 'academy.course.duplicated', $tenantId, $created, ['from' => $key]);
+            Session::set('academy_notice', $revision ? 'studio_revision' : 'studio_copied');
+            return Response::redirect($this->studioUrl($created, $step), 303);
         }
-        if ($course === null || $course['published']) {
+        if ($course === null || $course['published'] || !empty($course['archived'])) {
             return $this->error('locked', 409);
         }
         $form = $request->input('draft');
@@ -328,13 +469,126 @@ final class AcademyController
         if ($action === 'studio_publish') {
             if (AcademyStudio::issues($draft) !== []) {
                 Session::set('academy_notice', 'studio_not_ready');
-                return Response::redirect($this->studioUrl($key, $step), 303);
+                return Response::redirect($this->studioUrl($key, $step, $request->inputString('edit_lang')), 303);
             }
             $repository->publishDraft($tenantId, $key);
+            $this->audit('academy.course.published', $tenantId, $key);
             $notice = 'studio_published';
         }
         Session::set('academy_notice', $notice);
-        return Response::redirect($this->studioUrl($key, $step), 303);
+        return Response::redirect($this->studioUrl($key, $step, $request->inputString('edit_lang')), 303);
+    }
+
+    /** Fenêtre « Partager » : personnes (lecteur / éditeur) et lien d'accès. Réservé à l'encadrement. */
+    private function shareAction(Request $request, string $action, ?array $course, string $key, int $tenantId, int $userId): Response
+    {
+        $shares = $this->shareRepository();
+        $back = $this->studioUrl($key) . '&share=1';
+        if ($course === null) {
+            return $this->error('not_found', 404);
+        }
+        if ($shares === null) {
+            Session::set('academy_notice', 'studio_lifecycle_pending');
+            return Response::redirect($back, 303);
+        }
+        $notice = 'saved';
+        if ($action === 'studio_share_add') {
+            $member = (int) $request->inputString('share_user');
+            $role = $request->inputString('share_role');
+            if (!in_array($role, AcademyCourseShareRepository::ROLES, true) || $member < 1
+                || !Container::get(UserRepository::class)->isMemberOfTenant($member, $tenantId)) {
+                Session::set('academy_notice', 'share_invalid_member');
+                return Response::redirect($back, 303);
+            }
+            $shares->grant($tenantId, $key, $member, $role, $userId);
+            $this->audit('academy.course.shared', $tenantId, $key, ['user' => $member, 'role' => $role]);
+            $notice = 'share_added';
+        } elseif ($action === 'studio_share_remove') {
+            $member = (int) $request->inputString('share_user');
+            if ($shares->revoke($tenantId, $key, $member)) {
+                $this->audit('academy.course.unshared', $tenantId, $key, ['user' => $member]);
+            }
+            $notice = 'share_removed';
+        } else {
+            $access = $request->inputString('link_access');
+            $role = $access === 'public' ? 'viewer' : $request->inputString('link_role', 'viewer');
+            $expiry = $request->inputString('link_expiry', 'never');
+            $days = ['never' => null, '1' => 1, '7' => 7, '30' => 30][$expiry] ?? null;
+            $current = $shares->link($tenantId, $key);
+            // Renouveler le lien garde son échéance ; « Enregistrer » applique celle choisie.
+            $expiresAt = $expiry === 'keep' ? ($current !== null && $current['expires_at'] !== null ? (int) strtotime($current['expires_at']) : null)
+                : ($days !== null ? time() + $days * 86400 : null);
+            if ($access === 'off') {
+                if ($shares->disableLink($tenantId, $key)) {
+                    $this->audit('academy.course.link_disabled', $tenantId, $key);
+                }
+                $notice = 'share_link_off';
+            } else {
+                try {
+                    $shares->saveLink($tenantId, $key, $access, $role, $expiresAt, $userId, $action === 'studio_link_regenerate');
+                } catch (\InvalidArgumentException) {
+                    Session::set('academy_notice', 'share_invalid_link');
+                    return Response::redirect($back, 303);
+                }
+                $this->audit($action === 'studio_link_regenerate' ? 'academy.course.link_regenerated' : 'academy.course.link_saved', $tenantId, $key, ['access' => $access, 'role' => $role, 'days' => $days]);
+                $notice = $action === 'studio_link_regenerate' ? 'share_link_regenerated' : 'share_link_saved';
+            }
+        }
+        Session::set('academy_notice', $notice);
+        return Response::redirect($back, 303);
+    }
+
+    /**
+     * Lien de partage : « communauté » ouvre l'éditeur ou l'aperçu au membre connecté de la communauté ;
+     * « public » montre une lecture seule de la formation, sans compte ni inscription.
+     */
+    public function shared(Request $request, array $params = []): Response
+    {
+        $token = (string) ($params['token'] ?? '');
+        try {
+            $shares = $this->shareRepository();
+            $link = $shares?->resolve($token);
+            $course = $link !== null ? (new AcademyRepository())->editable($link['tenant_id'], $link['course_key']) : null;
+            if ($link === null || $course === null || !empty($course['archived'])) {
+                return $this->error('share_invalid', 404);
+            }
+            if ($link['access'] === 'public') {
+                return Response::view('academy.shared', ['course' => $course, 'token' => $token, 'space' => 'shared'])
+                    ->header('Cache-Control', 'private, no-store')->header('X-Robots-Tag', 'noindex, nofollow')->header('Referrer-Policy', 'no-referrer');
+            }
+            if ((int) Session::get('user_id') < 1) {
+                return Response::redirect(url('login?redirect=' . rawurlencode('academy/partage/' . $token)), 303);
+            }
+            if (TenantContext::id() !== $link['tenant_id']) {
+                return $this->error('share_other_community', 403);
+            }
+            $grants = Session::get('academy_link_grants', []);
+            $grants = is_array($grants) ? $grants : [];
+            $grants[$link['tenant_id'] . ':' . $link['course_key']] = $link['token_hash'];
+            Session::set('academy_link_grants', $grants);
+            $this->audit('academy.course.link_opened', $link['tenant_id'], $link['course_key'], ['role' => $link['role']]);
+            return Response::redirect($link['role'] === 'editor' && empty($course['published'])
+                ? $this->studioUrl($link['course_key'])
+                : url('academy/classroom?course=' . rawurlencode($link['course_key']) . '&preview=1'), 303);
+        } catch (\PDOException) {
+            return $this->error('unavailable', 503);
+        }
+    }
+
+    /** Diapositives d'une formation ouverte par un lien public. */
+    public function sharedMedia(Request $request, array $params = []): Response
+    {
+        try {
+            $link = $this->shareRepository()?->resolve((string) ($params['token'] ?? ''));
+            $course = $link !== null && $link['access'] === 'public' ? (new AcademyRepository())->editable($link['tenant_id'], $link['course_key']) : null;
+            $file = (string) ($params['file'] ?? '');
+            if ($course === null || !empty($course['archived']) || !in_array($file, AcademyStudio::files($course), true)) {
+                return (new Response())->setStatusCode(404);
+            }
+            return $this->pdf($this->importer()->path($link['tenant_id'], $file));
+        } catch (\PDOException) {
+            return (new Response())->setStatusCode(503);
+        }
     }
 
     /**
@@ -346,8 +600,11 @@ final class AcademyController
     private function importSlides(Request $request, array $draft, int $tenantId, string $step): array
     {
         try {
-            // « Mettre à jour » sur une présentation déjà importée, sinon le lien collé.
-            $url = $request->inputString('reimport_url') !== '' ? $request->inputString('reimport_url') : $request->inputString('slides_url');
+            // « Mettre à jour » sur une présentation déjà importée, sinon le lien collé (encart du chapitre ou panneau latéral).
+            $here = $request->inputString('slides_here');
+            $hereUrls = $request->input('slides_url_here');
+            $url = $request->inputString('reimport_url') !== '' ? $request->inputString('reimport_url')
+                : (ctype_digit($here) && is_array($hereUrls) && is_string($hereUrls[$here] ?? null) ? $hereUrls[$here] : $request->inputString('slides_url'));
             $slides = $this->importer()->import($tenantId, $url);
         } catch (\DomainException $e) {
             return [$draft, 'slides_' . $e->getMessage(), $step];
@@ -361,7 +618,7 @@ final class AcademyController
                 }
             }
         }
-        $target = $request->inputString('slides_target', 'new');
+        $target = ctype_digit($here) ? $here : $request->inputString('slides_target', 'new');
         if ($target !== 'new' && ctype_digit($target) && isset($draft['chapters'][(int) $target])) {
             $index = (int) $target;
             if (count($draft['chapters'][$index]['resources']) >= 20) {
@@ -383,7 +640,11 @@ final class AcademyController
     /** Diapositives importées : fichiers privés de la communauté, lus par les membres ayant accès à l'Academy. */
     public function media(Request $request, array $params = []): Response
     {
-        $path = $this->importer()->path(TenantContext::id(), (string) ($params['file'] ?? ''));
+        return $this->pdf($this->importer()->path(TenantContext::id(), (string) ($params['file'] ?? '')));
+    }
+
+    private function pdf(?string $path): Response
+    {
         if ($path === null) {
             return (new Response())->setStatusCode(404);
         }
