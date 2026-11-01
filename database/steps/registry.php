@@ -10,4 +10,6 @@ declare(strict_types=1);
  * explicit, self-contained step when a new table or column is needed. Successful
  * steps are skipped on normal runs; --step=id is an explicit retry of an active entry.
  */
-return [];
+return [
+    ['id' => 'units_military_symbol', 'label' => 'ORBAT : symbole militaire MIL-STD-2525 et échelon des unités (units.sidc, units.echelon)', 'group' => 'migrations', 'file' => '3130_units_military_symbol.php', 'rerun' => true],
+];

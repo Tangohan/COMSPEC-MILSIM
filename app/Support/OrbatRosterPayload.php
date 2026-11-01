@@ -101,6 +101,7 @@ final class OrbatRosterPayload
 
         $rawMembers = $unitRosterByUnit[$uid] ?? [];
         $visibleStrength = is_array($rawMembers) ? count($rawMembers) : 0;
+        $symbol = UnitMilitarySymbol::resolve($u);
 
         return [
             'id' => 'unit-' . $uid,
@@ -110,6 +111,13 @@ final class OrbatRosterPayload
             // Code unité hiérarchique (SOAR-B-A-1) et identifiant administratif fixe (0042-0137).
             'unitCode' => (string) ($unitCodes[$uid]['code'] ?? ''),
             'adminId' => (string) ($unitCodes[$uid]['admin_id'] ?? ''),
+            // Symbole MIL-STD-2525 : base choisie (ou déduite), échelon et code final affiché par milsymbol.
+            'sidc' => $symbol['sidc'],
+            'sidcAuto' => $symbol['sidcAuto'],
+            'echelon' => $symbol['echelon'],
+            'echelonAuto' => $symbol['echelonAuto'],
+            'symbolSidc' => $symbol['symbol'],
+            'symbolFunction' => $symbol['functionKey'],
             'type' => $displayType,
             'structType' => $structType,
             'maskMode' => $maskMode,
@@ -283,9 +291,89 @@ final class OrbatRosterPayload
         if ($root !== null) {
             [$root] = self::annotateReadinessAggregation($root);
             $root = self::attachBilletManning($root, $tenantId);
+            $root = self::attachGrades($root, $unitRepository->gradeShortNamesForUsers($tenantId, self::collectPersonIds($root)));
         }
 
         return $root;
+    }
+
+    /**
+     * Identifiants des personnes citées dans l’arbre (membres, titulaires de postes, chef et adjoint).
+     *
+     * @param array<string, mixed> $node
+     * @return list<int>
+     */
+    private static function collectPersonIds(array $node): array
+    {
+        $ids = [];
+        $walk = static function (array $n) use (&$walk, &$ids): void {
+            if (empty($n['viewerNamesRedacted']) && empty($n['isOrbatPlaceholder'])) {
+                $ids[] = (int) ($n['commanderUserId'] ?? 0);
+                foreach (['commander', 'deputy'] as $k) {
+                    if (is_array($n[$k] ?? null)) {
+                        $ids[] = (int) ($n[$k]['userId'] ?? 0);
+                    }
+                }
+                foreach (is_array($n['members'] ?? null) ? $n['members'] : [] as $m) {
+                    $ids[] = (int) (is_array($m) ? ($m['user_id'] ?? 0) : 0);
+                }
+                foreach (is_array($n['billets'] ?? null) ? $n['billets'] : [] as $b) {
+                    foreach (is_array($b['holders'] ?? null) ? $b['holders'] : [] as $h) {
+                        $ids[] = (int) (is_array($h) ? ($h['user_id'] ?? 0) : 0);
+                    }
+                }
+            }
+            foreach (is_array($n['children'] ?? null) ? $n['children'] : [] as $c) {
+                if (is_array($c)) {
+                    $walk($c);
+                }
+            }
+        };
+        $walk($node);
+
+        return array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
+    }
+
+    /**
+     * Ajoute l’abréviation du grade aux cadres et aux membres (jamais sur une unité aux noms masqués).
+     *
+     * @param array<string, mixed> $node
+     * @param array<int, string> $grades
+     * @return array<string, mixed>
+     */
+    private static function attachGrades(array $node, array $grades): array
+    {
+        if ($grades !== [] && empty($node['viewerNamesRedacted']) && empty($node['isOrbatPlaceholder'])) {
+            $node['commanderGrade'] = $grades[(int) ($node['commanderUserId'] ?? 0)] ?? '';
+            foreach (['commander', 'deputy'] as $k) {
+                if (is_array($node[$k] ?? null)) {
+                    $node[$k]['grade'] = $grades[(int) ($node[$k]['userId'] ?? 0)] ?? '';
+                }
+            }
+            if (is_array($node['members'] ?? null)) {
+                foreach ($node['members'] as $i => $m) {
+                    if (is_array($m)) {
+                        $node['members'][$i]['grade'] = $grades[(int) ($m['user_id'] ?? 0)] ?? '';
+                    }
+                }
+            }
+            if (is_array($node['billets'] ?? null)) {
+                foreach ($node['billets'] as $i => $b) {
+                    foreach (is_array($b['holders'] ?? null) ? $b['holders'] : [] as $j => $h) {
+                        $node['billets'][$i]['holders'][$j]['grade'] = $grades[(int) ($h['user_id'] ?? 0)] ?? '';
+                    }
+                }
+            }
+        }
+        if (is_array($node['children'] ?? null)) {
+            foreach ($node['children'] as $i => $c) {
+                if (is_array($c)) {
+                    $node['children'][$i] = self::attachGrades($c, $grades);
+                }
+            }
+        }
+
+        return $node;
     }
 
     /**

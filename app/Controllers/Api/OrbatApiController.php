@@ -21,6 +21,7 @@ use App\Support\OrbatMaskMode;
 use App\Support\OrbatRosterPayload;
 use App\Support\OrgVisibilityCapabilities;
 use App\Support\UnitAdminStatus;
+use App\Support\UnitMilitarySymbol;
 use App\Support\VisibilityLevel;
 use App\Services\Organization\OrgVisibilityService;
 
@@ -116,7 +117,10 @@ final class OrbatApiController
             'adminStatuses' => UnitAdminStatus::options(),
             'structTypes' => $this->structTypeOptions(),
             'chartDisplayTypes' => $this->mergedChartDisplayTypes($tenantId),
+            'symbols' => UnitMilitarySymbol::options(locale()),
             'capabilities' => [
+                'military_symbol' => $this->unitRepository->hasTableColumn('units', 'sidc')
+                    && $this->unitRepository->hasTableColumn('units', 'echelon'),
                 'mask_editing' => $this->unitRepository->hasTableColumn('units', 'orbat_mask_mode')
                     || $this->unitRepository->hasTableColumn('units', 'visibility_level'),
                 'admin_status' => $this->unitRepository->hasTableColumn('units', 'admin_status'),
@@ -448,6 +452,19 @@ final class OrbatApiController
             $parentId = null;
         }
 
+        $symbol = $this->symbolFields($request);
+        if ($symbol instanceof Response) {
+            return $symbol;
+        }
+        $code = trim($request->inputString('code', ''));
+        $commanderId = (int) $request->input('commander_user_id', 0);
+        if ($commanderId > 0) {
+            $commander = $this->userRepository->findById($commanderId, $tenantId);
+            if (!$commander || (string) ($commander['status'] ?? '') !== 'active') {
+                return Response::json(['success' => false, 'message' => 'Chef d’unité introuvable ou compte inactif'], 400);
+            }
+        }
+
         $slug = $this->unitRepository->uniqueSlugForTenant($tenantId, $name);
 
         $data = [
@@ -457,7 +474,9 @@ final class OrbatApiController
             'parent_id' => $parentId,
             'display_order' => 0,
             'show_on_public_page' => 1,
-        ];
+            'code' => $code === '' ? null : mb_substr($code, 0, 20),
+            'commander_user_id' => $commanderId > 0 ? $commanderId : null,
+        ] + $symbol;
 
         $created = $this->unitRepository->create($tenantId, $data);
         $this->recordUnitCreationHistory($tenantId, $created, $parentId);
@@ -983,6 +1002,36 @@ final class OrbatApiController
         ]);
     }
 
+    /**
+     * Symbole MIL-STD-2525 (`sidc`) et échelon (`echelon`) envoyés par l’ORBAT ; chaîne vide = automatique.
+     *
+     * @return array<string, string|null>|Response
+     */
+    private function symbolFields(Request $request): array|Response
+    {
+        $out = [];
+        foreach (['sidc', 'echelon'] as $field) {
+            if ($request->input($field) === null) {
+                continue;
+            }
+            try {
+                $out[$field] = $field === 'sidc'
+                    ? UnitMilitarySymbol::normalizeSidc($request->inputString('sidc', ''))
+                    : UnitMilitarySymbol::normalizeEchelon($request->inputString('echelon', ''));
+            } catch (\InvalidArgumentException $e) {
+                return Response::json(['success' => false, 'message' => $e->getMessage()], 400);
+            }
+            if (!$this->unitRepository->hasTableColumn('units', $field)) {
+                return Response::json([
+                    'success' => false,
+                    'message' => 'Le symbole militaire sera disponible après la prochaine mise à jour du site.',
+                ], 409);
+            }
+        }
+
+        return $out;
+    }
+
     private function wouldCreateCycle(int $unitId, int $newParentId, int $tenantId): bool
     {
         if ($newParentId === $unitId) {
@@ -1170,6 +1219,12 @@ final class OrbatApiController
         if ($request->input('clear_chart_image') === '1' && $this->unitRepository->hasTableColumn('units', 'orbat_image_path')) {
             $data['orbat_image_path'] = null;
         }
+
+        $symbol = $this->symbolFields($request);
+        if ($symbol instanceof Response) {
+            return $symbol;
+        }
+        $data += $symbol;
 
         if ($request->input('commander_user_id') !== null) {
             $raw = $request->input('commander_user_id');

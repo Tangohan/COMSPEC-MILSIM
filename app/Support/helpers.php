@@ -1777,6 +1777,30 @@ if (!function_exists('cooperation_mission_orbat_url')) {
     }
 }
 
+if (!function_exists('orbat_page_url')) {
+    /**
+     * Page unique de l’ORBAT, avec au besoin l’unité à afficher (`unit`), sa fenêtre d’édition (`modifier`)
+     * ou une fenêtre de création à ouvrir (`ouvrir` : unite, groupe, equipe, membre). Les valeurs vides sont ignorées.
+     *
+     * @param array<string, scalar|null> $query
+     */
+    function orbat_page_url(array $query = []): string
+    {
+        $allowed = ['unit' => true, 'modifier' => true, 'ouvrir' => true];
+        $clean = [];
+        foreach ($query as $key => $value) {
+            if (isset($allowed[$key]) && $value !== null && $value !== '' && $value !== 0) {
+                $clean[$key] = (string) $value;
+            }
+        }
+        if (isset($clean['ouvrir']) && !in_array($clean['ouvrir'], ['unite', 'groupe', 'equipe', 'membre'], true)) {
+            unset($clean['ouvrir']);
+        }
+
+        return url('orbat') . ($clean !== [] ? '?' . http_build_query($clean) : '');
+    }
+}
+
 if (!function_exists('cooperation_mission_archive_url')) {
     function cooperation_mission_archive_url(string|int $id): string
     {

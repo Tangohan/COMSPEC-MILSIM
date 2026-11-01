@@ -17,7 +17,7 @@ final class GradeDoctrineCascadeAssetTest extends TestCase
         $platform = (string) file_get_contents($root . '/views/admin/system/user_edit.php');
         $repo = (string) file_get_contents($root . '/app/Repositories/GradeRepository.php');
         $users = (string) file_get_contents($root . '/app/Controllers/Admin/Organization/UserAdminController.php');
-        $hub = (string) file_get_contents($root . '/app/Controllers/Admin/Organization/OrganizationDashboardController.php');
+        $hub = (string) file_get_contents($root . '/app/Controllers/Web/PersonnelController.php');
         $platformSvc = (string) file_get_contents($root . '/app/Services/Admin/PlatformUserProfileService.php');
 
         self::assertStringContainsString('data-grade-doctrine', $invite);
