@@ -81,7 +81,7 @@ Goal: a three-man cell in a house, a computer and papers to exploit. Ten minutes
 2. **Let players exploit**: nothing to do, the ACE actions are always there. For the biometric terminal, place the **Issue SEEK terminal** module (category *3. Mission and scenario*) near the players' start, radius 25 m.
 3. **Generate the site**: place the **Create a full SSE site** module (category *1. Sites and objects*) in the centre of the house. Radius 35 m, type *Insurgent cell*, richness *Detailed*. Everything in the radius gets identities, phones, documents and links.
 4. **Choose the record look** (optional): **SSE document presentation** module, template *Field — stained sheet*.
-5. **Play**: in game, ACE menu on a prisoner › **SSE** › *Inspect*, *Search*, *Biometrics › Full capture*; on the computer › *Digital exploitation*; on the crate › *Search*, *Collect*, *Seal*. ACE self menu › **COMSPEC SSE** › *Link chart* to see the network appear.
+5. **Play**: in game, ACE menu on a prisoner › **SSE** › *Search*, *Biometrics › Full capture*; on the computer › *Digital exploitation*; on the crate › *Search*, *Collect*, *Seal*. ACE self menu › **COMSPEC SSE** › *Link chart* to see the network appear.
 
 No-prep variant: in Zeus, **COMSPEC SSE · Tools › Tutorial: place an exercise here** places a full cell ready to exploit.
 
@@ -338,7 +338,7 @@ Items from other mods are accepted as substitutes when *Accept items from other 
 
 ## 11. Player actions (ACE menu)
 
-**On a person** (Windows key › SSE): Inspect (5 s), Photograph (3 s, camera), Search (5 s), Mark as exploited, Read documents (6 s), **Open SSE terminal (files)**, Read dog tag (with ACE), Deepen exploitation, SSE timeline.
+**On a person** (Windows key › SSE): Photograph (3 s, camera), Search (5 s), Mark as exploited, Read documents (6 s), **Open SSE terminal (files)**, Read dog tag (with ACE), Deepen exploitation, SSE timeline.
 **Biometrics** sub-menu: Open SEEK II, Fingerprints (8 s), Iris (5 s), Face photo (3 s), DNA (12 s), Full capture (25 s), Identify (8 s).
 **Digital exploitation** sub-menu: identify device, contacts, messages, calls, photos, coordinates, full extraction, system info, users, documents, browser, mail, connected devices, credentials, collect a USB/SD device.
 
@@ -355,7 +355,7 @@ Items from other mods are accepted as substitutes when *Accept items from other 
 Escape › Options › Addon Options › **COMSPEC SSE**:
 
 - **Equipment**: require SSE equipment, accept items from other mods, extra equipment aliases.
-- **Durations**: inspect, searches, photo, fingerprints, phone, computer.
+- **Durations**: searches, photo, fingerprints, phone, computer.
 - **Generation**: useless data probability, false lead probability.
 - **Network**: mission identifier, **SSE case reference**, map identifier, prefer the COMSPEC extension.
 - **Intel**: training mode, operator level, automatic triage and pivot.

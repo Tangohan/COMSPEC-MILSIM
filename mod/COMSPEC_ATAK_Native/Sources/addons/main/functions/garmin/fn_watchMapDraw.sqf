@@ -1,6 +1,6 @@
 /*
     Carte de la montre : mon point et les alliés du suivi, avec les mêmes couleurs et les mêmes filtres que la carte
-    du téléphone. L'altitude est mise à 0 avant le dessin : un point qui garde sa hauteur est placé hors du cadran.
+    du téléphone (filtres appliqués à la source par fn_localDataRefresh). L'altitude est mise à 0 avant le dessin : un point qui garde sa hauteur est placé hors du cadran.
     Params : [contrôle carte]
 */
 params ["_mc"];
@@ -46,7 +46,6 @@ if (_wm isNotEqualTo []) then {
     private _e = _y;
     if (_e getOrDefault ["self", false]) then { continue };
     if ((_e getOrDefault ["affiliation", ""]) isNotEqualTo "friend") then { continue };
-    if !([_e] call comspec_atak_native_fnc_bftFilter) then { continue };
     private _p = [_e getOrDefault ["position", []]] call _flat;
     if (_p isEqualTo []) then { continue };
     private _a = 1;

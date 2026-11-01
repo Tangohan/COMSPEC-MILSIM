@@ -5,11 +5,12 @@ params [["_autostart", false, [true]]];
 if (!hasInterface) exitWith {};
 
 disableSerialization;
+// Ouverture déjà en cours : sortie de la fonction (un exitWith dans le else ne quittait que le bloc).
+if (missionNamespace getVariable ["COMSPEC_TheaterSurveyOpening", false]) exitWith {};
 
 if (!isNull (uiNamespace getVariable ["COMSPEC_TheaterSurvey_Display", displayNull])) then {
     [] call comspec_overwatch_connect_fnc_theaterSurveyRefresh;
 } else {
-    if (missionNamespace getVariable ["COMSPEC_TheaterSurveyOpening", false]) exitWith {};
     missionNamespace setVariable ["COMSPEC_TheaterSurveyOpening", true, false];
 
     private _parent = displayNull;
@@ -39,6 +40,7 @@ if (!isNull (uiNamespace getVariable ["COMSPEC_TheaterSurvey_Display", displayNu
     uiNamespace setVariable ["COMSPEC_TheaterSurvey_Display", _disp];
 };
 
-if (_autostart) then {
+// Pas de relevé sans fenêtre pour le suivre (ouverture ratée).
+if (_autostart && {!isNull (uiNamespace getVariable ["COMSPEC_TheaterSurvey_Display", displayNull])}) then {
     [] call comspec_overwatch_connect_fnc_sampleTheater;
 };

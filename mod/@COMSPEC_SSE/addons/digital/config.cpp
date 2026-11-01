@@ -28,19 +28,6 @@ class CfgFunctions {
             class initDigitalACE {};
             class exploitDevice {};
             class exploitComputer {};
-            class extractContacts {};
-            class extractMessages {};
-            class extractCalls {};
-            class extractPhotos {};
-            class extractLocations {};
-            class extractFull {};
-            class extractSystemInfo {};
-            class extractUsers {};
-            class extractFiles {};
-            class extractBrowser {};
-            class extractMail {};
-            class extractUsbHistory {};
-            class extractCredentials {};
             class getDeviceSummary {};
             class getComputerSummary {};
             class generateUSB {};
@@ -48,11 +35,5 @@ class CfgFunctions {
             class revealDigitalFog {};
             class openDigitalPanel {};
         };
-    };
-};
-
-class Extended_PostInit_EventHandlers {
-    class comspec_sse_digital {
-        clientInit = "call compile preprocessFileLineNumbers 'z\comspec_sse\addons\digital\XEH_postInitClient.sqf'";
     };
 };

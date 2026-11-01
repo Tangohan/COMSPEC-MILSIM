@@ -173,7 +173,10 @@ switch (_mode) do {
                     _nodes pushBack [_key, _cs select [0, 28], [round (_pos select 0), round (_pos select 1)], round _dir, _fr, _kind, _isAi, groupId group _u, 1];
                 };
             } forEach allUnits;
-            missionNamespace setVariable [format ["COMSPEC_ATAK_TocFeed_%1", _side], [_now, _nodes, +(COMSPEC_ATAK_TocEvents getOrDefault [_side, []]), [_jam, _relays, _nP, _nAi]], true];
+            // Envoyé aux seuls joueurs du camp (seuls lecteurs : fn_tocScreen / fn_tocLaptop), pas de file JIP ; l'hôte lit la valeur locale.
+            private _var = format ["COMSPEC_ATAK_TocFeed_%1", _side];
+            missionNamespace setVariable [_var, [_now, _nodes, +(COMSPEC_ATAK_TocEvents getOrDefault [_side, []]), [_jam, _relays, _nP, _nAi]]];
+            { (owner _x) publicVariableClient _var; } forEach (allPlayers select { !local _x && {(str side group _x) isEqualTo _side} });
         } forEach _sides;
         // Ménage : unités disparues.
         if ((count COMSPEC_ATAK_TocDev) > 600) then { COMSPEC_ATAK_TocDev = createHashMap; COMSPEC_ATAK_TocLast = createHashMap; };

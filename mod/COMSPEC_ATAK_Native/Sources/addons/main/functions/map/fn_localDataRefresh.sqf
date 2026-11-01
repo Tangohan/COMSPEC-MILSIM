@@ -222,7 +222,7 @@ private _friendMeta = [];
 // Les marqueurs de la mission sont déjà dessinés par la carte Arma : on les garde pour la sélection
 // et l'inspecteur (local = true) et on n'ajoute que les marqueurs Athena absents du jeu.
 // Seuls les marqueurs changés sont relus (carnet COMSPEC_ATAK_MkDirtyLd tenu par les EH MarkerCreated / Deleted /
-// Updated, XEH_postInitClient) ; tous au premier passage et toutes les 30 s. Avant, un seul marqueur déplacé (piste
+// Updated, XEH_postInitClient) ; tous au premier passage et toutes les 5 min. Avant, un seul marqueur déplacé (piste
 // Athena redessinée par Overwatch, marqueur suivi) faisait refaire une table par marqueur de la mission, puis comparer
 // chaque marqueur Athena à chaque marqueur du jeu : la saccade régulière, carte ouverte ou téléphone porté.
 private _mkRemote = _data getOrDefault ["remoteMarkers",createHashMap];
@@ -242,7 +242,7 @@ private _entry = {
 private _local = createHashMap;
 if (_full) then {
     { _local set [_x, _x call _entry]; } forEach allMapMarkers;
-    _mk = [diag_tickTime + 30, _local, _remRev, (_mk param [3, 0]) + 1];
+    _mk = [diag_tickTime + 300, _local, _remRev, (_mk param [3, 0]) + 1];
 } else {
     _local = _mk select 1;
     { if ((markerShape _x) isEqualTo "") then { _local deleteAt _x; } else { _local set [_x, _x call _entry]; }; } forEach (keys _dirty);

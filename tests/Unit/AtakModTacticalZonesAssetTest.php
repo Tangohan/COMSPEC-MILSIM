@@ -15,9 +15,6 @@ final class AtakModTacticalZonesAssetTest extends TestCase
         $poll = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_pollTacticalZones.sqf'
         );
-        $check = (string) file_get_contents(
-            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_checkPlayerInDangerZone.sqf'
-        );
         $warn = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_warnDangerZoneEntry.sqf'
         );
@@ -44,7 +41,7 @@ final class AtakModTacticalZonesAssetTest extends TestCase
         self::assertStringContainsString('DANGER_ZONE', $poll);
         self::assertStringContainsString('NO_GO_AREA', $poll);
         self::assertStringContainsString('_shouldWarn', $poll);
-        self::assertStringContainsString('inPolygon', $check);
+        self::assertStringContainsString('inPolygon', $poll);
         self::assertStringContainsString('CheckZonePosition', $warn);
         self::assertStringContainsString('pollTacticalZones', $loops);
         self::assertStringContainsString('class pollTacticalZones {};', $cfg);

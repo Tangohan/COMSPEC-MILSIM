@@ -54,17 +54,6 @@
 ] call comspec_sse_fnc_addSetting;
 
 [
-    "comspec_sse_timeInspect",
-    "SLIDER",
-    ["Durée : inspection (s)", "Durée de la barre de progression pour inspecter."],
-    ["COMSPEC SSE", "Durées"],
-    [1, 30, 5, 0],
-    1,
-    {},
-    true
-] call comspec_sse_fnc_addSetting;
-
-[
     "comspec_sse_timeSearchQuick",
     "SLIDER",
     ["Durée : fouille rapide (s)", ""],
@@ -81,17 +70,6 @@
     ["Durée : fouille complète (s)", ""],
     ["COMSPEC SSE", "Durées"],
     [5, 120, 15, 0],
-    1,
-    {},
-    true
-] call comspec_sse_fnc_addSetting;
-
-[
-    "comspec_sse_timePhoto",
-    "SLIDER",
-    ["Durée : photo (s)", ""],
-    ["COMSPEC SSE", "Durées"],
-    [1, 30, 3, 0],
     1,
     {},
     true

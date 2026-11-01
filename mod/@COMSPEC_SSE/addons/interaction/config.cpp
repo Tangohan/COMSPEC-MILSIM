@@ -33,8 +33,6 @@ class CfgFunctions {
             class acePadAction {};
             class aceWrapMenuChildren {};
             class canInspect {};
-            class doInspect {};
-            class doPhotograph {};
             class doSearch {};
             class doCollect {};
             class doMarkExploited {};
@@ -43,7 +41,6 @@ class CfgFunctions {
             class equipSseKit {};
             class addJournalEntry {};
             class getJournal {};
-            class openJournal {};
             class progressAction {};
             class kitUse {};
             class kitActions {};

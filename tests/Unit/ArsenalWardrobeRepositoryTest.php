@@ -190,10 +190,9 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         );
         self::assertStringContainsString('syncwardrobe', $outbox);
         self::assertStringNotContainsString('["INFO", "Outbox"', $outbox);
-        $pause = (string) file_get_contents(
+        self::assertFileDoesNotExist(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_pauseManagerShow.sqf'
         );
-        self::assertStringNotContainsString('pause-open', $pause);
         $tx = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_logTransmission.sqf'
         );

@@ -1100,7 +1100,7 @@ switch (_act) do {
         if (_page isEqualTo "MAP") then {
             // Téléphone rangé : le suivi n'est plus alimenté. La carte de la montre le relit elle-même.
             private _phone = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["display", displayNull];
-            if (isNull _phone && {diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_WatchBftAt", -1]) > 0.5}) then {
+            if (isNull _phone && {diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_WatchBftAt", -1]) >= 1}) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_WatchBftAt", diag_tickTime];
                 [] call comspec_atak_native_fnc_localDataRefresh;
             };

@@ -6,6 +6,9 @@
 private _theme = missionNamespace getVariable ["comspec_overwatch_ecoti_theme", "nvg"];
 if (!(_theme isEqualType "")) then { _theme = "nvg"; };
 _theme = toLower _theme;
+// Palette figée par thème (appelée par chaque pastille / halo en Draw3D) ; lecteurs : copie avant set.
+private _memo = missionNamespace getVariable ["COMSPEC_EcotiThemeMemo", createHashMap];
+if (_theme in _memo) exitWith { _memo get _theme };
 
 private _allies = [0.55, 1, 0.85, 1];
 private _vehicles = [0.55, 0.9, 1, 1];
@@ -71,7 +74,7 @@ switch (_theme) do {
     };
 };
 
-createHashMapFromArray [
+private _res = createHashMapFromArray [
     ["allies", _allies],
     ["vehicles", _vehicles],
     ["outline", _outline],
@@ -81,4 +84,7 @@ createHashMapFromArray [
     ["badge", _badge],
     ["glow", _glow],
     ["thermal", _thermal]
-]
+];
+_memo set [_theme, _res];
+missionNamespace setVariable ["COMSPEC_EcotiThemeMemo", _memo];
+_res

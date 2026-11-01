@@ -192,18 +192,27 @@ switch (_op) do {
 };
 if (!_changed) exitWith { false };
 // 4e champ : UID de l'auteur de la modification, qui l'envoie au site (fn_planWeb).
+// Ce qui a changé : historique de l'auteur, et seule chose envoyée aux autres pour un trait (plan du camp).
+([objNull, "diff", [_old, _items]] call comspec_atak_native_fnc_planServer) params ["_before", "_after"];
 if (_room isEqualTo "") then {
     // Plan du camp : envoyé aux joueurs connectés, hors file JIP (l'arrivant le reçoit par comspec_atak_native_syncReq).
     // Diffusé en public, il réécrivait une grosse variable JIP à chaque trait. Tous les joueurs le reçoivent, comme avant :
     // un filtre par camp laissait un plan périmé à qui changeait de camp ou était mort au moment du trait.
     missionNamespace setVariable [_var, [_rev + 1, _items, _name, getPlayerUID _by, _creator]];
-    { (owner _x) publicVariableClient _var; } forEach (allPlayers select { !local _x });
+    private _remote = allPlayers select { !local _x };
+    if (_op in ["add", "upd", "del", "undo", "merge"]) then {
+        // Ajouts en fin de liste, remplacements sur place : le client refait la même liste (planPatch, XEH_preInit) ;
+        // révision manquée -> il redemande le plan entier (planFull). Le plan complet ne part plus à chaque trait.
+        private _afterIds = _after apply { _x select 0 };
+        private _delIds = (_before apply { _x select 0 }) select { !(_x in _afterIds) };
+        ["comspec_atak_native_planPatch", [_var, _rev, _delIds, _after, _name, getPlayerUID _by, _creator], _remote] call CBA_fnc_targetEvent;
+    } else {
+        { (owner _x) publicVariableClient _var; } forEach _remote;
+    };
 } else {
     // Salle : ouverte à tous les camps et sans liste de membres côté serveur, elle reste publique.
     missionNamespace setVariable [_var, [_rev + 1, _items, _name, getPlayerUID _by, _creator], true];
 };
-// Historique de l'auteur : ce qui a changé, pour ANNULER / RÉTABLIR (rien de lourd si rien n'a bougé).
-([objNull, "diff", [_old, _items]] call comspec_atak_native_fnc_planServer) params ["_before", "_after"];
 if ((count _before) + (count _after) > 0) then {
     ["comspec_atak_native_planDiff", [_tag, _room, _before, _after], _by] call CBA_fnc_targetEvent;
 };

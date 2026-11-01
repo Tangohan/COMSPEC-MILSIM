@@ -9,17 +9,17 @@ params ["_map", ["_cursor", []]];
 private _now = diag_tickTime;
 // Traits (POLYLINE) connus : nom -> style ([] tant que sa variable de style n'est pas arrivée). Tenus à jour par les
 // marqueurs changés (EH, carnet COMSPEC_ATAK_MkDirtySk) ; tous les marqueurs ne sont parcourus qu'au premier dessin et
-// toutes les 30 s. Avant : parcours de tous les marqueurs toutes les 2 s, à chaque fois une petite saccade.
+// toutes les 5 min. Avant : parcours de tous les marqueurs toutes les 2 s, à chaque fois une petite saccade.
 private _known = missionNamespace getVariable ["COMSPEC_ATAK_SkKnown", createHashMap];
 private _dirty = missionNamespace getVariable ["COMSPEC_ATAK_MkDirtySk", createHashMap];
 private _styleOf = { missionNamespace getVariable [format ["COMSPEC_ATAK_SK_%1", _this regexReplace ["[^A-Za-z0-9]", "_"]], []] };
 private _list = missionNamespace getVariable ["COMSPEC_ATAK_SkList", []];
 private _rebuild = false;
 // Points et boîte englobante de chaque trait, gardés jusqu'à ce que le marqueur change (carnet MkDirtySk) ou jusqu'au
-// relevé complet de 30 s (avant : polyligne recopiée et comparée en entier à chaque image, pour chaque trait).
+// relevé complet de 5 min (avant : polyligne recopiée et comparée en entier à chaque image, pour chaque trait).
 private _geo = missionNamespace getVariable ["COMSPEC_ATAK_SkGeo", createHashMap];
 if (_now > (missionNamespace getVariable ["COMSPEC_ATAK_SkFull", -1]) || {"" in _dirty}) then {
-    missionNamespace setVariable ["COMSPEC_ATAK_SkFull", _now + 30];
+    missionNamespace setVariable ["COMSPEC_ATAK_SkFull", _now + 300];
     missionNamespace setVariable ["COMSPEC_ATAK_MkDirtySk", createHashMap];
     _geo = createHashMap;
     _known = createHashMap;
