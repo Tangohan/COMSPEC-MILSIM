@@ -350,6 +350,8 @@ return function (Router $router) {
     $router->get('/retour-demonstration', [DemoNdaController::class, 'feedbackForm']);
     $router->post('/retour-demonstration', [DemoNdaController::class, 'feedbackSubmit']);
     // Communautés multi-tenant (slug) + Stripe (sans auth)
+    // Page publique de C.V. du joueur (opt-in, sans connexion ; 404 si fermée).
+    $router->get('/joueur/{slug}', [\App\Controllers\Web\PublicPlayerCvController::class, 'show']);
     $router->get('/c/{slug}/avis/{avis}', [CommunityController::class, 'recruitmentOpeningShow']);
     $router->get('/c/{slug}', [CommunityController::class, 'show']);
     $router->get('/c/{slug}/unite/{unitSlug}', [CommunityController::class, 'showUnit']);
@@ -586,6 +588,8 @@ return function (Router $router) {
     $router->get('/formations/creer', [TrainingWizardController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account/acces', [AccountController::class, 'access'], [AuthMiddleware::class]);
+    $router->get('/account/page-publique', [\App\Controllers\Web\PublicPlayerCvController::class, 'settings'], [AuthMiddleware::class]);
+    $router->post('/account/page-publique', [\App\Controllers\Web\PublicPlayerCvController::class, 'settings'], [AuthMiddleware::class]);
     // Rétrospective annuelle du joueur (stories, cartes à partager) et bilan de l'unité (formules payantes).
     $router->get('/retrospective', [\App\Controllers\Web\YearReviewController::class, 'latest'], [AuthMiddleware::class]);
     $router->get('/retrospective/{year}', [\App\Controllers\Web\YearReviewController::class, 'show'], [AuthMiddleware::class]);

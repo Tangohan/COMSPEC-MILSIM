@@ -65,6 +65,7 @@ class AccountController
             'content' => $content,
             'title' => $title,
             'accountHubPage' => true,
+            'accountPublicCvUrl' => PublicPlayerCvController::activeUrlForUser((int) (Session::get('user_id') ?? 0)),
         ], $data));
     }
 
