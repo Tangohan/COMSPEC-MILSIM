@@ -1211,3 +1211,26 @@ Heroicons (via Iconify)	identique en anglais	config/cdn_libraries.php
 Motion / hero (GSAP)	identique en anglais	config/cdn_libraries.php
 Navigation & dashboard (guide)	identique en anglais	config/navigation.php
 Radio / satcom	identique en anglais	config/sse_case_presets.php
+En route	identique en anglais	public/assets/js/atak-medevac.js
+cTab - symbole se	extraction tronquée	public/assets/js/arma-marker-library-index.js
+contribuer de maniere significative	mots-clés recherche	public/assets/js/community-enlistment.js
+en conclusion	mots-clés recherche	public/assets/js/community-enlistment.js
+&edit=en	paramètre d'URL	views/academy/studio.php
+/nouveau?mission=	chemin d'URL	views/admin/aar_reports/index.php
+?jours=	paramètre d'URL	views/admin/atak/screen_time.php
+back-office/atak/temps-ecran?jours=	chemin d'URL	views/admin/atak/screen_time.php
+back-office/atak/escouades?jours=	chemin d'URL	views/admin/atak/squads.php
+back-office/atak/operateurs?statut=tous	chemin d'URL	views/admin/atak_operators/profile.php
+Joue en	texte non affiché (vue anglaise déjà gérée)	views/admin/effectifs_workspace/roster.php
+?vue=calendrier&mois=	paramètre d'URL	views/admin/member_situation/evenements.php
+/^\[MISE EN ATTENTE\]\s*/u	expression régulière	views/admin/recruitments/show.php
+[MISE EN ATTENTE]	marqueur interne	views/admin/recruitments/show.php
+?tout=1	paramètre d'URL	views/admin/system/name_filter.php
+atak/sse/toiles/nouveau?case=	chemin d'URL	views/atak/sse/case_show.php
+atak/sse/documents/nouveau?type=	chemin d'URL	views/atak/sse/documents.php
+atak/sse/dossiers/nouveau?parent=	chemin d'URL	views/atak/sse/folder_show.php
+atak/sse/objets/nouveau?type=	chemin d'URL	views/atak/sse/object_registry.php
+atak/sse/chronologie?objet=person&id=	chemin d'URL	views/atak/sse/person_show.php
+?vue=tous	paramètre d'URL	views/hub/board.php
+?nouveau=1	paramètre d'URL	views/messages/index.php
+traduire-site/en?f=blank	chemin d'URL	views/site/site_translate.php
