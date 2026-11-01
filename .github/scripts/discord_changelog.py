@@ -187,6 +187,55 @@ def kind_of(declared: str | None, title: str) -> str:
 
 
 # --------------------------------------------------------------------------
+# Composants du pack : chaque pièce, sa version et à quoi elle sert (lu dans les sources)
+# --------------------------------------------------------------------------
+COMPONENT_FILES = {
+    "atak": "mod/COMSPEC_ATAK_Native/Sources/addons/main/script_component.hpp",
+    "connect": "mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp",
+    "owmain": "mod/UptoDate/Sources/comspec-overwatch-addons/main/config.cpp",
+}
+COMPONENT_TEXT = [
+    ("atak", "📱 Téléphone ATAK", "le téléphone en jeu : carte, messages, apps · the in-game phone"),
+    ("link", "🔗 COMSPEC Link", "la liaison avec Athena (DLL) · the link to Athena (DLL)"),
+    ("connect", "🛰️ Overwatch connect", "synchro, arsenal, menus ACE · sync, arsenal, ACE menus"),
+    ("owmain", "🧩 Overwatch main", "socle commun · shared base"),
+]
+
+
+def _read(rel: str) -> str:
+    try:
+        with open(os.path.join(ROOT, rel), encoding="utf-8", errors="replace") as fh:
+            return fh.read()
+    except OSError:
+        return ""
+
+
+def component_versions() -> dict:
+    """Versions lues dans les sources du dépôt ; une pièce introuvable est simplement omise."""
+    out = {}
+    hpp = _read(COMPONENT_FILES["atak"])
+    m = re.search(r'#define\s+VERSION_NAME\s+"([^"]+)"', hpp)
+    if m:
+        out["atak"] = m.group(1)
+    m = re.search(r'#define\s+LINK_VERSION_STR\s+"([^"]+)"', hpp)
+    if m:
+        out["link"] = m.group(1)
+    for key in ("connect", "owmain"):
+        m = re.search(r'versionStr\s*=\s*"([^"]+)"', _read(COMPONENT_FILES[key]))
+        if m:
+            out[key] = m.group(1)
+    return out
+
+
+def components_field(versions: dict | None = None) -> dict | None:
+    versions = component_versions() if versions is None else versions
+    lines = [f"**{label} {versions[key]}** — {what}" for key, label, what in COMPONENT_TEXT if versions.get(key)]
+    if not lines:
+        return None
+    return {"name": "Composants du pack · Pack components", "value": "\n".join(lines)[:1024], "inline": False}
+
+
+# --------------------------------------------------------------------------
 # Construction de la carte
 # --------------------------------------------------------------------------
 def card(summary: dict, heading: str, when: str | None) -> dict:
@@ -206,6 +255,11 @@ def card(summary: dict, heading: str, when: str | None) -> dict:
     product = summary["product"] or products_of(heading)
     if product:
         fields.append({"name": "Version", "value": product, "inline": True})
+    # Annonce du mod : chaque composant du pack et sa version.
+    if re.search(r"ATAK|COMSPEC Link|Overwatch", heading, re.I):
+        comp = components_field()
+        if comp:
+            fields.append(comp)
 
     embed = {
         "title": f"{emoji} {summary['fr']['title']}"[:256],
@@ -322,6 +376,35 @@ def build(event_name: str, payload: dict) -> dict | None:
     return card(summary, heading, when)
 
 
+def steam_published(version: str, role_id: str) -> dict:
+    """Annonce « disponible sur Steam » avec ping des testeurs (rôle Discord) et appel aux retours."""
+    found = find_summary(version, "")
+    fields = []
+    comp = components_field()
+    if comp:
+        fields.append(comp)
+    desc = ""
+    if found:
+        desc = "\n".join(f"• {b}" for b in found[0]["fr"]["bullets"][:MAX_BULLETS])
+    desc = (desc + "\n\n**Testeurs : mettez à jour, quittez Arma complètement, relancez, puis donnez vos retours ici "
+            "(ce qui marche, ce qui casse, captures et journal).**\n"
+            "Testers: update, fully restart Arma, then post your feedback here.").strip()
+    embed = {
+        "title": f"🎮 Disponible sur Steam · Live on Steam — {version}"[:256],
+        "description": desc[:4000],
+        "color": 0x6B7F3A,
+        "fields": fields,
+        "footer": {"text": "COMSPEC · Steam Workshop"},
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    }
+    role_id = re.sub(r"\D", "", role_id or "")
+    msg = {"username": "COMSPEC Releases", "embeds": [embed],
+           "allowed_mentions": {"parse": [], "roles": [role_id] if role_id else []}}
+    if role_id:
+        msg["content"] = f"<@&{role_id}> nouvelle version à tester · new build to test"
+    return msg
+
+
 def post(webhook: str, message: dict) -> None:
     req = urllib.request.Request(
         webhook, data=json.dumps(message).encode("utf-8"),
@@ -343,7 +426,21 @@ def main() -> int:
     ap.add_argument("--preview", metavar="VERSION", help="affiche la carte de cette version de CHANGELOG-ATAK.md")
     ap.add_argument("--event", default=os.environ.get("GITHUB_EVENT_NAME", ""))
     ap.add_argument("--payload", default=os.environ.get("GITHUB_EVENT_PATH", ""))
+    ap.add_argument("--steam-published", metavar="VERSION",
+                    help="annonce la publication Steam de cette version et pingue les testeurs (DISCORD_TESTERS_ROLE_ID)")
     args = ap.parse_args()
+
+    if args.steam_published:
+        message = steam_published(args.steam_published, os.environ.get("DISCORD_TESTERS_ROLE_ID", ""))
+        if args.dry_run:
+            print(json.dumps(message, ensure_ascii=False, indent=2))
+            return 0
+        webhook = os.environ.get("DISCORD_RELEASES_WEBHOOK", "").strip().strip("﻿​‌‍⁠‎‏").strip()
+        if not webhook:
+            print("Secret DISCORD_RELEASES_WEBHOOK absent : aucun message envoyé.")
+            return 0
+        post(webhook, message)
+        return 0
 
     if args.preview:
         found = find_summary(args.preview, "")
