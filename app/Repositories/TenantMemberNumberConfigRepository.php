@@ -208,6 +208,32 @@ final class TenantMemberNumberConfigRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Derniers changements de matricule dans la communauté, avec le nom du membre et de l’auteur.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listRecentAuditForTenant(int $tenantId, int $limit = 15): array
+    {
+        if (!$this->auditSchemaReady() || $tenantId < 1) {
+            return [];
+        }
+        $limit = max(1, min(100, $limit));
+        $stmt = $this->pdo->prepare(
+            'SELECT a.id, a.user_id, a.old_value, a.new_value, a.reason, a.source, a.created_at, a.actor_user_id,
+                    u.display_name AS member_name, u.callsign AS member_callsign, act.display_name AS actor_name
+             FROM tenant_member_number_audit a
+             LEFT JOIN users u ON u.id = a.user_id
+             LEFT JOIN users act ON act.id = a.actor_user_id
+             WHERE a.tenant_id = ?
+             ORDER BY a.created_at DESC, a.id DESC
+             LIMIT ' . $limit
+        );
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     /** @return array<string, mixed> */
     private function defaults(int $tenantId): array
     {

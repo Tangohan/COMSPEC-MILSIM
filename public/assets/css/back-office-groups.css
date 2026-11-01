@@ -1,4 +1,4 @@
-/* Groupes (back-office/groups) : liste en cartes, fiche, formulaire avec aperçu de la vitrine. */
+/* Groupes et équipes (back-office/groups, back-office/teams) : liste en cartes, fiche, formulaire avec aperçu de la vitrine. */
 
 .bo-grp { display: flex; flex-direction: column; gap: 18px; }
 
@@ -14,6 +14,17 @@
   border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer;
 }
 .bo-grp__chip[aria-pressed="true"] { background: var(--ath-ink, #0f172a); border-color: var(--ath-ink, #0f172a); color: #fff; }
+
+.bo-grp__sort { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ath-muted, #64748b); }
+.bo-grp__sort select {
+  padding: 6px 10px; border-radius: 10px; border: 1px solid var(--ath-line, #d5dce1);
+  background: var(--ath-surface, #fff); color: var(--ath-ink, #0f172a); font-size: 13px;
+}
+.bo-grp-card[hidden] { display: none; }
+.bo-grp-card__nolead { color: var(--ath-warn, #a16207); }
+.bo-grp-fill { height: 6px; border-radius: 999px; background: var(--ath-line-soft, #e8ecee); overflow: hidden; }
+.bo-grp-fill__bar { display: block; height: 100%; border-radius: inherit; background: var(--grp-accent, #1e4f80); }
+.bo-grp-fill__bar.is-full { background: #0b8a5c; }
 
 .bo-grp__grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 
@@ -157,6 +168,7 @@ html[data-bo-theme="dark"] .bo-grp-state--ok { background: rgba(16,185,129,.16);
 html[data-bo-theme="dark"] .bo-grp-state--todo { background: rgba(245,158,11,.16); color: #fcd34d; }
 html[data-bo-theme="dark"] .bo-grp-state--off { background: rgba(148,163,184,.16); color: #cbd5e1; }
 html[data-bo-theme="dark"] .bo-grp-card__blurb--empty { color: #fcd34d; }
+html[data-bo-theme="dark"] .bo-grp-card__nolead { color: #fcd34d; }
 html[data-bo-theme="dark"] .bo-grp-btn-danger { background: rgba(244,63,94,.12); border-color: rgba(244,63,94,.4); color: #fda4af; }
 html[data-bo-theme="dark"] .bo-grp__chip[aria-pressed="true"] { background: #e2e8f0; color: #0f172a; border-color: #e2e8f0; }
 html[data-bo-theme="dark"] .bo-grp-fieldset__num { background: #e2e8f0; color: #0f172a; }

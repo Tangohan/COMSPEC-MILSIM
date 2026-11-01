@@ -10,12 +10,14 @@ declare(strict_types=1);
  * @var array<string, mixed>|null $parent
  */
 
-$group = $group ?? null;
+$group = $group ?? ($team ?? null);
+$ui = require __DIR__ . '/_kind.php';
+$base = (string) $ui['base'];
 $members = array_values(is_array($members ?? null) ? $members : []);
 $commander = $commander ?? null;
 $parent = is_array($parent ?? null) ? $parent : null;
 if (!$group) {
-    echo '<p>Groupe introuvable.</p>';
+    echo '<p>' . htmlspecialchars((string) $ui['One'], ENT_QUOTES, 'UTF-8') . ' introuvable.</p>';
     return;
 }
 $gid = (int) $group['id'];
@@ -66,9 +68,9 @@ $error = \App\Core\Session::get('error');
                 </p>
             </div>
             <div class="bo-grp-hero__actions">
-                <a href="<?= $h(url('back-office/groups')) ?>" class="ath-btn">Tous les groupes</a>
-                <a href="<?= $h(url('back-office/groups/' . $gid . '/edit')) ?>" class="ath-btn ath-btn--solid">Modifier</a>
-                <form method="post" action="<?= $h(url('back-office/groups/' . $gid . '/delete')) ?>" onsubmit="return confirm('Supprimer ce groupe ? Les membres restent dans la communauté, seule leur affectation à ce groupe disparaît.');">
+                <a href="<?= $h(url($base)) ?>" class="ath-btn"><?= $h((string) $ui['all']) ?></a>
+                <a href="<?= $h(url($base . '/' . $gid . '/edit')) ?>" class="ath-btn ath-btn--solid">Modifier</a>
+                <form method="post" action="<?= $h(url($base . '/' . $gid . '/delete')) ?>" data-grp-confirm="<?= $h((string) $ui['deleteConfirm']) ?>">
                     <?= \App\Core\Csrf::field() ?>
                     <button type="submit" class="bo-grp-btn-danger">Supprimer</button>
                 </form>
@@ -85,7 +87,7 @@ $error = \App\Core\Session::get('error');
         <div class="bo-grp-stat">
             <div class="bo-grp-stat__label">Responsable</div>
             <div class="bo-grp-stat__value"><?= $commander ? $h($nameOf($commander)) : '—' ?></div>
-            <div class="bo-grp-stat__note"><?= $commander ? 'Chef du groupe' : 'À désigner dans « Modifier »' ?></div>
+            <div class="bo-grp-stat__note"><?= $commander ? $h((string) $ui['lead']) : 'À désigner dans « Modifier »' ?></div>
         </div>
         <div class="bo-grp-stat">
             <div class="bo-grp-stat__label">Adresse courte</div>
@@ -102,7 +104,7 @@ $error = \App\Core\Session::get('error');
             </div>
             <div class="bo-grp-panel__body">
                 <?php if ($members === []): ?>
-                <p class="bo-grp-note" style="margin:0;">Personne n’est encore affecté à ce groupe. L’affectation se fait dans le tableur des effectifs (colonne Affectation).</p>
+                <p class="bo-grp-note" style="margin:0;">Personne n’est encore affecté à <?= $h((string) $ui['this']) ?>. L’affectation se fait dans le tableur des effectifs (colonne Affectation).</p>
                 <?php else: ?>
                 <ul class="bo-grp-members">
                     <?php foreach ($members as $m):
@@ -136,3 +138,8 @@ $error = \App\Core\Session::get('error');
         </aside>
     </div>
 </div>
+<script>
+document.querySelectorAll('[data-grp-confirm]').forEach(function (f) {
+    f.addEventListener('submit', function (e) { if (!window.confirm(f.getAttribute('data-grp-confirm'))) { e.preventDefault(); } });
+});
+</script>

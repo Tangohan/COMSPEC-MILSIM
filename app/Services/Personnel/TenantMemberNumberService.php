@@ -68,6 +68,9 @@ final class TenantMemberNumberService
         if ($pattern === '') {
             $pattern = '{PREFIX}-{NUMBER:4}';
         }
+        if ($mode !== 'free' && !self::patternHasNumber($pattern)) {
+            return ['ok' => false, 'error' => 'Le format doit contenir le numéro de séquence ({NUMBER} ou {NUMBER:4}) pour que chaque matricule généré soit différent.'];
+        }
         $prefix = trim((string) ($data['prefix'] ?? ''));
         if (function_exists('mb_substr')) {
             $prefix = mb_substr($prefix, 0, 40);
@@ -124,6 +127,78 @@ final class TenantMemberNumberService
         $out = trim($out, '-/');
 
         return $out;
+    }
+
+    public static function patternHasNumber(string $pattern): bool
+    {
+        return preg_match('/\{NUMBER(:\d+)?\}/i', $pattern) === 1;
+    }
+
+    /**
+     * Contrôle du registre de la communauté (doublons, trous, format) pour la page Matricules.
+     *
+     * @param list<array{id: int, tenant_member_number?: string|null}> $members
+     * @return array<string, mixed>
+     */
+    public function analyzeRegistry(int $tenantId, array $members): array
+    {
+        $config = $this->schemaReady() ? $this->getConfig($tenantId) : [];
+
+        return \App\Support\MemberNumberAnalysis::analyze(
+            $members,
+            (string) ($config['pattern'] ?? '{PREFIX}-{NUMBER:4}'),
+            (string) ($config['prefix'] ?? ''),
+            $this->resolveTenantSlug($tenantId),
+            (int) ($config['next_sequence'] ?? 1)
+        );
+    }
+
+    /** Valeur du jeton {TENANT} pour l’aperçu du format. */
+    public function tenantToken(int $tenantId): string
+    {
+        return (string) ($this->resolveTenantSlug($tenantId) ?? '');
+    }
+
+    /**
+     * Attribue le prochain matricule à chaque membre listé qui n’en a pas encore.
+     *
+     * @param list<int> $userIds
+     * @return array{assigned: int, failed: int, errors: list<string>}
+     */
+    public function assignNextToMembersWithout(int $tenantId, array $userIds, ?int $actorUserId, int $limit = 200): array
+    {
+        $assigned = 0;
+        $failed = 0;
+        $errors = [];
+        foreach (array_slice(array_values(array_unique(array_map('intval', $userIds))), 0, max(1, $limit)) as $uid) {
+            if ($uid < 1 || $this->getForUser($tenantId, $uid) !== null) {
+                continue;
+            }
+            $r = $this->assignNext($tenantId, $uid, $actorUserId, 'Attribution groupée (back-office)', 'bulk');
+            if (!empty($r['ok'])) {
+                ++$assigned;
+            } else {
+                ++$failed;
+                $errors[] = (string) ($r['error'] ?? 'échec');
+                if (!$this->schemaReady() || empty($this->getConfig($tenantId)['enabled'])) {
+                    break;
+                }
+            }
+        }
+
+        return ['assigned' => $assigned, 'failed' => $failed, 'errors' => array_values(array_unique($errors))];
+    }
+
+    /** Recale la prochaine séquence (jamais en dessous de 1). */
+    public function setNextSequence(int $tenantId, int $next): bool
+    {
+        if (!$this->schemaReady() || $tenantId < 1) {
+            return false;
+        }
+        $config = $this->getConfig($tenantId);
+        $config['next_sequence'] = max(1, $next);
+
+        return $this->configRepo->updateConfig($tenantId, $config);
     }
 
     public function previewNext(int $tenantId): ?string

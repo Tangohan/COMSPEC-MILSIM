@@ -10,6 +10,7 @@ use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\TenantMemberNumberConfigRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Personnel\TenantMemberNumberService;
@@ -49,6 +50,22 @@ final class OrganizationMemberNumberController
         $schemaReady = $this->memberNumbers->schemaReady();
         $config = $schemaReady ? $this->memberNumbers->getConfig($tenantId) : [];
         $preview = $schemaReady ? $this->memberNumbers->previewNext($tenantId) : null;
+        $members = [];
+        $analysis = null;
+        $audit = [];
+        if ($schemaReady) {
+            try {
+                $members = $this->users->listTenantMemberNumbersForTenant($tenantId);
+                $analysis = $this->memberNumbers->analyzeRegistry($tenantId, $members);
+            } catch (\Throwable $e) {
+                error_log('[matricules] registre indisponible : ' . $e->getMessage());
+            }
+            try {
+                $audit = (new TenantMemberNumberConfigRepository())->listRecentAuditForTenant($tenantId, 12);
+            } catch (\Throwable $e) {
+                error_log('[matricules] historique indisponible : ' . $e->getMessage());
+            }
+        }
 
         return Response::view('layout.main', [
             'title' => 'Configuration des matricules',
@@ -63,6 +80,10 @@ final class OrganizationMemberNumberController
             'memberNumberPreview' => $preview,
             'memberNumberModes' => TenantMemberNumberService::MODES,
             'memberNumberCsrf' => Csrf::token(),
+            'memberNumberMembers' => $members,
+            'memberNumberAnalysis' => $analysis,
+            'memberNumberAudit' => $audit,
+            'memberNumberTenantToken' => $schemaReady ? $this->memberNumbers->tenantToken($tenantId) : '',
             'showPortalFooter' => false,
         ]);
     }
@@ -210,6 +231,179 @@ final class OrganizationMemberNumberController
         }
 
         return Response::redirect(url('back-office/organisation/matricules'));
+    }
+
+    /** Export du registre (membres actifs et matricules), réimportable tel quel. */
+    public function exportCsv(Request $request, array $params = []): Response
+    {
+        $guard = $this->guardManage(false);
+        if ($guard instanceof Response) {
+            return $guard;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $members = $this->users->listTenantMemberNumbersForTenant($tenantId);
+        if ((string) $request->query('filtre', '') === 'sans') {
+            $members = array_values(array_filter($members, static fn (array $m): bool => $m['tenant_member_number'] === ''));
+        }
+
+        return (new Response())
+            ->setStatusCode(200)
+            ->header('Content-Type', 'text/csv; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="matricules-' . date('Ymd-Hi') . '.csv"')
+            ->header('Cache-Control', 'private, no-store')
+            ->setBody(self::registryCsv($members));
+    }
+
+    /**
+     * CSV « ; » avec BOM (ouvrable dans Excel), colonnes reconnues par l’import.
+     *
+     * @param list<array{display_name: string, callsign: string, email: string, tenant_member_number: string, athena_identifier: string}> $members
+     */
+    public static function registryCsv(array $members): string
+    {
+        $fh = fopen('php://temp', 'w+b');
+        if ($fh === false) {
+            return '';
+        }
+        fwrite($fh, "\xEF\xBB\xBF");
+        fputcsv($fh, ['nom', 'indicatif', 'email', 'tenant_member_number', 'matricule_plateforme'], ';', '"', '\\');
+        foreach ($members as $m) {
+            fputcsv($fh, array_map(
+                static fn (string $v): string => self::csvSafe($v),
+                [$m['display_name'], $m['callsign'], $m['email'], $m['tenant_member_number'], $m['athena_identifier']]
+            ), ';', '"', '\\');
+        }
+        rewind($fh);
+        $csv = (string) stream_get_contents($fh);
+        fclose($fh);
+
+        return $csv;
+    }
+
+    /** Attribue le prochain matricule à un membre, ou à tous les membres qui n’en ont pas. */
+    public function assignNext(Request $request, array $params = []): Response
+    {
+        $guard = $this->guardManage(true, $request);
+        if ($guard instanceof Response) {
+            return $guard;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $actorId = (int) Session::get('user_id');
+        $config = $this->memberNumbers->getConfig($tenantId);
+        if (empty($config['enabled']) || (string) ($config['mode'] ?? 'free') === 'free') {
+            Session::flash('error', 'La génération demande d’activer les matricules et de choisir le mode automatique ou assisté.');
+
+            return $this->back();
+        }
+
+        $userId = (int) $request->input('user_id', 0);
+        if ($userId > 0) {
+            $r = $this->memberNumbers->assignNext($tenantId, $userId, $actorId, 'Attribution depuis la page Matricules', 'assisted');
+            Session::flash(
+                !empty($r['ok']) ? 'success' : 'error',
+                !empty($r['ok']) ? 'Matricule ' . (string) ($r['value'] ?? '') . ' attribué.' : (string) ($r['error'] ?? 'Attribution impossible.')
+            );
+
+            return $this->back();
+        }
+
+        $without = [];
+        foreach ($this->users->listTenantMemberNumbersForTenant($tenantId) as $m) {
+            if ($m['tenant_member_number'] === '') {
+                $without[] = (int) $m['id'];
+            }
+        }
+        if ($without === []) {
+            Session::flash('success', 'Tous les membres actifs ont déjà un matricule.');
+
+            return $this->back();
+        }
+        $r = $this->memberNumbers->assignNextToMembersWithout($tenantId, $without, $actorId, self::BULK_LIMIT);
+        $msg = $r['assigned'] . ' matricule(s) attribué(s).';
+        $left = count($without) - $r['assigned'] - $r['failed'];
+        if ($left > 0) {
+            $msg .= ' ' . $left . ' membre(s) restent à traiter : relancez l’attribution.';
+        }
+        if ($r['failed'] > 0) {
+            $msg .= ' ' . $r['failed'] . ' échec(s) : ' . implode(' · ', array_slice($r['errors'], 0, 3));
+        }
+        Session::flash($r['assigned'] > 0 || $r['failed'] === 0 ? 'success' : 'error', $msg);
+
+        return $this->back();
+    }
+
+    /** Saisie ou correction du matricule d’un membre (vide = retirer). */
+    public function updateMember(Request $request, array $params = []): Response
+    {
+        $guard = $this->guardManage(true, $request);
+        if ($guard instanceof Response) {
+            return $guard;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $value = trim((string) $request->input('value', ''));
+        $r = $this->memberNumbers->assignManual(
+            $tenantId,
+            (int) $request->input('user_id', 0),
+            $value,
+            (int) Session::get('user_id'),
+            'Correction depuis la page Matricules',
+            'manual'
+        );
+        if (!empty($r['ok'])) {
+            Session::flash('success', $value === '' ? 'Matricule retiré.' : 'Matricule ' . $value . ' enregistré.');
+        } else {
+            Session::flash('error', (string) ($r['error'] ?? 'Enregistrement impossible.'));
+        }
+
+        return $this->back();
+    }
+
+    /** Recale la prochaine séquence juste après le plus grand numéro déjà attribué. */
+    public function realignSequence(Request $request, array $params = []): Response
+    {
+        $guard = $this->guardManage(true, $request);
+        if ($guard instanceof Response) {
+            return $guard;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $analysis = $this->memberNumbers->analyzeRegistry($tenantId, $this->users->listTenantMemberNumbersForTenant($tenantId));
+        $next = (int) ($analysis['suggested_next'] ?? 1);
+        $ok = $this->memberNumbers->setNextSequence($tenantId, $next);
+        Session::flash($ok ? 'success' : 'error', $ok ? 'Prochaine séquence recalée sur ' . $next . '.' : 'Recalage impossible.');
+
+        return $this->back();
+    }
+
+    private const BULK_LIMIT = 200;
+
+    private function guardManage(bool $post, ?Request $request = null): ?Response
+    {
+        if (!$this->authService->check() || !$this->canManage()) {
+            return Response::redirect(url('login'));
+        }
+        if ($post && ($request === null || !Csrf::validate((string) $request->input('_csrf_token')))) {
+            Session::flash('error', 'Session expirée.');
+
+            return $this->back();
+        }
+        if ((int) Session::get('tenant_id') < 1 || !$this->memberNumbers->schemaReady()) {
+            Session::flash('error', 'Module indisponible.');
+
+            return $this->back();
+        }
+
+        return null;
+    }
+
+    private function back(): Response
+    {
+        return Response::redirect(url('back-office/organisation/matricules'));
+    }
+
+    /** Neutralise les formules quand le fichier est ouvert dans un tableur. */
+    private static function csvSafe(string $v): string
+    {
+        return $v !== '' && in_array($v[0], ['=', '+', '-', '@', "\t", "\r"], true) ? "'" . $v : $v;
     }
 
     private function canManage(): bool

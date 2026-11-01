@@ -16,6 +16,7 @@ declare(strict_types=1);
  */
 
 $fg = is_array($formGroup ?? null) ? $formGroup : [];
+$ui = require __DIR__ . '/_kind.php';
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $isEdit = isset($fg['id']);
 $tagsLines = '';
@@ -37,16 +38,16 @@ usort($users, static fn (array $a, array $b): int => strcasecmp($nameOf($a), $na
     <?= \App\Core\Csrf::field() ?>
     <div class="bo-grp-form__col">
         <section class="bo-grp-panel"><div class="bo-grp-panel__body">
-            <fieldset class="bo-grp-fieldset" aria-label="Le groupe">
-                <div class="bo-grp-fieldset__step"><span class="bo-grp-fieldset__num">1</span><span class="bo-grp-fieldset__legend">Le groupe</span></div>
+            <fieldset class="bo-grp-fieldset" aria-label="<?= $h(ucfirst((string) $ui['the'])) ?>">
+                <div class="bo-grp-fieldset__step"><span class="bo-grp-fieldset__num">1</span><span class="bo-grp-fieldset__legend"><?= $h(mb_strtoupper(mb_substr((string) $ui['the'], 0, 1)) . mb_substr((string) $ui['the'], 1)) ?></span></div>
                 <div class="bo-grp-row">
                     <div class="bo-grp-field" style="grid-column: span 2;">
-                        <label for="name">Nom du groupe *</label>
-                        <input type="text" id="name" name="name" required maxlength="190" value="<?= $h((string) ($fg['name'] ?? '')) ?>" placeholder="1er Groupe de Combat" data-grp-in="name">
+                        <label for="name">Nom <?= $ui['kind'] === 'team' ? 'de l’équipe' : 'du groupe' ?> *</label>
+                        <input type="text" id="name" name="name" required maxlength="190" value="<?= $h((string) ($fg['name'] ?? '')) ?>" placeholder="<?= $h((string) $ui['namePh']) ?>" data-grp-in="name">
                     </div>
                     <div class="bo-grp-field">
                         <label for="code">Code court</label>
-                        <input type="text" id="code" name="code" maxlength="20" value="<?= $h((string) ($fg['code'] ?? '')) ?>" placeholder="GC1" data-grp-in="code">
+                        <input type="text" id="code" name="code" maxlength="20" value="<?= $h((string) ($fg['code'] ?? '')) ?>" placeholder="<?= $h((string) $ui['codePh']) ?>" data-grp-in="code">
                         <small>Affiché dans le badge.</small>
                     </div>
                 </div>
@@ -61,7 +62,7 @@ usort($users, static fn (array $a, array $b): int => strcasecmp($nameOf($a), $na
                         </select>
                     </div>
                     <div class="bo-grp-field">
-                        <label for="commander_user_id">Chef de groupe</label>
+                        <label for="commander_user_id"><?= $h((string) $ui['lead']) ?></label>
                         <select id="commander_user_id" name="commander_user_id">
                             <option value="">À désigner plus tard</option>
                             <?php foreach ($users as $u): ?>
@@ -78,12 +79,12 @@ usort($users, static fn (array $a, array $b): int => strcasecmp($nameOf($a), $na
                 <div class="bo-grp-fieldset__step"><span class="bo-grp-fieldset__num">2</span><span class="bo-grp-fieldset__legend">La carte sur la page publique</span></div>
                 <label class="bo-grp-toggle">
                     <input type="checkbox" name="show_on_public_page" value="1" <?= $sop ? 'checked' : '' ?> data-grp-in="visible">
-                    <span><strong>Afficher ce groupe sur la page publique</strong><br><small style="color:var(--ath-muted,#64748b);">Décochez pour une cellule interne.</small></span>
+                    <span><strong><?= $h((string) $ui['publicToggle']) ?></strong><br><small style="color:var(--ath-muted,#64748b);"><?= $h((string) $ui['hiddenHint']) ?></small></span>
                 </label>
                 <div class="bo-grp-field">
                     <label for="public_blurb">Présentation</label>
-                    <textarea id="public_blurb" name="public_blurb" rows="3" maxlength="600" placeholder="Groupe d’assaut de la compagnie, spécialisé dans le combat en zone urbaine." data-grp-in="blurb"><?= $h((string) ($fg['public_blurb'] ?? '')) ?></textarea>
-                    <small>Deux phrases suffisent : le rôle du groupe et ce qu’il cherche.</small>
+                    <textarea id="public_blurb" name="public_blurb" rows="3" maxlength="600" placeholder="<?= $h((string) $ui['blurbPh']) ?>" data-grp-in="blurb"><?= $h((string) ($fg['public_blurb'] ?? '')) ?></textarea>
+                    <small>Deux phrases suffisent : le rôle <?= $ui['kind'] === 'team' ? 'de l’équipe' : 'du groupe' ?> et ce qu’<?= $ui['kind'] === 'team' ? 'elle' : 'il' ?> cherche.</small>
                 </div>
                 <div class="bo-grp-field">
                     <span class="bo-grp-label" id="<?= $h($formIdPrefix) ?>-color-label">Couleur</span>
@@ -115,9 +116,10 @@ usort($users, static fn (array $a, array $b): int => strcasecmp($nameOf($a), $na
 
         <section class="bo-grp-panel"><div class="bo-grp-panel__body">
             <details class="bo-grp-more">
-                <summary>3. Options avancées (type, adresse, ordre, dates)</summary>
+                <summary>3. Options avancées (<?= !empty($ui['typeSelect']) ? 'type, ' : '' ?>adresse, ordre, dates)</summary>
                 <div class="bo-grp-fieldset">
                     <div class="bo-grp-row">
+                        <?php if (!empty($ui['typeSelect'])): ?>
                         <div class="bo-grp-field">
                             <label for="struct_type">Type de structure</label>
                             <select id="struct_type" name="struct_type">
@@ -127,6 +129,7 @@ usort($users, static fn (array $a, array $b): int => strcasecmp($nameOf($a), $na
                             </select>
                             <small>Aligné sur l’ORBAT, modifiable plus tard.</small>
                         </div>
+                        <?php endif; ?>
                         <div class="bo-grp-field">
                             <label for="slug">Adresse courte dans l’URL</label>
                             <input type="text" id="slug" name="slug" value="<?= $h((string) ($fg['slug'] ?? '')) ?>" placeholder="Créée depuis le nom si vide">
@@ -167,11 +170,11 @@ usort($users, static fn (array $a, array $b): int => strcasecmp($nameOf($a), $na
     var hexOk = function (v) { return /^#[0-9a-f]{6}$/i.test(v); };
     function render() {
         var name = q('name').value.trim();
-        el('name').textContent = name || 'Nom du groupe';
+        el('name').textContent = name || <?= json_encode('Nom ' . ($ui['kind'] === 'team' ? 'de l’équipe' : 'du groupe'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?>;
         el('code').textContent = q('code').value.trim();
         var blurb = q('blurb').value.trim();
         var b = el('blurb');
-        b.textContent = blurb || 'Pas encore de présentation : écrivez deux phrases sur le rôle du groupe.';
+        b.textContent = blurb || <?= json_encode((string) $ui['noBlurb'], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?>;
         b.classList.toggle('bo-grp-vitrine__blurb--empty', blurb === '');
         var tags = el('tags');
         tags.textContent = '';
