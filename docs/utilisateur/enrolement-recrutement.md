@@ -22,9 +22,9 @@ Côté candidat, les états usuels sont par exemple :
 
 Vous pouvez suivre l’état depuis le **tableau de bord** ou les notifications, selon la configuration.
 
-## Profils de candidature (préréglages)
+## Profils de candidature (retirés)
 
-Pour accélérer les dépôts répétés, votre compte peut permettre d’enregistrer des **profils de candidature** (préremplissage de champs récurrents). Voir [Connexion et compte](connexion-et-compte.md).
+Les profils de candidature enregistrés sur le compte n’existent plus : chaque candidature se remplit directement dans le formulaire de la communauté. Les candidatures déjà déposées avec un ancien profil restent consultables par le recrutement.
 
 ## Côté staff (recrutement)
 

@@ -136,13 +136,6 @@ $navGroups = [
                 'icon' => '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3"/>',
             ],
             [
-                'key' => 'recruitment',
-                'href' => url('account/recruitment-presets'),
-                'label' => 'Profils de candidature',
-                'hint' => 'Préréglages d’enrôlement',
-                'icon' => '<path d="M9 4h6l1 2h3v14H5V6h3z"/><path d="M9 12h6M9 16h4"/>',
-            ],
-            [
                 'key' => 'public_cv',
                 'href' => url('account/page-publique'),
                 'label' => 'Ma page publique',

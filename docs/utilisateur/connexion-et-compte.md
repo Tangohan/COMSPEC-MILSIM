@@ -26,7 +26,6 @@ Rubrique regroupant typiquement :
 | **Portrait** | Une seule photo, visible sur le portail et la fiche. |
 | **Adresse électronique** | Modification de l’identifiant de connexion (souvent avec confirmation). |
 | **Mot de passe** | Changement du secret d’accès. |
-| **Profils de candidature** | Préréglages pour accélérer les formulaires d’enrôlement (si activé). |
 
 ## Déconnexion
 
