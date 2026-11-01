@@ -3713,13 +3713,14 @@ if ($atakMapConfig) {
       setTimeout(function () { dismissAtakBoot(); }, 6000);
 
       function atakPoll() {
+        // Onglet caché : rien (une quinzaine de lectures par tour) ; tour complet dès qu'il redevient visible.
+        if (document.hidden) return;
         if (window.ATAKSocket && typeof window.ATAKSocket.isApiPaused === 'function' && window.ATAKSocket.isApiPaused()) {
           return;
         }
         if (window.ATAKUnits) ATAKUnits.fetchUnits();
         if (window.ATAKChat) ATAKChat.fetchMessages();
-        if (window.ATAKMedicalAlerts) ATAKMedicalAlerts.fetchAlerts();
-        if (window.ATAKOrders) ATAKOrders.fetchOrders();
+        // Alertes médicales et ordres : leurs propres boucles (5 s / 4 s, lancées plus bas) ; ici ils partaient en double.
         if (window.ATAKPings) ATAKPings.fetchPings();
         if (window.ATAKExplosiveTimers) ATAKExplosiveTimers.fetchList();
         if (window.ATAKVehicles) ATAKVehicles.fetchList();
@@ -3739,7 +3740,7 @@ if ($atakMapConfig) {
         refreshLiaisonChipQuiet();
       }
       function pollWeatherQuiet() {
-        if (!window.TacmapWeather) return;
+        if (!window.TacmapWeather || document.hidden) return;
         if (window.ATAKSocket && typeof window.ATAKSocket.isApiPaused === 'function' && window.ATAKSocket.isApiPaused()) {
           return;
         }
@@ -3973,7 +3974,7 @@ if ($atakMapConfig) {
       function refreshWebPresence() {
         var listEl = document.getElementById('atak-web-presence-list');
         var emptyEl = document.getElementById('atak-web-presence-empty');
-        if (!listEl) return;
+        if (!listEl || document.hidden) return;
         var mid = resolveAtakMapId();
         fetch('<?= url("api/atak/presence") ?>?mapId=' + encodeURIComponent(mid), { credentials: 'include', cache: 'no-store' })
           .then(function (r) { return r.ok ? r.json() : null; })
@@ -4035,6 +4036,9 @@ if ($atakMapConfig) {
       };
       atakPoll();
       setTacticalPollInterval(3000);
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) atakPoll();
+      });
       pollWeatherQuiet();
       setInterval(pollWeatherQuiet, 30000);
       if (window.ATAKActivity && typeof window.ATAKActivity.start === 'function') {

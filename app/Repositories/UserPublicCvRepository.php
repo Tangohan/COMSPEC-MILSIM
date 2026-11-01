@@ -15,6 +15,8 @@ class UserPublicCvRepository
 
     private ?bool $tableReady = null;
 
+    private ?bool $bannerReady = null;
+
     public function __construct(private ?PDO $pdo = null)
     {
     }
@@ -64,6 +66,56 @@ class UserPublicCvRepository
         $this->tableReady = null;
 
         return $this->tableExists();
+    }
+
+    /** Colonne de la bannière personnelle (migrations/2026_11_02_001_user_public_cv_banner.sql). */
+    public function bannerColumnExists(): bool
+    {
+        if ($this->bannerReady !== null) {
+            return $this->bannerReady;
+        }
+        if (!$this->tableExists()) {
+            return false;
+        }
+        try {
+            $st = $this->pdo()->query(
+                "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_public_cv' AND COLUMN_NAME = 'banner_path' LIMIT 1"
+            );
+            $this->bannerReady = (bool) ($st && $st->fetchColumn());
+        } catch (\Throwable) {
+            $this->bannerReady = false;
+        }
+
+        return $this->bannerReady;
+    }
+
+    /** Ajoute la colonne de la bannière au premier envoi si la mise à jour du schéma n’a pas encore eu lieu. */
+    public function ensureBannerColumn(): bool
+    {
+        if ($this->bannerColumnExists()) {
+            return true;
+        }
+        if (!$this->tableExists()) {
+            return false;
+        }
+        try {
+            $this->pdo()->exec('ALTER TABLE user_public_cv ADD COLUMN banner_path VARCHAR(255) NULL DEFAULT NULL');
+        } catch (\Throwable $e) {
+            error_log('[user_public_cv] ajout de la colonne banner_path impossible : ' . $e->getMessage());
+        }
+        $this->bannerReady = null;
+
+        return $this->bannerColumnExists();
+    }
+
+    /** Enregistre (ou retire avec null) la bannière personnelle ; la ligne de réglages doit déjà exister. */
+    public function setBannerPath(int $userId, ?string $path): void
+    {
+        if ($userId < 1 || !$this->bannerColumnExists()) {
+            return;
+        }
+        $this->pdo()->prepare('UPDATE user_public_cv SET banner_path = ?, updated_at = NOW() WHERE user_id = ?')
+            ->execute([$path !== null && $path !== '' ? $path : null, $userId]);
     }
 
     /** @return array<string, mixed>|null */

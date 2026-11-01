@@ -18,6 +18,7 @@ use App\Repositories\AtakOrderTemplateRepository;
 use App\Repositories\AtakOrderTypeRepository;
 use App\Repositories\FireTeamRepository;
 use App\Support\AtakPlanAccess;
+use App\Support\ShortCache;
 use App\Support\OperatorPortraits;
 use App\Support\BriefingSlideGameImage;
 use App\Support\AtakGameImage;
@@ -5137,14 +5138,20 @@ class AtakApiController
         }
         
         $mapId = $this->mapId($request);
+        $includeGateway = $request->query('include_gateway') === '1'
+            || $request->query('includeGateway') === '1'
+            || $request->query('gateway') === '1';
         try {
-            $rows = $this->unitsForTransmission($tenantId, $mapId);
-            $this->logStaleUnitDisconnects($tenantId, $mapId);
+            // Liste commune à toute la communauté (sondée toutes les 3 s par chaque joueur ATAK ouvert et par chaque
+            // poste web) : calculée une fois toutes les 2 s, puis seuls le filtre et le brouillage propres au
+            // demandeur sont appliqués. Unité éditée depuis le poste : relue tout de suite (génération).
+            $rows = ShortCache::remember(
+                'units:' . $tenantId . ':' . $mapId . ':' . ShortCache::gen('units:' . $tenantId),
+                2,
+                fn (): array => $this->sharedUnitsList($tenantId, $mapId)
+            );
         } catch (\Throwable) {
             // Ne pas renvoyer une liste vide : le poste prendrait ça pour « plus personne ».
-            $includeGateway = $request->query('include_gateway') === '1'
-                || $request->query('includeGateway') === '1'
-                || $request->query('gateway') === '1';
             if ($includeGateway) {
                 return Response::json([
                     'ok' => false,
@@ -5154,6 +5161,46 @@ class AtakApiController
 
             return Response::json([]);
         }
+
+        // Filtre opt-in : ne pas casser Tacmap (qui n’envoie pas ce paramètre).
+        $onlineOnly = $request->query('online_only') === '1'
+            || $request->query('onlineOnly') === '1'
+            || $request->query('live_only') === '1';
+        if ($onlineOnly) {
+            $rows = array_values(array_filter(
+                $rows,
+                static fn ($u): bool => is_array($u) && in_array((string) ($u['status'] ?? ''), ['linked', 'delayed'], true)
+            ));
+        }
+
+        if ($includeGateway) {
+            try {
+                $rows = array_merge($rows, ShortCache::remember(
+                    'units-gw:' . $tenantId,
+                    2,
+                    fn (): array => $this->collectGatewayMirrorUnits($tenantId)
+                ));
+            } catch (\Throwable) {
+            }
+        }
+
+        try {
+            $rows = $this->applyIntelScramble($request, $tenantId, $mapId, 'unit', $rows);
+        } catch (\Throwable) {
+        }
+
+        return Response::json($rows);
+    }
+
+    /**
+     * Unités de la carte enrichies (ID BFT, équipes de feu, mouvement) : identiques pour tous les demandeurs.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function sharedUnitsList(int $tenantId, int $mapId): array
+    {
+        $rows = $this->unitsForTransmission($tenantId, $mapId);
+        $this->logStaleUnitDisconnects($tenantId, $mapId);
         try {
             $opIds = $this->operatorIdRepository ?? new AtakOperatorIdRepository();
             if ($opIds->tablesReady() && $opIds->unitsMilitaryIdColumnReady()) {
@@ -5201,17 +5248,6 @@ class AtakApiController
         } catch (\Throwable) {
         }
 
-        // Filtre opt-in : ne pas casser Tacmap (qui n’envoie pas ce paramètre).
-        $onlineOnly = $request->query('online_only') === '1'
-            || $request->query('onlineOnly') === '1'
-            || $request->query('live_only') === '1';
-        if ($onlineOnly) {
-            $rows = array_values(array_filter(
-                $rows,
-                static fn ($u): bool => is_array($u) && in_array((string) ($u['status'] ?? ''), ['linked', 'delayed'], true)
-            ));
-        }
-
         try {
             $rows = $this->enrichUnitsWithFireTeams($tenantId, $rows);
         } catch (\Throwable) {
@@ -5221,22 +5257,7 @@ class AtakApiController
         } catch (\Throwable) {
         }
 
-        $includeGateway = $request->query('include_gateway') === '1'
-            || $request->query('includeGateway') === '1'
-            || $request->query('gateway') === '1';
-        if ($includeGateway) {
-            try {
-                $rows = array_merge($rows, $this->collectGatewayMirrorUnits($tenantId));
-            } catch (\Throwable) {
-            }
-        }
-
-        try {
-            $rows = $this->applyIntelScramble($request, $tenantId, $mapId, 'unit', $rows);
-        } catch (\Throwable) {
-        }
-
-        return Response::json($rows);
+        return $rows;
     }
 
     /**

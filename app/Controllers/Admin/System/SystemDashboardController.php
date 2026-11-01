@@ -11,6 +11,7 @@ use App\Repositories\ContentReportRepository;
 use App\Repositories\ModerationArtifactRepository;
 use App\Repositories\TenantAnalyticsRepository;
 use App\Services\Admin\AdminDashboardMetricsService;
+use App\Services\Admin\PlatformHealthDigest;
 use App\Services\Audit\AuditAction;
 
 class SystemDashboardController
@@ -21,7 +22,9 @@ class SystemDashboardController
         private ?ContentReportRepository $contentReports = null,
         private ?ModerationArtifactRepository $moderationArtifacts = null,
         private ?TenantAnalyticsRepository $tenantAnalytics = null,
+        private ?PlatformHealthDigest $health = null,
     ) {
+        $this->health ??= new PlatformHealthDigest();
         $this->metrics ??= new AdminDashboardMetricsService();
         $this->auditLogs ??= new AuditLogRepository();
         $this->contentReports ??= new ContentReportRepository();
@@ -98,8 +101,13 @@ class SystemDashboardController
             $adminPlatformUsagePreview['error'] = 'L’aperçu d’usage sur 7 jours est momentanément indisponible.';
         }
 
+        // Bilan de santé : réservé aux administrateurs du site (l'assistance voit le reste du tableau de bord).
+        $healthRows = \App\Core\Gate::getInstance()->allows('admin.system') ? $this->health->rows() : [];
+
         return Response::view('layout.main', [
             'content' => 'admin.system.dashboard',
+            'adminHealthRows' => $healthRows,
+            'adminHealthSummary' => PlatformHealthDigest::summarize($healthRows),
             'title' => 'Administration plateforme',
             'adminKpis' => $metrics['kpis'],
             'adminKpiBlockError' => $metrics['blockError'],

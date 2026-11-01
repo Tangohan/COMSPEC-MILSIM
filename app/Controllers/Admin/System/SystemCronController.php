@@ -9,6 +9,8 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\CronJobRunRepository;
+use App\Services\Audit\AuditAction;
+use App\Services\Audit\AuditService;
 use App\Services\Cron\CronRunner;
 use App\Services\Cron\CronSchedule;
 use App\Services\Cron\CronVpsInstallService;
@@ -81,6 +83,7 @@ final class SystemCronController
                 $failCount++;
             }
         }
+        AuditService::logPlatformAction(AuditAction::PLATFORM_CRON_RUN, ['tache' => $jobKey !== '' ? $jobKey : 'toutes', 'reussies' => $okCount, 'echecs' => $failCount]);
 
         if ($failCount > 0) {
             Session::flash('error', "Exécution terminée avec des erreurs ({$okCount} réussie(s), {$failCount} en échec). Consultez l’historique ci-dessous.");
@@ -102,6 +105,7 @@ final class SystemCronController
         }
 
         $result = $this->vpsInstall->install();
+        AuditService::logPlatformAction(AuditAction::PLATFORM_CRON_INSTALLED, ['reussi' => !empty($result['ok'])]);
         if (!empty($result['ok'])) {
             Session::flash('success', (string) $result['message']);
         } else {
@@ -120,6 +124,7 @@ final class SystemCronController
         }
 
         $result = $this->vpsInstall->uninstall();
+        AuditService::logPlatformAction(AuditAction::PLATFORM_CRON_UNINSTALLED, ['reussi' => !empty($result['ok'])]);
         if (!empty($result['ok'])) {
             Session::flash('success', (string) $result['message']);
         } else {

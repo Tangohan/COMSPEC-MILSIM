@@ -291,12 +291,34 @@ $monogram = static function (string $label): string {
 
     return $out !== '' ? $out : 'Q';
 };
+
+// Données calculées (présence, rang, équipe, grades, éligibilité, sanctions) : MemberFileInsightsService.
+$insights = is_array($memberInsights ?? null) ? $memberInsights : [];
+$attendance = is_array($insights['attendance'] ?? null) ? $insights['attendance'] : null;
+$rankInfo = is_array($insights['rank'] ?? null) ? $insights['rank'] : null;
+$team = is_array($insights['team'] ?? null) ? $insights['team'] : null;
+$gradeEntries = is_array($insights['grades']['entries'] ?? null) ? $insights['grades']['entries'] : [];
+$gradeSince = trim((string) ($insights['grades']['current_since'] ?? ''));
+$eligibility = is_array($insights['eligibility'] ?? null) ? $insights['eligibility'] : null;
+$sanctions = is_array($insights['sanctions'] ?? null) ? $insights['sanctions'] : null;
+$canViewSanctions = (bool) ($canViewSanctions ?? false) && $sanctions !== null;
+$canManageSanctions = (bool) ($canManageSanctions ?? false);
+$canSetElevationCriteria = (bool) ($canSetElevationCriteria ?? false);
+$canEditOrbat = (bool) ($canEditOrbat ?? false);
+$eligibilityStatus = (string) ($eligibility['status'] ?? '');
+$isEligible = $eligibility !== null && $eligibilityStatus === \App\Services\Effectifs\ElevationEligibility::ELIGIBLE;
+$attendanceRate = $attendance['rate_90'] ?? null;
+$attendanceDelta = $attendance['delta_points'] ?? null;
+$sanctionsActive = (int) ($sanctions['active'] ?? 0);
 ?>
 <div class="eff-fm">
 <section class="eff-fiche-hero eff-fm-hero" aria-label="En-tête du dossier">
     <div class="eff-fm-hero__band<?= $bannerUrl !== '' ? ' has-image' : '' ?>"<?php if ($bannerUrl !== ''): ?> style="--eff-fm-band: url('<?= $h($bannerUrl) ?>')"<?php endif; ?>>
         <nav class="eff-fm-hero__nav" aria-label="Retour">
             <a class="eff-fm-hero__back" href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">← Tableur des effectifs</a>
+            <?php if ($rankInfo !== null): ?>
+                <span class="eff-fm-hero__rank" title="Rang d’ancienneté : membres actifs de la communauté classés par date d’engagement, du plus ancien au plus récent.">Membre <?= (int) $rankInfo['rank'] ?> / <?= (int) $rankInfo['total'] ?></span>
+            <?php endif; ?>
         </nav>
         <?php if ($matricule !== '' || $athenaId !== ''): ?>
             <p class="eff-fm-hero__mat">Matricule <?= $h($matricule !== '' ? $matricule : $athenaId) ?></p>
@@ -340,6 +362,12 @@ $monogram = static function (string $label): string {
                 <?php endif; ?>
                 <?php if ($seniorityLabel !== '' && $seniorityLabel !== '—'): ?>
                     <span class="eff-fm-chip"><?= htmlspecialchars($seniorityLabel, ENT_QUOTES, 'UTF-8') ?> d’ancienneté</span>
+                <?php endif; ?>
+                <?php if ($isEligible): ?>
+                    <a class="eff-fm-chip is-elig" href="#grade">Élévation éligible</a>
+                <?php endif; ?>
+                <?php if ($canViewSanctions && $sanctionsActive > 0): ?>
+                    <a class="eff-fm-chip is-warn" href="#sanctions"><?= $sanctionsActive ?> mesure<?= $sanctionsActive > 1 ? 's' : '' ?> en vigueur</a>
                 <?php endif; ?>
             </div>
             <div class="eff-fm-actions">
@@ -396,20 +424,33 @@ $monogram = static function (string $label): string {
             <dd class="eff-fm-kpi__s"><?= $qualExpiring === [] ? 'aucune échéance proche' : count($qualExpiring) . ' à renouveler' ?></dd>
         </div>
         <div class="eff-fm-kpi">
-            <dt class="eff-fm-k">Fonctions</dt>
-            <dd class="eff-fm-kpi__v"><?= count($jobRoles) ?></dd>
-            <dd class="eff-fm-kpi__s"><?= $h($fonction !== '' ? $fonction : 'aucune fonction') ?></dd>
+            <dt class="eff-fm-k">Présence 90 j</dt>
+            <?php if ($attendance !== null && $attendanceRate !== null): ?>
+                <dd class="eff-fm-kpi__v<?= (int) $attendanceRate >= 75 ? ' is-good' : '' ?>"><?= (int) $attendanceRate ?> %</dd>
+                <dd class="eff-fm-kpi__s"><?php if ($attendanceDelta !== null): ?><?= $h(((int) $attendanceDelta >= 0 ? '+' : '−') . abs((int) $attendanceDelta) . ' pts vs trimestre précédent') ?><?php else: ?><?= (int) ($attendance['present_90'] ?? 0) ?> / <?= (int) ($attendance['sessions_90'] ?? 0) ?> sessions<?php endif; ?></dd>
+            <?php else: ?>
+                <dd class="eff-fm-kpi__v">—</dd>
+                <dd class="eff-fm-kpi__s">aucune session sur 90 jours</dd>
+            <?php endif; ?>
         </div>
         <div class="eff-fm-kpi">
             <dt class="eff-fm-k">Dernière connexion</dt>
             <dd class="eff-fm-kpi__v"><?= $h($lastLogin !== '' ? substr($lastLogin, 0, 5) : '—') ?></dd>
             <dd class="eff-fm-kpi__s"><?= $h($lastLoginAgo) ?></dd>
         </div>
+        <?php if ($canViewSanctions): ?>
+        <div class="eff-fm-kpi">
+            <dt class="eff-fm-k">Sanctions</dt>
+            <dd class="eff-fm-kpi__v<?= $sanctionsActive > 0 ? ' is-warn' : '' ?>"><?= $sanctionsActive ?></dd>
+            <dd class="eff-fm-kpi__s"><?= (int) ($sanctions['total'] ?? 0) === 0 ? 'dossier vierge' : ($sanctionsActive > 0 ? 'en vigueur' : 'aucune en vigueur') . ' · ' . (int) $sanctions['total'] . ' au total' ?></dd>
+        </div>
+        <?php else: ?>
         <div class="eff-fm-kpi">
             <dt class="eff-fm-k">Absences</dt>
             <dd class="eff-fm-kpi__v"><?= count($absences) ?></dd>
             <dd class="eff-fm-kpi__s"><?= $absences === [] ? 'aucune déclarée' : 'enregistrée' . (count($absences) > 1 ? 's' : '') ?></dd>
         </div>
+        <?php endif; ?>
     </dl>
 </section>
 
@@ -545,9 +586,50 @@ $monogram = static function (string $label): string {
             <h3>Unité</h3>
         </div>
         <?php if ($primaryAssignment !== null || $unit !== ''): ?>
+            <?php $unitPath = is_array($team['path'] ?? null) && $team['path'] !== [] ? $team['path'] : [(string) ($primaryAssignment['unit_name'] ?? $unit)]; ?>
             <p class="eff-fm-path" aria-label="Affectation principale">
-                <span><?= $h($communityName) ?></span><i aria-hidden="true">›</i><span class="is-cur"><?= $h((string) ($primaryAssignment['unit_name'] ?? $unit)) ?></span>
+                <span><?= $h($communityName) ?></span>
+                <?php foreach ($unitPath as $pi => $pathPart): ?>
+                    <i aria-hidden="true">›</i><span<?= $pi === count($unitPath) - 1 ? ' class="is-cur"' : '' ?>><?= $h($pathPart) ?></span>
+                <?php endforeach; ?>
             </p>
+        <?php endif; ?>
+        <?php if ($team !== null): ?>
+            <?php
+            $teamSeats = is_array($team['seats'] ?? null) ? $team['seats'] : [];
+            $teamOthers = is_array($team['others'] ?? null) ? $team['others'] : [];
+            $teamUnitUrl = url('back-office/organisation/unites/' . (int) ($team['unit_id'] ?? 0)) . '#postes';
+            ?>
+            <div class="eff-fm-team" id="equipe">
+                <?php if (!empty($team['has_posts'])): ?>
+                    <p class="eff-fm-k">Équipe — <?= (int) $team['filled'] ?> / <?= (int) $team['authorized'] ?> postes pourvus<?php if ((int) $team['vacant'] > 0): ?> · <?= (int) $team['vacant'] ?> vacant<?= (int) $team['vacant'] > 1 ? 's' : '' ?><?php endif; ?></p>
+                    <ul class="eff-fm-slots">
+                        <?php foreach ($teamSeats as $seat): ?>
+                            <li class="eff-fm-slot<?= !empty($seat['is_me']) ? ' is-me' : '' ?><?= !empty($seat['vacant']) ? ' is-vacant' : '' ?>">
+                                <?php if (!empty($seat['vacant'])): ?>
+                                    <b>Poste vacant</b>
+                                <?php elseif (!empty($seat['is_me'])): ?>
+                                    <b><?= $h($seat['label']) ?></b>
+                                <?php else: ?>
+                                    <b><a href="<?= $h(effectifs_workspace_url('membres/' . (int) $seat['user_id'])) ?>"><?= $h($seat['label']) ?></a></b>
+                                <?php endif; ?>
+                                <small><?= $h($seat['title']) ?><?= !empty($seat['is_me']) ? ' · cette fiche' : '' ?></small>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php else: ?>
+                    <p class="eff-fm-k">Équipe</p>
+                    <p class="eff-fm-hint">Aucun poste n’est prévu pour cette unité : le nombre de postes pourvus ne peut pas être calculé.<?php if ($canEditOrbat): ?> <a href="<?= $h($teamUnitUrl) ?>">Définir les postes de l’unité</a><?php endif; ?></p>
+                <?php endif; ?>
+                <?php if ($teamOthers !== []): ?>
+                    <p class="eff-fm-hint"><?= !empty($team['has_posts']) ? 'Sans poste dans l’unité' : 'Membres de l’unité' ?> :
+                        <?php foreach ($teamOthers as $oi => $other): ?><?= $oi > 0 ? ', ' : '' ?><?php if (!empty($other['is_me'])): ?><strong><?= $h($other['label']) ?></strong><?php else: ?><a href="<?= $h(effectifs_workspace_url('membres/' . (int) $other['user_id'])) ?>"><?= $h($other['label']) ?></a><?php endif; ?><?php if ($other['job_label'] !== ''): ?> (<?= $h($other['job_label']) ?>)<?php endif; ?><?php endforeach; ?>
+                    </p>
+                <?php endif; ?>
+                <?php if (!empty($team['has_posts']) && $canEditOrbat): ?>
+                    <p class="eff-fm-hint"><a href="<?= $h($teamUnitUrl) ?>">Modifier les postes et l’effectif prévu de l’unité</a></p>
+                <?php endif; ?>
+            </div>
         <?php endif; ?>
         <p class="eff-fm-lead">L’affectation indique dans quelle équipe la personne est rattachée. L’affectation principale place la personne dans l’organigramme et sur la fiche.</p>
         <?php if ($assignments !== []): ?>
@@ -641,35 +723,6 @@ $monogram = static function (string $label): string {
             <p class="eff-fm-hint">La gestion des fonctions sera disponible après application des migrations.</p>
         <?php endif; ?>
     </article>
-    <?php if ($canManageGrades): ?>
-    <article class="eff-fm-card" id="grade">
-        <div class="eff-fm-card__head">
-            <h3>Grade</h3>
-        </div>
-        <p class="eff-fm-big"><?= $h($grade !== '' ? $grade : 'Aucun grade') ?><?php if ($gradeLong !== '' && $gradeLong !== $grade): ?> <small><?= $h($gradeLong) ?></small><?php endif; ?></p>
-        <details class="eff-card__edit">
-            <summary>Changer le grade</summary>
-            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/grade'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
-                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                <input type="hidden" name="return_to" value="member">
-                <label for="eff-member-grade">Grade affiché</label>
-                <select id="eff-member-grade" name="grade_id">
-                    <option value="">Aucun grade</option>
-                    <?php foreach ($gradeGroups as $gradeGroup): ?>
-                        <optgroup label="<?= $h($gradeGroup['label']) ?>">
-                            <?php foreach ($gradeGroup['grades'] as $g): ?>
-                                <?php $gid = (int) ($g['id'] ?? 0); ?>
-                                <option value="<?= $gid ?>" <?= $gradeId === $gid ? 'selected' : '' ?>><?= $h(\App\Support\GradeSelectOptions::label($g)) ?></option>
-                            <?php endforeach; ?>
-                        </optgroup>
-                    <?php endforeach; ?>
-                </select>
-                <p class="eff-card__hint">Grades classés du plus élevé au plus bas. <a href="<?= $h(url('back-office/referentiels/grades')) ?>">Gérer le référentiel des grades</a></p>
-                <button type="submit" class="eff-btn eff-btn--primary">Enregistrer le grade</button>
-            </form>
-        </details>
-    </article>
-    <?php endif; ?>
     <article class="eff-fm-card" id="acces">
         <?php
         $currentAccessKey = (string) ($currentAccessKey ?? \App\Services\Rbac\CommunityAccessProfiles::MEMBER);
@@ -718,9 +771,102 @@ $monogram = static function (string $label): string {
     <section class="eff-fm-sec" id="carriere" aria-labelledby="carriere-titre">
         <header class="eff-fm-sec__head">
             <h2 id="carriere-titre">Carrière</h2>
-            <p>Ancienneté, qualifications, élévations et état du compte.</p>
+            <p>Grades, ancienneté, qualifications, élévations et état du compte.</p>
         </header>
         <div class="eff-fm-cards">
+    <article class="eff-fm-card" id="grade">
+        <div class="eff-fm-card__head">
+            <h3>Grades</h3>
+        </div>
+        <p class="eff-fm-big"><?= $h($grade !== '' ? $grade : 'Aucun grade') ?><?php if ($gradeLong !== '' && $gradeLong !== $grade): ?> <small><?= $h($gradeLong) ?></small><?php endif; ?></p>
+        <p class="eff-fm-hint"><?= $gradeSince !== '' ? 'Grade actuel depuis le ' . $h($fmtDate($gradeSince)) . '.' : ($grade !== '' ? 'Date d’obtention du grade actuel inconnue.' : '') ?></p>
+        <?php if ($eligibility !== null): ?>
+            <?php
+            $eligTitle = match ($eligibilityStatus) {
+                \App\Services\Effectifs\ElevationEligibility::ELIGIBLE => 'Élévation éligible',
+                \App\Services\Effectifs\ElevationEligibility::NOT_ELIGIBLE => 'Élévation pas encore éligible',
+                default => 'Éligibilité à vérifier',
+            };
+            $eligTone = match ($eligibilityStatus) {
+                \App\Services\Effectifs\ElevationEligibility::ELIGIBLE => 'is-ok',
+                \App\Services\Effectifs\ElevationEligibility::NOT_ELIGIBLE => 'is-no',
+                default => 'is-unknown',
+            };
+            ?>
+            <div class="eff-fm-elig <?= $eligTone ?>">
+                <p class="eff-fm-elig__title"><b><?= $h($eligTitle) ?></b> · <?= (int) $eligibility['met'] ?> / <?= (int) $eligibility['total'] ?> critère<?= (int) $eligibility['total'] > 1 ? 's' : '' ?> rempli<?= (int) $eligibility['met'] > 1 ? 's' : '' ?></p>
+                <ul class="eff-fm-elig__list">
+                    <?php foreach ($eligibility['criteria'] as $crit): ?>
+                        <?php $cMet = $crit['met']; ?>
+                        <li class="<?= $cMet === true ? 'is-ok' : ($cMet === false ? 'is-no' : 'is-unknown') ?>">
+                            <span class="eff-fm-elig__mark" aria-hidden="true"><?= $cMet === true ? '✓' : ($cMet === false ? '✕' : '?') ?></span>
+                            <span><?= $h($crit['label']) ?><small><?= $h($crit['detail']) ?></small></span>
+                            <span class="eff-fm-sr"><?= $cMet === true ? 'Rempli' : ($cMet === false ? 'Non rempli' : 'À vérifier') ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php if ($canSetElevationCriteria): ?>
+                    <p class="eff-fm-hint"><a href="<?= $h(effectifs_workspace_url('elevations/criteres')) ?>">Régler les critères d’élévation</a></p>
+                <?php endif; ?>
+            </div>
+        <?php elseif ($canSetElevationCriteria): ?>
+            <p class="eff-fm-hint">Aucun critère d’élévation n’est défini pour la communauté. <a href="<?= $h(effectifs_workspace_url('elevations/criteres')) ?>">Définir les critères</a></p>
+        <?php endif; ?>
+        <?php if ($gradeEntries !== []): ?>
+            <ol class="eff-fm-tl eff-fm-tl--grades" aria-label="Frise des grades">
+                <?php foreach ($gradeEntries as $gi => $ge): ?>
+                    <?php
+                    $geHow = $ge['source'] === 'elevation' ? 'Élévation validée' : 'Changement de grade';
+                    if ($ge['actor_label'] !== '') {
+                        $geHow .= ' par ' . $ge['actor_label'];
+                    }
+                    ?>
+                    <li class="<?= $gi === 0 && $ge['to_grade_id'] !== null && $ge['to_grade_id'] === ($gradeId > 0 ? $gradeId : null) ? 'is-now' : '' ?>">
+                        <span class="eff-fm-tl__d"><?= $h($fmtDate($ge['date'])) ?><?= $gi === 0 && $ge['to_grade_id'] === ($gradeId > 0 ? $gradeId : null) ? ' — aujourd’hui' : '' ?></span>
+                        <b><?= $h($ge['to_label']) ?></b>
+                        <small>
+                            <?php if ($ge['from_known']): ?>Précédemment : <?= $h($ge['from_label']) ?> · <?php endif; ?><?= $h($geHow) ?>
+                        </small>
+                    </li>
+                <?php endforeach; ?>
+                <?php if ($enlistmentStart !== ''): ?>
+                    <li class="is-start">
+                        <span class="eff-fm-tl__d"><?= $h($fmtDate($enlistmentStart)) ?></span>
+                        <b>Engagement</b>
+                        <small>Arrivée dans la communauté</small>
+                    </li>
+                <?php endif; ?>
+            </ol>
+            <?php if (count(array_filter($gradeEntries, static fn (array $e): bool => !$e['from_known'])) > 0): ?>
+                <p class="eff-fm-hint">Les changements anciens sont repris des traces existantes ; quand le grade précédent n’y figure pas, seule la date est indiquée.</p>
+            <?php endif; ?>
+        <?php else: ?>
+            <p class="eff-fm-hint">Aucun changement de grade enregistré pour l’instant. Les prochains changements apparaîtront ici avec le grade avant et après.</p>
+        <?php endif; ?>
+        <?php if ($canManageGrades): ?>
+        <details class="eff-card__edit">
+            <summary>Changer le grade</summary>
+            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/grade'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="return_to" value="member">
+                <label for="eff-member-grade">Grade affiché</label>
+                <select id="eff-member-grade" name="grade_id">
+                    <option value="">Aucun grade</option>
+                    <?php foreach ($gradeGroups as $gradeGroup): ?>
+                        <optgroup label="<?= $h($gradeGroup['label']) ?>">
+                            <?php foreach ($gradeGroup['grades'] as $g): ?>
+                                <?php $gid = (int) ($g['id'] ?? 0); ?>
+                                <option value="<?= $gid ?>" <?= $gradeId === $gid ? 'selected' : '' ?>><?= $h(\App\Support\GradeSelectOptions::label($g)) ?></option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endforeach; ?>
+                </select>
+                <p class="eff-card__hint">Grades classés du plus élevé au plus bas. Le changement est ajouté à la frise des grades. <a href="<?= $h(url('back-office/referentiels/grades')) ?>">Gérer le référentiel des grades</a></p>
+                <button type="submit" class="eff-btn eff-btn--primary">Enregistrer le grade</button>
+            </form>
+        </details>
+        <?php endif; ?>
+    </article>
     <article class="eff-fm-card" id="anciennete">
         <div class="eff-fm-card__head">
             <h3>Ancienneté</h3>
@@ -919,7 +1065,7 @@ $monogram = static function (string $label): string {
     <section class="eff-fm-sec" id="suivi-rh" aria-labelledby="suivi-rh-titre">
         <header class="eff-fm-sec__head">
             <h2 id="suivi-rh-titre">Suivi RH</h2>
-            <p>Absences, pièces du dossier et souhaits de mobilité.</p>
+            <p>Présence, absences, sanctions, pièces du dossier et souhaits de mobilité.</p>
         </header>
         <div class="eff-fm-cards">
     <?php
@@ -939,6 +1085,52 @@ $monogram = static function (string $label): string {
         echo '</ul>';
     };
     ?>
+    <article class="eff-fm-card eff-fm-card--wide" id="presence">
+        <?php
+        $grid = is_array($attendance['grid'] ?? null) ? $attendance['grid'] : [];
+        $gridCounts = is_array($attendance['grid_counts'] ?? null) ? $attendance['grid_counts'] : [];
+        $gridSize = \App\Services\Effectifs\MemberAttendanceSummary::GRID_SIZE;
+        $stateLabels = \App\Services\Effectifs\MemberAttendanceSummary::LABELS;
+        ?>
+        <div class="eff-fm-card__head">
+            <h3>Présence — <?= $gridSize ?> dernières sessions</h3>
+            <?php if ($grid !== []): ?>
+                <p class="eff-fm-pres__sum">
+                    <b><?= (int) ($gridCounts['present'] ?? 0) ?></b> présent<?= (int) ($gridCounts['present'] ?? 0) > 1 ? 's' : '' ?>
+                    · <b><?= (int) ($gridCounts['excused'] ?? 0) ?></b> excusé<?= (int) ($gridCounts['excused'] ?? 0) > 1 ? 's' : '' ?>
+                    · <b class="<?= (int) ($gridCounts['absent'] ?? 0) > 0 ? 'is-bad' : '' ?>"><?= (int) ($gridCounts['absent'] ?? 0) ?></b> sans prévenir
+                    <?php if ((int) ($gridCounts['no_reply'] ?? 0) > 0): ?> · <b><?= (int) $gridCounts['no_reply'] ?></b> sans réponse<?php endif; ?>
+                </p>
+            <?php endif; ?>
+        </div>
+        <?php if ($attendance === null): ?>
+            <p class="eff-fm-lead">La présence n’a pas pu être calculée pour le moment.</p>
+        <?php elseif ($grid === []): ?>
+            <p class="eff-fm-lead">Aucune session passée depuis l’arrivée du membre. Les sessions sont les événements du calendrier de la communauté ; la présence se valide par le pointage.</p>
+        <?php else: ?>
+            <ol class="eff-fm-pres" aria-label="Présence aux <?= count($grid) ?> dernières sessions, de la plus ancienne à la plus récente">
+                <?php for ($pad = count($grid); $pad < $gridSize; $pad++): ?>
+                    <li class="eff-fm-pres__c is-none" title="Pas de session"><span class="eff-fm-sr">Pas de session</span></li>
+                <?php endfor; ?>
+                <?php foreach ($grid as $cell): ?>
+                    <?php $cellLabel = $fmtDate($cell['date']) . ($cell['title'] !== '' ? ' — ' . $cell['title'] : '') . ' : ' . ($stateLabels[$cell['state']] ?? ''); ?>
+                    <li class="eff-fm-pres__c is-<?= $h($cell['state']) ?>" title="<?= $h($cellLabel) ?>"><span class="eff-fm-sr"><?= $h($cellLabel) ?></span></li>
+                <?php endforeach; ?>
+            </ol>
+            <ul class="eff-fm-pres__legend" aria-hidden="true">
+                <li><i class="is-none"></i>Pas de session</li>
+                <li><i class="is-present"></i>Présent</li>
+                <li><i class="is-excused"></i>Absent excusé</li>
+                <li><i class="is-absent"></i>Absent sans prévenir</li>
+                <li><i class="is-no_reply"></i>Sans réponse</li>
+            </ul>
+            <p class="eff-fm-hint">
+                Sur 90 jours : <?= (int) ($attendance['present_90'] ?? 0) ?> présence<?= (int) ($attendance['present_90'] ?? 0) > 1 ? 's' : '' ?> sur <?= (int) ($attendance['sessions_90'] ?? 0) ?> session<?= (int) ($attendance['sessions_90'] ?? 0) > 1 ? 's' : '' ?><?php if ($attendanceRate !== null): ?> (<?= (int) $attendanceRate ?> %)<?php endif; ?>.
+                Depuis l’engagement : <?= (int) ($attendance['present_total'] ?? 0) ?> session<?= (int) ($attendance['present_total'] ?? 0) > 1 ? 's' : '' ?> pointée<?= (int) ($attendance['present_total'] ?? 0) > 1 ? 's' : '' ?>.
+                Une présence est comptée quand elle a été pointée le jour de la session.
+            </p>
+        <?php endif; ?>
+    </article>
     <article class="eff-fm-card" id="absences">
         <div class="eff-fm-card__head">
             <h3>Absences</h3>
@@ -951,6 +1143,54 @@ $monogram = static function (string $label): string {
             return [$start, $absenceReasonLabels[$reason] ?? $reason, 'Du ' . ($start !== '' ? $start : '—') . ' au ' . ($end !== '' ? $end : '—')];
         }); ?>
     </article>
+    <?php if ($canViewSanctions): ?>
+    <article class="eff-fm-card" id="sanctions">
+        <?php $sanctionItems = is_array($sanctions['items'] ?? null) ? $sanctions['items'] : []; ?>
+        <div class="eff-fm-card__head">
+            <h3>Sanctions</h3>
+            <?php if ($sanctionsActive > 0): ?><span class="eff-fm-chip is-warn"><?= $sanctionsActive ?> en vigueur</span><?php endif; ?>
+        </div>
+        <?php if ($sanctionItems === []): ?>
+            <p class="eff-fm-lead">Aucune sanction enregistrée.</p>
+        <?php else: ?>
+            <ul class="eff-fm-list eff-fm-sanctions">
+                <?php foreach ($sanctionItems as $sn): ?>
+                    <li class="is-<?= $h($sn['status']) ?>">
+                        <span class="eff-fm-list__dt"><?= $h($fmtDate($sn['date']) ?: '—') ?></span>
+                        <div>
+                            <b><?= $h($sn['label']) ?> <span class="eff-fm-chip <?= $sn['status'] === 'active' ? 'is-warn' : '' ?>"><?= $h($sn['status_label']) ?></span></b>
+                            <?php if ($sn['reason'] !== ''): ?><p><?= $h($sn['reason']) ?></p><?php endif; ?>
+                            <p class="eff-fm-sanctions__meta">
+                                <?= $sn['actor'] !== '' ? 'Par ' . $h($sn['actor']) : '' ?>
+                                <?php if ($sn['expires_at'] !== '' && $sn['status'] !== 'lifted'): ?> · jusqu’au <?= $h($fmtDate($sn['expires_at'])) ?><?php endif; ?>
+                                <?php if ($sn['status'] === 'lifted'): ?> · levée le <?= $h($fmtDate($sn['lifted_at'])) ?><?= $sn['lifted_by'] !== '' ? ' par ' . $h($sn['lifted_by']) : '' ?><?php endif; ?>
+                            </p>
+                            <?php if ($canManageSanctions && $sn['status'] === 'active'): ?>
+                                <form method="post" action="<?= $h(effectifs_workspace_url('membres/' . $id . '/sanctions/' . (int) $sn['id'] . '/lever')) ?>" class="eff-fm-sanctions__lift">
+                                    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                                    <button type="submit" class="eff-fm-btn is-sm">Lever la mesure</button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+        <?php if ($canManageSanctions): ?>
+            <details class="eff-card__edit">
+                <summary>Donner un avertissement</summary>
+                <form method="post" action="<?= $h(effectifs_workspace_url('membres/' . $id . '/sanctions')) ?>" class="eff-card__form">
+                    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                    <label for="eff-sanction-reason">Motif</label>
+                    <textarea id="eff-sanction-reason" name="reason" rows="3" maxlength="1000" required placeholder="Ex. Absence non excusée à l’opération du 12/10"></textarea>
+                    <p class="eff-card__hint">L’avertissement est inscrit au dossier et journalisé. Il reste visible après avoir été levé.</p>
+                    <button type="submit" class="eff-btn eff-btn--primary">Enregistrer l’avertissement</button>
+                </form>
+            </details>
+            <p class="eff-fm-hint"><a href="<?= $h(url('back-office/moderation')) ?>">Restreindre l’activité du membre (formations, documents…)</a></p>
+        <?php endif; ?>
+    </article>
+    <?php endif; ?>
     <article class="eff-fm-card" id="documents-rh">
         <div class="eff-fm-card__head">
             <h3>Documents RH</h3>
@@ -1013,6 +1253,11 @@ $monogram = static function (string $label): string {
     }
     if ($canRequestElevation && $elevationCooldownSeconds > 0) {
         $railTodo[] = ['i', 'Élévation en cours', 'Une demande a déjà été envoyée.', '#elevation', 'Voir'];
+    } elseif ($isEligible) {
+        $railTodo[] = ['i', 'Élévation possible', 'Critères d’élévation remplis (' . (int) $eligibility['met'] . '/' . (int) $eligibility['total'] . ').', '#grade', 'Voir le détail'];
+    }
+    if ($canViewSanctions && $sanctionsActive > 0) {
+        $railTodo[] = ['w', 'Sanction en vigueur', $sanctionsActive . ' mesure' . ($sanctionsActive > 1 ? 's' : '') . ' à suivre.', '#sanctions', 'Voir'];
     }
     ?>
     <section class="eff-fm-card eff-fm-rail__card">

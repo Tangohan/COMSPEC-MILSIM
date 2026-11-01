@@ -36,6 +36,22 @@ class AuditService
         $this->log($action, $tenantId, $userId, $entityType, $entityId, $os, $ns);
     }
 
+    /**
+     * Action d'un administrateur du site (auteur = session courante). Ne lève jamais :
+     * un journal indisponible ne doit pas bloquer l'action elle-même.
+     *
+     * @param array<string, mixed> $details
+     */
+    public static function logPlatformAction(string $action, array $details = [], ?int $tenantId = null): void
+    {
+        try {
+            $userId = (int) \App\Core\Session::get('user_id');
+            (new self())->logChange($action, $tenantId, $userId > 0 ? $userId : null, 'platform', null, [], $details);
+        } catch (\Throwable $e) {
+            error_log('[audit] ' . $action . ' : ' . $e->getMessage());
+        }
+    }
+
     public function log(
         string $action,
         ?int $tenantId = null,

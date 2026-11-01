@@ -219,6 +219,11 @@ window.ATAKSocket = (function () {
     if (typeof fn === 'function') deferredListeners.push(fn);
   }
 
+  /* Lectures déjà en route, par adresse : deux modules qui demandent la même liste au même moment (tour de
+     atakPoll + boucle propre au module, ou serveur lent qui laisse le tour suivant partir) partagent une seule
+     requête au lieu d'empiler les mêmes appels côté Athena. */
+  var inflightGets = {};
+
   if (nativeFetch) {
     window.fetch = function (input, init) {
       var url = requestUrl(input);
@@ -240,7 +245,11 @@ window.ATAKSocket = (function () {
           }
         }));
       }
-      return nativeFetch(input, init).then(function (res) {
+      var shareable = ours && method === 'GET' && !heartbeat && typeof input === 'string' && !(init && init.signal);
+      if (shareable && inflightGets[url]) {
+        return inflightGets[url].then(function (shared) { return shared.clone(); });
+      }
+      var pending = nativeFetch(input, init).then(function (res) {
         if (ours && res && countsTowardUnavailable(url, method) && (res.status === 403 || res.status === 429 || res.status === 503 || res.status === 0)) {
           var retry = res.status === 403 ? 20 : 30;
           try {
@@ -260,6 +269,12 @@ window.ATAKSocket = (function () {
         }
         throw err;
       });
+      if (!shareable) return pending;
+      inflightGets[url] = pending;
+      var release = function () { if (inflightGets[url] === pending) delete inflightGets[url]; };
+      pending.then(release, release);
+      /* Chaque appelant lit sa propre copie : un corps de réponse ne se lit qu'une fois. */
+      return pending.then(function (res) { return res.clone(); });
     };
   }
 

@@ -10,6 +10,8 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\SiteContributorRepository;
+use App\Services\Audit\AuditAction;
+use App\Services\Audit\AuditService;
 use App\Services\I18n\CommunityLanguages;
 use App\Services\I18n\SiteTranslationService;
 
@@ -73,6 +75,7 @@ final class SystemContributorsController
             $languages = implode(',', SiteContributorRepository::splitLanguages((string) $request->input('languages')));
         }
         $this->repo()->decide((int) $row['id'], $status, $adminId, trim((string) $request->input('note', '')), $languages);
+        AuditService::logPlatformAction(AuditAction::PLATFORM_CONTRIBUTOR_UPDATED, ['compte' => (int) $row['user_id'], 'role' => (string) $row['role'], 'decision' => $action]);
         // Traducteur accepté : ses langues encore inconnues sont créées en brouillon (nom à corriger ensuite).
         if ($status === SiteContributorRepository::STATUS_ACTIVE && (string) $row['role'] === 'translator') {
             foreach (SiteContributorRepository::splitLanguages($languages ?? (string) $row['languages']) as $code) {
@@ -143,8 +146,9 @@ final class SystemContributorsController
                 $activated[] = $role;
             }
         }
+        AuditService::logPlatformAction(AuditAction::PLATFORM_CONTRIBUTOR_UPDATED, ['compte' => $userId, 'roles_accordes' => $activated, 'decision' => 'accept']);
         if (in_array('translator', $picked, true)) {
-            $codes = SiteContributorRepository::splitLanguages((string) ($languages ?? ''));
+            $codes =SiteContributorRepository::splitLanguages((string) ($languages ?? ''));
             if ($codes === []) {
                 foreach ($this->repo()->rolesOfUser($userId) as $row) {
                     if ((string) $row['role'] === 'translator') {
@@ -221,6 +225,9 @@ final class SystemContributorsController
             Session::flash('error', 'Code de langue invalide (deux lettres, par exemple « es », ou « pt-br »).');
 
             return Response::redirect(url(self::BASE) . '#langues');
+        }
+        if (in_array($action, ['create', 'save'], true)) {
+            AuditService::logPlatformAction(AuditAction::PLATFORM_CONTRIBUTOR_UPDATED, ['langue' => $code, 'action' => $action, 'publiee' => (string) $request->input('published', '') === '1']);
         }
         if ($action === 'create') {
             if ($code === CommunityLanguages::ENGLISH) {

@@ -1207,6 +1207,14 @@ class EffectifsWorkspaceController
         $memberLanguage = $this->memberLanguages()->resolvedForUsers($tenantId, [$id], $languageCommunity)[$id]
             ?? CommunityLanguages::resolveMember(null, null, $languageCommunity);
 
+        $canViewSanctions = EffectifsLmsAccess::canViewSanctions($gate);
+        $insights = [];
+        try {
+            $insights = $this->memberInsights()->build($tenantId, $row, $qualifications, $assignments, $canViewSanctions);
+        } catch (\Throwable $e) {
+            error_log('Effectifs member: insights failed: ' . $e->getMessage());
+        }
+
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
             'memberLanguage' => $memberLanguage,
@@ -1254,6 +1262,11 @@ class EffectifsWorkspaceController
             'dutyPosition' => $dutyPosition,
             'remainingTrainingDays' => $remainingTrainingDays,
             'memberCommandChain' => $commandChain,
+            'memberInsights' => $insights,
+            'canViewSanctions' => $canViewSanctions,
+            'canManageSanctions' => EffectifsLmsAccess::canManageSanctions($gate),
+            'canSetElevationCriteria' => EffectifsLmsAccess::canSetElevationCriteria($gate),
+            'canEditOrbat' => $gate->allows('organization.orbat.manage') || $gate->allows('admin.organization'),
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
@@ -2133,6 +2146,191 @@ class EffectifsWorkspaceController
     private function memberLanguages(): MemberLanguageRepository
     {
         return \App\Core\Container::get(MemberLanguageRepository::class);
+    }
+
+    private function memberInsights(): \App\Services\Effectifs\MemberFileInsightsService
+    {
+        return new \App\Services\Effectifs\MemberFileInsightsService(
+            $this->userRepository,
+            $this->unitRepository,
+            $this->personnelAssignmentRepository,
+            $this->personnelJobRoleRepository,
+            $this->gradeRepository,
+            $this->tenantRepository,
+            $this->senioritySummary
+        );
+    }
+
+    /**
+     * Avertissement saisi depuis la fiche membre. Même registre que l’écran « Restrictions membres »
+     * (mesure de niveau communauté, journalisée), réservé aux personnes habilitées aux restrictions.
+     */
+    public function declareSanction(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $back = effectifs_workspace_url('membres/' . $id) . '#sanctions';
+        if (!EffectifsLmsAccess::canManageSanctions(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à enregistrer une mesure disciplinaire.');
+
+            return Response::redirect($id > 0 ? $back : effectifs_workspace_url());
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $actorId = (int) Session::get('user_id');
+        if ($id < 1 || $this->userRepository->findById($id, $tenantId) === null) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        if ($id === $actorId) {
+            Session::flash('error', 'Vous ne pouvez pas vous sanctionner vous-même.');
+
+            return Response::redirect($back);
+        }
+        $reason = trim((string) $request->input('reason', ''));
+        if ($reason === '') {
+            Session::flash('error', 'Indiquez le motif de l’avertissement.');
+
+            return Response::redirect($back);
+        }
+        try {
+            $this->moderationService()->applySanction($tenantId, $actorId, $id, 'warn', mb_substr($reason, 0, 1000), null, [], 'tenant');
+            Session::flash('success', 'Avertissement enregistré sur le dossier du membre.');
+        } catch (\Throwable $e) {
+            error_log('Effectifs member: sanction failed: ' . $e->getMessage());
+            Session::flash('error', 'L’avertissement n’a pas pu être enregistré.');
+        }
+
+        return Response::redirect($back);
+    }
+
+    /** Levée d’une mesure disciplinaire de la communauté depuis la fiche membre. */
+    public function liftSanction(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $sanctionId = (int) ($params['sanctionId'] ?? 0);
+        $back = effectifs_workspace_url('membres/' . $id) . '#sanctions';
+        if (!EffectifsLmsAccess::canManageSanctions(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à lever une mesure disciplinaire.');
+
+            return Response::redirect($id > 0 ? $back : effectifs_workspace_url());
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $action = $sanctionId > 0 ? $this->moderationRepository()->findActionById($tenantId, $sanctionId) : null;
+        if ($action === null || (int) ($action['target_user_id'] ?? 0) !== $id) {
+            Session::flash('error', 'Mesure introuvable pour ce membre.');
+
+            return Response::redirect($back);
+        }
+        $ok = $this->moderationService()->revokeForScope($tenantId, $sanctionId, (int) Session::get('user_id'), 'tenant');
+        Session::flash($ok ? 'success' : 'error', $ok ? 'Mesure levée. Elle reste visible dans l’historique du dossier.' : 'Cette mesure est déjà levée ou relève de l’administration du site.');
+
+        return Response::redirect($back);
+    }
+
+    private function moderationService(): \App\Services\Moderation\ModerationService
+    {
+        return \App\Core\Container::get(\App\Services\Moderation\ModerationService::class);
+    }
+
+    private function moderationRepository(): \App\Repositories\ModerationRepository
+    {
+        return \App\Core\Container::get(\App\Repositories\ModerationRepository::class);
+    }
+
+    /** Réglage des critères d’éligibilité à une élévation (communauté courante). */
+    public function elevationCriteria(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $qualifications = [];
+        try {
+            $qualifications = (new \App\Repositories\QualificationDefinitionRepository())->listForTenant($tenantId);
+        } catch (\Throwable) {
+        }
+
+        return $this->shell('admin.effectifs_workspace.elevation_criteria', [
+            'title' => 'Critères d’élévation',
+            'effectifsNav' => 'elevations',
+            'criteria' => \App\Services\Effectifs\ElevationEligibility::settings($this->tenantRepository->getSettings($tenantId)),
+            'qualificationOptions' => $qualifications,
+            'canSetElevationCriteria' => EffectifsLmsAccess::canSetElevationCriteria(Gate::getInstance()),
+            'csrfToken' => Csrf::token(),
+        ]);
+    }
+
+    public function saveElevationCriteria(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $target = effectifs_workspace_url('elevations/criteres');
+        if (!EffectifsLmsAccess::canSetElevationCriteria(Gate::getInstance())) {
+            Session::flash('error', 'Seules les personnes qui gèrent les grades peuvent régler les critères d’élévation.');
+
+            return Response::redirect($target);
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($target);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $allowed = [];
+        try {
+            foreach ((new \App\Repositories\QualificationDefinitionRepository())->listForTenant($tenantId) as $d) {
+                $allowed[] = (int) ($d['id'] ?? 0);
+            }
+        } catch (\Throwable) {
+        }
+        $rawQuals = $request->input('required_qualification_ids');
+        $criteria = \App\Services\Effectifs\ElevationEligibility::sanitize([
+            'min_months_in_grade' => $request->input('min_months_in_grade', 0),
+            'min_presences_90' => $request->input('min_presences_90', 0),
+            'min_presence_rate_90' => $request->input('min_presence_rate_90', 0),
+            'required_qualification_ids' => is_array($rawQuals) ? $rawQuals : [],
+        ], $allowed);
+        // Réglages relus puis réécrits en entier : la liste des qualifications remplace l’ancienne.
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $previous = \App\Services\Effectifs\ElevationEligibility::settings($settings);
+        $settings[\App\Services\Effectifs\ElevationEligibility::SETTINGS_KEY] = $criteria;
+        $this->tenantRepository->replaceSettings($tenantId, $settings);
+        try {
+            \App\Core\Container::get(\App\Services\Audit\AuditService::class)->log(
+                \App\Services\Audit\AuditAction::ELEVATION_CRITERIA_UPDATED,
+                $tenantId,
+                (int) Session::get('user_id'),
+                'tenant',
+                $tenantId,
+                json_encode($previous, JSON_UNESCAPED_UNICODE) ?: null,
+                json_encode($criteria, JSON_UNESCAPED_UNICODE) ?: null
+            );
+        } catch (\Throwable) {
+        }
+        Session::flash('success', 'Critères d’élévation enregistrés. Ils s’affichent sur chaque fiche membre.');
+
+        return Response::redirect($target);
     }
 
     /** @return array<string, mixed> */

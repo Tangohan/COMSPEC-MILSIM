@@ -72,8 +72,9 @@ final class RequestTelemetryMiddleware
 
     private function shouldRecord(int $statusCode, int $elapsedMs): bool
     {
-        // Les erreurs et requêtes lentes restent exhaustives pour ne masquer aucun incident.
-        if ($statusCode >= 400 || $elapsedMs >= self::SLOW_REQUEST_THRESHOLD_MS) {
+        // Les erreurs et requêtes lentes restent exhaustives pour ne masquer aucun incident. Sauf les refus 429 : ils
+        // arrivent en rafale justement quand le site est chargé, une ligne SQL par refus ajouterait à la charge.
+        if ($statusCode !== 429 && ($statusCode >= 400 || $elapsedMs >= self::SLOW_REQUEST_THRESHOLD_MS)) {
             return true;
         }
 

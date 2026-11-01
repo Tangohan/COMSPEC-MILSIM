@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Repositories\UserPublicCvRepository;
 use App\Services\PublicCv\PublicCvDataLoader;
+use App\Support\PublicCv\PublicCvBannerStorage;
 use App\Support\PublicCv\PublicCvPresenter;
 use App\Support\PublicCv\PublicCvSettings;
 use PHPUnit\Framework\TestCase;
@@ -191,7 +192,177 @@ final class PublicPlayerCvTest extends TestCase
         self::assertNotNull(PublicCvSettings::slugError('ab'));
         self::assertNotNull(PublicCvSettings::slugError('admin'));
         self::assertNotNull(PublicCvSettings::slugError('-bad-'));
-        self::assertSame(['unit' => true, 'counters' => false], array_slice(PublicCvSettings::sectionsFromForm(['unit', 'inconnue']), 0, 2));
+        self::assertSame(['unit' => true, 'roles' => false], array_slice(PublicCvSettings::sectionsFromForm(['unit', 'inconnue']), 0, 2));
+    }
+
+    /** Données de jeu, fonctions, poste, ancienneté et promotions (ajoutées après la première version). */
+    private static function rawFull(): array
+    {
+        return array_merge(self::raw(), [
+            'unit_name' => null,
+            'unit_post' => ['role_name' => 'Chef de groupe', 'unit_name' => '2e section'],
+            'jobs' => [
+                ['name' => 'Fusilier', 'detail' => 'Grenadier', 'is_primary' => 1],
+                ['name' => 'Infirmier', 'detail' => 'CLS', 'is_primary' => 0],
+                ['name' => 'Fusilier', 'detail' => 'Grenadier', 'is_primary' => 0],
+            ],
+            'member_since' => '2022-03-10 20:00:00',
+            'promotions' => [
+                ['event_date' => '2025-06-01', 'description' => 'Grade : Sergent-chef · Fonction : Chef de groupe · Accès : Encadrement secret · Droits d’accès ajustés'],
+                ['event_date' => '2024-02-01', 'description' => 'Sanction disciplinaire sans grade'],
+            ],
+            'distances' => ['totals' => ['foot_m' => 412300, 'land_m' => 1280400, 'air_m' => 3920000, 'sea_m' => 50, 'halo_m' => 9200, 'halo_jumps' => 7]],
+            'play' => ['total_seconds' => 1834 * 3600, 'sessions_total' => 212],
+            'game_roles' => [['key' => 'CDE', 'label' => 'CDE', 'seconds' => 720 * 3600], ['key' => 'SLOT:Grenadier', 'label' => '', 'seconds' => 300 * 3600], ['key' => 'PIL', 'label' => 'PIL', 'seconds' => 120]],
+        ]);
+    }
+
+    public function testNewSectionsDefaultsKeepOptInHiddenOnExistingPages(): void
+    {
+        // Page enregistrée avant l’ajout des nouvelles sections : clés absentes.
+        $legacy = PublicCvSettings::decodeSections('{"unit":1,"counters":0}');
+        self::assertTrue($legacy['roles']);
+        self::assertTrue($legacy['activity']);
+        self::assertFalse($legacy['since']);
+        self::assertFalse($legacy['career']);
+        self::assertFalse($legacy['counters']);
+
+        $cv = PublicCvPresenter::present(self::rawFull(), self::settings());
+        self::assertNull($cv['member_since']);
+        self::assertSame([], $cv['career']);
+    }
+
+    public function testActivityCountersAndDistanceBreakdown(): void
+    {
+        $cv = PublicCvPresenter::present(self::rawFull(), self::settings());
+        self::assertSame(['operations', 'play', 'distance', 'flight', 'qualifications', 'trainings'], array_column($cv['counters'], 'key'));
+        self::assertSame(["1\u{202F}834", 'h', 'sur 212 parties'], [$cv['counters'][1]['number'], $cv['counters'][1]['unit'], $cv['counters'][1]['hint']]);
+        self::assertSame(["5\u{202F}622", 'km'], [$cv['counters'][2]['number'], $cv['counters'][2]['unit']]);
+        // Du plus long au plus court ; la mer (50 m) n’apparaît pas ; les sauts sont comptés.
+        self::assertSame(['air', 'land', 'foot', 'halo'], array_column($cv['distance_modes'], 'key'));
+        self::assertSame(['9,2', '7 sauts', 100], [$cv['distance_modes'][3]['km'], $cv['distance_modes'][3]['note'], $cv['distance_modes'][0]['share']]);
+        // Codes de rôle traduits ; rôle de moins de 10 minutes ignoré.
+        self::assertSame(['Chef d’équipe', 'Grenadier'], array_column($cv['game_roles'], 'label'));
+
+        $body = $this->controller(self::settings(), self::rawFull())->show(new Request(), ['slug' => 'viper-6'])->body();
+        self::assertStringContainsString('id="pcv-activity"', $body);
+        self::assertStringContainsString('Rôles tenus en mission', $body);
+        self::assertStringContainsString('Heures de jeu', $body);
+
+        $hidden = $this->controller(self::settings(['activity' => false]), self::rawFull())->show(new Request(), ['slug' => 'viper-6'])->body();
+        foreach (['id="pcv-activity"', 'id="pcv-roles"', 'Heures de jeu', 'Kilomètres'] as $absent) {
+            self::assertStringNotContainsString($absent, $hidden, 'Activité masquée rendue : ' . $absent);
+        }
+        self::assertStringContainsString('Heures de vol', $hidden);
+    }
+
+    public function testJobsAndUnitPost(): void
+    {
+        $cv = PublicCvPresenter::present(self::rawFull(), self::settings());
+        self::assertSame('Fusilier — Grenadier', $cv['job']);
+        self::assertSame(['Infirmier — CLS'], $cv['other_jobs']);
+        self::assertSame('Chef de groupe', $cv['post']);
+        self::assertSame('2e section', $cv['unit'], 'Affectation reprise de l’organigramme si aucune unité de rattachement');
+
+        $body = $this->controller(self::settings(), self::rawFull())->show(new Request(), ['slug' => 'viper-6'])->body();
+        self::assertStringContainsString('<li class="pcv-chip">Fusilier — Grenadier</li>', $body);
+        self::assertStringContainsString('<dt>Poste</dt><dd>Chef de groupe</dd>', $body);
+
+        $none = PublicCvPresenter::present(self::rawFull(), self::settings(['roles' => false]));
+        self::assertSame([null, [], null], [$none['job'], $none['other_jobs'], $none['post']]);
+    }
+
+    public function testMemberSinceAndCareerAreOptInAndNeverShowReasons(): void
+    {
+        $settings = self::settings(['since' => true, 'career' => true]);
+        $cv = PublicCvPresenter::present(self::rawFull(), $settings);
+        self::assertSame('mars 2022', $cv['member_since']);
+        self::assertSame([['title' => 'Sergent-chef', 'subtitle' => 'Chef de groupe', 'date' => 'juin 2025']], $cv['career']);
+
+        $body = $this->controller($settings, self::rawFull())->show(new Request(), ['slug' => 'viper-6'])->body();
+        self::assertStringContainsString('id="pcv-career"', $body);
+        self::assertStringContainsString('<dt>Membre depuis</dt><dd>Mars 2022</dd>', $body);
+        foreach (['Encadrement secret', 'Droits d’accès', 'Sanction'] as $forbidden) {
+            self::assertStringNotContainsString($forbidden, $body);
+        }
+    }
+
+    public function testBannerFallbackOwnThenCommunityThenPlain(): void
+    {
+        $own = 'uploads/public-cv/b-7-0123456789abcdef.jpg';
+        $body = $this->controller(self::settings() + ['banner_path' => $own], self::raw())->show(new Request(), ['slug' => 'viper-6'])->body();
+        self::assertStringContainsString($own, $body);
+        self::assertStringNotContainsString('banniere-lynx', $body);
+        // La bannière perso reste même si la section communauté est masquée.
+        $body = $this->controller(self::settings(['unit' => false]) + ['banner_path' => $own], self::raw())->show(new Request(), ['slug' => 'viper-6'])->body();
+        self::assertStringContainsString($own, $body);
+
+        // Chemin enregistré invalide : ignoré, la bannière de la communauté reprend.
+        $body = $this->controller(self::settings() + ['banner_path' => '../../config/app.php'], self::raw())->show(new Request(), ['slug' => 'viper-6'])->body();
+        self::assertStringContainsString('banniere-lynx', $body);
+        self::assertStringNotContainsString('config/app.php', $body);
+
+        $raw = self::raw();
+        $raw['banner_url'] = null;
+        $body = $this->controller(self::settings(), $raw)->show(new Request(), ['slug' => 'viper-6'])->body();
+        self::assertStringContainsString('pcv-hero pcv-hero--plain', $body);
+        self::assertStringNotContainsString('class="pcv-hero-bg"', $body);
+    }
+
+    public function testBannerUploadRejectsInvalidFiles(): void
+    {
+        $dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'pcv-banner-' . bin2hex(random_bytes(4));
+        mkdir($dir);
+        $storage = new PublicCvBannerStorage($dir);
+        $file = static function (string $content, string $name) use ($dir): array {
+            $tmp = $dir . DIRECTORY_SEPARATOR . 'up-' . bin2hex(random_bytes(3));
+            file_put_contents($tmp, $content);
+
+            return ['name' => $name, 'tmp_name' => $tmp, 'size' => strlen($content), 'error' => UPLOAD_ERR_OK, 'type' => 'image/jpeg'];
+        };
+
+        self::assertSame(['path' => null, 'error' => null], $storage->store(7, ['error' => UPLOAD_ERR_NO_FILE]));
+        self::assertStringContainsString('Formats acceptés', (string) $storage->store(7, $file('<?php echo 1; ?>', 'photo.jpg'))['error']);
+        self::assertStringContainsString('Formats acceptés', (string) $storage->store(7, $file('<svg xmlns="http://www.w3.org/2000/svg"/>', 'b.svg'))['error']);
+        self::assertStringContainsString('iPhone', (string) $storage->store(7, $file("\x00\x00\x00\x18ftypheic\x00\x00\x00\x00", 'IMG_1.HEIC'))['error']);
+        $big = $file('x', 'b.jpg');
+        $big['size'] = PublicCvBannerStorage::effectiveMaxBytes() + 1;
+        self::assertStringContainsString('trop lourde', (string) $storage->store(7, $big)['error']);
+        self::assertNotNull($storage->store(7, ['error' => UPLOAD_ERR_INI_SIZE])['error']);
+        self::assertSame([], glob($dir . '/public/uploads/public-cv/*') ?: [], 'Aucun fichier publié pour un envoi refusé');
+
+        self::assertTrue(PublicCvBannerStorage::isStoredPath('uploads/public-cv/b-7-0123456789abcdef.jpg'));
+        foreach (['uploads/public-cv/../../.env', 'uploads/banners/x.jpg', 'uploads/public-cv/b-7-0123456789abcdef.php', 'https://evil.test/x.jpg'] as $bad) {
+            self::assertFalse(PublicCvBannerStorage::isStoredPath($bad), $bad);
+            self::assertNull(PublicCvBannerStorage::publicUrl($bad), $bad);
+        }
+    }
+
+    public function testBannerUploadIsReencodedWithoutCameraData(): void
+    {
+        if (!function_exists('imagecreatetruecolor') || !function_exists('imagejpeg')) {
+            self::markTestSkipped('Bibliothèque d’images (GD) absente.');
+        }
+        $dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'pcv-banner-' . bin2hex(random_bytes(4));
+        mkdir($dir);
+        $src = $dir . DIRECTORY_SEPARATOR . 'src.png';
+        $im = imagecreatetruecolor(1200, 400);
+        imagepng($im, $src);
+        $small = $dir . DIRECTORY_SEPARATOR . 'small.png';
+        imagepng(imagecreatetruecolor(300, 100), $small);
+
+        $storage = new PublicCvBannerStorage($dir);
+        $tooSmall = $storage->store(7, ['name' => 's.png', 'tmp_name' => $small, 'size' => filesize($small), 'error' => UPLOAD_ERR_OK]);
+        self::assertStringContainsString('trop petite', (string) $tooSmall['error']);
+
+        $ok = $storage->store(7, ['name' => 'b.png', 'tmp_name' => $src, 'size' => filesize($src), 'error' => UPLOAD_ERR_OK]);
+        self::assertNull($ok['error']);
+        self::assertTrue(PublicCvBannerStorage::isStoredPath($ok['path']));
+        $abs = $dir . '/public/' . $ok['path'];
+        self::assertFileExists($abs);
+        self::assertSame("\xFF\xD8\xFF", substr((string) file_get_contents($abs), 0, 3), 'Toujours ré-encodée en JPEG');
+        $storage->delete($ok['path']);
+        self::assertFileDoesNotExist($abs);
     }
 
     public function testNotFoundViewIsStandalone(): void

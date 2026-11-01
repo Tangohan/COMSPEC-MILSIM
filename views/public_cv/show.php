@@ -27,13 +27,22 @@ $qualifications = $list('qualifications');
 $trainings = $list('trainings');
 $operations = $list('operations');
 $photos = $list('photos');
+$job = $str('job');
+$otherJobs = $list('other_jobs');
+$post = $str('post');
+$since = $str('member_since');
+$career = $list('career');
+$distanceModes = $list('distance_modes');
+$gameRoles = $list('game_roles');
 $pageUrl = (string) ($cv['page_url'] ?? '');
 $slug = (string) ($cv['slug'] ?? '');
 $og = is_array($cv['og'] ?? null) ? $cv['og'] : [];
 
-$hasFiche = $grade !== null || $unit !== null || $community !== null;
-$hasMain = $bio !== null || $trainings !== [] || $operations !== [] || $photos !== [];
-$hasAside = $hasFiche || $qualifications !== [] || $decorations !== [];
+$hasFiche = $grade !== null || $unit !== null || $community !== null || $job !== null || $post !== null || $since !== null;
+$hasMain = $bio !== null || $career !== [] || $trainings !== [] || $operations !== [] || $photos !== [];
+$hasAside = $hasFiche || $qualifications !== [] || $decorations !== [] || $distanceModes !== [] || $gameRoles !== [];
+/* Pastille de fonction dans l’en-tête : l’emploi principal, sinon le poste tenu dans l’unité. */
+$jobChip = $job ?? $post;
 
 /* Teinte de l’étiquette d’une opération selon son type. */
 $typeTone = ['Opération' => 'op', 'Formation' => 'form'];
@@ -132,10 +141,13 @@ $seo_json_ld = [
         .pcv-cta { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 
         /* Compteurs */
-        .pcv-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; border-bottom: 1px solid var(--rule); }
-        .pcv-stat { min-width: 0; padding: 28px 24px; border-right: 1px solid var(--rule); }
-        .pcv-stat:last-child { border-right: 0; }
-        .pcv-stat-v { margin: 10px 0 0; font-size: clamp(34px, 4.4vw, 56px); font-weight: 900; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+        /* Bandeau de 1 à 6 compteurs : filets intérieurs seulement (bords extérieurs masqués par le débord). */
+        .pcv-stats-wrap { overflow: hidden; border-bottom: 1px solid var(--rule); }
+        .pcv-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin: 0 -1px -1px 0; padding: 0; list-style: none; }
+        .pcv-stat { min-width: 0; padding: 28px 24px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+        .pcv-stat-v { margin: 10px 0 0; font-size: clamp(32px, 3.8vw, 54px); font-weight: 900; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+        .pcv-stats--dense .pcv-stat { padding: 26px 18px; }
+        .pcv-stats--dense .pcv-stat-v { font-size: clamp(28px, 2.9vw, 42px); }
         .pcv-stat-v small { margin-left: 4px; font-size: .4em; font-weight: 700; letter-spacing: 0; color: var(--ink-muted); }
         .pcv-stat-s { margin: 8px 0 0; font-size: 12px; color: var(--ink-muted); }
 
@@ -174,6 +186,12 @@ $seo_json_ld = [
         .pcv-dl dt { color: var(--ink-muted); }
         .pcv-dl dd { margin: 0; text-align: right; font-weight: 600; overflow-wrap: anywhere; }
         .pcv-quals { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
+        .pcv-bars { display: flex; flex-direction: column; gap: 14px; margin: 16px 0 0; padding: 0; list-style: none; }
+        .pcv-bar-r { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 600; }
+        .pcv-bar-r em { flex: none; font: normal 400 12px/1.5 var(--mono); color: var(--ink-muted); }
+        .pcv-bar-r small { margin-left: 6px; font-size: 12px; font-weight: 400; color: var(--ink-muted); }
+        .pcv-bar { height: 4px; margin-top: 8px; background: var(--rule); }
+        .pcv-bar i { display: block; height: 100%; background: var(--accent); }
         .pcv-q { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--rule); font-size: 12px; font-weight: 700; }
         .pcv-q i { font: normal 500 10px/1 var(--mono); color: var(--accent); }
         .pcv-q img { width: 18px; height: 18px; object-fit: contain; }
@@ -213,13 +231,10 @@ $seo_json_ld = [
             .pcv-avatar { width: 120px; height: 144px; }
             .pcv-avatar b { font-size: 60px; }
             .pcv-grid { grid-template-columns: minmax(0, 1fr); padding: 48px 0; }
-            .pcv-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .pcv-stat:nth-child(2n) { border-right: 0; }
-            .pcv-stat:nth-child(-n+2) { border-bottom: 1px solid var(--rule); }
         }
         @media (max-width: 560px) {
+            .pcv-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .pcv-stat { padding: 20px 14px; }
-            .pcv-stat:nth-child(odd) { padding-left: 0; }
             .pcv-op { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
             .pcv-op time { grid-column: 1 / -1; }
             .pcv-cta .pcv-btn { flex: 1 1 auto; }
@@ -261,6 +276,7 @@ $seo_json_ld = [
                 <ul class="pcv-ident" aria-label="Identité">
                     <li class="pcv-chip pcv-chip--acc"><span class="pcv-dot" aria-hidden="true"></span>Membre actif</li>
                     <?php if ($grade !== null): ?><li class="pcv-chip"><?= $h($grade) ?></li><?php endif; ?>
+                    <?php if ($jobChip !== null): ?><li class="pcv-chip"><?= $h($jobChip) ?></li><?php endif; ?>
                     <?php if ($unit !== null): ?><li class="pcv-chip"><?= $h($unit) ?></li><?php endif; ?>
                 </ul>
             </div>
@@ -279,7 +295,8 @@ $seo_json_ld = [
 
     <div class="pcv-wrap">
         <?php if ($counters !== []): ?>
-        <ul class="pcv-stats pcv-rise pcv-rise-4" aria-label="Compteurs">
+        <div class="pcv-stats-wrap pcv-rise pcv-rise-4">
+        <ul class="pcv-stats<?= count($counters) >= 5 ? ' pcv-stats--dense' : '' ?>" aria-label="Compteurs">
             <?php foreach ($counters as $c): ?>
             <li class="pcv-stat">
                 <p class="pcv-k"><?= $h($c['label'] ?? '') ?></p>
@@ -288,6 +305,7 @@ $seo_json_ld = [
             </li>
             <?php endforeach; ?>
         </ul>
+        </div>
         <?php endif; ?>
 
         <?php if ($hasMain || $hasAside): ?>
@@ -302,9 +320,25 @@ $seo_json_ld = [
                 </section>
                 <?php endif; ?>
 
+                <?php if ($career !== []): ?>
+                <section id="pcv-career" aria-labelledby="pcv-h-career">
+                    <p class="pcv-k">États de service</p>
+                    <h2 id="pcv-h-career" class="pcv-h2">Parcours</h2>
+                    <ol class="pcv-tl">
+                        <?php foreach ($career as $c): ?>
+                        <li>
+                            <?php if (!empty($c['date'])): ?><div class="pcv-tl-d"><?= $h($c['date']) ?></div><?php endif; ?>
+                            <div class="pcv-tl-t"><?= $h($c['title'] ?? '') ?></div>
+                            <?php if (!empty($c['subtitle'])): ?><div class="pcv-tl-u"><?= $h($c['subtitle']) ?></div><?php endif; ?>
+                        </li>
+                        <?php endforeach; ?>
+                    </ol>
+                </section>
+                <?php endif; ?>
+
                 <?php if ($trainings !== []): ?>
                 <section id="pcv-trainings" aria-labelledby="pcv-h-trainings">
-                    <p class="pcv-k">États de service</p>
+                    <p class="pcv-k">Instruction</p>
                     <h2 id="pcv-h-trainings" class="pcv-h2">Formations validées</h2>
                     <ol class="pcv-tl">
                         <?php foreach ($trainings as $t): ?>
@@ -359,11 +393,15 @@ $seo_json_ld = [
                     <h2 class="pcv-k">Fiche</h2>
                     <dl class="pcv-dl">
                         <?php if ($grade !== null): ?><dt>Grade</dt><dd><?= $h($grade) ?></dd><?php endif; ?>
+                        <?php if ($job !== null): ?><dt>Fonction</dt><dd><?= $h($job) ?></dd><?php endif; ?>
+                        <?php if ($otherJobs !== []): ?><dt>Autres fonctions</dt><dd><?= $h(implode(', ', $otherJobs)) ?></dd><?php endif; ?>
+                        <?php if ($post !== null): ?><dt>Poste</dt><dd><?= $h($post) ?></dd><?php endif; ?>
                         <?php if ($community !== null): ?>
                         <dt>Communauté</dt>
                         <dd><?php if ($communityUrl !== null): ?><a href="<?= $h($communityUrl) ?>"><?= $h($community) ?></a><?php else: ?><?= $h($community) ?><?php endif; ?></dd>
                         <?php endif; ?>
                         <?php if ($unit !== null): ?><dt>Affectation</dt><dd><?= $h($unit) ?></dd><?php endif; ?>
+                        <?php if ($since !== null): ?><dt>Membre depuis</dt><dd><?= $h(mb_strtoupper(mb_substr($since, 0, 1)) . mb_substr($since, 1)) ?></dd><?php endif; ?>
                     </dl>
                 </div>
                 <?php endif; ?>
@@ -377,6 +415,34 @@ $seo_json_ld = [
                         <li class="pcv-q"<?= $qTip !== '' ? ' title="' . $h($qTip) . '"' : '' ?>>
                             <?php if (!empty($q['code'])): ?><i><?= $h($q['code']) ?></i><?php elseif (!empty($q['image'])): ?><img src="<?= $h($q['image']) ?>" alt="" loading="lazy"><?php endif; ?>
                             <span><?= $h($q['title'] ?? '') ?><?php if (!empty($q['subtitle'])): ?><small><?= $h($q['subtitle']) ?></small><?php endif; ?></span>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
+
+                <?php if ($gameRoles !== []): ?>
+                <div class="pcv-card" id="pcv-roles">
+                    <h2 class="pcv-k">Rôles tenus en mission</h2>
+                    <ul class="pcv-bars">
+                        <?php foreach ($gameRoles as $r): ?>
+                        <li>
+                            <div class="pcv-bar-r"><span><?= $h($r['label'] ?? '') ?></span><em><?= $h($r['hours'] ?? '') ?></em></div>
+                            <div class="pcv-bar" aria-hidden="true"><i style="width:<?= (int) ($r['share'] ?? 0) ?>%"></i></div>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
+
+                <?php if ($distanceModes !== []): ?>
+                <div class="pcv-card" id="pcv-activity">
+                    <h2 class="pcv-k">Kilomètres parcourus</h2>
+                    <ul class="pcv-bars">
+                        <?php foreach ($distanceModes as $d): ?>
+                        <li>
+                            <div class="pcv-bar-r"><span><?= $h($d['label'] ?? '') ?><?php if (!empty($d['note'])): ?><small><?= $h($d['note']) ?></small><?php endif; ?></span><em><?= $h($d['km'] ?? '') ?> km</em></div>
+                            <div class="pcv-bar" aria-hidden="true"><i style="width:<?= (int) ($d['share'] ?? 0) ?>%"></i></div>
                         </li>
                         <?php endforeach; ?>
                     </ul>

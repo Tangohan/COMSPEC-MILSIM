@@ -31,7 +31,7 @@ use App\Services\Personnel\PersonnelCompletenessService;
 use App\Repositories\UserProfileDisplaySettingsRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserLegalIdentityRepository;
-use App\Services\Profile\RecruitmentPresetPayloadService;
+use App\Services\Profile\CandidateRpSnapshotService;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PlanningEntryRepository;
@@ -739,7 +739,7 @@ class PersonnelController
         $canSensitive = $this->canViewSensitivePersonnel();
         $canManageVisibility = $realCaps->managePersonnelVisibility || $realCaps->bypassAll;
         $rpDossierNeedsAttention = ($isSelf || $canStaffView || $canStaffEdit || $canSensitive)
-            && RecruitmentPresetPayloadService::personnelRpDossierNeedsAttention(is_array($personnelProfile) ? $personnelProfile : []);
+            && CandidateRpSnapshotService::personnelRpDossierNeedsAttention(is_array($personnelProfile) ? $personnelProfile : []);
         $roleplayTimelineEvents = [];
         if ($roleplayFollowupConfig['enabled'] && ($isSelf || $canStaffView || $canStaffEdit) && $this->personnelRoleplayTimelineRepository->tableExists()) {
             $roleplayTimelineEvents = $this->personnelRoleplayTimelineRepository->listForUser((int) $tenantId, $uid, 80);

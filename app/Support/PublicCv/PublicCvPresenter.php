@@ -16,6 +16,22 @@ final class PublicCvPresenter
     /** Type d’événement de la communauté => libellé affiché sur la ligne d’opération. */
     private const EVENT_TYPES = ['operation' => 'Opération', 'formation' => 'Formation', 'evenement' => 'Événement', 'autre' => 'Autre'];
 
+    /** Mode de déplacement => [libellé, compteur en mètres d’atak_distance_stats]. */
+    private const DISTANCE_MODES = [
+        'foot' => ['À pied', 'foot_m'],
+        'land' => ['En véhicule', 'land_m'],
+        'air' => ['En vol', 'air_m'],
+        'sea' => ['En mer', 'sea_m'],
+        'halo' => ['En chute libre', 'halo_m'],
+    ];
+
+    /** Codes de rôle remontés par le jeu => libellé lisible (les autres gardent le nom envoyé par le jeu). */
+    private const GAME_ROLE_LABELS = [
+        'PIL' => 'Pilote', 'CPL' => 'Copilote', 'DRV' => 'Conducteur', 'CREW' => 'Équipage', 'MED' => 'Infirmier',
+        'EOD' => 'Démineur', 'ENG' => 'Sapeur', 'DRN' => 'Télépilote', 'CDE' => 'Chef d’équipe', 'FUS' => 'Fusilier',
+        'JTAC' => 'Guidage aérien (JTAC)',
+    ];
+
     private const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 
     /**
@@ -42,12 +58,58 @@ final class PublicCvPresenter
             $g = is_array($raw['grade'] ?? null) ? $raw['grade'] : [];
             $grade = self::text($g['label_long'] ?? null) ?? self::text($g['name'] ?? null);
             $gradeShort = self::text($g['label_short'] ?? null) ?? self::text($g['short_name'] ?? null);
-            $unit = self::text($raw['unit_name'] ?? null);
+            $post = is_array($raw['unit_post'] ?? null) ? $raw['unit_post'] : [];
+            $unit = self::text($raw['unit_name'] ?? null) ?? self::text($post['unit_name'] ?? null);
             $t = is_array($raw['tenant'] ?? null) ? $raw['tenant'] : [];
             $community = self::text($t['name'] ?? null);
             $communityUrl = $community !== null ? ($env['community_url'] ?? null) : null;
             // Bannière déjà publiée par la communauté sur sa propre page : fond de l’en-tête.
             $banner = $community !== null ? self::imageUrl($raw['banner_url'] ?? null, $env['asset_url'] ?? null) : null;
+        }
+        // Bannière choisie par le joueur : prioritaire sur celle de la communauté (sinon trame).
+        $banner = self::text($env['own_banner_url'] ?? null) ?? $banner;
+
+        // Fonction (emploi) et poste dans l’unité, comme les colonnes du tableur Effectifs.
+        $job = null;
+        $otherJobs = [];
+        $post = null;
+        if ($sections['roles']) {
+            foreach (is_array($raw['jobs'] ?? null) ? $raw['jobs'] : [] as $j) {
+                $name = self::text($j['name'] ?? null);
+                if ($name === null) {
+                    continue;
+                }
+                $detail = self::text($j['detail'] ?? null);
+                $label = $detail !== null && mb_strtolower($detail) !== mb_strtolower($name) ? $name . ' — ' . $detail : $name;
+                if ($job === null) {
+                    $job = $label;
+                } elseif ($label !== $job && !in_array($label, $otherJobs, true)) {
+                    $otherJobs[] = $label;
+                }
+            }
+            $up = is_array($raw['unit_post'] ?? null) ? $raw['unit_post'] : [];
+            $post = self::text($up['role_name'] ?? null);
+            if ($post !== null && $job !== null && mb_strtolower($post) === mb_strtolower($job)) {
+                $post = null;
+            }
+        }
+
+        $since = $sections['since'] ? self::monthYear($raw['member_since'] ?? null) : null;
+
+        $career = [];
+        if ($sections['career']) {
+            foreach (is_array($raw['promotions'] ?? null) ? $raw['promotions'] : [] as $pr) {
+                $parts = self::structuredParts((string) ($pr['description'] ?? ''));
+                if (!isset($parts['Grade'])) {
+                    continue;
+                }
+                $sub = implode(' · ', array_values(array_filter([$parts['Fonction'] ?? null, $parts['Unité'] ?? null])));
+                $career[] = [
+                    'title' => $parts['Grade'],
+                    'subtitle' => $sub !== '' ? $sub : null,
+                    'date' => self::monthYear($pr['event_date'] ?? null),
+                ];
+            }
         }
 
         $badge = $env['badge_url'] ?? null;
@@ -157,12 +219,66 @@ final class PublicCvPresenter
         [$flightNumber, $flightUnit] = array_pad(explode(' ', $flight, 2), 2, null);
         $operationsCount = (string) max(0, (int) ($ops['count'] ?? 0));
         // value : texte complet ; number + unit : le même chiffre et son unité, mis en forme séparément.
-        $counters = [
+        $activityCounters = [];
+        $distanceModes = [];
+        $gameRoles = [];
+        if ($sections['activity']) {
+            $play = is_array($raw['play'] ?? null) ? $raw['play'] : [];
+            $playSeconds = max(0, (int) ($play['total_seconds'] ?? 0));
+            if ($playSeconds >= 60) {
+                $p = self::hours($playSeconds);
+                [$pn, $pu] = array_pad(explode(' ', $p, 2), 2, null);
+                $sessions = max(0, (int) ($play['sessions_total'] ?? 0));
+                $activityCounters[] = [
+                    'key' => 'play', 'label' => 'Heures de jeu', 'value' => $p, 'number' => (string) $pn, 'unit' => $pu,
+                    'hint' => $sessions > 0 ? 'sur ' . $sessions . ' partie' . ($sessions > 1 ? 's' : '') : 'en mission',
+                ];
+            }
+            $dist = is_array($raw['distances'] ?? null) ? $raw['distances'] : [];
+            $totals = is_array($dist['totals'] ?? null) ? $dist['totals'] : [];
+            $totalM = 0;
+            foreach (self::DISTANCE_MODES as $mode => [$label, $col]) {
+                $m = max(0, (int) ($totals[$col] ?? 0));
+                $totalM += $m;
+                if ($m >= 100) {
+                    $jumps = $mode === 'halo' ? max(0, (int) ($totals['halo_jumps'] ?? 0)) : 0;
+                    $distanceModes[] = [
+                        'key' => $mode, 'label' => $label, 'meters' => $m, 'km' => self::km($m),
+                        'note' => $jumps > 0 ? $jumps . ' saut' . ($jumps > 1 ? 's' : '') : null,
+                    ];
+                }
+            }
+            if ($totalM >= 100) {
+                $activityCounters[] = [
+                    'key' => 'distance', 'label' => 'Kilomètres', 'value' => self::km($totalM) . ' km', 'number' => self::km($totalM),
+                    'unit' => 'km', 'hint' => 'parcourus en jeu',
+                ];
+            }
+            usort($distanceModes, static fn (array $a, array $b): int => $b['meters'] <=> $a['meters']);
+            $maxM = $distanceModes !== [] ? max(1, $distanceModes[0]['meters']) : 1;
+            foreach ($distanceModes as $i => $d) {
+                $distanceModes[$i]['share'] = (int) max(2, round($d['meters'] * 100 / $maxM));
+            }
+            foreach (array_slice(is_array($raw['game_roles'] ?? null) ? $raw['game_roles'] : [], 0, 5) as $r) {
+                $sec = max(0, (int) ($r['seconds'] ?? 0));
+                $label = self::roleLabel((string) ($r['key'] ?? ''), self::text($r['label'] ?? null));
+                if ($sec >= 600 && $label !== null) {
+                    $gameRoles[] = ['label' => $label, 'seconds' => $sec, 'hours' => self::hours($sec)];
+                }
+            }
+            $maxR = $gameRoles !== [] ? max(1, $gameRoles[0]['seconds']) : 1;
+            foreach ($gameRoles as $i => $r) {
+                $gameRoles[$i]['share'] = (int) max(2, round($r['seconds'] * 100 / $maxR));
+            }
+        }
+        // Ordre du bandeau : opérations, heures de jeu, kilomètres, heures de vol, qualifications, formations.
+        $counters = array_merge($sections['counters'] ? [
             ['key' => 'operations', 'label' => 'Opérations', 'value' => $operationsCount, 'number' => $operationsCount, 'unit' => null, 'hint' => 'jouées avec la communauté'],
+        ] : [], $activityCounters, !$sections['counters'] ? [] : [
             ['key' => 'flight', 'label' => 'Heures de vol', 'value' => $flight, 'number' => (string) $flightNumber, 'unit' => $flightUnit, 'hint' => 'inscrites au carnet de vol'],
             ['key' => 'qualifications', 'label' => 'Qualifications', 'value' => (string) count($qualifications), 'number' => (string) count($qualifications), 'unit' => null, 'hint' => 'en cours de validité'],
             ['key' => 'trainings', 'label' => 'Formations', 'value' => (string) count($trainings), 'number' => (string) count($trainings), 'unit' => null, 'hint' => 'validées, cursus Academy compris'],
-        ];
+        ]);
 
         $bio = $sections['bio'] ? self::text(PublicCvSettings::normalizeBio((string) ($settings['bio'] ?? ''))) : null;
 
@@ -188,7 +304,14 @@ final class PublicCvPresenter
             'banner_url' => $banner,
             'bio' => $bio,
             'sections' => $sections,
-            'counters' => $sections['counters'] ? $counters : [],
+            'job' => $job,
+            'other_jobs' => $otherJobs,
+            'post' => $post,
+            'member_since' => $since,
+            'career' => $career,
+            'counters' => $counters,
+            'distance_modes' => $distanceModes,
+            'game_roles' => $gameRoles,
             'decorations' => $sections['decorations'] ? $decorations : [],
             'qualifications' => $sections['qualifications'] ? $qualifications : [],
             'trainings' => $sections['trainings'] ? $trainings : [],
@@ -210,6 +333,52 @@ final class PublicCvPresenter
         $s = trim((string) $v);
 
         return $s !== '' ? $s : null;
+    }
+
+    /** Distance lisible : une décimale sous 10 km, entier au-delà. */
+    public static function km(int $meters): string
+    {
+        $km = max(0, $meters) / 1000;
+        if ($km < 10) {
+            return number_format($km, 1, ',', '');
+        }
+
+        return number_format((int) round($km), 0, ',', "\u{202F}");
+    }
+
+    /**
+     * Segments « Clé : valeur » d’un texte de promotion (« Grade : X · Fonction : Y · Unité : Z · Accès : … »).
+     * Seuls Grade, Fonction et Unité sont gardés ; le reste (accès, droits, motifs) n’est jamais repris.
+     *
+     * @return array<string, string>
+     */
+    private static function structuredParts(string $text): array
+    {
+        $out = [];
+        foreach (explode('·', $text) as $seg) {
+            if (preg_match('/^\s*(Grade|Fonction|Unité)\s*:\s*(.+?)\s*$/u', $seg, $m) === 1 && !isset($out[$m[1]])) {
+                $v = mb_substr(trim($m[2]), 0, 80);
+                if ($v !== '') {
+                    $out[$m[1]] = $v;
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    private static function roleLabel(string $key, ?string $label): ?string
+    {
+        $k = strtoupper(trim($key));
+        if (isset(self::GAME_ROLE_LABELS[$k])) {
+            return self::GAME_ROLE_LABELS[$k];
+        }
+        if (str_starts_with($k, 'SLOT:') && ($label === null || strtoupper($label) === $k)) {
+            $label = trim(substr($key, 5));
+        }
+        $label = $label !== null ? trim(str_replace('_', ' ', $label)) : '';
+
+        return $label !== '' ? mb_substr($label, 0, 40) : null;
     }
 
     private static function timestamp(mixed $raw): int

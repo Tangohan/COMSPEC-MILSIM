@@ -20,6 +20,7 @@ use App\Support\AtakReleaseInfo;
 use App\Support\AtakTranslationTemplate;
 use App\Support\ChangelogCatalog;
 use App\Support\DevDispatchCatalog;
+use App\Support\Seo;
 
 /**
  * Pages marketing publiques : à propos, contact, journal des nouveautés, présentation SSE.
@@ -28,12 +29,39 @@ final class SitePagesController
 {
     public function about(Request $request, array $params = []): Response
     {
+        // Chiffres réels de la plateforme (même source et même cache que « Notre histoire ») ; base indisponible = pas de chiffres.
+        try {
+            $platformStats = (new PublicHistoryStatsService())->stats();
+        } catch (\Throwable) {
+            $platformStats = null;
+        }
+        $pageUrl = Seo::baseUrl() . '/a-propos';
+
         return Response::view('layout.marketing', [
             'content' => 'site.about',
             'title' => __('site.about_meta_title'),
             'meta_description' => __('site.about_meta_description'),
             'marketingActive' => 'about',
-            'marketingStyles' => [asset_url('assets/css/site-about.css')],
+            'platformStats' => $platformStats,
+            'og_image' => asset_url('assets/atak-native/atak-natif-poster.jpg'),
+            'og_image_alt' => __('site.about_hero_alt'),
+            'marketingStyles' => [
+                'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&display=swap',
+                asset_url('assets/css/site-about.css'),
+            ],
+            'marketingScripts' => [asset_url('assets/js/site-about.js')],
+            'jsonLdExtra' => [
+                [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'AboutPage',
+                    'name' => __('site.about_meta_title'),
+                    'description' => __('site.about_meta_description'),
+                    'url' => $pageUrl,
+                    'inLanguage' => str_starts_with((string) html_lang(), 'en') ? 'en' : 'fr',
+                    'isPartOf' => ['@id' => Seo::baseUrl() . '/#website'],
+                    'about' => ['@id' => Seo::baseUrl() . '/#organization'],
+                ],
+            ],
         ]);
     }
 
