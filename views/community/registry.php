@@ -1,6 +1,6 @@
 <?php
 /** @var list<array<string, mixed>> $registryTenants */
-$registryTenants = $registryTenants ?? [];
+$registryTenants = array_values($registryTenants ?? []);
 $registryCount = count($registryTenants);
 $loggedIn = (bool) \App\Core\Session::get('user_id');
 $createCommunityUrl = $loggedIn ? url('communities/create') : url('register');
@@ -34,13 +34,11 @@ foreach ($registryTenants as $tRow) {
     if (!empty($tRow['registry_pinned'])) {
         $registryPinnedCount++;
     }
-    $g = trim((string) ($tRow['game_label'] ?? ''));
-    if ($g !== '') {
-        $filterGames[$g] = $g;
-    }
     $u = trim((string) ($tRow['registry_unit_affiliation_label'] ?? ''));
     if ($u !== '') {
-        $filterUnits[$u] = $u;
+        $uKey = mb_strtolower($u);
+        $filterUnits[$uKey] ??= ['label' => $u, 'count' => 0];
+        ++$filterUnits[$uKey]['count'];
     }
     $locKey = trim((string) ($tRow['registry_locale'] ?? ''));
     $locLabel = trim((string) ($tRow['registry_locale_label'] ?? ''));
@@ -48,8 +46,16 @@ foreach ($registryTenants as $tRow) {
         $filterLocales[$locKey] = $locLabel;
     }
 }
-natcasesort($filterGames);
-natcasesort($filterUnits);
+// Jeux : « Arma3 », « ARMA 3 » et « ArmA III » ne font qu'un seul choix (App\Support\GameCatalog).
+$gameGrouping = \App\Support\GameCatalog::group(array_map(static fn (array $r): string => (string) ($r['game_label'] ?? ''), $registryTenants));
+$filterGames = $gameGrouping['groups'];
+$cardGameKeys = $gameGrouping['keys'];
+// Anciens liens (?jeu=arma 3, ?jeu=a3) : clé de l'alias => clé du groupe affiché.
+$gameAliasKeys = [];
+foreach (\App\Support\GameCatalog::aliasIndex() as $aliasKey => $aliasName) {
+    $gameAliasKeys[(string) $aliasKey] = \App\Support\GameCatalog::key($aliasName);
+}
+uasort($filterUnits, static fn (array $a, array $b): int => strnatcasecmp($a['label'], $b['label']));
 ksort($filterLocales);
 natcasesort($filterCountries);
 natcasesort($filterTags);
@@ -118,8 +124,13 @@ foreach (array_slice($heroBadgeRows, 0, 5) as $hbRow) {
 }
 
 /* Compteurs des filtres (nombre de communautés par pays, langue, type, jeu, tag). */
-$filterCounts = ['pays' => [], 'langue' => [], 'jeu' => [], 'tag' => []];
+$filterCounts = ['pays' => [], 'langue' => [], 'type' => [], 'tag' => []];
 foreach ($registryTenants as $fcRow) {
+    foreach ((is_array($fcRow['registry_style_badge_slugs'] ?? null) ? $fcRow['registry_style_badge_slugs'] : []) as $fcType) {
+        if (is_string($fcType) && $fcType !== '') {
+            $filterCounts['type'][$fcType] = ($filterCounts['type'][$fcType] ?? 0) + 1;
+        }
+    }
     $fcCountry = strtolower(trim((string) ($fcRow['registry_country'] ?? '')));
     if ($fcCountry !== '') {
         $filterCounts['pays'][$fcCountry] = ($filterCounts['pays'][$fcCountry] ?? 0) + 1;
@@ -127,10 +138,6 @@ foreach ($registryTenants as $fcRow) {
     $fcLang = trim((string) ($fcRow['registry_locale'] ?? ''));
     if ($fcLang !== '') {
         $filterCounts['langue'][$fcLang] = ($filterCounts['langue'][$fcLang] ?? 0) + 1;
-    }
-    $fcGame = trim((string) ($fcRow['game_label'] ?? ''));
-    if ($fcGame !== '') {
-        $filterCounts['jeu'][$fcGame] = ($filterCounts['jeu'][$fcGame] ?? 0) + 1;
     }
     foreach ((is_array($fcRow['registry_tag_slugs'] ?? null) ? $fcRow['registry_tag_slugs'] : []) as $fcTag) {
         if (is_string($fcTag) && $fcTag !== '') {
@@ -145,11 +152,55 @@ foreach ($registryTenants as $roRow) {
         : empty($roRow['registry_locked']);
     $registryOpenCount += $roOpen ? 1 : 0;
 }
-$filterCountSuffix = static function (string $group, string $key) use ($filterCounts): string {
-    $n = (int) ($filterCounts[$group][$key] ?? 0);
-    // « · » : HtmlTranslator traduit chaque morceau séparément (le libellé, pas le nombre).
-    return $n > 0 ? ' · ' . $n : '';
+/*
+ * Groupes du panneau de filtres : nom du paramètre d'URL => titre, options (valeur => [libellé, nombre]),
+ * attribut de carte comparé, liste (plusieurs valeurs par carte) et recherche dans les options.
+ */
+$facetOptions = static function (array $labels, string $group) use ($filterCounts): array {
+    $out = [];
+    foreach ($labels as $key => $label) {
+        $n = (int) ($filterCounts[$group][(string) $key] ?? 0);
+        if ($n > 0) {
+            $out[(string) $key] = [(string) $label, $n];
+        }
+    }
+    return $out;
 };
+$registryFacets = [];
+$registryFacets['jeu'] = ['title' => 'Jeu', 'all' => 'Tous les jeux', 'attr' => 'data-cr-game', 'list' => true,
+    'options' => array_map(static fn (array $g): array => [$g['label'], $g['count']], $filterGames)];
+$registryFacets['type'] = ['title' => 'Type de communauté', 'all' => 'Tous les types', 'attr' => 'data-cr-type', 'list' => true,
+    'options' => $facetOptions($styleBadgeCatalog, 'type')];
+$registryFacets['unite'] = ['title' => 'Unité réelle de référence', 'all' => 'Toutes les unités', 'attr' => 'data-cr-unit', 'list' => false,
+    'options' => array_map(static fn (array $u): array => [$u['label'], $u['count']], $filterUnits)];
+$registryFacets['pays'] = ['title' => 'Pays', 'all' => 'Tous les pays', 'attr' => 'data-cr-country', 'list' => false,
+    'options' => $facetOptions(array_combine(array_map(static fn ($k): string => strtolower((string) $k), array_keys($filterCountries)), array_values($filterCountries)) ?: [], 'pays')];
+$registryFacets['langue'] = ['title' => 'Langue', 'all' => 'Toutes les langues', 'attr' => 'data-cr-lang', 'list' => false,
+    'options' => $facetOptions($filterLocales, 'langue')];
+$registryFacets['tag'] = ['title' => 'Thèmes', 'all' => 'Tous les thèmes', 'attr' => 'data-cr-tags', 'list' => true,
+    'options' => $facetOptions($filterTags, 'tag')];
+$registryFacets = array_filter($registryFacets, static fn (array $f): bool => $f['options'] !== []);
+
+$registryViews = ['all' => ['Toutes', $registryCount]];
+if ($registryPinnedCount > 0) {
+    $registryViews['pinned'] = ['Épinglées', $registryPinnedCount];
+}
+if ($registryTrending !== []) {
+    $registryViews['trending'] = ['Tendance', count($registryTrending)];
+}
+$registryViews['featured'] = ['À la une', null];
+$registryViews['open'] = ['Recrutement ouvert', $registryOpenCount];
+$registryViews['closed'] = ['Recrutement fermé', $registryCount - $registryOpenCount];
+
+$registrySorts = [
+    '' => 'Recommandé',
+    'tendance' => 'Tendance',
+    'nom' => 'Nom (A → Z)',
+    'recent' => 'Plus récentes',
+    'membres' => 'Plus de membres',
+    'activite' => 'Les plus actives (30 j)',
+    'ops' => 'Opérations à venir',
+];
 
 if ($registryCount === 0) {
     $countLabel = 'Aucune communauté listée';
@@ -222,121 +273,88 @@ if ($registryCount === 0) {
 
       <?php if ($registryTenants !== []): ?>
       <form class="cr-filters" role="search" action="<?= htmlspecialchars(url('communities')) ?>" method="get" data-cr-form>
-        <label class="cr-search" for="cr-search-input">
-          <span class="sr-only">Rechercher une communauté</span>
-          <svg class="cr-search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
-          </svg>
-          <input
-            type="search"
-            id="cr-search-input"
-            name="q"
-            class="cr-search__input"
-            placeholder="Nom, pays, langue, type, tag…"
-            autocomplete="off"
-            data-cr-search
-          >
-          <kbd class="cr-search__kbd" aria-hidden="true">/</kbd>
-        </label>
-
-        <div class="cr-filter-selects">
-          <?php if ($filterCountries !== []): ?>
-          <label class="cr-select">
-            <span class="sr-only">Filtrer par pays</span>
-            <select name="pays" data-cr-country aria-label="Pays">
-              <option value="">Tous les pays</option>
-              <?php foreach ($filterCountries as $countryKey => $countryLabel): ?>
-              <option value="<?= htmlspecialchars(strtolower((string) $countryKey), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $countryLabel . $filterCountSuffix('pays', strtolower((string) $countryKey))) ?></option>
-              <?php endforeach; ?>
-            </select>
+        <div class="cr-filters__bar">
+          <label class="cr-search" for="cr-search-input">
+            <span class="sr-only">Rechercher une communauté</span>
+            <svg class="cr-search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+            </svg>
+            <input
+              type="search"
+              id="cr-search-input"
+              name="q"
+              class="cr-search__input"
+              placeholder="Nom, pays, langue, jeu, tag…"
+              autocomplete="off"
+              data-cr-search
+            >
+            <kbd class="cr-search__kbd" aria-hidden="true">/</kbd>
           </label>
+
+          <?php if ($registryFacets !== []): ?>
+          <button type="button" class="cr-fbtn" data-cr-open-filters aria-haspopup="dialog" aria-controls="cr-fdialog" aria-expanded="false" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M4 6h16M7 12h10M10 18h4"/></svg>
+            <span>Filtres</span>
+            <span class="cr-fbtn__n" data-cr-filter-count hidden>0</span>
+          </button>
           <?php endif; ?>
 
-          <?php if ($filterLocales !== []): ?>
-          <label class="cr-select">
-            <span class="sr-only">Filtrer par langue</span>
-            <select name="langue" data-cr-lang aria-label="Langue">
-              <option value="">Toutes les langues</option>
-              <?php foreach ($filterLocales as $langKey => $langLabel): ?>
-              <option value="<?= htmlspecialchars((string) $langKey, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $langLabel . $filterCountSuffix('langue', (string) $langKey)) ?></option>
+          <label class="cr-sortbox" for="cr-sort-select">
+            <span class="cr-sortbox__label">Trier par</span>
+            <select id="cr-sort-select" name="tri" data-cr-sort>
+              <?php foreach ($registrySorts as $sortKey => $sortLabel): ?>
+              <option value="<?= htmlspecialchars((string) $sortKey, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($sortLabel) ?></option>
               <?php endforeach; ?>
             </select>
           </label>
-          <?php endif; ?>
-
-          <label class="cr-select">
-            <span class="sr-only">Filtrer par type</span>
-            <select name="type" data-cr-type aria-label="Type de communauté">
-              <option value="">Tous les types</option>
-              <?php foreach ($styleBadgeCatalog as $typeSlug => $typeLabel): ?>
-              <option value="<?= htmlspecialchars((string) $typeSlug, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $typeLabel) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </label>
-
-          <?php if ($filterTags !== []): ?>
-          <label class="cr-select">
-            <span class="sr-only">Filtrer par tag</span>
-            <select name="tag" data-cr-tag aria-label="Tag">
-              <option value="">Tous les tags</option>
-              <?php foreach ($filterTags as $tagKey => $tagLabel): ?>
-              <option value="<?= htmlspecialchars((string) $tagKey, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $tagLabel . $filterCountSuffix('tag', (string) $tagKey)) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </label>
-          <?php endif; ?>
-
-          <?php if ($filterGames !== []): ?>
-          <label class="cr-select">
-            <span class="sr-only">Filtrer par jeu</span>
-            <select name="jeu" data-cr-game aria-label="Jeu">
-              <option value="">Tous les jeux</option>
-              <?php foreach ($filterGames as $gameOpt): ?>
-              <option value="<?= htmlspecialchars(mb_strtolower($gameOpt), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($gameOpt . $filterCountSuffix('jeu', $gameOpt)) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </label>
-          <?php endif; ?>
-
-          <?php if ($filterUnits !== []): ?>
-          <label class="cr-select">
-            <span class="sr-only">Filtrer par unité</span>
-            <select name="unite" data-cr-unit aria-label="Unité">
-              <option value="">Toutes les unités</option>
-              <?php foreach ($filterUnits as $unitOpt): ?>
-              <option value="<?= htmlspecialchars(mb_strtolower($unitOpt), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($unitOpt) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </label>
-          <?php endif; ?>
         </div>
 
-        <div class="cr-filters__foot">
-          <div class="cr-chips" role="group" aria-label="Affiner la liste">
-            <button type="button" class="cr-chip is-active" data-cr-filter="all" aria-pressed="true">Toutes <span class="cr-chip__n"><?= (int) $registryCount ?></span></button>
-            <?php if ($registryPinnedCount > 0): ?>
-            <button type="button" class="cr-chip" data-cr-filter="pinned" aria-pressed="false">Épinglées <span class="cr-chip__n"><?= (int) $registryPinnedCount ?></span></button>
-            <?php endif; ?>
-            <?php if ($registryTrending !== []): ?>
-            <button type="button" class="cr-chip" data-cr-filter="trending" aria-pressed="false">Tendance <span class="cr-chip__n"><?= count($registryTrending) ?></span></button>
-            <?php endif; ?>
-            <button type="button" class="cr-chip" data-cr-filter="featured" aria-pressed="false">À la une</button>
-            <button type="button" class="cr-chip" data-cr-filter="open" aria-pressed="false">Recrutement ouvert <span class="cr-chip__n"><?= (int) $registryOpenCount ?></span></button>
-            <button type="button" class="cr-chip" data-cr-filter="closed" aria-pressed="false">Recrutement fermé <span class="cr-chip__n"><?= (int) ($registryCount - $registryOpenCount) ?></span></button>
-          </div>
-          <div class="cr-sort">
-            <label class="cr-select cr-select--sort">
-              <span class="cr-sort__label">Trier</span>
-              <select name="tri" data-cr-sort aria-label="Trier les communautés">
-                <option value="">Recommandé</option>
-                <option value="tendance">Tendance</option>
-                <option value="nom">Nom (A → Z)</option>
-                <option value="recent">Plus récentes</option>
-              </select>
-            </label>
-            <button type="button" class="cr-btn cr-btn--line cr-btn--sm" data-cr-reset hidden>Effacer les filtres</button>
-          </div>
+        <div class="cr-chips" role="group" aria-label="Affichage rapide">
+          <?php foreach ($registryViews as $viewKey => [$viewLabel, $viewCount]): ?>
+          <button type="button" class="cr-chip<?= $viewKey === 'all' ? ' is-active' : '' ?>" data-cr-filter="<?= htmlspecialchars((string) $viewKey, ENT_QUOTES, 'UTF-8') ?>" aria-pressed="<?= $viewKey === 'all' ? 'true' : 'false' ?>"><?= htmlspecialchars($viewLabel) ?><?php if ($viewCount !== null): ?> <span class="cr-chip__n"><?= (int) $viewCount ?></span><?php endif; ?></button>
+          <?php endforeach; ?>
         </div>
+
+        <div class="cr-active" data-cr-active hidden>
+          <span class="cr-active__label" id="cr-active-label">Filtres actifs</span>
+          <ul class="cr-active__list" aria-labelledby="cr-active-label" data-cr-active-list></ul>
+          <button type="button" class="cr-active__clear" data-cr-reset>Tout effacer</button>
+        </div>
+
+        <?php if ($registryFacets !== []): ?>
+        <noscript><style>.cr-fdialog { display: block; position: static; inset: auto; width: auto; max-width: none; max-height: none; margin: 1rem 0 0; box-shadow: none; } .cr-fdialog__close, .cr-fdialog__apply { display: none; }</style></noscript>
+        <dialog class="cr-fdialog" id="cr-fdialog" aria-labelledby="cr-fdialog-title" data-cr-dialog>
+          <div class="cr-fdialog__panel">
+            <header class="cr-fdialog__head">
+              <h2 id="cr-fdialog-title" class="cr-fdialog__title">Filtrer les communautés</h2>
+              <button type="button" class="cr-fdialog__close" data-cr-close-filters aria-label="Fermer les filtres">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+              </button>
+            </header>
+            <div class="cr-fdialog__body">
+              <?php foreach ($registryFacets as $facetParam => $facet): ?>
+              <?php $facetFind = count($facet['options']) > 8; ?>
+              <fieldset class="cr-facet" data-cr-facet="<?= htmlspecialchars((string) $facetParam, ENT_QUOTES, 'UTF-8') ?>" data-cr-facet-attr="<?= htmlspecialchars($facet['attr'], ENT_QUOTES, 'UTF-8') ?>" data-cr-facet-list="<?= $facet['list'] ? '1' : '0' ?>" data-cr-facet-title="<?= htmlspecialchars($facet['title'], ENT_QUOTES, 'UTF-8') ?>">
+                <legend class="cr-facet__title"><?= htmlspecialchars($facet['title']) ?></legend>
+                <?php if ($facetFind): ?>
+                <input type="search" class="cr-facet__find" placeholder="Chercher dans la liste…" aria-label="Chercher : <?= htmlspecialchars($facet['title'], ENT_QUOTES, 'UTF-8') ?>" autocomplete="off" data-cr-facet-find>
+                <?php endif; ?>
+                <div class="cr-facet__opts<?= $facetFind ? ' cr-facet__opts--scroll' : '' ?>">
+                  <label class="cr-opt"><input type="radio" name="<?= htmlspecialchars((string) $facetParam, ENT_QUOTES, 'UTF-8') ?>" value="" checked><span class="cr-opt__label"><?= htmlspecialchars($facet['all']) ?></span></label>
+                  <?php foreach ($facet['options'] as $optValue => [$optLabel, $optCount]): ?>
+                  <label class="cr-opt"><input type="radio" name="<?= htmlspecialchars((string) $facetParam, ENT_QUOTES, 'UTF-8') ?>" value="<?= htmlspecialchars((string) $optValue, ENT_QUOTES, 'UTF-8') ?>"><span class="cr-opt__label"><?= htmlspecialchars((string) $optLabel) ?></span><span class="cr-opt__n"><?= (int) $optCount ?></span></label>
+                  <?php endforeach; ?>
+                </div>
+              </fieldset>
+              <?php endforeach; ?>
+            </div>
+            <footer class="cr-fdialog__foot">
+              <button type="button" class="cr-btn cr-btn--line cr-btn--sm" data-cr-reset>Réinitialiser</button>
+              <button type="button" class="cr-btn cr-btn--ink cr-btn--sm cr-fdialog__apply" data-cr-close-filters data-cr-apply-label>Afficher les communautés</button>
+            </footer>
+          </div>
+        </dialog>
+        <?php endif; ?>
         <noscript><button type="submit" class="cr-btn cr-btn--ink cr-btn--sm">Rechercher</button></noscript>
       </form>
       <?php endif; ?>
@@ -365,7 +383,7 @@ if ($registryCount === 0) {
           $ttPrev = (int) ($ttTrend['visitors_prev'] ?? 0);
           $ttLogo = trim((string) ($tt['logo_url'] ?? ''));
           $ttMeta = array_values(array_filter([
-              trim((string) ($tt['game_label'] ?? '')),
+              \App\Support\GameCatalog::normalize((string) ($tt['game_label'] ?? '')),
               trim((string) ($tt['registry_country_label'] ?? '')),
               trim((string) ($tt['registry_locale_label'] ?? '')),
           ]));
@@ -448,7 +466,7 @@ if ($registryCount === 0) {
           $styleBadgeSlugs = is_array($t['registry_style_badge_slugs'] ?? null) ? $t['registry_style_badge_slugs'] : [];
           $registryTagLabels = is_array($t['registry_tag_labels'] ?? null) ? $t['registry_tag_labels'] : [];
           $unitAffiliationLabel = trim((string) ($t['registry_unit_affiliation_label'] ?? ''));
-          $gameLabel = trim((string) ($t['game_label'] ?? ''));
+          $gameLabel = \App\Support\GameCatalog::normalize((string) ($t['game_label'] ?? ''));
           $localeKey = trim((string) ($t['registry_locale'] ?? ''));
           $localeLabel = trim((string) ($t['registry_locale_label'] ?? ''));
           $coverUrl = $registryCoverUrl($slug);
@@ -515,7 +533,10 @@ if ($registryCount === 0) {
           data-cr-open="<?= $recruitOpen ? '1' : '0' ?>"
           data-cr-featured="<?= $featured ? '1' : '0' ?>"
           data-cr-search="<?= htmlspecialchars($searchBlob, ENT_QUOTES, 'UTF-8') ?>"
-          data-cr-game="<?= htmlspecialchars(mb_strtolower($gameLabel), ENT_QUOTES, 'UTF-8') ?>"
+          data-cr-game="<?= htmlspecialchars(implode(' ', $cardGameKeys[$i] ?? []), ENT_QUOTES, 'UTF-8') ?>"
+          data-cr-members="<?= $cardMembers ?>"
+          data-cr-activity="<?= $cardActivity ?? -1 ?>"
+          data-cr-upcoming="<?= $cardUpcoming ?>"
           data-cr-unit="<?= htmlspecialchars(mb_strtolower($unitAffiliationLabel), ENT_QUOTES, 'UTF-8') ?>"
           data-cr-type="<?= htmlspecialchars($typeAttr, ENT_QUOTES, 'UTF-8') ?>"
           data-cr-lang="<?= htmlspecialchars($localeKey, ENT_QUOTES, 'UTF-8') ?>"
@@ -688,28 +709,61 @@ if ($registryCount === 0) {
   var trendStrip = root.querySelector('[data-cr-trend-strip]');
   var countLabel = root.querySelector('[data-cr-count-label]');
   var resets = Array.prototype.slice.call(root.querySelectorAll('[data-cr-reset]'));
-  // Sélecteurs : attribut de la carte comparé, paramètre d'URL (lien partageable).
-  var selects = [
-    { el: root.querySelector('[data-cr-country]'), attr: 'data-cr-country', param: 'pays' },
-    { el: root.querySelector('[data-cr-lang]'), attr: 'data-cr-lang', param: 'langue' },
-    { el: root.querySelector('[data-cr-type]'), attr: 'data-cr-type', param: 'type', list: true },
-    { el: root.querySelector('[data-cr-tag]'), attr: 'data-cr-tags', param: 'tag', list: true },
-    { el: root.querySelector('[data-cr-game]'), attr: 'data-cr-game', param: 'jeu' },
-    { el: root.querySelector('[data-cr-unit]'), attr: 'data-cr-unit', param: 'unite' }
-  ].filter(function (f) { return !!f.el; });
+  var dialog = root.querySelector('[data-cr-dialog]');
+  var openBtn = root.querySelector('[data-cr-open-filters]');
+  var filterCount = root.querySelector('[data-cr-filter-count]');
+  var applyBtn = root.querySelector('[data-cr-apply-label]');
+  var activeBox = root.querySelector('[data-cr-active]');
+  var activeList = root.querySelector('[data-cr-active-list]');
+  // Anciens liens partagés (?jeu=arma 3, ?jeu=a3) : clé d'alias => clé du jeu affiché.
+  var gameAliases = <?= json_encode((object) $gameAliasKeys, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+  // Groupes du panneau : paramètre d'URL, attribut de carte comparé, valeurs multiples ou non.
+  var facets = Array.prototype.slice.call(root.querySelectorAll('[data-cr-facet]')).map(function (fs) {
+    return {
+      fs: fs,
+      param: fs.getAttribute('data-cr-facet'),
+      attr: fs.getAttribute('data-cr-facet-attr'),
+      list: fs.getAttribute('data-cr-facet-list') === '1',
+      title: fs.getAttribute('data-cr-facet-title') || '',
+      radios: Array.prototype.slice.call(fs.querySelectorAll('input[type="radio"]'))
+    };
+  });
+  var modal = false;
   var filter = 'all';
 
   function norm(v) {
     return (v || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   }
+  function gameKey(v) {
+    return norm(v).replace(/[^a-z0-9]+/g, '');
+  }
   cards.forEach(function (card) {
     card._blob = norm(card.getAttribute('data-cr-search'));
   });
 
+  function checkedRadio(f) {
+    return f.radios.filter(function (r) { return r.checked; })[0] || null;
+  }
+  function valueOf(f) {
+    var on = checkedRadio(f);
+    return on ? on.value : '';
+  }
+  function setValue(f, v) {
+    var hit = false;
+    f.radios.forEach(function (r) { r.checked = r.value === v; if (r.checked) hit = true; });
+    if (!hit && f.radios[0]) f.radios[0].checked = true;
+    return hit;
+  }
+  function labelOf(f) {
+    var on = checkedRadio(f);
+    var span = on && on.parentNode.querySelector('.cr-opt__label');
+    return span ? span.textContent : '';
+  }
+
   function labelFor(n) {
     if (n === 0) return 'Aucune communauté correspondante';
     if (n === 1) return '1 communauté visible';
-    return `${n} communautés visibles`;
+    return n + ' communautés visibles';
   }
 
   function setChip(value) {
@@ -724,22 +778,26 @@ if ($registryCount === 0) {
     if (!found) setChip('all');
   }
 
+  function num(card, attr) {
+    return +card.getAttribute(attr) || 0;
+  }
   function sortCards() {
     var mode = sortSelect ? sortSelect.value : '';
-    var sorted = cards.slice().sort(function (a, b) {
-      if (mode === 'tendance') {
-        return (+b.getAttribute('data-cr-score')) - (+a.getAttribute('data-cr-score'))
-          || (+a.getAttribute('data-cr-index')) - (+b.getAttribute('data-cr-index'));
+    var byIndex = function (a, b) { return num(a, 'data-cr-index') - num(b, 'data-cr-index'); };
+    var desc = function (attr) {
+      return function (a, b) { return num(b, attr) - num(a, attr) || byIndex(a, b); };
+    };
+    var cmp = {
+      tendance: desc('data-cr-score'),
+      recent: desc('data-cr-created'),
+      membres: desc('data-cr-members'),
+      activite: desc('data-cr-activity'),
+      ops: desc('data-cr-upcoming'),
+      nom: function (a, b) {
+        return (a.getAttribute('data-cr-name') || '').localeCompare(b.getAttribute('data-cr-name') || '', 'fr', { sensitivity: 'base' });
       }
-      if (mode === 'nom') {
-        return (a.getAttribute('data-cr-name') || '').localeCompare(b.getAttribute('data-cr-name') || '');
-      }
-      if (mode === 'recent') {
-        return (+b.getAttribute('data-cr-created')) - (+a.getAttribute('data-cr-created'));
-      }
-      return (+a.getAttribute('data-cr-index')) - (+b.getAttribute('data-cr-index'));
-    });
-    sorted.forEach(function (card) { grid.appendChild(card); });
+    }[mode] || byIndex;
+    cards.slice().sort(cmp).forEach(function (card) { grid.appendChild(card); });
   }
 
   function syncUrl() {
@@ -747,11 +805,42 @@ if ($registryCount === 0) {
     var params = new URLSearchParams(window.location.search);
     ['q', 'pays', 'langue', 'type', 'tag', 'jeu', 'unite', 'tri', 'vue'].forEach(function (k) { params.delete(k); });
     if (search && search.value.trim()) params.set('q', search.value.trim());
-    selects.forEach(function (f) { if (f.el.value) params.set(f.param, f.el.value); });
+    facets.forEach(function (f) { var v = valueOf(f); if (v) params.set(f.param, v); });
     if (sortSelect && sortSelect.value) params.set('tri', sortSelect.value);
     if (filter !== 'all') params.set('vue', filter);
     var qs = params.toString();
     window.history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
+  }
+
+  // Puces des filtres actifs : un clic retire le filtre.
+  function renderActive() {
+    if (!activeList || !activeBox) return 0;
+    activeList.textContent = '';
+    var n = 0;
+    facets.forEach(function (f) {
+      if (!valueOf(f)) return;
+      n += 1;
+      var text = f.title + ' : ' + labelOf(f);
+      var li = document.createElement('li');
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'cr-apill';
+      b.setAttribute('aria-label', 'Retirer le filtre ' + text);
+      var span = document.createElement('span');
+      span.textContent = text;
+      b.appendChild(span);
+      b.insertAdjacentHTML('beforeend', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path stroke-linecap="round" d="M7 7l10 10M17 7L7 17"/></svg>');
+      b.addEventListener('click', function () {
+        setValue(f, '');
+        apply();
+        var next = activeList.querySelector('button') || (openBtn && !openBtn.hidden ? openBtn : search);
+        if (next) next.focus();
+      });
+      li.appendChild(b);
+      activeList.appendChild(li);
+    });
+    activeBox.hidden = n === 0;
+    return n;
   }
 
   function apply() {
@@ -767,34 +856,78 @@ if ($registryCount === 0) {
         || (filter === 'open' && open)
         || (filter === 'closed' && !open);
       var okSearch = terms.every(function (t) { return card._blob.indexOf(t) !== -1; });
-      var okSelects = selects.every(function (f) {
-        var want = norm(f.el.value);
+      var okFacets = facets.every(function (f) {
+        var want = norm(valueOf(f));
         if (!want) return true;
         var have = norm(card.getAttribute(f.attr));
         return f.list ? (' ' + have + ' ').indexOf(' ' + want + ' ') !== -1 : have === want;
       });
-      var show = okFilter && okSearch && okSelects;
+      var show = okFilter && okSearch && okFacets;
       card.classList.toggle('is-hidden', !show);
       if (show) visible += 1;
     });
-    var active = !!query || filter !== 'all' || selects.some(function (f) { return !!f.el.value; });
+    var nFacets = renderActive();
+    var active = !!query || filter !== 'all' || nFacets > 0;
     if (countLabel) countLabel.textContent = labelFor(visible);
+    if (filterCount) { filterCount.hidden = nFacets === 0; filterCount.textContent = String(nFacets); }
+    if (openBtn) openBtn.setAttribute('aria-label', nFacets ? 'Filtres (' + nFacets + ' actif' + (nFacets > 1 ? 's' : '') + ')' : 'Filtres');
+    if (applyBtn) applyBtn.textContent = visible === 0 ? 'Aucun résultat' : (visible === 1 ? 'Afficher 1 communauté' : 'Afficher ' + visible + ' communautés');
     if (empty) empty.hidden = visible !== 0;
     if (trendStrip) trendStrip.hidden = active && filter !== 'trending';
-    resets.forEach(function (r) { if (!r.closest('[data-cr-empty]')) r.hidden = !active && !(sortSelect && sortSelect.value); });
     syncUrl();
   }
 
-  // Lien partagé : /communities?q=…&pays=…&vue=tendance
+  // Panneau des filtres en fenêtre modale : Échap ou clic hors du panneau ferment, le focus revient au bouton.
+  if (dialog && openBtn && typeof dialog.showModal === 'function') {
+    modal = true;
+    openBtn.hidden = false;
+    dialog.classList.add('is-modal');
+    openBtn.addEventListener('click', function () {
+      dialog.showModal();
+      openBtn.setAttribute('aria-expanded', 'true');
+      var first = dialog.querySelector('.cr-facet input:checked') || dialog.querySelector('input');
+      if (first) first.focus();
+    });
+    Array.prototype.forEach.call(dialog.querySelectorAll('[data-cr-close-filters]'), function (b) {
+      b.addEventListener('click', function () { dialog.close(); });
+    });
+    dialog.addEventListener('click', function (e) { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener('close', function () {
+      openBtn.setAttribute('aria-expanded', 'false');
+      openBtn.focus();
+    });
+  } else if (dialog) {
+    // Navigateur sans fenêtre modale : le panneau reste affiché sous la barre.
+    dialog.setAttribute('open', '');
+    dialog.classList.add('is-inline');
+  }
+  // Recherche dans les longues listes (jeux, unités, thèmes).
+  facets.forEach(function (f) {
+    var find = f.fs.querySelector('[data-cr-facet-find]');
+    if (!find) return;
+    find.addEventListener('input', function () {
+      var t = norm(find.value);
+      f.radios.forEach(function (r, i) {
+        r.parentNode.hidden = i > 0 && !!t && !r.checked && norm(r.parentNode.textContent).indexOf(t) === -1;
+      });
+    });
+  });
+
+  // Lien partagé : /communities?q=…&jeu=arma3&tri=membres&vue=open
   if (window.URLSearchParams) {
     var init = new URLSearchParams(window.location.search);
     if (search && init.get('q')) search.value = init.get('q');
-    selects.forEach(function (f) {
+    facets.forEach(function (f) {
       var v = init.get(f.param);
-      if (v && f.el.querySelector('option[value="' + v.replace(/"/g, '') + '"]')) f.el.value = v;
+      if (!v) return;
+      if (!setValue(f, v) && !setValue(f, v.toLowerCase()) && f.param === 'jeu') {
+        var k = gameKey(v);
+        setValue(f, gameAliases[k] || k);
+      }
     });
-    if (sortSelect && init.get('tri') && sortSelect.querySelector('option[value="' + init.get('tri').replace(/"/g, '') + '"]')) {
-      sortSelect.value = init.get('tri');
+    var tri = init.get('tri');
+    if (sortSelect && tri && Array.prototype.some.call(sortSelect.options, function (o) { return o.value === tri; })) {
+      sortSelect.value = tri;
     }
     var vue = init.get('vue');
     if (vue === 'tendance') vue = 'trending';
@@ -802,9 +935,15 @@ if ($registryCount === 0) {
     setChip(vue || 'all');
   }
 
-  if (form) form.addEventListener('submit', function (e) { e.preventDefault(); apply(); });
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      apply();
+      if (modal && dialog.open) dialog.close();
+    });
+  }
   if (search) search.addEventListener('input', apply);
-  selects.forEach(function (f) { f.el.addEventListener('change', apply); });
+  facets.forEach(function (f) { f.radios.forEach(function (r) { r.addEventListener('change', apply); }); });
   if (sortSelect) sortSelect.addEventListener('change', function () { sortCards(); apply(); });
   chips.forEach(function (chip) {
     chip.addEventListener('click', function () {
@@ -815,16 +954,23 @@ if ($registryCount === 0) {
   resets.forEach(function (reset) {
     reset.addEventListener('click', function () {
       if (search) search.value = '';
-      selects.forEach(function (f) { f.el.value = ''; });
+      facets.forEach(function (f) {
+        setValue(f, '');
+        var find = f.fs.querySelector('[data-cr-facet-find]');
+        if (find) find.value = '';
+        f.radios.forEach(function (r) { r.parentNode.hidden = false; });
+      });
       if (sortSelect) sortSelect.value = '';
       setChip('all');
       sortCards();
       apply();
+      if (!reset.closest('[data-cr-dialog]') && search) search.focus();
     });
   });
   // « / » place le curseur dans la recherche.
   document.addEventListener('keydown', function (e) {
     if (e.key !== '/' || !search || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (modal && dialog.open) return;
     var tag = (document.activeElement && document.activeElement.tagName) || '';
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) || (document.activeElement && document.activeElement.isContentEditable)) return;
     e.preventDefault();

@@ -642,7 +642,7 @@ final class OrganizationSettingsController
 
         $community['registry_listed'] = (string) $request->input('registry_listed', '1') !== '0';
         $community['welcome_text'] = $this->clip((string) $request->input('welcome_text', ''), 500);
-        $community['game_label'] = $this->clip((string) $request->input('game_label', ''), 120);
+        $community['game_label'] = $this->clip(\App\Support\GameCatalog::normalize((string) $request->input('game_label', '')), 120);
         $community['public_hero_subtitle'] = $this->clip((string) $request->input('public_hero_subtitle', ''), 600);
         $community['public_about_title'] = $this->clip((string) $request->input('public_about_title', ''), 160);
         $community['public_about_body'] = $this->clip((string) $request->input('public_about_body', ''), 8000);
