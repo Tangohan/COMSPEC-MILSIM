@@ -1,362 +1,429 @@
 <?php
 declare(strict_types=1);
 
+use App\Support\ServerControlPresenter as P;
+use App\Support\ServerControlWiring as W;
+
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $csrfToken = (string) ($csrfToken ?? \App\Core\Csrf::token());
-$groupedRules = is_array($groupedRules ?? null) ? $groupedRules : [];
-$groupLabels = is_array($groupLabels ?? null) ? $groupLabels : [];
-$bridgeModules = is_array($bridgeModules ?? null) ? $bridgeModules : [];
-$relays = is_array($relays ?? null) ? $relays : [];
-$roleplay = is_array($roleplay ?? null) ? $roleplay : [];
-$enabledModulesCount = (int) ($enabledModulesCount ?? 0);
-$bridgeModulesTotal = (int) ($bridgeModulesTotal ?? 0);
-$maintenanceEnabled = !empty($maintenanceEnabled);
-$experienceSchemaReady = !empty($experienceSchemaReady);
+$themes = is_array($themes ?? null) ? $themes : [];
+$soon = is_array($soon ?? null) ? $soon : [];
+$stateCounts = is_array($stateCounts ?? null) ? $stateCounts : [];
+$preview = is_array($preview ?? null) ? $preview : [];
+$presence = is_array($presence ?? null) ? $presence : [];
+$now = (int) ($now ?? time());
 $netLive = is_array($netLive ?? null) ? $netLive : [];
 $phoneApps = is_array($phoneApps ?? null) ? $phoneApps : [];
 $appsPolicy = is_array($appsPolicy ?? null) ? $appsPolicy : [];
+$relays = is_array($relays ?? null) ? $relays : [];
+$journal = is_array($journal ?? null) ? $journal : [];
+$maintenanceEnabled = !empty($maintenanceEnabled);
+$schemaReady = !empty($experienceSchemaReady);
+$savedAt = (string) ($savedAt ?? '');
+$savedTs = $savedAt !== '' ? strtotime($savedAt) : false;
+$success = $success ?? null;
+$error = $error ?? null;
+
 $appsBySection = [];
 foreach ($phoneApps as $app) {
     $appsBySection[(string) ($app['section'] ?? '')][] = $app;
 }
 $appsRequired = count(array_filter($appsPolicy, static fn ($r): bool => $r === 'required'));
 $appsForbidden = count(array_filter($appsPolicy, static fn ($r): bool => $r === 'forbidden'));
-$success = $success ?? null;
-$error = $error ?? null;
-$linkViaRelays = !empty($roleplay['link_via_relays']);
-$networkOn = !empty($roleplay['network_enabled']);
-$sensorOn = !empty($roleplay['sensor_enabled']);
-$aliveRelays = 0;
-foreach ($relays as $r) {
-    if (!empty($r['alive'])) {
-        $aliveRelays++;
+$appsBelow = P::countBelow(is_array($presence['versions'] ?? null) ? $presence['versions'] : [], (string) W::APPS['min']);
+$aliveRelays = count(array_filter($relays, static fn (array $r): bool => !empty($r['alive'])));
+$plural = static fn (int $n, string $one, string $many): string => $n > 1 ? $many : $one;
+
+/** Indicateur à trois crans : enregistré sur le site, transmis au jeu, appliqué en jeu. */
+$badge = static function (string $state) use ($h): string {
+    $label = W::STATES[$state] ?? W::STATES['todo'];
+    $lit = ['live' => 3, 'partial' => 2][$state] ?? 1;
+    $bars = '';
+    foreach (['Enregistré sur le site', 'Transmis au jeu', 'Appliqué en jeu'] as $i => $step) {
+        $bars .= '<i class="' . ($i < $lit ? 'on' : '') . '" title="' . $h($step) . '"></i>';
     }
-}
+
+    return '<span class="sc-state sc-state--' . $h($state) . '"><span class="sc-state__bars" aria-hidden="true">' . $bars . '</span>' . $h($label) . '</span>';
+};
+
+/** Contrôle d'un réglage : interrupteur, choix segmenté (trois choix au plus) ou liste. */
+$control = static function (array $item) use ($h, $schemaReady): string {
+    $id = (string) $item['id'];
+    $isModule = $item['kind'] === 'module';
+    $name = ($isModule ? 'module_' : 'experience_') . $id;
+    $domId = 'sc-' . ($isModule ? 'm-' : 'r-') . $id;
+    $off = !$isModule && !$schemaReady ? ' disabled' : '';
+    $type = (string) $item['type'];
+    if ($type === 'bool' || $type === 'module') {
+        return '<label class="sc-switch" for="' . $h($domId) . '"><input type="hidden" name="' . $h($name) . '" value="0"' . $off . '>'
+            . '<input type="checkbox" role="switch" id="' . $h($domId) . '" name="' . $h($name) . '" value="1"' . (!empty($item['value']) ? ' checked' : '') . $off . '>'
+            . '<span class="sc-switch__track" aria-hidden="true"></span><span class="sc-switch__txt sc-switch__txt--on">' . ($isModule ? 'Fonction activée' : 'Activé') . '</span><span class="sc-switch__txt sc-switch__txt--off">' . ($isModule ? 'Fonction coupée' : 'Désactivé') . '</span></label>';
+    }
+    $choices = is_array($item['choices'] ?? null) ? $item['choices'] : [];
+    $value = (string) $item['value'];
+    if (count($choices) <= 3) {
+        $out = '<fieldset class="sc-seg"' . $off . '><legend class="sc-sr">' . $h($item['label']) . '</legend>';
+        foreach ($choices as $i => $c) {
+            $cv = (string) ($c['value'] ?? '');
+            $cid = $domId . '-' . $i;
+            $out .= '<input type="radio" id="' . $h($cid) . '" name="' . $h($name) . '" value="' . $h($cv) . '"' . ($cv === $value ? ' checked' : '') . '>'
+                . '<label for="' . $h($cid) . '">' . $h($c['label'] ?? $cv) . '</label>';
+        }
+
+        return $out . '</fieldset>';
+    }
+    $out = '<label class="sc-sr" for="' . $h($domId) . '">' . $h($item['label']) . '</label><select class="sc-select" id="' . $h($domId) . '" name="' . $h($name) . '"' . $off . '>';
+    foreach ($choices as $c) {
+        $cv = (string) ($c['value'] ?? '');
+        $out .= '<option value="' . $h($cv) . '"' . ($cv === $value ? ' selected' : '') . '>' . $h($c['label'] ?? $cv) . '</option>';
+    }
+
+    return $out . '</select>';
+};
+
+/** Une ligne de réglage : nom, état réel, impact pour les joueurs, où / quand / version, contrôle. */
+$row = static function (array $item) use ($h, $badge, $control, $plural): string {
+    $meta = '';
+    if ((string) $item['where'] !== '') {
+        $meta .= '<span><b>Où</b> ' . $h($item['where']) . '</span>';
+    }
+    if ((string) $item['delay_label'] !== '') {
+        $meta .= '<span><b>Délai</b> ' . $h($item['delay_label']) . '</span>';
+    }
+    if ($item['min'] !== null) {
+        $below = (int) $item['below_min'];
+        $meta .= '<span><b>Mod</b> ATAK natif ' . $h($item['min']) . ' ou plus récent'
+            . ($below > 0 ? ' <em class="sc-warn">' . $below . ' ' . $plural($below, 'téléphone trop ancien', 'téléphones trop anciens') . ' cette semaine</em>' : '')
+            . '</span>';
+    }
+    if (($item['note'] ?? '') === 'retired') {
+        $meta .= '<span><b>Origine</b> Ancien mod, plus maintenu</span>';
+    }
+    $imposed = !empty($item['imposed']) && $item['state'] !== 'todo';
+    $tag = $item['kind'] === 'module' ? 'Fonction coupée' : 'Imposé à tous';
+
+    return '<div class="sc-row' . ($imposed ? ' is-imposed' : '') . '" data-sc-row>'
+        . '<div class="sc-row__text"><div class="sc-row__head"><h4 class="sc-row__label">' . $h($item['label']) . '</h4>' . $badge((string) $item['state'])
+        . ($imposed ? '<span class="sc-tag">' . $tag . '</span>' : '') . '</div>'
+        . '<p class="sc-row__impact">' . $h($item['impact']) . '</p>'
+        . ($meta !== '' ? '<p class="sc-row__meta">' . $meta . '</p>' : '')
+        . '</div><div class="sc-row__ctl">' . $control($item) . '</div></div>';
+};
 ?>
-<div class="min-h-0 flex-1 bg-slate-50">
-    <div class="max-w-[1040px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 space-y-8">
+<div class="sc">
+    <?php if ($success): ?>
+        <p class="sc-flash sc-flash--ok" role="status"><?= $h($success) ?></p>
+    <?php endif; ?>
+    <?php if ($error): ?>
+        <p class="sc-flash sc-flash--err" role="alert"><?= $h($error) ?></p>
+    <?php endif; ?>
 
-        <header class="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 shadow-sm">
-            <div class="relative px-5 sm:px-8 py-7">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 mb-2">ATAK · Administration serveur</p>
-                <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Contrôle de mission</h1>
-                <p class="mt-2 text-sm text-slate-600 max-w-3xl leading-relaxed">
-                    Ce que vous réglez ici s’applique à toute la communauté en liaison. Les opérateurs n’ont plus à chercher dans les options d’addons.
-                    Les réglages personnels du téléphone (sons, indicatif, affichage situation) restent sur l’ATAK.
+    <section class="sc-hero" aria-labelledby="sc-hero-title">
+        <div class="sc-hero__server">
+            <h2 id="sc-hero-title" class="sc-hero__title">Serveur de jeu de la communauté</h2>
+            <?php if (empty($presence['has_data'])): ?>
+                <p class="sc-hero__empty">Aucun téléphone n’a encore remonté d’information. Lancez une partie avec le mod ATAK natif : l’état du serveur apparaîtra ici.</p>
+            <?php else: ?>
+                <?php $online = (int) $presence['online']; ?>
+                <p class="sc-hero__now">
+                    <span class="sc-live<?= $online > 0 ? ' is-on' : '' ?>" aria-hidden="true"></span>
+                    <strong class="sc-hero__big"><?= $online ?></strong>
+                    <span><?= $online > 0 ? $plural($online, 'joueur en jeu en ce moment', 'joueurs en jeu en ce moment') : 'personne en jeu en ce moment' ?></span>
                 </p>
-                <div class="mt-5 flex flex-wrap gap-2">
-                    <a href="<?= $h(url('back-office/atak/roleplay')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Simulation réseau et capteurs</a>
-                    <a href="<?= $h(url('back-office/atak/relays-network')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Réseau de relais</a>
-                    <a href="<?= $h(url('back-office/ressources/atak-config')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Liaison technique</a>
-                    <a href="<?= $h(url('back-office/atak/realisme')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Parc de terminaux</a>
-                </div>
-            </div>
-        </header>
-
-        <?php if ($success): ?>
-            <p class="text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl px-4 py-3"><?= $h($success) ?></p>
-        <?php endif; ?>
-        <?php if ($error): ?>
-            <p class="text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl px-4 py-3"><?= $h($error) ?></p>
-        <?php endif; ?>
-
-        <?php if ($maintenanceEnabled): ?>
-            <div class="rounded-xl border border-amber-300 bg-amber-50 px-5 py-4">
-                <p class="text-sm font-bold text-amber-950">Maintenance active</p>
-                <p class="text-xs text-amber-900 mt-1">La carte et la liaison jeu sont coupées pour les opérateurs. Vous pouvez les rétablir depuis la liaison technique.</p>
-            </div>
-        <?php endif; ?>
-
-        <section class="grid sm:grid-cols-3 gap-3">
-            <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-                <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Fonctions actives</p>
-                <p class="mt-2 text-2xl font-black text-slate-900"><?= $enabledModulesCount ?> / <?= $bridgeModulesTotal ?></p>
-                <p class="mt-1 text-xs text-slate-500">Ponts entre le théâtre et le poste</p>
-            </div>
-            <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-                <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Relais</p>
-                <p class="mt-2 text-2xl font-black text-slate-900"><?= $aliveRelays ?> / <?= count($relays) ?></p>
-                <p class="mt-1 text-xs text-slate-500"><?= $linkViaRelays ? 'Liaison exigée via un relais intact' : 'Liaison libre, sans relais obligatoire' ?></p>
-            </div>
-            <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-                <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Simulation</p>
-                <p class="mt-2 text-2xl font-black text-slate-900"><?= ($networkOn || $sensorOn) ? 'Active' : 'Off' ?></p>
-                <p class="mt-1 text-xs text-slate-500"><?= $networkOn ? 'Réseau dégradé' : 'Réseau normal' ?><?= $sensorOn ? ' · capteurs' : '' ?></p>
-            </div>
-        </section>
-
-        <section id="regles" class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80">
-                <h2 class="text-sm font-black text-slate-900 tracking-tight">Règles de mission</h2>
-                <p class="mt-1 text-xs text-slate-600 leading-relaxed">Imposez un comportement à toute la communauté, ou laissez chaque opérateur choisir. Les communautés déjà en place ne changent rien tant que vous n’enregistrez pas.</p>
-            </div>
-            <?php if (!$experienceSchemaReady): ?>
-                <p class="px-5 py-6 text-sm text-red-800">Cette page ne peut pas encore enregistrer : la base n’est pas à jour. Contactez le support.</p>
-            <?php else: ?>
-                <form method="post" action="<?= $h(url('back-office/atak/controle-serveur/regles')) ?>" class="px-5 py-5 space-y-8" id="overwatch-server-rules">
-                    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-                    <?php foreach ($groupLabels as $gid => $glabel): ?>
-                        <?php $rows = $groupedRules[$gid] ?? []; ?>
-                        <?php if ($rows === []) { continue; } ?>
-                        <div>
-                            <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3"><?= $h($glabel) ?></h3>
-                            <?php if ($gid === 'reseau'): ?>
-                                <?php
-                                $liveCond = is_array($netLive['conditions'] ?? null) ? $netLive['conditions'] : [];
-                                $liveLabels = [];
-                                foreach ($rows as $nr) {
-                                    $nid = (string) ($nr['id'] ?? '');
-                                    if (!array_key_exists($nid, $liveCond)) {
-                                        continue;
-                                    }
-                                    $vl = (string) $liveCond[$nid];
-                                    foreach (($nr['choices'] ?? []) as $ch) {
-                                        if ((string) ($ch['value'] ?? '') === (string) $liveCond[$nid]) {
-                                            $vl = (string) ($ch['label'] ?? $vl);
-                                        }
-                                    }
-                                    $liveLabels[] = [(string) ($nr['label'] ?? $nid), $vl, (string) ($nr['value'] ?? 'player') !== 'player'];
-                                }
-                                $liveAt = (string) ($netLive['at'] ?? '');
-                                $liveTs = $liveAt !== '' ? strtotime($liveAt) : false;
-                                ?>
-                                <p class="text-xs text-slate-500 mb-3 leading-relaxed">« Laisser au serveur » : un administrateur du serveur ou un Zeus règle ces conditions en partie (menu Échap &gt; Conditions réseau). Une autre valeur s’impose à tous les joueurs de la communauté et se verrouille dans ce menu (COMSPEC Link 2.0.89 ou plus récent).</p>
-                                <div class="rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-3 mb-3" id="conditions-en-jeu">
-                                    <p class="text-sm font-semibold text-slate-800">Conditions appliquées en jeu</p>
-                                    <?php if ($liveTs === false): ?>
-                                        <p class="text-xs text-slate-600 mt-1">Aucune pour l’instant. Elles apparaissent ici dès qu’un administrateur les applique depuis le menu Échap.</p>
-                                    <?php else: ?>
-                                        <p class="text-xs text-slate-600 mt-1">
-                                            <?= !empty($netLive['reset']) ? 'Retour aux réglages du serveur' : 'Appliquées' ?>
-                                            par <strong><?= $h((string) ($netLive['applied_by'] ?? '?')) ?></strong>
-                                            le <?= $h(date('d/m/Y à H:i', (int) $liveTs)) ?>
-                                            <?php if ((string) ($netLive['mission'] ?? '') !== ''): ?> · mission <?= $h((string) $netLive['mission']) ?><?php endif; ?>
-                                            <?php if ((string) ($netLive['world'] ?? '') !== ''): ?> (<?= $h((string) $netLive['world']) ?>)<?php endif; ?>
-                                            <?php if ((string) ($netLive['server'] ?? '') !== ''): ?> · <?= $h((string) $netLive['server']) ?><?php endif; ?>
-                                        </p>
-                                        <?php if ($liveLabels !== []): ?>
-                                            <ul class="mt-2 grid sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700">
-                                                <?php foreach ($liveLabels as [$ll, $lv, $locked]): ?>
-                                                    <li><?= $h($ll) ?> : <strong><?= $h($lv) ?></strong><?= $locked ? ' <span class="text-amber-700">(règle du site prioritaire)</span>' : '' ?></li>
-                                                <?php endforeach; ?>
-                                            </ul>
-                                            <button type="submit" form="net-adopt" class="mt-3 inline-flex px-3 py-1.5 bg-emerald-700 text-white text-xs font-semibold rounded-lg hover:bg-emerald-800">Garder ces conditions comme règles de la communauté</button>
-                                        <?php endif; ?>
-                                    <?php endif; ?>
-                                </div>
-                            <?php endif; ?>
-                            <div class="grid sm:grid-cols-2 gap-3">
-                                <?php foreach ($rows as $exp): ?>
-                                    <?php
-                                    $eid = (string) ($exp['id'] ?? '');
-                                    $elabel = (string) ($exp['label'] ?? $eid);
-                                    $edesc = (string) ($exp['description'] ?? '');
-                                    $etype = (string) ($exp['type'] ?? 'bool');
-                                    $eval = $exp['value'] ?? false;
-                                    if ($eid === '') {
-                                        continue;
-                                    }
-                                    ?>
-                                    <?php if ($etype === 'tri' || $etype === 'list'): ?>
-                                        <div class="rounded-lg border border-slate-200 bg-white px-3 py-3">
-                                            <label class="block text-sm font-medium text-slate-800 mb-1" for="exp-<?= $h($eid) ?>"><?= $h($elabel) ?></label>
-                                            <?php if ($edesc !== ''): ?>
-                                                <p class="text-xs text-slate-500 mb-2 leading-relaxed"><?= $h($edesc) ?></p>
-                                            <?php endif; ?>
-                                            <select id="exp-<?= $h($eid) ?>" name="experience_<?= $h($eid) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                                                <?php foreach (($exp['choices'] ?? []) as $ch): ?>
-                                                    <?php $cv = (string) ($ch['value'] ?? ''); ?>
-                                                    <option value="<?= $h($cv) ?>"<?= (string) $eval === $cv ? ' selected' : '' ?>><?= $h((string) ($ch['label'] ?? $cv)) ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-                                    <?php else: ?>
-                                        <label class="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 cursor-pointer hover:border-emerald-300">
-                                            <input type="hidden" name="experience_<?= $h($eid) ?>" value="0">
-                                            <input type="checkbox" name="experience_<?= $h($eid) ?>" value="1" class="mt-1 rounded border-slate-300"<?= !empty($eval) ? ' checked' : '' ?>>
-                                            <span>
-                                                <span class="block text-sm font-medium text-slate-800"><?= $h($elabel) ?></span>
-                                                <?php if ($edesc !== ''): ?>
-                                                    <span class="block text-xs text-slate-500 mt-0.5 leading-relaxed"><?= $h($edesc) ?></span>
-                                                <?php endif; ?>
-                                            </span>
-                                        </label>
-                                    <?php endif; ?>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                    <div>
-                        <button type="submit" class="inline-flex px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer les règles</button>
-                    </div>
-                </form>
-                <form method="post" action="<?= $h(url('back-office/atak/controle-serveur/reseau-adopter')) ?>" id="net-adopt" class="hidden">
-                    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-                </form>
+                <dl class="sc-facts">
+                    <div><dt>Dernière remontée</dt><dd><?= $h(P::ago($presence['last_seen'], $now)) ?></dd></div>
+                    <?php if ($presence['server'] !== ''): ?>
+                        <div><dt>Serveur</dt><dd><?= $h($presence['server']) ?></dd></div>
+                    <?php endif; ?>
+                    <?php if ($presence['mission'] !== ''): ?>
+                        <div><dt>Mission</dt><dd><?= $h($presence['mission']) ?><?= $presence['world'] !== '' ? ' sur ' . $h($presence['world']) : '' ?></dd></div>
+                    <?php endif; ?>
+                    <div><dt>Téléphones vus cette semaine</dt><dd><?= (int) $presence['recent'] ?></dd></div>
+                    <?php if ($presence['mod_top'] !== ''): ?>
+                        <div><dt>Version du mod la plus courante</dt><dd><?= $h($presence['mod_top']) ?></dd></div>
+                    <?php endif; ?>
+                    <?php if ($presence['mod_oldest'] !== '' && $presence['mod_oldest'] !== $presence['mod_top']): ?>
+                        <div><dt>Version la plus ancienne</dt><dd><?= $h($presence['mod_oldest']) ?></dd></div>
+                    <?php endif; ?>
+                    <?php if ($presence['link_top'] !== ''): ?>
+                        <div><dt>COMSPEC Link</dt><dd><?= $h($presence['link_top']) ?></dd></div>
+                    <?php endif; ?>
+                </dl>
             <?php endif; ?>
-        </section>
-
-        <section id="fonctions" class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80">
-                <h2 class="text-sm font-black text-slate-900 tracking-tight">Fonctions actives</h2>
-                <p class="mt-1 text-xs text-slate-600 leading-relaxed">Décochez ce que votre mission n’utilise pas. Les opérateurs en liaison s’alignent sous environ une minute.</p>
-            </div>
-            <form method="post" action="<?= $h(url('back-office/atak/controle-serveur/fonctions')) ?>" class="px-5 py-5 space-y-4">
-                <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-                <div class="grid sm:grid-cols-2 gap-3">
-                    <?php foreach ($bridgeModules as $mod): ?>
-                        <?php
-                        $mid = (string) ($mod['id'] ?? '');
-                        if ($mid === '') {
-                            continue;
-                        }
-                        ?>
-                        <label class="flex items-start gap-3 rounded-lg border border-slate-200 px-3 py-3 cursor-pointer hover:border-emerald-300">
-                            <input type="hidden" name="module_<?= $h($mid) ?>" value="0">
-                            <input type="checkbox" name="module_<?= $h($mid) ?>" value="1" class="mt-1 rounded border-slate-300"<?= !empty($mod['enabled']) ? ' checked' : '' ?>>
-                            <span>
-                                <span class="block text-sm font-medium text-slate-800"><?= $h((string) ($mod['label'] ?? $mid)) ?></span>
-                                <span class="block text-xs text-slate-500 mt-0.5 leading-relaxed"><?= $h((string) ($mod['description'] ?? '')) ?></span>
-                            </span>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-                <button type="submit" class="inline-flex px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer les fonctions</button>
-            </form>
-        </section>
-
-        <section id="apps" class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <h2 class="text-sm font-black text-slate-900 tracking-tight">Apps du téléphone</h2>
-                        <p class="mt-1 text-xs text-slate-600 leading-relaxed max-w-2xl">Chaque opérateur installe et désinstalle ses apps dans l’App Store de son ATAK. Ici, vous pouvez rendre une app <strong>obligatoire</strong> (installée chez tous, impossible à désinstaller) ou <strong>interdite</strong> (retirée des téléphones, ne s’ouvre plus). Le Zeus et l’admin du serveur peuvent en ajouter pour une partie.</p>
-                    </div>
-                    <p class="text-xs font-semibold text-slate-600 whitespace-nowrap"><span class="text-amber-700"><?= $appsRequired ?> obligatoire(s)</span> · <span class="text-red-700"><?= $appsForbidden ?> interdite(s)</span></p>
-                </div>
-            </div>
-            <?php if (!$experienceSchemaReady): ?>
-                <p class="px-5 py-5 text-sm text-amber-900">La base n’est pas à jour : les règles d’apps ne peuvent pas encore être enregistrées.</p>
-            <?php else: ?>
-                <form method="post" action="<?= $h(url('back-office/atak/controle-serveur/apps')) ?>" class="px-5 py-5 space-y-6">
-                    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-                    <?php foreach ($appsBySection as $section => $apps): ?>
-                        <div>
-                            <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3"><?= $h($section) ?></h3>
-                            <div class="grid sm:grid-cols-2 gap-3">
-                                <?php foreach ($apps as $app): ?>
-                                    <?php
-                                    $aid = (string) $app['id'];
-                                    $rule = (string) ($appsPolicy[$aid] ?? 'player');
-                                    $tone = match ($rule) {
-                                        'required' => 'border-amber-300 bg-amber-50/60',
-                                        'forbidden' => 'border-red-300 bg-red-50/60',
-                                        default => 'border-slate-200',
-                                    };
-                                    ?>
-                                    <div class="flex items-center gap-3 rounded-lg border <?= $tone ?> px-3 py-3">
-                                        <div class="min-w-0 flex-1">
-                                            <label for="app-<?= $h($aid) ?>" class="block text-sm font-medium text-slate-800"><?= $h((string) $app['name']) ?></label>
-                                            <span class="block text-xs text-slate-500 mt-0.5 leading-relaxed"><?= $h((string) ($app['description'] ?? '')) ?></span>
-                                        </div>
-                                        <select id="app-<?= $h($aid) ?>" name="app_<?= $h($aid) ?>" class="shrink-0 border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white">
-                                            <option value="player"<?= $rule === 'player' ? ' selected' : '' ?>>Au choix</option>
-                                            <option value="required"<?= $rule === 'required' ? ' selected' : '' ?>>Obligatoire</option>
-                                            <option value="forbidden"<?= $rule === 'forbidden' ? ' selected' : '' ?>>Interdite</option>
-                                        </select>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                    <p class="text-xs text-slate-500">Réglages, App Store et Alertes font partie du téléphone : toujours installés.</p>
-                    <button type="submit" class="inline-flex px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer les apps</button>
-                </form>
+            <?php if ($maintenanceEnabled): ?>
+                <p class="sc-hero__alert">Maintenance active : la carte et la liaison jeu sont coupées pour les joueurs. Rétablissez-les depuis <a href="<?= $h(url('back-office/ressources/atak-config')) ?>">Configuration ATAK</a>.</p>
             <?php endif; ?>
-        </section>
+            <p class="sc-hero__links">
+                <a href="<?= $h(url('back-office/atak/parc-atak')) ?>">Parc ATAK des membres</a>
+                <a href="<?= $h(url('back-office/atak/roleplay')) ?>">Mode roleplay</a>
+                <a href="<?= $h(url('back-office/atak/relays-network')) ?>">Réseau de relais</a>
+                <a href="<?= $h(url('back-office/ressources/atak-config')) ?>">Configuration ATAK</a>
+            </p>
+        </div>
 
-        <section id="relais" class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <h2 class="text-sm font-black text-slate-900 tracking-tight">Relais de liaison</h2>
-                        <p class="mt-1 text-xs text-slate-600 leading-relaxed">Les mâts se posent en jeu (éditeur ou Zeus). Ici vous voyez ceux déjà connus, et vous décidez si le téléphone doit passer par un relais intact.</p>
-                    </div>
-                    <a href="<?= $h(url('back-office/atak/relays-network')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Ouvrir le réseau de relais</a>
-                </div>
-            </div>
-            <div class="px-5 py-5 border-b border-slate-100 bg-amber-50/50">
-                <p class="text-sm font-medium text-amber-900 mb-2">⚠️ Réglage relais déplacé</p>
-                <p class="text-xs text-amber-800 leading-relaxed">Le toggle "Exiger un relais pour la liaison" est maintenant dans <a href="<?= $h(url('back-office/atak/roleplay')) ?>" class="underline font-semibold">Simulation réseau et capteurs</a> pour éviter la duplication.</p>
-            </div>
-            <?php if ($relays === []): ?>
-                <p class="px-5 py-6 text-sm text-slate-500">Aucun relais n’a encore été vu depuis le théâtre. Posez-en un en mission pour qu’il apparaisse ici.</p>
+        <aside class="sc-phone" aria-labelledby="sc-phone-title">
+            <div class="sc-phone__notch" aria-hidden="true"></div>
+            <h3 id="sc-phone-title" class="sc-phone__title">Ce que vos joueurs vont avoir</h3>
+            <?php if ($preview === []): ?>
+                <p class="sc-phone__empty">Aucune règle imposée : chaque joueur règle son téléphone comme il veut.</p>
             <?php else: ?>
-                <ul class="divide-y divide-slate-100">
-                    <?php foreach ($relays as $relay): ?>
-                        <?php
-                        $alive = !empty($relay['alive']);
-                        $range = (int) round((float) ($relay['range_m'] ?? 0));
-                        $seen = trim((string) ($relay['last_seen_at'] ?? ''));
-                        $name = trim((string) ($relay['display_name'] ?? ''));
-                        if ($name === '') {
-                            $name = trim((string) ($relay['identity'] ?? ''));
-                        }
-                        if ($name === '') {
-                            $name = (string) ($relay['relay_uid'] ?? 'Relais');
-                        }
-                        $identity = trim((string) ($relay['identity'] ?? ''));
-                        $ip = trim((string) ($relay['ip_addr'] ?? ''));
-                        $gw = trim((string) ($relay['gateway'] ?? ''));
-                        $cert = trim((string) ($relay['certificate'] ?? ''));
-                        $slots = (int) ($relay['slots'] ?? 0);
-                        $used = (int) ($relay['slots_used'] ?? 0);
-                        $power = (int) ($relay['power_w'] ?? 0);
-                        $thru = (float) ($relay['throughput_mbps'] ?? 0);
-                        $relPct = (int) ($relay['reliability_pct'] ?? 0);
-                        $bits = [];
-                        if ((string) ($relay['map_label'] ?? '') !== '') {
-                            $bits[] = (string) $relay['map_label'];
-                        }
-                        if ($identity !== '' && $identity !== $name) {
-                            $bits[] = $identity;
-                        }
-                        if ($range > 0) {
-                            $bits[] = 'portée ' . $range . ' m';
-                        }
-                        if ($alive) {
-                            $bits[] = rtrim(rtrim(number_format($thru, 1, ',', ''), '0'), ',') . ' Mbit/s';
-                            $bits[] = $relPct . ' %';
-                            if ($slots > 0) {
-                                $bits[] = $used . ' / ' . $slots . ' places';
-                            }
-                            if ($power > 0) {
-                                $bits[] = $power . ' W';
-                            }
-                        }
-                        if ($ip !== '') {
-                            $bits[] = 'adresse réseau ' . $ip;
-                        }
-                        if ($gw !== '') {
-                            $bits[] = 'passerelle ' . $gw;
-                        }
-                        if ($cert !== '') {
-                            $bits[] = $cert;
-                        }
-                        if ($seen !== '') {
-                            $bits[] = 'vu ' . $seen;
-                        }
-                        ?>
-                        <li class="px-5 py-3 flex flex-wrap items-center justify-between gap-2">
-                            <div>
-                                <p class="text-sm font-semibold text-slate-900"><?= $h($name) ?></p>
-                                <p class="text-xs text-slate-500"><?= $h(implode(' · ', $bits)) ?></p>
-                            </div>
-                            <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold <?= $alive ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800' ?>"><?= $alive ? 'Intact' : 'Hors service' ?></span>
-                        </li>
+                <ul class="sc-phone__list">
+                    <?php foreach (array_slice($preview, 0, 9) as $p): ?>
+                        <li class="sc-phone__item<?= $p['state'] === 'partial' ? ' is-partial' : '' ?>"><span><?= $h($p['label']) ?></span><b><?= $h($p['value']) ?></b></li>
                     <?php endforeach; ?>
                 </ul>
+                <?php $extra = count($preview) - 9; ?>
+                <?php if ($extra > 0): ?>
+                    <p class="sc-phone__more">Et <?= $extra ?> <?= $plural($extra, 'autre règle imposée', 'autres règles imposées') ?>.</p>
+                <?php endif; ?>
             <?php endif; ?>
+            <p class="sc-phone__foot">Ces règles se verrouillent dans les réglages du téléphone. Un guide les reprend dans le journal de la carte en jeu.</p>
+        </aside>
+    </section>
+
+    <section class="sc-legend" aria-label="Ce que signifient les états">
+        <p class="sc-legend__lead">Chaque réglage dit s’il agit vraiment en jeu : enregistré sur le site, transmis au jeu, puis appliqué.</p>
+        <ul class="sc-legend__list">
+            <li><?= $badge('live') ?><span><?= (int) ($stateCounts['live'] ?? 0) ?> réglages agissent en jeu.</span></li>
+            <li><?= $badge('partial') ?><span><?= (int) ($stateCounts['partial'] ?? 0) ?> agissent en partie ou avec retard.</span></li>
+            <li><?= $badge('todo') ?><span><?= (int) ($stateCounts['todo'] ?? 0) ?> sans effet pour l’instant, rangés dans « Bientôt ».</span></li>
+        </ul>
+    </section>
+
+    <nav class="sc-nav" aria-label="Thèmes de la page">
+        <?php foreach ($themes as $tid => $theme): ?>
+            <a href="#theme-<?= $h($tid) ?>"><?= $h($theme['label']) ?></a>
+        <?php endforeach; ?>
+        <a href="#apps">Apps du téléphone</a>
+        <a href="#relais">Relais</a>
+        <?php if ($soon !== []): ?><a href="#bientot">Bientôt</a><?php endif; ?>
+        <a href="#journal">Journal</a>
+    </nav>
+
+    <?php if (!$schemaReady): ?>
+        <p class="sc-flash sc-flash--err" role="alert">Les règles et les apps ne peuvent pas encore être enregistrées : la base n’est pas à jour. Contactez le support. Les fonctions reliées restent modifiables.</p>
+    <?php endif; ?>
+
+    <form method="post" action="<?= $h(url('back-office/atak/controle-serveur/regles')) ?>" id="regles" class="sc-form" data-sc-form>
+        <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+        <span id="fonctions" class="sc-anchor" aria-hidden="true"></span>
+
+        <?php foreach ($themes as $tid => $theme): ?>
+            <section class="sc-card" id="theme-<?= $h($tid) ?>" aria-labelledby="theme-<?= $h($tid) ?>-t">
+                <header class="sc-card__h">
+                    <h3 class="sc-card__title" id="theme-<?= $h($tid) ?>-t"><?= $h($theme['label']) ?></h3>
+                    <p class="sc-card__lead"><?= $h($theme['lead']) ?></p>
+                </header>
+                <?php if ($tid === 'reseau'): ?>
+                    <?php
+                    $liveCond = is_array($netLive['conditions'] ?? null) ? $netLive['conditions'] : [];
+                    $liveAt = (string) ($netLive['at'] ?? '');
+                    $liveTs = $liveAt !== '' ? strtotime($liveAt) : false;
+                    $byId = array_column($theme['items'], null, 'id');
+                    ?>
+                    <div class="sc-ingame" id="conditions-en-jeu">
+                        <h4 class="sc-ingame__t">Conditions appliquées en jeu</h4>
+                        <?php if ($liveTs === false): ?>
+                            <p class="sc-ingame__p">Aucune pour l’instant. Elles apparaissent ici dès qu’un administrateur du serveur les applique depuis le menu Échap.</p>
+                        <?php else: ?>
+                            <p class="sc-ingame__p">
+                                <?= !empty($netLive['reset']) ? 'Retour aux réglages du serveur' : 'Appliquées' ?> par <strong><?= $h((string) ($netLive['applied_by'] ?? '?')) ?></strong>
+                                <?= $h(P::ago((int) $liveTs, $now)) ?><?php if ((string) ($netLive['mission'] ?? '') !== ''): ?>, mission <?= $h((string) $netLive['mission']) ?><?php endif; ?><?php if ((string) ($netLive['world'] ?? '') !== ''): ?> (<?= $h((string) $netLive['world']) ?>)<?php endif; ?>.
+                            </p>
+                            <?php if ($liveCond !== []): ?>
+                                <ul class="sc-ingame__list">
+                                    <?php foreach ($liveCond as $cid => $cv): ?>
+                                        <?php $ci = $byId[$cid] ?? null; if ($ci === null) { continue; } ?>
+                                        <li><?= $h($ci['label']) ?> : <strong><?= $h(P::valueLabel($ci, $cv)) ?></strong><?= !empty($ci['imposed']) ? ' <em>(la règle du site passe avant)</em>' : '' ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                                <button type="submit" form="net-adopt" class="sc-btn sc-btn--ghost"<?= $schemaReady ? '' : ' disabled' ?>>Garder ces conditions comme règles de la communauté</button>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+                <div class="sc-rows">
+                    <?php foreach ($theme['items'] as $item): ?>
+                        <?= $row($item) ?>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endforeach; ?>
+
+        <section class="sc-card" id="apps" aria-labelledby="apps-t">
+            <header class="sc-card__h">
+                <div class="sc-card__hrow">
+                    <h3 class="sc-card__title" id="apps-t">Apps du téléphone</h3>
+                    <?= $badge((string) W::APPS['state']) ?>
+                </div>
+                <p class="sc-card__lead">Chaque joueur installe ses apps dans l’App Store de son téléphone. <b>Obligatoire</b> : installée chez tous, impossible à désinstaller. <b>Interdite</b> : retirée des téléphones, elle ne s’ouvre plus. Un Zeus ou l’administrateur du serveur peut en ajouter pour une partie.</p>
+                <p class="sc-row__meta">
+                    <span><b>Délai</b> <?= $h(W::DELAYS[W::APPS['delay']]) ?></span>
+                    <span><b>Mod</b> ATAK natif <?= $h(W::APPS['min']) ?> ou plus récent<?= $appsBelow > 0 ? ' <em class="sc-warn">' . $appsBelow . ' ' . $plural($appsBelow, 'téléphone trop ancien', 'téléphones trop anciens') . ' cette semaine</em>' : '' ?></span>
+                    <span><b>En ce moment</b> <?= $appsRequired ?> <?= $plural($appsRequired, 'obligatoire', 'obligatoires') ?>, <?= $appsForbidden ?> <?= $plural($appsForbidden, 'interdite', 'interdites') ?></span>
+                </p>
+            </header>
+            <?php foreach ($appsBySection as $section => $apps): ?>
+                <h4 class="sc-apps__section"><?= $h($section) ?></h4>
+                <div class="sc-apps">
+                    <?php foreach ($apps as $app): ?>
+                        <?php $aid = (string) $app['id']; $rule = (string) ($appsPolicy[$aid] ?? 'player'); ?>
+                        <div class="sc-app sc-app--<?= $h($rule) ?>" data-sc-row>
+                            <div class="sc-app__text">
+                                <span class="sc-app__name"><?= $h((string) $app['name']) ?></span>
+                                <span class="sc-app__desc"><?= $h((string) ($app['description'] ?? '')) ?></span>
+                            </div>
+                            <fieldset class="sc-seg sc-seg--sm"<?= $schemaReady ? '' : ' disabled' ?>>
+                                <legend class="sc-sr"><?= $h((string) $app['name']) ?></legend>
+                                <?php foreach (['player' => 'Au choix', 'required' => 'Obligatoire', 'forbidden' => 'Interdite'] as $rv => $rl): ?>
+                                    <input type="radio" id="app-<?= $h($aid . '-' . $rv) ?>" name="app_<?= $h($aid) ?>" value="<?= $h($rv) ?>"<?= $rule === $rv ? ' checked' : '' ?>>
+                                    <label for="app-<?= $h($aid . '-' . $rv) ?>"><?= $h($rl) ?></label>
+                                <?php endforeach; ?>
+                            </fieldset>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endforeach; ?>
+            <p class="sc-card__foot">Réglages, App Store et Alertes font partie du téléphone : toujours installés.</p>
         </section>
-    </div>
+
+        <?php if ($soon !== []): ?>
+            <details class="sc-card sc-soon" id="bientot">
+                <summary class="sc-soon__sum">
+                    <span class="sc-card__title">Bientôt</span>
+                    <span class="sc-soon__count"><?= count($soon) ?> réglages sans effet en jeu pour l’instant</span>
+                </summary>
+                <p class="sc-card__lead">Ces réglages sont gardés tels quels, mais le mod actuel ne les lit pas : les changer ne modifie rien pour les joueurs.</p>
+                <div class="sc-rows">
+                    <?php foreach ($soon as $item): ?>
+                        <?= $row($item) ?>
+                    <?php endforeach; ?>
+                </div>
+            </details>
+        <?php endif; ?>
+
+        <div class="sc-savebar" data-sc-savebar role="region" aria-label="Enregistrement">
+            <p class="sc-savebar__msg" data-sc-msg aria-live="polite"><?= $savedTs !== false ? 'Tout est enregistré. Dernier enregistrement ' . $h(P::ago((int) $savedTs, $now)) . '.' : 'Tout est enregistré.' ?></p>
+            <div class="sc-savebar__acts">
+                <button type="reset" class="sc-btn sc-btn--ghost" data-sc-reset hidden>Annuler les modifications</button>
+                <button type="submit" class="sc-btn sc-btn--solid" data-sc-submit>Enregistrer</button>
+            </div>
+        </div>
+    </form>
+    <form method="post" action="<?= $h(url('back-office/atak/controle-serveur/reseau-adopter')) ?>" id="net-adopt" hidden>
+        <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+    </form>
+
+    <section class="sc-card" id="relais" aria-labelledby="relais-t">
+        <header class="sc-card__h">
+            <div class="sc-card__hrow">
+                <h3 class="sc-card__title" id="relais-t">Relais de liaison</h3>
+                <span class="sc-count"><?= $aliveRelays ?> <?= $plural($aliveRelays, 'intact', 'intacts') ?> sur <?= count($relays) ?></span>
+            </div>
+            <p class="sc-card__lead">Les mâts se posent en jeu (éditeur ou Zeus) ; ceux déjà vus sont listés ici. Le réglage « Exiger un relais pour la liaison » se trouve dans <a href="<?= $h(url('back-office/atak/roleplay')) ?>">Mode roleplay</a>.</p>
+        </header>
+        <?php if ($relays === []): ?>
+            <p class="sc-empty">Aucun relais vu pour l’instant. Posez-en un en mission pour qu’il apparaisse ici.</p>
+        <?php else: ?>
+            <ul class="sc-relays">
+                <?php foreach ($relays as $relay): ?>
+                    <?php
+                    $alive = !empty($relay['alive']);
+                    $name = trim((string) ($relay['display_name'] ?? '')) ?: (trim((string) ($relay['identity'] ?? '')) ?: (string) ($relay['relay_uid'] ?? 'Relais'));
+                    $bits = [];
+                    if ((string) ($relay['map_label'] ?? '') !== '') {
+                        $bits[] = (string) $relay['map_label'];
+                    }
+                    $range = (int) round((float) ($relay['range_m'] ?? 0));
+                    if ($range > 0) {
+                        $bits[] = 'portée ' . $range . ' m';
+                    }
+                    if ($alive) {
+                        $bits[] = rtrim(rtrim(number_format((float) ($relay['throughput_mbps'] ?? 0), 1, ',', ''), '0'), ',') . ' Mbit/s';
+                        $bits[] = 'fiabilité ' . (int) ($relay['reliability_pct'] ?? 0) . ' %';
+                        if ((int) ($relay['slots'] ?? 0) > 0) {
+                            $bits[] = (int) ($relay['slots_used'] ?? 0) . ' / ' . (int) $relay['slots'] . ' places';
+                        }
+                    }
+                    if (trim((string) ($relay['ip_addr'] ?? '')) !== '') {
+                        $bits[] = 'adresse réseau ' . trim((string) $relay['ip_addr']);
+                    }
+                    $seen = \App\Support\UtcDateTime::timestamp($relay['last_seen_at'] ?? null);
+                    if ($seen !== null) {
+                        $bits[] = 'vu ' . P::ago($seen, $now);
+                    }
+                    ?>
+                    <li class="sc-relay">
+                        <div><p class="sc-relay__name"><?= $h($name) ?></p><p class="sc-relay__meta"><?= $h(implode(', ', $bits)) ?></p></div>
+                        <span class="sc-pill <?= $alive ? 'sc-pill--ok' : 'sc-pill--ko' ?>"><?= $alive ? 'Intact' : 'Hors service' ?></span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </section>
+
+    <section class="sc-card" id="journal" aria-labelledby="journal-t">
+        <header class="sc-card__h">
+            <h3 class="sc-card__title" id="journal-t">Journal des changements</h3>
+            <p class="sc-card__lead">Qui a changé quoi sur cette page, du plus récent au plus ancien.</p>
+        </header>
+        <?php if ($journal === []): ?>
+            <p class="sc-empty">Aucun changement enregistré depuis la mise en place du journal.</p>
+        <?php else: ?>
+            <ol class="sc-journal">
+                <?php foreach ($journal as $j): ?>
+                    <li>
+                        <p class="sc-journal__h"><b><?= $h($j['who']) ?></b> <?= $h($j['title']) ?><?php if ($j['at'] !== ''): ?> <time><?= $h($j['at']) ?></time><?php endif; ?></p>
+                        <?php if ($j['changes'] !== []): ?>
+                            <ul class="sc-journal__list">
+                                <?php foreach ($j['changes'] as $c): ?><li><?= $h($c) ?></li><?php endforeach; ?>
+                                <?php if ($j['more'] > 0): ?><li>et <?= (int) $j['more'] ?> <?= $plural((int) $j['more'], 'autre', 'autres') ?></li><?php endif; ?>
+                            </ul>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ol>
+        <?php endif; ?>
+    </section>
 </div>
+<script>
+(function () {
+    var form = document.querySelector('[data-sc-form]');
+    if (!form) { return; }
+    var msg = form.querySelector('[data-sc-msg]');
+    var bar = form.querySelector('[data-sc-savebar]');
+    var reset = form.querySelector('[data-sc-reset]');
+    var submit = form.querySelector('[data-sc-submit]');
+    var clean = msg.textContent;
+    var sending = false;
+    function changed(el) {
+        if (el.type === 'checkbox' || el.type === 'radio') { return el.checked !== el.defaultChecked; }
+        if (el.tagName === 'SELECT') { return el.selectedIndex >= 0 && !el.options[el.selectedIndex].defaultSelected; }
+        return false;
+    }
+    function refresh() {
+        var rows = new Set();
+        form.querySelectorAll('[data-sc-row].is-dirty').forEach(function (r) { r.classList.remove('is-dirty'); });
+        form.querySelectorAll('input[type=checkbox], input[type=radio], select').forEach(function (el) {
+            var r = changed(el) ? el.closest('[data-sc-row]') : null;
+            if (r) { rows.add(r); }
+        });
+        rows.forEach(function (r) { r.classList.add('is-dirty'); });
+        var n = rows.size;
+        bar.classList.toggle('is-dirty', n > 0);
+        reset.hidden = n === 0;
+        msg.textContent = n === 0 ? clean : n + (n > 1 ? ' réglages modifiés, pas encore enregistrés.' : ' réglage modifié, pas encore enregistré.');
+        return n;
+    }
+    form.addEventListener('change', refresh);
+    form.addEventListener('reset', function () { setTimeout(refresh, 0); });
+    form.addEventListener('submit', function () {
+        sending = true;
+        submit.disabled = true;
+        submit.textContent = 'Enregistrement…';
+    });
+    window.addEventListener('beforeunload', function (e) {
+        if (!sending && refresh() > 0) { e.preventDefault(); e.returnValue = ''; }
+    });
+})();
+</script>

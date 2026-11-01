@@ -26,6 +26,9 @@ final class AuditActionLabel
         'configuration_update.completed' => 'Configuration post-mise à jour terminée',
         'configuration_update.dismissed' => 'Configuration post-mise à jour ignorée',
         'configuration_update.reopened' => 'Configuration post-mise à jour rouverte',
+        // ATAK : Contrôle de mission
+        'atak.server_control.updated' => 'Contrôle de mission : réglages modifiés',
+        'atak.server_control.network_adopted' => 'Contrôle de mission : conditions réseau reprises du jeu',
         // Invitations
         'invitation.sent' => 'Invitation envoyée',
         'invitation.accepted' => 'Invitation acceptée',

@@ -11,15 +11,21 @@ use App\Core\Session;
 use App\Repositories\AtakMapRepository;
 use App\Repositories\AtakRelayRepository;
 use App\Repositories\TenantAtakConfigRepository;
+use App\Services\Audit\AuditService;
 use App\Services\Tactical\AtakBridgeModulesService;
 use App\Services\Tactical\AtakExperienceService;
 use App\Support\ModuleFeatureAccess;
+use App\Support\ServerControlPresenter;
 
 /**
- * Poste de contrôle serveur : réalisme, fonctions actives, relais.
+ * Contrôle de mission : règles imposées aux joueurs, fonctions reliées, apps du téléphone et relais,
+ * avec pour chaque réglage ce qu'il fait réellement en jeu (ServerControlWiring).
  */
 final class AdminOverwatchServerControlController
 {
+    public const AUDIT_UPDATED = 'atak.server_control.updated';
+    public const AUDIT_NETWORK_ADOPTED = 'atak.server_control.network_adopted';
+
     public function __construct(
         private ?TenantAtakConfigRepository $atakConfig = null,
         private ?AtakRelayRepository $relays = null,
@@ -43,9 +49,8 @@ final class AdminOverwatchServerControlController
 
         $exp = new AtakExperienceService();
         $modules = new AtakBridgeModulesService();
-        $roleplay = $this->atakConfig->getRoleplayConfig($tenantId);
+        $expState = $exp->get($tenantId);
         $config = $this->atakConfig->getByTenantId($tenantId) ?? [];
-        $maintenance = (int) ($config['maintenance_enabled'] ?? 0) === 1;
         $mapLabels = [];
         foreach ($this->maps->getAll() as $map) {
             $id = (int) ($map['id'] ?? 0);
@@ -60,73 +65,52 @@ final class AdminOverwatchServerControlController
             $relayRows[] = $row;
         }
 
-        $groupedRules = [];
-        foreach ($exp->catalogWithState($tenantId) as $row) {
-            $group = (string) ($row['group'] ?? 'fonctions');
-            $groupedRules[$group][] = $row;
-        }
-
-        $enabledModules = 0;
-        $moduleRows = $modules->catalogWithState($tenantId);
-        foreach ($moduleRows as $mod) {
-            if (!empty($mod['enabled'])) {
-                $enabledModules++;
-            }
-        }
+        $now = time();
+        $presence = ServerControlPresenter::presence($this->terminals($tenantId), $this->serverPresence($tenantId), $now);
+        $view = ServerControlPresenter::themes($exp->catalogWithState($tenantId), $modules->catalogWithState($tenantId), $presence['versions']);
+        $appsPolicy = $expState['settings']['apps_policy'] ?? [];
 
         return Response::view('layout.main', [
             'content' => 'admin.atak.server_control',
-            'title' => 'Contrôle serveur Overwatch',
-            'pageTitle' => 'Contrôle serveur Overwatch',
+            'title' => 'Contrôle de mission',
+            'pageTitle' => 'Contrôle de mission',
+            'backOfficePageCss' => ['back-office-server-control.css'],
             'csrfToken' => Csrf::token(),
             'experienceSchemaReady' => $this->atakConfig->isExperienceSchemaReady(),
-            'groupedRules' => $groupedRules,
-            'groupLabels' => $exp->groupLabels(),
-            'netLive' => $exp->get($tenantId)['settings']['net_live'] ?? [],
+            'themes' => $view['themes'],
+            'soon' => $view['soon'],
+            'stateCounts' => $view['counts'],
+            'preview' => ServerControlPresenter::preview($view, $appsPolicy, $exp->phoneApps()),
+            'presence' => $presence,
+            'now' => $now,
+            'netLive' => $expState['settings']['net_live'] ?? [],
             'phoneApps' => $exp->phoneApps(),
-            'appsPolicy' => $exp->get($tenantId)['settings']['apps_policy'] ?? [],
-            'bridgeModules' => $moduleRows,
-            'enabledModulesCount' => $enabledModules,
-            'bridgeModulesTotal' => count($moduleRows),
-            'roleplay' => $roleplay,
+            'appsPolicy' => $appsPolicy,
             'relays' => $relayRows,
-            'maintenanceEnabled' => $maintenance,
+            'maintenanceEnabled' => (int) ($config['maintenance_enabled'] ?? 0) === 1,
+            'savedAt' => max((string) $expState['updated_at'], (string) $modules->get($tenantId)['updated_at']),
+            'journal' => ServerControlPresenter::journal($this->auditRows($tenantId)),
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]);
     }
 
+    /** Enregistre le formulaire de la page : règles, fonctions reliées et apps (seuls les champs envoyés changent). */
     public function storeRules(Request $request, array $params = []): Response
     {
-        $redirect = $this->guardPost($request);
-        if ($redirect instanceof Response) {
-            return $redirect;
-        }
-        $tenantId = $this->tenantId();
-        if (!$this->atakConfig->isExperienceSchemaReady()) {
-            Session::flash('error', 'Impossible d’enregistrer : la base n’est pas à jour. Contactez le support, puis réessayez.');
+        return $this->save($request, '#regles');
+    }
 
-            return Response::redirect(url('back-office/atak/controle-serveur'));
-        }
+    /** Ancienne adresse du formulaire « Fonctions actives » : même enregistrement. */
+    public function storeModules(Request $request, array $params = []): Response
+    {
+        return $this->save($request, '#fonctions');
+    }
 
-        $svc = new AtakExperienceService();
-        $incoming = ['server_control_reviewed' => true];
-        foreach ($svc->catalog() as $row) {
-            $id = $row['id'];
-            if ($row['type'] === 'bool') {
-                $incoming[$id] = (string) $request->input('experience_' . $id, '0') === '1';
-            } else {
-                $incoming[$id] = trim((string) $request->input('experience_' . $id, (string) $row['default']));
-            }
-        }
-        if (!empty($incoming['realism'])) {
-            $incoming['troll'] = false;
-        }
-        $svc->put($tenantId, $incoming);
-        $this->markControlReviewed($tenantId);
-        Session::flash('success', 'Règles de mission enregistrées. Les opérateurs en liaison les reçoivent sous environ une minute.');
-
-        return Response::redirect(url('back-office/atak/controle-serveur') . '#regles');
+    /** Ancienne adresse du formulaire « Apps du téléphone » : même enregistrement. */
+    public function storeApps(Request $request, array $params = []): Response
+    {
+        return $this->save($request, '#apps');
     }
 
     /**
@@ -138,10 +122,20 @@ final class AdminOverwatchServerControlController
         if ($redirect instanceof Response) {
             return $redirect;
         }
-        $n = (new AtakExperienceService())->adoptLiveNetwork($this->tenantId());
+        $tenantId = $this->tenantId();
+        $exp = new AtakExperienceService();
+        $before = $exp->get($tenantId)['settings'];
+        $n = $exp->adoptLiveNetwork($tenantId);
         if ($n > 0) {
-            $this->markControlReviewed($this->tenantId());
-            Session::flash('success', $n . ' condition(s) réseau reprise(s) comme règles de la communauté. Les opérateurs en liaison les reçoivent sous environ une minute.');
+            $this->markControlReviewed($tenantId);
+            $after = $exp->get($tenantId)['settings'];
+            $changes = ServerControlPresenter::changes(
+                $this->itemsByKey($exp, new AtakBridgeModulesService()),
+                $this->prefixed($before, 'rule:'),
+                $this->prefixed($after, 'rule:')
+            );
+            $this->audit(self::AUDIT_NETWORK_ADOPTED, $tenantId, $changes);
+            Session::flash('success', $n . ' condition(s) réseau reprise(s) comme règles de la communauté. Les joueurs en liaison les reçoivent en moins de 2 minutes.');
         } else {
             Session::flash('error', 'Aucune condition réseau appliquée en jeu à reprendre.');
         }
@@ -149,58 +143,8 @@ final class AdminOverwatchServerControlController
         return Response::redirect(url('back-office/atak/controle-serveur') . '#conditions-en-jeu');
     }
 
-    public function storeModules(Request $request, array $params = []): Response
-    {
-        $redirect = $this->guardPost($request);
-        if ($redirect instanceof Response) {
-            return $redirect;
-        }
-        $svc = new AtakBridgeModulesService();
-        $boolMap = [];
-        foreach ($svc->catalog() as $row) {
-            $id = $row['id'];
-            $boolMap[$id] = (string) $request->input('module_' . $id, '0') === '1';
-        }
-        $svc->put($this->tenantId(), $boolMap);
-        $this->markControlReviewed($this->tenantId());
-        Session::flash('success', 'Fonctions actives enregistrées. Les opérateurs en liaison les reçoivent sous environ une minute.');
-
-        return Response::redirect(url('back-office/atak/controle-serveur') . '#fonctions');
-    }
-
     /**
-     * App Store du téléphone ATAK : apps obligatoires (installées chez tous) ou interdites pour toute la communauté.
-     */
-    public function storeApps(Request $request, array $params = []): Response
-    {
-        $redirect = $this->guardPost($request);
-        if ($redirect instanceof Response) {
-            return $redirect;
-        }
-        $tenantId = $this->tenantId();
-        if (!$this->atakConfig->isExperienceSchemaReady()) {
-            Session::flash('error', 'Impossible d’enregistrer : la base n’est pas à jour. Contactez le support, puis réessayez.');
-
-            return Response::redirect(url('back-office/atak/controle-serveur') . '#apps');
-        }
-        $svc = new AtakExperienceService();
-        $rules = [];
-        foreach ($svc->phoneApps() as $app) {
-            $rules[$app['id']] = trim((string) $request->input('app_' . $app['id'], 'player'));
-        }
-        $policy = $svc->putAppPolicy($tenantId, $rules);
-        $this->markControlReviewed($tenantId);
-        $req = count(array_filter($policy, static fn (string $r): bool => $r === 'required'));
-        $forb = count($policy) - $req;
-        Session::flash('success', sprintf('Apps du téléphone enregistrées : %d obligatoire(s), %d interdite(s). Les opérateurs en liaison les reçoivent sous environ une minute.', $req, $forb));
-
-        return Response::redirect(url('back-office/atak/controle-serveur') . '#apps');
-    }
-
-    /**
-     * @deprecated Cette méthode est obsolète. Le paramètre link_via_relays est maintenant
-     * géré exclusivement dans back-office/atak/roleplay pour éviter la duplication (incohérence #5).
-     * Cette route sera supprimée en Phase 4 du plan de centralisation.
+     * @deprecated Le réglage « liaison par relais » est géré dans back-office/atak/roleplay.
      */
     public function storeRelays(Request $request, array $params = []): Response
     {
@@ -208,9 +152,192 @@ final class AdminOverwatchServerControlController
         if ($redirect instanceof Response) {
             return $redirect;
         }
-        // Redirection vers la page roleplay où ce paramètre est maintenant géré
-        Session::flash('error', 'Ce paramètre est maintenant géré dans la page "Simulation réseau et capteurs".');
+        Session::flash('error', 'Ce réglage est maintenant dans la page Mode roleplay.');
+
         return Response::redirect(url('back-office/atak/roleplay'));
+    }
+
+    /**
+     * Valeurs reçues du formulaire, champ par champ : un champ absent ne change rien.
+     *
+     * @param array<string, mixed> $post
+     * @param list<array<string, mixed>> $ruleCatalog
+     * @param list<array<string, mixed>> $moduleCatalog
+     * @param list<array<string, mixed>> $phoneApps
+     * @return array{rules: array<string, mixed>, modules: array<string, bool>, apps: array<string, string>}
+     */
+    public static function incomingFromPost(array $post, array $ruleCatalog, array $moduleCatalog, array $phoneApps): array
+    {
+        $scalar = static fn (mixed $v): ?string => is_scalar($v) ? trim((string) $v) : null;
+        $rules = [];
+        foreach ($ruleCatalog as $row) {
+            $id = (string) $row['id'];
+            $v = $scalar($post['experience_' . $id] ?? null);
+            if ($v !== null) {
+                $rules[$id] = ($row['type'] ?? 'bool') === 'bool' ? $v === '1' : $v;
+            }
+        }
+        $modules = [];
+        foreach ($moduleCatalog as $row) {
+            $v = $scalar($post['module_' . $row['id']] ?? null);
+            if ($v !== null) {
+                $modules[(string) $row['id']] = $v === '1';
+            }
+        }
+        $apps = [];
+        foreach ($phoneApps as $app) {
+            $v = $scalar($post['app_' . $app['id']] ?? null);
+            if ($v !== null) {
+                $apps[(string) $app['id']] = $v;
+            }
+        }
+
+        return ['rules' => $rules, 'modules' => $modules, 'apps' => $apps];
+    }
+
+    private function save(Request $request, string $anchor): Response
+    {
+        $redirect = $this->guardPost($request);
+        if ($redirect instanceof Response) {
+            return $redirect;
+        }
+        $tenantId = $this->tenantId();
+        $back = url('back-office/atak/controle-serveur') . $anchor;
+        $exp = new AtakExperienceService();
+        $mods = new AtakBridgeModulesService();
+        $in = self::incomingFromPost($request->all(), $exp->catalog(), $mods->catalog(), $exp->phoneApps());
+        if (($in['rules'] !== [] || $in['apps'] !== []) && !$this->atakConfig->isExperienceSchemaReady()) {
+            Session::flash('error', 'Rien n’a été enregistré : la base n’est pas à jour. Contactez le support, puis réessayez.');
+
+            return Response::redirect($back);
+        }
+
+        $settingsBefore = $exp->get($tenantId)['settings'];
+        $before = $this->prefixed($settingsBefore, 'rule:')
+            + $this->prefixed($mods->get($tenantId)['modules'], 'module:')
+            + $this->prefixed($settingsBefore['apps_policy'] ?? [], 'app:');
+        if ($in['rules'] !== []) {
+            $exp->put($tenantId, $in['rules'] + ['server_control_reviewed' => true]);
+        }
+        if ($in['modules'] !== []) {
+            $mods->put($tenantId, $in['modules']);
+        }
+        if ($in['apps'] !== []) {
+            $exp->putAppPolicy($tenantId, $in['apps']);
+        }
+        $settingsAfter = $exp->get($tenantId)['settings'];
+        $after = array_intersect_key($this->prefixed($settingsAfter, 'rule:'), $this->prefixed($in['rules'], 'rule:'))
+            + $this->prefixed(array_intersect_key($mods->get($tenantId)['modules'], $in['modules']), 'module:');
+        foreach ($in['apps'] as $id => $_) {
+            $after['app:' . $id] = $settingsAfter['apps_policy'][$id] ?? 'player';
+        }
+
+        $changes = ServerControlPresenter::changes($this->itemsByKey($exp, $mods), $before, $after);
+        $this->markControlReviewed($tenantId);
+        if ($changes === []) {
+            Session::flash('success', 'Aucun changement : les réglages étaient déjà ceux-ci.');
+
+            return Response::redirect($back);
+        }
+        $this->audit(self::AUDIT_UPDATED, $tenantId, $changes);
+        $n = count($changes);
+        Session::flash('success', sprintf(
+            '%d réglage%s enregistré%s : %s%s. Les joueurs en liaison les reçoivent en moins de 2 minutes.',
+            $n,
+            $n > 1 ? 's' : '',
+            $n > 1 ? 's' : '',
+            implode(', ', array_column(array_slice($changes, 0, 3), 'label')),
+            $n > 3 ? ' et ' . ($n - 3) . ' autre(s)' : ''
+        ));
+
+        return Response::redirect($back);
+    }
+
+    /**
+     * Tous les réglages de la page par id préfixé (rule:, module:, app:), avec ce qu'il faut pour lire leurs valeurs.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function itemsByKey(AtakExperienceService $exp, AtakBridgeModulesService $mods): array
+    {
+        $items = [];
+        foreach ($exp->catalog() as $row) {
+            $items['rule:' . $row['id']] = $row;
+        }
+        foreach ($mods->catalog() as $row) {
+            $items['module:' . $row['id']] = $row + ['type' => 'module', 'default' => true];
+        }
+        $appChoices = [['value' => 'player', 'label' => 'Au choix'], ['value' => 'required', 'label' => 'Obligatoire'], ['value' => 'forbidden', 'label' => 'Interdite']];
+        foreach ($exp->phoneApps() as $app) {
+            $items['app:' . $app['id']] = ['label' => 'App ' . $app['name'], 'type' => 'list', 'default' => 'player', 'choices' => $appChoices];
+        }
+
+        return $items;
+    }
+
+    /**
+     * @param array<array-key, mixed> $values
+     * @return array<string, mixed>
+     */
+    private function prefixed(array $values, string $prefix): array
+    {
+        $out = [];
+        foreach ($values as $k => $v) {
+            $out[$prefix . $k] = $v;
+        }
+
+        return $out;
+    }
+
+    /** @param list<array{label: string, from: string, to: string}> $changes */
+    private function audit(string $action, int $tenantId, array $changes): void
+    {
+        if ($changes === []) {
+            return;
+        }
+        try {
+            (new AuditService())->logChange(
+                $action,
+                $tenantId,
+                (int) (Session::get('user_id') ?? 0) ?: null,
+                'tenant',
+                $tenantId,
+                array_column($changes, 'from', 'label'),
+                array_column($changes, 'to', 'label'),
+            );
+        } catch (\Throwable) {
+            // Le journal ne doit jamais bloquer l’enregistrement d’un réglage.
+        }
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function auditRows(int $tenantId): array
+    {
+        try {
+            return (new \App\Repositories\AuditLogRepository())->listForTenant($tenantId, ['action_domain' => 'atak.server_control'], 1, 8)['rows'];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function terminals(int $tenantId): array
+    {
+        try {
+            return (new \App\Repositories\AtakAdminControlRepository())->listTerminals('', $tenantId, 300);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function serverPresence(int $tenantId): array
+    {
+        try {
+            return (new \App\Repositories\TenantGameServerRepository())->recentPresence($tenantId, 24, 1);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     private function tenantId(): int
@@ -225,7 +352,7 @@ final class AdminOverwatchServerControlController
             return Response::redirect(url('login'));
         }
         if ($request->method() !== 'POST' || !Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
+            Session::flash('error', 'Session expirée : rien n’a été enregistré. Rechargez la page puis réessayez.');
 
             return Response::redirect(url('back-office/atak/controle-serveur'));
         }
