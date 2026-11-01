@@ -716,19 +716,19 @@ class CfgCommands {
 // Sources : mod\UptoDate\Sources\art\donor_insignia (SVG + PNG 256x256, hors PBO) ; PAA DXT5 générés par mod\UptoDate\tools\png2paa.py.
 class CfgUnitInsignia {
     class COMSPEC_Donor_soutien {
-        displayName = "Donateur Athena · Soutien";
+        displayName = "$STR_COMSPEC_OW_CFG_362C50325B";
         author = "COMSPEC";
         texture = "\z\comspec_overwatch\addons\connect\img\donor\donor_soutien_ca.paa";
         textureVehicle = "";
     };
     class COMSPEC_Donor_allie {
-        displayName = "Donateur Athena · Allié";
+        displayName = "$STR_COMSPEC_OW_CFG_53EDA14935";
         author = "COMSPEC";
         texture = "\z\comspec_overwatch\addons\connect\img\donor\donor_allie_ca.paa";
         textureVehicle = "";
     };
     class COMSPEC_Donor_pilier {
-        displayName = "Donateur Athena · Pilier";
+        displayName = "$STR_COMSPEC_OW_CFG_B72BAA7444";
         author = "COMSPEC";
         texture = "\z\comspec_overwatch\addons\connect\img\donor\donor_pilier_ca.paa";
         textureVehicle = "";

@@ -45,9 +45,9 @@ _cam camCommit 0;
 // Bandeau : grille du point, cap de la vue, distance.
 private _osd = ["COMSPEC_RscStructuredText", [_vx, _vy, _vw, _font * 1.3]] call comspec_atak_native_fnc_pageCtrl;
 _osd ctrlSetBackgroundColor [0, 0, 0, 0.45];
-_osd ctrlSetStructuredText parseText format ["<t size='0.85' color='#e6efe9'>%1 · %2 · %3 m · %4</t>",
+_osd ctrlSetStructuredText parseText ((format ["<t size='0.85' color='#e6efe9'>%1 · %2 · %3 m · %4</t>",
     ("VUE 3D") call comspec_atak_native_fnc_tr, [_pt, 8] call comspec_atak_native_fnc_gridRef, round _dist,
-    format ["%1°", [round _dir, 3] call CBA_fnc_formatNumber]];
+    format ["%1°", [round _dir, 3] call CBA_fnc_formatNumber]]) call comspec_atak_native_fnc_tr);
 // Commandes : deux rangées de boutons.
 private _set = {
     params ["_k", "_v"];

@@ -661,7 +661,7 @@ switch (_act) do {
             private _c = format ["l%1", _i] call _g;
             if (isNull _c) then { continue };
             _c ctrlSetPosition ([0.8 * (sin _a) - 0.1, -0.8 * (cos _a) - 0.08, 0.2, 0.16] call _P);
-            _c ctrlSetText ([_cards select _i, (_cards select _i) call _tr] select ((_i mod 3) isEqualTo 0));
+            _c ctrlSetText ((([_cards select _i, (_cards select _i) call _tr] select ((_i mod 3) isEqualTo 0))) call comspec_atak_native_fnc_tr);
             _c ctrlSetTextColor (([_cGrey, _cWhite] select ((_i mod 3) isEqualTo 0)) call _tone);
             if (_i isEqualTo 0) then { _c ctrlSetTextColor (_cRed call _tone); };
             _c ctrlCommit 0;
@@ -675,9 +675,9 @@ switch (_act) do {
             _c ctrlCommit 0;
         };
         private _hd = (round _heading) mod 360;
-        ("val" call _g) ctrlSetText format ["%1%2°", ["", "0", "00"] select (([100, 10] findIf { _hd >= _x }) call { [_this, 2] select (_this < 0) }), _hd];
+        ("val" call _g) ctrlSetText ((format ["%1%2°", ["", "0", "00"] select (([100, 10] findIf { _hd >= _x }) call { [_this, 2] select (_this < 0) }), _hd]) call comspec_atak_native_fnc_tr);
         private _dirs = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
-        ("card" call _g) ctrlSetText ((_dirs select ((round (_heading / 45)) mod 8)) call _tr);
+        ("card" call _g) ctrlSetText ((((_dirs select ((round (_heading / 45)) mod 8)) call _tr)) call comspec_atak_native_fnc_tr);
         private _wpt = _m getOrDefault ["wpt", []];
         private _wp = "wp" call _g;
         if (!isNull _wp) then {
@@ -838,7 +838,7 @@ switch (_act) do {
             private _pic = {
                 params ["_key", "_t", "_u", "_v", "_s", ["_col", [1, 1, 1, 1]]];
                 private _c = [_key, "COMSPEC_RscWatchPic", [_u, _v, _s, _s] call _P] call _mk;
-                _c ctrlSetText (_t call _tex);
+                _c ctrlSetText (((_t call _tex)) call comspec_atak_native_fnc_tr);
                 _c ctrlSetTextColor (_col call _tone);
                 _c ctrlCommit 0;
                 _c
@@ -1049,7 +1049,7 @@ switch (_act) do {
             ["banBg", -0.8, -0.66, 1.6, 0.46, [0.13, 0.14, 0.15, 0.97]] call _box;
             ["ban", -0.74, -0.62, 1.48, 0.4, 0.105] call _rich;
             ["frame", "COMSPEC_RscWatchPic", [_x0, _y0, _ww, _size]] call _mk;
-            (_n get "frame") ctrlSetText (_skin call _tex);
+            (_n get "frame") ctrlSetText (((_skin call _tex)) call comspec_atak_native_fnc_tr);
             (_n get "frame") ctrlSetTextColor [1, 1, 1, 1];
             (_n get "frame") ctrlCommit 0;
             { (_n get _x) ctrlShow false; } forEach ["banBg", "ban"];
@@ -1059,14 +1059,14 @@ switch (_act) do {
                     params ["_key", "_u", "_v", "_uw", "_vh", "_tip", "_code"];
                     private _b = [_key, "COMSPEC_RscButtonInvisible", [_u, _v, _uw, _vh] call _P] call _mk;
                     _b ctrlEnable true;
-                    _b ctrlSetTooltip ((_tip) call _tr);
+                    _b ctrlSetTooltip ((((_tip) call _tr)) call comspec_atak_native_fnc_tr);
                     _b ctrlAddEventHandler ["ButtonClick", _code];
                     _b
                 };
                 // LIGHT : appui court = luminosité, maintien = menu (comme la touche physique).
                 private _bl = ["hitLight", "COMSPEC_RscButtonInvisible", [-1.55, -0.55, 0.42, 0.32] call _P] call _mk;
                 _bl ctrlEnable true;
-                _bl ctrlSetTooltip (("LIGHT — luminosité (maintenir : menu)") call _tr);
+                _bl ctrlSetTooltip (((("LIGHT — luminosité (maintenir : menu)") call _tr)) call comspec_atak_native_fnc_tr);
                 _bl ctrlAddEventHandler ["MouseButtonDown", { if ((_this select 1) isEqualTo 0) then { ["lightDown"] call comspec_atak_native_fnc_watch; }; false }];
                 _bl ctrlAddEventHandler ["MouseButtonUp", { if ((_this select 1) isEqualTo 0) then { ["lightUp"] call comspec_atak_native_fnc_watch; }; false }];
                 ["hitUp", -1.55, -0.08, 0.42, 0.32, "UP — écran précédent", { ["prev"] call comspec_atak_native_fnc_watch; }] call _hit;
@@ -1079,7 +1079,7 @@ switch (_act) do {
             _w set ["slow", 0];
         };
         private _g = { _n getOrDefault [_this, controlNull] };
-        private _set = { params ["_k", "_t"]; (_k call _g) ctrlSetText ((_t) call _tr); };
+        private _set = { params ["_k", "_t"]; (_k call _g) ctrlSetText ((((_t) call _tr)) call comspec_atak_native_fnc_tr); };
         private _col = { params ["_k", "_c"]; private _ctrl = _k call _g; _ctrl ctrlSetTextColor (_c call _tone); _ctrl ctrlCommit 0; };
 
         // --- Mises à jour rapides (0,1 s) : carte, chrono, minuteur ---
@@ -1092,8 +1092,8 @@ switch (_act) do {
                 private _me = [] call comspec_atak_native_fnc_gpsPos;
                 private _brg = ((_me getDir (_wpt select 0)) + 360) mod 360;
                 private _dist = _me distance2D (_wpt select 0);
-                ("foot" call _g) ctrlSetText format ["%1 %2 · %3 · %4°", "Point" call _tr, _wpt select 1,
-                    [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 2]] select (_dist >= 1000), round _brg];
+                ("foot" call _g) ctrlSetText ((format ["%1 %2 · %3 · %4°", "Point" call _tr, _wpt select 1,
+                    [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 2]] select (_dist >= 1000), round _brg]) call comspec_atak_native_fnc_tr);
                 ["hint", "BACK : effacer"] call _set;
             };
         };
@@ -1131,7 +1131,7 @@ switch (_act) do {
             };
             private _hd = round (getDir (vehicle player));
             private _card = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_hd / 45)) mod 8);
-            ("north" call _g) ctrlSetText format ["%1 %2°", _card call _tr, _hd];
+            ("north" call _g) ctrlSetText ((format ["%1 %2°", _card call _tr, _hd]) call comspec_atak_native_fnc_tr);
         };
         if (_page isEqualTo "MUSIC") then {
             private _mu = [] call comspec_atak_native_fnc_musicState;
@@ -1146,8 +1146,8 @@ switch (_act) do {
             if (_len > 0) then { _pos = _pos min _len; };
             ["title", ["Musique", "Piste", "Avance", "Volume"] select _mode] call _set;
             private _title = if (_kind isEqualTo "") then { "Aucune lecture" } else { _mu get "title" };
-            ("track" call _g) ctrlSetText (([_title, 28] call _clip) call _tr);
-            ("time" call _g) ctrlSetText ([_pos] call _fmtT);
+            ("track" call _g) ctrlSetText (((([_title, 28] call _clip) call _tr)) call comspec_atak_native_fnc_tr);
+            ("time" call _g) ctrlSetText ((([_pos] call _fmtT)) call comspec_atak_native_fnc_tr);
             ["time", [_cGrey, [_cBlue, _cOrange] select _paused] select (_kind isNotEqualTo "")] call _col;
             private _fill = if (_len <= 0) then { 0 } else { round ((_pos / _len) min 1) * 16 };
             private _bar = [_cDim, [_cBlue, _cOrange] select _paused] select (_kind isNotEqualTo "");
@@ -1156,40 +1156,40 @@ switch (_act) do {
             private _nq = count _q;
             if (_nq isEqualTo 0) then {
                 ["meta", "Lancez un morceau sur le téléphone"] call _set;
-                ("next" call _g) ctrlSetText "";
+                ("next" call _g) ctrlSetText (("") call comspec_atak_native_fnc_tr);
             } else {
-                ("meta" call _g) ctrlSetText format ["%1/%2 · %3 %4 %5", (_mu get "qi") + 1, _nq, (["Écouteurs", "Haut-parleur"] select (_mu get "speaker")) call _tr, _mu get "vol", "%"];
+                ("meta" call _g) ctrlSetText ((format ["%1/%2 · %3 %4 %5", (_mu get "qi") + 1, _nq, (["Écouteurs", "Haut-parleur"] select (_mu get "speaker")) call _tr, _mu get "vol", "%"]) call comspec_atak_native_fnc_tr);
                 private _ni = (_mu get "qi") + 1;
                 if (_ni >= _nq) then { _ni = if ((_mu get "repeat") isEqualTo "off") then { -1 } else { 0 }; };
                 if (_ni < 0 || {_ni isEqualTo (_mu get "qi")}) then {
-                    ("next" call _g) ctrlSetText "";
+                    ("next" call _g) ctrlSetText (("") call comspec_atak_native_fnc_tr);
                 } else {
-                    ("next" call _g) ctrlSetText format ["%1 %2", "Ensuite" call _tr, [(_q select _ni) select 2, 26] call _clip];
+                    ("next" call _g) ctrlSetText ((format ["%1 %2", "Ensuite" call _tr, [(_q select _ni) select 2, 26] call _clip]) call comspec_atak_native_fnc_tr);
                 };
             };
             ["hint", ["START : lecture ou pause", "UP : précédente · DOWN : suivante", "UP : -15 s · DOWN : +15 s", "UP : plus fort · DOWN : moins fort"] select _mode] call _set;
             ["hint2", ["BACK : commandes", "BACK : avance", "BACK : volume", "BACK : quitter les commandes"] select _mode] call _set;
         };
         if (_page isEqualTo "JUMP") then {
-            ("val" call _g) ctrlSetText ((round _agl) call _thou);
-            ("fall" call _g) ctrlSetText format ["%1 %2 km/h · %3 m/s", "Chute" call _tr, round ((-_vz max 0) * 3.6), round (-_vz max 0)];
+            ("val" call _g) ctrlSetText ((((round _agl) call _thou)) call comspec_atak_native_fnc_tr);
+            ("fall" call _g) ctrlSetText ((format ["%1 %2 km/h · %3 m/s", "Chute" call _tr, round ((-_vz max 0) * 3.6), round (-_vz max 0)]) call comspec_atak_native_fnc_tr);
         };
         if (_page isEqualTo "CHRONO") then {
             private _run = _m get "run";
             private _tot = (_m get "acc") + ([0, diag_tickTime - (_m get "t0")] select _run);
-            ("val" call _g) ctrlSetText ([_tot, true] call _fmtT);
+            ("val" call _g) ctrlSetText ((([_tot, true] call _fmtT)) call comspec_atak_native_fnc_tr);
         };
         if (_page isEqualTo "TIMER") then {
             private _left = if ((_m get "tend") >= 0) then { ((_m get "tend") - diag_tickTime) max 0 } else { _m get "tleft" };
-            ("val" call _g) ctrlSetText ([ceil _left] call _fmtT);
+            ("val" call _g) ctrlSetText ((([ceil _left] call _fmtT)) call comspec_atak_native_fnc_tr);
             private _k = round (40 * _left / ((_m get "tdur") max 1));
             for "_i" from 0 to 39 do { [format ["ring%1", _i], [_cDim, _cOrange] select (_i < _k)] call _col; };
             if (_hhTxt isEqualTo "") then {
-                ("hhl" call _g) ctrlSetText "";
+                ("hhl" call _g) ctrlSetText (("") call comspec_atak_native_fnc_tr);
                 ["hhs", ["Menu : heure H au groupe", ""] select ((leader group player) isNotEqualTo player)] call _set;
             } else {
-                ("hhl" call _g) ctrlSetText format ["%1  %2", "Heure H" call _tr, _hhTxt];
-                ("hhs" call _g) ctrlSetText format ["%1 %2", "par" call _tr, _hh select 1];
+                ("hhl" call _g) ctrlSetText ((format ["%1  %2", "Heure H" call _tr, _hhTxt]) call comspec_atak_native_fnc_tr);
+                ("hhs" call _g) ctrlSetText ((format ["%1 %2", "par" call _tr, _hh select 1]) call comspec_atak_native_fnc_tr);
             };
         };
 
@@ -1212,8 +1212,8 @@ switch (_act) do {
             { (_x call _g) ctrlShow _showBan; } forEach ["banBg", "ban"];
         };
         if (_showBan) then {
-            ("ban" call _g) ctrlSetStructuredText parseText format ["<t align='center' font='%5' color='%3'>%1</t><br/><t align='center' color='%4'>%2</t>",
-                _bt, _bb2, _cBlue call _H, _cWhite call _H, _fB];
+            ("ban" call _g) ctrlSetStructuredText parseText ((format ["<t align='center' font='%5' color='%3'>%1</t><br/><t align='center' color='%4'>%2</t>",
+                _bt, _bb2, _cBlue call _H, _cWhite call _H, _fB]) call comspec_atak_native_fnc_tr);
         };
 
         // --- Mises à jour lentes (1 s) ---
@@ -1224,15 +1224,15 @@ switch (_act) do {
                 date params ["_y", "_mo", "_dd", "_h", "_mi"];
                 private _yy = _y - ([0, 1] select (_mo < 3));
                 private _wd = (_yy + floor (_yy / 4) - floor (_yy / 100) + floor (_yy / 400) + ([0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4] select (_mo - 1)) + _dd) mod 7;
-                ("date" call _g) ctrlSetText format ["%1 %2", (["DIM.", "LUN.", "MAR.", "MER.", "JEU.", "VEN.", "SAM."] select _wd) call _tr, _dd];
-                ("time" call _g) ctrlSetText format ["%1:%2", _h, [str _mi, "0" + str _mi] select (_mi < 10)];
+                ("date" call _g) ctrlSetText ((format ["%1 %2", (["DIM.", "LUN.", "MAR.", "MER.", "JEU.", "VEN.", "SAM."] select _wd) call _tr, _dd]) call comspec_atak_native_fnc_tr);
+                ("time" call _g) ctrlSetText ((format ["%1:%2", _h, [str _mi, "0" + str _mi] select (_mi < 10)]) call comspec_atak_native_fnc_tr);
                 ["bt", [_cDim, _cBlue] select _link] call _col;
                 private _wb = round (_gm getOrDefault ["wbat", 100]);
-                ("bat" call _g) ctrlSetText format ["%1 %2", _wb, "%"];
+                ("bat" call _g) ctrlSetText ((format ["%1 %2", _wb, "%"]) call comspec_atak_native_fnc_tr);
                 ["batI", [_cGrey, _cRed] select (_wb <= 15)] call _col;
-                ("bbv" call _g) ctrlSetText str _bb;
-                ("hrv" call _g) ctrlSetText str _hr;
-                ("stv" call _g) ctrlSetText (_steps call _thou);
+                ("bbv" call _g) ctrlSetText ((str _bb) call comspec_atak_native_fnc_tr);
+                ("hrv" call _g) ctrlSetText ((str _hr) call comspec_atak_native_fnc_tr);
+                ("stv" call _g) ctrlSetText (((_steps call _thou)) call comspec_atak_native_fnc_tr);
                 // Lever / coucher du soleil (prochain des deux) et température : une fois par minute.
                 private _sun = _w getOrDefault ["sun", [[], [-1, -1]]];
                 if ((_sun select 0) isNotEqualTo [_y, _mo, _dd]) then {
@@ -1246,22 +1246,22 @@ switch (_act) do {
                     case (daytime < _rise || {daytime >= _sunset}): { format ["%1 %2", "Lever" call _tr, [_rise, "HH:MM"] call BIS_fnc_timeToString] };
                     default { format ["%1 %2", "Coucher" call _tr, [_sunset, "HH:MM"] call BIS_fnc_timeToString] };
                 };
-                ("sun" call _g) ctrlSetText ([format ["%1 · %2 °C", _sunTxt, round _temp], format ["%1 °C", round _temp]] select (_sunTxt isEqualTo ""));
+                ("sun" call _g) ctrlSetText ((([format ["%1 · %2 °C", _sunTxt, round _temp], format ["%1 °C", round _temp]] select (_sunTxt isEqualTo ""))) call comspec_atak_native_fnc_tr);
                 // Heure H en cours : à la place du soleil, en orange.
-                if (_hhTxt isNotEqualTo "") then { ("sun" call _g) ctrlSetText format ["%1  %2", "Heure H" call _tr, _hhTxt]; };
+                if (_hhTxt isNotEqualTo "") then { ("sun" call _g) ctrlSetText ((format ["%1  %2", "Heure H" call _tr, _hhTxt]) call comspec_atak_native_fnc_tr); };
                 ["sun", [_cGrey, _cOrange] select (_hhTxt isNotEqualTo "")] call _col;
                 // Lune : part éclairée (moonPhase) et croissante / décroissante (comparée au lendemain).
                 private _mp = moonPhase date;
                 private _mp2 = moonPhase (numberToDate [_y, ((dateToNumber date) + 1 / 365) min 0.9999]);
-                ("moon" call _g) ctrlSetText format ["%1 %2 %3 · %4", "Lune" call _tr, round (_mp * 100), "%", (["décroissante", "croissante"] select (_mp2 >= _mp)) call _tr];
+                ("moon" call _g) ctrlSetText ((format ["%1 %2 %3 · %4", "Lune" call _tr, round (_mp * 100), "%", (["décroissante", "croissante"] select (_mp2 >= _mp)) call _tr]) call comspec_atak_native_fnc_tr);
                 private _stressTxt = format [(["Stress %1 · repos", "Stress %1 · faible", "Stress %1 · moyen", "Stress %1 · élevé"] select ([0, 1, 2, 3] select (([25, 50, 75] findIf { _stress <= _x }) call { [_this, 3] select (_this < 0) }))), _stress];
                 private _mu = [] call comspec_atak_native_fnc_musicState;
                 if ((_mu get "kind") isNotEqualTo "") then {
                     private _tt = _mu get "title";
                     if ((count _tt) > 22) then { _tt = (_tt select [0, 21]) + "…"; };
-                    ("foot" call _g) ctrlSetText format ["%1 · %2", (["Pause", "Lecture"] select (!(_mu get "paused"))) call _tr, _tt];
+                    ("foot" call _g) ctrlSetText ((format ["%1 · %2", (["Pause", "Lecture"] select (!(_mu get "paused"))) call _tr, _tt]) call comspec_atak_native_fnc_tr);
                 } else {
-                    ("foot" call _g) ctrlSetText (_stressTxt call _tr);
+                    ("foot" call _g) ctrlSetText (((_stressTxt call _tr)) call comspec_atak_native_fnc_tr);
                 };
                 for "_i" from 0 to 29 do {
                     [format ["bba%1", _i], [_cDim, _cBlue] select (_i < round (_bb / 100 * 30))] call _col;
@@ -1270,7 +1270,7 @@ switch (_act) do {
             };
             case "HR": {
                 ["title", "FRÉQUENCE CARDIAQUE"] call _set;
-                ("val" call _g) ctrlSetText str _hr;
+                ("val" call _g) ctrlSetText ((str _hr) call comspec_atak_native_fnc_tr);
                 ["unit", "bpm"] call _set;
                 private _z = [_hr] call _zone;
                 ["zone", format ["Zone %1 · %2", _z, (["Échauffement", "Échauffement", "Endurance", "Aérobie", "Seuil", "Maximum"] select _z) call _tr]] call _set;
@@ -1294,8 +1294,8 @@ switch (_act) do {
             };
             case "ALT": {
                 ["title", "ALTIMÈTRE"] call _set;
-                ("val" call _g) ctrlSetText (_alt call _thou);
-                ("unit" call _g) ctrlSetText "m";
+                ("val" call _g) ctrlSetText (((_alt call _thou)) call comspec_atak_native_fnc_tr);
+                ("unit" call _g) ctrlSetText (("m") call comspec_atak_native_fnc_tr);
                 // Baromètre : atmosphère standard, plus la météo (basse pression par temps couvert).
                 private _hpa = 1013.25 * ((1 - 2.25577e-5 * ((getPosASL player) select 2)) ^ 5.25588) - 12 * overcast;
                 ["baro", format ["Baromètre %1 hPa", _hpa call _thou]] call _set;
@@ -1319,20 +1319,20 @@ switch (_act) do {
                 ["hint", "START : étalonner sur le GPS"] call _set;
             };
             case "COMPASS": {
-                ("mgrs" call _g) ctrlSetText (([] call comspec_atak_native_fnc_gpsPos) call _mgrs);
+                ("mgrs" call _g) ctrlSetText (((([] call comspec_atak_native_fnc_gpsPos) call _mgrs)) call comspec_atak_native_fnc_tr);
             };
             case "JUMP": {
                 ["title", "JUMPMASTER"] call _set;
                 ["unit", "m sol"] call _set;
                 private _arm = _m getOrDefault ["jArm", false];
                 private _edit = _w get "edit";
-                ("open" call _g) ctrlSetText format ["%1 %2 m", "Ouverture" call _tr, (_m getOrDefault ["jOpen", 1200]) call _thou];
+                ("open" call _g) ctrlSetText ((format ["%1 %2 m", "Ouverture" call _tr, (_m getOrDefault ["jOpen", 1200]) call _thou]) call comspec_atak_native_fnc_tr);
                 ["open", [_cWhite, _cOrange] select _edit] call _col;
                 if (_wpt isEqualTo []) then { ["dip", "Pas de point (DIP) : boussole ou ATAK"] call _set; } else {
                     private _me = [] call comspec_atak_native_fnc_gpsPos;
                     private _dist = _me distance2D (_wpt select 0);
-                    ("dip" call _g) ctrlSetText format ["DIP %1 · %2 · %3°", _wpt select 1,
-                        [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 1]] select (_dist >= 1000), round (((_me getDir (_wpt select 0)) + 360) mod 360)];
+                    ("dip" call _g) ctrlSetText ((format ["DIP %1 · %2 · %3°", _wpt select 1,
+                        [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 1]] select (_dist >= 1000), round (((_me getDir (_wpt select 0)) + 360) mod 360)]) call comspec_atak_native_fnc_tr);
                 };
                 ["state", switch (true) do { case (_edit): { "Réglage de l'ouverture" }; case (_arm): { "Armé" }; default { "Désarmé" }; }] call _set;
                 ["state", switch (true) do { case (_edit): { _cOrange }; case (_arm): { _cGreen }; default { _cGrey }; }] call _col;
@@ -1340,7 +1340,7 @@ switch (_act) do {
             };
             case "MAP": {
                 private _fix = [] call comspec_atak_native_fnc_gpsFix;
-                ("grid" call _g) ctrlSetText format ["%1 · ±%2 m", ([] call comspec_atak_native_fnc_gpsPos) call _mgrs, round (_fix param [0, 0])];
+                ("grid" call _g) ctrlSetText ((format ["%1 · ±%2 m", ([] call comspec_atak_native_fnc_gpsPos) call _mgrs, round (_fix param [0, 0])]) call comspec_atak_native_fnc_tr);
                 // Largeur réelle affichée, mesurée sur la carte (dépend du zoom choisi avec START).
                 private _mc = "map" call _g;
                 (ctrlPosition _mc) params ["_mx", "_my", "_mw", "_mh"];
@@ -1367,12 +1367,12 @@ switch (_act) do {
                 for "_i" from 0 to 2 do {
                     private _j = _nl - 1 - _i;
                     if (_j < 0) then {
-                        (("lapL" + str _i) call _g) ctrlSetText "";
-                        (("lap" + str _i) call _g) ctrlSetText "";
+                        (("lapL" + str _i) call _g) ctrlSetText (("") call comspec_atak_native_fnc_tr);
+                        (("lap" + str _i) call _g) ctrlSetText (("") call comspec_atak_native_fnc_tr);
                     } else {
                         private _lt = (_laps select _j) - ([0, _laps select (_j - 1)] select (_j > 0));
-                        (("lapL" + str _i) call _g) ctrlSetText format ["%1 %2", "Tour" call _tr, _j + 1];
-                        (("lap" + str _i) call _g) ctrlSetText ([_lt, true] call _fmtT);
+                        (("lapL" + str _i) call _g) ctrlSetText ((format ["%1 %2", "Tour" call _tr, _j + 1]) call comspec_atak_native_fnc_tr);
+                        (("lap" + str _i) call _g) ctrlSetText ((([_lt, true] call _fmtT)) call comspec_atak_native_fnc_tr);
                     };
                 };
                 // Activité reconnue seule par la montre (fn_garminTick) : genre, distance, durée.
@@ -1384,7 +1384,7 @@ switch (_act) do {
                         case "land": { "Véhicule" }; case "air": { "Vol" }; case "halo": { "Saut" }; case "sea": { "Bateau" };
                         default { "Nage" };
                     };
-                    ("auto" call _g) ctrlSetText format ["%1 · %2 · %3 km · %4", "Auto" call _tr, _lbl call _tr, (_mm / 1000) toFixed 2, [_sec] call _fmtT];
+                    ("auto" call _g) ctrlSetText ((format ["%1 · %2 · %3 km · %4", "Auto" call _tr, _lbl call _tr, (_mm / 1000) toFixed 2, [_sec] call _fmtT]) call comspec_atak_native_fnc_tr);
                 };
                 ["hint", ["START : départ · BACK : remise à zéro", "START : arrêt · BACK : tour"] select _run] call _set;
             };
@@ -1431,9 +1431,9 @@ switch (_act) do {
                         private _e = _last select _i;
                         private _msg = (_e getOrDefault ["message", ""]) call _tr;
                         if ((count _msg) > 70) then { _msg = (_msg select [0, 68]) + "…"; };
-                        _c ctrlSetStructuredText parseText format ["<t color='%3' size='0.85'>%1</t>  <t color='%4'>%2</t>", _e getOrDefault ["time", ""], _msg, _cGrey call _H, _cWhite call _H];
+                        _c ctrlSetStructuredText parseText ((format ["<t color='%3' size='0.85'>%1</t>  <t color='%4'>%2</t>", _e getOrDefault ["time", ""], _msg, _cGrey call _H, _cWhite call _H]) call comspec_atak_native_fnc_tr);
                     } else {
-                        _c ctrlSetStructuredText parseText (if (_i isEqualTo 0) then { format ["<t align='center' color='%2'>%1</t>", "Aucune notification" call _tr, _cGrey call _H] } else { "" });
+                        _c ctrlSetStructuredText parseText (((if (_i isEqualTo 0) then { format ["<t align='center' color='%2'>%1</t>", "Aucune notification" call _tr, _cGrey call _H] } else { "" })) call comspec_atak_native_fnc_tr);
                     };
                 };
                 ["hint", "START : faire sonner le téléphone"] call _set;
@@ -1450,7 +1450,7 @@ switch (_act) do {
                 {
                     _x params ["_k", "_lbl", "_val", "_p"];
                     [_k + "L", _lbl] call _set;
-                    (_k call _g) ctrlSetText _val;
+                    (_k call _g) ctrlSetText ((_val) call comspec_atak_native_fnc_tr);
                     private _b = (_k + "B1") call _g;
                     private _r = ctrlPosition ((_k + "B0") call _g);
                     _b ctrlSetPosition [_r select 0, _r select 1, ((_r select 2) * (_p max 0.01 min 1)), _r select 3];
@@ -1465,8 +1465,8 @@ switch (_act) do {
                 for "_i" from 0 to 4 do {
                     private _j = _sel - 2 + _i;
                     if (_j < 0 || {_j >= (count _menuItems)}) then {
-                        (("row" + str _i) call _g) ctrlSetText "";
-                        (("rowV" + str _i) call _g) ctrlSetText "";
+                        (("row" + str _i) call _g) ctrlSetText (("") call comspec_atak_native_fnc_tr);
+                        (("rowV" + str _i) call _g) ctrlSetText (("") call comspec_atak_native_fnc_tr);
                     } else {
                         (_menuItems select _j) params ["_id", "_lbl"];
                         ["row" + str _i, _lbl] call _set;

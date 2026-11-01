@@ -138,7 +138,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             if (_card) then { _cb = ["COMSPEC_RscText", [_pad, _y, _w, _rowH]] call _mk; _cb ctrlSetBackgroundColor _tbg; };
             private _t = ["COMSPEC_RscStructuredText", [_pad + _ix, _y + _ix / 2, _w - 2 * _ix, _rowH]] call _mk;
             private _trTxt = (_txt) call comspec_atak_native_fnc_tr;
-            _t ctrlSetStructuredText parseText _trTxt;
+            _t ctrlSetStructuredText parseText ((_trTxt) call comspec_atak_native_fnc_tr);
             private _h = (ctrlTextHeight _t) max (_fs * 1.2) max ([_trTxt, _w - 2 * _ix] call _estH);
             _t ctrlSetPosition [_pad + _ix, _y + _ix / 2, _w - 2 * _ix, _h];
             _t ctrlCommit 0;

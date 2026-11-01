@@ -526,8 +526,8 @@ if (_interactive) then {
         private _tx0 = _hx + pixelW * 10 + _hh * 0.7 / _ratio;
         private _txt = ["COMSPEC_RscStructuredText", [_tx0, _by + _pad + _hh * 0.12, (_hw - (_tx0 - _hx) - _xw) max 0, _hh * 0.88]] call _mk;
         _txt ctrlSetFontHeight (_fs * 0.92);
-        _txt ctrlSetStructuredText parseText format ["<t font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  <t color='#e6efe9'>%2</t>  <t size='0.85' color='#8a9a93'>%3</t>",
-            _name, _what, "glisser : déplacer la carte · clic droit : quitter" call comspec_atak_native_fnc_tr];
+        _txt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  <t color='#e6efe9'>%2</t>  <t size='0.85' color='#8a9a93'>%3</t>",
+            _name, _what, "glisser : déplacer la carte · clic droit : quitter" call comspec_atak_native_fnc_tr]) call comspec_atak_native_fnc_tr);
         private _xb = ["COMSPEC_RscButton", [_hx + _hw - _xw, _by + _pad, _xw, _hh], "✕"] call _mk;
         _xb ctrlSetFontHeight _fs;
         _xb ctrlSetTooltip (("Quitter l'outil") call comspec_atak_native_fnc_tr);

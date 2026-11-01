@@ -206,12 +206,12 @@ _btnTeleport ctrlAddEventHandler ["ButtonClick", {
             player setPos ((getPosATL _relay) vectorAdd [0, 5, 0]);
             private _msg = ("✈️ Téléporté au relais") call comspec_overwatch_connect_fnc_tr;
             [_msg, "system", "info"] call comspec_overwatch_connect_fnc_announce;
-            if (!isNull _footer) then { _footer ctrlSetStructuredText parseText format ["<t size='0.7' color='#FFD700' align='center'>%1</t>", _msg]; };
+            if (!isNull _footer) then { _footer ctrlSetStructuredText parseText ((format ["<t size='0.7' color='#FFD700' align='center'>%1</t>", _msg]) call comspec_overwatch_connect_fnc_tr); };
         };
     } else {
         private _msg = ("⚠️ Sélectionnez un relais dans la liste") call comspec_overwatch_connect_fnc_tr;
         [_msg, "system", "warn"] call comspec_overwatch_connect_fnc_announce;
-        if (!isNull _footer) then { _footer ctrlSetStructuredText parseText format ["<t size='0.7' color='#FFD700' align='center'>%1</t>", _msg]; };
+        if (!isNull _footer) then { _footer ctrlSetStructuredText parseText ((format ["<t size='0.7' color='#FFD700' align='center'>%1</t>", _msg]) call comspec_overwatch_connect_fnc_tr); };
     };
 }];
 
@@ -233,7 +233,7 @@ _footer ctrlSetStructuredText parseText (("<t size='0.7' color='#666666' align='
 private _feedback = uiNamespace getVariable ["COMSPEC_RelayDashboard_Feedback", ""];
 if (_feedback isEqualType "" && {_feedback isNotEqualTo ""}) then {
     uiNamespace setVariable ["COMSPEC_RelayDashboard_Feedback", ""];
-    _footer ctrlSetStructuredText parseText format ["<t size='0.7' color='#FFD700' align='center'>%1</t>", _feedback];
+    _footer ctrlSetStructuredText parseText ((format ["<t size='0.7' color='#FFD700' align='center'>%1</t>", _feedback]) call comspec_overwatch_connect_fnc_tr);
 };
 _footer ctrlCommit 0;
 

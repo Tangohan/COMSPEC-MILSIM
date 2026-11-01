@@ -431,7 +431,7 @@ if (!_isUav) then {
         _st set ["livecamFocal", _mm];
         (["fov", ((0.75 * 35 / _mm) max 0.15) min 2]) call comspec_atak_native_fnc_livecamStart;
         private _l = uiNamespace getVariable ["COMSPEC_ATAK_LivecamFocalLbl", controlNull];
-        if (!isNull _l) then { _l ctrlSetText format ["%1 mm", _mm]; };
+        if (!isNull _l) then { _l ctrlSetText ((format ["%1 mm", _mm]) call comspec_atak_native_fnc_tr); };
         private _bm = uiNamespace getVariable ["COMSPEC_ATAK_LivecamFocalMinus", controlNull];
         private _bp = uiNamespace getVariable ["COMSPEC_ATAK_LivecamFocalPlus", controlNull];
         if (!isNull _bm) then { _bm ctrlEnable (_i > 0); };
