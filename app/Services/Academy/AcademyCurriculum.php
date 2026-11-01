@@ -64,6 +64,9 @@ final class AcademyCurriculum
         if (isset($course['version']) && (!is_string($course['version']) || !preg_match('/\A[a-zA-Z0-9._-]{1,32}\z/', $course['version']))) {
             throw new \InvalidArgumentException('invalid_content');
         }
+        if (isset($course['cover']) && !in_array($course['cover'], AcademyStudio::COVERS, true)) {
+            throw new \InvalidArgumentException('invalid_content');
+        }
         if (isset($course['duration_minutes']) && (!is_int($course['duration_minutes']) || $course['duration_minutes'] < 5 || $course['duration_minutes'] > 1440)) {
             throw new \InvalidArgumentException('invalid_content');
         }
@@ -129,6 +132,11 @@ final class AcademyCurriculum
                 // Inline documents are self-contained, bilingual text. External media retains HTTPS validation.
                 if (isset($resource['body'])) {
                     self::bilingual($resource['body']);
+                } elseif (isset($resource['file'])) {
+                    // Diapositives importées et stockées par la communauté (voir GoogleSlidesImporter).
+                    if ($resource['type'] !== 'slides' || !is_string($resource['file']) || !preg_match(GoogleSlidesImporter::FILE_PATTERN, $resource['file'])) {
+                        throw new \InvalidArgumentException('invalid_content');
+                    }
                 } elseif (!isset($resource['url'])) {
                     throw new \InvalidArgumentException('invalid_content');
                 }

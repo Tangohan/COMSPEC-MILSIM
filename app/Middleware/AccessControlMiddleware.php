@@ -46,6 +46,10 @@ final class AccessControlMiddleware
     {
         $path = trim($request->path(), '/');
         $segment = strtolower((string) explode('/', $path)[0]);
+        // Pages de l'ancien LMS servies par l'Academy : mêmes règles que /formations.
+        if (str_starts_with(strtolower($path), 'academy/formations')) {
+            $segment = 'formations';
+        }
         $module = match ($segment) {
             'documents' => 'documents',
             'courrier' => 'courrier',

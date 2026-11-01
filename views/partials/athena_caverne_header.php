@@ -49,8 +49,9 @@ if ($currentKey === '') {
         $currentKey = 'dashboard';
     } elseif (str_starts_with($currentPath, 'hub')) {
         $currentKey = 'hub';
-    } elseif (str_starts_with($currentPath, 'formations')) {
-        $currentKey = 'formations';
+    } elseif (str_starts_with($currentPath, 'formations') || $currentPath === 'academy' || str_starts_with($currentPath, 'academy/')) {
+        // L'ancien catalogue « Formations » vit désormais dans l'Academy.
+        $currentKey = 'academy';
     } elseif (str_starts_with($currentPath, 'personnel') || str_starts_with($currentPath, 'orbat')) {
         $currentKey = 'effectifs';
     } elseif (
@@ -70,7 +71,7 @@ if ($currentKey === '') {
 $sectionLabelByKey = [
     'dashboard' => 'Tableau de bord',
     'hub' => 'Hub',
-    'formations' => 'Formations',
+    'academy' => 'Academy',
     'effectifs' => 'Effectifs',
     'recrutement' => 'Recrutement',
     'admin' => 'Gestion',
@@ -127,8 +128,7 @@ $navItems = [
     ['key' => 'dashboard', 'label' => 'Dashboard', 'href' => url('dashboard'), 'path' => 'dashboard'],
     ['key' => 'hub', 'label' => 'Hub', 'href' => url('hub'), 'path' => 'hub'],
 ];
-$navItems[] = ['key' => 'academy', 'label' => 'ATHENA Academy', 'href' => url('academy'), 'path' => 'academy'];
-$navItems[] = ['key' => 'formations', 'label' => 'Formations', 'href' => url('formations'), 'path' => 'formations'];
+$navItems[] = ['key' => 'academy', 'label' => 'Academy', 'href' => url('academy'), 'path' => 'academy'];
 $navItems[] = ['key' => 'effectifs', 'label' => 'Effectifs', 'href' => url('personnel'), 'path' => 'personnel'];
 if ($headerNoOrg) {
     $navItems[] = ['key' => 'registre', 'label' => 'Registre des unités', 'href' => url('communities'), 'path' => 'communities'];
@@ -184,9 +184,9 @@ $espaceLinks = [
     ['abbr' => 'OPS', 'label' => 'Manœuvres', 'desc' => 'Calendrier opérationnel', 'href' => url('evenements'), 'path' => 'evenements'],
     ['abbr' => 'ORB', 'label' => 'ORBAT', 'desc' => 'Structure et effectifs', 'href' => url('orbat'), 'path' => 'orbat'],
     ['abbr' => 'ATK', 'label' => 'ATAK', 'desc' => 'Carte tactique', 'href' => url('atak'), 'path' => 'atak'],
-    ['abbr' => 'FRM', 'label' => 'Formations', 'desc' => 'Catalogue et parcours', 'href' => url('formations'), 'path' => 'formations'],
-    // Accès direct à son parcours (sinon : Formations › catalogue › onglet), filtré comme le reste.
-    ['abbr' => 'MES', 'label' => 'Mes formations', 'desc' => 'Mon parcours et mes inscriptions', 'href' => url('formations/mes-formations'), 'path' => 'formations/mes-formations'],
+    ['abbr' => 'FRM', 'label' => 'Formations', 'desc' => 'Catalogue et parcours', 'href' => url('academy/catalogue'), 'path' => 'academy/formations'],
+    // Accès direct à son parcours dans l'Academy, filtré comme le reste (module formation).
+    ['abbr' => 'MES', 'label' => 'Mes formations', 'desc' => 'Mon parcours et mes inscriptions', 'href' => url('academy/courses'), 'path' => 'academy/formations'],
 ];
 if ($canRecruit) {
     $espaceLinks[] = [
@@ -437,7 +437,7 @@ if (function_exists('i18n_phrase')) {
 $profileMenuItems = [
     ['label' => 'JNET Extranet', 'desc' => 'Bureau numérique d’unité', 'href' => url('jnet'), 'path' => 'jnet'],
     ['label' => 'Ma fiche', 'desc' => 'Identité, grade et fonction', 'href' => url('personnel/me'), 'path' => 'personnel/me'],
-    ['label' => 'Mes formations', 'desc' => 'Parcours et compétences', 'href' => url('formations/mes-formations'), 'path' => 'formations/mes-formations'],
+    ['label' => 'Mes formations', 'desc' => 'Parcours et compétences', 'href' => url('academy/courses'), 'path' => 'academy/formations'],
     ['label' => 'Manœuvres', 'desc' => 'Calendrier opérationnel', 'href' => url('evenements'), 'path' => 'evenements'],
 ];
 if ($canDocsMenu) {

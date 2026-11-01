@@ -396,6 +396,7 @@ final class TenantTypeConfig
             // Formation
             'formations' => 'training',
             'formation' => 'training',
+            'academy/formations' => 'training',
             'courses' => 'training',
             'training' => 'training',
             'back-office/ressources/training' => 'training',

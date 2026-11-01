@@ -1,5 +1,8 @@
 <?php
 require __DIR__ . '/init.php';
+/* Salle de cours avec un cursus ouvert : maquette « Classroom » pleine largeur, avec sa propre barre d'en-tête. */
+$classroomFocus = $space === 'classroom' && !empty($selected);
+$customTopbar = $classroomFocus;
 require __DIR__ . '/header.php';
 $legacyCourses = $legacyCourses ?? [];
 $legacyEnrollments = $legacyEnrollments ?? [];
@@ -19,22 +22,19 @@ $formStart = static function (string $action, string $key) use ($h, $link, $stat
 <form method="post" action="<?= $h($link('action/' . $action)) ?>"><?= \App\Core\Csrf::field() ?><input type="hidden" name="course" value="<?= $h($key) ?>"><?php if ($state !== null && in_array($action,['advance','practice','exam_start','exam_submit','debrief'],true)): ?><input type="hidden" name="expected_stage" value="<?= (int)$state['stage'] ?>"><input type="hidden" name="expected_chapter" value="<?= (int)$state['chapter'] ?>"><?php endif ?>
 <?php };
 ?>
-<?php /* Salle de cours avec un cursus ouvert : mode lecture pleine largeur, sans colonne de navigation. */
-$classroomFocus = $space === 'classroom' && !empty($selected); ?>
-<div class="app-shell<?= $classroomFocus ? ' app-shell--focus' : '' ?>">
+<?php if ($classroomFocus): require __DIR__ . '/classroom.php'; else: ?>
+<div class="app-shell">
 <?php
-$academyIcons = ['dashboard'=>'overview','catalogue'=>'catalogue','courses'=>'mine','classroom'=>'docs','laboratory'=>'studio','simulators'=>'star','exams'=>'calendar','library'=>'docs','notebook'=>'feedback','record'=>'cert','instructor'=>'groups'];
+$academyIcons = ['dashboard'=>'overview','catalogue'=>'catalogue','courses'=>'mine','classroom'=>'docs','laboratory'=>'studio','simulators'=>'star','exams'=>'calendar','library'=>'docs','notebook'=>'feedback','record'=>'cert','instructor'=>'groups','studio'=>'studio'];
 $academyNavItems = [];
 foreach ($allSpaces as $item) {
-    if ($item === 'instructor' && !$staff) continue;
+    if (in_array($item, ['instructor','studio'], true) && !$staff) continue;
     $academyNavItems[] = ['href'=>$link($item), 'label'=>$t($item), 'icon'=>$academyIcons[$item], 'active'=>$space===$item];
 }
-$lmsNav = ['id'=>'academy','tone'=>'emerald','kicker'=>'ATHENA · Academy','title'=>$t('brand'),'lead'=>$t('tagline'),'aria'=>$t('brand'),'sections'=>[['label'=>$t('welcome'),'items'=>$academyNavItems]],'foot'=>['href'=>url('dashboard'),'label'=>$t('back_athena')]];
-if (!$classroomFocus) {
-    (static function (array $lmsNav): void { require base_path('views/partials/lms_nav_aside.php'); })($lmsNav);
-}
+$lmsNav = ['id'=>'academy','tone'=>'emerald','kicker'=>'Academy','title'=>$t('brand'),'lead'=>$t('tagline'),'aria'=>$t('brand'),'sections'=>[['label'=>$t('welcome'),'items'=>$academyNavItems]],'foot'=>['href'=>url('dashboard'),'label'=>$t('back_athena')]];
+(static function (array $lmsNav): void { require base_path('views/partials/lms_nav_aside.php'); })($lmsNav);
 ?>
-<main id="main" class="app-main<?= $classroomFocus ? ' academy-classroom' : '' ?>"><?php if (!$classroomFocus): ?><div class="breadcrumb"><a href="<?= $h($link()) ?>">ATHENA ACADEMY</a><span>/</span><?= $h($t($space)) ?></div><?php endif ?>
+<main id="main" class="app-main"><div class="breadcrumb"><a href="<?= $h($link()) ?>">Academy</a><span>/</span><?= $h($t($space)) ?></div>
 <?php if ($notice): ?><div class="notice" role="status"><?= $h($t($notice)) ?></div><?php \App\Core\Session::set('academy_notice', ''); endif ?>
 <?php if (!$academyStorageReady): ?><p class="notice"><?= $h($t('lms_storage_notice')) ?></p><?php endif ?>
 <?php if ($space === 'dashboard'): ?>
@@ -54,7 +54,7 @@ if (!$classroomFocus) {
 <?php if($displayCourses===[]&&($space==='courses'?$legacyEnrollments:$legacyCourses)===[]): ?><p><?= $h($t($space==='courses'?'empty_text':'no_published_courses')) ?></p><?php endif ?>
 <p data-search-empty hidden role="status"><?= $h($t('search_empty')) ?></p>
 <?php elseif(in_array($space,['classroom','laboratory','exams','simulators'],true)): ?>
-<?php if (!$classroomFocus): ?><div class="page-heading"><p class="eyebrow">ATHENA / <?= $h($t($space)) ?></p><h1><?= $h($t($space)) ?></h1><p><?= $h($t($space.'_desc')) ?></p></div><?php endif ?>
+<div class="page-heading"><p class="eyebrow">ATHENA / <?= $h($t($space)) ?></p><h1><?= $h($t($space)) ?></h1><p><?= $h($t($space.'_desc')) ?></p></div>
 <?php require __DIR__.'/course_player.php'; ?>
 <?php elseif ($space==='notebook'): ?>
 <div class="page-heading"><p class="eyebrow">ATHENA / <?= $h($t('notebook')) ?></p><h1><?= $h($t('notebook')) ?></h1><p><?= $h($t('notes_help')) ?></p></div><section class="panel notebook"><?php $formStart('notes','academy'); ?><label for="notes"><?= $h($t('notes_label')) ?></label><textarea id="notes" name="notes" rows="16" maxlength="30000"><?= $h($states['__notes']['text']??'') ?></textarea><div class="buttons"><button class="button"><?= $h($t('save_notes')) ?> ✓</button><button class="button outline" type="button" data-print><?= $h($t('print')) ?> ↗</button></div></form><div class="print-notes" data-print-notes><?= $h($states['__notes']['text']??'') ?></div><div class="qr-card"><img src="<?= $h($link('qr')) ?>" width="140" height="140" alt="QR · <?= $h($t('classroom')) ?>"><div><h3><?= $h($t('classroom')) ?></h3><a href="<?= $h($link('classroom')) ?>"><?= $h($link('classroom')) ?></a></div></div></section>
@@ -84,8 +84,8 @@ if (!$classroomFocus) {
 <?php if((int)$learner['user_id']===(int)\App\Core\Session::get('user_id')): ?><p class="hint"><?= $h($t('self_validation')) ?></p>
 <?php else: $formStart('validate',$learner['course_key']); ?><input type="hidden" name="learner" value="<?= (int)$learner['user_id'] ?>"><input type="hidden" name="expected_chapter" value="<?= (int)$item['chapter'] ?>"><label for="comment-<?= $pendingCount ?>"><?= $h($t('comment')) ?></label><textarea id="comment-<?= $pendingCount ?>" name="comment" rows="5" minlength="10" maxlength="5000" required></textarea><button class="button"><?= $h($t('validate')) ?> ✓</button></form><?php endif ?></section>
 <?php endforeach; if(!$pendingCount): ?><p class="muted"><?= $h($t('review_empty')) ?></p><?php endif ?>
-<?php if($academyStorageReady): ?><details class="advanced"><summary><?= $h($t('additional_authoring')) ?></summary><?php require __DIR__.'/editor.php'; ?></details><?php endif ?>
-<section class="lms-panel panel"><h2><?= $h($t('catalogue')) ?></h2><?php foreach($courses as $course): ?><div class="activity"><h3><?= $h($local($course['title'])) ?></h3><span class="pill"><?= $h($t(isset($course['published'])&&!$course['published']?'draft':'published_course')) ?></span><?php if(isset($course['published'])&&!$course['published']): $formStart('publish',$course['key']); ?><button class="button small"><?= $h($t('publish')) ?></button></form><?php endif ?></div><?php endforeach ?></section>
+<section class="lms-panel panel"><h2><?= $h($t('catalogue')) ?></h2><p><a class="button" href="<?= $h($link('studio')) ?>"><?= $h($t('open_studio')) ?></a></p><?php foreach($courses as $course): ?><div class="activity"><h3><?= $h($local($course['title'])) ?></h3><span class="pill"><?= $h($t(isset($course['published'])&&!$course['published']?'draft':'published_course')) ?></span><?php if(empty($course['built_in'])): ?><a class="text-link" href="<?= $h($link('studio').'?course='.rawurlencode($course['key'])) ?>"><?= $h($t('edit_in_studio')) ?></a><?php endif ?></div><?php endforeach ?></section>
 <?php endif ?>
 </main></div>
+<?php endif ?>
 <?php require __DIR__ . '/footer.php'; ?>
