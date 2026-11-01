@@ -35,4 +35,5 @@ return [
     ['id' => 'competency_links_pathways', 'label' => 'Compétences : explication, liens vers l’Academy, les qualifications, les emplois et la dotation, parcours enregistrés', 'group' => 'schema', 'file' => '3340_competency_links_pathways.php', 'rerun' => true],
     ['id' => 'community_game_labels', 'label' => 'Annuaire : harmonisation des jeux déclarés par les communautés (Arma3, ARMA 3… → Arma 3)', 'group' => 'schema', 'file' => '3290_community_game_labels.php', 'rerun' => true],
     ['id' => 'org_low_member_reminders', 'label' => 'Communautés à un ou deux membres : rappels aux responsables et liste « Organisations à supprimer »', 'group' => 'schema', 'file' => '3310_org_low_member_reminders.php', 'rerun' => true],
+    ['id' => 'tenant_generated_labels', 'label' => 'Libellés des unités et postes générés : personnalisation par communauté et par langue', 'group' => 'schema', 'file' => '3295_tenant_generated_labels.php', 'rerun' => true],
 ];

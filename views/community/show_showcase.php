@@ -1125,8 +1125,9 @@ unset($pbCssFile, $pbCssName);
           $mc = (int) ($unitMemberCounts[$uid] ?? 0);
           $blurb = trim((string) ($unit['public_blurb'] ?? ''));
           $code = trim((string) ($unit['code'] ?? ''));
-          $unitName = (string) ($unit['name'] ?? '');
           $unitSlugForLink = trim((string) ($unit['slug'] ?? ''));
+          // Libellé généré (modèle d’organisation) dans la langue du lecteur ; un nom saisi reste tel quel.
+          $unitName = generated_label('unit', (string) ($unit['name'] ?? ''), $unitSlugForLink, (int) ($unit['tenant_id'] ?? 0));
           $cmdId = (int) ($unit['commander_user_id'] ?? 0);
           $cmdName = $cmdId > 0 ? ($commanderNames[$cmdId] ?? '') : '';
           $cmdAnon = $cmdName !== '' && isset($commanderConfidential[$cmdId]);
@@ -1180,7 +1181,7 @@ unset($pbCssFile, $pbCssName);
             <span class="orb-badge" aria-hidden="true"><?= htmlspecialchars(\App\Support\PublicOrbat::insignia($code, name_mask_text($unitName))) ?></span>
             <div class="orb-titles">
               <div class="cl-unit__code"><?= htmlspecialchars(mb_strtoupper($code !== '' ? $code : ($typeLabel !== '' ? $typeLabel : $orbL['unit']))) ?></div>
-              <h3 class="cl-unit__name"><?= name_blur_html($unitName) ?><?php if (is_array($unit['confidential'] ?? null)): ?> <?= \App\Support\ConfidentialDisplay::renderPayload($unit['confidential'], true) ?><?php endif; ?></h3>
+              <h3 class="cl-unit__name"><span<?= unit_name_translate_attr($unitName) ?>><?= name_blur_html($unitName) ?></span><?php if (is_array($unit['confidential'] ?? null)): ?> <?= \App\Support\ConfidentialDisplay::renderPayload($unit['confidential'], true) ?><?php endif; ?></h3>
               <?php if ($parentName !== ''): ?>
               <p class="orb-parent"><?= htmlspecialchars($orbL['under']) ?> <?= name_blur_html($parentName) ?></p>
               <?php endif; ?>

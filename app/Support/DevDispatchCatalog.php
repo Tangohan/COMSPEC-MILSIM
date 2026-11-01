@@ -302,6 +302,7 @@ final class DevDispatchCatalog
                 'Matricules : contrôle du registre (doublons, membres sans matricule, numéros libres), aperçu du modèle, attribution en un clic et export CSV',
                 'Disponibilité des unités : vue d’ensemble, filtres Prête / À surveiller / Critique, recherche, tri et affichage en cartes sur téléphone',
                 'Organigramme : indicateur « postes vacants »',
+                'Libellés générés traduits (FR/EN) et personnalisables par communauté',
             ], [
                 'Équipes et groupes : même présentation en cartes, filtre « sans responsable », jauge de remplissage et tri',
                 'Pastille commune « Unité anonymisée », « Personnel anonymisé », « Affectation restreinte »… avec explication, sur l’organigramme, le tableau de bord, l’annuaire, la fiche personnel, les espaces JNET et la page publique',

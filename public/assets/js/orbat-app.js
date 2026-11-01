@@ -786,6 +786,8 @@
     public_custom_date_label: 'publicCustomDateLabel'
   };
   function apiValue(n, field) {
+    // Nom affiché traduit (libellé généré) : on édite le nom enregistré.
+    if (field === 'name') return n.labelSource != null ? String(n.labelSource) : (n.label == null ? '' : String(n.label));
     if (field === 'sidc') return n.sidcAuto ? '' : n.sidc;
     if (field === 'echelon') return n.echelonAuto ? '' : n.echelon;
     if (field === 'code') return n.role && n.role !== 'Unité' ? n.role : '';
@@ -800,6 +802,7 @@
       var v = fields[f];
       if (f === 'sidc') { n.sidcAuto = v === ''; if (v) n.sidc = v; n.symbolSidc = composeSidc(n.sidc, n.echelon); return; }
       if (f === 'echelon') { n.echelonAuto = v === ''; if (v) n.echelon = v; n.symbolSidc = composeSidc(n.sidc, n.echelon); return; }
+      if (f === 'name') { n.label = v; delete n.labelSource; return; }
       if (f === 'code') { n.role = v || 'Unité'; return; }
       if (f === 'public_blurb') { n.mission = v || '—'; return; }
       if (f === 'show_on_public_page') { n.showOnPublicPage = v === '1'; return; }
@@ -822,7 +825,7 @@
     var before = {};
     Object.keys(fields).forEach(function (f) { before[f] = apiValue(n, f); });
     var body = Object.assign({ unit_id: unitId }, fields);
-    if (fields.struct_type !== undefined && fields.name === undefined) body.name = n.label;
+    if (fields.struct_type !== undefined && fields.name === undefined) body.name = apiValue(n, 'name');
     return mutate({
       url: api('/api/orbat/unit'),
       fields: body,
@@ -1428,7 +1431,7 @@
     openModal({
       html: function () {
         return '<h2>' + esc(b ? t('f_post_edit') : t('f_post_new')) + '</h2><p>' + esc(n.label) + '</p><div class="orb-fg">' +
-          fl(esc(t('f_post_title')) + ' <i>*</i>', '<input class="orb-in" id="orb-pf-title" maxlength="150" autofocus value="' + esc(b ? b.title : '') + '">', '', true) +
+          fl(esc(t('f_post_title')) + ' <i>*</i>', '<input class="orb-in" id="orb-pf-title" maxlength="150" autofocus value="' + esc(b ? (b.titleSource || b.title) : '') + '">', '', true) +
           fl(esc(t('f_post_function')), '<input class="orb-in" id="orb-pf-fn" maxlength="150" value="' + esc(b ? b.function_label : '') + '">') +
           fl(esc(t('f_post_slots')), '<input class="orb-in" id="orb-pf-slots" type="number" min="1" max="50" value="' + esc(b ? b.authorized : 1) + '">') +
           fl(esc(t('f_post_kind')), '<select class="orb-in" id="orb-pf-kind">' + opt('', t('f_post_kind_none'), kind) + opt('commander', t('f_post_kind_commander'), kind) + opt('deputy', t('f_post_kind_deputy'), kind) + '</select>', '', true) +
@@ -1631,7 +1634,7 @@
     if (!b) return;
     var input = document.createElement('input');
     input.className = 'orb-inline-name';
-    input.value = n.label;
+    input.value = apiValue(n, 'name');
     input.maxLength = 255;
     input.setAttribute('aria-label', t('f_name'));
     b.replaceWith(input);
@@ -1645,7 +1648,7 @@
       S.inline = false;
       var v = input.value.trim();
       cardSig.delete(key);
-      if (save && v && v !== n.label) patchUnit(n.unitId, { name: v }).catch(function () {});
+      if (save && v && v !== apiValue(n, 'name')) patchUnit(n.unitId, { name: v }).catch(function () {});
       else render();
       var c = cards.get(key);
       if (c) c.focus({ preventScroll: true });

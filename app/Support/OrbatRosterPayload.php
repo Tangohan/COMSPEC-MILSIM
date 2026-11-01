@@ -305,6 +305,8 @@ final class OrbatRosterPayload
                 )
             );
             $root = self::attachGrades($root, self::attempt('grades', static fn (): array => $unitRepository->gradeShortNamesForUsers($tenantId, $personIds), []));
+            // Noms d’unités et postes générés par Athena dans la langue du lecteur (personnalisés par la communauté).
+            $root = \App\Services\I18n\GeneratedLabels::localizeOrbat($root, $tenantId, array_column($flat, 'slug', 'id'));
         }
 
         return $root;

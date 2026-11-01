@@ -1394,6 +1394,8 @@ return function (Router $router) {
     $router->post('/back-office/organisation/catalogue/actualiser', [OrganizationCatalogController::class, 'refresh'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/catalogue/retirer', [OrganizationCatalogController::class, 'archive'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/catalogue/restaurer', [OrganizationCatalogController::class, 'restore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/catalogue/libelles', [\App\Controllers\Admin\Organization\OrganizationGeneratedLabelsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/catalogue/libelles/enregistrer', [\App\Controllers\Admin\Organization\OrganizationGeneratedLabelsController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/progression', [OrganizationProgressionHubController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/passes', [PersonnelPassAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/passes/create', [PersonnelPassAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
