@@ -532,7 +532,7 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                         <?php endif; ?>
                         <?php if (!$retroWindowEligible && !$staffRetroFeedback && $statusRaw === 'reviewed'): ?>
                             <div class="rounded-xl border border-sky-200 bg-sky-50/70 px-4 py-3 text-sm text-sky-950">
-                                <p class="font-bold">Bilan d’équipe prévu<?= $retroDueDate !== null ? ' le ' . htmlspecialchars($retroDueDate, ENT_QUOTES, 'UTF-8') : '' ?><?= $retroDaysLeft !== null ? ' (dans ' . (int) $retroDaysLeft . ' j)' : '' ?>.</p>
+                                <p class="font-bold"><span><?= htmlspecialchars($retroDueDate !== null ? sprintf('Bilan d’équipe prévu le %s', $retroDueDate) : 'Bilan d’équipe prévu', ENT_QUOTES, 'UTF-8') ?></span><?php if ($retroDaysLeft !== null): ?> <span><?= htmlspecialchars(sprintf('(dans %d j)', (int) $retroDaysLeft), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>.</p>
                                 <p class="mt-1 text-sky-900/80">Le formulaire s’ouvrira ici 30 jours après l’acceptation : le temps de voir le nouveau membre en mission.</p>
                             </div>
                         <?php endif; ?>

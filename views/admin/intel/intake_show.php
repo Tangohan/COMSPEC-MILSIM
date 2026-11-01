@@ -437,7 +437,7 @@ $isOpen = in_array($it['state'], IntelIntakeService::OPEN_STATES, true);
                             <?php foreach ($redactions as $r): $readable = IntelRedaction::readable($r, $level, $me); ?>
                                 <li>
                                     <p class="rmt__red-phrase"><?= $readable ? '« ' . $h(mb_strimwidth((string) $r['phrase'], 0, 90, '…')) . ' »' : '<span class="rmt-bar">' . $h(SseRedactionService::bar((string) $r['phrase'])) . '</span>' ?></p>
-                                    <p class="rmt__muted"><?= $h(IntelRedaction::FIELDS[$src][$r['field']] ?? $r['field']) ?> · en clair dès « <?= $h(SseRedactionService::levelLabel((string) $r['clear_level'])) ?> »<?= $r['allowed'] !== [] ? ' + ' . count($r['allowed']) . ' membre(s)' : '' ?><?= !empty($r['reason']) ? ' · ' . $h($r['reason']) : '' ?></p>
+                                    <p class="rmt__muted"><?= $h(IntelRedaction::FIELDS[$src][$r['field']] ?? $r['field']) ?> · <span>en clair dès « <?= $h(SseRedactionService::levelLabel((string) $r['clear_level'])) ?> »</span><?php if ($r['allowed'] !== []): ?> <span><?= $h(sprintf('+ %d membre(s)', count($r['allowed']))) ?></span><?php endif; ?><?php if (!empty($r['reason'])): ?> · <span translate="no"><?= $h($r['reason']) ?></span><?php endif; ?></p>
                                     <?php if ($canRedact): ?>
                                         <form method="post" action="<?= $h($base . '/unredact') ?>">
                                             <?= $csrf ?>

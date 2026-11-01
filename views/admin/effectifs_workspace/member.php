@@ -1168,7 +1168,7 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
                             <p class="eff-fm-sanctions__meta">
                                 <?= $sn['actor'] !== '' ? 'Par ' . $h($sn['actor']) : '' ?>
                                 <?php if ($sn['expires_at'] !== '' && $sn['status'] !== 'lifted'): ?> · jusqu’au <?= $h($fmtDate($sn['expires_at'])) ?><?php endif; ?>
-                                <?php if ($sn['status'] === 'lifted'): ?> · levée le <?= $h($fmtDate($sn['lifted_at'])) ?><?= $sn['lifted_by'] !== '' ? ' par ' . $h($sn['lifted_by']) : '' ?><?php endif; ?>
+                                <?php if ($sn['status'] === 'lifted'): ?> · <span><?= $h($sn['lifted_by'] !== '' ? sprintf('levée le %s par %s', $fmtDate($sn['lifted_at']), $sn['lifted_by']) : sprintf('levée le %s', $fmtDate($sn['lifted_at']))) ?></span><?php endif; ?>
                             </p>
                             <?php if ($canManageSanctions && $sn['status'] === 'active'): ?>
                                 <form method="post" action="<?= $h(effectifs_workspace_url('membres/' . $id . '/sanctions/' . (int) $sn['id'] . '/lever')) ?>" class="eff-fm-sanctions__lift">

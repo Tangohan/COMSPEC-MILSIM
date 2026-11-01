@@ -125,7 +125,7 @@ $shown = count($rows);
 </form>
 
 <div class="eff-mq-meta">
-    <span class="eff-mq-meta__count"><b><?= $shown ?></b> <?= htmlspecialchars($totalPages > 1 ? sprintf($shown > 1 ? 'membres affichés sur %d (page %d / %d)' : 'membre affiché sur %d (page %d / %d)', $total, $page, $totalPages) : ($shown > 1 ? 'membres affichés' : 'membre affiché'), ENT_QUOTES, 'UTF-8') ?><?php if ($hasActiveFilters || $unitNow > 0 || $categoryNow !== ''): ?> · <a href="<?= $hq(effectifs_workspace_url()) ?>">effacer les filtres</a><?php endif; ?></span>
+    <span class="eff-mq-meta__count"><b><?= $shown ?></b> <span><?= htmlspecialchars($totalPages > 1 ? sprintf($shown > 1 ? 'membres affichés sur %d (page %d / %d)' : 'membre affiché sur %d (page %d / %d)', $total, $page, $totalPages) : ($shown > 1 ? 'membres affichés' : 'membre affiché'), ENT_QUOTES, 'UTF-8') ?></span><?php if ($hasActiveFilters || $unitNow > 0 || $categoryNow !== ''): ?> · <a href="<?= $hq(effectifs_workspace_url()) ?>">effacer les filtres</a><?php endif; ?></span>
     <nav class="eff-mq-views" aria-label="Colonnes du tableur">
         <?php foreach (['general' => ['Vue générale', 'Grade, affectation, emploi, accès, temps en mission, heures de vol'], 'medical' => ['Médical', 'Groupe sanguin, poids, taille, intolérances et allergies'], 'aviation' => ['Heures de vol', 'Heures aux commandes, par type d’appareil']] as $viewKey => [$viewLabel, $viewHint]): ?>
             <a class="<?= $rosterView === $viewKey ? 'is-on' : '' ?>" href="<?= $hq($queryUrlView($viewKey)) ?>" title="<?= $hq($viewHint) ?>"<?= $rosterView === $viewKey ? ' aria-current="page"' : '' ?>><?= $hq($viewLabel) ?></a>
