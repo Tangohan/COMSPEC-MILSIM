@@ -22,7 +22,11 @@ if ((count _cache) < 3 || {!((_cache select 2) isEqualType createHashMap)}) then
 // relus. Avant, un seul marqueur déplacé (piste Athena, marqueur suivi d'une mission) faisait relire toutes les propriétés
 // de tous les marqueurs, plusieurs fois par seconde : saccade régulière carte ouverte, surtout téléphone porté.
 private _dirty = missionNamespace getVariable ["COMSPEC_ATAK_MkDirtyGm", createHashMap];
-private _full = _now > (_cache select 0) || {"" in _dirty};
+// Carte sombre (fn_mapColors) : couleurs trop sombres éclaircies (marqueur noir invisible sinon) ; changement de fond =
+// relecture complète.
+private _pal = [] call comspec_atak_native_fnc_mapColors;
+private _lift = _pal get "lift";
+private _full = _now > (_cache select 0) || {"" in _dirty} || {(_cache param [3, false]) isNotEqualTo (_pal get "dark")};
 if (_full || {(count _dirty) > 0}) then {
     missionNamespace setVariable ["COMSPEC_ATAK_MkDirtyGm", createHashMap];
     private _cfg = uiNamespace getVariable "COMSPEC_ATAK_GmCfg";
@@ -39,7 +43,7 @@ if (_full || {(count _dirty) > 0}) then {
             if ((count _c) < 4) then { _c = [0, 0, 0, 1]; };
             _cfg set [_key, _c];
         };
-        +_c
+        [+_c] call _lift
     };
     // Entrée de dessin d'un marqueur ; [] : rien à dessiner (supprimé, transparent, sans image).
     private _entry = {
@@ -107,7 +111,7 @@ if (_full || {(count _dirty) > 0}) then {
             private _e = call _entry;
             if ((count _e) > 0) then { _index set [_x, count _list]; _list pushBack _e; };
         } forEach allMapMarkers;
-        _cache = [_now + 30, _list, _index];
+        _cache = [_now + 30, _list, _index, _pal get "dark"];
     } else {
         // Marqueur changé : son entrée est remplacée à sa place (ordre de dessin gardé), ajoutée s'il est nouveau,
         // vidée s'il a disparu ; la liste est recompactée à la prochaine relecture complète.

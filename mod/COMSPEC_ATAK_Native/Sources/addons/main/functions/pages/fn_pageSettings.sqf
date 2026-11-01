@@ -294,7 +294,7 @@ private _map = [
     ["buttons", [[["RÉTABLIR LA CARTE PAR DÉFAUT", "CONFIRMER : CARTE PAR DÉFAUT"] select (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_MapResetArm", -10]) < 5), {
         if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_MapResetArm", -10]) < 5) then {
             uiNamespace setVariable ["COMSPEC_ATAK_MapResetArm", -10];
-            { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Labels", "COMSPEC_ATAK_LabelStyle", "COMSPEC_ATAK_MarkerTags", "COMSPEC_ATAK_Compass", "COMSPEC_ATAK_CompassStyle", "COMSPEC_ATAK_AllyFilter", "COMSPEC_ATAK_HideAllyAi", "COMSPEC_ATAK_UnitSymbols", "COMSPEC_ATAK_AllyColor", "COMSPEC_ATAK_SelfColor", "COMSPEC_ATAK_MapToolbarScale", "COMSPEC_ATAK_GridDigits", "COMSPEC_ATAK_MapTextScale", "COMSPEC_ATAK_MapIconScale", "COMSPEC_ATAK_MapStyle"];
+            { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Labels", "COMSPEC_ATAK_LabelStyle", "COMSPEC_ATAK_MarkerTags", "COMSPEC_ATAK_Compass", "COMSPEC_ATAK_CompassStyle", "COMSPEC_ATAK_AllyFilter", "COMSPEC_ATAK_HideAllyAi", "COMSPEC_ATAK_UnitSymbols", "COMSPEC_ATAK_AllyColor", "COMSPEC_ATAK_SelfColor", "COMSPEC_ATAK_MapToolbarScale", "COMSPEC_ATAK_GridDigits", "COMSPEC_ATAK_MapTextScale", "COMSPEC_ATAK_MapIconScale", "COMSPEC_ATAK_MapStyle", "COMSPEC_ATAK_LblEni", "COMSPEC_ATAK_LblGrid", "COMSPEC_ATAK_LblBgAlpha"];
             [] call comspec_atak_native_fnc_saveProfile;
             ["Réglages de la carte rétablis", 2] call comspec_atak_native_fnc_toast;
         } else {

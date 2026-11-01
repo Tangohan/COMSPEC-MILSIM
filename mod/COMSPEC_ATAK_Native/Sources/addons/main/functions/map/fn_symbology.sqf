@@ -1,3 +1,4 @@
 params [["_entity",createHashMap]]; private _aff=_entity getOrDefault ["affiliation","unknown"]; private _type=_entity getOrDefault ["type","infantry"];
-private _color=switch _aff do {case "friend":{[0.28,0.70,1,1]};case "hostile":{[0.95,0.22,0.18,1]};case "neutral":{[0.35,0.85,0.42,1]};default {[0.95,0.75,0.18,1]};};
+// Couleur de l'affiliation (OTAN / APP-6) : table de la carte (fn_mapColors), teinte adaptée au fond et au mode nuit.
+private _pal=[] call comspec_atak_native_fnc_mapColors; private _color=+(_pal getOrDefault [["unknown",_aff] select (_aff in ["friend","hostile","neutral"]),_pal get "unknown"]);
 private _icon=switch _type do {case "air":{"\A3\ui_f\data\map\vehicleicons\iconAir_ca.paa"};case "armor":{"\A3\ui_f\data\map\vehicleicons\iconTank_ca.paa"};case "vehicle":{"\A3\ui_f\data\map\vehicleicons\iconCar_ca.paa"};case "medical":{"\A3\ui_f\data\map\mapcontrol\hospital_ca.paa"};case "objective":{"\A3\ui_f\data\map\markers\military\objective_CA.paa"};default {"\A3\ui_f\data\map\vehicleicons\iconMan_ca.paa"};}; [_icon,_color]

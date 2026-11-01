@@ -47,16 +47,19 @@ FR : Fini les à-coups pendant les échanges avec Athena
 - Galerie, Musique, pièces jointes de fiche et ouverture du navigateur ne figent plus l'image en lisant le disque.
 - Les réponses d'Athena ne se perdent plus quand beaucoup d'informations arrivent en même temps.
 - Traduction anglaise complète : téléphone, Overwatch connect et SSE (montre Garmin, bloc-notes, groupes d'apps, écran TOC, tenues de l'arsenal).
+- Carte plus lisible, de jour comme de nuit : noms sur fond sombre qui ne se chevauchent plus, unités regroupées au dézoom, couleurs ami / ennemi nettes sur tous les fonds ; taille du texte, fond et noms affichés se règlent dans CONFIGURATION > Étiquettes.
 EN : No more stutter while talking to Athena
 - The game no longer freezes while waiting for Athena, even on a busy server or a slow link.
 - Gallery, Music, report attachments and opening the browser no longer freeze the picture while reading the disk.
 - Athena replies are no longer lost when a lot of data arrives at once.
 - Full English translation: phone, Overwatch connect and SSE (Garmin watch, notepad, app groups, TOC screen, arsenal loadouts).
+- Easier-to-read map, day and night: names on a dark plate that no longer overlap, units grouped when zoomed out, clear friend / enemy colours on every background; text size, plate and which names show are set in CONFIGURATION > Labels.
 
 ### Détail technique
 - Connect : `fn_extFast` (liste blanche des commandes rapides) ; `fn_extDirect` passe toute autre commande par `fn_extAwait` (spawn hors contexte suspendable) ; `fn_extAwait` connect + natif : commande lente hors contexte suspendable relancée en tâche de fond (`ERR|unscheduled`, signalé une fois au journal)
 - Appelants corrigés : recopie de capture (`fn_captureReconImage`), galerie de fiche (`fn_intelNoteAddPiece`), briefing (`fn_openBriefingBoard`, `fn_refreshBriefingSlides`, `fn_webBrowserJSDialog`), `fn_registerBetaClient` ; natif : `fn_photoLibrary` (liste et suppression), `fn_musicAction` (« files » par Async), `fn_taskAction` (DLL native seule)
 - i18n : `tools/i18n.py wrap` (natif, connect, SSE), +249 entrées dans `i18n/en.txt` (sans mot isolé ni modèle générique : phrases entières, fiche Zeus d'un ATAK en lignes traduites une à une, relais « Tour relais », libellés DL-7 et lien « dirige » du SSE), `fr.txt` réassemblé (+12 lignes dans `i18n_fr_source.tsv`) ; stringtables SSE et connect régénérées (`<Original>` en anglais, comme le natif)
+- Carte : `fn_mapColors` (table unique des couleurs : APP-6, alliés / moi, états, étiquettes, grille ; teintes claires sur fond sombre et en mode nuit / JVN ; marqueurs Arma trop sombres éclaircis sur fond sombre), `fn_mapFmt` (« 1,2 km · 034° », noms coupés avec « … »), `fn_mapLblGrid` (anti-chevauchement par grille grossière, priorité cartouches unités / ENI > noms des repères > lieux) ; `fn_mapLabels` (sélection > mon groupe et alliés < 400 m > ENI > autres, regroupement « +N », ANCIEN / PERDU, heure ENI « 15:01 »), `fn_mapMarkerText` / `fn_mapPlaceText` (plus de texte hors de la carte) ; volet CONFIGURATION > Étiquettes : `COMSPEC_ATAK_LblEni`, `COMSPEC_ATAK_LblGrid`, `COMSPEC_ATAK_LblBgAlpha`, taille du texte (`COMSPEC_ATAK_MapTextScale`)
 - Link 2.0.112 : rappel refusé par Arma (file pleine, retour négatif) renvoyé jusqu'à ~9 s ; sondages `ServePollGet` en HTTP async (plus de fil du pool bloqué) ; `OpenAthenaLink`, ménage des captures, relevés terrain/scène/géo et `MusicList` / `MusicOpenFolder` hors du fil du jeu
 
 ## Pack 2.9.21 : plus de gel, tenues ACE réparées, liaison vraiment coupée (ATAK natif 2.9.21.AG - Denver, COMSPEC Link 2.0.111)
