@@ -149,7 +149,9 @@ final class AtakAdminFleetTest extends TestCase
         self::assertSame('ok', AtakFleetLink::classify(true, 3, $member, $on, '76561198000000101'));
         self::assertSame('steam_mismatch', AtakFleetLink::classify(true, 3, $member, $on, '76561198000000999'));
         self::assertSame('no_steam', AtakFleetLink::classify(true, 3, ['steam_id' => ''] + $member, []));
-        self::assertSame('duplicate', AtakFleetLink::classify(true, 3, $member, [$member, ['id' => 99] + $member]));
+        self::assertSame('duplicate', AtakFleetLink::classify(true, 3, $member, [$member, ['id' => 99, 'email' => 'c@d.fr'] + $member]));
+        // Même personne (même e-mail) dans deux communautés : un seul compte Athena, pas un doublon.
+        self::assertSame('ok', AtakFleetLink::classify(true, 3, $member, [$member, ['id' => 99, 'tenant_id' => 4] + $member], '76561198000000101'));
         self::assertSame('disabled', AtakFleetLink::classify(true, 3, ['status' => 'banned'] + $member, $on));
         self::assertSame('bad_email', AtakFleetLink::classify(true, 3, ['email' => ''] + $member, $on));
         self::assertSame('unlinked', AtakFleetLink::classify(true, 3, null, []));

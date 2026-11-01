@@ -25,6 +25,7 @@ use App\Support\PlayerMetrics;
 use App\Support\UtcDateTime;
 
 $rows = is_array($rows ?? null) ? $rows : [];
+$steamReports = is_array($steamReports ?? null) ? $steamReports : [];
 $counts = is_array($counts ?? null) ? $counts : [];
 $totals = is_array($totals ?? null) ? $totals : ['play' => 0, 'total_m' => 0, 'reports' => 0];
 $tenants = is_array($tenants ?? null) ? $tenants : [];
@@ -447,8 +448,10 @@ $shortSteam = static fn (string $s): string => strlen($s) > 8 ? '…' . substr($
                             <?php if (!$inTenant): ?>
                             <td>
                                 <span class="pa-pill pa-pill--<?= $h($linkInfo[1]) ?>" title="<?= $h($linkInfo[2]) ?>"><?= $h($linkInfo[0]) ?></span>
-                                <?php if ($link === 'duplicate'): ?>
-                                <p class="pa-sub paf-muted"><?= count($linkUsers) ?> fiches membres</p>
+                                <?php $steamReported = $steam !== '' && isset($steamReports[$steam]); ?>
+                                <?php if ($link === 'duplicate' || $steamReported): ?>
+                                <?php if ($link === 'duplicate'): ?><p class="pa-sub paf-muted"><?= AtakFleetLink::owners($linkUsers) ?> comptes Athena</p><?php endif; ?>
+                                <p class="pa-sub"><?= $steamReported ? 'Signalé : à examiner' : 'En attente du choix du joueur' ?> · <a class="paf-link" href="<?= $h(url('admin/steam-doublons') . '?steam=' . rawurlencode($steam)) ?>">Résoudre</a></p>
                                 <?php elseif ($link === 'other_tenant' && $linkUsers !== []): ?>
                                 <p class="pa-sub paf-muted">Membre #<?= (int) $linkUsers[0]['id'] ?></p>
                                 <?php elseif ($memberId > 0 && in_array($link, ['ok', 'no_terminal', 'steam_mismatch', 'no_steam', 'bad_email', 'disabled'], true)): ?>
