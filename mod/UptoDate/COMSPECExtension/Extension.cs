@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.110";
+    private const string ExtensionVersion = "2.0.111";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -875,6 +875,69 @@ public static partial class Extension
         catch (Exception ex)
         {
             return FormatCaughtError(ex);
+        }
+    }
+
+    /// <summary>
+    /// Ancien chemin async (RvExtensionArgsImpl) : notifie SQF sans bloquer.
+    /// Préférer VerifyClientInitSync sur Connect.
+    /// </summary>
+    private static void StartClientInitAsync()
+    {
+        var baseUrl = _baseUrl;
+        if (string.IsNullOrEmpty(baseUrl)) return;
+        if (!TryBuildRequestUri(baseUrl, "/api/atak/client-init", out var initUri, out _) || initUri is null)
+            return;
+
+        try
+        {
+            var initReq = new HttpRequestMessage(HttpMethod.Post, initUri)
+            {
+                Content = JsonContent(BuildClientInitBody())
+            };
+            AttachApiKeyHeader(initReq);
+            _ = HttpClient.SendAsync(initReq).ContinueWith(t =>
+            {
+                try { initReq.Dispose(); } catch { /* ignore */ }
+                try
+                {
+                    if (t.IsFaulted || t.IsCanceled)
+                    {
+                        InvokeCallback("Error", "Portail injoignable");
+                        return;
+                    }
+                    var resp = t.Result;
+                    if (resp.IsSuccessStatusCode)
+                    {
+                        try { TryRememberSessionFromInitBody(ReadContentUtf8(resp, CancellationToken.None)); } catch { /* ignore */ }
+                        InvokeCallback("Connected", baseUrl);
+                    }
+                    else if ((int)resp.StatusCode == 401)
+                        InvokeCallback("Error", "Acces refuse (cle Athena)");
+                    else if ((int)resp.StatusCode == 403)
+                    {
+                        var body403 = "";
+                        try { body403 = ReadContentUtf8(resp, CancellationToken.None); } catch { /* ignore */ }
+                        var modBlock = MapModAccessBlockError(body403);
+                        if (modBlock == "ERR|mod_steam_blocked")
+                            InvokeCallback("Error", "Acces mod refuse — identifiant Steam restreint");
+                        else if (modBlock == "ERR|mod_ip_blocked")
+                            InvokeCallback("Error", "Acces mod refuse — adresse reseau restreinte");
+                        else
+                            InvokeCallback("Error", "Communaute Athena manquante — refaites la liaison");
+                    }
+                    else
+                        InvokeCallback("Error", "HTTP " + (int)resp.StatusCode);
+                }
+                catch
+                {
+                    InvokeCallback("Error", "Portail injoignable");
+                }
+            });
+        }
+        catch
+        {
+            // best effort
         }
     }
 
@@ -9263,6 +9326,37 @@ public static partial class Extension
     {
         try
         {
+            if (function == "Connect")
+            {
+                // Chemin async de secours (TryGetSyncResponse gère normalement Connect).
+                if (args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
+                {
+                    var normalized = NormalizeBaseUrl(args[0]);
+                    if (normalized.Length == 0) return;
+                    // SEC-001 : même point de contrôle que le Connect synchrone — portail non-Athena ignoré.
+                    if (!TrySetSqfBaseUrl(normalized, out _)) return;
+                    EnsureDrainTimer();
+                    var key = args.Length > 1 ? (args[1] ?? "") : "";
+                    // Ne jamais réinjecter une clé CBA si une session jeu est active.
+                    if (_gameAccessToken.Length == 0)
+                        ApplyApiKeyHeaders(key);
+                    if (args.Length > 2 && _gameAccessToken.Length == 0)
+                        ApplyTenantId(args[2]);
+                    // Conserver exactement la même identité que le chemin synchrone. Sans ces
+                    // arguments, un Connect passé par le fallback perdait le SteamID puis chaque
+                    // UpdatePosition était refusé par Athena comme anonyme.
+                    if (args.Length > 3)
+                        ApplySteamUid(args[3]);
+                    if (args.Length > 4)
+                        ApplyModVersion(args[4]);
+                    if (args.Length > 5)
+                        ApplyBloodType(args[5]);
+                    if (_apiKey.Length > 0 || _gameAccessToken.Length > 0)
+                        StartClientInitAsync();
+                }
+                return;
+            }
+
             if (function == "UpdatePosition" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 4)
             {
                 // InvariantCulture + virgule→point : SQF str/format sous locale FR envoie « 1850,12 ».
@@ -10600,6 +10694,14 @@ public static partial class Extension
             return File.Exists(path) && new FileInfo(path).Length >= minSize;
         }
         catch { return false; }
+    }
+
+    private static byte[]? ReadStableImageBytes(string path, TimeSpan timeout)
+    {
+        if (!WaitUntilImageFileStable(path, timeout))
+            return null;
+        try { return File.ReadAllBytes(path); }
+        catch { return null; }
     }
 
     /// <summary>

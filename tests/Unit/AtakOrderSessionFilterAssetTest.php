@@ -31,7 +31,7 @@ final class AtakOrderSessionFilterAssetTest extends TestCase
 
         self::assertStringContainsString('COMSPEC_OrdersSessionStartedAt', $orders);
         self::assertStringContainsString('systemTimeUTC', $orders);
-        self::assertStringContainsString('["GetOrders", [_mapId, "40", _callsign, _sessionStart]]', $orders);
+        self::assertStringContainsString('"GetOrders", [_mapId, "40", _callsign, _sessionStart]] call comspec_overwatch_connect_fnc_extDirect', $orders);
         self::assertStringContainsString('isEqualTo "web") then { continue }', $orders);
 
         // L'appel est désormais asynchrone (extAwait) : [_mapId, _sessionStart] est passé au spawn.
