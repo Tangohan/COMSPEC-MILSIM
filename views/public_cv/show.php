@@ -2,41 +2,41 @@
 declare(strict_types=1);
 
 /**
- * Page publique de C.V. du joueur (sans connexion).
- * Reçoit uniquement $cv, déjà filtré par App\Support\PublicCv\PublicCvPresenter (liste blanche + sections choisies).
+ * Page publique de C.V. du joueur (sans connexion) — « dossier opérateur ».
+ * Reçoit uniquement $cv, déjà filtré par App\Support\PublicCv\PublicCvPresenter (liste blanche + sections choisies) :
+ * une section masquée arrive vide et n’est donc pas rendue.
+ * Styles autonomes (préfixe pcv-) : la page ne dépend ni du portail connecté ni de la feuille Tailwind.
  */
 $cv = is_array($cv ?? null) ? $cv : [];
 $h = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+$list = static fn (string $k): array => is_array($cv[$k] ?? null) ? array_values($cv[$k]) : [];
+$str = static fn (string $k): ?string => is_string($cv[$k] ?? null) && $cv[$k] !== '' ? $cv[$k] : null;
 
 $callsign = (string) ($cv['callsign'] ?? 'Opérateur');
-$grade = $cv['grade'] ?? null;
-$gradeShort = $cv['grade_short'] ?? null;
-$unit = $cv['unit'] ?? null;
-$community = $cv['community'] ?? null;
-$communityUrl = $cv['community_url'] ?? null;
-$avatar = $cv['avatar_url'] ?? null;
-$bio = $cv['bio'] ?? null;
-$counters = is_array($cv['counters'] ?? null) ? $cv['counters'] : [];
+$grade = $str('grade');
+$gradeShort = $str('grade_short');
+$unit = $str('unit');
+$community = $str('community');
+$communityUrl = $str('community_url');
+$avatar = $str('avatar_url');
+$banner = $str('banner_url');
+$bio = $str('bio');
+$counters = $list('counters');
+$decorations = $list('decorations');
+$qualifications = $list('qualifications');
+$trainings = $list('trainings');
+$operations = $list('operations');
+$photos = $list('photos');
 $pageUrl = (string) ($cv['page_url'] ?? '');
+$slug = (string) ($cv['slug'] ?? '');
 $og = is_array($cv['og'] ?? null) ? $cv['og'] : [];
 
-$blocks = [
-    'decorations' => ['Décorations', is_array($cv['decorations'] ?? null) ? $cv['decorations'] : []],
-    'qualifications' => ['Qualifications', is_array($cv['qualifications'] ?? null) ? $cv['qualifications'] : []],
-    'trainings' => ['Formations', is_array($cv['trainings'] ?? null) ? $cv['trainings'] : []],
-    'operations' => ['Opérations', is_array($cv['operations'] ?? null) ? $cv['operations'] : []],
-    'photos' => ['Photos', is_array($cv['photos'] ?? null) ? $cv['photos'] : []],
-];
-$blocks = array_filter($blocks, static fn (array $b): bool => $b[1] !== []);
+$hasFiche = $grade !== null || $unit !== null || $community !== null;
+$hasMain = $bio !== null || $trainings !== [] || $operations !== [] || $photos !== [];
+$hasAside = $hasFiche || $qualifications !== [] || $decorations !== [];
 
-$icons = [
-    'decorations' => '<circle cx="12" cy="15" r="5"/><path d="M8.5 11.5L6 3h4l2 5 2-5h4l-2.5 8.5"/><path d="M12 13l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2L9.1 15.1l2-.3z"/>',
-    'qualifications' => '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
-    'trainings' => '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c2 2 10 2 12 0v-5"/>',
-    'operations' => '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
-    'photos' => '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/>',
-];
-$icon = static fn (string $k, string $cls = 'h-5 w-5'): string => '<svg class="' . $cls . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . ($icons[$k] ?? '') . '</svg>';
+/* Teinte de l’étiquette d’une opération selon son type. */
+$typeTone = ['Opération' => 'op', 'Formation' => 'form'];
 
 /* Métadonnées de partage (Open Graph / Twitter) via le partial commun. */
 $seo_og_title = (string) ($og['title'] ?? $callsign);
@@ -63,147 +63,369 @@ $seo_json_ld = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050505">
     <title><?= $h($seo_og_title) ?></title>
 <?php require base_path('views/partials/seo_meta.php'); ?>
-    <?php require base_path('views/partials/tailwind_cdn_or_build.php'); ?>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;0,800;0,900;1,800;1,900&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', system-ui, sans-serif; }
-        .pcv-ring { background: conic-gradient(from 210deg, #34d399, #38bdf8, #a3e635, #34d399); }
-        .pcv-grid-bg {
-            background-image:
-                linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
-            background-size: 36px 36px;
+        :root {
+            --void: #050505;
+            --ink: #f4f4f0;
+            --ink-muted: rgba(244, 244, 240, .6);
+            --rule: rgba(244, 244, 240, .14);
+            --accent: #34d399;
+            --accent-strong: #6ee7b7;
+            --accent-ink: #052e1c;
+            --field: #0b3d2e;
+            --field-deep: #06261c;
+            --sans: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+            --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+            --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+            --ease-out: cubic-bezier(.22, 1, .36, 1);
         }
-        .pcv-tile { container-type: inline-size; }
-        .pcv-tile-title { font-size: clamp(.62rem, 8cqi, .9rem); }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { margin: 0; background: var(--void); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+        body { min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        img { max-width: 100%; display: block; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { color: var(--accent-strong); }
+        :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+        .pcv-skip { position: absolute; left: -9999px; top: 8px; z-index: 30; padding: 8px 14px; background: var(--accent); color: var(--accent-ink); font-weight: 800; }
+        .pcv-skip:focus { left: 8px; color: var(--accent-ink); }
+
+        .pcv-k { margin: 0; font-size: .6875rem; font-weight: 600; letter-spacing: .28em; text-transform: uppercase; color: var(--ink-muted); }
+        .pcv-mono { font-family: var(--mono); }
+        .pcv-wrap { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
+
+        /* Barre du haut */
+        .pcv-top { position: sticky; top: 0; z-index: 20; background: rgba(5, 5, 5, .72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--rule); }
+        .pcv-top .pcv-wrap { display: flex; align-items: center; justify-content: space-between; gap: 24px; height: 60px; }
+        .pcv-brand { font-size: 20px; font-weight: 900; font-style: italic; letter-spacing: -.02em; text-transform: uppercase; color: var(--ink); }
+        .pcv-brand:hover { color: var(--ink); }
+        .pcv-brand span { color: var(--accent); }
+
+        /* Boutons */
+        .pcv-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 0 20px; border: 1px solid var(--rule); background: transparent; color: var(--ink); font: 900 11px/1 var(--sans); letter-spacing: .22em; text-transform: uppercase; white-space: nowrap; cursor: pointer; transition: border-color .14s, background-color .14s, color .14s; }
+        .pcv-btn:hover { border-color: var(--ink); color: var(--ink); }
+        .pcv-btn--sm { height: 36px; padding: 0 16px; }
+        .pcv-btn--pri { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+        .pcv-btn--pri:hover { background: var(--accent-strong); border-color: var(--accent-strong); color: var(--accent-ink); }
+        .pcv-btn svg { flex: none; width: 15px; height: 15px; }
+
+        /* En-tête : portrait, indicatif, identité */
+        .pcv-hero { position: relative; display: flex; align-items: flex-end; min-height: 520px; overflow: hidden; border-bottom: 1px solid var(--rule); background: radial-gradient(120% 90% at 18% 100%, rgba(11, 61, 46, .55), transparent 60%), var(--void); }
+        .pcv-hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: center 35%; filter: grayscale(.35) contrast(1.05); transform: scale(1.04); }
+        .pcv-hero::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(5, 5, 5, .35) 0%, rgba(5, 5, 5, .55) 45%, var(--void) 100%); }
+        .pcv-hero--plain::after { background-image: linear-gradient(rgba(244, 244, 240, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(244, 244, 240, .035) 1px, transparent 1px); background-size: 40px 40px; -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 85%); mask-image: linear-gradient(180deg, #000 0%, transparent 85%); }
+        .pcv-hero .pcv-wrap { position: relative; z-index: 1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 36px; align-items: end; padding-top: 72px; padding-bottom: 48px; }
+        .pcv-avatar { position: relative; display: grid; place-items: center; width: 168px; height: 200px; overflow: hidden; border: 1px solid var(--rule); background: linear-gradient(160deg, var(--field), var(--field-deep)); }
+        .pcv-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .pcv-avatar b { font-size: 84px; font-weight: 900; font-style: italic; letter-spacing: -.05em; line-height: 1; color: var(--accent); }
+        .pcv-avatar-tag { position: absolute; left: 0; right: 0; bottom: 0; padding: 6px 10px; overflow: hidden; background: rgba(5, 5, 5, .72); font: 500 10px/1.4 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-muted); white-space: nowrap; text-overflow: ellipsis; }
+        .pcv-callsign { margin: 10px 0 18px; padding-right: .06em; font-size: clamp(2.5rem, 9vw, 6.5rem); font-weight: 900; font-style: italic; letter-spacing: -.045em; line-height: .88; text-transform: uppercase; overflow-wrap: anywhere; }
+        .pcv-ident { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; list-style: none; }
+        .pcv-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 30px; padding: 4px 12px; border: 1px solid var(--rule); background: rgba(5, 5, 5, .4); font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--ink); }
+        .pcv-chip--acc { border-color: var(--accent); color: var(--accent); }
+        .pcv-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(52, 211, 153, .18); }
+        .pcv-cta { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+
+        /* Compteurs */
+        .pcv-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; border-bottom: 1px solid var(--rule); }
+        .pcv-stat { min-width: 0; padding: 28px 24px; border-right: 1px solid var(--rule); }
+        .pcv-stat:last-child { border-right: 0; }
+        .pcv-stat-v { margin: 10px 0 0; font-size: clamp(34px, 4.4vw, 56px); font-weight: 900; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+        .pcv-stat-v small { margin-left: 4px; font-size: .4em; font-weight: 700; letter-spacing: 0; color: var(--ink-muted); }
+        .pcv-stat-s { margin: 8px 0 0; font-size: 12px; color: var(--ink-muted); }
+
+        /* Corps : colonne principale + fiche latérale */
+        .pcv-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 56px; padding: 64px 0; }
+        .pcv-grid--solo { grid-template-columns: minmax(0, 1fr); }
+        .pcv-main > section + section { margin-top: 56px; }
+        .pcv-h2 { margin: 8px 0 24px; font-size: 28px; font-weight: 900; font-style: italic; letter-spacing: -.03em; line-height: 1.05; text-transform: uppercase; }
+        .pcv-bio { max-width: 62ch; margin: 0; font-family: var(--serif); font-size: 20px; line-height: 1.6; color: var(--ink); white-space: pre-line; text-wrap: pretty; }
+        .pcv-bio::first-letter { color: var(--accent); }
+
+        .pcv-tl { margin: 0; padding: 0; list-style: none; border-left: 1px solid var(--rule); }
+        .pcv-tl li { position: relative; padding: 0 0 28px 28px; }
+        .pcv-tl li:last-child { padding-bottom: 4px; }
+        .pcv-tl li::before { content: ""; position: absolute; left: -5px; top: 6px; width: 9px; height: 9px; border: 1px solid var(--accent); background: var(--void); }
+        .pcv-tl li:first-child::before { background: var(--accent); }
+        .pcv-tl-d { font: 400 11px/1.4 var(--mono); letter-spacing: .08em; color: var(--ink-muted); }
+        .pcv-tl-t { margin: 4px 0 2px; font-size: 17px; font-weight: 800; }
+        .pcv-tl-u { font-size: 14px; color: var(--ink-muted); }
+
+        .pcv-ops { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--rule); }
+        .pcv-op { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 20px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--rule); }
+        .pcv-op time { font: 400 12px/1.4 var(--mono); color: var(--ink-muted); }
+        .pcv-op-n { font-size: 16px; font-weight: 800; overflow-wrap: anywhere; }
+        .pcv-tag { padding: 5px 8px; border: 1px solid rgba(244, 244, 240, .3); font-size: 10px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-muted); }
+        .pcv-tag--op { border-color: rgba(52, 211, 153, .4); color: var(--accent); }
+        .pcv-tag--form { border-color: rgba(252, 211, 77, .35); color: #fcd34d; }
+
+        .pcv-photos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+        .pcv-photos li { aspect-ratio: 1; overflow: hidden; border: 1px solid var(--rule); background: var(--field-deep); }
+        .pcv-photos img { width: 100%; height: 100%; object-fit: cover; }
+
+        .pcv-card { padding: 24px; border: 1px solid var(--rule); background: rgba(244, 244, 240, .02); }
+        .pcv-card + .pcv-card { margin-top: 24px; }
+        .pcv-dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px 20px; margin: 16px 0 0; font-size: 14px; }
+        .pcv-dl dt { color: var(--ink-muted); }
+        .pcv-dl dd { margin: 0; text-align: right; font-weight: 600; overflow-wrap: anywhere; }
+        .pcv-quals { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
+        .pcv-q { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--rule); font-size: 12px; font-weight: 700; }
+        .pcv-q i { font: normal 500 10px/1 var(--mono); color: var(--accent); }
+        .pcv-q img { width: 18px; height: 18px; object-fit: contain; }
+        .pcv-q small { margin-left: 4px; font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+        .pcv-medals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 16px 0 0; padding: 0; list-style: none; }
+        .pcv-medal { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-width: 0; aspect-ratio: 1; padding: 8px; border: 1px solid var(--rule); text-align: center; }
+        .pcv-medal img { max-width: 56%; max-height: 46%; object-fit: contain; }
+        .pcv-ribbon { width: 38px; height: 12px; background: repeating-linear-gradient(90deg, var(--field) 0 8px, var(--accent) 8px 12px, var(--field) 12px 26px, var(--accent) 26px 30px, var(--field) 30px 38px); }
+        .pcv-medal-t { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 3; -webkit-box-orient: vertical; font-size: 10px; letter-spacing: .08em; line-height: 1.3; text-transform: uppercase; color: var(--ink-muted); overflow-wrap: anywhere; }
+        .pcv-aside--wide { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 24px; align-items: start; }
+        .pcv-aside--wide .pcv-card + .pcv-card { margin-top: 0; }
+
+        .pcv-empty { margin: 64px 0; padding: 48px 24px; border: 1px dashed var(--rule); text-align: center; }
+        .pcv-empty p { margin: 0; }
+        .pcv-empty p + p { margin-top: 6px; font-size: 14px; color: var(--ink-muted); }
+
+        .pcv-foot { margin-top: auto; padding: 24px 0; border-top: 1px solid var(--rule); font-size: 12px; color: var(--ink-muted); }
+        .pcv-foot .pcv-wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; }
+        .pcv-foot a { color: var(--ink-muted); text-decoration: underline; text-underline-offset: 3px; }
+        .pcv-foot a:hover { color: var(--ink); }
+
+        /* Une seule entrée orchestrée au chargement ; rien si l’utilisateur limite les animations. */
+        @media (prefers-reduced-motion: no-preference) {
+            .pcv-rise { animation: pcv-rise .9s var(--ease-out) both; }
+            .pcv-rise-2 { animation-delay: .08s; }
+            .pcv-rise-3 { animation-delay: .16s; }
+            .pcv-rise-4 { animation-delay: .26s; }
+            .pcv-hero-bg { animation: pcv-settle 1.6s var(--ease-out) both; }
+        }
+        @keyframes pcv-rise { from { opacity: 0; transform: translateY(1.25rem); } to { opacity: 1; transform: none; } }
+        @keyframes pcv-settle { from { opacity: 0; transform: scale(1.1); } to { opacity: 1; transform: scale(1.04); } }
+
+        @media (max-width: 900px) {
+            .pcv-hero { min-height: 0; }
+            .pcv-hero .pcv-wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 48px; padding-bottom: 36px; }
+            .pcv-cta { flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
+            .pcv-avatar { width: 120px; height: 144px; }
+            .pcv-avatar b { font-size: 60px; }
+            .pcv-grid { grid-template-columns: minmax(0, 1fr); padding: 48px 0; }
+            .pcv-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .pcv-stat:nth-child(2n) { border-right: 0; }
+            .pcv-stat:nth-child(-n+2) { border-bottom: 1px solid var(--rule); }
+        }
+        @media (max-width: 560px) {
+            .pcv-stat { padding: 20px 14px; }
+            .pcv-stat:nth-child(odd) { padding-left: 0; }
+            .pcv-op { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
+            .pcv-op time { grid-column: 1 / -1; }
+            .pcv-cta .pcv-btn { flex: 1 1 auto; }
+            .pcv-card { padding: 20px; }
+            .pcv-bio { font-size: 18px; }
+        }
     </style>
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
-<div class="pcv-grid-bg min-h-screen">
-    <header class="sticky top-0 z-20 border-b border-white/5 bg-slate-950/85 backdrop-blur">
-        <div class="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-            <a href="<?= $h(url('/')) ?>" class="text-[0.7rem] font-black uppercase tracking-[0.4em] text-slate-300 hover:text-white">Athena</a>
-            <button type="button" data-pcv-share class="inline-flex items-center gap-2 rounded-full border border-white/10 px-3.5 py-1.5 text-xs font-semibold text-slate-200 hover:border-emerald-400/60 hover:text-white">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>
-                <span data-pcv-share-label>Partager</span>
-            </button>
-        </div>
-    </header>
+<body>
+<a class="pcv-skip" href="#main">Aller au contenu</a>
 
-    <main id="main" class="mx-auto max-w-4xl px-4 pb-16">
-        <section class="flex flex-col items-center gap-6 pt-10 sm:flex-row sm:items-start sm:gap-12 sm:pt-14" aria-labelledby="pcv-callsign">
-            <div class="pcv-ring shrink-0 rounded-full p-[3px] shadow-[0_0_60px_-12px_rgba(52,211,153,.55)]">
-                <div class="rounded-full bg-slate-950 p-[3px]">
-                    <?php if (is_string($avatar) && $avatar !== ''): ?>
-                    <img src="<?= $h($avatar) ?>" alt="Portrait de <?= $h($callsign) ?>" class="h-28 w-28 rounded-full object-cover sm:h-36 sm:w-36" width="144" height="144">
-                    <?php else: ?>
-                    <span class="flex h-28 w-28 items-center justify-center rounded-full bg-slate-800 text-3xl font-black tracking-tight text-slate-300 sm:h-36 sm:w-36" aria-hidden="true"><?= $h($cv['initials'] ?? '·') ?></span>
-                    <?php endif; ?>
-                </div>
-            </div>
+<header class="pcv-top">
+    <div class="pcv-wrap">
+        <a class="pcv-brand" href="<?= $h(url('/')) ?>" aria-label="Athena, accueil">Athena<span>.</span></a>
+        <a class="pcv-btn pcv-btn--sm" href="<?= $h(url('login')) ?>">Connexion</a>
+    </div>
+</header>
 
-            <div class="w-full min-w-0 text-center sm:text-left">
-                <div class="flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:gap-3">
-                    <h1 id="pcv-callsign" class="break-words text-3xl font-black tracking-tight text-white sm:text-4xl"><?= $h($callsign) ?></h1>
-                    <?php if ($gradeShort !== null || $grade !== null): ?>
-                    <span class="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-[0.18em] text-emerald-300" title="<?= $h($grade ?? $gradeShort) ?>"><?= $h($gradeShort ?? $grade) ?></span>
-                    <?php endif; ?>
-                </div>
-                <?php if ($grade !== null || $unit !== null || $community !== null): ?>
-                <p class="mt-2 text-sm text-slate-400">
-                    <?php $parts = array_values(array_filter([$grade, $unit], static fn ($v): bool => $v !== null)); ?>
-                    <?= $h(implode(' · ', $parts)) ?>
-                    <?php if ($community !== null): ?>
-                        <?= $parts !== [] ? ' · ' : '' ?>
-                        <?php if (is_string($communityUrl) && $communityUrl !== ''): ?>
-                        <a href="<?= $h($communityUrl) ?>" class="font-semibold text-slate-200 underline decoration-emerald-400/40 underline-offset-4 hover:text-white"><?= $h($community) ?></a>
-                        <?php else: ?>
-                        <span class="font-semibold text-slate-200"><?= $h($community) ?></span>
-                        <?php endif; ?>
-                    <?php endif; ?>
-                </p>
-                <?php endif; ?>
-
-                <?php if ($counters !== []): ?>
-                <ul class="mt-6 grid grid-cols-4 gap-2 border-y border-white/10 py-4 sm:max-w-lg sm:border-0 sm:py-0" aria-label="Compteurs">
-                    <?php foreach ($counters as $c): ?>
-                    <li class="text-center sm:text-left">
-                        <span class="block text-xl font-black tabular-nums text-white sm:text-2xl"><?= $h($c['value'] ?? '0') ?></span>
-                        <span class="mt-0.5 block text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-slate-400"><?= $h($c['label'] ?? '') ?></span>
-                    </li>
-                    <?php endforeach; ?>
-                </ul>
-                <?php endif; ?>
-
-                <?php if (is_string($bio) && $bio !== ''): ?>
-                <p class="mt-5 whitespace-pre-line text-sm leading-relaxed text-slate-300 sm:max-w-xl"><?= $h($bio) ?></p>
-                <?php endif; ?>
-            </div>
-        </section>
-
-        <?php if ($blocks !== []): ?>
-        <nav class="mt-10 flex justify-center gap-1 overflow-x-auto border-t border-white/10 sm:justify-start" aria-label="Sections du parcours">
-            <?php foreach ($blocks as $key => [$label, $items]): ?>
-            <a href="#pcv-<?= $h($key) ?>" class="-mt-px inline-flex shrink-0 items-center gap-2 border-t border-transparent px-3 py-3 text-[0.68rem] font-bold uppercase tracking-[0.2em] text-slate-400 hover:border-white hover:text-white">
-                <?= $icon($key, 'h-4 w-4') ?><?= $h($label) ?>
-                <span class="text-slate-500"><?= count($items) ?></span>
-            </a>
-            <?php endforeach; ?>
-        </nav>
-
-        <?php foreach ($blocks as $key => [$label, $items]): ?>
-        <section id="pcv-<?= $h($key) ?>" class="scroll-mt-20 pt-8" aria-labelledby="pcv-h-<?= $h($key) ?>">
-            <h2 id="pcv-h-<?= $h($key) ?>" class="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.3em] text-slate-300"><?= $icon($key, 'h-4 w-4 text-emerald-400') ?><?= $h($label) ?></h2>
-            <ul class="grid grid-cols-3 gap-1 sm:gap-3">
-                <?php foreach ($items as $item): ?>
-                <?php if ($key === 'photos'): ?>
-                <li class="aspect-square overflow-hidden rounded-sm bg-slate-900 sm:rounded-xl">
-                    <img src="<?= $h($item['url'] ?? '') ?>" alt="<?= $h(($item['title'] ?? '') !== '' ? $item['title'] : 'Photo de ' . $callsign) ?>" loading="lazy" class="h-full w-full object-cover transition duration-300 hover:scale-105">
-                </li>
+<main id="main">
+    <section class="pcv-hero<?= $banner === null ? ' pcv-hero--plain' : '' ?>" aria-labelledby="pcv-callsign">
+        <?php if ($banner !== null): ?>
+        <img class="pcv-hero-bg" src="<?= $h($banner) ?>" alt="">
+        <?php endif; ?>
+        <div class="pcv-wrap">
+            <div class="pcv-avatar pcv-rise">
+                <?php if ($avatar !== null): ?>
+                <img src="<?= $h($avatar) ?>" alt="Portrait de <?= $h($callsign) ?>" width="168" height="200">
                 <?php else: ?>
-                <li class="pcv-tile group relative flex aspect-square flex-col justify-between overflow-hidden rounded-sm border border-white/5 bg-gradient-to-br from-slate-800 to-slate-900 p-2.5 sm:rounded-xl sm:p-4">
-                    <?php $img = $item['image'] ?? null; ?>
-                    <div class="flex flex-1 items-center justify-center">
-                        <?php if (is_string($img) && $img !== ''): ?>
-                        <img src="<?= $h($img) ?>" alt="" loading="lazy" class="max-h-[58%] max-w-[58%] object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,.5)]">
-                        <?php elseif ($key === 'operations' && !empty($item['date'])): ?>
-                        <span class="text-center text-[0.7rem] font-black uppercase leading-tight tracking-[0.16em] text-emerald-300 sm:text-sm"><?= $h($item['date']) ?></span>
-                        <?php else: ?>
-                        <span class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-300 sm:h-14 sm:w-14"><?= $icon($key, 'h-5 w-5 sm:h-7 sm:w-7') ?></span>
-                        <?php endif; ?>
-                    </div>
-                    <div class="min-w-0">
-                        <p class="pcv-tile-title line-clamp-2 font-bold leading-snug text-white"><?= $h($item['title'] ?? '') ?></p>
-                        <?php $meta = array_values(array_filter([$item['subtitle'] ?? null, $key !== 'operations' ? ($item['date'] ?? null) : null])); ?>
-                        <?php if ($meta !== []): ?>
-                        <p class="mt-0.5 hidden truncate text-[0.68rem] text-slate-400 sm:block"><?= $h(implode(' · ', $meta)) ?></p>
-                        <?php endif; ?>
-                    </div>
-                </li>
+                <b aria-hidden="true"><?= $h(mb_substr($callsign, 0, 1)) ?></b>
                 <?php endif; ?>
-                <?php endforeach; ?>
-            </ul>
-        </section>
-        <?php endforeach; ?>
+                <?php if ($gradeShort !== null): ?>
+                <span class="pcv-avatar-tag" aria-hidden="true"><?= $h($gradeShort) ?></span>
+                <?php endif; ?>
+            </div>
+
+            <div class="pcv-rise pcv-rise-2">
+                <p class="pcv-k">Dossier opérateur<?= $community !== null ? ' · ' . $h($community) : '' ?></p>
+                <h1 id="pcv-callsign" class="pcv-callsign"><?= $h($callsign) ?></h1>
+                <ul class="pcv-ident" aria-label="Identité">
+                    <li class="pcv-chip pcv-chip--acc"><span class="pcv-dot" aria-hidden="true"></span>Membre actif</li>
+                    <?php if ($grade !== null): ?><li class="pcv-chip"><?= $h($grade) ?></li><?php endif; ?>
+                    <?php if ($unit !== null): ?><li class="pcv-chip"><?= $h($unit) ?></li><?php endif; ?>
+                </ul>
+            </div>
+
+            <div class="pcv-cta pcv-rise pcv-rise-3">
+                <?php if ($communityUrl !== null): ?>
+                <a class="pcv-btn pcv-btn--pri" href="<?= $h($communityUrl) ?>">Découvrir la communauté</a>
+                <?php endif; ?>
+                <button type="button" class="pcv-btn" data-pcv-share>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>
+                    <span data-pcv-share-label aria-live="polite">Partager le profil</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <div class="pcv-wrap">
+        <?php if ($counters !== []): ?>
+        <ul class="pcv-stats pcv-rise pcv-rise-4" aria-label="Compteurs">
+            <?php foreach ($counters as $c): ?>
+            <li class="pcv-stat">
+                <p class="pcv-k"><?= $h($c['label'] ?? '') ?></p>
+                <p class="pcv-stat-v"><?= $h($c['number'] ?? ($c['value'] ?? '0')) ?><?php if (!empty($c['unit'])): ?><small><?= $h($c['unit']) ?></small><?php endif; ?></p>
+                <?php if (!empty($c['hint'])): ?><p class="pcv-stat-s"><?= $h($c['hint']) ?></p><?php endif; ?>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
+
+        <?php if ($hasMain || $hasAside): ?>
+        <div class="pcv-grid<?= ($hasMain && $hasAside) ? '' : ' pcv-grid--solo' ?>">
+            <?php if ($hasMain): ?>
+            <div class="pcv-main">
+                <?php if ($bio !== null): ?>
+                <section id="pcv-bio" aria-labelledby="pcv-h-bio">
+                    <p class="pcv-k">Présentation</p>
+                    <h2 id="pcv-h-bio" class="pcv-h2">Profil</h2>
+                    <p class="pcv-bio"><?= $h($bio) ?></p>
+                </section>
+                <?php endif; ?>
+
+                <?php if ($trainings !== []): ?>
+                <section id="pcv-trainings" aria-labelledby="pcv-h-trainings">
+                    <p class="pcv-k">États de service</p>
+                    <h2 id="pcv-h-trainings" class="pcv-h2">Formations validées</h2>
+                    <ol class="pcv-tl">
+                        <?php foreach ($trainings as $t): ?>
+                        <li>
+                            <?php if (!empty($t['date'])): ?><div class="pcv-tl-d"><?= $h($t['date']) ?></div><?php endif; ?>
+                            <div class="pcv-tl-t"><?= $h($t['title'] ?? '') ?></div>
+                            <?php if (!empty($t['subtitle'])): ?><div class="pcv-tl-u"><?= $h($t['subtitle']) ?></div><?php endif; ?>
+                        </li>
+                        <?php endforeach; ?>
+                    </ol>
+                </section>
+                <?php endif; ?>
+
+                <?php if ($operations !== []): ?>
+                <section id="pcv-operations" aria-labelledby="pcv-h-operations">
+                    <p class="pcv-k">Journal</p>
+                    <h2 id="pcv-h-operations" class="pcv-h2">Dernières opérations</h2>
+                    <ul class="pcv-ops">
+                        <?php foreach ($operations as $o): ?>
+                        <li class="pcv-op">
+                            <?php if (!empty($o['day'])): ?>
+                            <time datetime="<?= $h($o['iso'] ?? '') ?>"><?= $h($o['day']) ?></time>
+                            <?php else: ?><span></span><?php endif; ?>
+                            <div class="pcv-op-n"><?= $h($o['title'] ?? '') ?></div>
+                            <?php if (!empty($o['type'])): ?>
+                            <span class="pcv-tag<?= isset($typeTone[$o['type']]) ? ' pcv-tag--' . $typeTone[$o['type']] : '' ?>"><?= $h($o['type']) ?></span>
+                            <?php else: ?><span></span><?php endif; ?>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </section>
+                <?php endif; ?>
+
+                <?php if ($photos !== []): ?>
+                <section id="pcv-photos" aria-labelledby="pcv-h-photos">
+                    <p class="pcv-k">Sur le terrain</p>
+                    <h2 id="pcv-h-photos" class="pcv-h2">Photos</h2>
+                    <ul class="pcv-photos">
+                        <?php foreach ($photos as $p): ?>
+                        <li><img src="<?= $h($p['url'] ?? '') ?>" alt="<?= $h(($p['title'] ?? '') !== '' ? $p['title'] : 'Photo publiée par ' . $callsign) ?>" loading="lazy"></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </section>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($hasAside): ?>
+            <aside<?= $hasMain ? '' : ' class="pcv-aside--wide"' ?> aria-label="Fiche du joueur">
+                <?php if ($hasFiche): ?>
+                <div class="pcv-card" id="pcv-unit">
+                    <h2 class="pcv-k">Fiche</h2>
+                    <dl class="pcv-dl">
+                        <?php if ($grade !== null): ?><dt>Grade</dt><dd><?= $h($grade) ?></dd><?php endif; ?>
+                        <?php if ($community !== null): ?>
+                        <dt>Communauté</dt>
+                        <dd><?php if ($communityUrl !== null): ?><a href="<?= $h($communityUrl) ?>"><?= $h($community) ?></a><?php else: ?><?= $h($community) ?><?php endif; ?></dd>
+                        <?php endif; ?>
+                        <?php if ($unit !== null): ?><dt>Affectation</dt><dd><?= $h($unit) ?></dd><?php endif; ?>
+                    </dl>
+                </div>
+                <?php endif; ?>
+
+                <?php if ($qualifications !== []): ?>
+                <div class="pcv-card" id="pcv-qualifications">
+                    <h2 class="pcv-k">Qualifications</h2>
+                    <ul class="pcv-quals">
+                        <?php foreach ($qualifications as $q): ?>
+                        <?php $qTip = !empty($q['date']) ? 'Obtenue en ' . $q['date'] : ''; ?>
+                        <li class="pcv-q"<?= $qTip !== '' ? ' title="' . $h($qTip) . '"' : '' ?>>
+                            <?php if (!empty($q['code'])): ?><i><?= $h($q['code']) ?></i><?php elseif (!empty($q['image'])): ?><img src="<?= $h($q['image']) ?>" alt="" loading="lazy"><?php endif; ?>
+                            <span><?= $h($q['title'] ?? '') ?><?php if (!empty($q['subtitle'])): ?><small><?= $h($q['subtitle']) ?></small><?php endif; ?></span>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
+
+                <?php if ($decorations !== []): ?>
+                <div class="pcv-card" id="pcv-decorations">
+                    <h2 class="pcv-k">Décorations</h2>
+                    <ul class="pcv-medals">
+                        <?php foreach ($decorations as $d): ?>
+                        <?php $dTip = implode(', ', array_filter([$d['subtitle'] ?? null, !empty($d['date']) ? 'remise en ' . $d['date'] : null])); ?>
+                        <li class="pcv-medal"<?= $dTip !== '' ? ' title="' . $h($dTip) . '"' : '' ?>>
+                            <?php if (!empty($d['image'])): ?>
+                            <img src="<?= $h($d['image']) ?>" alt="" loading="lazy">
+                            <?php else: ?>
+                            <span class="pcv-ribbon" aria-hidden="true"></span>
+                            <?php endif; ?>
+                            <span class="pcv-medal-t"><?= $h($d['title'] ?? '') ?></span>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
+            </aside>
+            <?php endif; ?>
+        </div>
         <?php else: ?>
-        <div class="mt-12 rounded-2xl border border-dashed border-white/10 px-6 py-12 text-center">
-            <p class="text-sm font-semibold text-slate-200">Le parcours de <?= $h($callsign) ?> commence.</p>
-            <p class="mt-1 text-xs text-slate-400">Décorations, qualifications et opérations apparaîtront ici au fil des parties.</p>
+        <div class="pcv-empty">
+            <p>Le parcours de <?= $h($callsign) ?> commence.</p>
+            <p>Formations, qualifications et opérations apparaîtront ici au fil des parties.</p>
         </div>
         <?php endif; ?>
-    </main>
+    </div>
+</main>
 
-    <footer class="border-t border-white/5 py-6 text-center text-[0.68rem] text-slate-500">
-        Page publiée par <?= $h($callsign) ?> sur <a href="<?= $h(url('/')) ?>" class="font-semibold text-slate-400 hover:text-white">Athena</a>.
-    </footer>
-</div>
+<footer class="pcv-foot">
+    <div class="pcv-wrap">
+        <span>Page publiée par <?= $h($callsign) ?> sur <a href="<?= $h(url('/')) ?>">Athena</a></span>
+        <?php if ($slug !== ''): ?><span class="pcv-mono">/joueur/<?= $h($slug) ?></span><?php endif; ?>
+    </div>
+</footer>
+
 <script>
 (function () {
     var btn = document.querySelector('[data-pcv-share]');
     if (!btn) return;
     var label = btn.querySelector('[data-pcv-share-label]');
+    var initial = label.textContent;
     var url = <?= json_encode($pageUrl !== '' ? $pageUrl : null, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) ?> || window.location.href;
     var title = <?= json_encode($seo_og_title, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
     btn.addEventListener('click', function () {
@@ -214,8 +436,8 @@ $seo_json_ld = [
         if (navigator.clipboard) {
             navigator.clipboard.writeText(url).then(function () {
                 label.textContent = 'Lien copié';
-                setTimeout(function () { label.textContent = 'Partager'; }, 2000);
-            });
+                setTimeout(function () { label.textContent = initial; }, 2000);
+            }, function () {});
         }
     });
 })();

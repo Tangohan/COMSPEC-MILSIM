@@ -17,4 +17,4 @@ private _pos = getPos _unit;
 private _posX = str (_pos select 0);
 private _posY = str (_pos select 1);
 ["SyncLaserCode", "attempt", format ["code %1", _laserCode], nil, false, "cas"] call comspec_overwatch_connect_fnc_logTransmission;
-"COMSPECExtension" callExtension ["SyncLaserCode", [_callSign, _laserCode, _posX, _posY, "ACTIVE"]];
+(["COMSPECExtension", "SyncLaserCode", [_callSign, _laserCode, _posX, _posY, "ACTIVE"]] call comspec_overwatch_connect_fnc_extDirect);

@@ -142,9 +142,6 @@ public static partial class Extension
             + (_coalescedPosition is null ? 0 : 0); // position live is offered into P1
     }
 
-    private static bool IsTelemetryBatchEndpoint(string url) =>
-        url.Contains("/api/atak/telemetry/batch", StringComparison.OrdinalIgnoreCase);
-
     private static bool IsBatchableTelemetryUrl(string url)
     {
         if (string.IsNullOrWhiteSpace(url)) return false;

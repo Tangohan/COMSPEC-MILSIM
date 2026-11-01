@@ -294,6 +294,40 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1219, '2026-11-01', 'Notre histoire : versions, kilomètres et nouvelle page', 'La page « Notre histoire » est entièrement refaite : carte topographique animée qui mène au total de kilomètres parcourus en jeu, chiffres réels de la plateforme et de votre communauté, histoire année par année et frise complète des versions (téléphone, liaison, Overwatch, SSE, portail) avec filtres par produit.', [
+                'Frise de toutes les versions publiées, filtrable par produit',
+                'Kilomètres parcourus en jeu (à pied, véhicule, vol, mer, chute libre) et heures de jeu',
+                'Thème jour « carte papier » et nuit',
+            ], [
+                'Page Notre histoire entièrement redessinée',
+            ], [
+                'Plus de version unique « 1.0.0 » affichée à tort',
+            ], ['platform'], [], 'Portail Athena'),
+            $pr(1216, '2026-11-01', 'Téléphone : plus de gel, tenues ACE réparées, liaison vraiment coupée', 'Avec le pack 2.9.21 et la liaison 2.0.111, le téléphone ne se fige plus après un moment d’utilisation, la carte suit sans à-coups et les tâches de fond sont étalées pour supprimer les micro-gels. Le panneau Athena · Tenues de l’arsenal ACE est corrigé : plus de tenues en double, plus d’erreur ACE, « Enfiler » et l’import fonctionnent. Liaison Athena désactivée ou téléphone rangé : plus rien n’est transmis.', [
+                'Bandeau bêta du menu principal fermable',
+                'Tenues ACE abîmées ou en double réparées automatiquement au lancement',
+            ], [
+                'Carte : suivi sans arrêts ni sauts, calculs limités à ce qui est à l’écran',
+                'Tâches de fond étalées : plus d’à-coup groupé toutes les deux minutes',
+                'Liaison désactivée ou sans téléphone : aucune transmission, même de la liaison elle-même',
+                'Live cam par captures d’écran retirée (la Vidéo live du téléphone reste)',
+                'Menu ACE « COMSPEC Athéna > Tenues » retiré : tout passe par le panneau de l’arsenal',
+            ], [
+                'Téléphone qui ne répondait plus après un moment (écrans TOC)',
+                'Tenues en double à l’infini et erreur ACE dans « Mes équipements »',
+                'Tenue enregistrée qui disparaissait de la liste ACE',
+                '« Enfiler » et import des tenues Athena',
+                'Tenue identique marquée « non transmise »',
+                'App Drone : textes superposés ; lanceur : bloc « Choisir un groupe » affiché à tort',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.21 (liaison 2.0.111 incluse), quittez Arma complètement, puis relancez.',
+            ], 'Pack téléphone 2.9.21'),
+            $pr(1204, '2026-10-28', 'Carte : Vue 3D en chantier', 'Avec le pack 2.9.20, l’entrée « Vue 3D ici » du menu de la carte reste visible mais signale qu’elle est en chantier. Un appui n’ouvre plus la vue ; un message indique qu’elle sera bientôt disponible. La liaison reste en 2.0.110.', [
+                'Menu carte : « Vue 3D ici » marquée en chantier',
+                'La vue 3D ne s’ouvre plus tant que le chantier n’est pas terminé',
+            ], [], [], ['atak'], [
+                'Mettez à jour le pack 2.9.20, quittez Arma complètement, puis relancez.',
+            ], 'Pack téléphone 2.9.20 à republier'),
             $pr(1203, '2026-10-28', 'Liaison : moins d’envois parallèles résiduels', 'Avec le pack 2.9.19 et la liaison 2.0.110, les mises à jour de logistique, les réponses d’identification ami-ennemi et les accusés de réception de commande rejoignent la file d’envoi déjà utilisée pour les positions et la messagerie. Les ordres et les notifications du poste partent aussi sans figer l’image. La carte des alliés reste prioritaire.', [
                 'Logistique, identification ami-ennemi et accusés de commande passent par la file d’envoi',
                 'Ordres et notifications du poste sans figer l’image',

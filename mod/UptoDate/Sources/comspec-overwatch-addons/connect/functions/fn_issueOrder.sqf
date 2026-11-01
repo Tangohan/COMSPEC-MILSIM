@@ -87,7 +87,8 @@ private _encoded = format ["ORDER|%1|%2|%3|%4|%5|%6", _id, _orderType, _target, 
     if (!isNil "comspec_overwatch_connect_fnc_extAwait") then {
         ["COMSPECExtension", "SendChat", [_issuer, _encoded]] call comspec_overwatch_connect_fnc_extAwait;
     } else {
-        "COMSPECExtension" callExtension ["SendChat", [_issuer, _encoded]];
+        if (["SendChat"] call comspec_overwatch_connect_fnc_uplinkHold) exitWith {};
+        (["COMSPECExtension", "SendChat", [_issuer, _encoded]] call comspec_overwatch_connect_fnc_extDirect);
     };
 };
 

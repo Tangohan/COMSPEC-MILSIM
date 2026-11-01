@@ -1,16 +1,18 @@
 /*
-    Bandeau « bêta publique » en haut du menu principal Arma.
-    Toujours visible ; un clic ouvre la note complète.
+    Bandeau « bêta publique » en haut du menu principal Arma, sous la barre de menus du jeu (il la masquait).
+    Un clic ouvre la note complète ; la croix le ferme jusqu'à la prochaine version du mod.
 */
 params [["_display", displayNull]];
 if (!hasInterface || {isNull _display}) exitWith {};
+private _ver = getText (configFile >> "CfgPatches" >> "comspec_overwatch_connect" >> "versionStr");
+if ((profileNamespace getVariable ["comspec_overwatch_beta_banner_closed", ""]) isEqualTo _ver) exitWith {};
 
 private _bg = _display displayCtrl 9612;
 if (isNull _bg) then {
     private _barW = 0.64 * safezoneW;
     private _barH = 0.046 * safezoneH;
     private _barX = safezoneX + ((safezoneW - _barW) / 2);
-    private _barY = safezoneY + (0.018 * safezoneH);
+    private _barY = safezoneY + (0.105 * safezoneH);
 
     _bg = _display ctrlCreate ["RscText", 9612];
     _bg ctrlSetPosition [_barX, _barY, _barW, _barH];
@@ -43,7 +45,7 @@ if (isNull _bg) then {
     _text ctrlCommit 0;
 
     private _hit = _display ctrlCreate ["COMSPEC_RscInvisibleButton", 9614];
-    _hit ctrlSetPosition [_barX, _barY, _barW, _barH];
+    _hit ctrlSetPosition [_barX, _barY, _barW - _barH, _barH];
     _hit ctrlSetText (("") call comspec_overwatch_connect_fnc_tr);
     _hit ctrlSetBackgroundColor [0, 0, 0, 0];
     _hit ctrlSetTextColor [0, 0, 0, 0];
@@ -52,6 +54,22 @@ if (isNull _bg) then {
         [true] call comspec_overwatch_connect_fnc_showBetaAccessNote;
     }];
     _hit ctrlCommit 0;
+
+    // Croix de fermeture (à droite) : masque le bandeau jusqu'à la prochaine version.
+    private _close = _display ctrlCreate ["RscButton", 9615];
+    _close ctrlSetPosition [_barX + _barW - _barH, _barY, _barH, _barH];
+    _close ctrlSetText "×";
+    _close ctrlSetBackgroundColor [0, 0, 0, 0];
+    _close ctrlSetTextColor [0.78, 0.85, 0.9, 1];
+    _close ctrlSetTooltip (("Fermer") call comspec_overwatch_connect_fnc_tr);
+    _close ctrlAddEventHandler ["ButtonClick", {
+        params ["_c"];
+        private _d = ctrlParent _c;
+        { (_d displayCtrl _x) ctrlShow false; } forEach [9610, 9611, 9612, 9613, 9614, 9615];
+        profileNamespace setVariable ["comspec_overwatch_beta_banner_closed", getText (configFile >> "CfgPatches" >> "comspec_overwatch_connect" >> "versionStr")];
+        saveProfileNamespace;
+    }];
+    _close ctrlCommit 0;
 };
 
 [_display] call comspec_overwatch_connect_fnc_refreshMainMenuBetaBanner;

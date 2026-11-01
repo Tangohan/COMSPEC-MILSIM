@@ -74,6 +74,8 @@ switch (true) do {
         if (_l isNotEqualTo "") then { _out = ([_p, _l, _num] select { _x isNotEqualTo "" }) joinString " "; };
     };
 };
-if ((count _done) > 400) then { _done = createHashMap; _cache set [1, _done]; };
+// Plafond relevé de 400 à 4000 : une mission à plusieurs centaines de marqueurs titrés vidait le cache en boucle et
+// tous les noms étaient recalculés à chaque relecture (à-coups carte ouverte).
+if ((count _done) > 4000) then { _done = createHashMap; _cache set [1, _done]; };
 _done set [_t, _out];
 _out

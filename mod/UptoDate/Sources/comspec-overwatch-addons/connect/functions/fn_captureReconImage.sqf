@@ -285,7 +285,7 @@ private _fnc_stagePath = {
     params ["_hint"];
     if (!(_hint isEqualType "") || {_hint isEqualTo ""}) exitWith { "" };
     if (isNil "comspec_overwatch_connect_fnc_extResult") exitWith { "" };
-    private _raw = ["COMSPECExtension" callExtension ["StageCapture", [_hint]]] call comspec_overwatch_connect_fnc_extResult;
+    private _raw = [(["COMSPECExtension", "StageCapture", [_hint]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
     if (!(_raw isEqualType "")) exitWith { "" };
     _raw = [_raw] call _fnc_stripExtQuotes;
     if ((count _raw) < 4) exitWith { "" };
@@ -374,7 +374,7 @@ private _fnc_notifyPath = {
         worldName,
         _extraStr
     ];
-    private _raw = ["COMSPECExtension" callExtension ["NotifyNewPhoto", _notifyArgs]] call comspec_overwatch_connect_fnc_extResult;
+    private _raw = [(["COMSPECExtension", "NotifyNewPhoto", _notifyArgs] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
     private _ok = [_raw] call _isQueuedOk;
     missionNamespace setVariable ["COMSPEC_LastReconUploadOk", _ok, false];
     missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", _raw, false];

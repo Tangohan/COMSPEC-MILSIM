@@ -15,6 +15,7 @@ use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Platform\AthenaHeritageService;
 use App\Services\Platform\PublicHistoryStatsService;
+use App\Services\Platform\PublicReleaseHistoryService;
 use App\Support\AtakReleaseInfo;
 use App\Support\AtakTranslationTemplate;
 use App\Support\ChangelogCatalog;
@@ -38,42 +39,39 @@ final class SitePagesController
 
     public function history(Request $request, array $params = []): Response
     {
-        $period = strtolower(trim((string) $request->query('periode', 'all')));
-        $from = null;
-        $to = null;
-        if ($period === '90') {
-            $from = (new \DateTimeImmutable('today'))->modify('-89 days')->format('Y-m-d');
-        } elseif ($period === '365') {
-            $from = (new \DateTimeImmutable('today'))->modify('-364 days')->format('Y-m-d');
-        }
-
-        $heritage = [
-            'live' => [],
-            'timeline' => [],
-            'chart' => ['labels' => [], 'operators' => [], 'organizations' => [], 'markers' => []],
-            'versions' => [],
-            'next_goal' => null,
-            'honesty_note' => (string) __('site.hist_honesty_note'),
-        ];
-        // Cache court : la construction du patrimoine écrit un snapshot et lit beaucoup de tables.
-        $cacheFile = base_path('storage/cache/public_history_heritage_' . ($from === null ? 'all' : $period) . '.json');
+        // Jalons datés de la plateforme (premier message ATAK, premier vol de drone…) : la construction lit
+        // beaucoup de tables, d’où un cache court partagé par tous les visiteurs.
+        $milestones = [];
+        $cacheFile = base_path('storage/cache/public_history_heritage_all.json');
         $cached = is_file($cacheFile) && filemtime($cacheFile) >= time() - PublicHistoryStatsService::CACHE_TTL
             ? json_decode((string) @file_get_contents($cacheFile), true)
             : null;
-        if (is_array($cached) && isset($cached['live'], $cached['timeline'])) {
+        if (is_array($cached) && isset($cached['timeline'])) {
             $heritage = $cached;
         } else {
+            $heritage = [];
             try {
                 /** @var AthenaHeritageService $service */
                 $service = Container::get(AthenaHeritageService::class);
-                $heritage = $service->buildPublicPage($from, $to);
+                $heritage = $service->buildPublicPage(null, null);
                 if (!is_dir(dirname($cacheFile))) {
                     @mkdir(dirname($cacheFile), 0775, true);
                 }
                 @file_put_contents($cacheFile, (string) json_encode($heritage, JSON_UNESCAPED_UNICODE), LOCK_EX);
             } catch (\Throwable) {
-                // Page publique dégradée sans données.
+                // Page publique dégradée sans jalons.
             }
+        }
+        foreach (is_array($heritage['timeline'] ?? null) ? $heritage['timeline'] : [] as $item) {
+            // Les versions viennent de l’historique réel des sorties ; un jalon sans date n’est pas affiché.
+            if (!is_array($item) || ($item['kind'] ?? '') === 'version' || ($item['date_precision'] ?? 'unknown') === 'unknown') {
+                continue;
+            }
+            $day = substr((string) ($item['occurred_at'] ?? ''), 0, 10);
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) !== 1 || trim((string) ($item['title'] ?? '')) === '') {
+                continue;
+            }
+            $milestones[] = ['date' => $day, 'title' => (string) $item['title'], 'text' => (string) ($item['narrative'] ?? '')];
         }
 
         // Chiffres réels : plateforme pour tous, communauté en plus pour ses membres connectés.
@@ -82,6 +80,13 @@ final class SitePagesController
         $communityTenantId = $this->publicHistoryTenantId();
         $communityStats = $communityTenantId !== null ? $statsService->stats($communityTenantId) : null;
 
+        // Historique des versions (journal ATAK, changelogs Steam, bulletins UPDATE, version du portail).
+        try {
+            $releaseHistory = (new PublicReleaseHistoryService())->history();
+        } catch (\Throwable) {
+            $releaseHistory = null;
+        }
+
         $pageUrl = rtrim(url(''), '/') . '/notre-histoire';
 
         return Response::view('layout.marketing', [
@@ -89,11 +94,14 @@ final class SitePagesController
             'title' => __('site.hist_meta_title'),
             'meta_description' => __('site.hist_meta_description'),
             'marketingActive' => 'history',
-            'heritage' => $heritage,
-            'heritagePeriod' => $period,
             'platformStats' => $platformStats,
             'communityStats' => $communityStats,
-            'marketingStyles' => [asset_url('assets/css/site-history.css')],
+            'releaseHistory' => $releaseHistory,
+            'milestones' => $milestones,
+            'marketingStyles' => [
+                'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&display=swap',
+                asset_url('assets/css/site-history.css'),
+            ],
             'marketingScripts' => [asset_url('assets/js/site-history.js')],
             'jsonLdExtra' => [
                 [

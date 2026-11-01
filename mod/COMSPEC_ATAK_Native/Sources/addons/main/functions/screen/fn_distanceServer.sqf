@@ -141,7 +141,7 @@ for "_i" from 0 to ((count _uids) - 1) step 25 do {
         _tried = true;
         private _body = createHashMapFromArray [["mission_key", _mk], ["players", _players]];
         if (_self) then { _body set ["source", "client"]; };
-        _r = "COMSPECExtension" callExtension ["Distance.Batch", [[_body] call comspec_atak_native_fnc_json]];
+        _r = (["COMSPECExtension", "Distance.Batch", [[_body] call comspec_atak_native_fnc_json]] call comspec_overwatch_connect_fnc_extDirect);
         if (_r isEqualType []) then { _r = _r param [0, ""]; };
         if ((_r select [0, 3]) isEqualTo "OK|") then {
             { _acc deleteAt _x; } forEach _sent;

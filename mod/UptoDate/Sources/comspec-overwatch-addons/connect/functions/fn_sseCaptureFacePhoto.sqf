@@ -220,7 +220,7 @@ if (!isNull _disp) then {
         params ["_hint"];
         uiSleep 2.2;
         if (isNil "comspec_overwatch_connect_fnc_extResult") exitWith {};
-        ["COMSPECExtension" callExtension ["StageCapture", [_hint]]] call comspec_overwatch_connect_fnc_extResult;
+        [(["COMSPECExtension", "StageCapture", [_hint]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
     };
 };
 

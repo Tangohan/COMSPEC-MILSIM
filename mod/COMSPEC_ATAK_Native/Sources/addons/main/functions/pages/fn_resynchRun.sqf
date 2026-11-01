@@ -98,7 +98,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ResynchBusy", true, false];
     private _photos = { (toLower (_x param [2, ""])) find "photo" >= 0 } count _q;
     private _dll = 0;
     if ([] call comspec_atak_native_fnc_bridge && {!(missionNamespace getVariable ["COMSPEC_ATAK_SendQNo", false])}) then {
-        private _raw = ("COMSPECExtension" callExtension ["SendQueue.Status", []]) select 0;
+        private _raw = ((["COMSPECExtension", "SendQueue.Status", []] call comspec_overwatch_connect_fnc_extDirect)) select 0;
         if ((_raw select [0, 3]) isEqualTo "OK|") then { _dll = parseNumber (((((_raw select [3]) splitString toString [10]) param [0, ""]) splitString toString [9]) param [0, "0"]); };
     };
     private _wait = (count _q) + _dll;

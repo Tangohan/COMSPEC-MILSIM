@@ -140,8 +140,6 @@ if (!isNil "comspec_overwatch_connect_fnc_sendFactionSettings") then {
 missionNamespace setVariable ["COMSPEC_Athena_LastWeatherSig", "", false];
 missionNamespace setVariable ["COMSPEC_Athena_RouteSig", "", false];
 missionNamespace setVariable ["COMSPEC_Athena_JumpSig", "", false];
-missionNamespace setVariable ["COMSPEC_Athena_LastVideoFeedsSig", "", false];
-missionNamespace setVariable ["COMSPEC_Athena_LastVideoFeedsAt", 0, false];
 missionNamespace setVariable ["COMSPEC_Athena_DroneContactSeen", createHashMap, false];
 
 private _mkCount = 0;
@@ -160,8 +158,7 @@ if (!isNil "comspec_overwatch_connect_fnc_queueMapMarker") then {
     "comspec_overwatch_atak_athena_fnc_athena_bridgeWeather",
     "comspec_overwatch_atak_athena_fnc_athena_bridgeDroneContacts",
     "comspec_overwatch_atak_athena_fnc_athena_bridgeRoute",
-    "comspec_overwatch_atak_athena_fnc_athena_bridgeJump",
-    "comspec_overwatch_atak_athena_fnc_athena_bridgeVideoFeeds"
+    "comspec_overwatch_atak_athena_fnc_athena_bridgeJump"
 ];
 
 _parts pushBack "données carte";

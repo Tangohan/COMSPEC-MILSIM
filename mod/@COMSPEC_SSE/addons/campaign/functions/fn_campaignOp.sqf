@@ -333,15 +333,22 @@ switch (_op) do {
             if ((_r getOrDefault ["alias", ""]) isNotEqualTo "") then { _pairs pushBack ["alias", _r get "alias"]; };
             [_u, _pairs] call comspec_sse_fnc_setIdentity;
         };
+        // Diffusion groupée (2 s) : une vague d'IA renvoyait les deux tables entières à tous les clients pour chaque unité.
+        private _pvSoon = {
+            private _flag = "comspec_sse_pvPending_" + _this;
+            if (missionNamespace getVariable [_flag, false]) exitWith {};
+            missionNamespace setVariable [_flag, true];
+            [{ missionNamespace setVariable ["comspec_sse_pvPending_" + _this, false]; publicVariable _this; }, _this, 2] call CBA_fnc_waitAndExecute;
+        };
         private _m = (missionNamespace getVariable ["comspec_sse_orgMembers", createHashMap]) getOrDefault [_k, createHashMap];
         if (count _m > 0) then {
             _m set ["netId", netId _u];
             _u setVariable ["COMSPEC_SSE_Org", [_m get "org", _m get "role"], true];
-            if (!_quiet) then { publicVariable "comspec_sse_orgMembers"; };
+            if (!_quiet) then { "comspec_sse_orgMembers" call _pvSoon; };
         };
         if (_k in (missionNamespace getVariable ["comspec_sse_anaSeen", createHashMap])) then {
             comspec_sse_anaSeen set [_k, netId _u];
-            if (!_quiet) then { publicVariable "comspec_sse_anaSeen"; };
+            if (!_quiet) then { "comspec_sse_anaSeen" call _pvSoon; };
         };
         true
     };

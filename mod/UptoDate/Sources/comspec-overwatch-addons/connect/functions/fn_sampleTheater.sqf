@@ -171,7 +171,7 @@ missionNamespace setVariable ["COMSPEC_TheaterSampleToken", _bootToken, false];
                 _mapId,
                 _batch joinString ","
             ];
-            private _raw = "COMSPECExtension" callExtension ["Scene.Ingest", [_json]];
+            private _raw = (["COMSPECExtension", "Scene.Ingest", [_json]] call comspec_overwatch_connect_fnc_extDirect);
             private _parsed = [_raw] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
             _parsed params ["_extOk", "_status", "_detail"];
             private _detailLc = toLower (str _detail);
@@ -398,7 +398,7 @@ missionNamespace setVariable ["COMSPEC_TheaterSampleToken", _bootToken, false];
                     _rh,
                     (_parts joinString ",")
                 ];
-                private _raw = "COMSPECExtension" callExtension ["Terrain.Chunk", [_json]];
+                private _raw = (["COMSPECExtension", "Terrain.Chunk", [_json]] call comspec_overwatch_connect_fnc_extDirect);
                 private _parsed = [_raw] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
                 _parsed params ["_extOk", "_status", "_detail"];
                 private _detailLc = toLower (str _detail);

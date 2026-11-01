@@ -52,7 +52,7 @@ missionNamespace setVariable ["COMSPEC_WebBrowser_SystemOpenAt", _now];
 
 // Priorite 1 : navigateur systeme (Windows)
 // openURL n'existe pas en SQF : COMSPEC Link ouvre le navigateur (adresse du portail seulement).
-"COMSPECExtension" callExtension ["OpenAthenaLink", [_atakUrl]];
+(["COMSPECExtension", "OpenAthenaLink", [_atakUrl]] call comspec_overwatch_connect_fnc_extDirect);
 
 // Sur Stable, l’embarqué ne charge pas /atak : rester en mode local (radar tablette).
 private _branch = "";

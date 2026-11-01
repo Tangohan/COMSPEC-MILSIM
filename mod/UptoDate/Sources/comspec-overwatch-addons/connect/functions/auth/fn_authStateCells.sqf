@@ -3,7 +3,7 @@
     les champs vides, et l’extension envoie aussi "-" à la place. Les adresses
     internes ne sont jamais un indicatif, un grade ou une unité.
 */
-private _raw = ["COMSPECExtension" callExtension ["GetAuthState", []]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [(["COMSPECExtension", "GetAuthState", []] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 private _parts = [_raw] call comspec_overwatch_connect_fnc_splitKeepEmpty;
 
 private _fnc_cell = {

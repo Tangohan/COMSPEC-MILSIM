@@ -26,7 +26,7 @@ if ((_lower find "https://docs.google.com/presentation/d/") isNotEqualTo 0
     ""
 };
 
-"COMSPECExtension" callExtension ["CancelGoogleDeck", []];
+(["COMSPECExtension", "CancelGoogleDeck", []] call comspec_overwatch_connect_fnc_extDirect);
 
 private _requestId = format [
     "gdeck_%1_%2",
@@ -66,7 +66,7 @@ if (!_native
 
 ["COMSPEC_Info", ["Téléchargement de la présentation Google…"]] call comspec_overwatch_connect_fnc_showNotification;
 
-private _raw = ["COMSPECExtension" callExtension ["LoadGoogleDeck", [_url, str (floor _index), _requestId]]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [(["COMSPECExtension", "LoadGoogleDeck", [_url, str (floor _index), _requestId]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 if (_raw isEqualTo "") exitWith {
     missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", ""];
     ["COMSPEC_Warning", ["Extension indisponible pour charger Google Slides."]] call comspec_overwatch_connect_fnc_showNotification;

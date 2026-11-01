@@ -53,7 +53,8 @@ if (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "off") then {
     [] call comspec_overwatch_connect_fnc_initATAK;
 }, [], 10] call CBA_fnc_waitAndExecute;
 
-// Panneau Athena dans ACE Arsenal (indépendant de la liaison initiale)
+// Tenues ACE abîmées ou en double (anciennes versions) réparées, puis panneau Athena dans ACE Arsenal (indépendant de la liaison initiale).
 [{
+    [] call comspec_overwatch_connect_fnc_aceLoadoutsRepair;
     [] call comspec_overwatch_connect_fnc_arsenalInitOverlay;
 }, [], 12] call CBA_fnc_waitAndExecute;

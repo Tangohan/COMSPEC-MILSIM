@@ -230,11 +230,24 @@ private _dcAll = uiNamespace getVariable "COMSPEC_ATAK_MapDrawCache";
 if (isNil "_dcAll") then { _dcAll = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_MapDrawCache", _dcAll]; };
 // Unités parties : entrées périmées retirées de temps en temps (pas de table sans fin).
 if ((count _dcAll) > (300 max (2 * (count (_data getOrDefault ["units", createHashMap]))))) then { private _tNow = diag_tickTime; { if (_tNow > ((_y select 0) + 5)) then { _dcAll deleteAt _x; }; } forEach +_dcAll; };
+// Vue de la carte en coordonnées du monde (marge d'environ 5 % de l'écran) : les unités hors de la vue sont sautées avant
+// tout calcul (avant : symbole, couleurs, anneaux et cartouche préparés pour toutes les unités du camp à chaque image,
+// même zoomé sur 500 m en téléphone porté).
+(ctrlPosition _map) params ["_ucx", "_ucy", "_ucw", "_uch"];
+private _uA = _map ctrlMapScreenToWorld [_ucx - 0.05, _ucy - 0.05];
+private _uB = _map ctrlMapScreenToWorld [_ucx + _ucw + 0.05, _ucy + _uch + 0.05];
+private _ux0 = (_uA select 0) min (_uB select 0); private _ux1 = (_uA select 0) max (_uB select 0);
+private _uy0 = (_uA select 1) min (_uB select 1); private _uy1 = (_uA select 1) max (_uB select 1);
 {
     private _entity = _y;
     private _pos = _entity getOrDefault ["position",[]];
     if ((count _pos) < 2) then { continue };
     if (_compSkip && {!(_entity getOrDefault ["self", false])}) then { continue };
+    // Hors de la vue (cercle de précision compris) : rien à dessiner. Moi et l'unité sélectionnée toujours traités.
+    if (!(_entity getOrDefault ["self", false]) && {_x isNotEqualTo _selected} && {
+        private _ua = _entity getOrDefault ["acc", 0];
+        ((_pos select 0) + _ua) < _ux0 || {((_pos select 0) - _ua) > _ux1} || {((_pos select 1) + _ua) < _uy0} || {((_pos select 1) - _ua) > _uy1}
+    }) then { continue };
     private _self = _entity getOrDefault ["self",false];
     // Symbole, couleur de base, icône perso et symbole OTAN gardés 1 s par unité (table à part, COMSPEC_ATAK_MapDrawCache) :
     // refaits à chaque image et pour chaque unité avant. Plus dans la piste : fn_localDataRefresh la refait 4 fois par seconde.
@@ -329,7 +342,8 @@ if ((count _mkLists) < 4 || {(_mkLists select 0) isNotEqualTo _mkRev} || {diag_t
         if (!_lc) then { _rem pushBack [_x,_y]; };
         if ((_y getOrDefault ["text",""]) isNotEqualTo "" && {!_lc || {((_y getOrDefault ["id",_x]) find "_USER_DEFINED") >= 0}} && {!((toUpper (_y getOrDefault ["shape","ICON"])) in ["POLYLINE","RECTANGLE","ELLIPSE"])}) then { _tag pushBack [_x,_y]; };
     } forEach (_data getOrDefault ["markers",createHashMap]);
-    _mkLists = [_mkRev, diag_tickTime + 2, _rem, _tag];
+    // Sécurité 10 s (avant 2 s) : la révision du magasin change déjà à chaque marqueur créé, modifié ou supprimé.
+    _mkLists = [_mkRev, diag_tickTime + 10, _rem, _tag];
     missionNamespace setVariable ["COMSPEC_ATAK_DrawMkLists", _mkLists];
 };
 {
@@ -339,6 +353,9 @@ if ((count _mkLists) < 4 || {(_mkLists select 0) isNotEqualTo _mkRev} || {diag_t
     if ((count _pos) < 2) then { continue };
     private _shape = toUpper (_marker getOrDefault ["shape","ICON"]);
     private _size = _marker getOrDefault ["size",[1,1]];
+    // Repère Athena hors de la vue (zone comprise) : sauté. Rayon a + b : couvre aussi un rectangle tourné (coin à √(a²+b²)).
+    private _mr = if (_size isEqualType []) then { ((_size param [0, 1]) + (_size param [1, 1])) max 1 } else { 1 };
+    if (((_pos select 0) + _mr) < _ux0 || {((_pos select 0) - _mr) > _ux1} || {((_pos select 1) + _mr) < _uy0} || {((_pos select 1) - _mr) > _uy1}) then { continue };
     switch _shape do {
         case "RECTANGLE": {
             _map drawRectangle [_pos,_size select 0,_size select 1,_marker getOrDefault ["dir",0],[0.36,0.78,0.42,0.65],""];
@@ -632,7 +649,7 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
         _used = _used + 1;
         _tagged pushBack _id;
     } forEach (_mkLists select 3);
-    if ((count _gridCache) > 400) then { _gridCache = createHashMap; };
+    if ((count _gridCache) > 2000) then { _gridCache = createHashMap; };
     uiNamespace setVariable ["COMSPEC_ATAK_TagGridCache", _gridCache];
 };
 for "_i" from _used to ((count _pool) - 1) do { private _c = _pool select _i; if (ctrlShown _c) then { _c ctrlShow false; }; };

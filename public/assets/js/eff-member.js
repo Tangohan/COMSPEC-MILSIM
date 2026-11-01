@@ -188,8 +188,44 @@
         }
     }
 
+    // Onglets de rubriques de la fiche : souligne la rubrique en cours de lecture.
+    function initSectionTabs() {
+        var nav = document.querySelector('[data-eff-fm-tabs]');
+        if (!nav || !('IntersectionObserver' in window)) {
+            return;
+        }
+        var links = Array.prototype.slice.call(nav.querySelectorAll('a[href^="#"]'));
+        var byId = {};
+        links.forEach(function (link) {
+            var target = document.getElementById(link.getAttribute('href').slice(1));
+            var section = target ? (target.closest('section[id]') || target) : null;
+            if (section) {
+                byId[section.id] = link;
+            }
+        });
+        var setActive = function (link) {
+            links.forEach(function (l) {
+                l.classList.toggle('is-active', l === link);
+            });
+        };
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting && byId[entry.target.id]) {
+                    setActive(byId[entry.target.id]);
+                }
+            });
+        }, { rootMargin: '-20% 0px -70% 0px' });
+        Object.keys(byId).forEach(function (id) {
+            observer.observe(document.getElementById(id));
+        });
+        if (links[0]) {
+            setActive(links[0]);
+        }
+    }
+
     function init() {
         initDialogs();
+        initSectionTabs();
         openDialogFromHash();
         initFilters();
         initElevationKind();

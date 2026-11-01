@@ -48,7 +48,7 @@ if !(
     ([_unit] call comspec_overwatch_connect_fnc_hasTerminal)
     || { [_unit, "COMSPEC_PhoneTrack"] call comspec_overwatch_connect_fnc_isObjectFlag }
 ) exitWith {
-    if (!_force) then { ["no_terminal"] call _fnc_skip; };
+    // Plus de téléphone : silence (fn_uplinkHold écrit le changement d'état une fois).
     if (_force) then { "" } else { nil }
 };
 
@@ -668,11 +668,7 @@ if ((count _steamUid) < 15) then {
     _steamUid = profileNamespace getVariable ["comspec_overwatch_saved_steam_uid", ""];
 };
 
-// Horodatage PLI lu par atak_athena (seuil périmé 30 s) : diffusé au plus toutes les 5 s au lieu de
-// chaque envoi de position (jusqu'à ~2/s en aéronef), sinon trafic réseau constant par joueur.
-if ((time - (_unit getVariable ["COMSPEC_PliAt", -1e9])) >= 5) then {
-    _unit setVariable ["COMSPEC_PliAt", time, true];
-};
+// Plus d'horodatage public COMSPEC_PliAt (toutes les 5 s par joueur) : seul atak_athena le lisait, il n'est plus livré.
 // POST hors du thread de jeu (spawn + extAwait) : l'appel synchrone du timer 1 s figeait le jeu.
 // Retour inutilisé ; un seul envoi en vol (COMSPEC_PosTxBusyAt, libéré au retour).
 missionNamespace setVariable ["COMSPEC_PosTxBusyAt", diag_tickTime, false];

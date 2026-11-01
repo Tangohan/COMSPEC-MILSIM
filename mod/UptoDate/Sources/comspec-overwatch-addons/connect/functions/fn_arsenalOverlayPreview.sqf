@@ -14,7 +14,7 @@ private _row = (_grp getVariable ["COMSPEC_ArsenalShown", []]) param [_grp getVa
 private _offline = _grp getVariable ["COMSPEC_ArsenalOffline", false];
 private _state = switch (true) do {
     case (_row isEqualTo []): { "" };
-    case (_isCloud): { switch (true) do { case (_row select 11): { "new" }; case ((_row select 10) in ["in", "diff"]): { _row select 10 }; case (_row select 8): { "mine" }; default { "out" }; } };
+    case (_isCloud): { switch (true) do { case (_row select 11): { "new" }; case ((_row select 10) in ["in", "diff", "check"]): { _row select 10 }; case (_row select 8): { "mine" }; default { "out" }; } };
     default { _row select 4 };
 };
 private _info = [_state, _isCloud] call comspec_overwatch_connect_fnc_arsenalStateInfo;
@@ -165,8 +165,10 @@ if (!isNull _names) then {
 // Actions selon l'onglet et l'état.
 (_grp getVariable ["COMSPEC_ArsenalDetailBtns", []]) params [["_bApply", controlNull], ["_bKeep", controlNull], ["_bDel", controlNull]];
 private _keep = if (_isCloud) then {
-    switch (_state) do {
+    // Relation à mon arsenal (pas l'état affiché : une « Nouvelle » peut porter le nom d'une de mes tenues).
+    switch (_row param [10, ""]) do {
         case "in": { ["DÉJÀ DANS MON ARSENAL", false, "Cette tenue est déjà dans votre arsenal, identique."] };
+        case "check";
         case "diff": { ["METTRE À JOUR MON ARSENAL", true, "Remplace la tenue du même nom de votre arsenal par celle-ci."] };
         default { ["IMPORTER DANS MON ARSENAL", true, "Ajoute cette tenue à votre arsenal ACE, sur cet ordinateur."] };
     }

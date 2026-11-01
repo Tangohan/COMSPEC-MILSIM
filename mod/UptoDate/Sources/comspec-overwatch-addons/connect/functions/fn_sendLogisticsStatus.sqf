@@ -106,7 +106,7 @@ private _payload = format [
     if (_slingload) then { "true" } else { "false" }
 ];
 
-"COMSPECExtension" callExtension ["Logistics.Update", [_payload]];
+(["COMSPECExtension", "Logistics.Update", [_payload]] call comspec_overwatch_connect_fnc_extDirect);
 
 if (!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent") then {
     private _pos = getPosASL _vehicle;

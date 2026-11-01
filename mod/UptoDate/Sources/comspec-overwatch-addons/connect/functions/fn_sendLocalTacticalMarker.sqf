@@ -58,5 +58,5 @@ if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {
     true
 };
 
-"COMSPECExtension" callExtension ["SendMarker", [_markerName, _json, "1", "0"]];
+(["COMSPECExtension", "SendMarker", [_markerName, _json, "1", "0"]] call comspec_overwatch_connect_fnc_extDirect);
 true

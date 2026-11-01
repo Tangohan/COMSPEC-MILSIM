@@ -312,7 +312,7 @@ missionNamespace setVariable ["COMSPEC_SceneSampleToken", _token, false];
                 _mapId,
                 _batch joinString ","
             ];
-            private _raw = "COMSPECExtension" callExtension ["Scene.Ingest", [_json]];
+            private _raw = (["COMSPECExtension", "Scene.Ingest", [_json]] call comspec_overwatch_connect_fnc_extDirect);
             private _parsed = [_raw] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
             _parsed params ["_extOk", "_status", "_detail"];
             private _detailLc = toLower (str _detail);

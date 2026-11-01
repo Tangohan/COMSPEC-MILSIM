@@ -16,7 +16,7 @@ final class PublicCvSettings
 
     /** Clé interne => [libellé, aide] affichés dans le réglage du compte. */
     public const SECTIONS = [
-        'unit' => ['Grade, unité et communauté', 'Sous votre indicatif, en haut de la page.'],
+        'unit' => ['Grade, unité et communauté', 'Sous votre indicatif, en haut de la page, avec la bannière et le lien de votre communauté.'],
         'counters' => ['Compteurs', 'Opérations jouées, heures de vol, qualifications et formations.'],
         'bio' => ['Présentation', 'Le court texte que vous écrivez ci-dessous.'],
         'decorations' => ['Décorations', 'Les distinctions qui vous ont été remises.'],

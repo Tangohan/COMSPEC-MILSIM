@@ -97,6 +97,26 @@ private _fit = {
     private _tw = ctrlTextWidth _b;
     if (_tw > _bw * 0.9) then { _b ctrlSetFontHeight ((_fh * _bw * 0.9 / _tw) max COMSPEC_ATAK_FontMin); };
 };
+// Hauteur plancher d'un texte structuré, estimée d'après sa longueur et la largeur de son cadre : ctrlTextHeight rendait
+// trop peu dans une colonne étroite (app Drone, colonne de gauche en paysage sur S7 : aides, sections et interrupteurs
+// empilés les uns sur les autres et sur les boutons). Params : [texte (balises comprises), largeur, taille relative].
+private _estH = {
+    params ["_txt", "_wid", ["_rel", -1]];
+    // Taille relative non donnée : celle de la première balise size='…' du texte (aides en 0.8, etc.), sinon 1.
+    if (_rel < 0) then {
+        private _i = _txt find "size='";
+        _rel = [1, parseNumber (_txt select [_i + 6, 5])] select (_i >= 0);
+        if (_rel <= 0) then { _rel = 1; };
+    };
+    private _nl = toString [10];
+    private _plain = (_txt regexReplace ["<br ?/?>", _nl]) regexReplace ["<[^>]*>", ""];
+    private _fh = ((missionNamespace getVariable ["COMSPEC_ATAK_FontBody", 0]) max _fs) * _rel;
+    // Largeur moyenne d'un caractère (police condensée, capitales comprises) en unités d'écran horizontales.
+    private _cw = _fh * 0.46 * pixelW / pixelH;
+    private _n = 0;
+    { _n = _n + ((ceil (((count _x) * _cw) / (_wid max 0.01))) max 1); } forEach (_plain splitString _nl);
+    (_n max 1) * _fh * 1.08
+};
 // Libellés des boutons pleine ligne et des boutons de champ : retour de jeu, ENREGISTRER et QUITTER LE GROUPE
 // paraissaient minuscules et empâtés à côté du texte de la page ; presque la taille du corps, rétrécis par _fit si trop longs.
 private _btnFs = _font * 0.92;
@@ -117,8 +137,9 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             private _cb = controlNull;
             if (_card) then { _cb = ["COMSPEC_RscText", [_pad, _y, _w, _rowH]] call _mk; _cb ctrlSetBackgroundColor _tbg; };
             private _t = ["COMSPEC_RscStructuredText", [_pad + _ix, _y + _ix / 2, _w - 2 * _ix, _rowH]] call _mk;
-            _t ctrlSetStructuredText parseText ((_txt) call comspec_atak_native_fnc_tr);
-            private _h = (ctrlTextHeight _t) max (_fs * 1.2);
+            private _trTxt = (_txt) call comspec_atak_native_fnc_tr;
+            _t ctrlSetStructuredText parseText _trTxt;
+            private _h = (ctrlTextHeight _t) max (_fs * 1.2) max ([_trTxt, _w - 2 * _ix] call _estH);
             _t ctrlSetPosition [_pad + _ix, _y + _ix / 2, _w - 2 * _ix, _h];
             _t ctrlCommit 0;
             if (_card) then { _cb ctrlSetPosition [_pad, _y, _w, _h + _ix]; _cb ctrlCommit 0; _h = _h + _ix; };
@@ -292,7 +313,8 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             // Titre en blanc (une couleur d'accent sombre, bleu ou rouge, se perdait sur le fond) : la barre porte l'accent.
             // Traduit avant la mise en capitales : « Cibles marquées : %1 » n'a pas de modèle en capitales.
             _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#f2f6f3'>%1</t>%2", toUpper ((_title) call comspec_atak_native_fnc_tr), ["", format ["<br/><t size='0.8' color='#b4c1bb'>%1</t>", _sub]] select (_sub isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
-            private _h = (ctrlTextHeight _t) max (_fs * 1.3);
+            private _h = (ctrlTextHeight _t) max (_fs * 1.3)
+                max (([(toUpper _title) call comspec_atak_native_fnc_tr, _w - _pad, 1] call _estH) + ([0, [(_sub) call comspec_atak_native_fnc_tr, _w - _pad, 0.8] call _estH] select (_sub isNotEqualTo "")));
             _t ctrlSetPosition [_pad * 1.6, _y, _w - _pad, _h];
             _t ctrlCommit 0;
             _y = _y + _h + _pad / 2;
@@ -308,8 +330,10 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             private _t = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + _pad / 4, _w - _pillW - _pad * 2.5, _rowH]] call _mk;
             // Libellé en blanc franc, aide en gris clair (retour de jeu : les lignes semblaient grisées).
             _t ctrlSetStructuredText parseText ((format ["<t size='0.95' color='#eef4f0'>%1</t>%2", _label, ["", format ["<br/><t size='0.75' color='#a9b8b1'>%1</t>", _help]] select (_help isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
-            private _h = ((ctrlTextHeight _t) + _pad / 2) max _rowH;
-            _t ctrlSetPosition [_pad * 1.5, _y + _pad / 4, _w - _pillW - _pad * 2.5, _h - _pad / 2];
+            private _tw = _w - _pillW - _pad * 2.5;
+            private _h = (((ctrlTextHeight _t) max (([(_label) call comspec_atak_native_fnc_tr, _tw, 0.95] call _estH)
+                + ([0, [(_help) call comspec_atak_native_fnc_tr, _tw, 0.75] call _estH] select (_help isNotEqualTo "")))) + _pad / 2) max _rowH;
+            _t ctrlSetPosition [_pad * 1.5, _y + _pad / 4, _tw, _h - _pad / 2];
             _t ctrlCommit 0;
             _card ctrlSetPosition [_pad, _y, _w, _h];
             _card ctrlCommit 0;
@@ -421,15 +445,25 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             if (_label isNotEqualTo "") then {
                 private _lb = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _fs * 1.3]] call _mk;
                 _lb ctrlSetStructuredText parseText ((format ["<t size='0.9'>%1</t>%2", _label, ["", format ["  <t size='0.75' color='#b4c1bb'>%1</t>", _help]] select (_help isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
-                private _lh = (ctrlTextHeight _lb) max (_fs * 1.3);
+                private _lh = (ctrlTextHeight _lb) max (_fs * 1.3)
+                    max ([format ["%1  %2", (_label) call comspec_atak_native_fnc_tr, (_help) call comspec_atak_native_fnc_tr], _w, [0.9, 0.8] select (_help isNotEqualTo "")] call _estH);
                 if (_lh > _fs * 1.3) then { _lb ctrlSetPosition [_pad, _y, _w, _lh]; _lb ctrlCommit 0; };
                 _y = _y + _lh + _fs * 0.05;
             };
             private _n = count _opts;
-            private _sw = _w / (_n max 1);
+            // Colonne étroite : autant de boutons par rangée que leurs libellés le permettent (taille plancher comprise),
+            // la suite passe à la rangée suivante. Avant : 4 ou 5 boutons forcés sur une rangée, libellés débordant les
+            // uns sur les autres (« REVENIR À MOI », altitudes, vitesses dans la colonne de gauche de l'app Drone).
+            private _minF = COMSPEC_ATAK_FontMin max (_fs * 0.6);
+            private _longest = 0;
+            { _longest = _longest max (count ((((_x select 0) call comspec_atak_native_fnc_tr) splitString ""))); } forEach _opts;
+            private _needW = _longest * _minF * 0.55 * pixelW / pixelH;
+            private _per = _n max 1;
+            while { _per > 1 && {_needW > ((_w / _per) - _pad / 6) * 0.9} } do { _per = _per - 1; };
+            private _sw = _w / _per;
             {
                 _x params ["_text", "_code", ["_active", false], ["_tip", ""]];
-                private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * _sw, _y, _sw - _pad / 6, _rowH * 0.9], _text] call _mk;
+                private _b = ["COMSPEC_RscButton", [_pad + (_forEachIndex mod _per) * _sw, _y + (floor (_forEachIndex / _per)) * (_rowH * 0.9 + _pad / 4), _sw - _pad / 6, _rowH * 0.9], _text] call _mk;
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlSetFontHeight (_fs * 0.9);
                 [_b, _sw - _pad / 6, _fs * 0.9] call _fit;
@@ -437,7 +471,8 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 if (_active) then { _b ctrlSetBackgroundColor _acc; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; } else { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor [0.92, 0.96, 0.93, 1]; };
                 [_b, _code] call _click;
             } forEach _opts;
-            _y = _y + _rowH * 0.9 + _pad / 2;
+            private _segRows = ceil (_n / _per) max 1;
+            _y = _y + _segRows * _rowH * 0.9 + (_segRows - 1) * _pad / 4 + _pad / 2;
         };
         case "info": {
             _row params ["", "_label", "_value"];
@@ -891,17 +926,25 @@ private _lineIdx = 0; // lignes "line" : fond alterné
         case "buttons": {
             private _btns = _row select 1;
             private _n = count _btns;
-            private _bw = (_w - (_n - 1) * _pad / 2) / (_n max 1);
+            // Comme « segment » : colonne étroite, les boutons dont le libellé ne tiendrait pas passent à la rangée suivante.
+            private _minF = COMSPEC_ATAK_FontMin max (_fs * 0.6);
+            private _longest = 0;
+            { _longest = _longest max (count ((((_x select 0) call comspec_atak_native_fnc_tr) splitString ""))); } forEach _btns;
+            private _needW = _longest * _minF * 0.55 * pixelW / pixelH;
+            private _per = _n max 1;
+            while { _per > 1 && {_needW > ((_w - (_per - 1) * _pad / 2) / _per) * 0.9} } do { _per = _per - 1; };
+            private _bw = (_w - (_per - 1) * _pad / 2) / _per;
             {
                 _x params ["_label", "_code", ["_primary", false], ["_enabled", true], ["_tip", ""]];
-                private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _forEachIndex * (_bw + _pad / 2), _y, _bw, _rowH], _label] call _mk;
+                private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + (_forEachIndex mod _per) * (_bw + _pad / 2), _y + (floor (_forEachIndex / _per)) * (_rowH + _pad / 4), _bw, _rowH], _label] call _mk;
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlSetFontHeight _btnFs;
                 [_b, _bw, _btnFs] call _fit;
                 _b ctrlEnable _enabled;
                 [_b, _code] call _click;
             } forEach _btns;
-            _y = _y + _rowH + _pad / 2;
+            private _bRows = ceil (_n / _per) max 1;
+            _y = _y + _bRows * _rowH + (_bRows - 1) * _pad / 4 + _pad / 2;
         };
         case "bar": {
             // Groupes titrés côte à côte (titre gris souligné de vert), passage à la ligne si les boutons deviennent

@@ -28,11 +28,11 @@
 
 /* ——— Colonne de page ———
  * Le bandeau, les encarts (avancement, visibilité, avis) et les onglets partagent
- * la même colonne centrée : plus rien ne colle au bord de la fenêtre. */
+ * toute la largeur de la page, avec une marge latérale : plus de vide à droite sur grand écran. */
 .personnel-file--public {
-  max-width: 80rem;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
   padding-left: 16px;
   padding-right: 16px;
   /* Respiration sous la barre du haut : le bandeau ne colle plus à l’en-tête. */
@@ -43,6 +43,22 @@
 }
 @media (min-width: 768px) {
   .personnel-file--public { padding-left: 32px; padding-right: 32px; }
+}
+@media (min-width: 1280px) {
+  .personnel-file--public { padding-left: 40px; padding-right: 40px; }
+}
+.personnel-file--public .personnel-file-hero__inner {
+  max-width: none;
+}
+
+/* Grilles de cartes et de champs : davantage de colonnes quand la place le permet. */
+@media (min-width: 1600px) {
+  .personnel-file .pf-grid-wide,
+  .personnel-file .pf-grid-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 2100px) {
+  .personnel-file .pf-grid-wide,
+  .personnel-file .pf-grid-fields { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 .personnel-file--public .personnel-file-hub {
   max-width: none;

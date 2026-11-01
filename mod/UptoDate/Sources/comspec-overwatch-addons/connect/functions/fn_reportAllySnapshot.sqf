@@ -40,7 +40,8 @@ private _extra = format [
     (_allyId splitString """" joinString "")
 ];
 
-"COMSPECExtension" callExtension ["UpdatePosition", [
+if (["UpdatePosition"] call comspec_overwatch_connect_fnc_uplinkHold) exitWith { false };
+(["COMSPECExtension", "UpdatePosition", [
     [_px, 2] call _fnc_num,
     [_py, 2] call _fnc_num,
     [_dir, 2] call _fnc_num,
@@ -54,5 +55,5 @@ private _extra = format [
     "",
     "",
     [_asl, 3] call _fnc_num
-]];
+]] call comspec_overwatch_connect_fnc_extDirect);
 true

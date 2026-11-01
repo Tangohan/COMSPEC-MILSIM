@@ -79,7 +79,8 @@ if (_ok) then {
 
     [{
         params ["_n"];
-        "COMSPECExtension" callExtension ["SendMarker", [_n, "{}", "1", "1"]];
+        // Liaison coupée : rien n'est envoyé, mais le marqueur local est quand même retiré.
+        if !(["SendMarker"] call comspec_overwatch_connect_fnc_uplinkHold) then { (["COMSPECExtension", "SendMarker", [_n, "{}", "1", "1"]] call comspec_overwatch_connect_fnc_extDirect); };
         deleteMarkerLocal _n;
     }, [_markerName], 600] call CBA_fnc_waitAndExecute;
 

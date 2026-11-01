@@ -40,7 +40,7 @@ if ((_out get "ctab") isEqualTo "") then {
 };
 
 private _dll = "";
-private _extRaw = ["COMSPECExtension" callExtension ["GetExtensionVersion", []]] call comspec_overwatch_connect_fnc_extResult;
+private _extRaw = [(["COMSPECExtension", "GetExtensionVersion", []] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 private _extParts = _extRaw splitString "|";
 if ((count _extParts) >= 2 && {(_extParts select 0) isEqualTo "OK"}) then {
     private _bits = (_extParts select 1) splitString " ";

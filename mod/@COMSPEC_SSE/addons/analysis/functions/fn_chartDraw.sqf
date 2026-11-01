@@ -28,19 +28,26 @@ private _clear = "#(rgba,8,8,3)color(0,0,0,0)";
     };
 } forEach _edges;
 
-private _icons = createHashMapFromArray [
-    ["org", "\A3\ui_f\data\map\markers\nato\o_hq.paa"],
-    ["person", "\A3\ui_f\data\map\vehicleicons\iconMan_ca.paa"],
-    ["vehicle", "\A3\ui_f\data\map\vehicleicons\iconCar_ca.paa"],
-    ["device", "\A3\ui_f\data\igui\cfg\simpleTasks\types\radio_ca.paa"],
-    ["doc", "\A3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"],
-    ["weapon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\rifle_ca.paa"],
-    ["place", "\A3\ui_f\data\map\markers\military\flag_ca.paa"],
-    ["object", "\A3\ui_f\data\igui\cfg\simpleTasks\types\box_ca.paa"]
-];
-private _threat = createHashMapFromArray [
-    ["faible", [0.55, 0.85, 0.55]], ["moyenne", [0.95, 0.78, 0.3]], ["elevee", [0.95, 0.5, 0.25]], ["critique", [0.95, 0.27, 0.25]]
-];
+// Tables fixes créées une seule fois (avant : deux hashmaps recréées à chaque image).
+private _icons = uiNamespace getVariable "comspec_sse_chartIcons";
+private _threat = uiNamespace getVariable "comspec_sse_chartThreat";
+if (isNil "_icons" || {isNil "_threat"}) then {
+    _icons = createHashMapFromArray [
+        ["org", "\A3\ui_f\data\map\markers\nato\o_hq.paa"],
+        ["person", "\A3\ui_f\data\map\vehicleicons\iconMan_ca.paa"],
+        ["vehicle", "\A3\ui_f\data\map\vehicleicons\iconCar_ca.paa"],
+        ["device", "\A3\ui_f\data\igui\cfg\simpleTasks\types\radio_ca.paa"],
+        ["doc", "\A3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"],
+        ["weapon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\rifle_ca.paa"],
+        ["place", "\A3\ui_f\data\map\markers\military\flag_ca.paa"],
+        ["object", "\A3\ui_f\data\igui\cfg\simpleTasks\types\box_ca.paa"]
+    ];
+    _threat = createHashMapFromArray [
+        ["faible", [0.55, 0.85, 0.55]], ["moyenne", [0.95, 0.78, 0.3]], ["elevee", [0.95, 0.5, 0.25]], ["critique", [0.95, 0.27, 0.25]]
+    ];
+    uiNamespace setVariable ["comspec_sse_chartIcons", _icons];
+    uiNamespace setVariable ["comspec_sse_chartThreat", _threat];
+};
 private _orgs = missionNamespace getVariable ["comspec_sse_orgs", createHashMap];
 
 {

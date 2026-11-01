@@ -24,7 +24,7 @@ if (_armaName isEqualTo "") exitWith {
         if (_name isEqualTo "") then { continue };
         private _delFlag = if (_del) then { "1" } else { "0" };
         private _payload = if (_del) then { "{}" } else { _body };
-        "COMSPECExtension" callExtension ["SendMarker", [_name, _payload, "1", _delFlag]];
+        (["COMSPECExtension", "SendMarker", [_name, _payload, "1", _delFlag]] call comspec_overwatch_connect_fnc_extDirect);
         _n = _n + 1;
     } forEach _queue;
     missionNamespace setVariable ["COMSPEC_PendingMarkers", [], false];

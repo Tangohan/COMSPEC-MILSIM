@@ -15,7 +15,7 @@ private _prev = missionNamespace getVariable ["COMSPEC_ATAK_SyncStats", createHa
 if ((count _prev) > 0 && {diag_tickTime - (_prev getOrDefault ["at", -1e9]) < 2}) exitWith { _prev };
 if (missionNamespace getVariable ["COMSPEC_ATAK_SyncStatsNo", false]) exitWith { _out };
 
-private _raw = ("COMSPECExtension" callExtension ["SyncStats", []]) select 0;
+private _raw = ((["COMSPECExtension", "SyncStats", []] call comspec_overwatch_connect_fnc_extDirect)) select 0;
 if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith {
     // COMSPEC Link plus ancien : plus redemandé de la mission.
     missionNamespace setVariable ["COMSPEC_ATAK_SyncStatsNo", true];

@@ -55,7 +55,7 @@ private _save = {
 private _metaOk = {
     private _k = missionNamespace getVariable "COMSPEC_ATAK_PhotoMetaOk";
     if (!isNil "_k") exitWith { _k };
-    private _v = "COMSPECExtension" callExtension ["GetExtensionVersion", []];
+    private _v = (["COMSPECExtension", "GetExtensionVersion", []] call comspec_overwatch_connect_fnc_extDirect);
     if (_v isEqualType []) then { _v = _v param [0, ""]; };
     if !(_v isEqualType "") then { _v = str _v; };
     // « OK|COMSPECExtension 2.0.66 » ; vide : DLL pas encore chargée, on redemandera.
@@ -504,7 +504,7 @@ switch (_act) do {
         private _path = call _find;
         if (_path isEqualTo []) then { ["list"] call comspec_atak_native_fnc_photoLibrary; _path = call _find; };
         if (_path isEqualTo []) then { _path = [_file]; };
-        "COMSPECExtension" callExtension ["DeleteLocalFile", [_path select 0]];
+        (["COMSPECExtension", "DeleteLocalFile", [_path select 0]] call comspec_overwatch_connect_fnc_extDirect);
         _lib deleteAt _arg;
         call _store;
         if (_cur isEqualTo _arg) then { _s set ["dronePhEdit", -1]; } else { if (_cur > _arg) then { _s set ["dronePhEdit", _cur - 1]; }; };

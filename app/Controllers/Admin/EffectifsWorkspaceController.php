@@ -1129,7 +1129,7 @@ class EffectifsWorkspaceController
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css'],
             'loadDecorationsKit' => true,
         ]);
     }
