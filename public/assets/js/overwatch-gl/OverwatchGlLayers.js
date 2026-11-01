@@ -1296,6 +1296,7 @@ window.OverwatchGlLayers = (function () {
           getPosition: function (d) { return d.position; },
           getIcon: function (d) {
             return {
+              id: d.icon.id || d.icon.url,
               url: d.icon.url,
               width: d.icon.width || 34,
               height: d.icon.height || 34,

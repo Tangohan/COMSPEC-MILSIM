@@ -4,7 +4,7 @@ window.OverwatchGlSymbols = (function () {
 
   var cache = {};
   var cacheOrder = [];
-  var CACHE_MAX = 240;
+  var CACHE_MAX = 500;
 
   function nato() {
     return window.NatoSidcIcons || null;
@@ -104,9 +104,16 @@ window.OverwatchGlSymbols = (function () {
     return ageSecOf(unit) > 180 ? 'A' : 'P';
   }
 
+  /* Échelon ORBAT du chef d'unité (atak-overwatch-orbat.js), vide sinon. */
+  function echelonOf(unit) {
+    var O = window.OverwatchOrbat;
+    return O && typeof O.echelonForUnit === 'function' ? O.echelonForUnit(unit) : '';
+  }
+
   function symbolOpts(unit, callsign) {
     var N = nato();
     var ex = extrasOf(unit);
+    var echelon = echelonOf(unit);
     var fields = N && N.symbolFieldsFromUnit
       ? N.symbolFieldsFromUnit(unit, ex)
       : {
@@ -123,8 +130,10 @@ window.OverwatchGlSymbols = (function () {
       : 'infantry';
     var heading = headingOf(unit);
     var sidc = fields.sidc || '';
-    if (!sidc && N && N.resolveSidc) {
+    if (N && N.resolveSidc) {
       sidc = N.resolveSidc({
+        sidc: sidc,
+        echelon: echelon,
         affiliation: fields.affiliation,
         role: fields.role,
         roleKey: roleKey,
@@ -159,10 +168,16 @@ window.OverwatchGlSymbols = (function () {
       opts.sidc || '',
       opts.affiliation || '',
       opts.roleKey || '',
-      opts.heading == null ? '' : Math.round(Number(opts.heading) / 15) * 15,
+      headingBucket(opts),
       opts.health || '',
       opts.size || 34
     ].join('|');
+  }
+
+  /* Cap arrondi à 15° : la clé du cache et le symbole dessiné utilisent la même valeur. */
+  function headingBucket(opts) {
+    if (opts.heading == null || !isFinite(Number(opts.heading))) return '';
+    return (Math.round(Number(opts.heading) / 15) * 15) % 360;
   }
 
   function remember(key, value) {
@@ -200,9 +215,8 @@ window.OverwatchGlSymbols = (function () {
         fill: true,
         frame: true
       };
-      if (opts.heading != null && isFinite(Number(opts.heading))) {
-        symOpts.direction = Number(opts.heading);
-      }
+      var heading = headingBucket(opts);
+      if (heading !== '') symOpts.direction = heading;
       var sym = new window.ms.Symbol(sidc, symOpts);
       if (sym.isValid && sym.isValid() === false) return null;
       /* 2–3× la taille affichée pour netteté / anti-scintillement. */
@@ -253,7 +267,7 @@ window.OverwatchGlSymbols = (function () {
         role: opts.role,
         roleKey: opts.roleKey,
         size: size,
-        heading: opts.heading,
+        heading: headingBucket(opts),
         showLabel: false,
         health: opts.health
       })
@@ -279,6 +293,8 @@ window.OverwatchGlSymbols = (function () {
     var key = cacheKey(opts);
     if (cache[key]) return cache[key];
     var icon = milsymbolIcon(opts) || fallbackIcon(opts);
+    /* id = clé de l'atlas deck.gl : une entrée par symbole distinct, pas par URL de données. */
+    icon.id = key;
     return remember(key, icon);
   }
 

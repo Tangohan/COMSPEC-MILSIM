@@ -5,6 +5,10 @@ import { renderMarkerHtml, renderClusterHtml, markerHoverLines } from './Tactica
 import { computeLOD, applyDisplaySize } from './MarkerLOD.js';
 import { MarkerClusterManager } from './MarkerClusterManager.js';
 
+function posSigOf(latlng) {
+  return Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
+}
+
 export class MarkerManager {
   /**
    * @param {object} opts
@@ -161,7 +165,7 @@ export class MarkerManager {
     const extraH = lodOpts.showCallsign ? Math.round(labelPx * 1.8 + 12) : 8;
     const labelW = lodOpts.showCallsign ? Math.max(size + 24, Math.round(labelPx * 8)) : size;
     const sig = html + '|' + size + '|' + extraH + '|' + labelW;
-    const posSig = Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
+    const posSig = posSigOf(latlng);
 
     let marker = this.markers.get(id);
 
@@ -188,7 +192,7 @@ export class MarkerManager {
     } else {
       marker = this.L.marker(latlng, { icon: icon, interactive: true, zIndexOffset: 850 });
       marker.on('click', () => {
-        this._emitSelect(entity);
+        this._emitSelect(marker._tacEntity || entity);
       });
       marker.addTo(this.layerGroup);
       this.markers.set(id, marker);
@@ -200,6 +204,25 @@ export class MarkerManager {
     if (window.ATAKMarkerSizes && window.ATAKMarkerSizes.bindSelectVisual) {
       window.ATAKMarkerSizes.bindSelectVisual(marker);
     }
+  }
+
+  /**
+   * Relecture fluide : déplace un symbole existant sans événement global ;
+   * le symbole n'est redessiné que si le cap change de tranche de 15°.
+   */
+  moveEntity(id, latlng, heading) {
+    const marker = this.markers.get(String(id));
+    if (!marker || !latlng) return;
+    const h = heading != null && heading !== '' && isFinite(Number(heading))
+      ? Math.round(Number(heading) / 15) * 15
+      : null;
+    const ent = marker._tacEntity;
+    if (ent && h !== null && h !== ent.heading) {
+      this._upsertMarker(Object.assign({}, ent, { heading: h }), computeLOD(this._lastZoom), latlng, this._readPrefs());
+      return;
+    }
+    marker.setLatLng(latlng);
+    marker._tacPosSig = posSigOf(latlng);
   }
 
   _bindHover(marker, entity) {

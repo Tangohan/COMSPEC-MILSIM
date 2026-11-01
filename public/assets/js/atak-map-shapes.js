@@ -158,6 +158,8 @@ window.ATAKMapShapes = (function () {
     }
     var geom = s.geometry || {};
     var color = s.color || '#34d399';
+    // Toile partagée (canvas) ; le halo flou reste en SVG car le flou CSS ne s'applique pas au canvas.
+    var renderer = window.ATAKMap && window.ATAKMap.getVectorRenderer ? window.ATAKMap.getVectorRenderer('shapes') : undefined;
     var label = s.label || s.type || '';
     var meta = s.meta || {};
     var kind = meta.kind || '';
@@ -182,6 +184,7 @@ window.ATAKMapShapes = (function () {
       if (latlngs.length >= 2) {
         if (type === 'POLYGON') {
           var polyOpts = {
+            renderer: renderer,
             color: color,
             weight: s.stroke || 2,
             fillOpacity: s.fill_opacity != null ? s.fill_opacity : 0.12
@@ -198,7 +201,7 @@ window.ATAKMapShapes = (function () {
           }
           obj = L.polygon(latlngs, polyOpts);
         } else {
-          obj = L.polyline(latlngs, { color: color, weight: s.stroke || 2, opacity: 0.95 });
+          obj = L.polyline(latlngs, { renderer: renderer, color: color, weight: s.stroke || 2, opacity: 0.95 });
         }
       }
     } else if (type === 'CIRCLE') {
@@ -219,6 +222,7 @@ window.ATAKMapShapes = (function () {
             }));
           }
           obj = L.circle(cll, {
+            renderer: renderer,
             radius: radius,
             color: color,
             fillColor: color,

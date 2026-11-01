@@ -386,6 +386,8 @@ window.ATAKTerrain = (function () {
       var labels = flags.altitudes;
       contourLayer = window.L.geoJSON(geo, {
         pane: 'atakContourPane',
+        // Toile canvas partagée : des milliers d'isolignes en SVG ralentissent fortement le téléphone.
+        renderer: window.ATAKMap.getVectorRenderer ? window.ATAKMap.getVectorRenderer('contours') : undefined,
         interactive: false,
         coordsToLatLng: function (c) {
           return window.ATAKMap.latLngFromWorld(c[0], c[1]);

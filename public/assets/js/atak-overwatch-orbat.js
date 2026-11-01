@@ -16,7 +16,9 @@
     selectedId: '',
     query: '',
     loadError: '',
-    loading: false
+    loading: false,
+    autoLoaded: false,
+    echelonByBft: {}
   };
 
   function ow() {
@@ -203,7 +205,20 @@
     enrichWithBft(list, units);
     state.entities = list;
     state.byId = {};
-    list.forEach(function (e) { state.byId[e.id] = e; });
+    state.echelonByBft = {};
+    list.forEach(function (e) {
+      state.byId[e.id] = e;
+      // Le chef porte l'échelon de son unité sur la carte (symbole OTAN).
+      var bft = e.commander && e.commander.bft;
+      var uid = bft && beta && beta.unitId ? String(beta.unitId(bft)) : '';
+      if (uid && e.echelon && !state.echelonByBft[uid]) state.echelonByBft[uid] = e.echelon;
+    });
+  }
+
+  function echelonForUnit(unit) {
+    var beta = ow();
+    var uid = unit && beta && beta.unitId ? String(beta.unitId(unit)) : '';
+    return uid ? (state.echelonByBft[uid] || '') : '';
   }
 
   function loadRoster() {
@@ -592,7 +607,14 @@
   }
 
   function onUnitsUpdated() {
-    if (!state.roster) return;
+    if (!state.roster) {
+      // Une seule lecture de l'ORBAT par session, pour les échelons des symboles.
+      if (!state.autoLoaded && !state.loading && !(window.ATAK_CAPS && window.ATAK_CAPS.phoneSession)) {
+        state.autoLoaded = true;
+        loadRoster();
+      }
+      return;
+    }
     rebuildEntities();
     if (state.active) {
       renderTree();
@@ -714,6 +736,7 @@
     reload: loadRoster,
     getEntities: function () { return state.entities.slice(); },
     getEntity: function (id) { return state.byId[id] || null; },
+    echelonForUnit: echelonForUnit,
     select: selectEntity
   };
 

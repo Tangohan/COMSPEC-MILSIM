@@ -5,8 +5,23 @@ window.ATAKReplay = (function () {
   var events = [];
   var sourceEvents = [];
   var index = 0;
-  var timer = null;
   var active = false;
+  /* Lecture continue : horloge t = t0 + écoulé × vitesse, une image par rafraîchissement d'écran. */
+  var HOLD_MS = 90000; /* = ReplayTimelineBuilder::HOLD_SECONDS : au-delà, pas d'interpolation (trou d'enregistrement). */
+  var FULL_REFRESH_MS = 250; /* rafraîchissement complet (panneaux, apparitions) au plus 4 fois par seconde */
+  var MOVE_MIN_MS = 30; /* déplacements à ~30 images par seconde */
+  var TRAIL_MS = 120000;
+  var TRAIL_POINTS = 30;
+  var frameMs = [];
+  var playT = NaN;
+  var playing = false;
+  var rafId = 0;
+  var clockT0 = 0;
+  var clockWall0 = 0;
+  var lastFullAt = 0;
+  var lastMoveAt = 0;
+  var lastInfoAt = 0;
+  var pairCache = null;
   var loaded = false;
   var bound = false;
   var eventFilter = 'all';
@@ -75,17 +90,176 @@ window.ATAKReplay = (function () {
   }
 
   function stopTimer() {
-    if (timer) {
-      clearInterval(timer);
-      timer = null;
+    playing = false;
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
     }
   }
 
-  function speedMs() {
+  function speedFactor() {
     var sel = el('atak-replay-speed');
     var sp = sel ? parseFloat(sel.value) : 1;
-    if (!sp || sp < 0.25) sp = 1;
-    return Math.max(40, Math.round(500 / sp));
+    return sp > 0 ? sp : 1;
+  }
+
+  /* Cap interpolé par le plus court chemin (350° → 10° passe par 0°, pas par 180°). */
+  function lerpHeading(a, b, k) {
+    var ha = Number(a);
+    var hb = Number(b);
+    if (a == null || a === '' || !isFinite(ha)) return b;
+    if (b == null || b === '' || !isFinite(hb)) return a;
+    var d = ((hb - ha + 540) % 360) - 180;
+    return ((ha + d * k) % 360 + 360) % 360;
+  }
+
+  function replayUnitId(u, i) {
+    return 'replay_' + String(u.unitId || u.callsign || ('U' + i));
+  }
+
+  /* Dernière image dont l'heure est <= t (recherche dichotomique). */
+  function frameIndexAt(t) {
+    var lo = 0;
+    var hi = frameMs.length - 1;
+    if (hi < 0) return 0;
+    if (t <= frameMs[0]) return 0;
+    while (lo < hi) {
+      var mid = (lo + hi + 1) >> 1;
+      if (frameMs[mid] <= t) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo;
+  }
+
+  function pairAt(i) {
+    if (pairCache && pairCache.i === i && pairCache.frame === timeline[i]) return pairCache;
+    var next = {};
+    (((timeline[i + 1] || {}).units) || []).forEach(function (u, idx) { next[replayUnitId(u, idx)] = u; });
+    pairCache = { i: i, frame: timeline[i], units: ((timeline[i] || {}).units) || [], next: next };
+    return pairCache;
+  }
+
+  /* Positions entre l'image i et la suivante à l'instant t : position linéaire, cap au plus court. */
+  function interpolatedMoves(i, t) {
+    var pair = pairAt(i);
+    var ta = frameMs[i];
+    var tb = frameMs[i + 1];
+    var k = (tb > ta && tb - ta <= HOLD_MS) ? Math.max(0, Math.min(1, (t - ta) / (tb - ta))) : 0;
+    return pair.units.map(function (u, idx) {
+      var id = replayUnitId(u, idx);
+      var x = Number(u.x);
+      var y = Number(u.y);
+      var h = u.heading;
+      var nb = k > 0 ? pair.next[id] : null;
+      if (nb && isFinite(Number(nb.x)) && isFinite(Number(nb.y))) {
+        x += (Number(nb.x) - x) * k;
+        y += (Number(nb.y) - y) * k;
+        h = lerpHeading(u.heading, nb.heading, k);
+      }
+      return { id: id, pos_x: x, pos_y: y, heading: h };
+    });
+  }
+
+  /* Traînées : dernières positions enregistrées (2 min de jeu au plus) de chaque unité de l'image i. */
+  function drawTrails(i) {
+    var tracks = window.ATAKTrackRendererC2;
+    if (!tracks || typeof tracks.updateTracks !== 'function') return;
+    var prefs = window.ATAKMap && window.ATAKMap.getDisplayPrefs ? window.ATAKMap.getDisplayPrefs() : {};
+    if (prefs.showUnitTrails === false) {
+      tracks.updateTracks([]);
+      return;
+    }
+    var byId = {};
+    var tEnd = frameMs[i];
+    for (var j = Math.max(0, i - TRAIL_POINTS + 1); j <= i; j++) {
+      if (tEnd - frameMs[j] > TRAIL_MS) continue;
+      ((timeline[j] && timeline[j].units) || []).forEach(function (u, idx) {
+        var id = replayUnitId(u, idx);
+        var x = Number(u.x);
+        var y = Number(u.y);
+        if (!isFinite(x) || !isFinite(y)) return;
+        (byId[id] = byId[id] || []).push({ x: x, y: y, t: frameMs[j] });
+      });
+    }
+    tracks.updateTracks(Object.keys(byId).map(function (id) { return { id: id, points: byId[id] }; }));
+  }
+
+  function clearTrails() {
+    var tracks = window.ATAKTrackRendererC2;
+    if (tracks && typeof tracks.clear === 'function') tracks.clear();
+  }
+
+  function syncSlider() {
+    var slider = el('atak-replay-slider');
+    if (!slider) return;
+    var span = frameMs.length ? Math.max(0, Math.round((frameMs[frameMs.length - 1] - frameMs[0]) / 1000)) : 0;
+    slider.min = '0';
+    slider.max = String(span);
+    slider.step = '1';
+  }
+
+  function updateCursor(t) {
+    var slider = el('atak-replay-slider');
+    if (slider && frameMs.length) slider.value = String(Math.round((t - frameMs[0]) / 1000));
+  }
+
+  function updateInfo(t) {
+    var info = el('atak-replay-info');
+    var frame = timeline[index];
+    if (!info || !frame) return;
+    var n = frame.units ? frame.units.length : 0;
+    info.textContent = (index + 1) + ' / ' + timeline.length + ' · ' + formatTs(isFinite(t) ? Math.round(t) : frame.timestamp)
+      + (n ? ' · ' + n + ' sur la carte' : '');
+  }
+
+  /* Affiche l'instant t : image encadrante complète si elle a changé, puis positions interpolées. */
+  function showAt(t, now, force) {
+    if (!frameMs.length) return;
+    var i = frameIndexAt(t);
+    playT = t;
+    if (force || i !== index || !active) {
+      if (force || now - lastFullAt >= FULL_REFRESH_MS) {
+        applyFrame(i, { at: t });
+        lastFullAt = now;
+      }
+    }
+    if (force || now - lastMoveAt >= MOVE_MIN_MS) {
+      lastMoveAt = now;
+      if (window.ATAKMap && window.ATAKMap.moveUnitMarkers) {
+        window.ATAKMap.moveUnitMarkers(interpolatedMoves(i, t));
+      }
+    }
+    updateCursor(t);
+    if (force || now - lastInfoAt >= FULL_REFRESH_MS) {
+      lastInfoAt = now;
+      updateInfo(t);
+    }
+  }
+
+  function tick(now) {
+    rafId = 0;
+    if (!playing || !frameMs.length) return;
+    var last = frameMs.length - 1;
+    var t = clockT0 + (now - clockWall0) * speedFactor();
+    if (t >= frameMs[last]) {
+      stopTimer();
+      showAt(frameMs[last], now, true);
+      return;
+    }
+    var i = frameIndexAt(t);
+    if (frameMs[i + 1] - frameMs[i] > HOLD_MS) {
+      // Trou d'enregistrement (pause, autre session) : on passe directement à la reprise.
+      t = frameMs[i + 1];
+      clockT0 = t;
+      clockWall0 = now;
+    }
+    showAt(t, now, false);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function restartClock() {
+    clockT0 = playT;
+    clockWall0 = performance.now();
   }
 
   /* Date et heure locales (fuseau du navigateur) : la base est en UTC, l'heure seule ne disait pas quel jour. */
@@ -136,7 +310,7 @@ window.ATAKReplay = (function () {
         extra.affiliation = extra.phone_geoloc ? 'unknown' : 'friend';
       }
       return {
-        id: 'replay_' + String(u.unitId || cs || i),
+        id: replayUnitId(u, i),
         call_sign: cs,
         pos_x: u.x,
         pos_y: u.y,
@@ -300,18 +474,18 @@ window.ATAKReplay = (function () {
       })
       .map(frameForOperator)
       .filter(Boolean);
+    frameMs = timeline.map(function (f) { return parseTsMs(f.timestamp); });
+    pairCache = null;
     index = Math.max(0, Math.min(index, Math.max(0, timeline.length - 1)));
-    var slider = el('atak-replay-slider');
-    if (slider) {
-      slider.min = '0';
-      slider.max = String(Math.max(0, timeline.length - 1));
-      slider.value = String(index);
-    }
+    syncSlider();
     if (!timeline.length) {
+      playT = NaN;
       updateEmptyInfo();
       renderEventsList(false);
       return;
     }
+    playT = frameMs[index];
+    updateCursor(playT);
     applyFrame(index, { previewOnly: !active });
   }
 
@@ -373,14 +547,7 @@ window.ATAKReplay = (function () {
     if (!timeline.length) return;
     index = Math.max(0, Math.min(i, timeline.length - 1));
     var frame = timeline[index];
-    var slider = el('atak-replay-slider');
-    if (slider) slider.value = String(index);
-    var info = el('atak-replay-info');
-    if (info) {
-      var n = (frame && frame.units) ? frame.units.length : 0;
-      info.textContent = (index + 1) + ' / ' + timeline.length + ' · ' + formatTs(frame && frame.timestamp)
-        + (n ? ' · ' + n + ' sur la carte' : '');
-    }
+    updateInfo(opts.at);
     renderLegend(frame);
     renderEventsList(true);
     if (!opts.previewOnly) {
@@ -389,6 +556,7 @@ window.ATAKReplay = (function () {
       if (window.ATAKMap && window.ATAKMap.setUnitsMarkers) {
         window.ATAKMap.setUnitsMarkers(frameToUnits(frame), { fromReplay: true });
       }
+      drawTrails(index);
     }
   }
 
@@ -407,6 +575,14 @@ window.ATAKReplay = (function () {
       slider.max = '0';
       slider.value = '0';
     }
+  }
+
+  /* Curseur : secondes depuis la première image. */
+  function seekToSlider(value) {
+    if (!frameMs.length) return;
+    var t = frameMs[0] + (parseFloat(value) || 0) * 1000;
+    showAt(Math.min(t, frameMs[frameMs.length - 1]), performance.now(), true);
+    restartClock();
   }
 
   function windowQuery(forAar) {
@@ -600,13 +776,11 @@ window.ATAKReplay = (function () {
     }
     stopTimer();
     setActive(true);
-    timer = setInterval(function () {
-      if (index >= timeline.length - 1) {
-        pause();
-        return;
-      }
-      applyFrame(index + 1);
-    }, speedMs());
+    if (!isFinite(playT) || playT >= frameMs[frameMs.length - 1]) playT = frameMs[0];
+    showAt(playT, performance.now(), true);
+    restartClock();
+    playing = true;
+    rafId = requestAnimationFrame(tick);
   }
 
   function pause() {
@@ -617,6 +791,7 @@ window.ATAKReplay = (function () {
     pause();
     setActive(false);
     clearOverlay();
+    clearTrails();
     if (window.ATAKUnits && typeof window.ATAKUnits.fetchUnits === 'function') {
       window.ATAKUnits.fetchUnits();
     }
@@ -676,12 +851,13 @@ window.ATAKReplay = (function () {
     if (slider) {
       slider.addEventListener('input', function () {
         pause();
-        applyFrame(parseInt(slider.value, 10) || 0);
+        seekToSlider(slider.value);
       });
     }
     if (speed) {
       speed.addEventListener('change', function () {
-        if (timer) play();
+        // Même instant, nouvelle vitesse : l'horloge repart de la position affichée.
+        if (playing) restartClock();
       });
     }
     if (filter) {

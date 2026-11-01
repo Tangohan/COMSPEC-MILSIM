@@ -70,14 +70,57 @@ window.ATAKCollapse = (function () {
     bindOne(el);
   }
 
+  /*
+   * Carte plein écran (mode tablette) : replie l'en-tête et les panneaux (classe atak-map-focus, voir atak.css)
+   * et passe le navigateur en plein écran quand il le permet. Pas mémorisé : on revient toujours à l'écran normal.
+   */
+  var browserFullscreen = false;
+
+  function setMapFocus(on) {
+    on = !!on;
+    document.body.classList.toggle('atak-map-focus', on);
+    document.querySelectorAll('[data-atak-map-focus]').forEach(function (btn) {
+      if (!btn.classList.contains('atak-map-focus-exit')) btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    try {
+      var root = document.documentElement;
+      if (on && !document.fullscreenElement && root.requestFullscreen) {
+        root.requestFullscreen().then(function () { browserFullscreen = true; }).catch(function () {});
+      } else if (!on && browserFullscreen && document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(function () {});
+      }
+    } catch (e) {}
+    if (!on) browserFullscreen = false;
+    // La carte suit sa nouvelle taille (ResizeObserver / resize de atak-map.js).
+    try { window.dispatchEvent(new Event('resize')); } catch (e2) {}
+  }
+
+  function bindMapFocus() {
+    document.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('[data-atak-map-focus]') : null;
+      if (!btn) return;
+      e.preventDefault();
+      setMapFocus(!document.body.classList.contains('atak-map-focus'));
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.body.classList.contains('atak-map-focus') && !document.fullscreenElement) setMapFocus(false);
+    });
+    // Sortie du plein écran par le navigateur (Échap, geste retour) : on rouvre aussi les barres.
+    document.addEventListener('fullscreenchange', function () {
+      if (!document.fullscreenElement && browserFullscreen && document.body.classList.contains('atak-map-focus')) setMapFocus(false);
+    });
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () { bind(document); });
   } else {
     bind(document);
   }
+  bindMapFocus();
 
   return {
     bind: bind,
+    setMapFocus: setMapFocus,
     apply: apply,
     isOpen: isOpen,
     setOpen: setOpen
