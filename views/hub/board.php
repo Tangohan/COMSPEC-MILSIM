@@ -73,7 +73,7 @@ require __DIR__ . '/partials/shell_open.php';
             </div>
             <div class="hx-field">
               <label for="hx-b-game">Jeu</label>
-              <input id="hx-b-game" class="hx-input" name="game_label" maxlength="80" placeholder="Arma 3, Arma Reforger, Squad…">
+              <input id="hx-b-game" class="hx-input" name="game_label" maxlength="80" placeholder="Arma 3, Arma Reforger, Squad…" list="athena-game-list" autocomplete="off" data-game-suggest> <?php require base_path('views/partials/game_label_suggest.php'); ?>
             </div>
             <div class="hx-field">
               <label for="hx-b-date">Date et heure</label>

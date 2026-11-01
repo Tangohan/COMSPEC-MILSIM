@@ -516,6 +516,11 @@ class Container
                 self::get(\App\Repositories\GameEquipmentRepository::class),
                 self::get(\App\Repositories\ArsenalWardrobeRepository::class)
             ),
+            \App\Services\GameEquipment\DotationOverviewService::class => new \App\Services\GameEquipment\DotationOverviewService(
+                self::get(\App\Repositories\GameEquipmentRepository::class),
+                self::get(\App\Repositories\GameRoleKitRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class)
+            ),
             \App\Controllers\Admin\Organization\GameEquipmentAdminController::class => new \App\Controllers\Admin\Organization\GameEquipmentAdminController(
                 self::get(\App\Repositories\GameEquipmentRepository::class),
                 self::get(\App\Repositories\GameRoleKitRepository::class),
@@ -632,6 +637,7 @@ class Container
             ),
             \App\Services\Cron\Jobs\PhotoCompressCronJob::class => new \App\Services\Cron\Jobs\PhotoCompressCronJob(),
             \App\Services\Cron\Jobs\PlanEndWarningCronJob::class => new \App\Services\Cron\Jobs\PlanEndWarningCronJob(),
+            \App\Services\Cron\Jobs\LowMemberOrgRemindersCronJob::class => new \App\Services\Cron\Jobs\LowMemberOrgRemindersCronJob(),
             \App\Services\Cron\Jobs\YearReviewMailCronJob::class => new \App\Services\Cron\Jobs\YearReviewMailCronJob(),
             \App\Services\Cron\Jobs\DiscordLinkedRolesSyncCronJob::class => new \App\Services\Cron\Jobs\DiscordLinkedRolesSyncCronJob(),
             \App\Services\Email\MailBudgetGate::class => new \App\Services\Email\MailBudgetGate(
@@ -709,6 +715,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\AdvancementSeniorityCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PhotoCompressCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PlanEndWarningCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\LowMemberOrgRemindersCronJob::class),
                     self::get(\App\Services\Cron\Jobs\YearReviewMailCronJob::class),
                     self::get(\App\Services\Cron\Jobs\DiscordLinkedRolesSyncCronJob::class),
                     self::get(\App\Services\Cron\Jobs\MailQueueCronJob::class),
@@ -1495,6 +1502,14 @@ class Container
                 self::get(\App\Services\Personnel\UnitReadinessService::class)
             ),
             \App\Repositories\CompetencyGradeRequirementRepository::class => new \App\Repositories\CompetencyGradeRequirementRepository(),
+            \App\Repositories\CompetencyLinkRepository::class => new \App\Repositories\CompetencyLinkRepository(),
+            \App\Repositories\CompetencyPathwayRepository::class => new \App\Repositories\CompetencyPathwayRepository(),
+            \App\Services\Training\CompetencyCatalogService::class => new \App\Services\Training\CompetencyCatalogService(
+                self::get(\App\Repositories\CompetencyGradeRequirementRepository::class),
+                self::get(\App\Repositories\CompetencyLinkRepository::class),
+                new \App\Repositories\CompetencyModuleRepository(),
+                self::get(\App\Repositories\CompetencyPathwayRepository::class),
+            ),
             \App\Controllers\Admin\Organization\CompetencyMatrixController::class => new \App\Controllers\Admin\Organization\CompetencyMatrixController(
                 self::get(\App\Repositories\CompetencyGradeRequirementRepository::class),
                 self::get(\App\Repositories\GradeRepository::class)

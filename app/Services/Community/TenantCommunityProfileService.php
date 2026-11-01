@@ -397,7 +397,7 @@ final class TenantCommunityProfileService
 
         $c['registry_listed'] = (string) $request->input('registry_listed', '1') !== '0';
 
-        $c['game_label'] = $this->clip((string) $request->input('game_label', ''), 120);
+        $c['game_label'] = $this->clip(\App\Support\GameCatalog::normalize((string) $request->input('game_label', '')), 120);
         $c['main_mods'] = $this->clip((string) $request->input('main_mods', ''), 4000);
         $modpack = trim((string) $request->input('modpack_size_gb', ''));
         $c['modpack_size_gb'] = $modpack === '' ? null : $this->clip($modpack, 32);

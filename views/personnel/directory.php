@@ -152,6 +152,8 @@ foreach ($results as $row) {
         'gradeOrder' => (int) ($row['grade_sort_order'] ?? 999),
         'matricule' => $matricule,
         'unitName' => $unitName,
+        'anonymized' => !empty($row['anonymized']),
+        'unitRedacted' => !empty($row['assignment_redacted']),
         'unitCode' => $unitCode,
         'unitKey' => $unitKey,
         'unitTooltip' => $unitTooltip !== '' ? $unitTooltip : ($unitName !== '' ? 'Unité : ' . $unitName : ''),
@@ -301,7 +303,7 @@ $unitCount = count(array_filter(array_keys($units), static fn ($k) => $k !== '__
                     <div class="pd-ident">
                         <p class="pd-grade"><?= $p['grade'] !== '' ? $e($p['grade']) : '<em>Grade non renseigné</em>' ?></p>
                         <h2 class="pd-name">
-                            <a href="<?= $e($p['href']) ?>" class="pd-name__link<?= \App\Services\Billing\DonorService::nameClass((int) $p['uid']) ?><?= staff_name_class((int) $p['uid']) ?>" data-staff-done><?= $e($p['name']) ?></a><?= staff_mark((int) $p['uid']) ?><?= \App\Services\Billing\DonorService::mark((int) $p['uid']) ?>
+                            <a href="<?= $e($p['href']) ?>" class="pd-name__link<?= \App\Services\Billing\DonorService::nameClass((int) $p['uid']) ?><?= staff_name_class((int) $p['uid']) ?>" data-staff-done><?= $p['anonymized'] ? \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::PERSON_ANONYMIZED, $p['name'], true) : $e($p['name']) ?></a><?php if (!$p['anonymized']): ?><?= staff_mark((int) $p['uid']) ?><?= \App\Services\Billing\DonorService::mark((int) $p['uid']) ?><?php endif; ?>
                             <?php if ($p['isMe']): ?><span class="pd-me">Vous</span><?php endif; ?>
                         </h2>
                         <?php if ($p['fullName'] !== '' && $p['fullName'] !== $p['name']): ?>
@@ -322,7 +324,7 @@ $unitCount = count(array_filter(array_keys($units), static fn ($k) => $k !== '__
                 </div>
 
                 <div class="pd-card__assign">
-                    <p class="pd-unit" title="<?= $e($p['unitTooltip']) ?>"><?= $p['unitName'] !== '' ? $e(\App\Support\UnitAbbreviation::standalone($p['unitName'])) : '<span class="pd-muted">Non affecté</span>' ?></p>
+                    <p class="pd-unit" title="<?= $e($p['unitTooltip']) ?>"><?= $p['unitRedacted'] ? \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::ASSIGNMENT_RESTRICTED, null, true) : ($p['unitName'] !== '' ? $e(\App\Support\UnitAbbreviation::standalone($p['unitName'])) : '<span class="pd-muted">Non affecté</span>') ?></p>
                     <?php if ($p['function'] !== ''): ?><p class="pd-function"><?= $e($p['function']) ?></p><?php endif; ?>
                     <?php if ($roleNames !== []): ?>
                     <ul class="pd-roles" title="<?= $e(implode(' · ', $roleNames)) ?>">

@@ -28,6 +28,31 @@ final class DonationBanner
     public const KEY_STARTS_ON = 'donation_banner.starts_on';
     public const KEY_ENDS_ON = 'donation_banner.ends_on';
     public const KEY_VERSION = 'donation_banner.version';
+    public const KEY_STYLE = 'donation_banner.style';
+
+    /** Toutes les clés du réglage, dans l'ordre de lecture. */
+    public const KEYS = [self::KEY_ENABLED, self::KEY_MESSAGE_FR, self::KEY_MESSAGE_EN, self::KEY_GOAL_EUR, self::KEY_STARTS_ON, self::KEY_ENDS_ON, self::KEY_VERSION, self::KEY_STYLE];
+
+    /** Message d'exemple montré dans l'aperçu tant qu'aucun n'est écrit, et enregistré tel quel si l'on active sans rien écrire. */
+    public const DEFAULT_MESSAGE_FR = 'Athena est gratuite et faite par des joueurs. Un petit don garde les serveurs allumés.';
+    public const DEFAULT_MESSAGE_EN = 'Athena is free and built by players. A small donation keeps the servers running.';
+
+    /**
+     * Styles du bandeau (clé => [nom, description]), choisis dans Admin > Paiements > Dons.
+     * Terrain : photo de nuit assombrie, titre display, jauge. Rouge : même chose en palette rouge. Cœurs : cœurs
+     * qui montent doucement derrière le texte (immobiles si l'animation est réduite).
+     */
+    public const STYLES = [
+        'terrain' => ['Terrain', 'Photo de nuit assombrie, grand titre, jauge de l’objectif. Le plus visible.'],
+        'terrain_rouge' => ['Terrain rouge', 'Le style Terrain en rouge : plus pressant, pour une fin d’objectif.'],
+        'terrain_coeurs' => ['Terrain cœurs', 'Le style Terrain avec des petits cœurs qui montent doucement.'],
+        'terrain_rouge_coeurs' => ['Terrain rouge cœurs', 'Rouge et cœurs réunis : idéal pour un appel du cœur.'],
+        'indicatif' => ['Indicatif', 'Bande fine façon statut de serveur. Discrète mais vivante.'],
+        'emeraude' => ['Émeraude', 'Montants en un clic (5, 10, 25 €) : moins d’étapes avant le don.'],
+        'portail' => ['Portail clair', 'Ton sobre, clair le jour et sombre la nuit. Se fond dans le portail.'],
+        'compact' => ['Compact', 'Une seule ligne de 40 px. Le plus discret, idéal sur mobile.'],
+    ];
+    public const DEFAULT_STYLE = 'terrain';
 
     public const MESSAGE_MAX = 180;
     public const GOAL_MAX_EUR = 1000000;
@@ -58,7 +83,7 @@ final class DonationBanner
      * Réglages lus depuis les paires clé => valeur (pur).
      *
      * @param array<string, string> $raw
-     * @return array{enabled: bool, message_fr: string, message_en: string, goal_eur: int, starts_on: string, ends_on: string, version: int}
+     * @return array{enabled: bool, message_fr: string, message_en: string, goal_eur: int, starts_on: string, ends_on: string, version: int, style: string}
      */
     public static function configFrom(array $raw): array
     {
@@ -72,7 +97,16 @@ final class DonationBanner
             'starts_on' => self::cleanDate((string) ($raw[self::KEY_STARTS_ON] ?? '')) ?? '',
             'ends_on' => self::cleanDate((string) ($raw[self::KEY_ENDS_ON] ?? '')) ?? '',
             'version' => max(0, (int) ($raw[self::KEY_VERSION] ?? 0)),
+            'style' => self::cleanStyle((string) ($raw[self::KEY_STYLE] ?? '')),
         ];
+    }
+
+    /** Style connu, sinon le style par défaut. */
+    public static function cleanStyle(string $raw): string
+    {
+        $raw = strtolower(trim($raw));
+
+        return isset(self::STYLES[$raw]) ? $raw : self::DEFAULT_STYLE;
     }
 
     /** Message nettoyé : une ligne, sans balises ni caractères de contrôle, 180 caractères. */
@@ -173,8 +207,8 @@ final class DonationBanner
     /**
      * Ce que le bandeau affiche (pur) : null s'il est hors ligne.
      *
-     * @param array{enabled: bool, message_fr: string, message_en: string, goal_eur: int, starts_on: string, ends_on: string, version: int} $cfg
-     * @return array{message: string, goal_cents: int, raised_cents: int, percent: int, key: string}|null
+     * @param array{enabled: bool, message_fr: string, message_en: string, goal_eur: int, starts_on: string, ends_on: string, version: int, style?: string} $cfg
+     * @return array{message: string, goal_cents: int, raised_cents: int, percent: int, key: string, style: string}|null
      */
     public static function view(array $cfg, int $raisedCents, string $locale, ?int $now = null): ?array
     {
@@ -192,6 +226,7 @@ final class DonationBanner
             'raised_cents' => $goal > 0 ? max(0, $raisedCents) : 0,
             'percent' => $percent,
             'key' => 'v' . $cfg['version'] . '-' . substr(md5($cfg['message_fr'] . '|' . $cfg['message_en'] . '|' . $cfg['goal_eur']), 0, 8),
+            'style' => self::cleanStyle((string) ($cfg['style'] ?? '')),
         ];
     }
 
@@ -205,7 +240,7 @@ final class DonationBanner
     /**
      * Réglages et montant collecté (cache fichier de 5 minutes).
      *
-     * @return array{config: array{enabled: bool, message_fr: string, message_en: string, goal_eur: int, starts_on: string, ends_on: string, version: int}, raised_cents: int}
+     * @return array{config: array{enabled: bool, message_fr: string, message_en: string, goal_eur: int, starts_on: string, ends_on: string, version: int, style: string}, raised_cents: int}
      */
     public static function state(): array
     {
@@ -302,7 +337,9 @@ final class DonationBanner
         $fr = self::cleanMessage((string) ($input['message_fr'] ?? ''));
         $en = self::cleanMessage((string) ($input['message_en'] ?? ''));
         if ($enabled && $fr === '' && $en === '') {
-            return ['pairs' => [], 'error' => 'Écrivez le message du bandeau (en français, en anglais ou les deux) avant de l’activer.'];
+            // L'aperçu montre le message d'exemple tant que les champs sont vides : c'est lui qu'on enregistre.
+            $fr = self::DEFAULT_MESSAGE_FR;
+            $en = self::DEFAULT_MESSAGE_EN;
         }
 
         return ['pairs' => [
@@ -313,6 +350,7 @@ final class DonationBanner
             self::KEY_STARTS_ON => $starts,
             self::KEY_ENDS_ON => $ends,
             self::KEY_VERSION => (string) ($previousVersion + 1),
+            self::KEY_STYLE => self::cleanStyle((string) ($input['style'] ?? '')),
         ], 'error' => null];
     }
 
@@ -340,7 +378,7 @@ final class DonationBanner
      * visiteurs (rendu même hors période, pour juger le message avant de l'activer).
      *
      * @param array<string, string> $raw
-     * @return array{config: array{enabled: bool, message_fr: string, message_en: string, goal_eur: int, starts_on: string, ends_on: string, version: int}, status: string, raised_cents: int, goal_cents: int, percent: int, period: string, preview: array{fr: ?array{message: string, goal_cents: int, raised_cents: int, percent: int, key: string}, en: ?array{message: string, goal_cents: int, raised_cents: int, percent: int, key: string}}}
+     * @return array{config: array{enabled: bool, message_fr: string, message_en: string, goal_eur: int, starts_on: string, ends_on: string, version: int, style: string}, status: string, raised_cents: int, goal_cents: int, percent: int, period: string, preview: array{fr: ?array{message: string, goal_cents: int, raised_cents: int, percent: int, key: string, style: string}, en: ?array{message: string, goal_cents: int, raised_cents: int, percent: int, key: string, style: string}}}
      */
     public static function adminState(array $raw, int $raisedCents, ?int $now = null): array
     {
@@ -373,7 +411,7 @@ final class DonationBanner
     public static function adminSnapshot(PlatformSettingsRepository $repo): array
     {
         $raw = [];
-        foreach ([self::KEY_ENABLED, self::KEY_MESSAGE_FR, self::KEY_MESSAGE_EN, self::KEY_GOAL_EUR, self::KEY_STARTS_ON, self::KEY_ENDS_ON, self::KEY_VERSION] as $key) {
+        foreach (self::KEYS as $key) {
             $raw[$key] = (string) $repo->get($key, '');
         }
         $cfg = self::configFrom($raw);

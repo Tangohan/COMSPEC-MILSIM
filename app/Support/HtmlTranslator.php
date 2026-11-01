@@ -13,7 +13,8 @@ namespace App\Support;
  * tools/i18n/site_i18n.py). Ordre : texte exact,
  * « Libellé : valeur », modèle %1/%2 (les valeurs capturées sont traduites à leur tour), morceaux séparés par « · ».
  * Un texte inconnu reste en français. Jamais traduits : <script>, <style>, <textarea>, <pre>, <code> et tout élément
- * marqué translate="no" (contenu saisi par les membres).
+ * marqué translate="no" (contenu saisi par les membres). En JSON, un objet peut lister dans « noTranslate » ses
+ * champs à laisser tels quels.
  */
 final class HtmlTranslator
 {
@@ -217,7 +218,13 @@ final class HtmlTranslator
     private static function jsonWalk(mixed $node, ?string $key, bool &$changed): mixed
     {
         if (is_array($node) || is_object($node)) {
+            // « noTranslate » : champs déjà dans la langue du lecteur ou saisis par la communauté (noms d'unités).
+            $keep = is_array($node) ? ($node['noTranslate'] ?? null) : ($node->noTranslate ?? null);
+            $keep = is_array($keep) ? $keep : [];
             foreach ($node as $k => $v) {
+                if (is_string($k) && is_string($v) && in_array($k, $keep, true)) {
+                    continue;
+                }
                 $name = is_string($k) ? $k : $key;
                 $nv = self::jsonWalk($v, $name, $changed);
                 if ($nv !== $v) {
@@ -308,7 +315,11 @@ final class HtmlTranslator
         }
         if ($r === null && ($k = strpos($s, ' : ')) !== false && $k > 0) {
             $label = $exact[substr($s, 0, $k)] ?? null;
-            if ($label !== null) {
+            // Modèle du texte entier (« Sur 90 jours : %1 présence(s) sur %2 session(s). ») : plus précis que le
+            // libellé seul suivi d'une valeur traduite à part.
+            if ($label !== null && ($whole = self::template($s, $depth)) !== null) {
+                $r = $whole;
+            } elseif ($label !== null) {
                 $rest = substr($s, $k + 3);
                 $tr = self::lookup($rest, $depth + 1);
                 // « Libellé : phrase française » : pas de libellé anglais devant une phrase restée en français.

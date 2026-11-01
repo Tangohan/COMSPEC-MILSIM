@@ -171,7 +171,7 @@ require base_path('views/partials/ath_kpis.php');
                 <div style="min-width:0;">
                     <span class="ath-list__name"><?= $h((string) ($c['title'] ?? '')) ?></span>
                     <span class="ath-list__meta">
-                        <?= (int) ($c['items_count'] ?? 0) ?> média<?= (int) ($c['items_count'] ?? 0) > 1 ? 's' : '' ?><?= !empty($c['is_public']) ? ' · visible sur la page publique' : '' ?>
+                        <span><?= $h(sprintf((int) ($c['items_count'] ?? 0) > 1 ? '%d médias' : '%d média', (int) ($c['items_count'] ?? 0))) ?></span><?php if (!empty($c['is_public'])): ?> · <span>visible sur la page publique</span><?php endif; ?>
                     </span>
                 </div>
                 <form method="post" action="<?= $h(url('back-office/media/collections/' . $collectionId . '/delete')) ?>"

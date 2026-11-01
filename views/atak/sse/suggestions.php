@@ -116,7 +116,7 @@ $fmtWhen = static function (mixed $raw): string {
 <section class="panel">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">25.02</span> Historique des décisions</div>
-        <div class="panel-meta"><?= $historyCount ?> décision<?= $historyCount > 1 ? 's' : '' ?><?= $searchQuery !== '' ? ' · filtrée' : '' ?></div>
+        <div class="panel-meta"><span><?= $h(sprintf($historyCount > 1 ? '%d décisions' : '%d décision', (int) $historyCount)) ?></span><?php if ($searchQuery !== ''): ?> · <span>filtrée</span><?php endif; ?></div>
     </div>
     <div class="panel-body">
         <?php if ($history === []): ?>

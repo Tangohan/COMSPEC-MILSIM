@@ -46,25 +46,8 @@
         return SENTENCE.test(c) || (frenchWords !== false && !/\d/.test(c) && FRWORD.test(c));
     }
     var memo = Object.create(null);
-    function lookup(s, depth) {
-        if (!s || depth > 2) {
-            return null;
-        }
-        if (depth === 0 && s in memo) {
-            return memo[s];
-        }
-        var r = Object.prototype.hasOwnProperty.call(exact, s) ? exact[s] : null;
-        if (r === null) {
-            var k = s.indexOf(' : ');
-            if (k > 0 && Object.prototype.hasOwnProperty.call(exact, s.slice(0, k))) {
-                var rest = s.slice(k + 3);
-                var trRest = lookup(rest, depth + 1);
-                if (trRest !== null || (!sentenceLike(rest) && rest.split(' ').length < 4)) {
-                    r = exact[s.slice(0, k)] + ': ' + (trRest === null ? rest : trRest);
-                }
-            }
-        }
-        for (var i = 0; r === null && i < tpls.length; i++) {
+    function templateLookup(s, depth) {
+        for (var i = 0; i < tpls.length; i++) {
             var t = tpls[i];
             var m = t.re.exec(s);
             if (!m) {
@@ -86,7 +69,32 @@
             t.ids.forEach(function (id, j) {
                 out = out.split('%' + id).join(vals[j] === null ? caps[j] : vals[j]);
             });
-            r = out;
+            return out;
+        }
+        return null;
+    }
+
+    function lookup(s, depth) {
+        if (!s || depth > 2) {
+            return null;
+        }
+        if (depth === 0 && s in memo) {
+            return memo[s];
+        }
+        var r = Object.prototype.hasOwnProperty.call(exact, s) ? exact[s] : null;
+        if (r === null) {
+            var k = s.indexOf(' : ');
+            // Modèle du texte entier : plus précis que « Libellé : » suivi d'une valeur traduite à part.
+            if (k > 0 && Object.prototype.hasOwnProperty.call(exact, s.slice(0, k)) && templateLookup(s, depth) === null) {
+                var rest = s.slice(k + 3);
+                var trRest = lookup(rest, depth + 1);
+                if (trRest !== null || (!sentenceLike(rest) && rest.split(' ').length < 4)) {
+                    r = exact[s.slice(0, k)] + ': ' + (trRest === null ? rest : trRest);
+                }
+            }
+        }
+        if (r === null) {
+            r = templateLookup(s, depth);
         }
         // Préfixe décoratif (drapeau, puce, icône), puis texte en capitales.
         var pm = r === null && depth === 0 ? /^([^A-Za-zÀ-ÿ0-9«"“(\[]+)([A-Za-zÀ-ÿ][\s\S]*)$/.exec(s) : null;

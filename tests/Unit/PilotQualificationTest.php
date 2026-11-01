@@ -173,8 +173,11 @@ final class PilotQualificationTest extends TestCase
         self::assertStringContainsString('self::get(\App\Services\Cron\Jobs\PilotQualificationsCronJob::class)', $container);
         self::assertSame(60, CronSchedule::intervalMinutes('pilot_qualifications'));
 
-        $registry = (string) file_get_contents(self::ROOT . '/database/steps/registry.php');
-        self::assertStringContainsString("'3100_pilot_qualification_rules.php'", $registry);
+        // Étape appliquée en production puis sortie de la file active le 29/10/2026
+        // (docs/technical/migrations-active-queue.md) : elle reste référencée dans l'archive.
+        $archive = (string) file_get_contents(self::ROOT . '/database/steps/registry-archive.php');
+        self::assertStringContainsString("'file' => '3100_pilot_qualification_rules.php'", $archive);
+        self::assertStringNotContainsString('3100_pilot_qualification_rules.php', (string) file_get_contents(self::ROOT . '/database/steps/registry.php'));
         self::assertFileExists(self::ROOT . '/database/steps/3100_pilot_qualification_rules.php');
         $migration = (string) file_get_contents(self::ROOT . '/bootstrap/pilot_qualification_rules_migration.php');
         self::assertStringContainsString('CREATE TABLE pilot_qualification_rules', $migration);

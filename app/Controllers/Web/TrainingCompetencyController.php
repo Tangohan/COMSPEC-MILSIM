@@ -13,7 +13,12 @@ use App\Repositories\RoleRepository;
 use App\Repositories\TrainingCompetencyRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\UserRepository;
+use App\Core\Gate;
+use App\Repositories\CompetencyPathwayRepository;
+use App\Services\Training\CompetencyCatalogService;
+use App\Services\Training\CompetencyPathwayGenerator;
 use App\Services\Training\CompetencyUserJourneyService;
+use App\Support\TrainingLmsStaffAccess;
 use App\Services\Training\PedagogyPathwayService;
 use App\Services\Training\TenantPedagogyChainGuard;
 use App\Services\Training\TenantPedagogyStructureService;
@@ -32,7 +37,12 @@ final class TrainingCompetencyController
         private TenantPedagogyStructureService $pedagogyStructureService,
         private TrainingCourseRepository $trainingCourseRepository,
         private TrainingPedagogyDesignationService $designationService,
-    ) {}
+        private ?CompetencyCatalogService $competencyCatalog = null,
+        private ?CompetencyPathwayRepository $competencyPathways = null,
+    ) {
+        $this->competencyCatalog ??= \App\Core\Container::get(CompetencyCatalogService::class);
+        $this->competencyPathways ??= \App\Core\Container::get(CompetencyPathwayRepository::class);
+    }
 
     private function trainingShellTotalModules(int $tenantId): int
     {
@@ -434,6 +444,89 @@ final class TrainingCompetencyController
             'title' => 'Mon parcours compétences',
             'content' => 'training.competency_journey',
             'competencyJourney' => $competencyJourney,
+            'pathwayGenerator' => $this->pathwayGeneratorData($tenantId, $request->queryString('cible')),
         ]);
+    }
+
+    /**
+     * Générateur de parcours : cibles proposées, parcours généré pour la cible demandée (?cible=type:ref),
+     * parcours déjà enregistrés. Tout membre peut consulter ; ajuster et enregistrer reste au pilotage des formations.
+     *
+     * @return array<string, mixed>
+     */
+    private function pathwayGeneratorData(int $tenantId, string $target): array
+    {
+        $catalog = $this->competencyCatalog->build($tenantId, false);
+        $generated = null;
+        if (preg_match('/\A(competency|job_role|template):([A-Za-z0-9_-]{1,64})\z/', $target, $m) === 1) {
+            $generated = (new CompetencyPathwayGenerator())->generate($catalog, $m[1], $m[2]);
+        }
+        $saved = [];
+        foreach ($this->competencyPathways->listForTenant($tenantId) as $p) {
+            $p['steps'] = CompetencyPathwayGenerator::attachUrls($p['steps'], $catalog);
+            $saved[] = $p;
+        }
+
+        return [
+            'templates' => CompetencyPathwayGenerator::templates(),
+            'competencies' => $catalog['competencies'],
+            'job_roles' => $catalog['job_roles'],
+            'target' => $target,
+            'generated' => $generated,
+            'saved' => $saved,
+            'can_design' => TrainingLmsStaffAccess::allows(Gate::getInstance()),
+            'save_ready' => $this->competencyPathways->schemaReady(),
+        ];
+    }
+
+    public function savePathway(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $back = url('academy/formations/competences');
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée, réessayez.');
+
+            return Response::redirect($back . '#generateur');
+        }
+        if (!$this->competencyPathways->schemaReady()) {
+            Session::flash('error', 'L’enregistrement des parcours arrive avec la prochaine mise à jour de la plateforme.');
+
+            return Response::redirect($back . '#generateur');
+        }
+        $kind = $request->inputString('target_kind');
+        $ref = $request->inputString('target_ref');
+        $target = in_array($kind, ['competency', 'job_role', 'template'], true) && preg_match('/\A[A-Za-z0-9_-]{1,64}\z/', $ref) === 1;
+        $name = trim($request->inputString('name'));
+        $postedSteps = $request->input('steps', []);
+        $steps = CompetencyPathwayGenerator::normalizeSteps(is_array($postedSteps) ? $postedSteps : []);
+        if (!$target || $name === '' || $steps === []) {
+            Session::flash('error', 'Donnez un nom au parcours et gardez au moins une étape.');
+
+            return Response::redirect($back . ($target ? '?cible=' . rawurlencode($kind . ':' . $ref) : '') . '#generateur');
+        }
+        $id = $this->competencyPathways->create($tenantId, (int) Session::get('user_id'), $name, trim($request->inputString('summary')), $kind, $ref, $steps);
+        $this->pedagogyRepository->logAudit($tenantId, (int) Session::get('user_id'), 'competency_pathway_saved', 'competency_pathway', $id, ['steps' => count($steps), 'target' => $kind . ':' . $ref]);
+        Session::flash('success', 'Parcours « ' . $name . ' » enregistré. Il est visible par les membres sur cette page.');
+
+        return Response::redirect($back . '#parcours-' . $id);
+    }
+
+    public function deletePathway(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $back = url('academy/formations/competences') . '#parcours-enregistres';
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée, réessayez.');
+
+            return Response::redirect($back);
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $ok = $this->competencyPathways->delete($tenantId, $id);
+        if ($ok) {
+            $this->pedagogyRepository->logAudit($tenantId, (int) Session::get('user_id'), 'competency_pathway_deleted', 'competency_pathway', $id, null);
+        }
+        Session::flash($ok ? 'success' : 'error', $ok ? 'Parcours supprimé.' : 'Ce parcours n’existe plus.');
+
+        return Response::redirect($back);
     }
 }

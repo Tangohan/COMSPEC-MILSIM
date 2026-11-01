@@ -106,6 +106,19 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            // Communauté restée à 1 ou 2 membres : texte déjà rédigé dans la langue du destinataire (responsables)
+            // ou pour l'administration de la plateforme.
+            'org_low_members', 'org_low_members_admin' => [
+                'title' => trim((string) ($payload['title'] ?? '')) !== ''
+                    ? trim((string) $payload['title'])
+                    : ($type === 'org_low_members_admin' ? 'Organisations à supprimer' : 'Votre communauté compte encore peu de membres'),
+                'detail' => trim((string) ($payload['detail'] ?? '')),
+                'href' => (isset($payload['href']) && trim((string) $payload['href']) !== '')
+                    ? trim((string) $payload['href'])
+                    : ($type === 'org_low_members_admin' ? url('admin/organisations-a-supprimer') : url('back-office/invitations')),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             default => [
                 'title' => 'Notification',
                 'detail' => '',

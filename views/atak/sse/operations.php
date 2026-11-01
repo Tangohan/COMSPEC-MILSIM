@@ -196,7 +196,7 @@ $kpis = [
         <section class="panel iw-anim" style="--d:280ms">
             <div class="panel-header">
                 <div class="panel-title"><span class="panel-index">00.02</span> Alertes &amp; signaux</div>
-                <div class="panel-meta"><?= count($alerts) ?> active<?= count($alerts) > 1 ? 's' : '' ?></div>
+                <div class="panel-meta"><?= $h(sprintf(count($alerts) > 1 ? '%d actives' : '%d active', count($alerts))) ?></div>
             </div>
             <div class="panel-body">
                 <?php foreach ($alerts as $a): ?>

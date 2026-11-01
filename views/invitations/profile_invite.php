@@ -50,7 +50,7 @@ $steps = [
             <?php endforeach; ?>
         </ol>
         <?php if ($expiresTs > 0): ?>
-        <p class="pinv-note">Lien valable jusqu’au <?= $h(date('d/m/Y à H:i', $expiresTs)) ?><?= !empty($inviteSingleUse) ? ', une seule fois' : '' ?>.</p>
+        <p class="pinv-note"><?= $h(sprintf(!empty($inviteSingleUse) ? 'Lien valable jusqu’au %s, une seule fois.' : 'Lien valable jusqu’au %s.', date('d/m/Y à H:i', $expiresTs))) ?></p>
         <?php endif; ?>
     </section>
 

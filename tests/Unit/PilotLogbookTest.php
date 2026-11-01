@@ -130,8 +130,11 @@ final class PilotLogbookTest extends TestCase
         $container = (string) file_get_contents(self::ROOT . '/app/Core/Container.php');
         self::assertStringContainsString('PilotLogbookController::class', $container);
         self::assertStringContainsString('PilotLogbookService::class', $container);
-        $registry = (string) file_get_contents(self::ROOT . '/database/steps/registry.php');
-        self::assertStringContainsString('pilot_logbook', $registry);
+        // Étape appliquée en production puis sortie de la file active le 29/10/2026
+        // (docs/technical/migrations-active-queue.md) : elle reste référencée dans l'archive.
+        $archive = (string) file_get_contents(self::ROOT . '/database/steps/registry-archive.php');
+        self::assertStringContainsString("'file' => '3110_pilot_logbook.php'", $archive);
+        self::assertStringNotContainsString('3110_pilot_logbook.php', (string) file_get_contents(self::ROOT . '/database/steps/registry.php'));
         self::assertFileExists(self::ROOT . '/database/steps/3110_pilot_logbook.php');
         $migration = (string) file_get_contents(self::ROOT . '/bootstrap/pilot_logbook_migration.php');
         self::assertStringContainsString('pilot_logbook_entries', $migration);

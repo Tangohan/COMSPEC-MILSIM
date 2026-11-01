@@ -3,3 +3,55 @@
 @tailwind utilities;
 
 @import './training_lms.css';
+
+/*
+ * Pastille commune des éléments masqués / anonymisés / restreints.
+ * Rendu : App\Support\ConfidentialDisplay (PHP) et confBadge() dans orbat-app.js.
+ * Écrit en CSS simple après les directives Tailwind : conservé tel quel dans tailwind.css (chargé partout).
+ */
+.ath-confid {
+  --cf-fg: #8a5a06;
+  --cf-bg: #fdf3e2;
+  --cf-bd: #f2ddb4;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 2px 8px;
+  border: 1px solid var(--cf-bd);
+  border-radius: 999px;
+  background: var(--cf-bg);
+  color: var(--cf-fg);
+  font-size: 12px;
+  font-weight: 600;
+  font-style: normal;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: help;
+}
+.ath-confid:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.ath-confid--sm { padding: 0 6px; font-size: 11px; }
+.ath-confid__icon { flex: none; }
+.ath-confid__label { overflow: hidden; text-overflow: ellipsis; }
+.ath-confid--anonymized { --cf-fg: #1e4f80; --cf-bg: #eaf2fb; --cf-bd: #c9dcf0; }
+.ath-confid--hidden { --cf-fg: #3c474c; --cf-bg: #eef1f3; --cf-bd: #d5dbdf; }
+.ath-confid--deleted { --cf-fg: #5b4a6b; --cf-bg: #f3eff7; --cf-bd: #ddd3e8; }
+.ath-confid--restricted { --cf-fg: #8a5a06; --cf-bg: #fdf3e2; --cf-bd: #f2ddb4; }
+
+html[data-bo-theme="dark"] .ath-confid,
+html.dark .ath-confid,
+.orb .ath-confid {
+  --cf-fg: #fcd9a0; --cf-bg: rgba(251, 191, 36, .12); --cf-bd: rgba(251, 191, 36, .32);
+}
+html[data-bo-theme="dark"] .ath-confid--anonymized,
+html.dark .ath-confid--anonymized,
+.orb .ath-confid--anonymized { --cf-fg: #bfdbfe; --cf-bg: rgba(96, 165, 250, .14); --cf-bd: rgba(96, 165, 250, .34); }
+html[data-bo-theme="dark"] .ath-confid--hidden,
+html.dark .ath-confid--hidden,
+.orb .ath-confid--hidden { --cf-fg: #cbd5e1; --cf-bg: rgba(148, 163, 184, .14); --cf-bd: rgba(148, 163, 184, .32); }
+html[data-bo-theme="dark"] .ath-confid--deleted,
+html.dark .ath-confid--deleted,
+.orb .ath-confid--deleted { --cf-fg: #e9d5ff; --cf-bg: rgba(192, 132, 252, .14); --cf-bd: rgba(192, 132, 252, .32); }

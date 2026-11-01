@@ -115,7 +115,7 @@ $pbDecidedAt = trim((string) ($e['reviewed_at'] ?? ''));
                 <?php else: ?>
                     <p class="rp-next-box__eyebrow">Dossier clos</p>
                     <p class="rp-next-box__title"><?= $pbH((string) $statusLabel) ?></p>
-                    <p class="rp-next-box__detail"><?= $pbH((string) $pbStage['hint']) ?><?= $pbDecidedAt !== '' ? ' le ' . $pbH(date('d/m/Y', strtotime($pbDecidedAt) ?: $pbNow)) : '' ?>. Aucune action n’est attendue ; le journal garde la trace des échanges.</p>
+                    <p class="rp-next-box__detail"><span><?= $pbH((string) $pbStage['hint']) ?></span><?php if ($pbDecidedAt !== ''): ?> <span><?= $pbH(sprintf('le %s', date('d/m/Y', strtotime($pbDecidedAt) ?: $pbNow))) ?></span><?php endif; ?>. <span>Aucune action n’est attendue ; le journal garde la trace des échanges.</span></p>
                 <?php endif; ?>
             </div>
             <div class="rp-next-box__go">

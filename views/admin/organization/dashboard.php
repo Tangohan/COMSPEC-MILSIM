@@ -109,7 +109,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
     <?php elseif ($pilCfgCount > 0): ?>
     <div class="pil-banner pil-banner--info" role="status" data-pil-dismissable="cfg-<?= $pilCfgCount ?>">
         <?= $pilIcon('spark') ?>
-        <span class="pil-banner__text"><b><?= $pilH($pilPlural($pilCfgCount, 'nouvelle configuration', 'nouvelles configurations')) ?></b> disponible<?= $pilCfgCount > 1 ? 's' : '' ?> pour votre organisation.</span>
+        <span class="pil-banner__text"><b><?= $pilH($pilPlural($pilCfgCount, 'nouvelle configuration', 'nouvelles configurations')) ?></b> <?= $pilCfgCount > 1 ? 'disponibles pour votre organisation.' : 'disponible pour votre organisation.' ?></span>
         <a class="pil-banner__cta" href="<?= $pilH(url('back-office/mise-a-niveau')) ?>">Découvrir</a>
         <button type="button" class="pil-banner__close" data-pil-dismiss title="Masquer jusqu’à la prochaine nouveauté" aria-label="Masquer ce bandeau"><?= $pilIcon('x') ?></button>
     </div>
@@ -128,7 +128,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
                 <?php if ($pilNextIn === null): ?>
                     Aucune activité n’est programmée<?php elseif ($pilNextIn === 'en cours'): ?>
                     <?= $pilH((string) ($pilHello['next_noun'] ?? 'La prochaine activité')) ?> est <b>en cours</b><?php else: ?>
-                    <?= $pilH((string) ($pilHello['next_noun'] ?? 'La prochaine activité')) ?> est dans <b><?= $pilH((string) $pilNextIn) ?></b><?php endif; ?><?php $pilDecN = (int) ($pilHello['decisions'] ?? 0); ?><?php if ($pilDecN > 0): ?>, et <b><?= $pilH($pilPlural($pilDecN, 'décision', 'décisions')) ?></b> vous attend<?= $pilDecN > 1 ? 'ent' : '' ?>.<?php else: ?>, et rien n’attend votre décision.<?php endif; ?>
+                    <?= $pilH((string) ($pilHello['next_noun'] ?? 'La prochaine activité')) ?> est dans <b><?= $pilH((string) $pilNextIn) ?></b><?php endif; ?><?php $pilDecN = (int) ($pilHello['decisions'] ?? 0); ?><?php if ($pilDecN > 0): ?>, et <b><?= $pilH($pilPlural($pilDecN, 'décision', 'décisions')) ?></b> <?= $pilDecN > 1 ? 'vous attendent.' : 'vous attend.' ?><?php else: ?>, et rien n’attend votre décision.<?php endif; ?>
             </p>
         </div>
         <?php if (!empty($pilHello['actions'])): ?>
@@ -175,9 +175,9 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
                         <i class="pil-rb__yes" style="width:<?= $pilH((string) $pilR['pct']['yes']) ?>%"></i><i class="pil-rb__maybe" style="width:<?= $pilH((string) $pilR['pct']['maybe']) ?>%"></i><i class="pil-rb__no" style="width:<?= $pilH((string) $pilR['pct']['no']) ?>%"></i>
                     </div>
                     <div class="pil-rl">
-                        <span><em class="pil-rl__yes"></em><b><?= (int) $pilR['yes'] ?></b> confirmé<?= (int) $pilR['yes'] > 1 ? 's' : '' ?></span>
+                        <span><em class="pil-rl__yes"></em><b><?= (int) $pilR['yes'] ?></b> <?= (int) $pilR['yes'] > 1 ? 'confirmés' : 'confirmé' ?></span>
                         <span><em class="pil-rl__maybe"></em><b><?= (int) $pilR['maybe'] ?></b> peut-être</span>
-                        <span><em class="pil-rl__no"></em><b><?= (int) $pilR['no'] ?></b> décliné<?= (int) $pilR['no'] > 1 ? 's' : '' ?></span>
+                        <span><em class="pil-rl__no"></em><b><?= (int) $pilR['no'] ?></b> <?= (int) $pilR['no'] > 1 ? 'déclinés' : 'décliné' ?></span>
                         <span><em class="pil-rl__none"></em><b><?= (int) $pilR['no_reply'] ?></b> sans réponse</span>
                     </div>
                 </div>

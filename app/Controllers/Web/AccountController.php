@@ -781,6 +781,13 @@ class AccountController
         ];
 
         $items[] = [
+            'key' => EmailEvents::ORG_LOW_MEMBERS_REMINDER,
+            'label' => 'Communauté qui compte encore peu de membres (responsables)',
+            'hint' => 'Rappel à 3 puis 4 mois lorsque votre communauté ne compte qu’un ou deux membres. La notification sur le site reste envoyée.',
+            'group' => 'Communauté',
+        ];
+
+        $items[] = [
             'key' => EmailEvents::MEMBER_LEFT_COMMUNITY_STAFF,
             'label' => 'Départ d’un membre (équipe)',
             'hint' => 'Lorsqu’un membre quitte volontairement la communauté.',

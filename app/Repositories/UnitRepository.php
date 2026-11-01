@@ -27,6 +27,26 @@ class UnitRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Nom de chaque unité du tenant (rattachements affichés sur les listes de groupes et d’équipes).
+     *
+     * @return array<int, string>
+     */
+    public function namesByIdForTenant(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $stmt = $this->pdo()->prepare('SELECT id, name FROM units WHERE tenant_id = ?');
+        $stmt->execute([$tenantId]);
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $out[(int) $row['id']] = (string) ($row['name'] ?? '');
+        }
+
+        return $out;
+    }
+
     public function countWithoutCommander(int $tenantId): int
     {
         if ($tenantId < 1) {
@@ -554,7 +574,7 @@ class UnitRepository
     }
 
     /**
-     * Abréviation du grade (grades.short_name) de chaque membre, pour les cadres affichés sur l’ORBAT.
+     * Abréviation du grade (grades.label_short, ou short_name sur une base ancienne) de chaque membre, pour les cadres affichés sur l’ORBAT.
      *
      * @param list<int> $userIds
      * @return array<int, string>
@@ -565,11 +585,22 @@ class UnitRepository
         if ($userIds === [] || !$this->columnExists('users', 'grade_id') || !$this->tableExists('grades')) {
             return [];
         }
+        // Référentiel actuel : label_short ; anciennes bases (avant la bascule vers le référentiel) : short_name.
+        $shortColumn = null;
+        foreach (['label_short', 'short_name'] as $candidate) {
+            if ($this->columnExists('grades', $candidate)) {
+                $shortColumn = $candidate;
+                break;
+            }
+        }
+        if ($shortColumn === null) {
+            return [];
+        }
         $out = [];
         foreach (array_chunk($userIds, 500) as $chunk) {
             $placeholders = implode(',', array_fill(0, count($chunk), '?'));
             $stmt = $this->pdo()->prepare(
-                'SELECT u.id, g.label_short AS short_name FROM users u INNER JOIN grades g ON g.id = u.grade_id
+                'SELECT u.id, g.' . $shortColumn . ' AS short_name FROM users u INNER JOIN grades g ON g.id = u.grade_id
                  WHERE u.tenant_id = ? AND u.id IN (' . $placeholders . ')'
             );
             $stmt->execute(array_merge([$tenantId], $chunk));
@@ -688,15 +719,40 @@ class UnitRepository
         return $row ?: null;
     }
 
+    /**
+     * Arbre des unités du tenant. Une unité rattachée à un parent absent (supprimé, autre communauté)
+     * remonte au sommet au lieu de disparaître, et une boucle de rattachement (A → B → A, ou une unité
+     * parente d’elle-même) est coupée au lieu de faire tourner la récursion à l’infini.
+     */
     public function getTree(int $tenantId): array
     {
         $all = $this->allForTenant($tenantId);
+        $known = [];
+        foreach ($all as $u) {
+            $known[(int) ($u['id'] ?? 0)] = true;
+        }
         $byParent = [];
         foreach ($all as $u) {
+            $id = (int) ($u['id'] ?? 0);
             $pid = (int) ($u['parent_id'] ?? 0);
+            if ($pid === $id || !isset($known[$pid])) {
+                $pid = 0;
+            }
             $byParent[$pid][] = $u;
         }
-        return $this->buildTree($byParent, 0);
+        $visited = [];
+        $tree = $this->buildTree($byParent, 0, $visited);
+        // Unités prises dans une boucle : aucune n’est atteignable depuis le sommet.
+        foreach ($all as $u) {
+            $id = (int) ($u['id'] ?? 0);
+            if (!isset($visited[$id])) {
+                $visited[$id] = true;
+                $u['children'] = $this->buildTree($byParent, $id, $visited);
+                $tree[] = $u;
+            }
+        }
+
+        return $tree;
     }
 
     /**
@@ -914,11 +970,17 @@ class UnitRepository
         return false;
     }
 
-    private function buildTree(array $byParent, int $parentId): array
+    /** @param array<int, true> $visited */
+    private function buildTree(array $byParent, int $parentId, array &$visited = []): array
     {
         $out = [];
         foreach ($byParent[$parentId] ?? [] as $u) {
-            $u['children'] = $this->buildTree($byParent, (int) $u['id']);
+            $id = (int) ($u['id'] ?? 0);
+            if (isset($visited[$id])) {
+                continue;
+            }
+            $visited[$id] = true;
+            $u['children'] = $this->buildTree($byParent, $id, $visited);
             $out[] = $u;
         }
         return $out;

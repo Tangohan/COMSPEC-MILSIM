@@ -31,4 +31,10 @@ return [
     ['id' => 'member_profile_invites', 'label' => 'Liens pour compléter son profil (invitations des effectifs)', 'group' => 'schema', 'file' => '3260_member_profile_invites.php', 'rerun' => true],
     ['id' => 'academy_course_lifecycle_sharing', 'label' => 'Academy Studio : archivage, corbeille et partage des formations', 'group' => 'schema', 'file' => '3270_academy_course_lifecycle_sharing.php', 'rerun' => true],
     ['id' => 'academy_jtac_v2_refresh', 'label' => 'Académie : dernière version du cours JTAC (2.0.1, marquage fumigène) pour les inscrits qui ne l’ont pas encore commencé', 'group' => 'schema', 'file' => '3280_academy_jtac_v2_refresh.php', 'rerun' => true],
+    ['id' => 'equipment_definitions_game_class', 'label' => 'Dotation : lien entre un article du référentiel et un objet vu en jeu', 'group' => 'schema', 'file' => '3335_equipment_definitions_game_class.php', 'rerun' => true],
+    ['id' => 'competency_links_pathways', 'label' => 'Compétences : explication, liens vers l’Academy, les qualifications, les emplois et la dotation, parcours enregistrés', 'group' => 'schema', 'file' => '3340_competency_links_pathways.php', 'rerun' => true],
+    ['id' => 'community_game_labels', 'label' => 'Annuaire : harmonisation des jeux déclarés par les communautés (Arma3, ARMA 3… → Arma 3)', 'group' => 'schema', 'file' => '3290_community_game_labels.php', 'rerun' => true],
+    ['id' => 'org_low_member_reminders', 'label' => 'Communautés à un ou deux membres : rappels aux responsables et liste « Organisations à supprimer »', 'group' => 'schema', 'file' => '3310_org_low_member_reminders.php', 'rerun' => true],
+    ['id' => 'tenant_generated_labels', 'label' => 'Libellés des unités et postes générés : personnalisation par communauté et par langue', 'group' => 'schema', 'file' => '3295_tenant_generated_labels.php', 'rerun' => true],
+    ['id' => 'unit_assignment_repair', 'label' => 'Affectations : réparation des membres affectés sur leur fiche mais absents des effectifs (double envoi du formulaire)', 'group' => 'schema', 'file' => '3345_unit_assignment_repair.php', 'rerun' => true],
 ];

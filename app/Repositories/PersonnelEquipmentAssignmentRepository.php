@@ -56,6 +56,29 @@ final class PersonnelEquipmentAssignmentRepository
         return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Dotations nominatives en cours, par article : definition_id → liste de personnel_id.
+     *
+     * @return array<int, list<int>>
+     */
+    public function issuedPersonnelByDefinition(int $tenantId): array
+    {
+        if (!$this->schemaReady()) {
+            return [];
+        }
+        $st = $this->pdo->prepare(
+            'SELECT definition_id, personnel_id FROM personnel_equipment_assignments
+             WHERE tenant_id = ? AND status = ?'
+        );
+        $st->execute([$tenantId, AdvancementCodes::EQUIP_ISSUED]);
+        $out = [];
+        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+            $out[(int) $row['definition_id']][] = (int) $row['personnel_id'];
+        }
+
+        return $out;
+    }
+
     public function find(int $tenantId, int $id): ?array
     {
         $st = $this->pdo->prepare(

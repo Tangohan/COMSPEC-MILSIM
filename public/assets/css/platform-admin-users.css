@@ -48,7 +48,7 @@ html[data-bo-theme="dark"] .pu {
 /* Filtres */
 .pu-filters__grid {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
   gap: 0.85rem 1rem;
   align-items: end;
 }
