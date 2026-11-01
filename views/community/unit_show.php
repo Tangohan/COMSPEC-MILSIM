@@ -19,7 +19,10 @@ declare(strict_types=1);
 $slug = (string) ($tenant['slug'] ?? '');
 $tenantName = (string) ($tenant['name'] ?? 'Communauté');
 $unit = is_array($unit ?? null) ? $unit : [];
-$unitName = trim((string) ($unit['name'] ?? 'Unité'));
+$unitTenantId = (int) ($tenant['id'] ?? 0);
+$unitSlug = trim((string) ($unit['slug'] ?? ''));
+// Libellé généré (modèle d’organisation) dans la langue du lecteur ; un nom saisi par la communauté reste tel quel.
+$unitName = generated_label('unit', trim((string) ($unit['name'] ?? 'Unité')), $unitSlug, $unitTenantId);
 $unitType = trim((string) ($unit['type'] ?? ''));
 $unitCode = trim((string) ($unit['code'] ?? ''));
 $blurb = trim((string) ($unit['public_blurb'] ?? ''));
@@ -186,8 +189,8 @@ if (count($children) > 0 && count($heroFacts) < 4) {
     $heroFacts[] = ['v' => (string) count($children), 'k' => 'Sous-unités'];
 }
 
-$parentName = $parentUnit ? trim((string) ($parentUnit['name'] ?? '')) : '';
 $parentSlug = $parentUnit ? trim((string) ($parentUnit['slug'] ?? '')) : '';
+$parentName = $parentUnit ? generated_label('unit', trim((string) ($parentUnit['name'] ?? '')), $parentSlug, $unitTenantId) : '';
 $parentPublic = $parentUnit && !empty($parentUnit['show_on_public_page']);
 $parentHref = ($parentPublic && $parentSlug !== '')
     ? url('c/' . rawurlencode($slug) . '/unite/' . rawurlencode($parentSlug))
@@ -247,7 +250,10 @@ $showChildren = $children !== [];
     <div class="cl-hero__inner">
       <div class="cl-hero__copy">
         <div class="cl-pill cl-pill--muted"><?= htmlspecialchars(mb_strtoupper($typeLine), ENT_QUOTES, 'UTF-8') ?></div>
-        <h1 id="cl-unit-hero-title" class="cl-hero__title"><?= name_blur_html($unitName) ?></h1>
+        <h1 id="cl-unit-hero-title" class="cl-hero__title"<?= unit_name_translate_attr($unitName) ?>><?= name_blur_html($unitName) ?></h1>
+        <?php if (is_array($unit['confidential'] ?? null)): ?>
+        <p class="cl-hero__confidential"><?= \App\Support\ConfidentialDisplay::renderPayload($unit['confidential']) ?></p>
+        <?php endif; ?>
         <p class="cl-hero__lead">
           Unité de <?= name_blur_html($tenantName) ?>
           <?php if ($commanderName !== ''): ?>
@@ -305,9 +311,9 @@ $showChildren = $children !== [];
           <p class="cl-unit-fiche__lead-sub">
             Rattachée à
             <?php if ($parentHref !== null): ?>
-            <a href="<?= htmlspecialchars($parentHref, ENT_QUOTES, 'UTF-8') ?>"><?= name_blur_html($parentName) ?></a>
+            <a href="<?= htmlspecialchars($parentHref, ENT_QUOTES, 'UTF-8') ?>"<?= unit_name_translate_attr($parentName) ?>><?= name_blur_html($parentName) ?></a>
             <?php else: ?>
-            <?= name_blur_html($parentName) ?>
+            <span<?= unit_name_translate_attr($parentName) ?>><?= name_blur_html($parentName) ?></span>
             <?php endif; ?>
           </p>
           <?php endif; ?>
@@ -371,7 +377,7 @@ $showChildren = $children !== [];
           ?>
         <article class="cl-unit" style="--cl-unit-tone:<?= htmlspecialchars($csTone, ENT_QUOTES, 'UTF-8') ?>">
           <div class="cl-unit__code"><?= htmlspecialchars(mb_strtoupper($csCode !== '' ? $csCode : $csType), ENT_QUOTES, 'UTF-8') ?></div>
-          <h3 class="cl-unit__name"><?= name_blur_html((string) ($child['name'] ?? '')) ?></h3>
+          <h3 class="cl-unit__name"><?= unit_name_html((string) ($child['name'] ?? ''), $csSlug, $unitTenantId) ?></h3>
           <div class="cl-unit__meta">
             <span>Effectif</span>
             <span class="cl-mono"><?= $csCount ?> membre<?= $csCount > 1 ? 's' : '' ?></span>
@@ -408,7 +414,7 @@ $showChildren = $children !== [];
             <?php foreach ($roster as $i => $r): ?>
             <tr>
               <td class="cl-mono"><?= (int) $i + 1 ?></td>
-              <td><?= htmlspecialchars((string) ($r['label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
+              <td><?= is_array($r['confidential'] ?? null) ? \App\Support\ConfidentialDisplay::renderPayload($r['confidential'], true) : htmlspecialchars((string) ($r['label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
             </tr>
             <?php endforeach; ?>
           </tbody>

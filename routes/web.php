@@ -1217,6 +1217,10 @@ return function (Router $router) {
     $router->post('/admin/tenants/{id}/archiver', [SystemTenantsController::class, 'archive'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/restaurer', [SystemTenantsController::class, 'restore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/supprimer', [SystemTenantsController::class, 'destroy'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Communautés toujours à 1 ou 2 membres après les rappels : supprimer (retrait ci-dessus) ou garder.
+    $router->get('/admin/organisations-a-supprimer', [\App\Controllers\Admin\System\SystemLowMemberOrgsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/organisations-a-supprimer/{id}/garder', [\App\Controllers\Admin\System\SystemLowMemberOrgsController::class, 'keep'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/organisations-a-supprimer/{id}/reprendre', [\App\Controllers\Admin\System\SystemLowMemberOrgsController::class, 'unkeep'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Paiements PayPal des formules : vérification et activation manuelle.
     $router->get('/admin/paiements', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/paiements/export.csv', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'export'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1390,6 +1394,8 @@ return function (Router $router) {
     $router->post('/back-office/organisation/catalogue/actualiser', [OrganizationCatalogController::class, 'refresh'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/catalogue/retirer', [OrganizationCatalogController::class, 'archive'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/catalogue/restaurer', [OrganizationCatalogController::class, 'restore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/catalogue/libelles', [\App\Controllers\Admin\Organization\OrganizationGeneratedLabelsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/catalogue/libelles/enregistrer', [\App\Controllers\Admin\Organization\OrganizationGeneratedLabelsController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/progression', [OrganizationProgressionHubController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/passes', [PersonnelPassAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/passes/create', [PersonnelPassAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1404,6 +1410,14 @@ return function (Router $router) {
     $router->get('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules/import', [OrganizationMemberNumberController::class, 'importCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/matricules/export', [OrganizationMemberNumberController::class, 'exportCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/attribuer', [OrganizationMemberNumberController::class, 'assignNext'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/membre', [OrganizationMemberNumberController::class, 'updateMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/recaler', [OrganizationMemberNumberController::class, 'realignSequence'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/import/appliquer', [OrganizationMemberNumberController::class, 'applyImport'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/import/annuler', [OrganizationMemberNumberController::class, 'cancelImport'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/retablir', [OrganizationMemberNumberController::class, 'restore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/renumeroter', [OrganizationMemberNumberController::class, 'renumber'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Ancien « Structure & recrutement » : l’ORBAT unique fait tout (création, invitation, édition en fenêtres).
     $router->get('/back-office/organisation/structure', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => (string) $r->query('ouvrir', '')])), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/unites/{id}', [UnitSheetController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1751,6 +1765,7 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/dotation', [EquipmentReferentielController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/dotation/attribuer', [EquipmentReferentielController::class, 'assign'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/dotation/{id}', [EquipmentReferentielController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/dotation/{id}/objet-jeu', [EquipmentReferentielController::class, 'linkGameClass'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/dotation/{id}/archive', [EquipmentReferentielController::class, 'archive'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/dotation/attributions/{id}/statut', [EquipmentReferentielController::class, 'changeStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
 
@@ -2397,6 +2412,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/formation/competences/modules/{id}/activation', [\App\Controllers\Web\TrainingCompetencyModulesController::class, 'toggle'], $trainingResMw);
     $router->get('/formation/competences/modules/{id}/suivi', [\App\Controllers\Web\TrainingCompetencyModulesController::class, 'tracking'], $trainingResMw);
     $router->post('/formation/competences/modules/{id}/suivi', [\App\Controllers\Web\TrainingCompetencyModulesController::class, 'record'], $trainingResMw);
+    // Parcours de compétence (générateur de l'Academy) : consultation pour tous, enregistrement réservé au pilotage des formations.
+    $router->post('/academy/formations/competences/parcours', [TrainingCompetencyController::class, 'savePathway'], $trainingResMw);
+    $router->post('/academy/formations/competences/parcours/{id}/supprimer', [TrainingCompetencyController::class, 'deletePathway'], $trainingResMw);
 
     $router->get('/back-office/ressources/training/charte-rh', $lmsBoTrainingLegacyRedirect, $trainingResMw);
     $router->post('/back-office/ressources/training/charte-rh', $lmsBoTrainingLegacyRedirect, $trainingResMw);

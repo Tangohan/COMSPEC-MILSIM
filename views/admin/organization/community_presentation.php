@@ -989,7 +989,7 @@ $cpNum = 0;
                     <div class="bcs-grid">
                         <div class="bcs-field">
                             <label class="bcs-label" for="f-game">Jeu</label>
-                            <input type="text" id="f-game" name="game_label" value="<?= $cv('game_label') ?>" maxlength="120" placeholder="Arma 3, Arma Reforger, Squad…">
+                            <input type="text" id="f-game" name="game_label" value="<?= $cv('game_label') ?>" maxlength="120" placeholder="Arma 3, Arma Reforger, Squad…" list="athena-game-list" autocomplete="off" data-game-suggest> <?php require base_path('views/partials/game_label_suggest.php'); ?>
                         </div>
                         <div class="bcs-field">
                             <label class="bcs-label" for="f-modpack">Taille du modpack <span class="bcs-opt">(Go, indicatif)</span></label>

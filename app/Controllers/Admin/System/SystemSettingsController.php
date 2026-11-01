@@ -51,7 +51,7 @@ class SystemSettingsController
     {
         $back = url('admin/paiements') . '?vue=dons#bandeau-don';
         if (!Csrf::validate($request->inputString('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
+            Session::flash('dnb_notice', ['error', 'Session expirée. Réessayez.']);
 
             return Response::redirect($back);
         }
@@ -64,9 +64,10 @@ class SystemSettingsController
             'goal_eur' => $request->inputString('goal_eur'),
             'starts_on' => $request->inputString('starts_on'),
             'ends_on' => $request->inputString('ends_on'),
+            'style' => $request->inputString('style'),
         ], $before['version']);
         if ($parsed['error'] !== null) {
-            Session::flash('error', $parsed['error']);
+            Session::flash('dnb_notice', ['error', (string) $parsed['error']]);
 
             return Response::redirect($back);
         }
@@ -76,7 +77,7 @@ class SystemSettingsController
             }
             $repo->setMany($parsed['pairs']);
         } catch (\Throwable) {
-            Session::flash('error', 'Le bandeau n’a pas pu être enregistré. Réessayez dans un instant.');
+            Session::flash('dnb_notice', ['error', 'Le bandeau n’a pas pu être enregistré. Réessayez dans un instant.']);
 
             return Response::redirect($back);
         }
@@ -95,12 +96,12 @@ class SystemSettingsController
             );
         } catch (\Throwable) {
         }
-        Session::flash(
+        Session::flash('dnb_notice', [
             'success',
             $after['enabled']
                 ? (DonationBanner::isLive($after) ? 'Bandeau de don enregistré : il s’affiche dès maintenant sur le site.' : 'Bandeau de don enregistré : il s’affichera pendant la période choisie.')
-                : 'Bandeau de don désactivé.'
-        );
+                : 'Bandeau de don désactivé.',
+        ]);
 
         return Response::redirect($back);
     }
@@ -109,7 +110,7 @@ class SystemSettingsController
     private function donationBannerRaw(): array
     {
         $raw = [];
-        foreach ([DonationBanner::KEY_ENABLED, DonationBanner::KEY_MESSAGE_FR, DonationBanner::KEY_MESSAGE_EN, DonationBanner::KEY_GOAL_EUR, DonationBanner::KEY_STARTS_ON, DonationBanner::KEY_ENDS_ON, DonationBanner::KEY_VERSION] as $key) {
+        foreach (DonationBanner::KEYS as $key) {
             $raw[$key] = $this->platformSettingsRepository->get($key, '');
         }
 

@@ -590,7 +590,7 @@ class PersonnelController
         $primaryAssignment = $assignments[0] ?? null;
         $primaryUnitFallbackName = null;
         if ($assignmentRedactedForViewer) {
-            $primaryUnitFallbackName = 'Restreinte';
+            $primaryUnitFallbackName = \App\Support\ConfidentialDisplay::label(\App\Support\ConfidentialDisplay::ASSIGNMENT_RESTRICTED);
         } elseif ($primaryAssignment === null && !empty($personnelProfile['primary_unit_id'])) {
             $urow = $this->unitRepository->findById((int) $personnelProfile['primary_unit_id'], (int) $tenantId);
             if ($urow) {
@@ -775,7 +775,7 @@ class PersonnelController
         if ($personnelAnonymizedForViewer) {
             $anonLabel = $visibilityMeta['anonymized_label'] !== ''
                 ? $visibilityMeta['anonymized_label']
-                : 'Personnel anonymisé';
+                : \App\Support\ConfidentialDisplay::personLabel();
             $target['display_name'] = $anonLabel;
             $target['callsign'] = null;
             $target['avatar_url'] = null;
@@ -1757,6 +1757,13 @@ class PersonnelController
         $sheetLang = \App\Support\CommunityLanguages::normalize($request->query('lang', ''))
             ?? \App\Support\CommunityLanguages::orbatLanguage($orbatCommunity);
         $sheetCountry = \App\Support\CommunityLanguages::unitCountry($orbatCommunity);
+        // Noms d’unités et postes générés : dans la langue de la feuille (personnalisés par la communauté).
+        $rosterData = \App\Services\I18n\GeneratedLabels::localizeOrbat(
+            $rosterData,
+            $tid,
+            array_column($this->unitRepository->allForTenant($tid), 'slug', 'id'),
+            $sheetLang
+        );
 
         $paper = strtoupper(trim((string) $request->query('paper', '')));
         if (!in_array($paper, ['A3', 'A2', 'A1', 'A0'], true)) {
@@ -3068,7 +3075,7 @@ class PersonnelController
                 continue;
             }
             if (!empty($filtered['anonymized'])) {
-                $row['display_name'] = (string) ($filtered['display_name'] ?? 'Personnel anonymisé');
+                $row['display_name'] = (string) ($filtered['display_name'] ?? \App\Support\ConfidentialDisplay::personLabel());
                 $row['callsign'] = null;
                 $row['character_name'] = $row['display_name'];
                 $row['character_portrait_path'] = null;
@@ -3076,10 +3083,16 @@ class PersonnelController
                 $row['athena_identifier'] = null;
                 $row['matricule_internal'] = null;
                 $row['tenant_member_number'] = null;
+                // Identité civile, adresse de fiche et repères radio : absents pour un membre anonymisé.
+                $row['first_name'] = null;
+                $row['last_name'] = null;
+                $row['profile_slug'] = null;
+                $row['service_number'] = null;
+                $row['radio_assigned'] = null;
                 $row['anonymized'] = true;
             }
             if (!empty($filtered['assignment_redacted'])) {
-                $row['unit_name'] = 'Restreinte';
+                $row['unit_name'] = \App\Support\ConfidentialDisplay::label(\App\Support\ConfidentialDisplay::ASSIGNMENT_RESTRICTED);
                 $row['unit_code'] = null;
                 $row['unit_blurb'] = null;
                 $row['assignment_redacted'] = true;
@@ -3103,9 +3116,9 @@ class PersonnelController
             if (!is_array($a)) {
                 continue;
             }
-            $a['unit_name'] = 'Restreinte';
+            $a['unit_name'] = \App\Support\ConfidentialDisplay::label(\App\Support\ConfidentialDisplay::ASSIGNMENT_RESTRICTED);
             $a['unit_code'] = null;
-            $a['role_name'] = 'Restreinte';
+            $a['role_name'] = \App\Support\ConfidentialDisplay::label(\App\Support\ConfidentialDisplay::ASSIGNMENT_RESTRICTED);
             $a['assignment_redacted'] = true;
             $a['commander_user_id'] = null;
             $out[] = $a;

@@ -86,7 +86,7 @@ final class VisibilityLevel
         }
 
         return match ($level) {
-            self::ANONYMIZED => 'La structure apparaît sous un libellé générique (« Unité restreinte ») pour les utilisateurs non autorisés.',
+            self::ANONYMIZED => 'La structure apparaît sous un libellé générique (« Unité anonymisée ») pour les utilisateurs non autorisés.',
             self::RESTRICTED => 'La structure reste visible avec des informations limitées ; le détail et les effectifs nominatifs sont protégés.',
             self::HIDDEN => 'Cette unité et ses sous-structures (sauf dérogation) ne seront pas visibles par les utilisateurs sans autorisation.',
             default => 'Structure affichée normalement dans l’ORBAT, l’annuaire et les sélecteurs.',

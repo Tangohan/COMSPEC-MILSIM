@@ -87,8 +87,61 @@ final class EquipmentItemDefinitionRepository
             $data['cover_image_path'] ?? null,
             $actorId,
         ]);
+        $id = (int) $this->pdo->lastInsertId();
+        if ($id > 0 && trim((string) ($data['game_class_name'] ?? '')) !== '') {
+            $this->setGameClass($tenantId, $id, (string) $data['game_class_name']);
+        }
 
-        return (int) $this->pdo->lastInsertId();
+        return $id;
+    }
+
+    /** Lien facultatif vers un objet vu en jeu (classe Arma) ; étape de schéma 3335. */
+    public function gameClassReady(): bool
+    {
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $st->execute(['equipment_item_definitions', 'game_class_name']);
+
+            return (bool) $st->fetchColumn();
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    public function setGameClass(int $tenantId, int $id, ?string $class): bool
+    {
+        if (!$this->gameClassReady()) {
+            return false;
+        }
+        $class = trim((string) $class);
+        if ($class !== '' && (strlen($class) > 128 || preg_match('/^[A-Za-z0-9_.\-]+$/', $class) !== 1)) {
+            return false;
+        }
+        $st = $this->pdo->prepare(
+            'UPDATE equipment_item_definitions SET game_class_name = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?'
+        );
+        $st->execute([$class === '' ? null : $class, $tenantId, $id]);
+
+        return true;
+    }
+
+    /** Article actif déjà lié à cet objet du jeu. */
+    public function findByGameClass(int $tenantId, string $class): ?array
+    {
+        if (!$this->gameClassReady() || trim($class) === '') {
+            return null;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT * FROM equipment_item_definitions
+             WHERE tenant_id = ? AND game_class_name = ? AND archived_at IS NULL LIMIT 1'
+        );
+        $st->execute([$tenantId, trim($class)]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? $this->mapDefinition($row) : null;
     }
 
     /** @param array<string, mixed> $data */

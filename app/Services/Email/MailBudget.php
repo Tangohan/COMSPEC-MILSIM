@@ -154,6 +154,8 @@ final class MailBudget
         EmailEvents::ATAK_PLAYER_ACCESS_REFUSED => 'Accès ATAK refusé (joueur)',
         EmailEvents::PLAN_GIFT_GRANTED => 'Formule offerte',
         EmailEvents::PLAN_END_WARNING => 'Fin de formule proche',
+        EmailEvents::ORG_LOW_MEMBERS_REMINDER => 'Communauté à un ou deux membres (rappel aux responsables)',
+        EmailEvents::ORG_LOW_MEMBERS_ADMIN_DIGEST => 'Organisations à supprimer (résumé admin)',
         EmailEvents::YEAR_REVIEW_READY => 'Rétrospective annuelle prête',
         EmailEvents::PLAN_PAYMENT_DECLARED => 'Paiement PayPal à vérifier (admin)',
         EmailEvents::PLAN_PAYMENT_DECIDED => 'Paiement PayPal confirmé ou refusé',

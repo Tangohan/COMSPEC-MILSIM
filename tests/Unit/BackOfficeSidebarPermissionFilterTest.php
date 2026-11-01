@@ -13,13 +13,15 @@ final class BackOfficeSidebarPermissionFilterTest extends TestCase
         $helpers = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/helpers.php');
         $sidebar = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/back_office_sidebar.php');
         $nav = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/ath_sidebar_nav.php');
+        $tree = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/BackOfficeNavTree.php');
 
         self::assertStringContainsString('function back_office_nav_permission_rules', $helpers);
         self::assertStringContainsString('function back_office_nav_href_permission_allowed', $helpers);
         self::assertStringContainsString('back_office_nav_href_permission_allowed', $sidebar);
         self::assertStringContainsString('Masquer les entrées sans droit', $sidebar);
-        self::assertStringContainsString('Parent sans droit mais enfants autorisés', $nav);
-        self::assertStringContainsString('$parentOk = $boHrefAllowed', $nav);
+        self::assertStringContainsString('BackOfficeNavTree::filter($athNavGroups, $boHrefAllowed)', $nav);
+        self::assertStringContainsString('Parent sans droit mais enfants autorisés', $tree);
+        self::assertStringContainsString('$parentOk = $allowed', $tree);
     }
 
     public function testSidebarDoesNotOverwriteGroupPageViewData(): void

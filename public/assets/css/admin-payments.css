@@ -1,8 +1,8 @@
 /* Administration du site — Paiements et dons (/admin/paiements). Jetons --ath-* uniquement. */
 .ap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; min-width: 0; }
 .ap > *, .ap-grid > * { min-width: 0; }
-.ap a:not(.ath-btn):not(.ap-tabs__tab):not(.ap-seg__btn) { color: var(--ath-accent, #0b8a5c); font-weight: 600; text-decoration: none; }
-.ap a:not(.ath-btn):not(.ap-tabs__tab):not(.ap-seg__btn):hover { text-decoration: underline; }
+.ap a:not(.ath-btn):not(.ap-tabs__tab):not(.ap-seg__btn):not(.dnb-preview a) { color: var(--ath-accent, #0b8a5c); font-weight: 600; text-decoration: none; }
+.ap a:not(.ath-btn):not(.ap-tabs__tab):not(.ap-seg__btn):not(.dnb-preview a):hover { text-decoration: underline; }
 .ap *, .ap *::before, .ap *::after { box-sizing: border-box; }
 .ap-muted { color: var(--ath-muted, #6b7280); font-size: 13px; }
 .ap-pad { padding: 10px 14px; margin: 0; }

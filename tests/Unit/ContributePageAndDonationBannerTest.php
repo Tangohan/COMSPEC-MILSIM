@@ -226,7 +226,9 @@ final class ContributePageAndDonationBannerTest extends TestCase
         self::assertSame('1', $ok['pairs'][DonationBanner::KEY_ENABLED]);
         self::assertSame('3', $ok['pairs'][DonationBanner::KEY_VERSION]);
         self::assertSame('250', $ok['pairs'][DonationBanner::KEY_GOAL_EUR]);
-        self::assertNotNull(DonationBanner::pairsFromForm(['enabled' => '1'], 0)['error'], 'Activé sans message : refusé.');
+        $noText = DonationBanner::pairsFromForm(['enabled' => '1'], 0);
+        self::assertNull($noText['error'], 'Activé sans message : le message d’exemple de l’aperçu est repris.');
+        self::assertSame(DonationBanner::DEFAULT_MESSAGE_FR, $noText['pairs'][DonationBanner::KEY_MESSAGE_FR]);
         self::assertNotNull(DonationBanner::pairsFromForm(['message_fr' => 'x', 'starts_on' => '2026-11-10', 'ends_on' => '2026-11-01'], 0)['error']);
         self::assertNotNull(DonationBanner::pairsFromForm(['message_fr' => 'x', 'goal_eur' => '12,5'], 0)['error']);
         self::assertNull(DonationBanner::pairsFromForm([], 0)['error'], 'Désactiver sans rien remplir est permis.');
@@ -310,6 +312,99 @@ final class ContributePageAndDonationBannerTest extends TestCase
         self::assertStringNotContainsString('id="athena-donation-banner"', $html, 'L’aperçu ne doit pas déclencher le script de fermeture du site.');
         self::assertStringContainsString("'payDonationBanner'", (string) file_get_contents(base_path('app/Controllers/Admin/System/SystemPlanPaymentsController.php')));
         self::assertStringContainsString('payments_donation_banner.php', (string) file_get_contents(base_path('views/admin/system/plan_payments.php')));
+    }
+
+    /**
+     * Régression : l'aperçu de l'administration montre le message d'exemple tant que les champs sont vides. Cocher
+     * « Afficher le bandeau » puis enregistrer était refusé (« écrivez le message ») et l'erreur s'affichait en haut
+     * de la page, hors de vue de l'ancre #bandeau-don : le bandeau ne s'activait jamais. Le message d'exemple vu dans
+     * l'aperçu est désormais enregistré tel quel.
+     */
+    public function testEnablingWithEmptyMessageSavesTheExampleShownInPreview(): void
+    {
+        $repo = $this->getMockBuilder(\App\Repositories\PlatformSettingsRepository::class)->disableOriginalConstructor()->getMock();
+        $repo->method('get')->willReturn('');
+        $repo->method('tableExists')->willReturn(true);
+        $saved = null;
+        $repo->expects(self::once())->method('setMany')->willReturnCallback(static function (array $pairs) use (&$saved): void {
+            $saved = $pairs;
+        });
+        $controller = new \App\Controllers\Admin\System\SystemSettingsController($repo);
+        $savedPost = $_POST;
+        $_POST = ['_csrf_token' => str_repeat('a', 64), 'enabled' => '1', 'message_fr' => '', 'message_en' => '', 'goal_eur' => '', 'starts_on' => '', 'ends_on' => ''];
+        try {
+            $controller->saveDonationBanner(new \App\Core\Request());
+        } finally {
+            $_POST = $savedPost;
+        }
+        self::assertIsArray($saved, 'Le bandeau activé doit être enregistré.');
+        self::assertSame('1', $saved[DonationBanner::KEY_ENABLED]);
+        self::assertSame(DonationBanner::DEFAULT_MESSAGE_FR, $saved[DonationBanner::KEY_MESSAGE_FR]);
+        self::assertSame(DonationBanner::DEFAULT_MESSAGE_EN, $saved[DonationBanner::KEY_MESSAGE_EN]);
+        self::assertTrue(DonationBanner::isLive(DonationBanner::configFrom($saved)));
+    }
+
+    public function testBannerStylesTerrainVariantsAndAdminPicker(): void
+    {
+        self::assertSame('terrain', $this->cfg()['style'], 'Style par défaut : Terrain.');
+        self::assertSame('terrain', $this->cfg([DonationBanner::KEY_STYLE => 'inconnu'])['style']);
+        self::assertSame('terrain_rouge', $this->cfg([DonationBanner::KEY_STYLE => 'terrain_rouge'])['style']);
+        self::assertSame('terrain_coeurs', DonationBanner::pairsFromForm(['style' => 'terrain_coeurs'], 0)['pairs'][DonationBanner::KEY_STYLE]);
+        self::assertContains(DonationBanner::KEY_STYLE, DonationBanner::KEYS);
+
+        $expect = [
+            'terrain' => 'dnb dnb--terrain"',
+            'terrain_rouge' => 'dnb dnb--terrain dnb--rouge"',
+            'terrain_coeurs' => 'dnb dnb--terrain dnb--coeurs"',
+            'terrain_rouge_coeurs' => 'dnb dnb--terrain dnb--rouge dnb--coeurs"',
+            'indicatif' => 'dnb dnb--indicatif"',
+            'emeraude' => 'dnb dnb--emeraude"',
+            'portail' => 'dnb dnb--portail"',
+            'compact' => 'dnb dnb--compact"',
+        ];
+        self::assertSame(array_keys(DonationBanner::STYLES), array_keys($expect));
+        $dnbLocale = 'fr';
+        $dnbE = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+        $dnbT = static fn (string $k, array $r = []): string => htmlspecialchars(__('site.dnb_' . $k, $r, 'fr'), ENT_QUOTES, 'UTF-8');
+        foreach ($expect as $style => $class) {
+            $dnb = DonationBanner::view($this->cfg([DonationBanner::KEY_STYLE => $style]), 15000, 'fr', strtotime('2026-11-15'));
+            self::assertNotNull($dnb);
+            ob_start();
+            try {
+                require base_path('views/partials/donation_banner_markup.php');
+            } finally {
+                $html = (string) ob_get_clean();
+            }
+            self::assertStringContainsString('class="' . $class, $html, $style);
+            self::assertStringContainsString('id="athena-donation-banner"', $html, $style);
+            self::assertStringContainsString('data-dnb-close', $html, $style . ' : bouton de fermeture.');
+            self::assertStringContainsString('soutenir-atak', $html, $style . ' : lien de don.');
+            self::assertStringContainsString('Un petit don garde les serveurs allumés.', $html, $style . ' : message de l’administration.');
+            self::assertStringContainsString('aria-valuenow="50"', $html, $style . ' : jauge.');
+            self::assertSame(str_ends_with($style, '_coeurs'), str_contains($html, 'dnb__hearts'), $style . ' : cœurs.');
+            unset($dnbId);
+        }
+
+        $css = (string) file_get_contents(base_path('public/assets/css/donation-banner.css'));
+        foreach (['.dnb--rouge', '.dnb__hearts', '@container dnb', 'prefers-reduced-motion'] as $needle) {
+            self::assertStringContainsString($needle, $css);
+        }
+        self::assertStringContainsString("queryString('montant')", (string) file_get_contents(base_path('app/Controllers/Web/AtakSupportController.php')), 'Montant choisi depuis le style Émeraude.');
+
+        $dnbAdmin = DonationBanner::adminState([DonationBanner::KEY_STYLE => 'terrain_rouge'], 0, strtotime('2026-11-15'));
+        $base = '/admin/paiements';
+        ob_start();
+        try {
+            require base_path('views/admin/system/partials/payments_donation_banner.php');
+        } finally {
+            $admin = (string) ob_get_clean();
+        }
+        foreach (array_keys(DonationBanner::STYLES) as $style) {
+            self::assertStringContainsString('name="style" value="' . $style . '"', $admin);
+        }
+        self::assertSame(1, substr_count($admin, ' checked>'), 'Seul le style enregistré est coché (la case « Afficher » est décochée).');
+        self::assertStringContainsString('value="terrain_rouge" id="dnba-style-terrain_rouge" checked', $admin);
+        self::assertStringContainsString('Terrain cœurs', $admin);
     }
 
     public function testSaveRedirectsBackToPayments(): void

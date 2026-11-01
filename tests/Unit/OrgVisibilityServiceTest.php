@@ -75,7 +75,7 @@ final class OrgVisibilityServiceTest extends TestCase
         $out = OrgVisibilityService::filterPersonnelRow($member, $this->caps(), VisibilityLevel::NORMAL);
         self::assertNotNull($out);
         self::assertTrue($out['assignment_redacted']);
-        self::assertSame('Restreinte', $out['unit_name']);
+        self::assertSame('Affectation restreinte', $out['unit_name']);
         self::assertNull($out['unit_path']);
     }
 
@@ -90,7 +90,7 @@ final class OrgVisibilityServiceTest extends TestCase
         $out = OrgVisibilityService::filterPersonnelRow($member, $this->caps(), VisibilityLevel::HIDDEN);
         self::assertNotNull($out);
         self::assertTrue($out['assignment_redacted']);
-        self::assertSame('Restreinte', $out['unit_name']);
+        self::assertSame('Affectation restreinte', $out['unit_name']);
     }
 
     public function testDetectStatusInconsistencies(): void
@@ -125,12 +125,53 @@ final class OrgVisibilityServiceTest extends TestCase
             ],
             'strength' => 4,
             'strengthDisplayMode' => 'visible_only',
+            'unitCode' => 'SOAR-B-A-1',
+            'adminId' => '0042-0137',
+            'motto' => 'Toujours prêts',
+            'commanderUserId' => 55,
+            'commander' => ['userId' => 55, 'label' => 'Cdt X'],
         ]);
-        self::assertSame('Unité restreinte', $node['label']);
+        self::assertSame('Unité anonymisée', $node['label']);
+        self::assertSame('', $node['unitCode']);
+        self::assertSame('', $node['adminId']);
+        self::assertSame('', $node['motto']);
+        self::assertSame(0, $node['commanderUserId']);
+        self::assertNull($node['commander']);
+        self::assertSame('unit_anonymized', $node['confidential']['kind']);
         self::assertTrue($node['isAnonymizedUnit']);
         self::assertSame('Opérateur', $node['members'][0]['label']);
         self::assertTrue($node['members'][0]['anonymized']);
         self::assertSame(0, $node['members'][0]['user_id']);
+    }
+
+    public function testRestrictUnitNodeDropsCommanderIdentity(): void
+    {
+        $node = OrgVisibilityService::restrictUnitNode([
+            'label' => 'Section Bravo',
+            'leader' => 'Cne Martin',
+            'commanderUserId' => 12,
+            'members' => [['user_id' => 3, 'label' => 'Bob']],
+        ], $this->caps());
+        self::assertSame('Section Bravo', $node['label']);
+        self::assertSame('Identité restreinte', $node['leader']);
+        self::assertSame(0, $node['commanderUserId']);
+        self::assertSame('Personnel anonymisé', $node['members'][0]['label']);
+        self::assertSame('unit_restricted', $node['confidential']['kind']);
+    }
+
+    public function testStaffViewerGetsLevelBadgeInsteadOfRedaction(): void
+    {
+        $node = OrgVisibilityService::applyEffectiveVisibility([
+            'unitId' => 4,
+            'label' => 'Cellule',
+            'visibilityLevel' => VisibilityLevel::ANONYMIZED,
+            'members' => [['user_id' => 3, 'label' => 'Bob']],
+            'children' => [],
+        ], $this->caps(['viewRestrictedUnits' => true]));
+        self::assertNotNull($node);
+        self::assertSame('Cellule', $node['label']);
+        self::assertSame('Anonymisée', $node['confidential']['label']);
+        self::assertStringStartsWith('Visible pour vous', $node['confidential']['hint']);
     }
 
     public function testShouldShowUnitByAdminStatus(): void

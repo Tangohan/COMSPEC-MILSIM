@@ -67,7 +67,8 @@ final class AtakSupportController
             'marketingActive' => 'soutenir',
             'marketingStyles' => [asset_url('assets/css/site-support.css') . '?v=1'],
             'tiers' => $tiers,
-            'defaultEur' => self::DEFAULT_EUR,
+            // ?montant=10 : palier choisi depuis le bandeau de don (style Émeraude) ; montant inconnu ignoré.
+            'defaultEur' => isset(self::TIERS[(int) $request->queryString('montant')]) ? (int) $request->queryString('montant') : self::DEFAULT_EUR,
             'minEur' => self::MIN_EUR,
             'maxEur' => self::MAX_EUR,
             'paypalBase' => $paypalBase,

@@ -13,6 +13,7 @@ use App\Repositories\ModerationArtifactRepository;
 use App\Repositories\PlatformAlertRepository;
 use App\Repositories\TenantAnalyticsRepository;
 use App\Services\Admin\AdminDashboardMetricsService;
+use App\Services\Admin\PlatformAccountsOverviewService;
 use App\Services\Admin\PlatformHealthDigest;
 use App\Services\Audit\AuditAction;
 
@@ -25,7 +26,9 @@ class SystemDashboardController
         private ?ModerationArtifactRepository $moderationArtifacts = null,
         private ?TenantAnalyticsRepository $tenantAnalytics = null,
         private ?PlatformHealthDigest $health = null,
+        private ?PlatformAccountsOverviewService $accountsOverview = null,
     ) {
+        $this->accountsOverview ??= new PlatformAccountsOverviewService();
         $this->health ??= new PlatformHealthDigest();
         $this->metrics ??= new AdminDashboardMetricsService();
         $this->auditLogs ??= new AuditLogRepository();
@@ -127,6 +130,18 @@ class SystemDashboardController
         } catch (\Throwable) {
         }
 
+        $accountsOverview = [
+            'communities' => [],
+            'accounts' => [],
+            'inactivity' => ['available' => false, 'total' => 0, 'buckets' => [], 'oldest' => []],
+            'error' => null,
+        ];
+        try {
+            $accountsOverview = $this->accountsOverview->overview(6);
+        } catch (\Throwable) {
+            $accountsOverview['error'] = 'Les aperçus des comptes et communautés sont momentanément indisponibles.';
+        }
+
         $healthRows = $this->health->rows();
 
         return Response::view('layout.main', [
@@ -154,6 +169,7 @@ class SystemDashboardController
             'adminAuditRecentTenant' => $adminAuditRecentTenant,
             'adminAuditModerationError' => $adminAuditModerationError,
             'adminPlatformUsagePreview' => $adminPlatformUsagePreview,
+            'adminAccountsOverview' => $accountsOverview,
             'backOfficePageCss' => ['platform-admin.css', 'ops-console.css'],
         ]);
     }

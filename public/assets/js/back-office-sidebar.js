@@ -20,7 +20,7 @@
 
     var isPlatform = aside && aside.id === 'platform-admin-sidebar';
     var storageKey = isPlatform ? 'ath-platform-sidebar-collapsed' : 'ath-bo-sidebar-collapsed';
-    var groupsKey = isPlatform ? 'ath-platform-nav-groups-v1' : 'ath-bo-nav-groups-v3';
+    var groupsKey = isPlatform ? 'ath-platform-nav-groups-v1' : 'ath-bo-nav-groups-v4';
 
     function loadCollapsed() {
       try {
@@ -139,8 +139,8 @@
 
     /* Sous-pages : chevron pour déplier sans quitter la page courante */
     function setKids(block, on) {
-      var kids = block.querySelector('.ath-sidebar__children');
-      var btn = block.querySelector('[data-ath-kids-toggle]');
+      var kids = block.querySelector(':scope > .ath-sidebar__children');
+      var btn = block.querySelector(':scope > .ath-sidebar__item-row [data-ath-kids-toggle]');
       if (!kids) return;
       kids.hidden = !on;
       block.classList.toggle('is-expanded', on);
@@ -155,6 +155,62 @@
         setKids(block, !block.classList.contains('is-expanded'));
       });
     });
+
+    /* Sous-menus (3e niveau) : repliables, ouverts d’office s’ils contiennent la page courante */
+    function setSection(section, on) {
+      var body = section.querySelector(':scope > .ath-sidebar__section-body');
+      var btn = section.querySelector(':scope > [data-ath-section-toggle]');
+      if (!body) return;
+      body.hidden = !on;
+      section.classList.toggle('is-expanded', on);
+      if (btn) btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+    }
+
+    sidebar.querySelectorAll('[data-ath-section-toggle]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        var section = btn.closest('[data-ath-section]');
+        if (!section) return;
+        setSection(section, !section.classList.contains('is-expanded'));
+      });
+    });
+
+    /* Clavier : flèches haut/bas entre les liens et boutons visibles du menu, Début/Fin, ← / → pour replier/déplier */
+    var navRoot = document.getElementById('ath-sidebar-nav');
+    if (navRoot) {
+      navRoot.addEventListener('keydown', function (e) {
+        var t = e.target;
+        if (!t || !t.matches || !t.matches('a, button')) return;
+        var key = e.key;
+        if (key === 'ArrowRight' || key === 'ArrowLeft') {
+          var open = key === 'ArrowRight';
+          var section = t.matches('[data-ath-section-toggle]') ? t.closest('[data-ath-section]') : null;
+          var block = !section && (t.matches('[data-ath-kids-toggle]') || t.classList.contains('ath-sidebar__item'))
+            ? t.closest('.ath-sidebar__nav-block') : null;
+          if (section) {
+            e.preventDefault();
+            setSection(section, open);
+          } else if (block && block.querySelector(':scope > .ath-sidebar__children')) {
+            e.preventDefault();
+            setKids(block, open);
+          }
+          return;
+        }
+        if (key !== 'ArrowDown' && key !== 'ArrowUp' && key !== 'Home' && key !== 'End') return;
+        var focusables = Array.prototype.filter.call(
+          navRoot.querySelectorAll('a[href], button'),
+          function (el) { return el.offsetParent !== null && !el.closest('[hidden]'); }
+        );
+        var idx = focusables.indexOf(t);
+        if (idx === -1) return;
+        var next = key === 'Home' ? 0
+          : key === 'End' ? focusables.length - 1
+          : idx + (key === 'ArrowDown' ? 1 : -1);
+        if (next < 0 || next >= focusables.length) return;
+        e.preventDefault();
+        focusables[next].focus();
+      });
+    }
 
     /* Amener la page courante dans la zone visible du menu */
     var navScroller = document.getElementById('ath-sidebar-nav');
@@ -195,9 +251,17 @@
         nav.querySelectorAll('[data-ath-nav-item]').forEach(function (el) {
           var block = el.querySelector('.ath-sidebar__nav-block');
           var kids = el.querySelectorAll('[data-ath-child-search]');
+          var sections = el.querySelectorAll('[data-ath-section]');
           if (q === '') {
             el.hidden = false;
             kids.forEach(function (k) { k.hidden = false; });
+            sections.forEach(function (s) {
+              s.hidden = false;
+              if (s._athOpenBefore !== undefined) {
+                setSection(s, s._athOpenBefore);
+                delete s._athOpenBefore;
+              }
+            });
             if (block && block._athKidsBefore !== undefined) {
               setKids(block, block._athKidsBefore);
               delete block._athKidsBefore;
@@ -213,6 +277,14 @@
             if (ok && !selfOk) anyKid = true;
           });
           el.hidden = !selfOk && !anyKid;
+          sections.forEach(function (s) {
+            var visible = s.querySelector('[data-ath-child-search]:not([hidden])');
+            if (s._athOpenBefore === undefined) {
+              s._athOpenBefore = s.classList.contains('is-expanded');
+            }
+            s.hidden = !visible;
+            setSection(s, !!visible && (anyKid || s._athOpenBefore));
+          });
           if (block && kids.length) {
             if (block._athKidsBefore === undefined) {
               block._athKidsBefore = block.classList.contains('is-expanded');

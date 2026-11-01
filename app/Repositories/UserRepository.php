@@ -192,6 +192,47 @@ class UserRepository
         return self::$hasServiceAccountColumn;
     }
 
+    /** Filtres « inactif » de l’annuaire plateforme : nombre de jours sans connexion, ou jamais connecté. */
+    public const PLATFORM_INACTIVITY_FILTERS = ['30', '90', '180', 'jamais'];
+
+    /**
+     * Clause HAVING (annuaire groupé par e-mail) pour un filtre d’inactivité ; null si filtre absent,
+     * inconnu ou colonne last_login_at absente.
+     *
+     * @return array{sql: string, params: list<string>}|null
+     */
+    public static function platformInactivityHaving(?string $inactivity, bool $hasLastLogin, ?int $now = null): ?array
+    {
+        $inactivity = trim((string) $inactivity);
+        if (!$hasLastLogin || !in_array($inactivity, self::PLATFORM_INACTIVITY_FILTERS, true)) {
+            return null;
+        }
+        if ($inactivity === 'jamais') {
+            return ['sql' => 'MAX(u.last_login_at) IS NULL', 'params' => []];
+        }
+
+        return [
+            'sql' => 'MAX(u.last_login_at) IS NOT NULL AND MAX(u.last_login_at) < ?',
+            'params' => [date('Y-m-d H:i:s', ($now ?? time()) - ((int) $inactivity) * 86400)],
+        ];
+    }
+
+    private static ?bool $hasLastLoginColumn = null;
+
+    private function hasLastLoginColumn(): bool
+    {
+        if (self::$hasLastLoginColumn === null) {
+            try {
+                $this->pdo()->query('SELECT last_login_at FROM users WHERE 1 = 0');
+                self::$hasLastLoginColumn = true;
+            } catch (\Throwable) {
+                self::$hasLastLoginColumn = false;
+            }
+        }
+
+        return self::$hasLastLoginColumn;
+    }
+
     private function hasDeletedAtColumn(): bool
     {
         if (self::$hasDeletedAtColumn === null) {
@@ -1771,6 +1812,148 @@ class UserRepository
     }
 
     /**
+     * Code de l’unité principale et abréviation du grade de chaque membre, pour les éléments {UNIT} et {GRADE}
+     * du modèle de matricule. Unité : affectation principale du dossier, sinon première affectation active.
+     *
+     * @param list<int> $userIds
+     * @return array<int, array{unit: string, grade: string}>
+     */
+    public function memberNumberContextsForTenant(int $tenantId, array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0)));
+        if ($tenantId < 1 || $userIds === []) {
+            return [];
+        }
+        $out = [];
+        foreach ($userIds as $id) {
+            $out[$id] = ['unit' => '', 'grade' => ''];
+        }
+        $tenantLit = (int) $tenantId;
+        foreach (array_chunk($userIds, 500) as $chunk) {
+            $in = implode(',', array_fill(0, count($chunk), '?'));
+            // Unité principale (dossier personnel), puis première affectation active.
+            if ($this->tableExists('personnel_profiles') && $this->personnelProfilesHasColumn('primary_unit_id')) {
+                $st = $this->pdo()->prepare(
+                    'SELECT pp.user_id, un.code FROM personnel_profiles pp
+                     INNER JOIN units un ON un.id = pp.primary_unit_id AND un.tenant_id = ' . $tenantLit . '
+                     WHERE pp.user_id IN (' . $in . ')'
+                    . ($this->personnelProfilesHasColumn('tenant_id') ? ' AND pp.tenant_id = ' . $tenantLit : '')
+                );
+                $st->execute($chunk);
+                while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                    $uid = (int) $row['user_id'];
+                    if (isset($out[$uid]) && $out[$uid]['unit'] === '') {
+                        $out[$uid]['unit'] = trim((string) ($row['code'] ?? ''));
+                    }
+                }
+            }
+            if ($this->tableExists('user_units')) {
+                $st = $this->pdo()->prepare(
+                    'SELECT uu.user_id, un.code FROM user_units uu
+                     INNER JOIN units un ON un.id = uu.unit_id AND un.tenant_id = ' . $tenantLit . '
+                     WHERE uu.user_id IN (' . $in . ')'
+                    . ($this->columnExists('user_units', 'ended_at') ? ' AND uu.ended_at IS NULL' : '')
+                    . ' ORDER BY uu.user_id, uu.unit_id'
+                );
+                $st->execute($chunk);
+                while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                    $uid = (int) $row['user_id'];
+                    $code = trim((string) ($row['code'] ?? ''));
+                    if (isset($out[$uid]) && $out[$uid]['unit'] === '' && $code !== '') {
+                        $out[$uid]['unit'] = $code;
+                    }
+                }
+            }
+            // Grade : référentiel (label_short) ou ancienne table (short_name).
+            if ($this->tableExists('grades') && $this->columnExists('users', 'grade_id')) {
+                $short = $this->columnExists('grades', 'label_short') ? 'label_short' : ($this->columnExists('grades', 'short_name') ? 'short_name' : null);
+                if ($short !== null) {
+                    $hasUcp = $this->hasCommunityMembershipTable() && $this->tableExists('user_community_profiles')
+                        && $this->columnExists('user_community_profiles', 'grade_id');
+                    $gradeExpr = $hasUcp ? 'COALESCE(ucp.grade_id, u.grade_id)' : 'u.grade_id';
+                    $st = $this->pdo()->prepare(
+                        'SELECT u.id, g.' . $short . ' AS grade_short FROM users u '
+                        . ($hasUcp ? 'LEFT JOIN user_community_profiles ucp ON ucp.user_id = u.id AND ucp.tenant_id = ' . $tenantLit . ' ' : '')
+                        . 'INNER JOIN grades g ON g.id = ' . $gradeExpr . '
+                         WHERE u.id IN (' . $in . ')'
+                    );
+                    $st->execute($chunk);
+                    while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                        $uid = (int) $row['id'];
+                        if (isset($out[$uid])) {
+                            $out[$uid]['grade'] = trim((string) ($row['grade_short'] ?? ''));
+                        }
+                    }
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Membres actifs de la communauté et leur matricule d’organisation (page Matricules du back-office) :
+     * nom, indicatif, e-mail, matricule plateforme et matricule de CETTE communauté.
+     *
+     * @return list<array{id: int, display_name: string, callsign: string, email: string, athena_identifier: string, tenant_member_number: string}>
+     */
+    public function listTenantMemberNumbersForTenant(int $tenantId, int $limit = 5000): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $limit = max(1, min(10000, $limit));
+        $pdo = $this->pdo();
+        $hasTmn = $this->hasTenantMemberNumberColumn();
+        $hasAthena = $this->hasAthenaIdentifierColumn();
+        $hasUcp = $this->hasCommunityMembershipTable() && $this->tableExists('user_community_profiles');
+        $tenantLit = (int) $tenantId;
+        $pack = $this->technicalAccountExclusionPredicate('u');
+
+        $nameExpr = $hasUcp ? 'COALESCE(ucp.display_name, u.display_name)' : 'u.display_name';
+        $callsignExpr = $hasUcp ? 'COALESCE(ucp.callsign, u.callsign)' : 'u.callsign';
+        $athenaSelect = $hasAthena
+            ? ($hasUcp ? 'COALESCE(ucp.athena_identifier, u.athena_identifier)' : 'u.athena_identifier')
+            : "''";
+        $tmnSelect = $hasTmn
+            ? ($hasUcp
+                ? 'COALESCE(ucp.tenant_member_number, CASE WHEN u.tenant_id = ' . $tenantLit . ' THEN u.tenant_member_number END)'
+                : 'u.tenant_member_number')
+            : 'NULL';
+        $where = [$this->sqlMemberOfTenantPredicate('u', $tenantId), $pack['sql']];
+        if ($hasUcp) {
+            $where[] = SqlText::coalesceEqualsLiteral($pdo, 'ucp.status', 'u.status', 'active');
+        } else {
+            $where[] = SqlText::equalsLiteral($pdo, 'u.status', 'active');
+        }
+        if ($this->hasDeletedAtColumn()) {
+            $where[] = 'u.deleted_at IS NULL';
+        }
+        $sql = 'SELECT u.id, ' . $nameExpr . ' AS display_name, ' . $callsignExpr . ' AS callsign, u.email, '
+            . $athenaSelect . ' AS athena_identifier, ' . $tmnSelect . ' AS tenant_member_number
+            FROM users u '
+            . ($hasUcp ? 'LEFT JOIN user_community_profiles ucp ON ucp.user_id = u.id AND ucp.tenant_id = ' . $tenantLit . ' ' : '')
+            . 'WHERE ' . implode(' AND ', $where) . '
+            ORDER BY u.id ASC
+            LIMIT ' . $limit;
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($pack['params']);
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $out[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'display_name' => trim((string) ($row['display_name'] ?? '')),
+                'callsign' => trim((string) ($row['callsign'] ?? '')),
+                'email' => trim((string) ($row['email'] ?? '')),
+                'athena_identifier' => trim((string) ($row['athena_identifier'] ?? '')),
+                'tenant_member_number' => trim((string) ($row['tenant_member_number'] ?? '')),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Annuaire personnel enrichi : grade, affectation principale, matricule, ancienneté, rôle métier —
      * en une seule requête (jointures), sans boucle N+1. Recherche optionnelle (nom affiché, prénom/nom,
      * indicatif, slug, identifiant Athena, nom de personnage).
@@ -3067,12 +3250,14 @@ class UserRepository
         ?string $status = null,
         ?int $tenantId = null,
         int $page = 1,
-        int $perPage = 50
+        int $perPage = 50,
+        ?string $inactivity = null
     ): array {
         $page = max(1, $page);
         $perPage = max(10, min(100, $perPage));
         $offset = ($page - 1) * $perPage;
         $pdo = $this->pdo();
+        $inactivityFilter = self::platformInactivityHaving($inactivity, $this->hasLastLoginColumn());
         $hasMemberships = $this->hasCommunityMembershipTable();
         $hasDeletedAt = $this->hasDeletedAtColumn();
         $pack = $this->technicalAccountExclusionPredicate('u');
@@ -3141,24 +3326,29 @@ class UserRepository
         $fromUsers = $hasMemberships
             ? 'FROM users u'
             : 'FROM users u INNER JOIN tenants t ON t.id = u.tenant_id';
+        // Filtre « inactif » : porte sur la dernière connexion de la personne (toutes fiches confondues).
+        $having = $inactivityFilter !== null ? ' HAVING ' . $inactivityFilter['sql'] : '';
+        $params = array_merge($params, $inactivityFilter['params'] ?? []);
+        $sortSelect = $inactivityFilter !== null ? 'MAX(u.last_login_at) AS sort_at' : 'MAX(u.updated_at) AS sort_at';
+        $sortOrder = $inactivityFilter !== null ? 'sort_at ASC, email_key ASC' : 'sort_at DESC';
 
         $countStmt = $this->pdo()->prepare(
             "SELECT COUNT(*) FROM (
                 SELECT 1
                 {$fromUsers}
                 WHERE {$where}
-                GROUP BY LOWER(TRIM(u.email))
+                GROUP BY LOWER(TRIM(u.email)){$having}
             ) grouped_accounts"
         );
         $countStmt->execute($params);
         $total = (int) $countStmt->fetchColumn();
 
         $emailStmt = $this->pdo()->prepare(
-            "SELECT LOWER(TRIM(u.email)) AS email_key, MAX(u.updated_at) AS sort_at
+            "SELECT LOWER(TRIM(u.email)) AS email_key, {$sortSelect}
              {$fromUsers}
              WHERE {$where}
-             GROUP BY LOWER(TRIM(u.email))
-             ORDER BY sort_at DESC
+             GROUP BY LOWER(TRIM(u.email)){$having}
+             ORDER BY {$sortOrder}
              LIMIT {$perPage} OFFSET {$offset}"
         );
         $emailStmt->execute($params);
@@ -4178,6 +4368,33 @@ class UserRepository
     }
 
     /**
+     * Comme countActiveMembers, sans les comptes techniques (modération système, comptes de service) :
+     * les personnes réellement présentes dans la communauté.
+     */
+    public function countActiveHumanMembers(int $tenantId): int
+    {
+        $tech = $this->technicalAccountExclusionPredicate('u');
+        if ($this->hasCommunityMembershipTable()) {
+            $stmt = $this->pdo()->prepare(
+                "SELECT COUNT(DISTINCT u.id)
+                 FROM users u
+                 LEFT JOIN user_community_profiles p ON p.user_id = u.id AND p.tenant_id = " . (int) $tenantId . "
+                 WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . "
+                   AND " . SqlText::coalesceInLiterals($this->pdo(), 'p.status', 'u.status', ['active']) . "
+                   AND " . $tech['sql']
+            );
+            $stmt->execute($tech['params']);
+
+            return (int) $stmt->fetchColumn();
+        }
+        $statusActive = SqlText::inLiterals($this->pdo(), 'u.status', ['active']);
+        $stmt = $this->pdo()->prepare("SELECT COUNT(*) FROM users u WHERE u.tenant_id = ? AND {$statusActive} AND " . $tech['sql']);
+        $stmt->execute(array_merge([$tenantId], $tech['params']));
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
      * % de membres actifs ayant eu une activité (last_login) sur les 30 derniers jours.
      */
     public function activityRateLast30DaysPercent(int $tenantId): ?int
@@ -4282,6 +4499,7 @@ class UserRepository
         $sql = "SELECT u.id, u.display_name, u.callsign, u.status,
                        {$gradeShort},
                        r.name AS role_name,
+                       un.id AS unit_id,
                        un.name AS unit_name
                 FROM users u
                 INNER JOIN user_profile_display_settings ups ON ups.user_id = u.id AND COALESCE(ups.public_roster_opt_in, 0) = 1
