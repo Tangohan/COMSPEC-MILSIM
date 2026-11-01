@@ -59,3 +59,79 @@ apparaît qu	commentaire	public/assets/js/sse-shell.js
 état choisi par l	commentaire	public/assets/js/sse-shell.js
 "Barlow Condensed", "Arial Narrow", sans-serif	police CSS	public/assets/js/year-review.js
 Barlow, Arial, sans-serif	police CSS	public/assets/js/year-review.js
+Collation	identique en anglais	app/Controllers/Admin/System/SystemSettingsController.php
+Intervention	identique en anglais	app/Controllers/Admin/System/SystemTenantInterventionController.php
+du -sb	bout de code (commande shell)	app/Services/Platform/PlatformStorageService.php
+/(?<=[.!?])\s+(?=[A-ZÀ-ÖØ-Ý«])/u	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+/[\s.(]*non testé en jeu\)?/iu	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+/\b(?:COMSPEC ATAK|pack(?: téléphone)?)\s+(\d+\.\d+\.\d+)/iu	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+/\s*\((?:[^()]*\d+\.\d+[^()]*|[^()]*regroupement[^()]*|site|non testé en jeu)\)\s*/iu	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+/^### Détail technique/mu	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+/^### Résumé joueur\s*\n(.*?)(?=^### |^---|\z)/msu	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+/partie du regroupement\s+(\d+\.\d+\.\d+)/iu	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+/partie du regroupement|regroupé dans/iu	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+amélior	bruit d'extraction (fragment de code)	app/Services/Platform/PublicReleaseHistoryService.php
+Cache	identique en anglais	app/Support/PlatformStorageCatalog.php
+Link %1	identique en anglais	views/admin/system/_user_atak_panel.php
+Link %3	identique en anglais	views/admin/system/_user_atak_panel.php
+mod %2	identique en anglais	views/admin/system/_user_atak_panel.php
+mod %3	identique en anglais	views/admin/system/_user_atak_panel.php
+×%2	identique en anglais	views/admin/system/_user_atak_panel.php
+Athena %1	identique en anglais (nom propre + valeur)	views/admin/system/advanced_fiche_edit.php
+%1 s	identique en anglais	views/admin/system/analytics.php
+Occurrences	identique en anglais	views/admin/system/analytics.php
+Signal	identique en anglais	views/admin/system/analytics.php
+Corrections	identique en anglais	views/admin/system/contributors.php
+English	nom de langue (non traduit)	views/admin/system/contributors.php
+Español	nom de langue (non traduit)	views/admin/system/contributors.php
+es, de	codes de langue	views/admin/system/contributors.php
+ancien tableau de bord, la synthèse opérationnelle et, en onglets, la console d	commentaire de code (non affiché)	views/admin/system/dashboard.php
+une ligne et purge. Rendu par public/assets/js/admin-data-registry.js. * * @var array	commentaire de code (non affiché)	views/admin/system/data_registry.php
+DEMO_NDA_GATE_ACCESS_CODE=XXXX-XXXX	variable de configuration	views/admin/system/demo_nda.php
+DEMO_NDA_GATE_ENABLED=true	variable de configuration	views/admin/system/demo_nda.php
+— version	identique en anglais	views/admin/system/deployment_campaign_show.php
+%1 v%2	identique en anglais	views/admin/system/deployment_community_form.php
+, name:string, slug:string, exists:bool, listed:bool, payload:?array	commentaire de code (annotation de type)	views/admin/system/discord_showcase.php
+, tags:list	commentaire de code (annotation de type)	views/admin/system/discord_showcase.php
+Amazon SES	nom de produit	views/admin/system/mail_traffic.php
+Communication	identique en anglais	views/admin/system/mail_traffic.php
+' : 'Non' ?>	bruit d'extraction (fragment de code)	views/admin/system/maintenance_index.php
+Scope	identique en anglais	views/admin/system/maintenance_index.php
+System Ops	identique en anglais	views/admin/system/maintenance_index.php
+preset: %1	identique en anglais	views/admin/system/maintenance_index.php
+Suspension	identique en anglais	views/admin/system/member_sanctions.php
+Sources	identique en anglais	views/admin/system/military_referential_form.php
+Pagination	identique en anglais	views/admin/system/newsletter.php
+Maintenance	identique en anglais	views/admin/system/ops_console.php
+anglais reprend le français s	commentaire de code (non affiché)	views/admin/system/partials/payments_donation_banner.php
+Escadron Alpha	exemple de nom saisi	views/admin/system/plan_payments.php
+Kodiak	exemple de nom saisi	views/admin/system/plan_payments.php
+Net	identique en anglais	views/admin/system/plan_payments.php
+Transaction	identique en anglais	views/admin/system/plan_payments.php
+Transaction %1	identique en anglais	views/admin/system/plan_payments.php
+Audience	identique en anglais	views/admin/system/platform_alerts_form.php
+General Information › Linked Roles Verification URL	libellé de l'interface Discord (anglais)	views/admin/system/platform_integrations.php
+OAuth2 › Redirects	libellé de l'interface Discord (anglais)	views/admin/system/platform_integrations.php
+équipe Athena, rôles liés de Discord (comptes du site), * envoi commun des e-mails : tout en base, plus rien dans le .env. Mêmes styles et comportements que les intégrations * des communautés (back-office-integrations.css / .js). * * @var array	commentaire de code (non affiché)	views/admin/system/platform_integrations.php
+[data-par-date]	sélecteur CSS	views/admin/system/registry_pins.php
+[data-par-duration]	sélecteur CSS	views/admin/system/registry_pins.php
+[data-par-nomatch]	sélecteur CSS	views/admin/system/registry_pins.php
+[data-par-row]	sélecteur CSS	views/admin/system/registry_pins.php
+[data-par-search]	sélecteur CSS	views/admin/system/registry_pins.php
+Email	identique en anglais	views/admin/system/site_role_assignments.php
+staff@example.com	exemple d'adresse	views/admin/system/site_role_assignments.php
+%1 tables	identique en anglais	views/admin/system/storage.php
+(%1 max)	identique en anglais	views/admin/system/storage_table.php
+%1 table(s)	identique en anglais	views/admin/system/storage_tables.php
+Table	identique en anglais	views/admin/system/storage_tables.php
+Slug	identique en anglais	views/admin/system/subscription_plans_index.php
+INSERT INTO `tenants` ...	bout de code SQL	views/admin/system/tenant_recovery.php
+Logo URL	identique en anglais	views/admin/system/tenant_recovery.php
+Settings (JSON)	identique en anglais	views/admin/system/tenant_recovery.php
+Users	identique en anglais	views/admin/system/tenant_recovery.php
+Archive	identique en anglais	views/admin/system/updates.php
+Version %1	identique en anglais	views/admin/system/updates.php
+<textarea id="bio" name="bio" rows="3" class="%1	bout de code HTML	views/admin/system/user_edit.php
+<textarea id="command_notes" name="command_notes" rows="4" class="%1	bout de code HTML	views/admin/system/user_edit.php
+<textarea id="nicknames_text" name="nicknames_text" rows="3" class="%1	bout de code HTML	views/admin/system/user_edit.php
+tenant #%2	identique en anglais	views/admin/system/user_person.php
