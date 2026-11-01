@@ -692,6 +692,68 @@ class PersonnelAssignmentRepository
     }
 
     /**
+     * Change le rôle tenu dans l’unité principale (tableur des effectifs), sans toucher aux autres affectations.
+     * L’ancienne ligne est close pour garder l’historique, sauf si elle date du jour (corrigée sur place).
+     * Sans affectation active, $fallbackUnitId (unité du dossier, de la communauté) reçoit une affectation principale.
+     *
+     * @return bool false si aucune unité ne permet de porter le rôle
+     */
+    public function changePrimaryRoleName(int $userId, int $tenantId, string $roleName, ?int $fallbackUnitId = null): bool
+    {
+        $roleName = trim($roleName);
+        if ($userId < 1 || $tenantId < 1 || $roleName === '' || !$this->personnelAssignmentsTableExists()) {
+            return false;
+        }
+        $roleName = mb_substr($roleName, 0, 120);
+        $current = $this->getPrimaryAssignment($userId, $tenantId);
+        $unitId = (int) ($current['unit_id'] ?? 0);
+        if ($current === null) {
+            $unitId = (int) ($fallbackUnitId ?? 0);
+            if ($unitId < 1) {
+                return false;
+            }
+            $st = $this->pdo->prepare('SELECT 1 FROM units WHERE id = ? AND tenant_id = ? LIMIT 1');
+            $st->execute([$unitId, $tenantId]);
+            if (!$st->fetchColumn()) {
+                return false;
+            }
+        } elseif (PersonnelAssignmentHistoryCoalescer::sameActiveAssignment($current, ['unit_id' => $unitId, 'role_name' => $roleName])) {
+            return true;
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            $startedToday = $current !== null && substr((string) ($current['started_at'] ?? ''), 0, 10) === date('Y-m-d');
+            if ($current !== null && $startedToday) {
+                $this->pdo->prepare('UPDATE personnel_assignments SET role_name = ?, updated_at = NOW() WHERE id = ? AND user_id = ?')
+                    ->execute([$roleName, (int) $current['id'], $userId]);
+            } else {
+                if ($current !== null) {
+                    $this->pdo->prepare(
+                        "UPDATE personnel_assignments SET status = 'inactive', ended_at = CURDATE(), is_primary = 0, updated_at = NOW()
+                         WHERE id = ? AND user_id = ?"
+                    )->execute([(int) $current['id'], $userId]);
+                }
+                $this->pdo->prepare(
+                    "INSERT INTO personnel_assignments (user_id, unit_id, role_name, is_primary, started_at, ended_at, status, created_at)
+                     VALUES (?, ?, ?, 1, CURDATE(), NULL, 'active', NOW())"
+                )->execute([$userId, $unitId, $roleName]);
+            }
+            if ($this->userUnitsTableExists()) {
+                $this->pdo->prepare(
+                    'UPDATE user_units SET assignment_type = ? WHERE user_id = ? AND unit_id = ? AND (ended_at IS NULL OR ended_at > NOW())'
+                )->execute([$roleName, $userId, $unitId]);
+            }
+            $this->pdo->commit();
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+
+        return true;
+    }
+
+    /**
      * Aligne personnel_assignments et user_units sur le dossier (unité principale + rôle d’affectation).
      * Indispensable pour la fiche personnelle, l’ORBAT et les indicateurs « sans unité » (user_units).
      */
