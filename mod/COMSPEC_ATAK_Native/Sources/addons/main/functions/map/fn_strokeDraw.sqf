@@ -70,7 +70,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_SkGeo", _geo];
 {
     _x params ["_m", "_st"];
     if ((markerShape _m) isEqualTo "" || {(markerAlpha _m) <= 0}) then { continue };
-    _st params [["_w", 2], ["_arrow", false]];
+    _st params [["_w", 2], ["_arrow", false], ["_closed", false], ["_lbl", ""]];
     private _g = _geo getOrDefault [_m, []];
     if ((count _g) isEqualTo 0) then {
         private _flat = markerPolyline _m;
@@ -89,10 +89,47 @@ missionNamespace setVariable ["COMSPEC_ATAK_SkGeo", _geo];
     private _c = [markerColor _m] call _rgbaOf;
     _c set [3, (_c select 3) * (markerAlpha _m)];
     ["line", _map, [_pts, _c, (_w max 1 min 3) * 1.3, false, _arrow, false, _mpx]] call comspec_atak_native_fnc_planGfx;
+    // Tracé routier : distance et temps estimés au milieu du trait (traduits une fois, gardés avec ses points), écrits
+    // seulement quand le trait est assez long à l'écran pour ne pas encombrer la carte dézoomée.
+    if (_lbl isEqualType "" && {_lbl isNotEqualTo ""}) then {
+        if ((count _g) < 4) then {
+            private _len = 0;
+            for "_i" from 1 to ((count _pts) - 1) do { _len = _len + ((_pts select (_i - 1)) distance2D (_pts select _i)); };
+            private _mid = _pts select 0;
+            private _run = 0;
+            for "_i" from 1 to ((count _pts) - 1) do {
+                private _a = _pts select (_i - 1); private _b = _pts select _i;
+                private _d = _a distance2D _b;
+                if (_run + _d >= _len / 2) exitWith { _mid = _a vectorAdd ((_b vectorDiff _a) vectorMultiply ((((_len / 2) - _run) / (_d max 0.01)) min 1)); };
+                _run = _run + _d;
+            };
+            _g pushBack [_mid, _lbl call comspec_atak_native_fnc_tr, _len];
+        };
+        (_g select 3) params ["_lp", "_lt", "_len"];
+        if (_len > 160 * _mpx) then {
+            _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)", [0.97, 0.98, 0.96, (markerAlpha _m) max 0.4], _lp, 0, 0, 0, _lt, 2,
+                0.024 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), (COMSPEC_ATAK_FontSet select 1), "center"];
+        };
+    };
 } forEach _list;
 
 // Tracé en cours (trait A-B suivant le curseur, ou dessin à main levée) au style choisi.
 private _state = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+// Tracés par les routes en calcul (fn_markerStroke, fn_roadPath) : étapes en pointillé clignotant et « CALCUL… » au bout.
+// Un calcul de plus de 90 s (script interrompu) n'est plus montré.
+private _jobs = _state getOrDefault ["roadJobs", []];
+if ((count _jobs) > 0) then {
+    private _al = 0.45 + 0.35 * (abs (sin (_now * 240)));
+    {
+        private _jp = _x getOrDefault ["pts", []];
+        private _age = _now - (_x getOrDefault ["t0", _now]);
+        if ((count _jp) < 2 || {_age > 90}) then { continue };
+        ["line", _map, [_jp, [0.88, 0.92, 0.9, _al], 1.6, true, false, false, _mpx]] call comspec_atak_native_fnc_planGfx;
+        _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)", [0.97, 0.98, 0.96, 1], _jp select -1, 0, 0, 0,
+            format ["%1 %2 s", ("CALCUL PAR LES ROUTES…") call comspec_atak_native_fnc_tr, floor _age], 2,
+            0.024 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), (COMSPEC_ATAK_FontSet select 1), "right"];
+    } forEach _jobs;
+};
 private _stroke = +(_state getOrDefault ["drawStroke", []]);
 if ((count _stroke) > 0) then {
     if ((_state getOrDefault ["mapMode", ""]) isEqualTo "LINE" && {(count _cursor) >= 2}) then { _stroke pushBack [_cursor select 0, _cursor select 1, 0]; };
