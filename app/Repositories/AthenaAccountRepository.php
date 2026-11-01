@@ -246,6 +246,24 @@ final class AthenaAccountRepository
         return $row ?: null;
     }
 
+    /**
+     * Ouverture (created_at, UTC) de la session jeu qui a remis ce jeton de poste : chaque émission recopie
+     * le jeton dans sa session, une session déconnectée garde donc la trace de son jeton.
+     */
+    public function findPairingSessionCreatedAt(int $accountId, string $pairingTokenHash): ?string
+    {
+        if ($accountId < 1 || $pairingTokenHash === '') {
+            return null;
+        }
+        $st = $this->pdo()->prepare(
+            'SELECT created_at FROM game_sessions WHERE account_id = ? AND pairing_token_hash = ? ORDER BY id DESC LIMIT 1'
+        );
+        $st->execute([$accountId, $pairingTokenHash]);
+        $value = $st->fetchColumn();
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
     public function assignSteamIdIfEmpty(int $accountId, string $steamId): bool
     {
         $steamId = trim($steamId);

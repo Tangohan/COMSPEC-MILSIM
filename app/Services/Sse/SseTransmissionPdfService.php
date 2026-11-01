@@ -5,26 +5,23 @@ declare(strict_types=1);
 namespace App\Services\Sse;
 
 use App\Core\Response;
+use App\Core\Session;
 use App\Repositories\SseIntelEventRepository;
+use App\Support\Pdf\AthenaPdfTheme as Theme;
 use App\Support\SseTransmissionView;
 use App\Support\TrainingCertificatePdfEngine;
 
 /**
- * Exports PDF des transmissions terrain SSE : fiche unitaire et journal.
+ * Exports PDF des transmissions terrain SSE : fiche unitaire et journal, au gabarit Athena
+ * (A4 portrait, en-tête communauté + référence, bandeau de diffusion, pied « Généré par Athena »).
  *
- * Mise en page « fiche de renseignement » : bandeau de diffusion, cartouche titre,
- * cotation OTAN lisible, données regroupées par thème (identité, contexte, localisation,
- * relevés), coordonnées dédoublonnées, identité liée avec photo, traçabilité technique en fin.
+ * Mise en page « fiche de renseignement » : bloc titre, cotation OTAN lisible, données regroupées
+ * par thème (identité, contexte, localisation, relevés), coordonnées dédoublonnées, identité liée
+ * avec photo, traçabilité technique en fin.
  */
 final class SseTransmissionPdfService
 {
-    private const INK = '#0b1220';
-    private const MUTED = '#64748b';
-    private const LINE = '#e2e8f0';
-    private const SOFT = '#f8fafc';
-    private const ACCENT = '#0f5132';
-    private const ACCENT_SOFT = '#e8f3ee';
-    private const MARKING = 'DIFFUSION RESTREINTE · USAGE INTERNE SSE';
+    private const MARKING = 'Diffusion restreinte · usage interne SSE';
 
     /** Regroupement des champs du payload par thème (ordre d'affichage). */
     private const GROUPS = [
@@ -51,6 +48,9 @@ final class SseTransmissionPdfService
 
     private const CLIENT_KEYS = ['mod_name', 'mod_version', 'mod_cfg', 'sse_addon_version', 'sse_addon_cfg', 'arma_version'];
 
+    /** Numérotation des sections de la fiche (« 01 », « 02 »…). */
+    private int $sectionNo = 0;
+
     // ------------------------------------------------------------------ exports
 
     /**
@@ -65,9 +65,10 @@ final class SseTransmissionPdfService
             $html,
             'Journal des transmissions terrain',
             'journal-transmissions-' . date('Ymd-Hi') . '.pdf',
-            'L',
+            'P',
             'Journal des transmissions',
-            []
+            [],
+            ['kind' => 'Journal des transmissions', 'reference' => 'SSE-TX-' . date('Ymd'), 'tenant_id' => $this->tenantOf($events[0] ?? [])]
         );
     }
 
@@ -90,7 +91,8 @@ final class SseTransmissionPdfService
             sprintf('transmission-TX-%d.pdf', max(0, $id)),
             'P',
             'TX-' . $id,
-            $this->resolveImages($images, $linkedPerson)
+            $this->resolveImages($images, $linkedPerson),
+            ['kind' => 'Fiche de transmission terrain', 'tenant_id' => $this->tenantOf($event)]
         );
     }
 
@@ -103,6 +105,7 @@ final class SseTransmissionPdfService
      */
     public function eventHtml(array $event, array $payload, ?array $linkedPerson, string $generatedAt): string
     {
+        $this->sectionNo = 0;
         $id = (int) ($event['id'] ?? 0);
         $nature = (string) ($event['event_type_label'] ?? 'Transmission');
         $summary = trim((string) ($event['summary'] ?? ''));
@@ -111,31 +114,22 @@ final class SseTransmissionPdfService
 
         $html = $this->style();
 
-        // Cartouche titre
-        $html .= '<table cellpadding="0" cellspacing="0" width="100%"><tr>'
-            . '<td width="72%" style="background-color:' . self::INK . ';color:#ffffff;">'
-            . '<table cellpadding="10" cellspacing="0" width="100%"><tr><td>'
-            . '<span style="font-size:7.5px;color:#9fb3c8;letter-spacing:1.5px;">FICHE DE TRANSMISSION TERRAIN</span><br/>'
-            . '<span style="font-size:18px;font-weight:bold;">' . $this->esc($nature) . '</span><br/>'
-            . '<span style="font-size:9px;color:#cbd5e1;">' . $this->esc($summary !== '' ? $summary : 'Sans résumé') . '</span>'
-            . '</td></tr></table></td>'
-            . '<td width="28%" style="background-color:' . self::ACCENT . ';color:#ffffff;" align="right">'
-            . '<table cellpadding="10" cellspacing="0" width="100%"><tr><td align="right">'
-            . '<span style="font-size:7.5px;color:#bfe3cf;letter-spacing:1.5px;">RÉFÉRENCE</span><br/>'
-            . '<span style="font-size:20px;font-weight:bold;">TX-' . $id . '</span><br/>'
-            . '<span style="font-size:8.5px;color:#d7efe2;">' . $this->esc($time) . '</span>'
-            . '</td></tr></table></td>'
-            . '</tr></table>';
+        // Bloc titre
+        $html .= $this->titleHtml(
+            'Fiche de transmission terrain · TX-' . $id,
+            $nature,
+            ($summary !== '' ? $summary : 'Sans résumé') . ' · ' . $time
+        );
 
         // Bande d'informations clés
-        $html .= '<br/><table cellpadding="6" cellspacing="0" width="100%" style="border:0.4px solid ' . self::LINE . ';"><tr>'
-            . $this->metaCell('Origine', (string) ($event['source_system_label'] ?? '—'), '25%')
+        $html .= '<table cellpadding="5" cellspacing="0" style="border:0.3px solid ' . Theme::LINE . ';"><tr>'
+            . $this->metaCell('Origine', (string) ($event['source_system_label'] ?? '—'), '25%', false)
             . $this->metaCell('Opérateur', $this->orDash($event['author_label'] ?? ''), '25%')
             . $this->metaCell('Unité', $this->orDash($event['unit_label'] ?? '', 'Non renseignée'), '25%')
-            . '<td width="25%" style="background-color:' . self::SOFT . ';">'
+            . '<td width="25%" style="border-left:0.3px solid ' . Theme::LINE . ';">'
             . '<span class="lbl">COTATION</span><br/>' . $this->cotationBadge($code)
-            . '<br/><span style="font-size:7px;color:' . self::MUTED . ';">' . $this->esc($this->cotationMeaning($code)) . '</span>'
-            . '</td></tr></table>';
+            . '<br/><span style="font-size:7pt;color:' . Theme::MUTED . ';">' . $this->esc($this->cotationMeaning($code)) . '</span>'
+            . '</td></tr></table>' . Theme::spacer(1);
 
         // Identité liée
         if (is_array($linkedPerson) && trim((string) ($linkedPerson['name'] ?? '')) !== '') {
@@ -208,8 +202,8 @@ final class SseTransmissionPdfService
         $tech[] = ['Horodatage serveur', $this->formatDateTime((string) ($event['created_at'] ?? $event['event_time'] ?? ''))];
         $html .= $this->sectionTitle('Traçabilité technique', true) . $this->kvGrid($tech, true);
 
-        $html .= '<br/><span style="font-size:7px;color:' . self::MUTED . ';">Document généré par Athena SSE le '
-            . $this->esc($generatedAt) . '. Toute reproduction ou diffusion hors du bureau SSE est interdite.</span>';
+        $html .= Theme::spacer(3) . '<p style="font-size:7pt;color:' . Theme::MUTED . ';">Document généré par Athena SSE le '
+            . $this->esc($generatedAt) . '. Toute reproduction ou diffusion hors du bureau SSE est interdite.</p>';
 
         return $html;
     }
@@ -237,51 +231,45 @@ final class SseTransmissionPdfService
         $last = $events !== [] ? $this->formatDateTime((string) $events[0]['event_time']) : '—';
 
         $html = $this->style();
-        $html .= '<table cellpadding="10" cellspacing="0" width="100%"><tr>'
-            . '<td width="70%" style="background-color:' . self::INK . ';color:#ffffff;">'
-            . '<span style="font-size:7.5px;color:#9fb3c8;letter-spacing:1.5px;">BUREAU SSE · EXTRAIT</span><br/>'
-            . '<span style="font-size:17px;font-weight:bold;">Journal des transmissions terrain</span><br/>'
-            . '<span style="font-size:8.5px;color:#cbd5e1;">' . $this->esc($filterLabel !== '' ? $filterLabel : 'Toutes transmissions')
-            . ' · généré le ' . $this->esc($generatedAt) . '</span></td>'
-            . '<td width="30%" style="background-color:' . self::ACCENT . ';color:#ffffff;" align="right">'
-            . '<span style="font-size:7.5px;color:#bfe3cf;letter-spacing:1.5px;">TRANSMISSIONS</span><br/>'
-            . '<span style="font-size:20px;font-weight:bold;">' . $count . '</span><br/>'
-            . '<span style="font-size:8px;color:#d7efe2;">' . count($operators) . ' opérateur' . (count($operators) > 1 ? 's' : '') . '</span>'
-            . '</td></tr></table><br/>';
+        $html .= $this->titleHtml(
+            'Bureau SSE · Extrait',
+            'Journal des transmissions terrain',
+            ($filterLabel !== '' ? $filterLabel : 'Toutes transmissions') . ' · généré le ' . $generatedAt
+        );
 
         // Synthèse
-        $chips = '';
-        foreach (array_slice($byNature, 0, 6, true) as $n => $c) {
-            $chips .= '<td style="background-color:' . self::SOFT . ';border:0.4px solid ' . self::LINE . ';">'
-                . '<span class="lbl">' . $this->esc(mb_strtoupper($n, 'UTF-8')) . '</span><br/>'
-                . '<span style="font-size:12px;font-weight:bold;">' . $c . '</span></td>';
+        $stats = [[
+            'label' => 'Transmissions',
+            'value' => (string) $count,
+            'sub' => count($operators) . ' opérateur' . (count($operators) > 1 ? 's' : ''),
+        ]];
+        foreach (array_slice($byNature, 0, 4, true) as $n => $c) {
+            $stats[] = ['label' => (string) $n, 'value' => (string) $c];
         }
-        $html .= '<table cellpadding="6" cellspacing="3" width="100%"><tr>'
-            . '<td style="background-color:' . self::SOFT . ';border:0.4px solid ' . self::LINE . ';"><span class="lbl">PÉRIODE</span><br/>'
-            . '<span style="font-size:8.5px;font-weight:bold;">' . $this->esc($first) . '<br/>→ ' . $this->esc($last) . '</span></td>'
-            . $chips . '</tr></table><br/>';
+        $html .= Theme::stats($stats);
+        $html .= Theme::keyValues([['Période', $first . ' → ' . $last]], '30%') . Theme::spacer(2);
 
-        $html .= '<table cellpadding="5" cellspacing="0" width="100%">'
-            . '<thead><tr style="background-color:' . self::INK . ';color:#ffffff;font-size:7.5px;">'
-            . '<th width="8%">RÉF.</th><th width="13%">HORODATAGE</th><th width="15%">NATURE</th>'
-            . '<th width="11%">ORIGINE</th><th width="35%">RÉSUMÉ</th><th width="11%">OPÉRATEUR</th><th width="7%" align="center">COT.</th>'
-            . '</tr></thead><tbody>';
-        if ($events === []) {
-            $html .= '<tr><td colspan="7" align="center" style="color:' . self::MUTED . ';">Aucune transmission pour ces filtres.</td></tr>';
+        $rows = [];
+        foreach ($events as $e) {
+            $origin = trim((string) ($e['source_system_label'] ?? ''));
+            $rows[] = [
+                '<b>TX-' . (int) ($e['id'] ?? 0) . '</b>',
+                $this->esc($this->formatDateTime((string) ($e['event_time'] ?? ''), 'd/m/Y H:i')),
+                '<b>' . $this->esc((string) ($e['event_type_label'] ?? '')) . '</b>'
+                    . ($origin !== '' ? '<br/><span style="color:' . Theme::MUTED . ';font-size:7.5pt;">' . $this->esc($origin) . '</span>' : ''),
+                $this->esc((string) ($e['summary'] ?? '')),
+                $this->esc($this->orDash($e['author_label'] ?? '')),
+                $this->cotationBadge(strtoupper((string) ($e['confidence_code'] ?? '')), true),
+            ];
         }
-        foreach ($events as $i => $e) {
-            $bg = $i % 2 === 0 ? '#ffffff' : self::SOFT;
-            $html .= '<tr style="background-color:' . $bg . ';font-size:8px;" nobr="true">'
-                . '<td width="8%" style="border-bottom:0.3px solid ' . self::LINE . ';"><b>TX-' . (int) ($e['id'] ?? 0) . '</b></td>'
-                . '<td width="13%" style="border-bottom:0.3px solid ' . self::LINE . ';">' . $this->esc($this->formatDateTime((string) ($e['event_time'] ?? ''), 'd/m/Y H:i')) . '</td>'
-                . '<td width="15%" style="border-bottom:0.3px solid ' . self::LINE . ';"><b>' . $this->esc((string) ($e['event_type_label'] ?? '')) . '</b></td>'
-                . '<td width="11%" style="border-bottom:0.3px solid ' . self::LINE . ';color:' . self::MUTED . ';">' . $this->esc((string) ($e['source_system_label'] ?? '')) . '</td>'
-                . '<td width="35%" style="border-bottom:0.3px solid ' . self::LINE . ';">' . $this->esc((string) ($e['summary'] ?? '')) . '</td>'
-                . '<td width="11%" style="border-bottom:0.3px solid ' . self::LINE . ';">' . $this->esc($this->orDash($e['author_label'] ?? '')) . '</td>'
-                . '<td width="7%" align="center" style="border-bottom:0.3px solid ' . self::LINE . ';">' . $this->cotationBadge(strtoupper((string) ($e['confidence_code'] ?? '')), true) . '</td>'
-                . '</tr>';
-        }
-        $html .= '</tbody></table>';
+        $html .= Theme::table([
+            ['label' => 'Réf.', 'width' => 10, 'mono' => true],
+            ['label' => 'Horodatage', 'width' => 13],
+            ['label' => 'Nature · origine', 'width' => 19],
+            ['label' => 'Résumé', 'width' => 36],
+            ['label' => 'Opérateur', 'width' => 14],
+            ['label' => 'Cot.', 'width' => 8, 'align' => 'C'],
+        ], $rows, false, 'Aucune transmission pour ces filtres.');
 
         return $html;
     }
@@ -291,26 +279,33 @@ final class SseTransmissionPdfService
     private function style(): string
     {
         return '<style>'
-            . '.lbl{font-size:6.5px;color:' . self::MUTED . ';letter-spacing:1px;}'
-            . '.val{font-size:9.5px;color:' . self::INK . ';}'
+            . '.lbl{font-size:6.5pt;font-weight:bold;color:' . Theme::MUTED . ';letter-spacing:0.6px;}'
+            . '.val{font-size:9pt;color:' . Theme::INK . ';}'
             . '</style>';
     }
 
-    private function metaCell(string $label, string $value, string $width): string
+    /**
+     * Bloc titre du gabarit (surtitre, titre en capitales grasses italiques, sous-titre). Les capitales
+     * viennent du CSS : le texte source reste lisible tel quel dans le HTML.
+     */
+    private function titleHtml(string $kicker, string $title, string $subtitle): string
     {
-        return '<td width="' . $width . '" style="background-color:' . self::SOFT . ';">'
+        return '<p style="font-size:7pt;font-weight:bold;color:' . Theme::MUTED . ';letter-spacing:0.6px;text-transform:uppercase;">' . $this->esc($kicker) . '</p>'
+            . '<p style="font-size:21pt;font-weight:bold;font-style:italic;color:' . Theme::INK . ';line-height:1.05;text-transform:uppercase;">' . $this->esc($title) . '</p>'
+            . ($subtitle !== '' ? '<p style="font-size:9pt;color:' . Theme::MUTED . ';">' . $this->esc($subtitle) . '</p>' : '')
+            . Theme::spacer(3);
+    }
+
+    private function metaCell(string $label, string $value, string $width, bool $separator = true): string
+    {
+        return '<td width="' . $width . '"' . ($separator ? ' style="border-left:0.3px solid ' . Theme::LINE . ';"' : '') . '>'
             . '<span class="lbl">' . $this->esc(mb_strtoupper($label, 'UTF-8')) . '</span><br/>'
-            . '<span style="font-size:10px;font-weight:bold;color:' . self::INK . ';">' . $this->esc($value) . '</span></td>';
+            . '<span style="font-size:9.5pt;font-weight:bold;color:' . Theme::INK . ';">' . $this->esc($value) . '</span></td>';
     }
 
     private function sectionTitle(string $title, bool $muted = false): string
     {
-        $color = $muted ? self::MUTED : self::ACCENT;
-
-        return '<div style="font-size:5px;line-height:1;">&nbsp;</div><table cellpadding="0" cellspacing="0" width="100%"><tr>'
-            . '<td width="1.6%" style="background-color:' . $color . ';"> </td>'
-            . '<td width="98.4%" style="font-size:10px;font-weight:bold;color:' . ($muted ? self::MUTED : self::INK) . ';">&nbsp;&nbsp;'
-            . $this->esc(mb_strtoupper($title, 'UTF-8')) . '</td></tr></table><br/>';
+        return Theme::section($muted ? '' : sprintf('%02d', ++$this->sectionNo), $title);
     }
 
     /**
@@ -320,7 +315,7 @@ final class SseTransmissionPdfService
      */
     private function kvGrid(array $pairs, bool $compact = false): string
     {
-        $size = $compact ? '8px' : '9.5px';
+        $size = $compact ? '8pt' : '9pt';
         $cells = [];
         foreach ($pairs as [$label, $value]) {
             $text = $this->stringify($value);
@@ -328,21 +323,22 @@ final class SseTransmissionPdfService
             $cells[] = ['wide' => $wide, 'html' => '<span class="lbl">' . $this->esc(mb_strtoupper($label, 'UTF-8')) . '</span><br/>'
                 . (is_bool($value) || in_array($text, ['Oui', 'Non'], true)
                     ? $this->pill($text === 'Oui')
-                    : '<span style="font-size:' . $size . ';color:' . self::INK . ';">' . nl2br($this->esc($text)) . '</span>')];
+                    : '<span style="font-size:' . $size . ';color:' . Theme::INK . ';">' . nl2br($this->esc($text)) . '</span>')];
         }
 
-        $html = '<table cellpadding="5" cellspacing="0" width="100%">';
+        $line = 'border-bottom:0.2px solid ' . Theme::LINE . ';';
+        $html = '<table cellpadding="3" cellspacing="0" width="100%">';
         $row = [];
-        $flush = function () use (&$row, &$html): void {
+        $flush = function () use (&$row, &$html, $line): void {
             if ($row === []) {
                 return;
             }
             $html .= '<tr nobr="true">';
             foreach ($row as $c) {
-                $html .= '<td width="50%" style="border-bottom:0.3px solid ' . self::LINE . ';">' . $c . '</td>';
+                $html .= '<td width="50%" style="' . $line . '">' . $c . '</td>';
             }
             if (count($row) === 1) {
-                $html .= '<td width="50%" style="border-bottom:0.3px solid ' . self::LINE . ';"></td>';
+                $html .= '<td width="50%" style="' . $line . '"></td>';
             }
             $html .= '</tr>';
             $row = [];
@@ -350,7 +346,7 @@ final class SseTransmissionPdfService
         foreach ($cells as $c) {
             if ($c['wide']) {
                 $flush();
-                $html .= '<tr nobr="true"><td width="100%" colspan="2" style="border-bottom:0.3px solid ' . self::LINE . ';">' . $c['html'] . '</td></tr>';
+                $html .= '<tr nobr="true"><td width="100%" colspan="2" style="' . $line . '">' . $c['html'] . '</td></tr>';
                 continue;
             }
             $row[] = $c['html'];
@@ -381,15 +377,16 @@ final class SseTransmissionPdfService
         $alias = trim((string) ($p['alias'] ?? ''));
         $photo = $this->localImageTag((string) ($p['photo'] ?? ''), 22);
 
-        return $this->sectionTitle('Identité liée au dossier')
-            . '<table cellpadding="8" cellspacing="0" width="100%" style="background-color:' . self::ACCENT_SOFT . ';"><tr>'
+        $body = '<table cellpadding="0" cellspacing="0" width="100%"><tr>'
             . ($photo !== '' ? '<td width="16%">' . $photo . '</td>' : '')
             . '<td width="' . ($photo !== '' ? '84%' : '100%') . '">'
             . '<span class="lbl">' . $this->esc((string) ($p['ref'] ?? '')) . '</span><br/>'
-            . '<span style="font-size:13px;font-weight:bold;color:' . self::INK . ';">' . $this->esc((string) $p['name']) . '</span>'
-            . ($alias !== '' ? ' <span style="font-size:10px;color:' . self::MUTED . ';">« ' . $this->esc($alias) . ' »</span>' : '')
-            . ($bits !== [] ? '<br/><span style="font-size:8px;color:' . self::INK . ';">' . implode(' &nbsp;·&nbsp; ', $bits) . '</span>' : '')
+            . '<span style="font-size:12pt;font-weight:bold;color:' . Theme::INK . ';">' . $this->esc((string) $p['name']) . '</span>'
+            . ($alias !== '' ? ' <span style="font-size:9.5pt;color:' . Theme::MUTED . ';">« ' . $this->esc($alias) . ' »</span>' : '')
+            . ($bits !== [] ? '<br/><span style="font-size:8pt;color:' . Theme::INK . ';">' . implode(' &nbsp;·&nbsp; ', $bits) . '</span>' : '')
             . '</td></tr></table>';
+
+        return $this->sectionTitle('Identité liée au dossier') . Theme::callout($body, '', 'ok');
     }
 
     /**
@@ -438,13 +435,13 @@ final class SseTransmissionPdfService
     private function cotationBadge(string $code, bool $small = false): string
     {
         if ($code === '' || !preg_match('/^([A-F])([1-6])$/', $code, $m)) {
-            return '<span style="color:' . self::MUTED . ';">—</span>';
+            return '<span style="color:' . Theme::MUTED . ';">—</span>';
         }
         $score = (ord('F') - ord($m[1])) + (6 - (int) $m[2]); // 0 (F6) → 10 (A1)
-        $bg = $score >= 7 ? '#15803d' : ($score >= 4 ? '#b45309' : '#b91c1c');
-        $size = $small ? '8px' : '12px';
+        $bg = $score >= 7 ? Theme::ACCENT_DARK : ($score >= 4 ? Theme::WARN : Theme::DANGER);
+        $size = $small ? '7.5pt' : '11pt';
 
-        return '<span style="background-color:' . $bg . ';color:#ffffff;font-size:' . $size . ';font-weight:bold;">&nbsp;' . $code . '&nbsp;</span>';
+        return '<span style="background-color:' . $bg . ';color:#ffffff;font-family:' . Theme::mono() . ';font-size:' . $size . ';font-weight:bold;">&nbsp;' . $code . '&nbsp;</span>';
     }
 
     private function cotationMeaning(string $code): string
@@ -466,8 +463,7 @@ final class SseTransmissionPdfService
 
     private function pill(bool $yes): string
     {
-        return '<span style="background-color:' . ($yes ? '#dcfce7' : '#fef3c7') . ';color:' . ($yes ? '#166534' : '#92400e')
-            . ';font-size:8.5px;font-weight:bold;">&nbsp;' . ($yes ? 'OUI' : 'NON') . '&nbsp;</span>';
+        return Theme::pill($yes ? 'OUI' : 'NON', $yes ? 'ok' : 'warn');
     }
 
     // ------------------------------------------------------------------ images
@@ -600,12 +596,32 @@ final class SseTransmissionPdfService
         return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 
+    /**
+     * Communauté du document : celle de la transmission, sinon celle de la session.
+     *
+     * @param array<string, mixed> $event
+     */
+    private function tenantOf(array $event): int
+    {
+        $tid = (int) ($event['tenant_id'] ?? 0);
+        if ($tid <= 0) {
+            try {
+                $tid = (int) (Session::get('tenant_id') ?? 0);
+            } catch (\Throwable) {
+                $tid = 0;
+            }
+        }
+
+        return $tid;
+    }
+
     // ------------------------------------------------------------------ moteur
 
     /**
      * @param list<array{path:string,label:string}> $images
+     * @param array<string, mixed> $meta
      */
-    private function renderPdf(string $html, string $title, string $filename, string $orientation, string $footerRef, array $images): Response
+    private function renderPdf(string $html, string $title, string $filename, string $orientation, string $footerRef, array $images, array $meta = []): Response
     {
         return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(function () use (
             $html,
@@ -613,13 +629,14 @@ final class SseTransmissionPdfService
             $filename,
             $orientation,
             $footerRef,
-            $images
+            $images,
+            $meta
         ): Response {
             if (!TrainingCertificatePdfEngine::ensureTcpdfLoaded()) {
                 return (new Response())->setStatusCode(503)->setBody('<p>Export PDF indisponible pour le moment.</p>');
             }
 
-            $binary = $this->buildPdf($html, $title, $orientation, $footerRef, $images);
+            $binary = $this->buildPdf($html, $title, $orientation, $footerRef, $images, $meta);
 
             return (new Response())
                 ->header('Content-Type', 'application/pdf')
@@ -630,93 +647,66 @@ final class SseTransmissionPdfService
     }
 
     /**
-     * Construit le binaire PDF (TCPDF déjà chargé).
+     * Construit le binaire PDF (TCPDF déjà chargé). Toujours en A4 portrait (gabarit Athena) :
+     * `$orientation` est conservé pour compatibilité et ignoré.
+     *
+     * `$meta` complète les métadonnées du gabarit (kind, reference, tenant_id, community…).
      *
      * @param list<array{path:string,label:string}> $images
+     * @param array<string, mixed> $meta
      */
-    public function buildPdf(string $html, string $title, string $orientation, string $footerRef, array $images = []): string
+    public function buildPdf(string $html, string $title, string $orientation, string $footerRef, array $images = [], array $meta = []): string
     {
-        $pdf = new class ($orientation, 'mm', 'A4', true, 'UTF-8', false) extends \TCPDF {
-            public string $sseRef = '';
-            public string $sseMarking = '';
-
-            public function Header(): void
-            {
-                $l = $this->lMargin;
-                $r = $this->w - $this->rMargin;
-                $this->SetFillColor(15, 81, 50);
-                $this->Rect(0, 0, $this->w, 2.2, 'F');
-                $this->SetY(5);
-                $this->SetX($l);
-                $this->SetFont('helvetica', 'B', 7);
-                $this->SetTextColor(15, 81, 50);
-                $this->Cell(($r - $l) / 2, 4, 'ATHENA · SECTION SÉCURITÉ ET ENQUÊTES', 0, 0, 'L');
-                $this->SetTextColor(185, 28, 28);
-                $this->Cell(($r - $l) / 2, 4, $this->sseMarking, 0, 0, 'R');
+        unset($orientation);
+        $community = '';
+        if ((int) ($meta['tenant_id'] ?? 0) <= 0) {
+            try {
+                $community = trim((string) (Session::get('tenant_name') ?? ''));
+            } catch (\Throwable) {
+                $community = '';
             }
-
-            public function Footer(): void
-            {
-                $l = $this->lMargin;
-                $r = $this->w - $this->rMargin;
-                $col = ($r - $l) / 3;
-                $this->SetY(-12);
-                $this->SetDrawColor(226, 232, 240);
-                $this->SetLineWidth(0.3);
-                $this->Line($l, $this->GetY(), $r, $this->GetY());
-                $this->SetY(-10);
-                $this->SetX($l);
-                $this->SetFont('helvetica', '', 7);
-                $this->SetTextColor(100, 116, 139);
-                $this->Cell($col, 5, $this->sseRef, 0, 0, 'L');
-                $this->SetFont('helvetica', 'B', 7);
-                $this->SetTextColor(185, 28, 28);
-                $this->Cell($col, 5, $this->sseMarking, 0, 0, 'C');
-                $this->SetFont('helvetica', '', 7);
-                $this->SetTextColor(100, 116, 139);
-                $this->Cell($col, 5, 'Page ' . $this->getAliasNumPage() . ' / ' . $this->getAliasNbPages(), 0, 0, 'R');
-            }
-        };
-        $pdf->sseRef = 'Athena SSE · ' . $footerRef;
-        $pdf->sseMarking = self::MARKING;
-        $pdf->SetCreator('Athena COMSPEC');
-        $pdf->SetAuthor('Portail SSE Athena');
-        $pdf->SetTitle($title);
-        $pdf->SetMargins(14, 14, 14);
-        $pdf->SetHeaderMargin(0);
-        $pdf->SetAutoPageBreak(true, 18);
-        $pdf->setFooterMargin(12);
-        $pdf->setCellHeightRatio(1.3);
-        $pdf->setPrintHeader(true);
-        $pdf->setPrintFooter(true);
-        $pdf->SetFont('dejavusans', '', 9);
+        }
+        $pdf = Theme::tcpdf($meta + [
+            'kind' => 'Transmission terrain',
+            'reference' => $footerRef,
+            'community' => $community,
+            'classification' => self::MARKING,
+            'audience' => 'Bureau SSE',
+            'title' => $title,
+        ]);
+        if ($pdf === null) {
+            throw new \RuntimeException('TCPDF indisponible');
+        }
         $pdf->AddPage();
-        $pdf->writeHTML($html, true, false, true, false, '');
+        $pdf->writeAthenaHtml($html);
 
         if ($images !== []) {
             $pdf->AddPage();
-            $pdf->SetFont('dejavusans', 'B', 11);
-            $pdf->SetTextColor(11, 18, 32);
-            $pdf->Cell(0, 8, 'PIÈCES IMAGES', 0, 1);
-            $w = ($pdf->getPageWidth() - 28 - 6) / 2;
-            $x0 = 14;
+            $pdf->writeAthenaHtml(Theme::section(sprintf('%02d', $this->sectionNo + 1), 'Pièces images'));
+            $l = Theme::MARGIN;
+            $gap = 6;
+            $w = ($pdf->getPageWidth() - 2 * $l - $gap) / 2;
+            $bottom = $pdf->getPageHeight() - Theme::BOTTOM;
             $col = 0;
-            $y = $pdf->GetY() + 2;
+            $y = $pdf->GetY() + 1;
             foreach ($images as $img) {
                 $h = $w * 0.75;
-                if ($y + $h + 10 > $pdf->getPageHeight() - 18) {
+                if ($y + $h + 10 > $bottom) {
                     $pdf->AddPage();
-                    $y = 22;
+                    $y = $pdf->contentTop();
                     $col = 0;
                 }
-                $x = $x0 + $col * ($w + 6);
+                $x = $l + $col * ($w + $gap);
+                $pdf->SetDrawColorArray(Theme::rgb(Theme::LINE));
+                $pdf->SetLineWidth(0.2);
+                $pdf->Rect($x, $y, $w, $h, 'D');
                 try {
                     $pdf->Image($img['path'], $x, $y, $w, $h, '', '', '', true, 150, '', false, false, 0, 'CM');
                 } catch (\Throwable) {
                 }
                 $pdf->SetXY($x, $y + $h + 1);
-                $pdf->SetFont('dejavusans', '', 7.5);
-                $pdf->SetTextColor(100, 116, 139);
+                $pdf->SetFont(Theme::sans(), '', 7.5);
+                $pdf->SetTextColorArray(Theme::rgb(Theme::MUTED));
                 $pdf->Cell($w, 4, $img['label'], 0, 0, 'C');
                 $col++;
                 if ($col === 2) {

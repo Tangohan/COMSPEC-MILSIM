@@ -9,9 +9,10 @@ use App\Repositories\PersonnelHrDocumentRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Effectifs\PersonnelHrWorkspaceSettings;
+use App\Support\Pdf\AthenaPdfTheme as Theme;
 
 /**
- * Établit une pièce PDF et la range dans le coffre du dossier.
+ * Établit une pièce PDF (gabarit Athena, A4 portrait, Dompdf) et la range dans le coffre du dossier.
  */
 final class PersonnelHrPdfService
 {
@@ -31,6 +32,13 @@ final class PersonnelHrPdfService
         private ?PersonnelHrDocumentRepository $documents = null,
     ) {
     }
+
+    /**
+     * Métadonnées du gabarit Athena de la dernière pièce construite par buildHtml().
+     *
+     * @var array<string, mixed>
+     */
+    private array $lastMeta = [];
 
     private function tenants(): TenantRepository
     {
@@ -77,8 +85,7 @@ final class PersonnelHrPdfService
         if ($user === null) {
             return ['ok' => false, 'message' => 'Membre introuvable.'];
         }
-        $html = $this->buildHtml($tenantId, $user, $docType, $context);
-        $binary = $this->renderPdf($html);
+        $binary = $this->buildPdf($tenantId, $user, $docType, $context);
         if ($binary === null) {
             return ['ok' => false, 'message' => 'La pièce n’a pas pu être établie pour le moment. Réessayez plus tard.'];
         }
@@ -141,6 +148,21 @@ final class PersonnelHrPdfService
     }
 
     /**
+     * Binaire PDF de la pièce (sans la ranger dans le coffre) ; null si Dompdf est indisponible.
+     *
+     * @param array<string, mixed> $user
+     * @param array<string, mixed> $context
+     */
+    public function buildPdf(int $tenantId, array $user, string $docType, array $context = []): ?string
+    {
+        $html = $this->buildHtml($tenantId, $user, $docType, $context);
+
+        return $this->renderPdf($html, $this->lastMeta);
+    }
+
+    /**
+     * Document HTML complet (gabarit Athena pour Dompdf).
+     *
      * @param array<string, mixed> $user
      * @param array<string, mixed> $context
      */
@@ -199,11 +221,6 @@ final class PersonnelHrPdfService
         $metaRows[] = ['Référence', $ref];
         $metaRows[] = ['Date', $dateShort];
 
-        $metaHtml = '';
-        foreach ($metaRows as [$label, $value]) {
-            $metaHtml .= '<tr><th>' . $esc($label) . '</th><td>' . $esc($value) . '</td></tr>';
-        }
-
         $bodyHtml = '';
         foreach ($sections as $paragraph) {
             $paragraph = trim((string) $paragraph);
@@ -213,160 +230,42 @@ final class PersonnelHrPdfService
             $bodyHtml .= '<p class="para">' . nl2br($esc($paragraph)) . '</p>';
         }
 
-        $typeBadge = $esc(mb_strtoupper($typeLabel, 'UTF-8'));
+        $this->lastMeta = [
+            'kind' => $typeLabel,
+            'reference' => $ref,
+            'community' => $community,
+            'tenant_id' => $tenantId,
+            'classification' => 'Diffusion restreinte · dossier personnel',
+            'audience' => 'Staff & intéressé(e)',
+            'title' => $title,
+        ];
 
-        return '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>'
-            . $esc($title)
-            . '</title><style>
-@page { margin: 10mm 10mm 10mm 10mm; }
-body {
-  font-family: DejaVu Sans, sans-serif;
-  color: #14202a;
-  margin: 0;
-  padding: 0;
-  font-size: 9.5pt;
-  line-height: 1.4;
-}
-.sheet { border: 1.1pt solid #1b2a33; padding: 7mm 7mm 6mm; }
-.brand-row { width: 100%; border-collapse: collapse; margin-bottom: 4mm; }
-.brand-row td { vertical-align: top; }
-.brand-mark {
-  width: 12mm;
-  height: 12mm;
-  border: 1pt solid #1b2a33;
-  text-align: center;
-  line-height: 12mm;
-  font-size: 7pt;
-  font-weight: bold;
-  letter-spacing: 0.06em;
-}
-.brand-text { padding-left: 3mm; }
-.brand-kicker {
-  margin: 0 0 0.8mm;
-  font-size: 7pt;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #5b6a73;
-}
-.brand-name { margin: 0; font-size: 11.5pt; font-weight: bold; color: #0f1a22; }
-.brand-sub { margin: 0.8mm 0 0; font-size: 8pt; color: #5b6a73; }
-.ref-block { text-align: right; font-size: 8pt; color: #3d4c55; white-space: nowrap; }
-.ref-block strong { display: block; color: #14202a; font-size: 9pt; margin-top: 0.5mm; }
-.badge {
-  display: inline-block;
-  margin: 0 0 2mm;
-  padding: 1mm 2.2mm;
-  border: 0.65pt solid #1b2a33;
-  font-size: 7pt;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #1b2a33;
-}
-h1 {
-  margin: 0 0 1.8mm;
-  font-size: 12.5pt;
-  line-height: 1.2;
-  font-weight: bold;
-  color: #0f1a22;
-}
-.object {
-  margin: 0 0 3mm;
-  padding: 1.8mm 2.2mm;
-  background: #f4f7f8;
-  border-left: 2pt solid #1b2a33;
-  font-size: 9pt;
-}
-.object strong { display: block; font-size: 7pt; letter-spacing: 0.1em; text-transform: uppercase; color: #5b6a73; margin-bottom: 0.6mm; }
-.meta {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 0 0 3mm;
-  font-size: 9pt;
-}
-.meta th, .meta td {
-  border: 0.5pt solid #c9d3d8;
-  padding: 1.2mm 2mm;
-  text-align: left;
-  vertical-align: top;
-}
-.meta th {
-  width: 28%;
-  background: #f7f9fa;
-  color: #3d4c55;
-  font-weight: bold;
-}
-.para { margin: 0 0 2mm; text-align: justify; }
-.closing { margin: 3mm 0 0; }
-.closing .place { margin: 0 0 2.5mm; }
-.sig-table { width: 100%; border-collapse: collapse; }
-.sig-table td { width: 48%; vertical-align: top; }
-.sig-box {
-  border-top: 0.65pt solid #1b2a33;
-  padding-top: 1.6mm;
-  margin-top: 3mm;
-  width: 90%;
-}
-.sig-role { font-size: 7.5pt; color: #5b6a73; margin: 0 0 0.5mm; }
-.sig-name { font-size: 9pt; font-weight: bold; margin: 0; }
-.sig-hint { font-size: 7pt; color: #8aa0ab; margin: 2.5mm 0 0; font-style: italic; }
-.foot {
-  margin-top: 4mm;
-  padding-top: 1.5mm;
-  border-top: 0.5pt solid #c9d3d8;
-  font-size: 7pt;
-  color: #6d7a80;
-  text-align: center;
-}
-</style></head><body>
-<div class="sheet"><div class="inner">
-  <table class="brand-row">
-    <tr>
-      <td style="width:18mm"><div class="brand-mark">RH</div></td>
-      <td class="brand-text">
-        <p class="brand-kicker">Dossier individuel · Ressources humaines</p>
-        <p class="brand-name">' . $esc($community) . '</p>
-        <p class="brand-sub">Pièce officielle versée au coffre du personnel</p>
-      </td>
-      <td class="ref-block">
-        Réf.<br><strong>' . $esc($ref) . '</strong>
-        <span style="display:block;margin-top:2mm">' . $esc($dateShort) . '</span>
-      </td>
-    </tr>
-  </table>
+        $body = Theme::titleBlock('Dossier individuel · Ressources humaines', $title, [[$typeLabel, 'ok']], 'Pièce officielle versée au coffre du personnel')
+            . Theme::callout(
+                '<span style="font-size:6.5pt;font-weight:bold;color:' . Theme::MUTED . ';letter-spacing:0.6px;text-transform:uppercase;">Objet</span><br>'
+                    . '<span style="font-size:9.5pt;font-weight:bold;">' . $esc($objectLine) . '</span>',
+                '',
+                'ok'
+            )
+            . Theme::section('01', 'Identification')
+            . Theme::keyValues($metaRows, '35%')
+            . Theme::section('02', 'Teneur de la pièce')
+            . $bodyHtml
+            . Theme::section('03', 'Visas')
+            . '<p class="para">' . $placeBit . $esc($dateLong) . '.</p>'
+            . Theme::signatures([
+                ['Intéressé(e) · pour le dossier', 'Visa / prise de connaissance'],
+                [$authority, 'Autorité émettrice · Signature et cachet'],
+            ])
+            . Theme::spacer(6)
+            . '<p class="foot">Document généré pour le dossier individuel — conservation dans le coffre RH de la communauté · ' . $esc($ref) . '</p>';
 
-  <div class="badge">' . $typeBadge . '</div>
-  <h1>' . $esc($title) . '</h1>
-  <div class="object"><strong>Objet</strong>' . $esc($objectLine) . '</div>
-
-  <table class="meta">' . $metaHtml . '</table>
-
-  ' . $bodyHtml . '
-
-  <div class="closing">
-    <p class="place">' . $placeBit . $esc($dateLong) . '.</p>
-    <table class="sig-table">
-      <tr>
-        <td>
-          <div class="sig-box">
-            <p class="sig-role">Pour le dossier</p>
-            <p class="sig-name">Intéressé(e)</p>
-            <p class="sig-hint">Visa / prise de connaissance</p>
-          </div>
-        </td>
-        <td align="right">
-          <div class="sig-box" style="margin-left:auto">
-            <p class="sig-role">Autorité émettrice</p>
-            <p class="sig-name">' . $esc($authority) . '</p>
-            <p class="sig-hint">Signature et cachet</p>
-          </div>
-        </td>
-      </tr>
-    </table>
-  </div>
-
-  <div class="foot">Document généré pour le dossier individuel — conservation dans le coffre RH de la communauté · ' . $esc($ref) . '</div>
-</div></div>
-</body></html>';
+        return Theme::dompdfDocument(
+            $body,
+            $this->lastMeta,
+            '.para { margin: 0 0 2mm; text-align: justify; font-size: 9pt; line-height: 1.45; }
+            .foot { font-size: 7pt; color: ' . Theme::MUTED . '; text-align: center; }'
+        );
     }
 
     /**
@@ -554,22 +453,15 @@ h1 {
         return (int) $date->format('j') . ' ' . $month . ' ' . $date->format('Y');
     }
 
-    private function renderPdf(string $html): ?string
+    /**
+     * Rendu Dompdf A4 portrait (isHtml5ParserEnabled, DejaVu Sans) via le gabarit Athena.
+     *
+     * @param array<string, mixed> $meta
+     */
+    private function renderPdf(string $html, array $meta): ?string
     {
-        if (!class_exists(\Dompdf\Dompdf::class)) {
-            return null;
-        }
         try {
-            $dompdf = new \Dompdf\Dompdf([
-                'isRemoteEnabled' => false,
-                'isHtml5ParserEnabled' => true,
-            ]);
-            $dompdf->setPaper('A4', 'portrait');
-            $dompdf->loadHtml($html, 'UTF-8');
-            $dompdf->render();
-            $out = $dompdf->output();
-
-            return is_string($out) && $out !== '' ? $out : null;
+            return Theme::dompdfRender($html, $meta);
         } catch (\Throwable) {
             return null;
         }
