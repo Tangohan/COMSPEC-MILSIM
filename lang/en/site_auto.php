@@ -41950,7 +41950,6 @@ return [
     'Volumes, canaux de dépôt et offres les plus sollicitées sur la période affichée.' => 'Volumes, submission channels and most requested offers over the period displayed.',
     'Volumes, canaux et offres liées' => 'Volumes, channels and linked offers',
     'Volumes, délais et conversion' => 'Volumes, delays and conversion',
-    'Vos adhésions avec le même e-mail : utilisez le tableau de bord pour changer de communauté active.' => 'Your memberships with the same email: use the dashboard to switch active community.',
     'Vos appareils ATAK' => 'Your ATAK devices',
     'Vos autorisations sur le brief partenaire' => 'Your authorizations on the partner briefing',
     'Vos besoins' => 'Your needs',
