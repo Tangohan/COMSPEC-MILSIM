@@ -13,6 +13,7 @@ use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserProfileDisplaySettingsRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
+use App\Services\Auth\LoginSecurityOtpService;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Support\CommunityMediaDetails;
@@ -29,6 +30,15 @@ final class GameAuthService
     public const REFRESH_TTL_SEC = 2592000;
 
     public const OTP_TTL_SEC = 600;
+
+    /**
+     * Compte protégé par l'application d'authentification : le jeu n'affiche que le code d'erreur, ce texte sert
+     * aux journaux et aux clients qui savent l'afficher. L'onglet E-MAIL du jeu attend alors le code de l'application.
+     */
+    private const APP_CODE_REQUIRED = [
+        'reason' => 'totp_required',
+        'message' => 'Compte protégé par l’application d’authentification : dans l’onglet E-MAIL, saisissez le code de l’application (ou un code de secours) puis Valider le code. Aucun e-mail n’est envoyé.',
+    ];
 
     /** Émet une session jeu depuis une validation forte réalisée par ATHENA (appairage/recovery). */
     public function issueForTrustedUser(int $userId, int $tenantId, array $device): array
@@ -51,6 +61,7 @@ final class GameAuthService
         private ?UserProfileRepository $profiles = null,
         private ?TenantBrandingRepository $branding = null,
         private ?UserNotificationPreferencesRepository $notificationPreferences = null,
+        private ?GameSecondFactorGate $secondFactor = null,
     ) {
         $this->profiles ??= new UserProfileRepository();
         $this->branding ??= new TenantBrandingRepository();
@@ -76,6 +87,10 @@ final class GameAuthService
         if ((string) ($account['status'] ?? '') !== 'active') {
             return $this->fail('ACCOUNT_DISABLED', 403);
         }
+        // Mot de passe seul : refusé quand l'application est active (le jeu n'a pas de second champ ici).
+        if ($this->appProtectedUsers($email, $account) !== []) {
+            return $this->fail('INVALID_CREDENTIALS', 401, self::APP_CODE_REQUIRED);
+        }
         $body['_auth_method'] = 'password';
 
         return $this->issueForAccount($account, $body, null, true);
@@ -98,6 +113,10 @@ final class GameAuthService
                 // Ne pas révéler l’existence du compte.
                 return ['ok' => true, 'status' => 200, 'payload' => ['sent' => true]];
             }
+        }
+        // Application active : le code attendu est celui de l'application, aucun e-mail (réponse identique).
+        if ($this->appProtectedUsers($email, $account) !== []) {
+            return ['ok' => true, 'status' => 200, 'payload' => ['sent' => true]];
         }
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $this->accounts->insertOtp(
@@ -130,8 +149,24 @@ final class GameAuthService
     public function verifyOtp(array $body): array
     {
         $email = strtolower(trim((string) ($body['email'] ?? '')));
-        $code = preg_replace('/\D+/', '', (string) ($body['code'] ?? '')) ?? '';
-        if ($email === '' || strlen($code) !== 6) {
+        $rawCode = trim((string) ($body['code'] ?? ''));
+        $code = preg_replace('/\D+/', '', $rawCode) ?? '';
+        if ($email === '') {
+            return $this->fail('INVALID_CREDENTIALS', 401);
+        }
+        $protected = $this->appProtectedUsers($email, $this->accounts->findByEmail($email));
+        if ($protected !== []) {
+            // Code de l'application (anti-rejeu) ou code de secours, à la place du code e-mail.
+            if ($this->secondFactor()->isThrottled($email)) {
+                return $this->fail('INVALID_CREDENTIALS', 429, ['reason' => 'totp_throttled', 'message' => 'Trop de codes incorrects : patientez 15 minutes.']);
+            }
+            if (!$this->secondFactor()->verify($email, $protected, $rawCode)) {
+                return $this->fail('INVALID_CREDENTIALS', 401, self::APP_CODE_REQUIRED);
+            }
+
+            return $this->issueAfterCode($email, $body);
+        }
+        if (strlen($code) !== 6) {
             return $this->fail('INVALID_CREDENTIALS', 401);
         }
         $row = $this->accounts->findLatestOtp($email);
@@ -150,6 +185,16 @@ final class GameAuthService
             return $this->fail('INVALID_CREDENTIALS', 401);
         }
         $this->accounts->consumeOtp((int) $row['id']);
+
+        return $this->issueAfterCode($email, $body);
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     * @return array{ok: bool, status: int, payload: array<string, mixed>}
+     */
+    private function issueAfterCode(string $email, array $body): array
+    {
         $account = $this->accounts->findByEmail($email);
         if ($account === null) {
             $account = $this->promoteAccountFromUsers($email, null);
@@ -216,11 +261,21 @@ final class GameAuthService
         if ($account === null || (string) ($account['status'] ?? '') !== 'active') {
             return $this->fail('STEAM_NOT_LINKED', 401);
         }
+        $paired = false;
         if (strlen($pairing) >= 32) {
             $row = $this->accounts->findPairing((int) $account['id'], $deviceId);
             if ($row !== null && hash_equals((string) ($row['pairing_token_hash'] ?? ''), hash('sha256', $pairing))) {
                 $this->accounts->touchPairing((int) $row['id']);
+                $paired = true;
             }
+        }
+        // Application active : un Steam ID est public, il faut le jeton de ce poste remis par une connexion vérifiée.
+        $protected = $this->appProtectedUsers((string) ($account['email'] ?? ''), $account);
+        if ($protected !== [] && !($paired && $this->secondFactor()->sessionOpenedWithFactor(
+            $this->accounts->findPairingSessionCreatedAt((int) $account['id'], hash('sha256', $pairing)),
+            $protected
+        ))) {
+            return $this->fail('STEAM_NOT_LINKED', 401, self::APP_CODE_REQUIRED);
         }
         $body['steam_id'] = $steamId;
         $body['_auth_method'] = 'steam';
@@ -348,6 +403,9 @@ final class GameAuthService
         if ($account === null || (string) ($account['status'] ?? '') !== 'active') {
             return $this->fail('ACCOUNT_DISABLED', 403);
         }
+        if (!$this->sessionKeepsSecondFactor($account, $session)) {
+            return $this->fail('SESSION_EXPIRED', 401, self::APP_CODE_REQUIRED);
+        }
         $body['device_id'] = (string) ($session['device_id'] ?? $body['device_id'] ?? '');
         $body['preferred_tenant_id'] = (int) $session['tenant_id'];
         $this->carrySteamIdFromSession($body, $session);
@@ -364,7 +422,7 @@ final class GameAuthService
     public function refresh(array $body, array $session): array
     {
         $account = $this->accounts->findById((int) $session['account_id']);
-        if ($account === null) {
+        if ($account === null || !$this->sessionKeepsSecondFactor($account, $session)) {
             return $this->fail('SESSION_EXPIRED', 401);
         }
         $body['device_id'] = (string) ($session['device_id'] ?? '');
@@ -1676,6 +1734,50 @@ final class GameAuthService
         } catch (\Throwable) {
             return false;
         }
+    }
+
+    private function secondFactor(): GameSecondFactorGate
+    {
+        return $this->secondFactor ??= new GameSecondFactorGate(
+            $this->users,
+            \App\Core\Container::get(LoginSecurityOtpService::class)
+        );
+    }
+
+    /**
+     * Fiches de cet e-mail ou des communautés du compte jeu dont l'application d'authentification est active.
+     *
+     * @param array<string, mixed>|null $account
+     * @return list<array<string, mixed>>
+     */
+    private function appProtectedUsers(string $email, ?array $account): array
+    {
+        $ids = [];
+        if ($account !== null && (int) ($account['id'] ?? 0) > 0) {
+            foreach ($this->accounts->listActiveMemberships((int) $account['id']) as $m) {
+                $ids[] = (int) ($m['user_id'] ?? 0);
+            }
+        }
+
+        return $this->secondFactor()->protectedUsers($email !== '' ? $email : (string) ($account['email'] ?? ''), $ids);
+    }
+
+    /**
+     * Reprise de session : pour un compte protégé, seule une session ouverte après ce correctif et après
+     * l'activation de l'application est reprise ; les autres sont révoquées (le joueur saisit le code une fois).
+     *
+     * @param array<string, mixed> $account
+     * @param array<string, mixed> $session
+     */
+    private function sessionKeepsSecondFactor(array $account, array $session): bool
+    {
+        $protected = $this->appProtectedUsers((string) ($account['email'] ?? ''), $account);
+        if ($protected === [] || $this->secondFactor()->sessionOpenedWithFactor((string) ($session['created_at'] ?? ''), $protected)) {
+            return true;
+        }
+        $this->accounts->revokeSession((int) ($session['id'] ?? 0));
+
+        return false;
     }
 
     private function fail(string $code, int $status, array $extra = []): array

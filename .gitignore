@@ -98,3 +98,6 @@ mod/COMSPEC_ATAK_Native/signing/*.biprivatekey
 # Caches Python (jamais versionnés)
 __pycache__/
 *.pyc
+
+# Ancien fichier de configuration SMTP en clair (retiré du dépôt) : ne jamais le versionner
+/mail/config_mail.php
