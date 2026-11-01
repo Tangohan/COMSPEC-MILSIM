@@ -38,6 +38,7 @@ use App\Repositories\TenantRepository;
 use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingQuizRepository;
 use App\Services\Admin\AdminDashboardMetricsService;
+use App\Services\Admin\PilotageDashboardService;
 use App\Services\Community\MemberOnboardingService;
 use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\GradeDisplayService;
@@ -50,6 +51,7 @@ use App\Services\Personnel\RoleplayFollowupSettings;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Training\TrainingEnrollmentCompletionAnalytics;
 use App\Support\AlertDisplayStyle;
+use App\Support\PilotageDashboardPresenter;
 
 class OrganizationDashboardController
 {
@@ -69,6 +71,7 @@ class OrganizationDashboardController
         private ?UserRepository $users = null,
         private ?PersonnelRoleplayTimelineRepository $personnelRoleplayTimelineRepository = null,
         private ?PersonnelProfileGapScanService $profileGaps = null,
+        private ?PilotageDashboardService $pilotage = null,
     ) {
         $this->metrics ??= new AdminDashboardMetricsService();
         $this->auditLogs ??= new AuditLogRepository();
@@ -88,6 +91,7 @@ class OrganizationDashboardController
         $this->users ??= new UserRepository();
         $this->personnelRoleplayTimelineRepository ??= new PersonnelRoleplayTimelineRepository();
         $this->profileGaps ??= new PersonnelProfileGapScanService();
+        $this->pilotage ??= new PilotageDashboardService();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -111,93 +115,27 @@ class OrganizationDashboardController
             $tenantName = '';
         }
         $metrics = $this->metrics->getOrganizationMetrics($tenantId);
-        $workQueue = $this->metrics->getOrganizationWorkQueue($tenantId);
         $recent = [];
-        $recentError = null;
         try {
-            $recent = $this->auditLogs->recentForTenant($tenantId, 12);
+            $recent = $this->auditLogs->recentForTenant($tenantId, 20);
         } catch (\Throwable) {
-            $recentError = 'Activité récente indisponible.';
+            $recent = [];
         }
         $orgEnlistmentCounts = [];
         $orgEnlistmentRecent = [];
-        $orgEnlistmentError = null;
         try {
             $orgEnlistmentCounts = $this->enlistmentRepository->countsByStatusForTenant($tenantId);
             $orgEnlistmentRecent = $this->enlistmentRepository->recentForTenantDashboard($tenantId, 10);
         } catch (\Throwable) {
-            $orgEnlistmentError = 'Données candidatures indisponibles.';
-        }
-        $orgRhRecent = [];
-        $orgRhRecentError = null;
-        try {
-            $orgRhRecent = $this->auditLogs->recentForTenantRhFocus($tenantId, 15);
-        } catch (\Throwable) {
-            $orgRhRecentError = 'Fil RH indisponible.';
-        }
-        $moderationRecent = [];
-        $moderationError = null;
-        try {
-            $moderationRecent = $this->moderationRepository->listRecentActions($tenantId, 5, 'tenant');
-        } catch (\Throwable) {
-            $moderationError = 'Modération indisponible.';
-        }
-        $orgTrainingFeed = [];
-        $orgTrainingFeedError = null;
-        try {
-            $orgTrainingFeed = $this->communityFeed->listRecentForTenant($tenantId, 15, 'training_');
-        } catch (\Throwable) {
-            $orgTrainingFeedError = 'Fil formations indisponible.';
-        }
-        $orgTrainingFeedCompletionAnalytics = [];
-        if ($orgTrainingFeedError === null && $orgTrainingFeed !== []) {
-            try {
-                $orgTrainingFeedCompletionAnalytics = $this->trainingFeedCompletionAnalytics->buildForTrainingFeedRows(
-                    $tenantId,
-                    $orgTrainingFeed
-                );
-            } catch (\Throwable) {
-                $orgTrainingFeedCompletionAnalytics = [];
-            }
-        }
-        $orgRoleplayTimelineRows = [];
-        $orgRoleplayTimelineError = null;
-        try {
-            $orgRoleplayTimelineRows = $this->personnelRoleplayTimelineRepository->listDashboardDueItems(
-                $tenantId,
-                (int) \App\Services\Personnel\RoleplayFollowupSettings::dueListOptionsForTenant($tenantId)['horizon'],
-                12,
-                \App\Services\Personnel\RoleplayFollowupSettings::dueListOptionsForTenant($tenantId)
-            );
-        } catch (\Throwable) {
-            $orgRoleplayTimelineError = 'Suivi roleplay indisponible.';
+            $orgEnlistmentCounts = [];
+            $orgEnlistmentRecent = [];
         }
 
-        $orgIntegrationsPlanAllowed = false;
-        if ($tenantId > 1) {
-            try {
-                $orgIntegrationsPlanAllowed = Container::get(FeatureGateService::class)->allows($tenantId, 'advanced_integrations');
-            } catch (\Throwable) {
-                $orgIntegrationsPlanAllowed = false;
-            }
-        }
-
-        $orgAnnounceItems = [];
         $discordInviteMissing = false;
         try {
             $settings = (new TenantRepository())->getSettings($tenantId);
             $communityCfg = is_array($settings['community'] ?? null) ? $settings['community'] : [];
             $discordInviteMissing = \App\Services\Community\TenantCommunityProfileService::needsDiscordInviteAlert($communityCfg);
-            if ($discordInviteMissing) {
-                $orgAnnounceItems[] = [
-                    'kind' => 'urgent',
-                    'category' => 'Configuration',
-                    'title' => 'Lien Discord manquant',
-                    'body' => 'Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné. Les candidats ne peuvent pas rejoindre votre serveur depuis le formulaire.',
-                    'cta_label' => 'Renseigner le lien',
-                    'cta_url' => url('back-office/organisation/parametres') . '?onglet=inscription#coordonnees',
-                ];
-            }
         } catch (\Throwable) {
             $discordInviteMissing = false;
         }
@@ -205,81 +143,8 @@ class OrganizationDashboardController
         try {
             $mediaScan = (new \App\Services\Media\MissingUserMediaScanner())->scanTenant($tenantId, 300);
             $missingMediaCount = (int) ($mediaScan['total_users'] ?? 0);
-            if ($missingMediaCount > 0) {
-                $orgAnnounceItems[] = [
-                    'kind' => 'urgent',
-                    'category' => 'Médias',
-                    'title' => 'Photos perdues après migration',
-                    'body' => $missingMediaCount . ' compte(s) ont encore un chemin d’image en base alors que le fichier n’est plus sur le serveur. Demandez un re-téléversement.',
-                    'cta_label' => 'Voir les comptes',
-                    'cta_url' => url('back-office/centre-operations') . '#anomalies-medias',
-                ];
-            }
         } catch (\Throwable) {
             $missingMediaCount = 0;
-        }
-        try {
-            foreach ($this->tenantAlertRepository->listActiveForTenantDisplay($tenantId) as $alert) {
-                $style = \App\Support\AlertDisplayStyle::sanitizeTenant(
-                    isset($alert['display_style']) ? (string) $alert['display_style'] : null
-                );
-                if (\App\Support\AlertDisplayStyle::isActivityFeedStyle($style)
-                    || \App\Support\AlertDisplayStyle::isBackOfficeStyle($style)) {
-                    continue;
-                }
-                $orgAnnounceItems[] = [
-                    'scope' => 'tenant',
-                    'kind' => (string) ($alert['kind'] ?? 'info'),
-                    'title' => (string) ($alert['title'] ?? ''),
-                    'body' => trim((string) ($alert['body'] ?? '')),
-                    'cta_label' => isset($alert['cta_label']) && $alert['cta_label'] !== '' ? (string) $alert['cta_label'] : null,
-                    'cta_url' => isset($alert['cta_url']) && $alert['cta_url'] !== '' ? (string) $alert['cta_url'] : null,
-                    'accent_color' => isset($alert['accent_color']) ? (string) $alert['accent_color'] : null,
-                    'image_url' => \App\Support\TenantAlertVisuals::publicUrl(isset($alert['image_path']) ? (string) $alert['image_path'] : null),
-                ];
-            }
-        } catch (\Throwable) {
-            // Les annonces publiées restent optionnelles ; l’alerte Discord ci-dessus est conservée.
-        }
-        try {
-            foreach (\App\Core\Container::get(\App\Services\Alerts\AlertPresentationService::class)
-                ->backOfficeForTenant($tenantId) as $alert) {
-                $orgAnnounceItems[] = [
-                    'scope' => 'tenant',
-                    'kind' => (string) ($alert['kind'] ?? 'info'),
-                    'title' => (string) ($alert['title'] ?? ''),
-                    'body' => trim((string) ($alert['body'] ?? '')),
-                    'cta_label' => $alert['cta_label'] ?? null,
-                    'cta_url' => $alert['cta_url'] ?? null,
-                    'accent_color' => $alert['accent_color'] ?? null,
-                    'image_url' => $alert['image_url'] ?? null,
-                ];
-            }
-        } catch (\Throwable) {
-            // Annonces back-office optionnelles.
-        }
-        try {
-            $pinRows = (new \App\Repositories\TenantDashboardPinRepository())->listOrderedForTenant($tenantId);
-            foreach ($pinRows as $pin) {
-                if ((string) ($pin['pin_type'] ?? '') !== 'notice') {
-                    continue;
-                }
-                $body = trim((string) ($pin['notice_body'] ?? ''));
-                if ($body === '') {
-                    continue;
-                }
-                $label = trim((string) ($pin['title'] ?? ''));
-                $orgAnnounceItems[] = [
-                    'kind' => 'notice',
-                    'category' => 'Annonce',
-                    'title' => $label !== '' ? $label : 'Annonce',
-                    'body' => $body,
-                    'cta_label' => 'Gérer',
-                    'cta_url' => url('back-office/dashboard-pins'),
-                ];
-            }
-        } catch (\Throwable) {
-            // Les consignes épinglées restent optionnelles.
         }
 
         $initialSetupBanner = null;
@@ -306,7 +171,7 @@ class OrganizationDashboardController
         }
 
         $chartDays = 14;
-        $orgActivityChart = ['days' => [], 'portal' => [], 'atak' => [], 'max' => 1];
+        $orgActivityChart = ['days' => [], 'portal' => [], 'atak' => [], 'max' => 1, 'period_days' => $chartDays];
         try {
             $portalSeries = $this->auditLogs->dailyLoginCountsForTenant($tenantId, $chartDays);
             $atakSeries = $this->atakRealism->dailyTerminalSeenCountsForTenant($tenantId, $chartDays);
@@ -337,49 +202,27 @@ class OrganizationDashboardController
             $orgActivityChart = ['days' => [], 'portal' => [], 'atak' => [], 'max' => 1, 'period_days' => $chartDays];
         }
 
-        $orgNextOperation = null;
+        // Agenda + prochaine opération : une seule lecture des créneaux à venir, une seule pour les réponses.
+        $upcomingEvents = [];
+        $upcomingRsvp = [];
         try {
-            $upcoming = $this->eventRepository->upcomingForTenant($tenantId, 1);
-            $event = $upcoming[0] ?? null;
-            if (is_array($event) && (int) ($event['id'] ?? 0) > 0) {
-                $eid = (int) $event['id'];
-                $summaries = $this->eventRepository->rsvpSummariesForEvents([$eid]);
-                $sum = $summaries[$eid] ?? ['yes' => [], 'maybe' => [], 'no' => []];
-                $yes = count($sum['yes'] ?? []);
-                $maybe = count($sum['maybe'] ?? []);
-                $no = count($sum['no'] ?? []);
-                $activeMembers = 0;
-                try {
-                    $activeMembers = $this->users->countActiveForTenant($tenantId);
-                } catch (\Throwable) {
-                    $activeMembers = 0;
-                }
-                $answered = $yes + $maybe + $no;
-                $noReply = max(0, $activeMembers - $answered);
-                $startsAt = (string) ($event['starts_at'] ?? '');
-                $startsFmt = $startsAt !== '' ? date('d/m/Y H\hi', strtotime($startsAt) ?: time()) : '';
-                $orgNextOperation = [
-                    'id' => $eid,
-                    'title' => trim((string) ($event['title'] ?? 'Manœuvre')),
-                    'starts_at' => $startsAt,
-                    'starts_label' => $startsFmt,
-                    'href' => url('back-office/events/' . $eid),
-                    'rsvp' => [
-                        'yes' => $yes,
-                        'maybe' => $maybe,
-                        'no' => $no,
-                        'no_reply' => $noReply,
-                    ],
-                ];
+            $upcomingEvents = $this->eventRepository->upcomingForTenant($tenantId, 8);
+            $eventIds = array_values(array_filter(array_map(
+                static fn (array $e): int => (int) ($e['id'] ?? 0),
+                $upcomingEvents
+            )));
+            if ($eventIds !== []) {
+                $upcomingRsvp = $this->eventRepository->rsvpSummariesForEvents($eventIds);
             }
         } catch (\Throwable) {
-            $orgNextOperation = null;
+            $upcomingEvents = [];
+            $upcomingRsvp = [];
         }
 
         $orgElevationOpen = [];
         $orgElevationOpenCount = 0;
         try {
-            $orgElevationOpen = $this->elevationRequests->listOpenForTenant($tenantId, 6);
+            $orgElevationOpen = $this->elevationRequests->listOpenForTenant($tenantId, 4);
             $orgElevationOpenCount = $this->elevationRequests->countOpenForTenant($tenantId);
         } catch (\Throwable) {
             $orgElevationOpen = [];
@@ -390,7 +233,7 @@ class OrganizationDashboardController
         $viewerId = (int) Session::get('user_id');
         if ($viewerId > 0) {
             try {
-                $orgMessagesRecent = $this->tenantMessages->listActivityThreadsForUser($tenantId, $viewerId, 2);
+                $orgMessagesRecent = $this->tenantMessages->listActivityThreadsForUser($tenantId, $viewerId, 3);
             } catch (\Throwable) {
                 $orgMessagesRecent = [];
             }
@@ -416,42 +259,42 @@ class OrganizationDashboardController
             $orgProfileGaps['error'] = 'La liste des profils à compléter n’est pas disponible pour le moment.';
         }
 
+        $now = time();
+        $pilotage = PilotageDashboardPresenter::build([
+            'now' => $now,
+            'tenant_name' => $tenantName,
+            'viewer_name' => trim((string) (Session::get('display_name') ?? Session::get('callsign') ?? '')),
+            'kpis' => $metrics['kpis'],
+            'profile_gaps_total' => ($orgProfileGaps['error'] ?? null) === null ? (int) ($orgProfileGaps['total'] ?? 0) : null,
+            'upcoming' => $upcomingEvents,
+            'rsvp' => $upcomingRsvp,
+            'elevations' => $orgElevationOpen,
+            'elevation_count' => $orgElevationOpenCount,
+            'elevation_kind_labels' => EffectifsStaffAlertService::ELEVATION_KIND_LABELS,
+            'enlistment_counts' => $orgEnlistmentCounts,
+            'enlistments' => $orgEnlistmentRecent,
+            'participation' => $this->pilotage->participation($tenantId, 10),
+            'presence' => $this->pilotage->presence($tenantId, 30),
+            'month_events' => $this->pilotage->monthEvents($tenantId, $now),
+            'units' => $this->pilotage->unitReadiness($tenantId),
+            'activity' => $recent,
+            'link_allowed' => static fn (string $href): bool => !function_exists('portal_nav_href_permission_allowed')
+                || portal_nav_href_permission_allowed($href),
+        ]);
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.dashboard',
             'title' => 'Tableau de bord',
             'isBackOfficeShell' => true,
             'boPageGroup' => 'Pilotage',
             'boPageTitle' => 'Tableau de bord',
-            'boPageKicker' => 'PILOTAGE · VUE GÉNÉRALE',
-            'boPageSubtitle' => 'Ce qui a bougé dans votre communauté, et ce qui attend votre décision. Commencez par les alertes en haut de page.',
+            // L’en-tête (salutation, résumé du jour) est porté par la vue elle-même.
+            'boSkipPageHead' => true,
             'boPageAction' => 'Publier une annonce',
             'boPageActionUrl' => url('back-office/alerts/create'),
-            'boPageQuick' => [
-                ['label' => 'Candidatures', 'href' => url('back-office/recruitments')],
-                ['label' => 'Centre d’opérations', 'href' => url('back-office/centre-operations')],
-                ['label' => 'Journal d’audit', 'href' => url('back-office/audit')],
-            ],
-            'backOfficePageCss' => ['back-office-dashboard.css', 'announce-tiles.css'],
-            'adminKpis' => $metrics['kpis'],
+            'backOfficePageCss' => ['back-office-dashboard.css', 'pilotage-dashboard.css'],
             'adminKpiBlockError' => $metrics['blockError'],
-            'adminRecentActivity' => $recent,
-            'adminRecentActivityError' => $recentError,
-            'adminRecentActivityMoreUrl' => url('back-office/audit'),
-            'orgEnlistmentCounts' => $orgEnlistmentCounts,
-            'orgEnlistmentRecent' => $orgEnlistmentRecent,
-            'orgEnlistmentError' => $orgEnlistmentError,
-            'orgRhRecent' => $orgRhRecent,
-            'orgRhRecentError' => $orgRhRecentError,
-            'orgWorkQueue' => $workQueue,
-            'orgModerationRecent' => $moderationRecent,
-            'orgModerationError' => $moderationError,
-            'orgTrainingFeed' => $orgTrainingFeed,
-            'orgTrainingFeedError' => $orgTrainingFeedError,
-            'orgTrainingFeedCompletionAnalytics' => $orgTrainingFeedCompletionAnalytics,
-            'orgRoleplayTimelineRows' => $orgRoleplayTimelineRows,
-            'orgRoleplayTimelineError' => $orgRoleplayTimelineError,
-            'orgIntegrationsPlanAllowed' => $orgIntegrationsPlanAllowed,
-            'orgAnnounceItems' => $orgAnnounceItems,
+            'pilotage' => $pilotage,
             'skipGlobalAlertBanners' => true,
             'tenantName' => $tenantName,
             'initialSetupBanner' => $initialSetupBanner,
@@ -459,10 +302,6 @@ class OrganizationDashboardController
             'discordInviteMissing' => $discordInviteMissing,
             'missingMediaCount' => $missingMediaCount,
             'orgActivityChart' => $orgActivityChart,
-            'orgNextOperation' => $orgNextOperation,
-            'orgElevationOpen' => $orgElevationOpen,
-            'orgElevationOpenCount' => $orgElevationOpenCount,
-            'orgElevationKindLabels' => EffectifsStaffAlertService::ELEVATION_KIND_LABELS,
             'orgMessagesRecent' => $orgMessagesRecent,
             'orgProfileGaps' => $orgProfileGaps,
         ]);
