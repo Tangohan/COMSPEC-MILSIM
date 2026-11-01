@@ -2165,6 +2165,7 @@ if (!function_exists('detect_current_module')) {
         }
         if (
             str_starts_with($path, '/formations')
+            || str_starts_with($path, '/academy/formations')
             || ($path === '/formation' || str_starts_with($path, '/formation/'))
             || str_starts_with($path, '/api/training')
             || str_starts_with($path, '/admin/training')

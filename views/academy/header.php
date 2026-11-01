@@ -8,10 +8,14 @@ require base_path('views/training/partials/lms_head.php');
 <meta name="description" content="<?= $h($t('hero_text')) ?>">
 <link rel="stylesheet" href="<?= $h(asset_url('assets/css/design-system.css')) ?>">
 <link rel="stylesheet" href="<?= $h(asset_url('assets/css/academy.css')) ?>">
+<?php $customTopbar = $customTopbar ?? false; /* Salle de cours et Studio : maquettes dédiées, avec leur propre barre d'en-tête. */ ?>
+<?php if ($customTopbar): ?><link rel="stylesheet" href="<?= $h(asset_url('assets/css/academy-workspace.css')) ?>"><?php endif ?>
 <script src="<?= $h(asset_url('assets/js/academy.js')) ?>" defer></script>
+<?php if ($customTopbar): ?><script type="module" src="<?= $h(asset_url('assets/js/academy-deck.js')) ?>"></script><?php endif ?>
 </head>
-<body class="academy-app">
-<a class="skip" href="#main"><?= $h($t('next')) ?></a>
+<body class="academy-app<?= $customTopbar ? ' academy-workspace academy-workspace--' . $h($space) : '' ?>">
+<a class="skip" href="#main"><?= $h($t('skip_to_content')) ?></a>
+<?php if (!$customTopbar): ?>
 <?php /* En-tête unique des pages Academy : marque, mention de préversion (ouvre l’avertissement complet), organisation, langue, retour vers ATHENA. */ ?>
 <header class="academy-topbar">
 <a class="academy-topbar__brand" href="<?= $h($link()) ?>">ATHENA <span>Academy</span></a>
@@ -20,3 +24,4 @@ require base_path('views/training/partials/lms_head.php');
 <nav class="languages" aria-label="<?= $h($t('language')) ?>"><?php foreach (['fr','en'] as $language): ?><a href="<?= $h(locale_switch_url($language)) ?>" lang="<?= $language ?>" aria-current="<?= $language === $lang ? 'true' : 'false' ?>"><?= strtoupper($language) ?></a><?php endforeach ?></nav>
 <a class="academy-topbar__back" href="<?= $h(url('dashboard')) ?>"><span aria-hidden="true">←</span> <?= $h($t('back_athena')) ?></a>
 </header>
+<?php endif ?>
