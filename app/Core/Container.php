@@ -897,6 +897,10 @@ class Container
                 self::get(\App\Services\Audit\AuditService::class),
                 self::get(\App\Services\Community\TenantTypeSwitchService::class),
             ),
+            \App\Controllers\Admin\System\SystemAdminSearchController::class => new \App\Controllers\Admin\System\SystemAdminSearchController(
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class),
+            ),
             \App\Controllers\Admin\System\SystemUsersController::class => new \App\Controllers\Admin\System\SystemUsersController(
                 self::get(UserRepository::class),
                 self::get(TenantRepository::class),
