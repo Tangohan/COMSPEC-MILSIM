@@ -100,6 +100,12 @@ final class EffectifsShellRenderTest extends TestCase
         self::assertStringContainsString('Owen &lt;Hale&gt;', $html);
         self::assertStringNotContainsString('Owen <Hale>', $html);
         self::assertStringContainsString('Sans unité', $html);
+        // Vue « Par unité » : carte avec code, identifiant administratif et titulaires (grade, rôle, emploi).
+        self::assertStringContainsString('class="eff-ut__admin"', $html);
+        self::assertStringContainsString('<span>ID</span>0002-0003', $html);
+        self::assertStringContainsString('<span class="eff-ut__grade">SSG</span>Ryan Mercer', $html);
+        self::assertStringContainsString('Chef de groupe · Infirmier de combat', $html);
+        self::assertStringNotContainsString('prochaine ouverture', $html);
     }
 
     public function testCommunityCodeFormIsHiddenWithoutAdministrationRight(): void

@@ -54,7 +54,7 @@ $typeLabel = static function (string $typeRaw): string {
             <?php if ($community !== null): ?>
             <p class="eff-aff-codes__lead">Votre communauté : <?= eff_unit_code_html((string) $community['code'], 'n° ' . (string) $community['admin_id']) ?></p>
             <?php else: ?>
-            <p class="eff-aff-codes__lead">Les codes seront attribués à la prochaine ouverture de cette page.</p>
+            <p class="eff-aff-codes__lead eff-aff-codes__warn" role="status">Les codes n’ont pas pu être calculés pour le moment. Rechargez la page ; si ce message reste affiché, signalez-le au support.</p>
             <?php endif; ?>
         </div>
         <?php if ($community !== null && $canEditCommunityCode): ?>
@@ -206,50 +206,104 @@ $typeLabel = static function (string $typeRaw): string {
                     <?php if ($canManageAssignments): ?><br><a href="<?= $h(url('back-office/organisation/structure')) ?>">Ouvrir la structure</a><?php endif; ?>
                 </div>
             <?php else: ?>
-            <div class="eff-aff-tree">
+            <div class="eff-ut" data-eff-ut>
+                <?php
+                $unitPalette = ['#0f172a', '#065f46', '#1d4ed8', '#b45309', '#6d28d9', '#0369a1', '#9f1239', '#3f6212'];
+                $initialsOf = static function (string $name): string {
+                    $parts = preg_split('/\s+/u', trim($name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                    $first = mb_substr($parts[0] ?? '?', 0, 1, 'UTF-8');
+                    $second = isset($parts[1]) ? mb_substr($parts[1], 0, 1, 'UTF-8') : mb_substr($parts[0] ?? '', 1, 1, 'UTF-8');
+
+                    return mb_strtoupper($first . $second, 'UTF-8');
+                };
+                ?>
                 <?php foreach ($unitsList as $u): ?>
                     <?php
                     $holders = $u['holders'];
+                    $seats = is_array($u['seats'] ?? null) ? $u['seats'] : null;
                     $haystack = $norm(implode(' ', array_merge(
                         [$u['name'], $u['code'], $u['admin_id'], $u['path'], $u['commander']],
-                        array_map(static fn (array $x): string => $x['name'] . ' ' . $x['callsign'] . ' ' . $x['role'] . ' ' . implode(' ', array_map(static fn (array $j): string => (string) $j['name'], $x['jobs'])), $holders)
+                        array_map(static fn (array $x): string => $x['name'] . ' ' . $x['callsign'] . ' ' . $x['grade'] . ' ' . $x['role'] . ' ' . implode(' ', array_map(static fn (array $j): string => (string) $j['name'], $x['jobs'])), $holders),
+                        $seats['vacant'] ?? []
                     )));
                     $type = $typeLabel((string) $u['type']);
+                    $color = $unitPalette[(int) $u['id'] % count($unitPalette)];
+                    $depth = (int) $u['depth'];
+                    $seatPct = $seats !== null && $seats['authorized'] > 0 ? (int) round($seats['filled'] * 100 / $seats['authorized']) : null;
                     ?>
-                    <article class="eff-aff-unit<?= (int) $u['id'] === $initialUnit ? ' is-target' : '' ?>" id="unite-<?= (int) $u['id'] ?>" style="--depth:<?= (int) $u['depth'] ?>" data-eff-aff-unit-row data-search="<?= $h($haystack) ?>" data-code="<?= $h((string) $u['code']) ?>">
-                        <div class="eff-aff-unit__head">
-                            <?= eff_unit_code_html((string) $u['code'], (string) $u['admin_id']) ?>
-                            <h3><?= $h((string) $u['name']) ?></h3>
-                            <span class="eff-aff-unit__meta">
-                                <?= $h(implode(' · ', array_filter([
+                    <article class="eff-ut__unit<?= (int) $u['id'] === $initialUnit ? ' is-target' : '' ?><?= $depth === 0 ? ' is-root' : '' ?>" id="unite-<?= (int) $u['id'] ?>" style="--depth:<?= min($depth, 6) ?>;--unit:<?= $h($color) ?>" data-eff-aff-unit-row data-search="<?= $h($haystack) ?>" data-code="<?= $h((string) $u['code']) ?>" aria-labelledby="eff-ut-name-<?= (int) $u['id'] ?>">
+                        <header class="eff-ut__head">
+                            <div class="eff-ut__ident">
+                                <?php if ((string) $u['code'] !== ''): ?>
+                                    <?= eff_unit_code_html((string) $u['code'], '', 'lg') ?>
+                                    <span class="eff-ut__admin" title="Identifiant administratif : ne change jamais"><span>ID</span><?= $h((string) $u['admin_id']) ?></span>
+                                <?php else: ?>
+                                    <span class="eff-ut__nocode">Code en cours d’attribution</span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="eff-ut__title">
+                                <?php if ($u['children'] > 0): ?>
+                                <button type="button" class="eff-ut__fold" aria-expanded="true" data-eff-ut-fold="<?= $h((string) $u['code']) ?>" title="Replier les sous-unités">
+                                    <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+                                    <span class="sr-only">Replier les sous-unités de <?= $h((string) $u['name']) ?></span>
+                                </button>
+                                <?php endif; ?>
+                                <h3 id="eff-ut-name-<?= (int) $u['id'] ?>"><?= $h((string) $u['name']) ?></h3>
+                                <p><?= $h(implode(' · ', array_filter([
                                     $type,
-                                    count($holders) . ' titulaire' . (count($holders) > 1 ? 's' : ''),
+                                    $u['commander'] !== '' ? 'Chef : ' . $u['commander'] : 'Sans chef désigné',
                                     $u['children'] > 0 ? $u['children'] . ' sous-unité' . ($u['children'] > 1 ? 's' : '') : '',
-                                    $u['commander'] !== '' ? 'Chef : ' . $u['commander'] : '',
-                                ]))) ?>
-                            </span>
-                        </div>
-                        <?php if ($canManageAssignments): ?>
-                        <details class="eff-aff-seg">
-                            <summary>Modifier le code</summary>
-                            <form method="post" action="<?= $h(effectifs_workspace_url('codes/unites/' . (int) $u['id'])) ?>" class="eff-aff-seg__panel">
-                                <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
-                                <label for="eff-aff-seg-<?= (int) $u['id'] ?>">Repère de l’unité dans le code</label>
-                                <input id="eff-aff-seg-<?= (int) $u['id'] ?>" name="segment" value="<?= $h((string) $u['own_code']) ?>" maxlength="8" pattern="[A-Za-z0-9]{0,8}" placeholder="<?= $h((string) $u['segment']) ?>" autocomplete="off" spellcheck="false">
-                                <span>Lettres ou chiffres, 8 au plus. Laissez vide pour le calculer depuis le nom (actuellement « <?= $h((string) $u['segment'] !== '' ? (string) $u['segment'] : (string) $u['code']) ?> »).</span>
-                                <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary">Enregistrer</button>
-                            </form>
-                        </details>
-                        <?php endif; ?>
-                        <?php if ($holders !== []): ?>
-                        <div class="eff-aff-holders">
+                                ]))) ?></p>
+                            </div>
+                            <div class="eff-ut__figures">
+                                <span class="eff-ut__count"><b><?= count($holders) ?></b> titulaire<?= count($holders) > 1 ? 's' : '' ?></span>
+                                <?php if ($seatPct !== null): ?>
+                                <span class="eff-ut__seats" title="Postes de l’ORBAT : <?= (int) $seats['filled'] ?> pourvus sur <?= (int) $seats['authorized'] ?>">
+                                    <span class="eff-ut__bar" aria-hidden="true"><i style="width:<?= $seatPct ?>%"></i></span>
+                                    <?= (int) $seats['filled'] ?>/<?= (int) $seats['authorized'] ?> postes<?= $seats['authorized'] - $seats['filled'] > 0 ? ' · <b>' . ($seats['authorized'] - $seats['filled']) . ' vacant' . ($seats['authorized'] - $seats['filled'] > 1 ? 's' : '') . '</b>' : '' ?>
+                                </span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="eff-ut__acts">
+                                <a href="<?= $h(effectifs_workspace_url() . '?unite=' . (int) $u['id']) ?>">Voir au tableur</a>
+                                <?php if ($canManageAssignments): ?>
+                                <details class="eff-aff-seg">
+                                    <summary>Modifier le code</summary>
+                                    <form method="post" action="<?= $h(effectifs_workspace_url('codes/unites/' . (int) $u['id'])) ?>" class="eff-aff-seg__panel">
+                                        <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+                                        <label for="eff-aff-seg-<?= (int) $u['id'] ?>">Repère de l’unité dans le code</label>
+                                        <input id="eff-aff-seg-<?= (int) $u['id'] ?>" name="segment" value="<?= $h((string) $u['own_code']) ?>" maxlength="8" pattern="[A-Za-z0-9]{0,8}" placeholder="<?= $h((string) $u['segment']) ?>" autocomplete="off" spellcheck="false">
+                                        <span>Lettres ou chiffres, 8 au plus. Laissez vide pour le calculer depuis le nom<?= (string) $u['segment'] !== '' ? ' (actuellement « ' . $h((string) $u['segment']) . ' »)' : '' ?>.</span>
+                                        <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary">Enregistrer</button>
+                                    </form>
+                                </details>
+                                <?php endif; ?>
+                            </div>
+                        </header>
+                        <?php if ($holders !== [] || ($seats['vacant'] ?? []) !== []): ?>
+                        <ul class="eff-ut__people">
                             <?php foreach ($holders as $x): ?>
-                                <?php $jobLabel = $x['jobs'] !== [] ? (string) $x['jobs'][0]['name'] : ''; ?>
-                                <a class="eff-aff-holder<?= $x['role'] !== '' ? ' has-role' : '' ?>" href="<?= $h(effectifs_workspace_url('membres/' . (int) $x['id'])) ?>" title="<?= $h(implode(' · ', array_filter([(string) $x['grade'], (string) $x['role'], $jobLabel]))) ?>">
-                                    <i><?= $h($x['role'] !== '' ? (string) $x['role'] : ($jobLabel !== '' ? $jobLabel : 'Membre')) ?></i><?= $h((string) $x['name']) ?>
-                                </a>
+                                <?php
+                                $jobLabel = $x['jobs'] !== [] ? (string) $x['jobs'][0]['name'] : '';
+                                $sub = array_filter([(string) $x['role'], $jobLabel]);
+                                ?>
+                                <li>
+                                    <a class="eff-ut__person" href="<?= $h(effectifs_workspace_url('membres/' . (int) $x['id'])) ?>">
+                                        <span class="eff-ut__av" aria-hidden="true"><?= $h($initialsOf((string) $x['name'])) ?></span>
+                                        <span class="eff-ut__who">
+                                            <b><?php if ((string) $x['grade'] !== ''): ?><span class="eff-ut__grade"><?= $h((string) $x['grade']) ?></span><?php endif; ?><?= $h((string) $x['name']) ?></b>
+                                            <small><?= $h($sub !== [] ? implode(' · ', $sub) : 'Sans rôle ni emploi') ?><?= (string) $x['callsign'] !== '' ? ' · « ' . $h((string) $x['callsign']) . ' »' : '' ?></small>
+                                        </span>
+                                        <?php if ((string) $x['role'] !== ''): ?><span class="eff-ut__role-dot" title="Rôle dans l’unité" aria-hidden="true"></span><?php endif; ?>
+                                    </a>
+                                </li>
                             <?php endforeach; ?>
-                        </div>
+                            <?php foreach ($seats['vacant'] ?? [] as $vacant): ?>
+                                <li class="eff-ut__vacant"><span class="eff-ut__av" aria-hidden="true">+</span><span class="eff-ut__who"><b><?= $h((string) $vacant) ?></b><small>Poste vacant</small></span></li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php else: ?>
+                        <p class="eff-ut__empty">Aucun titulaire dans cette unité.</p>
                         <?php endif; ?>
                     </article>
                 <?php endforeach; ?>

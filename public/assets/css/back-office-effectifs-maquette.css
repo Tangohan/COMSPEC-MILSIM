@@ -2186,3 +2186,391 @@ html[data-bo-theme="dark"] .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__
     max-width: none;
   }
 }
+
+/* ——— Affectations, vue « Par unité » (2026-11-01, v2) : organigramme en cartes ——— */
+.eff-ucode--lg .eff-ucode__seg {
+  padding: 0.34rem 0.5rem;
+  font-size: 0.82rem;
+}
+
+.eff-aff-codes__warn {
+  color: var(--eff-mq-warn);
+  font-weight: 600;
+}
+
+.eff-ut {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.85rem;
+  background: var(--eff-mq-sunken);
+  border-radius: 0 0 14px 14px;
+}
+
+.eff-ut__unit {
+  position: relative;
+  margin-left: calc(var(--depth, 0) * 1.6rem);
+  border: 1px solid var(--eff-mq-line);
+  border-left: 3px solid var(--unit, #334155);
+  border-radius: 10px;
+  background: var(--eff-mq-surface);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* Trait de rattachement vers le parent (organigramme). */
+.eff-ut__unit:not(.is-root)::before {
+  content: "";
+  position: absolute;
+  top: -0.65rem;
+  bottom: 50%;
+  left: -0.95rem;
+  width: 0.8rem;
+  border-left: 1px solid var(--ath-subtle, #cbd5e1);
+  border-bottom: 1px solid var(--ath-subtle, #cbd5e1);
+  border-bottom-left-radius: 6px;
+  pointer-events: none;
+}
+
+.eff-ut__unit.is-root {
+  border-left-width: 4px;
+}
+
+.eff-ut__unit.is-target {
+  box-shadow: 0 0 0 2px var(--eff-mq-primary);
+}
+
+.eff-ut__unit[hidden],
+.eff-ut__unit.is-folded {
+  display: none;
+}
+
+.eff-ut__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.6rem 1.25rem;
+  padding: 0.85rem 1rem;
+}
+
+.eff-ut__ident {
+  display: grid;
+  justify-items: start;
+  gap: 0.3rem;
+}
+
+.eff-ut__admin {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--eff-mq-text);
+  font-family: var(--ath-mono, 'JetBrains Mono', ui-monospace, monospace);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.eff-ut__admin span {
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  background: var(--eff-mq-sunken);
+  color: var(--eff-mq-muted);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.eff-ut__nocode {
+  color: var(--eff-mq-warn);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.eff-ut__title {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.4rem;
+  min-width: 0;
+}
+
+.eff-ut__title h3 {
+  grid-column: 2;
+  margin: 0;
+  overflow: hidden;
+  color: var(--eff-mq-text);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eff-ut__title p {
+  grid-column: 2;
+  margin: 0.1rem 0 0;
+  color: var(--eff-mq-muted);
+  font-size: 0.76rem;
+}
+
+.eff-ut__fold {
+  grid-row: 1;
+  grid-column: 1;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 1px solid var(--eff-mq-line);
+  border-radius: 6px;
+  background: var(--eff-mq-surface);
+  color: var(--eff-mq-muted);
+  cursor: pointer;
+}
+
+.eff-ut__fold svg {
+  transition: transform 0.15s;
+}
+
+.eff-ut__fold[aria-expanded="false"] svg {
+  transform: rotate(-90deg);
+}
+
+.eff-ut__fold:focus-visible,
+.eff-ut__person:focus-visible,
+.eff-ut__acts a:focus-visible {
+  outline: 2px solid var(--eff-mq-primary);
+  outline-offset: 2px;
+}
+
+.eff-ut__figures {
+  display: grid;
+  justify-items: end;
+  gap: 0.3rem;
+  color: var(--eff-mq-muted);
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+.eff-ut__count b {
+  color: var(--eff-mq-text);
+  font-size: 1.15rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.eff-ut__seats {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.eff-ut__seats b {
+  color: var(--eff-mq-warn);
+}
+
+.eff-ut__bar {
+  width: 4.5rem;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--eff-mq-line);
+}
+
+.eff-ut__bar i {
+  display: block;
+  height: 100%;
+  background: var(--eff-mq-good);
+}
+
+.eff-ut__acts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.eff-ut__acts a {
+  color: var(--eff-mq-muted);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.eff-ut__acts a:hover {
+  color: var(--eff-mq-text);
+}
+
+.eff-ut__people {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0 1rem 0.9rem;
+  list-style: none;
+}
+
+.eff-ut__person,
+.eff-ut__vacant {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--eff-mq-line-soft);
+  border-radius: 8px;
+  background: var(--eff-mq-surface);
+  color: var(--eff-mq-text);
+  text-decoration: none;
+}
+
+.eff-ut__person:hover {
+  border-color: var(--eff-mq-line);
+  background: var(--eff-mq-hover);
+  color: var(--eff-mq-text);
+}
+
+.eff-ut__vacant {
+  border-style: dashed;
+  border-color: var(--ath-subtle, #cbd5e1);
+  background: transparent;
+  color: var(--eff-mq-muted);
+}
+
+.eff-ut__av {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 7px;
+  background: var(--unit, #334155);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.eff-ut__vacant .eff-ut__av {
+  border: 1px dashed var(--ath-subtle, #cbd5e1);
+  background: transparent;
+  color: var(--eff-mq-muted);
+  font-size: 0.95rem;
+}
+
+.eff-ut__who {
+  display: grid;
+  min-width: 0;
+}
+
+.eff-ut__who b {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  overflow: hidden;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eff-ut__who small {
+  overflow: hidden;
+  color: var(--eff-mq-muted);
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eff-ut__grade {
+  flex: none;
+  padding: 0.05rem 0.28rem;
+  border-radius: 3px;
+  background: var(--eff-mq-text);
+  color: var(--eff-mq-surface);
+  font-family: var(--ath-mono, 'JetBrains Mono', ui-monospace, monospace);
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.eff-ut__role-dot {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.5rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--eff-mq-good);
+}
+
+.eff-ut__empty {
+  margin: 0;
+  padding: 0 1rem 0.9rem;
+  color: var(--eff-mq-muted);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 900px) {
+  .eff-ut__head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .eff-ut__ident {
+    grid-column: 1 / -1;
+    grid-auto-flow: column;
+    justify-content: start;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .eff-ut__acts {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .eff-ut {
+    padding: 0.5rem;
+  }
+
+  .eff-ut__unit {
+    margin-left: calc(min(var(--depth, 0), 3) * 0.7rem);
+  }
+
+  .eff-ut__unit:not(.is-root)::before {
+    display: none;
+  }
+
+  .eff-ut__head {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.75rem;
+  }
+
+  .eff-ut__figures {
+    justify-items: start;
+  }
+
+  .eff-ut__people {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0 0.75rem 0.75rem;
+  }
+
+  .eff-ut__acts .eff-aff-seg__panel {
+    right: auto;
+    left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eff-ut__fold svg {
+    transition: none;
+  }
+}
+
+html[data-bo-theme="dark"] .eff-ut__grade {
+  background: #e6ebe8;
+  color: #0d1110;
+}
+
+html[data-bo-theme="dark"] .eff-ut__unit {
+  box-shadow: none;
+}
