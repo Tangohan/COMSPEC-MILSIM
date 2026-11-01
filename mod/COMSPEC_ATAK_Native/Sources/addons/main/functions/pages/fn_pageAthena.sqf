@@ -5,7 +5,9 @@
     LE CANAL, OBTENIR MON CODE…), puis les étapes de la liaison (module, service, serveur, compte, identité du
     téléphone, canal du poste), dépliées tant que la connexion n'est pas faite.
     Connecté : fiche opérateur. Sinon : moyens de connexion par onglets, CODE (à autoriser sur athena-comspec.eu/lier,
-    sans clé ni identifiant de communauté, fn_athenaLink), E-MAIL (mot de passe masqué ou code e-mail), STEAM, PORTAIL.
+    sans clé ni identifiant de communauté, fn_athenaLink), E-MAIL (mot de passe masqué ou code e-mail), STEAM.
+    Plus d'onglet PORTAIL (2.9.24) : il demandait un code créé sur le site, à l'envers de la page /lier, qui attend le
+    code affiché par le jeu (onglet CODE). RedeemGameLink reste servi pour les anciennes versions et Overwatch connect.
     La page se redessine seule quand l'état change (fn_statusUpdate), en gardant ce qui est saisi.
 */
 disableSerialization;
@@ -79,6 +81,7 @@ if (_logged) then {
     if !(_key in ["battleye", "off", "unset"]) then {
         _rows pushBack ["section", "Se connecter", "Une seule fois : les parties suivantes se connectent seules"];
         private _tab = uiNamespace getVariable ["COMSPEC_ATAK_AthenaTab", "account"];
+        if !(_tab in ["account", "email", "steam"]) then { _tab = "account"; };
         private _tabBtn = {
             params ["_label", "_tk", "_tip"];
             [_label, compile format ["uiNamespace setVariable ['COMSPEC_ATAK_AthenaTab', '%1']; ['ATHENA'] call comspec_atak_native_fnc_pageRender;", _tk], _tab isEqualTo _tk, _tip]
@@ -86,8 +89,7 @@ if (_logged) then {
         _rows pushBack ["segment", "", [
             ["CODE", "account", "Code à autoriser sur le site (recommandé)"] call _tabBtn,
             ["E-MAIL", "email", "E-mail et mot de passe, ou code reçu par e-mail"] call _tabBtn,
-            ["STEAM", "steam", "Compte Steam déjà relié à Athena"] call _tabBtn,
-            ["PORTAIL", "pair", "Code généré sur la page Appairer du portail"] call _tabBtn
+            ["STEAM", "steam", "Compte Steam déjà relié à Athena"] call _tabBtn
         ]];
         private _draft = uiNamespace getVariable ["COMSPEC_ATAK_AthenaDraft", createHashMap];
         private _card = [0.06, 0.075, 0.07, 1];
@@ -104,13 +106,6 @@ if (_logged) then {
                         ["RECEVOIR LE CODE", { profileNamespace setVariable ["COMSPEC_ATAK_Email", ["email"] call comspec_atak_native_fnc_formValue]; ["otp_ask"] call comspec_atak_native_fnc_athenaAction; }],
                         ["VALIDER LE CODE", { ["otp_ok"] call comspec_atak_native_fnc_athenaAction; }]
                     ]]
-                ];
-            };
-            case "pair": {
-                _rows append [
-                    ["text", "<t color='#c9d4cf'>Sur le portail Athena, page <t font='COMSPEC_BarlowBold'>Appairer</t>, générez un code (valable 30 min) et saisissez-le ici.</t>"],
-                    ["edit", "pair", "Code d'appairage", _draft getOrDefault ["pair", ""]],
-                    ["buttons", [["LIER CE JEU", { ["pair"] call comspec_atak_native_fnc_athenaAction; }, true, true, "Relie ce jeu au compte qui a généré le code"]]]
                 ];
             };
             case "steam": {
@@ -154,7 +149,7 @@ if (_logged) then {
                             ["text", if (_ld isEqualTo "maintenance") then {
                                 // Athena en maintenance (HTTP 503) : nouvel essai automatique toutes les 60 s, app ouverte.
                                 "<t color='#f2c66b' font='COMSPEC_BarlowBold'>Athena est en maintenance.</t><br/><t color='#c9d4cf'>Le site est fermé le temps d'une mise à jour : aucun code ne peut être donné pour l'instant. Gardez l'app ouverte : nouvel essai automatique toutes les minutes.</t>"
-                            } else { if ((_ld find "http_4") isEqualTo 0) then {
+                            } else { if ((_ld find "http_4") isEqualTo 0 || {_ld isEqualTo "client_untrusted"}) then {
                                 // Athena a répondu mais refuse : cause et action lues dans fn_athenaStatus.
                                 format ["<t color='#f2c66b'>%1</t><br/><t color='#c9d4cf'>%2</t>", _st getOrDefault ["text", ""], _st getOrDefault ["action", ""]]
                             } else {
@@ -190,7 +185,8 @@ if (_logged) then {
             ["text", "<t color='#f2c66b'>Pas de code ?</t> <t color='#c9d4cf'>Vérifiez la connexion internet du jeu et que COMSPEC Link est autorisé (BattlEye, pare-feu). Puis RÉESSAYER.</t>"],
             ["text", "<t color='#f2c66b'>Code expiré ?</t> <t color='#c9d4cf'>Il ne dure que quelques minutes : NOUVEAU CODE.</t>"],
             ["text", "<t color='#f2c66b'>Non lié ?</t> <t color='#c9d4cf'>Le serveur répond mais ce jeu n'est relié à aucun compte : OBTENIR MON CODE, puis autorisez-le sur le site.</t>"],
-            ["text", "<t color='#f2c66b'>Toujours bloqué ?</t> <t color='#c9d4cf'>Onglet E-MAIL (mot de passe ou code reçu par e-mail), ou PORTAIL (page Appairer du site). Sinon, prévenez votre staff.</t>"]
+            ["text", "<t color='#f2c66b'>Pack non reconnu ?</t> <t color='#c9d4cf'>Athena n'accepte que la version officielle : abonnez-vous à COMSPEC ATAK sur le Steam Workshop (ou mettez-le à jour), retirez les copies locales ou modifiées du mod, puis relancez Arma complètement.</t>"],
+            ["text", "<t color='#f2c66b'>Toujours bloqué ?</t> <t color='#c9d4cf'>Onglet E-MAIL (mot de passe ou code reçu par e-mail). Sinon, prévenez votre staff.</t>"]
         ];
     };
 };

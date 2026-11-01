@@ -204,8 +204,14 @@ switch (_mode) do {
         [[_cx, _y, _cw, _H * 0.022], "INDICATIF DU POSTE (CONFIG.JSON, TOC.CALLSIGN)", "cL3"] call _lbl;
         _y = _y + _H * 0.024;
         private _cs = ["COMSPEC_RscEdit", [_cx, _y, _cw - _bw3 - _m, _rh], "cCs"] call _mk;
-        _cs ctrlSetText (((["callsign"] call comspec_atak_native_fnc_tocPost)) call comspec_atak_native_fnc_tr);
+        _cs ctrlSetText (["callsign"] call comspec_atak_native_fnc_tocPost); // i18n:brut (saisi, réenregistré tel quel)
         ["cSave", [_cx + _cw - _bw3, _y, _bw3, _rh], "ENREGISTRER", { ["act", "cSave"] call comspec_atak_native_fnc_tocLaptop; }] call _btn;
+        _y = _y + _rh + _H * 0.016;
+        // Caméra en direct sur les écrans TOC à côté du poste (fn_tocCam).
+        [[_cx, _y, _cw, _H * 0.022], "CAMÉRA SUR LES ÉCRANS DU POSTE", "cL4"] call _lbl;
+        _y = _y + _H * 0.024;
+        ["COMSPEC_RscCombo", [_cx, _y, _cw - _bw3 - _m, _rh], "cCam"] call _mk;
+        ["cCamGo", [_cx + _cw - _bw3, _y, _bw3, _rh], "AFFICHER", { ["act", "cCamGo"] call comspec_atak_native_fnc_tocLaptop; }, false, "Les écrans TOC à moins de 30 m montrent cette caméra en direct ; « Carte et flux » les remet à l'affichage du poste"] call _btn;
         _y = _y + _rh + _H * 0.012;
         ["COMSPEC_RscStructuredText", [_cx, _y, _cw, (_cy + _ch) - _y], "cInfo"] call _mk;
         // Choix des listes déroulantes gardés tout de suite dans le brouillon (listes reconstruites quand le camp change).
@@ -220,9 +226,9 @@ switch (_mode) do {
         _ok lbSetCurSel ((_kinds findIf { (_x select 1) isEqualTo (_draft getOrDefault ["kind", "MOVE"]) }) max 0);
         _op lbSetCurSel ((["ROUTINE", "IMPORTANT", "URGENT", "FLASH"] find (_draft getOrDefault ["prio", "ROUTINE"])) max 0);
         _cp lbSetCurSel ((["ROUTINE", "URGENT", "FLASH"] find (_draft getOrDefault ["mprio", "ROUTINE"])) max 0);
-        (_ui get "oText") ctrlSetText (((_draft getOrDefault ["text", ""])) call comspec_atak_native_fnc_tr);
-        (_ui get "oGrid") ctrlSetText (((_draft getOrDefault ["grid", ""])) call comspec_atak_native_fnc_tr);
-        (_ui get "cText") ctrlSetText (((_draft getOrDefault ["msg", ""])) call comspec_atak_native_fnc_tr);
+        (_ui get "oText") ctrlSetText (_draft getOrDefault ["text", ""]); // i18n:brut
+        (_ui get "oGrid") ctrlSetText (_draft getOrDefault ["grid", ""]); // i18n:brut
+        (_ui get "cText") ctrlSetText (_draft getOrDefault ["msg", ""]); // i18n:brut
         ["tab", _st get "tab"] call _fn;
         ["refresh"] call _fn;
         ["frame", ["net", "post"] select ((count ((call _feedOf) param [1, []])) isEqualTo 0)] call _fn;
@@ -259,7 +265,7 @@ switch (_mode) do {
             ["GROUPES", ["gList", "gInfo", "gOrder", "gMsg", "gCenter"]],
             ["FLUX", ["fList", "fInfo", "fCenter"]],
             ["ORDRES", ["oL1", "oL2", "oL3", "oL4", "oL5", "oKind", "oPrio", "oTarget", "oText", "oGrid", "oClear", "oSend", "oInfo"]],
-            ["CAMP", ["cL1", "cL2", "cL3", "cDest", "cPrio", "cText", "cSend", "cCs", "cSave", "cInfo"]]
+            ["CAMP", ["cL1", "cL2", "cL3", "cDest", "cPrio", "cText", "cSend", "cCs", "cSave", "cL4", "cCam", "cCamGo", "cInfo"]]
         ];
         { private _on = _x isEqualTo _t; { (_ui getOrDefault [_x, controlNull]) ctrlShow _on; } forEach _y; } forEach _sets;
         { (_ui get ("tab" + _x)) ctrlSetBackgroundColor ([[0.07, 0.085, 0.075, 1], [0.18, 0.38, 0.21, 1]] select (_x isEqualTo _t)); } forEach ["GROUPES", "FLUX", "ORDRES", "CAMP"];
@@ -310,7 +316,7 @@ switch (_mode) do {
     case "click": {
         private _p = _a;
         _draft set ["pos", [_p select 0, _p select 1]];
-        if ((count _ui) > 0) then { (_ui get "oGrid") ctrlSetText ((([[_p select 0, _p select 1, 0], 8] call comspec_atak_native_fnc_gridRef)) call comspec_atak_native_fnc_tr); };
+        if ((count _ui) > 0) then { (_ui get "oGrid") ctrlSetText ([[_p select 0, _p select 1, 0], 8] call comspec_atak_native_fnc_gridRef); }; // i18n:brut
         if ((_st getOrDefault ["tab", ""]) isNotEqualTo "ORDRES") then { ["keep"] call _fn; ["tab", "ORDRES"] call _fn; };
         ["status", format ["Objectif de l'ordre : grille %1", [[_p select 0, _p select 1, 0], 8] call comspec_atak_native_fnc_gridRef]] call _fn;
     };
@@ -367,6 +373,16 @@ switch (_mode) do {
                     [_to, name (_u select 0)] select ((count _u) > 0)
                 };
                 [format ["Message envoyé à %1", _who]] call _setStatus;
+            };
+            case "cCamGo": {
+                private _cc = _ui get "cCam";
+                private _src = _cc lbData (lbCurSel _cc);
+                private _scr = (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {alive _x} && {(player distance _x) < 30} && {((_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""]) in ["", _side]} };
+                if ((count _scr) isEqualTo 0) exitWith { ["Aucun écran TOC à moins de 30 m du poste"] call _setStatus; };
+                {
+                    if (_src isEqualTo "") then { ["ensure", [_x, "SPLIT"]] call comspec_atak_native_fnc_tocScreen; } else { ["set", [_x, _src]] call comspec_atak_native_fnc_tocCam; };
+                } forEach _scr;
+                [format ["%1 écran(s) : %2", count _scr, [_cc lbText (lbCurSel _cc), "carte et flux"] select (_src isEqualTo "")]] call _setStatus;
             };
             case "cSave": {
                 private _new = toUpper trim (ctrlText (_ui get "cCs"));
@@ -429,7 +445,9 @@ switch (_mode) do {
                     (_g select 0) params ["_gn", "", "_ld", "_np", "_nAll", "_n", "_best", "_p"];
                     format ["<t size='1.35' font='COMSPEC_BarlowBold'>%1</t><br/><t size='1.1'>Chef %2 %3<br/>%4 vivant(s) dont %5 joueur(s) · %6 nœud(s) ATAK<br/>%7</t>",
                         [_gn] call _esc, [name _ld] call _esc, ["", format [" · n° %1", ([_ld] call comspec_atak_native_fnc_phoneIdent) select 0]] select (isPlayer _ld), _nAll, _np, _n,
-                        [format ["Grille %1 · %2", [[_p select 0, _p select 1, 0], 6] call comspec_atak_native_fnc_gridRef, ["en direct", "point ancien", "point perdu", "téléphone hors ligne"] select ((_best min 3) max 0)], "<t color='#e0b040'>Position inconnue du poste : aucun ATAK dans ce groupe</t>"] select ((count _p) < 2)]
+                        // if, pas [a, b] select : les deux branches seraient évaluées et _p vide (groupe sans ATAK) planterait le rafraîchissement.
+                        if ((count _p) < 2) then { "<t color='#e0b040'>Position inconnue du poste : aucun ATAK dans ce groupe</t>" } else {
+                            format ["Grille %1 · %2", [[_p select 0, _p select 1, 0], 6] call comspec_atak_native_fnc_gridRef, ["en direct", "point ancien", "point perdu", "téléphone hors ligne"] select ((_best min 3) max 0)] }]
                 })) call comspec_atak_native_fnc_tr);
             };
             case "FLUX": {
@@ -495,6 +513,16 @@ switch (_mode) do {
                 reverse _last;
                 { _s = _s + format ["<t size='1'><t color='#7fd0b0'>%1</t> %2 · %3<br/>   %4</t><br/>", _x param [0, ""], _x param [2, ""], [_x param [3, ""]] call _esc, [(_x param [5, ""]) select [0, 120]] call _esc]; } forEach _last;
                 (_ui get "cInfo") ctrlSetStructuredText parseText ((_s) call comspec_atak_native_fnc_tr);
+                private _cc = _ui get "cCam";
+                private _srcs = [["Carte et flux du poste", ""]] + ((["sources"] call comspec_atak_native_fnc_tocCam) apply { [_x select 0, _x select 1] });
+                // Liste refaite seulement quand les caméras du camp changent (le choix en cours reste sélectionné).
+                if ((_cc getVariable ["COMSPEC_ATAK_CamSig", []]) isNotEqualTo _srcs) then {
+                    _cc setVariable ["COMSPEC_ATAK_CamSig", _srcs];
+                    private _keep = _cc lbData ((lbCurSel _cc) max 0);
+                    lbClear _cc;
+                    { private _i = _cc lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _cc lbSetData [_i, _x select 1]; } forEach _srcs;
+                    _cc lbSetCurSel ((_srcs findIf { (_x select 1) isEqualTo _keep }) max 0);
+                };
             };
         };
         // Ce que regarde l'opérateur, pour les écrans TOC en PIP (fn_tocScreen, affichage « TOC »).

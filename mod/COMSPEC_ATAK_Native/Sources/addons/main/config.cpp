@@ -43,6 +43,9 @@ class CfgFunctions {
         class viz { file="z\comspec_atak_native\addons\main\functions\viz";
             class vizEcg {}; class vizSpectrum {}; class vizPlayer {};
         };
+        class academy { file="z\comspec_atak_native\addons\main\functions\academy";
+            class academy {}; class pageAcademy {};
+        };
         class music { file="z\comspec_atak_native\addons\main\functions\music";
             class musicState {}; class musicAction {}; class musicTick {}; class musicServerList {}; class musicAthena {}; class pageMusic {};
         };
@@ -69,7 +72,7 @@ class CfgFunctions {
             class vehicleTerminal {}; class vehicleGateway {};
         };
         class toc { file="z\comspec_atak_native\addons\main\functions\toc";
-            class tocPost {}; class pageToc {}; class tocAction {}; class tocLaptop {}; class tocScreen {}; class tocFeed {}; class tocPersist {}; class moduleTocScreen {};
+            class tocPost {}; class pageToc {}; class tocAction {}; class tocLaptop {}; class tocScreen {}; class tocCam {}; class tocFeed {}; class tocPersist {}; class moduleTocScreen {};
         };
         class datalink { file="z\comspec_atak_native\addons\main\functions\datalink";
             class dataSetup {}; class dataParseFiles {}; class dataServer {}; class dataAction {}; class dataInit {}; class dataOverlay {}; class pageDataLink {}; class zeusForm {}; class moduleContext {}; class moduleDataNode {}; class moduleDataFile {}; class moduleDataReset {}; class moduleDating {};
@@ -161,6 +164,7 @@ class COMSPEC_ATAK_Apps {
     class Reports     { name="Comptes rendus"; page="REPORTS"; section="Mission"; order=202; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reports.paa"; desc="Comptes rendus de fin de mission"; };
     class Debrief     { name="CR fin d'op"; page="DEBRIEF"; function="comspec_atak_native_fnc_pageDebrief"; section="Mission"; order=203; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reports.paa"; desc="Compte rendu de fin d'opération à remplir ou à lire"; };
     class Briefing    { name="Briefing"; page="BRIEFING"; section="Mission"; order=205; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_briefing.paa"; desc="Diapositives et consignes de la mission"; };
+    class Academy     { name="Academy"; page="ACADEMY"; new=1; function="comspec_atak_native_fnc_pageAcademy"; section="Mission"; order=207; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_notes.paa"; desc="Cours COMSPEC Academy : lire ses leçons et les présenter sur les écrans"; };
     class Plan        { name="Plan"; page="PLAN"; function="comspec_atak_native_fnc_pagePlan"; section="Mission"; order=206; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_plan.paa"; desc="Plan de manœuvre et phases"; };
     class Logistics   { name="Logistique"; page="LOGI"; section="Mission"; order=210; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_logistics.paa"; desc="Demandes de ravitaillement et logistique"; };
     class Aar         { name="Rejeu"; page="AAR"; section="Mission"; order=215; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_aar.paa"; desc="Rejeu de la mission (AAR)"; };

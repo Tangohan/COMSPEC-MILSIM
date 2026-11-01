@@ -92,7 +92,7 @@ switch (_mode) do {
         if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["add", _a]] call CBA_fnc_serverEvent; true };
         if (_name isEqualTo "") then { _name = "TOC"; };
         private _old = [_o] call _cfgOf;
-        if !(_view in ["SPLIT", "MAP", "FEED", "TOC"]) then { _view = "SPLIT"; };
+        if !(_view in ["SPLIT", "MAP", "FEED", "TOC", "CAM"]) then { _view = "SPLIT"; };
         // Index de dalle : celui demandé, sinon la sélection nommée écran (évite un TOC noir sur le châssis).
         private _faceSel = [_o, (round _sel) max 0] call _face;
         _o setVariable ["COMSPEC_ATAK_TocScr", [_name select [0, 32], toUpper _side, _faceSel, _view, _old param [4, 0], _old param [5, []], _toc, _spawned || {_old param [7, false]}], true];
@@ -142,7 +142,9 @@ switch (_mode) do {
         private _c = +([_o] call _cfgOf);
         if ((count _c) < 8) exitWith { false };
         switch (_k) do {
-            case "mode": { if (_v in ["SPLIT", "MAP", "FEED", "TOC"]) then { _c set [3, _v]; }; };
+            case "mode": { if (_v in ["SPLIT", "MAP", "FEED", "TOC", "CAM"]) then { _c set [3, _v]; }; };
+            // Caméra en direct (fn_tocCam) : seule la source choisie circule (netId), chaque joueur fait son rendu.
+            case "cam": { if (_v isEqualType "" && {(count _v) < 40}) then { _o setVariable ["COMSPEC_ATAK_TocCam", _v, true]; }; };
             case "zoom": { _c set [4, ((_v max 100) min (worldSize max 1000))]; };
             case "center": { if (_v isEqualType [] && {(count _v) >= 2}) then { _c set [5, [_v select 0, _v select 1]]; }; };
             case "auto": { _c set [4, 0]; _c set [5, []]; };
@@ -177,6 +179,8 @@ switch (_mode) do {
             uiNamespace setVariable ["COMSPEC_ATAK_TocPending", []];
         };
         private _cam = positionCameraToWorld [0, 0, 0];
+        // Écrans en vue caméra rendus en direct par ce poste (proches, regardés, dans la limite) : pas de texture UI.
+        private _live = ["tick", _reg] call comspec_atak_native_fnc_tocCam;
         {
             private _o = _x;
             private _cfg = [_o] call _cfgOf;
@@ -187,10 +191,11 @@ switch (_mode) do {
                     _o setVariable ["COMSPEC_ATAK_TocAct", true];
                     ["actions", _o] call _fn;
                 };
-                // Diapositives prioritaires : on libère la dalle pour fn_screenCast.
-                if ([_o] call _casting) then {
+                // Diapositives prioritaires : on libère la dalle pour fn_screenCast. Caméra en direct : fn_tocCam la tient.
+                if ([_o] call _casting || {_o in _live}) then {
                     if (_tex isNotEqualTo "") then {
-                        _o setObjectTexture [_o getVariable ["COMSPEC_ATAK_TocSel", 0], _o getVariable ["COMSPEC_ATAK_TocOrig", ""]];
+                        // Caméra en direct : fn_tocCam vient de poser son image, ne pas la recouvrir.
+                        if !(_o in _live) then { _o setObjectTexture [_o getVariable ["COMSPEC_ATAK_TocSel", 0], _o getVariable ["COMSPEC_ATAK_TocOrig", ""]]; };
                         _o setVariable ["COMSPEC_ATAK_TocTex", ""];
                         _disps deleteAt _tex;
                         if ((_pend param [0, objNull]) isEqualTo _o) then { uiNamespace setVariable ["COMSPEC_ATAK_TocPending", []]; _pend = []; };
@@ -242,6 +247,8 @@ switch (_mode) do {
         disableSerialization;
         private _cfg = [_o] call _cfgOf;
         _cfg params ["_name", "_cside", "", "_view", "_half", "_center"];
+        // Vue caméra sans rendu en direct sur ce poste (trop loin, pas regardée, limite atteinte) : carte et flux.
+        if (_view isEqualTo "CAM") then { _view = "SPLIT"; };
         private _side = [_cside, str side group player] select (_cside isEqualTo "");
         private _feed = missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed_%1", _side], []];
         _feed params [["_ft", -1], ["_nodes", []], ["_events", []], ["_stats", []]];
@@ -583,7 +590,7 @@ switch (_mode) do {
         // Désigne l'objet comme écran TOC (ou change seulement l'affichage) : ACE sur n'importe quel écran du jeu.
         _a params [["_o", objNull], ["_view", "SPLIT"]];
         if (isNull _o || {!alive _o}) exitWith { false };
-        if !(_view in ["SPLIT", "MAP", "FEED", "TOC"]) then { _view = "SPLIT"; };
+        if !(_view in ["SPLIT", "MAP", "FEED", "TOC", "CAM"]) then { _view = "SPLIT"; };
         private _c = [_o] call _cfgOf;
         if ((count _c) >= 8) then {
             ["view", [_o, "mode", _view]] call _fn;
@@ -593,7 +600,7 @@ switch (_mode) do {
             ["add", [_o, _nm select [0, 32], "", 0, _view, true, false]] call _fn;
         };
         _o setVariable ["COMSPEC_ATAK_TocAt", -10];
-        private _lbl = (createHashMapFromArray [["SPLIT", "carte et flux"], ["MAP", "carte seule"], ["FEED", "flux seul"], ["TOC", "PIP du poste"]]) getOrDefault [_view, _view];
+        private _lbl = (createHashMapFromArray [["SPLIT", "carte et flux"], ["MAP", "carte seule"], ["FEED", "flux seul"], ["TOC", "PIP du poste"], ["CAM", "caméra en direct"]]) getOrDefault [_view, _view];
         ["INFO", format ["Écran TOC : %1", _lbl], 2, 20] call comspec_atak_native_fnc_notify;
         if (_view isEqualTo "TOC") then {
             private _side = str side group player;
@@ -606,7 +613,7 @@ switch (_mode) do {
     };
     case "aceInit": {
         // ACE sur chaque classe d'écran du jeu : TOC / PIP / diapositives, sans module Zeus.
-        if (!hasInterface || {isNil "ace_interact_menu_fnc_createAction"}) exitWith { false };
+        if (!hasInterface) exitWith { false };
         if (missionNamespace getVariable ["COMSPEC_ATAK_TocAceInit", false]) exitWith { true };
         missionNamespace setVariable ["COMSPEC_ATAK_TocAceInit", true];
         private _do = {
@@ -644,6 +651,15 @@ switch (_mode) do {
                 case "slidesStop": { ["stop", _o] call comspec_atak_native_fnc_screenCast; };
                 case "slidesNext": { ["step", [_o, 1]] call comspec_atak_native_fnc_screenCast; };
                 case "slidesPrev": { ["step", [_o, -1]] call comspec_atak_native_fnc_screenCast; };
+                // Caméra suivante du camp (action de secours sans ACE ; ACE propose la liste).
+                case "camNext": {
+                    private _src = ["sources"] call comspec_atak_native_fnc_tocCam;
+                    if ((count _src) isEqualTo 0) exitWith { ["INFO", "Aucune caméra du camp à afficher (drone, caméra fixe ou caméra partagée)", 3, 20] call comspec_atak_native_fnc_notify; };
+                    private _i = (_src findIf { (_x select 1) isEqualTo (_o getVariable ["COMSPEC_ATAK_TocCam", ""]) }) + 1;
+                    private _pick = _src select (_i mod (count _src));
+                    ["set", [_o, _pick select 1]] call comspec_atak_native_fnc_tocCam;
+                    ["INFO", format ["Écran TOC : %1", _pick select 0], 2, 20] call comspec_atak_native_fnc_notify;
+                };
                 case "remove": {
                     ["remove", _o] call comspec_atak_native_fnc_tocScreen;
                     ["INFO", "Écran TOC retiré", 2, 20] call comspec_atak_native_fnc_notify;
@@ -651,6 +667,9 @@ switch (_mode) do {
             };
         };
         missionNamespace setVariable ["COMSPEC_ATAK_TocDo", _do];
+        // Sans ACE : seules les actions de secours (« actions ») s'en servent ; avant, COMSPEC_ATAK_TocDo restait vide
+        // et aucune action d'écran (dont Ouvrir le PC du poste) ne faisait rien.
+        if (isNil "ace_interact_menu_fnc_createAction") exitWith { false };
         private _icon = "\z\comspec_atak_native\addons\main\data\app_toc.paa";
         private _kids = {
             private _out = [];
@@ -669,11 +688,22 @@ switch (_mode) do {
                 _out pushBack [["COMSPEC_ATAK_WallSlides", "Diffuser mes diapositives", "\z\comspec_atak_native\addons\main\data\app_briefing.paa", { [_target, "slides"] call COMSPEC_ATAK_TocDo; }, { [_player] call comspec_atak_native_fnc_hasDevice }] call comspec_atak_native_fnc_aceAction, [], _target];
             };
             private _tic = "\z\comspec_atak_native\addons\main\data\app_toc.paa";
+            // Caméra en direct sur l'écran : sources du camp que je peux voir (fn_tocCam).
+            _out pushBack [["COMSPEC_ATAK_WallCam", "Afficher une caméra", "\z\comspec_atak_native\addons\main\data\app_livecam.paa", {}, { true }, {
+                private _kids = [];
+                {
+                    _x params ["_lbl", "_id"];
+                    _kids pushBack [["COMSPEC_ATAK_WallCam_" + str _forEachIndex, _lbl, "", { ["set", [_target, _this select 2]] call comspec_atak_native_fnc_tocCam; }, { true }, {}, _id] call comspec_atak_native_fnc_aceAction, [], _target];
+                } forEach ((["sources"] call comspec_atak_native_fnc_tocCam) select [0, 12]);
+                _kids
+            }] call comspec_atak_native_fnc_aceAction, [], _target];
             if (!_has) then {
                 _out pushBack [["COMSPEC_ATAK_WallSplit", "Afficher le réseau TOC", _tic, { [_target, "split"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
                 _out pushBack [["COMSPEC_ATAK_WallPip", "Afficher le PIP du poste", _tic, { [_target, "pip"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
             } else {
                 _out pushBack [["COMSPEC_ATAK_WallPipOn", "Passer en PIP du poste", _tic, { [_target, "pip"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
+                _out pushBack [["COMSPEC_ATAK_WallMapOnly", "Carte seule", _tic, { [_target, "map"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
+                _out pushBack [["COMSPEC_ATAK_WallFeedOnly", "Flux seul", _tic, { [_target, "feed"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
                 _out pushBack [["COMSPEC_ATAK_WallCycle", "Changer d'affichage TOC", "", { [_target, "cycle"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
                 _out pushBack [["COMSPEC_ATAK_WallIn", "Zoomer", "", { [_target, "in"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
                 _out pushBack [["COMSPEC_ATAK_WallOut", "Dézoomer", "", { [_target, "out"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
@@ -721,7 +751,7 @@ switch (_mode) do {
                 ["Écran TOC : PIP du poste", "pip", 1.46], ["Écran TOC : changer d'affichage", "cycle", 1.45],
                 ["Écran TOC : zoomer", "in", 1.44], ["Écran TOC : dézoomer", "out", 1.43],
                 ["Écran TOC : cadrer tout le réseau", "auto", 1.42], ["Écran TOC : ouvrir le PC du poste", "big", 1.41],
-                ["Écran TOC : diffuser mes diapositives", "slides", 1.40]
+                ["Écran TOC : diffuser mes diapositives", "slides", 1.40], ["Écran TOC : caméra suivante du camp", "camNext", 1.39]
             ];
         };
         true

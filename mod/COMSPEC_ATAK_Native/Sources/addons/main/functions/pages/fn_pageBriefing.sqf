@@ -87,10 +87,15 @@ if (_tab isEqualTo "SCREENS") exitWith {
         private _c = _o getVariable ["COMSPEC_ATAK_ScreenCast", []];
         private _id = netId _o;
         private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
+        private _what = switch (_c param [2, ""]) do {
+            case "GOOGLE": { "Google Slides" };
+            case "ACADEMY": { "leçon Academy" };
+            default { format ["%1 / %2", (_c param [4, 0]) + 1, count (_c param [3, []])] };
+        };
         private _state = switch (true) do {
             case ((count _c) < 5): { "<t color='#8a9a93'>libre</t>" };
-            case ((_c select 0) isEqualTo player): { format ["<t color='#5cc76b'>● vous diffusez · %1</t>", [format ["%1 / %2", (_c select 4) + 1, count (_c select 3)], "Google Slides"] select ((_c select 2) isEqualTo "GOOGLE")] };
-            default { format ["<t color='#f2ab33'>● %1 diffuse · %2</t>", [_c select 1] call _esc, [format ["%1 / %2", (_c select 4) + 1, count (_c select 3)], "Google Slides"] select ((_c select 2) isEqualTo "GOOGLE")] };
+            case ((_c select 0) isEqualTo player): { format ["<t color='#5cc76b'>● vous diffusez · %1</t>", _what] };
+            default { format ["<t color='#f2ab33'>● %1 diffuse · %2</t>", [_c select 1] call _esc, _what] };
         };
         _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='#8a9a93'>%2 m</t><br/>%3", [_cfg param [0, "Écran"]] call _esc, round (player distance _o), _state]];
         private _b = [];

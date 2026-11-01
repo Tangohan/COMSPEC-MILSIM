@@ -12,8 +12,12 @@
 
     Variables publiques de l'objet :
       COMSPEC_ATAK_Screen     [nom, portée m, camp ("" = tous), index de texture, contrôle ACE]
-      COMSPEC_ATAK_ScreenCast [diffuseur, nom du diffuseur, source "ATHENA" | "GOOGLE", deck [[id, titre, url]...], index]
+      COMSPEC_ATAK_ScreenCast [diffuseur, nom du diffuseur, source "ATHENA" | "GOOGLE" | "ACADEMY", deck [[id, titre, url]...], index]
                               ([] = rien n'est diffusé, l'écran garde sa texture d'origine)
+                              ACADEMY (app Academy, fn_academy) : deck vide, 6e élément = repère de la leçon ; seuls ce
+                              repère et l'index changent quand l'instructeur tourne les pages.
+      COMSPEC_ATAK_ScreenAcademy [repère, cours, leçon, [[genre, titre, texte]...]] leçon Academy, envoyée une fois par
+                              leçon : chaque joueur dessine la page lui-même (texte du jeu, sans image ni COMSPEC Link).
     Registre : missionNamespace COMSPEC_ATAK_Screens (objets), tenu par le serveur.
 
     Modes :
@@ -22,7 +26,9 @@
       ["list"]                    écrans à portée de mon téléphone, de mon camp, triés par distance
       ["cast", objet]             diffuse ma diapositive en cours sur l'écran ("castAll" : tous les écrans à portée)
       ["castOn", objet]           comme cast, et désigne l'objet comme écran si besoin (ACE sur TV / écran TOC)
+      ["castAcademy", [objet, [repère, cours, leçon, pages], index]]   diffuse une leçon Academy (instructeur)
       ["stop", objet]             arrête la diffusion        ["step", [objet, ±1]] : diapositive précédente / suivante
+                                  (Academy : seul l'instructeur qui diffuse, ou Zeus, tourne les pages)
       ["sync"]                    ma diapositive a changé : les écrans que je diffuse suivent
       ["tick"]                    toutes les 2 s (XEH_postInitClient) : image des écrans proches, actions ACE ou molette
       ["load", display]           onLoad du display de la texture UI (diapositive par le navigateur intégré)
@@ -140,6 +146,29 @@ switch (_mode) do {
         ["INFO", format ["Diapositives sur %1", (_a getVariable ["COMSPEC_ATAK_Screen", []]) param [0, "l'écran"]], 2, 20] call comspec_atak_native_fnc_notify;
         true
     };
+    case "castAcademy": {
+        _a params [["_o", objNull], ["_lesson", []], ["_idx", 0]];
+        if (isNull _o || {!alive _o} || {(count _lesson) < 4}) exitWith { false };
+        // Écran TOC / TV pas encore désigné : il le devient (comme castOn).
+        if ((count (_o getVariable ["COMSPEC_ATAK_Screen", []])) < 5) then {
+            private _nm = getText (configOf _o >> "displayName");
+            if (_nm isEqualTo "") then { _nm = "Écran"; };
+            ["add", [_o, _nm select [0, 32], 50, "", [_o, 0] call _face, true]] call _fn;
+        };
+        if ((count (_o getVariable ["COMSPEC_ATAK_TocScr", []])) >= 8 && {(_o getVariable ["COMSPEC_ATAK_TocTex", ""]) isNotEqualTo ""}) then {
+            _o setObjectTexture [_o getVariable ["COMSPEC_ATAK_TocSel", 0], _o getVariable ["COMSPEC_ATAK_TocOrig", ""]];
+            _o setVariable ["COMSPEC_ATAK_TocTex", ""];
+            _o setVariable ["COMSPEC_ATAK_ScreenOrig", nil];
+            _o setVariable ["COMSPEC_ATAK_ScreenCur", ""];
+        };
+        // Texte de la leçon envoyé une seule fois ; ensuite seul l'index circule.
+        if (((_o getVariable ["COMSPEC_ATAK_ScreenAcademy", []]) param [0, ""]) isNotEqualTo (_lesson select 0)) then {
+            _o setVariable ["COMSPEC_ATAK_ScreenAcademy", _lesson, true];
+        };
+        _o setVariable ["COMSPEC_ATAK_ScreenCast", [player, name player, "ACADEMY", [], ((_idx max 0) min (((count (_lesson select 3)) - 1) max 0)), _lesson select 0], true];
+        ["INFO", format ["Leçon Academy sur %1", (_o getVariable ["COMSPEC_ATAK_Screen", []]) param [0, "l'écran"]], 2, 20] call comspec_atak_native_fnc_notify;
+        true
+    };
     case "stop": {
         if (isNull _a) exitWith { false };
         _a setVariable ["COMSPEC_ATAK_ScreenCast", [], true];
@@ -150,6 +179,20 @@ switch (_mode) do {
         if (isNull _o) exitWith { false };
         private _c = +(_o getVariable ["COMSPEC_ATAK_ScreenCast", []]);
         if ((count _c) < 5) exitWith { false };
+        if ((_c select 2) isEqualTo "ACADEMY") exitWith {
+            if ((_c select 0) isNotEqualTo player && {isNull (getAssignedCuratorLogic player)}) exitWith {
+                ["INFO", format ["Seul %1, qui diffuse la leçon, tourne les pages", _c select 1], 3, 20] call comspec_atak_native_fnc_notify;
+                false
+            };
+            private _n = count ((_o getVariable ["COMSPEC_ATAK_ScreenAcademy", []]) param [3, []]);
+            if (_n < 1) exitWith { false };
+            private _i = (((_c select 4) + _delta) max 0) min (_n - 1);
+            _c set [4, _i];
+            _o setVariable ["COMSPEC_ATAK_ScreenCast", _c, true];
+            // Instructeur au menu ACE : son téléphone suit la page.
+            if ((_c select 0) isEqualTo player) then { ["follow", [_c param [5, ""], _i]] call comspec_atak_native_fnc_academy; };
+            true
+        };
         // Google : la navigation est celle du deck synchronisé de tous (Overwatch), l'écran suit.
         if ((_c select 2) isEqualTo "GOOGLE") exitWith { ["step", _delta] call comspec_atak_native_fnc_briefingAction; true };
         private _n = count (_c select 3);
@@ -163,7 +206,8 @@ switch (_mode) do {
         if ((count _d) isEqualTo 0) exitWith { false };
         {
             private _c = _x getVariable ["COMSPEC_ATAK_ScreenCast", []];
-            if ((_c param [0, objNull]) isEqualTo player && {[_d select 0, _d select 1, _d select 2] isNotEqualTo [_c select 2, _c select 3, _c select 4]}) then {
+            // Leçon Academy diffusée : ce n'est pas le briefing, elle ne suit pas mes diapositives.
+            if ((_c param [0, objNull]) isEqualTo player && {(_c select 2) isNotEqualTo "ACADEMY"} && {[_d select 0, _d select 1, _d select 2] isNotEqualTo [_c select 2, _c select 3, _c select 4]}) then {
                 _x setVariable ["COMSPEC_ATAK_ScreenCast", [player, name player, _d select 0, _d select 1, _d select 2], true];
             };
         } forEach ((missionNamespace getVariable ["COMSPEC_ATAK_Screens", []]) select { !isNull _x });
@@ -191,9 +235,11 @@ switch (_mode) do {
             private _c = _o getVariable ["COMSPEC_ATAK_ScreenCast", []];
             // Texture voulue : "" = celle d'origine.
             private _want = "";
+            // Leçon Academy : page dessinée en texte par ce poste (pas d'image à télécharger).
+            private _acad = (count _c) >= 5 && {(_c select 2) isEqualTo "ACADEMY"};
             if ((count _c) >= 5) then {
                 _want = "#(rgb,8,8,3)color(0,0,0,1)";
-                if (_bridge) then {
+                if (_bridge && {!_acad}) then {
                     // Source : adresse Athena, ou « local:<chemin> » de la diapositive Google téléchargée par COMSPEC Link.
                     private _key = "";
                     private _id = "g";
@@ -263,8 +309,9 @@ switch (_mode) do {
             };
             // Diapositive par le navigateur intégré : texture UI propre à l'objet, page rechargée quand la diapositive change.
             private _web = "";
-            if ((_want select [0, 4]) isEqualTo "WEB:") then {
-                _web = _want select [4];
+            private _uiName = "";
+            if ((_want select [0, 4]) isEqualTo "WEB:" || {_acad}) then {
+                if (!_acad) then { _web = _want select [4]; };
                 private _ui = _o getVariable ["COMSPEC_ATAK_ScreenUi", ""];
                 if (_ui isEqualTo "") then {
                     private _n = (uiNamespace getVariable ["COMSPEC_ATAK_ScreenSeq", 0]) + 1;
@@ -272,25 +319,28 @@ switch (_mode) do {
                     _ui = format ["comspec_atak_scr_%1", _n];
                     _o setVariable ["COMSPEC_ATAK_ScreenUi", _ui];
                 };
-                _want = format ["#(rgb,1280,720,1)ui(""COMSPEC_RscScreenSlideTexture"",""%1"")", _ui];
+                // Nom distinct pour Academy : pas de navigateur réutilisé d'une diapositive précédente.
+                _uiName = [_ui, _ui + "a"] select _acad;
+                _want = format ["#(rgb,1280,720,1)ui(""COMSPEC_RscScreenSlideTexture"",""%1"")", _uiName];
                 // Un écran en attente de son display à la fois (comme les écrans TOC) : les autres attendent leur tour,
                 // sinon un display pourrait être rangé sous le nom d'un autre écran. Attente libérée au bout de 4 s.
                 private _pend = uiNamespace getVariable ["COMSPEC_ATAK_ScreenPending", []];
                 if ((count _pend) >= 3 && {(_pend select 0) isNotEqualTo _o} && {!isNull (_pend select 0)} && {diag_tickTime - (_pend select 2) < 4}
-                    && {(_o getVariable ["COMSPEC_ATAK_ScreenCur", ""]) isNotEqualTo _want}) then { _want = _o getVariable ["COMSPEC_ATAK_ScreenCur", ""]; _web = ""; };
+                    && {(_o getVariable ["COMSPEC_ATAK_ScreenCur", ""]) isNotEqualTo _want}) then { _want = _o getVariable ["COMSPEC_ATAK_ScreenCur", ""]; _web = ""; _uiName = ""; };
             };
             private _cur = _o getVariable ["COMSPEC_ATAK_ScreenCur", ""];
             if (_want isNotEqualTo _cur) then {
                 // Texture UI posée : son display arrive dans « load ».
-                if (_web isNotEqualTo "") then {
+                if (_uiName isNotEqualTo "") then {
                     if !(uiNamespace getVariable ["COMSPEC_ATAK_ScreenPreload", false]) then {
                         uiNamespace setVariable ["COMSPEC_ATAK_ScreenPreload", true];
                         disableSerialization;
                         private _tmp = findDisplay 46 createDisplay "COMSPEC_RscScreenSlideTexture";
                         if (!isNull _tmp) then { _tmp closeDisplay 0; };
                     };
-                    uiNamespace setVariable ["COMSPEC_ATAK_ScreenPending", [_o, _o getVariable ["COMSPEC_ATAK_ScreenUi", ""], diag_tickTime]];
+                    uiNamespace setVariable ["COMSPEC_ATAK_ScreenPending", [_o, _uiName, diag_tickTime]];
                     _o setVariable ["COMSPEC_ATAK_ScreenWebShown", ""];
+                    _o setVariable ["COMSPEC_ATAK_ScreenAcadShown", []];
                 };
                 // Texture d'origine gardée avant le premier changement, remise à la fin de la diffusion.
                 if (isNil { _o getVariable "COMSPEC_ATAK_ScreenOrig" }) then { _o setVariable ["COMSPEC_ATAK_ScreenOrig", (getObjectTextures _o) param [_sel, ""]]; };
@@ -298,8 +348,23 @@ switch (_mode) do {
                 _o setVariable ["COMSPEC_ATAK_ScreenCur", _want];
                 _o setVariable ["COMSPEC_ATAK_ScreenSel", _sel];
             };
+            if (_acad && {_uiName isNotEqualTo ""}) then {
+                private _disp = (uiNamespace getVariable ["COMSPEC_ATAK_ScreenDisps", createHashMap]) getOrDefault [_uiName, displayNull];
+                if (!isNull _disp) then {
+                    private _les = _o getVariable ["COMSPEC_ATAK_ScreenAcademy", []];
+                    private _sig = [_c param [5, ""], _c select 4, _les param [0, ""], count (_les param [3, []])];
+                    if ((_o getVariable ["COMSPEC_ATAK_ScreenAcadShown", []]) isNotEqualTo _sig) then {
+                        _o setVariable ["COMSPEC_ATAK_ScreenAcadShown", _sig];
+                        _o setVariable ["COMSPEC_ATAK_ScreenAcadN", 0];
+                        ["academyDraw", [_disp, _o]] call _fn;
+                    };
+                    // Quelques recopies après le dessin (une texture UI recopiée trop tôt reste vide), puis plus rien.
+                    private _k = _o getVariable ["COMSPEC_ATAK_ScreenAcadN", 0];
+                    if (_k < 3) then { _o setVariable ["COMSPEC_ATAK_ScreenAcadN", _k + 1]; displayUpdate _disp; };
+                };
+            };
             if (_web isNotEqualTo "") then {
-                private _disp = (uiNamespace getVariable ["COMSPEC_ATAK_ScreenDisps", createHashMap]) getOrDefault [_o getVariable ["COMSPEC_ATAK_ScreenUi", ""], displayNull];
+                private _disp = (uiNamespace getVariable ["COMSPEC_ATAK_ScreenDisps", createHashMap]) getOrDefault [_uiName, displayNull];
                 if (!isNull _disp) then {
                     if ((_o getVariable ["COMSPEC_ATAK_ScreenWebShown", ""]) isNotEqualTo _web) then {
                         _o setVariable ["COMSPEC_ATAK_ScreenWebShown", _web];
@@ -368,6 +433,61 @@ switch (_mode) do {
         _disps set [_p select 1, _a];
         uiNamespace setVariable ["COMSPEC_ATAK_ScreenDisps", _disps];
         uiNamespace setVariable ["COMSPEC_ATAK_ScreenPending", []];
+        true
+    };
+    case "academyDraw": {
+        // Leçon Academy en texte sur la texture 1280 x 720 : tableau sombre, titre, texte, avancée de la leçon.
+        _a params ["_d", "_o"];
+        disableSerialization;
+        if (isNull _d || {isNull _o}) exitWith { false };
+        private _c = _o getVariable ["COMSPEC_ATAK_ScreenCast", []];
+        private _les = _o getVariable ["COMSPEC_ATAK_ScreenAcademy", []];
+        private _ui = _d getVariable ["COMSPEC_ATAK_AcadUi", []];
+        if ((count _ui) isEqualTo 0) then {
+            private _mk = {
+                params ["_cls", "_pos", ["_bg", [0, 0, 0, 0]]];
+                private _k = _d ctrlCreate [_cls, -1];
+                _k ctrlSetPosition _pos;
+                _k ctrlSetBackgroundColor _bg;
+                _k ctrlCommit 0;
+                _k
+            };
+            ["RscText", [0, 0, 1, 1], [0.07, 0.12, 0.10, 1]] call _mk;
+            ["RscText", [0, 0, 1, 0.11], [0.05, 0.085, 0.075, 1]] call _mk;
+            ["RscText", [0.04, 0.105, 0.92, 0.004], [0.88, 0.69, 0.25, 1]] call _mk;
+            _ui = [
+                ["COMSPEC_RscStructuredText", [0.04, 0.025, 0.66, 0.08]] call _mk,
+                ["COMSPEC_RscStructuredText", [0.62, 0.025, 0.34, 0.08]] call _mk,
+                ["COMSPEC_RscStructuredText", [0.04, 0.15, 0.92, 0.12]] call _mk,
+                ["COMSPEC_RscStructuredText", [0.04, 0.28, 0.92, 0.6]] call _mk,
+                ["RscText", [0.04, 0.925, 0.92, 0.008], [1, 1, 1, 0.12]] call _mk,
+                ["RscText", [0.04, 0.925, 0, 0.008], [0.88, 0.69, 0.25, 1]] call _mk,
+                ["COMSPEC_RscStructuredText", [0.04, 0.94, 0.92, 0.05]] call _mk
+            ];
+            _d setVariable ["COMSPEC_ATAK_AcadUi", _ui];
+        };
+        _ui params ["_course", "_count", "_title", "_body", "", "_bar", "_foot"];
+        private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
+        private _pages = _les param [3, []];
+        private _i = _c param [4, 0];
+        // Leçon pas encore reçue (repère différent) : on l'attend sans afficher l'ancienne.
+        if ((count _pages) isEqualTo 0 || {(_les param [0, ""]) isNotEqualTo (_c param [5, ""])}) exitWith {
+            _title ctrlSetStructuredText parseText (("<t size='2.4' font='COMSPEC_BarlowBold' color='#e8eee6'>Leçon Academy</t>") call comspec_atak_native_fnc_tr);
+            _body ctrlSetStructuredText parseText (("<t size='1.6' color='#9fb3aa'>Chargement de la leçon…</t>") call comspec_atak_native_fnc_tr);
+            { _x ctrlSetStructuredText parseText (("") call comspec_atak_native_fnc_tr); } forEach [_course, _count, _foot];
+            true
+        };
+        _i = (_i max 0) min ((count _pages) - 1);
+        (_pages select _i) params ["", ["_pt", ""], ["_pb", ""]];
+        _course ctrlSetStructuredText parseText format ["<t size='1.5' color='#9fb3aa'>%1</t><t size='1.5' color='#e0b040'>   %2</t>", ["COMSPEC Academy" call comspec_atak_native_fnc_tr] call _esc, [_les param [1, ""]] call _esc]; // i18n:brut (texte du cours, déjà dans la langue choisie)
+        _count ctrlSetStructuredText parseText format ["<t align='right' size='1.5' color='#e8eee6'>%1</t>", [format [("Page %1 sur %2") call comspec_atak_native_fnc_tr, _i + 1, count _pages]] call _esc]; // i18n:brut (texte du cours, déjà dans la langue choisie)
+        _title ctrlSetStructuredText parseText format ["<t size='2.6' font='COMSPEC_BarlowBold' color='#f2f5ee'>%1</t>", [_pt] call _esc]; // i18n:brut (texte du cours, déjà dans la langue choisie)
+        // Taille du texte selon sa longueur : une page longue reste entière sur l'écran.
+        private _sz = if ((count _pb) < 450) then { 1.75 } else { [1.2, 1.45] select ((count _pb) < 900) };
+        _body ctrlSetStructuredText parseText format ["<t size='%1' color='#e8eee6'>%2</t>", _sz, [([_pb] call _esc), "\n", "<br/>"] call CBA_fnc_replace]; // i18n:brut (texte du cours, déjà dans la langue choisie)
+        _bar ctrlSetPosition [0.04, 0.925, 0.92 * (_i + 1) / (count _pages), 0.008];
+        _bar ctrlCommit 0;
+        _foot ctrlSetStructuredText parseText format ["<t size='1.25' color='#9fb3aa'>%1</t>", [format [("%1 · présenté par %2") call comspec_atak_native_fnc_tr, _les param [2, ""], _c param [1, ""]]] call _esc]; // i18n:brut (texte du cours, déjà dans la langue choisie)
         true
     };
     case "web": {

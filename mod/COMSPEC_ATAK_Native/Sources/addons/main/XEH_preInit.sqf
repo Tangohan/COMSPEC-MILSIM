@@ -710,6 +710,12 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_persist", "CHECKBOX",
     ["Garder les écrans TOC", "Les écrans TOC (module Écran TOC) sont gardés par le serveur d'une partie à l'autre sur la même mission : écrans posés au Zeus recréés à leur place, affichage et cadrage des écrans de la mission remis, flux des comptes rendus repris."],
     _loc, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_cam_max", "SLIDER",
+    ["Caméras en direct sur les écrans TOC (par joueur)", "Nombre d'écrans TOC en affichage caméra que chaque joueur rend en direct en même temps (les plus proches). 0 : jamais d'image en direct, l'écran garde la carte et le flux."],
+    _loc, [0, 4, 2, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_cam_range", "SLIDER",
+    ["Distance d'activation des caméras d'écran (m)", "Un écran TOC en affichage caméra ne montre l'image en direct qu'aux joueurs plus proches que cette distance et qui le regardent. Plus loin, il montre la carte et le flux du poste."],
+    _loc, [10, 150, 40, 0], 1] call comspec_atak_native_fnc_addSetting;
 // IA et ATAK (fn_aiAtak).
 private _ai = ["COMSPEC", "ATAK · IA"];
 ["comspec_atak_native_ai_atak", "LIST",
