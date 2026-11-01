@@ -582,7 +582,7 @@ class PersonnelController
             $mergedProfileForScore['last_name'] = $civilIdentity['last_name'];
         }
 
-        $assignments = $this->personnelAssignmentRepository->listActiveForUserResolved($uid);
+        $assignments = $this->personnelAssignmentRepository->listActiveForUserResolved($uid, (int) $tenantId > 0 ? (int) $tenantId : null);
         $assignments = $this->personnelAssignmentRepository->enrichAssignmentHistoryWithDurations($assignments);
         if ($assignmentRedactedForViewer) {
             $assignments = $this->redactAssignmentsForViewer($assignments);
@@ -1876,7 +1876,7 @@ class PersonnelController
         }
         $completeness = $this->completenessService->getScoreWithMissingLabels($uid, $target, $userProfile, $personnelExtras, $tenantId);
         $matricule = $personnelProfile['matricule_internal'] ?? $personnelExtras['service_number'] ?? null;
-        $personnelAssignments = $this->personnelAssignmentRepository->listActiveForUserResolved($uid);
+        $personnelAssignments = $this->personnelAssignmentRepository->listActiveForUserResolved($uid, (int) $tenantId > 0 ? (int) $tenantId : null);
         $dossierPresets = $this->loadDossierPresets();
         $jobRolesEnabled = $this->personnelJobRoleRepository->tablesExist() && $this->personnelJobRoleRepository->pivotTableExists();
         $jobRoleOptions = $jobRolesEnabled ? $this->personnelJobRoleRepository->listRoleOptionsForSelect($tenantId) : [];

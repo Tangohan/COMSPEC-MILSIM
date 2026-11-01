@@ -681,6 +681,13 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
         <?php elseif ($assignments !== []): ?>
             <p class="eff-fm-hint">Chef non désigné pour cette unité. <a href="<?= htmlspecialchars(effectifs_workspace_url('chaine'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir la chaîne de commandement</a></p>
         <?php endif; ?>
+        <?php if ($canManageAssignments && !empty($assignmentNeedsRepair)): ?>
+            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/affectation/reparer'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                <p class="eff-fm-hint">Cette fiche et les effectifs des unités ne concordent pas (affectation enregistrée à moitié).</p>
+                <button type="submit" class="eff-btn">Réparer l’affectation</button>
+            </form>
+        <?php endif; ?>
         <?php if ($canManageAssignments): ?>
             <details class="eff-card__edit">
                 <summary>Changer d’unité</summary>
