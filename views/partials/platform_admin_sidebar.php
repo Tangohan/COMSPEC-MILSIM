@@ -26,6 +26,7 @@ $accessOk = [
 
 $icons = [
     'dash' => 'M3 13h8V3H3zM13 21h8V11h-8zM13 3v6h8V3zM3 21h8v-6H3z',
+    'search' => 'M11 4a7 7 0 1 0 .01 0M20 20l-3.5-3.5',
     'chart' => 'M4 20V10M10 20V4M16 20v-7M22 20H2',
     'ops' => 'M12 2v3M12 19v3M2 12h3M19 12h3M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10',
     'chat' => 'M4 5h16v11H9l-5 4zM8 9h8M8 12h5',
@@ -71,6 +72,7 @@ $under = static fn (string $path): bool => $p === $path || str_starts_with($p, $
 $platformNav = [
     ['key' => 'pilotage', 'label' => 'Pilotage', 'items' => [
         ['path' => 'admin', 'label' => 'Tableau de bord', 'icon' => 'dash', 'access' => 'hub', 'exact' => true, 'desc' => 'Vue d’ensemble du site'],
+        ['path' => 'admin/recherche', 'label' => 'Recherche', 'icon' => 'search', 'access' => 'system', 'desc' => 'Comptes et communautés de tout le site, avec actions rapides'],
         ['path' => 'admin/analytics', 'label' => 'Indicateurs transverses', 'icon' => 'chart', 'access' => 'hub', 'desc' => 'Usage, communautés actives, comptes'],
         ['path' => 'admin/ops-center', 'label' => 'Synthèse opérationnelle', 'icon' => 'ops', 'access' => 'hub', 'desc' => 'Modération, support, incidents'],
         ['path' => 'admin/system/retours-interface', 'label' => 'Retours interface', 'icon' => 'chat', 'access' => 'system', 'desc' => 'Remarques des membres sur l’interface'],

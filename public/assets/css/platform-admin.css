@@ -1521,3 +1521,107 @@ html[data-bo-theme="dark"] .pa-field :is(input, select, textarea) { background: 
 .pa-sheet__corr:hover {
   text-decoration: underline;
 }
+
+/* Bilan de santé du tableau de bord : une ligne par signal, le bord gauche porte le ton. */
+.pa-health__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+  margin-bottom: 12px;
+}
+
+.pa-health__verdict {
+  margin: 0;
+  font-family: var(--pa-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--pa-tone-mint-fg);
+}
+
+.pa-health--warn .pa-health__verdict { color: var(--pa-tone-amber-fg); }
+.pa-health--bad .pa-health__verdict { color: var(--pa-tone-rose-fg); }
+
+.pa-health__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pa-health__link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 100%;
+  padding: 9px 12px 10px;
+  border: 1px solid var(--pa-line);
+  border-left: 4px solid var(--pa-line);
+  border-radius: 10px;
+  background: var(--pa-surface-2);
+  color: var(--pa-ink);
+  text-decoration: none;
+}
+
+.pa-health__link:hover { border-color: var(--pa-mint); }
+.pa-health__link:focus-visible { outline: 2px solid var(--pa-mint); outline-offset: 2px; }
+.pa-health__row--ok .pa-health__link { border-left-color: var(--pa-mint-bright); }
+.pa-health__row--warn .pa-health__link { border-left-color: #f2b33d; background: var(--pa-tone-amber-bg); }
+.pa-health__row--bad .pa-health__link { border-left-color: var(--pa-tone-rose-fg); background: var(--pa-tone-rose-bg); }
+
+.pa-health__label {
+  font-size: 0.78rem;
+  font-weight: 750;
+  color: var(--pa-muted);
+}
+
+.pa-health__value {
+  font-size: 0.92rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pa-health__hint {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--pa-ink-2);
+}
+
+/* Recherche globale de l'administration */
+.pa-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  max-width: 46rem;
+}
+
+.pa-search input {
+  flex: 1 1 18rem;
+  min-width: 0;
+  min-height: 2.6rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--pa-line);
+  border-radius: 0.75rem;
+  background: var(--pa-surface);
+  color: var(--pa-ink);
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.pa-search input:focus-visible {
+  outline: none;
+  border-color: var(--pa-mint);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.18);
+}
+
+.pa-table--search { min-width: 44rem; }
+.pa-table--search .pa-name,
+.pa-table--search .pa-sub { display: block; }
+.pa-table--search .pa-actions { margin-top: 0; gap: 6px; }
+
+.pa-health__foot { margin: -4px 0 12px; }

@@ -9,6 +9,8 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\PlatformAppReleaseRepository;
+use App\Services\Audit\AuditAction;
+use App\Services\Audit\AuditService;
 use App\Services\Deployment\AppVersionStore;
 use App\Services\Deployment\HealthCheckService;
 use App\Services\Deployment\ReleaseManager;
@@ -27,7 +29,8 @@ final class SystemUpdatesController
     public function index(Request $request, array $params = []): Response
     {
         $ready = $this->releases->schemaReady();
-        $selectedId = (int) ($request->query['release'] ?? 0);
+        // Lire la propriété privée du tableau de requête valait toujours 0 : la version choisie ne s’ouvrait jamais.
+        $selectedId = (int) $request->query('release', 0);
         $selected = $selectedId > 0 ? $this->releases->find($selectedId) : null;
         $files = $selected ? $this->releases->listFiles((int) $selected['id']) : [];
         $logs = $ready ? $this->releases->listLogs($selected ? (int) $selected['id'] : null, 50) : [];
@@ -82,6 +85,7 @@ final class SystemUpdatesController
                 $name,
                 Session::get('user_id') ? (int) Session::get('user_id') : null
             );
+            AuditService::logPlatformAction(AuditAction::PLATFORM_UPDATE_UPLOADED, ['version' => (string) $result['version'], 'mise_a_jour' => (int) $result['release_id']]);
             Session::flash('success', 'Package validé : version ' . $result['version'] . '. Vérifiez l’aperçu puis déployez.');
 
             return Response::redirect(url('admin/system/updates?release=' . $result['release_id']));
@@ -102,8 +106,10 @@ final class SystemUpdatesController
         $id = (int) ($params['id'] ?? 0);
         try {
             $this->manager->deploy($id, Session::get('user_id') ? (int) Session::get('user_id') : null);
+            AuditService::logPlatformAction(AuditAction::PLATFORM_UPDATE_DEPLOYED, ['mise_a_jour' => $id, 'reussi' => true]);
             Session::flash('success', 'Mise à jour déployée avec succès.');
         } catch (\Throwable $e) {
+            AuditService::logPlatformAction(AuditAction::PLATFORM_UPDATE_DEPLOYED, ['mise_a_jour' => $id, 'reussi' => false]);
             Session::flash('error', 'Échec du déploiement : ' . $e->getMessage());
         }
 
@@ -120,8 +126,10 @@ final class SystemUpdatesController
         $id = (int) ($params['id'] ?? 0);
         try {
             $this->manager->rollback($id, Session::get('user_id') ? (int) Session::get('user_id') : null);
+            AuditService::logPlatformAction(AuditAction::PLATFORM_UPDATE_ROLLED_BACK, ['mise_a_jour' => $id, 'reussi' => true]);
             Session::flash('success', 'Version précédente restaurée.');
         } catch (\Throwable $e) {
+            AuditService::logPlatformAction(AuditAction::PLATFORM_UPDATE_ROLLED_BACK, ['mise_a_jour' => $id, 'reussi' => false]);
             Session::flash('error', 'Échec de la restauration : ' . $e->getMessage());
         }
 

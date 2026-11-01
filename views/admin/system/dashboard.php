@@ -31,6 +31,14 @@ $appVersion = function_exists('platform_app_version') ? platform_app_version() :
                         La vie quotidienne d’une unité se gère dans le <a href="<?= $h(url('back-office')) ?>">back-office</a>.
                     </p>
                     <?php endif; ?>
+                    <?php if ($isPlatformAdmin): ?>
+                    <form class="pa-search" method="get" action="<?= $h(url('admin/recherche')) ?>" role="search">
+                        <label for="pa-dash-search" class="ath-sr-only">Rechercher un compte ou une communauté</label>
+                        <input id="pa-dash-search" name="q" type="search" autocomplete="off" spellcheck="false"
+                               placeholder="Compte ou communauté : e-mail, pseudo, Steam, indicatif, code…">
+                        <button type="submit" class="pa-btn pa-btn--solid">Rechercher</button>
+                    </form>
+                    <?php endif; ?>
                     <div class="pa-hero__actions">
                         <?php if ($isPlatformAdmin): ?>
                         <a class="pa-btn pa-btn--solid" href="<?= $h(url('admin/tenants')) ?>">Annuaire des communautés</a>
@@ -61,6 +69,9 @@ $appVersion = function_exists('platform_app_version') ? platform_app_version() :
         </header>
 
         <nav class="pa-jump" aria-label="Sections du tableau de bord">
+            <?php if ($isPlatformAdmin): ?>
+            <a class="pa-jump__link" href="#hub-sante">État du site</a>
+            <?php endif; ?>
             <a class="pa-jump__link" href="#hub-plateforme">Indicateurs</a>
             <?php if ($isPlatformAdmin): ?>
             <a class="pa-jump__link" href="#hub-annuaire">Outils du site</a>
@@ -70,6 +81,9 @@ $appVersion = function_exists('platform_app_version') ? platform_app_version() :
         </nav>
 
         <div class="pa-panel">
+            <?php if ($isPlatformAdmin && !empty($adminHealthRows)): ?>
+                <?php require base_path('views/admin/partials/platform_health.php'); ?>
+            <?php endif; ?>
             <section id="hub-plateforme" class="scroll-mt-24" aria-label="Indicateurs plateforme">
                 <?php require base_path('views/admin/partials/kpi_row.php'); ?>
             </section>

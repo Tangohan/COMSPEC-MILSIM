@@ -7,7 +7,6 @@ namespace App\Services\Account;
 use App\Core\Database;
 use App\Repositories\PersonnelExtrasRepository;
 use App\Repositories\PersonnelProfileRepository;
-use App\Repositories\RecruitmentPresetRepository;
 use App\Repositories\UserLegalIdentityRepository;
 use App\Repositories\UserProfileDisplaySettingsRepository;
 use App\Repositories\UserProfileRepository;
@@ -84,7 +83,6 @@ final class AccountDeletionService
         private PersonnelProfileRepository $personnelProfiles,
         private UserProfileDisplaySettingsRepository $displaySettings,
         private PersonnelExtrasRepository $personnelExtras,
-        private RecruitmentPresetRepository $recruitmentPresets,
         private ?CommunityHandoverService $handover = null,
         private ?AccountIdentityTraceEraser $traceEraser = null,
         private ?AccountPurgeService $purge = null,
@@ -436,12 +434,15 @@ final class AccountDeletionService
             $this->personnelExtras->deleteByUserId($userId);
         } catch (\Throwable) {
         }
+        // Bannière de la page publique : le fichier part avec la ligne de réglages.
         try {
-            $this->recruitmentPresets->deleteAllForUser($userId);
+            $publicCv = (new \App\Repositories\UserPublicCvRepository())->findByUserId($userId);
+            (new \App\Support\PublicCv\PublicCvBannerStorage())->delete(isset($publicCv['banner_path']) ? (string) $publicCv['banner_path'] : null);
         } catch (\Throwable) {
         }
-
         $this->deleteOptionalRowsByUserId($userId, [
+            // Anciens profils de candidature (fonction retirée) : les lignes restantes sont effacées.
+            'recruitment_presets',
             'personnel_media',
             'personnel_admin_data',
             'user_public_cv',

@@ -173,8 +173,5 @@ $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
         </div>
     <?php endif; ?>
 
-    <?php if (!empty($memberships)): ?>
-        <p class="mt-8 text-xs text-slate-600">Vos adhésions avec le même e-mail : utilisez le tableau de bord pour changer de communauté active.</p>
-    <?php endif; ?>
     </div>
 </div>

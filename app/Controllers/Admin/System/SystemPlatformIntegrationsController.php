@@ -9,6 +9,8 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Services\Audit\AuditAction;
+use App\Services\Audit\AuditService;
 use App\Services\Auth\AuthService;
 use App\Services\Email\TenantMailSender;
 use App\Services\Integrations\DiscordLinkedRoles;
@@ -55,6 +57,7 @@ final class SystemPlatformIntegrationsController
             PlatformIntegrationSettings::MOD_REPORTS => (string) $request->input('mod_reports_webhook', ''),
             PlatformIntegrationSettings::STARTUP_CHECK => (string) $request->input('startup_check_webhook', ''),
         ]);
+        $this->journal('salons Discord', $result);
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
         return Response::redirect(url(self::BASE) . '#salons-discord');
@@ -95,6 +98,7 @@ final class SystemPlatformIntegrationsController
             (string) $request->input('linked_roles_client_secret', ''),
             (string) $request->input('linked_roles_clear_secret', '') === '1'
         );
+        $this->journal('rôles liés de Discord', $result);
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
         return Response::redirect(url(self::BASE) . '#roles-lies');
@@ -110,9 +114,20 @@ final class SystemPlatformIntegrationsController
             $input[$field] = $request->input($field, '');
         }
         $result = (new TenantMailSender())->save(TenantMailSender::PLATFORM, $input);
+        $this->journal('envoi des e-mails', $result);
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
         return Response::redirect(url(self::BASE) . '#emails');
+    }
+
+    /**
+     * Seule la rubrique est journalisée, jamais les liens ni les mots de passe saisis.
+     *
+     * @param array<string, mixed> $result
+     */
+    private function journal(string $section, array $result): void
+    {
+        AuditService::logPlatformAction(AuditAction::PLATFORM_INTEGRATIONS_UPDATED, ['rubrique' => $section, 'reussi' => !empty($result['ok'])]);
     }
 
     public function testMail(Request $request, array $params = []): Response

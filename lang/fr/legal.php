@@ -5,6 +5,8 @@ declare(strict_types=1);
 return [
     'hub_title' => 'Politique et conditions',
     'rights_title' => 'Exercer vos droits sur vos données',
+    'hub_meta_description' => 'Mentions légales, conditions d’utilisation et de vente, données personnelles et cookies du portail Athena Comspec et des mods COMSPEC.',
+    'rights_meta_description' => 'Demandez l’accès, la rectification, l’export ou l’effacement de vos données personnelles sur Athena Comspec.',
     'docs_aria' => 'Documentation juridique',
     'portal' => 'PORTAIL',
     'docs_label' => 'Documentation',

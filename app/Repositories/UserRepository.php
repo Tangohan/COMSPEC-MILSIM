@@ -2380,6 +2380,10 @@ class UserRepository
             $sql .= ' AND tenant_id = ?';
             $params[] = $tenantId;
         }
+        $gradeBefore = false;
+        if (array_key_exists('grade_id', $data)) {
+            $gradeBefore = $this->currentGradeIdForHistory($userId, $tenantId);
+        }
         $stmt = $this->pdo()->prepare($sql);
         $ok = $stmt->execute($params);
         if ($ok && $this->hasCommunityMembershipTable()) {
@@ -2389,8 +2393,67 @@ class UserRepository
                 UserIdentityMergeRules::communityProfileFromUserRow($data)
             );
         }
+        if ($ok && $gradeBefore !== false) {
+            $this->recordGradeChange($userId, $tenantId, $gradeBefore, $this->normalizeOptionalGradeId($data['grade_id']));
+        }
 
         return $ok;
+    }
+
+    /**
+     * Grade actuel avant modification, pour l’historique des grades (false si illisible : rien n’est enregistré).
+     */
+    private function currentGradeIdForHistory(int $userId, int $tenantId): int|false|null
+    {
+        try {
+            $row = $this->findById($userId, $tenantId);
+        } catch (\Throwable) {
+            return false;
+        }
+        if ($row === null) {
+            return false;
+        }
+        $gid = (int) ($row['grade_id'] ?? 0);
+
+        return $gid > 0 ? $gid : null;
+    }
+
+    /**
+     * Historique des grades : chaque changement réel est noté avec le grade avant / après,
+     * quel que soit l’écran à l’origine (fiche, dossier, élévation validée…). Ne bloque jamais l’enregistrement.
+     */
+    private function recordGradeChange(int $userId, int $tenantId, ?int $before, mixed $after): void
+    {
+        $after = is_numeric($after) && (int) $after > 0 ? (int) $after : null;
+        if ($before === $after || $tenantId < 1) {
+            return;
+        }
+        try {
+            $history = new MemberGradeChangeRepository($this->pdo());
+            if (!$history->ensureTable()) {
+                return;
+            }
+            $label = static function (?int $gradeId) use ($tenantId): ?string {
+                if ($gradeId === null) {
+                    return null;
+                }
+                $grade = (new GradeRepository())->findById($gradeId, $tenantId);
+
+                return is_array($grade) ? \App\Support\GradeSelectOptions::label($grade) : null;
+            };
+            $actor = (int) (\App\Core\Session::get('user_id') ?? 0);
+            $history->record(
+                $tenantId,
+                $userId,
+                $before,
+                $after,
+                $label($before),
+                $label($after),
+                $actor > 0 ? $actor : null
+            );
+        } catch (\Throwable $e) {
+            error_log('[member_grade_changes] changement de grade non historisé : ' . $e->getMessage());
+        }
     }
 
     /**

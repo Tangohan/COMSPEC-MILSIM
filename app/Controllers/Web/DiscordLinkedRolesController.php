@@ -29,7 +29,7 @@ final class DiscordLinkedRolesController
         if (!$this->service()->configured()) {
             Session::flash('discord_link_error', 'La liaison avec Discord n’est pas encore ouverte sur le site.');
 
-            return Response::redirect(url(self::BACK));
+            return Response::redirect($this->back());
         }
         $state = bin2hex(random_bytes(16));
         Session::set(self::STATE, $state);
@@ -47,17 +47,17 @@ final class DiscordLinkedRolesController
         if ($expected === '' || !hash_equals($expected, $state)) {
             Session::flash('discord_link_error', 'La liaison a expiré. Recommencez depuis le bouton « Relier mon Discord ».');
 
-            return Response::redirect(url(self::BACK));
+            return Response::redirect($this->back());
         }
         if ($code === '' || $request->query('error') !== null) {
             Session::flash('discord_link_error', 'Liaison annulée sur Discord.');
 
-            return Response::redirect(url(self::BACK));
+            return Response::redirect($this->back());
         }
         $result = $this->service()->link($this->uid(), mb_substr($code, 0, 200));
         Session::flash($result['ok'] ? 'discord_link_success' : 'discord_link_error', $result['message']);
 
-        return Response::redirect(url(self::BACK));
+        return Response::redirect($this->back());
     }
 
     /** POST /account/discord/actualiser */
@@ -68,7 +68,7 @@ final class DiscordLinkedRolesController
             Session::flash($result['ok'] ? 'discord_link_success' : 'discord_link_error', $result['message']);
         }
 
-        return Response::redirect(url(self::BACK));
+        return Response::redirect($this->back());
     }
 
     /** POST /account/discord/delier */
@@ -79,7 +79,14 @@ final class DiscordLinkedRolesController
             Session::flash('discord_link_success', 'Compte Discord délié : Discord retirera les rôles liés à Athena.');
         }
 
-        return Response::redirect(url(self::BACK));
+        return Response::redirect($this->back());
+    }
+
+    /** Préférences du compte, ou l'étape Discord de l'accueil du profil quand le joueur en vient. */
+    private function back(): string
+    {
+        return \App\Services\Account\ProfileWelcomeJourney::returnUrlFor(\App\Services\Account\ProfileWelcomeService::STEP_DISCORD)
+            ?? url(self::BACK);
     }
 
     private function uid(): int

@@ -373,6 +373,7 @@ final class OrbatBilletRepository
                 'title' => (string) ($b['title'] ?? ''),
                 'org_callsign' => (string) ($b['org_callsign'] ?? ''),
                 'function_label' => (string) ($b['function_label'] ?? ''),
+                'job_role_id' => isset($b['job_role_id']) ? (int) $b['job_role_id'] : null,
                 'status' => $status,
                 'authorized' => $slots,
                 'filled' => $seatFilled,

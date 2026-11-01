@@ -99,6 +99,8 @@ final class UnitSheetController
                 ['id' => VisibilityLevel::HIDDEN, 'label' => 'Masquée'],
             ],
             'canEdit' => $canEdit,
+            'jobRoleOptions' => $canEdit ? $this->jobRoleOptions($tenantId) : [],
+            'postsUrl' => url('back-office/organisation/unites/' . $unitId . '/postes'),
             'csrf' => Csrf::token(),
             'structureUrl' => url('back-office/organisation/structure'),
             'saveUrl' => url('back-office/organisation/unites/' . $unitId),
@@ -244,5 +246,133 @@ final class UnitSheetController
             : 'Enregistrement de l’activité impossible.');
 
         return Response::redirect(url('back-office/organisation/unites/' . $unitId . '#journal'));
+    }
+
+    /**
+     * Postes de l’unité (tableau d’effectifs) : intitulé, effectif prévu et emploi rattaché.
+     * Saisie simple depuis la fiche unité ; un poste peut aussi être ajouté.
+     */
+    public function savePosts(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $unitId = (int) ($params['id'] ?? 0);
+        $back = url('back-office/organisation/unites/' . max(1, $unitId) . '#postes');
+        if (!Csrf::verify($request)) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        $canEdit = Gate::getInstance()->allows('organization.orbat.manage')
+            || Gate::getInstance()->allows('admin.organization');
+        if (!$canEdit || $tenantId < 1 || $unitId < 1) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+        if ($this->units->findById($unitId, $tenantId) === null) {
+            Session::flash('error', 'Unité introuvable.');
+
+            return Response::redirect(url('back-office/organisation/structure'));
+        }
+        if (!$this->billets->schemaReady()) {
+            Session::flash('error', 'Les postes ne sont pas encore disponibles : la mise à jour de la base doit être appliquée.');
+
+            return Response::redirect($back);
+        }
+        $actorId = (int) Session::get('user_id');
+        $jobRoleIds = array_map(static fn (array $r): int => $r['id'], $this->jobRoleOptions($tenantId));
+        $jobRole = static function (mixed $raw) use ($jobRoleIds): ?int {
+            $id = is_numeric($raw) ? (int) $raw : 0;
+
+            return $id > 0 && in_array($id, $jobRoleIds, true) ? $id : null;
+        };
+        $slotsOf = static fn (mixed $raw): int => max(1, min(99, is_numeric($raw) ? (int) $raw : 1));
+
+        $updated = 0;
+        $posts = $request->input('posts');
+        foreach (is_array($posts) ? $posts : [] as $billetId => $row) {
+            $billetId = (int) $billetId;
+            if ($billetId < 1 || !is_array($row)) {
+                continue;
+            }
+            // Un poste d’une autre unité ou d’une autre communauté n’est jamais modifié.
+            $billet = $this->billetRepo->findById($tenantId, $billetId);
+            if ($billet === null || (int) ($billet['unit_id'] ?? 0) !== $unitId) {
+                continue;
+            }
+            $data = ['authorized_slots' => $slotsOf($row['authorized_slots'] ?? 1)];
+            $title = mb_substr(trim((string) ($row['title'] ?? '')), 0, 150);
+            if ($title !== '') {
+                $data['title'] = $title;
+            }
+            if (array_key_exists('job_role_id', $row)) {
+                $data['job_role_id'] = $jobRole($row['job_role_id']);
+            }
+            if (!empty($this->billets->updateBillet($tenantId, $billetId, $data, $actorId)['ok'])) {
+                $updated++;
+            }
+        }
+
+        $created = false;
+        $newTitle = mb_substr(trim((string) $request->input('new_title', '')), 0, 150);
+        if ($newTitle !== '') {
+            $result = $this->billets->createBillet($tenantId, [
+                'unit_id' => $unitId,
+                'code' => $this->uniquePostCode($tenantId, $unitId, $newTitle),
+                'title' => $newTitle,
+                'authorized_slots' => $slotsOf($request->input('new_slots', 1)),
+                'job_role_id' => $jobRole($request->input('new_job_role_id')),
+                'sort_order' => 100,
+            ], $actorId);
+            $created = !empty($result['ok']);
+            if (!$created) {
+                Session::flash('error', 'Le poste n’a pas pu être ajouté.');
+
+                return Response::redirect($back);
+            }
+        }
+
+        Session::flash('success', $created
+            ? 'Poste ajouté au tableau d’effectifs de l’unité.'
+            : ($updated > 0 ? 'Postes de l’unité enregistrés.' : 'Aucun changement.'));
+
+        return Response::redirect($back);
+    }
+
+    /** @return list<array{id:int,name:string}> */
+    private function jobRoleOptions(int $tenantId): array
+    {
+        try {
+            $rows = (new \App\Repositories\PersonnelJobRoleRepository())->listRolesWithCategory($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $r) {
+            $id = (int) ($r['id'] ?? 0);
+            if ($id > 0) {
+                $out[] = ['id' => $id, 'name' => trim((string) ($r['name'] ?? '')) ?: 'Emploi'];
+            }
+        }
+
+        return $out;
+    }
+
+    /** Code interne du poste, unique dans l’unité, déduit de l’intitulé (jamais affiché à l’utilisateur). */
+    private function uniquePostCode(int $tenantId, int $unitId, string $title): string
+    {
+        $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $title);
+        $base = strtoupper(trim((string) preg_replace('/[^A-Za-z0-9]+/', '-', is_string($ascii) ? $ascii : ''), '-'));
+        $base = substr($base !== '' ? $base : 'POSTE', 0, 40);
+        $taken = [];
+        foreach ($this->billetRepo->listForUnit($tenantId, $unitId, true) as $b) {
+            $taken[strtoupper((string) ($b['code'] ?? ''))] = true;
+        }
+        $code = $base;
+        for ($i = 2; isset($taken[$code]); $i++) {
+            $code = substr($base, 0, 36) . '-' . $i;
+        }
+
+        return $code;
     }
 }

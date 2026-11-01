@@ -11,13 +11,41 @@ use App\Repositories\CommunityMediaRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
+use App\Support\DevDispatchCatalog;
 use App\Support\Seo;
 
 final class SeoController
 {
+    /**
+     * Pages publiques fixes : chemin, fréquence, priorité, vue dont la date de modification sert de lastmod
+     * (jamais « aujourd'hui » à chaque passage, que Google ignorerait). Les adresses qui redirigent
+     * (/cgu, /cookies…) et les pages non indexées (/register, /join) n'y figurent pas.
+     *
+     * @var list<array{0: string, 1: string, 2: string, 3: string}>
+     */
+    public const STATIC_PAGES = [
+        ['/', 'daily', '1.0', 'home/index'],
+        ['/communities', 'daily', '0.9', 'community/registry'],
+        ['/a-propos', 'monthly', '0.8', 'site/about'],
+        ['/notre-histoire', 'weekly', '0.7', 'site/history'],
+        ['/atak-natif', 'monthly', '0.85', 'site/atak_native'],
+        ['/sse', 'monthly', '0.8', 'site/sse'],
+        ['/academy', 'monthly', '0.6', 'academy/home'],
+        ['/nouveautes', 'weekly', '0.8', 'site/changelog'],
+        ['/traduire-atak', 'monthly', '0.6', 'site/atak_translate'],
+        ['/traduire-atak/workshop', 'daily', '0.6', 'site/atak_translate_workshop'],
+        ['/traduire-site', 'monthly', '0.5', 'site/site_translate'],
+        ['/contribuer', 'monthly', '0.5', 'site/contribute'],
+        ['/soutenir-atak', 'monthly', '0.6', 'atak/support'],
+        ['/contact', 'monthly', '0.7', 'site/contact'],
+        ['/legal/site', 'yearly', '0.3', 'legal/site'],
+        ['/demande-donnees', 'yearly', '0.3', 'legal/gdpr_request'],
+    ];
+
     public function robots(Request $request, array $params = []): Response
     {
-        $base = rtrim((string) url(''), '/');
+        // Toujours le domaine actuel, y compris quand le fichier est lu sur l'ancien domaine.
+        $base = Seo::baseUrl();
         $prefix = rtrim((string) (parse_url($base, PHP_URL_PATH) ?: ''), '/');
         // Bots de mirroring : Disallow total (complément ; non contraignant pour les scrapers malhonnêtes).
         $mirrorAgents = [
@@ -39,7 +67,7 @@ final class SeoController
 
         // Espaces membres et outils (même liste que la balise robots des pages, App\Support\Seo).
         $disallow = '';
-        foreach (Seo::PRIVATE_PREFIXES as $path) {
+        foreach ([...Seo::PRIVATE_PREFIXES, ...Seo::PRIVATE_CHILDREN] as $path) {
             $disallow .= 'Disallow: ' . $prefix . $path . "\n";
         }
         $disallow .= 'Disallow: ' . $prefix . "/c/*/forum\n"
@@ -60,34 +88,29 @@ final class SeoController
 
     public function sitemap(Request $request, array $params = []): Response
     {
-        $base = rtrim((string) url(''), '/');
-        $today = gmdate('Y-m-d');
-        // Pages fixes : pas de lastmod (une date « aujourd'hui » à chaque passage fait ignorer le champ par Google).
-        $paths = [
-            ['/', 'daily', '1.0'],
-            ['/communities', 'daily', '0.9'],
-            ['/a-propos', 'monthly', '0.8'],
-            ['/sse', 'monthly', '0.85'],
-            ['/atak-natif', 'monthly', '0.85'],
-            ['/traduire-atak', 'monthly', '0.6'],
-            ['/traduire-atak/workshop', 'daily', '0.6'],
-            ['/soutenir-atak', 'monthly', '0.6'],
-            ['/contact', 'monthly', '0.7'],
-            ['/nouveautes', 'weekly', '0.8'],
-            ['/register', 'monthly', '0.6'],
-            ['/join', 'monthly', '0.5'],
-            ['/mentions-legales', 'yearly', '0.3'],
-            ['/donnees-personnelles', 'yearly', '0.3'],
-            ['/cookies', 'yearly', '0.3'],
-            ['/cgu', 'yearly', '0.3'],
-            ['/cgv', 'yearly', '0.3'],
-            ['/legal/site', 'yearly', '0.3'],
-            ['/demande-donnees', 'yearly', '0.3'],
-        ];
-
+        $base = Seo::baseUrl();
         $urls = [];
-        foreach ($paths as [$p, $freq, $prio]) {
-            $urls[] = $this->urlEntry($p === '/' ? $base . '/' : $base . $p, null, $freq, $prio);
+        foreach (self::STATIC_PAGES as [$p, $freq, $prio, $view]) {
+            $urls[] = $this->urlEntry($p === '/' ? $base . '/' : $base . $p, $this->viewLastmod($view), $freq, $prio);
+        }
+
+        // Bulletins du journal des nouveautés (SPOTREP, TECHREP, UPDATE) : une page chacun, datée.
+        try {
+            foreach (DevDispatchCatalog::all() as $dispatch) {
+                $kind = (string) ($dispatch['kind'] ?? '');
+                $number = (string) ($dispatch['number_pad'] ?? '');
+                if ($kind === '' || $number === '') {
+                    continue;
+                }
+                $urls[] = $this->urlEntry(
+                    $base . '/nouveautes/' . rawurlencode($kind) . '/' . rawurlencode($number),
+                    $this->normalizeLastmod($dispatch['date'] ?? null),
+                    'yearly',
+                    '0.4'
+                );
+            }
+        } catch (\Throwable) {
+            // Journal indisponible : continuer.
         }
 
         try {
@@ -204,6 +227,15 @@ final class SeoController
         }
 
         return $out . '<changefreq>' . $esc($freq) . '</changefreq><priority>' . $esc($prio) . '</priority></url>';
+    }
+
+    /** Date de dernière modification de la vue d'une page fixe (aaaa-mm-jj), null si inconnue. */
+    private function viewLastmod(string $view): ?string
+    {
+        $file = base_path('views/' . $view . '.php');
+        $mtime = is_file($file) ? @filemtime($file) : false;
+
+        return $mtime !== false ? gmdate('Y-m-d', $mtime) : null;
     }
 
     private function normalizeLastmod(mixed $value): ?string

@@ -8,6 +8,8 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Services\Audit\AuditAction;
+use App\Services\Audit\AuditService;
 use App\Services\DemoNda\DemoNdaGateService;
 
 final class SystemDemoNdaController
@@ -43,6 +45,7 @@ final class SystemDemoNdaController
         }
         try {
             $code = $this->gate->regenerateAccessCode();
+            AuditService::logPlatformAction(AuditAction::PLATFORM_DEMO_ACCESS_UPDATED, ['action' => 'nouveau code d’accès']);
             Session::flash('success', 'Nouveau code généré : ' . $code);
         } catch (\Throwable $e) {
             Session::flash('error', $e->getMessage());
@@ -64,6 +67,7 @@ final class SystemDemoNdaController
 
             return Response::redirect(url('admin/system/demo-nda'));
         }
+        AuditService::logPlatformAction(AuditAction::PLATFORM_DEMO_ACCESS_UPDATED, ['action' => 'adresse exemptée', 'adresse' => $ip]);
         Session::flash('success', 'Adresse exemptée enregistrée.');
 
         return Response::redirect(url('admin/system/demo-nda'));
@@ -78,6 +82,7 @@ final class SystemDemoNdaController
         }
         $ip = trim((string) $request->input('bypass_ip', ''));
         $this->gate->removeAdminBypassIp($ip);
+        AuditService::logPlatformAction(AuditAction::PLATFORM_DEMO_ACCESS_UPDATED, ['action' => 'exemption retirée', 'adresse' => $ip]);
         Session::flash('success', 'Adresse retirée de la liste d’exemption.');
 
         return Response::redirect(url('admin/system/demo-nda'));
@@ -96,6 +101,7 @@ final class SystemDemoNdaController
 
             return Response::redirect(url('admin/system/demo-nda'));
         }
+        AuditService::logPlatformAction(AuditAction::PLATFORM_DEMO_ACCESS_UPDATED, ['action' => 'adresse exemptée', 'adresse' => $ip]);
         Session::flash('success', 'Votre adresse actuelle a été exemptée.');
 
         return Response::redirect(url('admin/system/demo-nda'));
@@ -114,6 +120,7 @@ final class SystemDemoNdaController
 
             return Response::redirect(url('admin/system/demo-nda'));
         }
+        AuditService::logPlatformAction(AuditAction::PLATFORM_DEMO_ACCESS_UPDATED, ['action' => 'visite rouverte', 'visite' => $id]);
         Session::flash('success', 'Fenêtre d’accès rouverte pour cette connexion.');
 
         return Response::redirect(url('admin/system/demo-nda'));
