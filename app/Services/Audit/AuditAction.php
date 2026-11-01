@@ -129,6 +129,17 @@ final class AuditAction
     public const PLATFORM_DATA_ROW_UPDATED = 'platform.data_row_updated';
     public const PLATFORM_DATA_ROW_DELETED = 'platform.data_row_deleted';
 
+    /** Actions sensibles des outils du site jusque-là absentes du journal. */
+    public const PLATFORM_CRON_RUN = 'platform.cron_run';
+    public const PLATFORM_CRON_INSTALLED = 'platform.cron_installed';
+    public const PLATFORM_CRON_UNINSTALLED = 'platform.cron_uninstalled';
+    public const PLATFORM_UPDATE_UPLOADED = 'platform.update_uploaded';
+    public const PLATFORM_UPDATE_DEPLOYED = 'platform.update_deployed';
+    public const PLATFORM_UPDATE_ROLLED_BACK = 'platform.update_rolled_back';
+    public const PLATFORM_INTEGRATIONS_UPDATED = 'platform.integrations_updated';
+    public const PLATFORM_DEMO_ACCESS_UPDATED = 'platform.demo_access_updated';
+    public const PLATFORM_CONTRIBUTOR_UPDATED = 'platform.contributor_updated';
+
     public const SUBSCRIPTION_PLAN_UPDATED = 'platform.subscription_plan_updated';
 
     /** Affectation manuelle d’une formule à une communauté (opérateur plateforme). */

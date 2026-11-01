@@ -254,6 +254,50 @@ class TenantRepository
         return $row;
     }
 
+    /**
+     * Recherche globale de l'administration du site : nom, adresse courte, code de communauté ou numéro.
+     *
+     * @return list<array{id: int, name: string, slug: string, community_code: string, archived: bool}>
+     */
+    public function searchForPlatformAdmin(string $query, int $limit = 20): array
+    {
+        $q = mb_substr(trim($query), 0, 120);
+        if ($q === '') {
+            return [];
+        }
+        $id = ctype_digit(ltrim($q, '#')) ? (int) ltrim($q, '#') : 0;
+        $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
+        $limit = max(1, min(50, $limit));
+        $run = function (bool $withCode) use ($id, $like, $q, $limit): array {
+            $code = $withCode ? 'community_code' : "''";
+            $stmt = $this->pdo()->prepare(
+                "SELECT id, name, slug, {$code} AS community_code, settings FROM tenants
+                 WHERE id > 1 AND (id = ? OR name LIKE ? OR slug LIKE ?" . ($withCode ? ' OR ' . SqlText::equals($this->pdo(), 'community_code') : '') . ")
+                 ORDER BY (id = ?) DESC, (name LIKE ?) DESC, name ASC LIMIT {$limit}"
+            );
+            $args = [$id, $like, $like];
+            if ($withCode) {
+                $args[] = self::normalizeCommunityCode($q);
+            }
+            $stmt->execute([...$args, $id, $q . '%']);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        };
+        try {
+            $rows = $run(true);
+        } catch (\Throwable) {
+            $rows = $run(false); // base sans colonne de code de communauté
+        }
+
+        return array_map(static fn (array $r): array => [
+            'id' => (int) $r['id'],
+            'name' => (string) $r['name'],
+            'slug' => (string) $r['slug'],
+            'community_code' => (string) ($r['community_code'] ?? ''),
+            'archived' => TenantArchiveState::isArchived($r),
+        ], $rows);
+    }
+
     public function isCommunityCodeTaken(string $normalizedCode, ?int $exceptTenantId = null): bool
     {
         if ($normalizedCode === '') {

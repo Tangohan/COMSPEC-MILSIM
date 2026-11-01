@@ -1274,6 +1274,8 @@ return function (Router $router) {
     $router->post('/admin/site-roles/assign', [SystemSiteRoleAssignmentController::class, 'assign'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/revoke', [SystemSiteRoleAssignmentController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin', [SystemDashboardController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
+    // Recherche globale (comptes et communautés), réservée aux administrateurs du site.
+    $router->get('/admin/recherche', [\App\Controllers\Admin\System\SystemAdminSearchController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/analytics', [SystemAnalyticsController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     $router->get('/admin/newsletter', [SystemNewsletterAdminController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/ops-center', [SystemOpsCenterController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
