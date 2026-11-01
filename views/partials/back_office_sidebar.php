@@ -274,17 +274,22 @@ require __DIR__ . '/ath_sidebar_nav.php';
     <div class="ath-sidebar__nav" id="ath-sidebar-nav">
         <?php foreach ($athNavGroups as $navGroup): ?>
             <div class="ath-sidebar__group is-open" data-ath-nav-group="<?= $h((string) $navGroup['key']) ?>">
-                <button type="button" class="ath-sidebar__group-head" data-ath-group-toggle aria-expanded="true">
+                <button type="button" class="ath-sidebar__group-head" data-ath-group-toggle aria-expanded="true" aria-controls="ath-nav-group-<?= $h((string) $navGroup['key']) ?>">
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#4b524e" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
                     <span class="ath-sidebar__group-label"><?= $h((string) $navGroup['label']) ?></span>
                 </button>
-                <div class="ath-sidebar__group-body">
+                <div class="ath-sidebar__group-body" id="ath-nav-group-<?= $h((string) $navGroup['key']) ?>">
                     <?php foreach ($navGroup['items'] as $navItem): ?>
                         <?php
                         $searchBits = [(string) ($navItem['label'] ?? '')];
                         foreach (($navItem['children'] ?? []) as $child) {
                             if (is_array($child)) {
                                 $searchBits[] = (string) ($child['label'] ?? '');
+                                foreach (($child['children'] ?? []) as $grandChild) {
+                                    if (is_array($grandChild)) {
+                                        $searchBits[] = (string) ($grandChild['label'] ?? '');
+                                    }
+                                }
                             }
                         }
                         $searchBlob = mb_strtolower(trim(preg_replace('/\s+/u', ' ', implode(' ', $searchBits)) ?? ''), 'UTF-8');
