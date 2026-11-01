@@ -315,7 +315,11 @@ final class HtmlTranslator
         }
         if ($r === null && ($k = strpos($s, ' : ')) !== false && $k > 0) {
             $label = $exact[substr($s, 0, $k)] ?? null;
-            if ($label !== null) {
+            // Modèle du texte entier (« Sur 90 jours : %1 présence(s) sur %2 session(s). ») : plus précis que le
+            // libellé seul suivi d'une valeur traduite à part.
+            if ($label !== null && ($whole = self::template($s, $depth)) !== null) {
+                $r = $whole;
+            } elseif ($label !== null) {
                 $rest = substr($s, $k + 3);
                 $tr = self::lookup($rest, $depth + 1);
                 // « Libellé : phrase française » : pas de libellé anglais devant une phrase restée en français.

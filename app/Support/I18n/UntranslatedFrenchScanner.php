@@ -72,13 +72,24 @@ final class UntranslatedFrenchScanner
     {
         $d = self::dict();
         $keep = self::keep();
+        $known = false;
         foreach ([$s, str_replace("'", '’', $s), str_replace('’', "'", $s)] as $v) {
-            if (isset($d[$v]) || isset($keep[$v])) {
+            if (isset($keep[$v])) {
                 return true;
             }
+            $known = $known || isset($d[$v]);
         }
-        // Repli du traducteur (« Libellé : valeur », morceaux « · », modèle %1).
-        return HtmlTranslator::translateText($s) !== $s;
+        if ($known && !preg_match('/%\d/', $s)) {
+            return true;
+        }
+        // Modèle (%1) ou repli du traducteur (« Libellé : valeur », morceaux « · ») : essayé comme à l'affichage,
+        // avec une valeur à la place de chaque marqueur. Un « Libellé : » connu passe avant le modèle entier et peut
+        // laisser la suite en français (« Over 90 days: 4 présence(s) ») ; il reste alors des accents.
+        // Marqueur collé à un mot (« membre%1 », marque du pluriel) : vide ; sinon un nombre.
+        $sample = (string) preg_replace(['/(?<=\p{L})%\d|%\d(?=\p{L})/u', '/%\d/'], ['', '7'], $s);
+        $en = HtmlTranslator::translateText($sample);
+
+        return $en !== $sample && preg_match('/[àâçéèêëîïôûùüÿœ]/u', $en) !== 1;
     }
 
     /** @return array<string, true> */
