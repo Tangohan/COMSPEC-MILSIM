@@ -76,6 +76,7 @@ $pilotTab = 'vue';
                 <?php require base_path('views/admin/partials/platform_health.php'); ?>
             <?php endif; ?>
             <?php require base_path('views/admin/partials/platform_communication.php'); ?>
+            <?php require base_path('views/admin/partials/low_member_orgs_alert.php'); ?>
             <section id="hub-plateforme" class="scroll-mt-24" aria-label="Indicateurs plateforme">
                 <?php require base_path('views/admin/partials/kpi_row.php'); ?>
             </section>

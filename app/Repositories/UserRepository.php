@@ -4178,6 +4178,33 @@ class UserRepository
     }
 
     /**
+     * Comme countActiveMembers, sans les comptes techniques (modération système, comptes de service) :
+     * les personnes réellement présentes dans la communauté.
+     */
+    public function countActiveHumanMembers(int $tenantId): int
+    {
+        $tech = $this->technicalAccountExclusionPredicate('u');
+        if ($this->hasCommunityMembershipTable()) {
+            $stmt = $this->pdo()->prepare(
+                "SELECT COUNT(DISTINCT u.id)
+                 FROM users u
+                 LEFT JOIN user_community_profiles p ON p.user_id = u.id AND p.tenant_id = " . (int) $tenantId . "
+                 WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . "
+                   AND " . SqlText::coalesceInLiterals($this->pdo(), 'p.status', 'u.status', ['active']) . "
+                   AND " . $tech['sql']
+            );
+            $stmt->execute($tech['params']);
+
+            return (int) $stmt->fetchColumn();
+        }
+        $statusActive = SqlText::inLiterals($this->pdo(), 'u.status', ['active']);
+        $stmt = $this->pdo()->prepare("SELECT COUNT(*) FROM users u WHERE u.tenant_id = ? AND {$statusActive} AND " . $tech['sql']);
+        $stmt->execute(array_merge([$tenantId], $tech['params']));
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
      * % de membres actifs ayant eu une activité (last_login) sur les 30 derniers jours.
      */
     public function activityRateLast30DaysPercent(int $tenantId): ?int

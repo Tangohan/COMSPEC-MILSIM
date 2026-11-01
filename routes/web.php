@@ -1217,6 +1217,10 @@ return function (Router $router) {
     $router->post('/admin/tenants/{id}/archiver', [SystemTenantsController::class, 'archive'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/restaurer', [SystemTenantsController::class, 'restore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/supprimer', [SystemTenantsController::class, 'destroy'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Communautés toujours à 1 ou 2 membres après les rappels : supprimer (retrait ci-dessus) ou garder.
+    $router->get('/admin/organisations-a-supprimer', [\App\Controllers\Admin\System\SystemLowMemberOrgsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/organisations-a-supprimer/{id}/garder', [\App\Controllers\Admin\System\SystemLowMemberOrgsController::class, 'keep'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/organisations-a-supprimer/{id}/reprendre', [\App\Controllers\Admin\System\SystemLowMemberOrgsController::class, 'unkeep'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Paiements PayPal des formules : vérification et activation manuelle.
     $router->get('/admin/paiements', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/paiements/export.csv', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'export'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
