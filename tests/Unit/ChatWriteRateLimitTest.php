@@ -276,8 +276,13 @@ final class ChatWriteRateLimitTest extends TestCase
         self::assertSame([], $this->countedFor('GET', '/api/chat', '203.0.113.23'), 'relève, invité');
         self::assertSame([], $this->countedFor('POST', '/api/chat/channels', '203.0.113.23'));
         $_SESSION = ['user_id' => 42, 'tenant_id' => 7];
-        self::assertSame([], $this->countedFor('GET', '/api/chat', '203.0.113.23'), 'relève, session web');
-        self::assertSame([], $this->countedFor('GET', '/api/atak/salute', '203.0.113.23'));
+        // Session web : seul le plafond général des sondages GET (RateLimitMiddleware::WEB_POLL_MAX_PER_MIN) compte.
+        $pollOnly = static fn (array $seen): array => array_values(array_filter(
+            $seen,
+            static fn (array $s): bool => !str_starts_with($s[0], 'rl:api_poll:')
+        ));
+        self::assertSame([], $pollOnly($this->countedFor('GET', '/api/chat', '203.0.113.23')), 'relève, session web');
+        self::assertSame([], $pollOnly($this->countedFor('GET', '/api/atak/salute', '203.0.113.23')));
     }
 
     public function testOverTheLimitTheWriteIsRefusedWith429AndTheTimeLeft(): void

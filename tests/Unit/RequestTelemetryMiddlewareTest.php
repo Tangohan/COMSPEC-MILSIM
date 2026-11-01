@@ -34,6 +34,12 @@ final class RequestTelemetryMiddlewareTest extends TestCase
         self::assertFalse($this->shouldRecord($middleware, 200, 50));
     }
 
+    public function testRateLimitRefusalsAreSampledLikeSuccesses(): void
+    {
+        self::assertFalse($this->shouldRecord(new RequestTelemetryMiddleware(0.0), 429, 5));
+        self::assertTrue($this->shouldRecord(new RequestTelemetryMiddleware(1.0), 429, 5));
+    }
+
     public function testSampleRateIsClampedToOne(): void
     {
         $middleware = new RequestTelemetryMiddleware(2.0);
