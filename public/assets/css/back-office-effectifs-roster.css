@@ -764,3 +764,32 @@ html[data-bo-theme="dark"] .bo-eff-workspace .eff-sheets--das #eff-roster-table 
     display: none;
   }
 }
+
+/* Boutons « Modifier » des colonnes Emploi, Rôle, Niveau d'accès (fenêtres d'édition). */
+button.eff-das__edit {
+  background: transparent;
+}
+
+/* Colonne « Dossier » : icône vers le dossier personnel du membre. */
+.bo-eff-workspace #eff-roster-table.eff-das__table .eff-das__col-dossier {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.eff-das__dossier {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 0.45rem;
+  color: var(--ath-muted, #6d7a80);
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+
+.eff-das__dossier:hover,
+.eff-das__dossier:focus-visible {
+  border-color: var(--ath-accent, #0b8a5c);
+  color: var(--ath-accent, #0b8a5c);
+}

@@ -301,6 +301,7 @@ class EffectifsWorkspaceController
             $rowIds,
             $viewerId
         );
+        $jobEdit = $this->rosterJobEditData($tenantId, $rowIds, EffectifsLmsAccess::canManageAssignments($gate));
 
         return $this->shell('admin.effectifs_workspace.roster', [
             'title' => 'Tableur des effectifs',
@@ -357,7 +358,46 @@ class EffectifsWorkspaceController
             'personnelDuplicateScan' => $this->duplicateDetection->scan($tenantId),
             'personnelDuplicateFieldLabels' => PersonnelDuplicateDetectionService::FIELD_LABELS,
             'orgFoundingDate' => $this->seniorityPrePlatform->getOrgFoundingDate($tenantId),
+            'rosterJobsByUserId' => $jobEdit['by_user'],
+            'rosterJobPickerGroups' => $jobEdit['groups'],
+            'rosterJobRoleMax' => $jobEdit['max'],
         ]);
+    }
+
+    /**
+     * Emplois des membres de la page et choix proposés dans la fenêtre « Emploi » du tableur.
+     *
+     * @param list<int> $userIds
+     * @return array{by_user: array<int, list<array{id: int, label: string, primary: bool}>>, groups: list<array<string, mixed>>, max: int}
+     */
+    private function rosterJobEditData(int $tenantId, array $userIds, bool $canEdit): array
+    {
+        $out = ['by_user' => [], 'groups' => [], 'max' => 5];
+        try {
+            if (!$this->personnelJobRoleRepository->tablesExist() || !$this->personnelJobRoleRepository->pivotTableExists()) {
+                return $out;
+            }
+            foreach ($this->personnelJobRoleRepository->listPivotAssignmentsForUsers($tenantId, $userIds) as $uid => $assigned) {
+                foreach ($assigned as $a) {
+                    $name = trim((string) ($a['role_name'] ?? ''));
+                    $detail = trim((string) ($a['role_detail'] ?? ''));
+                    $out['by_user'][(int) $uid][] = [
+                        'id' => (int) ($a['personnel_job_role_id'] ?? 0),
+                        'label' => $detail !== '' && $name !== '' ? $name . ' — ' . $detail : ($name !== '' ? $name : $detail),
+                        'primary' => !empty($a['is_primary']),
+                    ];
+                }
+            }
+            if ($canEdit) {
+                $settings = PersonnelJobRoleAssignmentsSettings::resolve($this->tenantRepository->getSettings($tenantId));
+                $out['max'] = max(1, (int) $settings['max_roles_per_member']);
+                $out['groups'] = (new JobRolePickerService($this->personnelJobRoleRepository))->groups($tenantId, []);
+            }
+        } catch (\Throwable $e) {
+            error_log('Effectifs roster: job data failed: ' . $e->getMessage());
+        }
+
+        return $out;
     }
 
     /** Réglages de détection de doublons (matricule, nom, callsign…). */
@@ -1390,7 +1430,9 @@ class EffectifsWorkspaceController
             return $denied;
         }
         $id = (int) ($params['id'] ?? 0);
-        $redirect = effectifs_workspace_url('membres/' . $id);
+        // Depuis le tableur (fenêtre « Emploi »), on revient au tableur ; sinon à la fiche.
+        $returnUrl = trim((string) $request->input('return_url', ''));
+        $redirect = $this->isAllowedMemberReturnUrl($returnUrl, $id) ? $returnUrl : effectifs_workspace_url('membres/' . $id);
         if (!EffectifsLmsAccess::canManageAssignments(Gate::getInstance())) {
             Session::flash('error', 'Vous n’êtes pas habilité à attribuer les fonctions.');
 
@@ -1488,6 +1530,70 @@ class EffectifsWorkspaceController
         }
 
         Session::flash('success', 'Fonctions du membre mises à jour.');
+
+        return Response::redirect($redirect);
+    }
+
+    /** Rôle tenu dans l’unité principale (fenêtre « Rôle » du tableur). Même droit que les affectations. */
+    public function updateMemberAssignmentRole(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if (!EffectifsLmsAccess::canManageAssignments(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier le rôle dans l’unité.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $redirect = $this->redirectAfterMemberAction($request, $id);
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($redirect);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if ($id < 1 || !$this->userRepository->findById($id, $tenantId)) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $roleName = trim((string) $request->input('role_name', ''));
+        if ($roleName === '') {
+            Session::flash('error', 'Indiquez le rôle tenu dans l’unité (ex. chef de groupe, tireur, adjoint).');
+
+            return Response::redirect($redirect);
+        }
+        $profile = $this->personnelProfileRepository->getByUserId($id, $tenantId) ?? [];
+        $fallbackUnitId = (int) ($profile['primary_unit_id'] ?? 0);
+        try {
+            $before = $this->structureChangeNotification->snapshot($tenantId, $id);
+            $ok = $this->personnelAssignmentRepository->changePrimaryRoleName($id, $tenantId, $roleName, $fallbackUnitId > 0 ? $fallbackUnitId : null);
+            if (!$ok) {
+                Session::flash('error', 'Affectez d’abord ce membre à une unité, puis indiquez son rôle.');
+
+                return Response::redirect($redirect);
+            }
+            $actorId = (int) Session::get('user_id');
+            $this->adminAuditService->logUserUpdated($tenantId, $actorId, $id, 'role_affectation', mb_substr($roleName, 0, 120));
+            try {
+                $this->structureChangeNotification->notifyFromSnapshots(
+                    $tenantId,
+                    $id,
+                    $actorId > 0 ? $actorId : null,
+                    $before,
+                    $this->structureChangeNotification->snapshot($tenantId, $id)
+                );
+            } catch (\Throwable) {
+            }
+        } catch (\Throwable $e) {
+            error_log('Effectifs assignment role: ' . $e->getMessage());
+            Session::flash('error', 'Impossible d’enregistrer le rôle. Réessayez ou ouvrez le dossier.');
+
+            return Response::redirect($redirect);
+        }
+        Session::flash('success', 'Rôle dans l’unité enregistré.');
 
         return Response::redirect($redirect);
     }
@@ -3502,6 +3608,7 @@ class EffectifsWorkspaceController
                 'unit_code' => $rich['unit_code'] ?? null,
                 'unit_id' => $unitId > 0 ? $unitId : null,
                 'assignment_path' => $path !== '' ? $path : null,
+                'assignment_role_name' => trim((string) ($rich['assignment_role_name'] ?? '')) ?: null,
                 'command_sort_key' => $commandKey,
                 'community_name' => trim((string) ($rich['community_name'] ?? '')) !== ''
                     ? (string) $rich['community_name']

@@ -114,7 +114,7 @@ final class PersonnelDeploymentController
             $campaignTag = trim((string) ($event['campaign_tag'] ?? ''));
         }
 
-        $profile = $this->profileRepository->getByUserId($targetUserId) ?? [];
+        $profile = $this->profileRepository->getByUserId($targetUserId, $tenantId) ?? [];
         $missing = [];
         if ((int) ($profile['deployable'] ?? 1) !== 1) {
             $missing[] = 'profil marqué non déployable';
