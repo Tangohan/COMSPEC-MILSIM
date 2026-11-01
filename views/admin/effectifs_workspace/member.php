@@ -572,6 +572,10 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
             <p class="eff-fm-hint"><?= $h($langSource === 'interface' ? 'Déduite de la langue de son interface' : 'Langue de la communauté, à confirmer') ?></p>
         <?php endif; ?>
     </article>
+    <?php // Portée isolée : la liste des liens ne doit pas écraser les variables de la fiche.
+    (static function (array $memberInvitePanel, int $id): void {
+        require __DIR__ . '/partials/member_invites.php';
+    })(is_array($memberInvitePanel ?? null) ? $memberInvitePanel : [], $id); ?>
         </div>
     </section>
 

@@ -1,6 +1,7 @@
 /**
  * Back-office — Intégrations (views/admin/organization/integrations.php).
- * Sommaire actif au défilement, choix du salon par événement (Ne pas publier / Salon commun / Autre salon),
+ * Sommaire actif au défilement, usages Discord (activé / coupé, salon à part en mode avancé), bouton « Tester »,
+ * aperçu du message des liens d’invitation,
  * recherche et filtres d'événements, réglage groupé, barre d'enregistrement, vérification des liens webhook,
  * préréglages des fournisseurs d'envoi d'e-mails.
  */
@@ -16,6 +17,9 @@
     ok: 'Lien webhook valide.',
     channel: 'Ceci est le lien du salon, pas un webhook : Modifier le salon › Intégrations › Webhooks › Copier l’URL du webhook.',
     id: 'Ceci est l’identifiant du salon, pas un webhook : il faut le lien complet du webhook.',
+    invite: 'Ceci est une invitation au serveur, pas un webhook : suivez le tutoriel ci-dessus (Intégrations › Webhooks).',
+    incomplete: 'Le lien est coupé : il manque la partie secrète à la fin. Recopiez-le avec « Copier l’URL du webhook ».',
+    foreign: 'Seuls les liens de Discord sont acceptés (discord.com ou discordapp.com).',
     bad: 'Lien non reconnu. Il doit ressembler à https://discord.com/api/webhooks/1234…/AbCd…'
   };
 
@@ -34,12 +38,18 @@
       return;
     }
     var kind;
-    if (/^https:\/\/(?:(?:www|ptb|canary)\.)?discord(?:app)?\.com\/api\/webhooks\/\d{5,}\/[\w-]{20,}\/?$/i.test(v)) {
+    if (/^https:\/\/(?:(?:www|ptb|canary)\.)?discord(?:app)?\.com\/api(?:\/v\d+)?\/webhooks\/\d{5,}\/[\w-]{20,}\/?(?:\?thread_id=\d+)?$/i.test(v)) {
       kind = 'ok';
     } else if (/discord(?:app)?\.com\/channels\//i.test(v)) {
       kind = 'channel';
-    } else if (/^\d{15,}$/.test(v)) {
+    } else if (/^#?\d{15,}$/.test(v)) {
       kind = 'id';
+    } else if (/discord\.gg\/|discord(?:app)?\.com\/invite\//i.test(v)) {
+      kind = 'invite';
+    } else if (/\/webhooks\/\d+\/?$/i.test(v)) {
+      kind = 'incomplete';
+    } else if (/^https?:\/\//i.test(v) && !/^https?:\/\/(?:(?:www|ptb|canary)\.)?discord(?:app)?\.com\//i.test(v)) {
+      kind = 'foreign';
     } else {
       kind = 'bad';
     }
@@ -55,7 +65,7 @@
     input.addEventListener('input', function () { checkWebhook(input); });
   });
 
-  /* ── Événements Discord ───────────────────────────────────────── */
+  /* ── Usages Discord ───────────────────────────────────────────── */
 
   var form = root.querySelector('[data-discord-form]');
   if (form) {
@@ -69,8 +79,7 @@
     var saveState = form.querySelector('[data-savebar-state]');
     var resetBtn = form.querySelector('[data-savebar-reset]');
     var filter = 'all';
-    var initial = new FormData(form);
-    var initialStr = serialize(initial);
+    var initialStr = serialize(new FormData(form));
 
     function serialize(fd) {
       var out = [];
@@ -82,18 +91,9 @@
       return out.join('&');
     }
 
-    function modeOf(card) {
-      var checked = card.querySelector('.js-discord-mode:checked');
-      return checked ? checked.value : 'off';
-    }
-
-    function syncCard(card) {
-      var mode = modeOf(card);
-      card.setAttribute('data-mode', mode);
-      var custom = card.querySelector('.js-discord-custom');
-      if (custom) {
-        custom.hidden = mode !== 'custom';
-      }
+    function isOn(card) {
+      var box = card.querySelector('[data-usage-on]');
+      return !!(box && box.checked);
     }
 
     function refresh() {
@@ -101,31 +101,25 @@
       var total = 0;
       var visible = 0;
       events.forEach(function (card) {
-        var mode = modeOf(card);
-        if (mode !== 'off') {
-          total++;
-        }
+        var on = isOn(card);
+        card.setAttribute('data-mode', on ? 'on' : 'off');
+        if (on) { total++; }
         var matchQ = q === '' || (card.getAttribute('data-search') || '').indexOf(q) !== -1;
-        var matchF = filter === 'all' || (filter === 'on' ? mode !== 'off' : mode === 'off');
+        var matchF = filter === 'all' || (filter === 'on' ? on : !on);
         card.hidden = !(matchQ && matchF);
-        if (!card.hidden) {
-          visible++;
-        }
+        if (!card.hidden) { visible++; }
       });
       groups.forEach(function (g) {
-        var cards = g.querySelectorAll('[data-discord-event]');
         var on = 0;
         var shown = 0;
-        cards.forEach(function (c) {
-          if (modeOf(c) !== 'off') { on++; }
+        g.querySelectorAll('[data-discord-event]').forEach(function (c) {
+          if (isOn(c)) { on++; }
           if (!c.hidden) { shown++; }
         });
         var label = g.querySelector('[data-group-on]');
         if (label) { label.textContent = String(on); }
         g.hidden = shown === 0;
-        if ((q !== '' || filter !== 'all') && shown > 0) {
-          g.open = true;
-        }
+        if ((q !== '' || filter !== 'all') && shown > 0) { g.open = true; }
       });
       if (countOn) { countOn.textContent = String(total); }
       if (empty) { empty.hidden = visible > 0; }
@@ -137,42 +131,33 @@
       }
     }
 
-    events.forEach(function (card) {
-      syncCard(card);
-      card.querySelectorAll('.js-discord-mode').forEach(function (radio) {
-        radio.addEventListener('change', function () {
-          syncCard(card);
-          refresh();
-          if (radio.value === 'custom' && radio.checked) {
-            var input = card.querySelector('.js-discord-custom input');
-            if (input && input.value === '') { input.focus(); }
-          }
-        });
+    function setAll(scope, on) {
+      scope.querySelectorAll('[data-discord-event]').forEach(function (card) {
+        if (card.hidden) { return; }
+        var box = card.querySelector('[data-usage-on]');
+        if (box) { box.checked = on; }
       });
-    });
+      refresh();
+    }
 
     form.addEventListener('input', refresh);
-
+    form.addEventListener('change', refresh);
     groups.forEach(function (g) {
       g.querySelectorAll('[data-group-set]').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
           e.preventDefault();
           g.open = true;
-          var mode = btn.getAttribute('data-group-set');
-          g.querySelectorAll('[data-discord-event]').forEach(function (card) {
-            if (card.hidden) { return; }
-            var radio = card.querySelector('.js-discord-mode[value="' + mode + '"]');
-            if (radio) { radio.checked = true; }
-            syncCard(card);
-          });
-          refresh();
+          setAll(g, btn.getAttribute('data-group-set') === 'on');
         });
       });
     });
-
-    if (search) {
-      search.addEventListener('input', refresh);
-    }
+    form.querySelectorAll('[data-usage-all]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        setAll(form, btn.getAttribute('data-usage-all') === 'on');
+        groups.forEach(function (g) { g.open = btn.getAttribute('data-usage-all') === 'on'; });
+      });
+    });
+    if (search) { search.addEventListener('input', refresh); }
     filters.forEach(function (btn) {
       btn.addEventListener('click', function () {
         filter = btn.getAttribute('data-discord-filter') || 'all';
@@ -180,37 +165,83 @@
         refresh();
       });
     });
-
-    form.addEventListener('reset', function () {
-      window.setTimeout(function () {
-        events.forEach(syncCard);
-        form.querySelectorAll('[data-webhook-input]').forEach(checkWebhook);
-        refresh();
-      }, 0);
-    });
-
-    form.addEventListener('submit', function () {
-      initialStr = serialize(new FormData(form));
-    });
-
-    // Essai d'un événement : il part avec le réglage enregistré, on prévient si la page a changé.
-    root.querySelectorAll('[data-discord-test]').forEach(function (btn) {
-      btn.addEventListener('click', function (e) {
-        if (serialize(new FormData(form)) !== initialStr
-          && !window.confirm('Vos changements ne sont pas encore enregistrés : l’essai part dans le salon enregistré. Continuer ?')) {
-          e.preventDefault();
-        }
-      });
-    });
-
+    form.addEventListener('reset', function () { window.setTimeout(refresh, 0); });
+    form.addEventListener('submit', function () { initialStr = serialize(new FormData(form)); });
     window.addEventListener('beforeunload', function (e) {
       if (serialize(new FormData(form)) !== initialStr) {
         e.preventDefault();
         e.returnValue = '';
       }
     });
-
     refresh();
+  }
+
+  /* ── Bouton « Tester » d'un salon ─────────────────────────────── */
+
+  var testForm = root.querySelector('[data-wh-test-form]');
+  root.querySelectorAll('[data-wh-test]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (!testForm || !window.fetch) { return; }
+      var box = btn.closest('[data-wh-form]') || btn.closest('.bo-int-wh');
+      var out = box ? box.querySelector('[data-wh-result]') : null;
+      var typed = box ? box.querySelector('input[name="url"]') : null;
+      var fd = new FormData(testForm);
+      fd.append('id', btn.getAttribute('data-wh-test') || 'organisation');
+      if (typed && typed.value.trim() !== '') {
+        fd.append('url', typed.value.trim());
+      } else if (btn.getAttribute('data-wh-test') === 'nouveau') {
+        if (out) { out.className = 'bo-int-wh__result is-bad'; out.textContent = 'Collez d’abord le lien du webhook.'; }
+        if (typed) { typed.focus(); }
+        return;
+      }
+      btn.disabled = true;
+      if (out) { out.className = 'bo-int-wh__result'; out.textContent = 'Envoi d’un message d’essai…'; }
+      fetch(testForm.action, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (out) {
+            out.className = 'bo-int-wh__result ' + (data && data.ok ? 'is-ok' : 'is-bad');
+            out.textContent = (data && data.message) || 'Réponse inattendue.';
+          }
+        })
+        .catch(function () {
+          if (out) { out.className = 'bo-int-wh__result is-bad'; out.textContent = 'Connexion perdue. Réessayez.'; }
+        })
+        .then(function () { btn.disabled = false; });
+    });
+  });
+
+  /* ── Message des liens d'invitation : variables et aperçu ─────── */
+
+  var tpl = root.querySelector('[data-tpl-form]');
+  if (tpl) {
+    var area = tpl.querySelector('[data-tpl-input]');
+    var preview = tpl.querySelector('[data-tpl-preview]');
+    var sample = {
+      indicatif: 'VIPER 2-1',
+      lien: 'https://athena-comspec.eu/public/invitation/profil/…',
+      expire: '03/11/2026 à 21:00',
+      communaute: tpl.getAttribute('data-community') || 'Votre communauté',
+      unite: '1re section · SOAR-B-1',
+      grade: 'Caporal'
+    };
+    var render = function () {
+      var text = (area.value || '').replace(/\{(\w+)\}/g, function (m, k) { return Object.prototype.hasOwnProperty.call(sample, k) ? sample[k] : m; });
+      preview.textContent = '@VIPER 2-1 ' + text;
+    };
+    tpl.querySelectorAll('[data-tpl-var]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var token = '{' + chip.getAttribute('data-tpl-var') + '}';
+        var start = area.selectionStart || area.value.length;
+        var end = area.selectionEnd || start;
+        area.value = area.value.slice(0, start) + token + area.value.slice(end);
+        area.focus();
+        area.setSelectionRange(start + token.length, start + token.length);
+        render();
+      });
+    });
+    area.addEventListener('input', render);
+    render();
   }
 
   /* ── Comptes d'envoi d'e-mails ────────────────────────────────── */

@@ -83,7 +83,8 @@ final class DiscordChannelInput
             return $out;
         }
         if (preg_match('#^/api(?:/v\d+)?/webhooks/(\d{1,20})/([A-Za-z0-9_\-]{20,})$#', $path, $m) === 1) {
-            if (($parts['scheme'] ?? '') !== 'https' && strtolower((string) ($parts['scheme'] ?? '')) !== 'http') {
+            // Uniquement https (un lien sans protocole a déjà reçu « https:// » plus haut).
+            if (strtolower((string) ($parts['scheme'] ?? '')) !== 'https') {
                 return $out;
             }
             $url = 'https://discord.com/api/webhooks/' . $m[1] . '/' . $m[2];

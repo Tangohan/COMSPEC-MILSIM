@@ -408,6 +408,10 @@ return function (Router $router) {
     $router->get('/platform/invite-unit', [ReferralInviteController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/invitations/accept', [InvitationAcceptController::class, 'show']);
     $router->post('/invitations/accept', [InvitationAcceptController::class, 'accept']);
+    // Lien « compléter son profil » (Effectifs) : jeton retiré de l'adresse dès la première ouverture.
+    $router->get('/invitation/profil', [\App\Controllers\Web\ProfileInviteController::class, 'show']);
+    $router->post('/invitation/profil/activer', [\App\Controllers\Web\ProfileInviteController::class, 'activate']);
+    $router->get('/invitation/profil/{token}', [\App\Controllers\Web\ProfileInviteController::class, 'open']);
     $router->get('/integration/invitation/repondre', [MemberIntegrationInvitationRespondController::class, 'show']);
     $router->post('/integration/invitation/repondre', [MemberIntegrationInvitationRespondController::class, 'submit']);
     $router->get('/integration/invitation/calendrier', [MemberIntegrationInvitationRespondController::class, 'calendar']);
@@ -1493,6 +1497,11 @@ return function (Router $router) {
     $router->get('/back-office/integrations', [OrganizationIntegrationsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord', [OrganizationIntegrationsController::class, 'saveDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord/essai', [OrganizationIntegrationsController::class, 'testDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/discord/organisation', [OrganizationIntegrationsController::class, 'saveDiscordOrganisation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/discord/salons', [OrganizationIntegrationsController::class, 'addDiscordWebhook'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/discord/salons/{webhookId}/supprimer', [OrganizationIntegrationsController::class, 'removeDiscordWebhook'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/discord/tester', [OrganizationIntegrationsController::class, 'testDiscordWebhook'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/discord/modele-invitation', [OrganizationIntegrationsController::class, 'saveInviteTemplate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/emails', [OrganizationIntegrationsController::class, 'saveMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/emails/essai', [OrganizationIntegrationsController::class, 'testMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/sse-relais', [OrganizationIntegrationsController::class, 'storeSseRelay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1818,8 +1827,12 @@ return function (Router $router) {
     $router->post('/back-office/ressources/recrutement/automod/restore-access', [RecruitmentWorkspaceController::class, 'automodRestoreAccess'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/recrutement/automod/escalate', [RecruitmentWorkspaceController::class, 'automodEscalateToPlatform'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs', [EffectifsWorkspaceController::class, 'roster'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ressources/effectifs/nouveau', [UserAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/nouveau', [EffectifsWorkspaceController::class, 'newMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/nouveau', [UserAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/nouveau/verifier', [\App\Controllers\Admin\EffectifsInvitesController::class, 'checkNewMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/invitations', [EffectifsWorkspaceController::class, 'invitations'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/invitations', [\App\Controllers\Admin\EffectifsInvitesController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/invitations/{inviteId}/{action}', [\App\Controllers\Admin\EffectifsInvitesController::class, 'act'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/export', [EffectifsWorkspaceController::class, 'exportCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/export.pdf', [EffectifsWorkspaceController::class, 'exportPdf'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/importer', [EffectifsWorkspaceController::class, 'importRoster'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

@@ -895,9 +895,8 @@ $imagesNeedAddress = $slugHint === '';
                         </div>
                     </div>
                     <div class="bcs-field">
-                        <label class="bcs-label" for="discord_webhook_url">Relais Discord des annonces <span class="bcs-opt">(facultatif)</span></label>
-                        <p class="bcs-help">Collez l’adresse d’un webhook Discord : les annonces du portail et les mises à jour du pack y seront publiées automatiquement. Les salons séparés et les photos se règlent dans <a class="bcs-link" href="<?= $h(url('back-office/integrations')) ?>">Intégrations</a>.</p>
-                        <input type="text" inputmode="url" autocomplete="off" spellcheck="false" id="discord_webhook_url" name="discord_webhook_url" maxlength="500" value="<?= $h((string) ($i['discord_webhook_url'] ?? '')) ?>" placeholder="https://discord.com/api/webhooks/…">
+                        <span class="bcs-label">Salon Discord de l’organisation</span>
+                        <p class="bcs-help"><?= trim((string) ($i['discord_webhook_url'] ?? '')) !== '' ? 'Un salon est relié.' : 'Aucun salon relié pour l’instant.' ?> Un seul salon suffit pour tout recevoir (annonces, recrutement, liens d’invitation…) ; il se règle, avec son tutoriel, dans <a class="bcs-link" href="<?= $h(url('back-office/integrations') . '#relais-discord') ?>">Intégrations › Discord</a>.</p>
                     </div>
                 </div>
             </section>

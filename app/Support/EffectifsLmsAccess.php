@@ -42,6 +42,21 @@ final class EffectifsLmsAccess
             || $gate->allows('personnel.status.manage');
     }
 
+    /**
+     * Ajouter un membre (fiche + compte) : gestion des comptes ou des dossiers. Les volets grade, affectation et
+     * niveau d'accès de la fiche restent soumis à leur propre droit (canManageGrades, canManageAssignments, canManageRoles).
+     */
+    public static function canCreateMembers(Gate $gate): bool
+    {
+        return self::canManageStatus($gate) || self::canEditProfiles($gate);
+    }
+
+    /** Créer, envoyer, prolonger ou révoquer un lien « compléter son profil » : mêmes personnes. */
+    public static function canInviteMembers(Gate $gate): bool
+    {
+        return self::canCreateMembers($gate);
+    }
+
     public static function canManageAssignments(Gate $gate): bool
     {
         return $gate->allows('admin.organization')

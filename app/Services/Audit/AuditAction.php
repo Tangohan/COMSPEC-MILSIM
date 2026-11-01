@@ -62,6 +62,21 @@ final class AuditAction
     public const INVITATION_ACCEPTED = 'invitation.accepted';
     public const INVITATION_REVOKED = 'invitation.revoked';
 
+    /** Liens « compléter son profil » (Effectifs). */
+    public const PROFILE_INVITE_CREATED = 'profile_invite.created';
+    public const PROFILE_INVITE_OPENED = 'profile_invite.opened';
+    public const PROFILE_INVITE_EXTENDED = 'profile_invite.extended';
+    public const PROFILE_INVITE_REGENERATED = 'profile_invite.regenerated';
+    public const PROFILE_INVITE_REVOKED = 'profile_invite.revoked';
+    public const PROFILE_INVITE_SENT = 'profile_invite.sent';
+    public const PROFILE_INVITE_ACCOUNT_READY = 'profile_invite.account_ready';
+    public const PROFILE_INVITE_COMPLETED = 'profile_invite.completed';
+
+    /** Salons Discord de la communauté (Intégrations). */
+    public const DISCORD_WEBHOOK_SAVED = 'discord_webhook.saved';
+    public const DISCORD_WEBHOOK_REMOVED = 'discord_webhook.removed';
+    public const DISCORD_WEBHOOK_TESTED = 'discord_webhook.tested';
+
     public const MODERATION_ACTION = 'moderation.action_applied';
     public const MODERATION_REVOKED = 'moderation.action_revoked';
     public const REPORT_MODERATION = 'report.moderation_action';

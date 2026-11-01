@@ -111,12 +111,15 @@ $unitDialogs = [
         <div class="ath-dialog__head ath-dialog__head--split">
             <div>
                 <h2 class="ath-dialog__title">Inviter un membre</h2>
-                <p class="ath-dialog__sub">Un e-mail permettra à la personne de définir son mot de passe.</p>
+                <p class="ath-dialog__sub">Un e-mail lui envoie un lien (valable 48 h) pour créer son mot de passe et compléter son profil. Pour l’envoyer plutôt sur Discord, passez par Effectifs › Ajouter un membre.</p>
             </div>
             <button type="button" class="ath-dialog__close" data-hub-close="hub-dlg-membre" aria-label="Fermer">✕</button>
         </div>
         <div class="ath-dialog__body">
             <?= \App\Core\Csrf::field() ?>
+            <input type="hidden" name="invite" value="1">
+            <input type="hidden" name="duration_hours" value="48">
+            <input type="hidden" name="send_email" value="1">
             <?php
             $fieldIdPrefix = 'hub-user-';
             $matrixRootId = 'hub-role-matrix-wrap';

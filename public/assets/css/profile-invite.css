@@ -1,0 +1,269 @@
+/*
+ * Lien « compléter mon profil » (views/invitations/profile_invite.php).
+ * Bandeau sombre des Effectifs (noir, vert de la maquette) + carte claire du portail.
+ */
+.pinv {
+  --pinv-void: #050505;
+  --pinv-ink: #f4f4f0;
+  --pinv-ink-muted: rgba(244, 244, 240, 0.66);
+  --pinv-accent: #34d399;
+  --pinv-accent-ink: #052e1c;
+  --pinv-surface: var(--ath-surface, #ffffff);
+  --pinv-text: var(--ath-ink, #0f172a);
+  --pinv-muted: var(--ath-muted, #64748b);
+  --pinv-line: var(--ath-line, #e2e8f0);
+  --pinv-primary: var(--ath-accent, #059669);
+  --pinv-bad: #b91c1c;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 1.5rem;
+  max-width: 64rem;
+  margin: 2.5rem auto 3.5rem;
+  padding: 0 1rem;
+}
+
+.pinv-intro {
+  position: relative;
+  overflow: hidden;
+  padding: 2rem 2rem 1.75rem;
+  border-radius: 16px;
+  color: var(--pinv-ink);
+  background:
+    radial-gradient(120% 140% at 90% -10%, rgba(52, 211, 153, 0.18) 0%, transparent 55%),
+    linear-gradient(100deg, rgba(5, 5, 5, 0.98) 0%, rgba(8, 18, 14, 0.95) 60%, rgba(10, 30, 22, 0.92) 100%),
+    var(--pinv-void);
+}
+
+.pinv-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  color: var(--pinv-accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.pinv-kicker i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pinv-accent);
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.2);
+}
+
+.pinv-title {
+  margin: 0.6rem 0 0.75rem;
+  font-size: clamp(2.1rem, 5vw, 3.4rem);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.pinv-intro .pinv-lead {
+  color: var(--pinv-ink-muted);
+}
+
+.pinv-intro .pinv-lead b {
+  color: var(--pinv-ink);
+}
+
+.pinv-lead {
+  margin: 0 0 1rem;
+  max-width: 54ch;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.pinv-steps {
+  display: grid;
+  gap: 0.15rem;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.pinv-steps li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.55rem 0;
+  border-top: 1px solid rgba(244, 244, 240, 0.12);
+  color: var(--pinv-ink-muted);
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.pinv-steps li b {
+  display: block;
+  color: var(--pinv-ink);
+  font-weight: 650;
+}
+
+.pinv-steps__n {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid rgba(244, 244, 240, 0.28);
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pinv-steps li.is-now .pinv-steps__n {
+  border-color: var(--pinv-accent);
+  background: var(--pinv-accent);
+  color: var(--pinv-accent-ink);
+}
+
+.pinv-note {
+  margin: 1rem 0 0;
+  color: inherit;
+  opacity: 0.78;
+  font-size: 0.82rem;
+}
+
+.pinv-card {
+  align-self: start;
+  padding: 1.75rem;
+  border: 1px solid var(--pinv-line);
+  border-radius: 16px;
+  background: var(--pinv-surface);
+  color: var(--pinv-text);
+  box-shadow: 0 18px 40px -28px rgba(15, 23, 42, 0.45);
+}
+
+.pinv-card .pinv-lead,
+.pinv-card .pinv-note {
+  color: var(--pinv-muted);
+}
+
+.pinv-card--solo {
+  grid-column: 1 / -1;
+  max-width: 34rem;
+  justify-self: center;
+}
+
+.pinv-card--solo .pinv-kicker {
+  color: var(--pinv-primary);
+}
+
+.pinv-card--solo .pinv-kicker i {
+  background: var(--pinv-primary);
+}
+
+.pinv-card__title {
+  margin: 0 0 1.25rem;
+  font-size: 1.2rem;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+.pinv-form {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.pinv-field {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+}
+
+.pinv-field > span {
+  font-weight: 650;
+}
+
+.pinv-field input {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--pinv-line);
+  border-radius: 10px;
+  background: var(--pinv-surface);
+  color: var(--pinv-text);
+  font-size: 0.95rem;
+}
+
+.pinv-field input:focus-visible {
+  outline: 2px solid var(--pinv-primary);
+  outline-offset: 1px;
+  border-color: var(--pinv-primary);
+}
+
+.pinv-field small {
+  color: var(--pinv-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.pinv-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-radius: 10px;
+  background: var(--pinv-void);
+  color: var(--pinv-ink);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pinv-btn:hover {
+  background: #0d1f17;
+}
+
+.pinv-btn:focus-visible {
+  outline: 3px solid var(--pinv-accent);
+  outline-offset: 2px;
+}
+
+.pinv-btn--ghost {
+  border: 1px solid var(--pinv-line);
+  background: transparent;
+  color: var(--pinv-text);
+}
+
+.pinv-flash {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.85rem;
+  border-left: 3px solid var(--pinv-bad);
+  border-radius: 8px;
+  background: rgba(185, 28, 28, 0.08);
+  color: var(--pinv-bad);
+  font-size: 0.86rem;
+}
+
+.pinv a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.pinv-btn,
+.pinv-btn:hover {
+  text-decoration: none;
+}
+
+@media (max-width: 760px) {
+  .pinv {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 1.25rem;
+  }
+
+  .pinv-intro,
+  .pinv-card {
+    padding: 1.4rem 1.25rem;
+  }
+}

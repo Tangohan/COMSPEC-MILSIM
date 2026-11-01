@@ -28,6 +28,8 @@ final class DiscordWebhookCatalog
     public const KEY_ATAK_STARTUP_CHECK = 'atak_startup_check';
     /** Signalements du mod envoyés par les joueurs de la communauté (Échap > Signaler, erreurs du mod). */
     public const KEY_ATAK_MOD_REPORTS = 'atak_mod_reports';
+    /** Liens « compléter son profil » envoyés depuis les effectifs (bouton « Envoyer sur Discord », jamais automatique). */
+    public const KEY_MEMBER_INVITES = 'member_profile_invites';
 
     public const MODE_OFF = 'off';
     public const MODE_DEFAULT = 'default';
@@ -94,6 +96,13 @@ final class DiscordWebhookCatalog
                 'label' => 'Signalements du mod',
                 'hint' => 'Quand un joueur de la communauté signale un problème depuis le jeu (Échap > Signaler un problème) ou que le mod remonte une erreur : gravité, indicatif, module, message et versions. Les incidents passagers ne sont pas postés. Ni Steam, ni adresse IP, ni lien.',
                 'default_mode' => self::MODE_OFF,
+            ],
+            [
+                'key' => self::KEY_MEMBER_INVITES,
+                'group' => 'Effectifs',
+                'label' => 'Liens pour compléter le profil',
+                'hint' => 'Quand un gestionnaire clique sur « Envoyer sur Discord » pour un nouveau membre : message avec son lien personnel, sa date d’expiration et une mention s’il est connu. Rien ne part tout seul.',
+                'default_mode' => self::MODE_DEFAULT,
             ],
             [
                 'key' => EmailEvents::NEW_COMMUNITY_MEMBER,

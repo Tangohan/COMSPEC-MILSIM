@@ -24,6 +24,7 @@ $tabs = [
     ['fonctions', 'Emplois', 'fonctions', 0, 'Organisation'],
     ['rh_alerts', 'Alertes', 'alertes', (int) ($rhAlertTotalCount ?? 0), 'Suivi des dossiers'],
     ['rh_integration', 'Intégration', 'integration', (int) ($integrationOpenCount ?? 0), 'Suivi des dossiers'],
+    ['invitations', 'Invitations', 'invitations', 0, 'Suivi des dossiers'],
     ['rh_mobility', 'Mobilité', 'mobilite', (int) ($mobilityPendingCount ?? 0), 'Suivi des dossiers'],
     ['rh_succession', 'Vivier', 'vivier', 0, 'Suivi des dossiers'],
     ['rh_roleplay', 'Roleplay', 'roleplay', (int) ($roleplayDueCount ?? 0) + (int) ($phaseGateCount ?? 0), 'Suivi des dossiers'],
@@ -56,6 +57,8 @@ $lead = match ($active) {
     'rh_inbox' => 'Corrections, élévations, échéances et dossiers incomplets : le système propose, vous décidez.',
     'fonctions' => 'Organisez les emplois, les catégories et les responsabilités de votre communauté.',
     'affectations' => 'Qui tient quoi, dans quelle unité et avec quel rôle, avec le code de chaque unité.',
+    'nouveau' => 'Créez la fiche, puis envoyez à la personne son lien pour compléter son profil.',
+    'invitations' => 'Les liens envoyés pour compléter un profil : qui les a reçus, ouverts, et ce qu’il reste à faire.',
     default => 'Dossiers des membres : tableur, accès, emplois et suivi.',
 };
 $showTools = empty($jobsReferenceWorkspace);
