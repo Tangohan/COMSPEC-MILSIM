@@ -28,5 +28,7 @@ Envoi par le SMTP Hostinger (quota quotidien vite atteint) et double vérificati
 - `mail/config_mail.php` (fichier inutilisé, suivi par git) contient un identifiant et un mot de passe SMTP Hostinger en clair : changer ce mot de passe, puis retirer le fichier du dépôt.
 - La connexion en jeu par code e-mail (`GameAuthService::requestOtp`) ne tient pas compte de l'application d'authentification.
 
+Traités dans `2026-11-01-2fa-contournee-en-jeu-et-secret-smtp.md` (le mot de passe SMTP reste à changer chez Hostinger).
+
 ## Statut
 Corrigé (points 1 à 3) ; deux points identifiés ci-dessus.
