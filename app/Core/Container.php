@@ -2246,6 +2246,12 @@ class Container
                 self::get(\App\Repositories\AtakAdminControlRepository::class),
                 self::get(AuthService::class),
             ),
+            // Parc ATAK de la communauté (/back-office/atak/parc-atak) : mêmes dépendances que la version admin ;
+            // sans cette entrée, le routeur faisait « new » sans arguments (erreur 500).
+            \App\Controllers\Admin\BackOfficeAtakFleetController::class => new \App\Controllers\Admin\BackOfficeAtakFleetController(
+                self::get(\App\Repositories\AtakAdminControlRepository::class),
+                self::get(AuthService::class),
+            ),
             \App\Controllers\Admin\AdminAtakModReportsController::class => new \App\Controllers\Admin\AdminAtakModReportsController(
                 self::get(\App\Repositories\AtakModReportRepository::class),
                 self::get(AuthService::class),
