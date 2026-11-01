@@ -270,6 +270,10 @@ final class GameAuthAssetTest extends TestCase
         self::assertSame(0, preg_match('/^\d+(\.\d+)*$/', 'native'));
         // Le téléphone garde le code HTTP du refus et ne dit plus « serveur injoignable » quand Athena a répondu.
         self::assertStringContainsString('_fail = (_r splitString "|") param [1, "http_4xx"];', $link);
-        self::assertStringContainsString('private _refused = _ls isEqualTo "error" && {(_ld find "http_4") isEqualTo 0};', $status);
+        self::assertStringContainsString('private _refused = _ls isEqualTo "error" && {(_ld find "http_4") isEqualTo 0 || {_untrusted}};', $status);
+        // Pack non officiel (401 client_untrusted) : message dédié, jamais « Athena n'a pas reconnu le compte ».
+        self::assertStringContainsString('case (_untrusted):', $status);
+        self::assertStringContainsString('case (_code in ["CLIENT_UNTRUSTED"]):', $status);
+        self::assertStringContainsString('_fail = "client_untrusted";', $link);
     }
 }

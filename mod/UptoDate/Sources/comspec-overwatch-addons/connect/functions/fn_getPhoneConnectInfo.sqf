@@ -27,7 +27,7 @@ if (_prefix != "OK") exitWith {
         case "not_connected": { "Liaison Athena non établie — liez votre compte (téléphone ATAK → Compte Athena) ou vérifiez l’URL du mod, puis réessayez." };
         case "not_found": { "Adresse Athena incorrecte ou service indisponible (page introuvable). Utilisez https://athena.ttrd.fr/public sans slash final." };
         case "unauthorized": { "Accès refusé — liez votre compte Athena en jeu, ou renseignez la clé d’accès fournie par votre admin." };
-        case "client_untrusted": { "Ce module n’est pas reconnu. Installez la version officielle du pack, puis relancez Arma." };
+        case "client_untrusted": { "Ce pack n'est pas reconnu comme version officielle. Abonnez-vous à COMSPEC ATAK sur le Steam Workshop (ou mettez-le à jour), retirez les copies locales ou modifiées du mod, puis relancez Arma complètement." };
         case "mod_steam_blocked": { "Accès au mod refusé pour cet identifiant Steam — contactez un administrateur de la communauté." };
         case "mod_ip_blocked": { "Accès au mod refusé depuis cette adresse réseau — contactez un administrateur de la communauté." };
         case "no_tenant": { "Communauté non reconnue — reliez votre compte Athena en jeu (code de liaison), puis réessayez « Connecter mon téléphone »." };

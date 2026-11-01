@@ -24,6 +24,28 @@ private _rows = [
     ["buttons", [["ENVOYER AU CAMP", ["send"] call _act, true, true, "Diffuse le message à tous les joueurs de votre camp"],
         ["NOUVEL ORDRE", ["order", ""] call _act, false, true, "Ouvre le rédacteur d'ordre (app Tâches)"]]]
 ];
+// Écrans TOC du poste (à 30 m) : caméra du camp à afficher en direct (fn_tocCam), ou retour à la carte et au flux.
+private _scr = (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {alive _x} && {(player distance _x) < 30} && {((_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""]) in ["", str side group player]} };
+if ((count _scr) > 0) then {
+    private _srcs = ["sources"] call comspec_atak_native_fnc_tocCam;
+    _rows pushBack ["section", "Caméra sur les écrans du poste", "Image en direct pour les joueurs devant l'écran"];
+    if ((count _srcs) isEqualTo 0) then { _rows pushBack ["text", "<t size='0.85' color='#8a9a93'>Aucune caméra du camp à afficher : drone du camp en vol, caméra fixe ou caméra de téléphone partagée avec vous.</t>"]; };
+    {
+        private _o = _x;
+        private _c = _o getVariable ["COMSPEC_ATAK_TocScr", []];
+        private _id = netId _o;
+        private _onCam = (_c param [3, ""]) isEqualTo "CAM";
+        _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='#8a9a93'>%2 m · %3</t>", [_c param [0, "TOC"]] call _esc, round (player distance _o),
+            [["affichage du poste", format ["caméra : %1", ["label", _o] call comspec_atak_native_fnc_tocCam]] select _onCam] call _esc]];
+        if ((count _srcs) > 0) then {
+            _rows pushBack ["combo", "tocCam" + _id, "Caméra", _srcs apply { [_x select 0, _x select 1] }, _o getVariable ["COMSPEC_ATAK_TocCam", ""],
+                ["AFFICHER", compile format ["params ['_src']; ['set', [objectFromNetId '%1', _src]] call comspec_atak_native_fnc_tocCam; [{ ['TOC'] call comspec_atak_native_fnc_pageRender; }, [], 0.5] call CBA_fnc_waitAndExecute;", _id]]];
+        };
+        if (_onCam) then {
+            _rows pushBack ["buttons", [["CARTE ET FLUX", compile format ["['ensure', [objectFromNetId '%1', 'SPLIT']] call comspec_atak_native_fnc_tocScreen; [{ ['TOC'] call comspec_atak_native_fnc_pageRender; }, [], 0.5] call CBA_fnc_waitAndExecute;", _id], false, true, "L'écran revient à la carte et au flux du poste"]]];
+        };
+    } forEach _scr;
+};
 // Groupes du camp ayant des joueurs : chef, effectif, numéro et grille du chef.
 private _groups = [];
 { if (side _x isEqualTo side group player && {({isPlayer _x && {alive _x}} count (units _x)) > 0}) then { _groups pushBackUnique _x; }; } forEach allGroups;

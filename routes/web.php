@@ -2591,6 +2591,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // App Musique de l'ATAK natif (COMSPEC Link AthenaMusic) ; flux audio par URL signée, sans en-tête Athena.
     $router->get('/api/atak/music', [MusicLibraryApiController::class, 'index']);
     $router->get('/api/music/stream/{file}', [MusicLibraryApiController::class, 'stream']);
+    // App Academy de l'ATAK natif et écrans posables (COMSPEC Link Academy) : lecteur de cours en jeu.
+    $router->get('/api/atak/academy/courses', [\App\Controllers\Api\AcademyGameApiController::class, 'courses']);
+    $router->get('/api/atak/academy/lesson', [\App\Controllers\Api\AcademyGameApiController::class, 'lesson']);
+    $router->post('/api/atak/academy/seen', [\App\Controllers\Api\AcademyGameApiController::class, 'seen']);
     $router->post('/api/atak/beta-register', [AtakApiController::class, 'betaRegister']);
     $router->post('/api/atak/mod-report', [AtakApiController::class, 'modReport']);
     $router->post('/api/atak/device-logs', [AtakApiController::class, 'deviceLogsStore']);

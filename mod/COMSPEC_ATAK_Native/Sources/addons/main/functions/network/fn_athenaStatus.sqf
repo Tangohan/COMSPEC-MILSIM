@@ -52,9 +52,12 @@ if !(_dllVer isEqualType "") then { _dllVer = ""; };
 (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLink", ["", "", 0, "", "", ""]]) params ["_ls", "_lc", "_lu", "", "", "_ld"];
 if (_ls isEqualTo "pending" && {diag_tickTime >= _lu}) then { _ls = "expired"; };
 // Code refusé par Athena (réponse HTTP 4xx) : le serveur répond, c'est le compte, la communauté ou le mod qui bloque.
-private _refused = _ls isEqualTo "error" && {(_ld find "http_4") isEqualTo 0};
+// Mod non officiel (client_untrusted, réponse 401) : refus du pack lui-même, pas du compte.
+private _untrusted = (toLower _ld) isEqualTo "client_untrusted";
+private _refused = _ls isEqualTo "error" && {(_ld find "http_4") isEqualTo 0 || {_untrusted}};
 private _refusal = switch (true) do {
     case (!_refused): { [] };
+    case (_untrusted): { ["Ce pack n'est pas reconnu comme version officielle.", "Abonnez-vous à COMSPEC ATAK sur le Steam Workshop (ou mettez-le à jour), retirez les copies locales ou modifiées du mod, puis relancez Arma complètement."] };
     case (_ld isEqualTo "http_426"): { ["Votre mod est plus ancien que la version minimale de votre communauté.", "Mettez le mod à jour sur Steam, ou demandez à votre staff de baisser la version minimale (réglages ATAK de la communauté sur Athena)."] };
     case (_ld isEqualTo "http_403"): { ["Athena a refusé ce compte pour le jeu.", "Compte désactivé, pas membre de la communauté, ATAK bloqué ou mod non autorisé : prévenez votre staff avec ce message."] };
     case (_ld isEqualTo "http_401"): { ["Athena n'a pas reconnu le compte qui a autorisé le code.", "Connectez-vous au bon compte sur le site, puis NOUVEAU CODE."] };
@@ -98,6 +101,8 @@ private _stepName = switch (_state) do {
 private _code = toUpper ([_err, _state] select (_err isEqualTo "" && {!(_state in ["", "READY", "INITIALIZING", "DISABLED", "AWAITING_OTP"])} && {!_syncing}));
 private _why = switch (true) do {
     case (_code isEqualTo ""): { [] };
+    // Avant HTTP_401 : Athena refuse le pack (copie locale, modifiée ou ancienne), le compte n'y est pour rien.
+    case (_code in ["CLIENT_UNTRUSTED"]): { ["Ce pack n'est pas reconnu comme version officielle.", "Abonnez-vous à COMSPEC ATAK sur le Steam Workshop (ou mettez-le à jour), retirez les copies locales ou modifiées du mod, puis relancez Arma complètement."] };
     case (_code in ["INVALID_CREDENTIALS"]): { ["E-mail ou mot de passe incorrect.", "Vérifiez vos identifiants, ou recevez un code par e-mail (onglet E-MAIL)."] };
     case (_code in ["HTTP_503", "MAINTENANCE"]): { ["Athena est en maintenance.", "Rien à faire : la connexion reprend seule à la réouverture du site."] };
     case (_code in ["NETWORK_ERROR", "TIMEOUT", "HTTP_502", "HTTP_504"]): { ["Le serveur Athena ne répond pas.", "Vérifiez la connexion internet du jeu, puis RECONNECTER."] };
@@ -154,6 +159,8 @@ switch (true) do {
         ["syncing", format ["Connexion en cours : %1…", [_stepName, "synchronisation du profil"] select (_ls isEqualTo "approved")], "Patientez quelques secondes.", "", _amber, ""] call _set;
     };
     case (_refused): {
+        // Pack non officiel : explication seule (le bouton NOUVEAU CODE n'y changerait rien).
+        if (_untrusted) exitWith { ["error", "Erreur : version du pack non reconnue", _refusal select 0, _refusal select 1, _red, ""] call _set; };
         ["error", "Erreur : Athena a refusé la connexion", format ["%1 (%2)", _refusal select 0, toUpper _ld], _refusal select 1, _red, "code"] call _set;
     };
     case (_notLinked): {

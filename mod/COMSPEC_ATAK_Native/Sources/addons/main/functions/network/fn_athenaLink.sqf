@@ -166,6 +166,8 @@ switch (_action) do {
                     case ((_r find "ERR|expired") isEqualTo 0 || {(_r find "ERR|no_pairing") isEqualTo 0}): { _result = "expired"; };
                     // Maintenance ouverte pendant le suivi du code : on s'arrête, l'app l'annonce.
                     case ((_r find "ERR|http_503") isEqualTo 0): { _result = "error"; _fail = "maintenance"; };
+                    // Pack non reconnu comme officiel (COMSPEC Link 2.0.113+ le distingue d'un vrai 401).
+                    case ((_r find "ERR|client_untrusted") isEqualTo 0): { _result = "error"; _fail = "client_untrusted"; };
                     case ((_r find "ERR|http_4") isEqualTo 0): {
                         _result = "error";
                         _fail = (_r splitString "|") param [1, "http_4xx"];
