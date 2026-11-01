@@ -31,4 +31,5 @@ return [
     ['id' => 'member_profile_invites', 'label' => 'Liens pour compléter son profil (invitations des effectifs)', 'group' => 'schema', 'file' => '3260_member_profile_invites.php', 'rerun' => true],
     ['id' => 'academy_course_lifecycle_sharing', 'label' => 'Academy Studio : archivage, corbeille et partage des formations', 'group' => 'schema', 'file' => '3270_academy_course_lifecycle_sharing.php', 'rerun' => true],
     ['id' => 'academy_jtac_v2_refresh', 'label' => 'Académie : nouvelle version du cours JTAC pour les inscrits qui ne l’ont pas encore commencé', 'group' => 'schema', 'file' => '3280_academy_jtac_v2_refresh.php', 'rerun' => true],
+    ['id' => 'competency_links_pathways', 'label' => 'Compétences : explication, liens vers l’Academy, les qualifications, les emplois et la dotation, parcours enregistrés', 'group' => 'schema', 'file' => '3340_competency_links_pathways.php', 'rerun' => true],
 ];

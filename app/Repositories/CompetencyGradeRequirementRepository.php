@@ -15,10 +15,26 @@ use PDO;
 class CompetencyGradeRequirementRepository
 {
     private PDO $pdo;
+    private ?bool $explained = null;
 
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+    }
+
+    /** Colonnes description / validation_mode posées par l’étape competency_links_pathways (3340). */
+    public function explanationReady(): bool
+    {
+        if ($this->explained === null) {
+            try {
+                $this->pdo->query('SELECT description, validation_mode FROM competency_grade_requirements WHERE 1 = 0');
+                $this->explained = true;
+            } catch (\PDOException) {
+                $this->explained = false;
+            }
+        }
+
+        return $this->explained;
     }
 
     /** @return list<array<string, mixed>> */
@@ -53,11 +69,13 @@ class CompetencyGradeRequirementRepository
 
     public function create(int $tenantId, array $data, ?int $createdByUserId): int
     {
+        $explained = $this->explanationReady();
         $stmt = $this->pdo->prepare(
-            'INSERT INTO competency_grade_requirements (tenant_id, palier, palier_order, label, grade_id, acquisition_level, sort_order, created_by_user_id, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+            'INSERT INTO competency_grade_requirements (tenant_id, palier, palier_order, label, grade_id, acquisition_level, sort_order, created_by_user_id'
+            . ($explained ? ', description, validation_mode' : '') . ', created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?' . ($explained ? ', ?, ?' : '') . ', NOW())'
         );
-        $stmt->execute([
+        $values = [
             $tenantId,
             $data['palier'],
             $data['palier_order'] ?? 0,
@@ -66,7 +84,12 @@ class CompetencyGradeRequirementRepository
             $data['acquisition_level'] ?? null,
             $data['sort_order'] ?? $this->nextSortOrderForPalier($tenantId, (string) $data['palier']),
             $createdByUserId,
-        ]);
+        ];
+        if ($explained) {
+            $values[] = $data['description'] ?? null;
+            $values[] = $data['validation_mode'] ?? null;
+        }
+        $stmt->execute($values);
 
         return (int) $this->pdo->lastInsertId();
     }
@@ -74,6 +97,10 @@ class CompetencyGradeRequirementRepository
     public function update(int $id, int $tenantId, array $data): bool
     {
         $cols = ['palier', 'palier_order', 'label', 'grade_id', 'acquisition_level', 'sort_order'];
+        if ($this->explanationReady()) {
+            $cols[] = 'description';
+            $cols[] = 'validation_mode';
+        }
         $sets = [];
         $params = [];
         foreach ($cols as $col) {
