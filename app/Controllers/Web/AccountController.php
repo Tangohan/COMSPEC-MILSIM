@@ -919,13 +919,6 @@ class AccountController
             'group' => 'Intégration',
         ];
 
-        $items[] = [
-            'key' => EmailEvents::SSE_ANALYST_DIGEST,
-            'label' => 'Point quotidien renseignement SSE',
-            'hint' => 'Résumé des rapprochements à trancher, signaux ouverts et nouvelles fiches terrain pour votre communauté.',
-            'group' => 'Renseignement SSE',
-        ];
-
         $recrutementItems = [
             [
                 'key' => EmailEvents::RECRUITMENT_OPENING_PUBLISHED_STAFF,
@@ -993,6 +986,24 @@ class AccountController
             'label' => 'Mises à jour de dossiers (équipe RH / effectifs)',
             'hint' => 'Lorsqu’un autre membre voit son grade, son affectation ou sa fonction modifié dans la communauté.',
             'group' => 'Dossier personnel',
+        ];
+        $items[] = [
+            'key' => EmailEvents::PERSONNEL_CORRECTION_REQUEST_STAFF,
+            'label' => 'Demandes de correction de dossier (équipe)',
+            'hint' => 'Lorsqu’un membre demande la correction de son dossier personnel.',
+            'group' => 'Dossier personnel',
+        ];
+        $items[] = [
+            'key' => EmailEvents::PERSONNEL_CORRECTION_DECISION,
+            'label' => 'Réponse à ma demande de correction',
+            'hint' => 'Lorsque l’équipe accepte ou refuse la correction que vous avez demandée.',
+            'group' => 'Dossier personnel',
+        ];
+        $items[] = [
+            'key' => 'cooperation.announcement',
+            'label' => 'Missions en coopération avec d’autres communautés',
+            'hint' => 'Annonces et rappels des missions menées avec une communauté partenaire.',
+            'group' => 'Coopération',
         ];
 
         $encadrement = 'Messages de l’encadrement';
@@ -1450,7 +1461,7 @@ class AccountController
                 $secret = (string) ($pendingSetup['secret'] ?? '');
                 if ($password === '' || !password_verify($password, (string) ($user['password_hash'] ?? ''))) {
                     $errors['confirm_password'] = ['Mot de passe actuel incorrect.'];
-                } elseif (!$this->loginSecurityOtpService->totpService()->verify($secret, $code)) {
+                } elseif (!$this->loginSecurityOtpService->verifyTotpCode($uid, $secret, $code)) {
                     $errors['totp_code'] = ['Code incorrect. Vérifiez l’heure de votre appareil et réessayez.'];
                 } else {
                     $enc = $this->loginSecurityOtpService->encryptTotpSecret($secret);
@@ -1515,8 +1526,8 @@ class AccountController
                     $errors['confirm_password'] = ['Mot de passe actuel incorrect.'];
                 } else {
                     $secret = $this->loginSecurityOtpService->decryptUserTotpSecret($user);
-                    if ($secret === null || !$this->loginSecurityOtpService->totpService()->verify($secret, $code)) {
-                        $errors['totp_code'] = ['Code de l’application incorrect.'];
+                    if ($secret === null || !$this->loginSecurityOtpService->verifyTotpCode($uid, $secret, $code)) {
+                        $errors['totp_code'] = ['Code de l’application incorrect ou déjà utilisé.'];
                     } elseif ($loginOtpForcedByRole && !$emailLoginOtpEnabled) {
                         $errors['totp_enabled'] = ['Votre rôle impose une double vérification. Activez d’abord le code par e-mail avant de retirer l’application.'];
                     } else {

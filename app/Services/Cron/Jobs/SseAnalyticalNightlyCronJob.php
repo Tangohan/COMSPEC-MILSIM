@@ -13,7 +13,7 @@ use App\Services\Sse\SseAnalystDigestService;
  * Pipeline nocturne SSE : propose, ne décide jamais.
  *
  * INGESTION → NORMALISATION → DÉDOUBLONNAGE → CORRÉLATION → CONTRADICTIONS
- * → SCORING → ALERTES → SYNTHÈSE → digest e-mail (si du nouveau)
+ * → SCORING → ALERTES → SYNTHÈSE → point Discord (si du nouveau, aucun e-mail)
  */
 final class SseAnalyticalNightlyCronJob implements CronJobInterface
 {
@@ -37,7 +37,7 @@ final class SseAnalyticalNightlyCronJob implements CronJobInterface
 
     public function description(): string
     {
-        return 'Produit des rapprochements possibles/probables, signaux et scores de complétude, puis envoie le digest e-mail du jour. Aucune fusion automatique.';
+        return 'Produit des rapprochements possibles/probables, signaux et scores de complétude, puis publie le point du jour sur Discord (aucun e-mail). Aucune fusion automatique.';
     }
 
     public function run(): array
@@ -88,9 +88,9 @@ final class SseAnalyticalNightlyCronJob implements CronJobInterface
         if ($this->digest !== null) {
             try {
                 $mail = $this->digest->runAllTenants();
-                $mailSummary = ' · mail ' . (string) ($mail['summary'] ?? '');
+                $mailSummary = ' · point SSE ' . (string) ($mail['summary'] ?? '');
             } catch (\Throwable $e) {
-                $mailSummary = ' · mail erreur ' . $e->getMessage();
+                $mailSummary = ' · point SSE erreur ' . $e->getMessage();
             }
         }
 

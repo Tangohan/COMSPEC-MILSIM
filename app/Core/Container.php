@@ -666,10 +666,7 @@ class Container
             \App\Repositories\SseSuggestionQueueRepository::class => new \App\Repositories\SseSuggestionQueueRepository(),
             \App\Services\Sse\SseAnalystDigestService::class => new \App\Services\Sse\SseAnalystDigestService(
                 self::get(TenantRepository::class),
-                self::get(UserRepository::class),
                 self::get(\App\Repositories\SseSuggestionQueueRepository::class),
-                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
-                self::get(\App\Services\EmailService::class),
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),
             \App\Services\Cron\Jobs\SseAnalystDigestCronJob::class => new \App\Services\Cron\Jobs\SseAnalystDigestCronJob(

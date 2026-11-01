@@ -140,7 +140,7 @@ final class AccountSpaceCatalog
 
             // Double vérification
             ['page' => 'security', 'anchor' => 'email-otp', 'title' => 'Code par e-mail', 'desc' => 'Recevoir un code à chaque connexion.', 'keywords' => ['code', 'e-mail', 'otp', 'email code', 'one-time']],
-            ['page' => 'security', 'anchor' => 'authenticator', 'title' => 'Application d’authentification', 'desc' => 'Google Authenticator, Authy, 2FAS…', 'keywords' => ['totp', 'google authenticator', 'authy', 'application', 'authenticator app', 'qr']],
+            ['page' => 'security', 'anchor' => 'authenticator', 'title' => 'Application d’authentification', 'desc' => 'Google Authenticator, Authy, 2FAS…', 'keywords' => ['totp', 'google authenticator', 'microsoft authenticator', 'aegis', '1password', 'authy', '2fas', 'application', 'authenticator app', 'qr']],
             ['page' => 'security', 'anchor' => 'codes-secours', 'title' => 'Codes de secours', 'desc' => 'Se connecter sans téléphone ni e-mail.', 'keywords' => ['secours', 'récupération', 'backup codes', 'recovery codes']],
             ['page' => 'security', 'anchor' => 'appareils-confiance', 'title' => 'Appareils de confiance', 'desc' => 'Navigateurs dispensés du code pendant un temps.', 'keywords' => ['confiance', 'navigateur', 'mémoriser', 'trusted devices', 'remember']],
 

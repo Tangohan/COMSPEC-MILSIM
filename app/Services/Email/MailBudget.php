@@ -11,13 +11,17 @@ namespace App\Services\Email;
  *   - exploitation : alertes à la boîte de l'exploitation (incidents, nouveaux comptes, signalements du mod…)
  *                    regroupées dans un récapitulatif toutes les N minutes ;
  *   - membre     : le reste ; s'arrête quand le quota (moins la réserve des essentiels) est atteint,
- *                  et repart le lendemain depuis la file d'attente au lieu d'être perdu.
+ *                  et repart le lendemain depuis la file d'attente au lieu d'être perdu ;
+ *                  informations sans urgence (DAILY_DIGEST_EVENTS) et 2e envoi du même type au même destinataire
+ *                  en moins de REPEAT_WINDOW_MINUTES : versés au résumé quotidien du destinataire ;
+ *   - coupé      : DISABLED_EVENTS (tout ce que déclenche le SSE) ne part jamais, même par le compte d'une communauté.
  *
  * Réglages (platform_settings, page Administration > Envois d'e-mails) :
  *   mail_daily_limit         quota quotidien (MAIL_DAILY_LIMIT, 90 par défaut ; 0 = pas de quota)
  *   mail_critical_reserve    envois gardés pour les essentiels (15 par défaut)
  *   mail_ops_digest_minutes  cadence du récapitulatif exploitation (120 par défaut ; 0 = alertes une par une)
- *   mail_muted_events        types coupés, séparés par des virgules (jamais les essentiels)
+ *   mail_muted_events        types coupés, séparés par des virgules (jamais les essentiels) ;
+ *   mail_muted_reviewed      '1' une fois la page enregistrée ; avant, DEFAULT_MUTED s'ajoute aux types coupés
  */
 final class MailBudget
 {
@@ -35,10 +39,18 @@ final class MailBudget
     public const SETTING_RESERVE = 'mail_critical_reserve';
     public const SETTING_DIGEST_MINUTES = 'mail_ops_digest_minutes';
     public const SETTING_MUTED = 'mail_muted_events';
+    /** '1' dès que l'administration a enregistré ses coupures : DEFAULT_MUTED ne s'ajoute plus d'office. */
+    public const SETTING_MUTED_REVIEWED = 'mail_muted_reviewed';
 
     public const DEFAULT_DAILY_LIMIT = 90;
     public const DEFAULT_RESERVE = 15;
     public const DEFAULT_DIGEST_MINUTES = 120;
+
+    /** Un même type au même destinataire : au plus un e-mail par période, la suite va au résumé quotidien. */
+    public const REPEAT_WINDOW_MINUTES = 60;
+
+    /** Cadence du résumé quotidien des membres (minutes). */
+    public const MEMBER_DIGEST_MINUTES = 1440;
 
     /** Cadences proposées pour le récapitulatif (minutes ; 0 = une alerte par e-mail). */
     public const DIGEST_CHOICES = [0, 60, 120, 180, 360, 720, 1440];
@@ -65,10 +77,55 @@ final class MailBudget
         EmailEvents::SECURITY_ALERT,
     ];
 
+    /** Jamais envoyés : e-mails déclenchés par le SSE (le portail SSE et Discord gardent l'information). */
+    public const DISABLED_EVENTS = [
+        EmailEvents::SSE_ANALYST_DIGEST,
+    ];
+
+    /**
+     * Coupés par défaut (la personne vient de faire l'action ou l'information est déjà dans le site) ;
+     * l'administration peut les réactiver dans Administration > Envois d'e-mails.
+     */
+    public const DEFAULT_MUTED = [
+        EmailEvents::REGISTER_SECURITY_COMPANION,
+        EmailEvents::PLATFORM_ACCOUNT_EMAIL_VERIFIED,
+        EmailEvents::ATTENDANCE_RSVP_CONFIRM,
+        EmailEvents::ATTENDANCE_CHECKIN_CONFIRM,
+        EmailEvents::MEMBER_LEFT_COMMUNITY_CONFIRMATION,
+        EmailEvents::GAME_STEAM_LINKED_MEMBER,
+        EmailEvents::TRAINING_COURSE_COMPLETED,
+        EmailEvents::COMMUNITY_REPORT_RECEIPT,
+        EmailEvents::PERSONNEL_CORRECTION_REQUEST_MEMBER,
+        EmailEvents::RECRUITMENT_OPENING_PUBLISHED_STAFF,
+    ];
+
+    /** Informations sans urgence pour l'encadrement : toujours dans le résumé quotidien, jamais une par une. */
+    public const DAILY_DIGEST_EVENTS = [
+        EmailEvents::NEW_COMMUNITY_MEMBER,
+        EmailEvents::MEMBER_LEFT_COMMUNITY_STAFF,
+        EmailEvents::ATTENDANCE_RSVP_ORGANIZER,
+        EmailEvents::PERSONNEL_STRUCTURE_CHANGED,
+        EmailEvents::PERSONNEL_STRUCTURE_CHANGED_STAFF,
+        EmailEvents::ENLISTMENT_ACCEPTED_STAFF,
+        EmailEvents::GAME_STEAM_LINKED_STAFF,
+        EmailEvents::ROLEPLAY_FOLLOWUP_UPDATED,
+        EmailEvents::TRAINING_ENROLLMENT_PENDING_APPROVAL,
+    ];
+
+    /** Envois légitimement répétés le même jour (annulation, rappel de chaque activité, formulaire de contact). */
+    public const REPEAT_ALLOWED_EVENTS = [
+        EmailEvents::ATTENDANCE_EVENT_CANCELLED,
+        EmailEvents::ATTENDANCE_REMINDER,
+        EmailEvents::COMMUNITY_CONTACT,
+        'privacy_rights_request',
+    ];
+
     /** @var array<string, string> */
     private const LABELS = [
         'error_alert' => 'Incident technique (erreur 500)',
         EmailEvents::OPS_DIGEST => 'Récapitulatif exploitation',
+        EmailEvents::MEMBER_DAILY_DIGEST => 'Résumé quotidien (membres)',
+        EmailEvents::SSE_ANALYST_DIGEST => 'Point quotidien SSE (coupé)',
         EmailEvents::PLATFORM_ACCOUNT_CREATED => 'Nouveau compte créé (exploitation)',
         EmailEvents::PLATFORM_ACCOUNT_EMAIL_VERIFIED => 'Adresse vérifiée (exploitation)',
         EmailEvents::PLATFORM_NEW_COMMUNITY => 'Nouvelle communauté (exploitation)',
@@ -118,7 +175,7 @@ final class MailBudget
         if (in_array($eventCode, self::CRITICAL_EVENTS, true)) {
             return self::PRIORITY_CRITICAL;
         }
-        if ($eventCode === EmailEvents::OPS_DIGEST) {
+        if ($eventCode === EmailEvents::OPS_DIGEST || $eventCode === EmailEvents::MEMBER_DAILY_DIGEST) {
             return self::PRIORITY_DIGEST;
         }
         if (in_array($eventCode, self::OPS_EVENTS, true)) {
@@ -138,16 +195,20 @@ final class MailBudget
 
     /**
      * @param array{limit:int, reserve:int, digest_minutes:int, muted:list<string>} $config
+     * @param bool $sentRecently même type déjà parti vers ce destinataire dans les REPEAT_WINDOW_MINUTES
      */
-    public static function decide(string $eventCode, string $priority, int $sentToday, array $config): string
+    public static function decide(string $eventCode, string $priority, int $sentToday, array $config, bool $sentRecently = false): string
     {
         if ($priority === self::PRIORITY_CRITICAL) {
             return self::SEND;
         }
-        if (in_array($eventCode, $config['muted'], true)) {
+        if (self::isDisabled($eventCode) || in_array($eventCode, $config['muted'], true)) {
             return self::MUTE;
         }
         if ($priority === self::PRIORITY_OPS && $config['digest_minutes'] > 0) {
+            return self::GROUP;
+        }
+        if ($priority === self::PRIORITY_NORMAL && (in_array($eventCode, self::DAILY_DIGEST_EVENTS, true) || $sentRecently)) {
             return self::GROUP;
         }
         $limit = $config['limit'];
@@ -182,7 +243,11 @@ final class MailBudget
             'limit' => $limitVal,
             'reserve' => $reserveVal,
             'digest_minutes' => max(0, min(1440, $digest !== null ? (int) $digest : self::DEFAULT_DIGEST_MINUTES)),
-            'muted' => self::parseMuted((string) ($settings[self::SETTING_MUTED] ?? '')),
+            // Tant que l'administration n'a pas réenregistré la page depuis l'arrivée de DEFAULT_MUTED, ces types sont coupés en plus.
+            'muted' => array_values(array_unique(array_merge(
+                self::parseMuted((string) ($settings[self::SETTING_MUTED] ?? '')),
+                ($settings[self::SETTING_MUTED_REVIEWED] ?? '') === '1' ? [] : self::DEFAULT_MUTED
+            ))),
         ];
     }
 
@@ -200,9 +265,22 @@ final class MailBudget
         return array_keys($out);
     }
 
+    public static function isDisabled(string $eventCode): bool
+    {
+        return in_array($eventCode, self::DISABLED_EVENTS, true);
+    }
+
+    /** Le plafond « un par période » s'applique-t-il à ce type ? */
+    public static function capsRepeats(string $eventCode): bool
+    {
+        return !in_array($eventCode, self::REPEAT_ALLOWED_EVENTS, true)
+            && !in_array($eventCode, self::DAILY_DIGEST_EVENTS, true);
+    }
+
     public static function canMute(string $eventCode): bool
     {
-        return !in_array($eventCode, self::CRITICAL_EVENTS, true) && $eventCode !== EmailEvents::OPS_DIGEST;
+        return !in_array($eventCode, self::CRITICAL_EVENTS, true) && !self::isDisabled($eventCode)
+            && $eventCode !== EmailEvents::OPS_DIGEST && $eventCode !== EmailEvents::MEMBER_DAILY_DIGEST;
     }
 
     public static function label(string $eventCode): string

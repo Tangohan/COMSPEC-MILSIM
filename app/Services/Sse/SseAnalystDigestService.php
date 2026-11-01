@@ -7,34 +7,23 @@ namespace App\Services\Sse;
 use App\Repositories\CronJobRunRepository;
 use App\Repositories\SseSuggestionQueueRepository;
 use App\Repositories\TenantRepository;
-use App\Repositories\UserNotificationPreferencesRepository;
-use App\Repositories\UserRepository;
 use App\Services\Email\EmailEvents;
-use App\Services\EmailService;
+use App\Services\Integrations\DiscordEventRelayService;
 use App\Core\Database;
 
 /**
- * Digest e-mail SSE (analystes) : rapprochements, signaux, fiches terrain, dossiers d’intérêt.
+ * Point quotidien SSE : rapprochements, signaux, fiches terrain, dossiers d’intérêt.
+ * Plus aucun e-mail (quota d'envoi) : le point part seulement sur le salon Discord de la communauté
+ * si elle l'a activé (Intégrations > Discord) ; dans le site, la boîte du portail SSE montre les mêmes éléments.
  * Dédupliqué une fois par jour et par communauté via cron_notification_log.
  */
 final class SseAnalystDigestService
 {
     public const JOB_KEY = 'sse_analyst_digest';
 
-    /** @var list<string> */
-    private const RECIPIENT_PERMISSION_SLUGS = [
-        'admin.access',
-        'atak.sse.access',
-        'atak.sse.case.manage',
-        'atak.sse.grant',
-    ];
-
     public function __construct(
         private TenantRepository $tenants,
-        private UserRepository $users,
         private SseSuggestionQueueRepository $queue,
-        private UserNotificationPreferencesRepository $notificationPreferences,
-        private EmailService $emailService,
         private CronJobRunRepository $cronLog,
         private ?Database $db = null,
     ) {
@@ -54,7 +43,6 @@ final class SseAnalystDigestService
         $sent = 0;
         $skippedDedup = 0;
         $skippedEmpty = 0;
-        $skippedNoRecipient = 0;
         $tenantsTouched = 0;
 
         foreach ($this->tenants->listBasicAll() as $tenant) {
@@ -71,27 +59,22 @@ final class SseAnalystDigestService
             if (!empty($result['skipped_empty'])) {
                 $skippedEmpty++;
             }
-            if (!empty($result['skipped_no_recipient'])) {
-                $skippedNoRecipient++;
-            }
         }
 
         return [
             'ok' => true,
             'summary' => sprintf(
-                'Communautés %d · e-mails %d · déjà envoyé %d · rien à signaler %d · sans destinataire %d',
+                'Communautés %d · points Discord %d · déjà fait %d · rien à signaler %d',
                 $tenantsTouched,
                 $sent,
                 $skippedDedup,
-                $skippedEmpty,
-                $skippedNoRecipient
+                $skippedEmpty
             ),
             'details' => [
                 'tenants' => $tenantsTouched,
                 'sent' => $sent,
                 'skipped_dedup' => $skippedDedup,
                 'skipped_empty' => $skippedEmpty,
-                'skipped_no_recipient' => $skippedNoRecipient,
                 'day' => $dayKey,
             ],
         ];
@@ -99,21 +82,12 @@ final class SseAnalystDigestService
 
     /**
      * @param array<string,mixed> $tenant
-     * @param bool $forceIgnoreDailyDedup après un passage moteur manuel : ignore le « déjà envoyé aujourd’hui »
-     * @param string|null $dedupeKey clé de dédup (sinon tenant:jour) — ex. run_id moteur
-     * @return array{sent:int,skipped_dedup?:bool,skipped_empty?:bool,skipped_no_recipient?:bool}
+     * @return array{sent:int,skipped_dedup?:bool,skipped_empty?:bool}
      */
-    public function sendForTenant(
-        int $tenantId,
-        array $tenant = [],
-        ?string $dayKey = null,
-        bool $forceIgnoreDailyDedup = false,
-        ?string $dedupeKey = null,
-    ): array {
+    public function sendForTenant(int $tenantId, array $tenant = [], ?string $dayKey = null): array
+    {
         $dayKey ??= date('Y-m-d');
-        $subjectId = $dedupeKey !== null && trim($dedupeKey) !== ''
-            ? mb_substr(trim($dedupeKey), 0, 190)
-            : ($tenantId . ':' . $dayKey);
+        $subjectId = $tenantId . ':' . $dayKey;
         if ($this->cronLog->wasNotified(self::JOB_KEY, 'tenant_digest', $subjectId, 'email')) {
             return ['sent' => 0, 'skipped_dedup' => true];
         }
@@ -124,10 +98,7 @@ final class SseAnalystDigestService
         $interestOpen = $this->countOpenInterestCases($tenantId);
 
         if ($pendingSuggestions + $openSignals + $newPersons + $interestOpen < 1) {
-            // Ne pas « brûler » le digest quotidien si c’est un passage moteur forcé vide.
-            if (!$forceIgnoreDailyDedup) {
-                $this->cronLog->markNotified(self::JOB_KEY, 'tenant_digest', $subjectId, 'email', null);
-            }
+            $this->cronLog->markNotified(self::JOB_KEY, 'tenant_digest', $subjectId, 'email', null);
 
             return ['sent' => 0, 'skipped_empty' => true];
         }
@@ -135,53 +106,22 @@ final class SseAnalystDigestService
         if ($tenant === []) {
             $tenant = $this->tenants->findById($tenantId) ?? ['id' => $tenantId, 'name' => 'Communauté'];
         }
-
-        $ids = $this->users->listActiveUserIdsWithAnyPermissionSlug($tenantId, self::RECIPIENT_PERMISSION_SLUGS);
-        $recipients = $ids === [] ? [] : $this->users->findByIdsForTenant($tenantId, $ids);
-        if ($recipients === []) {
-            return ['sent' => 0, 'skipped_no_recipient' => true];
-        }
-
         $tenantName = function_exists('community_display_name')
             ? community_display_name($tenant)
             : (string) ($tenant['name'] ?? 'Communauté');
-        $workspaceUrl = url('atak/sse');
-        $suggestionsUrl = url('atak/sse/rapprochements');
+        $text = sprintf(
+            "%d rapprochement(s) à trancher · %d signal(aux) ouvert(s) · %d nouvelle(s) fiche(s) terrain · %d dossier(s) d’intérêt ouvert(s)\n%s",
+            $pendingSuggestions,
+            $openSignals,
+            $newPersons,
+            $interestOpen,
+            url('atak/sse/rapprochements')
+        );
+        // Aucun e-mail : relais Discord seulement (rien ne part si la communauté ne l'a pas activé).
+        DiscordEventRelayService::relayFromEmail($tenantId, EmailEvents::SSE_ANALYST_DIGEST, 'Point renseignement SSE — ' . $tenantName, $text);
+        $this->cronLog->markNotified(self::JOB_KEY, 'tenant_digest', $subjectId, 'email', 'discord');
 
-        $sent = 0;
-        $seenEmails = [];
-        foreach ($recipients as $r) {
-            $uid = (int) ($r['id'] ?? 0);
-            $email = strtolower(trim((string) ($r['email'] ?? '')));
-            if ($uid < 1 || $email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || isset($seenEmails[$email])) {
-                continue;
-            }
-            if (!$this->notificationPreferences->isEmailEventEnabled($uid, EmailEvents::SSE_ANALYST_DIGEST)) {
-                continue;
-            }
-            $seenEmails[$email] = true;
-            $name = trim((string) (($r['callsign'] ?? '') !== '' ? $r['callsign'] : ($r['display_name'] ?? $r['username'] ?? 'Analyste')));
-            if ($this->emailService->sendSseAnalystDigest(
-                $email,
-                $name !== '' ? $name : 'Analyste',
-                $tenantName,
-                $pendingSuggestions,
-                $openSignals,
-                $newPersons,
-                $interestOpen,
-                $workspaceUrl,
-                $suggestionsUrl,
-                $tenantId
-            )) {
-                $sent++;
-            }
-        }
-
-        if ($sent > 0) {
-            $this->cronLog->markNotified(self::JOB_KEY, 'tenant_digest', $subjectId, 'email', 'batch:' . $sent);
-        }
-
-        return ['sent' => $sent, 'skipped_no_recipient' => $sent < 1];
+        return ['sent' => 1];
     }
 
     private function countNewPersonsLastDay(int $tenantId): int

@@ -756,8 +756,10 @@ class AuthController
             return Response::redirect(url('login'));
         }
         if ($target === LoginSecurityOtpService::CHANNEL_EMAIL) {
-            if (empty($pending['can_fallback_email']) && !$this->loginSecurityOtpService->isEmailOtpEnabled($user)
-                && !$this->loginSecurityOtpService->isMandatoryForUserId((int) $user['id'])) {
+            // Application active : l'e-mail n'est proposé que si le membre l'a gardé en secours.
+            if (!$this->loginSecurityOtpService->isEmailOtpEnabled($user)
+                && ($this->loginSecurityOtpService->isTotpEnabled($user)
+                    || !$this->loginSecurityOtpService->isMandatoryForUserId((int) $user['id']))) {
                 Session::flash('error', 'Le code par e-mail n’est pas disponible pour ce compte.');
 
                 return Response::redirect(url('login/otp'));

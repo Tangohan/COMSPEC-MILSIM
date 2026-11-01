@@ -30,7 +30,6 @@ use App\Repositories\TenantRepository;
 use App\Repositories\TheatreMissionCycleRepository;
 use App\Repositories\UserRepository;
 use App\Services\Sse\SseAnalyticalEngineService;
-use App\Services\Sse\SseAnalystDigestService;
 use App\Services\Sse\SseCompletenessService;
 use App\Services\Sse\SseContextualMentionService;
 use App\Services\Sse\SseAccessCodeService;
@@ -82,7 +81,6 @@ final class SsePortalController
         private ?SseContextualMentionService $contextualMentions = null,
         private ?SseSuggestionQueueRepository $suggestions = null,
         private ?SseAnalyticalEngineService $engine = null,
-        private ?SseAnalystDigestService $analystDigest = null,
         private ?SseCompletenessService $completeness = null,
         private ?SseCaseBundleService $caseBundles = null,
         private ?UserRepository $users = null,
@@ -128,13 +126,6 @@ final class SsePortalController
         $this->contextualMentions ??= new SseContextualMentionService();
         $this->suggestions ??= new SseSuggestionQueueRepository();
         $this->engine ??= new SseAnalyticalEngineService();
-        if ($this->analystDigest === null) {
-            try {
-                $this->analystDigest = \App\Core\Container::get(SseAnalystDigestService::class);
-            } catch (\Throwable) {
-                $this->analystDigest = null;
-            }
-        }
         $this->completeness ??= new SseCompletenessService();
         $this->caseBundles ??= new SseCaseBundleService($this->cases, $this->persons, $this->sites);
         $this->intelEvents ??= new SseIntelEventRepository();
@@ -2181,33 +2172,9 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/rapprochements'));
         }
         $tenantId = $this->tenantId();
+        // Plus d'e-mail aux analystes après un passage manuel : les résultats sont dans la boîte du portail.
         $result = $this->engine->runForTenant($tenantId);
-        $mailNote = '';
-        if ($this->analystDigest !== null) {
-            try {
-                $runId = (string) ($result['run_id'] ?? ('manual-' . time()));
-                $mail = $this->analystDigest->sendForTenant(
-                    $tenantId,
-                    [],
-                    null,
-                    true,
-                    $tenantId . ':engine:' . $runId
-                );
-                $sent = (int) ($mail['sent'] ?? 0);
-                if ($sent > 0) {
-                    $mailNote = sprintf(' · %d e-mail(s) analyste envoyé(s)', $sent);
-                } elseif (!empty($mail['skipped_empty'])) {
-                    $mailNote = ' · aucun e-mail (rien à signaler)';
-                } elseif (!empty($mail['skipped_dedup'])) {
-                    $mailNote = ' · e-mail déjà envoyé pour ce passage';
-                } elseif (!empty($mail['skipped_no_recipient'])) {
-                    $mailNote = ' · aucun destinataire e-mail (droits / préférences)';
-                }
-            } catch (\Throwable) {
-                $mailNote = ' · e-mail non envoyé (erreur temporaire)';
-            }
-        }
-        Session::flash('success', 'Passage moteur terminé — ' . ($result['summary'] ?? '') . $mailNote);
+        Session::flash('success', 'Passage moteur terminé — ' . ($result['summary'] ?? ''));
 
         return Response::redirect(url('atak/sse/rapprochements'));
     }

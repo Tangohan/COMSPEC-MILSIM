@@ -129,6 +129,7 @@ final class SystemMailTrafficController
                 MailBudget::SETTING_RESERVE => (string) $reserve,
                 MailBudget::SETTING_DIGEST_MINUTES => (string) $digest,
                 MailBudget::SETTING_MUTED => implode(',', $muted),
+                MailBudget::SETTING_MUTED_REVIEWED => '1',
             ]);
             Session::flash('success', 'Réglages des envois enregistrés.');
         } catch (\Throwable) {

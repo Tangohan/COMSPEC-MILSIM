@@ -8,7 +8,7 @@ use App\Services\Cron\CronJobInterface;
 use App\Services\Sse\SseAnalystDigestService;
 
 /**
- * Envoie le digest e-mail SSE (rapprochements, signaux, fiches terrain).
+ * Point quotidien SSE (rapprochements, signaux, fiches terrain) : Discord seulement, plus d'e-mail.
  * Une fois par jour et par communauté (dédup interne).
  */
 final class SseAnalystDigestCronJob implements CronJobInterface
@@ -24,12 +24,12 @@ final class SseAnalystDigestCronJob implements CronJobInterface
 
     public function label(): string
     {
-        return 'Digest e-mail SSE (analystes)';
+        return 'Point quotidien SSE (Discord)';
     }
 
     public function description(): string
     {
-        return 'Envoie un point quotidien aux analystes SSE : rapprochements à trancher, signaux ouverts, nouvelles fiches terrain et dossiers d’intérêt actifs.';
+        return 'Publie sur le salon Discord de la communauté (si activé) un point quotidien SSE : rapprochements à trancher, signaux ouverts, nouvelles fiches terrain et dossiers d’intérêt actifs.';
     }
 
     public function run(): array
