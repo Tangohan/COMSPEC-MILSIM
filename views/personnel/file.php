@@ -575,10 +575,10 @@ $personnelFileSegment = $personnelFileSegment !== '' ? $personnelFileSegment : (
 $personnelFileBaseUrl = url('personnel/' . $personnelFileSegment);
 $personnelFileIsRhFull = $canAccessRhView && $personnelViewMode === 'rh';
 $personnelFileRhContext = $personnelFileIsRhFull;
-/** Conteneur page : vue commandement en pleine largeur ; sinon colonne classique max-w-7xl. */
+/** Conteneur page : vue commandement en pleine largeur ; sinon le bandeau et les onglets suivent la largeur de la page (personnel-file-refresh.css). */
 $personnelFileShell = $personnelFileIsRhFull
     ? 'w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12'
-    : 'max-w-7xl mx-auto px-6 md:px-8';
+    : 'w-full max-w-none';
 $personnelFileRootClass = 'personnel-file-root personnel-file';
 if ($personnelFileIsRhFull) {
     $personnelFileRootClass .= ' personnel-file--rh-full pt-20 pb-10';
@@ -828,7 +828,7 @@ if ($personnelFileIsRhFull) {
                     <?php require base_path('views/partials/personnel/file_playtime.php'); ?>
                     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
                         <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-5">Synthèse</h2>
-                        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        <div class="grid pf-grid-wide gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Unité indiquée</p>
                                 <p class="mt-1 text-sm font-bold text-slate-900"><?= $unitName ? htmlspecialchars($unitName) : '—' ?></p>
@@ -1025,7 +1025,7 @@ if ($personnelFileIsRhFull) {
                 <!-- Identité opérationnelle -->
                 <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Identité opérationnelle</h2>
-                    <div class="grid md:grid-cols-2 gap-6">
+                    <div class="grid pf-grid-fields md:grid-cols-2 gap-6">
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Prénom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(($civilIdentity['first_name'] ?? '') !== '' ? $civilIdentity['first_name'] : $missingLabel) ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nom</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars(($civilIdentity['last_name'] ?? '') !== '' ? $civilIdentity['last_name'] : $missingLabel) ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Indicatif radio</p><p class="text-sm font-black text-slate-900"><?= $callsign ? htmlspecialchars($callsign) : htmlspecialchars($missingLabel) ?></p></div>
@@ -1080,7 +1080,7 @@ if ($personnelFileIsRhFull) {
                     <?php if ($rpExtra): ?>
                     <div class="mt-8 border-t border-slate-100 pt-6">
                         <h3 class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mb-4">Détails RP (dossier opérationnel)</h3>
-                        <div class="grid md:grid-cols-2 gap-6">
+                        <div class="grid pf-grid-fields md:grid-cols-2 gap-6">
                             <?php if ($rpOperatorStatus !== ''): ?>
                             <div class="md:col-span-2"><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut opérateur</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($rpOperatorStatus) ?></p></div>
                             <?php endif; ?>
@@ -1126,7 +1126,7 @@ if ($personnelFileIsRhFull) {
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Emploi</h2>
                     <p class="mb-6 max-w-3xl text-sm leading-relaxed text-slate-600">La fonction tenue, distincte de l’équipe. L’emploi principal apparaît sur la fiche et l’organigramme. Il n’ouvre aucun droit d’accès.</p>
                     <?php if ($personnelJobRoleAssignments !== []): ?>
-                    <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="grid pf-grid-wide gap-4 sm:grid-cols-2">
                         <?php foreach ($personnelJobRoleAssignments as $jr):
                             $jrName = trim((string) ($jr['role_name'] ?? ''));
                             $jrDetail = trim((string) ($jr['role_detail'] ?? ''));
@@ -1306,7 +1306,7 @@ if ($personnelFileIsRhFull) {
                         <a href="<?= htmlspecialchars(url('back-office/tableau-operationnel')) ?>" class="inline-flex shrink-0 items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-50 transition">Ouvrir le tableau</a>
                         <?php endif; ?>
                     </div>
-                    <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="grid pf-grid-wide gap-4 sm:grid-cols-2">
                         <?php foreach ($personnelPlanningEntries as $pe):
                             $peTitle = trim((string) ($pe['title'] ?? 'Activité'));
                             $peType = $planningEntryTypeFr((string) ($pe['entry_type'] ?? ''));
@@ -1338,7 +1338,7 @@ if ($personnelFileIsRhFull) {
                                 Chaque durée ci-dessous correspond à des <strong>périodes</strong> enregistrées sur le dossier (dates de début et, si besoin, de fin). Il n’y a pas de journal « minute par minute » affiché ici : seules les plages retenues pour le calcul sont visibles. L’organisation peut disposer d’une trace des saisies pour le dossier, sans détail sur cette page.
                             </p>
                         </div>
-                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <div class="grid pf-grid-wide gap-3 sm:grid-cols-2 lg:grid-cols-3">
                             <?php foreach ($seniorityDetailLines as $seniorityRow): ?>
                             <div class="rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-sm">
                                 <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1"><?= htmlspecialchars((string) ($seniorityRow['label'] ?? 'Indicateur'), ENT_QUOTES, 'UTF-8') ?></p>
@@ -1373,7 +1373,7 @@ if ($personnelFileIsRhFull) {
                     <?php if ($lmsEnrollmentsForPersonnel !== []): ?>
                     <div class="mb-10">
                         <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-4">Parcours et suivi</h3>
-                        <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid pf-grid-wide gap-4 sm:grid-cols-2">
                             <?php foreach ($lmsEnrollmentsForPersonnel as $enr):
                                 $est = (string) ($enr['status'] ?? '');
                                 $pct = (int) round((float) ($enr['progress_percent'] ?? 0));
@@ -1445,7 +1445,7 @@ if ($personnelFileIsRhFull) {
                     <?php if ($trainingCertificates !== []): ?>
                     <div class="mb-10">
                         <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-4">Attestations et certifications (parcours Athena)</h3>
-                        <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid pf-grid-wide gap-4 sm:grid-cols-2">
                             <?php foreach ($trainingCertificates as $cert):
                                 $cst = (string) ($cert['status'] ?? 'valid');
                                 $certId = (int) ($cert['id'] ?? 0);
@@ -1548,7 +1548,7 @@ if ($personnelFileIsRhFull) {
                 <!-- Équipement / dotation -->
                 <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Équipement / dotation</h2>
-                    <div class="grid md:grid-cols-2 gap-6">
+                    <div class="grid pf-grid-fields md:grid-cols-2 gap-6">
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Classe d'équipement</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($personnelProfile['equipment_class'] ?? '—') ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Kit assigné</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($personnelProfile['kit_assigned'] ?? '—') ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Radio</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($personnelProfile['radio_assigned'] ?? '—') ?></p></div>
@@ -1734,7 +1734,7 @@ if ($personnelFileIsRhFull) {
                 <?php endif; ?>
                 <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-4">Compte & accès</h2>
-                    <div class="grid gap-4 md:grid-cols-2">
+                    <div class="grid pf-grid-fields gap-4 md:grid-cols-2">
                         <?php if ($accountCreatedDisplay !== null): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Membre depuis</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($accountCreatedDisplay) ?></p></div>
                         <?php endif; ?>
@@ -1785,7 +1785,7 @@ if ($personnelFileIsRhFull) {
                     <?php if ($civilSourceLabel): ?>
                     <p class="text-[10px] text-slate-500 mb-6">Source prénom / nom du personnage : <span class="font-semibold text-slate-700"><?= htmlspecialchars($civilSourceLabel) ?></span><?php if (($civilIdentity['source'] ?? null) === 'enlistment' && is_array($latestEnlistment) && $latestEnlistment !== []): ?> · Dossier de recrutement associé : <span class="font-semibold text-slate-700"><?= htmlspecialchars((string) ($latestEnlistmentStage['label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></span><?php if (!empty($latestEnlistment['created_at'])): ?> (transmis le <?= htmlspecialchars(date('d/m/Y', strtotime((string) $latestEnlistment['created_at']))) ?>)<?php endif; ?><?php endif; ?>.</p>
                     <?php endif; ?>
-                    <div class="grid md:grid-cols-2 gap-6">
+                    <div class="grid pf-grid-fields md:grid-cols-2 gap-6">
                         <?php if (!empty($showEmailInContact)): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">E-mail</p><p class="text-sm font-bold text-slate-900"><?= htmlspecialchars((string) ($targetUser['email'] ?? '')) ?></p></div>
                         <?php else: ?>
