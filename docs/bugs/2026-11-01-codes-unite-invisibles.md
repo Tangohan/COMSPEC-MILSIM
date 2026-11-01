@@ -25,3 +25,9 @@ Les tables `tenant_unit_codes` et `unit_codes` sont créées à la demande à pa
 
 ## Statut
 Corrigé (branche `site/affectations-unites`).
+
+## Suite (01/11, migration en production)
+L'étape `unit_codes` de run-migrations échouait : `errno 121 Duplicate key` à la création de `tenant_unit_codes`.
+Cause : le nom de clé étrangère `fk_tuc_tenant` existe déjà dans la base (table `tenant_usage_counters`) ; sous MySQL, un nom
+de contrainte est unique dans tout le schéma. Contraintes renommées `fk_tenant_unit_codes_tenant`, `fk_unit_codes_unit`,
+`fk_unit_codes_tenant`. Relancer `php8.4 run-migrations.php` (l'étape en échec est rejouée).
