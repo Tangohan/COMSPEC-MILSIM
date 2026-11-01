@@ -3,6 +3,7 @@
       "playList" [pistes, index] : joue la piste et met la liste en file      "enqueue" piste : ajoute à la file
       "toggle" : pause / reprise     "stop"     "next"     "prev"     "jump" index : piste de la file
       "vol" n (0-100) : écouteurs    "volStep" ±n    "spkVol" n / "spkVolStep" ±n : haut-parleur
+      "volMute" / "spkMute" : coupe ou rétablit (écouteurs / haut-parleur)    "sonSub" : résumé de la section Son (texte)
       "speaker" / "hear" / "shuffle" : bascule    "repeat" off|all|one    "repeatCycle" : non -> la file -> le morceau
       "files" : relit le dossier local (DLL)    "openFolder"    "url" : lit l'URL saisie    "urlDel" index
       "tab" onglet    "fold" clé : section repliable de LECTURE    "srvCat" catégorie    "srvSearch" : applique la recherche    "srvPage" n
@@ -14,6 +15,8 @@
     lib (bibliothèque musicale d'Athena : URL signée, mise en cache par la DLL).
     3e paramètre false (curseurs de volume pendant le glissé) : la page n'est pas redessinée, le son est appliqué
     au plus 10 fois par seconde puis une dernière fois après le dernier cran.
+    Réglages (haut-parleur, entendre, volumes, aléatoire, répéter, pause) : mis à jour sur place (fn_formSet, lecteur
+    fn_vizPlayer), sans redessiner la page (retour de jeu 2.9.27 : le haut-parleur remettait la page à zéro).
     Le son lui-même est lancé par comspec_atak_native_fnc_musicTick (aussi pour les haut-parleurs des autres).
 */
 params [["_act", ""], ["_arg", ""], ["_redraw", true]];
@@ -21,6 +24,30 @@ private _m = [] call comspec_atak_native_fnc_musicState;
 private _ui = uiNamespace getVariable ["COMSPEC_ATAK_MusicUi", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_MusicUi", _ui];
 private _now = [time, serverTime] select isMultiplayer;
+// Résumé de la section Son (fn_pageMusic et mise à jour sur place).
+if (_act isEqualTo "sonSub") exitWith {
+    private _vol = _m get "vol";
+    private _spkVol = _m getOrDefault ["spkVol", 70];
+    [format ["Écouteurs %1", [(str _vol) + " %", "MUET"] select (_vol isEqualTo 0)], format ["Haut-parleur %1", [(str _spkVol) + " %", "MUET"] select (_spkVol isEqualTo 0)]] select (_m get "speaker")
+};
+// Section Son et lecteur mis à jour sur place : aucune ligne n'apparaît ni ne disparaît.
+private _sonNow = {
+    params [["_sliders", true]];
+    private _spk = _m get "speaker";
+    ["musicSon", ["sonSub"] call comspec_atak_native_fnc_musicAction] call comspec_atak_native_fnc_formSet;
+    ["musicSpk", _spk] call comspec_atak_native_fnc_formSet;
+    ["musicHear", _m get "hear"] call comspec_atak_native_fnc_formSet;
+    if (_sliders) then {
+        ["musicVol", [_m get "vol", !_spk, ""]] call comspec_atak_native_fnc_formSet;
+        private _sv = _m getOrDefault ["spkVol", 70];
+        ["musicSpkVol", [_sv, _spk, ["ui_speaker", "ui_mute"] select (_sv isEqualTo 0)]] call comspec_atak_native_fnc_formSet;
+    };
+    call (uiNamespace getVariable ["COMSPEC_ATAK_PlayerVizUpd", {}]);
+};
+private _vizNow = {
+    call (uiNamespace getVariable ["COMSPEC_ATAK_PlayerVizModes", {}]);
+    call (uiNamespace getVariable ["COMSPEC_ATAK_PlayerVizUpd", {}]);
+};
 private _rerender = { if (!_redraw) exitWith {}; [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MUSIC") then { ["MUSIC"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 private _start = {
     params ["_i"];
@@ -88,7 +115,7 @@ switch (_act) do {
             _m set ["pausedAt", (_now - (_m get "start")) max 0]; _m set ["paused", true];
         };
         [] call comspec_atak_native_fnc_musicTick;
-        call _rerender;
+        call _vizNow;
     };
     case "stop": {
         _m set ["kind", ""]; _m set ["paused", false]; _m set ["status", ["idle", 0, 0, "", ""]];
@@ -129,7 +156,7 @@ switch (_act) do {
         _m set ["vol", _v];
         profileNamespace setVariable ["COMSPEC_ATAK_MusicVol", _v];
         call _volTick;
-        call _rerender;
+        [_redraw] call _sonNow;
     };
     case "volStep": { ["vol", (_m get "vol") + _arg] call comspec_atak_native_fnc_musicAction; };
     case "spkVol": {
@@ -138,8 +165,10 @@ switch (_act) do {
         _m set ["spkVol", _v];
         profileNamespace setVariable ["COMSPEC_ATAK_MusicSpkVol", _v];
         call _volTick;
-        call _rerender;
+        [_redraw] call _sonNow;
     };
+    case "volMute": { ["vol", [0, profileNamespace getVariable ["COMSPEC_ATAK_MusicVolBack", 60]] select ((_m get "vol") isEqualTo 0)] call comspec_atak_native_fnc_musicAction; };
+    case "spkMute": { ["spkVol", [0, profileNamespace getVariable ["COMSPEC_ATAK_MusicSpkVolBack", 70]] select ((_m getOrDefault ["spkVol", 70]) isEqualTo 0)] call comspec_atak_native_fnc_musicAction; };
     case "spkVolStep": { ["spkVol", (_m getOrDefault ["spkVol", 70]) + _arg] call comspec_atak_native_fnc_musicAction; };
     case "speaker": {
         if !(missionNamespace getVariable ["comspec_atak_native_music_speaker", true]) exitWith { ["WARNING", "Haut-parleur interdit sur ce serveur", 3, 30] call comspec_atak_native_fnc_notify; };
@@ -147,12 +176,12 @@ switch (_act) do {
         _m set ["speaker", !(_m get "speaker")];
         ["INFO", ["Haut-parleur coupé : vous seul entendez", format ["Haut-parleur : audible à %1 m", round (missionNamespace getVariable ["comspec_atak_native_music_range", 30])]] select (_m get "speaker"), 3, 20] call comspec_atak_native_fnc_notify;
         [] call comspec_atak_native_fnc_musicTick;
-        call _rerender;
+        call _sonNow;
     };
-    case "hear": { _m set ["hear", !(_m get "hear")]; profileNamespace setVariable ["COMSPEC_ATAK_MusicHear", _m get "hear"]; [] call comspec_atak_native_fnc_musicTick; call _rerender; };
-    case "shuffle": { _m set ["shuffle", !(_m get "shuffle")]; profileNamespace setVariable ["COMSPEC_ATAK_MusicShuffle", _m get "shuffle"]; call _rerender; };
+    case "hear": { _m set ["hear", !(_m get "hear")]; profileNamespace setVariable ["COMSPEC_ATAK_MusicHear", _m get "hear"]; [] call comspec_atak_native_fnc_musicTick; [false] call _sonNow; };
+    case "shuffle": { _m set ["shuffle", !(_m get "shuffle")]; profileNamespace setVariable ["COMSPEC_ATAK_MusicShuffle", _m get "shuffle"]; call _vizNow; };
     case "repeatCycle": { ["repeat", (createHashMapFromArray [["off", "all"], ["all", "one"], ["one", "off"]]) getOrDefault [_m get "repeat", "all"]] call comspec_atak_native_fnc_musicAction; };
-    case "repeat": { _m set ["repeat", _arg]; profileNamespace setVariable ["COMSPEC_ATAK_MusicRepeat", _arg]; call _rerender; };
+    case "repeat": { _m set ["repeat", _arg]; profileNamespace setVariable ["COMSPEC_ATAK_MusicRepeat", _arg]; call _vizNow; };
     case "files": {
         // Parcours du dossier musique (disque) par « Async » de la DLL native : jamais sur le fil du jeu.
         if (!canSuspend) exitWith { [_arg, _redraw] spawn { ["files", _this select 0, _this select 1] call comspec_atak_native_fnc_musicAction; }; };

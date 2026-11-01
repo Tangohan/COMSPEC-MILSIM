@@ -12,10 +12,10 @@
       ["gap"]
       ["person", image, texte structuré, [[libellé, code, principal, actif, aide]...], couleur image]  (ligne compacte : vignette, texte, boutons à droite ;
           principal = true, false ou "red" pour un bouton de confirmation)
-      ["section", titre, sous-titre]        ["switch", libellé, actif, code, aide, imposé]
-      ["fold", titre, résumé, ouverte, code]   en-tête de section repliable : barre pleine largeur cliquable, chevron
+      ["section", titre, sous-titre]        ["switch", libellé, actif, code, aide, imposé, id]
+      ["fold", titre, résumé, ouverte, code, id]   en-tête de section repliable : barre pleine largeur cliquable, chevron
           à droite ; le contenu qui suit n'est ajouté par la page que si la section est ouverte
-      ["slider", libellé, valeur 0-100, code, aide, actif, icône, code de l'icône, aide de l'icône, [min, max]]
+      ["slider", libellé, valeur 0-100, code, aide, actif, icône, code de l'icône, aide de l'icône, [min, max], id]
           curseur 0-100 (ou [min, max], valeur affichée en %) au cran de 1 : code appelé avec [valeur] pendant le glissé (sans redessiner la page) ; icône
           (data\nom) cliquable à gauche, valeur à droite (0 = MUET) ; actif = liseré et icône en couleur d'accent
       ["segment", libellé, [[texte, code, actif, aide]...], aide]   ["info", libellé, valeur]   ["image", chemin]
@@ -51,6 +51,9 @@
           l'état, image carrée à gauche, explication dessous, action à faire en ambre (facultative) ; hauteur au contenu
       ["check", niveau, libellé, valeur, aide]   étape d'une chaîne (liaison) : pastille d'icône (niveau "ok" | "now" |
           "warn" | "ko" | "todo" | "off"), libellé à gauche, valeur à droite, aide en petit dessous ; hauteur au contenu
+    id (facultatif, switch / slider / fold) : la ligne se met à jour sur place par fn_formSet, sans redessiner la page.
+    Défilement du formulaire gardé quand la même page se redessine (clic sur un réglage, rafraîchissement) : groupe
+    nommé d'après la page et ses premières lignes, relevé par fn_pageRender (COMSPEC_ATAK_ScrollGroups).
     L'aide (facultative) s'affiche en infobulle. Hauteur occupée par le contenu : uiNamespace COMSPEC_ATAK_FormH ;
     fond du formulaire : (contrôle renvoyé) getVariable "bg".
     Les champs sont lisibles ensuite par [clé] call comspec_atak_native_fnc_formValue.
@@ -70,6 +73,9 @@ private _w = _rw - 0.014 - 2 * _pad;
 private _rowH = _font * 1.55;
 private _y = _pad;
 private _fields = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
+// Lignes à mise à jour sur place (fn_formSet) : id -> contrôles.
+private _ids = uiNamespace getVariable ["COMSPEC_ATAK_FormIds", createHashMap];
+uiNamespace setVariable ["COMSPEC_ATAK_FormIds", _ids];
 ([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
 // Clic différé d'une image : beaucoup d'actions redessinent la page (ou en changent), ce qui supprimait le bouton
 // pendant son propre gestionnaire, une cause connue d'arrêt du moteur (« can't resize AutoArray to negative size »).
@@ -321,7 +327,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
         };
         case "switch": {
             // Ligne réglage : libellé + aide à gauche, interrupteur à droite ; « IMPOSÉ » si la communauté fixe la valeur.
-            _row params ["", "_label", "_on", "_code", ["_help", ""], ["_locked", false]];
+            _row params ["", "_label", "_on", "_code", ["_help", ""], ["_locked", false], ["_id", ""]];
             // Pastille plafonnée au tiers de la ligne : dans le volet étroit de la carte, elle prenait toute la largeur
             // et le libellé disparaissait (on ne voyait que des « OUI »).
             private _pillW = (_font * 3.6 * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW])) min (_w * 0.3);
@@ -343,6 +349,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             [_pill, _pillW, (_fs * 0.85) max COMSPEC_ATAK_FontMin] call _fit;
             _pill ctrlSetBackgroundColor ([[[0.30, 0.34, 0.32, 1], _acc] select _on, [0.55, 0.38, 0.08, 1]] select _locked);
             _pill ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.03, 0.05, 0.04, 1]] select (_on && {!_locked}));
+            if (_id isNotEqualTo "") then { _ids set [_id, createHashMapFromArray [["kind", "switch"], ["pill", _pill], ["locked", _locked], ["w", _pillW], ["fh", (_fs * 0.85) max COMSPEC_ATAK_FontMin]]]; };
             if !(_locked) then {
                 private _b = ["COMSPEC_RscButtonOverlay", [_pad, _y, _w, _h]] call _mk;
                 [_b, _code] call _click;
@@ -358,7 +365,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             // Titre et résumé dans un seul texte (titre à gauche, résumé aligné à droite) sur toute la largeur hors
             // chevron : deux colonnes fixes coupaient les mots (« SITUAT ION ») et posaient le compteur sur le titre.
             // Trop long, le résumé passe à la ligne et la carte s'agrandit, sans chevauchement.
-            _row params ["", "_title", ["_sub", ""], ["_open", false], ["_code", {}]];
+            _row params ["", "_title", ["_sub", ""], ["_open", false], ["_code", {}], ["_id", ""]];
             private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
             private _h = _rowH * 1.25;
             _y = _y + _pad / 3;
@@ -376,6 +383,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _t ctrlCommit 0;
             _card ctrlSetPositionH _h;
             _card ctrlCommit 0;
+            if (_id isNotEqualTo "") then { _ids set [_id, createHashMapFromArray [["kind", "fold"], ["text", _t], ["title", _title]]]; };
             {
                 private _ln = ["COMSPEC_RscText", [_pad, _y + _x, _w, pixelH]] call _mk;
                 _ln ctrlSetBackgroundColor [1, 1, 1, [0.10, 0.16] select _open];
@@ -390,20 +398,24 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _y = _y + _h + _pad / ([3, 2] select _open);
         };
         case "slider": {
-            _row params ["", "_label", "_val", "_code", ["_help", ""], ["_active", false], ["_icon", ""], ["_iconCode", {}], ["_iconTip", ""], ["_range", [0, 100]]];
+            _row params ["", "_label", "_val", "_code", ["_help", ""], ["_active", false], ["_icon", ""], ["_iconCode", {}], ["_iconTip", ""], ["_range", [0, 100]], ["_id", ""]];
             _range params [["_min", 0], ["_max", 100]];
             private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
             private _h = _rowH * 1.3;
             private _card = ["COMSPEC_RscText", [_pad, _y, _w, _h]] call _mk;
             _card ctrlSetBackgroundColor [0.085, 0.105, 0.095, 1];
-            if (_active) then {
-                private _rim = ["COMSPEC_RscText", [_pad, _y, pixelW * 3, _h]] call _mk;
+            // Liseré créé même inactif quand la ligne se met à jour sur place (fn_formSet le montre ou le masque).
+            private _rim = controlNull;
+            if (_active || {_id isNotEqualTo ""}) then {
+                _rim = ["COMSPEC_RscText", [_pad, _y, pixelW * 3, _h]] call _mk;
                 _rim ctrlSetBackgroundColor _acc;
+                _rim ctrlShow _active;
             };
             private _ix = _pad * 1.6;
+            private _ic = controlNull;
             if (_icon isNotEqualTo "") then {
                 private _is = _rowH * 0.7;
-                private _ic = ["COMSPEC_RscPicture", [_ix, _y + (_h - _is) / 2, _is / _ratio, _is], format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon]] call _mk;
+                _ic = ["COMSPEC_RscPicture", [_ix, _y + (_h - _is) / 2, _is / _ratio, _is], format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon]] call _mk;
                 _ic ctrlSetTextColor ([[0.62, 0.68, 0.65, 1], _acc] select _active);
                 private _ib = ["COMSPEC_RscButtonOverlay", [_ix, _y + (_h - _is) / 2, _is / _ratio, _is]] call _mk;
                 if (_iconTip isNotEqualTo "") then { _ib ctrlSetTooltip ((_iconTip) call comspec_atak_native_fnc_tr); };
@@ -428,6 +440,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _sl sliderSetSpeed [1, 10];
             _sl sliderSetPosition (_val max _min min _max);
             _sl setVariable ["comspec_slide", [_code, _vt, round _val, _min]];
+            if (_id isNotEqualTo "") then { _ids set [_id, createHashMapFromArray [["kind", "slider"], ["slider", _sl], ["value", _vt], ["rim", _rim], ["icon", _ic], ["min", _min], ["max", _max]]]; };
             _sl ctrlAddEventHandler ["SliderPosChanged", {
                 params ["_c", "_v"];
                 (_c getVariable ["comspec_slide", [{}, controlNull, -1, 0]]) params ["_code", "_vt", "_last", ["_min", 0]];
@@ -1005,5 +1018,24 @@ private _lineIdx = 0; // lignes "line" : fond alterné
 } forEach _rows;
 uiNamespace setVariable ["COMSPEC_ATAK_Form", _fields];
 uiNamespace setVariable ["COMSPEC_ATAK_FormH", _y + _pad];
+// Défilement gardé quand la même page se redessine (retour de jeu 2.9.27 : un clic sur un réglage ramenait la liste en
+// haut). Nom : page + types et titres des premières lignes (un autre onglet de la page ne reprend pas ce défilement).
+// Messagerie exclue (elle tient son propre défilement, fil en bas).
+private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+private _pg = _st getOrDefault ["pageDrawn", ""];
+if (_pg isNotEqualTo "" && {_pg isNotEqualTo "CHAT"}) then {
+    private _nm = format ["form|%1|%2", _pg, str ((_rows select [0, 3]) apply { [_x param [0, ""], [_x param [1, ""], ""] select !((_x param [1, ""]) isEqualType "")] })];
+    private _sg = uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []];
+    _sg pushBack [_nm, _grp];
+    uiNamespace setVariable ["COMSPEC_ATAK_ScrollGroups", _sg];
+    if ((_st getOrDefault ["pagePrev", ""]) isEqualTo _pg) then {
+        private _v = ((_st getOrDefault ["scrollGroups", createHashMap]) getOrDefault [_nm, []]) param [0, -1];
+        if (_v > 0) then {
+            _grp ctrlSetScrollValues [_v, -1];
+            // Encore à l'image suivante, quand la hauteur du contenu est connue.
+            [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_grp, _v]] call CBA_fnc_execNextFrame;
+        };
+    };
+};
 _grp setVariable ["bg", _bg];
 _grp

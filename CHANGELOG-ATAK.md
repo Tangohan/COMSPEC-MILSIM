@@ -38,6 +38,36 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.27 : recherche d'apps instantanée, réglages sans rechargement, « Écouter » dans l'app Musique (ATAK natif 2.9.27.AG - Denver, COMSPEC Link 2.0.114)
+
+### Résumé joueur
+Type : correctif
+FR : Recherche d'apps instantanée et apps qui ne se rechargent plus à chaque clic
+- Rechercher une app : la liste se filtre pendant que vous tapez, sans recharger l'écran ni perdre de lettres. Majuscules et accents sont ignorés, le nom français ou anglais marche. Entrée ouvre la première app trouvée, Échap efface la recherche. Le champ de recherche existe aussi en mode PETIT.
+- App Musique : le haut-parleur, les volumes, couper le son, aléatoire, répéter et pause changent sur place, sans remettre la page à zéro.
+- Dans toutes les apps, la liste reste à la même position après un clic qui met l'écran à jour.
+- En anglais, l'app Musique affiche LISTEN au lieu de READ, et les onglets et boutons de lecture sont traduits.
+EN : Instant app search and apps that no longer reload on every click
+- Search for an app: the list filters as you type, without reloading the screen or losing letters. Case and accents are ignored, the French or English name works. Enter opens the first match, Esc clears the search. The search field is also there in SMALL mode.
+- Music app: speaker, volumes, mute, shuffle, repeat and pause change in place, without resetting the page.
+- In every app, the list stays where it was after a click that updates the screen.
+- In English, the Music app shows LISTEN instead of READ, and the playback tabs and buttons are translated.
+
+### Détail technique
+- Lanceur : `fn_launcherRender` crée une fois en-têtes et tuiles (sections repliées comprises quand la recherche est active) en haut de la zone des apps et publie le modèle `COMSPEC_ATAK_LauncherModel` ; nouveau `fn_launcherFilter` [texte, garder le défilement] : `ctrlShow` + `ctrlSetPosition` / `ctrlCommit 0` des contrôles existants (positions de repos de l'effet d'appui suivies), en-têtes vides masqués, compteur de section = résultats, « Aucune app ne correspond. », retour en haut à la frappe. Aucun `ctrlCreate` ni rendu de page pendant la frappe ; débounce 0,1 s (`COMSPEC_ATAK_LauncherTok`).
+- Recherche sans casse ni accents (`fn_patchCatalog "fold"`) sur nom français, nom traduit, `id` et `page` de l'app, clé calculée une fois par tuile. Recherche active : sections seulement (épinglées, récentes et groupes masqués), base = puce choisie (ÉPINGLÉES, section ; GROUPES → toutes les sections).
+- Entrée : filtre appliqué tout de suite, première app hors W.I.P ouverte. Échap : `fn_keyBlock` efface le champ marqué `launcherSearch` (sinon Échap agit comme avant). Bouton × toujours créé, montré selon le texte. Mode PETIT : champ compact (1,3 x police), sans puces.
+- `fn_formSet` (nouveau) : lignes `switch` / `slider` / `fold` de `fn_formRender` déclarées avec un id, mises à jour sur place (pastille, curseur, valeur, liseré, icône, résumé) ; ids remis à zéro par `fn_pageRender`. Liseré du curseur créé même inactif quand il a un id.
+- `fn_formRender` : défilement du formulaire gardé au redessin de la même page (nom `form|page|types et titres des 3 premières lignes` dans `COMSPEC_ATAK_ScrollGroups`, restauré si `pagePrev` = `pageDrawn`, encore à l'image suivante). CHAT exclu.
+- Musique : `fn_musicAction` speaker / hear / vol / spkVol / volMute / spkMute (nouveaux, remplacent le code d'icône figé au rendu) / shuffle / repeat / toggle sans `fn_pageRender` ; `sonSub` (résumé de la section Son) ; `fn_vizPlayer` publie `COMSPEC_ATAK_PlayerVizModes` (icônes et infobulles aléatoire / répéter).
+- i18n : boutons de piste et de lien « LIRE » → « ÉCOUTER » (LISTEN), onglet « LECTURE » → « LECTEUR » (PLAYER), « LECTURE » (bouton AAR) → PLAY ; « LIRE » → READ reste pour les autres usages. Texte du réglage « Recherche dans le lanceur » mis à jour.
+- Note `docs/bugs/2026-11-01-recherche-apps-et-pages-redessinees.md`. Connect et Link inchangés.
+
+### À tester en jeu
+- Lanceur en main : taper vite « carte », « map », « reglages » (sans accent), « settings », un nom de classe ; Entrée ouvre l'app ; Échap efface sans ranger le téléphone, puis Échap range comme avant ; × efface ; puces ÉPINGLÉES / section / GROUPES puis recherche ; sections repliées trouvées ; « Aucune app ne correspond. » ; défilement et fondu d'arrivée sur l'accueil ; mode PETIT (champ compact).
+- Musique : haut-parleur, entendre, curseurs et icônes couper / rétablir, aléatoire, répéter, pause : la page ne clignote plus, la liste ne remonte pas ; titre et « HAUT-PARLEUR » du lecteur suivent. En anglais : LISTEN, PLAYER, PLAY ALL.
+- Autres apps en formulaire (Réglages des apps, Drone, JTAC, Athena) : un clic qui redessine garde la position de la liste ; changer d'onglet repart en haut.
+
 ## Pack 2.9.26 : Tenues refaites, ordres aux IA, jeu sans Athena, note de licence, tracé par les routes (ATAK natif 2.9.26.AG - Denver, COMSPEC Link 2.0.114)
 
 ### Résumé joueur

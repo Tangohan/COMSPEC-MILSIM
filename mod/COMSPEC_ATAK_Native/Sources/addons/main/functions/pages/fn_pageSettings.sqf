@@ -176,7 +176,7 @@ private _perso = [["section", "Téléphone", "L'objet porté, l'antenne"]] + [
     ["COMSPEC_ATAK_PressFx", true, "", "Icône qui s'enfonce à l'appui", "L'icône d'une app s'enfonce légèrement sous le doigt"] call _profSwitch,
     ["COMSPEC_ATAK_TapFeedback", true, "", "Clic et vibration des appuis", "Petit clic et légère vibration à chaque appui (sans son en mode discrétion)"] call _profSwitch,
     ["COMSPEC_ATAK_HandHint", true, "", "Rappel « prendre en main » quand le téléphone est porté", "Petite icône de main et Ctrl+Maj+U dans la barre du téléphone porté. Désactivé : écran sans indication, plus immersif"] call _profSwitch,
-    ["COMSPEC_ATAK_LauncherSearch", true, "", "Recherche dans le lanceur", "Champ « Rechercher une app » en haut de la liste des apps (en main). Entrée ouvre la première trouvée"] call _profSwitch,
+    ["COMSPEC_ATAK_LauncherSearch", true, "", "Recherche dans le lanceur", "Champ « Rechercher une app » en haut de la liste des apps (en main) : la liste se filtre pendant la frappe, Entrée ouvre la première trouvée, Échap efface"] call _profSwitch,
     ["section", "Accessoires", "Batterie externe, filtre d'écran JVN, module DL-7"],
     ["switch", format ["Batterie externe sur la plaque%1", ["", format [" (%1 %%)", round (missionNamespace getVariable ["COMSPEC_ATAK_PowerBankCharge", 100])]] select (missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false])],
         missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false],

@@ -133,6 +133,7 @@ private _totW = (count _btns - 1) * _gap;
 { _totW = _totW + (_x select 0) / _ratio; } forEach _btns;
 private _bx = _rx + (_rw - _totW) / 2;
 private _playPic = controlNull;
+private _modeCtl = [];
 {
     _x params ["_s", "_pic", "_code", "_tip"];
     _pic params ["_img", "_col"];
@@ -142,6 +143,7 @@ private _playPic = controlNull;
     if (_forEachIndex isEqualTo 2) then { _playPic = _p; };
     private _b = [["COMSPEC_RscButtonOverlay", "COMSPEC_RscButtonInvisible"] select (_forEachIndex isEqualTo 2), [_bx, _py, _s / _ratio, _s]] call _mk;
     [_b, _code, _tip] call _click;
+    if (_forEachIndex in [0, 4]) then { _modeCtl pushBack [_p, _b]; };
     _bx = _bx + _s / _ratio + _gap;
 } forEach _btns;
 _y = _y + _bigD + _g * 0.7;
@@ -163,8 +165,27 @@ private _sx = _rx + (_rw - (count _sk) * _skW - ((count _sk) - 1) * _skGap) / 2;
 
 uiNamespace setVariable ["COMSPEC_ATAK_PlayerViz", createHashMapFromArray [
     ["title", _title], ["sub", _sub], ["fill", _fill], ["knob", _knob], ["bar", [_rx, _trY, _rw, _trH]], ["tL", _tL], ["tR", _tR],
-    ["eq", _eq], ["eqGeo", _eqGeo], ["lv", []], ["play", _playPic]
+    ["eq", _eq], ["eqGeo", _eqGeo], ["lv", []], ["play", _playPic], ["modes", _modeCtl]
 ]];
+// Aléatoire et répéter mis à jour sur place (fn_musicAction), sans redessiner la page.
+uiNamespace setVariable ["COMSPEC_ATAK_PlayerVizModes", {
+    private _e = uiNamespace getVariable ["COMSPEC_ATAK_PlayerViz", createHashMap];
+    (_e getOrDefault ["modes", []]) params [["_sh", []], ["_rp", []]];
+    _sh params [["_shP", controlNull], ["_shB", controlNull]];
+    _rp params [["_rpP", controlNull], ["_rpB", controlNull]];
+    if (isNull _shP || {isNull _rpP}) exitWith {};
+    private _m = [] call comspec_atak_native_fnc_musicState;
+    ([] call comspec_atak_native_fnc_accent) params ["_acc"];
+    private _dim = [0.56, 0.62, 0.59, 1];
+    private _dir = "\z\comspec_atak_native\addons\main\data\";
+    private _shuffle = _m get "shuffle";
+    private _rep = _m get "repeat";
+    _shP ctrlSetTextColor ([_dim, _acc] select _shuffle);
+    _shB ctrlSetTooltip ((["Lecture aléatoire : non", "Lecture aléatoire : oui"] select _shuffle) call comspec_atak_native_fnc_tr);
+    _rpP ctrlSetText (((_dir + (["ui_repeat", "ui_repeat_one"] select (_rep isEqualTo "one")) + ".paa")) call comspec_atak_native_fnc_tr);
+    _rpP ctrlSetTextColor ([_acc, _dim] select (_rep isEqualTo "off"));
+    _rpB ctrlSetTooltip (((createHashMapFromArray [["off", "Répéter : non"], ["all", "Répéter : la file"], ["one", "Répéter : le morceau"]]) getOrDefault [_rep, ""]) call comspec_atak_native_fnc_tr);
+}];
 private _upd = {
     private _e = uiNamespace getVariable ["COMSPEC_ATAK_PlayerViz", createHashMap];
     if ((count _e) isEqualTo 0 || {isNull (_e get "title")}) exitWith { false };

@@ -294,6 +294,18 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1259, '2026-11-01', 'Recherche d’apps instantanée, réglages sans rechargement', 'Avec le pack 2.9.27, la recherche d’apps du téléphone filtre la liste pendant la frappe, sans recharger l’écran ni perdre de lettres (Entrée ouvre la première app, Échap efface), y compris en mode PETIT. L’app Musique change le haut-parleur, les volumes, l’aléatoire, la répétition et la pause sur place, et toutes les apps gardent leur position dans la liste après un clic.', [
+                'Recherche d’apps dans le mode PETIT (champ compact)',
+            ], [
+                'Recherche d’apps instantanée, sans casse ni accents, nom français ou anglais',
+                'Musique : haut-parleur, volumes, aléatoire, répéter et pause sans rechargement de la page',
+                'Position de la liste gardée après un clic dans toutes les apps',
+            ], [
+                'Recherche d’apps qui rechargeait l’écran à chaque lettre',
+                'App Musique en anglais : « READ » remplacé par « LISTEN »',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.27 (liaison 2.0.114 incluse), quittez Arma complètement et relancez.',
+            ], 'Pack téléphone 2.9.27'),
             $pr(1257, '2026-11-01', 'Back-office réorganisé, dotation alimentée par le jeu, compétences et parcours, matricules, disponibilité et confidentialité', 'Le menu du back-office est rangé par usage avec des sous-menus repliables. La page Référentiels › Dotation compare l’équipement réellement porté en jeu au kit de chaque fonction. Le référentiel des compétences relie chaque compétence aux cours Academy, qualifications, emplois et dotation, et l’Academy propose un générateur de parcours. Les pages Matricules, Équipes et Groupes sont refaites, et l’organigramme reste affiché même si une donnée annexe est indisponible. La page Disponibilité est repensée et les éléments confidentiels s’affichent partout de la même façon ; plusieurs fuites de noms sont fermées.', [
                 'Menu du back-office par usage (Pilotage, Effectifs, Organisation, Academy…) avec sous-menus repliables, page courante ouverte d’office et navigation au clavier',
                 'Référentiels › Dotation : conformité de chaque joueur au kit de sa fonction, objets manquants ou en plus, catalogue des objets vus en jeu avec ajout direct au référentiel',
