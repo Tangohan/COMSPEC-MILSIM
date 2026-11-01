@@ -128,8 +128,8 @@ switch (_action) do {
         ];
         [{ params ["_r", "_side"]; ["comspec_atak_native_sideEvent", ["comspec_atak_native_medevac", [_r, _side], _side]] call CBA_fnc_serverEvent; }, [_r, str side group player], "MEDEVAC", 2] call comspec_atak_native_fnc_netSend;
         ["SUCCESS", "MEDEVAC envoyé au camp · suivi dans l'onglet MEDEVAC", 5, 50] call comspec_atak_native_fnc_notify;
-        // Avec Overwatch : aussi au poste web.
-        if (isNil "comspec_overwatch_connect_fnc_requestMEDEVAC") exitWith {};
+        // Avec Overwatch : aussi au poste web (pas sans Athena : la demande échouait et affichait une fausse erreur).
+        if (isNil "comspec_overwatch_connect_fnc_requestMEDEVAC" || {([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on"}) exitWith {};
         private _args = [_m getOrDefault ["prio", "URGENT"], ["mT1", "1"] call _n, ["mT2", "0"] call _n, ["mT3", "0"] call _n,
             _m getOrDefault ["sec", "NO_ENEMY"], _m getOrDefault ["mark", "SMOKE"], _m getOrDefault ["col", "GREEN"], _pos, _m getOrDefault ["mRem", ""], _grid];
         _args spawn {

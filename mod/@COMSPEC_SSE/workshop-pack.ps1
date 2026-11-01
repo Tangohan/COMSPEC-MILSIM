@@ -6,6 +6,7 @@
   Copie uniquement les artefacts destines a la diffusion Steam :
     - mod.cpp (+ meta.cpp s'il existe)
     - CREDITS.md (credits / licences)
+    - LICENSE.txt (licence d'utilisation, tous droits reserves)
     - CHANGELOG.md (historique versions, a la racine du pack)
     - addons/comspec_sse_*.pbo (+ event. .bisign)
     - logos (logo.paa, logoSmall.paa, overview.paa)
@@ -101,6 +102,12 @@ $credits = Join-Path $SourceMod 'CREDITS.md'
 if (Test-Path -LiteralPath $credits) {
     Copy-Item -LiteralPath $credits -Destination (Join-Path $OutDir 'CREDITS.md') -Force
 }
+
+$license = Join-Path $SourceMod 'LICENSE.txt'
+if (-not (Test-Path -LiteralPath $license)) {
+    Write-Fail "LICENSE.txt introuvable (licence d'utilisation obligatoire dans le pack)."
+}
+Copy-Item -LiteralPath $license -Destination (Join-Path $OutDir 'LICENSE.txt') -Force
 
 $changelogRoot = Join-Path $SourceMod 'CHANGELOG.md'
 $changelogDocs = Join-Path $SourceMod 'docs\CHANGELOG.md'

@@ -93,7 +93,7 @@ ils sont supprimés automatiquement au changement de page.
 - Ne modifiez pas les variables `COMSPEC_ATAK_*` du téléphone : lisez-les seulement.
 - Un serveur peut retirer n'importe quelle app, module compris, avec le réglage CBA
   « Apps désactivées » (noms de classe séparés par des virgules).
-- Publiez votre module sous votre propre licence. COMSPEC ATAK est non commercial (APL-SA).
+- Publiez votre module sous votre propre licence. COMSPEC ATAK reste sous sa licence (LICENSE, tous droits réservés) : votre module ne doit pas en recopier le code.
 
 ## 5. Brouilleurs : brouiller l'ATAK depuis une mission ou un autre mod
 

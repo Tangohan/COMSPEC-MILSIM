@@ -105,11 +105,17 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["srvMeta", [_m, objNu
 // Mode local et poste TOC : messages du poste et ordres émis sans Athena, rejoués aux arrivants.
 ["comspec_atak_native_tocMsg", { [_this param [4, ""], "comspec_atak_native_tocMsg", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_localOrder", { [_this param [1, ""], "comspec_atak_native_localOrder", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
+// Messagerie sans Athena (canaux général, commandement, groupe : fn_chatSend), rejouée aux arrivants.
+["comspec_atak_native_chatLocal", { [_this param [5, ""], "comspec_atak_native_chatLocal", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
+// Ordres aux groupes IA (fn_aiOrder) : demandes vérifiées ici, dernier état de chaque groupe gardé pour les arrivants.
+COMSPEC_ATAK_SrvAiOrd = createHashMap;    // camp -> (netId du groupe -> état)
+["comspec_atak_native_aiOrdSrv", { ["srv", _this] call comspec_atak_native_fnc_aiOrder; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_aiOrdState", { ["keep", _this] call comspec_atak_native_fnc_aiOrder; }] call CBA_fnc_addEventHandler;
 // Événements de camp (logistique, MEDEVAC, BDA, comptes rendus, alertes) : relayés par le serveur aux seuls joueurs du camp.
 // CBA_fnc_globalEvent les envoyait aussi au camp adverse, qui les jetait. Le serveur les reçoit comme avant (journal ci-dessus).
 ["comspec_atak_native_sideEvent", {
     params [["_ev", ""], ["_args", []], ["_side", ""]];
-    if !(_ev in ["comspec_atak_native_logi", "comspec_atak_native_medevac", "comspec_atak_native_medevacStatus", "comspec_atak_native_bda", "comspec_atak_native_report", "comspec_atak_native_alert", "comspec_atak_native_orderAck", "comspec_atak_native_reportRcpt", "comspec_atak_native_tocMsg", "comspec_atak_native_localOrder"]) exitWith {};
+    if !(_ev in ["comspec_atak_native_logi", "comspec_atak_native_medevac", "comspec_atak_native_medevacStatus", "comspec_atak_native_bda", "comspec_atak_native_report", "comspec_atak_native_alert", "comspec_atak_native_orderAck", "comspec_atak_native_reportRcpt", "comspec_atak_native_tocMsg", "comspec_atak_native_localOrder", "comspec_atak_native_chatLocal", "comspec_atak_native_aiOrdState"]) exitWith {};
     [_ev, _args] call CBA_fnc_localEvent;
     private _to = allPlayers select { !local _x && {(str side group _x) isEqualTo _side} };
     // Compte rendu : auteur retenu pour ses accusés ; « MON GROUPE » ne part qu'aux joueurs du groupe (le client filtre aussi).
@@ -179,6 +185,8 @@ COMSPEC_ATAK_FtCheck = {
     private _side = str side group _unit;
     // Journal du camp, puis les « VU » des ordres, puis les accusés des C.R. dont l'arrivant est l'auteur (après leurs C.R.).
     private _log = (COMSPEC_ATAK_SrvLog getOrDefault [_side, []]) + (COMSPEC_ATAK_SrvSeen getOrDefault [_side, []]);
+    // Dernier état des ordres aux groupes IA du camp (fn_aiOrder) : un par groupe.
+    { _log pushBack ["comspec_atak_native_aiOrdState", [_x, (keys _y) apply { [_x, _y get _x] }, _side]]; } forEach (COMSPEC_ATAK_SrvAiOrd getOrDefault [_side, createHashMap]);
     private _me = getPlayerUID _unit;
     {
         if (_y isEqualTo _me) then {

@@ -5,7 +5,8 @@
 params [["_display", displayNull]];
 if (!hasInterface || {isNull _display}) exitWith {};
 private _ver = getText (configFile >> "CfgPatches" >> "comspec_overwatch_connect" >> "versionStr");
-if ((profileNamespace getVariable ["comspec_overwatch_beta_banner_closed", ""]) isEqualTo _ver) exitWith {};
+// Fermé par la croix : seulement une fois la licence acceptée (sinon le bandeau reste, il rouvre la note de service).
+if (((profileNamespace getVariable ["comspec_overwatch_beta_banner_closed", ""]) isEqualTo _ver) && {([] call comspec_overwatch_connect_fnc_licenceStatus) select 1}) exitWith {};
 
 private _bg = _display displayCtrl 9612;
 if (isNull _bg) then {

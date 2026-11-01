@@ -1,14 +1,14 @@
 /*
-    Note bêta / CGU — overlay dans le menu principal Arma (une fois par profil).
-    Fenêtre Windows en repli si l’overlay n’a pas pu s’ouvrir.
+    Note de service (accès au mod, licence, bêta) — overlay dans le menu principal Arma.
+    Affichée tant que la licence courante n'est pas acceptée (fn_licenceStatus), que l'unité utilise Athéna ou non,
+    et, avec Athéna, tant que la note bêta n'est pas confirmée sur ce profil.
+    Fenêtre Windows (DLL) en repli seulement pour la note bêta seule : la licence s'affiche toujours dans l'overlay.
     Jamais de popup automatique en mission (parade de dialogues + gel REAPP).
-    Params: [_force] — relire depuis le bandeau menu / hub / réglages.
+    Params: [_force] — relire depuis le bandeau menu / hub / réglages du téléphone.
 */
 params [["_force", false]];
 
 if (!hasInterface) exitWith {};
-if (([] call comspec_overwatch_connect_fnc_athenaMode) isNotEqualTo "on") exitWith {};
-if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 
 private _fnc_isTrue = {
     params ["_v"];
@@ -17,10 +17,14 @@ private _fnc_isTrue = {
     }
 };
 
+private _licOk = ([] call comspec_overwatch_connect_fnc_licenceStatus) select 1;
+private _athOn = (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "on")
+    && {missionNamespace getVariable ["comspec_overwatch_enabled", true]};
 private _cguAck = [profileNamespace getVariable ["comspec_overwatch_cgu_ack", false]] call _fnc_isTrue;
 private _betaAck = [profileNamespace getVariable ["comspec_overwatch_beta_note_ack", false]] call _fnc_isTrue;
 
-if (!_force && {_cguAck}) exitWith {
+if (!_force && {_licOk} && {!_athOn || {_cguAck}}) exitWith {
+    if (!_athOn) exitWith {};
     if (!_betaAck) then {
         profileNamespace setVariable ["comspec_overwatch_beta_note_ack", true];
         [] call comspec_overwatch_connect_fnc_saveProfile;
@@ -53,6 +57,8 @@ if (_opened) exitWith {
 };
 
 if (!_force && {!_onMainMenu}) exitWith {};
+// La fenêtre Windows de la DLL ne montre que la note bêta : pas de repli tant que la licence n'est pas acceptée.
+if (!_licOk || {!_athOn}) exitWith {};
 if (_force && {!isNull findDisplay 46} && {!([] call comspec_overwatch_connect_fnc_canShowWinMessageBox)}) exitWith {};
 
 missionNamespace setVariable ["COMSPEC_BetaAccessNoteShown", true, false];

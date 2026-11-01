@@ -7,7 +7,9 @@
       - la vraie carte d'Arma, en grand : marqueurs de la mission et de l'ATAK, nœuds ATAK du camp (joueurs et IA
         équipées, symbole OTAN, en direct / ancien / perdu / hors ligne), comptes rendus et alertes géolocalisés,
         objectif de l'ordre en cours (clic droit sur la carte), poste TOC ;
-      - GROUPES : groupes du camp (chef, effectif, nœuds, grille), ordre au groupe, message au chef ;
+      - GROUPES : groupes du camp (chef, effectif, nœuds, grille), ordre au groupe, message au chef, et pour un groupe
+        IA, ORDRE IA exécuté pour de vrai (aller, patrouiller, attaquer, tenir, embarquer, posture… au point du clic droit,
+        fn_aiOrder) ; état de l'ordre sur la carte ;
       - FLUX : comptes rendus, alertes, MEDEVAC, BDA, ordres et messages du camp ;
       - ORDRES : rédacteur d'ordre (type, destinataire, priorité, consigne, objectif), ordres émis et leurs réponses ;
       - CAMP : message à tout le camp ou à un chef de groupe (arrive dans Messages), indicatif du poste.
@@ -35,14 +37,14 @@ private _feedOf = { (missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
 private _sideRgb = (createHashMapFromArray [["WEST", [0.28, 0.62, 1]], ["EAST", [0.95, 0.3, 0.25]], ["GUER", [0.36, 0.85, 0.42]], ["CIV", [0.75, 0.5, 0.95]]]) getOrDefault [_side, [0.28, 0.62, 1]];
 private _kinds = [["DÉPLACER", "MOVE"], ["TENIR", "HOLD"], ["RECO", "RECON"], ["APPUI AÉRIEN", "CAS"], ["RENFORT", "QRF"], ["FRAGO", "FRAGO"], ["DEM-SSE", "DEMSSE"]];
-// Groupes du camp : ceux qui ont des joueurs, et ceux dont un membre est un nœud ATAK (IA équipées).
+// Groupes du camp : ceux qui ont des joueurs, ceux dont un membre est un nœud ATAK (IA équipées) et les groupes IA (ordres IA).
 private _groups = {
     params [["_nodes", []]];
     private _names = _nodes apply { _x param [7, ""] };
     private _out = [];
     {
         private _g = _x;
-        if ((str side _g) isEqualTo _side && {({alive _x} count (units _g)) > 0} && {({isPlayer _x} count (units _g)) > 0 || {(groupId _g) in _names}}) then {
+        if ((str side _g) isEqualTo _side && {({alive _x} count (units _g)) > 0} && {({isPlayer _x} count (units _g)) > 0 || {(groupId _g) in _names} || {!unitIsUAV (vehicle leader _g)}}) then {
             private _gn = groupId _g;
             private _mine = _nodes select { (_x param [7, ""]) isEqualTo _gn };
             private _n = 0; private _best = 9; private _p = [];
@@ -180,7 +182,11 @@ switch (_mode) do {
         // GROUPES
         private _gl = ["COMSPEC_RscListBox", [_cx, _cy, _cw, _ch * 0.56], "gList"] call _mk;
         _gl ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ["pick", ["GROUPES", _c lbData _i]] call comspec_atak_native_fnc_tocLaptop; }];
-        ["COMSPEC_RscStructuredText", [_cx, _cy + _ch * 0.58, _cw, _ch * 0.3], "gInfo"] call _mk;
+        ["COMSPEC_RscStructuredText", [_cx, _cy + _ch * 0.58, _cw, _ch * 0.27], "gInfo"] call _mk;
+        // Ordre réel à un groupe IA (fn_aiOrder), au point choisi d'un clic droit sur la carte.
+        private _ga = ["COMSPEC_RscCombo", [_cx, _cy + _ch - 2 * _rh - _H * 0.008, _cw - _bw3 - _m, _rh], "gAi"] call _mk;
+        { if ((_x select 0) isNotEqualTo "FOLLOW") then { private _i = _ga lbAdd ((_x select 1) call comspec_atak_native_fnc_tr); _ga lbSetData [_i, _x select 0]; }; } forEach (["kinds"] call comspec_atak_native_fnc_aiOrder);
+        ["gAiGo", [_cx + _cw - _bw3, _cy + _ch - 2 * _rh - _H * 0.008, _bw3, _rh], "ORDRE IA", { ["act", "gAiGo"] call comspec_atak_native_fnc_tocLaptop; }, true, "Le groupe IA choisi exécute l'ordre au point du clic droit (sinon sur place)"] call _btn;
         ["gOrder", [_cx, _cy + _ch - _rh, _bw3, _rh], "ORDRE AU GROUPE", { ["act", "gOrder"] call comspec_atak_native_fnc_tocLaptop; }, true] call _btn;
         ["gMsg", [_cx + _bw3 + _m, _cy + _ch - _rh, _bw3, _rh], "MESSAGE AU CHEF", { ["act", "gMsg"] call comspec_atak_native_fnc_tocLaptop; }] call _btn;
         ["gCenter", [_cx + 2 * (_bw3 + _m), _cy + _ch - _rh, _bw3, _rh], "CENTRER", { ['frame', 'sel'] call comspec_atak_native_fnc_tocLaptop; }] call _btn;
@@ -247,7 +253,7 @@ switch (_mode) do {
         {
             _x params ["_k", "_dk"];
             (_ui get _k) ctrlAddEventHandler ["LBSelChanged", compile format ["params ['_c', '_i']; if (_i >= 0) then { (uiNamespace getVariable ['COMSPEC_ATAK_TocLapDraft', createHashMap]) set [%1, _c lbData _i]; };", str _dk]];
-        } forEach [["oKind", "kind"], ["oPrio", "prio"], ["oTarget", "target"], ["cDest", "dest"], ["cPrio", "mprio"]];
+        } forEach [["oKind", "kind"], ["oPrio", "prio"], ["oTarget", "target"], ["cDest", "dest"], ["cPrio", "mprio"], ["gAi", "aikind"]];
         // Ligne d'état.
         private _bar = ["COMSPEC_RscStructuredText", [_xi, _yi + _hi - _sb, _wi, _sb], "bar"] call _mk;
         _bar ctrlSetBackgroundColor [0.06, 0.08, 0.07, 1];
@@ -255,6 +261,9 @@ switch (_mode) do {
         _ok lbSetCurSel ((_kinds findIf { (_x select 1) isEqualTo (_draft getOrDefault ["kind", "MOVE"]) }) max 0);
         _op lbSetCurSel ((["ROUTINE", "IMPORTANT", "URGENT", "FLASH"] find (_draft getOrDefault ["prio", "ROUTINE"])) max 0);
         _cp lbSetCurSel ((["ROUTINE", "URGENT", "FLASH"] find (_draft getOrDefault ["mprio", "ROUTINE"])) max 0);
+        private _gaN = (lbSize _ga) - 1;
+        for "_i" from 0 to _gaN do { if ((_ga lbData _i) isEqualTo (_draft getOrDefault ["aikind", "MOVE"])) then { _ga lbSetCurSel _i; }; };
+        if ((lbCurSel _ga) < 0) then { _ga lbSetCurSel 0; };
         (_ui get "oText") ctrlSetText (_draft getOrDefault ["text", ""]); // i18n:brut
         (_ui get "oGrid") ctrlSetText (_draft getOrDefault ["grid", ""]); // i18n:brut
         (_ui get "cText") ctrlSetText (_draft getOrDefault ["msg", ""]); // i18n:brut
@@ -292,7 +301,7 @@ switch (_mode) do {
         private _t = [_a, "GROUPES"] select !(_a in ["GROUPES", "FLUX", "ORDRES", "CAMP"]);
         _st set ["tab", _t];
         private _sets = createHashMapFromArray [
-            ["GROUPES", ["gList", "gInfo", "gOrder", "gMsg", "gCenter"]],
+            ["GROUPES", ["gList", "gInfo", "gOrder", "gMsg", "gCenter", "gAi", "gAiGo"]],
             ["FLUX", ["fList", "fInfo", "fCenter"]],
             ["ORDRES", ["oL1", "oL2", "oL3", "oL4", "oL5", "oKind", "oPrio", "oTarget", "oText", "oGrid", "oClear", "oSend", "oInfo"]],
             ["CAMP", ["cL1", "cL2", "cL3", "cDest", "cPrio", "cText", "cSend", "cCs", "cSave", "cL4", "cCam", "cCamGo", "cInfo"]]
@@ -347,7 +356,8 @@ switch (_mode) do {
         private _p = _a;
         _draft set ["pos", [_p select 0, _p select 1]];
         if ((count _ui) > 0) then { (_ui get "oGrid") ctrlSetText ([[_p select 0, _p select 1, 0], 8] call comspec_atak_native_fnc_gridRef); }; // i18n:brut
-        if ((_st getOrDefault ["tab", ""]) isNotEqualTo "ORDRES") then { ["keep"] call _fn; ["tab", "ORDRES"] call _fn; };
+        // Onglet GROUPES : le point sert à l'ORDRE IA, on y reste.
+        if !((_st getOrDefault ["tab", ""]) in ["ORDRES", "GROUPES"]) then { ["keep"] call _fn; ["tab", "ORDRES"] call _fn; };
         ["status", format ["Objectif de l'ordre : grille %1", [[_p select 0, _p select 1, 0], 8] call comspec_atak_native_fnc_gridRef]] call _fn;
     };
     case "status": { [_a] call _setStatus; };
@@ -361,6 +371,13 @@ switch (_mode) do {
                 if ((count _g) isEqualTo 0) exitWith { ["Choisissez d'abord un groupe"] call _setStatus; };
                 _draft set ["target", format ["group|%1|%2", (_g select 0) select 1, (_g select 0) select 0]];
                 ["tab", "ORDRES"] call _fn;
+            };
+            case "gAiGo": {
+                private _g = ([_nodes] call _groups) select { (_x select 0) isEqualTo (_st getOrDefault ["selG", ""]) };
+                if ((count _g) isEqualTo 0) exitWith { ["Choisissez d'abord un groupe"] call _setStatus; };
+                private _grp = group ((_g select 0) select 2);
+                if (((_g select 0) select 3) > 0) exitWith { ["Groupe de joueurs : envoyez-lui un ordre (ORDRE AU GROUPE)"] call _setStatus; };
+                ["send", [_grp, _draft getOrDefault ["aikind", "MOVE"], _draft getOrDefault ["pos", []], true]] call comspec_atak_native_fnc_aiOrder;
             };
             case "gMsg": {
                 private _g = ([_nodes] call _groups) select { (_x select 0) isEqualTo (_st getOrDefault ["selG", ""]) };
@@ -480,11 +497,13 @@ switch (_mode) do {
                     format ["<t size='1.1' color='#8a9a93'>%1 groupe(s) dans le camp. Choisissez un groupe : la carte se centre sur lui, puis ORDRE AU GROUPE ou MESSAGE AU CHEF.</t>", count _groupsL]
                 } else {
                     (_g select 0) params ["_gn", "", "_ld", "_np", "_nAll", "_n", "_best", "_p"];
-                    format ["<t size='1.35' font='COMSPEC_BarlowBold'>%1</t><br/><t size='1.1'>Chef %2 %3<br/>%4 vivant(s) dont %5 joueur(s) · %6 nœud(s) ATAK<br/>%7</t>",
+                    private _ao = (missionNamespace getVariable ["COMSPEC_ATAK_AiOrds", createHashMap]) getOrDefault [[group _ld] call BIS_fnc_netId, createHashMap];
+                    format ["<t size='1.35' font='COMSPEC_BarlowBold'>%1</t><br/><t size='1.1'>Chef %2 %3<br/>%4 vivant(s) dont %5 joueur(s) · %6 nœud(s) ATAK<br/>%7%8</t>",
                         [_gn] call _esc, [name _ld] call _esc, ["", format [" · n° %1", ([_ld] call comspec_atak_native_fnc_phoneIdent) select 0]] select (isPlayer _ld), _nAll, _np, _n,
                         // if, pas [a, b] select : les deux branches seraient évaluées et _p vide (groupe sans ATAK) planterait le rafraîchissement.
                         if ((count _p) < 2) then { "<t color='#e0b040'>Position inconnue du poste : aucun ATAK dans ce groupe</t>" } else {
-                            format ["Grille %1 · %2", [[_p select 0, _p select 1, 0], 6] call comspec_atak_native_fnc_gridRef, ["en direct", "point ancien", "point perdu", "téléphone hors ligne"] select ((_best min 3) max 0)] }]
+                            format ["Grille %1 · %2", [[_p select 0, _p select 1, 0], 6] call comspec_atak_native_fnc_gridRef, ["en direct", "point ancien", "point perdu", "téléphone hors ligne"] select ((_best min 3) max 0)] },
+                        if (_np > 0) then { "" } else { format ["<br/><t color='#e0b040'>Ordre IA : %1</t>", [["aucun", format ["%1 (%2)", _ao get "lbl", _ao getOrDefault ["text", ""]]] select ("lbl" in _ao)] call _esc] }]
                 })) call comspec_atak_native_fnc_tr);
             };
             case "FLUX": {
@@ -632,6 +651,8 @@ switch (_mode) do {
             if (_fr < 2) then { _map drawArrow [_pos, _pos getPos [45, _dir], _col]; };
         } forEach _nodes;
         { _x params ["_c", "_p", "_k"]; _map drawIcon ["\A3\ui_f\data\map\markers\military\warning_CA.paa", _c, _p, 22, 22, 0, [_p, _k, 0.85] call _lbl, 1, _ts * 0.85, "RobotoCondensedBold", "right"]; } forEach _evs;
+        // Ordres aux groupes IA du camp (fn_aiOrder).
+        ["draw", [_map, _ts * 0.9, "RobotoCondensedBold"]] call comspec_atak_native_fnc_aiOrder;
         // Objectif de l'ordre en cours de rédaction (clic droit).
         private _op = _draft getOrDefault ["pos", []];
         if ((count _op) >= 2) then {

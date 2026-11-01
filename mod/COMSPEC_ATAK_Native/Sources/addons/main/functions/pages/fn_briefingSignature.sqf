@@ -14,7 +14,10 @@ if (_fid isNotEqualTo "") exitWith {
     if (_hash isNotEqualTo "" && {(LPRES_cache getOrDefault [_hash, ""]) isEqualTo ""}) then { _hash = _hash + "?"; };
     ["FENRIR", _idx, count _slides, _hash, _slides apply { _x param [1, ""] }]
 };
-if ([] call comspec_atak_native_fnc_bridge) exitWith {
+// Sans Athena : diapositives de la mission (fn_briefingAction "mission"), chargées à la première lecture.
+private _mis = ([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on" && {(count (missionNamespace getVariable ["COMSPEC_ATAK_MissionSlides", []])) > 0};
+if (_mis && {(count (missionNamespace getVariable ["COMSPEC_BriefingSlides", []])) isEqualTo 0}) then { ["mission"] call comspec_atak_native_fnc_briefingAction; };
+if ([] call comspec_atak_native_fnc_bridge || {_mis}) exitWith {
     // Source « Athena » choisie dans l'engrenage (fn_briefingSettings) : le deck Google partagé est ignoré.
     if ((missionNamespace getVariable ["COMSPEC_GoogleBriefingActive", false]) && {(profileNamespace getVariable ["COMSPEC_ATAK_BriefSource", "AUTO"]) isNotEqualTo "ATHENA"}) exitWith {
         private _total = missionNamespace getVariable ["COMSPEC_GoogleBriefingTotal", 0];

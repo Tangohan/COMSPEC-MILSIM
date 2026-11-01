@@ -1,24 +1,17 @@
 # Crédits — COMSPEC ATAK Native
 
-## Better CAS Environment (BCE) — Aaren
+## Inspirations
 
-- Dépôt : https://github.com/Aaren882/Better-CAS-Environment-
-- Licence : Arma Public License Share Alike (APL-SA)
-
-Fonctionnalités reprises de BCE et réécrites pour le terminal natif (sans cTab) :
-
-- registre d'applications déclaré en config (principe des `app.hpp` de BCE) → `COMSPEC_ATAK_Apps` ;
-- messages directs entre joueurs par événement CBA ciblé (app message de BCE) → `fn_p2pSend` / `fn_p2pReceive` ;
-- liste de groupe (app group de BCE) → `fn_pageGroup` ;
-- visionneur de tâches (app taskViewer de BCE) → `fn_pageTasks`.
-
-Non repris : `UI_Anim` (ressort du téléphone), cause des fermetures de jeu documentées dans `docs/bugs`.
+Better CAS Environment (BCE, Aaren, https://github.com/Aaren882/Better-CAS-Environment-) a inspiré certaines idées
+(registre d'applications, messages directs, liste de groupe, visionneur de tâches). Aucun code ni contenu de BCE
+n'est présent dans ce mod : ces fonctions ont été entièrement réécrites par COMSPEC.
 
 ## Licence de ce mod
 
-Conformément à l'APL-SA de BCE, `@COMSPEC_ATAK_Native` est distribué sous APL-SA (voir `LICENSE`) :
-crédit aux auteurs, usage non commercial (le mod reste gratuit et n'est réservé à aucune offre payante),
-même licence pour toute adaptation, Arma uniquement.
+`@COMSPEC_ATAK_Native` est distribué sous la licence COMSPEC (voir `LICENSE`, tous droits réservés) :
+usage personnel depuis la page officielle du Steam Workshop ; copie, modification, ré-empaquetage et
+redistribution interdits sans autorisation écrite de COMSPEC. Les éléments de tiers listés ci-dessous
+gardent leur propre licence.
 
 La coque du téléphone (S7 en coque olive, `tools/src/android_s7_ca.png`) est fournie par COMSPEC ; les icônes d'apps et d'outils sont dessinées par COMSPEC (`tools/gen_assets.py`).
 Les outils carte (bâtiments, hauteur, terrain plat, ligne de vue) sont réécrits d'après le comportement de Simple Map Tools (POLPOX), sans reprise de code.

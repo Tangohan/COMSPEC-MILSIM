@@ -22,31 +22,13 @@ private _gridPos = {
     _r params ["_p", "_s"];
     [(_p select 0) + (_s select 0) / 2, (_p select 1) + (_s select 1) / 2, 0]
 };
-// Envoi d'un ordre (vu sur le web et par les joueurs visés) quand Overwatch est là ; sinon chat local.
+// Envoi d'un ordre : sans Athena (mode full local, service « Non », pas de COMSPEC Link), ordre du camp par le serveur
+// (fn_orderLocal : app Tâches des destinataires, flux du poste TOC) ; avec Athena, ordre Overwatch (vu sur le web).
+private _local = ["local"] call comspec_atak_native_fnc_orderLocal;
 private _order = {
     params ["_type", "_target", "_body", ["_prio", "URGENT"], ["_targetType", ""]];
-    if (_bridge) exitWith { [_type, _target, _body, _prio, "", _targetType] call comspec_overwatch_connect_fnc_issueOrder; };
-    // Sans Overwatch : même envoi que le chat natif (fn_chatSend lit le champ du chat, absent sur cette page).
-    private _author = [] call comspec_atak_native_fnc_unitCallsign;
-    private _id = format ["out:%1:%2", diag_tickTime, floor random 1e5];
-    private _outbox = +((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["outbox", []]);
-    _outbox pushBack createHashMapFromArray [
-        ["id", _id], ["author", _author], ["body", _body],
-        ["time", [dayTime, "HH:MM"] call BIS_fnc_timeToString], ["status", "PENDING"]
-    ];
-    while { (count _outbox) > 30 } do { _outbox deleteAt 0; };
-    ["outbox", _outbox] call comspec_atak_native_fnc_storeSet;
-    // Libellé « Rapport » : rangé en urgent par fn_netSend (passe devant en file, jamais abandonné quand elle est pleine).
-    [{
-        params ["_id", "_author", "_message"];
-        private _raw = ["SendChat", [_author, _message]] call comspec_atak_native_fnc_extensionCall;
-        // SendChat part en file dans la DLL et répond "" : seul un retour ERR est un échec.
-        private _ok = (toUpper (_raw select [0, 3])) isNotEqualTo "ERR";
-        private _outbox = +((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["outbox", []]);
-        { if ((_x getOrDefault ["id", ""]) isEqualTo _id) then { _x set ["status", ["FAILED", "SENT"] select _ok]; }; } forEach _outbox;
-        ["outbox", _outbox] call comspec_atak_native_fnc_storeSet;
-        if !(_ok) then { ["WARNING", "Athena indisponible : message gardé sur le terminal", 4, 30] call comspec_atak_native_fnc_notify; };
-    }, [_id, _author, _body], format ["Rapport de feu %1", _type], 1] call comspec_atak_native_fnc_netSend;
+    if (_local) exitWith { ["send", [_type, (createHashMapFromArray [["CAS", "APPUI AÉRIEN"], ["CUSTOM_CFF", "APPEL DE FEU"]]) getOrDefault [_type, ""], "all", "", "", _body, ["ROUTINE", "URGENT"] select (_prio isEqualTo "URGENT")]] call comspec_atak_native_fnc_orderLocal; };
+    [_type, _target, _body, _prio, "", _targetType] call comspec_overwatch_connect_fnc_issueOrder
 };
 
 switch (_action) do {
@@ -144,14 +126,14 @@ switch (_action) do {
             private _log = _f getOrDefault ["log", []];
             _log pushBack format ["<t color='#5cc76b'>%1</t> 9-LINE · %2 · %3", [] call _time, _lines select 5, ["ordre CAS", "Athena"] select _ok];
             _f set ["log", _log select [((count _log) - 20) max 0]];
-            [["9-line transmis en ordre CAS (la DLL ne connaît pas encore SubmitNineLine).", "9-line transmis à Athena : les pilotes le reçoivent."] select _ok] call _say;
+            [[["9-line transmis en ordre CAS (la DLL ne connaît pas encore SubmitNineLine).", "9-line transmis au camp en ordre CAS (app Tâches et poste TOC)."] select _local, "9-line transmis à Athena : les pilotes le reçoivent."] select _ok] call _say;
             ["SUCCESS", "9-LINE transmis", 3, 50] call comspec_atak_native_fnc_notify;
         };
-        if (!_bridge) exitWith { [false] call _finish; };
+        if (!_bridge || {_local}) exitWith { [false] call _finish; };
         // DLL à jour : vrai 9-line sur Athena (pilotes et web). POST HTTP hors de l'image (extAwait en Async), sinon le jeu fige.
         missionNamespace setVariable ["COMSPEC_ATAK_Fires9Busy", true];
-        [_json, _text, _lines, _f, _bridge, _order, _say, _time, _render, _finish] spawn {
-            params ["_json", "_text", "_lines", "_f", "_bridge", "_order", "_say", "_time", "_render", "_finish"];
+        [_json, _text, _lines, _f, _bridge, _order, _say, _time, _render, _finish, _local] spawn {
+            params ["_json", "_text", "_lines", "_f", "_bridge", "_order", "_say", "_time", "_render", "_finish", "_local"];
             private _r = (["COMSPECExtension", "SubmitNineLine", [_json]] call comspec_atak_native_fnc_extAwait);
             if (_r isEqualType []) then { _r = _r param [0, ""]; };
             if !(_r isEqualType "") then { _r = str _r; };

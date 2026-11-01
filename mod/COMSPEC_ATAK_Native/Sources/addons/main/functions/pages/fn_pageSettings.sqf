@@ -586,7 +586,12 @@ if (_cat isEqualTo "ABOUT" || {_query isNotEqualTo ""}) then {
         ["info", "Installation", ["<t color='#5cc76b'>aucune anomalie</t>", format ["<t color='#f2ab33'>%1 anomalie(s) : voir l'app Debug</t>", count _anom]] select ((count _anom) > 0)],
         ["buttons", [
             ["CRÉDITS", { [{ ["CREDITS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }],
-            ["DEBUG", { [{ ["DEBUG"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }, (count _anom) > 0]
+            ["DEBUG", { [{ ["DEBUG"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }, (count _anom) > 0],
+            // Note de service du menu principal (accès, licence) : on range le téléphone pour lui laisser la souris.
+            ["RELIRE LA LICENCE", {
+                [] call comspec_atak_native_fnc_close;
+                [{ if (!isNil "comspec_overwatch_connect_fnc_showBetaAccessNote") then { [true] call comspec_overwatch_connect_fnc_showBetaAccessNote; }; }, [], 0.1] call CBA_fnc_waitAndExecute;
+            }, false, !isNil "comspec_overwatch_connect_fnc_showBetaAccessNote"]
         ]]
     ];
 };

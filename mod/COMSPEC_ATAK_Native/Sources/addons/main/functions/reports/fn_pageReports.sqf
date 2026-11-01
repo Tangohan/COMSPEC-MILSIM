@@ -143,7 +143,7 @@ switch (_tab) do {
             private _trail = if (_isSent) then {
                 [
                     ["<t color='#8a9a93'>non diffusé en jeu</t>", "<t color='#5cc76b'>diffusé ✓</t>"] select ((_r getOrDefault ["dest", "CAMP"]) isNotEqualTo "AUCUNE"),
-                    switch (_web) do { case "OK": { "<t color='#5cc76b'>Athena ✓</t>" }; case "ÉCHEC": { "<t color='#e5483a'>Athena : non reçu</t>" }; default { "<t color='#8a9a93'>Athena hors ligne</t>" } },
+                    switch (_web) do { case "OK": { "<t color='#5cc76b'>Athena ✓</t>" }; case "LOCAL": { "" }; case "ÉCHEC": { "<t color='#e5483a'>Athena : non reçu</t>" }; default { "<t color='#8a9a93'>Athena hors ligne</t>" } },
                     ["<t color='#8a9a93'>pas encore lu</t>", format ["<t color='#5cc76b'>lu par %1</t>", count _rc]] select ((count _rc) > 0),
                     ["", format ["<t color='#5cc76b'>reçu par %1 ✓</t>", _acks]] select (_acks > 0)
                 ] select { _x isNotEqualTo "" }

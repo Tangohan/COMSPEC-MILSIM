@@ -662,6 +662,8 @@ private _data = ["COMSPEC", "ATAK · Extraction de données"];
 if (isServer) then { ["comspec_atak_native_dataSrv", { if ((_this param [0, ""]) isNotEqualTo "code") then { _this call comspec_atak_native_fnc_dataServer; }; }] call CBA_fnc_addEventHandler; };
 // Passerelles de véhicule (fn_vehicleGateway) et messages courts du serveur vers des joueurs.
 if (isServer) then { ["comspec_atak_native_gwSrv", { _this call comspec_atak_native_fnc_vehicleGateway; }] call CBA_fnc_addEventHandler; };
+// Ordres aux groupes IA (fn_aiOrder) : exécutés là où le groupe est local (serveur, client headless, joueur).
+["comspec_atak_native_aiOrdExec", { ["exec", _this] call comspec_atak_native_fnc_aiOrder; }] call CBA_fnc_addEventHandler;
 // Téléphones ramassés par l'IA ennemie : actions là où l'unité est locale, état au serveur, alertes aux clients.
 ["comspec_atak_native_capLocal", { ["local", _this] call comspec_atak_native_fnc_captureServer; }] call CBA_fnc_addEventHandler;
 if (isServer) then { ["comspec_atak_native_captureSrv", { params [["_a", ""], ["_args", []]]; if (_a in ["dropped", "giveFail", "validate", "dismiss", "athena"]) then { [_a, _args] call comspec_atak_native_fnc_captureServer; }; }] call CBA_fnc_addEventHandler; };
@@ -699,7 +701,7 @@ private _dock = ["COMSPEC", "ATAK · Socle de recharge"];
 // Mode full local et PC portable de TOC (fn_localCfg, fn_tocPost, fn_orderLocal).
 private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_local_only", "CHECKBOX",
-    ["Mode full local (sans Athena)", "Coché : personne ne se connecte à Athena sur ce serveur, la question du service Athéna disparaît. Ordres, messages du poste, comptes rendus, numéros de téléphone et carnet passent en jeu ; chaque joueur garde sa configuration dans Documents\Arma 3\COMSPEC_Local\config.json."],
+    ["Mode full local (sans Athena)", "Coché : personne ne se connecte à Athena sur ce serveur, la question du service Athéna disparaît. Ordres et ordres aux IA, messagerie, messages du poste, marqueurs, comptes rendus, MEDEVAC, 9-line, diapositives de la mission, numéros de téléphone et carnet passent en jeu par ce serveur ; chaque joueur garde sa configuration dans Documents\Arma 3\COMSPEC_Local\config.json."],
     _loc, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_toc_enabled", "CHECKBOX",
     ["PC portables de TOC", "Un joueur à côté d'un PC de TOC (objet « PC portable de TOC (ATAK) » d'Eden ou de Zeus) a l'ATAK du poste et l'app Poste TOC : message à tout le camp, ordres aux groupes, situation, comptes rendus. Aussi sans Athena."],

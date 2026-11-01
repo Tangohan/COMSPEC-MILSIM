@@ -109,6 +109,8 @@ private _sendRcpt = {
 private _toWeb = {
     params ["_r"];
     if (isNil "comspec_overwatch_connect_fnc_submitTacticalReport") exitWith { "HORS LIGNE" };
+    // Sans Athena (mode full local, service « Non ») : le C.R. ne vit qu'en jeu, rien n'est tenté.
+    if (([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on") exitWith { "LOCAL" };
     private _sd = createHashMapFromArray [["kind", toLower (_r get "code")], ["grid", _r get "grid"], ["source", "COMSPEC ATAK · Comptes rendus"]];
     { _sd set [_x select 0, _x select 2]; } forEach (_r get "lines");
     // Remontée JNET (relais du site vers les unités au-dessus de la mienne) et photo jointe.
@@ -305,6 +307,7 @@ switch (_act) do {
         };
         ["SUCCESS", format ["%1 transmis%2", _label, switch (_r get "web") do {
             case "OK": { " · enregistré sur Athena" };
+            case "LOCAL": { " au camp" };
             case "HORS LIGNE": { " en jeu · Athena non connecté" };
             default { " en jeu · Athena n'a pas répondu (RENVOYER dans Envoyés)" };
         }], 5, 45] call comspec_atak_native_fnc_notify;
