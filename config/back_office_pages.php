@@ -258,7 +258,7 @@ return [
             ['label' => 'Réseau de relais', 'href' => 'back-office/atak/relays-network'],
             ['label' => 'Configuration réalisme', 'href' => 'back-office/ressources/atak-realism/config'],
         ]],
-        ['path' => 'back-office/atak/controle-serveur', 'group' => 'ATAK', 'kicker' => 'ATAK · MISSION', 'title' => 'Contrôle de mission', 'subtitle' => 'Les règles de la mission en cours, les fonctions activées et les relais de liaison.'],
+        ['path' => 'back-office/atak/controle-serveur', 'group' => 'ATAK', 'kicker' => 'ATAK · MISSION', 'title' => 'Contrôle de mission', 'subtitle' => 'Ce que chaque réglage change vraiment pour vos joueurs, quand il s’applique, et l’état du serveur de jeu de la communauté.'],
         ['path' => 'back-office/atak/relays-network', 'group' => 'ATAK', 'kicker' => 'ATAK · RELAIS', 'title' => 'Réseau de relais', 'subtitle' => 'Les relais radio sur le terrain : état, portée, places disponibles et fiabilité.', 'css' => ['back-office-atak-devices.css'], 'quick' => [
             ['label' => 'Contrôle de mission', 'href' => 'back-office/atak/controle-serveur'],
             ['label' => 'Mode roleplay', 'href' => 'back-office/atak/roleplay'],

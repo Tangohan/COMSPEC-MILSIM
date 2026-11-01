@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Courrier;
 
 use App\Repositories\Courrier\DocumentPresetRepository;
+use App\Support\Pdf\AthenaPdfTheme;
 
 /**
  * Export HTML / PDF : styles alignés sur {@see CourrierPrintStyles}, QR optionnel (Endroid), caviardage export externe.
@@ -80,12 +81,10 @@ body { font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; pad
         if (!class_exists(\Dompdf\Dompdf::class)) {
             return null;
         }
-        $html = $this->buildPrintHtml($document, $context, $options);
-        $dompdf = new \Dompdf\Dompdf();
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-        $binary = $dompdf->output();
+        $binary = $this->renderPdfBinary($document, $context, $options);
+        if ($binary === null) {
+            return null;
+        }
         if ($outputPath !== null) {
             if (file_put_contents($outputPath, $binary) === false) {
                 return null;
@@ -110,12 +109,16 @@ body { font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; pad
         if (!class_exists(\Dompdf\Dompdf::class)) {
             return null;
         }
-        $html = $this->buildPrintHtml($document, $context, $options);
-        $dompdf = new \Dompdf\Dompdf();
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
+        // Le courrier garde l'en-tête de la communauté (papier à en-tête) : seuls le format A4 portrait,
+        // la police embarquée (accents) et la pagination « réf · n / N » viennent du gabarit Athena.
+        $html = str_replace(
+            '</style>',
+            'body, .courrier-preview { font-family: "DejaVu Sans", sans-serif !important; }' . "
+" . '</style>',
+            $this->buildPrintHtml($document, $context, $options)
+        );
+        $reference = trim((string) ($document['reference_number'] ?? ''));
 
-        return $dompdf->output();
+        return AthenaPdfTheme::dompdfRender($html, ['reference' => $reference]);
     }
 }

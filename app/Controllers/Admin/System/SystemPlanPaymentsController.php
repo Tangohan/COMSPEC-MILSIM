@@ -138,6 +138,7 @@ final class SystemPlanPaymentsController
             'isPlatformAdminShell' => true,
             'backOfficePageCss' => ['admin-payments.css', 'donor-marks.css'],
             'payView' => $view,
+            'payDonationBanner' => $view === 'dons' ? $this->safe(static fn () => \App\Services\Platform\DonationBanner::adminSnapshot(new \App\Repositories\PlatformSettingsRepository()), null) : null,
             'payError' => $error,
             'payFocus' => $focus,
             'payLedger' => $ledger,

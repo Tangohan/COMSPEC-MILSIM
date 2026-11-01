@@ -1059,7 +1059,6 @@ return function (Router $router) {
     // Plancher de version des DLL du jeu (SEC-001) : réglage, abaissement ou retrait en un clic.
     $router->post('/admin/settings/version-dll', [SystemSettingsController::class, 'saveGameClientGate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Bandeau de don sur tout le site (activé, messages FR / EN, objectif, dates).
-    $router->post('/admin/settings/bandeau-don', [SystemSettingsController::class, 'saveDonationBanner'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/annuaire', [\App\Controllers\Admin\System\SystemRegistryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/annuaire/epingler', [\App\Controllers\Admin\System\SystemRegistryController::class, 'pin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/annuaire/retirer', [\App\Controllers\Admin\System\SystemRegistryController::class, 'unpin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1192,6 +1191,7 @@ return function (Router $router) {
     $router->get('/admin/paiements', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/paiements/export.csv', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'export'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/paiements/membres', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'searchMembers'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/paiements/bandeau-don', [SystemSettingsController::class, 'saveDonationBanner'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/dons', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'recordDonation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/dons/{id}/rembourser', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'refundDonation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/paiements/dons-stripe/{id}/annuler', [\App\Controllers\Admin\System\SystemPlanPaymentsController::class, 'stripeDonationCancel'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

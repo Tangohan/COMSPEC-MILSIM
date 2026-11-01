@@ -5,18 +5,14 @@ declare(strict_types=1);
 namespace App\Services\Aar;
 
 use App\Core\Response;
+use App\Support\Pdf\AthenaPdfTheme as Theme;
 use App\Support\TrainingCertificatePdfEngine;
 
 /**
- * Export PDF d'un compte rendu post-opération (fiche complète, tableau des actions).
+ * Export PDF d'un compte rendu post-opération (fiche complète, tableau des actions), A4 portrait au gabarit Athena.
  */
 final class AarReportPdfService
 {
-    private const INK = '#0b1220';
-    private const MUTED = '#64748b';
-    private const LINE = '#e2e8f0';
-    private const SOFT = '#f8fafc';
-    private const ACCENT = '#1e3a5f';
 
     /**
      * @param array<string, mixed> $report rapport présenté (AarReportRepository::present)
@@ -29,8 +25,7 @@ final class AarReportPdfService
             if (!TrainingCertificatePdfEngine::ensureTcpdfLoaded()) {
                 return (new Response())->setStatusCode(503)->setBody('<p>Export PDF indisponible pour le moment.</p>');
             }
-            $title = 'Compte rendu ' . $ref;
-            $binary = $this->buildPdf($this->buildHtml($report), $title, $ref);
+            $binary = $this->buildPdfBinary($report);
 
             return (new Response())
                 ->header('Content-Type', 'application/pdf')
@@ -45,151 +40,136 @@ final class AarReportPdfService
      */
     public function buildHtml(array $r): string
     {
-        $e = fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $nl = fn (mixed $v): string => nl2br($e(trim((string) $v)));
+        $e = fn (mixed $v): string => Theme::e($v);
         $status = (string) ($r['status'] ?? 'pending');
-        $statusColor = match (AarReportAdminService::tone($status)) {
-            'ok' => '#0b6b47',
-            'bad' => '#b91c1c',
-            'info' => '#1d4ed8',
-            default => '#a16207',
+        $tone = match (AarReportAdminService::tone($status)) {
+            'ok' => 'ok',
+            'bad' => 'bad',
+            'info' => 'muted',
+            default => 'warn',
         };
-        $operation = trim((string) ($r['operation_label'] ?? '')) !== '' ? (string) $r['operation_label'] : (string) ($r['title'] ?? '');
+        $operation = trim((string) ($r['operation_label'] ?? '')) !== '' ? (string) ($r['operation_label'] ?? '') : (string) ($r['title'] ?? '');
+        $window = $this->window($r['mission_started_at'] ?? null, $r['mission_ended_at'] ?? null);
+        $kicker = 'Retour d’expérience' . ($window !== '' ? ' · ' . $window : '');
 
+        $html = Theme::titleBlock($kicker, $operation, [[AarReportAdminService::statusLabel($status), $tone]]);
         $meta = [
             'Opération' => $operation,
             'Titre' => (string) ($r['title'] ?? ''),
             'Auteur' => (string) ($r['author_name'] ?? ''),
             'Déposé le' => $this->date($r['reported_at'] ?? null, 'd/m/Y à H:i'),
-            'Fenêtre de mission' => $this->window($r['mission_started_at'] ?? null, $r['mission_ended_at'] ?? null),
+            'Fenêtre de mission' => $window,
             'Relecteur' => (string) ($r['validator_name'] ?? ''),
             'Validé le' => $this->date($r['validated_at'] ?? null, 'd/m/Y'),
         ];
-        $metaRows = '';
-        foreach ($meta as $k => $v) {
-            if (trim($v) === '' || $v === '—') {
-                continue;
-            }
-            $metaRows .= '<tr><td width="32%" style="color:' . self::MUTED . ';">' . $e($k) . '</td><td width="68%">' . $e($v) . '</td></tr>';
-        }
+        $meta = array_filter($meta, static fn (string $v): bool => trim($v) !== '' && $v !== '—');
+        $half = (int) ceil(count($meta) / 2);
+        $html .= Theme::twoColumns(
+            Theme::keyValues(array_slice($meta, 0, $half, true), '42%'),
+            Theme::keyValues(array_slice($meta, $half, null, true), '42%')
+        );
 
-        $html = '<style>
-            h1 { font-size: 16pt; color: ' . self::INK . '; }
-            h2 { font-size: 10.5pt; color: ' . self::ACCENT . '; }
-            .k { font-size: 7.5pt; color: ' . self::MUTED . '; letter-spacing: 1px; }
-            .p { font-size: 9pt; color: ' . self::INK . '; }
-            td { font-size: 8.5pt; }
-        </style>';
-        $html .= '<p class="k">' . $e($r['reference_code'] ?? '') . ' · COMPTE RENDU POST-OPÉRATION</p>';
-        $html .= '<h1>' . $e($operation) . '</h1>';
-        $html .= '<p><span style="color:#ffffff;background-color:' . $statusColor . ';font-size:8pt;font-weight:bold;">&nbsp;' . $e(mb_strtoupper(AarReportAdminService::statusLabel($status), 'UTF-8')) . '&nbsp;</span></p>';
-        $html .= '<table cellpadding="4" cellspacing="0" style="border:0.3px solid ' . self::LINE . ';background-color:' . self::SOFT . ';">' . $metaRows . '</table>';
-
-        $section = function (string $num, string $title, string $body): string {
-            return '<br><p class="k">' . htmlspecialchars($num, ENT_QUOTES, 'UTF-8') . '</p><h2>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h2>' . $body;
+        $n = 0;
+        $num = static function () use (&$n): string {
+            return sprintf('%02d', ++$n);
         };
 
         $customRows = is_array($r['custom_rows'] ?? null) ? $r['custom_rows'] : [];
         if (!empty($r['is_custom']) && $customRows !== []) {
-            $rows = '';
+            $rows = [];
             foreach ($customRows as $row) {
-                $rows .= '<tr><td width="38%" style="border-bottom:0.3px solid ' . self::LINE . ';color:' . self::MUTED . ';">' . $e($row['label'] ?? '') . '</td>'
-                    . '<td width="62%" style="border-bottom:0.3px solid ' . self::LINE . ';">' . (!empty($row['empty']) ? '<span style="color:' . self::MUTED . ';">Non renseigné</span>' : $nl($row['display'] ?? '')) . '</td></tr>';
+                $rows[] = [
+                    $e($row['label'] ?? ''),
+                    !empty($row['empty']) ? '<span style="color:' . Theme::MUTED . ';">Non renseigné</span>' : nl2br($e(trim((string) ($row['display'] ?? '')))),
+                ];
             }
-            $html .= $section('DEBRIEFING', 'Réponses au questionnaire', '<table cellpadding="4">' . $rows . '</table>');
+            $html .= Theme::section($num(), 'Réponses au questionnaire')
+                . Theme::table([['label' => 'Question', 'width' => 38], ['label' => 'Réponse', 'width' => 62]], $rows, false);
         }
 
-        $n = 0;
         $summary = trim((string) ($r['summary_text'] ?? ''));
         $heading = trim((string) ($r['summary_heading'] ?? ''));
         if ($summary !== '' || $heading !== '') {
-            $html .= $section(++$n . ' · SYNTHÈSE', $heading !== '' ? $heading : 'Synthèse opérationnelle', '<p class="p">' . $nl($summary) . '</p>');
+            $html .= Theme::section($num(), 'Synthèse')
+                . Theme::callout(
+                    '<b>' . $e($heading !== '' ? $heading : 'Synthèse opérationnelle') . '</b>'
+                    . ($summary !== '' ? '<br>' . nl2br($e($summary)) : '')
+                );
         }
-        foreach ([['strengths', 'POINTS FORTS', 'Ce qui a fonctionné', '#0b6b47'], ['weaknesses', 'POINTS FAIBLES', 'Ce qui doit progresser', '#a16207']] as [$key, $kicker, $title, $color]) {
-            $items = is_array($r[$key] ?? null) ? $r[$key] : [];
+        foreach ([['strengths', 'Points forts', 'ok'], ['weaknesses', 'À améliorer', 'warn']] as [$key, $title, $bulletTone]) {
+            $items = is_array($r[$key] ?? null) ? array_map('strval', $r[$key]) : [];
             if ($items === []) {
                 continue;
             }
-            $list = '';
-            foreach ($items as $it) {
-                $list .= '<tr><td width="3%" style="color:' . $color . ';">■</td><td width="97%" class="p">' . $e($it) . '</td></tr>';
-            }
-            $html .= $section(++$n . ' · ' . $kicker, $title, '<table cellpadding="3">' . $list . '</table>');
+            $html .= Theme::section($num(), $title) . Theme::bullets(array_values($items), $bulletTone);
         }
         $lessons = trim((string) ($r['lessons_learned'] ?? ''));
         if ($lessons !== '') {
             $ctx = trim((string) ($r['lessons_context'] ?? ''));
-            $html .= $section(++$n . ' · ENSEIGNEMENTS', $ctx !== '' ? 'À retenir pour ' . $ctx : 'À retenir', '<p class="p">' . $nl($lessons) . '</p>');
+            $html .= Theme::section($num(), $ctx !== '' ? 'Enseignements · à retenir pour ' . $ctx : 'Enseignements')
+                . Theme::paragraph($lessons);
         }
         $conclusion = trim((string) ($r['conclusion_text'] ?? ''));
         if ($conclusion !== '') {
-            $html .= $section(++$n . ' · CONCLUSION', 'Avis du commandement', '<p class="p">' . $nl($conclusion) . '</p>');
+            $html .= Theme::section($num(), 'Avis du commandement')
+                . Theme::callout(nl2br($e($conclusion)), '', 'ok');
         }
 
         $actions = AarReportAdminService::actions([$r]);
         if ($actions !== []) {
-            $th = 'style="background-color:' . self::ACCENT . ';color:#ffffff;font-weight:bold;font-size:7.5pt;"';
-            $rows = '<tr><td width="50%" ' . $th . '>ACTION</td><td width="20%" ' . $th . '>RESPONSABLE</td><td width="15%" ' . $th . '>ÉCHÉANCE</td><td width="15%" ' . $th . '>ÉTAT</td></tr>';
+            $rows = [];
             foreach ($actions as $a) {
                 $state = $a['state'] === 'closed' ? 'Close' : ($a['overdue'] ? 'En retard' : 'En cours');
-                $color = $a['state'] === 'closed' ? '#0b6b47' : ($a['overdue'] ? '#b91c1c' : '#a16207');
-                $b = 'border-bottom:0.3px solid ' . self::LINE . ';';
-                $rows .= '<tr><td style="' . $b . '">' . $e($a['label']) . '</td><td style="' . $b . '">' . $e($a['owner'] !== '' ? $a['owner'] : '—') . '</td>'
-                    . '<td style="' . $b . '">' . $e($this->date($a['due_at'], 'd/m/Y')) . '</td><td style="' . $b . 'color:' . $color . ';font-weight:bold;">' . $e($state) . '</td></tr>';
+                $rows[] = [
+                    'cells' => [(string) $a['label'], $a['owner'] !== '' ? (string) $a['owner'] : '—', $this->date($a['due_at'], 'd/m/Y'), $state],
+                    'tones' => [3 => $a['state'] === 'closed' ? 'ok' : ($a['overdue'] ? 'bad' : 'warn')],
+                ];
             }
-            $html .= $section(++$n . ' · ACTIONS', 'Actions décidées', '<table cellpadding="4">' . $rows . '</table>');
+            $html .= Theme::section($num(), 'Actions décidées')
+                . Theme::table([
+                    ['label' => 'Action', 'width' => 50],
+                    ['label' => 'Responsable', 'width' => 20],
+                    ['label' => 'Échéance', 'width' => 15, 'mono' => true],
+                    ['label' => 'État', 'width' => 15, 'bold' => true],
+                ], $rows);
         }
 
-        if ($n === 0 && !(!empty($r['is_custom']) && $customRows !== [])) {
-            $html .= '<br><p class="p" style="color:' . self::MUTED . ';">Ce compte rendu n’a pas encore de contenu détaillé.</p>';
+        if ($n === 0) {
+            $html .= Theme::spacer(3) . '<p style="color:' . Theme::MUTED . ';">Ce compte rendu n’a pas encore de contenu détaillé.</p>';
         }
 
-        return $html;
+        $author = trim((string) ($r['author_name'] ?? ''));
+        $validator = trim((string) ($r['validator_name'] ?? ''));
+        $reported = $this->date($r['reported_at'] ?? null, 'd/m/Y');
+        $validated = $this->date($r['validated_at'] ?? null, 'd/m/Y');
+
+        return $html . Theme::signatures([
+            ['Rédigé par', $author !== '' ? $author . ($reported !== '—' ? ' · ' . $reported : '') : 'Nom, date, signature'],
+            ['Validé par', $validator !== '' ? $validator . ($validated !== '—' ? ' · ' . $validated : '') : 'Nom, date, signature'],
+        ]);
     }
 
-    private function buildPdf(string $html, string $title, string $ref): string
+    /**
+     * Binaire PDF (A4 portrait, gabarit Athena).
+     *
+     * @param array<string, mixed> $report
+     */
+    public function buildPdfBinary(array $report): string
     {
-        $pdf = new class ('P', 'mm', 'A4', true, 'UTF-8', false) extends \TCPDF {
-            public string $aarRef = '';
-
-            public function Header(): void
-            {
-                $this->SetFillColor(30, 58, 95);
-                $this->Rect(0, 0, $this->w, 2.2, 'F');
-                $this->SetY(5);
-                $this->SetX($this->lMargin);
-                $this->SetFont('helvetica', 'B', 7);
-                $this->SetTextColor(30, 58, 95);
-                $this->Cell(0, 4, 'ATHENA · RETOUR D’EXPÉRIENCE', 0, 0, 'L');
-            }
-
-            public function Footer(): void
-            {
-                $l = $this->lMargin;
-                $r = $this->w - $this->rMargin;
-                $this->SetY(-12);
-                $this->SetDrawColor(226, 232, 240);
-                $this->SetLineWidth(0.3);
-                $this->Line($l, $this->GetY(), $r, $this->GetY());
-                $this->SetY(-10);
-                $this->SetX($l);
-                $this->SetFont('helvetica', '', 7);
-                $this->SetTextColor(100, 116, 139);
-                $this->Cell(($r - $l) / 2, 5, $this->aarRef, 0, 0, 'L');
-                $this->Cell(($r - $l) / 2, 5, 'Page ' . $this->getAliasNumPage() . ' / ' . $this->getAliasNbPages(), 0, 0, 'R');
-            }
-        };
-        $pdf->aarRef = 'Athena · ' . $ref . ' · édité le ' . date('d/m/Y à H:i');
-        $pdf->SetCreator('Athena COMSPEC');
-        $pdf->SetTitle($title);
-        $pdf->SetMargins(16, 14, 16);
-        $pdf->SetHeaderMargin(0);
-        $pdf->SetAutoPageBreak(true, 18);
-        $pdf->setFooterMargin(12);
-        $pdf->setCellHeightRatio(1.35);
-        $pdf->SetFont('dejavusans', '', 9);
+        $ref = (string) ($report['reference_code'] ?? 'AAR');
+        $pdf = Theme::tcpdf([
+            'kind' => 'Compte rendu d’opération',
+            'reference' => $ref,
+            'tenant_id' => (int) ($report['tenant_id'] ?? 0),
+            'classification' => 'Diffusion interne',
+            'audience' => 'Retour d’expérience',
+            'title' => 'Compte rendu ' . $ref,
+        ]);
+        if ($pdf === null) {
+            throw new \RuntimeException('TCPDF indisponible');
+        }
         $pdf->AddPage();
-        $pdf->writeHTML($html, true, false, true, false, '');
+        $pdf->writeAthenaHtml($this->buildHtml($report));
 
         return $pdf->Output('', 'S');
     }

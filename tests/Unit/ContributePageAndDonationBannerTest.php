@@ -236,13 +236,17 @@ final class ContributePageAndDonationBannerTest extends TestCase
     {
         $routes = (string) file_get_contents(base_path('routes/web.php'));
         self::assertMatchesRegularExpression(
-            "~post\\('/admin/settings/bandeau-don', \\[SystemSettingsController::class, 'saveDonationBanner'\\], \\[AuthMiddleware::class, SystemAdminMiddleware::class\\]\\)~",
+            "~post\\('/admin/paiements/bandeau-don', \\[SystemSettingsController::class, 'saveDonationBanner'\\], \\[AuthMiddleware::class, SystemAdminMiddleware::class\\]\\)~",
             $routes
         );
         self::assertStringContainsString("views/partials/donation_banner.php", (string) file_get_contents(base_path('views/layout/main.php')));
         self::assertStringContainsString("views/partials/donation_banner.php", (string) file_get_contents(base_path('views/layout/marketing.php')));
-        self::assertStringContainsString('id="bandeau-don"', (string) file_get_contents(base_path('views/admin/system/settings.php')));
-        $partial = (string) file_get_contents(base_path('views/partials/donation_banner.php'));
+        $settings = (string) file_get_contents(base_path('views/admin/system/settings.php'));
+        self::assertStringContainsString('Gérer depuis Paiements', $settings);
+        self::assertStringNotContainsString('name="message_fr"', $settings, 'Le formulaire vit dans Paiements, plus dans Paramètres système.');
+        self::assertStringNotContainsString("'/admin/settings/bandeau-don'", $routes);
+        self::assertStringContainsString('views/partials/donation_banner_markup.php', (string) file_get_contents(base_path('views/partials/donation_banner.php')));
+        $partial = (string) file_get_contents(base_path('views/partials/donation_banner.php')) . (string) file_get_contents(base_path('views/partials/donation_banner_markup.php'));
         self::assertStringContainsString('try {', $partial);
         self::assertStringContainsString('localStorage', $partial);
         self::assertStringContainsString("url('soutenir-atak')", $partial);
@@ -264,5 +268,64 @@ final class ContributePageAndDonationBannerTest extends TestCase
             $_POST = $savedPost;
         }
         self::assertSame(302, $response->statusCode());
+    }
+
+    public function testAdminStateStatusGaugeAndPreview(): void
+    {
+        $now = strtotime('2026-11-15 12:00:00');
+        $raw = [DonationBanner::KEY_ENABLED => '1', DonationBanner::KEY_MESSAGE_FR => 'Aidez-nous', DonationBanner::KEY_GOAL_EUR => '200', DonationBanner::KEY_STARTS_ON => '2026-11-01', DonationBanner::KEY_ENDS_ON => '2026-11-30'];
+        $state = DonationBanner::adminState($raw, 5000, $now);
+        self::assertSame('live', $state['status']);
+        self::assertSame(25, $state['percent']);
+        self::assertSame(20000, $state['goal_cents']);
+        self::assertSame('Aidez-nous', $state['preview']['en']['message'] ?? null, 'Sans anglais, le français est repris.');
+        self::assertSame('scheduled', DonationBanner::adminState([DonationBanner::KEY_STARTS_ON => '2026-12-01'] + $raw, 0, $now)['status']);
+        self::assertSame('ended', DonationBanner::adminState([DonationBanner::KEY_ENDS_ON => '2026-11-10'] + $raw, 0, $now)['status']);
+        $off = DonationBanner::adminState([DonationBanner::KEY_ENABLED => '0'] + $raw, 0, $now);
+        self::assertSame('disabled', $off['status']);
+        self::assertNotNull($off['preview']['fr'], 'L’aperçu reste visible quand le bandeau est coupé.');
+    }
+
+    public function testPaymentsPageRendersBannerSection(): void
+    {
+        $now = time();
+        $raw = [DonationBanner::KEY_ENABLED => '1', DonationBanner::KEY_MESSAGE_FR => 'Gardez & serveurs allumés', DonationBanner::KEY_MESSAGE_EN => 'Keep servers on', DonationBanner::KEY_GOAL_EUR => '300'];
+        $dnbAdmin = DonationBanner::adminState($raw, 7500, $now);
+        $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+        $base = '/admin/paiements';
+        ob_start();
+        try {
+            require base_path('views/admin/system/partials/payments_donation_banner.php');
+        } finally {
+            $html = (string) ob_get_clean();
+        }
+        self::assertStringContainsString('id="bandeau-don"', $html);
+        self::assertStringContainsString('Affiché en ce moment', $html);
+        self::assertStringContainsString('action="/admin/paiements/bandeau-don"', $html);
+        self::assertStringContainsString('data-dnb-theme="light"', $html);
+        self::assertStringContainsString('data-dnb-theme="dark"', $html);
+        self::assertStringContainsString('Gardez &amp; serveurs allumés', $html);
+        self::assertStringContainsString('Keep servers on', $html);
+        self::assertStringContainsString('aria-valuenow="25"', $html);
+        self::assertStringNotContainsString('id="athena-donation-banner"', $html, 'L’aperçu ne doit pas déclencher le script de fermeture du site.');
+        self::assertStringContainsString("'payDonationBanner'", (string) file_get_contents(base_path('app/Controllers/Admin/System/SystemPlanPaymentsController.php')));
+        self::assertStringContainsString('payments_donation_banner.php', (string) file_get_contents(base_path('views/admin/system/plan_payments.php')));
+    }
+
+    public function testSaveRedirectsBackToPayments(): void
+    {
+        $repo = $this->getMockBuilder(\App\Repositories\PlatformSettingsRepository::class)->disableOriginalConstructor()->getMock();
+        $repo->method('get')->willReturn('');
+        $repo->expects(self::never())->method('setMany');
+        $controller = new \App\Controllers\Admin\System\SystemSettingsController($repo);
+        $savedPost = $_POST;
+        $_POST = ['_csrf_token' => str_repeat('a', 64), 'starts_on' => '2026-11-10', 'ends_on' => '2026-11-01'];
+        try {
+            $response = $controller->saveDonationBanner(new \App\Core\Request());
+        } finally {
+            $_POST = $savedPost;
+        }
+        self::assertSame(302, $response->statusCode());
+        self::assertStringContainsString('admin/paiements?vue=dons#bandeau-don', (string) $response->headerValue('Location'));
     }
 }

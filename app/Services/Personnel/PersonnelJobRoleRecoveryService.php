@@ -107,7 +107,7 @@ final class PersonnelJobRoleRecoveryService
     {
         $report=$this->preview($tenantId,$labels);
         if (!$report['ready']) throw new RuntimeException('Les tables des emplois doivent être migrées avant la récupération.');
-        $this->ensureAudit();
+        $this->ensureAuditTable();
         $this->pdo->beginTransaction();
         try {
             $lock=$this->pdo->prepare('SELECT id FROM tenants WHERE id=?'.($this->mysql()?' FOR UPDATE':''));$lock->execute([$tenantId]);
@@ -191,7 +191,8 @@ final class PersonnelJobRoleRecoveryService
         foreach ($this->pdo->query('PRAGMA table_info('.$table.')')->fetchAll(PDO::FETCH_ASSOC) as $row) if ($row['name']===$column) return true;
         return false;
     }
-    private function ensureAudit(): void
+    /** Journal des reprises (CREATE TABLE IF NOT EXISTS) : étape 3150 de la file active, et filet de sécurité ici. */
+    public function ensureAuditTable(): void
     {
         $sql=$this->mysql()?"CREATE TABLE IF NOT EXISTS personnel_job_role_recovery_log(id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,tenant_id INT UNSIGNED NOT NULL,evidence_hash CHAR(64) NOT NULL,batch_id CHAR(24) NOT NULL,actor_user_id INT UNSIGNED NULL,user_id INT UNSIGNED NULL,job_role_id INT UNSIGNED NOT NULL,label VARCHAR(120) NOT NULL,evidence_json LONGTEXT NOT NULL,outcome VARCHAR(64) NOT NULL,created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE KEY pjrr_evidence(tenant_id,evidence_hash)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4":"CREATE TABLE IF NOT EXISTS personnel_job_role_recovery_log(id INTEGER PRIMARY KEY AUTOINCREMENT,tenant_id INTEGER NOT NULL,evidence_hash TEXT NOT NULL,batch_id TEXT NOT NULL,actor_user_id INTEGER,user_id INTEGER,job_role_id INTEGER NOT NULL,label TEXT NOT NULL,evidence_json TEXT NOT NULL,outcome TEXT NOT NULL,created_at TEXT DEFAULT CURRENT_TIMESTAMP,UNIQUE(tenant_id,evidence_hash))";
         $this->pdo->exec($sql);

@@ -69,7 +69,8 @@ final class OverwatchServerControlAssetTest extends TestCase
         $ext = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
         $cfg = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp');
 
-        self::assertStringContainsString('Contrôle de mission', $view);
+        $pages = (string) file_get_contents($root . '/config/back_office_pages.php');
+        self::assertStringContainsString("'title' => 'Contrôle de mission'", $pages);
         // Le réglage « relais obligatoire » a été déplacé vers Simulation réseau et capteurs (roleplay) :
         // la page renvoie vers lui et la vue roleplay porte la case link_via_relays.
         self::assertStringContainsString('Exiger un relais pour la liaison', $view);
@@ -77,7 +78,8 @@ final class OverwatchServerControlAssetTest extends TestCase
         $roleplay = (string) file_get_contents($root . '/views/admin/atak/roleplay_enhanced.php');
         self::assertStringContainsString('name="link_via_relays"', $roleplay);
         self::assertStringContainsString('Liaison par relais', $roleplay);
-        self::assertStringContainsString('Fonctions actives', $view);
+        self::assertStringContainsString('Apps du téléphone', $view);
+        self::assertStringContainsString('Bientôt', $view);
         self::assertStringNotContainsString('endpoint', strtolower($view));
         self::assertStringNotContainsString('json', strtolower($view));
 

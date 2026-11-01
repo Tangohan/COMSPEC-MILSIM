@@ -1695,7 +1695,7 @@ class PersonnelController
     }
 
     /**
-     * Téléchargement PDF de l’ORBAT (format adaptatif A3→A0 / custom, jamais A4).
+     * Téléchargement PDF de l’ORBAT (A4 portrait au gabarit Athena ; le format A3→A0 ne concerne plus que la vue imprimable HTML).
      */
     public function orbatPdf(Request $request, array $params = []): Response
     {

@@ -192,6 +192,48 @@ html[data-bo-theme="dark"] .dnb {
   96% { transform: scale(1); }
 }
 
+/* Aperçu de l'administration (Admin > Paiements > Dons) : thème imposé, quel que soit celui du navigateur. */
+.dnb-preview[data-dnb-theme="light"] .dnb.dnb {
+  --dnb-bg: #fff8ea;
+  --dnb-edge: #f0dfb8;
+  --dnb-ink: #3d2f12;
+  --dnb-soft: #6f5a2c;
+  --dnb-heart: #d63a6a;
+  --dnb-track: #f1e3c2;
+  --dnb-fill-a: #e0577f;
+  --dnb-fill-b: #d9a12c;
+  --dnb-cta-bg: #3d2f12;
+  --dnb-cta-ink: #fff8ea;
+  color-scheme: light;
+}
+
+.dnb-preview[data-dnb-theme="dark"] .dnb.dnb {
+  --dnb-bg: #1b1610;
+  --dnb-edge: #3a2e1c;
+  --dnb-ink: #f3e7cb;
+  --dnb-soft: #c8b590;
+  --dnb-heart: #ff7aa0;
+  --dnb-track: #33291a;
+  --dnb-fill-a: #ff7aa0;
+  --dnb-fill-b: #f0c060;
+  --dnb-cta-bg: #f3e7cb;
+  --dnb-cta-ink: #1b1610;
+  color-scheme: dark;
+}
+
+.dnb-preview .dnb {
+  z-index: 0;
+  animation: none;
+}
+
+.dnb-preview .dnb__inner {
+  padding-right: 3.25rem;
+}
+
+.dnb-preview .dnb__close {
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .dnb, .dnb.is-leaving, .dnb__heart { animation: none; }
   .dnb__cta { transition: none; }

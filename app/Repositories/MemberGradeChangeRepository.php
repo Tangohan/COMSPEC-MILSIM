@@ -10,8 +10,8 @@ use PDO;
 /**
  * Historique des changements de grade (table member_grade_changes).
  *
- * La table est créée à la demande (même mécanisme que la page publique du joueur) :
- * la file active des migrations reste vide, voir docs/technical/migrations-active-queue.md.
+ * Voie officielle : étape member_grade_changes de la file active, lancée par run-migrations.php
+ * (docs/technical/migrations-active-queue.md). ensureTable() reste un filet de sécurité idempotent.
  */
 class MemberGradeChangeRepository
 {

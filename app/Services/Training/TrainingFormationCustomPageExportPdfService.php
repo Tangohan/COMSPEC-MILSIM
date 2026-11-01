@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\Training;
 
+use App\Support\Pdf\AthenaPdfTheme as Theme;
 use App\Support\TrainingCertificatePdfEngine;
 use App\Support\TrainingFormationCustomPageRenderer;
 
 /**
  * Export PDF téléchargeable d'une Documentation HTML (manuels imprimés, fiches de procédure
- * hors-ligne). Réutilise le moteur PDF déjà en place pour les attestations
- * (TrainingCertificatePdfEngine) mais avec un gabarit dédié — le rendu navigateur/iframe de
+ * hors-ligne), au gabarit Athena en A4 portrait (Dompdf, repli TCPDF). Réutilise le moteur PDF des
+ * attestations (TrainingCertificatePdfEngine) avec le gabarit commun — le rendu navigateur/iframe de
  * TrainingFormationCustomPageRenderer::render() (CSS externe, JS de progression) n'est pas
  * directement exploitable par Dompdf/TCPDF, donc on ne réutilise que decodeSections().
  */
@@ -35,16 +36,13 @@ final class TrainingFormationCustomPageExportPdfService
             return null;
         }
 
-        $html = $this->buildPrintHtml($row);
+        $meta = $this->pdfMeta($row);
+        $body = $this->buildBodyHtml($row);
 
         if (class_exists(\Dompdf\Dompdf::class)) {
             try {
-                $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => false]);
-                $dompdf->loadHtml($html);
-                $dompdf->setPaper('A4', 'portrait');
-                $dompdf->render();
-                $binary = $dompdf->output();
-                if ($binary !== false && $binary !== '') {
+                $binary = Theme::dompdfRender(Theme::dompdfDocument($body, $meta, $this->printCss()), $meta);
+                if ($binary !== null) {
                     return $binary;
                 }
                 $this->lastFailureReason = 'Le moteur PDF n’a produit aucun document.';
@@ -73,8 +71,36 @@ final class TrainingFormationCustomPageExportPdfService
         return null;
     }
 
-    /** @param array<string, mixed> $row */
-    private function buildPrintHtml(array $row): string
+    /**
+     * Métadonnées du gabarit Athena (type, référence, communauté du tenant, bandeau de diffusion).
+     *
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private function pdfMeta(array $row): array
+    {
+        $title = trim((string) ($row['title'] ?? 'Documentation'));
+        $key = trim((string) ($row['slug'] ?? '')) !== '' ? (string) $row['slug'] : (string) ($row['id'] ?? '');
+        $key = strtoupper(trim((string) preg_replace('/[^A-Za-z0-9]+/', '-', $key), '-'));
+
+        return [
+            'kind' => 'Documentation de formation',
+            'reference' => 'DOC-' . ($key !== '' ? mb_substr($key, 0, 40) : date('Ymd')),
+            'tenant_id' => (int) ($row['tenant_id'] ?? 0),
+            'community' => trim((string) ($row['community'] ?? '')),
+            'classification' => 'Diffusion interne · documentation de formation',
+            'audience' => 'Personnel formé',
+            'title' => $title !== '' ? $title : 'Documentation',
+        ];
+    }
+
+    /**
+     * Corps du document (fragments du gabarit, valides sous Dompdf et TCPDF) : titre, sous-titre,
+     * résumé, introduction puis chapitres numérotés.
+     *
+     * @param array<string, mixed> $row
+     */
+    private function buildBodyHtml(array $row): string
     {
         $title = trim((string) ($row['title'] ?? 'Documentation'));
         $subtitle = trim((string) ($row['subtitle'] ?? ''));
@@ -84,23 +110,19 @@ final class TrainingFormationCustomPageExportPdfService
             isset($row['sections_json']) ? (string) $row['sections_json'] : null
         );
 
-        $titleEsc = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
-        $subtitleHtml = $subtitle !== '' ? '<p class="doc-subtitle">' . htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8') . '</p>' : '';
-        $summaryHtml = $summary !== '' ? '<p class="doc-summary">' . htmlspecialchars($summary, ENT_QUOTES, 'UTF-8') . '</p>' : '';
-
-        $body = '<div class="doc-header"><h1>' . $titleEsc . '</h1>' . $subtitleHtml . $summaryHtml . '</div>';
+        $body = Theme::titleBlock('Documentation', $title !== '' ? $title : 'Documentation', [], $subtitle);
+        if ($summary !== '') {
+            $body .= Theme::callout(Theme::paragraph($summary, 'muted'), '', 'ok');
+        }
         if ($intro !== '') {
             $body .= '<div class="doc-prose doc-intro">' . $intro . '</div>';
         }
         foreach ($sections as $i => $s) {
-            $body .= '<div class="doc-chapter">'
-                . '<h2>' . ($i + 1) . '. ' . htmlspecialchars($s['title'], ENT_QUOTES, 'UTF-8') . '</h2>'
-                . '<div class="doc-prose">' . $s['html'] . '</div>'
-                . '</div>';
+            $body .= Theme::section(sprintf('%02d', $i + 1), $s['title'])
+                . '<div class="doc-prose">' . $s['html'] . '</div>';
         }
 
-        return '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><style>' . $this->printCss() . '</style></head>'
-            . '<body>' . $body . '</body></html>';
+        return $body;
     }
 
     /** @param array<string, mixed> $row */
@@ -111,64 +133,33 @@ final class TrainingFormationCustomPageExportPdfService
         return trim($introHtml !== '' ? $introHtml : (string) ($row['html_body'] ?? ''));
     }
 
+    /** Styles de la prose saisie (Dompdf), complétant la feuille du gabarit. */
     private function printCss(): string
     {
         return '
-        @page { margin: 18mm 16mm; }
-        body { font-family: DejaVu Sans, sans-serif; color: #1e293b; font-size: 10.5pt; line-height: 1.5; }
-        .doc-header { margin-bottom: 8mm; border-bottom: 1pt solid #cbd5e1; padding-bottom: 4mm; }
-        .doc-header h1 { font-size: 20pt; margin: 0 0 2mm; color: #0f172a; }
-        .doc-subtitle { font-size: 11pt; color: #475569; font-style: italic; margin: 0 0 1mm; }
-        .doc-summary { font-size: 10pt; color: #64748b; margin: 0; }
-        .doc-chapter { margin-top: 8mm; page-break-inside: avoid; }
-        .doc-chapter h2 { font-size: 13pt; color: #0f766e; border-bottom: 0.5pt solid #cbd5e1; padding-bottom: 1.5mm; margin: 0 0 3mm; }
-        .doc-prose { font-size: 10.5pt; }
+        .doc-prose { font-size: 9.5pt; line-height: 1.5; }
         .doc-prose p { margin: 0 0 3mm; }
+        .doc-prose h1, .doc-prose h2, .doc-prose h3, .doc-prose h4 { font-size: 10pt; margin: 3mm 0 1.5mm; }
         .doc-prose img { max-width: 100%; }
+        .doc-prose ul, .doc-prose ol { margin: 0 0 3mm; padding-left: 6mm; }
         .doc-prose table { width: 100%; border-collapse: collapse; margin: 3mm 0; }
-        .doc-prose table td, .doc-prose table th { border: 0.5pt solid #cbd5e1; padding: 1.5mm 2mm; }
+        .doc-prose table th { border-bottom: 0.6pt solid ' . Theme::INK . '; color: ' . Theme::MUTED . '; font-size: 7pt; text-align: left; padding: 1.5mm 2mm; }
+        .doc-prose table td { border-bottom: 0.3pt solid ' . Theme::LINE . '; padding: 1.5mm 2mm; }
+        .doc-prose a { color: ' . Theme::ACCENT_DARK . '; }
         ';
     }
 
     /** @param array<string, mixed> $row */
     private function renderWithTcpdf(array $row): ?string
     {
-        $font = TrainingCertificatePdfEngine::resolveCertificateFontFamily();
-        if ($font === null) {
-            return null;
-        }
-
         try {
-            return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(function () use ($row, $font): ?string {
-                $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
-                $pdf->setPrintHeader(false);
-                $pdf->setPrintFooter(false);
-                $pdf->SetMargins(16, 16, 16);
-                $pdf->SetAutoPageBreak(true, 16);
-                $pdf->SetFont($font, '', 10);
+            return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(function () use ($row): ?string {
+                $pdf = Theme::tcpdf($this->pdfMeta($row));
+                if ($pdf === null) {
+                    return null;
+                }
                 $pdf->AddPage();
-
-                $title = trim((string) ($row['title'] ?? 'Documentation'));
-                $sections = TrainingFormationCustomPageRenderer::decodeSections(
-                    isset($row['sections_json']) ? (string) $row['sections_json'] : null
-                );
-                $intro = self::resolveIntroHtml($row);
-
-                $pdf->SetFont($font, 'B', 18);
-                $pdf->MultiCell(0, 9, $title, 0, 'L', false, 1);
-                $pdf->Ln(2);
-                $pdf->SetFont($font, '', 10);
-                if ($intro !== '') {
-                    $pdf->writeHTML($intro, true, false, true, false, '');
-                }
-                foreach ($sections as $i => $s) {
-                    $pdf->Ln(4);
-                    $pdf->SetFont($font, 'B', 13);
-                    $pdf->MultiCell(0, 7, ($i + 1) . '. ' . $s['title'], 0, 'L', false, 1);
-                    $pdf->SetFont($font, '', 10);
-                    $pdf->writeHTML($s['html'], true, false, true, false, '');
-                }
-
+                $pdf->writeAthenaHtml($this->buildBodyHtml($row));
                 $out = $pdf->Output('', 'S');
                 unset($pdf);
 

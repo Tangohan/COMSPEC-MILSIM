@@ -42,7 +42,8 @@ final class ArsenalWardrobeRepository
     }
 
     /**
-     * Colonne visibility présente (migration à la demande) : sinon toutes les tenues restent visibles par la communauté.
+     * Colonne visibility présente (étape arsenal_wardrobes_visibility de run-migrations, ou migration à la demande) :
+     * sinon toutes les tenues restent visibles par la communauté.
      */
     private function visibilityReady(): bool
     {

@@ -16,9 +16,10 @@ final class MigrationRegistryTest extends TestCase
         return dirname(__DIR__, 2);
     }
 
-    public function testActiveQueueIsEmptyAndHistoricalSourcesRemainArchived(): void
+    public function testActiveQueueOnlyHoldsNewStepsAndHistoricalSourcesRemainArchived(): void
     {
-        self::assertSame([], MigrationRegistry::load($this->root()));
+        $active = MigrationRegistry::load($this->root());
+        self::assertNotSame([], $active, 'La file active porte les nouvelles étapes de schéma (voir docs/technical/migrations-active-queue.md).');
         self::assertNull(MigrationRegistry::find($this->root(), 'atak_maps'));
         self::assertNull(MigrationRegistry::find($this->root(), 'sql_files'));
         $archive = require $this->root() . '/database/steps/registry-archive.php';
@@ -28,6 +29,10 @@ final class MigrationRegistryTest extends TestCase
         foreach ($archive as $step) {
             self::assertFileExists($this->root() . '/database/steps/' . $step['file']);
         }
+        // L'ancien registre n'est jamais réintroduit : aucune entrée active n'en reprend l'identifiant ou le fichier.
+        self::assertSame([], array_intersect(array_column($active, 'id'), $ids));
+        self::assertSame([], array_intersect(array_column($active, 'file'), array_column($archive, 'file')));
+        self::assertLessThan(count($archive), count($active));
     }
 
     public function testArchivedSourcesRemainAvailableWithoutMakingThemActive(): void
@@ -40,7 +45,9 @@ final class MigrationRegistryTest extends TestCase
             self::assertStringNotContainsString($retired, $active);
         }
         self::assertFileExists($this->root() . '/bootstrap/training_onboarding_course_seed.php');
-        self::assertSame([], MigrationRegistry::load($this->root()));
+        $registry = (string) file_get_contents($this->root() . '/database/steps/registry.php');
+        self::assertStringNotContainsString('require', $registry);
+        self::assertStringNotContainsString('glob(', $registry);
     }
 
     public function testClassifyAndRedact(): void
