@@ -397,7 +397,11 @@ class ElevationApprovalService
                         'applied' => [],
                     ];
                 }
-                $this->userRepository->update($targetUserId, $tenantId, ['grade_id' => $gradeId]);
+                // Historique des grades : ce changement est noté comme une élévation validée.
+                \App\Repositories\MemberGradeChangeRepository::withSource(
+                    \App\Repositories\MemberGradeChangeRepository::SOURCE_ELEVATION,
+                    fn () => $this->userRepository->update($targetUserId, $tenantId, ['grade_id' => $gradeId])
+                );
                 $applied[] = 'grade';
             }
 

@@ -29,6 +29,9 @@ final class AuditAction
     /** Fusion de fiches users partageant le même e-mail (un compte, plusieurs communautés). */
     public const USER_IDENTITY_MERGED = 'user.identity_merged';
 
+    /** Critères d’éligibilité à une élévation réglés pour la communauté (Effectifs). */
+    public const ELEVATION_CRITERIA_UPDATED = 'effectifs.elevation_criteria_updated';
+
     public const TENANT_CREATED = 'tenant.created';
     public const TENANT_SETUP_COMPLETED = 'tenant.setup_completed';
 

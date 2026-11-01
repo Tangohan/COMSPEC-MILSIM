@@ -1379,3 +1379,260 @@ html[data-bo-theme="dark"] .eff-fm-portrait__rank {
 html[data-bo-theme="dark"] .eff-fm .eff-fm-add {
   border-color: #8a6a1c;
 }
+
+/* ——— Données calculées : rang, présence, équipe, frise des grades, éligibilité, sanctions ——— */
+.eff-fm-hero__rank {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: help;
+}
+
+.eff-fm .eff-fm-chip.is-elig {
+  border-color: var(--fm-warning-line);
+  background: var(--fm-warning-soft);
+  color: var(--fm-warning-ink);
+  text-decoration: none;
+}
+
+.eff-fm-kpi__v.is-good {
+  color: var(--fm-primary);
+}
+
+.eff-fm-kpi__v.is-warn {
+  color: var(--fm-warning);
+}
+
+.eff-fm-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Équipe de l’unité */
+.eff-fm-team {
+  margin: 0 0 12px;
+}
+
+.eff-fm-team > .eff-fm-k {
+  margin: 0 0 8px;
+}
+
+.eff-fm-slot a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.eff-fm-slot a:hover {
+  text-decoration: underline;
+}
+
+.eff-fm-slot.is-vacant {
+  border-style: dashed;
+  color: var(--fm-muted);
+}
+
+.eff-fm-slot.is-vacant b {
+  font-weight: 600;
+}
+
+/* Présence : carré des dernières sessions */
+.eff-fm-pres__sum {
+  margin: 0;
+  color: var(--fm-muted);
+  font-size: 12.5px;
+}
+
+.eff-fm-pres__sum b {
+  color: var(--fm-text);
+}
+
+.eff-fm-pres__sum b.is-bad {
+  color: #b91c1c;
+}
+
+.eff-fm-pres {
+  display: grid;
+  grid-template-columns: repeat(26, minmax(0, 1fr));
+  gap: 4px;
+  margin: 4px 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.eff-fm-pres__c {
+  position: relative;
+  min-width: 0;
+  height: 30px;
+  border-radius: 4px;
+  background: var(--fm-surface-muted);
+}
+
+.eff-fm-pres__c.is-present,
+.eff-fm-pres__legend i.is-present {
+  background: var(--fm-accent);
+}
+
+.eff-fm-pres__c.is-excused,
+.eff-fm-pres__legend i.is-excused {
+  background: #fde68a;
+}
+
+.eff-fm-pres__c.is-absent,
+.eff-fm-pres__legend i.is-absent {
+  background: #fca5a5;
+}
+
+.eff-fm-pres__c.is-no_reply,
+.eff-fm-pres__legend i.is-no_reply {
+  background: var(--fm-border-strong);
+}
+
+.eff-fm-pres__c.is-none,
+.eff-fm-pres__legend i.is-none {
+  background: var(--fm-surface-muted);
+  box-shadow: inset 0 0 0 1px var(--fm-border);
+}
+
+.eff-fm-pres__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0 0 8px;
+  padding: 0;
+  color: var(--fm-muted);
+  font-size: 11.5px;
+  list-style: none;
+}
+
+.eff-fm-pres__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.eff-fm-pres__legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/* Frise des grades et éligibilité */
+.eff-fm-tl li.is-start::before {
+  border-style: dotted;
+}
+
+.eff-fm-elig {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--fm-border);
+  border-radius: 10px;
+  background: var(--fm-surface-muted);
+}
+
+.eff-fm-elig.is-ok {
+  border-color: var(--fm-primary-line);
+  background: var(--fm-primary-soft);
+}
+
+.eff-fm-elig.is-unknown {
+  border-color: var(--fm-warning-line);
+  background: var(--fm-warning-soft);
+}
+
+.eff-fm-elig__title {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.eff-fm-elig__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eff-fm-elig__list li {
+  display: flex;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 12.5px;
+}
+
+.eff-fm-elig__list li small {
+  display: block;
+  color: var(--fm-muted);
+  font-size: 11.5px;
+}
+
+.eff-fm-elig__mark {
+  flex: none;
+  width: 16px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.eff-fm-elig__list li.is-ok .eff-fm-elig__mark {
+  color: var(--fm-primary);
+}
+
+.eff-fm-elig__list li.is-no .eff-fm-elig__mark {
+  color: #b91c1c;
+}
+
+.eff-fm-elig__list li.is-unknown .eff-fm-elig__mark {
+  color: var(--fm-warning);
+}
+
+.eff-fm-elig .eff-fm-hint {
+  margin: 6px 0 0;
+}
+
+/* Sanctions */
+.eff-fm-sanctions li.is-lifted b,
+.eff-fm-sanctions li.is-expired b {
+  color: var(--fm-muted);
+}
+
+.eff-fm-sanctions b .eff-fm-chip {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.eff-fm .eff-fm-sanctions__meta {
+  font-size: 11.5px;
+}
+
+.eff-fm-sanctions__lift {
+  margin: 6px 0 0;
+}
+
+@media (max-width: 700px) {
+  .eff-fm-pres {
+    grid-template-columns: repeat(13, minmax(0, 1fr));
+  }
+
+  .eff-fm-pres__c {
+    height: 22px;
+  }
+}
+
+html[data-bo-theme="dark"] .eff-fm-pres__c.is-excused,
+html[data-bo-theme="dark"] .eff-fm-pres__legend i.is-excused {
+  background: #a16207;
+}
+
+html[data-bo-theme="dark"] .eff-fm-pres__c.is-absent,
+html[data-bo-theme="dark"] .eff-fm-pres__legend i.is-absent {
+  background: #b91c1c;
+}
+
+html[data-bo-theme="dark"] .eff-fm-pres__sum b.is-bad,
+html[data-bo-theme="dark"] .eff-fm-elig__list li.is-no .eff-fm-elig__mark {
+  color: #fca5a5;
+}

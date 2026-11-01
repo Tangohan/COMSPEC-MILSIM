@@ -55,6 +55,7 @@ final class AuditActionLabel
         'user_deactivated' => 'Utilisateur désactivé',
         'user_left_community' => 'Départ volontaire d’une communauté',
         'role_assigned' => 'Rôle attribué',
+        'effectifs.elevation_criteria_updated' => 'Critères d’élévation modifiés',
         'group_member_added' => 'Membre ajouté au groupe',
         'group_member_removed' => 'Membre retiré du groupe',
         // Documents (audit global)
