@@ -1264,6 +1264,15 @@
   }
 }
 
+/* --- Bandeau de don (partiel commun) : sous la barre fixe ; plus d’espace une fois fermé. --- */
+.home-impact .hi-dnb {
+  background: var(--hi-void);
+}
+
+.home-impact .hi-dnb:has(.dnb) {
+  padding-top: 3.75rem;
+}
+
 /* --- Hero ---------------------------------------------------------------- */
 .home-impact .hi-hero__content {
   position: relative;

@@ -253,6 +253,15 @@ $heroPosterUrl = $heroImages[0]['src'];
     </header>
 
     <main id="contenu" tabindex="-1">
+        <?php
+        // Bandeau de don commun au site public (comme en tête de layout.marketing), sous la barre fixe.
+        ob_start();
+        require base_path('views/partials/donation_banner.php');
+        $donationBannerHtml = trim((string) ob_get_clean());
+        ?>
+        <?php if ($donationBannerHtml !== ''): ?>
+        <div class="hi-dnb"><?= $donationBannerHtml ?></div>
+        <?php endif; ?>
         <!-- Hero : fond immersif + marque + proposition + accès -->
         <section class="relative flex min-h-[100svh] flex-col justify-end overflow-hidden bg-black" id="hero" aria-labelledby="hero-title" data-hero-videos-ready="<?= $heroVideosPresentOnDisk ? '1' : '0' ?>">
             <div class="pointer-events-none absolute inset-0" id="heroSlider">

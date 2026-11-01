@@ -122,6 +122,9 @@ final class HomePublicPageTest extends TestCase
         self::assertStringContainsString('function autoVideoAllowed()', $js);
         self::assertStringNotContainsString("addEventListener('scroll'", $js);
 
+        // Bandeau de don commun au site public, comme dans layout.marketing.
+        self::assertStringContainsString("views/partials/donation_banner.php", (string) file_get_contents($root . '/views/home/index.php'));
+
         $ctrl = (string) file_get_contents($root . '/app/Controllers/Web/HomeController.php');
         self::assertStringContainsString('PublicHistoryStatsService', $ctrl);
         self::assertStringNotContainsString('getPlatformOperationalKpis', $ctrl);
