@@ -13,7 +13,11 @@ declare(strict_types=1);
  * @var list<string> $available_scopes
  * @var bool $api_keys_allowed
  * @var list<array{key:string, group:string, label:string, hint:string, default_mode:string}> $discord_events
- * @var array{default_url:string, events:array<string, array{mode:string, url:string}>} $discord_state
+ * @var array{default_url:string, never_saved:bool, events:array<string, array{mode:string, webhook:string, url:string}>} $discord_state
+ * @var array<string, mixed> $discord_org salon de l'organisation (sans lien en clair)
+ * @var list<array<string, mixed>> $discord_webhooks salons à part (sans lien en clair)
+ * @var string $invite_template
+ * @var array<string, string> $invite_variables
  * @var list<array{id:string,label:string,masked:string}> $discord_relays
  * @var bool $use_community_relay
  * @var bool $community_relay_ready
@@ -34,7 +38,6 @@ $communityRelayReady = !empty($community_relay_ready);
 $mailSender = is_array($mail_sender ?? null) ? $mail_sender : [];
 $mailProviders = is_array($mail_providers ?? null) ? $mail_providers : [];
 $adminEmail = (string) ($admin_email ?? '');
-$discordDefaultUrl = (string) ($discordState['default_url'] ?? '');
 $discordEventState = is_array($discordState['events'] ?? null) ? $discordState['events'] : [];
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
@@ -93,31 +96,53 @@ $fmtDt = static function (mixed $raw, string $fallback = '—'): string {
     return $t ? date('d/m/Y H:i', $t) : $fallback;
 };
 
-/** Lien webhook raccourci pour l'affichage : discord.com/api/webhooks/1234…/•••• */
-$maskWebhook = static function (string $url): string {
-    if (preg_match('#webhooks/(\d{4})\d*/#', $url, $m) === 1) {
-        return 'discord.com/api/webhooks/' . $m[1] . '…/••••';
+// Discord : salon de l'organisation, salons à part (mode avancé), usages par groupe.
+$discordOrg = is_array($discord_org ?? null) ? $discord_org : ['configured' => false, 'masked' => '', 'name' => '', 'channel' => '', 'last_test_at' => '', 'last_test_ok' => null, 'last_test_message' => ''];
+$discordWebhooks = is_array($discord_webhooks ?? null) ? $discord_webhooks : [];
+$inviteTemplate = (string) ($invite_template ?? '');
+$inviteVariables = is_array($invite_variables ?? null) ? $invite_variables : [];
+$communityName = (string) ($community_name ?? '');
+$knownWebhooks = array_column($discordWebhooks, 'id');
+$usageOn = static fn (string $k): bool => (string) ($discordEventState[$k]['mode'] ?? 'off') !== 'off';
+$usageDest = static function (string $k) use ($discordEventState, $knownWebhooks): string {
+    $row = is_array($discordEventState[$k] ?? null) ? $discordEventState[$k] : [];
+    if ((string) ($row['mode'] ?? '') !== 'custom') {
+        return 'organisation';
+    }
+    $wh = (string) ($row['webhook'] ?? '');
+    if ($wh !== '' && in_array($wh, $knownWebhooks, true)) {
+        return $wh;
     }
 
-    return $url !== '' ? 'lien enregistré' : '';
+    return trim((string) ($row['url'] ?? '')) !== '' ? 'legacy' : 'organisation';
 };
-
-// Discord : événements par groupe, compteurs de publication.
 $discordGroups = [];
 $publishedCount = 0;
-$customCount = 0;
+$legacyCount = 0;
+$whUses = [];
 foreach ($discordEvents as $ev) {
     $g = (string) ($ev['group'] ?? 'Autres');
+    $key = (string) ($ev['key'] ?? '');
     $discordGroups[$g][] = $ev;
-    $mode = (string) ($discordEventState[(string) ($ev['key'] ?? '')]['mode'] ?? ($ev['default_mode'] ?? 'off'));
-    if ($mode !== 'off') {
+    if ($usageOn($key)) {
         $publishedCount++;
+        $whUses[$usageDest($key)][] = (string) ($ev['label'] ?? '');
     }
-    if ($mode === 'custom') {
-        $customCount++;
+    if ($usageDest($key) === 'legacy') {
+        $legacyCount++;
     }
 }
-$discordLinked = $discordDefaultUrl !== '' || $customCount > 0;
+$usesText = static function (array $labels): string {
+    if ($labels === []) {
+        return 'rien pour l’instant';
+    }
+    if (count($labels) <= 3) {
+        return implode(', ', $labels);
+    }
+
+    return implode(', ', array_slice($labels, 0, 3)) . ' et ' . (count($labels) - 3) . ' autre' . (count($labels) - 3 > 1 ? 's' : '');
+};
+$discordLinked = !empty($discordOrg['configured']) || $discordWebhooks !== [] || $legacyCount > 0;
 $groupIcons = [
     'Portail' => '📣', 'Téléphone ATAK' => '📱', 'Effectifs' => '🪖', 'Recrutement' => '📝', 'Opérations' => '🎯',
     'Formation' => '🎓', 'Modération' => '🛡️', 'Renseignement' => '🛰️', 'Accès' => '🔑',
@@ -148,7 +173,7 @@ $tiles = [
         'title' => 'Discord',
         'state' => $discordLinked ? ($publishedCount > 0 ? 'ok' : 'warn') : 'off',
         'value' => $discordLinked ? $publishedCount . ' / ' . count($discordEvents) : 'Non relié',
-        'note' => $discordLinked ? 'événements publiés' : 'aucun salon renseigné',
+        'note' => $discordLinked ? 'usages publiés' : 'aucun salon relié',
     ],
     [
         'href' => '#emails-communaute',
@@ -249,8 +274,8 @@ $flashSuccess = \App\Core\Session::getFlash('success');
                 <p class="bo-int-concept__text">Un lien secret, créé dans un salon Discord, qui permet à Athena d’y publier des messages sans bot ni invitation. Un salon = un lien. Quiconque a le lien peut écrire dans le salon : gardez-le pour vous.</p>
             </div>
             <div class="bo-int-concept">
-                <p class="bo-int-concept__title"><?= $icon('send') ?> Salon commun ou autre salon</p>
-                <p class="bo-int-concept__text">Le salon commun reçoit tout ce que vous réglez sur « Salon commun ». Pour envoyer un événement ailleurs (photos dans #renseignement, candidatures dans #recrutement), choisissez « Autre salon » et collez le lien de ce salon.</p>
+                <p class="bo-int-concept__title"><?= $icon('send') ?> Un salon pour tout, ou un salon par usage</p>
+                <p class="bo-int-concept__text">Le salon de l’organisation reçoit tout ce que vous activez. Pour envoyer un usage ailleurs (photos dans #renseignement, candidatures dans #recrutement), ajoutez ce salon dans le mode avancé et choisissez-le en face de l’usage.</p>
             </div>
             <div class="bo-int-concept">
                 <p class="bo-int-concept__title"><?= $icon('mail') ?> Votre propre adresse d’envoi</p>
@@ -265,104 +290,201 @@ $flashSuccess = \App\Core\Session::getFlash('success');
             <span class="bo-int-section__icon bo-int-section__icon--discord"><?= $icon('discord') ?></span>
             <div>
                 <h2 class="bo-int-section__title">Discord</h2>
-                <p class="bo-int-section__desc">Choisissez ce qu’Athena publie dans vos salons : annonces, photos du téléphone, notes de reco, candidatures, effectifs, opérations…</p>
+                <p class="bo-int-section__desc">Un seul salon suffit : collez son lien une fois, Athena y publie annonces, recrutement, effectifs, liens d’invitation… Vous coupez ensuite ce que vous ne voulez pas.</p>
             </div>
         </header>
 
-        <details class="bo-int-guide"<?= $discordLinked ? '' : ' open' ?>>
-            <summary class="bo-int-guide__summary"><?= $icon('info') ?> Créer le lien webhook d’un salon (30 secondes)</summary>
-            <ol class="bo-int-guide__steps">
-                <li><span class="bo-int-step">1</span><span>Dans Discord : clic droit sur le salon › <strong>Modifier le salon</strong> › <strong>Intégrations</strong> › <strong>Webhooks</strong>.</span></li>
-                <li><span class="bo-int-step">2</span><span><strong>Nouveau webhook</strong>, donnez-lui un nom (par exemple « Athena »), puis <strong>Copier l’URL du webhook</strong>.</span></li>
-                <li><span class="bo-int-step">3</span><span>Collez-le dans <strong>Salon commun</strong> ci-dessous, ou dans <strong>Autre salon</strong> pour un événement précis, puis enregistrez.</span></li>
-                <li><span class="bo-int-step">4</span><span>Bouton <strong>Essai</strong> à côté de l’événement : un court message doit apparaître dans le salon.</span></li>
+        <details class="bo-int-tuto"<?= $discordLinked ? '' : ' open' ?>>
+            <summary class="bo-int-guide__summary"><?= $icon('info') ?> Tutoriel : récupérer le lien d’un salon Discord (1 minute)</summary>
+            <ol class="bo-int-tuto__steps">
+                <li class="bo-int-tuto__step">
+                    <svg class="bo-int-tuto__shot" viewBox="0 0 240 132" role="img" aria-label="Liste des salons Discord, roue dentée à côté du salon">
+                        <rect width="240" height="132" rx="10" fill="#1e1f22"/><rect x="8" y="8" width="96" height="116" rx="6" fill="#2b2d31"/>
+                        <text x="16" y="26" fill="#949ba4" font-size="8" font-family="sans-serif">SALONS TEXTUELS</text>
+                        <text x="18" y="44" fill="#949ba4" font-size="10" font-family="sans-serif"># général</text>
+                        <rect x="12" y="52" width="88" height="18" rx="4" fill="#404249"/>
+                        <text x="18" y="65" fill="#f2f3f5" font-size="10" font-family="sans-serif"># annonces</text>
+                        <circle cx="90" cy="61" r="8" fill="none" stroke="#34d399" stroke-width="2"/><circle cx="90" cy="61" r="3.2" fill="none" stroke="#dbdee1" stroke-width="1.4"/>
+                        <text x="18" y="86" fill="#949ba4" font-size="10" font-family="sans-serif"># recrutement</text>
+                        <rect x="112" y="8" width="120" height="116" rx="6" fill="#313338"/>
+                        <text x="122" y="70" fill="#dbdee1" font-size="10" font-family="sans-serif">Modifier le salon</text>
+                        <path d="M98 61 H118" stroke="#34d399" stroke-width="1.5" stroke-dasharray="3 2"/>
+                    </svg>
+                    <p><b>1.</b> Survolez le salon où Athena doit écrire et cliquez sur la <b>roue dentée</b> (« Modifier le salon »).</p>
+                </li>
+                <li class="bo-int-tuto__step">
+                    <svg class="bo-int-tuto__shot" viewBox="0 0 240 132" role="img" aria-label="Menu des paramètres du salon, Intégrations en surbrillance">
+                        <rect width="240" height="132" rx="10" fill="#1e1f22"/><rect x="8" y="8" width="96" height="116" rx="6" fill="#2b2d31"/>
+                        <text x="16" y="28" fill="#949ba4" font-size="10" font-family="sans-serif">Vue d’ensemble</text>
+                        <text x="16" y="46" fill="#949ba4" font-size="10" font-family="sans-serif">Permissions</text>
+                        <text x="16" y="64" fill="#949ba4" font-size="10" font-family="sans-serif">Invitations</text>
+                        <rect x="11" y="72" width="90" height="18" rx="4" fill="#404249" stroke="#34d399" stroke-width="1.5"/>
+                        <text x="16" y="85" fill="#f2f3f5" font-size="10" font-family="sans-serif">Intégrations</text>
+                        <rect x="112" y="8" width="120" height="116" rx="6" fill="#313338"/>
+                        <text x="122" y="28" fill="#f2f3f5" font-size="11" font-weight="700" font-family="sans-serif">Intégrations</text>
+                        <rect x="122" y="40" width="100" height="24" rx="4" fill="#2b2d31"/><text x="130" y="56" fill="#dbdee1" font-size="10" font-family="sans-serif">Webhooks</text>
+                    </svg>
+                    <p><b>2.</b> Dans le menu du salon, ouvrez <b>Intégrations</b>, puis <b>Webhooks</b>.</p>
+                </li>
+                <li class="bo-int-tuto__step">
+                    <svg class="bo-int-tuto__shot" viewBox="0 0 240 132" role="img" aria-label="Bouton Nouveau webhook">
+                        <rect width="240" height="132" rx="10" fill="#1e1f22"/><rect x="8" y="8" width="224" height="116" rx="6" fill="#313338"/>
+                        <text x="20" y="30" fill="#f2f3f5" font-size="11" font-weight="700" font-family="sans-serif">Webhooks</text>
+                        <text x="20" y="48" fill="#949ba4" font-size="9" font-family="sans-serif">Publiez des messages depuis d’autres services.</text>
+                        <rect x="20" y="62" width="96" height="26" rx="4" fill="#5865f2" stroke="#34d399" stroke-width="2"/>
+                        <text x="30" y="79" fill="#ffffff" font-size="10" font-weight="700" font-family="sans-serif">Nouveau webhook</text>
+                    </svg>
+                    <p><b>3.</b> Cliquez sur <b>Nouveau webhook</b>. Donnez-lui un nom (« Athena ») et vérifiez le salon choisi.</p>
+                </li>
+                <li class="bo-int-tuto__step">
+                    <svg class="bo-int-tuto__shot" viewBox="0 0 240 132" role="img" aria-label="Fiche du webhook avec le bouton Copier l’URL du webhook">
+                        <rect width="240" height="132" rx="10" fill="#1e1f22"/><rect x="8" y="8" width="224" height="116" rx="6" fill="#313338"/>
+                        <circle cx="34" cy="38" r="14" fill="#34d399"/><text x="28" y="43" fill="#052e1c" font-size="13" font-weight="900" font-family="sans-serif">A</text>
+                        <text x="56" y="34" fill="#f2f3f5" font-size="11" font-weight="700" font-family="sans-serif">Athena</text>
+                        <text x="56" y="48" fill="#949ba4" font-size="9" font-family="sans-serif"># annonces</text>
+                        <rect x="20" y="70" width="128" height="26" rx="4" fill="#4e5058" stroke="#34d399" stroke-width="2"/>
+                        <text x="28" y="87" fill="#ffffff" font-size="10" font-weight="700" font-family="sans-serif">Copier l’URL du webhook</text>
+                    </svg>
+                    <p><b>4.</b> Cliquez sur le webhook créé, puis <b>Copier l’URL du webhook</b>. Collez-la ci-dessous et cliquez sur <b>Tester</b>.</p>
+                </li>
             </ol>
             <div class="bo-int-anatomy" aria-label="Forme d’un lien webhook">
                 <code><span class="bo-int-anatomy__base">https://discord.com/api/webhooks/</span><span class="bo-int-anatomy__id">1290000000000000001</span>/<span class="bo-int-anatomy__token">AbCdEf…</span></code>
-                <span class="bo-int-anatomy__legend"><span class="bo-int-anatomy__dot bo-int-anatomy__dot--id"></span>numéro du webhook <span class="bo-int-anatomy__dot bo-int-anatomy__dot--token"></span>jeton secret</span>
+                <span class="bo-int-anatomy__legend"><span class="bo-int-anatomy__dot bo-int-anatomy__dot--id"></span>numéro du webhook <span class="bo-int-anatomy__dot bo-int-anatomy__dot--token"></span>partie secrète</span>
             </div>
-            <p class="bo-int-guide__note"><?= $icon('warn') ?> L’identifiant du salon (le grand nombre de « Copier l’identifiant du salon ») et le lien <code>discord.com/channels/…</code> ne suffisent pas : Athena publie sans bot, Discord n’accepte que le lien webhook.</p>
+            <p class="bo-int-guide__note"><?= $icon('warn') ?> Le lien du salon (« Copier le lien ») ou son identifiant ne suffisent pas : seul le lien du webhook permet à Athena d’écrire. Quiconque a ce lien peut écrire dans le salon : Athena le garde chiffré et ne le réaffiche jamais.</p>
         </details>
+
+        <!-- Salon de l'organisation -->
+        <div class="bo-int-wh bo-int-wh--org" id="discord-organisation">
+            <div class="bo-int-wh__head">
+                <div>
+                    <h3 class="bo-int-wh__title">Salon de l’organisation</h3>
+                    <p class="bo-int-wh__sub">Reçoit tous les usages qui n’ont pas de salon à part.</p>
+                </div>
+                <span class="bo-int-badge bo-int-badge--<?= $discordOrg['configured'] ? 'ok' : 'off' ?>"><?= $discordOrg['configured'] ? 'Relié' : 'Non relié' ?></span>
+            </div>
+            <?php if ($discordOrg['configured']): ?>
+                <p class="bo-int-wh__saved">
+                    <span class="bo-int-mono"><?= $h($discordOrg['masked']) ?></span>
+                    <?php if ($discordOrg['channel'] !== '' || $discordOrg['name'] !== ''): ?> · <?= $h(trim($discordOrg['name'] . ' ' . $discordOrg['channel'])) ?><?php endif; ?>
+                </p>
+                <p class="bo-int-wh__uses">Utilisé pour : <?= $h($usesText($whUses[\App\Services\Integrations\DiscordWebhookDirectory::ORGANISATION] ?? [])) ?></p>
+                <?php if ($discordOrg['last_test_at'] !== ''): ?>
+                    <p class="bo-int-wh__test is-<?= $discordOrg['last_test_ok'] ? 'ok' : 'bad' ?>">Dernier essai le <?= $h($fmtDt($discordOrg['last_test_at'])) ?> : <?= $h($discordOrg['last_test_ok'] ? 'message reçu par Discord' : $discordOrg['last_test_message']) ?></p>
+                <?php endif; ?>
+            <?php endif; ?>
+            <form method="post" action="<?= $h(url('back-office/integrations/discord/organisation')) ?>" class="bo-int-wh__form" data-wh-form>
+                <?= \App\Core\Csrf::field() ?>
+                <label class="bo-int-field bo-int-wh__url">
+                    <span class="bo-int-field__label"><?= $discordOrg['configured'] ? 'Remplacer le lien (laisser vide pour garder l’actuel)' : 'Lien du webhook' ?></span>
+                    <input type="text" inputmode="url" autocomplete="off" spellcheck="false" name="url" maxlength="500" class="bo-int-input bo-int-mono" value="" placeholder="https://discord.com/api/webhooks/…" data-webhook-input<?= $discordOrg['configured'] ? '' : ' required' ?>>
+                    <span class="bo-int-check-msg" data-webhook-msg aria-live="polite"></span>
+                </label>
+                <label class="bo-int-field">
+                    <span class="bo-int-field__label">Nom <em>pour vous repérer</em></span>
+                    <input type="text" name="name" maxlength="80" class="bo-int-input" value="<?= $h($discordOrg['name']) ?>" placeholder="Discord de la communauté">
+                </label>
+                <label class="bo-int-field">
+                    <span class="bo-int-field__label">Salon</span>
+                    <input type="text" name="channel" maxlength="60" class="bo-int-input" value="<?= $h($discordOrg['channel']) ?>" placeholder="#annonces">
+                </label>
+                <div class="bo-int-wh__acts">
+                    <button type="submit" class="bo-int-btn bo-int-btn--solid">Enregistrer</button>
+                    <button type="button" class="bo-int-btn" data-wh-test="<?= $h(\App\Services\Integrations\DiscordWebhookDirectory::ORGANISATION) ?>"><?= $icon('send') ?><span>Tester</span></button>
+                    <?php if ($discordOrg['configured']): ?>
+                        <button type="submit" name="clear" value="1" class="bo-int-link-btn bo-int-link-btn--danger" formnovalidate onclick="return confirm('Retirer le salon de l’organisation ? Les usages qui en dépendent ne publieront plus.')">Retirer ce salon</button>
+                    <?php endif; ?>
+                </div>
+                <p class="bo-int-wh__result" data-wh-result role="status" aria-live="polite"></p>
+            </form>
+        </div>
 
         <p class="bo-int-guide__note"><?= $icon('send') ?> Pour présenter votre communauté sur le Discord Athena (salon des communautés), voyez <a href="<?= $h(url('back-office/community/discord')) ?>">Annoncer sur Discord</a>.</p>
 
-        <form method="post" action="<?= $h(url('back-office/integrations/discord')) ?>" id="form-relais-discord" class="bo-int-discord" data-discord-form>
+        <!-- Usages -->
+        <form method="post" action="<?= $h(url('back-office/integrations/discord')) ?>" id="discord-usages" class="bo-int-discord" data-discord-form>
             <?= \App\Core\Csrf::field() ?>
-            <div class="bo-int-common">
-                <label class="bo-int-field">
-                    <span class="bo-int-field__label">Salon commun · lien webhook</span>
-                    <input type="text" inputmode="url" autocomplete="off" spellcheck="false" name="discord_webhook_url" maxlength="500" class="bo-int-input bo-int-mono" value="<?= $h($discordDefaultUrl) ?>" placeholder="https://discord.com/api/webhooks/…" data-webhook-input>
-                    <span class="bo-int-check-msg" data-webhook-msg aria-live="polite"></span>
-                    <span class="bo-int-field__help">Tous les événements réglés sur « Salon commun » partent ici. Laissez vide si vous n’utilisez que des salons à part.</span>
-                </label>
+            <div class="bo-int-usages__head">
+                <div>
+                    <h3 class="bo-int-wh__title">Ce qu’Athena publie</h3>
+                    <p class="bo-int-wh__sub">Activé = publié dans le salon de l’organisation<?= $discordWebhooks !== [] ? ', ou dans le salon à part choisi' : '' ?>.</p>
+                </div>
+                <div class="bo-int-usages__bulk">
+                    <button type="button" class="bo-int-btn bo-int-btn--sm" data-usage-all="on">Tout publier</button>
+                    <button type="button" class="bo-int-btn bo-int-btn--sm" data-usage-all="off">Tout couper</button>
+                </div>
             </div>
 
             <div class="bo-int-toolbar">
                 <label class="bo-int-search">
                     <?= $icon('search') ?>
-                    <span class="bo-int-sr">Chercher un événement</span>
-                    <input type="search" class="bo-int-search__input" placeholder="Chercher un événement (photo, candidature, reco…)" data-discord-search>
+                    <span class="bo-int-sr">Chercher un usage</span>
+                    <input type="search" class="bo-int-search__input" placeholder="Chercher un usage (photo, candidature, invitation…)" data-discord-search>
                 </label>
-                <div class="bo-int-filter" role="group" aria-label="Filtrer les événements">
+                <div class="bo-int-filter" role="group" aria-label="Filtrer les usages">
                     <button type="button" class="bo-int-filter__btn is-active" data-discord-filter="all">Tous</button>
                     <button type="button" class="bo-int-filter__btn" data-discord-filter="on">Publiés <span data-discord-count-on><?= (int) $publishedCount ?></span></button>
                     <button type="button" class="bo-int-filter__btn" data-discord-filter="off">Coupés</button>
                 </div>
             </div>
-            <p class="bo-int-empty" data-discord-empty hidden>Aucun événement ne correspond.</p>
+            <p class="bo-int-empty" data-discord-empty hidden>Aucun usage ne correspond.</p>
 
             <?php foreach ($discordGroups as $groupLabel => $groupEvents): ?>
                 <?php
                 $groupOn = 0;
                 foreach ($groupEvents as $gev) {
-                    if ((string) ($discordEventState[(string) ($gev['key'] ?? '')]['mode'] ?? ($gev['default_mode'] ?? 'off')) !== 'off') {
+                    if ($usageOn((string) ($gev['key'] ?? ''))) {
                         $groupOn++;
                     }
                 }
                 ?>
-                <details class="bo-int-group" data-discord-group<?= $groupLabel === 'Téléphone ATAK' ? ' id="relais-discord-atak"' : '' ?><?= ($groupOn > 0 || $groupLabel === 'Téléphone ATAK') ? ' open' : '' ?>>
+                <details class="bo-int-group" data-discord-group<?= $groupLabel === 'Téléphone ATAK' ? ' id="relais-discord-atak"' : '' ?><?= $groupOn > 0 ? ' open' : '' ?>>
                     <summary class="bo-int-group__head">
                         <span class="bo-int-group__caret" aria-hidden="true"><?= $icon('chevron') ?></span>
                         <span class="bo-int-group__emoji" aria-hidden="true"><?= $h($groupIcons[$groupLabel] ?? '•') ?></span>
                         <h3 class="bo-int-group__title"><?= $h((string) $groupLabel) ?></h3>
                         <span class="bo-int-group__count"><span data-group-on><?= $groupOn ?></span> / <?= count($groupEvents) ?> publiés</span>
                         <span class="bo-int-group__bulk">
-                            <button type="button" class="bo-int-link-btn" data-group-set="default">Tout sur le salon commun</button>
+                            <button type="button" class="bo-int-link-btn" data-group-set="on">Tout publier</button>
                             <button type="button" class="bo-int-link-btn" data-group-set="off">Tout couper</button>
                         </span>
                     </summary>
                     <?php if ($groupLabel === 'Téléphone ATAK'): ?>
-                        <p class="bo-int-group__note">Le lien du salon reste sur Athena : il n’est jamais envoyé au jeu. L’<strong>App Discord du téléphone</strong> ne fonctionne qu’une fois un salon choisi ici. Pour vérifier le téléphone, essayez « App Discord du téléphone » ou « Photos Quick Picture ».</p>
+                        <p class="bo-int-group__note">Le lien du salon reste sur Athena : il n’est jamais envoyé au jeu. L’<strong>App Discord du téléphone</strong> ne fonctionne qu’une fois cet usage activé.</p>
                     <?php endif; ?>
                     <?php foreach ($groupEvents as $ev): ?>
                         <?php
                         $ek = (string) ($ev['key'] ?? '');
-                        $st = is_array($discordEventState[$ek] ?? null) ? $discordEventState[$ek] : [];
-                        $mode = (string) ($st['mode'] ?? ($ev['default_mode'] ?? 'off'));
-                        $dedicatedUrl = (string) ($st['url'] ?? '');
+                        $on = $usageOn($ek);
+                        $dest = $usageDest($ek);
                         $search = mb_strtolower((string) ($ev['label'] ?? '') . ' ' . (string) ($ev['hint'] ?? '') . ' ' . (string) $groupLabel);
                         ?>
-                        <div class="bo-int-event" data-discord-event data-mode="<?= $h($mode) ?>" data-search="<?= $h($search) ?>">
-                            <div class="bo-int-event__text">
-                                <p class="bo-int-event__name"><?= $h((string) ($ev['label'] ?? '')) ?></p>
-                                <p class="bo-int-event__hint"><?= $h((string) ($ev['hint'] ?? '')) ?></p>
-                            </div>
-                            <div class="bo-int-event__ctrl">
-                                <div class="bo-int-seg" role="radiogroup" aria-label="Où publier « <?= $h((string) ($ev['label'] ?? '')) ?> »">
-                                    <?php foreach (['off' => 'Ne pas publier', 'default' => 'Salon commun', 'custom' => 'Autre salon'] as $mv => $ml): ?>
-                                        <label class="bo-int-seg__opt bo-int-seg__opt--<?= $h($mv) ?>">
-                                            <input type="radio" class="js-discord-mode" name="discord_event[<?= $h($ek) ?>][mode]" value="<?= $h($mv) ?>" <?= $mode === $mv ? 'checked' : '' ?>>
-                                            <span><?= $h($ml) ?></span>
-                                        </label>
-                                    <?php endforeach; ?>
-                                </div>
-                                <button type="submit" form="form-discord-test" name="event_key" value="<?= $h($ek) ?>" class="bo-int-btn bo-int-btn--sm" data-discord-test title="Envoyer un message d’essai dans le salon enregistré"><?= $icon('send') ?><span>Essai</span></button>
-                            </div>
-                            <label class="bo-int-field bo-int-event__custom js-discord-custom"<?= $mode === 'custom' ? '' : ' hidden' ?>>
-                                <span class="bo-int-field__label">Autre salon · lien webhook</span>
-                                <input type="text" inputmode="url" autocomplete="off" spellcheck="false" name="discord_event[<?= $h($ek) ?>][url]" maxlength="500" class="bo-int-input bo-int-mono" value="<?= $h($dedicatedUrl) ?>" placeholder="https://discord.com/api/webhooks/…" data-webhook-input>
-                                <span class="bo-int-check-msg" data-webhook-msg aria-live="polite"></span>
+                        <div class="bo-int-event" data-discord-event data-mode="<?= $on ? 'on' : 'off' ?>" data-search="<?= $h($search) ?>">
+                            <label class="bo-int-switch">
+                                <input type="checkbox" name="discord_event[<?= $h($ek) ?>][on]" value="1" data-usage-on <?= $on ? 'checked' : '' ?>>
+                                <span class="bo-int-switch__track" aria-hidden="true"></span>
+                                <span class="bo-int-event__text">
+                                    <span class="bo-int-event__name"><?= $h((string) ($ev['label'] ?? '')) ?></span>
+                                    <span class="bo-int-event__hint"><?= $h((string) ($ev['hint'] ?? '')) ?></span>
+                                </span>
                             </label>
+                            <?php if ($discordWebhooks !== [] || $dest === 'legacy'): ?>
+                                <label class="bo-int-event__dest">
+                                    <span class="bo-int-sr">Salon pour « <?= $h((string) ($ev['label'] ?? '')) ?> »</span>
+                                    <select name="discord_event[<?= $h($ek) ?>][dest]" class="bo-int-select">
+                                        <option value="organisation"<?= $dest === 'organisation' ? ' selected' : '' ?>>Salon de l’organisation</option>
+                                        <?php foreach ($discordWebhooks as $wh): ?>
+                                            <option value="<?= $h($wh['id']) ?>"<?= $dest === $wh['id'] ? ' selected' : '' ?>><?= $h($wh['name'] . ($wh['channel'] !== '' ? ' (' . $wh['channel'] . ')' : '')) ?></option>
+                                        <?php endforeach; ?>
+                                        <?php if ($dest === 'legacy'): ?>
+                                            <option value="legacy" selected>Salon à part enregistré avant</option>
+                                        <?php endif; ?>
+                                    </select>
+                                </label>
+                            <?php else: ?>
+                                <input type="hidden" name="discord_event[<?= $h($ek) ?>][dest]" value="organisation">
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </details>
@@ -371,10 +493,97 @@ $flashSuccess = \App\Core\Session::getFlash('success');
             <div class="bo-int-savebar" data-savebar>
                 <span class="bo-int-savebar__state" data-savebar-state>Tout est enregistré.</span>
                 <button type="reset" class="bo-int-btn" data-savebar-reset disabled>Annuler</button>
-                <button type="submit" class="bo-int-btn bo-int-btn--solid">Enregistrer les relais</button>
+                <button type="submit" class="bo-int-btn bo-int-btn--solid">Enregistrer les usages</button>
             </div>
         </form>
-        <form method="post" action="<?= $h(url('back-office/integrations/discord/essai')) ?>" id="form-discord-test" hidden>
+
+        <!-- Mode avancé : salons à part -->
+        <details class="bo-int-advanced" id="discord-avance"<?= $discordWebhooks !== [] ? ' open' : '' ?>>
+            <summary class="bo-int-guide__summary"><?= $icon('link') ?> Mode avancé : envoyer certains usages dans d’autres salons</summary>
+            <p class="bo-int-wh__sub">Par exemple les candidatures dans #recrutement et les photos dans #renseignement. Ajoutez le salon ici, puis choisissez-le en face de l’usage dans la liste ci-dessus. Un salon retiré renvoie ses usages vers le salon de l’organisation.</p>
+            <?php if ($discordWebhooks !== []): ?>
+            <ul class="bo-int-wh-list">
+                <?php foreach ($discordWebhooks as $wh): ?>
+                <li class="bo-int-wh">
+                    <div class="bo-int-wh__head">
+                        <div>
+                            <h4 class="bo-int-wh__title"><?= $h($wh['name']) ?><?= $wh['channel'] !== '' ? ' <span class="bo-int-wh__chan">' . $h($wh['channel']) . '</span>' : '' ?></h4>
+                            <p class="bo-int-wh__saved bo-int-mono"><?= $h($wh['masked']) ?></p>
+                        </div>
+                        <div class="bo-int-wh__acts">
+                            <button type="button" class="bo-int-btn bo-int-btn--sm" data-wh-test="<?= $h($wh['id']) ?>"><?= $icon('send') ?><span>Tester</span></button>
+                            <form method="post" action="<?= $h(url('back-office/integrations/discord/salons/' . $wh['id'] . '/supprimer')) ?>" onsubmit="return confirm('Retirer ce salon ? Ses usages passeront sur le salon de l’organisation.')">
+                                <?= \App\Core\Csrf::field() ?>
+                                <button type="submit" class="bo-int-link-btn bo-int-link-btn--danger">Retirer</button>
+                            </form>
+                        </div>
+                    </div>
+                    <p class="bo-int-wh__uses">Utilisé pour : <?= $h($usesText($whUses[$wh['id']] ?? [])) ?></p>
+                    <?php if ($wh['last_test_at'] !== ''): ?>
+                        <p class="bo-int-wh__test is-<?= $wh['last_test_ok'] ? 'ok' : 'bad' ?>">Dernier essai le <?= $h($fmtDt($wh['last_test_at'])) ?> : <?= $h($wh['last_test_ok'] ? 'message reçu par Discord' : $wh['last_test_message']) ?></p>
+                    <?php endif; ?>
+                    <p class="bo-int-wh__result" data-wh-result role="status" aria-live="polite"></p>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php endif; ?>
+            <form method="post" action="<?= $h(url('back-office/integrations/discord/salons')) ?>" class="bo-int-wh bo-int-wh__form bo-int-wh--new" data-wh-form>
+                <?= \App\Core\Csrf::field() ?>
+                <h4 class="bo-int-wh__title">Ajouter un salon</h4>
+                <label class="bo-int-field">
+                    <span class="bo-int-field__label">Nom</span>
+                    <input type="text" name="name" maxlength="80" class="bo-int-input" required placeholder="Recrutement">
+                </label>
+                <label class="bo-int-field">
+                    <span class="bo-int-field__label">Salon</span>
+                    <input type="text" name="channel" maxlength="60" class="bo-int-input" placeholder="#recrutement">
+                </label>
+                <label class="bo-int-field bo-int-wh__url">
+                    <span class="bo-int-field__label">Lien du webhook</span>
+                    <input type="text" inputmode="url" autocomplete="off" spellcheck="false" name="url" maxlength="500" class="bo-int-input bo-int-mono" required placeholder="https://discord.com/api/webhooks/…" data-webhook-input>
+                    <span class="bo-int-check-msg" data-webhook-msg aria-live="polite"></span>
+                </label>
+                <div class="bo-int-wh__acts">
+                    <button type="submit" class="bo-int-btn bo-int-btn--solid">Ajouter le salon</button>
+                    <button type="button" class="bo-int-btn" data-wh-test="nouveau"><?= $icon('send') ?><span>Tester ce lien</span></button>
+                </div>
+                <p class="bo-int-wh__result" data-wh-result role="status" aria-live="polite"></p>
+            </form>
+        </details>
+
+        <!-- Message des liens d'invitation -->
+        <details class="bo-int-advanced" id="discord-message">
+            <summary class="bo-int-guide__summary"><?= $icon('mail') ?> Message des liens « compléter son profil »</summary>
+            <p class="bo-int-wh__sub">Texte publié quand un gestionnaire clique sur « Envoyer sur Discord » depuis les effectifs. La personne est mentionnée si son identifiant Discord est connu ; une carte rappelle la communauté, le grade, l’unité, le lien et l’expiration.</p>
+            <form method="post" action="<?= $h(url('back-office/integrations/discord/modele-invitation')) ?>" class="bo-int-tpl" data-tpl-form data-community="<?= $h($communityName !== '' ? $communityName : 'Votre communauté') ?>">
+                <?= \App\Core\Csrf::field() ?>
+                <label class="bo-int-field">
+                    <span class="bo-int-field__label">Message</span>
+                    <textarea name="template" rows="4" maxlength="<?= \App\Support\ProfileInviteDiscordMessage::MAX_TEMPLATE ?>" class="bo-int-input" data-tpl-input><?= $h($inviteTemplate) ?></textarea>
+                </label>
+                <div class="bo-int-tpl__vars" role="group" aria-label="Variables à insérer">
+                    <?php foreach ($inviteVariables as $var => $varHint): ?>
+                        <button type="button" class="bo-int-chip" data-tpl-var="<?= $h($var) ?>" title="<?= $h($varHint) ?>">{<?= $h($var) ?>}</button>
+                    <?php endforeach; ?>
+                </div>
+                <div class="bo-int-tpl__preview" aria-live="polite">
+                    <span class="bo-int-tpl__avatar" aria-hidden="true">A</span>
+                    <div>
+                        <p class="bo-int-tpl__bot">Athena <span>APPLI</span></p>
+                        <p class="bo-int-tpl__text" data-tpl-preview></p>
+                        <div class="bo-int-tpl__embed">
+                            <p class="bo-int-tpl__embed-title">Compléter mon profil — <?= $h($communityName !== '' ? $communityName : 'Votre communauté') ?></p>
+                            <p>Grade : Caporal · Unité : 1re section · SOAR-B-1 · Expire dans 2 jours</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bo-int-wh__acts">
+                    <button type="submit" class="bo-int-btn bo-int-btn--solid">Enregistrer le message</button>
+                    <button type="submit" name="reset" value="1" class="bo-int-link-btn">Remettre le message par défaut</button>
+                </div>
+            </form>
+        </details>
+        <form method="post" action="<?= $h(url('back-office/integrations/discord/tester')) ?>" id="form-wh-test" hidden data-wh-test-form>
             <?= \App\Core\Csrf::field() ?>
         </form>
     </section>

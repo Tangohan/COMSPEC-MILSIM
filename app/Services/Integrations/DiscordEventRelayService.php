@@ -28,19 +28,22 @@ final class DiscordEventRelayService
     public function __construct(
         private ?TenantRepository $tenants = null,
         private ?DiscordWebhookService $discord = null,
+        private ?DiscordWebhookDirectory $directory = null,
     ) {
         $this->tenants ??= new TenantRepository();
         $this->discord ??= new DiscordWebhookService();
     }
 
     /**
-     * @return array{default_url:string, events:array<string, array{mode:string, url:string}>}
+     * Réglage de chaque usage : coupé (off), salon de l'organisation (default) ou salon précis (custom + webhook).
+     * « url » ne subsiste que pour un ancien réglage « Autre salon » pas encore réenregistré.
+     *
+     * @return array{default_url:string, never_saved:bool, events:array<string, array{mode:string, webhook:string, url:string}>}
      */
     public function state(int $tenantId): array
     {
         $settings = $this->tenants->getSettings($tenantId);
         $integrations = is_array($settings['integrations'] ?? null) ? $settings['integrations'] : [];
-        $default = trim((string) ($integrations['discord_webhook_url'] ?? ''));
         $rawEvents = is_array($integrations[self::SETTINGS_EVENTS_KEY] ?? null)
             ? $integrations[self::SETTINGS_EVENTS_KEY]
             : [];
@@ -54,85 +57,92 @@ final class DiscordEventRelayService
             }
             $events[$key] = [
                 'mode' => $mode,
+                'webhook' => trim((string) ($row['webhook'] ?? '')),
                 'url' => trim((string) ($row['url'] ?? '')),
             ];
         }
 
         return [
-            'default_url' => $default,
+            'default_url' => DiscordWebhookDirectory::reveal($integrations['discord_webhook_url'] ?? ''),
+            'never_saved' => !isset($integrations[self::SETTINGS_EVENTS_KEY]),
             'events' => $events,
         ];
     }
 
     /**
-     * @param array<string, array{mode?:string, url?:string}> $eventsInput
+     * Enregistre les usages. Pour chaque clé du catalogue : on = '1' (publier) et dest = 'organisation' ou l'identifiant
+     * d'un salon nommé. Un usage absent du formulaire est coupé. Les anciens liens « Autre salon » sont repris dans le
+     * carnet (chiffrés) avant d'être retirés du réglage.
+     *
+     * @param array<string, mixed> $eventsInput
      * @return array{ok:bool, message:string}
      */
-    public function save(int $tenantId, string $defaultUrl, array $eventsInput): array
+    public function saveEvents(int $tenantId, array $eventsInput): array
     {
-        $defaultUrl = trim($defaultUrl);
-        if ($defaultUrl !== '') {
-            $problem = DiscordChannelInput::problem($defaultUrl, 'Salon commun');
-            if ($problem !== null) {
-                return ['ok' => false, 'message' => $problem];
+        $settings = $this->tenants->getSettings($tenantId);
+        $integrations = is_array($settings['integrations'] ?? null) ? $settings['integrations'] : [];
+        $previous = $this->state($tenantId)['events'];
+        $known = [];
+        foreach ((is_array($integrations['discord_webhooks'] ?? null) ? $integrations['discord_webhooks'] : []) as $w) {
+            if (is_array($w) && isset($w['id'])) {
+                $known[(string) $w['id']] = true;
             }
-            $defaultUrl = DiscordChannelInput::webhookUrl($defaultUrl);
         }
-
         $events = [];
         foreach (DiscordWebhookCatalog::events() as $meta) {
             $key = $meta['key'];
             $row = is_array($eventsInput[$key] ?? null) ? $eventsInput[$key] : [];
-            $mode = trim((string) ($row['mode'] ?? $meta['default_mode']));
-            if (!in_array($mode, [DiscordWebhookCatalog::MODE_OFF, DiscordWebhookCatalog::MODE_DEFAULT, DiscordWebhookCatalog::MODE_CUSTOM], true)) {
-                $mode = $meta['default_mode'];
+            if ((string) ($row['on'] ?? '') !== '1') {
+                $events[$key] = ['mode' => DiscordWebhookCatalog::MODE_OFF, 'webhook' => ''];
+                continue;
             }
-            $url = trim((string) ($row['url'] ?? ''));
-            if ($mode === DiscordWebhookCatalog::MODE_CUSTOM) {
-                if ($url === '') {
-                    return [
-                        'ok' => false,
-                        'message' => '« ' . $meta['label'] . ' » est réglé sur « Autre salon » mais aucun lien webhook n’est renseigné. Collez l’URL du webhook de ce salon, ou choisissez « Salon commun ».',
-                    ];
-                }
-                $problem = DiscordChannelInput::problem($url, '« ' . $meta['label'] . ' » (autre salon)');
-                if ($problem !== null) {
-                    return ['ok' => false, 'message' => $problem];
-                }
-                $url = DiscordChannelInput::webhookUrl($url);
+            $dest = trim((string) ($row['dest'] ?? DiscordWebhookDirectory::ORGANISATION));
+            if ($dest === 'legacy') {
+                $dest = DiscordWebhookDirectory::adoptLegacyUrl($integrations, (string) ($previous[$key]['url'] ?? ''), 'Salon « ' . $meta['label'] . ' »');
+                $known[$dest] = $dest !== '';
+            }
+            if ($dest !== '' && $dest !== DiscordWebhookDirectory::ORGANISATION && !empty($known[$dest])) {
+                $events[$key] = ['mode' => DiscordWebhookCatalog::MODE_CUSTOM, 'webhook' => $dest];
             } else {
-                $url = DiscordChannelInput::webhookUrl($url);
+                $events[$key] = ['mode' => DiscordWebhookCatalog::MODE_DEFAULT, 'webhook' => ''];
             }
-            $events[$key] = ['mode' => $mode, 'url' => $url];
         }
-
-        $settings = $this->tenants->getSettings($tenantId);
-        $integrations = is_array($settings['integrations'] ?? null) ? $settings['integrations'] : [];
-        $integrations['discord_webhook_url'] = $defaultUrl !== '' ? $defaultUrl : null;
         $integrations[self::SETTINGS_EVENTS_KEY] = $events;
         $this->tenants->mergeSettings($tenantId, ['integrations' => $integrations]);
 
-        return ['ok' => true, 'message' => 'Les relais Discord ont été enregistrés.'];
+        return ['ok' => true, 'message' => 'Les usages Discord ont été enregistrés.'];
     }
 
+    /**
+     * Salon d'un usage. Salon précis disparu ou illisible → salon de l'organisation (« quand rien de spécifique n'est
+     * défini, tout part sur le salon de l'organisation »).
+     */
     public function resolveUrl(int $tenantId, string $eventKey): ?string
     {
         if ($tenantId < 2 || !DiscordWebhookCatalog::isKnown($eventKey)) {
             return null;
         }
         $state = $this->state($tenantId);
-        $mode = $state['events'][$eventKey]['mode'] ?? DiscordWebhookCatalog::defaultMode($eventKey);
-        if ($mode === DiscordWebhookCatalog::MODE_OFF) {
+        $row = $state['events'][$eventKey] ?? ['mode' => DiscordWebhookCatalog::defaultMode($eventKey), 'webhook' => '', 'url' => ''];
+        if ($row['mode'] === DiscordWebhookCatalog::MODE_OFF) {
             return null;
         }
-        if ($mode === DiscordWebhookCatalog::MODE_CUSTOM) {
-            $url = trim((string) ($state['events'][$eventKey]['url'] ?? ''));
-
-            return $this->discord->isValidWebhookUrl($url) ? $url : null;
+        if ($row['mode'] === DiscordWebhookCatalog::MODE_CUSTOM) {
+            $url = $row['webhook'] !== ''
+                ? (string) ($this->directory()->urlFor($tenantId, $row['webhook']) ?? '')
+                : $row['url'];
+            if ($this->discord->isValidWebhookUrl($url)) {
+                return $url;
+            }
         }
-        $default = trim($state['default_url']);
+        $default = $state['default_url'];
 
         return $this->discord->isValidWebhookUrl($default) ? $default : null;
+    }
+
+    private function directory(): DiscordWebhookDirectory
+    {
+        return $this->directory ??= new DiscordWebhookDirectory($this->tenants);
     }
 
     /** @return array{ok:bool, skipped:bool, error?:string} */
@@ -496,7 +506,7 @@ final class DiscordEventRelayService
             : DiscordWebhookCatalog::KEY_ANNOUNCEMENTS;
         $url = $this->resolveUrl($tenantId, $key);
         if ($url === null) {
-            return ['ok' => false, 'message' => 'Aucun salon n’est configuré pour cet événement. Choisissez le salon commun ou un autre salon, puis enregistrez.'];
+            return ['ok' => false, 'message' => 'Aucun salon ne reçoit cet usage. Renseignez le salon de l’organisation ou activez l’usage, puis enregistrez.'];
         }
         $label = DiscordWebhookCatalog::byKey()[$key]['label'] ?? 'essai';
         $result = $this->discord->send($url, 'Essai Athena : relais « ' . $label . ' » opérationnel.');
@@ -505,5 +515,50 @@ final class DiscordEventRelayService
         }
 
         return ['ok' => false, 'message' => (string) ($result['error'] ?? 'Discord a refusé le message d’essai.')];
+    }
+
+    /**
+     * Bouton « Tester » d'un salon : « organisation », identifiant d'un salon nommé, ou lien pas encore enregistré
+     * ($rawUrl, vérifié avant envoi). Le résultat est gardé pour l'affichage (dernier essai réussi / refusé).
+     *
+     * @return array{ok:bool, message:string}
+     */
+    public function testDestination(int $tenantId, string $id, string $rawUrl = '', string $communityName = ''): array
+    {
+        $rawUrl = trim($rawUrl);
+        if ($rawUrl !== '') {
+            $url = DiscordChannelInput::webhookUrl($rawUrl);
+            if ($url === '') {
+                return ['ok' => false, 'message' => DiscordChannelInput::problem($rawUrl, 'Ce lien') ?? 'Lien non reconnu.'];
+            }
+        } else {
+            $url = (string) ($this->directory()->urlFor($tenantId, $id) ?? '');
+            if ($url === '') {
+                return ['ok' => false, 'message' => 'Aucun lien n’est enregistré pour ce salon. Collez le lien webhook puis enregistrez.'];
+            }
+        }
+        $embed = [
+            'title' => 'Essai Athena',
+            'description' => 'Ce salon est bien relié à ' . ($communityName !== '' ? $communityName : 'votre communauté') . ' sur Athena. Vous pouvez supprimer ce message.',
+            'color' => 0x34D399,
+            'timestamp' => gmdate('c'),
+        ];
+        try {
+            $result = $this->discord->sendRawEmbed($url, $embed, 'Athena');
+        } catch (\Throwable) {
+            $result = ['ok' => false, 'error' => 'Discord injoignable pour le moment.'];
+        }
+        $ok = !empty($result['ok']);
+        $message = $ok
+            ? 'Message d’essai publié. Vérifiez qu’il est apparu dans le bon salon.'
+            : (string) ($result['error'] ?? 'Discord a refusé le message d’essai.');
+        if ($rawUrl === '') {
+            try {
+                $this->directory()->recordTest($tenantId, $id, $ok, $message);
+            } catch (\Throwable) {
+            }
+        }
+
+        return ['ok' => $ok, 'message' => $message];
     }
 }

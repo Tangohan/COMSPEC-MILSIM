@@ -11,10 +11,13 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantApiKeyRepository;
 use App\Repositories\TenantRepository;
+use App\Services\Audit\AuditAction;
 use App\Services\Auth\AuthService;
 use App\Services\Email\TenantMailSender;
 use App\Services\Integrations\DiscordEventRelayService;
+use App\Services\Integrations\DiscordWebhookDirectory;
 use App\Services\Integrations\DiscordWebhookService;
+use App\Support\ProfileInviteDiscordMessage;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Sse\SseTransmissionDiscordService;
 use App\Support\DiscordWebhookCatalog;
@@ -47,6 +50,7 @@ final class OrganizationIntegrationsController
         $keys = $planAllowed ? $this->apiKeys->listForTenant($tenantId) : [];
         $flashKey = Session::getFlash('new_integration_key');
         $discord = new DiscordEventRelayService();
+        $directory = new DiscordWebhookDirectory();
         $sse = new SseTransmissionDiscordService();
         $mailer = new TenantMailSender();
 
@@ -65,6 +69,11 @@ final class OrganizationIntegrationsController
             'mail_sender' => $mailer->state($tenantId),
             'mail_providers' => TenantMailSender::PROVIDERS,
             'admin_email' => (string) ($user['email'] ?? ''),
+            'discord_org' => $directory->organisation($tenantId),
+            'discord_webhooks' => $directory->list($tenantId),
+            'invite_template' => $directory->inviteTemplate($tenantId),
+            'invite_variables' => ProfileInviteDiscordMessage::variables(),
+            'community_name' => (string) ((new TenantRepository())->findById($tenantId)['name'] ?? ''),
         ]);
     }
 
@@ -123,15 +132,164 @@ final class OrganizationIntegrationsController
         $tenantId = (int) Session::get('tenant_id');
         $events = $request->input('discord_event', []);
         $events = is_array($events) ? $events : [];
-        $result = (new DiscordEventRelayService())->save(
-            $tenantId,
-            (string) $request->input('discord_webhook_url', ''),
-            $events
-        );
+        $result = (new DiscordEventRelayService())->saveEvents($tenantId, $events);
+        $this->audit(AuditAction::DISCORD_WEBHOOK_SAVED, $tenantId, 'usages');
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
-        return Response::redirect(url('back-office/integrations') . '#relais-discord');
+        return Response::redirect(url('back-office/integrations') . '#discord-usages');
     }
+
+    /** Salon de l'organisation : un seul lien pour tous les usages qui n'ont pas de salon à part. */
+    public function saveDiscordOrganisation(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/integrations'));
+        }
+        $denied = $this->guardOrg();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $directory = new DiscordWebhookDirectory();
+        $relay = new DiscordEventRelayService();
+        $wasConfigured = $directory->organisation($tenantId)['configured'];
+        $neverSaved = $relay->state($tenantId)['never_saved'];
+        $clear = (string) $request->input('clear', '') === '1';
+        $result = $directory->saveOrganisation(
+            $tenantId,
+            (string) $request->input('url', ''),
+            (string) $request->input('name', ''),
+            (string) $request->input('channel', ''),
+            $clear
+        );
+        $message = $result['message'];
+        if ($result['ok'] && !$clear && !$wasConfigured && $neverSaved && $directory->organisation($tenantId)['configured']) {
+            // Premier salon d'une communauté qui n'avait rien réglé : tout y part, les usages se coupent ensuite un par un.
+            $all = [];
+            foreach (DiscordWebhookCatalog::keys() as $key) {
+                $all[$key] = ['on' => '1', 'dest' => DiscordWebhookDirectory::ORGANISATION];
+            }
+            $relay->saveEvents($tenantId, $all);
+            $message .= ' Tous les usages y sont publiés : coupez ceux dont vous ne voulez pas dans la liste ci-dessous.';
+        }
+        if ($result['ok']) {
+            $this->audit($clear ? AuditAction::DISCORD_WEBHOOK_REMOVED : AuditAction::DISCORD_WEBHOOK_SAVED, $tenantId, 'organisation');
+        }
+        Session::flash($result['ok'] ? 'success' : 'error', $message);
+
+        return Response::redirect(url('back-office/integrations') . '#discord-organisation');
+    }
+
+    /** Mode avancé : salon à part (nom, salon, lien), pour envoyer certains usages ailleurs. */
+    public function addDiscordWebhook(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/integrations'));
+        }
+        $denied = $this->guardOrg();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $result = (new DiscordWebhookDirectory())->add(
+            $tenantId,
+            (string) $request->input('name', ''),
+            (string) $request->input('channel', ''),
+            (string) $request->input('url', '')
+        );
+        if ($result['ok']) {
+            $this->audit(AuditAction::DISCORD_WEBHOOK_SAVED, $tenantId, 'salon:' . ($result['id'] ?? ''));
+        }
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('back-office/integrations') . '#discord-avance');
+    }
+
+    public function removeDiscordWebhook(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/integrations'));
+        }
+        $denied = $this->guardOrg();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (string) ($params['webhookId'] ?? '');
+        $result = (new DiscordWebhookDirectory())->remove($tenantId, $id);
+        if ($result['ok']) {
+            $this->audit(AuditAction::DISCORD_WEBHOOK_REMOVED, $tenantId, 'salon:' . $id);
+        }
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('back-office/integrations') . '#discord-avance');
+    }
+
+    /**
+     * Bouton « Tester » (réponse affichée sur place) : salon enregistré (id) ou lien en cours de saisie (url).
+     * Dix essais par minute et par communauté.
+     */
+    public function testDiscordWebhook(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            return Response::json(['ok' => false, 'message' => 'Session expirée. Rechargez la page.'], 419);
+        }
+        $user = $this->auth->user();
+        $tenantId = (int) (Session::get('tenant_id') ?? 0);
+        if (!$user || $tenantId < 2 || !Gate::getInstance()->allows('admin.organization')) {
+            return Response::json(['ok' => false, 'message' => 'Accès refusé.'], 403);
+        }
+        try {
+            if ((new \App\Services\Security\FileRateLimiter())->tooManyAttempts('discord_webhook_test|' . $tenantId, 10, 60)) {
+                return Response::json(['ok' => false, 'message' => 'Trop d’essais d’affilée. Patientez une minute.'], 429);
+            }
+        } catch (\Throwable) {
+        }
+        $id = trim((string) $request->input('id', DiscordWebhookDirectory::ORGANISATION));
+        $typed = (string) $request->input('url', '');
+        $tenant = (new TenantRepository())->findById($tenantId) ?? [];
+        $result = (new DiscordEventRelayService())->testDestination($tenantId, $id, $typed, (string) ($tenant['name'] ?? ''));
+        $this->audit(AuditAction::DISCORD_WEBHOOK_TESTED, $tenantId, (trim($typed) !== '' ? 'lien saisi' : 'salon:' . $id) . ($result['ok'] ? ';ok' : ';refus'));
+
+        return Response::json($result, $result['ok'] ? 200 : 422);
+    }
+
+    /** Modèle du message Discord des liens « compléter son profil ». */
+    public function saveInviteTemplate(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/integrations'));
+        }
+        $denied = $this->guardOrg();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $reset = (string) $request->input('reset', '') === '1';
+        (new DiscordWebhookDirectory())->saveInviteTemplate($tenantId, $reset ? '' : (string) $request->input('template', ''));
+        $this->audit(AuditAction::DISCORD_WEBHOOK_SAVED, $tenantId, 'modele-invitation');
+        Session::flash('success', $reset ? 'Message d’invitation remis par défaut.' : 'Message d’invitation enregistré.');
+
+        return Response::redirect(url('back-office/integrations') . '#discord-message');
+    }
+
+    private function audit(string $action, int $tenantId, string $detail): void
+    {
+        try {
+            \App\Core\Container::get(\App\Services\Audit\AuditService::class)
+                ->log($action, $tenantId, (int) Session::get('user_id') ?: null, 'discord_webhook', null, null, $detail);
+        } catch (\Throwable) {
+        }
+    }
+
 
     public function testDiscord(Request $request, array $params = []): Response
     {

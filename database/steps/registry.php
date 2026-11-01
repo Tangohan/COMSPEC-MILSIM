@@ -28,4 +28,5 @@ return [
     ['id' => 'atak_api_hot_indexes', 'label' => 'Index des lectures fréquentes de la liaison (positions, repères)', 'group' => 'schema', 'file' => '3230_atak_api_hot_indexes.php', 'rerun' => true],
     ['id' => 'user_totp_used_steps', 'label' => 'Double vérification : anti-rejeu des codes de l’application', 'group' => 'schema', 'file' => '3240_user_totp_used_steps.php', 'rerun' => true],
     ['id' => 'units_military_symbol', 'label' => 'ORBAT : symbole militaire MIL-STD-2525 et échelon des unités (units.sidc, units.echelon)', 'group' => 'schema', 'file' => '3250_units_military_symbol.php', 'rerun' => true],
+    ['id' => 'member_profile_invites', 'label' => 'Liens pour compléter son profil (invitations des effectifs)', 'group' => 'schema', 'file' => '3260_member_profile_invites.php', 'rerun' => true],
 ];

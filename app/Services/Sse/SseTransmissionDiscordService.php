@@ -318,7 +318,8 @@ final class SseTransmissionDiscordService
 
     private function communityWebhookUrl(int $tenantId): ?string
     {
-        $url = trim((string) ($this->tenants->getSettings($tenantId)['integrations']['discord_webhook_url'] ?? ''));
+        // Salon de l'organisation (chiffré au repos, voir DiscordWebhookDirectory).
+        $url = (string) ((new \App\Services\Integrations\DiscordWebhookDirectory($this->tenants))->organisationUrl($tenantId) ?? '');
         if ($url === '' || !$this->discord->isValidWebhookUrl($url)) {
             return null;
         }

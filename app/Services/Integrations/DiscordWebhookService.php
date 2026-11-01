@@ -121,6 +121,17 @@ final class DiscordWebhookService
         return $this->post($webhookUrl, $payload);
     }
 
+    /**
+     * Message complet (contenu, embeds, mentions autorisées) préparé par l'appelant.
+     *
+     * @param array<string, mixed> $payload
+     * @return array{ok:bool, error?:string}
+     */
+    public function sendMessage(string $webhookUrl, array $payload): array
+    {
+        return $this->post($webhookUrl, $payload);
+    }
+
     /** @return array{ok:bool, error?:string} */
     public function send(string $webhookUrl, string $content, ?string $username = null, int $timeoutSeconds = self::TIMEOUT_SECONDS): array
     {

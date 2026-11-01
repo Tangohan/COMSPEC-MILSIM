@@ -147,7 +147,11 @@ $exportUrl = url('orbat/export');
 <div id="orb-invite" hidden>
     <form method="post" action="<?= $h(url('back-office/users/store')) ?>" class="space-y-4">
         <h2><?= $h($T['invite_member']) ?></h2>
+        <p class="text-sm">Un e-mail lui envoie un lien (valable 48 h) pour créer son mot de passe et compléter son profil. Pour l’envoyer plutôt sur Discord, passez par Effectifs › Ajouter un membre.</p>
         <?= \App\Core\Csrf::field() ?>
+        <input type="hidden" name="invite" value="1">
+        <input type="hidden" name="duration_hours" value="48">
+        <input type="hidden" name="send_email" value="1">
         <?php
         $fieldIdPrefix = 'orb-user-';
         $matrixRootId = 'orb-role-matrix-wrap';

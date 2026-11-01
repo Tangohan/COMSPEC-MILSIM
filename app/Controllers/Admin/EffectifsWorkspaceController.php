@@ -1055,6 +1055,132 @@ class EffectifsWorkspaceController
             ->setBody($csv);
     }
 
+    /**
+     * Ajouter un membre : formulaire en étapes (identité de jeu, place dans l'unité, dossier, lien d'invitation, aperçu).
+     * Chaque volet n'apparaît qu'avec le droit correspondant ; l'enregistrement est fait par UserAdminController::store.
+     */
+    public function newMember(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canCreateMembers($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à ajouter des membres.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $tenant = $this->tenantRepository->findById($tenantId) ?: [];
+        $grades = $this->gradeRepository->listActiveForDoctrinePicker($tenantId);
+        $unitMeta = $this->unitRepository->hierarchyMetaByUnitId($tenantId);
+        $codes = (new UnitCodeService())->sync($tenantId)['units'];
+        $units = [];
+        foreach ($this->unitRepository->allForTenant($tenantId) as $u) {
+            $uid = (int) ($u['id'] ?? 0);
+            $path = trim((string) ($unitMeta[$uid]['path'] ?? ''));
+            $units[] = [
+                'id' => $uid,
+                'name' => trim((string) ($u['name'] ?? '')),
+                'path' => $path !== '' ? $path : trim((string) ($u['name'] ?? '')),
+                'code' => (string) ($codes[$uid]['code'] ?? ''),
+                'admin_id' => (string) ($codes[$uid]['admin_id'] ?? ''),
+            ];
+        }
+        usort($units, static fn (array $a, array $b): int => strcasecmp($a['path'], $b['path']));
+        $jobGroups = [];
+        $jobMax = 5;
+        if ($this->personnelJobRoleRepository->tablesExist() && $this->personnelJobRoleRepository->pivotTableExists()) {
+            try {
+                $jobGroups = (new JobRolePickerService($this->personnelJobRoleRepository))->groups($tenantId, []);
+                $jobMax = (int) PersonnelJobRoleAssignmentsSettings::resolve($this->tenantRepository->getSettings($tenantId))['max_roles_per_member'];
+            } catch (\Throwable $e) {
+                error_log('Effectifs nouveau membre : emplois indisponibles : ' . $e->getMessage());
+            }
+        }
+        $community = $this->communitySettingsFor($tenantId);
+        $invites = new \App\Services\Effectifs\MemberProfileInviteService();
+        $destinations = [];
+        try {
+            $destinations = (new \App\Services\Effectifs\MemberProfileInviteSender($invites, $this->userRepository, $this->tenantRepository))->destinations($tenantId);
+        } catch (\Throwable) {
+        }
+        $old = Session::get('effectifs_new_member_old');
+
+        return $this->shell('admin.effectifs_workspace.new_member', [
+            'title' => 'Ajouter un membre',
+            'effectifsNav' => 'nouveau',
+            'nmRosterOnly' => \App\Services\Community\TenantTypeConfig::rosterWithoutAccounts((string) ($tenant['tenant_type'] ?? 'full')),
+            'nmGradeGroups' => GradeSelectOptions::groups($grades, CommunityLanguages::preferredGradeCountry($this->tenantRepository->getSettings($tenantId))),
+            'nmUnits' => $units,
+            'nmAccessRoles' => $this->roleRepository->forTenantAccessProfiles($tenantId),
+            'nmJobGroups' => $jobGroups,
+            'nmJobMax' => max(1, $jobMax),
+            'nmLanguages' => CommunityLanguages::communityLanguages($community),
+            'nmDefaultLanguage' => CommunityLanguages::communityDefault($community),
+            'nmCanGrades' => EffectifsLmsAccess::canManageGrades($gate),
+            'nmCanAssign' => EffectifsLmsAccess::canManageAssignments($gate),
+            'nmCanRoles' => EffectifsLmsAccess::canManageRoles($gate),
+            'nmCanProfiles' => EffectifsLmsAccess::canEditProfiles($gate),
+            'nmInvitesReady' => $invites->available(),
+            'nmDestinations' => $destinations,
+            'nmOld' => is_array($old) ? $old : [],
+            'csrfToken' => Csrf::token(),
+        ]);
+    }
+
+    /** Effectifs › Invitations : tous les liens « compléter son profil » de la communauté, façon « partage ». */
+    public function invitations(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $invites = new \App\Services\Effectifs\MemberProfileInviteService();
+        $rows = (new \App\Services\Effectifs\MemberProfileInviteBoard($invites, null, $this->userRepository))->forTenant($tenantId, 100);
+        $destinations = [];
+        try {
+            $destinations = (new \App\Services\Effectifs\MemberProfileInviteSender($invites, $this->userRepository, $this->tenantRepository))->destinations($tenantId);
+        } catch (\Throwable) {
+        }
+
+        return $this->shell('admin.effectifs_workspace.invitations', [
+            'title' => 'Invitations',
+            'effectifsNav' => 'invitations',
+            'invRows' => $rows,
+            'invReady' => $invites->available(),
+            'invCanManage' => EffectifsLmsAccess::canInviteMembers(Gate::getInstance()),
+            'invDestinations' => $destinations,
+            'invFilter' => (string) $request->query('etat', ''),
+            'csrfToken' => Csrf::token(),
+        ]);
+    }
+
+    /**
+     * Panneau « Invitations » de la fiche (liens, étapes faites, actions).
+     *
+     * @return array{rows: list<array<string, mixed>>, ready: bool, can_manage: bool, destinations: list<array{id:string, label:string, preferred:bool}>, needs_link: bool}
+     */
+    private function memberInvitePanel(int $tenantId, array $user): array
+    {
+        $invites = new \App\Services\Effectifs\MemberProfileInviteService();
+        $out = ['rows' => [], 'ready' => $invites->available(), 'can_manage' => EffectifsLmsAccess::canInviteMembers(Gate::getInstance()), 'destinations' => [], 'needs_link' => false];
+        if (!$out['ready']) {
+            return $out;
+        }
+        try {
+            $out['rows'] = (new \App\Services\Effectifs\MemberProfileInviteBoard($invites, null, $this->userRepository))->forMember($tenantId, (int) $user['id']);
+            $out['destinations'] = (new \App\Services\Effectifs\MemberProfileInviteSender($invites, $this->userRepository, $this->tenantRepository))->destinations($tenantId);
+        } catch (\Throwable $e) {
+            error_log('Effectifs fiche : invitations indisponibles : ' . $e->getMessage());
+        }
+        $out['needs_link'] = \App\Controllers\Web\ProfileInviteController::needsActivation($user);
+
+        return $out;
+    }
+
     public function member(Request $request, array $params = []): Response
     {
         $denied = $this->denyUnlessAccess();
@@ -1270,9 +1396,10 @@ class EffectifsWorkspaceController
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css'],
             'loadDecorationsKit' => true,
             'effMemberUnitCode' => (new UnitCodeService())->forUnit($tenantId, (int) ($row['unit_id'] ?? 0)),
+            'memberInvitePanel' => $this->memberInvitePanel($tenantId, $user),
         ]);
     }
 
@@ -3662,7 +3789,7 @@ class EffectifsWorkspaceController
             'boSkipPageHead' => true,
             // The member page embeds the personnel editor. Its response only contains
             // the view body, so its component stylesheet must be loaded by this shell.
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css'],
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
             'elevationOpenCount' => $elevationOpen,

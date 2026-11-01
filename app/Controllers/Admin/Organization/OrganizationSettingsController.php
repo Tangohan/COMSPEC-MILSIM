@@ -704,14 +704,8 @@ final class OrganizationSettingsController
         }
 
         $warnings = [];
-        $discordRaw = trim((string) $request->input('discord_webhook_url', ''));
-        if ($discordRaw === '') {
-            $integrations['discord_webhook_url'] = null;
-        } elseif (\App\Support\DiscordChannelInput::webhookUrl($discordRaw) !== '') {
-            $integrations['discord_webhook_url'] = \App\Support\DiscordChannelInput::webhookUrl($discordRaw);
-        } else {
-            $warnings[] = 'Relais Discord non enregistré. ' . (\App\Support\DiscordChannelInput::problem($discordRaw, 'Relais Discord (annonces)') ?? 'Le lien doit commencer par https://discord.com/api/webhooks/…');
-        }
+        // Le salon Discord de l'organisation se règle dans Intégrations › Discord (lien chiffré, jamais réaffiché) :
+        // les paramètres généraux n'y touchent plus.
 
         $this->tenantRepository->mergeSettings($tenantId, [
             'timezone' => $timezone,

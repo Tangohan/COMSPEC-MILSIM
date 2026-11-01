@@ -42,11 +42,15 @@ final class DiscordWebhookCatalogAssetTest extends TestCase
 
         self::assertStringContainsString('relais-discord', $view);
         self::assertStringContainsString('discord_event[', $view);
-        self::assertStringContainsString('Salon commun', $view);
-        self::assertStringContainsString('Autre salon', $view);
-        self::assertStringContainsString('Photos Quick Picture', $view);
-        self::assertStringContainsString('js-discord-mode', $view);
+        self::assertStringContainsString('Salon de l’organisation', $view);
+        self::assertStringContainsString('Mode avancé', $view);
+        self::assertStringContainsString('Tutoriel', $view);
+        self::assertStringContainsString('data-usage-on', $view);
+        self::assertStringContainsString('data-wh-test', $view);
+        self::assertStringNotContainsString('discord_webhook_url', $view, 'le lien enregistré n’est jamais réécrit dans la page');
         self::assertStringContainsString('Transmissions terrain', $view);
+        self::assertContains(DiscordWebhookCatalog::KEY_MEMBER_INVITES, DiscordWebhookCatalog::keys());
+        self::assertSame('default', DiscordWebhookCatalog::defaultMode(DiscordWebhookCatalog::KEY_MEMBER_INVITES));
         self::assertStringContainsString('discord_events', $view);
         self::assertStringContainsString('DiscordWebhookCatalog::events()', $controller);
         self::assertStringContainsString("'/back-office/integrations/discord'", $routes);

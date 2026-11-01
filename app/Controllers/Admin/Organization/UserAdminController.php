@@ -42,8 +42,6 @@ use App\Repositories\AccountPurgeRequestRepository;
 
 class UserAdminController
 {
-    private const SETUP_TOKEN_HOURS = 72;
-
     private const RESEND_VERIFICATION_COOLDOWN_SEC = 90;
 
     private function organizationRoleLabelModeForTenant(int $tenantId): string
@@ -574,33 +572,12 @@ class UserAdminController
         return Response::redirect(url('back-office/users/' . $id));
     }
 
-    public function create(Request $request, array $params = []): Response
-    {
-        $tenantId = (int) Session::get('tenant_id');
-        if (!$tenantId) {
-            return Response::redirect(url('login'));
-        }
-        $roles = $this->roleRepository->forTenantOrganization($tenantId);
-        $roleMatrix = $this->roleRepository->organizationRolesPermissionMatrix($tenantId);
-        $grades = $this->gradeRepository->listActiveForDoctrinePicker($tenantId);
-        $gradeCategories = $this->gradeCategoryRepository->listForTenant($tenantId);
-        $tenantRowCreate = $this->tenantRepository->findById($tenantId);
-        $rosterWithoutAccounts = \App\Services\Community\TenantTypeConfig::rosterWithoutAccounts((string) ($tenantRowCreate['tenant_type'] ?? 'full'));
-        return Response::view('layout.main', [
-            'content' => 'admin.organization.users.create',
-            'title' => $rosterWithoutAccounts ? 'Nouvelle fiche' : 'Nouvel utilisateur',
-            'rosterWithoutAccounts' => $rosterWithoutAccounts,
-            'roles' => $roles,
-            'roleMatrix' => $roleMatrix,
-            'grades' => $grades,
-            'gradeCategories' => $gradeCategories,
-            'organizationRoleLabelMode' => $this->organizationRoleLabelModeForTenant($tenantId),
-            'steamWebConfigured' => $this->steamWebApiService->isConfigured(),
-            'backOfficePageCss' => ['back-office-users.css'],
-            'showPortalFooter' => false,
-        ]);
-    }
-
+    /**
+     * Ajout d'un membre (Effectifs › Ajouter un membre, ou fenêtre « Inviter un membre » de la structure).
+     *
+     * Aucun e-mail ne part tout seul : la personne reçoit un lien « compléter son profil » (24 ou 48 h) que le
+     * gestionnaire copie, poste sur Discord, ou envoie par e-mail s'il le demande (send_email=1).
+     */
     public function store(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
@@ -609,23 +586,52 @@ class UserAdminController
             return Response::redirect(url('login'));
         }
         $createUrl = $this->memberCreateEntryUrl($tenantId);
-        $email = trim((string) $request->input('email'));
+        $gateNow = Gate::getInstance();
+        if (!\App\Support\EffectifsLmsAccess::canCreateMembers($gateNow)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à ajouter des membres.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Recommencez.');
+
+            return Response::redirect($createUrl);
+        }
+        $canGrades = \App\Support\EffectifsLmsAccess::canManageGrades($gateNow);
+        $canRoles = \App\Support\EffectifsLmsAccess::canManageRoles($gateNow);
+        $rights = [
+            'profiles' => \App\Support\EffectifsLmsAccess::canEditProfiles($gateNow),
+            'assignments' => \App\Support\EffectifsLmsAccess::canManageAssignments($gateNow),
+        ];
+        $emailUnknown = (string) $request->input('email_unknown', '') === '1';
+        $email = $emailUnknown ? '' : trim((string) $request->input('email'));
         $firstName = trim((string) $request->input('first_name'));
         $lastName = trim((string) $request->input('last_name'));
         $displayName = trim($firstName . ' ' . $lastName);
         $callsign = trim((string) $request->input('callsign'));
-        $roleIds = $this->parseRoleIdsFromRequest($request);
+        $this->rememberCreateInput($request);
+
+        $roleIds = [];
+        if ($canRoles) {
+            $accessRoleId = (int) $request->input('access_role_id', 0);
+            $roleIds = $accessRoleId > 0 ? [$accessRoleId] : $this->parseRoleIdsFromRequest($request);
+        }
         foreach ($roleIds as $rid) {
             if (!$this->roleRepository->canAssignInTenantAdminContext($rid, $tenantId)) {
-                Session::flash('error', 'Un rôle sélectionné ne peut pas être attribué depuis l’administration communauté.');
+                Session::flash('error', 'Ce niveau d’accès ne peut pas être attribué depuis les effectifs.');
 
                 return Response::redirect($createUrl);
             }
         }
         $primaryRoleId = $this->userRepository->peekPrimaryRoleIdForTenant($tenantId, $roleIds);
-        $gradeId = $request->input('grade_id') ? (int) $request->input('grade_id') : null;
+        $gradeId = $canGrades && $request->input('grade_id') ? (int) $request->input('grade_id') : null;
         if ($gradeId !== null && $gradeId > 0 && !$this->gradeIsAvailableForDoctrinePicker($tenantId, $gradeId)) {
             Session::flash('error', 'Le grade sélectionné n’est pas disponible.');
+
+            return Response::redirect($createUrl);
+        }
+        if ($callsign !== '' && $this->userRepository->callsignExistsInTenant($tenantId, $callsign)) {
+            Session::flash('error', 'L’indicatif « ' . $callsign . ' » est déjà porté dans la communauté.');
 
             return Response::redirect($createUrl);
         }
@@ -639,19 +645,24 @@ class UserAdminController
         $tenantTypeRow = $this->tenantRepository->findById($tenantId);
         $rosterWithoutAccounts = \App\Services\Community\TenantTypeConfig::rosterWithoutAccounts((string) ($tenantTypeRow['tenant_type'] ?? 'full'));
         if ($rosterWithoutAccounts && ($request->input('roster_only') === '1' || $email === '')) {
-            return $this->storeRosterOnlyMember($request, $tenantId, $actorUserId, $createUrl, $gradeId);
+            return $this->storeRosterOnlyMember($request, $tenantId, $actorUserId, $createUrl, $gradeId, $rights);
         }
 
-        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            Session::flash('error', 'Une adresse e-mail valide est requise.');
+        if ($emailUnknown) {
+            $email = \App\Support\RosterOnlyMember::syntheticEmail();
+        } elseif ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Session::flash('error', 'Indiquez une adresse e-mail valide, ou cochez « Je ne connais pas son e-mail ».');
+
             return Response::redirect($createUrl);
         }
-        if ($firstName === '' || $lastName === '') {
-            Session::flash('error', 'Le prénom et le nom du personnage sont requis.');
+        if ($firstName === '' && $lastName === '' && $callsign === '') {
+            Session::flash('error', 'Indiquez au moins l’indicatif ou le nom du personnage.');
+
             return Response::redirect($createUrl);
         }
         if ($this->userRepository->emailExistsInTenant($tenantId, $email)) {
-            Session::flash('error', 'Cet email est déjà utilisé.');
+            Session::flash('error', 'Cette adresse e-mail est déjà celle d’un membre de la communauté.');
+
             return Response::redirect($createUrl);
         }
 
@@ -666,9 +677,10 @@ class UserAdminController
         $gate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
         if (!$gate->canAddMember($tenantId)) {
             Session::flash('error', 'Limite de membres du plan atteinte.');
+
             return Response::redirect($createUrl);
         }
-        $existingGlobal = $this->userRepository->findFirstByEmailGlobal($email);
+        $existingGlobal = $emailUnknown ? null : $this->userRepository->findFirstByEmailGlobal($email);
         try {
             if ($existingGlobal) {
                 $userId = $this->userRepository->addMembershipToTenant(
@@ -686,7 +698,7 @@ class UserAdminController
                 $userId = $this->userRepository->create($tenantId, [
                     'email' => $email,
                     'password_hash' => $passwordPlaceholder,
-                    'display_name' => $displayName !== '' ? $displayName : null,
+                    'display_name' => $displayName !== '' ? $displayName : ($callsign !== '' ? $callsign : null),
                     'callsign' => $callsign ?: null,
                     'role_id' => $primaryRoleId,
                     'grade_id' => $gradeId,
@@ -708,7 +720,7 @@ class UserAdminController
 
             return Response::redirect($createUrl);
         }
-        if ($existingGlobal === null) {
+        if ($existingGlobal === null && ($firstName !== '' || $lastName !== '')) {
             $this->userProfileRepository->upsert($userId, [
                 'first_name' => $firstName,
                 'last_name' => $lastName,
@@ -716,9 +728,11 @@ class UserAdminController
         }
         try {
             $this->personnelProfileRepository->ensureRecord($userId, $tenantId);
-            $this->personnelProfileRepository->update($userId, [
-                'character_name' => $displayName,
-            ]);
+            if ($displayName !== '') {
+                $this->personnelProfileRepository->update($userId, [
+                    'character_name' => $displayName,
+                ]);
+            }
         } catch (\Throwable) {
         }
         \App\Services\Personnel\NewMemberNumbers::assign($userId, $tenantId);
@@ -729,36 +743,12 @@ class UserAdminController
 
             return Response::redirect($createUrl);
         }
-
-        $steamNotes = [];
         if ($steamId !== null) {
             $this->userRepository->update($userId, $tenantId, ['steam_id' => $steamId]);
-            if ($request->input('sync_steam_profile') === '1') {
-                $steamNotes = $this->applySteamProfileSync($userId, $tenantId, $steamId);
-            }
         }
+        $warnings = (new \App\Services\Effectifs\NewMemberDossierService())->apply($tenantId, $userId, $this->dossierInput($request), $rights);
 
-        $this->passwordResetRepository->deleteExpired();
-        $rawToken = bin2hex(random_bytes(32));
-        $tokenHash = hash('sha256', $rawToken);
-        $expires = new \DateTimeImmutable('+' . self::SETUP_TOKEN_HOURS . ' hours');
-        $this->passwordResetRepository->create($userId, $tokenHash, $expires);
-
-        $setupUrl = url('reset-password') . '?token=' . rawurlencode($rawToken);
-        $tenantRow = $this->tenantRepository->findById($tenantId);
-        $tenantName = $tenantRow ? (string) ($tenantRow['name'] ?? 'Communauté') : 'Communauté';
-        $sent = false;
-        if ($this->userNotificationPreferencesRepository->isEmailEventEnabled($userId, EmailEvents::TENANT_USER_SETUP)) {
-            $sent = $this->emailService->sendTenantUserSetupInvite(
-                $email,
-                $setupUrl,
-                self::SETUP_TOKEN_HOURS,
-                $tenantName,
-                $tenantId
-            );
-        }
-
-        $this->adminAuditService->logUserCreated($tenantId, $actorUserId, $userId, $email);
+        $this->adminAuditService->logUserCreated($tenantId, $actorUserId, $userId, $emailUnknown ? 'e-mail inconnu' : $email);
         \App\Services\MemberIntegration\MemberIntegrationEntryHook::afterAccountReady(
             $tenantId,
             $userId,
@@ -766,37 +756,108 @@ class UserAdminController
             \App\Support\MemberIntegrationCatalog::SOURCE_MANUAL,
             ['role_ids' => $roleIds]
         );
-        if ($sent) {
-            $ok = 'Compte créé. Un e-mail a été envoyé à ' . $email . ' avec un lien pour définir le mot de passe (valide ' . self::SETUP_TOKEN_HOURS . ' h). Le compte sera actif après cette étape.';
-            if ($steamNotes !== []) {
-                $ok .= ' ' . implode(' ', $steamNotes);
-            }
-            Session::flash('success', $ok);
+        Session::forget('effectifs_new_member_old');
+
+        $messages = ['Membre ajouté.'];
+        $failed = false;
+        if ((string) $request->input('invite', '1') === '1' && $existingGlobal === null) {
+            [$inviteMessages, $failed] = $this->issueCreationInvite($request, $tenantId, $userId, $actorUserId);
+            $messages = array_merge($messages, $inviteMessages);
+        } elseif ($existingGlobal !== null) {
+            $messages[] = 'Cette personne avait déjà un compte Athena : elle se connecte avec son mot de passe habituel.';
         } else {
-            $msg = 'Compte créé, mais l’e-mail d’invitation n’a pas pu être envoyé. Vous pouvez utiliser « Mot de passe oublié » sur la page de connexion pour régénérer un lien, ou vérifier la configuration e-mail.';
-            if ($steamNotes !== []) {
-                $msg .= ' ' . implode(' ', $steamNotes);
+            $messages[] = 'Aucun lien n’a été envoyé : créez-en un depuis la fiche quand vous voulez.';
+        }
+        $messages = array_merge($messages, $warnings);
+        Session::flash($failed || $warnings !== [] ? 'error' : 'success', implode(' ', $messages));
+
+        return Response::redirect(effectifs_workspace_url('membres/' . $userId) . '#invitations');
+    }
+
+    /**
+     * Lien « compléter son profil » créé avec le membre, puis envoyé sur les canaux demandés (jamais d'office).
+     *
+     * @return array{0: list<string>, 1: bool} messages, échec d'un envoi
+     */
+    private function issueCreationInvite(Request $request, int $tenantId, int $userId, int $actorUserId): array
+    {
+        $invites = new \App\Services\Effectifs\MemberProfileInviteService();
+        if (!$invites->available()) {
+            return [['Le lien d’invitation sera disponible après la prochaine mise à jour de la base : la personne peut utiliser « Mot de passe oublié ».'], false];
+        }
+        try {
+            $issued = $invites->issue(
+                $tenantId,
+                $userId,
+                $actorUserId,
+                \App\Services\Effectifs\MemberProfileInviteService::normalizeHours($request->input('duration_hours', 48)),
+                (string) $request->input('single_use', '') === '1'
+            );
+        } catch (\Throwable $e) {
+            error_log('[nouveau-membre] lien : ' . $e->getMessage());
+
+            return [['Le lien d’invitation n’a pas pu être créé : réessayez depuis la fiche.'], true];
+        }
+        Session::flash('profile_invite_new', $issued['id']);
+        $messages = ['Son lien pour compléter son profil est prêt (copiez-le ci-dessous).'];
+        $failed = false;
+        $row = $invites->findUsableByToken($issued['token']);
+        if ($row !== null) {
+            $sender = new \App\Services\Effectifs\MemberProfileInviteSender($invites, $this->userRepository);
+            foreach (\App\Controllers\Admin\EffectifsInvitesController::requestedChannels($request) as $channel) {
+                $res = $channel === 'discord'
+                    ? $sender->sendDiscord($tenantId, $row, $actorUserId, (string) $request->input('destination', ''))
+                    : $sender->sendEmail($tenantId, $row, $actorUserId, $this->emailService);
+                $messages[] = $res['message'];
+                $failed = $failed || !$res['ok'];
             }
-            $detail = $this->emailService->getLastSendError();
-            if ($detail !== null && $detail !== '') {
-                $clean = preg_replace('/\s+/u', ' ', $detail) ?? $detail;
-                $msg .= ' Détail : ' . (function_exists('mb_substr') ? mb_substr($clean, 0, 300) : substr($clean, 0, 300));
-            }
-            Session::flash('error', $msg);
         }
 
-        return Response::redirect(effectifs_workspace_url('membres/' . $userId));
+        return [$messages, $failed];
+    }
+
+    /** @return array<string, mixed> */
+    private function dossierInput(Request $request): array
+    {
+        $out = [];
+        foreach (['nickname', 'enlistment_date', 'notes', 'discord_handle', 'primary_lang', 'unit_id', 'unit_role', 'primary_job_role_id'] as $k) {
+            $out[$k] = (string) $request->input($k, '');
+        }
+        foreach (['other_langs', 'job_role_ids'] as $k) {
+            $v = $request->input($k, []);
+            $out[$k] = is_array($v) ? array_values($v) : [];
+        }
+
+        return $out;
+    }
+
+    /** Formulaire rendu tel quel après une erreur (jamais le mot de passe : il n'y en a pas). */
+    private function rememberCreateInput(Request $request): void
+    {
+        $keep = [];
+        foreach (['callsign', 'nickname', 'first_name', 'last_name', 'email', 'email_unknown', 'discord_handle', 'steam_id', 'grade_id',
+            'unit_id', 'unit_role', 'access_role_id', 'enlistment_date', 'primary_lang', 'notes', 'duration_hours', 'single_use', 'invite', 'roster_only'] as $k) {
+            $keep[$k] = mb_substr((string) $request->input($k, ''), 0, 4000);
+        }
+        foreach (['other_langs', 'job_role_ids'] as $k) {
+            $v = $request->input($k, []);
+            $keep[$k] = is_array($v) ? array_map('strval', array_slice(array_values($v), 0, 20)) : [];
+        }
+        Session::set('effectifs_new_member_old', $keep);
     }
 
     /**
      * Profil « Bureau des effectifs » : fiche tenue par l’état-major, sans compte ni e-mail pour le membre.
+     *
+     * @param array{profiles:bool, assignments:bool} $rights
      */
-    private function storeRosterOnlyMember(Request $request, int $tenantId, int $actorUserId, string $createUrl, ?int $gradeId): Response
+    private function storeRosterOnlyMember(Request $request, int $tenantId, int $actorUserId, string $createUrl, ?int $gradeId, array $rights): Response
     {
         $firstName = trim((string) $request->input('first_name'));
         $lastName = trim((string) $request->input('last_name'));
-        if ($firstName === '' && $lastName === '') {
-            Session::flash('error', 'Indiquez au moins le nom du membre.');
+        $callsign = trim((string) $request->input('callsign'));
+        if ($firstName === '' && $lastName === '' && $callsign === '') {
+            Session::flash('error', 'Indiquez au moins l’indicatif ou le nom du membre.');
 
             return Response::redirect($createUrl);
         }
@@ -816,7 +877,8 @@ class UserAdminController
             $userId = $this->rosterOnlyMembers()->create($tenantId, $actorUserId, [
                 'first_name' => $firstName,
                 'last_name' => $lastName,
-                'callsign' => trim((string) $request->input('callsign')),
+                'display_name' => trim($firstName . ' ' . $lastName) !== '' ? '' : $callsign,
+                'callsign' => $callsign,
                 'grade_id' => $gradeId,
                 'steam_id' => (string) ($steamResult['steam_id'] ?? ''),
             ]);
@@ -825,8 +887,10 @@ class UserAdminController
 
             return Response::redirect($createUrl);
         }
+        $warnings = (new \App\Services\Effectifs\NewMemberDossierService())->apply($tenantId, $userId, $this->dossierInput($request), $rights);
         $this->adminAuditService->logUserCreated($tenantId, $actorUserId, $userId, \App\Support\RosterOnlyMember::label());
-        Session::flash('success', 'Fiche créée. Ce membre n’a pas de compte : il n’a rien à faire, vous tenez sa fiche ici.');
+        Session::forget('effectifs_new_member_old');
+        Session::flash($warnings === [] ? 'success' : 'error', trim('Fiche créée. Ce membre n’a pas de compte : il n’a rien à faire, vous tenez sa fiche ici. ' . implode(' ', $warnings)));
 
         return Response::redirect(effectifs_workspace_url('membres/' . $userId));
     }
