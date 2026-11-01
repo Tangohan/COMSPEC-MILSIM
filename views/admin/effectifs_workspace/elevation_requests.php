@@ -114,6 +114,7 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
 ?>
 <section class="eff-rh-hero">
     <div class="eff-pg__actions">
+        <a href="<?= htmlspecialchars(effectifs_workspace_url('elevations/criteres'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Critères d’éligibilité</a>
         <a href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Tableur des effectifs</a>
     </div>
     <p class="eff-page-kicker">Gouvernance</p>
