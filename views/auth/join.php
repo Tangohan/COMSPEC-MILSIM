@@ -9,6 +9,7 @@ $active = 'join';
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($title) ?> — Athena</title>
+    <meta name="robots" content="noindex,follow">
     <?php $tailwindBaseUrl = $base; require base_path('views/partials/tailwind_cdn_or_build.php'); ?>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>

@@ -22,7 +22,11 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
     <meta name="theme-color" content="#050505">
     <link rel="apple-touch-icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-180.png">
     <link rel="icon" type="image/png" sizes="192x192" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png">
-    <script src="https://cdn.tailwindcss.com"></script>
+<?php
+    // CSS utilitaire compilé (public/assets/css/tailwind.css) : plus de script bloquant sur les pages publiques.
+    $tailwindBaseUrl = $base;
+    require base_path('views/partials/tailwind_cdn_or_build.php');
+?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
@@ -47,6 +51,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
 ?>
 <?php
     $crumbName = match ($marketingActive) {
+        'about' => __('site.about'),
         'academy' => 'ATHENA Academy',
         'contact' => __('site.contact'),
         'changelog' => __('site.changelog'),
@@ -57,9 +62,10 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
         'contribuer' => __('site.contrib_crumb'),
         'traduire-site' => __('site.sitetr_crumb'),
         'soutenir' => __('site.support_crumb'),
-        default => __('site.about'),
+        default => '',
     };
     $crumbPath = match ($marketingActive) {
+        'about' => '/a-propos',
         'academy' => '/academy',
         'contact' => '/contact',
         'changelog' => '/nouveautes',
@@ -70,10 +76,11 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
         'contribuer' => '/contribuer',
         'traduire-site' => '/traduire-site',
         'soutenir' => '/soutenir-atak',
-        default => '/a-propos',
+        default => '',
     };
-    $siteRoot = rtrim($base, '/');
+    $siteRoot = \App\Support\Seo::baseUrl();
 ?>
+<?php if ($crumbName !== '' && $crumbPath !== ''): ?>
     <script type="application/ld+json"><?= json_encode([
         '@context' => 'https://schema.org',
         '@type' => 'BreadcrumbList',
@@ -92,6 +99,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
             ],
         ],
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
+<?php endif; ?>
 <?php
     $jsonLdExtra = is_array($jsonLdExtra ?? null) ? $jsonLdExtra : [];
     foreach ($jsonLdExtra as $jsonLdBlock):
