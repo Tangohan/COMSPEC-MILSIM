@@ -71,6 +71,33 @@ final class UntranslatedFrenchScannerTest extends TestCase
         self::assertNotContains('role_id', $segments);
     }
 
+    public function testAppCodeReportsComposedTextsOnly(): void
+    {
+        $php = <<<'PHP'
+            <?php
+            $a = 'Unité fictive : ' . $label;
+            $b = "Il reste {$n} jours avant la clôture";
+            $c = sprintf('%d membre(s) retiré(s) de « %s ».', $n, $name);
+            $d = 'Libellé seul affiché';
+            $e = __('site.key_' . $x);
+            error_log('Échec de synchro : ' . $err);
+            throw new \RuntimeException('Fichier introuvable : ' . $path);
+            $sql = 'SELECT nom FROM unités WHERE id = ' . $id;
+            $u = url('admin') . '?vue=calendrier#nouveau';
+            PHP;
+        $segments = UntranslatedFrenchScanner::appSegments($php);
+        self::assertContains('Unité fictive : %1', $segments);
+        self::assertContains('Il reste %1 jours avant la clôture', $segments);
+        self::assertContains('%1 membre(s) retiré(s) de « %2 ».', $segments);
+        self::assertNotContains('Libellé seul affiché', $segments, 'littéral seul : extract-app');
+        foreach ($segments as $s) {
+            self::assertStringNotContainsString('synchro', $s);
+            self::assertStringNotContainsString('introuvable', $s);
+            self::assertStringNotContainsString('unités', $s);
+            self::assertStringNotContainsString('calendrier', $s);
+        }
+    }
+
     public function testWatchedViewsAndScriptsHaveNoUntranslatedFrench(): void
     {
         $root = dirname(__DIR__, 2);

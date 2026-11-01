@@ -147,11 +147,9 @@ final class SseAnalysisService
             'by_weekday' => $byWeekday,
             'peak_hours' => $peakHours,
             'peak_weekdays' => array_map(static function (array $p): array {
-                $labels = [1 => 'Lundi', 2 => 'Mardi', 3 => 'Mercredi', 4 => 'Jeudi', 5 => 'Vendredi', 6 => 'Samedi', 7 => 'Dimanche'];
-
                 return [
                     'weekday' => $p['index'],
-                    'label' => $labels[$p['index']] ?? (string) $p['index'],
+                    'label' => mb_strtoupper(mb_substr(\App\Support\LocalizedCalendar::weekday((int) $p['index']), 0, 1)) . mb_substr(\App\Support\LocalizedCalendar::weekday((int) $p['index']), 1),
                     'count' => $p['count'],
                 ];
             }, $peakDays),

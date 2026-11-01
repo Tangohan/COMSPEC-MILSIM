@@ -125,12 +125,11 @@ final class PaymentAnalyticsService
     {
         $now ??= time();
         $out = [];
-        $names = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
         $first = strtotime(gmdate('Y-m-01', $now) . ' UTC');
         for ($i = $months - 1; $i >= 0; $i--) {
             $ts = strtotime('-' . $i . ' month', $first);
             $key = gmdate('Y-m', $ts);
-            $out[$key] = ['month' => $key, 'label' => $names[(int) gmdate('n', $ts) - 1] . ' ' . gmdate('y', $ts), 'plan' => 0, 'heart' => 0, 'donation' => 0, 'refund' => 0, 'total' => 0];
+            $out[$key] = ['month' => $key, 'label' => \App\Support\LocalizedCalendar::month((int) gmdate('n', $ts), true) . ' ' . gmdate('y', $ts), 'plan' => 0, 'heart' => 0, 'donation' => 0, 'refund' => 0, 'total' => 0];
         }
         foreach ($ledger as $e) {
             $amount = (int) ($e['amount_cents'] ?? 0);

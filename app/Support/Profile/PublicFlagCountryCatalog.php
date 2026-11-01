@@ -88,10 +88,35 @@ final class PublicFlagCountryCatalog
         'ZA' => 'Afrique du Sud',
     ];
 
+    /** @var array<string, string> code => nom anglais (même liste que OPTIONS) */
+    private const OPTIONS_EN = [
+        'AD' => 'Andorra', 'AE' => 'United Arab Emirates', 'AF' => 'Afghanistan', 'AL' => 'Albania',
+        'AM' => 'Armenia', 'AR' => 'Argentina', 'AT' => 'Austria', 'AU' => 'Australia',
+        'BA' => 'Bosnia and Herzegovina', 'BE' => 'Belgium', 'BG' => 'Bulgaria', 'BR' => 'Brazil',
+        'BY' => 'Belarus', 'CA' => 'Canada', 'CH' => 'Switzerland', 'CL' => 'Chile', 'CN' => 'China',
+        'CO' => 'Colombia', 'CY' => 'Cyprus', 'CZ' => 'Czechia', 'DE' => 'Germany', 'DK' => 'Denmark',
+        'DZ' => 'Algeria', 'EE' => 'Estonia', 'EG' => 'Egypt', 'ES' => 'Spain', 'FI' => 'Finland',
+        'FR' => 'France', 'GB' => 'United Kingdom', 'GE' => 'Georgia', 'GR' => 'Greece', 'HR' => 'Croatia',
+        'HU' => 'Hungary', 'IE' => 'Ireland', 'IL' => 'Israel', 'IN' => 'India', 'IQ' => 'Iraq', 'IR' => 'Iran',
+        'IS' => 'Iceland', 'IT' => 'Italy', 'JP' => 'Japan', 'KR' => 'South Korea', 'KZ' => 'Kazakhstan',
+        'LB' => 'Lebanon', 'LI' => 'Liechtenstein', 'LT' => 'Lithuania', 'LU' => 'Luxembourg', 'LV' => 'Latvia',
+        'MA' => 'Morocco', 'MC' => 'Monaco', 'MD' => 'Moldova', 'ME' => 'Montenegro', 'MK' => 'North Macedonia',
+        'MX' => 'Mexico', 'NL' => 'Netherlands', 'NO' => 'Norway', 'NZ' => 'New Zealand', 'PL' => 'Poland',
+        'PT' => 'Portugal', 'RO' => 'Romania', 'RS' => 'Serbia', 'RU' => 'Russia', 'SA' => 'Saudi Arabia',
+        'SE' => 'Sweden', 'SI' => 'Slovenia', 'SK' => 'Slovakia', 'TN' => 'Tunisia', 'TR' => 'Turkey',
+        'UA' => 'Ukraine', 'US' => 'United States', 'UY' => 'Uruguay', 'VE' => 'Venezuela', 'ZA' => 'South Africa',
+    ];
+
     /** @return array<string, string> */
     public static function optionsForSelect(): array
     {
         return self::OPTIONS;
+    }
+
+    /** Nom anglais d'un pays de la liste, sinon chaîne vide. */
+    public static function englishLabel(string $iso2): string
+    {
+        return self::OPTIONS_EN[strtoupper(trim($iso2))] ?? '';
     }
 
     public static function isAllowed(?string $code): bool

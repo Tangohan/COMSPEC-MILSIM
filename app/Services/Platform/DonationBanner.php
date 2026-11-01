@@ -293,9 +293,24 @@ final class DonationBanner
     }
 
     /** Bandeau à afficher pour cette adresse et cette langue, ou null. */
-    public static function forRequest(string $path, string $locale): ?array
+    /** Pages d'accueil des espaces membre et back-office : bandeau affiché en tête de contenu. */
+    public const SHELL_HOME_PATHS = ['dashboard', 'back-office'];
+
+    public static function isShellHomePath(string $path): bool
     {
-        if (self::hiddenOnPath($path)) {
+        $path = trim(strtolower($path), '/');
+        foreach (['public/', 'index.php/'] as $strip) {
+            if (str_starts_with($path, $strip)) {
+                $path = substr($path, strlen($strip));
+            }
+        }
+
+        return in_array($path, self::SHELL_HOME_PATHS, true);
+    }
+
+    public static function forRequest(string $path, string $locale, bool $shellHome = false): ?array
+    {
+        if ($shellHome ? !self::isShellHomePath($path) : self::hiddenOnPath($path)) {
             return null;
         }
         try {

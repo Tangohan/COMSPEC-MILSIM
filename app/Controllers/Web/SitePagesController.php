@@ -68,9 +68,11 @@ final class SitePagesController
     public function history(Request $request, array $params = []): Response
     {
         // Jalons datés de la plateforme (premier message ATAK, premier vol de drone…) : la construction lit
-        // beaucoup de tables, d’où un cache court partagé par tous les visiteurs.
+        // beaucoup de tables, d’où un cache court partagé par tous les visiteurs d’une même langue (titres et récits
+        // des jalons sont rédigés dans la langue du lecteur).
         $milestones = [];
-        $cacheFile = base_path('storage/cache/public_history_heritage_all.json');
+        $cacheLang = preg_replace('/[^a-z0-9-]/', '', strtolower(site_lang())) ?: 'fr';
+        $cacheFile = base_path('storage/cache/public_history_heritage_' . $cacheLang . '.json');
         $cached = is_file($cacheFile) && filemtime($cacheFile) >= time() - PublicHistoryStatsService::CACHE_TTL
             ? json_decode((string) @file_get_contents($cacheFile), true)
             : null;

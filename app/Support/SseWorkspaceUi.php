@@ -199,10 +199,8 @@ final class SseWorkspaceUi
         if ($ts === false) {
             return $raw;
         }
-        $months = [1 => 'janv.', 2 => 'févr.', 3 => 'mars', 4 => 'avr.', 5 => 'mai', 6 => 'juin',
-            7 => 'juil.', 8 => 'août', 9 => 'sept.', 10 => 'oct.', 11 => 'nov.', 12 => 'déc.'];
 
-        return (int) date('j', $ts) . ' ' . ($months[(int) date('n', $ts)] ?? '') . ' · ' . date('H:i', $ts);
+        return (int) date('j', $ts) . ' ' . LocalizedCalendar::month((int) date('n', $ts), true) . ' · ' . date('H:i', $ts);
     }
 
     /**

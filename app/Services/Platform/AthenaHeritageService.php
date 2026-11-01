@@ -179,7 +179,7 @@ final class AthenaHeritageService
                     'value' => $this->formatInt($threshold),
                 ]),
                 'value_numeric' => $threshold,
-                'value_label' => $this->formatInt($threshold) . ' opérateurs',
+                'value_label' => (string) __('site.hist_val_operators', ['value' => $this->formatInt($threshold)]),
                 'context_json' => ['metric' => 'operators', 'threshold' => $threshold],
             ])) {
                 $created++;
@@ -359,7 +359,7 @@ final class AthenaHeritageService
                     'value' => $this->formatInt(max(50, $players)),
                 ]),
                 'value_numeric' => $players,
-                'value_label' => $this->formatInt($players) . ' joueurs',
+                'value_label' => (string) __('site.hist_val_players', ['value' => $this->formatInt($players)]),
                 'context_json' => ['event_id' => $ops['event_id'] ?? null, 'players' => $players],
             ])) {
                 $created++;
@@ -640,12 +640,14 @@ final class AthenaHeritageService
                     'version_adoption_pct' => $live['version_adoption_pct'],
                 ];
             }
+            // Titre et résumé dans la langue du lecteur (la base garde ceux du moment de l’enregistrement).
+            [$vpTitle, $vpSummary] = AthenaHeritageNarration::versionTexts((string) ($vp['version'] ?? ''));
             $versionCards[] = [
                 'version' => (string) ($vp['version'] ?? ''),
                 'released_at' => $vp['released_at'] ?? null,
                 'date_precision' => (string) ($vp['date_precision'] ?? 'unknown'),
-                'title' => (string) ($vp['title'] ?? ''),
-                'summary' => (string) ($vp['summary'] ?? ''),
+                'title' => $vpTitle,
+                'summary' => $vpSummary,
                 'stats' => $stats,
                 'features' => $features,
                 'changelog_ref' => $ref !== '' ? $ref : null,
@@ -659,7 +661,7 @@ final class AthenaHeritageService
         return [
             'live' => $live,
             'snapshots' => $snapshots,
-            'milestones' => $milestones,
+            'milestones' => array_map([AthenaHeritageNarration::class, 'localizeMilestone'], $milestones),
             'versions' => $versionCards,
             'timeline' => $timeline,
             'chart' => $chart,
@@ -744,7 +746,7 @@ final class AthenaHeritageService
                 'narrative' => AthenaHeritageNarration::render('site.hist_narr_players', [
                     'value' => $this->formatInt($threshold),
                 ]),
-                'value_label' => $this->formatInt($threshold) . ' opérateurs',
+                'value_label' => (string) __('site.hist_val_operators', ['value' => $this->formatInt($threshold)]),
             ];
         }
 
@@ -878,7 +880,7 @@ final class AthenaHeritageService
                     'narrative' => AthenaHeritageNarration::render('site.hist_narr_ops_50', [
                         'value' => $this->formatInt(max(50, $players)),
                     ]),
-                    'value_label' => $this->formatInt($players) . ' joueurs',
+                    'value_label' => (string) __('site.hist_val_players', ['value' => $this->formatInt($players)]),
                 ];
             }
         } catch (\Throwable) {
@@ -914,6 +916,7 @@ final class AthenaHeritageService
     {
         $items = [];
         foreach ($milestones as $m) {
+            $m = AthenaHeritageNarration::localizeMilestone($m);
             $ctx = $m['context_json'] ?? null;
             if (is_string($ctx)) {
                 $decoded = json_decode($ctx, true);

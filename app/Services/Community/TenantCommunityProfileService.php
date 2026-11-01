@@ -1012,14 +1012,33 @@ final class TenantCommunityProfileService
             if (!is_array($labels) || $labels === []) {
                 return '';
             }
-            $country = trim((string) ($aff['country_label'] ?? ''));
-            $prefix = $country !== '' ? $country . ' — ' : '';
+            $country = self::affiliationCountryLabel($aff);
+            // Noms d'unités saisis ou repris du référentiel : jamais traduits.
+            $units = implode(', ', array_map('strval', $labels));
 
-            return $prefix . implode(', ', array_map('strval', $labels));
+            return $country !== '' ? __('site.registry_unit_real', ['country' => $country, 'units' => $units]) : $units;
         }
         $fict = trim((string) ($aff['fictional_label'] ?? ''));
 
-        return $fict !== '' ? 'Unité fictive : ' . $fict : '';
+        return $fict !== '' ? __('site.registry_unit_fictional', ['label' => $fict]) : '';
+    }
+
+    /**
+     * Pays de l'unité réelle de référence dans la langue du lecteur (le libellé enregistré avec l'affiliation est
+     * celui du moment de la saisie, en français).
+     *
+     * @param array<string, mixed> $aff settings.community.unit_affiliation
+     */
+    public static function affiliationCountryLabel(array $aff): string
+    {
+        $code = strtoupper(trim((string) ($aff['country'] ?? '')));
+        $lang = function_exists('site_lang') ? site_lang() : 'fr';
+        $label = $code !== '' && $lang !== 'fr' ? \App\Support\CommunityLanguages::countryLabelIn($code, $lang) : '';
+        if ($label === '' || $label === $code) {
+            $label = trim((string) ($aff['country_label'] ?? ''));
+        }
+
+        return $label !== '' ? $label : $code;
     }
 
     /** La formule de la communauté ouverte inclut-elle la mise en avant dans le registre ? */

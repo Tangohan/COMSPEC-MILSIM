@@ -234,7 +234,7 @@ final class YearReviewStats
         $best = null;
         foreach (array_values($months) as $i => $sec) {
             if ($sec > 0 && ($best === null || $sec > $best['seconds'])) {
-                $best = ['index' => $i, 'label' => self::MONTHS[$i] ?? '', 'seconds' => (int) $sec];
+                $best = ['index' => $i, 'label' => LocalizedCalendar::month($i + 1, true), 'seconds' => (int) $sec];
             }
         }
 

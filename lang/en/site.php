@@ -250,7 +250,7 @@ return [
     'about_pr2_b' => 'Everyone knows what they can do and why. Leaders stay in control.',
     'about_pr3_t' => 'One thread',
     'about_pr3_b' => 'From first contact to debrief, everything follows the same path.',
-    'about_pr4_t' => 'Tools à la carte',
+    'about_pr4_t' => 'Pick the tools you need',
     'about_pr4_b' => 'Optional modules switch on according to the plan the community chooses.',
     'about_team_title' => 'The team',
     'about_team_body' => 'ATHENA and the COMSPEC mods are designed, built and maintained by the COMSPEC team. Players move them forward too: translations, testing before each release, guides, code and help for newcomers.',
@@ -1486,4 +1486,8 @@ return [
     'hist_comm_participants' => ':value participants',
     'hist_comm_years' => 'Your community, year by year',
     'hist_note' => 'Figures come straight from the platform and are recalculated every ten minutes. A release whose day is unknown is placed in the month of the nearest dated entry; no date is invented.',
+    'hist_val_operators' => ':value operators',
+    'hist_val_players' => ':value players',
+    'registry_unit_fictional' => 'Fictional unit: :label',
+    'registry_unit_real' => ':country — :units',
 ];

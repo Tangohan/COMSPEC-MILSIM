@@ -14,11 +14,6 @@ final class MessagingThreadPresenter
     /** Deux messages du même auteur à moins de ce délai restent dans la même bulle groupée. */
     public const GROUP_GAP_SECONDS = 600;
 
-    private const MONTHS_SHORT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
-    private const MONTHS_LONG = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-    private const DAYS_SHORT = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
-    private const DAYS_LONG = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
-
     public static function initials(string $name): string
     {
         $name = trim(preg_replace('/[^\p{L}\p{N}\s\-\.]+/u', ' ', $name) ?? '');
@@ -64,10 +59,10 @@ final class MessagingThreadPresenter
             return 'Hier';
         }
         if ($days > 1 && $days < 7) {
-            return self::DAYS_SHORT[(int) date('w', $ts)];
+            return LocalizedCalendar::weekday((int) date('w', $ts), true);
         }
         if (date('Y', $ts) === date('Y', $now)) {
-            return (int) date('j', $ts) . ' ' . self::MONTHS_SHORT[(int) date('n', $ts) - 1];
+            return (int) date('j', $ts) . ' ' . LocalizedCalendar::month((int) date('n', $ts), true);
         }
 
         return date('d/m/Y', $ts);
@@ -88,7 +83,7 @@ final class MessagingThreadPresenter
         if ($days === 1) {
             return 'Hier';
         }
-        $label = self::DAYS_LONG[(int) date('w', $ts)] . ' ' . (int) date('j', $ts) . ' ' . self::MONTHS_LONG[(int) date('n', $ts) - 1];
+        $label = LocalizedCalendar::weekday((int) date('w', $ts)) . ' ' . (int) date('j', $ts) . ' ' . LocalizedCalendar::month((int) date('n', $ts));
         if (date('Y', $ts) !== date('Y', $now)) {
             $label .= ' ' . date('Y', $ts);
         }
