@@ -294,6 +294,11 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1248, '2026-11-01', 'Montre : la carte ne clignote plus', 'Avec le correctif 2.9.23, la mini-carte de la montre Garmin reste centrée sur le joueur au lieu d’alterner avec un autre endroit de la carte.', [], [], [
+                'Carte de la montre Garmin qui alternait entre deux centres',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.23, quittez Arma complètement, puis relancez.',
+            ], 'Pack téléphone 2.9.23'),
             $pr(1242, '2026-11-01', 'Téléphone : plus d’à-coups, carte lisible, anglais complet', 'Avec le pack 2.9.22 et la liaison 2.0.112, plus aucun échange avec Athena ne fige le jeu, même sur un serveur chargé. La carte du téléphone devient lisible de jour comme de nuit (noms qui ne se chevauchent plus, couleurs nettes, réglages d’étiquettes), le multijoueur envoie beaucoup moins de données et toute l’interface est traduite en anglais.', [
                 'Carte : réglages CONFIGURATION > Étiquettes (taille du texte, fond, noms affichés)',
                 'Traduction anglaise complète du téléphone, d’Overwatch et du SSE',
