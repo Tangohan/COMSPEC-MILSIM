@@ -353,3 +353,103 @@ Rifleman Light…	exemple de saisie (nom de tenue)	views/personnel/edit.php
 %1 kg	identique en anglais (unité)	views/personnel/file.php
 ATHENA MILSIM	nom propre	views/personnel/orbat_chart_export.php
 ATHENA MILSIM — ORBAT — %1	nom propre / identique en anglais	views/personnel/orbat_chart_export.php
+%1 kit(s)	identique en anglais	views/admin/organization/game_role_kits.php
+Doctrine & SOP	identique en anglais	app/Controllers/Admin/Organization/DoctrineAdminController.php
+Playbook Permissions	identique en anglais	app/Controllers/Admin/Organization/OrganizationDashboardController.php
+Playbook Spam	identique en anglais	app/Controllers/Admin/Organization/OrganizationDashboardController.php
+Medic	identique en anglais	app/Services/Organization/PositionCapabilityCatalog.php
+Combat	identique en anglais	app/Services/OrganizationCatalog/OrganizationKitDefinitions.php
+Grenadier	identique en anglais	app/Services/OrganizationCatalog/OrganizationKitDefinitions.php
+/^(op(é|e)ration|op\.?)\s+/iu	expression régulière	app/Support/PilotageDashboardPresenter.php
+Condition	identique en anglais	views/admin/organization/access_management/index.php
+%1 critique%2	pluriel collé	views/admin/organization/advancement/readiness.php
+Score	identique en anglais	views/admin/organization/advancement/readiness.php
+EXFIL, LZ, DANGER…	sigles / exemple de saisie	views/admin/organization/atak_marker_detection.php
+Padding	identique en anglais	views/admin/organization/callsign_sequences.php
+Pattern	identique en anglais	views/admin/organization/callsign_sequences.php
+%1 libellé%2 présent%3 dans votre communauté	pluriel collé	views/admin/organization/catalog/labels.php
+%4 personnalisé%5	pluriel collé	views/admin/organization/catalog/labels.php
+" maxlength="32" class="bcs-mono" placeholder="Étiquette (ex. PRIMO)" aria-label="Section	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
+(badge)	identique en anglais	views/admin/organization/community_presentation.php
+: étiquette">	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
+<textarea name="military_body[]" rows="4" placeholder="Contenu" aria-label="Section %1	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
+<textarea name="public_faq_a[]" rows="2" maxlength="800" placeholder="Réponse" aria-label="Réponse %1	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
+<textarea name="public_quote_text[]" rows="2" maxlength="600" placeholder="Citation" aria-label="Témoignage %1	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
+ACE3 TFAR RHS	nom propre (mods)	views/admin/organization/community_presentation.php
+Arma 3, Arma Reforger, Squad…	noms propres (jeux)	views/admin/organization/community_presentation.php
+Doctrine	identique en anglais	views/admin/organization/community_presentation.php
+Europe	identique en anglais	views/admin/organization/community_presentation.php
+FR OTAN	exemple de saisie	views/admin/organization/community_presentation.php
+Minimal	identique en anglais	views/admin/organization/community_presentation.php
+Question %1	identique en anglais	views/admin/organization/community_presentation.php
+Réponse %1  </div>   </div> </div> </section> <section class=	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
+Section %1  </div>   </div> <div class=	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
+Section %1%2	identique en anglais	views/admin/organization/community_presentation.php
+Simple	identique en anglais	views/admin/organization/community_presentation.php
+Standard	identique en anglais	views/admin/organization/community_presentation.php
+Témoignage %1  <div class=	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
+Administration	identique en anglais	views/admin/organization/configuration_updates.php
+COMSPEC ATAK	nom propre	views/admin/organization/configuration_updates_novelties.php
+Participation	identique en anglais	views/admin/organization/dashboard.php
+Site	identique en anglais	views/admin/organization/dashboard.php
+confirmé%1	pluriel collé	views/admin/organization/dashboard.php
+disponible%1 pour votre organisation.	pluriel collé	views/admin/organization/dashboard.php
+décliné%1	pluriel collé	views/admin/organization/dashboard.php
+vous attend%1.	pluriel collé	views/admin/organization/dashboard.php
+URL (https)	identique en anglais	views/admin/organization/dashboard_pins_form.php
+Anomalies	identique en anglais	views/admin/organization/data_quality.php
+<textarea id="dsc-pitch" name="pitch" rows="4" maxlength="%1	bruit d'extraction (fragment HTML)	views/admin/organization/discord_showcase.php
+Checklist	identique en anglais	views/admin/organization/doctrine.php
+<textarea id="slot-notes-%1	bruit d'extraction (fragment HTML)	views/admin/organization/event_show.php
+Service	identique en anglais	views/admin/organization/event_show.php
+%1 pts	identique en anglais	views/admin/organization/events.php
+<textarea id="ev-desc" name="description" rows="3" placeholder="Consignes, tenue, lieu de rendez-vous…" class="bo-events__textarea" %1	bruit d'extraction (fragment HTML)	views/admin/organization/events.php
+Workshop %1	nom propre	views/admin/organization/game_equipment.php
+<input class="bo-ge-input" type="number" min="1" max="99" name="cargo[	bruit d'extraction (fragment HTML)	views/admin/organization/game_role_kit_form.php
+%1  <small>Deux phrases suffisent : le rôle %2 et ce qu’%3 cherche.</small> </div> <div class=	bruit d'extraction (fragment HTML)	views/admin/organization/groups/_form.php
+<textarea id="public_blurb" name="public_blurb" rows="3" maxlength="600" placeholder="%1	bruit d'extraction (fragment HTML)	views/admin/organization/groups/_form.php
+<textarea name="template" rows="4" maxlength="%1	bruit d'extraction (fragment HTML)	views/admin/organization/integrations.php
+Arma 3 / Overwatch	nom propre	views/admin/organization/integrations.php
+Message	identique en anglais	views/admin/organization/integrations.php
+Permissions	identique en anglais	views/admin/organization/integrations.php
+Webhooks	identique en anglais	views/admin/organization/integrations.php
+accès. * Les réglages de la plateforme sont dans l	bruit d'extraction (commentaire)	views/admin/organization/integrations.php
+organisation (sans lien en clair) * @var list<array	bruit d'extraction (commentaire)	views/admin/organization/integrations.php
+1 ? 's' : '')">	bruit d'extraction (code)	views/admin/organization/invitations.php
+Collection	identique en anglais	views/admin/organization/media_edit.php
+back-office/organisation/matricules/export?filtre=sans	URL interne	views/admin/organization/member_numbers.php
+(6 images max.)	identique en anglais	views/admin/organization/mini_articles_form.php
+← Configuration	identique en anglais	views/admin/organization/onboarding_recovery.php
+tenant, unit, role…	déjà en anglais (mots-clés recherche)	views/admin/organization/operations_center.php
+21H00 - 21H15	exemple d'horaire	views/admin/organization/partials/event_details_fields.php
+<textarea id="ev-cg" name="conditions_general" rows="3" class="%1	bruit d'extraction (fragment HTML)	views/admin/organization/partials/event_details_fields.php
+<textarea id="ev-cs" name="conditions_special" rows="3" class="%1	bruit d'extraction (fragment HTML)	views/admin/organization/partials/event_details_fields.php
+' : '' ?>vu le %1	bruit d'extraction (code)	views/admin/organization/partials/game_player_kits.php
+×%1	identique en anglais	views/admin/organization/partials/game_player_kits.php
+envoi des e-mails (Intégrations) : communauté ou envoi commun de la plateforme. * Les préréglages des fournisseurs (port, chiffrement, serveur) sont appliqués par back-office-integrations.js. * * @var array	bruit d'extraction (commentaire)	views/admin/organization/partials/integrations_mail_form.php
+BB %1	sigle	views/admin/organization/player_metrics.php
+Body Battery	nom propre	views/admin/organization/player_metrics.php
+<textarea name="custom_values[%1	bruit d'extraction (fragment HTML)	views/admin/organization/qualifications/award_form.php
+%1 h	identique en anglais	views/admin/organization/qualifications/pilot_syllabus.php
+<textarea name="block_corps[]" rows="2" class="ath-field__textarea" placeholder="Description"%1	bruit d'extraction (fragment HTML)	views/admin/organization/recruitment_offers/form.php
+<textarea name="description" rows="7" class="ath-field__textarea"%1	bruit d'extraction (fragment HTML)	views/admin/organization/recruitment_offers/form.php
+<textarea name="mission_lead" rows="3" class="ath-field__textarea"%1	bruit d'extraction (fragment HTML)	views/admin/organization/recruitment_offers/form.php
+<textarea name="summary" rows="2" class="ath-field__textarea"%1	bruit d'extraction (fragment HTML)	views/admin/organization/recruitment_offers/form.php
+<textarea name="technical_notice" rows="3" class="ath-field__textarea"%1	bruit d'extraction (fragment HTML)	views/admin/organization/recruitment_offers/form.php
+<textarea class="cp-input" name="description" id="%1	bruit d'extraction (fragment HTML)	views/admin/organization/referentiels/competency_matrix.php
+. Colonel FR ARMY =	bruit d'extraction (code)	views/admin/organization/referentiels/grades/catalog_audit.php
+Gendarmerie	nom propre	views/admin/organization/referentiels/grades/catalog_audit.php
+est supprimé) ; les grades créés par la * communauté appartiennent au système d	bruit d'extraction (commentaire)	views/admin/organization/referentiels/grades/index.php
+Rotation	identique en anglais	views/admin/organization/roleplay_deadlines.php
+Activation	identique en anglais	views/admin/organization/roleplay_immersion_settings.php
+%1 / %2 kits	identique en anglais	views/admin/organization/roles/presets.php
+Destination	identique en anglais	views/admin/organization/roles_functions.php
+S1 Officer	identique en anglais	views/admin/organization/roles_functions.php
+Accent	identique en anglais	views/admin/organization/settings.php
+Confirmation	identique en anglais	views/admin/organization/settings.php
+Image %1	identique en anglais	views/admin/organization/settings.php
+Images	identique en anglais	views/admin/organization/tenant_alerts_form.php
+Inactive	identique en anglais	views/admin/organization/tenant_alerts_index.php
+Visible	identique en anglais	views/admin/organization/tenant_alerts_index.php
+%1 / %2 pourvu%3	pluriel collé	views/admin/organization/unit_sheet.php
+Steam ID	identique en anglais	views/admin/organization/users/show.php
