@@ -3,8 +3,8 @@
 -- Une ligne par changement réel : grade avant / après, date, origine (modification manuelle ou
 -- élévation validée) et auteur. Les libellés sont copiés au moment du changement pour rester lisibles
 -- si le grade est renommé ou retiré du référentiel.
--- Créée à la demande par MemberGradeChangeRepository::ensureTable() (CREATE TABLE IF NOT EXISTS) :
--- la file active des migrations reste vide (docs/technical/migrations-active-queue.md).
+-- Appliqué par l'étape member_grade_changes de la file active (run-migrations.php) ;
+-- MemberGradeChangeRepository::ensureTable() reste un filet de sécurité (CREATE TABLE IF NOT EXISTS).
 SET NAMES utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `member_grade_changes` (
