@@ -434,6 +434,12 @@ final class AccountDeletionService
             $this->personnelExtras->deleteByUserId($userId);
         } catch (\Throwable) {
         }
+        // Bannière de la page publique : le fichier part avec la ligne de réglages.
+        try {
+            $publicCv = (new \App\Repositories\UserPublicCvRepository())->findByUserId($userId);
+            (new \App\Support\PublicCv\PublicCvBannerStorage())->delete(isset($publicCv['banner_path']) ? (string) $publicCv['banner_path'] : null);
+        } catch (\Throwable) {
+        }
         $this->deleteOptionalRowsByUserId($userId, [
             // Anciens profils de candidature (fonction retirée) : les lignes restantes sont effacées.
             'recruitment_presets',

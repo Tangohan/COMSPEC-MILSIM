@@ -7,6 +7,8 @@ $ready = !empty($publicCvReady);
 $baseUrl = (string) ($publicCvBaseUrl ?? '');
 $liveUrl = $publicCvLiveUrl ?? null;
 $sections = is_array($form['sections'] ?? null) ? $form['sections'] : [];
+$bannerUrl = is_string($publicCvBannerUrl ?? null) && $publicCvBannerUrl !== '' ? $publicCvBannerUrl : null;
+$bannerHint = (string) ($publicCvBannerHint ?? '');
 $h = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
 $accountNavKey = 'public_cv';
@@ -34,7 +36,7 @@ require base_path('views/partials/account/shell_open.php');
 </div>
 <?php endif; ?>
 
-<form method="post" action="<?= $h(url('account/page-publique')) ?>">
+<form method="post" action="<?= $h(url('account/page-publique')) ?>" enctype="multipart/form-data">
     <?= \App\Core\Csrf::field() ?>
 
     <section class="account-hub__panel" aria-labelledby="pcv-open-heading">
@@ -70,6 +72,40 @@ require base_path('views/partials/account/shell_open.php');
                 <textarea id="pcv-bio" name="bio" rows="3" maxlength="<?= \App\Support\PublicCv\PublicCvSettings::BIO_MAX ?>" placeholder="Ex. : Pilote de transport depuis 2024, toujours partant pour les opérations de nuit."><?= $h($form['bio'] ?? '') ?></textarea>
                 <p class="account-hub__hint"><?= \App\Support\PublicCv\PublicCvSettings::BIO_MAX ?> caractères au plus. N’y mettez pas d’information personnelle.</p>
             </div>
+        </div>
+    </section>
+
+    <section class="account-hub__panel" aria-labelledby="pcv-banner-heading" style="margin-top:1.25rem">
+        <div class="account-hub__panel-head">
+            <p class="account-hub__panel-kicker">Apparence</p>
+            <h2 id="pcv-banner-heading" class="account-hub__panel-title">Bannière de la page</h2>
+            <p class="account-hub__panel-desc">Image en fond, derrière votre indicatif. Sans bannière à vous, la page reprend celle de votre communauté, sinon un fond sombre.</p>
+        </div>
+        <div class="account-hub__panel-body account-hub__form-grid">
+            <div class="account-hub__media-preview account-hub__media-preview--banner">
+                <?php if ($bannerUrl !== null): ?>
+                <img src="<?= $h($bannerUrl) ?>" alt="Aperçu de votre bannière">
+                <?php else: ?>
+                <span style="font-size:.625rem;font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.45)">Bannière de la communauté</span>
+                <?php endif; ?>
+            </div>
+            <div>
+                <label class="account-hub__label" for="pcv-banner"><?= $bannerUrl !== null ? 'Remplacer la bannière' : 'Choisir une image' ?></label>
+                <input type="file" id="pcv-banner" name="banner" accept="image/jpeg,image/png,image/webp">
+                <?php if ($bannerHint !== ''): ?><p class="account-hub__hint"><?= $h($bannerHint) ?></p><?php endif; ?>
+                <?php if (!empty($errors['banner'])): ?>
+                <p class="account-hub__field-error"><?= $h($errors['banner']) ?></p>
+                <?php endif; ?>
+            </div>
+            <?php if ($bannerUrl !== null): ?>
+            <label class="account-hub__check">
+                <input type="checkbox" name="banner_remove" value="1">
+                <span>
+                    <strong>Retirer ma bannière</strong>
+                    <span class="account-hub__hint" style="display:block">La page reprendra la bannière de votre communauté.</span>
+                </span>
+            </label>
+            <?php endif; ?>
         </div>
     </section>
 
