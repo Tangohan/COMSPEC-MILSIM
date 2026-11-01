@@ -40,17 +40,16 @@ class SystemSettingsController
             'adminSettingsSections' => $this->buildSections(),
             'adminSettingsPlatformRows' => $this->buildPlatformRows(),
             'adminGameClientGate' => $this->gameClientGateState(),
-            'adminDonationBanner' => $this->donationBannerState(),
         ]);
     }
 
     /**
-     * Bandeau de don sur tout le site (POST /admin/settings/bandeau-don) : activé, messages FR / EN, objectif,
-     * dates. Réglages plateforme donation_banner.*, cache du bandeau retiré, journal d'audit.
+     * Bandeau de don sur tout le site (POST /admin/paiements/bandeau-don, section Admin > Paiements > Dons) :
+     * activé, messages FR / EN, objectif, dates. Réglages plateforme donation_banner.*, cache retiré, audit.
      */
     public function saveDonationBanner(Request $request, array $params = []): Response
     {
-        $back = url('admin/settings') . '#bandeau-don';
+        $back = url('admin/paiements') . '?vue=dons#bandeau-don';
         if (!Csrf::validate($request->inputString('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
@@ -115,31 +114,6 @@ class SystemSettingsController
         }
 
         return $raw;
-    }
-
-    /**
-     * @return array{config: array{enabled: bool, message_fr: string, message_en: string, goal_eur: int, starts_on: string, ends_on: string, version: int}, live: bool, raised: string, period: string}
-     */
-    private function donationBannerState(): array
-    {
-        $cfg = DonationBanner::configFrom($this->donationBannerRaw());
-        [$from, $to] = DonationBanner::countedPeriod($cfg);
-        $raised = 0;
-        if ($cfg['goal_eur'] > 0) {
-            try {
-                $raised = DonationBanner::raisedFromLedger((new \App\Repositories\PaymentLedgerRepository())->ledger(), $from, $to);
-            } catch (\Throwable) {
-            }
-        }
-        $fmt = static fn (string $d): string => $d !== '' ? date('d/m/Y', (int) strtotime($d)) : '';
-        $period = 'depuis le ' . $fmt($from) . ($to !== '' ? ' jusqu’au ' . $fmt($to) : '');
-
-        return [
-            'config' => $cfg,
-            'live' => DonationBanner::isLive($cfg),
-            'raised' => DonationBanner::euros($raised) . ' sur ' . DonationBanner::euros($cfg['goal_eur'] * 100),
-            'period' => $period,
-        ];
     }
 
     /**
