@@ -9,7 +9,7 @@ use App\Services\Platform\PublicHistoryStatsService;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
-/** Page publique « Notre histoire » : chiffres réels, base vide sans erreur, portée communauté isolée. */
+/** Page publique « Notre histoire » : chiffres réels, kilomètres, versions, base vide sans erreur, portée communauté isolée. */
 final class PublicHistoryPageTest extends TestCase
 {
     private string $cacheDir;
@@ -41,12 +41,19 @@ final class PublicHistoryPageTest extends TestCase
         self::assertSame(0, $stats['members']);
         self::assertNull($stats['founded_at']);
         self::assertSame([], $stats['years']);
+        self::assertSame(0, $stats['distance_km']);
+        self::assertSame(0, $stats['play_hours']);
+        self::assertSame(0, $stats['communities']);
 
-        $body = $this->render($stats, null);
-        self::assertStringContainsString('ATHENA en chiffres réels', $body);
+        $body = $this->render($stats, null, null, []);
+        self::assertStringContainsString('Ce que les communautés ont accompli', $body);
         self::assertStringContainsString('À venir', $body);
-        self::assertStringContainsString('La frise annuelle se remplira', $body);
-        self::assertStringNotContainsString('Votre communauté', $body);
+        self::assertStringContainsString('La frise se remplira', $body);
+        self::assertStringContainsString('Les premiers kilomètres apparaîtront', $body);
+        self::assertStringContainsString('L’historique des versions sera publié', $body);
+        self::assertStringContainsString('La première communauté peut ouvrir son espace', $body);
+        self::assertStringNotContainsString('L’histoire de', $body);
+        self::assertStringNotContainsString('Comment ces kilomètres ont été parcourus', $body);
     }
 
     public function testRealDataFeedsPlatformAndCommunityScopes(): void
@@ -63,6 +70,15 @@ final class PublicHistoryPageTest extends TestCase
         self::assertSame(3, $platform['orbat_units']);
         self::assertSame([], $platform['highlights']);
         self::assertSame(['2024', '2025'], array_column($platform['years'], 'year'));
+        // Communautés : hors espace technique par défaut.
+        self::assertSame(2, $platform['communities']);
+        // Kilomètres : somme des modes de déplacement de toutes les communautés (mètres → km entiers).
+        self::assertSame(65, $platform['distance_km']);
+        self::assertSame(['foot' => 13, 'land' => 20, 'air' => 30, 'sea' => 0, 'halo' => 1], $platform['distance_modes']);
+        self::assertSame(3, $platform['distance_sessions']);
+        self::assertSame([0, 65], array_column($platform['years'], 'distance_km'));
+        // Heures de jeu : seulement le temps de jeu total, pas le temps par rôle.
+        self::assertSame(3, $platform['play_hours']);
 
         $community = $service->stats(2);
         self::assertSame('community', $community['scope']);
@@ -71,6 +87,9 @@ final class PublicHistoryPageTest extends TestCase
         self::assertSame(2, $community['operations']);
         self::assertSame(3, $community['flight_hours']);
         self::assertSame(2, $community['orbat_units']);
+        self::assertSame(37, $community['distance_km']);
+        self::assertSame(2, $community['distance_sessions']);
+        self::assertSame(2, $community['play_hours']);
         $titles = array_column($community['highlights'], 'title');
         self::assertContains('Opération Aube Rouge', $titles);
         self::assertContains('Retour sur la campagne', $titles);
@@ -85,13 +104,37 @@ final class PublicHistoryPageTest extends TestCase
         self::assertSame(2, $service->stats(2)['orbat_units']);
         self::assertSame(3, $service->stats(2, true)['orbat_units']);
 
-        $body = $this->render($platform, $community);
+        $body = $this->render($platform, $community, $this->releases());
         self::assertStringContainsString('2024', $body);
-        self::assertStringContainsString('Heures de vol cumulées', $body);
+        self::assertStringContainsString('data-nh-count="65"', $body);
+        self::assertStringContainsString('Comment ces kilomètres ont été parcourus', $body);
+        self::assertStringContainsString('En chute libre', $body);
         self::assertStringContainsString('L’histoire de Task Force Lynx', $body);
+        self::assertStringContainsString('data-nh-count="37"', $body);
         self::assertStringContainsString('Opération Aube Rouge', $body);
         self::assertStringContainsString('2 participants', $body);
+        self::assertStringContainsString('Premier message ATAK', $body);
         self::assertStringNotContainsString('pilot@example.test', $body);
+    }
+
+    public function testVersionsTimelineShowsReleasesWithFiltersAndBulletins(): void
+    {
+        $stats = $this->service(new PDO('sqlite::memory:'))->stats();
+        $body = $this->render($stats, null, $this->releases());
+
+        self::assertStringContainsString('Toutes les versions', $body);
+        self::assertStringContainsString('En service aujourd’hui', $body);
+        self::assertStringContainsString('Liaison plus fluide sous charge', $body);
+        self::assertStringContainsString('ATAK natif 2.9.19', $body);
+        self::assertStringContainsString('COMSPEC Link 2.0.110', $body);
+        self::assertStringContainsString('Portail Athena 1.7.0', $body);
+        self::assertStringContainsString('data-products="atak link"', $body);
+        self::assertStringContainsString('data-nh-filter="portal"', $body);
+        self::assertStringNotContainsString('data-nh-filter="sse"', $body);
+        self::assertStringContainsString('nouveautes/update/01203', $body);
+        self::assertStringContainsString('Date connue au mois près', $body);
+        // Plus jamais l’ancienne carte unique « 1.0.0 x.0.0 ».
+        self::assertStringNotContainsString('x.0.0', $body);
     }
 
     public function testControllerUsesSessionTenantOnlyForSignedInMembers(): void
@@ -100,7 +143,8 @@ final class PublicHistoryPageTest extends TestCase
         self::assertStringContainsString('function publicHistoryTenantId', $src);
         self::assertStringContainsString("Session::get('user_id')", $src);
         self::assertStringContainsString("'platformStats' => \$platformStats", $src);
-        self::assertStringContainsString('public_history_heritage_', $src);
+        self::assertStringContainsString("'releaseHistory' => \$releaseHistory", $src);
+        self::assertStringContainsString('PublicReleaseHistoryService', $src);
     }
 
     private function service(PDO $pdo): PublicHistoryStatsService
@@ -108,20 +152,56 @@ final class PublicHistoryPageTest extends TestCase
         return new PublicHistoryStatsService($pdo, $this->cacheDir, new \DateTimeImmutable('2025-06-01 12:00:00'));
     }
 
+    /** @return array<string, mixed> */
+    private function releases(): array
+    {
+        return [
+            'releases' => [
+                [
+                    'id' => 'atak-2-9-19', 'date' => '2025-05-20', 'date_precision' => 'day', 'product' => 'atak',
+                    'filters' => ['atak', 'link'],
+                    'tags' => [
+                        ['product' => 'atak', 'label' => 'ATAK natif', 'version' => '2.9.19'],
+                        ['product' => 'link', 'label' => 'COMSPEC Link', 'version' => '2.0.110'],
+                    ],
+                    'title' => 'Liaison plus fluide sous charge', 'title_en' => '', 'summary' => '',
+                    'points' => ['Les ordres ne figent plus l’image'], 'points_en' => [],
+                    'type' => 'performance', 'codename' => 'Denver', 'bulletin' => 1203,
+                ],
+                [
+                    'id' => 'portal-1-7-0', 'date' => '2025-04-18', 'date_precision' => 'month', 'product' => 'portal',
+                    'filters' => ['portal'],
+                    'tags' => [['product' => 'portal', 'label' => 'Portail', 'version' => '1.7.0']],
+                    'title' => 'Chaque version du portail porte un nom de ville', 'title_en' => '', 'summary' => '',
+                    'points' => [], 'points_en' => [], 'type' => null, 'codename' => 'Denver', 'bulletin' => 0,
+                ],
+            ],
+            'current' => [
+                ['product' => 'atak', 'label' => 'ATAK natif', 'version' => '2.9.19', 'date' => '2025-05-20'],
+                ['product' => 'portal', 'label' => 'Portail Athena', 'version' => '1.7.0', 'date' => '2025-04-18'],
+            ],
+            'counts' => ['atak' => 1, 'link' => 1, 'overwatch' => 0, 'sse' => 0, 'portal' => 1],
+            'bulletins' => 1,
+            'first_date' => '2025-04-18',
+        ];
+    }
+
     /**
      * @param array<string, mixed> $platform
      * @param array<string, mixed>|null $community
+     * @param array<string, mixed>|null $releases
+     * @param list<array<string, string>>|null $milestones
      */
-    private function render(array $platform, ?array $community): string
+    private function render(array $platform, ?array $community, ?array $releases, ?array $milestones = null): string
     {
         $response = Response::view('layout.marketing', [
             'content' => 'site.history',
             'title' => 'ATHENA — Notre histoire',
             'marketingActive' => 'history',
-            'heritage' => ['live' => [], 'timeline' => [], 'chart' => [], 'versions' => [], 'next_goal' => null],
-            'heritagePeriod' => 'all',
             'platformStats' => $platform,
             'communityStats' => $community,
+            'releaseHistory' => $releases,
+            'milestones' => $milestones ?? [['date' => '2024-12-01', 'title' => 'Premier message ATAK', 'text' => 'Premier message ATAK transmis.']],
         ]);
         self::assertSame(200, $response->statusCode());
 
@@ -132,7 +212,7 @@ final class PublicHistoryPageTest extends TestCase
     {
         $pdo = new PDO('sqlite::memory:');
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $pdo->exec('CREATE TABLE tenants (id INTEGER PRIMARY KEY, name TEXT, created_at TEXT)');
+        $pdo->exec('CREATE TABLE tenants (id INTEGER PRIMARY KEY, name TEXT, slug TEXT, created_at TEXT)');
         $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, tenant_id INT, email TEXT, status TEXT, is_service_account INT DEFAULT 0, created_at TEXT)');
         $pdo->exec('CREATE TABLE community_events (id INTEGER PRIMARY KEY, tenant_id INT, title TEXT, starts_at TEXT, cancelled_at TEXT)');
         $pdo->exec('CREATE TABLE community_event_rsvps (id INTEGER PRIMARY KEY, event_id INT, user_id INT, status TEXT)');
@@ -141,9 +221,12 @@ final class PublicHistoryPageTest extends TestCase
         $pdo->exec('CREATE TABLE training_enrollments (id INTEGER PRIMARY KEY, tenant_id INT, user_id INT, status TEXT)');
         $pdo->exec('CREATE TABLE units (id INTEGER PRIMARY KEY, tenant_id INT, name TEXT)');
         $pdo->exec('CREATE TABLE tenant_mini_articles (id INTEGER PRIMARY KEY, tenant_id INT, title TEXT, status TEXT, published_at TEXT)');
+        $pdo->exec('CREATE TABLE atak_distance_stats (id INTEGER PRIMARY KEY, tenant_id INT, user_id INT, day TEXT, foot_m INT, land_m INT, sea_m INT, air_m INT, halo_m INT)');
+        $pdo->exec('CREATE TABLE atak_screen_time (tenant_id INT, user_id INT, day TEXT, kind TEXT, item_key TEXT, seconds INT)');
 
-        $pdo->exec("INSERT INTO tenants (id, name, created_at) VALUES
-            (1, 'Plateforme', '2024-03-15 10:00:00'), (2, 'Task Force Lynx', '2024-05-02 09:00:00'), (3, 'Voisins', '2024-09-01 09:00:00')");
+        $pdo->exec("INSERT INTO tenants (id, name, slug, created_at) VALUES
+            (1, 'Plateforme', 'default', '2024-03-15 10:00:00'), (2, 'Task Force Lynx', 'tf-lynx', '2024-05-02 09:00:00'),
+            (3, 'Voisins', 'voisins', '2024-09-01 09:00:00')");
         $pdo->exec("INSERT INTO users (id, tenant_id, email, status, is_service_account, created_at) VALUES
             (1, 2, 'pilot@example.test', 'active', 0, '2024-05-03 10:00:00'),
             (2, 2, 'b@example.test', 'active', 0, '2025-01-10 10:00:00'),
@@ -169,6 +252,13 @@ final class PublicHistoryPageTest extends TestCase
         $pdo->exec("INSERT INTO tenant_mini_articles (tenant_id, title, status, published_at) VALUES
             (2, 'Retour sur la campagne', 'published', '2025-05-01 10:00:00'),
             (2, 'Brouillon', 'draft', NULL)");
+        $pdo->exec("INSERT INTO atak_distance_stats (tenant_id, user_id, day, foot_m, land_m, sea_m, air_m, halo_m) VALUES
+            (2, 1, '2025-04-12', 5400, 10000, 0, 20000, 1300),
+            (2, 2, '2025-04-12', 600, 0, 0, 0, 0),
+            (3, 5, '2025-03-01', 7000, 10500, 0, 10200, 0)");
+        $pdo->exec("INSERT INTO atak_screen_time (tenant_id, user_id, day, kind, item_key, seconds) VALUES
+            (2, 1, '2025-04-12', 'play', 'total', 7200), (2, 2, '2025-04-12', 'play', 'total', 1800),
+            (2, 1, '2025-04-12', 'role', 'PIL', 99999), (3, 5, '2025-03-01', 'play', 'total', 3600)");
 
         return $pdo;
     }

@@ -80,26 +80,23 @@ final class AthenaHeritageAssetTest extends TestCase
         self::assertFileExists($root . '/app/Services/Cron/Jobs/AthenaHeritageSnapshotCronJob.php');
 
         $view = (string) file_get_contents($root . '/views/site/history.php');
-        self::assertStringContainsString('site-history-hero', $view);
-        self::assertStringContainsString('site-history-hero__facts', $view);
-        self::assertStringContainsString('site-sse-block', $view);
-        self::assertStringContainsString('hi-display', $view);
-        self::assertStringContainsString('hi-cta hi-cta-solid', $view);
-        self::assertStringContainsString('fog-team.jpg', $view);
-        // PHP caste '365'/'90' en int : rawurlencode exige string (sinon 500).
-        self::assertStringContainsString('$periodKey = (string) $key', $view);
-        self::assertStringContainsString('rawurlencode($periodKey)', $view);
-        // Features changelog = tableaux {kind,text} : ne jamais caster l’entrée entière en string.
-        self::assertStringContainsString("\$feat['text']", $view);
+        self::assertStringContainsString('nh-hero', $view);
+        self::assertStringContainsString('nh-km', $view);
+        self::assertStringContainsString('data-nh-versions', $view);
+        self::assertStringContainsString('history-topo.svg', $view);
+        // Plus de photo lourde dans le hero : carte vectorielle mise en cache.
+        self::assertStringNotContainsString('fog-team.jpg', $view);
+        self::assertFileExists($root . '/public/assets/images/history-topo.svg');
 
         $css = (string) file_get_contents($root . '/public/assets/css/site-history.css');
-        self::assertStringContainsString('.site-history-hero', $css);
-        self::assertStringContainsString('site-history-hero__scrim', $css);
-        self::assertStringContainsString('site-history__node-excerpt', $css);
+        self::assertStringContainsString('prefers-color-scheme: dark', $css);
+        self::assertStringContainsString('.nh[data-theme="dark"]', $css);
+        self::assertStringContainsString('prefers-reduced-motion', $css);
 
         $js = (string) file_get_contents($root . '/public/assets/js/site-history.js');
-        self::assertStringContainsString('Points visibles', $js);
-        self::assertStringContainsString('ctx.arc', $js);
+        self::assertStringContainsString('prefers-reduced-motion', $js);
+        self::assertStringContainsString('athena.history.theme', $js);
+        self::assertStringContainsString('data-nh-filter', $js);
 
         $repoSrc = (string) file_get_contents($root . '/app/Repositories/AthenaHeritageRepository.php');
         self::assertStringContainsString('function ensureSchema', $repoSrc);
@@ -123,8 +120,8 @@ final class AthenaHeritageAssetTest extends TestCase
         self::assertStringContainsString("'hist_meta_title'", $en);
         self::assertStringContainsString("'history'", $fr);
         self::assertStringContainsString("'history'", $en);
-        self::assertStringContainsString("'hist_pill'", $fr);
-        self::assertStringContainsString("'hist_cta_timeline'", $en);
+        self::assertStringContainsString("'hist_km_label'", $fr);
+        self::assertStringContainsString("'hist_cta_versions'", $en);
 
         $nav = (string) file_get_contents($root . '/views/partials/home_nav_drawer.php');
         self::assertStringContainsString('notre-histoire', $nav);
