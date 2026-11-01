@@ -46,9 +46,9 @@ _bg ctrlSetBackgroundColor [0.12, 0.13, 0.12, 0.97];
 private _title = ["ctrlStatic", [_x0, _y0 - 5 * _u, _w, 5 * _u]] call _mk;
 _title ctrlSetBackgroundColor [0.10, 0.30, 0.16, 1];
 _title ctrlSetTextColor [1, 1, 1, 1];
-_title ctrlSetText ("  " + (("Tableau de bord SSE") call comspec_sse_fnc_tr));
+_title ctrlSetText ((("  " + (("Tableau de bord SSE") call comspec_sse_fnc_tr))) call comspec_sse_fnc_tr);
 private _sub = ["ctrlStructuredText", [_x0 + _w * 0.4, _y0 - 4.6 * _u, _w * 0.6 - _u, 4.4 * _u]] call _mk;
-_sub ctrlSetStructuredText parseText format ["<t align='right' color='#d8e6da'>%1 · %2</t>", missionName, worldName];
+_sub ctrlSetStructuredText parseText ((format ["<t align='right' color='#d8e6da'>%1 · %2</t>", missionName, worldName]) call comspec_sse_fnc_tr);
 
 // Onglets.
 private _tabs = [

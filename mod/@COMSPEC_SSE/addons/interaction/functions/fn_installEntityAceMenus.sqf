@@ -47,8 +47,7 @@ if (_isPerson) exitWith {
     };
     true
 };
-private _rootKey = if (_isPerson) then { "personRoot" } else { "objectRoot" };
-private _root = [_cache getOrDefault [_rootKey, []]] call comspec_sse_fnc_acePadAction;
+private _root = [_cache getOrDefault ["objectRoot", []]] call comspec_sse_fnc_acePadAction;
 if (_root isEqualTo []) exitWith {
     _entity setVariable ["comspec_sse_aceInstalling", false];
     // Dix essais au plus (5 s) : sans menu en cache, l'objet se relançait toutes les 0,5 s sans fin.

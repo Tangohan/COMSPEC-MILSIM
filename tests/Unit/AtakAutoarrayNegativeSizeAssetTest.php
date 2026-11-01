@@ -13,9 +13,6 @@ final class AtakAutoarrayNegativeSizeAssetTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $ext = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
-        $bugLog = (string) file_get_contents(
-            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_collectBugReportLog.sqf'
-        );
         $session = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_collectSessionLog.sqf'
         );
@@ -63,9 +60,9 @@ final class AtakAutoarrayNegativeSizeAssetTest extends TestCase
         self::assertStringNotContainsString('maxBytes = 14000', $ext);
         self::assertStringNotContainsString('Math.Min(parsed, 32000)', $ext);
 
-        self::assertStringContainsString('GetLogTail", ["8000"]', $bugLog);
+        // fn_collectBugReportLog (sans appelant) retiré : le journal passe par fn_athena_collectSessionLog.
+        self::assertFileDoesNotExist($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_collectBugReportLog.sqf');
         self::assertStringContainsString('GetLogTail", ["8000"]', $session);
-        self::assertStringNotContainsString('["14000"]', $bugLog);
         self::assertStringNotContainsString('["14000"]', $session);
 
         self::assertStringContainsString('+_rawEv', $timeline);

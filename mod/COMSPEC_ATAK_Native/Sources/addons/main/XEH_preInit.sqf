@@ -745,9 +745,44 @@ private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 if (hasInterface) then {
     ["comspec_atak_native_planDiff", { ["histPush", _this] call comspec_atak_native_fnc_planAction; }] call CBA_fnc_addEventHandler;
     ["comspec_atak_native_planRoom", { ["roomJoin", _this param [0, ""]] call comspec_atak_native_fnc_planAction; }] call CBA_fnc_addEventHandler;
+    // Plan du camp : un trait arrive en différence (fn_planServer) ; révision manquée -> plan entier redemandé au serveur.
+    COMSPEC_ATAK_PlanAskFull = {
+        params ["_var"];
+        private _ask = missionNamespace getVariable ["COMSPEC_ATAK_PlanAsk", createHashMap];
+        missionNamespace setVariable ["COMSPEC_ATAK_PlanAsk", _ask];
+        if (_ask getOrDefault [_var, false]) exitWith {};
+        _ask set [_var, true];
+        ["comspec_atak_native_planFull", [player, _var]] call CBA_fnc_serverEvent;
+        // 3 s plus tard : encore en retard sur le dernier trait annoncé -> on redemande.
+        [{
+            params ["_var"];
+            (missionNamespace getVariable ["COMSPEC_ATAK_PlanAsk", createHashMap]) set [_var, false];
+            private _want = (missionNamespace getVariable ["COMSPEC_ATAK_PlanWant", createHashMap]) getOrDefault [_var, 0];
+            if (((missionNamespace getVariable [_var, [0]]) param [0, 0]) < _want) then { [_var] call COMSPEC_ATAK_PlanAskFull; };
+        }, [_var], 3] call CBA_fnc_waitAndExecute;
+    };
+    ["comspec_atak_native_planPatch", {
+        params ["_var", "_rev", "_del", "_put", "_name", "_uid", "_creator"];
+        private _cur = missionNamespace getVariable [_var, [0, [], ""]];
+        private _have = _cur param [0, 0];
+        if (_rev < _have) exitWith {};
+        if (_rev > _have) exitWith {
+            private _want = missionNamespace getVariable ["COMSPEC_ATAK_PlanWant", createHashMap];
+            missionNamespace setVariable ["COMSPEC_ATAK_PlanWant", _want];
+            _want set [_var, (_want getOrDefault [_var, 0]) max (_rev + 1)];
+            [_var] call COMSPEC_ATAK_PlanAskFull;
+        };
+        missionNamespace setVariable [_var, [_rev + 1, [objNull, "patchList", [_cur param [1, []], _del, _put]] call comspec_atak_native_fnc_planServer, _name, _uid, _creator]];
+    }] call CBA_fnc_addEventHandler;
 };
 if (isServer) then {
     ["comspec_atak_native_planSrv", { _this call comspec_atak_native_fnc_planServer; }] call CBA_fnc_addEventHandler;
+    // Un client en retard d'une révision du plan du camp : lui renvoyer ce plan seul (pas tout syncReq).
+    ["comspec_atak_native_planFull", {
+        params [["_unit", objNull], ["_var", ""]];
+        if (isNull _unit || {local _unit} || {!(_var isEqualType "")} || {(_var find "COMSPEC_ATAK_Plan_") != 0}) exitWith {};
+        if (!isNil { missionNamespace getVariable _var }) then { (owner _unit) publicVariableClient _var; };
+    }] call CBA_fnc_addEventHandler;
     // Le serveur a le mod : posé dès le preInit (aussi en solo et en partie hébergée), sans attendre XEH_postInitServer.
     missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 };

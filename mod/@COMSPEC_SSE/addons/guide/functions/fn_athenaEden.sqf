@@ -104,7 +104,7 @@ switch (_mode) do {
         private _title = ["ctrlStatic", [_x0, _y0 - 5 * _u, _w, 5 * _u]] call _mk;
         _title ctrlSetBackgroundColor [0.10, 0.30, 0.16, 1];
         _title ctrlSetTextColor [1, 1, 1, 1];
-        _title ctrlSetText ("  " + (("Connexion Athena") call comspec_sse_fnc_tr));
+        _title ctrlSetText ((("  " + (("Connexion Athena") call comspec_sse_fnc_tr))) call comspec_sse_fnc_tr);
         private _body = ["ctrlStructuredText", [_x0 + 2 * _u, _y0 + 2 * _u, _w - 4 * _u, _h - 11 * _u]] call _mk;
         _d setVariable ["comspec_sse_body", _body];
         private _bw = (_w - 5 * _u) / 3;
@@ -259,8 +259,8 @@ switch (_mode) do {
         if (_phase isNotEqualTo "ok") then {
             _lines pushBack format ["<t color='#8a96a3'>%1</t>", "Le temps passé dans Eden est compté et part sur votre fiche Athena dès que le compte est relié." call _tr];
         };
-        (_dlg getVariable ["comspec_sse_body", controlNull]) ctrlSetStructuredText parseText (_lines joinString "<br/>");
-        (_dlg getVariable ["comspec_sse_bCode", controlNull]) ctrlSetText ((["Obtenir un code", "Nouveau code"] select (_phase in ["code", "expired", "maintenance"])) call _tr);
+        (_dlg getVariable ["comspec_sse_body", controlNull]) ctrlSetStructuredText parseText (((_lines joinString "<br/>")) call comspec_sse_fnc_tr);
+        (_dlg getVariable ["comspec_sse_bCode", controlNull]) ctrlSetText ((((["Obtenir un code", "Nouveau code"] select (_phase in ["code", "expired", "maintenance"])) call _tr)) call comspec_sse_fnc_tr);
         (_dlg getVariable ["comspec_sse_bOpen", controlNull]) ctrlEnable (_phase isEqualTo "code");
     };
 

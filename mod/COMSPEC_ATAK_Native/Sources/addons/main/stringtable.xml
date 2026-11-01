@@ -1517,45 +1517,10 @@
             <English>TOC post side</English>
             <French>Camp du poste TOC</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_Phone_S7_OD">
-            <Original>Samsung S7 olive</Original>
-            <English>Samsung S7 olive</English>
-            <French>Samsung S7 olive</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_Phone_S7_OD_DESC">
-            <Original>Olive Samsung S7 with COMSPEC ATAK installed. The case stays olive: another colour is another item.</Original>
-            <English>Olive Samsung S7 with COMSPEC ATAK installed. The case stays olive: another colour is another item.</English>
-            <French>Samsung S7 olive, ATAK COMSPEC installé. La coque reste olive : une autre couleur est un autre objet.</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_Phone_S7_Black">
-            <Original>Samsung S7 black</Original>
-            <English>Samsung S7 black</English>
-            <French>Samsung S7 noir</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_Phone_S7_Black_DESC">
-            <Original>Black Samsung S7 with COMSPEC ATAK installed. The case stays black: another colour is another item.</Original>
-            <English>Black Samsung S7 with COMSPEC ATAK installed. The case stays black: another colour is another item.</English>
-            <French>Samsung S7 noir, ATAK COMSPEC installé. La coque reste noire : une autre couleur est un autre objet.</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_Phone_S23">
-            <Original>Samsung S23</Original>
-            <English>Samsung S23</English>
-            <French>Samsung S23</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_Phone_S23_DESC">
-            <Original>Samsung S23 with COMSPEC ATAK installed.</Original>
-            <English>Samsung S23 with COMSPEC ATAK installed.</English>
-            <French>Samsung S23, ATAK COMSPEC installé.</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_Phone_iPhone">
-            <Original>V2 Enhanced</Original>
-            <English>V2 Enhanced</English>
-            <French>V2 Enhanced</French>
-        </Key>
-        <Key ID="STR_COMSPEC_ATAK_Phone_iPhone_DESC">
-            <Original>V2 Enhanced with COMSPEC ATAK installed.</Original>
-            <English>V2 Enhanced with COMSPEC ATAK installed.</English>
-            <French>V2 Enhanced, ATAK COMSPEC installé.</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSIDE_TIP">
+            <Original>WEST, EAST, GUER or CIV: only this side can use this laptop. Empty: every side.</Original>
+            <English>WEST, EAST, GUER or CIV: only this side can use this laptop. Empty: every side.</English>
+            <French>WEST, EAST, GUER ou CIV : seul ce camp peut utiliser ce PC. Vide : tous les camps.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_Phone_IP17">
             <Original>iPhone 17 Pro</Original>
@@ -1577,6 +1542,36 @@
             <English>Xiaomi X3D with COMSPEC ATAK installed.</English>
             <French>Xiaomi X3D, ATAK COMSPEC installé.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_S23">
+            <Original>Samsung S23</Original>
+            <English>Samsung S23</English>
+            <French>Samsung S23</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_S23_DESC">
+            <Original>Samsung S23 with COMSPEC ATAK installed.</Original>
+            <English>Samsung S23 with COMSPEC ATAK installed.</English>
+            <French>Samsung S23, ATAK COMSPEC installé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_S7_Black">
+            <Original>Samsung S7 black</Original>
+            <English>Samsung S7 black</English>
+            <French>Samsung S7 noir</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_S7_Black_DESC">
+            <Original>Black Samsung S7 with COMSPEC ATAK installed. The case stays black: another colour is another item.</Original>
+            <English>Black Samsung S7 with COMSPEC ATAK installed. The case stays black: another colour is another item.</English>
+            <French>Samsung S7 noir, ATAK COMSPEC installé. La coque reste noire : une autre couleur est un autre objet.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_S7_OD">
+            <Original>Samsung S7 olive</Original>
+            <English>Samsung S7 olive</English>
+            <French>Samsung S7 olive</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_S7_OD_DESC">
+            <Original>Olive Samsung S7 with COMSPEC ATAK installed. The case stays olive: another colour is another item.</Original>
+            <English>Olive Samsung S7 with COMSPEC ATAK installed. The case stays olive: another colour is another item.</English>
+            <French>Samsung S7 olive, ATAK COMSPEC installé. La coque reste olive : une autre couleur est un autre objet.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_Phone_Sonim">
             <Original>Sonim XP8</Original>
             <English>Sonim XP8</English>
@@ -1597,10 +1592,15 @@
             <English>Rugged tablet with COMSPEC ATAK installed.</English>
             <French>Tablette durcie, ATAK COMSPEC installé.</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSIDE_TIP">
-            <Original>WEST, EAST, GUER or CIV: only this side can use this laptop. Empty: every side.</Original>
-            <English>WEST, EAST, GUER or CIV: only this side can use this laptop. Empty: every side.</English>
-            <French>WEST, EAST, GUER ou CIV : seul ce camp peut utiliser ce PC. Vide : tous les camps.</French>
+        <Key ID="STR_COMSPEC_ATAK_Phone_iPhone">
+            <Original>V2 Enhanced</Original>
+            <English>V2 Enhanced</English>
+            <French>V2 Enhanced</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_Phone_iPhone_DESC">
+            <Original>V2 Enhanced with COMSPEC ATAK installed.</Original>
+            <English>V2 Enhanced with COMSPEC ATAK installed.</English>
+            <French>V2 Enhanced, ATAK COMSPEC installé.</French>
         </Key>
     </Package>
 </Project>

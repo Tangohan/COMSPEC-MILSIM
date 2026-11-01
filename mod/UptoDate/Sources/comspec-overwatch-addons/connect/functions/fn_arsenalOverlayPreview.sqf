@@ -29,11 +29,11 @@ private _author = if (_row isEqualTo []) then { "" } else { if (_isCloud) then {
 
 private _head = _grp getVariable ["COMSPEC_ArsenalDetailHead", controlNull];
 if (!isNull _head) then {
-    _head ctrlSetStructuredText parseText (if (_has) then {
+    _head ctrlSetStructuredText parseText (((if (_has) then {
         format ["<t size='1.15' font='%3' color='#eef7f1'>%1</t><br/><t size='0.78' color='#8fa596'>%2</t>", _caption, (_meta) call comspec_overwatch_connect_fnc_tr, (_grp getVariable ["COMSPEC_ArsenalFonts", ["", "RobotoCondensedBold"]]) select 1]
     } else {
         ("<t size='1.05' color='#b5c7bb'>Choisissez une tenue dans la liste</t><br/><t size='0.8' color='#8fa596'>Ses pièces, son auteur, son portrait et son état s'affichent ici.</t>") call comspec_overwatch_connect_fnc_tr
-    });
+    })) call comspec_overwatch_connect_fnc_tr);
 };
 
 // Portrait opérateur (téléchargé comme sur ATAK).
@@ -41,14 +41,14 @@ if (!isNull _head) then {
 if (!isNull _avBg) then { _avBg ctrlShow _has; };
 if (!isNull _avPic) then {
     _avPic ctrlShow false;
-    _avPic ctrlSetText "";
+    _avPic ctrlSetText (("") call comspec_overwatch_connect_fnc_tr);
     if (_has && {_avatarUrl isNotEqualTo ""}) then {
         private _cacheKey = format ["wardrobe_av_%1", [_avatarUrl] call comspec_overwatch_connect_fnc_arsenalHash];
         private _cached = missionNamespace getVariable ["COMSPEC_ArsenalAvatarCache", createHashMap];
         if (!(_cached isEqualType createHashMap)) then { _cached = createHashMap; };
         if (_cacheKey in _cached) then {
             private _local = _cached get _cacheKey;
-            if (_local isNotEqualTo "") then { _avPic ctrlSetText _local; _avPic ctrlShow true; };
+            if (_local isNotEqualTo "") then { _avPic ctrlSetText ((_local) call comspec_overwatch_connect_fnc_tr); _avPic ctrlShow true; };
         } else {
             [_display, _avatarUrl, _cacheKey, _avPic] spawn {
                 params ["_d", "_url", "_key", "_pic"];
@@ -69,7 +69,7 @@ if (!isNull _avPic) then {
                     (_r param [11, ""]) isEqualTo _url
                 };
                 if (!_still) exitWith {};
-                _pic ctrlSetText _local;
+                _pic ctrlSetText ((_local) call comspec_overwatch_connect_fnc_tr);
                 _pic ctrlShow true;
             };
         };
@@ -84,7 +84,7 @@ private _showBadge = _has && {_label isNotEqualTo ""};
 if (!isNull _badge) then {
     _badge ctrlShow _showBadge;
     if (_showBadge) then {
-        _badge ctrlSetText (" " + toUpper ((_label) call comspec_overwatch_connect_fnc_tr) + " ");
+        _badge ctrlSetText (((" " + toUpper ((_label) call comspec_overwatch_connect_fnc_tr) + " ")) call comspec_overwatch_connect_fnc_tr);
         _badge ctrlSetBackgroundColor _rgba;
         (ctrlPosition _badge) params ["_bx", "_by2", "", "_bh"];
         _badge ctrlSetPosition [_bx, _by2, (ctrlTextWidth _badge) + 0.012, _bh];
@@ -97,10 +97,10 @@ if (!isNull _flagsC) then {
     if (_has && {_feat} && {!_mand}) then { _chips pushBack format ["<t color='#7ec8ff'>%1</t>", ("Mise en avant") call comspec_overwatch_connect_fnc_tr]; };
     if (_has && {_fav}) then { _chips pushBack format ["<t color='#f0d060'>%1</t>", ("Favori") call comspec_overwatch_connect_fnc_tr]; };
     if (_has && {_author isNotEqualTo ""}) then { _chips pushBack format ["<t color='#b5c7bb'>%1</t>", format [("Envoyée par %1") call comspec_overwatch_connect_fnc_tr, _author]]; };
-    _flagsC ctrlSetStructuredText parseText (if (_chips isEqualTo []) then { "" } else { format ["<t size='0.78'>%1</t>", _chips joinString "  ·  "] });
+    _flagsC ctrlSetStructuredText parseText (((if (_chips isEqualTo []) then { "" } else { format ["<t size='0.78'>%1</t>", _chips joinString "  ·  "] })) call comspec_overwatch_connect_fnc_tr);
 };
 if (!isNull _noteC) then {
-    _noteC ctrlSetStructuredText parseText (if (_has) then { format ["<t size='0.78' color='#c4d2c8'>%1</t>", (_note) call comspec_overwatch_connect_fnc_tr] } else { "" });
+    _noteC ctrlSetStructuredText parseText (((if (_has) then { format ["<t size='0.78' color='#c4d2c8'>%1</t>", (_note) call comspec_overwatch_connect_fnc_tr] } else { "" })) call comspec_overwatch_connect_fnc_tr);
 };
 
 // Copie locale Documents (liste site gardée sur ce PC).
@@ -120,11 +120,11 @@ if (!isNull _syncC) then {
         };
     };
     if (_has && {_syncPath isNotEqualTo ""}) then {
-        _syncC ctrlSetTooltip format [("Emplacement : %1") call comspec_overwatch_connect_fnc_tr, _syncPath];
+        _syncC ctrlSetTooltip ((format [("Emplacement : %1") call comspec_overwatch_connect_fnc_tr, _syncPath]) call comspec_overwatch_connect_fnc_tr);
     } else {
-        _syncC ctrlSetTooltip "";
+        _syncC ctrlSetTooltip (("") call comspec_overwatch_connect_fnc_tr);
     };
-    _syncC ctrlSetStructuredText parseText _txt;
+    _syncC ctrlSetStructuredText parseText ((_txt) call comspec_overwatch_connect_fnc_tr);
 };
 
 // Pièces : icône et légende (traduite) ; info-bulle avec le nom de l'objet.
@@ -137,10 +137,10 @@ private _slots = _icons select { (_x select 1) isNotEqualTo "" || {(_x select 3)
     { _x ctrlShow _on; } forEach [_cb, _p, _cap];
     if (_on) then {
         (_slots select _forEachIndex) params ["_kind", "", "_pic", "_dn"];
-        if (_pic isNotEqualTo "") then { _p ctrlSetText _pic; } else { _p ctrlSetText ""; };
-        _p ctrlSetTooltip format ["%1 : %2", (_kind) call comspec_overwatch_connect_fnc_tr, _dn];
+        if (_pic isNotEqualTo "") then { _p ctrlSetText ((_pic) call comspec_overwatch_connect_fnc_tr); } else { _p ctrlSetText (("") call comspec_overwatch_connect_fnc_tr); };
+        _p ctrlSetTooltip ((format ["%1 : %2", (_kind) call comspec_overwatch_connect_fnc_tr, _dn]) call comspec_overwatch_connect_fnc_tr);
         _cap ctrlSetText toUpper ((_kind) call comspec_overwatch_connect_fnc_tr);
-        _cap ctrlSetTooltip _dn;
+        _cap ctrlSetTooltip ((_dn) call comspec_overwatch_connect_fnc_tr);
     };
 } forEach (_grp getVariable ["COMSPEC_ArsenalPreviewPics", []]);
 
@@ -156,7 +156,7 @@ if (!isNull _names) then {
         case (_err isEqualTo "too_large"): { format ["<t color='#ffb080'>%1</t>", ("Tenue trop lourde pour l'aperçu en jeu : ouvrez-la sur le poste Athena.") call comspec_overwatch_connect_fnc_tr] };
         default { format ["<t color='#8fa596'>%1</t>", ("Équipement non disponible pour cette tenue.") call comspec_overwatch_connect_fnc_tr] };
     };
-    _names ctrlSetStructuredText parseText format ["<t size='0.84' color='#d6e2da'>%1</t>", _txt];
+    _names ctrlSetStructuredText parseText ((format ["<t size='0.84' color='#d6e2da'>%1</t>", _txt]) call comspec_overwatch_connect_fnc_tr);
     (ctrlPosition _names) params ["_nx", "_ny", "_nw"];
     _names ctrlSetPosition [_nx, _ny, _nw, (ctrlTextHeight _names) max 0.01];
     _names ctrlCommit 0;

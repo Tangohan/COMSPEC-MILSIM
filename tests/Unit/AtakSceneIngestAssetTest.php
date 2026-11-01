@@ -11,27 +11,17 @@ final class AtakSceneIngestAssetTest extends TestCase
 {
     public function testGameCollectsBuildingsAndForestsForAthena(): void
     {
-        $sqf = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_sampleScene.sqf');
+        // Relevé de carte sur commande : fn_sampleTheater (l'ancien fn_sampleScene, sans appelant, a été retiré).
+        $base = dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions';
+        $sqf = (string) file_get_contents($base . '/fn_sampleTheater.sqf');
         self::assertStringContainsString('nearestTerrainObjects', $sqf);
         self::assertStringContainsString('"HOUSE"', $sqf);
         self::assertStringContainsString('"TREE"', $sqf);
-        self::assertStringContainsString('"WALL"', $sqf);
-        self::assertStringContainsString('"FENCE"', $sqf);
-        self::assertStringContainsString('buildingExit', $sqf);
-        self::assertStringContainsString('""doors""', $sqf);
         self::assertStringContainsString('Scene.Ingest', $sqf);
         self::assertStringContainsString('params ["_s"]', $sqf);
-        self::assertStringContainsString('visibleMap', $sqf);
-        self::assertStringContainsString('curatorCamera', $sqf);
         self::assertStringContainsString('COMSPEC_SceneWorldDone', $sqf);
-        self::assertStringContainsString('COMSPEC_SceneTiles_', $sqf);
-        self::assertStringContainsString('COMSPEC_SceneSentIds', $sqf);
-        self::assertStringContainsString('_sentIds getOrDefault', $sqf);
         self::assertStringContainsString('COMSPEC_TheaterSurveyCounts_', $sqf);
-        self::assertStringContainsString('"WALL"', $sqf);
-        self::assertStringContainsString('"FENCE"', $sqf);
-        self::assertStringContainsString('buildingExit', $sqf);
-        self::assertStringContainsString('"doors"', $sqf);
+        self::assertFileDoesNotExist($base . '/fn_sampleScene.sqf');
     }
 
     public function testSceneLoopDoesNotAutoUploadMapData(): void
@@ -121,7 +111,7 @@ final class AtakSceneIngestAssetTest extends TestCase
     public function testConnectRegistersSampleScene(): void
     {
         $cfg = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp');
-        self::assertStringContainsString('class sampleScene {};', $cfg);
+        self::assertStringNotContainsString('class sampleScene {};', $cfg);
         self::assertStringContainsString('class sampleTheater {};', $cfg);
         self::assertStringContainsString('class theaterSurveyVerify {};', $cfg);
         self::assertStringContainsString('class theaterSurveyResend {};', $cfg);

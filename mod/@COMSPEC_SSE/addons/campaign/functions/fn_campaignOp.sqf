@@ -79,7 +79,7 @@ private _wipe = {
     } else {
         comspec_sse_orgs = createHashMap;
         comspec_sse_orgMembers = createHashMap;
-        { _x setVariable ["COMSPEC_SSE_Org", nil, true]; } forEach (allUnits + allDeadMen);
+        { if (!isNil {_x getVariable "COMSPEC_SSE_Org"}) then { _x setVariable ["COMSPEC_SSE_Org", nil, true]; }; } forEach (allUnits + allDeadMen);
     };
     // Numéro de pièce effacé seulement sur les objets saisis (registre) : un setVariable public sur chaque objet
     // de la mission (allMissionObjects) envoyait des milliers de messages à chaque remise à zéro.

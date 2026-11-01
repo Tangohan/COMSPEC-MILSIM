@@ -214,7 +214,7 @@ if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pic
     if (_sheetPage isNotEqualTo "" && {!(_mode in ["new", "pick"])}) then {
         private _appNm = (((_apps select { (_x get "page") isEqualTo _sheetPage }) param [0, createHashMap]) getOrDefault ["name", _sheetPage]) call comspec_atak_native_fnc_tr;
         private _st = ["COMSPEC_RscStructuredText", [_pad * 1.4, _y + _pad * 0.4, _gw - _pad * 2, _font * 1.5]] call comspec_atak_native_fnc_pageCtrl;
-        _st ctrlSetStructuredText parseText format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>Que faire avec cette app ?</t>", _appNm];
+        _st ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>Que faire avec cette app ?</t>", _appNm]) call comspec_atak_native_fnc_tr);
         _st ctrlEnable false;
         private _pinned = _sheetPage in _pins;
         [_pad * 1.4, ["Épingler", "Désépingler"] select _pinned, {
@@ -245,7 +245,7 @@ if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pic
     } else {
         if (_mode isEqualTo "new") then {
             private _st = ["COMSPEC_RscStructuredText", [_pad * 1.4, _y + _pad * 0.4, _gw - _pad * 2, _font * 1.5]] call comspec_atak_native_fnc_pageCtrl;
-            _st ctrlSetStructuredText parseText "<t font='COMSPEC_BarlowBold'>Nouveau groupe</t><br/><t size='0.8' color='#8a9a93'>Donnez un nom court (ex. Terrain, Ops).</t>";
+            _st ctrlSetStructuredText parseText (("<t font='COMSPEC_BarlowBold'>Nouveau groupe</t><br/><t size='0.8' color='#8a9a93'>Donnez un nom court (ex. Terrain, Ops).</t>") call comspec_atak_native_fnc_tr);
             _st ctrlEnable false;
         };
     };

@@ -11,6 +11,19 @@ params [["_ext", "COMSPECExtension"], ["_cmd", ""], ["_args", []], ["_timeout", 
 // Liaison désactivée ou plus de téléphone : rien ne part (fn_uplinkHold de connect, embarqué).
 if (_ext isEqualTo "COMSPECExtension" && {!isNil "comspec_overwatch_connect_fnc_uplinkHold"} && {[_cmd] call comspec_overwatch_connect_fnc_uplinkHold}) exitWith { ["ERR|uplink_hold", 0, 0] };
 private _noAsync = missionNamespace getVariable ["COMSPEC_ATAK_ExtNoAsync", []];
+// Hors contexte suspendable, seule une commande rapide (fn_extFast de connect) part en direct. Une lente (HTTP, disque :
+// jusqu'à 8 s figé) repart en tâche de fond et l'appelant reçoit tout de suite ERR|unscheduled (signalé une fois).
+if (!canSuspend && {!(_ext in _noAsync)} && {!isNil {missionNamespace getVariable "COMSPEC_ATAK_ExtensionEH"}}
+    && {!isNil "comspec_overwatch_connect_fnc_extFast"} && {!([_cmd] call comspec_overwatch_connect_fnc_extFast)}) exitWith {
+    private _seen = missionNamespace getVariable ["COMSPEC_ATAK_ExtUnscheduled", createHashMap];
+    if !(_cmd in _seen) then {
+        _seen set [_cmd, true];
+        missionNamespace setVariable ["COMSPEC_ATAK_ExtUnscheduled", _seen];
+        ["WARN", "EXT", format ["%1 demandé hors contexte suspendable : relancé en tâche de fond", _cmd]] call comspec_atak_native_fnc_log;
+    };
+    [_ext, _cmd, _args, _timeout] spawn comspec_atak_native_fnc_extAwait;
+    ["ERR|unscheduled", 0, 0]
+};
 // Sans gestionnaire de rappel (menu principal, avant le postInit) la réponse ne reviendrait jamais : appel direct.
 if (!canSuspend || {_ext in _noAsync} || {isNil {missionNamespace getVariable "COMSPEC_ATAK_ExtensionEH"}}) exitWith { _ext callExtension [_cmd, _args] };
 private _n = (missionNamespace getVariable ["COMSPEC_ATAK_ExtTicketN", 0]) + 1;

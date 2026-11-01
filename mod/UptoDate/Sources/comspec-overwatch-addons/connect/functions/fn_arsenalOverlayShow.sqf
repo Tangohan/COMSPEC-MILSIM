@@ -235,9 +235,9 @@ _grp setVariable ["COMSPEC_ArsenalPickRefresh", {
     _bPick ctrlSetText ((["SÉLECTION MULTIPLE", "TERMINER"] select _mode) call comspec_overwatch_connect_fnc_tr);
     _bAll ctrlSetText ((["TOUT COCHER", "TOUT DÉCOCHER"] select _allOn) call comspec_overwatch_connect_fnc_tr);
     _bAll ctrlEnable (_mode && {_shown isNotEqualTo []});
-    _bDel ctrlSetText (format [("SUPPRIMER LA SÉLECTION (%1)") call comspec_overwatch_connect_fnc_tr, count _marked]);
+    _bDel ctrlSetText (((format [("SUPPRIMER LA SÉLECTION (%1)") call comspec_overwatch_connect_fnc_tr, count _marked])) call comspec_overwatch_connect_fnc_tr);
     _bDel ctrlEnable (_mode && {_marked isNotEqualTo []});
-    _bUndo ctrlSetText (format [("ANNULER (%1)") call comspec_overwatch_connect_fnc_tr, count _trash]);
+    _bUndo ctrlSetText (((format [("ANNULER (%1)") call comspec_overwatch_connect_fnc_tr, count _trash])) call comspec_overwatch_connect_fnc_tr);
     _bUndo ctrlEnable (_trash isNotEqualTo []);
 }];
 
@@ -259,7 +259,7 @@ _grp setVariable ["COMSPEC_ArsenalAvatar", [_avBg, _avPic]];
 // Badge d'état et phrase qui l'explique.
 private _by = _bodyY + _ip * 0.6 + (_avS max (_guiH * 2.5)) + 0.006;
 private _badge = [[_ix, _by, 0.1, _guiH * 1.0], "", _fB, _guiH * 0.7, [0.03, 0.04, 0.035, 1], _green] call _txt;
-_badge ctrlSetText "";
+_badge ctrlSetText (("") call comspec_overwatch_connect_fnc_tr);
 _grp setVariable ["COMSPEC_ArsenalBadge", _badge];
 private _flags = ["RscStructuredText", [_ix, _by + _guiH * 1.05, _iw, _guiH * 1.05]] call _mk;
 _grp setVariable ["COMSPEC_ArsenalDetailFlags", _flags];
@@ -282,7 +282,7 @@ for "_i" from 0 to 7 do {
     _cb ctrlSetBackgroundColor [0.075, 0.09, 0.08, 1];
     private _p = ["RscPictureKeepAspect", [_cx + _cellW * 0.08, _cy2 + _picH * 0.06, _cellW * 0.84, _picH * 0.88], 884408 + _i] call _mk;
     private _cap = [[_cx, _cy2 + _picH, _cellW, _capH], "", _fR, _guiH * 0.58, [0.62, 0.70, 0.65, 1]] call _txt;
-    _cap ctrlSetText "";
+    _cap ctrlSetText (("") call comspec_overwatch_connect_fnc_tr);
     { _x ctrlShow false; } forEach [_cb, _p, _cap];
     _pics pushBack [_cb, _p, _cap];
 };
@@ -338,7 +338,7 @@ _grp setVariable ["COMSPEC_ArsenalHint", _help];
 _grp setVariable ["COMSPEC_ArsenalSetHint", {
     params ["_g", "_text"];
     private _c = _g getVariable ["COMSPEC_ArsenalHint", controlNull];
-    if (!isNull _c) then { _c ctrlSetStructuredText parseText (format ["<t size='0.8' color='#8fa596'>%1</t>", (_text) call comspec_overwatch_connect_fnc_tr]); };
+    if (!isNull _c) then { _c ctrlSetStructuredText parseText (((format ["<t size='0.8' color='#8fa596'>%1</t>", (_text) call comspec_overwatch_connect_fnc_tr])) call comspec_overwatch_connect_fnc_tr); };
 }];
 _grp setVariable ["COMSPEC_ArsenalTab", profileNamespace getVariable ["COMSPEC_ArsenalTab", "local"]];
 _grp setVariable ["COMSPEC_ArsenalColl", ""];

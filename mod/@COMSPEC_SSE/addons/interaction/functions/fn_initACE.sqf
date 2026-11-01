@@ -82,7 +82,6 @@ private _objectChildren = [
 
 private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
 if (!(_cache isEqualType createHashMap)) then { _cache = createHashMap; };
-_cache set ["personRoot", _rootPerson];
 _cache set ["objectRoot", _rootObj];
 _cache set ["personChildren", _personChildren];
 _cache set ["objectChildren", _objectChildren];

@@ -20,12 +20,9 @@ if (_mode isEqualTo "clear") exitWith {
     ["Éclairage de zone éteint.", "system", "info"] call comspec_overwatch_connect_fnc_announce;
 };
 
-if (_mode isEqualTo "toggle") then {
-    private _cur = missionNamespace getVariable ["COMSPEC_EcotiZoneLight", objNull];
-    if (!isNull _cur) exitWith {
-        [] call _fnc_clear;
-        ["Éclairage de zone éteint.", "system", "info"] call comspec_overwatch_connect_fnc_announce;
-    };
+if (_mode isEqualTo "toggle" && {!isNull (missionNamespace getVariable ["COMSPEC_EcotiZoneLight", objNull])}) exitWith {
+    [] call _fnc_clear;
+    ["Éclairage de zone éteint.", "system", "info"] call comspec_overwatch_connect_fnc_announce;
 };
 
 private _camPos = AGLToASL (positionCameraToWorld [0, 0, 0]);

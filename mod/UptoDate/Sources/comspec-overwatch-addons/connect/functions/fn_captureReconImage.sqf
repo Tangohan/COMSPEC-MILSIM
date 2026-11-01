@@ -285,6 +285,9 @@ private _fnc_stagePath = {
     params ["_hint"];
     if (!(_hint isEqualType "") || {_hint isEqualTo ""}) exitWith { "" };
     if (isNil "comspec_overwatch_connect_fnc_extResult") exitWith { "" };
+    // Recopie = parcours de dossiers et attente du PNG (disque) : jamais sur le fil du jeu. Hors spawn, chemin d'origine :
+    // la file NotifyNewPhoto de la DLL résout et recopie elle-même le fichier (MirrorCapture).
+    if (!canSuspend) exitWith { "" };
     private _raw = [(["COMSPECExtension", "StageCapture", [_hint]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
     if (!(_raw isEqualType "")) exitWith { "" };
     _raw = [_raw] call _fnc_stripExtQuotes;

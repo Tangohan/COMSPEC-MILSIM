@@ -38,7 +38,7 @@ _anchor setVariable ["COMSPEC_RoleplayZoneId", _zoneId, true];
     private _newPos = getPosATL _anchor;
     // Ancre immobile : rien à diffuser. Le publicVariable de toute la liste partait toutes les 2 s vers tous les clients.
     private _oldPos = _zone getOrDefault ["position", []];
-    if (_oldPos isEqualType [] && {count _oldPos >= 2} && {(_oldPos distance2D _newPos) <= 1}) exitWith {};
+    if (_oldPos isEqualType [] && {count _oldPos >= 2} && {(_oldPos distance2D _newPos) <= (((_zone getOrDefault ["radius", 100]) * 0.1) max 10)}) exitWith {};
     _zone set ["position", _newPos];
     private _marker = _zone getOrDefault ["marker", ""];
     if (_marker isNotEqualTo "") then { _marker setMarkerPos _newPos; };

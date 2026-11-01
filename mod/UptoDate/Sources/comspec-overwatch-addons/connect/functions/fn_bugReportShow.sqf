@@ -13,12 +13,6 @@ if (missionNamespace getVariable ["COMSPEC_BugReportOpening", false]) exitWith {
 missionNamespace setVariable ["COMSPEC_BugReportOpening", true, false];
 
 [_this param [0, 0]] spawn {
-    private _pm = uiNamespace getVariable ["COMSPEC_PauseManager_Display", displayNull];
-    if (!isNull _pm) then {
-        _pm closeDisplay 2;
-        uiSleep 0.12;
-    };
-
     private _parent = findDisplay 49;
     if (isNull _parent) then { _parent = findDisplay 46; };
     if (isNull _parent) then { _parent = findDisplay 0; };

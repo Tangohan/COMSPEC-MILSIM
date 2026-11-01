@@ -28,7 +28,7 @@ switch (toLower _action) do {
         _d set ["grid", [player, 8] call comspec_atak_native_fnc_gridRef];
         // Champ mis à jour aussi : fn_pageRender relit les champs avant le redessin.
         private _gc = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault ["grid", controlNull];
-        if (!isNull _gc) then { _gc ctrlSetText (_d get "grid"); };
+        if (!isNull _gc) then { _gc ctrlSetText (((_d get "grid")) call comspec_atak_native_fnc_tr); };
         call _redraw;
     };
     case "send": {

@@ -263,12 +263,6 @@ private _fnc_applyNet = {
 ] call comspec_overwatch_connect_fnc_addSetting;
 
 [
-    "comspec_overwatch_profile_enabled", "CHECKBOX",
-    ["Mesure des performances (debug)", "Mesure le temps pris par les tâches lourdes du mod (position, CAS, marqueurs). Résultat dans l'app Debug. Désactivé, ça ne coûte rien."],
-    ["COMSPEC", "Overwatch"], false
-] call comspec_overwatch_connect_fnc_addSetting;
-
-[
     "comspec_overwatch_notif_sound", "LIST",
     ["Son des notifications", "Son joué avec les alertes (messages, ordres, connexion). Les urgences médicales ont leur propre son, même en « Vibreur seul ». Seul « Muet » coupe tout. Le mode discret ne coupe pas ces sons. Aussi réglable dans l’app Sons du téléphone."],
     ["COMSPEC", "Overwatch"],
@@ -338,25 +332,13 @@ private _fnc_applyNet = {
 
 [
     "comspec_overwatch_require_item", "CHECKBOX",
-    ["Téléphone obligatoire pour la liaison Athena", "Coché par défaut : la liaison avec Athena et les menus ATAK ne marchent que si vous avez sur vous l'item choisi ci-dessous (téléphone ATAK, tablette cTab...). Ne décochez que pour tester sans équipement."],
+    ["Téléphone obligatoire pour la liaison Athena", "Coché par défaut : la liaison avec Athena et les menus ATAK ne marchent que si vous avez sur vous un terminal (téléphone ATAK ou tablette cTab, ou l'item personnalisé ci-dessous ; avec l'ATAK natif, ses propres réglages décident). Ne décochez que pour tester sans équipement."],
     ["COMSPEC", "Overwatch"], true
 ] call comspec_overwatch_connect_fnc_addSetting;
 
 [
-    "comspec_overwatch_required_item", "LIST",
-    ["Item requis", "Item qu'il faut avoir sur soi quand « Téléphone obligatoire pour la liaison Athena » est coché."],
-    ["COMSPEC", "Overwatch"],
-    [
-        ["ItemAndroid", "ItemcTab", "ItemMicroDAGR", "ACE_microDAGR", "ItemGPS", "ItemWatch"],
-        ["Téléphone Android (cTab / ATAK)", "Tablette cTab", "MicroDAGR (cTab)", "MicroDAGR (ACE)", "GPS", "Montre"],
-        0
-    ],
-    false
-] call comspec_overwatch_connect_fnc_addSetting;
-
-[
     "comspec_overwatch_required_item_custom", "EDITBOX",
-    ["Item personnalisé (optionnel)", "Laissez vide pour utiliser la liste ci-dessus. Sinon, mettez le nom de classe de l’item de votre pack d’équipement : il remplace le choix de la liste."],
+    ["Item personnalisé (optionnel)", "Laissez vide pour accepter le téléphone ATAK ou la tablette cTab (en slot ou en inventaire selon le mode terminal). Sinon, mettez le nom de classe de l’item de votre pack d’équipement."],
     ["COMSPEC", "Overwatch"], ""
 ] call comspec_overwatch_connect_fnc_addSetting;
 
@@ -669,12 +651,6 @@ private _fnc_applyNet = {
     "comspec_overwatch_radio_proximity_radius", "SLIDER",
     ["Rayon de détection radio (m)", "Les radios actives dans ce rayon autour du joueur sont listées."],
     ["COMSPEC", "Overwatch"], [10, 300, 75, 0]
-] call comspec_overwatch_connect_fnc_addSetting;
-
-[
-    "comspec_overwatch_radio_proximity_interval", "SLIDER",
-    ["Mise à jour de la détection radio (s)", "Temps entre deux mises à jour de la liste des radios proches (calcul local, rien n'est envoyé sur le réseau)."],
-    ["COMSPEC", "Overwatch"], [1, 10, 2, 1]
 ] call comspec_overwatch_connect_fnc_addSetting;
 
 // Affichage camps sur Tacmap (inspiré Athena Remastered ATH_showEast/Guer/Civ)

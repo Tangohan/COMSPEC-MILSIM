@@ -1,10 +1,12 @@
 /*
     Remonte un relais (fiche complète + intact / détruit) vers le poste.
-    Params: [_obj, _aliveHint]
+    Params: [_obj, _aliveHint, _force]
+      _force : renvoyer même si la fiche n'a pas changé (resynchro Zeus, tableau de bord).
 */
 params [
     ["_obj", objNull, [objNull]],
-    ["_aliveHint", true, [true]]
+    ["_aliveHint", true, [true]],
+    ["_force", false, [false]]
 ];
 if (isNull _obj) exitWith { false };
 // Pas encore de session Athena (mission lancée hors ligne, test Eden, liaison pas encore ouverte) : rien à envoyer.
@@ -78,6 +80,10 @@ private _extra = format [
     round _rel
 ];
 
+// Fiche inchangée (pylône immobile, mêmes utilisateurs) : pas de requête, sauf un battement toutes les 120 s.
+private _sig = str [round (_pos select 0), round (_pos select 1), round (_pos select 2), round _range, _alive, _extra];
+if (!_force && {_sig isEqualTo (_obj getVariable ["COMSPEC_RelaySyncSig", ""])} && {diag_tickTime < (_obj getVariable ["COMSPEC_RelaySyncAt", -1e9]) + 120}) exitWith { true };
+
 private _fnc_num = { (_this select 0) toFixed (_this select 1) };
 // UpdateRelay est envoyé en tâche de fond par l'extension : un retour vide veut dire « accepté », pas un échec.
 // (callExtLogged le comptait comme ÉCHEC et chaque passage de la boucle produisait un rapport automatique.)
@@ -95,5 +101,8 @@ private _txt = [_raw] call comspec_overwatch_connect_fnc_extResult;
 if (_txt isEqualType "" && {(_txt find "ERR") >= 0 && {(_txt find "ERR") < 3}}) then {
     missionNamespace setVariable ["COMSPEC_RelaySyncHoldUntil", diag_tickTime + 60];
     ["Relais ATAK", "warn", _txt, nil, false, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+} else {
+    _obj setVariable ["COMSPEC_RelaySyncSig", _sig];
+    _obj setVariable ["COMSPEC_RelaySyncAt", diag_tickTime];
 };
 true

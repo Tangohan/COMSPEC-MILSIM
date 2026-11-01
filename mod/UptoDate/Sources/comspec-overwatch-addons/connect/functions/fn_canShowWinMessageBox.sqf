@@ -14,9 +14,6 @@ if (_now < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) e
 // Boot : attendre armement médical (spawn stabilisé)
 if (!(missionNamespace getVariable ["COMSPEC_MedicalAlertsArmed", false])) exitWith { false };
 
-if (isMultiplayer) then {
-    private _st = getClientStateNumber;
-    if (_st < 10 || {_st >= 11}) exitWith { false };
-};
+if (isMultiplayer && {private _st = getClientStateNumber; _st < 10 || {_st >= 11}}) exitWith { false };
 
 true

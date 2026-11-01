@@ -323,7 +323,7 @@ switch (_tab) do {
             private _isOpen = _open isEqualTo _key;
             if (!_isOpen) then { continue };
             _rows pushBack ["info", "Téléphone", format ["%1 · n° %2 · IMEI %3", _side, _num, _imei]];
-            _rows pushBack ["info", "Ramassé", format ["%1 vers %2", _hour, _grid]];
+            _rows pushBack ["info", "Ramassé", format ["%1 · grille %2", _hour, _grid]];
             _rows pushBack ["info", "Porteur", [format ["%1 (%2) · %3 · groupe %4 · %5", [_cName] call _esc, _cType, _cSide, [_cGrp] call _esc,
                 [[_cPos, 8] call comspec_atak_native_fnc_gridRef, "—"] select (_cPos isEqualTo [])], "aucun"] select (_cType isEqualTo "")];
             _rows pushBack ["info", "Dernière connexion", [format ["%1 · %2", _lastGrid, [_lastAgo] call _ago], "jamais"] select (_lastGrid isEqualTo "")];

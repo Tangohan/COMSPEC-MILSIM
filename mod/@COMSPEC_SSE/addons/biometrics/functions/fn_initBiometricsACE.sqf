@@ -37,7 +37,12 @@ private _cond = { [_this select 0] call comspec_sse_fnc_canInspect };
 if (!isNil "ace_interact_menu_fnc_addActionToClass") then {
     private _latentHolder = [
         "COMSPEC_SSE_LatentHolder", "Relever des empreintes latentes", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa",
-        { if (([_this select 1, "COMSPEC_SSE_FingerprintKit", 10] call comspec_sse_fnc_kitUse) > 0) then { [_this select 0, _this select 1] call comspec_sse_fnc_bioCaptureLatentAction; }; },
+        // Comme COMSPEC_SSE_KitLatent (fn_kitActions) : usage retiré au succès de la barre, pas sur refus / annulation.
+        { params ["_t", "_player"];
+          if (([_player, "COMSPEC_SSE_FingerprintKit", 10, true] call comspec_sse_fnc_kitUse) isEqualTo 0) exitWith {};
+          missionNamespace setVariable ["comspec_sse_progressKitCost", [_player, "COMSPEC_SSE_FingerprintKit", 10]];
+          [_t, _player] call comspec_sse_fnc_bioCaptureLatentAction;
+          missionNamespace setVariable ["comspec_sse_progressKitCost", nil]; },
         { (missionNamespace getVariable ["comspec_sse_bio_latents", true]) && {(missionNamespace getVariable ["comspec_sse_bio_enabled", true])} && {"COMSPEC_SSE_FingerprintKit" in (items (_this select 1))} },
         _noChildren, [], {[0,0,0]}, 3, _aceParams
     ] call comspec_sse_fnc_aceAction;

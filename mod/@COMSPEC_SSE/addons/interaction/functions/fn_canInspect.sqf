@@ -3,7 +3,7 @@
 
     Véhicules / objets : uniquement s’ils sont marqués SSE (Eden, Zeus, site).
     Personnes : menu ACE proposé à tous (PNJ, joueurs, corps). La génération
-    reste au clic (doInspect), pas dans cette condition — pour éviter le pic de pile.
+    reste au clic (doSearch / kits), pas dans cette condition — pour éviter le pic de pile.
 */
 params [
     ["_target", objNull, [objNull]]

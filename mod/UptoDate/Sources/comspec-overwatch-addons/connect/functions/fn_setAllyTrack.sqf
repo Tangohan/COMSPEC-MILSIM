@@ -78,21 +78,4 @@ if (_flag) then {
 };
 missionNamespace setVariable ["COMSPEC_AllyTrackUnits", _list, false];
 
-if (_flag && {!isNil "CBA_fnc_waitAndExecute"}) then {
-    {
-        [{
-            params ["_u", "_aid"];
-            if (isNull _u || {!alive _u}) exitWith {};
-            _u setVariable ["COMSPEC_AllyTrack", true, true];
-            if (_aid isNotEqualTo "") then {
-                _u setVariable ["COMSPEC_AllyTrackId", _aid, true];
-            };
-            private _keepCs = _u getVariable ["COMSPEC_AllyCallsign", ""];
-            if (_keepCs isEqualType "" && {_keepCs isNotEqualTo ""}) then {
-                _u setVariable ["COMSPEC_AllyCallsign", _keepCs, true];
-            };
-        }, [_unit, _id], _x] call CBA_fnc_waitAndExecute;
-    } forEach [0.4, 2, 6];
-};
-
 true

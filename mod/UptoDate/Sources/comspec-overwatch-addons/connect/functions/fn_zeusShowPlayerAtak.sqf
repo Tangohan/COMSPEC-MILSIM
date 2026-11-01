@@ -63,19 +63,18 @@ if (_state isEqualType createHashMap) then {
 };
 
 private _nl = toString [10];
-private _info = format [
-    "%1%2Indicatif : %3%2Steam : %4%2Terminal : %5%2ID ATAK : %6%2ID militaire : %7%2Certificat : %8%2Liaison : %9%2État appareil : %10",
-    _name,
-    _nl,
-    [_callsign] call _dash,
-    [_steam] call _dash,
-    [_terminal] call _dash,
-    [_atakId] call _dash,
-    [_mid] call _dash,
-    [_cert] call _dash,
-    [_link] call _dash,
-    _stateTxt
-];
+// Une ligne par libellé, traduite seule (langue du téléphone) : le champ ZEN n'est pas traduit à l'affichage, et un
+// modèle à dix valeurs (%10) ne pouvait pas entrer dans le dictionnaire.
+private _info = ([_name] + ([
+    ["Indicatif : %1", [_callsign] call _dash],
+    ["Steam : %1", [_steam] call _dash],
+    ["Terminal : %1", [_terminal] call _dash],
+    ["ID ATAK : %1", [_atakId] call _dash],
+    ["ID militaire : %1", [_mid] call _dash],
+    ["Certificat : %1", [_cert] call _dash],
+    ["Liaison : %1", [_link] call _dash],
+    ["État appareil : %1", _stateTxt call comspec_overwatch_connect_fnc_tr]
+] apply { format [(_x select 0) call comspec_overwatch_connect_fnc_tr, _x select 1] })) joinString _nl;
 
 private _apply = {
     params ["_action", "_unit", ["_duration", 30]];

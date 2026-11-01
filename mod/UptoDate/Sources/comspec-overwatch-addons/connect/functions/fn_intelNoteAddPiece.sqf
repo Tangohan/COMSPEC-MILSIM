@@ -14,6 +14,8 @@
 params [["_source", "capture", [""]]];
 
 if (!hasInterface) exitWith {};
+// Galerie : liste des captures lue sur le disque par la DLL, jamais sur le fil du jeu (bouton = contexte non suspendable).
+if (!canSuspend && {(toLower _source) isEqualTo "galerie"}) exitWith { [_source] spawn comspec_overwatch_connect_fnc_intelNoteAddPiece; };
 
 private _disp = uiNamespace getVariable ["COMSPEC_IntelNote_Display", displayNull];
 if (isNull _disp) then { _disp = findDisplay 9982; };
