@@ -36,8 +36,8 @@ switch (_act) do {
         [{ params ["_r", "_side"]; ["comspec_atak_native_sideEvent", ["comspec_atak_native_bda", [_r, _side], _side]] call CBA_fnc_serverEvent; }, [_r, str side group player], "BDA", 1] call comspec_atak_native_fnc_netSend;
         { _f deleteAt _x; } forEach ["ekia", "equip", "ammo", "rem"];
         ["SUCCESS", "Bilan des dégâts transmis au camp", 4, 40] call comspec_atak_native_fnc_notify;
-        // Avec Overwatch : rapport BDA au poste web.
-        if (!isNil "comspec_overwatch_connect_fnc_submitTacticalReport") then {
+        // Avec Overwatch et Athena : rapport BDA au poste web.
+        if (!isNil "comspec_overwatch_connect_fnc_submitTacticalReport" && {([] call comspec_atak_native_fnc_athenaMode) isEqualTo "on"}) then {
             private _labels = [_r] call comspec_atak_native_fnc_bdaLabels;
             private _sd = createHashMapFromArray [["kind", "bda"], ["grid", _r get "grid"], ["type", _labels select 0], ["desc", _labels select 1],
                 ["ekia", _r get "ekia"], ["equip", _r get "equip"], ["ordnance", _r get "ammo"], ["reattack", _labels select 2], ["remarks", _r get "rem"]];

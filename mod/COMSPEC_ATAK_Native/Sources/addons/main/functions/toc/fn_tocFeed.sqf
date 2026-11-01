@@ -59,6 +59,12 @@ switch (_mode) do {
             if (_to isNotEqualTo "") exitWith {};
             ["push", [_side, [_time, "TOC", _prio, _cs, "", _body select [0, 200], []]]] call comspec_atak_native_fnc_tocFeed;
         }] call CBA_fnc_addEventHandler;
+        // Messagerie sans Athena (canaux général et commandement, fn_chatSend) : dans le flux du PC et sur les écrans.
+        ["comspec_atak_native_chatLocal", {
+            params ["", ["_author", ""], ["_body", ""], ["_time", ""], ["_ch", "general"], ["_side", ""]];
+            if (_ch isEqualTo "groupe") exitWith {};
+            ["push", [_side, [(_time splitString " ") param [1, _time], ["MESSAGE", "MESSAGE CDT"] select (_ch isEqualTo "commandement"), "", _author, "", _body select [0, 200], []]]] call comspec_atak_native_fnc_tocFeed;
+        }] call CBA_fnc_addEventHandler;
         // Ordres du camp (PC du poste, chefs) : sur les écrans TOC et dans le flux du PC.
         ["comspec_atak_native_localOrder", {
             params [["_pairs", []], ["_side", ""]];
