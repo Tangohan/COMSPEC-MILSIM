@@ -1751,6 +1751,7 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/dotation', [EquipmentReferentielController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/dotation/attribuer', [EquipmentReferentielController::class, 'assign'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/dotation/{id}', [EquipmentReferentielController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/dotation/{id}/objet-jeu', [EquipmentReferentielController::class, 'linkGameClass'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/dotation/{id}/archive', [EquipmentReferentielController::class, 'archive'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/dotation/attributions/{id}/statut', [EquipmentReferentielController::class, 'changeStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
 
