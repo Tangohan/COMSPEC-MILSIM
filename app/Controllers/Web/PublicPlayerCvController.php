@@ -66,6 +66,7 @@ final class PublicPlayerCvController
             'badge_url' => static fn (string $p): string => (new \App\Services\Personnel\QualificationBadgeStorageService())->publicUrl($p),
             'decoration_url' => static fn (string $p): string => (new \App\Services\Personnel\DecorationMotifStorageService())->publicUrl($p),
             'photo_url' => static fn (string $p): ?string => CommunityMediaDetails::publicUrl($p),
+            'asset_url' => static fn (string $p): string => asset_url($p),
             'locale' => function_exists('html_lang') ? substr((string) html_lang(), 0, 2) : 'fr',
         ]);
 
