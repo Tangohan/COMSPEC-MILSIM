@@ -10,9 +10,11 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantAnalyticsRepository;
+use App\Repositories\TenantRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Platform\AthenaHeritageService;
+use App\Services\Platform\PublicHistoryStatsService;
 use App\Support\AtakReleaseInfo;
 use App\Support\AtakTranslationTemplate;
 use App\Support\ChangelogCatalog;
@@ -53,13 +55,32 @@ final class SitePagesController
             'next_goal' => null,
             'honesty_note' => (string) __('site.hist_honesty_note'),
         ];
-        try {
-            /** @var AthenaHeritageService $service */
-            $service = Container::get(AthenaHeritageService::class);
-            $heritage = $service->buildPublicPage($from, $to);
-        } catch (\Throwable) {
-            // Page publique dégradée sans données.
+        // Cache court : la construction du patrimoine écrit un snapshot et lit beaucoup de tables.
+        $cacheFile = base_path('storage/cache/public_history_heritage_' . ($from === null ? 'all' : $period) . '.json');
+        $cached = is_file($cacheFile) && filemtime($cacheFile) >= time() - PublicHistoryStatsService::CACHE_TTL
+            ? json_decode((string) @file_get_contents($cacheFile), true)
+            : null;
+        if (is_array($cached) && isset($cached['live'], $cached['timeline'])) {
+            $heritage = $cached;
+        } else {
+            try {
+                /** @var AthenaHeritageService $service */
+                $service = Container::get(AthenaHeritageService::class);
+                $heritage = $service->buildPublicPage($from, $to);
+                if (!is_dir(dirname($cacheFile))) {
+                    @mkdir(dirname($cacheFile), 0775, true);
+                }
+                @file_put_contents($cacheFile, (string) json_encode($heritage, JSON_UNESCAPED_UNICODE), LOCK_EX);
+            } catch (\Throwable) {
+                // Page publique dégradée sans données.
+            }
         }
+
+        // Chiffres réels : plateforme pour tous, communauté en plus pour ses membres connectés.
+        $statsService = new PublicHistoryStatsService();
+        $platformStats = $statsService->stats();
+        $communityTenantId = $this->publicHistoryTenantId();
+        $communityStats = $communityTenantId !== null ? $statsService->stats($communityTenantId) : null;
 
         $pageUrl = rtrim(url(''), '/') . '/notre-histoire';
 
@@ -70,6 +91,8 @@ final class SitePagesController
             'marketingActive' => 'history',
             'heritage' => $heritage,
             'heritagePeriod' => $period,
+            'platformStats' => $platformStats,
+            'communityStats' => $communityStats,
             'marketingStyles' => [asset_url('assets/css/site-history.css')],
             'marketingScripts' => [asset_url('assets/js/site-history.js')],
             'jsonLdExtra' => [
@@ -89,6 +112,25 @@ final class SitePagesController
                 ],
             ],
         ]);
+    }
+
+    /** Communauté du membre connecté (hors espace par défaut de la plateforme), sinon null. */
+    private function publicHistoryTenantId(): ?int
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId <= 1 || (int) Session::get('user_id') <= 0) {
+            return null;
+        }
+        try {
+            $tenant = Container::get(TenantRepository::class)->findById($tenantId);
+        } catch (\Throwable) {
+            return null;
+        }
+        if ($tenant === null || strtolower((string) ($tenant['slug'] ?? '')) === 'default') {
+            return null;
+        }
+
+        return $tenantId;
     }
 
     public function contact(Request $request, array $params = []): Response
