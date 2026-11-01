@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS `tenant_unit_codes` (
   PRIMARY KEY (`tenant_id`),
   UNIQUE KEY `uk_tuc_community_code` (`community_code`),
   UNIQUE KEY `uk_tuc_admin_number` (`admin_number`),
-  CONSTRAINT `fk_tuc_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `fk_tenant_unit_codes_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `unit_codes` (
@@ -25,6 +25,6 @@ CREATE TABLE IF NOT EXISTS `unit_codes` (
   PRIMARY KEY (`unit_id`),
   UNIQUE KEY `uk_uc_tenant_path` (`tenant_id`, `code_path`),
   UNIQUE KEY `uk_uc_tenant_admin` (`tenant_id`, `admin_number`),
-  CONSTRAINT `fk_uc_unit` FOREIGN KEY (`unit_id`) REFERENCES `units` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_uc_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `fk_unit_codes_unit` FOREIGN KEY (`unit_id`) REFERENCES `units` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_unit_codes_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
