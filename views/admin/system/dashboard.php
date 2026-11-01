@@ -1,40 +1,40 @@
 <?php
 declare(strict_types=1);
+/*
+ * Page de pilotage du site (administrateur de la plateforme uniquement).
+ * Réunit l'ancien tableau de bord, la synthèse opérationnelle et, en onglets, la console d'exploitation
+ * (rendue par SystemOpsConsoleController, derrière sa double vérification).
+ */
 $kpis = $adminKpis ?? [];
 $blockError = $adminKpiBlockError ?? null;
 $envLabel = $adminPlatformEnvLabel ?? '—';
 $envRaw = strtolower((string) ($adminPlatformEnvRaw ?? ''));
 $healthUrl = $adminHealthCheckUrl ?? url('api/health');
 $gate = \App\Core\Gate::getInstance();
-$hasOrgPath = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support');
-$isPlatformAdmin = $gate->allows('admin.system');
-$isSupportHub = $gate->allows('site.support') && !$isPlatformAdmin;
+$hasOrgPath = $gate->allows('admin.organization') || $gate->allows('admin.access');
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $appVersion = function_exists('platform_app_version') ? platform_app_version() : '';
+$pilotTab = 'vue';
 ?>
 <div class="pa">
     <div class="pa__frame">
         <header class="pa-hero">
             <div class="pa-hero__row">
                 <div>
-                    <p class="pa-hero__kicker"><?= $isSupportHub ? 'Pilotage site · assistance' : 'Administration du site' ?></p>
-                    <h1 class="pa-hero__title">Centre opérateur</h1>
-                    <?php if ($isSupportHub): ?>
-                    <p class="pa-hero__lead">
-                        Indicateurs, journaux et synthèses pour l’équipe assistance.
-                        Les réglages sensibles restent réservés aux administrateurs du site.
-                        Pour une communauté, ouvrez le <a href="<?= $h(url('back-office')) ?>">back-office</a>.
-                    </p>
-                    <?php else: ?>
+                    <p class="pa-hero__kicker">Administration du site</p>
+                    <h1 class="pa-hero__title">Pilotage du site</h1>
                     <p class="pa-hero__lead">
                         Communautés, comptes, formules, alertes et exploitation, à l’échelle du site entier.
                         La vie quotidienne d’une unité se gère dans le <a href="<?= $h(url('back-office')) ?>">back-office</a>.
                     </p>
-                    <?php endif; ?>
+                    <form class="pa-search" method="get" action="<?= $h(url('admin/recherche')) ?>" role="search">
+                        <label for="pa-dash-search" class="ath-sr-only">Rechercher un compte ou une communauté</label>
+                        <input id="pa-dash-search" name="q" type="search" autocomplete="off" spellcheck="false"
+                               placeholder="Compte ou communauté : e-mail, pseudo, Steam, indicatif, code…">
+                        <button type="submit" class="pa-btn pa-btn--solid">Rechercher</button>
+                    </form>
                     <div class="pa-hero__actions">
-                        <?php if ($isPlatformAdmin): ?>
                         <a class="pa-btn pa-btn--solid" href="<?= $h(url('admin/tenants')) ?>">Annuaire des communautés</a>
-                        <?php endif; ?>
                         <?php if ($hasOrgPath): ?>
                         <a class="pa-btn pa-btn--ghost" href="<?= $h(url('back-office')) ?>">Back-office communauté</a>
                         <?php endif; ?>
@@ -60,27 +60,27 @@ $appVersion = function_exists('platform_app_version') ? platform_app_version() :
             </div>
         </header>
 
-        <nav class="pa-jump" aria-label="Sections du tableau de bord">
+        <?php require base_path('views/admin/partials/pilotage_tabs.php'); ?>
+
+        <nav class="pa-jump" aria-label="Sections de la vue d’ensemble">
+            <a class="pa-jump__link" href="#hub-sante">État du site</a>
+            <a class="pa-jump__link" href="#hub-communication">Alertes et maintenances</a>
             <a class="pa-jump__link" href="#hub-plateforme">Indicateurs</a>
-            <?php if ($isPlatformAdmin): ?>
             <a class="pa-jump__link" href="#hub-annuaire">Outils du site</a>
-            <?php endif; ?>
             <a class="pa-jump__link" href="#hub-moderation">Usage et modération</a>
             <a class="pa-jump__link" href="#hub-assistance">Activité récente</a>
         </nav>
 
         <div class="pa-panel">
+            <?php if (!empty($adminHealthRows)): ?>
+                <?php require base_path('views/admin/partials/platform_health.php'); ?>
+            <?php endif; ?>
+            <?php require base_path('views/admin/partials/platform_communication.php'); ?>
             <section id="hub-plateforme" class="scroll-mt-24" aria-label="Indicateurs plateforme">
                 <?php require base_path('views/admin/partials/kpi_row.php'); ?>
             </section>
 
-            <?php if ($isSupportHub): ?>
-                <?php require base_path('views/admin/partials/quick_actions_support_hub.php'); ?>
-            <?php endif; ?>
-
-            <?php if ($isPlatformAdmin): ?>
-                <?php require base_path('views/admin/partials/platform_site_directory.php'); ?>
-            <?php endif; ?>
+            <?php require base_path('views/admin/partials/platform_site_directory.php'); ?>
 
             <?php
             $usagePrev = is_array($adminPlatformUsagePreview ?? null) ? $adminPlatformUsagePreview : [];

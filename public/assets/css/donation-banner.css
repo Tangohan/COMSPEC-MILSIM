@@ -1,0 +1,241 @@
+/*
+ * Bandeau de don (views/partials/donation_banner.php). Une ligne fine et chaleureuse en haut du contenu :
+ * fond miel très doux le jour, braise tamisée la nuit, cœur qui bat doucement deux fois toutes les 7 s.
+ * Suit le thème du système, et le thème choisi dans le portail (html[data-bo-theme]).
+ */
+.dnb {
+  --dnb-bg: #fff8ea;
+  --dnb-edge: #f0dfb8;
+  --dnb-ink: #3d2f12;
+  --dnb-soft: #6f5a2c;
+  --dnb-heart: #d63a6a;
+  --dnb-track: #f1e3c2;
+  --dnb-fill-a: #e0577f;
+  --dnb-fill-b: #d9a12c;
+  --dnb-cta-bg: #3d2f12;
+  --dnb-cta-ink: #fff8ea;
+  position: relative;
+  z-index: 5;
+  color-scheme: light;
+  background:
+    radial-gradient(120% 220% at 0% 50%, rgba(214, 58, 106, 0.09), transparent 45%),
+    var(--dnb-bg);
+  border-bottom: 1px solid var(--dnb-edge);
+  color: var(--dnb-ink);
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: normal;
+  animation: dnb-in 0.5s ease-out both;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-bo-theme="light"]) .dnb {
+    --dnb-bg: #1b1610;
+    --dnb-edge: #3a2e1c;
+    --dnb-ink: #f3e7cb;
+    --dnb-soft: #c8b590;
+    --dnb-heart: #ff7aa0;
+    --dnb-track: #33291a;
+    --dnb-fill-a: #ff7aa0;
+    --dnb-fill-b: #f0c060;
+    --dnb-cta-bg: #f3e7cb;
+    --dnb-cta-ink: #1b1610;
+    color-scheme: dark;
+  }
+}
+
+html[data-bo-theme="dark"] .dnb {
+  --dnb-bg: #1b1610;
+  --dnb-edge: #3a2e1c;
+  --dnb-ink: #f3e7cb;
+  --dnb-soft: #c8b590;
+  --dnb-heart: #ff7aa0;
+  --dnb-track: #33291a;
+  --dnb-fill-a: #ff7aa0;
+  --dnb-fill-b: #f0c060;
+  --dnb-cta-bg: #f3e7cb;
+  --dnb-cta-ink: #1b1610;
+  color-scheme: dark;
+}
+
+.dnb__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.9rem;
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 0.6rem 3.25rem 0.6rem 1rem;
+}
+
+.dnb__heart {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: var(--dnb-heart);
+  transform-origin: 50% 60%;
+  animation: dnb-beat 7s ease-in-out 1.2s infinite;
+}
+
+.dnb__msg {
+  flex: 1 1 16rem;
+  min-width: 0;
+  margin: 0;
+  font-weight: 500;
+}
+
+.dnb__goal {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 0 1 15rem;
+  min-width: 10rem;
+}
+
+.dnb__bar {
+  position: relative;
+  flex: 1;
+  height: 0.4rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--dnb-track);
+}
+
+.dnb__bar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--dnb-fill-a), var(--dnb-fill-b));
+}
+
+.dnb__sum {
+  flex: none;
+  color: var(--dnb-soft);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dnb__cta {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.3rem 0.9rem;
+  border-radius: 999px;
+  background: var(--dnb-cta-bg);
+  color: var(--dnb-cta-ink);
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: transform 0.15s ease;
+}
+
+.dnb__cta:hover { transform: translateY(-1px); }
+
+.dnb__close {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-top: -1.125rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dnb-soft);
+  cursor: pointer;
+}
+
+.dnb__close:hover { background: var(--dnb-track); color: var(--dnb-ink); }
+.dnb__close svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+.dnb__cta:focus-visible,
+.dnb__close:focus-visible {
+  outline: 2px solid var(--dnb-heart);
+  outline-offset: 2px;
+}
+
+.dnb.is-leaving {
+  animation: dnb-out 0.25s ease-in both;
+}
+
+/* Fenêtre du site ouverte dans une autre page, impression : pas de bandeau. */
+.ath-in-modal .dnb { display: none; }
+@media print { .dnb { display: none; } }
+
+@media (max-width: 639px) {
+  .dnb__inner { gap: 0.45rem 0.6rem; padding: 0.55rem 2.9rem 0.6rem 0.85rem; }
+  .dnb__msg { flex: 1 1 calc(100% - 2rem); font-size: 0.82rem; }
+  .dnb__goal { flex: 1 1 auto; }
+}
+
+@keyframes dnb-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes dnb-out {
+  to { opacity: 0; transform: translateY(-6px); }
+}
+
+@keyframes dnb-beat {
+  0%, 84%, 100% { transform: scale(1); }
+  87% { transform: scale(1.18); }
+  90% { transform: scale(1); }
+  93% { transform: scale(1.12); }
+  96% { transform: scale(1); }
+}
+
+/* Aperçu de l'administration (Admin > Paiements > Dons) : thème imposé, quel que soit celui du navigateur. */
+.dnb-preview[data-dnb-theme="light"] .dnb.dnb {
+  --dnb-bg: #fff8ea;
+  --dnb-edge: #f0dfb8;
+  --dnb-ink: #3d2f12;
+  --dnb-soft: #6f5a2c;
+  --dnb-heart: #d63a6a;
+  --dnb-track: #f1e3c2;
+  --dnb-fill-a: #e0577f;
+  --dnb-fill-b: #d9a12c;
+  --dnb-cta-bg: #3d2f12;
+  --dnb-cta-ink: #fff8ea;
+  color-scheme: light;
+}
+
+.dnb-preview[data-dnb-theme="dark"] .dnb.dnb {
+  --dnb-bg: #1b1610;
+  --dnb-edge: #3a2e1c;
+  --dnb-ink: #f3e7cb;
+  --dnb-soft: #c8b590;
+  --dnb-heart: #ff7aa0;
+  --dnb-track: #33291a;
+  --dnb-fill-a: #ff7aa0;
+  --dnb-fill-b: #f0c060;
+  --dnb-cta-bg: #f3e7cb;
+  --dnb-cta-ink: #1b1610;
+  color-scheme: dark;
+}
+
+.dnb-preview .dnb {
+  z-index: 0;
+  animation: none;
+}
+
+.dnb-preview .dnb__inner {
+  padding-right: 3.25rem;
+}
+
+.dnb-preview .dnb__close {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dnb, .dnb.is-leaving, .dnb__heart { animation: none; }
+  .dnb__cta { transition: none; }
+  .dnb__cta:hover { transform: none; }
+}

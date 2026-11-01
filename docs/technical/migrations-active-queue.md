@@ -1,18 +1,60 @@
 # File active des migrations
 
-Le 29 octobre 2026, l’installation existante devient le point de départ. La file `database/steps/registry.php` est vide : `php run-migrations.php`, `--list` et `--status` terminent avec succès sans charger l’environnement, ouvrir une connexion ou exécuter de SQL. Les alias `setup-database.php`, `migrate.php` et leurs entrées publiques utilisent cette même file.
+## Règle
+
+**Toute mise à jour SQL (table, colonne, index, rattrapage de schéma) est une étape de la file active `database/steps/registry.php`, lancée par `run-migrations.php`** :
+
+- console d’administration (onglet Migrations), qui ouvre un ticket à usage unique vers https://athena-comspec.eu/run-migrations.php ;
+- ticket ou accès de secours (mot de passe + CSRF) sur https://athena-comspec.eu/run-migrations.php ;
+- en SSH : `php8.4 run-migrations.php` (`--list`, `--status`, `--step=identifiant`).
+
+Pas de `CREATE TABLE` / `ALTER TABLE` lancé « à la demande » comme seule voie, pas de script SQL à passer à la main, pas de `bootstrap/*_migration.php` appelé seulement par le code applicatif. Une fonction `ensure…()` idempotente peut rester en filet de sécurité (base pas encore migrée), mais l’étape de la file active est la voie officielle.
+
+## Point de départ
+
+Le 29 octobre 2026, l’installation existante devient le point de départ. `php run-migrations.php --list` et une file vide terminent avec succès sans charger l’environnement, ouvrir une connexion ou exécuter de SQL. `--status` et un passage normal ouvrent la connexion seulement si la file contient des étapes. Les alias `setup-database.php`, `migrate.php` et leurs entrées publiques utilisent cette même file.
 
 La remise à zéro porte sur le programme de mise à jour, pas sur les données. Les fichiers SQL, migrations PHP, étapes historiques et tables de journal restent présents. `database/steps/registry-archive.php` conserve l’ancien registre comme référence ; le lanceur actif ne le charge jamais. Il ne recherche plus les anciens fichiers `migrations/*.sql`, ne resème aucun référentiel et ne lance aucun nettoyage, rattrapage ou contrôle de maintenance ancien. Les options `--replay` et `--replay-all` sont retirées ; un ancien identifiant passé à `--step` est refusé.
 
-Pour ajouter une nouvelle table ou colonne, créer une étape PHP autonome dans `database/steps/`, puis l’inscrire explicitement dans le registre actif :
+## Ajouter une étape
+
+Créer une étape PHP autonome dans `database/steps/` (numéro suivant : 3250, 3260…), puis l’inscrire explicitement à la fin du registre actif :
 
 ```php
 return [
+    // …
     ['id' => 'new_module_table', 'label' => 'Nouvelle table du module',
-     'group' => 'schema', 'file' => 'new_module_table.php', 'rerun' => true],
+     'group' => 'schema', 'file' => '3250_new_module_table.php', 'rerun' => true],
 ];
 ```
 
-L’étape reçoit `$pdo`, `$root`, `$migrationRunner`, `$migrationFlush` et `$migrationEnsurePdo`. Elle doit charger elle-même ses dépendances et être idempotente. Si elle utilise un fichier SQL, elle doit sélectionner précisément ce fichier ; ne pas réintroduire de balayage des archives. Une étape réussie est notée dans `schema_migration_runs` puis ignorée lors des passages normaux. Un échec reste en attente. `--status` indique l’état des seules entrées actives, et `--step=new_module_table` permet la relance explicite d’une entrée active marquée `rerun`.
+L’étape reçoit `$pdo`, `$root`, `$migrationRunner`, `$migrationFlush` et `$migrationEnsurePdo` ; l’autoload de l’application est chargé. Elle doit être **idempotente** : vérifier l’état réel de la base avant d’agir, avec `App\Support\Migrations\SchemaInspector` (`tableExists`, `columnExists`, `indexExists`, `columnIsIndexed`, `addColumnIfMissing`, `addIndexIfMissing` — information_schema sous MySQL) ; si elle utilise un fichier SQL, le désigner précisément (`runSqlFile($root . '/migrations/…sql')`), sans balayage de dossier. Une erreur lève une exception : l’étape reste en attente.
+
+Une étape réussie est notée dans `schema_migration_runs` puis ignorée lors des passages normaux. Un échec reste en attente. `--status` indique l’état des seules entrées actives, et `--step=new_module_table` permet la relance explicite d’une entrée active marquée `rerun`.
+
+`tests/Unit/MigrationActiveQueueTest.php` vérifie chaque entrée : fichier présent dans `database/steps/`, identifiant et fichier uniques et absents de l’ancien registre, `rerun`, aucun balayage d’archive, et deux passages successifs sur une base simulée sans modification au second. `MigrationQueueResetTest` vérifie `--list` et `--status` sur la vraie file.
 
 Les protections web existantes restent en place : console d’administration, ticket à usage unique, ou accès de secours avec mot de passe et CSRF. L’historique reste consultable ; aucune option de purge des données ou des journaux n’est ajoutée. Le lanceur n’est plus un outil d’installation initiale d’une base vierge : une telle installation demande un schéma de départ vérifié séparément.
+
+## Étapes de la file active (2026-11-01)
+
+Schéma ajouté depuis le 29 octobre, jusque-là créé à la demande, passé à la main ou laissé dans des fichiers SQL non lancés. Chaque étape constate ce qui existe déjà en production et ne refait rien.
+
+| # | Identifiant | Effet | Filet de sécurité conservé |
+|---|---|---|---|
+| 3130 | `academy_tables` | Tables `academy_courses`, `academy_learners` (`migrations/20261029130000_athena_academy.sql`) | — |
+| 3140 | `personnel_job_role_structure` | Table `personnel_job_role_structure` (`migrations/20261029223000_personnel_job_role_structure.sql`) | — |
+| 3150 | `personnel_job_role_recovery_log` | Table `personnel_job_role_recovery_log` | `PersonnelJobRoleRecoveryService::ensureAuditTable()` |
+| 3160 | `arsenal_wardrobes_visibility` | Colonne `arsenal_wardrobes.visibility` (`tenant` par défaut : rien ne change pour les tenues existantes) | `bootstrap/arsenal_wardrobe_migration.php` |
+| 3170 | `user_public_cv` | Table `user_public_cv` (page publique du joueur, désactivée par défaut) | `UserPublicCvRepository::ensureTable()` |
+| 3180 | `user_public_cv_banner` | Colonne `user_public_cv.banner_path` | `UserPublicCvRepository::ensureBannerColumn()` |
+| 3190 | `member_grade_changes` | Table `member_grade_changes` (historique des grades) | `MemberGradeChangeRepository::ensureTable()` |
+| 3200 | `unit_codes` | Tables `tenant_unit_codes`, `unit_codes`, puis numéro administratif de chaque communauté qui n’en a pas (ordre de création ; un code existant n’est jamais modifié) | `UnitCodeRepository::ensureTables()` |
+| 3210 | `steam_conflict_reports` | Table `steam_conflict_reports` | `bootstrap/steam_conflict_reports_migration.php` via `SteamConflictService` |
+| 3220 | `users_steam_id_index` | Index `idx_users_steam_id` sur `users.steam_id`, sauf si un index commence déjà par cette colonne | — |
+| 3230 | `atak_api_hot_indexes` | Index `idx_atak_pings_tenant_map_created`, `idx_atak_units_tenant_map_callsign` (déjà passés à la main en production : constatés) | `scripts/sql/api-hot-indexes.sql` (secours manuel) |
+| 3240 | `user_totp_used_steps` | Table `user_totp_used_steps` (anti-rejeu des codes de double vérification) | `TotpReplayGuard::ensureSchema()` |
+
+Codes unité : le repère saisi d’une unité reste `units.code`. Les écritures d’unités (`UnitRepository::create/update/delete`) ne recalculent les codes que si les tables existent ; les codes des unités sont calculés par `UnitCodeService` à l’ouverture des effectifs ou de l’ORBAT.
+
+Non repris dans la file : `personnel_job_role_legacy_imports`, journal interne de la migration historique `bootstrap/personnel_role_consolidation_migration.php` (ancien registre), créé par cette migration elle-même.

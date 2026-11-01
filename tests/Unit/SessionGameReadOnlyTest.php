@@ -15,17 +15,29 @@ final class SessionGameReadOnlyTest extends TestCase
         self::assertTrue(Session::isReadOnlyRequest('GET', '/api/game/v1/profile', true));
     }
 
-    public function testWithoutGameKeyOrOnWritesSessionStaysWritable(): void
+    public function testWritesAndPagesKeepAWritableSession(): void
     {
-        self::assertFalse(Session::isReadOnlyRequest('GET', '/api/atak/orders', false));
         self::assertFalse(Session::isReadOnlyRequest('POST', '/api/atak/positions', true));
+        self::assertFalse(Session::isReadOnlyRequest('POST', '/api/chat', false));
         self::assertFalse(Session::isReadOnlyRequest('GET', '/atak', true));
+        self::assertFalse(Session::isReadOnlyRequest('GET', '/atak', false));
+        self::assertFalse(Session::isReadOnlyRequest('GET', '/api/game/v1/profile', false));
+        self::assertFalse(Session::isReadOnlyRequest('GET', '/api/me/preferences', false));
+    }
+
+    public function testBrowserMapPollsDoNotLockTheSession(): void
+    {
+        foreach (['/api/atak/orders', '/api/units', '/api/chat', '/api/pings', '/api/map-shapes', '/api/recon/images'] as $path) {
+            self::assertTrue(Session::isReadOnlyRequest('GET', $path, false), $path);
+        }
     }
 
     public function testPairingAndAdminRoutesStayWritable(): void
     {
-        self::assertFalse(Session::isReadOnlyRequest('GET', '/api/atak/pair/status', true));
-        self::assertFalse(Session::isReadOnlyRequest('GET', '/api/atak/relays/1/abc', true));
+        foreach ([true, false] as $key) {
+            self::assertFalse(Session::isReadOnlyRequest('GET', '/api/atak/pair/status', $key));
+            self::assertFalse(Session::isReadOnlyRequest('GET', '/api/atak/relays/1/abc', $key));
+        }
     }
 
     public function testVersionPollStaysReadOnly(): void

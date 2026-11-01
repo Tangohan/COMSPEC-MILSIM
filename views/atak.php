@@ -74,7 +74,7 @@ if ($atakMapConfig) {
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title><?= $atakOverwatchBeta ? 'ATHENA | Overwatch Beta' : ($atakPopout === 'left' ? 'Panneau ATAK' : ($atakPopout === 'right' ? 'Effectifs ATAK' : 'COMSPEC ATAK | Carte tactique Arma 3')) ?></title>
   <link rel="icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png" type="image/png">
   <link rel="apple-touch-icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-180.png">
@@ -1667,6 +1667,28 @@ if ($atakMapConfig) {
             <input type="checkbox" id="atak-map-look-assignment-lines" checked />
             <span>Ligne vers destination</span>
           </label>
+          <h4 class="atak-account-section-subtitle">Couches par origine</h4>
+          <p class="atak-settings-copy">Masquez d’un geste ce qui vient du jeu, de la mission ou de vos outils, sans rien effacer.</p>
+          <label class="atak-map-look__check" for="atak-layer-origin-arma">
+            <input type="checkbox" id="atak-layer-origin-arma" checked />
+            <span>Marqueurs Arma</span>
+          </label>
+          <label class="atak-map-look__check" for="atak-layer-origin-mission">
+            <input type="checkbox" id="atak-layer-origin-mission" checked />
+            <span>Mission</span>
+          </label>
+          <label class="atak-map-look__check" for="atak-layer-origin-spawn">
+            <input type="checkbox" id="atak-layer-origin-spawn" checked />
+            <span>Apparition</span>
+          </label>
+          <label class="atak-map-look__check" for="atak-layer-origin-briefing">
+            <input type="checkbox" id="atak-layer-origin-briefing" checked />
+            <span>Plan de briefing</span>
+          </label>
+          <label class="atak-map-look__check" for="atak-layer-origin-measures">
+            <input type="checkbox" id="atak-layer-origin-measures" checked />
+            <span>Mesures</span>
+          </label>
         </section>
 
         <?php
@@ -2747,10 +2769,10 @@ if ($atakMapConfig) {
             <label class="atak-replay-speed-wrap">
               <span class="atak-replay-speed-label">Vitesse</span>
               <select id="atak-replay-speed" class="atak-replay-speed" title="Vitesse de lecture">
-                <option value="1" selected>×1</option>
-                <option value="2">×2</option>
-                <option value="4">×4</option>
-                <option value="8">×8</option>
+                <option value="1">×1</option>
+                <option value="5" selected>×5</option>
+                <option value="20">×20</option>
+                <option value="60">×60</option>
               </select>
             </label>
             <button type="button" class="atak-ops-btn" id="atak-replay-export">Export PDF</button>
@@ -2999,6 +3021,7 @@ if ($atakMapConfig) {
               <button type="button" class="atak-map-tools__btn" data-tool-ui="look" title="Ouvre les réglages carte (relief, ombre, 3D, données)" aria-expanded="false" aria-controls="atak-settings-aside">Affichage</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--chrome" data-tool-ui="customize" title="Choisir les outils affichés" aria-expanded="false" aria-controls="atak-map-tools-prefs">Personnaliser</button>
               <button type="button" class="atak-map-tools__btn atak-map-tools__btn--chrome" data-tool-ui="collapse" title="Masquer la barre d’outils">Masquer</button>
+              <button type="button" class="atak-map-tools__btn atak-map-tools__btn--chrome" data-atak-map-focus aria-pressed="false" title="Carte plein écran : replie l’en-tête et les panneaux (tablette)">Plein écran</button>
             </div>
           </div>
         </div>
@@ -3076,6 +3099,7 @@ if ($atakMapConfig) {
       <div class="atak-map-stage">
       <div id="terrain3d-container" class="terrain3d-host" hidden aria-label="Carte terrain 3D premium"></div>
       <div id="atak-map"></div>
+      <button type="button" class="atak-map-focus-exit" data-atak-map-focus aria-pressed="true">Quitter le plein écran</button>
       <div class="atak-map-3d-nav" id="atak-map-3d-nav" hidden aria-label="Orientation de la vue 3D">
         <button type="button" class="atak-map-3d-nav__compass" id="atak-map-3d-compass" title="Glisser pour orienter · cliquer pour remettre le nord en haut" aria-label="Orienter la carte, nord en haut">
           <span class="atak-map-3d-nav__needle">N</span>
@@ -3713,13 +3737,14 @@ if ($atakMapConfig) {
       setTimeout(function () { dismissAtakBoot(); }, 6000);
 
       function atakPoll() {
+        // Onglet caché : rien (une quinzaine de lectures par tour) ; tour complet dès qu'il redevient visible.
+        if (document.hidden) return;
         if (window.ATAKSocket && typeof window.ATAKSocket.isApiPaused === 'function' && window.ATAKSocket.isApiPaused()) {
           return;
         }
         if (window.ATAKUnits) ATAKUnits.fetchUnits();
         if (window.ATAKChat) ATAKChat.fetchMessages();
-        if (window.ATAKMedicalAlerts) ATAKMedicalAlerts.fetchAlerts();
-        if (window.ATAKOrders) ATAKOrders.fetchOrders();
+        // Alertes médicales et ordres : leurs propres boucles (5 s / 4 s, lancées plus bas) ; ici ils partaient en double.
         if (window.ATAKPings) ATAKPings.fetchPings();
         if (window.ATAKExplosiveTimers) ATAKExplosiveTimers.fetchList();
         if (window.ATAKVehicles) ATAKVehicles.fetchList();
@@ -3739,7 +3764,7 @@ if ($atakMapConfig) {
         refreshLiaisonChipQuiet();
       }
       function pollWeatherQuiet() {
-        if (!window.TacmapWeather) return;
+        if (!window.TacmapWeather || document.hidden) return;
         if (window.ATAKSocket && typeof window.ATAKSocket.isApiPaused === 'function' && window.ATAKSocket.isApiPaused()) {
           return;
         }
@@ -3973,7 +3998,7 @@ if ($atakMapConfig) {
       function refreshWebPresence() {
         var listEl = document.getElementById('atak-web-presence-list');
         var emptyEl = document.getElementById('atak-web-presence-empty');
-        if (!listEl) return;
+        if (!listEl || document.hidden) return;
         var mid = resolveAtakMapId();
         fetch('<?= url("api/atak/presence") ?>?mapId=' + encodeURIComponent(mid), { credentials: 'include', cache: 'no-store' })
           .then(function (r) { return r.ok ? r.json() : null; })
@@ -4035,6 +4060,9 @@ if ($atakMapConfig) {
       };
       atakPoll();
       setTacticalPollInterval(3000);
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) atakPoll();
+      });
       pollWeatherQuiet();
       setInterval(pollWeatherQuiet, 30000);
       if (window.ATAKActivity && typeof window.ATAKActivity.start === 'function') {

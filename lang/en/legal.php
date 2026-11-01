@@ -5,6 +5,8 @@ declare(strict_types=1);
 return [
     'hub_title' => 'Policies and terms',
     'rights_title' => 'Exercise your data rights',
+    'hub_meta_description' => 'Legal notice, terms of use and sale, personal data and cookies for the Athena Comspec portal and the COMSPEC mods.',
+    'rights_meta_description' => 'Request access, correction, export or deletion of your personal data on Athena Comspec.',
     'docs_aria' => 'Legal documentation',
     'portal' => 'PORTAL',
     'docs_label' => 'Documentation',

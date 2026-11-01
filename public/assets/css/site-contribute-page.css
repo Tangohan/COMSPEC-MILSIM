@@ -1,0 +1,366 @@
+/*
+ * Contribuer (/contribuer). Même famille que la page de dons et l'accueil : la page s'appuie sur les composants
+ * « don-* » de site-support.css (ouverture, titres, boutons, cartes, chiffres, mur des donateurs, appel final).
+ * Ici seulement ce qui est propre à la page (« ctr-* ») : orbite du héros, mur des contributeurs, rôles, formulaire.
+ * Une couleur par rôle, reprise partout (avatar, filtre, carte de rôle, case du formulaire).
+ */
+.ctr {
+  --ctr-translator: #38bdf8;
+  --ctr-tester: #f5c66b;
+  --ctr-content: #ff8fb7;
+  --ctr-developer: #34d399;
+  --ctr-support: #c4b5fd;
+  --ctr-bad: #fb7185;
+}
+.ctr-anchor { scroll-margin-top: 5rem; }
+
+/* ---------- Avatar (même forme que le mur des donateurs) ---------- */
+.ctr-avatar {
+  --role: var(--ctr-developer);
+  flex: 0 0 2.6rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  display: grid;
+  place-items: center;
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #0b0d0c;
+  background: var(--role);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 10px 24px -12px var(--role);
+}
+.ctr-avatar--translator { --role: var(--ctr-translator); }
+.ctr-avatar--tester { --role: var(--ctr-tester); }
+.ctr-avatar--content { --role: var(--ctr-content); }
+.ctr-avatar--developer { --role: var(--ctr-developer); }
+.ctr-avatar--support { --role: var(--ctr-support); }
+.ctr-avatar--empty { background: transparent; color: var(--don-accent); border: 1px dashed rgba(52, 211, 153, 0.5); box-shadow: none; font-size: 1.4rem; }
+
+/* ---------- Orbite du héros ---------- */
+.ctr-orbit {
+  position: relative;
+  width: min(100%, 30rem);
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+.ctr-orbit .don-ring { top: 50%; width: 78%; }
+.ctr-orbit::before {
+  content: "";
+  position: absolute;
+  inset: 11%;
+  border: 1px dashed rgba(52, 211, 153, 0.22);
+  border-radius: 50%;
+}
+.ctr-orbit__core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 26%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.35), rgba(5, 5, 5, 0.85) 70%);
+  color: #fda4af;
+  font-size: 2.4rem;
+  box-shadow: 0 0 60px -10px rgba(52, 211, 153, 0.55);
+}
+.ctr-orbit__core .don-ico { fill: currentColor; stroke: none; animation: don-beat 1.6s ease-in-out infinite; }
+.ctr-orbit__slot {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  transform: translate(-50%, -50%);
+  animation: don-bob 5s ease-in-out infinite;
+}
+.ctr-orbit__slot .ctr-avatar { width: 3.4rem; height: 3.4rem; flex-basis: 3.4rem; font-size: 1.2rem; }
+.ctr-orbit__slot.is-1 { left: 50%; top: 11%; }
+.ctr-orbit__slot.is-2 { left: 84%; top: 30%; animation-delay: 0.8s; }
+.ctr-orbit__slot.is-3 { left: 84%; top: 70%; animation-delay: 1.6s; }
+.ctr-orbit__slot.is-4 { left: 50%; top: 89%; animation-delay: 2.4s; }
+.ctr-orbit__slot.is-5 { left: 16%; top: 70%; animation-delay: 3.2s; }
+.ctr-orbit__slot.is-6 { left: 16%; top: 30%; animation-delay: 4s; }
+.ctr-orbit__name {
+  max-width: 8rem;
+  overflow: hidden;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(10, 15, 20, 0.78);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #fff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ctr-orbit .don-chip--a { left: 0; top: 0; }
+.ctr-orbit .don-chip--c { left: auto; right: 0; bottom: 2%; }
+
+/* ---------- Chiffres (jusqu'à 5) ---------- */
+.ctr-stats { margin-top: clamp(2.5rem, 6vh, 4rem); }
+@media (min-width: 768px) { .ctr-stats { grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); } }
+
+/* ---------- Mur des contributeurs ---------- */
+.ctr-filter { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.75rem; }
+.ctr-filter[hidden] { display: none; }
+.ctr-chip {
+  --chip: var(--don-accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.4rem;
+  padding: 0.4rem 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #fff;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.ctr-chip::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--chip); box-shadow: 0 0 10px var(--chip); }
+.ctr-chip span { color: var(--don-ink-3); letter-spacing: 0.04em; }
+.ctr-chip:hover { border-color: var(--chip); }
+.ctr-chip[aria-pressed="true"] { border-color: var(--chip); background: color-mix(in srgb, var(--chip) 14%, transparent); }
+.ctr-chip--translator { --chip: var(--ctr-translator); }
+.ctr-chip--tester { --chip: var(--ctr-tester); }
+.ctr-chip--content { --chip: var(--ctr-content); }
+.ctr-chip--developer { --chip: var(--ctr-developer); }
+.ctr-chip--support { --chip: var(--ctr-support); }
+.ctr-chip:focus-visible, .ctr-textbtn:focus-visible { outline: 2px solid var(--don-accent); outline-offset: 3px; }
+
+.ctr-wall {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr));
+  gap: 0.6rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.ctr-person {
+  --role: var(--ctr-developer);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--don-line);
+  background: var(--don-panel);
+  overflow: hidden;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.ctr-person::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--role); }
+.ctr-person:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--role) 45%, transparent); }
+.ctr-person[hidden] { display: none; }
+.ctr-person--translator { --role: var(--ctr-translator); }
+.ctr-person--tester { --role: var(--ctr-tester); }
+.ctr-person--content { --role: var(--ctr-content); }
+.ctr-person--developer { --role: var(--ctr-developer); }
+.ctr-person--support { --role: var(--ctr-support); }
+.ctr-person__who { display: grid; min-width: 0; }
+.ctr-person__who b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--don-ink); font-weight: 800; }
+.ctr-person__who small { overflow-wrap: anywhere; color: var(--don-ink-3); font-size: 0.78rem; }
+.ctr-person__meta { color: var(--don-accent) !important; font-weight: 700; }
+.ctr-new {
+  margin-left: auto;
+  align-self: flex-start;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  border-radius: 999px;
+  color: var(--don-accent);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ctr-empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 1px dashed var(--don-line);
+  border-radius: 1.3rem;
+  background: var(--don-panel);
+}
+.ctr-empty .ctr-avatar { width: 3.4rem; height: 3.4rem; flex-basis: 3.4rem; }
+.ctr-empty .don-card__title { margin-top: 0; }
+
+/* ---------- À l'honneur ---------- */
+@media (min-width: 860px) { .ctr-honor { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ctr-rank { margin: 1.1rem 0 0; padding: 0; list-style: none; }
+.ctr-rank li { display: flex; align-items: center; gap: 0.8rem; padding: 0.65rem 0; border-top: 1px solid var(--don-line); }
+.ctr-rank__n { width: 1.6rem; font-size: 1.5rem; font-weight: 900; letter-spacing: -0.03em; color: var(--don-ink-3); text-align: center; }
+.ctr-rank__n.is-1 { color: var(--don-gold); }
+
+/* ---------- Packs ---------- */
+.ctr-packs { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.6rem; margin: 2rem 0 0; padding: 0; list-style: none; }
+.ctr-packs a {
+  display: grid;
+  gap: 0.1rem;
+  height: 100%;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--don-line);
+  background: var(--don-panel);
+  color: var(--don-ink);
+  text-decoration: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.ctr-packs a:hover { border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.04); }
+.ctr-packs b { font-size: 1.05rem; font-weight: 900; }
+.ctr-packs small { color: var(--don-ink-3); font-size: 0.8rem; }
+.ctr-packs a:focus-visible { outline: 2px solid var(--don-accent); outline-offset: 2px; }
+
+/* ---------- Comment contribuer ---------- */
+@media (min-width: 860px) { .ctr-ways { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.ctr-links { display: flex; flex-wrap: wrap; gap: 0 1.25rem; margin: 0; }
+.ctr-way--warm .don-card__icon { background: linear-gradient(135deg, rgba(251, 113, 133, 0.25), rgba(245, 198, 107, 0.12)); color: #fda4af; }
+.ctr-way--warm .don-card__icon .don-ico { fill: currentColor; stroke: none; }
+.ctr-way--warm .don-link { color: #fda4af; }
+.ctr-way--warm .don-card__bar span { background: linear-gradient(90deg, #fb7185, var(--don-gold)); }
+
+/* ---------- Rôles ---------- */
+.ctr-roles { display: grid; gap: 1rem; margin: 2.25rem 0 0; padding: 0; list-style: none; }
+@media (min-width: 640px) { .ctr-roles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .ctr-roles { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.ctr-role {
+  --role: var(--ctr-developer);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 1.4rem 1.25rem 1.5rem;
+  border: 1px solid var(--don-line);
+  border-radius: 1.3rem;
+  background: var(--don-panel);
+  overflow: hidden;
+  scroll-margin-top: 5rem;
+}
+.ctr-role::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: var(--role); }
+.ctr-role .don-card__title { margin-top: 0.9rem; }
+.ctr-role .don-card__body { font-size: 0.9rem; }
+.ctr-role .don-link { margin-top: auto; padding-top: 1rem; }
+.ctr-role__icon {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--role) 18%, transparent);
+  color: var(--role);
+  font-size: 1.3rem;
+}
+.ctr-role__discord { margin: 0.75rem 0 0; font-size: 0.8rem; color: var(--don-ink-3); }
+.ctr-role__discord b { color: var(--don-ink-2); }
+.ctr-role--translator { --role: var(--ctr-translator); }
+.ctr-role--tester { --role: var(--ctr-tester); }
+.ctr-role--content { --role: var(--ctr-content); }
+.ctr-role--developer { --role: var(--ctr-developer); }
+.ctr-role--support { --role: var(--ctr-support); }
+
+.ctr-status {
+  display: inline-block;
+  margin: 1rem 0 0;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid var(--don-line);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--don-ink-2);
+}
+.ctr-status--active { border-color: rgba(52, 211, 153, 0.5); color: var(--don-accent); }
+.ctr-status--pending { border-color: rgba(245, 198, 107, 0.5); color: var(--don-gold); }
+.ctr-status--rejected, .ctr-status--revoked { border-color: rgba(251, 113, 133, 0.5); color: var(--ctr-bad); }
+
+/* ---------- Mes rôles ---------- */
+.ctr-mine { margin: 1.5rem 0 0; padding: 0; list-style: none; border: 1px solid var(--don-line); background: var(--don-panel); }
+.ctr-mine li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; padding: 0.85rem 1.1rem; border-top: 1px solid var(--don-line); }
+.ctr-mine li:first-child { border-top: 0; }
+.ctr-mine small { color: var(--don-ink-3); font-size: 0.8rem; }
+.ctr-mine .ctr-status, .ctr-mine .don-link { margin: 0; }
+.ctr-inline { display: inline; }
+.ctr-textbtn { padding: 0; border: 0; background: none; color: var(--don-ink-2); font: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.ctr-textbtn:hover { color: #fff; }
+
+/* ---------- Formulaire ---------- */
+.ctr-apply {
+  max-width: 56rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid var(--don-line);
+  border-radius: 1.6rem;
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.06), var(--don-panel) 40%);
+}
+.ctr-msg { margin: 2rem 0 0; padding: 0.85rem 1.1rem; border: 1px solid rgba(52, 211, 153, 0.35); border-radius: 0.85rem; background: rgba(52, 211, 153, 0.08); color: #d1fae5; }
+.ctr-msg.is-bad { border-color: rgba(251, 113, 133, 0.4); background: rgba(251, 113, 133, 0.08); color: #ffe4e6; }
+.ctr-form { display: grid; gap: 1.25rem 1.5rem; margin-top: 1.75rem; }
+@media (min-width: 720px) { .ctr-form { grid-template-columns: 1fr 1fr; } }
+.ctr-field { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; margin: 0; padding: 0; border: 0; }
+.ctr-field--wide { grid-column: 1 / -1; }
+.ctr-field[hidden] { display: none; }
+.ctr-field > span, .ctr-field legend { padding: 0; font-size: 0.72rem; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase; color: var(--don-ink-2); }
+.ctr-field small { color: var(--don-ink-3); font-size: 0.8rem; line-height: 1.5; }
+.ctr-field input[type="text"], .ctr-field textarea {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.85rem;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font: inherit;
+  font-size: 0.95rem;
+}
+.ctr-field input::placeholder, .ctr-field textarea::placeholder { color: var(--don-ink-3); }
+.ctr-field input:focus-visible, .ctr-field textarea:focus-visible { outline: 2px solid var(--don-accent); outline-offset: 1px; border-color: transparent; }
+.ctr-choices { display: grid; gap: 0.5rem; margin-top: 0.6rem; }
+@media (min-width: 560px) { .ctr-choices { grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); } }
+.ctr-choice {
+  --role: var(--ctr-developer);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--don-line);
+  border-left: 3px solid var(--role);
+  background: rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.ctr-choice:has(input:checked) { background: color-mix(in srgb, var(--role) 10%, transparent); border-color: color-mix(in srgb, var(--role) 50%, transparent); border-left-color: var(--role); }
+.ctr-choice input { margin-top: 0.25rem; accent-color: var(--role); }
+.ctr-choice span { display: flex; flex-direction: column; color: #fff; }
+.ctr-choice em { color: var(--don-ink-3); font-size: 0.78rem; font-style: normal; }
+.ctr-choice:has(input:disabled) { opacity: 0.6; cursor: default; }
+.ctr-choice--translator { --role: var(--ctr-translator); }
+.ctr-choice--tester { --role: var(--ctr-tester); }
+.ctr-choice--content { --role: var(--ctr-content); }
+.ctr-choice--developer { --role: var(--ctr-developer); }
+.ctr-choice--support { --role: var(--ctr-support); }
+.ctr-check { display: flex; align-items: center; gap: 0.6rem; color: var(--don-ink-2); font-size: 0.92rem; }
+.ctr-check input { accent-color: var(--don-accent); }
+
+/* ---------- Appel final ---------- */
+.ctr-final__body { position: relative; margin: 1rem auto 0; max-width: 40rem; color: var(--don-ink-2); line-height: 1.7; }
+
+@media (max-width: 640px) {
+  .ctr-orbit { width: min(100%, 22rem); }
+  .ctr-orbit__slot .ctr-avatar { width: 2.7rem; height: 2.7rem; flex-basis: 2.7rem; font-size: 1rem; }
+  .ctr-orbit__name { max-width: 5.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ctr-person, .ctr-chip, .ctr-choice, .ctr-packs a { transition: none; }
+  .ctr-person:hover { transform: none; }
+}

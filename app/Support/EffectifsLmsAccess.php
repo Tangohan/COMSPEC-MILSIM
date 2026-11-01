@@ -74,6 +74,27 @@ final class EffectifsLmsAccess
             || self::canEditProfiles($gate);
     }
 
+    /**
+     * Mesures disciplinaires de la communauté : saisie et levée réservées aux personnes habilitées
+     * aux restrictions de membres (même droit que l’écran « Restrictions membres »).
+     */
+    public static function canManageSanctions(Gate $gate): bool
+    {
+        return $gate->allows('admin.members.moderate');
+    }
+
+    /** Consultation des mesures disciplinaires sur la fiche : RH (statut du compte) ou habilités aux restrictions. */
+    public static function canViewSanctions(Gate $gate): bool
+    {
+        return self::canManageSanctions($gate) || self::canManageStatus($gate);
+    }
+
+    /** Réglage des critères d’éligibilité à une élévation : réservé à qui gère les grades. */
+    public static function canSetElevationCriteria(Gate $gate): bool
+    {
+        return self::canManageGrades($gate);
+    }
+
     /** Peut solliciter une élévation RH auprès des personnes habilitées. */
     public static function canRequestElevation(Gate $gate): bool
     {

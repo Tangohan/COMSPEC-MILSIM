@@ -24,6 +24,7 @@ window.ATAKMap = (function () {
   var airAssetsById = {};
   var unitsLayer = null;
   var unitsById = {};
+  var vectorRenderers = {};
   var config;
   var baseTileLayer = null;
   var tileFailCount = 0;
@@ -50,6 +51,9 @@ window.ATAKMap = (function () {
     showSseOverlay: true,
     showMissionOverlay: true,
     showBriefingPlan: true,
+    showArmaMarkers: true,
+    showSpawnMarkers: true,
+    showMeasures: true,
     showSseLayer_cases: true,
     showSseLayer_pir: true,
     showSseLayer_taskings: true,
@@ -140,6 +144,9 @@ window.ATAKMap = (function () {
       showSseOverlay: src.showSseOverlay !== false,
       showMissionOverlay: src.showMissionOverlay !== false,
       showBriefingPlan: src.showBriefingPlan !== false,
+      showArmaMarkers: src.showArmaMarkers !== false,
+      showSpawnMarkers: src.showSpawnMarkers !== false,
+      showMeasures: src.showMeasures !== false,
       showSseLayer_cases: src.showSseLayer_cases !== false,
       showSseLayer_pir: src.showSseLayer_pir !== false,
       showSseLayer_taskings: src.showSseLayer_taskings !== false,
@@ -206,6 +213,9 @@ window.ATAKMap = (function () {
       if (window.ATAKCams && typeof window.ATAKCams.refresh === 'function') {
         window.ATAKCams.refresh();
       }
+    }
+    if (patch && (patch.showArmaMarkers != null || patch.showSpawnMarkers != null)) {
+      Object.keys(markersById).forEach(function (id) { syncMarkerOriginVisibility(markersById[id]); });
     }
     refreshUnitMarkerIcons();
     try {
@@ -388,6 +398,15 @@ window.ATAKMap = (function () {
     if (val) val.textContent = String(value);
   }
 
+  /* Couches par origine (Réglages > Apparence de la carte) : case -> préférence d'affichage. */
+  var ORIGIN_TOGGLES = [
+    ['atak-layer-origin-arma', 'showArmaMarkers'],
+    ['atak-layer-origin-mission', 'showMissionOverlay'],
+    ['atak-layer-origin-spawn', 'showSpawnMarkers'],
+    ['atak-layer-origin-briefing', 'showBriefingPlan'],
+    ['atak-layer-origin-measures', 'showMeasures']
+  ];
+
   function syncDisplayPrefsUi() {
     var p = getDisplayPrefs();
     var styleEl = document.getElementById('atak-unit-style-mode');
@@ -432,6 +451,10 @@ window.ATAKMap = (function () {
     if (missionOverlay) missionOverlay.checked = !!p.showMissionOverlay;
     var briefingPlan = document.getElementById('atak-show-briefing-plan');
     if (briefingPlan) briefingPlan.checked = !!p.showBriefingPlan;
+    ORIGIN_TOGGLES.forEach(function (pair) {
+      var originEl = document.getElementById(pair[0]);
+      if (originEl) originEl.checked = !!p[pair[1]];
+    });
     var sseCases = document.getElementById('atak-sse-layer-cases');
     if (sseCases) sseCases.checked = !!p.showSseLayer_cases;
     var ssePir = document.getElementById('atak-sse-layer-pir');
@@ -583,6 +606,7 @@ window.ATAKMap = (function () {
     bindSseToggle('atak-show-sse-overlay', 'showSseOverlay');
     bindSseToggle('atak-show-mission-overlay', 'showMissionOverlay');
     bindSseToggle('atak-show-briefing-plan', 'showBriefingPlan');
+    ORIGIN_TOGGLES.forEach(function (pair) { bindCheck(pair[0], pair[1]); });
     bindSseToggle('atak-sse-layer-cases', 'showSseLayer_cases');
     bindSseToggle('atak-sse-layer-pir', 'showSseLayer_pir');
     bindSseToggle('atak-sse-layer-taskings', 'showSseLayer_taskings');
@@ -835,6 +859,7 @@ window.ATAKMap = (function () {
     airAssetsById = {};
     unitsLayer = null;
     unitsById = {};
+    vectorRenderers = {};
     baseTileLayer = null;
     tileFailCount = 0;
     if (posSimFlushTimer) {
@@ -939,6 +964,8 @@ window.ATAKMap = (function () {
     if (window.ATAKAerial && typeof window.ATAKAerial.attach === 'function') {
       try { window.ATAKAerial.attach(map, window.ATAK_MAP_CONFIG || config); } catch (e) {}
     }
+
+    initVectorRenderers();
 
     intelLayer = L.layerGroup().addTo(map);
     intelMarkersById = {};
@@ -1055,6 +1082,36 @@ window.ATAKMap = (function () {
       window.dispatchEvent(new CustomEvent('atak:mapready', { detail: { map: map, mapId: mapId } }));
     } catch (e) {}
     return map;
+  }
+
+  /*
+   * Couches vectorielles en canvas (une toile par famille) : des centaines de formes, isolignes et traces
+   * coûtent bien moins qu'autant d'éléments SVG, surtout sur téléphone. Les toiles sont sous la couche SVG
+   * (repères Arma, zones) ; seule la toile des formes reçoit clics et survols.
+   */
+  var VECTOR_PANES = {
+    contours: { pane: 'atakContourPane', z: 360, interactive: false },
+    tracks: { pane: 'atakTrackPane', z: 390, interactive: false },
+    shapes: { pane: 'atakShapePane', z: 395, interactive: true }
+  };
+
+  function initVectorRenderers() {
+    vectorRenderers = {};
+    if (!map || !L.canvas) return;
+    Object.keys(VECTOR_PANES).forEach(function (family) {
+      var spec = VECTOR_PANES[family];
+      if (!map.getPane(spec.pane)) {
+        map.createPane(spec.pane);
+        map.getPane(spec.pane).style.zIndex = spec.z;
+        if (!spec.interactive) map.getPane(spec.pane).style.pointerEvents = 'none';
+      }
+      vectorRenderers[family] = L.canvas({ padding: 0.5, pane: spec.pane });
+    });
+  }
+
+  /** Rendu canvas partagé d'une famille ('shapes' | 'contours' | 'tracks'), undefined si la carte n'est pas prête. */
+  function getVectorRenderer(family) {
+    return map ? vectorRenderers[family] : undefined;
   }
 
   /** /atak?focus=X,Y (lien « Voir sur la carte » du lecteur d'images) : centre la carte et marque le point. */
@@ -1294,6 +1351,27 @@ window.ATAKMap = (function () {
     return null;
   }
 
+  /* Origine d'un repère pour les couches : apparition (respawn_*), style Arma (jeu), ou autre (toujours visible). */
+  function markerOrigin(data, id) {
+    data = data || {};
+    var names = [data.name, data.markerName, data.marker_name, data.type, id].map(function (v) { return String(v || ''); });
+    if (names.some(function (n) { return /^respawn/i.test(n); })) return 'spawn';
+    var arma = window.ArmaMapMarkers;
+    if (arma && typeof arma.isArmaStyleMarker === 'function' && arma.isArmaStyleMarker(data)) return 'arma';
+    return '';
+  }
+
+  /* Le repère reste connu (liste, recherche, focus) : seule sa présence sur la carte suit la couche. */
+  function syncMarkerOriginVisibility(m) {
+    var lg = m && layerGroups[m._atakLayerId];
+    if (!lg) return;
+    var p = getDisplayPrefs();
+    var origin = markerOrigin(m._atakData, m._atakId);
+    var hide = (origin === 'spawn' && !p.showSpawnMarkers) || (origin === 'arma' && !p.showArmaMarkers);
+    if (hide && lg.hasLayer(m)) lg.removeLayer(m);
+    else if (!hide && !lg.hasLayer(m)) lg.addLayer(m);
+  }
+
   function addOrUpdateMarker(payload) {
     var id = payload.id;
     var layerId = payload.layerId;
@@ -1330,6 +1408,7 @@ window.ATAKMap = (function () {
       bindMarkerContextMenu(shapeLayer, id);
       shapeLayer.addTo(layer);
       markersById[id] = shapeLayer;
+      syncMarkerOriginVisibility(shapeLayer);
       return;
     }
 
@@ -1355,6 +1434,7 @@ window.ATAKMap = (function () {
         existing.bindPopup(popupHtml);
       }
       bindMarkerContextMenu(existing, id);
+      syncMarkerOriginVisibility(existing);
       return;
     }
 
@@ -1396,6 +1476,7 @@ window.ATAKMap = (function () {
     bindMarkerContextMenu(marker, id);
     marker.addTo(layer);
     markersById[id] = marker;
+    syncMarkerOriginVisibility(marker);
   }
 
   function getMarkerById(id) {
@@ -2433,7 +2514,8 @@ window.ATAKMap = (function () {
         : null;
       if (isPhone && (!rev || !rev.identity)) profile = null;
       var donorTier = profile && DONOR_LABELS[profile.donorTier] ? profile.donorTier : '';
-      var headingRounded = u.heading != null && u.heading !== '' ? Math.round(Number(u.heading)) : '';
+      // Tranches de 10° comme le cache des symboles (nato-sidc-icons.js) : pas de nouvelle icône au moindre degré.
+      var headingRounded = u.heading != null && u.heading !== '' ? Math.round(Number(u.heading) / 10) * 10 : '';
       if (isPhone && (!rev || !rev.heading)) headingRounded = '';
       var markerPriority = getUnitMarkerPriority();
       var preferAvatar = prefs.styleMode === 'nato' && markerPriority === 'avatar' && profile && profile.avatarUrl;
@@ -2535,6 +2617,11 @@ window.ATAKMap = (function () {
                 }));
           }
         }
+        var decorate = (prefs.showFtFrame && safeFt && prefs.styleMode === 'nato') || donorTier;
+        if (decorate && icon && icon.options) {
+          // Copie : l'icône OTAN est partagée par le cache, on ne doit pas la modifier.
+          icon = L.divIcon(L.extend({}, icon.options));
+        }
         if (prefs.showFtFrame && safeFt && prefs.styleMode === 'nato' && icon && icon.options) {
           icon.options.className = (icon.options.className || '') + ' atak-ft-marker';
           icon.options.html = '<div class="atak-ft-marker-wrap" style="--ft-color:' + safeFt + '">' + (icon.options.html || '') + '</div>';
@@ -2567,7 +2654,7 @@ window.ATAKMap = (function () {
           existing._atakPosSig = posSig;
         }
         if (icon && existing._atakIconSig !== iconSig) {
-          existing.setIcon(icon);
+          if (existing.options.icon !== icon) existing.setIcon(icon);
           existing._atakIconSig = iconSig;
         }
         if (window.ATAKUnitPopup && window.ATAKUnitPopup.bindUnit) {
@@ -2589,6 +2676,31 @@ window.ATAKMap = (function () {
     try {
       window.dispatchEvent(new CustomEvent('atak:units-markers-updated', { detail: { units: lastUnitsListForMap } }));
     } catch (e) {}
+  }
+
+  /**
+   * Relecture fluide : déplace les symboles déjà posés par setUnitsMarkers, sans recréation ni événement global.
+   * list : [{ id, pos_x, pos_y, heading }] (mêmes id que setUnitsMarkers).
+   */
+  function moveUnitMarkers(list) {
+    if (!map) return;
+    var mgr = window.ATAK_MAP_C2_V2 && window.ATAKMarkerManagerC2 && typeof window.ATAKMarkerManagerC2.moveEntity === 'function'
+      ? window.ATAKMarkerManagerC2
+      : null;
+    (list || []).forEach(function (u) {
+      var x = parseFloat(u.pos_x);
+      var y = parseFloat(u.pos_y);
+      if (isNaN(x) || isNaN(y)) return;
+      var ll = latLngFromWorld(x, y);
+      if (mgr) {
+        mgr.moveEntity(String(u.id), ll, u.heading);
+        return;
+      }
+      var m = unitsById['unit_' + String(u.id)];
+      if (!m) return;
+      m.setLatLng(ll);
+      m._atakPosSig = Math.round(ll.lat * 10) / 10 + ',' + Math.round(ll.lng * 10) / 10;
+    });
   }
 
   function refreshMarkersAgainstUnits() {
@@ -2725,6 +2837,8 @@ window.ATAKMap = (function () {
     updateMarkerById: updateMarkerById,
     setAirAssets: setAirAssets,
     setUnitsMarkers: setUnitsMarkers,
+    moveUnitMarkers: moveUnitMarkers,
+    getVectorRenderer: getVectorRenderer,
     refreshMarkersAgainstUnits: refreshMarkersAgainstUnits,
     setReplayActive: setReplayActive,
     isReplayActive: isReplayActive,

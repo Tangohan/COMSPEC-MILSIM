@@ -1354,7 +1354,7 @@ window.ATAKActivity = (function () {
     bindPanelActions();
     fetchActivity(false);
     if (pollTimer) clearInterval(pollTimer);
-    pollTimer = setInterval(function () { fetchActivity(true); }, 4000);
+    pollTimer = setInterval(function () { if (!document.hidden) fetchActivity(true); }, 4000);
   }
 
   function refresh() {

@@ -5,8 +5,8 @@ declare(strict_types=1);
 /**
  * Future schema changes only. The 2026-10-29 baseline retired the historical pipeline.
  *
- * Register new, self-contained steps in database/steps/registry.php. An empty queue
- * succeeds before loading environment variables or opening the database. Historical
+ * Every SQL change is a self-contained, idempotent step registered in database/steps/registry.php.
+ * --list (and an empty queue) succeed before loading environment variables or opening the database. Historical
  * SQL, bootstrap code, reference data and migration ledgers are never scanned or reset.
  *
  * CLI: php run-migrations.php [--list | --status | --step=active_id]

@@ -1716,7 +1716,7 @@ window.ATAKOrders = (function () {
     fetchOrders();
     if (pollTimer) clearInterval(pollTimer);
     // Poll plus fréquent pendant les délais radio (2–15 s)
-    pollTimer = setInterval(fetchOrders, intervalMs || 4000);
+    pollTimer = setInterval(function () { if (!document.hidden) fetchOrders(); }, intervalMs || 4000);
   }
 
   function openOrder(orderId) {

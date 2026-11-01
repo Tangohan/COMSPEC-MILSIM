@@ -361,18 +361,25 @@ window.ATAKMapTools = (function () {
     }
   }
 
+  /* Couche « Mesures » (Réglages > Couches par origine). */
+  function measuresVisible() {
+    var p = window.ATAKMap && window.ATAKMap.getDisplayPrefs ? window.ATAKMap.getDisplayPrefs() : null;
+    return !p || p.showMeasures !== false;
+  }
+
   function ensureMeasureLayer() {
     var map = getMap();
     if (!map) return null;
-    if (!measureLayer) measureLayer = L.layerGroup().addTo(map);
+    if (!measureLayer) measureLayer = L.layerGroup();
+    if (measuresVisible() && !map.hasLayer(measureLayer)) measureLayer.addTo(map);
     return measureLayer;
   }
 
   function redrawMeasure() {
-    var layer = ensureMeasureLayer();
-    if (!layer || measurePoints.length === 0) return;
+    if (!getMap() || measurePoints.length === 0) return;
+    // Repartir d'une couche neuve sur la carte (l'ancienne vient d'être retirée avec les tracés).
     clearMeasureGraphics();
-    measureLayer = layer;
+    var layer = ensureMeasureLayer();
     measurePoints.forEach(function (ll, idx) {
       var marker = L.circleMarker(ll, {
         radius: 5,
@@ -1271,6 +1278,12 @@ window.ATAKMapTools = (function () {
   }
 
   window.addEventListener('atak:mapready', onMapReady);
+  window.addEventListener('atak:display-prefs-changed', function () {
+    var map = getMap();
+    if (!map || !measureLayer) return;
+    if (measuresVisible()) { if (!map.hasLayer(measureLayer)) measureLayer.addTo(map); }
+    else if (map.hasLayer(measureLayer)) map.removeLayer(measureLayer);
+  });
   window.addEventListener('atak:units-updated', updateHudContacts);
 
   if (document.readyState === 'loading') {

@@ -49,6 +49,7 @@ final class LoginSecurityOtpService
         private TotpSecretCipher $totpSecretCipher,
         private RecoveryCodeService $recoveryCodeService = new RecoveryCodeService(),
         private TrustedDeviceService $trustedDeviceService = new TrustedDeviceService(),
+        private TotpReplayGuard $totpReplayGuard = new TotpReplayGuard(),
     ) {}
 
     public function recoveryCodes(): RecoveryCodeService
@@ -237,6 +238,10 @@ final class LoginSecurityOtpService
         if ($channel === self::CHANNEL_TOTP && $this->isTotpEnabled($user)) {
             return $this->beginTotpChallenge($user);
         }
+        // Application active : aucun code par e-mail, sauf si le membre a lui-même gardé l'e-mail en secours.
+        if ($this->isTotpEnabled($user) && !$this->isEmailOtpEnabled($user)) {
+            return $this->beginTotpChallenge($user);
+        }
         if ($channel === self::CHANNEL_EMAIL) {
             return $this->beginEmailChallenge($user);
         }
@@ -401,6 +406,17 @@ final class LoginSecurityOtpService
     }
 
     /**
+     * Code de l'application juste ET jamais servi pour ce membre (anti-rejeu) : à utiliser partout
+     * où un code TOTP est accepté (connexion, activation, désactivation, console d'exploitation).
+     */
+    public function verifyTotpCode(int $userId, string $secret, string $code): bool
+    {
+        $step = $this->totpService->matchStep($secret, $code);
+
+        return $step !== null && $this->totpReplayGuard->claim($userId, $step);
+    }
+
+    /**
      * @return array{ok: bool, message: string}
      */
     public function sendMailboxSelfTest(int $userId, int $tenantId): array
@@ -475,11 +491,7 @@ final class LoginSecurityOtpService
      */
     private function canUseEmailFallback(array $user): bool
     {
-        if ($this->isEmailOtpEnabled($user)) {
-            return true;
-        }
-
-        return $this->isMandatoryForUserId((int) ($user['id'] ?? 0));
+        return $this->isEmailOtpEnabled($user);
     }
 
     /**
@@ -495,8 +507,8 @@ final class LoginSecurityOtpService
             return ['ok' => false, 'message' => 'Compte indisponible.'];
         }
         $secret = $this->decryptUserTotpSecret($user);
-        if ($secret === null || !$this->totpService->verify($secret, $code)) {
-            return ['ok' => false, 'message' => 'Code incorrect.'];
+        if ($secret === null || !$this->verifyTotpCode($userId, $secret, $code)) {
+            return ['ok' => false, 'message' => 'Code incorrect ou déjà utilisé. Attendez le code suivant de l’application.'];
         }
         Session::forget('pending_login_security_otp');
 

@@ -16,8 +16,12 @@ final class PublicCvSettings
 
     /** Clé interne => [libellé, aide] affichés dans le réglage du compte. */
     public const SECTIONS = [
-        'unit' => ['Grade, unité et communauté', 'Sous votre indicatif, en haut de la page.'],
+        'unit' => ['Grade, unité et communauté', 'Sous votre indicatif, en haut de la page, avec la bannière et le lien de votre communauté.'],
+        'roles' => ['Fonction et poste', 'Votre fonction principale, vos autres fonctions et le poste que vous tenez dans votre unité.'],
         'counters' => ['Compteurs', 'Opérations jouées, heures de vol, qualifications et formations.'],
+        'activity' => ['Activité en jeu', 'Kilomètres parcourus (à pied, en véhicule, en vol, en mer, en chute libre), heures de jeu et rôles tenus en mission.'],
+        'since' => ['Membre depuis', 'Le mois où vous avez rejoint la communauté.'],
+        'career' => ['Parcours des grades', 'Vos promotions et leurs dates. Les motifs et commentaires du commandement n’y figurent jamais.'],
         'bio' => ['Présentation', 'Le court texte que vous écrivez ci-dessous.'],
         'decorations' => ['Décorations', 'Les distinctions qui vous ont été remises.'],
         'qualifications' => ['Qualifications', 'Vos qualifications en cours de validité.'],
@@ -25,6 +29,12 @@ final class PublicCvSettings
         'operations' => ['Opérations marquantes', 'Les dernières opérations auxquelles vous avez participé.'],
         'photos' => ['Photos', 'Les photos que vous avez publiées sur la page de la communauté.'],
     ];
+
+    /**
+     * Sections ajoutées après coup qui restent masquées tant que le joueur ne les coche pas (y compris sur les pages
+     * déjà ouvertes). Les autres sont visibles par défaut.
+     */
+    public const OPT_IN = ['since', 'career'];
 
     /** Adresses réservées : pages du site ou mots trompeurs. */
     private const RESERVED = [
@@ -88,13 +98,18 @@ final class PublicCvSettings
     }
 
     /**
-     * Sections par défaut : toutes visibles (la page elle-même reste désactivée tant que le joueur ne l’a pas ouverte).
+     * Sections par défaut : visibles sauf OPT_IN (la page elle-même reste désactivée tant que le joueur ne l’a pas ouverte).
      *
      * @return array<string, bool>
      */
     public static function defaultSections(): array
     {
-        return array_fill_keys(array_keys(self::SECTIONS), true);
+        $out = array_fill_keys(array_keys(self::SECTIONS), true);
+        foreach (self::OPT_IN as $key) {
+            $out[$key] = false;
+        }
+
+        return $out;
     }
 
     /**

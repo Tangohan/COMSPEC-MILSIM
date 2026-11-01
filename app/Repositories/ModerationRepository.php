@@ -68,6 +68,34 @@ class ModerationRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Mesures de la communauté visant un membre (avertissements, restrictions…), levées comprises.
+     * Les mesures « site » (niveau plateforme) ne sont pas renvoyées.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listTenantActionsForTarget(int $tenantId, int $userId, int $limit = 50): array
+    {
+        if ($tenantId < 1 || $userId < 1) {
+            return [];
+        }
+        $scopeSql = $this->hasSanctionScopeColumn()
+            ? " AND (ma.sanction_scope = 'tenant' OR ma.sanction_scope IS NULL OR ma.sanction_scope = '')"
+            : '';
+        $stmt = $this->pdo->prepare(
+            'SELECT ma.*, a.display_name AS actor_display_name, r.display_name AS revoker_display_name
+             FROM moderation_actions ma
+             LEFT JOIN users a ON a.id = ma.actor_user_id
+             LEFT JOIN users r ON r.id = ma.revoked_by_user_id
+             WHERE ma.tenant_id = ? AND ma.target_user_id = ?' . $scopeSql . '
+             ORDER BY ma.created_at DESC, ma.id DESC
+             LIMIT ' . max(1, min(200, $limit))
+        );
+        $stmt->execute([$tenantId, $userId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function createCase(int $tenantId, int $subjectUserId, int $openedByUserId, string $priority = 'normal'): int
     {
         $stmt = $this->pdo->prepare(

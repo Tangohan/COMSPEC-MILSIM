@@ -30,6 +30,9 @@ final class AccountHubClarityAssetTest extends TestCase
         self::assertStringNotContainsString('systemHealth', $index);
         self::assertStringNotContainsString('Charte des formations', $index);
 
+        // Les entrées du menu viennent du plan de l'espace compte (aussi utilisé par la recherche).
+        self::assertStringContainsString('AccountSpaceCatalog::navGroups()', $nav);
+        $nav .= (string) file_get_contents($root . '/app/Support/AccountSpaceCatalog.php');
         self::assertStringContainsString("'label' => 'Portrait'", $nav);
         self::assertStringContainsString("'label' => 'Appareils ATAK'", $nav);
         self::assertStringNotContainsString('Photo de compte', $nav);

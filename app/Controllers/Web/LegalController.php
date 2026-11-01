@@ -36,6 +36,9 @@ final class LegalController
         return Response::view('layout.legal', [
             'content' => 'legal.site',
             'title' => __('legal.hub_title'),
+            'meta_description' => __('legal.hub_meta_description'),
+            // /legal et /legal/site affichent la même page : une seule adresse déclarée aux moteurs.
+            'seo_canonical' => url('legal/site'),
             'legalActivePage' => 'site',
         ]);
     }
@@ -70,6 +73,7 @@ final class LegalController
         return Response::view('layout.legal', [
             'content' => 'legal.gdpr_request',
             'title' => __('legal.rights_title'),
+            'meta_description' => __('legal.rights_meta_description'),
             'legalActivePage' => 'droits',
             'gdprRequestKinds' => self::gdprRequestKindLabels(),
             'privacyInboxConfigured' => privacy_request_inbox_email() !== null,

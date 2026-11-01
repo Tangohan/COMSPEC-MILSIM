@@ -22,7 +22,7 @@ final class PlatformAdminSkinAssetTest extends TestCase
         // Chaque page plateforme écrite en utilitaires marque son en-tête pour le bandeau commun.
         // Les pages refondues sur la coque « .pa » (bandeau pa-hero) en sont exemptées : le skin
         // ne s'applique qu'aux enfants :not(.pa).
-        $paShell = ['contributors', 'dashboard', 'discord_showcase', 'mail_traffic', 'name_filter', 'ops_console', 'plan_gifts', 'plan_payments', 'platform_review_index', 'registry_pins', 'tenant_recovery', 'tenant_removal', 'tenants_index', 'tenants_plan_form', 'users', 'ux_feedback_index', 'year_review'];
+        $paShell = ['contributors', 'dashboard', 'discord_showcase', 'mail_traffic', 'name_filter', 'ops_console', 'plan_gifts', 'plan_payments', 'platform_review_index', 'registry_pins', 'search', 'tenant_recovery', 'tenant_removal', 'tenants_index', 'tenants_plan_form', 'users', 'ux_feedback_index', 'year_review'];
         foreach (glob($root . '/views/admin/system/*.php') ?: [] as $file) {
             $view = (string) file_get_contents($file);
             if (!str_contains($view, '<h1')) {
@@ -48,8 +48,9 @@ final class PlatformAdminSkinAssetTest extends TestCase
         self::assertStringContainsString('data-ath-desc', $sidebar);
         self::assertStringContainsString("data-ath-desc", $js);
         self::assertStringContainsString("'admin/system/deployment/campaigns'", $sidebar);
-        // Les alertes plateforme sont ouvertes à l’assistance (PlatformHubMiddleware) : le menu suit la route.
-        self::assertMatchesRegularExpression("/'admin\\/system\\/alerts'[^\\]]*'access' => 'hub'/", $sidebar);
+        // « Admin » = administrateur de la plateforme uniquement : plus aucune entrée ouverte à l’assistance.
+        self::assertMatchesRegularExpression("/'admin\\/system\\/alerts'[^\\]]*'access' => 'system'/", $sidebar);
+        self::assertStringNotContainsString("'access' => 'hub'", $sidebar);
         self::assertStringContainsString('$platformAdminCrumbGroup', $sidebar);
         self::assertStringContainsString('$platformAdminCrumbGroup', $topbar);
     }

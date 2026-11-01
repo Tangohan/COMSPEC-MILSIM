@@ -119,6 +119,8 @@ final class AtakRoleDetection
     /** Libellé d'un rôle sans libellé enregistré : « SLOT:FUSILIER » → « FUSILIER ». */
     public static function fallbackLabel(string $key): string
     {
+        $key = ArmaText::roleLabel($key);
+
         return str_starts_with($key, 'SLOT:') ? substr($key, 5) : $key;
     }
 }

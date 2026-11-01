@@ -2201,6 +2201,65 @@ class UserRepository
         return $rows;
     }
 
+    /**
+     * Recherche rapide des effectifs (fenêtre « Rechercher ») : nom du joueur, indicatif,
+     * nom de personnage, identifiant ATHENA ou matricule. Bornée, membres de la communauté seulement,
+     * comptes techniques et supprimés exclus (même périmètre que le tableur).
+     *
+     * @return list<array{id: int, display_name: string, callsign: string, character_name: string, status: string}>
+     */
+    public function searchEffectifsMembers(int $tenantId, string $term, int $limit = 8): array
+    {
+        $term = trim($term);
+        if ($tenantId < 1 || $term === '') {
+            return [];
+        }
+        $like = '%' . strtr($term, ['!' => '!!', '%' => '!%', '_' => '!_']) . '%';
+        $prefix = strtr($term, ['!' => '!!', '%' => '!%', '_' => '!_']) . '%';
+        $bits = ["u.display_name LIKE ? ESCAPE '!'", "u.callsign LIKE ? ESCAPE '!'", "pp.character_name LIKE ? ESCAPE '!'"];
+        $params = [$like, $like, $like];
+        if ($this->hasAthenaIdentifierColumn()) {
+            $bits[] = "u.athena_identifier LIKE ? ESCAPE '!'";
+            $params[] = $prefix;
+        }
+        if ($this->hasTenantMemberNumberColumn()) {
+            $bits[] = "u.tenant_member_number LIKE ? ESCAPE '!'";
+            $params[] = $prefix;
+        }
+        $tech = $this->technicalAccountExclusionPredicate('u');
+        $sql = 'SELECT u.id, u.display_name, u.callsign, u.status, pp.character_name
+                FROM users u
+                ' . $this->personnelProfilesJoinSql($tenantId) . '
+                WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . '
+                  AND ' . SqlText::normalizedNotLikeLiteral($this->pdo(), 'u.email', '%@deleted.invalid') . "
+                  AND (u.display_name IS NULL OR TRIM(u.display_name) <> 'Compte supprimé')
+                  AND " . $tech['sql'] . '
+                  AND (' . implode(' OR ', $bits) . ")
+                ORDER BY CASE WHEN u.callsign LIKE ? ESCAPE '!' OR u.display_name LIKE ? ESCAPE '!' THEN 0 ELSE 1 END,
+                         u.display_name ASC, u.id ASC
+                LIMIT " . max(1, min(25, $limit));
+        $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute(array_merge($tech['params'], $params, [$prefix, $prefix]));
+        $out = [];
+        $seen = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1 || isset($seen[$id])) {
+                continue;
+            }
+            $seen[$id] = true;
+            $out[] = [
+                'id' => $id,
+                'display_name' => trim((string) ($row['display_name'] ?? '')),
+                'callsign' => trim((string) ($row['callsign'] ?? '')),
+                'character_name' => trim((string) ($row['character_name'] ?? '')),
+                'status' => (string) ($row['status'] ?? ''),
+            ];
+        }
+
+        return $out;
+    }
+
     public function countListForTenant(int $tenantId, ?string $search = null, ?string $status = null, ?int $roleId = null, bool $excludeServiceAccounts = true, ?bool $onlyWithoutUnit = null, ?bool $onlyWithoutRole = null): int
     {
         [$whereSql, $params] = $this->buildUserListWhere($tenantId, $search, $status, $roleId, $excludeServiceAccounts, $onlyWithoutUnit, $onlyWithoutRole);
@@ -2380,6 +2439,10 @@ class UserRepository
             $sql .= ' AND tenant_id = ?';
             $params[] = $tenantId;
         }
+        $gradeBefore = false;
+        if (array_key_exists('grade_id', $data)) {
+            $gradeBefore = $this->currentGradeIdForHistory($userId, $tenantId);
+        }
         $stmt = $this->pdo()->prepare($sql);
         $ok = $stmt->execute($params);
         if ($ok && $this->hasCommunityMembershipTable()) {
@@ -2389,8 +2452,67 @@ class UserRepository
                 UserIdentityMergeRules::communityProfileFromUserRow($data)
             );
         }
+        if ($ok && $gradeBefore !== false) {
+            $this->recordGradeChange($userId, $tenantId, $gradeBefore, $this->normalizeOptionalGradeId($data['grade_id']));
+        }
 
         return $ok;
+    }
+
+    /**
+     * Grade actuel avant modification, pour l’historique des grades (false si illisible : rien n’est enregistré).
+     */
+    private function currentGradeIdForHistory(int $userId, int $tenantId): int|false|null
+    {
+        try {
+            $row = $this->findById($userId, $tenantId);
+        } catch (\Throwable) {
+            return false;
+        }
+        if ($row === null) {
+            return false;
+        }
+        $gid = (int) ($row['grade_id'] ?? 0);
+
+        return $gid > 0 ? $gid : null;
+    }
+
+    /**
+     * Historique des grades : chaque changement réel est noté avec le grade avant / après,
+     * quel que soit l’écran à l’origine (fiche, dossier, élévation validée…). Ne bloque jamais l’enregistrement.
+     */
+    private function recordGradeChange(int $userId, int $tenantId, ?int $before, mixed $after): void
+    {
+        $after = is_numeric($after) && (int) $after > 0 ? (int) $after : null;
+        if ($before === $after || $tenantId < 1) {
+            return;
+        }
+        try {
+            $history = new MemberGradeChangeRepository($this->pdo());
+            if (!$history->ensureTable()) {
+                return;
+            }
+            $label = static function (?int $gradeId) use ($tenantId): ?string {
+                if ($gradeId === null) {
+                    return null;
+                }
+                $grade = (new GradeRepository())->findById($gradeId, $tenantId);
+
+                return is_array($grade) ? \App\Support\GradeSelectOptions::label($grade) : null;
+            };
+            $actor = (int) (\App\Core\Session::get('user_id') ?? 0);
+            $history->record(
+                $tenantId,
+                $userId,
+                $before,
+                $after,
+                $label($before),
+                $label($after),
+                $actor > 0 ? $actor : null
+            );
+        } catch (\Throwable $e) {
+            error_log('[member_grade_changes] changement de grade non historisé : ' . $e->getMessage());
+        }
     }
 
     /**

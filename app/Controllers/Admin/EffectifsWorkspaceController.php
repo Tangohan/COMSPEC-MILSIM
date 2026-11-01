@@ -36,6 +36,7 @@ use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Effectifs\ElevationApprovalService;
 use App\Services\Effectifs\MemberOffboardingService;
 use App\Services\Effectifs\PersonnelCommandChainService;
+use App\Services\Effectifs\UnitCodeService;
 use App\Services\Personnel\JobRolePickerService;
 use App\Services\Personnel\PersonnelDuplicateDetectionService;
 use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
@@ -191,6 +192,27 @@ class EffectifsWorkspaceController
             $rosterView = 'general';
         }
         $jobFilter = mb_substr(trim((string) $request->query('fonction', '')), 0, 120, 'UTF-8');
+        // Regroupement de la maquette : par unité (ordre de commandement), par grade, ou liste simple.
+        $explicitSort = trim((string) $request->query('tri', '')) !== '';
+        $group = trim((string) $request->query('groupe', ''));
+        if (!in_array($group, ['unite', 'grade', 'liste'], true)) {
+            $group = match (true) {
+                !$explicitSort || $sort === 'commandement' => 'unite',
+                $sort === 'grade' => 'grade',
+                default => 'liste',
+            };
+        }
+        if ($group === 'unite') {
+            $sort = 'commandement';
+        } elseif ($group === 'grade') {
+            $sort = 'grade';
+        }
+        $unitFilter = max(0, (int) $request->query('unite', 0));
+        $gradeCategoryFilter = (string) $request->query('categorie', '');
+        if (!in_array($gradeCategoryFilter, ['off', 'nco', 'enl'], true)) {
+            $gradeCategoryFilter = '';
+        }
+        $gradeCategories = $this->gradeCategoriesById($tenantId);
 
         $statusFilter = $status !== '' ? $status : null;
         $roleFilter = $roleId > 0 ? $roleId : null;
@@ -210,7 +232,7 @@ class EffectifsWorkspaceController
 
         $languageCommunity = $this->communitySettingsFor($tenantId);
         $languageFilter = CommunityLanguages::normalize($request->query('langue', '')) ?? '';
-        $needsFullLoad = $sort !== 'nom' || $languageFilter !== '' || $jobFilter !== '';
+        $needsFullLoad = $sort !== 'nom' || $languageFilter !== '' || $jobFilter !== '' || $unitFilter > 0 || $gradeCategoryFilter !== '';
         if ($needsFullLoad) {
             $fetchLimit = min(2000, max($total, 1));
             $baseUsers = $this->userRepository->listForTenant(
@@ -242,6 +264,16 @@ class EffectifsWorkspaceController
             if ($jobFilter !== '') {
                 // Filtre « fonction » : la fonction principale commence par l'emploi choisi (ex. « Medic — CLS »).
                 $allRows = array_values(array_filter($allRows, static fn (array $r): bool => mb_stripos(trim((string) ($r['job_role_display'] ?? '')), $jobFilter, 0, 'UTF-8') === 0));
+                $total = count($allRows);
+            }
+            if ($unitFilter > 0) {
+                // Filtre « unité » : l'unité choisie et toutes ses sous-unités.
+                $unitScope = array_flip($this->unitRepository->expandUnitIdsWithDescendants($tenantId, [$unitFilter]));
+                $allRows = array_values(array_filter($allRows, static fn (array $r): bool => isset($unitScope[(int) ($r['unit_id'] ?? 0)])));
+                $total = count($allRows);
+            }
+            if ($gradeCategoryFilter !== '') {
+                $allRows = array_values(array_filter($allRows, static fn (array $r): bool => ($gradeCategories[(int) ($r['grade_id'] ?? 0)] ?? '') === $gradeCategoryFilter));
                 $total = count($allRows);
             }
             if (in_array($sort, ['heures_vol', 'temps_mission'], true)) {
@@ -361,7 +393,103 @@ class EffectifsWorkspaceController
             'rosterJobsByUserId' => $jobEdit['by_user'],
             'rosterJobPickerGroups' => $jobEdit['groups'],
             'rosterJobRoleMax' => $jobEdit['max'],
+            'rosterUnitCodes' => (new UnitCodeService())->sync($tenantId)['units'],
+            'rosterGroup' => $group,
+            'rosterUnitFilter' => $unitFilter,
+            'rosterGradeCategory' => $gradeCategoryFilter,
+            'rosterGradeCategories' => $gradeCategories,
+            'rosterUnitCommanders' => $this->safeCommanderLabels($tenantId, $unitsRaw),
+            'effHero' => $this->rosterHeroData($tenantId, $unitsRaw, $counts),
         ]);
+    }
+
+    /**
+     * Catégorie de chaque grade (officier, sous-officier, militaire du rang), d'après son code OTAN.
+     * Un grade sans code OTAN n'a pas de catégorie : il n'apparaît dans aucun des trois filtres.
+     *
+     * @return array<int, string>
+     */
+    private function gradeCategoriesById(int $tenantId): array
+    {
+        $out = [];
+        try {
+            foreach ($this->gradeRepository->listForTenant($tenantId) as $g) {
+                $rank = GradeSelectOptions::natoRank($g);
+                $id = (int) ($g['id'] ?? 0);
+                if ($id < 1 || $rank < 1) {
+                    continue;
+                }
+                $out[$id] = $rank >= 100 ? 'off' : ($rank >= 5 ? 'nco' : 'enl');
+            }
+        } catch (\Throwable) {
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $unitsRaw
+     * @return array<int, string>
+     */
+    private function safeCommanderLabels(int $tenantId, array $unitsRaw): array
+    {
+        try {
+            return $this->unitRepository->commanderLabelByUnitForTenant($tenantId, $unitsRaw);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * Bandeau du tableur : composition par unité et compteurs, tous issus de la base.
+     *
+     * @param list<array<string, mixed>> $unitsRaw
+     * @param array<string, int> $counts
+     * @return array<string, mixed>
+     */
+    private function rosterHeroData(int $tenantId, array $unitsRaw, array $counts): array
+    {
+        $byUnit = [];
+        try {
+            $byUnit = $this->unitRepository->countDistinctMembersByUnitForTenant($tenantId);
+        } catch (\Throwable) {
+        }
+        $names = [];
+        foreach ($unitsRaw as $u) {
+            $names[(int) ($u['id'] ?? 0)] = trim((string) ($u['name'] ?? ''));
+        }
+        arsort($byUnit);
+        $parts = [];
+        $other = 0;
+        $i = 0;
+        foreach ($byUnit as $unitId => $n) {
+            if ($n < 1 || !isset($names[$unitId])) {
+                continue;
+            }
+            if ($i++ < 6) {
+                $parts[] = ['label' => $names[$unitId], 'count' => (int) $n, 'unit_id' => (int) $unitId];
+            } else {
+                $other += (int) $n;
+            }
+        }
+        if ($other > 0) {
+            $parts[] = ['label' => 'Autres unités', 'count' => $other, 'unit_id' => 0];
+        }
+        $noUnit = (int) ($counts['no_unit'] ?? 0);
+        if ($noUnit > 0) {
+            $parts[] = ['label' => 'Sans unité', 'count' => $noUnit, 'unit_id' => -1];
+        }
+        $absent = 0;
+        try {
+            $absent = count($this->personnelAbsenceRepository->userIdsAbsentToday($tenantId));
+        } catch (\Throwable) {
+        }
+
+        return [
+            'units_with_members' => count(array_filter($byUnit, static fn (int $n): bool => $n > 0)),
+            'composition' => $parts,
+            'absent_today' => $absent,
+        ];
     }
 
     /**
@@ -1079,6 +1207,14 @@ class EffectifsWorkspaceController
         $memberLanguage = $this->memberLanguages()->resolvedForUsers($tenantId, [$id], $languageCommunity)[$id]
             ?? CommunityLanguages::resolveMember(null, null, $languageCommunity);
 
+        $canViewSanctions = EffectifsLmsAccess::canViewSanctions($gate);
+        $insights = [];
+        try {
+            $insights = $this->memberInsights()->build($tenantId, $row, $qualifications, $assignments, $canViewSanctions);
+        } catch (\Throwable $e) {
+            error_log('Effectifs member: insights failed: ' . $e->getMessage());
+        }
+
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
             'memberLanguage' => $memberLanguage,
@@ -1126,11 +1262,17 @@ class EffectifsWorkspaceController
             'dutyPosition' => $dutyPosition,
             'remainingTrainingDays' => $remainingTrainingDays,
             'memberCommandChain' => $commandChain,
+            'memberInsights' => $insights,
+            'canViewSanctions' => $canViewSanctions,
+            'canManageSanctions' => EffectifsLmsAccess::canManageSanctions($gate),
+            'canSetElevationCriteria' => EffectifsLmsAccess::canSetElevationCriteria($gate),
+            'canEditOrbat' => $gate->allows('organization.orbat.manage') || $gate->allows('admin.organization'),
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css'],
             'loadDecorationsKit' => true,
+            'effMemberUnitCode' => (new UnitCodeService())->forUnit($tenantId, (int) ($row['unit_id'] ?? 0)),
         ]);
     }
 
@@ -2004,6 +2146,191 @@ class EffectifsWorkspaceController
     private function memberLanguages(): MemberLanguageRepository
     {
         return \App\Core\Container::get(MemberLanguageRepository::class);
+    }
+
+    private function memberInsights(): \App\Services\Effectifs\MemberFileInsightsService
+    {
+        return new \App\Services\Effectifs\MemberFileInsightsService(
+            $this->userRepository,
+            $this->unitRepository,
+            $this->personnelAssignmentRepository,
+            $this->personnelJobRoleRepository,
+            $this->gradeRepository,
+            $this->tenantRepository,
+            $this->senioritySummary
+        );
+    }
+
+    /**
+     * Avertissement saisi depuis la fiche membre. Même registre que l’écran « Restrictions membres »
+     * (mesure de niveau communauté, journalisée), réservé aux personnes habilitées aux restrictions.
+     */
+    public function declareSanction(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $back = effectifs_workspace_url('membres/' . $id) . '#sanctions';
+        if (!EffectifsLmsAccess::canManageSanctions(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à enregistrer une mesure disciplinaire.');
+
+            return Response::redirect($id > 0 ? $back : effectifs_workspace_url());
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $actorId = (int) Session::get('user_id');
+        if ($id < 1 || $this->userRepository->findById($id, $tenantId) === null) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        if ($id === $actorId) {
+            Session::flash('error', 'Vous ne pouvez pas vous sanctionner vous-même.');
+
+            return Response::redirect($back);
+        }
+        $reason = trim((string) $request->input('reason', ''));
+        if ($reason === '') {
+            Session::flash('error', 'Indiquez le motif de l’avertissement.');
+
+            return Response::redirect($back);
+        }
+        try {
+            $this->moderationService()->applySanction($tenantId, $actorId, $id, 'warn', mb_substr($reason, 0, 1000), null, [], 'tenant');
+            Session::flash('success', 'Avertissement enregistré sur le dossier du membre.');
+        } catch (\Throwable $e) {
+            error_log('Effectifs member: sanction failed: ' . $e->getMessage());
+            Session::flash('error', 'L’avertissement n’a pas pu être enregistré.');
+        }
+
+        return Response::redirect($back);
+    }
+
+    /** Levée d’une mesure disciplinaire de la communauté depuis la fiche membre. */
+    public function liftSanction(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $sanctionId = (int) ($params['sanctionId'] ?? 0);
+        $back = effectifs_workspace_url('membres/' . $id) . '#sanctions';
+        if (!EffectifsLmsAccess::canManageSanctions(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à lever une mesure disciplinaire.');
+
+            return Response::redirect($id > 0 ? $back : effectifs_workspace_url());
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $action = $sanctionId > 0 ? $this->moderationRepository()->findActionById($tenantId, $sanctionId) : null;
+        if ($action === null || (int) ($action['target_user_id'] ?? 0) !== $id) {
+            Session::flash('error', 'Mesure introuvable pour ce membre.');
+
+            return Response::redirect($back);
+        }
+        $ok = $this->moderationService()->revokeForScope($tenantId, $sanctionId, (int) Session::get('user_id'), 'tenant');
+        Session::flash($ok ? 'success' : 'error', $ok ? 'Mesure levée. Elle reste visible dans l’historique du dossier.' : 'Cette mesure est déjà levée ou relève de l’administration du site.');
+
+        return Response::redirect($back);
+    }
+
+    private function moderationService(): \App\Services\Moderation\ModerationService
+    {
+        return \App\Core\Container::get(\App\Services\Moderation\ModerationService::class);
+    }
+
+    private function moderationRepository(): \App\Repositories\ModerationRepository
+    {
+        return \App\Core\Container::get(\App\Repositories\ModerationRepository::class);
+    }
+
+    /** Réglage des critères d’éligibilité à une élévation (communauté courante). */
+    public function elevationCriteria(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $qualifications = [];
+        try {
+            $qualifications = (new \App\Repositories\QualificationDefinitionRepository())->listForTenant($tenantId);
+        } catch (\Throwable) {
+        }
+
+        return $this->shell('admin.effectifs_workspace.elevation_criteria', [
+            'title' => 'Critères d’élévation',
+            'effectifsNav' => 'elevations',
+            'criteria' => \App\Services\Effectifs\ElevationEligibility::settings($this->tenantRepository->getSettings($tenantId)),
+            'qualificationOptions' => $qualifications,
+            'canSetElevationCriteria' => EffectifsLmsAccess::canSetElevationCriteria(Gate::getInstance()),
+            'csrfToken' => Csrf::token(),
+        ]);
+    }
+
+    public function saveElevationCriteria(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $target = effectifs_workspace_url('elevations/criteres');
+        if (!EffectifsLmsAccess::canSetElevationCriteria(Gate::getInstance())) {
+            Session::flash('error', 'Seules les personnes qui gèrent les grades peuvent régler les critères d’élévation.');
+
+            return Response::redirect($target);
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($target);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $allowed = [];
+        try {
+            foreach ((new \App\Repositories\QualificationDefinitionRepository())->listForTenant($tenantId) as $d) {
+                $allowed[] = (int) ($d['id'] ?? 0);
+            }
+        } catch (\Throwable) {
+        }
+        $rawQuals = $request->input('required_qualification_ids');
+        $criteria = \App\Services\Effectifs\ElevationEligibility::sanitize([
+            'min_months_in_grade' => $request->input('min_months_in_grade', 0),
+            'min_presences_90' => $request->input('min_presences_90', 0),
+            'min_presence_rate_90' => $request->input('min_presence_rate_90', 0),
+            'required_qualification_ids' => is_array($rawQuals) ? $rawQuals : [],
+        ], $allowed);
+        // Réglages relus puis réécrits en entier : la liste des qualifications remplace l’ancienne.
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $previous = \App\Services\Effectifs\ElevationEligibility::settings($settings);
+        $settings[\App\Services\Effectifs\ElevationEligibility::SETTINGS_KEY] = $criteria;
+        $this->tenantRepository->replaceSettings($tenantId, $settings);
+        try {
+            \App\Core\Container::get(\App\Services\Audit\AuditService::class)->log(
+                \App\Services\Audit\AuditAction::ELEVATION_CRITERIA_UPDATED,
+                $tenantId,
+                (int) Session::get('user_id'),
+                'tenant',
+                $tenantId,
+                json_encode($previous, JSON_UNESCAPED_UNICODE) ?: null,
+                json_encode($criteria, JSON_UNESCAPED_UNICODE) ?: null
+            );
+        } catch (\Throwable) {
+        }
+        Session::flash('success', 'Critères d’élévation enregistrés. Ils s’affichent sur chaque fiche membre.');
+
+        return Response::redirect($target);
     }
 
     /** @return array<string, mixed> */
@@ -2922,16 +3249,26 @@ class EffectifsWorkspaceController
             return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
-        $units = $this->unitRepository->allForTenant($tenantId);
-        $withoutUnit = $this->userRepository->countListForTenant($tenantId, null, 'active', null, true, true, null);
         $gate = Gate::getInstance();
+        $matrix = (new \App\Services\Effectifs\AffectationsMatrixService(
+            $this->userRepository,
+            $this->unitRepository,
+            $this->roleRepository,
+            $this->personnelJobRoleRepository,
+            new \App\Services\Effectifs\UnitCodeService()
+        ))->build($tenantId);
+        $view = (string) $request->query('vue', '');
 
         return $this->shell('admin.effectifs_workspace.affectations', [
             'title' => 'Affectations',
             'effectifsNav' => 'affectations',
-            'units' => $units,
-            'membersWithoutUnit' => $withoutUnit,
+            'affMatrix' => $matrix,
+            'affView' => $view === 'unites' ? 'units' : 'members',
+            'affInitialQuery' => mb_substr(trim((string) $request->query('q', '')), 0, 80, 'UTF-8'),
+            'affInitialUnit' => max(0, (int) $request->query('unite', 0)),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
+            'canEditCommunityCode' => $gate->allows('admin.organization') || $gate->allows('admin.access'),
+            'csrfToken' => Csrf::token(),
             'rosterCounts' => $this->rosterCounts($tenantId),
         ]);
     }
@@ -3325,7 +3662,7 @@ class EffectifsWorkspaceController
             'boSkipPageHead' => true,
             // The member page embeds the personnel editor. Its response only contains
             // the view body, so its component stylesheet must be loaded by this shell.
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css'],
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
             'elevationOpenCount' => $elevationOpen,
@@ -3340,6 +3677,7 @@ class EffectifsWorkspaceController
             'phaseGateCount' => $extras['phaseGateCount'],
             'phaseAutoErrorCount' => $extras['phaseAutoErrorCount'],
             'viewerName' => (string) (Session::get('display_name') ?? Session::get('email') ?? ''),
+            'communityName' => $referenceOnly ? '' : $this->communityNameForTenant($tenantId),
         ], $extra));
     }
 

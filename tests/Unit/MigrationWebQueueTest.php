@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Services\Ops\OpsConsoleStepUp;
+use App\Support\Migrations\MigrationRegistry;
 use DOMDocument;
 use DOMXPath;
 use PHPUnit\Framework\TestCase;
@@ -77,13 +78,34 @@ final class MigrationWebQueueTest extends TestCase
         $stepUp = (new ReflectionClass(OpsConsoleStepUp::class))->newInstanceWithoutConstructor();
         (new ReflectionProperty($controller, 'stepUp'))->setValue($controller, $stepUp);
         // Other dependencies stay uninitialized: no snapshot, audit or database may be used.
-        foreach (['run', 'replay'] as $mode) {
-            $_POST = ['mode'=>$mode, 'backup'=>'1', 'file'=>'schema.sql', '_csrf_token'=>$_SESSION['_csrf_token']];
-            $response = $controller->launchMigrations(new Request());
-            self::assertStringContainsString('onglet=migrations', $response->headerValue('Location'));
-            self::assertStringNotContainsString('ticket=', $response->headerValue('Location'));
-            self::assertStringContainsString($mode === 'run' ? 'Aucune migration en attente' : 'rejeu', Session::getFlash($mode === 'run' ? 'success' : 'error'));
+        // The real queue is not empty: the registry cache simulates an empty one for base_path().
+        $cache = new ReflectionProperty(MigrationRegistry::class, 'cache');
+        $saved = $cache->getValue();
+        $cache->setValue(null, [rtrim(base_path(), '/') => []] + $saved);
+        try {
+            foreach (['run', 'replay'] as $mode) {
+                $_POST = ['mode'=>$mode, 'backup'=>'1', 'file'=>'schema.sql', '_csrf_token'=>$_SESSION['_csrf_token']];
+                $response = $controller->launchMigrations(new Request());
+                self::assertStringContainsString('onglet=migrations', $response->headerValue('Location'));
+                self::assertStringNotContainsString('ticket=', $response->headerValue('Location'));
+                self::assertStringContainsString($mode === 'run' ? 'Aucune migration en attente' : 'rejeu', Session::getFlash($mode === 'run' ? 'success' : 'error'));
+            }
+        } finally {
+            $cache->setValue(null, $saved);
         }
+    }
+
+    public function testRealActiveQueueCanBeLaunchedButHistoricalReplayStaysRefused(): void
+    {
+        $steps = MigrationRegistry::load(base_path());
+        self::assertNotSame([], $steps);
+        self::assertNull(migrations_web_queue_error(base_path(), 'run'));
+        foreach ($steps as $step) {
+            self::assertNull(migrations_web_queue_error(base_path(), 'run_step', $step['id']), $step['id']);
+        }
+        self::assertNotNull(migrations_web_queue_error(base_path(), 'replay'));
+        self::assertNotNull(migrations_web_queue_error(base_path(), 'run_step', 'sql_files'));
+        self::assertNotNull(migrations_web_queue_error(base_path(), 'run_step', 'atak_maps'));
     }
 
     public function testOpsViewShowsArchiveOutputWithoutReplayOrSqlPendingControls(): void

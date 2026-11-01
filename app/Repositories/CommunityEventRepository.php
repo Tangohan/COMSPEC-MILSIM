@@ -852,6 +852,99 @@ class CommunityEventRepository
     }
 
     /**
+     * Derniers créneaux terminés : inscrits (réponse « oui ») et présents pointés, du plus récent au plus ancien.
+     * Les créneaux sont limités avant la jointure pour ne jamais agréger tout l’historique.
+     *
+     * @return list<array{id:int,title:string,starts_at:string,event_type:string,registered:int,present:int}>
+     */
+    public function participationForRecentEvents(int $tenantId, int $limit = 10): array
+    {
+        $lim = max(1, min(30, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT e.id, e.title, e.starts_at, e.event_type,
+                    COALESCE(SUM(CASE WHEN r.status = 'yes' THEN 1 ELSE 0 END), 0) AS registered,
+                    COALESCE(SUM(CASE WHEN r.checked_in_at IS NOT NULL THEN 1 ELSE 0 END), 0) AS present
+             FROM (
+                 SELECT id, title, starts_at, event_type FROM community_events
+                 WHERE tenant_id = ? AND cancelled_at IS NULL AND COALESCE(ends_at, starts_at) < NOW()
+                 ORDER BY starts_at DESC LIMIT {$lim}
+             ) e
+             LEFT JOIN community_event_rsvps r ON r.event_id = e.id
+             GROUP BY e.id, e.title, e.starts_at, e.event_type
+             ORDER BY e.starts_at DESC"
+        );
+        $stmt->execute([$tenantId]);
+        $out = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $out[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'title' => (string) ($row['title'] ?? ''),
+                'starts_at' => (string) ($row['starts_at'] ?? ''),
+                'event_type' => (string) ($row['event_type'] ?? 'evenement'),
+                'registered' => (int) ($row['registered'] ?? 0),
+                'present' => (int) ($row['present'] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Présence des membres ayant confirmé (« oui » puis pointés) sur deux fenêtres glissantes :
+     * les $windowDays derniers jours et la fenêtre précédente de même durée (créneaux terminés seulement).
+     *
+     * @return array{current_yes:int,current_present:int,current_checked:int,previous_yes:int,previous_present:int}
+     */
+    public function presenceWindowsForTenant(int $tenantId, int $windowDays = 30): array
+    {
+        $days = max(7, min(180, $windowDays));
+        $double = $days * 2;
+        $stmt = $this->pdo->prepare(
+            "SELECT
+                SUM(CASE WHEN ce.starts_at >= DATE_SUB(NOW(), INTERVAL {$days} DAY) AND r.status = 'yes' THEN 1 ELSE 0 END) AS current_yes,
+                SUM(CASE WHEN ce.starts_at >= DATE_SUB(NOW(), INTERVAL {$days} DAY) AND r.status = 'yes' AND r.checked_in_at IS NOT NULL THEN 1 ELSE 0 END) AS current_present,
+                SUM(CASE WHEN ce.starts_at >= DATE_SUB(NOW(), INTERVAL {$days} DAY) AND r.checked_in_at IS NOT NULL THEN 1 ELSE 0 END) AS current_checked,
+                SUM(CASE WHEN ce.starts_at < DATE_SUB(NOW(), INTERVAL {$days} DAY) AND r.status = 'yes' THEN 1 ELSE 0 END) AS previous_yes,
+                SUM(CASE WHEN ce.starts_at < DATE_SUB(NOW(), INTERVAL {$days} DAY) AND r.status = 'yes' AND r.checked_in_at IS NOT NULL THEN 1 ELSE 0 END) AS previous_present
+             FROM community_event_rsvps r
+             INNER JOIN community_events ce ON ce.id = r.event_id
+             WHERE ce.tenant_id = ?
+               AND ce.cancelled_at IS NULL
+               AND COALESCE(ce.ends_at, ce.starts_at) < NOW()
+               AND ce.starts_at >= DATE_SUB(NOW(), INTERVAL {$double} DAY)"
+        );
+        $stmt->execute([$tenantId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'current_yes' => (int) ($row['current_yes'] ?? 0),
+            'current_present' => (int) ($row['current_present'] ?? 0),
+            'current_checked' => (int) ($row['current_checked'] ?? 0),
+            'previous_yes' => (int) ($row['previous_yes'] ?? 0),
+            'previous_present' => (int) ($row['previous_present'] ?? 0),
+        ];
+    }
+
+    /**
+     * Créneaux (non annulés) qui démarrent sur [ $startInclusive, $endExclusive [ : total et déjà terminés.
+     *
+     * @return array{total:int,done:int}
+     */
+    public function countStartingInPeriod(int $tenantId, string $startInclusive, string $endExclusive): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) AS total,
+                    COALESCE(SUM(CASE WHEN COALESCE(ends_at, starts_at) < NOW() THEN 1 ELSE 0 END), 0) AS done
+             FROM community_events
+             WHERE tenant_id = ? AND cancelled_at IS NULL AND starts_at >= ? AND starts_at < ?'
+        );
+        $stmt->execute([$tenantId, $startInclusive, $endExclusive]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return ['total' => (int) ($row['total'] ?? 0), 'done' => (int) ($row['done'] ?? 0)];
+    }
+
+    /**
      * @return array{confirmed_yes:int,effective_yes:int,no_show_yes:int}
      */
     public function attendanceKpisForTenant(int $tenantId, int $windowDays = 90): array

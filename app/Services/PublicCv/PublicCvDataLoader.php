@@ -6,6 +6,8 @@ namespace App\Services\PublicCv;
 
 use App\Core\Database;
 use App\Repositories\AcademyRepository;
+use App\Repositories\AtakDistanceRepository;
+use App\Repositories\AtakScreenTimeRepository;
 use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelAwardRepository;
 use App\Repositories\PilotLogbookRepository;
@@ -61,6 +63,7 @@ class PublicCvDataLoader
             'grade' => $this->grade($user, $tenantId),
             'unit_name' => $this->unitName($userId, $tenantId),
             'tenant' => $this->tenant($tenantId),
+            'banner_url' => $this->bannerUrl($tenantId),
             'avatar_url' => $this->safe(static fn () => OperatorPortraits::forUser($tenantId, $userId)),
             'decorations' => $this->decorations($userId, $tenantId),
             'qualifications' => $this->qualifications($userId, $tenantId),
@@ -69,6 +72,13 @@ class PublicCvDataLoader
             'operations' => $this->operations($userId, $tenantId),
             'flight_seconds' => $this->flightSeconds($userId, $tenantId),
             'photos' => $this->photos($userId, $tenantId),
+            'jobs' => $this->jobs($userId, $tenantId),
+            'unit_post' => $this->unitPost($userId, $tenantId),
+            'distances' => $this->safe(fn () => (new AtakDistanceRepository($this->pdo()))->summaryForUser($tenantId, $userId)),
+            'play' => $this->safe(fn () => (new AtakScreenTimeRepository($this->pdo()))->playStatsForUser($tenantId, $userId)),
+            'game_roles' => $this->safe(fn () => (new AtakScreenTimeRepository($this->pdo()))->rolesForUser($tenantId, $userId)) ?? [],
+            'member_since' => $this->memberSince($user, $tenantId),
+            'promotions' => $this->promotions($userId, $tenantId),
         ];
     }
 
@@ -139,6 +149,18 @@ class PublicCvDataLoader
         return $this->safe(fn () => (new TenantRepository($this->pdo()))->findById($tenantId));
     }
 
+    /** Bannière que la communauté affiche déjà sur sa page publique (réglage de la vitrine). */
+    private function bannerUrl(int $tenantId): ?string
+    {
+        return $this->safe(function () use ($tenantId): ?string {
+            $st = $this->pdo()->prepare('SELECT banner_url FROM tenant_branding WHERE tenant_id = ? LIMIT 1');
+            $st->execute([$tenantId]);
+            $url = $st->fetchColumn();
+
+            return is_string($url) && trim($url) !== '' ? trim($url) : null;
+        });
+    }
+
     /** @return list<array<string, mixed>> */
     private function qualifications(int $userId, int $tenantId): array
     {
@@ -201,6 +223,118 @@ class PublicCvDataLoader
         }
 
         return (int) ($this->safe(static fn () => PilotLogbookService::summary($entries, $legacy)['total']) ?? 0);
+    }
+
+    /**
+     * Fonctions (emplois) du joueur dans la communauté, la principale en tête — comme la colonne « Fonction » des Effectifs.
+     *
+     * @return list<array{name: string, detail: string, is_primary: int}>
+     */
+    private function jobs(int $userId, int $tenantId): array
+    {
+        return $this->safe(function () use ($userId, $tenantId): array {
+            $st = $this->pdo()->prepare(
+                'SELECT r.name, pj.role_detail AS detail, pj.is_primary
+                 FROM personnel_profile_job_roles pj
+                 INNER JOIN personnel_job_roles r ON r.id = pj.personnel_job_role_id AND r.tenant_id = pj.tenant_id
+                 WHERE pj.tenant_id = ? AND pj.user_id = ?
+                 ORDER BY pj.is_primary DESC, pj.sort_order ASC, pj.id ASC LIMIT 6'
+            );
+            $st->execute([$tenantId, $userId]);
+
+            return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }) ?? [];
+    }
+
+    /**
+     * Poste tenu dans l’unité d’affectation principale (organigramme), avec le nom de cette unité.
+     *
+     * @return array{role_name: ?string, unit_name: ?string}|null
+     */
+    private function unitPost(int $userId, int $tenantId): ?array
+    {
+        return $this->safe(function () use ($userId, $tenantId): ?array {
+            $st = $this->pdo()->prepare(
+                "SELECT pa.role_name, un.name AS unit_name FROM personnel_assignments pa
+                 INNER JOIN units un ON un.id = pa.unit_id AND un.tenant_id = ?
+                 WHERE pa.user_id = ? AND (pa.status = 'active' OR pa.status = '' OR pa.status IS NULL)
+                   AND (pa.ended_at IS NULL OR pa.ended_at >= CURDATE())
+                 ORDER BY pa.is_primary DESC, pa.started_at DESC, pa.id DESC LIMIT 1"
+            );
+            $st->execute([$tenantId, $userId]);
+            $row = $st->fetch(PDO::FETCH_ASSOC);
+
+            return is_array($row) ? $row : null;
+        });
+    }
+
+    /**
+     * Date d’arrivée dans la communauté : adhésion active, sinon création du compte pour la communauté d’origine.
+     *
+     * @param array<string, mixed> $user
+     */
+    private function memberSince(array $user, int $tenantId): ?string
+    {
+        $joined = $this->safe(function () use ($user, $tenantId): ?string {
+            $st = $this->pdo()->prepare(
+                "SELECT MIN(joined_at) FROM user_community_memberships WHERE user_id = ? AND tenant_id = ? AND status = 'active'"
+            );
+            $st->execute([(int) ($user['id'] ?? 0), $tenantId]);
+            $v = $st->fetchColumn();
+
+            return is_string($v) && trim($v) !== '' ? $v : null;
+        });
+        if ($joined !== null) {
+            return $joined;
+        }
+        $created = trim((string) ($user['created_at'] ?? ''));
+
+        return $created !== '' && (int) ($user['tenant_id'] ?? 0) === $tenantId ? $created : null;
+    }
+
+    /**
+     * Promotions de grade du dossier (date + texte structuré « Grade : … · Fonction : … »). Le titre, les motifs et les
+     * autres types d’évènement ne sont jamais lus. Seules les lignes dont le grade existe dans la communauté sont
+     * gardées (le journal n’est pas rangé par communauté).
+     *
+     * @return list<array{event_date: string, description: string}>
+     */
+    private function promotions(int $userId, int $tenantId): array
+    {
+        $grades = $this->safe(static function () use ($tenantId): array {
+            $labels = [];
+            foreach ((new GradeRepository())->listForTenant($tenantId) as $g) {
+                foreach (['label_long', 'label_short', 'name', 'short_name'] as $k) {
+                    $v = mb_strtolower(trim((string) ($g[$k] ?? '')));
+                    if ($v !== '') {
+                        $labels[$v] = true;
+                    }
+                }
+            }
+
+            return $labels;
+        }) ?? [];
+        if ($grades === []) {
+            return [];
+        }
+        $rows = $this->safe(function () use ($userId): array {
+            $st = $this->pdo()->prepare(
+                "SELECT event_date, description FROM personnel_service_history
+                 WHERE user_id = ? AND event_type = 'promotion' ORDER BY event_date DESC, id DESC LIMIT 20"
+            );
+            $st->execute([$userId]);
+
+            return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }) ?? [];
+        $out = [];
+        foreach ($rows as $r) {
+            if (preg_match('/(?:^|·)\s*Grade\s*:\s*([^·]+)/u', (string) ($r['description'] ?? ''), $m) === 1
+                && isset($grades[mb_strtolower(trim($m[1]))])) {
+                $out[] = ['event_date' => (string) ($r['event_date'] ?? ''), 'description' => (string) ($r['description'] ?? '')];
+            }
+        }
+
+        return $out;
     }
 
     /** @return list<array<string, mixed>> */

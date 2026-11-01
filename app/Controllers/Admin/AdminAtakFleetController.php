@@ -197,6 +197,7 @@ class AdminAtakFleetController
             'reverse' => $reverse,
             'actions' => $this->fleet->recentActions(12, null, null, $scope),
             'tablesReady' => $this->fleet->ready(),
+            'steamReports' => $platform ? (new \App\Services\Account\SteamConflictService())->openReportSteams() : [],
         ]);
     }
 
@@ -241,7 +242,7 @@ class AdminAtakFleetController
                 'operator_callsign' => trim((string) ($p['callsign'] ?? '')),
                 'display_name' => trim((string) ($p['arma_player_name'] ?? '')) ?: trim((string) ($p['display_name'] ?? '')),
                 'mod_version' => (string) ($p['atak_version'] ?? ''),
-                'game_role' => (string) ($p['role'] ?? ''),
+                'game_role' => \App\Support\ArmaText::label((string) ($p['role'] ?? '')),
                 'game_faction' => (string) ($p['faction'] ?? ''),
                 'server_name' => (string) ($p['server_name'] ?? ''),
                 'last_seen_at' => $p['last_seen_at'] ?? null,

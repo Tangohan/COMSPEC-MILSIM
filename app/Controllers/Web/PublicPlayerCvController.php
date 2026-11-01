@@ -12,6 +12,7 @@ use App\Repositories\UserPublicCvRepository;
 use App\Repositories\UserRepository;
 use App\Services\PublicCv\PublicCvDataLoader;
 use App\Support\CommunityMediaDetails;
+use App\Support\PublicCv\PublicCvBannerStorage;
 use App\Support\PublicCv\PublicCvPresenter;
 use App\Support\PublicCv\PublicCvSettings;
 
@@ -27,7 +28,13 @@ final class PublicPlayerCvController
     public function __construct(
         private ?UserPublicCvRepository $repository = null,
         private ?PublicCvDataLoader $loader = null,
+        private ?PublicCvBannerStorage $banners = null,
     ) {
+    }
+
+    private function banners(): PublicCvBannerStorage
+    {
+        return $this->banners ??= new PublicCvBannerStorage();
     }
 
     private function repo(): UserPublicCvRepository
@@ -66,6 +73,8 @@ final class PublicPlayerCvController
             'badge_url' => static fn (string $p): string => (new \App\Services\Personnel\QualificationBadgeStorageService())->publicUrl($p),
             'decoration_url' => static fn (string $p): string => (new \App\Services\Personnel\DecorationMotifStorageService())->publicUrl($p),
             'photo_url' => static fn (string $p): ?string => CommunityMediaDetails::publicUrl($p),
+            'asset_url' => static fn (string $p): string => asset_url($p),
+            'own_banner_url' => PublicCvBannerStorage::publicUrl(isset($settings['banner_path']) ? (string) $settings['banner_path'] : null),
             'locale' => function_exists('html_lang') ? substr((string) html_lang(), 0, 2) : 'fr',
         ]);
 
@@ -121,12 +130,19 @@ final class PublicPlayerCvController
             'bio' => (string) ($row['bio'] ?? ''),
             'sections' => PublicCvSettings::decodeSections(isset($row['sections_json']) ? (string) $row['sections_json'] : null),
         ];
+        $currentBanner = isset($row['banner_path']) && PublicCvBannerStorage::isStoredPath((string) $row['banner_path']) ? (string) $row['banner_path'] : null;
         if ($form['slug'] === '') {
             $form['slug'] = PublicCvSettings::normalizeSlug($callsign);
         }
         $errors = [];
 
         if ($request->isPost()) {
+            // Envoi plus lourd que la limite du serveur : PHP vide alors tout le formulaire (jeton compris).
+            if ($_POST === [] && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+                Session::flash('error', 'Image trop lourde : la bannière doit peser ' . (int) floor(PublicCvBannerStorage::effectiveMaxBytes() / (1024 * 1024)) . ' Mo au plus.');
+
+                return Response::redirect(url('account/page-publique'));
+            }
             if (!Csrf::validate(is_string($t = $request->input('_csrf_token')) ? $t : null)) {
                 Session::flash('error', 'Votre session a expiré. Rechargez la page et réessayez.');
 
@@ -153,12 +169,40 @@ final class PublicPlayerCvController
                 }
             }
 
+            // Bannière personnelle : nouvelle image ou retrait, contrôlée puis ré-encodée avant d’être publiée.
+            $newBanner = null;
+            $removeBanner = (string) $request->input('banner_remove', '0') === '1';
+            $upload = is_array($_FILES['banner'] ?? null) ? $_FILES['banner'] : [];
+            if ($errors === [] && (int) ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                if (!$repo->ensureBannerColumn()) {
+                    $errors['banner'] = 'Les bannières ne peuvent pas être enregistrées pour le moment. Réessayez plus tard.';
+                } else {
+                    $stored = $this->banners()->store($userId, $upload);
+                    if ($stored['error'] !== null) {
+                        $errors['banner'] = $stored['error'];
+                    }
+                    $newBanner = $stored['path'];
+                }
+            }
+
             if ($errors === []) {
                 try {
                     $repo->save($userId, $tenantId, $form['enabled'], $form['slug'], $form['bio'], PublicCvSettings::encodeSections($form['sections']));
                 } catch (\PDOException) {
                     $errors['slug'] = 'Cette adresse vient d’être prise par un autre joueur. Essayez une variante.';
                 }
+            }
+            if ($errors === [] && ($newBanner !== null || ($removeBanner && $currentBanner !== null))) {
+                try {
+                    $repo->setBannerPath($userId, $newBanner);
+                    $this->banners()->delete($currentBanner);
+                    $currentBanner = $newBanner;
+                } catch (\Throwable) {
+                    $errors['banner'] = 'La bannière n’a pas pu être enregistrée. Réessayez.';
+                }
+            }
+            if ($errors !== [] && $newBanner !== null && $newBanner !== $currentBanner) {
+                $this->banners()->delete($newBanner);
             }
             if ($errors === []) {
                 Session::flash('success', $form['enabled']
@@ -178,6 +222,8 @@ final class PublicPlayerCvController
             'publicCvErrors' => $errors,
             'publicCvReady' => $tenantId > 0,
             'publicCvBaseUrl' => url('joueur') . '/',
+            'publicCvBannerUrl' => PublicCvBannerStorage::publicUrl($currentBanner),
+            'publicCvBannerHint' => PublicCvBannerStorage::hintText(),
             'publicCvLiveUrl' => ($form['enabled'] && $row !== null && (int) ($row['enabled'] ?? 0) === 1 && (string) ($row['slug'] ?? '') !== '')
                 ? url('joueur/' . rawurlencode((string) $row['slug']))
                 : null,

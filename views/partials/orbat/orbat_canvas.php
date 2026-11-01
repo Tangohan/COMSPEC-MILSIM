@@ -467,7 +467,8 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                         </div>
                         <div>
                             <label for="orbat-ed-code" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Sigle ou code court</label>
-                            <input id="orbat-ed-code" type="text" maxlength="20" autocomplete="off" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                            <input id="orbat-ed-code" type="text" maxlength="20" autocomplete="off" aria-describedby="orbat-ed-code-help" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                            <p id="orbat-ed-code-help" class="mt-1 text-[11px] text-slate-500">Sert aussi de repère dans le code unité (le « B » de SOAR-B-A-1). Laissez vide : il est déduit du nom.</p>
                         </div>
                         <div>
                             <label for="orbat-ed-type" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Type sur l’organigramme</label>
@@ -1318,7 +1319,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         label.textContent = node.label || "—";
         const sub = document.createElement("div");
         sub.className = "orbat-node-sub";
-        sub.textContent = node.role || "—";
+        sub.textContent = unitCodeText(node);
         const meta = document.createElement("div");
         meta.className = "orbat-node-meta";
         var manningTxt = (typeof node.strengthFilled === "number" && typeof node.strengthTheoretical === "number" && node.strengthTheoretical > 0)
@@ -1464,7 +1465,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
             else banPh.classList.add("hidden");
         }
         if (el = document.getElementById("detail-name")) el.textContent = node.label || "—";
-        if (el = document.getElementById("detail-role")) el.textContent = node.role || "—";
+        if (el = document.getElementById("detail-role")) el.textContent = unitCodeText(node);
         if (el = document.getElementById("detail-type")) el.textContent = getChartDisplayLabel(node.type);
         if (el = document.getElementById("detail-status")) {
             el.textContent = node.adminStatusLabel
@@ -1692,14 +1693,22 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         fillEditForm(node);
     }
 
+    // Code unité hiérarchique (SOAR-B-A-1) et identifiant fixe (0042-0137) ; sinon le sigle saisi.
+    function unitCodeText(node) {
+        if (node && node.unitCode) {
+            return node.unitCode + (node.adminId ? " · " + node.adminId : "");
+        }
+        return (node && node.role) || "—";
+    }
+
     function nodeMatches(node, term) {
-        var s = [node.label, node.role, node.type, node.status, node.adminStatus, node.adminStatusLabel, node.leader, node.mission, node.structType].join(" ").toLowerCase();
+        var s = [node.label, node.role, node.unitCode, node.adminId, node.type, node.status, node.adminStatus, node.adminStatusLabel, node.leader, node.mission, node.structType].join(" ").toLowerCase();
         return s.indexOf(term) !== -1;
     }
 
     function cloneNodeFields(node, children) {
         return {
-            id: node.id, unitId: node.unitId, label: node.label, role: node.role, type: node.type, status: node.status,
+            id: node.id, unitId: node.unitId, label: node.label, role: node.role, unitCode: node.unitCode, adminId: node.adminId, type: node.type, status: node.status,
             strength: node.strength, leader: node.leader, mission: node.mission, commanderUserId: node.commanderUserId || 0,
             showOnPublicPage: node.showOnPublicPage !== false,
             structType: node.structType, maskMode: node.maskMode, staffMaskActive: node.staffMaskActive,
@@ -1800,7 +1809,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
             }
             card.innerHTML = "<div class=\"flex items-start justify-between gap-2\">" +
                 "<h3>" + escapeHtml(node.label || "—") + "</h3>" + badge + "</div>" +
-                "<p class=\"meta\">" + escapeHtml(node.role || "—") + " · " + (node.strength || 0) + " pax</p>" +
+                "<p class=\"meta\">" + escapeHtml(unitCodeText(node)) + " · " + (node.strength || 0) + " pax</p>" +
                 "<p class=\"meta\">Chef : " + escapeHtml(node.leader || "—") + "</p>" +
                 (mems ? "<div class=\"orbat-dir-members\">" + mems + "</div>" : "");
             card.addEventListener("click", function() { selectNode(node); });
@@ -1857,7 +1866,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
             }
             tr.innerHTML = "<td><button type=\"button\" class=\"text-left font-black uppercase tracking-wide hover:underline\" data-sheet-select=\"1\">" + escapeHtml(node.label || "—") + "</button></td>" +
                 "<td>" + typeCell + "</td>" +
-                "<td>" + escapeHtml(node.role || "—") + "</td>" +
+                "<td>" + escapeHtml(unitCodeText(node)) + "</td>" +
                 "<td>" + statusCell + "</td>" +
                 "<td>" + visCell + "</td>" +
                 "<td>" + (node.strength || 0) + "</td>" +

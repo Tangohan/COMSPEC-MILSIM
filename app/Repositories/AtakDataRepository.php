@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Support\LazyDatabaseConnection;
 use App\Support\SchemaReadyCache;
+use App\Support\ShortCache;
 
 use PDO;
 
@@ -270,6 +271,7 @@ class AtakDataRepository
             $this->pdo()->prepare(
                 'UPDATE atak_units SET status = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?'
             )->execute(['offline', $tenantId, $unitId]);
+            ShortCache::bump('units:' . $tenantId);
         } catch (\Throwable) {
         }
     }
@@ -316,6 +318,21 @@ class AtakDataRepository
     }
 
     public function getMarkers(int $tenantId, int $mapId, ?string $since = null): array
+    {
+        if ($since === null || $since === '') {
+            // Liste complète : lue par chaque sondage des joueurs et par chaque position reçue (arrivée sur PO).
+            // 2 s partagées entre requêtes, relue tout de suite après une écriture (génération du tenant).
+            return ShortCache::remember(
+                'markers:' . $tenantId . ':' . $mapId . ':' . ShortCache::gen('markers:' . $tenantId),
+                2,
+                fn (): array => $this->loadMarkers($tenantId, $mapId, null)
+            );
+        }
+
+        return $this->loadMarkers($tenantId, $mapId, $since);
+    }
+
+    private function loadMarkers(int $tenantId, int $mapId, ?string $since): array
     {
         try {
             $sql = 'SELECT id, layer_id, marker_data, created_at, updated_at FROM atak_markers WHERE tenant_id = ? AND map_id = ?';
@@ -367,6 +384,7 @@ class AtakDataRepository
         $stmt = $this->pdo()->prepare('INSERT INTO atak_markers (tenant_id, map_id, layer_id, marker_data, arma_name) VALUES (?, ?, ?, ?, ?)');
         $stmt->execute([$tenantId, $mapId, $layerId, $markerData, $armaName]);
         $id = (int) $this->pdo()->lastInsertId();
+        ShortCache::bump('markers:' . $tenantId);
         return $this->getMarkerById($tenantId, $id);
     }
 
@@ -409,6 +427,7 @@ class AtakDataRepository
                 }
             }
             $this->pdo()->prepare('UPDATE atak_markers SET layer_id = ?, marker_data = ? WHERE id = ?')->execute([$layerId, $markerData, $existing['id']]);
+            ShortCache::bump('markers:' . $tenantId);
 
             return $this->getMarkerById($tenantId, (int) $existing['id']);
         }
@@ -451,6 +470,7 @@ class AtakDataRepository
             $stmt = $this->pdo()->prepare('UPDATE atak_markers SET marker_data = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?');
             $stmt->execute([$markerData, $tenantId, $id]);
         }
+        ShortCache::bump('markers:' . $tenantId);
         return $this->getMarkerById($tenantId, $id);
     }
 
@@ -474,6 +494,7 @@ class AtakDataRepository
         }
         $del = $this->pdo()->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND id = ?');
         $del->execute([$tenantId, (int) $row['id']]);
+        ShortCache::bump('markers:' . $tenantId);
 
         return $del->rowCount() > 0;
     }
@@ -498,6 +519,7 @@ class AtakDataRepository
         }
         $del = $this->pdo()->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND id = ?');
         $del->execute([$tenantId, $id]);
+        ShortCache::bump('markers:' . $tenantId);
 
         return $del->rowCount() > 0;
     }
@@ -513,6 +535,7 @@ class AtakDataRepository
         $encoded = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $upd = $this->pdo()->prepare('UPDATE atak_markers SET marker_data = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?');
         $upd->execute([is_string($encoded) ? $encoded : '{"suppressed":true,"suppressed_by":"web"}', $tenantId, $id]);
+        ShortCache::bump('markers:' . $tenantId);
 
         return true;
     }
@@ -1673,6 +1696,7 @@ class AtakDataRepository
             isset($data['extra']) ? (is_string($data['extra']) ? $data['extra'] : json_encode($data['extra'])) : null,
         ]);
         $id = (int) $this->pdo()->lastInsertId();
+        ShortCache::bump('units:' . $tenantId);
         $row = $this->pdo()->prepare('SELECT * FROM atak_units WHERE id = ?');
         $row->execute([$id]);
         return $row->fetch(PDO::FETCH_ASSOC);
@@ -1764,6 +1788,7 @@ class AtakDataRepository
         }
         $params[] = $id;
         $this->pdo()->prepare('UPDATE atak_units SET ' . implode(', ', $updates) . ' WHERE id = ?')->execute($params);
+        ShortCache::bump('units:' . $tenantId);
 
         return $this->getUnitById($tenantId, $id);
     }
@@ -1775,6 +1800,7 @@ class AtakDataRepository
         }
         $stmt = $this->pdo()->prepare('DELETE FROM atak_units WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
+        ShortCache::bump('units:' . $tenantId);
 
         return $stmt->rowCount() > 0;
     }
@@ -2539,17 +2565,26 @@ class AtakDataRepository
     public function getPings(int $tenantId, int $mapId, int $limit = 50): array
     {
         $limit = max(1, min($limit, 200));
-        $stmt = $this->pdo()->prepare(
-            'SELECT * FROM atak_pings WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ' . $limit
-        );
-        $stmt->execute([$tenantId, $mapId]);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Sondé toutes les 1,6 s par chaque joueur carte ouverte : 2 s partagées, relu après un ajout ou un retrait.
+        return ShortCache::remember(
+            'pings:' . $tenantId . ':' . $mapId . ':' . $limit . ':' . ShortCache::gen('pings:' . $tenantId),
+            2,
+            function () use ($tenantId, $mapId, $limit): array {
+                $stmt = $this->pdo()->prepare(
+                    'SELECT * FROM atak_pings WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ' . $limit
+                );
+                $stmt->execute([$tenantId, $mapId]);
+
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            }
+        );
     }
 
     public function addPing(int $tenantId, int $mapId, string $author, float $posX, float $posY, string $message): array
     {
         $this->pdo()->prepare('INSERT INTO atak_pings (tenant_id, map_id, author, pos_x, pos_y, message) VALUES (?, ?, ?, ?, ?, ?)')->execute([$tenantId, $mapId, $author, $posX, $posY, $message]);
+        ShortCache::bump('pings:' . $tenantId);
         $id = (int) $this->pdo()->lastInsertId();
         $stmt = $this->pdo()->prepare('SELECT * FROM atak_pings WHERE id = ?');
         $stmt->execute([$id]);
@@ -2560,6 +2595,7 @@ class AtakDataRepository
     {
         $stmt = $this->pdo()->prepare('DELETE FROM atak_pings WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
+        ShortCache::bump('pings:' . $tenantId);
 
         return $stmt->rowCount() > 0;
     }
@@ -2991,6 +3027,7 @@ class AtakDataRepository
              WHERE tenant_id = ? AND map_id = ? AND LOWER(call_sign) = LOWER(?)'
         );
         $stmt->execute(['offline', $tenantId, $mapId, $callSign]);
+        ShortCache::bump('units:' . $tenantId);
 
         return $stmt->rowCount() > 0;
     }

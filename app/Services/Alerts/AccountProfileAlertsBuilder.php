@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Alerts;
 
-use App\Services\Profile\RecruitmentPresetPayloadService;
+use App\Services\Profile\CandidateRpSnapshotService;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\UserRepository;
 
@@ -32,7 +32,7 @@ final class AccountProfileAlertsBuilder
         }
 
         $personnelProfile = $this->personnelProfiles->getByUserId($userId) ?? [];
-        $missingRp = RecruitmentPresetPayloadService::personnelRpDossierNeedsAttention($personnelProfile);
+        $missingRp = CandidateRpSnapshotService::personnelRpDossierNeedsAttention($personnelProfile);
         $missingMedia = (new \App\Services\Media\MissingUserMediaScanner())->missingKindsForUser($user, $personnelProfile);
 
         $out = [];

@@ -8,9 +8,12 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Repositories\AuditLogRepository;
 use App\Repositories\ContentReportRepository;
+use App\Repositories\MaintenanceRepository;
 use App\Repositories\ModerationArtifactRepository;
+use App\Repositories\PlatformAlertRepository;
 use App\Repositories\TenantAnalyticsRepository;
 use App\Services\Admin\AdminDashboardMetricsService;
+use App\Services\Admin\PlatformHealthDigest;
 use App\Services\Audit\AuditAction;
 
 class SystemDashboardController
@@ -21,7 +24,9 @@ class SystemDashboardController
         private ?ContentReportRepository $contentReports = null,
         private ?ModerationArtifactRepository $moderationArtifacts = null,
         private ?TenantAnalyticsRepository $tenantAnalytics = null,
+        private ?PlatformHealthDigest $health = null,
     ) {
+        $this->health ??= new PlatformHealthDigest();
         $this->metrics ??= new AdminDashboardMetricsService();
         $this->auditLogs ??= new AuditLogRepository();
         $this->contentReports ??= new ContentReportRepository();
@@ -31,6 +36,11 @@ class SystemDashboardController
 
     public function index(Request $request, array $params = []): Response
     {
+        // Onglets d'exploitation : la console garde sa propre double vérification.
+        if (in_array((string) $request->query('onglet', ''), SystemOpsConsoleController::TABS, true)) {
+            return (new SystemOpsConsoleController())->index($request, $params);
+        }
+
         $metrics = $this->metrics->getSystemMetrics();
         $recent = [];
         $recentError = null;
@@ -98,9 +108,34 @@ class SystemDashboardController
             $adminPlatformUsagePreview['error'] = 'L’aperçu d’usage sur 7 jours est momentanément indisponible.';
         }
 
+        // Alertes et maintenances en cours (repris de l'ancienne synthèse opérationnelle).
+        $activeAlerts = [];
+        try {
+            $activeAlerts = (new PlatformAlertRepository())->listActiveForDisplay();
+        } catch (\Throwable) {
+            $activeAlerts = [];
+        }
+        $maintenanceCounts = ['active' => 0, 'planned' => 0];
+        try {
+            $maintenance = new MaintenanceRepository();
+            if ($maintenance->tableExists()) {
+                foreach ($maintenance->listAll() as $row) {
+                    $maintenanceCounts['active'] += (int) ($row['is_enabled'] ?? 0) === 1 ? 1 : 0;
+                    $maintenanceCounts['planned'] += (string) ($row['starts_at'] ?? '') !== '' || (string) ($row['ends_at'] ?? '') !== '' ? 1 : 0;
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        $healthRows = $this->health->rows();
+
         return Response::view('layout.main', [
             'content' => 'admin.system.dashboard',
-            'title' => 'Administration plateforme',
+            'adminHealthRows' => $healthRows,
+            'adminHealthSummary' => PlatformHealthDigest::summarize($healthRows),
+            'adminActiveAlerts' => $activeAlerts,
+            'adminMaintenanceCounts' => $maintenanceCounts,
+            'title' => 'Pilotage du site',
             'adminKpis' => $metrics['kpis'],
             'adminKpiBlockError' => $metrics['blockError'],
             'adminRecentActivity' => $recent,
@@ -119,7 +154,7 @@ class SystemDashboardController
             'adminAuditRecentTenant' => $adminAuditRecentTenant,
             'adminAuditModerationError' => $adminAuditModerationError,
             'adminPlatformUsagePreview' => $adminPlatformUsagePreview,
-            'backOfficePageCss' => ['platform-admin.css'],
+            'backOfficePageCss' => ['platform-admin.css', 'ops-console.css'],
         ]);
     }
 }

@@ -20,7 +20,7 @@ $pageBody = isset($body) && trim((string) $body) !== ''
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex,nofollow">
     <title><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <?php $tailwindBaseUrl = function_exists('url') ? url('') : ''; require base_path('views/partials/tailwind_cdn_or_build.php'); ?>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link href="<?= htmlspecialchars($base) ?>/assets/css/styles.css" rel="stylesheet">
     <style>

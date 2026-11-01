@@ -15,15 +15,14 @@ use App\Repositories\UserRepository;
 use App\Repositories\UserLegalIdentityRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\PersonnelProfileRepository;
-use App\Repositories\RecruitmentPresetRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserUiPreferencesRepository;
 use App\Repositories\UserProfileDisplaySettingsRepository;
 use App\Services\Email\EmailEvents;
 use App\Support\TenantEmailKind;
-use App\Services\Profile\RecruitmentPresetPayloadService;
 use App\Services\Profile\UserUiPreferencesValidationService;
 use App\Services\User\UserProfileSlugService;
+use App\Services\Account\SteamConflictService;
 use App\Services\Steam\SteamOpenIdService;
 use App\Services\Steam\SteamWebApiService;
 use App\Support\SteamId;
@@ -43,8 +42,6 @@ class AccountController
         private UserLegalIdentityRepository $userLegalIdentityRepository,
         private UserProfileRepository $userProfileRepository,
         private PersonnelProfileRepository $personnelProfileRepository,
-        private RecruitmentPresetRepository $recruitmentPresetRepository,
-        private RecruitmentPresetPayloadService $recruitmentPresetPayloadService,
         private UserUiPreferencesRepository $userUiPreferencesRepository,
         private UserNotificationPreferencesRepository $userNotificationPreferencesRepository,
         private UserUiPreferencesValidationService $userUiPreferencesValidationService,
@@ -125,7 +122,23 @@ class AccountController
             'devices_total' => count($atakDevices),
         ];
 
+        // Accueil du profil : s'ouvre seul à la première visite d'un nouveau membre, puis reste une carte discrète.
+        $profileWelcome = null;
+        try {
+            $welcomeJourney = new \App\Services\Account\ProfileWelcomeJourney();
+            $profileWelcome = $welcomeJourney->snapshot($accountUser);
+            $isNewMember = \App\Services\Game\FirstLoginGameLinkGate::isNewMember($accountUser);
+            if (\App\Services\Account\ProfileWelcomeService::shouldAutoOpen($profileWelcome['steps'], $profileWelcome['state'], $isNewMember)) {
+                $welcomeJourney->save($uid, \App\Services\Account\ProfileWelcomeService::moveTo($profileWelcome['state'], $profileWelcome['resume']));
+
+                return Response::redirect(\App\Services\Account\ProfileWelcomeJourney::stepUrl($profileWelcome['resume']));
+            }
+        } catch (\Throwable) {
+            $profileWelcome = null;
+        }
+
         return $this->accountView('account.index', 'Mon compte', [
+            'profileWelcome' => $profileWelcome,
             'accountYearReview' => $this->yearReviewCard($tenantId, $uid),
             'accountUser' => $accountUser,
             'accountProfile' => $accountProfile,
@@ -464,7 +477,15 @@ class AccountController
 
                     return Response::redirect(url('account/preferences'));
                 }
-                $publicName = \App\Support\UserPublicName::normalize((string) $request->input('public_name', ''));
+                // Une saisie ne prouve rien : un Steam déjà sur le compte d'une autre personne ne se recopie pas ici.
+                if ($resolvedSteam !== null
+                    && $resolvedSteam !== SteamId::normalize((string) ($user['steam_id'] ?? ''))
+                    && (new SteamConflictService())->holders($resolvedSteam, (string) ($user['email'] ?? '')) !== []) {
+                    Session::flash('error', 'Ce compte Steam est déjà relié à un autre compte Athena. S’il est à vous, reliez-le avec le bouton « Se connecter avec Steam » : la connexion Steam prouve qu’il vous appartient.');
+
+                    return Response::redirect(url('account/preferences'));
+                }
+                $publicName =\App\Support\UserPublicName::normalize((string) $request->input('public_name', ''));
                 $publicNameError = \App\Support\UserPublicName::validationError($publicName);
                 if ($publicNameError !== null) {
                     Session::flash('error', __($publicNameError));
@@ -504,6 +525,9 @@ class AccountController
                 } catch (\Throwable) {
                 }
                 $language = strtolower(trim((string) $request->input('language')));
+                // normalize() ramène toute valeur inconnue au français : on enregistre la langue normalisée,
+                // jamais la saisie brute (isSupported() seul laissait passer « xx »).
+                $language = \App\Services\I18n\LocaleService::normalize($language);
                 if (!\App\Services\I18n\LocaleService::isSupported($language)) {
                     $language = 'fr';
                 }
@@ -581,6 +605,8 @@ class AccountController
             'uiThemeSync' => Session::getFlash('ui_theme_sync'),
             'timezoneSuggestions' => $this->timezoneSuggestions(),
             'errors' => $errors,
+            // Après une erreur de saisie, le formulaire garde ce qui a été tapé.
+            'old' => $errors !== [] ? $request->all() : [],
             'success' => $success,
             'error' => $error,
             'steamWebConfigured' => $this->steamWebApiService->isConfigured(),
@@ -893,13 +919,6 @@ class AccountController
             'group' => 'Intégration',
         ];
 
-        $items[] = [
-            'key' => EmailEvents::SSE_ANALYST_DIGEST,
-            'label' => 'Point quotidien renseignement SSE',
-            'hint' => 'Résumé des rapprochements à trancher, signaux ouverts et nouvelles fiches terrain pour votre communauté.',
-            'group' => 'Renseignement SSE',
-        ];
-
         $recrutementItems = [
             [
                 'key' => EmailEvents::RECRUITMENT_OPENING_PUBLISHED_STAFF,
@@ -967,6 +986,24 @@ class AccountController
             'label' => 'Mises à jour de dossiers (équipe RH / effectifs)',
             'hint' => 'Lorsqu’un autre membre voit son grade, son affectation ou sa fonction modifié dans la communauté.',
             'group' => 'Dossier personnel',
+        ];
+        $items[] = [
+            'key' => EmailEvents::PERSONNEL_CORRECTION_REQUEST_STAFF,
+            'label' => 'Demandes de correction de dossier (équipe)',
+            'hint' => 'Lorsqu’un membre demande la correction de son dossier personnel.',
+            'group' => 'Dossier personnel',
+        ];
+        $items[] = [
+            'key' => EmailEvents::PERSONNEL_CORRECTION_DECISION,
+            'label' => 'Réponse à ma demande de correction',
+            'hint' => 'Lorsque l’équipe accepte ou refuse la correction que vous avez demandée.',
+            'group' => 'Dossier personnel',
+        ];
+        $items[] = [
+            'key' => 'cooperation.announcement',
+            'label' => 'Missions en coopération avec d’autres communautés',
+            'hint' => 'Annonces et rappels des missions menées avec une communauté partenaire.',
+            'group' => 'Coopération',
         ];
 
         $encadrement = 'Messages de l’encadrement';
@@ -1164,14 +1201,20 @@ class AccountController
         $personnelProfile = $this->personnelProfileRepository->getByUserId((int) $user['id']);
         $portraitLocked = !empty($personnelProfile['character_portrait_locked']);
 
+        // Envoi depuis l'accueil du profil : retour à l'étape, avec le message, au lieu de la page habituelle.
+        $fromWelcome = $request->isPost() && $request->input('retour') === 'bienvenue';
+        $back = $fromWelcome
+            ? \App\Services\Account\ProfileWelcomeJourney::stepUrl(\App\Services\Account\ProfileWelcomeService::STEP_PORTRAIT)
+            : url('account/portrait');
+
         if ($request->isPost()) {
             if ($portraitLocked) {
                 Session::flash('error', 'Votre portrait opérateur est verrouillé par un administrateur de la communauté.');
-                return Response::redirect(url('account/portrait'));
+                return Response::redirect($back);
             }
             if (!Csrf::validate($request->input('_csrf_token'))) {
                 Session::flash('error', 'Session expirée.');
-                return Response::redirect(url('account/portrait'));
+                return Response::redirect($back);
             }
             $file = $_FILES['portrait'] ?? null;
             if (!$file || ($file['error'] ?? 0) !== UPLOAD_ERR_OK) {
@@ -1200,10 +1243,14 @@ class AccountController
                         $urlPath = 'uploads/portraits/' . $name;
                         $this->personnelProfileRepository->updatePortraitPath((int) $user['id'], $urlPath);
                         Session::flash('success', 'Portrait opérateur mis à jour.');
-                        return Response::redirect(url('account/portrait'));
+                        return Response::redirect($back);
                     }
                     $errors['portrait'] = ['Impossible d\'enregistrer le fichier.'];
                 }
+            }
+            if ($fromWelcome && $errors !== []) {
+                Session::flash('error', (string) ($errors['portrait'][0] ?? 'Le portrait n’a pas pu être enregistré.'));
+                return Response::redirect($back);
             }
         }
 
@@ -1414,7 +1461,7 @@ class AccountController
                 $secret = (string) ($pendingSetup['secret'] ?? '');
                 if ($password === '' || !password_verify($password, (string) ($user['password_hash'] ?? ''))) {
                     $errors['confirm_password'] = ['Mot de passe actuel incorrect.'];
-                } elseif (!$this->loginSecurityOtpService->totpService()->verify($secret, $code)) {
+                } elseif (!$this->loginSecurityOtpService->verifyTotpCode($uid, $secret, $code)) {
                     $errors['totp_code'] = ['Code incorrect. Vérifiez l’heure de votre appareil et réessayez.'];
                 } else {
                     $enc = $this->loginSecurityOtpService->encryptTotpSecret($secret);
@@ -1479,8 +1526,8 @@ class AccountController
                     $errors['confirm_password'] = ['Mot de passe actuel incorrect.'];
                 } else {
                     $secret = $this->loginSecurityOtpService->decryptUserTotpSecret($user);
-                    if ($secret === null || !$this->loginSecurityOtpService->totpService()->verify($secret, $code)) {
-                        $errors['totp_code'] = ['Code de l’application incorrect.'];
+                    if ($secret === null || !$this->loginSecurityOtpService->verifyTotpCode($uid, $secret, $code)) {
+                        $errors['totp_code'] = ['Code de l’application incorrect ou déjà utilisé.'];
                     } elseif ($loginOtpForcedByRole && !$emailLoginOtpEnabled) {
                         $errors['totp_enabled'] = ['Votre rôle impose une double vérification. Activez d’abord le code par e-mail avant de retirer l’application.'];
                     } else {
@@ -1620,190 +1667,6 @@ class AccountController
         ]);
     }
 
-    public function recruitmentPresets(Request $request, array $params = []): Response
-    {
-        $user = $this->authService->user();
-        if (!$user) {
-            return Response::redirect(url('login'));
-        }
-        $presets = $this->recruitmentPresetRepository->listForUser((int) $user['id']);
-        $success = Session::getFlash('success');
-        $error = Session::getFlash('error');
-
-        return $this->accountView('account.recruitment_presets', 'Profils de candidature', [
-            'presets' => $presets,
-            'success' => $success,
-            'error' => $error,
-        ]);
-    }
-
-    public function recruitmentPresetsCreate(Request $request, array $params = []): Response
-    {
-        $user = $this->authService->user();
-        if (!$user) {
-            return Response::redirect(url('login'));
-        }
-        $uid = (int) $user['id'];
-        $errors = [];
-
-        if ($request->isPost()) {
-            if (!Csrf::validate($request->input('_csrf_token'))) {
-                Session::flash('error', 'Session expirée.');
-                return Response::redirect(url('account/recruitment-presets/create'));
-            }
-            $label = trim((string) $request->input('label'));
-            if ($label === '') {
-                $errors['label'] = ['Nom du profil obligatoire.'];
-            }
-            $existing = $this->recruitmentPresetPayloadService->normalizeDecodedPayload([]);
-            $removeImage = (string) $request->input('remove_character_image') === '1';
-            $payload = $this->recruitmentPresetPayloadService->buildPayloadFromRequest($request, $existing, $removeImage);
-            $this->applyRecruitmentPresetImageUpload($uid, $payload, null, $errors);
-            if (empty($errors)) {
-                $this->recruitmentPresetRepository->create($uid, $label, $payload);
-                $this->applyPersonnelAutoFillFromRecruitmentPreset($uid, $payload);
-                Session::flash('success', 'Profil enregistré.');
-                return Response::redirect(url('account/recruitment-presets'));
-            }
-        }
-
-        return $this->accountView('account.recruitment_presets_form', 'Nouveau profil de candidature', [
-            'preset' => null,
-            'formAction' => url('account/recruitment-presets/create'),
-            'errors' => $errors,
-            'payloadDefaults' => $this->recruitmentPresetPayloadService->normalizeDecodedPayload([]),
-        ]);
-    }
-
-    public function recruitmentPresetsEdit(Request $request, array $params = []): Response
-    {
-        $user = $this->authService->user();
-        if (!$user) {
-            return Response::redirect(url('login'));
-        }
-        $uid = (int) $user['id'];
-        $id = (int) ($params['id'] ?? 0);
-        $row = $id > 0 ? $this->recruitmentPresetRepository->findForUser($id, $uid) : null;
-        if (!$row) {
-            Session::flash('error', 'Profil introuvable.');
-            return Response::redirect(url('account/recruitment-presets'));
-        }
-        $errors = [];
-
-        if ($request->isPost()) {
-            if (!Csrf::validate($request->input('_csrf_token'))) {
-                Session::flash('error', 'Session expirée.');
-                return Response::redirect(url('account/recruitment-presets/' . $id . '/edit'));
-            }
-            $label = trim((string) $request->input('label'));
-            if ($label === '') {
-                $errors['label'] = ['Nom du profil obligatoire.'];
-            }
-            $prevPayload = is_array($row['payload'] ?? null) ? $row['payload'] : [];
-            $existing = $this->recruitmentPresetPayloadService->normalizeDecodedPayload($prevPayload);
-            $removeImage = (string) $request->input('remove_character_image') === '1';
-            if ($removeImage) {
-                $prevUrl = is_array($existing['rp'] ?? null) ? trim((string) ($existing['rp']['image_url'] ?? '')) : '';
-                if ($prevUrl !== '') {
-                    $this->recruitmentPresetPayloadService->deleteCharacterImageFile($prevUrl);
-                }
-            }
-            $payload = $this->recruitmentPresetPayloadService->buildPayloadFromRequest($request, $existing, $removeImage);
-            $this->applyRecruitmentPresetImageUpload($uid, $payload, $existing, $errors);
-            if (empty($errors)) {
-                $this->recruitmentPresetRepository->update($id, $uid, $label, $payload);
-                $this->applyPersonnelAutoFillFromRecruitmentPreset($uid, $payload);
-                Session::flash('success', 'Profil mis à jour.');
-                return Response::redirect(url('account/recruitment-presets'));
-            }
-        }
-
-        return $this->accountView('account.recruitment_presets_form', 'Modifier le profil', [
-            'preset' => $row,
-            'formAction' => url('account/recruitment-presets/' . $id . '/edit'),
-            'errors' => $errors,
-            'payloadDefaults' => $this->recruitmentPresetPayloadService->normalizeDecodedPayload(is_array($row['payload'] ?? null) ? $row['payload'] : []),
-        ]);
-    }
-
-    public function recruitmentPresetsDelete(Request $request, array $params = []): Response
-    {
-        $user = $this->authService->user();
-        if (!$user) {
-            return Response::redirect(url('login'));
-        }
-        if (!$request->isPost()) {
-            return Response::redirect(url('account/recruitment-presets'));
-        }
-        if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée.');
-            return Response::redirect(url('account/recruitment-presets'));
-        }
-        $uid = (int) $user['id'];
-        $id = (int) ($params['id'] ?? 0);
-        if ($id < 1 || !$this->recruitmentPresetRepository->delete($id, $uid)) {
-            Session::flash('error', 'Suppression impossible.');
-        } else {
-            Session::flash('success', 'Profil supprimé.');
-        }
-
-        return Response::redirect(url('account/recruitment-presets'));
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     * @param array<string, mixed>|null $previousNormalized
-     * @param array<string, list<string>> $errors
-     */
-    /**
-     * @param array<string, mixed> $payload
-     */
-    private function applyPersonnelAutoFillFromRecruitmentPreset(int $userId, array $payload): void
-    {
-        $normalized = $this->recruitmentPresetPayloadService->normalizeDecodedPayload($payload);
-        $patch = $this->recruitmentPresetPayloadService->personnelAutoFillPatchFromPayload($normalized);
-        if ($patch === []) {
-            return;
-        }
-        $this->personnelProfileRepository->ensureRecord($userId);
-        $cur = $this->personnelProfileRepository->getByUserId($userId) ?? [];
-        $apply = [];
-        if (isset($patch['character_name']) && trim((string) ($cur['character_name'] ?? '')) === '') {
-            $apply['character_name'] = $patch['character_name'];
-        }
-        if (isset($patch['nationality']) && trim((string) ($cur['nationality'] ?? '')) === '') {
-            $apply['nationality'] = $patch['nationality'];
-        }
-        if ($apply !== []) {
-            $this->personnelProfileRepository->update($userId, $apply);
-        }
-    }
-
-    private function applyRecruitmentPresetImageUpload(int $userId, array &$payload, ?array $previousNormalized, array &$errors): void
-    {
-        $file = $_FILES['rp_character_image'] ?? null;
-        if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            return;
-        }
-        $res = $this->recruitmentPresetPayloadService->saveCharacterImage($userId, $file);
-        if (!$res['ok']) {
-            $errors['rp_character_image'] = [$res['error'] ?? 'Upload impossible.'];
-
-            return;
-        }
-        if ($previousNormalized !== null) {
-            $rp = is_array($previousNormalized['rp'] ?? null) ? $previousNormalized['rp'] : [];
-            $old = trim((string) ($rp['image_url'] ?? ''));
-            if ($old !== '') {
-                $this->recruitmentPresetPayloadService->deleteCharacterImageFile($old);
-            }
-        }
-        if (!isset($payload['rp']) || !is_array($payload['rp'])) {
-            $payload['rp'] = [];
-        }
-        $payload['rp']['image_url'] = $res['path'] ?? '';
-    }
-
     public function steamConnect(Request $request, array $params = []): Response
     {
         $user = $this->authService->user();
@@ -1827,8 +1690,11 @@ class AccountController
         $tenantId = (int) ($user['tenant_id'] ?? 0);
         $expected = (string) Session::get('steam_openid_state', '');
         $started = (int) Session::get('steam_openid_started', 0);
-        Session::forgetMany(['steam_openid_state', 'steam_openid_started']);
-        $back = url('dashboard');
+        $keep = (string) Session::get(SteamConflictController::SESSION_KEEP, '');
+        Session::forgetMany(['steam_openid_state', 'steam_openid_started', SteamConflictController::SESSION_KEEP]);
+        // Lancé depuis l'accueil du profil : retour à l'étape Steam plutôt qu'au tableau de bord.
+        $back = \App\Services\Account\ProfileWelcomeJourney::returnUrlFor(\App\Services\Account\ProfileWelcomeService::STEP_STEAM)
+            ?? url('dashboard');
         if ($tenantId < 1) {
             Session::flash('error', 'Communauté introuvable.');
 
@@ -1859,7 +1725,20 @@ class AccountController
 
             return Response::redirect($back);
         }
-        $taken = $this->userRepository->findBySteamIdForTenant($tenantId, $steamId);
+        // Steam en double : la connexion Steam qui vient d'aboutir est la preuve de possession.
+        if ($keep !== '' && $keep !== $steamId) {
+            Session::flash('error', 'Vous vous êtes connecté à Steam avec un autre compte que celui relié en double (qui se termine par ' . substr($keep, -4) . '). Rien n’a changé : déconnectez-vous de Steam puis recommencez avec le bon compte.');
+
+            return Response::redirect(url('account/steam-doublon'));
+        }
+        $conflicts = new SteamConflictService();
+        if ($conflicts->holders($steamId, (string) ($user['email'] ?? '')) !== []) {
+            $result = $conflicts->keepHere($user, $steamId);
+            Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+            return Response::redirect($result['ok'] ? $back : url('account/steam-doublon'));
+        }
+        $taken =$this->userRepository->findBySteamIdForTenant($tenantId, $steamId);
         if (is_array($taken) && (int) ($taken['id'] ?? 0) !== $uid) {
             Session::flash('error', 'Ce compte Steam est déjà associé à un autre membre de la communauté.');
 

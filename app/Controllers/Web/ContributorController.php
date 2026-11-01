@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\SiteContributorRepository;
+use App\Services\Community\ContributorShowcase;
 use App\Services\Auth\AuthService;
 use App\Support\UserPublicName;
 
@@ -29,7 +30,8 @@ final class ContributorController
         'support' => 'Support',
     ];
 
-    public function __construct(private ?SiteContributorRepository $repo = null)
+    /** @param array<string, mixed>|null $showcase contenu public déjà assemblé (tests) */
+    public function __construct(private ?SiteContributorRepository $repo = null, private ?array $showcase = null)
     {
     }
 
@@ -38,21 +40,16 @@ final class ContributorController
         $user = self::user();
         $ready = $this->ready();
         $mine = [];
-        $credits = [];
-        $leaders = [];
-        if ($ready) {
+        if ($ready && $user !== null) {
             try {
-                if ($user !== null) {
-                    foreach ($this->repo()->rolesOfUser((int) $user['id']) as $row) {
-                        $mine[(string) $row['role']] = $row;
-                    }
+                foreach ($this->repo()->rolesOfUser((int) $user['id']) as $row) {
+                    $mine[(string) $row['role']] = $row;
                 }
-                $credits = $this->repo()->publicCredits();
-                $leaders = $this->repo()->translationLeaders(8);
             } catch (\Throwable) {
                 $ready = false;
             }
         }
+        $showcase = $this->showcase ?? ContributorShowcase::load($ready ? $this->repo() : null);
         $want = (string) $request->query('role', '');
         $publicName = '';
         if ($user !== null) {
@@ -67,14 +64,18 @@ final class ContributorController
             'title' => __('site.contrib_meta_title'),
             'meta_description' => __('site.contrib_meta_description'),
             'marketingActive' => 'contribuer',
-            'marketingStyles' => [asset_url('assets/css/site-contribute.css')],
+            // Même famille que la page de dons : ses composants, plus les éléments propres à la page.
+            'marketingStyles' => [
+                asset_url('assets/css/site-support.css') . '?v=1',
+                asset_url('assets/css/site-contribute-page.css') . '?v=2',
+            ],
+            'marketingScripts' => [asset_url('assets/js/site-contribute.js') . '?v=2'],
             'contribUser' => $user,
             'contribPublicName' => $publicName,
             'contribCallsign' => trim((string) ($user['callsign'] ?? '')),
             'contribReady' => $ready,
             'contribMine' => $mine,
-            'contribCredits' => $credits,
-            'contribLeaders' => $leaders,
+            'contribShowcase' => $showcase,
             'contribWant' => in_array($want, SiteContributorRepository::ROLES, true) ? $want : '',
             'contribLang' => preg_replace('/[^a-z,\- ]/', '', strtolower((string) $request->query('lang', ''))) ?? '',
         ]);

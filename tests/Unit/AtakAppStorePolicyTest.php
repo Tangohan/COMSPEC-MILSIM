@@ -64,7 +64,7 @@ final class AtakAppStorePolicyTest extends TestCase
         $view = (string) file_get_contents($root . '/views/admin/atak/server_control.php');
         $routes = (string) file_get_contents($root . '/routes/web.php');
         self::assertStringContainsString('id="apps"', $view);
-        self::assertStringContainsString("controle-serveur/apps'", $view);
+        self::assertStringContainsString('name="app_<?= $h($aid) ?>"', $view);
         self::assertStringContainsString("'/back-office/atak/controle-serveur/apps'", $routes);
     }
 }

@@ -17,6 +17,12 @@ use App\Support\ComspecApiKeyAuth;
  */
 final class RateLimitMiddleware
 {
+    /** GET /api/* par joueur (compte du jeton jeu, sinon IP) et par minute : 15/s, ~4 fois l'usage normal. */
+    public const GAME_POLL_MAX_PER_MIN = 900;
+
+    /** GET /api/* par compte web et par minute : 25/s, de quoi garder trois onglets carte / Overwatch ouverts. */
+    public const WEB_POLL_MAX_PER_MIN = 1500;
+
     public function __construct(
         private FileRateLimiter $limiter = new FileRateLimiter()
     ) {
@@ -69,6 +75,20 @@ final class RateLimitMiddleware
             '/api/atak/terrain/contours',
         ], true)) {
             return [30, 60, 'rl:atak_terrain_overlay:' . $path . ':ip:' . $ip];
+        }
+
+        // Sondages GET de l'API pendant une partie : plafond large, seulement contre un client emballé (boucle sans
+        // pause, onglets multipliés). Usage normal mesuré : ~4 GET/s par joueur (COMSPEC Link), ~8 GET/s par poste
+        // web. Refus 429 + Retry-After : la DLL met le canal en attente (15 s, 30 s…), atak-socket.js en pause.
+        if ($method === 'GET' && str_starts_with($path, '/api/') && !$this->isPollCeilingExempt($path)) {
+            if (ComspecApiKeyAuth::extractPresentedKey() !== '') {
+                $gameUser = (int) (ComspecApiKeyAuth::matchedUserId() ?? 0);
+
+                return [self::GAME_POLL_MAX_PER_MIN, 60, 'rl:api_poll:game:' . ($gameUser > 0 ? 'u' . $gameUser : 'ip:' . $ip)];
+            }
+            if ($uid > 0) {
+                return [self::WEB_POLL_MAX_PER_MIN, 60, 'rl:api_poll:web:uid:' . $uid];
+            }
         }
 
         // Scraping / mirroring massif (GET) — invités uniquement ; bots SEO exemptés.
@@ -175,6 +195,21 @@ final class RateLimitMiddleware
         }
 
         return 'ip:' . $ip;
+    }
+
+    /** Tuiles, fichiers et sondes de vie : une carte qui se déplace en charge des dizaines d'un coup. */
+    private function isPollCeilingExempt(string $path): bool
+    {
+        if (in_array($path, ['/api/health', '/api/atak/ping', '/api/system/version', '/api/atak/version', '/api/atak/stream'], true)) {
+            return true;
+        }
+        foreach (['/api/atak/tiles', '/api/atak/terrain/', '/api/atak/map-photo/', '/api/music/stream/'] as $prefix) {
+            if (str_starts_with($path, $prefix)) {
+                return true;
+            }
+        }
+
+        return str_ends_with($path, '/file') || str_ends_with($path, '.png') || str_ends_with($path, '.jpg');
     }
 
     private function isExemptGetPath(string $path): bool

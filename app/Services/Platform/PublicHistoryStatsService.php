@@ -14,6 +14,10 @@ use PDO;
  * Portée « platform » = toute la plateforme ; portée communauté = un tenant précis (réservée
  * à ses membres connectés, qui voient alors aussi ses opérations marquantes et ses articles publiés).
  *
+ * Kilomètres : distances comptées en jeu par le serveur Arma (app Distances de l’ATAK natif, table
+ * atak_distance_stats : à pied, véhicule terrestre, air, mer, chute libre). Heures de jeu : temps de jeu
+ * remonté par le serveur et les téléphones (atak_screen_time, type « play »).
+ *
  * Une table absente ou vide vaut 0 / liste vide — jamais une valeur estimée. Le résultat est
  * mis en cache 10 minutes dans storage/cache (un fichier par portée).
  */
@@ -22,6 +26,15 @@ final class PublicHistoryStatsService
     public const CACHE_TTL = 600;
 
     private const HIGHLIGHTS_LIMIT = 6;
+
+    /** Mode de déplacement → colonne (mètres) d’atak_distance_stats. */
+    public const DISTANCE_MODES = [
+        'foot' => 'foot_m',
+        'land' => 'land_m',
+        'air' => 'air_m',
+        'sea' => 'sea_m',
+        'halo' => 'halo_m',
+    ];
 
     public function __construct(
         private ?PDO $pdo = null,
@@ -39,7 +52,12 @@ final class PublicHistoryStatsService
      *   flight_hours: int,
      *   academy_validated: int,
      *   orbat_units: int,
-     *   years: list<array{year: string, operations: int, members: int, flight_hours: int}>,
+     *   communities: int,
+     *   distance_km: int,
+     *   distance_modes: array<string, int>,
+     *   distance_sessions: int,
+     *   play_hours: int,
+     *   years: list<array{year: string, operations: int, members: int, flight_hours: int, distance_km: int}>,
      *   highlights: list<array{kind: string, date: string, title: string, value: ?int}>
      * }
      */
@@ -69,7 +87,12 @@ final class PublicHistoryStatsService
      *   flight_hours: int,
      *   academy_validated: int,
      *   orbat_units: int,
-     *   years: list<array{year: string, operations: int, members: int, flight_hours: int}>,
+     *   communities: int,
+     *   distance_km: int,
+     *   distance_modes: array<string, int>,
+     *   distance_sessions: int,
+     *   play_hours: int,
+     *   years: list<array{year: string, operations: int, members: int, flight_hours: int, distance_km: int}>,
      *   highlights: list<array{kind: string, date: string, title: string, value: ?int}>
      * }
      */
@@ -118,6 +141,31 @@ final class PublicHistoryStatsService
 
         $units = $this->int('SELECT COUNT(*) FROM units WHERE 1 = 1' . $t(), $p()) ?? 0;
 
+        // Communautés : espaces créés, hors espace technique par défaut de la plateforme.
+        $communities = $tenantId !== null ? 1 : ($this->int(
+            "SELECT COUNT(*) FROM tenants WHERE COALESCE(slug, '') <> 'default'"
+        ) ?? $this->int('SELECT COUNT(*) FROM tenants') ?? 0);
+
+        // Kilomètres parcourus en jeu, par mode de déplacement (mètres cumulés → km entiers).
+        $sums = [];
+        foreach (self::DISTANCE_MODES as $mode => $col) {
+            $sums[] = "COALESCE(SUM({$col}), 0) AS {$mode}";
+        }
+        $row = ($this->rows('SELECT COUNT(*) AS sessions, ' . implode(', ', $sums) . ' FROM atak_distance_stats WHERE 1 = 1' . $t(), $p()) ?? [])[0] ?? [];
+        $modes = [];
+        $totalM = 0;
+        foreach (array_keys(self::DISTANCE_MODES) as $mode) {
+            $m = max(0, (int) ($row[$mode] ?? 0));
+            $modes[$mode] = intdiv($m, 1000);
+            $totalM += $m;
+        }
+
+        // Heures de jeu : lignes « play / total » (une par membre et par jour).
+        $playSeconds = $this->int(
+            "SELECT COALESCE(SUM(seconds), 0) FROM atak_screen_time WHERE kind = 'play' AND item_key = 'total'" . $t(),
+            $p()
+        ) ?? 0;
+
         return [
             'scope' => $tenantId === null ? 'platform' : 'community',
             'community_name' => $communityName,
@@ -127,15 +175,20 @@ final class PublicHistoryStatsService
             'flight_hours' => intdiv(max(0, $flightSeconds), 3600),
             'academy_validated' => $academy,
             'orbat_units' => $units,
+            'communities' => $communities,
+            'distance_km' => intdiv($totalM, 1000),
+            'distance_modes' => $modes,
+            'distance_sessions' => max(0, (int) ($row['sessions'] ?? 0)),
+            'play_hours' => intdiv(max(0, $playSeconds), 3600),
             'years' => $this->years($tenantId, $now),
             'highlights' => $tenantId === null ? [] : $this->highlights($tenantId, $now),
         ];
     }
 
     /**
-     * Frise annuelle : opérations jouées, nouveaux membres et heures de vol par année.
+     * Frise annuelle : opérations jouées, nouveaux membres, heures de vol et kilomètres par année.
      *
-     * @return list<array{year: string, operations: int, members: int, flight_hours: int}>
+     * @return list<array{year: string, operations: int, members: int, flight_hours: int, distance_km: int}>
      */
     private function years(?int $tenantId, string $now): array
     {
@@ -158,7 +211,13 @@ final class PublicHistoryStatsService
             $p()
         );
 
-        $all = array_unique([...array_keys($ops), ...array_keys($members), ...array_keys($flight)]);
+        $distance = $this->pairs(
+            'SELECT SUBSTR(day, 1, 4) AS y, COALESCE(SUM(' . implode(' + ', self::DISTANCE_MODES) . '), 0) AS n
+             FROM atak_distance_stats WHERE 1 = 1' . $t . ' GROUP BY SUBSTR(day, 1, 4)',
+            $p()
+        );
+
+        $all = array_unique([...array_keys($ops), ...array_keys($members), ...array_keys($flight), ...array_keys($distance)]);
         $all = array_values(array_filter(array_map('strval', $all), static fn (string $y): bool => preg_match('/^\d{4}$/', $y) === 1));
         sort($all);
 
@@ -169,6 +228,7 @@ final class PublicHistoryStatsService
                 'operations' => $ops[$year] ?? 0,
                 'members' => $members[$year] ?? 0,
                 'flight_hours' => intdiv($flight[$year] ?? 0, 3600),
+                'distance_km' => intdiv($distance[$year] ?? 0, 1000),
             ];
         }
 
@@ -321,7 +381,7 @@ final class PublicHistoryStatsService
             return null;
         }
         $data = json_decode((string) @file_get_contents($path), true);
-        if (!is_array($data) || !isset($data['scope'], $data['years'], $data['highlights'])) {
+        if (!is_array($data) || !isset($data['scope'], $data['years'], $data['highlights'], $data['distance_modes'])) {
             return null;
         }
 

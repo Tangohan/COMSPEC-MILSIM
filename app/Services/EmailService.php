@@ -60,6 +60,15 @@ final class EmailService
             // Fiche sans compte : personne derrière l’adresse, rien à envoyer.
             return true;
         }
+        if (MailBudget::isDisabled($eventCode)) {
+            // Types coupés pour de bon (SSE) : jamais envoyés, même par le compte d'envoi d'une communauté.
+            try {
+                $this->deliveryRepository->insert($tenantId, $eventCode, trim($to), $subject, 'none', 'muted', null, null, $payloadSummary, $campaignId);
+            } catch (\Throwable) {
+            }
+
+            return true;
+        }
         if (!$fromQueue && !$forceImmediate && filter_var((string) env('MAIL_QUEUE', ''), FILTER_VALIDATE_BOOLEAN)) {
             try {
                 $repo = \App\Core\Container::get(\App\Repositories\AsyncJobRepository::class);
@@ -1807,42 +1816,6 @@ final class EmailService
             $tenantId,
             null,
             ['purpose' => 'training_forgotten_docs_digest']
-        );
-    }
-
-    /**
-     * Digest quotidien SSE aux analystes / gestionnaires du portail.
-     */
-    public function sendSseAnalystDigest(
-        string $to,
-        string $staffDisplayName,
-        string $tenantName,
-        int $pendingSuggestions,
-        int $openSignals,
-        int $newPersons,
-        int $interestOpen,
-        string $workspaceUrl,
-        string $suggestionsUrl,
-        int $tenantId
-    ): bool {
-        return $this->sendTemplated(
-            EmailEvents::SSE_ANALYST_DIGEST,
-            'sse_analyst_digest',
-            $to,
-            'Point renseignement SSE — ' . $tenantName,
-            [
-                'staffDisplayName' => $staffDisplayName,
-                'tenantName' => $tenantName,
-                'pendingSuggestions' => $pendingSuggestions,
-                'openSignals' => $openSignals,
-                'newPersons' => $newPersons,
-                'interestOpen' => $interestOpen,
-                'workspaceUrl' => $workspaceUrl,
-                'suggestionsUrl' => $suggestionsUrl,
-            ],
-            $tenantId,
-            null,
-            ['purpose' => 'sse_analyst_digest']
         );
     }
 

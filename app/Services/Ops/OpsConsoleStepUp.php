@@ -136,7 +136,7 @@ final class OpsConsoleStepUp
         if ($this->method($user) === 'totp') {
             $fresh = $this->users->findById($userId, null) ?? $user;
             $secret = $this->otp->decryptUserTotpSecret($fresh);
-            $ok = $secret !== null && $this->otp->totpService()->verify($secret, $code);
+            $ok = $secret !== null && $this->otp->verifyTotpCode($userId, $secret, $code);
         } else {
             $p = Session::get(self::PENDING_KEY);
             if (is_array($p) && (int) ($p['user_id'] ?? 0) === $userId && (int) ($p['expires_at'] ?? 0) >= time()) {

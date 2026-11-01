@@ -35,6 +35,29 @@ class Session
     ];
 
     /**
+     * Sondages GET des pages web pendant une partie (carte ATAK web, Overwatch, page téléphone) : une quinzaine de
+     * lectures partent ensemble toutes les 3 à 5 s avec le cookie de session. Sans lecture seule, le verrou du
+     * fichier de session les faisait passer une par une, chacune occupant un processus PHP-FPM en attendant.
+     * Ces routes relisent tout (droits, communauté) à chaque appel et n'enregistrent rien en session.
+     *
+     * @var list<string>
+     */
+    private const BROWSER_POLL_GET_PREFIXES = [
+        '/api/atak/',
+        '/api/units',
+        '/api/chat',
+        '/api/pings',
+        '/api/cas',
+        '/api/nine-line',
+        '/api/map-shapes',
+        '/api/recon/',
+        '/api/intel/',
+        '/api/iff/',
+        '/api/sse/persons',
+        '/api/mission-cycle/current',
+    ];
+
+    /**
      * Sous ces préfixes, routes gardées en écriture (appairage, pages d'administration).
      *
      * @var list<string>
@@ -58,15 +81,12 @@ class Session
         if (in_array($path, self::READ_ONLY_GET_PATHS, true)) {
             return true;
         }
-        if (!$gameKeyPresented) {
-            return false;
-        }
         foreach (self::GAME_READ_WRITE_PREFIXES as $prefix) {
             if (str_starts_with($path, $prefix)) {
                 return false;
             }
         }
-        foreach (self::GAME_READ_ONLY_GET_PREFIXES as $prefix) {
+        foreach ($gameKeyPresented ? self::GAME_READ_ONLY_GET_PREFIXES : self::BROWSER_POLL_GET_PREFIXES as $prefix) {
             if (str_starts_with($path, $prefix)) {
                 return true;
             }

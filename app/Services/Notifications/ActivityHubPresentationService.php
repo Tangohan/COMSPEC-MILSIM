@@ -53,6 +53,13 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            'steam_removed_by_owner' => [
+                'title' => 'Compte Steam retiré de votre compte',
+                'detail' => 'Ce compte Steam était aussi relié à un autre compte Athena, dont le titulaire a prouvé qu’il lui appartient en se connectant à Steam. S’il est bien à vous, reliez-le de nouveau avec « Se connecter avec Steam ».',
+                'href' => url('account/preferences') . '#section-liaisons',
+                'unread' => $unread,
+                'at' => $at,
+            ],
             'event_rsvp_change' => [
                 'title' => 'Participation mise à jour',
                 'detail' => trim((string) ($payload['participant'] ?? 'Un membre')) . ' — '
