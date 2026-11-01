@@ -13,7 +13,9 @@ if (isNull _display) exitWith {};
 uiNamespace setVariable ["COMSPEC_NDA_Lang", _lang];
 
 private _pack = [_lang] call comspec_overwatch_connect_fnc_ndaTexts;
-_pack params ["_title", "_subtitle", "_body", "_accept", "_decline", "_footer", "_legal"];
+_pack params ["_title", "_subtitle", "_body", "_accept", "_decline", "_footer", "_legal", ["_close", "Fermer"]];
+// Licence déjà acceptée (relecture) ou en mission : le second bouton ferme simplement la note.
+if ((([] call comspec_overwatch_connect_fnc_licenceStatus) select 1) || {!isNull findDisplay 46}) then { _decline = _close; };
 
 (_display displayCtrl 9510) ctrlSetStructuredText parseText ((_title) call comspec_overwatch_connect_fnc_tr);
 (_display displayCtrl 9511) ctrlSetStructuredText parseText ((_subtitle) call comspec_overwatch_connect_fnc_tr);

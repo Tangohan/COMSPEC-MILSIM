@@ -1,6 +1,7 @@
 /*
     Barre des outils TRAIT et DESSIN LIBRE de la carte (fn_pageMap, sous la consigne) : couleur, épaisseur,
     flèche, ROUTES (trait collé aux routes, fn_roadPath), ZONE (forme fermée, dessin libre), ANNULER (mon dernier trait) et EFFACER MES TRAITS.
+    ROUTES coché : troisième rangée RAPIDE / COURT, voies préférées (TOUTES VOIES, GRANDS AXES, DISCRET) et SANS PONT.
     Réglages gardés dans le profil (lus par fn_markerStroke et fn_strokeDraw).
     Params : [[x, y, largeur disponible]]
 */
@@ -24,7 +25,10 @@ private _cw = _h / _ratio;
 private _widths = [["FIN", 1], ["MOY.", 2], ["ÉPAIS", 3]];
 private _ww = _fs * 2.6 / _ratio * 0.62;
 private _row1W = (count _cols) * (_cw + _gap) + (count _widths) * (_ww + _gap) + _gap;
-private _bg = ["COMSPEC_RscMapPanel", [_x0 - _gap, _y0 - _gap, (_row1W min _wMax) + _gap, _h * 2 + _gap * 3]] call _mk;
+// TRAIT avec ROUTES : troisième rangée des réglages d'itinéraire.
+private _roadRow = !_draw && {profileNamespace getVariable ["COMSPEC_ATAK_DrawRoads", false]};
+private _rows = [2, 3] select _roadRow;
+private _bg = ["COMSPEC_RscMapPanel", [_x0 - _gap, _y0 - _gap, (_row1W min _wMax) + _gap, _h * _rows + _gap * (_rows + 1)]] call _mk;
 _bg ctrlSetBackgroundColor [0.025, 0.030, 0.027, 0.9];
 private _px = _x0;
 {
@@ -67,4 +71,29 @@ private _bw = (((_row1W min _wMax) - _gap * ((count _btns) - 1)) / (count _btns)
     _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
     _b ctrlAddEventHandler ["ButtonClick", _code];
 } forEach _btns;
+if (_roadRow) then {
+    // Itinéraire : le plus rapide (temps selon la voie) ou le plus court, voies préférées, ponts évités (fn_roadPath).
+    private _y2 = _y1 + _h + _gap;
+    private _rm = profileNamespace getVariable ["COMSPEC_ATAK_RoadMode", "FAST"];
+    private _rp = profileNamespace getVariable ["COMSPEC_ATAK_RoadPref", "ALL"];
+    private _nb = profileNamespace getVariable ["COMSPEC_ATAK_RoadNoBridge", false];
+    private _prefs = ["ALL", "MAIN", "QUIET"];
+    private _pi = (_prefs find _rp) max 0;
+    private _rbtns = [
+        ["RAPIDE", ["COMSPEC_ATAK_RoadMode", str "FAST"] call _set, _rm isNotEqualTo "SHORT", "Itinéraire le plus rapide : temps estimé selon la voie (grands axes plus vite que les pistes)"],
+        ["COURT", ["COMSPEC_ATAK_RoadMode", str "SHORT"] call _set, _rm isEqualTo "SHORT", "Itinéraire le plus court en distance"],
+        [["TOUTES VOIES", "GRANDS AXES", "DISCRET"] select _pi, ["COMSPEC_ATAK_RoadPref", str (_prefs select ((_pi + 1) mod 3))] call _set, _pi > 0,
+            "Voies préférées (clic : changer) : toutes, grands axes (évite pistes et sentiers) ou discret (évite les grands axes)"],
+        ["SANS PONT", ["COMSPEC_ATAK_RoadNoBridge", str !_nb] call _set, _nb, "Évite les ponts (passages obligés) quand un autre chemin existe"]
+    ];
+    private _rw = (((_row1W min _wMax) - _gap * ((count _rbtns) - 1)) / (count _rbtns)) max (_fs * 2 / _ratio);
+    {
+        _x params ["_t", "_code", "_on", "_tip"];
+        private _b = ["COMSPEC_RscButton", [_x0 + _forEachIndex * (_rw + _gap), _y2, _rw, _h], _t] call _mk;
+        _b ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin);
+        if (_on) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
+        _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
+        _b ctrlAddEventHandler ["ButtonClick", _code];
+    } forEach _rbtns;
+};
 true

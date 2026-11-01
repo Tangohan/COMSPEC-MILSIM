@@ -1,6 +1,6 @@
 # @COMSPEC_ATAK_Native
 
-Mod Arma 3 autonome : il embarque COMSPEC Overwatch connect (`comspec_overwatch_main.pbo`, `comspec_overwatch_connect.pbo` et `COMSPECExtension_x64.dll`) pour la connexion Athena, la synchro, les FRS et la Reco. Ne pas charger `@COMSPECOverwatch` en plus. Licence APL-SA, voir `LICENSE` et `CREDITS.md`.
+Mod Arma 3 autonome : il embarque COMSPEC Overwatch connect (`comspec_overwatch_main.pbo`, `comspec_overwatch_connect.pbo` et `COMSPECExtension_x64.dll`) pour la connexion Athena, la synchro, les FRS et la Reco. Ne pas charger `@COMSPECOverwatch` en plus. Licence COMSPEC, tous droits réservés (copie, modification et redistribution interdites sans autorisation écrite) : voir `LICENSE` et `CREDITS.md`.
 
 Build : `build_mod.bat` recompile les deux DLL et empaquète le mod et Overwatch. Sous Linux : `hemtt build` dans `Sources`, puis `tools/pack_pbo.py` pour les deux PBO d'Overwatch.
 

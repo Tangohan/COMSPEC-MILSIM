@@ -40,11 +40,11 @@ private _rows = [
     ["info", "ACRE2", ["acre_main"] call _patch],
     ["info", "Arma 3", format ["%1.%2", (_game select 2) / 100, _game select 3]],
     ["section", "Remerciements", ""],
-    ["text", "<t size='0.9'>Better CAS Environment (BCE) par Aaren : registre d'applications, messages directs, groupe et tâches, réécrits pour ce terminal (licence APL-SA).<br/>Simple Map Tools (POLPOX) : comportement des outils carte, réécrit sans reprise de code.<br/>Symboles de carte d'Arma 3 (Bohemia Interactive).</t>"],
+    ["text", "<t size='0.9'>Better CAS Environment (BCE, Aaren) : source d'inspiration (applications, messages directs, groupe, tâches), sans reprise de code.<br/>Simple Map Tools (POLPOX) : comportement des outils carte, réécrit sans reprise de code.<br/>Symboles de carte d'Arma 3 (Bohemia Interactive).</t>"],
     ["section", "Traductions communautaires", ""],
     ["text", "<t size='0.9'>Chinois simplifié : RickLeo et MOYA (traduction et création complète du pack).</t>"],
     ["section", "Licence", ""],
-    ["text", "<t size='0.9' color='#8a9a93'>Distribué sous Arma Public License Share Alike (APL-SA) : gratuit, non commercial, crédit aux auteurs, même licence pour toute adaptation.</t>"]
+    ["text", "<t size='0.9' color='#8a9a93'>© COMSPEC, tous droits réservés : usage personnel depuis le Steam Workshop officiel ; copie, modification et redistribution interdites sans autorisation écrite (LICENSE.txt).</t>"]
 ];
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true

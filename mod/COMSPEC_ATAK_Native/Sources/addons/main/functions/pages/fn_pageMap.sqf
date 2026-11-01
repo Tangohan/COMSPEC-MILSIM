@@ -517,7 +517,7 @@ if (_interactive) then {
         case "ROUTE": { "GPS : clic sur la destination" };
         // POINTS DE PASSAGE : la fiche d'étape dit elle-même comment poser et se ferme par ✕ (fn_wpCard).
         case "WP": { "" };
-        case "LINE": { "TRAIT : clic A puis clic B" };
+        case "LINE": { "TRAIT : clic A, Ctrl+clic = étape, clic B" };
         case "DRAW": { "DESSIN : maintenir le clic gauche (lissé au relâchement)" };
         case "DRONE": { switch (_s getOrDefault ["droneMapSub", "GOTO"]) do {
             case "ROUTE": { format ["DRONE : clic pour ajouter un point de route (%1)", count (_s getOrDefault ["droneMapPts", []])] };

@@ -329,6 +329,7 @@ class CfgFunctions {
             class decorateMainMenu {};
             class refreshMainMenuBetaBanner {};
             class ndaTexts {};
+            class licenceStatus {};
             class athenaMode {};
             class athenaApply {};
             class athenaChoiceShow {};

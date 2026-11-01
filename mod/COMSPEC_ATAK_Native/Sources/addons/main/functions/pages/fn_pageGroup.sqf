@@ -2,7 +2,7 @@
     Groupe : onglet MON GROUPE (fiche du groupe, bilan, membres, réglages du chef repliables, quitter),
     onglet ÉQUIPES (équipes de feu du groupe : créer, rejoindre, quitter, couleurs, icônes, descriptions, rôles ; fn_ftRows)
     et onglet GROUPES (autres groupes de mon camp avec joueurs, rejoindre).
-    Membres : principe de la liste de groupe de BCE (Aaren, APL-SA).
+    Membres : liste du groupe.
     Sections repliables : état dans COMSPEC_ATAK_State, clés « grpFold_<nom> » (fn_groupAction "fold").
 */
 disableSerialization;
