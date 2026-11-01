@@ -613,7 +613,28 @@ final class AtakExperienceService
      */
     public function put(int $tenantId, array $incoming): array
     {
-        $existing = $this->get($tenantId)['settings'];
+        $merged = $this->mergeSettings($this->get($tenantId)['settings'], $incoming);
+        $merged['updated_at'] = gmdate('c');
+
+        $repo = new \App\Repositories\TenantAtakConfigRepository();
+        $repo->saveExperienceConfig($tenantId, $merged);
+
+        return [
+            'settings' => $merged,
+            'updated_at' => $merged['updated_at'],
+            'guide' => $this->buildGuide($merged),
+        ];
+    }
+
+    /**
+     * Réglages enregistrés + réglages reçus : seules les clés reçues changent, une valeur hors liste reprend le défaut.
+     *
+     * @param array<string, mixed> $existing
+     * @param array<string, mixed> $incoming
+     * @return array<string, mixed>
+     */
+    public function mergeSettings(array $existing, array $incoming): array
+    {
         $merged = $this->defaults();
         foreach ($merged as $key => $_) {
             if (array_key_exists($key, $existing)) {
@@ -644,16 +665,8 @@ final class AtakExperienceService
         if (!empty($incoming['server_control_reviewed'])) {
             $merged['server_control_reviewed'] = true;
         }
-        $merged['updated_at'] = gmdate('c');
 
-        $repo = new \App\Repositories\TenantAtakConfigRepository();
-        $repo->saveExperienceConfig($tenantId, $merged);
-
-        return [
-            'settings' => $merged,
-            'updated_at' => $merged['updated_at'],
-            'guide' => $this->buildGuide($merged),
-        ];
+        return $merged;
     }
 
     /**
