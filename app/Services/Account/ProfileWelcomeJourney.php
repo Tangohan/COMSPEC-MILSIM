@@ -8,10 +8,12 @@ use App\Controllers\Web\PublicPlayerCvController;
 use App\Core\Session;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\UserDiscordLinkRepository;
+use App\Repositories\UserPublicCvRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\UserUiTourRepository;
 use App\Services\Auth\LoginSecurityOtpService;
 use App\Services\Integrations\DiscordLinkedRoles;
+use App\Support\PublicCv\PublicCvBannerStorage;
 
 /**
  * Accès aux données de l'accueil du profil : état réel du compte (« faits ») et progression enregistrée.
@@ -90,9 +92,12 @@ final class ProfileWelcomeJourney
                 || $otp->isMandatoryForUserId($uid);
         } catch (\Throwable) {
         }
-        $bannerAvailable = false;
+        // Bannière personnelle = celle de la page publique (même stockage que Mon compte › Ma page publique).
+        $bannerAvailable = (int) ($user['tenant_id'] ?? 0) > 0;
+        $banner = false;
         try {
-            $bannerAvailable = $this->users()->hasProfileBannerUrlColumn();
+            $cv = (new UserPublicCvRepository())->findByUserId($uid);
+            $banner = PublicCvBannerStorage::isStoredPath(isset($cv['banner_path']) ? (string) $cv['banner_path'] : null);
         } catch (\Throwable) {
         }
 
@@ -104,7 +109,7 @@ final class ProfileWelcomeJourney
             'portrait' => trim((string) ($personnel['character_portrait_path'] ?? '')) !== '',
             'portrait_locked' => !empty($personnel['character_portrait_locked']),
             'banner_available' => $bannerAvailable,
-            'banner' => trim((string) ($user['profile_banner_url'] ?? '')) !== '',
+            'banner' => $banner,
             'second_factor' => $secondFactor,
             'public_page' => PublicPlayerCvController::activeUrlForUser($uid) !== null,
         ];

@@ -45,7 +45,8 @@ $portraitUrl = !empty($welcomePersonnel['character_portrait_path']) && function_
     ? personnel_operator_portrait_url($welcomePersonnel)
     : null;
 $portraitLocked = !empty($welcomeFacts['portrait_locked']);
-$bannerUrl = function_exists('user_media_public_url') ? user_media_public_url($user['profile_banner_url'] ?? null) : null;
+$bannerUrl = isset($welcomeBannerUrl) && is_string($welcomeBannerUrl) && $welcomeBannerUrl !== '' ? $welcomeBannerUrl : null;
+$bannerHint = (string) ($welcomeBannerHint ?? 'JPG, PNG ou WebP, format paysage conseillé.');
 $discordName = $welcomeDiscordLink !== null
     ? trim((string) ($welcomeDiscordLink['discord_username'] ?? '')) ?: 'votre compte'
     : null;
@@ -195,13 +196,12 @@ require base_path('views/partials/account/shell_open.php');
                 <?php endif; ?>
             <?php break;
                 case W::STEP_BANNER: ?>
-                <form method="post" action="<?= $h(url('account/banner')) ?>" enctype="multipart/form-data" class="ah-wel__form" id="welcome-main-form">
+                <form method="post" action="<?= $h(url('account/bienvenue/banniere')) ?>" enctype="multipart/form-data" class="ah-wel__form" id="welcome-main-form">
                     <?= $csrf ?>
-                    <input type="hidden" name="retour" value="bienvenue">
                     <label class="ah-wel__drop" for="welcome-banner">
                         <input type="file" id="welcome-banner" name="banner" accept="image/jpeg,image/png,image/webp" data-welcome-file="banner" required>
                         <span class="ah-wel__drop-icon" aria-hidden="true"><?= $icon('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-4 4 3 3-2 6 4"/>') ?></span>
-                        <span class="ah-wel__drop-text"><strong><?= $bannerUrl ? 'Choisir une autre image' : 'Choisir une image' ?></strong><span data-welcome-filename>Format large conseillé (3 pour 1). JPG, PNG ou WebP, 2 Mo maximum.</span></span>
+                        <span class="ah-wel__drop-text"><strong><?= $bannerUrl ? 'Choisir une autre image' : 'Choisir une image' ?></strong><span data-welcome-filename><?= $h($bannerHint) ?></span></span>
                     </label>
                 </form>
             <?php break;

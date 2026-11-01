@@ -239,7 +239,7 @@ final class ProfileWelcomeServiceTest extends TestCase
     {
         $routes = (string) file_get_contents(self::ROOT . '/routes/web.php');
         foreach ([
-            "get('/account/bienvenue'", "post('/account/bienvenue/identite'", "post('/account/bienvenue/continuer'",
+            "get('/account/bienvenue'", "post('/account/bienvenue/identite'", "post('/account/bienvenue/banniere'", "post('/account/bienvenue/continuer'",
             "post('/account/bienvenue/passer'", "post('/account/bienvenue/terminer'", "post('/account/bienvenue/reprendre'",
             "get('/account/bienvenue/aller/{etape}'",
         ] as $route) {
@@ -248,11 +248,13 @@ final class ProfileWelcomeServiceTest extends TestCase
 
         $view = (string) file_get_contents(self::ROOT . '/views/account/welcome.php');
         self::assertStringContainsString("action=\"<?= \$h(url('account/portrait')) ?>\"", $view, 'Le portrait passe par le téléversement existant.');
-        self::assertStringContainsString("action=\"<?= \$h(url('account/banner')) ?>\"", $view, 'La bannière réutilise la couverture du profil.');
-        self::assertSame(2, substr_count($view, 'name="retour" value="bienvenue"'));
+        self::assertStringContainsString("action=\"<?= \$h(url('account/bienvenue/banniere')) ?>\"", $view);
+        self::assertSame(1, substr_count($view, 'name="retour" value="bienvenue"'));
+        $controller = (string) file_get_contents(self::ROOT . '/app/Controllers/Web/ProfileWelcomeController.php');
+        self::assertStringContainsString('PublicCvBannerStorage', $controller, 'La bannière réutilise le stockage de la page publique.');
 
         $account = (string) file_get_contents(self::ROOT . '/app/Controllers/Web/AccountController.php');
-        self::assertSame(2, substr_count($account, "\$request->input('retour') === 'bienvenue'"));
+        self::assertSame(1, substr_count($account, "\$request->input('retour') === 'bienvenue'"));
         self::assertStringContainsString('ProfileWelcomeService::STEP_STEAM', $account, 'Retour de Steam vers l’étape.');
         $discord = (string) file_get_contents(self::ROOT . '/app/Controllers/Web/DiscordLinkedRolesController.php');
         self::assertStringContainsString('ProfileWelcomeService::STEP_DISCORD', $discord, 'Retour de Discord vers l’étape.');

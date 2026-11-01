@@ -77,7 +77,7 @@ final class ProfileWelcomeService
             self::STEP_BANNER => [
                 'title' => 'Votre bannière',
                 'short' => 'Bannière',
-                'lead' => 'Une image large affichée en haut de votre menu profil. Une capture de jeu fait très bien l’affaire.',
+                'lead' => 'Une image large en tête de votre page publique. Une capture de jeu fait très bien l’affaire.',
             ],
             self::STEP_SECURITY => [
                 'title' => 'Protégez votre compte',

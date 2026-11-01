@@ -1262,21 +1262,16 @@ class AccountController
         $freshUser = $tenantId > 0 ? $this->userRepository->findById((int) $user['id'], $tenantId) : null;
         $accountUser = $freshUser ?? $user;
 
-        $fromWelcome = $request->isPost() && $request->input('retour') === 'bienvenue';
-        $back = $fromWelcome
-            ? \App\Services\Account\ProfileWelcomeJourney::stepUrl(\App\Services\Account\ProfileWelcomeService::STEP_BANNER)
-            : url('account/banner');
-
         if ($request->isPost()) {
             if (!Csrf::validate($request->input('_csrf_token'))) {
                 Session::flash('error', 'Session expirée.');
-                return Response::redirect($back);
+                return Response::redirect(url('account/banner'));
             }
 
             if ($request->input('remove_banner') === '1') {
                 $this->userRepository->update((int) $user['id'], $tenantId, ['profile_banner_url' => null]);
                 Session::flash('success', 'Couverture du menu session retirée.');
-                return Response::redirect($back);
+                return Response::redirect(url('account/banner'));
             }
 
             $file = $_FILES['banner'] ?? null;
@@ -1306,14 +1301,10 @@ class AccountController
                         $urlPath = 'uploads/banners/' . $name;
                         $this->userRepository->update((int) $user['id'], $tenantId, ['profile_banner_url' => $urlPath]);
                         Session::flash('success', 'Couverture du menu session mise à jour.');
-                        return Response::redirect($back);
+                        return Response::redirect(url('account/banner'));
                     }
                     $errors['banner'] = ['Impossible d\'enregistrer le fichier.'];
                 }
-            }
-            if ($fromWelcome && $errors !== []) {
-                Session::flash('error', (string) ($errors['banner'][0] ?? 'La bannière n’a pas pu être enregistrée.'));
-                return Response::redirect($back);
             }
         }
 

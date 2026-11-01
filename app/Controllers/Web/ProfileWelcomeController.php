@@ -10,16 +10,19 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\PersonnelProfileRepository;
+use App\Repositories\UserPublicCvRepository;
 use App\Repositories\UserRepository;
 use App\Services\Account\ProfileWelcomeJourney;
 use App\Services\Account\ProfileWelcomeService;
 use App\Services\Auth\AuthService;
+use App\Support\PublicCv\PublicCvBannerStorage;
+use App\Support\PublicCv\PublicCvSettings;
 
 /**
  * Accueil du profil joueur : /account/bienvenue, une étape à la fois, que l'on peut passer et reprendre.
  *
- * Chaque étape réutilise l'existant : liaison Discord (rôles liés), connexion Steam, téléversement du portrait et de
- * la couverture (AccountController), double vérification (/account/security), page publique (/account/page-publique).
+ * Chaque étape réutilise l'existant : liaison Discord (rôles liés), connexion Steam, téléversement du portrait
+ * (AccountController), bannière de la page publique (PublicCvBannerStorage), double vérification (/account/security), page publique (/account/page-publique).
  */
 final class ProfileWelcomeController
 {
@@ -78,6 +81,8 @@ final class ProfileWelcomeController
             'welcomeNext' => $asked === ProfileWelcomeService::END ? null : ProfileWelcomeService::nextKey($snap['steps'], $asked),
             'welcomePersonnel' => $personnel,
             'welcomeDiscordLink' => $discordLink,
+            'welcomeBannerUrl' => $this->bannerUrl((int) $user['id']),
+            'welcomeBannerHint' => PublicCvBannerStorage::hintText(),
             'welcomeIsNewMember' => \App\Services\Game\FirstLoginGameLinkGate::isNewMember($user),
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
@@ -122,6 +127,68 @@ final class ProfileWelcomeController
         Session::flash('success', 'Indicatif enregistré : « ' . $callsign . ' ».');
 
         return $this->advance($user, ProfileWelcomeService::STEP_IDENTITY);
+    }
+
+    /**
+     * POST /account/bienvenue/banniere : bannière personnelle de la page publique, même stockage et mêmes contrôles
+     * que Mon compte › Ma page publique (PublicCvBannerStorage). Ne touche ni à l'ouverture de la page ni à son adresse.
+     */
+    public function saveBanner(Request $request, array $params = []): Response
+    {
+        $user = $this->user();
+        if ($user === null) {
+            return Response::redirect(url('login'));
+        }
+        $here = ProfileWelcomeJourney::stepUrl(ProfileWelcomeService::STEP_BANNER);
+        if ($_POST === [] && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+            Session::flash('error', 'Image trop lourde : la bannière doit peser ' . (int) floor(PublicCvBannerStorage::effectiveMaxBytes() / (1024 * 1024)) . ' Mo au plus.');
+
+            return Response::redirect($here);
+        }
+        if (!Csrf::validate(is_string($t = $request->input('_csrf_token')) ? $t : null)) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($here);
+        }
+        $uid = (int) $user['id'];
+        $tenantId = (int) ($user['tenant_id'] ?? 0);
+        $upload = is_array($_FILES['banner'] ?? null) ? $_FILES['banner'] : [];
+        if ((int) ($upload['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            Session::flash('error', 'Choisissez une image, ou passez l’étape.');
+
+            return Response::redirect($here);
+        }
+        $repo = new UserPublicCvRepository();
+        if ($tenantId < 1 || !$repo->ensureTable() || !$repo->ensureBannerColumn()) {
+            Session::flash('error', 'Les bannières ne peuvent pas être enregistrées pour le moment. Réessayez plus tard.');
+
+            return Response::redirect($here);
+        }
+        $storage = new PublicCvBannerStorage();
+        $stored = $storage->store($uid, $upload);
+        if ($stored['error'] !== null || $stored['path'] === null) {
+            Session::flash('error', $stored['error'] ?? 'La bannière n’a pas pu être enregistrée. Réessayez.');
+
+            return Response::redirect($here);
+        }
+        $row = $repo->findByUserId($uid);
+        $previous = isset($row['banner_path']) && PublicCvBannerStorage::isStoredPath((string) $row['banner_path']) ? (string) $row['banner_path'] : null;
+        try {
+            if ($row === null) {
+                // Première fois : réglages par défaut, page fermée (le joueur l'ouvre lui-même à l'étape suivante).
+                $repo->save($uid, $tenantId, false, null, '', PublicCvSettings::encodeSections(PublicCvSettings::defaultSections()));
+            }
+            $repo->setBannerPath($uid, $stored['path']);
+            $storage->delete($previous);
+        } catch (\Throwable) {
+            $storage->delete($stored['path']);
+            Session::flash('error', 'La bannière n’a pas pu être enregistrée. Réessayez.');
+
+            return Response::redirect($here);
+        }
+        Session::flash('success', 'Bannière enregistrée.');
+
+        return $this->advance($user, ProfileWelcomeService::STEP_BANNER);
     }
 
     /** POST /account/bienvenue/continuer : étape suivante (la page publique compte alors comme vue). */
@@ -211,6 +278,17 @@ final class ProfileWelcomeController
         Session::set(ProfileWelcomeService::SESSION_RETURN, $step);
 
         return Response::redirect(url(self::GO[$step]));
+    }
+
+    private function bannerUrl(int $userId): ?string
+    {
+        try {
+            $row = (new UserPublicCvRepository())->findByUserId($userId);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return PublicCvBannerStorage::publicUrl(isset($row['banner_path']) ? (string) $row['banner_path'] : null);
     }
 
     /** @param array<string, mixed> $user */

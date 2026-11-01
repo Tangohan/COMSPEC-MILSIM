@@ -590,6 +590,7 @@ return function (Router $router) {
     // Accueil du profil joueur : parcours en étapes, que l'on peut passer et reprendre (jamais bloquant).
     $router->get('/account/bienvenue', [\App\Controllers\Web\ProfileWelcomeController::class, 'show'], [AuthMiddleware::class]);
     $router->post('/account/bienvenue/identite', [\App\Controllers\Web\ProfileWelcomeController::class, 'saveIdentity'], [AuthMiddleware::class]);
+    $router->post('/account/bienvenue/banniere', [\App\Controllers\Web\ProfileWelcomeController::class, 'saveBanner'], [AuthMiddleware::class]);
     $router->post('/account/bienvenue/continuer', [\App\Controllers\Web\ProfileWelcomeController::class, 'next'], [AuthMiddleware::class]);
     $router->post('/account/bienvenue/passer', [\App\Controllers\Web\ProfileWelcomeController::class, 'skip'], [AuthMiddleware::class]);
     $router->post('/account/bienvenue/terminer', [\App\Controllers\Web\ProfileWelcomeController::class, 'finish'], [AuthMiddleware::class]);
