@@ -265,7 +265,8 @@ final class UntranslatedFrenchScanner
     private static function segments(string $text): array
     {
         $out = [];
-        foreach (preg_split('/\s+·\s+/u', $text) ?: [] as $part) {
+        // « \x00 » : bloc PHP retiré au milieu d'un attribut, jamais un texte d'un seul tenant.
+        foreach (preg_split('/\s+·\s+|\x00/u', $text) ?: [] as $part) {
             $p = self::norm($part);
             if (!self::isText($p) || preg_match('/^(%\d\s*)+$/', $p)) {
                 continue;
