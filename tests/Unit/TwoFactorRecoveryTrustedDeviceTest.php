@@ -100,7 +100,11 @@ final class TwoFactorRecoveryTrustedDeviceTest extends TestCase
 
     public function testMigrationAndScreensAreWired(): void
     {
-        self::assertStringContainsString('3120_auth_recovery_trusted_devices.php', self::read('database/steps/registry.php'));
+        // Étape appliquée en production puis sortie de la file active le 29/10/2026
+        // (docs/technical/migrations-active-queue.md) : elle reste référencée dans l'archive.
+        self::assertStringContainsString("'file' => '3120_auth_recovery_trusted_devices.php'", self::read('database/steps/registry-archive.php'));
+        self::assertStringNotContainsString('3120_auth_recovery_trusted_devices.php', self::read('database/steps/registry.php'));
+        self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/3120_auth_recovery_trusted_devices.php');
         $migration = self::read('bootstrap/auth_recovery_trusted_devices_migration.php');
         self::assertStringContainsString('CREATE TABLE user_recovery_codes', $migration);
         self::assertStringContainsString('CREATE TABLE user_trusted_devices', $migration);
