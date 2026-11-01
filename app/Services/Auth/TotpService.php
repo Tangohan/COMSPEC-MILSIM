@@ -31,25 +31,32 @@ final class TotpService
 
     public function verify(string $secretBase32, string $code, int $window = self::DEFAULT_WINDOW, ?int $atTimestamp = null): bool
     {
+        return $this->matchStep($secretBase32, $code, $window, $atTimestamp) !== null;
+    }
+
+    /**
+     * Pas de 30 s auquel correspond le code (null = code faux). Sert à l'anti-rejeu (TotpReplayGuard).
+     */
+    public function matchStep(string $secretBase32, string $code, int $window = self::DEFAULT_WINDOW, ?int $atTimestamp = null): ?int
+    {
         $code = preg_replace('/\D+/', '', $code) ?? '';
         if (strlen($code) !== self::DIGITS) {
-            return false;
+            return null;
         }
         $secret = $this->base32Decode($secretBase32);
         if ($secret === null || $secret === '') {
-            return false;
+            return null;
         }
         $ts = $atTimestamp ?? time();
         $counter = intdiv($ts, self::PERIOD_SECONDS);
         $window = max(0, min(2, $window));
         for ($i = -$window; $i <= $window; $i++) {
-            $expected = $this->hotp($secret, $counter + $i);
-            if (hash_equals($expected, $code)) {
-                return true;
+            if (hash_equals($this->hotp($secret, $counter + $i), $code)) {
+                return $counter + $i;
             }
         }
 
-        return false;
+        return null;
     }
 
     public function currentCode(string $secretBase32, ?int $atTimestamp = null): string

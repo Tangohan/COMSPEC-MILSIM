@@ -79,18 +79,9 @@ final class ErrorReportMailer
             || str_contains($message, 'SQLSTATE[HY000] [2002]')
             || str_contains($message, 'Operation not permitted')
             || \App\Core\Database::messageLooksLikeLostConnection($message);
-        $dedupeKey = $infraStorm ? ('infra|' . $fingerprint) : ($fingerprint . '|' . $ip);
-        // Micro-coupures MySQL Hostinger : 1 mail / 15 min max (les polls ATAK sinon saturent la boîte).
-        $dbTransient = str_contains($message, 'Database connection failed')
-            || str_contains($message, 'SQLSTATE[HY000] [2002]')
-            || str_contains($message, 'Operation not permitted')
-            || \App\Core\Database::messageLooksLikeLostConnection($message);
-        $throttle = $dbTransient
-            ? new ErrorAlertThrottle(
-                max(600, (int) (env('ERROR_ALERT_DB_COOLDOWN_SECONDS', 900) ?: 900)),
-                max(1, (int) (env('ERROR_ALERT_DB_MAX_PER_HOUR', 4) ?: 4))
-            )
-            : ErrorAlertThrottle::fromEnv();
+        // Signature d'erreur sans l'IP : au plus un e-mail par cause et par heure (quota d'envoi Hostinger).
+        $dedupeKey = ($infraStorm ? 'infra|' : '') . $fingerprint;
+        $throttle = ErrorAlertThrottle::fromEnv();
         if ($throttle->isThrottled($dedupeKey)) {
             $this->auditSkip('throttled', $kind, $message, $file, $line, $to);
 
@@ -158,6 +149,12 @@ final class ErrorReportMailer
 
         // Toujours écrire une copie locale (indépendant du transport mail).
         $this->persistIncidentCopy($subject, $text, $kind, $path);
+        if (self::isSsePath($path)) {
+            // Plus aucun e-mail déclenché par le SSE : l'incident reste dans la copie locale et le journal.
+            $this->auditSkip('sse_no_mail', $kind, $message, $file, $line, $to);
+
+            return;
+        }
 
         try {
             $mailer = \App\Core\Container::get(\App\Services\EmailService::class);
@@ -183,6 +180,14 @@ final class ErrorReportMailer
             $this->auditSkip('mailer_exception:' . $mailEx->getMessage(), $kind, $message, $file, $line, $to);
             $this->fallbackPhpMail($to, $subject, $text);
         }
+    }
+
+    /** Routes du SSE (portail, API du mod, couches SSE de l'ATAK) : jamais d'e-mail d'incident. */
+    public static function isSsePath(string $path): bool
+    {
+        $path = '/' . ltrim(strtolower($path), '/');
+
+        return str_starts_with($path, '/api/sse') || str_starts_with($path, '/atak/sse') || str_starts_with($path, '/api/atak/sse-');
     }
 
     /**

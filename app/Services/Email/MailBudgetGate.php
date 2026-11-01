@@ -35,9 +35,13 @@ final class MailBudgetGate
                 return ['decision' => MailBudget::SEND, 'priority' => $priority, 'sent_today' => 0];
             }
             $sentToday = $config['limit'] > 0 ? $this->sentToday() : 0;
+            // Plafond « un par période » : même type, même destinataire.
+            $sentRecently = $priority === MailBudget::PRIORITY_NORMAL
+                && MailBudget::capsRepeats($eventCode)
+                && $this->deliveries->countRecentSameEventForRecipient($eventCode, $to, MailBudget::REPEAT_WINDOW_MINUTES * 60) > 0;
 
             return [
-                'decision' => MailBudget::decide($eventCode, $priority, $sentToday, $config),
+                'decision' => MailBudget::decide($eventCode, $priority, $sentToday, $config, $sentRecently),
                 'priority' => $priority,
                 'sent_today' => $sentToday,
             ];
@@ -63,7 +67,7 @@ final class MailBudgetGate
         $settings = [];
         try {
             $repo = $this->settings ??= new PlatformSettingsRepository();
-            foreach ([MailBudget::SETTING_DAILY_LIMIT, MailBudget::SETTING_RESERVE, MailBudget::SETTING_DIGEST_MINUTES, MailBudget::SETTING_MUTED] as $k) {
+            foreach ([MailBudget::SETTING_DAILY_LIMIT, MailBudget::SETTING_RESERVE, MailBudget::SETTING_DIGEST_MINUTES, MailBudget::SETTING_MUTED, MailBudget::SETTING_MUTED_REVIEWED] as $k) {
                 $settings[$k] = $repo->get($k, '');
             }
         } catch (\Throwable) {

@@ -28,7 +28,7 @@ final class OpsMailDigestCronJob implements CronJobInterface
 
     public function description(): string
     {
-        return 'Regroupe les alertes d’exploitation (incidents, nouveaux comptes, signalements du mod) en un seul e-mail.';
+        return 'Regroupe les alertes d’exploitation (incidents, nouveaux comptes, signalements du mod) en un seul e-mail, et envoie le résumé quotidien des membres.';
     }
 
     public function run(): array
