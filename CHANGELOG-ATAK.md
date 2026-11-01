@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.21](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.22 : transmissions sans à-coups (ATAK natif 2.9.22.AG - Denver, COMSPEC Link 2.0.112)
+
+### Résumé joueur
+Type : performance
+FR : Fini les à-coups pendant les échanges avec Athena
+- Le jeu ne se fige plus le temps d'une réponse d'Athena, même quand le serveur est chargé ou que la liaison est lente.
+- Galerie, Musique, pièces jointes de fiche et ouverture du navigateur ne figent plus l'image en lisant le disque.
+- Les réponses d'Athena ne se perdent plus quand beaucoup d'informations arrivent en même temps.
+EN : No more stutter while talking to Athena
+- The game no longer freezes while waiting for Athena, even on a busy server or a slow link.
+- Gallery, Music, report attachments and opening the browser no longer freeze the picture while reading the disk.
+- Athena replies are no longer lost when a lot of data arrives at once.
+
+### Détail technique
+- Connect : `fn_extFast` (liste blanche des commandes rapides) ; `fn_extDirect` passe toute autre commande par `fn_extAwait` (spawn hors contexte suspendable) ; `fn_extAwait` connect + natif : commande lente hors contexte suspendable relancée en tâche de fond (`ERR|unscheduled`, signalé une fois au journal)
+- Appelants corrigés : recopie de capture (`fn_captureReconImage`), galerie de fiche (`fn_intelNoteAddPiece`), briefing (`fn_openBriefingBoard`, `fn_refreshBriefingSlides`, `fn_webBrowserJSDialog`), `fn_registerBetaClient` ; natif : `fn_photoLibrary` (liste et suppression), `fn_musicAction` (« files » par Async), `fn_taskAction` (DLL native seule)
+- Link 2.0.112 : rappel refusé par Arma (file pleine, retour négatif) renvoyé jusqu'à ~9 s ; sondages `ServePollGet` en HTTP async (plus de fil du pool bloqué) ; `OpenAthenaLink`, ménage des captures, relevés terrain/scène/géo et `MusicList` / `MusicOpenFolder` hors du fil du jeu
+
 ## Pack 2.9.21 : plus de gel, tenues ACE réparées, liaison vraiment coupée (ATAK natif 2.9.21.AG - Denver, COMSPEC Link 2.0.111)
 
 ### Résumé joueur

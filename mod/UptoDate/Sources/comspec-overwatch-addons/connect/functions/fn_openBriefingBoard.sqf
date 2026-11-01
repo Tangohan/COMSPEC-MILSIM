@@ -5,6 +5,8 @@
 */
 
 if (!hasInterface) exitWith {};
+// Liste des diapositives demandée à Athena (HTTP) : jamais sur le fil du jeu (menu ACE, tablette, commande web).
+if (!canSuspend) exitWith { _this spawn comspec_overwatch_connect_fnc_openBriefingBoard; };
 
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 

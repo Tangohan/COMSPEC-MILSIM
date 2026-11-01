@@ -204,6 +204,7 @@ class CfgFunctions {
             class aceLoadoutsRepair {};
             class uplinkHold {};
             class extDirect {};
+            class extFast {};
             class startLogSession {};
             class logTransmission {};
             class logFnError {};

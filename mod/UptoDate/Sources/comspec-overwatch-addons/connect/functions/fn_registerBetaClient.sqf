@@ -4,6 +4,8 @@
 */
 if (!hasInterface) exitWith { false };
 if (([] call comspec_overwatch_connect_fnc_athenaMode) isNotEqualTo "on") exitWith { false };
+// Envoi HTTP (RegisterBeta) : jamais sur le fil du jeu (bouton, postInit, menu).
+if (!canSuspend) exitWith { [] spawn comspec_overwatch_connect_fnc_registerBetaClient; false };
 
 private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
 

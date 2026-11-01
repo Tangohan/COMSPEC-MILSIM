@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.111";
+    private const string ExtensionVersion = "2.0.112";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -452,6 +452,10 @@ public static partial class Extension
         // Point d'entrée natif : une exception (initialisation de la classe comprise) tuerait Arma.
         try { _callback = func == 0 ? null : Marshal.GetDelegateForFunctionPointer<ExtensionCallback>(func); }
         catch { /* sans rappel : Async répond ERR|no_callback */ }
+#if COMSPEC_ATAK_NATIVE
+        // Liste du dossier musique prête avant la première demande : MusicList en direct ne sert que ce cache.
+        try { _ = Task.Run(static () => { _musicListCache ??= MusicListScan(); }); } catch { /* best effort */ }
+#endif
     }
 
     private static void InvokeCallback(string function, string data)
@@ -463,7 +467,7 @@ public static partial class Extension
         try
         {
             // Arma callback peut être appelé hors thread jeu ; démarrer une tâche dédiée.
-            _ = Task.Run(() =>
+            _ = Task.Run(async () =>
             {
                 nint pName = 0, pFunction = 0, pData = 0;
                 try
@@ -471,7 +475,10 @@ public static partial class Extension
                     pName = Marshal.StringToCoTaskMemUTF8("comspec");
                     pFunction = Marshal.StringToCoTaskMemUTF8(function);
                     pData = Marshal.StringToCoTaskMemUTF8(Utf8Clip(data, 20000));
-                    cb(pName, pFunction, pData);
+                    // Retour négatif : file de rappels d'Arma pleine (plus de 100 par image, wiki BI callExtension), le
+                    // résultat n'est pas remis. Nouvel essai borné (~9 s, sous le délai de fn_extAwait) au lieu de le perdre.
+                    for (var attempt = 1; cb(pName, pFunction, pData) < 0 && attempt <= 40; attempt++)
+                        await Task.Delay(Math.Min(25 * attempt, 250)).ConfigureAwait(false);
                 }
                 catch { /* ne jamais faire planter le process hôte */ }
                 finally
@@ -2220,13 +2227,11 @@ public static partial class Extension
 
     private static string QueueHeavyIngest(string path, string?[] args)
     {
-        LoadQueueFromDisk();
         if (args.Length < 1)
             return FormatAtakExtArray("ERROR", "empty");
         var json = args[0] ?? "";
         if (string.IsNullOrWhiteSpace(json) || json.Length < 8)
             return FormatAtakExtArray("ERROR", "empty");
-        var body = EnrichAtakPayload(json);
         string url;
         if (string.IsNullOrEmpty(_baseUrl)
             || !TryBuildRequestUri(_baseUrl, path, out var uri, out _)
@@ -2234,7 +2239,17 @@ public static partial class Extension
             url = "queued:" + path;
         else
             url = uri.AbsoluteUri;
-        EnqueueOrSend(url, body);
+        // Relevés de terrain (dizaines de Ko de JSON relus et complétés) et première lecture de la file sur disque :
+        // hors du fil du jeu, appelés en rafale par fn_sampleTheater / fn_sampleScene. Réponse inchangée.
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                LoadQueueFromDisk();
+                EnqueueOrSend(url, EnrichAtakPayload(json));
+            }
+            catch { /* relevé perdu : le prochain passage le renvoie */ }
+        });
         return FormatAtakExtArray("OK", "queued");
     }
 
@@ -2660,7 +2675,11 @@ public static partial class Extension
     }
 
     /// <summary>Envoi synchrone mesuré (latence, 429/5xx, délais) pour l'indicateur de surcharge d'Athena.</summary>
-    private static HttpResponseMessage SendTimed(HttpRequestMessage req, CancellationToken token)
+    private static HttpResponseMessage SendTimed(HttpRequestMessage req, CancellationToken token) =>
+        SendTimedAsync(req, token).GetAwaiter().GetResult();
+
+    /// <summary>Même envoi sans tenir de fil pendant l'attente réseau (sondages ServePollGet).</summary>
+    private static async Task<HttpResponseMessage> SendTimedAsync(HttpRequestMessage req, CancellationToken token)
     {
         var started = DateTime.UtcNow.Ticks;
         // gzip + empreinte de la dernière réponse (304 = inchangée, copie gardée resservie) ; volume compté par canal.
@@ -2668,7 +2687,8 @@ public static partial class Extension
         var outBytes = EstimateRequestBytes(req);
         try
         {
-            var resp = HttpClient.SendAsync(req, token).GetAwaiter().GetResult();
+            // Corps déjà en mémoire à la fin de SendAsync (ResponseContentRead) : FinishTrackedResponse ne l'attend pas.
+            var resp = await HttpClient.SendAsync(req, token).ConfigureAwait(false);
             JournalHttp(started, (int)resp.StatusCode);
             FinishTrackedResponse(req, resp, outBytes, token);
             return resp;
@@ -2786,12 +2806,16 @@ public static partial class Extension
             && (slot.RefusedUntilMs == 0 || now >= slot.RefusedUntilMs);
         if (stale && Interlocked.CompareExchange(ref slot.InFlight, 1, 0) == 0)
         {
-            ThreadPool.QueueUserWorkItem(_ =>
+            // Attente réseau en async : 64 sondages lents ne bloquent plus 64 fils du pool (les rappels Async, servis
+            // par ce même pool, arrivaient en retard et fn_extAwait finissait en ERR|timeout).
+            _ = Task.Run(async () =>
             {
                 try
                 {
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
-                    using var resp = SendGet(url, cts.Token);
+                    using var req = new HttpRequestMessage(HttpMethod.Get, url);
+                    AttachApiKeyHeader(req);
+                    using var resp = await SendTimedAsync(req, cts.Token).ConfigureAwait(false);
                     var body = ReadContentUtf8(resp, cts.Token);
                     var status = (int)resp.StatusCode;
                     slot.LastCode = status;
@@ -4237,7 +4261,13 @@ public static partial class Extension
                     || !Uri.TryCreate(_baseUrl, UriKind.Absolute, out var portalUri)
                     || !string.Equals(portalUri.Host, targetUri.Host, StringComparison.OrdinalIgnoreCase))
                     return "ERR|foreign_host";
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(targetUri.AbsoluteUri) { UseShellExecute = true });
+                // Lancement du navigateur par le shell Windows : des centaines de ms, jamais sur le fil du jeu.
+                var openUrl = targetUri.AbsoluteUri;
+                _ = Task.Run(() =>
+                {
+                    try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(openUrl) { UseShellExecute = true })?.Dispose(); }
+                    catch { /* navigateur absent : rien à faire */ }
+                });
                 return "OK";
             }
             catch (Exception ex) { return FormatCaughtError(ex); }
@@ -12124,6 +12154,12 @@ public static partial class Extension
     {
         if (_screenshotQuotaEnsured) return;
         _screenshotQuotaEnsured = true;
+        // Parcours de tous les dossiers de captures (milliers de fichiers possibles) : hors du fil du jeu.
+        _ = Task.Run(EnsureScreenshotQuotaCore);
+    }
+
+    private static void EnsureScreenshotQuotaCore()
+    {
         try
         {
             const long softLimit = 180L * 1024 * 1024;

@@ -38,6 +38,19 @@ private _fnc_send = {
 switch (_action) do {
     case "list": {
         if !([] call comspec_atak_native_fnc_bridge) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_PhotoLib", []]; [] };
+        // Lecture des dossiers de captures (disque, parfois des milliers de fichiers) : jamais sur le fil du jeu. Depuis un
+        // rendu ou un clic, la liste en cache sert tout de suite ; la relecture part en tâche de fond puis la page est redessinée.
+        if (!canSuspend) exitWith {
+            if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PhotoListBusy", -100]) > 15) then {
+                uiNamespace setVariable ["COMSPEC_ATAK_PhotoListBusy", diag_tickTime];
+                [] spawn {
+                    ["list"] call comspec_atak_native_fnc_photoLibrary;
+                    uiNamespace setVariable ["COMSPEC_ATAK_PhotoListBusy", -100];
+                    [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg isNotEqualTo "") then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+                };
+            };
+            uiNamespace getVariable ["COMSPEC_ATAK_PhotoLib", []]
+        };
         private _raw = if (isNil "comspec_overwatch_connect_fnc_listLocalScreenshots") then { [] } else { [] call comspec_overwatch_connect_fnc_listLocalScreenshots };
         private _out = (_raw select { _x isEqualType [] && {(count _x) >= 2} }) apply { [_x select 0, _x select 1] };
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoLib", _out];
@@ -81,39 +94,43 @@ switch (_action) do {
             true
         };
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoDelArm", ["", -10]];
-        private _todo = if (_action isEqualTo "deleteAll") then { +_lib } else { [_lib select _arg] };
-        // Tout supprimer : les clichés du drone partent aussi (fichier et fiche), sauf un envoi en cours.
-        if (_action isEqualTo "deleteAll") then {
-            private _dl = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
-            if !(_dl isEqualType []) then { _dl = []; };
-            private _onDisk = _lib apply { toLower (_x select 1) };
-            private _keep = [];
+        // Recherche et effacement des fichiers par la DLL (disque) : hors du fil du jeu (appelé d'un clic), page redessinée à la fin.
+        [_action, _arg, _lib] spawn {
+            params ["_action", "_arg", "_lib"];
+            private _todo = if (_action isEqualTo "deleteAll") then { +_lib } else { [_lib select _arg] };
+            // Tout supprimer : les clichés du drone partent aussi (fichier et fiche), sauf un envoi en cours.
+            if (_action isEqualTo "deleteAll") then {
+                private _dl = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
+                if !(_dl isEqualType []) then { _dl = []; };
+                private _onDisk = _lib apply { toLower (_x select 1) };
+                private _keep = [];
+                {
+                    if (_x isEqualType [] && {(_x param [8, ""]) isEqualTo "SENDING"}) then {
+                        _keep pushBack _x;
+                        private _f = toLower (_x param [0, ""]);
+                        _todo = _todo select { (toLower (_x select 1)) isNotEqualTo _f };
+                    } else {
+                        private _f = if (_x isEqualType []) then { _x param [0, ""] } else { "" };
+                        if (_f isEqualType "" && {_f isNotEqualTo ""} && {!((toLower _f) in _onDisk)}) then { (["COMSPECExtension", "DeleteLocalFile", [_f]] call comspec_overwatch_connect_fnc_extDirect); };
+                    };
+                } forEach _dl;
+                profileNamespace setVariable ["COMSPEC_ATAK_DronePhotos", _keep];
+                [] call comspec_atak_native_fnc_saveProfile;
+                (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["dronePhEdit", -1];
+            };
+            private _done = 0;
             {
-                if (_x isEqualType [] && {(_x param [8, ""]) isEqualTo "SENDING"}) then {
-                    _keep pushBack _x;
-                    private _f = toLower (_x param [0, ""]);
-                    _todo = _todo select { (toLower (_x select 1)) isNotEqualTo _f };
-                } else {
-                    private _f = if (_x isEqualType []) then { _x param [0, ""] } else { "" };
-                    if (_f isEqualType "" && {_f isNotEqualTo ""} && {!((toLower _f) in _onDisk)}) then { (["COMSPECExtension", "DeleteLocalFile", [_f]] call comspec_overwatch_connect_fnc_extDirect); };
-                };
-            } forEach _dl;
-            profileNamespace setVariable ["COMSPEC_ATAK_DronePhotos", _keep];
-            [] call comspec_atak_native_fnc_saveProfile;
-            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["dronePhEdit", -1];
+                _x params ["_path", "_name"];
+                private _r = (["COMSPECExtension", "DeleteLocalFile", [_path]] call comspec_overwatch_connect_fnc_extDirect);
+                if (_r isEqualType []) then { _r = _r param [0, ""]; };
+                if ((_r isEqualType "") && {(_r select [0, 2]) isEqualTo "OK"}) then { _done = _done + 1; };
+            } forEach _todo;
+            private _fail = (count _todo) - _done;
+            [["SUCCESS", "WARNING"] select (_fail > 0), if (_fail > 0) then { format ["%1 photo(s) supprimée(s), %2 refusée(s) (fichier hors des dossiers COMSPEC ou déjà ouvert).", _done, _fail] } else { format ["%1 photo(s) supprimée(s) du poste.", _done] }, 4, 20] call comspec_atak_native_fnc_notify;
+            ["list"] call comspec_atak_native_fnc_photoLibrary;
+            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
         };
-        private _done = 0;
-        {
-            _x params ["_path", "_name"];
-            private _r = (["COMSPECExtension", "DeleteLocalFile", [_path]] call comspec_overwatch_connect_fnc_extDirect);
-            if (_r isEqualType []) then { _r = _r param [0, ""]; };
-            if ((_r isEqualType "") && {(_r select [0, 2]) isEqualTo "OK"}) then { _done = _done + 1; };
-        } forEach _todo;
-        private _fail = (count _todo) - _done;
-        [["SUCCESS", "WARNING"] select (_fail > 0), if (_fail > 0) then { format ["%1 photo(s) supprimée(s), %2 refusée(s) (fichier hors des dossiers COMSPEC ou déjà ouvert).", _done, _fail] } else { format ["%1 photo(s) supprimée(s) du poste.", _done] }, 4, 20] call comspec_atak_native_fnc_notify;
-        ["list"] call comspec_atak_native_fnc_photoLibrary;
-        [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
-        _done > 0
+        true
     };
     case "send": {
         private _lib = uiNamespace getVariable ["COMSPEC_ATAK_PhotoLib", []];
