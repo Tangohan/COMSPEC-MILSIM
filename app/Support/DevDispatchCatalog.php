@@ -294,7 +294,7 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1253, '2026-11-01', 'Écrans : un seul menu, diapositives visibles, PC du poste sur les écrans', 'Avec le pack 2.9.25 et la liaison 2.0.114, chaque écran n’a plus qu’un seul menu « Écran COMSPEC » (Diffusion, Affichage TOC, Carte), les diapositives s’affichent de nouveau sur les écrans et le PC du poste TOC est affiché en direct sur les écrans du poste pour tous les joueurs proches.', [
+            $pr(1254, '2026-11-01', 'Écrans : un seul menu, diapositives visibles, PC du poste sur les écrans', 'Avec le pack 2.9.25 et la liaison 2.0.114, chaque écran n’a plus qu’un seul menu « Écran COMSPEC » (Diffusion, Affichage TOC, Carte), les diapositives s’affichent de nouveau sur les écrans et le PC du poste TOC est affiché en direct sur les écrans du poste pour tous les joueurs proches.', [
                 'PC du poste TOC affiché en direct sur les écrans du poste (vue de l’opérateur, pour tous)',
             ], [
                 'Un seul menu « Écran COMSPEC » rangé par thème',
