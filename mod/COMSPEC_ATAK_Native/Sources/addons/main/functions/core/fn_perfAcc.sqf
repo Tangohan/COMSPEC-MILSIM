@@ -9,8 +9,11 @@
     0,1 ms sont indicatives, les totaux et les pires appels restent fiables.
 */
 params [["_key", ""], ["_t0", 0]];
+private _dt = diag_tickTime - _t0;
 private _acc = missionNamespace getVariable ["COMSPEC_ATAK_PerfAcc", createHashMap];
 if (_key isEqualTo "report") exitWith {
+    // Mode profilage (fn_profiler) : c'est lui qui fait le bilan, toutes les 10 s.
+    if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) exitWith {};
     missionNamespace setVariable ["COMSPEC_ATAK_PerfAcc", createHashMap];
     (missionNamespace getVariable ["COMSPEC_ATAK_PerfSlow", [0, 0]]) params ["_slowN", "_slowMax"];
     missionNamespace setVariable ["COMSPEC_ATAK_PerfSlow", [0, 0]];
@@ -26,10 +29,14 @@ if (_key isEqualTo "report") exitWith {
         round diag_fps, _slowN, round (_slowMax * 1000), ["aucun", "appairé"] select (!isNull _d), count (missionNamespace getVariable ["COMSPEC_ATAK_Locks", createHashMap]),
         (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""], [_parts joinString " ; ", "rien mesuré"] select ((count _parts) isEqualTo 0)];
 };
-private _dt = diag_tickTime - _t0;
 private _c = _acc getOrDefault [_key, []];
 if ((count _c) isEqualTo 0) then { _c = [0, 0, 0]; _acc set [_key, _c]; };
 _c set [0, (_c select 0) + 1];
 _c set [1, (_c select 1) + _dt];
 if (_dt > (_c select 2)) then { _c set [2, _dt]; };
 missionNamespace setVariable ["COMSPEC_ATAK_PerfAcc", _acc];
+// Mode profilage : ce qui a tourné pendant l'image (saccades) et les pics de plus de 5 ms (20 par bilan).
+if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then {
+    COMSPEC_ATAK_ProfFrame pushBack [_key, _dt];
+    if (_dt > 0.005 && {(count COMSPEC_ATAK_ProfSpikes) < 20}) then { COMSPEC_ATAK_ProfSpikes pushBack [_key, _dt]; };
+};

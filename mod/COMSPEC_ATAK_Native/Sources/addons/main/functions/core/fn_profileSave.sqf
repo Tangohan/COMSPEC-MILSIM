@@ -22,7 +22,13 @@ switch (_mode) do {
     case "now": {
         missionNamespace setVariable ["COMSPEC_ATAK_ProfileDirty", false];
         missionNamespace setVariable ["COMSPEC_ATAK_ProfileSaveAt", diag_tickTime + 120];
+        // Écriture regroupée en attente (fn_saveProfile, ATAK et Overwatch : même fichier) servie par celle-ci.
+        missionNamespace setVariable ["COMSPEC_ProfileSavePending", false];
+        private _t0 = diag_tickTime;
         saveProfileNamespace;
+        private _ms = round ((diag_tickTime - _t0) * 1000);
+        if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["Écriture du profil", _t0] call comspec_atak_native_fnc_perfAcc; };
+        if (_ms >= 100) then { diag_log format ["[COMSPEC ATAK NATIVE][PERF] Écriture du profil (sauvegardes périodiques) : %1 ms", _ms]; };
     };
 };
 true

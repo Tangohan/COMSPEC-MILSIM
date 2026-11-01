@@ -38,6 +38,36 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.28 : moins d'à-coups en partie, mode profilage des saccades (ATAK natif 2.9.28.AG - Denver, COMSPEC Link 2.0.114)
+
+### Résumé joueur
+Type : performance
+FR : Moins d'à-coups en pleine partie et un mode pour mesurer les saccades
+- Le téléphone n'enregistre plus votre profil Arma toutes les deux minutes quand rien n'a changé : cet enregistrement réécrivait tout le profil et figeait brièvement l'image, même téléphone rangé.
+- En solo, dans l'éditeur Eden ou en partie hébergée, la recherche des socles de recharge ne parcourt plus tous les objets de la mission chaque minute, et le suivi des balises GPS lit plus vite la liste des unités.
+- Nouveau réglage Options › Addon Options › COMSPEC › ATAK · Debug › Profilage (saccades) : jouez 10 minutes puis envoyez-nous le fichier RPT, il montre ce qui tournait à chaque saccade.
+EN : Fewer hitches in game and a mode to measure stutters
+- The phone no longer saves your Arma profile every two minutes when nothing changed: that save rewrote the whole profile and briefly froze the picture, even with the phone put away.
+- In single player, in the Eden editor or in a hosted game, the search for charging docks no longer goes through every mission object each minute, and GPS beacon tracking reads the unit list faster.
+- New setting Options › Addon Options › COMSPEC › ATAK · Debug › Profiling (stutters): play for 10 minutes then send us the RPT file, it shows what was running at each stutter.
+
+### Détail technique
+- Retour joueurs (Discord, « Semi consistent stutters ») : saccades semi-régulières téléphone fermé mais porté, mod seul + CBA/ACE, aussi en Eden. RPT 2.9.26 du 01/11 sans partie (rien après le chargement de la carte à 19:26) : seules données au démarrage. Note `docs/bugs/2026-11-01-saccades-fond-profilage.md`.
+- `fn_offline` : la sauvegarde hors ligne (toutes les 30 s) marquait le profil modifié à chaque passage, même sans rien de neuf (l'heure seule changeait) : `saveProfileNamespace` toutes les 2 min (`fn_profileSave`), profil de plusieurs Mo chez certains joueurs (3,2 Mo chez TTRD). Comparaison avec la sauvegarde précédente hors horodatage, écriture seulement si un SMS, message, ordre ou alerte a changé. Même règle pour le carnet de distances (`fn_distanceLog`) et le temps d'écran en attente sans liaison (`fn_screenTime`), toutes les 5 min.
+- `fn_saveProfile` (ATAK et connect) et `fn_profileSave` : une écriture sert les deux échéances (`COMSPEC_ProfileSavePending`, `COMSPEC_ATAK_ProfileDirty`), plus deux écritures rapprochées ; écriture périodique de plus de 100 ms journalisée. `fn_callsignAction` « web » (arrivée en jeu) : écriture regroupée et seulement si l'indicatif Athena a changé.
+- `fn_dockServer` (serveur, donc le joueur en solo / Eden / partie hébergée) : `allMissionObjects` une seule fois au premier passage puis `EntityCreated`, au lieu d'un balayage par minute.
+- connect `fn_initGpsBeacons` (toutes les 12 s sur chaque poste) : drapeaux lus directement avant `fn_isObjectFlag`, unités sans drapeau écartées sans appel de fonction.
+- connect `fn_zeusShowPlayerAtak` : `replaceString` n'existe pas, la fonction était refusée au preStart (2 « Error in expression » dans le RPT) ; `splitString` / `joinString`. Ancien panneau Zeus d'Overwatch, que l'ATAK natif ne propose plus (fn_zeusMenu) : aucun changement visible, seulement le RPT propre.
+- Nouveau `fn_profiler` + réglage `comspec_atak_native_profiling` (ATAK · Debug, décoché) : enveloppe toutes les boucles CBA (`cba_common_perFrameHandlerArray`, COMSPEC et autres mods séparés), plus les appels DLL (`fn_extensionCall`, `fn_extAwait` ATAK et connect, `fn_extDirect`, `LogWrite`), les rappels `ExtensionCallback` et `saveProfileNamespace` via `fn_perfAcc`. Toutes les 10 s : `[PROF]` bilan (img/s, image moyenne et pire, saccades, ms COMSPEC et autres mods, scripts en file), détail COMSPEC (15), autres mods (8), pics > 5 ms, et chaque saccade (> 33 ms et > 2× la moyenne) avec ce qui a tourné autour. Le bilan `[PERF]` 30 s se tait pendant le profilage.
+- Avertissements « No entry '.gesturecomspec…' » : au chargement de la config seulement (une fois, comme les gestes des autres mods), aucun coût en partie.
+- connect 1.6.26. Link inchangé.
+
+### À tester en jeu
+- Eden, mission locale avec téléphone porté et fermé : activer Profilage (saccades), jouer 10 min ; le RPT doit montrer « Profilage activé », un bilan `[PROF]` toutes les 10 s, des lignes COMSPEC / Autres mods, et les saccades avec leur détail. Décocher : « Profilage arrêté », plus de lignes `[PROF]`, le bilan `[PERF]` 30 s revient.
+- Pendant le profilage, téléphone ouvert : carte, drone, apps, tout doit fonctionner comme avant (boucles enveloppées).
+- Profil : sans SMS ni message, plus d'« Écriture du profil » toutes les 2 min dans les pics ; envoyer un SMS, l'écriture revient dans les 2 min ; SMS retrouvés après un crash.
+- Socle de recharge posé en Eden et posé avec le kit en partie : les téléphones chargent toujours.
+
 ## Pack 2.9.27 : recherche d'apps instantanée, réglages sans rechargement, « Écouter » dans l'app Musique (ATAK natif 2.9.27.AG - Denver, COMSPEC Link 2.0.114)
 
 ### Résumé joueur

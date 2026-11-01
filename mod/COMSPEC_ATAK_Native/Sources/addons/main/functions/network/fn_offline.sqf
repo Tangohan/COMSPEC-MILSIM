@@ -171,14 +171,20 @@ switch (toLower _act) do {
         if !(_alerts isEqualType []) then { _alerts = []; };
         _alerts = (_alerts select [((count _alerts) - 50) max 0, 50]) select { _x isEqualType [] };
         private _tasks = [] call comspec_atak_native_fnc_tasksAll;
-        profileNamespace setVariable ["COMSPEC_ATAK_OfflineSave", [
+        private _sv = [
             _key, call _hhmm,
             _p2p apply { [_x] call _flat },
             _msgs,
             ((_data getOrDefault ["inbox", []]) select { _x isEqualType createHashMap }) apply { [_x] call _flat },
             (keys _tasks) select { (_tasks get _x) isEqualType createHashMap } apply { [_x, [_tasks get _x] call _flat] },
             _alerts
-        ]];
+        ];
+        // Rien de neuf depuis la dernière sauvegarde (même mission, mêmes SMS, messages, ordres, alertes ; l'heure seule
+        // change) : pas d'écriture. Avant, le profil entier (plusieurs Mo chez certains joueurs) était réécrit toutes
+        // les 2 min même sans aucun message : saccade régulière en pleine partie.
+        private _old = profileNamespace getVariable ["COMSPEC_ATAK_OfflineSave", []];
+        if (_old isEqualType [] && {(_old param [0, ""]) isEqualTo _key} && {(_old select [2]) isEqualTo (_sv select [2])}) exitWith {};
+        profileNamespace setVariable ["COMSPEC_ATAK_OfflineSave", _sv];
         // Écrit sur le disque au plus toutes les 2 min (fn_profileSave : échéance commune aux sauvegardes périodiques) :
         // survit à un crash du jeu sans saccade à chaque sauvegarde.
         ["dirty"] call comspec_atak_native_fnc_profileSave;

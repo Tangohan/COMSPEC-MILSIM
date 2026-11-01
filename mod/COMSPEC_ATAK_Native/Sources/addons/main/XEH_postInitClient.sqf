@@ -228,7 +228,12 @@ if (!isNil "zen_custom_modules_fnc_register") then {
 ["comspec_atak_native_cas", { if (["hold", ["comspec_atak_native_cas", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_jtacAction; }] call CBA_fnc_addEventHandler;
 // App JTAC ouverte en contrôle (ou vue équipage) : position et géométrie de l'appareil rafraîchies.
 [{ ["tick"] call comspec_atak_native_fnc_jtacAction; }, 3] call COMSPEC_ATAK_PfhSpread;
-private _eh = addMissionEventHandler ["ExtensionCallback", { _this call comspec_atak_native_fnc_extensionCallback }];
+private _eh = addMissionEventHandler ["ExtensionCallback", {
+    if !(missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) exitWith { _this call comspec_atak_native_fnc_extensionCallback };
+    private _pt = diag_tickTime;
+    _this call comspec_atak_native_fnc_extensionCallback;
+    [format ["Rappel DLL natif %1", _this param [1, ""]] select [0, 60], _pt] call comspec_atak_native_fnc_perfAcc;
+}];
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 // Service Athéna changé (Oui / Non) : apps Athena affichées ou masquées tout de suite.
 ["COMSPEC_AthenaModeChanged", { [{ if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_dockRender; }; }] call CBA_fnc_execNextFrame; }] call CBA_fnc_addEventHandler;

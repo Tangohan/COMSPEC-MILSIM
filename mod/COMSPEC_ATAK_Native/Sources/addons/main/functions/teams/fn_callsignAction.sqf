@@ -97,7 +97,8 @@ switch (_act) do {
             [_web] call _publish;
             ["INFO", format ["Indicatif mis à jour depuis Athena : %1", _web], 4, 30] call comspec_atak_native_fnc_notify;
         };
-        saveProfileNamespace;
+        // Relu à chaque arrivée en jeu : écriture du profil regroupée (fn_saveProfile), et seulement si la fiche a changé.
+        if (_web isNotEqualTo _seen) then { [] call comspec_atak_native_fnc_saveProfile; };
         call _rerender;
         true
     };

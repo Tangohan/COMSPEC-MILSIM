@@ -9,7 +9,12 @@
 */
 params [["_ext", "COMSPECExtension"], ["_cmd", ""], ["_args", []]];
 if ([_cmd] call comspec_overwatch_connect_fnc_uplinkHold) exitWith { ["", 0, 0] };
-if ([_cmd] call comspec_overwatch_connect_fnc_extFast) exitWith { _ext callExtension [_cmd, _args] };
+if ([_cmd] call comspec_overwatch_connect_fnc_extFast) exitWith {
+    private _pt = diag_tickTime;
+    private _r = _ext callExtension [_cmd, _args];
+    if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL " + _cmd, _pt] call comspec_atak_native_fnc_perfAcc; };
+    _r
+};
 if (canSuspend) exitWith { [_ext, _cmd, _args] call comspec_overwatch_connect_fnc_extAwait };
 [_ext, _cmd, _args] spawn comspec_overwatch_connect_fnc_extAwait;
 ["", 0, 0]

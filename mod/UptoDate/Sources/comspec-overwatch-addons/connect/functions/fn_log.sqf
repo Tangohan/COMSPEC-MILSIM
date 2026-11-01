@@ -62,7 +62,9 @@ if (hasInterface && {missionNamespace getVariable ["comspec_overwatch_log_to_fil
     private _det = if (isNil "_detail") then { "" } else { str _detail };
     // Appel direct gardé : LogWrite ne fait que mettre la ligne en file dans la DLL, et les dernières lignes
     // avant un crash doivent arriver dans le fichier. Forme tableau [résultat, code, erreur] lue aussi.
+    private _pt = diag_tickTime;
     private _res = "COMSPECExtension" callExtension ["LogWrite", [_line, _levelKey, _channel, _message, _det, _termUid]];
+    if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL LogWrite", _pt] call comspec_atak_native_fnc_perfAcc; };
     if (_res isEqualType []) then { _res = _res param [0, ""]; };
     if (_res isEqualType "" && {(_res select [0, 3]) == "OK|"}) then {
         if (!(missionNamespace getVariable ["COMSPEC_LogFilePathLogged", false])) then {
