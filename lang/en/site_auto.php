@@ -49048,4 +49048,6 @@ return [
     '🟡 Événement' => '🟡 Event',
     '🟢 Débutant' => '🟢 Beginner',
     '🧪 Test avec un contact fictif:' => '🧪 Test with a fictitious contact:',
+    'Cette fiche et les effectifs des unités ne concordent pas (affectation enregistrée à moitié).' => 'This file and the unit rosters do not match (assignment only half saved).',
+    'Réparer l’affectation' => 'Repair assignment',
 ];

@@ -580,6 +580,7 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
                 <?php if (!empty($isBackOfficeShell) && empty($boSkipPageHead)): ?>
                     <?php require base_path('views/partials/back_office_page_head.php'); ?>
                 <?php endif; ?>
+                <?php $dnbShellHome = true; require base_path('views/partials/donation_banner.php'); $dnbShellHome = false; ?>
                 <?php if (!empty($isBackOfficeShell) && empty($boSkipSessionFlashes)): ?>
                 <div class="ath-main__flashes ath-rise">
                     <?php require base_path('views/partials/bo_session_flashes.php'); ?>
