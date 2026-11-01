@@ -1,58 +1,53 @@
 /**
- * Contribuer (/contribuer) : bascule jour / nuit (sans JavaScript, la page suit le système),
+ * Contribuer (/contribuer) : apparition au défilement et compteurs (mêmes effets que la page de dons),
  * filtre du mur par rôle, champ « langues » montré seulement quand « Traducteur » est coché.
  */
 (function () {
   'use strict';
 
-  var root = document.querySelector('[data-cb]');
+  var root = document.querySelector('[data-ctr]');
   if (!root) return;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ---- Thème -------------------------------------------------------------------------------
-  var KEY = 'athena.contribute.theme';
-  var media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
-  var btn = root.querySelector('[data-cb-theme-toggle]');
-
-  function stored() {
-    try { return localStorage.getItem(KEY); } catch (e) { return null; }
+  // ---- Apparition au défilement ------------------------------------------------------------
+  var items = root.querySelectorAll('.don-reveal');
+  if ('IntersectionObserver' in window && !reduce) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('is-in'); io.unobserve(en.target); }
+      });
+    }, { threshold: 0.12 });
+    Array.prototype.forEach.call(items, function (el) { io.observe(el); });
+  } else {
+    Array.prototype.forEach.call(items, function (el) { el.classList.add('is-in'); });
   }
 
-  function apply(theme) {
-    root.setAttribute('data-theme', theme);
-    if (!btn) return;
-    var label = theme === 'dark' ? btn.getAttribute('data-label-light') : btn.getAttribute('data-label-dark');
-    btn.setAttribute('aria-label', label || '');
-    btn.setAttribute('title', label || '');
-  }
-
-  var pref = stored();
-  apply(pref === 'dark' || pref === 'light' ? pref : (media && media.matches ? 'dark' : 'light'));
-
-  if (btn) {
-    btn.hidden = false;
-    btn.addEventListener('click', function () {
-      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      try {
-        if (media && (next === 'dark') === media.matches) localStorage.removeItem(KEY);
-        else localStorage.setItem(KEY, next);
-      } catch (e) {}
-      apply(next);
+  // ---- Compteurs ---------------------------------------------------------------------------
+  if (!reduce && 'IntersectionObserver' in window) {
+    Array.prototype.forEach.call(root.querySelectorAll('[data-don-count]'), function (el) {
+      var target = parseInt(el.getAttribute('data-don-count'), 10) || 0;
+      var final = el.textContent;
+      el.textContent = '0';
+      var seen = new IntersectionObserver(function (entries) {
+        if (!entries[0].isIntersecting) return;
+        seen.disconnect();
+        var t0 = null;
+        var step = function (ts) {
+          if (t0 === null) t0 = ts;
+          var k = Math.min(1, (ts - t0) / 1200);
+          el.textContent = k < 1 ? String(Math.round(target * (1 - Math.pow(1 - k, 3)))) : final;
+          if (k < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }, { threshold: 0.6 });
+      seen.observe(el);
     });
   }
 
-  if (media) {
-    var onSystem = function (e) {
-      var p = stored();
-      if (p !== 'dark' && p !== 'light') apply(e.matches ? 'dark' : 'light');
-    };
-    if (media.addEventListener) media.addEventListener('change', onSystem);
-    else if (media.addListener) media.addListener(onSystem);
-  }
-
   // ---- Filtre du mur -----------------------------------------------------------------------
-  var filter = root.querySelector('[data-cb-filter]');
-  var wall = root.querySelector('[data-cb-wall]');
-  var none = root.querySelector('[data-cb-none]');
+  var filter = root.querySelector('[data-ctr-filter]');
+  var wall = root.querySelector('[data-ctr-wall]');
+  var none = root.querySelector('[data-ctr-none]');
   if (filter && wall) {
     var chips = filter.querySelectorAll('button[data-role]');
     var people = wall.querySelectorAll('[data-roles]');
@@ -73,8 +68,8 @@
   }
 
   // ---- Formulaire : langues du traducteur --------------------------------------------------
-  var form = document.getElementById('cb-form');
-  var langs = document.getElementById('cb-langs-field');
+  var form = document.getElementById('ctr-form');
+  var langs = document.getElementById('ctr-langs-field');
   if (form && langs) {
     var box = form.querySelector('input[name="roles[]"][value="translator"]');
     var sync = function () { langs.hidden = !(box && box.checked && !box.disabled); };

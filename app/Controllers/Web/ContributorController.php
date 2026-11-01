@@ -64,11 +64,12 @@ final class ContributorController
             'title' => __('site.contrib_meta_title'),
             'meta_description' => __('site.contrib_meta_description'),
             'marketingActive' => 'contribuer',
+            // Même famille que la page de dons : ses composants, plus les éléments propres à la page.
             'marketingStyles' => [
-                'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&display=swap',
-                asset_url('assets/css/site-contribute-page.css') . '?v=1',
+                asset_url('assets/css/site-support.css') . '?v=1',
+                asset_url('assets/css/site-contribute-page.css') . '?v=2',
             ],
-            'marketingScripts' => [asset_url('assets/js/site-contribute.js') . '?v=1'],
+            'marketingScripts' => [asset_url('assets/js/site-contribute.js') . '?v=2'],
             'contribUser' => $user,
             'contribPublicName' => $publicName,
             'contribCallsign' => trim((string) ($user['callsign'] ?? '')),
