@@ -17,10 +17,48 @@ final class MemberNumberAnalysis
     public const GAP_LIST_LIMIT = 60;
 
     /**
-     * Expression régulière reconnaissant un matricule produit par le format, avec le numéro de séquence
-     * dans le groupe nommé « seq » (absent si le format n’a pas de {NUMBER}).
+     * Expressions régulières reconnaissant un matricule produit par le format : une par combinaison
+     * unité / grade renseigné ou vide (le nettoyage des séparateurs diffère selon le cas).
+     *
+     * @return list<string>
      */
-    public static function patternRegex(string $pattern, string $prefix, ?string $tenantSlug = null): string
+    public static function patternRegexes(string $pattern, string $prefix, ?string $tenantSlug = null): array
+    {
+        $hasUnit = stripos($pattern, '{UNIT}') !== false;
+        $hasGrade = stripos($pattern, '{GRADE}') !== false;
+        $out = [];
+        foreach ($hasUnit ? [false, true] : [false] as $unit) {
+            foreach ($hasGrade ? [false, true] : [false] as $grade) {
+                $out[] = self::patternRegex($pattern, $prefix, $tenantSlug, $unit, $grade);
+            }
+        }
+
+        return array_values(array_unique($out));
+    }
+
+    /**
+     * Numéro de séquence d’un matricule conforme au format (0 si le format n’a pas de numéro),
+     * ou null si la valeur ne suit pas le format.
+     *
+     * @param list<string> $regexes
+     */
+    public static function matchSequence(string $value, array $regexes): ?int
+    {
+        foreach ($regexes as $regex) {
+            if (preg_match($regex, $value, $m) === 1) {
+                return isset($m['seq']) ? (int) $m['seq'] : 0;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Expression régulière reconnaissant un matricule produit par le format, avec le numéro de séquence
+     * dans le groupe nommé « seq » (absent si le format n’a pas de {NUMBER}). $unitFilled / $gradeFilled :
+     * l’unité et le grade du membre sont-ils renseignés (code alphanumérique) ou vides.
+     */
+    public static function patternRegex(string $pattern, string $prefix, ?string $tenantSlug = null, bool $unitFilled = false, bool $gradeFilled = false): string
     {
         // Jetons remplacés par des marqueurs neutres (ni tiret ni barre) pour appliquer le même nettoyage que format().
         $marks = [
@@ -28,6 +66,8 @@ final class MemberNumberAnalysis
             'Y4' => "\x01Y\x01",
             'Y2' => "\x01y\x01",
             'MO' => "\x01M\x01",
+            'UN' => "\x01U\x01",
+            'GR' => "\x01G\x01",
         ];
         $out = $pattern;
         $out = str_replace(['{PREFIX}', '{prefix}'], $prefix, $out);
@@ -35,8 +75,8 @@ final class MemberNumberAnalysis
         $out = str_replace(['{YEAR}', '{year}'], $marks['Y4'], $out);
         $out = str_replace(['{MONTH}', '{month}'], $marks['MO'], $out);
         $out = str_replace(['{TENANT}', '{tenant}'], (string) ($tenantSlug ?? ''), $out);
-        // Unité et grade ne sont jamais fournis à la génération : ils valent toujours vide.
-        $out = str_replace(['{UNIT}', '{unit}', '{GRADE}', '{grade}'], '', $out);
+        $out = str_replace(['{UNIT}', '{unit}'], $unitFilled ? $marks['UN'] : '', $out);
+        $out = str_replace(['{GRADE}', '{grade}'], $gradeFilled ? $marks['GR'] : '', $out);
         $pad = null;
         if (preg_match('/\{NUMBER:(\d+)\}/i', $out, $m)) {
             $pad = max(1, min(8, (int) $m[1]));
@@ -59,7 +99,11 @@ final class MemberNumberAnalysis
 
             return $pad !== null ? '(?<seq>\d{' . $pad . ',})' : '(?<seq>\d+)';
         }, $regex) ?? $regex;
-        $regex = str_replace(["\x01Y\x01", "\x01y\x01", "\x01M\x01"], ['\d{4}', '\d{2}', '(?:0[1-9]|1[0-2])'], $regex);
+        $regex = str_replace(
+            ["\x01Y\x01", "\x01y\x01", "\x01M\x01", "\x01U\x01", "\x01G\x01"],
+            ['\d{4}', '\d{2}', '(?:0[1-9]|1[0-2])', '[A-Za-z0-9]+', '[A-Za-z0-9]+'],
+            $regex
+        );
 
         return '/^' . $regex . '$/i';
     }
@@ -83,7 +127,7 @@ final class MemberNumberAnalysis
      */
     public static function analyze(array $members, string $pattern, string $prefix, ?string $tenantSlug, int $nextSequence): array
     {
-        $regex = self::patternRegex($pattern, $prefix, $tenantSlug);
+        $regexes = self::patternRegexes($pattern, $prefix, $tenantSlug);
         $hasNumber = preg_match('/\{NUMBER(:\d+)?\}/i', $pattern) === 1;
 
         $byValue = [];
@@ -98,9 +142,10 @@ final class MemberNumberAnalysis
             }
             ++$assigned;
             $byValue[mb_strtolower($value)][] = $id;
-            if (preg_match($regex, $value, $mm) === 1) {
-                if (isset($mm['seq']) && (int) $mm['seq'] > 0) {
-                    $sequences[(int) $mm['seq']] = true;
+            $seq = self::matchSequence($value, $regexes);
+            if ($seq !== null) {
+                if ($seq > 0) {
+                    $sequences[$seq] = true;
                 }
             } else {
                 $offFormat[] = $id;

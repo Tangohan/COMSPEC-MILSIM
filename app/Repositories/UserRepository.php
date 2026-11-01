@@ -1771,6 +1771,86 @@ class UserRepository
     }
 
     /**
+     * Code de l’unité principale et abréviation du grade de chaque membre, pour les éléments {UNIT} et {GRADE}
+     * du modèle de matricule. Unité : affectation principale du dossier, sinon première affectation active.
+     *
+     * @param list<int> $userIds
+     * @return array<int, array{unit: string, grade: string}>
+     */
+    public function memberNumberContextsForTenant(int $tenantId, array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0)));
+        if ($tenantId < 1 || $userIds === []) {
+            return [];
+        }
+        $out = [];
+        foreach ($userIds as $id) {
+            $out[$id] = ['unit' => '', 'grade' => ''];
+        }
+        $tenantLit = (int) $tenantId;
+        foreach (array_chunk($userIds, 500) as $chunk) {
+            $in = implode(',', array_fill(0, count($chunk), '?'));
+            // Unité principale (dossier personnel), puis première affectation active.
+            if ($this->tableExists('personnel_profiles') && $this->personnelProfilesHasColumn('primary_unit_id')) {
+                $st = $this->pdo()->prepare(
+                    'SELECT pp.user_id, un.code FROM personnel_profiles pp
+                     INNER JOIN units un ON un.id = pp.primary_unit_id AND un.tenant_id = ' . $tenantLit . '
+                     WHERE pp.user_id IN (' . $in . ')'
+                    . ($this->personnelProfilesHasColumn('tenant_id') ? ' AND pp.tenant_id = ' . $tenantLit : '')
+                );
+                $st->execute($chunk);
+                while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                    $uid = (int) $row['user_id'];
+                    if (isset($out[$uid]) && $out[$uid]['unit'] === '') {
+                        $out[$uid]['unit'] = trim((string) ($row['code'] ?? ''));
+                    }
+                }
+            }
+            if ($this->tableExists('user_units')) {
+                $st = $this->pdo()->prepare(
+                    'SELECT uu.user_id, un.code FROM user_units uu
+                     INNER JOIN units un ON un.id = uu.unit_id AND un.tenant_id = ' . $tenantLit . '
+                     WHERE uu.user_id IN (' . $in . ')'
+                    . ($this->columnExists('user_units', 'ended_at') ? ' AND uu.ended_at IS NULL' : '')
+                    . ' ORDER BY uu.user_id, uu.unit_id'
+                );
+                $st->execute($chunk);
+                while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                    $uid = (int) $row['user_id'];
+                    $code = trim((string) ($row['code'] ?? ''));
+                    if (isset($out[$uid]) && $out[$uid]['unit'] === '' && $code !== '') {
+                        $out[$uid]['unit'] = $code;
+                    }
+                }
+            }
+            // Grade : référentiel (label_short) ou ancienne table (short_name).
+            if ($this->tableExists('grades') && $this->columnExists('users', 'grade_id')) {
+                $short = $this->columnExists('grades', 'label_short') ? 'label_short' : ($this->columnExists('grades', 'short_name') ? 'short_name' : null);
+                if ($short !== null) {
+                    $hasUcp = $this->hasCommunityMembershipTable() && $this->tableExists('user_community_profiles')
+                        && $this->columnExists('user_community_profiles', 'grade_id');
+                    $gradeExpr = $hasUcp ? 'COALESCE(ucp.grade_id, u.grade_id)' : 'u.grade_id';
+                    $st = $this->pdo()->prepare(
+                        'SELECT u.id, g.' . $short . ' AS grade_short FROM users u '
+                        . ($hasUcp ? 'LEFT JOIN user_community_profiles ucp ON ucp.user_id = u.id AND ucp.tenant_id = ' . $tenantLit . ' ' : '')
+                        . 'INNER JOIN grades g ON g.id = ' . $gradeExpr . '
+                         WHERE u.id IN (' . $in . ')'
+                    );
+                    $st->execute($chunk);
+                    while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                        $uid = (int) $row['id'];
+                        if (isset($out[$uid])) {
+                            $out[$uid]['grade'] = trim((string) ($row['grade_short'] ?? ''));
+                        }
+                    }
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Membres actifs de la communauté et leur matricule d’organisation (page Matricules du back-office) :
      * nom, indicatif, e-mail, matricule plateforme et matricule de CETTE communauté.
      *
