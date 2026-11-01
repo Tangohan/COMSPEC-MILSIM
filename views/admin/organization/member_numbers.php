@@ -17,6 +17,9 @@ declare(strict_types=1);
  * @var array<string, mixed>|null $memberNumberAnalysis
  * @var list<array<string, mixed>> $memberNumberAudit
  * @var string $memberNumberTenantToken
+ * @var array<string, mixed>|null $memberNumberRenumber Aperçu de renumérotation (?renumeroter=1)
+ * @var array<string, mixed>|null $memberNumberImportPreview Aperçu d’import en attente
+ * @var array{unit: string, grade: string} $memberNumberContextSample Exemple d’unité / grade pour l’aperçu
  */
 
 use App\Support\MemberNumberAnalysis;
@@ -30,6 +33,9 @@ $members = is_array($memberNumberMembers ?? null) ? $memberNumberMembers : [];
 $an = is_array($memberNumberAnalysis ?? null) ? $memberNumberAnalysis : null;
 $audit = is_array($memberNumberAudit ?? null) ? $memberNumberAudit : [];
 $tenantToken = (string) ($memberNumberTenantToken ?? '');
+$renumber = is_array($memberNumberRenumber ?? null) ? $memberNumberRenumber : null;
+$importPreview = is_array($memberNumberImportPreview ?? null) ? $memberNumberImportPreview : null;
+$ctxSample = is_array($memberNumberContextSample ?? null) ? $memberNumberContextSample : ['unit' => 'ALPHA', 'grade' => 'SGT'];
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
@@ -59,6 +65,8 @@ $tokens = [
     ['{YEAR:2}', 'Année (' . date('y') . ')'],
     ['{MONTH}', 'Mois'],
     ['{TENANT}', 'Nom court de la communauté'],
+    ['{UNIT}', 'Code de l’unité du membre'],
+    ['{GRADE}', 'Grade du membre'],
 ];
 $presets = [
     '{PREFIX}-{NUMBER:4}' => 'Préfixe et numéro',
@@ -101,6 +109,7 @@ $pct = static fn (int $n): string => $total > 0 ? (string) (int) round($n / $tot
 $sourceLabels = [
     'manual' => 'Saisie', 'manual_override' => 'Saisie', 'assisted' => 'Proposé', 'automatic' => 'Automatique',
     'import' => 'Import', 'bulk' => 'Attribution groupée', 'regenerate' => 'Régénéré',
+    'restore' => 'Rétabli depuis l’historique', 'renumber' => 'Renumérotation',
 ];
 ?>
 <?php if ($flashOk): ?>
@@ -186,7 +195,7 @@ if ($missing > 0 && $required) {
 </section>
 
 <form method="post" action="<?= $h(url('back-office/organisation/matricules')) ?>" class="bo-mn-rules ath-rise" data-mn-form
-      data-tenant="<?= $h($tenantToken) ?>" data-year="<?= $h(date('Y')) ?>" data-month="<?= $h(date('m')) ?>">
+      data-tenant="<?= $h($tenantToken) ?>" data-unit="<?= $h((string) $ctxSample['unit']) ?>" data-grade="<?= $h((string) $ctxSample['grade']) ?>" data-year="<?= $h(date('Y')) ?>" data-month="<?= $h(date('m')) ?>">
     <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
     <section class="bo-mn-panel">
         <header class="bo-mn-panel__head">
@@ -273,6 +282,7 @@ if ($missing > 0 && $required) {
         <p class="bo-mn-preview__value" data-mn-pv><?= $h($preview !== '' ? $preview : '—') ?></p>
         <p class="bo-mn-preview__then">puis</p>
         <ul class="bo-mn-preview__next" data-mn-pv-next></ul>
+        <p class="bo-mn-preview__ctx" data-mn-pv-ctx<?= \App\Services\Personnel\TenantMemberNumberService::patternUsesContext($pattern) ? '' : ' hidden' ?>>Exemple pour un membre de l’unité <?= $h((string) $ctxSample['unit']) ?>, grade <?= $h((string) $ctxSample['grade']) ?>. Sans unité ou sans grade, l’élément est simplement omis.</p>
         <p class="bo-mn-preview__mode" data-mn-pv-mode><?= $h(($modeInfo[$mode] ?? [$mode])[0]) ?><?= $enabled ? '' : ' · désactivé' ?></p>
     </aside>
 </form>
@@ -349,6 +359,79 @@ if ($missing > 0 && $required) {
     <?php endif; ?>
 </section>
 
+<?php
+$renumScope = (string) ($renumber['scope'] ?? 'off');
+$renumNumbering = (string) ($renumber['numbering'] ?? 'keep');
+?>
+<section class="bo-mn-panel ath-rise" aria-labelledby="mn-renum-title">
+    <header class="bo-mn-panel__head">
+        <h2 class="bo-mn-panel__title" id="mn-renum-title">Renuméroter selon le modèle actuel</h2>
+        <span class="bo-mn-panel__hint">Utile après un changement de modèle. Rien n’est modifié avant votre validation.</span>
+    </header>
+    <div class="bo-mn-panel__body">
+        <form method="get" action="<?= $h(url('back-office/organisation/matricules')) ?>" class="bo-mn-renum-form">
+            <input type="hidden" name="renumeroter" value="1">
+            <div class="ath-field">
+                <label class="ath-field__label" for="mn-renum-scope">Matricules concernés</label>
+                <select class="ath-field__select" id="mn-renum-scope" name="portee">
+                    <option value="off"<?= $renumScope === 'off' ? ' selected' : '' ?>>Seulement ceux qui ne suivent pas le modèle<?= $offCount > 0 ? ' (' . $offCount . ')' : '' ?></option>
+                    <option value="all"<?= $renumScope === 'all' ? ' selected' : '' ?>>Tous les matricules attribués (<?= $assigned ?>)</option>
+                </select>
+            </div>
+            <div class="ath-field">
+                <label class="ath-field__label" for="mn-renum-num">Numéro</label>
+                <select class="ath-field__select" id="mn-renum-num" name="numero">
+                    <option value="keep"<?= $renumNumbering === 'keep' ? ' selected' : '' ?>>Garder le numéro actuel (chiffres de fin)</option>
+                    <option value="next"<?= $renumNumbering === 'next' ? ' selected' : '' ?>>Numéroter à la suite, à partir de <?= $nextSeq ?></option>
+                </select>
+            </div>
+            <button type="submit" class="ath-btn">Voir l’aperçu</button>
+        </form>
+        <?php if ($renumber !== null): ?>
+            <?php if (!empty($renumber['error'])): ?>
+            <p class="ath-flash ath-flash--err bo-mn-gap"><?= $h((string) $renumber['error']) ?></p>
+            <?php elseif (($renumber['rows'] ?? []) === []): ?>
+            <p class="bo-mn-text bo-mn-gap">Aucun matricule à renuméroter avec ces choix.</p>
+            <?php else:
+                $renumRows = $renumber['rows'];
+                $renumChanges = (int) $renumber['changes'];
+                $renumConflicts = (int) $renumber['conflicts'];
+            ?>
+            <p class="bo-mn-text bo-mn-gap"><strong><?= $renumChanges ?> matricule(s) changeront</strong><?= $renumConflicts > 0 ? ', ' . $renumConflicts . ' resteront inchangés à cause d’un conflit' : '' ?>. La séquence reprendra ensuite à <?= (int) $renumber['next_after'] ?>. Chaque changement est inscrit dans l’historique et peut être annulé ligne par ligne.</p>
+            <div class="ath-table-wrap bo-mn-scroll">
+                <table class="ath-table bo-mn-table">
+                    <thead><tr><th>MEMBRE</th><th>ACTUEL</th><th>NOUVEAU</th><th>ÉTAT</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($renumRows as $r):
+                        [$rt, $rl] = ['change' => ['ok', 'Changera'], 'same' => ['neut', 'Déjà conforme'], 'conflict' => ['bad', 'Conflit']][$r['status']] ?? ['neut', '—'];
+                    ?>
+                        <tr>
+                            <td><?= $h($nameOf($byId[(int) $r['id']] ?? ['id' => (int) $r['id']])) ?></td>
+                            <td class="bo-mn-mono"><?= $h((string) $r['old']) ?></td>
+                            <td class="bo-mn-mono"><b><?= $h((string) $r['new']) ?></b></td>
+                            <td><span class="ath-tag ath-tag--<?= $rt ?>"><?= $h($rl) ?></span><?php if ((string) $r['reason'] !== ''): ?> <span class="bo-mn-muted"><?= $h((string) $r['reason']) ?></span><?php endif; ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <div class="ath-form__actions">
+                <?php if ($renumChanges > 0): ?>
+                <form method="post" action="<?= $h(url('back-office/organisation/matricules/renumeroter')) ?>" data-mn-confirm="Renuméroter <?= $renumChanges ?> matricule(s) ?">
+                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                    <input type="hidden" name="portee" value="<?= $h($renumScope) ?>">
+                    <input type="hidden" name="numero" value="<?= $h($renumNumbering) ?>">
+                    <input type="hidden" name="empreinte" value="<?= $h((string) $renumber['hash']) ?>">
+                    <button type="submit" class="ath-btn ath-btn--solid">Appliquer la renumérotation (<?= $renumChanges ?>)</button>
+                </form>
+                <?php endif; ?>
+                <a class="ath-btn" href="<?= $h(url('back-office/organisation/matricules')) ?>">Fermer l’aperçu</a>
+            </div>
+            <?php endif; ?>
+        <?php endif; ?>
+    </div>
+</section>
+
 <div class="bo-mn-split">
     <section class="bo-mn-panel ath-rise" aria-labelledby="mn-import-title">
         <header class="bo-mn-panel__head">
@@ -356,11 +439,56 @@ if ($missing > 0 && $required) {
         </header>
         <div class="bo-mn-panel__body">
             <p class="bo-mn-text">Le plus simple : exportez le registre, complétez la colonne des matricules dans votre tableur, puis réimportez le fichier. Les membres sont reconnus par leur adresse e-mail ; doublons, caractères non autorisés et adresses inconnues sont signalés.</p>
+            <?php if ($importPreview !== null):
+                $impRows = (array) ($importPreview['rows'] ?? []);
+                $impCount = ['ok' => 0, 'same' => 0, 'error' => 0];
+                foreach ($impRows as $ir) {
+                    $impCount[(string) ($ir['status'] ?? 'error')] = ($impCount[(string) ($ir['status'] ?? 'error')] ?? 0) + 1;
+                }
+            ?>
+            <div class="bo-mn-imp">
+                <p class="bo-mn-text"><strong>Vérification de « <?= $h((string) ($importPreview['file'] ?? '')) ?> »</strong> : <?= $impCount['ok'] ?> ligne(s) à appliquer, <?= $impCount['same'] ?> déjà à jour, <?= $impCount['error'] ?> refusée(s). Rien n’a encore été modifié.</p>
+                <?php if ($impRows !== []): ?>
+                <div class="ath-table-wrap bo-mn-scroll">
+                    <table class="ath-table bo-mn-table bo-mn-table--compact">
+                        <thead><tr><th>LIGNE</th><th>MEMBRE</th><th>ACTUEL</th><th>FICHIER</th><th>RÉSULTAT</th></tr></thead>
+                        <tbody>
+                        <?php foreach ($impRows as $ir):
+                            $st = (string) ($ir['status'] ?? 'error');
+                            [$it, $il] = ['ok' => ['ok', 'Sera appliqué'], 'same' => ['neut', 'Déjà à jour'], 'error' => ['bad', 'Refusé']][$st] ?? ['bad', 'Refusé'];
+                        ?>
+                            <tr>
+                                <td class="bo-mn-mono"><?= (int) ($ir['line'] ?? 0) ?></td>
+                                <td><?= $h((string) (($ir['name'] ?? '') !== '' ? $ir['name'] : ($ir['email'] ?? ''))) ?><?php if (($ir['name'] ?? '') !== ''): ?><span class="bo-mn-callsign"><?= $h((string) $ir['email']) ?></span><?php endif; ?></td>
+                                <td class="bo-mn-mono"><?= $h((string) (($ir['current'] ?? '') !== '' ? $ir['current'] : '—')) ?></td>
+                                <td class="bo-mn-mono"><b><?= $h((string) (($ir['number'] ?? '') !== '' ? $ir['number'] : '—')) ?></b></td>
+                                <td><span class="ath-tag ath-tag--<?= $it ?>"><?= $h($il) ?></span><?php if ($st === 'error' && (string) ($ir['message'] ?? '') !== ''): ?> <span class="bo-mn-muted"><?= $h((string) $ir['message']) ?></span><?php endif; ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endif; ?>
+                <div class="ath-form__actions">
+                    <?php if ($impCount['ok'] > 0): ?>
+                    <form method="post" action="<?= $h(url('back-office/organisation/matricules/import/appliquer')) ?>">
+                        <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                        <button type="submit" class="ath-btn ath-btn--solid">Appliquer <?= $impCount['ok'] ?> ligne(s)</button>
+                    </form>
+                    <?php endif; ?>
+                    <form method="post" action="<?= $h(url('back-office/organisation/matricules/import/annuler')) ?>">
+                        <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                        <button type="submit" class="ath-btn">Abandonner</button>
+                    </form>
+                </div>
+            </div>
+            <?php endif; ?>
             <form method="post" action="<?= $h(url('back-office/organisation/matricules/import')) ?>" enctype="multipart/form-data" class="bo-mn-import">
                 <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
                 <input type="file" name="csv_file" accept=".csv,text/csv" required aria-label="Fichier à importer">
-                <button type="submit" class="ath-btn ath-btn--solid">Importer</button>
+                <button type="submit" class="ath-btn<?= $importPreview === null ? ' ath-btn--solid' : '' ?>">Vérifier le fichier</button>
             </form>
+            <p class="bo-mn-text bo-mn-muted">Le fichier est d’abord vérifié ligne par ligne : vous voyez ce qui sera modifié avant de l’appliquer.</p>
             <p class="bo-mn-text bo-mn-muted">Séparateur point-virgule ou virgule. Les colonnes « email » et « tenant_member_number » du fichier exporté sont celles qui comptent ; les autres sont ignorées.</p>
             <a class="ath-btn" href="<?= $h(url('back-office/organisation/matricules/export?filtre=sans')) ?>">Télécharger les membres sans matricule</a>
         </div>
@@ -393,6 +521,16 @@ if ($missing > 0 && $required) {
                     <span class="bo-mn-mono"><?= $old !== '' ? $h($old) : '—' ?> → <?= $new !== '' ? $h($new) : 'retiré' ?></span>
                 </div>
                 <div class="bo-mn-audit__meta"><?= $h(($sourceLabels[(string) ($a['source'] ?? '')] ?? 'Modification') . ($actor !== '' ? ' · par ' . $actor : '') . ($ts !== null ? ' · ' . date('d/m/Y H:i', $ts) : '')) ?></div>
+                <?php
+                $auditUid = (int) ($a['user_id'] ?? 0);
+                $canRestore = $old !== '' && isset($byId[$auditUid]) && mb_strtolower((string) $byId[$auditUid]['tenant_member_number']) !== mb_strtolower($old);
+                if ($canRestore): ?>
+                <form method="post" action="<?= $h(url('back-office/organisation/matricules/retablir')) ?>" class="bo-mn-audit__restore" data-mn-confirm="Redonner le matricule <?= $h($old) ?> à <?= $h($who) ?> ?">
+                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                    <input type="hidden" name="audit_id" value="<?= (int) ($a['id'] ?? 0) ?>">
+                    <button type="submit" class="ath-row-action"><?= $new === '' ? 'Réattribuer' : 'Rétablir' ?> <?= $h($old) ?></button>
+                </form>
+                <?php endif; ?>
             </li>
             <?php endforeach; ?>
         </ol>
@@ -427,10 +565,11 @@ if ($missing > 0 && $required) {
     });
 
     /* Aperçu du modèle : reproduit TenantMemberNumberService::format(). */
-    function fmt(pattern, prefix, n, tenant, year, month) {
+    function fmt(pattern, prefix, n, tenant, year, month, unit, grade) {
         var out = pattern.split('{PREFIX}').join(prefix).split('{prefix}').join(prefix)
             .replace(/\{YEAR:2\}/gi, String(year).slice(-2)).replace(/\{YEAR\}/gi, String(year))
-            .replace(/\{MONTH\}/gi, month).replace(/\{TENANT\}/gi, tenant).replace(/\{UNIT\}|\{GRADE\}/gi, '');
+            .replace(/\{MONTH\}/gi, month).replace(/\{TENANT\}/gi, tenant)
+            .replace(/\{UNIT\}/gi, unit || '').replace(/\{GRADE\}/gi, grade || '');
         var m = out.match(/\{NUMBER:(\d+)\}/i);
         if (m) {
             var pad = Math.max(1, Math.min(8, parseInt(m[1], 10)));
@@ -452,7 +591,8 @@ if ($missing > 0 && $required) {
             var checked = form.querySelector('[data-mn-in="mode"]:checked');
             var mode = checked ? checked.value : 'free';
             var next = Math.max(1, parseInt(q('next').value, 10) || 1);
-            var args = [patternIn.value || '', q('prefix').value.trim(), next, form.dataset.tenant || '', form.dataset.year, form.dataset.month];
+            var args = [patternIn.value || '', q('prefix').value.trim(), next, form.dataset.tenant || '', form.dataset.year, form.dataset.month, form.dataset.unit || '', form.dataset.grade || ''];
+            form.querySelector('[data-mn-pv-ctx]').hidden = !/\{UNIT\}|\{GRADE\}/i.test(patternIn.value);
             form.querySelector('[data-mn-pv]').textContent = fmt.apply(null, args) || '—';
             var list = form.querySelector('[data-mn-pv-next]');
             list.textContent = '';

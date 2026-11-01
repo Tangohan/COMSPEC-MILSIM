@@ -234,6 +234,19 @@ final class TenantMemberNumberConfigRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /** @return array<string, mixed>|null Ligne d’historique de CETTE communauté. */
+    public function findAudit(int $tenantId, int $auditId): ?array
+    {
+        if (!$this->auditSchemaReady() || $tenantId < 1 || $auditId < 1) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare('SELECT * FROM tenant_member_number_audit WHERE id = ? AND tenant_id = ? LIMIT 1');
+        $stmt->execute([$auditId, $tenantId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     /** @return array<string, mixed> */
     private function defaults(int $tenantId): array
     {

@@ -1408,6 +1408,10 @@ return function (Router $router) {
     $router->post('/back-office/organisation/matricules/attribuer', [OrganizationMemberNumberController::class, 'assignNext'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules/membre', [OrganizationMemberNumberController::class, 'updateMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules/recaler', [OrganizationMemberNumberController::class, 'realignSequence'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/import/appliquer', [OrganizationMemberNumberController::class, 'applyImport'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/import/annuler', [OrganizationMemberNumberController::class, 'cancelImport'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/retablir', [OrganizationMemberNumberController::class, 'restore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/renumeroter', [OrganizationMemberNumberController::class, 'renumber'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Ancien « Structure & recrutement » : l’ORBAT unique fait tout (création, invitation, édition en fenêtres).
     $router->get('/back-office/organisation/structure', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => (string) $r->query('ouvrir', '')])), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/unites/{id}', [UnitSheetController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
