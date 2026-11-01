@@ -7,6 +7,7 @@ namespace App\Support;
 use App\Core\Gate;
 use App\Core\Session;
 use App\Repositories\UnitRepository;
+use App\Services\Effectifs\UnitCodeService;
 use App\Services\Organization\OrgVisibilityService;
 
 /**
@@ -27,7 +28,8 @@ final class OrbatRosterPayload
         array $u,
         array $unitMemberCounts,
         array $unitCommanderLabels,
-        array $unitRosterByUnit
+        array $unitRosterByUnit,
+        array $unitCodes = []
     ): array {
         $rawType = (string) ($u['type'] ?? '');
         $structType = strtolower(trim($rawType));
@@ -45,7 +47,7 @@ final class OrbatRosterPayload
         $children = [];
         foreach ($u['children'] ?? [] as $c) {
             if (is_array($c)) {
-                $children[] = self::normalizeNode($c, $unitMemberCounts, $unitCommanderLabels, $unitRosterByUnit);
+                $children[] = self::normalizeNode($c, $unitMemberCounts, $unitCommanderLabels, $unitRosterByUnit, $unitCodes);
             }
         }
         $mission = '—';
@@ -105,6 +107,9 @@ final class OrbatRosterPayload
             'unitId' => $uid,
             'label' => $u['name'] ?? 'Unité',
             'role' => !empty($u['code']) ? (string) $u['code'] : 'Unité',
+            // Code unité hiérarchique (SOAR-B-A-1) et identifiant administratif fixe (0042-0137).
+            'unitCode' => (string) ($unitCodes[$uid]['code'] ?? ''),
+            'adminId' => (string) ($unitCodes[$uid]['admin_id'] ?? ''),
             'type' => $displayType,
             'structType' => $structType,
             'maskMode' => $maskMode,
@@ -181,6 +186,7 @@ final class OrbatRosterPayload
             return null;
         }
         $flat = UnitRepository::flattenTree($tree);
+        $unitCodes = (new UnitCodeService())->sync($tenantId)['units'];
         $memberCounts = $unitRepository->countDistinctMembersByUnitForTenant($tenantId);
         $commanderLabels = $unitRepository->commanderLabelByUnitForTenant($tenantId, $flat);
         $rosterByUnit = $unitRepository->rosterMembersByUnitForTenant($tenantId);
@@ -227,11 +233,11 @@ final class OrbatRosterPayload
 
         $root = null;
         if (count($tree) === 1) {
-            $root = self::normalizeNode($tree[0], $memberCounts, $commanderLabels, $rosterByUnit);
+            $root = self::normalizeNode($tree[0], $memberCounts, $commanderLabels, $rosterByUnit, $unitCodes);
         } else {
             $children = [];
             foreach ($tree as $r) {
-                $children[] = self::normalizeNode($r, $memberCounts, $commanderLabels, $rosterByUnit);
+                $children[] = self::normalizeNode($r, $memberCounts, $commanderLabels, $rosterByUnit, $unitCodes);
             }
             $root = [
                 'id' => 'command',

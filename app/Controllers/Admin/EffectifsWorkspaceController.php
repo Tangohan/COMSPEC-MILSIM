@@ -36,6 +36,7 @@ use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Effectifs\ElevationApprovalService;
 use App\Services\Effectifs\MemberOffboardingService;
 use App\Services\Effectifs\PersonnelCommandChainService;
+use App\Services\Effectifs\UnitCodeService;
 use App\Services\Personnel\JobRolePickerService;
 use App\Services\Personnel\PersonnelDuplicateDetectionService;
 use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
@@ -191,6 +192,27 @@ class EffectifsWorkspaceController
             $rosterView = 'general';
         }
         $jobFilter = mb_substr(trim((string) $request->query('fonction', '')), 0, 120, 'UTF-8');
+        // Regroupement de la maquette : par unité (ordre de commandement), par grade, ou liste simple.
+        $explicitSort = trim((string) $request->query('tri', '')) !== '';
+        $group = trim((string) $request->query('groupe', ''));
+        if (!in_array($group, ['unite', 'grade', 'liste'], true)) {
+            $group = match (true) {
+                !$explicitSort || $sort === 'commandement' => 'unite',
+                $sort === 'grade' => 'grade',
+                default => 'liste',
+            };
+        }
+        if ($group === 'unite') {
+            $sort = 'commandement';
+        } elseif ($group === 'grade') {
+            $sort = 'grade';
+        }
+        $unitFilter = max(0, (int) $request->query('unite', 0));
+        $gradeCategoryFilter = (string) $request->query('categorie', '');
+        if (!in_array($gradeCategoryFilter, ['off', 'nco', 'enl'], true)) {
+            $gradeCategoryFilter = '';
+        }
+        $gradeCategories = $this->gradeCategoriesById($tenantId);
 
         $statusFilter = $status !== '' ? $status : null;
         $roleFilter = $roleId > 0 ? $roleId : null;
@@ -210,7 +232,7 @@ class EffectifsWorkspaceController
 
         $languageCommunity = $this->communitySettingsFor($tenantId);
         $languageFilter = CommunityLanguages::normalize($request->query('langue', '')) ?? '';
-        $needsFullLoad = $sort !== 'nom' || $languageFilter !== '' || $jobFilter !== '';
+        $needsFullLoad = $sort !== 'nom' || $languageFilter !== '' || $jobFilter !== '' || $unitFilter > 0 || $gradeCategoryFilter !== '';
         if ($needsFullLoad) {
             $fetchLimit = min(2000, max($total, 1));
             $baseUsers = $this->userRepository->listForTenant(
@@ -242,6 +264,16 @@ class EffectifsWorkspaceController
             if ($jobFilter !== '') {
                 // Filtre « fonction » : la fonction principale commence par l'emploi choisi (ex. « Medic — CLS »).
                 $allRows = array_values(array_filter($allRows, static fn (array $r): bool => mb_stripos(trim((string) ($r['job_role_display'] ?? '')), $jobFilter, 0, 'UTF-8') === 0));
+                $total = count($allRows);
+            }
+            if ($unitFilter > 0) {
+                // Filtre « unité » : l'unité choisie et toutes ses sous-unités.
+                $unitScope = array_flip($this->unitRepository->expandUnitIdsWithDescendants($tenantId, [$unitFilter]));
+                $allRows = array_values(array_filter($allRows, static fn (array $r): bool => isset($unitScope[(int) ($r['unit_id'] ?? 0)])));
+                $total = count($allRows);
+            }
+            if ($gradeCategoryFilter !== '') {
+                $allRows = array_values(array_filter($allRows, static fn (array $r): bool => ($gradeCategories[(int) ($r['grade_id'] ?? 0)] ?? '') === $gradeCategoryFilter));
                 $total = count($allRows);
             }
             if (in_array($sort, ['heures_vol', 'temps_mission'], true)) {
@@ -361,7 +393,103 @@ class EffectifsWorkspaceController
             'rosterJobsByUserId' => $jobEdit['by_user'],
             'rosterJobPickerGroups' => $jobEdit['groups'],
             'rosterJobRoleMax' => $jobEdit['max'],
+            'rosterUnitCodes' => (new UnitCodeService())->sync($tenantId)['units'],
+            'rosterGroup' => $group,
+            'rosterUnitFilter' => $unitFilter,
+            'rosterGradeCategory' => $gradeCategoryFilter,
+            'rosterGradeCategories' => $gradeCategories,
+            'rosterUnitCommanders' => $this->safeCommanderLabels($tenantId, $unitsRaw),
+            'effHero' => $this->rosterHeroData($tenantId, $unitsRaw, $counts),
         ]);
+    }
+
+    /**
+     * Catégorie de chaque grade (officier, sous-officier, militaire du rang), d'après son code OTAN.
+     * Un grade sans code OTAN n'a pas de catégorie : il n'apparaît dans aucun des trois filtres.
+     *
+     * @return array<int, string>
+     */
+    private function gradeCategoriesById(int $tenantId): array
+    {
+        $out = [];
+        try {
+            foreach ($this->gradeRepository->listForTenant($tenantId) as $g) {
+                $rank = GradeSelectOptions::natoRank($g);
+                $id = (int) ($g['id'] ?? 0);
+                if ($id < 1 || $rank < 1) {
+                    continue;
+                }
+                $out[$id] = $rank >= 100 ? 'off' : ($rank >= 5 ? 'nco' : 'enl');
+            }
+        } catch (\Throwable) {
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $unitsRaw
+     * @return array<int, string>
+     */
+    private function safeCommanderLabels(int $tenantId, array $unitsRaw): array
+    {
+        try {
+            return $this->unitRepository->commanderLabelByUnitForTenant($tenantId, $unitsRaw);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * Bandeau du tableur : composition par unité et compteurs, tous issus de la base.
+     *
+     * @param list<array<string, mixed>> $unitsRaw
+     * @param array<string, int> $counts
+     * @return array<string, mixed>
+     */
+    private function rosterHeroData(int $tenantId, array $unitsRaw, array $counts): array
+    {
+        $byUnit = [];
+        try {
+            $byUnit = $this->unitRepository->countDistinctMembersByUnitForTenant($tenantId);
+        } catch (\Throwable) {
+        }
+        $names = [];
+        foreach ($unitsRaw as $u) {
+            $names[(int) ($u['id'] ?? 0)] = trim((string) ($u['name'] ?? ''));
+        }
+        arsort($byUnit);
+        $parts = [];
+        $other = 0;
+        $i = 0;
+        foreach ($byUnit as $unitId => $n) {
+            if ($n < 1 || !isset($names[$unitId])) {
+                continue;
+            }
+            if ($i++ < 6) {
+                $parts[] = ['label' => $names[$unitId], 'count' => (int) $n, 'unit_id' => (int) $unitId];
+            } else {
+                $other += (int) $n;
+            }
+        }
+        if ($other > 0) {
+            $parts[] = ['label' => 'Autres unités', 'count' => $other, 'unit_id' => 0];
+        }
+        $noUnit = (int) ($counts['no_unit'] ?? 0);
+        if ($noUnit > 0) {
+            $parts[] = ['label' => 'Sans unité', 'count' => $noUnit, 'unit_id' => -1];
+        }
+        $absent = 0;
+        try {
+            $absent = count($this->personnelAbsenceRepository->userIdsAbsentToday($tenantId));
+        } catch (\Throwable) {
+        }
+
+        return [
+            'units_with_members' => count(array_filter($byUnit, static fn (int $n): bool => $n > 0)),
+            'composition' => $parts,
+            'absent_today' => $absent,
+        ];
     }
 
     /**
@@ -1142,8 +1270,9 @@ class EffectifsWorkspaceController
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css'],
             'loadDecorationsKit' => true,
+            'effMemberUnitCode' => (new UnitCodeService())->forUnit($tenantId, (int) ($row['unit_id'] ?? 0)),
         ]);
     }
 
@@ -3120,16 +3249,26 @@ class EffectifsWorkspaceController
             return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
-        $units = $this->unitRepository->allForTenant($tenantId);
-        $withoutUnit = $this->userRepository->countListForTenant($tenantId, null, 'active', null, true, true, null);
         $gate = Gate::getInstance();
+        $matrix = (new \App\Services\Effectifs\AffectationsMatrixService(
+            $this->userRepository,
+            $this->unitRepository,
+            $this->roleRepository,
+            $this->personnelJobRoleRepository,
+            new \App\Services\Effectifs\UnitCodeService()
+        ))->build($tenantId);
+        $view = (string) $request->query('vue', '');
 
         return $this->shell('admin.effectifs_workspace.affectations', [
             'title' => 'Affectations',
             'effectifsNav' => 'affectations',
-            'units' => $units,
-            'membersWithoutUnit' => $withoutUnit,
+            'affMatrix' => $matrix,
+            'affView' => $view === 'unites' ? 'units' : 'members',
+            'affInitialQuery' => mb_substr(trim((string) $request->query('q', '')), 0, 80, 'UTF-8'),
+            'affInitialUnit' => max(0, (int) $request->query('unite', 0)),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
+            'canEditCommunityCode' => $gate->allows('admin.organization') || $gate->allows('admin.access'),
+            'csrfToken' => Csrf::token(),
             'rosterCounts' => $this->rosterCounts($tenantId),
         ]);
     }
@@ -3523,7 +3662,7 @@ class EffectifsWorkspaceController
             'boSkipPageHead' => true,
             // The member page embeds the personnel editor. Its response only contains
             // the view body, so its component stylesheet must be loaded by this shell.
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css'],
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
             'elevationOpenCount' => $elevationOpen,
@@ -3538,6 +3677,7 @@ class EffectifsWorkspaceController
             'phaseGateCount' => $extras['phaseGateCount'],
             'phaseAutoErrorCount' => $extras['phaseAutoErrorCount'],
             'viewerName' => (string) (Session::get('display_name') ?? Session::get('email') ?? ''),
+            'communityName' => $referenceOnly ? '' : $this->communityNameForTenant($tenantId),
         ], $extra));
     }
 

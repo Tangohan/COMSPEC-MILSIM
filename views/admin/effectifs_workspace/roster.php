@@ -54,14 +54,20 @@ $cooldownLabel = static function (int $seconds): string {
     return max(1, (int) ceil($hours / 24)) . ' j';
 };
 
-$filterQuery = static function (array $overrides = []) use ($filters, $page): array {
+$rosterGroup = (string) ($rosterGroup ?? 'unite');
+$rosterUnitFilter = (int) ($rosterUnitFilter ?? 0);
+$rosterGradeCategory = (string) ($rosterGradeCategory ?? '');
+$filterQuery = static function (array $overrides = []) use ($filters, $page, $rosterGroup, $rosterUnitFilter, $rosterGradeCategory): array {
     $q = [
         'q' => $filters['q'] ?? null,
         'status' => !empty($filters['status']) ? $filters['status'] : null,
         'role_id' => !empty($filters['role_id']) ? (int) $filters['role_id'] : null,
         'sans_affectation' => !empty($filters['sans_affectation']) ? '1' : null,
         'sans_role' => !empty($filters['sans_role']) ? '1' : null,
-        'tri' => !empty($filters['tri']) && ($filters['tri'] ?? 'nom') !== 'nom' ? $filters['tri'] : null,
+        'tri' => ($rosterGroup ?? 'unite') === 'liste' && !empty($filters['tri']) && ($filters['tri'] ?? 'nom') !== 'nom' ? $filters['tri'] : null,
+        'groupe' => ($rosterGroup ?? 'unite') !== 'unite' ? ($rosterGroup ?? null) : null,
+        'unite' => (int) ($rosterUnitFilter ?? 0) > 0 ? (int) $rosterUnitFilter : null,
+        'categorie' => (string) ($rosterGradeCategory ?? '') !== '' ? (string) $rosterGradeCategory : null,
         'langue' => !empty($filters['langue']) ? $filters['langue'] : null,
         'fonction' => !empty($filters['fonction']) ? $filters['fonction'] : null,
         'vue' => !empty($filters['vue']) && $filters['vue'] !== 'general' ? $filters['vue'] : null,
@@ -150,7 +156,7 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
     || !empty($filters['sans_role'])
     || !empty($filters['langue'])
     || !empty($filters['fonction'])
-    || (($filters['tri'] ?? 'nom') !== 'nom');
+    || (($rosterGroup ?? 'unite') === 'liste' && ($filters['tri'] ?? 'nom') !== 'nom');
 
 $exportQuery = array_filter([
     'q' => $filters['q'] ?? null,
@@ -189,7 +195,7 @@ $metricNoRole = !empty($filters['sans_role']);
 $noUnitCount = (int) ($counts['no_unit'] ?? 0);
 $noRoleCount = (int) ($counts['no_role'] ?? 0);
 ?>
-<div class="eff-catalog eff-catalog--roster">
+<div class="eff-catalog eff-catalog--roster eff-mq">
     <?php if (!empty($dupScan['enabled']) && $dupGroups !== []): ?>
     <aside class="eff-banner eff-banner--warn" role="status">
         <div class="eff-banner__body">
@@ -221,161 +227,9 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
         <a href="<?= htmlspecialchars(effectifs_workspace_url('doublons'), ENT_QUOTES, 'UTF-8') ?>" class="eff-banner__action">Ouvrir les fiches</a>
     </aside>
     <?php endif; ?>
-    <div class="eff-roster-hero eff-roster-hero--compact">
-        <div class="eff-metrics eff-metrics--roster" aria-label="Synthèse des effectifs">
-            <a class="eff-metric eff-metric--link<?= $metricAll ? ' is-active' : '' ?>" href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">
-                <p class="eff-metric__k">Membres</p>
-                <p class="eff-metric__v"><?= (int) ($counts['total'] ?? $total) ?></p>
-            </a>
-            <a class="eff-metric eff-metric--link<?= $metricActive ? ' is-active' : '' ?>" href="<?= htmlspecialchars(effectifs_workspace_url() . '?status=active', ENT_QUOTES, 'UTF-8') ?>">
-                <p class="eff-metric__k">Actifs</p>
-                <p class="eff-metric__v"><?= (int) ($counts['active'] ?? 0) ?></p>
-            </a>
-            <a class="eff-metric eff-metric--link<?= $metricNoUnit ? ' is-active is-amber' : '' ?><?= !$metricNoUnit && $noUnitCount > 0 ? ' is-amber' : '' ?>" href="<?= htmlspecialchars(effectifs_workspace_url() . '?sans_affectation=1', ENT_QUOTES, 'UTF-8') ?>">
-                <p class="eff-metric__k">Sans unité</p>
-                <p class="eff-metric__v"><?= $noUnitCount ?></p>
-            </a>
-            <a class="eff-metric eff-metric--link<?= $metricNoRole ? ' is-active is-amber' : '' ?><?= !$metricNoRole && $noRoleCount > 0 ? ' is-amber' : '' ?>" href="<?= htmlspecialchars(effectifs_workspace_url() . '?sans_role=1', ENT_QUOTES, 'UTF-8') ?>">
-                <p class="eff-metric__k">Sans rôle</p>
-                <p class="eff-metric__v"><?= $noRoleCount ?></p>
-            </a>
-        </div>
-        <?php if ($canEditProfiles || $orgFoundingDate !== ''): ?>
-        <details class="eff-roster-hero__seniority eff-catalog__notice">
-            <summary class="eff-roster-seniority__summary">
-                <span class="eff-catalog__kicker">Ancienneté réelle</span>
-                <?php if ($orgFoundingDate !== ''): ?>
-                    <?php $orgFoundedTs = strtotime($orgFoundingDate); ?>
-                    <?php if ($orgFoundedTs !== false): ?>
-                    <span class="eff-roster-hero__seniority-date">Organisation créée le <?= htmlspecialchars(date('d/m/Y', $orgFoundedTs), ENT_QUOTES, 'UTF-8') ?></span>
-                    <?php endif; ?>
-                <?php else: ?>
-                    <span class="eff-roster-hero__seniority-date">Date de création à renseigner</span>
-                <?php endif; ?>
-            </summary>
-            <div class="eff-roster-seniority__panel">
-            <p class="eff-catalog__notice-lead">
-                La date de création de l’organisation compte pour tout le monde, y compris si la communauté
-                existait avant l’arrivée sur Athena. Pour un membre déjà présent à cette époque, indiquez
-                son arrivée avec le bouton « Ancienneté » de sa ligne.
-            </p>
-            <?php if ($canEditProfiles): ?>
-            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('anciennete-entite'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__notice-form">
-                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl ?? effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">
-                <label>
-                    Création de l’organisation
-                    <input type="date" name="org_founded_on" value="<?= htmlspecialchars($orgFoundingDate, ENT_QUOTES, 'UTF-8') ?>">
-                </label>
-                <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary">Enregistrer pour tous les membres</button>
-            </form>
-            <?php endif; ?>
-            </div>
-        </details>
-        <?php endif; ?>
-    </div>
 
 
-    <form method="get" action="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="eff-roster-toolbar" data-autosubmit>
-        <?php if (!empty($filters['sans_affectation'])): ?>
-            <input type="hidden" name="sans_affectation" value="1">
-        <?php endif; ?>
-        <?php if (!empty($filters['sans_role'])): ?>
-            <input type="hidden" name="sans_role" value="1">
-        <?php endif; ?>
-        <?php if ($rosterView !== 'general'): ?>
-            <input type="hidden" name="vue" value="<?= htmlspecialchars($rosterView, ENT_QUOTES, 'UTF-8') ?>">
-        <?php endif; ?>
-        <div class="eff-catalog-filters">
-            <div class="eff-roster-toolbar__field eff-roster-toolbar__field--grow">
-                <label for="eff-q">Recherche</label>
-                <input id="eff-q" type="search" name="q" value="<?= htmlspecialchars((string) ($filters['q'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Nom, indicatif, e-mail…">
-            </div>
-            <div class="eff-roster-toolbar__field">
-                <label for="eff-status">Statut du compte</label>
-                <select id="eff-status" name="status">
-                    <option value="">Tous les statuts</option>
-                    <option value="active" <?= (($filters['status'] ?? '') === 'active') ? 'selected' : '' ?>>Compte actif</option>
-                    <option value="inactive" <?= (($filters['status'] ?? '') === 'inactive') ? 'selected' : '' ?>>Compte inactif</option>
-                    <option value="pending_verification" <?= (($filters['status'] ?? '') === 'pending_verification') ? 'selected' : '' ?>>E-mail à vérifier</option>
-                </select>
-            </div>
-            <div class="eff-roster-toolbar__field">
-                <label for="eff-role">Rôle</label>
-                <select id="eff-role" name="role_id">
-                    <option value="">Tous les rôles</option>
-                    <?php foreach ($roles as $role): ?>
-                        <option value="<?= (int) ($role['id'] ?? 0) ?>" <?= ((int) ($filters['role_id'] ?? 0) === (int) ($role['id'] ?? 0)) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars((string) ($role['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <?php if ($jobOptions !== []): ?>
-            <div class="eff-roster-toolbar__field">
-                <label for="eff-fonction">Fonction</label>
-                <select id="eff-fonction" name="fonction">
-                    <option value="">Toutes les fonctions</option>
-                    <?php foreach ($jobOptions as $jobName): ?>
-                        <option value="<?= htmlspecialchars((string) $jobName, ENT_QUOTES, 'UTF-8') ?>" <?= $jobFilter === (string) $jobName ? 'selected' : '' ?>><?= htmlspecialchars((string) $jobName, ENT_QUOTES, 'UTF-8') ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <?php endif; ?>
-            <?php if (count($rosterLanguageCodes) > 1 || $languageFilter !== ''): ?>
-            <div class="eff-roster-toolbar__field">
-                <label for="eff-langue">Langue</label>
-                <select id="eff-langue" name="langue">
-                    <option value="">Toutes les langues</option>
-                    <?php foreach (array_values(array_unique(array_merge($rosterLanguageCodes, $languageFilter !== '' ? [$languageFilter] : []))) as $langCode): ?>
-                        <option value="<?= htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8') ?>" <?= $languageFilter === $langCode ? 'selected' : '' ?>><?= htmlspecialchars(strtoupper(\App\Support\CommunityLanguages::countryCode($langCode) ?: $langCode) . ' · ' . \App\Support\CommunityLanguages::label($langCode), ENT_QUOTES, 'UTF-8') ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <?php endif; ?>
-            <div class="eff-roster-toolbar__field">
-                <label for="eff-tri">Trier par</label>
-                <select id="eff-tri" name="tri">
-                    <?php foreach ($sortOptions as $value => $label): ?>
-                        <option value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') ?>" <?= $currentSort === (string) $value ? 'selected' : '' ?>>
-                            <?= htmlspecialchars((string) $label, ENT_QUOTES, 'UTF-8') ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="eff-roster-toolbar__actions">
-                <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary">Appliquer</button>
-                <?php if ($hasActiveFilters): ?>
-                <a href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Réinitialiser</a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </form>
-
-    <nav class="eff-das-views" aria-label="Colonnes du tableur">
-        <?php foreach (['general' => ['Vue générale', 'Grade, affectation, fonction, accès, temps en mission, heures de vol'], 'medical' => ['Médical', 'Groupe sanguin, poids, taille, intolérances et allergies'], 'aviation' => ['Heures de vol', 'Heures aux commandes, par type d’appareil']] as $viewKey => [$viewLabel, $viewHint]): ?>
-            <a class="eff-das-views__tab<?= $rosterView === $viewKey ? ' is-active' : '' ?>" href="<?= htmlspecialchars($queryUrlView($viewKey), ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars($viewHint, ENT_QUOTES, 'UTF-8') ?>"<?= $rosterView === $viewKey ? ' aria-current="page"' : '' ?>><?= htmlspecialchars($viewLabel, ENT_QUOTES, 'UTF-8') ?></a>
-        <?php endforeach; ?>
-        <span class="eff-das-views__hint"><?= htmlspecialchars(match ($rosterView) {
-            'medical' => 'Données du dossier médical, modifiables depuis la fiche (état civil).',
-            'aviation' => 'Heures relevées en jeu par la liaison ATAK, cumulées depuis le début.',
-            default => 'Un membre par ligne : cliquez sur un nom pour ouvrir sa fiche.',
-        }, ENT_QUOTES, 'UTF-8') ?></span>
-        <span class="eff-das-views__export" aria-label="Exporter ce tableau">
-            <a class="eff-das-views__btn" href="<?= htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8') ?>" title="Tableur CSV (Excel), avec les filtres de recherche">CSV</a>
-            <?php if ($canExportPdf): ?>
-            <a class="eff-das-views__btn eff-das-views__btn--pdf" href="<?= htmlspecialchars($pdfExportUrl, ENT_QUOTES, 'UTF-8') ?>" title="PDF prêt à imprimer ou à envoyer : cette vue, avec les filtres et le tri affichés">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 12v6"/><path d="m9 15 3 3 3-3"/></svg>
-                PDF<?= $rosterView === 'medical' ? ' médical' : ($rosterView === 'aviation' ? ' heures de vol' : '') ?>
-            </a>
-            <?php else: ?>
-            <a class="eff-das-views__btn eff-das-views__btn--locked" href="<?= htmlspecialchars(url('platform/upgrade?from=pdf_exports'), ENT_QUOTES, 'UTF-8') ?>" title="Les exports PDF sont inclus dans les formules payantes">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-                PDF
-            </a>
-            <?php endif; ?>
-        </span>
-    </nav>
+<?php require __DIR__ . '/partials/roster_toolbar.php'; ?>
 
     <?php if ($rows === []): ?>
         <div class="eff-catalog__empty">
@@ -438,11 +292,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         <?php if ($canBulkAny): ?>
                         <th class="eff-das__check"><input type="checkbox" data-eff-bulk-all aria-label="Tout sélectionner"></th>
                         <?php endif; ?>
-                        <th class="eff-das__sticky eff-das__col-photo">Photo</th>
-                        <th class="eff-das__col-mle">Matricule Athena</th>
-                        <th class="eff-das__col-mle">Matricule communauté</th>
-                        <th class="eff-das__col-identity">Identité</th>
-                        <th class="eff-das__col-callsign">Callsign</th>
+                        <th class="eff-das__sticky eff-mq-col-member">Membre</th>
                         <?php if ($rosterView === 'medical'): ?>
                             <th>Emploi</th>
                             <th class="eff-das__num">Qualifs</th>
@@ -466,19 +316,53 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             <th>Affectation</th>
                             <th title="Ce que fait la personne : radio, médecin, pilote…">Emploi</th>
                             <th title="Le poste tenu dans son unité : chef de groupe, tireur, adjoint…">Rôle</th>
+                            <th>Statut</th>
+                            <th title="Présence aux activités ; la disponibilité est indiquée dessous">Présence</th>
+                            <th title="Dernière connexion au site">Dernière connexion</th>
                             <th class="eff-das__num">Qualifs</th>
                             <th title="Ce que la personne a le droit de faire sur le site">Niveau d’accès</th>
                             <th>Ancienneté</th>
                             <th class="eff-das__num">Temps en mission</th>
                             <th class="eff-das__num" title="Heures aux commandes d'un aéronef, tous appareils confondus">Heures de vol</th>
-                            <th title="Disponibilité et présence">Disponibilité</th>
-                            <th>Complétion</th>
-                            <th class="eff-das__col-dossier">Dossier</th>
+                            <th class="eff-das__col-dossier" title="Complétion du dossier ; l’icône ouvre le dossier">Dossier</th>
+                            <th>À traiter</th>
                         <?php endif; ?>
                         <th class="eff-das__actions-col">Fiche</th>
                     </tr>
                 </thead>
                 <tbody>
+                <?php
+                // Regroupement de la maquette : en-tête de groupe à chaque changement d'unité (ou de grade).
+                $groupMode = in_array((string) ($rosterGroup ?? 'unite'), ['unite', 'grade'], true) ? (string) $rosterGroup : '';
+                $unitCodesMap = is_array($rosterUnitCodes ?? null) ? $rosterUnitCodes : [];
+                $unitCommanders = is_array($rosterUnitCommanders ?? null) ? $rosterUnitCommanders : [];
+                $gradeCats = is_array($rosterGradeCategories ?? null) ? $rosterGradeCategories : [];
+                $avatarPalette = ['#0f172a', '#065f46', '#1d4ed8', '#b45309', '#6d28d9', '#0369a1', '#9f1239', '#3f6212'];
+                $groupKeyOf = static function (array $r) use ($groupMode): string {
+                    if ($groupMode === 'grade') {
+                        $g = trim((string) ($r['grade_long'] ?? $r['grade_short'] ?? ''));
+
+                        return $g !== '' ? 'g:' . $g : 'g:';
+                    }
+
+                    return 'u:' . (int) ($r['unit_id'] ?? 0);
+                };
+                $groupStats = [];
+                if ($groupMode !== '') {
+                    foreach ($rows as $gr) {
+                        $gk = $groupKeyOf($gr);
+                        $groupStats[$gk] ??= ['n' => 0, 'presence' => 0];
+                        $groupStats[$gk]['n']++;
+                        $groupStats[$gk]['presence'] += (int) ($gr['presence_score'] ?? 0);
+                    }
+                }
+                $colCount = ($canBulkAny ? 1 : 0) + 2 + match ($rosterView) {
+                    'medical' => 8,
+                    'aviation' => 5 + count($aviationFamilies),
+                    default => 14,
+                };
+                $currentGroup = null;
+                ?>
                 <?php foreach ($rows as $row):
                     $id = (int) ($row['id'] ?? 0);
                     $display = trim((string) ($row['display_name'] ?? ''));
@@ -498,6 +382,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         $assignmentPath = $unit;
                     }
                     $assignmentLeaf = \App\Support\UnitAbbreviation::standalone($assignmentPath);
+                    $rowUnitCode = is_array($rosterUnitCodes ?? null) ? ($rosterUnitCodes[(int) ($row['unit_id'] ?? 0)] ?? null) : null;
                     $assignmentParent = '';
                     if ($assignmentPath !== '' && str_contains($assignmentPath, '/')) {
                         $pathParts = array_values(array_filter(array_map('trim', explode('/', $assignmentPath)), static fn (string $part): bool => $part !== ''));
@@ -571,85 +456,111 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         $pilotFamilies
                     ));
                     ?>
-                    <tr data-ath-quiet-scope="eff-row-<?= $id ?>"<?= $status !== 'active' ? ' class="is-muted-row"' : '' ?>>
+                    <?php
+                    $rowGroupKey = $groupMode !== '' ? $groupKeyOf($row) : '';
+                    $rowGroupId = $rowGroupKey !== '' ? 'g' . substr(md5($rowGroupKey), 0, 10) : '';
+                    $unitColor = $unitId > 0 ? $avatarPalette[$unitId % count($avatarPalette)] : '#64748b';
+                    ?>
+                    <?php if ($groupMode !== '' && $rowGroupKey !== $currentGroup): ?>
+                        <?php
+                        $currentGroup = $rowGroupKey;
+                        $gStat = $groupStats[$rowGroupKey] ?? ['n' => 0, 'presence' => 0];
+                        $gAvg = $gStat['n'] > 0 ? (int) round($gStat['presence'] / $gStat['n']) : 0;
+                        $gAvgClass = $gAvg >= 80 ? 'is-good' : ($gAvg >= 50 ? 'is-mid' : 'is-low');
+                        if ($groupMode === 'grade') {
+                            $gTitle = substr($rowGroupKey, 2) !== '' ? substr($rowGroupKey, 2) : 'Sans grade';
+                            $gCode = null;
+                            $gPath = '';
+                            $gChief = '';
+                        } else {
+                            $gTitle = $unitId > 0 ? ($unit !== '' ? $unit : $assignmentLeaf) : 'Sans unité';
+                            $gCode = $unitId > 0 ? ($unitCodesMap[$unitId] ?? null) : null;
+                            $gPath = $unitId > 0 ? $assignmentPath : '';
+                            $gChief = $unitId > 0 ? trim((string) ($unitCommanders[$unitId] ?? '')) : '';
+                        }
+                        ?>
+                    <tr class="eff-mq-gh" data-eff-group="<?= $rowGroupId ?>">
+                        <td colspan="<?= $colCount ?>">
+                            <button type="button" class="eff-mq-gh__toggle" aria-expanded="true" data-eff-group-toggle="<?= $rowGroupId ?>">
+                                <svg class="eff-mq-gh__car" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+                                <span class="eff-mq-gh__sq" style="background:<?= htmlspecialchars($groupMode === 'unite' ? $unitColor : '#475569', ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></span>
+                                <b><?= htmlspecialchars($gTitle, ENT_QUOTES, 'UTF-8') ?></b>
+                            </button>
+                            <?php if (is_array($gCode)): ?><?= eff_unit_code_html((string) $gCode['code'], (string) $gCode['admin_id'], 'sm') ?><?php endif; ?>
+                            <span class="eff-mq-gh__meta">
+                                <span><?= (int) $gStat['n'] ?> membre<?= $gStat['n'] > 1 ? 's' : '' ?><?= $totalPages > 1 ? ' sur cette page' : '' ?></span>
+                                <?php if ($gChief !== ''): ?><span>Chef : <b><?= htmlspecialchars($gChief, ENT_QUOTES, 'UTF-8') ?></b></span><?php endif; ?>
+                                <span>Présence moy. <b class="<?= $gAvgClass ?>"><?= $gAvg ?> %</b></span>
+                                <?php if ($gPath !== '' && str_contains($gPath, '/')): ?><span class="eff-mq-gh__path"><?= htmlspecialchars(str_replace(' / ', ' › ', $gPath), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                            </span>
+                        </td>
+                    </tr>
+                    <?php endif; ?>
+                    <tr data-ath-quiet-scope="eff-row-<?= $id ?>" class="eff-mq-row<?= $status !== 'active' ? ' is-muted-row' : '' ?>"<?= $rowGroupId !== '' ? ' data-eff-group-row="' . $rowGroupId . '"' : '' ?>>
                         <?php if ($canBulkAny): ?>
                         <td class="eff-das__check"><input type="checkbox" class="eff-bulk-check" name="user_ids[]" value="<?= $id ?>" form="eff-bulk-form" aria-label="Sélectionner <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>"></td>
                         <?php endif; ?>
-                        <td class="eff-das__sticky eff-das__col-photo" data-label="Photo">
-                            <span class="eff-sheets__avatar" aria-hidden="true">
-                                <?php if ($avatarUrl !== ''): ?>
-                                    <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" decoding="async" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars($rowInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait opérateur indisponible">
-                                <?php else: ?>
-                                    <?= htmlspecialchars($rowInitials, ENT_QUOTES, 'UTF-8') ?>
-                                <?php endif; ?>
-                            </span>
-                        </td>
-                        <td class="eff-das__col-mle" data-label="Matricule Athena">
-                            <?php if ($athenaId !== ''): ?>
-                                <span class="eff-das__mle" title="Matricule Athena"><?= htmlspecialchars($athenaId, ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php else: ?>
-                                <span class="eff-das__muted">—</span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="eff-das__col-mle" data-label="Matricule communauté">
-                            <?php if ($orgNumber !== ''): ?>
-                                <span class="eff-das__mle" title="N° communauté"><?= htmlspecialchars($orgNumber, ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php else: ?>
-                                <span class="eff-das__muted">—</span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="eff-das__col-identity" data-label="Identité">
-                            <div class="eff-sheets__id-text">
-                                <a class="eff-sheets__name" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></a>
-                                <span class="eff-sheets__grade-line">
-                                    <?php $rowLang = $rosterLanguages[$id] ?? null; ?>
-                                    <?php if (is_array($rowLang)): ?>
-                                        <?php
-                                        $rowLangCodes = array_merge([(string) $rowLang['primary']], $rowLang['others']);
-                                        // Phrase composée : écrite dans la langue de la page (la traduction automatique ne la reconnaît pas).
-                                        $rowLangName = static fn (string $c): string => $rosterEn
-                                            ? \App\Support\CommunityLanguages::pageLabel($c)
-                                            : mb_strtolower(\App\Support\CommunityLanguages::label($c));
-                                        $rowLangTitle = ($rosterEn ? 'Plays in ' : 'Joue en ') . $rowLangName((string) $rowLang['primary'])
-                                            . ($rowLang['others'] !== [] ? ($rosterEn ? ', understands ' : ', comprend ') . implode(', ', array_map($rowLangName, $rowLang['others'])) : '')
-                                            . ($rowLang['source'] !== 'member' ? ($rosterEn ? ' (to be confirmed)' : ' (à confirmer)') : '');
-                                        ?>
-                                        <span class="eff-sheets__badge eff-sheets__badge--lang<?= $rowLang['source'] !== 'member' ? ' eff-sheets__badge--muted' : '' ?>" title="<?= htmlspecialchars($rowLangTitle, ENT_QUOTES, 'UTF-8') ?>"><?= \App\Support\CommunityLanguages::flagsHtml($rowLangCodes, ['class' => 'eff-sheets__lang-flag', 'size' => '16x12']) ?><span class="eff-sheets__lang-codes"><?= htmlspecialchars(implode('·', array_map('strtoupper', $rowLangCodes)), ENT_QUOTES, 'UTF-8') ?></span></span>
-                                    <?php endif; ?>
-                                    <?php if (is_array($phaseBadge) && ($phaseBadge['label'] ?? '') !== ''): ?>
-                                        <?php
-                                        $phaseKind = (string) ($phaseBadge['kind'] ?? 'progress');
-                                        $phaseClass = match ($phaseKind) {
-                                            'gate' => 'eff-sheets__badge--watch',
-                                            'ready' => 'eff-sheets__badge--ok',
-                                            default => 'eff-sheets__badge--muted',
-                                        };
-                                        ?>
-                                        <span class="eff-sheets__badge <?= $phaseClass ?>"><?= htmlspecialchars((string) $phaseBadge['label'], ENT_QUOTES, 'UTF-8') ?></span>
-                                    <?php endif; ?>
-                                    <?php if ($status !== 'active'): ?>
-                                        <span class="eff-sheets__badge <?= htmlspecialchars($statusClass($status), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?></span>
+                        <td class="eff-das__sticky eff-mq-col-member" data-label="Membre">
+                            <div class="eff-mq-mb">
+                                <span class="eff-sheets__avatar eff-mq-av" style="--av:<?= htmlspecialchars($unitColor, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true">
+                                    <?php if ($avatarUrl !== ''): ?>
+                                        <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" decoding="async" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars($rowInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait opérateur indisponible">
+                                    <?php else: ?>
+                                        <?= htmlspecialchars($rowInitials, ENT_QUOTES, 'UTF-8') ?>
                                     <?php endif; ?>
                                 </span>
-                                <?php if ($character !== ''): ?><span class="eff-sheets__meta">Personnage · <?= htmlspecialchars($character, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
-                                <?php
-                                $idMeta = array_values(array_filter([
-                                    $radioAssigned !== '' ? 'Radio ' . $radioAssigned : '',
-                                    $memberBadges !== [] ? count($memberBadges) . ($rosterEn ? ' award' : ' distinction') . (count($memberBadges) > 1 ? 's' : '') : '',
-                                ]));
-                                ?>
-                                <?php if ($idMeta !== []): ?><span class="eff-sheets__meta"><?= htmlspecialchars(implode(' · ', $idMeta), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                                <span class="eff-mq-mb__txt">
+                                    <a class="eff-sheets__name eff-mq-mb__name" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></a>
+                                    <small class="eff-mq-mb__line">
+                                        <?php if ($callsign !== ''): ?>
+                                            <span class="eff-mq-cs" title="Indicatif<?= $extraCallsigns !== [] ? ' · aussi ' . htmlspecialchars(implode(', ', $extraCallsigns), ENT_QUOTES, 'UTF-8') : '' ?>"><?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?><?= $extraCallsigns !== [] ? ' +' . count($extraCallsigns) : '' ?></span>
+                                        <?php endif; ?>
+                                        <?php $rowLang = $rosterLanguages[$id] ?? null; ?>
+                                        <?php if (is_array($rowLang)): ?>
+                                            <?php
+                                            $rowLangCodes = array_merge([(string) $rowLang['primary']], $rowLang['others']);
+                                            // Phrase composée : écrite dans la langue de la page (la traduction automatique ne la reconnaît pas).
+                                            $rowLangName = static fn (string $c): string => $rosterEn
+                                                ? \App\Support\CommunityLanguages::pageLabel($c)
+                                                : mb_strtolower(\App\Support\CommunityLanguages::label($c));
+                                            $rowLangTitle = ($rosterEn ? 'Plays in ' : 'Joue en ') . $rowLangName((string) $rowLang['primary'])
+                                                . ($rowLang['others'] !== [] ? ($rosterEn ? ', understands ' : ', comprend ') . implode(', ', array_map($rowLangName, $rowLang['others'])) : '')
+                                                . ($rowLang['source'] !== 'member' ? ($rosterEn ? ' (to be confirmed)' : ' (à confirmer)') : '');
+                                            ?>
+                                            <span class="eff-mq-lang<?= $rowLang['source'] !== 'member' ? ' is-guess' : '' ?>" title="<?= htmlspecialchars($rowLangTitle, ENT_QUOTES, 'UTF-8') ?>"><?= \App\Support\CommunityLanguages::flagsHtml($rowLangCodes, ['class' => 'eff-sheets__lang-flag', 'size' => '16x12']) ?><span class="eff-sheets__lang-codes"><?= htmlspecialchars(implode('·', array_map('strtoupper', $rowLangCodes)), ENT_QUOTES, 'UTF-8') ?></span></span>
+                                        <?php endif; ?>
+                                        <?php if ($orgNumber !== '' || $athenaId !== ''): ?>
+                                            <span class="eff-mq-mle" title="<?= htmlspecialchars(trim(($orgNumber !== '' ? 'Matricule communauté ' . $orgNumber : '') . ($athenaId !== '' ? ' · Matricule Athena ' . $athenaId : ''), ' ·'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($orgNumber !== '' ? $orgNumber : $athenaId, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php endif; ?>
+                                        <?php if ($status !== 'active' && $rosterView !== 'general'): ?>
+                                            <span class="eff-sheets__badge <?= htmlspecialchars($statusClass($status), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php endif; ?>
+                                    </small>
+                                    <?php
+                                    $idMeta = array_values(array_filter([
+                                        $character !== '' ? 'Personnage · ' . $character : '',
+                                        $radioAssigned !== '' ? 'Radio ' . $radioAssigned : '',
+                                        $memberBadges !== [] ? count($memberBadges) . ($rosterEn ? ' award' : ' distinction') . (count($memberBadges) > 1 ? 's' : '') : '',
+                                        $orgNumber !== '' && $athenaId !== '' ? 'Athena ' . $athenaId : '',
+                                    ]));
+                                    ?>
+                                    <?php if ($idMeta !== [] || (is_array($phaseBadge) && ($phaseBadge['label'] ?? '') !== '')): ?>
+                                    <small class="eff-mq-mb__extra">
+                                        <?php if (is_array($phaseBadge) && ($phaseBadge['label'] ?? '') !== ''): ?>
+                                            <?php
+                                            $phaseClass = match ((string) ($phaseBadge['kind'] ?? 'progress')) {
+                                                'gate' => 'eff-sheets__badge--watch',
+                                                'ready' => 'eff-sheets__badge--ok',
+                                                default => 'eff-sheets__badge--muted',
+                                            };
+                                            ?>
+                                            <span class="eff-sheets__badge <?= $phaseClass ?>"><?= htmlspecialchars((string) $phaseBadge['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php endif; ?>
+                                        <?= htmlspecialchars(implode(' · ', $idMeta), ENT_QUOTES, 'UTF-8') ?>
+                                    </small>
+                                    <?php endif; ?>
+                                </span>
                             </div>
-                        </td>
-                        <td class="eff-das__col-callsign" data-label="Callsign">
-                            <?php if ($callsign !== ''): ?>
-                                <span class="eff-das__callsign" title="Indicatif"><?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?></span>
-                                <?php if ($extraCallsigns !== []): ?>
-                                    <span class="eff-sheets__meta" title="<?= htmlspecialchars(implode(' · ', $extraCallsigns), ENT_QUOTES, 'UTF-8') ?>">+<?= count($extraCallsigns) ?></span>
-                                <?php endif; ?>
-                            <?php else: ?>
-                                <span class="eff-das__muted">—</span>
-                            <?php endif; ?>
                         </td>
                         <?php if ($rosterView === 'medical'): ?>
                             <?php
@@ -707,7 +618,14 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         <?php else: ?>
                         <td data-label="Grade">
                             <?php if ($grade !== ''): ?>
-                                <span class="eff-das__strong"><?= htmlspecialchars($grade, ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php
+                                $gradeShort = trim((string) ($row['grade_short'] ?? ''));
+                                $gradeCat = $gradeCats[(int) ($row['grade_id'] ?? 0)] ?? '';
+                                ?>
+                                <span class="eff-mq-grade">
+                                    <?php if ($gradeShort !== ''): ?><span class="eff-mq-grade__ab<?= $gradeCat !== '' ? ' is-' . $gradeCat : '' ?>"><?= htmlspecialchars($gradeShort, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                                    <span class="eff-mq-grade__long"><?= htmlspecialchars($grade, ENT_QUOTES, 'UTF-8') ?></span>
+                                </span>
                             <?php else: ?>
                                 <span class="eff-das__muted">Sans grade</span>
                             <?php endif; ?>
@@ -717,6 +635,9 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                 <?php if ($assignmentPath !== ''): ?>
                                     <span class="eff-das__unit-wrap" title="<?= htmlspecialchars($assignmentPath, ENT_QUOTES, 'UTF-8') ?>">
                                         <span class="eff-das__unit"><?= htmlspecialchars($assignmentLeaf, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php if (is_array($rowUnitCode)): ?>
+                                            <span class="eff-ucode eff-ucode--sm" title="Code unité · identifiant <?= htmlspecialchars((string) $rowUnitCode['admin_id'], ENT_QUOTES, 'UTF-8') ?>" translate="no"><?= htmlspecialchars((string) $rowUnitCode['code'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php endif; ?>
                                         <?php if ($assignmentParent !== ''): ?>
                                             <span class="eff-das__unit-parent"><?= htmlspecialchars($assignmentParent, ENT_QUOTES, 'UTF-8') ?></span>
                                         <?php endif; ?>
@@ -791,6 +712,31 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                 <?php endif; ?>
                             </div>
                         </td>
+                        <td data-label="Statut">
+                            <span class="eff-mq-st eff-mq-st--<?= htmlspecialchars($status !== '' ? $status : 'unknown', ENT_QUOTES, 'UTF-8') ?>"><i aria-hidden="true"></i><?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?></span>
+                        </td>
+                        <?php $presClass = $presenceScore >= 80 ? 'is-good' : ($presenceScore >= 50 ? 'is-mid' : 'is-low'); ?>
+                        <td data-label="Présence">
+                            <span class="eff-mq-pr <?= $presClass ?>" title="Présence <?= $presenceScore ?> % · <?= $rosterEn ? 'Availability' : 'Disponibilité' ?> <?= $availabilityScore ?> %">
+                                <span class="eff-mq-pr__b" aria-hidden="true"><i style="width:<?= max(0, min(100, $presenceScore)) ?>%"></i></span>
+                                <span class="eff-mq-pr__v"><?= $presenceScore ?> %</span>
+                            </span>
+                            <span class="eff-das__sub">Dispo. <?= $availabilityScore ?> %</span>
+                        </td>
+                        <?php
+                        $lastLogin = trim((string) ($row['last_login_at'] ?? ''));
+                        $lastLoginTs = $lastLogin !== '' ? strtotime($lastLogin) : false;
+                        $lastDays = $lastLoginTs !== false ? (int) floor((strtotime('today') - strtotime(date('Y-m-d', $lastLoginTs))) / 86400) : null;
+                        $lastLabel = match (true) {
+                            $lastDays === null => '—',
+                            $lastDays <= 0 => 'Aujourd’hui',
+                            $lastDays === 1 => 'Hier',
+                            default => 'Il y a ' . $lastDays . ' j',
+                        };
+                        ?>
+                        <td data-label="Dernière connexion">
+                            <span class="eff-mq-ls<?= $lastDays !== null && $lastDays > 30 ? ' is-old' : '' ?>"<?= $lastLoginTs !== false ? ' title="' . htmlspecialchars(date('d/m/Y H:i', $lastLoginTs), ENT_QUOTES, 'UTF-8') . '"' : '' ?>><?= htmlspecialchars($lastLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                        </td>
                         <td class="eff-das__num" data-label="Qualifs">
                             <?php if ($qualCount > 0): ?>
                                 <button type="button" class="eff-sheets__qual-count<?= $qualAlert !== '' ? ' is-alert' : '' ?>" data-eff-qual-open data-eff-qual-name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>" data-eff-qual-fiche="<?= htmlspecialchars($ficheUrl . '#qualifications', ENT_QUOTES, 'UTF-8') ?>" data-eff-qual-items="<?= $qualJson ?>" title="<?= $qualAlert !== '' ? htmlspecialchars($qualAlert, ENT_QUOTES, 'UTF-8') : 'Voir les qualifications' ?>"><?= $qualCount ?></button>
@@ -862,32 +808,48 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                 <span class="eff-das__muted">—</span>
                             <?php endif; ?>
                         </td>
-                        <td data-label="Disponibilité">
-                            <?php
-                            $availHue = max(0, min(120, (int) round($availabilityScore * 1.2)));
-                            ?>
-                            <span class="eff-das__avail" style="--avail-hue:<?= $availHue ?>;--avail-pct:<?= max(0, min(100, $availabilityScore)) ?>%" title="<?= $rosterEn ? 'Availability' : 'Disponibilité' ?> <?= $availabilityScore ?> % · <?= $rosterEn ? 'Attendance' : 'Présence' ?> <?= $presenceScore ?> %">
-                                <span class="eff-das__avail-track" aria-hidden="true"><span class="eff-das__avail-fill"></span></span>
-                                <span class="eff-das__avail-pct"><?= $availabilityScore ?> %</span>
-                            </span>
-                            <span class="eff-das__sub<?= $presenceScore < 40 ? ' is-low' : '' ?>">Présence <?= $presenceScore ?> %</span>
-                        </td>
-                        <td data-label="Complétion">
-                            <div class="eff-sheets__meter<?= $completionScore < 40 ? ' is-low' : '' ?>">
-                                <div class="eff-sheets__meter-head">
-                                    <span>Complété</span>
-                                    <strong><?= $completionScore ?>%</strong>
-                                </div>
-                                <div class="eff-sheets__meter-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $completionScore ?>" aria-label="Complétion du dossier">
-                                    <span style="width:<?= max(0, min(100, $completionScore)) ?>%"></span>
-                                </div>
-                            </div>
-                        </td>
+                        <?php $ringColor = $completionScore >= 90 ? 'var(--eff-mq-good, #059669)' : ($completionScore >= 60 ? 'var(--eff-mq-mid-ring, #64748b)' : 'var(--eff-mq-warn, #d97706)'); ?>
                         <td data-label="Dossier" class="eff-das__col-dossier">
-                            <a class="eff-das__dossier" href="<?= htmlspecialchars(url('personnel/' . $id), ENT_QUOTES, 'UTF-8') ?>" title="Ouvrir le dossier de <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>">
-                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg>
-                                <span class="sr-only">Ouvrir le dossier de <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></span>
-                            </a>
+                            <span class="eff-mq-ds">
+                                <span class="eff-mq-ring" style="--pct:<?= max(0, min(100, $completionScore)) ?>%;--ring:<?= $ringColor ?>" role="img" aria-label="Dossier complété à <?= $completionScore ?> %"></span>
+                                <span class="eff-mq-ds__v"><?= $completionScore ?> %</span>
+                                <a class="eff-das__dossier" href="<?= htmlspecialchars(url('personnel/' . $id), ENT_QUOTES, 'UTF-8') ?>" title="Ouvrir le dossier de <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>">
+                                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg>
+                                    <span class="sr-only">Ouvrir le dossier de <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></span>
+                                </a>
+                            </span>
+                        </td>
+                        <?php
+                        // « À traiter » : uniquement ce que les données montrent (pas de signal inventé).
+                        $todo = [];
+                        if ($completionScore < 60) {
+                            $todo[] = ['w', 'Dossier ' . $completionScore . ' %', 'Dossier à compléter'];
+                        }
+                        if ($qualAlert !== '') {
+                            $todo[] = ['w', 'Qualification', $qualAlert];
+                        }
+                        if ($unitId < 1) {
+                            $todo[] = ['w', 'Sans unité', 'Membre à affecter'];
+                        }
+                        if ($status === 'inactive') {
+                            $todo[] = ['x', 'Inactif', 'Compte inactif'];
+                        } elseif ($status === 'pending_verification') {
+                            $todo[] = ['n', 'E-mail', 'Adresse e-mail à vérifier'];
+                        }
+                        if (is_array($phaseBadge) && (string) ($phaseBadge['kind'] ?? '') === 'gate') {
+                            $todo[] = ['n', 'Étape', (string) ($phaseBadge['label'] ?? 'Étape à valider')];
+                        }
+                        ?>
+                        <td data-label="À traiter">
+                            <?php if ($todo === []): ?>
+                                <span class="eff-das__muted" aria-label="Rien à traiter">—</span>
+                            <?php else: ?>
+                                <span class="eff-mq-al">
+                                    <?php foreach ($todo as [$kind, $label, $hint]): ?>
+                                        <span class="is-<?= $kind ?>" title="<?= htmlspecialchars($hint, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endforeach; ?>
+                                </span>
+                            <?php endif; ?>
                         </td>
                         <?php endif; ?>
                         <td class="eff-das__actions-col">
@@ -947,6 +909,39 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
         </div>
 
     <?php endif; ?>
+        <?php if ($canEditProfiles || $orgFoundingDate !== ''): ?>
+        <details class="eff-roster-hero__seniority eff-catalog__notice eff-mq-seniority">
+            <summary class="eff-roster-seniority__summary">
+                <span class="eff-catalog__kicker">Ancienneté réelle</span>
+                <?php if ($orgFoundingDate !== ''): ?>
+                    <?php $orgFoundedTs = strtotime($orgFoundingDate); ?>
+                    <?php if ($orgFoundedTs !== false): ?>
+                    <span class="eff-roster-hero__seniority-date">Organisation créée le <?= htmlspecialchars(date('d/m/Y', $orgFoundedTs), ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <span class="eff-roster-hero__seniority-date">Date de création à renseigner</span>
+                <?php endif; ?>
+            </summary>
+            <div class="eff-roster-seniority__panel">
+            <p class="eff-catalog__notice-lead">
+                La date de création de l’organisation compte pour tout le monde, y compris si la communauté
+                existait avant l’arrivée sur Athena. Pour un membre déjà présent à cette époque, indiquez
+                son arrivée avec le bouton « Ancienneté » de sa ligne.
+            </p>
+            <?php if ($canEditProfiles): ?>
+            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('anciennete-entite'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__notice-form">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl ?? effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">
+                <label>
+                    Création de l’organisation
+                    <input type="date" name="org_founded_on" value="<?= htmlspecialchars($orgFoundingDate, ENT_QUOTES, 'UTF-8') ?>">
+                </label>
+                <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary">Enregistrer pour tous les membres</button>
+            </form>
+            <?php endif; ?>
+            </div>
+        </details>
+        <?php endif; ?>
 </div>
 
 <dialog class="eff-elev-dialog eff-qual-dialog" id="eff-qual-dialog" aria-labelledby="eff-qual-dialog-title">

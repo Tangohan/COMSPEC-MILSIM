@@ -35,7 +35,10 @@ final class EffectifsBackOfficeShellAssetTest extends TestCase
         self::assertStringNotContainsString('centre de conduite', $shell);
         self::assertStringNotContainsString('Pilotage quotidien', $shell);
         self::assertStringNotContainsString('Actions rapides', $shell);
-        self::assertStringNotContainsString('bo-eff-hero', $shell);
+        // Bandeau de la maquette « Effectifs - Athena » (2026-11-01) : titre, actions, composition et compteurs.
+        self::assertStringContainsString('bo-eff-hero', $shell);
+        self::assertStringContainsString('bo-eff-tabs__more', $shell);
+        self::assertStringContainsString('data-eff-search-open', $shell);
         self::assertStringNotContainsString('<dialog', $shell);
 
         self::assertStringNotContainsString('eff-catalog__title', $roster);
