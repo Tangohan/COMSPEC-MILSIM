@@ -42,19 +42,75 @@ final class Seo
         '/traduire-atak/p/',
         '/connect',
         '/lier',
+        // Outils du téléphone et du commandement, liens personnels (jeton), connexion et inscription.
+        '/atak/',
+        '/dashboard',
+        '/search',
+        '/login',
+        '/register',
+        '/forgot-password',
+        '/reset-password',
+        '/verify-email',
+        '/join',
+        '/enlistment',
+        '/invitations/',
+        '/integration/',
+        '/newsletter/',
+        '/calendrier/abonnement/',
+        '/tableau-operationnel/',
+        '/telecommande-drone',
+        '/9-line',
+        '/acces-demonstration',
+        '/retour-preview',
+        '/retour-demonstration',
+        '/cron/',
     ];
 
-    /** Chemin de la requête sans le préfixe d'installation (APP_BASE_PATH), commence par « / ». */
+    /**
+     * Sous-pages privées dont la page d'accueil reste publique (ex. /academy est une page de présentation,
+     * /academy/… l'espace des inscrits). Reprises par robots.txt.
+     */
+    public const PRIVATE_CHILDREN = [
+        '/academy/',
+    ];
+
+    /**
+     * Chemin de la requête tel que le voit le routeur : sans le préfixe d'installation (APP_BASE_PATH)
+     * ni l'ancien préfixe « /public » des liens Workshop (réécrit par Nginx), commence par « / ».
+     */
     public static function requestPath(?string $requestUri = null): string
     {
-        $uri = $requestUri ?? (string) ($_SERVER['REQUEST_URI'] ?? '/');
-        $path = (string) (parse_url($uri, PHP_URL_PATH) ?: '/');
-        $prefix = rtrim((string) (function_exists('env') ? env('APP_BASE_PATH', '') : ''), '/');
-        if ($prefix !== '' && str_starts_with($path, $prefix)) {
-            $path = substr($path, strlen($prefix)) ?: '/';
+        $server = $_SERVER;
+        $server['REQUEST_URI'] = $requestUri ?? (string) ($_SERVER['REQUEST_URI'] ?? '/');
+
+        return \App\Core\Request::normalizePathFromServer($server);
+    }
+
+    /**
+     * Adresse publique du site (schéma, hôte, préfixe éventuel ; sans « / » final), toujours sur le domaine
+     * actuel : une page servie par l'ancien domaine déclare quand même ses adresses sur le nouveau.
+     */
+    public static function baseUrl(): string
+    {
+        $origin = self::origin();
+        if ($origin === '') {
+            return '';
+        }
+        $site = function_exists('url') ? (string) url('') : '';
+        $prefix = rtrim((string) (parse_url($site, PHP_URL_PATH) ?: ''), '/');
+
+        return $origin . $prefix;
+    }
+
+    /** Remplace l'ancien domaine par le domaine actuel dans une adresse absolue. */
+    public static function onCurrentHost(string $url): string
+    {
+        $host = strtolower((string) (parse_url($url, PHP_URL_HOST) ?: ''));
+        if ($host !== PortalHost::LEGACY_HOST) {
+            return $url;
         }
 
-        return '/' . ltrim($path, '/');
+        return (string) preg_replace('#^https?://[^/?\#]+#i', 'https://' . PortalHost::DEFAULT_HOST, $url);
     }
 
     public static function isPrivatePath(string $path): bool
@@ -62,6 +118,11 @@ final class Seo
         $path = '/' . ltrim($path, '/');
         foreach (self::PRIVATE_PREFIXES as $prefix) {
             if (str_starts_with($path, $prefix) || $path === rtrim($prefix, '/')) {
+                return true;
+            }
+        }
+        foreach (self::PRIVATE_CHILDREN as $prefix) {
+            if (str_starts_with($path, $prefix)) {
                 return true;
             }
         }
@@ -79,11 +140,12 @@ final class Seo
     public static function canonicalUrl(?string $requestUri = null): string
     {
         $uri = $requestUri ?? (string) ($_SERVER['REQUEST_URI'] ?? '/');
-        $path = (string) (parse_url($uri, PHP_URL_PATH) ?: '/');
-        $origin = self::origin();
-        if ($origin === '') {
+        $base = self::baseUrl();
+        if ($base === '') {
             return '';
         }
+        // /public/a-propos (ancienne base) et /a-propos/ désignent la même page que /a-propos.
+        $path = self::requestPath($uri);
         parse_str((string) (parse_url($uri, PHP_URL_QUERY) ?: ''), $query);
         $kept = [];
         foreach (self::KEPT_QUERY as $key) {
@@ -93,7 +155,7 @@ final class Seo
             }
         }
 
-        return $origin . $path . ($kept !== [] ? '?' . http_build_query($kept) : '');
+        return $base . $path . ($kept !== [] ? '?' . http_build_query($kept) : '');
     }
 
     /** Retire le paramètre `lang` d'une URL. */
@@ -144,17 +206,24 @@ final class Seo
         return !(array_key_exists('registry_listed', $communityConfig) && $communityConfig['registry_listed'] === false);
     }
 
-    /** schéma://hôte[:port] du site (APP_URL, sinon la requête). */
+    /** schéma://hôte[:port] du site (APP_URL, sinon la requête) ; l'ancien domaine est remplacé par le nouveau. */
     public static function origin(): string
     {
         $site = function_exists('url') ? (string) url('') : '';
         $p = parse_url($site);
         if (is_array($p) && !empty($p['host'])) {
+            if (strtolower((string) $p['host']) === PortalHost::LEGACY_HOST) {
+                return 'https://' . PortalHost::DEFAULT_HOST;
+            }
+
             return ($p['scheme'] ?? 'https') . '://' . $p['host'] . (isset($p['port']) ? ':' . $p['port'] : '');
         }
         $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
         if ($host === '') {
             return '';
+        }
+        if (strtolower((string) preg_replace('/:\d+$/', '', $host)) === PortalHost::LEGACY_HOST) {
+            return 'https://' . PortalHost::DEFAULT_HOST;
         }
         $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || ((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');

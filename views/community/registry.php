@@ -374,7 +374,7 @@ if ($registryCount === 0) {
           <a class="cr-trend__card" href="<?= htmlspecialchars(url('c/' . rawurlencode($ttSlug) . '?ref=registry')) ?>">
             <span class="cr-trend__rank" aria-label="Rang <?= (int) $rank ?>">#<?= (int) $rank ?></span>
             <?php if ($ttLogo !== '' && filter_var($ttLogo, FILTER_VALIDATE_URL)): ?>
-            <span class="cr-trend__logo"><img src="<?= htmlspecialchars($ttLogo) ?>" alt=""></span>
+            <span class="cr-trend__logo"><img src="<?= htmlspecialchars($ttLogo) ?>" alt="" loading="lazy" decoding="async"></span>
             <?php else: ?>
             <span class="cr-trend__logo cr-trend__logo--fallback" aria-hidden="true"><?= htmlspecialchars($nameInitials($ttName)) ?></span>
             <?php endif; ?>
@@ -566,7 +566,7 @@ if ($registryCount === 0) {
               </div>
               <?php if ($cardLogo !== ''): ?>
               <div class="cr-card__logo">
-                <img src="<?= htmlspecialchars($cardLogo) ?>" alt="">
+                <img src="<?= htmlspecialchars($cardLogo) ?>" alt="" loading="lazy" decoding="async">
               </div>
               <?php else: ?>
               <div class="cr-card__logo cr-card__logo-fallback" aria-hidden="true"><?= htmlspecialchars($nameInitials($name)) ?></div>

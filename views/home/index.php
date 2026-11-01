@@ -162,15 +162,7 @@ $fieldShown = array_values(array_filter($fieldStats, static fn (array $f): bool 
     <link rel="apple-touch-icon" href="<?= $e($base) ?>/assets/icons/athena-180.png">
     <link rel="icon" type="image/png" sizes="192x192" href="<?= $e($base) ?>/assets/icons/athena-192.png">
     <link rel="preload" as="image" href="<?= $e($heroPosterUrl) ?>" fetchpriority="high">
-    <script type="application/ld+json"><?= json_encode([
-        '@context' => 'https://schema.org',
-        '@type' => 'Organization',
-        'name' => 'Athena Comspec',
-        'url' => rtrim((string) url(''), '/'),
-        'logo' => rtrim((string) url(''), '/') . '/assets/icons/athena-192.png',
-        'description' => __('home.meta_description'),
-        'sameAs' => [],
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
+    <?php /* Organisation et site : graphe commun déclaré par views/partials/seo_meta.php. */ ?>
     <script type="application/ld+json"><?= json_encode([
         '@context' => 'https://schema.org',
         '@type' => 'FAQPage',
