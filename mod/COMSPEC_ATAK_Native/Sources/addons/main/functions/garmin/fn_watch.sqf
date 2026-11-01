@@ -1121,13 +1121,18 @@ switch (_act) do {
                     _mc ctrlMapAnimAdd [0, _z, _aim];
                     ctrlMapAnimCommit _mc;
                 } else {
-                    // Suivi lent du déplacement : seulement si on a bougé d'assez loin.
-                    if ((_aim distance2D _pos) > 2) then {
-                        _mc setVariable ["comspec_watchAim", _pos];
-                        _mc ctrlMapAnimAdd [0, _z, _pos];
+                    // Suivi lent du déplacement : seulement si on a bougé d'assez loin. Le point visé garde son décalage
+                    // de recentrage (il suit le déplacement) : le remettre sur la position brute faisait clignoter la carte
+                    // entre deux centres dès que ce décalage dépassait 2 m (zooms larges).
+                    private _last = _mc getVariable ["comspec_watchPos", _pos];
+                    if ((_last distance2D _pos) > 2) then {
+                        _aim = [(_aim select 0) + (_pos select 0) - (_last select 0), (_aim select 1) + (_pos select 1) - (_last select 1)];
+                        _mc setVariable ["comspec_watchAim", _aim];
+                        _mc ctrlMapAnimAdd [0, _z, _aim];
                         ctrlMapAnimCommit _mc;
                     };
                 };
+                _mc setVariable ["comspec_watchPos", _pos];
             };
             private _hd = round (getDir (vehicle player));
             private _card = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_hd / 45)) mod 8);
