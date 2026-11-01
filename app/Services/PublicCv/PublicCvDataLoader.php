@@ -61,6 +61,7 @@ class PublicCvDataLoader
             'grade' => $this->grade($user, $tenantId),
             'unit_name' => $this->unitName($userId, $tenantId),
             'tenant' => $this->tenant($tenantId),
+            'banner_url' => $this->bannerUrl($tenantId),
             'avatar_url' => $this->safe(static fn () => OperatorPortraits::forUser($tenantId, $userId)),
             'decorations' => $this->decorations($userId, $tenantId),
             'qualifications' => $this->qualifications($userId, $tenantId),
@@ -137,6 +138,18 @@ class PublicCvDataLoader
     private function tenant(int $tenantId): ?array
     {
         return $this->safe(fn () => (new TenantRepository($this->pdo()))->findById($tenantId));
+    }
+
+    /** Bannière que la communauté affiche déjà sur sa page publique (réglage de la vitrine). */
+    private function bannerUrl(int $tenantId): ?string
+    {
+        return $this->safe(function () use ($tenantId): ?string {
+            $st = $this->pdo()->prepare('SELECT banner_url FROM tenant_branding WHERE tenant_id = ? LIMIT 1');
+            $st->execute([$tenantId]);
+            $url = $st->fetchColumn();
+
+            return is_string($url) && trim($url) !== '' ? trim($url) : null;
+        });
     }
 
     /** @return list<array<string, mixed>> */
