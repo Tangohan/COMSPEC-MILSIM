@@ -182,3 +182,116 @@ Operational Excellence	identique en anglais	views/training/index.php
 Operational Readiness	identique en anglais	views/training/index.php
 TCCC / Trauma Care	identique en anglais	views/training/index.php
 A → Z	identique en anglais	views/training/my-training.php
+' : 'aucune en retard' ?>	bruit d'extraction	views/admin/aar_reports/index.php
+' : 'toutes les missions ont leur retour' ?>	bruit d'extraction	views/admin/aar_reports/index.php
+Actions	identique en anglais	views/admin/aar_reports/index.php
+" placeholder="Ex. Mettre à jour la carte du secteur nord" maxlength="500" data-aar-act-label>	bruit d'extraction (HTML)	views/admin/aar_reports/partials/actions_fields.php
+" placeholder="Indicatif ou nom" maxlength="160">	bruit d'extraction (HTML)	views/admin/aar_reports/partials/actions_fields.php
+<input type="date" name="actions[	bruit d'extraction (HTML)	views/admin/aar_reports/partials/actions_fields.php
+<select name="actions[	bruit d'extraction (HTML)	views/admin/aar_reports/partials/actions_fields.php
+<textarea id="%1	bruit d'extraction (HTML)	views/admin/aar_reports/partials/custom_fields.php
+Conclusion	identique en anglais	views/admin/aar_reports/show.php
+Questions	identique en anglais	views/admin/aar_reports/template_form.php
+Code %1	identique en anglais	views/admin/advancement/grade_form.php
+Total	identique en anglais	views/admin/atak-beta-registrations/index.php
+Versions	identique en anglais	views/admin/atak-beta-registrations/index.php
+Arma, méthodes de connexion, * synchronisation du profil, fonctions autorisées depuis le jeu, version du pack, fréquence des positions. * * @var array	bruit d'extraction (commentaire)	views/admin/atak-config/_game_experience.php
+COMSPEC OVERWATCH	nom propre	views/admin/atak-config/_game_experience.php
+Ex. Bienvenue au 2e REP — briefing 20 h 45	exemple de contenu saisi	views/admin/atak-config/_game_experience.php
+Logo	identique en anglais	views/admin/atak-config/_game_experience.php
+10 s	identique en anglais	views/admin/atak-config/index.php
+Ex. OP FORTERESSE	exemple de contenu saisi	views/admin/atak-config/index.php
+Port	identique en anglais	views/admin/atak-config/index.php
+Sections	identique en anglais	views/admin/atak-config/index.php
+pack ≥ %2	identique en anglais	views/admin/atak-config/index.php
+● REC	identique en anglais	views/admin/atak-config/index.php
+24 h	identique en anglais	views/admin/atak-fleet/index.php
+ATAK v%1	identique en anglais	views/admin/atak-fleet/index.php
+Dormant	identique en anglais	views/admin/atak-fleet/index.php
+Steam %1	identique en anglais	views/admin/atak-fleet/index.php
+Faction	identique en anglais	views/admin/atak-fleet/show.php
+Link	identique en anglais	views/admin/atak-fleet/show.php
+Terminal	identique en anglais	views/admin/atak-fleet/show.php
+Arma	nom propre	views/admin/atak-mod-reports/index.php
+Link %2	identique en anglais	views/admin/atak-mod-reports/index.php
+Mod %1	identique en anglais	views/admin/atak-mod-reports/index.php
+× %1	identique en anglais	views/admin/atak-mod-reports/index.php
+Version	identique en anglais	views/admin/atak-mod/index.php
+héberge plus d	bruit d'extraction (commentaire)	views/admin/atak-mod/index.php
+Sessions	identique en anglais	views/admin/atak/hours.php
+Zeus	nom propre	views/admin/atak/hours.php
+%1 m	identique en anglais	views/admin/atak/relays_network.php
+COMSPEC Overwatch — Roleplay	nom propre	views/admin/atak/roleplay.php
+13px sans-serif	police CSS	views/admin/atak/roleplay_enhanced.php
+Mode	identique en anglais	views/admin/atak/roleplay_enhanced.php
+COMSPEC Link %1%2	nom propre	views/admin/atak/send_queues.php
+Normal	identique en anglais	views/admin/atak/send_queues.php
+p95 %1	identique en anglais	views/admin/atak/send_queues.php
+COMSPEC Link	nom propre	views/admin/atak/server_control.php
+Mod	identique en anglais	views/admin/atak/server_control.php
+d/m à H:i	bruit d'extraction (format de date)	views/admin/atak/squads.php
+Mods (Steam Workshop)	identique en anglais	views/admin/atak_debrief/index.php
+Session	identique en anglais	views/admin/atak_debrief/index.php
+cr=%1	identifiant	views/admin/atak_debrief/index.php
+op=%1	identifiant	views/admin/atak_debrief/index.php
+ID %1	identique en anglais	views/admin/atak_operators/profile.php
+Signal %1/4	identique en anglais	views/admin/atak_realism/_phones.php
+COMSPEC Root CA	nom propre	views/admin/atak_realism/certificates.php
+ECDSA P-256	sigle	views/admin/atak_realism/certificates.php
+RSA 4096	sigle	views/admin/atak_realism/certificates.php
+SHA-256 %1	sigle	views/admin/atak_realism/certificates.php
+(GET	bruit d'extraction	views/admin/atak_realism/config.php
+Tenant ID:	identique en anglais	views/admin/atak_realism/verify.php
+Stratis	nom propre	views/admin/athena_tactical_map/index.php
+Tanoa	nom propre	views/admin/athena_tactical_map/index.php
+Image *	identique en anglais	views/admin/briefing_slides/index.php
+Position %1 / %2	identique en anglais	views/admin/briefing_slides/index.php
+Analytics	identique en anglais	views/admin/configuration.php
+Code	identique en anglais	views/admin/configuration.php
+Operator	identique en anglais	views/admin/configuration.php
+Squad Leader	identique en anglais	views/admin/configuration.php
+<textarea id="restrict-reason-%1	bruit d'extraction (HTML)	views/admin/content_moderation_index.php
+<textarea id="warn-reason-%1	bruit d'extraction (HTML)	views/admin/content_moderation_index.php
+Types	identique en anglais	views/admin/documents/doctrine_compliance.php
+Collaboration	identique en anglais	views/admin/documents/edit.php
+Tags	identique en anglais	views/admin/documents/edit.php
+Version %1 — %2 %3	identique en anglais	views/admin/documents/edit.php
+tag1, tag2	identique en anglais	views/admin/documents/edit.php
+Classification	identique en anglais	views/admin/documents/index.php
+Correction	identique en anglais	views/admin/documents/index.php
+Public	identique en anglais	views/admin/documents/index.php
+Signature	identique en anglais	views/admin/documents/show.php
+Dates	identique en anglais	views/admin/documents/upload.php
+Expiration	identique en anglais	views/admin/documents/upload.php
+Parent	identique en anglais	views/admin/documents/upload.php
+<textarea name="%1	bruit d'extraction (HTML)	views/admin/intel/intake_show.php
+<textarea class="ath-field__textarea" name="steps[%1	bruit d'extraction (HTML)	views/admin/member_integration/template_form.php
+Module	identique en anglais	views/admin/member_situation/liaison_atak.php
+%1 maximum	identique en anglais	views/admin/member_situation/musique.php
++ Playlist	identique en anglais	views/admin/member_situation/musique.php
+Genre	identique en anglais	views/admin/member_situation/musique.php
+Playlists	identique en anglais	views/admin/member_situation/musique.php
+, cond: array	bruit d'extraction (code)	views/admin/member_situation/pilot_logbook.php
+Structure	identique en anglais	views/admin/member_situation/unite.php
+Briefing	identique en anglais	views/admin/mission_cycle/index.php
+Force	identique en anglais	views/admin/mission_planning/index.php
+TF DAGGER	nom propre / indicatif	views/admin/mission_planning/index.php
+Participants	identique en anglais	views/admin/missions_portal/show.php
+Task force	identique en anglais	views/admin/missions_portal/show.php
+%1 playlist(s)	identique en anglais	views/admin/music/index.php
+Pages	identique en anglais	views/admin/music/index.php
+Playlist	identique en anglais	views/admin/music/index.php
+entrée, dossiers du fil d	bruit d'extraction (commentaire)	views/admin/partage/index.php
+Page %1 / %2	identique en anglais	views/admin/partials/audit_log_page.php
+page %1 / %2	identique en anglais	views/admin/partials/audit_log_page.php
+apparaît que s	bruit d'extraction (chaîne tronquée)	views/admin/partials/low_member_orgs_alert.php
+ancienne synthèse opérationnelle). * * @var list<array	bruit d'extraction (commentaire)	views/admin/partials/platform_communication.php
+<textarea id="new-body" name="body" rows="4" required maxlength="8000" class="%1	bruit d'extraction (HTML)	views/admin/recruitments/canned_messages.php
+<textarea name="body" rows="3" required maxlength="8000" class="%1	bruit d'extraction (HTML)	views/admin/recruitments/canned_messages.php
+<textarea id="new-options" name="options" rows="3" class="%1	bruit d'extraction (HTML)	views/admin/recruitments/discord_questions.php
+<textarea name="options" rows="3" class="%1	bruit d'extraction (HTML)	views/admin/recruitments/discord_questions.php
+Guide	identique en anglais	views/admin/recruitments/partials/dossier_side_nav.php
+Coordination	identique en anglais	views/admin/recruitments/show.php
+Score %1/100	identique en anglais	views/admin/recruitments/show.php
+<textarea id="comment-%1	bruit d'extraction (HTML)	views/admin/reports_moderation.php
+Export	identique en anglais	views/admin/roles_permissions/index.php
