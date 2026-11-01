@@ -6,6 +6,8 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Services\Personnel\PersonnelAssignmentHistoryCoalescer;
+use App\Services\Personnel\UnitAssignmentConsistency;
+use App\Support\Migrations\SchemaInspector;
 use App\Support\SqlText;
 use DateTimeImmutable;
 use PDO;
@@ -14,30 +16,43 @@ class PersonnelAssignmentRepository
 {
     private PDO $pdo;
     private ?bool $changeReasonColumnReady = null;
+    private ?UnitAssignmentConsistency $consistency = null;
 
-    public function __construct()
+    /** @var array<string, bool> */
+    private array $tableCache = [];
+
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo ?? Database::getPdo();
     }
 
     /**
      * Source métier : `personnel_assignments` en priorité ; si aucune ligne active, repli sur `user_units`
-     * (historique / compat). Pour les écritures futures, privilégier `personnel_assignments`.
+     * (historique / compat). Même règle que les rosters et l'ORBAT ({@see UnitAssignmentConsistency}).
+     * Avec $tenantId, seules les unités de cette communauté sont lues.
      *
      * @return list<array<string, mixed>>
      */
-    public function listActiveForUserResolved(int $userId): array
+    public function listActiveForUserResolved(int $userId, ?int $tenantId = null): array
     {
-        $rows = $this->listActiveForUser($userId);
+        $rows = $this->listActiveForUser($userId, $tenantId);
         if ($rows !== []) {
             return $rows;
         }
 
-        return $this->listActiveForUserLegacy($userId);
+        return $this->listActiveForUserLegacy($userId, $tenantId);
+    }
+
+    /** Contrôle et réparation de l'appartenance aux unités (même connexion). */
+    public function consistency(): UnitAssignmentConsistency
+    {
+        return $this->consistency ??= new UnitAssignmentConsistency($this->pdo);
     }
 
     /**
      * Membres actuellement rattachés, groupés par unité de l’organigramme.
+     * Même règle que la fiche : affectations actives, sinon (membre sans aucune affectation active dans la
+     * communauté) ses anciennes lignes user_units.
      *
      * @return array<int, list<array{user_id:int,role_name:string,callsign:string,display_name:string}>>
      */
@@ -47,55 +62,9 @@ class PersonnelAssignmentRepository
             return [];
         }
         $out = [];
-        if ($this->personnelAssignmentsTableExists()) {
-            $stmt = $this->pdo->prepare(
-                'SELECT pa.unit_id, pa.user_id, pa.role_name, usr.callsign, usr.display_name
-                 FROM personnel_assignments pa
-                 INNER JOIN users usr ON usr.id = pa.user_id AND usr.tenant_id = ?
-                 INNER JOIN units un ON un.id = pa.unit_id AND un.tenant_id = ?
-                 WHERE (pa.status = \'active\' OR pa.status = \'\' OR pa.status IS NULL)
-                   AND (pa.ended_at IS NULL OR pa.ended_at >= CURDATE())
-                   AND usr.status = \'active\'
-                 ORDER BY pa.is_primary DESC, usr.display_name ASC'
-            );
-            $stmt->execute([$tenantId, $tenantId]);
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
-                $uid = (int) ($row['unit_id'] ?? 0);
-                $userId = (int) ($row['user_id'] ?? 0);
-                if ($uid < 1 || $userId < 1) {
-                    continue;
-                }
-                $out[$uid][] = [
-                    'user_id' => $userId,
-                    'role_name' => trim((string) ($row['role_name'] ?? '')),
-                    'callsign' => trim((string) ($row['callsign'] ?? '')),
-                    'display_name' => trim((string) ($row['display_name'] ?? '')),
-                ];
-            }
-        }
-        if ($out !== []) {
-            return $out;
-        }
-        if (!$this->userUnitsTableExists()) {
-            return [];
-        }
-        $stmt = $this->pdo->prepare(
-            'SELECT uu.unit_id, uu.user_id, uu.assignment_type AS role_name, usr.callsign, usr.display_name
-             FROM user_units uu
-             INNER JOIN users usr ON usr.id = uu.user_id AND usr.tenant_id = ?
-             INNER JOIN units un ON un.id = uu.unit_id AND un.tenant_id = ?
-             WHERE usr.status = \'active\' AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
-             ORDER BY uu.is_primary DESC, usr.display_name ASC'
-        );
-        $stmt->execute([$tenantId, $tenantId]);
-        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
-            $uid = (int) ($row['unit_id'] ?? 0);
-            $userId = (int) ($row['user_id'] ?? 0);
-            if ($uid < 1 || $userId < 1) {
-                continue;
-            }
-            $out[$uid][] = [
-                'user_id' => $userId,
+        foreach ($this->activeMembershipRowsForTenant($tenantId) as $row) {
+            $out[(int) $row['unit_id']][] = [
+                'user_id' => (int) $row['user_id'],
                 'role_name' => trim((string) ($row['role_name'] ?? '')),
                 'callsign' => trim((string) ($row['callsign'] ?? '')),
                 'display_name' => trim((string) ($row['display_name'] ?? '')),
@@ -116,61 +85,75 @@ class PersonnelAssignmentRepository
             return [];
         }
         $out = [];
-        if ($this->personnelAssignmentsTableExists()) {
-            $stmt = $this->pdo->prepare(
-                'SELECT pa.user_id, pa.unit_id
-                 FROM personnel_assignments pa
-                 INNER JOIN users usr ON usr.id = pa.user_id AND usr.tenant_id = ?
-                 INNER JOIN units un ON un.id = pa.unit_id AND un.tenant_id = ?
-                 WHERE (pa.status = \'active\' OR pa.status = \'\' OR pa.status IS NULL)
-                   AND (pa.ended_at IS NULL OR pa.ended_at >= CURDATE())
-                   AND usr.status = \'active\'
-                 ORDER BY pa.is_primary DESC, pa.id ASC'
-            );
-            $stmt->execute([$tenantId, $tenantId]);
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
-                $userId = (int) ($row['user_id'] ?? 0);
-                $unitId = (int) ($row['unit_id'] ?? 0);
-                if ($userId < 1 || $unitId < 1 || isset($out[$userId])) {
-                    continue;
-                }
-                $out[$userId] = $unitId;
-            }
-            if ($out !== []) {
-                return $out;
-            }
-        }
-        if (!$this->userUnitsTableExists()) {
-            return [];
-        }
-        $stmt = $this->pdo->prepare(
-            'SELECT uu.user_id, uu.unit_id
-             FROM user_units uu
-             INNER JOIN users usr ON usr.id = uu.user_id AND usr.tenant_id = ?
-             INNER JOIN units un ON un.id = uu.unit_id AND un.tenant_id = ?
-             WHERE usr.status = \'active\' AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
-             ORDER BY uu.is_primary DESC, uu.id ASC'
-        );
-        $stmt->execute([$tenantId, $tenantId]);
-        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
-            $userId = (int) ($row['user_id'] ?? 0);
-            $unitId = (int) ($row['unit_id'] ?? 0);
-            if ($userId < 1 || $unitId < 1 || isset($out[$userId])) {
-                continue;
-            }
-            $out[$userId] = $unitId;
+        foreach ($this->activeMembershipRowsForTenant($tenantId) as $row) {
+            $out[(int) $row['user_id']] ??= (int) $row['unit_id'];
         }
 
         return $out;
     }
 
-    /** @return list<array<string, mixed>> Affectations actives (status = active, ended_at null ou future). */
-    public function listActiveForUser(int $userId): array
+    /**
+     * Lignes d'appartenance des membres actifs de la communauté : affectations actives (principale d'abord),
+     * puis user_units des seuls membres qui n'ont aucune affectation active.
+     *
+     * @return list<array{unit_id:int,user_id:int,role_name:string,callsign:string,display_name:string}>
+     */
+    private function activeMembershipRowsForTenant(int $tenantId): array
     {
+        $rows = [];
+        $withAssignment = [];
+        if ($this->personnelAssignmentsTableExists()) {
+            $stmt = $this->pdo->prepare(
+                'SELECT pa.unit_id, pa.user_id, pa.role_name, usr.callsign, usr.display_name
+                 FROM personnel_assignments pa
+                 INNER JOIN users usr ON usr.id = pa.user_id AND usr.tenant_id = ?
+                 INNER JOIN units un ON un.id = pa.unit_id AND un.tenant_id = ?
+                 WHERE ' . UnitAssignmentConsistency::paActiveSql('pa') . '
+                   AND usr.status = \'active\'
+                 ORDER BY pa.is_primary DESC, usr.display_name ASC, pa.id ASC'
+            );
+            $stmt->execute([$tenantId, $tenantId]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                $unitId = (int) ($row['unit_id'] ?? 0);
+                $userId = (int) ($row['user_id'] ?? 0);
+                if ($unitId < 1 || $userId < 1 || isset($rows[$unitId . ':' . $userId])) {
+                    continue;
+                }
+                $withAssignment[$userId] = true;
+                $rows[$unitId . ':' . $userId] = $row;
+            }
+        }
+        if ($this->userUnitsTableExists()) {
+            $stmt = $this->pdo->prepare(
+                'SELECT uu.unit_id, uu.user_id, uu.assignment_type AS role_name, usr.callsign, usr.display_name
+                 FROM user_units uu
+                 INNER JOIN users usr ON usr.id = uu.user_id AND usr.tenant_id = ?
+                 INNER JOIN units un ON un.id = uu.unit_id AND un.tenant_id = ?
+                 WHERE usr.status = \'active\' AND ' . UnitAssignmentConsistency::uuActiveSql('uu') . '
+                 ORDER BY uu.is_primary DESC, usr.display_name ASC, uu.id ASC'
+            );
+            $stmt->execute([$tenantId, $tenantId]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                $unitId = (int) ($row['unit_id'] ?? 0);
+                $userId = (int) ($row['user_id'] ?? 0);
+                if ($unitId < 1 || $userId < 1 || isset($withAssignment[$userId]) || isset($rows[$unitId . ':' . $userId])) {
+                    continue;
+                }
+                $rows[$unitId . ':' . $userId] = $row;
+            }
+        }
+
+        return array_values($rows);
+    }
+
+    /** @return list<array<string, mixed>> Affectations actives (status = active, ended_at null ou future). */
+    public function listActiveForUser(int $userId, ?int $tenantId = null): array
+    {
+        $tenantSql = $tenantId !== null && $tenantId > 0 ? ' AND u.tenant_id = ' . (int) $tenantId : '';
         $stmt = $this->pdo->prepare(
             'SELECT pa.*, u.name AS unit_name, u.slug AS unit_slug, u.type AS unit_type, u.commander_user_id
              FROM personnel_assignments pa
-             JOIN units u ON u.id = pa.unit_id
+             JOIN units u ON u.id = pa.unit_id' . $tenantSql . '
              WHERE pa.user_id = ? AND pa.status = ? AND (pa.ended_at IS NULL OR pa.ended_at > CURDATE())
              ORDER BY pa.is_primary DESC, pa.started_at DESC'
         );
@@ -201,14 +184,15 @@ class PersonnelAssignmentRepository
     }
 
     /** Liste depuis user_units si personnel_assignments vide (rétrocompat). */
-    public function listActiveForUserLegacy(int $userId): array
+    public function listActiveForUserLegacy(int $userId, ?int $tenantId = null): array
     {
+        $tenantSql = $tenantId !== null && $tenantId > 0 ? ' AND u.tenant_id = ' . (int) $tenantId : '';
         $stmt = $this->pdo->prepare(
             'SELECT uu.id, uu.user_id, uu.unit_id, uu.is_primary, uu.assigned_at AS started_at, uu.ended_at,
-             COALESCE(NULLIF(TRIM(uu.assignment_type), ""), "Membre") AS role_name,
+             COALESCE(NULLIF(TRIM(uu.assignment_type), \'\'), \'Membre\') AS role_name,
              u.name AS unit_name, u.slug AS unit_slug, u.type AS unit_type, u.commander_user_id
              FROM user_units uu
-             JOIN units u ON u.id = uu.unit_id
+             JOIN units u ON u.id = uu.unit_id' . $tenantSql . '
              WHERE uu.user_id = ? AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
              ORDER BY uu.is_primary DESC, uu.assigned_at DESC'
         );
@@ -233,21 +217,63 @@ class PersonnelAssignmentRepository
     }
 
     /**
-     * Remplace les affectations d'unité actives par la liste fournie.
+     * Remplace les affectations d'unité actives du membre, dans une communauté, par la liste fournie.
+     *
+     * Une seule transaction, membre verrouillé : l'état actuel est relu après le verrou, si bien que deux
+     * envois simultanés du formulaire (page rouverte pendant le rechargement) donnent le même résultat qu'un
+     * seul. Les copies (user_units, unité du dossier) sont réalignées dans la même transaction, y compris quand
+     * l'affectation existe déjà : renvoyer le formulaire répare un membre resté dans un demi-état.
+     *
+     * Communauté : $tenantId, sinon celle des unités demandées, sinon la communauté ouverte, sinon celle du
+     * compte. Les affectations du membre dans ses autres communautés ne sont pas touchées ; une unité d'une
+     * autre communauté que celle retenue est ignorée.
      *
      * @param list<array{unit_id:int, role_name:string, is_primary?:bool}> $assignments
      */
-    public function replaceActiveAssignmentsFromDossier(int $userId, array $assignments): void
+    public function replaceActiveAssignmentsFromDossier(int $userId, array $assignments, ?int $tenantId = null): void
     {
         $hasPa = $this->personnelAssignmentsTableExists();
         $hasUu = $this->userUnitsTableExists();
-        $hasChangeReason = $hasPa && $this->changeReasonColumnReady();
         if ((!$hasPa && !$hasUu) || $userId < 1) {
             return;
         }
+        [$normalized, $tenantId] = $this->normalizeDesiredAssignments($userId, $assignments, $tenantId);
+        if ($tenantId < 1) {
+            return;
+        }
+        $consistency = $this->consistency();
+        $ownTx = !$this->pdo->inTransaction();
+        if ($ownTx) {
+            $this->pdo->beginTransaction();
+        }
+        try {
+            $consistency->lockMember($userId);
+            if ($hasPa) {
+                $this->applyDesiredAssignments($userId, $tenantId, $normalized);
+            }
+            $consistency->syncMirrors($userId, $tenantId, $normalized);
+            if ($ownTx) {
+                $this->pdo->commit();
+            }
+        } catch (\Throwable $e) {
+            if ($ownTx && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
 
+        $this->syncJobsFromAssignments($userId, $normalized);
+    }
+
+    /**
+     * Liste demandée nettoyée (une ligne par unité, une seule principale) et communauté retenue.
+     *
+     * @param list<array<string, mixed>> $assignments
+     * @return array{0: list<array{unit_id:int, role_name:string, is_primary:bool, change_reason:?string}>, 1: int}
+     */
+    private function normalizeDesiredAssignments(int $userId, array $assignments, ?int $tenantId): array
+    {
         $normalized = [];
-        $seenPrimary = false;
         $seenUnits = [];
         foreach ($assignments as $assignment) {
             if (!is_array($assignment)) {
@@ -258,167 +284,128 @@ class PersonnelAssignmentRepository
                 continue;
             }
             $seenUnits[$unitId] = true;
-            $roleName = trim((string) ($assignment['role_name'] ?? ''));
-            $isPrimary = !empty($assignment['is_primary']) && !$seenPrimary;
-            if ($isPrimary) {
-                $seenPrimary = true;
-            }
+            $roleName = mb_substr(trim((string) ($assignment['role_name'] ?? '')), 0, 100);
             $normalized[] = [
                 'unit_id' => $unitId,
                 'role_name' => $roleName !== '' ? $roleName : 'Membre',
-                'is_primary' => $isPrimary,
+                'is_primary' => !empty($assignment['is_primary']),
                 'change_reason' => $this->normalizeReasonLabel($assignment['change_reason'] ?? null),
             ];
         }
 
+        $unitTenants = [];
+        if ($normalized !== []) {
+            $ids = array_column($normalized, 'unit_id');
+            $st = $this->pdo->prepare('SELECT id, tenant_id FROM units WHERE id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')');
+            $st->execute($ids);
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                $unitTenants[(int) $row['id']] = (int) ($row['tenant_id'] ?? 0);
+            }
+        }
+        if ($tenantId === null || $tenantId < 1) {
+            $tenantId = 0;
+            foreach ($normalized as $assignment) {
+                if (($unitTenants[$assignment['unit_id']] ?? 0) > 0) {
+                    $tenantId = $unitTenants[$assignment['unit_id']];
+                    break;
+                }
+            }
+            if ($tenantId < 1) {
+                try {
+                    $tenantId = (int) \App\Core\Session::get('tenant_id', 0);
+                } catch (\Throwable) {
+                    $tenantId = 0;
+                }
+            }
+            if ($tenantId < 1) {
+                $st = $this->pdo->prepare('SELECT tenant_id FROM users WHERE id = ? LIMIT 1');
+                $st->execute([$userId]);
+                $tenantId = (int) ($st->fetchColumn() ?: 0);
+            }
+        }
+
+        $normalized = array_values(array_filter(
+            $normalized,
+            static fn (array $a): bool => ($unitTenants[$a['unit_id']] ?? 0) === $tenantId
+        ));
+        $seenPrimary = false;
+        foreach ($normalized as $i => $assignment) {
+            $isPrimary = $assignment['is_primary'] && !$seenPrimary;
+            $seenPrimary = $seenPrimary || $isPrimary;
+            $normalized[$i]['is_primary'] = $isPrimary;
+        }
         if ($normalized !== [] && !$seenPrimary) {
             $normalized[0]['is_primary'] = true;
         }
 
-        $currentActive = $hasPa ? $this->listActiveForUser($userId) : [];
+        return [$normalized, $tenantId];
+    }
+
+    /**
+     * Écrit l'état voulu dans personnel_assignments (transaction de l'appelant, membre verrouillé) :
+     * affectation identique gardée, doublons et affectations retirées fermés (historique conservé),
+     * nouvelles affectations insérées.
+     *
+     * @param list<array{unit_id:int, role_name:string, is_primary:bool, change_reason:?string}> $normalized
+     */
+    private function applyDesiredAssignments(int $userId, int $tenantId, array $normalized): void
+    {
+        $consistency = $this->consistency();
+        $hasChangeReason = $this->changeReasonColumnReady();
         $currentByUnit = [];
-        foreach ($currentActive as $row) {
-            $unitId = (int) ($row['unit_id'] ?? 0);
-            if ($unitId > 0 && !isset($currentByUnit[$unitId])) {
-                $currentByUnit[$unitId] = $row;
+        foreach ($consistency->activeAssignments($userId, $tenantId) as $row) {
+            $unitId = (int) $row['unit_id'];
+            if (isset($currentByUnit[$unitId])) {
+                $consistency->closeAssignment($userId, (int) $row['id']);
+                continue;
             }
+            $currentByUnit[$unitId] = $row;
         }
 
-        $keepUnitIds = [];
-        $closeIds = [];
+        $kept = [];
         $toInsert = [];
         foreach ($normalized as $assignment) {
             $existing = $currentByUnit[$assignment['unit_id']] ?? null;
             if ($existing !== null && PersonnelAssignmentHistoryCoalescer::sameActiveAssignment($existing, $assignment)) {
-                $keepUnitIds[] = $assignment['unit_id'];
+                $kept[$assignment['unit_id']] = ['id' => (int) $existing['id']] + $assignment;
                 continue;
-            }
-            if ($existing !== null) {
-                $closeIds[] = (int) ($existing['id'] ?? 0);
             }
             $toInsert[] = $assignment;
         }
         foreach ($currentByUnit as $unitId => $row) {
-            if (!in_array($unitId, $keepUnitIds, true) && !in_array((int) ($row['id'] ?? 0), $closeIds, true)) {
-                $closeIds[] = (int) ($row['id'] ?? 0);
+            if (!isset($kept[$unitId])) {
+                $consistency->closeAssignment($userId, (int) $row['id']);
             }
         }
-        $closeIds = array_values(array_filter($closeIds, static fn (int $id): bool => $id > 0));
-
-        $this->pdo->beginTransaction();
-        try {
-            if ($hasUu) {
-                $keepPlaceholders = $keepUnitIds !== []
-                    ? implode(',', array_fill(0, count($keepUnitIds), '?'))
-                    : '';
-                if ($keepPlaceholders !== '') {
-                    $st = $this->pdo->prepare(
-                        "UPDATE user_units SET ended_at = NOW()
-                         WHERE user_id = ? AND (ended_at IS NULL OR ended_at > NOW())
-                           AND unit_id NOT IN ({$keepPlaceholders})"
-                    );
-                    $st->execute(array_merge([$userId], $keepUnitIds));
-                } else {
-                    $this->pdo->prepare(
-                        'UPDATE user_units SET ended_at = NOW() WHERE user_id = ? AND (ended_at IS NULL OR ended_at > NOW())'
-                    )->execute([$userId]);
-                }
+        foreach ($kept as $assignment) {
+            if ($hasChangeReason && $assignment['change_reason'] !== null) {
+                $this->pdo->prepare(
+                    'UPDATE personnel_assignments SET is_primary = ?, change_reason = COALESCE(?, change_reason), updated_at = NOW()
+                     WHERE id = ? AND user_id = ?'
+                )->execute([$assignment['is_primary'] ? 1 : 0, $assignment['change_reason'], $assignment['id'], $userId]);
+            } else {
+                $this->pdo->prepare('UPDATE personnel_assignments SET is_primary = ?, updated_at = NOW() WHERE id = ? AND user_id = ?')
+                    ->execute([$assignment['is_primary'] ? 1 : 0, $assignment['id'], $userId]);
             }
-            if ($hasPa && $closeIds !== []) {
-                $idPlaceholders = implode(',', array_fill(0, count($closeIds), '?'));
-                $st = $this->pdo->prepare(
-                    "UPDATE personnel_assignments SET status = 'inactive', ended_at = CURDATE(), is_primary = 0, updated_at = NOW()
-                     WHERE user_id = ? AND id IN ({$idPlaceholders})"
-                );
-                $st->execute(array_merge([$userId], $closeIds));
-            }
-
-            if ($hasPa && $keepUnitIds !== []) {
-                $this->pdo->prepare('UPDATE personnel_assignments SET is_primary = 0 WHERE user_id = ? AND status = \'active\'')
-                    ->execute([$userId]);
-                foreach ($normalized as $assignment) {
-                    if (!in_array($assignment['unit_id'], $keepUnitIds, true)) {
-                        continue;
-                    }
-                    $existing = $currentByUnit[$assignment['unit_id']] ?? null;
-                    $keepId = (int) ($existing['id'] ?? 0);
-                    if ($keepId < 1) {
-                        continue;
-                    }
-                    if ($hasChangeReason && $assignment['change_reason'] !== null) {
-                        $st = $this->pdo->prepare(
-                            'UPDATE personnel_assignments SET is_primary = ?, change_reason = COALESCE(?, change_reason), updated_at = NOW()
-                             WHERE id = ? AND user_id = ?'
-                        );
-                        $st->execute([!empty($assignment['is_primary']) ? 1 : 0, $assignment['change_reason'], $keepId, $userId]);
-                    } else {
-                        $st = $this->pdo->prepare(
-                            'UPDATE personnel_assignments SET is_primary = ?, updated_at = NOW() WHERE id = ? AND user_id = ?'
-                        );
-                        $st->execute([!empty($assignment['is_primary']) ? 1 : 0, $keepId, $userId]);
-                    }
-                }
-                if ($hasUu) {
-                    foreach ($normalized as $assignment) {
-                        if (!in_array($assignment['unit_id'], $keepUnitIds, true)) {
-                            continue;
-                        }
-                        $st = $this->pdo->prepare(
-                            'UPDATE user_units SET is_primary = ?
-                             WHERE user_id = ? AND unit_id = ? AND (ended_at IS NULL OR ended_at > NOW())'
-                        );
-                        $st->execute([!empty($assignment['is_primary']) ? 1 : 0, $userId, $assignment['unit_id']]);
-                    }
-                }
-            }
-
-            if ($toInsert !== []) {
-                if ($hasPa) {
-                    if ($hasChangeReason) {
-                        $insertPa = $this->pdo->prepare(
-                            'INSERT INTO personnel_assignments (user_id, unit_id, role_name, change_reason, is_primary, started_at, ended_at, status, created_at)
-                             VALUES (?, ?, ?, ?, ?, CURDATE(), NULL, \'active\', NOW())'
-                        );
-                    } else {
-                        $insertPa = $this->pdo->prepare(
-                            'INSERT INTO personnel_assignments (user_id, unit_id, role_name, is_primary, started_at, ended_at, status, created_at)
-                             VALUES (?, ?, ?, ?, CURDATE(), NULL, \'active\', NOW())'
-                        );
-                    }
-                } else {
-                    $insertPa = null;
-                }
-
-                if ($hasUu) {
-                    $insertUu = $this->pdo->prepare(
-                        'INSERT INTO user_units (user_id, unit_id, is_primary, assigned_at, ended_at, assignment_type) VALUES (?, ?, ?, NOW(), NULL, ?)'
-                    );
-                } else {
-                    $insertUu = null;
-                }
-
-                foreach ($toInsert as $assignment) {
-                    $isPrimary = !empty($assignment['is_primary']) ? 1 : 0;
-                    if ($insertPa !== null) {
-                        if ($hasChangeReason) {
-                            $insertPa->execute([$userId, $assignment['unit_id'], $assignment['role_name'], $assignment['change_reason'], $isPrimary]);
-                        } else {
-                            $insertPa->execute([$userId, $assignment['unit_id'], $assignment['role_name'], $isPrimary]);
-                        }
-                    }
-                    if ($insertUu !== null) {
-                        $insertUu->execute([$userId, $assignment['unit_id'], $isPrimary, $assignment['role_name']]);
-                    }
-                }
-            }
-
-            $this->pdo->commit();
-        } catch (\Throwable $e) {
-            $this->pdo->rollBack();
-            throw $e;
         }
-
-        $this->syncJobsFromAssignments($userId, $normalized);
+        if ($toInsert === []) {
+            return;
+        }
+        $insert = $hasChangeReason
+            ? $this->pdo->prepare(
+                'INSERT INTO personnel_assignments (user_id, unit_id, role_name, change_reason, is_primary, started_at, ended_at, status, created_at)
+                 VALUES (?, ?, ?, ?, ?, CURDATE(), NULL, \'active\', NOW())'
+            )
+            : $this->pdo->prepare(
+                'INSERT INTO personnel_assignments (user_id, unit_id, role_name, is_primary, started_at, ended_at, status, created_at)
+                 VALUES (?, ?, ?, ?, CURDATE(), NULL, \'active\', NOW())'
+            );
+        foreach ($toInsert as $assignment) {
+            $isPrimary = $assignment['is_primary'] ? 1 : 0;
+            $insert->execute($hasChangeReason
+                ? [$userId, $assignment['unit_id'], $assignment['role_name'], $assignment['change_reason'], $isPrimary]
+                : [$userId, $assignment['unit_id'], $assignment['role_name'], $isPrimary]);
+        }
     }
 
     /**
@@ -482,13 +469,20 @@ class PersonnelAssignmentRepository
 
     public function personnelAssignmentsTableExists(): bool
     {
-        try {
-            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_assignments' LIMIT 1");
+        return $this->tableExists('personnel_assignments');
+    }
 
-            return (bool) ($stmt && $stmt->fetchColumn());
-        } catch (\Throwable) {
-            return false;
+    private function tableExists(string $table): bool
+    {
+        if (!array_key_exists($table, $this->tableCache)) {
+            try {
+                $this->tableCache[$table] = (new SchemaInspector($this->pdo))->tableExists($table);
+            } catch (\Throwable) {
+                $this->tableCache[$table] = false;
+            }
         }
+
+        return $this->tableCache[$table];
     }
 
     /**
@@ -646,13 +640,7 @@ class PersonnelAssignmentRepository
 
     private function userUnitsTableExists(): bool
     {
-        try {
-            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_units' LIMIT 1");
-
-            return (bool) ($stmt && $stmt->fetchColumn());
-        } catch (\Throwable) {
-            return false;
-        }
+        return $this->tableExists('user_units');
     }
 
     private function changeReasonColumnReady(): bool
@@ -661,13 +649,7 @@ class PersonnelAssignmentRepository
             return $this->changeReasonColumnReady;
         }
         try {
-            $stmt = $this->pdo->prepare(
-                "SELECT 1 FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_assignments'
-                   AND COLUMN_NAME = 'change_reason' LIMIT 1"
-            );
-            $stmt->execute();
-            $this->changeReasonColumnReady = (bool) $stmt->fetchColumn();
+            $this->changeReasonColumnReady = (new SchemaInspector($this->pdo))->columnExists('personnel_assignments', 'change_reason');
         } catch (\Throwable) {
             $this->changeReasonColumnReady = false;
         }
@@ -704,60 +686,69 @@ class PersonnelAssignmentRepository
         if ($userId < 1 || $tenantId < 1 || $roleName === '' || !$this->personnelAssignmentsTableExists()) {
             return false;
         }
-        $roleName = mb_substr($roleName, 0, 120);
-        $current = $this->getPrimaryAssignment($userId, $tenantId);
-        $unitId = (int) ($current['unit_id'] ?? 0);
-        if ($current === null) {
-            $unitId = (int) ($fallbackUnitId ?? 0);
-            if ($unitId < 1) {
-                return false;
-            }
-            $st = $this->pdo->prepare('SELECT 1 FROM units WHERE id = ? AND tenant_id = ? LIMIT 1');
-            $st->execute([$unitId, $tenantId]);
-            if (!$st->fetchColumn()) {
-                return false;
-            }
-        } elseif (PersonnelAssignmentHistoryCoalescer::sameActiveAssignment($current, ['unit_id' => $unitId, 'role_name' => $roleName])) {
-            return true;
+        $roleName = mb_substr($roleName, 0, 100);
+        $consistency = $this->consistency();
+        $ownTx = !$this->pdo->inTransaction();
+        if ($ownTx) {
+            $this->pdo->beginTransaction();
         }
-
-        $this->pdo->beginTransaction();
         try {
-            $startedToday = $current !== null && substr((string) ($current['started_at'] ?? ''), 0, 10) === date('Y-m-d');
-            if ($current !== null && $startedToday) {
-                $this->pdo->prepare('UPDATE personnel_assignments SET role_name = ?, updated_at = NOW() WHERE id = ? AND user_id = ?')
-                    ->execute([$roleName, (int) $current['id'], $userId]);
-            } else {
-                if ($current !== null) {
+            // État relu sous verrou : deux enregistrements simultanés ne créent pas deux affectations principales.
+            $consistency->lockMember($userId);
+            $current = $this->getPrimaryAssignment($userId, $tenantId);
+            $unitId = (int) ($current['unit_id'] ?? 0);
+            $ok = true;
+            if ($current === null) {
+                $unitId = (int) ($fallbackUnitId ?? 0);
+                $st = $this->pdo->prepare('SELECT 1 FROM units WHERE id = ? AND tenant_id = ? LIMIT 1');
+                $st->execute([$unitId, $tenantId]);
+                $ok = $unitId > 0 && (bool) $st->fetchColumn();
+            }
+            $same = $current !== null
+                && PersonnelAssignmentHistoryCoalescer::sameActiveAssignment($current, ['unit_id' => $unitId, 'role_name' => $roleName]);
+            if ($ok && !$same) {
+                $startedToday = $current !== null && substr((string) ($current['started_at'] ?? ''), 0, 10) === date('Y-m-d');
+                if ($current !== null && $startedToday) {
+                    $this->pdo->prepare('UPDATE personnel_assignments SET role_name = ?, updated_at = NOW() WHERE id = ? AND user_id = ?')
+                        ->execute([$roleName, (int) $current['id'], $userId]);
+                } else {
+                    if ($current !== null) {
+                        $consistency->closeAssignment($userId, (int) $current['id']);
+                    }
                     $this->pdo->prepare(
-                        "UPDATE personnel_assignments SET status = 'inactive', ended_at = CURDATE(), is_primary = 0, updated_at = NOW()
-                         WHERE id = ? AND user_id = ?"
-                    )->execute([(int) $current['id'], $userId]);
+                        "INSERT INTO personnel_assignments (user_id, unit_id, role_name, is_primary, started_at, ended_at, status, created_at)
+                         VALUES (?, ?, ?, 1, CURDATE(), NULL, 'active', NOW())"
+                    )->execute([$userId, $unitId, $roleName]);
                 }
-                $this->pdo->prepare(
-                    "INSERT INTO personnel_assignments (user_id, unit_id, role_name, is_primary, started_at, ended_at, status, created_at)
-                     VALUES (?, ?, ?, 1, CURDATE(), NULL, 'active', NOW())"
-                )->execute([$userId, $unitId, $roleName]);
             }
-            if ($this->userUnitsTableExists()) {
-                $this->pdo->prepare(
-                    'UPDATE user_units SET assignment_type = ? WHERE user_id = ? AND unit_id = ? AND (ended_at IS NULL OR ended_at > NOW())'
-                )->execute([$roleName, $userId, $unitId]);
+            if ($ok) {
+                // Copies (effectif de l'unité, unité du dossier) alignées, y compris pour une affectation créée ici.
+                $consistency->normalizeAssignments($userId, $tenantId);
+                $consistency->syncMirrors($userId, $tenantId, array_map(static fn (array $r): array => [
+                    'unit_id' => (int) $r['unit_id'],
+                    'role_name' => (string) ($r['role_name'] ?? ''),
+                    'is_primary' => (int) ($r['is_primary'] ?? 0) === 1,
+                ], $consistency->activeAssignments($userId, $tenantId)));
             }
-            $this->pdo->commit();
+            if ($ownTx) {
+                $this->pdo->commit();
+            }
         } catch (\Throwable $e) {
-            $this->pdo->rollBack();
+            if ($ownTx && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             throw $e;
         }
 
-        return true;
+        return $ok;
     }
 
     /**
-     * Aligne personnel_assignments et user_units sur le dossier (unité principale + rôle d’affectation).
-     * Indispensable pour la fiche personnelle, l’ORBAT et les indicateurs « sans unité » (user_units).
+     * Aligne personnel_assignments, user_units et l'unité du dossier sur l'unité principale choisie
+     * (une seule transaction ; voir {@see replaceActiveAssignmentsFromDossier()}).
+     * Indispensable pour la fiche personnelle, l’ORBAT, les pages Équipes et le tableur des effectifs.
      */
-    public function syncPrimaryAssignmentFromDossier(int $userId, ?int $unitId, string $roleName, ?string $changeReason = null): void
+    public function syncPrimaryAssignmentFromDossier(int $userId, ?int $unitId, string $roleName, ?string $changeReason = null, ?int $tenantId = null): void
     {
         $assignments = [];
         if ($unitId !== null && $unitId > 0) {
@@ -769,14 +760,14 @@ class PersonnelAssignmentRepository
             ];
         }
 
-        $this->replaceActiveAssignmentsFromDossier($userId, $assignments);
+        $this->replaceActiveAssignmentsFromDossier($userId, $assignments, $tenantId);
         try {
             $st = $this->pdo->prepare('SELECT tenant_id FROM users WHERE id = ? LIMIT 1');
             $st->execute([$userId]);
-            $tenantId = (int) ($st->fetchColumn() ?: 0);
-            if ($tenantId > 0) {
+            $hookTenantId = (int) ($st->fetchColumn() ?: 0);
+            if ($hookTenantId > 0) {
                 \App\Services\MemberIntegration\MemberIntegrationEntryHook::afterRoleOrUnitChange(
-                    $tenantId,
+                    $hookTenantId,
                     $userId,
                     0,
                     ['unit_ids' => $unitId !== null && $unitId > 0 ? [$unitId] : []]

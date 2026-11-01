@@ -2507,11 +2507,19 @@ class UserRepository
         }
         if ($onlyWithoutUnit === true) {
             if ($this->hasUserUnitsTable()) {
+                // Sans unité = ni affectation active ni ancienne ligne d'effectif (même règle que la fiche).
                 $parts[] = 'NOT EXISTS (
                     SELECT 1 FROM user_units uu
                     INNER JOIN units un ON un.id = uu.unit_id AND un.tenant_id = u.tenant_id
                     WHERE uu.user_id = u.id AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
                 )';
+                if ($this->tableExists('personnel_assignments')) {
+                    $parts[] = 'NOT EXISTS (
+                        SELECT 1 FROM personnel_assignments pa
+                        INNER JOIN units un ON un.id = pa.unit_id AND un.tenant_id = u.tenant_id
+                        WHERE pa.user_id = u.id AND ' . \App\Services\Personnel\UnitAssignmentConsistency::paActiveSql('pa') . '
+                    )';
+                }
             } else {
                 $parts[] = '1=0';
             }
@@ -3588,18 +3596,24 @@ class UserRepository
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
-    /** @return list<int> User IDs appartenant à l'unité (user_units, affectation non terminée). */
+    /**
+     * @return list<int> Membres de l'unité : même règle que la fiche et l'ORBAT
+     *         ({@see \App\Services\Personnel\UnitAssignmentConsistency::membershipSql()}).
+     */
     public function getIdsByUnit(int $unitId): array
     {
+        $hasPa = $this->tableExists('personnel_assignments');
         $stmt = $this->pdo()->prepare(
-            'SELECT user_id FROM user_units WHERE unit_id = ? AND (ended_at IS NULL OR ended_at > NOW())'
+            'SELECT DISTINCT m.user_id FROM ('
+            . \App\Services\Personnel\UnitAssignmentConsistency::membershipSql($hasPa, ' AND pa.unit_id = ?', ' AND uu.unit_id = ?')
+            . ') m'
         );
-        $stmt->execute([$unitId]);
+        $stmt->execute($hasPa ? [$unitId, $unitId] : [$unitId]);
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
     /**
-     * Nombre d’affectations en cours par unité, en une seule requête (liste des groupes).
+     * Nombre de membres en cours par unité, en une seule requête (liste des groupes et des équipes).
      *
      * @param list<int> $unitIds
      * @return array<int, int> unit_id => nombre de membres
@@ -3611,12 +3625,17 @@ class UserRepository
             return [];
         }
         $placeholders = implode(',', array_fill(0, count($unitIds), '?'));
+        $hasPa = $this->tableExists('personnel_assignments');
         $stmt = $this->pdo()->prepare(
-            'SELECT unit_id, COUNT(DISTINCT user_id) AS n FROM user_units
-             WHERE unit_id IN (' . $placeholders . ') AND (ended_at IS NULL OR ended_at > NOW())
-             GROUP BY unit_id'
+            'SELECT m.unit_id, COUNT(DISTINCT m.user_id) AS n FROM ('
+            . \App\Services\Personnel\UnitAssignmentConsistency::membershipSql(
+                $hasPa,
+                ' AND pa.unit_id IN (' . $placeholders . ')',
+                ' AND uu.unit_id IN (' . $placeholders . ')'
+            )
+            . ') m GROUP BY m.unit_id'
         );
-        $stmt->execute($unitIds);
+        $stmt->execute($hasPa ? array_merge($unitIds, $unitIds) : $unitIds);
         $out = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
             $out[(int) $row['unit_id']] = (int) $row['n'];
@@ -3625,13 +3644,16 @@ class UserRepository
         return $out;
     }
 
-    /** @return list<int> Unit IDs auxquelles l'utilisateur est affecté (user_units, non terminée). */
+    /** @return list<int> Unités du membre, même règle que {@see getIdsByUnit()}. */
     public function getUnitIdsForUser(int $userId): array
     {
+        $hasPa = $this->tableExists('personnel_assignments');
         $stmt = $this->pdo()->prepare(
-            'SELECT unit_id FROM user_units WHERE user_id = ? AND (ended_at IS NULL OR ended_at > NOW())'
+            'SELECT DISTINCT m.unit_id FROM ('
+            . \App\Services\Personnel\UnitAssignmentConsistency::membershipSql($hasPa, ' AND pa.user_id = ?', ' AND uu.user_id = ?')
+            . ') m'
         );
-        $stmt->execute([$userId]);
+        $stmt->execute($hasPa ? [$userId, $userId] : [$userId]);
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
