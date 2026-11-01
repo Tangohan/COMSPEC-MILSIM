@@ -117,7 +117,8 @@ private _friendMeta = [];
                 private _d = (_y getOrDefault ["position",[0,0,0]]) distance2D _obj;
                 if (_d < _best) then { _best = _d; _near = _x; };
             } forEach _athena;
-            _nearCache set [_id, [_near, diag_tickTime]];
+            // Échéances étalées (5 à 7 s) : toutes les unités ne refont plus la recherche dans le même passage.
+            _nearCache set [_id, [_near, diag_tickTime + random 2]];
         };
     };
     if (_near isNotEqualTo "") then {

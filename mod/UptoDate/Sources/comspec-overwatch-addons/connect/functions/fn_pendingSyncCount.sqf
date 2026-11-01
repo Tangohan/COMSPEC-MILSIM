@@ -18,7 +18,7 @@ if (!isNil "comspec_overwatch_connect_fnc_outboxState") then {
     };
 };
 
-private _raw = "COMSPECExtension" callExtension ["GetPendingQueueCount", []];
+private _raw = (["COMSPECExtension", "GetPendingQueueCount", []] call comspec_overwatch_connect_fnc_extDirect);
 private _s = if (_raw isEqualType []) then {
     if ((count _raw) > 0) then { _raw select 0 } else { "" }
 } else {

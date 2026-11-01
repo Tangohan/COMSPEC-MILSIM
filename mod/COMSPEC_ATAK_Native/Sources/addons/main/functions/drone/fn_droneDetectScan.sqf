@@ -123,11 +123,11 @@ private _alerts = [];
         private _code = 0;
         { _code = (_code * 31 + _x) mod 9973; } forEach (toArray _nid);
         private _tag = format ["DRONE-%1", _code];
-        "COMSPECExtension" callExtension ["SendRfHit", [
+        (["COMSPECExtension", "SendRfHit", [
             "uav_" + str _code, format ["%1 · %2° ±%3°%4", _tag, round _brg, round _err, ["", " · " + _rangeBand] select (_rangeBand isNotEqualTo "")],
             "drone", _band, str round (_from select 0), str round (_from select 1), str round _rx, _me
-        ]];
-        "COMSPECExtension" callExtension ["SendSigint", [_tag, str round (_from select 0), str round (_from select 1), str round _brg]];
+        ]] call comspec_overwatch_connect_fnc_extDirect);
+        (["COMSPECExtension", "SendSigint", [_tag, str round (_from select 0), str round (_from select 1), str round _brg]] call comspec_overwatch_connect_fnc_extDirect);
     };
     if (!_friend && {_rangeBand in ["< 300 m", "300-800 m"]} && {(_now - (_alerted getOrDefault [_nid, -1e9])) > 60}) then {
         _alerted set [_nid, _now];

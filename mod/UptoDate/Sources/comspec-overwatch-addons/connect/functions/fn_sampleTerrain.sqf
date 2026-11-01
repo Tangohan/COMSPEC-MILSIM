@@ -111,7 +111,7 @@ private _scopeTxt = if (_fullTheater) then {
                                 (_parts joinString ",")
                             ];
                             // Fire-and-forget : un retour vide n’est pas un échec (ancienne DLL).
-                            private _raw = "COMSPECExtension" callExtension ["Terrain.Chunk", [_json]];
+                            private _raw = (["COMSPECExtension", "Terrain.Chunk", [_json]] call comspec_overwatch_connect_fnc_extDirect);
                             private _parsed = [_raw] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
                             _parsed params ["_extOk", "_status", "_detail"];
                             private _detailLc = toLower (str _detail);

@@ -6,7 +6,9 @@
 */
 params ["_txt", "_font", "_size"];
 private _cache = uiNamespace getVariable "COMSPEC_ATAK_TextWCache";
-if (isNil "_cache" || {(count _cache) > 800}) then { _cache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_TextWCache", _cache]; };
+// Plafond 4000 (avant 800) : noms des lieux d'un grand terrain + repères + indicatifs dépassaient 800, le cache se
+// vidait et tout était remesuré (texte caché + ctrlTextWidth) pendant les images suivantes.
+if (isNil "_cache" || {(count _cache) > 4000}) then { _cache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_TextWCache", _cache]; };
 private _key = [_txt, _font, _size];
 private _w = _cache getOrDefault [_key, -1];
 if (_w >= 0) exitWith { _w };

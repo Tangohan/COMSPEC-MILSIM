@@ -5,7 +5,7 @@
 if (!hasInterface) exitWith { -1 };
 
 private _t0 = diag_tickTime;
-private _ping = ["COMSPECExtension" callExtension ["Ping", []]] call comspec_overwatch_connect_fnc_extResult;
+private _ping = [(["COMSPECExtension", "Ping", []] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 private _ms = round ((diag_tickTime - _t0) * 1000);
 if (_ms < 0) then { _ms = 0; };
 

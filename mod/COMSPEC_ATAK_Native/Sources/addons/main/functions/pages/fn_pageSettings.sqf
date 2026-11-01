@@ -350,11 +350,6 @@ if (_bridge) then {
     private _lvl = missionNamespace getVariable ["comspec_overwatch_atak_realism", 0];
     _real pushBack ["info", "Dégâts au téléphone", format ["%1%2", ["aucun", "peut s'éteindre", "écran destructible", "téléphone destructible"] param [_lvl, str _lvl], [" <t color='#e8b84a'>· imposé</t>", ""] select (_dmg isEqualTo "player")]];
     if !(_tenantOn) then { _real pushBack ["text", "<t size='0.8' color='#8a9a93'>Réglages de la communauté pas encore reçus : connectez-vous à Athena.</t>"]; };
-    _live = [
-        ["section", "Caméra en direct", "Envoyer ce que je vois au poste de commandement"],
-        ["COMSPEC_ATAK_LivecamShare", false, "native_livecam_share", "Partager ma caméra", "Une image de votre vue est envoyée régulièrement au poste (onglet Live cam d'Athena)"] call _profSwitch,
-        ["COMSPEC_ATAK_LivecamShareEvery", 15, "Fréquence", [["10 S", 10], ["15 S", 15], ["30 S", 30], ["60 S", 60]]] call _profSegment
-    ];
 };
 // Téléphone (dégâts, saleté) et données médicales affichées (fn_medShow) : choix du joueur, sauf si le serveur
 // (réglages CBA) ou la communauté (Athena) les imposent.
@@ -630,7 +625,7 @@ private _cats = [
     ["MAP", "Carte", "Indicatifs, couleurs, grilles, tailles, fond", "app_map", _map],
     ["ALERTS", "Alertes", "Notifications et vibration", "ui_vibrate", _alerts],
     ["APPS", "Applications", format ["App Store : %1 app(s) à installer", { _x isEqualTo "removed" } count _appsSt], "ui_apps", _appsRows],
-    ["HW", "Matériel et réseau", "Mode avion, Bluetooth, dégâts, réseau simulé, caméra en direct", "app_network", _hw + _live],
+    ["HW", "Matériel et réseau", "Mode avion, Bluetooth, dégâts, réseau simulé", "app_network", _hw + _live],
     ["REAL", "Réalisme", ["Données médicales, saleté de l'écran", "Roleplay, données médicales, réglages imposés"] select _bridge, "app_status", _real],
     ["ACCESS", "Accès et touches", format ["Item requis, %1 raccourcis clavier réglables ici", count _kbAll], "ui_hand", _access],
     ["ABOUT", "À propos du téléphone", format ["%1 · COMSPEC ATAK %2", _modelName, _build], "ui_help", _about]

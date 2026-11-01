@@ -32,7 +32,7 @@ _lines append [
     "--- Journal fichier ---"
 ];
 
-private _raw = ["COMSPECExtension" callExtension ["GetLogTail", ["8000"]]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [(["COMSPECExtension", "GetLogTail", ["8000"]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 if (_raw isEqualType "" && {(_raw select [0, 3]) isEqualTo "OK|"}) then {
     private _payload = _raw select [3, count _raw - 3];
     {

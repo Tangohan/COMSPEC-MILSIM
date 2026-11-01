@@ -80,7 +80,7 @@ private _extVersion = "";
 // Version DLL : lue une seule fois par partie (évite un appel extension de plus par signalement).
 private _extRaw = missionNamespace getVariable ["COMSPEC_DiagExtVersionRaw", ""];
 if (_extRaw isEqualTo "") then {
-    _extRaw = ["COMSPECExtension" callExtension ["GetExtensionVersion", []]] call comspec_overwatch_connect_fnc_extResult;
+    _extRaw = [(["COMSPECExtension", "GetExtensionVersion", []] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
     missionNamespace setVariable ["COMSPEC_DiagExtVersionRaw", _extRaw, false];
 };
 private _extParts = _extRaw splitString "|";

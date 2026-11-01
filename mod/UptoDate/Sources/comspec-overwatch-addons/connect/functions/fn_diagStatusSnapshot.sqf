@@ -113,7 +113,7 @@ private _debit = format ["%1 ko/s", _rateKo];
 private _total = format ["%1 envois · %2 ko reçus", round _sent, _totalInKo];
 // COMSPEC Link 2.0.88+ : volume réel dans les deux sens (requêtes et réponses comptées par la DLL, gzip compris),
 // moyenne sur 5 min, et réponses inchangées qu'Athena n'a pas renvoyées. Avant, seuls les retours étaient comptés.
-private _ss = ["COMSPECExtension" callExtension ["SyncStats", []]] call comspec_overwatch_connect_fnc_extResult;
+private _ss = [(["COMSPECExtension", "SyncStats", []] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 if (_ss isEqualType "" && {(_ss select [0, 3]) isEqualTo "OK|"}) then {
     (((((_ss select [3]) splitString toString [10]) param [0, ""])) splitString toString [9]) params [
         ["_up", "1"], ["_outT", "0"], ["_inT", "0"], ["_calls", "0"], ["_nm", "0"], ["_saved", "0"], ["_wOut", "0"], ["_wIn", "0"], ["_span", "1"]

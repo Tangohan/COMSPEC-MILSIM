@@ -28,7 +28,10 @@ switch (_mode) do {
         };
         // Flux de la partie en cours seulement (celui de la partie précédente a déjà été gardé une fois).
         private _ev = [];
-        { _ev pushBack [_x, (_y select { !(_x param [8, false]) }) select [0 max ((count _y) - 30)]]; } forEach (["events"] call comspec_atak_native_fnc_tocFeed);
+        // Lu directement : fn_tocFeed se termine par true, ["events"] renvoyait un booléen (erreur foreach en boucle, ATAK figé).
+        private _evMap = missionNamespace getVariable ["COMSPEC_ATAK_TocEvents", createHashMap];
+        if !(_evMap isEqualType createHashMap) then { _evMap = createHashMap; };
+        { _ev pushBack [_x, (_y select { !(_x param [8, false]) }) select [0 max ((count _y) - 30)]]; } forEach _evMap;
         profileNamespace setVariable [_key, [1, systemTimeUTC, _scr, _ev]];
         // Écriture du profil du serveur regroupée (fn_saveProfile : une par minute au plus, tout de suite en fin de mission).
         [] call comspec_atak_native_fnc_saveProfile;

@@ -24,7 +24,8 @@ if (_callsign isEqualTo "") then { _callsign = "PILOT"; };
 private _s = toUpper (_status param [0, ""]);
 if (!(_s in ["ROGER", "INBOUND", "ONSTA", "ENGAGED", "RTB"])) exitWith {};
 
-"COMSPECExtension" callExtension ["PilotResponse", [_callsign, _s]];
+if (["PilotResponse"] call comspec_overwatch_connect_fnc_uplinkHold) exitWith {};
+(["COMSPECExtension", "PilotResponse", [_callsign, _s]] call comspec_overwatch_connect_fnc_extDirect);
 [format ["[PILOT] %1 -> %2", _callsign, _s]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
 private _lab = switch _s do {

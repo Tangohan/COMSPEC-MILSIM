@@ -8,6 +8,8 @@
     Renvoie la même forme que callExtension : [résultat, 0, 0].
 */
 params [["_ext", "COMSPECExtension"], ["_cmd", ""], ["_args", []], ["_timeout", 20]];
+// Liaison désactivée ou plus de téléphone : rien ne part (fn_uplinkHold).
+if (_ext isEqualTo "COMSPECExtension" && {[_cmd] call comspec_overwatch_connect_fnc_uplinkHold}) exitWith { ["ERR|uplink_hold", 0, 0] };
 private _noAsync = missionNamespace getVariable ["COMSPEC_ExtNoAsync", []];
 // Sans gestionnaire de rappel (menu principal, avant le postInit) la réponse ne reviendrait jamais : appel direct.
 if (!canSuspend || {_ext in _noAsync} || {isNil "COMSPEC_ExtensionCallbackEH"}) exitWith { _ext callExtension [_cmd, _args] };

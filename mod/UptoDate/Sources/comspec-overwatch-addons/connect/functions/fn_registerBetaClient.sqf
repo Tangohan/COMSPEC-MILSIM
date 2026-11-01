@@ -39,7 +39,7 @@ if (_pv isEqualType [] && {count _pv >= 4}) then {
 };
 
 private _extVersion = "1.17";
-private _extRaw = ["COMSPECExtension" callExtension ["GetExtensionVersion", []]] call comspec_overwatch_connect_fnc_extResult;
+private _extRaw = [(["COMSPECExtension", "GetExtensionVersion", []] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 private _extParts = _extRaw splitString "|";
 if ((count _extParts) >= 2 && {(_extParts select 0) isEqualTo "OK"}) then {
     private _label = _extParts select 1;

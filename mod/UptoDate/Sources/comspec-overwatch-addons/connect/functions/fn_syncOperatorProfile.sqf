@@ -188,7 +188,7 @@ if (_result getOrDefault ["pending", false]) then {
 
 private _bt = (_payload get "medical") getOrDefault ["blood_type", ""];
 if (_bt isNotEqualTo "") then {
-    ["COMSPECExtension" callExtension ["SetBloodType", [_bt]]] call comspec_overwatch_connect_fnc_extResult;
+    [(["COMSPECExtension", "SetBloodType", [_bt]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 };
 
 _result
