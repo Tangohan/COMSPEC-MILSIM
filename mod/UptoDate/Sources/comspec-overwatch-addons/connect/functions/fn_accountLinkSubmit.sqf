@@ -243,7 +243,7 @@ if (_prefix != "OK") exitWith {
 
         case "http_500": { "Erreur interne du portail. Réessayez dans un instant." };
 
-        case "client_untrusted": { "Ce module n’est pas reconnu. Installez la version officielle du pack, puis relancez Arma." };
+        case "client_untrusted": { "Ce pack n'est pas reconnu comme version officielle. Abonnez-vous à COMSPEC ATAK sur le Steam Workshop (ou mettez-le à jour), retirez les copies locales ou modifiées du mod, puis relancez Arma complètement." };
 
         case "unauthorized";
         case "http_401": {

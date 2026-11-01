@@ -23,7 +23,9 @@ private _isToc = {
     private _ok = _o isKindOf "COMSPEC_ATAK_TocLaptop" || {_o getVariable ["COMSPEC_ATAK_Toc", false]}
         || {(missionNamespace getVariable ["comspec_atak_native_toc_anylaptop", false]) && {(typeOf _o) in _laptops}};
     if !(_ok) exitWith { false };
-    private _side = toUpper (_o getVariable ["COMSPEC_ATAK_TocSide", ""]);
+    private _side = toUpper trim (_o getVariable ["COMSPEC_ATAK_TocSide", ""]);
+    // Camp écrit à la main dans Eden : noms courants acceptés (BLUFOR, OPFOR, INDEP…), sinon le PC restait muet.
+    _side = (createHashMapFromArray [["BLUFOR", "WEST"], ["BLU", "WEST"], ["OPFOR", "EAST"], ["RED", "EAST"], ["INDEP", "GUER"], ["INDEPENDENT", "GUER"], ["RESISTANCE", "GUER"], ["IND", "GUER"], ["CIVILIAN", "CIV"]]) getOrDefault [_side, _side];
     _side isEqualTo "" || {_side isEqualTo str side group player}
 };
 switch (_act) do {
@@ -68,7 +70,9 @@ switch (_act) do {
         if (!isNil "ace_interact_menu_fnc_createAction") then {
             private _a = ["COMSPEC_ATAK_TocOpen", "PC du poste TOC", _icon, { ["open", _target] call comspec_atak_native_fnc_tocPost; },
                 { ["isToc", _target] call comspec_atak_native_fnc_tocPost && {isNull objectParent _player} }] call comspec_atak_native_fnc_aceAction;
-            ["COMSPEC_ATAK_TocLaptop", 0, ["ACE_MainActions"], _a, true] call ace_interact_menu_fnc_addActionToClass;
+            // Classe exacte, sans héritage : l'action héritée (objet Static) dépend d'un événement d'init qui ne vient pas
+            // toujours, et l'action de la molette est retirée pour cet objet quand ACE est là : plus aucun moyen d'ouvrir le PC.
+            ["COMSPEC_ATAK_TocLaptop", 0, ["ACE_MainActions"], _a] call ace_interact_menu_fnc_addActionToClass;
             // Ordinateurs portables du jeu (réglage) et objets désignés par la mission : même action.
             { [_x, 0, ["ACE_MainActions"], _a] call ace_interact_menu_fnc_addActionToClass; } forEach _laptops;
         };
@@ -79,6 +83,6 @@ switch (_act) do {
     };
     case "action": {
         player addAction ["<t color='#7fd0b0'>PC du poste TOC</t>", { ["open", cursorObject] call comspec_atak_native_fnc_tocPost; }, nil, 1.3, false, true, "",
-            "isNull objectParent _this && {(_this distance cursorObject) < 2.5} && {['isToc', cursorObject] call comspec_atak_native_fnc_tocPost} && {isNil 'ace_interact_menu_fnc_createAction' || {!(cursorObject isKindOf 'COMSPEC_ATAK_TocLaptop') && {!((typeOf cursorObject) in (missionNamespace getVariable ['COMSPEC_ATAK_TocLaptops', []]))}}}"];
+            "isNull objectParent _this && {(_this distance cursorObject) < 4.5} && {['isToc', cursorObject] call comspec_atak_native_fnc_tocPost} && {isNil 'ace_interact_menu_fnc_createAction' || {!(cursorObject isKindOf 'COMSPEC_ATAK_TocLaptop') && {!((typeOf cursorObject) in (missionNamespace getVariable ['COMSPEC_ATAK_TocLaptops', []]))}}}"];
     };
 };

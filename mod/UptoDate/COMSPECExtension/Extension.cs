@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.112";
+    private const string ExtensionVersion = "2.0.113";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -4180,7 +4180,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck,HashText,MedicalRoster";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster";
         }
 
         if (function == "GetCapabilities")
@@ -4211,7 +4211,7 @@ public static partial class Extension
                 using var pairCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
                 using var resp = SendJsonPost(uri.ToString(), payload, pairCts.Token);
                 var body = ReadContentUtf8(resp, pairCts.Token);
-                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                if (!resp.IsSuccessStatusCode) return body.Contains("client_untrusted", StringComparison.Ordinal) ? "ERR|client_untrusted" : "ERR|http_" + (int)resp.StatusCode;
                 using var pairDoc = JsonDocument.Parse(body);
                 var pairRoot = pairDoc.RootElement;
                 var deviceCode = pairRoot.TryGetProperty("device_code", out var dc) && dc.ValueKind == JsonValueKind.String ? dc.GetString() ?? "" : "";
@@ -4285,7 +4285,7 @@ public static partial class Extension
                 using var resp = SendGet(uri.ToString(), pairStatusCts.Token);
                 var body = ReadContentUtf8(resp, pairStatusCts.Token);
                 if ((int)resp.StatusCode == 404) return "OK|pending";
-                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                if (!resp.IsSuccessStatusCode) return body.Contains("client_untrusted", StringComparison.Ordinal) ? "ERR|client_untrusted" : "ERR|http_" + (int)resp.StatusCode;
                 using var doc = JsonDocument.Parse(body);
                 var root = doc.RootElement;
                 var status = root.TryGetProperty("status", out var st) && st.ValueKind == JsonValueKind.String ? (st.GetString() ?? "pending").ToLowerInvariant() : "pending";
@@ -4340,7 +4340,7 @@ public static partial class Extension
                 var body = ReadContentUtf8(resp, recoveryCts.Token);
                 if ((int)resp.StatusCode == 409) return "ERR|used";
                 if ((int)resp.StatusCode == 400 || (int)resp.StatusCode == 404) return "ERR|invalid";
-                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                if (!resp.IsSuccessStatusCode) return body.Contains("client_untrusted", StringComparison.Ordinal) ? "ERR|client_untrusted" : "ERR|http_" + (int)resp.StatusCode;
                 using var doc = JsonDocument.Parse(body);
                 var root = doc.RootElement;
                 if (root.TryGetProperty("session_token", out var tok) && tok.ValueKind == JsonValueKind.String)
@@ -5804,6 +5804,45 @@ public static partial class Extension
                 }
                 catch { return "ERR|bad_json"; }
                 return "OK|" + lines.ToString();
+            }
+            // Lecteur Academy en jeu (app Academy du téléphone natif, écrans posables), session de jeu du compte.
+            // Args : ["courses", "", "", langue] | ["lesson", cours, leçon, langue, page de départ] | ["seen", cours, leçon, étape]
+            // → OK|lignes du site telles quelles (H/C/S, L/R/P, OK), coupées sur une fin de ligne.
+            if (function == "Academy")
+            {
+                var mode = args.Length > 0 ? (args[0] ?? "").Trim() : "";
+                string A(int i) => args.Length > i ? (args[i] ?? "").Trim() : "";
+                if (mode != "courses" && mode != "lesson" && mode != "seen") return "ERR|bad_args";
+                HttpResponseMessage resp;
+                if (mode == "seen")
+                {
+                    var ch = int.TryParse(A(2), out var chN) ? chN : -1;
+                    var st = int.TryParse(A(3), out var stN) ? stN : -1;
+                    // JsonEncodedText : sans réflexion (DLL compilée en NativeAOT).
+                    var payload = "{\"course\":\"" + JsonEncodedText.Encode(A(1)).ToString() + "\",\"chapter\":" + ch.ToString(CultureInfo.InvariantCulture) + ",\"stage\":" + st.ToString(CultureInfo.InvariantCulture) + "}";
+                    resp = SendJsonPost(_baseUrl + "/api/atak/academy/seen", payload, token);
+                }
+                else
+                {
+                    var url = _baseUrl + "/api/atak/academy/" + mode + "?lang=" + (A(3) == "en" ? "en" : "fr");
+                    if (mode == "lesson")
+                        url += "&course=" + Uri.EscapeDataString(A(1)) + "&chapter=" + Uri.EscapeDataString(A(2)) + "&from=" + Uri.EscapeDataString(A(4));
+                    resp = SendGet(url, token);
+                }
+                using var respScope = resp;
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    var reason = new string(respBody.Trim().Where(c => char.IsLetterOrDigit(c) || c == '_').Take(40).ToArray());
+                    if (code == 401) return "ERR|unauthorized";
+                    if (code == 403) return "ERR|" + (reason.Length > 0 ? reason : "forbidden");
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 409) return "ERR|locked";
+                    if (code == 503) return "ERR|unavailable";
+                    return "ERR|http_" + code;
+                }
+                return "OK|" + Utf8ClipLines(respBody.Replace("\r", ""), MaxOutputBytes - 4);
             }
             if (function == "GetWantedNotices")
             {

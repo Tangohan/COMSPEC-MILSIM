@@ -200,8 +200,8 @@ if (_prefix == "OK") then {
                     _logMsg = "Acces refuse (cle Athena invalide ou mal enregistree).";
                 };
                 case "client_untrusted": {
-                    _detail = "Module non reconnu — installez le pack officiel";
-                    _logMsg = "Ce module n'est pas reconnu. Installez la version officielle du pack, puis relancez Arma.";
+                    _detail = "Pack non officiel — abonnez-vous au Workshop";
+                    _logMsg = "Ce pack n'est pas reconnu comme version officielle. Abonnez-vous à COMSPEC ATAK sur le Steam Workshop (ou mettez-le à jour), retirez les copies locales ou modifiées du mod, puis relancez Arma complètement.";
                 };
                 case "tenant_required": {
                     _detail = "Communaute manquante — refaites la liaison";

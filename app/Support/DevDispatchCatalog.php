@@ -294,6 +294,18 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1251, '2026-11-01', 'Academy en jeu et caméras en direct sur les écrans TOC', 'Avec le pack 2.9.24 et la liaison 2.0.113, vos cours Academy arrivent sur le téléphone (leçons page par page, progression enregistrée sur le site) et l’encadrement Formation peut présenter une leçon sur un écran posé ou un écran TOC. Les écrans TOC affichent en direct un drone, une caméra fixe ou la caméra d’un porteur d’ATAK. Le PC du poste TOC est réparé, et un pack non officiel est enfin signalé clairement.', [
+                'App Academy sur le téléphone, progression enregistrée sur le site',
+                'Présentation d’une leçon sur un écran posé ou TOC, pages tournées par l’instructeur',
+                'Caméras en direct sur les écrans TOC (drone, caméra fixe, caméra d’un porteur d’ATAK)',
+            ], [
+                'Connexion : message clair pour un pack non officiel ; onglet PORTAIL retiré (utilisez CODE)',
+            ], [
+                'PC du poste TOC bloqué sur un groupe sans ATAK, inutilisable sans ACE',
+                'Camps BLUFOR / OPFOR / INDEP de l’éditeur non reconnus par le poste TOC',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.24 (liaison 2.0.113 incluse), quittez Arma complètement, puis relancez.',
+            ], 'Pack téléphone 2.9.24'),
             $pr(1248, '2026-11-01', 'Montre : la carte ne clignote plus', 'Avec le correctif 2.9.23, la mini-carte de la montre Garmin reste centrée sur le joueur au lieu d’alterner avec un autre endroit de la carte.', [], [], [
                 'Carte de la montre Garmin qui alternait entre deux centres',
             ], ['atak'], [
