@@ -292,6 +292,8 @@ final class OrbatRosterPayload
             [$root] = self::annotateReadinessAggregation($root);
             $root = self::attachBilletManning($root, $tenantId);
             $root = self::attachGrades($root, $unitRepository->gradeShortNamesForUsers($tenantId, self::collectPersonIds($root)));
+            // Noms d’unités et postes générés par Athena dans la langue du lecteur (personnalisés par la communauté).
+            $root = \App\Services\I18n\GeneratedLabels::localizeOrbat($root, $tenantId, array_column($flat, 'slug', 'id'));
         }
 
         return $root;

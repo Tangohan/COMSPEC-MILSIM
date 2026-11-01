@@ -2217,6 +2217,33 @@ if (!function_exists('name_blur_html')) {
     }
 }
 
+if (!function_exists('generated_label')) {
+    /**
+     * Libellé généré par Athena (unité ou emploi d'un modèle, poste type, type d'unité) dans la langue du lecteur,
+     * personnalisé par la communauté. Un nom saisi par la communauté est rendu tel quel.
+     *
+     * @param string $kind unit | category | job | post | unit_type
+     * @param string|null $id adresse courte (unité, emploi, catégorie) ou code du type quand on la connaît
+     */
+    function generated_label(string $kind, string $text, ?string $id = null, ?int $tenantId = null, ?string $lang = null): string
+    {
+        $tenantId ??= (int) \App\Core\Session::get('tenant_id');
+
+        return \App\Services\I18n\GeneratedLabels::display($tenantId, $kind, $text, $id, $lang);
+    }
+}
+
+if (!function_exists('unit_name_html')) {
+    /**
+     * Nom d'unité pour une page : libellé généré résolu (generated_label), mots inappropriés floutés, et
+     * translate="no" pour que la traduction de la page ne retouche jamais un nom choisi par la communauté.
+     */
+    function unit_name_html(string $name, ?string $slug = null, ?int $tenantId = null): string
+    {
+        return '<span translate="no">' . name_blur_html(generated_label('unit', $name, $slug, $tenantId)) . '</span>';
+    }
+}
+
 if (!function_exists('email_community_label')) {
     /**
      * Libellé pour e-mails transactionnels : le tenant système (slug default) et les

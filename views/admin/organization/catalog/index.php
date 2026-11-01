@@ -88,6 +88,12 @@ $gradeLabel = trim((string) ($inv['grade_label'] ?? 'Système de grades'));
                 <span class="bo-catalog__tile-label">Kits de droits prêts à l’emploi</span>
                 <span class="bo-catalog__admin-go">Administrer les profils de droits</span>
             </a>
+            <a class="bo-catalog__admin-card" href="<?= $h(url('back-office/organisation/catalogue/libelles')) ?>">
+                <span class="bo-catalog__tile-kicker">Langues</span>
+                <strong class="bo-catalog__tile-value">FR · EN</strong>
+                <span class="bo-catalog__tile-label">Noms des unités et postes créés par Athena</span>
+                <span class="bo-catalog__admin-go">Traduire et personnaliser les libellés</span>
+            </a>
             <a class="bo-catalog__admin-card" href="<?= $h(url('back-office/organisation/catalogue/historique')) ?>">
                 <span class="bo-catalog__tile-kicker">Journal</span>
                 <strong class="bo-catalog__tile-value"><?= $installCount ?></strong>

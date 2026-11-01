@@ -127,10 +127,14 @@ return [
         ['path' => 'back-office/organisation/catalogue', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Catalogue de l’organisation', 'subtitle' => 'Administrez l’organigramme, les grades, les fonctions et les rôles, ou copiez un modèle.', 'css' => ['back-office-catalog.css'], 'quick' => [
             ['label' => 'Structure', 'href' => 'back-office/organisation/structure'],
             ['label' => 'Journal', 'href' => 'back-office/organisation/catalogue/historique'],
+            ['label' => 'Libellés', 'href' => 'back-office/organisation/catalogue/libelles'],
             ['label' => 'Accès', 'href' => 'back-office/ressources/effectifs/roles'],
             ['label' => 'Emplois', 'href' => 'back-office/ressources/effectifs/fonctions'],
         ]],
         ['path' => 'back-office/organisation/catalogue/historique', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Journal du catalogue', 'subtitle' => 'Toutes les applications de modèles dans cette communauté.', 'css' => ['back-office-catalog.css'], 'quick' => [
+            ['label' => 'Catalogue', 'href' => 'back-office/organisation/catalogue'],
+        ]],
+        ['path' => 'back-office/organisation/catalogue/libelles', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Libellés des unités et postes', 'subtitle' => 'Les noms créés par Athena s’affichent dans la langue de chaque joueur. Remplacez-les si vous le souhaitez.', 'css' => ['back-office-catalog.css'], 'quick' => [
             ['label' => 'Catalogue', 'href' => 'back-office/organisation/catalogue'],
         ]],
         ['path' => 'back-office/organisation/catalogue/modele', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Modèle d’organisation', 'css' => ['back-office-catalog.css']],

@@ -446,7 +446,7 @@ class CommunityController
             ['unit_id' => $uid]
         );
 
-        $unitName = trim((string) ($unit['name'] ?? 'Unité'));
+        $unitName = generated_label('unit', trim((string) ($unit['name'] ?? 'Unité')), (string) ($unit['slug'] ?? ''), $tid);
         $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
         $unitBlurb = trim((string) ($unit['public_blurb'] ?? ''));
         $unitDesc = $unitBlurb !== ''

@@ -1757,6 +1757,13 @@ class PersonnelController
         $sheetLang = \App\Support\CommunityLanguages::normalize($request->query('lang', ''))
             ?? \App\Support\CommunityLanguages::orbatLanguage($orbatCommunity);
         $sheetCountry = \App\Support\CommunityLanguages::unitCountry($orbatCommunity);
+        // Noms d’unités et postes générés : dans la langue de la feuille (personnalisés par la communauté).
+        $rosterData = \App\Services\I18n\GeneratedLabels::localizeOrbat(
+            $rosterData,
+            $tid,
+            array_column($this->unitRepository->allForTenant($tid), 'slug', 'id'),
+            $sheetLang
+        );
 
         $paper = strtoupper(trim((string) $request->query('paper', '')));
         if (!in_array($paper, ['A3', 'A2', 'A1', 'A0'], true)) {

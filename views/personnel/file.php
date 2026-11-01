@@ -328,6 +328,8 @@ $publicFlagCode = ($publicFlagCodeRaw !== '' && \App\Support\Profile\PublicFlagC
 $publicFlagEmoji = $publicFlagCode !== null ? \App\Support\Profile\PublicFlagCountryCatalog::flagEmoji($publicFlagCode) : '';
 
 $unitName = $primaryAssignment['unit_name'] ?? $primaryUnitFallbackName ?? ($personnelExtras['squadron'] ?? null);
+// Unité copiée depuis un modèle : nom dans la langue du lecteur (personnalisé par la communauté).
+$unitName = is_string($unitName) && $unitName !== '' ? generated_label('unit', $unitName) : $unitName;
 $heroFlagLine = '';
 if ($publicFlagCode !== null) {
     $heroTail = trim((string) ($unitName ?? ''));
@@ -1128,7 +1130,7 @@ if ($personnelFileIsRhFull) {
                     <?php if ($personnelJobRoleAssignments !== []): ?>
                     <div class="grid pf-grid-wide gap-4 sm:grid-cols-2">
                         <?php foreach ($personnelJobRoleAssignments as $jr):
-                            $jrName = trim((string) ($jr['role_name'] ?? ''));
+                            $jrName = generated_label('job', trim((string) ($jr['role_name'] ?? '')), isset($jr['role_slug']) ? (string) $jr['role_slug'] : null);
                             $jrDetail = trim((string) ($jr['role_detail'] ?? ''));
                             $jrLabel = $jrDetail !== '' && $jrName !== '' ? $jrName . ' — ' . $jrDetail : ($jrName !== '' ? $jrName : $jrDetail);
                             $jrPrimary = !empty($jr['is_primary']);
@@ -1157,7 +1159,7 @@ if ($personnelFileIsRhFull) {
                     <?php else: ?>
                     <div class="space-y-6">
                         <?php foreach ($assignments as $asg):
-                            $asgUnit = trim((string) ($asg['unit_name'] ?? ''));
+                            $asgUnit = generated_label('unit', trim((string) ($asg['unit_name'] ?? '')));
                             $asgRole = trim((string) ($asg['role_name'] ?? ''));
                             $asgPrimary = !empty($asg['is_primary']);
                             $cmdId = (int) ($asg['commander_user_id'] ?? 0);
@@ -1229,7 +1231,7 @@ if ($personnelFileIsRhFull) {
                     </div>
                     <div class="space-y-4">
                         <?php foreach ($personnelAssignmentHistory as $hist):
-                            $hUnit = trim((string) ($hist['unit_name'] ?? ''));
+                            $hUnit = generated_label('unit', trim((string) ($hist['unit_name'] ?? '')));
                             $hRole = trim((string) ($hist['role_name'] ?? ''));
                             $hPrimary = !empty($hist['is_primary']);
                             $hCmdId = (int) ($hist['commander_user_id'] ?? 0);

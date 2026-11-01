@@ -77,6 +77,7 @@ final class CommunityLanguages
         'site.atakt' => 'Atelier du téléphone',
         'site.atakn' => 'Téléphone ATAK',
         'site.atak' => 'Téléphone ATAK',
+        'unit_labels' => 'Unités et postes des modèles',
         'site.atakw' => 'Atelier du téléphone',
         'site.sse' => 'Renseignement SSE',
         'site.contrib' => 'Contribuer',

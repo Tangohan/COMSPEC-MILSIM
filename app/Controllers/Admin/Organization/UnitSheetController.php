@@ -55,6 +55,11 @@ final class UnitSheetController
             $this->unitTypes->ensureSystemDefaults($tenantId);
             $types = $this->unitTypes->listForTenant($tenantId);
         }
+        // Types d’unité livrés par Athena : dans la langue du lecteur (personnalisés par la communauté).
+        foreach ($types as &$type) {
+            $type['label'] = generated_label('unit_type', (string) ($type['label'] ?? ''), (string) ($type['code'] ?? ''), $tenantId);
+        }
+        unset($type);
         $activityTypes = $this->activities->listTypesForTenant($tenantId);
         $timeline = $this->activities->listForUnit($tenantId, $unitId, 40);
         foreach ($timeline as &$row) {
