@@ -303,19 +303,121 @@ final class ArsenalLoadoutItems
     }
 
     /**
-     * Texte à coller dans l’arsenal ACE (bouton Importer, mannequin) : le getUnitLoadout de la tenue en SQF.
-     * null si la tenue est illisible.
+     * Texte à coller dans l’arsenal ACE (bouton Importer, écran principal) pour UNE tenue :
+     * [getUnitLoadout complet à 10 entrées, infos étendues ACE] en SQF. null si la tenue est illisible.
      */
     public static function aceExport(string $payload): ?string
     {
-        $loadout = self::parse($payload);
+        $data = self::aceLoadout($payload);
 
-        return $loadout === [] ? null : self::sqf($loadout);
+        return $data === null ? null : self::sqf($data);
     }
 
     /**
-     * Liste à coller dans « Mes équipements » d’ACE (onglet Mes équipements, Importer) : [[nom, loadout], …].
-     * Les tenues illisibles sont laissées de côté.
+     * Tenue au format attendu par ACE : [loadout, infos étendues], quel que soit l’emballage stocké
+     * (texte doublé par callExtension, [nom, tenue], [tenue, version], [tenue, infos], enveloppe de trop…).
+     * Chaque emplacement est remis au bon type (armes, conteneurs, casque / lunettes en texte, 6 objets
+     * assignés) : une tenue mal formée faisait planter la liste des tenues d’ACE (fnc_fillLoadoutsList).
+     *
+     * @return array{0: list<mixed>, 1: list<array{0: string, 1: mixed}>}|null
+     */
+    public static function aceLoadout(string $payload): ?array
+    {
+        $value = self::decode($payload);
+        if ($value === null) {
+            return null;
+        }
+        $extended = [];
+        for ($depth = 0; $depth < 6 && is_array($value) && array_is_list($value); $depth++) {
+            $n = count($value);
+            if (self::looksLikeLoadout($value)) {
+                return [self::normalizeLoadout($value), $extended];
+            }
+            if ($n === 1 && is_array($value[0])) {
+                $value = $value[0];
+                continue;
+            }
+            if ($n === 2 && is_string($value[0]) && is_array($value[1])) {
+                $value = $value[1];
+                continue;
+            }
+            if ($n === 2 && is_array($value[0])) {
+                if (is_array($value[1]) && self::looksLikeLoadout($value[0])) {
+                    $extended = self::extendedInfo($value[1]);
+                }
+                $value = $value[0];
+                continue;
+            }
+            break;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<int|string, mixed> $a
+     */
+    private static function looksLikeLoadout(array $a): bool
+    {
+        $n = count($a);
+        if ($n < 9 || $n > 10 || !array_is_list($a)) {
+            return false;
+        }
+        foreach ([0, 1, 2, 3, 4, 5] as $i) {
+            if (!is_array($a[$i])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param list<mixed> $a
+     * @return list<mixed>
+     */
+    private static function normalizeLoadout(array $a): array
+    {
+        $out = [];
+        foreach ([0, 1, 2, 3, 4, 5, 8] as $i) {
+            $out[$i] = is_array($a[$i] ?? null) ? array_values($a[$i]) : [];
+        }
+        foreach ([6, 7] as $i) {
+            $out[$i] = is_string($a[$i] ?? null) ? $a[$i] : '';
+        }
+        $assigned = [];
+        foreach (is_array($a[9] ?? null) ? $a[9] : [] as $item) {
+            if (count($assigned) < 6) {
+                $assigned[] = is_string($item) ? $item : '';
+            }
+        }
+        $out[9] = array_pad($assigned, 6, '');
+        ksort($out);
+
+        return array_values($out);
+    }
+
+    /**
+     * Infos étendues ACE / CBA (str d’une HashMap) : liste de paires [clé, valeur] ; le reste est écarté.
+     *
+     * @param array<int|string, mixed> $raw
+     * @return list<array{0: string, 1: mixed}>
+     */
+    private static function extendedInfo(array $raw): array
+    {
+        $out = [];
+        foreach ($raw as $pair) {
+            if (is_array($pair) && array_is_list($pair) && count($pair) === 2 && is_string($pair[0]) && $pair[0] !== '') {
+                $out[] = [$pair[0], $pair[1]];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Liste de tenues [[nom, [loadout, infos étendues]], …] (sauvegarde de toutes les tenues d’un coup).
+     * Les tenues illisibles sont laissées de côté. Le nom reste celui de la tenue sur Athena.
      *
      * @param list<array{name: string, payload: string}> $wardrobes
      */
@@ -324,9 +426,9 @@ final class ArsenalLoadoutItems
         $out = [];
         $seen = [];
         foreach ($wardrobes as $w) {
-            $loadout = self::parse((string) ($w['payload'] ?? ''));
+            $loadout = self::aceLoadout((string) ($w['payload'] ?? ''));
             $name = trim(preg_replace('/\s+/u', ' ', (string) ($w['name'] ?? '')) ?? '');
-            if ($loadout === [] || $name === '') {
+            if ($loadout === null || $name === '') {
                 continue;
             }
             // ACE range ses tenues par nom : un doublon écraserait la première.

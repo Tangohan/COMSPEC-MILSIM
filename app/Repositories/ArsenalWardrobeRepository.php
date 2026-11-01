@@ -14,7 +14,12 @@ use PDO;
 
 final class ArsenalWardrobeRepository
 {
+    /** Visibilités d’une tenue : toute la communauté, ou son propriétaire seul. */
+    public const WARDROBE_VISIBILITIES = ['tenant', 'personal'];
+
     private PDO $pdo;
+
+    private ?bool $visibilityReady = null;
 
     public function __construct(?PDO $pdo = null)
     {
@@ -34,6 +39,41 @@ final class ArsenalWardrobeRepository
         } catch (\Throwable) {
             return false;
         }
+    }
+
+    /**
+     * Colonne visibility présente (migration à la demande) : sinon toutes les tenues restent visibles par la communauté.
+     */
+    private function visibilityReady(): bool
+    {
+        if ($this->visibilityReady !== null) {
+            return $this->visibilityReady;
+        }
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'arsenal_wardrobes' AND COLUMN_NAME = 'visibility' LIMIT 1"
+            );
+            $this->visibilityReady = (bool) ($st && $st->fetchColumn());
+        } catch (\Throwable) {
+            $this->visibilityReady = false;
+        }
+
+        return $this->visibilityReady;
+    }
+
+    /**
+     * Un membre voit ses tenues et celles des autres qui ne sont pas réservées à leur propriétaire.
+     *
+     * @param array<string, mixed> $row
+     */
+    public static function canView(array $row, int $userId): bool
+    {
+        if ((int) ($row['user_id'] ?? 0) === $userId) {
+            return true;
+        }
+
+        return (string) ($row['visibility'] ?? 'tenant') !== 'personal';
     }
 
     public static function slugify(string $name): string
@@ -87,9 +127,12 @@ final class ArsenalWardrobeRepository
             // Table absente : pas de mise en avant.
         }
 
+        $visibilitySelect = $this->visibilityReady() ? 'w.visibility,' : "'tenant' AS visibility,";
+        $visibilityWhere = $this->visibilityReady() ? " AND (w.user_id = ? OR w.visibility <> 'personal')" : '';
         $st = $this->pdo->prepare(
             "SELECT w.id, w.tenant_id, w.user_id, w.steam_uid, w.collection_id, w.name, w.slug,
                     w.source, w.payload_format, w.payload_sha256, CHAR_LENGTH(w.payload_text) AS payload_bytes,
+                    {$visibilitySelect}
                     w.payload_text, w.notes, w.description, w.cover_image_path, w.gallery_json,
                     w.is_favorite, w.last_synced_at, w.created_at, w.updated_at,
                     c.name AS collection_name, c.slug AS collection_slug, c.visibility AS collection_visibility,
@@ -99,10 +142,10 @@ final class ArsenalWardrobeRepository
              LEFT JOIN arsenal_equipment_collections c ON c.id = w.collection_id
              LEFT JOIN users u ON u.id = w.user_id
              {$pinJoin}
-             WHERE w.tenant_id = ?
+             WHERE w.tenant_id = ?{$visibilityWhere}
              ORDER BY is_featured DESC, w.is_favorite DESC, w.name ASC, w.id ASC"
         );
-        $st->execute([$tenantId]);
+        $st->execute($this->visibilityReady() ? [$tenantId, $userId] : [$tenantId]);
 
         $rows = array_map([$this, 'mapWardrobe'], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
         $ownerIds = [];
@@ -158,14 +201,19 @@ final class ArsenalWardrobeRepository
     }
 
     /**
-     * Nom et contenu des tenues de la communauté (export pour l’arsenal ACE), d’une collection ou toutes.
+     * Nom et contenu des tenues de la communauté visibles par ce membre (export pour l’arsenal ACE),
+     * d’une collection ou toutes. Le nom est celui enregistré (le mod reconnaît ses tenues par leur nom).
      *
      * @return list<array{id: int, name: string, payload: string}>
      */
-    public function exportPayloads(int $tenantId, ?int $collectionId = null): array
+    public function exportPayloads(int $tenantId, ?int $collectionId = null, ?int $viewerId = null): array
     {
         $sql = 'SELECT id, name, payload_text FROM arsenal_wardrobes WHERE tenant_id = ?';
         $params = [$tenantId];
+        if ($viewerId !== null && $this->visibilityReady()) {
+            $sql .= " AND (user_id = ? OR visibility <> 'personal')";
+            $params[] = $viewerId;
+        }
         if ($collectionId !== null && $collectionId > 0) {
             $sql .= ' AND collection_id = ?';
             $params[] = $collectionId;
@@ -176,7 +224,7 @@ final class ArsenalWardrobeRepository
         foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
             $out[] = [
                 'id' => (int) $row['id'],
-                'name' => ArsenalLoadoutItems::formatWardrobeTitle((string) ($row['name'] ?? '')),
+                'name' => trim((string) ($row['name'] ?? '')),
                 'payload' => (string) ($row['payload_text'] ?? ''),
             ];
         }
@@ -679,6 +727,54 @@ final class ArsenalWardrobeRepository
     }
 
     /**
+     * Renomme une tenue du membre. L’adresse courte suit le nouveau nom : un prochain envoi depuis le jeu sous
+     * l’ancien nom créerait une autre tenue, d’où le message de la page.
+     *
+     * @return 'ok'|'unchanged'|'empty'|'duplicate'|'not_found'
+     */
+    public function renameWardrobe(int $tenantId, int $userId, int $id, string $name): string
+    {
+        $name = trim(preg_replace('/\s+/u', ' ', $name) ?? '');
+        if ($name === '') {
+            return 'empty';
+        }
+        $name = mb_substr($name, 0, 120);
+        $row = $this->findWardrobe($tenantId, $id, $userId);
+        if ($row === null) {
+            return 'not_found';
+        }
+        if ((string) ($row['name'] ?? '') === $name) {
+            return 'unchanged';
+        }
+        $slug = self::slugify($name);
+        $other = $this->findBySlug($tenantId, $userId, $slug);
+        if ($other !== null && (int) ($other['id'] ?? 0) !== $id) {
+            return 'duplicate';
+        }
+        $st = $this->pdo->prepare(
+            'UPDATE arsenal_wardrobes SET name = ?, slug = ?, updated_at = NOW()
+             WHERE id = ? AND tenant_id = ? AND user_id = ?'
+        );
+        $st->execute([$name, $slug, $id, $tenantId, $userId]);
+
+        return 'ok';
+    }
+
+    public function updateWardrobeVisibility(int $tenantId, int $userId, int $id, string $visibility): bool
+    {
+        if (!in_array($visibility, self::WARDROBE_VISIBILITIES, true) || !$this->visibilityReady()) {
+            return false;
+        }
+        $st = $this->pdo->prepare(
+            'UPDATE arsenal_wardrobes SET visibility = ?
+             WHERE id = ? AND tenant_id = ? AND user_id = ?'
+        );
+        $st->execute([$visibility, $id, $tenantId, $userId]);
+
+        return $st->rowCount() > 0;
+    }
+
+    /**
      * @param list<string> $paths Relative storage paths
      */
     public function setWardrobeGallery(int $tenantId, int $userId, int $id, array $paths): bool
@@ -729,6 +825,7 @@ final class ArsenalWardrobeRepository
             ? (int) $row['collection_id']
             : null;
         $row['is_favorite'] = !empty($row['is_favorite']);
+        $row['visibility'] = (string) ($row['visibility'] ?? '') === 'personal' ? 'personal' : 'tenant';
         $row['payload_bytes'] = isset($row['payload_bytes'])
             ? (int) $row['payload_bytes']
             : (isset($row['payload_text']) ? strlen((string) $row['payload_text']) : 0);

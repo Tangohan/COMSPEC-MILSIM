@@ -224,6 +224,9 @@ class ArsenalWardrobeController
         $label = 'tenues-athena';
         if ($tenueId > 0) {
             $row = $this->repo->findWardrobe($tenantId, $tenueId);
+            if ($row !== null && !ArsenalWardrobeRepository::canView($row, $userId)) {
+                $row = null;
+            }
             $text = $row !== null ? ArsenalLoadoutItems::aceExport((string) ($row['payload_text'] ?? '')) : null;
             if ($text === null) {
                 Session::flash('error', 'Cette tenue ne peut pas être exportée pour ACE.');
@@ -242,7 +245,7 @@ class ArsenalWardrobeController
                 }
                 $label = 'collection-' . ArsenalWardrobeRepository::slugify((string) ($collection['name'] ?? 'collection'));
             }
-            $text = ArsenalLoadoutItems::aceExportList($this->repo->exportPayloads($tenantId, $collectionId > 0 ? $collectionId : null));
+            $text = ArsenalLoadoutItems::aceExportList($this->repo->exportPayloads($tenantId, $collectionId > 0 ? $collectionId : null, $userId));
         }
 
         $inline = $request->query('inline') === '1';
@@ -265,6 +268,9 @@ class ArsenalWardrobeController
         [$tenantId, $userId] = $gate;
         $id = (int) ($params['id'] ?? 0);
         $row = $id > 0 ? $this->repo->findWardrobe($tenantId, $id) : null;
+        if ($row !== null && !ArsenalWardrobeRepository::canView($row, $userId)) {
+            $row = null;
+        }
         if ($row === null) {
             if ($this->wantsJson($request)) {
                 return Response::json(['ok' => false, 'error' => 'not_found'], 404);
@@ -308,6 +314,7 @@ class ArsenalWardrobeController
                     'collection_id' => $row['collection_id'] ?? null,
                     'collection_name' => $row['collection_name'] ?? null,
                     'notes' => $row['mine'] ? (string) ($row['notes'] ?? '') : '',
+                    'visibility' => (string) ($row['visibility'] ?? 'tenant'),
                     'owner_label' => (string) ($row['owner_label'] ?? ''),
                     'mine' => !empty($row['mine']),
                     'can_edit' => !empty($row['mine']),
@@ -315,7 +322,7 @@ class ArsenalWardrobeController
                     'loadout_items' => $loadoutItems,
                     'ace_export' => $aceExport,
                     'ace_export_url' => $aceExport !== null ? url('equipment/ace-export') . '?tenue=' . $id : null,
-                    'usage_hint' => 'En jeu : arsenal ACE, bandeau « Athena · Tenues » en haut de l’écran, ou « Copier pour ACE » puis Importer dans l’arsenal.',
+                    'usage_hint' => 'En jeu : arsenal ACE, bandeau « Athena · Tenues » en haut de l’écran, ou « Copier pour ACE » puis Importer dans l’arsenal (une tenue à la fois).',
                 ],
                 'collections' => array_map(static function (array $c): array {
                     return [
@@ -445,6 +452,21 @@ class ArsenalWardrobeController
 
             return Response::redirect(url('equipment'));
         }
+        $newName = $request->input('name');
+        if (is_string($newName)) {
+            $renamed = $this->repo->renameWardrobe($tenantId, $userId, $id, $newName);
+            if ($renamed === 'empty' || $renamed === 'duplicate') {
+                Session::flash('error', $renamed === 'empty'
+                    ? 'Donnez un nom à la tenue.'
+                    : 'Vous avez déjà une tenue portant ce nom. Choisissez-en un autre.');
+
+                return $this->wardrobeMutateRedirect($request, $id);
+            }
+        }
+        $visibility = $request->input('visibility');
+        if (is_string($visibility) && in_array($visibility, ArsenalWardrobeRepository::WARDROBE_VISIBILITIES, true)) {
+            $this->repo->updateWardrobeVisibility($tenantId, $userId, $id, $visibility);
+        }
         $collectionId = (int) $request->input('collection_id', 0);
         $this->repo->assignWardrobeCollection($tenantId, $userId, $id, $collectionId > 0 ? $collectionId : null);
         $this->repo->updateWardrobeNotes($tenantId, $userId, $id, trim((string) $request->input('notes', '')));
@@ -516,7 +538,9 @@ class ArsenalWardrobeController
                 EquipmentCoverStorage::delete(is_string($path) ? $path : null);
             }
             $this->repo->deleteWardrobe($tenantId, $userId, $id);
-            Session::flash('success', 'Tenue retirée.');
+            Session::flash('success', 'Tenue supprimée.');
+        } else {
+            Session::flash('error', 'Vous ne pouvez supprimer que vos propres tenues.');
         }
 
         return Response::redirect(url('equipment'));
