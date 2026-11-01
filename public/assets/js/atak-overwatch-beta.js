@@ -2831,11 +2831,16 @@
           labelLeft: Math.cos(angle) < -0.15,
           forceLabel: pack.length > 5 && index === 0 && !pack.some(function (row) { return selected && unitId(selected) === unitId(row); })
         };
+        var icon = markerIcon(unit, iconOpts);
+        var iconSig = icon.options.className + '|' + icon.options.html;
         if (!markers[id]) {
-          markers[id] = L.marker(displayLoc, { icon: markerIcon(unit, iconOpts), riseOnHover: true }).addTo(map);
+          markers[id] = L.marker(displayLoc, { icon: icon, riseOnHover: true }).addTo(map);
         } else {
-          markers[id].setLatLng(displayLoc).setIcon(markerIcon(unit, iconOpts));
+          markers[id].setLatLng(displayLoc);
+          // Icône inchangée : on déplace seulement (setIcon recrée l'élément à chaque rafraîchissement).
+          if (markers[id]._owIconSig !== iconSig) markers[id].setIcon(icon);
         }
+        markers[id]._owIconSig = iconSig;
         markers[id].setZIndexOffset(isSel ? 800 : 400 - index);
         markers[id].off('click').on('click', function () { selectUnit(unit); });
         appendTrack(id, trueLoc, unit);

@@ -6,6 +6,7 @@ export class TrackRenderer {
    * @param {object} opts
    * @param {L.Map} [opts.leafletMap] — carte Leaflet (mode 2D)
    * @param {object} [opts.threeScene] — scène Three.js (mode 3D)
+   * @param {L.Renderer} [opts.renderer] — rendu canvas partagé (ATAKMap.getVectorRenderer('tracks'))
    */
   constructor(opts) {
     opts = opts || {};
@@ -15,6 +16,7 @@ export class TrackRenderer {
     this.layerGroup = null;
     this.maxPoints = opts.maxPoints || 48;
     this.lineWeight = opts.lineWeight || 1.5;
+    this.renderer = opts.renderer || null;
   }
 
   /** @param {L.LayerGroup} layerGroup */
@@ -37,14 +39,10 @@ export class TrackRenderer {
       if (!track.points || track.points.length < 2) return;
 
       let polyline = self.tracks.get(track.id);
-      const latlngs = track.points.map(function (p) {
-        return self._toLatLng(p);
-      }).filter(Boolean);
-
-      if (latlngs.length < 2) return;
-
+      const points = track.points.length > self.maxPoints ? track.points.slice(-self.maxPoints) : track.points;
       const color = track.color || '#3ecfb4';
-      const segments = self._buildSegments(track.points, color);
+      const segments = self._buildSegments(points, color);
+      if (!segments.length) return;
 
       if (polyline) {
         self.layerGroup.removeLayer(polyline);
@@ -59,6 +57,7 @@ export class TrackRenderer {
           dashArray: seg.dashed ? '4 6' : null,
           interactive: false,
           className: 'tac-track',
+          renderer: self.renderer || undefined,
         }).addTo(group);
       });
       group.addTo(self.layerGroup);
@@ -82,20 +81,32 @@ export class TrackRenderer {
   }
 
   /**
-   * Segments avec opacité décroissante et pointillés si extrapolé.
+   * Segments avec opacité décroissante (4 paliers, un tracé par palier) et pointillés si extrapolé.
    */
   _buildSegments(points, baseColor) {
+    const BANDS = 4;
     const segs = [];
     const n = points.length;
+    let cur = null;
     for (let i = 1; i < n; i += 1) {
+      const a = this._toLatLng(points[i - 1]);
+      const b = this._toLatLng(points[i]);
+      if (!a || !b) { cur = null; continue; }
       const age = (n - i) / n;
-      const opacity = 0.15 + (1 - age) * 0.65;
-      segs.push({
-        latlngs: [this._toLatLng(points[i - 1]), this._toLatLng(points[i])],
+      const band = Math.min(BANDS - 1, Math.floor((1 - age) * BANDS));
+      const dashed = !!(points[i].extrapolated || points[i - 1].extrapolated);
+      if (cur && cur.band === band && cur.dashed === dashed) {
+        cur.latlngs.push(b);
+        continue;
+      }
+      cur = {
+        band: band,
+        dashed: dashed,
+        latlngs: [a, b],
         color: baseColor,
-        opacity: opacity,
-        dashed: !!(points[i].extrapolated || points[i - 1].extrapolated),
-      });
+        opacity: 0.15 + ((band + 1) / BANDS) * 0.65,
+      };
+      segs.push(cur);
     }
     return segs;
   }

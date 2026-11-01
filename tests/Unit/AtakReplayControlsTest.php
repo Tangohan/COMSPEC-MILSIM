@@ -30,4 +30,24 @@ final class AtakReplayControlsTest extends TestCase
         self::assertStringContainsString('class="atak-replay-event-target"', $script);
         self::assertStringContainsString('Number.isFinite(x) && Number.isFinite(y)', $script);
     }
+
+    public function testReplayPlaysContinuouslyWithInterpolation(): void
+    {
+        $view = (string) file_get_contents(__DIR__ . '/../../views/atak.php');
+        $script = (string) file_get_contents(__DIR__ . '/../../public/assets/js/atak-replay.js');
+        $builder = (string) file_get_contents(__DIR__ . '/../../app/Services/Replay/ReplayTimelineBuilder.php');
+
+        self::assertStringNotContainsString('setInterval', $script);
+        self::assertStringContainsString('requestAnimationFrame(tick)', $script);
+        self::assertStringContainsString('clockT0 + (now - clockWall0) * speedFactor()', $script);
+        self::assertStringContainsString('function lerpHeading(a, b, k)', $script);
+        self::assertStringContainsString('tb - ta <= HOLD_MS', $script);
+        self::assertStringContainsString('var HOLD_MS = 90000;', $script);
+        self::assertStringContainsString('public const HOLD_SECONDS = 90;', $builder);
+        self::assertStringContainsString('ATAKTrackRendererC2', $script);
+        self::assertStringContainsString('moveUnitMarkers', $script);
+        foreach (['1', '5', '20', '60'] as $speed) {
+            self::assertStringContainsString('<option value="' . $speed . '"', $view);
+        }
+    }
 }
