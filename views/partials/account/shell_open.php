@@ -18,6 +18,8 @@ $accountLead = (string) ($accountLead ?? '');
 $accountSuccess = $success ?? null;
 $accountError = $error ?? null;
 $accountHideDefaultActions = !empty($accountHideDefaultActions);
+/* Lien « Voir ma page publique » : fourni par le contrôleur seulement quand la page est ouverte. */
+$accountPublicCvLink = isset($accountPublicCvUrl) && is_string($accountPublicCvUrl) && $accountPublicCvUrl !== '' ? $accountPublicCvUrl : null;
 
 $ctx = function_exists('portal_header_context') ? portal_header_context() : [];
 $displayName = trim((string) ($ctx['display_name'] ?? ''));
@@ -140,6 +142,13 @@ $navGroups = [
                 'hint' => 'Préréglages d’enrôlement',
                 'icon' => '<path d="M9 4h6l1 2h3v14H5V6h3z"/><path d="M9 12h6M9 16h4"/>',
             ],
+            [
+                'key' => 'public_cv',
+                'href' => url('account/page-publique'),
+                'label' => 'Ma page publique',
+                'hint' => 'C.V. de joueur à partager',
+                'icon' => '<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="10" r="3"/><path d="M6.5 18c1.2-2.4 3.2-3.5 5.5-3.5s4.3 1.1 5.5 3.5"/>',
+            ],
         ],
     ],
     [
@@ -205,6 +214,9 @@ $accountPhrase = static fn (string $s): string => function_exists('i18n_phrase')
             </div>
             <?php if (!$accountHideDefaultActions): ?>
             <div class="account-hub__hero-actions">
+                <?php if ($accountPublicCvLink !== null): ?>
+                <a href="<?= htmlspecialchars($accountPublicCvLink, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener" class="account-hub__btn account-hub__btn--ghost"><?= htmlspecialchars($accountPhrase('Voir ma page publique'), ENT_QUOTES, 'UTF-8') ?></a>
+                <?php endif; ?>
                 <a href="<?= htmlspecialchars(url('personnel/me'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__btn account-hub__btn--ghost"><?= htmlspecialchars($accountPhrase('Ma fiche'), ENT_QUOTES, 'UTF-8') ?></a>
                 <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__btn account-hub__btn--ghost">
                     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
