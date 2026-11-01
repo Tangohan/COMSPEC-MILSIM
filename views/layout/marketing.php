@@ -141,6 +141,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
     </header>
 
     <main class="site-marketing__main pt-14">
+        <?php require base_path('views/partials/donation_banner.php'); ?>
         <?php require base_path('views/' . str_replace('.', '/', (string) $content) . '.php'); ?>
     </main>
 
