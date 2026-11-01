@@ -182,7 +182,8 @@ final class SystemTenantRecoveryController
             $actorId,
             'tenant',
             $tenantId,
-            null,
+            [], // logChange() exige un tableau : null levait une TypeError après la restauration
+
             [
                 'recovery' => true,
                 'name' => (string) ($normalized['name'] ?? ''),

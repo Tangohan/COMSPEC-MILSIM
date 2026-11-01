@@ -20,6 +20,9 @@ PHPStan niveau 2 sur `app/` et `scripts/` ; lecture des routes, du Container, de
 | Nettoyage notifications / zones ATAK expirées | `->rowCount()` sur l’entier renvoyé par `Database::execute()` | entier renvoyé tel quel |
 | Migration rôles (MariaDB) | `catch (PDOException)` sans `\` : jamais intercepté | `\PDOException` |
 | Cron `scripts/training-expire.php` : ne tournait plus | parenthèse en trop (erreur de syntaxe) | corrigée |
+| Tableau de bord (vitrine formations avec date de session) : erreur 500 | `$monthsFr` supprimé par la traduction des mois du jour (#1265) mais encore lu | `LocalizedCalendar::month()` |
+| Admin : restauration d’une communauté → erreur 500 après coup | `logChange(…, null, …)` alors qu’un tableau est exigé (TypeError) | `[]` |
+| ATAK : ETA MEDEVAC, prévision de panne | `date()` reçoit un flottant (dépréciation → exception) | arrondi en entier |
 
 Journal de prod : `blood_type_detected`, `mission_type`, `fputcsv` escape, `has_attachments`, `upsertConfig`, `u.username`,
 `OrganizationDiscordShowcaseController`, `TablePdfExportService`, `DoctrinePublicationService` (argument 8), `AdminAtakFleetController`
@@ -29,7 +32,7 @@ Journal de prod : `blood_type_detected`, `mission_type`, `fputcsv` escape, `has_
 `app/Core/Request.php`, `app/Repositories/{EnlistmentRepository,ProbationOversightRepository,AtakAdvancedIntelligenceRepository,AtakNotificationRepository,AtakZoneThreatRepository}.php`,
 `app/Controllers/Admin/AdminDocumentsController.php`, `app/Controllers/Admin/Organization/{AdminDoctrineController,RoleplayGameSessionAdminController}.php`,
 `app/Services/Personnel/UnitReadinessService.php`, `app/Services/Rbac/RoleDefinitionCatalog.php`, `app/Support/training_canvas.php`,
-`scripts/training-expire.php`, `phpstan-baseline.neon` (exceptions devenues inutiles).
+`app/Controllers/Web/HomeController.php`, `app/Controllers/Admin/System/SystemTenantRecoveryController.php`, `app/Repositories/AtakMedevacIntelligenceRepository.php`, `scripts/training-expire.php`, `phpstan-baseline.neon` (exceptions devenues inutiles).
 
 ## Vérification
 - `tests/Unit/SchemaSweepRegressionTest.php` (échoue sans les correctifs).

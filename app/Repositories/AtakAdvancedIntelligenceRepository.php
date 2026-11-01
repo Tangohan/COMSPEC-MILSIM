@@ -329,7 +329,7 @@ class AtakAdvancedIntelligenceRepository
         $hoursUntilFailure = ($score / 100) * 200; // 0% = 0h, 50% = 100h, 80% = 160h
 
         if ($hoursUntilFailure < 168) { // < 7 jours
-            return date('Y-m-d H:i:s', time() + ($hoursUntilFailure * 3600));
+            return date('Y-m-d H:i:s', time() + (int) round($hoursUntilFailure * 3600));
         }
 
         return null;

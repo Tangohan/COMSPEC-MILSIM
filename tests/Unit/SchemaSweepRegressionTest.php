@@ -193,4 +193,26 @@ final class SchemaSweepRegressionTest extends TestCase
         self::assertNull(training_canvas_sanitize_href('/a<script>'));
         self::assertNull(training_canvas_sanitize_href('//evil.example'));
     }
+
+    /** Tableau de bord : formation avec date de session, « $monthsFr » supprimé mais encore lu (erreur 500). */
+    public function testDashboardTrainingShowcaseFormatsTheSessionDate(): void
+    {
+        $method = new \ReflectionMethod(\App\Controllers\Web\HomeController::class, 'buildTrainingShowcasePayload');
+        // Comme en production (ExceptionHandler) : un avertissement devient une exception.
+        set_error_handler(static function (int $severity, string $message, string $file, int $line): bool {
+            throw new \ErrorException($message, 0, $severity, $file, $line);
+        });
+        try {
+            $items = $method->invoke(null, [[
+                'id' => 3, 'title' => 'Tir de combat', 'slug' => 'tir', 'showcase_badge' => 'open',
+                'showcase_cycle_date' => '2026-11-14', 'estimated_minutes' => 90,
+            ]]);
+        } finally {
+            restore_error_handler();
+        }
+
+        self::assertCount(1, $items);
+        self::assertStringStartsWith('14 ', (string) $items[0]['session_label']);
+        self::assertStringEndsWith(' 2026', (string) $items[0]['session_label']);
+    }
 }

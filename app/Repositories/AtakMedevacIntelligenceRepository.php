@@ -243,7 +243,7 @@ class AtakMedevacIntelligenceRepository
             $totalTimeMinutes += 3; // Temps manœuvres évasives
         }
 
-        $eta = date('Y-m-d H:i:s', time() + ($totalTimeMinutes * 60));
+        $eta = date('Y-m-d H:i:s', time() + (int) round($totalTimeMinutes * 60));
 
         // Mettre à jour MEDEVAC
         $this->db->execute(
