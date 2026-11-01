@@ -49,7 +49,7 @@ $stepSub = static function (array $chapter, int $s) use ($t): string {
     }
     if ($s === 4) {
         $count = count(AcademyCurriculum::examQuestions($chapter));
-        return $count . ' ' . $t('questions_label') . ' · ' . (int) ceil(AcademyCurriculum::examSeconds($chapter) / 60) . ' min';
+        return $count . ' ' . ($count === 1 ? mb_strtolower($t('question_number')) : $t('questions_label')) . ' · ' . (int) ceil(AcademyCurriculum::examSeconds($chapter) / 60) . ' min';
     }
     return $t('sub_' . AcademyCurriculum::STAGES[$s]);
 };

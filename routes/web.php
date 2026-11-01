@@ -272,6 +272,9 @@ return function (Router $router) {
     $academyMw = [AuthMiddleware::class, TrainingModuleSanctionMiddleware::class, \App\Middleware\AcademyPaidMiddleware::class];
     $router->get('/academy/qr', [\App\Controllers\Web\AcademyController::class, 'qr'], $academyMw);
     $router->get('/academy/media/{file}', [\App\Controllers\Web\AcademyController::class, 'media'], $academyMw);
+    // Lien de partage d'une formation (Studio) : le contrôleur vérifie le jeton, puis la connexion et la communauté si le lien l'exige.
+    $router->get('/academy/partage/{token}', [\App\Controllers\Web\AcademyController::class, 'shared']);
+    $router->get('/academy/partage/{token}/media/{file}', [\App\Controllers\Web\AcademyController::class, 'sharedMedia']);
     $router->get('/academy/{space}', [\App\Controllers\Web\AcademyController::class, 'space'], $academyMw);
     $router->post('/academy/action/{action}', [\App\Controllers\Web\AcademyController::class, 'action'], $academyMw);
 
