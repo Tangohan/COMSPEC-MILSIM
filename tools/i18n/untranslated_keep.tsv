@@ -1234,3 +1234,23 @@ atak/sse/chronologie?objet=person&id=	chemin d'URL	views/atak/sse/person_show.ph
 ?vue=tous	paramètre d'URL	views/hub/board.php
 ?nouveau=1	paramètre d'URL	views/messages/index.php
 traduire-site/en?f=blank	chemin d'URL	views/site/site_translate.php
+Questionnaire	identique en anglais	views/admin/aar_reports/index.php
+%1 question%2%3	identique en anglais	views/admin/aar_reports/partials/form_fields.php
+%1 place%2	identique en anglais	views/admin/advancement/campaign_show.php
+Exception	identique en anglais	views/admin/advancement/commission.php
+Publication %1	identique en anglais	views/admin/advancement/commission.php
+quota %1	identique en anglais	views/admin/advancement/commission.php
+Photos 15 min	identique en anglais	views/admin/atak-config/index.php
+%1 message(s)	identique en anglais	views/admin/atak-fleet/index.php
+Zone %1	identique en anglais	views/admin/atak/roleplay.php
+%1 client(s)	identique en anglais	views/admin/atak/send_queues.php
+, mission %1	identique en anglais	views/admin/atak/server_control.php
+%1 (%2 question(s))	identique en anglais	views/admin/atak_debrief/index.php
+Op. %1	identique en anglais	views/admin/briefing_slides/index.php
+%1 qualification%2	identique en anglais	views/admin/member_situation/qualifications.php
+%1 plan%2	identique en anglais	views/admin/mission_planning/index.php
+SLA & messages	identique en anglais	views/admin/recruitment_workspace/dashboard.php
+Finances	identique en anglais	views/admin/system/plan_payments.php
+vs %1	identique en anglais	views/admin/system/plan_payments.php
+Intervention — %1	identique en anglais	views/admin/system/tenant_intervention.php
+Studio — version	identique en anglais	views/admin/training/studio_edit.php

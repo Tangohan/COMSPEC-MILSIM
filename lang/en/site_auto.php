@@ -19412,6 +19412,7 @@ return [
     'Flèche d\'attaque principale' => 'Main attack arrow',
     'Flèche de direction' => 'Direction arrow',
     'Flèche double' => 'Double arrow',
+    'Flèche d’attaque principale' => 'Main attack arrow',
     'Flèche d’orientation' => 'Heading arrow',
     'Flèche feinte' => 'Feint arrow',
     'Flèche tactique' => 'Tactical arrow',
