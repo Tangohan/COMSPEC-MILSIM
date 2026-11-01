@@ -137,6 +137,7 @@ $err = \App\Core\Session::getFlash('error');
 
                 <h3 class="pa-label" style="margin:1.5rem 0 0.5rem;">Volume des 7 derniers jours, par type</h3>
                 <p class="pa-hint" style="margin-bottom:0.5rem;">Cochez « Couper » pour ne plus envoyer un type d’e-mail (il reste noté dans le journal). Les messages essentiels ne peuvent pas être coupés.</p>
+                <p class="pa-hint" style="margin-bottom:0.5rem;">Un même type d’e-mail part au plus une fois par heure vers une même personne ; la suite, comme les informations sans urgence pour l’encadrement, est regroupée dans un résumé quotidien. Les e-mails du renseignement (SSE) ne partent plus.</p>
                 <?php if ($events === []): ?>
                     <p class="pa-card__help">Aucun envoi sur la période.</p>
                 <?php else: ?>

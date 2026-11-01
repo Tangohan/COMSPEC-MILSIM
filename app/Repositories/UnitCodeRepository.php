@@ -73,16 +73,18 @@ class UnitCodeRepository
         if (!is_string($sql) || trim($sql) === '') {
             return false;
         }
-        try {
-            foreach ($this->statements($sql) as $statement) {
+        foreach (self::statements($sql) as $statement) {
+            try {
                 $this->pdo()->exec($statement);
-            }
-        } catch (Throwable $e) {
-            error_log('[unit_codes] création des tables impossible : ' . $e->getMessage());
+            } catch (Throwable $e) {
+                error_log('[unit_codes] création des tables impossible : ' . $e->getMessage());
 
-            return false;
+                return false;
+            }
         }
         if (!$this->tablesExist()) {
+            error_log('[unit_codes] tables toujours absentes après création.');
+
             return false;
         }
         $this->backfillTenants();
@@ -90,12 +92,49 @@ class UnitCodeRepository
         return true;
     }
 
-    /** @return list<string> */
-    private function statements(string $sql): array
+    /**
+     * Découpe un fichier SQL en instructions. Un « ; » dans un texte entre guillemets
+     * (commentaire de colonne…) ne coupe pas l'instruction : un découpage naïf sur « ; »
+     * empêchait la création des tables en production (2026-11-01).
+     *
+     * @return list<string>
+     */
+    public static function statements(string $sql): array
     {
-        $sql = (string) preg_replace('/^\s*--.*$/m', '', $sql);
+        $out = [];
+        $buf = '';
+        $quote = '';
+        $len = strlen($sql);
+        for ($i = 0; $i < $len; $i++) {
+            $c = $sql[$i];
+            if ($quote !== '') {
+                $buf .= $c;
+                if ($c === '\\' && $quote !== '`' && $i + 1 < $len) {
+                    $buf .= $sql[++$i];
+                } elseif ($c === $quote) {
+                    $quote = '';
+                }
+                continue;
+            }
+            if ($c === '-' && ($sql[$i + 1] ?? '') === '-') {
+                $eol = strpos($sql, "\n", $i);
+                $i = $eol === false ? $len : $eol;
+                $buf .= "\n";
+                continue;
+            }
+            if ($c === "'" || $c === '"' || $c === '`') {
+                $quote = $c;
+            }
+            if ($c === ';') {
+                $out[] = trim($buf);
+                $buf = '';
+                continue;
+            }
+            $buf .= $c;
+        }
+        $out[] = trim($buf);
 
-        return array_values(array_filter(array_map('trim', explode(';', $sql)), static fn (string $s): bool => $s !== ''));
+        return array_values(array_filter($out, static fn (string $s): bool => $s !== ''));
     }
 
     /** Numéros des communautés existantes : 1, 2, 3… dans l'ordre de création. */

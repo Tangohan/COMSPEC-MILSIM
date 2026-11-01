@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS `tenant_unit_codes` (
   `tenant_id` int unsigned NOT NULL,
   `community_code` varchar(12) NOT NULL COMMENT 'Code court de la communauté, unique sur la plateforme (ex. SOAR)',
   `admin_number` int unsigned NOT NULL COMMENT 'Numéro administratif stable, affiché sur 4 chiffres (0042)',
-  `next_unit_number` int unsigned NOT NULL DEFAULT 1 COMMENT 'Prochain numéro d unité ; ne redescend jamais',
+  `next_unit_number` int unsigned NOT NULL DEFAULT 1 COMMENT 'Prochain numéro d unité, ne redescend jamais',
   `is_custom` tinyint(1) NOT NULL DEFAULT 0,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`tenant_id`),

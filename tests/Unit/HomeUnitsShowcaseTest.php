@@ -7,7 +7,7 @@ namespace Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Accueil public : cartes « Unités sur la plateforme » (bannière, survol, défilement, compteurs).
+ * Accueil public : cartes de communauté et chiffres réels, lisibles sans JavaScript.
  */
 final class HomeUnitsShowcaseTest extends TestCase
 {
@@ -34,19 +34,20 @@ final class HomeUnitsShowcaseTest extends TestCase
     {
         $view = (string) file_get_contents(self::root() . '/views/home/index.php');
         self::assertStringContainsString('name_blur_html($unitName)', $view);
-        // Les KPI gardent leur valeur finale dans le HTML ; le JS ne fait que l’animer.
-        self::assertStringContainsString('data-hi-count="<?= (int) $k[\'v\'] ?>"><?= $e($formatInt($k[\'v\'])) ?>', $view);
+        // Les chiffres gardent leur valeur finale dans le HTML ; le JS ne fait que l’animer.
+        self::assertStringContainsString('data-hp-count="<?= (int) $figure[\'n\'] ?>"><?= $e($formatInt((int) $figure[\'n\'])) ?>', $view);
 
+        // Les chiffres d’une carte restent visibles : plus de révélation au survol ni d’apparition masquée.
         $css = (string) file_get_contents(self::root() . '/public/assets/css/home-impact.css');
-        // L’apparition échelonnée ne masque les cartes qu’une fois armée par le JS, et jamais en mouvement réduit.
-        self::assertMatchesRegularExpression('/prefers-reduced-motion: no-preference\)\s*\{[^@]*\[data-hi-units\]\.is-armed \.hi-units__item/s', $css);
+        self::assertStringNotContainsString('hi-ucard', $css);
+        self::assertStringNotContainsString('is-armed .hp-card', $css);
     }
 
     public function testScriptRespectsReducedMotion(): void
     {
         $js = (string) file_get_contents(self::root() . '/public/assets/js/home-impact.js');
-        self::assertStringContainsString('function unitsShowcase()', $js);
-        self::assertMatchesRegularExpression('/if \(!reduced\) \{\s*if \(stage\)/', $js);
-        self::assertStringContainsString('if (finePointer && !reduced)', $js);
+        self::assertStringContainsString('function homeFigures()', $js);
+        // Plus d’inclinaison 3D qui suit le pointeur.
+        self::assertStringNotContainsString("addEventListener('pointermove'", $js);
     }
 }

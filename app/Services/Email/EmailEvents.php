@@ -156,6 +156,9 @@ final class EmailEvents
     /** Récapitulatif des alertes d'exploitation regroupées (incidents, nouveaux comptes, signalements…). */
     public const OPS_DIGEST = 'OPS_DIGEST';
 
+    /** Résumé quotidien d'un membre : notifications sans urgence et envois répétés du même type. */
+    public const MEMBER_DAILY_DIGEST = 'MEMBER_DAILY_DIGEST';
+
     /** Nouvelle communauté créée — alerte à la boîte technique des incidents. */
     public const PLATFORM_NEW_COMMUNITY = 'PLATFORM_NEW_COMMUNITY';
 

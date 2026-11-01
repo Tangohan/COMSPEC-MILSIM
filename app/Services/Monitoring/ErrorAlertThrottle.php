@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace App\Services\Monitoring;
 
 /**
- * Limite la fréquence des alertes e-mail (même erreur / même IP) pour éviter les tempêtes.
+ * Limite la fréquence des alertes e-mail : une signature d'erreur (type, classe, fichier, ligne, message)
+ * part au plus une fois par heure, quelle que soit l'IP — le quota d'envoi quotidien est petit.
  */
 final class ErrorAlertThrottle
 {
+    /** Plancher du délai entre deux e-mails pour la même signature (le .env peut l'allonger, pas le raccourcir). */
+    public const MIN_COOLDOWN_SECONDS = 3600;
+
     public function __construct(
         private int $cooldownSeconds = 120,
         private int $maxPerHour = 30
@@ -82,9 +86,8 @@ final class ErrorAlertThrottle
 
     public static function fromEnv(): self
     {
-        $cooldown = (int) (env('ERROR_ALERT_COOLDOWN_SECONDS', 120) ?: 120);
-        $maxHour = (int) (env('ERROR_ALERT_MAX_PER_HOUR', 30) ?: 30);
+        $cooldown = (int) (env('ERROR_ALERT_COOLDOWN_SECONDS', self::MIN_COOLDOWN_SECONDS) ?: self::MIN_COOLDOWN_SECONDS);
 
-        return new self(max(10, $cooldown), max(1, $maxHour));
+        return new self(max(self::MIN_COOLDOWN_SECONDS, $cooldown), 1);
     }
 }

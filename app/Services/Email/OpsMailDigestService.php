@@ -9,6 +9,8 @@ use App\Services\EmailService;
 
 /**
  * Récapitulatif des alertes d'exploitation : un e-mail par boîte toutes les N minutes au lieu d'un par alerte.
+ * Même mécanisme pour le résumé quotidien des membres (MailBudget::DAILY_DIGEST_EVENTS et envois répétés) :
+ * un e-mail par jour et par personne, sans pièce jointe.
  */
 final class OpsMailDigestService
 {
@@ -28,10 +30,27 @@ final class OpsMailDigestService
     public function sendDue(bool $force = false): array
     {
         $minutes = $force ? 0 : max(1, $this->gate->config()['digest_minutes']);
+        $memberDue = array_flip($this->items->recipientsDue($force ? 0 : MailBudget::MEMBER_DIGEST_MINUTES));
+        $opsInboxes = array_flip(MailBudgetGate::opsInboxes());
         $out = ['recipients' => 0, 'emails' => 0, 'items' => 0];
-        foreach ($this->items->recipientsDue($minutes) as $to) {
+        foreach (array_unique(array_merge($this->items->recipientsDue($minutes), array_keys($memberDue))) as $to) {
+            $to = (string) $to;
             $rows = $this->items->pendingFor($to);
             if ($rows === []) {
+                continue;
+            }
+            if (!self::isOpsRecipient($to, $rows, $opsInboxes)) {
+                // Membre : un résumé par jour au plus.
+                if (!isset($memberDue[$to])) {
+                    continue;
+                }
+                $out['recipients']++;
+                [$subject, $html, $text] = self::composeMember($rows, url('account/preferences') . '#notifications-email', $this->email->recipientLocale($to));
+                if ($this->email->send(EmailEvents::MEMBER_DAILY_DIGEST, $to, $subject, $html, $text, null, null, ['purpose' => 'member_daily_digest', 'items' => count($rows)])) {
+                    $this->items->markDigested(array_map(static fn (array $r): int => (int) $r['id'], $rows));
+                    $out['emails']++;
+                    $out['items'] += count($rows);
+                }
                 continue;
             }
             $out['recipients']++;
@@ -174,6 +193,65 @@ final class OpsMailDigestService
             $html .= '<p style="color:#667085;">… et ' . $esc((string) $more) . ' autre(s) cause(s), dans le fichier joint.</p>';
         }
         $html .= '<p style="margin-top:16px;"><a href="' . $esc($adminLink) . '">Réglages et volume des envois</a></p>';
+
+        return [$subject, $html, $text];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @param array<string, int> $opsInboxes adresses de l'exploitation (clés en minuscules)
+     */
+    public static function isOpsRecipient(string $to, array $rows, array $opsInboxes): bool
+    {
+        if (isset($opsInboxes[strtolower(trim($to))])) {
+            return true;
+        }
+        foreach ($rows as $r) {
+            if (in_array((string) ($r['event_code'] ?? ''), MailBudget::OPS_EVENTS, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Résumé quotidien d'un membre : un paragraphe par notification (sujet + début du message).
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return array{0:string, 1:string, 2:string} sujet, HTML, texte
+     */
+    public static function composeMember(array $rows, string $preferencesLink, string $lang = 'fr'): array
+    {
+        $en = $lang === 'en';
+        $total = count($rows);
+        $brand = function_exists('email_brand_name') ? email_brand_name() : 'Athena';
+        $subject = '[' . $brand . '] ' . ($en ? 'Your daily summary — ' : 'Votre résumé du jour — ') . $total . ' notification' . ($total > 1 ? 's' : '');
+        $esc = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+        $intro = $en
+            ? 'To keep the number of emails down, these notifications are grouped into one message a day.'
+            : 'Pour limiter le nombre d’e-mails, ces notifications sont regroupées en un seul message par jour.';
+        $prefsLabel = $en ? 'Choose which emails you receive' : 'Choisir les e-mails que vous recevez';
+        $text = $intro . "\n";
+        $html = '<p style="margin:0 0 12px;">' . $esc($intro) . '</p>';
+        foreach (array_slice($rows, 0, self::MAX_DETAILED) as $r) {
+            $when = self::when($r['created_at'] ?? '');
+            $title = (string) ($r['subject'] ?? '');
+            $body = trim((string) ($r['body_text'] ?? ''));
+            $body = mb_strlen($body) > 400 ? mb_substr($body, 0, 399) . '…' : $body;
+            $text .= "\n──────── " . $when . ' · ' . $title . "\n" . $body . "\n";
+            $html .= '<div style="border-top:1px solid #d0d5dd;padding:10px 0;">'
+                . '<p style="margin:0;font-size:12px;color:#667085;">' . $esc($when) . '</p>'
+                . '<p style="margin:2px 0 6px;font-weight:600;">' . $esc($title) . '</p>'
+                . '<p style="margin:0;white-space:pre-wrap;font-size:13px;color:#344054;">' . $esc($body) . '</p></div>';
+        }
+        if ($total > self::MAX_DETAILED) {
+            $more = ($total - self::MAX_DETAILED) . ($en ? ' more notification(s) on the site.' : ' autre(s) notification(s) sont visibles sur le site.');
+            $text .= "\n" . $more . "\n";
+            $html .= '<p style="color:#667085;">' . $esc($more) . '</p>';
+        }
+        $text .= "\n" . $prefsLabel . ' : ' . $preferencesLink . "\n";
+        $html .= '<p style="margin-top:16px;"><a href="' . $esc($preferencesLink) . '">' . $esc($prefsLabel) . '</a></p>';
 
         return [$subject, $html, $text];
     }

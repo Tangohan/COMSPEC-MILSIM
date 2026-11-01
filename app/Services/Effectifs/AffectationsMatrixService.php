@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Effectifs;
 
+use App\Repositories\OrbatBilletRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\UnitRepository;
@@ -26,7 +27,44 @@ final class AffectationsMatrixService
         private RoleRepository $roles,
         private PersonnelJobRoleRepository $jobs,
         private UnitCodeService $codes,
+        private ?OrbatBilletRepository $billets = null,
     ) {
+    }
+
+    /**
+     * Postes de l'ORBAT par unité (s'ils sont saisis) : places prévues, pourvues, intitulés vacants.
+     *
+     * @return array<int, array{authorized: int, filled: int, vacant: list<string>}>
+     */
+    private function seatsByUnit(int $tenantId): array
+    {
+        $out = [];
+        try {
+            $repo = $this->billets ?? new OrbatBilletRepository();
+            if (!$repo->schemaReady()) {
+                return [];
+            }
+            $filled = $repo->filledSeatCountsForTenant($tenantId);
+            foreach ($repo->listActiveForTenant($tenantId, 800) as $b) {
+                $unitId = (int) ($b['unit_id'] ?? 0);
+                $slots = max(1, (int) ($b['authorized_slots'] ?? 1));
+                $taken = min($slots, (int) ($filled[(int) ($b['id'] ?? 0)] ?? 0));
+                if ($unitId < 1) {
+                    continue;
+                }
+                $out[$unitId] ??= ['authorized' => 0, 'filled' => 0, 'vacant' => []];
+                $out[$unitId]['authorized'] += $slots;
+                $out[$unitId]['filled'] += $taken;
+                if ($taken < $slots) {
+                    $title = trim((string) ($b['title'] ?? ''));
+                    $out[$unitId]['vacant'][] = ($title !== '' ? $title : 'Poste') . ($slots - $taken > 1 ? ' (×' . ($slots - $taken) . ')' : '');
+                }
+            }
+        } catch (Throwable) {
+            return [];
+        }
+
+        return $out;
     }
 
     /**
@@ -159,6 +197,7 @@ final class AffectationsMatrixService
                 $childCount[$pid] = ($childCount[$pid] ?? 0) + 1;
             }
         }
+        $seats = $this->seatsByUnit($tenantId);
         $units = [];
         $empty = 0;
         foreach ($unitRows as $u) {
@@ -183,6 +222,7 @@ final class AffectationsMatrixService
                 'commander' => trim((string) ($commanders[$uid] ?? '')),
                 'children' => (int) ($childCount[$uid] ?? 0),
                 'holders' => $holders,
+                'seats' => $seats[$uid] ?? null,
             ];
         }
         // Ordre de l'organigramme : le code suit l'arbre, il sert de clé de tri.

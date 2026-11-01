@@ -34,10 +34,8 @@ final class RecoveryCodeService
             return $this->hasTable;
         }
         try {
-            $st = $this->pdo()->query(
-                "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_recovery_codes' LIMIT 1"
-            );
-            $this->hasTable = $st !== false && (bool) $st->fetchColumn();
+            // Requête portable (MySQL et SQLite des tests) : table absente = exception.
+            $this->hasTable = $this->pdo()->query('SELECT 1 FROM user_recovery_codes LIMIT 1') !== false;
         } catch (\Throwable) {
             $this->hasTable = false;
         }

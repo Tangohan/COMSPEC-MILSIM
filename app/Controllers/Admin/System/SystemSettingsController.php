@@ -12,6 +12,7 @@ use App\Repositories\PlatformSettingsRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Moderation\ContentModerationConfig;
+use App\Services\Platform\DonationBanner;
 use App\Support\GameClientVersionGate;
 use App\Support\MaintenanceGuard;
 
@@ -39,7 +40,106 @@ class SystemSettingsController
             'adminSettingsSections' => $this->buildSections(),
             'adminSettingsPlatformRows' => $this->buildPlatformRows(),
             'adminGameClientGate' => $this->gameClientGateState(),
+            'adminDonationBanner' => $this->donationBannerState(),
         ]);
+    }
+
+    /**
+     * Bandeau de don sur tout le site (POST /admin/settings/bandeau-don) : activé, messages FR / EN, objectif,
+     * dates. Réglages plateforme donation_banner.*, cache du bandeau retiré, journal d'audit.
+     */
+    public function saveDonationBanner(Request $request, array $params = []): Response
+    {
+        $back = url('admin/settings') . '#bandeau-don';
+        if (!Csrf::validate($request->inputString('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        $repo = $this->platformSettingsRepository;
+        $before = DonationBanner::configFrom($this->donationBannerRaw());
+        $parsed = DonationBanner::pairsFromForm([
+            'enabled' => $request->inputString('enabled'),
+            'message_fr' => $request->inputString('message_fr'),
+            'message_en' => $request->inputString('message_en'),
+            'goal_eur' => $request->inputString('goal_eur'),
+            'starts_on' => $request->inputString('starts_on'),
+            'ends_on' => $request->inputString('ends_on'),
+        ], $before['version']);
+        if ($parsed['error'] !== null) {
+            Session::flash('error', $parsed['error']);
+
+            return Response::redirect($back);
+        }
+        try {
+            if (!$repo->tableExists()) {
+                throw new \RuntimeException('platform_settings absente');
+            }
+            $repo->setMany($parsed['pairs']);
+        } catch (\Throwable) {
+            Session::flash('error', 'Le bandeau n’a pas pu être enregistré. Réessayez dans un instant.');
+
+            return Response::redirect($back);
+        }
+        DonationBanner::forget();
+        $after = DonationBanner::configFrom($parsed['pairs']);
+        try {
+            (new AuditService())->log(
+                AuditAction::PLATFORM_SETTINGS_UPDATED,
+                null,
+                Session::get('user_id') ? (int) Session::get('user_id') : null,
+                'platform_setting',
+                null,
+                (string) json_encode(['donation_banner' => $before], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                (string) json_encode(['donation_banner' => $after], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                MaintenanceGuard::resolveClientIp()
+            );
+        } catch (\Throwable) {
+        }
+        Session::flash(
+            'success',
+            $after['enabled']
+                ? (DonationBanner::isLive($after) ? 'Bandeau de don enregistré : il s’affiche dès maintenant sur le site.' : 'Bandeau de don enregistré : il s’affichera pendant la période choisie.')
+                : 'Bandeau de don désactivé.'
+        );
+
+        return Response::redirect($back);
+    }
+
+    /** @return array<string, string> */
+    private function donationBannerRaw(): array
+    {
+        $raw = [];
+        foreach ([DonationBanner::KEY_ENABLED, DonationBanner::KEY_MESSAGE_FR, DonationBanner::KEY_MESSAGE_EN, DonationBanner::KEY_GOAL_EUR, DonationBanner::KEY_STARTS_ON, DonationBanner::KEY_ENDS_ON, DonationBanner::KEY_VERSION] as $key) {
+            $raw[$key] = $this->platformSettingsRepository->get($key, '');
+        }
+
+        return $raw;
+    }
+
+    /**
+     * @return array{config: array{enabled: bool, message_fr: string, message_en: string, goal_eur: int, starts_on: string, ends_on: string, version: int}, live: bool, raised: string, period: string}
+     */
+    private function donationBannerState(): array
+    {
+        $cfg = DonationBanner::configFrom($this->donationBannerRaw());
+        [$from, $to] = DonationBanner::countedPeriod($cfg);
+        $raised = 0;
+        if ($cfg['goal_eur'] > 0) {
+            try {
+                $raised = DonationBanner::raisedFromLedger((new \App\Repositories\PaymentLedgerRepository())->ledger(), $from, $to);
+            } catch (\Throwable) {
+            }
+        }
+        $fmt = static fn (string $d): string => $d !== '' ? date('d/m/Y', (int) strtotime($d)) : '';
+        $period = 'depuis le ' . $fmt($from) . ($to !== '' ? ' jusqu’au ' . $fmt($to) : '');
+
+        return [
+            'config' => $cfg,
+            'live' => DonationBanner::isLive($cfg),
+            'raised' => DonationBanner::euros($raised) . ' sur ' . DonationBanner::euros($cfg['goal_eur'] * 100),
+            'period' => $period,
+        ];
     }
 
     /**
