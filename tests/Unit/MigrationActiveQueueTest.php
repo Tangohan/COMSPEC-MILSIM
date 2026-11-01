@@ -139,13 +139,16 @@ final class MigrationActiveQueueTest extends TestCase
 
         $schema = new SchemaInspector($pdo);
         foreach (['academy_courses', 'academy_learners', 'personnel_job_role_structure', 'personnel_job_role_recovery_log', 'user_public_cv',
-            'member_grade_changes', 'tenant_unit_codes', 'unit_codes', 'steam_conflict_reports', 'user_totp_used_steps'] as $table) {
+            'member_grade_changes', 'tenant_unit_codes', 'unit_codes', 'steam_conflict_reports', 'user_totp_used_steps',
+            'academy_course_shares', 'academy_course_links'] as $table) {
             self::assertTrue($schema->tableExists($table), $table);
         }
         self::assertTrue($schema->columnExists('user_public_cv', 'banner_path'));
         self::assertTrue($schema->columnExists('arsenal_wardrobes', 'visibility'));
         self::assertTrue($schema->columnExists('units', 'sidc'));
         self::assertTrue($schema->columnExists('units', 'echelon'));
+        self::assertTrue($schema->columnExists('academy_courses', 'archived_at'));
+        self::assertTrue($schema->columnExists('academy_courses', 'deleted_at'));
         self::assertTrue($schema->indexExists('users', 'idx_users_steam_id'));
         self::assertTrue($schema->indexExists('atak_pings', 'idx_atak_pings_tenant_map_created'));
         self::assertTrue($schema->indexExists('atak_units', 'idx_atak_units_tenant_map_callsign'));

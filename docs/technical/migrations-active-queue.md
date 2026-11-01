@@ -56,6 +56,7 @@ Schéma ajouté depuis le 29 octobre, jusque-là créé à la demande, passé à
 | 3240 | `user_totp_used_steps` | Table `user_totp_used_steps` (anti-rejeu des codes de double vérification) | `TotpReplayGuard::ensureSchema()` |
 | 3250 | `units_military_symbol` | Colonnes `units.sidc` (symbole MIL-STD-2525) et `units.echelon` (équipe, groupe, section…), NULL = déduits du nom et du type de l’unité | — (l’ORBAT refuse l’enregistrement d’un symbole tant que l’étape n’est pas passée) |
 | 3260 | `member_profile_invites` | Table `member_profile_invites` (liens « compléter son profil » des effectifs : empreinte du jeton, copie chiffrée, expiration, suivi) — `migrations/2026_11_01_010_member_profile_invites.sql` | — (sans la table, les écrans indiquent que les liens arrivent avec la prochaine mise à jour) |
+| 3270 | `academy_course_lifecycle_sharing` | Colonnes `academy_courses.archived_at`, `deleted_at` (NULL = formation active) ; tables `academy_course_shares`, `academy_course_links` (partage par personne et par lien, jeton haché) — `migrations/2026_11_01_020_academy_course_sharing.sql` | — (sans l’étape, le Studio fonctionne comme avant ; archivage, corbeille et partage indiquent qu’ils arrivent avec la mise à jour) |
 
 Codes unité : le repère saisi d’une unité reste `units.code`. Les écritures d’unités (`UnitRepository::create/update/delete`) ne recalculent les codes que si les tables existent ; les codes des unités sont calculés par `UnitCodeService` à l’ouverture des effectifs ou de l’ORBAT.
 

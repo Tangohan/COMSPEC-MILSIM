@@ -11,11 +11,35 @@ use PDO;
 
 final class AcademyRepository
 {
+    public const TRASH_DAYS = 30;
+    /** Champs calculés à la lecture, jamais enregistrés dans le contenu. */
+    private const META = ['key', 'published', 'demo', 'built_in', 'updated_at', 'archived', 'deleted_at', 'learners'];
+
     private PDO $pdo;
+    private ?bool $lifecycle = null;
 
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo ?? Database::getPdo();
+    }
+
+    /** Colonnes archived_at / deleted_at posées par l'étape academy_course_lifecycle_sharing (3270). */
+    public function lifecycleReady(): bool
+    {
+        if ($this->lifecycle === null) {
+            try {
+                $this->pdo->query('SELECT archived_at, deleted_at FROM academy_courses WHERE 1 = 0');
+                $this->lifecycle = true;
+            } catch (\PDOException) {
+                $this->lifecycle = false;
+            }
+        }
+        return $this->lifecycle;
+    }
+
+    private function active(): string
+    {
+        return $this->lifecycleReady() ? ' AND archived_at IS NULL AND deleted_at IS NULL' : '';
     }
 
     public function courses(int $tenantId, bool $drafts = false): array
@@ -23,7 +47,8 @@ final class AcademyRepository
         if ($tenantId < 1) {
             return [];
         }
-        $stmt = $this->pdo->prepare('SELECT course_key, content_json, published FROM academy_courses WHERE tenant_id = ?' . ($drafts ? '' : ' AND published = 1') . ' ORDER BY updated_at DESC');
+        // Formations archivées ou à la corbeille : hors catalogue ; les inscrits gardent leur copie du contenu.
+        $stmt = $this->pdo->prepare('SELECT course_key, content_json, published FROM academy_courses WHERE tenant_id = ?' . ($drafts ? '' : ' AND published = 1') . $this->active() . ' ORDER BY updated_at DESC');
         $stmt->execute([$tenantId]);
         // Published Academy modules are versioned with the application. No migration or
         // request-time seed is needed; learners still keep a private tenant-scoped snapshot.
@@ -71,7 +96,8 @@ final class AcademyRepository
     /** Cours de la communauté, brouillon compris (jamais les modules intégrés à l'application). */
     public function editable(int $tenantId, string $key): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT content_json, published FROM academy_courses WHERE tenant_id = ? AND course_key = ?');
+        $lifecycle = $this->lifecycleReady();
+        $stmt = $this->pdo->prepare('SELECT content_json, published' . ($lifecycle ? ', archived_at' : '') . ' FROM academy_courses WHERE tenant_id = ? AND course_key = ?' . ($lifecycle ? ' AND deleted_at IS NULL' : ''));
         $stmt->execute([$tenantId, $key]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
@@ -80,14 +106,93 @@ final class AcademyRepository
         $content = json_decode($row['content_json'], true, 64, JSON_THROW_ON_ERROR);
         $content['key'] = $key;
         $content['published'] = (bool) $row['published'];
+        $content['archived'] = ($row['archived_at'] ?? null) !== null;
         return $content;
+    }
+
+    /** Stagiaires inscrits (leur progression et leurs licences dépendent de la formation). */
+    public function learnerCount(int $tenantId, string $key): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM academy_learners WHERE tenant_id = ? AND course_key = ?');
+        $stmt->execute([$tenantId, $key]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    /** Archiver / restaurer : la formation quitte le catalogue et le Studio actif, les inscrits gardent leur version. */
+    public function setArchived(int $tenantId, string $key, bool $archived): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE academy_courses SET archived_at = ? WHERE tenant_id = ? AND course_key = ? AND deleted_at IS NULL');
+        $stmt->execute([$archived ? date('Y-m-d H:i:s') : null, $tenantId, $key]);
+        return $stmt->rowCount() > 0;
+    }
+
+    /** Corbeille : seule une formation sans inscrit s'y place ; elle reste restaurable TRASH_DAYS jours. */
+    public function trash(int $tenantId, string $key): bool
+    {
+        if ($this->learnerCount($tenantId, $key) > 0) {
+            throw new \DomainException('has_learners');
+        }
+        $stmt = $this->pdo->prepare('UPDATE academy_courses SET deleted_at = ? WHERE tenant_id = ? AND course_key = ? AND deleted_at IS NULL');
+        $stmt->execute([date('Y-m-d H:i:s'), $tenantId, $key]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function restoreFromTrash(int $tenantId, string $key): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE academy_courses SET deleted_at = NULL WHERE tenant_id = ? AND course_key = ? AND deleted_at IS NOT NULL');
+        $stmt->execute([$tenantId, $key]);
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Supprime définitivement ce qui est à la corbeille depuis plus de TRASH_DAYS jours.
+     *
+     * @return list<string> clés supprimées (pour retirer leurs partages)
+     */
+    public function purgeTrash(int $tenantId, ?int $now = null): array
+    {
+        $cutoff = date('Y-m-d H:i:s', ($now ?? time()) - self::TRASH_DAYS * 86400);
+        $stmt = $this->pdo->prepare('SELECT course_key FROM academy_courses WHERE tenant_id = ? AND deleted_at IS NOT NULL AND deleted_at < ?');
+        $stmt->execute([$tenantId, $cutoff]);
+        $keys = array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        if ($keys !== []) {
+            $stmt = $this->pdo->prepare('DELETE FROM academy_courses WHERE tenant_id = ? AND deleted_at IS NOT NULL AND deleted_at < ?');
+            $stmt->execute([$tenantId, $cutoff]);
+        }
+        return $keys;
+    }
+
+    /**
+     * Accueil du Studio : cours de la communauté (brouillons compris) avec leur date de modification.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function studioList(int $tenantId): array
+    {
+        $lifecycle = $this->lifecycleReady();
+        $stmt = $this->pdo->prepare('SELECT c.course_key, c.content_json, c.published, c.updated_at' . ($lifecycle ? ', c.archived_at, c.deleted_at' : '')
+            . ', (SELECT COUNT(*) FROM academy_learners l WHERE l.tenant_id = c.tenant_id AND l.course_key = c.course_key) AS learners'
+            . ' FROM academy_courses c WHERE c.tenant_id = ? ORDER BY c.updated_at DESC');
+        $stmt->execute([$tenantId]);
+        $list = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $content = json_decode($row['content_json'], true, 64, JSON_THROW_ON_ERROR);
+            $content['key'] = $row['course_key'];
+            $content['published'] = (bool) $row['published'];
+            $content['updated_at'] = (string) $row['updated_at'];
+            $content['archived'] = ($row['archived_at'] ?? null) !== null;
+            $content['deleted_at'] = $row['deleted_at'] ?? null;
+            $content['learners'] = (int) $row['learners'];
+            $list[] = $content;
+        }
+        return $list;
     }
 
     /** Brouillon du Studio : il peut être incomplet, la publication le valide. */
     public function createDraft(int $tenantId, int $userId, array $content): string
     {
         $key = 'course-' . bin2hex(random_bytes(8));
-        unset($content['key'], $content['published'], $content['demo'], $content['built_in']);
+        $content = array_diff_key($content, array_flip(self::META));
         $stmt = $this->pdo->prepare('INSERT INTO academy_courses (tenant_id, course_key, content_json, published, updated_by) VALUES (?, ?, ?, 0, ?)');
         $stmt->execute([$tenantId, $key, json_encode($content, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), $userId]);
         return $key;
@@ -96,7 +201,7 @@ final class AcademyRepository
     /** Seul un brouillon se modifie : un cours publié change par une nouvelle version. */
     public function updateDraft(int $tenantId, string $key, int $userId, array $content): bool
     {
-        unset($content['key'], $content['published'], $content['demo'], $content['built_in']);
+        $content = array_diff_key($content, array_flip(self::META));
         $stmt = $this->pdo->prepare('UPDATE academy_courses SET content_json = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE tenant_id = ? AND course_key = ? AND published = 0');
         $stmt->execute([json_encode($content, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), $userId, $tenantId, $key]);
         return $stmt->rowCount() > 0;
