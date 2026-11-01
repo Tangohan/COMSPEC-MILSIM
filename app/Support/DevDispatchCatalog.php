@@ -294,6 +294,18 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1253, '2026-11-01', 'Écrans : un seul menu, diapositives visibles, PC du poste sur les écrans', 'Avec le pack 2.9.25 et la liaison 2.0.114, chaque écran n’a plus qu’un seul menu « Écran COMSPEC » (Diffusion, Affichage TOC, Carte), les diapositives s’affichent de nouveau sur les écrans et le PC du poste TOC est affiché en direct sur les écrans du poste pour tous les joueurs proches.', [
+                'PC du poste TOC affiché en direct sur les écrans du poste (vue de l’opérateur, pour tous)',
+            ], [
+                'Un seul menu « Écran COMSPEC » rangé par thème',
+                'Carte du PC du poste : noms qui ne se chevauchent plus, onglets avec compteurs',
+            ], [
+                'Menus ACE des écrans en double, actions sans effet',
+                'Écran noir en diffusant une diapositive (image verrouillée, portail athena-comspec.eu refusé)',
+                'Carte TOC masquée après l’arrêt d’une diffusion',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.25 (liaison 2.0.114 incluse), quittez Arma complètement, puis relancez.',
+            ], 'Pack téléphone 2.9.25'),
             $pr(1251, '2026-11-01', 'Academy en jeu et caméras en direct sur les écrans TOC', 'Avec le pack 2.9.24 et la liaison 2.0.113, vos cours Academy arrivent sur le téléphone (leçons page par page, progression enregistrée sur le site) et l’encadrement Formation peut présenter une leçon sur un écran posé ou un écran TOC. Les écrans TOC affichent en direct un drone, une caméra fixe ou la caméra d’un porteur d’ATAK. Le PC du poste TOC est réparé, et un pack non officiel est enfin signalé clairement.', [
                 'App Academy sur le téléphone, progression enregistrée sur le site',
                 'Présentation d’une leçon sur un écran posé ou TOC, pages tournées par l’instructeur',
