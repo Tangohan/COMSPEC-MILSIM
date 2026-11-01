@@ -110,7 +110,7 @@ final class RoleplayGameSessionAdminController
         $cfg = RoleplayGameSessionSettings::forTenant($tenantId, $this->tenants);
         $events = [];
         try {
-            $events = $this->events->listUpcomingForTenant($tenantId, 40);
+            $events = $this->events->upcomingForTenant($tenantId, 40);
         } catch (\Throwable) {
             $events = [];
         }

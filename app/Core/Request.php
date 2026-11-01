@@ -147,6 +147,12 @@ class Request
         return array_merge($this->query, $this->request);
     }
 
+    /** Corps POST (formulaire). Appelé par la passerelle ATAK : son absence mettait /atak/passerelle/* en erreur 500. */
+    public function getParsedBody(): array
+    {
+        return $this->request;
+    }
+
     public function isPost(): bool
     {
         return $this->method === 'POST';

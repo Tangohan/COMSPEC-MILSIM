@@ -195,20 +195,28 @@ final class UnitReadinessService
     /** @return array<int, int> */
     private function memberIdsForUnit(int $tenantId, int $unitId): array
     {
-        try {
-            $st = Database::getPdo()->prepare(
-                'SELECT DISTINCT user_id FROM users WHERE tenant_id = ? AND unit_id = ? AND status = \'active\''
-            );
-            $st->execute([$tenantId, $unitId]);
-            $ids = [];
-            foreach ($st->fetchAll(PDO::FETCH_COLUMN) ?: [] as $id) {
-                $ids[(int) $id] = (int) $id;
-            }
+        // users n'a ni user_id ni unit_id : l'ancienne requête échouait toujours (unité sans membres).
+        // Même règle d'appartenance que la fiche, les rosters et l'ORBAT (affectations, sinon user_units).
+        foreach ([true, false] as $hasAssignments) {
+            try {
+                $membership = UnitAssignmentConsistency::membershipSql($hasAssignments, ' AND pa.unit_id = ?', ' AND uu.unit_id = ?');
+                $st = Database::getPdo()->prepare(
+                    'SELECT DISTINCT m.user_id FROM (' . $membership . ') m
+                     INNER JOIN units un ON un.id = m.unit_id AND un.tenant_id = ?
+                     INNER JOIN users u ON u.id = m.user_id AND u.status = \'active\''
+                );
+                $st->execute($hasAssignments ? [$unitId, $unitId, $tenantId] : [$unitId, $tenantId]);
+                $ids = [];
+                foreach ($st->fetchAll(PDO::FETCH_COLUMN) ?: [] as $id) {
+                    $ids[(int) $id] = (int) $id;
+                }
 
-            return $ids;
-        } catch (\Throwable) {
-            return [];
+                return $ids;
+            } catch (\Throwable) {
+            }
         }
+
+        return [];
     }
 
     private function lastActivityForUser(int $tenantId, int $userId): ?string

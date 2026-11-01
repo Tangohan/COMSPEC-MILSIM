@@ -58,7 +58,7 @@ final class AdminDoctrineController
         }
         unset($d);
 
-        return Response::view('layout.back_office', [
+        return Response::view('layout.main', [
             'content' => 'admin/documents/doctrine_nomenclature',
             'title' => 'Nomenclature documentaire',
             'domains' => $domains,
@@ -96,7 +96,7 @@ final class AdminDoctrineController
         }
         $tenantId = (int) Session::get('tenant_id');
 
-        return Response::view('layout.back_office', [
+        return Response::view('layout.main', [
             'content' => 'admin/documents/document_types',
             'title' => 'Types de documents',
             'types' => $this->typeRepository->listForTenant($tenantId, false),
@@ -166,7 +166,7 @@ final class AdminDoctrineController
             $audiences = $this->audienceRepository->listForDocument($documentId, $tenantId);
         }
 
-        return Response::view('layout.back_office', [
+        return Response::view('layout.main', [
             'content' => 'admin/documents/publish_form',
             'title' => $documentId > 0 ? 'Modifier le document' : 'Publier un document',
             'document' => $document,
@@ -277,7 +277,7 @@ final class AdminDoctrineController
             return (new Response())->setStatusCode(404)->setBody('Document introuvable.');
         }
 
-        return Response::view('layout.back_office', [
+        return Response::view('layout.main', [
             'content' => 'admin/documents/new_version_form',
             'title' => 'Nouvelle version',
             'document' => $document,
@@ -414,7 +414,7 @@ final class AdminDoctrineController
             ? round(100 * $stats['read'] / $stats['concerned'], 1)
             : 100.0;
 
-        return Response::view('layout.back_office', [
+        return Response::view('layout.main', [
             'content' => 'admin/documents/doctrine_compliance',
             'title' => 'Suivi de diffusion',
             'rows' => $rows,

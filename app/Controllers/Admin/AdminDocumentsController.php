@@ -656,8 +656,6 @@ class AdminDocumentsController
             'document' => $doc,
             'auditEntries' => $auditEntries,
             'usersMap' => $usersMap,
-            'accessSessions' => $accessSessions,
-            'accessEvents' => $accessEvents,
         ]);
     }
 

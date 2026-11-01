@@ -57,5 +57,5 @@ $stmt = $pdo->prepare("UPDATE training_certificates SET status = 'expired' WHERE
 $stmt->execute();
 $countCertificates = $stmt->rowCount();
 
-echo date('Y-m-d H:i:s') . " — Enrollments expirés : $countEnrollments — Certificats expirés : $countCertificates\n");
+echo date('Y-m-d H:i:s') . " — Enrollments expirés : $countEnrollments — Certificats expirés : $countCertificates\n";
 exit(0);

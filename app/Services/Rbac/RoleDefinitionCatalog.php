@@ -135,7 +135,7 @@ final class RoleDefinitionCatalog
                  SET r.definition_id = d.id
                  WHERE r.definition_id IS NULL'
             );
-        } catch (PDOException) {
+        } catch (\PDOException) {
         }
 
         $tids = $pdo->query('SELECT id FROM tenants')->fetchAll(PDO::FETCH_COLUMN);

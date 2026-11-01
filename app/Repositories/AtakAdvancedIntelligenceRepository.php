@@ -545,8 +545,8 @@ class AtakAdvancedIntelligenceRepository
         $factors[] = ['factor' => 'correlations', 'value' => $poi['correlation_count'], 'impact' => $correlationBonus];
 
         // Ancienneté (-10 points max si > 30 jours)
-        $ageDay = (time() - strtotime($poi['created_at'])) / 86400;
-        if ($ageHours > 30) {
+        $ageDays = (time() - strtotime((string) ($poi['created_at'] ?? 'now'))) / 86400;
+        if ($ageDays > 30) {
             $agePenalty = -min(10, ($ageDays - 30) / 10);
             $confidence += $agePenalty;
             $factors[] = ['factor' => 'age_days', 'value' => round($ageDays, 1), 'impact' => round($agePenalty, 2)];
