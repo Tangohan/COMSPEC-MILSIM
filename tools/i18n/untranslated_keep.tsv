@@ -974,3 +974,240 @@ Invitation	identique en anglais	views/emails/member_integration_invite.php
 %1 — %2	identique en anglais (marqueurs seuls)	views/emails/security_alert.php
 %1 minutes	identique en anglais	views/emails/user_register_confirmation.php
 no-reply@athena-comspec.eu	adresse e-mail	views/emails/user_register_confirmation.php
+Cyan	identique en anglais	app/Controllers/Admin/AdminFireTeamsController.php
+Orange	identique en anglais	app/Controllers/Admin/AdminFireTeamsController.php
+/PANI(Q|C)|D[ÉE]TRESSE/iu	bruit d'extraction : regex	app/Controllers/Api/AtakOverwatchIntelController.php
+FRS / FRM	identique en anglais	app/Controllers/Api/AtakOverwatchIntelController.php
+Immersion	identique en anglais	app/Controllers/Web/AccountController.php
+ATAK / Overwatch	identique en anglais	app/Controllers/Web/AtakController.php
+PRODID:-//Athena Comspec//Événements communauté//FR	bruit d'extraction : code/identifiant	app/Controllers/Web/CommunityCalendarFeedController.php
+Architecture & addons	identique en anglais	app/Controllers/Web/DocumentationController.php
+Athena COMSPEC	identique en anglais	app/Controllers/Web/SitePagesController.php
+/* Textes de la langue «	bruit d'extraction : code/identifiant	app/Controllers/Web/SiteTranslationController.php
+» traduits par la communauté (/traduire-site). */\n	bruit d'extraction : code/identifiant	app/Controllers/Web/SiteTranslationController.php
+/obligatoire|r[eé]glementaire|reglementaire|mission|doctrine/iu	bruit d'extraction : regex	app/Repositories/ArsenalWardrobeRepository.php
+sans-cle@	bruit d'extraction : code/identifiant	app/Repositories/AtakDistanceRepository.php
+un.name AS unit_name	bruit d'extraction : SQL	app/Repositories/MemberIntegrationRepository.php
+Provenance	identique en anglais	app/Repositories/SseMeshRepository.php
+arme_épaule	bruit d'extraction : code/identifiant	app/Repositories/SseMeshRepository.php
+(display_name = 'Compte supprimé' AND status = 'inactive')	bruit d'extraction : SQL	app/Repositories/UserRepository.php
+(u.display_name IS NULL OR TRIM(u.display_name) <> 'Compte supprimé')	bruit d'extraction : SQL	app/Repositories/UserRepository.php
+un.public_blurb AS unit_blurb	bruit d'extraction : SQL	app/Repositories/UserRepository.php
+Inactive (h)	identique en anglais	app/Services/Admin/DataRegistryService.php
+Workshop	identique en anglais	app/Services/Admin/DataRegistryService.php
+Tout est bon. · All good.	déjà bilingue FR/EN	app/Services/Atak/AtakStartupCheckService.php
+PRODID:-//Athena Comspec//Intégration//FR	bruit d'extraction : code/identifiant	app/Services/Calendar/IcalendarService.php
+Circuit	identique en anglais	app/Services/Community/EnlistmentMilsimPackService.php
+une des valeurs : " . implode(	bruit d'extraction : code/identifiant	app/Services/ConfigSchemaService.php
+92e ri — cerbère	nom propre / exemple	app/Services/Courrier/CourrierLetterhead.php
+Battalion	identique en anglais	app/Services/Doctrine/EchelonCatalog.php
+Company	identique en anglais	app/Services/Doctrine/EchelonCatalog.php
+Platoon	identique en anglais	app/Services/Doctrine/EchelonCatalog.php
+Squad	identique en anglais	app/Services/Doctrine/EchelonCatalog.php
+· suivi par l’équipe Athena / tracked by the Athena team	déjà bilingue FR/EN	app/Services/Integrations/CommunityModReportRelay.php
+Athena account	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Communities	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Community member	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Days on Athena	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Days since the Athena account was created	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Has an Athena account linked	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Member of an Athena community	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Number of Athena communities	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Annexes	identique en anglais	app/Services/MissionPlanning/MissionPlanningAtakService.php
+/\b(air|helo|hélico|aviation|cas|pilote|uas|drone|squadron|escadron)\b/u	bruit d'extraction : regex	app/Services/MissionPlanning/MissionPlanningService.php
+/\b(hq|em|etat|état|command|staff|coe|pc)\b/u	bruit d'extraction : regex	app/Services/MissionPlanning/MissionPlanningService.php
+/\b(log|soutien|support|medic|médic|medevac|eod|trans|ravit)\b/u	bruit d'extraction : regex	app/Services/MissionPlanning/MissionPlanningService.php
+/medic|médic|infirm/u	bruit d'extraction : regex	app/Services/MissionPlanning/MissionPlanningService.php
+/\bhttp\s*5\d\d\b|tenant_context_required|migration_required|momentanément indisponible/u	bruit d'extraction : regex	app/Services/Monitoring/AtakAuthFailureNotifier.php
+Dernier envoi / Last seen	déjà bilingue FR/EN	app/Services/Monitoring/AtakModReportDiscordTicketService.php
+Premier envoi / First seen	déjà bilingue FR/EN	app/Services/Monitoring/AtakModReportDiscordTicketService.php
+Statut mis à jour par Athena · Status kept up to date by Athena	déjà bilingue FR/EN	app/Services/Monitoring/AtakModReportDiscordTicketService.php
+💬 **Réponse au joueur** · Reply to player	déjà bilingue FR/EN	app/Services/Monitoring/AtakModReportDiscordTicketService.php
+🔁 **Rouvert : le problème est revenu après la correction** · Reopened, seen again after the fix	déjà bilingue FR/EN	app/Services/Monitoring/AtakModReportDiscordTicketService.php
+🗑️ **Rapport supprimé d’Athena** · Report deleted	déjà bilingue FR/EN	app/Services/Monitoring/AtakModReportDiscordTicketService.php
+analytics indicateurs statistiques intégrations discord steam	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+catalogue modèles kits armée française sof infanterie blindé aéromobile hélicoptère smp pmc gaming fonctions emplois	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+compte sécurité mot de passe connexion	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+coopération inter-unités alliance mission commune	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+courrier lettre en-tête officiel	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+création assistant wizard tenant nouvelle communauté tutoriel champs	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+documents doctrine bibliothèque sop	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+droits permissions rôles accès matrice niveaux	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+démarrage première soirée mise en service checklist configuration initiale tutoriel	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+faq questions modifier adresse paiement modèle	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+inscription recrutement milsim discord formulaire court visibilité formule abonnement ancienneté	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+modération signalement sanctions	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+nom adresse slug url langue fuseau unité réelle fictive vitrine logo bannière	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+orbat structure type preset escouade section peloton compagnie détachement interarmes	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+personnel orbat organigramme affectation effectifs unités	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+pilotage organisation paramètres réglages administration	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+recrutement candidature enrôlement dossier milsim discord intégration	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+rôle fonction emploi métier différence	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+rôles modèle catalogue orbat organigramme structure unités	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+type complet bureau des effectifs carte atak modules	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+équipement dotation modpack mods arsenal	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+événements opérations calendrier pointage présence rsvp messagerie	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+Fire teams	identique en anglais	app/Services/Portal/BackOfficeSearchService.php
+bourse coopération inter-team renfort opfor partenaire besoin	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+calendrier événements opérations agenda inscription rsvp	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+compte profil sécurité mot de passe préférences	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+cr compte rendu aar après-action debriefing	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+cr compte rendu fin opération debrief suivi	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+distinctions décorations médailles rubans	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+espace rh absences mobilité documents élévation	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+hub centre commandement communautés comparer classement statistiques recommander avis bourse coopération inter-team	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+intégration arrivée parcours accueil	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+liaison atak téléphone tablette appairer	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+opérations mission ordres plan	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+orbat organigramme structure unités chaîne commandement	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+pointage présence session heures	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+tableau de bord dashboard accueil synthèse	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+équipement matériel armes tenues arsenal	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+/source\s+unique|aucun\s+recoup/iu	bruit d'extraction : regex	app/Services/Sse/SseAnalyticalEngineService.php
+/contradict|diverg|incoh[ée]ren/iu	bruit d'extraction : regex	app/Services/Sse/SseContextualMentionService.php
+/hypoth[èe]se/iu	bruit d'extraction : regex	app/Services/Sse/SseContextualMentionService.php
+/identit[ée]\s+(non\s+confirm|incertaine|suppos)/iu	bruit d'extraction : regex	app/Services/Sse/SseContextualMentionService.php
+Athena SSE	identique en anglais	app/Services/Sse/SseTransmissionDiscordService.php
+Arcade	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Bluetooth	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Debug	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Distances	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Drone	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Garmin	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Milsim	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Sniper	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Tinder	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+compléter	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+confidentialité	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+démarrer	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+paramètres	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+premiers pas	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+règlement	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+réglages	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+résumé	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+sécurité	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+vie privée	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+/[àáâãäå]/u	bruit d'extraction : regex	app/Support/AtakChatChannel.php
+/[ç]/u	bruit d'extraction : regex	app/Support/AtakChatChannel.php
+/[èéêë]/u	bruit d'extraction : regex	app/Support/AtakChatChannel.php
+/[ìíîï]/u	bruit d'extraction : regex	app/Support/AtakChatChannel.php
+/[òóôõö]/u	bruit d'extraction : regex	app/Support/AtakChatChannel.php
+/[ùúûü]/u	bruit d'extraction : regex	app/Support/AtakChatChannel.php
+, OU=	bruit d'extraction : code/identifiant	app/Support/AtakDevicePresenter.php
+Observation	identique en anglais	app/Support/AtakIcemanReportCatalog.php
+activée	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+créé	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+données	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+dépassé	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+envoyé	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+généré	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+liée	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+momentanément	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+même	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+présentation	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+prêt	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+périmé	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+réessayez	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+trouvé	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+trouvée	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+vérifiez	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+ÉCHEC	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+échoué	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+/^### Résumé joueur[ \t]*\n(.*?)(?=^### |\z)/ms	bruit d'extraction : regex	app/Support/AtakReleaseInfo.php
+Clone NCOs	identique en anglais	app/Support/CustomGradeTemplates.php
+Clone Officers	identique en anglais	app/Support/CustomGradeTemplates.php
+Clone Troopers	identique en anglais	app/Support/CustomGradeTemplates.php
+Commissariat	identique en anglais	app/Support/CustomGradeTemplates.php
+Guardsmen	identique en anglais	app/Support/CustomGradeTemplates.php
+High Command	identique en anglais	app/Support/CustomGradeTemplates.php
+Imperial Officers	identique en anglais	app/Support/CustomGradeTemplates.php
+Jedi Command	identique en anglais	app/Support/CustomGradeTemplates.php
+Mobile Task Forces	identique en anglais	app/Support/CustomGradeTemplates.php
+Overseer Council	identique en anglais	app/Support/CustomGradeTemplates.php
+Regimental Officers	identique en anglais	app/Support/CustomGradeTemplates.php
+Research Department	identique en anglais	app/Support/CustomGradeTemplates.php
+SCP Foundation	identique en anglais	app/Support/CustomGradeTemplates.php
+Security Department	identique en anglais	app/Support/CustomGradeTemplates.php
+Site Command	identique en anglais	app/Support/CustomGradeTemplates.php
+Stormtrooper Corps	identique en anglais	app/Support/CustomGradeTemplates.php
+/accès (?:refusé|réservé|restreint)|(?:est |sont )?réservé[es]? aux|non autorisé|pas (?:les |l[’'])droits|autorisation insuffisante|pas l[’']autorisation|pas habilité|habilitées?|règles de sécurité/iu	bruit d'extraction : regex	app/Support/FlashAlertTitle.php
+/authentification requise|connectez-vous pour|connexion requise/iu	bruit d'extraction : regex	app/Support/FlashAlertTitle.php
+/compte (?:n’|ne )?existe plus|compte n’est plus actif|compte verrouillé|programmé pour suppression/iu	bruit d'extraction : regex	app/Support/FlashAlertTitle.php
+/confirmez votre adresse|e-mail avant de vous connecter|vérification.*e-mail/iu	bruit d'extraction : regex	app/Support/FlashAlertTitle.php
+/introuvable|n’est plus (?:disponible|accessible)|n’existe pas/iu	bruit d'extraction : regex	app/Support/FlashAlertTitle.php
+/session (?:expirée|invalide)|session a expiré/iu	bruit d'extraction : regex	app/Support/FlashAlertTitle.php
+/[àâçéèêëîïôûùœ]|\b(?:le|la|les|des|du|de|et|aux|au|pour|une|un|sur|avec|dans|par)\b/iu	bruit d'extraction : regex	app/Support/HtmlTranslator.php
+Invite members	identique en anglais	app/Support/LowMemberOrgPolicy.php
+Your community	identique en anglais	app/Support/LowMemberOrgPolicy.php
+/(Mot de passe généré[^:\n]*:\s*)\S+/u	bruit d'extraction : regex	app/Support/Migrations/MigrationStepTracker.php
+/^\[[A-ZÉ ]+\]\s*/u	bruit d'extraction : regex	app/Support/Migrations/MigrationStepTracker.php
+COMSPEC ATAK mod	identique en anglais	app/Support/ModReportReplyNotice.php
+Alpha	identique en anglais	app/Support/OrbatChartDisplay.php
+AÉREO	autre langue (espagnol), libellé de fiche	app/Support/OrbatSheetLabels.php
+Idioma de la hoja	autre langue (espagnol), libellé de fiche	app/Support/OrbatSheetLabels.php
+Las indisponibilidades las sigue la oficina de personal / S-1.	autre langue (espagnol), libellé de fiche	app/Support/OrbatSheetLabels.php
+Anchorage	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Austin	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Boston	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Chicago	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Denver	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Houston	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Miami	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Nashville	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Phoenix	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Portland	nom propre / exemple	app/Support/PackCodenameCatalog.php
+San Diego	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Savannah	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Seattle	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Tucson	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Athena plan	identique en anglais	app/Support/PlanAccessWindow.php
+Keep access	identique en anglais	app/Support/PlanAccessWindow.php
+Renew	identique en anglais	app/Support/PlanAccessWindow.php
+Your plan has expired	identique en anglais	app/Support/PlanAccessWindow.php
+A plan has been gifted to you	identique en anglais	app/Support/PlanGift.php
+Athena gift	identique en anglais	app/Support/PlanGift.php
+Open management	identique en anglais	app/Support/PlanGift.php
+Liechtenstein	nom propre / exemple	app/Support/Profile/EnlistmentTimezoneCatalog.php
+Luxembourg	nom propre / exemple	app/Support/Profile/EnlistmentTimezoneCatalog.php
+Monaco	nom propre / exemple	app/Support/Profile/EnlistmentTimezoneCatalog.php
+Ver la ficha →	autre langue (espagnol), libellé de fiche	app/Support/PublicOrbat.php
+en_évaluation	bruit d'extraction : code/identifiant	app/Support/QualificationAdminStatus.php
+aéro	bruit d'extraction : code/identifiant	app/Support/QualificationExamples.php
+Altitude	identique en anglais	app/Support/QuickPictureDiscordEmbed.php
+Infrastructure	identique en anglais	app/Support/ReconNoteCatalog.php
+Obstacle / mine	identique en anglais	app/Support/ReconNoteCatalog.php
+groupe_armé	bruit d'extraction : code/identifiant	app/Support/ReconNoteCatalog.php
+image trop grande pour GD	exception développeur non affichée	app/Support/StoredPhotoCompressor.php
+pas une image	exception développeur non affichée	app/Support/StoredPhotoCompressor.php
+/\s+[—–]\s+(?=(?:\d\.\s*)?(?:Situation|Mission|Exécution|Execution|Soutien|Support|Commandement|Command)\b)/iu	bruit d'extraction : regex	app/Support/TacticalAlertParser.php
+/^Bilan des dégâts\s*[—\-–·|]+\s*/iu	bruit d'extraction : regex	app/Support/TacticalAlertParser.php
+/^Opérateur à terre\s*[—\-–·|]+\s*/iu	bruit d'extraction : regex	app/Support/TacticalAlertParser.php
+\s*:\s*(.+?)(?=\n\s*(?:\d+\.\s*)?(?:Situation|SITUATION|Mission|MISSION|Exécution|Execution|EXECUTION|Soutien|Support|SERVICE SUPPORT|Commandement|Command|COMMAND AND SIGNAL)\s*:|\z)/ius	bruit d'extraction : regex	app/Support/TacticalAlertParser.php
+Ellipse	identique en anglais	app/Support/TacticalGraphicsCatalog.php
+Image	identique en anglais	app/Support/TacticalGraphicsCatalog.php
+Infiltration	identique en anglais	app/Support/TacticalGraphicsCatalog.php
+/(\b[ée]quipe\b|\bteam\b|\bfire\s*team\b|\bbin[ôo]me\b|\b[ée]quipage\b|\bcrew\b|\bcellule\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(\bchars?\b|blind[ée]|\barmor|\btank|\bcuirass)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(\bqg\b|\bhq\b|[ée]tat-major|\bpc\b|\bcommandement\b|\bcommand\b|\bheadquarters?\b|\bstaff\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(\br[ée]giment\b|\bregiment\b|\brgt\b|\bgroup\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(\bsof\b|\bsoc\b|\bjsoc\b|special operations|op[ée]rations sp[ée]ciales|\bcos\b|\bafsoc\b|\bsocom\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(air assault|aeromobile|a[ée]romobile)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(forces? sp[ée]ciales?|special forces|\bsfod\b|\bdelta\b|\bsas\b|\bcpa\b|\bcommandos?\b|\bgcp\b|\bdevgru\b|green berets?)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(g[ée]nie|sapeur|engineer|\beod\b|d[ée]minage)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(h[ée]lico|rotary|\bheli|aviation l[ée]g[èe]re|\balat\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(m[ée]canis|mechani[sz]ed|\bvbci\b|\bifv\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(m[ée]dic|sant[ée]|pararescue|\bpj\b|\bcasevac|\bmedevac|secour|infirmer)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(maintenance|r[ée]paration|\bmat[ée]riel\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(parachut|airborne|a[ée]roport|\bpara\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(pr[ée]v[ôo]t|police militaire|military police|\bmp\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(recon|reco\b|[ée]claireur|cavaler|\bcav\b|scout|pathfinder)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/\b(aviation|air\s*wing|a[ée]ro)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+existe déjà	bruit d'extraction : code/identifiant	app/Support/UserFacingExceptionMapper.php
+/(?:Ã[\x80-\xBF]|â€[\x80-\xBF]|â€™|â€œ|â€"|Ã©|Ã¨|Ã |Ã§|Ã®|Ã´|Ã»|Ã‰)/u	bruit d'extraction : regex	app/Support/Utf8Text.php
+Marianne,'Segoe UI',system-ui,-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif	police CSS	app/Support/helpers.php
+Emoji (Twemoji SVG)	identique en anglais	config/cdn_libraries.php
+GIF (Tenor / Giphy helpers)	identique en anglais	config/cdn_libraries.php
+Heroicons (via Iconify)	identique en anglais	config/cdn_libraries.php
+Motion / hero (GSAP)	identique en anglais	config/cdn_libraries.php
+Navigation & dashboard (guide)	identique en anglais	config/navigation.php
+Radio / satcom	identique en anglais	config/sse_case_presets.php
