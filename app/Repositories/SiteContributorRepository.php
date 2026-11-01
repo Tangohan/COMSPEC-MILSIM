@@ -221,6 +221,58 @@ final class SiteContributorRepository
         return array_values($out);
     }
 
+    /**
+     * Mur public des contributeurs : rôles actifs que la personne accepte de rendre publics, avec la date
+     * d'arrivée (premier rôle accordé). Nom public uniquement (pseudo, sinon indicatif) : jamais d'e-mail,
+     * de prénom ni de nom.
+     *
+     * @return list<array{user_id: int, name: string, roles: list<string>, languages: string, since: ?string}>
+     */
+    public function publicWall(): array
+    {
+        UserPublicName::ensure($this->pdo());
+        $st = $this->pdo()->query(
+            'SELECT r.user_id, r.role, r.languages, COALESCE(r.decided_at, r.created_at) AS since,
+                    ' . UserPublicName::sql('u', '') . ' AS name
+               FROM site_contributor_roles r JOIN users u ON u.id = r.user_id
+              WHERE r.status = \'active\' AND r.public_credit = 1'
+        );
+        $out = [];
+        foreach ($st !== false ? ($st->fetchAll(PDO::FETCH_ASSOC) ?: []) : [] as $row) {
+            $uid = (int) $row['user_id'];
+            $name = trim((string) $row['name']);
+            if ($uid < 1 || $name === '' || str_contains($name, '@')) {
+                continue;
+            }
+            $out[$uid] ??= ['user_id' => $uid, 'name' => $name, 'roles' => [], 'languages' => '', 'since' => null];
+            if (in_array((string) $row['role'], self::ROLES, true)) {
+                $out[$uid]['roles'][] = (string) $row['role'];
+            }
+            if ((string) $row['languages'] !== '') {
+                $out[$uid]['languages'] = (string) $row['languages'];
+            }
+            $since = $row['since'] !== null ? (string) $row['since'] : null;
+            if ($since !== null && ($out[$uid]['since'] === null || $since < $out[$uid]['since'])) {
+                $out[$uid]['since'] = $since;
+            }
+        }
+        $order = array_flip(self::ROLES);
+        foreach ($out as &$person) {
+            usort($person['roles'], static fn (string $a, string $b): int => ($order[$a] ?? 9) <=> ($order[$b] ?? 9));
+        }
+        unset($person);
+
+        return array_values(array_filter($out, static fn (array $p): bool => $p['roles'] !== []));
+    }
+
+    /** Nombre de personnes qui ont au moins un rôle actif (cité ou non : simple total). */
+    public function activeContributorCount(): int
+    {
+        $st = $this->pdo()->query('SELECT COUNT(DISTINCT user_id) FROM site_contributor_roles WHERE status = \'active\'');
+
+        return $st !== false ? (int) $st->fetchColumn() : 0;
+    }
+
     /** Le membre est-il traducteur actif pour cette langue ? */
     public function isTranslatorFor(int $userId, string $lang): bool
     {

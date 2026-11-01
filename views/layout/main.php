@@ -439,6 +439,7 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/dashboard-rail.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
     <?php if (empty($usesAdminSidebarShell) && empty($communityReelsPage) && empty($communityShowcasePage)): ?>
+    <?php require base_path('views/partials/donation_banner.php'); ?>
     <?php require base_path('views/partials/navbar_info_banners.php'); ?>
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php endif; ?>
