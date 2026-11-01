@@ -22,7 +22,12 @@ final class AdminPlatformToolsTest extends TestCase
 {
     /** Routes ajoutées ou modifiées par la refonte des outils d'administration. */
     private const TOUCHED_ROUTES = [
+        'get /admin',
         'get /admin/recherche',
+        'get /admin/analytics',
+        'get /admin/audit',
+        'get /admin/maintenance',
+        'get /admin/system/alerts',
         'post /admin/system/cron/run',
         'post /admin/system/cron/install-vps',
         'post /admin/system/cron/uninstall-vps',
@@ -193,15 +198,71 @@ final class AdminPlatformToolsTest extends TestCase
         self::assertStringContainsString('action_domain=platform', $html);
     }
 
-    public function testDashboardShowsHealthAndSearchOnlyToSiteAdministrators(): void
+    public function testSiteSupportHasNoAccessLeftUnderAdmin(): void
     {
-        $dash = (string) file_get_contents(self::root() . '/views/admin/system/dashboard.php');
-        self::assertMatchesRegularExpression("#if \\(\\\$isPlatformAdmin && !empty\\(\\\$adminHealthRows\\)\\)#", $dash);
-        self::assertStringContainsString("url('admin/recherche')", $dash);
-        $controller = (string) file_get_contents(self::root() . '/app/Controllers/Admin/System/SystemDashboardController.php');
-        self::assertStringContainsString("allows('admin.system') ? \$this->health->rows() : []", $controller);
+        $routes = (string) file_get_contents(self::root() . '/routes/web.php');
+        self::assertStringNotContainsString('PlatformHubMiddleware', $routes);
+        self::assertFileDoesNotExist(self::root() . '/app/Middleware/PlatformHubMiddleware.php');
+
+        // L'assistance (même avec site.support dans ses droits) est renvoyée hors de /admin.
+        $_SESSION = ['user_id' => 5];
+        Gate::getInstance()->setPermissions(['site.support', 'admin.organization']);
+        $reached = false;
+        $response = (new SystemAdminMiddleware())(new Request(), function () use (&$reached): Response {
+            $reached = true;
+
+            return new Response();
+        });
+        self::assertFalse($reached);
+        self::assertSame(302, $response->statusCode());
+
         $sidebar = (string) file_get_contents(self::root() . '/views/partials/platform_admin_sidebar.php');
+        self::assertStringNotContainsString("'access' => 'hub'", $sidebar);
+        self::assertStringNotContainsString('ASSISTANCE PLATEFORME', $sidebar);
+        self::assertStringNotContainsString('isSupportHub', (string) file_get_contents(self::root() . '/views/admin/system/dashboard.php'));
+    }
+
+    public function testDashboardSynthesisAndConsoleAreOnePilotPage(): void
+    {
+        $routes = (string) file_get_contents(self::root() . '/routes/web.php');
+        // Anciennes adresses : renvoi vers la page de pilotage, toujours réservé à l'administrateur du site.
+        self::assertMatchesRegularExpression("#router->get\\('/admin/ops-center', fn \\([^)]*\\) => \\\\App\\\\Core\\\\Response::redirect\\(url\\('admin'\\)\\), \\[AuthMiddleware::class, SystemAdminMiddleware::class\\]\\);#", $routes);
+        self::assertMatchesRegularExpression("#router->get\\('/admin/system/exploitation', fn \\([^)]*\\) => \\\\App\\\\Core\\\\Response::redirect\\(url\\('admin'\\) \\. '\\?' \\. http_build_query\\(\\['onglet' => [^\\n]*\\[AuthMiddleware::class, SystemAdminMiddleware::class\\]\\);#", $routes);
+        self::assertFileDoesNotExist(self::root() . '/app/Controllers/Admin/System/SystemOpsCenterController.php');
+        self::assertFileDoesNotExist(self::root() . '/views/admin/system/ops_center.php');
+
+        // Les onglets d'exploitation passent par la console, qui garde sa double vérification.
+        $dashController = (string) file_get_contents(self::root() . '/app/Controllers/Admin/System/SystemDashboardController.php');
+        self::assertStringContainsString("in_array((string) \$request->query('onglet', ''), SystemOpsConsoleController::TABS, true)", $dashController);
+        self::assertStringContainsString('(new SystemOpsConsoleController())->index($request, $params)', $dashController);
+        $console = (string) file_get_contents(self::root() . '/app/Controllers/Admin/System/SystemOpsConsoleController.php');
+        self::assertStringContainsString("if (!\$this->stepUp()->isVerified((int) \$me['id'])) {", $console);
+        self::assertStringContainsString("\$url = url('admin');", $console);
+        self::assertStringNotContainsString("Response::redirect(url('admin/system/exploitation'))", $console);
+
+        // Une seule barre d'onglets, sur la vue d'ensemble comme dans la console.
+        $dash = (string) file_get_contents(self::root() . '/views/admin/system/dashboard.php');
+        $consoleView = (string) file_get_contents(self::root() . '/views/admin/system/ops_console.php');
+        foreach ([$dash, $consoleView] as $view) {
+            self::assertStringContainsString('views/admin/partials/pilotage_tabs.php', $view);
+            self::assertStringContainsString('Pilotage du site', $view);
+        }
+        self::assertStringContainsString("url('admin/recherche')", $dash);
+        self::assertStringContainsString('platform_communication.php', $dash);
+        $sidebar = (string) file_get_contents(self::root() . '/views/partials/platform_admin_sidebar.php');
+        self::assertStringNotContainsString("'admin/ops-center'", $sidebar);
+        self::assertStringNotContainsString("'admin/system/exploitation'", $sidebar);
         self::assertStringContainsString("['path' => 'admin/recherche', 'label' => 'Recherche', 'icon' => 'search', 'access' => 'system'", $sidebar);
+    }
+
+    public function testPilotTabsLinkEveryConsoleTabToTheAdminPage(): void
+    {
+        $html = Response::view('admin.partials.pilotage_tabs', ['pilotTab' => 'migrations', 'opsSummary' => ['bad' => 1, 'warn' => 0]])->body();
+        foreach (\App\Controllers\Admin\System\SystemOpsConsoleController::TABS as $tab) {
+            self::assertStringContainsString('/admin?onglet=' . $tab, $html);
+        }
+        self::assertStringContainsString('aria-current="page"', $html);
+        self::assertStringNotContainsString('exploitation', $html);
     }
 
     public function testNewAuditActionsHaveReadableLabels(): void

@@ -148,7 +148,7 @@ final class SystemOpsConsoleController
             Session::flash('success', 'Console verrouillée.');
         }
 
-        return Response::redirect(url('admin/system/exploitation'));
+        return Response::redirect(url('admin') . '?onglet=etat');
     }
 
     // ------------------------------------------------------------------ migrations
@@ -166,7 +166,7 @@ final class SystemOpsConsoleController
 
             return $this->back('migrations');
         }
-        $payload = ['action' => $mode, 'user_id' => (int) Session::get('user_id'), 'return' => url('admin/system/exploitation') . '?onglet=migrations'];
+        $payload = ['action' => $mode, 'user_id' => (int) Session::get('user_id'), 'return' => url('admin') . '?onglet=migrations'];
         if ($mode === 'run_step') {
             $payload['step'] = trim((string) $request->input('step', ''));
         }
@@ -555,7 +555,7 @@ final class SystemOpsConsoleController
         if (!$this->stepUp()->isVerified($uid)) {
             Session::flash('error', 'La console s’est verrouillée : confirmez de nouveau votre identité.');
 
-            return Response::redirect(url('admin/system/exploitation'));
+            return Response::redirect(url('admin') . '?onglet=etat');
         }
 
         return null;
@@ -571,11 +571,9 @@ final class SystemOpsConsoleController
 
     private function back(string $tab = '', ?Request $request = null): Response
     {
-        $url = url('admin/system/exploitation');
-        $query = [];
-        if ($tab !== '') {
-            $query['onglet'] = $tab;
-        }
+        // La console est un onglet de la page de pilotage (/admin?onglet=…).
+        $url = url('admin');
+        $query = ['onglet' => $tab !== '' ? $tab : 'etat'];
         $q = $request !== null ? trim((string) $request->input('q', '')) : '';
         if ($q !== '') {
             $query['q'] = $q;

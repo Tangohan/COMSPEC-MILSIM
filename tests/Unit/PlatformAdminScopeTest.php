@@ -25,7 +25,7 @@ final class PlatformAdminScopeTest extends TestCase
                 continue;
             }
             [, $method, $path] = $m;
-            if (str_contains($line, 'SystemAdminMiddleware::class') || str_contains($line, 'PlatformHubMiddleware::class')) {
+            if (str_contains($line, 'SystemAdminMiddleware::class')) {
                 continue;
             }
             // Anciennes adresses : simple renvoi GET vers la nouvelle page, qui applique ses propres contrôles.

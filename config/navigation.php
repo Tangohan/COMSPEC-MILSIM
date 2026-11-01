@@ -471,7 +471,6 @@ return [
                     'slot' => 'primary',
                     'links' => [
                         ['label' => 'Tableau de bord plateforme', 'path' => 'admin', 'permission' => 'admin.system'],
-                        ['label' => 'Synthèse opérationnelle', 'path' => 'admin/ops-center', 'permission' => 'admin.system', 'description' => 'Signaux critiques et vue transversale'],
                         ['label' => 'Annuaire des communautés', 'path' => 'admin/tenants', 'permission' => 'admin.system', 'description' => 'Liste des organisations et effectifs comptes'],
                         ['label' => 'Annuaire public : épinglage', 'path' => 'admin/system/annuaire', 'permission' => 'admin.system', 'description' => 'Épingler des communautés et suivre les unités en tendance'],
                         ['label' => 'Vitrine Discord des communautés', 'path' => 'admin/system/annuaire/discord', 'permission' => 'admin.system', 'description' => 'Valider les annonces des communautés sur le Discord Athena'],

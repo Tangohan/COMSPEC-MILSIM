@@ -48,8 +48,9 @@ final class PlatformAdminSkinAssetTest extends TestCase
         self::assertStringContainsString('data-ath-desc', $sidebar);
         self::assertStringContainsString("data-ath-desc", $js);
         self::assertStringContainsString("'admin/system/deployment/campaigns'", $sidebar);
-        // Les alertes plateforme sont ouvertes à l’assistance (PlatformHubMiddleware) : le menu suit la route.
-        self::assertMatchesRegularExpression("/'admin\\/system\\/alerts'[^\\]]*'access' => 'hub'/", $sidebar);
+        // « Admin » = administrateur de la plateforme uniquement : plus aucune entrée ouverte à l’assistance.
+        self::assertMatchesRegularExpression("/'admin\\/system\\/alerts'[^\\]]*'access' => 'system'/", $sidebar);
+        self::assertStringNotContainsString("'access' => 'hub'", $sidebar);
         self::assertStringContainsString('$platformAdminCrumbGroup', $sidebar);
         self::assertStringContainsString('$platformAdminCrumbGroup', $topbar);
     }

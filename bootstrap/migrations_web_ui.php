@@ -955,7 +955,7 @@ function migrations_web_gate(): void
             exit;
         }
         $return = (string) ($ticket['return'] ?? '');
-        $GLOBALS['__migrations_console_return'] = preg_match('#^(https?://[^\s"<>]+|/[^\s"<>]*)$#', $return) === 1 ? $return : '/admin/system/exploitation?onglet=migrations';
+        $GLOBALS['__migrations_console_return'] = preg_match('#^(https?://[^\s"<>]+|/[^\s"<>]*)$#', $return) === 1 ? $return : '/admin?onglet=migrations';
         $queueError = migrations_web_queue_error($root, (string) ($ticket['action'] ?? ''), (string) ($ticket['step'] ?? ''));
         if ($queueError !== null) {
             migrations_web_render_login($queueError, $ticket['action'] === 'run' ? 'ok' : 'warn');
