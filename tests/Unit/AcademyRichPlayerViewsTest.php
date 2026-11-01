@@ -130,7 +130,7 @@ final class AcademyRichPlayerViewsTest extends TestCase
             self::assertStringContainsString('data-print',$body);
             self::assertStringContainsString($language==='fr'?'qualification JTAC officielle':'official JTAC qualification',$body);
             $completedPlayer=$this->render('classroom',$state);
-            self::assertSame(7,substr_count($completedPlayer,'<li class="done"'));
+            self::assertSame(7,substr_count($completedPlayer,'class="acr-l done"'));
             self::assertStringNotContainsString('aria-current="step"',$completedPlayer);
         }
         unset($state['completed']);
@@ -144,10 +144,17 @@ final class AcademyRichPlayerViewsTest extends TestCase
             $GLOBALS['__app_locale']=$language;
             $state=['chapter'=>0,'stage'=>3,'snapshot'=>$course];
             $body=$this->render('classroom',$state);
-            self::assertStringContainsString('data-completed-materials',$body);
-            self::assertStringContainsString($course['chapters'][0]['theory'][$language],$body);
+            // Les étapes terminées se relisent depuis le sommaire de la salle de cours.
+            self::assertStringContainsString('step=0.0',$body);
             self::assertStringContainsString('name="expected_stage" value="3"',$body);
             self::assertStringNotContainsString('/action/advance',$body);
+            $review=$this->render('classroom',$state,['viewStep'=>'0.0']);
+            self::assertStringContainsString(htmlspecialchars($course['chapters'][0]['theory'][$language],ENT_QUOTES),$review);
+            self::assertStringNotContainsString('/action/advance',$review);
+            self::assertStringNotContainsString('/action/practice',$review);
+            self::assertStringContainsString('aria-current="step"',$review);
+            // Une étape pas encore atteinte ne s'ouvre pas : retour à l'étape en cours.
+            self::assertStringContainsString('/action/practice',$this->render('classroom',$state,['viewStep'=>'0.5']));
             $state['stage']=4;
             $state['exam']=['deadline'=>time()+900,'token'=>'server-exam-token'];
             $exam=$this->render('exams',$state);

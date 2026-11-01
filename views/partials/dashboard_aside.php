@@ -253,7 +253,7 @@ $navTiles[] = $tile(
             ? ['label' => 'Pilotage des formations', 'href' => url('formation'), 'hint' => 'Espace instructeurs', 'lms_module' => 'formation']
             : null,
         $canTrainingManage
-            ? ['label' => 'Créer un entraînement', 'href' => url('formations/creer'), 'hint' => 'Publication', 'lms_module' => 'formation']
+            ? ['label' => 'Créer un entraînement', 'href' => url('academy/studio'), 'hint' => 'Publication', 'lms_module' => 'formation']
             : null,
     ]),
     'trainings'

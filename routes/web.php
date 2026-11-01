@@ -174,7 +174,6 @@ use App\Controllers\Web\GamificationController;
 use App\Controllers\Web\WarRoomController;
 use App\Controllers\Web\UnitTemplatesController;
 use App\Controllers\Web\FederationController;
-use App\Controllers\Web\TrainingWizardController;
 use App\Controllers\Web\DocumentationController;
 use App\Controllers\Web\LegalController;
 use App\Controllers\Web\DemoNdaController;
@@ -272,6 +271,7 @@ return function (Router $router) {
     $router->get('/academy', [\App\Controllers\Web\AcademyController::class, 'home']);
     $academyMw = [AuthMiddleware::class, TrainingModuleSanctionMiddleware::class, \App\Middleware\AcademyPaidMiddleware::class];
     $router->get('/academy/qr', [\App\Controllers\Web\AcademyController::class, 'qr'], $academyMw);
+    $router->get('/academy/media/{file}', [\App\Controllers\Web\AcademyController::class, 'media'], $academyMw);
     $router->get('/academy/{space}', [\App\Controllers\Web\AcademyController::class, 'space'], $academyMw);
     $router->post('/academy/action/{action}', [\App\Controllers\Web\AcademyController::class, 'action'], $academyMw);
 
@@ -588,7 +588,8 @@ return function (Router $router) {
     $router->post('/atak/passerelle/rejoindre', [AtakMapGatewayController::class, 'redeem'], $mwAtakMemberOnly);
     $router->post('/atak/passerelle/{id}/valider', [AtakMapGatewayController::class, 'accept'], $mwAtakMemberOnly);
     $router->post('/atak/passerelle/{id}/annuler', [AtakMapGatewayController::class, 'revoke'], $mwAtakMemberOnly);
-    $router->get('/formations/creer', [TrainingWizardController::class, 'index'], [AuthMiddleware::class]);
+    // Création d'un entraînement : désormais dans le Studio de l'Academy.
+    $router->get('/formations/creer', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('academy/studio'), 301), [AuthMiddleware::class]);
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
     // Accueil du profil joueur : parcours en étapes, que l'on peut passer et reprendre (jamais bloquant).
     $router->get('/account/bienvenue', [\App\Controllers\Web\ProfileWelcomeController::class, 'show'], [AuthMiddleware::class]);
@@ -813,7 +814,45 @@ return function (Router $router) {
     foreach (['/modpacks', '/modpacks/images/{id}', '/modpacks/{id}/download', '/modpacks/{slug}'] as $legacyModpack) {
         $router->get($legacyModpack, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('atak/mod')), [AuthMiddleware::class]);
     }
-    $router->get('/formations', [TrainingController::class, 'index'], $mwTraining);
+    /*
+     * Ancien LMS « Formations » : ses pages sont servies par l'Academy (mêmes contrôleurs, mêmes droits, mêmes données).
+     * Les adresses /formations/… redirigent en 301 (sans contrôle : la page cible applique les droits) en gardant le lien
+     * profond et les paramètres ; les formulaires
+     * (inscription, quiz, avis…) continuent de poster sur /formations/….
+     */
+    $legacyFormations = static function (string $target): \Closure {
+        return static function (\App\Core\Request $r, array $p) use ($target): \App\Core\Response {
+            $path = $target;
+            foreach ($p as $name => $value) {
+                $path = str_replace('{' . $name . '}', rawurlencode((string) $value), $path);
+            }
+            $query = http_build_query($r->queryParams());
+            return \App\Core\Response::redirect(url($path) . ($query !== '' ? '?' . $query : ''), 301);
+        };
+    };
+    $router->get('/formations', $legacyFormations('academy/catalogue'));
+    $router->get('/formations/mes-formations', $legacyFormations('academy/courses'));
+    $academyFormations = [
+        // Avant {slug} : sessions, qualifications, pages publiées, code d'accès, bilan, leçons, quiz, attestations.
+        '/sessions' => [TrainingController::class, 'sessions'],
+        '/competences' => [TrainingCompetencyController::class, 'userJourney'],
+        '/page/{slug}' => [TrainingController::class, 'formationCustomPage'],
+        '/page/{slug}/pdf' => [TrainingController::class, 'formationCustomPageExportPdf'],
+        '/code-acces' => [TrainingController::class, 'accessCodeForm'],
+        '/{slug}/echanges' => [TrainingController::class, 'courseExchanges'],
+        '/bilan-module' => [TrainingController::class, 'moduleBilan'],
+        '/lesson/{id}' => [TrainingController::class, 'lesson'],
+        '/quiz/{id}' => [TrainingController::class, 'quiz'],
+        '/attestation/{id}' => [TrainingController::class, 'certificatePublic'],
+        '/certificate/{id}' => [TrainingController::class, 'certificate'],
+        '/{slug}' => [TrainingController::class, 'showBySlug'],
+    ];
+    foreach ($academyFormations as $suffix => $handler) {
+        // Vérification publique d'une attestation (QR code des PDF) : sans connexion, comme avant.
+        $middleware = $suffix === '/attestation/{id}' ? [TrainingModuleSanctionMiddleware::class] : $mwTraining;
+        $router->get('/academy/formations' . $suffix, $handler, $middleware);
+        $router->get('/formations' . $suffix, $legacyFormations('academy/formations' . $suffix));
+    }
     $router->post('/formations/enroll', [TrainingController::class, 'postEnroll'], $mwTraining);
     $router->post('/formations/inscription/annuler', [TrainingController::class, 'postWithdrawEnrollment'], $mwTraining);
     $router->post('/formations/favorite', [TrainingController::class, 'postFavorite'], $mwTraining);
@@ -821,26 +860,10 @@ return function (Router $router) {
     $router->post('/formations/review', [TrainingController::class, 'postReview'], $mwTraining);
     $router->post('/formations/question', [TrainingController::class, 'postQuestion'], $mwTraining);
     $router->post('/formations/comment', [TrainingController::class, 'postComment'], $mwTraining);
-    $router->get('/formations/mes-formations', [TrainingController::class, 'myTraining'], $mwTraining);
-    /** Avant /formations/{slug} : sessions, préparation et qualifications. */
-    $router->get('/formations/sessions', [TrainingController::class, 'sessions'], $mwTraining);
-    $router->get('/formations/competences', [TrainingCompetencyController::class, 'userJourney'], $mwTraining);
-    /** Avant /formations/{slug} : documentations HTML publiées (pilotage /formation/pages-html). */
-    $router->get('/formations/page/{slug}', [TrainingController::class, 'formationCustomPage'], $mwTraining);
-    $router->get('/formations/page/{slug}/pdf', [TrainingController::class, 'formationCustomPageExportPdf'], $mwTraining);
     $router->post('/formations/page/{slug}/avis', [TrainingController::class, 'formationCustomPageSubmitFeedback'], $mwTraining);
-    $router->get('/formations/code-acces', [TrainingController::class, 'accessCodeForm'], $mwTraining);
     $router->post('/formations/code-acces', [TrainingController::class, 'accessCodeSubmit'], $mwTraining);
-    /** Doit rester avant /formations/{slug} pour que « …/echanges » ne soit pas confondu avec un slug. */
-    $router->get('/formations/{slug}/echanges', [TrainingController::class, 'courseExchanges'], $mwTraining);
-    $router->get('/formations/bilan-module', [TrainingController::class, 'moduleBilan'], $mwTraining);
     $router->post('/formations/bilan-module/notifier', [TrainingController::class, 'moduleBilanNotifyStaff'], $mwTraining);
-    $router->get('/formations/lesson/{id}', [TrainingController::class, 'lesson'], $mwTraining);
     $router->post('/formations/quiz/start', [TrainingController::class, 'startQuiz'], $mwTraining);
-    $router->get('/formations/quiz/{id}', [TrainingController::class, 'quiz'], $mwTraining);
-    $router->get('/formations/attestation/{id}', [TrainingController::class, 'certificatePublic'], [TrainingModuleSanctionMiddleware::class]);
-    $router->get('/formations/certificate/{id}', [TrainingController::class, 'certificate'], $mwTraining);
-    $router->get('/formations/{slug}', [TrainingController::class, 'showBySlug'], $mwTraining);
     // Portail SSE classifié (avant /atak pour priorité de matching)
     $router->get('/atak/sse', [SsePortalController::class, 'gate']);
     $router->post('/atak/sse/entrer', [SsePortalController::class, 'redeem']);

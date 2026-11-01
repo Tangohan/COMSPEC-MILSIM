@@ -68,6 +68,65 @@ final class AcademyRepository
         $stmt->execute([$tenantId, $key]);
     }
 
+    /** Cours de la communauté, brouillon compris (jamais les modules intégrés à l'application). */
+    public function editable(int $tenantId, string $key): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT content_json, published FROM academy_courses WHERE tenant_id = ? AND course_key = ?');
+        $stmt->execute([$tenantId, $key]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return null;
+        }
+        $content = json_decode($row['content_json'], true, 64, JSON_THROW_ON_ERROR);
+        $content['key'] = $key;
+        $content['published'] = (bool) $row['published'];
+        return $content;
+    }
+
+    /** Brouillon du Studio : il peut être incomplet, la publication le valide. */
+    public function createDraft(int $tenantId, int $userId, array $content): string
+    {
+        $key = 'course-' . bin2hex(random_bytes(8));
+        unset($content['key'], $content['published'], $content['demo'], $content['built_in']);
+        $stmt = $this->pdo->prepare('INSERT INTO academy_courses (tenant_id, course_key, content_json, published, updated_by) VALUES (?, ?, ?, 0, ?)');
+        $stmt->execute([$tenantId, $key, json_encode($content, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), $userId]);
+        return $key;
+    }
+
+    /** Seul un brouillon se modifie : un cours publié change par une nouvelle version. */
+    public function updateDraft(int $tenantId, string $key, int $userId, array $content): bool
+    {
+        unset($content['key'], $content['published'], $content['demo'], $content['built_in']);
+        $stmt = $this->pdo->prepare('UPDATE academy_courses SET content_json = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE tenant_id = ? AND course_key = ? AND published = 0');
+        $stmt->execute([json_encode($content, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), $userId, $tenantId, $key]);
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Publie un brouillon complet. Une nouvelle version retire l'ancienne du catalogue ;
+     * les stagiaires déjà inscrits gardent leur copie du contenu.
+     */
+    public function publishDraft(int $tenantId, string $key): void
+    {
+        $course = $this->editable($tenantId, $key);
+        if ($course === null || $course['published']) {
+            throw new \DomainException('locked');
+        }
+        AcademyCurriculum::validate($course);
+        $this->pdo->beginTransaction();
+        try {
+            $this->publish($tenantId, $key);
+            if (isset($course['replaces']) && is_string($course['replaces']) && $course['replaces'] !== $key) {
+                $stmt = $this->pdo->prepare('UPDATE academy_courses SET published = 0 WHERE tenant_id = ? AND course_key = ?');
+                $stmt->execute([$tenantId, $course['replaces']]);
+            }
+            $this->pdo->commit();
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
     public function enroll(int $tenantId, int $userId, array $course): void
     {
         $stmt = $this->pdo->prepare('INSERT IGNORE INTO academy_learners (tenant_id, user_id, course_key, state_json) VALUES (?, ?, ?, ?)');

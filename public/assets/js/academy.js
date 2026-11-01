@@ -27,59 +27,6 @@ document.querySelectorAll('[data-print]').forEach(button => button.addEventListe
   if (notes && printed) printed.textContent = notes.value;
   window.print();
 }));
-document.querySelectorAll('[data-course-editor]').forEach(form => {
-  const chapters = form.querySelector('[data-chapters]');
-  const chapterTemplate = chapters.querySelector('[data-chapter]').cloneNode(true);
-  const fields = form.querySelector('[data-editor-fields]');
-  fields.hidden = false;
-  const advanced = form.querySelector('[data-advanced]');
-  const json = form.querySelector('[name=content]');
-  const bilingual = (root, selector) => Object.fromEntries(['fr', 'en'].map(language => [language, root.querySelector(`${selector}[data-language="${language}"]`).value]));
-  const serialize = () => {
-    const content = {
-      title: bilingual(form, '[data-course-field="title"]'),
-      summary: bilingual(form, '[data-course-field="summary"]'),
-      chapters: [...chapters.querySelectorAll('[data-chapter]')].map(chapter => {
-        const content = Object.fromEntries(['title','theory','demonstration','question','feedback'].map(key => [key, bilingual(chapter, `[data-chapter-field="${key}"]`)]));
-        content.options = [0, 1, 2].map(index => bilingual(chapter, `[data-option="${index}"]`));
-        content.answer = Number(chapter.querySelector('[data-answer]').value);
-        content.resources = [...chapter.querySelectorAll('[data-resources] > .editor-resource')].map(resource => ({
-          type: resource.querySelector('[data-resource-type]').value,
-          title: bilingual(resource, '[data-resource-field="title"]'),
-          url: bilingual(resource, '[data-resource-field="url"]')
-        }));
-        return content;
-      })
-    };
-    json.value = JSON.stringify(content, null, 2);
-  };
-  const renumber = () => chapters.querySelectorAll('[data-chapter-number]').forEach((number, index) => number.textContent = index + 1);
-  form.querySelector('[data-add-chapter]').addEventListener('click', () => {
-    if (chapters.children.length >= 20) return;
-    const chapter = chapterTemplate.cloneNode(true);
-    chapter.querySelectorAll('input,textarea').forEach(input => input.value = '');
-    chapters.append(chapter);
-    renumber();
-    chapter.querySelector('textarea').focus();
-  });
-  form.addEventListener('click', event => {
-    const remove = event.target.closest('[data-remove-chapter]');
-    if (remove && chapters.children.length > 1) { remove.closest('[data-chapter]').remove(); renumber(); }
-    const addResource = event.target.closest('[data-add-resource]');
-    if (addResource) {
-      const target = addResource.closest('[data-chapter]').querySelector('[data-resources]');
-      if (target.children.length < 20) target.append(form.querySelector('[data-resource-template]').content.cloneNode(true));
-    }
-    const removeResource = event.target.closest('[data-remove-resource]');
-    if (removeResource) removeResource.closest('.editor-resource').remove();
-  });
-  advanced.addEventListener('toggle', () => {
-    if (advanced.open) serialize();
-    fields.hidden = advanced.open;
-    fields.querySelectorAll('input,textarea,select').forEach(input => input.disabled = advanced.open);
-  });
-  form.addEventListener('submit', () => { if (!advanced.open) serialize(); });
-});
 // This stores acknowledgement only. Identity, community and entitlement stay server-side.
 document.querySelectorAll('[data-academy-disclaimer]').forEach(dialog => {
   const key = `athena:academy:disclaimer:${dialog.dataset.disclaimerVersion}`;
@@ -99,4 +46,112 @@ document.querySelectorAll('[data-academy-disclaimer]').forEach(dialog => {
     else dialog.removeAttribute('open');
   });
   document.querySelectorAll('[data-open-disclaimer]').forEach(button => button.addEventListener('click', open));
+});
+
+// Salle de cours : mode focus (préférence locale), sommaire mobile, choix de réponse, onglets.
+(() => {
+  const body = document.body;
+  const focusButton = document.querySelector('[data-focus-toggle]');
+  if (focusButton) {
+    const key = 'athena:academy:focus';
+    const apply = on => { body.classList.toggle('acr-focus', on); focusButton.setAttribute('aria-pressed', String(on)); };
+    try { apply(localStorage.getItem(key) === '1'); } catch { /* préférence facultative */ }
+    const toggle = () => { const on = !body.classList.contains('acr-focus'); apply(on); try { localStorage.setItem(key, on ? '1' : '0'); } catch { /* idem */ } };
+    focusButton.addEventListener('click', toggle);
+    document.addEventListener('keydown', event => {
+      if (event.key.toLowerCase() === 'f' && !event.ctrlKey && !event.metaKey && !event.altKey && !event.target.closest('input,textarea,select,[contenteditable]')) toggle();
+    });
+  }
+  const outlineButton = document.querySelector('[data-outline-toggle]');
+  if (outlineButton) outlineButton.addEventListener('click', () => {
+    if (window.matchMedia('(max-width: 900px)').matches) {
+      const open = body.classList.toggle('acr-outline-open');
+      outlineButton.setAttribute('aria-expanded', String(open));
+    } else if (focusButton) {
+      focusButton.click();
+      outlineButton.setAttribute('aria-expanded', String(!body.classList.contains('acr-focus')));
+    }
+  });
+  document.querySelectorAll('[data-choice]').forEach(group => {
+    const message = group.closest('form')?.querySelector('[data-choice-msg]');
+    group.addEventListener('change', event => {
+      if (!message || event.target.type !== 'radio') return;
+      const letter = event.target.closest('.op')?.querySelector('.lt')?.textContent ?? '';
+      message.textContent = `${message.dataset.chosen} ${letter}`;
+    });
+  });
+  document.querySelectorAll('[data-tabs]').forEach(root => {
+    const tabs = [...root.querySelectorAll('[data-tab]')];
+    const show = name => {
+      tabs.forEach(tab => tab.setAttribute('aria-selected', String(tab.dataset.tab === name)));
+      root.querySelectorAll('[data-panel]').forEach(panel => { panel.hidden = panel.dataset.panel !== name; });
+    };
+    tabs.forEach(tab => tab.addEventListener('click', () => show(tab.dataset.tab)));
+    show(tabs[0]?.dataset.tab);
+  });
+})();
+
+// Studio : une étape visible à la fois, état d'enregistrement, Ctrl+S, confirmations.
+document.querySelectorAll('[data-studio-form]').forEach(form => {
+  const stepInput = form.querySelector('[data-step-input]');
+  const state = document.querySelector('[data-save-state]');
+  let dirty = false;
+  let submitting = false;
+  const showStep = (step, push) => {
+    const panel = form.querySelector(`[data-step-panel="${step}"]`);
+    if (!panel) return false;
+    form.querySelectorAll('[data-step-panel]').forEach(item => { item.hidden = item !== panel; });
+    document.querySelectorAll('[data-step-link]').forEach(link => {
+      const on = link.dataset.stepLink === step && link.classList.contains('l');
+      link.classList.toggle('on', on);
+      if (on) link.setAttribute('aria-current', 'true'); else link.removeAttribute('aria-current');
+    });
+    const stage = step.split('.')[1];
+    document.querySelectorAll('[data-step-tip]').forEach(tip => { tip.hidden = tip.dataset.stepTip !== stage; });
+    const chapter = step.split('.')[0];
+    const target = form.querySelector('[name=slides_target]');
+    if (target && target.value !== 'new') target.value = chapter;
+    if (stepInput) stepInput.value = step;
+    if (push) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('step', step);
+      history.replaceState(null, '', url);
+    }
+    panel.closest('.col')?.scrollTo({ top: 0 });
+    return true;
+  };
+  document.querySelectorAll('[data-step-link]').forEach(link => link.addEventListener('click', event => {
+    if (showStep(link.dataset.stepLink, true)) {
+      event.preventDefault();
+      link.closest('details')?.removeAttribute('open');
+    }
+  }));
+  form.addEventListener('input', () => {
+    if (dirty || !state) return;
+    dirty = true;
+    state.textContent = state.dataset.dirty;
+    state.classList.add('dirty');
+  });
+  form.addEventListener('click', event => {
+    const button = event.target.closest('[data-confirm]');
+    if (button && !window.confirm(button.dataset.confirm)) event.preventDefault();
+  });
+  form.addEventListener('submit', () => { submitting = true; });
+  document.querySelectorAll('button[form="ast-form"]').forEach(button => button.addEventListener('click', () => { submitting = true; }));
+  window.addEventListener('beforeunload', event => {
+    if (dirty && !submitting) { event.preventDefault(); event.returnValue = ''; }
+  });
+  document.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      if (form.querySelector('fieldset:disabled')) return;
+      submitting = true;
+      form.requestSubmit();
+    }
+  });
+  document.querySelectorAll('[data-open-course-tab]').forEach(button => button.addEventListener('click', () => document.querySelector('[data-itab="course"]')?.click()));
+  document.querySelectorAll('[data-itab]').forEach(tab => tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-itab]').forEach(item => item.setAttribute('aria-selected', String(item === tab)));
+    document.querySelectorAll('[data-ipanel]').forEach(panel => { panel.hidden = panel.dataset.ipanel !== tab.dataset.itab; });
+  }));
 });

@@ -52,7 +52,7 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
 <?php
     $crumbName = match ($marketingActive) {
         'about' => __('site.about'),
-        'academy' => 'ATHENA Academy',
+        'academy' => 'Academy',
         'contact' => __('site.contact'),
         'changelog' => __('site.changelog'),
         'history' => __('site.history'),

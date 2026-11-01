@@ -51,6 +51,9 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 :: Overwatch connect est embarque : connexion Athena, synchro, FRS, Reco... sans charger @COMSPECOverwatch.
 set "OW=%ROOT%..\UptoDate"
+:: Garde : sans le materiel d attestation (ignore par Git, a copier a la main dans chaque dossier de build), la DLL publiee
+:: est refusee par Athena pour tous les joueurs (ERR|CLIENT_UNTRUSTED). Incident du 01/11/2026 (2.9.22/2.9.23).
+if not exist "%OW%\COMSPECExtension\ClientAttestMaterial.Local.cs" (echo [ERREUR] ClientAttestMaterial.Local.cs absent : copiez-le depuis le depot principal avant de builder. & exit /b 1)
 if "%ProgramFiles(x86)%"=="" set "ProgramFiles(x86)=C:\Program Files (x86)"
 dotnet publish "%OW%\COMSPECExtension\COMSPECExtension.csproj" -c Release -r win-x64 /p:NativeLib=Shared /p:SelfContained=true /p:IlcUseEnvironmentalTools=true --nologo
 if errorlevel 1 exit /b 1

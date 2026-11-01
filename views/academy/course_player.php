@@ -1,26 +1,17 @@
 <?php
 use App\Services\Academy\AcademyCurriculum;
-$classroomFocus = $classroomFocus ?? false;
 $courseDone = $state && !empty($state['completed']);
 $stage = $state ? (int)$state['stage'] : 0;
 $stepsHtml = '';
 ?>
 <?php if ($selected && $state): ob_start(); ?><ol class="lesson-steps"><?php foreach (AcademyCurriculum::STAGES as $index=>$step): $stepDone=$courseDone||$index<$stage; ?><li class="<?= $stepDone?'done':($index===$stage?'current':'') ?>" <?= !$stepDone&&$index===$stage?'aria-current="step"':'' ?>><span><?= $stepDone?'✓':$index+1 ?></span><span class="lesson-steps__label"><?= $h($t($step)) ?></span></li><?php endforeach ?></ol><?php $stepsHtml=(string)ob_get_clean(); endif ?>
-<?php if ($classroomFocus && $selected): ?>
-<header class="academy-classroom__bar">
-<a class="academy-classroom__back" href="<?= $h($link('dashboard')) ?>"><span aria-hidden="true">←</span> <?= $h($t('back_dashboard')) ?></a>
-<div class="academy-classroom__heading"><p class="eyebrow"><?= $h($t('classroom')) ?><?php if ($state): ?> · <?= $h($t('chapter')) ?> <?= (int)$state['chapter']+1 ?> <?= $h($t('chapter_of')) ?> <?= count($selected['chapters']) ?><?php endif ?></p><h1><?= $h($local($selected['title'])) ?></h1></div>
-<?php if ($state): ?><div class="academy-classroom__progress"><div class="progress-label"><span><?= $h($t('progress')) ?></span><b><?= $percent($state) ?> %</b></div><progress max="100" value="<?= $percent($state) ?>"><?= $percent($state) ?>%</progress></div>
-<div class="academy-classroom__steps"><?= $stepsHtml ?></div><?php endif ?>
-</header>
-<?php endif ?>
 <?php if (!$selected): ?>
 <p><?= $h($t('empty_text')) ?></p><a class="button" href="<?= $h($link('catalogue')) ?>"><?= $h($t('catalogue')) ?> →</a>
 <?php if ($legacyCourses!==[]): require __DIR__.'/native_course_list.php'; endif ?>
 <?php elseif (!$state): ?>
 <section class="lms-panel lesson panel">
 <p class="eyebrow"><?= $h($t(!empty($selected['demo'])?'demo':'published_course')) ?></p>
-<?php if (!$classroomFocus): ?><h2><?= $h($local($selected['title'])) ?></h2><?php endif ?><p><?= $h($local($selected['summary'])) ?></p>
+<h2><?= $h($local($selected['title'])) ?></h2><p><?= $h($local($selected['summary'])) ?></p>
 <?php if (!empty($selected['license'])): ?><p class="academy-license-note"><?= $h($local($selected['license'])) ?></p><?php endif ?>
 <p><?= $h($t('not_official')) ?></p>
 <?php if (!empty($selected['duration_minutes'])): ?><p><?= $h($t('estimated_duration')) ?> : <?= (int)$selected['duration_minutes'] ?> min</p><?php endif ?>
@@ -29,18 +20,6 @@ $stepsHtml = '';
 <?php $formStart('enroll',$selected['key']); ?><button class="button" <?= !$academyStorageReady?'disabled':'' ?>><?= $h($t('enroll')) ?> ↗</button></form>
 </section>
 <?php else: $chapter=$selected['chapters'][$state['chapter']]; ?>
-<?php if ($classroomFocus): ?>
-<div class="academy-classroom__layout">
-<nav class="academy-classroom__toc" aria-label="<?= $h($t('course_outline')) ?>">
-<p class="eyebrow"><?= $h($t('course_outline')) ?></p>
-<ol><?php foreach ($selected['chapters'] as $tocIndex=>$tocChapter): $tocState=$courseDone||$tocIndex<(int)$state['chapter']?'is-done':($tocIndex===(int)$state['chapter']?'is-current':''); ?><li class="academy-toc__item <?= $tocState ?>"<?= $tocState==='is-current'?' aria-current="location"':'' ?>><span class="academy-toc__mark" aria-hidden="true"><?= $tocState==='is-done'?'✓':$tocIndex+1 ?></span><span><?= $h($local($tocChapter['title'])) ?><?php if ($tocState==='is-current'): ?><small><?= $h($t('step_label')) ?> <?= $stage+1 ?>/7 · <?= $h($t(AcademyCurriculum::STAGES[$stage] ?? '')) ?></small><?php endif ?></span></li><?php endforeach ?></ol>
-</nav>
-<div class="academy-classroom__body">
-<div class="lesson-header">
-<h2><?= $h($t('chapter')) ?> <?= (int)$state['chapter']+1 ?> — <?= $h($local($chapter['title'])) ?></h2>
-<?php if (!empty($selected['license'])): ?><p class="academy-license-caption"><?= $h($local($selected['license'])) ?></p><?php endif ?>
-</div>
-<?php else: ?>
 <div class="lesson-header">
 <span class="pill"><?= $h($local($selected['title'])) ?></span>
 <h2><?= $h($t('chapter')) ?> <?= (int)$state['chapter']+1 ?> — <?= $h($local($chapter['title'])) ?></h2>
@@ -48,7 +27,6 @@ $stepsHtml = '';
 <div class="progress-label"><span><?= $h($t('progress')) ?></span><b><?= $percent($state) ?> %</b></div><progress max="100" value="<?= $percent($state) ?>"><?= $percent($state) ?>%</progress>
 </div>
 <?= $stepsHtml ?>
-<?php endif ?>
 <?php if (!empty($state['feedback'])): ?><div class="notice" role="status"><?= $h($t($state['feedback'])) ?><?php if (!empty($state['last_practice_feedback']) && $state['feedback']==='correct'): ?><p><?= $h($local($state['last_practice_feedback'])) ?></p><?php endif ?></div><?php endif ?>
 <article class="lms-panel lesson panel">
 <?php if (!empty($state['completed'])): ?>
@@ -102,5 +80,4 @@ $stepsHtml = '';
 <?php if (!empty($chapter['resources'])): ?><section class="academy-lesson-resources"><h3><?= $h($t('reference')) ?></h3><?php $resources=$chapter['resources']; require __DIR__.'/course_resources.php'; ?></section><?php endif ?>
 </details>
 <?php endif ?>
-<?php if ($classroomFocus): ?></div></div><?php endif ?>
 <?php endif ?>
