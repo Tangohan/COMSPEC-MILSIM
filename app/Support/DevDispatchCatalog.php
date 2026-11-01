@@ -294,6 +294,19 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1242, '2026-11-01', 'Téléphone : plus d’à-coups, carte lisible, anglais complet', 'Avec le pack 2.9.22 et la liaison 2.0.112, plus aucun échange avec Athena ne fige le jeu, même sur un serveur chargé. La carte du téléphone devient lisible de jour comme de nuit (noms qui ne se chevauchent plus, couleurs nettes, réglages d’étiquettes), le multijoueur envoie beaucoup moins de données et toute l’interface est traduite en anglais.', [
+                'Carte : réglages CONFIGURATION > Étiquettes (taille du texte, fond, noms affichés)',
+                'Traduction anglaise complète du téléphone, d’Overwatch et du SSE',
+            ], [
+                'Plus aucun gel pendant les échanges avec Athena',
+                'Moins de trafic en multijoueur (plan du camp, TOC, sang SSE, suivi des alliés)',
+                'Carte et montre : marqueurs relus moins souvent',
+            ], [
+                'Réponses d’Athena perdues quand beaucoup d’informations arrivaient à la fois',
+                'Galerie, Musique et pièces jointes qui figeaient l’image',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.22 (liaison 2.0.112 incluse), quittez Arma complètement, puis relancez.',
+            ], 'Pack téléphone 2.9.22'),
             $pr(1219, '2026-11-01', 'Notre histoire : versions, kilomètres et nouvelle page', 'La page « Notre histoire » est entièrement refaite : carte topographique animée qui mène au total de kilomètres parcourus en jeu, chiffres réels de la plateforme et de votre communauté, histoire année par année et frise complète des versions (téléphone, liaison, Overwatch, SSE, portail) avec filtres par produit.', [
                 'Frise de toutes les versions publiées, filtrable par produit',
                 'Kilomètres parcourus en jeu (à pied, véhicule, vol, mer, chute libre) et heures de jeu',

@@ -58,7 +58,7 @@ if (isNull _bg) then {
     // Croix de fermeture (à droite) : masque le bandeau jusqu'à la prochaine version.
     private _close = _display ctrlCreate ["RscButton", 9615];
     _close ctrlSetPosition [_barX + _barW - _barH, _barY, _barH, _barH];
-    _close ctrlSetText "×";
+    _close ctrlSetText (("×") call comspec_overwatch_connect_fnc_tr);
     _close ctrlSetBackgroundColor [0, 0, 0, 0];
     _close ctrlSetTextColor [0.78, 0.85, 0.9, 1];
     _close ctrlSetTooltip (("Fermer") call comspec_overwatch_connect_fnc_tr);

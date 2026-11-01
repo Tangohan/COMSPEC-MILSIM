@@ -150,7 +150,7 @@ private _resolve = {
 private _rel = createHashMapFromArray [
     ["OWNER", "propriétaire"], ["ASSOCIATE", "associé"], ["CONTACT", "contact"], ["LOCATION", "lieu"],
     ["MEMBER", "membre"], ["FAMILY", "famille"], ["FINANCE", "finance"], ["SUPPLIES", "fournit"],
-    ["USES", "utilise"], ["COMMANDS", "commande"], ["COMMS", "communications"], ["OWNS", "possède"]
+    ["USES", "utilise"], ["COMMANDS", "dirige"], ["COMMS", "communications"], ["OWNS", "possède"]
 ];
 if (!isNil "comspec_sse_linkGraph") then {
     {

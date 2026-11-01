@@ -101,15 +101,17 @@ final class OrbatBilletArchitectureTest extends TestCase
 
     public function testCanvasShowsBilletManningLabelAndVacantPosts(): void
     {
-        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/orbat/orbat_canvas.php');
-        self::assertStringContainsString('billetManningLabel', $src);
+        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/orbat-app.js');
+        $canvas = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/orbat/orbat_canvas.php');
         self::assertStringContainsString('strengthTheoretical', $src);
-        self::assertStringContainsString('detail-billets', $src);
-        self::assertStringContainsString('ORBAT théorique', $src);
+        self::assertStringContainsString('billetAuthorized', $src);
         self::assertStringContainsString('seat_status', $src);
-        self::assertStringContainsString('orbat-preview-as', $src);
-        self::assertStringContainsString('detail-command', $src);
-        self::assertStringContainsString('detail-signals', $src);
+        self::assertStringContainsString("t('vacant')", $src);
+        self::assertStringContainsString("t('sec_posts')", $src);
+        self::assertStringContainsString('derivedCommand', $src);
+        self::assertStringContainsString('capacitySignals', $src);
+        self::assertStringContainsString('id="orb-as"', $canvas);
+        self::assertStringContainsString('preview_as=', $src);
     }
 
     public function testOccupancyTypesAndDomainModelAreExplicit(): void
@@ -136,8 +138,8 @@ final class OrbatBilletArchitectureTest extends TestCase
         self::assertStringContainsString('OrganizationDataQualityController', $routes);
         $caps = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/OrgVisibilityCapabilities.php');
         self::assertStringContainsString('function asPreview', $caps);
-        $hub = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/organization/structure_hub.php');
-        self::assertStringContainsString('qualite-donnees', $hub);
+        $orbat = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/orbat/orbat_canvas.php');
+        self::assertStringContainsString('qualite-donnees', $orbat);
         $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/organization/data_quality.php');
         self::assertStringContainsString('Qualité des données', $view);
         self::assertStringContainsString('Tableau des mouvements', $view);

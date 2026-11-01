@@ -18,19 +18,14 @@ if ((_ul find "_defined #") >= 0) exitWith { true };
 if ((_ul find "_ictab_defined") >= 0) exitWith { true };
 if ((_ul find "ictab_defined") >= 0) exitWith { true };
 
-if (!isNil "BCE_cTab_Marker_Sync") then {
-    private _sync = BCE_cTab_Marker_Sync;
-    if (_sync isEqualType "" && {_sync isNotEqualTo ""} && {(_markerName find _sync) == 0}) exitWith { true };
-};
+// exitWith au niveau de la fonction (dans un then, le true était perdu).
+if (!isNil "BCE_cTab_Marker_Sync" && {BCE_cTab_Marker_Sync isEqualType ""} && {BCE_cTab_Marker_Sync isNotEqualTo ""} && {(_markerName find BCE_cTab_Marker_Sync) == 0}) exitWith { true };
 
 // Marqueurs sans underscore initial : toujours candidats (filtrés ailleurs)
 if ((_markerName select [0, 1]) isNotEqualTo "_") exitWith { true };
 
 // Filet : losange OTAN (o_inf, b_inf…) même si le nom IceMan change
 // Existence via getMarkerColor ("" = absent) : « in allMapMarkers » recopiait toute la liste à chaque appel.
-if ((getMarkerColor _markerName) isNotEqualTo "") then {
-    private _type = toLower (markerType _markerName);
-    if ((_type select [0, 2]) in ["o_", "b_", "n_", "c_", "u_"]) exitWith { true };
-};
+if ((getMarkerColor _markerName) isNotEqualTo "" && {((toLower (markerType _markerName)) select [0, 2]) in ["o_", "b_", "n_", "c_", "u_"]}) exitWith { true };
 
 false

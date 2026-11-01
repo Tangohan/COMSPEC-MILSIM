@@ -9,7 +9,7 @@ use PDO;
 use Throwable;
 
 /**
- * Liens « compléter son profil » (table member_profile_invites, étape database/steps/3250_member_profile_invites.php).
+ * Liens « compléter son profil » (table member_profile_invites, étape database/steps/3260_member_profile_invites.php).
  *
  * Toutes les lectures et écritures sont bornées à une communauté. Les dates sont fournies par l'appelant
  * (format Y-m-d H:i:s, UTC du serveur) : SQL portable, testable sans horloge.

@@ -154,7 +154,10 @@ switch (_act) do {
     case "repeatCycle": { ["repeat", (createHashMapFromArray [["off", "all"], ["all", "one"], ["one", "off"]]) getOrDefault [_m get "repeat", "all"]] call comspec_atak_native_fnc_musicAction; };
     case "repeat": { _m set ["repeat", _arg]; profileNamespace setVariable ["COMSPEC_ATAK_MusicRepeat", _arg]; call _rerender; };
     case "files": {
-        private _raw = ["MusicList"] call comspec_atak_native_fnc_extensionCall;
+        // Parcours du dossier musique (disque) par « Async » de la DLL native : jamais sur le fil du jeu.
+        if (!canSuspend) exitWith { [_arg, _redraw] spawn { ["files", _this select 0, _this select 1] call comspec_atak_native_fnc_musicAction; }; };
+        private _raw = (["COMSPECATAKNativeExtension", "MusicList", []] call comspec_atak_native_fnc_extAwait) param [0, ""];
+        if !(_raw isEqualType "") then { _raw = str _raw; };
         private _p = _raw splitString "|";
         if ((_p param [0, ""]) isEqualTo "OK") then {
             _ui set ["dir", _p param [1, ""]];

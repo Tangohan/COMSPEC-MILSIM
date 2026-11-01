@@ -19,7 +19,7 @@ final class UnitSheetsEnrichmentAssetTest extends TestCase
         $status = (string) file_get_contents($root . '/app/Support/UnitAdminStatus.php');
         $catalog = (string) file_get_contents($root . '/app/Services/ConfigurationUpdate/ConfigurationUpdateCatalog.php');
         $sheet = (string) file_get_contents($root . '/views/admin/organization/unit_sheet.php');
-        $canvas = (string) file_get_contents($root . '/views/partials/orbat/orbat_canvas.php');
+        $canvas = (string) file_get_contents($root . '/public/assets/js/orbat-app.js');
         $unite = (string) file_get_contents($root . '/views/admin/member_situation/unite.php');
         $dispatch = (string) file_get_contents($root . '/app/Support/DevDispatchCatalog.php');
 
@@ -48,10 +48,10 @@ final class UnitSheetsEnrichmentAssetTest extends TestCase
         self::assertStringContainsString('Postes (TO&amp;E)', $sheet);
         self::assertStringContainsString('Documents', $sheet);
 
-        self::assertStringContainsString('is-health-critical', $canvas);
-        self::assertStringContainsString('orbat-ed-motto', $canvas);
-        self::assertStringContainsString('full-sheet', $canvas);
-        self::assertStringContainsString('detail-deputy', $canvas);
+        self::assertStringContainsString('keyPostsHealth', $canvas);
+        self::assertStringContainsString('data-f="motto"', $canvas);
+        self::assertStringContainsString('fullSheetBase', $canvas);
+        self::assertStringContainsString('n.deputy', $canvas);
 
         self::assertStringContainsString('unitMotto', $unite);
         self::assertStringContainsString('bo-unit-hero__motto', $unite);

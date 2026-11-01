@@ -316,15 +316,18 @@ switch (true) do {
         [] call comspec_overwatch_connect_fnc_openBriefingBoard;
     };
     case (_cmd isEqualTo "briefing:community"): {
-        private _url = missionNamespace getVariable ["COMSPEC_CommunityGoogleSlidesUrl", ""];
-        if (_url isEqualTo "") then {
-            [] call comspec_overwatch_connect_fnc_getBriefingSlides;
-            _url = missionNamespace getVariable ["COMSPEC_CommunityGoogleSlidesUrl", ""];
-        };
-        if (_url isEqualTo "") then {
-            ["COMSPEC_Warning", ["Aucun brief Google publié pour la communauté."]] call comspec_overwatch_connect_fnc_showNotification;
-        } else {
-            [_url, 0, true] call comspec_overwatch_connect_fnc_loadGoogleBriefing;
+        // Liste des diapositives demandée à Athena (HTTP) : hors du fil du jeu.
+        [] spawn {
+            private _url = missionNamespace getVariable ["COMSPEC_CommunityGoogleSlidesUrl", ""];
+            if (_url isEqualTo "") then {
+                [] call comspec_overwatch_connect_fnc_getBriefingSlides;
+                _url = missionNamespace getVariable ["COMSPEC_CommunityGoogleSlidesUrl", ""];
+            };
+            if (_url isEqualTo "") then {
+                ["COMSPEC_Warning", ["Aucun brief Google publié pour la communauté."]] call comspec_overwatch_connect_fnc_showNotification;
+            } else {
+                [_url, 0, true] call comspec_overwatch_connect_fnc_loadGoogleBriefing;
+            };
         };
     };
     case ((_cmd select [0, 15]) isEqualTo "briefing:google|"): {

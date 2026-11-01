@@ -160,9 +160,8 @@ if (!(_prev isEqualType [])) then { _prev = []; };
 missionNamespace setVariable ["COMSPEC_TacticalZoneIds", _seen, false];
 missionNamespace setVariable ["COMSPEC_TacticalZoneSigs", _nextSigs, false];
 
-// Toutes les zones qui contiennent le joueur (checkPlayerInDangerZone ne rend que la première : un OBJECTIF / LZ
+// Toutes les zones qui contiennent le joueur, pas seulement la première (un OBJECTIF / LZ
 // listé avant une DANGER_ZONE superposée masquait l'alerte, et A puis A+B puis A réalertait A).
-// Même test de contenance que checkPlayerInDangerZone.
 private _hits = [];
 if (!isNull player && {alive player}) then {
     private _ppos = getPos player;

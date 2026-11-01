@@ -81,7 +81,7 @@ But : une cellule de trois hommes dans une maison, un ordinateur et des papiers 
 2. **Rendez les joueurs capables d'exploiter** : rien à faire, les actions ACE sont toujours là. Pour le terminal biométrique, posez le module **Doter en terminal SEEK** (catégorie *3. Mission et scénario*) près du point de départ des joueurs, rayon 25 m.
 3. **Générez le site** : posez le module **Créer un site SSE complet** (catégorie *1. Sites et objets*) au centre de la maison. Rayon 35 m, type *Cellule insurgée*, richesse *Détaillée*. Tout ce qui est dans le rayon reçoit identités, téléphones, documents et liens.
 4. **Choisissez l'apparence des fiches** (facultatif) : module **Présentation des documents SSE**, modèle *Terrain — feuille tachée*.
-5. **Lancez** : en jeu, menu ACE sur un prisonnier › **SSE** › *Inspecter*, *Fouiller*, *Biométrie › Capture complète* ; sur l'ordinateur › *Exploitation numérique* ; sur la caisse › *Fouiller*, *Collecter*, *Mettre sous scellé*. Menu ACE personnel › **COMSPEC SSE** › *Tableau des liens* pour voir le réseau apparaître.
+5. **Lancez** : en jeu, menu ACE sur un prisonnier › **SSE** › *Fouiller*, *Biométrie › Capture complète* ; sur l'ordinateur › *Exploitation numérique* ; sur la caisse › *Fouiller*, *Collecter*, *Mettre sous scellé*. Menu ACE personnel › **COMSPEC SSE** › *Tableau des liens* pour voir le réseau apparaître.
 
 Variante sans préparation : au Zeus, **COMSPEC SSE · Outils › Tutoriel : poser un exercice ici** pose une cellule complète prête à exploiter.
 
@@ -338,7 +338,7 @@ Les objets d'autres mods sont acceptés en substitut quand le réglage *Accepter
 
 ## 11. Les actions des joueurs (menu ACE)
 
-**Sur une personne** (touche Windows › SSE) : Inspecter (5 s), Photographier (3 s, appareil photo), Fouiller (5 s), Marquer comme exploité, Lire documents (6 s), **Ouvrir le terminal SSE (dossiers)**, Lire la plaque (si ACE), Approfondir l'exploitation, Chronologie SSE.
+**Sur une personne** (touche Windows › SSE) : Photographier (3 s, appareil photo), Fouiller (5 s), Marquer comme exploité, Lire documents (6 s), **Ouvrir le terminal SSE (dossiers)**, Lire la plaque (si ACE), Approfondir l'exploitation, Chronologie SSE.
 Sous-menu **Biométrie** : Ouvrir SEEK II, Empreintes (8 s), Iris (5 s), Photo faciale (3 s), ADN (12 s), Capture complète (25 s), Identifier (8 s).
 Sous-menu **Exploitation numérique** : identifier l'appareil, contacts, messages, appels, photos, coordonnées, extraction complète, informations système, utilisateurs, documents, navigateur, messagerie, supports connectés, identifiants, collecter un support USB/SD.
 
@@ -355,7 +355,7 @@ Sous-menu **Exploitation numérique** : identifier l'appareil, contacts, message
 Échap › Options › Réglages de l'addon › **COMSPEC SSE** :
 
 - **Matériel** : exiger le matériel SSE, accepter les items d'autres mods, alias matériels additionnels.
-- **Durées** : inspecter, fouilles, photo, empreintes, téléphone, ordinateur.
+- **Durées** : fouilles, photo, empreintes, téléphone, ordinateur.
 - **Génération** : probabilité de données inutiles, de fausse piste.
 - **Réseau** : identifiant de mission, **référence dossier SSE**, identifiant carte, préférer l'extension COMSPEC.
 - **Intel** : mode entraînement, niveau opérateur, triage et pivot automatiques.

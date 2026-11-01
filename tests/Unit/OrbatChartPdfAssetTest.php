@@ -29,7 +29,8 @@ final class OrbatChartPdfAssetTest extends TestCase
         self::assertStringContainsString('orbatPdf', $controller);
         self::assertStringContainsString('OrbatChartPdfService', $controller);
         self::assertStringContainsString('orbat/export', $canvas);
-        self::assertStringContainsString('Exporter PDF', $canvas);
+        self::assertStringContainsString("\$T['export_pdf']", $canvas);
+        self::assertStringContainsString('Exporter PDF', (string) file_get_contents($root . '/lang/fr/orbat.php'));
         $labels = (string) file_get_contents($root . '/app/Support/OrbatSheetLabels.php');
         self::assertStringContainsString("\$t('chart')", $view);
         self::assertStringContainsString("\$t('composition')", $view);

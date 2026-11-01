@@ -1592,7 +1592,9 @@ class PersonnelController
         }
         $tid = (int) $tenantId;
         $gate = Gate::getInstance();
-        if (!$gate->allows('organization.orbat.view')) {
+        // Page unique de l’ORBAT : reprend aussi les accès de l’ancien « Structure & recrutement » du back-office.
+        $orgAdmin = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support');
+        if (!$gate->allows('organization.orbat.view') && !$gate->allows('organization.orbat.manage') && !$orgAdmin) {
             Session::flash('error', 'Vous n’avez pas accès à l’organigramme des unités.');
 
             return Response::redirect(url('dashboard'));
@@ -1627,14 +1629,50 @@ class PersonnelController
             }
         }
 
-        return Response::view('layout.main', [
+        $rawOpen = strtolower(trim((string) $request->query('ouvrir', '')));
+        $data = [
             'content' => 'personnel.orbat',
             'title' => 'ORBAT',
             'orbatRosterData' => $rosterData,
             'orbatCanManage' => $orbatCanManage,
             'orbatCommanderOptions' => $orbatCommanderOptions,
             'orbatCsrfToken' => Csrf::token(),
-        ]);
+            'orbatRecruitmentHub' => $orgAdmin,
+            'orbatOpen' => in_array($rawOpen, ['unite', 'groupe', 'equipe', 'membre'], true) ? $rawOpen : '',
+        ];
+        if ($orgAdmin) {
+            $data = array_replace($data, $this->orbatInviteDialogData($tid));
+        }
+
+        return Response::view('layout.main', $data);
+    }
+
+    /**
+     * Données de la fenêtre « Inviter un membre » (rôles, grades, libellés) pour les gestionnaires de la communauté.
+     *
+     * @return array<string, mixed>
+     */
+    private function orbatInviteDialogData(int $tenantId): array
+    {
+        try {
+            $tenantRepository = new TenantRepository();
+            $settings = $tenantRepository->getSettings($tenantId);
+            $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+            $roleRepository = new RoleRepository();
+
+            return [
+                'roles' => $roleRepository->forTenantOrganization($tenantId),
+                'roleMatrix' => $roleRepository->organizationRolesPermissionMatrix($tenantId),
+                'grades' => (new GradeRepository())->listActiveForDoctrinePicker($tenantId),
+                'gradeCategories' => (new \App\Repositories\GradeCategoryRepository())->listForTenant($tenantId),
+                'organizationRoleLabelMode' => \App\Support\OrganizationRoleLabels::mode($community, $tenantRepository->findById($tenantId) ?: []),
+                'steamWebConfigured' => Container::get(SteamWebApiService::class)->isConfigured(),
+            ];
+        } catch (\Throwable $e) {
+            error_log('[orbat] fenêtre d’invitation indisponible : ' . $e->getMessage());
+
+            return ['orbatRecruitmentHub' => false];
+        }
     }
 
     /**

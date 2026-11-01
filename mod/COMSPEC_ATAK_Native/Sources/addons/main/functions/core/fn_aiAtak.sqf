@@ -81,14 +81,16 @@ switch (_mode) do {
         {
             private _u = _x;
             if (_n >= 250) exitWith {};
-            if (!alive _u || {!([_u] call comspec_atak_native_fnc_hasDevice)}) then { continue };
-            _n = _n + 1;
+            if (!alive _u) then { continue };
             private _k = netId _u;
             private _st = COMSPEC_ATAK_AiState getOrDefault [_k, [diag_tickTime + random _rate, [0, 0, 0], [0, 0, 0], 1]];
             _st params ["_at", "_lastPos", "_off", "_f"];
             private _p = getPosASL _u;
             private _due = diag_tickTime >= _at || {(_p distance2D _lastPos) > 50 && {diag_tickTime >= _at - _rate * _f / 2}};
             if (!_due) then { COMSPEC_ATAK_AiState set [_k, _st]; continue };
+            // Équipement vérifié seulement quand un point est dû : une IA sans ATAK n'est revue qu'une fois par intervalle.
+            if !([_u] call comspec_atak_native_fnc_hasDevice) then { COMSPEC_ATAK_AiState set [_k, [diag_tickTime + _rate, _p, [0, 0, 0], 1]]; continue };
+            _n = _n + 1;
             private _f2 = 0.85 + random 0.3;
             // Brouilleurs (même calcul que fn_ewEffects pour un joueur) : point perdu selon la force, sinon GPS dégradé.
             private _side = str side group _u;

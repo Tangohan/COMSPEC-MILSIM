@@ -166,7 +166,21 @@ if (_buildCache) exitWith {
     };
     _cache set ["vehicles", _vehList];
     private _mkEntries = [];
-    if (_showMarkers) then {
+    // Même nombre de marqueurs, caméra à < 100 m et scan < 2 s : on garde la liste (Draw3D refait écran + distance).
+    private _mkReuse = _showMarkers
+        && {(count allMapMarkers) == (_cache getOrDefault ["mkCount", -1])}
+        && {(_camPos distance2D (_cache getOrDefault ["mkCam", [0, 0, 0]])) < 100}
+        && {diag_tickTime < ((_cache getOrDefault ["mkAt", -1e9]) + 2)};
+    if (_mkReuse) then { _mkEntries = _cache getOrDefault ["markers", []]; };
+    if (_showMarkers && {!_mkReuse}) then {
+        // Mémos de session : couleur finale par markerColor, icône par markerType (compile / config une seule fois).
+        private _colMemo = missionNamespace getVariable ["COMSPEC_EcotiMkColCache", createHashMap];
+        private _iconMemo = missionNamespace getVariable ["COMSPEC_EcotiMkIconCache", createHashMap];
+        missionNamespace setVariable ["COMSPEC_EcotiMkColCache", _colMemo, false];
+        missionNamespace setVariable ["COMSPEC_EcotiMkIconCache", _iconMemo, false];
+        _cache set ["mkCount", count allMapMarkers];
+        _cache set ["mkCam", _camPos];
+        _cache set ["mkAt", diag_tickTime];
         {
             private _m = _x;
             if (_m isEqualTo "") then { continue };
@@ -192,20 +206,30 @@ if (_buildCache) exitWith {
             private _dist = _camPos distance _pos;
             private _txt = markerText _m;
             if (_txt isEqualTo "") then { _txt = markerType _m };
-            private _col = getArray (configFile >> "CfgMarkerColors" >> markerColor _m >> "color");
-            _col = [_col] call comspec_overwatch_connect_fnc_ecotiNormalizeColor;
-            private _lum = ((_col select 0) + (_col select 1) + (_col select 2)) / 3;
-            if (_lum < 0.45) then {
-                _col = [
-                    ((_col select 0) + 0.35) min 1,
-                    ((_col select 1) + 0.35) min 1,
-                    ((_col select 2) + 0.35) min 1,
-                    1
-                ];
-            } else {
-                _col set [3, 1];
+            private _mkCol = markerColor _m;
+            private _col = _colMemo getOrDefault [_mkCol, []];
+            if (_col isEqualTo []) then {
+                _col = getArray (configFile >> "CfgMarkerColors" >> _mkCol >> "color");
+                _col = [_col] call comspec_overwatch_connect_fnc_ecotiNormalizeColor;
+                private _lum = ((_col select 0) + (_col select 1) + (_col select 2)) / 3;
+                if (_lum < 0.45) then {
+                    _col = [
+                        ((_col select 0) + 0.35) min 1,
+                        ((_col select 1) + 0.35) min 1,
+                        ((_col select 2) + 0.35) min 1,
+                        1
+                    ];
+                } else {
+                    _col set [3, 1];
+                };
+                _colMemo set [_mkCol, _col];
             };
-            private _mIcon = getText (configFile >> "CfgMarkers" >> markerType _m >> "icon");
+            private _mkType = markerType _m;
+            private _mIcon = _iconMemo getOrDefault [_mkType, -1];
+            if (_mIcon isEqualTo -1) then {
+                _mIcon = getText (configFile >> "CfgMarkers" >> _mkType >> "icon");
+                _iconMemo set [_mkType, _mIcon];
+            };
             if (_mIcon isEqualTo "") then { _mIcon = _icon };
             _mkEntries pushBack [_pos, _mIcon, _col, _txt, _dist, 0.48];
         } forEach allMapMarkers;

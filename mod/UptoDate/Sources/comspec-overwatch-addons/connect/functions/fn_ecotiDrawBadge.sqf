@@ -17,7 +17,9 @@ params [
 if (!(_pos isEqualType []) || {(count _pos) < 3}) exitWith {};
 
 if (_icon isEqualTo "" || {_icon find "military\dot_CA" >= 0}) then {
-    _icon = [] call comspec_overwatch_connect_fnc_ecotiIconPath;
+    // Icône déjà résolue (fileExists) par le PFH ; repli tant que le cache est vide.
+    _icon = (missionNamespace getVariable ["COMSPEC_EcotiDrawCache", createHashMap]) getOrDefault ["icon", ""];
+    if (_icon isEqualTo "") then { _icon = [] call comspec_overwatch_connect_fnc_ecotiIconPath; };
 };
 
 private _mode = missionNamespace getVariable ["comspec_overwatch_ecoti_render_mode", "world3d"];
@@ -33,7 +35,7 @@ if (_mode in ["screen2d", "screen", "hud2d", "2d"]) exitWith {
 
 _color = [_color] call comspec_overwatch_connect_fnc_ecotiNormalizeColor;
 private _theme = [] call comspec_overwatch_connect_fnc_ecotiThemeColors;
-private _txtCol = _theme getOrDefault ["badge", [1, 1, 1, 1]];
+private _txtCol = +(_theme getOrDefault ["badge", [1, 1, 1, 1]]);
 
 private _sz = (_iconSize max 0.28) min 0.7;
 if (_compact) then { _sz = _sz * 0.72; };

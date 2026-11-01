@@ -33,11 +33,19 @@ missionNamespace setVariable ["COMSPEC_ProxyTrackServerHooked", true, false];
     // partait toutes les 4 s vers tous les clients, même avec des IA immobiles.
     // Seul le relais (client élu) lit ce tableau, mais il part public vers tous : seuil ~10 m / 15° pour
     // diffuser vite, et petits écarts (au mètre) seulement toutes les 20 s, pour ne pas inonder le réseau.
-    if (_sig isEqualTo (missionNamespace getVariable ["COMSPEC_AllyTrackSnapSig", []])) exitWith {};
+    // Élection avant les sorties : un nouveau relais (mort, déconnexion, UID plus petit) reçoit le tableau même sans mouvement.
+    private _linked = allPlayers select { alive _x && {_x getVariable ["COMSPEC_AtakReporterLinked", false]} && {(getPlayerUID _x) isNotEqualTo ""} };
+    private _b = if (_linked isEqualTo []) then {objNull} else {([_linked, [], { getPlayerUID _x }, "ASCEND"] call BIS_fnc_sortBy) select 0};
+    private _to = if (isNull _b) then {""} else {getPlayerUID _b};
+    private _sameTo = _to isEqualTo (missionNamespace getVariable ["COMSPEC_AllyTrackSnapTo", ""]);
+    if (_sameTo && {_sig isEqualTo (missionNamespace getVariable ["COMSPEC_AllyTrackSnapSig", []])}) exitWith {};
     private _coarseSame = _sigCoarse isEqualTo (missionNamespace getVariable ["COMSPEC_AllyTrackSnapSigCoarse", []]);
-    if (_coarseSame && {(time - (missionNamespace getVariable ["COMSPEC_AllyTrackSnapAt", -1e9])) < 20}) exitWith {};
+    if (_sameTo && _coarseSame && {(time - (missionNamespace getVariable ["COMSPEC_AllyTrackSnapAt", -1e9])) < 20}) exitWith {};
     missionNamespace setVariable ["COMSPEC_AllyTrackSnapSig", _sig, false];
     missionNamespace setVariable ["COMSPEC_AllyTrackSnapSigCoarse", _sigCoarse, false];
     missionNamespace setVariable ["COMSPEC_AllyTrackSnapAt", time, false];
-    missionNamespace setVariable ["COMSPEC_AllyTrackSnapshots", _snaps, true];
+    // Seul le relais lit ce tableau : envoyé à lui seul (même élection que _isBridge, fn_initGpsBeacons), plus en public.
+    missionNamespace setVariable ["COMSPEC_AllyTrackSnapshots", _snaps, false];
+    missionNamespace setVariable ["COMSPEC_AllyTrackSnapTo", _to, false];
+    if (!isNull _b && {!local _b}) then { (owner _b) publicVariableClient "COMSPEC_AllyTrackSnapshots"; };
 }, 4, []] call CBA_fnc_addPerFrameHandler;

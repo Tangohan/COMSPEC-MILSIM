@@ -52,11 +52,11 @@ switch (_mode) do {
         private _w = 0.125 * safeZoneW;
         // Sous la barre COMSPEC d'Overwatch (en haut à droite), alignée sur son bord droit.
         _bt ctrlSetPosition [safeZoneX + safeZoneW * 0.988 - _w, safeZoneY + 0.068 * safeZoneH, _w, 0.034 * safeZoneH];
-        _bt ctrlSetText ("Réalisme et réseau" call _T);
+        _bt ctrlSetText ((("Réalisme et réseau" call _T)) call comspec_atak_native_fnc_tr);
         // Police proportionnelle au bouton : avec la taille d'interface NORMALE ou plus grande, la police par défaut
         // débordait du bouton (texte écrasé).
         _bt ctrlSetFontHeight (0.034 * safeZoneH * 0.6);
-        _bt ctrlSetTooltip ("Profil de réalisme et simulation du serveur : réseau radio, météo, surcharge, pertes, positions BFT, GPS, batterie" call _T);
+        _bt ctrlSetTooltip ((("Profil de réalisme et simulation du serveur : réseau radio, météo, surcharge, pertes, positions BFT, GPS, batterie" call _T)) call comspec_atak_native_fnc_tr);
         _bt ctrlSetBackgroundColor [0.10, 0.30, 0.16, 0.95];
         _bt ctrlAddEventHandler ["ButtonClick", { ["open", ctrlParent (_this select 0)] call comspec_atak_native_fnc_netConfig; }];
         _bt ctrlCommit 0;
@@ -126,7 +126,7 @@ switch (_mode) do {
         (["ctrlStatic", [_x0, _y0, _w, _h]] call _mk) ctrlSetBackgroundColor [0.12, 0.13, 0.12, 0.98];
         private _title = ["ctrlStatic", [_x0, _y0 - 5 * _u, _w, 5 * _u]] call _mk;
         _title ctrlSetBackgroundColor [0.10, 0.30, 0.16, 1];
-        _title ctrlSetText (("  COMSPEC ATAK · Réalisme et réseau du serveur") call _T);
+        _title ctrlSetText (((("  COMSPEC ATAK · Réalisme et réseau du serveur") call _T)) call comspec_atak_native_fnc_tr);
 
         // Colonne de gauche : une ligne par condition (libellé, source, liste de valeurs).
         private _lw = _w * 0.56;
@@ -136,8 +136,8 @@ switch (_mode) do {
         private _who = if ((_held select 0) isEqualTo []) then { "Réglages du serveur (CBA), aucune condition appliquée en jeu." call _T } else {
             format ["Conditions appliquées en jeu par %1 à %2." call _T, _held select 1, [(_held select 2) param [3, 0], (_held select 2) param [4, 0]] apply { [str _x, "0" + str _x] select (_x < 10) } joinString ":"]
         };
-        _head ctrlSetStructuredText parseText format ["<t size='0.9' color='#C9D2CB'>%1</t><br/><t size='0.8' color='#9AA59C'>%2</t>",
-            [("Lecture seule : seul un administrateur du serveur (#login), l'hôte ou un Zeus peut appliquer des conditions." call _T), ("Choisissez les conditions puis Appliquer au serveur : tous les joueurs les reçoivent tout de suite." call _T)] select _edit, _who];
+        _head ctrlSetStructuredText parseText ((format ["<t size='0.9' color='#C9D2CB'>%1</t><br/><t size='0.8' color='#9AA59C'>%2</t>",
+            [("Lecture seule : seul un administrateur du serveur (#login), l'hôte ou un Zeus peut appliquer des conditions." call _T), ("Choisissez les conditions puis Appliquer au serveur : tous les joueurs les reçoivent tout de suite." call _T)] select _edit, _who]) call comspec_atak_native_fnc_tr);
         _head ctrlCommit 0;
         private _labels = createHashMapFromArray [
             ["sim", "Réseau réaliste"], ["realism", "Niveau de réalisme radio"], ["weather", "La météo gêne le réseau"],
@@ -158,15 +158,15 @@ switch (_mode) do {
             private _src = ["source", _key] call comspec_atak_native_fnc_netCond;
             (_srcTxt get _src) params ["_st", "_sc"];
             private _lb = ["ctrlStructuredText", [0, _y, _lw - _cw - 2 * _u, _rowH], _grp] call _mk;
-            _lb ctrlSetStructuredText parseText format ["<t size='0.9'>%1</t><br/><t size='0.72' color='%2'>%3</t>", (_labels getOrDefault [_key, _key]) call _T, _sc, _st call _T];
+            _lb ctrlSetStructuredText parseText ((format ["<t size='0.9'>%1</t><br/><t size='0.72' color='%2'>%3</t>", (_labels getOrDefault [_key, _key]) call _T, _sc, _st call _T]) call comspec_atak_native_fnc_tr);
             private _cb = ["ctrlCombo", [_lw - _cw - _u, _y + 0.8 * _u, _cw, 4.4 * _u], _grp, 200 + _forEachIndex] call _mk;
             if (_kind isEqualTo "bool") then { _vals = [true, false]; _names = ["Actif", "Coupé"]; };
             private _cur = _eff getOrDefault [_key, _def];
             if !(_cur in _vals) then { _vals = _vals + [_cur]; _names = _names + [str _cur]; };
-            { private _i = _cb lbAdd ((_names select _forEachIndex) call _T); _cb lbSetData [_i, str _x]; } forEach _vals;
+            { private _i = _cb lbAdd ((((_names select _forEachIndex) call _T)) call comspec_atak_native_fnc_tr); _cb lbSetData [_i, str _x]; } forEach _vals;
             _cb lbSetCurSel (_vals find _cur);
             _cb ctrlEnable (_edit && {_src isNotEqualTo "site"});
-            if (_src isEqualTo "site") then { _cb ctrlSetTooltip ("Imposé par la communauté sur le site (Contrôle serveur). À changer depuis le site." call _T); };
+            if (_src isEqualTo "site") then { _cb ctrlSetTooltip ((("Imposé par la communauté sur le site (Contrôle serveur). À changer depuis le site." call _T)) call comspec_atak_native_fnc_tr); };
             _combos pushBack [_key, _cb, _kind];
             // Profil choisi : chaque liste modifiable reprend la valeur du profil (ou son réglage CBA hors profil).
             if (_key isEqualTo "profile") then {
@@ -188,10 +188,10 @@ switch (_mode) do {
         private _rx = _x0 + _lw + 3 * _u;
         private _rw = _w - _lw - 4 * _u;
         private _pl = ["ctrlStatic", [_rx, _y0 + _u, _rw, 4 * _u]] call _mk;
-        _pl ctrlSetText ("Modèles de conditions" call _T);
+        _pl ctrlSetText ((("Modèles de conditions" call _T)) call comspec_atak_native_fnc_tr);
         private _pc = ["ctrlCombo", [_rx, _y0 + 5 * _u, _rw, 4.4 * _u], controlNull, 300] call _mk;
-        _pc lbAdd ("Choisir un modèle…" call _T);
-        { _pc lbAdd ((_x select 0) call _T); } forEach (["presets"] call comspec_atak_native_fnc_netConfig);
+        _pc lbAdd ((("Choisir un modèle…" call _T)) call comspec_atak_native_fnc_tr);
+        { _pc lbAdd ((((_x select 0) call _T)) call comspec_atak_native_fnc_tr); } forEach (["presets"] call comspec_atak_native_fnc_netConfig);
         _pc lbSetCurSel 0;
         _pc ctrlEnable _edit;
         _pc ctrlAddEventHandler ["LBSelChanged", {
@@ -213,7 +213,7 @@ switch (_mode) do {
         private _bw = _w * 0.2;
         private _by = _y0 + _h - 7 * _u;
         private _ap = ["ctrlButton", [_x0 + _u, _by, _bw, 5 * _u]] call _mk;
-        _ap ctrlSetText ("Appliquer au serveur" call _T);
+        _ap ctrlSetText ((("Appliquer au serveur" call _T)) call comspec_atak_native_fnc_tr);
         _ap ctrlSetBackgroundColor [0.10, 0.40, 0.20, 1];
         _ap ctrlEnable _edit;
         _ap ctrlAddEventHandler ["ButtonClick", {
@@ -236,12 +236,12 @@ switch (_mode) do {
             (ctrlParent (_this select 0)) closeDisplay 1;
         }];
         private _rs = ["ctrlButton", [_x0 + 2 * _u + _bw, _by, _bw, 5 * _u]] call _mk;
-        _rs ctrlSetText ("Revenir aux réglages serveur" call _T);
-        _rs ctrlSetTooltip ("Efface les conditions appliquées en jeu : les réglages CBA du serveur reprennent (les règles du site restent)." call _T);
+        _rs ctrlSetText ((("Revenir aux réglages serveur" call _T)) call comspec_atak_native_fnc_tr);
+        _rs ctrlSetTooltip ((("Efface les conditions appliquées en jeu : les réglages CBA du serveur reprennent (les règles du site restent)." call _T)) call comspec_atak_native_fnc_tr);
         _rs ctrlEnable _edit;
         _rs ctrlAddEventHandler ["ButtonClick", { ["apply", []] call comspec_atak_native_fnc_netConfig; (ctrlParent (_this select 0)) closeDisplay 1; }];
         private _cl = ["ctrlButton", [_x0 + _w - _bw * 0.7 - _u, _by, _bw * 0.7, 5 * _u]] call _mk;
-        _cl ctrlSetText ("Fermer" call _T);
+        _cl ctrlSetText ((("Fermer" call _T)) call comspec_atak_native_fnc_tr);
         _cl ctrlAddEventHandler ["ButtonClick", { (ctrlParent (_this select 0)) closeDisplay 2; }];
 
         // Conditions du moment, rafraîchies chaque seconde tant que la fenêtre est ouverte.
@@ -263,7 +263,7 @@ switch (_mode) do {
                     _html = _html + format ["<t size='0.8'>• %1 <t color='#E0B050'>%2</t></t><br/>", _n call _T, _e call _T];
                     if (_forEachIndex >= 10) exitWith {};
                 } forEach (_q getOrDefault ["factors", []]);
-                _live ctrlSetStructuredText parseText _html;
+                _live ctrlSetStructuredText parseText ((_html) call comspec_atak_native_fnc_tr);
                 uiSleep 1;
             };
         };

@@ -53,8 +53,8 @@ private _theme = "windows";
         } forEach (_d getOrDefault ["files", []]);
 
         private _blocks = [
-            ["courriels", [_d getOrDefault ["mail", []], [["from", "De"], ["to", "À"], ["subject", "Objet"], ["snippet", "Texte"], ["body", "Texte"]]] call _lines],
-            ["messages", [_d getOrDefault ["sms", _d getOrDefault ["messages", []]], [["from", "De"], ["to", "À"], ["when", "Le"], ["text", "Texte"]]] call _lines],
+            ["courriels", [_d getOrDefault ["mail", []], [["from", "De"], ["to", "Destinataire"], ["subject", "Objet"], ["snippet", "Texte"], ["body", "Texte"]]] call _lines],
+            ["messages", [_d getOrDefault ["sms", _d getOrDefault ["messages", []]], [["from", "De"], ["to", "Destinataire"], ["when", "Envoyé le"], ["text", "Texte"]]] call _lines],
             ["contacts", [(_d getOrDefault ["contacts", []]) apply { if (_x isEqualType createHashMap) then { _x } else { createHashMapFromArray [["name", _x]] } }, [["name", "Nom"], ["phone", "Numéro"]]] call _lines],
             ["journal_appels", [_d getOrDefault ["calls", []], [["with", "Avec"], ["dir", "Sens"], ["duration", "Durée"], ["missed", "Manqué"]]] call _lines],
             ["navigateur", [_d getOrDefault ["browser", []], [["title", "Titre"], ["url", "Adresse"]]] call _lines],

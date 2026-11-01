@@ -12,20 +12,21 @@ final class OrbatContextMenuAssetTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $canvas = (string) file_get_contents($root . '/views/partials/orbat/orbat_canvas.php');
-        $hub = (string) file_get_contents($root . '/views/admin/organization/structure_hub.php');
-        $ctrl = (string) file_get_contents($root . '/app/Controllers/Admin/Organization/OrganizationDashboardController.php');
+        $app = (string) file_get_contents($root . '/public/assets/js/orbat-app.js');
+        $ctrl = (string) file_get_contents($root . '/app/Controllers/Web/PersonnelController.php');
+        $routes = (string) file_get_contents($root . '/routes/web.php');
 
-        self::assertStringContainsString('id="orbat-ctx-menu"', $canvas);
-        self::assertStringContainsString('data-ctx="rename"', $canvas);
-        self::assertStringContainsString('data-ctx="struct-type"', $canvas);
-        self::assertStringContainsString('data-ctx="commander"', $canvas);
-        self::assertStringContainsString('data-ctx="hub-invite"', $canvas);
-        self::assertStringContainsString('function openOrbatContextMenu', $canvas);
-        self::assertStringContainsString('bindOrbatCardContext', $canvas);
-        self::assertStringContainsString('postUnitPatch', $canvas);
-        self::assertStringContainsString('document.body.appendChild(m)', $canvas);
-        self::assertStringContainsString('Clic droit (ou bouton ⋯)', $hub);
-        self::assertStringContainsString('site.support', $ctrl);
-        self::assertStringContainsString('allUnitsForParent', $ctrl);
+        self::assertStringContainsString('id="orb-cm"', $canvas);
+        self::assertStringContainsString("rootEl.addEventListener('contextmenu'", $app);
+        foreach (['function unitMenu', 'function postMenu', 'function canvasMenu', "t('menu_rename')", "t('menu_symbol')",
+            "t('menu_posts')", "t('menu_move')", "t('menu_detach')", "t('menu_status')", "t('menu_visibility')",
+            "t('menu_assign')", "t('menu_vacate'", "t('menu_new_group')", "t('menu_new_team')", "t('menu_delete')"] as $needle) {
+            self::assertStringContainsString($needle, $app);
+        }
+        self::assertStringContainsString("t('invite_member')", $app);
+        self::assertStringContainsString('document.body.appendChild(el)', $app);
+        // L'ancien « Structure & recrutement » redirige vers l'ORBAT, qui reprend ses accès (dont site.support).
+        self::assertStringContainsString("'site.support'", $ctrl);
+        self::assertStringContainsString("orbat_page_url(['ouvrir' => (string) \$r->query('ouvrir', '')])", $routes);
     }
 }

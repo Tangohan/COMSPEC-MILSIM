@@ -11,6 +11,18 @@ params [["_ext", "COMSPECExtension"], ["_cmd", ""], ["_args", []], ["_timeout", 
 // Liaison désactivée ou plus de téléphone : rien ne part (fn_uplinkHold).
 if (_ext isEqualTo "COMSPECExtension" && {[_cmd] call comspec_overwatch_connect_fnc_uplinkHold}) exitWith { ["ERR|uplink_hold", 0, 0] };
 private _noAsync = missionNamespace getVariable ["COMSPEC_ExtNoAsync", []];
+// Hors contexte suspendable, seule une commande rapide (fn_extFast) part en direct. Une lente (HTTP, disque : jusqu'à
+// 8 s figé) repart en tâche de fond et l'appelant reçoit tout de suite ERR|unscheduled (signalé une fois au journal).
+if (!canSuspend && {!(_ext in _noAsync)} && {!isNil "COMSPEC_ExtensionCallbackEH"} && {!([_cmd] call comspec_overwatch_connect_fnc_extFast)}) exitWith {
+    private _seen = missionNamespace getVariable ["COMSPEC_ExtUnscheduled", createHashMap];
+    if !(_cmd in _seen) then {
+        _seen set [_cmd, true];
+        missionNamespace setVariable ["COMSPEC_ExtUnscheduled", _seen];
+        ["WARN", "Link", format ["%1 demandé hors contexte suspendable : relancé en tâche de fond", _cmd]] call comspec_overwatch_connect_fnc_log;
+    };
+    [_ext, _cmd, _args, _timeout] spawn comspec_overwatch_connect_fnc_extAwait;
+    ["ERR|unscheduled", 0, 0]
+};
 // Sans gestionnaire de rappel (menu principal, avant le postInit) la réponse ne reviendrait jamais : appel direct.
 if (!canSuspend || {_ext in _noAsync} || {isNil "COMSPEC_ExtensionCallbackEH"}) exitWith { _ext callExtension [_cmd, _args] };
 // Bloc non ordonnancé (isNil {}) : lecture + écriture du compteur et création de la table sans suspension possible,

@@ -34,7 +34,7 @@ switch (_act) do {
             _tag = [getPlayerUID player, str side group player, [player] call comspec_atak_native_fnc_unitCallsign, _num, _imei, _tuid,
                 (profileNamespace getVariable ["COMSPEC_ATAK_LockCode", ""]) isNotEqualTo "", ["wiped"] call comspec_atak_native_fnc_phoneSecurity];
         };
-        if ((player getVariable ["COMSPEC_ATAK_PhoneTag", []]) isNotEqualTo _tag) then { player setVariable ["COMSPEC_ATAK_PhoneTag", _tag, true]; };
+        if ((player getVariable ["COMSPEC_ATAK_PhoneTag", []]) isNotEqualTo _tag) then { player setVariable ["COMSPEC_ATAK_PhoneTag", _tag, [2, clientOwner]]; };
     };
     case "event": {
         _arg params [["_kind", ""], ["_r", []]];

@@ -419,13 +419,19 @@ if (_interactive) then {
             // Calques par thème : [clé, titre, [[libellé, espace (P profil, M mission, C réglage CBA du joueur), variable,
             // défaut, clé communauté (verrou Athena) ou "", explication affichée en vue CONFIGURATION]...]]
             private _groups = [
+                // Étiquettes : chaque type masquable ; taille du texte et fond des étiquettes ajoutés sous la liste.
+                ["labels", "Étiquettes", [
+                    ["Indicatifs des unités", "P", "COMSPEC_ATAK_Labels", true, "native_map_labels", "Indicatif à côté de chaque allié ; en plein écran, cartouche avec distance et azimut"],
+                    ["Contacts ENI", "P", "COMSPEC_ATAK_LblEni", true, "", "Cartouches rouges des contacts ennemis, avec l'heure et qui les a signalés"],
+                    ["Noms des marqueurs", "C", "comspec_atak_native_map_show_marker_text", true, "", "Texte des marqueurs (aussi dans le menu CBA)"],
+                    ["Numéros de grille", "P", "COMSPEC_ATAK_LblGrid", true, "", "Numéros des lignes de la grille, en haut et à gauche de la carte"]
+                ]],
                 ["forces", "Forces", [
                     ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true, "", "Unités amies (joueurs et IA) sur la carte"],
                     ["Cercles de précision", "P", "COMSPEC_ATAK_AccRings", true, "", "Cercle autour de chaque position selon la précision du GPS. Orange pour vous, couleur de l'unité pour les alliés."]
                 ]],
                 ["places", "Repères et lieux", [
                     ["Coordonnées des marqueurs", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags", "Grille sous chaque marqueur posé"],
-                    ["Noms des marqueurs", "C", "comspec_atak_native_map_show_marker_text", true, "", "Texte des marqueurs (aussi dans le menu CBA)"],
                     ["Villes", "C", "comspec_atak_native_map_show_cities", true, "", "Noms des villes du terrain"],
                     ["Villages", "C", "comspec_atak_native_map_show_villages", true, "", "Noms des villages du terrain"],
                     ["Lieux-dits", "C", "comspec_atak_native_map_show_locals", true, "", "Noms des collines, bois et lieux-dits"],
@@ -465,6 +471,22 @@ if (_interactive) then {
                         (_st select _forEachIndex) params ["_on", "_locked"];
                         _rows pushBack ["switch", _lbl, _on, format ["[%1, %2, %3] call (uiNamespace getVariable 'COMSPEC_ATAK_LayerToggle');", str _ns, str _var, _def], ["", _help] select _full, _locked];
                     } forEach _items;
+                    // Étiquettes : taille du texte (même réglage que la réglette de Réglages > Carte) et opacité du fond,
+                    // enregistrées dans le profil.
+                    if (_key isEqualTo "labels") then {
+                        private _lblSeg = {
+                            params ["_var", "_now", "_opts"];
+                            _opts apply { _x params ["_t", "_v"]; [_t, format ["profileNamespace setVariable [%1, %2]; [] call comspec_atak_native_fnc_saveProfile; ['MAP'] call comspec_atak_native_fnc_pageRender;", str _var, _v], (abs (_now - _v)) < 0.06] }
+                        };
+                        private _tsNow = profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25];
+                        private _baNow = profileNamespace getVariable ["COMSPEC_ATAK_LblBgAlpha", 0.8];
+                        if !(_tsNow isEqualType 0) then { _tsNow = 1.25; };
+                        if !(_baNow isEqualType 0) then { _baNow = 0.8; };
+                        _rows pushBack ["segment", "Taille du texte", ["COMSPEC_ATAK_MapTextScale", _tsNow, [["PETIT", 1], ["NORMAL", 1.25], ["GRAND", 1.55]]] call _lblSeg,
+                            ["", "Indicatifs, noms et coordonnées ; réglage fin dans Réglages > Carte"] select _full];
+                        _rows pushBack ["segment", "Fond des étiquettes", ["COMSPEC_ATAK_LblBgAlpha", _baNow, [["LÉGER", 0.55], ["NORMAL", 0.8], ["OPAQUE", 0.95]]] call _lblSeg,
+                            ["", "Plaque sombre derrière les noms : plus opaque, plus lisible sur une carte chargée"] select _full];
+                    };
                 };
             } forEach _groups;
             private _fy = _sy + _sh + _pad / 3;
@@ -526,8 +548,8 @@ if (_interactive) then {
         private _tx0 = _hx + pixelW * 10 + _hh * 0.7 / _ratio;
         private _txt = ["COMSPEC_RscStructuredText", [_tx0, _by + _pad + _hh * 0.12, (_hw - (_tx0 - _hx) - _xw) max 0, _hh * 0.88]] call _mk;
         _txt ctrlSetFontHeight (_fs * 0.92);
-        _txt ctrlSetStructuredText parseText format ["<t font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  <t color='#e6efe9'>%2</t>  <t size='0.85' color='#8a9a93'>%3</t>",
-            _name, _what, "glisser : déplacer la carte · clic droit : quitter" call comspec_atak_native_fnc_tr];
+        _txt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  <t color='#e6efe9'>%2</t>  <t size='0.85' color='#8a9a93'>%3</t>",
+            _name, _what, "glisser : déplacer la carte · clic droit : quitter" call comspec_atak_native_fnc_tr]) call comspec_atak_native_fnc_tr);
         private _xb = ["COMSPEC_RscButton", [_hx + _hw - _xw, _by + _pad, _xw, _hh], "✕"] call _mk;
         _xb ctrlSetFontHeight _fs;
         _xb ctrlSetTooltip (("Quitter l'outil") call comspec_atak_native_fnc_tr);

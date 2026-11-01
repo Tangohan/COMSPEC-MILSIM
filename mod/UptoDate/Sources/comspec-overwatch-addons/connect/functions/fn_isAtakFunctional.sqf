@@ -9,6 +9,7 @@
             can_display - Boolean, peut afficher l'interface
             can_send - Boolean, peut envoyer des données
             device_crashed - Boolean, gel temporaire appareil
+            device_destroyed - Boolean, téléphone détruit (lu par les menus ACE Diagnostic / Réparer)
 */
 
 private _result = createHashMap;
@@ -19,6 +20,7 @@ _result set ["connection_ok", true];
 _result set ["can_display", true];
 _result set ["can_send", true];
 _result set ["device_crashed", false];
+_result set ["device_destroyed", false];
 
 private _atakState = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];
 if (_atakState isEqualTo createHashMap) exitWith { _result };
@@ -43,5 +45,6 @@ _result set ["connection_ok", !_deviceDestroyed && !_crashed];
 _result set ["device_crashed", _crashed];
 _result set ["can_display", _powered && !_screenDestroyed && !_crashed];
 _result set ["can_send", !_deviceDestroyed && !_crashed];
+_result set ["device_destroyed", _deviceDestroyed];
 
 _result

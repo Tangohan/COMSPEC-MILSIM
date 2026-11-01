@@ -52,14 +52,14 @@ switch (_mode) do {
         if (!(missionNamespace getVariable ["comspec_atak_native_hide_foreign_hud", true]) || {isNull _d} || {_s getOrDefault ["texture", false]}) exitWith { call _restore; };
         ((([] call comspec_atak_native_fnc_layoutGet) getOrDefault ["visible", [0, 0, 0, 0]])) params ["_px", "_py", "_pw", "_ph"];
         private _skip = allDisplays + (uiNamespace getVariable ["IGUI_displays", []]) + [_d];
-        // Découverte (au démarrage puis toutes les 10 s) : allVariables uiNamespace compte des milliers de noms (caches de
-        // fonctions BIS/CBA/ACE…). On ne garde que ceux qui contiennent un display (même fermé, pour qu'un calque rouvert
+        // Découverte (au démarrage puis toutes les 30 s) : allVariables uiNamespace compte des milliers de noms (caches de
+        // fonctions BIS/CBA/ACE…, écartés par le nom avant tout getVariable). On ne garde que ceux qui contiennent un display (même fermé, pour qu'un calque rouvert
         // sous le même nom soit repris) ; le contrôle de chaque seconde ne relit plus que cette courte liste.
         private _names = uiNamespace getVariable ["COMSPEC_ATAK_ForeignNames", []];
         if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_ForeignNamesNext", 0])) then {
-            missionNamespace setVariable ["COMSPEC_ATAK_ForeignNamesNext", diag_tickTime + 10];
+            missionNamespace setVariable ["COMSPEC_ATAK_ForeignNamesNext", diag_tickTime + 30];
             _names = (allVariables uiNamespace) select {
-                (_x select [0, 12]) isNotEqualTo "comspec_atak" && {
+                (_x find "_fnc_") < 0 && {(_x select [0, 12]) isNotEqualTo "comspec_atak"} && {
                     private _v = uiNamespace getVariable _x;
                     !isNil "_v" && {_v isEqualType displayNull}
                 }

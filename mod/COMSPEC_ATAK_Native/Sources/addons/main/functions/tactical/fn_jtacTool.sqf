@@ -92,8 +92,8 @@ switch (_act) do {
         // En-tête : titre de l'outil, nom de l'IP et déclinaison sur une seule ligne, coupée proprement si trop longue.
         private _hd = ["COMSPEC_RscStructuredText", [_x0, _y, _iw, _rh], "", false] call comspec_atak_native_fnc_pageCtrl;
         _hd ctrlSetFontHeight _fs;
-        _hd ctrlSetStructuredText parseText format ["<t font='COMSPEC_Barlow' color='#4dd9ff'>%1</t>  <t color='#9fb0a8' size='0.9'>%2 · %3 %4°</t>",
-            "IP VERS CIBLE" call _tr, _c get "ipName", "décl." call _tr, _c get "decl"];
+        _hd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_Barlow' color='#4dd9ff'>%1</t>  <t color='#9fb0a8' size='0.9'>%2 · %3 %4°</t>",
+            "IP VERS CIBLE" call _tr, _c get "ipName", "décl." call _tr, _c get "decl"]) call comspec_atak_native_fnc_tr);
         _y = _y + _rh + pixelH * 4;
         private _ami = _c get "l8";
         private _rows = [
@@ -118,8 +118,8 @@ switch (_act) do {
             _cl ctrlSetTextColor [0.62, 0.69, 0.66, 1];
             private _cv = ["COMSPEC_RscStructuredText", [_x0 + _nw + _lw, _y, _vw, _rh], "", false] call comspec_atak_native_fnc_pageCtrl;
             _cv ctrlSetFontHeight _fs;
-            _cv ctrlSetStructuredText parseText format ["<t font='EtelkaMonospacePro' size='0.92'>%1</t>%2", _val,
-                ["", format ["  <t color='#8a9a93' size='0.85'>%1</t>", _aux]] select (_aux isNotEqualTo "")];
+            _cv ctrlSetStructuredText parseText ((format ["<t font='EtelkaMonospacePro' size='0.92'>%1</t>%2", _val,
+                ["", format ["  <t color='#8a9a93' size='0.85'>%1</t>", _aux]] select (_aux isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
             _y = _y + _rh;
         } forEach _rows;
         private _bh = _fs * 1.6;

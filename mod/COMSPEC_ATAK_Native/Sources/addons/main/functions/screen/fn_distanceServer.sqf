@@ -106,7 +106,13 @@ if (_mode in ["tick", "self"]) then {
             (_sess get _uid) params ["", "_c", "_p"];
             private _me = [(keys _c) apply { [_x, _c get _x] }, (keys _p) apply { [_x] + (_p get _x) }];
             // Part du serveur et part du relais publiées à part : le téléphone les additionne (fn_distanceMine).
-            if (_self) then { _unit setVariable ["COMSPEC_ATAK_DistMeSelf", _me]; } else { _unit setVariable ["COMSPEC_ATAK_DistMe", _me, owner _unit]; };
+            // Côté serveur, rien n'est renvoyé si rien n'a bougé ; mémo local sur l'unité (un nouveau corps renvoie de lui-même).
+            if (_self) then { _unit setVariable ["COMSPEC_ATAK_DistMeSelf", _me]; } else {
+                if ((_unit getVariable ["COMSPEC_ATAK_DistMeSent", []]) isNotEqualTo _me) then {
+                    _unit setVariable ["COMSPEC_ATAK_DistMeSent", _me];
+                    _unit setVariable ["COMSPEC_ATAK_DistMe", _me, owner _unit];
+                };
+            };
         };
     } forEach ([allPlayers, [player]] select _self);
 };

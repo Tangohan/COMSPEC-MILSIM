@@ -369,6 +369,35 @@ public static partial class Extension
         return path;
     }
 
+    private static volatile string? _musicListCache;
+    private static int _musicListBusy;
+
+    /// <summary>OK|dossier|morceau1|morceau2... : parcours disque du dossier musique (sous-dossiers compris).</summary>
+    private static string MusicListScan()
+    {
+        var dir = MusicFolder();
+        var sb = new StringBuilder("OK|").Append(dir);
+        // Output coupe à MaxOutputBytes octets UTF-8 (accents, CJK : jusqu'à 3 octets par caractère).
+        var bytes = Encoding.UTF8.GetByteCount(sb.ToString());
+        try
+        {
+            var files = Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories)
+                .Where(f => MusicExtensions.Contains(Path.GetExtension(f).ToLowerInvariant()))
+                .Select(f => Path.GetRelativePath(dir, f))
+                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+                .Take(300);
+            foreach (var f in files)
+            {
+                var fb = Encoding.UTF8.GetByteCount(f) + 1;
+                if (bytes + fb > MaxOutputBytes - 100) break;
+                bytes += fb;
+                sb.Append('|').Append(f);
+            }
+        }
+        catch (Exception ex) { return "ERR|" + ex.Message; }
+        return sb.ToString();
+    }
+
     private static string MusicCommand(string function, string?[] args)
     {
         string Arg(int i) => args.Length > i ? (args[i] ?? "").Trim() : "";
@@ -376,36 +405,27 @@ public static partial class Extension
         {
             case "MusicList":
             {
-                var dir = MusicFolder();
-                var sb = new StringBuilder("OK|").Append(dir);
-                // Output coupe à MaxOutputBytes octets UTF-8 (accents, CJK : jusqu'à 3 octets par caractère).
-                var bytes = Encoding.UTF8.GetByteCount(sb.ToString());
-                try
-                {
-                    var files = Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories)
-                        .Where(f => MusicExtensions.Contains(Path.GetExtension(f).ToLowerInvariant()))
-                        .Select(f => Path.GetRelativePath(dir, f))
-                        .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
-                        .Take(300);
-                    foreach (var f in files)
+                // Parcours du dossier : jamais sur le fil du jeu. Par « Async » (app Musique) la liste est relue ; en
+                // direct (Bluetooth) la dernière liste sert tout de suite et une relecture part en tâche de fond.
+                if (InAsyncWorker.Value) return _musicListCache = MusicListScan();
+                if (Interlocked.CompareExchange(ref _musicListBusy, 1, 0) == 0)
+                    _ = Task.Run(static () =>
                     {
-                        var fb = Encoding.UTF8.GetByteCount(f) + 1;
-                        if (bytes + fb > MaxOutputBytes - 100) break;
-                        bytes += fb;
-                        sb.Append('|').Append(f);
-                    }
-                }
-                catch (Exception ex) { return "ERR|" + ex.Message; }
-                return sb.ToString();
+                        try { _musicListCache = MusicListScan(); }
+                        finally { Interlocked.Exchange(ref _musicListBusy, 0); }
+                    });
+                return _musicListCache ?? "OK|" + MusicFolder();
             }
             case "MusicOpenFolder":
             {
-                try
+                var folder = MusicFolder();
+                // Lancement de l'explorateur : hors du fil du jeu.
+                _ = Task.Run(() =>
                 {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", "\"" + MusicFolder() + "\"") { UseShellExecute = false });
-                    return "OK|" + MusicFolder();
-                }
-                catch (Exception ex) { return "ERR|" + ex.Message; }
+                    try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", "\"" + folder + "\"") { UseShellExecute = false })?.Dispose(); }
+                    catch { /* explorateur indisponible */ }
+                });
+                return "OK|" + folder;
             }
             case "MusicPlay":
             {

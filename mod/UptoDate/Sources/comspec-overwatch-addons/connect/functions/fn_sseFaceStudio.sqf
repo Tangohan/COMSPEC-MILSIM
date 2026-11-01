@@ -42,7 +42,6 @@ if ((_st getOrDefault ["target", objNull]) isNotEqualTo _t || {isNull _clone}) t
     _anchor setDir 0;
     _clone = createAgent [typeOf _t, [0, 0, 0], [], 0, "CAN_COLLIDE"];
     if (isNull _clone) exitWith { deleteVehicle _anchor; };
-    _clone setVariable ["comspec_sse_studioClone", true, true];
     _clone allowDamage false;
     { _clone disableAI _x; } forEach ["ALL"];
     _clone attachTo [_anchor, [0, 0, 0]];

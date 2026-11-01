@@ -28,6 +28,10 @@ if (isServer) then {
         missionNamespace setVariable ["comspec_sse_bioRuntime", _runtime];
     };
 };
+// Taches de sang : le serveur n'envoie que les nouvelles traces (fn_bioBloodStain "merge"), hors branche ACE "client".
+if (!isServer) then {
+    ["comspec_sse_bloodAdd", { ["merge", _this] call comspec_sse_fnc_bioBloodStain; }] call CBA_fnc_addEventHandler;
+};
 // Sujet d'un relevé : il regarde l'opérateur, tend la main (exécuté là où il est local).
 ["comspec_sse_bioAnimSubject", {
     params ["_t", "_op", "_gesture"];

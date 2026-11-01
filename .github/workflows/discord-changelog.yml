@@ -28,6 +28,9 @@ jobs:
           sparse-checkout: |
             .github/scripts
             CHANGELOG-ATAK.md
+            mod/COMSPEC_ATAK_Native/Sources/addons/main/script_component.hpp
+            mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp
+            mod/UptoDate/Sources/comspec-overwatch-addons/main/config.cpp
           sparse-checkout-cone-mode: false
           filter: blob:none
       - name: Fetch main history (one announcement per version)

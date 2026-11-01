@@ -20,14 +20,11 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         $pollOrders = (string) file_get_contents($base . '/functions/fn_pollOrders.sqf');
         $receive = (string) file_get_contents($base . '/functions/fn_receiveOrder.sqf');
         $hud = (string) file_get_contents($base . '/functions/fn_diagIsolateHud.sqf');
-        $html = (string) file_get_contents($base . '/web/pause_manager.html');
-        $js = (string) file_get_contents($base . '/functions/fn_pauseManagerJSDialog.sqf');
         $ace = (string) file_get_contents($base . '/functions/fn_initACE.sqf');
         $cfg = (string) file_get_contents($base . '/config.cpp');
         $dlg = (string) file_get_contents($base . '/display_diag_isolate.hpp');
         $launch = (string) file_get_contents($base . '/functions/fn_diagIsolateLaunch.sqf');
         $esc = (string) file_get_contents($base . '/functions/fn_onInterruptLoad.sqf');
-        $pauseHpp = (string) file_get_contents($base . '/display_pause_manager.hpp');
 
         $probe = (string) file_get_contents($base . '/functions/fn_diagIsolateProbe.sqf');
         $snap = (string) file_get_contents($base . '/functions/fn_diagStatusSnapshot.sqf');
@@ -64,9 +61,10 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         // Le bandeau n’agrège plus diagStatusSnapshot (refonte 45a98240) : il lit directement l’état de liaison.
         self::assertStringContainsString('COMSPEC_LinkState', $hud);
         self::assertStringContainsString('liaison OK', $hud);
-        self::assertStringContainsString('tool:diagisolate', $html);
-        self::assertStringContainsString('Dépannage liaison', $html);
-        self::assertStringContainsString('tool:diagisolate', $js);
+        // Panneau « Gestion du mod » (idd 9979) retiré : plus aucun bouton ne l'ouvrait.
+        self::assertFileDoesNotExist($base . '/web/pause_manager.html');
+        self::assertFileDoesNotExist($base . '/display_pause_manager.hpp');
+        self::assertFileDoesNotExist($base . '/functions/fn_pauseManagerJSDialog.sqf');
         self::assertStringContainsString('Dépannage liaison', $ace);
         ModVersion::assertAtLeast('7', ModVersion::match('/private _menuVer = (\d+);/', $ace));
         self::assertStringContainsString('class diagIsolateStart {}', $cfg);
@@ -102,11 +100,6 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('9606', $esc);
         self::assertStringContainsString('Dépannage liaison', $esc);
         self::assertStringNotContainsString('ctrlSetText "COMSPEC Overwatch"', $esc);
-        self::assertStringContainsString('9606', $pauseHpp);
-        // Le texte d’aide du panneau a été réécrit (refonte Dépannage liaison, diagnostic + pas à pas 20/55 s).
-        self::assertStringContainsString('Dépannage liaison — diagnostic', $html);
-        self::assertStringContainsString('son pas à pas rallume chaque fonction une par une (20 ou 55 s d’écart)', $html);
-        self::assertStringContainsString('la fonction affichée à l’écran est en cause', $html);
 
         self::assertStringContainsString('snapshot → getPacketLossStats', $snap);
         self::assertStringContainsString('snapshot ← getPacketLossStats ok', $snap);

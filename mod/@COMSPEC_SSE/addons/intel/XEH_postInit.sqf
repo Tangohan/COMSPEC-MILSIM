@@ -3,8 +3,6 @@
 diag_log "[SSE][POSTINIT][intel] BEGIN";
 
 if (hasInterface) then {
-    [] call comspec_sse_fnc_createMapMarkers;
-
     // Mode entraînement : feedback après actions via event
     ["comspec_sse_recordExploited", {
         params ["_entity", "_level", ["_origin", -1]];

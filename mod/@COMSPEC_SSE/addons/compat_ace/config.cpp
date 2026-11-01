@@ -27,7 +27,6 @@ class CfgFunctions {
             class aceDogtagFromSse {};
             class aceDogtagSync {};
             class aceDogtagInstallHooks {};
-            class aceDogtagOnCheck {};
         };
     };
 };

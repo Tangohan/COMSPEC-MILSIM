@@ -3,6 +3,8 @@
     tableau de briefing), puis réaffiche la première diapositive.
 */
 if (!hasInterface) exitWith {};
+// Bouton : la relecture (HTTP Athena) part hors du fil du jeu.
+if (!canSuspend) exitWith { [] spawn comspec_overwatch_connect_fnc_refreshBriefingSlides; };
 
 // Quitte le mode Google pour revenir aux diapositives Athena.
 missionNamespace setVariable ["COMSPEC_GoogleBriefingActive", false];

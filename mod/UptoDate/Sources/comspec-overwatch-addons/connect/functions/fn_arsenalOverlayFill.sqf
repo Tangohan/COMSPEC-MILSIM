@@ -27,7 +27,7 @@ private _pendingStates = ["new", "gone", "local", "diff"];
 {
     _x params ["_c", "_u", "_on", "_label"];
     if (!isNull _c) then {
-        _c ctrlSetText _label;
+        _c ctrlSetText ((_label) call comspec_overwatch_connect_fnc_tr);
         _c ctrlSetTextColor ([[0.56, 0.65, 0.59, 1], [0.93, 0.97, 0.94, 1]] select _on);
         _c ctrlSetBackgroundColor ([[0.05, 0.06, 0.055, 1], [0.08, 0.13, 0.10, 1]] select _on);
     };
@@ -47,7 +47,7 @@ private _right = ((ctrlPosition _grp) select 2) - 0.012;
     if (isNull _c) then { continue };
     _c ctrlShow _show;
     if (!_show) then { continue };
-    _c ctrlSetText _text;
+    _c ctrlSetText ((_text) call comspec_overwatch_connect_fnc_tr);
     _c ctrlSetBackgroundColor _bg;
     _c ctrlSetTextColor _fg;
     private _tw = (ctrlTextWidth _c) + 0.024;
@@ -105,7 +105,7 @@ if (!isNull _sc) then {
     {
         _x params ["_k", "_label"];
         private _n = { [_x, _k] call _match } count _rows;
-        private _i = _sc lbAdd format ["%1 (%2)", (_label) call comspec_overwatch_connect_fnc_tr, _n];
+        private _i = _sc lbAdd ((format ["%1 (%2)", (_label) call comspec_overwatch_connect_fnc_tr, _n]) call comspec_overwatch_connect_fnc_tr);
         _sc lbSetData [_i, _k];
         if (_k isEqualTo _stateKey) then { _sc lbSetCurSel _i; };
     } forEach _groups;
@@ -159,14 +159,14 @@ for "_i" from _off to ((count _chipDefs) - 1) do {
     private _c = _display ctrlCreate [["COMSPEC_RscButtonAtak", "COMSPEC_RscButtonAtakPrimary"] select _on, -1, _grp];
     _c ctrlSetFont ([_fR, _fB] select _on);
     _c ctrlSetFontHeight (_guiH * 0.7);
-    _c ctrlSetText _label;
+    _c ctrlSetText ((_label) call comspec_overwatch_connect_fnc_tr);
     private _cw = (ctrlTextWidth _c) + 0.02;
     if ((_cx + _cw) > _limit && {_i > _off}) exitWith { ctrlDelete _c; _more = true; };
     _c ctrlSetPosition [_cx, _by, _cw, _bh];
     _c ctrlCommit 0;
     _c setVariable ["act", "chip"];
     _c setVariable ["arg", _k];
-    _c ctrlSetTooltip (if (_k isEqualTo "") then { ("Afficher toutes les collections") call comspec_overwatch_connect_fnc_tr } else { format [("Afficher la collection « %1 »") call comspec_overwatch_connect_fnc_tr, _k] });
+    _c ctrlSetTooltip (((if (_k isEqualTo "") then { ("Afficher toutes les collections") call comspec_overwatch_connect_fnc_tr } else { format [("Afficher la collection « %1 »") call comspec_overwatch_connect_fnc_tr, _k] })) call comspec_overwatch_connect_fnc_tr);
     _c ctrlAddEventHandler ["ButtonClick", { params ["_c"]; ["chip", _c getVariable ["arg", ""]] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
     _chips pushBack _c;
     _cx = _cx + _cw + 0.004;
@@ -238,7 +238,7 @@ if (!isNull _list) then {
         if (_author isNotEqualTo "") then {
             _collTxt = format ["%1 · %2", _collTxt, _author];
         };
-        private _r = _list lnbAddRow ["", _prefix + (_x select _nameIdx), _collTxt, (_label) call comspec_overwatch_connect_fnc_tr];
+        private _r = _list lnbAddRow ((["", _prefix + (_x select _nameIdx), _collTxt, (_label) call comspec_overwatch_connect_fnc_tr]) call comspec_overwatch_connect_fnc_tr);
         _list lnbSetValue [[_r, 0], _forEachIndex];
         if (_pick) then {
             [_list, _r, (toLower (_x select 0)) in _marked] call comspec_overwatch_connect_fnc_arsenalOverlayMark;
@@ -261,7 +261,7 @@ if (!isNull _list) then {
             case (_stateKey isEqualTo "new"): { "Rien de nouveau depuis votre dernière visite." };
             default { "Aucune tenue ne correspond : changez la recherche, l'état ou la collection." };
         };
-        private _r = _list lnbAddRow ["", (_msg) call comspec_overwatch_connect_fnc_tr, "", ""];
+        private _r = _list lnbAddRow ((["", (_msg) call comspec_overwatch_connect_fnc_tr, "", ""]) call comspec_overwatch_connect_fnc_tr);
         _list lnbSetValue [[_r, 0], -1];
         _list lnbSetColor [[_r, 1], [0.56, 0.65, 0.59, 1]];
     };
@@ -277,10 +277,10 @@ if (!isNull _status) then {
     } else {
         format ["<t color='#e0a050'>%1</t>", ("Pas encore de copie locale Documents") call comspec_overwatch_connect_fnc_tr]
     };
-    _status ctrlSetStructuredText parseText (format ["<t align='right' size='0.72' color='#8fa596'>%1<br/>%2 · %3</t>",
+    _status ctrlSetStructuredText parseText (((format ["<t align='right' size='0.72' color='#8fa596'>%1<br/>%2 · %3</t>",
         _syncTxt,
         if (_offline) then { format ["<t color='#e0a050'>%1</t>", ("Athena hors ligne") call comspec_overwatch_connect_fnc_tr] } else { format [("Liste du site du %1") call comspec_overwatch_connect_fnc_tr, _grp getVariable ["COMSPEC_ArsenalLoadedAt", "--:--"]] },
-        format [("%1 affichée(s) sur %2") call comspec_overwatch_connect_fnc_tr, count _shown, count _rows]]);
+        format [("%1 affichée(s) sur %2") call comspec_overwatch_connect_fnc_tr, count _shown, count _rows]])) call comspec_overwatch_connect_fnc_tr);
 };
 
 // Action groupée : Mes tenues -> envoyer seulement celles qui ne sont pas à jour sur le site (rien n'est renvoyé
@@ -291,12 +291,12 @@ _grp setVariable ["COMSPEC_ArsenalBulkRows", _bulkRows];
 private _bulk = _grp getVariable ["COMSPEC_ArsenalBulk", controlNull];
 if (!isNull _bulk) then {
     private _n = count _bulkRows;
-    _bulk ctrlSetText (switch (true) do {
+    _bulk ctrlSetText (((switch (true) do {
         case (_isCloud && {_n > 0}): { format [("IMPORTER %1 TENUE(S) DANS MON ARSENAL") call comspec_overwatch_connect_fnc_tr, _n] };
         case (_isCloud): { ("TOUT EST DANS MON ARSENAL") call comspec_overwatch_connect_fnc_tr };
         case (_n > 0): { format [("ENVOYER %1 TENUE(S) AU SITE") call comspec_overwatch_connect_fnc_tr, _n] };
         default { ("RIEN À ENVOYER AU SITE") call comspec_overwatch_connect_fnc_tr };
-    });
+    })) call comspec_overwatch_connect_fnc_tr);
     _bulk ctrlSetTooltip (([
         "Envoie au site les tenues affichées qui n'y sont pas encore, ou qui ont changé ici. Les autres ne sont pas renvoyées.",
         "Importe dans votre arsenal les tenues affichées que vous n'avez pas encore. Aucune de vos tenues n'est remplacée."

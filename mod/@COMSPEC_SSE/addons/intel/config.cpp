@@ -30,18 +30,15 @@ class CfgFunctions {
             class createIntelDatum {};
             class attachIntelLayers {};
             class getExploitationLevel {};
-            class setExploitationLevel {};
             class advanceExploitation {};
             class getRevealedIntel {};
             class triageSite {};
-            class confidenceLabel {};
             class addLogicalEntity {};
             class listLogicalEntities {};
             class pivotSearch {};
             class fuseIntel {};
             class deduplicateIntel {};
             class buildTimeline {};
-            class extractGeopoints {};
             class createMapMarkers {};
             class applyEvidenceState {};
             class rollAccessState {};
@@ -49,7 +46,6 @@ class CfgFunctions {
             class generateOpticalMedia {};
             class generateTechint {};
             class enrichBiometrics {};
-            class matchBiometric {};
             class registerActionHistory {};
             class getActionHistory {};
             class getOperatorSkill {};
@@ -57,7 +53,6 @@ class CfgFunctions {
             class registerZeusHook {};
             class fireZeusHook {};
             class isDiscovered {};
-            class getDiscoveryState {};
             class setDiscoveryState {};
             class siteCompleteness {};
             class listSiteEntities {};
@@ -73,7 +68,6 @@ class CfgFunctions {
             class makeEvidenceLabel {};
             class afterActionReport {};
             class trainingFeedback {};
-            class sandboxGenerateSite {};
             class markExploitedLocal {};
         };
     };

@@ -1,0 +1,38 @@
+name: Discord Steam publié
+
+# Lancé à la main (ou par `gh workflow run discord-steam.yml -f version=2.9.22`) juste après la publication
+# du mod sur le Steam Workshop : annonce « disponible sur Steam » avec les composants du pack et leurs versions,
+# et pingue le rôle des testeurs pour récolter leurs retours.
+# Secrets : DISCORD_RELEASES_WEBHOOK (déjà utilisé par discord-changelog.yml) et DISCORD_TESTERS_ROLE_ID
+# (identifiant numérique du rôle « Testeurs » sur Discord ; sans lui, l'annonce part sans ping).
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version publiée (ex. 2.9.22)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/scripts
+            CHANGELOG-ATAK.md
+            mod/COMSPEC_ATAK_Native/Sources/addons/main/script_component.hpp
+            mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp
+            mod/UptoDate/Sources/comspec-overwatch-addons/main/config.cpp
+          sparse-checkout-cone-mode: false
+          filter: blob:none
+      - name: Post to Discord
+        env:
+          DISCORD_RELEASES_WEBHOOK: ${{ secrets.DISCORD_RELEASES_WEBHOOK }}
+          DISCORD_TESTERS_ROLE_ID: ${{ secrets.DISCORD_TESTERS_ROLE_ID }}
+          VERSION: ${{ inputs.version }}
+        run: python3 .github/scripts/discord_changelog.py --steam-published "$VERSION"

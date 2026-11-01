@@ -18,14 +18,15 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.622;
-        versionStr = "1.6.22";
-        versionAr[] = {1, 6, 22};
+        version = 1.623;
+        versionStr = "1.6.23";
+        versionAr[] = {1, 6, 23};
         // 1.6.18 : écusson « Donateur Athena » (CfgUnitInsignia COMSPEC_Donor_*, fn_applyDonorPerk).
         // 1.6.19 : correctif de sécurité 2.4.1 (adresse d'Athena vérifiée avant la connexion, fn_connect).
         // 1.6.20 : revue du mod, tours 4 et 5 (regroupement ATAK natif 2.5.0).
         // 1.6.21 : revue du mod, tours 6 et 7 (regroupement ATAK natif 2.6.0).
         // 1.6.22 : ATAK natif 2.9.21 — panneau Tenues ACE corrigé (réparation des tenues ACE), menu ACE Tenues retiré, coupure centrale des envois (fn_uplinkHold), bandeau bêta fermable.
+        // 1.6.23 : ATAK natif 2.9.22 — plus aucun appel lent sur le fil du jeu (extDirect / extFast), traduction anglaise complète, optimisations SQF.
     };
 };
 
@@ -119,15 +120,12 @@ class CfgFunctions {
             class diagChecks {};
             class diagSelfTest {};
             class diagAction {};
-            class collectBugReportLog {};
             class disconnect {};
             class playtimeTracker {};
             class forcePlaytimeReport {};
             class updatePosition {};
             class bftPlatform {};
             class applyNetworkProfile {};
-            class sampleTerrain {};
-            class sampleScene {};
             class sampleTheater {};
             class sampleGeoNetwork {};
             class theaterSurveyShow {};
@@ -188,10 +186,6 @@ class CfgFunctions {
             class aceAddSelfAction {};
             class aceSweepPlayerSelfActions {};
             class acePadAction {};
-            class pauseManagerShow {};
-            class pauseManagerOnLoad {};
-            class pauseManagerPageLoaded {};
-            class pauseManagerJSDialog {};
             class onInterruptLoad {};
             class log {};
             class logAtakEvent {};
@@ -204,6 +198,7 @@ class CfgFunctions {
             class aceLoadoutsRepair {};
             class uplinkHold {};
             class extDirect {};
+            class extFast {};
             class startLogSession {};
             class logTransmission {};
             class logFnError {};
@@ -233,7 +228,6 @@ class CfgFunctions {
             class emitTelemetryEvent {};
             class pushIcemanMedicalAlert {};
             class canTriageMedical {};
-            class medicalInboxShow {};
             class medicalInboxOnLoad {};
             class medicalTriage {};
             class pollMedicalAlerts {};
@@ -241,7 +235,6 @@ class CfgFunctions {
             class selfCancelMedicalAlert {};
             class getAircraftType {};
             class isHatchetVehicle {};
-            class playerInHatchetVehicle {};
             class hideAceMenu {};
             class fillFlightManifest {};
             class submitFlightManifest {};
@@ -268,7 +261,6 @@ class CfgFunctions {
             class syncLaserCode {};
             class receiveDangerZone {};
             class deleteDangerZone {};
-            class checkPlayerInDangerZone {};
             class warnDangerZoneEntry {};
             class pollTacticalZones {};
             class sendLogisticsStatus {};
@@ -514,7 +506,6 @@ class CfgFunctions {
             class showExperienceGuide {};
             class portalLabel {};
             class profileWrap {};
-            class profileReport {};
             class getPlayerAvatarInfo {};
             class showPlayerProfile {};
             class showDeviceView {};
@@ -567,7 +558,6 @@ class CfgFunctions {
             class gridPosition {};
             class mgrsGrid {};
             class formatHeading {};
-            class recordPacketReceived {};
             class getPacketLossStats {};
             class simulateNetworkDisconnect {};
             class isNetworkDisconnected {};
@@ -715,19 +705,19 @@ class CfgCommands {
 // Sources : mod\UptoDate\Sources\art\donor_insignia (SVG + PNG 256x256, hors PBO) ; PAA DXT5 générés par mod\UptoDate\tools\png2paa.py.
 class CfgUnitInsignia {
     class COMSPEC_Donor_soutien {
-        displayName = "Donateur Athena · Soutien";
+        displayName = "$STR_COMSPEC_OW_CFG_362C50325B";
         author = "COMSPEC";
         texture = "\z\comspec_overwatch\addons\connect\img\donor\donor_soutien_ca.paa";
         textureVehicle = "";
     };
     class COMSPEC_Donor_allie {
-        displayName = "Donateur Athena · Allié";
+        displayName = "$STR_COMSPEC_OW_CFG_53EDA14935";
         author = "COMSPEC";
         texture = "\z\comspec_overwatch\addons\connect\img\donor\donor_allie_ca.paa";
         textureVehicle = "";
     };
     class COMSPEC_Donor_pilier {
-        displayName = "Donateur Athena · Pilier";
+        displayName = "$STR_COMSPEC_OW_CFG_B72BAA7444";
         author = "COMSPEC";
         texture = "\z\comspec_overwatch\addons\connect\img\donor\donor_pilier_ca.paa";
         textureVehicle = "";
@@ -901,7 +891,6 @@ class CfgFactionClasses
 #include "display_medical_inbox.hpp"
 #include "display_device.hpp"
 #include "display_webbrowser.hpp"
-#include "display_pause_manager.hpp"
 #include "display_diag_isolate.hpp"
 #include "display_theater_survey.hpp"
 

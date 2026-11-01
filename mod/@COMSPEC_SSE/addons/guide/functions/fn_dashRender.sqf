@@ -428,10 +428,10 @@ switch (_tab) do {
         private _shown = _order select { _flt isEqualTo "all" || {((_ents get _x) get "kind") isEqualTo _flt} };
         {
             private _p = _ents get _x;
-            private _i = _lb lbAdd (_p get "label");
+            private _i = _lb lbAdd (((_p get "label")) call comspec_sse_fnc_tr);
             _lb lbSetData [_i, "e:" + str _x];
             _lb lbSetPicture [_i, _icons getOrDefault [_p get "kind", ""]];
-            _lb lbSetTooltip [_i, _p get "type"];
+            _lb lbSetTooltip (([_i, _p get "type"]) call comspec_sse_fnc_tr);
             _detail set ["e:" + str _x, [_x] call _entHtml];
         } forEach _shown;
         [[_ax + _lw + 2 * _u, _ay, _aw - _lw - 2 * _u, _ah - 6.5 * _u]] call _detailBox;
@@ -682,7 +682,7 @@ switch (_tab) do {
         private _list = _site getOrDefault ["campaigns", []];
         private _cb = ["ctrlCombo", [_ax, _ay, _aw * 0.5, 4.5 * _u]] call _ctl;
         {
-            private _i = _cb lbAdd format ["%1 (%2) · %3", _x param [1, ""], _x param [0, ""], (_typeLabels getOrDefault [_x param [2, ""], _x param [2, ""]]) call comspec_sse_fnc_tr];
+            private _i = _cb lbAdd ((format ["%1 (%2) · %3", _x param [1, ""], _x param [0, ""], (_typeLabels getOrDefault [_x param [2, ""], _x param [2, ""]]) call comspec_sse_fnc_tr]) call comspec_sse_fnc_tr);
             _cb lbSetData [_i, _x param [0, ""]];
         } forEach _list;
         _cb lbSetCurSel ((_list findIf { (_x select 0) isEqualTo (_site getOrDefault ["key", ""]) }) max 0);

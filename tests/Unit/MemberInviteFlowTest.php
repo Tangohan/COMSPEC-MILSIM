@@ -114,7 +114,7 @@ final class MemberInviteFlowTest extends TestCase
         $registry = require dirname(__DIR__, 2) . '/database/steps/registry.php';
         $ids = array_column($registry, 'id');
         self::assertContains('member_profile_invites', $ids);
-        $step = self::read('database/steps/3250_member_profile_invites.php');
+        $step = self::read('database/steps/3260_member_profile_invites.php');
         self::assertStringContainsString('2026_11_01_010_member_profile_invites.sql', $step);
         $sql = self::read('migrations/2026_11_01_010_member_profile_invites.sql');
         self::assertStringContainsString('CREATE TABLE IF NOT EXISTS `member_profile_invites`', $sql);
