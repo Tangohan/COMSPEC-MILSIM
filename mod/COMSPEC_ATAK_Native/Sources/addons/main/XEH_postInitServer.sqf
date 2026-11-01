@@ -10,6 +10,10 @@ private _perfT0 = diag_tickTime;
     Un client demande la synchro à son arrivée (comspec_atak_native_syncReq) ; le serveur répond par comspec_atak_native_syncData.
 */
 if (!isServer) exitWith {};
+if (missionNamespace getVariable ["COMSPEC_ATAK_ServerInitDone", false]) exitWith {
+    diag_log "[COMSPEC ATAK NATIVE][WARNING][BOOT] Initialisation serveur déjà faite : deux copies du mod chargées, la seconde est ignorée";
+};
+missionNamespace setVariable ["COMSPEC_ATAK_ServerInitDone", true];
 // Le serveur a le mod : il écrit le plan partagé de l'app Plan (sinon les clients gardent leurs tracés en brouillon).
 missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 // Téléphones de joueurs ramassés par l'IA ennemie, exploitation du BFT et compromissions (fn_captureServer).

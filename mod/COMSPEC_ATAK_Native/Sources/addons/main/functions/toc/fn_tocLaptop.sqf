@@ -64,7 +64,36 @@ switch (_mode) do {
         // Le serveur publie le réseau du camp dès qu'un PC est ouvert (fn_tocFeed) ; publié tout de suite.
         player setVariable ["COMSPEC_ATAK_TocView", [_side, [round ((getPosASL _a) select 0), round ((getPosASL _a) select 1)], 1500, "GROUPES", "", ["callsign"] call comspec_atak_native_fnc_tocPost, name player, ""], true];
         createDialog "COMSPEC_RscTocLaptop";
+        ["pipOn"] call _fn;
         true
+    };
+    case "pipOn": {
+        // Le PC du poste en PIP sur les écrans TOC du poste (20 m, même camp) : tous les joueurs autour voient la vue de
+        // l'opérateur (carte, onglet, sélection) sans se mettre derrière lui. Seul l'état de vue circule
+        // (COMSPEC_ATAK_TocView sur l'opérateur, affichage des écrans tenu par le serveur) : JIP compris.
+        private _o = _st getOrDefault ["obj", objNull];
+        if (isNull _o) exitWith { [] };
+        private _done = [];
+        {
+            private _c = _x getVariable ["COMSPEC_ATAK_TocScr", []];
+            private _v = _c param [3, ""];
+            // Caméra en direct ou diapositives en cours : l'écran garde ce qu'il montre.
+            if ((count _c) >= 8 && {alive _x} && {(_x distance _o) < 20} && {(_c select 1) in ["", _side]} && {_v in ["SPLIT", "MAP", "FEED"]}
+                && {(count (_x getVariable ["COMSPEC_ATAK_ScreenCast", []])) < 5}) then {
+                _done pushBack [_x, _v];
+                ["view", [_x, "mode", "TOC"]] call comspec_atak_native_fnc_tocScreen;
+                _x setVariable ["COMSPEC_ATAK_TocAt", -10];
+            };
+        } forEach ((missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x });
+        _st set ["pip", _done];
+        _done
+    };
+    case "pipOff": {
+        {
+            _x params ["_o", "_v"];
+            if (!isNull _o && {((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isEqualTo "TOC"}) then { ["view", [_o, "mode", _v]] call comspec_atak_native_fnc_tocScreen; };
+        } forEach (_st getOrDefault ["pip", []]);
+        _st set ["pip", []];
     };
     case "load": {
         private _d = _a;
@@ -238,6 +267,7 @@ switch (_mode) do {
     };
     case "unload": {
         ["keep"] call _fn;
+        ["pipOff"] call _fn;
         [_st getOrDefault ["pfh", -1]] call CBA_fnc_removePerFrameHandler;
         _st set ["pfh", -1];
         _st set ["ui", createHashMap];
@@ -414,10 +444,17 @@ switch (_mode) do {
         { private _f = (_x select 4) min 3; _cnt set [_f, (_cnt select _f) + (_x param [8, 1])]; } forEach _nodes;
         _stats params [["_jam", 0], ["_relays", 0], ["_players", 0], ["_ais", 0]];
         private _msg = (_st getOrDefault ["status", ["", 0]]);
-        (_ui get "bar") ctrlSetStructuredText parseText ((format ["<t size='1.05'>  RÉSEAU  <t color='#5cc76b'>%1 en ligne</t> · <t color='#e0b040'>%2 anciens</t> · <t color='#9aa39f'>%3 perdus</t> · <t color='#6f7773'>%4 hors ligne</t>   <t color='#8a9a93'>%5 joueurs · %6 IA · %7 relais · %8 brouilleurs</t>%9</t>",
+        private _pipN = count ((_st getOrDefault ["pip", []]) select { ((((_x select 0) getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isEqualTo "TOC") });
+        (_ui get "bar") ctrlSetStructuredText parseText ((format ["<t size='1.05'>  RÉSEAU  <t color='#5cc76b'>%1 en ligne</t> · <t color='#e0b040'>%2 anciens</t> · <t color='#9aa39f'>%3 perdus</t> · <t color='#6f7773'>%4 hors ligne</t>   <t color='#8a9a93'>%5 joueurs · %6 IA · %7 relais · %8 brouilleurs</t>   %10%9</t>",
             _cnt select 0, _cnt select 1, _cnt select 2, _cnt select 3, _players, _ais, _relays, _jam,
-            ["", format ["   <t color='#7fd0b0'>▶ %1</t>", [_msg select 0] call _esc]] select (diag_tickTime < (_msg select 1))]) call comspec_atak_native_fnc_tr);
+            ["", format ["   <t color='#7fd0b0'>▶ %1</t>", [_msg select 0] call _esc]] select (diag_tickTime < (_msg select 1)),
+            ["<t color='#6f7773'>écrans du poste : aucun en PIP</t>", format ["<t color='#e0b040'>● PIP sur %1 écran(s) du poste</t>", _pipN]] select (_pipN > 0)]) call comspec_atak_native_fnc_tr);
         private _groupsL = [_nodes] call _groups;
+        private _nOrd = count (values ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["localTasks", createHashMap]) select { (_x getOrDefault ["issuerUid", ""]) isEqualTo getPlayerUID player });
+        {
+            _x params ["_k", "_n"];
+            (_ui get ("tab" + _k)) ctrlSetText (format ["%1 %2", _k call comspec_atak_native_fnc_tr, ["", format ["(%1)", _n]] select (_n > 0)]); // i18n:brut (déjà traduit)
+        } forEach [["GROUPES", count _groupsL], ["FLUX", count _events], ["ORDRES", _nOrd], ["CAMP", 0]];
         // Listes reconstruites seulement quand leur contenu change (sélection et défilement gardés).
         private _sig = str [_tab, _groupsL apply { [_x select 0, _x select 3, _x select 5, _x select 6] }, count _events, _events param [(count _events) - 1, []]];
         private _changed = _sig isNotEqualTo (_st getOrDefault ["sig", ""]);
@@ -553,14 +590,29 @@ switch (_mode) do {
         if (!isNull _o) then {
             _map drawIcon ["\A3\ui_f\data\map\markers\nato\b_hq.paa", _sideRgb + [1], getPosASL _o, 30, 30, 0, "TOC", 1, _ts, "RobotoCondensedBold", "right"];
         };
-        // Comptes rendus et alertes géolocalisés des 20 dernières minutes.
+        // Étiquettes posées une à une : celle qui chevaucherait une étiquette déjà posée n'est pas écrite (icône seule).
+        private _taken = [];
+        private _lbl = {
+            params ["_pos", "_txt", ["_k", 1]];
+            if (_txt isEqualTo "") exitWith { "" };
+            private _sp = _map ctrlMapWorldToScreen _pos;
+            private _w = (count _txt) * _ts * 0.42 * _k + _ts;
+            private _r = [(_sp select 0) + _w / 2, _sp select 1, _w, _ts * 1.1 * _k];
+            if ((_taken findIf { abs ((_x select 0) - (_r select 0)) < ((_x select 2) + (_r select 2)) / 2 && {abs ((_x select 1) - (_r select 1)) < ((_x select 3) + (_r select 3)) / 2} }) >= 0) exitWith { "" };
+            _taken pushBack _r;
+            _txt
+        };
+        // Comptes rendus et alertes géolocalisés des 20 dernières minutes : dessinés après les nœuds (les noms d'abord).
+        private _evs = [];
         {
             _x params ["", ["_kind", ""], ["_prio", ""], "", "", "", ["_p", []], ["_at", -1e9]];
             if ((count _p) >= 2 && {serverTime - _at < 1200}) then {
-                _map drawIcon ["\A3\ui_f\data\map\markers\military\warning_CA.paa", [[1, 0.55, 0.2, 1], [1, 0.3, 0.22, 1]] select (_prio in ["FLASH", "URGENT"]), [_p select 0, _p select 1, 0], 26, 26, 0, _kind, 1, _ts * 0.9, "RobotoCondensedBold", "right"];
+                _evs pushBack [[[1, 0.55, 0.2, 1], [1, 0.3, 0.22, 1]] select (_prio in ["FLASH", "URGENT"]), [_p select 0, _p select 1, 0], _kind];
             };
         } forEach _events;
         // Nœuds ATAK du camp : symbole OTAN ami, couleur du camp ; ancien pâli, perdu et hors ligne en gris.
+        // Groupe choisi puis nœuds en direct d'abord : ce sont eux qui gardent leur nom quand la carte est chargée.
+        _nodes = [_nodes, [], { [(_x select 4) min 3, -10] select (((_x param [7, ""]) isEqualTo _selG) && {_selG isNotEqualTo ""}) }, "ASCEND"] call BIS_fnc_sortBy;
         {
             _x params ["", "_cs", "_p", "_dir", "_fr", "_kind", "_ai", ["_grp", ""], ["_n", 1]];
             private _tex = format ["\A3\ui_f\data\map\markers\nato\b_%1.paa", (createHashMapFromArray [["veh", "motor_inf"], ["air", "air"], ["boat", "naval"], ["armor", "armor"]]) getOrDefault [_kind, "inf"]];
@@ -574,9 +626,12 @@ switch (_mode) do {
             if (_grp isEqualTo _selG && {_selG isNotEqualTo ""}) then {
                 _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", [1, 0.85, 0.3, 0.9], _pos, 44, 44, 0, "", 0];
             };
-            _map drawIcon [_tex, _col, _pos, 28, 28, 0, _cs + (["", format [" +%1", _n - 1]] select (_n > 1)) + (["", " · IA"] select _ai) + (["", " · ancien", " · perdu", " · hors ligne"] select (_fr min 3)), 1, _ts, "RobotoCondensedBold", "right"];
+            // « IA » seulement sur le groupe choisi : la carte n'est plus couverte de suffixes.
+            private _txt = _cs + (["", format [" +%1", _n - 1]] select (_n > 1)) + (["", " · IA"] select (_ai && {_grp isEqualTo _selG})) + (["", " · ancien", " · perdu", " · hors ligne"] select (_fr min 3));
+            _map drawIcon [_tex, _col, _pos, 28, 28, 0, [_pos, _txt] call _lbl, 1, _ts, "RobotoCondensedBold", "right"];
             if (_fr < 2) then { _map drawArrow [_pos, _pos getPos [45, _dir], _col]; };
         } forEach _nodes;
+        { _x params ["_c", "_p", "_k"]; _map drawIcon ["\A3\ui_f\data\map\markers\military\warning_CA.paa", _c, _p, 22, 22, 0, [_p, _k, 0.85] call _lbl, 1, _ts * 0.85, "RobotoCondensedBold", "right"]; } forEach _evs;
         // Objectif de l'ordre en cours de rédaction (clic droit).
         private _op = _draft getOrDefault ["pos", []];
         if ((count _op) >= 2) then {

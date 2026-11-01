@@ -63,7 +63,8 @@ switch (_mode) do {
         if (_i < 0) exitWith { false };
         (_act select _i) params ["_o", "_cam", "_rt"];
         if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _rt]; camDestroy _cam; };
-        if (!isNull _o) then {
+        // Diapositives lancées sur l'écran : fn_screenCast pose déjà son image, ne pas la recouvrir par l'origine.
+        if (!isNull _o && {(count (_o getVariable ["COMSPEC_ATAK_ScreenCast", []])) < 5}) then {
             private _sel = ((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [2, 0]);
             _o setObjectTexture [_sel, _o getVariable ["COMSPEC_ATAK_TocOrig", ""]];
         };
