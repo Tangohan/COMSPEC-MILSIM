@@ -125,9 +125,7 @@ final class InvitationAcceptController
         }
 
         $pdo = Database::getPdo();
-        $gradeStmt = $pdo->prepare('SELECT id FROM grades WHERE tenant_id = ? ORDER BY rank_order ASC LIMIT 1');
-        $gradeStmt->execute([$tenantId]);
-        $gradeId = (int) ($gradeStmt->fetchColumn() ?: 0);
+        $gradeId = self::entryGradeIdForTenant($tenantId);
         if ($gradeId <= 0) {
             Session::flash('error', 'Configuration de la communauté incomplète (grades).');
 
@@ -298,5 +296,37 @@ final class InvitationAcceptController
         } catch (\Throwable $e) {
             error_log('InvitationAcceptController::applyInvitationPayload: ' . $e->getMessage());
         }
+    }
+    /**
+     * Grade d'entrée d'une recrue : le plus bas grade non officier du référentiel de la communauté
+     * (sort_order le plus grand, militaires du rang d'abord). Ancien schéma (grades par communauté) pris en charge.
+     */
+    private static function entryGradeIdForTenant(int $tenantId): int
+    {
+        $grades = new \App\Repositories\GradeRepository();
+        if ($grades->isReferentielTablePresent()) {
+            $best = 0;
+            $bestKey = null;
+            foreach ($grades->listForTenant($tenantId) as $g) {
+                if ((int) ($g['is_active'] ?? 1) !== 1) {
+                    continue;
+                }
+                $key = [
+                    strtoupper((string) ($g['category_code'] ?? '')) === 'MDR' ? 1 : 0,
+                    (int) ($g['is_commissioned'] ?? 0) === 1 ? 0 : 1,
+                    (int) ($g['sort_order'] ?? 0),
+                ];
+                if ($bestKey === null || $key > $bestKey) {
+                    $bestKey = $key;
+                    $best = (int) ($g['id'] ?? 0);
+                }
+            }
+
+            return $best;
+        }
+        $stmt = Database::getPdo()->prepare('SELECT id FROM grades WHERE tenant_id = ? ORDER BY rank_order ASC LIMIT 1');
+        $stmt->execute([$tenantId]);
+
+        return (int) ($stmt->fetchColumn() ?: 0);
     }
 }
