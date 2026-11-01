@@ -14,32 +14,12 @@ class HomeController
 {
     public function index(Request $request, array $params = []): Response
     {
-        $days = 30;
-        $platformKpis = [
-            'communities_total' => 0,
-            'users_active_total' => 0,
-            'training_completions_in_period' => 0,
-            'enlistments_created_in_period' => 0,
-            'usage_events_in_period' => 0,
-        ];
-
+        // Chiffres réels de toute la plateforme : même service et même cache (10 min) que « Notre histoire »
+        // et « À propos ». La home publique reste disponible si la base ne répond pas.
         try {
-            /** @var \App\Repositories\TenantAnalyticsRepository $analyticsRepo */
-            $analyticsRepo = \App\Core\Container::get(\App\Repositories\TenantAnalyticsRepository::class);
-            $raw = $analyticsRepo->getPlatformOperationalKpis($days);
-            $platformKpis['communities_total'] = (int) ($raw['communities_total'] ?? 0);
-            $platformKpis['users_active_total'] = (int) ($raw['users_active_total'] ?? 0);
-            $platformKpis['training_completions_in_period'] = (int) ($raw['training_completions_in_period'] ?? 0);
-            $platformKpis['enlistments_created_in_period'] = (int) ($raw['enlistments_created_in_period'] ?? 0);
-            $platformKpis['usage_events_in_period'] = (int) ($raw['usage_events_in_period'] ?? 0);
+            $platformStats = (new \App\Services\Platform\PublicHistoryStatsService())->stats();
         } catch (\Throwable) {
-            // La home publique doit rester disponible même si les tables analytics ne sont pas prêtes.
-        }
-
-        $fieldMetrics = ['phones' => 0, 'play_hours' => 0, 'distance_km' => 0];
-        try {
-            $fieldMetrics = (new \App\Services\Ecosystem\PlatformFieldMetricsService())->totals();
-        } catch (\Throwable) {
+            $platformStats = null;
         }
 
         $featuredUnits = [];
@@ -99,9 +79,7 @@ class HomeController
 
         return Response::view('home.index', [
             'title' => 'Athena Comspec — Portail MILSIM',
-            'platformKpis' => $platformKpis,
-            'platformKpiDays' => $days,
-            'fieldMetrics' => $fieldMetrics,
+            'platformStats' => $platformStats,
             'featuredUnits' => $featuredUnits,
         ]);
     }
