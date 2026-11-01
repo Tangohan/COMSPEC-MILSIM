@@ -245,7 +245,10 @@ final class CommunityLanguages
         return $iso2 !== '' ? ($options[strtoupper($iso2)] ?? strtoupper($iso2)) : '';
     }
 
-    /** Nom du pays dans la langue demandée (extension intl si présente), sinon en français. */
+    /**
+     * Nom du pays dans la langue demandée : table anglaise du catalogue pour l'anglais, extension intl pour les autres
+     * langues si elle est présente, sinon en français.
+     */
     public static function countryLabelIn(string $iso2, string $lang): string
     {
         $iso2 = strtoupper(trim($iso2));
@@ -253,11 +256,18 @@ final class CommunityLanguages
             return '';
         }
         $lang = self::normalize($lang) ?? self::DEFAULT;
+        if ($lang === 'en' && ($en = PublicFlagCountryCatalog::englishLabel($iso2)) !== '') {
+            return $en;
+        }
         if ($lang !== 'fr' && class_exists(\Locale::class)) {
             $name = (string) \Locale::getDisplayRegion('-' . $iso2, $lang);
             if ($name !== '' && strtoupper($name) !== $iso2) {
                 return $name;
             }
+        }
+        // Autre langue sans intl : l'anglais (les autres langues se posent sur l'anglais du site).
+        if ($lang !== 'fr' && ($en = PublicFlagCountryCatalog::englishLabel($iso2)) !== '') {
+            return $en;
         }
 
         return self::countryLabel($iso2);

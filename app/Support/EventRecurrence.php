@@ -129,20 +129,20 @@ final class EventRecurrence
      */
     public static function describe(string $frequency, array $weekdays = []): string
     {
-        $names = [1 => 'lundi', 2 => 'mardi', 3 => 'mercredi', 4 => 'jeudi', 5 => 'vendredi', 6 => 'samedi', 7 => 'dimanche'];
+        $en = LocalizedCalendar::lang() === 'en';
         $list = [];
         foreach ($weekdays as $d) {
-            if (isset($names[(int) $d])) {
-                $list[] = $names[(int) $d];
+            if ((int) $d >= 1 && (int) $d <= 7) {
+                $list[] = LocalizedCalendar::weekday((int) $d);
             }
         }
         $joined = $list === [] ? '' : ' (' . implode(', ', $list) . ')';
 
         return match ($frequency) {
-            'weekly' => 'chaque semaine' . $joined,
-            'biweekly' => 'une semaine sur deux' . $joined,
-            'monthly' => 'chaque mois',
-            default => 'une seule fois',
+            'weekly' => ($en ? 'every week' : 'chaque semaine') . $joined,
+            'biweekly' => ($en ? 'every other week' : 'une semaine sur deux') . $joined,
+            'monthly' => $en ? 'every month' : 'chaque mois',
+            default => $en ? 'once' : 'une seule fois',
         };
     }
 }

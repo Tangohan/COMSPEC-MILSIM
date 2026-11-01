@@ -209,20 +209,8 @@ final class PlatformProductionStatus
 
     private static function formatFrenchDateTime(\DateTimeImmutable $dt): string
     {
-        $months = [
-            1 => 'janvier', 2 => 'février', 3 => 'mars', 4 => 'avril',
-            5 => 'mai', 6 => 'juin', 7 => 'juillet', 8 => 'août',
-            9 => 'septembre', 10 => 'octobre', 11 => 'novembre', 12 => 'décembre',
-        ];
         $local = $dt->setTimezone(new \DateTimeZone('Europe/Paris'));
-        $m = (int) $local->format('n');
 
-        return sprintf(
-            '%d %s %s à %s',
-            (int) $local->format('j'),
-            $months[$m] ?? $local->format('m'),
-            $local->format('Y'),
-            $local->format('H:i')
-        );
+        return LocalizedCalendar::dateTime((int) $local->format('j'), (int) $local->format('n'), $local->format('Y'), $local->format('H:i'));
     }
 }

@@ -56,7 +56,14 @@ final class UntranslatedFrenchScanner
     public static function missingInFile(string $path): array
     {
         $src = (string) file_get_contents($path);
-        $segments = str_ends_with($path, '.js') ? self::jsSegments($src) : self::viewSegments($src);
+        $p = str_replace('\\', '/', $path);
+        $segments = match (true) {
+            str_ends_with($p, '.js') => self::jsSegments($src),
+            // Comme site_i18n.py extract-app : journaux, PDF et filtres de modération restent en français.
+            preg_match('~(^|/)app/~', $p) === 1 => preg_match('~Scanner|Log\w*Service|Pdf|Moderation|Logger|Journal~', basename($p)) === 1
+                ? [] : self::appSegments($src),
+            default => self::viewSegments($src),
+        };
         $out = [];
         foreach ($segments as $s) {
             if (!self::isTranslated($s)) {
@@ -175,6 +182,188 @@ final class UntranslatedFrenchScanner
             }
             foreach (explode("\x00", $p) as $chunk) {
                 array_push($out, ...self::segments(self::templ($chunk)));
+            }
+        }
+
+        return array_values(array_unique($out));
+    }
+
+    /** Appels dont les textes ne s'affichent pas (journaux, exceptions techniques, requêtes). */
+    private const APP_SILENT_CALLS = '/^(?:error_log|trigger_error|syslog|log\w*|audit\w*|journal\w*|record|debug|info|notice|warning|error|critical|alert|emergency|logException|[A-Za-z]*(?:Exception|Error)|prepare|query|exec|execute|define|header|preg_\w+|str_\w+|json_\w+|sprintf_log|assert\w*)$/i';
+
+    /**
+     * Textes composés du code PHP (app/) : concaténations « 'Unité fictive : ' . $x », chaînes "… {$n} jours" et
+     * formats sprintf('… %d …'). Un littéral seul n'est pas relevé ici (tools/i18n/site_i18n.py extract-app s'en
+     * charge) : c'est le texte collé à une valeur qui échappe au dictionnaire. Chaque valeur devient %1, %2… ; un
+     * texte de journal, d'exception, de requête SQL ou une clé __() est ignoré.
+     *
+     * @return list<string>
+     */
+    public static function appSegments(string $src): array
+    {
+        $tokens = @token_get_all($src);
+        $out = [];
+        // Niveau d'imbrication : opérandes déjà joints par « . », opérande courant, appel ouvrant, n° d'argument.
+        $new = static fn (string $fn, bool $silent): array => ['parts' => [], 'cur' => null, 'concat' => false, 'fn' => $fn, 'silent' => $silent, 'arg' => 0];
+        $stack = [$new('', false)];
+        $lastName = '';
+        $emit = static function (array $lvl) use (&$out): void {
+            $parts = $lvl['parts'];
+            if ($lvl['cur'] !== null) {
+                $parts[] = $lvl['cur'];
+            }
+            if ($lvl['silent'] || $parts === []) {
+                return;
+            }
+            $fmt = in_array(strtolower($lvl['fn']), ['sprintf', 'printf'], true) && $lvl['arg'] === 0;
+            if (!$lvl['concat'] && !$fmt && !(count($parts) === 1 && is_array($parts[0]) && $parts[0][1])) {
+                return;
+            }
+            $text = '';
+            $hasLit = false;
+            $hasVal = false;
+            foreach ($parts as $part) {
+                if (is_array($part)) {
+                    $text .= $part[0];
+                    $hasLit = true;
+                    $hasVal = $hasVal || $part[1];
+                } elseif (!str_ends_with($text, "\x01")) {
+                    $text .= "\x01";
+                    $hasVal = true;
+                }
+            }
+            if ($fmt) {
+                // « %% » : signe pour cent affiché tel quel.
+                $text = (string) preg_replace('/%(?:\d+\$)?[-+ 0\']*\d*(?:\.\d+)?[sdfu]/', "\x01", str_replace('%%', "\x02", $text));
+                $text = str_replace("\x02", '%', $text);
+                $hasVal = str_contains($text, "\x01");
+            }
+            if (!$hasLit || !$hasVal || preg_match('/\b(?:SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|ALTER|CREATE TABLE)\b/', $text) === 1) {
+                return;
+            }
+            foreach (preg_split('/<[^<>]*>|\n/', $text) ?: [] as $chunk) {
+                $n = 0;
+                $chunk = (string) preg_replace_callback('/\x01/', static function () use (&$n): string {
+                    return '%' . (++$n);
+                }, $chunk);
+                // Valeur sans texte autour, ou adresse (« %1?vue=calendrier#nouveau ») : rien à traduire.
+                if (preg_match('/%\d/', $chunk) !== 1 || (!str_contains(trim($chunk), ' ') && preg_match('~[?=@#/]~', $chunk) === 1)) {
+                    continue;
+                }
+                array_push($out, ...self::segments($chunk));
+            }
+        };
+        $close = static function () use (&$stack, $emit): void {
+            $i = count($stack) - 1;
+            $emit($stack[$i]);
+            $stack[$i]['parts'] = [];
+            $stack[$i]['cur'] = null;
+            $stack[$i]['concat'] = false;
+        };
+        $count = count($tokens);
+        for ($k = 0; $k < $count; $k++) {
+            $tok = $tokens[$k];
+            $top = count($stack) - 1;
+            if (is_array($tok)) {
+                [$id, $txt] = $tok;
+                if (in_array($id, [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT, T_OPEN_TAG, T_CLOSE_TAG, T_INLINE_HTML], true)) {
+                    continue;
+                }
+                if ($id === T_CONSTANT_ENCAPSED_STRING) {
+                    $lit = self::phpLiteral($txt);
+                    $isKey = in_array(strtolower($stack[$top]['fn']), ['__', 't', 'trans'], true) && $stack[$top]['arg'] === 0;
+                    $stack[$top]['cur'] = $stack[$top]['cur'] === null && !$isKey ? [$lit, false] : 'v';
+                    $lastName = '';
+                    continue;
+                }
+                if (in_array($id, [T_STRING, T_NAME_QUALIFIED, T_NAME_FULLY_QUALIFIED, T_VARIABLE], true)) {
+                    $lastName = $id === T_VARIABLE ? '' : (string) substr((string) strrchr('\\' . $txt, '\\'), 1);
+                    $stack[$top]['cur'] = 'v';
+                    continue;
+                }
+                if (in_array($id, [T_DOUBLE_ARROW, T_COALESCE, T_BOOLEAN_AND, T_BOOLEAN_OR, T_LOGICAL_AND, T_LOGICAL_OR, T_RETURN, T_ECHO, T_PRINT,
+                    T_CONCAT_EQUAL, T_PLUS_EQUAL, T_IS_EQUAL, T_IS_IDENTICAL, T_IS_NOT_EQUAL, T_IS_NOT_IDENTICAL, T_COALESCE_EQUAL, T_CASE, T_THROW, T_YIELD, T_MATCH, T_FN, T_FUNCTION, T_IS_SMALLER_OR_EQUAL, T_IS_GREATER_OR_EQUAL, T_SPACESHIP, T_INSTANCEOF], true)) {
+                    $close();
+                    $lastName = '';
+                    continue;
+                }
+                if (in_array($id, [T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES], true)) {
+                    $stack[] = $new('', true);
+                    continue;
+                }
+                $stack[$top]['cur'] = 'v';
+                $lastName = '';
+                continue;
+            }
+            switch ($tok) {
+                case '.':
+                    if ($stack[$top]['cur'] !== null) {
+                        $stack[$top]['parts'][] = $stack[$top]['cur'];
+                    }
+                    $stack[$top]['cur'] = null;
+                    $stack[$top]['concat'] = true;
+                    break;
+                case '"':
+                    // Chaîne interpolée : texte et variables jusqu'au guillemet fermant.
+                    $text = '';
+                    $depth = 0;
+                    for ($k++; $k < $count; $k++) {
+                        $t = $tokens[$k];
+                        if ($t === '"' && $depth === 0) {
+                            break;
+                        }
+                        if (is_array($t) && $t[0] === T_ENCAPSED_AND_WHITESPACE) {
+                            $text .= stripcslashes($t[1]);
+                        } else {
+                            if ($t === '}' ) {
+                                $depth--;
+                            } elseif (is_array($t) && in_array($t[0], [T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES], true)) {
+                                $depth++;
+                            }
+                            if (!str_ends_with($text, "\x01")) {
+                                $text .= "\x01";
+                            }
+                        }
+                    }
+                    $stack[$top]['cur'] = $stack[$top]['cur'] === null ? [$text, str_contains($text, "\x01")] : 'v';
+                    $lastName = '';
+                    break;
+                case '(':
+                case '[':
+                case '{':
+                    $fn = $tok === '(' ? $lastName : '';
+                    $silent = $stack[$top]['silent'] || ($fn !== '' && preg_match(self::APP_SILENT_CALLS, $fn) === 1);
+                    $stack[$top]['cur'] = 'v';
+                    $stack[] = $new($fn, $silent);
+                    $lastName = '';
+                    break;
+                case ')':
+                case ']':
+                case '}':
+                    $close();
+                    if (count($stack) > 1) {
+                        array_pop($stack);
+                    }
+                    $lastName = '';
+                    break;
+                case ',':
+                    $close();
+                    $stack[$top]['arg']++;
+                    $lastName = '';
+                    break;
+                case ';':
+                case '?':
+                case ':':
+                case '=':
+                case '<':
+                case '>':
+                case '!':
+                    $close();
+                    $lastName = '';
+                    break;
+                default:
+                    $stack[$top]['cur'] = 'v';
+                    $lastName = '';
             }
         }
 

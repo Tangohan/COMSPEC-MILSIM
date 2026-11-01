@@ -86,22 +86,9 @@ final class AtakPlayNight
         if (!$dt instanceof DateTimeImmutable) {
             return 'Soirée';
         }
-        $days = [
-            'Monday' => 'Lundi',
-            'Tuesday' => 'Mardi',
-            'Wednesday' => 'Mercredi',
-            'Thursday' => 'Jeudi',
-            'Friday' => 'Vendredi',
-            'Saturday' => 'Samedi',
-            'Sunday' => 'Dimanche',
-        ];
-        $months = [
-            1 => 'janvier', 2 => 'février', 3 => 'mars', 4 => 'avril',
-            5 => 'mai', 6 => 'juin', 7 => 'juillet', 8 => 'août',
-            9 => 'septembre', 10 => 'octobre', 11 => 'novembre', 12 => 'décembre',
-        ];
-        $dow = $days[$dt->format('l')] ?? $dt->format('l');
-        $month = $months[(int) $dt->format('n')] ?? $dt->format('F');
+        $dow = LocalizedCalendar::weekday((int) $dt->format('w'));
+        $dow = mb_strtoupper(mb_substr($dow, 0, 1)) . mb_substr($dow, 1);
+        $month = LocalizedCalendar::month((int) $dt->format('n'));
 
         return $dow . ' ' . (int) $dt->format('j') . ' ' . $month;
     }

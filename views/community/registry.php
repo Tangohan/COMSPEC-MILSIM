@@ -582,7 +582,7 @@ if ($registryCount === 0) {
                 <p class="cr-card__game"><?= htmlspecialchars($gameLabel) ?></p>
                 <?php endif; ?>
                 <?php if ($unitAffiliationLabel !== ''): ?>
-                <p class="cr-card__unit"><?= htmlspecialchars($unitAffiliationLabel) ?></p>
+                <p class="cr-card__unit" translate="no"><?= htmlspecialchars($unitAffiliationLabel) ?></p>
                 <?php endif; ?>
               </div>
               <?php if ($cardLogo !== ''): ?>

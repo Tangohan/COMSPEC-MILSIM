@@ -31,12 +31,8 @@ final class EventCalendarMonth
             $firstTs = strtotime(date('Y-m-01') . ' 12:00:00') ?: time();
             $mois = date('Y-m', $firstTs);
         }
-        $monthsFr = [
-            1 => 'janvier', 2 => 'février', 3 => 'mars', 4 => 'avril', 5 => 'mai', 6 => 'juin',
-            7 => 'juillet', 8 => 'août', 9 => 'septembre', 10 => 'octobre', 11 => 'novembre', 12 => 'décembre',
-        ];
         $monthNum = (int) date('n', $firstTs);
-        $label = ($monthsFr[$monthNum] ?? date('F', $firstTs)) . ' ' . date('Y', $firstTs);
+        $label = LocalizedCalendar::month($monthNum) . ' ' . date('Y', $firstTs);
 
         $prevTs = strtotime($mois . '-01 -1 month');
         $nextTs = strtotime($mois . '-01 +1 month');
