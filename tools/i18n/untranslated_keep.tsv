@@ -1,0 +1,61 @@
+# Textes français volontairement non traduits, relevés par tools/i18n/untranslated.php : texte<TAB>raison<TAB>source.
+espace « Mon compte » : filtrage instantané de l	commentaire	public/assets/js/account-search.js
+identifiant du déploiement qui l	commentaire	public/assets/js/app-version-check.js
+onglet est visible (toutes les 2 min, au retour sur l	commentaire	public/assets/js/app-version-check.js
+un quart de l	commentaire	public/assets/js/arma-map-markers.js
+Metis â€”	nom propre + mojibake	public/assets/js/arma-marker-catalog.js
+Action	identique en anglais	public/assets/js/atak-activity.js
+Description	identique en anglais	public/assets/js/atak-context-menu.js
+une couche neuve sur la carte (l	commentaire	public/assets/js/atak-map-tools.js
+), undefined si la carte n	commentaire tronqué	public/assets/js/atak-map.js
+aperçu : lecteur d	commentaire	public/assets/js/atak-map.js
+une famille (	commentaire tronqué	public/assets/js/atak-map.js
+au sol	mot-clé de détection interne (non affiché)	public/assets/js/atak-medical-alerts.js
+Mission	identique en anglais	public/assets/js/atak-orders.js
+Notes	identique en anglais	public/assets/js/atak-overwatch-beta.js
+une demande 9-line (CAS dans Air, CASEVAC dans Mission) : mêmes statuts que l	commentaire	public/assets/js/atak-overwatch-beta.js
+Date	identique en anglais	public/assets/js/atak-overwatch-intel.js
+organigramme de la communauté n	commentaire	public/assets/js/atak-overwatch-orbat.js
+600 11px Inter, sans-serif	police CSS	public/assets/js/atak-overwatch-tacmap.js
+"IBM Plex Sans", "Segoe UI", system-ui, sans-serif	police CSS	public/assets/js/atak-overwatch-tools.js
+"Noto Sans", "IBM Plex Sans", sans-serif	police CSS	public/assets/js/atak-overwatch-tools.js
+"Source Sans 3", "IBM Plex Sans", sans-serif	police CSS	public/assets/js/atak-overwatch-tools.js
+"Space Grotesk", "IBM Plex Sans", sans-serif	police CSS	public/assets/js/atak-overwatch-tools.js
+Inter, "IBM Plex Sans", "Segoe UI", system-ui, sans-serif	police CSS	public/assets/js/atak-overwatch-tools.js
+image i et la suivante à l	commentaire	public/assets/js/atak-replay.js
+échelle longue ci-dessus et sa descente d	commentaire	public/assets/js/atak-socket.js
+épisode de pause en cours : échelle longue jusqu	commentaire	public/assets/js/atak-socket.js
+700 24px Inter, Arial, sans-serif	police CSS	public/assets/js/atak-translate.js
+900 30px Inter, Arial, sans-serif	police CSS	public/assets/js/atak-translate.js
+900 64px Inter, Arial, sans-serif	police CSS	public/assets/js/atak-translate.js
+anglais : risque de texte coupé sur l	commentaire	public/assets/js/atak-translate.js
+px Inter, Arial, sans-serif	police CSS	public/assets/js/atak-translate.js
+y ouvre avec l	commentaire	public/assets/js/ath-modal-frame.js
+clé unique	commentaire	public/assets/js/ath-quiet-form.js
+élément de même clé est remplacé, puis le message du serveur s	commentaire	public/assets/js/ath-quiet-form.js
+modifié	pluriel collé	public/assets/js/back-office-atak-realism.js
+03/11/2026 à 21:00	exemple de date	public/assets/js/back-office-integrations.js
+événements, réglage groupé, barre d	commentaire	public/assets/js/back-office-integrations.js
+ordre initial vient du serveur (?tri=) : on l	commentaire	public/assets/js/back-office-player-metrics.js
+Documents	identique en anglais	public/assets/js/back-office-search.js
+il ne rouvre pas la recherche et qu	commentaire	public/assets/js/back-office-search.js
+[data-ce-dot]	sélecteur CSS	public/assets/js/community-enlistment.js
+Section	identique en anglais	public/assets/js/community-orbat-builder.js
+© OpenStreetMap contributors, SRTM | Style: © OpenTopoMap (CC-BY-SA)	attribution carte	public/assets/js/comspec-operational-map.js
+actions groupées ne s	commentaire	public/assets/js/eff-bulk-actions.js
+adresse dans le presse-papiers (elle n	commentaire	public/assets/js/eff-invites.js
+écran, il s	commentaire	public/assets/js/eff-workspace-shell.js
+arrivée à l	commentaire	public/assets/js/home-impact.js
+fill="#ecfdf5" font-family="Inter,system-ui,sans-serif" font-weight="800" font-size="	code SVG	public/assets/js/img-fallback.js
+fill="#ecfdf5" font-family="Inter,system-ui,sans-serif" font-weight="800" font-size="%1">%2	code SVG	public/assets/js/img-fallback.js
+font-family="Inter,system-ui,sans-serif" font-weight="900" font-size="	code SVG	public/assets/js/img-fallback.js
+font-family="Inter,system-ui,sans-serif" font-weight="900" font-size="%1" letter-spacing="0.08em">%2	code SVG	public/assets/js/img-fallback.js
+a pas d	commentaire tronqué	public/assets/js/recon-viewer.js
+album introuvable : repère au lieu de l	commentaire	public/assets/js/recon-viewer.js
+700 10px ui-sans-serif, system-ui	police CSS	public/assets/js/sse-case-map.js
+© OpenStreetMap, SRTM | Style: © OpenTopoMap (CC-BY-SA)	attribution carte	public/assets/js/sse-case-map.js
+Document	identique en anglais	public/assets/js/sse-field-note-composer.js
+apparaît qu	commentaire	public/assets/js/sse-shell.js
+état choisi par l	commentaire	public/assets/js/sse-shell.js
+"Barlow Condensed", "Arial Narrow", sans-serif	police CSS	public/assets/js/year-review.js
+Barlow, Arial, sans-serif	police CSS	public/assets/js/year-review.js
