@@ -88,21 +88,25 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         $overlay = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalOverlayShow.sqf'
         );
-        // Panneau « Tenues Athena » refondu : onglets Mes tenues / Communauté, filtres et pastilles de
-        // collection (arsenalOverlayShow), liste multicolonne (arsenalOverlayFill), actions dans arsenalOverlayAction.
+        // Panneau « Tenues Athena » refondu : onglets Mes tenues / Communauté / Favoris, filtres et pastilles de
+        // collection (arsenalOverlayShow), grille de cartes paginée (arsenalOverlayFill), actions et menu clic droit
+        // dans arsenalOverlayAction.
         self::assertStringContainsString('"COMMUNAUTÉ", "tabCloud"', $overlay);
         self::assertStringContainsString('"MES TENUES", "tabLocal"', $overlay);
         self::assertStringContainsString('13 * _gridW', $overlay);
         self::assertStringContainsString('ctrlShow false', $overlay);
         self::assertStringContainsString('ATHENA · TENUES', $overlay);
         self::assertStringContainsString('884400', $overlay);
-        self::assertStringContainsString('884404', $overlay);
+        self::assertStringContainsString('COMSPEC_ArsenalCards', $overlay);
+        self::assertStringContainsString('"FAVORIS", "tabFav"', $overlay);
+        self::assertStringContainsString('COMSPEC_RscArsenalCardHit', $overlay);
         self::assertStringContainsString('"ENFILER", "apply"', $overlay);
         self::assertStringContainsString('"keep"', $overlay);
         self::assertStringContainsString('"remove", "COMSPEC_RscButtonAtakDanger"', $overlay);
         self::assertStringContainsString('"bulk"', $overlay);
         self::assertStringContainsString('"ENREGISTRER ET ENVOYER", "saveCurrent"', $overlay);
-        // Panneau placé entre les deux colonnes de l'arsenal (plus de hauteur fixe 0.72 * safezoneH).
+        // Panneau placé entre les deux colonnes de l'arsenal (plus de hauteur fixe 0.72 * safezoneH), lues sur les
+        // listes d'ACE quand elles sont là.
         self::assertStringContainsString('private _px0 = safeZoneX + _sideW + _gap;', $overlay);
         self::assertStringNotContainsString('safeZoneW - 0.28', $overlay);
         self::assertStringNotContainsString('WARDROBES', $overlay);
@@ -133,7 +137,10 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         );
         self::assertStringContainsString("Aucune tenue partagée par l'organisation pour l'instant.", $fill);
         self::assertStringContainsString('Aucune tenue dans votre arsenal', $fill);
-        self::assertStringContainsString('lnbSetPicture', $fill);
+        // Cartes : badge d'état et pièces (arsenalLoadoutIcons), réécrites sans créer de contrôle à chaque frappe.
+        self::assertStringContainsString('arsenalLoadoutIcons', $fill);
+        self::assertStringContainsString('COMSPEC_ArsenalHay', $fill);
+        self::assertStringNotContainsString('ctrlCreate', $fill);
         // Les groupes repliables (▸ / ▾) ont été remplacés par des pastilles de collection.
         self::assertStringContainsString('COMSPEC_ArsenalChips', $fill);
         self::assertStringContainsString('COMSPEC_ArsenalColl', $fill);

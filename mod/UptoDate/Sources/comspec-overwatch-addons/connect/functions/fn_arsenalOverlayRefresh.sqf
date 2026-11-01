@@ -203,7 +203,7 @@ private _pathHint = _infoParts param [3, "Documents\\Arma 3 - COMSPEC\\Sync"];
 _grp setVariable ["COMSPEC_ArsenalLoadedAt", [_savedAt, [dayTime, "HH:MM"] call BIS_fnc_timeToString] select (_savedAt isEqualTo "")];
 _grp setVariable ["COMSPEC_ArsenalLocalSync", [_localOk, _pathHint, _savedAt]];
 [] call comspec_overwatch_connect_fnc_saveProfile;
-[_display] call comspec_overwatch_connect_fnc_arsenalOverlayFill;
+[_display, "data"] call comspec_overwatch_connect_fnc_arsenalOverlayFill;
 
 // Tenues du site à comparer par leur contenu : chargées en arrière-plan (cache Sync de COMSPEC Link d'abord), puis
 // la liste est redessinée sans réseau, la tenue choisie restant choisie.

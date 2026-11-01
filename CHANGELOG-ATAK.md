@@ -38,6 +38,26 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.26 : panneau Athena · Tenues refait (ATAK natif 2.9.26.AG - Denver, COMSPEC Link 2.0.114)
+
+### Résumé joueur
+Type : nouveauté
+FR : Tenues de l'arsenal ACE plus claires
+- Les tenues s'affichent en cartes avec leur arme, gilet, sac, casque et un badge d'état.
+- Onglet Favoris, recherche instantanée et menu clic droit : Enfiler, Importer, Envoyer, Supprimer.
+- Une ligne en bas dit si l'action a réussi.
+EN : Clearer ACE arsenal loadouts
+- Loadouts show as cards with their weapon, vest, backpack, helmet and a status badge.
+- Favourites tab, instant search and a right-click menu: Wear, Import, Send, Delete.
+- A line at the bottom tells you whether the action worked.
+
+### Détail technique
+- Connect 1.6.25 : `fn_arsenalOverlayShow` refait. Le panneau se cale entre les listes d'ACE (IDC 13 / 14, au-dessus de la barre IDC 10 ; repli `13 * _gridW`), onglets Mes tenues / Communauté / Favoris (`tabFav` = Communauté filtrée `fav`), recherche avec ✕, réserve fixe de pastilles de collection et de cartes (aucun `ctrlCreate` après l'ouverture), fiche avec portrait sur silhouette de la tenue, pied avec ligne de retour à niveaux (`COMSPEC_ArsenalSetHint` : busy / ok / warn / err) et rappel des gestes, menu clic droit (`COMSPEC_RscArsenalScrim`, `COMSPEC_RscArsenalMenuRow`).
+- `fn_arsenalOverlayFill` : cartes paginées (molette, ‹ ›), pièces via `fn_arsenalLoadoutIcons` mémorisées par contenu (`COMSPEC_ArsenalIconMemo`, tenues du site seulement si déjà en mémoire : aucun réseau pour une carte), texte de recherche calculé une fois par chargement (`COMSPEC_ArsenalHay`), frappe filtrée 0,12 s après la dernière touche, tenue choisie gardée par nom ou identifiant (`COMSPEC_ArsenalSelKey`) ; modes `data` / `light` / `page`.
+- `fn_arsenalOverlayAction` : `menu` / `menuDo` / `menuClose`, `page`, `filterNow`, `clearSearch`, `loaded` ; issue de chaque action sur la ligne de retour (retours booléens de `fn_arsenalPullAll`, `fn_arsenalPushAll`, `fn_arsenalSyncAll`, suppressions). Logique de synchro, d'import, d'envoi et de suppression inchangée.
+- `fn_arsenalStateInfo` : libellé court pour les badges (« À envoyer » remplace « Pas sur le site »). `fn_arsenalOverlayMark` et `COMSPEC_RscArsenalOutfitList` retirés (plus de liste), `COMSPEC_RscArsenalCardHit` ajouté.
+- Inspiration (principes seulement, aucun code ni image repris) : panneau d'AIO - Arma Inventory Overhaul dans ACE Arsenal (posé contre les listes d'ACE lues sur leurs contrôles, tuiles, cases vides marquées par l'icône de l'emplacement, menu contextuel à la souris avec focus pris, ligne d'aide en pied).
+
 ## Pack 2.9.25 : menus d'écran uniques, diapositives sur les écrans, PC du poste en PIP (ATAK natif 2.9.25.AG - Denver, COMSPEC Link 2.0.114)
 
 ### Résumé joueur

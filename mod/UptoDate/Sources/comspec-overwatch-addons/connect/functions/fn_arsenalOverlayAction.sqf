@@ -1,12 +1,19 @@
 /*
     Actions du panneau Tenues Athena (ACE Arsenal).
       "toggle" / "close" / "reload"        ouvrir-fermer le panneau, recharger la liste depuis Athena (Actualiser)
-      "redrawNow"                          relire Mes tenues avec la liste du site gardée sur ce PC (sans réseau)
-      "tabCloud" / "tabLocal" / "filter"   onglet, recherche changés
+      "loaded"                             ligne de retour après un chargement (nombre de tenues, ou hors ligne)
+      "redrawNow" / "redrawKeep"           relire Mes tenues avec la liste du site gardée sur ce PC (sans réseau) ;
+                                           la tenue choisie reste choisie (arsenalOverlayFill, mode « data »)
+      "tabCloud" / "tabLocal" / "tabFav"   onglet (Favoris : Communauté filtrée sur les favoris)
+      "filter" / "filterNow" / "clearSearch"   recherche changée (filtrée 0,12 s après la dernière frappe), effacée
       "stateFilter" / "sort", k           filtre d'état (liste), tri (coll, name, state, recent)
       "chip", coll / "chipPrev" / "chipNext"  pastille de collection, défilement des pastilles
+      "page", ±1 / "pagePrev" / "pageNext"   page de cartes (molette sur les cartes, ‹ ›)
       "pillPending" / "pillNew"           Mes tenues pas à jour sur le site / Communauté nouvelles
-      "select", i / "apply", i            aperçu de la ligne i, enfiler (double-clic ou ENFILER)
+      "select", i / "apply", i            fiche de la carte i (index dans la liste affichée), enfiler (double-clic,
+                                          ENFILER)
+      "menu", i / "menuDo", act / "menuClose"   menu clic droit d'une carte : Enfiler, Importer / Envoyer / Mettre
+                                          à jour, Supprimer, afficher sa collection, la cocher
       "keep"                              Communauté : importer · Mes tenues : envoyer au site, ou prendre la version
                                           du site si elle y a changé
       "remove"                            Communauté : retirer (si c'est la vôtre) · Mes tenues : supprimer
@@ -18,6 +25,8 @@
       "pick" / "markAll"                  Mes tenues : sélection multiple (un clic coche), tout (dé)cocher l'affiché
       "deleteMarked" / "undoDelete"       supprimer les tenues cochées en une fois, les remettre (dernière suppression)
       "loadoutsOpen", display / "loadoutsClosed"   écran « Mes équipements » d'ACE ouvert / fermé (arsenalInitOverlay)
+    Chaque action dit son issue sur la ligne de retour du pied (en cours, réussie, impossible) ; les messages
+    d'arsenalPushAll / arsenalPullAll restent affichés comme avant.
 */
 params [["_act", ""], ["_arg", -1]];
 private _d = uiNamespace getVariable ["ace_arsenal_display", displayNull];
@@ -47,7 +56,7 @@ if (isNull _g) exitWith {};
 if ((_g getVariable ["COMSPEC_ArsenalUiLock", false]) && {_act in ["select", "filter", "stateFilter", "sort"]}) exitWith {};
 private _isCloud = (_g getVariable ["COMSPEC_ArsenalTab", "local"]) isEqualTo "cloud";
 private _say = { params ["_t", ["_lvl", "info"]]; [_t, "arsenal", _lvl, true] call comspec_overwatch_connect_fnc_announce; };
-private _hint = { params ["_t"]; [_g, _t] call (_g getVariable ["COMSPEC_ArsenalSetHint", {}]); };
+private _hint = { params ["_t", ["_lvl", "info"]]; [_g, _t, _lvl] call (_g getVariable ["COMSPEC_ArsenalSetHint", {}]); };
 private _row = {
     private _i = _g getVariable ["COMSPEC_ArsenalSelected", -1];
     (_g getVariable ["COMSPEC_ArsenalShown", []]) param [_i, []]
@@ -68,9 +77,11 @@ private _metaLocal = {
     if ((_r param [10, ""]) isNotEqualTo "") then { _bits pushBack (_r select 10); };
     _bits joinString " · "
 };
+private _fill = { params [["_mode", ""]]; [_d, _mode] call comspec_overwatch_connect_fnc_arsenalOverlayFill; };
 
 switch (_act) do {
     case "toggle": {
+        ["menuClose"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
         private _open = !(_d getVariable ["COMSPEC_ArsenalOverlayOpen", false]);
         _d setVariable ["COMSPEC_ArsenalOverlayOpen", _open];
         _g ctrlShow _open;
@@ -106,83 +117,110 @@ switch (_act) do {
     };
     case "close": { _d setVariable ["COMSPEC_ArsenalOverlayOpen", true]; ["toggle"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
     case "reload": { [] spawn { ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }; };
-    case "reloadNow": { ["Rechargement depuis Athena…"] call _hint; call _reload; };
-    // Rien n'a changé sur le site (import, suppression sur ce PC) : pas de rechargement de la liste.
-    case "redrawNow": { [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh; };
-    // Comparaison des contenus terminée en arrière-plan (arsenalOverlayRefresh) : même chose, la tenue choisie reste choisie.
-    case "redrawKeep": {
-        private _sel = call _row;
-        [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh;
-        if (_sel isEqualTo []) exitWith {};
-        private _i = (_g getVariable ["COMSPEC_ArsenalShown", []]) findIf { (_x select 0) isEqualTo (_sel select 0) };
-        private _list = _g getVariable ["COMSPEC_ArsenalList", controlNull];
-        if (_i >= 0 && {!isNull _list} && {!(_g getVariable ["COMSPEC_ArsenalPickMode", false])}) then { _list lnbSetCurSelRow _i; };
+    case "reloadNow": { ["Rechargement depuis Athena…", "busy"] call _hint; call _reload; ["loaded"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
+    case "loaded": {
+        if (_g getVariable ["COMSPEC_ArsenalOffline", false]) then {
+            ["Athena injoignable : seules les tenues de cet ordinateur sont affichées. Reliez votre compte, puis Actualiser.", "warn"] call _hint;
+        } else {
+            [format [("Liste à jour : %1 tenue(s) dans votre arsenal, %2 partagée(s) par l'organisation.") call comspec_overwatch_connect_fnc_tr,
+                count (_g getVariable ["COMSPEC_ArsenalLocalRows", []]), count (_g getVariable ["COMSPEC_ArsenalCloudRows", []])], "ok"] call _hint;
+        };
     };
+    // Rien n'a changé sur le site (import, suppression sur ce PC), ou comparaison des contenus terminée en arrière-plan
+    // (arsenalOverlayRefresh) : pas de rechargement de la liste, la tenue choisie reste choisie.
+    case "redrawNow";
+    case "redrawKeep": { [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh; };
+    case "tabFav": { ["tabCloud", "fav"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
     case "tabCloud";
     case "tabLocal": {
         private _t = ["local", "cloud"] select (_act isEqualTo "tabCloud");
+        private _k = ["", _arg] select (_arg isEqualType "" && {_arg isNotEqualTo ""});
         if (_t isNotEqualTo (_g getVariable ["COMSPEC_ArsenalTab", "local"])) then {
             _g setVariable ["COMSPEC_ArsenalColl", ""];
             _g setVariable ["COMSPEC_ArsenalChipOffset", 0];
-            _g setVariable ["COMSPEC_ArsenalStateKey", if (_arg isEqualType "" && {_arg isNotEqualTo ""}) then { _arg } else { "all" }];
+            _g setVariable ["COMSPEC_ArsenalStateKey", [_k, "all"] select (_k isEqualTo "")];
         } else {
-            if (_arg isEqualType "" && {_arg isNotEqualTo ""}) then { _g setVariable ["COMSPEC_ArsenalStateKey", _arg]; };
+            // Communauté depuis Favoris : retour à toutes les tenues.
+            private _cur = _g getVariable ["COMSPEC_ArsenalStateKey", "all"];
+            _g setVariable ["COMSPEC_ArsenalStateKey", switch (true) do { case (_k isNotEqualTo ""): { _k }; case (_cur isEqualTo "fav" && {_t isEqualTo "cloud"}): { "all" }; default { _cur }; }];
         };
         _g setVariable ["COMSPEC_ArsenalTab", _t];
         profileNamespace setVariable ["COMSPEC_ArsenalTab", _t];
-        [_d] call comspec_overwatch_connect_fnc_arsenalOverlayFill;
+        [] call _fill;
     };
-    case "filter": { _g setVariable ["COMSPEC_ArsenalChipOffset", 0]; [_d] call comspec_overwatch_connect_fnc_arsenalOverlayFill; };
+    // Frappe : filtrage léger une fois la frappe posée (0,12 s), pas à chaque touche.
+    case "filter": {
+        private _t = diag_tickTime;
+        _g setVariable ["COMSPEC_ArsenalFilterAt", _t];
+        [{
+            params ["_g", "_t"];
+            if (!isNull _g && {(_g getVariable ["COMSPEC_ArsenalFilterAt", -1]) isEqualTo _t}) then { ["filterNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
+        }, [_g, _t], 0.12] call CBA_fnc_waitAndExecute;
+    };
+    case "filterNow": { _g setVariable ["COMSPEC_ArsenalChipOffset", 0]; ["light"] call _fill; };
+    case "clearSearch": {
+        private _s = _g getVariable ["COMSPEC_ArsenalSearch", controlNull];
+        if (!isNull _s) then { _s ctrlSetText (("") call comspec_overwatch_connect_fnc_tr); ctrlSetFocus _s; };
+        ["filterNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+    };
     case "stateFilter": {
         private _c = _g getVariable ["COMSPEC_ArsenalStateCombo", controlNull];
         if (isNull _c || {(lbCurSel _c) < 0}) exitWith {};
         _g setVariable ["COMSPEC_ArsenalStateKey", _c lbData (lbCurSel _c)];
         _g setVariable ["COMSPEC_ArsenalChipOffset", 0];
-        [_d] call comspec_overwatch_connect_fnc_arsenalOverlayFill;
+        [] call _fill;
     };
     case "sort": {
         if !(_arg isEqualType "") exitWith {};
         _g setVariable ["COMSPEC_ArsenalSort", _arg];
         profileNamespace setVariable ["COMSPEC_ArsenalSort", _arg];
-        [_d] call comspec_overwatch_connect_fnc_arsenalOverlayFill;
+        [] call _fill;
     };
     case "chip": {
         _g setVariable ["COMSPEC_ArsenalColl", [_arg, ""] select !(_arg isEqualType "")];
-        [_d] call comspec_overwatch_connect_fnc_arsenalOverlayFill;
+        [] call _fill;
     };
     case "chipPrev";
     case "chipNext": {
         // Défile d'une « page » : vers la droite, la première pastille masquée devient la première affichée.
         private _off = _g getVariable ["COMSPEC_ArsenalChipOffset", 0];
-        private _n = count (_g getVariable ["COMSPEC_ArsenalChips", []]);
+        private _n = _g getVariable ["COMSPEC_ArsenalChipCount", 1];
         _g setVariable ["COMSPEC_ArsenalChipOffset", if (_act isEqualTo "chipNext") then { _off + (_n max 1) } else { (_off - 4) max 0 }];
-        [_d] call comspec_overwatch_connect_fnc_arsenalOverlayFill;
+        ["light"] call _fill;
     };
+    case "page": {
+        if !(_arg isEqualType 0) exitWith {};
+        private _per = (count (_g getVariable ["COMSPEC_ArsenalCards", []])) max 1;
+        private _last = ((ceil ((count (_g getVariable ["COMSPEC_ArsenalShown", []])) / _per)) - 1) max 0;
+        private _p = _g getVariable ["COMSPEC_ArsenalPage", 0];
+        private _n = ((_p + _arg) max 0) min _last;
+        if (_n isEqualTo _p) exitWith {};
+        _g setVariable ["COMSPEC_ArsenalPage", _n];
+        ["page"] call _fill;
+    };
+    case "pagePrev": { ["page", -1] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
+    case "pageNext": { ["page", 1] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
     case "pillPending": { ["tabLocal", "pending"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
     case "pillNew": { ["tabCloud", "new"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
     case "markSeen": { [] call comspec_overwatch_connect_fnc_arsenalMarkSeen; };
     case "select": {
-        // Sélection multiple : le clic coche ou décoche la ligne, puis la ligne est désélectionnée pour qu'un second
-        // clic sur la même tenue la décoche.
+        if (!(_arg isEqualType 0) || {_arg < 0}) exitWith {};
+        // Sélection multiple : le clic coche ou décoche la carte.
         if (!_isCloud && {_g getVariable ["COMSPEC_ArsenalPickMode", false]}) exitWith {
-            private _list = _g getVariable ["COMSPEC_ArsenalList", controlNull];
-            if (!(_arg isEqualType 0) || {_arg < 0} || {isNull _list}) exitWith {};
-            private _r = (_g getVariable ["COMSPEC_ArsenalShown", []]) param [_list lnbValue [_arg, 0], []];
+            private _r = (_g getVariable ["COMSPEC_ArsenalShown", []]) param [_arg, []];
             if (_r isEqualTo []) exitWith {};
             private _k = toLower (_r select 0);
             private _marked = _g getVariable ["COMSPEC_ArsenalMarked", []];
-            private _on = !(_k in _marked);
-            if (_on) then { _marked pushBackUnique _k; } else { _marked = _marked - [_k]; };
+            if (_k in _marked) then { _marked = _marked - [_k]; } else { _marked pushBackUnique _k; };
             _g setVariable ["COMSPEC_ArsenalMarked", _marked];
-            [_list, _arg, _on] call comspec_overwatch_connect_fnc_arsenalOverlayMark;
+            [_g] call (_g getVariable ["COMSPEC_ArsenalPaintCards", {}]);
             [_g] call (_g getVariable ["COMSPEC_ArsenalPickRefresh", {}]);
-            _g setVariable ["COMSPEC_ArsenalUiLock", true];
-            _list lnbSetCurSelRow -1;
-            _g setVariable ["COMSPEC_ArsenalUiLock", false];
         };
         _g setVariable ["COMSPEC_ArsenalSelected", _arg];
         private _r = call _row;
-        if (_r isEqualTo []) exitWith { [_d, [], ""] call comspec_overwatch_connect_fnc_arsenalOverlayPreview; };
+        if (_r isEqualTo []) exitWith { _g setVariable ["COMSPEC_ArsenalSelKey", []]; [_d, [], ""] call comspec_overwatch_connect_fnc_arsenalOverlayPreview; };
+        _g setVariable ["COMSPEC_ArsenalSelKey", [["local", "cloud"] select _isCloud, [toLower (_r select 0), _r select 0] select _isCloud]];
+        [_g] call (_g getVariable ["COMSPEC_ArsenalPaintCards", {}]);
         if (_isCloud) then {
             [_d, [], _r select 2, "Chargement…"] call comspec_overwatch_connect_fnc_arsenalOverlayPreview;
             [_d, _r, _arg, [_r] call _metaCloud] spawn {
@@ -210,6 +248,65 @@ switch (_act) do {
             };
         };
     };
+    // Menu clic droit d'une carte, à la souris, gardé dans le panneau ; le focus va à sa première ligne (sinon la carte
+    // cliquée, qui garde le focus, se dessinait par-dessus).
+    case "menu": {
+        if (!(_arg isEqualType 0) || {_arg < 0}) exitWith {};
+        if (!_isCloud && {_g getVariable ["COMSPEC_ArsenalPickMode", false]}) exitWith { ["select", _arg] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
+        if ((_g getVariable ["COMSPEC_ArsenalSelected", -1]) isNotEqualTo _arg) then { ["select", _arg] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
+        private _r = call _row;
+        (_g getVariable ["COMSPEC_ArsenalActState", []]) params [["_has", false], ["_keep", ["", false]], ["_del", ["", false]]];
+        if (_r isEqualTo [] || {!_has}) exitWith {};
+        private _items = [
+            ["Enfiler", "apply", true],
+            [_keep select 0, "keep", _keep select 1],
+            [_del select 0, "remove", _del select 1],
+            [format [("Afficher la collection « %1 »") call comspec_overwatch_connect_fnc_tr, _r select ([2, 3] select _isCloud)], "menuColl", true]
+        ];
+        if (!_isCloud) then { _items pushBack ["Cocher pour supprimer en groupe", "menuPick", true]; };
+        (_g getVariable ["COMSPEC_ArsenalMenu", []]) params ["_scrim", "_menu", "_mRows", "_mRowH", "_menuW", "_mBg"];
+        {
+            private _it = _items param [_forEachIndex, []];
+            _x ctrlShow (_it isNotEqualTo []);
+            if (_it isEqualTo []) then { continue };
+            _it params ["_t", "_a", "_on"];
+            // Libellés en capitales sur les boutons de la fiche : en phrase dans le menu.
+            private _tt = (_t) call comspec_overwatch_connect_fnc_tr;
+            if (_tt isEqualTo toUpper _tt) then { _tt = (toUpper (_tt select [0, 1])) + (toLower (_tt select [1])); };
+            _x ctrlSetText ((("  " + _tt)) call comspec_overwatch_connect_fnc_tr);
+            _x ctrlEnable _on;
+            _x setVariable ["act", _a];
+        } forEach _mRows;
+        private _mh = (count _items) * _mRowH + 4 * pixelH;
+        _mBg ctrlSetPosition [0, 0, _menuW, _mh];
+        _mBg ctrlCommit 0;
+        getMousePosition params ["_mx", "_my"];
+        (ctrlPosition _g) params ["_gx", "_gy", "_gw", "_gh"];
+        _menu ctrlSetPosition [(((_mx - _gx) min (_gw - _menuW - 0.004)) max 0), (((_my - _gy) min (_gh - _mh - 0.004)) max 0), _menuW, _mh];
+        _menu ctrlCommit 0;
+        _scrim ctrlShow true;
+        _menu ctrlShow true;
+        ctrlSetFocus (_mRows select 0);
+    };
+    case "menuClose": {
+        (_g getVariable ["COMSPEC_ArsenalMenu", []]) params [["_scrim", controlNull], ["_menu", controlNull]];
+        if (!isNull _menu && {ctrlShown _menu}) then { _scrim ctrlShow false; _menu ctrlShow false; };
+    };
+    case "menuDo": {
+        ["menuClose"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+        private _r = call _row;
+        if (_r isEqualTo []) exitWith {};
+        switch (_arg) do {
+            case "menuColl": { ["chip", _r select ([2, 3] select _isCloud)] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
+            case "menuPick": {
+                if (_isCloud) exitWith {};
+                _g setVariable ["COMSPEC_ArsenalPickMode", true];
+                _g setVariable ["COMSPEC_ArsenalMarked", [toLower (_r select 0)]];
+                [] call _fill;
+            };
+            default { if (_arg in ["apply", "keep", "remove"]) then { [_arg] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }; };
+        };
+    };
     case "apply": {
         // Sélection multiple : un double-clic coche puis décoche, il n'enfile pas la tenue.
         if (!_isCloud && {_g getVariable ["COMSPEC_ArsenalPickMode", false]} && {_arg isEqualType 0} && {_arg >= 0}) exitWith {};
@@ -219,16 +316,20 @@ switch (_act) do {
         // Après enfiler : on ferme le panneau pour retrouver l'arsenal (retour de jeu).
         // Tenue posée comme le bouton Charger d'ACE (arsenalApplyLoadout : CBA_fnc_setLoadout + rafraîchissement ACE).
         if (_isCloud) then {
-            ["Chargement de la tenue…"] call _hint;
-            [_r select 0, _r select 9] spawn {
-                params ["_id", "_sr"];
+            ["Chargement de la tenue…", "busy"] call _hint;
+            [_r select 0, _r select 9, _g] spawn {
+                params ["_id", "_sr", "_g"];
                 if ([_id, _sr] call comspec_overwatch_connect_fnc_arsenalApplyCloud) then {
                     ["close"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+                } else {
+                    [_g, "La tenue n'a pas pu être enfilée : voir le message de l'arsenal.", "err"] call (_g getVariable ["COMSPEC_ArsenalSetHint", {}]);
                 };
             };
         } else {
             if ([_r select 3, _r select 0] call comspec_overwatch_connect_fnc_arsenalApplyLoadout) then {
                 ["close"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            } else {
+                ["La tenue n'a pas pu être enfilée : voir le message de l'arsenal.", "err"] call _hint;
             };
         };
     };
@@ -243,24 +344,33 @@ switch (_act) do {
             private _i = (_g getVariable ["COMSPEC_ArsenalCloudRows", []]) findIf { ((["key", _x select 1] call comspec_overwatch_connect_fnc_arsenalAceStore) isEqualTo _k) && {!_hasMine || {_x select 8}} };
             if (_i >= 0) then { _siteId = ((_g getVariable ["COMSPEC_ArsenalCloudRows", []]) select _i) select 0; };
         };
-        [["Envoi au site…", "Import dans votre arsenal…"] select (_isCloud || {_siteId isNotEqualTo ""})] call _hint;
-        [_r, _isCloud, _siteId] spawn {
-            params ["_r", "_isCloud", "_siteId"];
+        private _pull = _isCloud || {_siteId isNotEqualTo ""};
+        [["Envoi au site…", "Import dans votre arsenal…"] select _pull, "busy"] call _hint;
+        [_r, _isCloud, _siteId, _g, _pull] spawn {
+            params ["_r", "_isCloud", "_siteId", "_g", "_pull"];
             private _pushed = false;
+            private _ok = false;
             // Import d'une seule tenue, à la demande : celle du même nom est remplacée (le bouton le dit).
             switch (true) do {
-                case (_isCloud): { ["", [_r select 0]] call comspec_overwatch_connect_fnc_arsenalPullAll; };
-                case (_siteId isNotEqualTo ""): { ["", [_siteId]] call comspec_overwatch_connect_fnc_arsenalPullAll; };
-                default { [[_r select 0]] call comspec_overwatch_connect_fnc_arsenalPushAll; _pushed = true; };
+                case (_isCloud): { _ok = ["", [_r select 0]] call comspec_overwatch_connect_fnc_arsenalPullAll; };
+                case (_siteId isNotEqualTo ""): { _ok = ["", [_siteId]] call comspec_overwatch_connect_fnc_arsenalPullAll; };
+                default { _ok = [[_r select 0]] call comspec_overwatch_connect_fnc_arsenalPushAll; _pushed = true; };
             };
             [["redrawNow", "reloadNow"] select _pushed] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            private _label = _r select ([0, 1] select _isCloud);
+            [_g, format [(switch (true) do {
+                case (_pull && {_ok isEqualTo true}): { "« %1 » est dans votre arsenal." };
+                case (_pull): { "Import de « %1 » impossible : vérifiez la liaison Athena, puis réessayez." };
+                case (_ok isEqualTo true): { "« %1 » envoyée au site." };
+                default { "Envoi de « %1 » impossible : vérifiez la liaison Athena, puis réessayez." };
+            }) call comspec_overwatch_connect_fnc_tr, _label], ["err", "ok"] select (_ok isEqualTo true)] call (_g getVariable ["COMSPEC_ArsenalSetHint", {}]);
         };
     };
     case "remove": {
         private _r = call _row;
         if (_r isEqualTo []) exitWith { ["Choisissez d'abord une tenue dans la liste."] call _say; };
-        [_r, _isCloud, _d] spawn {
-            params ["_r", "_isCloud", "_d"];
+        [_r, _isCloud, _d, _g] spawn {
+            params ["_r", "_isCloud", "_d", "_g"];
             private _label = [_r select 1, _r select 2] select _isCloud;
             private _ok = [format [(["Supprimer « %1 » de votre arsenal sur cet ordinateur ?", "Retirer « %1 » des tenues de l'organisation ? Seul son auteur ou un responsable peut le faire."] select _isCloud) call comspec_overwatch_connect_fnc_tr, _label], ("Tenues Athena") call comspec_overwatch_connect_fnc_tr, true, true, _d] call BIS_fnc_guiMessage;
             if (!_ok) exitWith {};
@@ -271,29 +381,36 @@ switch (_act) do {
                 [format ["« %1 » retirée.", _label], "arsenal", "ok", true] call comspec_overwatch_connect_fnc_announce;
             };
             [["redrawNow", "reloadNow"] select _isCloud] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            [_g, format [(["« %1 » n'a pas pu être retirée.", "« %1 » retirée."] select _done) call comspec_overwatch_connect_fnc_tr, _label], ["err", "ok"] select _done] call (_g getVariable ["COMSPEC_ArsenalSetHint", {}]);
         };
     };
     case "bulk": {
         // Seulement les tenues à envoyer (pas à jour sur le site) ou à importer (pas dans mon arsenal) : arsenalOverlayFill.
         private _shown = _g getVariable ["COMSPEC_ArsenalBulkRows", []];
         if ((count _shown) isEqualTo 0) exitWith {};
-        [_shown, _isCloud, _d] spawn {
-            params ["_shown", "_isCloud", "_d"];
+        [_shown, _isCloud, _d, _g] spawn {
+            params ["_shown", "_isCloud", "_d", "_g"];
             private _ok = [format [(["Envoyer au site %1 tenue(s) qui n'y sont pas à jour ? Les autres ne sont pas renvoyées.", "Importer dans votre arsenal %1 tenue(s) que vous n'avez pas encore ? Aucune de vos tenues n'est remplacée ni doublée."] select _isCloud) call comspec_overwatch_connect_fnc_tr, count _shown], ("Tenues Athena") call comspec_overwatch_connect_fnc_tr, true, true, _d] call BIS_fnc_guiMessage;
             if (!_ok) exitWith {};
+            private _setHint = _g getVariable ["COMSPEC_ArsenalSetHint", {}];
+            [_g, ["Envoi au site en cours…", "Import en cours, patientez…"] select _isCloud, "busy"] call _setHint;
             [(["Envoi au site en cours…", "Import en cours, patientez…"] select _isCloud), "arsenal", "info", true] call comspec_overwatch_connect_fnc_announce;
-            if (_isCloud) then { ["", _shown apply { _x select 0 }, true] call comspec_overwatch_connect_fnc_arsenalPullAll; } else { [_shown apply { _x select 0 }] call comspec_overwatch_connect_fnc_arsenalPushAll; };
+            private _done = if (_isCloud) then { ["", _shown apply { _x select 0 }, true] call comspec_overwatch_connect_fnc_arsenalPullAll } else { [_shown apply { _x select 0 }] call comspec_overwatch_connect_fnc_arsenalPushAll };
             [["reloadNow", "redrawNow"] select _isCloud] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            [_g, [["Envoi groupé terminé.", "Import groupé terminé."] select _isCloud, "Rien n'a pu être transmis : vérifiez la liaison Athena, puis réessayez."] select !(_done isEqualTo true), ["err", "ok"] select (_done isEqualTo true)] call _setHint;
         };
     };
     case "syncAll": {
-        [_d] spawn {
-            params ["_d"];
+        [_d, _g] spawn {
+            params ["_d", "_g"];
             private _ok = [("Tout basculer dans l'arsenal ACE ? Toutes les tenues de l'organisation arrivent dans « Mes équipements » d'ACE et vos tenues pas encore sur le site y sont envoyées. Rien n'est supprimé ni remplacé, ici comme sur le site.") call comspec_overwatch_connect_fnc_tr, ("Tenues Athena") call comspec_overwatch_connect_fnc_tr, true, true, _d] call BIS_fnc_guiMessage;
             if (!_ok) exitWith {};
+            private _setHint = _g getVariable ["COMSPEC_ArsenalSetHint", {}];
+            [_g, "Import et envoi des tenues en cours, patientez…", "busy"] call _setHint;
             ["Import et envoi des tenues en cours, patientez…", "arsenal", "info", true] call comspec_overwatch_connect_fnc_announce;
-            [] call comspec_overwatch_connect_fnc_arsenalSyncAll;
+            private _done = [] call comspec_overwatch_connect_fnc_arsenalSyncAll;
             ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            [_g, ["Rien à basculer : votre arsenal ACE et le site sont déjà à jour.", "Tout est basculé dans l'arsenal ACE."] select (_done isEqualTo true), ["info", "ok"] select (_done isEqualTo true)] call _setHint;
         };
     };
     case "pick": {
@@ -301,7 +418,7 @@ switch (_act) do {
         private _mode = !(_g getVariable ["COMSPEC_ArsenalPickMode", false]);
         _g setVariable ["COMSPEC_ArsenalPickMode", _mode];
         if (!_mode) then { _g setVariable ["COMSPEC_ArsenalMarked", []]; };
-        [_d] call comspec_overwatch_connect_fnc_arsenalOverlayFill;
+        ["page"] call _fill;
     };
     case "markAll": {
         if (_isCloud) exitWith {};
@@ -309,13 +426,7 @@ switch (_act) do {
         private _marked = _g getVariable ["COMSPEC_ArsenalMarked", []];
         _marked = if ((_shown findIf { !(_x in _marked) }) < 0) then { _marked - _shown } else { _marked + (_shown - _marked) };
         _g setVariable ["COMSPEC_ArsenalMarked", _marked];
-        private _list = _g getVariable ["COMSPEC_ArsenalList", controlNull];
-        if (!isNull _list) then {
-            for "_i" from 0 to ((lnbSize _list) select 0) - 1 do {
-                private _r = (_g getVariable ["COMSPEC_ArsenalShown", []]) param [_list lnbValue [_i, 0], []];
-                if (_r isNotEqualTo []) then { [_list, _i, (toLower (_r select 0)) in _marked] call comspec_overwatch_connect_fnc_arsenalOverlayMark; };
-            };
-        };
+        [_g] call (_g getVariable ["COMSPEC_ArsenalPaintCards", {}]);
         [_g] call (_g getVariable ["COMSPEC_ArsenalPickRefresh", {}]);
     };
     case "deleteMarked": {
@@ -333,6 +444,7 @@ switch (_act) do {
             if (!isNull _g) then { _g setVariable ["COMSPEC_ArsenalMarked", []]; };
             [format [("%1 tenue(s) supprimée(s) de votre arsenal. ANNULER les remet.") call comspec_overwatch_connect_fnc_tr, count _gone], "arsenal", "ok", true] call comspec_overwatch_connect_fnc_announce;
             ["redrawNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            if (!isNull _g) then { [_g, format [("%1 tenue(s) supprimée(s) de votre arsenal. ANNULER les remet.") call comspec_overwatch_connect_fnc_tr, count _gone], "ok"] call (_g getVariable ["COMSPEC_ArsenalSetHint", {}]); };
         };
     };
     case "undoDelete": {
@@ -343,21 +455,35 @@ switch (_act) do {
         profileNamespace setVariable ["COMSPEC_ArsenalTrash", []];
         [] call comspec_overwatch_connect_fnc_saveProfile;
         [format [("%1 tenue(s) remise(s) dans votre arsenal.") call comspec_overwatch_connect_fnc_tr, _back], "ok"] call _say;
-        [] spawn { ["redrawNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
+        [_g, _back] spawn {
+            params ["_g", "_back"];
+            ["redrawNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            [_g, format [("%1 tenue(s) remise(s) dans votre arsenal.") call comspec_overwatch_connect_fnc_tr, _back], "ok"] call (_g getVariable ["COMSPEC_ArsenalSetHint", {}]);
+        };
     };
     case "saveCurrent": {
         private _name = trim ctrlText (_g getVariable ["COMSPEC_ArsenalSaveName", controlNull]);
-        if (_name isEqualTo "") exitWith { ["Donnez un nom à la tenue (ex. SOAR - Breacher), puis Enregistrer."] call _say; };
+        if (_name isEqualTo "") exitWith {
+            ["Donnez un nom à la tenue (ex. SOAR - Breacher), puis Enregistrer."] call _say;
+            ["Donnez un nom à la tenue (ex. SOAR - Breacher), puis Enregistrer.", "warn"] call _hint;
+        };
         private _unit = missionNamespace getVariable ["ace_arsenal_center", player];
         if (isNull _unit) then { _unit = player; };
         // Comme le bouton Enregistrer d'ACE : tenue étendue CBA (visage, voix, insigne), même nom = remplacée.
         private _lo = if (isNil "CBA_fnc_getLoadout") then { [getUnitLoadout _unit, createHashMap] } else { _unit call CBA_fnc_getLoadout };
         if (((["upsert", [[_name, _lo]], true] call comspec_overwatch_connect_fnc_arsenalAceStore) select 0) < 1) exitWith {
             ["La tenue portée n'a pas pu être enregistrée."] call _say;
+            ["La tenue portée n'a pas pu être enregistrée.", "err"] call _hint;
         };
         profileNamespace setVariable ["COMSPEC_ArsenalLastSaveName", _name];
         [] call comspec_overwatch_connect_fnc_saveProfile;
         [format ["« %1 » enregistrée dans votre arsenal, partage en cours…", _name], "ok"] call _say;
-        [_name] spawn { params ["_n"]; [[_n]] call comspec_overwatch_connect_fnc_arsenalPushAll; ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
+        [format [("« %1 » enregistrée dans votre arsenal, partage en cours…") call comspec_overwatch_connect_fnc_tr, _name], "busy"] call _hint;
+        [_name, _g] spawn {
+            params ["_n", "_g"];
+            private _ok = [[_n]] call comspec_overwatch_connect_fnc_arsenalPushAll;
+            ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            [_g, format [(["« %1 » est enregistrée ici mais n'est pas partie au site : Envoyer la renverra.", "« %1 » enregistrée et envoyée au site."] select (_ok isEqualTo true)) call comspec_overwatch_connect_fnc_tr, _n], ["warn", "ok"] select (_ok isEqualTo true)] call (_g getVariable ["COMSPEC_ArsenalSetHint", {}]);
+        };
     };
 };
