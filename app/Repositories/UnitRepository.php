@@ -569,7 +569,7 @@ class UnitRepository
         foreach (array_chunk($userIds, 500) as $chunk) {
             $placeholders = implode(',', array_fill(0, count($chunk), '?'));
             $stmt = $this->pdo()->prepare(
-                'SELECT u.id, g.short_name FROM users u INNER JOIN grades g ON g.id = u.grade_id
+                'SELECT u.id, g.label_short AS short_name FROM users u INNER JOIN grades g ON g.id = u.grade_id
                  WHERE u.tenant_id = ? AND u.id IN (' . $placeholders . ')'
             );
             $stmt->execute(array_merge([$tenantId], $chunk));

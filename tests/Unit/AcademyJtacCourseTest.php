@@ -53,7 +53,7 @@ final class AcademyJtacCourseTest extends TestCase
     {
         $course = self::course();
         self::assertSame($course, AcademyCurriculum::validate($course));
-        self::assertSame('2.0', $course['version']);
+        self::assertSame('2.0.1', $course['version']);
         self::assertTrue($course['built_in']);
         self::assertCount(6, $course['chapters']);
         $titles = array_map(static fn (array $c): string => $c['title']['fr'] . ' | ' . $c['title']['en'], $course['chapters']);
@@ -151,7 +151,7 @@ final class AcademyJtacCourseTest extends TestCase
             $state = AcademyCurriculum::validateChapter($state, $course, 99, 'Phrase radio répétée correctement en session.', $now++);
         }
         self::assertTrue($state['completed']);
-        self::assertSame('2.0', $state['license']['course_version']);
+        self::assertSame('2.0.1', $state['license']['course_version']);
         self::assertSame('simulation', $state['license']['scope']);
         self::assertCount(6, $state['validations']);
     }
