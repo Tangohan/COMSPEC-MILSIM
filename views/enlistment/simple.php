@@ -12,7 +12,6 @@ $prefill = array_merge(
 );
 $platformEmail = trim((string) ($ctx['platform_email'] ?? ''));
 $showPlatformEmailOption = $platformEmail !== '';
-$recruitmentPresets = $ctx['recruitmentPresets'] ?? [];
 $hasMembershipOnTarget = !empty($ctx['hasMembershipOnTarget']);
 $switchToTargetUrl = $ctx['switchToTargetUrl'] ?? null;
 $showMilsimUnavailableNotice = $showMilsimUnavailableNotice ?? false;
@@ -42,17 +41,6 @@ document.addEventListener('alpine:init', function () {
                 var el = document.querySelector('#simple-enlist-email');
                 if (!el) return;
                 el.value = this.usePlatformEmail ? this.platformEmail : this.prefillEmail;
-            },
-            applyPreset: function (ev) {
-                var opt = ev.target.selectedOptions[0];
-                if (!opt || !opt.dataset.payload) return;
-                try {
-                    var p = JSON.parse(opt.dataset.payload);
-                    var av = document.querySelector('input[name="availability"]');
-                    var mo = document.querySelector('textarea[name="motivation_why_join"]');
-                    if (av && p.availability) av.value = p.availability;
-                    if (mo && p.motivation_why_join) mo.value = p.motivation_why_join;
-                } catch (e) {}
             },
         };
     });
@@ -159,29 +147,6 @@ document.addEventListener('alpine:init', function () {
                         <span>Partager mon <strong>nom</strong> (affichage / dossier)</span>
                     </label>
                 </div>
-
-                <?php if (!empty($recruitmentPresets)): ?>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Profil enregistré (optionnel)</label>
-                        <select name="recruitment_preset_id" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-white" x-bind:disabled="flow !== 'account'" @change="applyPreset($event)">
-                            <option value="">— Aucun —</option>
-                            <?php foreach ($recruitmentPresets as $rp): ?>
-                                <?php
-                                $pid = (int) ($rp['id'] ?? 0);
-                                $pl = (string) ($rp['label'] ?? '');
-                                $pay = $rp['payload'] ?? [];
-                                if (!is_array($pay)) {
-                                    $pay = [];
-                                }
-                                ?>
-                                <option value="<?= $pid ?>" data-payload="<?= htmlspecialchars(json_encode($pay, JSON_UNESCAPED_UNICODE)) ?>"><?= htmlspecialchars($pl) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <p class="text-xs text-slate-500 mt-1"><a href="<?= url('account/recruitment-presets') ?>" class="underline">Gérer mes profils</a></p>
-                    </div>
-                <?php else: ?>
-                    <p class="text-xs text-slate-500"><a href="<?= url('account/recruitment-presets/create') ?>" class="underline">Créer un profil de candidature</a> pour préremplir motivation et disponibilité.</p>
-                <?php endif; ?>
 
                 <div class="rounded-xl border border-dashed border-slate-200 p-4">
                     <p class="text-xs text-slate-500 mb-2">Aperçu identité (non modifiable ici)</p>
