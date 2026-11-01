@@ -53,7 +53,13 @@ switch (_act) do {
         private _slides = missionNamespace getVariable ["COMSPEC_BriefingSlides", []];
         private _i = _slides findIf { (_x select 0) isEqualTo (_live select 2) };
         // Diapositives absentes ou périmées : les relire depuis Athena (une fois par présentation).
-        if (_i < 0 && {(uiNamespace getVariable ["COMSPEC_ATAK_BriefReload", objNull]) isNotEqualTo _pres} && {!isNil "comspec_overwatch_connect_fnc_getBriefingSlides"}) then {
+        // Sans Athena : celles de la mission.
+        if (_i < 0 && {([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on"}) then {
+            ["mission"] call comspec_atak_native_fnc_briefingAction;
+            _slides = missionNamespace getVariable ["COMSPEC_BriefingSlides", []];
+            _i = _slides findIf { (_x select 0) isEqualTo (_live select 2) };
+        };
+        if (_i < 0 && {(uiNamespace getVariable ["COMSPEC_ATAK_BriefReload", objNull]) isNotEqualTo _pres} && {!isNil "comspec_overwatch_connect_fnc_getBriefingSlides"} && {([] call comspec_atak_native_fnc_athenaMode) isEqualTo "on"}) then {
             uiNamespace setVariable ["COMSPEC_ATAK_BriefReload", _pres];
             uiNamespace setVariable ["COMSPEC_ATAK_SlideCache", createHashMap];
             // Relecture hors de l'image en cours : l'appel à Athena figeait le jeu de chaque spectateur au même moment.

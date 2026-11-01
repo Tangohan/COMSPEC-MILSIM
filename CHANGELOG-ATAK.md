@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.27 : tout en jeu sans Athena, ordres aux IA (ATAK natif 2.9.27.AG - Denver, COMSPEC Link 2.0.114)
+
+### Résumé joueur
+Type : nouveauté
+FR : Donnez des ordres aux IA, et jouez sans Athena
+- Carte du téléphone, clic droit sur un point ou sur un groupe IA allié : ORDRE AUX IA. Le groupe va au point, patrouille, attaque ou supprime une zone, se replie, tient, vous suit, embarque ou débarque ; POSTURE règle prudent, combat, furtif, la vitesse et la formation. Réservé aux chefs et au poste TOC, jamais aux groupes de joueurs.
+- Le PC du poste TOC a un bouton ORDRE IA dans l'onglet GROUPES, et un ordre DÉPLACER, TENIR, RECO ou RENFORT envoyé à un groupe IA est exécuté pour de vrai. Le donneur d'ordre est prévenu quand l'ordre est en cours, terminé ou impossible, et l'ordre s'affiche sur la carte du téléphone et du PC.
+- Sans Athena (serveur en mode local ou service « Non ») : les messages des canaux arrivent aux autres téléphones et au PC du poste, le 9-line part en ordre CAS dans l'app Tâches, et l'app Briefing montre les diapositives fournies par la mission.
+- Fini les faux messages « Athena » sans Athena : marqueurs, comptes rendus et MEDEVAC disent simplement qu'ils sont partis au camp.
+EN : Give orders to AI, and play without Athena
+- Phone map, right click on a point or on a friendly AI group: AI ORDER. The group moves to the point, patrols, attacks or suppresses an area, falls back, holds, follows you, mounts or dismounts; POSTURE sets aware, combat, stealth, speed and formation. Leaders and the TOC post only, never player groups.
+- The TOC post PC has an AI ORDER button in the GROUPS tab, and a MOVE, HOLD, RECON or QRF order sent to an AI group is carried out for real. The order giver is told when the order is under way, complete or impossible, and the order shows on the phone and PC maps.
+- Without Athena (local mode server or "No" to the Athena service): channel messages reach the other phones and the post PC, the 9-line goes out as a CAS order in the Tasks app, and the Briefing app shows the slides provided by the mission.
+- No more false "Athena" messages without Athena: markers, reports and MEDEVAC simply say they went to the side.
+
+### Détail technique
+- Ordres aux IA : `functions/teams/fn_aiOrder.sqf`. Client `send` (droits `can` : chef de groupe, joueur seul, rôle chef / commandant, opérateur du poste (`COMSPEC_ATAK_TocOn`) ou Zeus) → `comspec_atak_native_aiOrdSrv` (téléphone : `fn_netSend`, PC du poste : direct) → serveur `srv` (revérifie camp, droits, aucun joueur dans le groupe, `COMSPEC_ATAK_NoOrders` posé par la mission) → `comspec_atak_native_aiOrdExec` ciblé sur le chef (`CBA_fnc_targetEvent` : là où le groupe est local, serveur ou client headless ; gestionnaire dans `XEH_preInit`) → points de passage (MOVE, HOLD, SAD, CYCLE de patrouille, GETIN attaché au véhicule), `doSuppressiveFire`, `leaveVehicle`, `move` de suivi, `setBehaviour` / `setSpeedMode` / `setFormation` → suivi toutes les 3 s (arrivé, en position, zone nettoyée, à bord, bloqué 2 min, groupe détruit) → état `comspec_atak_native_aiOrdState` par `comspec_atak_native_sideEvent` (camp seulement), dernier état par groupe gardé au serveur (`COMSPEC_ATAK_SrvAiOrd`) et rejoué aux arrivants (`syncReq`).
+- Téléphone : `fn_mapCtxMenu` (ligne ORDRE AUX IA, sous-menus AI / AIPOST, groupe pointé ou suivant), `fn_mapOnDraw` (trait chef → objectif, état). PC du poste : `fn_tocLaptop` (groupes IA listés, combo + ORDRE IA, clic droit sans quitter GROUPES, état dans la fiche, carte). `fn_orderLocal "send"` : MOVE / HOLD / RECON / QRF vers un groupe IA → `fn_aiOrder`. Les ordres IA d'Athena (`GetAiOrders`, connect) restent inchangés.
+- Sans Athena (`fn_athenaMode` ≠ « on ») : `fn_chatSend` relaie les canaux (`comspec_atak_native_chatLocal`, journal serveur, flux `fn_tocFeed`) ; `fn_markerWeb`, `fn_bdaAction`, `fn_medicalAction` n'appellent plus le site ; `fn_reportAction` état `LOCAL` ; `fn_firesAction` ordres CAS / appels de feu par `fn_orderLocal` ; `fn_briefingAction "mission"` (+ `fn_briefingSignature`, `fn_briefingLive`, `fn_pageBriefing`) : diapositives `COMSPEC_ATAK_MissionSlides` = [[titre, image .paa / .jpg d'un PBO, notes]...] posées par la mission.
+- Note `docs/bugs/2026-11-01-mode-local-faux-messages-athena.md`. Link et connect inchangés.
+
 ## Pack 2.9.25 : menus d'écran uniques, diapositives sur les écrans, PC du poste en PIP (ATAK natif 2.9.25.AG - Denver, COMSPEC Link 2.0.114)
 
 ### Résumé joueur

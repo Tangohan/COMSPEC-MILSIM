@@ -5,7 +5,11 @@
     et EFFACER LA LIGNE DE VUE (quand il y en a un sur la carte), ZONE INTERDITE AU DRONE (poser, ou retirer celle
     sous le clic), RETIRER TOUTES LES ZONES (camp), MODIFIER LE MARQUEUR (marqueur joueur pointé, éditeur), SUPPRIMER (marqueur joueur ou alerte pointés), EFFACER LES ALERTES (repères
     d'alerte reçus). MARQUEUR ouvre la palette au point (fn_markerPlace) ou l'éditeur complet (réglage d'addon). Drone appairé et en vie : ORDRE AU DRONE
-    ouvre un sous-menu ALLER, RECHERCHER, STATIONNAIRE, ATTERRIR au point cliqué (fn_droneAction "mapOrder"), et RETOUR. Équipier pointé : aussi CHAMP DE VISION de l'équipier
+    ouvre un sous-menu ALLER, RECHERCHER, STATIONNAIRE, ATTERRIR au point cliqué (fn_droneAction "mapOrder"), et RETOUR.
+    Chef ou poste TOC avec des groupes IA dans le camp : ORDRE AUX IA ouvre le sous-menu des ordres au groupe (celui
+    pointé, sinon le dernier choisi ou le plus proche du clic ; la première ligne en change) : aller, patrouiller, attaquer,
+    supprimer, se replier, tenir, me suivre, embarquer, débarquer, annuler, et POSTURE (prudent, combat, furtif, vitesse,
+    formation) (fn_aiOrder). Équipier pointé : aussi CHAMP DE VISION de l'équipier
     et LOCALISER PAR RELAIS (triangulation de 6 à 10 s, fn_relayNet). EFFACER LES LOCALISATIONS quand il y en a une
     (triangulation en cours ou faite, géolocalisation GE, résultat de RECHERCHER).
     Étape de l'itinéraire pointée : MODIFIER L'ÉTAPE, NAVIGUER VERS L'ÉTAPE et SUPPRIMER L'ÉTAPE (fn_wpAt, fn_wpAction).
@@ -68,11 +72,25 @@ switch (_mode) do {
             private _dd2 = [(_sp select 0) - (_screen select 0), (_sp select 1) - (_screen select 1)] distance2D [0, 0];
             if (_dd2 < _near) then { _near = _dd2; _who = _x; };
         } forEach (allPlayers select { _x isNotEqualTo player && {alive _x} && {side group _x isEqualTo side group player} && {[_x] call comspec_atak_native_fnc_hasDevice} });
+        // Groupe IA du camp pointé (son chef à moins d'un symbole du clic) : choisi pour ORDRE AUX IA.
+        private _aiG = grpNull;
+        if (["can", player] call comspec_atak_native_fnc_aiOrder) then {
+            private _gs = ["groups", [str side group player, _w]] call comspec_atak_native_fnc_aiOrder;
+            private _nearAi = 0.03;
+            {
+                private _sp = _map ctrlMapWorldToScreen (getPosASLVisual leader _x);
+                private _dd3 = [(_sp select 0) - (_screen select 0), (_sp select 1) - (_screen select 1)] distance2D [0, 0];
+                if (_dd3 < _nearAi) then { _nearAi = _dd3; _aiG = _x; };
+            } forEach (_gs select [0, 12]);
+            // Sinon le dernier groupe choisi s'il est encore là, sinon le plus proche du clic.
+            if (isNull _aiG) then { _aiG = uiNamespace getVariable ["COMSPEC_ATAK_AiPick", grpNull]; };
+            if (isNull _aiG || {!(_aiG in _gs)}) then { _aiG = _gs param [0, grpNull]; };
+        };
         // Étape de l'itinéraire pointée : MODIFIER, NAVIGUER VERS, SUPPRIMER L'ÉTAPE.
         private _wpi = [_map, _screen] call comspec_atak_native_fnc_wpAt;
         if (_card) then { _m = ""; _who = objNull; _wpi = -1; };
         _s set ["mapCtx", createHashMapFromArray [["pos", [_w select 0, _w select 1, 0]], ["marker", _m], ["unit", [netId _who, ""] select (isNull _who)], ["at", diag_tickTime],
-            ["relay", _rl], ["card", _card], ["wp", _wpi]]];
+            ["relay", _rl], ["card", _card], ["wp", _wpi], ["aiG", _aiG]]];
         [] call _unbindEsc;
         private _d = [] call comspec_atak_native_fnc_display;
         if (!isNull _d) then {
@@ -96,8 +114,19 @@ switch (_mode) do {
         private _c = _s getOrDefault ["mapCtx", createHashMap];
         if ((count _c) isEqualTo 0) exitWith {};
         // Sous-menu drone : le menu reste ouvert et se redessine (à l'image suivante, hors du clic du bouton qu'on efface).
-        if (_arg in ["DRONE", "BACK"]) exitWith {
-            _c set ["sub", ["", "DRONE"] select (_arg isEqualTo "DRONE")];
+        if (_arg in ["DRONE", "BACK", "AI", "AIPOST", "AINEXT"]) exitWith {
+            // Groupe IA suivant (du plus proche au plus loin du point cliqué).
+            if (_arg isEqualTo "AINEXT") then {
+                private _gs = ["groups", [str side group player, _c get "pos"]] call comspec_atak_native_fnc_aiOrder;
+                _c set ["aiG", _gs param [((_gs find (_c getOrDefault ["aiG", grpNull])) + 1) mod ((count _gs) max 1), grpNull]];
+            };
+            _c set ["sub", switch (_arg) do {
+                case "DRONE": { "DRONE" };
+                case "AI";
+                case "AINEXT": { "AI" };
+                case "AIPOST": { "AIPOST" };
+                default { ["", "AI"] select ((_c getOrDefault ["sub", ""]) isEqualTo "AIPOST") };
+            }];
             _c set ["at", diag_tickTime];
             playSound "ClickSoft";
             [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
@@ -106,6 +135,12 @@ switch (_mode) do {
         private _m = _c getOrDefault ["marker", ""];
         ["close"] call comspec_atak_native_fnc_mapCtxMenu;
         playSound "ClickSoft";
+        // Ordres aux IA : clé « AI_ » + ordre de fn_aiOrder, au groupe choisi et au point cliqué.
+        if ((_arg select [0, 3]) isEqualTo "AI_") exitWith {
+            private _g = _c getOrDefault ["aiG", grpNull];
+            uiNamespace setVariable ["COMSPEC_ATAK_AiPick", _g];
+            ["send", [_g, _arg select [3], [_pos select 0, _pos select 1]]] call comspec_atak_native_fnc_aiOrder;
+        };
         switch (_arg) do {
             case "PING": { ["send", _pos] call comspec_atak_native_fnc_mapPing; };
             case "MARKER": { ["open", _pos] call comspec_atak_native_fnc_markerPlace; };
@@ -320,6 +355,43 @@ switch (_mode) do {
                 ["DLAND", "Atterrir", "se pose sur le point", "\A3\ui_f\data\igui\cfg\simpletasks\types\land_ca.paa", _drCol],
                 ["BACK", "Retour", "", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]
             ];
+        };
+        // Ordres aux IA (fn_aiOrder) : une ligne, puis les sous-menus ordres et posture.
+        private _aiG = _c getOrDefault ["aiG", grpNull];
+        private _aiCol = [1, 0.8, 0.25, 1];
+        private _aiSub = _c getOrDefault ["sub", ""];
+        if (!isNull _aiG && {({alive _x} count (units _aiG)) > 0} && {_aiSub isEqualTo ""} && {!_card}) then {
+            _rows insert [0, [["AI", "Ordre aux IA", groupId _aiG, _dir + "app_toc.paa", _aiCol]]];
+        };
+        if (!isNull _aiG && {_aiSub in ["AI", "AIPOST"]}) then {
+            private _e = (missionNamespace getVariable ["COMSPEC_ATAK_AiOrds", createHashMap]) getOrDefault [[_aiG] call BIS_fnc_netId, createHashMap];
+            private _cur = ["aucun ordre", _e getOrDefault ["lbl", ""]] select ((_e getOrDefault ["lbl", ""]) isNotEqualTo "");
+            private _gs = ["groups", [str side group player, _pos]] call comspec_atak_native_fnc_aiOrder;
+            private _head = [["AINEXT", ["label", _aiG] call comspec_atak_native_fnc_aiOrder, format ["groupe %1/%2", (_gs find _aiG) + 1, count _gs], _dir + "app_toc.paa", _aiCol]];
+            private _ti = "\A3\ui_f\data\igui\cfg\simpletasks\types\";
+            _rows = if (_aiSub isEqualTo "AI") then { _head + [
+                ["AI_MOVE", "Aller ici", _cur, _dir + "map_route.paa", _aiCol],
+                ["AI_PATROL", "Patrouiller ici", "4 points, 120 m", _ti + "walk_ca.paa", _aiCol],
+                ["AI_ATTACK", "Attaquer la zone", "fouille et détruit", _ti + "attack_ca.paa", [0.95, 0.35, 0.3, 1]],
+                ["AI_SUPPRESS", "Supprimer la zone", "tir 30 s", _ti + "target_ca.paa", [0.95, 0.35, 0.3, 1]],
+                ["AI_WITHDRAW", "Se replier ici", "vitesse rapide", _ti + "run_ca.paa", _aiCol],
+                ["AI_HOLD", "Tenir ici", "", _ti + "defend_ca.paa", _aiCol],
+                ["AI_FOLLOW", "Me suivre", "rejoint et suit", _ti + "meet_ca.paa", _aiCol],
+                ["AI_BOARD", "Embarquer", "véhicule le plus proche", _ti + "getin_ca.paa", _aiCol],
+                ["AI_DISMOUNT", "Débarquer", "", _ti + "getout_ca.paa", _aiCol],
+                ["AIPOST", "Posture", "vitesse, formation", _ti + "scout_ca.paa", _aiCol],
+                ["AI_CANCEL", "Annuler l'ordre", "", _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]],
+                ["BACK", "Retour", "", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]
+            ] } else { _head + ([
+                ["AWARE", "Prudent"], ["COMBAT", "Combat"], ["STEALTH", "Furtif"],
+                ["LIMITED", "Vitesse lente"], ["NORMAL", "Vitesse normale"], ["FULL", "Vitesse rapide"],
+                ["COLUMN", "Colonne"], ["WEDGE", "En coin"], ["LINE", "En ligne"], ["FILE", "En file"]
+            ] apply {
+                private _on = (_x select 0) in [_e getOrDefault ["beh", ""], _e getOrDefault ["spd", ""], _e getOrDefault ["frm", ""]];
+                ["AI_" + (_x select 0), _x select 1, ["", "actuel"] select _on, _ti + "scout_ca.paa", _aiCol]
+            }) + [
+                ["BACK", "Retour", "ordres", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]
+            ] };
         };
         private _rowH = _font * 1.55;
         private _headH = _font * 2.05;

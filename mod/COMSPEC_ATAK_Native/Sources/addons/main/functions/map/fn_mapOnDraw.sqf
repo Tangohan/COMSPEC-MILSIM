@@ -522,6 +522,8 @@ if ((count _anchor) >= 2 && {(_state getOrDefault ["mapMode","SELECT"]) isEqualT
 
 // Points de passage : tronçons, étapes nommées et typées, point choisi en mode POINTS DE PASSAGE (fn_wpDraw).
 [_map, _k * _is, _ts, _cursor] call comspec_atak_native_fnc_wpDraw;
+// Ordres aux groupes IA du camp en cours (et finis depuis moins d'une minute) : trait du chef à l'objectif (fn_aiOrder).
+["draw", [_map, 0.026 * _ts, COMSPEC_ATAK_FontSet select 1]] call comspec_atak_native_fnc_aiOrder;
 
 // Mesure A -> B (ou A -> curseur tant que B n'est pas posé)
 private _measure = +(_state getOrDefault ["mapMeasure",[]]);

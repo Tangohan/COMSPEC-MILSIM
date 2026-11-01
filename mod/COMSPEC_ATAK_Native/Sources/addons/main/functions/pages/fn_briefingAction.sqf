@@ -9,6 +9,11 @@
     ["follow"]                   suit le présentateur ou navigue librement
     ["questions", id]            relit les questions de la diapositive id (-1 : celle en cours)
     ["ask"]                      envoie la question saisie (Athena + alerte au présentateur)
+    ["mission"]                  sans Athena : charge les diapositives de la mission -> nombre chargé. La mission les
+                                 déclare (init.sqf, sur toutes les machines) :
+                                 missionNamespace setVariable ["COMSPEC_ATAK_MissionSlides", [["Titre", "images\slide1.paa", "notes"], ...]];
+                                 image .paa ou .jpg du dossier de la mission ou d'un addon. Elles se présentent au camp
+                                 comme celles d'Athena (PRÉSENTER, SUIVRE, écrans).
 */
 params [["_action", ""], ["_arg", 0]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -22,6 +27,20 @@ private _rerender = { [{
 }] call CBA_fnc_execNextFrame; };
 
 switch (_action) do {
+    case "mission": {
+        private _ms = missionNamespace getVariable ["COMSPEC_ATAK_MissionSlides", []];
+        if !(_ms isEqualType []) then { _ms = []; };
+        // Même forme que les diapositives d'Athena [id, titre, ordre, adresse, notes, opération] + image locale (7e).
+        private _out = [];
+        { if (_x isEqualType [] && {(_x param [1, ""]) isEqualType ""} && {(_x param [1, ""]) isNotEqualTo ""}) then {
+            _out pushBack [format ["M%1", _forEachIndex + 1], _x param [0, format ["Diapositive %1", _forEachIndex + 1]], _forEachIndex, "", _x param [2, ""], "", _x select 1];
+        }; } forEach _ms;
+        if ((missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) isNotEqualTo _out) then {
+            missionNamespace setVariable ["COMSPEC_BriefingSlides", _out];
+            missionNamespace setVariable ["COMSPEC_BriefingSlideIndex", 0];
+        };
+        count _out
+    };
     case "tab": { _s set ["briefTab", _arg]; call _rerender; };
     case "step";
     case "goto": {
@@ -125,6 +144,12 @@ switch (_action) do {
     case "refresh": {
         private _fid = ["viewed"] call comspec_atak_native_fnc_fenrir;
         if (_fid isNotEqualTo "") exitWith { ["cmd", [_fid, "refresh"]] call comspec_atak_native_fnc_fenrir; };
+        // Sans Athena : diapositives de la mission.
+        if (([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on") exitWith {
+            private _n = ["mission"] call comspec_atak_native_fnc_briefingAction;
+            ["INFO", ["Aucune diapositive dans cette mission (sans Athena, la mission les fournit)", format ["%1 diapositive(s) de la mission", _n]] select (_n > 0), 4, 20] call comspec_atak_native_fnc_notify;
+            call _rerender;
+        };
         if !([] call comspec_atak_native_fnc_bridge) exitWith {
             ["WARNING", "Diapositives Athena : COMSPEC Link requis", 4, 30] call comspec_atak_native_fnc_notify;
         };

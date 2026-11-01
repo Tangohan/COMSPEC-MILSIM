@@ -7,6 +7,7 @@
       "send" [type, libellé du type, genre de cible ("all" | "group"), clé du groupe, nom de la cible, consigne, priorité,
               PC du poste (fn_tocLaptop : émetteur « TOC · indicatif », envoi direct par le réseau filaire du poste),
               position de l'objectif [x, y] ou []] -> id
+              (adressé à un groupe IA : DÉPLACER, TENIR, RECO et RENFORT sont aussi exécutés par le groupe, fn_aiOrder)
       "recv" [ordre en paires [[clé, valeur]...], camp]   (événement comspec_atak_native_localOrder)
     Tout passe en tableaux simples (jamais de HashMap sur le réseau).
 */
@@ -40,6 +41,12 @@ switch (_act) do {
         if ((count _pos) >= 2) then { _o pushBack ["pos", [_pos select 0, _pos select 1]]; };
         private _side = str side group player;
         ["recv", [_o, _side]] call comspec_atak_native_fnc_orderLocal;
+        // Ordre à un groupe IA : exécuté pour de vrai (fn_aiOrder) quand le type a un équivalent.
+        private _aiK = (createHashMapFromArray [["MOVE", "MOVE"], ["HOLD", "HOLD"], ["RECON", "PATROL"], ["QRF", "ATTACK"]]) getOrDefault [_kind, ""];
+        if (_tType isEqualTo "group" && {_aiK isNotEqualTo ""}) then {
+            private _gs = (["groups", [_side, getPosATL player]] call comspec_atak_native_fnc_aiOrder) select { (groupId _x) in [_tRef, _tLabel] };
+            if (_gs isNotEqualTo []) then { ["send", [_gs select 0, _aiK, _pos, _toc]] call comspec_atak_native_fnc_aiOrder; };
+        };
         if (_direct) exitWith { ["comspec_atak_native_sideEvent", ["comspec_atak_native_localOrder", [_o, _side], _side]] call CBA_fnc_serverEvent; _id };
         [{ ["comspec_atak_native_sideEvent", ["comspec_atak_native_localOrder", _this, _this select 1]] call CBA_fnc_serverEvent; }, [_o, _side], "Ordre", 2] call comspec_atak_native_fnc_netSend;
         _id
