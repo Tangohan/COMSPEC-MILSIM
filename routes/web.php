@@ -624,6 +624,11 @@ return function (Router $router) {
     $router->post('/account/preferences/login-otp-mailbox-test', [AccountController::class, 'sendLoginOtpMailboxTest'], [AuthMiddleware::class]);
     $router->get('/account/steam/connect', [AccountController::class, 'steamConnect'], [AuthMiddleware::class]);
     $router->get('/account/steam/callback', [AccountController::class, 'steamCallback'], [AuthMiddleware::class]);
+    // Steam relié à deux comptes Athena : page de choix imposée (AuthMiddleware::steamConflictStep).
+    $router->get('/account/steam-doublon', [\App\Controllers\Web\SteamConflictController::class, 'show'], [AuthMiddleware::class]);
+    $router->post('/account/steam-doublon/garder', [\App\Controllers\Web\SteamConflictController::class, 'keep'], [AuthMiddleware::class]);
+    $router->post('/account/steam-doublon/autre-compte', [\App\Controllers\Web\SteamConflictController::class, 'release'], [AuthMiddleware::class]);
+    $router->post('/account/steam-doublon/signaler', [\App\Controllers\Web\SteamConflictController::class, 'report'], [AuthMiddleware::class]);
     $router->post('/account/steam-sync', [AccountController::class, 'syncSteamProfile'], [AuthMiddleware::class]);
     $router->get('/account/mail', [AccountController::class, 'mail'], [AuthMiddleware::class]);
     $router->post('/account/mail', [AccountController::class, 'mail'], [AuthMiddleware::class]);
@@ -2134,6 +2139,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/admin/atak-mod-reports/gravity', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'updateGravity'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Parc ATAK des joueurs, toutes communautés : chiffres de jeu, blocage appliqué par l'API, retrait, messages imposés.
     $router->get('/admin/parc-atak', [\App\Controllers\Admin\AdminAtakFleetController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/steam-doublons', [\App\Controllers\Admin\AdminSteamConflictController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/steam-doublons/decider', [\App\Controllers\Admin\AdminSteamConflictController::class, 'decide'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/parc-atak/fiche', [\App\Controllers\Admin\AdminAtakFleetController::class, 'show'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/bloquer', [\App\Controllers\Admin\AdminAtakFleetController::class, 'block'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/debloquer', [\App\Controllers\Admin\AdminAtakFleetController::class, 'unblock'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

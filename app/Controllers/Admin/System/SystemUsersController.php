@@ -480,6 +480,19 @@ final class SystemUsersController
     /**
      * Dossier personne multi-communautés (toutes les fiches users du même e-mail).
      */
+    /** Steam en double (porté par une autre personne) ou signalé : état affiché avec « Résoudre ». */
+    private function steamConflictState(string $steam): string
+    {
+        if ($steam === '') {
+            return \App\Services\Account\SteamConflictService::STATE_NONE;
+        }
+        try {
+            return (new \App\Services\Account\SteamConflictService())->stateFor($steam);
+        } catch (\Throwable) {
+            return \App\Services\Account\SteamConflictService::STATE_NONE;
+        }
+    }
+
     public function showPerson(Request $request, array $params = []): Response
     {
         $email = strtolower(trim((string) $request->query('email', '')));
@@ -608,6 +621,7 @@ final class SystemUsersController
             'personDisplayName' => $displayName,
             'personCallsign' => $callsign,
             'personSteamId' => $globalSteam,
+            'personSteamState' => $this->steamConflictState($globalSteam),
             'personAthenaId' => $globalAthena,
             'personCivil' => $civil,
             'personHasLiveOrg' => $hasLiveOrg,

@@ -112,7 +112,8 @@ final class DataRegistryService
         $profiles = $this->sub('operator_game_profiles', 'SELECT COUNT(*) FROM operator_game_profiles o WHERE o.user_id = u.id');
         $lastGame = $this->sub('operator_game_profiles', 'SELECT MAX(o.last_seen_at) FROM operator_game_profiles o WHERE o.user_id = u.id', 'NULL');
         $sessions = $this->sub('game_sessions', 'SELECT COUNT(*) FROM game_sessions g WHERE g.user_id = u.id AND g.revoked_at IS NULL AND g.refresh_expires_at > UTC_TIMESTAMP()');
-        $dupes = "(SELECT COUNT(*) FROM users d WHERE d.steam_id = u.steam_id AND d.id <> u.id AND d.deleted_at IS NULL)";
+        // Autre personne (autre e-mail) : les fiches d'une même personne dans plusieurs communautés ne sont pas un doublon.
+        $dupes = "(SELECT COUNT(*) FROM users d WHERE d.steam_id = u.steam_id AND d.id <> u.id AND d.deleted_at IS NULL AND LOWER(TRIM(d.email)) <> LOWER(TRIM(u.email)))";
 
         return [
             'sql' => "SELECT u.id, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.callsign, ''), u.email) AS label, u.email, u.callsign,
@@ -141,7 +142,7 @@ final class DataRegistryService
             ],
             'flags' => [
                 'ghost' => ['Supprimés avec traces de jeu', "deleted_at IS NOT NULL AND (terminals > 0 OR profiles > 0 OR sessions > 0)", 'bad', 'Comptes supprimés dont le joueur apparaît encore (carte, ATAK, registre)'],
-                'dupe' => ['Steam en double', 'steam_dupes > 0', 'warn', 'Le même Steam est porté par plusieurs fiches vivantes'],
+                'dupe' => ['Steam en double', 'steam_dupes > 0', 'warn', 'Le même Steam est porté par les fiches de plusieurs personnes'],
                 'deleted' => ['Supprimés / anonymisés', 'deleted_at IS NOT NULL', 'neut', ''],
                 'linked' => ['Steam lié', "steam_id IS NOT NULL AND steam_id <> '' AND deleted_at IS NULL", 'ok', ''],
                 'nosteam' => ['Sans Steam', "(steam_id IS NULL OR steam_id = '') AND deleted_at IS NULL", 'warn', 'Compte vivant sans identifiant Steam'],

@@ -8,7 +8,9 @@ namespace App\Support;
  * Parc ATAK (/admin/parc-atak) : le site retrouve-t-il le compte Athena du joueur ?
  * Corrélation fiche membre ↔ Steam vu en jeu, et accès que la formule de la communauté donne au jeu.
  * Mêmes règles que la connexion du jeu (GameAuthService::resolveAccountByLinkedSteam) : seule la fiche membre
- * (users.steam_id) fait la liaison, un Steam présent sur plusieurs fiches en choisit une au hasard.
+ * (users.steam_id) fait la liaison. Un Steam porté par les fiches de plusieurs personnes (e-mails différents) est refusé
+ * par le jeu jusqu'au choix du joueur (SteamConflictService) ; les fiches d'une même personne dans plusieurs
+ * communautés (même e-mail) ne sont pas un doublon.
  */
 final class AtakFleetLink
 {
@@ -17,7 +19,7 @@ final class AtakFleetLink
      * [libellé, teinte, explication]
      */
     public const STATES = [
-        'duplicate' => ['Steam en double', 'rose', 'Ce Steam est sur plusieurs fiches membres : la connexion du jeu prend l’une d’elles au hasard. Gardez une seule fiche.'],
+        'duplicate' => ['Steam en double', 'rose', 'Ce Steam est relié à plusieurs comptes Athena (personnes différentes) : le jeu refuse la connexion par Steam. Le joueur doit choisir le compte à garder ; la page de choix s’impose à sa prochaine connexion au site.'],
         'no_account' => ['Aucun compte Athena', 'rose', 'Steam vu en jeu sans fiche membre qui le porte : la connexion du jeu est refusée tant que le joueur n’a pas lié son Steam (page « Lier le jeu »).'],
         'account_only' => ['Steam hors fiche', 'rose', 'Ce Steam est sur un compte Athena mais sur aucune fiche membre : le site ne le reconnaît pas, la connexion du jeu est refusée. Refaire la liaison.'],
         'disabled' => ['Compte désactivé', 'rose', 'La fiche membre liée à ce Steam est désactivée ou bannie : toute connexion du jeu est refusée.'],
@@ -59,7 +61,7 @@ final class AtakFleetLink
             if ($steam === '') {
                 return 'no_steam';
             }
-            if (count($steamUsers) > 1) {
+            if (self::owners($steamUsers) > 1) {
                 return 'duplicate';
             }
             if ($gameSteam !== '' && $gameSteam !== $steam) {
@@ -72,7 +74,7 @@ final class AtakFleetLink
             return 'unlinked';
         }
         // Joueur connu par son Steam seulement (vu en jeu ou par les rapports du mod).
-        if (count($steamUsers) > 1) {
+        if (self::owners($steamUsers) > 1) {
             return 'duplicate';
         }
         if ($steamUsers === []) {
@@ -90,6 +92,24 @@ final class AtakFleetLink
         }
 
         return 'no_terminal';
+    }
+
+    /**
+     * Personnes (e-mails distincts, fiches supprimées exclues) qui portent ce Steam.
+     *
+     * @param list<array<string, mixed>> $steamUsers
+     */
+    public static function owners(array $steamUsers): int
+    {
+        $emails = [];
+        foreach ($steamUsers as $u) {
+            $email = strtolower(trim((string) ($u['email'] ?? '')));
+            if (!str_ends_with($email, '@deleted.invalid')) {
+                $emails[$email] = true;
+            }
+        }
+
+        return count($emails);
     }
 
     /** Rang pour le tri (0 = le plus bloquant). */

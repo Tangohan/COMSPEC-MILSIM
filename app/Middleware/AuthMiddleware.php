@@ -110,6 +110,11 @@ class AuthMiddleware
             }
         }
 
+        $steamStep = self::steamConflictStep($request, $user);
+        if ($steamStep instanceof Response) {
+            return $steamStep;
+        }
+
         $linkStep = $this->firstLoginGameLink($request, $user, $tenantId);
         if ($linkStep instanceof Response) {
             return $linkStep;
@@ -136,6 +141,40 @@ class AuthMiddleware
             Session::set('tenant_id', $originalTenantId);
             $context::clearVerification();
         }
+    }
+
+    /**
+     * Steam aussi sur le compte Athena d'une autre personne : toute page du site renvoie vers la page de choix, à
+     * chaque visite, tant que ce n'est pas réglé. Les trois choix sont toujours possibles et aucun ne supprime de
+     * données : bloquer tout le site ne coûte qu'un clic et ne peut enfermer personne. La liaison du jeu (POST /lier)
+     * est bloquée aussi : elle déplacerait le Steam sans régler le doublon.
+     *
+     * @param array<string, mixed> $user
+     */
+    public static function steamConflictStep(Request $request, array $user, ?\App\Services\Account\SteamConflictService $conflicts = null): ?Response
+    {
+        $service = \App\Services\Account\SteamConflictService::class;
+        $path = $request->path();
+        if (trim((string) ($user['steam_id'] ?? '')) === '' || $service::pathIsOpen($path)) {
+            return null;
+        }
+        $pairing = $request->method() === 'POST' && ($path === '/lier' || str_starts_with($path, '/lier/'));
+        if (!$pairing && ($request->method() !== 'GET' || !$request->isBrowserNavigation())) {
+            return null;
+        }
+        try {
+            $conflict = ($conflicts ?? new $service())->conflictFor($user);
+        } catch (\Throwable) {
+            return null;
+        }
+        if ($conflict === null) {
+            return null;
+        }
+        if ($pairing) {
+            Session::flash('error', 'Votre compte Steam est relié à deux comptes Athena : choisissez d’abord lequel le garde.');
+        }
+
+        return Response::redirect(url('account/steam-doublon'));
     }
 
     /**

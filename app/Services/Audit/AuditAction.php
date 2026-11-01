@@ -25,6 +25,16 @@ final class AuditAction
     public const AUTH_TRUSTED_DEVICES_REVOKED = 'auth.trusted_devices_revoked';
     public const AUTH_PORTAL_SELECTED = 'auth.portal_selected';
     public const USER_STEAM_LINKED = 'user.steam_linked';
+    /** Steam en double : le joueur a prouvé posséder Steam et le garde sur ce compte. */
+    public const USER_STEAM_CONFLICT_KEPT = 'user.steam_conflict_kept';
+    /** Steam en double : retiré d'une fiche d'une autre personne après preuve Steam du titulaire. */
+    public const USER_STEAM_REMOVED_BY_OWNER = 'user.steam_removed_by_owner';
+    /** Steam en double : le joueur garde son autre compte et retire Steam de celui-ci. */
+    public const USER_STEAM_CONFLICT_RELEASED = 'user.steam_conflict_released';
+    /** Steam en double : le joueur ne reconnaît pas l'autre compte (Steam mis de côté, signalement). */
+    public const USER_STEAM_CONFLICT_REPORTED = 'user.steam_conflict_reported';
+    public const ADMIN_STEAM_CONFLICT_RESTORED = 'admin.steam_conflict_restored';
+    public const ADMIN_STEAM_CONFLICT_CLOSED = 'admin.steam_conflict_closed';
 
     /** Fusion de fiches users partageant le même e-mail (un compte, plusieurs communautés). */
     public const USER_IDENTITY_MERGED = 'user.identity_merged';

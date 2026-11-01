@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Support\ArmaText;
 use App\Support\AtakRoleDetection;
 use App\Support\LazyDatabaseConnection;
 use PDO;
@@ -82,14 +83,17 @@ class AtakScreenTimeRepository
             if (!in_array($kind, self::KINDS, true) || $key === '' || $seconds < 1) {
                 continue;
             }
-            $label = trim(preg_replace('/[\x00-\x1F\x7F]/u', ' ', (string) ($it['label'] ?? '')) ?? '');
+            // Clé de traduction Arma non traduite (« STR_… ») : jamais enregistrée telle quelle.
+            $label = ArmaText::roleLabel(trim(preg_replace('/[\x00-\x1F\x7F]/u', ' ', (string) ($it['label'] ?? '')) ?? ''));
             $key = mb_substr($kind === 'role' ? $key : strtoupper($key), 0, 64);
             $id = $kind . '|' . $key;
             if (isset($out[$id])) {
                 $out[$id]['seconds'] = min(7200, $out[$id]['seconds'] + $seconds);
                 continue;
             }
-            $out[$id] = ['kind' => $kind, 'key' => $key, 'label' => mb_substr($label !== '' ? $label : $key, 0, 120), 'seconds' => min(7200, $seconds)];
+            $label = $label !== '' ? $label : ArmaText::roleLabel($key);
+            $label = $label !== '' ? $label : ($kind === 'role' ? 'Rôle sans nom' : $key);
+            $out[$id] = ['kind' => $kind, 'key' => $key, 'label' => mb_substr($label, 0, 120), 'seconds' => min(7200, $seconds)];
         }
 
         return array_values($out);
@@ -322,12 +326,12 @@ class AtakScreenTimeRepository
                 continue;
             }
             $key = (string) $r['item_key'];
-            $label = trim((string) ($r['item_label'] ?? ''));
+            $label = ArmaText::roleLabel((string) ($r['item_label'] ?? ''));
             $srcMask = (int) ($r['source_mask'] ?? 0);
             $detection = AtakRoleDetection::category($key, $srcMask === 0 && isset($corrected[$key]));
             $out[] = [
                 'key' => $key,
-                'label' => $label !== '' ? $label : (str_starts_with($key, 'SLOT:') ? substr($key, 5) : $key),
+                'label' => $label !== '' ? $label : AtakRoleDetection::fallbackLabel($key),
                 'seconds' => $sec,
                 'last_day' => (string) ($r['last_day'] ?? ''),
                 'source_mask' => $srcMask,
@@ -360,7 +364,7 @@ class AtakScreenTimeRepository
         $st->execute($args);
 
         return array_map(static fn (array $r): array => [
-            'key' => (string) $r['item_key'], 'label' => (string) $r['label'], 'seconds' => (int) $r['seconds'], 'members' => (int) $r['members'],
+            'key' => (string) $r['item_key'], 'label' => ArmaText::roleLabel((string) $r['label']) ?: 'Rôle sans nom', 'seconds' => (int) $r['seconds'], 'members' => (int) $r['members'],
         ], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
     }
 
@@ -489,7 +493,7 @@ class AtakScreenTimeRepository
             $kind = (string) $r['kind'];
             $key = (string) $r['item_key'];
             $mask = (int) ($r['source_mask'] ?? 0);
-            $label = trim((string) ($r['item_label'] ?? ''));
+            $label = ArmaText::roleLabel((string) ($r['item_label'] ?? ''));
             $out[] = [
                 'user_id' => $uid,
                 'display_name' => (string) ($r['display_name'] ?? ''),

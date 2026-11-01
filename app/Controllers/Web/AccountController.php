@@ -22,6 +22,7 @@ use App\Services\Email\EmailEvents;
 use App\Support\TenantEmailKind;
 use App\Services\Profile\UserUiPreferencesValidationService;
 use App\Services\User\UserProfileSlugService;
+use App\Services\Account\SteamConflictService;
 use App\Services\Steam\SteamOpenIdService;
 use App\Services\Steam\SteamWebApiService;
 use App\Support\SteamId;
@@ -476,7 +477,15 @@ class AccountController
 
                     return Response::redirect(url('account/preferences'));
                 }
-                $publicName = \App\Support\UserPublicName::normalize((string) $request->input('public_name', ''));
+                // Une saisie ne prouve rien : un Steam déjà sur le compte d'une autre personne ne se recopie pas ici.
+                if ($resolvedSteam !== null
+                    && $resolvedSteam !== SteamId::normalize((string) ($user['steam_id'] ?? ''))
+                    && (new SteamConflictService())->holders($resolvedSteam, (string) ($user['email'] ?? '')) !== []) {
+                    Session::flash('error', 'Ce compte Steam est déjà relié à un autre compte Athena. S’il est à vous, reliez-le avec le bouton « Se connecter avec Steam » : la connexion Steam prouve qu’il vous appartient.');
+
+                    return Response::redirect(url('account/preferences'));
+                }
+                $publicName =\App\Support\UserPublicName::normalize((string) $request->input('public_name', ''));
                 $publicNameError = \App\Support\UserPublicName::validationError($publicName);
                 if ($publicNameError !== null) {
                     Session::flash('error', __($publicNameError));
@@ -1670,7 +1679,8 @@ class AccountController
         $tenantId = (int) ($user['tenant_id'] ?? 0);
         $expected = (string) Session::get('steam_openid_state', '');
         $started = (int) Session::get('steam_openid_started', 0);
-        Session::forgetMany(['steam_openid_state', 'steam_openid_started']);
+        $keep = (string) Session::get(SteamConflictController::SESSION_KEEP, '');
+        Session::forgetMany(['steam_openid_state', 'steam_openid_started', SteamConflictController::SESSION_KEEP]);
         // Lancé depuis l'accueil du profil : retour à l'étape Steam plutôt qu'au tableau de bord.
         $back = \App\Services\Account\ProfileWelcomeJourney::returnUrlFor(\App\Services\Account\ProfileWelcomeService::STEP_STEAM)
             ?? url('dashboard');
@@ -1704,7 +1714,20 @@ class AccountController
 
             return Response::redirect($back);
         }
-        $taken = $this->userRepository->findBySteamIdForTenant($tenantId, $steamId);
+        // Steam en double : la connexion Steam qui vient d'aboutir est la preuve de possession.
+        if ($keep !== '' && $keep !== $steamId) {
+            Session::flash('error', 'Vous vous êtes connecté à Steam avec un autre compte que celui relié en double (qui se termine par ' . substr($keep, -4) . '). Rien n’a changé : déconnectez-vous de Steam puis recommencez avec le bon compte.');
+
+            return Response::redirect(url('account/steam-doublon'));
+        }
+        $conflicts = new SteamConflictService();
+        if ($conflicts->holders($steamId, (string) ($user['email'] ?? '')) !== []) {
+            $result = $conflicts->keepHere($user, $steamId);
+            Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+            return Response::redirect($result['ok'] ? $back : url('account/steam-doublon'));
+        }
+        $taken =$this->userRepository->findBySteamIdForTenant($tenantId, $steamId);
         if (is_array($taken) && (int) ($taken['id'] ?? 0) !== $uid) {
             Session::flash('error', 'Ce compte Steam est déjà associé à un autre membre de la communauté.');
 

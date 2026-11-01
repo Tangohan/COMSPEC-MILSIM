@@ -87,6 +87,13 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                 <div>
                     <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Steam ID</dt>
                     <dd class="mt-0.5 font-mono text-slate-900"><?= $empty($steamId) ?></dd>
+                    <?php $steamState = (string) ($personSteamState ?? 'none'); ?>
+                    <?php if ($steamState !== 'none' && $steamId !== ''): ?>
+                    <dd class="mt-1 text-xs">
+                        <span class="inline-flex rounded-full bg-rose-100 px-2 py-0.5 font-semibold text-rose-900"><?= $steamState === 'reported' ? 'Steam en double : signalé, à examiner' : 'Steam en double : en attente du choix du joueur' ?></span>
+                        <a class="ml-1 font-semibold text-emerald-800 hover:text-emerald-950" href="<?= $h(url('admin/steam-doublons') . '?steam=' . rawurlencode($steamId)) ?>">Résoudre</a>
+                    </dd>
+                    <?php endif; ?>
                 </div>
                 <div>
                     <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Prénom / Nom</dt>

@@ -123,7 +123,7 @@ final class YearReviewService
                     $raw[$key]['apps'][$label] = ($raw[$key]['apps'][$label] ?? 0) + $sec;
                     break;
                 case 'role':
-                    $label = trim((string) $r['label']) ?: $item;
+                    $label = \App\Support\ArmaText::roleLabel((string) $r['label']) ?: \App\Support\AtakRoleDetection::fallbackLabel($item);
                     $raw[$key]['roles'][$label] = ($raw[$key]['roles'][$label] ?? 0) + $sec;
                     break;
             }

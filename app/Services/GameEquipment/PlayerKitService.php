@@ -290,7 +290,7 @@ final class PlayerKitService
                 'steam_id' => $steam,
                 'user_id' => isset($row['user_id']) ? (int) $row['user_id'] : null,
                 'player_name' => (string) ($row['player_name'] ?? $steam),
-                'role' => trim((string) ($row['role'] ?? '')),
+                'role' => \App\Support\ArmaText::label((string) ($row['role'] ?? '')),
                 'group_name' => trim((string) ($row['group_name'] ?? '')),
                 'mission_name' => trim((string) ($row['mission_name'] ?? '')),
                 'last_seen_at' => (string) ($row['last_seen_at'] ?? ''),
