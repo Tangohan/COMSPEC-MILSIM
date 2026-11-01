@@ -23,6 +23,14 @@ private _f = controlNull;
 if (!isNull _phone) then { _f = focusedCtrl _phone; };
 if !(_f call _isEdit) then { _f = [controlNull, focusedCtrl _disp] select (!isNull _disp && {_disp isNotEqualTo (findDisplay 46)}); };
 if !(_f call _isEdit) exitWith { false };
+// Recherche du lanceur : Échap efface le texte (le téléphone reste en main) ; champ déjà vide, Échap agit comme avant.
+if (_key isEqualTo 1 && {_f getVariable ["launcherSearch", false]} && {(ctrlText _f) isNotEqualTo ""}) exitWith {
+    _f ctrlSetText (("") call comspec_atak_native_fnc_tr);
+    uiNamespace setVariable ["COMSPEC_ATAK_LauncherTok", -1];
+    uiNamespace setVariable ["COMSPEC_ATAK_LauncherFilter", ""];
+    [""] call comspec_atak_native_fnc_launcherFilter;
+    true
+};
 // Échap, effacer, tabulation, Entrée, Entrée du pavé, début, gauche, droite, fin, suppr.
 if (_key in [1, 14, 15, 28, 156, 199, 203, 205, 207, 211]) exitWith { false };
 // Flèches haut / bas : utiles dans une zone de texte sur plusieurs lignes seulement.

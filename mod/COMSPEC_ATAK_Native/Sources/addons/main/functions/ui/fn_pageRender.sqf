@@ -45,6 +45,8 @@ _st deleteAt "backSub";
 [] call comspec_atak_native_fnc_recoDraftSave;
 [] call comspec_atak_native_fnc_firesSave;
 [] call comspec_atak_native_fnc_pageClear;
+// Lignes à mise à jour sur place (fn_formSet) : celles de la page effacée sont oubliées.
+uiNamespace setVariable ["COMSPEC_ATAK_FormIds", createHashMap];
 // Calques hors zone de contenu : recréés plus bas, après la page.
 [createHashMap, false] call comspec_atak_native_fnc_layoutApply;
 

@@ -1,5 +1,5 @@
 /*
-    App Musique : onglets LECTURE (lecteur : fn_vizPlayer ; sections repliables Son, File d'attente, Favoris,
+    App Musique : onglets LECTEUR (lecteur : fn_vizPlayer ; sections repliables Son, File d'attente, Favoris,
     Haut-parleurs autour de moi ; aléatoire et répéter sont des icônes du lecteur),
     ATHENA (bibliothèque musicale du site : playlist globale, communauté, organisation, playlists, mes envois),
     FICHIERS (dossier local Documents\Arma 3\COMSPEC_Music), SERVEUR (pistes Arma, mods, mission et radio de la mission)
@@ -19,7 +19,7 @@ private _esc = { params ["_t"]; { _t = [_t, _x select 0, _x select 1] call CBA_f
 private _fmt = { params ["_s"]; if (_s <= 0) exitWith { "" }; _s = floor _s; format ["%1:%2", floor (_s / 60), [str (_s mod 60), "0" + str (_s mod 60)] select ((_s mod 60) < 10)] };
 private _act = { params ["_a", ["_v", ""]]; compile format ["[%1, %2] call comspec_atak_native_fnc_musicAction;", str _a, str _v] };
 private _tabBtn = { params ["_t", "_k"]; [_t, ["tab", _k] call _act, _tab isEqualTo _k] };
-private _rows = [["segment", "", [["LECTURE", "PLAY"] call _tabBtn, ["ATHENA", "ATH"] call _tabBtn, ["FICHIERS", "LOCAL"] call _tabBtn, ["SERVEUR", "SRV"] call _tabBtn, ["LIEN", "URL"] call _tabBtn]]];
+private _rows = [["segment", "", [["LECTEUR", "PLAY"] call _tabBtn, ["ATHENA", "ATH"] call _tabBtn, ["FICHIERS", "LOCAL"] call _tabBtn, ["SERVEUR", "SRV"] call _tabBtn, ["LIEN", "URL"] call _tabBtn]]];
 if !(missionNamespace getVariable ["comspec_atak_native_music_enabled", true]) exitWith {
     _rows pushBack ["text", "<t color='#f2ab33'>La musique est désactivée sur ce serveur.</t>"];
     [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
@@ -43,7 +43,7 @@ private _trackRow = {
     private _isCur = (_m get "kind") isEqualTo _k && {(_m get "ref") isEqualTo _r || {_id isNotEqualTo "" && {((_m get "queue") param [_m get "qi", []]) param [5, ""] isEqualTo _id}}};
     ["person", _icon, format ["<t %1>%2</t><br/><t size='0.75' color='#8a9a93'>%3%4</t>", ["", format ["color='%1' font='COMSPEC_BarlowBold'", _accHex]] select _isCur,
         [_t] call _esc, [_sub] call _esc, ["", format [" · %1", [_len] call _fmt]] select (_len > 0)],
-        [["LIRE", compile format ["['playList', [%1, %2]] call comspec_atak_native_fnc_musicAction;", [_key] call _listRef, _i], true],
+        [["ÉCOUTER", compile format ["['playList', [%1, %2]] call comspec_atak_native_fnc_musicAction;", [_key] call _listRef, _i], true],
          ["+ FILE", compile format ["['enqueue', +(%1 select %2)] call comspec_atak_native_fnc_musicAction;", [_key] call _listRef, _i]],
          ["FAV", compile format ["['fav', +(%1 select %2)] call comspec_atak_native_fnc_musicAction;", [_key] call _listRef, _i], [_k, _r, _id] call _isFav, true, "Ajouter / retirer des favoris"]],
         [[0.55, 0.6, 0.58, 1], _acc] select _isCur]
@@ -165,7 +165,7 @@ switch (_tab) do {
             ["section", "Lire un lien", "Fichier audio ou webradio"],
             ["edit", "musicUrl", "Adresse (https://…/morceau.mp3)", ""],
             ["edit", "musicUrlTitle", "Titre (facultatif)", ""],
-            ["buttons", [["LIRE", ["url"] call _act, true]]],
+            ["buttons", [["ÉCOUTER", ["url"] call _act, true]]],
             ["text", "<t size='0.75' color='#8a9a93'>Lien direct vers un MP3, WAV, WMA, M4A ou AAC (80 Mo max, gardé en cache) ou flux de webradio MP3. Les pages YouTube, Spotify ou Deezer ne sont pas des fichiers audio et ne sont pas lisibles. Avec le haut-parleur, chaque joueur proche télécharge le même lien.</t>"]
         ];
         if !(missionNamespace getVariable ["comspec_atak_native_music_urls", true]) then { _rows pushBack ["text", "<t color='#f2ab33'>Lecture de liens interdite sur ce serveur.</t>"]; };
@@ -191,15 +191,16 @@ switch (_tab) do {
         private _spk = _m get "speaker";
         // Sections repliables en accordéon (une seule ouverte, « Son » par défaut) : moins de défilement sous le lecteur.
         private _openKey = _ui getOrDefault ["fold", "son"];
-        private _fold = { params ["_k", "_t", "_sub"]; _rows pushBack ["fold", _t, _sub, _openKey isEqualTo _k, ["fold", _k] call _act]; _openKey isEqualTo _k };
-        if (["son", "Son", [format ["Écouteurs %1", [(str _vol) + " %", "MUET"] select (_vol isEqualTo 0)], format ["Haut-parleur %1", [(str _spkVol) + " %", "MUET"] select (_spkVol isEqualTo 0)]] select _spk] call _fold) then {
+        private _fold = { params ["_k", "_t", "_sub", ["_id", ""]]; _rows pushBack ["fold", _t, _sub, _openKey isEqualTo _k, ["fold", _k] call _act, _id]; _openKey isEqualTo _k };
+        // Son : haut-parleur, volumes et « entendre » se mettent à jour sur place (ids, fn_formSet via fn_musicAction).
+        if (["son", "Son", ["sonSub"] call comspec_atak_native_fnc_musicAction, "musicSon"] call _fold) then {
             _rows append [
                 ["slider", "Volume des écouteurs", _vol, { params ["_v"]; ["vol", _v, false] call comspec_atak_native_fnc_musicAction; }, "Vous seul entendez (haut-parleur coupé)", !_spk,
-                    "ui_headphones", ["vol", [0, profileNamespace getVariable ["COMSPEC_ATAK_MusicVolBack", 60]] select (_vol isEqualTo 0)] call _act, "Couper / rétablir le son des écouteurs"],
+                    "ui_headphones", ["volMute"] call _act, "Couper / rétablir le son des écouteurs", [0, 100], "musicVol"],
                 ["slider", "Volume du haut-parleur", _spkVol, { params ["_v"]; ["spkVol", _v, false] call comspec_atak_native_fnc_musicAction; }, format ["Vous et les joueurs à moins de %1 m", _range], _spk,
-                    ["ui_speaker", "ui_mute"] select (_spkVol isEqualTo 0), ["spkVol", [0, profileNamespace getVariable ["COMSPEC_ATAK_MusicSpkVolBack", 70]] select (_spkVol isEqualTo 0)] call _act, "Couper / rétablir le son du haut-parleur"],
-                ["switch", "Haut-parleur", _spk, ["speaker"] call _act, format ["Les joueurs à moins de %1 m entendent votre musique, plus fort en s'approchant (atténué entre l'intérieur et l'extérieur d'un véhicule).", _range], !(missionNamespace getVariable ["comspec_atak_native_music_speaker", true])],
-                ["switch", "Entendre les haut-parleurs proches", _m get "hear", ["hear"] call _act, "Quand vous n'écoutez rien, la musique d'un téléphone voisin passe dans votre casque."]
+                    ["ui_speaker", "ui_mute"] select (_spkVol isEqualTo 0), ["spkMute"] call _act, "Couper / rétablir le son du haut-parleur", [0, 100], "musicSpkVol"],
+                ["switch", "Haut-parleur", _spk, ["speaker"] call _act, format ["Les joueurs à moins de %1 m entendent votre musique, plus fort en s'approchant (atténué entre l'intérieur et l'extérieur d'un véhicule).", _range], !(missionNamespace getVariable ["comspec_atak_native_music_speaker", true]), "musicSpk"],
+                ["switch", "Entendre les haut-parleurs proches", _m get "hear", ["hear"] call _act, "Quand vous n'écoutez rien, la musique d'un téléphone voisin passe dans votre casque.", false, "musicHear"]
             ];
         };
         private _q = _m get "queue";

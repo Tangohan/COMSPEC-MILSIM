@@ -294,6 +294,18 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1259, '2026-11-01', 'Recherche d’apps instantanée, réglages sans rechargement', 'Avec le pack 2.9.27, la recherche d’apps du téléphone filtre la liste pendant la frappe, sans recharger l’écran ni perdre de lettres (Entrée ouvre la première app, Échap efface), y compris en mode PETIT. L’app Musique change le haut-parleur, les volumes, l’aléatoire, la répétition et la pause sur place, et toutes les apps gardent leur position dans la liste après un clic.', [
+                'Recherche d’apps dans le mode PETIT (champ compact)',
+            ], [
+                'Recherche d’apps instantanée, sans casse ni accents, nom français ou anglais',
+                'Musique : haut-parleur, volumes, aléatoire, répéter et pause sans rechargement de la page',
+                'Position de la liste gardée après un clic dans toutes les apps',
+            ], [
+                'Recherche d’apps qui rechargeait l’écran à chaque lettre',
+                'App Musique en anglais : « READ » remplacé par « LISTEN »',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.27 (liaison 2.0.114 incluse), quittez Arma complètement et relancez.',
+            ], 'Pack téléphone 2.9.27'),
             $pr(1256, '2026-11-01', 'Tenues refaites, ordres aux IA, routes et licence', 'Avec le pack 2.9.26, le panneau Athena · Tenues de l’arsenal ACE est refait (cartes, favoris, menu clic droit), vous pouvez donner des ordres aux groupes IA depuis le téléphone ou le PC TOC, le mode sans Athena fonctionne vraiment et l’outil TRAIT trace par les routes (plus rapide ou plus court, étapes, distance et temps). Une note de service présente la licence au premier lancement.', [
                 'Ordres aux groupes IA depuis la carte du téléphone et le PC TOC',
                 'Tracé par les routes : plus rapide ou plus court, étapes, distance et temps affichés',

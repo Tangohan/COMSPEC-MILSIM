@@ -1,24 +1,21 @@
-[h1]COMSPEC ATAK — Mise à jour 2.9.26.AG - Denver[/h1]
+[h1]COMSPEC ATAK — Mise à jour 2.9.27.AG - Denver[/h1]
 [b]Publication : 01/11/2026[/b]
 [quote]
-[b]Important :[/b] mettez à jour le pack 2.9.26 (COMSPEC Link 2.0.114 incluse), quittez Arma 3 complètement, puis relancez. Au premier lancement, lisez et acceptez la note de service (licence).
+[b]Important :[/b] mettez à jour le pack 2.9.27 (COMSPEC Link 2.0.114 incluse), quittez Arma 3 complètement, puis relancez.
 [/quote]
 
-[h2]Nouveau — Panneau Athena · Tenues refait[/h2]
-Dans l'arsenal ACE, le panneau se cale entre les colonnes d'ACE : cartes de tenues avec silhouette, badges d'état et icônes, onglets Mes tenues / Communauté / Favoris, fiche détaillée. Clic droit : enfiler en gardant son sac ou ses armes, renommer, dupliquer, déplacer vers une collection, comparer avec la tenue portée, vérifier les objets manquants, copier au format ACE.
+[h2]Correctif — Recherche d'apps instantanée[/h2]
+« Rechercher une app » filtre la liste pendant la frappe, sans recharger l'écran ni perdre de lettres. Majuscules et accents ignorés, nom français ou anglais. Entrée ouvre la première app trouvée, Échap efface la recherche. Le champ existe aussi en mode PETIT (version compacte).
 
-[h2]Nouveau — Ordres aux IA et jeu sans Athena[/h2]
-Clic droit sur la carte du téléphone (ou onglet GROUPES du PC TOC) : aller, patrouiller, attaquer, supprimer, se replier, tenir, me suivre, embarquer, débarquer, posture, vitesse, formation. Sans Athena (mode local) : canaux de messagerie entre joueurs, 9-line et appels de feu dans les Tâches, diapositives de mission, plus aucun faux message « Athena ».
+[h2]Correctif — Apps qui ne se rechargent plus à chaque clic[/h2]
+App Musique : haut-parleur, volumes, couper le son, aléatoire, répéter et pause changent sur place, sans remettre la page à zéro. Dans toutes les apps, la liste garde sa position après un clic qui met l'écran à jour.
 
-[h2]Nouveau — Tracé par les routes[/h2]
-Outil TRAIT avec ROUTES : le plus rapide ou le plus court, grands axes ou voies discrètes, sans pont ; Ctrl+clic ajoute des étapes ; distance et temps à pied / en véhicule sur le tracé ; les morceaux sans route passent en ligne droite. Calcul en arrière-plan, sans gel. Le GPS trouve plus souvent un itinéraire.
-
-[h2]Licence[/h2]
-Au premier lancement, une note de service présente l'accès au mod et sa licence : usage personnel depuis cette page Workshop ; copie, modification, ré-empaquetage et redistribution interdits sans autorisation écrite de COMSPEC (LICENSE.txt). À relire dans Réglages → À propos du téléphone.
+[h2]Traduction[/h2]
+En anglais, l'app Musique affiche LISTEN (et non plus READ) sur les morceaux et les liens ; onglet PLAYER, bouton PLAY du débriefing.
 
 [h2]Composants[/h2]
 [list]
-[*] Téléphone ATAK 2.9.26.AG - Denver
+[*] Téléphone ATAK 2.9.27.AG - Denver
 [*] COMSPEC Link 2.0.114
 [*] Overwatch connect 1.6.25 · Overwatch main 1.4.8
 [/list]
