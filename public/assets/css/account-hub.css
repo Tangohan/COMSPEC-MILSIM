@@ -1983,3 +1983,203 @@
   .ah-savebar { bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px)); }
   .ah-savebar__actions, .ah-savebar__actions .account-hub__btn { width: 100%; }
 }
+
+/* ==========================================================================
+   Accueil du profil joueur (/account/bienvenue) et rappel « Complétez votre profil ».
+   Couleurs uniquement en variables --ah-* : le mode nuit suit back-office-dark.css.
+   ========================================================================== */
+.ah-wel { display: grid; gap: 1.25rem; }
+
+/* Fil des étapes : vraie séquence, d'où la numérotation. */
+.ah-wel__rail {
+  padding: 1.1rem 1.15rem 1rem; border-radius: 18px; border: 1px solid var(--ah-line); background: var(--ah-surface);
+}
+@media (min-width: 640px) { .ah-wel__rail { padding: 1.25rem 1.5rem 1.1rem; } }
+.ah-wel__rail-count {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin: 0 0 0.6rem;
+  font-size: 0.875rem; color: var(--ah-muted);
+}
+.ah-wel__rail-count strong { color: var(--ah-ink); font-weight: 800; }
+.ah-wel__rail-count span { font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.ah-wel__meter { display: block; height: 4px; border-radius: 99px; background: var(--ah-track); overflow: hidden; }
+.ah-wel__meter > span { display: block; height: 100%; border-radius: inherit; background: #12d18e; transition: width 0.4s ease; }
+.ah-wel__steps {
+  list-style: none; margin: 1rem 0 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
+  position: relative;
+}
+.ah-wel__steps::before {
+  content: ""; position: absolute; top: 1rem; left: 1rem; right: 1rem; height: 2px; background: var(--ah-soft-line);
+}
+.ah-wel__dot { position: relative; display: flex; justify-content: center; }
+.ah-wel__dot a {
+  display: grid; justify-items: center; gap: 0.4rem; color: var(--ah-muted); text-decoration: none; border-radius: 10px; padding: 0 0.15rem;
+}
+.ah-wel__dot-mark {
+  display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; box-sizing: border-box;
+  border: 2px solid var(--ah-track); background: var(--ah-surface); color: var(--ah-muted);
+  font-size: 0.8rem; font-weight: 800; font-variant-numeric: tabular-nums; position: relative;
+}
+.ah-wel__dot-mark svg { width: 1rem; height: 1rem; }
+.ah-wel__dot-label { display: none; font-size: 0.75rem; font-weight: 600; text-align: center; line-height: 1.25; }
+@media (min-width: 720px) { .ah-wel__dot-label { display: block; } }
+.ah-wel__dot.is-done .ah-wel__dot-mark { border-color: #12d18e; background: #12d18e; color: #04130d; }
+.ah-wel__dot.is-skipped .ah-wel__dot-mark { border-style: dashed; border-color: var(--ah-warn-ink); color: var(--ah-warn-ink); }
+.ah-wel__dot.is-current .ah-wel__dot-mark { border-color: var(--ah-ink); color: var(--ah-ink); box-shadow: 0 0 0 4px var(--ah-mark); }
+.ah-wel__dot.is-current.is-done .ah-wel__dot-mark { border-color: #12d18e; color: #04130d; }
+.ah-wel__dot.is-current .ah-wel__dot-label { color: var(--ah-ink); font-weight: 800; }
+.ah-wel__dot a:hover .ah-wel__dot-mark { border-color: var(--ah-accent-strong); }
+
+/* Étape + aperçu de la carte d'opérateur. */
+.ah-wel__grid { display: grid; gap: 1.25rem; align-items: start; }
+@media (min-width: 1100px) { .ah-wel__grid { grid-template-columns: minmax(0, 1.5fr) minmax(16rem, 1fr); } }
+
+.ah-wel__panel {
+  padding: 1.5rem 1.25rem; border-radius: 18px; border: 1px solid var(--ah-line); background: var(--ah-surface);
+}
+@media (min-width: 640px) { .ah-wel__panel { padding: 2rem 2rem 1.75rem; } }
+.ah-wel__status {
+  display: inline-block; margin: 0 0 0.75rem; padding: 0.2rem 0.6rem; border-radius: 99px;
+  font-size: 0.75rem; font-weight: 700; background: var(--ah-hover); color: var(--ah-muted);
+}
+.ah-wel__status.is-done { background: var(--ah-ok-bg); color: var(--ah-ok-ink); }
+.ah-wel__status.is-skipped { background: var(--ah-warn-bg); color: var(--ah-warn-ink); }
+.ah-wel__title {
+  margin: 0; font-size: clamp(1.4rem, 2.6vw, 1.85rem); font-weight: 800; letter-spacing: -0.025em; line-height: 1.15; color: var(--ah-ink);
+}
+.ah-wel__lead { margin: 0.6rem 0 0; max-width: 58ch; font-size: 0.9375rem; line-height: 1.6; color: var(--ah-muted); }
+.ah-wel__body { margin-top: 1.5rem; }
+.ah-wel__body:empty { display: none; }
+
+.ah-wel__form { display: grid; gap: 0.5rem; max-width: 30rem; }
+.ah-wel__label { font-size: 0.8125rem; font-weight: 700; color: var(--ah-ink); }
+.account-hub input.ah-wel__input {
+  width: 100%; box-sizing: border-box; padding: 0.8rem 0.95rem; border-radius: 12px;
+  border: 1px solid var(--ah-line); background: var(--ah-panel); color: var(--ah-ink);
+  font-size: 1.125rem; font-weight: 700; letter-spacing: 0.01em;
+}
+.account-hub input.ah-wel__input:focus { outline: none; border-color: #12d18e; box-shadow: 0 0 0 3px var(--ah-mark); }
+.ah-wel__help { margin: 0; font-size: 0.8125rem; line-height: 1.5; color: var(--ah-muted); }
+.ah-wel__help a, .ah-wel__points a, .ah-wel__linked a { color: var(--ah-accent-strong); font-weight: 700; }
+
+.ah-wel__drop {
+  position: relative; display: flex; align-items: center; gap: 0.9rem; padding: 1.1rem 1.15rem; border-radius: 14px; cursor: pointer;
+  border: 2px dashed var(--ah-track); background: var(--ah-panel); color: var(--ah-ink);
+}
+.ah-wel__drop:hover, .ah-wel__drop:focus-within { border-color: #12d18e; }
+.ah-wel__drop.is-chosen { border-style: solid; border-color: var(--ah-ok-line); background: var(--ah-ok-bg); }
+.ah-wel__drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.ah-wel__drop-icon { display: grid; place-items: center; flex-shrink: 0; width: 2.6rem; height: 2.6rem; border-radius: 12px; background: var(--ah-surface); color: var(--ah-accent-strong); }
+.ah-wel__drop-icon svg { width: 1.3rem; height: 1.3rem; }
+.ah-wel__drop-text { display: grid; gap: 0.15rem; min-width: 0; font-size: 0.9rem; }
+.ah-wel__drop-text span { font-size: 0.8rem; color: var(--ah-muted); overflow-wrap: anywhere; }
+
+.ah-wel__points { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.55rem; max-width: 58ch; }
+.ah-wel__points li {
+  position: relative; padding-left: 1.1rem; font-size: 0.875rem; line-height: 1.55; color: var(--ah-ink);
+}
+.ah-wel__points li::before {
+  content: ""; position: absolute; left: 0; top: 0.6em; width: 0.4rem; height: 0.4rem; border-radius: 50%; background: #12d18e;
+}
+.ah-wel__linked {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0.85rem 1rem; border-radius: 12px;
+  border: 1px solid var(--ah-ok-line); background: var(--ah-ok-bg); color: var(--ah-ok-ink); font-size: 0.875rem; font-weight: 600;
+}
+.ah-wel__linked svg { width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
+.ah-wel__flash { margin: 0 0 0.85rem; padding: 0.7rem 0.9rem; border-radius: 12px; font-size: 0.85rem; }
+.ah-wel__flash.is-ok { background: var(--ah-ok-bg); color: var(--ah-ok-ink); border: 1px solid var(--ah-ok-line); }
+.ah-wel__flash.is-err { background: var(--ah-err-bg); color: var(--ah-err-ink); border: 1px solid var(--ah-err-line); }
+
+.ah-wel__actions {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1rem; margin-top: 1.75rem; padding-top: 1.25rem;
+  border-top: 1px solid var(--ah-soft-line);
+}
+.ah-wel__actions form { margin: 0; }
+.ah-wel__skip {
+  padding: 0.7rem 0.4rem; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 0.8125rem; font-weight: 700; color: var(--ah-muted); text-decoration: underline; text-underline-offset: 3px;
+}
+.ah-wel__skip:hover { color: var(--ah-ink); }
+.ah-wel__actions-end { display: flex; flex-wrap: wrap; gap: 1rem; margin-left: auto; }
+.ah-wel__back { font-size: 0.8125rem; font-weight: 600; color: var(--ah-muted); text-decoration: none; }
+.ah-wel__back:hover { color: var(--ah-accent-strong); }
+@media (max-width: 520px) {
+  .ah-wel__actions > form:first-child, .ah-wel__actions > .account-hub__btn { flex: 1 1 100%; }
+  .ah-wel__actions > form:first-child .account-hub__btn, .ah-wel__actions > .account-hub__btn { width: 100%; }
+  .ah-wel__actions-end { margin-left: 0; width: 100%; justify-content: space-between; }
+}
+
+.ah-wel__summary { list-style: none; margin: 1.4rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
+.ah-wel__summary li {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.75rem;
+  padding: 0.7rem 0.9rem; border-radius: 12px; border: 1px solid var(--ah-line); background: var(--ah-panel); font-size: 0.875rem;
+}
+.ah-wel__summary li.is-skipped, .ah-wel__summary li.is-todo { border-color: var(--ah-warn-line); background: var(--ah-warn-bg); }
+.ah-wel__summary-mark { display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--ah-track); color: var(--ah-muted); }
+.ah-wel__summary li.is-done .ah-wel__summary-mark { background: #12d18e; color: #04130d; }
+.ah-wel__summary-mark svg { width: 0.85rem; height: 0.85rem; }
+.ah-wel__summary-text { color: var(--ah-ink); font-weight: 600; }
+.ah-wel__summary-state { font-size: 0.75rem; color: var(--ah-ok-ink); font-weight: 700; }
+.ah-wel__summary a { font-size: 0.8125rem; font-weight: 700; color: var(--ah-accent-strong); }
+
+/* Carte d'opérateur : elle se remplit au fil des étapes. */
+.ah-wel__card {
+  border-radius: 18px; border: 1px solid var(--ah-line); background: var(--ah-surface); overflow: hidden;
+}
+@media (min-width: 1100px) { .ah-wel__card { position: sticky; top: 6rem; } }
+.ah-wel__card-banner { position: relative; aspect-ratio: 3 / 1; background: #050505; overflow: hidden; }
+.ah-wel__card-banner.is-empty {
+  background:
+    radial-gradient(ellipse 80% 90% at 15% 0%, rgba(16, 185, 129, 0.35), transparent 60%),
+    radial-gradient(ellipse 70% 80% at 95% 110%, rgba(15, 118, 110, 0.3), transparent 55%),
+    #050505;
+}
+.ah-wel__card-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ah-wel__card-body { padding: 0 1.25rem 1.1rem; }
+.ah-wel__card-portrait {
+  display: block; width: 5.25rem; height: 5.25rem; margin-top: -2.6rem; border-radius: 50%; overflow: hidden; position: relative;
+  border: 4px solid var(--ah-surface); background: var(--ah-panel);
+}
+.ah-wel__card-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ah-wel__card-portrait.is-empty img { opacity: 0.55; }
+.ah-wel__card-callsign {
+  margin: 0.65rem 0 0; font-size: 1.45rem; font-weight: 900; letter-spacing: -0.02em; line-height: 1.1; color: var(--ah-ink); overflow-wrap: anywhere;
+}
+.ah-wel__card-callsign.is-empty { color: var(--ah-track); }
+.ah-wel__card-name { margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--ah-muted); }
+.ah-wel__card-badges { list-style: none; margin: 0.95rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.ah-wel__card-badges li {
+  display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.6rem; border-radius: 99px;
+  border: 1px dashed var(--ah-track); font-size: 0.75rem; font-weight: 600; color: var(--ah-muted);
+}
+.ah-wel__card-badges li.is-on { border-style: solid; border-color: var(--ah-ok-line); background: var(--ah-ok-bg); color: var(--ah-ok-ink); }
+.ah-wel__card-badges svg { width: 0.8rem; height: 0.8rem; }
+.ah-wel__card-note { margin: 0; padding: 0.75rem 1.25rem; border-top: 1px solid var(--ah-soft-line); font-size: 0.75rem; color: var(--ah-muted); }
+
+@keyframes ah-wel-arrive { from { opacity: 0; transform: scale(1.06); } to { opacity: 1; transform: none; } }
+.ah-wel__card .is-fresh img { animation: ah-wel-arrive 0.45s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .ah-wel__card .is-fresh img { animation: none; }
+  .ah-wel__meter > span { transition: none; }
+}
+
+/* Mon compte : rappel tant que l'accueil n'est pas fini. */
+.ah-wel-nudge {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;
+  margin: 0 0 1.25rem; padding: 1.1rem 1.25rem; border-radius: 18px; border: 1px solid var(--ah-line); background: var(--ah-surface);
+}
+.ah-wel-nudge form { margin: 0; }
+.ah-wel-nudge__main { flex: 1 1 18rem; min-width: 0; }
+.ah-wel-nudge__title { margin: 0; font-size: 1rem; font-weight: 800; color: var(--ah-ink); }
+.ah-wel-nudge__desc { margin: 0.25rem 0 0; font-size: 0.8125rem; line-height: 1.5; color: var(--ah-muted); }
+.ah-wel-nudge__track { list-style: none; margin: 0.7rem 0 0; padding: 0; display: flex; gap: 4px; max-width: 22rem; }
+.ah-wel-nudge__track li { flex: 1; height: 5px; border-radius: 99px; background: var(--ah-track); }
+.ah-wel-nudge__track li.is-done { background: #12d18e; }
+.ah-wel-nudge__track li.is-skipped { background: var(--ah-warn-line); }
+
+/* Page du compte ouverte depuis une étape : retour à l'accueil. */
+.ah-wel-return {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem;
+  margin: 0 0 1rem; padding: 0.7rem 0.9rem; border-radius: 14px;
+  border: 1px solid var(--ah-ok-line); background: var(--ah-ok-bg); color: var(--ah-ok-ink); font-size: 0.85rem; font-weight: 600;
+}
+.ah-wel-return .account-hub__btn { padding: 0.5rem 0.9rem; }

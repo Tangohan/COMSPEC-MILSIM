@@ -135,7 +135,34 @@ require base_path('views/partials/account/shell_open.php');
 </div>
 <?php endif; ?>
 
-<section id="etat-du-compte" class="ah-ov-health is-<?= $h($healthTone) ?>" aria-labelledby="account-health-heading" data-locate-box>
+<?php
+/* Accueil du profil : rappel discret tant que le parcours n'est ni complet ni terminé. */
+$pw = is_array($profileWelcome ?? null) ? $profileWelcome : null;
+if ($pw !== null && empty($pw['finished']) && ($pw['steps'] ?? []) !== []):
+    $pwDone = (int) ($pw['progress']['done'] ?? 0);
+    $pwTotal = (int) ($pw['progress']['total'] ?? 0);
+    $pwLeft = array_values(array_filter($pw['steps'], static fn (array $s): bool => $s['status'] !== 'done'));
+    $pwStarted = !empty($pw['state']['started_at']);
+?>
+<section class="ah-wel-nudge" aria-labelledby="welcome-nudge-heading">
+    <div class="ah-wel-nudge__main">
+        <h2 id="welcome-nudge-heading" class="ah-wel-nudge__title">Complétez votre profil</h2>
+        <p class="ah-wel-nudge__desc">
+            <?= $pwDone ?> étape<?= $pwDone > 1 ? 's' : '' ?> sur <?= $pwTotal ?>.
+            Reste : <?= $h(implode(', ', array_map(static fn (array $s): string => mb_strtolower($s['short']), array_slice($pwLeft, 0, 3)))) ?><?= count($pwLeft) > 3 ? '…' : '.' ?>
+        </p>
+        <ol class="ah-wel-nudge__track" aria-hidden="true">
+            <?php foreach ($pw['steps'] as $s): ?><li class="is-<?= $h($s['status']) ?>"></li><?php endforeach; ?>
+        </ol>
+    </div>
+    <form method="post" action="<?= $h(url('account/bienvenue/reprendre')) ?>">
+        <?= \App\Core\Csrf::field() ?>
+        <button type="submit" class="account-hub__btn account-hub__btn--ink"><?= $pwStarted ? 'Reprendre' : 'Commencer' ?></button>
+    </form>
+</section>
+<?php endif; ?>
+
+<section id="etat-du-compte"class="ah-ov-health is-<?= $h($healthTone) ?>" aria-labelledby="account-health-heading" data-locate-box>
     <div class="ah-ov-health__score">
         <span class="ah-ov-health__ring" style="--pct:<?= $checksPct ?>" aria-hidden="true">
             <span><?= $checksDone ?><small>/<?= $checksTotal ?></small></span>

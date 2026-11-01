@@ -31,6 +31,12 @@ final class AccountSpaceCatalog
                 'keywords' => ['accueil', 'résumé', 'tableau', 'overview', 'home', 'summary', 'account'],
             ],
             [
+                'key' => 'welcome', 'group' => 'Compte', 'path' => 'account/bienvenue', 'view' => 'views/account/welcome.php', 'nav' => false,
+                'label' => 'Compléter mon profil', 'hint' => 'Indicatif, Discord, portrait, bannière, sécurité',
+                'icon' => '<path d="M4 12l5 5L20 6"/>',
+                'keywords' => ['bienvenue', 'premiers pas', 'compléter', 'démarrer', 'welcome', 'getting started', 'onboarding', 'setup'],
+            ],
+            [
                 'key' => 'preferences', 'group' => 'Compte', 'path' => 'account/preferences', 'view' => 'views/account/preferences.php', 'nav' => true,
                 'label' => 'Profil et préférences', 'hint' => 'Nom, langue, thème, e-mails',
                 'icon' => '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',

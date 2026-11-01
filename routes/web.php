@@ -587,6 +587,15 @@ return function (Router $router) {
     $router->post('/atak/passerelle/{id}/annuler', [AtakMapGatewayController::class, 'revoke'], $mwAtakMemberOnly);
     $router->get('/formations/creer', [TrainingWizardController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
+    // Accueil du profil joueur : parcours en étapes, que l'on peut passer et reprendre (jamais bloquant).
+    $router->get('/account/bienvenue', [\App\Controllers\Web\ProfileWelcomeController::class, 'show'], [AuthMiddleware::class]);
+    $router->post('/account/bienvenue/identite', [\App\Controllers\Web\ProfileWelcomeController::class, 'saveIdentity'], [AuthMiddleware::class]);
+    $router->post('/account/bienvenue/banniere', [\App\Controllers\Web\ProfileWelcomeController::class, 'saveBanner'], [AuthMiddleware::class]);
+    $router->post('/account/bienvenue/continuer', [\App\Controllers\Web\ProfileWelcomeController::class, 'next'], [AuthMiddleware::class]);
+    $router->post('/account/bienvenue/passer', [\App\Controllers\Web\ProfileWelcomeController::class, 'skip'], [AuthMiddleware::class]);
+    $router->post('/account/bienvenue/terminer', [\App\Controllers\Web\ProfileWelcomeController::class, 'finish'], [AuthMiddleware::class]);
+    $router->post('/account/bienvenue/reprendre', [\App\Controllers\Web\ProfileWelcomeController::class, 'resume'], [AuthMiddleware::class]);
+    $router->get('/account/bienvenue/aller/{etape}', [\App\Controllers\Web\ProfileWelcomeController::class, 'go'], [AuthMiddleware::class]);
     $router->get('/account/acces', [AccountController::class, 'access'], [AuthMiddleware::class]);
     $router->get('/account/page-publique', [\App\Controllers\Web\PublicPlayerCvController::class, 'settings'], [AuthMiddleware::class]);
     $router->post('/account/page-publique', [\App\Controllers\Web\PublicPlayerCvController::class, 'settings'], [AuthMiddleware::class]);

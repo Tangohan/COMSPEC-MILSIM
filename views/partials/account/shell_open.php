@@ -177,3 +177,13 @@ $accountPhrase = static fn (string $s): string => function_exists('i18n_phrase')
             <?php if ($accountError): ?>
             <div class="account-hub__flash account-hub__flash--err" role="alert"><?= htmlspecialchars((string) $accountError, ENT_QUOTES, 'UTF-8') ?></div>
             <?php endif; ?>
+            <?php
+            /* Page ouverte depuis l'accueil du profil : un lien ramène à l'étape en cours. */
+            $accountWelcomeReturn = (string) (\App\Core\Session::get(\App\Services\Account\ProfileWelcomeService::SESSION_RETURN) ?? '');
+            if ($accountNavKey !== 'welcome' && \App\Services\Account\ProfileWelcomeService::isStep($accountWelcomeReturn)):
+            ?>
+            <div class="ah-wel-return">
+                <span><?= htmlspecialchars($accountPhrase('Vous complétez votre profil.'), ENT_QUOTES, 'UTF-8') ?></span>
+                <a href="<?= htmlspecialchars(\App\Services\Account\ProfileWelcomeJourney::stepUrl($accountWelcomeReturn), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__btn account-hub__btn--soft"><?= htmlspecialchars($accountPhrase('Revenir à l’accueil du profil'), ENT_QUOTES, 'UTF-8') ?></a>
+            </div>
+            <?php endif; ?>

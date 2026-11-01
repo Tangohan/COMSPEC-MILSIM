@@ -121,7 +121,23 @@ class AccountController
             'devices_total' => count($atakDevices),
         ];
 
+        // Accueil du profil : s'ouvre seul à la première visite d'un nouveau membre, puis reste une carte discrète.
+        $profileWelcome = null;
+        try {
+            $welcomeJourney = new \App\Services\Account\ProfileWelcomeJourney();
+            $profileWelcome = $welcomeJourney->snapshot($accountUser);
+            $isNewMember = \App\Services\Game\FirstLoginGameLinkGate::isNewMember($accountUser);
+            if (\App\Services\Account\ProfileWelcomeService::shouldAutoOpen($profileWelcome['steps'], $profileWelcome['state'], $isNewMember)) {
+                $welcomeJourney->save($uid, \App\Services\Account\ProfileWelcomeService::moveTo($profileWelcome['state'], $profileWelcome['resume']));
+
+                return Response::redirect(\App\Services\Account\ProfileWelcomeJourney::stepUrl($profileWelcome['resume']));
+            }
+        } catch (\Throwable) {
+            $profileWelcome = null;
+        }
+
         return $this->accountView('account.index', 'Mon compte', [
+            'profileWelcome' => $profileWelcome,
             'accountYearReview' => $this->yearReviewCard($tenantId, $uid),
             'accountUser' => $accountUser,
             'accountProfile' => $accountProfile,
@@ -1165,14 +1181,20 @@ class AccountController
         $personnelProfile = $this->personnelProfileRepository->getByUserId((int) $user['id']);
         $portraitLocked = !empty($personnelProfile['character_portrait_locked']);
 
+        // Envoi depuis l'accueil du profil : retour à l'étape, avec le message, au lieu de la page habituelle.
+        $fromWelcome = $request->isPost() && $request->input('retour') === 'bienvenue';
+        $back = $fromWelcome
+            ? \App\Services\Account\ProfileWelcomeJourney::stepUrl(\App\Services\Account\ProfileWelcomeService::STEP_PORTRAIT)
+            : url('account/portrait');
+
         if ($request->isPost()) {
             if ($portraitLocked) {
                 Session::flash('error', 'Votre portrait opérateur est verrouillé par un administrateur de la communauté.');
-                return Response::redirect(url('account/portrait'));
+                return Response::redirect($back);
             }
             if (!Csrf::validate($request->input('_csrf_token'))) {
                 Session::flash('error', 'Session expirée.');
-                return Response::redirect(url('account/portrait'));
+                return Response::redirect($back);
             }
             $file = $_FILES['portrait'] ?? null;
             if (!$file || ($file['error'] ?? 0) !== UPLOAD_ERR_OK) {
@@ -1201,10 +1223,14 @@ class AccountController
                         $urlPath = 'uploads/portraits/' . $name;
                         $this->personnelProfileRepository->updatePortraitPath((int) $user['id'], $urlPath);
                         Session::flash('success', 'Portrait opérateur mis à jour.');
-                        return Response::redirect(url('account/portrait'));
+                        return Response::redirect($back);
                     }
                     $errors['portrait'] = ['Impossible d\'enregistrer le fichier.'];
                 }
+            }
+            if ($fromWelcome && $errors !== []) {
+                Session::flash('error', (string) ($errors['portrait'][0] ?? 'Le portrait n’a pas pu être enregistré.'));
+                return Response::redirect($back);
             }
         }
 
@@ -1645,7 +1671,9 @@ class AccountController
         $expected = (string) Session::get('steam_openid_state', '');
         $started = (int) Session::get('steam_openid_started', 0);
         Session::forgetMany(['steam_openid_state', 'steam_openid_started']);
-        $back = url('dashboard');
+        // Lancé depuis l'accueil du profil : retour à l'étape Steam plutôt qu'au tableau de bord.
+        $back = \App\Services\Account\ProfileWelcomeJourney::returnUrlFor(\App\Services\Account\ProfileWelcomeService::STEP_STEAM)
+            ?? url('dashboard');
         if ($tenantId < 1) {
             Session::flash('error', 'Communauté introuvable.');
 
