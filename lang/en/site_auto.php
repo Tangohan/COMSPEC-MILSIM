@@ -5721,7 +5721,6 @@ return [
     'Aucune campagne pour l’instant. En jeu, posez le module Eden « Campagne SSE », sauvegardez, puis envoyez-la avec le module Zeus « Campagne : envoyer à Athena ». Sans liaison, exportez-la (« Campagne : exporter ») et collez le texte ci-dessous.' => 'No campaign yet. In game, place the Eden module “SSE Campaign,” save, then send it with the Zeus module “Campaign: send to Athena.” Without a link, export it (“Campaign: export”) and paste the text below.',
     'Aucune campagne. Créez-en une pour ouvrir la voie choix.' => 'No campaigns. Create one to open the selection route.',
     'Aucune caméra détectée' => 'No camera detected',
-    'Aucune caméra partagée pour le moment.' => 'No camera shared at the moment.',
     'Aucune candidature acceptée avec un compte rattaché, ou données de compte indisponibles.' => 'No accepted application with a linked account, or account data unavailable.',
     'Aucune candidature déposée sur la période.' => 'No applications submitted in the period.',
     'Aucune candidature en attente.' => 'No pending applications.',

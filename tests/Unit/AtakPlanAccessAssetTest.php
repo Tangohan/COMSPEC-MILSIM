@@ -58,7 +58,7 @@ final class AtakPlanAccessAssetTest extends TestCase
             self::assertTrue(AtakPlanAccess::isBasicPath($path), $path);
         }
         foreach ([
-            '/api/recon/images', '/api/intel/photos', '/api/atak/video-feeds', '/api/atak/markers',
+            '/api/recon/images', '/api/intel/photos', '/api/atak/markers',
             '/api/cas', '/api/atak/positionx', '/api/atak/unitsx', '/api/atak/zones', '/api/atak/explosive-timers',
             '/atak/position', '/api/atak/orders',
         ] as $path) {

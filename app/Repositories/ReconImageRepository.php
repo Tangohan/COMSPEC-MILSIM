@@ -94,8 +94,9 @@ class ReconImageRepository
     }
 
     /**
-     * @param string|null $feedMode null : tout ; « only » : images de flux caméra (unit_name chest:/helmet:/drone:) ;
-     *                              « exclude » : sans les images Live cam périodiques (chest:), pour l'espace Photos.
+     * Les images de l'ancienne Live cam (unit_name chest:, fonction retirée) ne sont jamais listées.
+     *
+     * @param string|null $feedMode null / « exclude » : tout ; « only » : clichés caméra casque / drone (unit_name helmet:/drone:).
      */
     public function list(int $tenantId, ?string $missionId = null, ?string $author = null, ?string $dateFrom = null, ?string $dateTo = null, ?int $limit = 100, ?string $feedMode = null): array
     {
@@ -126,10 +127,9 @@ class ReconImageRepository
                 $params[] = $dateTo;
                 $params[] = $dateTo;
             }
+            $sql .= " AND (unit_name IS NULL OR unit_name NOT LIKE 'chest:%')";
             if ($feedMode === 'only') {
-                $sql .= " AND (unit_name LIKE 'chest:%' OR unit_name LIKE 'helmet:%' OR unit_name LIKE 'drone:%')";
-            } elseif ($feedMode === 'exclude') {
-                $sql .= " AND (unit_name IS NULL OR unit_name NOT LIKE 'chest:%')";
+                $sql .= " AND (unit_name LIKE 'helmet:%' OR unit_name LIKE 'drone:%')";
             }
             $sql .= ' ORDER BY created_at DESC LIMIT ' . (int) $limit;
             $stmt = $this->pdo()->prepare($sql);
@@ -301,68 +301,5 @@ class ReconImageRepository
         } catch (\Throwable) {
             return null;
         }
-    }
-
-    /**
-     * Dernière image par feed (unit_name = feed_id) ou par couple auteur + type d’appareil.
-     *
-     * @param list<string> $feedIds
-     * @return array{by_feed: array<string, array<string, mixed>>, by_author_device: array<string, array<string, mixed>>, by_author: array<string, array<string, mixed>>, recent: list<array<string, mixed>>}
-     */
-    public function latestSnapshots(int $tenantId, array $feedIds = [], int $limit = 80): array
-    {
-        $empty = ['by_feed' => [], 'by_author_device' => [], 'by_author' => [], 'recent' => []];
-        if (!$this->tablesReady() || $tenantId < 1) {
-            return $empty;
-        }
-        try {
-            $sql = 'SELECT * FROM recon_images WHERE tenant_id = ?';
-            if ($this->hasColumn('deleted_at')) {
-                $sql .= ' AND deleted_at IS NULL';
-            }
-            $sql .= ' ORDER BY created_at DESC LIMIT ' . (int) $limit;
-            $stmt = $this->pdo()->prepare($sql);
-            $stmt->execute([$tenantId]);
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        } catch (\Throwable) {
-            return $empty;
-        }
-
-        $byFeed = [];
-        $byAuthorDevice = [];
-        $byAuthorAny = [];
-        $feedSet = [];
-        foreach ($feedIds as $fid) {
-            $fid = trim((string) $fid);
-            if ($fid !== '') {
-                $feedSet[$fid] = true;
-            }
-        }
-        foreach ($rows as $row) {
-            $unit = trim((string) ($row['unit_name'] ?? ''));
-            if ($unit !== '' && !isset($byFeed[$unit])) {
-                if ($feedSet === [] || isset($feedSet[$unit])) {
-                    $byFeed[$unit] = $row;
-                }
-            }
-            $author = strtoupper(trim((string) ($row['author_callsign'] ?? '')));
-            $device = strtoupper(trim((string) ($row['device_type'] ?? 'CTAB')));
-            if ($author !== '') {
-                $key = $author . ':' . $device;
-                if (!isset($byAuthorDevice[$key])) {
-                    $byAuthorDevice[$key] = $row;
-                }
-                if (!isset($byAuthorAny[$author])) {
-                    $byAuthorAny[$author] = $row;
-                }
-            }
-        }
-
-        return [
-            'by_feed' => $byFeed,
-            'by_author_device' => $byAuthorDevice,
-            'by_author' => $byAuthorAny,
-            'recent' => $rows,
-        ];
     }
 }

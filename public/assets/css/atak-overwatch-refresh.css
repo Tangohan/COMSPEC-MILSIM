@@ -531,7 +531,7 @@ kbd {
 .ow-ft-actions{margin-left:auto;display:inline-flex;gap:4px}
 .ow-ft-add{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
 .ow-ft-add input{flex:1;min-width:90px}
-.ow-asg-row small,.ow-feed-row small{display:block}
+.ow-asg-row small{display:block}
 .ow-assign-banner{position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:9;display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);padding:8px 12px;border:1px solid var(--athena-green,#00d69a);border-radius:6px;background:#080b0a;font-size:12px;box-shadow:var(--shadow)}
 .ow-assign-banner[hidden]{display:none}
 .ow-replay-events{position:absolute;left:52px;bottom:100px;z-index:7;width:min(360px,calc(100% - 66px));max-height:220px;overflow:auto;padding:6px 10px;border:1px solid #27302d;background:#080b0a;font-size:12px;box-shadow:var(--shadow)}

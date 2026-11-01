@@ -315,7 +315,7 @@ $tabs = [
 <?php
 $moduleGroups = [
     'Carte et navigation' => ['ctab_markers' => 'marker', 'route' => 'route', 'route_planning' => 'route', 'gps_navigation' => 'map', 'geo_places' => 'map', 'geo_roads' => 'route', 'jump' => 'jump'],
-    'Capteurs et images' => ['drone' => 'drone', 'video_feeds' => 'camera', 'iceman_photo' => 'photo', 'ecoti_hud' => 'eye', 'weather' => 'weather'],
+    'Capteurs et images' => ['drone' => 'drone', 'iceman_photo' => 'photo', 'ecoti_hud' => 'eye', 'weather' => 'weather'],
     'Messages et alertes' => ['iceman_alerts' => 'warn', 'iceman_bda' => 'fire', 'iceman_group' => 'chat', 'comspec_mirror' => 'refresh', 'wave_relay' => 'radio'],
     'Renseignement et rapports' => ['sse_person' => 'intel', 'report_routing' => 'mail', 'jnet_bridge' => 'link'],
 ];

@@ -145,7 +145,7 @@ Réglables par communauté via `AtakBridgeModulesService` → exposés au jeu pa
 |---|---|
 | `weather` | Jeu → portail (bandeau météo) |
 | `drone` | Contacts ISR → carte |
-| `video_feeds` | Caméras → panneau Cams |
+| `video_feeds` | Retiré (ancienne Live cam) : toujours envoyé coupé au jeu |
 | `ctab_markers` | Repères cTab / Dropper → Tacmap |
 | `route` | Itinéraire actif → tracé web |
 | `jump` | Plan HAHO/HALO → carte |

@@ -101,7 +101,6 @@ final class AtakOverwatchWiringAssetTest extends TestCase
         self::assertStringContainsString('link_user_id: Number(userId)', $beta);
         self::assertStringContainsString("'/certificate/regenerate'", $beta);
         self::assertStringContainsString("'/api/atak/terminals/compromise'", $beta);
-        self::assertStringContainsString("'/api/atak/video-feeds?mapId='", $beta);
 
         $ops = $this->read('public/assets/js/atak-overwatch-ops.js');
         self::assertStringContainsString("'/api/replay/sessions/'", $ops);

@@ -1248,7 +1248,7 @@ window.ATAKOrders = (function () {
 
   function isTerminalSignal(o) {
     var t = String((o && o.type) || '').toUpperCase();
-    return t === 'VIBRATE' || t === 'NOTIFY' || t === 'NOTIFY_FULL' || t === 'HELMET_SNAP' || t === 'HELMET_SNAP_HD' || t === 'HELMET_STREAM';
+    return t === 'VIBRATE' || t === 'NOTIFY' || t === 'NOTIFY_FULL' || t === 'HELMET_SNAP' || t === 'HELMET_SNAP_HD';
   }
 
   function mergeOrdersDelta(incoming, isDelta) {

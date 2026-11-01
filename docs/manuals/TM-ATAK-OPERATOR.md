@@ -125,7 +125,6 @@ Once linked, the post sees you on the map.
 | ---- | ------------ |
 | Carte | Arma world metres, same grid as the game |
 | Contacts / unités | Live BFT; stale after ~2 minutes without update |
-| Cams | Video feeds when the field sends them |
 | Photos | Recon / camera uploads |
 | Chat | C2 journal (not Arma side chat) |
 | Pings | Point + message |

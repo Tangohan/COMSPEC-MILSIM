@@ -192,7 +192,6 @@ window.ATAKSessionProfile = (function () {
         return !state || hasSpecialty('sse');
       case 'orders':
         return true;
-      case 'cams':
       case 'markers':
       case 'zones':
       case 'chat':
