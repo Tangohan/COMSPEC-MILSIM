@@ -12,7 +12,8 @@
       QUIET     petit texte clair détouré, casse d'origine ;
       CLASSIC   couleur et casse de la carte Arma d'avant.
     Désencombrement : villages à partir d'un zoom moyen, lieux-dits et sites en zoom rapproché ; un nom qui chevauche
-    une étiquette de repère (fn_mapMarkerText, image précédente) ou un nom plus important n'est pas écrit.
+    une étiquette de repère ou un cartouche d'unité (image précédente), un nom plus important ou le bord de la carte
+    n'est pas écrit ; noms coupés proprement au-delà de 28 caractères.
     Params : [carte, taille des textes, facteur écran, échelle de la carte]
 */
 params ["_map", "_ts", "_kt", "_scale"];
@@ -42,7 +43,7 @@ if ((_all param [0, ""]) isNotEqualTo worldName) then {
         if (_cat isEqualTo 2 && {private _lt = toLower _t; (_mil findIf { (_lt find _x) >= 0 }) >= 0}) then { _cat = 3; };
         private _col = (getArray (configFile >> "CfgLocationTypes" >> _ty >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } };
         if ((count _col) < 4) then { _col = [0, 0, 0, 1]; };
-        _list pushBack [locationPosition _x, _t, _cat, _col];
+        _list pushBack [locationPosition _x, ["cut", _t, 28] call comspec_atak_native_fnc_mapFmt, _cat, _col];
     } forEach nearestLocations [[worldSize / 2, worldSize / 2], keys _cats, worldSize * 1.5];
     // Plus importants d'abord : ils passent devant les autres quand deux noms se chevauchent.
     _list = [0, 1, 2, 3] apply { private _c = _x; _list select { (_x select 2) isEqualTo _c } };
@@ -78,8 +79,10 @@ private _sizes = switch (_style) do {
 private _cols = [[0.98, 0.98, 0.97, 1], [0.93, 0.94, 0.91, 1], [0.86, 0.84, 0.77, 1], [0.98, 0.80, 0.45, 1]];
 private _tagCols = [[0.95, 0.95, 0.95, 1], [0.70, 0.80, 0.75, 1], [0.80, 0.70, 0.50, 1], [0.95, 0.67, 0.20, 1]];
 private _toW = { params ["_sx", "_sy"]; private _w = _map ctrlMapScreenToWorld [_sx, _sy]; [_w select 0, _w select 1, 0] };
-private _placed = +(uiNamespace getVariable ["COMSPEC_ATAK_LblRects", []]);
-private _hit = { params ["_r"]; (_placed findIf { (_r select 0) < (_x select 2) && {(_r select 2) > (_x select 0)} && {(_r select 1) < (_x select 3)} && {(_r select 3) > (_x select 1)} }) >= 0 };
+// Noms des lieux après les cartouches et les noms des repères (image précédente) : jamais par-dessus (fn_mapLblGrid).
+private _grid = createHashMap;
+{ [_grid, _x, 2] call comspec_atak_native_fnc_mapLblGrid; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_LblRects", []]);
+private _tagBg = ([] call comspec_atak_native_fnc_mapColors) get "lblBg";
 private _n = 0;
 {
     if (_n >= 60) then { break };
@@ -100,12 +103,13 @@ private _n = 0;
     private _bw = _w + _dw + _pad * 2;
     private _bh = _fs * ([1.0, 1.35] select _tag);
     private _r = [_sx - _bw / 2, _sy - _bh / 2, _sx + _bw / 2, _sy + _bh / 2];
-    if ([_r] call _hit) then { continue };
-    _placed pushBack _r;
+    // Nom coupé par le bord de la carte : pas écrit (il réapparaît en déplaçant la carte).
+    if ((_r select 0) < _mx || {(_r select 2) > (_mx + _mw)} || {(_r select 1) < _my} || {(_r select 3) > (_my + _mh)}) then { continue };
+    if ([_grid, _r, 1] call comspec_atak_native_fnc_mapLblGrid) then { continue };
     switch (_style) do {
         case "TAG": {
             _r params ["_x0", "_y0", "_x1", "_y1"];
-            _map drawRectangle [[_sx, _sy] call _toW, (_bw / 2) * _mpx, (_bh / 2) * _mpy, 0, [0.045, 0.055, 0.05, 0.8], _fill];
+            _map drawRectangle [[_sx, _sy] call _toW, (_bw / 2) * _mpx, (_bh / 2) * _mpy, 0, _tagBg, _fill];
             private _d = _fs * 0.22;
             _map drawRectangle [[_x0 + _pad + _dw * 0.45, _sy] call _toW, _d * _mpy, _d * _mpy, 45, _tagCols select _cat, _fill];
             _map drawIcon [_none, [0.96, 0.95, 0.92, 1], [_x0 + _pad + _dw, _sy] call _toW, 0, 0, 0, _t, 0, _fs, _font, "right"];
