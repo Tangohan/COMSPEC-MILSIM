@@ -12,9 +12,6 @@ use App\Repositories\TenantAtakConfigRepository;
  */
 class RoleplaySimulationService
 {
-    private const SESSION_KEY_DISCONNECT_NEXT = 'roleplay_disconnect_next_time';
-    private const SESSION_KEY_DISCONNECT_UNTIL = 'roleplay_disconnect_until';
-
     public function __construct(
         private TenantAtakConfigRepository $configRepo
     ) {
@@ -58,40 +55,34 @@ class RoleplaySimulationService
         if (!$config['network_enabled'] || !$config['disconnect_enabled']) {
             return false;
         }
+        $viewer = (session_id() ?: '') !== '' ? (string) session_id() : \App\Support\ClientIp::resolve();
 
-        $now = time();
-        
-        // Vérifier si on est en période de déconnexion
-        $disconnectUntil = $_SESSION[self::SESSION_KEY_DISCONNECT_UNTIL] ?? 0;
-        if ($disconnectUntil > $now) {
-            return true;
-        }
+        return self::disconnectedAt(
+            time(),
+            $tenantId . '|' . $viewer,
+            (int) $config['disconnect_interval_sec'],
+            (int) $config['disconnect_min_sec'],
+            (int) $config['disconnect_max_sec']
+        );
+    }
 
-        // Vérifier si c'est le moment de déclencher une nouvelle déconnexion
-        $nextDisconnectTime = $_SESSION[self::SESSION_KEY_DISCONNECT_NEXT] ?? 0;
-        if ($nextDisconnectTime === 0) {
-            // Première fois : planifier la prochaine déconnexion
-            $interval = max(60, $config['disconnect_interval_sec']);
-            $_SESSION[self::SESSION_KEY_DISCONNECT_NEXT] = $now + $interval;
-            return false;
-        }
+    /**
+     * Calendrier des coupures simulées, sans rien garder en session : les sondages lisent la session sans la
+     * verrouiller (Session::isReadOnlyRequest), une échéance écrite là ne serait jamais enregistrée.
+     * Cycles de « intervalle + durée max » secondes, décalés par demandeur ; dans chaque cycle, coupure de
+     * min à max secondes (tirage stable par cycle) après au moins `intervalle` secondes de liaison.
+     */
+    public static function disconnectedAt(int $now, string $viewer, int $intervalSec, int $minSec, int $maxSec): bool
+    {
+        $interval = max(60, $intervalSec);
+        $min = max(1, $minSec);
+        $max = max($min, $maxSec);
+        $cycle = $interval + $max;
+        $t = $now + (crc32('rp-offset|' . $viewer) % $cycle);
+        $duration = $min + (crc32('rp-duration|' . $viewer . '|' . intdiv($t, $cycle)) % ($max - $min + 1));
+        $phase = $t % $cycle;
 
-        if ($now >= $nextDisconnectTime) {
-            // Déclencher une déconnexion
-            $minDuration = max(1, $config['disconnect_min_sec']);
-            $maxDuration = max($minDuration, $config['disconnect_max_sec']);
-            $duration = $minDuration === $maxDuration ? $minDuration : random_int($minDuration, $maxDuration);
-            
-            $_SESSION[self::SESSION_KEY_DISCONNECT_UNTIL] = $now + $duration;
-            
-            // Planifier la prochaine déconnexion
-            $interval = max(60, $config['disconnect_interval_sec']);
-            $_SESSION[self::SESSION_KEY_DISCONNECT_NEXT] = $now + $duration + $interval;
-            
-            return true;
-        }
-
-        return false;
+        return $phase >= $interval && $phase < $interval + $duration;
     }
 
     /**

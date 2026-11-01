@@ -81,6 +81,10 @@
   var requestStarted = 0;
   var pollMs = 5000;
   var pollTimer = null;
+  /* Athena a demandé une pause (429 / 503 + Retry-After) : la boucle de rafraîchissement attend jusque-là. */
+  var pollBackoffUntil = 0;
+  /* Chaîne unités → marqueurs → engins… encore en route : le tour suivant ne la relance pas par-dessus. */
+  var unitsRefreshInFlight = null;
   var realtimeOn = false;
   var activeChannel = 'general';
   var activeTool = 'cursor';
@@ -2497,6 +2501,11 @@
       options.body = JSON.stringify(options.body);
     }
     return fetch(apiBase + path, options).then(function (response) {
+      if (response.status === 429 || response.status === 503) {
+        var wait = parseInt(response.headers.get('Retry-After') || '', 10);
+        wait = Math.min(600, Math.max(10, isNaN(wait) ? 10 : wait));
+        pollBackoffUntil = Math.max(pollBackoffUntil, Date.now() + wait * 1000);
+      }
       if (!response.ok) throw new Error(String(response.status));
       var type = response.headers.get('content-type') || '';
       return type.indexOf('json') !== -1 ? response.json() : response.text();
@@ -3331,8 +3340,9 @@
   }
 
   function refreshUnits() {
+    if (unitsRefreshInFlight) return unitsRefreshInFlight;
     requestStarted = Date.now();
-    return api('/api/units?mapId=' + encodeURIComponent(mapId) + '&include_gateway=1')
+    var chain = api('/api/units?mapId=' + encodeURIComponent(mapId) + '&include_gateway=1')
       .then(function (payload) {
         if (window.ATAKMap && typeof window.ATAKMap.setUnitsMarkers === 'function') {
           window.ATAKMap.setUnitsMarkers(asList(payload, 'units'));
@@ -3356,6 +3366,10 @@
         }
       })
       .catch(function () { syncStatus(false); });
+    unitsRefreshInFlight = chain;
+    var done = function () { if (unitsRefreshInFlight === chain) unitsRefreshInFlight = null; };
+    chain.then(done, done);
+    return chain;
   }
 
   function channelLabel(key) {
@@ -8078,6 +8092,8 @@
   function startPoll(ms) {
     if (pollTimer) window.clearInterval(pollTimer);
     pollTimer = window.setInterval(function () {
+      // Onglet caché ou pause demandée par Athena : tour sauté (reprise immédiate au retour sur l'onglet).
+      if (document.hidden || Date.now() < pollBackoffUntil) return;
       refreshUnits();
       loadChatInbox();
       var squadsPanel = document.querySelector('[data-chat-panel="squads"]');
@@ -8972,6 +8988,12 @@
   initSceneFootprints();
   refreshAll();
   startPoll(pollMs);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && Date.now() >= pollBackoffUntil) {
+      refreshUnits();
+      loadChatInbox();
+    }
+  });
   window.setInterval(function () { if (lastRx && Date.now() - lastRx > Math.max(15000, pollMs * 5)) syncStatus(false); }, 3000);
   window.setTimeout(function () {
     window.dispatchEvent(new CustomEvent('atak:mapready'));

@@ -1596,7 +1596,8 @@ window.ATAKMedicalAlerts = (function () {
       });
     }
     fetchAlerts();
-    pollTimer = setInterval(fetchAlerts, intervalMs || 5000);
+    // Onglet caché : pas de relève (reprise au prochain tour quand il redevient visible).
+    pollTimer = setInterval(function () { if (!document.hidden) fetchAlerts(); }, intervalMs || 5000);
   }
 
   function stopPolling() {
