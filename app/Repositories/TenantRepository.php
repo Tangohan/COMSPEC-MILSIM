@@ -198,7 +198,9 @@ class TenantRepository
             // Pays de l'unité réelle rattachée (filtre « Pays » de l'annuaire).
             $affiliation = is_array($community['unit_affiliation'] ?? null) ? $community['unit_affiliation'] : [];
             $row['registry_country'] = !empty($affiliation['is_real']) ? strtoupper(trim((string) ($affiliation['country'] ?? ''))) : '';
-            $row['registry_country_label'] = $row['registry_country'] !== '' ? trim((string) ($affiliation['country_label'] ?? $row['registry_country'])) : '';
+            $row['registry_country_label'] = $row['registry_country'] !== ''
+                ? \App\Services\Community\TenantCommunityProfileService::affiliationCountryLabel($affiliation)
+                : '';
             $welcome = trim((string) ($community['welcome_text'] ?? ''));
             $excerpt = $meta['tagline'];
             if ($excerpt === '' && $welcome !== '') {

@@ -32,8 +32,6 @@ final class PublicCvPresenter
         'JTAC' => 'Guidage aérien (JTAC)',
     ];
 
-    private const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-
     /**
      * @param array<string, mixed> $raw     sortie de PublicCvDataLoader::load()
      * @param array<string, mixed> $settings ligne user_public_cv
@@ -435,7 +433,7 @@ final class PublicCvPresenter
             return null;
         }
 
-        return self::MONTHS[(int) date('n', $ts) - 1] . ' ' . date('Y', $ts);
+        return \App\Support\LocalizedCalendar::month((int) date('n', $ts)) . ' ' . date('Y', $ts);
     }
 
     public static function hours(int $seconds): string

@@ -13,10 +13,6 @@ namespace App\Support;
  */
 final class PilotageDashboardPresenter
 {
-    private const WEEKDAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
-    private const WEEKDAYS_SHORT = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
-    private const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-    private const MONTHS_SHORT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 
     /**
      * @param array<string, mixed> $in
@@ -175,7 +171,7 @@ final class PilotageDashboardPresenter
             },
             'campaign' => $campaign,
             'title' => trim((string) ($ev['title'] ?? '')) !== '' ? trim((string) $ev['title']) : 'Créneau sans titre',
-            'date_label' => $start !== null ? self::ucfirst(self::WEEKDAYS[(int) date('w', $start)]) . ' ' . (int) date('j', $start) . ' ' . self::MONTHS_SHORT[(int) date('n', $start) - 1] : '',
+            'date_label' => $start !== null ? self::ucfirst(LocalizedCalendar::weekday((int) date('w', $start))) . ' ' . (int) date('j', $start) . ' ' . LocalizedCalendar::month((int) date('n', $start), true) : '',
             'time_label' => $start !== null ? date('H:i', $start) . ($end !== null && $end > $start ? ' – ' . date('H:i', $end) : '') : '',
             'location' => trim((string) ($ev['location'] ?? '')),
             'starts_at_iso' => $start !== null ? date('c', $start) : '',
@@ -325,7 +321,7 @@ final class PilotageDashboardPresenter
         }
 
         return [
-            'date_label' => self::WEEKDAYS[(int) date('w', $now)] . ' ' . (int) date('j', $now) . ' ' . self::MONTHS[(int) date('n', $now) - 1],
+            'date_label' => LocalizedCalendar::weekday((int) date('w', $now)) . ' ' . (int) date('j', $now) . ' ' . LocalizedCalendar::month((int) date('n', $now)),
             'greeting' => ($hour < 5 || $hour >= 18) ? 'Bonsoir' : 'Bonjour',
             'name' => $name,
             'tenant' => $tenant !== '' ? $tenant : 'Votre communauté',
@@ -403,7 +399,7 @@ final class PilotageDashboardPresenter
         }
 
         $month = is_array($in['month_events'] ?? null) ? $in['month_events'] : null;
-        $monthName = self::MONTHS[(int) date('n', $now) - 1];
+        $monthName = LocalizedCalendar::month((int) date('n', $now));
         $attendees = [];
         foreach ($participation['bars'] ?? [] as $bar) {
             $attendees[] = $participation['has_checkins'] ? (int) $bar['present'] : (int) $bar['registered'];
@@ -649,7 +645,7 @@ final class PilotageDashboardPresenter
                 $meta[] = $yes . ' confirmé' . ($yes > 1 ? 's' : '');
             }
             $items[] = [
-                'day' => self::WEEKDAYS_SHORT[(int) date('w', $start)],
+                'day' => LocalizedCalendar::weekday((int) date('w', $start), true),
                 'num' => date('d', $start),
                 'title' => trim((string) ($ev['title'] ?? '')) !== '' ? trim((string) $ev['title']) : 'Créneau sans titre',
                 'meta' => implode(' · ', $meta),

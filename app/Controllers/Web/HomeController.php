@@ -1049,7 +1049,6 @@ class HomeController
      */
     private static function buildTrainingShowcasePayload(array $rows): array
     {
-        $monthsFr = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
         $out = [];
         foreach ($rows as $c) {
             $cardLine = '';
@@ -1058,7 +1057,7 @@ class HomeController
             if (is_string($rawDate) && $rawDate !== '') {
                 $ts = strtotime($rawDate);
                 if ($ts !== false) {
-                    $cardLine = (int) date('j', $ts) . ' ' . $monthsFr[(int) date('n', $ts) - 1] . ' ' . date('Y', $ts);
+                    $cardLine = (int) date('j', $ts) . ' ' . \App\Support\LocalizedCalendar::month((int) date('n', $ts)) . ' ' . date('Y', $ts);
                     $cycleDisplay = date('d.m.Y', $ts);
                 }
             }

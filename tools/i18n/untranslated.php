@@ -7,12 +7,15 @@ declare(strict_types=1);
  *
  *   php tools/i18n/untranslated.php                     views/ et public/assets/js : « fichier<TAB>texte »
  *   php tools/i18n/untranslated.php views/admin/effectifs_workspace public/assets/js/foo.js
+ *   php tools/i18n/untranslated.php app                 textes composés du code PHP : concaténation, "… {$n} …",
+ *                                                       sprintf (« 'Unité fictive : ' . $x » -> « Unité fictive : %1 »)
  *   php tools/i18n/untranslated.php --count             nombre de textes par fichier, du plus fourni au moins
  *   php tools/i18n/untranslated.php --tsv=chemin.tsv    écrit « texte<TAB>fichier » (à traduire puis
  *                                                       python3 tools/i18n/site_i18n.py merge)
  *
- * Heuristique (App\Support\I18n\UntranslatedFrenchScanner) : accent ou mot français hors appels __() / t(). Code de
- * sortie 1 s'il reste des textes.
+ * Heuristique (App\Support\I18n\UntranslatedFrenchScanner) : accent ou mot français hors appels __() / t(). Dans app/,
+ * seuls les textes collés à une valeur sont relevés (les littéraux seuls relèvent de site_i18n.py extract-app) ;
+ * journaux, exceptions, SQL et adresses sont ignorés. Code de sortie 1 s'il reste des textes.
  */
 
 $root = dirname(__DIR__, 2);

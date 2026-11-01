@@ -17,12 +17,6 @@ final class PlatformAlertPresentation
         'urgent' => 'Urgent',
     ];
 
-    /** @var list<string> */
-    private const MONTHS_FR = [
-        'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
-        'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
-    ];
-
     /**
      * @return array<string, string> value => label (ordre d’affichage formulaire)
      */
@@ -251,7 +245,7 @@ final class PlatformAlertPresentation
             return $sqlDatetime;
         }
         $m = (int) date('n', $t);
-        $month = self::MONTHS_FR[$m - 1] ?? date('M', $t);
+        $month = LocalizedCalendar::month($m, true);
 
         return (int) date('j', $t) . ' ' . $month . ' ' . date('Y', $t) . ' — ' . date('H:i', $t);
     }

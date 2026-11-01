@@ -1486,4 +1486,8 @@ return [
     'hist_comm_participants' => ':value participants',
     'hist_comm_years' => 'Votre communauté, année après année',
     'hist_note' => 'Les chiffres viennent directement de la plateforme et sont recalculés toutes les dix minutes. Une version dont le jour n’est pas connu est rangée au mois de l’entrée datée la plus proche ; aucune date n’est inventée.',
+    'hist_val_operators' => ':value opérateurs',
+    'hist_val_players' => ':value joueurs',
+    'registry_unit_fictional' => 'Unité fictive : :label',
+    'registry_unit_real' => ':country — :units',
 ];
