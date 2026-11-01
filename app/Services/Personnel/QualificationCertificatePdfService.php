@@ -8,6 +8,8 @@ use App\Core\Container;
 use App\Repositories\QualificationAwardRepository;
 use App\Repositories\QualificationReferentielRepository;
 use App\Repositories\UserRepository;
+use App\Support\Pdf\AthenaCertificateLayout;
+use App\Support\Pdf\AthenaPdfTheme;
 use App\Support\QualificationAdminStatus;
 use DateTimeImmutable;
 use RuntimeException;
@@ -44,6 +46,49 @@ final class QualificationCertificatePdfService
      * @return array{path: string, relative: string, certificate_number: string, holder_name: string}
      */
     public function generate(int $tenantId, int $awardId, ?int $actorId = null): array
+    {
+        $doc = $this->renderCertificate($tenantId, $awardId, $actorId);
+        $award = $doc['award'];
+        $number = $doc['certificate_number'];
+        $binary = $doc['binary'];
+
+        $relDir = 'qualifications/' . $tenantId . '/certificates/' . (int) $award['user_id'];
+        $absDir = base_path('storage/uploads/' . $relDir);
+        if (!is_dir($absDir) && !@mkdir($absDir, 0755, true) && !is_dir($absDir)) {
+            throw new RuntimeException('Impossible de préparer le stockage du brevet.');
+        }
+        $filename = 'brevet_' . $awardId . '_' . date('YmdHis') . '.pdf';
+        $relative = $relDir . '/' . $filename;
+        $absolute = $absDir . '/' . $filename;
+        if (@file_put_contents($absolute, $binary) === false) {
+            throw new RuntimeException('Écriture du brevet PDF impossible.');
+        }
+
+        // Conserve l'ancien chemin en historique via notes / history ; pointe vers le nouveau.
+        $this->awards->update($awardId, ['certificate_document_path' => $relative], $actorId);
+        $this->awards->addHistory(
+            $tenantId,
+            $awardId,
+            'certificate_generated',
+            $actorId,
+            'Brevet PDF généré (' . $number . ')'
+        );
+
+        return [
+            'path' => $absolute,
+            'relative' => $relative,
+            'certificate_number' => $number,
+            'holder_name' => $doc['holder_name'],
+        ];
+    }
+
+    /**
+     * Binaire PDF du brevet (A4 portrait), sans écriture de fichier. Attribue le numéro de brevet
+     * s'il manque (comme {@see self::generate()}).
+     *
+     * @return array{binary: string, certificate_number: string, holder_name: string, layout: string, html: string, award: array<string, mixed>}
+     */
+    public function renderCertificate(int $tenantId, int $awardId, ?int $actorId = null): array
     {
         $award = $this->awards->find($awardId, $tenantId);
         if ($award === null) {
@@ -87,6 +132,20 @@ final class QualificationCertificatePdfService
             }
         }
 
+        return $this->renderAward($tenantId, $award, $layoutCode);
+    }
+
+    /**
+     * Rendu d'une attribution déjà chargée et numérotée (titulaire, grade, communauté et insigne résolus),
+     * sans accès aux dépôts d'attributions ni écriture.
+     *
+     * @param array<string, mixed> $award ligne de {@see QualificationAwardRepository::find()}
+     * @return array{binary: string, certificate_number: string, holder_name: string, layout: string, html: string, award: array<string, mixed>}
+     */
+    public function renderAward(int $tenantId, array $award, string $layoutCode = 'classique'): array
+    {
+        $layoutCode = $layoutCode === 'moderne' ? 'moderne' : 'classique';
+        $number = trim((string) ($award['certificate_number'] ?? ''));
         $holder = $this->resolveHolder((int) $award['user_id'], $tenantId);
         $tenantName = $this->resolveTenantName($tenantId);
         $isPermanent = !empty($award['is_permanent']) || empty($award['expires_at']);
@@ -115,40 +174,20 @@ final class QualificationCertificatePdfService
             'temporal_label' => $temporal['label'] !== '' ? $temporal['label'] : 'Valide',
             'generated_at' => (new DateTimeImmutable())->format('d/m/Y H:i'),
             'layout' => $layoutCode,
-            'primary_hex' => $layoutCode === 'moderne' ? '#1f3a7a' : '#14213d',
-            'accent_hex' => $layoutCode === 'moderne' ? '#1f3a7a' : '#a8843b',
+            'primary_hex' => AthenaPdfTheme::INK,
+            'accent_hex' => AthenaPdfTheme::ACCENT,
         ];
 
         $html = $this->renderLayout($layoutCode, $viewData);
         $binary = $this->renderPdf($html);
 
-        $relDir = 'qualifications/' . $tenantId . '/certificates/' . (int) $award['user_id'];
-        $absDir = base_path('storage/uploads/' . $relDir);
-        if (!is_dir($absDir) && !@mkdir($absDir, 0755, true) && !is_dir($absDir)) {
-            throw new RuntimeException('Impossible de préparer le stockage du brevet.');
-        }
-        $filename = 'brevet_' . $awardId . '_' . date('YmdHis') . '.pdf';
-        $relative = $relDir . '/' . $filename;
-        $absolute = $absDir . '/' . $filename;
-        if (@file_put_contents($absolute, $binary) === false) {
-            throw new RuntimeException('Écriture du brevet PDF impossible.');
-        }
-
-        // Conserve l'ancien chemin en historique via notes / history ; pointe vers le nouveau.
-        $this->awards->update($awardId, ['certificate_document_path' => $relative], $actorId);
-        $this->awards->addHistory(
-            $tenantId,
-            $awardId,
-            'certificate_generated',
-            $actorId,
-            'Brevet PDF généré (' . $number . ')'
-        );
-
         return [
-            'path' => $absolute,
-            'relative' => $relative,
+            'binary' => $binary,
             'certificate_number' => $number,
             'holder_name' => $holder['name'],
+            'layout' => $layoutCode,
+            'html' => $html,
+            'award' => $award,
         ];
     }
 
@@ -216,15 +255,12 @@ final class QualificationCertificatePdfService
                 'La génération PDF n’est pas disponible sur ce serveur. Contactez l’équipe technique.'
             );
         }
-        $dompdf = new \Dompdf\Dompdf([
-            'isRemoteEnabled' => false,
-            'isHtml5ParserEnabled' => true,
-        ]);
-        $dompdf->loadHtml($html, 'UTF-8');
-        $dompdf->setPaper('A4', 'landscape');
-        $dompdf->render();
+        $binary = AthenaCertificateLayout::dompdfRender($html);
+        if ($binary === null) {
+            throw new RuntimeException('Le moteur PDF n’a produit aucun document.');
+        }
 
-        return (string) $dompdf->output();
+        return $binary;
     }
 
     /**
@@ -269,21 +305,22 @@ final class QualificationCertificatePdfService
         }
         try {
             $pdo = \App\Core\Database::getPdo();
-            $st = $pdo->prepare(
-                "SELECT COLUMN_NAME FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades'
-                   AND COLUMN_NAME IN ('label_long', 'name') LIMIT 2"
-            );
-            $st->execute();
-            $cols = $st->fetchAll(\PDO::FETCH_COLUMN) ?: [];
-            if (in_array('label_long', $cols, true)) {
-                $q = $pdo->prepare('SELECT label_long FROM grades WHERE id = ? LIMIT 1');
-            } elseif (in_array('name', $cols, true)) {
-                $q = $pdo->prepare('SELECT name FROM grades WHERE id = ? LIMIT 1');
-            } else {
+            // label_long si la colonne existe, sinon name (sans information_schema : portable).
+            $q = null;
+            foreach (['label_long', 'name'] as $col) {
+                try {
+                    $st = $pdo->prepare('SELECT ' . $col . ' FROM grades WHERE id = ? LIMIT 1');
+                    if ($st !== false && $st->execute([$gradeId])) {
+                        $q = $st;
+                        break;
+                    }
+                } catch (\Throwable) {
+                    // Colonne absente : essai suivant.
+                }
+            }
+            if ($q === null) {
                 return '';
             }
-            $q->execute([$gradeId]);
 
             return trim((string) ($q->fetchColumn() ?: ''));
         } catch (\Throwable) {

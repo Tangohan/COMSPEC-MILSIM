@@ -7,27 +7,26 @@ namespace App\Services\Sse;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\SseCaseRepository;
+use App\Support\Pdf\AthenaPdfTheme as Theme;
+use App\Support\Pdf\AthenaTcpdf;
 use App\Support\SseDocumentMarkings;
 use App\Support\TrainingCertificatePdfEngine;
 
 /**
  * Export PDF complet d’un dossier SSE (couverture, produits, personnes, sites,
  * corrélations, notes, preuves). Toujours produit au niveau d’habilitation demandé.
+ *
+ * Gabarit Athena (A4 portrait) : l’en-tête porte la communauté et la référence du dossier,
+ * le bandeau noir la classification et la version (intégrale / expurgée), le pied la date
+ * d’édition et la pagination.
  */
 final class SseCasePdfService
 {
-    /** @var array{accent:string,banner:string,seal:string,soft:string,ink:string,muted:string} */
-    private array $palette = [
-        'accent' => '#475569',
-        'banner' => '#f8fafc',
-        'seal' => '#334155',
-        'soft' => '#e2e8f0',
-        'ink' => '#0b1220',
-        'muted' => '#64748b',
-    ];
-
     /** @var array<string,mixed> */
     private array $caseMeta = [];
+
+    /** @var list<string> fichiers temporaires (QR SVG) supprimés après le rendu */
+    private array $tempFiles = [];
 
     public function __construct(
         private ?SseCaseRepository $cases = null,
@@ -72,18 +71,8 @@ final class SseCasePdfService
         $flash = $this->reports->buildFlashReport($caseId, $tenantId, $releaseLevel);
         $initial = $this->reports->buildInitialReport($caseId, $tenantId, $releaseLevel);
 
-        $redactedLabel = '';
-        if ($releaseLevel !== null) {
-            $hidden = SseRedactionService::summarise($releaseLevel)['hidden'];
-            $redactedLabel = $hidden === []
-                ? 'Version intégrale — ' . SseRedactionService::levelLabel($releaseLevel)
-                : 'VERSION EXPURGÉE — ' . SseRedactionService::levelLabel($releaseLevel)
-                    . ' — au noir : ' . implode(', ', $hidden);
-        }
-
-        $generatedAt = (new \DateTimeImmutable('now'))->format('d/m/Y H:i');
-
         return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(function () use (
+            $tenantId,
             $case,
             $people,
             $sites,
@@ -92,8 +81,6 @@ final class SseCasePdfService
             $relations,
             $flash,
             $initial,
-            $redactedLabel,
-            $generatedAt,
             $inline,
             $releaseLevel
         ): Response {
@@ -101,159 +88,7 @@ final class SseCasePdfService
                 return (new Response())->setStatusCode(503)->setBody('<p>Export PDF indisponible pour le moment.</p>');
             }
 
-            $classCode = SseCaseRepository::normalizeClassification((string) ($case['classification'] ?? 'encadrement'));
-            $this->palette = $this->classPalette($classCode);
-            $this->caseMeta = $case;
-
-            $footerRef = (string) ($case['reference_code'] ?? '');
-            $footerClass = mb_strtoupper((string) ($case['classification_label'] ?? 'Confidentiel'), 'UTF-8');
-            $footerAccent = $this->hexToRgb($this->palette['accent']);
-
-            $pdf = new class ('P', 'mm', 'A4', true, 'UTF-8', false) extends \TCPDF {
-                public string $sseFooterRef = '';
-                public string $sseFooterClass = '';
-                /** @var array{0:int,1:int,2:int} */
-                public array $sseFooterAccent = [71, 85, 105];
-
-                public function Footer(): void
-                {
-                    $leftM = $this->lMargin;
-                    $rightM = $this->w - $this->rMargin;
-                    $usable = max(1.0, $rightM - $leftM);
-                    $this->SetY(-12);
-                    $this->SetDrawColor($this->sseFooterAccent[0], $this->sseFooterAccent[1], $this->sseFooterAccent[2]);
-                    $this->SetLineWidth(0.35);
-                    $this->Line($leftM, $this->GetY(), $rightM, $this->GetY());
-                    $this->SetY(-10);
-                    $this->SetX($leftM);
-                    $this->SetFont('helvetica', '', 7);
-                    $this->SetTextColor(100, 116, 139);
-                    $left = $this->sseFooterRef !== '' ? $this->sseFooterRef : 'Athena SSE';
-                    $center = $this->sseFooterClass;
-                    $right = 'Page ' . $this->getAliasNumPage() . ' / ' . $this->getAliasNbPages();
-                    $col = $usable / 3;
-                    $this->Cell($col, 5, $left, 0, 0, 'L');
-                    $this->SetTextColor($this->sseFooterAccent[0], $this->sseFooterAccent[1], $this->sseFooterAccent[2]);
-                    $this->SetFont('helvetica', 'B', 7);
-                    $this->Cell($col, 5, $center, 0, 0, 'C');
-                    $this->SetTextColor(100, 116, 139);
-                    $this->SetFont('helvetica', '', 7);
-                    $this->Cell($col, 5, $right, 0, 0, 'R');
-                }
-            };
-            $pdf->sseFooterRef = $footerRef;
-            $pdf->sseFooterClass = $footerClass;
-            $pdf->sseFooterAccent = $footerAccent;
-
-            $pdf->SetCreator('Athena COMSPEC');
-            $pdf->SetAuthor('Portail SSE Athena');
-            $pdf->SetTitle('Dossier complet ' . $footerRef);
-            $pdf->SetMargins(12, 14, 12);
-            $pdf->SetAutoPageBreak(true, 18);
-            $pdf->setCellHeightRatio(1.35);
-            $pdf->setPrintHeader(false);
-            $pdf->setPrintFooter(true);
-            $pdf->setFooterMargin(12);
-            // TCPDF moderne : pas d’AliasNbPages() (héritage FPDF). Les alias
-            // getAliasNumPage() / getAliasNbPages() dans Footer() suffisent.
-
-            // —— Page de garde ——
-            $pdf->AddPage();
-            $pdf->writeHTML(
-                $this->coverHtml($case, $redactedLabel, $generatedAt, $people, $sites, $notes, $evidence),
-                true,
-                false,
-                true,
-                false,
-                ''
-            );
-
-            // —— Flash ——
-            $pdf->AddPage();
-            $pdf->writeHTML(
-                $this->sectionBanner($redactedLabel, '01 · Flash opérationnel')
-                . $this->reportSheet('Flash opérationnel', $flash),
-                true,
-                false,
-                true,
-                false,
-                ''
-            );
-
-            // —— Compte rendu initial ——
-            $pdf->AddPage();
-            $pdf->writeHTML(
-                $this->sectionBanner($redactedLabel, '02 · Compte rendu initial')
-                . $this->reportSheet('Compte rendu initial', $initial),
-                true,
-                false,
-                true,
-                false,
-                ''
-            );
-
-            // —— Personnes ——
-            $pdf->AddPage();
-            $pdf->writeHTML(
-                $this->sectionBanner($redactedLabel, '03 · Personnes rattachées')
-                . $this->peopleHtml($people),
-                true,
-                false,
-                true,
-                false,
-                ''
-            );
-
-            // —— Sites ——
-            $pdf->AddPage();
-            $pdf->writeHTML(
-                $this->sectionBanner($redactedLabel, '04 · Sites exploités')
-                . $this->sitesHtml($sites),
-                true,
-                false,
-                true,
-                false,
-                ''
-            );
-
-            // —— Corrélations ——
-            $pdf->AddPage();
-            $pdf->writeHTML(
-                $this->sectionBanner($redactedLabel, '05 · Corrélations')
-                . $this->relationsHtml($relations, $people, $sites),
-                true,
-                false,
-                true,
-                false,
-                ''
-            );
-
-            // —— Notes ——
-            $pdf->AddPage();
-            $pdf->writeHTML(
-                $this->sectionBanner($redactedLabel, '06 · Notes classifiées')
-                . $this->notesHtml($notes),
-                true,
-                false,
-                true,
-                false,
-                ''
-            );
-
-            // —— Preuves (+ images) ——
-            $pdf->AddPage();
-            $pdf->writeHTML(
-                $this->sectionBanner($redactedLabel, '07 · Preuves recensées')
-                . $this->evidenceHtml($evidence),
-                true,
-                false,
-                true,
-                false,
-                ''
-            );
-            $this->appendEvidenceImages($pdf, $evidence, $redactedLabel);
-
-            $binary = (string) $pdf->Output('', 'S');
+            $binary = $this->buildPdfBinary($case, $people, $sites, $notes, $evidence, $relations, $flash, $initial, $releaseLevel, $tenantId);
             $refSlug = preg_replace('/[^a-zA-Z0-9_-]+/', '-', (string) ($case['reference_code'] ?? 'sse'));
             $levelSlug = $releaseLevel !== null
                 ? preg_replace('/[^a-zA-Z0-9_-]+/', '-', $releaseLevel)
@@ -268,6 +103,108 @@ final class SseCasePdfService
                 ->header('Cache-Control', 'private, no-store')
                 ->setBody($binary);
         });
+    }
+
+    /**
+     * Construit le binaire PDF à partir des données déjà rassemblées (et déjà expurgées au
+     * niveau `$releaseLevel`). TCPDF doit être chargé.
+     *
+     * @param array<string,mixed> $case
+     * @param list<array<string,mixed>> $people
+     * @param list<array<string,mixed>> $sites
+     * @param list<array<string,mixed>> $notes
+     * @param list<array<string,mixed>> $evidence
+     * @param list<array<string,mixed>> $relations
+     */
+    public function buildPdfBinary(
+        array $case,
+        array $people,
+        array $sites,
+        array $notes,
+        array $evidence,
+        array $relations,
+        string $flash,
+        string $initial,
+        ?string $releaseLevel = null,
+        int $tenantId = 0
+    ): string {
+        $redactedLabel = '';
+        $hidden = [];
+        if ($releaseLevel !== null) {
+            $hidden = SseRedactionService::summarise($releaseLevel)['hidden'];
+            $redactedLabel = $hidden === []
+                ? 'Version intégrale — ' . SseRedactionService::levelLabel($releaseLevel)
+                : 'VERSION EXPURGÉE — ' . SseRedactionService::levelLabel($releaseLevel)
+                    . ' — au noir : ' . implode(', ', $hidden);
+        }
+
+        $generatedAt = (new \DateTimeImmutable('now'))->format('d/m/Y H:i');
+        $this->caseMeta = $case;
+
+        $ref = (string) ($case['reference_code'] ?? '');
+        $classLabel = (string) ($case['classification_label'] ?? 'Confidentiel');
+        $version = $releaseLevel === null
+            ? 'Version intégrale'
+            : ($hidden === [] ? 'Version intégrale' : 'Version expurgée') . ' · ' . SseRedactionService::levelLabel($releaseLevel);
+
+        $community = '';
+        if ($tenantId <= 0) {
+            $community = trim((string) (Session::get('tenant_name') ?? ''));
+        }
+
+        $pdf = Theme::tcpdf([
+            'kind' => 'Dossier SSE complet',
+            'reference' => $ref !== '' ? $ref : 'Athena SSE',
+            'tenant_id' => $tenantId,
+            'community' => $community,
+            'classification' => $classLabel . ' · besoin d’en connaître',
+            'audience' => $version,
+            'note' => 'Chemise à ne pas dissocier de ses pièces · reproduction interdite sans accord écrit du chef de bureau',
+            'title' => 'Dossier complet ' . $ref,
+        ]);
+        if ($pdf === null) {
+            throw new \RuntimeException('TCPDF indisponible');
+        }
+
+        // —— Page de garde ——
+        $pdf->AddPage();
+        $pdf->writeAthenaHtml($this->coverHtml($case, $redactedLabel, $generatedAt, $people, $sites, $notes, $evidence));
+
+        $sections = [
+            ['01', 'Flash opérationnel', fn (): string => $this->reportSheet('Flash opérationnel', $flash)],
+            ['02', 'Compte rendu initial', fn (): string => $this->reportSheet('Compte rendu initial', $initial)],
+            ['03', 'Personnes rattachées', fn (): string => $this->peopleHtml($people)],
+            ['04', 'Sites exploités', fn (): string => $this->sitesHtml($sites)],
+            ['05', 'Corrélations', fn (): string => $this->relationsHtml($relations, $people, $sites)],
+            ['06', 'Notes classifiées', fn (): string => $this->notesHtml($notes)],
+            ['07', 'Preuves recensées', fn (): string => $this->evidenceHtml($evidence)],
+        ];
+        foreach ($sections as [$num, $label, $body]) {
+            $pdf->AddPage();
+            $pdf->writeAthenaHtml($this->sectionBanner($redactedLabel, $num, $label) . $body());
+        }
+        $this->appendEvidenceImages($pdf, $evidence, $redactedLabel);
+
+        try {
+            return (string) $pdf->Output('', 'S');
+        } finally {
+            foreach ($this->tempFiles as $tmp) {
+                @unlink($tmp);
+            }
+            $this->tempFiles = [];
+        }
+    }
+
+    /**
+     * Ton du gabarit associé au niveau de classification (pastilles et tampons).
+     */
+    private function classTone(string $classCode): string
+    {
+        return match ($classCode) {
+            'tres_restreint' => 'bad',
+            'confidentiel' => 'warn',
+            default => '',
+        };
     }
 
     /**
@@ -290,12 +227,13 @@ final class SseCasePdfService
         $caseTitle = (string) ($case['title'] ?? 'Dossier sans intitulé');
         $classLabel = (string) ($case['classification_label'] ?? 'Confidentiel');
         $classUpper = mb_strtoupper($classLabel, 'UTF-8');
-        $accent = $this->palette['accent'];
-        $bannerBg = $this->palette['banner'];
-        $sealColor = $this->palette['seal'];
-        $soft = $this->palette['soft'];
-        $ink = $this->palette['ink'];
-        $muted = $this->palette['muted'];
+        $classCode = SseCaseRepository::normalizeClassification((string) ($case['classification'] ?? 'encadrement'));
+        $tone = $this->classTone($classCode);
+        $toneColor = Theme::toneColor($tone);
+        $muted = Theme::MUTED;
+        $ink = Theme::INK;
+        $line = Theme::LINE;
+        $mono = Theme::mono();
 
         $statusLabel = (string) ($case['status_label'] ?? 'En cours');
         $statusKey = (string) ($case['status'] ?? '');
@@ -328,342 +266,206 @@ final class SseCasePdfService
         $wsIp = (string) ($ws['ip'] ?? '—');
         $wsFp = (string) ($ws['fingerprint'] ?? '—');
         $wsQr = (string) ($ws['qr_html'] ?? '');
+        $copy = (int) ($marks['copy_index'] ?? 1) . ' / ' . (int) ($marks['copy_total'] ?? 1);
 
         $e = fn (string $v): string => $this->e($v);
 
-        // Cadre papier : filet gauche classification + bordure fine
-        $html = '<table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>'
-            . '<td width="1.6%" style="background-color:' . $accent . ';"></td>'
-            . '<td width="98.4%" style="border:1px solid #cbd5e1;padding:0;">';
-
+        $html = '';
         if ($redactedLabel !== '') {
-            $html .= '<table cellpadding="5" cellspacing="0" border="0" width="100%" style="background-color:'
-                . $accent . ';"><tr><td style="color:#ffffff;text-align:center;font-size:8.5px;font-weight:bold;letter-spacing:0.5px;">'
-                . $e($redactedLabel)
-                . '</td></tr></table>';
+            $html .= $this->redactionCallout($redactedLabel);
         }
 
-        // Bandeau classification
-        $html .= '<table cellpadding="5" cellspacing="0" border="0" width="100%" style="background-color:'
-            . $bannerBg . ';border-bottom:1px solid ' . $accent . ';">'
-            . '<tr>'
-            . '<td width="26%" style="font-size:6.5px;color:' . $muted . ';text-align:left;letter-spacing:0.4px;">(CLASSIFICATION DE SÉCURITÉ)</td>'
-            . '<td width="48%" style="font-size:13px;font-weight:bold;color:' . $accent . ';text-align:center;letter-spacing:1.5px;">'
-            . $e($classUpper) . '</td>'
-            . '<td width="26%" style="font-size:7px;color:' . $muted . ';text-align:right;">EXEMPLAIRE '
-            . (int) ($marks['copy_index'] ?? 1) . '/' . (int) ($marks['copy_total'] ?? 1) . '</td>'
-            . '</tr></table>';
+        // Bloc titre
+        $html .= Theme::titleBlock(
+            'Chemise de dossier · Bureau SSE',
+            $caseTitle,
+            [
+                [$classUpper, $tone !== '' ? $tone : 'muted'],
+                [$isClosed ? 'DOSSIER CLOS' : 'DOSSIER OUVERT', $isClosed ? 'muted' : 'ok'],
+                ['EXEMPLAIRE ' . $copy, 'muted'],
+            ],
+            'Dossier n° ' . $caseRef . ' · Unité : ' . $coverUnit . ' · Section : Bureau SSE — Renseignement'
+        );
 
-        $html .= '<table cellpadding="8" cellspacing="0" border="0" width="100%"><tr><td>';
+        // Indicateurs
+        $html .= Theme::stats([
+            ['label' => 'Personnes rattachées', 'value' => (string) count($people)],
+            ['label' => 'Notes classifiées', 'value' => (string) count($notes)],
+            ['label' => 'Preuves versées', 'value' => (string) count($evidence)],
+            ['label' => 'Sites exploités', 'value' => (string) count($sites)],
+        ]);
 
-        // Registre + boîte de contrôle
-        $html .= '<table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>';
-        $html .= '<td width="67%" valign="top">';
-        $html .= '<table cellpadding="3" cellspacing="0" border="1" width="100%" style="border-color:#334155;font-size:7.5px;">'
-            . '<tr style="background-color:#1e293b;color:#ffffff;">'
-            . '<td colspan="4" style="font-size:7.5px;font-weight:bold;letter-spacing:1.2px;">REGISTRE DE CONSULTATION</td></tr>'
-            . '<tr style="background-color:' . $soft . ';font-weight:bold;color:' . $ink . ';">'
-            . '<td width="10%">N°</td><td width="48%">CONSULTANT</td><td width="22%">DATE</td><td width="20%">VISA</td></tr>';
+        // Faits + contrôle
+        $facts = Theme::keyValues([
+            ['Statut', $statusLabel],
+            ['Classification', $classLabel],
+            ['Habilitation', $isClosed ? 'Consultation sur demande' : 'Besoin d’en connaître'],
+            ['Code d’ouverture', !empty($case['has_unlock_code']) ? 'Exigé' : 'Non exigé'],
+        ]);
+        $control = Theme::keyValues([
+            ['Contrôle n°', (string) ($marks['control_number'] ?? '')],
+            ['Registre', (string) ($marks['registry_number'] ?? '')],
+            ['Ouvert le', $openedFr],
+            ['Mouvement', $updatedFr],
+            ['Émis le', $updatedFr],
+        ]);
+        $html .= Theme::twoColumns(
+            Theme::section('', 'Situation du dossier') . $facts,
+            Theme::section('', 'Contrôle') . $control
+        );
+
+        // Objet
+        $html .= Theme::section('', 'Objet du dossier');
+        if ($summary !== '') {
+            $html .= '<p style="font-size:9pt;line-height:1.45;text-align:justify;">' . nl2br($e($summary)) . '</p>';
+        } else {
+            $html .= '<p style="font-size:8.5pt;color:' . $muted . ';font-style:italic;">'
+                . 'Aucune synthèse n’a encore été portée à la chemise.</p>';
+        }
+
+        // Canal protégé
+        $caveats = is_array($marks['caveats'] ?? null) ? $marks['caveats'] : [];
+        $canal = '<span style="font-size:9pt;font-weight:bold;letter-spacing:0.8px;">'
+            . $e((string) ($marks['channel'] ?? 'CANAL PROTÉGÉ')) . '</span><br/>'
+            . '<span style="font-size:8pt;color:' . $muted . ';">'
+            . 'Chemise à ne pas dissocier de ses pièces jointes. Toute sortie du local sécurisé est portée au registre de consultation.'
+            . '</span>';
+        if ($caveats !== []) {
+            $canal .= '<br/><span style="font-size:7.5pt;">' . implode('&nbsp;&nbsp;', array_map(
+                static fn ($c): string => Theme::pill((string) $c, 'muted'),
+                $caveats
+            )) . '</span>';
+        }
+        $html .= Theme::spacer(2) . Theme::callout($canal, '', $tone !== '' ? $tone : 'ok');
+
+        // Consignes
+        $html .= Theme::section('', 'Consignes de manipulation');
+        $html .= '<p style="font-size:8pt;line-height:1.4;">'
+            . 'Le dossier <strong>' . $e($caseRef) . '</strong> regroupe des pièces de niveaux de protection différents. '
+            . 'Le niveau retenu pour l’ensemble est <strong>' . $e($classLabel) . '</strong>. '
+            . 'Consultation au poste habilité, chemise complète ; restitution le jour même contre visa ; '
+            . 'reproduction interdite sans accord écrit du chef de bureau.'
+            . '</p>' . Theme::spacer(1);
+        $html .= '<p style="font-size:8pt;line-height:1.4;">'
+            . 'Révision de classification prévue le <strong>' . $e((string) ($marks['declassify_on'] ?? '—')) . '</strong>. '
+            . 'Conservation <strong>' . $e((string) ($marks['destruction_delay'] ?? '—')) . '</strong> après clôture.'
+            . '</p>';
+
+        // Registre de consultation
+        $html .= Theme::section('', 'Registre de consultation');
+        $rows = [];
         $routing = is_array($marks['routing'] ?? null) ? $marks['routing'] : [];
         foreach ($routing as $row) {
             if (!is_array($row)) {
                 continue;
             }
-            $holder = trim((string) ($row['holder'] ?? ''));
-            $rowBg = $holder === '' ? 'background-color:#fafafa;' : '';
-            $html .= '<tr style="' . $rowBg . '">'
-                . '<td style="color:' . $muted . ';">' . (int) ($row['slot'] ?? 0) . '</td>'
-                . '<td>' . $e($holder) . '</td>'
-                . '<td>' . $e((string) ($row['date'] ?? '')) . '</td>'
-                . '<td style="font-family:courier;letter-spacing:1px;font-weight:bold;">'
-                . $e((string) ($row['initials'] ?? '')) . '</td>'
-                . '</tr>';
+            $rows[] = [
+                (string) (int) ($row['slot'] ?? 0),
+                trim((string) ($row['holder'] ?? '')),
+                (string) ($row['date'] ?? ''),
+                (string) ($row['initials'] ?? ''),
+            ];
         }
-        $html .= '</table></td>';
-        $html .= '<td width="2%"></td>';
-        $html .= '<td width="31%" valign="top">';
-        $html .= '<table cellpadding="4" cellspacing="0" border="1" width="100%" style="border-color:#334155;font-size:7px;">'
-            . '<tr style="background-color:' . $bannerBg . ';"><td>'
-            . '<span style="color:' . $muted . ';letter-spacing:0.6px;">CONTRÔLE N°</span><br/>'
-            . '<strong style="font-size:9px;color:' . $ink . ';">' . $e((string) ($marks['control_number'] ?? '')) . '</strong></td></tr>'
-            . '<tr><td><span style="color:' . $muted . ';letter-spacing:0.6px;">REGISTRE</span><br/>'
-            . '<strong style="font-size:8.5px;color:' . $ink . ';">' . $e((string) ($marks['registry_number'] ?? '')) . '</strong></td></tr>'
-            . '<tr style="background-color:' . $bannerBg . ';"><td><span style="color:' . $muted . ';letter-spacing:0.6px;">OUVERT LE</span><br/>'
-            . '<strong style="font-size:9px;color:' . $ink . ';">' . $e($openedFr) . '</strong></td></tr>'
-            . '<tr><td><span style="color:' . $muted . ';letter-spacing:0.6px;">MOUVEMENT</span><br/>'
-            . '<strong style="font-size:9px;color:' . $ink . ';">' . $e($updatedFr) . '</strong></td></tr>'
-            . '</table></td>';
-        $html .= '</tr></table>';
+        $html .= Theme::table([
+            ['label' => 'N°', 'width' => 10, 'mono' => true],
+            ['label' => 'Consultant', 'width' => 48],
+            ['label' => 'Date', 'width' => 22],
+            ['label' => 'Visa', 'width' => 20, 'mono' => true, 'bold' => true],
+        ], $rows);
 
-        // Canal protégé
-        $caveats = is_array($marks['caveats'] ?? null) ? $marks['caveats'] : [];
-        $html .= '<br/><table cellpadding="7" cellspacing="0" border="1" width="100%" style="border-color:'
-            . $accent . ';background-color:' . $bannerBg . ';">'
-            . '<tr><td>'
-            . '<div style="font-size:10px;font-weight:bold;color:' . $accent . ';letter-spacing:1px;">'
-            . $e((string) ($marks['channel'] ?? 'CANAL PROTÉGÉ')) . '</div>'
-            . '<div style="font-size:7.5px;color:#334155;margin-top:3px;line-height:1.35;">'
-            . 'Chemise à ne pas dissocier de ses pièces jointes. Toute sortie du local sécurisé est portée au registre de consultation.'
-            . '</div>';
-        if ($caveats !== []) {
-            $html .= '<div style="margin-top:5px;font-size:7px;">';
-            foreach ($caveats as $caveat) {
-                $html .= '<span style="border:1px solid ' . $accent . ';color:' . $accent
-                    . ';background-color:#ffffff;padding:2px 5px;margin-right:3px;font-weight:bold;letter-spacing:0.4px;">'
-                    . $e((string) $caveat) . '</span> ';
-            }
-            $html .= '</div>';
-        }
-        $html .= '</td></tr></table>';
-
-        // En-tête unité + sceau
-        $html .= '<br/><table cellpadding="2" cellspacing="0" border="0" width="100%"><tr>';
-        $html .= '<td width="52%" valign="top" style="font-size:8.5px;color:' . $ink . ';line-height:1.5;">'
-            . '<div style="font-size:7px;letter-spacing:1.5px;color:' . $muted . ';">ATHENA · COMPSEC</div>'
-            . '<div style="font-weight:bold;text-decoration:underline;margin-top:3px;font-size:9.5px;">UNITÉ : '
-            . $e($coverUnit) . '</div>'
-            . '<div style="margin-top:2px;">SECTION : Bureau SSE — Renseignement</div>'
-            . '<div style="margin-top:5px;font-weight:bold;font-size:10px;color:' . $accent . ';">DOSSIER N° '
-            . $e($caseRef) . '</div>'
-            . '</td>';
-        $html .= '<td width="22%" align="center" valign="middle">';
-        $html .= '<table cellpadding="5" cellspacing="0" border="2" width="100%" style="border-color:'
-            . $sealColor . ';color:' . $sealColor . ';background-color:#ffffff;">'
-            . '<tr><td align="center" style="font-size:5.5px;letter-spacing:1.2px;border-bottom:1px solid '
-            . $sealColor . ';">BUREAU SSE</td></tr>'
-            . '<tr><td align="center" style="font-size:18px;font-weight:bold;letter-spacing:1px;">'
-            . $e((string) ($marks['seal_initials'] ?? 'UA')) . '</td></tr>'
-            . '<tr><td align="center" style="font-size:5.5px;letter-spacing:1.2px;border-top:1px solid '
-            . $sealColor . ';">DOSSIERS</td></tr>'
-            . '</table></td>';
-        $html .= '<td width="26%" align="right" valign="top" style="font-size:9px;color:' . $ink . ';">'
-            . '<span style="color:' . $muted . ';font-size:7px;">ÉMIS LE</span><br/>'
-            . '<strong>' . $e($updatedFr) . '</strong></td>';
-        $html .= '</tr></table>';
-
-        $html .= '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:6px;">'
-            . '<tr><td style="border-top:2px solid ' . $accent . ';font-size:1px;line-height:1px;">&nbsp;</td></tr>'
-            . '<tr><td style="border-top:1px solid ' . $accent . ';font-size:2px;line-height:2px;">&nbsp;</td></tr>'
-            . '</table>';
-
-        $html .= '<div style="text-align:center;font-size:7px;letter-spacing:2px;color:' . $muted
-            . ';font-weight:bold;margin:6px 0 2px 0;">CHEMISE DE DOSSIER</div>';
-        $html .= '<div style="text-align:center;font-size:14px;font-weight:bold;color:' . $ink
-            . ';margin:0 0 8px 0;line-height:1.25;">'
-            . $e($caseTitle) . '</div>';
-
-        // Grille faits
-        $facts = [
-            ['Statut', $statusLabel],
-            ['Classification', $classLabel],
-            ['Habilitation', $isClosed ? 'Consultation sur demande' : 'Besoin d’en connaître'],
-            ['Code d’ouverture', !empty($case['has_unlock_code']) ? 'Exigé' : 'Non exigé'],
-            ['Personnes rattachées', (string) count($people)],
-            ['Notes classifiées', (string) count($notes)],
-            ['Preuves versées', (string) count($evidence)],
-            ['Sites exploités', (string) count($sites)],
-        ];
-        $html .= '<table cellpadding="5" cellspacing="0" border="1" width="100%" style="border-color:'
-            . $ink . ';font-size:8px;">';
-        for ($i = 0; $i < 8; $i += 4) {
-            $html .= '<tr>';
-            for ($j = 0; $j < 4; $j++) {
-                [$lab, $val] = $facts[$i + $j];
-                $cellBg = (($i + $j) % 2 === 0) ? 'background-color:' . $bannerBg . ';' : '';
-                $html .= '<td width="25%" style="' . $cellBg . '"><span style="font-size:6px;color:'
-                    . $muted . ';letter-spacing:0.6px;text-transform:uppercase;">'
-                    . $e($lab) . '</span><br/><strong style="font-size:9px;color:' . $ink . ';">'
-                    . $e($val) . '</strong></td>';
-            }
-            $html .= '</tr>';
-        }
-        $html .= '</table>';
-
-        // Objet
-        $html .= $this->sectionTitle('Objet du dossier');
-        if ($summary !== '') {
-            $html .= '<p style="font-size:9px;color:#1e293b;line-height:1.45;text-align:justify;margin:2px 0 6px 0;">'
-                . nl2br($e($summary)) . '</p>';
-        } else {
-            $html .= '<p style="font-size:8.5px;color:' . $muted . ';font-style:italic;margin:2px 0 6px 0;">'
-                . 'Aucune synthèse n’a encore été portée à la chemise.</p>';
-        }
-
-        // Consignes
-        $html .= $this->sectionTitle('Consignes de manipulation');
-        $html .= '<p style="font-size:7.5px;color:#334155;line-height:1.4;margin:2px 0 4px 0;">'
-            . 'Le dossier <strong>' . $e($caseRef) . '</strong> regroupe des pièces de niveaux de protection différents. '
-            . 'Le niveau retenu pour l’ensemble est <strong>' . $e($classLabel) . '</strong>. '
-            . 'Consultation au poste habilité, chemise complète ; restitution le jour même contre visa ; '
-            . 'reproduction interdite sans accord écrit du chef de bureau.'
-            . '</p>';
-        $html .= '<p style="font-size:7.5px;color:#334155;margin:0 0 6px 0;">'
-            . 'Révision de classification prévue le <strong>' . $e((string) ($marks['declassify_on'] ?? '—')) . '</strong>. '
-            . 'Conservation <strong>' . $e((string) ($marks['destruction_delay'] ?? '—')) . '</strong> après clôture.'
-            . '</p>';
-
-        // Auth : QR + empreintes
-        $html .= '<table cellpadding="5" cellspacing="0" border="1" width="100%" style="border-color:#cbd5e1;background-color:#fafafa;">'
-            . '<tr>';
-        $html .= '<td width="26%" valign="middle" align="center" style="background-color:#ffffff;">';
+        // Authentification : QR + empreintes
+        $html .= Theme::section('', 'Empreintes d’intégrité');
+        $qr = '';
         if ($wsQr !== '') {
-            $html .= preg_replace(
+            $qr = preg_replace(
                 ['/\sclass="[^"]*"/', '/\swidth="\d+"/', '/\sheight="\d+"/'],
                 ['', ' width="64"', ' height="64"'],
                 $wsQr
             ) ?? $wsQr;
+            $qr = $this->tcpdfImageSrc($qr);
         }
-        $html .= '<div style="font-size:6.5px;margin-top:3px;color:' . $ink . ';"><strong>'
-            . $e($wsId) . '</strong><br/>' . $e($wsHost) . ' · ' . $e($wsIp) . '</div></td>';
-        $html .= '<td width="74%" valign="top" style="font-size:7px;color:' . $ink . ';line-height:1.45;">'
-            . '<div style="font-weight:bold;font-size:8px;letter-spacing:0.8px;color:' . $accent
-            . ';margin-bottom:4px;">EMPREINTES D’INTÉGRITÉ</div>'
-            . '<strong>Condensat</strong> : <span style="font-family:courier;font-size:6.5px;">'
-            . $e((string) ($marks['integrity_groups'] ?? '')) . '</span><br/>'
-            . '<strong>Enveloppe</strong> : <span style="font-family:courier;font-size:6.5px;">'
-            . $e((string) ($marks['envelope_hash'] ?? '')) . '</span><br/>'
-            . '<strong>Machine</strong> : <span style="font-family:courier;font-size:6.5px;">'
-            . $e($wsFp !== '' ? $wsFp : '—') . '</span><br/>'
-            . '<strong>Contrôle</strong> : <span style="font-family:courier;font-size:6.5px;">'
-            . $e((string) ($marks['checksum'] ?? '')) . '</span>'
+        $monoSpan = static fn (string $v): string => '<span style="font-family:' . $mono . ';font-size:7pt;">' . $v . '</span>';
+        $html .= '<table cellpadding="4" cellspacing="0" style="border:0.3px solid ' . $line . ';"><tr nobr="true">'
+            . '<td width="20%" align="center">' . $qr
+            . '<br/><span style="font-size:6.5pt;"><strong>' . $e($wsId) . '</strong><br/>' . $e($wsHost) . ' · ' . $e($wsIp) . '</span></td>'
+            . '<td width="60%" style="font-size:7.5pt;line-height:1.5;border-left:0.3px solid ' . $line . ';">'
+            . '<strong>Condensat</strong> : ' . $monoSpan($e((string) ($marks['integrity_groups'] ?? ''))) . '<br/>'
+            . '<strong>Enveloppe</strong> : ' . $monoSpan($e((string) ($marks['envelope_hash'] ?? ''))) . '<br/>'
+            . '<strong>Machine</strong> : ' . $monoSpan($e($wsFp !== '' ? $wsFp : '—')) . '<br/>'
+            . '<strong>Contrôle</strong> : ' . $monoSpan($e((string) ($marks['checksum'] ?? '')))
             . ' · ' . $e((string) ($marks['algorithm'] ?? ''))
-            . '</td></tr></table>';
-
-        // Tampons
-        $html .= '<br/><table cellpadding="4" cellspacing="5" border="0" width="100%"><tr>'
-            . '<td align="center" style="border:2px solid ' . $accent . ';color:' . $accent
-            . ';font-size:7.5px;font-weight:bold;letter-spacing:1px;">'
-            . $e($classUpper) . '</td>'
-            . '<td align="center" style="border:2px solid #15803d;color:#15803d;font-size:7.5px;font-weight:bold;letter-spacing:1px;">'
-            . ($isClosed ? 'DOSSIER CLOS' : 'DOSSIER OUVERT') . '</td>'
-            . '<td align="center" style="border:2px dashed #64748b;color:#64748b;font-size:7.5px;font-weight:bold;letter-spacing:0.6px;">'
-            . 'EXEMPLAIRE ' . (int) ($marks['copy_index'] ?? 1) . ' / ' . (int) ($marks['copy_total'] ?? 1) . '</td>'
+            . '</td>'
+            // Sceau du bureau ; classification, état et exemplaire figurent en pastilles sous le titre.
+            . '<td width="20%" align="center" style="border-left:0.3px solid ' . $line . ';">'
+            . '<span style="font-size:5.5pt;letter-spacing:1px;color:' . $muted . ';">BUREAU SSE</span><br/>'
+            . '<span style="font-size:15pt;font-weight:bold;letter-spacing:1px;color:' . $ink . ';">' . $e((string) ($marks['seal_initials'] ?? 'UA')) . '</span><br/>'
+            . '<span style="font-size:5.5pt;letter-spacing:1px;color:' . $muted . ';">DOSSIERS</span><br/>'
+            . '<span style="font-size:6.5pt;font-weight:bold;color:' . $toneColor . ';">' . $e($classUpper) . '</span></td>'
             . '</tr></table>';
 
-        $html .= '</td></tr></table>'; // padding cell
-
-        // Bandeau bas
-        $html .= '<table cellpadding="4" cellspacing="0" border="0" width="100%" style="background-color:'
-            . $bannerBg . ';border-top:1px solid ' . $accent . ';">'
-            . '<tr>'
-            . '<td width="33%" style="font-size:6.5px;color:' . $muted . ';">Contrôle '
-            . $e((string) ($marks['control_number'] ?? '')) . '</td>'
-            . '<td width="34%" style="font-size:10px;font-weight:bold;color:' . $accent
-            . ';text-align:center;letter-spacing:1px;">' . $e($classUpper) . '</td>'
-            . '<td width="33%" style="font-size:6.5px;color:' . $muted . ';text-align:right;">Chemise — page de garde · '
-            . $e($generatedAt) . '</td>'
-            . '</tr></table>';
-
-        $html .= '</td></tr></table>'; // frame
+        $html .= Theme::spacer(1.5) . '<p style="font-size:6.5pt;color:' . $muted . ';">Contrôle '
+            . $e((string) ($marks['control_number'] ?? '')) . ' · ' . $e($classUpper)
+            . ' · Chemise — page de garde · ' . $e($generatedAt) . '</p>';
 
         return $html;
     }
 
     /**
-     * @return array{accent:string,banner:string,seal:string,soft:string,ink:string,muted:string}
+     * TCPDF ne lit pas les URI data: dans <img> : PNG/JPEG passent en src="@<base64>",
+     * SVG par un fichier temporaire .svg (rendu vectoriel par TCPDF).
      */
-    private function classPalette(string $classCode): array
+    private function tcpdfImageSrc(string $html): string
     {
-        $base = ['ink' => '#0b1220', 'muted' => '#64748b'];
+        return preg_replace_callback('#src="data:image/([a-z+]+);base64,([^"]*)"#i', function (array $m): string {
+            if (stripos($m[1], 'svg') === false) {
+                return 'src="@' . $m[2] . '"';
+            }
+            $svg = base64_decode($m[2], true);
+            $base = $svg !== false ? tempnam(sys_get_temp_dir(), 'sseqr') : false;
+            if ($base === false || $svg === false) {
+                return 'src=""';
+            }
+            @unlink($base);
+            $file = $base . '.svg';
+            file_put_contents($file, $svg);
+            $this->tempFiles[] = $file;
 
-        return match ($classCode) {
-            'tres_restreint' => $base + [
-                'accent' => '#b91c1c',
-                'banner' => '#fef2f2',
-                'seal' => '#991b1b',
-                'soft' => '#fecaca',
-            ],
-            'confidentiel' => $base + [
-                'accent' => '#b45309',
-                'banner' => '#fffbeb',
-                'seal' => '#92400e',
-                'soft' => '#fde68a',
-            ],
-            'encadrement' => $base + [
-                'accent' => '#1d4ed8',
-                'banner' => '#eff6ff',
-                'seal' => '#1e3a8a',
-                'soft' => '#bfdbfe',
-            ],
-            default => $base + [
-                'accent' => '#475569',
-                'banner' => '#f8fafc',
-                'seal' => '#334155',
-                'soft' => '#e2e8f0',
-            ],
-        };
+            return 'src="' . htmlspecialchars($file, ENT_QUOTES, 'UTF-8') . '"';
+        }, $html) ?? $html;
     }
 
-    private function sectionBanner(string $redactedLabel, string $sectionLabel = ''): string
+    /** Encadré de caviardage (version expurgée / intégrale au niveau de diffusion). */
+    private function redactionCallout(string $redactedLabel): string
     {
-        $case = $this->caseMeta;
-        $classLabel = (string) ($case['classification_label'] ?? '');
-        $classUpper = mb_strtoupper($classLabel !== '' ? $classLabel : 'CONFIDENTIEL', 'UTF-8');
-        $accent = $this->palette['accent'];
-        $bannerBg = $this->palette['banner'];
-        $muted = $this->palette['muted'];
-        $ink = $this->palette['ink'];
+        $expurged = str_starts_with($redactedLabel, 'VERSION EXPURGÉE');
 
-        $html = '<table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>'
-            . '<td width="1.6%" style="background-color:' . $accent . ';"></td>'
-            . '<td width="98.4%" style="border:1px solid ' . $accent . ';background-color:' . $bannerBg . ';">'
-            . '<table cellpadding="4" cellspacing="0" border="0" width="100%">'
-            . '<tr>'
-            . '<td width="28%" style="font-size:7px;color:' . $muted . ';">'
-            . $this->e((string) ($case['reference_code'] ?? '')) . '</td>'
-            . '<td width="44%" style="font-size:10px;font-weight:bold;color:' . $accent
-            . ';text-align:center;letter-spacing:1px;">'
-            . $this->e($classUpper) . '</td>'
-            . '<td width="28%" style="font-size:7px;color:' . $muted . ';text-align:right;">'
-            . $this->e((string) ($case['title'] ?? '')) . '</td>'
-            . '</tr>';
-        if ($sectionLabel !== '') {
-            $html .= '<tr><td colspan="3" style="font-size:8px;font-weight:bold;color:' . $ink
-                . ';letter-spacing:0.8px;border-top:1px solid ' . $accent . ';background-color:#ffffff;">'
-                . $this->e(mb_strtoupper($sectionLabel, 'UTF-8')) . '</td></tr>';
-        }
-        $html .= '</table></td></tr></table><br/>';
+        return Theme::callout(
+            '<span style="font-size:8pt;font-weight:bold;color:' . ($expurged ? Theme::DANGER : Theme::INK) . ';">' . $this->e($redactedLabel) . '</span>',
+            '',
+            $expurged ? 'bad' : 'muted'
+        );
+    }
 
+    private function sectionBanner(string $redactedLabel, string $num, string $sectionLabel): string
+    {
+        $html = '';
         if ($redactedLabel !== '') {
-            $html .= '<table cellpadding="4" cellspacing="0" border="0" width="100%" style="background-color:'
-                . $accent . ';margin-bottom:6px;"><tr><td style="color:#ffffff;font-size:7.5px;text-align:center;font-weight:bold;">'
-                . $this->e($redactedLabel) . '</td></tr></table>';
+            $html .= $this->redactionCallout($redactedLabel);
         }
 
-        return $html;
-    }
+        $title = trim((string) ($this->caseMeta['title'] ?? ''));
 
-    private function sectionTitle(string $title): string
-    {
-        $accent = $this->palette['accent'];
-        $ink = $this->palette['ink'];
-
-        return '<br/><table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>'
-            . '<td width="1.6%" style="background-color:' . $accent . ';"></td>'
-            . '<td width="1.8%"></td>'
-            . '<td width="96.6%" style="font-size:9.5px;font-weight:bold;color:' . $ink
-            . ';letter-spacing:1px;">' . $this->e(mb_strtoupper($title, 'UTF-8')) . '</td>'
-            . '</tr></table><br/>';
+        return $html . Theme::section($num, $sectionLabel)
+            . ($title !== '' ? '<p style="font-size:7.5pt;color:' . Theme::MUTED . ';">' . $this->e($title) . '</p>' . Theme::spacer(1.5) : '');
     }
 
     private function reportSheet(string $title, string $body): string
     {
-        $accent = $this->palette['accent'];
-        $bannerBg = $this->palette['banner'];
-        $ink = $this->palette['ink'];
-        $muted = $this->palette['muted'];
-
-        return '<table cellpadding="0" cellspacing="0" border="1" width="100%" style="border-color:'
-            . $accent . ';">'
-            . '<tr style="background-color:' . $bannerBg . ';"><td>'
-            . '<table cellpadding="6" cellspacing="0" border="0" width="100%">'
-            . '<tr><td style="font-size:11px;font-weight:bold;color:' . $ink . ';letter-spacing:0.6px;">'
-            . $this->e(mb_strtoupper($title, 'UTF-8')) . '</td></tr>'
-            . '<tr><td style="font-size:7px;color:' . $muted . ';letter-spacing:0.5px;">'
-            . 'PIÈCE RÉDACTIONNELLE · DIFFUSION CONTRÔLÉE</td></tr>'
-            . '</table></td></tr>'
-            . '<tr><td>' . $this->reportBodyHtml($body) . '</td></tr>'
-            . '</table>';
+        unset($title); // déjà porté par le titre de section
+        return '<p style="font-size:6.5pt;font-weight:bold;color:' . Theme::MUTED . ';letter-spacing:0.6px;">'
+            . 'PIÈCE RÉDACTIONNELLE · DIFFUSION CONTRÔLÉE</p>'
+            . Theme::spacer(1.5)
+            . $this->reportBodyHtml($body);
     }
 
     /**
@@ -672,20 +474,17 @@ final class SseCasePdfService
     private function reportBodyHtml(string $text): string
     {
         $text = str_replace(["\r\n", "\r"], "\n", trim($text));
-        $ink = $this->palette['ink'];
-        $accent = $this->palette['accent'];
-        $muted = $this->palette['muted'];
+        $line = 'border-bottom:0.2px solid ' . Theme::LINE . ';';
 
         if ($text === '') {
-            return '<table cellpadding="10" cellspacing="0" border="0" width="100%"><tr><td style="font-size:9px;font-style:italic;color:'
-                . $muted . ';">(aucun contenu généré)</td></tr></table>';
+            return $this->emptyState('(aucun contenu généré)');
         }
 
-        $html = '<table cellpadding="6" cellspacing="0" border="0" width="100%">';
-        foreach (explode("\n", $text) as $line) {
-            $trim = trim($line);
+        $html = '<table cellpadding="3" cellspacing="0" width="100%">';
+        foreach (explode("\n", $text) as $row) {
+            $trim = trim($row);
             if ($trim === '') {
-                $html .= '<tr><td colspan="2" style="font-size:3px;line-height:3px;">&nbsp;</td></tr>';
+                $html .= '<tr><td colspan="2" width="100%" style="font-size:3pt;line-height:1;">&nbsp;</td></tr>';
                 continue;
             }
 
@@ -693,24 +492,20 @@ final class SseCasePdfService
             if ($colon !== false && $colon > 0 && $colon <= 42) {
                 $label = mb_substr($trim, 0, $colon, 'UTF-8');
                 $value = mb_substr($trim, $colon + 3, 400, 'UTF-8');
-                $html .= '<tr>'
-                    . '<td width="44%" style="font-size:9.5px;font-weight:bold;color:' . $ink
-                    . ';border-bottom:0.4px solid #e2e8f0;">' . $this->e($label) . '</td>'
-                    . '<td width="56%" style="font-size:9.5px;color:' . $ink
-                    . ';border-bottom:0.4px solid #e2e8f0;">' . $this->e($value) . '</td>'
+                $html .= '<tr nobr="true">'
+                    . '<td width="38%" style="font-size:8.5pt;color:' . Theme::MUTED . ';' . $line . '">' . $this->e($label) . '</td>'
+                    . '<td width="62%" style="font-size:9pt;font-weight:bold;' . $line . '">' . $this->e($value) . '</td>'
                     . '</tr>';
                 continue;
             }
 
             if ($this->isReportHeading($trim)) {
-                $html .= '<tr><td colspan="2" style="font-size:8.5px;font-weight:bold;color:' . $accent
-                    . ';letter-spacing:0.8px;border-bottom:0.7px solid ' . $accent . ';">'
-                    . $this->e($trim) . '</td></tr>';
+                $html .= '<tr nobr="true"><td colspan="2" width="100%" style="font-size:7.5pt;font-weight:bold;letter-spacing:0.8px;border-bottom:0.6px solid ' . Theme::INK . ';">'
+                    . '<br/>' . $this->e($trim) . '</td></tr>';
                 continue;
             }
 
-            $html .= '<tr><td colspan="2" style="font-size:9.5px;color:' . $ink . ';">'
-                . $this->e($trim) . '</td></tr>';
+            $html .= '<tr><td colspan="2" width="100%" style="font-size:9pt;">' . $this->e($trim) . '</td></tr>';
         }
         $html .= '</table>';
 
@@ -729,32 +524,7 @@ final class SseCasePdfService
 
     private function emptyState(string $message): string
     {
-        $muted = $this->palette['muted'];
-        $soft = $this->palette['soft'];
-
-        return '<table cellpadding="10" cellspacing="0" border="1" width="100%" style="border-color:#cbd5e1;background-color:'
-            . $soft . ';"><tr><td style="text-align:center;font-size:9px;color:' . $muted
-            . ';font-style:italic;">' . $this->e($message) . '</td></tr></table>';
-    }
-
-    /**
-     * @param list<string> $headers
-     * @param list<string> $widths percent widths as strings e.g. "12%"
-     */
-    private function openDataTable(array $headers, array $widths): string
-    {
-        $accent = $this->palette['accent'];
-        $html = '<table cellpadding="4" cellspacing="0" border="1" width="100%" style="border-color:#334155;font-size:8.5px;border-collapse:collapse;">'
-            . '<tr style="background-color:' . $accent . ';color:#ffffff;">';
-        foreach ($headers as $i => $label) {
-            $w = $widths[$i] ?? '';
-            $html .= '<th' . ($w !== '' ? ' width="' . $w . '"' : '')
-                . ' style="font-size:7px;font-weight:bold;letter-spacing:0.5px;">'
-                . $this->e($label) . '</th>';
-        }
-        $html .= '</tr>';
-
-        return $html;
+        return Theme::callout('<span style="font-size:8.5pt;color:' . Theme::MUTED . ';font-style:italic;">' . $this->e($message) . '</span>');
     }
 
     /**
@@ -762,16 +532,11 @@ final class SseCasePdfService
      */
     private function peopleHtml(array $people): string
     {
-        $html = $this->sectionTitle('Personnes rattachées');
         if ($people === []) {
-            return $html . $this->emptyState('Aucune personne rattachée à ce dossier.');
+            return $this->emptyState('Aucune personne rattachée à ce dossier.');
         }
 
-        $html .= $this->openDataTable(
-            ['Réf.', 'Identité', 'Statut', 'Biométrie', 'Croisement'],
-            ['10%', '28%', '16%', '22%', '24%']
-        );
-
+        $rows = [];
         foreach ($people as $i => $p) {
             $ref = sprintf('P%02d', $i + 1);
             $samples = is_array($p['biometric_samples'] ?? null) ? $p['biometric_samples'] : [];
@@ -796,24 +561,26 @@ final class SseCasePdfService
                 $wlLabel = (string) $wl['verdict_label'];
             }
 
-            $rowBg = ($i % 2 === 1) ? 'background-color:' . $this->palette['banner'] . ';' : '';
             $alias = !empty($p['alias'])
-                ? '<br/><span style="font-size:7.5px;color:' . $this->palette['muted'] . ';">« '
-                    . $this->e((string) $p['alias']) . ' »</span>'
+                ? '<br/><span style="font-size:7.5pt;color:' . Theme::MUTED . ';">« ' . $this->e((string) $p['alias']) . ' »</span>'
                 : '';
 
-            $html .= '<tr style="' . $rowBg . '">'
-                . '<td style="font-family:courier;font-weight:bold;color:' . $this->palette['accent'] . ';">'
-                . $this->e($ref) . '</td>'
-                . '<td><strong>' . $this->e((string) ($p['display_name'] ?? '—')) . '</strong>' . $alias . '</td>'
-                . '<td>' . $this->e((string) ($p['status_label'] ?? '')) . '</td>'
-                . '<td>' . $this->e($bio) . '</td>'
-                . '<td>' . $this->e($wlLabel) . '</td>'
-                . '</tr>';
+            $rows[] = [
+                '<b>' . $this->e($ref) . '</b>',
+                '<b>' . $this->e((string) ($p['display_name'] ?? '—')) . '</b>' . $alias,
+                $this->e((string) ($p['status_label'] ?? '')),
+                $this->e($bio),
+                $this->e($wlLabel),
+            ];
         }
-        $html .= '</table>';
 
-        return $html;
+        return Theme::table([
+            ['label' => 'Réf.', 'width' => 9, 'mono' => true],
+            ['label' => 'Identité', 'width' => 27],
+            ['label' => 'Statut', 'width' => 16],
+            ['label' => 'Biométrie', 'width' => 22],
+            ['label' => 'Croisement', 'width' => 26],
+        ], $rows, false);
     }
 
     /**
@@ -821,69 +588,62 @@ final class SseCasePdfService
      */
     private function sitesHtml(array $sites): string
     {
-        $html = $this->sectionTitle('Sites exploités');
         if ($sites === []) {
-            return $html . $this->emptyState('Aucun site rattaché.');
+            return $this->emptyState('Aucun site rattaché.');
         }
 
-        $accent = $this->palette['accent'];
-        $bannerBg = $this->palette['banner'];
-        $ink = $this->palette['ink'];
-        $muted = $this->palette['muted'];
+        $muted = Theme::MUTED;
+        $label = static fn (string $t): string => '<span style="font-size:6.5pt;font-weight:bold;color:' . $muted . ';letter-spacing:0.6px;">' . $t . '</span><br/>';
+        $html = '';
 
         foreach ($sites as $site) {
             $rooms = is_array($site['rooms'] ?? null) ? $site['rooms'] : [];
             $seizures = is_array($site['seizures'] ?? null) ? $site['seizures'] : [];
             $done = count(array_filter($rooms, static fn (array $r): bool => !empty($r['checked'])));
 
-            $html .= '<table cellpadding="0" cellspacing="0" border="1" width="100%" style="border-color:'
-                . $accent . ';margin-bottom:8px;">'
-                . '<tr style="background-color:' . $bannerBg . ';"><td style="padding:5px;">'
-                . '<span style="font-size:10px;font-weight:bold;color:' . $ink . ';">'
+            $body = '<span style="font-size:10pt;font-weight:bold;">'
                 . $this->e((string) ($site['reference_code'] ?? ''))
                 . ' — ' . $this->e((string) ($site['name'] ?? ''))
                 . '</span><br/>'
-                . '<span style="font-size:7.5px;color:' . $muted . ';">'
+                . '<span style="font-size:7.5pt;color:' . $muted . ';">'
                 . $this->e((string) ($site['site_type_label'] ?? ''))
                 . ' · ' . $this->e((string) ($site['status_label'] ?? ''))
                 . ' · Fouille : ' . $done . '/' . count($rooms)
                 . ' · Saisies : ' . count($seizures)
-                . '</span></td></tr><tr><td style="padding:6px;background-color:#ffffff;">';
+                . '</span><br/>';
 
             if ($rooms !== []) {
-                $html .= '<div style="font-size:7.5px;font-weight:bold;color:' . $accent
-                    . ';letter-spacing:0.6px;margin-bottom:3px;">PIÈCES</div>'
-                    . '<p style="font-size:8.5px;color:' . $ink . ';margin:0 0 6px 0;">';
                 $bits = [];
                 foreach ($rooms as $r) {
                     $mark = !empty($r['checked']) ? '■' : '□';
                     $bits[] = $mark . ' ' . $this->e((string) ($r['label'] ?? 'Pièce'));
                 }
-                $html .= implode(' · ', $bits) . '</p>';
+                $body .= '<br/>' . $label('PIÈCES')
+                    . '<span style="font-size:8.5pt;">' . implode(' · ', $bits) . '</span><br/>';
             }
 
             if ($seizures !== []) {
-                $html .= '<div style="font-size:7.5px;font-weight:bold;color:' . $accent
-                    . ';letter-spacing:0.6px;margin-bottom:3px;">SAISIES</div><ul style="font-size:8.5px;margin:0;padding-left:14px;">';
+                $items = [];
                 foreach (array_slice($seizures, 0, 40) as $sz) {
-                    $html .= '<li>' . $this->e((string) ($sz['label'] ?? $sz['item_label'] ?? 'Saisie'));
+                    $item = $this->e((string) ($sz['label'] ?? $sz['item_label'] ?? 'Saisie'));
                     if (!empty($sz['quantity'])) {
-                        $html .= ' × ' . $this->e((string) $sz['quantity']);
+                        $item .= ' × ' . $this->e((string) $sz['quantity']);
                     }
                     if (!empty($sz['location_label'])) {
-                        $html .= ' — ' . $this->e((string) $sz['location_label']);
+                        $item .= ' — ' . $this->e((string) $sz['location_label']);
                     }
-                    $html .= '</li>';
+                    $items[] = '<span style="color:' . Theme::ACCENT . ';">■</span>&nbsp; ' . $item;
                 }
-                $html .= '</ul>';
+                $body .= '<br/>' . $label('SAISIES')
+                    . '<span style="font-size:8.5pt;">' . implode('<br/>', $items) . '</span>';
             }
 
             if ($rooms === [] && $seizures === []) {
-                $html .= '<p style="font-size:8px;color:' . $muted . ';font-style:italic;margin:0;">'
-                    . 'Aucun détail de fouille versé.</p>';
+                $body .= '<span style="font-size:8pt;color:' . $muted . ';font-style:italic;">'
+                    . 'Aucun détail de fouille versé.</span>';
             }
 
-            $html .= '</td></tr></table>';
+            $html .= Theme::callout($body);
         }
 
         return $html;
@@ -896,9 +656,8 @@ final class SseCasePdfService
      */
     private function relationsHtml(array $relations, array $people, array $sites): string
     {
-        $html = $this->sectionTitle('Corrélations');
         if ($relations === []) {
-            return $html . $this->emptyState('Aucune corrélation enregistrée sur ce dossier.');
+            return $this->emptyState('Aucune corrélation enregistrée sur ce dossier.');
         }
 
         $personNames = [];
@@ -910,28 +669,24 @@ final class SseCasePdfService
             $siteNames[(int) ($s['id'] ?? 0)] = (string) ($s['name'] ?? $s['reference_code'] ?? 'Site');
         }
 
-        $html .= $this->openDataTable(
-            ['De', 'Lien', 'Vers', 'Fiabilité', 'Note'],
-            ['22%', '16%', '22%', '14%', '26%']
-        );
-
-        foreach ($relations as $i => $rel) {
-            $from = $this->entityLabel((string) ($rel['from_type'] ?? ''), (int) ($rel['from_id'] ?? 0), $personNames, $siteNames);
-            $to = $this->entityLabel((string) ($rel['to_type'] ?? ''), (int) ($rel['to_id'] ?? 0), $personNames, $siteNames);
-            $link = SseCorrelationService::relationLabel((string) ($rel['relation'] ?? ''));
-            $relia = SseCorrelationService::reliabilityLabel((string) ($rel['reliability'] ?? ''));
-            $rowBg = ($i % 2 === 1) ? 'background-color:' . $this->palette['banner'] . ';' : '';
-            $html .= '<tr style="' . $rowBg . '">'
-                . '<td>' . $this->e($from) . '</td>'
-                . '<td><strong style="color:' . $this->palette['accent'] . ';">' . $this->e($link) . '</strong></td>'
-                . '<td>' . $this->e($to) . '</td>'
-                . '<td>' . $this->e($relia) . '</td>'
-                . '<td>' . $this->e((string) ($rel['note'] ?? '—')) . '</td>'
-                . '</tr>';
+        $rows = [];
+        foreach ($relations as $rel) {
+            $rows[] = [
+                $this->entityLabel((string) ($rel['from_type'] ?? ''), (int) ($rel['from_id'] ?? 0), $personNames, $siteNames),
+                SseCorrelationService::relationLabel((string) ($rel['relation'] ?? '')),
+                $this->entityLabel((string) ($rel['to_type'] ?? ''), (int) ($rel['to_id'] ?? 0), $personNames, $siteNames),
+                SseCorrelationService::reliabilityLabel((string) ($rel['reliability'] ?? '')),
+                (string) ($rel['note'] ?? '—'),
+            ];
         }
-        $html .= '</table>';
 
-        return $html;
+        return Theme::table([
+            ['label' => 'De', 'width' => 22],
+            ['label' => 'Lien', 'width' => 16, 'bold' => true],
+            ['label' => 'Vers', 'width' => 22],
+            ['label' => 'Fiabilité', 'width' => 14],
+            ['label' => 'Note', 'width' => 26],
+        ], $rows);
     }
 
     /**
@@ -956,31 +711,21 @@ final class SseCasePdfService
      */
     private function notesHtml(array $notes): string
     {
-        $html = $this->sectionTitle('Notes classifiées');
         if ($notes === []) {
-            return $html . $this->emptyState('Aucune note.');
+            return $this->emptyState('Aucune note.');
         }
 
-        $accent = $this->palette['accent'];
-        $bannerBg = $this->palette['banner'];
-        $ink = $this->palette['ink'];
-        $muted = $this->palette['muted'];
-
+        $html = '';
         foreach ($notes as $n) {
-            $html .= '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:7px;">'
-                . '<tr>'
-                . '<td width="1.6%" style="background-color:' . $accent . ';"></td>'
-                . '<td width="98.4%" style="border:1px solid #cbd5e1;border-left:0;">'
-                . '<table cellpadding="5" cellspacing="0" border="0" width="100%">'
-                . '<tr style="background-color:' . $bannerBg . ';"><td style="font-size:7px;color:'
-                . $muted . ';">'
-                . $this->e((string) ($n['classification_label'] ?? ''))
+            $meta = $this->e((string) ($n['classification_label'] ?? ''))
                 . ' · ' . $this->e((string) ($n['author_label'] ?? 'Opérateur'))
-                . (!empty($n['created_at']) ? ' · ' . $this->e((string) $n['created_at']) : '')
-                . '</td></tr>'
-                . '<tr><td style="font-size:9px;color:' . $ink . ';line-height:1.4;">'
-                . nl2br($this->e((string) ($n['body'] ?? '')))
-                . '</td></tr></table></td></tr></table>';
+                . (!empty($n['created_at']) ? ' · ' . $this->e((string) $n['created_at']) : '');
+            $html .= Theme::callout(
+                '<span style="font-size:6.5pt;font-weight:bold;color:' . Theme::MUTED . ';letter-spacing:0.5px;">' . mb_strtoupper($meta, 'UTF-8') . '</span><br/>'
+                . '<span style="font-size:9pt;line-height:1.4;">' . nl2br($this->e((string) ($n['body'] ?? ''))) . '</span>',
+                '',
+                'muted'
+            );
         }
 
         return $html;
@@ -991,43 +736,41 @@ final class SseCasePdfService
      */
     private function evidenceHtml(array $evidence): string
     {
-        $html = $this->sectionTitle('Preuves recensées');
         if ($evidence === []) {
-            return $html . $this->emptyState('Aucune preuve jointe.');
+            return $this->emptyState('Aucune preuve jointe.');
         }
 
-        $html .= $this->openDataTable(
-            ['N°', 'Libellé', 'Légende', 'Versée par', 'Date'],
-            ['8%', '24%', '30%', '20%', '18%']
-        );
-
+        $rows = [];
         foreach ($evidence as $i => $ev) {
-            $rowBg = ($i % 2 === 1) ? 'background-color:' . $this->palette['banner'] . ';' : '';
             $label = (string) ($ev['label'] ?? 'Preuve');
             if (!empty($ev['image_path'])) {
                 $label .= ' ✦';
             }
-            $html .= '<tr style="' . $rowBg . '">'
-                . '<td style="font-family:courier;font-weight:bold;color:' . $this->palette['accent'] . ';">'
-                . sprintf('%02d', $i + 1) . '</td>'
-                . '<td><strong>' . $this->e($label) . '</strong></td>'
-                . '<td>' . $this->e((string) ($ev['caption'] ?? '—')) . '</td>'
-                . '<td>' . $this->e((string) ($ev['author_label'] ?? '—')) . '</td>'
-                . '<td>' . $this->e((string) ($ev['created_at'] ?? '—')) . '</td>'
-                . '</tr>';
+            $rows[] = [
+                sprintf('%02d', $i + 1),
+                $label,
+                (string) ($ev['caption'] ?? '—'),
+                (string) ($ev['author_label'] ?? '—'),
+                (string) ($ev['created_at'] ?? '—'),
+            ];
         }
-        $html .= '</table>';
-        $html .= '<p style="font-size:7.5px;color:' . $this->palette['muted'] . ';margin-top:6px;">'
+
+        return Theme::table([
+            ['label' => 'N°', 'width' => 7, 'mono' => true],
+            ['label' => 'Libellé', 'width' => 25, 'bold' => true],
+            ['label' => 'Légende', 'width' => 30],
+            ['label' => 'Versée par', 'width' => 20],
+            ['label' => 'Date', 'width' => 18],
+        ], $rows)
+            . '<p style="font-size:7.5pt;color:' . Theme::MUTED . ';">'
             . '✦ Image jointe reproduite dans les pages suivantes, dans la limite de l’espace du document.'
             . '</p>';
-
-        return $html;
     }
 
     /**
      * @param list<array<string,mixed>> $evidence
      */
-    private function appendEvidenceImages(\TCPDF $pdf, array $evidence, string $redactedLabel = ''): void
+    private function appendEvidenceImages(AthenaTcpdf $pdf, array $evidence, string $redactedLabel = ''): void
     {
         $shown = 0;
         foreach ($evidence as $i => $e) {
@@ -1045,29 +788,22 @@ final class SseCasePdfService
 
             try {
                 $pdf->AddPage();
-                $pdf->writeHTML(
-                    $this->sectionBanner($redactedLabel, sprintf('07.%02d · Pièce visuelle', $i + 1)),
-                    true,
-                    false,
-                    true,
-                    false,
-                    ''
+                $caption = trim((string) ($e['caption'] ?? ''));
+                $pdf->writeAthenaHtml(
+                    $this->sectionBanner($redactedLabel, sprintf('07.%02d', $i + 1), 'Pièce visuelle')
+                    . '<p style="font-size:11pt;font-weight:bold;">' . $this->e((string) ($e['label'] ?? 'Preuve')) . '</p>'
+                    . ($caption !== '' ? '<p style="font-size:9pt;color:' . Theme::MUTED . ';">' . $this->e($caption) . '</p>' : '')
+                    . Theme::spacer(2)
                 );
-                $pdf->SetFont('helvetica', 'B', 11);
-                $pdf->SetTextColor(11, 18, 32);
-                $pdf->Write(6, (string) ($e['label'] ?? 'Preuve'), '', false, 'L', true);
-                if (!empty($e['caption'])) {
-                    $pdf->SetFont('helvetica', '', 9);
-                    $pdf->SetTextColor(100, 116, 139);
-                    $pdf->Write(5, (string) $e['caption'], '', false, 'L', true);
-                }
-                $pdf->Ln(3);
-                $pdf->SetDrawColor(...$this->hexToRgb($this->palette['accent']));
-                $pdf->SetLineWidth(0.4);
+                $l = Theme::MARGIN;
+                $w = $pdf->getPageWidth() - 2 * $l;
                 $y = $pdf->GetY();
-                $pdf->Rect(12, $y, 186, 0.01);
-                $pdf->Ln(2);
-                $pdf->Image($abs, 14, $pdf->GetY(), 176, 0, '', '', '', false, 150, '', false, false, 0, false, false, false);
+                $pdf->SetDrawColorArray(Theme::rgb(Theme::INK));
+                $pdf->SetLineWidth(0.3);
+                $pdf->Line($l, $y, $l + $w, $y);
+                $y += 2;
+                $h = max(20.0, $pdf->getPageHeight() - Theme::BOTTOM - 6 - $y);
+                $pdf->Image($abs, $l, $y, $w, $h, '', '', '', false, 150, '', false, false, 0, 'CT', false, false);
                 $shown++;
             } catch (\Throwable) {
                 // Image illisible : on continue sans faire échouer tout l'export.
@@ -1089,26 +825,6 @@ final class SseCasePdfService
         }
 
         return null;
-    }
-
-    /**
-     * @return array{0:int,1:int,2:int}
-     */
-    private function hexToRgb(string $hex): array
-    {
-        $hex = ltrim($hex, '#');
-        if (strlen($hex) === 3) {
-            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
-        }
-        if (strlen($hex) !== 6) {
-            return [71, 85, 105];
-        }
-
-        return [
-            (int) hexdec(substr($hex, 0, 2)),
-            (int) hexdec(substr($hex, 2, 2)),
-            (int) hexdec(substr($hex, 4, 2)),
-        ];
     }
 
     private function e(string $value): string

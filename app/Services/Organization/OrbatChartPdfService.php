@@ -6,12 +6,14 @@ namespace App\Services\Organization;
 
 use App\Core\Response;
 use App\Support\OrbatSheetLabels;
+use App\Support\Pdf\AthenaPdfTheme as Theme;
 use App\Support\TrainingCertificatePdfEngine;
 
 /**
- * Export ORBAT style FM (mockup ATHENA) — HTML imprimable + PDF TCPDF/Dompdf.
- * Format papier adaptatif (A3→A0 / personnalisé) selon la largeur de l’arbre ;
- * toutes les sous-unités sont incluses sans troncature.
+ * Export ORBAT style FM (mockup ATHENA) — HTML imprimable + PDF au gabarit Athena.
+ * La vue imprimable HTML garde un format papier adaptatif (A3→A0 / personnalisé, meta « paper ») ;
+ * le PDF est toujours en A4 portrait : ordre de bataille en tableau arborescent, sur plusieurs pages
+ * si besoin. Toutes les sous-unités sont incluses sans troncature.
  */
 final class OrbatChartPdfService
 {
@@ -147,59 +149,22 @@ final class OrbatChartPdfService
     }
 
     /**
+     * Téléchargement PDF : A4 portrait au gabarit Athena (TCPDF, sinon Dompdf).
+     *
      * @param array<string, mixed> $document
      */
     public function pdfResponse(array $document): Response
     {
         $meta = is_array($document['meta'] ?? null) ? $document['meta'] : [];
-        $title = 'ORBAT — ' . (string) ($meta['unit_label'] ?? 'Organisation');
         $filename = 'orbat-' . preg_replace('/[^a-zA-Z0-9_-]+/', '-', strtolower((string) ($meta['reference'] ?? 'export'))) . '.pdf';
-        $w = max(420, (int) ($meta['paper_width_mm'] ?? 841));
-        $h = max(297, (int) ($meta['paper_height_mm'] ?? 594));
-        $paperName = strtoupper((string) ($meta['paper'] ?? 'A1'));
 
-        return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(function () use (
-            $document,
-            $title,
-            $filename,
-            $w,
-            $h,
-            $paperName
-        ): Response {
-            if (!TrainingCertificatePdfEngine::ensureTcpdfLoaded() && !class_exists(\Dompdf\Dompdf::class)) {
+        return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(function () use ($document, $filename): Response {
+            $binary = $this->buildPdf($document);
+            if ($binary === null) {
                 return (new Response())
                     ->setStatusCode(503)
                     ->header('Content-Type', 'text/plain; charset=UTF-8')
                     ->setBody('Export PDF indisponible (moteur PDF manquant).');
-            }
-
-            $html = $this->tcpdfFriendlyHtml($document);
-
-            if (class_exists(\Dompdf\Dompdf::class) && !TrainingCertificatePdfEngine::prefersTcpdf()) {
-                $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => false]);
-                $dompdf->loadHtml($html);
-                // Dompdf: dimensions déjà en paysage (mm → pt) — ne pas re-swapper via « landscape »
-                $dompdf->setPaper([0.0, 0.0, $w * 2.83465, $h * 2.83465]);
-                $dompdf->render();
-                $binary = (string) $dompdf->output();
-            } else {
-                // Format personnalisé paysage (largeur × hauteur mm) — jamais forcé en A4
-                $pageFormat = in_array($paperName, ['A3', 'A2', 'A1', 'A0'], true)
-                    ? $paperName
-                    : [$w, $h];
-                $pdf = new \TCPDF('L', 'mm', $pageFormat, true, 'UTF-8', false);
-                $pdf->SetCreator('Athena');
-                $pdf->SetAuthor('Athena MILSIM');
-                $pdf->SetTitle($title);
-                $pdf->setPrintHeader(false);
-                $pdf->setPrintFooter(false);
-                $pdf->SetMargins(8, 8, 8);
-                $pdf->SetAutoPageBreak(true, 10);
-                $font = TrainingCertificatePdfEngine::resolveCertificateFontFamily() ?? 'helvetica';
-                $pdf->SetFont($font, '', 9);
-                $pdf->AddPage();
-                $pdf->writeHTML($html, true, false, true, false, '');
-                $binary = (string) $pdf->Output('', 'S');
             }
 
             return (new Response())
@@ -211,7 +176,45 @@ final class OrbatChartPdfService
     }
 
     /**
-     * HTML simplifié compatible TCPDF/Dompdf (sans flex/grid complexes).
+     * Binaire PDF A4 portrait (TCPDF via le gabarit Athena, repli Dompdf) ; null si aucun moteur.
+     *
+     * @param array<string, mixed> $document
+     */
+    public function buildPdf(array $document): ?string
+    {
+        $docMeta = is_array($document['meta'] ?? null) ? $document['meta'] : [];
+        $lang = OrbatSheetLabels::language($docMeta['lang'] ?? null);
+        $unitLabel = trim((string) ($docMeta['unit_label'] ?? ''));
+        $tenantId = (int) ($docMeta['tenant_id'] ?? 0);
+        if ($tenantId < 1 && isset($_SESSION['tenant_id'])) {
+            $tenantId = (int) $_SESSION['tenant_id'];
+        }
+        $pdfMeta = [
+            'kind' => self::label('kind', $lang),
+            'reference' => trim((string) ($docMeta['reference'] ?? '')),
+            'tenant_id' => $tenantId,
+            'community' => $tenantId > 0 ? '' : $unitLabel,
+            'classification' => trim((string) ($docMeta['classification'] ?? '')),
+            'audience' => trim((string) ($docMeta['doc_code'] ?? '')),
+            'title' => 'ORBAT — ' . ($unitLabel !== '' ? $unitLabel : 'Organisation'),
+        ];
+        $body = $this->tcpdfFriendlyHtml($document);
+
+        $pdf = Theme::tcpdf($pdfMeta);
+        if ($pdf !== null) {
+            $pdf->AddPage();
+            $pdf->writeAthenaHtml($body);
+            $out = $pdf->Output('', 'S');
+
+            return is_string($out) && $out !== '' ? $out : null;
+        }
+
+        return Theme::dompdfRender(Theme::dompdfDocument($body, $pdfMeta), $pdfMeta);
+    }
+
+    /**
+     * Corps du PDF (fragments du gabarit Athena, compatibles TCPDF/Dompdf) : indicateurs,
+     * composition générale, ordre de bataille arborescent (toutes les unités), mission, notes, légende.
      *
      * @param array<string, mixed> $document
      */
@@ -220,158 +223,184 @@ final class OrbatChartPdfService
         $meta = is_array($document['meta'] ?? null) ? $document['meta'] : [];
         $root = is_array($document['root'] ?? null) ? $document['root'] : [];
         $groups = is_array($document['groups'] ?? null) ? $document['groups'] : [];
-        $flat = is_array($document['flat_units'] ?? null) ? $document['flat_units'] : [];
         $totals = is_array($document['totals'] ?? null) ? $document['totals'] : [];
-        $e = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $e = static fn (mixed $v): string => Theme::e($v);
         $lang = OrbatSheetLabels::language($meta['lang'] ?? null);
-        $t = static fn (string $key): string => htmlspecialchars(OrbatSheetLabels::get($key, $lang), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $paper = $e($meta['paper'] ?? 'A1');
+        $t = static fn (string $key): string => OrbatSheetLabels::get($key, $lang);
         $countryLabel = \App\Support\CommunityLanguages::countryLabelIn((string) ($meta['country'] ?? ''), $lang)
             ?: trim((string) ($meta['country_label'] ?? ''));
 
-        $groupCells = '';
-        $nGroups = max(1, count($groups));
-        // Répartir en lignes de 4 colonnes max pour les ORBAT très larges
-        $chunks = array_chunk($groups, min(4, $nGroups));
-        foreach ($chunks as $chunk) {
-            $row = '';
-            $colW = max(12, (int) floor(100 / max(1, count($chunk))));
-            foreach ($chunk as $g) {
-                if (!is_array($g)) {
-                    continue;
-                }
-                $row .= '<td width="' . $colW . '%" valign="top" style="border:1px solid #21282e;padding:5px;">'
-                    . $this->renderUnitTcpdf($g, $e, 0, $lang)
-                    . '</td>';
+        $rows = [];
+        foreach ($groups as $g) {
+            if (is_array($g)) {
+                $this->collectTreeRows($g, 0, $rows);
             }
-            $groupCells .= '<tr>' . $row . '</tr>';
+        }
+        $theo = (int) ($totals['theoretical'] ?? 0);
+        $pres = (int) ($totals['present'] ?? 0);
+        $rate = (int) ($totals['rate'] ?? 0);
+        $unitCount = (int) ($totals['unit_count'] ?? count($rows));
+        $active = count(array_filter($rows, static fn (array $r): bool => $r['present'] > 0));
+
+        $html = Theme::titleBlock(
+            $t('chart'),
+            (string) ($root['name'] ?? ($meta['unit_label'] ?? '')),
+            [[$t('version') . ' ' . (string) ($meta['version'] ?? '1.0'), 'muted'], [(string) ($meta['effect_date'] ?? ''), 'muted']],
+            $t('toe')
+        );
+
+        $html .= Theme::stats([
+            ['label' => $t('units'), 'value' => (string) $unitCount],
+            ['label' => self::label('filled', $lang), 'value' => $pres . ' / ' . $theo, 'sub' => $rate . ' %', 'tone' => 'ok'],
+            ['label' => $t('availability_rate'), 'value' => $rate . ' %'],
+            ['label' => self::label('active', $lang), 'value' => (string) $active, 'sub' => sprintf(self::label('of', $lang), $unitCount)],
+        ]);
+
+        $n = 0;
+        $num = static function () use (&$n): string {
+            return sprintf('%02d', ++$n);
+        };
+
+        $identity = Theme::keyValues([
+            [$t('unit'), (string) ($meta['unit_label'] ?? '')],
+            [$t('country'), $countryLabel],
+            [$t('theater'), (string) ($meta['theater'] ?? '—')],
+            [$t('effect_date'), (string) ($meta['effect_date'] ?? '')],
+            [$t('reference'), (string) ($meta['reference'] ?? '')],
+            [$t('version'), (string) ($meta['version'] ?? '1.0')],
+            [self::label('document', $lang), (string) ($meta['doc_code'] ?? '')],
+        ]);
+        $figures = Theme::keyValues([
+            [self::label('commander', $lang), (string) ($root['leader'] ?? '—')],
+            [self::label('code', $lang), (string) ($root['code'] ?? '')],
+            [$t('strength_total'), (string) $theo],
+            [$t('strength_present'), (string) $pres],
+            [$t('availability_rate'), $rate . ' %'],
+            [$t('units_shown'), (string) $unitCount],
+        ], '62%');
+        $html .= Theme::section($num(), $t('composition')) . Theme::twoColumns($identity, $figures);
+
+        $html .= Theme::section($num(), $t('strength_summary'));
+        $columns = [
+            ['label' => $t('element'), 'width' => 37],
+            ['label' => self::label('code', $lang), 'width' => 10, 'mono' => true],
+            ['label' => self::label('commander', $lang), 'width' => 20],
+            ['label' => self::label('pax', $lang), 'width' => 10, 'align' => 'R'],
+            ['label' => $t('availability_short'), 'width' => 9, 'align' => 'R'],
+            ['label' => self::label('status', $lang), 'width' => 14, 'align' => 'R'],
+        ];
+        $tableRows = [];
+        foreach ($rows as $r) {
+            $pct = $r['theoretical'] > 0 ? (int) round(($r['present'] / $r['theoretical']) * 100) : 0;
+            [$statusKey, $tone] = match (true) {
+                $r['theoretical'] < 1 && $r['present'] < 1 => ['status_none', 'muted'],
+                $r['present'] < 1 => ['status_empty', 'bad'],
+                $r['present'] >= $r['theoretical'] => ['status_full', 'ok'],
+                default => ['status_partial', 'warn'],
+            };
+            $dash = '<span style="color:' . Theme::MUTED . ';">—</span>';
+            $name = $e($r['title']);
+            $tableRows[] = [
+                str_repeat('&nbsp;', $r['depth'] * 4)
+                    . '<span style="color:' . self::typeDotColor($r['type']) . ';font-size:7pt;">■</span>&nbsp;'
+                    . ($r['depth'] === 0 ? '<b>' . $name . '</b>' : $name),
+                $r['code'] !== '' ? $e($r['code']) : $dash,
+                $r['leader'] !== '' && $r['leader'] !== '—' ? $e($r['leader']) : $dash,
+                $r['present'] . ' / ' . $r['theoretical'],
+                $pct . ' %',
+                Theme::pill(self::label($statusKey, $lang), $tone),
+            ];
+        }
+        $tableRows[] = [
+            '<b>' . $e($t('total')) . '</b>', '', '', '<b>' . $pres . ' / ' . $theo . '</b>', '<b>' . $rate . ' %</b>', '',
+        ];
+        $html .= Theme::table($columns, $tableRows, false);
+
+        if (!empty($meta['include_mission'])) {
+            $mission = trim((string) ($root['mission'] ?? ''));
+            $html .= Theme::section($num(), $t('mission'))
+                . Theme::callout(Theme::paragraph($mission !== '' ? $mission : $t('mission_default')), '', 'ok');
+        }
+        if (!empty($meta['include_notes'])) {
+            $html .= Theme::section($num(), $t('notes'))
+                . Theme::bullets([$t('note_1'), $t('note_2'), $t('note_3')], 'muted');
+        }
+        if (!empty($meta['include_legend'])) {
+            $types = array_values(array_unique(array_merge(['hq', 'combat', 'support', 'air'], array_column($rows, 'type'))));
+            $cells = [];
+            foreach ($types as $type) {
+                $legendKey = 'legend_' . $type;
+                $legend = OrbatSheetLabels::get($legendKey, $lang);
+                $cells[] = '<span style="color:' . self::typeDotColor($type) . ';">■</span>&nbsp;<b>' . $e(OrbatSheetLabels::typeLabel($type, $lang)) . '</b>'
+                    . ($legend !== $legendKey ? '&nbsp;<span style="color:' . Theme::MUTED . ';">' . $e($legend) . '</span>' : '');
+            }
+            $html .= Theme::section($num(), $t('legend'))
+                . '<p style="font-size:8pt;">' . implode('&nbsp;&nbsp;&nbsp;&nbsp;', $cells) . '</p>';
         }
 
-        $strengthRows = '';
-        foreach ($flat as $u) {
-            if (!is_array($u)) {
-                continue;
-            }
-            $theo = (int) ($u['theoretical'] ?? 0);
-            $p = (int) ($u['present'] ?? 0);
-            $pct = $theo > 0 ? (int) round(($p / $theo) * 100) : 0;
-            $indent = str_repeat('· ', max(0, (int) ($u['depth'] ?? 0)));
-            $strengthRows .= '<tr><td>' . $indent . $e($u['title'] ?? '') . '</td><td align="center">' . $theo
-                . '</td><td align="center">' . $p . '</td><td align="center">' . $pct . ' %</td></tr>';
-        }
-
-        $classif = $e($meta['classification'] ?? 'UNCLASSIFIED // FOR OFFICIAL USE ONLY');
-        $unitCount = (int) ($totals['unit_count'] ?? count($flat));
-
-        return '<div style="font-family:dejavusans,freesans,helvetica,sans-serif;color:#101820;font-size:9px;">'
-            . '<table width="100%" cellpadding="3" cellspacing="0"><tr>'
-            . '<td width="34%"><div style="font-size:13px;font-weight:bold;">ATHENA MILSIM</div>'
-            . '<div style="font-size:11px;font-weight:bold;">' . $t('chart') . '</div>'
-            . '<div style="font-size:8px;font-weight:bold;">' . $t('toe') . '</div></td>'
-            . '<td width="32%" align="center" style="background-color:#141c24;color:#ffffff;font-size:10px;font-weight:bold;">'
-            . $classif . '</td>'
-            . '<td width="34%" align="right" style="font-size:9px;font-weight:bold;">'
-            . $e($meta['doc_code'] ?? 'FM ATHENA RH-01') . '<br/>' . $t('annex') . '<br/>' . $t('figure') . ' · ' . $paper . ' ' . $t('landscape') . '</td>'
-            . '</tr></table>'
-            . '<br/>'
-            . '<table width="100%" cellpadding="3" cellspacing="0"><tr>'
-            . '<td width="32%" valign="top">'
-            . '<b>' . $t('unit') . ' :</b> ' . $e($meta['unit_label'] ?? '') . '<br/>'
-            . ($countryLabel !== '' ? '<b>' . $t('country') . ' :</b> ' . $e($countryLabel) . '<br/>' : '')
-            . '<b>' . $t('theater') . ' :</b> ' . $e($meta['theater'] ?? '—') . '<br/>'
-            . '<b>' . $t('effect_date') . ' :</b> ' . $e($meta['effect_date'] ?? '') . '<br/>'
-            . '<b>' . $t('reference') . ' :</b> ' . $e($meta['reference'] ?? '') . '<br/>'
-            . '<b>' . $t('version') . ' :</b> ' . $e($meta['version'] ?? '1.0') . '<br/>'
-            . '<b>' . $t('units') . ' :</b> ' . $unitCount
-            . '</td>'
-            . '<td width="36%" align="center" valign="top">'
-            . '<div style="font-size:11px;font-weight:bold;">' . $e($root['code'] ?? 'TF') . '</div>'
-            . '<div style="display:inline-block;background:' . $e($this->symbolColor((string) ($root['type'] ?? 'combat')))
-            . ';border:2px solid #111;padding:5px 14px;font-weight:bold;font-size:10px;margin:3px 0;">'
-            . $e(OrbatSheetLabels::typeLabel((string) ($root['type'] ?? 'combat'), $lang)) . '</div>'
-            . '<div style="font-size:12px;font-weight:bold;">' . $e($root['name'] ?? '') . '</div>'
-            . '<div style="font-size:9px;">(± ' . (int) ($totals['theoretical'] ?? 0) . ' ' . $t('pers') . ')</div>'
-            . '<div style="font-size:8px;">' . $e($root['leader'] ?? '—') . '</div>'
-            . '</td>'
-            . '<td width="32%" valign="top">'
-            . '<table cellpadding="3" cellspacing="0" border="1" width="100%">'
-            . '<tr style="background-color:#1e2932;color:#fff;"><th colspan="2" align="left">' . $t('composition') . '</th></tr>'
-            . '<tr><td>' . $t('strength_total') . '</td><td align="right"><b>' . (int) ($totals['theoretical'] ?? 0) . '</b></td></tr>'
-            . '<tr><td>' . $t('strength_present') . '</td><td align="right"><b>' . (int) ($totals['present'] ?? 0) . '</b></td></tr>'
-            . '<tr><td>' . $t('availability_rate') . '</td><td align="right"><b>' . (int) ($totals['rate'] ?? 0) . ' %</b></td></tr>'
-            . '<tr><td>' . $t('units_shown') . '</td><td align="right"><b>' . $unitCount . '</b></td></tr>'
-            . '</table></td></tr></table>'
-            . '<br/>'
-            . '<table width="100%" cellpadding="0" cellspacing="4">' . $groupCells . '</table>'
-            . '<br/>'
-            . '<table width="100%" cellpadding="0" cellspacing="6"><tr>'
-            . '<td width="55%" valign="top">'
-            . '<table cellpadding="2" cellspacing="0" border="1" width="100%">'
-            . '<tr style="background-color:#1e2932;color:#fff;">'
-            . '<th align="left">' . $t('element_all') . '</th><th>' . $t('authorized') . '</th><th>' . $t('present') . '</th><th>' . $t('availability_short') . '</th></tr>'
-            . $strengthRows
-            . '<tr style="background-color:#f3f4f5;font-weight:bold;"><td>' . $t('total') . '</td>'
-            . '<td align="center">' . (int) ($totals['theoretical'] ?? 0) . '</td>'
-            . '<td align="center">' . (int) ($totals['present'] ?? 0) . '</td>'
-            . '<td align="center">' . (int) ($totals['rate'] ?? 0) . ' %</td></tr>'
-            . '</table></td>'
-            . '<td width="45%" valign="top">'
-            . (!empty($meta['include_mission'])
-                ? '<table cellpadding="3" cellspacing="0" border="1" width="100%">'
-                . '<tr style="background-color:#1e2932;color:#fff;"><th align="left">' . $t('mission') . '</th></tr>'
-                . '<tr><td style="font-size:8px;">' . (($root['mission'] ?? '') !== '' ? $e((string) $root['mission']) : $t('mission_default')) . '</td></tr></table>'
-                : '')
-            . '</td></tr></table>'
-            . '<br/><table width="100%" cellpadding="3"><tr>'
-            . '<td width="33%">' . $e($meta['doc_code'] ?? 'FM ATHENA RH-01') . '</td>'
-            . '<td width="34%" align="center" style="font-size:8px;font-weight:bold;">' . $classif . '</td>'
-            . '<td width="33%" align="right">' . $t('annex_short') . ' · ' . $paper . ' · ' . $t('page_break') . '</td>'
-            . '</tr></table>'
-            . '</div>';
+        return $html;
     }
 
     /**
+     * Lignes de l'ordre de bataille (parcours en profondeur, aucune troncature).
+     *
      * @param array<string, mixed> $node
-     * @param callable(mixed): string $e
+     * @param list<array{title: string, code: string, leader: string, theoretical: int, present: int, type: string, depth: int}> $out
      */
-    private function renderUnitTcpdf(array $node, callable $e, int $depth, string $lang = 'fr'): string
+    private function collectTreeRows(array $node, int $depth, array &$out): void
     {
-        $type = (string) ($node['type'] ?? 'combat');
-        $fs = max(7, 10 - $depth);
-        $html = '<div style="text-align:center;font-size:' . ($fs + 1) . 'px;font-weight:bold;letter-spacing:1px;">'
-            . $e($node['echelon'] ?? '') . '</div>'
-            . '<div style="text-align:center;background:' . $e($this->symbolColor($type))
-            . ';border:1.5px solid #111;padding:3px;margin:3px auto;font-size:' . $fs
-            . 'px;font-weight:bold;max-width:120px;">'
-            . $e(OrbatSheetLabels::typeLabel($type, $lang)) . '</div>'
-            . '<div style="text-align:center;font-size:' . ($fs + 1) . 'px;font-weight:bold;">'
-            . $e($node['title'] ?? '') . '</div>'
-            . '<div style="text-align:center;font-size:' . $fs . 'px;">'
-            . (int) ($node['present'] ?? 0) . ' / ' . (int) ($node['theoretical'] ?? 0) . ' ' . $e(OrbatSheetLabels::get('pers', $lang)) . '</div>'
-            . '<div style="text-align:center;font-size:' . max(7, $fs - 1) . 'px;">'
-            . $e($node['rank'] ?? '') . '</div>';
-
-        $kids = is_array($node['children'] ?? null) ? $node['children'] : [];
-        if ($kids === []) {
-            return $html;
-        }
-
-        $validKids = array_values(array_filter($kids, static fn ($c): bool => is_array($c)));
-        $html .= '<table width="100%" cellpadding="2" cellspacing="2" style="margin-top:4px;">';
-        foreach (array_chunk($validKids, 4) as $chunk) {
-            $html .= '<tr>';
-            $colW = max(10, (int) floor(100 / max(1, count($chunk))));
-            foreach ($chunk as $child) {
-                /** @var array<string, mixed> $child */
-                $html .= '<td width="' . $colW . '%" valign="top" style="border:0.5px solid #94a3b8;padding:3px;">'
-                    . $this->renderUnitTcpdf($child, $e, $depth + 1, $lang)
-                    . '</td>';
+        $out[] = [
+            'title' => (string) ($node['title'] ?? $node['name'] ?? 'Unité'),
+            'code' => trim((string) ($node['code'] ?? '')),
+            'leader' => trim((string) ($node['leader'] ?? $node['rank'] ?? '')),
+            'theoretical' => (int) ($node['theoretical'] ?? 0),
+            'present' => (int) ($node['present'] ?? 0),
+            'type' => (string) ($node['type'] ?? 'combat'),
+            'depth' => $depth,
+        ];
+        foreach (is_array($node['children'] ?? null) ? $node['children'] : [] as $child) {
+            if (is_array($child)) {
+                $this->collectTreeRows($child, $depth + 1, $out);
             }
-            $html .= '</tr>';
         }
-        $html .= '</table>';
+    }
 
-        return $html;
+    /** Intitulés propres au PDF A4 (complètent OrbatSheetLabels). */
+    private static function label(string $key, string $lang): string
+    {
+        $labels = [
+            'kind' => ['fr' => 'Ordre de bataille', 'en' => 'Order of battle', 'ru' => 'Боевой состав', 'es' => 'Orden de batalla'],
+            'filled' => ['fr' => 'Effectif pourvu', 'en' => 'Filled strength', 'ru' => 'Укомплектовано', 'es' => 'Efectivo cubierto'],
+            'active' => ['fr' => 'Actives', 'en' => 'Active', 'ru' => 'Активные', 'es' => 'Activas'],
+            'of' => ['fr' => 'sur %d', 'en' => 'of %d', 'ru' => 'из %d', 'es' => 'de %d'],
+            'document' => ['fr' => 'Document', 'en' => 'Document', 'ru' => 'Документ', 'es' => 'Documento'],
+            'code' => ['fr' => 'Code', 'en' => 'Code', 'ru' => 'Код', 'es' => 'Código'],
+            'commander' => ['fr' => 'Commandant', 'en' => 'Commander', 'ru' => 'Командир', 'es' => 'Comandante'],
+            'pax' => ['fr' => 'Pax', 'en' => 'Pax', 'ru' => 'Чел.', 'es' => 'Pax'],
+            'status' => ['fr' => 'Statut', 'en' => 'Status', 'ru' => 'Статус', 'es' => 'Estado'],
+            'status_full' => ['fr' => 'Complète', 'en' => 'Full', 'ru' => 'Полный', 'es' => 'Completa'],
+            'status_partial' => ['fr' => 'Partielle', 'en' => 'Partial', 'ru' => 'Частично', 'es' => 'Parcial'],
+            'status_empty' => ['fr' => 'Non pourvue', 'en' => 'Unfilled', 'ru' => 'Пусто', 'es' => 'Sin cubrir'],
+            'status_none' => ['fr' => 'À constituer', 'en' => 'To be formed', 'ru' => 'Формируется', 'es' => 'Por constituir'],
+        ];
+        $row = $labels[$key] ?? null;
+
+        return $row === null ? $key : ($row[$lang] ?? $row['fr']);
+    }
+
+    /** Puce de type d'unité (teintes sourdes, lisibles sur fond blanc). */
+    private static function typeDotColor(string $type): string
+    {
+        return match ($type) {
+            'hq' => Theme::INK,
+            'support' => '#5f8f2e',
+            'air' => '#4a90c2',
+            'fire' => '#c9a227',
+            'engineer' => '#c26a1b',
+            'log' => '#8a9199',
+            'isr' => '#6b5fb5',
+            default => '#3b6ea5',
+        };
     }
 
     /**
@@ -595,20 +624,6 @@ final class OrbatChartPdfService
             'log' => 'LOG',
             'isr' => 'ISR',
             default => 'COMBAT',
-        };
-    }
-
-    private function symbolColor(string $type): string
-    {
-        return match ($type) {
-            'hq' => '#dcecf8',
-            'support' => '#cbe8a3',
-            'air' => '#bcd8f0',
-            'fire' => '#f8e979',
-            'engineer' => '#f4ba79',
-            'log' => '#d7dadd',
-            'isr' => '#bcd8f0',
-            default => '#bcd8f0',
         };
     }
 

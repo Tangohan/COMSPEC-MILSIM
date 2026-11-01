@@ -9,9 +9,12 @@ use App\Core\Container;
 use App\Services\Export\TablePdfExportService;
 use App\Support\TrainingCertificatePdfEngine;
 use PHPUnit\Framework\TestCase;
+use Tests\Unit\Pdf\AthenaPdfAssertions;
 
 final class TablePdfExportServiceTest extends TestCase
 {
+    use AthenaPdfAssertions;
+
     public function testContainerResolvesTheExportService(): void
     {
         self::assertInstanceOf(TablePdfExportService::class, Container::get(TablePdfExportService::class));
@@ -35,8 +38,7 @@ final class TablePdfExportServiceTest extends TestCase
     {
         $html = (new TablePdfExportService())->buildHtml($this->doc());
 
-        self::assertStringContainsString('1ER RIMA &lt;TEST&gt;', $html);
-        self::assertStringContainsString('Effectifs · Médical', $html);
+        self::assertStringContainsString('EFFECTIFS · MÉDICAL', $html, 'titre au gabarit (capitales)');
         self::assertStringContainsString('<b>Fonction</b> : Medic', $html);
         self::assertStringNotContainsString('Recherche', $html, 'un filtre vide ne s\'affiche pas');
         self::assertStringContainsString('<thead>', $html, 'en-tête répété à chaque page');
@@ -67,10 +69,14 @@ final class TablePdfExportServiceTest extends TestCase
         if (!TrainingCertificatePdfEngine::ensureTcpdfLoaded()) {
             self::markTestSkipped('TCPDF indisponible');
         }
-        $response = (new TablePdfExportService())->export($this->doc());
-        $body = $response->body();
+        $doc = $this->doc();
+        $doc['orientation'] = 'L';
+        $doc['columns'] = array_map(static fn (int $i): array => ['label' => 'Colonne ' . $i], range(1, 11));
+        $doc['rows'] = array_fill(0, 120, array_map(static fn (int $i): string => 'Valeur accentuée ' . $i, range(1, 11)));
+        $response = (new TablePdfExportService())->export($doc);
 
-        self::assertStringStartsWith('%PDF-', $body);
+        // 11 colonnes, 120 lignes : reste en A4 portrait sur plusieurs pages, gabarit sur chacune.
+        self::assertAthenaTcpdf($response->body(), 'effectifs-tableau');
     }
 
     public function testRosterMedicalTableColumnsAndValues(): void

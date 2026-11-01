@@ -1,8 +1,8 @@
 <?php
 /**
- * Préparation commune des gabarits de brevet (moderne, classique).
- * Produit $b : valeurs déjà échappées, prêtes à afficher. Compatible Dompdf
- * (pas de flex/grid : positions absolues et tableaux uniquement).
+ * Préparation commune des gabarits de brevet (moderne, classique), A4 portrait.
+ * Produit $b (valeurs déjà échappées) et $cert (valeurs brutes pour
+ * {@see \App\Support\Pdf\AthenaCertificateLayout}, qui échappe lui-même).
  *
  * @var array $award
  * @var string $holder_name
@@ -41,7 +41,9 @@ $statusShort = trim((string) preg_split('/\s+[—(]/u', $status)[0]);
 
 // Insigne : type MIME réel (les JPG/WebP étaient annoncés en PNG).
 $badgeSrc = '';
-if (!empty($badge_path) && is_file((string) $badge_path)) {
+// L’insigne générique par défaut n’est pas affiché : le sceau porte alors l’initiale de la communauté.
+$bdgIsDefault = !empty($badge_path) && basename((string) $badge_path) === 'qualification-badge-default.svg';
+if (!empty($badge_path) && !$bdgIsDefault && is_file((string) $badge_path)) {
     $bdgMime = '';
     if (str_ends_with(strtolower((string) $badge_path), '.svg')) {
         $bdgMime = 'image/svg+xml';
@@ -105,4 +107,31 @@ $b = [
     'badge_code' => $e($badgeCode),
     'generated' => $e($generated_at ?? ''),
 ];
-unset($bdgSide, $bdgImg, $bdgOut, $bdgPng, $bdgRaw, $bdgMime, $bdgInfo, $bdgScale, $bdgNw, $bdgNh, $bdgW, $bdgH);
+
+$cert = [
+    'community' => $tenant,
+    'reference' => (string) ($certificate_number ?? ''),
+    'kicker' => $issuer !== '' ? $issuer : $tenant,
+    'awarded_intro' => 'est décerné à',
+    'holder' => (string) ($holder_name ?? ''),
+    'holder_line' => $holderLine,
+    'reason' => 'pour avoir obtenu la qualification',
+    'subject' => $qualification !== '' ? $qualification : 'Qualification',
+    'subject_sub' => implode(' · ', array_filter([$category, $level !== '' ? 'Niveau ' . $ucfirst($level) : ''], static fn (string $v): bool => $v !== '')),
+    'fields' => [
+        ['Validée le', ($obtained_at ?? '') !== '' ? (string) $obtained_at : '—'],
+        ['Émetteur', $issuer !== '' ? $issuer : $tenant],
+        ['Validité', $permanent ? 'Permanente' : 'Jusqu’au ' . $expires],
+    ],
+    'signatures' => [
+        ['name' => (string) ($holder_name ?? ''), 'role' => 'Le titulaire'],
+        ['name' => $issuer !== '' ? $issuer : $tenant, 'role' => 'Pour l’autorité émettrice'],
+    ],
+    'seal_image' => $badgeSrc,
+    'seal_letter' => mb_substr($tenant, 0, 1, 'UTF-8'),
+    'seal_label' => \App\Support\Pdf\AthenaCertificateLayout::shortName($tenant),
+    'verify' => \App\Support\Pdf\AthenaCertificateLayout::verificationLine((string) ($certificate_number ?? ''), $tenant)
+        . (($generated_at ?? '') !== '' ? ' · généré par Athena le ' . $generated_at : ''),
+    'status' => [$statusShort !== '' ? $statusShort : $status, $statusColors[0], $statusColors[1]],
+];
+unset($bdgIsDefault, $bdgSide, $bdgImg, $bdgOut, $bdgPng, $bdgRaw, $bdgMime, $bdgInfo, $bdgScale, $bdgNw, $bdgNh, $bdgW, $bdgH);
