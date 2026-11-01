@@ -1,6 +1,6 @@
 # Évolutions possibles — espace compte et sécurité
 
-Document de **priorisation produit** pour compléter le périmètre actuel (hub « Mon compte », préférences, e-mail, images, mot de passe, profils de candidature, lien vers la fiche personnelle). Référence technique des routes : [`ROUTES.md`](ROUTES.md) (section 2.1).
+Document de **priorisation produit** pour compléter le périmètre actuel (hub « Mon compte », préférences, e-mail, images, mot de passe, lien vers la fiche personnelle). Référence technique des routes : [`ROUTES.md`](ROUTES.md) (section 2.1).
 
 ## Priorité 1 — intégrité du compte et confiance
 

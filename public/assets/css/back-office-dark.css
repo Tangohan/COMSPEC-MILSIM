@@ -190,10 +190,35 @@ html[data-bo-theme="dark"] .account-hub {
 }
 html[data-bo-theme="dark"] .account-hub__nav-link.is-active { color: #6ee7b7; }
 html[data-bo-theme="dark"] .account-hub__nav-link.is-active small { color: #34d399; }
-html[data-bo-theme="dark"] .account-hub__ov-check.is-todo .account-hub__ov-check-cta { background: #12d18e; border-color: #12d18e; color: #04130d; }
 html[data-bo-theme="dark"] .account-hub__btn--ink { background: #e6ebe8; color: #0c1116; }
 html[data-bo-theme="dark"] .account-hub__btn--ink:hover { background: #fff; color: #0c1116; }
-html[data-bo-theme="dark"] .account-hub__ov-check.is-todo .account-hub__ov-check-mark { color: #3d2903; }
+/* Mon compte, refonte 2026-11 (recherche, vue d’ensemble, préférences) : jetons de nuit. */
+html[data-bo-theme="dark"] .account-hub {
+  --ah-soft-line: #1f2724;
+  --ah-hover: #18201d;
+  --ah-accent-strong: #34d399;
+  --ah-mark: rgba(18, 209, 142, 0.32);
+  --ah-ok-bg: #12291f;
+  --ah-ok-line: #1f4a37;
+  --ah-ok-ink: #6ee7b7;
+  --ah-warn-bg: #2a2210;
+  --ah-warn-line: #4a3a18;
+  --ah-warn-ink: #f2c66d;
+  --ah-err-bg: #2a1414;
+  --ah-err-line: #5a2a2a;
+  --ah-err-ink: #fca5a5;
+  --ah-track: #33403a;
+  --ah-pop-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+html[data-bo-theme="dark"] .account-hub input.ah-search__input {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+html[data-bo-theme="dark"] .account-hub input.ah-search__input:focus { border-color: #12d18e; background: rgba(255, 255, 255, 0.11); }
+html[data-bo-theme="dark"] .ah-ov-check.is-todo .ah-ov-check__cta { background: #12d18e; border-color: #12d18e; color: #04130d; }
+html[data-bo-theme="dark"] .ah-theme-option__swatch.is-light { border-color: rgba(255, 255, 255, 0.12); }
+html[data-bo-theme="dark"] .ah-switch__track::after { background: #e6ebe8; }
 
 /* ATAK : Escouades en jeu, Temps d'écran et rôles, Files d'envoi Athena (aksq-, sqf-) :
    jetons de nuit (les --ds-color-* restent clairs) et cellules du tableau sur la même surface. */

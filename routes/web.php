@@ -641,12 +641,6 @@ return function (Router $router) {
     $router->post('/account/portrait', [AccountController::class, 'portrait'], [AuthMiddleware::class]);
     $router->get('/account/password', [AccountController::class, 'password'], [AuthMiddleware::class]);
     $router->post('/account/password', [AccountController::class, 'password'], [AuthMiddleware::class]);
-    $router->get('/account/recruitment-presets', [AccountController::class, 'recruitmentPresets'], [AuthMiddleware::class]);
-    $router->get('/account/recruitment-presets/create', [AccountController::class, 'recruitmentPresetsCreate'], [AuthMiddleware::class]);
-    $router->post('/account/recruitment-presets/create', [AccountController::class, 'recruitmentPresetsCreate'], [AuthMiddleware::class]);
-    $router->get('/account/recruitment-presets/{id}/edit', [AccountController::class, 'recruitmentPresetsEdit'], [AuthMiddleware::class]);
-    $router->post('/account/recruitment-presets/{id}/edit', [AccountController::class, 'recruitmentPresetsEdit'], [AuthMiddleware::class]);
-    $router->post('/account/recruitment-presets/{id}/delete', [AccountController::class, 'recruitmentPresetsDelete'], [AuthMiddleware::class]);
     $router->get('/account/charte-formations', [HrCharterController::class, 'show'], [AuthMiddleware::class]);
     $router->post('/account/charte-formations/accept', [HrCharterController::class, 'accept'], [AuthMiddleware::class]);
     $router->get('/personnel', [PersonnelController::class, 'personnelIndex'], [AuthMiddleware::class]);
