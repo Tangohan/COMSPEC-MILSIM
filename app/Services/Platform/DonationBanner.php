@@ -8,7 +8,7 @@ use App\Repositories\PaymentLedgerRepository;
 use App\Repositories\PlatformSettingsRepository;
 
 /**
- * Bandeau de don affiché sur tout le site (réglage Admin > Paramètres système > Bandeau de don).
+ * Bandeau de don affiché sur tout le site (réglage Admin > Paiements > Dons > Bandeau de don).
  *
  * Réglages plateforme (table platform_settings, clés donation_banner.*) : activé, message FR / EN, objectif en
  * euros, dates de début et de fin facultatives, numéro de version (augmenté à chaque enregistrement, pour que le
@@ -314,6 +314,79 @@ final class DonationBanner
             self::KEY_ENDS_ON => $ends,
             self::KEY_VERSION => (string) ($previousVersion + 1),
         ], 'error' => null];
+    }
+
+    /**
+     * État vu par l'administration (pur) : live (affiché), scheduled (activé, période à venir), ended (période
+     * passée) ou disabled.
+     *
+     * @param array{enabled: bool, starts_on: string, ends_on: string} $cfg
+     */
+    public static function status(array $cfg, ?int $now = null): string
+    {
+        if (!$cfg['enabled']) {
+            return 'disabled';
+        }
+        $today = date('Y-m-d', $now ?? time());
+        if ($cfg['starts_on'] !== '' && $today < $cfg['starts_on']) {
+            return 'scheduled';
+        }
+
+        return ($cfg['ends_on'] !== '' && $today > $cfg['ends_on']) ? 'ended' : 'live';
+    }
+
+    /**
+     * Données de la section d'administration (pur) : réglages, état, jauge, aperçu FR / EN tel que vu par les
+     * visiteurs (rendu même hors période, pour juger le message avant de l'activer).
+     *
+     * @param array<string, string> $raw
+     * @return array{config: array{enabled: bool, message_fr: string, message_en: string, goal_eur: int, starts_on: string, ends_on: string, version: int}, status: string, raised_cents: int, goal_cents: int, percent: int, period: string, preview: array{fr: ?array{message: string, goal_cents: int, raised_cents: int, percent: int, key: string}, en: ?array{message: string, goal_cents: int, raised_cents: int, percent: int, key: string}}}
+     */
+    public static function adminState(array $raw, int $raisedCents, ?int $now = null): array
+    {
+        $cfg = self::configFrom($raw);
+        [$from, $to] = self::countedPeriod($cfg, $now);
+        $fmt = static fn (string $d): string => date('d/m/Y', (int) strtotime($d));
+        $previewCfg = ['enabled' => true, 'starts_on' => '', 'ends_on' => ''] + $cfg;
+        $hasMessage = $cfg['message_fr'] !== '' || $cfg['message_en'] !== '';
+        $goal = $cfg['goal_eur'] * 100;
+
+        return [
+            'config' => $cfg,
+            'status' => self::status($cfg, $now),
+            'raised_cents' => max(0, $raisedCents),
+            'goal_cents' => $goal,
+            'percent' => $goal > 0 ? (int) min(100, floor(max(0, $raisedCents) * 100 / $goal)) : 0,
+            'period' => 'depuis le ' . $fmt($from) . ($to !== '' ? ' jusqu’au ' . $fmt($to) : ''),
+            'preview' => [
+                'fr' => $hasMessage ? self::view($previewCfg, $raisedCents, 'fr', $now) : null,
+                'en' => $hasMessage ? self::view($previewCfg, $raisedCents, 'en', $now) : null,
+            ],
+        ];
+    }
+
+    /**
+     * Section d'administration lue en base (réglages sans cache, dons réels du registre).
+     *
+     * @return array<string, mixed>
+     */
+    public static function adminSnapshot(PlatformSettingsRepository $repo): array
+    {
+        $raw = [];
+        foreach ([self::KEY_ENABLED, self::KEY_MESSAGE_FR, self::KEY_MESSAGE_EN, self::KEY_GOAL_EUR, self::KEY_STARTS_ON, self::KEY_ENDS_ON, self::KEY_VERSION] as $key) {
+            $raw[$key] = (string) $repo->get($key, '');
+        }
+        $cfg = self::configFrom($raw);
+        $raised = 0;
+        if ($cfg['goal_eur'] > 0) {
+            try {
+                [$from, $to] = self::countedPeriod($cfg);
+                $raised = self::raisedFromLedger((new PaymentLedgerRepository())->ledger(), $from, $to);
+            } catch (\Throwable) {
+            }
+        }
+
+        return self::adminState($raw, $raised);
     }
 
     /** Montant lisible (« 1 250 € »), sans centimes quand ils sont nuls. */

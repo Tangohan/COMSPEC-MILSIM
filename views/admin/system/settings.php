@@ -12,9 +12,6 @@ $envRaw = (string) ($adminSettingsEnvRaw ?? '');
 $gate = is_array($adminGameClientGate ?? null) ? $adminGameClientGate : null;
 $gateCsrf = $gate !== null ? \App\Core\Csrf::token() : '';
 $gateAction = url('admin/settings/version-dll');
-/** @var array{config: array<string, mixed>, live: bool, raised: string, period: string}|null $adminDonationBanner */
-$dnbAdmin = is_array($adminDonationBanner ?? null) ? $adminDonationBanner : null;
-$dnbE = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 ?>
 <div class="min-h-0 flex-1 bg-slate-50">
     <div class="max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 space-y-8">
@@ -110,72 +107,13 @@ $dnbE = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES
                 </section>
             <?php endif; ?>
 
-            <?php if ($dnbAdmin !== null): $dnbCfg = $dnbAdmin['config']; ?>
-                <section id="bandeau-don" class="rounded-2xl border border-amber-200/80 bg-white shadow-sm overflow-hidden" aria-labelledby="bandeau-don-heading">
-                    <div class="px-5 py-4 border-b border-slate-100 bg-amber-50/90">
-                        <h2 id="bandeau-don-heading" class="text-sm font-black text-slate-900 tracking-tight">Bandeau de don</h2>
-                        <p class="mt-1 text-xs text-slate-600 leading-relaxed">
-                            Une fine bande en haut des pages du site public et du portail, avec un lien vers la page « Soutenir Athena ».
-                            Elle n’apparaît jamais dans l’administration, la gestion de communauté, la connexion, le paiement, la page de dons,
-                            l’ATAK web et les écrans plein écran du terrain. Un visiteur peut la fermer : elle reste cachée 5 jours pour lui,
-                            et revient dès que vous changez le message.
-                        </p>
-                    </div>
-                    <div class="px-5 py-4 space-y-4">
-                        <p class="text-sm text-slate-700">
-                            État :
-                            <?php if ($dnbAdmin['live']): ?>
-                                <strong class="font-semibold text-slate-900">affiché en ce moment</strong>.
-                            <?php elseif (!empty($dnbCfg['enabled'])): ?>
-                                <strong class="font-semibold text-slate-900">activé, hors de la période choisie</strong> : rien n’est affiché aujourd’hui.
-                            <?php else: ?>
-                                <strong class="font-semibold text-slate-900">désactivé</strong>.
-                            <?php endif; ?>
-                            <?php if ((int) $dnbCfg['goal_eur'] > 0): ?>
-                                Dons reçus <?= $dnbE($dnbAdmin['period']) ?> : <strong class="font-semibold text-slate-900"><?= $dnbE($dnbAdmin['raised']) ?></strong>.
-                            <?php endif; ?>
-                        </p>
-                        <form method="post" action="<?= $dnbE(url('admin/settings/bandeau-don')) ?>" class="grid gap-4 sm:grid-cols-2">
-                            <input type="hidden" name="_csrf_token" value="<?= $dnbE(\App\Core\Csrf::token()) ?>">
-                            <label class="sm:col-span-2 inline-flex items-center gap-2 text-sm font-semibold text-slate-800">
-                                <input type="checkbox" name="enabled" value="1"<?= !empty($dnbCfg['enabled']) ? ' checked' : '' ?>>
-                                Afficher le bandeau
-                            </label>
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="dnb-message-fr">Message en français</label>
-                                <textarea id="dnb-message-fr" name="message_fr" rows="2" maxlength="180" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Athena est gratuite et faite par des joueurs. Un petit don garde les serveurs allumés."><?= $dnbE($dnbCfg['message_fr']) ?></textarea>
-                                <p class="mt-1 text-xs text-slate-500">180 caractères au plus. Montré aux visiteurs qui lisent le site en français.</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="dnb-message-en">Message en anglais</label>
-                                <textarea id="dnb-message-en" name="message_en" rows="2" maxlength="180" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Athena is free and built by players. A small donation keeps the servers running."><?= $dnbE($dnbCfg['message_en']) ?></textarea>
-                                <p class="mt-1 text-xs text-slate-500">Facultatif : sans message anglais, le message français est repris.</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="dnb-goal">Objectif en euros</label>
-                                <input id="dnb-goal" name="goal_eur" type="number" min="0" max="1000000" step="1" inputmode="numeric" value="<?= (int) $dnbCfg['goal_eur'] > 0 ? (int) $dnbCfg['goal_eur'] : '' ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="300">
-                                <p class="mt-1 text-xs text-slate-500">Facultatif. Affiche une jauge : dons reçus depuis la date de début (sans date : depuis le 1er du mois), formules payées non comptées. Vide : pas de jauge.</p>
-                            </div>
-                            <div class="grid gap-4 sm:grid-cols-2">
-                                <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="dnb-starts">Début</label>
-                                    <input id="dnb-starts" name="starts_on" type="date" value="<?= $dnbE($dnbCfg['starts_on']) ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1" for="dnb-ends">Fin</label>
-                                    <input id="dnb-ends" name="ends_on" type="date" value="<?= $dnbE($dnbCfg['ends_on']) ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                                </div>
-                                <p class="sm:col-span-2 text-xs text-slate-500">Facultatif : le bandeau s’affiche du jour de début au jour de fin inclus.</p>
-                            </div>
-                            <div class="sm:col-span-2">
-                                <button type="submit" class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
-                                    Enregistrer
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </section>
-            <?php endif; ?>
+            <section id="bandeau-don" class="rounded-2xl border border-amber-200/80 bg-white shadow-sm px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" aria-labelledby="bandeau-don-heading">
+                <div class="min-w-0">
+                    <h2 id="bandeau-don-heading" class="text-sm font-black text-slate-900 tracking-tight">Bandeau de don</h2>
+                    <p class="mt-1 text-xs text-slate-600 leading-relaxed">Le bandeau se règle désormais avec les dons : aperçu, état, objectif et dons reçus au même endroit.</p>
+                </div>
+                <a href="<?= htmlspecialchars(url('admin/paiements') . '?vue=dons#bandeau-don', ENT_QUOTES, 'UTF-8') ?>" class="inline-flex shrink-0 items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Gérer depuis Paiements</a>
+            </section>
 
             <?php foreach ($sections as $sec): ?>
                 <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">

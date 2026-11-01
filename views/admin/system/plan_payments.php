@@ -353,6 +353,7 @@ $qs = static function (array $over) use ($f): string {
   <?php endif; ?>
 
   <?php elseif ($view === 'dons'): ?>
+  <?php $dnbAdmin = is_array($payDonationBanner ?? null) ? $payDonationBanner : null; if ($dnbAdmin !== null) { require base_path('views/admin/system/partials/payments_donation_banner.php'); } ?>
   <div class="ap-grid ap-grid--main">
     <section class="ath-panel ap-card">
       <header class="ap-card__head"><h2 class="ap-card__t">Enregistrer un don</h2></header>
