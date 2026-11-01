@@ -191,7 +191,7 @@ $searchIcon = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" strok
                         <div class="rdy-cell">
                             <span class="rdy-cell__k">Postes pourvus</span>
                             <?php if ($sAuth > 0): ?>
-                                <span class="rdy-metric"><b><?= $sFilled ?></b><small>/ <?= $sAuth ?></small><?php if ($sVacant > 0): ?><span class="rdy-vacant"><?= $sVacant ?> vacant<?= $sVacant > 1 ? 's' : '' ?></span><?php endif; ?></span>
+                                <span class="rdy-metric"><b><?= $sFilled ?></b><small>/ <?= $sAuth ?></small><?php if ($sVacant > 0): ?><span class="rdy-vacant"><?= $h(sprintf($sVacant > 1 ? '%d vacants' : '%d vacant', (int) $sVacant)) ?></span><?php endif; ?></span>
                                 <span class="rdy-bar is-<?= $h($toneOf((int) $fillPct)) ?>" aria-hidden="true"><i style="width: <?= (int) $fillPct ?>%"></i></span>
                             <?php else: ?>
                                 <span class="rdy-muted"><?= $sFilled > 0 ? $sFilled . ' membre' . ($sFilled > 1 ? 's' : '') . ', aucun poste défini' : 'Aucun poste défini' ?></span>

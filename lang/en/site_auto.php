@@ -853,6 +853,7 @@ return [
     '%2 à commencer' => '%2 to start',
     '%2 à surveiller' => '%2 to watch',
     '%2% de no-show' => '%2% no-show',
+    '%3 au total. Laissez un champ vide pour garder le libellé du site.' => '%3 in total. Leave a field empty to keep the site label.',
     '%3 brouillon(s)' => '%3 draft(s)',
     '%3 en échec' => '%3 failing',
     '%3 identité%4' => '%3 identit%4',
