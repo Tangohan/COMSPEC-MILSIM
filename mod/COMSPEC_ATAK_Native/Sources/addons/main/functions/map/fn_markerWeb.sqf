@@ -9,7 +9,8 @@ params [["_name", ""], ["_deleted", false]];
 if (_name isNotEqualTo "") then {
     [{ ["touch", _this] call comspec_atak_native_fnc_markerNet; }, [_name, _deleted], [0.5, 0] select _deleted] call CBA_fnc_waitAndExecute;
 };
-if (_name isEqualTo "" || {isNil "comspec_overwatch_connect_fnc_syncMapMarker"}) exitWith { false };
+// Sans Athena (mode full local, service « Non ») : le marqueur reste en jeu, rien ne part au site ni en file d'attente.
+if (_name isEqualTo "" || {isNil "comspec_overwatch_connect_fnc_syncMapMarker"} || {([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on"}) exitWith { false };
 // Laisse le temps au type, à la couleur et au texte d'être posés (le dernier appel global diffuse l'état).
 [{
     params ["_name", "_deleted"];

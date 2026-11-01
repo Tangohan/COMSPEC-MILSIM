@@ -1,10 +1,12 @@
 /*
-    Confirmation note bêta : persistance locale + inscription bêta Athena.
+    « J'accepte » sur la note de service : licence (version courante) + note bêta enregistrées sur le profil,
+    puis inscription bêta Athena (seulement si l'unité utilise Athéna, fn_registerBetaClient).
 */
 if (!hasInterface) exitWith {};
 
 private _display = uiNamespace getVariable ["COMSPEC_NDA_Display", displayNull];
 
+[true] call comspec_overwatch_connect_fnc_licenceStatus;
 profileNamespace setVariable ["comspec_overwatch_beta_note_ack", true];
 profileNamespace setVariable ["comspec_overwatch_cgu_ack", true];
 [] call comspec_overwatch_connect_fnc_saveProfile;

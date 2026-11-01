@@ -91,20 +91,24 @@ class COMSPEC_RscButtonAtakDanger: COMSPEC_RscButtonAtak {
     colorFocused[] = {0.60, 0.17, 0.15, 1};
 };
 
-// Panneau Tenues Athena (ACE Arsenal) : liste à lignes hautes, sélection verte COMSPEC (#5cc76b).
-class COMSPEC_RscArsenalOutfitList: RscListNBox {
-    rowHeight = "(((((safezoneW / safezoneH) min 1.2) / 1.2) / 25) * 1.5)";
-    sizeEx = "(((((safezoneW / safezoneH) min 1.2) / 1.2) / 25) * 0.86)";
-    colorBackground[] = {0, 0, 0, 0};
-    colorText[] = {0.90, 0.94, 0.91, 1};
-    colorDisabled[] = {0.55, 0.60, 0.57, 1};
-    colorSelect[] = {1, 1, 1, 1};
-    colorSelect2[] = {1, 1, 1, 1};
-    colorSelectBackground[] = {0.36, 0.78, 0.42, 0.24};
-    colorSelectBackground2[] = {0.36, 0.78, 0.42, 0.24};
-    colorPictureSelected[] = {1, 1, 1, 1};
-    period = 0;
-    drawSideArrows = 0;
-    idcLeft = -1;
-    idcRight = -1;
+// Panneau Tenues Athena (ACE Arsenal) : zone cliquable d'une carte de tenue (survol vert COMSPEC #5cc76b, sans son
+// au survol : la souris passe sur des dizaines de cartes), fond qui ferme le menu clic droit, lignes de ce menu.
+class COMSPEC_RscArsenalCardHit: COMSPEC_RscInvisibleButton {
+    colorBackgroundActive[] = {0.36, 0.78, 0.42, 0.08};
+    soundEnter[] = {"", 0, 1};
+};
+class COMSPEC_RscArsenalScrim: COMSPEC_RscInvisibleButton {
+    colorBackgroundActive[] = {0, 0, 0, 0};
+    soundEnter[] = {"", 0, 1};
+    soundPush[] = {"", 0, 1};
+    soundClick[] = {"", 0, 1};
+};
+class COMSPEC_RscArsenalMenuRow: COMSPEC_RscButtonAtak {
+    style = 0;
+    colorBackground[] = {0.070, 0.082, 0.072, 1};
+    colorBackgroundActive[] = {0.18, 0.38, 0.21, 1};
+    colorFocused[] = {0.070, 0.082, 0.072, 1};
+    colorBackgroundDisabled[] = {0.070, 0.082, 0.072, 1};
+    colorDisabled[] = {0.38, 0.43, 0.40, 1};
+    soundEnter[] = {"", 0, 1};
 };

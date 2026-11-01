@@ -11,7 +11,7 @@ if (_button isEqualTo 0 && {!_click}) exitWith {
     private _picking = ((["medevacPick", "reportPick", "dronePick", "logiPick", "jtacPick", "firePick"] findIf { (_s getOrDefault [_x, ""]) isNotEqualTo "" }) >= 0)
         || {_s getOrDefault ["recoPick", false]} || {(_s getOrDefault ["mapMode", "SELECT"]) isEqualTo "DRONE"};
     _s set ["mapLc", []];
-    if (!_picking && {(count (_s getOrDefault ["mapCtx", createHashMap])) isEqualTo 0} && {["DOWN", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_markerStroke}) exitWith { true };
+    if (!_picking && {(count (_s getOrDefault ["mapCtx", createHashMap])) isEqualTo 0} && {["DOWN", [_world select 0, _world select 1, 0], _ctrl] call comspec_atak_native_fnc_markerStroke}) exitWith { true };
     _s set ["mapLc", [_mx, _my, _shift, _ctrl, _alt]];
     true
 };

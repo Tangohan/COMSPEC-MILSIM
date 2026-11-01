@@ -444,6 +444,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     if (["hold", ["comspec_atak_native_localOrder", _this]] call comspec_atak_native_fnc_offline) exitWith {};
     ["recv", _this] call comspec_atak_native_fnc_orderLocal;
 }] call CBA_fnc_addEventHandler;
+// Messagerie sans Athena : message d'un canal (général, commandement, groupe) envoyé par un téléphone du camp (fn_chatSend).
+["comspec_atak_native_chatLocal", {
+    if (["hold", ["comspec_atak_native_chatLocal", _this]] call comspec_atak_native_fnc_offline) exitWith {};
+    ["recv", _this] call comspec_atak_native_fnc_chatSend;
+}] call CBA_fnc_addEventHandler;
+// Ordres aux groupes IA (fn_aiOrder) : état reçu (carte, PC du poste, notification au donneur d'ordre).
+["comspec_atak_native_aiOrdState", { ["recv", _this] call comspec_atak_native_fnc_aiOrder; }] call CBA_fnc_addEventHandler;
 
 // Goniométrie : émetteurs estimés par Athena, relus toutes les 15 s quand la couche est active.
 // Seulement avec un téléphone et une carte à l'écran (téléphone ou carte Arma) : inutile sinon.

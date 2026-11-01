@@ -18,9 +18,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.624;
-        versionStr = "1.6.24";
-        versionAr[] = {1, 6, 24};
+        version = 1.625;
+        versionStr = "1.6.25";
+        versionAr[] = {1, 6, 25};
         // 1.6.18 : écusson « Donateur Athena » (CfgUnitInsignia COMSPEC_Donor_*, fn_applyDonorPerk).
         // 1.6.19 : correctif de sécurité 2.4.1 (adresse d'Athena vérifiée avant la connexion, fn_connect).
         // 1.6.20 : revue du mod, tours 4 et 5 (regroupement ATAK natif 2.5.0).
@@ -28,6 +28,7 @@ class CfgPatches {
         // 1.6.22 : ATAK natif 2.9.21 — panneau Tenues ACE corrigé (réparation des tenues ACE), menu ACE Tenues retiré, coupure centrale des envois (fn_uplinkHold), bandeau bêta fermable.
         // 1.6.23 : ATAK natif 2.9.22 — plus aucun appel lent sur le fil du jeu (extDirect / extFast), traduction anglaise complète, optimisations SQF.
         // 1.6.24 : ATAK natif 2.9.24 — message « pack non officiel » (CLIENT_UNTRUSTED) au lieu du faux 401.
+        // 1.6.25 : ATAK natif 2.9.26 — panneau Athena · Tenues refait (cartes, onglet Favoris, menu clic droit, fiche, ligne de retour), options du menu (renommer, dupliquer, collection, enfiler en gardant sac ou armes, comparer, objets manquants, copier), note de service et licence au premier lancement (fn_licenceStatus, relecture depuis le téléphone).
     };
 };
 
@@ -157,7 +158,6 @@ class CfgFunctions {
             class arsenalOverlayRefresh {};
             class arsenalOverlayPreview {};
             class arsenalOverlayFill {};
-            class arsenalOverlayMark {};
             class arsenalOverlayAction {};
             class arsenalCollectionName {};
             class arsenalDeleteLocal {};
@@ -166,6 +166,7 @@ class CfgFunctions {
             class arsenalHash {};
             class arsenalLedger {};
             class arsenalStateInfo {};
+            class arsenalMissingItems {};
             class arsenalMarkSeen {};
             class arsenalAceStore {};
             class sendIntel {};
@@ -328,6 +329,7 @@ class CfgFunctions {
             class decorateMainMenu {};
             class refreshMainMenuBetaBanner {};
             class ndaTexts {};
+            class licenceStatus {};
             class athenaMode {};
             class athenaApply {};
             class athenaChoiceShow {};

@@ -294,7 +294,20 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1254, '2026-11-01', 'Écrans : un seul menu, diapositives visibles, PC du poste sur les écrans', 'Avec le pack 2.9.25 et la liaison 2.0.114, chaque écran n’a plus qu’un seul menu « Écran COMSPEC » (Diffusion, Affichage TOC, Carte), les diapositives s’affichent de nouveau sur les écrans et le PC du poste TOC est affiché en direct sur les écrans du poste pour tous les joueurs proches.', [
+            $pr(1256, '2026-11-01', 'Tenues refaites, ordres aux IA, routes et licence', 'Avec le pack 2.9.26, le panneau Athena · Tenues de l’arsenal ACE est refait (cartes, favoris, menu clic droit), vous pouvez donner des ordres aux groupes IA depuis le téléphone ou le PC TOC, le mode sans Athena fonctionne vraiment et l’outil TRAIT trace par les routes (plus rapide ou plus court, étapes, distance et temps). Une note de service présente la licence au premier lancement.', [
+                'Ordres aux groupes IA depuis la carte du téléphone et le PC TOC',
+                'Tracé par les routes : plus rapide ou plus court, étapes, distance et temps affichés',
+                'Panneau Tenues : cartes, onglet Favoris, renommer, dupliquer, comparer, enfiler sans sac ou armes',
+                'Note de service et licence au premier lancement',
+            ], [
+                'Mode sans Athena : messagerie entre joueurs, 9-line dans les Tâches, diapositives de mission',
+                'GPS routier plus fiable (raccords de routes, repli partiel)',
+            ], [
+                'Faux messages « Athena » en mode local (marqueurs, comptes rendus, MEDEVAC)',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.26 (liaison 2.0.114 incluse), quittez Arma complètement, relancez et acceptez la note de service.',
+            ], 'Pack téléphone 2.9.26'),
+            $pr(1254,'2026-11-01', 'Écrans : un seul menu, diapositives visibles, PC du poste sur les écrans', 'Avec le pack 2.9.25 et la liaison 2.0.114, chaque écran n’a plus qu’un seul menu « Écran COMSPEC » (Diffusion, Affichage TOC, Carte), les diapositives s’affichent de nouveau sur les écrans et le PC du poste TOC est affiché en direct sur les écrans du poste pour tous les joueurs proches.', [
                 'PC du poste TOC affiché en direct sur les écrans du poste (vue de l’opérateur, pour tous)',
             ], [
                 'Un seul menu « Écran COMSPEC » rangé par thème',

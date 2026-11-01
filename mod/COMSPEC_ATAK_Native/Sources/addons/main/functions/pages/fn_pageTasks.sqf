@@ -1,7 +1,7 @@
 /*
     Tâches : ordres Athena en cartes (statut en couleur, boutons REÇU / EN COURS / TERMINÉ / IMPOSSIBLE,
     suivi de qui a vu, reçu, exécute avec photo ; le chef répond pour son groupe)
-    et tâches de la mission (état, distance, carte, tâche suivie). Reprend le visionneur de tâches de BCE (Aaren, APL-SA).
+    et tâches de la mission (état, distance, carte, tâche suivie).
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;

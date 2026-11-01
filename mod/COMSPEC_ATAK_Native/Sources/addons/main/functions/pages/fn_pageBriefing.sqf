@@ -295,6 +295,9 @@ if (_src isEqualTo "ATHENA" && {_total > 0}) then {
     // Image du navigateur intégré évincée du magasin base64 (vidé au-delà de 12) : entrée périmée, image relue.
     private _hit = (_cache getOrDefault [_path, [""]]) param [0, ""];
     if ((_hit select [0, 4]) isEqualTo "WEB:" && {!((_hit select [4]) in (uiNamespace getVariable ["COMSPEC_ATAK_SlideWeb", createHashMap]))}) then { _cache deleteAt _path; };
+    // Diapositive de la mission (sans Athena) : son image est déjà dans un PBO, rien à télécharger.
+    private _locImg = ((missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) param [_idx, []]) param [6, ""];
+    if (_locImg isNotEqualTo "" && {!(_path in _cache)}) then { _cache set [_path, [_locImg, ""]]; };
     private _since = _loading getOrDefault [_path, -100];
     if !(_since isEqualType 0) then { _since = -100; };
     if (!(_path in _cache) && {diag_tickTime - _since > 25}) then {
@@ -492,6 +495,7 @@ private _title = if (_total > 0) then { _titles param [_idx, ""] } else { "" };
 private _gLocal = uiNamespace getVariable ["COMSPEC_ATAK_BriefLocalDeck", ""];
 private _gLabel = ["Google Slides · partagé avec tous", "Google Slides · ce téléphone seulement"] select (_gLocal isNotEqualTo "" && {_gLocal isEqualTo (missionNamespace getVariable ["COMSPEC_GoogleBriefingUrl", ""])});
 private _srcLabel = createHashMapFromArray [["GOOGLE", _gLabel], ["ATHENA", "Athena"], ["LOCAL", "Briefing"]] getOrDefault [_src, ""];
+if (_src isEqualTo "ATHENA" && {_total > 0} && {(((missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) param [_idx, []]) param [6, ""]) isNotEqualTo ""}) then { _srcLabel = "Mission"; };
 if (_src isEqualTo "FENRIR") then { _srcLabel = format ["<t color='#c9a0ff'>FENRIR · %1</t>", [_fst select 11] call _escTxt]; };
 // Opération Athena rattachée à la diapositive (vide : commune à toutes les opérations).
 private _op = if (_src isEqualTo "ATHENA" && {_total > 0}) then { ((missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) select _idx) param [5, ""] } else { "" };

@@ -1,6 +1,7 @@
 /*
     Libellé, couleur et explication d'un état de synchro du panneau Tenues Athena (voir arsenalOverlayRefresh).
-    Params : [état, onglet communauté ?]. Retour : [libellé, couleur rgba, explication, couleur #hex, ordre de tri].
+    Params : [état, onglet communauté ?]. Retour : [libellé, couleur rgba, explication, couleur #hex, ordre de tri,
+    libellé court (badge des cartes)].
 */
 params [["_state", "", [""]], ["_cloud", false, [false]]];
 private _info = switch (true) do {
@@ -12,7 +13,7 @@ private _info = switch (true) do {
     case (_cloud && {_state isEqualTo "in"}): { ["Dans mon arsenal", [0.50, 0.66, 0.55, 1], "Déjà dans votre arsenal, identique.", 3] };
     case (_cloud && {_state isEqualTo "mine"}): { ["À moi", [0.56, 0.65, 0.59, 1], "Vous l'avez partagée. Elle n'est pas dans l'arsenal de cet ordinateur.", 2] };
     case (_cloud): { ["", [0.56, 0.65, 0.59, 1], "Pas encore dans votre arsenal : importez-la pour l'avoir hors ligne.", 2] };
-    case (_state isEqualTo "new"): { ["Pas sur le site", [0.95, 0.67, 0.20, 1], "Uniquement sur cet ordinateur. Envoyez-la au site pour la partager à l'organisation.", 0] };
+    case (_state isEqualTo "new"): { ["À envoyer", [0.95, 0.67, 0.20, 1], "Uniquement sur cet ordinateur. Envoyez-la au site pour la partager à l'organisation.", 0] };
     case (_state isEqualTo "gone"): { ["Retirée du site", [0.90, 0.42, 0.36, 1], "Elle était sur le site et n'y est plus. Renvoyez-la si c'est une erreur.", 1] };
     case (_state isEqualTo "local"): { ["Modifiée ici", [0.93, 0.80, 0.30, 1], "Modifiée depuis votre dernier envoi. Envoyez-la pour mettre le site à jour.", 2] };
     case (_state isEqualTo "diff"): { ["Différente du site", [0.93, 0.80, 0.30, 1], "Votre version et celle du site ne sont pas identiques. Envoyez la vôtre ou prenez celle du site.", 2] };
@@ -23,5 +24,7 @@ private _info = switch (true) do {
     default { ["Hors ligne", [0.55, 0.60, 0.57, 1], "Athena est injoignable : état inconnu. Reliez votre compte Athena (ATAK, app Athena).", 7] };
 };
 _info params ["_label", "_rgba", "_note", "_order"];
+// Badge des cartes : même sens en moins de place.
+private _short = [_label, "Différente"] select (_state isEqualTo "diff");
 private _hex = "#" + ((_rgba select [0, 3]) apply { private _v = round ((_x max 0 min 1) * 255); private _d = "0123456789abcdef"; (_d select [floor (_v / 16), 1]) + (_d select [_v mod 16, 1]) } joinString "");
-[_label, _rgba, _note, _hex, _order]
+[_label, _rgba, _note, _hex, _order, _short]
