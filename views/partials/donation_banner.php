@@ -2,7 +2,8 @@
 declare(strict_types=1);
 
 // Bandeau de don (réglage Admin > Paiements > Dons > Bandeau de don) : App\Services\Platform\DonationBanner.
-// Inclus par layout.main (pages portail hors administration) et layout.marketing (site public).
+// Inclus par layout.main (pages portail hors administration, et en tête de /dashboard et /back-office
+// avec $dnbShellHome) et layout.marketing (site public).
 // Jamais sur l'administration, la connexion, le paiement, la page de dons, l'ATAK web et les outils plein écran.
 // Fermé par le visiteur : masqué 5 jours (localStorage), revient si l'équipe change le message.
 
@@ -10,7 +11,7 @@ use App\Services\Platform\DonationBanner;
 
 $dnbLocale = function_exists('locale') ? (string) locale() : 'fr';
 try {
-    $dnb = DonationBanner::forRequest(function_exists('back_office_path_suffix') ? back_office_path_suffix() : '', $dnbLocale);
+    $dnb = DonationBanner::forRequest(function_exists('back_office_path_suffix') ? back_office_path_suffix() : '', $dnbLocale, !empty($dnbShellHome));
 } catch (\Throwable) {
     $dnb = null;
 }
