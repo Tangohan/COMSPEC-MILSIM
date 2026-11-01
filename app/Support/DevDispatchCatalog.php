@@ -294,20 +294,26 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1255, '2026-11-01', 'Disponibilité des unités repensée, éléments confidentiels affichés partout de la même façon', 'La page Organisation › Disponibilité affiche une vue d’ensemble, des filtres par état, une recherche et un tri, et passe en cartes sur téléphone. Partout sur le site, une unité masquée, anonymisée ou restreinte et un membre anonymisé s’affichent avec la même pastille, la même icône et la même explication au survol. Plusieurs endroits montraient encore des noms qui auraient dû rester confidentiels : ils sont corrigés.', [
-                'Vue d’ensemble de la disponibilité : unités suivies, score moyen, postes vacants, qualifications à jour',
-                'Filtres Prête / À surveiller / Critique, recherche et tri des unités ; affichage en cartes sur téléphone',
-                'Pastille commune « Unité anonymisée », « Personnel anonymisé », « Affectation restreinte », « Compte anonymisé »… avec explication',
+            $pr(1257, '2026-11-01', 'Back-office réorganisé, dotation alimentée par le jeu, compétences et parcours, matricules, disponibilité et confidentialité', 'Le menu du back-office est rangé par usage avec des sous-menus repliables. La page Référentiels › Dotation compare l’équipement réellement porté en jeu au kit de chaque fonction. Le référentiel des compétences relie chaque compétence aux cours Academy, qualifications, emplois et dotation, et l’Academy propose un générateur de parcours. Les pages Matricules, Équipes et Groupes sont refaites, et l’organigramme reste affiché même si une donnée annexe est indisponible. La page Disponibilité est repensée et les éléments confidentiels s’affichent partout de la même façon ; plusieurs fuites de noms sont fermées.', [
+                'Menu du back-office par usage (Pilotage, Effectifs, Organisation, Academy…) avec sous-menus repliables, page courante ouverte d’office et navigation au clavier',
+                'Référentiels › Dotation : conformité de chaque joueur au kit de sa fonction, objets manquants ou en plus, catalogue des objets vus en jeu avec ajout direct au référentiel',
+                'Référentiel des compétences : explication, mode de validation et liens vers les cours Academy, modules, qualifications, emplois et dotation',
+                'Academy › Formations › Compétences : générateur de parcours (compétence, emploi ou modèle Fusilier → Chef d’équipe, JTAC, Pilote, Médic), ajustable et enregistrable par le pilotage des formations',
+                'Matricules : contrôle du registre (doublons, membres sans matricule, numéros libres), aperçu du modèle, attribution en un clic et export CSV',
+                'Disponibilité des unités : vue d’ensemble, filtres Prête / À surveiller / Critique, recherche, tri et affichage en cartes sur téléphone',
+                'Organigramme : indicateur « postes vacants »',
             ], [
-                'Organigramme, tableau de bord, annuaire, fiche personnel, espaces JNET et page publique utilisent la même pastille',
+                'Équipes et groupes : même présentation en cartes, filtre « sans responsable », jauge de remplissage et tri',
+                'Pastille commune « Unité anonymisée », « Personnel anonymisé », « Affectation restreinte »… avec explication, sur l’organigramme, le tableau de bord, l’annuaire, la fiche personnel, les espaces JNET et la page publique',
             ], [
+                'Organigramme : une donnée annexe indisponible (effectifs, grades, codes, disponibilité) ne provoque plus d’erreur sur toute la page ; en cas de doute sur la confidentialité, les personnes restent masquées',
                 'Organigramme : nom du chef et des titulaires de poste visibles dans une unité anonymisée ou restreinte',
                 'Organigramme : membre anonymisé affiché sous son vrai nom quand il tenait un poste ou commandait une unité',
                 'Page publique : unités masquées affichées, liste nominative complète d’une unité sans tenir compte de la confidentialité',
                 'Annuaire : prénom et nom civils d’un membre anonymisé encore affichés',
                 'Disponibilité des unités : unités masquées listées pour des lecteurs non habilités',
             ], ['platform', 'personnel'], [
-                'Aucune règle de confidentialité ne change : seul l’affichage est harmonisé, et les fuites constatées sont fermées.',
+                'Aucun droit d’accès ne change : le menu, les pages et les règles de confidentialité respectent toujours les permissions existantes.',
             ], 'Portail'),
 
             $pr(1254, '2026-11-01', 'Écrans : un seul menu, diapositives visibles, PC du poste sur les écrans', 'Avec le pack 2.9.25 et la liaison 2.0.114, chaque écran n’a plus qu’un seul menu « Écran COMSPEC » (Diffusion, Affichage TOC, Carte), les diapositives s’affichent de nouveau sur les écrans et le PC du poste TOC est affiché en direct sur les écrans du poste pour tous les joueurs proches.', [

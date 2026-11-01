@@ -35445,6 +35445,7 @@ return [
     'Référentiel américain (US_CLASSIC)' => 'American reference (US_CLASSIC)',
     'Référentiel configurable : instructions, notes de service, directives, etc. Chaque type peut imposer par défaut une lecture obligatoire ou un accusé de lecture.' => 'Configurable reference: instructions, service memos, directives, etc. Each type can enforce mandatory reading or a read receipt by default.',
     'Référentiel de grade affiché côté compte administratif.' => 'Rank reference shown on the administrative account side.',
+    'Référentiel des compétences' => 'Skills framework',
     'Référentiel de grades' => 'Rank reference',
     'Référentiel de grades français associé à la communauté.' => 'French rank framework associated with the community.',
     'Référentiel de la communauté' => 'Community reference',

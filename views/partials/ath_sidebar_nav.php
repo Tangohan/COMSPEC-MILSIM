@@ -210,7 +210,7 @@ $referentialChildren = [
         'label' => 'Compétences',
         'children' => [
             ['label' => 'Qualifications', 'href' => url('back-office/referentiels/qualifications'), 'active' => $navAt('back-office/referentiels/qualifications') && !$navAt('back-office/referentiels/qualifications/cursus-pilote')],
-            ['label' => 'Compétences par grade', 'href' => url('back-office/referentiels/competences'), 'active' => $navAt('back-office/referentiels/competences')],
+            ['label' => 'Référentiel des compétences', 'href' => url('back-office/referentiels/competences'), 'active' => $navAt('back-office/referentiels/competences')],
             ['label' => 'Cursus pilote', 'href' => url('back-office/referentiels/qualifications/cursus-pilote'), 'active' => $navAt('back-office/referentiels/qualifications/cursus-pilote')],
         ],
     ],
