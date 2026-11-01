@@ -12636,6 +12636,7 @@
 ["Reliez-le : OBTENIR MON CODE, puis autorisez-le sur le site.", "Link it: GET MY CODE, then approve it on the website."],
 ["Reliez-le une fois : OBTENIR MON CODE et autorisez-le sur le site.", "Link it once: GET MY CODE and approve it on the website."],
 ["RELIRE", "RELOAD"],
+["RELIRE LA LICENCE", "READ THE LICENCE"],
 ["Relire la note bêta", "Re-read the beta note"],
 ["RELIRE LES APPS", "RELOAD APPS"],
 ["Relire les photos du téléphone et demander à Athena lesquelles elle a déjà", "Re-read the phone's photos and ask Athena which ones it already has"],

@@ -1,0 +1,71 @@
+COMSPEC — LICENCE D'UTILISATION / LICENCE OF USE
+Version 1 — © 2026 COMSPEC. Tous droits réservés / All rights reserved.
+Mods concernés / Mods covered : COMSPEC ATAK (Native), COMSPEC SSE, et leurs composants
+(fichiers PBO, scripts, images, textures, sons, bibliothèques DLL).
+
+==========================================================================================
+FRANÇAIS
+==========================================================================================
+
+1. Ce qui est autorisé
+   Vous pouvez installer et utiliser le mod pour votre usage personnel, dans Arma 3,
+   uniquement depuis sa page officielle du Steam Workshop (abonnement Steam).
+   Les fonctions reliées à Athéna demandent un compte joueur lié à votre unité.
+
+2. Ce qui est interdit, sauf autorisation écrite de COMSPEC
+   - copier le mod, le ré-héberger ou le redistribuer (autre page Workshop, site Internet,
+     partage de fichiers, serveur de téléchargement) ;
+   - le ré-empaqueter, en tout ou en partie, dans un autre pack, un modpack ou un mod de
+     communauté ;
+   - le modifier, le décompiler, le désassembler ou en extraire des fichiers pour réutiliser
+     son code, ses images, ses textures, ses sons ou sa DLL ;
+   - tout usage commercial (vente, accès payant, contrepartie financière).
+
+3. Packs de communauté
+   Un pack ou modpack qui inclut le mod doit avoir l'autorisation écrite de COMSPEC.
+   Sans cette autorisation, demandez à vos joueurs de s'abonner à la page officielle du
+   Steam Workshop (en dépendance de votre collection).
+
+4. Éléments de tiers
+   Les éléments fournis par des tiers (polices, contenus d'Arma 3, éléments crédités dans
+   CREDITS.md) restent soumis à leur propre licence.
+
+5. Acceptation
+   Au premier lancement, et à chaque nouvelle version de cette licence, le mod affiche une
+   note de service au menu principal. En choisissant « J'accepte », vous acceptez cette
+   licence. Sans acceptation, le mod ne doit pas être utilisé.
+
+Contact : https://athena-comspec.eu
+
+==========================================================================================
+ENGLISH
+==========================================================================================
+
+1. What is allowed
+   You may install and use the mod for your personal use, in Arma 3, only from its official
+   Steam Workshop page (Steam subscription).
+   Features linked to Athena need a player account linked to your unit.
+
+2. What is not allowed without written permission from COMSPEC
+   - copying the mod, re-uploading it or redistributing it (another Workshop page, website,
+     file sharing, download server);
+   - repacking it, in whole or in part, in another pack, modpack or community mod;
+   - modifying, decompiling or disassembling it, or extracting files to reuse its code,
+     images, textures, sounds or DLL;
+   - any commercial use (sale, paid access, financial consideration).
+
+3. Community packs
+   A pack or modpack that includes the mod needs written permission from COMSPEC.
+   Without it, ask your players to subscribe to the official Steam Workshop page (as a
+   dependency of your collection).
+
+4. Third-party material
+   Material provided by third parties (fonts, Arma 3 content, material credited in
+   CREDITS.md) remains under its own licence.
+
+5. Acceptance
+   On first launch, and for each new version of this licence, the mod shows a service note
+   in the main menu. By selecting "I accept", you accept this licence. Without acceptance,
+   the mod must not be used.
+
+Contact: https://athena-comspec.eu

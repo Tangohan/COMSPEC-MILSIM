@@ -7,6 +7,6 @@ logoOver = "logo.paa";
 logoSmall = "logo.paa";
 picture = "logo.paa";
 tooltip = "COMSPEC ATAK";
-overview = "Téléphone ATAK natif relié à Athena : carte, marqueurs, messagerie, photos.";
+overview = "Téléphone ATAK natif relié à Athena : carte, marqueurs, messagerie, photos. Tous droits réservés COMSPEC : usage personnel via le Steam Workshop officiel ; copie, modification et redistribution interdites (voir LICENSE.txt).";
 hideName = 0;
 hidePicture = 0;

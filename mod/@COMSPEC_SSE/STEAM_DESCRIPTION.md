@@ -126,6 +126,8 @@ Gardez le même identifiant de campagne d'une mission à l'autre. Pour changer d
 [/list]
 Gratuit, non commercial, aucun contenu payant.
 
+[b]Licence :[/b] © COMSPEC, tous droits réservés. Usage personnel via cette page officielle du Workshop. Interdit sans autorisation écrite de COMSPEC : copier, ré-héberger, redistribuer, ré-empaqueter dans un autre pack ou modpack, modifier, décompiler ou extraire le code, les images, les textures ou la DLL, tout usage commercial. Texte complet : LICENSE.txt dans le dossier du mod.
+
 [url=https://athena-comspec.eu]Portail Athena[/url]  ·  [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708]COMSPEC ATAK Native[/url]
 ```
 
@@ -233,6 +235,8 @@ Keep the same campaign ID from one mission to the next. To move to another serve
 [*]Optional bridge to [b]BII Identifi[/b] (S.O.A.R).
 [/list]
 Free, non-commercial, no paid content ever.
+
+[b]Licence:[/b] © COMSPEC, all rights reserved. Personal use through this official Workshop page. Not allowed without written permission from COMSPEC: copying, re-uploading, redistributing, repacking in another pack or modpack, modifying, decompiling or extracting the code, images, textures or DLL, any commercial use. Full text: LICENSE.txt in the mod folder.
 
 [url=https://athena-comspec.eu]Athena portal[/url]  ·  [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708]COMSPEC ATAK Native[/url]
 ```
