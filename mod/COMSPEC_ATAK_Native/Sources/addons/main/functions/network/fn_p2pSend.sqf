@@ -1,5 +1,5 @@
 /*
-    Message direct à un joueur, sans passer par Athena (principe de l'app message de BCE, Aaren, APL-SA).
+    Message direct à un joueur, sans passer par Athena.
     Retourne true si l'événement a été envoyé.
 */
 params [["_peer", ""], ["_body", ""]];

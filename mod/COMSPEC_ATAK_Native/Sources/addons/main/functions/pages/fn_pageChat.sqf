@@ -1,6 +1,6 @@
 /*
     Messagerie : canal TOC (Athena) + messages directs entre joueurs.
-    Les messages directs reprennent le principe de l'app message de BCE (Aaren, APL-SA) :
+    Les messages directs sont envoyés de joueur à joueur :
     un événement CBA ciblé sur le destinataire, sans serveur ni Athena, donc utilisable hors ligne.
 
     Interface (même famille que Reco et Galerie : fond nuit, en-têtes sombres, filets, couleur d'accent du joueur) :

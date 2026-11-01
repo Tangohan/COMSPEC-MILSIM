@@ -1,29 +1,28 @@
 /*
     Tracé collé aux routes entre deux points de la carte (option ROUTES de l'outil TRAIT, fn_markerStroke) : convoi, patrouille.
-    Chaque extrémité est d'abord ramenée sur le segment de route le plus proche (projection reprise de MapTac,
-    fnc_drawMapTool, © 2026 Smith and MapTac contributors, licence APL-SA), puis le chemin suit le réseau routier
+    Chaque extrémité est d'abord ramenée sur le segment de route le plus proche, puis le chemin suit le réseau routier
     (A* sur roadsConnectedTo, comme le GPS routier fn_routeCompute). Pas de route proche ou chemin introuvable : ligne droite.
     À lancer en spawn (une grande carte peut prendre une seconde).
     Params : [point A, point B, rayon d'accroche en m (défaut 120)]
     Renvoie [points simplifiés (200 au plus), trouvé]
 */
 params [["_a", [0, 0, 0]], ["_b", [0, 0, 0]], ["_snap", 120]];
-// MapTac : projection du point sur le segment de route le plus proche dans le rayon.
+// Point le plus proche sur chaque segment de route du rayon (projection orthogonale bornée aux extrémités).
 private _project = {
     params ["_p"];
     private _best = _snap;
     private _out = +_p;
+    private _p2 = [_p select 0, _p select 1, 0];
     {
         (getRoadInfo _x) params ["", "", "", "", "", "", ["_beg", []], ["_end", []]];
         if (_beg isEqualTo [] || {_end isEqualTo []}) then { continue };
-        _beg params ["_bx", "_by"];
-        private _sx = (_end select 0) - _bx;
-        private _sy = (_end select 1) - _by;
-        private _len = _sx ^ 2 + _sy ^ 2;
-        if (_len == 0) then { continue };
-        private _r = 0 max ((((_p select 0) - _bx) * _sx + ((_p select 1) - _by) * _sy) / _len min 1);
-        private _q = [_bx + _sx * _r, _by + _sy * _r, 0];
-        private _d = _p distance2D _q;
+        private _o = [_beg select 0, _beg select 1, 0];
+        private _seg = [_end select 0, _end select 1, 0] vectorDiff _o;
+        private _l2 = _seg vectorDotProduct _seg;
+        if (_l2 == 0) then { continue };
+        private _t = (((_p2 vectorDiff _o) vectorDotProduct _seg) / _l2) max 0 min 1;
+        private _q = _o vectorAdd (_seg vectorMultiply _t);
+        private _d = _p2 distance2D _q;
         if (_d < _best) then { _best = _d; _out = _q; };
     } forEach (_p nearRoads _snap);
     _out
