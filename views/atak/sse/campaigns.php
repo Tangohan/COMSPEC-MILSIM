@@ -38,7 +38,7 @@ $typeTone = static fn (string $t): string => match ($t) { 'temporaire' => 'badge
 <section class="panel" style="margin-top:14px">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">C.01</span> Campagnes de la communauté</div>
-        <div class="panel-meta"><?= count($active) ?> active<?= count($active) > 1 ? 's' : '' ?></div>
+        <div class="panel-meta"><?= $h(sprintf(count($active) > 1 ? '%d actives' : '%d active', count($active))) ?></div>
     </div>
     <?php if ($active === []): ?>
         <div class="panel-body">

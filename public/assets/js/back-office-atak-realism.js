@@ -89,7 +89,7 @@
     const n = rows.filter(r => r.classList.contains('is-changed')).length;
     dirty = n > 0;
     const el = $('[data-rl-dirty]');
-    el.textContent = n ? n + ' réglage' + (n > 1 ? 's' : '') + ' modifié' + (n > 1 ? 's' : '') + ' — pensez à enregistrer' : 'Aucune modification';
+    el.textContent = n ? (n > 1 ? n + ' réglages modifiés — pensez à enregistrer' : n + ' réglage modifié — pensez à enregistrer') : 'Aucune modification';
     el.classList.toggle('is-dirty', n > 0);
     tabs.forEach(a => {
       const sec = document.getElementById(a.dataset.rlTab);

@@ -84,7 +84,7 @@ usort($users, static fn (array $a, array $b): int => strcasecmp($nameOf($a), $na
                 <div class="bo-grp-field">
                     <label for="public_blurb">Présentation</label>
                     <textarea id="public_blurb" name="public_blurb" rows="3" maxlength="600" placeholder="<?= $h((string) $ui['blurbPh']) ?>" data-grp-in="blurb"><?= $h((string) ($fg['public_blurb'] ?? '')) ?></textarea>
-                    <small>Deux phrases suffisent : le rôle <?= $ui['kind'] === 'team' ? 'de l’équipe' : 'du groupe' ?> et ce qu’<?= $ui['kind'] === 'team' ? 'elle' : 'il' ?> cherche.</small>
+                    <small><?= $ui['kind'] === 'team' ? 'Deux phrases suffisent : le rôle de l’équipe et ce qu’elle cherche.' : 'Deux phrases suffisent : le rôle du groupe et ce qu’il cherche.' ?></small>
                 </div>
                 <div class="bo-grp-field">
                     <span class="bo-grp-label" id="<?= $h($formIdPrefix) ?>-color-label">Couleur</span>

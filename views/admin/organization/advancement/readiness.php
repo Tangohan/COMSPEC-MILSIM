@@ -79,7 +79,7 @@ $searchIcon = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" strok
             <li class="rdy-kpi">
                 <p class="rdy-kpi__label">Unités suivies</p>
                 <p class="rdy-kpi__value"><?= $total ?></p>
-                <p class="rdy-kpi__sub"><?= $counts['bad'] ?> critique<?= $counts['bad'] > 1 ? 's' : '' ?> · <?= $counts['warn'] ?> à surveiller</p>
+                <p class="rdy-kpi__sub"><?= $h(sprintf($counts['bad'] > 1 ? '%d critiques' : '%d critique', (int) $counts['bad'])) ?> · <?= $counts['warn'] ?> à surveiller</p>
             </li>
             <li class="rdy-kpi is-<?= $h($toneOf((int) $avg)) ?>">
                 <p class="rdy-kpi__label">Score moyen</p>

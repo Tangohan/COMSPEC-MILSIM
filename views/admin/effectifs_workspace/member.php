@@ -606,7 +606,7 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
             ?>
             <div class="eff-fm-team" id="equipe">
                 <?php if (!empty($team['has_posts'])): ?>
-                    <p class="eff-fm-k">Équipe — <?= (int) $team['filled'] ?> / <?= (int) $team['authorized'] ?> postes pourvus<?php if ((int) $team['vacant'] > 0): ?> · <?= (int) $team['vacant'] ?> vacant<?= (int) $team['vacant'] > 1 ? 's' : '' ?><?php endif; ?></p>
+                    <p class="eff-fm-k">Équipe — <?= (int) $team['filled'] ?> / <?= (int) $team['authorized'] ?> postes pourvus<?php if ((int) $team['vacant'] > 0): ?> · <?= $h(sprintf((int) $team['vacant'] > 1 ? '%d vacants' : '%d vacant', (int) $team['vacant'])) ?><?php endif; ?></p>
                     <ul class="eff-fm-slots">
                         <?php foreach ($teamSeats as $seat): ?>
                             <li class="eff-fm-slot<?= !empty($seat['is_me']) ? ' is-me' : '' ?><?= !empty($seat['vacant']) ? ' is-vacant' : '' ?>">
@@ -798,7 +798,7 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
             };
             ?>
             <div class="eff-fm-elig <?= $eligTone ?>">
-                <p class="eff-fm-elig__title"><b><?= $h($eligTitle) ?></b> · <?= (int) $eligibility['met'] ?> / <?= (int) $eligibility['total'] ?> critère<?= (int) $eligibility['total'] > 1 ? 's' : '' ?> rempli<?= (int) $eligibility['met'] > 1 ? 's' : '' ?></p>
+                <p class="eff-fm-elig__title"><b><?= $h($eligTitle) ?></b> · <?= $h(sprintf((int) $eligibility['total'] > 1 ? '%d / %d critères remplis' : '%d / %d critère rempli', (int) $eligibility['met'], (int) $eligibility['total'])) ?></p>
                 <ul class="eff-fm-elig__list">
                     <?php foreach ($eligibility['criteria'] as $crit): ?>
                         <?php $cMet = $crit['met']; ?>
@@ -1100,8 +1100,8 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
             <h3>Présence — <?= $gridSize ?> dernières sessions</h3>
             <?php if ($grid !== []): ?>
                 <p class="eff-fm-pres__sum">
-                    <b><?= (int) ($gridCounts['present'] ?? 0) ?></b> présent<?= (int) ($gridCounts['present'] ?? 0) > 1 ? 's' : '' ?>
-                    · <b><?= (int) ($gridCounts['excused'] ?? 0) ?></b> excusé<?= (int) ($gridCounts['excused'] ?? 0) > 1 ? 's' : '' ?>
+                    <b><?= (int) ($gridCounts['present'] ?? 0) ?></b> <?= (int) ($gridCounts['present'] ?? 0) > 1 ? 'présents' : 'présent' ?>
+                    · <b><?= (int) ($gridCounts['excused'] ?? 0) ?></b> <?= (int) ($gridCounts['excused'] ?? 0) > 1 ? 'excusés' : 'excusé' ?>
                     · <b class="<?= (int) ($gridCounts['absent'] ?? 0) > 0 ? 'is-bad' : '' ?>"><?= (int) ($gridCounts['absent'] ?? 0) ?></b> sans prévenir
                     <?php if ((int) ($gridCounts['no_reply'] ?? 0) > 0): ?> · <b><?= (int) $gridCounts['no_reply'] ?></b> sans réponse<?php endif; ?>
                 </p>
@@ -1129,9 +1129,10 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
                 <li><i class="is-no_reply"></i>Sans réponse</li>
             </ul>
             <p class="eff-fm-hint">
-                Sur 90 jours : <?= (int) ($attendance['present_90'] ?? 0) ?> présence<?= (int) ($attendance['present_90'] ?? 0) > 1 ? 's' : '' ?> sur <?= (int) ($attendance['sessions_90'] ?? 0) ?> session<?= (int) ($attendance['sessions_90'] ?? 0) > 1 ? 's' : '' ?><?php if ($attendanceRate !== null): ?> (<?= (int) $attendanceRate ?> %)<?php endif; ?>.
-                Depuis l’engagement : <?= (int) ($attendance['present_total'] ?? 0) ?> session<?= (int) ($attendance['present_total'] ?? 0) > 1 ? 's' : '' ?> pointée<?= (int) ($attendance['present_total'] ?? 0) > 1 ? 's' : '' ?>.
-                Une présence est comptée quand elle a été pointée le jour de la session.
+                <span><?= $h(sprintf('Sur 90 jours : %d présence(s) sur %d session(s).', (int) ($attendance['present_90'] ?? 0), (int) ($attendance['sessions_90'] ?? 0))) ?></span>
+                <?php if ($attendanceRate !== null): ?><span>Taux : <?= (int) $attendanceRate ?> %.</span><?php endif; ?>
+                <span><?= $h(sprintf('Depuis l’engagement : %d session(s) pointée(s).', (int) ($attendance['present_total'] ?? 0))) ?></span>
+                <span>Une présence est comptée quand elle a été pointée le jour de la session.</span>
             </p>
         <?php endif; ?>
     </article>

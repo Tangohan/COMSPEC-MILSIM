@@ -33,7 +33,6 @@ px Inter, Arial, sans-serif	police CSS	public/assets/js/atak-translate.js
 y ouvre avec l	commentaire	public/assets/js/ath-modal-frame.js
 clé unique	commentaire	public/assets/js/ath-quiet-form.js
 élément de même clé est remplacé, puis le message du serveur s	commentaire	public/assets/js/ath-quiet-form.js
-modifié	pluriel collé	public/assets/js/back-office-atak-realism.js
 03/11/2026 à 21:00	exemple de date	public/assets/js/back-office-integrations.js
 événements, réglage groupé, barre d	commentaire	public/assets/js/back-office-integrations.js
 ordre initial vient du serveur (?tri=) : on l	commentaire	public/assets/js/back-office-player-metrics.js
@@ -150,7 +149,6 @@ FR / EN	identique en anglais	views/academy/footer.php
 ATHENA / %1	nom de produit	views/academy/home_body.php
 %2 min	identique en anglais	views/academy/native_course_list.php
 une formation ouverte par un lien « toute personne disposant du lien » : lecture seule, * sans compte ni inscription. Cours et démonstrations uniquement : questions, réponses et évaluations restent dans l	bruit d'extraction (commentaire)	views/academy/shared.php
-%1 </label> <fieldset class=	bruit d'extraction (code HTML)	views/academy/studio.php
 %1 (min)	identique en anglais	views/academy/studio.php
 Studio	identique en anglais	views/academy/studio.php
 %2 placement(s)	identique en anglais	views/admin/training/competency_command.php
@@ -307,21 +305,15 @@ Page	identique en anglais	views/admin/effectifs_workspace/departures.php
 Conditions	identique en anglais	views/admin/effectifs_workspace/elevation_criteria.php
 " selected>Référence indisponible (#	bruit d'extraction : fragment HTML tronqué	views/admin/effectifs_workspace/fonctions.php
 Invitations	identique en anglais	views/admin/effectifs_workspace/invitations.php
-%1 / %2 critère%3 rempli%4	pluriel collé	views/admin/effectifs_workspace/member.php
-%1 vacant%2	pluriel collé	views/admin/effectifs_workspace/member.php
-. Depuis l’engagement : %1 session%2 pointée%3. Une présence est comptée quand elle a été pointée le jour de la session.	pluriel collé	views/admin/effectifs_workspace/member.php
 Absences	identique en anglais	views/admin/effectifs_workspace/member.php
 Allergies	identique en anglais	views/admin/effectifs_workspace/member.php
 Qualifications	identique en anglais	views/admin/effectifs_workspace/member.php
 Sanctions	identique en anglais	views/admin/effectifs_workspace/member.php
-excusé%1	pluriel collé	views/admin/effectifs_workspace/member.php
-présent%1	pluriel collé	views/admin/effectifs_workspace/member.php
 affichent toutes, à la suite. Comportements : eff-new-member.js. */ require_once __DIR__ .	bruit d'extraction : commentaire/code	views/admin/effectifs_workspace/new_member.php
 %2 h%3	identique en anglais (unité)	views/admin/effectifs_workspace/partials/invite_rows.php
 48 h	identique en anglais (unité)	views/admin/effectifs_workspace/partials/invite_rows.php
 >, ready: bool, can_manage: bool, destinations: list	bruit d'extraction : annotation de type	views/admin/effectifs_workspace/partials/member_invites.php
 Succession	identique en anglais	views/admin/effectifs_workspace/partials/rh_shortcuts.php
-membre%1 affiché%2%3	pluriel collé	views/admin/effectifs_workspace/partials/roster_toolbar.php
 Qualification	identique en anglais	views/admin/effectifs_workspace/qualifications.php
 Motivation	identique en anglais	views/admin/effectifs_workspace/rh_mobility.php
 Roleplay	identique en anglais	views/admin/effectifs_workspace/rh_settings.php
@@ -341,7 +333,6 @@ primaryUnitId()	bruit d'extraction : expression JS	views/partials/personnel/edit
 Stress	identique en anglais	views/partials/personnel/file_playtime.php
 <section id="edit-visibilite" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-300/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" data-personnel-visibility-admin data-consequences="%1"	bruit d'extraction : balise HTML	views/partials/personnel/visibility_admin_block.php
 x-data="personnelVisibilityAdmin(%1)"	bruit d'extraction : attribut HTML	views/partials/personnel/visibility_admin_block.php
-%1  </div> </div> </div> </div> <div class=	bruit d'extraction : HTML	views/personnel/correction_form.php
 <textarea id="corr-%1	bruit d'extraction : balise HTML	views/personnel/correction_form.php
 <textarea id="corr-note" name="note" rows="3" maxlength="1000" placeholder="%1	bruit d'extraction : balise HTML	views/personnel/correction_form.php
 O+, A-, …	exemple de saisie (groupes sanguins)	views/personnel/deployment.php
@@ -362,13 +353,10 @@ Combat	identique en anglais	app/Services/OrganizationCatalog/OrganizationKitDefi
 Grenadier	identique en anglais	app/Services/OrganizationCatalog/OrganizationKitDefinitions.php
 /^(op(é|e)ration|op\.?)\s+/iu	expression régulière	app/Support/PilotageDashboardPresenter.php
 Condition	identique en anglais	views/admin/organization/access_management/index.php
-%1 critique%2	pluriel collé	views/admin/organization/advancement/readiness.php
 Score	identique en anglais	views/admin/organization/advancement/readiness.php
 EXFIL, LZ, DANGER…	sigles / exemple de saisie	views/admin/organization/atak_marker_detection.php
 Padding	identique en anglais	views/admin/organization/callsign_sequences.php
 Pattern	identique en anglais	views/admin/organization/callsign_sequences.php
-%1 libellé%2 présent%3 dans votre communauté	pluriel collé	views/admin/organization/catalog/labels.php
-%4 personnalisé%5	pluriel collé	views/admin/organization/catalog/labels.php
 " maxlength="32" class="bcs-mono" placeholder="Étiquette (ex. PRIMO)" aria-label="Section	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
 (badge)	identique en anglais	views/admin/organization/community_presentation.php
 : étiquette">	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
@@ -382,20 +370,13 @@ Europe	identique en anglais	views/admin/organization/community_presentation.php
 FR OTAN	exemple de saisie	views/admin/organization/community_presentation.php
 Minimal	identique en anglais	views/admin/organization/community_presentation.php
 Question %1	identique en anglais	views/admin/organization/community_presentation.php
-Réponse %1  </div>   </div> </div> </section> <section class=	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
-Section %1  </div>   </div> <div class=	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
 Section %1%2	identique en anglais	views/admin/organization/community_presentation.php
 Simple	identique en anglais	views/admin/organization/community_presentation.php
 Standard	identique en anglais	views/admin/organization/community_presentation.php
-Témoignage %1  <div class=	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
 Administration	identique en anglais	views/admin/organization/configuration_updates.php
 COMSPEC ATAK	nom propre	views/admin/organization/configuration_updates_novelties.php
 Participation	identique en anglais	views/admin/organization/dashboard.php
 Site	identique en anglais	views/admin/organization/dashboard.php
-confirmé%1	pluriel collé	views/admin/organization/dashboard.php
-disponible%1 pour votre organisation.	pluriel collé	views/admin/organization/dashboard.php
-décliné%1	pluriel collé	views/admin/organization/dashboard.php
-vous attend%1.	pluriel collé	views/admin/organization/dashboard.php
 URL (https)	identique en anglais	views/admin/organization/dashboard_pins_form.php
 Anomalies	identique en anglais	views/admin/organization/data_quality.php
 <textarea id="dsc-pitch" name="pitch" rows="4" maxlength="%1	bruit d'extraction (fragment HTML)	views/admin/organization/discord_showcase.php
@@ -406,7 +387,6 @@ Service	identique en anglais	views/admin/organization/event_show.php
 <textarea id="ev-desc" name="description" rows="3" placeholder="Consignes, tenue, lieu de rendez-vous…" class="bo-events__textarea" %1	bruit d'extraction (fragment HTML)	views/admin/organization/events.php
 Workshop %1	nom propre	views/admin/organization/game_equipment.php
 <input class="bo-ge-input" type="number" min="1" max="99" name="cargo[	bruit d'extraction (fragment HTML)	views/admin/organization/game_role_kit_form.php
-%1  <small>Deux phrases suffisent : le rôle %2 et ce qu’%3 cherche.</small> </div> <div class=	bruit d'extraction (fragment HTML)	views/admin/organization/groups/_form.php
 <textarea id="public_blurb" name="public_blurb" rows="3" maxlength="600" placeholder="%1	bruit d'extraction (fragment HTML)	views/admin/organization/groups/_form.php
 <textarea name="template" rows="4" maxlength="%1	bruit d'extraction (fragment HTML)	views/admin/organization/integrations.php
 Arma 3 / Overwatch	nom propre	views/admin/organization/integrations.php
@@ -451,7 +431,6 @@ Image %1	identique en anglais	views/admin/organization/settings.php
 Images	identique en anglais	views/admin/organization/tenant_alerts_form.php
 Inactive	identique en anglais	views/admin/organization/tenant_alerts_index.php
 Visible	identique en anglais	views/admin/organization/tenant_alerts_index.php
-%1 / %2 pourvu%3	pluriel collé	views/admin/organization/unit_sheet.php
 Steam ID	identique en anglais	views/admin/organization/users/show.php
 Radio, protection…	identique en anglais	views/equipment/hub.php
 Portrait	identique en anglais / sigle / mesure	views/account/banner.php
@@ -459,11 +438,9 @@ IP %2	identique en anglais / sigle / mesure	views/account/index.php
 Alias %1	identique en anglais / sigle / mesure	views/account/preferences.php
 Compact	identique en anglais / sigle / mesure	views/account/preferences.php
 Discord	identique en anglais / sigle / mesure	views/account/preferences.php
-alias enregistré	pluriel collé	views/account/preferences.php
 <textarea id="pcv-bio" name="bio" rows="3" maxlength="%1	bruit d'extraction (code/HTML)	views/account/public_cv.php
 Plan B	identique en anglais / sigle / mesure	views/account/security.php
 Steam …%1	identique en anglais / sigle / mesure	views/account/steam_conflict.php
-%1 faite%2	pluriel collé	views/account/welcome.php
 aperçu de la carte d	bruit d'extraction (commentaire/fragment)	views/account/welcome.php
 étape est faite, sinon l	bruit d'extraction (commentaire/fragment)	views/account/welcome.php
 Archives	identique en anglais / sigle / mesure	views/alerts/index.php
@@ -630,7 +607,6 @@ Investigation	identique en anglais / sigle / mesure	views/atak/sse/_layout.php
 Menu	identique en anglais / sigle / mesure	views/atak/sse/_layout.php
 Suggestions	identique en anglais / sigle / mesure	views/atak/sse/_layout.php
 %3 mission(s)	identique en anglais / sigle / mesure	views/atak/sse/campaign_catalog.php
-%1 active%2	pluriel collé	views/atak/sse/campaigns.php
 Missions	identique en anglais / sigle / mesure	views/atak/sse/campaigns.php
 ["COMSPEC_SSE_CAMPAIGN",1,["#M",[…]]]	bruit d'extraction (code/HTML)	views/atak/sse/campaigns.php
 Athena / SSE /	identique en anglais / sigle / mesure	views/atak/sse/case_correlations.php
@@ -724,7 +700,6 @@ Nomenclature	identique en anglais / sigle / mesure	views/documents/doctrine_inde
 VISA %1	identique en anglais / sigle / mesure	views/enlistment.php
 Variable	identique en anglais / sigle / mesure	views/enlistment.php
 data-ce-start="candidature"	bruit d'extraction (code/HTML)	views/enlistment.php
-%1  </div> </div>   <label class=	bruit d'extraction (code/HTML)	views/enlistment/simple.php
 <textarea name="motivation_why_join" rows="4" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" placeholder="%1	bruit d'extraction (code/HTML)	views/enlistment/simple.php
 15× Bandage (Einfach)	contenu de démo (maquette)	views/equipement.php
 1× 1000ml Saline IV	contenu de démo (maquette)	views/equipement.php
@@ -818,7 +793,6 @@ PL ROUGE	nom propre/indicatif	views/home/partials/demo_showcase.php
 Sgt VIPER	nom propre/indicatif	views/home/partials/demo_showcase.php
 TF ORION	nom propre/indicatif	views/home/partials/demo_showcase.php
 Task Force ORION	nom propre/indicatif	views/home/partials/demo_showcase.php
-%3 terminée%4%5	pluriel collé	views/hub/index.php
 hub?tri=%1	bruit d'extraction (code/HTML)	views/hub/index.php
 %1 — JNET	identique en anglais / sigle / mesure	views/jnet/_layout.php
 Extranet %1	identique en anglais / sigle / mesure	views/jnet/_layout.php
@@ -828,7 +802,6 @@ un espace en deux vues : cartes regroupées par grand commandement, ou organigra
 %1 engagement%2	identique en anglais / sigle / mesure	views/jnet/operations.php
 community-reels-page bg-[#070a0c] text-white font-sans antialiased min-h-screen	bruit d'extraction (code/HTML)	views/layout/main.php
 layout-light bg-slate-50 text-slate-900 font-sans antialiased min-h-screen	bruit d'extraction (code/HTML)	views/layout/main.php
-%1  </div> <button type=	bruit d'extraction (code/HTML)	views/legal/gdpr_request.php
 <textarea name="message" id="message" required rows="6" maxlength="4000" minlength="10" placeholder="%1	bruit d'extraction (code/HTML)	views/legal/gdpr_request.php
 ), app	bruit d'extraction (commentaire/fragment)	views/link/lier.php
 COMSPEC SSE	identique en anglais / sigle / mesure	views/link/lier.php
@@ -904,8 +877,6 @@ REF: %1	identique en anglais / sigle / mesure	views/partials/editorial-block.php
 un essai fondateur, d	bruit d'extraction (commentaire/fragment)	views/partials/plan_end_banner.php
 M4 6h16v13H4zM9 3h6v4H9zM8 12h8M8 15h5	bruit d'extraction (code/HTML)	views/partials/platform_admin_sidebar.php
 Mod Overwatch	identique en anglais / sigle / mesure	views/partials/platform_admin_sidebar.php
-%1  </label> <div class=	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
-%1  </label> <label class=	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
 <textarea rows="2" maxlength="1000" data-prw-comment placeholder="%1	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
 <textarea rows="2" maxlength="2000" data-prw-wishlist placeholder="%1	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
 <textarea rows="2" maxlength="500" data-prw-original placeholder="%1	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
