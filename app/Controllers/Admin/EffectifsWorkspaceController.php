@@ -793,7 +793,7 @@ class EffectifsWorkspaceController
             'total' => count($cells),
             'note' => $view === 'medical' ? 'Confidentiel : données médicales' : '',
             'filename' => 'effectifs-' . $view . '-' . date('Y-m-d'),
-            'orientation' => 'L',
+            'reference' => 'EFF-' . date('Y-m-d'),
         ]);
     }
 

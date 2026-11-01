@@ -204,17 +204,20 @@ final class OrbatChartPdfAssetTest extends TestCase
         self::assertGreaterThanOrEqual(9, $doc['totals']['unit_count']);
         self::assertGreaterThan(0, $doc['totals']['theoretical']);
         self::assertSame('Altis', $doc['meta']['theater']);
-        // Jamais A4 — format adaptatif large
+        // Vue imprimable HTML : format adaptatif large (le PDF, lui, est en A4 portrait)
         self::assertNotSame('A4', $doc['meta']['paper']);
         self::assertGreaterThanOrEqual(420, (int) $doc['meta']['paper_width_mm']);
         self::assertContains($doc['meta']['paper'], ['A3', 'A2', 'A1', 'A0', 'CUSTOM']);
 
         $html = $service->tcpdfFriendlyHtml($doc);
-        self::assertStringContainsString('ATHENA MILSIM', $html);
+        // Corps du PDF A4 portrait (gabarit Athena) : ordre de bataille en tableau arborescent.
+        self::assertStringContainsString('SYNTHÈSE EFFECTIFS', $html);
+        self::assertStringContainsString('CPT MARTIN', $html);
         self::assertStringContainsString('CIE ALPHA', $html);
         self::assertStringContainsString('ALPHA 1-1', $html);
         self::assertStringContainsString('ALPHA 7', $html);
         self::assertStringContainsString('COMPOSITION GÉNÉRALE', $html);
-        self::assertStringNotContainsString('A4', $html);
+        // Le PDF est en A4 portrait : plus de mention de format paysage dans le corps.
+        self::assertStringNotContainsString('paysage', $html);
     }
 }
