@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 /**
  * Steam en double : signalements « je ne reconnais pas l'autre compte » (Steam mis de côté sur les fiches du
- * déclarant, rendu possible par l'administration). Idempotent, lancé à la première requête du service.
+ * déclarant, rendu possible par l'administration). Idempotent : étape steam_conflict_reports de la file
+ * active (run-migrations.php), et filet de sécurité à la première requête du service.
  */
 return static function (PDO $pdo): void {
     $pdo->exec(

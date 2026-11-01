@@ -12,9 +12,9 @@ use Throwable;
 /**
  * Tables tenant_unit_codes et unit_codes (codes unité lisibles + identifiants administratifs).
  *
- * La file active des migrations est vide depuis le 2026-10-29 et ses tests imposent qu'elle le
- * reste : les tables sont créées à la demande (CREATE TABLE IF NOT EXISTS du seul fichier
- * MIGRATION_FILE), comme la page publique du joueur. À la création, chaque communauté existante
+ * Voie officielle : étape unit_codes de la file active, lancée par run-migrations.php
+ * (docs/technical/migrations-active-queue.md). ensureTables() reste un filet de sécurité idempotent
+ * (CREATE TABLE IF NOT EXISTS du seul fichier MIGRATION_FILE). À la création, chaque communauté existante
  * reçoit son numéro administratif dans l'ordre de création (déterministe).
  */
 class UnitCodeRepository

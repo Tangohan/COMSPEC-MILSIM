@@ -1,6 +1,6 @@
 -- Index des lectures fréquentes de la liaison (positions, repères). Idempotent : relançable sans erreur.
--- Hors file de migrations : la file active doit rester vide (MigrationRegistryTest). À passer une fois à la main.
--- Usage manuel : mysql -u ... athena < scripts/sql/api-hot-indexes.sql
+-- Voie officielle : étape atak_api_hot_indexes de la file active (php8.4 run-migrations.php), qui constate
+-- les index déjà posés. Ce script reste un secours manuel : mysql -u ... athena < scripts/sql/api-hot-indexes.sql
 
 SET @t := 'atak_pings', @i := 'idx_atak_pings_tenant_map_created';
 SET @sql := IF(

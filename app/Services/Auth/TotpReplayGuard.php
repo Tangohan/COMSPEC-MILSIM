@@ -12,7 +12,8 @@ use PDO;
  * On garde le dernier pas accepté par membre ; un code d'un pas égal ou antérieur est refusé, même s'il est
  * encore dans la fenêtre de tolérance d'horloge.
  *
- * Table user_totp_used_steps créée à la demande (la file de migrations active est vide, cf. MigrationRegistryTest).
+ * Table user_totp_used_steps : étape user_totp_used_steps de la file active (run-migrations.php) ;
+ * ensureSchema() reste un filet de sécurité idempotent.
  * SQL portable MySQL / SQLite (tests).
  */
 final class TotpReplayGuard

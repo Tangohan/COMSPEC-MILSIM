@@ -38,10 +38,10 @@ final class MigrationQueueResetTest extends TestCase
         rmdir($this->fixture);
     }
 
-    private function runCommand(array $arguments = []): array
+    private function runCommand(array $arguments = [], array $env = [], array $php = []): array
     {
         $pipes = [];
-        $process = proc_open([PHP_BINARY, $this->fixture . '/run-migrations.php', ...$arguments], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $this->fixture, []);
+        $process = proc_open([PHP_BINARY, ...$php, $this->fixture . '/run-migrations.php', ...$arguments], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $this->fixture, $env);
         self::assertIsResource($process);
         $output = stream_get_contents($pipes[1]) . stream_get_contents($pipes[2]);
         fclose($pipes[1]);
@@ -89,6 +89,49 @@ REGISTRY);
         self::assertSame(0, $exit);
         self::assertStringContainsString('future_table', $output);
         self::assertStringNotContainsString('sql_files', $output);
+        self::assertStringNotContainsString('MUST_NOT', $output);
+    }
+
+    public function testRealActiveQueueIsListedWithoutDatabaseAndStatusReadsOnlyTheRunJournal(): void
+    {
+        $root = dirname(__DIR__, 2);
+        copy($root . '/database/steps/registry.php', $this->fixture . '/database/steps/registry.php');
+        $ids = array_column(MigrationRegistry::load($root), 'id');
+        self::assertNotSame([], $ids);
+
+        // --list : aucune connexion ni chargement de l'application, même avec une file non vide.
+        [$exit, $output] = $this->runCommand(['--list']);
+        self::assertSame(0, $exit, $output);
+        foreach ($ids as $id) {
+            self::assertStringContainsString($id, $output);
+        }
+        self::assertStringNotContainsString('MUST_NOT', $output);
+
+        // --status : lit le journal schema_migration_runs (base SQLite simulée), n'exécute aucune étape.
+        $database = $this->fixture . '/status.sqlite';
+        $pdo = new \PDO('sqlite:' . $database);
+        $pdo->exec('CREATE TABLE schema_migration_runs (id INTEGER PRIMARY KEY, run_id TEXT, mode TEXT, step_id TEXT, status TEXT, duration_ms INTEGER, message TEXT, output TEXT, ran_at TEXT)');
+        $pdo->exec("INSERT INTO schema_migration_runs (run_id, mode, step_id, status, duration_ms, message, ran_at) VALUES ('r1','cli','" . $ids[0] . "','ok',1,'','2026-11-01 10:00:00'), ('r1','cli','" . $ids[1] . "','error',1,'','2026-11-01 10:00:00')");
+        $pdo = null;
+        copy($root . '/bootstrap/migration_runner.php', $this->fixture . '/bootstrap/migration_runner.php');
+        file_put_contents($this->fixture . '/bootstrap/autoload.php', '<?php // Status needs no application code.');
+        file_put_contents($this->fixture . '/bootstrap/migration_pdo.php', '<?php function migration_mysql_dsn(): string { return ' . var_export('sqlite:' . $database, true) . '; } function migration_apply_session_collation(PDO $pdo): void {}');
+        file_put_contents($this->fixture . '/database/steps/' . MigrationRegistry::load($root)[0]['file'], '<?php throw new RuntimeException("STEP_MUST_NOT_RUN");');
+        $env = ['DB_NAME' => 'status', 'DB_USER' => 'status', 'SystemRoot' => (string) getenv('SystemRoot')];
+        [$exit, $output] = $this->runCommand(['--status'], $env);
+        if (str_contains($output, 'could not find driver')) {
+            [$exit, $output] = $this->runCommand(['--status'], $env, ['-d', 'extension=pdo_sqlite']);
+        }
+        if (str_contains($output, 'could not find driver')) {
+            self::markTestSkipped('pdo_sqlite indisponible pour le processus enfant.');
+        }
+        self::assertSame(0, $exit, $output);
+        self::assertStringContainsString('[APPLIQUÉE] ' . $ids[0], $output);
+        self::assertStringContainsString('[EN ATTENTE] ' . $ids[1], $output);
+        foreach (array_slice($ids, 2) as $id) {
+            self::assertStringContainsString('[EN ATTENTE] ' . $id, $output);
+        }
+        self::assertSame(count($ids), substr_count($output, '] '));
         self::assertStringNotContainsString('MUST_NOT', $output);
     }
 }

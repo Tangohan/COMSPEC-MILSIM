@@ -8,7 +8,12 @@ use App\Core\Database;
 use App\Support\SqlText;
 use PDO;
 
-/** Réglages de la page publique du joueur (table user_public_cv). */
+/**
+ * Réglages de la page publique du joueur (table user_public_cv).
+ *
+ * Voie officielle : étapes user_public_cv et user_public_cv_banner de la file active, lancées par
+ * run-migrations.php. ensureTable() / ensureBannerColumn() restent des filets de sécurité idempotents.
+ */
 class UserPublicCvRepository
 {
     public const MIGRATION_FILE = 'migrations/2026_11_01_001_user_public_cv.sql';

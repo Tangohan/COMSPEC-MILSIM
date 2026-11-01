@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace App\Support\Migrations;
 
 /**
- * File active des nouvelles migrations (database/steps/registry.php), vide après la baseline du 29 octobre 2026.
+ * File active des nouvelles migrations (database/steps/registry.php), repartie de la baseline du 29 octobre 2026.
+ * Toute mise à jour SQL y est inscrite comme étape idempotente et lancée par run-migrations.php.
  *
  * Chaque étape est un fichier PHP de database/steps/ exécuté par run-migrations.php dans la portée globale
  * du lanceur. Seules ces entrées explicites sont exécutables ; le registre historique reste une archive.

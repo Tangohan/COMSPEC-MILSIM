@@ -1,6 +1,6 @@
 -- Codes unité : code lisible hiérarchique + identifiant administratif numérique.
--- Créées à la demande par App\Repositories\UnitCodeRepository::ensureTables()
--- (file active des migrations vide depuis le 2026-10-29) ; idempotent.
+-- Appliqué par l'étape unit_codes de la file active (run-migrations.php) ;
+-- App\Repositories\UnitCodeRepository::ensureTables() reste un filet de sécurité ; idempotent.
 
 CREATE TABLE IF NOT EXISTS `tenant_unit_codes` (
   `tenant_id` int unsigned NOT NULL,
