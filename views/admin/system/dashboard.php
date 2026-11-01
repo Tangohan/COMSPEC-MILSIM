@@ -66,6 +66,7 @@ $pilotTab = 'vue';
             <a class="pa-jump__link" href="#hub-sante">État du site</a>
             <a class="pa-jump__link" href="#hub-communication">Alertes et maintenances</a>
             <a class="pa-jump__link" href="#hub-plateforme">Indicateurs</a>
+            <a class="pa-jump__link" href="#hub-comptes">Comptes et communautés</a>
             <a class="pa-jump__link" href="#hub-annuaire">Outils du site</a>
             <a class="pa-jump__link" href="#hub-moderation">Usage et modération</a>
             <a class="pa-jump__link" href="#hub-assistance">Activité récente</a>
@@ -79,6 +80,8 @@ $pilotTab = 'vue';
             <section id="hub-plateforme" class="scroll-mt-24" aria-label="Indicateurs plateforme">
                 <?php require base_path('views/admin/partials/kpi_row.php'); ?>
             </section>
+
+            <?php require base_path('views/admin/partials/accounts_overview.php'); ?>
 
             <?php require base_path('views/admin/partials/platform_site_directory.php'); ?>
 

@@ -70,13 +70,18 @@ final class SystemUsersController
         if ($status !== '' && !in_array($status, $allowedStatus, true)) {
             $status = '';
         }
+        $inactivity = trim((string) $request->query('inactif', ''));
+        if (!in_array($inactivity, UserRepository::PLATFORM_INACTIVITY_FILTERS, true)) {
+            $inactivity = '';
+        }
 
         $result = $this->users->listGroupedAccountsForPlatformDirectory(
             $q !== '' ? $q : null,
             $status !== '' ? $status : null,
             $tenantFilter > 0 ? $tenantFilter : null,
             $page,
-            $perPage
+            $perPage,
+            $inactivity !== '' ? $inactivity : null
         );
         $total = (int) ($result['total'] ?? 0);
         $pages = max(1, (int) ceil($total / $perPage));
@@ -99,6 +104,7 @@ final class SystemUsersController
             'platformUsersQ' => $q,
             'platformUsersStatus' => $status,
             'platformUsersTenantId' => $tenantFilter,
+            'platformUsersInactivity' => $inactivity,
             'platformTenants' => $realTenants,
             'pendingPurgeRequests' => $this->purgeRequests->listPending(50),
             'pendingPurgeRequestsCount' => $this->purgeRequests->countPending(),
@@ -1358,6 +1364,7 @@ final class SystemUsersController
         $q = trim((string) $request->input('return_q', ''));
         $status = trim((string) $request->input('return_status', ''));
         $tenantId = (int) $request->input('return_tenant_id', 0);
+        $inactivity = trim((string) $request->input('return_inactif', ''));
         $page = max(1, (int) $request->input('return_page', 1));
         $bits = [];
         if ($q !== '') {
@@ -1368,6 +1375,9 @@ final class SystemUsersController
         }
         if ($tenantId > 0) {
             $bits[] = 'tenant_id=' . $tenantId;
+        }
+        if (in_array($inactivity, UserRepository::PLATFORM_INACTIVITY_FILTERS, true)) {
+            $bits[] = 'inactif=' . rawurlencode($inactivity);
         }
         if ($page > 1) {
             $bits[] = 'page=' . $page;

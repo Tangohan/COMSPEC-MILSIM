@@ -192,6 +192,47 @@ class UserRepository
         return self::$hasServiceAccountColumn;
     }
 
+    /** Filtres « inactif » de l’annuaire plateforme : nombre de jours sans connexion, ou jamais connecté. */
+    public const PLATFORM_INACTIVITY_FILTERS = ['30', '90', '180', 'jamais'];
+
+    /**
+     * Clause HAVING (annuaire groupé par e-mail) pour un filtre d’inactivité ; null si filtre absent,
+     * inconnu ou colonne last_login_at absente.
+     *
+     * @return array{sql: string, params: list<string>}|null
+     */
+    public static function platformInactivityHaving(?string $inactivity, bool $hasLastLogin, ?int $now = null): ?array
+    {
+        $inactivity = trim((string) $inactivity);
+        if (!$hasLastLogin || !in_array($inactivity, self::PLATFORM_INACTIVITY_FILTERS, true)) {
+            return null;
+        }
+        if ($inactivity === 'jamais') {
+            return ['sql' => 'MAX(u.last_login_at) IS NULL', 'params' => []];
+        }
+
+        return [
+            'sql' => 'MAX(u.last_login_at) IS NOT NULL AND MAX(u.last_login_at) < ?',
+            'params' => [date('Y-m-d H:i:s', ($now ?? time()) - ((int) $inactivity) * 86400)],
+        ];
+    }
+
+    private static ?bool $hasLastLoginColumn = null;
+
+    private function hasLastLoginColumn(): bool
+    {
+        if (self::$hasLastLoginColumn === null) {
+            try {
+                $this->pdo()->query('SELECT last_login_at FROM users WHERE 1 = 0');
+                self::$hasLastLoginColumn = true;
+            } catch (\Throwable) {
+                self::$hasLastLoginColumn = false;
+            }
+        }
+
+        return self::$hasLastLoginColumn;
+    }
+
     private function hasDeletedAtColumn(): bool
     {
         if (self::$hasDeletedAtColumn === null) {
@@ -3067,12 +3108,14 @@ class UserRepository
         ?string $status = null,
         ?int $tenantId = null,
         int $page = 1,
-        int $perPage = 50
+        int $perPage = 50,
+        ?string $inactivity = null
     ): array {
         $page = max(1, $page);
         $perPage = max(10, min(100, $perPage));
         $offset = ($page - 1) * $perPage;
         $pdo = $this->pdo();
+        $inactivityFilter = self::platformInactivityHaving($inactivity, $this->hasLastLoginColumn());
         $hasMemberships = $this->hasCommunityMembershipTable();
         $hasDeletedAt = $this->hasDeletedAtColumn();
         $pack = $this->technicalAccountExclusionPredicate('u');
@@ -3141,24 +3184,29 @@ class UserRepository
         $fromUsers = $hasMemberships
             ? 'FROM users u'
             : 'FROM users u INNER JOIN tenants t ON t.id = u.tenant_id';
+        // Filtre « inactif » : porte sur la dernière connexion de la personne (toutes fiches confondues).
+        $having = $inactivityFilter !== null ? ' HAVING ' . $inactivityFilter['sql'] : '';
+        $params = array_merge($params, $inactivityFilter['params'] ?? []);
+        $sortSelect = $inactivityFilter !== null ? 'MAX(u.last_login_at) AS sort_at' : 'MAX(u.updated_at) AS sort_at';
+        $sortOrder = $inactivityFilter !== null ? 'sort_at ASC, email_key ASC' : 'sort_at DESC';
 
         $countStmt = $this->pdo()->prepare(
             "SELECT COUNT(*) FROM (
                 SELECT 1
                 {$fromUsers}
                 WHERE {$where}
-                GROUP BY LOWER(TRIM(u.email))
+                GROUP BY LOWER(TRIM(u.email)){$having}
             ) grouped_accounts"
         );
         $countStmt->execute($params);
         $total = (int) $countStmt->fetchColumn();
 
         $emailStmt = $this->pdo()->prepare(
-            "SELECT LOWER(TRIM(u.email)) AS email_key, MAX(u.updated_at) AS sort_at
+            "SELECT LOWER(TRIM(u.email)) AS email_key, {$sortSelect}
              {$fromUsers}
              WHERE {$where}
-             GROUP BY LOWER(TRIM(u.email))
-             ORDER BY sort_at DESC
+             GROUP BY LOWER(TRIM(u.email)){$having}
+             ORDER BY {$sortOrder}
              LIMIT {$perPage} OFFSET {$offset}"
         );
         $emailStmt->execute($params);
