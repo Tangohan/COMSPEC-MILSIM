@@ -56,7 +56,7 @@ EN : No more stutter while talking to Athena
 ### Détail technique
 - Connect : `fn_extFast` (liste blanche des commandes rapides) ; `fn_extDirect` passe toute autre commande par `fn_extAwait` (spawn hors contexte suspendable) ; `fn_extAwait` connect + natif : commande lente hors contexte suspendable relancée en tâche de fond (`ERR|unscheduled`, signalé une fois au journal)
 - Appelants corrigés : recopie de capture (`fn_captureReconImage`), galerie de fiche (`fn_intelNoteAddPiece`), briefing (`fn_openBriefingBoard`, `fn_refreshBriefingSlides`, `fn_webBrowserJSDialog`), `fn_registerBetaClient` ; natif : `fn_photoLibrary` (liste et suppression), `fn_musicAction` (« files » par Async), `fn_taskAction` (DLL native seule)
-- i18n : `tools/i18n.py wrap` (natif, connect, SSE), +254 entrées dans `i18n/en.txt`, `fr.txt` réassemblé (+12 lignes dans `i18n_fr_source.tsv`) ; stringtables SSE et connect régénérées (`<Original>` en anglais, comme le natif)
+- i18n : `tools/i18n.py wrap` (natif, connect, SSE), +249 entrées dans `i18n/en.txt` (sans mot isolé ni modèle générique : phrases entières, fiche Zeus d'un ATAK en lignes traduites une à une, relais « Tour relais », libellés DL-7 et lien « dirige » du SSE), `fr.txt` réassemblé (+12 lignes dans `i18n_fr_source.tsv`) ; stringtables SSE et connect régénérées (`<Original>` en anglais, comme le natif)
 - Link 2.0.112 : rappel refusé par Arma (file pleine, retour négatif) renvoyé jusqu'à ~9 s ; sondages `ServePollGet` en HTTP async (plus de fil du pool bloqué) ; `OpenAthenaLink`, ménage des captures, relevés terrain/scène/géo et `MusicList` / `MusicOpenFolder` hors du fil du jeu
 
 ## Pack 2.9.21 : plus de gel, tenues ACE réparées, liaison vraiment coupée (ATAK natif 2.9.21.AG - Denver, COMSPEC Link 2.0.111)

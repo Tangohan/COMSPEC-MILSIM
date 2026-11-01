@@ -43,7 +43,7 @@ private _register = {
     params ["_o", "_src", "_cls", "_h"];
     ([_cls, _h] call _preset) params ["_kind", "_range", "_mb", "_ant", "_slots"];
     private _p = getPosATL _src;
-    private _n = format ["%1 %2", ["Antenne", "Tour", "Mât", "Parabole"] select (["antenne", "tour", "mat", "satellite"] find _kind), mapGridPosition _p];
+    private _n = format ["%1 %2", ["Antenne", "Tour relais", "Mât", "Parabole"] select (["antenne", "tour", "mat", "satellite"] find _kind), mapGridPosition _p];
     _o setVariable ["COMSPEC_AtakRelay", true, true];
     _o setVariable ["COMSPEC_AtakRelayName", _n, true];
     _o setVariable ["COMSPEC_AtakRelayIdentity", _n, true];
