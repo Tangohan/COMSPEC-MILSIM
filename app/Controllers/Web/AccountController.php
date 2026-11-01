@@ -500,6 +500,9 @@ class AccountController
                 } catch (\Throwable) {
                 }
                 $language = strtolower(trim((string) $request->input('language')));
+                // normalize() ramène toute valeur inconnue au français : on enregistre la langue normalisée,
+                // jamais la saisie brute (isSupported() seul laissait passer « xx »).
+                $language = \App\Services\I18n\LocaleService::normalize($language);
                 if (!\App\Services\I18n\LocaleService::isSupported($language)) {
                     $language = 'fr';
                 }
@@ -577,6 +580,8 @@ class AccountController
             'uiThemeSync' => Session::getFlash('ui_theme_sync'),
             'timezoneSuggestions' => $this->timezoneSuggestions(),
             'errors' => $errors,
+            // Après une erreur de saisie, le formulaire garde ce qui a été tapé.
+            'old' => $errors !== [] ? $request->all() : [],
             'success' => $success,
             'error' => $error,
             'steamWebConfigured' => $this->steamWebApiService->isConfigured(),

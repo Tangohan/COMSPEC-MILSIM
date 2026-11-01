@@ -23,6 +23,7 @@ $secondFactorMandatory = !empty($accountSecurity['second_factor_mandatory']);
 $steamLinked = !empty($accountSecurity['steam_linked']);
 $devicesActive = (int) ($accountSecurity['devices_active'] ?? 0);
 $devicesTotal = (int) ($accountSecurity['devices_total'] ?? 0);
+$ovPublicCvUrl = isset($accountPublicCvUrl) && is_string($accountPublicCvUrl) && $accountPublicCvUrl !== '' ? $accountPublicCvUrl : null;
 
 $formatDay = static function (string $raw): ?string {
     if ($raw === '' || str_starts_with($raw, '0000')) {
@@ -66,7 +67,7 @@ $checks = [
         'title' => 'Compte Steam lié',
         'detail' => $steamLinked ? 'Reconnu en jeu et par COMSPEC ATAK' : 'Non lié',
         'warn' => 'Nécessaire pour être reconnu sur le serveur et dans ATAK.',
-        'href' => $steamLinked ? url('account/preferences') . '#section-profil' : url('account/steam/connect'),
+        'href' => $steamLinked ? url('account/preferences') . '#section-liaisons' : url('account/steam/connect'),
         'cta' => $steamLinked ? 'Voir' : 'Lier Steam',
     ],
     [
@@ -88,11 +89,26 @@ $healthLabel = match ($healthTone) {
     default => 'À compléter',
 };
 
+/* Réglages qu’on vient chercher le plus souvent : chacun ouvre directement le bon endroit. */
+$shortcuts = [
+    ['href' => url('account/preferences') . '#section-interface', 'title' => 'Thème clair ou sombre', 'desc' => 'Mode nuit du compte', 'icon' => '<path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/>'],
+    ['href' => url('account/preferences') . '#language', 'title' => 'Langue et fuseau', 'desc' => 'Pages, e-mails, heures', 'icon' => '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/>'],
+    ['href' => url('account/preferences') . '#notifications-email', 'title' => 'Notifications par e-mail', 'desc' => 'Ce que vous recevez', 'icon' => '<path d="M6 9a6 6 0 0112 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 004 0"/>'],
+    ['href' => url('account/password'), 'title' => 'Mot de passe', 'desc' => 'Changer le secret d’accès', 'icon' => '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/>'],
+    ['href' => url('account/security'), 'title' => 'Double vérification', 'desc' => 'Code par e-mail ou application', 'icon' => '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>'],
+    ['href' => url('account/preferences') . '#section-profil', 'title' => 'Nom et indicatif', 'desc' => 'Identité sur le portail', 'icon' => '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>'],
+];
+$svg = static fn (string $path): string => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $path . '</svg>';
+
+$lastLogin = preg_replace('/\s*\([^)]*\)$/', '', (string) ($accountSnapshot['last_login_label'] ?? '')) ?: 'Non enregistrée';
+
 $accountNavKey = 'overview';
 $accountTitle = 'Mon compte';
 $accountLead = 'Connexion, sécurité et préférences. L’unité et le grade restent sur votre fiche.';
 require base_path('views/partials/account/shell_open.php');
 ?>
+
+<div class="ah-ov">
 
 <?php if ($accountDeletionScheduledAt !== ''): ?>
 <div class="account-hub__ov-alert account-hub__ov-alert--danger" role="alert">
@@ -119,148 +135,177 @@ require base_path('views/partials/account/shell_open.php');
 </div>
 <?php endif; ?>
 
-<section class="account-hub__ov-health is-<?= $h($healthTone) ?>" aria-labelledby="account-health-heading">
-    <div class="account-hub__ov-score">
-        <span class="account-hub__ov-ring" style="--pct:<?= $checksPct ?>" aria-hidden="true">
+<section id="etat-du-compte" class="ah-ov-health is-<?= $h($healthTone) ?>" aria-labelledby="account-health-heading" data-locate-box>
+    <div class="ah-ov-health__score">
+        <span class="ah-ov-health__ring" style="--pct:<?= $checksPct ?>" aria-hidden="true">
             <span><?= $checksDone ?><small>/<?= $checksTotal ?></small></span>
         </span>
         <div>
-            <p class="account-hub__panel-kicker">État du compte</p>
-            <h2 id="account-health-heading" class="account-hub__ov-score-title"><?= $h($healthLabel) ?></h2>
-            <p class="account-hub__ov-score-desc">
+            <p class="ah-ov-health__label">État du compte</p>
+            <h2 id="account-health-heading" class="ah-ov-health__title"><?= $h($healthLabel) ?></h2>
+            <p class="ah-ov-health__desc">
                 <?= $checksDone === $checksTotal
                     ? 'Les quatre protections sont en place.'
                     : $h(($checksTotal - $checksDone) . ' point' . ($checksTotal - $checksDone > 1 ? 's' : '') . ' à régler, chacun en un clic.') ?>
             </p>
         </div>
     </div>
-    <ul class="account-hub__ov-checks">
+    <ul class="ah-ov-checks">
         <?php foreach ($checks as $check): ?>
-        <li class="account-hub__ov-check<?= $check['ok'] ? ' is-ok' : ' is-todo' ?>">
-            <span class="account-hub__ov-check-mark" aria-hidden="true">
+        <li class="ah-ov-check<?= $check['ok'] ? ' is-ok' : ' is-todo' ?>">
+            <span class="ah-ov-check__mark" aria-hidden="true">
                 <?php if ($check['ok']): ?>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
                 <?php else: ?>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 7v6M12 17h.01"/></svg>
                 <?php endif; ?>
             </span>
-            <span class="account-hub__ov-check-text">
-                <span class="account-hub__ov-check-title"><?= $h($check['title']) ?><span class="account-hub__sr"><?= $check['ok'] ? ' : en place' : ' : à régler' ?></span></span>
-                <span class="account-hub__ov-check-detail<?= !empty($check['detail_mono']) ? ' is-mono' : '' ?>"><?= $h($check['detail']) ?></span>
+            <span class="ah-ov-check__text">
+                <span class="ah-ov-check__title"><?= $h($check['title']) ?><span class="account-hub__sr"><?= $check['ok'] ? ' : en place' : ' : à régler' ?></span></span>
+                <span class="ah-ov-check__detail<?= !empty($check['detail_mono']) ? ' is-mono' : '' ?>"><?= $h($check['detail']) ?></span>
                 <?php if (!$check['ok']): ?>
-                <span class="account-hub__ov-check-why"><?= $h($check['warn']) ?></span>
+                <span class="ah-ov-check__why"><?= $h($check['warn']) ?></span>
                 <?php endif; ?>
             </span>
-            <a href="<?= $h($check['href']) ?>" class="account-hub__ov-check-cta"><?= $h($check['cta']) ?></a>
+            <a href="<?= $h($check['href']) ?>" class="ah-ov-check__cta"><?= $h($check['cta']) ?></a>
         </li>
         <?php endforeach; ?>
     </ul>
 </section>
 
-<?php $yr = is_array($accountYearReview ?? null) ? $accountYearReview : null; ?>
-<?php if ($yr !== null): ?>
-<link href="<?= $h(asset_url('assets/css/year-review.css')) ?>" rel="stylesheet">
-<section class="yr-account<?= $yr['published'] ? '' : ' is-soon' ?>" aria-labelledby="account-year-review-heading">
-    <div class="yr-account__main">
-        <p class="yr-account__kicker">Rétrospective</p>
-        <p class="yr-account__year"><?= (int) $yr['year'] ?></p>
-        <div>
-            <h2 id="account-year-review-heading" class="yr-account__title">
-                <?= $yr['published'] ? ($yr['has_data'] ? 'Ton année sur le terrain' : 'Pas encore assez de terrain cette année') : 'Ta rétrospective arrive bientôt' ?>
-            </h2>
-            <p class="yr-account__desc">
-                <?php if (!$yr['published']): ?>
-                    Heures de jeu, kilomètres, blessures, SSE, comptes rendus : publiée le <?= $h(date('d/m/Y', (int) $yr['publish_at'])) ?>.
-                <?php elseif ($yr['has_data']): ?>
-                    Revois ton année en quelques écrans et partage tes cartes sur Discord.
-                <?php else: ?>
-                    Elle se remplit à chaque partie jouée avec l’ATAK et le lien du jeu.
+<div class="ah-ov-layout">
+    <div class="ah-ov-layout__main">
+        <?php $yr = is_array($accountYearReview ?? null) ? $accountYearReview : null; ?>
+        <?php if ($yr !== null): ?>
+        <link href="<?= $h(asset_url('assets/css/year-review.css')) ?>" rel="stylesheet">
+        <section class="yr-account<?= $yr['published'] ? '' : ' is-soon' ?>" aria-labelledby="account-year-review-heading">
+            <div class="yr-account__main">
+                <p class="yr-account__kicker">Rétrospective</p>
+                <p class="yr-account__year"><?= (int) $yr['year'] ?></p>
+                <div>
+                    <h2 id="account-year-review-heading" class="yr-account__title">
+                        <?= $yr['published'] ? ($yr['has_data'] ? 'Ton année sur le terrain' : 'Pas encore assez de terrain cette année') : 'Ta rétrospective arrive bientôt' ?>
+                    </h2>
+                    <p class="yr-account__desc">
+                        <?php if (!$yr['published']): ?>
+                            Heures de jeu, kilomètres, blessures, SSE, comptes rendus : publiée le <?= $h(date('d/m/Y', (int) $yr['publish_at'])) ?>.
+                        <?php elseif ($yr['has_data']): ?>
+                            Revois ton année en quelques écrans et partage tes cartes sur Discord.
+                        <?php else: ?>
+                            Elle se remplit à chaque partie jouée avec l’ATAK et le lien du jeu.
+                        <?php endif; ?>
+                    </p>
+                </div>
+            </div>
+            <?php if ($yr['published']): ?>
+            <div class="yr-account__actions">
+                <a class="yr-btn yr-btn--solid" href="<?= $h(url('retrospective/' . (int) $yr['year'])) ?>"><?= $yr['has_data'] ? 'Voir ma rétrospective' : 'Ouvrir' ?></a>
+                <?php if ($yr['collective']): ?>
+                <a class="yr-btn" href="<?= $h(url('retrospective/' . (int) $yr['year'] . '/unite')) ?>">Bilan de l’unité</a>
                 <?php endif; ?>
-            </p>
-        </div>
-    </div>
-    <?php if ($yr['published']): ?>
-    <div class="yr-account__actions">
-        <a class="yr-btn yr-btn--solid" href="<?= $h(url('retrospective/' . (int) $yr['year'])) ?>"><?= $yr['has_data'] ? 'Voir ma rétrospective' : 'Ouvrir' ?></a>
-        <?php if ($yr['collective']): ?>
-        <a class="yr-btn" href="<?= $h(url('retrospective/' . (int) $yr['year'] . '/unite')) ?>">Bilan de l’unité</a>
+                <?php foreach (array_slice($yr['years'], 1) as $past): ?>
+                <a class="yr-btn" href="<?= $h(url('retrospective/' . (int) $past)) ?>"><?= (int) $past ?></a>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+        </section>
         <?php endif; ?>
-        <?php foreach (array_slice($yr['years'], 1) as $past): ?>
-        <a class="yr-btn" href="<?= $h(url('retrospective/' . (int) $past)) ?>"><?= (int) $past ?></a>
-        <?php endforeach; ?>
-    </div>
-    <?php endif; ?>
-</section>
-<?php endif; ?>
 
-<div class="account-hub__ov-stats">
-    <div class="account-hub__ov-stat">
-        <p class="account-hub__ov-stat-label">Dernière connexion</p>
-        <p class="account-hub__ov-stat-value is-sm"><?= $h(preg_replace('/\s*\([^)]*\)$/', '', (string) ($accountSnapshot['last_login_label'] ?? '')) ?: 'Non enregistrée') ?></p>
-    </div>
-    <a class="account-hub__ov-stat is-link" href="<?= $h(url('account/security/devices')) ?>">
-        <p class="account-hub__ov-stat-label">Appareils ATAK</p>
-        <p class="account-hub__ov-stat-value"><?= $devicesActive ?></p>
-        <p class="account-hub__ov-stat-note"><?= $devicesTotal === 0 ? 'Aucun téléphone lié' : ($devicesActive === $devicesTotal ? 'actif' . ($devicesActive > 1 ? 's' : '') : 'actif' . ($devicesActive > 1 ? 's' : '') . ' sur ' . $devicesTotal) ?></p>
-    </a>
-    <div class="account-hub__ov-stat">
-        <p class="account-hub__ov-stat-label">Indicatif</p>
-        <p class="account-hub__ov-stat-value is-sm"><?= $h($callsign !== '' ? $callsign : 'Non renseigné') ?></p>
-        <p class="account-hub__ov-stat-note"><a href="<?= $h(url('account/preferences')) ?>#section-profil">Modifier le profil</a></p>
-    </div>
-    <?php $ovPublicCvUrl = isset($accountPublicCvUrl) && is_string($accountPublicCvUrl) && $accountPublicCvUrl !== '' ? $accountPublicCvUrl : null; ?>
-    <a class="account-hub__ov-stat is-link" href="<?= $h($ovPublicCvUrl ?? url('account/page-publique')) ?>"<?= $ovPublicCvUrl !== null ? ' target="_blank" rel="noopener"' : '' ?>>
-        <p class="account-hub__ov-stat-label">Page publique</p>
-        <p class="account-hub__ov-stat-value is-sm"><?= $ovPublicCvUrl !== null ? 'En ligne' : 'Fermée' ?></p>
-        <p class="account-hub__ov-stat-note"><?= $ovPublicCvUrl !== null ? 'Voir ma page publique' : 'Ouvrir mon C.V. de joueur' ?></p>
-    </a>
-    <div class="account-hub__ov-stat">
-        <p class="account-hub__ov-stat-label">Membre depuis</p>
-        <p class="account-hub__ov-stat-value is-sm"><?= $h($formatDay($accountMemberSince) ?? '—') ?></p>
-    </div>
-</div>
+        <section class="ah-card" aria-labelledby="account-shortcuts-heading">
+            <div class="ah-card__head">
+                <h2 id="account-shortcuts-heading" class="ah-card__title">Réglages fréquents</h2>
+                <p class="ah-card__desc">Tout le reste se trouve avec la recherche en haut de la page<span class="ah-kbd-hint">, touche <kbd>/</kbd></span>.</p>
+            </div>
+            <ul class="ah-ov-shortcuts">
+                <?php foreach ($shortcuts as $sc): ?>
+                <li>
+                    <a class="ah-ov-shortcut" href="<?= $h($sc['href']) ?>">
+                        <span class="ah-ov-shortcut__icon"><?= $svg($sc['icon']) ?></span>
+                        <span class="ah-ov-shortcut__text">
+                            <span class="ah-ov-shortcut__title"><?= $h($sc['title']) ?></span>
+                            <span class="ah-ov-shortcut__desc"><?= $h($sc['desc']) ?></span>
+                        </span>
+                    </a>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+        </section>
 
-<div class="account-hub__ov-grid">
-    <section class="account-hub__panel" aria-labelledby="account-activity-heading">
-        <div class="account-hub__panel-head">
-            <p class="account-hub__panel-kicker">Journal</p>
-            <h2 id="account-activity-heading" class="account-hub__panel-title">Activité récente</h2>
-            <p class="account-hub__panel-desc">Connexions et changements de sécurité de ce compte. Adresse IP volontairement tronquée.</p>
-        </div>
-        <div class="account-hub__panel-body">
+        <section id="activite" class="ah-card" aria-labelledby="account-activity-heading" data-locate-box>
+            <div class="ah-card__head">
+                <h2 id="account-activity-heading" class="ah-card__title">Activité récente</h2>
+                <p class="ah-card__desc">Connexions et changements de sécurité de ce compte. Adresse IP volontairement tronquée.</p>
+            </div>
             <?php if ($accountActivity === []): ?>
-            <p class="account-hub__ov-empty">Aucune activité enregistrée pour l’instant.</p>
+            <p class="ah-ov-empty">Aucune activité enregistrée pour l’instant.</p>
             <?php else: ?>
-            <ol class="account-hub__ov-feed">
+            <ol class="ah-ov-feed">
                 <?php foreach ($accountActivity as $event): ?>
-                <li class="account-hub__ov-event is-<?= $h($event['tone'] ?? 'muted') ?>">
-                    <span class="account-hub__ov-event-dot" aria-hidden="true"></span>
-                    <span class="account-hub__ov-event-main">
-                        <span class="account-hub__ov-event-title"><?= $h($event['label'] ?? '') ?></span>
-                        <span class="account-hub__ov-event-meta"><?= $h($event['device'] ?? '') ?> · IP <?= $h($event['ip'] ?? '—') ?></span>
+                <li class="ah-ov-event is-<?= $h($event['tone'] ?? 'muted') ?>">
+                    <span class="ah-ov-event__dot" aria-hidden="true"></span>
+                    <span class="ah-ov-event__main">
+                        <span class="ah-ov-event__title"><?= $h($event['label'] ?? '') ?></span>
+                        <span class="ah-ov-event__meta"><?= $h($event['device'] ?? '') ?> · IP <?= $h($event['ip'] ?? '—') ?></span>
                     </span>
-                    <time class="account-hub__ov-event-when"><?= $h($event['when'] ?? '') ?></time>
+                    <time class="ah-ov-event__when"><?= $h($event['when'] ?? '') ?></time>
                 </li>
                 <?php endforeach; ?>
             </ol>
             <?php endif; ?>
-        </div>
-    </section>
+        </section>
+    </div>
 
-    <section id="sessions" class="account-hub__panel account-hub__section-anchor" aria-labelledby="account-sessions-heading">
-        <div class="account-hub__panel-head">
-            <p class="account-hub__panel-kicker">Sessions</p>
-            <h2 id="account-sessions-heading" class="account-hub__panel-title">Connecté ailleurs ?</h2>
-            <p class="account-hub__panel-desc">Un ordinateur partagé, un téléphone perdu ou une connexion que vous ne reconnaissez pas : fermez toutes les autres sessions. Celle-ci reste ouverte.</p>
-        </div>
-        <div class="account-hub__panel-body">
-            <form method="post" action="<?= $h(url('account/sessions/fermer-les-autres')) ?>" onsubmit="return confirm('Fermer toutes vos autres sessions ? Les autres navigateurs devront se reconnecter.');">
+    <aside class="ah-ov-layout__side" aria-label="Votre compte en bref">
+        <section class="ah-card" aria-labelledby="account-facts-heading">
+            <h2 id="account-facts-heading" class="ah-card__title">En bref</h2>
+            <dl class="ah-ov-facts">
+                <div>
+                    <dt>Dernière connexion</dt>
+                    <dd><?= $h($lastLogin) ?></dd>
+                </div>
+                <div>
+                    <dt>Indicatif</dt>
+                    <dd><?= $h($callsign !== '' ? $callsign : 'Non renseigné') ?> <a href="<?= $h(url('account/preferences')) ?>#callsign">Modifier</a></dd>
+                </div>
+                <div>
+                    <dt>Appareils ATAK</dt>
+                    <dd>
+                        <?= $devicesTotal === 0
+                            ? 'Aucun téléphone lié'
+                            : $h($devicesActive . ' actif' . ($devicesActive > 1 ? 's' : '') . ($devicesActive === $devicesTotal ? '' : ' sur ' . $devicesTotal)) ?>
+                        <a href="<?= $h(url('account/security/devices')) ?>">Gérer</a>
+                    </dd>
+                </div>
+                <div>
+                    <dt>Page publique</dt>
+                    <dd>
+                        <?= $ovPublicCvUrl !== null ? 'En ligne' : 'Fermée' ?>
+                        <?php if ($ovPublicCvUrl !== null): ?>
+                        <a href="<?= $h($ovPublicCvUrl) ?>" target="_blank" rel="noopener">Voir ma page publique</a>
+                        <?php else: ?>
+                        <a href="<?= $h(url('account/page-publique')) ?>">Ouvrir mon C.V. de joueur</a>
+                        <?php endif; ?>
+                    </dd>
+                </div>
+                <div>
+                    <dt>Membre depuis</dt>
+                    <dd><?= $h($formatDay($accountMemberSince) ?? '—') ?></dd>
+                </div>
+            </dl>
+        </section>
+
+        <section id="sessions" class="ah-card" aria-labelledby="account-sessions-heading" data-locate-box>
+            <h2 id="account-sessions-heading" class="ah-card__title">Connecté ailleurs ?</h2>
+            <p class="ah-card__desc">Un ordinateur partagé, un téléphone perdu ou une connexion que vous ne reconnaissez pas : fermez toutes les autres sessions. Celle-ci reste ouverte.</p>
+            <form method="post" action="<?= $h(url('account/sessions/fermer-les-autres')) ?>" class="ah-ov-sessions" onsubmit="return confirm('Fermer toutes vos autres sessions ? Les autres navigateurs devront se reconnecter.');">
                 <?= \App\Core\Csrf::field() ?>
                 <button type="submit" class="account-hub__btn account-hub__btn--ink">Déconnecter mes autres sessions</button>
             </form>
-            <p class="account-hub__hint" style="margin-top:.85rem">Changer de mot de passe ferme aussi les autres sessions. Les téléphones ATAK se gèrent dans <a href="<?= $h(url('account/security/devices')) ?>">Appareils ATAK</a>.</p>
-        </div>
-    </section>
+            <p class="ah-card__note">Changer de mot de passe ferme aussi les autres sessions. Les téléphones ATAK se gèrent dans <a href="<?= $h(url('account/security/devices')) ?>">Appareils ATAK</a>.</p>
+        </section>
+    </aside>
+</div>
+
 </div>
 
 <?php require base_path('views/partials/account/shell_close.php'); ?>

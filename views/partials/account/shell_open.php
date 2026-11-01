@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Shell commun de l’espace compte (bandeau + navigation latérale).
+ * Shell commun de l’espace compte (bandeau, recherche + navigation latérale).
  *
  * Variables attendues (optionnelles sauf $accountNavKey / $accountTitle) :
  * - string $accountNavKey
@@ -11,6 +11,8 @@ declare(strict_types=1);
  * - string|null $success
  * - string|null $error
  * - bool $accountHideDefaultActions
+ *
+ * Pages du menu et index de recherche : App\Support\AccountSpaceCatalog.
  */
 $accountNavKey = (string) ($accountNavKey ?? 'overview');
 $accountTitle = (string) ($accountTitle ?? 'Mon compte');
@@ -53,110 +55,30 @@ $accountIcon = static function (string $path): string {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $path . '</svg>';
 };
 
-$navGroups = [
-    [
-        'title' => 'Compte',
-        'items' => [
-            [
-                'key' => 'overview',
-                'href' => url('account'),
-                'label' => 'Vue d’ensemble',
-                'hint' => 'État du compte, activité',
-                'icon' => '<path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/>',
-            ],
-            [
-                'key' => 'preferences',
-                'href' => url('account/preferences'),
-                'label' => 'Profil et préférences',
-                'hint' => 'Nom, langue, thème, e-mails',
-                'icon' => '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
-            ],
-        ],
-    ],
-    [
-        'title' => 'Sécurité',
-        'items' => [
-            [
-                'key' => 'mail',
-                'href' => url('account/mail'),
-                'label' => 'Adresse e-mail',
-                'hint' => 'Adresse de connexion',
-                'icon' => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
-            ],
-            [
-                'key' => 'password',
-                'href' => url('account/password'),
-                'label' => 'Mot de passe',
-                'hint' => 'Changer le secret d’accès',
-                'icon' => '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/>',
-            ],
-            [
-                'key' => 'security',
-                'href' => url('account/security'),
-                'label' => 'Double vérification',
-                'hint' => 'Code par e-mail ou application',
-                'icon' => '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
-            ],
-            [
-                'key' => 'devices',
-                'href' => url('account/security/devices'),
-                'label' => 'Appareils ATAK',
-                'hint' => 'Téléphones COMSPEC liés',
-                'icon' => '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',
-            ],
-        ],
-    ],
-    [
-        'title' => 'Apparence',
-        'items' => [
-            [
-                'key' => 'portrait',
-                'href' => url('account/portrait'),
-                'label' => 'Portrait',
-                'hint' => 'Votre photo d’opérateur',
-                'icon' => '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="12" cy="10" r="3"/><path d="M6 19c1.2-2.4 3.4-3.5 6-3.5s4.8 1.1 6 3.5"/>',
-            ],
-            [
-                'key' => 'banner',
-                'href' => url('account/banner'),
-                'label' => 'Couverture du menu',
-                'hint' => 'Bandeau du menu session',
-                'icon' => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-4 4 3 3-2 6 4"/>',
-            ],
-        ],
-    ],
-    [
-        'title' => 'Communauté',
-        'items' => [
-            [
-                'key' => 'access',
-                'href' => url('account/acces'),
-                'label' => 'Mes accès',
-                'hint' => 'Rôle et départ de la communauté',
-                'icon' => '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3"/>',
-            ],
-            [
-                'key' => 'public_cv',
-                'href' => url('account/page-publique'),
-                'label' => 'Ma page publique',
-                'hint' => 'C.V. de joueur à partager',
-                'icon' => '<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="10" r="3"/><path d="M6.5 18c1.2-2.4 3.2-3.5 5.5-3.5s4.3 1.1 5.5 3.5"/>',
-            ],
-        ],
-    ],
-    [
-        'title' => 'Confidentialité',
-        'items' => [
-            [
-                'key' => 'donnees',
-                'href' => url('account/donnees'),
-                'label' => 'Mes données',
-                'hint' => 'Export et suppression du compte',
-                'icon' => '<path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3"/><path d="M12 3v12M7 10l5 5 5-5"/>',
-            ],
-        ],
-    ],
-];
+$navGroups = \App\Support\AccountSpaceCatalog::navGroups();
+
+/* Réglages qui n’existent pas pour ce compte : absents de la recherche plutôt que de mener à une page vide. */
+$accountSearchHidden = [];
+try {
+    $discordShell = new \App\Services\Integrations\DiscordLinkedRoles();
+    $discordLinksShell = new \App\Repositories\UserDiscordLinkRepository();
+    $discordLinkedShell = !empty($accountUserForShell['id']) && $discordLinksShell->schemaReady()
+        && $discordLinksShell->find((int) $accountUserForShell['id']) !== null;
+    if (!$discordShell->configured() && !$discordLinkedShell) {
+        $accountSearchHidden[] = 'section-discord';
+    }
+} catch (\Throwable) {
+    $accountSearchHidden[] = 'section-discord';
+}
+try {
+    $shellTenantId = (int) (\App\Core\Session::get('tenant_id') ?? 0);
+    if ($shellTenantId < 1 || !\App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)->allows($shellTenantId, 'training')) {
+        $accountSearchHidden[] = 'charter';
+    }
+} catch (\Throwable) {
+    $accountSearchHidden[] = 'charter';
+}
+$accountSearchEntries = \App\Support\AccountSpaceCatalog::searchEntries($accountSearchHidden);
 
 if (function_exists('i18n_translate_nav_item')) {
     $navGroups = array_map('i18n_translate_nav_item', $navGroups);
@@ -217,6 +139,9 @@ $accountPhrase = static fn (string $s): string => function_exists('i18n_phrase')
                 </a>
             </div>
             <?php endif; ?>
+        </div>
+        <div class="account-hub__hero-search">
+            <?php require base_path('views/partials/account/search.php'); ?>
         </div>
     </header>
 

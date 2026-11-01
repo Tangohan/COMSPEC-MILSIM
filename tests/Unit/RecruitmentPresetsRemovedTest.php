@@ -95,6 +95,7 @@ final class RecruitmentPresetsRemovedTest extends TestCase
             'views/partials/account/shell_open.php',
             'views/enlistment.php',
             'views/enlistment/simple.php',
+            'app/Support/AccountSpaceCatalog.php',
         ] as $file) {
             $src = (string) file_get_contents(self::ROOT . '/' . $file);
             self::assertStringNotContainsString('recruitment-presets', $src, $file);
