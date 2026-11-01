@@ -107,6 +107,10 @@ return static function (PDO $pdo): void {
     if ($tableExists('arsenal_wardrobes') && !$columnExists('arsenal_wardrobes', 'gallery_json')) {
         $pdo->exec('ALTER TABLE arsenal_wardrobes ADD COLUMN gallery_json JSON DEFAULT NULL AFTER cover_image_path');
     }
+    // Visibilité d’une tenue : toute la communauté (comportement historique) ou son propriétaire seul.
+    if ($tableExists('arsenal_wardrobes') && !$columnExists('arsenal_wardrobes', 'visibility')) {
+        $pdo->exec("ALTER TABLE arsenal_wardrobes ADD COLUMN visibility ENUM('tenant','personal') NOT NULL DEFAULT 'tenant' AFTER collection_id");
+    }
     if ($tableExists('equipment_classes') && !$columnExists('equipment_classes', 'cover_image_path')) {
         $pdo->exec('ALTER TABLE equipment_classes ADD COLUMN cover_image_path VARCHAR(255) DEFAULT NULL AFTER description');
     }

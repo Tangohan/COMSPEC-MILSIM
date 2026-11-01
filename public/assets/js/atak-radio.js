@@ -240,8 +240,8 @@ window.ATAKRadio = (function () {
       tab.hidden = true;
       var panel = document.getElementById('tab-radio');
       if (panel && panel.classList.contains('active')) {
-        var cams = document.querySelector('.atak-tab[data-tab="cams"]');
-        if (cams) cams.click();
+        var photos = document.querySelector('.atak-tab[data-tab="photos"]');
+        if (photos) photos.click();
       }
     } else {
       tab.hidden = false;

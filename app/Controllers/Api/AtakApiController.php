@@ -6001,8 +6001,8 @@ class AtakApiController
     }
 
     /**
-     * Demande ciblée : photo casque, photo HD ou flux d’aperçus rapides (pas de RTMP).
-     * Body : { "mode": "snap" | "snap_hd" | "stream" }
+     * Demande ciblée : photo casque ou photo HD.
+     * Body : { "mode": "snap" | "snap_hd" }
      */
     public function unitsRequestHelmetMedia(Request $request, array $params = []): Response
     {
@@ -6044,9 +6044,9 @@ class AtakApiController
         $mode = strtolower(trim((string) ($body['mode'] ?? $body['quality'] ?? 'snap')));
         if (in_array($mode, ['stream', 'video', 'flux'], true)) {
             return Response::json([
-                'error' => 'not_ready',
-                'message' => 'La vue casque en temps réel n’est pas encore au point. Demandez une photo, ou consultez l’onglet Photos pour les clichés du terminal ATAK.',
-            ], 422);
+                'error' => 'gone',
+                'message' => 'La vue casque en continu a été retirée. Demandez une photo casque à la place.',
+            ], 410);
         }
         [$orderType, $typeLabel, $payload, $activityLabel, $userMessage] = match ($mode) {
             'snap_hd', 'hd' => [
@@ -6055,13 +6055,6 @@ class AtakApiController
                 'Demande de photo casque haute définition depuis Athena',
                 'Caméra — photo HD — ',
                 'Demande de photo casque HD envoyée vers ',
-            ],
-            'stream', 'video', 'flux' => [
-                'HELMET_STREAM',
-                'Flux casque (aperçus rapides)',
-                'Demande de flux casque (~3 min, aperçus toutes les ~5 s)',
-                'Caméra — flux casque — ',
-                'Demande de flux casque envoyée vers ',
             ],
             default => [
                 'HELMET_SNAP',
@@ -8230,142 +8223,16 @@ class AtakApiController
     }
 
     /**
-     * Roster caméras casque / drone (aperçus photo, pas de flux vidéo temps réel).
+     * Ancien roster des caméras casque / drone pour la « Live cam » par captures d'écran : fonction retirée.
+     * Les anciennes versions du mod appellent encore GET/POST ici ; elles reçoivent 410 (et se mettent en pause).
      */
     public function videoFeeds(Request $request, array $params = []): Response
     {
-        $svc = new \App\Services\Tactical\AtakVideoFeedsService();
-        $method = strtoupper((string) ($request->method() ?? 'GET'));
-
-        try {
-            $r = $this->requireTenant($request);
-            if ($r instanceof Response) {
-                return $r;
-            }
-            $tenantId = $r;
-
-            if ($method === 'POST' || $method === 'PUT' || $method === 'PATCH') {
-                if (!$this->authArma()) {
-                    return Response::json(['error' => 'Unauthorized'], 401);
-                }
-                $actor = $this->guardArmaWrite($request, $tenantId, false);
-                if ($actor instanceof Response) {
-                    return $actor;
-                }
-                $body = $this->jsonBody($request);
-                $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $this->mapId($request, true));
-                if ($mapId < 1) {
-                    $mapId = self::DEFAULT_MAP_ID;
-                }
-                $feeds = $body['feeds'] ?? [];
-                if (!is_array($feeds)) {
-                    $feeds = [];
-                }
-                $reporter = trim((string) ($body['callsign'] ?? $body['call_sign'] ?? $body['reporter'] ?? ''));
-                if ($reporter === '' && is_array($actor)) {
-                    $reporter = trim((string) ($actor['callsign'] ?? $actor['call_sign'] ?? ''));
-                }
-                $saved = $svc->put($tenantId, $mapId, $feeds, $reporter);
-                $saved = $this->attachFeedSnapshots($tenantId, $saved);
-
-                return Response::json(['ok' => true] + $saved);
-            }
-
-            $mapId = $this->mapId($request);
-            $payload = $svc->get($tenantId, $mapId);
-            $payload = $this->attachFeedSnapshots($tenantId, $payload);
-
-            return Response::json($payload);
-        } catch (\Throwable $e) {
-            error_log('[atak/video-feeds] ' . $e->getMessage());
-
-            return Response::json([
-                'error' => 'video_feeds_failed',
-                'message' => 'Impossible de mettre à jour les caméras pour le moment.',
-            ], 503);
-        }
-    }
-
-    /**
-     * Attache la dernière capture recon à chaque flux (par id de feed ou auteur + type).
-     *
-     * @param array{mapId?: int, feeds: list<array<string, mixed>>, updated_at?: string} $payload
-     * @return array{mapId?: int, feeds: list<array<string, mixed>>, updated_at?: string}
-     */
-    private function attachFeedSnapshots(int $tenantId, array $payload): array
-    {
-        $feeds = $payload['feeds'] ?? [];
-        if (!is_array($feeds) || $feeds === []) {
-            return $payload;
-        }
-        $ids = [];
-        foreach ($feeds as $f) {
-            if (is_array($f) && trim((string) ($f['id'] ?? '')) !== '') {
-                $ids[] = (string) $f['id'];
-            }
-        }
-        try {
-            $snap = $this->reconImages()->latestSnapshots($tenantId, $ids, 120);
-        } catch (\Throwable $e) {
-            error_log('[atak/video-feeds] snapshots: ' . $e->getMessage());
-            $snap = ['by_feed' => [], 'by_author_device' => [], 'by_author' => []];
-        }
-        $byFeed = $snap['by_feed'] ?? [];
-        $byAuthor = $snap['by_author_device'] ?? [];
-        $byAuthorAny = $snap['by_author'] ?? [];
-        foreach ($feeds as &$feed) {
-            if (!is_array($feed)) {
-                continue;
-            }
-            $id = trim((string) ($feed['id'] ?? ''));
-            $row = ($id !== '' && isset($byFeed[$id])) ? $byFeed[$id] : null;
-            $cs = strtoupper(trim((string) ($feed['callsign'] ?? '')));
-            if ($row === null) {
-                $kind = strtolower(trim((string) ($feed['kind'] ?? 'helmet')));
-                $device = match ($kind) {
-                    'drone', 'uav' => 'DRONE',
-                    'vehicle' => 'UAV',
-                    default => 'HELMET',
-                };
-                $key = $cs . ':' . $device;
-                $row = ($cs !== '' && isset($byAuthor[$key])) ? $byAuthor[$key] : null;
-            }
-            if ($row === null && $cs !== '' && isset($byAuthorAny[$cs])) {
-                $row = $byAuthorAny[$cs];
-            }
-            // Cliché confidentiel : pas de vignette ni de légende sans l'habilitation (même règle que les flux photo).
-            if (is_array($row) && !empty($row['is_confidential']) && !$this->canViewConfidentialRecon()) {
-                $row = null;
-            }
-            if (is_array($row)) {
-                $feed['snapshot_url'] = \App\Support\ReconImageStorage::urlForRow($row);
-                $feed['snapshot_id'] = (int) ($row['id'] ?? 0);
-                $feed['snapshot_at'] = $row['created_at'] ?? $row['captured_at'] ?? null;
-                $feed['snapshot_caption'] = $row['caption'] ?? null;
-            } else {
-                $feed['snapshot_url'] = null;
-                $feed['snapshot_id'] = null;
-                $feed['snapshot_at'] = null;
-                $feed['snapshot_caption'] = null;
-            }
-            $feed['kind_label'] = match (strtolower((string) ($feed['kind'] ?? ''))) {
-                'drone', 'uav' => 'Caméra drone',
-                'vehicle' => 'Caméra véhicule',
-                default => 'Caméra casque',
-            };
-            // Évite INF/NAN qui font échouer json_encode → réponse 500 opaque.
-            foreach (['pos_x', 'pos_y', 'pos_z'] as $coord) {
-                if (!array_key_exists($coord, $feed) || $feed[$coord] === null) {
-                    continue;
-                }
-                $n = (float) $feed[$coord];
-                $feed[$coord] = is_finite($n) ? $n : null;
-            }
-        }
-        unset($feed);
-        $payload['feeds'] = $feeds;
-
-        return $payload;
+        return Response::json([
+            'error' => 'gone',
+            'message' => 'Le partage des caméras vers Athena a été retiré.',
+            'feeds' => [],
+        ], 410);
     }
 
     /**
@@ -8419,7 +8286,7 @@ class AtakApiController
 
             return Response::json([
                 'ok' => true,
-                'modules' => $saved['modules'],
+                'modules' => \App\Services\Tactical\AtakBridgeModulesService::forGame($saved['modules']),
                 'catalog' => $svc->catalogWithState($tenantId),
                 'updated_at' => $saved['updated_at'],
             ]);
@@ -8428,7 +8295,7 @@ class AtakApiController
         $state = $svc->get($tenantId);
 
         return Response::json([
-            'modules' => $state['modules'],
+            'modules' => \App\Services\Tactical\AtakBridgeModulesService::forGame($state['modules']),
             'catalog' => $svc->catalogWithState($tenantId),
             'updated_at' => $state['updated_at'],
         ]);
@@ -11377,7 +11244,6 @@ class AtakApiController
             'NOTIFY_FULL' => 'Alerte plein écran',
             'HELMET_SNAP' => 'Photo casque',
             'HELMET_SNAP_HD' => 'Photo casque HD',
-            'HELMET_STREAM' => 'Flux casque',
             'PHONE_GEOLOC' => 'Géolocalisation téléphone',
             'PHONE_GEOLOC_OFF' => 'Arrêt géolocalisation téléphone',
             default => null,
@@ -13160,6 +13026,15 @@ class AtakApiController
                     'message' => 'Aucune image reçue. Reprenez la capture depuis le terrain.',
                 ], 400);
             }
+            // Ancienne « Live cam » (captures périodiques du téléphone, flux chest:) : fonction retirée, image ignorée.
+            $legacyFeed = strtolower(trim((string) ($_POST['feed_id'] ?? $_POST['feedId'] ?? $_POST['unit_name'] ?? $_POST['unitName'] ?? '')));
+            if (str_starts_with($legacyFeed, 'chest:')) {
+                return Response::json([
+                    'ok' => true,
+                    'ignored' => true,
+                    'message' => 'Le partage de caméra vers Athena a été retiré : image non enregistrée.',
+                ], 200);
+            }
             if (TerrainUploadedImage::isSseFaceFileName((string) ($file['name'] ?? ''))) {
                 return Response::json([
                     'ok' => true,
@@ -13435,7 +13310,7 @@ class AtakApiController
                         $status = 404;
                     } else {
                         $unit = strtolower((string) ($row['unit_name'] ?? ''));
-                        $isFeed = (bool) preg_match('/^(chest|helmet|drone):/', $unit);
+                        $isFeed = (bool) preg_match('/^(helmet|drone):/', $unit);
                         $mission = trim((string) ($row['mission_id'] ?? ''));
                         $album = $this->reconImages()->list($tenantId, $mission !== '' ? $mission : null, null, null, null, 200, $isFeed ? 'only' : 'exclude');
                         $found = false;

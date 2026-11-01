@@ -40,7 +40,7 @@ final class AntiScraperMiddlewareTest extends TestCase
 
     public function testApiKeyBypassesIpTrapBan(): void
     {
-        $this->bindRequest('POST', '/api/atak/video-feeds', 'Mozilla/5.0');
+        $this->bindRequest('POST', '/api/atak/position', 'Mozilla/5.0');
         $_SERVER['HTTP_X_COMSPEC_KEY'] = 'tenant-key';
         $ok = new Response();
         $mw = new AntiScraperMiddleware($this->trapBannedLimiter());

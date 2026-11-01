@@ -3153,15 +3153,6 @@ body.atak-hints-hidden .atak-panel-hint {
   color: #86efac;
   background: rgba(52, 211, 153, 0.12);
 }
-.atak-cam-item { margin-bottom: 0.5rem; }
-.atak-cam-item video,
-.atak-cam-webrtc-video {
-  width: 100%;
-  max-height: 180px;
-  background: #0f172a;
-  border-radius: 4px;
-}
-
 .atak-cams-section { margin-bottom: 0.75rem; }
 .atak-cams-section-head {
   display: flex;
@@ -3184,57 +3175,6 @@ body.atak-hints-hidden .atak-panel-hint {
   color: rgba(148, 163, 184, 0.75);
 }
 
-.atak-cams-tiles {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.55rem;
-}
-.atak-cam-tile {
-  border: 1px solid var(--atak-border);
-  background: rgba(15, 18, 28, 0.85);
-  overflow: hidden;
-}
-.atak-cam-tile-media {
-  position: relative;
-  aspect-ratio: 16 / 10;
-  background:
-    linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
-}
-.atak-cam-tile-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  cursor: zoom-in;
-}
-.atak-cam-tile-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem;
-  text-align: center;
-  color: rgba(226, 232, 240, 0.78);
-  font-size: 0.78rem;
-  line-height: 1.3;
-  background:
-    repeating-linear-gradient(
-      -45deg,
-      rgba(51, 65, 85, 0.25),
-      rgba(51, 65, 85, 0.25) 6px,
-      rgba(15, 23, 42, 0.35) 6px,
-      rgba(15, 23, 42, 0.35) 12px
-    );
-}
-.atak-cams-link-alert {
-  margin: 0 0 0.6rem;
-  padding: 0.45rem 0.7rem;
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  background: rgba(120, 53, 15, 0.55);
-  color: #fde68a;
-  font-size: 0.8rem;
-}
 .atak-api-outage {
   position: relative;
   z-index: 40;
@@ -3247,80 +3187,6 @@ body.atak-hints-hidden .atak-panel-hint {
 .atak-api-outage[hidden] {
   display: none !important;
 }
-.atak-cam-tile-badge {
-  position: absolute;
-  top: 0.35rem;
-  left: 0.35rem;
-  font-family: var(--atak-font-tactical);
-  font-size: 0.55rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 0.15rem 0.35rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(8, 10, 16, 0.75);
-  color: #e2e8f0;
-}
-.atak-cam-tile--helmet .atak-cam-tile-badge {
-  border-color: rgba(52, 211, 153, 0.45);
-  color: #6ee7b7;
-}
-.atak-cam-tile--drone .atak-cam-tile-badge,
-.atak-cam-tile--vehicle .atak-cam-tile-badge {
-  border-color: rgba(56, 189, 248, 0.45);
-  color: #7dd3fc;
-}
-.atak-cam-tile-badge--stream {
-  left: auto;
-  right: 0.35rem;
-  top: 0.35rem;
-  border-color: rgba(167, 139, 250, 0.55);
-  color: #c4b5fd;
-  background: rgba(46, 16, 101, 0.82);
-}
-.atak-cam-tile.is-streaming .atak-cam-tile-media {
-  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.45);
-}
-.atak-cam-tile-status {
-  position: absolute;
-  right: 0.35rem;
-  bottom: 0.35rem;
-  font-size: 0.55rem;
-  padding: 0.12rem 0.3rem;
-  background: rgba(8, 10, 16, 0.8);
-  color: #94a3b8;
-}
-.atak-cam-tile.is-online .atak-cam-tile-status {
-  color: #86efac;
-}
-.atak-cam-tile.is-online .atak-cam-tile-status::before {
-  content: "";
-  display: inline-block;
-  width: 0.4rem;
-  height: 0.4rem;
-  margin-right: 0.28rem;
-  border-radius: 50%;
-  background: #34d399;
-  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.25);
-  vertical-align: middle;
-}
-.atak-cam-tile-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.12rem;
-  padding: 0.4rem 0.5rem 0.5rem;
-  font-size: 0.68rem;
-  color: #cbd5e1;
-}
-.atak-cam-tile-meta strong {
-  font-size: 0.72rem;
-  color: #f1f5f9;
-}
-.atak-cam-tile-meta span {
-  color: #94a3b8;
-  font-size: 0.62rem;
-}
-
 .atak-cams-photos {
   display: grid;
   grid-template-columns: 1fr;

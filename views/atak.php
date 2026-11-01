@@ -1894,23 +1894,6 @@ if ($atakMapConfig) {
         <span class="atak-panel-chrome-label">Panneau</span>
         <button type="button" class="atak-panel-chrome-btn" id="atak-panel-left-popout" data-atak-popout="left" title="Détacher le module actif sur un second écran">Écran 2 · module actif</button>
       </div>
-      <div class="atak-tabs-content" id="tab-cams" hidden>
-        <div class="atak-cams-panel">
-          <div class="atak-cams-toolbar">
-            <p class="atak-panel-hint atak-cams-toolbar-hint">Les clichés pris depuis le terminal ATAK en jeu apparaissent dans l’onglet Photos. La vue casque en temps réel n’est pas au point.</p>
-            <button type="button" class="atak-ops-btn atak-ops-btn--primary" id="atak-cams-request-view" title="Demander une nouvelle capture photo aux opérateurs">Demander une nouvelle vue</button>
-          </div>
-          <p class="atak-cams-link-alert" id="atak-cams-helmet-wip" role="status">Vue casque en temps réel : pas encore au point. Utilisez l’onglet Photos pour les clichés transmis depuis le terrain.</p>
-          <p class="atak-cams-link-alert" id="atak-cams-link-alert" hidden role="status">Liaison coupée — les aperçus ne se mettent pas à jour. Demandez une nouvelle vue dès que la liaison revient.</p>
-          <div class="atak-cams-list" id="atak-cams-list">
-            <div class="atak-empty-state">
-              <div class="atak-empty-state-icon" aria-hidden="true">▣</div>
-              <p class="atak-empty-state-title">Aucun aperçu reçu</p>
-              <p class="atak-empty-state-text">La vue casque en temps réel n’est pas au point. Les photos prises depuis le terminal ATAK se retrouvent dans l’onglet Photos.</p>
-            </div>
-          </div>
-        </div>
-      </div>
       <div class="atak-tabs-content active" id="tab-photos">
         <div class="atak-cams-panel">
           <div class="atak-cams-toolbar" id="atak-photos-night-bar">

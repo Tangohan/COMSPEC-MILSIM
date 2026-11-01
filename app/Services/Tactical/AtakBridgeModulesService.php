@@ -11,6 +11,28 @@ namespace App\Services\Tactical;
 final class AtakBridgeModulesService
 {
     /**
+     * Modules retirés du site : toujours envoyés « coupés » au jeu, pour que les anciennes versions du mod
+     * (qui considèrent un module absent comme actif) cessent de les faire tourner.
+     * video_feeds : ancienne Live cam par captures d'écran (roster des caméras + aperçus périodiques).
+     */
+    public const RETIRED_MODULE_IDS = ['video_feeds'];
+
+    /**
+     * État envoyé au jeu : modules du catalogue + modules retirés forcés à false.
+     *
+     * @param array<string, bool> $modules
+     * @return array<string, bool>
+     */
+    public static function forGame(array $modules): array
+    {
+        foreach (self::RETIRED_MODULE_IDS as $id) {
+            $modules[$id] = false;
+        }
+
+        return $modules;
+    }
+
+    /**
      * Catalogue figé (ordre d’affichage admin / jeu).
      *
      * @return list<array{id: string, label: string, description: string}>
@@ -27,11 +49,6 @@ final class AtakBridgeModulesService
                 'id' => 'drone',
                 'label' => 'Contacts ISR / drones',
                 'description' => 'Partage les contacts repérés via Drone Ops sur la carte et la tablette.',
-            ],
-            [
-                'id' => 'video_feeds',
-                'label' => 'Caméras casque et drone',
-                'description' => 'Annonce les caméras casque / drones disponibles et remonte les aperçus photo vers le panneau Cams.',
             ],
             [
                 'id' => 'ctab_markers',

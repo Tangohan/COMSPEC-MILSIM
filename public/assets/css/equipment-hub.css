@@ -1061,3 +1061,47 @@ a.eq-rolekits__card:hover {
   color: var(--eq-accent);
   border: 1px solid rgba(42, 157, 111, 0.5);
 }
+
+/* Actions d’une tenue sous sa carte : copier pour ACE, modifier, supprimer (ses propres tenues). */
+.eq-hub__card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+.eq-hub__card-actions form {
+  margin: 0;
+}
+.eq-hub__btn--sm {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.78rem;
+  border-radius: 0.4rem;
+}
+.eq-hub__card-private {
+  color: var(--eq-muted);
+  font-size: 0.74rem;
+  font-style: italic;
+}
+.eq-hub__ace-one {
+  display: block;
+  margin-top: 0.25rem;
+}
+.eq-hub__copy-status {
+  position: fixed;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: min(32rem, calc(100vw - 2rem));
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.5rem;
+  background: #10231b;
+  color: #fff;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+}
+.eq-hub__copy-status[hidden] {
+  display: none;
+}
