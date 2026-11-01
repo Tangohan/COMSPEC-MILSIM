@@ -79,6 +79,7 @@ $platformNav = [
         ['path' => 'admin/system/annuaire', 'label' => 'Annuaire public', 'icon' => 'star', 'access' => 'system', 'not' => ['admin/system/annuaire/discord'], 'desc' => 'Épinglage et unités en tendance'],
         ['path' => 'admin/system/annuaire/discord', 'label' => 'Vitrine Discord', 'icon' => 'megaphone', 'access' => 'system', 'desc' => 'Annonces des communautés sur le Discord Athena'],
         ['path' => 'admin/system/contributeurs', 'label' => 'Contributeurs', 'icon' => 'globe', 'access' => 'system', 'desc' => 'Rôles de contributeur et traduction du site'],
+        ['path' => 'admin/organisations-a-supprimer', 'label' => 'Organisations à supprimer', 'icon' => 'globe', 'access' => 'system', 'desc' => 'Toujours 1 ou 2 membres après les rappels : supprimer ou garder'],
         ['path' => 'admin/system/tenant-recovery', 'label' => 'Récupération communauté', 'icon' => 'lifebuoy', 'access' => 'system', 'desc' => 'Rendre la main à une communauté bloquée'],
         ['path' => 'admin/system/subscription-plans', 'label' => 'Formules d’accès', 'icon' => 'layers', 'access' => 'system', 'desc' => 'Paliers, modules et plafonds'],
         ['path' => 'admin/paiements', 'label' => 'Paiements PayPal', 'icon' => 'file-check', 'access' => 'system', 'desc' => 'Paiements des formules, compte PayPal du site (aussi utilisé par la page de dons)'],

@@ -30,6 +30,7 @@ $item = static function (string $href, string $title, string $desc) use ($h): vo
             <ul class="pa-map__list">
                 <?php
                 $item(url('admin/tenants'), 'Annuaire des communautés', 'Nom, profil, formule et effectif');
+                $item(url('admin/organisations-a-supprimer'), 'Organisations à supprimer', 'Toujours 1 ou 2 membres après les rappels');
                 $item(url('admin/system/tenant-recovery'), 'Récupération communauté', 'Recréer une communauté orpheline depuis une sauvegarde');
                 $item(url('communities/create'), 'Créer une communauté', 'Parcours de création sur le site');
                 $item(url('admin/system/subscription-plans'), 'Formules d’accès', 'Paliers, quotas et modules');

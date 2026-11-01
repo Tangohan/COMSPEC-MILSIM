@@ -21,6 +21,10 @@ final class EmailEvents
     public const PLAN_PAYMENT_DECIDED = 'PLAN_PAYMENT_DECIDED';
     /** Essai fondateur ou formule offerte qui se termine bientôt — e-mail aux gestionnaires. */
     public const PLAN_END_WARNING = 'PLAN_END_WARNING';
+    /** Communauté restée à un ou deux membres après trois mois — rappel aux responsables (3 mois, relance à 4 mois). */
+    public const ORG_LOW_MEMBERS_REMINDER = 'ORG_LOW_MEMBERS_REMINDER';
+    /** Organisations à supprimer (toujours 1 ou 2 membres après les rappels) — résumé hebdomadaire à l'administration. */
+    public const ORG_LOW_MEMBERS_ADMIN_DIGEST = 'ORG_LOW_MEMBERS_ADMIN_DIGEST';
     /** Rétrospective annuelle publiée — e-mail au joueur (une fois par année). */
     public const YEAR_REVIEW_READY = 'YEAR_REVIEW_READY';
     public const NEW_COMMUNITY_MEMBER = 'NEW_COMMUNITY_MEMBER';

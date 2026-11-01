@@ -47,6 +47,8 @@ final class CronSchedule
         'photo_compress' => 60,
         // Fins d'essai fondateur et de formule offerte : e-mail une fois par fin.
         'plan_end_warning' => 360,
+        // Communautés à 1 ou 2 membres : rappels (3 et 4 mois, un envoi par palier), liste admin « à supprimer ».
+        'org_low_member_reminders' => 1440,
         // Annonce de la rétrospective annuelle : une part du quota d'e-mails par jour, pendant 14 jours.
         'year_review_mail' => 1440,
         // Rôles liés Discord : chaque compte relié est renvoyé au plus une fois par 24 h, 50 par passage.
