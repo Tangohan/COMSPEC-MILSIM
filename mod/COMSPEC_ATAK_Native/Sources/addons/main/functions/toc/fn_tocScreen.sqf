@@ -670,90 +670,106 @@ switch (_mode) do {
         // Sans ACE : seules les actions de secours (« actions ») s'en servent ; avant, COMSPEC_ATAK_TocDo restait vide
         // et aucune action d'écran (dont Ouvrir le PC du poste) ne faisait rien.
         if (isNil "ace_interact_menu_fnc_createAction") exitWith { false };
-        private _icon = "\z\comspec_atak_native\addons\main\data\app_toc.paa";
+        // Un seul arbre ACE par écran (retour de jeu 2.9.24 : tout en double, listes superposées) :
+        //   Écran COMSPEC > Diffusion (diapositives / leçon Academy, caméra en direct, PIP du poste)
+        //                 > Affichage TOC (réseau, carte seule, flux seul, PC du poste, retirer)
+        //                 > Carte (zoom, centrer, cadrer ; écran TOC désigné)
+        // Racine posée une fois : sur la classe exacte des écrans du jeu (jamais par héritage : une variante « noire » ou
+        // « sable » héritant d'une classe listée recevait les deux racines), sinon sur l'objet (« aceObj »), une fois.
         private _kids = {
-            private _out = [];
-            private _has = (count (_target getVariable ["COMSPEC_ATAK_TocScr", []])) >= 8;
-            private _cast = (count (_target getVariable ["COMSPEC_ATAK_ScreenCast", []])) >= 5;
-            private _sideOk = {
-                private _c = _target getVariable ["COMSPEC_ATAK_TocScr", []];
-                (count _c) < 8 || {(_c select 1) isEqualTo "" || {(_c select 1) isEqualTo str side group _player}}
+            private _o = _target;
+            private _has = (count (_o getVariable ["COMSPEC_ATAK_TocScr", []])) >= 8;
+            private _c = _o getVariable ["COMSPEC_ATAK_ScreenCast", []];
+            private _d = "\z\comspec_atak_native\addons\main\data\";
+            // Action simple : clé passée en paramètre (pas de code compilé à chaque ouverture du menu).
+            private _mk = {
+                params ["_id", "_txt", "_key", ["_cond", { true }]];
+                [["COMSPEC_ATAK_Wall" + _id, _txt, "", { [_target, _this select 2] call COMSPEC_ATAK_TocDo; }, _cond, {}, _key] call comspec_atak_native_fnc_aceAction, [], _o]
             };
-            if !(call _sideOk) exitWith { _out };
-            if (_cast) then {
-                _out pushBack [["COMSPEC_ATAK_WallSlideNext", "Diapositive suivante", "", { [_target, "slidesNext"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
-                _out pushBack [["COMSPEC_ATAK_WallSlidePrev", "Diapositive précédente", "", { [_target, "slidesPrev"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
-                _out pushBack [["COMSPEC_ATAK_WallSlideStop", "Arrêter les diapositives", "", { [_target, "slidesStop"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
+            private _grp = {
+                params ["_id", "_txt", "_icon", "_list"];
+                [["COMSPEC_ATAK_Wall" + _id, _txt, _icon, {}, { true }] call comspec_atak_native_fnc_aceAction, _list, _o]
+            };
+            private _diff = [];
+            if ((count _c) >= 5) then {
+                private _acad = (_c select 2) isEqualTo "ACADEMY";
+                _diff pushBack (["Next", ["Diapositive suivante", "Page suivante"] select _acad, "slidesNext"] call _mk);
+                _diff pushBack (["Prev", ["Diapositive précédente", "Page précédente"] select _acad, "slidesPrev"] call _mk);
+                _diff pushBack (["Stop", "Arrêter la diffusion", "slidesStop"] call _mk);
             } else {
-                _out pushBack [["COMSPEC_ATAK_WallSlides", "Diffuser mes diapositives", "\z\comspec_atak_native\addons\main\data\app_briefing.paa", { [_target, "slides"] call COMSPEC_ATAK_TocDo; }, { [_player] call comspec_atak_native_fnc_hasDevice }] call comspec_atak_native_fnc_aceAction, [], _target];
+                _diff pushBack (["Slides", "Diffuser mes diapositives", "slides", { [_player] call comspec_atak_native_fnc_hasDevice }] call _mk);
             };
-            private _tic = "\z\comspec_atak_native\addons\main\data\app_toc.paa";
-            // Caméra en direct sur l'écran : sources du camp que je peux voir (fn_tocCam).
-            _out pushBack [["COMSPEC_ATAK_WallCam", "Afficher une caméra", "\z\comspec_atak_native\addons\main\data\app_livecam.paa", {}, { true }, {
-                private _kids = [];
-                {
-                    _x params ["_lbl", "_id"];
-                    _kids pushBack [["COMSPEC_ATAK_WallCam_" + str _forEachIndex, _lbl, "", { ["set", [_target, _this select 2]] call comspec_atak_native_fnc_tocCam; }, { true }, {}, _id] call comspec_atak_native_fnc_aceAction, [], _target];
-                } forEach ((["sources"] call comspec_atak_native_fnc_tocCam) select [0, 12]);
-                _kids
-            }] call comspec_atak_native_fnc_aceAction, [], _target];
+            private _cams = [];
+            {
+                _x params ["_lbl", "_id"];
+                _cams pushBack [["COMSPEC_ATAK_WallCam" + str _forEachIndex, _lbl, "", { ["set", [_target, _this select 2]] call comspec_atak_native_fnc_tocCam; }, { true }, {}, _id] call comspec_atak_native_fnc_aceAction, [], _o];
+            } forEach ((["sources"] call comspec_atak_native_fnc_tocCam) select [0, 12]);
+            if (_cams isNotEqualTo []) then { _diff pushBack (["Cam", "Caméra en direct", _d + "app_livecam.paa", _cams] call _grp); };
+            _diff pushBack (["Pip", "PIP du poste", "pip"] call _mk);
+            private _aff = [];
             if (!_has) then {
-                _out pushBack [["COMSPEC_ATAK_WallSplit", "Afficher le réseau TOC", _tic, { [_target, "split"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
-                _out pushBack [["COMSPEC_ATAK_WallPip", "Afficher le PIP du poste", _tic, { [_target, "pip"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
+                _aff pushBack (["Split", "Afficher le réseau TOC", "split"] call _mk);
             } else {
-                _out pushBack [["COMSPEC_ATAK_WallPipOn", "Passer en PIP du poste", _tic, { [_target, "pip"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
-                _out pushBack [["COMSPEC_ATAK_WallMapOnly", "Carte seule", _tic, { [_target, "map"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
-                _out pushBack [["COMSPEC_ATAK_WallFeedOnly", "Flux seul", _tic, { [_target, "feed"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
-                _out pushBack [["COMSPEC_ATAK_WallCycle", "Changer d'affichage TOC", "", { [_target, "cycle"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
-                _out pushBack [["COMSPEC_ATAK_WallIn", "Zoomer", "", { [_target, "in"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
-                _out pushBack [["COMSPEC_ATAK_WallOut", "Dézoomer", "", { [_target, "out"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
-                _out pushBack [["COMSPEC_ATAK_WallMe", "Centrer sur ma position", "", { [_target, "me"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
-                _out pushBack [["COMSPEC_ATAK_WallAuto", "Cadrer tout le réseau", "", { [_target, "auto"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
-                if (_target getVariable ["COMSPEC_ATAK_Toc", false]) then {
-                    _out pushBack [["COMSPEC_ATAK_WallBig", "Ouvrir le PC du poste", "", { [_target, "big"] call COMSPEC_ATAK_TocDo; }, { isNull objectParent _player }] call comspec_atak_native_fnc_aceAction, [], _target];
-                };
-                _out pushBack [["COMSPEC_ATAK_WallOff", "Retirer l'affichage TOC", "", { [_target, "remove"] call COMSPEC_ATAK_TocDo; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
+                _aff pushBack (["SplitOn", "Carte et flux", "split"] call _mk);
+                _aff pushBack (["MapOnly", "Carte seule", "map"] call _mk);
+                _aff pushBack (["FeedOnly", "Flux seul", "feed"] call _mk);
+                if (_o getVariable ["COMSPEC_ATAK_Toc", false]) then { _aff pushBack (["Big", "Ouvrir le PC du poste", "big", { isNull objectParent _player }] call _mk); };
+                _aff pushBack (["Off", "Retirer l'affichage TOC", "remove"] call _mk);
+            };
+            private _out = [["Diff", "Diffusion", _d + "app_briefing.paa", _diff] call _grp, ["Toc", "Affichage TOC", _d + "app_toc.paa", _aff] call _grp];
+            if (_has) then {
+                _out pushBack (["Map", "Carte", _d + "app_map.paa", [
+                    ["In", "Zoomer", "in"] call _mk, ["Out", "Dézoomer", "out"] call _mk,
+                    ["Me", "Centrer sur ma position", "me"] call _mk, ["Auto", "Cadrer tout le réseau", "auto"] call _mk
+                ]] call _grp);
             };
             _out
         };
         missionNamespace setVariable ["COMSPEC_ATAK_WallKids", _kids];
-        private _root = ["COMSPEC_ATAK_Wall", "Écran COMSPEC", _icon, {}, { alive _target && {(player distance _target) < 8} }, _kids, [], [0, 0, 0], 5] call comspec_atak_native_fnc_aceAction;
-        { [_x select 1, 0, ["ACE_MainActions"], _root, true] call ace_interact_menu_fnc_addActionToClass; } forEach (["classes"] call _fn);
+        // Camp de l'écran TOC et camp de l'écran COMSPEC : la racine n'apparaît qu'au camp autorisé.
+        private _root = ["COMSPEC_ATAK_Wall", "Écran COMSPEC", "\z\comspec_atak_native\addons\main\data\app_toc.paa", {}, {
+            alive _target && {(_player distance _target) < 8} && {
+                private _s1 = (_target getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""];
+                private _s2 = (_target getVariable ["COMSPEC_ATAK_Screen", []]) param [2, ""];
+                private _me = str side group _player;
+                (_s1 isEqualTo "" || {_s1 isEqualTo _me}) && {_s2 isEqualTo "" || {_s2 isEqualTo _me}}
+            }
+        }, _kids, [], [0, 0, 0], 5] call comspec_atak_native_fnc_aceAction;
+        missionNamespace setVariable ["COMSPEC_ATAK_WallRoot", _root];
+        private _classes = (["classes"] call _fn) apply { _x select 1 };
+        missionNamespace setVariable ["COMSPEC_ATAK_WallClasses", _classes];
+        { [_x, 0, ["ACE_MainActions"], _root] call ace_interact_menu_fnc_addActionToClass; } forEach _classes;
+        true
+    };
+    case "aceObj": {
+        // Écran d'une autre classe (moniteur, TV d'un mod) désigné par un module ou une diffusion : même racine, une fois.
+        private _o = _a;
+        if (isNull _o || {!hasInterface} || {isNil "ace_interact_menu_fnc_addActionToObject"}) exitWith { false };
+        ["aceInit"] call _fn;
+        if ((typeOf _o) in (missionNamespace getVariable ["COMSPEC_ATAK_WallClasses", []])) exitWith { false };
+        if (_o getVariable ["COMSPEC_ATAK_WallObj", false]) exitWith { false };
+        _o setVariable ["COMSPEC_ATAK_WallObj", true];
+        [_o, 0, [], missionNamespace getVariable "COMSPEC_ATAK_WallRoot"] call ace_interact_menu_fnc_addActionToObject;
         true
     };
     case "actions": {
         private _o = _a;
-        // Affichage, cadrage, diapositives et carte en grand : joueur du camp, à 5 m (objet déjà désigné).
-        private _do = missionNamespace getVariable ["COMSPEC_ATAK_TocDo", {
-            params ["_o", "_k"];
-            ["ensure", [_o, "SPLIT"]] call comspec_atak_native_fnc_tocScreen;
-        }];
-        // Garantit les actions partagées (aceInit peut ne pas être passé encore).
-        if (isNil { missionNamespace getVariable "COMSPEC_ATAK_TocAceInit" }) then { ["aceInit"] call _fn; };
+        ["aceInit"] call _fn;
+        if (!isNil "ace_interact_menu_fnc_createAction") exitWith { ["aceObj", _o] call _fn };
+        // Sans ACE : actions de la molette, une fois par objet.
+        if (_o getVariable ["COMSPEC_ATAK_TocWheel", false]) exitWith { false };
+        _o setVariable ["COMSPEC_ATAK_TocWheel", true];
         private _cond = "private _o = _target; private _c = _o getVariable ['COMSPEC_ATAK_TocScr', []]; (count _c) >= 8 && {(_c select 1) isEqualTo '' || {(_c select 1) isEqualTo str side group player}}";
-        if (!isNil "ace_interact_menu_fnc_createAction") then {
-            // Racine objet : mêmes enfants que les classes (éviter le double menu si aceInit a déjà posé la classe).
-            if !(_o getVariable ["COMSPEC_ATAK_TocObjAce", false]) then {
-                _o setVariable ["COMSPEC_ATAK_TocObjAce", true];
-                private _icon = "\z\comspec_atak_native\addons\main\data\app_toc.paa";
-                private _root = ["COMSPEC_ATAK_TocScreen", "Écran TOC", _icon, {}, {
-                    private _c = _target getVariable ["COMSPEC_ATAK_TocScr", []];
-                    (count _c) >= 8 && {(_c select 1) isEqualTo "" || {(_c select 1) isEqualTo str side group _player}}
-                }, missionNamespace getVariable ["COMSPEC_ATAK_WallKids", { [] }], [], [0, 0, 0], 5] call comspec_atak_native_fnc_aceAction;
-                [_o, 0, [], _root] call ace_interact_menu_fnc_addActionToObject;
-            };
-        } else {
-            {
-                _x params ["_lbl", "_k", "_prio"];
-                _o addAction [format ["<t color='#7fd0b0'>%1</t>", _lbl call comspec_atak_native_fnc_tr], { [_this select 0, _this select 3] call COMSPEC_ATAK_TocDo; }, _k, _prio, false, true, "",
-                    _cond + ([" ", " && {_o getVariable ['COMSPEC_ATAK_Toc', false]}"] select (_k isEqualTo "big")), 5];
-            } forEach [
-                ["Écran TOC : PIP du poste", "pip", 1.46], ["Écran TOC : changer d'affichage", "cycle", 1.45],
-                ["Écran TOC : zoomer", "in", 1.44], ["Écran TOC : dézoomer", "out", 1.43],
-                ["Écran TOC : cadrer tout le réseau", "auto", 1.42], ["Écran TOC : ouvrir le PC du poste", "big", 1.41],
-                ["Écran TOC : diffuser mes diapositives", "slides", 1.40], ["Écran TOC : caméra suivante du camp", "camNext", 1.39]
-            ];
-        };
+        {
+            _x params ["_lbl", "_k", "_prio"];
+            _o addAction [format ["<t color='#7fd0b0'>%1</t>", _lbl call comspec_atak_native_fnc_tr], { [_this select 0, _this select 3] call COMSPEC_ATAK_TocDo; }, _k, _prio, false, true, "",
+                _cond + ([" ", " && {_o getVariable ['COMSPEC_ATAK_Toc', false]}"] select (_k isEqualTo "big")), 5];
+        } forEach [
+            ["Écran TOC : PIP du poste", "pip", 1.46], ["Écran TOC : changer d'affichage", "cycle", 1.45],
+            ["Écran TOC : zoomer", "in", 1.44], ["Écran TOC : dézoomer", "out", 1.43],
+            ["Écran TOC : cadrer tout le réseau", "auto", 1.42], ["Écran TOC : ouvrir le PC du poste", "big", 1.41],
+            ["Écran TOC : diffuser mes diapositives", "slides", 1.40], ["Écran TOC : caméra suivante du camp", "camNext", 1.39]
+        ];
         true
     };
     default { false };

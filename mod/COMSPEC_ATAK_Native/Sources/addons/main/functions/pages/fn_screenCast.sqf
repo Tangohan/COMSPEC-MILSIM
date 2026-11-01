@@ -269,21 +269,37 @@ switch (_mode) do {
                                     private _local = (_key select [0, 6]) isEqualTo "local:";
                                     private _url = [_key, ""] select _local;
                                     private _p = "";
+                                    // Diapositive déjà affichée par l'app Briefing de ce téléphone (même diapositive) : son image
+                                    // est reprise telle quelle. Avant, l'écran la retéléchargeait dans le même fichier, verrouillé
+                                    // par Arma, et restait noir (journal du 01/11 : fichier illisible puis host_not_allowed).
+                                    private _ph = if (_local) then { [] } else { (uiNamespace getVariable ["COMSPEC_ATAK_SlideCache", createHashMap]) getOrDefault [_id, []] };
+                                    private _phUse = _ph param [0, ""];
+                                    private _phWeb = if ((_phUse select [0, 4]) isEqualTo "WEB:") then { (uiNamespace getVariable ["COMSPEC_ATAK_SlideWeb", createHashMap]) getOrDefault [_phUse select [4], []] } else { [] };
                                     if (_local) then {
                                         _p = (((_key select [6]) splitString (toString [92])) joinString "/");
                                     } else {
+                                      if (_phUse isNotEqualTo "" && {(_phUse select [0, 4]) isNotEqualTo "WEB:"}) then { _p = _phUse; } else {
                                         private _raw = [(["COMSPECExtension", "DownloadBriefingSlideImage", [_url, format ["%1_%2", _id, hashValue _url]]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
                                         if (isNil "_raw") then { _raw = ""; };
                                         if (_raw isEqualType []) then { _raw = _raw param [0, ""]; };
                                         if !(_raw isEqualType "") then { _raw = str _raw; };
                                         private _dl = _raw splitString "|";
                                         _p = if ((_dl param [0, ""]) isEqualTo "OK") then { ((_dl param [1, ""]) splitString (toString [92])) joinString "/" } else { "" };
+                                      };
                                     };
                                     private _lp = toLower _p;
                                     // Arma ne lit que JPEG et PAA sur un objet, et aucune image hors d'un PBO sans -filePatching
                                     // (journal de TTRD du 26/10 : texture [-1,-1], écran noir) : chemin gardé seulement s'il est lisible.
                                     private _use = if ((_lp select [((count _lp) - 4) max 0]) in [".jpg", "jpeg", ".paa"]) then { [_p] call comspec_atak_native_fnc_texUsable } else { "" };
                                     private _how = "image posée sur l'objet";
+                                    if (_use isEqualTo "" && {(count _phWeb) >= 2}) then {
+                                        private _store = uiNamespace getVariable ["COMSPEC_ATAK_ScreenWeb", createHashMap];
+                                        if (count _store > 12) then { _store = createHashMap; };
+                                        _store set [_key, _phWeb];
+                                        uiNamespace setVariable ["COMSPEC_ATAK_ScreenWeb", _store];
+                                        _use = "WEB:" + _key;
+                                        _how = "image reprise de l'app Briefing (navigateur intégré)";
+                                    };
                                     if (_use isEqualTo "") then {
                                         // Repli, comme l'app Briefing : l'image en base64 montrée par le navigateur intégré.
                                         ([[_url, _key] select _local, format ["scr_%1", hashValue _key]] call comspec_atak_native_fnc_slideWebData) params ["_mime", "_b64", "_why"];
@@ -347,6 +363,9 @@ switch (_mode) do {
                 _o setObjectTexture [_sel, [_want, _o getVariable ["COMSPEC_ATAK_ScreenOrig", ""]] select (_want isEqualTo "")];
                 _o setVariable ["COMSPEC_ATAK_ScreenCur", _want];
                 _o setVariable ["COMSPEC_ATAK_ScreenSel", _sel];
+                // Fin de diffusion sur un écran TOC : la texture d'origine vient d'écraser la carte du TOC, que fn_tocScreen
+                // croyait encore posée (écran noir jusqu'au rechargement). Il la reposera à son prochain passage.
+                if (_want isEqualTo "" && {(count (_o getVariable ["COMSPEC_ATAK_TocScr", []])) >= 8}) then { _o setVariable ["COMSPEC_ATAK_TocTex", ""]; };
             };
             if (_acad && {_uiName isNotEqualTo ""}) then {
                 private _disp = (uiNamespace getVariable ["COMSPEC_ATAK_ScreenDisps", createHashMap]) getOrDefault [_uiName, displayNull];
@@ -516,32 +535,18 @@ switch (_mode) do {
         private _o = _a;
         private _cfg = _o getVariable ["COMSPEC_ATAK_Screen", []];
         if !(_cfg param [4, true]) exitWith { false };
-        // Écran aussi TOC / classe TV : le menu ACE « Écran COMSPEC » (fn_tocScreen aceInit) couvre déjà les diapositives.
+        // ACE : une seule racine « Écran COMSPEC » par objet, la même que les écrans TOC (fn_tocScreen aceObj). Avant,
+        // l'écran recevait ici sa propre racine en plus de celle de sa classe (et de l'« Écran TOC ») : menus en double.
+        if (!isNil "ace_interact_menu_fnc_createAction") exitWith { ["aceObj", _o] call comspec_atak_native_fnc_tocScreen };
+        // Molette : écran TOC ou classe d'écran du jeu, les actions de l'écran TOC couvrent déjà les diapositives.
         if ((count (_o getVariable ["COMSPEC_ATAK_TocScr", []])) >= 8) exitWith { false };
-        if ((typeOf _o) in (((["classes"] call comspec_atak_native_fnc_tocScreen) apply { _x select 1 }))) exitWith { false };
         private _cond = { private _c = _target getVariable ["COMSPEC_ATAK_ScreenCast", []]; private _s = (_target getVariable ["COMSPEC_ATAK_Screen", []]) param [2, ""]; (count _c) >= 5 && {_s isEqualTo "" || {_s isEqualTo str side group _player}} };
-        if (!isNil "ace_interact_menu_fnc_createAction") then {
-            private _icon = "\z\comspec_atak_native\addons\main\data\app_briefing.paa";
-            private _root = ["COMSPEC_ATAK_Screen", "Écran COMSPEC", _icon, {}, { (count (_target getVariable ["COMSPEC_ATAK_Screen", []])) >= 5 }, {
-                private _out = [];
-                private _c = _target getVariable ["COMSPEC_ATAK_ScreenCast", []];
-                private _s = (_target getVariable ["COMSPEC_ATAK_Screen", []]) param [2, ""];
-                if !(_s isEqualTo "" || {_s isEqualTo str side group _player}) exitWith { _out };
-                if ((count _c) >= 5) then {
-                    _out pushBack [["COMSPEC_ATAK_ScreenNext", "Diapositive suivante", "", { ["step", [_target, 1]] call comspec_atak_native_fnc_screenCast; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
-                    _out pushBack [["COMSPEC_ATAK_ScreenPrev", "Diapositive précédente", "", { ["step", [_target, -1]] call comspec_atak_native_fnc_screenCast; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
-                    _out pushBack [["COMSPEC_ATAK_ScreenStop", "Arrêter la diffusion", "", { ["stop", _target] call comspec_atak_native_fnc_screenCast; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
-                } else {
-                    _out pushBack [["COMSPEC_ATAK_ScreenCast", "Diffuser mes diapositives", "", { ["cast", _target] call comspec_atak_native_fnc_screenCast; }, { [_player] call comspec_atak_native_fnc_hasDevice }] call comspec_atak_native_fnc_aceAction, [], _target];
-                };
-                _out
-            }, [], [0, 0, 0], 4] call comspec_atak_native_fnc_aceAction;
-            [_o, 0, [], _root] call ace_interact_menu_fnc_addActionToObject;
-        } else {
-            _o addAction [format ["<t color='#7fd0b0'>%1</t>", ("Écran : diapositive suivante") call comspec_atak_native_fnc_tr], { ["step", [_this select 0, 1]] call comspec_atak_native_fnc_screenCast; }, nil, 1.4, false, true, "", "private _player = _this; call (missionNamespace getVariable 'COMSPEC_ATAK_ScreenCond')", 4];
-            _o addAction [format ["<t color='#7fd0b0'>%1</t>", ("Écran : diapositive précédente") call comspec_atak_native_fnc_tr], { ["step", [_this select 0, -1]] call comspec_atak_native_fnc_screenCast; }, nil, 1.39, false, true, "", "private _player = _this; call (missionNamespace getVariable 'COMSPEC_ATAK_ScreenCond')", 4];
-            missionNamespace setVariable ["COMSPEC_ATAK_ScreenCond", _cond];
-        };
+        // Molette, une fois par objet.
+        if (_o getVariable ["COMSPEC_ATAK_ScreenWheel", false]) exitWith { false };
+        _o setVariable ["COMSPEC_ATAK_ScreenWheel", true];
+        _o addAction [format ["<t color='#7fd0b0'>%1</t>", ("Écran : diapositive suivante") call comspec_atak_native_fnc_tr], { ["step", [_this select 0, 1]] call comspec_atak_native_fnc_screenCast; }, nil, 1.4, false, true, "", "private _player = _this; call (missionNamespace getVariable 'COMSPEC_ATAK_ScreenCond')", 4];
+        _o addAction [format ["<t color='#7fd0b0'>%1</t>", ("Écran : diapositive précédente") call comspec_atak_native_fnc_tr], { ["step", [_this select 0, -1]] call comspec_atak_native_fnc_screenCast; }, nil, 1.39, false, true, "", "private _player = _this; call (missionNamespace getVariable 'COMSPEC_ATAK_ScreenCond')", 4];
+        missionNamespace setVariable ["COMSPEC_ATAK_ScreenCond", _cond];
         true
     };
     default { false };

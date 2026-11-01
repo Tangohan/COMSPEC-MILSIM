@@ -1,4 +1,10 @@
 if (!hasInterface) exitWith {};
+// Deux copies du mod chargées (pack d'un serveur contenant main.pbo + mod du Workshop) : tout ne s'enregistre qu'une fois.
+if (missionNamespace getVariable ["COMSPEC_ATAK_ClientInitDone", false]) exitWith {
+    diag_log "[COMSPEC ATAK NATIVE][WARNING][BOOT] Initialisation client déjà faite : deux copies du mod chargées, la seconde est ignorée";
+};
+missionNamespace setVariable ["COMSPEC_ATAK_ClientInitDone", true];
+[] call comspec_atak_native_fnc_dupCheck;
 private _perfT0 = diag_tickTime;
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] Client PostInit complete";
 // Version complète en tête du journal de session COMSPEC (le .log que les joueurs envoient au support).
@@ -454,6 +460,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 [] call comspec_atak_native_fnc_dockMenu;
 // PC portable de TOC (fn_tocPost) : action ACE / molette, poste le plus proche cherché chaque seconde.
 ["menu"] call comspec_atak_native_fnc_tocPost;
+// Menu ACE des écrans (classes d'écran du jeu), posé une fois dès l'arrivée : avant, seulement au premier écran TOC
+// proche, et un moniteur COMSPEC de ces classes n'avait alors aucune action.
+["aceInit"] call comspec_atak_native_fnc_tocScreen;
 [{ ["tick"] call comspec_atak_native_fnc_tocPost; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Configuration locale (config.json, fn_localCfg) : mes numéros publiés aux autres joueurs, aussi après une réapparition
 // ou un changement du service Athéna.

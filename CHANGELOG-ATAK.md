@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [ATAK 2.9.24](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.25 : menus d'écran uniques, diapositives sur les écrans, PC du poste en PIP (ATAK natif 2.9.25.AG - Denver, COMSPEC Link 2.0.114)
+
+### Résumé joueur
+Type : correctif
+FR : Les écrans du poste fonctionnent de nouveau
+- Le menu ACE d'un écran n'apparaît plus en double : une seule entrée « Écran COMSPEC », rangée en Diffusion, Affichage TOC et Carte.
+- Les diapositives de l'app Briefing s'affichent sur les écrans posés au lieu d'un écran noir, quel que soit le site Athena utilisé pour se connecter.
+- Quand un opérateur ouvre le PC du poste TOC, les écrans TOC du poste montrent sa vue en direct (carte, onglet, sélection) à tous les joueurs autour ; ils reprennent leur affichage à la fermeture. La carte du PC n'empile plus les noms des unités et ses onglets indiquent leur nombre d'éléments.
+- Le téléphone prévient quand deux copies du mod sont chargées en même temps.
+EN : The post screens work again
+- A screen's ACE menu no longer shows everything twice: a single "COMSPEC screen" entry, sorted into Casting, TOC display and Map.
+- Briefing app slides now show on placed screens instead of a black screen, whichever Athena site you signed in with.
+- When an operator opens the TOC post PC, the post's TOC screens show the operator's live view (map, tab, selection) to every player around; they go back to their previous display when the PC is closed. The PC map no longer stacks unit names on top of each other, and its tabs show how many items they hold.
+- The phone warns you when two copies of the mod are loaded at the same time.
+
+### Détail technique
+- Doublons ACE : `fn_tocScreen aceInit` posait la racine sur les classes d'écran **avec héritage** (une variante noire ou sable d'un écran listé recevait deux racines), `fn_screenCast actions` ajoutait sa propre racine « Écran COMSPEC » sur l'objet et `fn_tocScreen actions` une racine « Écran TOC » : jusqu'à trois racines, menus superposés. Désormais une racine `COMSPEC_ATAK_Wall` : classe exacte (sans héritage) pour les écrans du jeu, sinon objet (`aceObj`, une fois par objet), sous-menus Diffusion / Affichage TOC / Carte ; posée dès `XEH_postInitClient` (avant : au premier écran TOC proche). Molette : une fois par objet.
+- Deux copies du mod : `fn_dupCheck` (`configSourceModList` sur `comspec_atak_native_main`), avertissement dans le journal et le téléphone ; `XEH_postInitClient` / `XEH_postInitServer` ne s'exécutent qu'une fois (garde missionNamespace).
+- Écran noir : l'écran retéléchargeait la diapositive dans le fichier déjà ouvert par Arma pour l'app Briefing (écriture refusée), puis le repli navigateur refusait l'hôte athena-comspec.eu pour un joueur connecté par athena.ttrd.fr (`host_not_allowed`). Link 2.0.114 : `ImageDataChunk` accepte les portails officiels (`IsSecretSafeUri`), `DownloadBriefingSlideImage` rend le fichier déjà présent quand il est verrouillé ; `fn_screenCast` reprend l'image de l'app Briefing (`COMSPEC_ATAK_SlideCache` / `COMSPEC_ATAK_SlideWeb`). Fin de diffusion sur un écran TOC : la carte du TOC est reposée (`TocTex` vidé) ; `fn_tocCam release` ne recouvre plus une diapositive.
+- PC du poste : `pipOn` / `pipOff` (écrans TOC à 20 m du poste passés en vue `TOC` le temps de l'ouverture, seul l'affichage circule) ; étiquettes de carte sans chevauchement, comptes rendus dessinés après les nœuds, « IA » seulement sur le groupe choisi ; compteurs d'onglets ; barre d'état « PIP sur N écran(s) du poste » ; textes de carte plus petits (`COMSPEC_RscMapToc`).
+- Note `docs/bugs/2026-11-01-ecrans-ace-double-ecran-noir.md`.
+
 ## Pack 2.9.24 : Academy en jeu, caméras en direct sur les écrans TOC (ATAK natif 2.9.24.AG - Denver, COMSPEC Link 2.0.113)
 
 ### Résumé joueur

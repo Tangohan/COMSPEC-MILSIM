@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.113";
+    private const string ExtensionVersion = "2.0.114";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -6725,6 +6725,14 @@ public static partial class Extension
                 }
                 catch (Exception ex)
                 {
+                    // Même image déjà sur le disque et ouverte par Arma (le téléphone l'affiche) : l'écran COMSPEC la
+                    // redemandait, l'écriture échouait (fichier verrouillé) et l'écran restait noir (journal du 01/11).
+                    try
+                    {
+                        if (File.Exists(destPath) && new FileInfo(destPath).Length == bytes.Length)
+                            return "OK|" + destPath.Replace('\\', '/');
+                    }
+                    catch { /* erreur d'origine ci-dessous */ }
                     return "ERR|write_failed_" + ex.GetType().Name;
                 }
 
@@ -6749,9 +6757,13 @@ public static partial class Extension
                     var rel = imageUrl.StartsWith('/') ? imageUrl : "/" + imageUrl.TrimStart('/');
                     Uri.TryCreate(_baseUrl.TrimEnd('/') + rel, UriKind.Absolute, out imgUri);
                 }
-                if (imgUri == null || !Uri.TryCreate(_baseUrl, UriKind.Absolute, out var baseUri)
-                    || imgUri.Scheme != Uri.UriSchemeHttps && imgUri.Scheme != baseUri.Scheme
-                    || !string.Equals(imgUri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase))
+                // Hôte du portail configuré, ou l'un des portails officiels (athena-comspec.eu, athena.ttrd.fr) : les
+                // diapositives ont l'adresse athena-comspec.eu même quand le joueur est connecté par athena.ttrd.fr
+                // (journal du 01/11 : host_not_allowed, écran noir). Jamais un autre hôte.
+                var sameHost = imgUri != null && Uri.TryCreate(_baseUrl, UriKind.Absolute, out var baseUri)
+                    && (imgUri.Scheme == Uri.UriSchemeHttps || imgUri.Scheme == baseUri.Scheme)
+                    && string.Equals(imgUri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase);
+                if (imgUri == null || !(sameHost || IsSecretSafeUri(imgUri)))
                     return "ERR|host_not_allowed";
                 var cacheDir = GetWritableCacheDir();
                 if (cacheDir == null) return "ERR|no_writable_cache_dir";
