@@ -186,7 +186,7 @@ private _airAssets = (entities [["Air"], ["ParachuteBase"], false, true])
     private _json = [_payload] call comspec_overwatch_connect_fnc_hashMapToJson;
     if (!(_json isEqualType "") || {_json isEqualTo ""}) then { continue };
 
-    "COMSPECExtension" callExtension ["SendFlightManifest", [_json]];
+    (["COMSPECExtension", "SendFlightManifest", [_json]] call comspec_overwatch_connect_fnc_extDirect);
     _sent = _sent + 1;
 } forEach _airAssets;
 

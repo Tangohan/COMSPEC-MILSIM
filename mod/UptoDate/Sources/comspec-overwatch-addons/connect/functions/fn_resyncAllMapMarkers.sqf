@@ -125,7 +125,7 @@ if (_spent < _budget) then {
                 if (!isNil "comspec_overwatch_connect_fnc_extAwait") then {
                     ["COMSPECExtension", "SendMarker", [_x, "{}", "1", "1"]] call comspec_overwatch_connect_fnc_extAwait;
                 } else {
-                    "COMSPECExtension" callExtension ["SendMarker", [_x, "{}", "1", "1"]];
+                    (["COMSPECExtension", "SendMarker", [_x, "{}", "1", "1"]] call comspec_overwatch_connect_fnc_extDirect);
                 };
             } forEach _dels;
         };

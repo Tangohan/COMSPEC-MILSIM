@@ -16,11 +16,15 @@ params ["_map", "_cands", "_ts", "_scale", ["_style", "FULL"]];
 private _now = diag_tickTime;
 private _two = _style isEqualTo "FULL" && {_scale < 0.1};
 private _cache = uiNamespace getVariable "COMSPEC_ATAK_LblCache";
-if (isNil "_cache" || {(count _cache) > 400}) then { _cache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_LblCache", _cache]; };
+if (isNil "_cache" || {(count _cache) > 2000}) then { _cache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_LblCache", _cache]; };
 
-// Contacts ENI : marqueurs hostiles (classe o_*) ou titrés « ENI … » (palette du téléphone), liste refaite chaque seconde.
-private _eni = missionNamespace getVariable ["COMSPEC_ATAK_EniList", [-1, []]];
-if (_now > (_eni select 0)) then {
+// Contacts ENI : marqueurs hostiles (classe o_*) ou titrés « ENI … » (palette du téléphone), liste refaite quand le
+// magasin des marqueurs change (au plus une fois par seconde, toutes les 15 s par sécurité) ; avant : chaque seconde,
+// tous les marqueurs relus même sans aucun changement.
+private _eni = missionNamespace getVariable ["COMSPEC_ATAK_EniList", [-1, [], -1, 0, ""]];
+private _eRev = ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["revisions", createHashMap]) getOrDefault ["markers", -1];
+private _eLang = missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"];
+if (_now > (_eni select 0) && {(_eni param [2, -1]) isNotEqualTo _eRev || {_now > (_eni param [3, 0])} || {(_eni param [4, ""]) isNotEqualTo _eLang}}) then {
     private _meta = missionNamespace getVariable "COMSPEC_ATAK_MarkerMeta";
     if (isNil "_meta") then { _meta = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_MarkerMeta", _meta]; };
     private _list = [];
@@ -56,7 +60,7 @@ if (_now > (_eni select 0)) then {
         private _title = toUpper ([_txt, ["ENY CONTACT", "ENI CONTACT"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr")] select (_txt isEqualTo ""));
         _list pushBack [_key, [_pos select 0, _pos select 1, 0], _title, [_hms, (format ["%1 · signalé %2", _hms, toUpper _who]) call comspec_atak_native_fnc_tr] select (_who isNotEqualTo "")];
     } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["markers", createHashMap]);
-    _eni = [_now + 1, _list];
+    _eni = [_now + 1, _list, _eRev, _now + 15, _eLang];
     missionNamespace setVariable ["COMSPEC_ATAK_EniList", _eni];
 };
 

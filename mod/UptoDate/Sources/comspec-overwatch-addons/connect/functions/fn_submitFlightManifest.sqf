@@ -186,7 +186,8 @@ if (!(_json isEqualType "") || {_json isEqualTo ""}) exitWith {
 };
 
 ["SendFlightManifest", "attempt", _callsign, nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-"COMSPECExtension" callExtension ["SendFlightManifest", [_json]];
+if (["SendFlightManifest"] call comspec_overwatch_connect_fnc_uplinkHold) exitWith {};
+(["COMSPECExtension", "SendFlightManifest", [_json]] call comspec_overwatch_connect_fnc_extDirect);
 [format ["Manifeste de vol transmis au poste - %1.", _callsign], "system", "info"] call comspec_overwatch_connect_fnc_announce;
 
 if (!isNull _display) then {

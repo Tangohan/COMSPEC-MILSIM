@@ -47,6 +47,7 @@ switch (_mode) do {
         missionNamespace setVariable ["COMSPEC_SSE_BloodTraces", [], true];
         private _add = {
             params ["_u", "_pos", "_kind"];
+            if !(missionNamespace getVariable ["comspec_sse_bio_enabled", true]) exitWith {};
             private _list = missionNamespace getVariable ["COMSPEC_SSE_BloodTraces", []];
             private _key = [_u] call comspec_sse_fnc_bioPersonKey;
             if (_key isEqualTo "") exitWith {};
@@ -64,6 +65,8 @@ switch (_mode) do {
         };
         missionNamespace setVariable ["COMSPEC_SSE_BloodAdd", _add];
         [{
+            // Biométrie coupée (réglage serveur) : plus de parcours des unités toutes les 3 s ni de diffusion des traces.
+            if !(missionNamespace getVariable ["comspec_sse_bio_enabled", true]) exitWith {};
             private _add = missionNamespace getVariable ["COMSPEC_SSE_BloodAdd", {}];
             {
                 private _u = _x;

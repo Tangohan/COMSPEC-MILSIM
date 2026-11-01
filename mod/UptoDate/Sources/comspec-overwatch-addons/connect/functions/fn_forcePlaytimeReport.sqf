@@ -70,7 +70,7 @@ if (_callsign isEqualTo "") then {
 private _tenantId = missionNamespace getVariable ["comspec_overwatch_tenant_id", ""];
 if (!(_tenantId isEqualType "")) then { _tenantId = ""; };
 
-"COMSPECExtension" callExtension ["ReportPlaytime", [_uid, str _secs, _callsign, _tenantId, _ctx]];
+(["COMSPECExtension", "ReportPlaytime", [_uid, str _secs, _callsign, _tenantId, _ctx]] call comspec_overwatch_connect_fnc_extDirect);
 
 missionNamespace setVariable ["COMSPEC_ForcePlaytimeAt", _now, false];
 missionNamespace setVariable ["COMSPEC_LastPlaytimeSent", _now, false];

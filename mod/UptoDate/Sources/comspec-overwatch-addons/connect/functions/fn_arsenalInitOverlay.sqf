@@ -12,6 +12,9 @@ COMSPEC_ArsenalOverlayEH = [
         params ["_display"];
         if (isNull _display) exitWith {};
         uiNamespace setVariable ["ace_arsenal_display", _display];
+        // Tenues ACE abîmées ou en double réparées avant que le joueur n'ouvre « Mes équipements » (une seule
+        // entrée illisible arrêtait l'affichage de toute la liste d'ACE). Rapide, n'écrit que si ça change.
+        [] call comspec_overwatch_connect_fnc_aceLoadoutsRepair;
         // Léger délai : laisse ACE construire son UI
         [{
             params ["_disp"];

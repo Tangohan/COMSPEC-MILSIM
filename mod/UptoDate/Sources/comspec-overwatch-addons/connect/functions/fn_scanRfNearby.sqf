@@ -55,7 +55,8 @@ private _canUpload = _upload && {(_now - _lastUpload) >= 2.5};
     _hits pushBack _hit;
 
     if (_canUpload) then {
-        "COMSPECExtension" callExtension ["SendRfHit", [
+        if (["SendRfHit"] call comspec_overwatch_connect_fnc_uplinkHold) exitWith {};
+        (["COMSPECExtension", "SendRfHit", [
             _uid,
             _label,
             _band,
@@ -65,7 +66,7 @@ private _canUpload = _upload && {(_now - _lastUpload) >= 2.5};
             [_rssi, 1] call _fnc_num,
             _sensorCallsign,
             _mac
-        ]];
+        ]] call comspec_overwatch_connect_fnc_extDirect);
     };
 } forEach _list;
 

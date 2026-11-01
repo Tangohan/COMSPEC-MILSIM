@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.110";
+    private const string ExtensionVersion = "2.0.111";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -449,8 +449,9 @@ public static partial class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionRegisterCallback")]
     public static void RvExtensionRegisterCallback(nint func)
     {
-        if (func == 0) { _callback = null; return; }
-        _callback = Marshal.GetDelegateForFunctionPointer<ExtensionCallback>(func);
+        // Point d'entrée natif : une exception (initialisation de la classe comprise) tuerait Arma.
+        try { _callback = func == 0 ? null : Marshal.GetDelegateForFunctionPointer<ExtensionCallback>(func); }
+        catch { /* sans rappel : Async répond ERR|no_callback */ }
     }
 
     private static void InvokeCallback(string function, string data)
@@ -1808,12 +1809,44 @@ public static partial class Extension
         return true;
     }
 
+    /// <summary>
+    /// Dernière commande réseau reçue du jeu (Environment.TickCount64). Liaison coupée par fn_uplinkHold, joueur sans
+    /// téléphone, menu : le jeu n'envoie plus rien, et la file, le rapport de file et les journaux ne partent plus
+    /// d'eux-mêmes au bout de UplinkIdleMs (ils restent en file, repris à la prochaine commande).
+    /// </summary>
+    private static long _lastGameUplinkMs = long.MinValue / 2;
+    private const long UplinkIdleMs = 120_000;
+
+    /// <summary>Commandes que fn_uplinkHold laisse passer ou purement locales : elles ne rouvrent pas les envois.</summary>
+    private static readonly HashSet<string> NonUplinkCommands = new(StringComparer.Ordinal)
+    {
+        "Async", "Warmup", "Ping", "GetExtensionVersion", "GetVersion", "HashText", "LogWrite", "LogSessionStart",
+        "GetLogTail", "SendQueue.Status", "SyncStats", "MemStats", "GetPendingQueueCount", "GetSessionTenant",
+        "Init", "Connect", "AuthSteam", "AuthPassword", "RequestOtp", "VerifyOtp", "RestoreSession", "GetSessionRestore",
+        "SetSteamId", "LinkBySteam", "RedeemGameLink", "GetClientIp", "Logout", "Disconnect", "ClientDisconnect",
+    };
+
+    private static void NoteGameCommand(string? function)
+    {
+        if (string.IsNullOrEmpty(function) || NonUplinkCommands.Contains(function)
+            || function.StartsWith("Music", StringComparison.Ordinal) || function.StartsWith("Clip", StringComparison.Ordinal)
+            || function.StartsWith("Bt", StringComparison.Ordinal) || function.StartsWith("Local", StringComparison.Ordinal)
+            || function.StartsWith("MapCap.", StringComparison.Ordinal) || function.StartsWith("MapPhoto.", StringComparison.Ordinal))
+            return;
+        System.Threading.Volatile.Write(ref _lastGameUplinkMs, Environment.TickCount64);
+    }
+
+    private static bool GameUplinkIdle() =>
+        Environment.TickCount64 - System.Threading.Volatile.Read(ref _lastGameUplinkMs) > UplinkIdleMs;
+
     private static void DrainQueue()
     {
         // File modifiée depuis la dernière sauvegarde (EnqueueForRetry) : sauvegardée ici, hors du thread du jeu,
         // même pendant une coupure ou un ralentissement imposé par Athena.
         if (System.Threading.Interlocked.Exchange(ref _queueDirty, 0) == 1)
             PersistQueueToDisk();
+        // Aucune commande réseau du jeu depuis 2 min : rien ne part tout seul vers Athena (ni file, ni rapport).
+        if (GameUplinkIdle()) return;
         // État de la file remonté au site (page admin « Files d'envoi Athena »), même en pause.
         JournalMaybeReport();
         if (string.IsNullOrEmpty(_baseUrl)) return;
@@ -2948,7 +2981,8 @@ public static partial class Extension
     {
             // Tampon de 32 octets côté Arma : la version seule (le nom du produit est déjà celui de la DLL ;
             // « COMSPECATAKNativeExtension 1.0.0-native » était coupé dans le RPT).
-            Output(output, outputSize, CurrentExtensionVersion());
+        try { Output(output, outputSize, CurrentExtensionVersion()); }
+        catch { /* point d'entrée natif : jamais d'exception vers Arma */ }
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -2990,6 +3024,7 @@ public static partial class Extension
         try
         {
             var functionString = Marshal.PtrToStringUTF8(function);
+            NoteGameCommand(functionString);
             if (functionString == "Warmup")
                 KickBackgroundWarmup();
             // Forme chaîne (callExtension "GetUnits", "GetPings"…) : même chemin que RVExtensionArgs, réponse directe
@@ -3116,6 +3151,8 @@ public static partial class Extension
             // X-COMSPEC-KEY: "secret" → 401 sur toutes les routes authentifiées.
             for (var i = 0; i < argsString.Length; i++)
                 argsString[i] = ArmaString(argsString[i]);
+            // « Async » : c'est la commande portée qui compte (fn_extAwait l'a déjà passée par fn_uplinkHold).
+            NoteGameCommand(functionString == "Async" && argsString.Length > 1 ? argsString[1] : functionString);
         }
         catch
         {
@@ -7234,6 +7271,12 @@ public static partial class Extension
 
     private static void DrainDeviceLogs()
     {
+        // Jeu silencieux (liaison coupée, plus de téléphone) : LogWrite continue, les journaux restent en file (bornée).
+        if (GameUplinkIdle())
+        {
+            Interlocked.Exchange(ref _deviceLogDrainScheduled, 0);
+            return;
+        }
         var ok = true;
         try
         {
@@ -9907,20 +9950,6 @@ public static partial class Extension
         catch
         {
             // ignore for now
-        }
-    }
-
-    private static void SendChatMessage(string body)
-    {
-        if (string.IsNullOrEmpty(_baseUrl)) return;
-        try
-        {
-            var payload = $"{{\"mapId\":{CurrentMapId()},\"author\":\"COMSPEC Overwatch\",\"body\":\"{EscapeJson(body)}\"}}";
-            EnqueueOrSend(_baseUrl + "/api/chat", payload);
-        }
-        catch
-        {
-            // ignore
         }
     }
 

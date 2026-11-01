@@ -100,7 +100,7 @@ private _payload = createHashMapFromArray [
     ["mission_key", missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2", missionName, worldName]]],
     ["items", _items]
 ];
-private _r = "COMSPECExtension" callExtension ["ScreenTime.Report", [[_payload] call comspec_atak_native_fnc_json]];
+private _r = (["COMSPECExtension", "ScreenTime.Report", [[_payload] call comspec_atak_native_fnc_json]] call comspec_overwatch_connect_fnc_extDirect);
 if (_r isEqualType []) then { _r = _r param [0, ""]; };
 if ((_r select [0, 3]) isEqualTo "OK|") then {
     { private _v = _acc get _x; _acc set [_x, [_v select 0, ((_v select 1) - 7200) max 0]]; } forEach (keys _acc);

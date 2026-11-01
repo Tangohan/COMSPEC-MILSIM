@@ -34,9 +34,45 @@ EN : The Athena portal address is no longer a setting
 
 Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.md) · [TECHREP #00003](docs/dev/TECHREP-00003.md).
 
-Changelog Steam (copier-coller) : [ATAK 2.9.19](docs/dev/STEAM-CHANGELOG-2026-10-28-atak-2.9.19.md) · [ATAK 2.9.18](docs/dev/STEAM-CHANGELOG-2026-10-28-atak-2.9.18.md) · [ATAK 2.9.17](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.9.17.md) · [ATAK 2.9.16](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.9.16.md) · [ATAK 2.7.0](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.7.0.md) · [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-2026-09-22-overwatch-1.6.12.md) · [Overwatch 1.6.9](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.9.md) · [Overwatch 1.6.8](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.8.md) · [Overwatch 1.6.7](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.7.md) · [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md) · [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-2026-09-15-overwatch-1.5.78.md) · [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
+Changelog Steam (copier-coller) : [ATAK 2.9.21](docs/dev/STEAM-CHANGELOG-2026-11-01-atak-2.9.21.md) · [ATAK 2.9.20](docs/dev/STEAM-CHANGELOG-2026-10-28-atak-2.9.20.md) · [ATAK 2.9.19](docs/dev/STEAM-CHANGELOG-2026-10-28-atak-2.9.19.md) · [ATAK 2.9.18](docs/dev/STEAM-CHANGELOG-2026-10-28-atak-2.9.18.md) · [ATAK 2.9.17](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.9.17.md) · [ATAK 2.9.16](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.9.16.md) · [ATAK 2.7.0](docs/dev/STEAM-CHANGELOG-2026-10-27-atak-2.7.0.md) · [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-2026-09-22-overwatch-1.6.12.md) · [Overwatch 1.6.9](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.9.md) · [Overwatch 1.6.8](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.8.md) · [Overwatch 1.6.7](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.7.md) · [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md) · [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-2026-09-15-overwatch-1.5.78.md) · [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
 
 ---
+
+## Pack 2.9.21 : plus de gel, tenues ACE réparées, liaison vraiment coupée (ATAK natif 2.9.21.AG - Denver, COMSPEC Link 2.0.111)
+
+### Résumé joueur
+Type : patch
+FR : Téléphone fluide, tenues ACE fiables
+- Le téléphone ne se fige plus après un moment ; la carte suit sans à-coups ; plus de micro-gels réguliers.
+- Panneau Athena · Tenues de l'arsenal ACE corrigé (doublons, erreur ACE, tenue qui disparaît, Enfiler, import, « non transmise »).
+- Liaison coupée ou téléphone rangé : plus rien n'est transmis. Bandeau bêta fermable.
+EN : Smooth phone, reliable ACE loadouts
+- The phone no longer freezes after a while; the map follows smoothly; no more periodic micro-stutters.
+- Athena loadouts panel in ACE Arsenal fixed (duplicates, ACE error, vanishing loadout, Wear, import, "not sent").
+- Link disabled or phone stowed: nothing is transmitted anymore. Beta banner can be closed.
+
+### Détail technique
+- `fn_tocPersist` : lecture directe de `COMSPEC_ATAK_TocEvents` (`fn_tocFeed` renvoie toujours true → erreur foreach en boucle)
+- Connect 1.6.22 : `fn_uplinkHold` (coupure centrale, fn_extAwait connect + natif + envois directs) ; `fn_arsenalAceStore` (seul écrivain de `ace_arsenal_saved_loadouts`), `fn_aceLoadoutsRepair`, empreinte de contenu « cv1 » ; menu ACE Tenues retiré ; bandeau bêta abaissé + fermeture ; boucles de `fn_startSyncLoops` étalées ; marqueurs réécrits seulement s'ils changent ; balayage radio mort et `COMSPEC_PliAt` public retirés
+- Natif : carte (recentrage de secours, unités hors vue écartées, listes refaites sur changement, caches agrandis) ; formulaires (hauteur plancher, retour à la ligne des boutons) ; lanceur (feuille « Au groupe… » annulable, filtre GROUPES) ; `fn_livecamShare` retiré
+- SSE : traces de sang coupées sans biométrie, file hors ligne écrite seulement si changée, diffusion campagne groupée
+- Link 2.0.111 : plus d'envoi autonome après 2 min sans commande du jeu ; points d'entrée protégés ; Bluetooth (morceaux comptés une fois) ; code mort retiré
+- Notes de bug : `docs/bugs/2026-11-01-*` ; DevDispatch UPDATE #1216
+
+## Pack 2.9.20 : Vue 3D de la carte en chantier (ATAK natif 2.9.20.AG - Denver, COMSPEC Link 2.0.110)
+
+### Résumé joueur
+Type : patch
+FR : Vue 3D de la carte temporairement indisponible
+- Dans le menu de la carte, « Vue 3D ici » reste visible mais indique qu’elle est en chantier.
+- Un appui sur cette entrée n’ouvre plus la vue ; un message le précise.
+EN : Map 3D view temporarily unavailable
+- On the map menu, “Vue 3D ici” stays visible but shows it is a work in progress.
+- Tapping it no longer opens the view; a short message explains why.
+
+### Détail technique
+- `fn_mapCtxMenu` : libellé W.I.P + toast ; `fn_navigate` bloque `VIEW3D` ; filet dans `fn_pageView3d`
+- Link inchangé 2.0.110 ; DevDispatch UPDATE #1204
 
 ## Pack 2.9.19 : file d’envoi élargie et envois hors fil jeu (ATAK natif 2.9.19.AG - Denver, COMSPEC Link 2.0.110)
 

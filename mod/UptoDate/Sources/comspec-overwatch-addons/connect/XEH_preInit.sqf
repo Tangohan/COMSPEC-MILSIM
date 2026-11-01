@@ -114,7 +114,7 @@ if (hasInterface && {!isNil {profileNamespace getVariable "comspec_overwatch_sav
         missionNamespace setVariable ["COMSPEC_MapId", _id];
         missionNamespace setVariable ["comspec_overwatch_map_id", _id];
         if (!isNil "comspec_overwatch_connect_fnc_extResult") then {
-            ["COMSPECExtension" callExtension ["SetMapId", [str _id]]] call comspec_overwatch_connect_fnc_extResult;
+            [(["COMSPECExtension", "SetMapId", [str _id]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
         };
     }
 ] call comspec_overwatch_connect_fnc_addSetting;

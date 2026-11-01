@@ -97,7 +97,8 @@ if (!(_json isEqualType "") || {_json isEqualTo ""}) exitWith {
 };
 
 ["SendFlightManifest", "attempt", format ["tablette %1", _callsign], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-"COMSPECExtension" callExtension ["SendFlightManifest", [_json]];
+if (["SendFlightManifest"] call comspec_overwatch_connect_fnc_uplinkHold) exitWith {};
+(["COMSPECExtension", "SendFlightManifest", [_json]] call comspec_overwatch_connect_fnc_extDirect);
 [format ["[FLIGHT MANIFEST] Envoi (tablette) : %1", _callsign]] call comspec_overwatch_connect_fnc_appendLinkLog;
 ["Manifeste de vol transmis (file d’attente).", "system", "info"] call comspec_overwatch_connect_fnc_announce;
 

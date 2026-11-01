@@ -92,6 +92,7 @@ private _pos = getPosASL _unit;
 private _seen = [];
 private _synced = missionNamespace getVariable ["COMSPEC_PoSyncedAt", createHashMap];
 if (!(_synced isEqualType createHashMap)) then { _synced = createHashMap; };
+private _ringSigs = missionNamespace getVariable ["COMSPEC_PoRingSigs", createHashMap];
 private _announced = missionNamespace getVariable ["COMSPEC_PoReachedNames", []];
 if (!(_announced isEqualType [])) then { _announced = []; };
 // Tri des marqueurs (libellé PO / règles) : passage complet sur allMapMarkers toutes les 10 s ou quand
@@ -161,7 +162,11 @@ if (
 
     private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
     missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
+    // Anneau inchangé depuis le dernier passage : rien n'est réécrit. Chaque setMarker*Local lève MarkerUpdated
+    // (4 par anneau toutes les 2 s) et l'ATAK natif relisait alors ces marqueurs sur sa carte.
+    private _ringSig = [_mkPos, _color, _alpha, _thisRadius];
     if ((getMarkerColor _ring) isNotEqualTo "") then {
+        if ((_ringSigs getOrDefault [_ring, []]) isEqualTo _ringSig) exitWith {};
         _ring setMarkerPosLocal _mkPos;
         _ring setMarkerColorLocal _color;
         _ring setMarkerAlphaLocal _alpha;
@@ -174,6 +179,7 @@ if (
         _el setMarkerColorLocal _color;
         _el setMarkerAlphaLocal _alpha;
     };
+    _ringSigs set [_ring, _ringSig];
     private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
     if (_unmute < 0) then { _unmute = 0; };
     missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _unmute, false];
@@ -203,6 +209,8 @@ if (
 } forEach _cands;
 
 [_seen] call _fnc_clearRings;
+{ if !(_x in _seen) then { _ringSigs deleteAt _x; }; } forEach (keys _ringSigs);
+missionNamespace setVariable ["COMSPEC_PoRingSigs", _ringSigs, false];
 missionNamespace setVariable ["COMSPEC_PoRingIds", _seen, false];
 missionNamespace setVariable ["COMSPEC_PoSyncedAt", _synced, false];
 missionNamespace setVariable ["COMSPEC_PoReachedNames", _announced, false];

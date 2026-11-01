@@ -203,7 +203,7 @@ switch (_act) do {
             if (_tx && {_forEachIndex < 8}) then {
                 private _code = 0;
                 { _code = (_code * 31 + _x) mod 9973; } forEach (toArray _id);
-                "COMSPECExtension" callExtension ["SendSigint", [format ["GE %1-%2", ["EMETTEUR", "BROUILLEUR"] select (_kind isEqualTo "BROUILLEUR"), _code], str round (_from select 0), str round (_from select 1), str round _brg]];
+                (["COMSPECExtension", "SendSigint", [format ["GE %1-%2", ["EMETTEUR", "BROUILLEUR"] select (_kind isEqualTo "BROUILLEUR"), _code], str round (_from select 0), str round (_from select 1), str round _brg]] call comspec_overwatch_connect_fnc_extDirect);
             };
         } forEach _hits;
         while { (count _bearings) > 15 } do { _bearings deleteAt 0; };

@@ -104,14 +104,14 @@ switch (_action) do {
     case "load": {
         _arg params [["_url", ""], ["_broadcast", false]];
         if !([] call comspec_atak_native_fnc_bridge) exitWith { ["warn", "Google Slides demande COMSPEC Link."] call _setTest; false };
-        "COMSPECExtension" callExtension ["CancelGoogleDeck", []];
+        (["COMSPECExtension", "CancelGoogleDeck", []] call comspec_overwatch_connect_fnc_extDirect);
         private _rid = format ["gdeck_%1_%2", clientOwner, floor (diag_tickTime * 1000)];
         missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", _rid];
         missionNamespace setVariable ["COMSPEC_GoogleBriefingUrl", _url];
         missionNamespace setVariable ["COMSPEC_GoogleBriefingPendingIndex", 0];
         uiNamespace setVariable ["COMSPEC_ATAK_BriefGErr", []];
         uiNamespace setVariable ["COMSPEC_ATAK_BriefOwnLoad", _rid];
-        private _raw = ["COMSPECExtension" callExtension ["LoadGoogleDeck", [_url, "0", _rid]]] call comspec_overwatch_connect_fnc_extResult;
+        private _raw = [(["COMSPECExtension", "LoadGoogleDeck", [_url, "0", _rid]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
         if ((_raw find "accepted") < 0) exitWith {
             missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", ""];
             ["err", ["COMSPEC Link refuse ce lien : il ne reconnaît pas l'identifiant de la présentation.", "COMSPEC Link ne répond pas (DLL absente ou trop ancienne)."] select (_raw isEqualTo "")] call _setTest;
@@ -167,11 +167,11 @@ switch (_action) do {
     case "step": {
         private _pid = missionNamespace getVariable ["COMSPEC_GoogleBriefingPresentationId", ""];
         if (_pid isEqualTo "") exitWith { false };
-        "COMSPECExtension" callExtension ["CancelGoogleDeck", []];
+        (["COMSPECExtension", "CancelGoogleDeck", []] call comspec_overwatch_connect_fnc_extDirect);
         private _rid = format ["gslide_%1_%2", clientOwner, floor (diag_tickTime * 1000)];
         missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", _rid];
         missionNamespace setVariable ["COMSPEC_GoogleBriefingPendingIndex", _arg];
-        private _raw = ["COMSPECExtension" callExtension ["LoadGoogleSlide", [_pid, str _arg, _rid]]] call comspec_overwatch_connect_fnc_extResult;
+        private _raw = [(["COMSPECExtension", "LoadGoogleSlide", [_pid, str _arg, _rid]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
         if ((_raw find "accepted") < 0) exitWith {
             ["load", [missionNamespace getVariable ["COMSPEC_GoogleBriefingUrl", ""], false]] call comspec_atak_native_fnc_briefingCfg;
         };

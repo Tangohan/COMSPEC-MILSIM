@@ -1,8 +1,15 @@
 /*
-    Tire la liste cloud + fusionne dans ace_arsenal_saved_loadouts (profile).
-    params: [applyId optional, onlyIds optional, keepLocal optional] — onlyIds vide = toutes.
-    keepLocal (import groupé, « Tout basculer dans l'arsenal ACE ») : une tenue locale du même nom mais différente
-    n'est jamais remplacée ; la version du site arrive à côté, sous « nom · Athena ». Identique : rien ne change.
+    Importe des tenues du site dans « Mes équipements » d'ACE (profil). À appeler depuis un spawn.
+    Params : [applyId (facultatif), onlyIds (vide = toutes), keepLocal]
+      keepLocal (Tout basculer, import groupé) : une tenue de l'arsenal qui porte déjà ce nom n'est jamais touchée
+                (ni remplacée, ni doublée) ; seules arrivent les tenues que le joueur n'a pas.
+      sinon (bouton « Mettre à jour mon arsenal » / « Prendre la version du site ») : la tenue du même nom est
+                remplacée, à la demande du joueur.
+    Idempotent : relancer ne change rien. Avant, le verrou n'était posé qu'après le chargement de la liste (réseau) :
+    plusieurs clics lançaient plusieurs imports qui ajoutaient chacun les mêmes tenues, sans jamais les fusionner
+    ensuite ; et une version différente arrivait à côté sous « nom · Athena », qui partait ensuite au site puis
+    revenait en « nom · Athena · Athena »… L'écriture passe par arsenalAceStore (format ACE, un nom = une tenue).
+    Retour : true si au moins une tenue a été écrite.
 */
 params [["_applyId", "", [""]], ["_onlyIds", [], [[]]], ["_keepLocal", false, [false]]];
 
@@ -13,145 +20,95 @@ if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {
     false
 };
 
-if (missionNamespace getVariable ["COMSPEC_ArsenalPullBusy", false]) exitWith {
-    ["Récupération des tenues déjà en cours.", "arsenal", "info", true] call comspec_overwatch_connect_fnc_announce;
+// Verrou pris d'un bloc, avant tout appel réseau (un verrou de plus de 3 min est un import interrompu : ignoré).
+private _busy = false;
+isNil {
+    private _t = missionNamespace getVariable ["COMSPEC_ArsenalPullBusy", -1];
+    _busy = (_t isEqualType 0) && {_t >= 0} && {(diag_tickTime - _t) < 180};
+    if (!_busy) then { missionNamespace setVariable ["COMSPEC_ArsenalPullBusy", diag_tickTime, false]; };
+};
+if (_busy) exitWith {
+    ["Import des tenues déjà en cours, patientez.", "arsenal", "info", true] call comspec_overwatch_connect_fnc_announce;
     false
 };
+private _release = { missionNamespace setVariable ["COMSPEC_ArsenalPullBusy", -1, false]; };
 
-// Tout importer : liste relue sur le site (les tenues déjà gardées sur ce PC ne sont pas retéléchargées) ;
-// une tenue choisie dans le panneau : la liste gardée sur ce PC suffit.
+// Tout importer : liste relue sur le site ; tenues choisies dans le panneau : la liste gardée sur ce PC suffit.
 private _lines = [["cache", "refresh"] select (_onlyIds isEqualTo [])] call comspec_overwatch_connect_fnc_arsenalListWardrobes;
 if (_lines isEqualTo []) exitWith {
+    call _release;
     private _probe = [["COMSPECExtension", "ListWardrobes", ["0", "cache"]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
     if (!(_probe isEqualType "") || {_probe find "OK|" != 0}) then {
-        private _err = if (_probe isEqualType "") then { _probe } else { str _probe };
-        [format ["Impossible de lister les tenues (%1).", _err], "arsenal", "warn", true] call comspec_overwatch_connect_fnc_announce;
+        ["Athena est injoignable : les tenues n'ont pas pu être listées.", "arsenal", "warn", true] call comspec_overwatch_connect_fnc_announce;
     } else {
-        [
-            if (_onlyIds isEqualTo []) then { "Aucune tenue dans la communauté." } else { "Cette tenue n’est plus disponible." },
-            "arsenal",
-            "info",
-            true
-        ] call comspec_overwatch_connect_fnc_announce;
+        [["Cette tenue n'est plus disponible.", "Aucune tenue dans la communauté."] select (_onlyIds isEqualTo []), "arsenal", "info", true] call comspec_overwatch_connect_fnc_announce;
     };
     false
 };
 
-private _meta = [];
+// Lignes « id \t nom \t slug \t collection \t … \t mine (8) \t sha256 (9) … » : champs vides gardés, rognés.
+private _want = _onlyIds apply { trim _x };
+private _mine = [];
+private _others = [];
 {
     if (_x isEqualTo "") then { continue };
-    // Champs vides conservés (splitString les fusionne et décale la collection).
-    private _s = _x; private _parts = []; private _tab = toString [9]; private _i = _s find _tab;
-    while { _i >= 0 } do { _parts pushBack (_s select [0, _i]); _s = _s select [_i + 1]; _i = _s find _tab; };
-    _parts pushBack _s;
-    if (count _parts < 2) then { continue };
-    _meta pushBack [
-        _parts select 0,
-        _parts select 1,
-        if (count _parts > 3) then { _parts select 3 } else { "" },
-        _parts param [9, ""]
-    ];
+    private _s = _x; private _f = []; private _tab = toString [9]; private _i = _s find _tab;
+    while { _i >= 0 } do { _f pushBack trim (_s select [0, _i]); _s = _s select [_i + 1]; _i = _s find _tab; };
+    _f pushBack trim _s;
+    if ((count _f) < 2 || {(_f select 0) isEqualTo ""} || {(_f select 1) isEqualTo ""}) then { continue };
+    if (_want isNotEqualTo [] && {!((_f select 0) in _want)}) then { continue };
+    private _row = [_f select 0, _f select 1, toLower (_f param [9, ""])];
+    // Plusieurs tenues du même nom sur le site : la vôtre d'abord.
+    if ((_f param [8, ""]) isEqualTo "1") then { _mine pushBack _row; } else { _others pushBack _row; };
 } forEach _lines;
-
-if (_onlyIds isNotEqualTo []) then {
-    _meta = _meta select { (_x select 0) in _onlyIds };
-};
+private _meta = _mine + _others;
 
 if (_meta isEqualTo []) exitWith {
-    [
-        if (_onlyIds isEqualTo []) then { "Aucune tenue dans la communauté." } else { "Cette tenue n’est plus disponible." },
-        "arsenal",
-        "info",
-        true
-    ] call comspec_overwatch_connect_fnc_announce;
+    call _release;
+    [["Cette tenue n'est plus disponible.", "Aucune tenue dans la communauté."] select (_onlyIds isEqualTo []), "arsenal", "info", true] call comspec_overwatch_connect_fnc_announce;
     false
 };
 
-missionNamespace setVariable ["COMSPEC_ArsenalCloudMeta", _meta, false];
-missionNamespace setVariable ["COMSPEC_ArsenalPullBusy", true, false];
+private _localKeys = createHashMap;
+{ _localKeys set [["key", _x select 0] call comspec_overwatch_connect_fnc_arsenalAceStore, true]; } forEach ([] call comspec_overwatch_connect_fnc_arsenalLocalLoadouts);
 
-private _merged = [] call comspec_overwatch_connect_fnc_arsenalLocalLoadouts;
-private _names = _merged apply { toLower (_x select 0) };
-private _pulled = 0;
-private _same = 0;
-// Tenues réellement importées (clé = nom en minuscules) : seules elles sont écrites dans le profil, à la fin.
-private _writes = createHashMap;
-private _skippedDense = 0;
-
+private _items = [];
+private _ledger = [];
+private _taken = createHashMap;
+private _kept = 0;
+private _failed = 0;
 {
-    _x params ["_id", "_name", "", ["_siteSha", ""]];
-    private _loadout = [_id] call comspec_overwatch_connect_fnc_arsenalCloudLoadout;
-    if (_loadout isEqualTo []) then {
-        if ((missionNamespace getVariable ["COMSPEC_ArsenalCloudLoadoutError", ""]) isEqualTo "too_large") then {
-            _skippedDense = _skippedDense + 1;
-        };
-        continue;
-    };
-
-    private _idx = _names find toLower _name;
-    private _copy = false;
-    if (_idx >= 0 && {_keepLocal}) then {
-        // Même règle que le panneau (arsenalOverlayRefresh) : texte identique, empreinte du site, ou registre.
-        private _localLo = [(_merged select _idx) select 1] call comspec_overwatch_connect_fnc_arsenalNormalizeLoadout;
-        private _localSha = [str _localLo] call comspec_overwatch_connect_fnc_arsenalHash;
-        private _identical = ((str _localLo) isEqualTo (str _loadout))
-            || {_siteSha isNotEqualTo "" && {_localSha isEqualTo _siteSha}}
-            || {_siteSha isNotEqualTo "" && {(["get", _name] call comspec_overwatch_connect_fnc_arsenalLedger) isEqualTo [_siteSha, _localSha]}};
-        if (_identical) then { _idx = -2; } else {
-            _name = _name + " · Athena";
-            _idx = _names find toLower _name;
-            _copy = true;
-        };
-    };
-    if (_idx isEqualTo -2) then { _same = _same + 1; continue; };
-    if (_idx >= 0) then {
-        _merged set [_idx, [_name, _loadout]];
-    } else {
-        _merged pushBack [_name, _loadout];
-        _names pushBack toLower _name;
-    };
-    _writes set [toLower _name, [_name, _loadout]];
-    _pulled = _pulled + 1;
-    // Registre de synchro : la tenue importée est celle du site (sha du site) ; sha local tel qu'il sera relu.
-    // Copie « · Athena » posée à côté de votre tenue : elle ne porte pas ce nom sur le site, pas de registre.
-    if (_copy) then { continue; };
-    ["set", _name, _siteSha, [str _loadout] call comspec_overwatch_connect_fnc_arsenalHash] call comspec_overwatch_connect_fnc_arsenalLedger;
+    _x params ["_id", "_name", "_siteSha"];
+    private _k = ["key", _name] call comspec_overwatch_connect_fnc_arsenalAceStore;
+    if (_k isEqualTo "" || {_k in _taken}) then { continue };
+    _taken set [_k, true];
+    // Déjà dans l'arsenal sous ce nom : rien à télécharger.
+    if (_keepLocal && {_k in _localKeys}) then { _kept = _kept + 1; continue };
+    private _ext = [_id, _siteSha] call comspec_overwatch_connect_fnc_arsenalCloudLoadout;
+    if (_ext isEqualTo []) then { _failed = _failed + 1; continue };
+    _items pushBack [_name, _ext];
+    _ledger pushBack [_k, _name, _siteSha, [_ext] call comspec_overwatch_connect_fnc_arsenalHash];
 } forEach _meta;
 
-// Le chargement des tenues prend du temps (réseau) : le joueur a pu enregistrer ou supprimer une tenue dans ACE
-// entre-temps. On relit donc la liste du profil maintenant et on n'y pose que les tenues importées, sans toucher
-// au reste (une liste figée au début de l'import effaçait ses nouvelles tenues, et les entrées qu'on ne sait pas
-// lire disparaissaient).
-if (count _writes > 0) then {
-    private _saved = profileNamespace getVariable ["ace_arsenal_saved_loadouts", []];
-    if !(_saved isEqualType []) then { _saved = []; };
-    private _done = createHashMap;
-    {
-        if ((_x isEqualType []) && {(_x param [0, ""]) isEqualType ""}) then {
-            private _k = toLower (_x select 0);
-            if (_k in _writes && {!(_k in _done)}) then { _saved set [_forEachIndex, _writes get _k]; _done set [_k, true]; };
-        };
-    } forEach _saved;
-    { if !(_x in _done) then { _saved pushBack _y; }; } forEach _writes;
-    profileNamespace setVariable ["ace_arsenal_saved_loadouts", _saved];
-    [] call comspec_overwatch_connect_fnc_saveProfile;
-};
+// Écriture d'un bloc ; sans remplacer, une tenue enregistrée sous ce nom pendant le téléchargement reste intacte.
+(["upsert", _items, !_keepLocal] call comspec_overwatch_connect_fnc_arsenalAceStore) params ["_written", "_already", "_keys"];
+_kept = _kept + _already;
+// Registre de synchro : la tenue importée est celle du site (empreinte du site, contenu).
+{
+    _x params ["_k", "_name", "_siteSha", "_content"];
+    if (_k in _keys) then { ["set", _name, _siteSha, _content] call comspec_overwatch_connect_fnc_arsenalLedger; };
+} forEach _ledger;
+
 missionNamespace setVariable ["COMSPEC_ArsenalLastPullAt", diag_tickTime, false];
-missionNamespace setVariable ["COMSPEC_ArsenalPullBusy", false, false];
+call _release;
 // Tenues téléchargées gardées dans Sync\wardrobes.json (COMSPEC Link écrit le fichier en fin d'import).
-"COMSPECExtension" callExtension ["WardrobesCacheInfo", []];
+(["COMSPECExtension", "WardrobesCacheInfo", []] call comspec_overwatch_connect_fnc_extDirect);
 
-private _msg = format ["%1 tenue(s) de la communauté ajoutée(s) à l’arsenal.", _pulled];
-if (_same > 0) then {
-    _msg = _msg + format [" %1 déjà identique(s).", _same];
-};
-if (_skippedDense > 0) then {
-    _msg = _msg + format [" %1 trop dense(s) pour l’import en jeu.", _skippedDense];
-};
-[_msg, "arsenal", if (_pulled > 0 || {_same > 0}) then { "ok" } else { "warn" }, true] call comspec_overwatch_connect_fnc_announce;
+private _msg = format ["%1 tenue(s) importée(s) dans votre arsenal ACE.", _written];
+if (_kept > 0) then { _msg = _msg + format [" %1 déjà présente(s) sous le même nom : gardée(s) telle(s) quelle(s).", _kept]; };
+if (_failed > 0) then { _msg = _msg + format [" %1 n'a (n'ont) pas pu être chargée(s).", _failed]; };
+[_msg, "arsenal", ["warn", "ok"] select (_written > 0 || {_kept > 0}), true] call comspec_overwatch_connect_fnc_announce;
 
-if (_applyId != "") then {
-    [_applyId] call comspec_overwatch_connect_fnc_arsenalApplyCloud;
-};
+if (_applyId isNotEqualTo "") then { [_applyId] call comspec_overwatch_connect_fnc_arsenalApplyCloud; };
 
-_pulled > 0
+_written > 0

@@ -98,7 +98,9 @@ if ((_l get "landscape") && {!_mini}) then {
         if (_k isEqualTo "PAIR") then { [{ ["pair", _this] call comspec_atak_native_fnc_droneAction; }, _o] call CBA_fnc_execNextFrame; };
     }];
     if (_leftMenus) then {
-        private _lh = (((lbSize _list) + 0.6) * _fs * 1.75) min (_bh * 0.34);
+        // Liste plafonnée au quart de la hauteur (avant : un tiers) : sur un S7 couché, les onglets et réglages du drone
+        // dessous n'avaient plus qu'une petite fenêtre défilante. La liste défile si elle a plus de lignes.
+        private _lh = (((lbSize _list) + 0.6) * _fs * 1.75) min (_bh * 0.26);
         _list ctrlSetPosition [_pad, _pad, _lw, _lh];
         _list ctrlCommit 0;
         _menuRect = [_pad, _pad * 2 + _lh, _lw, _bh - _pad * 3 - _lh];

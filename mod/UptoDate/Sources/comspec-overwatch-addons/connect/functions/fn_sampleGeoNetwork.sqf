@@ -143,7 +143,7 @@ if (!(missionNamespace getVariable ["COMSPEC_TheaterSampling", false])) then {
             if (_placesPart isEqualTo []) then {""} else {_placesPart joinString ","},
             if (_roadsPart isEqualTo []) then {""} else {_roadsPart joinString ","}
         ];
-        "COMSPECExtension" callExtension ["Geo.Ingest", [_json]];
+        (["COMSPECExtension", "Geo.Ingest", [_json]] call comspec_overwatch_connect_fnc_extDirect);
     };
 
     // Envoyer les villes tout de suite — ne pas attendre la fin du scan routes

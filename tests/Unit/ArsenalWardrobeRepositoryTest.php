@@ -111,7 +111,7 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalOverlayAction.sqf'
         );
         self::assertStringContainsString('Envoyer au site %1 tenue(s)', $action);
-        self::assertStringContainsString('Importer %1 tenue(s) dans votre arsenal', $action);
+        self::assertStringContainsString('Importer dans votre arsenal %1 tenue(s)', $action);
         self::assertStringContainsString('Supprimer « %1 » de votre arsenal', $action);
         self::assertStringContainsString('BIS_fnc_guiMessage', $action);
         self::assertStringContainsString('arsenalDeleteLocal', $action);
@@ -145,8 +145,13 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         $delLocal = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalDeleteLocal.sqf'
         );
-        self::assertStringContainsString('ace_arsenal_saved_loadouts', $delLocal);
-        self::assertStringContainsString('fnc_saveProfile', $delLocal);
+        // Écriture de la liste ACE centralisée (fn_arsenalAceStore : seul écrivain de ace_arsenal_saved_loadouts).
+        self::assertStringContainsString('["remove", [_name]] call comspec_overwatch_connect_fnc_arsenalAceStore', $delLocal);
+        $aceStore = (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalAceStore.sqf'
+        );
+        self::assertStringContainsString('ace_arsenal_saved_loadouts', $aceStore);
+        self::assertStringContainsString('fnc_saveProfile', $aceStore);
         $delCloud = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalDeleteCloud.sqf'
         );

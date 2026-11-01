@@ -58,7 +58,7 @@ private _json = [createHashMapFromArray [["atak_notifs", _new], ["atak_notif_unr
     if (!isNil "comspec_overwatch_connect_fnc_extAwait") then {
         ["COMSPECExtension", "SubmitExplosiveTimer", [_json]] call comspec_overwatch_connect_fnc_extAwait;
     } else {
-        "COMSPECExtension" callExtension ["SubmitExplosiveTimer", [_json]];
+        (["COMSPECExtension", "SubmitExplosiveTimer", [_json]] call comspec_overwatch_connect_fnc_extDirect);
     };
 };
 count _new

@@ -42,7 +42,7 @@ switch (_act) do {
     case "poll": {
         private _reqs = missionNamespace getVariable ["COMSPEC_ATAK_LogiReqs", createHashMap];
         if (((values _reqs) findIf { (_x getOrDefault ["status", ""]) in ["DEMANDEE", "VALIDEE", "EN_ROUTE"] }) < 0) exitWith {};
-        private _res = "COMSPECExtension" callExtension ["GetResupplyStatus", ["1"]];
+        private _res = (["COMSPECExtension", "GetResupplyStatus", ["1"]] call comspec_overwatch_connect_fnc_extDirect);
         if (_res isEqualType []) then { _res = _res param [0, ""]; };
         if ((_res select [0, 3]) isNotEqualTo "OK|") exitWith {};
         {
