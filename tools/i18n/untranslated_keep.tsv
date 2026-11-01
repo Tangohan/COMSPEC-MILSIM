@@ -135,3 +135,50 @@ Version %1	identique en anglais	views/admin/system/updates.php
 <textarea id="command_notes" name="command_notes" rows="4" class="%1	bout de code HTML	views/admin/system/user_edit.php
 <textarea id="nicknames_text" name="nicknames_text" rows="3" class="%1	bout de code HTML	views/admin/system/user_edit.php
 tenant #%2	identique en anglais	views/admin/system/user_person.php
+system-ui, sans-serif	police CSS	app/Support/training_lms.php
+approche, pour ne pas charger toute la présentation d	bruit d'extraction (commentaire JS)	public/assets/js/academy-deck.js
+un envoi : seul le signal explicite du serveur vaut confirmation d	bruit d'extraction (commentaire JS)	public/assets/js/training_custom_page_editor.js
+Inter, system-ui, sans-serif	police CSS	public/assets/js/training_studio_presentation.js
+%1 min	identique en anglais	views/academy/classroom.php
+%4 min	identique en anglais	views/academy/classroom.php
+étape, contenu, * notes, ressources et navigation précédente/suivante. Tout est branché sur l	bruit d'extraction (commentaire)	views/academy/classroom.php
+<textarea id="acr-notes-%1	bruit d'extraction (code HTML)	views/academy/classroom_notes.php
+ATHENA ACADEMY	nom de produit	views/academy/course_license.php
+%3 min	identique en anglais	views/academy/course_player.php
+Academy	nom de produit	views/academy/footer.php
+FR / EN	identique en anglais	views/academy/footer.php
+ATHENA / %1	nom de produit	views/academy/home_body.php
+%2 min	identique en anglais	views/academy/native_course_list.php
+une formation ouverte par un lien « toute personne disposant du lien » : lecture seule, * sans compte ni inscription. Cours et démonstrations uniquement : questions, réponses et évaluations restent dans l	bruit d'extraction (commentaire)	views/academy/shared.php
+%1 </label> <fieldset class=	bruit d'extraction (code HTML)	views/academy/studio.php
+%1 (min)	identique en anglais	views/academy/studio.php
+Studio	identique en anglais	views/academy/studio.php
+%2 placement(s)	identique en anglais	views/admin/training/competency_command.php
+Validation / certification	identique en anglais	views/admin/training/competency_command.php
+Code *	identique en anglais	views/admin/training/competency_modules.php
+Phase *	identique en anglais	views/admin/training/competency_modules.php
+Badge	identique en anglais	views/admin/training/course_showcase.php
+v%1 — %2	identique en anglais	views/admin/training/custom_page_diff.php
+%1 document%2	identique en anglais	views/admin/training/custom_pages.php
+page %3 / %4	identique en anglais	views/admin/training/custom_pages.php
+Canonical URL	identique en anglais	views/admin/training/custom_pages_form.php
+Meta description	identique en anglais	views/admin/training/custom_pages_form.php
+Meta title	identique en anglais	views/admin/training/custom_pages_form.php
+Timeline	identique en anglais	views/admin/training/custom_pages_form.php
+%1 module%2	identique en anglais	views/admin/training/studio_edit.php
+<textarea name="lesson_content" class="hidden" data-lms-canvas-json %1	bruit d'extraction (code HTML)	views/admin/training/studio_edit.php
+<textarea name="lesson_content" rows="%1	bruit d'extraction (code HTML)	views/admin/training/studio_edit.php
+Module %1	identique en anglais	views/admin/training/studio_edit.php
+Modules	identique en anglais	views/admin/training/studio_edit.php
+T+%1 min	identique en anglais	views/admin/training/studio_edit.php
+≈ %1 min	identique en anglais	views/admin/training/studio_edit.php
+(v%1)	identique en anglais	views/admin/training/studio_index.php
+%2 module(s)	identique en anglais	views/partials/training_studio_sidebar.php
+Export & import	identique en anglais	views/partials/training_studio_sidebar.php
+<span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold leading-tight %1">%2	bruit d'extraction (code HTML)	views/training/catalogue.php
+Audio	identique en anglais	views/training/course.php
+Architecture & DDD	identique en anglais	views/training/index.php
+Operational Excellence	identique en anglais	views/training/index.php
+Operational Readiness	identique en anglais	views/training/index.php
+TCCC / Trauma Care	identique en anglais	views/training/index.php
+A → Z	identique en anglais	views/training/my-training.php
