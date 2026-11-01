@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Services\Organization\OrgVisibilityService;
+use App\Support\ConfidentialDisplay;
+use App\Support\OrgVisibilityCapabilities;
+use App\Support\VisibilityLevel;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
@@ -202,10 +206,22 @@ class CommunityController
         $publicRosterRows = [];
         $unitMemberCounts = [];
         $commanderNames = [];
+        $commanderConfidential = [];
 
         if ($publicLayout === 'showcase') {
             $effectif = $this->userRepository->countActiveMembers($tid);
-            $publicUnits = array_map(fn (array $u): array => $this->maskPublicNames($u), $this->unitRepository->listPublicForTenant($tid));
+            // Confidentialité ORBAT appliquée aux visiteurs : unités masquées retirées, anonymisées sous libellé commun.
+            $unitLevels = OrgVisibilityService::effectiveUnitLevels($this->unitRepository->allForTenant($tid));
+            $publicUnits = [];
+            foreach ($this->unitRepository->listPublicForTenant($tid) as $u) {
+                $row = OrgVisibilityService::publicUnitRow(
+                    $this->maskPublicNames($u),
+                    $unitLevels[(int) ($u['id'] ?? 0)] ?? VisibilityLevel::NORMAL
+                );
+                if ($row !== null) {
+                    $publicUnits[] = $row;
+                }
+            }
             $unitsPublic = count($publicUnits);
             $activityPct = $this->userRepository->activityRateLast30DaysPercent($tid);
             $rosterCount = $this->userRepository->countPublicRosterOptIn($tid);
@@ -226,14 +242,23 @@ class CommunityController
                 }
             }
             $cmdIds = array_unique($cmdIds);
+            $cmdVis = $cmdIds !== [] ? $this->unitRepository->personnelVisibilityByUserIdsForTenant($tid, array_values($cmdIds)) : [];
+            $publicCaps = new OrgVisibilityCapabilities();
             foreach ($cmdIds as $cuid) {
                 $cu = $this->userRepository->findById($cuid, $tid);
                 if ($cu) {
-                    $commanderNames[$cuid] = trim((string) ($cu['display_name'] ?? $cu['callsign'] ?? '')) ?: '—';
+                    $commanderNames[$cuid] = $this->publicPersonName($cu, $cmdVis[$cuid] ?? [], $publicCaps) ?? '';
+                    if ($publicCaps->shouldAnonymizePersonnel((string) ($cmdVis[$cuid]['visibility_level'] ?? ''))) {
+                        $commanderConfidential[$cuid] = true;
+                    }
                 }
             }
             if (!empty($communityConfig['public_roster_enabled'])) {
-                $publicRosterRows = $this->userRepository->listPublicRosterForTenant($tid);
+                $publicRosterRows = $this->publicRosterForVisitor(
+                    $tid,
+                    $this->userRepository->listPublicRosterForTenant($tid),
+                    $unitLevels
+                );
             }
         }
 
@@ -350,6 +375,7 @@ class CommunityController
             'showcaseVm' => $showcaseVm,
             'publicUnits' => $publicUnits,
             'publicRosterRows' => $publicRosterRows,
+            'commanderConfidential' => $commanderConfidential,
             'unitMemberCounts' => $unitMemberCounts,
             'commanderNames' => $commanderNames,
             'communityShowcasePage' => $publicLayout === 'showcase',
@@ -406,19 +432,54 @@ class CommunityController
         }
 
         $uid = (int) ($unit['id'] ?? 0);
+        // Visiteur sans droit : mêmes règles de confidentialité que l’ORBAT (unité, sous-unités, membres).
+        $unitLevels = $isStaffViewer ? [] : OrgVisibilityService::effectiveUnitLevels($this->unitRepository->allForTenant($tid));
+        $publicCaps = new OrgVisibilityCapabilities();
+        if (!$isStaffViewer) {
+            $unit = OrgVisibilityService::publicUnitRow($unit, $unitLevels[$uid] ?? VisibilityLevel::NORMAL);
+            if ($unit === null) {
+                return Response::view('errors.404', ['title' => 'Unité introuvable'])->setStatusCode(404);
+            }
+        }
         $memberCounts = $this->unitRepository->countActiveMembersByUnitForTenant($tid);
         $memberCount = (int) ($memberCounts[$uid] ?? 0);
         $rosterByUnit = $this->unitRepository->rosterMembersByUnitForTenant($tid, 60);
         $roster = $rosterByUnit[$uid] ?? [];
+        if (!$isStaffViewer) {
+            $rosterIds = array_values(array_filter(array_map(static fn ($r): int => (int) ($r['user_id'] ?? 0), $roster)));
+            $roster = OrgVisibilityService::rosterForViewer(
+                $roster,
+                $publicCaps,
+                $unitLevels[$uid] ?? VisibilityLevel::NORMAL,
+                $rosterIds !== [] ? $this->unitRepository->personnelVisibilityByUserIdsForTenant($tid, $rosterIds) : []
+            );
+        }
 
         $commanderName = null;
         $cmdId = (int) ($unit['commander_user_id'] ?? 0);
         if ($cmdId > 0) {
             $cu = $this->userRepository->findById($cmdId, $tid);
-            $commanderName = $cu ? (trim((string) ($cu['display_name'] ?? $cu['callsign'] ?? '')) ?: null) : null;
+            if ($cu) {
+                $commanderName = $isStaffViewer
+                    ? (trim((string) ($cu['display_name'] ?? $cu['callsign'] ?? '')) ?: null)
+                    : $this->publicPersonName(
+                        $cu,
+                        $this->unitRepository->personnelVisibilityByUserIdsForTenant($tid, [$cmdId])[$cmdId] ?? [],
+                        $publicCaps
+                    );
+            }
         }
 
-        $children = array_map(fn (array $c): array => $this->maskPublicNames($c), $this->unitRepository->childrenForTenant($tid, $uid));
+        $children = [];
+        foreach ($this->unitRepository->childrenForTenant($tid, $uid) as $c) {
+            $c = $this->maskPublicNames($c);
+            if (!$isStaffViewer) {
+                $c = OrgVisibilityService::publicUnitRow($c, $unitLevels[(int) ($c['id'] ?? 0)] ?? VisibilityLevel::NORMAL);
+            }
+            if ($c !== null) {
+                $children[] = $c;
+            }
+        }
         $childrenCounts = [];
         foreach ($children as $c) {
             $cid = (int) ($c['id'] ?? 0);
@@ -430,6 +491,9 @@ class CommunityController
         if ($parentId > 0) {
             $parentUnit = $this->unitRepository->findById($parentId, $tid);
             $parentUnit = $parentUnit ? $this->maskPublicNames($parentUnit) : null;
+            if ($parentUnit !== null && !$isStaffViewer) {
+                $parentUnit = OrgVisibilityService::publicUnitRow($parentUnit, $unitLevels[$parentId] ?? VisibilityLevel::NORMAL);
+            }
         }
 
         $brandingRow = $this->tenantBrandingRepository->findByTenantId($tid);
@@ -446,7 +510,7 @@ class CommunityController
             ['unit_id' => $uid]
         );
 
-        $unitName = trim((string) ($unit['name'] ?? 'Unité'));
+        $unitName = generated_label('unit', trim((string) ($unit['name'] ?? 'Unité')), (string) ($unit['slug'] ?? ''), $tid);
         $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
         $unitBlurb = trim((string) ($unit['public_blurb'] ?? ''));
         $unitDesc = $unitBlurb !== ''
@@ -481,7 +545,7 @@ class CommunityController
             'meta_description' => $unitDesc,
             'seo_canonical' => $unitUrl,
             // Seules les unités publiées d'une communauté visible dans l'annuaire sont indexées (aperçu staff : jamais).
-            'seo_robots' => (!empty($unit['show_on_public_page']) && $this->tenantIndexable($tenant)) ? null : 'noindex,follow',
+            'seo_robots' => (!empty($unit['show_on_public_page']) && empty($unit['confidential']) && $this->tenantIndexable($tenant)) ? null : 'noindex,follow',
             'og_image' => $ogImage,
             'og_image_alt' => $unitName . ' — ' . $tenantName,
             'seo_json_ld' => [
@@ -2064,6 +2128,75 @@ class CommunityController
      * @param array<string, mixed> $row
      * @return array<string, mixed>
      */
+    /**
+     * Nom public d’un membre (chef d’unité…) selon sa confidentialité : null = ne rien afficher.
+     *
+     * @param array<string, mixed> $user
+     * @param array<string, mixed> $meta {visibility_level, anonymized_label}
+     */
+    private function publicPersonName(array $user, array $meta, OrgVisibilityCapabilities $caps): ?string
+    {
+        $level = VisibilityLevel::normalize((string) ($meta['visibility_level'] ?? VisibilityLevel::NORMAL));
+        if ($caps->shouldHidePersonnelCompletely($level)) {
+            return null;
+        }
+        if ($caps->shouldAnonymizePersonnel($level)) {
+            return ConfidentialDisplay::personLabel((string) ($meta['anonymized_label'] ?? ''));
+        }
+
+        return trim((string) ($user['display_name'] ?? $user['callsign'] ?? '')) ?: null;
+    }
+
+    /**
+     * Roster public (membres volontaires) : confidentialité du membre et de son unité appliquée.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @param array<int, string> $unitLevels
+     * @return list<array<string, mixed>>
+     */
+    private function publicRosterForVisitor(int $tenantId, array $rows, array $unitLevels): array
+    {
+        if ($rows === []) {
+            return [];
+        }
+        $ids = array_values(array_filter(array_map(static fn ($r): int => (int) ($r['id'] ?? 0), $rows)));
+        $vis = $this->unitRepository->personnelVisibilityByUserIdsForTenant($tenantId, $ids);
+        $caps = new OrgVisibilityCapabilities();
+        $out = [];
+        foreach ($rows as $r) {
+            $id = (int) ($r['id'] ?? 0);
+            $unitId = (int) ($r['unit_id'] ?? 0);
+            $unitLevel = $unitId > 0 ? ($unitLevels[$unitId] ?? VisibilityLevel::NORMAL) : VisibilityLevel::NORMAL;
+            $meta = $vis[$id] ?? [];
+            $filtered = OrgVisibilityService::filterPersonnelRow([
+                'user_id' => $id,
+                'visibility_level' => (string) ($meta['visibility_level'] ?? VisibilityLevel::NORMAL),
+                'assignment_visibility' => (string) ($meta['assignment_visibility'] ?? VisibilityLevel::NORMAL),
+                'anonymized_label' => (string) ($meta['anonymized_label'] ?? ''),
+                'display_name' => (string) ($r['display_name'] ?? ''),
+                'callsign' => $r['callsign'] ?? null,
+                'unit_name' => $r['unit_name'] ?? null,
+            ], $caps, $unitLevel);
+            if ($filtered === null) {
+                continue;
+            }
+            if (!empty($filtered['anonymized'])) {
+                $r['display_name'] = (string) $filtered['display_name'];
+                $r['callsign'] = null;
+                $r['anonymized'] = true;
+            }
+            if (!empty($filtered['assignment_redacted'])) {
+                $r['unit_name'] = (string) $filtered['unit_name'];
+                $r['role_name'] = null;
+            } elseif ($unitLevel === VisibilityLevel::ANONYMIZED) {
+                $r['unit_name'] = ConfidentialDisplay::label(ConfidentialDisplay::UNIT_ANONYMIZED);
+            }
+            $out[] = $r;
+        }
+
+        return $out;
+    }
+
     private function maskPublicNames(array $row): array
     {
         if (isset($row['name']) && is_string($row['name'])) {

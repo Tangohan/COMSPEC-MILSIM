@@ -590,6 +590,67 @@ final class EmailService
         );
     }
 
+    /**
+     * Rappel aux responsables d'une communauté restée à un ou deux membres (texte déjà rédigé en fr ou en en).
+     *
+     * @param array<string, string> $links invitations, new_member, invite_codes, public_page
+     */
+    public function sendLowMemberOrgReminder(
+        string $to,
+        string $lang,
+        string $displayName,
+        string $tenantName,
+        int $members,
+        string $stage,
+        int $deletionFrom,
+        array $links,
+        int $tenantId
+    ): bool {
+        $copy = \App\Support\LowMemberOrgPolicy::copy($lang, $stage, $tenantName, $members, $deletionFrom);
+
+        return $this->sendTemplated(
+            EmailEvents::ORG_LOW_MEMBERS_REMINDER,
+            'org_low_members_reminder',
+            $to,
+            $copy['subject'],
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'members' => $members,
+                'stage' => $stage,
+                'deletionFrom' => $deletionFrom,
+                'links' => $links,
+                'lang' => $lang,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'org_low_members_reminder', 'stage' => $stage, 'members' => $members],
+            false,
+            $lang
+        );
+    }
+
+    /**
+     * Résumé à l'administration de la plateforme : organisations toujours à 1 ou 2 membres après les rappels.
+     *
+     * @param list<array<string, mixed>> $orgs
+     */
+    public function sendLowMemberOrgAdminDigest(string $to, array $orgs, string $listUrl): bool
+    {
+        $n = count($orgs);
+
+        return $this->sendTemplated(
+            EmailEvents::ORG_LOW_MEMBERS_ADMIN_DIGEST,
+            'org_low_members_admin_digest',
+            $to,
+            $n . ' organisation' . ($n > 1 ? 's' : '') . ' à supprimer — toujours 1 ou 2 membres',
+            ['orgs' => $orgs, 'listUrl' => $listUrl],
+            null,
+            null,
+            ['purpose' => 'org_low_members_admin_digest', 'count' => $n]
+        );
+    }
+
     public function sendCommunityCreationChecklist(
         string $to,
         string $displayName,

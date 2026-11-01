@@ -255,7 +255,7 @@ $guideUrl = url('communities/create/guide');
                                     </div>
                                     <div>
                                         <label class="cc-label">Jeu / théâtre</label>
-                                        <input type="text" name="wizard_game_label" maxlength="120" class="cc-field" placeholder="Arma 3, Squad…">
+                                        <input type="text" name="wizard_game_label" maxlength="120" class="cc-field" placeholder="Arma 3, Squad…" list="athena-game-list" autocomplete="off" data-game-suggest> <?php require base_path('views/partials/game_label_suggest.php'); ?>
                                     </div>
                                 </div>
                                 <div>

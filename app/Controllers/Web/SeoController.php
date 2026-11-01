@@ -158,9 +158,14 @@ final class SeoController
                     }
                 }
                 try {
-                    // Unités dont la page publique est activée (show_on_public_page) uniquement.
+                    // Unités dont la page publique est activée (show_on_public_page) uniquement,
+                    // jamais une unité masquée, anonymisée ou restreinte (son adresse trahirait son nom).
+                    $unitLevels = \App\Services\Organization\OrgVisibilityService::effectiveUnitLevels($units->allForTenant($tid));
                     foreach ($units->listPublicForTenant($tid) as $unit) {
                         if (array_key_exists('show_on_public_page', $unit) && empty($unit['show_on_public_page'])) {
+                            continue;
+                        }
+                        if (($unitLevels[(int) ($unit['id'] ?? 0)] ?? \App\Support\VisibilityLevel::NORMAL) !== \App\Support\VisibilityLevel::NORMAL) {
                             continue;
                         }
                         $unitSlug = trim((string) ($unit['slug'] ?? ''));

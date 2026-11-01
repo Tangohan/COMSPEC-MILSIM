@@ -44,7 +44,11 @@ final class EffectifsPersonnelConsolidationAssetTest extends TestCase
         // The roster is now a spreadsheet: matricule, radio and distinctions are meta lines of the member cell.
         self::assertStringContainsString('aria-label="Tableur des effectifs"', $roster);
         self::assertStringContainsString('Personnage ·', $roster);
-        self::assertStringContainsString("'Mle ' . \$matricule", $roster);
+        // Depuis #1199 le matricule n'est plus préfixé « Mle » : pastille du numéro de communauté
+        // (ou du matricule Athena), les deux matricules détaillés en infobulle.
+        self::assertStringContainsString('class="eff-mq-mle"', $roster);
+        self::assertStringContainsString("'Matricule communauté ' . \$orgNumber", $roster);
+        self::assertStringContainsString("' · Matricule Athena ' . \$athenaId", $roster);
         self::assertStringContainsString("'Radio ' . \$radioAssigned", $roster);
         self::assertStringContainsString("' distinction'", $roster);
         self::assertStringContainsString('.eff-catalog--roster', $styles);

@@ -91,11 +91,14 @@ final class SeoCommunityModpackAssetTest extends TestCase
     {
         $profiles = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Rbac/CommunityAccessProfiles.php');
         $roles = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/effectifs_workspace/roles.php');
-        $fonctions = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/effectifs_workspace/fonctions.php');
+        // Depuis 308fe461a, l'édition d'un emploi vit dans job_editor.php (fonctions.php > job_browser.php).
+        $editor = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/effectifs_workspace/job_editor.php');
 
         self::assertStringContainsString('function moduleDescription', $profiles);
         self::assertStringContainsString('eff-access-group__desc', $roles);
-        self::assertStringContainsString('Description de la fonction', $fonctions);
-        self::assertStringContainsString('recherche portail', $fonctions);
+        // L'ancienne aide « recherche portail » n'est pas reprise : la recherche portail
+        // (UserRepository::searchForPortal) porte sur le nom de l'emploi, pas sur sa description.
+        self::assertStringContainsString('<summary>Description et rattachements', $editor);
+        self::assertStringContainsString('<textarea name="description" rows="3" maxlength="500">', $editor);
     }
 }

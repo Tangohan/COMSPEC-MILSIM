@@ -8,6 +8,7 @@ $pages = max(1, (int) ($platformUsersPages ?? 1));
 $q = (string) ($platformUsersQ ?? '');
 $statusFilter = (string) ($platformUsersStatus ?? '');
 $tenantFilter = (int) ($platformUsersTenantId ?? 0);
+$inactivityFilter = (string) ($platformUsersInactivity ?? '');
 $tenants = is_array($platformTenants ?? null) ? $platformTenants : [];
 $bansCount = (int) ($platformBansCount ?? 0);
 $pendingPurgeRequests = is_array($pendingPurgeRequests ?? null) ? $pendingPurgeRequests : [];
@@ -28,19 +29,28 @@ $statusOptions = [
     'banned' => 'Bannis du site',
     'deleted' => 'Comptes anonymisés',
 ];
+$inactivityOptions = [
+    '' => 'Peu importe',
+    '30' => 'Plus de 30 jours',
+    '90' => 'Plus de 90 jours',
+    '180' => 'Plus de 180 jours',
+    'jamais' => 'Jamais connecté',
+];
 
-$hiddenReturns = static function () use ($h, $q, $statusFilter, $tenantFilter, $page): string {
+$hiddenReturns = static function () use ($h, $q, $statusFilter, $tenantFilter, $inactivityFilter, $page): string {
     return '<input type="hidden" name="return_q" value="' . $h($q) . '">'
         . '<input type="hidden" name="return_status" value="' . $h($statusFilter) . '">'
         . '<input type="hidden" name="return_tenant_id" value="' . ($tenantFilter > 0 ? $tenantFilter : '') . '">'
+        . '<input type="hidden" name="return_inactif" value="' . $h($inactivityFilter) . '">'
         . '<input type="hidden" name="return_page" value="' . $page . '">';
 };
 
-$queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFilter, $page): string {
+$queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFilter, $inactivityFilter, $page): string {
     $params = [
         'q' => $overrides['q'] ?? $q,
         'status' => $overrides['status'] ?? $statusFilter,
         'tenant_id' => $overrides['tenant_id'] ?? ($tenantFilter > 0 ? (string) $tenantFilter : ''),
+        'inactif' => $overrides['inactif'] ?? $inactivityFilter,
         'page' => (string) ($overrides['page'] ?? $page),
     ];
     $bits = [];
@@ -202,9 +212,17 @@ $actionForm = static function (string $action, array $fields, string $label, str
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <div class="pa-field">
+                    <label for="platform-users-inactif">Sans connexion depuis</label>
+                    <select id="platform-users-inactif" name="inactif">
+                        <?php foreach ($inactivityOptions as $value => $label): ?>
+                            <option value="<?= $h($value) ?>" <?= $inactivityFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
                 <div class="pu-filters__buttons">
                     <button type="submit" class="pa-btn pa-btn--solid">Filtrer</button>
-                    <?php if ($q !== '' || $statusFilter !== '' || $tenantFilter > 0): ?>
+                    <?php if ($q !== '' || $statusFilter !== '' || $tenantFilter > 0 || $inactivityFilter !== ''): ?>
                         <a href="<?= $h(url('admin/users')) ?>" class="pa-btn pa-btn--line">Tout afficher</a>
                     <?php endif; ?>
                 </div>
@@ -271,7 +289,7 @@ $actionForm = static function (string $action, array $fields, string $label, str
                                     <span class="pa-pill pa-pill--slate" title="Aucune communauté active : la personne a un compte seul, elle peut rejoindre ou créer une communauté.">Sans communauté</span>
                                 <?php endif; ?>
                                 <?php if ($isAnonymized): ?>
-                                    <span class="pa-pill pa-pill--slate">Compte anonymisé</span>
+                                    <?= \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::ACCOUNT_DELETED) ?>
                                 <?php endif; ?>
                             </h2>
                             <p class="pu-person__sub">
@@ -380,7 +398,11 @@ $actionForm = static function (string $action, array $fields, string $label, str
                                         <?php endif; ?>
                                     </p>
                                 </div>
+                                <?php if ($isDeleted): ?>
+                                <span class="pu-row__state"><?= \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::ACCOUNT_DELETED) ?></span>
+                                <?php else: ?>
                                 <span class="pa-pill <?= $h($pill) ?> pu-row__state"><?= $h($pillText) ?></span>
+                                <?php endif; ?>
                                 <div class="pu-actions pu-row__actions">
                                     <?php if ($uid === $currentActorId): ?>
                                         <span class="pu-muted">Vous</span>

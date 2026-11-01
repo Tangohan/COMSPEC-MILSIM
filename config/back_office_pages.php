@@ -127,10 +127,14 @@ return [
         ['path' => 'back-office/organisation/catalogue', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Catalogue de l’organisation', 'subtitle' => 'Administrez l’organigramme, les grades, les fonctions et les rôles, ou copiez un modèle.', 'css' => ['back-office-catalog.css'], 'quick' => [
             ['label' => 'Structure', 'href' => 'back-office/organisation/structure'],
             ['label' => 'Journal', 'href' => 'back-office/organisation/catalogue/historique'],
+            ['label' => 'Libellés', 'href' => 'back-office/organisation/catalogue/libelles'],
             ['label' => 'Accès', 'href' => 'back-office/ressources/effectifs/roles'],
             ['label' => 'Emplois', 'href' => 'back-office/ressources/effectifs/fonctions'],
         ]],
         ['path' => 'back-office/organisation/catalogue/historique', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Journal du catalogue', 'subtitle' => 'Toutes les applications de modèles dans cette communauté.', 'css' => ['back-office-catalog.css'], 'quick' => [
+            ['label' => 'Catalogue', 'href' => 'back-office/organisation/catalogue'],
+        ]],
+        ['path' => 'back-office/organisation/catalogue/libelles', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Libellés des unités et postes', 'subtitle' => 'Les noms créés par Athena s’affichent dans la langue de chaque joueur. Remplacez-les si vous le souhaitez.', 'css' => ['back-office-catalog.css'], 'quick' => [
             ['label' => 'Catalogue', 'href' => 'back-office/organisation/catalogue'],
         ]],
         ['path' => 'back-office/organisation/catalogue/modele', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Modèle d’organisation', 'css' => ['back-office-catalog.css']],
@@ -150,7 +154,8 @@ return [
         ]],
         ['path' => 'back-office/organisation/indicatifs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CARRIÈRE', 'title' => 'Indicatifs radio', 'subtitle' => 'Comment les indicatifs sont attribués : séries, numéros réservés et historique.'],
         ['path' => 'back-office/groups', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Groupes', 'subtitle' => 'Regroupez des membres en sous-unités ou en cellules.', 'css' => ['back-office-groups.css']],
-        ['path' => 'back-office/teams', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Équipes', 'subtitle' => 'Des équipes formées pour une mission ou un créneau.'],
+        ['path' => 'back-office/teams', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Équipes', 'subtitle' => 'Des équipes formées pour une mission ou un créneau.', 'css' => ['back-office-groups.css']],
+        ['path' => 'back-office/organisation/matricules', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CONFIGURATION', 'title' => 'Matricules d’organisation', 'subtitle' => 'Identifiant propre à la communauté, distinct de l’identifiant plateforme permanent.', 'css' => ['back-office-member-numbers.css']],
         ['path' => 'back-office/categories', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Catégories', 'subtitle' => 'Les catégories de la communauté et l’ordre dans lequel elles apparaissent.'],
         ['path' => 'back-office/referentiels/grades', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Grades', 'subtitle' => 'La liste des grades de votre communauté, dans l’ordre hiérarchique.'],
         ['path' => 'back-office/positions', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Postes', 'subtitle' => 'Les postes à pourvoir dans l’organigramme et leurs titulaires.'],

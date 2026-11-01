@@ -137,7 +137,7 @@ $flashWarn = \App\Core\Session::getFlash('warning');
             <p class="ath-member-show__name"><?= staff_name($displayName !== '' ? $displayName : 'Membre sans nom affiché', $uid, true) ?></p>
             <p class="ath-member-show__email"><?= $h(function_exists('email_for_display') ? email_for_display($email) : $email) ?></p>
             <div class="ath-member-show__tags">
-                <span class="ath-tag <?= $h($statusTagClass) ?>"><?= $h($statusLabel) ?></span>
+                <?php if ($isAnonymizedAccount): ?><?= \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::ACCOUNT_DELETED) ?><?php else: ?><span class="ath-tag <?= $h($statusTagClass) ?>"><?= $h($statusLabel) ?></span><?php endif; ?>
                 <?php if ($callsign !== ''): ?>
                 <span class="ath-tag ath-tag--neut">Indicatif <?= $h($callsign) ?></span>
                 <?php endif; ?>
@@ -374,7 +374,7 @@ $flashWarn = \App\Core\Session::getFlash('warning');
                     </div>
                     <div class="ath-member-show__data-row">
                         <dt>Statut du compte</dt>
-                        <dd><span class="ath-tag <?= $h($statusTagClass) ?>"><?= $h($statusLabel) ?></span></dd>
+                        <dd><?php if ($isAnonymizedAccount): ?><?= \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::ACCOUNT_DELETED) ?><?php else: ?><span class="ath-tag <?= $h($statusTagClass) ?>"><?= $h($statusLabel) ?></span><?php endif; ?></dd>
                     </div>
                 </dl>
             </div>
@@ -484,7 +484,7 @@ $flashWarn = \App\Core\Session::getFlash('warning');
                     ?>
                     <li>
                         <strong><?= $h($sibName) ?></strong>
-                        — #<?= $sibUid ?> · <?= $h($sibStatus) ?><?= $sibDeleted ? ' · anonymisé' : '' ?>
+                        — #<?= $sibUid ?> · <?= $h($sibStatus) ?><?= $sibDeleted ? ' · ' . \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::ACCOUNT_DELETED, null, true) : '' ?>
                         <?php if ($sibTid === (int) ($user['tenant_id'] ?? 0)): ?>
                             <span class="ath-tag ath-tag--info">Communauté courante</span>
                         <?php endif; ?>

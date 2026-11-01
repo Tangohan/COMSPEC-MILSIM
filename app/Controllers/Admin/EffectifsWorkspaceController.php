@@ -1203,7 +1203,16 @@ class EffectifsWorkspaceController
 
         $enriched = $this->enrichRosterRows($tenantId, [$user]);
         $row = $enriched[0] ?? $user;
-        $assignments = $this->personnelAssignmentRepository->listActiveForUserResolved($id);
+        $assignments = $this->personnelAssignmentRepository->listActiveForUserResolved($id, $tenantId);
+        // Demi-affectation (fiche affectée, rosters vides…) : signalée aux gestionnaires avec un bouton de réparation.
+        $assignmentNeedsRepair = false;
+        if (EffectifsLmsAccess::canManageAssignments(Gate::getInstance())) {
+            try {
+                $assignmentNeedsRepair = $this->personnelAssignmentRepository->consistency()->findInconsistent($id, $tenantId) !== [];
+            } catch (\Throwable) {
+                $assignmentNeedsRepair = false;
+            }
+        }
         $personnelProfile = $this->personnelProfileRepository->getByUserId($id);
         $roleIds = $this->userRepository->listOrganizationRoleIdsForUser($id, $tenantId);
         $allOrgRoles = $this->roleRepository->forTenantOrganization($tenantId);
@@ -1368,6 +1377,7 @@ class EffectifsWorkspaceController
             'civilStatusOptions' => $this->civilStatusOptions(),
             'canManageStatus' => EffectifsLmsAccess::canManageStatus($gate),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
+            'assignmentNeedsRepair' => $assignmentNeedsRepair,
             'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),
             'canManageGrades' => EffectifsLmsAccess::canManageGrades($gate),
             'canRequestElevation' => EffectifsLmsAccess::canRequestElevation($gate) && $elevationRecipients !== [],
@@ -1518,17 +1528,16 @@ class EffectifsWorkspaceController
                 continue;
             }
             try {
+                // Affectation, effectif de l'unité et unité du dossier écrits ensemble (une transaction).
                 $this->personnelProfileRepository->ensureRecord($id);
-                $this->personnelProfileRepository->update($id, [
-                    'primary_unit_id' => $unitId > 0 ? $unitId : null,
-                ]);
                 $currentAssignment = $this->personnelAssignmentRepository->getPrimaryAssignment($id, $tenantId);
                 $roleName = trim((string) ($currentAssignment['role_name'] ?? ''));
                 $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier(
                     $id,
                     $unitId > 0 ? $unitId : null,
                     $roleName !== '' ? $roleName : 'Membre',
-                    $assignmentReason !== '' ? $assignmentReason : null
+                    $assignmentReason !== '' ? $assignmentReason : null,
+                    $tenantId
                 );
                 $this->adminAuditService->logUserUpdated(
                     $tenantId,
@@ -2597,17 +2606,17 @@ class EffectifsWorkspaceController
 
         try {
             $beforeSnap = $this->structureChangeNotification->snapshot($tenantId, $id);
+            // Affectation, effectif de l'unité et unité du dossier écrits ensemble (une transaction, membre verrouillé) :
+            // un second envoi du formulaire relit l'état réel et ne laisse pas de demi-affectation.
             $this->personnelProfileRepository->ensureRecord($id);
-            $this->personnelProfileRepository->update($id, [
-                'primary_unit_id' => $unitId > 0 ? $unitId : null,
-            ]);
             $currentAssignment = $this->personnelAssignmentRepository->getPrimaryAssignment($id, $tenantId);
             $roleName = trim((string) ($currentAssignment['role_name'] ?? ''));
             $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier(
                 $id,
                 $unitId > 0 ? $unitId : null,
                 $roleName !== '' ? $roleName : 'Membre',
-                $assignmentReason !== '' ? $assignmentReason : null
+                $assignmentReason !== '' ? $assignmentReason : null,
+                $tenantId
             );
             $actorId = (int) Session::get('user_id');
             $this->adminAuditService->logUserUpdated(
@@ -2647,6 +2656,52 @@ class EffectifsWorkspaceController
                 ? effectifs_workspace_url('membres/' . $id)
                 : $this->redirectBackToRoster($request)
         );
+    }
+
+    /**
+     * Réaligne l'affectation d'un membre resté dans un demi-état (fiche affectée mais absent des rosters,
+     * doublon après un double envoi…). Sans effet sur un membre cohérent.
+     */
+    public function repairAssignment(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $back = effectifs_workspace_url($id > 0 ? 'membres/' . $id : '');
+        if (!EffectifsLmsAccess::canManageAssignments(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier les affectations.');
+
+            return Response::redirect($back);
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if ($id < 1 || !$this->userRepository->findById($id, $tenantId)) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        try {
+            $changes = $this->personnelAssignmentRepository->consistency()->repair($id, $tenantId);
+        } catch (\Throwable) {
+            Session::flash('error', 'La réparation de l’affectation n’a pas abouti. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        if ($changes === []) {
+            Session::flash('success', 'L’affectation est déjà cohérente : rien à réparer.');
+
+            return Response::redirect($back);
+        }
+        $this->adminAuditService->logUserUpdated($tenantId, (int) Session::get('user_id'), $id, 'affectation', mb_substr('réparée : ' . implode(' ; ', $changes), 0, 250));
+        Session::flash('success', 'Affectation réparée : ' . implode(' ; ', $changes) . '.');
+
+        return Response::redirect($back);
     }
 
     public function requestElevation(Request $request, array $params = []): Response

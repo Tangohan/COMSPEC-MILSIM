@@ -84,7 +84,7 @@ require base_path('views/partials/account/shell_open.php');
             <?php else: ?>
             <span>Étape <strong><?= (int) ($current['number'] ?? 1) ?></strong> sur <?= $total ?></span>
             <?php endif; ?>
-            <span><?= $done ?> faite<?= $done > 1 ? 's' : '' ?></span>
+            <span><?= $h(sprintf($done > 1 ? '%d faites' : '%d faite', (int) $done)) ?></span>
         </p>
         <span class="ah-wel__meter" role="progressbar" aria-label="Profil complété" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= (int) $welcomeProgress['percent'] ?>">
             <span style="width:<?= (int) $welcomeProgress['percent'] ?>%"></span>

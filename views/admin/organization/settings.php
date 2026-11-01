@@ -476,7 +476,7 @@ $imagesNeedAddress = $slugHint === '';
                     <div class="bcs-field">
                         <label class="bcs-label" for="game_label">Jeu ou plateforme <span class="bcs-opt">(facultatif)</span></label>
                         <p class="bcs-help">Affiché sur votre page publique et sur votre carte du registre : les joueurs filtrent souvent par jeu.</p>
-                        <input type="text" id="game_label" name="game_label" class="bcs-input--short" maxlength="120" value="<?= $h((string) ($c['game_label'] ?? '')) ?>" placeholder="Ex. Arma 3, Arma Reforger, Squad">
+                        <input type="text" id="game_label" name="game_label" class="bcs-input--short" maxlength="120" value="<?= $h((string) ($c['game_label'] ?? '')) ?>" placeholder="Ex. Arma 3, Arma Reforger, Squad" list="athena-game-list" autocomplete="off" data-game-suggest> <?php require base_path('views/partials/game_label_suggest.php'); ?>
                     </div>
                 </div>
             </section>

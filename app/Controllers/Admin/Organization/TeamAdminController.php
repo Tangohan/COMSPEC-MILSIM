@@ -26,10 +26,15 @@ class TeamAdminController
             return Response::redirect(url('login'));
         }
         $units = $this->unitRepository->getTeams($tenantId);
+        $unitIds = array_map(static fn (array $u): int => (int) ($u['id'] ?? 0), $units);
+        $commanderIds = array_map(static fn (array $u): int => (int) ($u['commander_user_id'] ?? 0), $units);
         return Response::view('layout.main', [
             'content' => 'admin.organization.teams.index',
             'title' => 'Équipes',
             'teams' => $units,
+            'memberCounts' => $this->userRepository->countActiveByUnits($unitIds),
+            'commanders' => $this->userRepository->findByIdsForTenant($tenantId, $commanderIds),
+            'parentNames' => $this->unitRepository->namesByIdForTenant($tenantId),
         ]);
     }
 
@@ -113,9 +118,11 @@ class TeamAdminController
         return Response::view('layout.main', [
             'content' => 'admin.organization.teams.show',
             'title' => $unit['name'],
+            'boSkipPageHead' => true,
             'team' => $unit,
             'members' => $members,
             'commander' => $commander,
+            'parent' => !empty($unit['parent_id']) ? $this->unitRepository->findById((int) $unit['parent_id'], $tenantId) : null,
         ]);
     }
 

@@ -34,6 +34,7 @@ class GroupAdminController
             'groups' => $units,
             'memberCounts' => $this->userRepository->countActiveByUnits($unitIds),
             'commanders' => $this->userRepository->findByIdsForTenant($tenantId, $commanderIds),
+            'parentNames' => $this->unitRepository->namesByIdForTenant($tenantId),
         ]);
     }
 

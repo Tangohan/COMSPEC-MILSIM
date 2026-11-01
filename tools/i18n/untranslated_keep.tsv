@@ -1,0 +1,1227 @@
+# Textes français volontairement non traduits, relevés par tools/i18n/untranslated.php : texte<TAB>raison<TAB>source.
+espace « Mon compte » : filtrage instantané de l	commentaire	public/assets/js/account-search.js
+identifiant du déploiement qui l	commentaire	public/assets/js/app-version-check.js
+onglet est visible (toutes les 2 min, au retour sur l	commentaire	public/assets/js/app-version-check.js
+un quart de l	commentaire	public/assets/js/arma-map-markers.js
+Metis â€”	nom propre + mojibake	public/assets/js/arma-marker-catalog.js
+Action	identique en anglais	public/assets/js/atak-activity.js
+Description	identique en anglais	public/assets/js/atak-context-menu.js
+une couche neuve sur la carte (l	commentaire	public/assets/js/atak-map-tools.js
+), undefined si la carte n	commentaire tronqué	public/assets/js/atak-map.js
+aperçu : lecteur d	commentaire	public/assets/js/atak-map.js
+une famille (	commentaire tronqué	public/assets/js/atak-map.js
+au sol	mot-clé de détection interne (non affiché)	public/assets/js/atak-medical-alerts.js
+Mission	identique en anglais	public/assets/js/atak-orders.js
+Notes	identique en anglais	public/assets/js/atak-overwatch-beta.js
+une demande 9-line (CAS dans Air, CASEVAC dans Mission) : mêmes statuts que l	commentaire	public/assets/js/atak-overwatch-beta.js
+Date	identique en anglais	public/assets/js/atak-overwatch-intel.js
+organigramme de la communauté n	commentaire	public/assets/js/atak-overwatch-orbat.js
+600 11px Inter, sans-serif	police CSS	public/assets/js/atak-overwatch-tacmap.js
+"IBM Plex Sans", "Segoe UI", system-ui, sans-serif	police CSS	public/assets/js/atak-overwatch-tools.js
+"Noto Sans", "IBM Plex Sans", sans-serif	police CSS	public/assets/js/atak-overwatch-tools.js
+"Source Sans 3", "IBM Plex Sans", sans-serif	police CSS	public/assets/js/atak-overwatch-tools.js
+"Space Grotesk", "IBM Plex Sans", sans-serif	police CSS	public/assets/js/atak-overwatch-tools.js
+Inter, "IBM Plex Sans", "Segoe UI", system-ui, sans-serif	police CSS	public/assets/js/atak-overwatch-tools.js
+image i et la suivante à l	commentaire	public/assets/js/atak-replay.js
+échelle longue ci-dessus et sa descente d	commentaire	public/assets/js/atak-socket.js
+épisode de pause en cours : échelle longue jusqu	commentaire	public/assets/js/atak-socket.js
+700 24px Inter, Arial, sans-serif	police CSS	public/assets/js/atak-translate.js
+900 30px Inter, Arial, sans-serif	police CSS	public/assets/js/atak-translate.js
+900 64px Inter, Arial, sans-serif	police CSS	public/assets/js/atak-translate.js
+anglais : risque de texte coupé sur l	commentaire	public/assets/js/atak-translate.js
+px Inter, Arial, sans-serif	police CSS	public/assets/js/atak-translate.js
+y ouvre avec l	commentaire	public/assets/js/ath-modal-frame.js
+clé unique	commentaire	public/assets/js/ath-quiet-form.js
+élément de même clé est remplacé, puis le message du serveur s	commentaire	public/assets/js/ath-quiet-form.js
+03/11/2026 à 21:00	exemple de date	public/assets/js/back-office-integrations.js
+événements, réglage groupé, barre d	commentaire	public/assets/js/back-office-integrations.js
+ordre initial vient du serveur (?tri=) : on l	commentaire	public/assets/js/back-office-player-metrics.js
+Documents	identique en anglais	public/assets/js/back-office-search.js
+il ne rouvre pas la recherche et qu	commentaire	public/assets/js/back-office-search.js
+[data-ce-dot]	sélecteur CSS	public/assets/js/community-enlistment.js
+Section	identique en anglais	public/assets/js/community-orbat-builder.js
+© OpenStreetMap contributors, SRTM | Style: © OpenTopoMap (CC-BY-SA)	attribution carte	public/assets/js/comspec-operational-map.js
+actions groupées ne s	commentaire	public/assets/js/eff-bulk-actions.js
+adresse dans le presse-papiers (elle n	commentaire	public/assets/js/eff-invites.js
+écran, il s	commentaire	public/assets/js/eff-workspace-shell.js
+arrivée à l	commentaire	public/assets/js/home-impact.js
+fill="#ecfdf5" font-family="Inter,system-ui,sans-serif" font-weight="800" font-size="	code SVG	public/assets/js/img-fallback.js
+fill="#ecfdf5" font-family="Inter,system-ui,sans-serif" font-weight="800" font-size="%1">%2	code SVG	public/assets/js/img-fallback.js
+font-family="Inter,system-ui,sans-serif" font-weight="900" font-size="	code SVG	public/assets/js/img-fallback.js
+font-family="Inter,system-ui,sans-serif" font-weight="900" font-size="%1" letter-spacing="0.08em">%2	code SVG	public/assets/js/img-fallback.js
+a pas d	commentaire tronqué	public/assets/js/recon-viewer.js
+album introuvable : repère au lieu de l	commentaire	public/assets/js/recon-viewer.js
+700 10px ui-sans-serif, system-ui	police CSS	public/assets/js/sse-case-map.js
+© OpenStreetMap, SRTM | Style: © OpenTopoMap (CC-BY-SA)	attribution carte	public/assets/js/sse-case-map.js
+Document	identique en anglais	public/assets/js/sse-field-note-composer.js
+apparaît qu	commentaire	public/assets/js/sse-shell.js
+état choisi par l	commentaire	public/assets/js/sse-shell.js
+"Barlow Condensed", "Arial Narrow", sans-serif	police CSS	public/assets/js/year-review.js
+Barlow, Arial, sans-serif	police CSS	public/assets/js/year-review.js
+Collation	identique en anglais	app/Controllers/Admin/System/SystemSettingsController.php
+Intervention	identique en anglais	app/Controllers/Admin/System/SystemTenantInterventionController.php
+du -sb	bout de code (commande shell)	app/Services/Platform/PlatformStorageService.php
+/(?<=[.!?])\s+(?=[A-ZÀ-ÖØ-Ý«])/u	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+/[\s.(]*non testé en jeu\)?/iu	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+/\b(?:COMSPEC ATAK|pack(?: téléphone)?)\s+(\d+\.\d+\.\d+)/iu	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+/\s*\((?:[^()]*\d+\.\d+[^()]*|[^()]*regroupement[^()]*|site|non testé en jeu)\)\s*/iu	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+/^### Détail technique/mu	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+/^### Résumé joueur\s*\n(.*?)(?=^### |^---|\z)/msu	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+/partie du regroupement\s+(\d+\.\d+\.\d+)/iu	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+/partie du regroupement|regroupé dans/iu	expression régulière	app/Services/Platform/PublicReleaseHistoryService.php
+amélior	bruit d'extraction (fragment de code)	app/Services/Platform/PublicReleaseHistoryService.php
+Cache	identique en anglais	app/Support/PlatformStorageCatalog.php
+Link %1	identique en anglais	views/admin/system/_user_atak_panel.php
+Link %3	identique en anglais	views/admin/system/_user_atak_panel.php
+mod %2	identique en anglais	views/admin/system/_user_atak_panel.php
+mod %3	identique en anglais	views/admin/system/_user_atak_panel.php
+×%2	identique en anglais	views/admin/system/_user_atak_panel.php
+Athena %1	identique en anglais (nom propre + valeur)	views/admin/system/advanced_fiche_edit.php
+%1 s	identique en anglais	views/admin/system/analytics.php
+Occurrences	identique en anglais	views/admin/system/analytics.php
+Signal	identique en anglais	views/admin/system/analytics.php
+Corrections	identique en anglais	views/admin/system/contributors.php
+English	nom de langue (non traduit)	views/admin/system/contributors.php
+Español	nom de langue (non traduit)	views/admin/system/contributors.php
+es, de	codes de langue	views/admin/system/contributors.php
+ancien tableau de bord, la synthèse opérationnelle et, en onglets, la console d	commentaire de code (non affiché)	views/admin/system/dashboard.php
+une ligne et purge. Rendu par public/assets/js/admin-data-registry.js. * * @var array	commentaire de code (non affiché)	views/admin/system/data_registry.php
+DEMO_NDA_GATE_ACCESS_CODE=XXXX-XXXX	variable de configuration	views/admin/system/demo_nda.php
+DEMO_NDA_GATE_ENABLED=true	variable de configuration	views/admin/system/demo_nda.php
+— version	identique en anglais	views/admin/system/deployment_campaign_show.php
+%1 v%2	identique en anglais	views/admin/system/deployment_community_form.php
+, name:string, slug:string, exists:bool, listed:bool, payload:?array	commentaire de code (annotation de type)	views/admin/system/discord_showcase.php
+, tags:list	commentaire de code (annotation de type)	views/admin/system/discord_showcase.php
+Amazon SES	nom de produit	views/admin/system/mail_traffic.php
+Communication	identique en anglais	views/admin/system/mail_traffic.php
+' : 'Non' ?>	bruit d'extraction (fragment de code)	views/admin/system/maintenance_index.php
+Scope	identique en anglais	views/admin/system/maintenance_index.php
+System Ops	identique en anglais	views/admin/system/maintenance_index.php
+preset: %1	identique en anglais	views/admin/system/maintenance_index.php
+Suspension	identique en anglais	views/admin/system/member_sanctions.php
+Sources	identique en anglais	views/admin/system/military_referential_form.php
+Pagination	identique en anglais	views/admin/system/newsletter.php
+Maintenance	identique en anglais	views/admin/system/ops_console.php
+anglais reprend le français s	commentaire de code (non affiché)	views/admin/system/partials/payments_donation_banner.php
+Escadron Alpha	exemple de nom saisi	views/admin/system/plan_payments.php
+Kodiak	exemple de nom saisi	views/admin/system/plan_payments.php
+Net	identique en anglais	views/admin/system/plan_payments.php
+Transaction	identique en anglais	views/admin/system/plan_payments.php
+Transaction %1	identique en anglais	views/admin/system/plan_payments.php
+Audience	identique en anglais	views/admin/system/platform_alerts_form.php
+General Information › Linked Roles Verification URL	libellé de l'interface Discord (anglais)	views/admin/system/platform_integrations.php
+OAuth2 › Redirects	libellé de l'interface Discord (anglais)	views/admin/system/platform_integrations.php
+équipe Athena, rôles liés de Discord (comptes du site), * envoi commun des e-mails : tout en base, plus rien dans le .env. Mêmes styles et comportements que les intégrations * des communautés (back-office-integrations.css / .js). * * @var array	commentaire de code (non affiché)	views/admin/system/platform_integrations.php
+[data-par-date]	sélecteur CSS	views/admin/system/registry_pins.php
+[data-par-duration]	sélecteur CSS	views/admin/system/registry_pins.php
+[data-par-nomatch]	sélecteur CSS	views/admin/system/registry_pins.php
+[data-par-row]	sélecteur CSS	views/admin/system/registry_pins.php
+[data-par-search]	sélecteur CSS	views/admin/system/registry_pins.php
+Email	identique en anglais	views/admin/system/site_role_assignments.php
+staff@example.com	exemple d'adresse	views/admin/system/site_role_assignments.php
+%1 tables	identique en anglais	views/admin/system/storage.php
+(%1 max)	identique en anglais	views/admin/system/storage_table.php
+%1 table(s)	identique en anglais	views/admin/system/storage_tables.php
+Table	identique en anglais	views/admin/system/storage_tables.php
+Slug	identique en anglais	views/admin/system/subscription_plans_index.php
+INSERT INTO `tenants` ...	bout de code SQL	views/admin/system/tenant_recovery.php
+Logo URL	identique en anglais	views/admin/system/tenant_recovery.php
+Settings (JSON)	identique en anglais	views/admin/system/tenant_recovery.php
+Users	identique en anglais	views/admin/system/tenant_recovery.php
+Archive	identique en anglais	views/admin/system/updates.php
+Version %1	identique en anglais	views/admin/system/updates.php
+<textarea id="bio" name="bio" rows="3" class="%1	bout de code HTML	views/admin/system/user_edit.php
+<textarea id="command_notes" name="command_notes" rows="4" class="%1	bout de code HTML	views/admin/system/user_edit.php
+<textarea id="nicknames_text" name="nicknames_text" rows="3" class="%1	bout de code HTML	views/admin/system/user_edit.php
+tenant #%2	identique en anglais	views/admin/system/user_person.php
+system-ui, sans-serif	police CSS	app/Support/training_lms.php
+approche, pour ne pas charger toute la présentation d	bruit d'extraction (commentaire JS)	public/assets/js/academy-deck.js
+un envoi : seul le signal explicite du serveur vaut confirmation d	bruit d'extraction (commentaire JS)	public/assets/js/training_custom_page_editor.js
+Inter, system-ui, sans-serif	police CSS	public/assets/js/training_studio_presentation.js
+%1 min	identique en anglais	views/academy/classroom.php
+%4 min	identique en anglais	views/academy/classroom.php
+étape, contenu, * notes, ressources et navigation précédente/suivante. Tout est branché sur l	bruit d'extraction (commentaire)	views/academy/classroom.php
+<textarea id="acr-notes-%1	bruit d'extraction (code HTML)	views/academy/classroom_notes.php
+ATHENA ACADEMY	nom de produit	views/academy/course_license.php
+%3 min	identique en anglais	views/academy/course_player.php
+Academy	nom de produit	views/academy/footer.php
+FR / EN	identique en anglais	views/academy/footer.php
+ATHENA / %1	nom de produit	views/academy/home_body.php
+%2 min	identique en anglais	views/academy/native_course_list.php
+une formation ouverte par un lien « toute personne disposant du lien » : lecture seule, * sans compte ni inscription. Cours et démonstrations uniquement : questions, réponses et évaluations restent dans l	bruit d'extraction (commentaire)	views/academy/shared.php
+%1 (min)	identique en anglais	views/academy/studio.php
+Studio	identique en anglais	views/academy/studio.php
+%2 placement(s)	identique en anglais	views/admin/training/competency_command.php
+Validation / certification	identique en anglais	views/admin/training/competency_command.php
+Code *	identique en anglais	views/admin/training/competency_modules.php
+Phase *	identique en anglais	views/admin/training/competency_modules.php
+Badge	identique en anglais	views/admin/training/course_showcase.php
+v%1 — %2	identique en anglais	views/admin/training/custom_page_diff.php
+%1 document%2	identique en anglais	views/admin/training/custom_pages.php
+page %3 / %4	identique en anglais	views/admin/training/custom_pages.php
+Canonical URL	identique en anglais	views/admin/training/custom_pages_form.php
+Meta description	identique en anglais	views/admin/training/custom_pages_form.php
+Meta title	identique en anglais	views/admin/training/custom_pages_form.php
+Timeline	identique en anglais	views/admin/training/custom_pages_form.php
+%1 module%2	identique en anglais	views/admin/training/studio_edit.php
+<textarea name="lesson_content" class="hidden" data-lms-canvas-json %1	bruit d'extraction (code HTML)	views/admin/training/studio_edit.php
+<textarea name="lesson_content" rows="%1	bruit d'extraction (code HTML)	views/admin/training/studio_edit.php
+Module %1	identique en anglais	views/admin/training/studio_edit.php
+Modules	identique en anglais	views/admin/training/studio_edit.php
+T+%1 min	identique en anglais	views/admin/training/studio_edit.php
+≈ %1 min	identique en anglais	views/admin/training/studio_edit.php
+(v%1)	identique en anglais	views/admin/training/studio_index.php
+%2 module(s)	identique en anglais	views/partials/training_studio_sidebar.php
+Export & import	identique en anglais	views/partials/training_studio_sidebar.php
+<span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold leading-tight %1">%2	bruit d'extraction (code HTML)	views/training/catalogue.php
+Audio	identique en anglais	views/training/course.php
+Architecture & DDD	identique en anglais	views/training/index.php
+Operational Excellence	identique en anglais	views/training/index.php
+Operational Readiness	identique en anglais	views/training/index.php
+TCCC / Trauma Care	identique en anglais	views/training/index.php
+A → Z	identique en anglais	views/training/my-training.php
+' : 'aucune en retard' ?>	bruit d'extraction	views/admin/aar_reports/index.php
+' : 'toutes les missions ont leur retour' ?>	bruit d'extraction	views/admin/aar_reports/index.php
+Actions	identique en anglais	views/admin/aar_reports/index.php
+" placeholder="Ex. Mettre à jour la carte du secteur nord" maxlength="500" data-aar-act-label>	bruit d'extraction (HTML)	views/admin/aar_reports/partials/actions_fields.php
+" placeholder="Indicatif ou nom" maxlength="160">	bruit d'extraction (HTML)	views/admin/aar_reports/partials/actions_fields.php
+<input type="date" name="actions[	bruit d'extraction (HTML)	views/admin/aar_reports/partials/actions_fields.php
+<select name="actions[	bruit d'extraction (HTML)	views/admin/aar_reports/partials/actions_fields.php
+<textarea id="%1	bruit d'extraction (HTML)	views/admin/aar_reports/partials/custom_fields.php
+Conclusion	identique en anglais	views/admin/aar_reports/show.php
+Questions	identique en anglais	views/admin/aar_reports/template_form.php
+Code %1	identique en anglais	views/admin/advancement/grade_form.php
+Total	identique en anglais	views/admin/atak-beta-registrations/index.php
+Versions	identique en anglais	views/admin/atak-beta-registrations/index.php
+Arma, méthodes de connexion, * synchronisation du profil, fonctions autorisées depuis le jeu, version du pack, fréquence des positions. * * @var array	bruit d'extraction (commentaire)	views/admin/atak-config/_game_experience.php
+COMSPEC OVERWATCH	nom propre	views/admin/atak-config/_game_experience.php
+Ex. Bienvenue au 2e REP — briefing 20 h 45	exemple de contenu saisi	views/admin/atak-config/_game_experience.php
+Logo	identique en anglais	views/admin/atak-config/_game_experience.php
+10 s	identique en anglais	views/admin/atak-config/index.php
+Ex. OP FORTERESSE	exemple de contenu saisi	views/admin/atak-config/index.php
+Port	identique en anglais	views/admin/atak-config/index.php
+Sections	identique en anglais	views/admin/atak-config/index.php
+pack ≥ %2	identique en anglais	views/admin/atak-config/index.php
+● REC	identique en anglais	views/admin/atak-config/index.php
+24 h	identique en anglais	views/admin/atak-fleet/index.php
+ATAK v%1	identique en anglais	views/admin/atak-fleet/index.php
+Dormant	identique en anglais	views/admin/atak-fleet/index.php
+Steam %1	identique en anglais	views/admin/atak-fleet/index.php
+Faction	identique en anglais	views/admin/atak-fleet/show.php
+Link	identique en anglais	views/admin/atak-fleet/show.php
+Terminal	identique en anglais	views/admin/atak-fleet/show.php
+Arma	nom propre	views/admin/atak-mod-reports/index.php
+Link %2	identique en anglais	views/admin/atak-mod-reports/index.php
+Mod %1	identique en anglais	views/admin/atak-mod-reports/index.php
+× %1	identique en anglais	views/admin/atak-mod-reports/index.php
+Version	identique en anglais	views/admin/atak-mod/index.php
+héberge plus d	bruit d'extraction (commentaire)	views/admin/atak-mod/index.php
+Sessions	identique en anglais	views/admin/atak/hours.php
+Zeus	nom propre	views/admin/atak/hours.php
+%1 m	identique en anglais	views/admin/atak/relays_network.php
+COMSPEC Overwatch — Roleplay	nom propre	views/admin/atak/roleplay.php
+13px sans-serif	police CSS	views/admin/atak/roleplay_enhanced.php
+Mode	identique en anglais	views/admin/atak/roleplay_enhanced.php
+COMSPEC Link %1%2	nom propre	views/admin/atak/send_queues.php
+Normal	identique en anglais	views/admin/atak/send_queues.php
+p95 %1	identique en anglais	views/admin/atak/send_queues.php
+COMSPEC Link	nom propre	views/admin/atak/server_control.php
+Mod	identique en anglais	views/admin/atak/server_control.php
+d/m à H:i	bruit d'extraction (format de date)	views/admin/atak/squads.php
+Mods (Steam Workshop)	identique en anglais	views/admin/atak_debrief/index.php
+Session	identique en anglais	views/admin/atak_debrief/index.php
+cr=%1	identifiant	views/admin/atak_debrief/index.php
+op=%1	identifiant	views/admin/atak_debrief/index.php
+ID %1	identique en anglais	views/admin/atak_operators/profile.php
+Signal %1/4	identique en anglais	views/admin/atak_realism/_phones.php
+COMSPEC Root CA	nom propre	views/admin/atak_realism/certificates.php
+ECDSA P-256	sigle	views/admin/atak_realism/certificates.php
+RSA 4096	sigle	views/admin/atak_realism/certificates.php
+SHA-256 %1	sigle	views/admin/atak_realism/certificates.php
+(GET	bruit d'extraction	views/admin/atak_realism/config.php
+Tenant ID:	identique en anglais	views/admin/atak_realism/verify.php
+Stratis	nom propre	views/admin/athena_tactical_map/index.php
+Tanoa	nom propre	views/admin/athena_tactical_map/index.php
+Image *	identique en anglais	views/admin/briefing_slides/index.php
+Position %1 / %2	identique en anglais	views/admin/briefing_slides/index.php
+Analytics	identique en anglais	views/admin/configuration.php
+Code	identique en anglais	views/admin/configuration.php
+Operator	identique en anglais	views/admin/configuration.php
+Squad Leader	identique en anglais	views/admin/configuration.php
+<textarea id="restrict-reason-%1	bruit d'extraction (HTML)	views/admin/content_moderation_index.php
+<textarea id="warn-reason-%1	bruit d'extraction (HTML)	views/admin/content_moderation_index.php
+Types	identique en anglais	views/admin/documents/doctrine_compliance.php
+Collaboration	identique en anglais	views/admin/documents/edit.php
+Tags	identique en anglais	views/admin/documents/edit.php
+Version %1 — %2 %3	identique en anglais	views/admin/documents/edit.php
+tag1, tag2	identique en anglais	views/admin/documents/edit.php
+Classification	identique en anglais	views/admin/documents/index.php
+Correction	identique en anglais	views/admin/documents/index.php
+Public	identique en anglais	views/admin/documents/index.php
+Signature	identique en anglais	views/admin/documents/show.php
+Dates	identique en anglais	views/admin/documents/upload.php
+Expiration	identique en anglais	views/admin/documents/upload.php
+Parent	identique en anglais	views/admin/documents/upload.php
+<textarea name="%1	bruit d'extraction (HTML)	views/admin/intel/intake_show.php
+<textarea class="ath-field__textarea" name="steps[%1	bruit d'extraction (HTML)	views/admin/member_integration/template_form.php
+Module	identique en anglais	views/admin/member_situation/liaison_atak.php
+%1 maximum	identique en anglais	views/admin/member_situation/musique.php
++ Playlist	identique en anglais	views/admin/member_situation/musique.php
+Genre	identique en anglais	views/admin/member_situation/musique.php
+Playlists	identique en anglais	views/admin/member_situation/musique.php
+, cond: array	bruit d'extraction (code)	views/admin/member_situation/pilot_logbook.php
+Structure	identique en anglais	views/admin/member_situation/unite.php
+Briefing	identique en anglais	views/admin/mission_cycle/index.php
+Force	identique en anglais	views/admin/mission_planning/index.php
+TF DAGGER	nom propre / indicatif	views/admin/mission_planning/index.php
+Participants	identique en anglais	views/admin/missions_portal/show.php
+Task force	identique en anglais	views/admin/missions_portal/show.php
+%1 playlist(s)	identique en anglais	views/admin/music/index.php
+Pages	identique en anglais	views/admin/music/index.php
+Playlist	identique en anglais	views/admin/music/index.php
+entrée, dossiers du fil d	bruit d'extraction (commentaire)	views/admin/partage/index.php
+Page %1 / %2	identique en anglais	views/admin/partials/audit_log_page.php
+page %1 / %2	identique en anglais	views/admin/partials/audit_log_page.php
+apparaît que s	bruit d'extraction (chaîne tronquée)	views/admin/partials/low_member_orgs_alert.php
+ancienne synthèse opérationnelle). * * @var list<array	bruit d'extraction (commentaire)	views/admin/partials/platform_communication.php
+<textarea id="new-body" name="body" rows="4" required maxlength="8000" class="%1	bruit d'extraction (HTML)	views/admin/recruitments/canned_messages.php
+<textarea name="body" rows="3" required maxlength="8000" class="%1	bruit d'extraction (HTML)	views/admin/recruitments/canned_messages.php
+<textarea id="new-options" name="options" rows="3" class="%1	bruit d'extraction (HTML)	views/admin/recruitments/discord_questions.php
+<textarea name="options" rows="3" class="%1	bruit d'extraction (HTML)	views/admin/recruitments/discord_questions.php
+Guide	identique en anglais	views/admin/recruitments/partials/dossier_side_nav.php
+Coordination	identique en anglais	views/admin/recruitments/show.php
+Score %1/100	identique en anglais	views/admin/recruitments/show.php
+<textarea id="comment-%1	bruit d'extraction (HTML)	views/admin/reports_moderation.php
+Export	identique en anglais	views/admin/roles_permissions/index.php
+page %2 / %3	identique en anglais	views/admin/effectifs_workspace/elevation_requests.php
+%1 / %2 sessions	identique en anglais	views/admin/effectifs_workspace/member.php
+Check-up — %1	identique en anglais	views/personnel/deployment.php
+qualification(s)	identique en anglais	views/personnel/file.php
+, section	identique en anglais	views/personnel/tutorials.php
+/reserv|réserv|irr[eé]gulier|dispo\b|disponib/	bruit d'extraction : expression régulière	app/Services/Personnel/SeniorityDossierInferenceSyncService.php
+JTAC / FO	identique en anglais (sigles)	config/personnel_dossier_presets.php
+ouverture, la fermeture, la recherche et le maximum d	bruit d'extraction : commentaire tronqué	public/assets/js/eff-roster-edit.js
+Page	identique en anglais	views/admin/effectifs_workspace/departures.php
+Conditions	identique en anglais	views/admin/effectifs_workspace/elevation_criteria.php
+" selected>Référence indisponible (#	bruit d'extraction : fragment HTML tronqué	views/admin/effectifs_workspace/fonctions.php
+Invitations	identique en anglais	views/admin/effectifs_workspace/invitations.php
+Absences	identique en anglais	views/admin/effectifs_workspace/member.php
+Allergies	identique en anglais	views/admin/effectifs_workspace/member.php
+Qualifications	identique en anglais	views/admin/effectifs_workspace/member.php
+Sanctions	identique en anglais	views/admin/effectifs_workspace/member.php
+affichent toutes, à la suite. Comportements : eff-new-member.js. */ require_once __DIR__ .	bruit d'extraction : commentaire/code	views/admin/effectifs_workspace/new_member.php
+%2 h%3	identique en anglais (unité)	views/admin/effectifs_workspace/partials/invite_rows.php
+48 h	identique en anglais (unité)	views/admin/effectifs_workspace/partials/invite_rows.php
+>, ready: bool, can_manage: bool, destinations: list	bruit d'extraction : annotation de type	views/admin/effectifs_workspace/partials/member_invites.php
+Succession	identique en anglais	views/admin/effectifs_workspace/partials/rh_shortcuts.php
+Qualification	identique en anglais	views/admin/effectifs_workspace/qualifications.php
+Motivation	identique en anglais	views/admin/effectifs_workspace/rh_mobility.php
+Roleplay	identique en anglais	views/admin/effectifs_workspace/rh_settings.php
+édition du tableur (emploi, rôle dans l	bruit d'extraction : commentaire tronqué	views/admin/effectifs_workspace/roster.php
+Composition	identique en anglais	views/admin/effectifs_workspace/shell.php
+Ctrl K	identique en anglais (raccourci clavier)	views/admin/effectifs_workspace/shell.php
+Perms	identique en anglais	views/admin/organization/personnel_job_roles/index.php
+Permissions (preset)	identique en anglais	views/admin/organization/personnel_job_roles/role_form.php
+String(s.id)	bruit d'extraction : code JS	views/courrier/partials/signature-modal.php
+<button type="button" class="rounded-lg border border-dashed border-cyan-300 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-50" @click="addRow()" x-show="roles.length	bruit d'extraction : balise HTML	views/partials/personnel/edit_orbat_section.php
+<button type="button" class="rounded-lg border border-dashed border-cyan-300 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-50" @click="addRow()" x-show="rows.length	bruit d'extraction : balise HTML	views/partials/personnel/edit_orbat_section.php
+O-5, OF-4…	exemple de saisie (codes de grade)	views/partials/personnel/edit_orbat_section.php
+primaryIdx === idx ? '1' : '0'	bruit d'extraction : expression JS	views/partials/personnel/edit_orbat_section.php
+primaryUnitId()	bruit d'extraction : expression JS	views/partials/personnel/edit_orbat_section.php
+%1 bpm	identique en anglais (unité)	views/partials/personnel/file_playtime.php
+%1 km/h	identique en anglais (unité)	views/partials/personnel/file_playtime.php
+Stress	identique en anglais	views/partials/personnel/file_playtime.php
+<section id="edit-visibilite" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-300/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" data-personnel-visibility-admin data-consequences="%1"	bruit d'extraction : balise HTML	views/partials/personnel/visibility_admin_block.php
+x-data="personnelVisibilityAdmin(%1)"	bruit d'extraction : attribut HTML	views/partials/personnel/visibility_admin_block.php
+<textarea id="corr-%1	bruit d'extraction : balise HTML	views/personnel/correction_form.php
+<textarea id="corr-note" name="note" rows="3" maxlength="1000" placeholder="%1	bruit d'extraction : balise HTML	views/personnel/correction_form.php
+O+, A-, …	exemple de saisie (groupes sanguins)	views/personnel/deployment.php
+<textarea name="medal_rack_text" id="medal_rack_text"%1	bruit d'extraction : balise HTML	views/personnel/edit.php
+FR, EN…	exemple de saisie (codes de langue)	views/personnel/edit.php
+MRAP, Utility…	exemple de saisie (noms de véhicules)	views/personnel/edit.php
+PRC-152…	exemple de saisie (nom de radio)	views/personnel/edit.php
+Rifleman Light…	exemple de saisie (nom de tenue)	views/personnel/edit.php
+%1 kg	identique en anglais (unité)	views/personnel/file.php
+ATHENA MILSIM	nom propre	views/personnel/orbat_chart_export.php
+ATHENA MILSIM — ORBAT — %1	nom propre / identique en anglais	views/personnel/orbat_chart_export.php
+%1 kit(s)	identique en anglais	views/admin/organization/game_role_kits.php
+Doctrine & SOP	identique en anglais	app/Controllers/Admin/Organization/DoctrineAdminController.php
+Playbook Permissions	identique en anglais	app/Controllers/Admin/Organization/OrganizationDashboardController.php
+Playbook Spam	identique en anglais	app/Controllers/Admin/Organization/OrganizationDashboardController.php
+Medic	identique en anglais	app/Services/Organization/PositionCapabilityCatalog.php
+Combat	identique en anglais	app/Services/OrganizationCatalog/OrganizationKitDefinitions.php
+Grenadier	identique en anglais	app/Services/OrganizationCatalog/OrganizationKitDefinitions.php
+/^(op(é|e)ration|op\.?)\s+/iu	expression régulière	app/Support/PilotageDashboardPresenter.php
+Condition	identique en anglais	views/admin/organization/access_management/index.php
+Score	identique en anglais	views/admin/organization/advancement/readiness.php
+EXFIL, LZ, DANGER…	sigles / exemple de saisie	views/admin/organization/atak_marker_detection.php
+Padding	identique en anglais	views/admin/organization/callsign_sequences.php
+Pattern	identique en anglais	views/admin/organization/callsign_sequences.php
+" maxlength="32" class="bcs-mono" placeholder="Étiquette (ex. PRIMO)" aria-label="Section	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
+(badge)	identique en anglais	views/admin/organization/community_presentation.php
+: étiquette">	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
+<textarea name="military_body[]" rows="4" placeholder="Contenu" aria-label="Section %1	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
+<textarea name="public_faq_a[]" rows="2" maxlength="800" placeholder="Réponse" aria-label="Réponse %1	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
+<textarea name="public_quote_text[]" rows="2" maxlength="600" placeholder="Citation" aria-label="Témoignage %1	bruit d'extraction (fragment HTML)	views/admin/organization/community_presentation.php
+ACE3 TFAR RHS	nom propre (mods)	views/admin/organization/community_presentation.php
+Arma 3, Arma Reforger, Squad…	noms propres (jeux)	views/admin/organization/community_presentation.php
+Doctrine	identique en anglais	views/admin/organization/community_presentation.php
+Europe	identique en anglais	views/admin/organization/community_presentation.php
+FR OTAN	exemple de saisie	views/admin/organization/community_presentation.php
+Minimal	identique en anglais	views/admin/organization/community_presentation.php
+Question %1	identique en anglais	views/admin/organization/community_presentation.php
+Section %1%2	identique en anglais	views/admin/organization/community_presentation.php
+Simple	identique en anglais	views/admin/organization/community_presentation.php
+Standard	identique en anglais	views/admin/organization/community_presentation.php
+Administration	identique en anglais	views/admin/organization/configuration_updates.php
+COMSPEC ATAK	nom propre	views/admin/organization/configuration_updates_novelties.php
+Participation	identique en anglais	views/admin/organization/dashboard.php
+Site	identique en anglais	views/admin/organization/dashboard.php
+URL (https)	identique en anglais	views/admin/organization/dashboard_pins_form.php
+Anomalies	identique en anglais	views/admin/organization/data_quality.php
+<textarea id="dsc-pitch" name="pitch" rows="4" maxlength="%1	bruit d'extraction (fragment HTML)	views/admin/organization/discord_showcase.php
+Checklist	identique en anglais	views/admin/organization/doctrine.php
+<textarea id="slot-notes-%1	bruit d'extraction (fragment HTML)	views/admin/organization/event_show.php
+Service	identique en anglais	views/admin/organization/event_show.php
+%1 pts	identique en anglais	views/admin/organization/events.php
+<textarea id="ev-desc" name="description" rows="3" placeholder="Consignes, tenue, lieu de rendez-vous…" class="bo-events__textarea" %1	bruit d'extraction (fragment HTML)	views/admin/organization/events.php
+Workshop %1	nom propre	views/admin/organization/game_equipment.php
+<input class="bo-ge-input" type="number" min="1" max="99" name="cargo[	bruit d'extraction (fragment HTML)	views/admin/organization/game_role_kit_form.php
+<textarea id="public_blurb" name="public_blurb" rows="3" maxlength="600" placeholder="%1	bruit d'extraction (fragment HTML)	views/admin/organization/groups/_form.php
+<textarea name="template" rows="4" maxlength="%1	bruit d'extraction (fragment HTML)	views/admin/organization/integrations.php
+Arma 3 / Overwatch	nom propre	views/admin/organization/integrations.php
+Message	identique en anglais	views/admin/organization/integrations.php
+Permissions	identique en anglais	views/admin/organization/integrations.php
+Webhooks	identique en anglais	views/admin/organization/integrations.php
+accès. * Les réglages de la plateforme sont dans l	bruit d'extraction (commentaire)	views/admin/organization/integrations.php
+organisation (sans lien en clair) * @var list<array	bruit d'extraction (commentaire)	views/admin/organization/integrations.php
+1 ? 's' : '')">	bruit d'extraction (code)	views/admin/organization/invitations.php
+Collection	identique en anglais	views/admin/organization/media_edit.php
+back-office/organisation/matricules/export?filtre=sans	URL interne	views/admin/organization/member_numbers.php
+(6 images max.)	identique en anglais	views/admin/organization/mini_articles_form.php
+← Configuration	identique en anglais	views/admin/organization/onboarding_recovery.php
+tenant, unit, role…	déjà en anglais (mots-clés recherche)	views/admin/organization/operations_center.php
+21H00 - 21H15	exemple d'horaire	views/admin/organization/partials/event_details_fields.php
+<textarea id="ev-cg" name="conditions_general" rows="3" class="%1	bruit d'extraction (fragment HTML)	views/admin/organization/partials/event_details_fields.php
+<textarea id="ev-cs" name="conditions_special" rows="3" class="%1	bruit d'extraction (fragment HTML)	views/admin/organization/partials/event_details_fields.php
+' : '' ?>vu le %1	bruit d'extraction (code)	views/admin/organization/partials/game_player_kits.php
+×%1	identique en anglais	views/admin/organization/partials/game_player_kits.php
+envoi des e-mails (Intégrations) : communauté ou envoi commun de la plateforme. * Les préréglages des fournisseurs (port, chiffrement, serveur) sont appliqués par back-office-integrations.js. * * @var array	bruit d'extraction (commentaire)	views/admin/organization/partials/integrations_mail_form.php
+BB %1	sigle	views/admin/organization/player_metrics.php
+Body Battery	nom propre	views/admin/organization/player_metrics.php
+<textarea name="custom_values[%1	bruit d'extraction (fragment HTML)	views/admin/organization/qualifications/award_form.php
+%1 h	identique en anglais	views/admin/organization/qualifications/pilot_syllabus.php
+<textarea name="block_corps[]" rows="2" class="ath-field__textarea" placeholder="Description"%1	bruit d'extraction (fragment HTML)	views/admin/organization/recruitment_offers/form.php
+<textarea name="description" rows="7" class="ath-field__textarea"%1	bruit d'extraction (fragment HTML)	views/admin/organization/recruitment_offers/form.php
+<textarea name="mission_lead" rows="3" class="ath-field__textarea"%1	bruit d'extraction (fragment HTML)	views/admin/organization/recruitment_offers/form.php
+<textarea name="summary" rows="2" class="ath-field__textarea"%1	bruit d'extraction (fragment HTML)	views/admin/organization/recruitment_offers/form.php
+<textarea name="technical_notice" rows="3" class="ath-field__textarea"%1	bruit d'extraction (fragment HTML)	views/admin/organization/recruitment_offers/form.php
+<textarea class="cp-input" name="description" id="%1	bruit d'extraction (fragment HTML)	views/admin/organization/referentiels/competency_matrix.php
+. Colonel FR ARMY =	bruit d'extraction (code)	views/admin/organization/referentiels/grades/catalog_audit.php
+Gendarmerie	nom propre	views/admin/organization/referentiels/grades/catalog_audit.php
+est supprimé) ; les grades créés par la * communauté appartiennent au système d	bruit d'extraction (commentaire)	views/admin/organization/referentiels/grades/index.php
+Rotation	identique en anglais	views/admin/organization/roleplay_deadlines.php
+Activation	identique en anglais	views/admin/organization/roleplay_immersion_settings.php
+%1 / %2 kits	identique en anglais	views/admin/organization/roles/presets.php
+Destination	identique en anglais	views/admin/organization/roles_functions.php
+S1 Officer	identique en anglais	views/admin/organization/roles_functions.php
+Accent	identique en anglais	views/admin/organization/settings.php
+Confirmation	identique en anglais	views/admin/organization/settings.php
+Image %1	identique en anglais	views/admin/organization/settings.php
+Images	identique en anglais	views/admin/organization/tenant_alerts_form.php
+Inactive	identique en anglais	views/admin/organization/tenant_alerts_index.php
+Visible	identique en anglais	views/admin/organization/tenant_alerts_index.php
+Steam ID	identique en anglais	views/admin/organization/users/show.php
+Radio, protection…	identique en anglais	views/equipment/hub.php
+Portrait	identique en anglais / sigle / mesure	views/account/banner.php
+IP %2	identique en anglais / sigle / mesure	views/account/index.php
+Alias %1	identique en anglais / sigle / mesure	views/account/preferences.php
+Compact	identique en anglais / sigle / mesure	views/account/preferences.php
+Discord	identique en anglais / sigle / mesure	views/account/preferences.php
+<textarea id="pcv-bio" name="bio" rows="3" maxlength="%1	bruit d'extraction (code/HTML)	views/account/public_cv.php
+Plan B	identique en anglais / sigle / mesure	views/account/security.php
+Steam …%1	identique en anglais / sigle / mesure	views/account/steam_conflict.php
+aperçu de la carte d	bruit d'extraction (commentaire/fragment)	views/account/welcome.php
+étape est faite, sinon l	bruit d'extraction (commentaire/fragment)	views/account/welcome.php
+Archives	identique en anglais / sigle / mesure	views/alerts/index.php
+Articles	identique en anglais / sigle / mesure	views/articles/index.php
+affichage : articles enregistrés avec l	bruit d'extraction (commentaire/fragment)	views/articles/show.php
+Incidents	identique en anglais / sigle / mesure	views/atak-liaison.php
+Ping	identique en anglais / sigle / mesure	views/atak-liaison.php
+Type	identique en anglais / sigle / mesure	views/atak-liaison.php
+Athena	nom propre/indicatif	views/atak-maintenance.php
+100 m	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+15 minutes	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+15 s	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+1×	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+2.0×	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+250 m	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+2D / 3D	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+2×	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+3 s	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+30 minutes	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+30 s	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+4×	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+500 m	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+8 s	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+A4 — Portrait	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Affiliation	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Air	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Altitudes	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Athena / Overwatch	nom propre/indicatif	views/atak-overwatch-beta.php
+Athena — Overwatch	nom propre/indicatif	views/atak-overwatch-beta.php
+BFT 0	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Comspec / Overwatch	nom propre/indicatif	views/atak-overwatch-beta.php
+Contact	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Contacts	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Direct	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Format	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Horizon	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Hostile 0	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Hostiles	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Identification	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Identification (IFF)	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Inter	police CSS	views/atak-overwatch-beta.php
+Noto Sans	police CSS	views/atak-overwatch-beta.php
+Obstacle	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Obstacles	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Overwatch	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Photos	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Pings	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Plex Mono	police CSS	views/atak-overwatch-beta.php
+Plex Sans	police CSS	views/atak-overwatch-beta.php
+Point	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Radio	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Rectangle	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Routine	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Rx —	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Silhouette	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Situation	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Source	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Source Sans	police CSS	views/atak-overwatch-beta.php
+Space Grotesk	police CSS	views/atak-overwatch-beta.php
+Sync	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Urgent	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Volume	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Wave	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Wave Relay	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Zones	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+×	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+⌘ K	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+⌘K	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+(Community Base Addons).	identique en anglais / sigle / mesure	views/atak-setup.php
+(Configure Addons) →	identique en anglais / sigle / mesure	views/atak-setup.php
+CBA A3	identique en anglais / sigle / mesure	views/atak-setup.php
+COMSPEC Overwatch	nom propre/indicatif	views/atak-setup.php
+Configuration (Arma ↔ site)	identique en anglais / sigle / mesure	views/atak-setup.php
+Dashboard	identique en anglais / sigle / mesure	views/atak-setup.php
+Installation	identique en anglais / sigle / mesure	views/atak-setup.php
+Options	identique en anglais / sigle / mesure	views/atak-setup.php
+Pack	identique en anglais / sigle / mesure	views/atak-tuto.php
+Steam	identique en anglais / sigle / mesure	views/atak-tuto.php
+— menu	identique en anglais / sigle / mesure	views/atak-tuto.php
+--:--:-- Z	identique en anglais / sigle / mesure	views/atak.php
+15 S	identique en anglais / sigle / mesure	views/atak.php
+2 s	identique en anglais / sigle / mesure	views/atak.php
+2.5×	identique en anglais / sigle / mesure	views/atak.php
+3 S	identique en anglais / sigle / mesure	views/atak.php
+3 modules	identique en anglais / sigle / mesure	views/atak.php
+30 S	identique en anglais / sigle / mesure	views/atak.php
+5 km/h	identique en anglais / sigle / mesure	views/atak.php
+8 S	identique en anglais / sigle / mesure	views/atak.php
+9-Line MEDEVAC	identique en anglais / sigle / mesure	views/atak.php
+ATAK Enhanced	identique en anglais / sigle / mesure	views/atak.php
+ATAK Native	identique en anglais / sigle / mesure	views/atak.php
+ATAK Solo	identique en anglais / sigle / mesure	views/atak.php
+ATHENA / INTEL	nom propre/indicatif	views/atak.php
+Absent	identique en anglais / sigle / mesure	views/atak.php
+Alt	identique en anglais / sigle / mesure	views/atak.php
+Arma / Overwatch	nom propre/indicatif	views/atak.php
+COMSPEC ATAK Native	nom propre/indicatif	views/atak.php
+CTRL K	identique en anglais / sigle / mesure	views/atak.php
+Command	identique en anglais / sigle / mesure	views/atak.php
+Config	identique en anglais / sigle / mesure	views/atak.php
+Ctrl	identique en anglais / sigle / mesure	views/atak.php
+Dest	identique en anglais / sigle / mesure	views/atak.php
+Distance	identique en anglais / sigle / mesure	views/atak.php
+Fire team	identique en anglais / sigle / mesure	views/atak.php
+Forces	identique en anglais / sigle / mesure	views/atak.php
+Full map	identique en anglais / sigle / mesure	views/atak.php
+Important	identique en anglais / sigle / mesure	views/atak.php
+Instructions	identique en anglais / sigle / mesure	views/atak.php
+Intel	identique en anglais / sigle / mesure	views/atak.php
+Interface	identique en anglais / sigle / mesure	views/atak.php
+Laser	identique en anglais / sigle / mesure	views/atak.php
+Navigation	identique en anglais / sigle / mesure	views/atak.php
+OPERATOR FOCUS	identique en anglais / sigle / mesure	views/atak.php
+OSINT / NOTES	identique en anglais / sigle / mesure	views/atak.php
+OVERWATCH / LIVE	identique en anglais / sigle / mesure	views/atak.php
+Plan	identique en anglais / sigle / mesure	views/atak.php
+Positions	identique en anglais / sigle / mesure	views/atak.php
+QR codes	identique en anglais / sigle / mesure	views/atak.php
+Reconnaissance	identique en anglais / sigle / mesure	views/atak.php
+Sitac	identique en anglais / sigle / mesure	views/atak.php
+Transmission	identique en anglais / sigle / mesure	views/atak.php
+± 90 s	identique en anglais / sigle / mesure	views/atak.php
+×1	identique en anglais / sigle / mesure	views/atak.php
+×20	identique en anglais / sigle / mesure	views/atak.php
+×5	identique en anglais / sigle / mesure	views/atak.php
+×60	identique en anglais / sigle / mesure	views/atak.php
+— MS	identique en anglais / sigle / mesure	views/atak.php
+@COMSPEC_ATAK_Native	nom propre/indicatif	views/atak/first_link.php
+ATAK natif (@COMSPEC_ATAK_Native) au compte Athena. * Cinq étapes (installer, sortir le téléphone, se connecter, vérifier, dépanner), schéma de l	bruit d'extraction (commentaire/fragment)	views/atak/first_link.php
+COMSPEC_logs_<date>.zip	nom propre/indicatif	views/atak/first_link.php
+Arma 3	identique en anglais / sigle / mesure	views/atak/mod.php
+Steam Workshop	identique en anglais / sigle / mesure	views/atak/mod.php
+25 min	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+30 min	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+35 min	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+40 min	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+45 min	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+50 min	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+@COMSPECOverwatch	nom propre/indicatif	views/atak/mod/formation/_modules.php
+Activity	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Equipment	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Location	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Module 1	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Module 2	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Module 3	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Module 4	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Module 5	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Module 6	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Module 7	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Shift	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Time	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Uniform	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+pack %1	identique en anglais / sigle / mesure	views/atak/mod/formation/index.php
+CONTACT, SALUTE, SPOTREP, SITREP…	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_hub.php
+Cams	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_hub.php
+Photo Library (cTab / BCE)	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_hub.php
+Hub	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_intro.php
+Introduction	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_intro.php
+Spawn	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_intro.php
+Tacmap	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_intro.php
+Sites	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_sse.php
+%1 — SSE	identique en anglais / sigle / mesure	views/atak/sse/_layout.php
+Investigation	identique en anglais / sigle / mesure	views/atak/sse/_layout.php
+Menu	identique en anglais / sigle / mesure	views/atak/sse/_layout.php
+Suggestions	identique en anglais / sigle / mesure	views/atak/sse/_layout.php
+%3 mission(s)	identique en anglais / sigle / mesure	views/atak/sse/campaign_catalog.php
+Missions	identique en anglais / sigle / mesure	views/atak/sse/campaigns.php
+["COMSPEC_SSE_CAMPAIGN",1,["#M",[…]]]	bruit d'extraction (code/HTML)	views/atak/sse/campaigns.php
+Athena / SSE /	identique en anglais / sigle / mesure	views/atak/sse/case_correlations.php
+PDF — version %1	identique en anglais / sigle / mesure	views/atak/sse/case_declassify.php
+Flash	identique en anglais / sigle / mesure	views/atak/sse/case_report.php
+Athena + Arma	identique en anglais / sigle / mesure	views/atak/sse/dev/hub.php
+Eden	identique en anglais / sigle / mesure	views/atak/sse/dev/hub.php
+Abu Karim Al-Rashid	nom propre/indicatif	views/atak/sse/dev/model_form.php
+Irak Cible prioritaire	nom propre/indicatif	views/atak/sse/dev/model_form.php
+ORAGE LUNE	nom propre/indicatif	views/atak/sse/dev/model_form.php
+%1 contact(s)	identique en anglais / sigle / mesure	views/atak/sse/dev/model_show.php
+Messages	identique en anglais / sigle / mesure	views/atak/sse/dev/model_show.php
+Acquisitions	identique en anglais / sigle / mesure	views/atak/sse/digital/acquisition_show.php
+Application	identique en anglais / sigle / mesure	views/atak/sse/digital/artifact_show.php
+Applications	identique en anglais / sigle / mesure	views/atak/sse/digital/phone.php
+%1 — %2 — %3 — volume %4	identique en anglais / sigle / mesure	views/atak/sse/digital/reports.php
+<textarea id="pres-desc" name="description" rows="2" maxlength="400" %1	bruit d'extraction (code/HTML)	views/atak/sse/document_presentation.php
+<textarea id="pres-footer" name="footer" rows="2" required maxlength="400" %1	bruit d'extraction (code/HTML)	views/atak/sse/document_presentation.php
+Production	identique en anglais / sigle / mesure	views/atak/sse/documents.php
+<textarea class="fn-editor" id="fn-body" name="body" maxlength="%1	bruit d'extraction (code/HTML)	views/atak/sse/field_note_composer.php
+Information	identique en anglais / sigle / mesure	views/atak/sse/field_note_show.php
+Focus	identique en anglais / sigle / mesure	views/atak/sse/guide/_part_admin.php
+Documentation	identique en anglais / sigle / mesure	views/atak/sse/guide/_part_bureau.php
+Export / PDF	identique en anglais / sigle / mesure	views/atak/sse/guide/_part_dossiers.php
+Human in the loop.	identique en anglais / sigle / mesure	views/atak/sse/guide/_part_interet.php
+Extraction	identique en anglais / sigle / mesure	views/atak/sse/guide/_part_labnum.php
+Ctrl+K	identique en anglais / sigle / mesure	views/atak/sse/intelligence_workspace.php
+Cycle	identique en anglais / sigle / mesure	views/atak/sse/intelligence_workspace.php
+Exploitation // Workspace	identique en anglais / sigle / mesure	views/atak/sse/intelligence_workspace.php
+Inbox	identique en anglais / sigle / mesure	views/atak/sse/intelligence_workspace.php
+Intelligence Workspace	identique en anglais / sigle / mesure	views/atak/sse/intelligence_workspace.php
+Contradictions	identique en anglais / sigle / mesure	views/atak/sse/interest_case_form.php
+H1… H2…	identique en anglais / sigle / mesure	views/atak/sse/interest_case_form.php
+Observations	identique en anglais / sigle / mesure	views/atak/sse/interest_case_form.php
+Acquisition	identique en anglais / sigle / mesure	views/atak/sse/interest_case_show.php
+Investigations	identique en anglais / sigle / mesure	views/atak/sse/maitre_jeu.php
+%1 investigation%2	identique en anglais / sigle / mesure	views/atak/sse/meshes.php
+Illustration	identique en anglais / sigle / mesure	views/atak/sse/object_create.php
+Zulu	identique en anglais / sigle / mesure	views/atak/sse/operations.php
+Corroboration	identique en anglais / sigle / mesure	views/atak/sse/person_show.php
+Import	identique en anglais / sigle / mesure	views/atak/sse/person_show.php
+Iris	identique en anglais / sigle / mesure	views/atak/sse/person_show.php
+Provenance & audit	identique en anglais / sigle / mesure	views/atak/sse/person_show.php
+terminal %1	identique en anglais / sigle / mesure	views/atak/sse/persons.php
+Exploitation // %1	identique en anglais / sigle / mesure	views/atak/sse/site_show.php
+Possession	identique en anglais / sigle / mesure	views/atak/sse/site_show.php
+score %1	identique en anglais / sigle / mesure	views/atak/sse/suggestions.php
+%1 insertion%2	identique en anglais / sigle / mesure	views/atak/sse/text_library.php
+Exploitation // Validation	identique en anglais / sigle / mesure	views/atak/sse/validation.php
+%1 anomalies	identique en anglais / sigle / mesure	views/atak/sse/workspace/_analyse.php
+%1 contradictions	identique en anglais / sigle / mesure	views/atak/sse/workspace/_analyse.php
+%1 obs.	identique en anglais / sigle / mesure	views/atak/sse/workspace/_analyse.php
+X %1	identique en anglais / sigle / mesure	views/atak/sse/workspace/_analyse.php
+Y %2	identique en anglais / sigle / mesure	views/atak/sse/workspace/_analyse.php
+Notes (%1)	identique en anglais / sigle / mesure	views/atak/sse/workspace/_case_folder.php
+Question	identique en anglais / sigle / mesure	views/atak/sse/workspace/_cycle.php
+%1 — Athena	identique en anglais / sigle / mesure	views/auth/join.php
+Forward	identique en anglais / sigle / mesure	views/auth/join.php
+steamcommunity.com/profiles/…	identique en anglais / sigle / mesure	views/auth/register.php
+<form method="post" action="%1" data-coop-ajax class="coop-parts__pop space-y-2" data-ui-confirm="1" data-ui-confirm-title="%2" data-ui-confirm-body="%3">	bruit d'extraction (code/HTML)	views/back_office/cooperation/missions/show.php
+<textarea id="cf_%1	bruit d'extraction (code/HTML)	views/back_office/cooperation/missions/show.php
+Alternative	identique en anglais / sigle / mesure	views/community/create.php
+Arma 3, Squad…	identique en anglais / sigle / mesure	views/community/create.php
+Option	identique en anglais / sigle / mesure	views/community/create.php
+United States	identique en anglais / sigle / mesure	views/community/create.php
+Ctrl + K	identique en anglais / sigle / mesure	views/community/create_guide.php
+⌘ + K	identique en anglais / sigle / mesure	views/community/create_guide.php
+<span class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wide %1">	bruit d'extraction (code/HTML)	views/community/recruitment_opening_show.php
+Impact	identique en anglais / sigle / mesure	views/community/setup.php
+Collections	identique en anglais / sigle / mesure	views/community/show_showcase.php
+Cookies	identique en anglais / sigle / mesure	views/community/show_showcase.php
+Formats	identique en anglais / sigle / mesure	views/courrier/dashboard.php
+Notifications	identique en anglais / sigle / mesure	views/courrier/dashboard.php
+<textarea id="body-rendered" name="body_rendered" form="courrier-form" rows="10" class="w-full border border-slate-200 rounded px-3 py-2 text-sm font-sans text-[#0b1220]" %1	bruit d'extraction (code/HTML)	views/courrier/editor.php
+Format (preset)	identique en anglais / sigle / mesure	views/courrier/editor.php
+Workflow	identique en anglais / sigle / mesure	views/courrier/editor.php
+A4 portrait	identique en anglais / sigle / mesure	views/courrier/read.php
+Excellent	identique en anglais / sigle / mesure	views/demo_nda/feedback.php
+Preview	identique en anglais / sigle / mesure	views/demo_nda/feedback.php
+Posture	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_a.php
+Vigilance	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_a.php
+Notification	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_b.php
+Phase	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_b.php
+Sanction	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_b.php
+Conversion	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_c.php
+Init	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_c.php
+Interaction (menu)	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_c.php
+Modpack	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_c.php
+Personnel & ORBAT	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_c.php
+Nomenclature	identique en anglais / sigle / mesure	views/documents/doctrine_index.php
+VISA %1	identique en anglais / sigle / mesure	views/enlistment.php
+Variable	identique en anglais / sigle / mesure	views/enlistment.php
+data-ce-start="candidature"	bruit d'extraction (code/HTML)	views/enlistment.php
+<textarea name="motivation_why_join" rows="4" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" placeholder="%1	bruit d'extraction (code/HTML)	views/enlistment/simple.php
+15× Bandage (Einfach)	contenu de démo (maquette)	views/equipement.php
+1× 1000ml Saline IV	contenu de démo (maquette)	views/equipement.php
+1× 16g IV [freiwillig]	contenu de démo (maquette)	views/equipement.php
+1× Schmerzmittel	contenu de démo (maquette)	views/equipement.php
+2× Chest Seal	contenu de démo (maquette)	views/equipement.php
+2× Guedeltubus	contenu de démo (maquette)	views/equipement.php
+2× Morphin-Autoinjektor	contenu de démo (maquette)	views/equipement.php
+65% PROGRESS	contenu de démo (maquette)	views/equipement.php
+AN/PRC-117G Radio	contenu de démo (maquette)	views/equipement.php
+Active	contenu de démo (maquette)	views/equipement.php
+Active_Sessions: 02	contenu de démo (maquette)	views/equipement.php
+Admin Pouch + Strobe IR	contenu de démo (maquette)	views/equipement.php
+Approved for CAS	contenu de démo (maquette)	views/equipement.php
+Atemwegsversorgung	contenu de démo (maquette)	views/equipement.php
+Auto-Refresh Active	contenu de démo (maquette)	views/equipement.php
+Bandage (Field Dressing)	contenu de démo (maquette)	views/equipement.php
+Candidate / Trainee	contenu de démo (maquette)	views/equipement.php
+Chest Seal	contenu de démo (maquette)	views/equipement.php
+Communications	contenu de démo (maquette)	views/equipement.php
+Community	contenu de démo (maquette)	views/equipement.php
+Cpl. Henderson	contenu de démo (maquette)	views/equipement.php
+Docs	contenu de démo (maquette)	views/equipement.php
+Equipment Command	contenu de démo (maquette)	views/equipement.php
+Expert	contenu de démo (maquette)	views/equipement.php
+Expertise	contenu de démo (maquette)	views/equipement.php
+Forward Observations Group	contenu de démo (maquette)	views/equipement.php
+Guedeltubus	contenu de démo (maquette)	views/equipement.php
+Hydration Carrier	contenu de démo (maquette)	views/equipement.php
+ID: 8842-DELTA	contenu de démo (maquette)	views/equipement.php
+IFAK Belt	contenu de démo (maquette)	views/equipement.php
+IFAK Pouch (accessible)	contenu de démo (maquette)	views/equipement.php
+Identification Friendly Forces	contenu de démo (maquette)	views/equipement.php
+JPC Setup	contenu de démo (maquette)	views/equipement.php
+JPC config	contenu de démo (maquette)	views/equipement.php
+JTAC JPC	contenu de démo (maquette)	views/equipement.php
+Language	contenu de démo (maquette)	views/equipement.php
+Last_Sync: 2026-03-10	contenu de démo (maquette)	views/equipement.php
+Lead Instructor / JTAC-E	contenu de démo (maquette)	views/equipement.php
+Mag Pouches ×4	contenu de démo (maquette)	views/equipement.php
+Maj. Blackwood	contenu de démo (maquette)	views/equipement.php
+Medikamente	contenu de démo (maquette)	views/equipement.php
+Network	contenu de démo (maquette)	views/equipement.php
+Operational: 100%	contenu de démo (maquette)	views/equipement.php
+Personnel	contenu de démo (maquette)	views/equipement.php
+Plate Carrier CRYE JPC 2.0	contenu de démo (maquette)	views/equipement.php
+Qualified Operator	contenu de démo (maquette)	views/equipement.php
+Radio Pouch AN/PRC-117G	contenu de démo (maquette)	views/equipement.php
+Reddit	contenu de démo (maquette)	views/equipement.php
+SCORM 2004	contenu de démo (maquette)	views/equipement.php
+Sgt. Miller	contenu de démo (maquette)	views/equipement.php
+Standby	contenu de démo (maquette)	views/equipement.php
+Status: Live_Sync	contenu de démo (maquette)	views/equipement.php
+Strobe IR MS2000	contenu de démo (maquette)	views/equipement.php
+System_Liaison / Kilo-06	contenu de démo (maquette)	views/equipement.php
+Total_Certified: 142	contenu de démo (maquette)	views/equipement.php
+Total_Records: 04	contenu de démo (maquette)	views/equipement.php
+Tourniquet	contenu de démo (maquette)	views/equipement.php
+Type / Source	contenu de démo (maquette)	views/equipement.php
+Wundversorgung	contenu de démo (maquette)	views/equipement.php
+Zugang	contenu de démo (maquette)	views/equipement.php
+r/TacticalGear — JPC Loadout Optimization	contenu de démo (maquette)	views/equipement.php
+© 2026 FOG	contenu de démo (maquette)	views/equipement.php
+×15	contenu de démo (maquette)	views/equipement.php
+×2	contenu de démo (maquette)	views/equipement.php
+×4	contenu de démo (maquette)	views/equipement.php
+— No Active Session —	contenu de démo (maquette)	views/equipement.php
+Photo	identique en anglais / sigle / mesure	views/equipment/hub.php
+Protection	identique en anglais / sigle / mesure	views/equipment/hub.php
+Athena Comspec	nom propre/indicatif	views/errors/403.php
+Athena has moved to %1.	identique en anglais / sigle / mesure	views/errors/domain_moved.php
+Same site, same accounts, same communities. Update your bookmarks and sign in once on the new address. The in-game ATAK mod keeps working.	identique en anglais / sigle / mesure	views/errors/domain_moved.php
+%1 km	identique en anglais / sigle / mesure	views/home/index.php
+Athena — %1	identique en anglais / sigle / mesure	views/home/index.php
+%1 → Alpha	identique en anglais / sigle / mesure	views/home/partials/demo_showcase.php
+6 PAX, 1 technical	identique en anglais / sigle / mesure	views/home/partials/demo_showcase.php
+640 m	identique en anglais / sigle / mesure	views/home/partials/demo_showcase.php
+AZ 284°	identique en anglais / sigle / mesure	views/home/partials/demo_showcase.php
+Adj LYNX	nom propre/indicatif	views/home/partials/demo_showcase.php
+Alpha → %1	identique en anglais / sigle / mesure	views/home/partials/demo_showcase.php
+Bravo	identique en anglais / sigle / mesure	views/home/partials/demo_showcase.php
+Cdt AURIGA	nom propre/indicatif	views/home/partials/demo_showcase.php
+Cne HALO	nom propre/indicatif	views/home/partials/demo_showcase.php
+Cne SIRIUS	nom propre/indicatif	views/home/partials/demo_showcase.php
+L:38S MB 412 776	identique en anglais / sigle / mesure	views/home/partials/demo_showcase.php
+Lt VEGA	nom propre/indicatif	views/home/partials/demo_showcase.php
+NIGHT HERON	nom propre/indicatif	views/home/partials/demo_showcase.php
+OBJ FALCON	nom propre/indicatif	views/home/partials/demo_showcase.php
+OP NIGHT HERON	nom propre/indicatif	views/home/partials/demo_showcase.php
+PL ROUGE	nom propre/indicatif	views/home/partials/demo_showcase.php
+Sgt VIPER	nom propre/indicatif	views/home/partials/demo_showcase.php
+TF ORION	nom propre/indicatif	views/home/partials/demo_showcase.php
+Task Force ORION	nom propre/indicatif	views/home/partials/demo_showcase.php
+hub?tri=%1	bruit d'extraction (code/HTML)	views/hub/index.php
+%1 — JNET	identique en anglais / sigle / mesure	views/jnet/_layout.php
+Extranet %1	identique en anglais / sigle / mesure	views/jnet/_layout.php
+Terminal %1	identique en anglais / sigle / mesure	views/jnet/_layout.php
+un espace en deux vues : cartes regroupées par grand commandement, ou organigramme. * Bascule sans JavaScript (boutons radio) ; le dernier choix est mémorisé par jnet_spaces.js. * @var list<array	bruit d'extraction (commentaire/fragment)	views/jnet/_unit_views.php
+%2 participant%3	identique en anglais / sigle / mesure	views/jnet/mail.php
+%1 engagement%2	identique en anglais / sigle / mesure	views/jnet/operations.php
+community-reels-page bg-[#070a0c] text-white font-sans antialiased min-h-screen	bruit d'extraction (code/HTML)	views/layout/main.php
+layout-light bg-slate-50 text-slate-900 font-sans antialiased min-h-screen	bruit d'extraction (code/HTML)	views/layout/main.php
+<textarea name="message" id="message" required rows="6" maxlength="4000" minlength="10" placeholder="%1	bruit d'extraction (code/HTML)	views/legal/gdpr_request.php
+), app	bruit d'extraction (commentaire/fragment)	views/link/lier.php
+COMSPEC SSE	identique en anglais / sigle / mesure	views/link/lier.php
+un nouveau membre : le site reste fermé tant que le jeu n	bruit d'extraction (commentaire/fragment)	views/link/lier.php
+%1 message%2	identique en anglais / sigle / mesure	views/messages/thread.php
+%1 <textarea name="description" rows="%2	bruit d'extraction (code/HTML)	views/operations/board_entry_form.php
+Latitude	identique en anglais / sigle / mesure	views/operations/board_entry_form.php
+Longitude	identique en anglais / sigle / mesure	views/operations/board_entry_form.php
+Posture %1	identique en anglais / sigle / mesure	views/operations/board_portal.php
+%1 (v%2	bruit d'extraction (code/HTML)	views/operations/workspace/show.php
+1. Situation	identique en anglais / sigle / mesure	views/operations/workspace/show.php
+2. Mission	identique en anglais / sigle / mesure	views/operations/workspace/show.php
+H+35	identique en anglais / sigle / mesure	views/operations/workspace/show.php
+OBJ LION	nom propre/indicatif	views/operations/workspace/show.php
+Explosive	identique en anglais / sigle / mesure	views/overwatch/fire-support.php
+1 h	identique en anglais / sigle / mesure	views/overwatch/iff-panel.php
+15 min	identique en anglais / sigle / mesure	views/overwatch/iff-panel.php
+2 h	identique en anglais / sigle / mesure	views/overwatch/iff-panel.php
+Auto	identique en anglais / sigle / mesure	views/overwatch/iff-panel.php
+Message…	identique en anglais / sigle / mesure	views/overwatch/index.php
+×8	identique en anglais / sigle / mesure	views/overwatch/replay.php
+espace compte (bandeau). Index rendu côté serveur — les libellés passent ainsi par la traduction * de la page — puis filtré dans le navigateur par public/assets/js/account-search.js. * * Variables : list	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+â	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ä	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ç	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+è	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+é	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ê	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ë	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+î	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ï	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ô	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ö	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ù	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+û	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ü	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ÿ	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+accueil du profil : un lien ramène à l	bruit d'extraction (commentaire/fragment)	views/partials/account/shell_open.php
+App	identique en anglais / sigle / mesure	views/partials/atak_device_cards.php
+Msgs	identique en anglais / sigle / mesure	views/partials/atak_qr_phone_preview.php
+Data Inspector	identique en anglais / sigle / mesure	views/partials/ath_sidebar_nav.php
+Mods	identique en anglais / sigle / mesure	views/partials/ath_sidebar_nav.php
+Sanctions & absences	identique en anglais / sigle / mesure	views/partials/ath_sidebar_nav.php
+Academy, filtré comme le reste (module formation). [	bruit d'extraction (commentaire/fragment)	views/partials/athena_caverne_header.php
+JNET Extranet	nom propre/indicatif	views/partials/athena_caverne_header.php
+ancien catalogue « Formations » vit désormais dans l	bruit d'extraction (commentaire/fragment)	views/partials/athena_caverne_header.php
+<span class="das-steps" role="img" aria-label="Étape	bruit d'extraction (code/HTML)	views/partials/dashboard_applications_table.php
+Action %1	identique en anglais / sigle / mesure	views/partials/dashboard_applications_table.php
+Guides	identique en anglais / sigle / mesure	views/partials/dashboard_aside.php
+0 || active().primary_weapon">	bruit d'extraction (code/HTML)	views/partials/dashboard_catalog_showcase.php
+active().title	bruit d'extraction (code/HTML)	views/partials/dashboard_catalog_showcase.php
+ATAK & mods	identique en anglais / sigle / mesure	views/partials/dashboard_command_center.php
+Modset	identique en anglais / sigle / mesure	views/partials/dashboard_command_center.php
+Signatures	identique en anglais / sigle / mesure	views/partials/dashboard_doctrine_pending.php
+Vacant	identique en anglais / sigle / mesure	views/partials/dashboard_orbat.php
+Absence	identique en anglais / sigle / mesure	views/partials/dashboard_rh_parcours.php
+Today	identique en anglais / sigle / mesure	views/partials/discord_showcase_preview.php
+aperçu. * * @var array	bruit d'extraction (commentaire/fragment)	views/partials/discord_showcase_preview.php
+reported by	identique en anglais / sigle / mesure	views/partials/dispatch_article.php
+Destruction notice:	identique en anglais / sigle / mesure	views/partials/document_fm_paper.php
+Distribution restriction:	identique en anglais / sigle / mesure	views/partials/document_fm_paper.php
+FM …	identique en anglais / sigle / mesure	views/partials/document_fm_paper.php
+Foreword	identique en anglais / sigle / mesure	views/partials/document_fm_paper.php
+APRIL 2026	identique en anglais / sigle / mesure	views/partials/document_manuscript_fields.php
+administration, la connexion, le paiement, la page de dons, l	bruit d'extraction (commentaire/fragment)	views/partials/donation_banner.php
+aperçu de // l	bruit d'extraction (commentaire/fragment)	views/partials/donation_banner_markup.php
+est exposée (ni e-mail ni montant). * Inclus une fois par mise en page, juste avant	bruit d'extraction (commentaire/fragment)	views/partials/donor_marks_assets.php
+REF: %1	identique en anglais / sigle / mesure	views/partials/editorial-block.php
+<textarea name="em_auto_refuse[%1	bruit d'extraction (code/HTML)	views/partials/enlistment_auto_refuse_editor.php
+<textarea name="em_custom_questions[%1	bruit d'extraction (code/HTML)	views/partials/enlistment_custom_questions_editor.php
+éventaillent au survol ou au focus clavier. Inspiré du composant « Images Badge » * d	bruit d'extraction (commentaire/fragment)	views/partials/images_badge.php
+équipe a répondu à votre signalement » : réponses de l	bruit d'extraction (commentaire/fragment)	views/partials/mod_report_reply_modal.php
+un essai fondateur, d	bruit d'extraction (commentaire/fragment)	views/partials/plan_end_banner.php
+M4 6h16v13H4zM9 3h6v4H9zM8 12h8M8 15h5	bruit d'extraction (code/HTML)	views/partials/platform_admin_sidebar.php
+Mod Overwatch	identique en anglais / sigle / mesure	views/partials/platform_admin_sidebar.php
+<textarea rows="2" maxlength="1000" data-prw-comment placeholder="%1	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
+<textarea rows="2" maxlength="2000" data-prw-wishlist placeholder="%1	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
+<textarea rows="2" maxlength="500" data-prw-original placeholder="%1	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
+<textarea rows="2" maxlength="500" data-prw-proposed placeholder="%1	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
+<textarea rows="3" maxlength="2000" data-prw-highlights placeholder="%1	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
+<textarea rows="3" maxlength="2000" data-prw-improvements placeholder="%1	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
+© %1 Athena Comspec. %2	identique en anglais / sigle / mesure	views/partials/portal_footer.php
+© %1 Athena	identique en anglais / sigle / mesure	views/partials/public_site_footer.php
+administration de la plateforme, casque vert * pour le support. Feuille de style, correspondances (ids de comptes, slugs de fiche) et décorateur * public/assets/js/staff-marks.js. Aucune donnée personnelle n	bruit d'extraction (commentaire/fragment)	views/partials/staff_marks_assets.php
+Rollback	identique en anglais / sigle / mesure	views/partials/tenant_intervention_banner.php
+Pal	identique en anglais / sigle / mesure	views/payment/show.php
+Pay	identique en anglais / sigle / mesure	views/payment/show.php
+Pro	identique en anglais / sigle / mesure	views/platform/upgrade.php
+Assistant	identique en anglais / sigle / mesure	views/portal/assistant.php
+05 Configuration (CPU/GPU/RAM)	identique en anglais / sigle / mesure	views/recrutement.php
+17:42:01 Z	identique en anglais / sigle / mesure	views/recrutement.php
+Document Control	identique en anglais / sigle / mesure	views/recrutement.php
+EU-WEST-01 // HUB	identique en anglais / sigle / mesure	views/recrutement.php
+Encrypted	identique en anglais / sigle / mesure	views/recrutement.php
+Intake ID	identique en anglais / sigle / mesure	views/recrutement.php
+JNET v2.4.0	identique en anglais / sigle / mesure	views/recrutement.php
+Joint Task Force Olympus	nom propre/indicatif	views/recrutement.php
+MAJ. V. KANE [RECR-01]	nom propre/indicatif	views/recrutement.php
+Node: Paris_HQ_01	identique en anglais / sigle / mesure	views/recrutement.php
+Section II — Performance & Background	identique en anglais / sigle / mesure	views/recrutement.php
+Server Origin	identique en anglais / sigle / mesure	views/recrutement.php
+est ATHENA, pour qui, ce que ça change, le téléphone et les mods, * l	bruit d'extraction (commentaire/fragment)	views/site/about.php
+ATAK %1	identique en anglais / sigle / mesure	views/site/atak_translate_item.php
+ATAK %2	identique en anglais / sigle / mesure	views/site/atak_translate_item.php
+01 // SITUATION	identique en anglais / sigle / mesure	views/site/changelog.php
+02 // MISSION EFFECT	identique en anglais / sigle / mesure	views/site/changelog.php
+03 // CHANGE SUMMARY	identique en anglais / sigle / mesure	views/site/changelog.php
+ATHENA // PRODUCT OPERATIONS //	identique en anglais / sigle / mesure	views/site/changelog.php
+ATHENA // PRODUCT OPS // AUTO-GENERATED RECORD	identique en anglais / sigle / mesure	views/site/changelog.php
+CHANGE CONTROL	identique en anglais / sigle / mesure	views/site/changelog.php
+From	identique en anglais / sigle / mesure	views/site/changelog.php
+PRODUCT OPS	identique en anglais / sigle / mesure	views/site/changelog.php
+Release	identique en anglais / sigle / mesure	views/site/changelog.php
+Releases	identique en anglais / sigle / mesure	views/site/changelog.php
+Roadmap	identique en anglais / sigle / mesure	views/site/changelog.php
+SPOTREP / TECHREP	identique en anglais / sigle / mesure	views/site/changelog.php
+Status	identique en anglais / sigle / mesure	views/site/changelog.php
+To	identique en anglais / sigle / mesure	views/site/changelog.php
+Updates	identique en anglais / sigle / mesure	views/site/changelog.php
+athena / product / modules	identique en anglais / sigle / mesure	views/site/changelog.php
+athena / product / roadmap	identique en anglais / sigle / mesure	views/site/changelog.php
+athena / product / updates	identique en anglais / sigle / mesure	views/site/changelog.php
+athena / product / versions	identique en anglais / sigle / mesure	views/site/changelog.php
+Company website	identique en anglais / sigle / mesure	views/site/contact.php
+COMSPEC TACMAP	nom propre/indicatif	views/tacmap.php
+—:—:— Z	identique en anglais / sigle / mesure	views/tacmap.php
+%1 capture%2	identique en anglais / sigle / mesure	views/transmission/poe.php
+<textarea id="poe-%1	bruit d'extraction (code/HTML)	views/transmission/poe.php
+<textarea id="pv-%1	bruit d'extraction (code/HTML)	views/transmission/show.php
+· COMSPEC	identique en anglais / sigle / mesure	views/year_review/story.php
+Message — %1	identique en anglais	views/emails/community_contact.php
+Invitation — %1	identique en anglais	views/emails/community_invitation.php
+Brevo	nom de produit	app/Services/Email/TenantMailSender.php
+Mailgun	nom de produit	app/Services/Email/TenantMailSender.php
+Athena · 2026	identique en anglais	views/emails/atak_mod_report_reply.php
+Athena refused your game connection	déjà en anglais	views/emails/atak_player_access_refused.php
+Game connection guide	déjà en anglais	views/emails/atak_player_access_refused.php
+Dashboard: %1	identique en anglais	views/emails/community_creation_checklist.php
+Invitation	identique en anglais	views/emails/member_integration_invite.php
+— Athena	identique en anglais	views/emails/platform_alert_broadcast.php
+%1 — %2	identique en anglais (marqueurs seuls)	views/emails/security_alert.php
+%1 minutes	identique en anglais	views/emails/user_register_confirmation.php
+no-reply@athena-comspec.eu	adresse e-mail	views/emails/user_register_confirmation.php
+Cyan	identique en anglais	app/Controllers/Admin/AdminFireTeamsController.php
+Orange	identique en anglais	app/Controllers/Admin/AdminFireTeamsController.php
+/PANI(Q|C)|D[ÉE]TRESSE/iu	bruit d'extraction : regex	app/Controllers/Api/AtakOverwatchIntelController.php
+FRS / FRM	identique en anglais	app/Controllers/Api/AtakOverwatchIntelController.php
+Immersion	identique en anglais	app/Controllers/Web/AccountController.php
+ATAK / Overwatch	identique en anglais	app/Controllers/Web/AtakController.php
+PRODID:-//Athena Comspec//Événements communauté//FR	bruit d'extraction : code/identifiant	app/Controllers/Web/CommunityCalendarFeedController.php
+Architecture & addons	identique en anglais	app/Controllers/Web/DocumentationController.php
+Athena COMSPEC	identique en anglais	app/Controllers/Web/SitePagesController.php
+/* Textes de la langue «	bruit d'extraction : code/identifiant	app/Controllers/Web/SiteTranslationController.php
+» traduits par la communauté (/traduire-site). */\n	bruit d'extraction : code/identifiant	app/Controllers/Web/SiteTranslationController.php
+/obligatoire|r[eé]glementaire|reglementaire|mission|doctrine/iu	bruit d'extraction : regex	app/Repositories/ArsenalWardrobeRepository.php
+sans-cle@	bruit d'extraction : code/identifiant	app/Repositories/AtakDistanceRepository.php
+un.name AS unit_name	bruit d'extraction : SQL	app/Repositories/MemberIntegrationRepository.php
+Provenance	identique en anglais	app/Repositories/SseMeshRepository.php
+arme_épaule	bruit d'extraction : code/identifiant	app/Repositories/SseMeshRepository.php
+(display_name = 'Compte supprimé' AND status = 'inactive')	bruit d'extraction : SQL	app/Repositories/UserRepository.php
+(u.display_name IS NULL OR TRIM(u.display_name) <> 'Compte supprimé')	bruit d'extraction : SQL	app/Repositories/UserRepository.php
+un.public_blurb AS unit_blurb	bruit d'extraction : SQL	app/Repositories/UserRepository.php
+Inactive (h)	identique en anglais	app/Services/Admin/DataRegistryService.php
+Workshop	identique en anglais	app/Services/Admin/DataRegistryService.php
+Tout est bon. · All good.	déjà bilingue FR/EN	app/Services/Atak/AtakStartupCheckService.php
+PRODID:-//Athena Comspec//Intégration//FR	bruit d'extraction : code/identifiant	app/Services/Calendar/IcalendarService.php
+Circuit	identique en anglais	app/Services/Community/EnlistmentMilsimPackService.php
+une des valeurs : " . implode(	bruit d'extraction : code/identifiant	app/Services/ConfigSchemaService.php
+92e ri — cerbère	nom propre / exemple	app/Services/Courrier/CourrierLetterhead.php
+Battalion	identique en anglais	app/Services/Doctrine/EchelonCatalog.php
+Company	identique en anglais	app/Services/Doctrine/EchelonCatalog.php
+Platoon	identique en anglais	app/Services/Doctrine/EchelonCatalog.php
+Squad	identique en anglais	app/Services/Doctrine/EchelonCatalog.php
+· suivi par l’équipe Athena / tracked by the Athena team	déjà bilingue FR/EN	app/Services/Integrations/CommunityModReportRelay.php
+Athena account	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Communities	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Community member	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Days on Athena	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Days since the Athena account was created	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Has an Athena account linked	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Member of an Athena community	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Number of Athena communities	identique en anglais	app/Services/Integrations/DiscordLinkedRoles.php
+Annexes	identique en anglais	app/Services/MissionPlanning/MissionPlanningAtakService.php
+/\b(air|helo|hélico|aviation|cas|pilote|uas|drone|squadron|escadron)\b/u	bruit d'extraction : regex	app/Services/MissionPlanning/MissionPlanningService.php
+/\b(hq|em|etat|état|command|staff|coe|pc)\b/u	bruit d'extraction : regex	app/Services/MissionPlanning/MissionPlanningService.php
+/\b(log|soutien|support|medic|médic|medevac|eod|trans|ravit)\b/u	bruit d'extraction : regex	app/Services/MissionPlanning/MissionPlanningService.php
+/medic|médic|infirm/u	bruit d'extraction : regex	app/Services/MissionPlanning/MissionPlanningService.php
+/\bhttp\s*5\d\d\b|tenant_context_required|migration_required|momentanément indisponible/u	bruit d'extraction : regex	app/Services/Monitoring/AtakAuthFailureNotifier.php
+Dernier envoi / Last seen	déjà bilingue FR/EN	app/Services/Monitoring/AtakModReportDiscordTicketService.php
+Premier envoi / First seen	déjà bilingue FR/EN	app/Services/Monitoring/AtakModReportDiscordTicketService.php
+Statut mis à jour par Athena · Status kept up to date by Athena	déjà bilingue FR/EN	app/Services/Monitoring/AtakModReportDiscordTicketService.php
+💬 **Réponse au joueur** · Reply to player	déjà bilingue FR/EN	app/Services/Monitoring/AtakModReportDiscordTicketService.php
+🔁 **Rouvert : le problème est revenu après la correction** · Reopened, seen again after the fix	déjà bilingue FR/EN	app/Services/Monitoring/AtakModReportDiscordTicketService.php
+🗑️ **Rapport supprimé d’Athena** · Report deleted	déjà bilingue FR/EN	app/Services/Monitoring/AtakModReportDiscordTicketService.php
+analytics indicateurs statistiques intégrations discord steam	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+catalogue modèles kits armée française sof infanterie blindé aéromobile hélicoptère smp pmc gaming fonctions emplois	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+compte sécurité mot de passe connexion	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+coopération inter-unités alliance mission commune	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+courrier lettre en-tête officiel	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+création assistant wizard tenant nouvelle communauté tutoriel champs	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+documents doctrine bibliothèque sop	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+droits permissions rôles accès matrice niveaux	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+démarrage première soirée mise en service checklist configuration initiale tutoriel	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+faq questions modifier adresse paiement modèle	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+inscription recrutement milsim discord formulaire court visibilité formule abonnement ancienneté	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+modération signalement sanctions	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+nom adresse slug url langue fuseau unité réelle fictive vitrine logo bannière	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+orbat structure type preset escouade section peloton compagnie détachement interarmes	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+personnel orbat organigramme affectation effectifs unités	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+pilotage organisation paramètres réglages administration	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+recrutement candidature enrôlement dossier milsim discord intégration	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+rôle fonction emploi métier différence	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+rôles modèle catalogue orbat organigramme structure unités	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+type complet bureau des effectifs carte atak modules	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+équipement dotation modpack mods arsenal	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+événements opérations calendrier pointage présence rsvp messagerie	mots-clés recherche	app/Services/Portal/BackOfficeHelpCatalog.php
+Fire teams	identique en anglais	app/Services/Portal/BackOfficeSearchService.php
+bourse coopération inter-team renfort opfor partenaire besoin	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+calendrier événements opérations agenda inscription rsvp	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+compte profil sécurité mot de passe préférences	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+cr compte rendu aar après-action debriefing	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+cr compte rendu fin opération debrief suivi	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+distinctions décorations médailles rubans	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+espace rh absences mobilité documents élévation	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+hub centre commandement communautés comparer classement statistiques recommander avis bourse coopération inter-team	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+intégration arrivée parcours accueil	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+liaison atak téléphone tablette appairer	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+opérations mission ordres plan	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+orbat organigramme structure unités chaîne commandement	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+pointage présence session heures	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+tableau de bord dashboard accueil synthèse	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+équipement matériel armes tenues arsenal	mots-clés recherche	app/Services/Portal/PortalSearchService.php
+/source\s+unique|aucun\s+recoup/iu	bruit d'extraction : regex	app/Services/Sse/SseAnalyticalEngineService.php
+/contradict|diverg|incoh[ée]ren/iu	bruit d'extraction : regex	app/Services/Sse/SseContextualMentionService.php
+/hypoth[èe]se/iu	bruit d'extraction : regex	app/Services/Sse/SseContextualMentionService.php
+/identit[ée]\s+(non\s+confirm|incertaine|suppos)/iu	bruit d'extraction : regex	app/Services/Sse/SseContextualMentionService.php
+Athena SSE	identique en anglais	app/Services/Sse/SseTransmissionDiscordService.php
+Arcade	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Bluetooth	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Debug	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Distances	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Drone	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Garmin	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Milsim	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Sniper	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+Tinder	identique en anglais	app/Services/Tactical/AtakExperienceService.php
+compléter	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+confidentialité	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+démarrer	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+paramètres	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+premiers pas	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+règlement	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+réglages	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+résumé	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+sécurité	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+vie privée	mots-clés recherche	app/Support/AccountSpaceCatalog.php
+/[àáâãäå]/u	bruit d'extraction : regex	app/Support/AtakChatChannel.php
+/[ç]/u	bruit d'extraction : regex	app/Support/AtakChatChannel.php
+/[èéêë]/u	bruit d'extraction : regex	app/Support/AtakChatChannel.php
+/[ìíîï]/u	bruit d'extraction : regex	app/Support/AtakChatChannel.php
+/[òóôõö]/u	bruit d'extraction : regex	app/Support/AtakChatChannel.php
+/[ùúûü]/u	bruit d'extraction : regex	app/Support/AtakChatChannel.php
+, OU=	bruit d'extraction : code/identifiant	app/Support/AtakDevicePresenter.php
+Observation	identique en anglais	app/Support/AtakIcemanReportCatalog.php
+activée	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+créé	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+données	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+dépassé	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+envoyé	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+généré	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+liée	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+momentanément	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+même	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+présentation	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+prêt	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+périmé	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+réessayez	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+trouvé	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+trouvée	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+vérifiez	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+ÉCHEC	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+échoué	table de correction d'encodage (code)	app/Support/AtakModReportDetail.php
+/^### Résumé joueur[ \t]*\n(.*?)(?=^### |\z)/ms	bruit d'extraction : regex	app/Support/AtakReleaseInfo.php
+Clone NCOs	identique en anglais	app/Support/CustomGradeTemplates.php
+Clone Officers	identique en anglais	app/Support/CustomGradeTemplates.php
+Clone Troopers	identique en anglais	app/Support/CustomGradeTemplates.php
+Commissariat	identique en anglais	app/Support/CustomGradeTemplates.php
+Guardsmen	identique en anglais	app/Support/CustomGradeTemplates.php
+High Command	identique en anglais	app/Support/CustomGradeTemplates.php
+Imperial Officers	identique en anglais	app/Support/CustomGradeTemplates.php
+Jedi Command	identique en anglais	app/Support/CustomGradeTemplates.php
+Mobile Task Forces	identique en anglais	app/Support/CustomGradeTemplates.php
+Overseer Council	identique en anglais	app/Support/CustomGradeTemplates.php
+Regimental Officers	identique en anglais	app/Support/CustomGradeTemplates.php
+Research Department	identique en anglais	app/Support/CustomGradeTemplates.php
+SCP Foundation	identique en anglais	app/Support/CustomGradeTemplates.php
+Security Department	identique en anglais	app/Support/CustomGradeTemplates.php
+Site Command	identique en anglais	app/Support/CustomGradeTemplates.php
+Stormtrooper Corps	identique en anglais	app/Support/CustomGradeTemplates.php
+/accès (?:refusé|réservé|restreint)|(?:est |sont )?réservé[es]? aux|non autorisé|pas (?:les |l[’'])droits|autorisation insuffisante|pas l[’']autorisation|pas habilité|habilitées?|règles de sécurité/iu	bruit d'extraction : regex	app/Support/FlashAlertTitle.php
+/authentification requise|connectez-vous pour|connexion requise/iu	bruit d'extraction : regex	app/Support/FlashAlertTitle.php
+/compte (?:n’|ne )?existe plus|compte n’est plus actif|compte verrouillé|programmé pour suppression/iu	bruit d'extraction : regex	app/Support/FlashAlertTitle.php
+/confirmez votre adresse|e-mail avant de vous connecter|vérification.*e-mail/iu	bruit d'extraction : regex	app/Support/FlashAlertTitle.php
+/introuvable|n’est plus (?:disponible|accessible)|n’existe pas/iu	bruit d'extraction : regex	app/Support/FlashAlertTitle.php
+/session (?:expirée|invalide)|session a expiré/iu	bruit d'extraction : regex	app/Support/FlashAlertTitle.php
+/[àâçéèêëîïôûùœ]|\b(?:le|la|les|des|du|de|et|aux|au|pour|une|un|sur|avec|dans|par)\b/iu	bruit d'extraction : regex	app/Support/HtmlTranslator.php
+Invite members	identique en anglais	app/Support/LowMemberOrgPolicy.php
+Your community	identique en anglais	app/Support/LowMemberOrgPolicy.php
+/(Mot de passe généré[^:\n]*:\s*)\S+/u	bruit d'extraction : regex	app/Support/Migrations/MigrationStepTracker.php
+/^\[[A-ZÉ ]+\]\s*/u	bruit d'extraction : regex	app/Support/Migrations/MigrationStepTracker.php
+COMSPEC ATAK mod	identique en anglais	app/Support/ModReportReplyNotice.php
+Alpha	identique en anglais	app/Support/OrbatChartDisplay.php
+AÉREO	autre langue (espagnol), libellé de fiche	app/Support/OrbatSheetLabels.php
+Idioma de la hoja	autre langue (espagnol), libellé de fiche	app/Support/OrbatSheetLabels.php
+Las indisponibilidades las sigue la oficina de personal / S-1.	autre langue (espagnol), libellé de fiche	app/Support/OrbatSheetLabels.php
+Anchorage	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Austin	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Boston	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Chicago	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Denver	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Houston	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Miami	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Nashville	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Phoenix	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Portland	nom propre / exemple	app/Support/PackCodenameCatalog.php
+San Diego	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Savannah	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Seattle	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Tucson	nom propre / exemple	app/Support/PackCodenameCatalog.php
+Athena plan	identique en anglais	app/Support/PlanAccessWindow.php
+Keep access	identique en anglais	app/Support/PlanAccessWindow.php
+Renew	identique en anglais	app/Support/PlanAccessWindow.php
+Your plan has expired	identique en anglais	app/Support/PlanAccessWindow.php
+A plan has been gifted to you	identique en anglais	app/Support/PlanGift.php
+Athena gift	identique en anglais	app/Support/PlanGift.php
+Open management	identique en anglais	app/Support/PlanGift.php
+Liechtenstein	nom propre / exemple	app/Support/Profile/EnlistmentTimezoneCatalog.php
+Luxembourg	nom propre / exemple	app/Support/Profile/EnlistmentTimezoneCatalog.php
+Monaco	nom propre / exemple	app/Support/Profile/EnlistmentTimezoneCatalog.php
+Ver la ficha →	autre langue (espagnol), libellé de fiche	app/Support/PublicOrbat.php
+en_évaluation	bruit d'extraction : code/identifiant	app/Support/QualificationAdminStatus.php
+aéro	bruit d'extraction : code/identifiant	app/Support/QualificationExamples.php
+Altitude	identique en anglais	app/Support/QuickPictureDiscordEmbed.php
+Infrastructure	identique en anglais	app/Support/ReconNoteCatalog.php
+Obstacle / mine	identique en anglais	app/Support/ReconNoteCatalog.php
+groupe_armé	bruit d'extraction : code/identifiant	app/Support/ReconNoteCatalog.php
+image trop grande pour GD	exception développeur non affichée	app/Support/StoredPhotoCompressor.php
+pas une image	exception développeur non affichée	app/Support/StoredPhotoCompressor.php
+/\s+[—–]\s+(?=(?:\d\.\s*)?(?:Situation|Mission|Exécution|Execution|Soutien|Support|Commandement|Command)\b)/iu	bruit d'extraction : regex	app/Support/TacticalAlertParser.php
+/^Bilan des dégâts\s*[—\-–·|]+\s*/iu	bruit d'extraction : regex	app/Support/TacticalAlertParser.php
+/^Opérateur à terre\s*[—\-–·|]+\s*/iu	bruit d'extraction : regex	app/Support/TacticalAlertParser.php
+\s*:\s*(.+?)(?=\n\s*(?:\d+\.\s*)?(?:Situation|SITUATION|Mission|MISSION|Exécution|Execution|EXECUTION|Soutien|Support|SERVICE SUPPORT|Commandement|Command|COMMAND AND SIGNAL)\s*:|\z)/ius	bruit d'extraction : regex	app/Support/TacticalAlertParser.php
+Ellipse	identique en anglais	app/Support/TacticalGraphicsCatalog.php
+Image	identique en anglais	app/Support/TacticalGraphicsCatalog.php
+Infiltration	identique en anglais	app/Support/TacticalGraphicsCatalog.php
+/(\b[ée]quipe\b|\bteam\b|\bfire\s*team\b|\bbin[ôo]me\b|\b[ée]quipage\b|\bcrew\b|\bcellule\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(\bchars?\b|blind[ée]|\barmor|\btank|\bcuirass)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(\bqg\b|\bhq\b|[ée]tat-major|\bpc\b|\bcommandement\b|\bcommand\b|\bheadquarters?\b|\bstaff\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(\br[ée]giment\b|\bregiment\b|\brgt\b|\bgroup\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(\bsof\b|\bsoc\b|\bjsoc\b|special operations|op[ée]rations sp[ée]ciales|\bcos\b|\bafsoc\b|\bsocom\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(air assault|aeromobile|a[ée]romobile)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(forces? sp[ée]ciales?|special forces|\bsfod\b|\bdelta\b|\bsas\b|\bcpa\b|\bcommandos?\b|\bgcp\b|\bdevgru\b|green berets?)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(g[ée]nie|sapeur|engineer|\beod\b|d[ée]minage)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(h[ée]lico|rotary|\bheli|aviation l[ée]g[èe]re|\balat\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(m[ée]canis|mechani[sz]ed|\bvbci\b|\bifv\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(m[ée]dic|sant[ée]|pararescue|\bpj\b|\bcasevac|\bmedevac|secour|infirmer)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(maintenance|r[ée]paration|\bmat[ée]riel\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(parachut|airborne|a[ée]roport|\bpara\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(pr[ée]v[ôo]t|police militaire|military police|\bmp\b)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/(recon|reco\b|[ée]claireur|cavaler|\bcav\b|scout|pathfinder)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+/\b(aviation|air\s*wing|a[ée]ro)/u	bruit d'extraction : regex	app/Support/UnitMilitarySymbol.php
+existe déjà	bruit d'extraction : code/identifiant	app/Support/UserFacingExceptionMapper.php
+/(?:Ã[\x80-\xBF]|â€[\x80-\xBF]|â€™|â€œ|â€"|Ã©|Ã¨|Ã |Ã§|Ã®|Ã´|Ã»|Ã‰)/u	bruit d'extraction : regex	app/Support/Utf8Text.php
+Marianne,'Segoe UI',system-ui,-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif	police CSS	app/Support/helpers.php
+Emoji (Twemoji SVG)	identique en anglais	config/cdn_libraries.php
+GIF (Tenor / Giphy helpers)	identique en anglais	config/cdn_libraries.php
+Heroicons (via Iconify)	identique en anglais	config/cdn_libraries.php
+Motion / hero (GSAP)	identique en anglais	config/cdn_libraries.php
+Navigation & dashboard (guide)	identique en anglais	config/navigation.php
+Radio / satcom	identique en anglais	config/sse_case_presets.php
+En route	identique en anglais	public/assets/js/atak-medevac.js
+cTab - symbole se	extraction tronquée	public/assets/js/arma-marker-library-index.js
+contribuer de maniere significative	mots-clés recherche	public/assets/js/community-enlistment.js
+en conclusion	mots-clés recherche	public/assets/js/community-enlistment.js
+&edit=en	paramètre d'URL	views/academy/studio.php
+/nouveau?mission=	chemin d'URL	views/admin/aar_reports/index.php
+?jours=	paramètre d'URL	views/admin/atak/screen_time.php
+back-office/atak/temps-ecran?jours=	chemin d'URL	views/admin/atak/screen_time.php
+back-office/atak/escouades?jours=	chemin d'URL	views/admin/atak/squads.php
+back-office/atak/operateurs?statut=tous	chemin d'URL	views/admin/atak_operators/profile.php
+Joue en	texte non affiché (vue anglaise déjà gérée)	views/admin/effectifs_workspace/roster.php
+?vue=calendrier&mois=	paramètre d'URL	views/admin/member_situation/evenements.php
+/^\[MISE EN ATTENTE\]\s*/u	expression régulière	views/admin/recruitments/show.php
+[MISE EN ATTENTE]	marqueur interne	views/admin/recruitments/show.php
+?tout=1	paramètre d'URL	views/admin/system/name_filter.php
+atak/sse/toiles/nouveau?case=	chemin d'URL	views/atak/sse/case_show.php
+atak/sse/documents/nouveau?type=	chemin d'URL	views/atak/sse/documents.php
+atak/sse/dossiers/nouveau?parent=	chemin d'URL	views/atak/sse/folder_show.php
+atak/sse/objets/nouveau?type=	chemin d'URL	views/atak/sse/object_registry.php
+atak/sse/chronologie?objet=person&id=	chemin d'URL	views/atak/sse/person_show.php
+?vue=tous	paramètre d'URL	views/hub/board.php
+?nouveau=1	paramètre d'URL	views/messages/index.php
+traduire-site/en?f=blank	chemin d'URL	views/site/site_translate.php
+Questionnaire	identique en anglais	views/admin/aar_reports/index.php
+%1 question%2%3	identique en anglais	views/admin/aar_reports/partials/form_fields.php
+%1 place%2	identique en anglais	views/admin/advancement/campaign_show.php
+Exception	identique en anglais	views/admin/advancement/commission.php
+Publication %1	identique en anglais	views/admin/advancement/commission.php
+quota %1	identique en anglais	views/admin/advancement/commission.php
+Photos 15 min	identique en anglais	views/admin/atak-config/index.php
+%1 message(s)	identique en anglais	views/admin/atak-fleet/index.php
+Zone %1	identique en anglais	views/admin/atak/roleplay.php
+%1 client(s)	identique en anglais	views/admin/atak/send_queues.php
+, mission %1	identique en anglais	views/admin/atak/server_control.php
+%1 (%2 question(s))	identique en anglais	views/admin/atak_debrief/index.php
+Op. %1	identique en anglais	views/admin/briefing_slides/index.php
+%1 qualification%2	identique en anglais	views/admin/member_situation/qualifications.php
+%1 plan%2	identique en anglais	views/admin/mission_planning/index.php
+SLA & messages	identique en anglais	views/admin/recruitment_workspace/dashboard.php
+Finances	identique en anglais	views/admin/system/plan_payments.php
+vs %1	identique en anglais	views/admin/system/plan_payments.php
+Intervention — %1	identique en anglais	views/admin/system/tenant_intervention.php
+Studio — version	identique en anglais	views/admin/training/studio_edit.php

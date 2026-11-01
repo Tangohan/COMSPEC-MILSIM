@@ -39,6 +39,20 @@
     if (vars) Object.keys(vars).forEach(function (k) { s = s.split(':' + k).join(String(vars[k])); });
     return s;
   }
+  /* Pastille commune « masqué / anonymisé / restreint » (même rendu que App\Support\ConfidentialDisplay). */
+  var CONF_ICON = {
+    hidden: '<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c5 0 9 4.5 10 7a12.6 12.6 0 0 1-3.2 4.3"/><path d="M6.6 6.6C4.4 8 2.8 10.1 2 12c1 2.5 5 7 10 7a9.9 9.9 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+    anonymized: '<path d="M3 7c3-1 6-1.5 9-1.5S18 6 21 7c0 6-3.5 10-9 10S3 13 3 7z"/><circle cx="8.5" cy="10.5" r="1.3"/><circle cx="15.5" cy="10.5" r="1.3"/>',
+    restricted: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'
+  };
+  function confBadge(c, compact) {
+    if (!c || !c.label) return '';
+    var tone = /^[a-z_-]+$/.test(c.tone || '') ? c.tone : 'restricted';
+    return '<span class="ath-confid ath-confid--' + tone + (compact ? ' ath-confid--sm' : '') + '" title="' + esc(c.hint || '') + '" tabindex="0">' +
+      '<svg class="ath-confid__icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+      (CONF_ICON[tone] || CONF_ICON.restricted) + '</svg><span class="ath-confid__label">' + esc(c.label) + '</span>' +
+      (c.hint ? '<span class="sr-only"> — ' + esc(c.hint) + '</span>' : '') + '</span>';
+  }
   function tn(n, one, many, vars) { return t(n > 1 ? many : one, Object.assign({ n: n }, vars || {})); }
   function clone(o) {
     if (typeof structuredClone === 'function') return structuredClone(o);
@@ -175,16 +189,19 @@
   function leaders(n) {
     var chef = null;
     if (n.commander && n.commander.label) {
-      chef = { label: n.commander.label, grade: n.commander.grade || '', userId: n.commander.userId || 0, billetId: n.commander.billetId || 0 };
+      chef = { label: n.commander.label, grade: n.commander.grade || '', userId: n.commander.userId || 0, billetId: n.commander.billetId || 0, confidential: n.commander.confidential || null };
     } else if ((n.commanderUserId || 0) > 0 && n.leader && n.leader !== '—') {
       chef = { label: n.leader, grade: n.commanderGrade || '', userId: n.commanderUserId, billetId: 0 };
+    } else if (n.leaderConfidential && n.leader && n.leader !== '—') {
+      chef = { label: n.leader, grade: '', userId: 0, billetId: 0, confidential: n.leaderConfidential };
     }
     var adj = n.deputy && n.deputy.label
-      ? { label: n.deputy.label, grade: n.deputy.grade || '', userId: n.deputy.userId || 0, billetId: n.deputy.billetId || 0 }
+      ? { label: n.deputy.label, grade: n.deputy.grade || '', userId: n.deputy.userId || 0, billetId: n.deputy.billetId || 0, confidential: n.deputy.confidential || null }
       : null;
     return { chef: chef, adj: adj };
   }
   function personHtml(p) {
+    if (p && p.confidential) return confBadge(p.confidential, true);
     var g = String(p.grade || '').trim();
     var label = String(p.label || '');
     if (g && label.toUpperCase().indexOf(g.toUpperCase() + ' ') === 0) g = '';
@@ -218,8 +235,9 @@
     opt = opt || {};
     if (n.isOrbatPlaceholder) {
       return '<div class="orb-nd-top"><span class="orb-sym">' + symHtml(n, 22) + '</span><div class="orb-nd-t"><b>' + esc(n.label) +
-        '</b><span>' + esc(n.role || '') + '</span></div></div><div class="orb-nd-tags"><span class="orb-pill">' + esc(t('out_of_scope')) +
-        '</span></div><p class="orb-ph-txt">' + esc(n.mission || '') + '</p>';
+        '</b><span>' + esc(n.role || '') + '</span></div></div><div class="orb-nd-tags">' +
+        (n.confidential ? confBadge(n.confidential, true) : '<span class="orb-pill">' + esc(t('out_of_scope')) + '</span>') +
+        '</div><p class="orb-ph-txt">' + esc(n.mission || '') + '</p>';
     }
     var st = n.adminStatus || 'active';
     var lead = leaders(n);
@@ -229,8 +247,10 @@
     var posts = cardPosts(n);
     var shownPosts = posts.length > 3 ? posts.slice(0, 2) : posts;
     var tags = '<span class="orb-pill"><i style="background:' + (STATUS_COLOR[st] || '#94a3b8') + '"></i>' + esc(n.adminStatusLabel || statusLabel(st)) + '</span>';
-    if (n.staffVisibilityActive || (n.visibilityLevel && n.visibilityLevel !== 'normal')) {
-      tags += '<span class="orb-pill orb-pill--vis">' + esc(n.visibilityHintLabel || n.maskHintLabel || '') + '</span>';
+    if (n.confidential) {
+      tags += confBadge(n.confidential, true);
+    } else if (n.visibilityHintLabel || n.maskHintLabel) {
+      tags += '<span class="orb-pill orb-pill--vis">' + esc(n.visibilityHintLabel || n.maskHintLabel) + '</span>';
     }
     if (n.echelon) tags += '<span class="orb-pill orb-pill--ech">' + esc(echelonLabel(n.echelon)) + '</span>';
     var html = '<div class="orb-nd-top"><span class="orb-sym" aria-hidden="true">' + symHtml(n, 25) + '</span>' +
@@ -395,9 +415,10 @@
   }
   function renderStats() {
     var units = visibleUnits();
-    var pax = 0, active = 0, rs = 0, rc = 0;
+    var pax = 0, active = 0, rs = 0, rc = 0, posts = 0, vacant = 0;
     units.forEach(function (n) {
       pax += n.strength || 0;
+      if (n.billetAuthorized > 0) { posts += n.billetAuthorized; vacant += n.billetVacant || 0; }
       if ((n.adminStatus || 'active') === 'active') active++;
       if (typeof n.localReadinessScore === 'number') {
         var w = (n.members || []).length || 1;
@@ -411,6 +432,7 @@
       '<div><span class="orb-k">' + esc(t('stat_strength')) + '</span><b>' + pax + '</b></div>' +
       '<div><span class="orb-k">' + esc(t('stat_active')) + '</span><b>' + active + '</b></div>' +
       '<div><span class="orb-k">' + esc(t('stat_watch')) + '</span><b class="orb-warn">' + (units.length - active) + '</b></div>' +
+      (posts > 0 ? '<div title="' + esc(t('stat_vacant_hint', { n: vacant, total: posts })) + '"><span class="orb-k">' + esc(t('stat_vacant')) + '</span><b' + (vacant > 0 ? ' class="orb-warn"' : '') + '>' + vacant + '</b></div>' : '') +
       '<div><span class="orb-k">' + esc(t('stat_readiness')) + '</span><b style="color:' + (r == null ? 'inherit' : readinessColor(r)) + '">' + (r == null ? '—' : r + ' %') + '</b></div>';
   }
   function renderFilters() {
@@ -539,13 +561,14 @@
       esc([structLabel(n.structType), n.echelon ? echelonLabel(n.echelon) : ''].filter(Boolean).join(' · ')) + (n.unitCode ? ' · <span class="orb-mono">' + esc(n.unitCode) + '</span>' : '') +
       (n.adminId ? ' · <span class="orb-mono">' + esc(n.adminId) + '</span>' : '') + '</div><h2>' + esc(n.label) + '</h2>' +
       '<div class="orb-dh-tags"><span class="orb-pill"><i style="background:' + (STATUS_COLOR[st] || '#94a3b8') + '"></i>' + esc(n.adminStatusLabel || statusLabel(st)) + '</span>' +
-      (n.staffVisibilityActive ? '<span class="orb-pill orb-pill--vis">' + esc(n.visibilityHintLabel || '') + '</span>' : '') + '</div></div></div>' +
+      (n.confidential ? confBadge(n.confidential) : (n.staffVisibilityActive ? '<span class="orb-pill orb-pill--vis">' + esc(n.visibilityHintLabel || '') + '</span>' : '')) + '</div></div></div>' +
       (canEdit(n) ? '<div class="orb-dh-acts"><button type="button" class="orb-hb1" data-edit="identity">' + esc(t('edit_unit')) + '</button>' +
         '<button type="button" class="orb-hb2" data-add>' + esc(t('add_sub')) + '</button>' +
         '<button type="button" class="orb-hb2 sq" data-menu-dr title="' + esc(t('more_actions')) + '" aria-label="' + esc(t('more_actions')) + '">⋯</button></div>' : '') + '</div>';
     html += '<div class="orb-db">';
-    if (n.viewerNamesRedacted) html += '<p class="orb-sg i">' + esc(t('redacted')) + '</p>';
-    if (n.isOrbatPlaceholder) html += '<p class="orb-sg i">' + esc(t('placeholder')) + '</p>';
+    if (n.viewerNamesRedacted || n.isOrbatPlaceholder) {
+      html += '<p class="orb-sg i">' + esc(n.confidential && n.confidential.hint ? n.confidential.hint : t(n.isOrbatPlaceholder ? 'placeholder' : 'redacted')) + '</p>';
+    }
     html += '<div class="orb-kg"><div><span class="orb-k">' + esc(t('kpi_strength')) + '</span><b>' + s.pax + '<small>' + esc(t('pax')) + '</small></b>' +
       (s.auth ? '<em>' + esc(t('kpi_strength_sub', { n: s.filled, m: s.auth })) + '</em>' : '') + '</div>' +
       '<div><span class="orb-k">' + esc(t('kpi_readiness')) + '</span><b style="color:' + (s.r == null ? 'inherit' : readinessColor(s.r)) + '">' + (s.r == null ? '—' : s.r + ' %') + '</b><em>' +
@@ -645,10 +668,10 @@
       var lead = leaders(n);
       return '<tr data-key="' + esc(n.id) + '"><td><button type="button" class="orb-link" data-go="' + esc(n.id) + '"><span class="orb-sym orb-sym--sm">' + symHtml(n, 12) + '</span>' + esc(n.label) + '</button></td>' +
         '<td class="orb-mono orb-nowrap">' + esc(n.unitCode || '') + (n.adminId ? '<br><small>' + esc(n.adminId) + '</small>' : '') + '</td>' +
-        '<td>' + (edit ? selectHtml('struct_type', structs, n.structType) : esc(n.structType || '')) + '</td>' +
+        '<td>' + (edit ? selectHtml('struct_type', structs, n.structType) : esc(structLabel(n.structType) || '—')) + '</td>' +
         '<td>' + (edit && S.opts && S.opts.capabilities && S.opts.capabilities.military_symbol ? selectHtml('echelon', ech, n.echelonAuto ? '' : n.echelon) : esc(echelonLabel(n.echelon))) + '</td>' +
         '<td>' + (edit ? selectHtml('admin_status', statuses, n.adminStatus || 'active') : esc(n.adminStatusLabel || '')) + '</td>' +
-        '<td>' + (edit && vis.length ? selectHtml('visibility_level', vis, n.visibilityLevel || 'normal') : esc(n.visibilityHintLabel || '')) + '</td>' +
+        '<td>' + (edit && vis.length ? selectHtml('visibility_level', vis, n.visibilityLevel || 'normal') : (n.confidential ? confBadge(n.confidential, true) : esc(n.visibilityHintLabel || ''))) + '</td>' +
         '<td>' + (n.strength || 0) + '</td><td>' + (lead.chef ? personHtml(lead.chef) : '—') + '</td><td>' + (lead.adj ? personHtml(lead.adj) : '—') + '</td>' +
         '<td class="orb-cut" title="' + esc(n.mission || '') + '">' + esc(n.mission && n.mission !== '—' ? n.mission : '') + '</td></tr>';
     }).join('') + '</tbody></table>' + (units.length ? '' : '<p class="orb-muted">' + esc(t('no_result')) + '</p>');
@@ -691,11 +714,18 @@
     if (S.previewAs) params.push('preview_as=' + encodeURIComponent(S.previewAs));
     return api('/api/orbat/roster') + '?' + params.join('&');
   }
-  function reloadRoster() {
+  /* quiet : rafraîchissement de fond, sans message si le réseau ou la session lâche. */
+  function reloadRoster(quiet) {
     return fetch(rosterUrl(), { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-      .then(function (r) { return r.json(); })
-      .then(function (j) { if (j && j.success && j.roster) applyServer(j.roster); })
-      .catch(function () {});
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (j) {
+        if (!j || !j.success) throw new Error('roster');
+        if (j.roster) applyServer(j.roster);
+      })
+      .catch(function () { if (!quiet) toast(t('t_reload_error'), null, true); });
   }
   function applyServer(root) {
     var snap = JSON.stringify(root);
@@ -756,6 +786,8 @@
     public_custom_date_label: 'publicCustomDateLabel'
   };
   function apiValue(n, field) {
+    // Nom affiché traduit (libellé généré) : on édite le nom enregistré.
+    if (field === 'name') return n.labelSource != null ? String(n.labelSource) : (n.label == null ? '' : String(n.label));
     if (field === 'sidc') return n.sidcAuto ? '' : n.sidc;
     if (field === 'echelon') return n.echelonAuto ? '' : n.echelon;
     if (field === 'code') return n.role && n.role !== 'Unité' ? n.role : '';
@@ -770,6 +802,7 @@
       var v = fields[f];
       if (f === 'sidc') { n.sidcAuto = v === ''; if (v) n.sidc = v; n.symbolSidc = composeSidc(n.sidc, n.echelon); return; }
       if (f === 'echelon') { n.echelonAuto = v === ''; if (v) n.echelon = v; n.symbolSidc = composeSidc(n.sidc, n.echelon); return; }
+      if (f === 'name') { n.label = v; delete n.labelSource; return; }
       if (f === 'code') { n.role = v || 'Unité'; return; }
       if (f === 'public_blurb') { n.mission = v || '—'; return; }
       if (f === 'show_on_public_page') { n.showOnPublicPage = v === '1'; return; }
@@ -792,7 +825,7 @@
     var before = {};
     Object.keys(fields).forEach(function (f) { before[f] = apiValue(n, f); });
     var body = Object.assign({ unit_id: unitId }, fields);
-    if (fields.struct_type !== undefined && fields.name === undefined) body.name = n.label;
+    if (fields.struct_type !== undefined && fields.name === undefined) body.name = apiValue(n, 'name');
     return mutate({
       url: api('/api/orbat/unit'),
       fields: body,
@@ -1398,7 +1431,7 @@
     openModal({
       html: function () {
         return '<h2>' + esc(b ? t('f_post_edit') : t('f_post_new')) + '</h2><p>' + esc(n.label) + '</p><div class="orb-fg">' +
-          fl(esc(t('f_post_title')) + ' <i>*</i>', '<input class="orb-in" id="orb-pf-title" maxlength="150" autofocus value="' + esc(b ? b.title : '') + '">', '', true) +
+          fl(esc(t('f_post_title')) + ' <i>*</i>', '<input class="orb-in" id="orb-pf-title" maxlength="150" autofocus value="' + esc(b ? (b.titleSource || b.title) : '') + '">', '', true) +
           fl(esc(t('f_post_function')), '<input class="orb-in" id="orb-pf-fn" maxlength="150" value="' + esc(b ? b.function_label : '') + '">') +
           fl(esc(t('f_post_slots')), '<input class="orb-in" id="orb-pf-slots" type="number" min="1" max="50" value="' + esc(b ? b.authorized : 1) + '">') +
           fl(esc(t('f_post_kind')), '<select class="orb-in" id="orb-pf-kind">' + opt('', t('f_post_kind_none'), kind) + opt('commander', t('f_post_kind_commander'), kind) + opt('deputy', t('f_post_kind_deputy'), kind) + '</select>', '', true) +
@@ -1601,7 +1634,7 @@
     if (!b) return;
     var input = document.createElement('input');
     input.className = 'orb-inline-name';
-    input.value = n.label;
+    input.value = apiValue(n, 'name');
     input.maxLength = 255;
     input.setAttribute('aria-label', t('f_name'));
     b.replaceWith(input);
@@ -1615,7 +1648,7 @@
       S.inline = false;
       var v = input.value.trim();
       cardSig.delete(key);
-      if (save && v && v !== n.label) patchUnit(n.unitId, { name: v }).catch(function () {});
+      if (save && v && v !== apiValue(n, 'name')) patchUnit(n.unitId, { name: v }).catch(function () {});
       else render();
       var c = cards.get(key);
       if (c) c.focus({ preventScroll: true });
@@ -1989,7 +2022,7 @@
   // Rafraîchissement discret (travail à plusieurs) : jamais pendant une saisie, un glisser ou une fenêtre ouverte.
   setInterval(function () {
     if (!B.canManage || document.hidden || S.pending || M || drag || S.inline || !S.root) return;
-    reloadRoster();
+    reloadRoster(true);
   }, 32000);
 
 })();

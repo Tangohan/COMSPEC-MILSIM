@@ -17,6 +17,7 @@ $publicUnits = is_array($publicUnits ?? null) ? $publicUnits : [];
 $publicRosterRows = is_array($publicRosterRows ?? null) ? $publicRosterRows : [];
 $unitMemberCounts = is_array($unitMemberCounts ?? null) ? $unitMemberCounts : [];
 $commanderNames = is_array($commanderNames ?? null) ? $commanderNames : [];
+$commanderConfidential = is_array($commanderConfidential ?? null) ? $commanderConfidential : [];
 $hasMembershipInTenant = $hasMembershipInTenant ?? false;
 $communityCode = trim((string) ($tenant['community_code'] ?? ''));
 $flashSuccess = \App\Core\Session::getFlash('success');
@@ -1108,6 +1109,7 @@ unset($pbCssFile, $pbCssName);
           $publicUnitChildIds,
           $unitMemberCounts,
           $commanderNames,
+          $commanderConfidential,
           $orbCommanders,
           $orbUnitTone,
           $orbL,
@@ -1123,12 +1125,14 @@ unset($pbCssFile, $pbCssName);
           $mc = (int) ($unitMemberCounts[$uid] ?? 0);
           $blurb = trim((string) ($unit['public_blurb'] ?? ''));
           $code = trim((string) ($unit['code'] ?? ''));
-          $unitName = (string) ($unit['name'] ?? '');
           $unitSlugForLink = trim((string) ($unit['slug'] ?? ''));
+          // Libellé généré (modèle d’organisation) dans la langue du lecteur ; un nom saisi reste tel quel.
+          $unitName = generated_label('unit', (string) ($unit['name'] ?? ''), $unitSlugForLink, (int) ($unit['tenant_id'] ?? 0));
           $cmdId = (int) ($unit['commander_user_id'] ?? 0);
           $cmdName = $cmdId > 0 ? ($commanderNames[$cmdId] ?? '') : '';
-          $cmdGrade = $cmdName !== '' ? (string) ($orbCommanders[$cmdId]['grade'] ?? '') : '';
-          $cmdPortrait = $cmdName !== '' ? ($orbCommanders[$cmdId]['portrait'] ?? null) : null;
+          $cmdAnon = $cmdName !== '' && isset($commanderConfidential[$cmdId]);
+          $cmdGrade = $cmdName !== '' && !$cmdAnon ? (string) ($orbCommanders[$cmdId]['grade'] ?? '') : '';
+          $cmdPortrait = $cmdName !== '' && !$cmdAnon ? ($orbCommanders[$cmdId]['portrait'] ?? null) : null;
           $capacity = isset($unit['public_capacity']) && $unit['public_capacity'] !== null && $unit['public_capacity'] !== ''
               ? (int) $unit['public_capacity']
               : null;
@@ -1177,7 +1181,7 @@ unset($pbCssFile, $pbCssName);
             <span class="orb-badge" aria-hidden="true"><?= htmlspecialchars(\App\Support\PublicOrbat::insignia($code, name_mask_text($unitName))) ?></span>
             <div class="orb-titles">
               <div class="cl-unit__code"><?= htmlspecialchars(mb_strtoupper($code !== '' ? $code : ($typeLabel !== '' ? $typeLabel : $orbL['unit']))) ?></div>
-              <h3 class="cl-unit__name"><?= name_blur_html($unitName) ?></h3>
+              <h3 class="cl-unit__name"><span<?= unit_name_translate_attr($unitName) ?>><?= name_blur_html($unitName) ?></span><?php if (is_array($unit['confidential'] ?? null)): ?> <?= \App\Support\ConfidentialDisplay::renderPayload($unit['confidential'], true) ?><?php endif; ?></h3>
               <?php if ($parentName !== ''): ?>
               <p class="orb-parent"><?= htmlspecialchars($orbL['under']) ?> <?= name_blur_html($parentName) ?></p>
               <?php endif; ?>
@@ -1197,7 +1201,7 @@ unset($pbCssFile, $pbCssName);
             <span class="orb-cmd__face"><?php if ($cmdPortrait): ?><img src="<?= htmlspecialchars((string) $cmdPortrait, ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" decoding="async"><?php else: ?><?= htmlspecialchars(mb_strtoupper(mb_substr($cmdName, 0, 1))) ?><?php endif; ?></span>
             <span class="orb-cmd__txt">
               <span class="orb-cmd__k"><?= htmlspecialchars($orbL['leader']) ?></span>
-              <span class="orb-cmd__v"><?php if ($cmdGrade !== ''): ?><span class="orb-cmd__grade"><?= htmlspecialchars($cmdGrade) ?></span> <?php endif; ?><?= htmlspecialchars($cmdName) ?></span>
+              <span class="orb-cmd__v"><?php if ($cmdGrade !== ''): ?><span class="orb-cmd__grade"><?= htmlspecialchars($cmdGrade) ?></span> <?php endif; ?><?= $cmdAnon ? \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::PERSON_ANONYMIZED, $cmdName, true) : htmlspecialchars($cmdName) ?></span>
             </span>
           </div>
           <?php elseif ($cmdId < 1 && $blurb === ''): ?>
@@ -1627,10 +1631,10 @@ unset($pbCssFile, $pbCssName);
             <?php foreach ($publicRosterRows as $rr): ?>
               <?php $st = (string) ($rr['status'] ?? 'active'); ?>
             <tr class="roster-row" data-roster-search="<?= htmlspecialchars(strtolower($rosterIndicatif($rr) . ' ' . ($rr['grade_short'] ?? '') . ' ' . ($rr['role_name'] ?? '') . ' ' . ($rr['unit_name'] ?? '')), ENT_QUOTES, 'UTF-8') ?>">
-              <td class="cl-table__strong"><?= htmlspecialchars($rosterIndicatif($rr)) ?></td>
+              <td class="cl-table__strong"><?= !empty($rr['anonymized']) ? \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::PERSON_ANONYMIZED, $rosterIndicatif($rr), true) : htmlspecialchars($rosterIndicatif($rr)) ?></td>
               <td class="cl-mono"><?= htmlspecialchars((string) ($rr['grade_short'] ?? '—')) ?></td>
               <td><?= htmlspecialchars((string) ($rr['role_name'] ?? '—')) ?></td>
-              <td><?= htmlspecialchars((string) ($rr['unit_name'] ?? '—')) ?></td>
+              <td><?= \App\Support\ConfidentialDisplay::text((string) ($rr['unit_name'] ?? '')) ?></td>
               <td class="cl-table__right"><span class="cl-badge cl-badge--pill cl-badge--<?= $st === 'active' ? 'ok' : ($st === 'pending' ? 'info' : 'warn') ?>"><?= htmlspecialchars($rosterStatusLabel($st)) ?></span></td>
             </tr>
             <?php endforeach; ?>

@@ -57,7 +57,7 @@ Champs (`tenant_member_number_config`) :
 
 `{PREFIX}`, `{NUMBER}`, `{NUMBER:3|4|5}`, `{YEAR}`, `{YEAR:2}`, `{MONTH}`, `{TENANT}`, `{UNIT}`, `{GRADE}`
 
-`UNIT` et `GRADE` sont optionnels (architecture prête, sans dépendance obligatoire).
+`UNIT` et `GRADE` sont remplis à la génération avec le code de l’unité et le grade du membre (vides s’ils manquent).
 
 ## Permission
 
@@ -88,6 +88,18 @@ Helper : `TenantMemberNumberService::identityPayload($userRow)`.
 
 - Recherche personnel / portail / listes BO : nom, prénom, `athena_identifier`, `tenant_member_number` (toujours filtrée par `tenant_id`).
 - Import CSV (BO matricules) : colonnes `email` + `tenant_member_number`.
+- Export CSV (BO matricules, `/back-office/organisation/matricules/export`, `?filtre=sans` pour les membres sans matricule) : `nom;indicatif;email;tenant_member_number;matricule_plateforme`, réimportable tel quel (BOM UTF-8, formules neutralisées).
+
+## Page Matricules : contrôle du registre et attribution
+
+- **Contrôle du registre** (`App\Support\MemberNumberAnalysis`, calcul pur) : doublons (insensibles à la casse), membres actifs sans matricule, valeurs hors modèle, numéros sautés dans la séquence, séquence en retard sur le plus grand numéro attribué (bouton « Reprendre à N », route `POST …/matricules/recaler`). La reconnaissance du modèle reproduit exactement `TenantMemberNumberService::format()`.
+- **Registre** : recherche et filtres (sans matricule / doublons / hors modèle), correction d’un matricule (`POST …/matricules/membre`, vide = retirer), attribution du prochain matricule à un membre ou à tous ceux qui n’en ont pas (`POST …/matricules/attribuer`, 200 par passage, modes automatique / assisté uniquement).
+- **Modèle** : éléments insérables au curseur, modèles courants, aperçu en direct des trois prochains matricules. Un mode généré refuse un modèle sans `{NUMBER}` (tous les matricules seraient identiques).
+- **Derniers changements** : 12 dernières lignes de `tenant_member_number_audit` de la communauté.
+- **Unité et grade** : `{UNIT}` = code de l’unité principale du membre (dossier personnel, sinon première affectation active), `{GRADE}` = abréviation du grade (`label_short`, ou `short_name` sur l’ancien schéma). Lettres et chiffres seulement, en capitales ; vide si l’information manque (l’élément est omis, séparateurs nettoyés). Utilisés à la génération (`assignNext`) et à la renumérotation.
+- **Rétablir depuis l’historique** (`POST …/matricules/retablir`, `audit_id`) : redonne l’ancienne valeur d’une ligne (« Réattribuer » après un retrait), avec les contrôles habituels (unicité, caractères). Source d’audit `restore`.
+- **Renumérotation** (`GET …/matricules?renumeroter=1&portee=off|all&numero=keep|next`, puis `POST …/matricules/renumeroter`) : aperçu ancien → nouveau, conflits laissés inchangés, empreinte du plan vérifiée à l’application (refus si le registre a changé). Les matricules concernés sont libérés puis réattribués (un échange de numéros passe malgré l’unicité). La séquence est relevée si besoin. Source d’audit `renumber`.
+- **Import en deux temps** : `POST …/matricules/import` vérifie le fichier sans rien écrire (aperçu gardé en session), `POST …/matricules/import/appliquer` écrit les lignes valides (revérifiées), `POST …/matricules/import/annuler` abandonne. Un échange de matricules entre deux membres dans le même fichier est refusé à l’aperçu.
 - Export effectifs : colonnes séparées `platform_number` et `tenant_member_number`.
 
 ## Audit
@@ -106,3 +118,5 @@ Le matricule organisation est exposé en **métadonnée** (`member_number`) sur 
 ## Tests
 
 `tests/Unit/TenantMemberNumberServiceTest.php` — formats, payload, câblage migration / permission / routes / isolation SQL.
+`tests/Unit/MemberNumberToolsTest.php` — unité / grade, renumérotation (aperçu, conflits, échange, empreinte), rétablissement, lecture de l’import.
+`tests/Unit/MemberNumberAnalysisTest.php` — reconnaissance du modèle, doublons / trous / séquence en retard, refus d’un modèle sans numéro, rendu de la page, export.

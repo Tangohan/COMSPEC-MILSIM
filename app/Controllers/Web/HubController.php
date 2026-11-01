@@ -267,7 +267,7 @@ class HubController
         $id = $this->ecosystem()->createPost($tenantId, (int) Session::get('user_id'), [
             'title' => $title,
             'need_type' => $type,
-            'game_label' => mb_substr(trim((string) $request->input('game_label', '')), 0, 80),
+            'game_label' => mb_substr(\App\Support\GameCatalog::normalize((string) $request->input('game_label', '')), 0, 80),
             'starts_at' => $startsTs !== false ? date('Y-m-d H:i:s', $startsTs) : null,
             'slots' => $slots > 0 ? min($slots, 999) : null,
             'details' => mb_substr(trim((string) $request->input('details', '')), 0, 4000),

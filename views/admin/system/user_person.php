@@ -337,7 +337,7 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <?php if ($isDeleted): ?>
-                                <span class="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-900">Anonymisé</span>
+                                <?= \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::ACCOUNT_DELETED) ?>
                             <?php else: ?>
                                 <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-800"><?= $h($statusLabel($st)) ?></span>
                             <?php endif; ?>

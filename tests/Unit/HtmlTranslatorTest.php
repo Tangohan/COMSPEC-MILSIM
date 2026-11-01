@@ -161,4 +161,18 @@ final class HtmlTranslatorTest extends TestCase
         self::assertSame('<p>1 person listed</p>', HtmlTranslator::translate('<p>1 personne listée</p>'));
         self::assertSame('<p>3 persons listed</p>', HtmlTranslator::translate('<p>3 personnes listées</p>'));
     }
+
+    public function testWholeTemplateBeatsKnownLabelFollowedByValue(): void
+    {
+        // « Sur 90 jours » connu seul : le libellé passait avant le modèle entier et laissait « présence(s) ».
+        HtmlTranslator::useDictionary([
+            'Sur 90 jours' => 'Over 90 days',
+            '%1 sur %2' => '%1 of %2',
+            'Sur 90 jours : %1 présence(s) sur %2 session(s).' => 'Last 90 days: attended %1 of %2 sessions.',
+            'Statut' => 'Status',
+            'Actif' => 'Active',
+        ]);
+        self::assertSame('<p>Last 90 days: attended 4 of 6 sessions.</p>', HtmlTranslator::translate('<p>Sur 90 jours : 4 présence(s) sur 6 session(s).</p>'));
+        self::assertSame('<dd>Status: Active</dd>', HtmlTranslator::translate('<dd>Statut : Actif</dd>'));
+    }
 }

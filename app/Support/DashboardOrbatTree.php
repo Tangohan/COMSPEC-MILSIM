@@ -214,6 +214,22 @@ final class DashboardOrbatTree
                 continue;
             }
             $uid = (int) ($mem['user_id'] ?? 0);
+            if ($uid < 1 && (!empty($mem['anonymized']) || is_array($mem['confidential'] ?? null))) {
+                // Membre présent mais non identifiable pour ce lecteur : même pastille que partout ailleurs.
+                $conf = is_array($mem['confidential'] ?? null)
+                    ? $mem['confidential']
+                    : ConfidentialDisplay::payload(ConfidentialDisplay::PERSON_ANONYMIZED, (string) ($mem['label'] ?? ''));
+                $members[] = [
+                    'user_id' => 0,
+                    'label' => (string) ($conf['label'] ?? ConfidentialDisplay::label(ConfidentialDisplay::PERSON_ANONYMIZED)),
+                    'initials' => '·',
+                    'photo_url' => null,
+                    'role' => '',
+                    'href' => '',
+                    'confidential' => $conf,
+                ];
+                continue;
+            }
             if ($uid < 1 || isset($seen[$uid])) {
                 continue;
             }
@@ -248,6 +264,31 @@ final class DashboardOrbatTree
                 'role' => is_array($pack) ? (string) ($pack['role'] ?? '') : '',
                 'href' => url('personnel/' . $commanderId),
             ];
+        } else {
+            $leader = trim((string) ($node['leader'] ?? ''));
+            $conf = is_array($node['leaderConfidential'] ?? null) ? $node['leaderConfidential'] : null;
+            if ($conf === null && is_array($node['commander'] ?? null) && is_array($node['commander']['confidential'] ?? null)) {
+                $conf = $node['commander']['confidential'];
+            }
+            if ($conf === null && $leader !== '' && $leader !== '—') {
+                $kind = ConfidentialDisplay::kindFromText($leader);
+                if ($kind !== null) {
+                    $conf = ConfidentialDisplay::payload($kind);
+                } elseif (!empty($node['namesAbbreviated'])) {
+                    $conf = ConfidentialDisplay::payload(ConfidentialDisplay::NAMES_ABBREVIATED, $leader);
+                }
+            }
+            if ($conf !== null) {
+                $commander = [
+                    'user_id' => 0,
+                    'label' => (string) ($conf['label'] ?? $leader),
+                    'initials' => '·',
+                    'photo_url' => null,
+                    'role' => '',
+                    'href' => '',
+                    'confidential' => $conf,
+                ];
+            }
         }
 
         $children = [];
@@ -276,7 +317,8 @@ final class DashboardOrbatTree
             'icon_url' => $icon !== '' ? $icon : null,
             'image_url' => $image !== '' ? $image : null,
             'commander' => $commander,
-            'commander_vacant' => $commander === null && $unitId > 0,
+            'commander_vacant' => $commander === null && $unitId > 0 && empty($node['isAnonymizedUnit']),
+            'confidential' => is_array($node['confidential'] ?? null) ? $node['confidential'] : null,
             'is_mine' => $unitId > 0 && isset($viewerLookup[$unitId]),
             'members' => $members,
             'children' => $children,

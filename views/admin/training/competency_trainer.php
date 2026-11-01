@@ -160,7 +160,7 @@ foreach ($pedagogyDesignations as $rows) {
                 <li class="flex flex-wrap items-center justify-between gap-2 py-2">
                     <span class="min-w-0">
                         <span class="block text-sm font-semibold text-slate-900"><?= htmlspecialchars($dn, ENT_QUOTES, 'UTF-8') ?><?= $inactive ? ' <span class="text-xs font-normal text-amber-700">(compte inactif)</span>' : '' ?></span>
-                        <span class="block text-[11px] text-slate-500">Nommé<?= $by !== '' ? ' par ' . htmlspecialchars($by, ENT_QUOTES, 'UTF-8') : '' ?><?= !empty($d['created_at']) ? ' le ' . htmlspecialchars(date('d/m/Y', (int) strtotime((string) $d['created_at'])), ENT_QUOTES, 'UTF-8') : '' ?></span>
+                        <span class="block text-[11px] text-slate-500"><span><?= htmlspecialchars($by !== '' ? sprintf('Nommé par %s', $by) : 'Nommé', ENT_QUOTES, 'UTF-8') ?></span><?php if (!empty($d['created_at'])): ?> <span><?= htmlspecialchars(sprintf('le %s', date('d/m/Y', (int) strtotime((string) $d['created_at']))), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?></span>
                     </span>
                     <form method="post" onsubmit="return confirm('Retirer cette nomination ?');">
                         <?= \App\Core\Csrf::field() ?>

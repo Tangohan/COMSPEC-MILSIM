@@ -122,7 +122,7 @@ foreach ($sessions as $s) {
                             <?php if ($free !== []): ?>
                                 <p class="aksq__free"><span>Sans équipe</span> <?= $h(implode(' · ', array_map(static fn (array $m): string => (string) (($m['role_label'] ?? '') !== '' ? $m['role_label'] . ' ' : '') . ($m['callsign'] ?? ''), $free))) ?></p>
                             <?php endif; ?>
-                            <footer class="aksq__squad-foot">Reçue <?= $h($ago((string) $sq['synced_at'])) ?><?= $gone > 0 ? ' · ' . $gone . ' équipe(s) dissoute(s)' : '' ?></footer>
+                            <footer class="aksq__squad-foot"><span>Reçue <?= $h($ago((string) $sq['synced_at'])) ?></span><?php if ($gone > 0): ?> · <span><?= $h(sprintf('%d équipe(s) dissoute(s)', $gone)) ?></span><?php endif; ?></footer>
                         </article>
                     <?php endforeach; ?>
                 </div>
