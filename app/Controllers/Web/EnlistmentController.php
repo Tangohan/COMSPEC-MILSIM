@@ -17,7 +17,6 @@ use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RecruitmentDiscordQuestionRepository;
 use App\Repositories\RecruitmentInviteCodeRepository;
 use App\Repositories\RecruitmentOpeningRepository;
-use App\Repositories\RecruitmentPresetRepository;
 use App\Repositories\TenantBrandingRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
@@ -30,7 +29,7 @@ use App\Services\Community\TenantCommunityProfileService;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Moderation\IndicatorBlocklistService;
-use App\Services\Profile\RecruitmentPresetPayloadService;
+use App\Services\Profile\CandidateRpSnapshotService;
 use App\Support\Profile\EnlistmentTimezoneCatalog;
 use App\Services\Analytics\AnalyticsEventCategory;
 use App\Services\Analytics\AnalyticsEventName;
@@ -47,8 +46,7 @@ class EnlistmentController
         private AuthService $authService,
         private UserRepository $userRepository,
         private UserProfileRepository $userProfileRepository,
-        private RecruitmentPresetRepository $recruitmentPresetRepository,
-        private RecruitmentPresetPayloadService $recruitmentPresetPayloadService,
+        private CandidateRpSnapshotService $candidateRpSnapshotService,
         private EmailService $emailService,
         private IndicatorBlocklistService $indicatorBlocklist,
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
@@ -380,64 +378,6 @@ class EnlistmentController
                 $last = '—';
             }
 
-            $presetId = (int) $request->input('recruitment_preset_id');
-            $presetRow = $presetId > 0 ? $this->recruitmentPresetRepository->findForUser($presetId, $uid) : null;
-            if ($presetId > 0 && !$presetRow) {
-                Session::flash('enlistment_error', 'Profil de candidature invalide.');
-
-                return Response::redirect(url('enlistment/error'));
-            }
-            $pData = [];
-            if ($presetRow) {
-                $rawPayload = $presetRow['payload'] ?? [];
-                $pData = is_array($rawPayload) ? $rawPayload : [];
-            }
-
-            $rpSharesRaw = [];
-            foreach (RecruitmentPresetPayloadService::rpShareSelectionKeys() as $rk) {
-                if ($rk === 'character_name') {
-                    $rpSharesRaw[$rk] = false;
-                    continue;
-                }
-                $rpSharesRaw[$rk] = $request->input('share_rp_' . $rk);
-            }
-            $rpShares = $this->recruitmentPresetPayloadService->normalizeRpShareSelections($rpSharesRaw);
-            $includeMilsimFromPreset = (bool) $request->input('include_milsim_from_preset');
-
-            if ($presetRow !== null) {
-                $shareOptions = [
-                    'include_milsim_from_preset' => $includeMilsimFromPreset,
-                    'rp_shares' => $rpShares,
-                ];
-                $this->recruitmentPresetPayloadService->mergePresetIntoEnlistmentPayload($pData, $payload, $shareOptions);
-
-                // Préférer les choix du formulaire ; sinon le modèle (si valeur encore autorisée).
-                $formTz = EnlistmentTimezoneCatalog::normalize((string) $request->input('timezone'));
-                $payload['timezone'] = $formTz ?? EnlistmentTimezoneCatalog::normalize(
-                    isset($payload['timezone']) ? (string) $payload['timezone'] : null
-                );
-                $formPc = EnlistmentTimezoneCatalog::normalizePcPerformance((string) $request->input('system_config'));
-                $payload['system_config'] = $formPc ?? EnlistmentTimezoneCatalog::normalizePcPerformance(
-                    isset($payload['system_config']) ? (string) $payload['system_config'] : null
-                );
-
-                $fullSnapForValidation = $this->recruitmentPresetPayloadService->buildRpSnapshotForEnlistment($pData, null);
-                if (!$includeMilsimFromPreset
-                    && !$this->recruitmentPresetPayloadService->snapshotHasAnyRpContent($fullSnapForValidation, $rpShares)) {
-                    Session::flash(
-                        'enlistment_error',
-                        'Pour utiliser ce profil enregistré, indiquez au moins un élément à transmettre au recrutement, ou cochez l’inclusion des réponses techniques du modèle.'
-                    );
-
-                    return Response::redirect(url('enlistment/error'));
-                }
-
-                $snap = $this->recruitmentPresetPayloadService->buildRpSnapshotForEnlistment($pData, $rpShares);
-                if ($this->recruitmentPresetPayloadService->snapshotHasVisibleRpContent($snap)) {
-                    $payload['recruitment_rp_snapshot'] = $snap;
-                }
-            }
-
             if ($isCompactAccount && trim((string) ($payload['motivation_why_join'] ?? '')) === '') {
                 Session::flash('enlistment_error', 'Indiquez en quelques lignes votre motivation pour ce poste.');
 
@@ -449,16 +389,14 @@ class EnlistmentController
             $payload['email'] = $email;
             $payload['callsign'] = null;
             $payload['submitter_user_id'] = $uid;
-            $payload['recruitment_preset_id'] = $presetRow ? $presetId : null;
-            $payload['submitted_via'] = $presetRow ? 'preset' : 'account';
+            $payload['recruitment_preset_id'] = null;
+            $payload['submitted_via'] = 'account';
             $payload['consent_sharing_at'] = date('Y-m-d H:i:s');
             $payload['shared_fields'] = [
                 'share_name' => $shareName,
                 'share_email' => true,
                 'mask_email' => $maskEmail,
                 'share_callsign' => false,
-                'rp_shares' => $presetRow ? $rpShares : null,
-                'include_milsim_from_preset' => $presetRow ? $includeMilsimFromPreset : null,
                 'form_mode' => $isCompactAccount ? 'compact' : 'full',
             ];
         } else {
@@ -480,10 +418,10 @@ class EnlistmentController
 
                 return Response::redirect(url('enlistment/error'));
             }
-            $guestBd = RecruitmentPresetPayloadService::normalizeRpBirthDate((string) $request->input('guest_rp_birth_date'));
+            $guestBd = CandidateRpSnapshotService::normalizeRpBirthDate((string) $request->input('guest_rp_birth_date'));
             $guestNat = trim((string) $request->input('guest_rp_nationality'));
-            $pseudoPreset = [
-                'payload_version' => RecruitmentPresetPayloadService::PAYLOAD_VERSION,
+            $guestRp = [
+                'payload_version' => CandidateRpSnapshotService::PAYLOAD_VERSION,
                 'rp' => [
                     'first_name' => $guestFn,
                     'last_name' => $guestLn,
@@ -494,7 +432,7 @@ class EnlistmentController
                 'admin_notes' => '',
                 'availability' => ['schedule' => [], 'timezone_label' => '', 'free_text' => ''],
             ];
-            $snap = $this->recruitmentPresetPayloadService->buildRpSnapshotForEnlistment($pseudoPreset, null);
+            $snap = $this->candidateRpSnapshotService->buildRpSnapshotForEnlistment($guestRp);
             $snap['identity_kind'] = 'rp';
             $snap['legal_contact_name'] = null;
             $payload['recruitment_rp_snapshot'] = $snap;
@@ -1003,7 +941,6 @@ class EnlistmentController
                 $prefill[$k] = $v;
             }
         }
-        $recruitmentPresets = [];
         $switchToTargetUrl = $slug !== '' ? url('c/' . $slug . '/enlistment/enter') : null;
         $hasMembershipOnTarget = false;
 
@@ -1025,11 +962,6 @@ class EnlistmentController
                 } else {
                     $prefill['full_name'] = trim((string) ($user['display_name'] ?? ''));
                     $prefill['guest_rp_first_name'] = $prefill['full_name'];
-                }
-                try {
-                    $recruitmentPresets = $this->recruitmentPresetRepository->listForUser($uid);
-                } catch (\Throwable) {
-                    $recruitmentPresets = [];
                 }
             }
             if ($sessionTenant !== $targetTenantId) {
@@ -1059,7 +991,6 @@ class EnlistmentController
             'canUseAccount' => $canUseAccount,
             'prefill' => $prefill,
             'platform_email' => $platformEmail,
-            'recruitmentPresets' => $recruitmentPresets,
             'hasMembershipOnTarget' => $hasMembershipOnTarget,
             'switchToTargetUrl' => $switchToTargetUrl,
         ];
@@ -1190,7 +1121,7 @@ class EnlistmentController
                 $out['age'] = (string) $a;
             }
         }
-        $bd = RecruitmentPresetPayloadService::normalizeRpBirthDate((string) $request->query('guest_rp_birth_date', ''));
+        $bd = CandidateRpSnapshotService::normalizeRpBirthDate((string) $request->query('guest_rp_birth_date', ''));
         if ($bd !== '') {
             $out['guest_rp_birth_date'] = $bd;
         }

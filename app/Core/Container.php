@@ -793,7 +793,7 @@ class Container
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Services\Attendance\CommunityEventAttendanceService::class)
             ),
-            \App\Services\Profile\RecruitmentPresetPayloadService::class => new \App\Services\Profile\RecruitmentPresetPayloadService(),
+            \App\Services\Profile\CandidateRpSnapshotService::class => new \App\Services\Profile\CandidateRpSnapshotService(),
             \App\Services\Steam\SteamWebApiService::class => new \App\Services\Steam\SteamWebApiService(),
             \App\Controllers\Web\AccountController::class => new \App\Controllers\Web\AccountController(
                 self::get(AuthService::class),
@@ -801,8 +801,6 @@ class Container
                 self::get(\App\Repositories\UserLegalIdentityRepository::class),
                 self::get(\App\Repositories\UserProfileRepository::class),
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
-                self::get(\App\Repositories\RecruitmentPresetRepository::class),
-                new \App\Services\Profile\RecruitmentPresetPayloadService(),
                 self::get(\App\Repositories\UserUiPreferencesRepository::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
                 self::get(\App\Services\Profile\UserUiPreferencesValidationService::class),
@@ -830,7 +828,6 @@ class Container
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
                 self::get(\App\Repositories\UserProfileDisplaySettingsRepository::class),
                 self::get(\App\Repositories\PersonnelExtrasRepository::class),
-                self::get(\App\Repositories\RecruitmentPresetRepository::class),
             ),
             \App\Services\Identity\UserIdentityMergeService::class => new \App\Services\Identity\UserIdentityMergeService(
                 \App\Core\Database::getPdo(),
@@ -1274,7 +1271,6 @@ class Container
             \App\Repositories\EnlistmentCannedMessageRepository::class => new \App\Repositories\EnlistmentCannedMessageRepository(),
             \App\Repositories\EnlistmentTimelineRepository::class => new \App\Repositories\EnlistmentTimelineRepository(),
             \App\Repositories\EnlistmentRecruitmentEngagementRepository::class => new \App\Repositories\EnlistmentRecruitmentEngagementRepository(),
-            \App\Repositories\RecruitmentPresetRepository::class => new \App\Repositories\RecruitmentPresetRepository(),
             \App\Repositories\RecruitmentInviteCodeRepository::class => new \App\Repositories\RecruitmentInviteCodeRepository(),
             \App\Controllers\Web\EnlistmentController::class => new \App\Controllers\Web\EnlistmentController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
@@ -1283,8 +1279,7 @@ class Container
                 self::get(AuthService::class),
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\UserProfileRepository::class),
-                self::get(\App\Repositories\RecruitmentPresetRepository::class),
-                self::get(\App\Services\Profile\RecruitmentPresetPayloadService::class),
+                self::get(\App\Services\Profile\CandidateRpSnapshotService::class),
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),

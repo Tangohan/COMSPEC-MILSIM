@@ -58,7 +58,6 @@ if ($availabilitySlots !== [] && trim((string) ($prefill['weekly_availability'] 
     );
 }
 $timezoneOptions = \App\Support\Profile\EnlistmentTimezoneCatalog::optionsForSelect();
-$recruitmentPresets = $enlistmentContext['recruitmentPresets'] ?? [];
 $hasMembershipOnTarget = !empty($enlistmentContext['hasMembershipOnTarget']);
 $switchToTargetUrl = $enlistmentContext['switchToTargetUrl'] ?? null;
 $tenantSlugForForm = trim((string) ($tenant['slug'] ?? ''));
@@ -560,52 +559,6 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                                         <span>Partager mon <strong>nom</strong> (profil)</span>
                                     </label>
                                 </div>
-                                <?php if (!empty($recruitmentPresets)): ?>
-                                    <div style="margin-top:1rem">
-                                        <label class="ce-label" for="recruitment_preset_select">Profil enregistré (optionnel)</label>
-                                        <select name="recruitment_preset_id" class="input-field" id="recruitment_preset_select">
-                                            <option value="">— Aucun —</option>
-                                            <?php foreach ($recruitmentPresets as $rp): ?>
-                                                <?php
-                                                $pid = (int) ($rp['id'] ?? 0);
-                                                $pl = (string) ($rp['label'] ?? '');
-                                                $pay = $rp['payload'] ?? [];
-                                                if (!is_array($pay)) {
-                                                    $pay = [];
-                                                }
-                                                ?>
-                                                <option value="<?= $pid ?>" data-payload="<?= htmlspecialchars(json_encode($pay, JSON_UNESCAPED_UNICODE)) ?>"><?= htmlspecialchars($pl) ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-                                    <?php
-                                    $rpShareLabels = [
-                                        'identity' => 'Identité personnage (prénom, nom, naissance, nationalité)',
-                                        'bio' => 'Biographie',
-                                        'cv' => 'Parcours',
-                                        'image_url' => 'Portrait enregistré',
-                                        'image_external_url' => 'Lien vers un portrait',
-                                        'admin_notes' => 'Notes personnelles du profil',
-                                        'availability' => 'Synthèse des disponibilités',
-                                    ];
-                                    ?>
-                                    <div id="enlist-rp-share-panel" class="hidden" style="margin-top:1rem">
-                                        <p class="ce-panel__title">Contenu du profil transmis au recrutement</p>
-                                        <p class="ce-help">Ne cochez que ce que vous acceptez d’ajouter à ce dossier. Le reste reste sur votre compte.</p>
-                                        <div class="ce-check-list">
-                                        <?php foreach ($rpShareLabels as $shareKey => $shareLabel): ?>
-                                            <label class="ce-check">
-                                                <input type="checkbox" name="share_rp_<?= htmlspecialchars($shareKey) ?>" value="1" checked disabled class="enlist-rp-share-cb">
-                                                <span><?= htmlspecialchars($shareLabel) ?></span>
-                                            </label>
-                                        <?php endforeach; ?>
-                                            <label class="ce-check">
-                                                <input type="checkbox" name="include_milsim_from_preset" value="1" checked disabled class="enlist-include-milsim-cb">
-                                                <span>Inclure aussi les réponses techniques enregistrées dans ce modèle (matériel, créneaux, motivation, etc.).</span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                <?php endif; ?>
                                 <div class="ce-consent">
                                     <label class="ce-check">
                                         <input type="checkbox" name="consent_data_sharing" value="1" id="consent_data_sharing">
@@ -981,18 +934,6 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                 ta.required = tenantRequired || (flow === 'account' && compact);
             }
 
-            function syncRpSharePanel() {
-                var sel = document.getElementById('recruitment_preset_select');
-                var panel = document.getElementById('enlist-rp-share-panel');
-                if (!panel) return;
-                var guest = flowInput && flowInput.value === 'guest';
-                var picked = !guest && sel && sel.value && String(sel.value).length > 0;
-                panel.classList.toggle('hidden', !picked);
-                panel.querySelectorAll('input').forEach(function(inp) {
-                    inp.disabled = !picked;
-                });
-            }
-
             function syncIdentityKind() {
                 // Identité unique = prénom + nom du personnage (plus de champ « nom unique » legacy).
             }
@@ -1026,7 +967,6 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                 }
                 setGuestFieldsRequired(guest || !canUseAccount);
                 syncIdentityKind();
-                syncRpSharePanel();
                 syncMotivationRequired();
             }
 
@@ -1037,7 +977,6 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
             } else {
                 setGuestFieldsRequired(true);
                 syncIdentityKind();
-                syncRpSharePanel();
                 syncMotivationRequired();
             }
 
@@ -1054,27 +993,6 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
             }
 
             syncIdentityKind();
-
-            var presetSel = document.getElementById('recruitment_preset_select');
-            if (presetSel) {
-                presetSel.addEventListener('change', function(ev) {
-                    syncRpSharePanel();
-                    var opt = ev.target.selectedOptions[0];
-                    var raw = opt && opt.getAttribute('data-payload');
-                    if (!raw) return;
-                    try {
-                        var payload = JSON.parse(raw);
-                        var mo = document.querySelector('textarea[name="motivation_why_join"]');
-                        if (mo && payload.motivation_why_join) mo.value = payload.motivation_why_join;
-                        var tz = document.querySelector('select[name="timezone"]');
-                        if (tz && payload.timezone) tz.value = payload.timezone;
-                        var sc = document.querySelector('select[name="system_config"], input[name="system_config"], textarea[name="system_config"]');
-                        if (sc && payload.system_config) sc.value = payload.system_config;
-                        var av = document.querySelector('input[name="weekly_availability"]');
-                        if (av && payload.availability) av.value = payload.availability;
-                    } catch (e) {}
-                });
-            }
 
             form.addEventListener('submit', function(ev) {
                 var flow = flowInput ? flowInput.value : 'guest';
