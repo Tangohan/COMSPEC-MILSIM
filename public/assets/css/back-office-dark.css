@@ -219,6 +219,8 @@ html[data-bo-theme="dark"] .account-hub input.ah-search__input:focus { border-co
 html[data-bo-theme="dark"] .ah-ov-check.is-todo .ah-ov-check__cta { background: #12d18e; border-color: #12d18e; color: #04130d; }
 html[data-bo-theme="dark"] .ah-theme-option__swatch.is-light { border-color: rgba(255, 255, 255, 0.12); }
 html[data-bo-theme="dark"] .ah-switch__track::after { background: #e6ebe8; }
+/* Accueil du profil (account-hub.css, .ah-wel) : le bouton « Revenir » garde son contraste la nuit. */
+html[data-bo-theme="dark"] .ah-wel-return .account-hub__btn--soft { background: #12d18e; border-color: #12d18e; color: #04130d; }
 
 /* ATAK : Escouades en jeu, Temps d'écran et rôles, Files d'envoi Athena (aksq-, sqf-) :
    jetons de nuit (les --ds-color-* restent clairs) et cellules du tableau sur la même surface. */
