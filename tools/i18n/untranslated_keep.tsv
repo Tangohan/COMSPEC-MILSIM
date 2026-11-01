@@ -453,3 +453,511 @@ Inactive	identique en anglais	views/admin/organization/tenant_alerts_index.php
 Visible	identique en anglais	views/admin/organization/tenant_alerts_index.php
 %1 / %2 pourvu%3	pluriel collé	views/admin/organization/unit_sheet.php
 Steam ID	identique en anglais	views/admin/organization/users/show.php
+Radio, protection…	identique en anglais	views/equipment/hub.php
+Portrait	identique en anglais / sigle / mesure	views/account/banner.php
+IP %2	identique en anglais / sigle / mesure	views/account/index.php
+Alias %1	identique en anglais / sigle / mesure	views/account/preferences.php
+Compact	identique en anglais / sigle / mesure	views/account/preferences.php
+Discord	identique en anglais / sigle / mesure	views/account/preferences.php
+alias enregistré	pluriel collé	views/account/preferences.php
+<textarea id="pcv-bio" name="bio" rows="3" maxlength="%1	bruit d'extraction (code/HTML)	views/account/public_cv.php
+Plan B	identique en anglais / sigle / mesure	views/account/security.php
+Steam …%1	identique en anglais / sigle / mesure	views/account/steam_conflict.php
+%1 faite%2	pluriel collé	views/account/welcome.php
+aperçu de la carte d	bruit d'extraction (commentaire/fragment)	views/account/welcome.php
+étape est faite, sinon l	bruit d'extraction (commentaire/fragment)	views/account/welcome.php
+Archives	identique en anglais / sigle / mesure	views/alerts/index.php
+Articles	identique en anglais / sigle / mesure	views/articles/index.php
+affichage : articles enregistrés avec l	bruit d'extraction (commentaire/fragment)	views/articles/show.php
+Incidents	identique en anglais / sigle / mesure	views/atak-liaison.php
+Ping	identique en anglais / sigle / mesure	views/atak-liaison.php
+Type	identique en anglais / sigle / mesure	views/atak-liaison.php
+Athena	nom propre/indicatif	views/atak-maintenance.php
+100 m	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+15 minutes	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+15 s	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+1×	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+2.0×	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+250 m	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+2D / 3D	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+2×	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+3 s	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+30 minutes	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+30 s	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+4×	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+500 m	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+8 s	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+A4 — Portrait	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Affiliation	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Air	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Altitudes	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Athena / Overwatch	nom propre/indicatif	views/atak-overwatch-beta.php
+Athena — Overwatch	nom propre/indicatif	views/atak-overwatch-beta.php
+BFT 0	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Comspec / Overwatch	nom propre/indicatif	views/atak-overwatch-beta.php
+Contact	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Contacts	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Direct	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Format	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Horizon	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Hostile 0	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Hostiles	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Identification	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Identification (IFF)	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Inter	police CSS	views/atak-overwatch-beta.php
+Noto Sans	police CSS	views/atak-overwatch-beta.php
+Obstacle	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Obstacles	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Overwatch	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Photos	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Pings	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Plex Mono	police CSS	views/atak-overwatch-beta.php
+Plex Sans	police CSS	views/atak-overwatch-beta.php
+Point	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Radio	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Rectangle	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Routine	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Rx —	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Silhouette	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Situation	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Source	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Source Sans	police CSS	views/atak-overwatch-beta.php
+Space Grotesk	police CSS	views/atak-overwatch-beta.php
+Sync	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Urgent	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Volume	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Wave	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Wave Relay	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+Zones	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+×	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+⌘ K	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+⌘K	identique en anglais / sigle / mesure	views/atak-overwatch-beta.php
+(Community Base Addons).	identique en anglais / sigle / mesure	views/atak-setup.php
+(Configure Addons) →	identique en anglais / sigle / mesure	views/atak-setup.php
+CBA A3	identique en anglais / sigle / mesure	views/atak-setup.php
+COMSPEC Overwatch	nom propre/indicatif	views/atak-setup.php
+Configuration (Arma ↔ site)	identique en anglais / sigle / mesure	views/atak-setup.php
+Dashboard	identique en anglais / sigle / mesure	views/atak-setup.php
+Installation	identique en anglais / sigle / mesure	views/atak-setup.php
+Options	identique en anglais / sigle / mesure	views/atak-setup.php
+Pack	identique en anglais / sigle / mesure	views/atak-tuto.php
+Steam	identique en anglais / sigle / mesure	views/atak-tuto.php
+— menu	identique en anglais / sigle / mesure	views/atak-tuto.php
+--:--:-- Z	identique en anglais / sigle / mesure	views/atak.php
+15 S	identique en anglais / sigle / mesure	views/atak.php
+2 s	identique en anglais / sigle / mesure	views/atak.php
+2.5×	identique en anglais / sigle / mesure	views/atak.php
+3 S	identique en anglais / sigle / mesure	views/atak.php
+3 modules	identique en anglais / sigle / mesure	views/atak.php
+30 S	identique en anglais / sigle / mesure	views/atak.php
+5 km/h	identique en anglais / sigle / mesure	views/atak.php
+8 S	identique en anglais / sigle / mesure	views/atak.php
+9-Line MEDEVAC	identique en anglais / sigle / mesure	views/atak.php
+ATAK Enhanced	identique en anglais / sigle / mesure	views/atak.php
+ATAK Native	identique en anglais / sigle / mesure	views/atak.php
+ATAK Solo	identique en anglais / sigle / mesure	views/atak.php
+ATHENA / INTEL	nom propre/indicatif	views/atak.php
+Absent	identique en anglais / sigle / mesure	views/atak.php
+Alt	identique en anglais / sigle / mesure	views/atak.php
+Arma / Overwatch	nom propre/indicatif	views/atak.php
+COMSPEC ATAK Native	nom propre/indicatif	views/atak.php
+CTRL K	identique en anglais / sigle / mesure	views/atak.php
+Command	identique en anglais / sigle / mesure	views/atak.php
+Config	identique en anglais / sigle / mesure	views/atak.php
+Ctrl	identique en anglais / sigle / mesure	views/atak.php
+Dest	identique en anglais / sigle / mesure	views/atak.php
+Distance	identique en anglais / sigle / mesure	views/atak.php
+Fire team	identique en anglais / sigle / mesure	views/atak.php
+Forces	identique en anglais / sigle / mesure	views/atak.php
+Full map	identique en anglais / sigle / mesure	views/atak.php
+Important	identique en anglais / sigle / mesure	views/atak.php
+Instructions	identique en anglais / sigle / mesure	views/atak.php
+Intel	identique en anglais / sigle / mesure	views/atak.php
+Interface	identique en anglais / sigle / mesure	views/atak.php
+Laser	identique en anglais / sigle / mesure	views/atak.php
+Navigation	identique en anglais / sigle / mesure	views/atak.php
+OPERATOR FOCUS	identique en anglais / sigle / mesure	views/atak.php
+OSINT / NOTES	identique en anglais / sigle / mesure	views/atak.php
+OVERWATCH / LIVE	identique en anglais / sigle / mesure	views/atak.php
+Plan	identique en anglais / sigle / mesure	views/atak.php
+Positions	identique en anglais / sigle / mesure	views/atak.php
+QR codes	identique en anglais / sigle / mesure	views/atak.php
+Reconnaissance	identique en anglais / sigle / mesure	views/atak.php
+Sitac	identique en anglais / sigle / mesure	views/atak.php
+Transmission	identique en anglais / sigle / mesure	views/atak.php
+± 90 s	identique en anglais / sigle / mesure	views/atak.php
+×1	identique en anglais / sigle / mesure	views/atak.php
+×20	identique en anglais / sigle / mesure	views/atak.php
+×5	identique en anglais / sigle / mesure	views/atak.php
+×60	identique en anglais / sigle / mesure	views/atak.php
+— MS	identique en anglais / sigle / mesure	views/atak.php
+@COMSPEC_ATAK_Native	nom propre/indicatif	views/atak/first_link.php
+ATAK natif (@COMSPEC_ATAK_Native) au compte Athena. * Cinq étapes (installer, sortir le téléphone, se connecter, vérifier, dépanner), schéma de l	bruit d'extraction (commentaire/fragment)	views/atak/first_link.php
+COMSPEC_logs_<date>.zip	nom propre/indicatif	views/atak/first_link.php
+Arma 3	identique en anglais / sigle / mesure	views/atak/mod.php
+Steam Workshop	identique en anglais / sigle / mesure	views/atak/mod.php
+25 min	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+30 min	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+35 min	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+40 min	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+45 min	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+50 min	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+@COMSPECOverwatch	nom propre/indicatif	views/atak/mod/formation/_modules.php
+Activity	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Equipment	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Location	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Module 1	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Module 2	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Module 3	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Module 4	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Module 5	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Module 6	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Module 7	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Shift	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Time	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+Uniform	identique en anglais / sigle / mesure	views/atak/mod/formation/_modules.php
+pack %1	identique en anglais / sigle / mesure	views/atak/mod/formation/index.php
+CONTACT, SALUTE, SPOTREP, SITREP…	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_hub.php
+Cams	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_hub.php
+Photo Library (cTab / BCE)	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_hub.php
+Hub	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_intro.php
+Introduction	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_intro.php
+Spawn	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_intro.php
+Tacmap	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_intro.php
+Sites	identique en anglais / sigle / mesure	views/atak/mod/guide/_part_sse.php
+%1 — SSE	identique en anglais / sigle / mesure	views/atak/sse/_layout.php
+Investigation	identique en anglais / sigle / mesure	views/atak/sse/_layout.php
+Menu	identique en anglais / sigle / mesure	views/atak/sse/_layout.php
+Suggestions	identique en anglais / sigle / mesure	views/atak/sse/_layout.php
+%3 mission(s)	identique en anglais / sigle / mesure	views/atak/sse/campaign_catalog.php
+%1 active%2	pluriel collé	views/atak/sse/campaigns.php
+Missions	identique en anglais / sigle / mesure	views/atak/sse/campaigns.php
+["COMSPEC_SSE_CAMPAIGN",1,["#M",[…]]]	bruit d'extraction (code/HTML)	views/atak/sse/campaigns.php
+Athena / SSE /	identique en anglais / sigle / mesure	views/atak/sse/case_correlations.php
+PDF — version %1	identique en anglais / sigle / mesure	views/atak/sse/case_declassify.php
+Flash	identique en anglais / sigle / mesure	views/atak/sse/case_report.php
+Athena + Arma	identique en anglais / sigle / mesure	views/atak/sse/dev/hub.php
+Eden	identique en anglais / sigle / mesure	views/atak/sse/dev/hub.php
+Abu Karim Al-Rashid	nom propre/indicatif	views/atak/sse/dev/model_form.php
+Irak Cible prioritaire	nom propre/indicatif	views/atak/sse/dev/model_form.php
+ORAGE LUNE	nom propre/indicatif	views/atak/sse/dev/model_form.php
+%1 contact(s)	identique en anglais / sigle / mesure	views/atak/sse/dev/model_show.php
+Messages	identique en anglais / sigle / mesure	views/atak/sse/dev/model_show.php
+Acquisitions	identique en anglais / sigle / mesure	views/atak/sse/digital/acquisition_show.php
+Application	identique en anglais / sigle / mesure	views/atak/sse/digital/artifact_show.php
+Applications	identique en anglais / sigle / mesure	views/atak/sse/digital/phone.php
+%1 — %2 — %3 — volume %4	identique en anglais / sigle / mesure	views/atak/sse/digital/reports.php
+<textarea id="pres-desc" name="description" rows="2" maxlength="400" %1	bruit d'extraction (code/HTML)	views/atak/sse/document_presentation.php
+<textarea id="pres-footer" name="footer" rows="2" required maxlength="400" %1	bruit d'extraction (code/HTML)	views/atak/sse/document_presentation.php
+Production	identique en anglais / sigle / mesure	views/atak/sse/documents.php
+<textarea class="fn-editor" id="fn-body" name="body" maxlength="%1	bruit d'extraction (code/HTML)	views/atak/sse/field_note_composer.php
+Information	identique en anglais / sigle / mesure	views/atak/sse/field_note_show.php
+Focus	identique en anglais / sigle / mesure	views/atak/sse/guide/_part_admin.php
+Documentation	identique en anglais / sigle / mesure	views/atak/sse/guide/_part_bureau.php
+Export / PDF	identique en anglais / sigle / mesure	views/atak/sse/guide/_part_dossiers.php
+Human in the loop.	identique en anglais / sigle / mesure	views/atak/sse/guide/_part_interet.php
+Extraction	identique en anglais / sigle / mesure	views/atak/sse/guide/_part_labnum.php
+Ctrl+K	identique en anglais / sigle / mesure	views/atak/sse/intelligence_workspace.php
+Cycle	identique en anglais / sigle / mesure	views/atak/sse/intelligence_workspace.php
+Exploitation // Workspace	identique en anglais / sigle / mesure	views/atak/sse/intelligence_workspace.php
+Inbox	identique en anglais / sigle / mesure	views/atak/sse/intelligence_workspace.php
+Intelligence Workspace	identique en anglais / sigle / mesure	views/atak/sse/intelligence_workspace.php
+Contradictions	identique en anglais / sigle / mesure	views/atak/sse/interest_case_form.php
+H1… H2…	identique en anglais / sigle / mesure	views/atak/sse/interest_case_form.php
+Observations	identique en anglais / sigle / mesure	views/atak/sse/interest_case_form.php
+Acquisition	identique en anglais / sigle / mesure	views/atak/sse/interest_case_show.php
+Investigations	identique en anglais / sigle / mesure	views/atak/sse/maitre_jeu.php
+%1 investigation%2	identique en anglais / sigle / mesure	views/atak/sse/meshes.php
+Illustration	identique en anglais / sigle / mesure	views/atak/sse/object_create.php
+Zulu	identique en anglais / sigle / mesure	views/atak/sse/operations.php
+Corroboration	identique en anglais / sigle / mesure	views/atak/sse/person_show.php
+Import	identique en anglais / sigle / mesure	views/atak/sse/person_show.php
+Iris	identique en anglais / sigle / mesure	views/atak/sse/person_show.php
+Provenance & audit	identique en anglais / sigle / mesure	views/atak/sse/person_show.php
+terminal %1	identique en anglais / sigle / mesure	views/atak/sse/persons.php
+Exploitation // %1	identique en anglais / sigle / mesure	views/atak/sse/site_show.php
+Possession	identique en anglais / sigle / mesure	views/atak/sse/site_show.php
+score %1	identique en anglais / sigle / mesure	views/atak/sse/suggestions.php
+%1 insertion%2	identique en anglais / sigle / mesure	views/atak/sse/text_library.php
+Exploitation // Validation	identique en anglais / sigle / mesure	views/atak/sse/validation.php
+%1 anomalies	identique en anglais / sigle / mesure	views/atak/sse/workspace/_analyse.php
+%1 contradictions	identique en anglais / sigle / mesure	views/atak/sse/workspace/_analyse.php
+%1 obs.	identique en anglais / sigle / mesure	views/atak/sse/workspace/_analyse.php
+X %1	identique en anglais / sigle / mesure	views/atak/sse/workspace/_analyse.php
+Y %2	identique en anglais / sigle / mesure	views/atak/sse/workspace/_analyse.php
+Notes (%1)	identique en anglais / sigle / mesure	views/atak/sse/workspace/_case_folder.php
+Question	identique en anglais / sigle / mesure	views/atak/sse/workspace/_cycle.php
+%1 — Athena	identique en anglais / sigle / mesure	views/auth/join.php
+Forward	identique en anglais / sigle / mesure	views/auth/join.php
+steamcommunity.com/profiles/…	identique en anglais / sigle / mesure	views/auth/register.php
+<form method="post" action="%1" data-coop-ajax class="coop-parts__pop space-y-2" data-ui-confirm="1" data-ui-confirm-title="%2" data-ui-confirm-body="%3">	bruit d'extraction (code/HTML)	views/back_office/cooperation/missions/show.php
+<textarea id="cf_%1	bruit d'extraction (code/HTML)	views/back_office/cooperation/missions/show.php
+Alternative	identique en anglais / sigle / mesure	views/community/create.php
+Arma 3, Squad…	identique en anglais / sigle / mesure	views/community/create.php
+Option	identique en anglais / sigle / mesure	views/community/create.php
+United States	identique en anglais / sigle / mesure	views/community/create.php
+Ctrl + K	identique en anglais / sigle / mesure	views/community/create_guide.php
+⌘ + K	identique en anglais / sigle / mesure	views/community/create_guide.php
+<span class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wide %1">	bruit d'extraction (code/HTML)	views/community/recruitment_opening_show.php
+Impact	identique en anglais / sigle / mesure	views/community/setup.php
+Collections	identique en anglais / sigle / mesure	views/community/show_showcase.php
+Cookies	identique en anglais / sigle / mesure	views/community/show_showcase.php
+Formats	identique en anglais / sigle / mesure	views/courrier/dashboard.php
+Notifications	identique en anglais / sigle / mesure	views/courrier/dashboard.php
+<textarea id="body-rendered" name="body_rendered" form="courrier-form" rows="10" class="w-full border border-slate-200 rounded px-3 py-2 text-sm font-sans text-[#0b1220]" %1	bruit d'extraction (code/HTML)	views/courrier/editor.php
+Format (preset)	identique en anglais / sigle / mesure	views/courrier/editor.php
+Workflow	identique en anglais / sigle / mesure	views/courrier/editor.php
+A4 portrait	identique en anglais / sigle / mesure	views/courrier/read.php
+Excellent	identique en anglais / sigle / mesure	views/demo_nda/feedback.php
+Preview	identique en anglais / sigle / mesure	views/demo_nda/feedback.php
+Posture	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_a.php
+Vigilance	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_a.php
+Notification	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_b.php
+Phase	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_b.php
+Sanction	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_b.php
+Conversion	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_c.php
+Init	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_c.php
+Interaction (menu)	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_c.php
+Modpack	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_c.php
+Personnel & ORBAT	identique en anglais / sigle / mesure	views/documentation/site/_guide_part_c.php
+Nomenclature	identique en anglais / sigle / mesure	views/documents/doctrine_index.php
+VISA %1	identique en anglais / sigle / mesure	views/enlistment.php
+Variable	identique en anglais / sigle / mesure	views/enlistment.php
+data-ce-start="candidature"	bruit d'extraction (code/HTML)	views/enlistment.php
+%1  </div> </div>   <label class=	bruit d'extraction (code/HTML)	views/enlistment/simple.php
+<textarea name="motivation_why_join" rows="4" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" placeholder="%1	bruit d'extraction (code/HTML)	views/enlistment/simple.php
+15× Bandage (Einfach)	contenu de démo (maquette)	views/equipement.php
+1× 1000ml Saline IV	contenu de démo (maquette)	views/equipement.php
+1× 16g IV [freiwillig]	contenu de démo (maquette)	views/equipement.php
+1× Schmerzmittel	contenu de démo (maquette)	views/equipement.php
+2× Chest Seal	contenu de démo (maquette)	views/equipement.php
+2× Guedeltubus	contenu de démo (maquette)	views/equipement.php
+2× Morphin-Autoinjektor	contenu de démo (maquette)	views/equipement.php
+65% PROGRESS	contenu de démo (maquette)	views/equipement.php
+AN/PRC-117G Radio	contenu de démo (maquette)	views/equipement.php
+Active	contenu de démo (maquette)	views/equipement.php
+Active_Sessions: 02	contenu de démo (maquette)	views/equipement.php
+Admin Pouch + Strobe IR	contenu de démo (maquette)	views/equipement.php
+Approved for CAS	contenu de démo (maquette)	views/equipement.php
+Atemwegsversorgung	contenu de démo (maquette)	views/equipement.php
+Auto-Refresh Active	contenu de démo (maquette)	views/equipement.php
+Bandage (Field Dressing)	contenu de démo (maquette)	views/equipement.php
+Candidate / Trainee	contenu de démo (maquette)	views/equipement.php
+Chest Seal	contenu de démo (maquette)	views/equipement.php
+Communications	contenu de démo (maquette)	views/equipement.php
+Community	contenu de démo (maquette)	views/equipement.php
+Cpl. Henderson	contenu de démo (maquette)	views/equipement.php
+Docs	contenu de démo (maquette)	views/equipement.php
+Equipment Command	contenu de démo (maquette)	views/equipement.php
+Expert	contenu de démo (maquette)	views/equipement.php
+Expertise	contenu de démo (maquette)	views/equipement.php
+Forward Observations Group	contenu de démo (maquette)	views/equipement.php
+Guedeltubus	contenu de démo (maquette)	views/equipement.php
+Hydration Carrier	contenu de démo (maquette)	views/equipement.php
+ID: 8842-DELTA	contenu de démo (maquette)	views/equipement.php
+IFAK Belt	contenu de démo (maquette)	views/equipement.php
+IFAK Pouch (accessible)	contenu de démo (maquette)	views/equipement.php
+Identification Friendly Forces	contenu de démo (maquette)	views/equipement.php
+JPC Setup	contenu de démo (maquette)	views/equipement.php
+JPC config	contenu de démo (maquette)	views/equipement.php
+JTAC JPC	contenu de démo (maquette)	views/equipement.php
+Language	contenu de démo (maquette)	views/equipement.php
+Last_Sync: 2026-03-10	contenu de démo (maquette)	views/equipement.php
+Lead Instructor / JTAC-E	contenu de démo (maquette)	views/equipement.php
+Mag Pouches ×4	contenu de démo (maquette)	views/equipement.php
+Maj. Blackwood	contenu de démo (maquette)	views/equipement.php
+Medikamente	contenu de démo (maquette)	views/equipement.php
+Network	contenu de démo (maquette)	views/equipement.php
+Operational: 100%	contenu de démo (maquette)	views/equipement.php
+Personnel	contenu de démo (maquette)	views/equipement.php
+Plate Carrier CRYE JPC 2.0	contenu de démo (maquette)	views/equipement.php
+Qualified Operator	contenu de démo (maquette)	views/equipement.php
+Radio Pouch AN/PRC-117G	contenu de démo (maquette)	views/equipement.php
+Reddit	contenu de démo (maquette)	views/equipement.php
+SCORM 2004	contenu de démo (maquette)	views/equipement.php
+Sgt. Miller	contenu de démo (maquette)	views/equipement.php
+Standby	contenu de démo (maquette)	views/equipement.php
+Status: Live_Sync	contenu de démo (maquette)	views/equipement.php
+Strobe IR MS2000	contenu de démo (maquette)	views/equipement.php
+System_Liaison / Kilo-06	contenu de démo (maquette)	views/equipement.php
+Total_Certified: 142	contenu de démo (maquette)	views/equipement.php
+Total_Records: 04	contenu de démo (maquette)	views/equipement.php
+Tourniquet	contenu de démo (maquette)	views/equipement.php
+Type / Source	contenu de démo (maquette)	views/equipement.php
+Wundversorgung	contenu de démo (maquette)	views/equipement.php
+Zugang	contenu de démo (maquette)	views/equipement.php
+r/TacticalGear — JPC Loadout Optimization	contenu de démo (maquette)	views/equipement.php
+© 2026 FOG	contenu de démo (maquette)	views/equipement.php
+×15	contenu de démo (maquette)	views/equipement.php
+×2	contenu de démo (maquette)	views/equipement.php
+×4	contenu de démo (maquette)	views/equipement.php
+— No Active Session —	contenu de démo (maquette)	views/equipement.php
+Photo	identique en anglais / sigle / mesure	views/equipment/hub.php
+Protection	identique en anglais / sigle / mesure	views/equipment/hub.php
+Athena Comspec	nom propre/indicatif	views/errors/403.php
+Athena has moved to %1.	identique en anglais / sigle / mesure	views/errors/domain_moved.php
+Same site, same accounts, same communities. Update your bookmarks and sign in once on the new address. The in-game ATAK mod keeps working.	identique en anglais / sigle / mesure	views/errors/domain_moved.php
+%1 km	identique en anglais / sigle / mesure	views/home/index.php
+Athena — %1	identique en anglais / sigle / mesure	views/home/index.php
+%1 → Alpha	identique en anglais / sigle / mesure	views/home/partials/demo_showcase.php
+6 PAX, 1 technical	identique en anglais / sigle / mesure	views/home/partials/demo_showcase.php
+640 m	identique en anglais / sigle / mesure	views/home/partials/demo_showcase.php
+AZ 284°	identique en anglais / sigle / mesure	views/home/partials/demo_showcase.php
+Adj LYNX	nom propre/indicatif	views/home/partials/demo_showcase.php
+Alpha → %1	identique en anglais / sigle / mesure	views/home/partials/demo_showcase.php
+Bravo	identique en anglais / sigle / mesure	views/home/partials/demo_showcase.php
+Cdt AURIGA	nom propre/indicatif	views/home/partials/demo_showcase.php
+Cne HALO	nom propre/indicatif	views/home/partials/demo_showcase.php
+Cne SIRIUS	nom propre/indicatif	views/home/partials/demo_showcase.php
+L:38S MB 412 776	identique en anglais / sigle / mesure	views/home/partials/demo_showcase.php
+Lt VEGA	nom propre/indicatif	views/home/partials/demo_showcase.php
+NIGHT HERON	nom propre/indicatif	views/home/partials/demo_showcase.php
+OBJ FALCON	nom propre/indicatif	views/home/partials/demo_showcase.php
+OP NIGHT HERON	nom propre/indicatif	views/home/partials/demo_showcase.php
+PL ROUGE	nom propre/indicatif	views/home/partials/demo_showcase.php
+Sgt VIPER	nom propre/indicatif	views/home/partials/demo_showcase.php
+TF ORION	nom propre/indicatif	views/home/partials/demo_showcase.php
+Task Force ORION	nom propre/indicatif	views/home/partials/demo_showcase.php
+%3 terminée%4%5	pluriel collé	views/hub/index.php
+hub?tri=%1	bruit d'extraction (code/HTML)	views/hub/index.php
+%1 — JNET	identique en anglais / sigle / mesure	views/jnet/_layout.php
+Extranet %1	identique en anglais / sigle / mesure	views/jnet/_layout.php
+Terminal %1	identique en anglais / sigle / mesure	views/jnet/_layout.php
+un espace en deux vues : cartes regroupées par grand commandement, ou organigramme. * Bascule sans JavaScript (boutons radio) ; le dernier choix est mémorisé par jnet_spaces.js. * @var list<array	bruit d'extraction (commentaire/fragment)	views/jnet/_unit_views.php
+%2 participant%3	identique en anglais / sigle / mesure	views/jnet/mail.php
+%1 engagement%2	identique en anglais / sigle / mesure	views/jnet/operations.php
+community-reels-page bg-[#070a0c] text-white font-sans antialiased min-h-screen	bruit d'extraction (code/HTML)	views/layout/main.php
+layout-light bg-slate-50 text-slate-900 font-sans antialiased min-h-screen	bruit d'extraction (code/HTML)	views/layout/main.php
+%1  </div> <button type=	bruit d'extraction (code/HTML)	views/legal/gdpr_request.php
+<textarea name="message" id="message" required rows="6" maxlength="4000" minlength="10" placeholder="%1	bruit d'extraction (code/HTML)	views/legal/gdpr_request.php
+), app	bruit d'extraction (commentaire/fragment)	views/link/lier.php
+COMSPEC SSE	identique en anglais / sigle / mesure	views/link/lier.php
+un nouveau membre : le site reste fermé tant que le jeu n	bruit d'extraction (commentaire/fragment)	views/link/lier.php
+%1 message%2	identique en anglais / sigle / mesure	views/messages/thread.php
+%1 <textarea name="description" rows="%2	bruit d'extraction (code/HTML)	views/operations/board_entry_form.php
+Latitude	identique en anglais / sigle / mesure	views/operations/board_entry_form.php
+Longitude	identique en anglais / sigle / mesure	views/operations/board_entry_form.php
+Posture %1	identique en anglais / sigle / mesure	views/operations/board_portal.php
+%1 (v%2	bruit d'extraction (code/HTML)	views/operations/workspace/show.php
+1. Situation	identique en anglais / sigle / mesure	views/operations/workspace/show.php
+2. Mission	identique en anglais / sigle / mesure	views/operations/workspace/show.php
+H+35	identique en anglais / sigle / mesure	views/operations/workspace/show.php
+OBJ LION	nom propre/indicatif	views/operations/workspace/show.php
+Explosive	identique en anglais / sigle / mesure	views/overwatch/fire-support.php
+1 h	identique en anglais / sigle / mesure	views/overwatch/iff-panel.php
+15 min	identique en anglais / sigle / mesure	views/overwatch/iff-panel.php
+2 h	identique en anglais / sigle / mesure	views/overwatch/iff-panel.php
+Auto	identique en anglais / sigle / mesure	views/overwatch/iff-panel.php
+Message…	identique en anglais / sigle / mesure	views/overwatch/index.php
+×8	identique en anglais / sigle / mesure	views/overwatch/replay.php
+espace compte (bandeau). Index rendu côté serveur — les libellés passent ainsi par la traduction * de la page — puis filtré dans le navigateur par public/assets/js/account-search.js. * * Variables : list	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+â	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ä	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ç	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+è	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+é	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ê	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ë	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+î	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ï	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ô	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ö	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ù	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+û	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ü	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+ÿ	bruit d'extraction (commentaire/fragment)	views/partials/account/search.php
+accueil du profil : un lien ramène à l	bruit d'extraction (commentaire/fragment)	views/partials/account/shell_open.php
+App	identique en anglais / sigle / mesure	views/partials/atak_device_cards.php
+Msgs	identique en anglais / sigle / mesure	views/partials/atak_qr_phone_preview.php
+Data Inspector	identique en anglais / sigle / mesure	views/partials/ath_sidebar_nav.php
+Mods	identique en anglais / sigle / mesure	views/partials/ath_sidebar_nav.php
+Sanctions & absences	identique en anglais / sigle / mesure	views/partials/ath_sidebar_nav.php
+Academy, filtré comme le reste (module formation). [	bruit d'extraction (commentaire/fragment)	views/partials/athena_caverne_header.php
+JNET Extranet	nom propre/indicatif	views/partials/athena_caverne_header.php
+ancien catalogue « Formations » vit désormais dans l	bruit d'extraction (commentaire/fragment)	views/partials/athena_caverne_header.php
+<span class="das-steps" role="img" aria-label="Étape	bruit d'extraction (code/HTML)	views/partials/dashboard_applications_table.php
+Action %1	identique en anglais / sigle / mesure	views/partials/dashboard_applications_table.php
+Guides	identique en anglais / sigle / mesure	views/partials/dashboard_aside.php
+0 || active().primary_weapon">	bruit d'extraction (code/HTML)	views/partials/dashboard_catalog_showcase.php
+active().title	bruit d'extraction (code/HTML)	views/partials/dashboard_catalog_showcase.php
+ATAK & mods	identique en anglais / sigle / mesure	views/partials/dashboard_command_center.php
+Modset	identique en anglais / sigle / mesure	views/partials/dashboard_command_center.php
+Signatures	identique en anglais / sigle / mesure	views/partials/dashboard_doctrine_pending.php
+Vacant	identique en anglais / sigle / mesure	views/partials/dashboard_orbat.php
+Absence	identique en anglais / sigle / mesure	views/partials/dashboard_rh_parcours.php
+Today	identique en anglais / sigle / mesure	views/partials/discord_showcase_preview.php
+aperçu. * * @var array	bruit d'extraction (commentaire/fragment)	views/partials/discord_showcase_preview.php
+reported by	identique en anglais / sigle / mesure	views/partials/dispatch_article.php
+Destruction notice:	identique en anglais / sigle / mesure	views/partials/document_fm_paper.php
+Distribution restriction:	identique en anglais / sigle / mesure	views/partials/document_fm_paper.php
+FM …	identique en anglais / sigle / mesure	views/partials/document_fm_paper.php
+Foreword	identique en anglais / sigle / mesure	views/partials/document_fm_paper.php
+APRIL 2026	identique en anglais / sigle / mesure	views/partials/document_manuscript_fields.php
+administration, la connexion, le paiement, la page de dons, l	bruit d'extraction (commentaire/fragment)	views/partials/donation_banner.php
+aperçu de // l	bruit d'extraction (commentaire/fragment)	views/partials/donation_banner_markup.php
+est exposée (ni e-mail ni montant). * Inclus une fois par mise en page, juste avant	bruit d'extraction (commentaire/fragment)	views/partials/donor_marks_assets.php
+REF: %1	identique en anglais / sigle / mesure	views/partials/editorial-block.php
+<textarea name="em_auto_refuse[%1	bruit d'extraction (code/HTML)	views/partials/enlistment_auto_refuse_editor.php
+<textarea name="em_custom_questions[%1	bruit d'extraction (code/HTML)	views/partials/enlistment_custom_questions_editor.php
+éventaillent au survol ou au focus clavier. Inspiré du composant « Images Badge » * d	bruit d'extraction (commentaire/fragment)	views/partials/images_badge.php
+équipe a répondu à votre signalement » : réponses de l	bruit d'extraction (commentaire/fragment)	views/partials/mod_report_reply_modal.php
+un essai fondateur, d	bruit d'extraction (commentaire/fragment)	views/partials/plan_end_banner.php
+M4 6h16v13H4zM9 3h6v4H9zM8 12h8M8 15h5	bruit d'extraction (code/HTML)	views/partials/platform_admin_sidebar.php
+Mod Overwatch	identique en anglais / sigle / mesure	views/partials/platform_admin_sidebar.php
+%1  </label> <div class=	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
+%1  </label> <label class=	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
+<textarea rows="2" maxlength="1000" data-prw-comment placeholder="%1	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
+<textarea rows="2" maxlength="2000" data-prw-wishlist placeholder="%1	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
+<textarea rows="2" maxlength="500" data-prw-original placeholder="%1	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
+<textarea rows="2" maxlength="500" data-prw-proposed placeholder="%1	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
+<textarea rows="3" maxlength="2000" data-prw-highlights placeholder="%1	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
+<textarea rows="3" maxlength="2000" data-prw-improvements placeholder="%1	bruit d'extraction (code/HTML)	views/partials/platform_review_modal.php
+© %1 Athena Comspec. %2	identique en anglais / sigle / mesure	views/partials/portal_footer.php
+© %1 Athena	identique en anglais / sigle / mesure	views/partials/public_site_footer.php
+administration de la plateforme, casque vert * pour le support. Feuille de style, correspondances (ids de comptes, slugs de fiche) et décorateur * public/assets/js/staff-marks.js. Aucune donnée personnelle n	bruit d'extraction (commentaire/fragment)	views/partials/staff_marks_assets.php
+Rollback	identique en anglais / sigle / mesure	views/partials/tenant_intervention_banner.php
+Pal	identique en anglais / sigle / mesure	views/payment/show.php
+Pay	identique en anglais / sigle / mesure	views/payment/show.php
+Pro	identique en anglais / sigle / mesure	views/platform/upgrade.php
+Assistant	identique en anglais / sigle / mesure	views/portal/assistant.php
+05 Configuration (CPU/GPU/RAM)	identique en anglais / sigle / mesure	views/recrutement.php
+17:42:01 Z	identique en anglais / sigle / mesure	views/recrutement.php
+Document Control	identique en anglais / sigle / mesure	views/recrutement.php
+EU-WEST-01 // HUB	identique en anglais / sigle / mesure	views/recrutement.php
+Encrypted	identique en anglais / sigle / mesure	views/recrutement.php
+Intake ID	identique en anglais / sigle / mesure	views/recrutement.php
+JNET v2.4.0	identique en anglais / sigle / mesure	views/recrutement.php
+Joint Task Force Olympus	nom propre/indicatif	views/recrutement.php
+MAJ. V. KANE [RECR-01]	nom propre/indicatif	views/recrutement.php
+Node: Paris_HQ_01	identique en anglais / sigle / mesure	views/recrutement.php
+Section II — Performance & Background	identique en anglais / sigle / mesure	views/recrutement.php
+Server Origin	identique en anglais / sigle / mesure	views/recrutement.php
+est ATHENA, pour qui, ce que ça change, le téléphone et les mods, * l	bruit d'extraction (commentaire/fragment)	views/site/about.php
+ATAK %1	identique en anglais / sigle / mesure	views/site/atak_translate_item.php
+ATAK %2	identique en anglais / sigle / mesure	views/site/atak_translate_item.php
+01 // SITUATION	identique en anglais / sigle / mesure	views/site/changelog.php
+02 // MISSION EFFECT	identique en anglais / sigle / mesure	views/site/changelog.php
+03 // CHANGE SUMMARY	identique en anglais / sigle / mesure	views/site/changelog.php
+ATHENA // PRODUCT OPERATIONS //	identique en anglais / sigle / mesure	views/site/changelog.php
+ATHENA // PRODUCT OPS // AUTO-GENERATED RECORD	identique en anglais / sigle / mesure	views/site/changelog.php
+CHANGE CONTROL	identique en anglais / sigle / mesure	views/site/changelog.php
+From	identique en anglais / sigle / mesure	views/site/changelog.php
+PRODUCT OPS	identique en anglais / sigle / mesure	views/site/changelog.php
+Release	identique en anglais / sigle / mesure	views/site/changelog.php
+Releases	identique en anglais / sigle / mesure	views/site/changelog.php
+Roadmap	identique en anglais / sigle / mesure	views/site/changelog.php
+SPOTREP / TECHREP	identique en anglais / sigle / mesure	views/site/changelog.php
+Status	identique en anglais / sigle / mesure	views/site/changelog.php
+To	identique en anglais / sigle / mesure	views/site/changelog.php
+Updates	identique en anglais / sigle / mesure	views/site/changelog.php
+athena / product / modules	identique en anglais / sigle / mesure	views/site/changelog.php
+athena / product / roadmap	identique en anglais / sigle / mesure	views/site/changelog.php
+athena / product / updates	identique en anglais / sigle / mesure	views/site/changelog.php
+athena / product / versions	identique en anglais / sigle / mesure	views/site/changelog.php
+Company website	identique en anglais / sigle / mesure	views/site/contact.php
+COMSPEC TACMAP	nom propre/indicatif	views/tacmap.php
+—:—:— Z	identique en anglais / sigle / mesure	views/tacmap.php
+%1 capture%2	identique en anglais / sigle / mesure	views/transmission/poe.php
+<textarea id="poe-%1	bruit d'extraction (code/HTML)	views/transmission/poe.php
+<textarea id="pv-%1	bruit d'extraction (code/HTML)	views/transmission/show.php
+· COMSPEC	identique en anglais / sigle / mesure	views/year_review/story.php
