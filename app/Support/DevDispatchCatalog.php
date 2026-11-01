@@ -294,6 +294,17 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1262, '2026-11-01', 'Moins d’à-coups en partie, mode profilage des saccades', 'Avec le pack 2.9.28, le téléphone n’enregistre plus votre profil Arma toutes les deux minutes quand rien n’a changé (cet enregistrement figeait brièvement l’image, même téléphone rangé), et en solo, dans l’éditeur Eden ou en partie hébergée, la recherche des socles de recharge ne parcourt plus tous les objets de la mission chaque minute. Un nouveau réglage « Profilage (saccades) » note dans le fichier RPT ce qui tourne à chaque saccade, pour nous aider à trouver la suite.', [
+                'Réglage Profilage (saccades) dans ATAK · Debug : bilan des tâches de fond toutes les 10 s dans le RPT',
+            ], [
+                'Profil Arma enregistré seulement quand vos messages, distances ou temps d’écran ont changé',
+                'Socles de recharge et balises GPS suivis sans parcourir toute la mission',
+            ], [
+                'À-coup régulier toutes les deux minutes, téléphone fermé',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.28 (liaison 2.0.114 incluse), quittez Arma complètement et relancez.',
+                'Le jeu saccade encore ? Cochez Profilage (saccades), jouez 10 minutes et envoyez le fichier RPT à l’équipe.',
+            ], 'Pack téléphone 2.9.28'),
             $pr(1259, '2026-11-01', 'Recherche d’apps instantanée, réglages sans rechargement', 'Avec le pack 2.9.27, la recherche d’apps du téléphone filtre la liste pendant la frappe, sans recharger l’écran ni perdre de lettres (Entrée ouvre la première app, Échap efface), y compris en mode PETIT. L’app Musique change le haut-parleur, les volumes, l’aléatoire, la répétition et la pause sur place, et toutes les apps gardent leur position dans la liste après un clic.', [
                 'Recherche d’apps dans le mode PETIT (champ compact)',
             ], [

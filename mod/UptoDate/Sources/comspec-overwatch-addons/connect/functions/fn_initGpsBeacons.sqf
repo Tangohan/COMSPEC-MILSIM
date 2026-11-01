@@ -30,8 +30,10 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconIsBridge", _isBridge, false];
 private _scan = {
     private _vehs = missionNamespace getVariable ["COMSPEC_GpsBeaconObjects", []];
     if (!(_vehs isEqualType [])) then { _vehs = []; };
+    // Lecture directe du drapeau avant l'appel de fonction : la plupart des objets n'en ont pas (balayage de tous
+    // les véhicules et de toutes les unités, sur chaque poste : à-coup toutes les 12 s sur les grosses missions).
     {
-        if (isNull _x) then { continue };
+        if (isNil { _x getVariable "COMSPEC_GpsBeacon" }) then { continue };
         if ([_x, "COMSPEC_GpsBeacon"] call comspec_overwatch_connect_fnc_isObjectFlag) then {
             _vehs pushBackUnique _x;
         };
@@ -45,11 +47,13 @@ private _scan = {
     if (!(_allies isEqualType [])) then { _allies = []; };
     private _allyIds = missionNamespace getVariable ["COMSPEC_AllyTrackNetIds", []];
     if (!(_allyIds isEqualType [])) then { _allyIds = []; };
+    private _hasIds = _allyIds isNotEqualTo [];
     {
+        // Unité sans aucun drapeau de suivi (cas courant) : écartée sans appel de fonction.
+        private _listed = _hasIds && {(netId _x) in _allyIds};
+        if (!_listed && {isNil { _x getVariable "COMSPEC_AllyTrack" }} && {isNil { _x getVariable "COMSPEC_PhoneTrack" }}) then { continue };
         if (isNull _x || {!alive _x}) then { continue };
         if (isPlayer _x) then { continue };
-        private _nid = netId _x;
-        private _listed = _nid in _allyIds;
         if (_listed && {!([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag)}) then {
             // Réparation publique réservée au serveur (setAllyTrack + EH Local tiennent déjà le drapeau public) :
             // sinon chaque client, JIP compris, rediffusait le même drapeau.

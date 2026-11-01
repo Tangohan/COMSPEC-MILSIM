@@ -11,8 +11,12 @@
 params [["_now", false]];
 if (_now || {isNil "CBA_fnc_waitAndExecute"}) exitWith {
     missionNamespace setVariable ["COMSPEC_ProfileSavePending", false];
+    // Même fichier que l'échéance des sauvegardes périodiques de l'ATAK natif (fn_profileSave) : elle est servie aussi.
+    missionNamespace setVariable ["COMSPEC_ATAK_ProfileDirty", false];
+    missionNamespace setVariable ["COMSPEC_ATAK_ProfileSaveAt", diag_tickTime + 120];
     private _t0 = diag_tickTime;
     saveProfileNamespace;
+    if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["Écriture du profil", _t0] call comspec_atak_native_fnc_perfAcc; };
     private _ms = round ((diag_tickTime - _t0) * 1000);
     if (_ms >= 100) then { diag_log format ["[COMSPEC Overwatch][PERF] Écriture du profil : %1 ms", _ms]; };
 };

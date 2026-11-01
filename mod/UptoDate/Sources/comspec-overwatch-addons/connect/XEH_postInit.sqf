@@ -229,7 +229,11 @@ COMSPEC_CbaSettingsEhDump = ["CBA_settingsInitialized", {
 // Callbacks async extension → SQF (inspiré cTab IRL)
 if (isNil "COMSPEC_ExtensionCallbackEH") then {
     COMSPEC_ExtensionCallbackEH = addMissionEventHandler ["ExtensionCallback", {
+        // Mode profilage de l'ATAK natif (fn_profiler) : temps de traitement de chaque rappel de la DLL.
+        if !(missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) exitWith { _this call comspec_overwatch_connect_fnc_extensionCallback; };
+        private _pt = diag_tickTime;
         _this call comspec_overwatch_connect_fnc_extensionCallback;
+        [format ["Rappel DLL %1", _this param [1, ""]] select [0, 60], _pt] call comspec_atak_native_fnc_perfAcc;
     }];
     ["DEBUG", "Boot", "ExtensionCallback EH enregistré"] call comspec_overwatch_connect_fnc_log;
 };

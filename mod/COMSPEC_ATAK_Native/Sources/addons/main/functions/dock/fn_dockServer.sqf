@@ -112,12 +112,18 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_DockTick", _now];
         private _gain = (call _rate) * _dt / 60;
         private _utcNow = call _utc;
-        // Liste des socles : allMissionObjects (parcourt tous les objets de la mission) une fois par minute
-        // seulement ; les socles posés avec le kit y sont ajoutés dès leur création (« deploy »).
+        // Liste des socles : allMissionObjects (parcourt tous les objets de la mission, plusieurs ms sur une grosse
+        // mission) une seule fois, au premier passage, pour les socles posés dans l'éditeur. Ensuite, ceux créés en
+        // partie (kit, Zeus, script) arrivent par EntityCreated ou « deploy ». Avant : un balayage par minute, à-coup
+        // régulier sur la machine serveur (le joueur lui-même en solo, en Eden ou en partie hébergée).
         private _docks = missionNamespace getVariable ["COMSPEC_ATAK_DockObjs", []];
-        if (_now - (missionNamespace getVariable ["COMSPEC_ATAK_DockScan", -1e9]) > 60) then {
-            missionNamespace setVariable ["COMSPEC_ATAK_DockScan", _now];
-            _docks = allMissionObjects _class;
+        if !(missionNamespace getVariable ["COMSPEC_ATAK_DockScanned", false]) then {
+            missionNamespace setVariable ["COMSPEC_ATAK_DockScanned", true];
+            { _docks pushBackUnique _x; } forEach (allMissionObjects _class);
+            addMissionEventHandler ["EntityCreated", {
+                params ["_e"];
+                if (_e isKindOf "COMSPEC_ATAK_ChargingDock") then { (missionNamespace getVariable ["COMSPEC_ATAK_DockObjs", []]) pushBackUnique _e; };
+            }];
         };
         _docks = _docks select { !isNull _x };
         missionNamespace setVariable ["COMSPEC_ATAK_DockObjs", _docks];

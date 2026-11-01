@@ -25,7 +25,8 @@ if (!canSuspend && {!(_ext in _noAsync)} && {!isNil {missionNamespace getVariabl
     ["ERR|unscheduled", 0, 0]
 };
 // Sans gestionnaire de rappel (menu principal, avant le postInit) la réponse ne reviendrait jamais : appel direct.
-if (!canSuspend || {_ext in _noAsync} || {isNil {missionNamespace getVariable "COMSPEC_ATAK_ExtensionEH"}}) exitWith { _ext callExtension [_cmd, _args] };
+private _pt = diag_tickTime;
+if (!canSuspend || {_ext in _noAsync} || {isNil {missionNamespace getVariable "COMSPEC_ATAK_ExtensionEH"}}) exitWith { private _r = _ext callExtension [_cmd, _args]; if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL " + _cmd, _pt] call comspec_atak_native_fnc_perfAcc; }; _r };
 private _n = (missionNamespace getVariable ["COMSPEC_ATAK_ExtTicketN", 0]) + 1;
 missionNamespace setVariable ["COMSPEC_ATAK_ExtTicketN", _n];
 private _ticket = format ["%1_%2", round diag_tickTime, _n];
@@ -34,6 +35,7 @@ private _pending = missionNamespace getVariable ["COMSPEC_ATAK_ExtPending", crea
 missionNamespace setVariable ["COMSPEC_ATAK_ExtPending", _pending];
 _pending set [_ticket, false];
 private _r = _ext callExtension ["Async", [_ticket, _cmd] + _args];
+if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL Async " + _cmd, _pt] call comspec_atak_native_fnc_perfAcc; };
 private _q = if (_r isEqualType []) then { _r param [0, ""] } else { _r };
 if !(_q isEqualType "") then { _q = str _q; };
 if ((_q select [0, 7]) isNotEqualTo "QUEUED|") exitWith {

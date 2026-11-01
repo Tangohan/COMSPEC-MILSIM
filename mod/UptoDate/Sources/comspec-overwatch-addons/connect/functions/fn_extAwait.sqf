@@ -24,7 +24,8 @@ if (!canSuspend && {!(_ext in _noAsync)} && {!isNil "COMSPEC_ExtensionCallbackEH
     ["ERR|unscheduled", 0, 0]
 };
 // Sans gestionnaire de rappel (menu principal, avant le postInit) la réponse ne reviendrait jamais : appel direct.
-if (!canSuspend || {_ext in _noAsync} || {isNil "COMSPEC_ExtensionCallbackEH"}) exitWith { _ext callExtension [_cmd, _args] };
+private _pt = diag_tickTime;
+if (!canSuspend || {_ext in _noAsync} || {isNil "COMSPEC_ExtensionCallbackEH"}) exitWith { private _r = _ext callExtension [_cmd, _args]; if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL " + _cmd, _pt] call comspec_atak_native_fnc_perfAcc; }; _r };
 // Bloc non ordonnancé (isNil {}) : lecture + écriture du compteur et création de la table sans suspension possible,
 // sinon deux scripts suspendus entre les deux obtenaient le même ticket.
 private _n = 0;
@@ -39,6 +40,7 @@ private _ticket = format ["ow%1_%2", round diag_tickTime, _n];
 // Ticket en attente : false ; le rappel y range [résultat] (un résultat arrivé après l'abandon est ignoré).
 _pending set [_ticket, false];
 private _r = _ext callExtension ["Async", [_ticket, _cmd] + _args];
+if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL Async " + _cmd, _pt] call comspec_atak_native_fnc_perfAcc; };
 private _q = if (_r isEqualType []) then { _r param [0, ""] } else { _r };
 if !(_q isEqualType "") then { _q = str _q; };
 if ((_q select [0, 7]) isNotEqualTo "QUEUED|") exitWith {
