@@ -17,15 +17,17 @@ if (_pid isEqualTo "" || {_stem isEqualTo ""}) exitWith { false };
     params ["_pid", "_stem", "_cs", "_px", "_py", "_pz", "_gridRef", "_angle", "_target"];
     private _stem0 = _stem;
     uiSleep 0.35;
-    if (!isNil "comspec_overwatch_connect_fnc_extResult") then {
-        private _staged = ["COMSPECExtension" callExtension ["StageCapture", [_stem]]] call comspec_overwatch_connect_fnc_extResult;
+    // Liaison coupée ou pas de téléphone : ni préparation ni envoi (avant, seul StageCapture était sauté, la photo partait).
+    private _hold = ["UploadSsePhoto"] call comspec_overwatch_connect_fnc_uplinkHold;
+    if (!_hold && {!isNil "comspec_overwatch_connect_fnc_extResult"}) then {
+        private _staged = [(["COMSPECExtension", "StageCapture", [_stem]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
         if ((_staged isEqualType "") && {(count _staged) >= 4} && {(_staged select [0, 3]) isEqualTo "OK|"}) then {
             private _body = trim (_staged select [3, (count _staged) - 3]);
             if (_body isNotEqualTo "") then { _stem = _body; };
         };
     };
-    private _shot = [
-        "COMSPECExtension" callExtension ["UploadSsePhoto", [
+    private _shot = if (_hold) then { "ERR|uplink_hold" } else { [
+        (["COMSPECExtension", "UploadSsePhoto", [
             _pid,
             _stem,
             _cs,
@@ -35,17 +37,19 @@ if (_pid isEqualTo "" || {_stem isEqualTo ""}) exitWith { false };
             _pz,
             "Photo du visage",
             _gridRef
-        ]]
-    ] call comspec_overwatch_connect_fnc_extResult;
+        ]] call comspec_overwatch_connect_fnc_extDirect)
+    ] call comspec_overwatch_connect_fnc_extResult };
     private _parsed = [_shot] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
     _parsed params ["_ok", "_status", "_detail"];
     private _u = toUpper (str _shot);
     if (!_ok && { ((_u find "OK|QUEUED") == 0) || {(_u find "OK|DUPLICATE") == 0} }) then { _ok = true; };
     if (!_ok) then {
         ["UploadSsePhoto", "fail", _shot, _shot, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-        private _why = if ((toLower (str _shot)) find "not_connected" >= 0) then {
-            "COMSPEC Link n'est pas connecté à Athena"
-        } else { str _shot };
+        private _why = switch (true) do {
+            case (_hold): { "liaison Athena coupée ou pas de téléphone ATAK" };
+            case ((toLower (str _shot)) find "not_connected" >= 0): { "COMSPEC Link n'est pas connecté à Athena" };
+            default { str _shot };
+        };
         [
             format ["La photo du visage n'a pas pu partir (%1) — refaites PHOTO DU VISAGE une fois la liaison revenue.", _why],
             "tactical",

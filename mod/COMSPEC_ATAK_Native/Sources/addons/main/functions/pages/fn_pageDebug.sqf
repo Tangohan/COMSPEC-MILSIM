@@ -69,9 +69,9 @@ switch (_tab) do {
         // Version de la DLL et fonctions attendues par COMSPEC ATAK. Une DLL plus ancienne ne connaît pas
         // GetAtakFeatures et répond vide : tout est alors marqué manquant.
         private _res = { params ["_r"]; if (!isNil "comspec_overwatch_connect_fnc_extResult") then { [_r] call comspec_overwatch_connect_fnc_extResult } else { _r } };
-        private _ver = ["COMSPECExtension" callExtension ["GetExtensionVersion", []]] call _res;
+        private _ver = [(["COMSPECExtension", "GetExtensionVersion", []] call comspec_overwatch_connect_fnc_extDirect)] call _res;
         if !(_ver isEqualType "") then { _ver = str _ver; };
-        private _feat = ["COMSPECExtension" callExtension ["GetAtakFeatures", []]] call _res;
+        private _feat = [(["COMSPECExtension", "GetAtakFeatures", []] call comspec_overwatch_connect_fnc_extDirect)] call _res;
         if !(_feat isEqualType "") then { _feat = str _feat; };
         private _have = if ((_feat select [0, 3]) isEqualTo "OK|") then { ((_feat splitString "|") param [2, ""]) splitString "," } else { [] };
         private _want = [

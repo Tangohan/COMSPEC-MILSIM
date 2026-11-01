@@ -32,12 +32,13 @@ if (!isNil "ATHENA_fnc_getRealismParam") then {
     if ((_x distance2D _unit) > _range) then { continue };
     private _rpos = getPosATL _x;
     private _dir = _x getDir _unit;
-    "COMSPECExtension" callExtension ["SendSigint", [
+    if (["SendSigint"] call comspec_overwatch_connect_fnc_uplinkHold) exitWith {};
+    (["COMSPECExtension", "SendSigint", [
         _callSign,
         [_rpos select 0, 2] call _fnc_num,
         [_rpos select 1, 2] call _fnc_num,
         [_dir, 1] call _fnc_num
-    ]];
+    ]] call comspec_overwatch_connect_fnc_extDirect);
     _sent = _sent + 1;
 } forEach _list;
 _sent > 0

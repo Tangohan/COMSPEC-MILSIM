@@ -47,7 +47,7 @@ private _uids = if (_mode isEqualTo "leave") then { [_only] select { _x in _db }
 if (_uids isEqualTo []) exitWith {
     // Rien en attente et envoi en panne : on redemande à la DLL si elle sait envoyer.
     if (!(missionNamespace getVariable ["COMSPEC_ATAK_SrvPlayOK", false]) && {_mode isNotEqualTo "leave"}) then {
-        private _p = "COMSPECExtension" callExtension ["ScreenTime.Batch", ["probe"]];
+        private _p = (["COMSPECExtension", "ScreenTime.Batch", ["probe"]] call comspec_overwatch_connect_fnc_extDirect);
         if (_p isEqualType []) then { _p = _p param [0, ""]; };
         if ((_p select [0, 3]) isEqualTo "OK|") then { missionNamespace setVariable ["COMSPEC_ATAK_SrvPlayOK", true, true]; };
     };
@@ -76,7 +76,7 @@ for "_i" from 0 to ((count _uids) - 1) step 25 do {
     } forEach (_uids select [_i, 25]);
     if (_players isNotEqualTo []) then {
         _tried = true;
-        _r = "COMSPECExtension" callExtension ["ScreenTime.Batch", [[createHashMapFromArray [["mission_key", _mk], ["players", _players]]] call comspec_atak_native_fnc_json]];
+        _r = (["COMSPECExtension", "ScreenTime.Batch", [[createHashMapFromArray [["mission_key", _mk], ["players", _players]]] call comspec_atak_native_fnc_json]] call comspec_overwatch_connect_fnc_extDirect);
         if (_r isEqualType []) then { _r = _r param [0, ""]; };
         if ((_r select [0, 3]) isEqualTo "OK|") then {
             {

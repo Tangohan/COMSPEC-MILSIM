@@ -11,7 +11,7 @@ if !(_txGate getOrDefault ["can_transmit", true]) exitWith { false };
 
 private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
 if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
-private _raw = ["COMSPECExtension" callExtension ["GetMedicalAlerts", [_mapId, "25"]]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [(["COMSPECExtension", "GetMedicalAlerts", [_mapId, "25"]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
 private _parts = _raw splitString "|";
 private _prefix = if ((count _parts) >= 1) then { _parts select 0 } else { "" };

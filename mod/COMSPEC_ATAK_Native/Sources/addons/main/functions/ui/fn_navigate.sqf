@@ -1,8 +1,13 @@
 params [["_page", "LAUNCHER"], ["_push", true]];
 _page = toUpper _page;
-// Sous-pages sans icône au lanceur : PATCHES (Réglages > Patch au dos), VIEW3D (carte > Vue 3D ici).
+// Sous-pages sans icône au lanceur : PATCHES (Réglages > Patch au dos), VIEW3D (carte > Vue 3D ici, actuellement W.I.P).
 private _allowed = ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D", "FOLDER"] +(([] call comspec_atak_native_fnc_appList) apply { _x get "page" });
 if !(_page in _allowed) then { _page = "LAUNCHER"; };
+// Vue 3D de la carte : en chantier (menu carte « Vue 3D ici »). Code conservé dans fn_pageView3d.
+if (_page isEqualTo "VIEW3D") exitWith {
+    ["Vue 3D en chantier (W.I.P), bientôt disponible", 2] call comspec_atak_native_fnc_toast;
+    false
+};
 // App en chantier (config wip=1, ex. Brèche) : affichée grisée au lanceur, ne s'ouvre d'aucune façon (tuile, dock, recherche).
 if ((([] call comspec_atak_native_fnc_appList) findIf { (_x get "page") isEqualTo _page && {_x getOrDefault ["wip", false]} }) >= 0) exitWith {
     ["Application en chantier (W.I.P), bientôt disponible", 2] call comspec_atak_native_fnc_toast;

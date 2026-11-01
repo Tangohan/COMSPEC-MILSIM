@@ -89,7 +89,7 @@ missionNamespace setVariable ["COMSPEC_NetworkLoadHint", _load, false];
 
 if (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) then {
     private _ms = str round (((_batch max 0.25) min 2) * 1000);
-    ["COMSPECExtension" callExtension ["SetTelemetryBatch", [_ms]]] call comspec_overwatch_connect_fnc_extResult;
+    [(["COMSPECExtension", "SetTelemetryBatch", [_ms]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 };
 
 true

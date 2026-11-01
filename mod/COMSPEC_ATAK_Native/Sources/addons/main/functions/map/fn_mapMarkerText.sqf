@@ -22,9 +22,13 @@ if !(missionNamespace getVariable ["comspec_atak_native_map_show_marker_text", t
 private _style = toUpper (missionNamespace getVariable ["comspec_atak_native_map_marker_style", "plate"]);
 private _now = diag_tickTime;
 
-// Candidats (repères ponctuels titrés et visibles), refaits une fois par seconde depuis le magasin des marqueurs.
-private _cand = missionNamespace getVariable ["COMSPEC_ATAK_MkTextCand", [-1, []]];
-if (_now > (_cand select 0)) then {
+// Candidats (repères ponctuels titrés et visibles), refaits depuis le magasin des marqueurs quand il change (au plus
+// une fois par seconde ; toutes les 15 s par sécurité). Avant : refaits chaque seconde, marqueurs inchangés compris
+// (nom automatique et couleur relus pour chaque marqueur : à-coup régulier dans une mission à centaines de marqueurs).
+private _cand = missionNamespace getVariable ["COMSPEC_ATAK_MkTextCand", [-1, [], -1, 0, ""]];
+private _cRev = ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["revisions", createHashMap]) getOrDefault ["markers", -1];
+private _cLang = missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"];
+if (_now > (_cand select 0) && {(_cand param [2, -1]) isNotEqualTo _cRev || {_now > (_cand param [3, 0])} || {(_cand param [4, ""]) isNotEqualTo _cLang}}) then {
     private _colCache = uiNamespace getVariable "COMSPEC_ATAK_MkColorCache";
     if (isNil "_colCache") then { _colCache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_MkColorCache", _colCache]; };
     private _sizeCache = uiNamespace getVariable "COMSPEC_ATAK_MkSizeCache";
@@ -74,7 +78,7 @@ if (_now > (_cand select 0)) then {
     } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["markers", createHashMap]);
     // LOCK d'abord (jamais masqués par un autre nom), puis l'ordre des marqueurs.
     _list = (_list select { (count (_x select 6)) > 0 }) + (_list select { (count (_x select 6)) isEqualTo 0 });
-    _cand = [_now + 1, _list];
+    _cand = [_now + 1, _list, _cRev, _now + 15, _cLang];
     missionNamespace setVariable ["COMSPEC_ATAK_MkTextCand", _cand];
 };
 if ((count (_cand select 1)) isEqualTo 0) exitWith {};
@@ -120,7 +124,7 @@ private _toW = { params ["_sx", "_sy"]; private _w = _map ctrlMapScreenToWorld [
 private _rect = { params ["_x0", "_y0", "_x1", "_y1", "_c", ["_t", _fill]]; _map drawRectangle [[(_x0 + _x1) / 2, (_y0 + _y1) / 2] call _toW, ((_x1 - _x0) / 2) * _mpx, ((_y1 - _y0) / 2) * _mpy, 0, _c, _t]; };
 private _hit = { params ["_r"]; (_rects findIf { (_r select 0) < (_x select 2) && {(_r select 2) > (_x select 0)} && {(_r select 1) < (_x select 3)} && {(_r select 3) > (_x select 1)} }) >= 0 };
 private _distCache = uiNamespace getVariable "COMSPEC_ATAK_LblCache";
-if (isNil "_distCache" || {(count _distCache) > 400}) then { _distCache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_LblCache", _distCache]; };
+if (isNil "_distCache" || {(count _distCache) > 2000}) then { _distCache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_LblCache", _distCache]; };
 
 private _n = 0;
 {

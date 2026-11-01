@@ -5,7 +5,7 @@ if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
 
-private _raw = ["COMSPECExtension" callExtension ["GetModModules", []]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [(["COMSPECExtension", "GetModModules", []] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
 
 private _payload = _raw select [3, count _raw - 3];

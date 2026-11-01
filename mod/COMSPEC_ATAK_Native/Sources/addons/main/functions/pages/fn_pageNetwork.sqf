@@ -465,7 +465,7 @@ if (_bridge) then {
 };
 
 // --- File d'envoi Athena (journal de COMSPEC Link 2.0.65, lu en mémoire sans réseau) ---
-private _sqRaw = if (_bridge && {!(missionNamespace getVariable ["COMSPEC_ATAK_SendQNo", false])}) then { ("COMSPECExtension" callExtension ["SendQueue.Status", []]) select 0 } else { "" };
+private _sqRaw = if (_bridge && {!(missionNamespace getVariable ["COMSPEC_ATAK_SendQNo", false])}) then { ((["COMSPECExtension", "SendQueue.Status", []] call comspec_overwatch_connect_fnc_extDirect)) select 0 } else { "" };
 if ((_sqRaw select [0, 3]) isEqualTo "OK|") then {
     private _raw = _sqRaw;
     private _lines = (_raw select [3]) splitString toString [10];

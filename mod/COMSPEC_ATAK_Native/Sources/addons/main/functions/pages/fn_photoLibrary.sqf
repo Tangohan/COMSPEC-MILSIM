@@ -95,7 +95,7 @@ switch (_action) do {
                     _todo = _todo select { (toLower (_x select 1)) isNotEqualTo _f };
                 } else {
                     private _f = if (_x isEqualType []) then { _x param [0, ""] } else { "" };
-                    if (_f isEqualType "" && {_f isNotEqualTo ""} && {!((toLower _f) in _onDisk)}) then { "COMSPECExtension" callExtension ["DeleteLocalFile", [_f]]; };
+                    if (_f isEqualType "" && {_f isNotEqualTo ""} && {!((toLower _f) in _onDisk)}) then { (["COMSPECExtension", "DeleteLocalFile", [_f]] call comspec_overwatch_connect_fnc_extDirect); };
                 };
             } forEach _dl;
             profileNamespace setVariable ["COMSPEC_ATAK_DronePhotos", _keep];
@@ -105,7 +105,7 @@ switch (_action) do {
         private _done = 0;
         {
             _x params ["_path", "_name"];
-            private _r = "COMSPECExtension" callExtension ["DeleteLocalFile", [_path]];
+            private _r = (["COMSPECExtension", "DeleteLocalFile", [_path]] call comspec_overwatch_connect_fnc_extDirect);
             if (_r isEqualType []) then { _r = _r param [0, ""]; };
             if ((_r isEqualType "") && {(_r select [0, 2]) isEqualTo "OK"}) then { _done = _done + 1; };
         } forEach _todo;

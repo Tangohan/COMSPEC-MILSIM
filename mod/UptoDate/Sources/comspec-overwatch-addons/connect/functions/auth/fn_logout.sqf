@@ -1,4 +1,4 @@
-["COMSPECExtension" callExtension ["Logout", []]] call comspec_overwatch_connect_fnc_extResult;
+[(["COMSPECExtension", "Logout", []] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 
 missionNamespace setVariable ["comspec_overwatch_auth_state", "INITIALIZING", false];
 missionNamespace setVariable ["comspec_overwatch_auth_otp_mode", false, false];

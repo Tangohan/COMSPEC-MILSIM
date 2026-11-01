@@ -131,13 +131,17 @@ if (_page isEqualTo "MAP") then {
     if (missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false]) then { [] call comspec_atak_native_fnc_inspectorUpdate; };
     // Porté (HUD) ou suivi activé : la carte reste centrée sur le joueur.
     if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) then {
-        // Recentrage seulement si j'ai bougé (ou zoomé) : sinon la carte tremble à chaque seconde.
-        private _fk = [round ((getPosASL player) select 0), round ((getPosASL player) select 1), ctrlMapScale ([] call comspec_atak_native_fnc_mapCtrl)];
-        private _fl = uiNamespace getVariable ["COMSPEC_ATAK_FollowLast", [0, 0, 0]];
         // Le suivi image par image (fn_mapOnDraw) prend le relais dès le premier centrage : ici, seulement au besoin
-        // (premier affichage, zoom changé) ou en secours s'il a décroché (plus de 30 m).
+        // (premier affichage, zoom changé) ou en secours s'il a décroché (centre visible à plus de 30 m de mon point).
+        // Avant : recentrage complet tous les 30 m parcourus, même quand le suivi tenait ; chaque recentrage coupe le
+        // suivi 0,6 s (fn_mapCenter) : en marchant ou en véhicule, la carte s'arrêtait puis sautait toutes les quelques secondes.
         private _fMap = ([] call comspec_atak_native_fnc_mapCtrl);
-        private _fFar = ((count (_fMap getVariable ["comspec_lastAim", []])) isNotEqualTo 2) || {(([_fk select 0, _fk select 1] distance2D [_fl select 0, _fl select 1]) > 30)};
+        (ctrlPosition _fMap) params ["_fcx", "_fcy", "_fcw", "_fch"];
+        private _fVis = _fMap ctrlMapScreenToWorld [_fcx + _fcw / 2, _fcy + _fch / 2];
+        private _fk = [0, 0, ctrlMapScale _fMap];
+        private _fl = uiNamespace getVariable ["COMSPEC_ATAK_FollowLast", [0, 0, 0]];
+        private _fFar = ((count (_fMap getVariable ["comspec_lastAim", []])) isNotEqualTo 2)
+            || {ctrlMapAnimDone _fMap && {diag_tickTime - (_fMap getVariable ["comspec_centerAt", -1]) > 2} && {(([] call comspec_atak_native_fnc_gpsPos) distance2D _fVis) > 30}};
         if (_fFar || {(_fk select 2) isNotEqualTo (_fl select 2)}) then {
             uiNamespace setVariable ["COMSPEC_ATAK_FollowLast", _fk];
             [player] call comspec_atak_native_fnc_mapCenter;

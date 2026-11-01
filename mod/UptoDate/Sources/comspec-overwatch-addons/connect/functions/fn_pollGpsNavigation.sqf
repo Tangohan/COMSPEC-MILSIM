@@ -194,11 +194,12 @@ if (_activeRoute != "" && {(count _activeList) > 0}) then {
         private _color = if (_isReached) then { "ColorGrey" } else { "ColorYellow" };
         private _alpha = if (_isReached) then { 0.45 } else { 0.95 };
         if ((getMarkerColor _name) isNotEqualTo "") then {
-            _name setMarkerPosLocal [_px, _py];
-            _name setMarkerTextLocal _txt;
-            _name setMarkerTypeLocal "mil_pickup";
-            _name setMarkerColorLocal _color;
-            _name setMarkerAlphaLocal _alpha;
+            // Seuls les champs changés sont réécrits : chaque setter lève MarkerUpdated (5 par point toutes les 5 s).
+            if (((markerPos _name) distance2D [_px, _py]) > 0.5) then { _name setMarkerPosLocal [_px, _py]; };
+            if ((markerText _name) isNotEqualTo _txt) then { _name setMarkerTextLocal _txt; };
+            if ((markerType _name) isNotEqualTo "mil_pickup") then { _name setMarkerTypeLocal "mil_pickup"; };
+            if ((markerColor _name) isNotEqualTo _color) then { _name setMarkerColorLocal _color; };
+            if ((abs ((markerAlpha _name) - _alpha)) > 0.01) then { _name setMarkerAlphaLocal _alpha; };
         } else {
             private _mk = createMarkerLocal [_name, [_px, _py]];
             _mk setMarkerTypeLocal "mil_pickup";
@@ -219,10 +220,11 @@ if (_activeRoute != "" && {(count _activeList) > 0}) then {
     _seenRt pushBack _activeRoute;
     if ((count _flat) >= 4) then {
         if ((getMarkerColor _rtName) isNotEqualTo "") then {
-            _rtName setMarkerPolylineLocal _flat;
-            _rtName setMarkerPosLocal [_flat select 0, _flat select 1, 0];
-            _rtName setMarkerColorLocal "ColorYellow";
-            _rtName setMarkerAlphaLocal 0.75;
+            // Tracé inchangé : pas de réécriture (couleur et transparence ne changent jamais après la création).
+            if ((markerPolyline _rtName) isNotEqualTo _flat) then {
+                _rtName setMarkerPolylineLocal _flat;
+                _rtName setMarkerPosLocal [_flat select 0, _flat select 1, 0];
+            };
         } else {
             private _route = createMarkerLocal [_rtName, [_flat select 0, _flat select 1, 0]];
             _route setMarkerShapeLocal "POLYLINE";

@@ -51,6 +51,9 @@ if (!isNil "COMSPEC_SyncLoopsInstalled") exitWith {
     ["INFO", "Boot", "Boucles de sync déjà installées — pas de doublon"] call comspec_overwatch_connect_fnc_log;
 };
 COMSPEC_SyncLoopsInstalled = true;
+// Boucles de fond étalées (COMSPEC_ATAK_PfhSpread de l'ATAK natif : départ décalé au hasard) : elles partaient toutes
+// à la même image et retombaient ensemble (1, 5, 8, 12, 60, 90 s : toutes les 2 min un à-coup groupé).
+private _pfh = missionNamespace getVariable ["COMSPEC_ATAK_PfhSpread", { _this call CBA_fnc_addPerFrameHandler; nil }];
 
 // Faction settings / fiche : différés — HTTP sync au même frame que l’open ATAK = gel.
 [{
@@ -111,7 +114,7 @@ private _loadHint = missionNamespace getVariable ["COMSPEC_NetworkLoadHint", "no
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
     if (!(["position"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
     [{ [player] call comspec_overwatch_connect_fnc_updatePosition }, [], "updatePosition"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 1] call CBA_fnc_addPerFrameHandler;
+}, 1] call _pfh;
 
 [] call comspec_overwatch_connect_fnc_initRadioMonitor;
 [] call comspec_overwatch_connect_fnc_initLogisticsLoop;
@@ -141,7 +144,7 @@ if (isNil "COMSPEC_WebNotifMirrorPfh") then {
         [] call comspec_overwatch_connect_fnc_syncProfile;
         missionNamespace setVariable ["COMSPEC_SyncProfileBusy", false, false];
     };
-}, 300] call CBA_fnc_addPerFrameHandler;
+}, 300] call _pfh;
 
 if (isNil "COMSPEC_MapMarkerEHs") then {
     private _resyncSoon = {
@@ -234,22 +237,26 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
 [{
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
     if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
+    // Sans téléphone ou liaison coupée (fn_uplinkHold) : la file reste en place, rien ne part.
+    if ([""] call comspec_overwatch_connect_fnc_uplinkHold) exitWith {};
     [] call comspec_overwatch_connect_fnc_queueMapMarker;
-}, 5, []] call CBA_fnc_addPerFrameHandler;
+}, 5, []] call _pfh;
 // Resync complet : les EH MarkerCreated/Updated/Deleted couvrent le temps réel.
 // Un passage toutes les 5 s sur allMapMarkers provoquait un hitch SQF régulier.
 [{
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
     if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
     [] call comspec_overwatch_connect_fnc_resyncAllMapMarkers;
-}, 90, []] call CBA_fnc_addPerFrameHandler;
+}, 90, []] call _pfh;
 [{
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
     if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
+    // Sans téléphone ou liaison coupée : plus de parcours de tous les marqueurs toutes les 8 s pour un envoi bloqué ensuite.
+    if ([""] call comspec_overwatch_connect_fnc_uplinkHold) exitWith {};
     if (!isNil "comspec_overwatch_connect_fnc_syncUserMapMarkers") then {
         [] call comspec_overwatch_connect_fnc_syncUserMapMarkers;
     };
-}, 8, []] call CBA_fnc_addPerFrameHandler;
+}, 8, []] call _pfh;
 
 private _fnc_addPoll = {
     params ["_code", "_interval", "_delay", ["_id", "", [""]]];
@@ -502,7 +509,7 @@ private _fnc_addPoll = {
         _skip set [_nextId, _nowSkip];
     };
     missionNamespace setVariable ["COMSPEC_OrdersFallbackSkip", _skip, false];
-}, 5, []] call CBA_fnc_addPerFrameHandler;
+}, 5, []] call _pfh;
 
 [{
     [{
@@ -511,7 +518,7 @@ private _fnc_addPoll = {
         if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
         [] call comspec_overwatch_connect_fnc_pollExperience;
     }, [], "pollExperience"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 60, []] call CBA_fnc_addPerFrameHandler;
+}, 60, []] call _pfh;
 
 [{
     [{
@@ -522,7 +529,7 @@ private _fnc_addPoll = {
         if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
         [] call comspec_overwatch_connect_fnc_pollRoleplayConfig;
     }, [], "pollRoleplayConfig"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 90, []] call CBA_fnc_addPerFrameHandler;
+}, 90, []] call _pfh;
 
 [{
     [{
@@ -533,7 +540,7 @@ private _fnc_addPoll = {
         if (missionNamespace getVariable ["COMSPEC_ServerHubActive", false]) exitWith {};
         [] call comspec_overwatch_connect_fnc_syncAtakRelays;
     }, [], "syncAtakRelays"] call comspec_overwatch_connect_fnc_profileWrap;
-}, 12, []] call CBA_fnc_addPerFrameHandler;
+}, 12, []] call _pfh;
 
 [{
     private _ctab = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
@@ -543,13 +550,13 @@ private _fnc_addPoll = {
     if (isNull _ctab && {isNull _hub} && {isNull _web}) exitWith {};
     if (!(["overlay"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
     [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
-}, 1, []] call CBA_fnc_addPerFrameHandler;
+}, 1, []] call _pfh;
 
 [{
     if (!(missionNamespace getVariable ["comspec_overwatch_roleplay_enabled", false])) exitWith {};
     if (isNull (uiNamespace getVariable ["COMSPEC_Hub_Display", displayNull])) exitWith {};
     [] call comspec_overwatch_connect_fnc_updateAtakEnhancedRoleplay;
-}, 1, []] call CBA_fnc_addPerFrameHandler;
+}, 1, []] call _pfh;
 
 ["OnTrackingAnomaly", {
     params ["_alert"];

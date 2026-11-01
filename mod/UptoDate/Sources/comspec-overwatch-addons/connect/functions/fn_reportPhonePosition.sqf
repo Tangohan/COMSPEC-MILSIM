@@ -105,7 +105,8 @@ if (_showVeh) then {
 };
 private _extra = "{" + (_parts joinString ",") + "}";
 
-"COMSPECExtension" callExtension ["UpdatePosition", [
+if (["UpdatePosition"] call comspec_overwatch_connect_fnc_uplinkHold) exitWith { false };
+(["COMSPECExtension", "UpdatePosition", [
     [_pos select 0, 2] call _fnc_num,
     [_pos select 1, 2] call _fnc_num,
     _headingStr,
@@ -119,5 +120,5 @@ private _extra = "{" + (_parts joinString ",") + "}";
     "",
     _groupName,
     _aslStr
-]];
+]] call comspec_overwatch_connect_fnc_extDirect);
 true

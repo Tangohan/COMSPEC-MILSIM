@@ -26,7 +26,9 @@ public static partial class Extension
     private static readonly string[] BtPhotoExtensions = [".jpg", ".jpeg", ".png"];
 
     private sealed class BtSend { public string Path = ""; public long Size; public DateTime At = DateTime.UtcNow; }
-    private sealed class BtRecv { public string Temp = ""; public string Kind = ""; public string Name = ""; public long Size; public long Got; public DateTime At = DateTime.UtcNow; }
+    // Chunks : morceaux déjà écrits — un morceau renvoyé (nouvel essai) ne compte qu'une fois, sinon Got atteignait
+    // Size avec un trou (zéros) et BtRecvEnd acceptait un fichier incomplet.
+    private sealed class BtRecv { public string Temp = ""; public string Kind = ""; public string Name = ""; public long Size; public long Got; public HashSet<long> Chunks = new(); public DateTime At = DateTime.UtcNow; }
 
     private static readonly ConcurrentDictionary<string, BtSend> BtSends = new();
     private static readonly ConcurrentDictionary<string, BtRecv> BtRecvs = new();
@@ -222,8 +224,11 @@ public static partial class Extension
                         fs.Seek(offset, SeekOrigin.Begin);
                         fs.Write(data, 0, data.Length);
                     }
-                    lock (r) r.Got += data.Length;
-                    return "OK|" + r.Got.ToString(CultureInfo.InvariantCulture);
+                    lock (r)
+                    {
+                        if (r.Chunks.Add(n)) r.Got += data.Length;
+                        return "OK|" + r.Got.ToString(CultureInfo.InvariantCulture);
+                    }
                 }
                 case "BtRecvEnd":
                 {

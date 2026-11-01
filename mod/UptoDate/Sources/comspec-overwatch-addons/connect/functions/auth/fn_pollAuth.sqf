@@ -104,7 +104,7 @@ if (!isNull _pic) then {
                 missionNamespace setVariable ["comspec_profile_avatar_loading", true, false];
                 [_d, _avatar] spawn {
                     params ["_disp", "_url"];
-                    private _raw = ["COMSPECExtension" callExtension ["DownloadBriefingSlideImage", [_url, "auth_avatar"]]] call comspec_overwatch_connect_fnc_extResult;
+                    private _raw = [(["COMSPECExtension", "DownloadBriefingSlideImage", [_url, "auth_avatar"]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
                     private _bits = _raw splitString "|";
                     private _local = "";
                     if ((count _bits) >= 2 && {(_bits select 0) isEqualTo "OK"}) then {

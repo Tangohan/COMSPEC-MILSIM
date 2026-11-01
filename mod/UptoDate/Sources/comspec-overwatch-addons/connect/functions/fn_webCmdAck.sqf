@@ -20,6 +20,7 @@ private _ack = createHashMapFromArray [
 ];
 if ((count _data) > 0) then { _ack set ["data", _data]; };
 private _json = [createHashMapFromArray [["web_cmd_ack", _ack]]] call comspec_overwatch_connect_fnc_hashMapToJson;
-private _r = "COMSPECExtension" callExtension ["SubmitExplosiveTimer", [_json]];
+if (["SubmitExplosiveTimer"] call comspec_overwatch_connect_fnc_uplinkHold) exitWith { false };
+private _r = (["COMSPECExtension", "SubmitExplosiveTimer", [_json]] call comspec_overwatch_connect_fnc_extDirect);
 ["INFO", "WebCmd", format ["Commande %1 : %2 — %3", _id, _status, _msg]] call comspec_overwatch_connect_fnc_log;
 (_r isEqualType []) && {(_r param [0, ""]) isEqualTo "OK"}

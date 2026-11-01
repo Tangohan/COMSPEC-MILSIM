@@ -4,7 +4,8 @@
 params [["_status", "TARGET_ACQUIRED"]];
 private _id = missionNamespace getVariable ["COMSPEC_CurrentCASId", ""];
 if (_id isEqualTo "") exitWith { ["COMSPEC_Warning", ["No CAS request selected"]] call comspec_overwatch_connect_fnc_showNotification; };
-"COMSPECExtension" callExtension ["SendCASState", [_id, _status]];
+if (["SendCASState"] call comspec_overwatch_connect_fnc_uplinkHold) exitWith {};
+(["COMSPECExtension", "SendCASState", [_id, _status]] call comspec_overwatch_connect_fnc_extDirect);
 missionNamespace setVariable ["COMSPEC_CurrentCASStatus", _status];
 ["COMSPEC_Info", [format ["Statut CAS : %1", _status]]] call comspec_overwatch_connect_fnc_showNotification;
 private _disp = uiNamespace getVariable ["COMSPEC_CAS_Display", displayNull];

@@ -7,7 +7,7 @@
 if (!hasInterface) exitWith { [] };
 
 private _out = [];
-private _raw = ["COMSPECExtension" callExtension ["ListLocalScreenshots", ["24"]]] call comspec_overwatch_connect_fnc_extResult;
+private _raw = [(["COMSPECExtension", "ListLocalScreenshots", ["24"]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { [] };
 if ((_raw find "OK|") != 0) exitWith { [] };
 

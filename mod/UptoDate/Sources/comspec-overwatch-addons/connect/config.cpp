@@ -18,13 +18,14 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.621;
-        versionStr = "1.6.21";
-        versionAr[] = {1, 6, 21};
+        version = 1.622;
+        versionStr = "1.6.22";
+        versionAr[] = {1, 6, 22};
         // 1.6.18 : écusson « Donateur Athena » (CfgUnitInsignia COMSPEC_Donor_*, fn_applyDonorPerk).
         // 1.6.19 : correctif de sécurité 2.4.1 (adresse d'Athena vérifiée avant la connexion, fn_connect).
         // 1.6.20 : revue du mod, tours 4 et 5 (regroupement ATAK natif 2.5.0).
         // 1.6.21 : revue du mod, tours 6 et 7 (regroupement ATAK natif 2.6.0).
+        // 1.6.22 : ATAK natif 2.9.21 — panneau Tenues ACE corrigé (réparation des tenues ACE), menu ACE Tenues retiré, coupure centrale des envois (fn_uplinkHold), bandeau bêta fermable.
     };
 };
 
@@ -167,6 +168,7 @@ class CfgFunctions {
             class arsenalLedger {};
             class arsenalStateInfo {};
             class arsenalMarkSeen {};
+            class arsenalAceStore {};
             class sendIntel {};
             class initACE {};
             class initACEAthena {};
@@ -199,6 +201,9 @@ class CfgFunctions {
             class noteLinkTraffic {};
             class uplinkQuiet {};
             class arsenalOpen {};
+            class aceLoadoutsRepair {};
+            class uplinkHold {};
+            class extDirect {};
             class startLogSession {};
             class logTransmission {};
             class logFnError {};

@@ -5,8 +5,14 @@
     Commandes : ◀ ▶ tourne de 30°, + − rapproche ou éloigne, ▲ ▼ monte ou descend, NORD remet la vue face au nord,
     CARTE revient à la carte. Vue réservée au joueur (rien n'est envoyé aux autres).
     État : COMSPEC_ATAK_State "v3d" = [point ASL, cap en degrés, distance m, hauteur m].
+    W.I.P : entrée menu et navigation bloquées (fn_mapCtxMenu / fn_navigate) ; ce script ne doit plus s'afficher.
 */
 disableSerialization;
+// W.I.P : filet si pageRender est encore appelé avec VIEW3D (historique / redessin). Toast déjà géré à l'ouverture.
+if (true) exitWith {
+    [{ ["MAP", false] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+    true
+};
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _pad = (_l get "pad") * 2;

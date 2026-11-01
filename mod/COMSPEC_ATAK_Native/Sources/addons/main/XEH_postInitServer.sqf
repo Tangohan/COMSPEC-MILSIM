@@ -195,7 +195,7 @@ COMSPEC_ATAK_FtCheck = {
 // Sonde au démarrage : si la DLL du serveur sait envoyer, les clients ne remontent plus eux-mêmes que l'écran et les apps.
 [{ ["tick"] call comspec_atak_native_fnc_playTimeServer; }, 10] call COMSPEC_ATAK_PfhSpread;
 [{
-    private _r = "COMSPECExtension" callExtension ["ScreenTime.Batch", ["probe"]];
+    private _r = (["COMSPECExtension", "ScreenTime.Batch", ["probe"]] call comspec_overwatch_connect_fnc_extDirect);
     if (_r isEqualType []) then { _r = _r param [0, ""]; };
     missionNamespace setVariable ["COMSPEC_ATAK_SrvPlayOK", (_r select [0, 3]) isEqualTo "OK|", true];
     ["INFO", "PLAYTIME", format ["Sonde ScreenTime.Batch : %1", [_r, "COMSPEC Link 2.0.63 requis"] select (_r isEqualTo "")]] call comspec_atak_native_fnc_log;

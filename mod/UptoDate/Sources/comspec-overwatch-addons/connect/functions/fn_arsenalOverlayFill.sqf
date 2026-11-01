@@ -18,7 +18,7 @@ private _collIdx = [2, 3] select _isCloud;
 private _guiH = ((((safezoneW / safezoneH) min 1.2) / 1.2) / 25);
 // État affiché d'une ligne (voir arsenalStateInfo).
 private _stateOf = if (_isCloud) then {
-    { switch (true) do { case (_this select 11): { "new" }; case ((_this select 10) in ["in", "diff"]): { _this select 10 }; case (_this select 8): { "mine" }; default { "out" }; } }
+    { switch (true) do { case (_this select 11): { "new" }; case ((_this select 10) in ["in", "diff", "check"]): { _this select 10 }; case (_this select 8): { "mine" }; default { "out" }; } }
 } else { { _this select 4 } };
 private _pendingStates = ["new", "gone", "local", "diff"];
 
@@ -82,7 +82,7 @@ private _groups = if (_isCloud) then {
         ["fav", "Favoris", []],
         ["pending", "Pas à jour sur le site", _pendingStates],
         ["remote", "Modifiées sur le site", ["remote"]],
-        ["synced", "Sur le site", ["synced", "unknown", "comm"]]
+        ["synced", "Sur le site", ["synced", "unknown", "comm", "copy"]]
     ]
 };
 private _match = {
@@ -284,8 +284,9 @@ if (!isNull _status) then {
 };
 
 // Action groupée : Mes tenues -> envoyer seulement celles qui ne sont pas à jour sur le site (rien n'est renvoyé
-// pour rien) ; Communauté -> importer celles qui ne sont pas (ou pas identiques) dans mon arsenal.
-private _bulkRows = if (_isCloud) then { _shown select { (_x select 10) isNotEqualTo "in" } } else { _shown select { (_x select 4) in _pendingStates } };
+// pour rien) ; Communauté -> importer celles dont aucune tenue de mon arsenal ne porte le nom (jamais de remplacement
+// groupé : une tenue du même nom se met à jour une à une, bouton « Mettre à jour mon arsenal »).
+private _bulkRows = if (_isCloud) then { _shown select { (_x select 10) isEqualTo "out" } } else { _shown select { (_x select 4) in _pendingStates } };
 _grp setVariable ["COMSPEC_ArsenalBulkRows", _bulkRows];
 private _bulk = _grp getVariable ["COMSPEC_ArsenalBulk", controlNull];
 if (!isNull _bulk) then {
@@ -298,7 +299,7 @@ if (!isNull _bulk) then {
     });
     _bulk ctrlSetTooltip (([
         "Envoie au site les tenues affichées qui n'y sont pas encore, ou qui ont changé ici. Les autres ne sont pas renvoyées.",
-        "Importe dans votre arsenal les tenues affichées que vous n'avez pas encore, ou pas dans cette version. Une tenue du même nom est remplacée."
+        "Importe dans votre arsenal les tenues affichées que vous n'avez pas encore. Aucune de vos tenues n'est remplacée."
     ] select _isCloud) call comspec_overwatch_connect_fnc_tr);
     _bulk ctrlEnable (_n > 0 && {!_offline});
 };
