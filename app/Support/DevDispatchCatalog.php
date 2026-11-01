@@ -294,6 +294,15 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1219, '2026-11-01', 'Notre histoire : versions, kilomètres et nouvelle page', 'La page « Notre histoire » est entièrement refaite : carte topographique animée qui mène au total de kilomètres parcourus en jeu, chiffres réels de la plateforme et de votre communauté, histoire année par année et frise complète des versions (téléphone, liaison, Overwatch, SSE, portail) avec filtres par produit.', [
+                'Frise de toutes les versions publiées, filtrable par produit',
+                'Kilomètres parcourus en jeu (à pied, véhicule, vol, mer, chute libre) et heures de jeu',
+                'Thème jour « carte papier » et nuit',
+            ], [
+                'Page Notre histoire entièrement redessinée',
+            ], [
+                'Plus de version unique « 1.0.0 » affichée à tort',
+            ], ['platform'], [], 'Portail Athena'),
             $pr(1216, '2026-11-01', 'Téléphone : plus de gel, tenues ACE réparées, liaison vraiment coupée', 'Avec le pack 2.9.21 et la liaison 2.0.111, le téléphone ne se fige plus après un moment d’utilisation, la carte suit sans à-coups et les tâches de fond sont étalées pour supprimer les micro-gels. Le panneau Athena · Tenues de l’arsenal ACE est corrigé : plus de tenues en double, plus d’erreur ACE, « Enfiler » et l’import fonctionnent. Liaison Athena désactivée ou téléphone rangé : plus rien n’est transmis.', [
                 'Bandeau bêta du menu principal fermable',
                 'Tenues ACE abîmées ou en double réparées automatiquement au lancement',
