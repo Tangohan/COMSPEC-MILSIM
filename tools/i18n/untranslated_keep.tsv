@@ -295,3 +295,61 @@ Coordination	identique en anglais	views/admin/recruitments/show.php
 Score %1/100	identique en anglais	views/admin/recruitments/show.php
 <textarea id="comment-%1	bruit d'extraction (HTML)	views/admin/reports_moderation.php
 Export	identique en anglais	views/admin/roles_permissions/index.php
+page %2 / %3	identique en anglais	views/admin/effectifs_workspace/elevation_requests.php
+%1 / %2 sessions	identique en anglais	views/admin/effectifs_workspace/member.php
+Check-up — %1	identique en anglais	views/personnel/deployment.php
+qualification(s)	identique en anglais	views/personnel/file.php
+, section	identique en anglais	views/personnel/tutorials.php
+/reserv|réserv|irr[eé]gulier|dispo\b|disponib/	bruit d'extraction : expression régulière	app/Services/Personnel/SeniorityDossierInferenceSyncService.php
+JTAC / FO	identique en anglais (sigles)	config/personnel_dossier_presets.php
+ouverture, la fermeture, la recherche et le maximum d	bruit d'extraction : commentaire tronqué	public/assets/js/eff-roster-edit.js
+Page	identique en anglais	views/admin/effectifs_workspace/departures.php
+Conditions	identique en anglais	views/admin/effectifs_workspace/elevation_criteria.php
+" selected>Référence indisponible (#	bruit d'extraction : fragment HTML tronqué	views/admin/effectifs_workspace/fonctions.php
+Invitations	identique en anglais	views/admin/effectifs_workspace/invitations.php
+%1 / %2 critère%3 rempli%4	pluriel collé	views/admin/effectifs_workspace/member.php
+%1 vacant%2	pluriel collé	views/admin/effectifs_workspace/member.php
+. Depuis l’engagement : %1 session%2 pointée%3. Une présence est comptée quand elle a été pointée le jour de la session.	pluriel collé	views/admin/effectifs_workspace/member.php
+Absences	identique en anglais	views/admin/effectifs_workspace/member.php
+Allergies	identique en anglais	views/admin/effectifs_workspace/member.php
+Qualifications	identique en anglais	views/admin/effectifs_workspace/member.php
+Sanctions	identique en anglais	views/admin/effectifs_workspace/member.php
+excusé%1	pluriel collé	views/admin/effectifs_workspace/member.php
+présent%1	pluriel collé	views/admin/effectifs_workspace/member.php
+affichent toutes, à la suite. Comportements : eff-new-member.js. */ require_once __DIR__ .	bruit d'extraction : commentaire/code	views/admin/effectifs_workspace/new_member.php
+%2 h%3	identique en anglais (unité)	views/admin/effectifs_workspace/partials/invite_rows.php
+48 h	identique en anglais (unité)	views/admin/effectifs_workspace/partials/invite_rows.php
+>, ready: bool, can_manage: bool, destinations: list	bruit d'extraction : annotation de type	views/admin/effectifs_workspace/partials/member_invites.php
+Succession	identique en anglais	views/admin/effectifs_workspace/partials/rh_shortcuts.php
+membre%1 affiché%2%3	pluriel collé	views/admin/effectifs_workspace/partials/roster_toolbar.php
+Qualification	identique en anglais	views/admin/effectifs_workspace/qualifications.php
+Motivation	identique en anglais	views/admin/effectifs_workspace/rh_mobility.php
+Roleplay	identique en anglais	views/admin/effectifs_workspace/rh_settings.php
+édition du tableur (emploi, rôle dans l	bruit d'extraction : commentaire tronqué	views/admin/effectifs_workspace/roster.php
+Composition	identique en anglais	views/admin/effectifs_workspace/shell.php
+Ctrl K	identique en anglais (raccourci clavier)	views/admin/effectifs_workspace/shell.php
+Perms	identique en anglais	views/admin/organization/personnel_job_roles/index.php
+Permissions (preset)	identique en anglais	views/admin/organization/personnel_job_roles/role_form.php
+String(s.id)	bruit d'extraction : code JS	views/courrier/partials/signature-modal.php
+<button type="button" class="rounded-lg border border-dashed border-cyan-300 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-50" @click="addRow()" x-show="roles.length	bruit d'extraction : balise HTML	views/partials/personnel/edit_orbat_section.php
+<button type="button" class="rounded-lg border border-dashed border-cyan-300 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-50" @click="addRow()" x-show="rows.length	bruit d'extraction : balise HTML	views/partials/personnel/edit_orbat_section.php
+O-5, OF-4…	exemple de saisie (codes de grade)	views/partials/personnel/edit_orbat_section.php
+primaryIdx === idx ? '1' : '0'	bruit d'extraction : expression JS	views/partials/personnel/edit_orbat_section.php
+primaryUnitId()	bruit d'extraction : expression JS	views/partials/personnel/edit_orbat_section.php
+%1 bpm	identique en anglais (unité)	views/partials/personnel/file_playtime.php
+%1 km/h	identique en anglais (unité)	views/partials/personnel/file_playtime.php
+Stress	identique en anglais	views/partials/personnel/file_playtime.php
+<section id="edit-visibilite" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-300/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" data-personnel-visibility-admin data-consequences="%1"	bruit d'extraction : balise HTML	views/partials/personnel/visibility_admin_block.php
+x-data="personnelVisibilityAdmin(%1)"	bruit d'extraction : attribut HTML	views/partials/personnel/visibility_admin_block.php
+%1  </div> </div> </div> </div> <div class=	bruit d'extraction : HTML	views/personnel/correction_form.php
+<textarea id="corr-%1	bruit d'extraction : balise HTML	views/personnel/correction_form.php
+<textarea id="corr-note" name="note" rows="3" maxlength="1000" placeholder="%1	bruit d'extraction : balise HTML	views/personnel/correction_form.php
+O+, A-, …	exemple de saisie (groupes sanguins)	views/personnel/deployment.php
+<textarea name="medal_rack_text" id="medal_rack_text"%1	bruit d'extraction : balise HTML	views/personnel/edit.php
+FR, EN…	exemple de saisie (codes de langue)	views/personnel/edit.php
+MRAP, Utility…	exemple de saisie (noms de véhicules)	views/personnel/edit.php
+PRC-152…	exemple de saisie (nom de radio)	views/personnel/edit.php
+Rifleman Light…	exemple de saisie (nom de tenue)	views/personnel/edit.php
+%1 kg	identique en anglais (unité)	views/personnel/file.php
+ATHENA MILSIM	nom propre	views/personnel/orbat_chart_export.php
+ATHENA MILSIM — ORBAT — %1	nom propre / identique en anglais	views/personnel/orbat_chart_export.php
