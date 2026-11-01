@@ -57,6 +57,6 @@ final class VisibilityLevelTest extends TestCase
     {
         self::assertSame('Masquée', VisibilityLevel::label(VisibilityLevel::HIDDEN));
         self::assertStringContainsString('absent', VisibilityLevel::consequence(VisibilityLevel::HIDDEN, 'personnel'));
-        self::assertStringContainsString('Unité restreinte', VisibilityLevel::consequence(VisibilityLevel::ANONYMIZED, 'unit'));
+        self::assertStringContainsString('Unité anonymisée', VisibilityLevel::consequence(VisibilityLevel::ANONYMIZED, 'unit'));
     }
 }

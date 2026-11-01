@@ -24,6 +24,7 @@ $jnTreeRender = static function (array $nodes) use (&$jnTreeRender): void {
             . '<a class="jn-tree__name" href="' . $h((string) $n['href']) . '" title="Ouvrir l’espace ' . $h((string) $n['label']) . '">'
             . '<span class="jn-tree__swatch" aria-hidden="true"></span>'
             . '<span class="jn-tree__label">' . $h((string) $n['label']) . '</span>'
+            . (is_array($n['confidential'] ?? null) ? ' ' . \App\Support\ConfidentialDisplay::renderPayload($n['confidential'], true) : '')
             . ($children !== [] ? '<span class="jn-tree__count">' . (int) ($n['descendantCount'] ?? count($children)) . ' sous-unité' . ((int) ($n['descendantCount'] ?? 0) > 1 ? 's' : '') . '</span>' : '')
             . '</a>'
             . '<span class="jn-tree__strength" title="' . ($total > 0 ? $avail . ' disponibles sur ' . $total : 'Aucun membre affecté') . '">'

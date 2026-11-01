@@ -291,6 +291,11 @@ final class OrbatRosterPayload
         if ($root !== null) {
             [$root] = self::annotateReadinessAggregation($root);
             $root = self::attachBilletManning($root, $tenantId);
+            $root = self::redactPeopleForViewer(
+                $root,
+                $caps,
+                $unitRepository->personnelVisibilityByUserIdsForTenant($tenantId, self::collectPersonIds($root))
+            );
             $root = self::attachGrades($root, $unitRepository->gradeShortNamesForUsers($tenantId, self::collectPersonIds($root)));
         }
 
@@ -661,7 +666,9 @@ final class OrbatRosterPayload
                 $node['strength'] = 0;
                 $node['strengthHidden'] = true;
             } elseif ($mode === 'generic') {
-                $node['strengthLabel'] = $visibleCounts[$uid] > 0 ? 'Effectif restreint' : '—';
+                $node['strengthLabel'] = $visibleCounts[$uid] > 0
+                    ? ConfidentialDisplay::label(ConfidentialDisplay::STRENGTH_RESTRICTED)
+                    : '—';
             }
         }
         $children = [];
@@ -826,7 +833,10 @@ final class OrbatRosterPayload
         if ($needAnon) {
             $node['members'] = self::anonymizeMemberRows($node['members'] ?? []);
             $node['leader'] = self::anonymizeLeaderLabel((string) ($node['leader'] ?? '—'));
+            $node['commanderUserId'] = 0;
             $node['viewerNamesRedacted'] = true;
+            $node['namesAbbreviated'] = true;
+            $node['confidential'] = ConfidentialDisplay::payload(ConfidentialDisplay::NAMES_ABBREVIATED);
         }
 
         return $node;
@@ -855,7 +865,7 @@ final class OrbatRosterPayload
         return [
             'id' => 'masked-' . substr(hash('sha256', 'orbat-masked|' . $stableKey), 0, 14),
             'unitId' => 0,
-            'label' => 'Structure non affichée',
+            'label' => ConfidentialDisplay::label(ConfidentialDisplay::UNIT_HIDDEN),
             'role' => 'Selon votre périmètre',
             'type' => 'command',
             'structType' => 'placeholder',
@@ -863,7 +873,7 @@ final class OrbatRosterPayload
             'status' => 'inactive',
             'strength' => 0,
             'leader' => '—',
-            'mission' => 'Cette portion de l’organigramme est réservée aux personnes concernées par l’affectation ou le niveau d’habilitation. Si vous devez la consulter, rapprochez votre encadrement ou le référent organisation.',
+            'mission' => ConfidentialDisplay::hint(ConfidentialDisplay::UNIT_HIDDEN),
             'orbatDetails' => $scopeNote,
             'chartIconUrl' => null,
             'chartImageUrl' => null,
@@ -872,6 +882,7 @@ final class OrbatRosterPayload
             'children' => [],
             'isOrbatPlaceholder' => true,
             'placeholderReason' => 'branch_hidden',
+            'confidential' => ConfidentialDisplay::payload(ConfidentialDisplay::UNIT_HIDDEN),
         ];
     }
 
@@ -892,6 +903,13 @@ final class OrbatRosterPayload
         $mask = OrbatMaskMode::normalize((string) ($node['maskMode'] ?? OrbatMaskMode::NONE));
         $node['staffMaskActive'] = $mask !== OrbatMaskMode::NONE;
         $node['maskHintLabel'] = $mask !== OrbatMaskMode::NONE ? self::staffMaskBadgeCaption($mask) : '';
+        $staff = $mask !== OrbatMaskMode::NONE
+            ? ConfidentialDisplay::staffPayload(VisibilityLevel::fromOrbatMaskMode($mask), 'unit')
+            : null;
+        if ($staff !== null) {
+            $staff['label'] = $node['maskHintLabel'];
+            $node['confidential'] = $staff;
+        }
 
         $children = [];
         foreach ($node['children'] ?? [] as $ch) {
@@ -976,6 +994,137 @@ final class OrbatRosterPayload
     }
 
     /**
+     * Retire les identités ajoutées APRÈS le filtrage de confidentialité (postes, chef, adjoint) :
+     * unité aux noms masqués, ou personne anonymisée / masquée pour ce lecteur.
+     *
+     * @param array<string, mixed> $node
+     * @param array<int, array<string, mixed>> $visByUser
+     * @return array<string, mixed>
+     */
+    public static function redactPeopleForViewer(array $node, OrgVisibilityCapabilities $caps, array $visByUser): array
+    {
+        $children = [];
+        foreach ($node['children'] ?? [] as $ch) {
+            if (is_array($ch)) {
+                $children[] = self::redactPeopleForViewer($ch, $caps, $visByUser);
+            }
+        }
+        $node['children'] = $children;
+        if (!empty($node['isOrbatPlaceholder'])) {
+            return $node;
+        }
+
+        $unitRedacted = !empty($node['viewerNamesRedacted']);
+        $abbrev = !empty($node['namesAbbreviated']);
+        $person = static function (int $uid, string $label) use ($unitRedacted, $abbrev, $caps, $visByUser): array {
+            $meta = $uid > 0 ? ($visByUser[$uid] ?? null) : null;
+            $custom = is_array($meta) ? (string) ($meta['anonymized_label'] ?? '') : '';
+            if ($unitRedacted) {
+                if ($abbrev) {
+                    $short = self::anonymizePersonLabel($label);
+
+                    return [0, $short, ConfidentialDisplay::payload(ConfidentialDisplay::NAMES_ABBREVIATED, $short)];
+                }
+                $l = ConfidentialDisplay::personLabel($custom);
+
+                return [0, $l, ConfidentialDisplay::payload(ConfidentialDisplay::PERSON_ANONYMIZED, $l)];
+            }
+            if (is_array($meta)) {
+                $level = (string) ($meta['visibility_level'] ?? VisibilityLevel::NORMAL);
+                if ($caps->shouldHidePersonnelCompletely($level) || $caps->shouldAnonymizePersonnel($level)) {
+                    $l = ConfidentialDisplay::personLabel($custom);
+
+                    return [0, $l, ConfidentialDisplay::payload(ConfidentialDisplay::PERSON_ANONYMIZED, $l)];
+                }
+            }
+
+            return [$uid, $label, null];
+        };
+
+        if (is_array($node['billets'] ?? null)) {
+            foreach ($node['billets'] as $bi => $b) {
+                if (!is_array($b) || !is_array($b['holders'] ?? null)) {
+                    continue;
+                }
+                foreach ($b['holders'] as $hi => $h) {
+                    if (!is_array($h)) {
+                        continue;
+                    }
+                    [$id, $label, $conf] = $person((int) ($h['user_id'] ?? 0), (string) ($h['label'] ?? ''));
+                    if ($conf !== null) {
+                        $node['billets'][$bi]['holders'][$hi]['user_id'] = $id;
+                        $node['billets'][$bi]['holders'][$hi]['label'] = $label;
+                        $node['billets'][$bi]['holders'][$hi]['confidential'] = $conf;
+                    }
+                }
+            }
+        }
+        if (is_array($node['derivedCommand'] ?? null)) {
+            foreach ($node['derivedCommand'] as $di => $dc) {
+                if (!is_array($dc)) {
+                    continue;
+                }
+                [$id, $label, $conf] = $person((int) ($dc['user_id'] ?? 0), (string) ($dc['label'] ?? ''));
+                if ($conf !== null) {
+                    $node['derivedCommand'][$di]['user_id'] = $id;
+                    $node['derivedCommand'][$di]['label'] = $label;
+                }
+            }
+        }
+        foreach (['commander', 'deputy'] as $k) {
+            if (!is_array($node[$k] ?? null)) {
+                continue;
+            }
+            [$id, $label, $conf] = $person((int) ($node[$k]['userId'] ?? 0), (string) ($node[$k]['label'] ?? ''));
+            if ($conf !== null) {
+                $node[$k]['userId'] = $id;
+                $node[$k]['label'] = $label;
+                $node[$k]['confidential'] = $conf;
+            }
+        }
+
+        if ($unitRedacted) {
+            // Le chef issu des postes a pu réécrire « leader » avec un nom réel après le masquage.
+            if (!empty($node['isAnonymizedUnit'])) {
+                $node['leader'] = '—';
+                $node['commander'] = null;
+                $node['deputy'] = null;
+            } elseif (is_array($node['commander'] ?? null)) {
+                $node['leader'] = (string) $node['commander']['label'];
+            } elseif (!empty($node['isRestrictedUnit'])) {
+                $node['leader'] = ConfidentialDisplay::label(ConfidentialDisplay::IDENTITY_RESTRICTED);
+            } elseif (!empty($node['leaderFromBillet'])) {
+                $node['leader'] = self::anonymizeLeaderLabel((string) ($node['leader'] ?? '—'));
+            }
+            $node['commanderUserId'] = 0;
+            $leader = trim((string) ($node['leader'] ?? ''));
+            if ($leader !== '' && $leader !== '—') {
+                $kind = ConfidentialDisplay::kindFromText($leader);
+                $node['leaderConfidential'] = is_array($node['commander']['confidential'] ?? null)
+                    ? $node['commander']['confidential']
+                    : ($kind !== null
+                        ? ConfidentialDisplay::payload($kind)
+                        : ConfidentialDisplay::payload(ConfidentialDisplay::NAMES_ABBREVIATED, $leader));
+            }
+        } else {
+            $cmdId = (int) ($node['commanderUserId'] ?? 0);
+            if ($cmdId > 0) {
+                [$id, $label, $conf] = $person($cmdId, (string) ($node['leader'] ?? ''));
+                if ($conf !== null) {
+                    $node['commanderUserId'] = $id;
+                    $node['leader'] = $label;
+                    $node['leaderConfidential'] = $conf;
+                }
+            }
+            if (is_array($node['commander'] ?? null) && !empty($node['commander']['confidential'])) {
+                $node['leader'] = (string) $node['commander']['label'];
+            }
+        }
+
+        return $node;
+    }
+
+    /**
      * @param list<array{user_id: int, label: string}>|mixed $members
      * @return list<array{user_id: int, label: string}>
      */
@@ -993,6 +1142,11 @@ final class OrbatRosterPayload
             $out[] = [
                 'user_id' => 0,
                 'label' => self::anonymizePersonLabel($label),
+                'anonymized' => true,
+                'confidential' => ConfidentialDisplay::payload(
+                    ConfidentialDisplay::NAMES_ABBREVIATED,
+                    self::anonymizePersonLabel($label)
+                ),
             ];
         }
 

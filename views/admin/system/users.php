@@ -271,7 +271,7 @@ $actionForm = static function (string $action, array $fields, string $label, str
                                     <span class="pa-pill pa-pill--slate" title="Aucune communauté active : la personne a un compte seul, elle peut rejoindre ou créer une communauté.">Sans communauté</span>
                                 <?php endif; ?>
                                 <?php if ($isAnonymized): ?>
-                                    <span class="pa-pill pa-pill--slate">Compte anonymisé</span>
+                                    <?= \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::ACCOUNT_DELETED) ?>
                                 <?php endif; ?>
                             </h2>
                             <p class="pu-person__sub">
@@ -380,7 +380,11 @@ $actionForm = static function (string $action, array $fields, string $label, str
                                         <?php endif; ?>
                                     </p>
                                 </div>
+                                <?php if ($isDeleted): ?>
+                                <span class="pu-row__state"><?= \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::ACCOUNT_DELETED) ?></span>
+                                <?php else: ?>
                                 <span class="pa-pill <?= $h($pill) ?> pu-row__state"><?= $h($pillText) ?></span>
+                                <?php endif; ?>
                                 <div class="pu-actions pu-row__actions">
                                     <?php if ($uid === $currentActorId): ?>
                                         <span class="pu-muted">Vous</span>

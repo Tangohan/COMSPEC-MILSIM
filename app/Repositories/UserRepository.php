@@ -4282,6 +4282,7 @@ class UserRepository
         $sql = "SELECT u.id, u.display_name, u.callsign, u.status,
                        {$gradeShort},
                        r.name AS role_name,
+                       un.id AS unit_id,
                        un.name AS unit_name
                 FROM users u
                 INNER JOIN user_profile_display_settings ups ON ups.user_id = u.id AND COALESCE(ups.public_roster_opt_in, 0) = 1
