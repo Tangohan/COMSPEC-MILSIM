@@ -122,6 +122,16 @@ final class ArsenalWardrobeRepositoryTest extends TestCase
         self::assertStringContainsString('arsenalDeleteCloud', $action);
         self::assertStringContainsString('arsenalPullAll', $action);
         self::assertStringContainsString('arsenalPushAll', $action);
+        // Options du menu clic droit : renommer / déplacer (écrits par arsenalAceStore, l'ancienne entrée retirée après
+        // la nouvelle), dupliquer, enfiler en gardant sac ou armes, comparer, objets manquants, copier.
+        foreach (['"rename"', '"move"', '"dup"', '"applyKeep"', '"compare"', '"missing"', '"copy"', 'copyToClipboard'] as $needle) {
+            self::assertStringContainsString($needle, $action);
+        }
+        self::assertStringContainsString('["upsert", [[_new, _r select 3]], _same]', $action);
+        self::assertStringContainsString('class arsenalMissingItems', $cfg);
+        self::assertStringContainsString('CfgMagazines', (string) file_get_contents(
+            dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalMissingItems.sqf'
+        ));
 
         $refresh = (string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_arsenalOverlayRefresh.sqf'

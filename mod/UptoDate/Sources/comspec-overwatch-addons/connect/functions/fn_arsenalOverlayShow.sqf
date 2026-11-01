@@ -423,7 +423,8 @@ for "_i" from 0 to 7 do {
     _pics pushBack [_cb, _p, _cap];
 };
 _grp setVariable ["COMSPEC_ArsenalPreviewPics", _pics];
-// Actions de la fiche : Enfiler (pleine largeur), puis Importer / Envoyer / Mettre à jour et Supprimer côte à côte.
+// Actions de la fiche : Enfiler (pleine largeur), puis Importer / Envoyer / Mettre à jour, Supprimer et « … » (toutes
+// les actions, comme le clic droit sur la carte).
 private _actY = _bodyY + _bodyH - _ipY - (_rowH * 2 + _gap);
 private _ny = _gy2 + 2 * (_cellH + _cg) + 0.004;
 private _namesGrp = ["RscControlsGroup", [_ix, _ny, _dIw, (_actY - _ny - _gap) max _u]] call _mk;
@@ -431,11 +432,12 @@ private _names = _display ctrlCreate ["RscStructuredText", -1, _namesGrp];
 _names ctrlSetPosition [0, 0, _dIw - 0.012, _u];
 _names ctrlCommit 0;
 _grp setVariable ["COMSPEC_ArsenalPreviewNames", _names];
-private _half = (_dIw - _gap) / 2;
+private _half = (_dIw - 2 * _gap - _sq) / 2;
 _grp setVariable ["COMSPEC_ArsenalDetailBtns", [
     [[_ix, _actY, _dIw, _rowH], "ENFILER", "apply", "COMSPEC_RscButtonAtakPrimary", "Mettre cette tenue sur le mannequin et fermer le panneau", _fB, _fs] call _btn,
     [[_ix, _actY + _rowH + _gap, _half, _rowH], "", "keep", "COMSPEC_RscButtonAtak", "", _fB] call _btn,
-    [[_ix + _half + _gap, _actY + _rowH + _gap, _half, _rowH], "", "remove", "COMSPEC_RscButtonAtakDanger", "", _fB] call _btn
+    [[_ix + _half + _gap, _actY + _rowH + _gap, _half, _rowH], "", "remove", "COMSPEC_RscButtonAtakDanger", "", _fB] call _btn,
+    [[_ix + _dIw - _sq, _actY + _rowH + _gap, _sq, _rowH], "…", "moreMenu", "COMSPEC_RscButtonAtak", "Toutes les actions sur cette tenue (aussi au clic droit sur sa carte)", _fB] call _btn
 ]];
 
 // Pied : action groupée, enregistrement de la tenue portée, puis retour des actions et rappel des gestes.
@@ -476,25 +478,66 @@ _grp setVariable ["COMSPEC_ArsenalSetHint", {
     _c ctrlSetStructuredText parseText (((format ["<t size='0.78'><t color='%1'>●</t>  <t color='%2'>%3</t></t>", _dot, _fg, (_text) call comspec_overwatch_connect_fnc_tr])) call comspec_overwatch_connect_fnc_tr);
 }];
 
-// Menu clic droit : fond qui le ferme au clic, carte de lignes (créés en dernier : par-dessus les cartes).
+// Menu clic droit : fond qui le ferme au clic, carte de lignes et de séparateurs placés à l'ouverture (créés en
+// dernier : par-dessus les cartes). Même fond pour la petite fenêtre de saisie (Renommer, Déplacer vers une collection).
 private _scrim = ["COMSPEC_RscArsenalScrim", [0, 0, _w, _h]] call _mk;
 _scrim ctrlAddEventHandler ["ButtonClick", { ["menuClose"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
 _scrim ctrlShow false;
-private _menuW = 11 * _uw;
-private _mRowH = _rowH * 0.92;
-private _menu = ["RscControlsGroupNoScrollbars", [0, 0, _menuW, 6 * _mRowH + 4 * _pxH]] call _mk;
-private _mBg = [[0, 0, _menuW, 6 * _mRowH + 4 * _pxH], _line, _menu] call _box;
+private _menuW = 12.5 * _uw;
+private _mRowH = _rowH * 0.88;
+private _menu = ["RscControlsGroupNoScrollbars", [0, 0, _menuW, 16 * _mRowH]] call _mk;
+private _mBg = [[0, 0, _menuW, 16 * _mRowH], _line, _menu] call _box;
 [[0, 0, _menuW, 2 * _pxH], _green, _menu] call _box;
 private _mRows = [];
-for "_i" from 0 to 5 do {
-    private _r = ["COMSPEC_RscArsenalMenuRow", [_pxW, 2 * _pxH + _i * _mRowH, _menuW - 2 * _pxW, _mRowH - _pxH], -1, _menu] call _mk;
+for "_i" from 0 to 15 do {
+    private _r = ["COMSPEC_RscArsenalMenuRow", [_pxW, 0, _menuW - 2 * _pxW, _mRowH - _pxH], -1, _menu] call _mk;
     _r ctrlSetFont _fR;
     _r ctrlSetFontHeight _fsS;
     _r ctrlAddEventHandler ["ButtonClick", { params ["_c"]; ["menuDo", _c getVariable ["act", ""]] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
+    _r ctrlShow false;
     _mRows pushBack _r;
 };
+private _mSeps = [];
+for "_i" from 0 to 5 do {
+    private _l = [[0.4 * _uw, 0, _menuW - 0.8 * _uw, _pxH], [0.22, 0.28, 0.24, 1], _menu] call _box;
+    _l ctrlShow false;
+    _mSeps pushBack _l;
+};
 _menu ctrlShow false;
-_grp setVariable ["COMSPEC_ArsenalMenu", [_scrim, _menu, _mRows, _mRowH, _menuW, _mBg]];
+_grp setVariable ["COMSPEC_ArsenalMenu", [_scrim, _menu, _mRows, _mRowH, _menuW, _mBg, _mSeps]];
+
+// Fenêtre de saisie : titre, champ (Entrée valide), Valider / Annuler.
+private _askW = (16 * _uw) min (_w * 0.8);
+private _askH = _u * 3.9;
+private _ask = ["RscControlsGroupNoScrollbars", [(_w - _askW) / 2, (_h - _askH) / 2, _askW, _askH]] call _mk;
+[[0, 0, _askW, _askH], _line, _ask] call _box;
+[[_pxW, _pxH, _askW - 2 * _pxW, _askH - 2 * _pxH], [0.035, 0.042, 0.038, 1], _ask] call _box;
+[[0, 0, _askW, 2 * _pxH], _green, _ask] call _box;
+private _aIp = 0.45 * _uw;
+private _askTitle = ["RscStructuredText", [_aIp, _u * 0.3, _askW - 2 * _aIp, _u * 0.9], -1, _ask] call _mk;
+[[_aIp, _u * 1.25, _askW - 2 * _aIp, _rowH], _bg2, _ask] call _box;
+[[_aIp, _u * 1.25 + _rowH - _pxH, _askW - 2 * _aIp, _pxH], _green, _ask] call _box;
+private _askEdit = ["RscEdit", [_aIp + 0.004, _u * 1.25, _askW - 2 * _aIp - 0.008, _rowH], 884424, _ask] call _mk;
+_askEdit ctrlSetFont _fR;
+_askEdit ctrlSetFontHeight _fsS;
+[_askEdit] call _typing;
+_askEdit ctrlAddEventHandler ["KeyDown", {
+    params ["", "_key"];
+    if (_key in [28, 156]) then { [{ ["askOk"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }] call CBA_fnc_execNextFrame; };
+    false
+}];
+private _aBw = (_askW - 2 * _aIp - _gap) / 2;
+{
+    _x params ["_bx", "_label", "_act", "_cls"];
+    private _b = [_cls, [_bx, _u * 2.6, _aBw, _rowH], -1, _ask] call _mk;
+    _b ctrlSetText ((_label) call comspec_overwatch_connect_fnc_tr);
+    _b ctrlSetFont _fB;
+    _b ctrlSetFontHeight _fsS;
+    _b setVariable ["act", _act];
+    _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [_c getVariable "act"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
+} forEach [[_aIp, "FERMER", "menuClose", "COMSPEC_RscButtonAtak"], [_aIp + _aBw + _gap, "VALIDER", "askOk", "COMSPEC_RscButtonAtakPrimary"]];
+_ask ctrlShow false;
+_grp setVariable ["COMSPEC_ArsenalAsk", [_ask, _askTitle, _askEdit]];
 
 _grp setVariable ["COMSPEC_ArsenalTab", profileNamespace getVariable ["COMSPEC_ArsenalTab", "local"]];
 _grp setVariable ["COMSPEC_ArsenalColl", ""];

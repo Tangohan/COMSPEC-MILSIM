@@ -28,7 +28,7 @@ class CfgPatches {
         // 1.6.22 : ATAK natif 2.9.21 — panneau Tenues ACE corrigé (réparation des tenues ACE), menu ACE Tenues retiré, coupure centrale des envois (fn_uplinkHold), bandeau bêta fermable.
         // 1.6.23 : ATAK natif 2.9.22 — plus aucun appel lent sur le fil du jeu (extDirect / extFast), traduction anglaise complète, optimisations SQF.
         // 1.6.24 : ATAK natif 2.9.24 — message « pack non officiel » (CLIENT_UNTRUSTED) au lieu du faux 401.
-        // 1.6.25 : ATAK natif 2.9.26 — panneau Athena · Tenues refait (cartes, onglet Favoris, menu clic droit, fiche, ligne de retour).
+        // 1.6.25 : ATAK natif 2.9.26 — panneau Athena · Tenues refait (cartes, onglet Favoris, menu clic droit, fiche, ligne de retour), options du menu (renommer, dupliquer, collection, enfiler en gardant sac ou armes, comparer, objets manquants, copier).
     };
 };
 
@@ -166,6 +166,7 @@ class CfgFunctions {
             class arsenalHash {};
             class arsenalLedger {};
             class arsenalStateInfo {};
+            class arsenalMissingItems {};
             class arsenalMarkSeen {};
             class arsenalAceStore {};
             class sendIntel {};

@@ -114,7 +114,22 @@ if (!isNull _noteC) then {
     _noteC ctrlSetStructuredText parseText (((if (_has) then { format ["<t size='0.78' color='#c4d2c8'>%1</t>", (_note) call comspec_overwatch_connect_fnc_tr] } else { "" })) call comspec_overwatch_connect_fnc_tr);
 };
 
-// Pièces : icône et légende (traduite) ; info-bulle avec le nom de l'objet.
+// Comparaison avec la tenue portée (menu « Comparer ») : les 8 emplacements principaux, classe par classe.
+private _cmpOn = _has && {_loadout isNotEqualTo []} && {_grp getVariable ["COMSPEC_ArsenalCompare", false]};
+private _diffKinds = [];
+if (_cmpOn) then {
+    private _unit = missionNamespace getVariable ["ace_arsenal_center", player];
+    if (isNull _unit) then { _unit = player; };
+    private _worn = [getUnitLoadout _unit] call comspec_overwatch_connect_fnc_arsenalLoadoutIcons;
+    for "_i" from 0 to 7 do {
+        private _a = _icons param [_i, []];
+        if (((_a param [1, ""]) isNotEqualTo ((_worn param [_i, []]) param [1, ""]))) then { _diffKinds pushBack (_a param [0, ""]); };
+    };
+};
+// Objets que les mods chargés ne connaissent pas : ils ne seraient pas enfilés.
+private _missing = if (_has && {_loadout isNotEqualTo []}) then { [_loadout] call comspec_overwatch_connect_fnc_arsenalMissingItems } else { [] };
+
+// Pièces : icône et légende (traduite) ; info-bulle avec le nom de l'objet. Comparaison : case différente en orange.
 // Afficher aussi sans image (mods absents) : la case reste utile avec le libellé.
 private _slots = _icons select { (_x select 1) isNotEqualTo "" || {(_x select 3) isNotEqualTo ""} };
 {
@@ -123,6 +138,9 @@ private _slots = _icons select { (_x select 1) isNotEqualTo "" || {(_x select 3)
     { _x ctrlShow _on; } forEach [_cb, _p, _cap];
     if (_on) then {
         (_slots select _forEachIndex) params ["_kind", "", "_pic", "_dn"];
+        private _d = _kind in _diffKinds;
+        _cb ctrlSetBackgroundColor ([[0.075, 0.09, 0.08, 1], [0.26, 0.17, 0.04, 1]] select _d);
+        _cap ctrlSetTextColor ([[0.62, 0.70, 0.65, 1], [0.95, 0.67, 0.20, 1]] select _d);
         if (_pic isNotEqualTo "") then { _p ctrlSetText ((_pic) call comspec_overwatch_connect_fnc_tr); } else { _p ctrlSetText (("") call comspec_overwatch_connect_fnc_tr); };
         _p ctrlSetTooltip ((format ["%1 : %2", (_kind) call comspec_overwatch_connect_fnc_tr, _dn]) call comspec_overwatch_connect_fnc_tr);
         _cap ctrlSetText toUpper ((_kind) call comspec_overwatch_connect_fnc_tr);
@@ -138,7 +156,20 @@ if (!isNull _names) then {
     private _txt = switch (true) do {
         case (!_has): { "" };
         case (_loadout isEqualTo [] && {_meta find "Chargement" >= 0}): { format ["<t color='#8fa596'>%1</t>", ("Chargement de la tenue…") call comspec_overwatch_connect_fnc_tr] };
-        case ((count _lines) > 0): { _lines joinString "<br/>" };
+        case ((count _lines) > 0): {
+            private _top = [];
+            if (_missing isNotEqualTo []) then {
+                _top pushBack format ["<t color='#e06a5a'>%1</t>", format [("%1 objet(s) absents de vos mods, ils ne seront pas enfilés : %2") call comspec_overwatch_connect_fnc_tr, count _missing, ((_missing select [0, 8]) joinString ", ") + (["", "…"] select ((count _missing) > 8))]];
+            };
+            if (_cmpOn) then {
+                _top pushBack (if (_diffKinds isEqualTo []) then {
+                    format ["<t color='#5cc76b'>%1</t>", ("Mêmes pièces principales que la tenue portée.") call comspec_overwatch_connect_fnc_tr]
+                } else {
+                    format ["<t color='#f2ab33'>%1</t>", format [("Différent de la tenue portée : %1") call comspec_overwatch_connect_fnc_tr, (_diffKinds apply { (_x) call comspec_overwatch_connect_fnc_tr }) joinString ", "]]
+                });
+            };
+            (_top + [_lines joinString "<br/>"]) joinString "<br/>"
+        };
         case (_err isEqualTo "too_large"): { format ["<t color='#ffb080'>%1</t>", ("Tenue trop lourde pour l'aperçu en jeu : ouvrez-la sur le poste Athena.") call comspec_overwatch_connect_fnc_tr] };
         default { format ["<t color='#8fa596'>%1</t>", ("Équipement non disponible pour cette tenue.") call comspec_overwatch_connect_fnc_tr] };
     };
@@ -149,7 +180,8 @@ if (!isNull _names) then {
 };
 
 // Actions selon l'onglet et l'état.
-(_grp getVariable ["COMSPEC_ArsenalDetailBtns", []]) params [["_bApply", controlNull], ["_bKeep", controlNull], ["_bDel", controlNull]];
+(_grp getVariable ["COMSPEC_ArsenalDetailBtns", []]) params [["_bApply", controlNull], ["_bKeep", controlNull], ["_bDel", controlNull], ["_bMore", controlNull]];
+if (!isNull _bMore) then { _bMore ctrlEnable _has; };
 private _keep = if (_isCloud) then {
     // Relation à mon arsenal (pas l'état affiché : une « Nouvelle » peut porter le nom d'une de mes tenues).
     switch (_row param [10, ""]) do {

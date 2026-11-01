@@ -12,8 +12,12 @@
       "pillPending" / "pillNew"           Mes tenues pas à jour sur le site / Communauté nouvelles
       "select", i / "apply", i            fiche de la carte i (index dans la liste affichée), enfiler (double-clic,
                                           ENFILER)
-      "menu", i / "menuDo", act / "menuClose"   menu clic droit d'une carte : Enfiler, Importer / Envoyer / Mettre
-                                          à jour, Supprimer, afficher sa collection, la cocher
+      "menu", i / "moreMenu" / "menuDo", act / "menuClose"   menu clic droit d'une carte (ou « … » de la fiche) :
+                                          Enfiler (aussi en gardant mon sac ou mes armes : "applyKeep", pack / arms),
+                                          Importer / Envoyer / Mettre à jour, Supprimer, Renommer et Déplacer vers une
+                                          collection ("ask" / "askOk"), Dupliquer ("dup"), Comparer avec la tenue
+                                          portée ("compare"), Vérifier les objets manquants ("missing"), Copier la
+                                          tenue ("copy"), afficher sa collection, la cocher
       "keep"                              Communauté : importer · Mes tenues : envoyer au site, ou prendre la version
                                           du site si elle y a changé
       "remove"                            Communauté : retirer (si c'est la vôtre) · Mes tenues : supprimer
@@ -78,6 +82,47 @@ private _metaLocal = {
     _bits joinString " · "
 };
 private _fill = { params [["_mode", ""]]; [_d, _mode] call comspec_overwatch_connect_fnc_arsenalOverlayFill; };
+// Tenue choisie complète ([tenue, infos étendues]), puis _code [tenue étendue, ligne, panneau, extra, communauté ?],
+// dans un spawn : celle du site vient du cache de COMSPEC Link ou du site (arsenalCloudLoadout), comme pour Enfiler.
+private _withData = {
+    params ["_code", ["_extra", ""]];
+    private _r = call _row;
+    if (_r isEqualTo []) exitWith { ["Choisissez d'abord une tenue dans la liste."] call _say; };
+    [_r, _isCloud, _code, _extra, _g] spawn {
+        params ["_r", "_isCloud", "_code", "_extra", "_g"];
+        private _data = if (_isCloud) then { [_r select 0, _r select 9] call comspec_overwatch_connect_fnc_arsenalCloudLoadout } else {
+            private _d = _r select 3;
+            if (([_d] call comspec_overwatch_connect_fnc_arsenalNormalizeLoadout) isEqualTo [] && {(_r param [13, ""]) isNotEqualTo ""}) then { [_r select 13] call comspec_overwatch_connect_fnc_arsenalCloudLoadout } else { _d }
+        };
+        private _ext = ["extended", _data] call comspec_overwatch_connect_fnc_arsenalAceStore;
+        if (_ext isEqualTo []) exitWith { [_g, "Cette tenue est illisible ou introuvable.", "err"] call (_g getVariable ["COMSPEC_ArsenalSetHint", {}]); };
+        [_ext, _r, _g, _extra, _isCloud] call _code;
+    };
+};
+// Mes tenues : renommer (ou changer de collection = changer le préfixe « Collection - »). Par arsenalAceStore, seul
+// écrivain des tenues ACE : la nouvelle entrée est écrite avant que l'ancienne soit retirée ; un nom déjà pris est refusé.
+private _renameTo = {
+    params ["_r", "_new"];
+    private _old = _r select 0;
+    _new = trim _new;
+    if (_new isEqualTo "") exitWith { ["Donnez un nom à la tenue.", "warn"] call _hint; };
+    if (_new isEqualTo _old) exitWith {};
+    private _kn = ["key", _new] call comspec_overwatch_connect_fnc_arsenalAceStore;
+    private _same = _kn isEqualTo (["key", _old] call comspec_overwatch_connect_fnc_arsenalAceStore);
+    if (!_same && {((_g getVariable ["COMSPEC_ArsenalLocalRows", []]) findIf { (["key", _x select 0] call comspec_overwatch_connect_fnc_arsenalAceStore) isEqualTo _kn }) >= 0}) exitWith {
+        [format [("Une tenue s'appelle déjà « %1 » : choisissez un autre nom.") call comspec_overwatch_connect_fnc_tr, _new], "warn"] call _hint;
+    };
+    if (((["upsert", [[_new, _r select 3]], _same] call comspec_overwatch_connect_fnc_arsenalAceStore) select 0) < 1) exitWith {
+        [format [("« %1 » n'a pas pu être renommée.") call comspec_overwatch_connect_fnc_tr, _old], "err"] call _hint;
+    };
+    if (!_same) then { ["remove", [_old]] call comspec_overwatch_connect_fnc_arsenalAceStore; };
+    _g setVariable ["COMSPEC_ArsenalSelKey", ["local", toLower _new]];
+    [_g, _old, _new] spawn {
+        params ["_g", "_o", "_n"];
+        ["redrawNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+        [_g, format [("« %1 » devient « %2 ».") call comspec_overwatch_connect_fnc_tr, _o, _n], "ok"] call (_g getVariable ["COMSPEC_ArsenalSetHint", {}]);
+    };
+};
 
 switch (_act) do {
     case "toggle": {
@@ -248,8 +293,9 @@ switch (_act) do {
             };
         };
     };
-    // Menu clic droit d'une carte, à la souris, gardé dans le panneau ; le focus va à sa première ligne (sinon la carte
-    // cliquée, qui garde le focus, se dessinait par-dessus).
+    // Menu clic droit d'une carte (ou « … » de la fiche), à la souris, gardé dans le panneau ; le focus va à sa
+    // première ligne active (sinon la carte cliquée, qui garde le focus, se dessinait par-dessus). [] = séparateur.
+    case "moreMenu": { ["menu", _g getVariable ["COMSPEC_ArsenalSelected", -1]] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
     case "menu": {
         if (!(_arg isEqualType 0) || {_arg < 0}) exitWith {};
         if (!_isCloud && {_g getVariable ["COMSPEC_ArsenalPickMode", false]}) exitWith { ["select", _arg] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
@@ -259,25 +305,59 @@ switch (_act) do {
         if (_r isEqualTo [] || {!_has}) exitWith {};
         private _items = [
             ["Enfiler", "apply", true],
+            ["Enfiler en gardant mon sac", "applyPack", true],
+            ["Enfiler en gardant mes armes", "applyArms", true],
+            [],
             [_keep select 0, "keep", _keep select 1],
             [_del select 0, "remove", _del select 1],
+            []
+        ];
+        if (!_isCloud) then { _items append [["Renommer…", "rename", true], ["Dupliquer", "dup", true], ["Déplacer vers une collection…", "move", true], []]; };
+        _items append [
+            [["Comparer avec la tenue portée", "Arrêter la comparaison"] select (_g getVariable ["COMSPEC_ArsenalCompare", false]), "compare", true],
+            ["Vérifier les objets manquants", "missing", true],
+            ["Copier la tenue (format ACE)", "copy", true],
+            [],
             [format [("Afficher la collection « %1 »") call comspec_overwatch_connect_fnc_tr, _r select ([2, 3] select _isCloud)], "menuColl", true]
         ];
         if (!_isCloud) then { _items pushBack ["Cocher pour supprimer en groupe", "menuPick", true]; };
-        (_g getVariable ["COMSPEC_ArsenalMenu", []]) params ["_scrim", "_menu", "_mRows", "_mRowH", "_menuW", "_mBg"];
+        (_g getVariable ["COMSPEC_ArsenalMenu", []]) params ["_scrim", "_menu", "_mRows", "_mRowH", "_menuW", "_mBg", ["_mSeps", []]];
+        { _x ctrlShow false; } forEach (_mRows + _mSeps);
+        private _y = 3 * pixelH;
+        private _ri = 0;
+        private _si = 0;
+        private _first = controlNull;
         {
-            private _it = _items param [_forEachIndex, []];
-            _x ctrlShow (_it isNotEqualTo []);
-            if (_it isEqualTo []) then { continue };
-            _it params ["_t", "_a", "_on"];
+            if (_x isEqualTo []) then {
+                private _l = _mSeps param [_si, controlNull];
+                if (!isNull _l) then {
+                    (ctrlPosition _l) params ["_lx", "", "_lw"];
+                    _l ctrlSetPosition [_lx, _y + _mRowH * 0.14, _lw, pixelH];
+                    _l ctrlCommit 0;
+                    _l ctrlShow true;
+                };
+                _si = _si + 1;
+                _y = _y + _mRowH * 0.3;
+                continue;
+            };
+            private _b = _mRows param [_ri, controlNull];
+            if (isNull _b) then { continue };
+            _x params ["_t", "_a", "_on"];
             // Libellés en capitales sur les boutons de la fiche : en phrase dans le menu.
             private _tt = (_t) call comspec_overwatch_connect_fnc_tr;
             if (_tt isEqualTo toUpper _tt) then { _tt = (toUpper (_tt select [0, 1])) + (toLower (_tt select [1])); };
-            _x ctrlSetText ((("  " + _tt)) call comspec_overwatch_connect_fnc_tr);
-            _x ctrlEnable _on;
-            _x setVariable ["act", _a];
-        } forEach _mRows;
-        private _mh = (count _items) * _mRowH + 4 * pixelH;
+            _b ctrlSetText ((("  " + _tt)) call comspec_overwatch_connect_fnc_tr);
+            _b ctrlEnable _on;
+            _b setVariable ["act", _a];
+            (ctrlPosition _b) params ["_bx", "", "_bw", "_bh"];
+            _b ctrlSetPosition [_bx, _y, _bw, _bh];
+            _b ctrlCommit 0;
+            _b ctrlShow true;
+            if (isNull _first && {_on}) then { _first = _b; };
+            _ri = _ri + 1;
+            _y = _y + _mRowH;
+        } forEach _items;
+        private _mh = _y + 2 * pixelH;
         _mBg ctrlSetPosition [0, 0, _menuW, _mh];
         _mBg ctrlCommit 0;
         getMousePosition params ["_mx", "_my"];
@@ -286,11 +366,17 @@ switch (_act) do {
         _menu ctrlCommit 0;
         _scrim ctrlShow true;
         _menu ctrlShow true;
-        ctrlSetFocus (_mRows select 0);
+        if (!isNull _first) then { ctrlSetFocus _first; };
     };
     case "menuClose": {
         (_g getVariable ["COMSPEC_ArsenalMenu", []]) params [["_scrim", controlNull], ["_menu", controlNull]];
-        if (!isNull _menu && {ctrlShown _menu}) then { _scrim ctrlShow false; _menu ctrlShow false; };
+        (_g getVariable ["COMSPEC_ArsenalAsk", []]) params [["_ask", controlNull]];
+        private _askOn = !isNull _ask && {ctrlShown _ask};
+        if ((!isNull _menu && {ctrlShown _menu}) || {_askOn}) then {
+            { if (!isNull _x) then { _x ctrlShow false; }; } forEach [_scrim, _menu, _ask];
+            // Le champ de saisie masqué ne garde pas les raccourcis d'ACE.
+            if (_askOn) then { ace_arsenal_leftSearchbarFocus = false; };
+        };
     };
     case "menuDo": {
         ["menuClose"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
@@ -304,8 +390,106 @@ switch (_act) do {
                 _g setVariable ["COMSPEC_ArsenalMarked", [toLower (_r select 0)]];
                 [] call _fill;
             };
-            default { if (_arg in ["apply", "keep", "remove"]) then { [_arg] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }; };
+            case "applyPack";
+            case "applyArms": { ["applyKeep", ["pack", "arms"] select (_arg isEqualTo "applyArms")] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
+            case "rename": { ["ask", ["rename", "Nouveau nom de la tenue (le préfixe avant « - » sert de collection)", _r select 0]] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
+            case "move": {
+                ["ask", ["move", format [("Collection de « %1 » : existante ou nouvelle (vide : sans collection)") call comspec_overwatch_connect_fnc_tr, _r select 1], ["", _r select 2] select ((_r select 2) isNotEqualTo "Autres")]] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            };
+            default { if (_arg in ["apply", "keep", "remove", "dup", "compare", "missing", "copy"]) then { [_arg] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }; };
         };
+    };
+    // Petite fenêtre de saisie (Renommer, Déplacer vers une collection) : [genre, titre, texte de départ].
+    case "ask": {
+        _arg params [["_kind", ""], ["_title", ""], ["_prefill", ""]];
+        (_g getVariable ["COMSPEC_ArsenalAsk", []]) params [["_ask", controlNull], ["_t", controlNull], ["_e", controlNull]];
+        (_g getVariable ["COMSPEC_ArsenalMenu", []]) params [["_scrim", controlNull]];
+        if (isNull _ask) exitWith {};
+        _g setVariable ["COMSPEC_ArsenalAskKind", _kind];
+        _t ctrlSetStructuredText parseText (((format ["<t size='0.8' color='#dce8e0'>%1</t>", (_title) call comspec_overwatch_connect_fnc_tr])) call comspec_overwatch_connect_fnc_tr);
+        _e ctrlSetText _prefill; // i18n:brut
+        _scrim ctrlShow true;
+        _ask ctrlShow true;
+        ctrlSetFocus _e;
+    };
+    case "askOk": {
+        (_g getVariable ["COMSPEC_ArsenalAsk", []]) params [["_ask", controlNull], "", ["_e", controlNull]];
+        if (isNull _ask || {!ctrlShown _ask}) exitWith {};
+        private _txt = trim ctrlText _e;
+        ["menuClose"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+        private _r = call _row;
+        if (_r isEqualTo [] || {_isCloud}) exitWith {};
+        private _new = switch (true) do {
+            case ((_g getVariable ["COMSPEC_ArsenalAskKind", ""]) isNotEqualTo "move"): { _txt };
+            case (_txt isEqualTo ""): { _r select 1 };
+            default { format ["%1 - %2", _txt, _r select 1] };
+        };
+        [_r, _new] call _renameTo;
+    };
+    // Mes tenues : copie sous « nom (copie) », « nom (copie 2) »… ; rien d'autre ne bouge.
+    case "dup": {
+        private _r = call _row;
+        if (_r isEqualTo [] || {_isCloud}) exitWith {};
+        private _keys = (_g getVariable ["COMSPEC_ArsenalLocalRows", []]) apply { ["key", _x select 0] call comspec_overwatch_connect_fnc_arsenalAceStore };
+        private _copy = ("copie") call comspec_overwatch_connect_fnc_tr;
+        private _n = format ["%1 (%2)", _r select 0, _copy];
+        private _i = 2;
+        while { (["key", _n] call comspec_overwatch_connect_fnc_arsenalAceStore) in _keys } do { _n = format ["%1 (%2 %3)", _r select 0, _copy, _i]; _i = _i + 1; };
+        if (((["upsert", [[_n, _r select 3]], false] call comspec_overwatch_connect_fnc_arsenalAceStore) select 0) < 1) exitWith {
+            [format [("« %1 » n'a pas pu être dupliquée.") call comspec_overwatch_connect_fnc_tr, _r select 0], "err"] call _hint;
+        };
+        _g setVariable ["COMSPEC_ArsenalSelKey", ["local", toLower _n]];
+        [_g, _r select 0, _n] spawn {
+            params ["_g", "_o", "_n"];
+            ["redrawNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            [_g, format [("« %1 » dupliquée en « %2 ».") call comspec_overwatch_connect_fnc_tr, _o, _n], "ok"] call (_g getVariable ["COMSPEC_ArsenalSetHint", {}]);
+        };
+    };
+    // Fiche : pièces qui diffèrent de la tenue portée par le mannequin, en orange (arsenalOverlayPreview).
+    case "compare": {
+        private _on = !(_g getVariable ["COMSPEC_ArsenalCompare", false]);
+        _g setVariable ["COMSPEC_ArsenalCompare", _on];
+        [["Comparaison arrêtée.", "Comparaison avec la tenue portée : les pièces différentes sont en orange dans la fiche."] select _on, "info"] call _hint;
+        private _i = _g getVariable ["COMSPEC_ArsenalSelected", -1];
+        if (_i >= 0) then { ["select", _i] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
+    };
+    case "missing": {
+        [{
+            params ["_ext", "_r", "_g", "", "_isCloud"];
+            private _miss = [_ext] call comspec_overwatch_connect_fnc_arsenalMissingItems;
+            private _label = _r select ([0, 1] select _isCloud);
+            [_g, if (_miss isEqualTo []) then {
+                format [("Tous les objets de « %1 » existent dans vos mods.") call comspec_overwatch_connect_fnc_tr, _label]
+            } else {
+                format [("%1 objet(s) de « %2 » absents de vos mods : %3") call comspec_overwatch_connect_fnc_tr, count _miss, _label,
+                    ((_miss select [0, 4]) joinString ", ") + (["", "…"] select ((count _miss) > 4))]
+            }, ["warn", "ok"] select (_miss isEqualTo [])] call (_g getVariable ["COMSPEC_ArsenalSetHint", {}]);
+        }] call _withData;
+    };
+    // Presse-papiers : tableau getUnitLoadout, relu par Importer d'ACE ou setUnitLoadout.
+    case "copy": {
+        [{
+            params ["_ext", "_r", "_g", "", "_isCloud"];
+            copyToClipboard (str (_ext select 0));
+            [_g, format [("« %1 » copiée dans le presse-papiers (format ACE, à coller dans Importer d'ACE).") call comspec_overwatch_connect_fnc_tr, _r select ([0, 1] select _isCloud)], "ok"] call (_g getVariable ["COMSPEC_ArsenalSetHint", {}]);
+        }] call _withData;
+    };
+    // Enfiler en gardant le sac porté (« pack ») ou les trois armes portées (« arms ») : le reste vient de la tenue.
+    case "applyKeep": {
+        ["Chargement de la tenue…", "busy"] call _hint;
+        [{
+            params ["_ext", "_r", "_g", "_what", "_isCloud"];
+            private _unit = missionNamespace getVariable ["ace_arsenal_center", player];
+            if (isNull _unit) then { _unit = player; };
+            private _cur = getUnitLoadout _unit;
+            private _lo = +(_ext select 0);
+            { _lo set [_x, +(_cur select _x)]; } forEach ([[0, 1, 2], [5]] select (_what isEqualTo "pack"));
+            if ([[_lo, _ext select 1], _r select ([0, 1] select _isCloud)] call comspec_overwatch_connect_fnc_arsenalApplyLoadout) then {
+                ["close"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+            } else {
+                [_g, "La tenue n'a pas pu être enfilée : voir le message de l'arsenal.", "err"] call (_g getVariable ["COMSPEC_ArsenalSetHint", {}]);
+            };
+        }, _arg] call _withData;
     };
     case "apply": {
         // Sélection multiple : un double-clic coche puis décoche, il n'enfile pas la tenue.
