@@ -961,3 +961,16 @@ COMSPEC TACMAP	nom propre/indicatif	views/tacmap.php
 <textarea id="poe-%1	bruit d'extraction (code/HTML)	views/transmission/poe.php
 <textarea id="pv-%1	bruit d'extraction (code/HTML)	views/transmission/show.php
 · COMSPEC	identique en anglais / sigle / mesure	views/year_review/story.php
+Message — %1	identique en anglais	views/emails/community_contact.php
+Invitation — %1	identique en anglais	views/emails/community_invitation.php
+Brevo	nom de produit	app/Services/Email/TenantMailSender.php
+Mailgun	nom de produit	app/Services/Email/TenantMailSender.php
+Athena · 2026	identique en anglais	views/emails/atak_mod_report_reply.php
+Athena refused your game connection	déjà en anglais	views/emails/atak_player_access_refused.php
+Game connection guide	déjà en anglais	views/emails/atak_player_access_refused.php
+Dashboard: %1	identique en anglais	views/emails/community_creation_checklist.php
+Invitation	identique en anglais	views/emails/member_integration_invite.php
+— Athena	identique en anglais	views/emails/platform_alert_broadcast.php
+%1 — %2	identique en anglais (marqueurs seuls)	views/emails/security_alert.php
+%1 minutes	identique en anglais	views/emails/user_register_confirmation.php
+no-reply@athena-comspec.eu	adresse e-mail	views/emails/user_register_confirmation.php
