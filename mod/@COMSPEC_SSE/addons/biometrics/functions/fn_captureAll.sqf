@@ -6,16 +6,10 @@ params [
     ["_player", player, [objNull]]
 ];
 
-private _hasSeek = [_player, "seek"] call comspec_sse_fnc_hasEquipment;
-if (!_hasSeek) then {
-    private _hasKits =
-        ([_player, "fingerprint"] call comspec_sse_fnc_hasEquipment)
-        && {[_player, "dna"] call comspec_sse_fnc_hasEquipment}
-        && {[_player, "face"] call comspec_sse_fnc_hasEquipment};
-    if (!_hasKits) exitWith {
-        ["SEEK II / tablette compatible, ou kits empreintes + ADN + photo requis.", "WARNING"] call comspec_sse_fnc_notify;
-        false
-    };
+// exitWith au niveau de la fonction : dans un then, la capture démarrait quand même sans équipement.
+if (!([_player, "seek"] call comspec_sse_fnc_hasEquipment) && {!(([_player, "fingerprint"] call comspec_sse_fnc_hasEquipment) && {[_player, "dna"] call comspec_sse_fnc_hasEquipment} && {[_player, "face"] call comspec_sse_fnc_hasEquipment})}) exitWith {
+    ["SEEK II / tablette compatible, ou kits empreintes + ADN + photo requis.", "WARNING"] call comspec_sse_fnc_notify;
+    false
 };
 
 [player, _target, "complet", "start"] call comspec_sse_fnc_bioAnimate;

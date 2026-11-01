@@ -46,7 +46,6 @@ class CfgFunctions {
             class missionSeed {};
             class entitySeed {};
             class getSeed {};
-            class setSeed {};
             class getState {};
             class setState {};
             class setIdentity {};

@@ -16,6 +16,7 @@
       "near" [unité]      -> trace la plus proche à moins de 2,5 m, [] sinon
       "examine" / "latent" / "dna" [unité]
       "say" [texte, type]  -> notification ATAK (retours de l'action, rien sur l'écran du jeu)
+      "merge" [traces]     (clients) nouvelles traces envoyées par le serveur
 */
 params [["_mode", "near"], ["_args", []]];
 private _now = { [time, serverTime] select isMultiplayer };
@@ -40,11 +41,26 @@ if (_mode isEqualTo "say") exitWith {
     if (!hasInterface || {_txt isEqualTo ""}) exitWith {};
     [_txt, _type, "SSE · Tache de sang"] call comspec_sse_fnc_notify;
 };
+// Clients (XEH_postInit, hors serveur) : nouvelles traces reçues en lot (comspec_sse_bloodAdd), dédoublonnées par id
+// (une copie complète peut arriver en même temps), 150 au plus, liste locale seulement.
+if (_mode isEqualTo "merge") exitWith {
+    if (isServer) exitWith {};
+    _args params [["_new", []]];
+    private _l = missionNamespace getVariable ["COMSPEC_SSE_BloodTraces", []];
+    {
+        private _id = _x select 0;
+        if ((_l findIf { (_x select 0) isEqualTo _id }) < 0) then { _l pushBack _x; };
+    } forEach _new;
+    if ((count _l) > 150) then { _l deleteRange [0, (count _l) - 150]; };
+    missionNamespace setVariable ["COMSPEC_SSE_BloodTraces", _l];
+};
 
 switch (_mode) do {
     case "server": {
         if (!isServer) exitWith {};
         missionNamespace setVariable ["COMSPEC_SSE_BloodTraces", [], true];
+        missionNamespace setVariable ["COMSPEC_SSE_BloodNew", []];
+        missionNamespace setVariable ["COMSPEC_SSE_BloodFullAt", diag_tickTime];
         private _add = {
             params ["_u", "_pos", "_kind"];
             if !(missionNamespace getVariable ["comspec_sse_bio_enabled", true]) exitWith {};
@@ -57,7 +73,9 @@ switch (_mode) do {
             private _w = _near param [0, objNull];
             private _n = (missionNamespace getVariable ["COMSPEC_SSE_BloodN", 0]) + 1;
             missionNamespace setVariable ["COMSPEC_SSE_BloodN", _n];
-            _list pushBack [format ["BLD-%1", 1000 + _n], _pos, _key, _u, [time, serverTime] select isMultiplayer, [_w] call comspec_sse_fnc_bioPersonKey, _w, _kind];
+            private _entry = [format ["BLD-%1", 1000 + _n], _pos, _key, _u, [time, serverTime] select isMultiplayer, [_w] call comspec_sse_fnc_bioPersonKey, _w, _kind];
+            _list pushBack _entry;
+            (missionNamespace getVariable ["COMSPEC_SSE_BloodNew", []]) pushBack _entry;
             // 150 traces au plus : les plus anciennes partent.
             if ((count _list) > 150) then { _list deleteRange [0, (count _list) - 150]; };
             missionNamespace setVariable ["COMSPEC_SSE_BloodTraces", _list];
@@ -78,12 +96,23 @@ switch (_mode) do {
                     if (isNull objectParent _u && {!surfaceIsWater _p}) then { [_u, _p, "drop"] call _add; };
                 };
             } forEach (allUnits select { _x isKindOf "CAManBase" });
-            // Publication groupée (pas une diffusion réseau par goutte) et au plus toutes les 12 s : la liste entière
-            // (150 traces) repartait vers chaque client toutes les 3 s tant qu'un blessé se déplaçait.
+            // Publication groupée au plus toutes les 12 s : seulement les nouvelles traces (la liste entière, 150 traces,
+            // repartait vers chaque client à chaque lot). Copie complète (JIP) au plus toutes les 60 s s'il y a eu du neuf.
             if ((missionNamespace getVariable ["COMSPEC_SSE_BloodDirty", false])
                 && {diag_tickTime >= (missionNamespace getVariable ["COMSPEC_SSE_BloodPubAt", -100]) + 12}) then {
                 missionNamespace setVariable ["COMSPEC_SSE_BloodDirty", false];
                 missionNamespace setVariable ["COMSPEC_SSE_BloodPubAt", diag_tickTime];
+                private _new = missionNamespace getVariable ["COMSPEC_SSE_BloodNew", []];
+                missionNamespace setVariable ["COMSPEC_SSE_BloodNew", []];
+                if (_new isNotEqualTo []) then {
+                    ["comspec_sse_bloodAdd", [_new]] call CBA_fnc_remoteEvent;
+                    missionNamespace setVariable ["COMSPEC_SSE_BloodFullDirty", true];
+                };
+            };
+            if ((missionNamespace getVariable ["COMSPEC_SSE_BloodFullDirty", false])
+                && {diag_tickTime >= (missionNamespace getVariable ["COMSPEC_SSE_BloodFullAt", -100]) + 60}) then {
+                missionNamespace setVariable ["COMSPEC_SSE_BloodFullDirty", false];
+                missionNamespace setVariable ["COMSPEC_SSE_BloodFullAt", diag_tickTime];
                 publicVariable "COMSPEC_SSE_BloodTraces";
             };
         }, 3] call CBA_fnc_addPerFrameHandler;
@@ -103,14 +132,23 @@ switch (_mode) do {
             {}, [], [0, 0, 0], 2.5, _p] call comspec_sse_fnc_aceAction;
         private _kids = [
             ["COMSPEC_SSE_BloodLook", "Examiner la tache", { ["examine", [_this select 0]] call comspec_sse_fnc_bioBloodStain }, { true }],
-            // Relevés : seulement avec le kit porté (un usage consommé), l'examen à l'œil reste libre.
+            // Relevés : seulement avec le kit porté, l'examen à l'œil reste libre. Usage retiré au succès de la barre
+            // (progressAction), pas sur refus, annulation ou action déjà en cours ; remis à nil pour les sorties anticipées.
             ["COMSPEC_SSE_BloodLatent", "Relever les empreintes sanglantes", {
-                    if (([_this select 0, "COMSPEC_SSE_FingerprintKit", 10] call comspec_sse_fnc_kitUse) > 0) then { ["latent", [_this select 0]] call comspec_sse_fnc_bioBloodStain; };
+                    params ["_u"];
+                    if (([_u, "COMSPEC_SSE_FingerprintKit", 10, true] call comspec_sse_fnc_kitUse) isEqualTo 0) exitWith {};
+                    missionNamespace setVariable ["comspec_sse_progressKitCost", [_u, "COMSPEC_SSE_FingerprintKit", 10]];
+                    ["latent", [_u]] call comspec_sse_fnc_bioBloodStain;
+                    missionNamespace setVariable ["comspec_sse_progressKitCost", nil];
                 },
                 { (missionNamespace getVariable ["comspec_sse_bio_latents", true]) && {"COMSPEC_SSE_FingerprintKit" in (items (_this select 0))} }],
             ["COMSPEC_SSE_BloodDna", "Prélever l'ADN (sang)", {
-                    private _cls = ["COMSPEC_SSE_SwabKit", "COMSPEC_SSE_DNKit"] select ("COMSPEC_SSE_DNKit" in (items (_this select 0)));
-                    if (([_this select 0, _cls, 12] call comspec_sse_fnc_kitUse) > 0) then { ["dna", [_this select 0]] call comspec_sse_fnc_bioBloodStain; };
+                    params ["_u"];
+                    private _cls = ["COMSPEC_SSE_SwabKit", "COMSPEC_SSE_DNKit"] select ("COMSPEC_SSE_DNKit" in (items _u));
+                    if (([_u, _cls, 12, true] call comspec_sse_fnc_kitUse) isEqualTo 0) exitWith {};
+                    missionNamespace setVariable ["comspec_sse_progressKitCost", [_u, _cls, 12]];
+                    ["dna", [_u]] call comspec_sse_fnc_bioBloodStain;
+                    missionNamespace setVariable ["comspec_sse_progressKitCost", nil];
                 },
                 { ((items (_this select 0)) findIf { _x in ["COMSPEC_SSE_SwabKit", "COMSPEC_SSE_DNKit"] }) >= 0 }]
         ];

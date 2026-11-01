@@ -119,15 +119,12 @@ class CfgFunctions {
             class diagChecks {};
             class diagSelfTest {};
             class diagAction {};
-            class collectBugReportLog {};
             class disconnect {};
             class playtimeTracker {};
             class forcePlaytimeReport {};
             class updatePosition {};
             class bftPlatform {};
             class applyNetworkProfile {};
-            class sampleTerrain {};
-            class sampleScene {};
             class sampleTheater {};
             class sampleGeoNetwork {};
             class theaterSurveyShow {};
@@ -188,10 +185,6 @@ class CfgFunctions {
             class aceAddSelfAction {};
             class aceSweepPlayerSelfActions {};
             class acePadAction {};
-            class pauseManagerShow {};
-            class pauseManagerOnLoad {};
-            class pauseManagerPageLoaded {};
-            class pauseManagerJSDialog {};
             class onInterruptLoad {};
             class log {};
             class logAtakEvent {};
@@ -233,7 +226,6 @@ class CfgFunctions {
             class emitTelemetryEvent {};
             class pushIcemanMedicalAlert {};
             class canTriageMedical {};
-            class medicalInboxShow {};
             class medicalInboxOnLoad {};
             class medicalTriage {};
             class pollMedicalAlerts {};
@@ -241,7 +233,6 @@ class CfgFunctions {
             class selfCancelMedicalAlert {};
             class getAircraftType {};
             class isHatchetVehicle {};
-            class playerInHatchetVehicle {};
             class hideAceMenu {};
             class fillFlightManifest {};
             class submitFlightManifest {};
@@ -268,7 +259,6 @@ class CfgFunctions {
             class syncLaserCode {};
             class receiveDangerZone {};
             class deleteDangerZone {};
-            class checkPlayerInDangerZone {};
             class warnDangerZoneEntry {};
             class pollTacticalZones {};
             class sendLogisticsStatus {};
@@ -514,7 +504,6 @@ class CfgFunctions {
             class showExperienceGuide {};
             class portalLabel {};
             class profileWrap {};
-            class profileReport {};
             class getPlayerAvatarInfo {};
             class showPlayerProfile {};
             class showDeviceView {};
@@ -567,7 +556,6 @@ class CfgFunctions {
             class gridPosition {};
             class mgrsGrid {};
             class formatHeading {};
-            class recordPacketReceived {};
             class getPacketLossStats {};
             class simulateNetworkDisconnect {};
             class isNetworkDisconnected {};
@@ -901,7 +889,6 @@ class CfgFactionClasses
 #include "display_medical_inbox.hpp"
 #include "display_device.hpp"
 #include "display_webbrowser.hpp"
-#include "display_pause_manager.hpp"
 #include "display_diag_isolate.hpp"
 #include "display_theater_survey.hpp"
 

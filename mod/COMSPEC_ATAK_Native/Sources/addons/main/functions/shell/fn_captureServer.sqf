@@ -39,7 +39,11 @@ private _publish = {
             !isNull (_c get "carrier") && {alive (_c get "carrier")}, _c get "pos"];
     } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap]);
     _l sort true;
-    missionNamespace setVariable ["COMSPEC_ATAK_CaptureList", _l select [((count _l) - 20) max 0, 20], true];
+    private _new = _l select [((count _l) - 20) max 0, 20];
+    // Rien de changé (IA immobile, second appel du même tick) : pas de renvoi à tous les clients.
+    if (_new isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_CaptureList", []])) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_CaptureList", _new, true];
+    };
 };
 private _toSide = {
     params ["_side", "_kind", "_id"];

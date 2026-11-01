@@ -1,7 +1,7 @@
 /*
     Initialise la surveillance radio (ACRE/TFAR optionnels) :
     - cache des radios distantes via événements ACRE
-    - boucle légère de proximité → missionNamespace pour tablette / UI
+    - liste de proximité (fn_scanRadioProximity) à l'ouverture de la page et à la demande du JS, sans boucle
 */
 if (!hasInterface) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_RadioMonitorInited", false]) exitWith {};

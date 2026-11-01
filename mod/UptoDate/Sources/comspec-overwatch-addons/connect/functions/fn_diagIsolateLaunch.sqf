@@ -11,7 +11,7 @@ if (isNull player) exitWith { false };
 {
     private _d = findDisplay _x;
     if (!isNull _d) then { _d closeDisplay 1; };
-} forEach [9979, 9995, 49];
+} forEach [9995, 49];
 
 [] spawn {
     uiSleep 0.25;

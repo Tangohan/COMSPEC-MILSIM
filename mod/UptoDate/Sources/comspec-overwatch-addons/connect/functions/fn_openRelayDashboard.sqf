@@ -161,7 +161,7 @@ _btnResync ctrlAddEventHandler ["ButtonClick", {
     private _count = 0;
     {
         if ((_x isEqualType objNull) && {!isNull _x} && {(_x getVariable ["COMSPEC_AtakRelayUid", ""]) != ""}) then {
-            [_x, true] call comspec_overwatch_connect_fnc_syncAtakRelay;
+            [_x, true, true] call comspec_overwatch_connect_fnc_syncAtakRelay;
             _x setVariable ["COMSPEC_AtakRelayLastSync", time, true];
             _count = _count + 1;
         };

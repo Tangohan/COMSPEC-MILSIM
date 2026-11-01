@@ -21,9 +21,6 @@ final class AtakModC2PlatformAssetTest extends TestCase
         $theater = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_sampleTheater.sqf'
         );
-        $terrain = (string) file_get_contents(
-            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_sampleTerrain.sqf'
-        );
         $geo = (string) file_get_contents(
             $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_sampleGeoNetwork.sqf'
         );
@@ -44,7 +41,10 @@ final class AtakModC2PlatformAssetTest extends TestCase
         self::assertStringContainsString("return 'VEHICLE'", $bridge);
         self::assertStringContainsString('normalizeAffiliation', $bridge);
         self::assertStringContainsString('worldSize', $theater);
-        self::assertStringContainsString('_aoHalf = 4000', $terrain);
+        // Relief envoyé par fn_sampleTheater (fn_sampleTerrain, sans appelant, retiré).
+        self::assertStringContainsString('Terrain.Chunk', $theater);
+        self::assertStringContainsString('getTerrainHeightASL', $theater);
+        self::assertFileDoesNotExist($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_sampleTerrain.sqf');
         self::assertStringContainsString('Geo.Ingest', $geo);
         self::assertStringContainsString('Geo.Ingest', $ext);
         self::assertStringContainsString('geo_ready', $coverage);

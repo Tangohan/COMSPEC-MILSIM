@@ -1,5 +1,5 @@
 // Receive danger / tactical zone. Param: [zoneId, geometryType, centerOrPoints, radius, zoneType, threatLevel, label?, alertOnEntry?]
-// Stores in COMSPEC_DangerZones for fn_checkPlayerInDangerZone
+// Stores in COMSPEC_DangerZones for fn_pollTacticalZones (test de contenance)
 params [
     ["_zoneId", "", [""]],
     ["_geomType", "CIRCLE", [""]],

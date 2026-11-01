@@ -10,11 +10,8 @@ if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { f
 if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_DeathThenRespawn", false]) exitWith { false };
 
-if (isMultiplayer) then {
-    private _st = getClientStateNumber;
-    // BI : 10 = briefing lu / en jeu ; ≥ 11 = sortie / débrief
-    if (_st < 10 || {_st >= 11}) exitWith { false };
-};
+// BI : 10 = briefing lu / en jeu ; ≥ 11 = sortie / débrief
+if (isMultiplayer && {private _st = getClientStateNumber; _st < 10 || {_st >= 11}}) exitWith { false };
 
 private _pos = getPosWorld player;
 if ((abs (_pos select 0) < 1) && {abs (_pos select 1) < 1}) exitWith { false };
