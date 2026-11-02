@@ -51612,4 +51612,8 @@ return [
     'Le pôle formation, pour planifier les sessions et les renouvellements.' => 'The training cell, to plan sessions and renewals.',
     'Trouver les manques à traiter en premier et la formation Academy qui les comble.' => 'Find the gaps to handle first and the Academy course that closes them.',
     'Voir d’un coup d’œil si les membres ont les compétences attendues : les modules ALPHA → DELTA de la communauté.' => 'See at a glance whether members have the expected competencies: the community\'s ALPHA → DELTA modules.',
+    'Noms' => 'Names',
+    'Nom copié' => 'Name to copy',
+    'Allemand' => 'German',
+    'nom officiel' => 'official name',
 ];
