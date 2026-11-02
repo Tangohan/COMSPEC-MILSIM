@@ -294,7 +294,7 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1306, '2026-11-02', 'Seule la MPU5 relie le téléphone au réseau', 'Avec le pack 2.9.32, le repli par radio tactique en données disparaît : en liaison téléphone-radio réaliste, seule une radio de données MPU5, reliée par le Câble EUD ou par son Wi-Fi, donne du réseau au téléphone. Sans MPU5, pas de réseau de données ; le Bluetooth entre téléphones et les données déjà reçues restent. Les radios ACRE ou TFAR gardent leur rôle d’avant quand la liaison réaliste est décochée.', [], [
+            $pr(1307, '2026-11-02', 'Seule la MPU5 relie le téléphone au réseau', 'Avec le pack 2.9.32, le repli par radio tactique en données disparaît : en liaison téléphone-radio réaliste, seule une radio de données MPU5, reliée par le Câble EUD ou par son Wi-Fi, donne du réseau au téléphone. Sans MPU5, pas de réseau de données ; le Bluetooth entre téléphones et les données déjà reçues restent. Les radios ACRE ou TFAR gardent leur rôle d’avant quand la liaison réaliste est décochée.', [], [
                 'App Réseau, menu ACE Radio de données et réglages : plus de bouton ni d’action Radio tactique, message clair « Sans MPU5 : pas de réseau de données »',
                 'Bouton Brancher sur ma radio de l’app Wave Relay masqué en liaison réaliste ; le réglage « Données par radio ACRE2 / TFAR » n’y est plus pris en compte',
                 'Réglages Radio tactique (débit, latence, taille maximale) retirés de ATAK · Radio de données (MPU5)',
