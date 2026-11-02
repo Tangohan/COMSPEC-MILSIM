@@ -294,6 +294,22 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1342, '2026-11-02', 'Sur mon téléphone : vos apps de l’ATAK sur votre vrai téléphone', 'Avec le pack 2.9.39, les apps Comptes rendus, CR fin d’op et Carte du téléphone en jeu, et l’espace BRIEFS AIR du pilote, ont un bouton SUR MON TÉLÉPHONE. Il affiche un QR code, valable 5 minutes et pour une seule utilisation, à scanner avec son vrai téléphone : la version mobile de l’app s’ouvre sur Athena, liée au compte du joueur et à la partie en cours. On y remplit un compte rendu rapide (contact, SALUTE, SPOTREP, blessé ou libre) avec sa position du jeu ou un point choisi sur la carte, on remet son compte rendu de fin d’opération, on suit la carte de la partie (amis et marqueurs) et on y pose, modifie ou retire ses marqueurs. Le pilote ou un membre d’équipage lit ses 9-LINE et 5-LINE en grand et répond WILCO ou UNABLE. Ce qui est fait sur le vrai téléphone part dans l’ATAK du joueur en jeu, qui l’envoie comme s’il avait été rempli dedans. Le pack apporte aussi les briefs air envoyés aux pilotes depuis l’app JTAC et un rôle affiché unique, choisi dans le profil.', [
+                'Bouton SUR MON TÉLÉPHONE dans les apps Comptes rendus, CR fin d’op, Carte et dans l’espace BRIEFS AIR : QR code en grand, adresse à taper, temps restant, RÉGÉNÉRER',
+                'Pages mobiles : compte rendu rapide, CR de fin d’opération, carte de la partie, briefs air du pilote (WILCO, UNABLE, lu, alerte à l’arrivée)',
+                'Profil Athena, Appareils ATAK : liste des téléphones ouverts depuis le jeu et bouton Déconnecter',
+                'Rôle affiché choisi dans le profil du téléphone, le même partout (carte, BFT, fiche, Athena)',
+            ], [
+                'Le téléphone en jeu relève plus souvent les envois du vrai téléphone pendant la partie',
+                'L’ATAK s’ouvre en grand et se manipule à la souris dans tous les aéronefs et véhicules',
+            ], [
+                'L’ancien rôle « Breacher » resté bloqué disparaît',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.39 (liaison 2.0.117 incluse), quittez Arma complètement et relancez.',
+                'L’administrateur lance run-migrations.php (étape atak_mobile_links).',
+                'Le jeu doit être relié au compte Athena du joueur : sans liaison, le téléphone en jeu l’explique et renvoie vers l’app Athena.',
+            ], 'Pack 2.9.39'),
+
             $pr(1340, '2026-11-02', 'Page 9-LINE : 5-LINE, envoi au pilote et accusés, thème du back-office', 'La page 9-LINE prend le thème du back-office (mode jour ou nuit) et devient compacte : destinataires, rédaction en grille, carte de transmission et historique tiennent sur un écran. On y rédige un 9-LINE, un 5-LINE (brief CAS court : observateur, position amie, position et description de la cible, remarques) ou un MEDEVAC, en saisie guidée ou en saisie libre (aucune ligne obligatoire, simples avertissements). La demande part aux pilotes choisis parmi les appareils remontés par le jeu (« Joueurs uniquement » masque ceux de l’IA) ou à un indicatif tapé à la main ; le pilote la reçoit dans l’espace BRIEFS AIR de son téléphone en jeu, et son accusé (reçu, lu, WILCO, UNABLE) s’affiche dans l’historique. Chaque membre règle son indicatif JTAC, et l’indicatif affiché d’un appareil se change sur la page.', [
                 'Page 9-LINE : choix 9-LINE / 5-LINE / MEDEVAC, saisie libre, remarques et restrictions',
                 'Destinataires : appareils remontés par le jeu (case « Joueurs uniquement »), indicatif saisi à la main, indicatif affiché modifiable',

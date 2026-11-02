@@ -347,14 +347,15 @@
     });
   }
 
-  // ── Briefs air ───────────────────────────────────────────────────────────
+  // ── Briefs air (même boîte que l'espace BRIEFS AIR du téléphone en jeu) ──
   if (VIEW === 'briefs') {
-    var CAS = ['IP / BP', 'Cap depuis l’IP', 'Distance', 'Altitude de la cible', 'Description de la cible', 'Position de la cible', 'Marquage', 'Amis', 'Dégagement'];
-    var MED = ['Position de la LZ', 'Fréquence et indicatif', 'Patients par urgence', 'Équipement spécial', 'Patients (couchés / assis)', 'Sécurité de la LZ', 'Marquage de la LZ', 'Nationalité', 'NRBC et terrain'];
-    var READ_KEY = 'mm_briefs_read';
-    var readSet = {};
-    try { readSet = JSON.parse(localStorage.getItem(READ_KEY) || '{}') || {}; } catch (e) { readSet = {}; }
-    var markRead = function (id) { readSet[id] = 1; try { localStorage.setItem(READ_KEY, JSON.stringify(readSet)); } catch (e) {} };
+    var LABELS = {
+      '9line': ['IP / BP', 'Cap depuis l’IP', 'Distance', 'Altitude de la cible', 'Description de la cible', 'Position de la cible', 'Marquage', 'Amis', 'Dégagement'],
+      '5line': ['Indicatif et ordre d’alerte', 'Position des amis', 'Position de la cible', 'Description et marquage de la cible', 'Remarques et restrictions'],
+      medevac: ['Position de la LZ', 'Fréquence et indicatif', 'Patients par urgence', 'Équipement spécial', 'Patients (couchés / assis)', 'Sécurité de la LZ', 'Marquage de la LZ', 'Nationalité', 'NRBC et terrain']
+    };
+    var TITLES = { '9line': 'CAS 9-LINE', '5line': '5-LINE', medevac: 'MEDEVAC 9-LINE' };
+    var STATES = { sent: 'Envoyé', received: 'Reçu', read: 'Lu', wilco: 'WILCO', unable: 'UNABLE' };
     var known = null;
     var briefs = [];
     var openId = 0;
@@ -362,29 +363,34 @@
     var bsheet = $('[data-brief-sheet]');
     var banner = $('[data-brief-banner]');
     var baseTitle = document.title;
+    var unread = function (b) { return b.status === 'sent' || b.status === 'received'; };
     var render = function () {
       if (!briefs.length) { list.innerHTML = '<p class="mm-muted">Aucun brief reçu pour l’instant.</p>'; return; }
-      var sorted = briefs.slice().sort(function (a, b) { return (readSet[a.id] ? 1 : 0) - (readSet[b.id] ? 1 : 0) || b.id - a.id; });
+      var sorted = briefs.slice().sort(function (a, b) { return (unread(a) ? 0 : 1) - (unread(b) ? 0 : 1) || b.id - a.id; });
       list.innerHTML = sorted.map(function (b) {
-        var unread = !readSet[b.id];
-        return '<button type="button" class="mm-brief' + (unread ? ' is-new' : '') + '" data-brief="' + b.id + '">' +
-          '<strong>' + (b.kind === 'medevac' ? 'MEDEVAC 9-LINE' : 'CAS 9-LINE') + (unread ? ' <em>NOUVEAU</em>' : '') + '</strong>' +
-          '<span translate="no">' + esc(b.author) + ' → ' + esc(b.to) + '</span>' +
-          '<small>' + esc(b.at) + (b.status ? ' · ' + esc(b.status) : '') + '</small></button>';
+        var u = unread(b);
+        return '<button type="button" class="mm-brief' + (u ? ' is-new' : '') + '" data-brief="' + b.id + '">' +
+          '<strong>' + esc(TITLES[b.format] || 'BRIEF') + (u ? ' <em>NOUVEAU</em>' : '') + '</strong>' +
+          '<span translate="no">' + esc(b.from) + ' → ' + esc(b.to) + '</span>' +
+          '<small>' + esc(b.time) + ' · ' + esc(STATES[b.status] || b.status) + '</small></button>';
       }).join('');
     };
     var openBrief = function (id) {
       var b = briefs.filter(function (x) { return x.id === id; })[0];
       if (!b) return;
       openId = id;
-      markRead(id);
-      var labels = b.kind === 'medevac' ? MED : CAS;
-      $('[data-brief-title]').textContent = (b.kind === 'medevac' ? 'MEDEVAC' : 'CAS') + ' · ' + b.author;
+      var labels = LABELS[b.format] || LABELS['9line'];
+      $('[data-brief-title]').textContent = (TITLES[b.format] || 'BRIEF') + ' · ' + b.from;
       $('[data-brief-lines]').innerHTML = labels.map(function (l, i) {
-        return '<li><span>' + esc(l) + '</span><b translate="no">' + esc(b.lines[i + 1] || '—') + '</b></li>';
-      }).join('');
-      $('[data-brief-state]').textContent = b.status ? ('État : ' + b.status) : '';
+        return '<li><span>' + esc(l) + '</span><b translate="no">' + esc(b.lines[i] || '—') + '</b></li>';
+      }).join('') + (b.remarks ? '<li class="mm-lines__rem"><span>Remarques</span><b translate="no">' + esc(b.remarks) + '</b></li>' : '');
+      $('[data-brief-state]').textContent = 'État : ' + (STATES[b.status] || b.status);
       bsheet.hidden = false;
+      // Ouvert sur le téléphone : « lu » pour le JTAC (une seule fois).
+      if (unread(b)) {
+        b.status = 'read';
+        post('/m/api/briefs/' + id + '/reponse', { answer: 'read' });
+      }
       render();
     };
     list.addEventListener('click', function (ev) {
@@ -392,16 +398,6 @@
       if (b) openBrief(Number(b.getAttribute('data-brief')));
     });
     $('[data-brief-close]').addEventListener('click', function () { bsheet.hidden = true; openId = 0; });
-    $all('[data-brief-answer]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        if (!openId) return;
-        var answer = btn.getAttribute('data-brief-answer');
-        post('/m/api/briefs/' + openId + '/reponse', { answer: answer }).then(function (j) {
-          $('[data-brief-state]').textContent = j.ok ? (answer + ' envoyé au JTAC ✓') : failText(j);
-          if (j.ok) poll();
-        });
-      });
-    });
     var poll = function () {
       getJSON('/m/api/briefs').then(function (j) {
         if (!j || !j.ok) {
@@ -423,6 +419,16 @@
         render();
       }).catch(function () {});
     };
+    $all('[data-brief-answer]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (!openId) return;
+        var answer = btn.getAttribute('data-brief-answer');
+        post('/m/api/briefs/' + openId + '/reponse', { answer: answer.toLowerCase() }).then(function (j) {
+          $('[data-brief-state]').textContent = j.ok ? (answer + ' envoyé au JTAC ✓') : failText(j);
+          if (j.ok) poll();
+        });
+      });
+    });
     banner.addEventListener('click', function () { banner.hidden = true; });
     poll();
     setInterval(function () { if (!document.hidden) poll(); }, 5000);

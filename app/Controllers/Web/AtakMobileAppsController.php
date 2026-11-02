@@ -11,6 +11,7 @@ use App\Repositories\AtakDataRepository;
 use App\Repositories\AtakMapRepository;
 use App\Services\Atak\AtakMobileLinkService;
 use App\Services\Security\FileRateLimiter;
+use App\Services\Tactical\AirBriefService;
 use App\Services\Tactical\NineLineBoardService;
 use App\Support\AtakMobileReportCatalog;
 
@@ -39,6 +40,7 @@ final class AtakMobileAppsController
         private ?AtakMobileLinkService $links = null,
         private ?AtakDataRepository $atak = null,
         private ?FileRateLimiter $limiter = null,
+        private ?AirBriefService $air = null,
     ) {
     }
 
@@ -319,10 +321,10 @@ final class AtakMobileAppsController
             return Response::json(['ok' => false, 'error' => 'not_aircrew'], 403);
         }
 
-        return Response::json(['ok' => true, 'aircraft' => $aircraft, 'briefs' => $this->briefsFor((int) $link['tenant_id'], $aircraft)]);
+        return Response::json(['ok' => true, 'aircraft' => $aircraft, 'briefs' => $this->briefsFor($link, $aircraft)]);
     }
 
-    /** WILCO / UNABLE sur un brief reçu par mon appareil. */
+    /** Accusé sur un brief reçu par mon appareil : read (lu), wilco ou unable. */
     public function briefRespond(Request $request, array $params = []): Response
     {
         $link = $this->guardPost($request);
@@ -334,15 +336,15 @@ final class AtakMobileAppsController
             return Response::json(['ok' => false, 'error' => 'not_aircrew'], 403);
         }
         $id = (int) ($params['id'] ?? 0);
-        $answer = strtoupper(trim((string) $request->input('answer', '')));
-        if (!in_array($answer, ['WILCO', 'UNABLE'], true)) {
+        $answer = strtolower(trim((string) $request->input('answer', '')));
+        if (!in_array($answer, ['read', 'wilco', 'unable'], true)) {
             return Response::json(['ok' => false, 'error' => 'invalid'], 422);
         }
-        $mine = array_filter($this->briefsFor((int) $link['tenant_id'], $aircraft), static fn (array $b): bool => $b['id'] === $id);
+        $mine = array_values(array_filter($this->briefsFor($link, $aircraft), static fn (array $b): bool => $b['id'] === $id));
         if ($mine === []) {
             return Response::json(['ok' => false, 'error' => 'not_found'], 404);
         }
-        $ok = $this->respondBrief($link, $id, $answer, $aircraft);
+        $ok = $this->acknowledgeBrief($link, $mine[0], $answer);
 
         return Response::json(['ok' => $ok], $ok ? 200 : 503);
     }
@@ -362,47 +364,51 @@ final class AtakMobileAppsController
     // ── Briefs air ──────────────────────────────────────────────────────────
 
     /**
+     * Boîte du pilote (AirBriefService, la même que l'espace BRIEFS AIR du téléphone en jeu) : demandes adressées à mon
+     * appareil ou à mon nom de jeu, des 3 dernières heures, la plus récente d'abord.
+     *
      * @param list<string> $aircraft
      * @return list<array<string, mixed>>
      */
-    private function briefsFor(int $tenantId, array $aircraft): array
+    private function briefsFor(array $link, array $aircraft): array
     {
-        $wanted = array_map('mb_strtolower', $aircraft);
+        $names = array_merge($aircraft, [(string) ($link['player_name'] ?? '')]);
         $out = [];
-        foreach ((new NineLineBoardService())->history($tenantId, 0, false, null, 60) as $b) {
-            $to = array_map(static fn (string $s): string => mb_strtolower(trim($s)), explode(',', (string) $b['assigned_aircraft']));
-            if (array_intersect($wanted, $to) === []) {
-                continue;
-            }
-            $lines = [];
-            for ($n = 1; $n <= 9; $n++) {
-                $lines[$n] = (string) ($b['line' . $n] ?? '');
-            }
+        foreach ($this->air()->inbox((int) $link['tenant_id'], $names) as $b) {
             $out[] = [
                 'id' => (int) $b['id'],
-                'kind' => (string) $b['mission_kind'],
-                'author' => (string) $b['author'],
-                'to' => (string) $b['assigned_aircraft'],
+                'ref' => (string) $b['ref'],
+                'format' => (string) $b['format'],
+                'from' => (string) $b['from'],
+                'to' => (string) $b['recipient'],
+                'time' => (string) $b['time'],
                 'status' => (string) $b['status'],
-                'at' => (string) ($b['created_at'] ?: $b['updated_at']),
-                'lines' => $lines,
+                'lines' => array_values(array_map('strval', (array) $b['lines'])),
+                'remarks' => (string) ($b['remarks'] ?? ''),
             ];
         }
 
         return $out;
     }
 
-    /** @param list<string> $aircraft */
-    private function respondBrief(array $link, int $id, string $answer, array $aircraft): bool
+    /**
+     * Accusé du pilote depuis le vrai téléphone : même enregistrement que l'ATAK en jeu (POST /api/cas/{ref}/status),
+     * vu par le JTAC sur le site et dans son app JTAC.
+     */
+    private function acknowledgeBrief(array $link, array $brief, string $status): bool
     {
         try {
-            $repo = new \App\Repositories\CasNineLineRepository();
-            $row = $answer === 'WILCO' ? $repo->ackCas((int) $link['tenant_id'], $id) : $repo->updateCasStatus((int) $link['tenant_id'], $id, 'ABORTED');
+            $res = $this->air()->acknowledge((int) $link['tenant_id'], (string) $brief['ref'], $status, (string) $brief['to']);
 
-            return $row !== null;
+            return $res['result'] === 'ok';
         } catch (\Throwable) {
             return false;
         }
+    }
+
+    private function air(): \App\Services\Tactical\AirBriefService
+    {
+        return $this->air ??= new \App\Services\Tactical\AirBriefService();
     }
 
     // ── Outils ──────────────────────────────────────────────────────────────
