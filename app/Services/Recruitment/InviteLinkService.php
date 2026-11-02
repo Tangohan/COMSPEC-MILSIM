@@ -18,6 +18,7 @@ final class InviteLinkService
     public const STATUS_EXPIRED = 'expired';
     public const STATUS_EXHAUSTED = 'exhausted';
     public const STATUS_REVOKED = 'revoked';
+    public const STATUS_DELETED = 'deleted';
 
     /** Fonctionnalités de formule (SubscriptionPlanFeaturesCatalog). */
     public const FEATURE_MAX_ACTIVE = 'max_active_invite_links';
@@ -84,6 +85,7 @@ final class InviteLinkService
             self::STATUS_EXPIRED => 'Ce lien d’invitation a expiré. Demandez un nouveau lien à la personne qui vous l’a envoyé.',
             self::STATUS_EXHAUSTED => 'Ce lien d’invitation a déjà été utilisé le nombre de fois prévu. Demandez un nouveau lien à la personne qui vous l’a envoyé.',
             self::STATUS_REVOKED => 'Ce lien d’invitation a été désactivé par la communauté. Demandez un nouveau lien à la personne qui vous l’a envoyé.',
+            self::STATUS_DELETED => 'Ce lien d’invitation a été supprimé par la communauté. Demandez un nouveau lien à la personne qui vous l’a envoyé.',
             default => 'Ce lien d’invitation n’existe pas. Vérifiez l’adresse ou demandez un nouveau lien.',
         };
     }

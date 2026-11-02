@@ -74,6 +74,10 @@ class TemplateVariableService
             $resolved['user.first_name'] = $firstName ?? '';
             $resolved['user.last_name'] = $lastName ?? '';
             $resolved['user.full_name'] = $fullName;
+            $nameRow = ['first_name' => (string) ($firstName ?? ''), 'last_name' => (string) ($lastName ?? ''), 'display_name' => (string) ($user['display_name'] ?? '')];
+            $resolved['user.short_name'] = \App\Support\MemberName::short($nameRow);
+            // Paraphe / visa : trigramme du membre dans la communauté (attribué s’il manque).
+            $resolved['user.trigram'] = $this->trigramOf($tenantId, $userId);
             if ($grade) {
                 $resolved['user.grade_text'] = $this->gradeDisplayService->formatForUser($grade, GradeDisplayService::FORMAT_CLASSIC, $countryCode);
                 $resolved['user.grade_short'] = $this->gradeDisplayService->getShort($grade);
@@ -127,6 +131,7 @@ class TemplateVariableService
                         $resolved['superior.rank_label'] = '';
                     }
                     $resolved['superior.full_name'] = $supPersonnel['character_name'] ?? $sup['display_name'] ?? '';
+                    $resolved['superior.trigram'] = $this->trigramOf($tenantId, (int) $unit['commander_user_id']);
                     $resolved['superior.position_label'] = 'Commandant';
                 }
             }
@@ -144,10 +149,24 @@ class TemplateVariableService
             $resolved['superior.grade_text'] = $resolved['superior.grade_text'] ?? '—';
             $resolved['superior.grade_otan'] = $resolved['superior.grade_otan'] ?? '—';
             $resolved['superior.full_name'] = '—';
+            $resolved['superior.trigram'] = '—';
             $resolved['superior.position_label'] = '—';
         }
 
         return $resolved;
+    }
+
+    private function trigramOf(int $tenantId, int $userId): string
+    {
+        try {
+            if (!\App\Services\Personnel\MemberNameSettings::forTenant($tenantId)['trigrams_enabled']) {
+                return '';
+            }
+
+            return (string) ((new \App\Services\Personnel\MemberNameService())->ensureTrigram($tenantId, $userId) ?? '');
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     /**

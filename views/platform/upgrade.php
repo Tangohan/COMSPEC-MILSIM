@@ -8,6 +8,7 @@
 /** @var list<array{slug: string, name: string, monthly: ?int, yearly: ?int, available: bool}>|null $paymentOffers */
 /** @var array<string, mixed>|null $openPayment Demande de paiement encore ouverte pour la communauté */
 /** @var bool|null $canManageBilling */
+/** @var list<array<string, mixed>>|null $planOfferCards Cartes générées depuis les formules réelles (PlanOfferSummary) */
 /** @var string|null $csrfToken */
 $upgradeFrom = $upgradeFrom ?? '';
 $featureKey = (string) ($featureKey ?? '');
@@ -105,42 +106,12 @@ $csrf = (string) ($csrfToken ?? \App\Core\Csrf::token());
                 </div>
                 <?php endif; ?>
 
+                <?php if (is_array($planOfferCards ?? null) && $planOfferCards !== []): ?>
                 <div>
                     <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Comparer les formules</p>
-                    <div class="mt-4 grid gap-4 sm:grid-cols-3">
-                        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Essentiel</p>
-                            <p class="mt-2 text-xl font-black text-slate-900">Gratuit</p>
-                            <ul class="mt-4 space-y-2.5 text-sm text-slate-600">
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span> Documents, messagerie</li>
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span> Effectifs et formations de base</li>
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span> Quotas limités sur certains modules</li>
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span> Catalogue des qualifications réelles consultable en entier : 10 imports, 5 émetteurs réels, 5 qualifications créées</li>
-                            </ul>
-                        </div>
-                        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-sky-700/80">Équipe</p>
-                            <p class="mt-2 text-xl font-black text-slate-900">Standard</p>
-                            <ul class="mt-4 space-y-2.5 text-sm text-slate-600">
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500"></span> Événements, courrier, mur opérationnel</li>
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500"></span> Carte tactique ATAK</li>
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500"></span> Alertes communauté</li>
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500"></span> Qualifications réelles : 50 imports, 25 émetteurs réels, 30 qualifications et brevets créés, cursus pilote</li>
-                            </ul>
-                        </div>
-                        <div class="relative rounded-2xl border border-emerald-200/80 bg-gradient-to-b from-white to-emerald-50/40 p-5 shadow-sm ring-1 ring-emerald-500/10">
-                            <span class="absolute right-4 top-4 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">Recommandé</span>
-                            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-700/80">Complet</p>
-                            <p class="mt-2 text-xl font-black text-slate-900">Pro</p>
-                            <ul class="mt-4 space-y-2.5 text-sm text-slate-600">
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Recrutement et coopération</li>
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Analytics organisation</li>
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Plafonds relevés</li>
-                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Qualifications réelles et émetteurs illimités, import d’un pays entier en un clic, créations illimitées</li>
-                            </ul>
-                        </div>
-                    </div>
+                    <?php require base_path('views/partials/plan_offer_cards.php'); ?>
                 </div>
+                <?php endif; ?>
 
                 <?php if ($openPayment !== null): ?>
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-relaxed text-amber-950">

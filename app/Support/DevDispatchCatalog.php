@@ -294,17 +294,74 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1324, '2026-11-02', 'App Zones sans automatisme, menu Zones au clic droit, bandeau du curseur', 'Avec le pack 2.9.36, l’app Zones ne change plus rien toute seule. Un contact ennemi posé dans une zone ne la fait plus passer « ennemi signalé » : par défaut l’opérateur met l’état lui-même, et le serveur peut choisir de proposer le changement (question OUI / NON) ou de le faire automatiquement comme avant. Les zones ne vont plus sur la carte d’Arma par défaut, car tout le camp les y voyait sans appareil. Un menu Zones arrive au clic droit de la carte et le bandeau du curseur montre la direction de votre vue.', [
-                'Nouveau réglage serveur « Contact dans une zone » : Manuel (par défaut, rien ne se passe), Proposer (celui qui a posé le contact et l’auteur du plan reçoivent « Contact en B-04 : passer la zone en ennemi signalé ? », OUI / NON dans l’app Zones, sans effet sans réponse) ou Automatique (comportement de la 2.9.35)',
-                'Zones sur la carte d’Arma et Athena : désactivé par défaut (réaliste) ; quand le serveur l’autorise, un plan n’est envoyé au site Athena que s’il est partagé',
-                'Le nom de la zone sous le curseur reste affiché dans le bandeau : c’est l’affichage de vos plans sur votre propre téléphone',
-                'Clic droit sur la carte › Zones : découper ici (grille 100, 200 ou 500 m, îlots, secteurs, rayon au choix), nouveau plan à partir d’ici, nommer les axes autour ; sur une zone : fiche, état, signaler un ennemi, citer @zone, masquer, rendu',
-                'Bandeau du curseur (style Nouveau) : flèche et cap selon la direction de votre vue ; distance et gisement vers le curseur dans l’étiquette de survol, ou dans le bandeau sur option',
-                'Traductions anglaises corrigées (IN PROGRESS, CANCEL, ESTABLISHED, rubriques des réglages ATAK, retour de l’app Routes)',
-            ], [], [], ['atak'], [
-                'Mettez à jour le pack 2.9.36, quittez Arma complètement et relancez.',
-                'L’ancien réglage « Contacts ennemis dans les zones » (coché par défaut) est remplacé : tous les serveurs repartent sur Manuel, à remettre sur Proposer ou Automatique dans Options des addons › COMSPEC › ATAK · Plan / Zones si vous le souhaitez.',
-            ], 'Pack téléphone 2.9.36'),
+            $pr(1332, '2026-11-02', 'Royaume-Uni : grades britanniques, emplois, qualifications, doctrine et modèles d’unités', 'Une communauté peut choisir le modèle britannique à sa création (étape Grades) ou dans Back-office › Référentiel des grades : British Army et Royal Marines (Private, Trooper, Gunner, Sapper… jusqu’à Field Marshal), Royal Navy ou Royal Air Force, avec abréviations officielles et codes OTAN. Le Royaume-Uni rejoint aussi les catalogues : emplois des forces spéciales et unités spécialisées, brevets et cursus réels avec leurs écoles, publications doctrinales publiques et modèles d’organisation (UKSF, 16 Air Assault, UK Commando Force, Joint Aviation Command, bataillon d’infanterie type).', [
+                'Grades : trois systèmes britanniques (British Army et Royal Marines, Royal Navy, Royal Air Force), proposés à la création de la communauté et dans le référentiel des grades',
+                'Catalogue d’emplois : 111 emplois britanniques sourcés (UKSF, 16 Air Assault, Ranger Regiment, Royal Marines, aviation, EOD, artillerie, RAF Regiment, Royal Navy)',
+                'Catalogue des qualifications : 52 brevets et cursus britanniques (UKSF Selection, All Arms Commando Course, P Company, Brecon, JTAC, CMT…) et 29 émetteurs réels (CTCRM Lympstone, Infantry Battle School, RMA Sandhurst…)',
+                'Référentiel doctrinal : 35 publications britanniques publiques (JDP 0-01, JDP 01, Land Operations, JSP 383…)',
+                'Modèles d’organisation : UKSF, 16 Air Assault Brigade Combat Team, UK Commando Force, Joint Aviation Command et bataillon d’infanterie britannique type jusqu’aux fire teams',
+            ], [
+                'Adéquation de l’organisation : référentiel britannique (section commandée par un Corporal, platoon par un Lieutenant et un Platoon Sergeant, compagnie par un Major), retenu d’office avec les grades britanniques',
+                'Catalogues : drapeau du Royaume-Uni et nom « United Kingdom »',
+            ], [], ['personnel'], [
+                'L’administrateur lance run-migrations.php (étape grades_royaume_uni) pour ajouter les grades britanniques.',
+                'Essai : Back-office › Référentiel des grades › onglet Royaume-Uni : British Army et Royal Marines › Utiliser pour la communauté ; puis Organisation › Modèles › Royaume-Uni.',
+            ]),
+            $pr(1331, '2026-11-02', 'Liens d’invitation : suppression et page aux couleurs du site', 'Un lien d’invitation se supprime désormais depuis la liste ou sa fiche, après confirmation : il cesse de fonctionner, ses statistiques sont effacées et il libère la place dans la limite de liens actifs ; les candidatures et adhésions déjà faites restent intactes. La page ouverte par le lien (athena-comspec.eu/public/i/…) reprend la barre de navigation et le pied de page de l’accueil du site.', [
+                'Recrutement › Liens d’invitation : bouton Supprimer dans la liste et sur la fiche, avec une fenêtre de confirmation qui détaille ce qui est conservé et ce qui est effacé',
+                'Page d’un lien supprimé : le visiteur voit que la communauté l’a supprimé',
+            ], [
+                'Page d’invitation /i/… : même barre de navigation (menu, langue, connexion) et même pied de page que l’accueil ; Connexion et Inscription gardent l’invitation',
+            ], [], ['personnel'], [], 'Portail Athena'),
+
+            $pr(1330, '2026-11-02', 'Malaisie : grades, emplois, qualifications et modèles d’unités', 'La Malaisie rejoint les pays du site. Le référentiel des grades propose les grades de l’Angkatan Tentera Malaysia, système d’origine britannique, en malais avec leur équivalent anglais et leur code OTAN : armée de terre (Tentera Darat, de Prebet à Jeneral), marine (TLDM) et armée de l’air (TUDM). Le catalogue d’emplois ajoute 81 emplois malaisiens sourcés (Grup Gerak Khas, 10 Briged Para, Askar Melayu, Renjer, PASKAL, PASKAU, aviation de l’armée, et à part la police : VAT 69 et UTK), reliés à 31 qualifications et 19 écoles et unités réelles. Cinq modèles d’organisation inspirés d’unités réelles s’appliquent avec les grades malaisiens, dont un bataillon de l’Askar Melayu détaillé jusqu’au seksyen, et l’adéquation de l’organisation suit le modèle britannique (le chef de seksyen est un Koperal).', [
+                'Référentiel des grades : onglets Malaisie (armée de terre, marine, armée de l’air), intitulés malais, abrégés usuels, équivalent anglais et code OTAN ; bouton pour utiliser ces grades dans la communauté',
+                'Création de communauté : les grades malaisiens se choisissent à l’étape Grades, avec aperçu et grade du fondateur',
+                'Catalogue d’emplois : pays Malaisie (drapeau, nom « Malaysia »), 81 emplois avec intitulé officiel malais, traductions française et anglaise, brevets et formations reliés',
+                'Qualifications : catalogue malaisien (31 cursus réels : Kursus Asas Komando, PASKAL, PASKAU, parachutisme, tireur d’élite, cours de police…) et 19 émetteurs réels (PULPAK, PULADA, UPNM, Maktab Turus Angkatan Tentera…)',
+                'Modèles d’organisation : 21 Gerup Gerak Khas, 10 Briged Para, bataillon 9 RAMD (Para) avec kompeni, platun et seksyen, PASKAL et PASKAU',
+                'Adéquation de l’organisation : référentiel malaisien (modèle britannique), retenu d’office avec les grades malaisiens',
+            ], [
+                'Les listes de grades regroupent la Malaisie sous son nom ; le système de grades d’un modèle d’organisation malaisien est indiqué sur sa carte',
+            ], [], ['personnel'], [
+                'L’administrateur lance run-migrations.php (étape grade_systems_malaysia) pour installer les grades malaisiens ; les emplois, qualifications et modèles d’unités sont disponibles sans migration.',
+                'Essai : Référentiel des grades › Malaisie : armée de terre › « Utiliser les grades malaisiens… », puis Effectifs › attribuer « Kapten » à un membre.',
+            ], 'Portail Athena'),
+            $pr(1329, '2026-11-02', 'Administration des formules : tableau comparatif et fiche par formule', 'Administration › Formules d’accès devient un tableau comparatif : une colonne par formule, une ligne par paramètre, rangés par groupe (membres et organisation, Academy et qualifications, recrutement, ATAK et jeu, documents, marque et intégrations) et repliables, avec une recherche et le nombre de communautés sur chaque formule. Chaque formule s’ouvre sur une fiche à onglets : interrupteurs pour les modules, nombre ou case « Illimité » pour les plafonds, aperçu de la page des formules telle que la voit le client, liste des communautés qui dépasseraient un plafond abaissé (rien ne leur est retiré) et historique des modifications. Une formule se duplique en un clic. La page publique des formules calcule désormais son comparatif depuis les vraies valeurs des formules.', [
+                'Tableau comparatif des formules : groupes repliables, recherche d’un paramètre, communautés par formule, boutons Modifier et Dupliquer',
+                'Fiche d’une formule : onglets par groupe, interrupteurs, quotas avec case « Illimité », contrôle des valeurs à l’enregistrement',
+                'Aperçu « ce que voit le client » mis à jour à chaque changement, avant l’enregistrement',
+                'Avertissement : communautés qui dépassent déjà un nouveau plafond, sans rien couper',
+                'Historique des modifications de la formule (journal d’audit) avec lien vers la restauration',
+                'Dupliquer une formule : copie de tous ses paramètres, sans prix, à offrir depuis Formules offertes',
+            ], [
+                'Page des formules : le comparatif (modules et plafonds) est généré depuis les formules réelles, plus aucun chiffre écrit à la main ; Pro+ y figure quand elle est en vente',
+                'Message « passez à une formule supérieure » des qualifications : plafond lu dans la formule réelle',
+                'Paramètres signalés « Non contrôlé » quand aucun écran ne les vérifie encore (documents, effectifs, recrutement, création de communauté)',
+                'Réglages inconnus enregistrés dans une formule : toujours conservés à l’enregistrement',
+            ], [], ['platform'], [
+                'Aucune migration.',
+                'Essai : Administration › Formules d’accès, ouvrez Standard, abaissez « Nombre max. de membres » : l’aperçu et l’avertissement se mettent à jour ; enregistrez puis consultez l’onglet Historique.',
+            ], 'Portail Athena'),
+            $pr(1327, '2026-11-02', 'Invitations : plus de blocage à tort et une page refaite', 'Certaines communautés Pro+ ne pouvaient plus inviter : la page affichait « Votre formule actuelle limite le nombre de membres » alors que leur formule n’a pas de plafond. Un plafond de membres à 0 compte de nouveau comme illimité, et une formule sans plafond renseigné reprend celui de son palier au lieu de 50. La page Invitations est refaite : chiffres en tête (envoyées, acceptées, en attente, expirées) et membres sur le plafond de la formule (« 42 / illimité »), assistant en trois étapes pour inviter plusieurs adresses à la fois avec rôle, grade d’entrée, unité, durée du lien et message, tableau filtrable et triable pour renvoyer, révoquer ou copier un lien.', [
+                'Inviter plusieurs adresses e-mail en une fois, avec grade d’entrée, durée du lien (1 à 30 jours) et message personnel ajouté à l’e-mail',
+                'Tableau des invitations : recherche, filtre par état, tri par colonne ; renvoyer, révoquer, copier un nouveau lien',
+                'Jauge des membres sur le plafond de la formule, lien vers les formules seulement quand le plafond est réellement atteint',
+            ], [
+                'Les liens tout juste envoyés s’affichent une fois pour les transmettre soi-même',
+                'Accès direct aux liens d’invitation partageables',
+            ], [
+                'Formules : un plafond de membres à 0 bloquait toutes les invitations au lieu de signifier « illimité »',
+                'Formules : un plafond absent valait 50 membres au lieu du plafond de la formule',
+                'Une formule offerte inférieure ou l’essai fondateur ne font plus redescendre une communauté Pro+',
+                'Modifier une formule : un plafond vidé garde sa valeur au lieu de devenir illimité',
+            ], ['personnel'], [
+                'Essai : Back-office › Invitations, « Inviter des membres » avec deux adresses, puis « Copier le lien » et « Renvoyer » sur une invitation en attente.',
+            ], 'Portail Athena'),
+            $pr(1325, '2026-11-02', 'Liens d’invitation : en anglais de bout en bout', 'Les pages des liens d’invitation (back-office et page publique) gardaient quelques phrases en français en anglais : elles sont désormais entièrement traduites.', [], [], [
+                'Liens d’invitation en anglais : la présentation de la liste, le quota, l’aide de l’adresse personnalisée, l’action « Rejoindre » et le bandeau de candidature restaient en français',
+            ], ['personnel'], [], 'Portail Athena'),
+
             $pr(1323, '2026-11-02', 'Liens d’invitation : la mise en page revient', 'Les pages Recrutement › Liens d’invitation s’affichaient sans mise en page : elles retrouvent le style du back-office, comme les codes prioritaires.', [], [], [
                 'Recrutement › Liens d’invitation : liste, création, fiche et modification s’affichaient sans mise en page ; elles retrouvent le style du back-office',
             ], ['personnel'], [], 'Portail Athena'),

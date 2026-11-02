@@ -15,6 +15,8 @@ if (!is_array($quickUnitsArr)) {
 $zones = \DateTimeZone::listIdentifiers();
 $gradesFrGrouped = $gradesFrGrouped ?? [];
 $gradesUsGrouped = $gradesUsGrouped ?? [];
+/** @var array<string, list<array<string,mixed>>> $gradesExtraGrouped grades groupés des autres systèmes officiels (Malaisie…) */
+$gradesExtraGrouped = is_array($gradesExtraGrouped ?? null) ? $gradesExtraGrouped : [];
 $badgeLabels = $badgeLabels ?? \App\Services\Community\TenantCommunityProfileService::badgeLabels();
 $wizardPermissionGroups = $wizardPermissionGroups ?? \App\Services\Community\CommunityOnboardingValidationService::wizardPermissionFieldGroups();
 $tenantTypes = \App\Services\Community\TenantTypeConfig::availableTypes();
@@ -518,7 +520,13 @@ $guideUrl = url('communities/create/guide');
                                     $kitIsJobCatalog = in_array($kitCode, $jobDoctrineKits, true);
                                     $kitIsReal = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::isRealUnits($kit);
                                     $kitGradeCode = (string) ($kit['grade_system_code'] ?? '');
-                                    $kitGrades = $kitGradeCode === 'US_CLASSIC' ? 'Grades américains' : ($kitGradeCode === 'FR_CLASSIC' ? 'Grades français' : 'Sans système de grades');
+                                    $kitGrades = match ($kitGradeCode) {
+                                        'US_CLASSIC' => 'Grades américains',
+                                        'FR_CLASSIC' => 'Grades français',
+                                        'GB_ARMY', 'GB_RN', 'GB_RAF' => 'Grades britanniques',
+                                        'MY_CLASSIC', 'MY_TLDM', 'MY_TUDM' => 'Grades malaisiens',
+                                        default => 'Sans système de grades',
+                                    };
                                     $kitEyebrow = $kitIsReal ? 'Inspiré d’unités réelles' : ($kitIsJobCatalog ? 'Catalogue d’emplois' : 'Modèle officiel');
                                     $kitCommand = $kitIsReal ? (string) ($kit['origin']['command'] ?? '') : '';
                                     $kitJobs = $kitIsReal ? \App\Services\OrganizationCatalog\RealUnitKitDefinitions::jobCatalogCount($kit) : 0;
@@ -659,6 +667,15 @@ $guideUrl = url('communities/create/guide');
                                 <span class="cc-choice__title">United States</span>
                                 <span class="cc-choice__text">Grades classiques des forces armées américaines.</span>
                             </label>
+                            <?php foreach (array_keys($gradesExtraGrouped) as $extraCode): ?>
+                            <?php $extraCard = \App\Support\OfficialGradeSystems::card($extraCode); ?>
+                            <label class="cc-choice min-w-[12rem] flex-1">
+                                <input type="radio" name="wizard_grade_system_code" value="<?= htmlspecialchars($extraCode, ENT_QUOTES, 'UTF-8') ?>" class="sr-only" data-grade-system>
+                                <span class="cc-choice__eyebrow">Référentiel</span>
+                                <span class="cc-choice__title" translate="no"><?= htmlspecialchars($extraCard['title'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="cc-choice__text"><?= htmlspecialchars($extraCard['text'], ENT_QUOTES, 'UTF-8') ?></span>
+                            </label>
+                            <?php endforeach; ?>
                             <label class="cc-choice min-w-[12rem] flex-1">
                                 <input type="radio" name="wizard_grade_system_code" value="NONE" class="sr-only" data-grade-system>
                                 <span class="cc-choice__eyebrow">Sans grades</span>
@@ -669,7 +686,7 @@ $guideUrl = url('communities/create/guide');
                         <p class="cc-hint hidden" id="cc-grades-none-note">Aucun grade ne sera affiché dans la communauté. Vous pourrez en activer un plus tard dans <em>Back-office → Référentiel des grades</em>, sans rien perdre.</p>
 
                         <div class="mt-6 grid gap-4 md:grid-cols-2" id="cc-grade-previews">
-                            <div id="preview-fr" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 max-h-80 overflow-y-auto">
+                            <div id="preview-fr" data-grade-preview="FR_CLASSIC" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 max-h-80 overflow-y-auto">
                                 <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Aperçu français</p>
                                 <div class="mt-3 space-y-3 text-xs text-slate-700">
                                     <?php foreach ($gradesFrGrouped as $block): ?>
@@ -693,7 +710,7 @@ $guideUrl = url('communities/create/guide');
                                     <?php endforeach; ?>
                                 </div>
                             </div>
-                            <div id="preview-us" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 max-h-80 overflow-y-auto opacity-60">
+                            <div id="preview-us" data-grade-preview="US_CLASSIC" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 max-h-80 overflow-y-auto opacity-60">
                                 <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Aperçu US</p>
                                 <div class="mt-3 space-y-3 text-xs text-slate-700">
                                     <?php foreach ($gradesUsGrouped as $block): ?>
@@ -719,10 +736,30 @@ $guideUrl = url('communities/create/guide');
                             </div>
                         </div>
 
+                        <?php foreach ($gradesExtraGrouped as $extraCode => $extraGrouped): ?>
+                        <div data-grade-preview="<?= htmlspecialchars($extraCode, ENT_QUOTES, 'UTF-8') ?>" class="hidden mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 max-h-80 overflow-y-auto">
+                            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Aperçu <span translate="no"><?= htmlspecialchars(\App\Support\OfficialGradeSystems::card($extraCode)['title'], ENT_QUOTES, 'UTF-8') ?></span></p>
+                            <div class="mt-3 space-y-3 text-xs text-slate-700">
+                                    <?php foreach ($extraGrouped as $block): ?>
+                                        <?php if (empty($block['grades'])) { continue; } ?>
+                                        <div>
+                                            <p class="font-black text-slate-800"><?= htmlspecialchars($block['label'], ENT_QUOTES, 'UTF-8') ?></p>
+                                            <ul class="mt-1 space-y-0.5 pl-2 border-l-2 border-emerald-200">
+                                                <?php foreach ($block['grades'] as $g): ?>
+                                                <?php $gShort = trim((string) ($g['label_short'] ?? $g['code'] ?? '')); $gLong = trim((string) ($g['label_long'] ?? '')); ?>
+                                                <li><?php if ($gShort !== '' && mb_strtolower($gShort) !== mb_strtolower($gLong)): ?><span class="cc-grade-code"><?= htmlspecialchars($gShort, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?><span lang="ms" translate="no"><?= htmlspecialchars($gLong !== '' ? $gLong : $gShort, ENT_QUOTES, 'UTF-8') ?></span></li>
+                                                <?php endforeach; ?>
+                                            </ul>
+                                        </div>
+                                    <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+
                         <div class="mt-6" id="cc-founder-grade">
                             <label class="cc-label" for="founder-grade-fr">Grade du fondateur</label>
                             <p class="cc-hint mt-0 mb-2">Le grade affiché sur votre propre dossier. Les grades des membres s’attribuent ensuite dans Effectifs.</p>
-                            <select name="wizard_founder_grade_id" id="founder-grade-fr" class="cc-select founder-grade-select">
+                            <select name="wizard_founder_grade_id" id="founder-grade-fr" data-founder-for="FR_CLASSIC" class="cc-select founder-grade-select">
                                 <?php foreach ($gradesFrGrouped as $block): ?>
                                     <?php if (empty($block['grades'])) { continue; } ?>
                                     <optgroup label="<?= htmlspecialchars($block['label'], ENT_QUOTES, 'UTF-8') ?>">
@@ -732,7 +769,7 @@ $guideUrl = url('communities/create/guide');
                                     </optgroup>
                                 <?php endforeach; ?>
                             </select>
-                            <select name="wizard_founder_grade_id_us" id="founder-grade-us" class="hidden cc-select founder-grade-select">
+                            <select name="wizard_founder_grade_id_us" id="founder-grade-us" data-founder-for="US_CLASSIC" class="hidden cc-select founder-grade-select">
                                 <?php foreach ($gradesUsGrouped as $block): ?>
                                     <?php if (empty($block['grades'])) { continue; } ?>
                                     <optgroup label="<?= htmlspecialchars($block['label'], ENT_QUOTES, 'UTF-8') ?>">
@@ -742,6 +779,18 @@ $guideUrl = url('communities/create/guide');
                                     </optgroup>
                                 <?php endforeach; ?>
                             </select>
+                            <?php foreach ($gradesExtraGrouped as $extraCode => $extraGrouped): ?>
+                            <select name="" data-founder-for="<?= htmlspecialchars($extraCode, ENT_QUOTES, 'UTF-8') ?>" class="hidden cc-select founder-grade-select" aria-label="Grade du fondateur" disabled>
+                                <?php foreach ($extraGrouped as $block): ?>
+                                    <?php if (empty($block['grades'])) { continue; } ?>
+                                    <optgroup label="<?= htmlspecialchars($block['label'], ENT_QUOTES, 'UTF-8') ?>">
+                                        <?php foreach ($block['grades'] as $g): ?>
+                                        <option value="<?= (int) $g['id'] ?>"><?= htmlspecialchars((string) ($g['label_long'] ?? $g['label_short'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
+                                        <?php endforeach; ?>
+                                    </optgroup>
+                                <?php endforeach; ?>
+                            </select>
+                            <?php endforeach; ?>
                         </div>
                     </section>
                 </div>
@@ -1265,7 +1314,8 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         } else {
             lines.push('Ancienneté : commence aujourd’hui');
         }
-        lines.push('Grades : ' + (gs === 'US_CLASSIC' ? 'United States' : (gs === 'NONE' ? 'aucun' : 'Français')));
+        var gsTitle = gsPicked && gsPicked.closest('label') ? gsPicked.closest('label').querySelector('.cc-choice__title') : null;
+        lines.push('Grades : ' + (gs === 'NONE' ? 'aucun' : (gsTitle ? gsTitle.textContent.trim() : 'Français')));
         if (fgText) lines.push('Grade fondateur : ' + fgText);
         lines.push('Inscription : ' + regLabel);
         lines.push('Recrutement fermé : ' + (locked ? 'oui' : 'non'));
@@ -1463,21 +1513,15 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         }
         syncUnitsFromOrgStep();
         if (unitsEditor && unitsHidden) unitsEditor.value = unitsHidden.value;
-        var fr = document.getElementById('founder-grade-fr');
-        var us = document.getElementById('founder-grade-us');
+        // Seule la liste du système choisi envoie le grade du fondateur (français par défaut, et pour « Aucun »).
         var sys = form.querySelector('input[name="wizard_grade_system_code"]:checked');
-        if (sys && fr && us) {
-            if (sys.value === 'US_CLASSIC') {
-                fr.disabled = true;
-                us.disabled = false;
-                fr.name = '';
-                us.name = 'wizard_founder_grade_id';
-            } else {
-                fr.disabled = false;
-                us.disabled = true;
-                us.name = '';
-                fr.name = 'wizard_founder_grade_id';
-            }
+        if (sys) {
+            var founderFor = form.querySelector('select.founder-grade-select[data-founder-for="' + sys.value + '"]') ? sys.value : 'FR_CLASSIC';
+            form.querySelectorAll('select.founder-grade-select[data-founder-for]').forEach(function (sel) {
+                var on = sel.dataset.founderFor === founderFor;
+                sel.disabled = !on;
+                sel.name = on ? 'wizard_founder_grade_id' : '';
+            });
         }
     });
 
@@ -1488,8 +1532,13 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         r.addEventListener('change', function () {
             var us = r.value === 'US_CLASSIC';
             var none = r.value === 'NONE';
-            if (previewFr) previewFr.classList.toggle('opacity-60', us);
+            var extra = !none && !us && r.value !== 'FR_CLASSIC';
+            if (previewFr) previewFr.classList.toggle('opacity-60', us || extra);
             if (previewUs) previewUs.classList.toggle('opacity-60', !us);
+            form.querySelectorAll('[data-grade-preview]').forEach(function (box) {
+                if (box === previewFr || box === previewUs) return;
+                box.classList.toggle('hidden', box.dataset.gradePreview !== r.value);
+            });
             ['cc-grade-previews', 'cc-founder-grade'].forEach(function (id) {
                 var el = document.getElementById(id);
                 if (el) el.classList.toggle('hidden', none);
@@ -1499,9 +1548,14 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
             var frSel = document.getElementById('founder-grade-fr');
             var usSel = document.getElementById('founder-grade-us');
             if (frSel && usSel) {
-                frSel.classList.toggle('hidden', us);
+                frSel.classList.toggle('hidden', us || extra);
                 usSel.classList.toggle('hidden', !us);
             }
+            form.querySelectorAll('select.founder-grade-select[data-founder-for]').forEach(function (sel) {
+                if (sel === frSel || sel === usSel) return;
+                sel.classList.toggle('hidden', sel.dataset.founderFor !== r.value);
+                sel.disabled = sel.dataset.founderFor !== r.value;
+            });
         });
     });
 

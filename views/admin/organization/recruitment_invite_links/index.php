@@ -41,11 +41,11 @@ foreach ($inviteLinks as $link) {
 <div class="ath-note">
     <p class="ath-note__title">Un lien à partager, comme sur Discord</p>
     <p class="ath-note__text">
-        Chaque lien ouvre une page de présentation de votre communauté, puis propose de <strong>candidater</strong>
-        ou de <strong>rejoindre</strong> la communauté. Les visiteurs sans compte en créent un : l’invitation est gardée
-        jusqu’au bout de l’inscription. Collez le lien sur Discord, un forum ou un message, ou affichez son QR code.
+        <span>Chaque lien ouvre une page de présentation de votre communauté, puis propose de candidater ou de rejoindre la communauté.</span>
+        <span>Les visiteurs sans compte en créent un : l’invitation est gardée jusqu’au bout de l’inscription.</span>
+        <span>Collez le lien sur Discord, un forum ou un message, ou affichez son QR code.</span>
         <?php if ($quota['max'] > 0): ?>
-            Votre formule permet <strong><?= (int) $quota['max'] ?></strong> liens actifs à la fois (<?= (int) $quota['active'] ?> en service).
+            <span>Votre formule permet <?= (int) $quota['max'] ?> liens actifs à la fois (<?= (int) $quota['active'] ?> en service).</span>
         <?php endif; ?>
     </p>
 </div>
@@ -82,7 +82,8 @@ foreach ($inviteLinks as $link) {
     ];
     $athTableRowHrefs[] = $baseUrl . '/' . $id;
     $athTableRowActions[] = '<a href="' . $h($baseUrl . '/' . $id) . '" class="ath-row-action">Détails</a> '
-        . '<a href="' . $h($baseUrl . '/' . $id . '/modifier') . '" class="ath-row-action">Modifier</a>';
+        . '<a href="' . $h($baseUrl . '/' . $id . '/modifier') . '" class="ath-row-action">Modifier</a> '
+        . '<button type="button" class="ath-row-action ath-row-action--danger" data-invite-link-delete="' . $h($baseUrl . '/' . $id . '/supprimer') . '" data-invite-link-label="' . $h((string) ($link['label'] ?? '')) . '">Supprimer</button>';
 }
 $athTableActionsLabel = 'FICHE';
 $athTableFilters = [];
@@ -94,3 +95,4 @@ $athTableFoot = $inviteLinks === []
     ? 'Aucun lien d’invitation pour le moment : créez-en un pour l’envoyer à vos futurs membres.'
     : 'Cliquez une ligne pour copier le lien, afficher son QR code et voir ses statistiques.';
 require base_path('views/partials/ath_table.php');
+require __DIR__ . '/_delete_dialog.php';

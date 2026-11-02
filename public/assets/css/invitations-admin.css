@@ -1,0 +1,119 @@
+/*
+ * Back-office › Invitations (views/admin/organization/invitations.php).
+ * S'appuie sur le kit effectifs-kit.css (.effk-*, jetons --k-*, mode nuit) ; ici seulement ce qui est propre à la page :
+ * jauge membres / formule, liens tout juste envoyés, assistant pas à pas, tableau en cartes sur mobile.
+ * Composants de la maquette (bandeau, faits, billet, boutons, badges, message bref) : invitations-ath.css.
+ */
+
+/* ——— Jauge membres / plafond (dans la bande de faits du bandeau) ——— */
+.inv-fact-cap { min-width: 180px; }
+.inv-gauge { display: block; width: 100%; min-width: 140px; height: 6px; margin-top: 8px; border-radius: 999px; background: rgba(244, 244, 240, 0.12); overflow: hidden; }
+.inv-gauge i { display: block; height: 100%; border-radius: inherit; background: var(--iath-acc, #34d399); transition: width 0.3s; }
+.inv-gauge.is-warn i { background: #fbbf24; }
+.inv-gauge.is-bad i { background: #f87171; }
+.inv-gauge[data-unlimited] i { background: repeating-linear-gradient(-45deg, rgba(52, 211, 153, 0.55) 0 6px, rgba(52, 211, 153, 0.18) 6px 12px); }
+.bo-eff-workspace .inv-full .effk-i { margin-top: 2px; }
+.bo-eff-workspace .inv-full a { font-weight: 700; margin-left: 4px; white-space: nowrap; }
+.bo-eff-workspace .inv-msgs { display: grid; gap: 8px; }
+.bo-eff-workspace .inv-msgs:empty { display: none; }
+
+/* ——— Liens tout juste envoyés (billet) ——— */
+.bo-eff-workspace .inv-just ul { list-style: none; margin: 0; padding: 16px 24px; display: grid; gap: 10px; }
+.bo-eff-workspace .inv-just li { display: grid; grid-template-columns: minmax(140px, 240px) minmax(0, 1fr); gap: 12px; align-items: center; }
+.bo-eff-workspace .inv-just__mail { font-weight: 700; overflow-wrap: anywhere; }
+.bo-eff-workspace .inv-just .iath-code { justify-self: start; }
+.bo-eff-workspace .inv-just .iath-code span { overflow: hidden; text-overflow: ellipsis; }
+.bo-eff-workspace .inv-just .iath-ticket__f { margin: 0; }
+
+/* ——— Tableau ——— */
+.bo-eff-workspace .inv-sort {
+  border: 0; background: transparent; padding: 0; font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+}
+.bo-eff-workspace .inv-sort::after { content: '↕'; opacity: 0.35; font-size: 11px; }
+.bo-eff-workspace th[aria-sort="ascending"] .inv-sort::after { content: '↑'; opacity: 1; }
+.bo-eff-workspace th[aria-sort="descending"] .inv-sort::after { content: '↓'; opacity: 1; }
+.bo-eff-workspace .inv-who { display: grid; gap: 1px; min-width: 0; }
+.bo-eff-workspace .inv-who b { font-weight: 700; overflow-wrap: anywhere; }
+.bo-eff-workspace .inv-who small { color: var(--k-muted); font-size: 12px; overflow-wrap: anywhere; }
+.bo-eff-workspace .inv-date { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--k-muted); }
+.bo-eff-workspace .inv-acts { white-space: nowrap; text-align: right; }
+.bo-eff-workspace .inv-acts form { display: inline-block; margin: 0 0 0 4px; }
+.bo-eff-workspace .inv-danger { color: var(--k-danger); }
+.bo-eff-workspace .inv-danger:hover { color: var(--k-danger); }
+.bo-eff-workspace .inv-empty-act { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 12px 0 0; }
+.bo-eff-workspace .inv-empty span { display: block; max-width: 60ch; margin: 0 auto; }
+
+/* ——— Assistant ——— */
+.effk-md.inv-wiz { width: min(680px, calc(100vw - 24px)); max-height: calc(100vh - 32px); overflow: hidden; }
+.effk-md.inv-wiz[open] { display: flex; flex-direction: column; }
+.inv-wiz > form { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; max-height: calc(100vh - 32px); }
+.inv-wiz__steps { padding: 8px 24px 14px; border-bottom: 1px solid var(--ath-line, #e2e8f0); }
+.inv-wiz__steps .ds-stepper { gap: 6px 18px; }
+.inv-wiz__steps .ds-stepper__item { color: var(--ath-muted, #64748b); }
+.inv-wiz__steps .ds-stepper__item--active { color: var(--ath-ink, #0f172a); }
+.inv-wiz__steps .ds-stepper__item--done { color: var(--ath-accent, #059669); }
+.inv-wiz__b { overflow: auto; min-height: 0; flex: 1 1 auto; }
+.inv-wiz__b > section { display: grid; gap: 14px; }
+.inv-wiz__b > section[hidden] { display: none; }
+.inv-wiz__f { align-items: center; }
+.inv-wiz__f [hidden] { display: none; }
+.inv-wiz__where { margin-right: auto; font-size: 12.5px; color: var(--ath-muted, #64748b); }
+.inv-wiz__err { margin: 0; color: #b91c1c; font-size: 13px; font-weight: 600; }
+.inv-wiz__err[hidden] { display: none; }
+html[data-bo-theme="dark"] .inv-wiz__err { color: #f08a8a; }
+.inv-wiz .effk-md__fl > label { font-size: 12.5px; font-weight: 600; }
+.inv-wiz .effk-md__fl textarea { font-size: 13.5px; }
+.inv-wiz .inv-sel,
+.inv-wiz .inv-input {
+  height: 38px; width: 100%; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--ath-line, #e2e8f0); border-radius: 8px;
+  background: var(--ath-surface, #fff); color: inherit; font: inherit; font-size: 13.5px;
+}
+.inv-wiz .inv-sel:focus,
+.inv-wiz .inv-input:focus { outline: 0; border-color: var(--ath-accent, #059669); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15); }
+.inv-wiz .inv-wiz__search {
+  display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; border: 1px solid var(--ath-line, #e2e8f0);
+  border-radius: 8px; color: var(--ath-muted, #64748b); font-weight: 400;
+}
+.inv-wiz .inv-wiz__search input { border: 0; outline: 0; background: transparent; color: var(--ath-ink, #0f172a); flex: 1; min-width: 0; font: inherit; font-size: 13.5px; }
+.inv-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.inv-grid__full { grid-column: 1 / -1; }
+.inv-wiz .effk-tip { margin: 0; color: var(--ath-muted, #64748b); font-size: 12.5px; }
+.inv-chips { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; }
+.inv-chips:empty { display: none; }
+.inv-chips .is-ok { color: var(--ath-accent, #059669); font-weight: 700; }
+.inv-chips .is-bad { color: #b91c1c; font-weight: 700; }
+html[data-bo-theme="dark"] .inv-chips .is-bad { color: #f08a8a; }
+.inv-chips code { padding: 1px 6px; border-radius: 6px; background: var(--ath-line-soft, #f1f5f9); font-size: 12px; }
+.inv-sum { margin: 0; display: grid; }
+.inv-sum > div { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px; padding: 7px 0; border-top: 1px solid var(--ath-line, #e2e8f0); font-size: 13.5px; }
+.inv-sum > div:first-child { border-top: 0; }
+.inv-sum dt { color: var(--ath-muted, #64748b); font-weight: 600; }
+.inv-sum dd { margin: 0; overflow-wrap: anywhere; }
+
+/* ——— Mobile : lignes en cartes ——— */
+@media (max-width: 700px) {
+  .bo-eff-workspace .inv-just li { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .inv-fact-cap { flex: 1 1 100%; border-right: 0 !important; }
+  .bo-eff-workspace .inv-table thead { display: none; }
+  .bo-eff-workspace .inv-table, .bo-eff-workspace .inv-table tbody, .bo-eff-workspace .inv-table tr, .bo-eff-workspace .inv-table td { display: block; width: 100%; box-sizing: border-box; }
+  .bo-eff-workspace .inv-table tr { padding: 10px 12px; border-top: 1px solid var(--k-border); }
+  .bo-eff-workspace .inv-table tr:first-child { border-top: 0; }
+  .bo-eff-workspace .inv-table tr[hidden] { display: none; }
+  .bo-eff-workspace .inv-table td { border: 0; padding: 3px 0; display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px; }
+  .bo-eff-workspace .inv-table td::before { content: attr(data-label); color: var(--k-muted); font-size: 12px; font-weight: 600; }
+  .bo-eff-workspace .inv-table td.inv-acts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; padding-top: 8px; }
+  .bo-eff-workspace .inv-table td.inv-acts::before { content: none; }
+  .bo-eff-workspace .inv-acts form { margin: 0; }
+  .inv-grid { grid-template-columns: 1fr; }
+  .inv-wiz__steps { padding: 6px 16px 10px; }
+  .inv-wiz__steps .ds-stepper__item > span:not(.ds-stepper__num) { display: none; }
+  .inv-wiz__steps .ds-stepper__item--active > span:not(.ds-stepper__num) { display: inline; }
+  .inv-sum > div { grid-template-columns: 1fr; gap: 2px; }
+}
+.bo-eff-workspace .inv-page [hidden], .bo-eff-workspace [data-inv-reset][hidden] { display: none; }
+.bo-eff-workspace .inv-list { display: grid; gap: 10px; }
+.bo-eff-workspace .inv-list .effk-count { margin: 0; }
+@media (max-width: 700px) {
+  .bo-eff-workspace .inv-table td > * { justify-self: start; }
+}

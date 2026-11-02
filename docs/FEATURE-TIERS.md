@@ -14,30 +14,49 @@ Ce document aligne la méthode produit (score, tiers, limites) sur l’implémen
 
 ## Inventaire des `feature_key` (code)
 
-Les clés suivantes sont utilisées dans `features_json` et/ou dans le gating applicatif (catalogue `SubscriptionPlanFeaturesCatalog`) :
+Source unique : `App\Services\Billing\SubscriptionPlanFeaturesCatalog` (libellés FR/EN, description, type, unité, groupe,
+bornes, défauts par palier). `tests/Unit/PlanFeaturesCatalogCoverageTest.php` relève dans `app/` et `views/` toutes les clés
+lues par le code (contrôles de `FeatureGateService`, `PlanFeatureDenial`, lectures directes de `features_json`) et échoue si
+l’une manque au catalogue. Les quotas valent `0` pour « illimité » ; l’administration affiche une case « Illimité ».
 
-| feature_key | Surfaces principales | Notes |
-|-------------|----------------------|-------|
-| `forum` | Forum communauté | Booléen ; tous les paliers. |
-| `documents` | Documents / pièces jointes | Booléen ; `past_due` conserve l’accès. |
-| `messages` | Messagerie interne | Booléen ; tous les paliers. |
-| `personnel` | Effectifs / ORBAT | Booléen ; tous les paliers. |
-| `training` | Formations LMS | Booléen. |
-| `equipment` | Fiches équipement | Booléen ; tous les paliers. |
-| `events` | Événements / calendrier | Booléen Pro/Standard **ou** quota gratuit. |
-| `courrier` | Bureau courrier officiel | Booléen ; **Standard+**. |
-| `operational_board` | Mur opérationnel | Booléen ; **Standard+**. |
-| `recruitment` | Enrôlement / candidatures | Booléen ; inclus dès le gratuit (socle). |
-| `cooperation` | Coopération inter-unités | Booléen ; **Pro+**. |
-| `alerts` | Alertes communauté | Booléen ; **Standard+**. |
-| `atak` | Carte ATAK | Booléen ; **Standard+**. |
-| `analytics` | Analytics org | Booléen ; **Pro+**. |
-| `advanced_integrations` | Clés API / intégrations | Booléen ; **Pro+**. |
-| `community_create` | Création communauté | Booléen. |
-| `max_members` | Plafond membres | Entier. |
-| `max_training_courses` | Plafond parcours catalogue | Entier ; `0` = illimité. |
-| `max_active_invite_links` | Liens d’invitation actifs à la fois | Entier ; gratuit `2`, payant `0` = illimité. Vérifié à la création et à la réactivation seulement : un lien déjà actif n’est jamais coupé. |
-| `invite_link_custom_slug` | Adresse personnalisée d’un lien d’invitation (`/i/tfj`) | Booléen ; **Standard+**. Sinon code généré. |
+Administration : `/admin/system/subscription-plans` (tableau comparatif, fiche par formule à onglets, aperçu de la page
+publique, communautés qui dépasseraient un plafond abaissé, historique du journal d’audit, copie d’une formule).
+La page publique `/platform/upgrade` génère son comparatif depuis les valeurs réelles (`PlanOfferSummary`).
+
+Défauts : gratuit / standard / pro / pro+. « Lue » = non : clé enregistrée mais qu’aucun écran ne contrôle (sans effet).
+
+| feature_key | Groupe | Libellé | Type | Défauts | Lue |
+|-------------|--------|---------|------|---------|-----|
+| `max_members` | Membres et organisation | Nombre max. de membres | quota (membres, 0 = illimité) | 10 / 25 / 50 / 80 | oui |
+| `personnel` | Membres et organisation | Effectifs et ORBAT | booléen | oui / oui / oui / oui | **non** |
+| `messages` | Membres et organisation | Messagerie interne | booléen | oui / oui / oui / oui | oui |
+| `events` | Membres et organisation | Événements et calendrier | booléen | — / oui / oui / oui | oui |
+| `operational_board` | Membres et organisation | Mur opérationnel | booléen | — / oui / oui / oui | oui |
+| `alerts` | Membres et organisation | Alertes communauté | booléen | — / oui / oui / oui | oui |
+| `analytics` | Membres et organisation | Analytics organisation | booléen | — / — / oui / oui | oui |
+| `pdf_exports` | Membres et organisation | Exports PDF des tableaux | booléen | — / oui / oui / oui | oui |
+| `year_review_collective` | Membres et organisation | Rétrospective annuelle de l’unité | booléen | — / oui / oui / oui | oui |
+| `community_create` | Membres et organisation | Création de communauté | booléen | oui / oui / oui / oui | **non** |
+| `training` | Academy et qualifications | Formations | booléen | oui / oui / oui / oui | oui |
+| `max_training_courses` | Academy et qualifications | Nombre max. de parcours | quota (parcours, 0 = illimité) | 5 / 25 / 100 / illimité | oui |
+| `pilot_qualifications` | Academy et qualifications | Cursus pilote automatique | booléen | — / oui / oui / oui | oui |
+| `qualification_catalog_bulk_import` | Academy et qualifications | Import d’un pays entier du catalogue de référence | booléen | — / — / oui / oui | oui |
+| `max_catalog_qualification_imports` | Academy et qualifications | Qualifications importées du catalogue de référence | quota (qualifications, 0 = illimité) | 10 / 50 / illimité / illimité | oui |
+| `max_real_issuer_imports` | Academy et qualifications | Émetteurs réels importés | quota (émetteurs, 0 = illimité) | 5 / 25 / illimité / illimité | oui |
+| `max_custom_qualifications` | Academy et qualifications | Qualifications et brevets créés par la communauté | quota (créations, 0 = illimité) | 5 / 30 / illimité / illimité | oui |
+| `recruitment` | Recrutement | Recrutement et enrôlement | booléen | oui / oui / oui / oui | **non** |
+| `invite_link_custom_slug` | Recrutement | Liens d’invitation à adresse personnalisée | booléen | — / oui / oui / oui | oui |
+| `max_active_invite_links` | Recrutement | Liens d’invitation actifs | quota (liens actifs, 0 = illimité) | 2 / illimité / illimité / illimité | oui |
+| `atak` | ATAK et jeu | Carte tactique ATAK | booléen | — / oui / oui / oui | oui |
+| `atak_link_basic` | ATAK et jeu | Liaison jeu de base | booléen | oui / oui / oui / oui | oui |
+| `documents` | Documents et doctrine | Documents | booléen | oui / oui / oui / oui | **non** |
+| `courrier` | Documents et doctrine | Courrier officiel | booléen | — / oui / oui / oui | oui |
+| `equipment` | Documents et doctrine | Équipement | booléen | oui / oui / oui / oui | oui |
+| `registry_featured` | Marque, visibilité et intégrations | Mise en avant dans le registre | booléen | — / — / oui / oui | oui |
+| `cooperation` | Marque, visibilité et intégrations | Coopération inter-unités | booléen | — / — / oui / oui | oui |
+| `advanced_integrations` | Marque, visibilité et intégrations | Intégrations avancées | booléen | — / — / — / oui | oui |
+
+Clé historique `forum` : ni au catalogue ni lue par le code (orpheline si encore présente en base ; conservée à l’enregistrement).
 
 ## Facturation
 

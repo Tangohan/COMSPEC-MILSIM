@@ -20,6 +20,7 @@ final class OrganizationKitDefinitions
     public const FRENCH_ARMOR = 'official.french_armor';
     public const AIRMOBILE = 'official.airmobile';
     public const PRIVATE_MILITARY = 'official.private_military';
+    public const BRITISH_INFANTRY = 'official.british_infantry';
 
     /**
      * Modèles génériques puis modèles inspirés d’unités réelles (RealUnitKitDefinitions).
@@ -46,6 +47,7 @@ final class OrganizationKitDefinitions
             self::airmobile(),
             self::privateMilitary(),
             self::gamingCommunity(),
+            self::britishInfantryBattalion(),
         ];
     }
 
@@ -72,6 +74,7 @@ final class OrganizationKitDefinitions
             self::AIRMOBILE,
             self::PRIVATE_MILITARY,
             self::GAMING_COMMUNITY,
+            self::BRITISH_INFANTRY,
         ];
     }
 
@@ -531,6 +534,106 @@ final class OrganizationKitDefinitions
                 self::job('appui', 'Officier appui feu', 'usinf-officier-appui-feu', 'Fire Support Officer : coordonne les feux au profit de la compagnie.', 40),
                 self::job('sout', 'Infirmier de combat', 'usinf-infirmier-combat', 'Combat Medic : soins au plus près et évacuation.', 10),
                 self::job('sout', 'Sous-officier ravitaillement', 'usinf-ravitaillement', 'Supply Sergeant : matériel, munitions et vivres.', 20),
+            ],
+            'roles' => [],
+        ];
+    }
+
+    /**
+     * Bataillon d’infanterie britannique type (light role) : quartier général, Headquarters Company, Support Company et
+     * trois compagnies de fusiliers (A, B, C) de trois platoons à trois sections de deux fire teams, grades de la
+     * British Army. Chaque unité porte son échelon : l’adéquation (référentiel britannique, EchelonStandards::british)
+     * attend un Corporal à la section, un Lieutenant et un Platoon Sergeant au platoon, un Major et un Company Sergeant
+     * Major à la compagnie, un Lieutenant Colonel et un Regimental Sergeant Major au bataillon.
+     *
+     * Organisation publique de l’infanterie britannique (army.mod.uk, Infantry Battle School) ; noms d’unités en anglais,
+     * comme dans l’armée britannique.
+     *
+     * @return array<string, mixed>
+     */
+    public static function britishInfantryBattalion(): array
+    {
+        $units = [
+            self::unit(null, 'bn', 'Infantry Battalion', 'gbinf-battalion', 'BN', 10) + ['unit_echelon' => 'bataillon'],
+            self::unit('bn', 'bnhq', 'Battalion Headquarters', 'gbinf-bn-hq', 'BHQ', 11),
+            self::unit('bn', 'hqcoy', 'Headquarters Company', 'gbinf-hq-company', 'HQ COY', 12) + ['unit_echelon' => 'compagnie'],
+            self::unit('hqcoy', 'sigs', 'Signals Platoon', 'gbinf-signals-platoon', 'SIGS', 1) + ['unit_echelon' => 'section'],
+            self::unit('hqcoy', 'rap', 'Regimental Aid Post', 'gbinf-regimental-aid-post', 'RAP', 2),
+            self::unit('hqcoy', 'qm', 'Quartermaster’s Department', 'gbinf-quartermaster', 'QM', 3),
+            self::unit('bn', 'spcoy', 'Support Company', 'gbinf-support-company', 'SP COY', 13) + ['unit_echelon' => 'compagnie'],
+            self::unit('spcoy', 'mor', 'Mortar Platoon', 'gbinf-mortar-platoon', 'MOR', 1) + ['unit_echelon' => 'section'],
+            self::unit('spcoy', 'at', 'Anti-Tank Platoon', 'gbinf-anti-tank-platoon', 'ATK', 2) + ['unit_echelon' => 'section'],
+            self::unit('spcoy', 'recce', 'Reconnaissance Platoon', 'gbinf-recce-platoon', 'RECCE', 3) + ['unit_echelon' => 'section'],
+            self::unit('spcoy', 'snp', 'Sniper Platoon', 'gbinf-sniper-platoon', 'SNP', 4) + ['unit_echelon' => 'section'],
+            self::unit('spcoy', 'mg', 'Machine Gun Platoon', 'gbinf-machine-gun-platoon', 'MG', 5) + ['unit_echelon' => 'section'],
+        ];
+        $order = 20;
+        $platoon = 0;
+        foreach (['a' => 'A', 'b' => 'B', 'c' => 'C'] as $k => $letter) {
+            $coy = 'coy' . $k;
+            $units[] = self::unit('bn', $coy, $letter . ' Company', 'gbinf-' . $k . '-company', $letter . ' COY', $order) + ['unit_echelon' => 'compagnie'];
+            $units[] = self::unit($coy, $coy . 'hq', $letter . ' Company Headquarters', 'gbinf-' . $k . '-company-hq', $letter . ' HQ', 1);
+            foreach ([1, 2, 3] as $p) {
+                $platoon++;
+                $pl = $coy . 'pl' . $platoon;
+                $units[] = self::unit($coy, $pl, $platoon . ' Platoon', 'gbinf-' . $platoon . '-platoon', $platoon . ' PL', 1 + $p) + ['unit_echelon' => 'section'];
+                $units[] = self::unit($pl, $pl . 'hq', $platoon . ' Platoon Headquarters', 'gbinf-' . $platoon . '-platoon-hq', $platoon . ' PL HQ', 1);
+                foreach ([1, 2, 3] as $sec) {
+                    $sc = $pl . 's' . $sec;
+                    $units[] = self::unit($pl, $sc, $sec . ' Section, ' . $platoon . ' Platoon', 'gbinf-' . $platoon . '-' . $sec . '-section', $platoon . '-' . $sec, 1 + $sec) + ['unit_echelon' => 'groupe'];
+                    $units[] = self::unit($sc, $sc . 'c', 'Charlie Fire Team, ' . $platoon . '-' . $sec, 'gbinf-' . $platoon . '-' . $sec . '-charlie', $platoon . '-' . $sec . 'C', 1) + ['unit_echelon' => 'equipe'];
+                    $units[] = self::unit($sc, $sc . 'd', 'Delta Fire Team, ' . $platoon . '-' . $sec, 'gbinf-' . $platoon . '-' . $sec . '-delta', $platoon . '-' . $sec . 'D', 2) + ['unit_echelon' => 'equipe'];
+                }
+            }
+            $order += 10;
+        }
+
+        return [
+            'code' => self::BRITISH_INFANTRY,
+            'title' => 'Bataillon d’infanterie britannique',
+            'summary' => 'Un bataillon d’infanterie de la British Army : quartier général, Headquarters Company, Support Company (mortiers, antichars, reconnaissance, tireurs d’élite, mitrailleuses) et trois compagnies de fusiliers de trois platoons, chaque section en deux fire teams Charlie et Delta, avec les grades britanniques (British Army et Royal Marines).',
+            'version' => 1,
+            'grade_system_code' => 'GB_ARMY',
+            'origin' => ['country' => 'GB', 'branch' => 'army', 'command' => 'Field Army'],
+            'units' => $units,
+            'job_role_categories' => [
+                self::cat('cmd', 'Commandement', 'gbinf-commandement', 10),
+                self::cat('sec', 'Section d’infanterie', 'gbinf-section', 20),
+                self::cat('sp', 'Armes d’appui', 'gbinf-armes-appui', 30),
+                self::cat('fires', 'Appui feu', 'gbinf-appui-feu', 40),
+                self::cat('css', 'Soutien', 'gbinf-soutien', 50),
+            ],
+            'job_roles' => [
+                self::job('cmd', 'Commanding Officer', 'gbinf-commanding-officer', 'Chef de corps du bataillon, en général Lieutenant Colonel.', 10),
+                self::job('cmd', 'Battalion Second-in-Command', 'gbinf-battalion-2ic', 'Adjoint du chef de corps (Major) : tient l’état-major et la logistique.', 20),
+                self::job('cmd', 'Adjutant', 'gbinf-adjutant', 'Officier adjoint chargé du personnel et de la discipline (Captain).', 30),
+                self::job('cmd', 'Regimental Sergeant Major', 'gbinf-regimental-sergeant-major', 'Sous-officier le plus ancien du bataillon (Warrant Officer Class 1).', 40),
+                self::job('cmd', 'Officer Commanding', 'gbinf-officer-commanding', 'Commandant de compagnie, en général Major.', 50),
+                self::job('cmd', 'Company Second-in-Command', 'gbinf-company-2ic', 'Adjoint du commandant de compagnie (Captain).', 60),
+                self::job('cmd', 'Company Sergeant Major', 'gbinf-company-sergeant-major', 'Sous-officier le plus ancien de la compagnie (Warrant Officer Class 2).', 70),
+                self::job('cmd', 'Company Quartermaster Sergeant', 'gbinf-cqms', 'Ravitaillement de la compagnie (Colour Sergeant ou Staff Sergeant).', 80),
+                self::job('cmd', 'Platoon Commander', 'gbinf-platoon-commander', 'Chef de platoon (Second Lieutenant ou Lieutenant), formé au Platoon Commanders’ Battle Course.', 90),
+                self::job('cmd', 'Platoon Sergeant', 'gbinf-platoon-sergeant', 'Adjoint du chef de platoon (Sergeant), formé au Platoon Sergeants’ Battle Course.', 100),
+                self::job('sec', 'Section Commander', 'gbinf-section-commander', 'Chef de section de huit (Corporal), formé au Section Commanders’ Battle Course.', 10),
+                self::job('sec', 'Section Second-in-Command', 'gbinf-section-2ic', 'Adjoint du chef de section et chef de la seconde fire team (Lance Corporal).', 20),
+                self::job('sec', 'Fire Team Commander', 'gbinf-fire-team-commander', 'Chef d’une fire team de quatre (Lance Corporal).', 30),
+                self::job('sec', 'Rifleman', 'gbinf-rifleman', 'Combattant de base de la fire team.', 40),
+                self::job('sec', 'Grenadier', 'gbinf-grenadier', 'Fusilier équipé du lance-grenades sous le canon.', 50),
+                self::job('sec', 'Sharpshooter', 'gbinf-sharpshooter', 'Tireur de précision de la section, à moyenne portée.', 60),
+                self::job('sec', 'Light Machine Gunner', 'gbinf-light-machine-gunner', 'Appui feu soutenu de la fire team.', 70),
+                self::job('sec', 'Platoon Signaller', 'gbinf-platoon-signaller', 'Radio du quartier général de platoon.', 80),
+                self::job('sp', 'Mortar Fire Controller', 'gbinf-mortar-fire-controller', 'Observe et ajuste les tirs du Mortar Platoon au profit d’une compagnie.', 10),
+                self::job('sp', 'Mortarman', 'gbinf-mortarman', 'Servant du mortier de 81 mm.', 20),
+                self::job('sp', 'Anti-Tank Operator', 'gbinf-anti-tank-operator', 'Met en œuvre le missile antichar Javelin.', 30),
+                self::job('sp', 'Reconnaissance Soldier', 'gbinf-recce-soldier', 'Observe et renseigne en avant du bataillon.', 40),
+                self::job('sp', 'Sniper', 'gbinf-sniper', 'Tireur d’élite et observateur du Sniper Platoon.', 50),
+                self::job('sp', 'Machine Gunner (GPMG SF)', 'gbinf-machine-gunner', 'Sert la mitrailleuse en rôle d’appui feu soutenu.', 60),
+                self::job('fires', 'Fire Support Team Commander', 'gbinf-fst-commander', 'Royal Artillery : coordonne les feux indirects et l’appui aérien au profit de la compagnie.', 10),
+                self::job('fires', 'Joint Terminal Attack Controller', 'gbinf-jtac', 'Guide l’appui aérien rapproché au profit de la compagnie.', 20),
+                self::job('css', 'Team Medic', 'gbinf-team-medic', 'Premiers soins de combat au niveau de la section.', 10),
+                self::job('css', 'Combat Medical Technician', 'gbinf-combat-medical-technician', 'Infirmier de combat (Royal Army Medical Service) rattaché à la compagnie.', 20),
+                self::job('css', 'Regimental Signals Officer', 'gbinf-regimental-signals-officer', 'Officier transmissions du bataillon, chef du Signals Platoon.', 30),
+                self::job('css', 'Quartermaster', 'gbinf-quartermaster', 'Officier chargé du matériel, des munitions et des vivres du bataillon.', 40),
             ],
             'roles' => [],
         ];

@@ -12,7 +12,7 @@ final class OrganizationKitDefinitionsTest extends TestCase
     public function testOfficialKitsAreTenantAgnosticAndComplete(): void
     {
         $kits = OrganizationKitDefinitions::genericKits();
-        self::assertCount(9, $kits);
+        self::assertCount(10, $kits);
         self::assertSame(
             [
                 OrganizationKitDefinitions::FRENCH_ARMY,
@@ -24,6 +24,7 @@ final class OrganizationKitDefinitionsTest extends TestCase
                 OrganizationKitDefinitions::AIRMOBILE,
                 OrganizationKitDefinitions::PRIVATE_MILITARY,
                 OrganizationKitDefinitions::GAMING_COMMUNITY,
+                OrganizationKitDefinitions::BRITISH_INFANTRY,
             ],
             OrganizationKitDefinitions::genericCodes()
         );
@@ -115,7 +116,8 @@ final class OrganizationKitDefinitionsTest extends TestCase
                 self::assertContains($job['category_key'], $categories, (string) $job['slug']);
             }
             // Modèles allemands : aucun barème de grades allemand, le système de la communauté reste inchangé.
-            $grades = OrganizationKitDefinitions::isRealUnits($kit) ? ['FR_CLASSIC', 'US_CLASSIC', ''] : ['FR_CLASSIC', 'US_CLASSIC'];
+            // Modèles malaisiens et britanniques : grades du registre des systèmes officiels.
+            $grades = OrganizationKitDefinitions::isRealUnits($kit) ? array_merge(\App\Support\OfficialGradeSystems::CODES, ['']) : \App\Support\OfficialGradeSystems::CODES;
             self::assertContains($kit['grade_system_code'], $grades);
         }
     }

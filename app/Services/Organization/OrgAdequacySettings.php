@@ -12,7 +12,7 @@ use App\Services\Doctrine\DoctrineReferential;
  * Réglages de l’adéquation de l’organisation, par communauté (admin_runtime.org_adequacy des paramètres).
  *
  * - enabled : contrôle actif ou non ;
- * - profile : référentiel des attentes (auto = doctrine de la communauté, sinon fr / us) ;
+ * - profile : référentiel des attentes (auto = doctrine de la communauté ou système de grades, sinon fr / us / gb) ;
  * - overqualification_margin : écart de niveaux de grade (OTAN) au-dessus de la plage attendue à partir duquel un
  *   grade est signalé « nettement au-dessus » ;
  * - rules : chaque famille de contrôle s’active ou se désactive ;
@@ -146,6 +146,14 @@ final class OrgAdequacySettings
         $profile = (string) ($settings['profile'] ?? self::PROFILE_AUTO);
         if (in_array($profile, EchelonStandards::profiles(), true)) {
             return $profile;
+        }
+        // Grades britanniques : référentiel des échelons britannique, quelle que soit la doctrine.
+        if (str_starts_with(strtoupper(trim($gradeSystemCode)), 'GB')) {
+            return EchelonStandards::PROFILE_GB;
+        }
+        // Grades malaisiens : articulation d’origine britannique (le chef de seksyen est un Koperal).
+        if (str_starts_with(strtoupper(trim($gradeSystemCode)), 'MY_')) {
+            return EchelonStandards::PROFILE_MY;
         }
         $ref = DoctrineReferential::sanitize($doctrineReferential);
         if ($ref === DoctrineReferential::US) {
