@@ -17,7 +17,16 @@ $prereqSelect = static function (string $name, array $choices, string|int $value
 $prereqRow = static function (string $index, array $c) use ($h, $prereqTypes, $prereqOptions, $prereqSelect): string {
     $type = ($c['type'] ?? '') === 'metric' ? 'metric:' . $c['metric'] : (string) ($c['type'] ?? '');
     $n = static fn (string $f): string => 'crit[' . $index . '][' . $f . ']';
-    ob_start(); ?>
+    ob_start();
+    if ($type === 'doctrine_ref'): // Publication du référentiel doctrinal rattachée depuis le catalogue d’emplois : gardée telle quelle. ?>
+<div class="eff-jobs-prereq-row" data-prereq-row data-type="doctrine_ref">
+    <input type="hidden" name="<?= $h($n('type')) ?>" value="doctrine_ref"><input type="hidden" name="<?= $h($n('key')) ?>" value="<?= $h((string) ($c['key'] ?? '')) ?>">
+    <p>Doctrine du référentiel : <strong translate="no"><?= $h(\App\Services\Personnel\JobPrerequisiteService::libraryLabel((string) ($c['key'] ?? ''))) ?></strong></p>
+    <label>Exigence<select name="<?= $h($n('mode')) ?>"><?php foreach (\App\Services\Personnel\JobPrerequisiteService::DOCTRINE_MODES as $value => $label): ?><option value="<?= $h($value) ?>" <?= ($c['mode'] ?? 'read') === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach ?></select></label>
+    <label class="eff-jobs-checkbox"><input type="checkbox" name="<?= $h($n('remove')) ?>" value="1">Retirer</label>
+</div>
+<?php return (string) ob_get_clean();
+    endif ?>
 <div class="eff-jobs-prereq-row" data-prereq-row data-type="<?= $h($type) ?>">
     <label>Prérequis<select name="<?= $h($n('type')) ?>" data-prereq-type><?php foreach ($prereqTypes as $value => $label): ?><option value="<?= $h($value) ?>" <?= $type === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach ?></select></label>
     <label data-prereq-field="doctrine">Doctrine<?= $prereqSelect($n('document_id'), $prereqOptions['doctrines'] ?? [], (int) ($c['document_id'] ?? 0), 'Choisir une doctrine publiée') ?></label>

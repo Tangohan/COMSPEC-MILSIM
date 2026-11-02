@@ -664,9 +664,26 @@
         target.textContent = '';
         const links = entry.qualification_links || [];
         const defs = entry.qualification_definitions || [];
+        const refs = entry.references || [];
         (entry.qualifications || []).forEach((text, i) => {
             const li = el('li', 'jobcat__qual-item');
-            if (links[i]) {
+            const ref = refs[i];
+            if (ref && ref.kind === 'doctrine') {
+                // Publication du référentiel doctrinal : lien direct vers sa fiche.
+                const link = el('a', 'jobcat__qual-ref', text);
+                link.href = box.dataset.doctrineUrl + '#ref-' + encodeURIComponent(ref.id);
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.title = label('open-doctrine') + ' : ' + ref.code;
+                li.appendChild(link);
+                li.appendChild(el('small', 'jobcat__qual-issuer', label('doctrine') + ' · ' + ref.code + (ref.issuer ? ' · ' + ref.issuer : '')));
+                li.appendChild(attachButton(ref.key, text));
+            } else if (ref && ref.kind === 'qualification') {
+                li.appendChild(qualButton(ref.id, text));
+                if (ref.issuer) li.appendChild(el('small', 'jobcat__qual-issuer', ref.issuer));
+                if (ref.academy) li.appendChild(academyLink(ref.academy));
+                li.appendChild(attachButton(ref.key, text));
+            } else if (links[i]) {
                 li.appendChild(qualButton(links[i], text));
                 const q = (entry.linked_qualifications || []).find(item => item.id === links[i]);
                 if (q?.academy) li.appendChild(academyLink(q.academy));
@@ -689,6 +706,45 @@
             }
             target.appendChild(li);
         });
+    }
+
+    /**
+     * « Rattacher à la fonction » : la qualification (importée à la volée si besoin) ou la doctrine devient un prérequis
+     * de l'emploi à son enregistrement (champs cachés catalog_reference_keys[] de la fiche). Un second clic annule.
+     */
+    const attached = new Set();
+    function attachButton(key, text) {
+        const button = el('button', 'jobcat__copy jobcat__attach');
+        button.type = 'button';
+        button.dataset.jobCatalogAttach = key;
+        button.setAttribute('aria-label', label('attach') + ' : ' + text);
+        paintAttach(button);
+        button.hidden = !form();
+        return button;
+    }
+    function paintAttach(button) {
+        const on = attached.has(button.dataset.jobCatalogAttach);
+        button.textContent = on ? label('attached') : label('attach');
+        button.setAttribute('aria-pressed', on ? 'true' : 'false');
+        button.classList.toggle('is-on', on);
+    }
+    function toggleAttach(button) {
+        const key = button.dataset.jobCatalogAttach;
+        if (attached.has(key)) attached.delete(key); else attached.add(key);
+        const target = form();
+        if (target) {
+            target.querySelectorAll('[data-catalog-ref]').forEach(node => node.remove());
+            attached.forEach(value => {
+                const input = el('input');
+                input.type = 'hidden';
+                input.name = 'catalog_reference_keys[]';
+                input.value = value;
+                input.dataset.catalogRef = '';
+                target.appendChild(input);
+            });
+        }
+        dialog().querySelectorAll('[data-job-catalog-attach]').forEach(node => { if (node.dataset.jobCatalogAttach === key) paintAttach(node); });
+        announce(attached.has(key) ? label('attached') : label('detached'));
     }
 
     /** Relier (ou délier) une qualification citée à une qualification du référentiel de la communauté. */
@@ -1128,6 +1184,8 @@
         if (event.target === box) { close(); return; }
         if (event.target.closest('[data-job-catalog-close]')) { close(); return; }
         if (event.target.closest('[data-job-catalog-back]')) { back(); return; }
+        const attach = event.target.closest('[data-job-catalog-attach]');
+        if (attach) { toggleAttach(attach); return; }
         const qual = event.target.closest('[data-job-catalog-qual]');
         if (qual) { openQualification(qual.dataset.jobCatalogQual); return; }
         if (event.target.closest('[data-job-catalog-expand]')) { setExpanded(!box.classList.contains('is-expanded')); return; }

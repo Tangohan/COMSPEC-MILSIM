@@ -43,6 +43,10 @@
           "Allied Joint Doctrine for Special Operations (AJP-3.5)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nsou-socc-staff",
+        "doctrine:nato-ajp-3-5"
+      ],
       "billets": {
         "fr": [
           "SOCC de l’ARF : commandant de composante",
@@ -112,6 +116,10 @@
           "Allied Joint Doctrine for Special Operations (AJP-3.5)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nsou-socc-staff",
+        "doctrine:nato-ajp-3-5"
+      ],
       "billets": {
         "fr": [
           "SOCC : chef d’état-major"
@@ -177,6 +185,9 @@
           "NATO Special Operations University (NSOU, Chièvres) education on SOCC functions"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nsou-socc-staff"
+      ],
       "billets": {
         "fr": [
           "Centre d’opérations SOCC : chef de quart / officier opérations"
@@ -238,6 +249,10 @@
           "NATO School Oberammergau intelligence courses (Intelligence department)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nsou-socc-staff",
+        "qualification:nato-nso-intelligence"
+      ],
       "billets": {
         "fr": [
           "SOCC : chef de cellule J2"
@@ -305,6 +320,10 @@
           "Allied Joint Doctrine for Special Operations (AJP-3.5)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nsou-socc-staff",
+        "doctrine:nato-ajp-3-5"
+      ],
       "billets": {
         "fr": [
           "SOFLE auprès du LCC, de l’ACC ou du MCC : chef d’élément"
@@ -366,6 +385,10 @@
           "Allied Joint Doctrine for Special Operations (AJP-3.5)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-sof-selection",
+        "doctrine:nato-ajp-3-5"
+      ],
       "billets": {
         "fr": [
           "SOTG : commandant"
@@ -425,6 +448,9 @@
           "Special forces selection and training of the contributing nation"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-sof-selection"
+      ],
       "billets": {
         "fr": [
           "SOTU : chef d’unité"
@@ -486,6 +512,10 @@
           "Allied Joint Doctrine for Special Operations (AJP-3.5)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-sof-selection",
+        "doctrine:nato-ajp-3-5"
+      ],
       "billets": {
         "fr": [
           "Équipe SOF : observateur, transmetteur, chef d’équipe"
@@ -551,6 +581,10 @@
           "Allied Joint Doctrine for Special Operations (AJP-3.5)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-sof-selection",
+        "doctrine:nato-ajp-3-5"
+      ],
       "billets": {
         "fr": [
           "Équipe SOF : équipier d’assaut"
@@ -612,6 +646,10 @@
           "Allied Joint Doctrine for Special Operations (AJP-3.5)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-sof-selection",
+        "doctrine:nato-ajp-3-5"
+      ],
       "billets": {
         "fr": [
           "Équipe SOF : conseiller / instructeur auprès d’une force partenaire"
@@ -681,6 +719,11 @@
           "Special forces selection and training of the contributing nation"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-jtac",
+        "qualification:nato-jtac",
+        "qualification:nato-national-sof-selection"
+      ],
       "qualification_refs": [
         "nato-jtac"
       ],
@@ -751,6 +794,10 @@
           "Allied Joint Doctrine for Special Operations (AJP-3.5)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-sof-selection",
+        "doctrine:nato-ajp-3-5"
+      ],
       "billets": {
         "fr": [
           "SOMTG : commandant"
@@ -818,6 +865,10 @@
           "Maritime interdiction training at NMIOTC (Souda Bay)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-sof-selection",
+        "qualification:nato-boarding-team"
+      ],
       "qualification_refs": [
         "nato-boarding-team"
       ],
@@ -888,6 +939,10 @@
           "Air mission commander qualification of the contributing nation"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-5",
+        "qualification:nato-national-air-mission-commander"
+      ],
       "billets": {
         "fr": [
           "SOATG : commandant"
@@ -955,6 +1010,10 @@
           "Night vision goggle flying training"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-tactical-helo-aircrew",
+        "qualification:nato-national-nvg-flying"
+      ],
       "billets": {
         "fr": [
           "SOATU : commandant de bord, pilote"
@@ -1022,6 +1081,10 @@
           "Train-the-trainer course"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nsou-socc-staff",
+        "qualification:nato-train-the-trainer"
+      ],
       "billets": {
         "fr": [
           "NSOU : instructeur, directeur de cours"
@@ -1085,6 +1148,11 @@
           "Certification under the JTAC MOA (multinational JTAC standardisation agreement)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-jtac",
+        "qualification:nato-jtac",
+        "qualification:nato-jtac"
+      ],
       "qualification_refs": [
         "nato-jtac",
         "nato-laser-operator"
@@ -1158,6 +1226,10 @@
           "Squadron FAC(A) qualification per ATP-3.3.2.1 TTPs"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-fac-airborne",
+        "qualification:nato-fac-airborne"
+      ],
       "qualification_refs": [
         "nato-fac-airborne"
       ],
@@ -1222,6 +1294,9 @@
           "Qualification compliant with STANAG 3797 (minimum qualifications for forward air controllers and laser operators)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-fac-airborne"
+      ],
       "qualification_refs": [
         "nato-fac-airborne"
       ],
@@ -1286,6 +1361,10 @@
           "ATP-3.3.2.1 close air support TTPs"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-jfo",
+        "qualification:nato-jfo"
+      ],
       "qualification_refs": [
         "nato-jfo"
       ],
@@ -1350,6 +1429,10 @@
           "ATP-3.3.2.2 JTAC Program and ATP-3.3.2.1 close air support TTPs"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-jtac",
+        "qualification:nato-jtac"
+      ],
       "qualification_refs": [
         "nato-jtac"
       ],
@@ -1420,6 +1503,10 @@
           "Allied Joint Doctrine for Air and Space Operations (AJP-3.3)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-jtac",
+        "doctrine:nato-ajp-3-3"
+      ],
       "billets": {
         "fr": [
           "État-major de division ou de brigade : ALO"
@@ -1487,6 +1574,10 @@
           "Tactical air control or TACP experience"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-3-5",
+        "qualification:nato-jtac"
+      ],
       "billets": {
         "fr": [
           "ASOC : officier de conduite"
@@ -1554,6 +1645,10 @@
           "Air operations officer experience"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-3",
+        "qualification:nato-nso-staff"
+      ],
       "billets": {
         "fr": [
           "CAOC : chef Combat Operations, chef de quart"
@@ -1621,6 +1716,10 @@
           "Allied Joint Doctrine for Joint Targeting (AJP-3.9)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-3",
+        "doctrine:nato-ajp-3-9"
+      ],
       "billets": {
         "fr": [
           "CAOC / JFAC : officier Combat Plans, rédacteur ATO"
@@ -1684,6 +1783,9 @@
           "Allied Joint Doctrine for Airspace Control (AJP-3.3.5)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-3-5"
+      ],
       "billets": {
         "fr": [
           "CAOC / JFAC : cellule espace aérien"
@@ -1743,6 +1845,9 @@
           "National military air traffic controller licence"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-military-atc"
+      ],
       "billets": {
         "fr": [
           "Élément ATC déployable : contrôleur"
@@ -1802,6 +1907,9 @@
           "National air defence controller training"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-air-defence-controller"
+      ],
       "billets": {
         "fr": [
           "Équipage de mission AWACS : contrôleur d’armes, contrôleur de surveillance"
@@ -1863,6 +1971,9 @@
           "Allied Joint Doctrine for Air and Space Operations (AJP-3.3)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-3"
+      ],
       "billets": {
         "fr": [
           "ACCE auprès d’un LCC ou d’un MCC : officier de liaison"
@@ -1926,6 +2037,9 @@
           "National RPAS pilot or operator qualification"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-rpas-operator"
+      ],
       "billets": {
         "fr": [
           "NISRF : pilote, opérateur capteurs"
@@ -1993,6 +2107,10 @@
           "NATO School Oberammergau intelligence courses"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-imagery-analyst",
+        "qualification:nato-nso-intelligence"
+      ],
       "billets": {
         "fr": [
           "NISRF / cellule JISR : analyste image"
@@ -2054,6 +2172,9 @@
           "National maritime patrol tactical coordinator training"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-mpa-tacco"
+      ],
       "billets": {
         "fr": [
           "Équipage MPA : TACCO"
@@ -2117,6 +2238,10 @@
           "Air-centric Personnel Recovery Operatives Course (APROC)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-7",
+        "qualification:nato-aproc"
+      ],
       "qualification_refs": [
         "nato-jpr",
         "nato-aproc"
@@ -2188,6 +2313,10 @@
           "Air-centric Personnel Recovery Operatives Course (APROC)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-7",
+        "qualification:nato-aproc"
+      ],
       "qualification_refs": [
         "nato-jpr",
         "nato-aproc"
@@ -2257,6 +2386,10 @@
           "Air-centric Personnel Recovery Operatives Course (APROC)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-7",
+        "qualification:nato-aproc"
+      ],
       "qualification_refs": [
         "nato-jpr",
         "nato-aproc"
@@ -2328,6 +2461,10 @@
           "National tactical helicopter aircrew qualification"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-aproc",
+        "qualification:nato-national-tactical-helo-aircrew"
+      ],
       "qualification_refs": [
         "nato-aproc"
       ],
@@ -2394,6 +2531,9 @@
           "Allied Joint Doctrine for Recovery of Personnel in a Hostile Environment (AJP-3.7)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-7"
+      ],
       "qualification_refs": [
         "nato-jpr"
       ],
@@ -2462,6 +2602,10 @@
           "SERE training"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-pararescue-pipeline",
+        "qualification:nato-sere-c"
+      ],
       "qualification_refs": [
         "nato-sere-c"
       ],
@@ -2532,6 +2676,10 @@
           "Emergency Management of Battlefield Injuries (EMBI) – MILMED COE"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-4-2",
+        "qualification:nato-embi"
+      ],
       "qualification_refs": [
         "nato-embi"
       ],
@@ -2600,6 +2748,10 @@
           "Major Incident Medical Management and Support (MIMMS) – MILMED COE"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-embi",
+        "qualification:nato-mimms"
+      ],
       "qualification_refs": [
         "nato-embi",
         "nato-mimms"
@@ -2671,6 +2823,10 @@
           "NATO Medical Evaluation Course (MEDEVAL) – MILMED COE"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-4-2",
+        "qualification:nato-medeval"
+      ],
       "billets": {
         "fr": [
           "QG de force : chef de la branche médicale"
@@ -2736,6 +2892,10 @@
           "Allied Joint Doctrine for Medical Support (AJP-4.2, formerly AJP-4.10)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-pecc",
+        "doctrine:nato-ajp-4-2"
+      ],
       "qualification_refs": [
         "nato-pecc"
       ],
@@ -2804,6 +2964,10 @@
           "National in-flight care training"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-4-2",
+        "qualification:nato-national-flight-medic"
+      ],
       "billets": {
         "fr": [
           "Hélicoptère MEDEVAC : médecin, infirmier, technicien"
@@ -2871,6 +3035,10 @@
           "NATO EOD COE training activities (Trenčín)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-18",
+        "qualification:nato-eod-coe-training"
+      ],
       "billets": {
         "fr": [
           "Équipe EOD : chef d’équipe, opérateur"
@@ -2938,6 +3106,10 @@
           "National IEDD qualification"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-15",
+        "qualification:nato-national-iedd"
+      ],
       "billets": {
         "fr": [
           "Équipe IEDD : opérateur, assistant"
@@ -3003,6 +3175,10 @@
           "Basic Field Exploitation Course (BIFEC) – C-IED COE"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-wit",
+        "qualification:nato-bifec"
+      ],
       "qualification_refs": [
         "nato-wit"
       ],
@@ -3073,6 +3249,10 @@
           "Allied Joint Doctrine for Countering IEDs (AJP-3.15)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-cied-staff-officer",
+        "doctrine:nato-ajp-3-15"
+      ],
       "qualification_refs": [
         "nato-cied-staff-officer"
       ],
@@ -3141,6 +3321,10 @@
           "Analyst’s Notebook Users Course (ANUC) – C-IED COE"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-attack-the-network",
+        "qualification:nato-anuc"
+      ],
       "qualification_refs": [
         "nato-attack-the-network"
       ],
@@ -3205,6 +3389,9 @@
           "NATO Document and Media Exploitation course series (DOMEX) – C-IED COE"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-domex"
+      ],
       "qualification_refs": [
         "nato-domex"
       ],
@@ -3271,6 +3458,10 @@
           "National clearance diver qualification"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-maritime-iedd",
+        "qualification:nato-national-clearance-diver"
+      ],
       "qualification_refs": [
         "nato-maritime-iedd"
       ],
@@ -3341,6 +3532,10 @@
           "Allied Joint Doctrine for Countering WMD in Military Operations (AJP-3.23)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-cbrn-consequence-management",
+        "doctrine:nato-ajp-3-23"
+      ],
       "billets": {
         "fr": [
           "Cellule NRBC : officier d’état-major"
@@ -3406,6 +3601,10 @@
           "Hazard Prediction and Assessment Capability (HPAC) course – JCBRN Defence COE"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-cbrn-warning-reporting",
+        "qualification:nato-hpac"
+      ],
       "qualification_refs": [
         "nato-cbrn-warning-reporting"
       ],
@@ -3474,6 +3673,10 @@
           "National CBRN specialist qualification"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-cbrn-live-agent",
+        "qualification:nato-cbrn-live-agent"
+      ],
       "qualification_refs": [
         "nato-cbrn-live-agent"
       ],
@@ -3542,6 +3745,10 @@
           "Live Agent Training – JCBRN Defence COE"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-cbrn-live-agent",
+        "qualification:nato-cbrn-live-agent"
+      ],
       "qualification_refs": [
         "nato-cbrn-live-agent"
       ],
@@ -3604,6 +3811,9 @@
           "Science degree or CBRN expert background"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-hpac"
+      ],
       "billets": {
         "fr": [
           "Reachback Element : analyste, officier de permanence"
@@ -3667,6 +3877,10 @@
           "NATO Defense College senior courses (Rome)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-01",
+        "qualification:nato-ndc-senior-course"
+      ],
       "billets": {
         "fr": [
           "JFC / JTF HQ : commandant"
@@ -3732,6 +3946,10 @@
           "NATO School Oberammergau courses (operational-level training, over 100 courses)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-5",
+        "qualification:nato-nso-staff"
+      ],
       "billets": {
         "fr": [
           "JFC / JTF HQ : chef d’état-major"
@@ -3797,6 +4015,9 @@
           "NATO School Oberammergau courses (operational-level training, over 100 courses)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nso-staff"
+      ],
       "billets": {
         "fr": [
           "Branche J1 : officier personnel"
@@ -3858,6 +4079,10 @@
           "NATO Counter Intelligence COE courses (Kraków)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nso-staff",
+        "qualification:nato-cicoe-courses"
+      ],
       "billets": {
         "fr": [
           "Branche J2 : analyste, officier de collecte"
@@ -3923,6 +4148,9 @@
           "NATO School Oberammergau courses (operational-level training, over 100 courses)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nso-staff"
+      ],
       "billets": {
         "fr": [
           "Cellule JISR : gestionnaire de collecte"
@@ -3992,6 +4220,10 @@
           "Allied Joint Doctrine for the Conduct of Operations (AJP-3)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nso-staff",
+        "doctrine:nato-ajp-3"
+      ],
       "billets": {
         "fr": [
           "Centre d’opérations interarmées : officier de quart, chef de cellule"
@@ -4055,6 +4287,10 @@
           "NATO School Oberammergau courses (operational-level training, over 100 courses)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-5",
+        "qualification:nato-nso-staff"
+      ],
       "billets": {
         "fr": [
           "Cellule J35 : planificateur"
@@ -4118,6 +4354,10 @@
           "NATO School Oberammergau courses (operational-level training, over 100 courses)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-4",
+        "qualification:nato-nso-staff"
+      ],
       "billets": {
         "fr": [
           "Branche J4 : officier logistique"
@@ -4181,6 +4421,10 @@
           "NATO School Oberammergau courses (operational-level training, over 100 courses)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-5",
+        "qualification:nato-nso-staff"
+      ],
       "billets": {
         "fr": [
           "Groupe de planification opérationnelle : planificateur"
@@ -4248,6 +4492,10 @@
           "NCI Academy training (Oeiras)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-6",
+        "qualification:nato-nci-academy"
+      ],
       "billets": {
         "fr": [
           "Branche J6 : officier CIS"
@@ -4313,6 +4561,9 @@
           "NATO School Oberammergau courses (operational-level training, over 100 courses)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nso-staff"
+      ],
       "billets": {
         "fr": [
           "Branche J7 : officier exercices, officier retours d’expérience"
@@ -4378,6 +4629,9 @@
           "NATO School Oberammergau courses (operational-level training, over 100 courses)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nso-staff"
+      ],
       "billets": {
         "fr": [
           "Branche J8 : officier budget, contrats"
@@ -4441,6 +4695,10 @@
           "NATO CIMIC Higher Command Course – CIMIC COE"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-cimic-staff-worker",
+        "qualification:nato-cimic-higher-command"
+      ],
       "qualification_refs": [
         "nato-cimic-staff-worker"
       ],
@@ -4511,6 +4769,10 @@
           "NATO School Oberammergau courses (operational-level training, over 100 courses)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-9",
+        "qualification:nato-nso-staff"
+      ],
       "billets": {
         "fr": [
           "Cellule ciblage : officier ciblage, analyste d’objectifs"
@@ -4574,6 +4836,10 @@
           "Law degree and national legal qualification"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nso-legal-advisor",
+        "qualification:nato-nso-legal-advisor"
+      ],
       "billets": {
         "fr": [
           "QG : conseiller juridique, juriste opérationnel"
@@ -4639,6 +4905,9 @@
           "Allied Joint Doctrine for the Planning of Operations (AJP-5)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-5"
+      ],
       "billets": {
         "fr": [
           "QG : conseiller politique"
@@ -4700,6 +4969,9 @@
           "Gender Advisor training at the Nordic Centre for Gender in Military Operations (Sweden)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-genad"
+      ],
       "billets": {
         "fr": [
           "QG : conseiller genre ; branches : point focal genre"
@@ -4761,6 +5033,9 @@
           "Allied Joint Doctrine for Military Public Affairs (AJP-10.3)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-10-3"
+      ],
       "billets": {
         "fr": [
           "QG : chef des affaires publiques, porte-parole"
@@ -4824,6 +5099,9 @@
           "Allied Joint Doctrine for Strategic Communications (AJP-10)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-10"
+      ],
       "billets": {
         "fr": [
           "QG : chef StratCom"
@@ -4891,6 +5169,9 @@
           "Allied Joint Doctrine for Information Operations (AJP-10.1)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-10-1"
+      ],
       "billets": {
         "fr": [
           "Cellule Info Ops : officier d’état-major"
@@ -4954,6 +5235,10 @@
           "National PSYOPS training"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-10-1",
+        "qualification:nato-national-psyops"
+      ],
       "billets": {
         "fr": [
           "Élément PSYOPS : analyste de publics, producteur"
@@ -5019,6 +5304,10 @@
           "National electronic warfare specialist training"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nso-staff",
+        "qualification:nato-national-ew"
+      ],
       "billets": {
         "fr": [
           "Cellule EWCC : officier GE, gestionnaire du spectre"
@@ -5084,6 +5373,10 @@
           "CCDCOE training and exercises (Tallinn)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-20",
+        "qualification:nato-ccdcoe-training"
+      ],
       "billets": {
         "fr": [
           "Cellule cyber : officier d’état-major"
@@ -5149,6 +5442,9 @@
           "National military forecaster training"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-metoc"
+      ],
       "billets": {
         "fr": [
           "QG : officier METOC, prévisionniste"
@@ -5210,6 +5506,9 @@
           "Allied Joint Doctrine for the Joint Logistic Support Group (AJP-4.6)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-4-6"
+      ],
       "billets": {
         "fr": [
           "JLSG : officier logistique"
@@ -5271,6 +5570,9 @@
           "Allied Joint Doctrine for Movement (AJP-4.4)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-4-4"
+      ],
       "billets": {
         "fr": [
           "Centre de coordination des mouvements : officier MOVCON"
@@ -5334,6 +5636,9 @@
           "Allied Joint Doctrine for Force Protection (AJP-3.14)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-14"
+      ],
       "billets": {
         "fr": [
           "Cellule protection de la force : officier FP"
@@ -5395,6 +5700,9 @@
           "NATO School Oberammergau staff courses"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nso-staff"
+      ],
       "billets": {
         "fr": [
           "Équipe de liaison : LNO, adjoint"
@@ -5456,6 +5764,10 @@
           "Prerequisite advanced distributed learning (ADL) module"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-cimic-field-worker",
+        "qualification:nato-cimic-adl"
+      ],
       "qualification_refs": [
         "nato-cimic-field-worker"
       ],
@@ -5522,6 +5834,9 @@
           "NATO CIMIC Functional Specialist Course – CIMIC COE"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-cimic-functional-specialist"
+      ],
       "billets": {
         "fr": [
           "Groupe CIMIC : spécialiste fonctionnel"
@@ -5581,6 +5896,9 @@
           "NATO CIMIC Liaison Course – CIMIC COE"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-cimic-liaison"
+      ],
       "billets": {
         "fr": [
           "Centre CIMIC : officier de liaison"
@@ -5640,6 +5958,9 @@
           "Contributing nation KFOR pre-deployment training"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-national-kfor-predeployment"
+      ],
       "billets": {
         "fr": [
           "LMT : chef d’équipe, équipier, interprète"
@@ -5701,6 +6022,9 @@
           "OMLT pre-deployment training (Joint Multinational Readiness Center, Hohenfels)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-omlt-predeployment"
+      ],
       "billets": {
         "fr": [
           "OMLT de kandak ou de brigade : chef d’équipe"
@@ -5762,6 +6086,9 @@
           "OMLT pre-deployment training (Joint Multinational Readiness Center, Hohenfels)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-omlt-predeployment"
+      ],
       "billets": {
         "fr": [
           "OMLT : mentor opérations, logistique, appui feu"
@@ -5825,6 +6152,10 @@
           "ADL 362 Introduction to Security Force Assistance – NATO SFA COE"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-sfa-operators",
+        "qualification:nato-sfa-adl362"
+      ],
       "billets": {
         "fr": [
           "Équipe SFA : conseiller, formateur"
@@ -5888,6 +6219,9 @@
           "Advanced Seminar for SFA Strategic Advising within SSR – NATO SFA COE"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-sfa-strategic-advising"
+      ],
       "billets": {
         "fr": [
           "NMI : conseiller ministériel, conseiller enseignement militaire"
@@ -5949,6 +6283,10 @@
           "NATO School Oberammergau staff courses"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-13",
+        "qualification:nato-nso-staff"
+      ],
       "billets": {
         "fr": [
           "NFIU : officier plans, officier soutien de la nation hôte"
@@ -6012,6 +6350,10 @@
           "National battalion command course"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-2",
+        "qualification:nato-national-battalion-command"
+      ],
       "billets": {
         "fr": [
           "Groupement FLF : commandant, chef d’état-major"
@@ -6075,6 +6417,10 @@
           "Allied Joint Doctrine for Land Operations (AJP-3.2)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nso-staff",
+        "doctrine:nato-ajp-3-2"
+      ],
       "billets": {
         "fr": [
           "QG NRDC : officier G3, G5, G2"
@@ -6134,6 +6480,9 @@
           "NATO School Oberammergau staff courses"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nso-staff"
+      ],
       "billets": {
         "fr": [
           "QG ARF : officier de coordination de composante"
@@ -6197,6 +6546,9 @@
           "Allied Joint Doctrine for Maritime Operations (AJP-3.1)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-1"
+      ],
       "billets": {
         "fr": [
           "MOC : officier de quart, officier situation maritime"
@@ -6262,6 +6614,10 @@
           "National sea command qualification"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-1",
+        "qualification:nato-national-sea-command"
+      ],
       "billets": {
         "fr": [
           "SNMG : commandant, chef d’état-major embarqué"
@@ -6323,6 +6679,10 @@
           "NMIOTC MIO course catalogue"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-cied-mio",
+        "qualification:nato-boarding-team"
+      ],
       "qualification_refs": [
         "nato-cied-mio",
         "nato-boarding-team",
@@ -6393,6 +6753,9 @@
           "Course 12000 C-IED in Maritime Interdiction Operations – NMIOTC"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-cied-mio"
+      ],
       "qualification_refs": [
         "nato-cied-mio"
       ],
@@ -6455,6 +6818,9 @@
           "Naval Mine Warfare COE training (Ostend)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nmwcoe-training"
+      ],
       "billets": {
         "fr": [
           "Chasseur de mines : officier guerre des mines"
@@ -6516,6 +6882,10 @@
           "Allied Joint Doctrine for CIS (AJP-6)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nci-academy",
+        "doctrine:nato-ajp-6"
+      ],
       "billets": {
         "fr": [
           "Bataillon de transmissions déployable : technicien réseau, satellite"
@@ -6581,6 +6951,10 @@
           "CCDCOE exercises (Tallinn)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nci-academy",
+        "qualification:nato-ccdcoe-training"
+      ],
       "billets": {
         "fr": [
           "NCSC : analyste, intervenant sur incident"
@@ -6646,6 +7020,10 @@
           "Train-the-trainer course"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nci-academy",
+        "qualification:nato-train-the-trainer"
+      ],
       "billets": {
         "fr": [
           "NCI Academy : instructeur, directeur de cours"
@@ -6707,6 +7085,10 @@
           "Train-the-trainer course"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nso-staff",
+        "qualification:nato-train-the-trainer"
+      ],
       "billets": {
         "fr": [
           "NATO School : instructeur, directeur de cours"
@@ -6766,6 +7148,9 @@
           "Recognised expertise in the centre’s field"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-nso-staff"
+      ],
       "billets": {
         "fr": [
           "COE : expert, chef de branche"
@@ -6825,6 +7210,9 @@
           "Military Police COE training (Bydgoszcz)"
         ]
       },
+      "reference_keys": [
+        "qualification:nato-mpcoe-training"
+      ],
       "billets": {
         "fr": [
           "Unité MP : enquêteur, patrouilleur, escorte"
@@ -6886,6 +7274,10 @@
           "Stability Policing COE training (Vicenza)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-22",
+        "qualification:nato-nspcoe-training"
+      ],
       "billets": {
         "fr": [
           "Unité de police de stabilisation : officier, formateur de police locale"
@@ -6945,6 +7337,9 @@
           "Allied Joint Doctrine for Non-combatant Evacuation Operations (AJP-3.25)"
         ]
       },
+      "reference_keys": [
+        "doctrine:nato-ajp-3-25"
+      ],
       "billets": {
         "fr": [
           "Cellule NEO : officier de coordination"

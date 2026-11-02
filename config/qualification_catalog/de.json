@@ -3127,6 +3127,1905 @@
           "title": "Mit Gespür für das Tier — Spezialhundezug KSK (bundeswehr.de)"
         }
       ]
+    },
+    {
+      "id": "de-lgan",
+      "code": "DE-LGAN",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours d’état-major national (LGAN, Führungsakademie)",
+        "en": "National General/Admiral Staff Course (LGAN, Command and Staff College)"
+      },
+      "official_name": "Lehrgang Generalstabs-/Admiralstabsdienst National (LGAN)",
+      "short_name": "LGAN",
+      "description": {
+        "fr": "Cursus de l’École supérieure de guerre allemande (Führungsakademie der Bundeswehr, Hambourg) qui forme les officiers d’état-major (Generalstabsoffiziere) destinés aux plus hautes responsabilités de commandement et d’état-major. Les officiers généraux de la Bundeswehr en sont presque tous issus.",
+        "en": "Course of the Bundeswehr Command and Staff College (Führungsakademie der Bundeswehr, Hamburg) that trains general/admiral staff officers for the highest command and staff posts. Almost all Bundeswehr general officers are graduates."
+      },
+      "body": {
+        "fr": "Führungsakademie der Bundeswehr, Hambourg",
+        "en": "Bundeswehr Command and Staff College, Hamburg"
+      },
+      "issuer": {
+        "name": "Führungsakademie der Bundeswehr",
+        "short_name": "FüAkBw"
+      },
+      "reference": {
+        "fr": "Présentation officielle de la Führungsakademie der Bundeswehr",
+        "en": "Official presentation of the Führungsakademie der Bundeswehr"
+      },
+      "prerequisites": {
+        "fr": [
+          "Officier de carrière sélectionné (grade de capitaine/commandant)"
+        ],
+        "en": [
+          "Selected career officer (captain/major rank)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/F%C3%BChrungsakademie_der_Bundeswehr",
+          "title": "Führungsakademie der Bundeswehr (Wikipedia)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/organisation/division-schnelle-kraefte/kommando-spezialkraefte",
+          "title": "Kommando Spezialkräfte (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-bls",
+      "code": "DE-BLS",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours de base d’officier d’état-major (Basislehrgang Stabsoffizier)",
+        "en": "Basic Staff Officer Course (Basislehrgang Stabsoffizier)"
+      },
+      "official_name": "Basislehrgang Stabsoffizier (BLS)",
+      "short_name": "BLS",
+      "description": {
+        "fr": "Cours interarmées de la Führungsakademie der Bundeswehr qui prépare les capitaines à leur première affectation d’officier d’état-major (Stabsoffizier). Il donne les bases de la planification et du travail d’état-major nécessaires dans les quartiers généraux nationaux et OTAN, dont un état-major de composante opérations spéciales (SOCC).",
+        "en": "Joint course of the Bundeswehr Command and Staff College preparing captains for their first staff-officer (Stabsoffizier) assignment. It teaches the planning and staff-work basics required in national and NATO headquarters, including a Special Operations Component Command (SOCC) staff."
+      },
+      "body": {
+        "fr": "Führungsakademie der Bundeswehr, Hambourg",
+        "en": "Bundeswehr Command and Staff College, Hamburg"
+      },
+      "issuer": {
+        "name": "Führungsakademie der Bundeswehr",
+        "short_name": "FüAkBw"
+      },
+      "reference": {
+        "fr": "Présentation officielle de la Führungsakademie der Bundeswehr",
+        "en": "Official presentation of the Führungsakademie der Bundeswehr"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/F%C3%BChrungsakademie_der_Bundeswehr",
+          "title": "Führungsakademie der Bundeswehr (Wikipedia)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/meldungen/bundeswehr-fuehrt-spezialkraeftehauptquartier-fuer-vjtf-5534948",
+          "title": "Bundeswehr führt Spezialkräftehauptquartier für VJTF (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-sanoa-humanmedizin",
+      "code": "DE-SANOA-MED",
+      "category": "medical",
+      "name": {
+        "fr": "Médecin militaire (Sanitätsoffizier Arzt) – études de médecine financées par la Bundeswehr",
+        "en": "Military physician (Sanitätsoffizier Arzt) – Bundeswehr-sponsored medical degree"
+      },
+      "official_name": "Sanitätsoffizier Arzt (Studium der Humanmedizin als Sanitätsoffizieranwärter)",
+      "short_name": "SanOA Arzt",
+      "description": {
+        "fr": "Parcours des officiers du service de santé : les élèves officiers (Sanitätsoffizieranwärter) étudient la médecine humaine dans une université civile aux frais de la Bundeswehr, puis obtiennent l’autorisation d’exercer (Approbation) et servent comme médecins militaires. C’est la base des emplois de médecin des forces spéciales (KSK, SOMST de la Marine).",
+        "en": "Medical service officer track: officer candidates (Sanitätsoffizieranwärter) study human medicine at a civilian university paid for by the Bundeswehr, obtain their licence to practise (Approbation) and serve as military physicians. It underpins special forces physician posts (KSK, Navy SOMST)."
+      },
+      "body": {
+        "fr": "Service de santé de la Bundeswehr (Zentraler Sanitätsdienst)",
+        "en": "Bundeswehr Joint Medical Service (Zentraler Sanitätsdienst)"
+      },
+      "issuer": {
+        "name": "Sanitätsdienst der Bundeswehr",
+        "short_name": "SanDstBw"
+      },
+      "reference": {
+        "fr": "Pages de carrière officielles du service de santé de la Bundeswehr",
+        "en": "Official Bundeswehr medical service career pages"
+      },
+      "prerequisites": {
+        "fr": [
+          "Abitur et réussite à la sélection des officiers",
+          "Engagement de longue durée"
+        ],
+        "en": [
+          "Abitur and passing officer selection",
+          "Long-term enlistment"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Sanit%C3%A4tsoffizier",
+          "title": "Sanitätsoffizier (Wikipedia)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/meldungen/rettungsspezialisten-retten-aus-vorderster-linie",
+          "title": "Rettungsspezialisten retten aus vorderster Linie (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-feldwebellehrgang",
+      "code": "DE-FWLG",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours de sous-officier Feldwebel (parcours Feldwebel)",
+        "en": "Feldwebel NCO course (Feldwebel career track)"
+      },
+      "official_name": "Laufbahn der Feldwebel – Feldwebellehrgang (Allgemeinmilitärischer Teil)",
+      "short_name": "FwLg",
+      "description": {
+        "fr": "Formation des sous-officiers supérieurs de l’Heer : après le cours d’Unteroffizier, le Feldwebellehrgang de l’Unteroffizierschule des Heeres (Delitzsch, Sondershausen, Celle) forme les futurs Feldwebel au commandement d’un groupe et à l’instruction, base de la suite de la formation dans les écoles d’arme. Le grade de Feldwebel est la condition d’accès de nombreux emplois spécialisés.",
+        "en": "Training of senior NCOs in the German Army: after the Unteroffizier course, the Feldwebellehrgang of the Unteroffizierschule des Heeres (Delitzsch, Sondershausen, Celle) trains future Feldwebel in squad leadership and instruction, as the basis for further branch-school training. The rank of Feldwebel is the entry condition for many specialised posts."
+      },
+      "body": {
+        "fr": "Unteroffizierschule des Heeres",
+        "en": "Army NCO School (Unteroffizierschule des Heeres)"
+      },
+      "issuer": {
+        "name": "Unteroffizierschule des Heeres",
+        "short_name": "USH"
+      },
+      "reference": {
+        "fr": "Page officielle de l’Unteroffizierschule des Heeres (bundeswehr.de)",
+        "en": "Official Unteroffizierschule des Heeres page (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Engagement comme soldat temporaire (Soldat auf Zeit) dans la carrière Feldwebel"
+        ],
+        "en": [
+          "Enlistment as a temporary-career soldier (Soldat auf Zeit) in the Feldwebel career"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/unteroffizierschule-des-heeres",
+          "title": "Unteroffizierschule des Heeres (bundeswehr.de)"
+        },
+        {
+          "url": "https://bundeswehrkarriere.de/soldatin-soldat-der-fallschirmjaegertruppe-394",
+          "title": "Soldatin/Soldat der Fallschirmjägertruppe (bundeswehrkarriere.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-grundausbildung",
+      "code": "DE-AGA",
+      "category": "selection",
+      "name": {
+        "fr": "Formation de base militaire générale (Allgemeine Grundausbildung)",
+        "en": "General basic military training (Allgemeine Grundausbildung)"
+      },
+      "official_name": "Allgemeine Grundausbildung (AGA)",
+      "short_name": "AGA",
+      "description": {
+        "fr": "Première étape de tout soldat de la Bundeswehr, quel que soit l’engagement (service volontaire ou soldat temporaire) : maniement des armes, tir, combat de base, secourisme, protection NRBC et droit du soldat. Elle est suivie par la formation de spécialité de l’arme ou de l’emploi.",
+        "en": "First step for every Bundeswehr soldier, whatever the commitment (voluntary service or temporary-career soldier): weapons handling, shooting, basic combat, first aid, CBRN protection and soldiers’ law. It is followed by the branch or trade specialist training."
+      },
+      "body": {
+        "fr": "Bundeswehr (unités et centres de formation)",
+        "en": "Bundeswehr (training units and centres)"
+      },
+      "issuer": {
+        "name": "Bundeswehr",
+        "short_name": "Bw"
+      },
+      "reference": {
+        "fr": "Pages de carrière officielles de la Bundeswehr",
+        "en": "Official Bundeswehr career pages"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Grundausbildung",
+          "title": "Grundausbildung (Wikipedia)"
+        },
+        {
+          "url": "https://bundeswehrkarriere.de/soldatin-soldat-der-fallschirmjaegertruppe-394",
+          "title": "Soldatin/Soldat der Fallschirmjägertruppe (bundeswehrkarriere.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/menschen-karrieren/jobportraets-menschen-bundeswehr-berufe/marineinfanterist-6093398",
+          "title": "Marineinfanterist (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-offizierlehrgang-heer",
+      "code": "DE-OL-HEER",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours d’officier de l’Heer (Offizierschule des Heeres, Dresde)",
+        "en": "Army officer course (Offizierschule des Heeres, Dresden)"
+      },
+      "official_name": "Offizierlehrgang (Truppendienst) an der Offizierschule des Heeres",
+      "short_name": "OL OSH",
+      "description": {
+        "fr": "Formation des officiers de l’Heer à l’Offizierschule des Heeres de Dresde : commandement, tactique de base, éducation civique et Innere Führung, avant la formation propre à l’arme. Elle s’adresse aux candidats de la carrière d’officier, recrutés avec le baccalauréat ou la Fachhochschulreife.",
+        "en": "Training of German Army officers at the Offizierschule des Heeres in Dresden: leadership, basic tactics, civic education and Innere Führung, before branch-specific training. It is open to officer-career candidates recruited with the Abitur or Fachhochschulreife."
+      },
+      "body": {
+        "fr": "Offizierschule des Heeres, Dresde",
+        "en": "Army Officer School, Dresden"
+      },
+      "issuer": {
+        "name": "Offizierschule des Heeres",
+        "short_name": "OSH"
+      },
+      "reference": {
+        "fr": "Pages officielles de l’Offizierschule des Heeres et de la carrière d’officier (bundeswehr.de)",
+        "en": "Official Offizierschule des Heeres and officer-career pages (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Offizierschule_des_Heeres",
+          "title": "Offizierschule des Heeres (Wikipedia)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/traumberuf-fallschirmjaegeroffizier-5604214",
+          "title": "Traumberuf Fallschirmjägeroffizier (bundeswehr.de)"
+        },
+        {
+          "url": "https://bundeswehrkarriere.de/fuehrungskraft-m-w-d-gebirgsjaegertruppe-344",
+          "title": "Führungskraft Gebirgsjägertruppe (bundeswehrkarriere.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-offizierausbildung-marine",
+      "code": "DE-OA-MARINE",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation d’officier de marine (Marineschule Mürwik)",
+        "en": "Naval officer training (Marineschule Mürwik)"
+      },
+      "official_name": "Offizierausbildung an der Marineschule Mürwik",
+      "short_name": "MSM",
+      "description": {
+        "fr": "Formation initiale des officiers de la Deutsche Marine à la Marineschule Mürwik (Flensburg) : commandement, navigation, formation embarquée et Innere Führung, suivie en général d’études à une université de la Bundeswehr. C’est la voie d’accès aux postes d’officier des forces spéciales navales et du Seebataillon.",
+        "en": "Initial training of German Navy officers at the Marineschule Mürwik (Flensburg): leadership, navigation, sea training and Innere Führung, usually followed by studies at a Bundeswehr university. It is the entry route to officer posts in the naval special forces and the Seebataillon."
+      },
+      "body": {
+        "fr": "Marineschule Mürwik, Flensburg",
+        "en": "Naval Academy Mürwik, Flensburg"
+      },
+      "issuer": {
+        "name": "Marineschule Mürwik",
+        "short_name": "MSM"
+      },
+      "reference": {
+        "fr": "Page Wikipédia et pages officielles de la Marine",
+        "en": "Wikipedia page and official Navy pages"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Marineschule_M%C3%BCrwik",
+          "title": "Marineschule Mürwik (Wikipedia)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/meldungen/spezialkraefte-bundeswehr/karriere-kampfschwimmer",
+          "title": "Karriere Kampfschwimmer (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-fahnenjunkerlehrgang",
+      "code": "DE-FJLG-INF",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours de Fahnenjunker (Infanterieschule, Hammelburg)",
+        "en": "Fahnenjunker course (Infantry School, Hammelburg)"
+      },
+      "official_name": "Fahnenjunkerlehrgang Infanterie",
+      "short_name": "FjLg",
+      "description": {
+        "fr": "Cours suivi par les élèves officiers de l’infanterie à l’Infanterieschule de Hammelburg au grade de Fahnenjunker : formation de chef de groupe et instruction tactique de l’infanterie, avant le cours d’officier à Dresde.",
+        "en": "Course taken by infantry officer candidates at the Infanterieschule in Hammelburg at the rank of Fahnenjunker: squad-leader and infantry tactical training before the officer course in Dresden."
+      },
+      "body": {
+        "fr": "Infanterieschule, Hammelburg",
+        "en": "Infantry School, Hammelburg"
+      },
+      "issuer": {
+        "name": "Infanterieschule",
+        "short_name": "InfS"
+      },
+      "reference": {
+        "fr": "Témoignage officiel « Traumberuf Fallschirmjägeroffizier » (bundeswehr.de)",
+        "en": "Official feature “Traumberuf Fallschirmjägeroffizier” (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/traumberuf-fallschirmjaegeroffizier-5604214",
+          "title": "Traumberuf Fallschirmjägeroffizier (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/infanterieschule",
+          "title": "Infanterieschule (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-offizierlehrgang-3-infanterie",
+      "code": "DE-OL3-INF",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours d’officier partie III de l’infanterie (modules A et B)",
+        "en": "Infantry officer course part III (modules A and B)"
+      },
+      "official_name": "Offizierlehrgang Teil III (Infanterie)",
+      "short_name": "OL III Inf",
+      "description": {
+        "fr": "Dernière partie de la formation de l’officier d’infanterie à l’Infanterieschule : chef de section au combat (module A), puis, pour les Fallschirmjäger, cours de parachutiste et module B propre à l’arme. À l’issue, l’officier prend le commandement d’une section.",
+        "en": "Final part of infantry officer training at the Infanterieschule: platoon leadership in combat (module A), then, for paratroopers, the parachutist course and the branch-specific module B. Graduates take command of a platoon."
+      },
+      "body": {
+        "fr": "Infanterieschule, Hammelburg",
+        "en": "Infantry School, Hammelburg"
+      },
+      "issuer": {
+        "name": "Infanterieschule",
+        "short_name": "InfS"
+      },
+      "reference": {
+        "fr": "Témoignage officiel « Traumberuf Fallschirmjägeroffizier » (bundeswehr.de)",
+        "en": "Official feature “Traumberuf Fallschirmjägeroffizier” (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours d’officier à l’Offizierschule des Heeres"
+        ],
+        "en": [
+          "Officer course at the Offizierschule des Heeres"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/traumberuf-fallschirmjaegeroffizier-5604214",
+          "title": "Traumberuf Fallschirmjägeroffizier (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/egb-eine-ganz-besondere-dna-5297044",
+          "title": "EGB – eine ganz besondere DNA (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-unibw-studium",
+      "code": "DE-UNIBW",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Diplôme universitaire d’une université de la Bundeswehr (Munich ou Hambourg)",
+        "en": "Degree from a Bundeswehr university (Munich or Hamburg)"
+      },
+      "official_name": "Studium an einer Universität der Bundeswehr (München / Helmut-Schmidt-Universität Hamburg)",
+      "short_name": "Studium UniBw",
+      "description": {
+        "fr": "Les officiers de carrière et officiers temporaires de longue durée étudient en principe dans l’une des deux universités de la Bundeswehr (Universität der Bundeswehr München, Helmut-Schmidt-Universität Hambourg) en cycle intensif trimestriel menant au bachelor puis au master. Ces universités forment aussi des sous-officiers en filières techniques.",
+        "en": "Career officers and long-serving temporary officers normally study at one of the two Bundeswehr universities (Universität der Bundeswehr München, Helmut Schmidt University Hamburg) on an intensive trimester system leading to a bachelor’s and then a master’s degree. They also train NCOs in technical programmes."
+      },
+      "body": {
+        "fr": "Universités de la Bundeswehr",
+        "en": "Bundeswehr universities"
+      },
+      "issuer": {
+        "name": "Universität der Bundeswehr München / Helmut-Schmidt-Universität",
+        "short_name": "UniBw M / HSU"
+      },
+      "reference": {
+        "fr": "Pages Wikipédia des universités de la Bundeswehr",
+        "en": "Wikipedia pages of the Bundeswehr universities"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Universit%C3%A4t_der_Bundeswehr_M%C3%BCnchen",
+          "title": "Universität der Bundeswehr München (Wikipedia)"
+        },
+        {
+          "url": "https://de.wikipedia.org/wiki/Helmut-Schmidt-Universit%C3%A4t",
+          "title": "Helmut-Schmidt-Universität (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "de-sicherheitsueberpruefung",
+      "code": "DE-SUE",
+      "category": "intelligence",
+      "name": {
+        "fr": "Habilitation de sécurité (Sicherheitsüberprüfung Ü1 à Ü3)",
+        "en": "Security clearance (Sicherheitsüberprüfung Ü1 to Ü3)"
+      },
+      "official_name": "Sicherheitsüberprüfung nach dem Sicherheitsüberprüfungsgesetz (SÜG) – Ü1/Ü2/Ü3",
+      "short_name": "SÜ",
+      "description": {
+        "fr": "Contrôle de sécurité des personnes prévu par la loi SÜG, à trois niveaux (Ü1 simple, Ü2 élargi, Ü3 élargi avec enquêtes). Pour les militaires, il est conduit par le service de contre-ingérence militaire (MAD) ; les forces spéciales exigent un niveau élevé avant l’affectation.",
+        "en": "Personnel security vetting under the SÜG act, at three levels (Ü1 simple, Ü2 extended, Ü3 extended with investigations). For soldiers it is carried out by the Military Counter-Intelligence Service (MAD); special forces require a high level before assignment."
+      },
+      "body": {
+        "fr": "Bundesamt für den Militärischen Abschirmdienst",
+        "en": "Federal Office for the Military Counter-Intelligence Service"
+      },
+      "issuer": {
+        "name": "Bundesamt für den Militärischen Abschirmdienst",
+        "short_name": "BAMAD"
+      },
+      "reference": {
+        "fr": "Sicherheitsüberprüfungsgesetz (SÜG), gesetze-im-internet.de",
+        "en": "Security Clearance Check Act (SÜG), gesetze-im-internet.de"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.gesetze-im-internet.de/s_g/",
+          "title": "Sicherheitsüberprüfungsgesetz – SÜG (gesetze-im-internet.de)"
+        },
+        {
+          "url": "https://de.wikipedia.org/wiki/Sicherheits%C3%BCberpr%C3%BCfung",
+          "title": "Sicherheitsüberprüfung (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "de-ksk-waffenspezialist",
+      "code": "DE-KSK-WAFFEN",
+      "category": "sof",
+      "name": {
+        "fr": "Spécialiste armes et tactique du Kommandotrupp (KSK)",
+        "en": "Kommandotrupp weapons and tactics specialist (KSK)"
+      },
+      "official_name": "Spezialisierung Waffen (Kommandotrupp)",
+      "short_name": "KdoSpez Waffen",
+      "description": {
+        "fr": "Au sein de l’équipe commando de quatre hommes (Kommandotrupp), chaque soldat acquiert après la formation de base une spécialité : armes, transmissions, sanitaire ou explosifs. Le spécialiste armes maîtrise l’ensemble de l’armement de l’équipe et en assure l’instruction.",
+        "en": "Within the four-man commando team (Kommandotrupp), each soldier acquires a speciality after basic training: weapons, communications, medical or explosives. The weapons specialist masters the team’s entire weaponry and instructs the others on it."
+      },
+      "body": {
+        "fr": "Kommando Spezialkräfte (Kommandokompanie)",
+        "en": "Special Forces Command (commando company)"
+      },
+      "issuer": {
+        "name": "Kommando Spezialkräfte",
+        "short_name": "KSK"
+      },
+      "reference": {
+        "fr": "Présentations publiques de l’organisation du Kommandotrupp",
+        "en": "Public descriptions of the Kommandotrupp organisation"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de base commando KSK"
+        ],
+        "en": [
+          "KSK commando basic training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.joint-forces.com/?p=15188",
+          "title": "Kommando Spezialkräfte – Kommandotrupp (joint-forces.com)"
+        },
+        {
+          "url": "https://de.wikipedia.org/wiki/Kommando_Spezialkr%C3%A4fte",
+          "title": "Kommando Spezialkräfte (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "de-ksk-fernmeldespezialist",
+      "code": "DE-KSK-FM",
+      "category": "communications",
+      "name": {
+        "fr": "Spécialiste transmissions du Kommandotrupp (KSK)",
+        "en": "Kommandotrupp communications specialist (KSK)"
+      },
+      "official_name": "Spezialisierung Fernmelden (Kommandotrupp)",
+      "short_name": "KdoSpez FM",
+      "description": {
+        "fr": "Spécialité transmissions de l’équipe commando, d’environ cinq mois selon la Bundeswehr : liaisons radio et satellitaires, transmission de données en toutes circonstances. Elle comprend des bases d’informatique et d’électrotechnique (Universität der Bundeswehr München) et des cours matériels à l’école IT de la Bundeswehr.",
+        "en": "Communications speciality of the commando team, about five months according to the Bundeswehr: radio and satellite links and data transmission under all conditions. It includes basic informatics and electrical engineering (Universität der Bundeswehr München) and equipment courses at the Bundeswehr IT school."
+      },
+      "body": {
+        "fr": "Kommando Spezialkräfte (Kommandokompanie)",
+        "en": "Special Forces Command (commando company)"
+      },
+      "issuer": {
+        "name": "Kommando Spezialkräfte",
+        "short_name": "KSK"
+      },
+      "reference": {
+        "fr": "Reportage officiel « Datenübertragung unter allen Umständen » (bundeswehr.de)",
+        "en": "Official feature “Datenübertragung unter allen Umständen” (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de base commando KSK"
+        ],
+        "en": [
+          "KSK commando basic training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/datenuebertragung-unter-allen-umstaenden-5219256",
+          "title": "Datenübertragung unter allen Umständen (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.joint-forces.com/?p=15188",
+          "title": "Kommando Spezialkräfte – Kommandotrupp (joint-forces.com)"
+        }
+      ]
+    },
+    {
+      "id": "de-ksk-sanitaetsspezialist",
+      "code": "DE-KSK-SAN",
+      "category": "medical",
+      "name": {
+        "fr": "Spécialiste sanitaire du Kommandotrupp (KSK)",
+        "en": "Kommandotrupp medical specialist (KSK)"
+      },
+      "official_name": "Spezialisierung Sanität (Kommandotrupp)",
+      "short_name": "KdoSpez San",
+      "description": {
+        "fr": "Spécialité sanitaire de l’équipe commando : après un cours sanitaire de plusieurs semaines pendant la formation de base, le spécialiste assure les soins de combat avancés et la prise en charge des blessés jusqu’à l’évacuation.",
+        "en": "Medical speciality of the commando team: after a multi-week medical course during basic training, the specialist provides advanced combat care and casualty management until evacuation."
+      },
+      "body": {
+        "fr": "Kommando Spezialkräfte (Kommandokompanie)",
+        "en": "Special Forces Command (commando company)"
+      },
+      "issuer": {
+        "name": "Kommando Spezialkräfte",
+        "short_name": "KSK"
+      },
+      "reference": {
+        "fr": "Présentations publiques de l’organisation du Kommandotrupp",
+        "en": "Public descriptions of the Kommandotrupp organisation"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de base commando KSK"
+        ],
+        "en": [
+          "KSK commando basic training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.joint-forces.com/?p=15188",
+          "title": "Kommando Spezialkräfte – Kommandotrupp (joint-forces.com)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/die-neue-haertewoche-fuer-den-einstieg-ins-ksk-5722130",
+          "title": "Die neue Härtewoche für den Einstieg ins KSK (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-ksk-sprengspezialist",
+      "code": "DE-KSK-SPRENG",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Spécialiste explosifs et effraction du Kommandotrupp (KSK)",
+        "en": "Kommandotrupp explosives and breaching specialist (KSK)"
+      },
+      "official_name": "Spezialisierung Sprengen/Pionier (Kommandotrupp)",
+      "short_name": "KdoSpez Spreng",
+      "description": {
+        "fr": "Spécialité explosifs et génie de l’équipe commando : charges d’effraction et de destruction, ouverture de passages et travaux de génie de campagne. Elle prolonge la formation explosifs reçue pendant la formation de base commando.",
+        "en": "Explosives and engineer speciality of the commando team: breaching and demolition charges, opening passages and field engineering. It builds on the explosives training received during commando basic training."
+      },
+      "body": {
+        "fr": "Kommando Spezialkräfte (Kommandokompanie)",
+        "en": "Special Forces Command (commando company)"
+      },
+      "issuer": {
+        "name": "Kommando Spezialkräfte",
+        "short_name": "KSK"
+      },
+      "reference": {
+        "fr": "Reportage officiel « Bauen, bohren, sägen – Pioniere beim KSK » (bundeswehr.de)",
+        "en": "Official feature “Bauen, bohren, sägen – Pioniere beim KSK” (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de base commando KSK"
+        ],
+        "en": [
+          "KSK commando basic training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/bauen-bohren-saegen-pioniere-beim-ksk-5214366",
+          "title": "Bauen, bohren, sägen – Pioniere beim KSK (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.joint-forces.com/?p=15188",
+          "title": "Kommando Spezialkräfte – Kommandotrupp (joint-forces.com)"
+        }
+      ]
+    },
+    {
+      "id": "de-ksk-amphibisch",
+      "code": "DE-KSK-AMPH",
+      "category": "maritime",
+      "name": {
+        "fr": "Spécialisation opérations amphibies (KSK)",
+        "en": "Amphibious operations specialisation (KSK)"
+      },
+      "official_name": "Spezialisierung amphibische Operationen (Kommandozug amphibisch)",
+      "short_name": "KdoSpez Amph",
+      "description": {
+        "fr": "Chaque compagnie commando du KSK compte une section spécialisée dans l’infiltration par voie d’eau (embarcations, nage, plongée). Les commandos qui y sont affectés reçoivent une formation complémentaire aux opérations amphibies après la formation de base.",
+        "en": "Each KSK commando company includes a platoon specialised in waterborne infiltration (boats, swimming, diving). Commandos assigned to it receive additional amphibious operations training after basic training."
+      },
+      "body": {
+        "fr": "Kommando Spezialkräfte (Kommandokompanie)",
+        "en": "Special Forces Command (commando company)"
+      },
+      "issuer": {
+        "name": "Kommando Spezialkräfte",
+        "short_name": "KSK"
+      },
+      "reference": {
+        "fr": "Page Wikipédia du Kommando Spezialkräfte (organisation des sections)",
+        "en": "Kommando Spezialkräfte Wikipedia page (platoon organisation)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de base commando KSK"
+        ],
+        "en": [
+          "KSK commando basic training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Kommando_Spezialkr%C3%A4fte",
+          "title": "Kommando Spezialkräfte (Wikipedia)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/der-wille-entscheidet-5091896",
+          "title": "Der Wille entscheidet (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-ksk-pionierspezialist",
+      "code": "DE-KSK-PIONSPZ",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Sapeur de la section spéciale du génie (Pionierspezialzug, KSK)",
+        "en": "Special engineer platoon engineer (Pionierspezialzug, KSK)"
+      },
+      "official_name": "Pionier im Pionierspezialzug des KSK",
+      "short_name": "PiSpzZg KSK",
+      "description": {
+        "fr": "Les sapeurs du Pionierspezialzug soutiennent les opérations du KSK par la construction, le forage, la découpe et le franchissement. Ils sont recrutés de préférence avec une formation artisanale achevée et reçoivent notamment le permis de conduite de bateaux de navigation intérieure ainsi que des cours de tronçonneuse et d’engins de chantier.",
+        "en": "Engineers of the Pionierspezialzug support KSK operations through construction, drilling, cutting and crossing work. They are preferably recruited with a completed craft apprenticeship and receive, among others, the inland-waterway boat licence and chainsaw and construction-machinery courses."
+      },
+      "body": {
+        "fr": "Kommando Spezialkräfte (Pionierspezialzug)",
+        "en": "Special Forces Command (special engineer platoon)"
+      },
+      "issuer": {
+        "name": "Kommando Spezialkräfte",
+        "short_name": "KSK"
+      },
+      "reference": {
+        "fr": "Reportage officiel « Bauen, bohren, sägen – Pioniere beim KSK » (bundeswehr.de)",
+        "en": "Official feature “Bauen, bohren, sägen – Pioniere beim KSK” (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation artisanale achevée (parcours Unteroffizier)"
+        ],
+        "en": [
+          "Completed craft apprenticeship (Unteroffizier career)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/bauen-bohren-saegen-pioniere-beim-ksk-5214366",
+          "title": "Bauen, bohren, sägen – Pioniere beim KSK (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-abc-abwehr-feldwebel",
+      "code": "DE-ABCABW-FW",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Sous-officier de défense NRBC (ABC-Abwehrfeldwebel)",
+        "en": "CBRN defence NCO (ABC-Abwehrfeldwebel)"
+      },
+      "official_name": "Feldwebel ABC-Abwehr",
+      "short_name": "Fw ABC-Abw",
+      "description": {
+        "fr": "Formation des sous-officiers de la défense NRBC : radioprotection, reconnaissance NRBC, protection respiratoire, prélèvements et décontamination. Elle est dispensée à l’école de défense NRBC de Sonthofen, avec une partie finale aux États-Unis sur agents toxiques réels ; une formation de laborantin en biologie ou chimie est recherchée.",
+        "en": "Training of CBRN defence NCOs: radiation protection, CBRN reconnaissance, respiratory protection, sampling and decontamination. It is delivered by the CBRN defence school in Sonthofen, with a final part in the United States using live agents; a biology or chemistry laboratory-technician background is sought."
+      },
+      "body": {
+        "fr": "Schule ABC-Abwehr und Gesetzliche Schutzaufgaben, Sonthofen",
+        "en": "CBRN Defence and Statutory Protection Tasks School, Sonthofen"
+      },
+      "issuer": {
+        "name": "Schule ABC-Abwehr und Gesetzliche Schutzaufgaben",
+        "short_name": "SABCAbw/GSchAufg"
+      },
+      "reference": {
+        "fr": "Page officielle de l’école et reportage « Die unsichtbare Gefahr bekämpfen » (bundeswehr.de)",
+        "en": "Official school page and feature “Die unsichtbare Gefahr bekämpfen” (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/unterstuetzungsbereich/abc-abwehr-bundeswehr/abc-abwehrkommando-der-bundeswehr-in-bruchsal/schule-abc-abwehr-und-gesetzliche-schutzaufgaben-in-sonthofen",
+          "title": "Schule ABC-Abwehr und Gesetzliche Schutzaufgaben (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/die-unsichtbare-gefahr-bekaempfen-5102584",
+          "title": "Die unsichtbare Gefahr bekämpfen (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/meldungen/vx-ausbildung-abc-abwehr-us-army",
+          "title": "VX-Ausbildung ABC-Abwehr US Army (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-waffeninstandsetzer",
+      "code": "DE-WAFFINST",
+      "category": "sof",
+      "name": {
+        "fr": "Mécanicien armement (Waffeninstandsetzer)",
+        "en": "Weapons maintenance technician (Waffeninstandsetzer)"
+      },
+      "official_name": "Waffeninstandsetzer (Feinwerkmechaniker)",
+      "short_name": "WaInst",
+      "description": {
+        "fr": "Les mécaniciens armement entretiennent et réparent les armes de l’unité. Ils suivent une formation civile reconnue de mécanicien de précision (Feinwerkmechaniker, environ deux ans) puis des cours spécifiques à chaque arme ; au KSK, ils assurent la maintenance de tout l’armement des commandos.",
+        "en": "Weapons maintenance technicians service and repair the unit’s weapons. They complete a civil-recognised precision-mechanic training (Feinwerkmechaniker, about two years) followed by weapon-specific courses; at the KSK they maintain the commandos’ entire weaponry."
+      },
+      "body": {
+        "fr": "Bundeswehr (formation de maintenance de l’Heer)",
+        "en": "Bundeswehr (Army maintenance training)"
+      },
+      "issuer": {
+        "name": "Bundeswehr",
+        "short_name": "Bw"
+      },
+      "reference": {
+        "fr": "Reportage officiel « Waffeninstandsetzerin beim KSK » (bundeswehr.de)",
+        "en": "Official feature “Waffeninstandsetzerin beim KSK” (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/waffeninstandsetzerin-beim-ksk-5101224",
+          "title": "Waffeninstandsetzerin beim KSK (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-jtac-evaluator",
+      "code": "DE-JTAC-EVAL",
+      "category": "air_support",
+      "name": {
+        "fr": "Évaluateur JTAC (JTAC-Evaluator)",
+        "en": "JTAC evaluator (JTAC-Evaluator)"
+      },
+      "official_name": "JTAC-Evaluator (Fliegerleitoffizier-Ausbilder/Prüfer)",
+      "short_name": "JTAC-E",
+      "description": {
+        "fr": "Qualification d’un JTAC expérimenté habilité à évaluer et certifier d’autres contrôleurs selon les standards OTAN. Dans la Bundeswehr, elle est notamment détenue par des officiers de liaison de la Luftwaffe affectés auprès des brigades de l’Heer.",
+        "en": "Qualification of an experienced JTAC authorised to evaluate and certify other controllers to NATO standards. In the Bundeswehr it is held notably by Luftwaffe liaison officers attached to Army brigades."
+      },
+      "body": {
+        "fr": "Luftwaffe (Fliegerleitausbildung)",
+        "en": "German Air Force (JTAC training)"
+      },
+      "issuer": {
+        "name": "Luftwaffe",
+        "short_name": "Lw"
+      },
+      "reference": {
+        "fr": "Reportages officiels « Fliegerleitoffizier – nichts für schwache Nerven » et « JTAC – Auge am Feind und in der Luft »",
+        "en": "Official features “Fliegerleitoffizier – nichts für schwache Nerven” and “JTAC – Auge am Feind und in der Luft”"
+      },
+      "prerequisites": {
+        "fr": [
+          "Qualification JTAC et expérience confirmée"
+        ],
+        "en": [
+          "JTAC qualification and confirmed experience"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "instructor",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/fliegerleitoffizier-nichts-fuer-schwache-nerven-5613540",
+          "title": "Fliegerleitoffizier – nichts für schwache Nerven (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/jtac-auge-am-feind-und-in-der-luft-5068354",
+          "title": "JTAC – Auge am Feind und in der Luft (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-moerser",
+      "code": "DE-MRS",
+      "category": "fires",
+      "name": {
+        "fr": "Servant de mortier (Mörser 120 mm)",
+        "en": "Mortar crewman (120 mm mortar)"
+      },
+      "official_name": "Ausbildung Mörserschütze (Mörser 120 mm)",
+      "short_name": "MrsSchtz",
+      "description": {
+        "fr": "Formation de servant des mortiers lourds de l’infanterie (120 mm) : mise en batterie, pointage, conduite du tir et sécurité des munitions. Elle concerne les sections de mortiers des compagnies lourdes des Fallschirmjäger et des Gebirgsjäger.",
+        "en": "Training of infantry heavy mortar (120 mm) crewmen: emplacement, laying, fire procedures and ammunition safety. It covers the mortar platoons of the heavy companies of the paratroopers and mountain infantry."
+      },
+      "body": {
+        "fr": "Infanterie de l’Heer (compagnies lourdes)",
+        "en": "German Army infantry (heavy companies)"
+      },
+      "issuer": {
+        "name": "Heer",
+        "short_name": "H"
+      },
+      "reference": {
+        "fr": "Reportages officiels « Mit Feuer und Präzision » et « Schwere Gebirgsjägerkompanien trainieren das Gefecht »",
+        "en": "Official features “Mit Feuer und Präzision” and “Schwere Gebirgsjägerkompanien trainieren das Gefecht”"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/mit-feuer-und-praezision-5046190",
+          "title": "Mit Feuer und Präzision (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/schwere-gebirgsjaegerkompanien-trainieren-das-gefecht-5322318",
+          "title": "Schwere Gebirgsjägerkompanien trainieren das Gefecht (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-wiesel",
+      "code": "DE-WIESEL",
+      "category": "fires",
+      "name": {
+        "fr": "Membre d’équipage du porteur Wiesel",
+        "en": "Wiesel weapon carrier crewman"
+      },
+      "official_name": "Besatzungsausbildung Waffenträger Wiesel",
+      "short_name": "Wiesel",
+      "description": {
+        "fr": "Formation de conduite et de mise en œuvre du blindé aérotransportable Wiesel, employé par les compagnies lourdes de l’infanterie légère, selon le poste occupé.",
+        "en": "Driving and operating training on the air-transportable Wiesel armoured weapon carrier used by the heavy companies of the light infantry, depending on the post held."
+      },
+      "body": {
+        "fr": "Infanterie de l’Heer (compagnies lourdes)",
+        "en": "German Army infantry (heavy companies)"
+      },
+      "issuer": {
+        "name": "Heer",
+        "short_name": "H"
+      },
+      "reference": {
+        "fr": "Page Wikipédia du Wiesel et reportage officiel sur les compagnies lourdes de Gebirgsjäger",
+        "en": "Wiesel Wikipedia page and official feature on heavy mountain infantry companies"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Wiesel_AWC",
+          "title": "Wiesel AWC (Wikipedia)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/schwere-gebirgsjaegerkompanien-trainieren-das-gefecht-5322318",
+          "title": "Schwere Gebirgsjägerkompanien trainieren das Gefecht (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-gespraechsaufklaerung",
+      "code": "DE-GESPRAUFKL",
+      "category": "intelligence",
+      "name": {
+        "fr": "Reconnaissance par entretien (Gesprächsaufklärung)",
+        "en": "Conversational reconnaissance (Gesprächsaufklärung)"
+      },
+      "official_name": "Ausbildung Gesprächsaufklärung",
+      "short_name": "GesprAufkl",
+      "description": {
+        "fr": "Formation au recueil de renseignement par entretien avec la population et des interlocuteurs locaux, avec interprète au besoin. Elle est mise en œuvre notamment par les unités de reconnaissance aéroportée de la Luftlandebrigade 1.",
+        "en": "Training in gathering information through conversations with the population and local contacts, with an interpreter if needed. It is used notably by the airborne reconnaissance units of Luftlandebrigade 1."
+      },
+      "body": {
+        "fr": "Heeresaufklärungstruppe",
+        "en": "German Army reconnaissance branch"
+      },
+      "issuer": {
+        "name": "Heeresaufklärungstruppe",
+        "short_name": "HAufklTr"
+      },
+      "reference": {
+        "fr": "Article ESUT « Luftlandekräfte – einsatzbereit jederzeit weltweit »",
+        "en": "ESUT article “Luftlandekräfte – einsatzbereit jederzeit weltweit”"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://esut.de/2023/05/fachbeitraege/41518/luftlandekraefte-einsatzbereit-jederzeit-weltweit/",
+          "title": "Luftlandekräfte – einsatzbereit jederzeit weltweit (esut.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-pionier-sga",
+      "code": "DE-PI-SGA",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Formation de spécialité du génie (Pionier)",
+        "en": "Combat engineer specialist training (Pionier)"
+      },
+      "official_name": "Spezialgrundausbildung Pionier",
+      "short_name": "SGA Pi",
+      "description": {
+        "fr": "Formation de spécialité des sapeurs de l’Heer : destructions, pose et levée d’obstacles, franchissement et appui à la mobilité. Les Luftlandepioniere de la Luftlandebrigade 1 la complètent par le parachutisme et certains par la qualification d’artificier.",
+        "en": "Specialist training of German Army combat engineers: demolitions, laying and clearing obstacles, crossing and mobility support. The Luftlandepioniere of Luftlandebrigade 1 add parachuting and, for some, demolitions-specialist qualification."
+      },
+      "body": {
+        "fr": "Pioniertruppe de l’Heer",
+        "en": "German Army engineer branch"
+      },
+      "issuer": {
+        "name": "Pioniertruppe",
+        "short_name": "PiTr"
+      },
+      "reference": {
+        "fr": "Reportage officiel « Luftlandepioniere im Gefecht » (bundeswehr.de)",
+        "en": "Official feature “Luftlandepioniere im Gefecht” (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/luftlandepioniere-im-gefecht-5500596",
+          "title": "Luftlandepioniere im Gefecht (bundeswehr.de)"
+        },
+        {
+          "url": "https://esut.de/2023/08/fachbeitraege/43528/glueck-ab-und-anker-wirf-die-luftlandepioniere-der-luftlandebrigade-1/",
+          "title": "Glück ab und Anker wirf – die Luftlandepioniere (esut.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-fernmelder-sga",
+      "code": "DE-FM-SGA",
+      "category": "communications",
+      "name": {
+        "fr": "Formation de spécialité transmissions (Fernmelder)",
+        "en": "Signals specialist training (Fernmelder)"
+      },
+      "official_name": "Spezialgrundausbildung Fernmelder",
+      "short_name": "SGA FM",
+      "description": {
+        "fr": "Formation de spécialité des transmetteurs de l’Heer : électronique, hautes fréquences, mise en œuvre des moyens d’émission et de réception et des réseaux de commandement. Elle concerne notamment la compagnie de commandement et de transmissions de la Luftlandebrigade 1.",
+        "en": "Specialist training of German Army signallers: electronics, high frequency, operating transmission/reception equipment and command networks. It applies notably to the HQ and signals company of Luftlandebrigade 1."
+      },
+      "body": {
+        "fr": "Fernmeldetruppe de l’Heer",
+        "en": "German Army signals branch"
+      },
+      "issuer": {
+        "name": "Fernmeldetruppe",
+        "short_name": "FmTr"
+      },
+      "reference": {
+        "fr": "Page de carrière officielle « Soldatin/Soldat der Fernmeldetruppe »",
+        "en": "Official career page “Soldatin/Soldat der Fernmeldetruppe”"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://bundeswehrkarriere.de/soldatin-soldat-der-fernmeldetruppe-395",
+          "title": "Soldatin/Soldat der Fernmeldetruppe (bundeswehrkarriere.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-fernspaeher",
+      "code": "DE-FERNSP",
+      "category": "sof",
+      "name": {
+        "fr": "Patrouilleur de reconnaissance profonde (Fernspäher)",
+        "en": "Long-range reconnaissance patrol soldier (Fernspäher)"
+      },
+      "official_name": "Fernspäherausbildung",
+      "short_name": "Fernspäher",
+      "description": {
+        "fr": "Après une sélection exigeante comprenant une phase de test de deux semaines, les Fernspäher suivent au moins trois ans de formation : reconnaissance profonde, survie, transmissions et insertion par parachute, en montagne et en milieu arctique ou amphibie (kayak). Une partie est dispensée à l’Ausbildungszentrum Munster ; ils servent à la Fernspähkompanie 1.",
+        "en": "After a demanding selection including a two-week test phase, Fernspäher complete at least three years of training: long-range reconnaissance, survival, communications and parachute, mountain/arctic and amphibious (kayak) insertion. Part is delivered at the Ausbildungszentrum Munster; they serve in Fernspähkompanie 1."
+      },
+      "body": {
+        "fr": "Heeresaufklärungstruppe (Fernspähkompanie 1, Ausbildungszentrum Munster)",
+        "en": "German Army reconnaissance branch (Fernspähkompanie 1, Munster Training Centre)"
+      },
+      "issuer": {
+        "name": "Ausbildungszentrum Munster",
+        "short_name": "AusbZ Munster"
+      },
+      "reference": {
+        "fr": "Pages officielles « Fernspäher – Augen des Heeres » et « Hartes Auswahlverfahren für Fernspäher »",
+        "en": "Official pages “Fernspäher – Augen des Heeres” and “Hartes Auswahlverfahren für Fernspäher”"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/faehigkeiten/fernspaeher-augen-des-heeres",
+          "title": "Fernspäher – Augen des Heeres (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/meldungen/hartes-auswahlverfahren-fernspaeher-4598608",
+          "title": "Hartes Auswahlverfahren für Fernspäher (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/fernspaehkompanie-1-aufgestellt-5637528",
+          "title": "Fernspähkompanie 1 aufgestellt (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-hochgebirgsjaeger",
+      "code": "DE-HGEBJG",
+      "category": "environment",
+      "name": {
+        "fr": "Chasseur de haute montagne (Hochgebirgsjäger)",
+        "en": "High-mountain infantryman (Hochgebirgsjäger)"
+      },
+      "official_name": "Hochgebirgsjäger (Hochgebirgsjägerzug)",
+      "short_name": "HGebJg",
+      "description": {
+        "fr": "Les Hochgebirgsjäger des sections de haute montagne de la Gebirgsjägerbrigade 23 combattent jusqu’à plus de 3 000 m. L’accès passe par des tests de condition physique et d’escalade, puis une formation glaciaire (escalade sur glace, sauvetage en crevasse) encadrée par des Heeresbergführer.",
+        "en": "The Hochgebirgsjäger of Gebirgsjägerbrigade 23’s high-mountain platoons fight at altitudes above 3,000 m. Entry requires fitness and climbing tests, followed by glacier training (ice climbing, crevasse rescue) supervised by Army mountain guides."
+      },
+      "body": {
+        "fr": "Gebirgsjägerbrigade 23 (Gebirgsjägerbataillon 231)",
+        "en": "Mountain Infantry Brigade 23 (Mountain Infantry Battalion 231)"
+      },
+      "issuer": {
+        "name": "Gebirgsjägerbrigade 23",
+        "short_name": "GebJgBrig 23"
+      },
+      "reference": {
+        "fr": "Reportage officiel « Kampf auf 3.000 Metern – die Hochgebirgsjäger des Heeres »",
+        "en": "Official feature “Kampf auf 3.000 Metern – die Hochgebirgsjäger des Heeres”"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de chasseur de montagne"
+        ],
+        "en": [
+          "Mountain infantry training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/kampf-auf-3-000-metern-die-hochgebirgsjaeger-des-heeres-4473640",
+          "title": "Kampf auf 3.000 Metern – die Hochgebirgsjäger des Heeres (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-aufklaerer-sga",
+      "code": "DE-AUFKL-SGA",
+      "category": "intelligence",
+      "name": {
+        "fr": "Formation de spécialité reconnaissance (Aufklärer)",
+        "en": "Reconnaissance specialist training (Aufklärer)"
+      },
+      "official_name": "Spezialgrundausbildung Aufklärer",
+      "short_name": "SGA Aufkl",
+      "description": {
+        "fr": "Formation de spécialité des soldats de la reconnaissance de l’Heer : mise en œuvre de drones, de moyens optroniques et de radars de surveillance du champ de bataille, observation et compte rendu. Elle concerne notamment la Gebirgsaufklärungskompanie 23.",
+        "en": "Specialist training of German Army reconnaissance soldiers: operating drones, optronic sensors and battlefield surveillance radars, observation and reporting. It applies notably to Gebirgsaufklärungskompanie 23."
+      },
+      "body": {
+        "fr": "Heeresaufklärungstruppe (Ausbildungszentrum Munster)",
+        "en": "German Army reconnaissance branch (Munster Training Centre)"
+      },
+      "issuer": {
+        "name": "Heeresaufklärungstruppe",
+        "short_name": "HAufklTr"
+      },
+      "reference": {
+        "fr": "Page officielle de la Gebirgsjägerbrigade 23 (bundeswehr.de)",
+        "en": "Official Gebirgsjägerbrigade 23 page (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/division-schnelle-kraefte/gebirgsjaegerbrigade-23",
+          "title": "Gebirgsjägerbrigade 23 (bundeswehr.de)"
+        },
+        {
+          "url": "https://de.wikipedia.org/wiki/Heeresaufkl%C3%A4rungstruppe",
+          "title": "Heeresaufklärungstruppe (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "de-fliegerische-eignung",
+      "code": "DE-FLG-EIGN",
+      "category": "aviation",
+      "name": {
+        "fr": "Sélection du personnel navigant et aptitude au vol (Wehrfliegerverwendungsfähigkeit)",
+        "en": "Aircrew selection and flight fitness (Wehrfliegerverwendungsfähigkeit)"
+      },
+      "official_name": "Eignungsfeststellung für den fliegerischen Dienst / Wehrfliegerverwendungsfähigkeit",
+      "short_name": "WFV",
+      "description": {
+        "fr": "Les candidats pilotes passent une sélection en trois phases (aptitude d’officier, tests de coordination et aptitude médicale, simulateur). Tout personnel navigant, pilote ou membre d’équipage, doit en outre être reconnu apte au vol militaire par le Zentrum für Luft- und Raumfahrtmedizin der Luftwaffe.",
+        "en": "Pilot candidates go through a three-phase selection (officer aptitude, coordination tests and medical fitness, simulator). All aircrew, pilots and crew members alike, must also be certified fit for military flying by the German Air Force Centre of Aerospace Medicine."
+      },
+      "body": {
+        "fr": "Bundeswehr – Zentrum für Luft- und Raumfahrtmedizin der Luftwaffe",
+        "en": "Bundeswehr – German Air Force Centre of Aerospace Medicine"
+      },
+      "issuer": {
+        "name": "Zentrum für Luft- und Raumfahrtmedizin der Luftwaffe",
+        "short_name": "ZentrLuRMedLw"
+      },
+      "reference": {
+        "fr": "Page de carrière officielle « Hubschrauberpilotin/Hubschrauberpilot »",
+        "en": "Official career page “Hubschrauberpilotin/Hubschrauberpilot”"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://bundeswehrkarriere.de/hubschrauberpilotin-hubschrauberpilot-191",
+          "title": "Hubschrauberpilotin/Hubschrauberpilot (bundeswehrkarriere.de)"
+        },
+        {
+          "url": "https://de.wikipedia.org/wiki/Zentrum_f%C3%BCr_Luft-_und_Raumfahrtmedizin_der_Luftwaffe",
+          "title": "Zentrum für Luft- und Raumfahrtmedizin der Luftwaffe (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "de-fluggeraetmechaniker",
+      "code": "DE-FLGMECH",
+      "category": "aviation",
+      "name": {
+        "fr": "Mécanicien d’aéronefs (Fluggerätmechaniker, maintenance)",
+        "en": "Aircraft mechanic (Fluggerätmechaniker, maintenance)"
+      },
+      "official_name": "Fluggerätmechaniker/-in Fachrichtung Instandhaltungstechnik",
+      "short_name": "FlgMech",
+      "description": {
+        "fr": "Formation civile reconnue de mécanicien d’aéronefs (spécialité maintenance) suivie par les sous-officiers techniciens de l’aviation de l’Heer, complétée par la formation technique aéronautique de l’Internationales Hubschrauberausbildungszentrum (Bückeburg). Une licence EASA Part 66 (CAT A/B1) peut être prise en compte.",
+        "en": "Civil-recognised aircraft-mechanic training (maintenance specialism) taken by Army aviation technical NCOs, supplemented by aircraft technical training at the Internationales Hubschrauberausbildungszentrum (Bückeburg). An EASA Part 66 (CAT A/B1) licence may be credited."
+      },
+      "body": {
+        "fr": "Heeresfliegertruppe (Internationales Hubschrauberausbildungszentrum)",
+        "en": "Army Aviation (International Helicopter Training Centre)"
+      },
+      "issuer": {
+        "name": "Internationales Hubschrauberausbildungszentrum",
+        "short_name": "IntHubschrAusbZ"
+      },
+      "reference": {
+        "fr": "Page de carrière officielle « Soldatin/Soldat in der Lfz-Instandhaltung »",
+        "en": "Official career page “Soldatin/Soldat in der Lfz-Instandhaltung”"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://bundeswehrkarriere.de/soldatin-soldat-m-w-d-in-der-lfz-instandhaltung-270",
+          "title": "Soldatin/Soldat in der Lfz-Instandhaltung (bundeswehrkarriere.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/division-schnelle-kraefte/kommando-hubschrauber",
+          "title": "Kommando Hubschrauber (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-fallschirmsprunglehrer",
+      "code": "DE-FSLEHRER",
+      "category": "airborne",
+      "name": {
+        "fr": "Instructeur de saut en parachute (Fallschirmsprunglehrer)",
+        "en": "Military parachuting instructor (Fallschirmsprunglehrer)"
+      },
+      "official_name": "Fallschirmsprunglehrer",
+      "short_name": "FschSprL",
+      "description": {
+        "fr": "Les instructeurs de la Luftlande-/Lufttransportschule d’Altenstadt forment les parachutistes de toutes les armées au saut automatique et à la chute libre. Ils sont eux-mêmes parachutistes expérimentés, chuteurs pour l’instruction en chute libre, et titulaires d’une qualification d’instructeur.",
+        "en": "Instructors of the Luftlande-/Lufttransportschule in Altenstadt train parachutists from all services in static-line and free-fall jumping. They are experienced parachutists themselves, free-fall qualified for free-fall instruction, and hold an instructor qualification."
+      },
+      "body": {
+        "fr": "Luftlande-/Lufttransportschule, Altenstadt",
+        "en": "Airborne/Air Transport School, Altenstadt"
+      },
+      "issuer": {
+        "name": "Luftlande-/Lufttransportschule",
+        "short_name": "LL/LTS"
+      },
+      "reference": {
+        "fr": "Page officielle de la Luftlande-/Lufttransportschule (bundeswehr.de)",
+        "en": "Official Luftlande-/Lufttransportschule page (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Brevet de parachutiste et expérience de saut"
+        ],
+        "en": [
+          "Parachutist badge and jump experience"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "instructor",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/infanterieschule/luftlande-lufttransportschule",
+          "title": "Luftlande-/Lufttransportschule (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/mit-dem-fallschirm-zur-arbeit-5675826",
+          "title": "Mit dem Fallschirm zur Arbeit (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-ksm-medic",
+      "code": "DE-KSM-MEDIC",
+      "category": "medical",
+      "name": {
+        "fr": "Spécialisation sanitaire du nageur de combat (Medic, KSM)",
+        "en": "Combat swimmer medical specialisation (Medic, KSM)"
+      },
+      "official_name": "Kampfschwimmer – Spezialisierung Medic",
+      "short_name": "KS Medic",
+      "description": {
+        "fr": "Après la formation de nageur de combat, certains Kampfschwimmer se spécialisent comme médecins d’équipe (Medic) : soins de combat avancés et prise en charge prolongée des blessés au sein de l’équipe.",
+        "en": "After combat swimmer training, some Kampfschwimmer specialise as team medics: advanced combat care and prolonged casualty management within the team."
+      },
+      "body": {
+        "fr": "Kommando Spezialkräfte der Marine (Kampfschwimmerkompanie)",
+        "en": "Naval Special Forces Command (combat swimmer company)"
+      },
+      "issuer": {
+        "name": "Kommando Spezialkräfte der Marine",
+        "short_name": "KSM"
+      },
+      "reference": {
+        "fr": "Page officielle « Karriere Kampfschwimmer » (bundeswehr.de)",
+        "en": "Official page “Karriere Kampfschwimmer” (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de nageur de combat"
+        ],
+        "en": [
+          "Combat swimmer training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/meldungen/spezialkraefte-bundeswehr/karriere-kampfschwimmer",
+          "title": "Karriere Kampfschwimmer (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/meldungen/spezialkraefte-bundeswehr/kommando-spezialkraefte-marine/bundeswehr-kampfschwimmer-u-boot-einsatz",
+          "title": "Kampfschwimmer im U-Boot-Einsatz (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-ksm-breacher",
+      "code": "DE-KSM-BREACH",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Spécialisation effraction du nageur de combat (Breacher, KSM)",
+        "en": "Combat swimmer breaching specialisation (Breacher, KSM)"
+      },
+      "official_name": "Kampfschwimmer – Spezialisierung Breacher",
+      "short_name": "KS Breacher",
+      "description": {
+        "fr": "Spécialité des Kampfschwimmer chargés de l’effraction mécanique, balistique et explosive lors des abordages et des assauts de l’équipe.",
+        "en": "Speciality of the Kampfschwimmer in charge of mechanical, ballistic and explosive breaching during the team’s boardings and assaults."
+      },
+      "body": {
+        "fr": "Kommando Spezialkräfte der Marine (Kampfschwimmerkompanie)",
+        "en": "Naval Special Forces Command (combat swimmer company)"
+      },
+      "issuer": {
+        "name": "Kommando Spezialkräfte der Marine",
+        "short_name": "KSM"
+      },
+      "reference": {
+        "fr": "Page officielle « Karriere Kampfschwimmer » (bundeswehr.de)",
+        "en": "Official page “Karriere Kampfschwimmer” (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de nageur de combat"
+        ],
+        "en": [
+          "Combat swimmer training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/meldungen/spezialkraefte-bundeswehr/karriere-kampfschwimmer",
+          "title": "Karriere Kampfschwimmer (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/meldungen/spezialkraefte-bundeswehr/kommando-spezialkraefte-marine/bundeswehr-kampfschwimmer-u-boot-einsatz",
+          "title": "Kampfschwimmer im U-Boot-Einsatz (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-ksm-funker",
+      "code": "DE-KSM-FUNKER",
+      "category": "communications",
+      "name": {
+        "fr": "Spécialisation transmissions du nageur de combat (Funker, KSM)",
+        "en": "Combat swimmer communications specialisation (Funker, KSM)"
+      },
+      "official_name": "Kampfschwimmer – Spezialisierung Funker",
+      "short_name": "KS Funker",
+      "description": {
+        "fr": "Spécialité des Kampfschwimmer responsables des liaisons de l’équipe (radio, satellite, transmission de données) avec le commandement et les appuis.",
+        "en": "Speciality of the Kampfschwimmer responsible for the team’s links (radio, satellite, data) with command and supporting assets."
+      },
+      "body": {
+        "fr": "Kommando Spezialkräfte der Marine (Kampfschwimmerkompanie)",
+        "en": "Naval Special Forces Command (combat swimmer company)"
+      },
+      "issuer": {
+        "name": "Kommando Spezialkräfte der Marine",
+        "short_name": "KSM"
+      },
+      "reference": {
+        "fr": "Page officielle « Karriere Kampfschwimmer » (bundeswehr.de)",
+        "en": "Official page “Karriere Kampfschwimmer” (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de nageur de combat"
+        ],
+        "en": [
+          "Combat swimmer training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/meldungen/spezialkraefte-bundeswehr/karriere-kampfschwimmer",
+          "title": "Karriere Kampfschwimmer (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/meldungen/spezialkraefte-bundeswehr/kommando-spezialkraefte-marine/bundeswehr-kampfschwimmer-u-boot-einsatz",
+          "title": "Kampfschwimmer im U-Boot-Einsatz (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-fachlehrgang-navigation",
+      "code": "DE-FL-NAV",
+      "category": "maritime",
+      "name": {
+        "fr": "Cours spécialisé navigation (Fachlehrgang Navigation)",
+        "en": "Navigation specialist course (Fachlehrgang Navigation)"
+      },
+      "official_name": "Fachlehrgang Navigation",
+      "short_name": "FL Nav",
+      "description": {
+        "fr": "Cours de navigation de la Marine d’environ six mois, suivi notamment par les pilotes et chefs d’élément de la compagnie d’embarcations d’opérations spéciales (SBK) du KSM : navigation côtière et hauturière, cartographie et moyens électroniques.",
+        "en": "Navy navigation course of about six months, taken notably by boat operators and element leaders of the KSM special operations boat company (SBK): coastal and offshore navigation, charts and electronic aids."
+      },
+      "body": {
+        "fr": "Deutsche Marine",
+        "en": "German Navy"
+      },
+      "issuer": {
+        "name": "Deutsche Marine",
+        "short_name": "Marine"
+      },
+      "reference": {
+        "fr": "Reportage officiel « Bootfahrerin in der Bootskompanie » (bundeswehr.de)",
+        "en": "Official feature “Bootfahrerin in der Bootskompanie” (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/marine/aktuelles/bootfahrerin-bootskompanie-5809056",
+          "title": "Bootfahrerin in der Bootskompanie (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-infanterie-sga",
+      "code": "DE-INF-SGA",
+      "category": "sof",
+      "name": {
+        "fr": "Formation de spécialité d’infanterie (Spezialgrundausbildung Infanterie)",
+        "en": "Infantry specialist basic training (Spezialgrundausbildung Infanterie)"
+      },
+      "official_name": "Spezialgrundausbildung Infanterie",
+      "short_name": "SGA Inf",
+      "description": {
+        "fr": "Formation suivant la formation de base générale pour les fantassins (Jäger, Fallschirmjäger, Gebirgsjäger, infanterie de marine) : combat d’infanterie, combat en zone urbaine (Häuserkampf) et en forêt (Waldkampf), tir de combat et armes collectives. Elle est le prérequis de nombreux cours, dont celui de tireur d’élite.",
+        "en": "Training following general basic training for infantrymen (Jäger, paratroopers, mountain infantry, naval infantry): infantry combat, urban combat (Häuserkampf) and forest combat (Waldkampf), combat shooting and crew-served weapons. It is the prerequisite for many courses, including the sniper course."
+      },
+      "body": {
+        "fr": "Infanterie de l’Heer et Seebataillon",
+        "en": "German Army infantry and Seebataillon"
+      },
+      "issuer": {
+        "name": "Bundeswehr",
+        "short_name": "Bw"
+      },
+      "reference": {
+        "fr": "Pages officielles sur la formation de l’infanterie et du Seebataillon",
+        "en": "Official pages on infantry and Seebataillon training"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de base militaire générale"
+        ],
+        "en": [
+          "General basic military training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/marine-und-heer-ueben-gemeinsam-5520972",
+          "title": "Marine und Heer üben gemeinsam (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/meldungen/podcast-scharfschuetze-werden-5639040",
+          "title": "Podcast: Scharfschütze werden (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-ch53-muster",
+      "code": "DE-CH53",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification de type CH-53",
+        "en": "CH-53 type qualification"
+      },
+      "official_name": "Musterschulung CH-53",
+      "short_name": "CH-53",
+      "description": {
+        "fr": "Formation des pilotes et équipages sur l’hélicoptère de transport lourd CH-53 de la Luftwaffe, suivie d’un perfectionnement continu avec entraînement tactique au sein du Hubschraubergeschwader 64.",
+        "en": "Training of pilots and crews on the Luftwaffe’s CH-53 heavy transport helicopter, followed by continuation training with tactical training within Hubschraubergeschwader 64."
+      },
+      "body": {
+        "fr": "Hubschraubergeschwader 64 (Luftwaffe)",
+        "en": "Helicopter Wing 64 (German Air Force)"
+      },
+      "issuer": {
+        "name": "Hubschraubergeschwader 64",
+        "short_name": "HSG 64"
+      },
+      "reference": {
+        "fr": "Page officielle Sikorsky CH-53 (bundeswehr.de)",
+        "en": "Official Sikorsky CH-53 page (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de base de pilote d’hélicoptère"
+        ],
+        "en": [
+          "Basic helicopter pilot training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/ausruestung-technik-bundeswehr/luftsysteme-bundeswehr/sikorsky-ch-53",
+          "title": "Sikorsky CH-53 (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/luftwaffe/organisation-/luftwaffentruppenkommando/hubschraubergeschwader-64",
+          "title": "Hubschraubergeschwader 64 (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-ch47f-fluglehrer",
+      "code": "DE-CH47F-FL",
+      "category": "aviation",
+      "name": {
+        "fr": "Pilote instructeur CH-47F (Fluglehrer)",
+        "en": "CH-47F instructor pilot (Fluglehrer)"
+      },
+      "official_name": "Fluglehrer CH-47F",
+      "short_name": "FL CH-47F",
+      "description": {
+        "fr": "Certains pilotes de CH-47F de la Luftwaffe sont formés aux États-Unis comme instructeurs de vol afin de former ensuite les équipages allemands de la future flotte Chinook.",
+        "en": "Selected Luftwaffe CH-47F pilots are trained in the United States as flight instructors in order to then train German crews of the future Chinook fleet."
+      },
+      "body": {
+        "fr": "Luftwaffe (Hubschraubergeschwader 64), formation à l’US Army Aviation Center of Excellence",
+        "en": "German Air Force (Helicopter Wing 64), training at the US Army Aviation Center of Excellence"
+      },
+      "issuer": {
+        "name": "Hubschraubergeschwader 64",
+        "short_name": "HSG 64"
+      },
+      "reference": {
+        "fr": "Reportage officiel « Ausbildung Fluglehrer CH-47F » (bundeswehr.de)",
+        "en": "Official feature “Ausbildung Fluglehrer CH-47F” (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Qualification de type CH-47F"
+        ],
+        "en": [
+          "CH-47F type rating"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "instructor",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/luftwaffe/aktuelles/ausbildung-fluglehrer-ch-47f-6035360",
+          "title": "Ausbildung Fluglehrer CH-47F (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "id": "de-feldjaeger",
+      "code": "DE-FJG",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation de Feldjäger (police militaire)",
+        "en": "Feldjäger (military police) training"
+      },
+      "official_name": "Ausbildung Feldjäger",
+      "short_name": "FJg",
+      "description": {
+        "fr": "Formation pluriannuelle des militaires de la police militaire de la Bundeswehr à la Schule für Feldjäger und Stabsdienst der Bundeswehr (Hanovre) : missions de police, circulation, sécurité et droit. Elle précède les spécialisations comme la protection rapprochée.",
+        "en": "Multi-year training of Bundeswehr military police personnel at the Schule für Feldjäger und Stabsdienst der Bundeswehr (Hanover): policing tasks, traffic, security and law. It precedes specialisations such as close protection."
+      },
+      "body": {
+        "fr": "Schule für Feldjäger und Stabsdienst der Bundeswehr, Hanovre",
+        "en": "Bundeswehr Military Police and Staff Service School, Hanover"
+      },
+      "issuer": {
+        "name": "Schule für Feldjäger und Stabsdienst der Bundeswehr",
+        "short_name": "SFJg/StDstBw"
+      },
+      "reference": {
+        "fr": "Page officielle « Feldjäger – Militärpolizei » (bundeswehr.de)",
+        "en": "Official page “Feldjäger – Militärpolizei” (bundeswehr.de)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/unterstuetzungsbereich/feldjaeger-militaerpolizei",
+          "title": "Feldjäger – Militärpolizei (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/auftrag/einsaetze/feldjaeger-betreuungsfeldwebel-personenschuetzer-5493794",
+          "title": "Feldjäger als Personenschützer (bundeswehr.de)"
+        }
+      ]
     }
   ]
 }

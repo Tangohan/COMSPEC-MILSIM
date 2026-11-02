@@ -42,6 +42,9 @@
      "General officer (Brigadegeneral)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-lgan"
+   ],
    "billets": {
     "fr": [
      "Kommandeur KSK, Calw"
@@ -104,6 +107,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Directeur d'exercice (Leitender der Gesamtübung)"
@@ -166,6 +170,9 @@
      "Military physician (Sanitätsoffizier Arzt)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-sanoa-humanmedizin"
+   ],
    "billets": {
     "fr": [
      "Conseiller médical du commandant"
@@ -228,6 +235,9 @@
      "Feldwebel NCO career (8–13 year enlistment)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-feldwebellehrgang"
+   ],
    "billets": {
     "fr": [
      "Administrateur IT de l'état-major"
@@ -282,6 +292,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Développement armes et équipements"
@@ -352,6 +363,13 @@
      "Commando badge (Kommandoabzeichen)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksk-pfv",
+    "qualification:de-ksk-basisausbildung",
+    "qualification:de-einzelkaempfer",
+    "qualification:de-klimazone-arktis",
+    "qualification:de-ksk-basisausbildung"
+   ],
    "qualification_refs": [
     "de-ksk-pfv",
     "de-ksk-basisausbildung",
@@ -431,6 +449,11 @@
      "Security clearance SÜ1 completed, SÜ2 initiated"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksk-pfv",
+    "qualification:de-ksk-basisausbildung",
+    "qualification:de-sicherheitsueberpruefung"
+   ],
    "qualification_refs": [
     "de-ksk-pfv",
     "de-ksk-basisausbildung"
@@ -503,6 +526,9 @@
      "Experienced Kommandofeldwebel"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksk-basisausbildung"
+   ],
    "qualification_refs": [
     "de-ksk-basisausbildung"
    ],
@@ -572,6 +598,9 @@
      "Commando officer (Kommandooffizier)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksk-basisausbildung"
+   ],
    "qualification_refs": [
     "de-ksk-basisausbildung"
    ],
@@ -633,6 +662,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Chef de compagnie / noyau de Task Group (SOLTG)"
@@ -701,6 +731,10 @@
      "Weapons specialisation (Waffenspezialist)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksk-basisausbildung",
+    "qualification:de-ksk-waffenspezialist"
+   ],
    "qualification_refs": [
     "de-ksk-basisausbildung"
    ],
@@ -774,6 +808,11 @@
      "Equipment courses at the Bundeswehr IT school (IT-Schule der Bundeswehr)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksk-fernmeldespezialist",
+    "qualification:de-ksk-fernmeldespezialist",
+    "qualification:de-ksk-fernmeldespezialist"
+   ],
    "billets": {
     "fr": [
      "Kommandotrupp : transmetteur"
@@ -838,6 +877,10 @@
      "Medical specialisation (Sanitätsdienst)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksk-sanitaetsspezialist",
+    "qualification:de-ksk-sanitaetsspezialist"
+   ],
    "qualification_refs": [
     "de-ksk-basisausbildung"
    ],
@@ -909,6 +952,10 @@
      "Explosives and engineering specialisation (Sprengen/Pionier)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksk-sprengspezialist",
+    "qualification:de-ksk-sprengspezialist"
+   ],
    "qualification_refs": [
     "de-ksk-basisausbildung"
    ],
@@ -982,6 +1029,11 @@
      "Shooting from the H145M LUH SOF helicopter"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksk-kommandoscharfschuetze",
+    "qualification:de-ksk-kommandoscharfschuetze",
+    "qualification:de-ksk-kommandoscharfschuetze"
+   ],
    "qualification_refs": [
     "de-ksk-kommandoscharfschuetze"
    ],
@@ -1047,6 +1099,11 @@
      "Tandem licence (Tandemmaster)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fallschirmspringer",
+    "qualification:de-freifall",
+    "qualification:de-tandemmaster"
+   ],
    "qualification_refs": [
     "de-fallschirmspringer",
     "de-freifall",
@@ -1122,6 +1179,9 @@
      "Amphibious operations specialisation"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksk-amphibisch"
+   ],
    "billets": {
     "fr": [
      "Section amphibie : équipier",
@@ -1188,6 +1248,10 @@
      "Army mountain guide (Heeresbergführer) for team leaders (secondary source)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-klimazone-arktis",
+    "qualification:de-heeresbergfuehrer"
+   ],
    "qualification_refs": [
     "de-klimazone-arktis",
     "de-heeresbergfuehrer"
@@ -1254,6 +1318,9 @@
      "Experienced commando soldier"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksk-basisausbildung"
+   ],
    "qualification_refs": [
     "de-ksk-basisausbildung"
    ],
@@ -1325,6 +1392,10 @@
      "Dog-handler training at the Ulmen school (≈ 9 months)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-diensthundefuehrer",
+    "qualification:de-diensthundefuehrer"
+   ],
    "qualification_refs": [
     "de-diensthundefuehrer"
    ],
@@ -1394,6 +1465,11 @@
      "Special badge (Sonderabzeichen Aufklärungssoldat)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksk-pfv",
+    "qualification:de-ksk-aufklaerungssoldat",
+    "qualification:de-ksk-aufklaerungssoldat"
+   ],
    "qualification_refs": [
     "de-ksk-pfv",
     "de-ksk-aufklaerungssoldat"
@@ -1468,6 +1544,11 @@
      "Radiation protection, CBRN reconnaissance, respiratory protection, sampling"
     ]
    },
+   "reference_keys": [
+    "qualification:de-abc-abwehr-feldwebel",
+    "qualification:nato-sere-c",
+    "qualification:de-abc-abwehr-feldwebel"
+   ],
    "qualification_refs": [
     "de-sere",
     "nato-sere-c"
@@ -1542,6 +1623,12 @@
      "Parachute, lone-combatant and fast-roping fitness"
     ]
    },
+   "reference_keys": [
+    "qualification:de-notfallsanitaeter",
+    "qualification:de-ksk-pfv",
+    "qualification:de-ksk-rettungsspezialist",
+    "qualification:de-einzelkaempfer"
+   ],
    "qualification_refs": [
     "de-notfallsanitaeter",
     "de-ksk-rettungsspezialist",
@@ -1617,6 +1704,11 @@
      "Parachute, lone-combatant, fast-roping/speed-rappelling fitness"
     ]
    },
+   "reference_keys": [
+    "qualification:de-sanoa-humanmedizin",
+    "qualification:de-rettungsmediziner",
+    "qualification:de-einzelkaempfer"
+   ],
    "qualification_refs": [
     "de-rettungsmediziner",
     "de-fallschirmspringer",
@@ -1685,6 +1777,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Transmetteur",
@@ -1755,6 +1848,12 @@
      "Chainsaw and construction-machinery courses"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksk-pionierspezialist",
+    "qualification:de-sprengberechtigung",
+    "qualification:de-ksk-pionierspezialist",
+    "qualification:de-ksk-pionierspezialist"
+   ],
    "qualification_refs": [
     "de-sprengberechtigung"
    ],
@@ -1820,6 +1919,10 @@
      "Parachute jumps during training"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fallschirmpruefer",
+    "qualification:de-fallschirmspringer"
+   ],
    "qualification_refs": [
     "de-fallschirmpruefer"
    ],
@@ -1889,6 +1992,10 @@
      "Weapon-specific courses"
     ]
    },
+   "reference_keys": [
+    "qualification:de-waffeninstandsetzer",
+    "qualification:de-waffeninstandsetzer"
+   ],
    "billets": {
     "fr": [
      "Atelier armement",
@@ -1949,6 +2056,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Gestion du matériel et des munitions",
@@ -2015,6 +2123,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Entraîneur / diagnostic de performance",
@@ -2079,6 +2188,9 @@
      "Experienced commando soldier or specialist (sports instructor, etc.)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksk-basisausbildung"
+   ],
    "qualification_refs": [
     "de-ksk-basisausbildung"
    ],
@@ -2148,6 +2260,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Recruteur / conseiller candidats"
@@ -2216,6 +2329,11 @@
      "Standard 12-year commitment (or 7 to 23 months of voluntary service)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-grundausbildung",
+    "qualification:de-fallschirmspringer",
+    "qualification:de-grundausbildung"
+   ],
    "qualification_refs": [
     "de-fallschirmspringer"
    ],
@@ -2293,6 +2411,11 @@
      "Standard 15-year commitment"
     ]
    },
+   "reference_keys": [
+    "qualification:de-feldwebellehrgang",
+    "qualification:de-fallschirmspringer",
+    "qualification:de-feldwebellehrgang"
+   ],
    "qualification_refs": [
     "de-fallschirmspringer"
    ],
@@ -2368,6 +2491,12 @@
      "Offizierlehrgang Teil III: Module A (5.5 months), Fallschirmspringerlehrgang (6 weeks), Module B (3 months)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fahnenjunkerlehrgang",
+    "qualification:de-unibw-studium",
+    "qualification:de-offizierlehrgang-heer",
+    "qualification:de-offizierlehrgang-3-infanterie"
+   ],
    "qualification_refs": [
     "de-fallschirmspringer"
    ],
@@ -2445,6 +2574,13 @@
      "In-depth security vetting (MAD) and jump fitness"
     ]
    },
+   "reference_keys": [
+    "qualification:de-egb",
+    "qualification:de-egb",
+    "qualification:de-urbane-angriffstaktiken",
+    "qualification:de-egb",
+    "qualification:de-sicherheitsueberpruefung"
+   ],
    "qualification_refs": [
     "de-egb",
     "de-urbane-angriffstaktiken",
@@ -2530,6 +2666,12 @@
      "Feldwebel career track"
     ]
    },
+   "reference_keys": [
+    "qualification:de-egb",
+    "qualification:de-urbane-angriffstaktiken",
+    "qualification:de-fallschirmspringer",
+    "qualification:de-feldwebellehrgang"
+   ],
    "qualification_refs": [
     "de-egb",
     "de-urbane-angriffstaktiken",
@@ -2605,6 +2747,11 @@
      "Paratrooper officer course (Module B, Fallschirmspringerlehrgang)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-unibw-studium",
+    "qualification:de-egb",
+    "qualification:de-offizierlehrgang-3-infanterie"
+   ],
    "qualification_refs": [
     "de-egb",
     "de-fallschirmspringer"
@@ -2681,6 +2828,12 @@
      "Prerequisites: infantry specialist basic training and at least two years of remaining service"
     ]
    },
+   "reference_keys": [
+    "qualification:de-scharfschuetze",
+    "qualification:de-scharfschuetze",
+    "qualification:de-scharfschuetze",
+    "qualification:de-infanterie-sga"
+   ],
    "qualification_refs": [
     "de-scharfschuetze"
    ],
@@ -2752,6 +2905,11 @@
      "EGB training (depending on career path)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-freifall",
+    "qualification:de-fallschirmspringer",
+    "qualification:de-egb"
+   ],
    "qualification_refs": [
     "de-freifall",
     "de-fallschirmspringer",
@@ -2829,6 +2987,11 @@
      "Free-fall team leader course"
     ]
    },
+   "reference_keys": [
+    "qualification:de-gleitfallschirm-truppfuehrer",
+    "qualification:de-egb",
+    "qualification:de-gleitfallschirm-truppfuehrer"
+   ],
    "qualification_refs": [
     "de-gleitfallschirm-truppfuehrer",
     "de-freifall",
@@ -2895,6 +3058,10 @@
      "Air traffic controller licence (team leader)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-freifall",
+    "qualification:de-combat-control-team"
+   ],
    "qualification_refs": [
     "de-freifall",
     "de-combat-control-team"
@@ -2965,6 +3132,10 @@
      "Annual one-week regimental Absetzer refresher (including A400M familiarisation)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fallschirmspringer",
+    "qualification:de-absetzer"
+   ],
    "qualification_refs": [
     "de-absetzer",
     "de-fallschirmspringer"
@@ -3045,6 +3216,12 @@
      "Joint and multinational exercises (Stoneage, Talisman Sabre)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-jtac",
+    "qualification:de-fallschirmspringer",
+    "qualification:nato-slp-2",
+    "qualification:de-jtac"
+   ],
    "qualification_refs": [
     "de-jtac",
     "nato-jtac",
@@ -3118,6 +3295,11 @@
      "Good English"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fallschirmspringer",
+    "qualification:nato-jfo",
+    "qualification:nato-slp-2"
+   ],
    "qualification_refs": [
     "nato-jfo",
     "de-fallschirmspringer"
@@ -3190,6 +3372,10 @@
      "120 mm mortar crew training"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fallschirmspringer",
+    "qualification:de-moerser"
+   ],
    "qualification_refs": [
     "de-fallschirmspringer"
    ],
@@ -3265,6 +3451,10 @@
      "Parachutist badge"
     ]
    },
+   "reference_keys": [
+    "qualification:de-notfallsanitaeter",
+    "qualification:de-fallschirmspringer"
+   ],
    "qualification_refs": [
     "de-notfallsanitaeter",
     "de-fallschirmspringer"
@@ -3335,6 +3525,10 @@
      "Conversational reconnaissance training (Gesprächsaufklärung)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fallschirmspringer",
+    "qualification:de-gespraechsaufklaerung"
+   ],
    "qualification_refs": [
     "de-fallschirmspringer"
    ],
@@ -3410,6 +3604,11 @@
      "Demolitions specialist (Sprengmeister) for some"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fallschirmspringer",
+    "qualification:de-pionier-sga",
+    "qualification:de-sprengberechtigung"
+   ],
    "qualification_refs": [
     "de-fallschirmspringer",
     "de-sprengberechtigung"
@@ -3486,6 +3685,11 @@
      "Parachutist course (depending on post)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fernmelder-sga",
+    "qualification:nato-slp-2",
+    "qualification:de-fallschirmspringer"
+   ],
    "qualification_refs": [
     "de-fallschirmspringer"
    ],
@@ -3559,6 +3763,11 @@
      "Parachute, mountain/arctic and amphibious (kayak) insertion"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fernspaeher",
+    "qualification:de-fernspaeher",
+    "qualification:de-fernspaeher"
+   ],
    "qualification_refs": [
     "de-fallschirmspringer"
    ],
@@ -3638,6 +3847,11 @@
      "Military skiing and military mountaineering"
     ]
    },
+   "reference_keys": [
+    "qualification:de-gebirgsjaeger-ausbildung",
+    "qualification:de-gebirgsjaeger-ausbildung",
+    "qualification:de-gebirgsjaeger-ausbildung"
+   ],
    "qualification_refs": [
     "de-gebirgsjaeger-ausbildung"
    ],
@@ -3719,6 +3933,12 @@
      "Standard 15-year commitment"
     ]
    },
+   "reference_keys": [
+    "qualification:de-feldwebellehrgang",
+    "qualification:de-gebirgsjaeger-ausbildung",
+    "qualification:de-bergretter",
+    "qualification:de-feldwebellehrgang"
+   ],
    "qualification_refs": [
     "de-gebirgsjaeger-ausbildung"
    ],
@@ -3786,6 +4006,11 @@
      "Mountain and winter warfare course at the Gebirgs- und Winterkampfschule (Mittenwald)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-offizierlehrgang-heer",
+    "qualification:de-unibw-studium",
+    "qualification:de-gebirgsjaeger-ausbildung"
+   ],
    "qualification_refs": [
     "de-gebirgsjaeger-ausbildung"
    ],
@@ -3857,6 +4082,11 @@
      "Glacier training (ice climbing, crevasse rescue)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-hochgebirgsjaeger",
+    "qualification:de-bergretter",
+    "qualification:de-hochgebirgsjaeger"
+   ],
    "qualification_refs": [
     "de-bergretter"
    ],
@@ -3928,6 +4158,10 @@
      "Heereshochgebirgsspezialist course (summer and winter parts, binational)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-feldwebellehrgang",
+    "qualification:de-heereshochgebirgsspezialist"
+   ],
    "qualification_refs": [
     "de-heereshochgebirgsspezialist"
    ],
@@ -4005,6 +4239,12 @@
      "Final exam and guide badge (Heeresbergführerabzeichen)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-heereshochgebirgsspezialist",
+    "qualification:de-heeresbergfuehrer",
+    "qualification:de-heeresbergfuehrer",
+    "qualification:de-heeresbergfuehrer"
+   ],
    "qualification_refs": [
     "de-heeresbergfuehrer",
     "de-heereshochgebirgsspezialist"
@@ -4085,6 +4325,11 @@
      "Pack animal handler course (4 weeks: anatomy, animal first aid, handling, marches)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-gebirgsjaeger-ausbildung",
+    "qualification:de-gebirgsjaeger-ausbildung",
+    "qualification:de-tragtierfuehrer"
+   ],
    "qualification_refs": [
     "de-gebirgsjaeger-ausbildung",
     "de-tragtierfuehrer"
@@ -4155,6 +4400,10 @@
      "Reconnaissance specialist training (drones, optronics, radar)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-gebirgsjaeger-ausbildung",
+    "qualification:de-aufklaerer-sga"
+   ],
    "qualification_refs": [
     "de-gebirgsjaeger-ausbildung"
    ],
@@ -4224,6 +4473,11 @@
      "Military skiing and mountaineering"
     ]
    },
+   "reference_keys": [
+    "qualification:de-scharfschuetze",
+    "qualification:de-scharfschuetze-gebirge",
+    "qualification:de-gebirgsjaeger-ausbildung"
+   ],
    "qualification_refs": [
     "de-scharfschuetze",
     "de-scharfschuetze-gebirge",
@@ -4295,6 +4549,10 @@
      "Wiesel weapon carrier training (depending on post)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-moerser",
+    "qualification:de-wiesel"
+   ],
    "billets": {
     "fr": [
      "Servant mortier (Panzermörser)",
@@ -4367,6 +4625,12 @@
      "Standard 16-year commitment"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fliegerische-eignung",
+    "qualification:de-hubschrauberfuehrer",
+    "qualification:de-nh90-muster",
+    "qualification:de-hubschrauberfuehrer"
+   ],
    "qualification_refs": [
     "de-hubschrauberfuehrer",
     "de-nh90-muster"
@@ -4449,6 +4713,12 @@
      "Standard 16-year commitment"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fliegerische-eignung",
+    "qualification:de-hubschrauberfuehrer",
+    "qualification:de-tiger-muster",
+    "qualification:de-hubschrauberfuehrer"
+   ],
    "qualification_refs": [
     "de-hubschrauberfuehrer",
     "de-tiger-muster"
@@ -4525,6 +4795,10 @@
      "Aircraft technical training"
     ]
    },
+   "reference_keys": [
+    "qualification:de-bordtechnik",
+    "qualification:de-bordtechnik"
+   ],
    "qualification_refs": [
     "de-bordtechnik"
    ],
@@ -4604,6 +4878,12 @@
      "Standard 15-year commitment"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fluggeraetmechaniker",
+    "qualification:de-fluggeraetmechaniker",
+    "qualification:de-fluggeraetmechaniker",
+    "qualification:de-feldwebellehrgang"
+   ],
    "billets": {
     "fr": [
      "Technicien de piste / hangar",
@@ -4678,6 +4958,11 @@
      "Possible follow-on: Jagdkommando leader course (Führer von Jagdkommandos)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-einzelkaempfer",
+    "qualification:de-einzelkaempfer",
+    "qualification:de-jagdkommando"
+   ],
    "qualification_refs": [
     "de-einzelkaempfer",
     "de-jagdkommando"
@@ -4748,6 +5033,10 @@
      "Instructor qualifications in the subject taught"
     ]
    },
+   "reference_keys": [
+    "qualification:de-egb",
+    "qualification:de-egb"
+   ],
    "qualification_refs": [
     "de-egb"
    ],
@@ -4827,6 +5116,11 @@
      "Instructor qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fallschirmspringer",
+    "qualification:de-freifall",
+    "qualification:de-fallschirmsprunglehrer"
+   ],
    "qualification_refs": [
     "de-fallschirmspringer",
     "de-freifall"
@@ -4915,6 +5209,15 @@
      "Parachute training (Fallschirmspringerausbildung, Altenstadt)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksm-pfv",
+    "qualification:de-schwimmtaucher",
+    "qualification:de-kampfschwimmer",
+    "qualification:de-kampfschwimmer",
+    "qualification:de-tauchereinsatzleiter",
+    "qualification:de-cfr",
+    "qualification:de-fallschirmspringer"
+   ],
    "qualification_refs": [
     "de-ksm-pfv",
     "de-schwimmtaucher",
@@ -5001,6 +5304,13 @@
      "Final 30 km Baltic swim (Abschlussschwimmen)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ksm-pfv",
+    "qualification:de-ksm-pfv",
+    "qualification:de-ksm-pfv",
+    "qualification:de-ksm-pfv",
+    "qualification:de-kampfschwimmer"
+   ],
    "qualification_refs": [
     "de-ksm-pfv"
    ],
@@ -5074,6 +5384,11 @@
      "Dive supervisor (Tauchereinsatzleiter)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-offizierausbildung-marine",
+    "qualification:de-kampfschwimmer",
+    "qualification:de-tauchereinsatzleiter"
+   ],
    "qualification_refs": [
     "de-ksm-pfv",
     "de-kampfschwimmer",
@@ -5151,6 +5466,11 @@
      "Medical specialisation (Medic)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-kampfschwimmer",
+    "qualification:de-cfr",
+    "qualification:de-ksm-medic"
+   ],
    "qualification_refs": [
     "de-kampfschwimmer",
     "de-cfr"
@@ -5223,6 +5543,10 @@
      "Breaching specialisation (Breacher)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-kampfschwimmer",
+    "qualification:de-ksm-breacher"
+   ],
    "qualification_refs": [
     "de-kampfschwimmer"
    ],
@@ -5290,6 +5614,10 @@
      "Communications specialisation (Funker)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-kampfschwimmer",
+    "qualification:de-ksm-funker"
+   ],
    "qualification_refs": [
     "de-kampfschwimmer"
    ],
@@ -5357,6 +5685,10 @@
      "Explosive ordnance disposal specialisation (EOD)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-kampfschwimmer",
+    "qualification:de-eod"
+   ],
    "qualification_refs": [
     "de-kampfschwimmer",
     "de-eod"
@@ -5425,6 +5757,10 @@
      "Sniper specialisation (Scharfschütze)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-kampfschwimmer",
+    "qualification:de-scharfschuetze"
+   ],
    "qualification_refs": [
     "de-kampfschwimmer"
    ],
@@ -5500,6 +5836,14 @@
      "Sailing licence (Segelschein), sea survival"
     ]
    },
+   "reference_keys": [
+    "qualification:de-sbk-ausbildung",
+    "qualification:de-fachlehrgang-navigation",
+    "qualification:de-sbk-ausbildung",
+    "qualification:de-cfr",
+    "qualification:de-freifall",
+    "qualification:de-sbk-ausbildung"
+   ],
    "qualification_refs": [
     "de-sbk-ausbildung",
     "de-cfr",
@@ -5574,6 +5918,12 @@
      "Parachuting (Fallschirmlehrgänge)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-sbk-ausbildung",
+    "qualification:de-fachlehrgang-navigation",
+    "qualification:de-cfr",
+    "qualification:de-fallschirmspringer"
+   ],
    "qualification_refs": [
     "de-sbk-ausbildung",
     "de-cfr",
@@ -5639,6 +5989,10 @@
      "16-week SOMST basic course with a strong tactical component"
     ]
    },
+   "reference_keys": [
+    "qualification:de-notfallsanitaeter",
+    "qualification:de-somst"
+   ],
    "qualification_refs": [
     "de-notfallsanitaeter",
     "de-somst"
@@ -5711,6 +6065,10 @@
      "16-week SOMST basic course with a strong tactical component"
     ]
    },
+   "reference_keys": [
+    "qualification:de-sanoa-humanmedizin",
+    "qualification:de-somst"
+   ],
    "qualification_refs": [
     "de-somst"
    ],
@@ -5772,6 +6130,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Personnel de l'Unterstützungskompanie",
@@ -5836,6 +6195,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Kommandeur KSM (Fregattenkapitän ou Kapitän zur See)"
@@ -5908,6 +6268,12 @@
      "Entry standard: 5 km under 25 min, 300 m clothed swim under 9 min"
     ]
    },
+   "reference_keys": [
+    "qualification:de-grundausbildung",
+    "qualification:de-bordeinsatz",
+    "qualification:de-fast-rope",
+    "qualification:de-bordeinsatz"
+   ],
    "qualification_refs": [
     "de-bordeinsatz",
     "de-fast-rope"
@@ -5984,6 +6350,11 @@
      "Standard casualty evacuation request (9-Liner)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fast-rope",
+    "qualification:de-infanterie-sga",
+    "qualification:de-einsatzersthelfer-b"
+   ],
    "billets": {
     "fr": [
      "Fantassin d'une section côtière (Zug)",
@@ -6052,6 +6423,9 @@
      "Naval officer career (Offizierlaufbahn)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-offizierausbildung-marine"
+   ],
    "billets": {
     "fr": [
      "Zugführer / Zugführerin (Leutnant zur See)"
@@ -6110,6 +6484,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Kompaniechef (Korvettenkapitän)"
@@ -6172,6 +6547,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Tireur d'élite du Scharfschützenzug",
@@ -6236,6 +6612,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Opérateur du Drohnenzug"
@@ -6306,6 +6683,11 @@
      "Trimix diving to 84 m"
     ]
    },
+   "reference_keys": [
+    "qualification:de-schwimmtaucher",
+    "qualification:de-minentaucher",
+    "qualification:de-minentaucher"
+   ],
    "qualification_refs": [
     "de-schwimmtaucher",
     "de-minentaucher"
@@ -6384,6 +6766,12 @@
      "IHK 'Geprüfter Taucher' exam after two and a half years of training"
     ]
    },
+   "reference_keys": [
+    "qualification:de-schwimmtaucher",
+    "qualification:de-schiffstaucher",
+    "qualification:de-schiffstaucher",
+    "qualification:de-schiffstaucher"
+   ],
    "qualification_refs": [
     "de-schwimmtaucher",
     "de-schiffstaucher"
@@ -6458,6 +6846,11 @@
      "Advanced Flight Training on a Navy helicopter (NH90)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-hubschrauberfuehrer",
+    "qualification:de-marine-hubschrauberausbildung",
+    "qualification:de-marine-hubschrauberausbildung"
+   ],
    "qualification_refs": [
     "de-marine-hubschrauberausbildung"
    ],
@@ -6537,6 +6930,11 @@
      "Advanced Flight Training on a Navy helicopter"
     ]
    },
+   "reference_keys": [
+    "qualification:de-hubschrauberfuehrer",
+    "qualification:de-marine-hubschrauberausbildung",
+    "qualification:de-marine-hubschrauberausbildung"
+   ],
    "qualification_refs": [
     "de-marine-hubschrauberausbildung"
    ],
@@ -6608,6 +7006,12 @@
      "Infantry training / tactical understanding of special operations"
     ]
    },
+   "reference_keys": [
+    "qualification:de-sof-aviator",
+    "qualification:de-sof-aviator",
+    "qualification:de-sof-aviator",
+    "qualification:de-sof-aviator"
+   ],
    "qualification_refs": [
     "de-sof-aviator"
    ],
@@ -6687,6 +7091,11 @@
      "Operation of the MG6 minigun and rescue hoist (up to 250 kg)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-tactical-operator",
+    "qualification:de-tactical-operator",
+    "qualification:de-tactical-operator"
+   ],
    "qualification_refs": [
     "de-tactical-operator"
    ],
@@ -6756,6 +7165,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Mécanicien de piste (inspections avant/après vol)",
@@ -6820,6 +7230,9 @@
      "CH-53 flight training and continuation training with tactical training (HSG 64)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ch53-muster"
+   ],
    "billets": {
     "fr": [
      "Pilote / commandant de bord CH-53",
@@ -6890,6 +7303,9 @@
      "Door gunner training depending on assignment"
     ]
    },
+   "reference_keys": [
+    "qualification:de-doorgunner"
+   ],
    "qualification_refs": [
     "de-doorgunner"
    ],
@@ -6971,6 +7387,13 @@
      "Aircrew licence (minimum 50 flight hours/year)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-fliegerische-eignung",
+    "qualification:de-doorgunner",
+    "qualification:de-doorgunner",
+    "qualification:de-sere",
+    "qualification:de-doorgunner"
+   ],
    "qualification_refs": [
     "de-doorgunner",
     "de-sere"
@@ -7047,6 +7470,11 @@
      "Conversion of CH-53 pilots"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ch47f-muster",
+    "qualification:de-ch47f-fluglehrer",
+    "qualification:de-ch47f-muster"
+   ],
    "qualification_refs": [
     "de-ch47f-muster"
    ],
@@ -7120,6 +7548,9 @@
      "CH-47 loadmaster training in the United States (Pennsylvania)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-ch47-ladungsmeister"
+   ],
    "qualification_refs": [
     "de-ch47-ladungsmeister"
    ],
@@ -7183,6 +7614,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Officier technique (Technische Gruppe)",
@@ -7245,6 +7677,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Kommodore HSG 64",
@@ -7315,6 +7748,10 @@
      "Unpaved-strip landing training"
     ]
    },
+   "reference_keys": [
+    "qualification:de-a400m-muster",
+    "qualification:de-a400m-muster"
+   ],
    "qualification_refs": [
     "de-a400m-muster"
    ],
@@ -7386,6 +7823,11 @@
      "Cargo hold simulator training (Cargo Hold Trainer, Wunstorf)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-a400m-ladungsmeister",
+    "qualification:de-a400m-ladungsmeister",
+    "qualification:de-a400m-ladungsmeister"
+   ],
    "qualification_refs": [
     "de-a400m-ladungsmeister"
    ],
@@ -7461,6 +7903,11 @@
      "Specialisation: runner (Melder), scoped rifleman (Zielfernrohrschütze), weapons specialist or first aider B (Ersthelfer B)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-lwsich-a",
+    "qualification:de-lwsich-a",
+    "qualification:de-zielfernrohrschuetze"
+   ],
    "qualification_refs": [
     "de-lwsich-a",
     "de-zielfernrohrschuetze",
@@ -7534,6 +7981,10 @@
      "Sniper training (Scharfschützenausbildung)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-zielfernrohrschuetze",
+    "qualification:de-scharfschuetze"
+   ],
    "qualification_refs": [
     "de-zielfernrohrschuetze",
     "de-scharfschuetze"
@@ -7606,6 +8057,12 @@
      "Combat first aider (Einsatzersthelfer) and intercultural communication"
     ]
    },
+   "reference_keys": [
+    "qualification:de-lwsich-a",
+    "qualification:de-ampt",
+    "qualification:de-ampt",
+    "qualification:de-einsatzersthelfer-b"
+   ],
    "qualification_refs": [
     "de-ampt"
    ],
@@ -7681,6 +8138,13 @@
      "Air-centric Personnel Recovery Operatives Course (APROC)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-kampfretter",
+    "qualification:de-kampfretter",
+    "qualification:de-kampfretter",
+    "qualification:de-gleitfallschirm-truppfuehrer",
+    "qualification:nato-aproc"
+   ],
    "qualification_refs": [
     "de-kampfretter",
     "de-freifall",
@@ -7759,6 +8223,10 @@
      "Combat First Responder / medic training"
     ]
    },
+   "reference_keys": [
+    "qualification:de-kampfretter",
+    "qualification:de-cfr"
+   ],
    "qualification_refs": [
     "de-kampfretter",
     "de-cfr"
@@ -7821,6 +8289,9 @@
      "JTAC and JTAC evaluator qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:de-jtac-evaluator"
+   ],
    "qualification_refs": [
     "de-jtac",
     "nato-jtac"
@@ -7901,6 +8372,13 @@
      "Parachute qualification for airborne JFSTs"
     ]
    },
+   "reference_keys": [
+    "qualification:de-jtac",
+    "qualification:de-jtac",
+    "qualification:nato-slp-3",
+    "qualification:de-jtac",
+    "qualification:de-fallschirmspringer"
+   ],
    "qualification_refs": [
     "de-jtac",
     "nato-jtac",
@@ -7978,6 +8456,10 @@
      "Regular training on realistic, time-pressured scenarios"
     ]
    },
+   "reference_keys": [
+    "qualification:nato-slp-3",
+    "qualification:de-jtac"
+   ],
    "billets": {
     "fr": [
      "Fliegerleitfeldwebel (équipe air-sol)",
@@ -8040,6 +8522,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Direktor Spezialkräfte Bundeswehr (officier général / amiral)"
@@ -8102,6 +8585,9 @@
      "NATO SOCC certification (exercise Steadfast Jupiter)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-bls"
+   ],
    "billets": {
     "fr": [
      "Officier planification opérations spéciales",
@@ -8172,6 +8658,11 @@
      "Self-defence and driving armoured limousines and protected vehicles (Eagle)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-feldjaeger",
+    "qualification:de-personenschutz",
+    "qualification:de-personenschutz"
+   ],
    "qualification_refs": [
     "de-personenschutz"
    ],
@@ -8239,6 +8730,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Personnel du centre de sauvetage aéroporté (Luftlanderettungszentrum)",
@@ -8311,6 +8803,10 @@
      "Teaching SERE level A (theory) and level B (practical)"
     ]
    },
+   "reference_keys": [
+    "qualification:de-egb",
+    "qualification:de-sere"
+   ],
    "qualification_refs": [
     "de-egb",
     "de-sere",

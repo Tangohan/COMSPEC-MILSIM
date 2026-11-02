@@ -2977,6 +2977,351 @@
           "title": "Groupe d’intervention de la Gendarmerie nationale – Wikipédia"
         }
       ]
+    },
+    {
+      "id": "fr-specialite-13rdp",
+      "code": "FR-SPE-13RDP",
+      "category": "intelligence",
+      "name": {
+        "fr": "Formation spécialisée au 13e RDP (renseignement et SIC des forces spéciales)",
+        "en": "Specialist training at the 13e RDP (special forces intelligence and CIS)"
+      },
+      "official_name": "Formation spécialisée au 13e régiment de dragons parachutistes",
+      "short_name": "Spé 13e RDP",
+      "description": {
+        "fr": "Formation de spécialité dispensée au 13e régiment de dragons parachutistes, à Souge, après la formation initiale en CFIM. Elle prépare notamment aux postes d’exploitant renseignement et de spécialiste des systèmes d’information et de communication des forces spéciales du régiment.",
+        "en": "Trade training delivered at the 13th Parachute Dragoon Regiment in Souge after initial training at a CFIM. It prepares soldiers for the regiment’s special forces intelligence exploitation and communication and information systems posts."
+      },
+      "body": {
+        "fr": "13e régiment de dragons parachutistes (Commandement des actions spéciales Terre)",
+        "en": "13th Parachute Dragoon Regiment (French Army Special Actions Command)"
+      },
+      "issuer": {
+        "name": "13e régiment de dragons parachutistes",
+        "short_name": "13e RDP"
+      },
+      "reference": {
+        "fr": "Fiches de poste sengager.fr (exploitant renseignement et spécialiste SIC des forces spéciales)",
+        "en": "sengager.fr job descriptions (special forces intelligence analyst and CIS specialist)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation initiale du militaire du rang (CFIM)"
+        ],
+        "en": [
+          "Enlisted initial training (CFIM)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/exploitant-renseignement-des-forces-speciales",
+          "title": "Exploitant renseignement des forces spéciales (sengager.fr)"
+        },
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/specialiste-des-systemes-et-reseaux-informatiques-des-forces-speciales",
+          "title": "Spécialiste des systèmes et réseaux informatiques des forces spéciales (sengager.fr)"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-actions-speciales-terre/13e-regiment-dragons-parachutistes",
+          "title": "13e régiment de dragons parachutistes (defense.gouv.fr)"
+        }
+      ]
+    },
+    {
+      "id": "fr-chef-de-bord-alat",
+      "code": "FR-CDB-ALAT",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification de chef de bord (hélicoptère de l’ALAT)",
+        "en": "Aircraft commander qualification (Army Light Aviation helicopter)"
+      },
+      "official_name": "Qualification de chef de bord",
+      "short_name": "Chef de bord",
+      "description": {
+        "fr": "Qualification qui permet à un pilote de l’aviation légère de l’armée de Terre d’assurer le commandement d’un équipage d’hélicoptère (Gazelle, Tigre, Caïman, Cougar…) et la conduite de la mission. Elle est acquise en unité, après la formation de pilote et une expérience de vol en équipage.",
+        "en": "Qualification allowing a French Army Light Aviation pilot to command a helicopter crew (Gazelle, Tigre, Caïman, Cougar, etc.) and lead the mission. It is earned in the unit after pilot training and crew flying experience."
+      },
+      "body": {
+        "fr": "Aviation légère de l’armée de Terre (ALAT)",
+        "en": "French Army Light Aviation (ALAT)"
+      },
+      "issuer": {
+        "name": "Aviation légère de l’armée de Terre",
+        "short_name": "ALAT"
+      },
+      "reference": {
+        "fr": "Pages officielles des hélicoptères Tigre et Gazelle (defense.gouv.fr)",
+        "en": "Official Tigre and Gazelle helicopter pages (defense.gouv.fr)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de pilote d’hélicoptère de l’ALAT (EALAT)"
+        ],
+        "en": [
+          "Army Light Aviation helicopter pilot training (EALAT)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/nos-materiels/nos-equipements-terre/nos-vehicules/nos-helicopteres/tigre-helicoptere-combat",
+          "title": "Tigre, hélicoptère de combat (defense.gouv.fr)"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/terre/nos-materiels/nos-equipements-terre/nos-vehicules/nos-helicopteres/helicoptere-gazelle",
+          "title": "Hélicoptère Gazelle (defense.gouv.fr)"
+        }
+      ]
+    },
+    {
+      "id": "fr-technicien-simulateur-ealat",
+      "code": "FR-SIMU-EALAT",
+      "category": "aviation",
+      "name": {
+        "fr": "Formation de technicien simulateur de vol (EALAT, Dax)",
+        "en": "Flight simulator technician training (EALAT, Dax)"
+      },
+      "official_name": "Formation spécialisée de technicien simulateur de vol à l’École de l’aviation légère de l’armée de Terre",
+      "short_name": "Tech. simu EALAT",
+      "description": {
+        "fr": "Formation spécialisée d’environ 6,5 mois à l’École de l’aviation légère de l’armée de Terre, à Dax, suivie après la formation initiale de sous-officier à l’ENSOA. Elle prépare au poste de technicien simulateur de vol et de préparateur de mission en régiment d’hélicoptères.",
+        "en": "Specialist course of about 6.5 months at the French Army Light Aviation School in Dax, taken after NCO initial training at ENSOA. It prepares for flight simulator technician and mission planner posts in helicopter regiments."
+      },
+      "body": {
+        "fr": "École de l’aviation légère de l’armée de Terre (EALAT)",
+        "en": "French Army Light Aviation School (EALAT)"
+      },
+      "issuer": {
+        "name": "École de l’aviation légère de l’armée de Terre",
+        "short_name": "EALAT"
+      },
+      "reference": {
+        "fr": "Fiche de poste sengager.fr « préparateur de mission » (technicien simulateur de vol)",
+        "en": "sengager.fr job description “mission planner” (flight simulator technician)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation initiale de sous-officier (ENSOA)"
+        ],
+        "en": [
+          "NCO initial training (ENSOA)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/preparateur-de-mission",
+          "title": "Préparateur de mission (sengager.fr)"
+        }
+      ]
+    },
+    {
+      "id": "fr-officier-amscc",
+      "code": "FR-OFF-AMSCC",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation initiale d’officier à l’Académie militaire de Saint-Cyr Coëtquidan",
+        "en": "Officer initial training at the Saint-Cyr Coëtquidan Military Academy"
+      },
+      "official_name": "Formation initiale d’officier à l’Académie militaire de Saint-Cyr Coëtquidan",
+      "short_name": "FI officier AMSCC",
+      "description": {
+        "fr": "Formation militaire initiale des officiers de l’armée de Terre dispensée à l’Académie militaire de Saint-Cyr Coëtquidan. Pour les officiers spécialistes sous contrat, elle dure environ 3 mois et précède la formation de spécialité (par exemple la maintenance aéronautique).",
+        "en": "Initial military training of French Army officers delivered at the Saint-Cyr Coëtquidan Military Academy. For contract specialist officers it lasts about 3 months and precedes trade training (for example aviation maintenance)."
+      },
+      "body": {
+        "fr": "Académie militaire de Saint-Cyr Coëtquidan (armée de Terre)",
+        "en": "Saint-Cyr Coëtquidan Military Academy (French Army)"
+      },
+      "issuer": {
+        "name": "Académie militaire de Saint-Cyr Coëtquidan",
+        "short_name": "AMSCC"
+      },
+      "reference": {
+        "fr": "Fiche de poste sengager.fr « officier maintenance des matériels aéronautiques »",
+        "en": "sengager.fr job description “aviation equipment maintenance officer”"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/officier-maintenance-des-materiels-aeronautiques",
+          "title": "Officier maintenance des matériels aéronautiques (sengager.fr)"
+        },
+        {
+          "url": "https://fr.wikipedia.org/wiki/Acad%C3%A9mie_militaire_de_Saint-Cyr_Co%C3%ABtquidan",
+          "title": "Académie militaire de Saint-Cyr Coëtquidan (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "id": "fr-aerocordage",
+      "code": "FR-AEROCORDAGE",
+      "category": "sof",
+      "name": {
+        "fr": "Techniques d’aérocordage (corde lisse et extraction en grappe)",
+        "en": "Helicopter rope techniques (fast rope and cluster extraction)"
+      },
+      "official_name": "Techniques d’aérocordage",
+      "short_name": "Aérocordage",
+      "description": {
+        "fr": "Savoir-faire de mise en place et d’extraction par hélicoptère : descente à la corde lisse et extraction de personnels suspendus en grappe sous l’appareil. Les commandos du CPA 30 s’y entraînent régulièrement avec l’escadron d’hélicoptères 1/67 Pyrénées, notamment pour la recherche et le sauvetage au combat.",
+        "en": "Helicopter insertion and extraction skills: fast-rope descent and extraction of personnel suspended in a cluster under the aircraft. CPA 30 commandos train in them regularly with Helicopter Squadron 1/67 Pyrénées, notably for combat search and rescue."
+      },
+      "body": {
+        "fr": "Brigade des forces spéciales Air (CPA 30 et EH 1/67 Pyrénées)",
+        "en": "Air Force Special Forces Brigade (CPA 30 and EH 1/67 Pyrénées)"
+      },
+      "issuer": {
+        "name": "Commando parachutiste de l’air n° 30",
+        "short_name": "CPA 30"
+      },
+      "reference": {
+        "fr": "Actualités de l’armée de l’Air et de l’Espace sur l’entraînement CPA 30 / EH 1/67 Pyrénées (defense.gouv.fr)",
+        "en": "French Air and Space Force news on CPA 30 / EH 1/67 Pyrénées training (defense.gouv.fr)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/air/actualites/ba-123-entrainement-conjoint-entre-cpa-30-leh-167-pyrenees",
+          "title": "BA 123 : entraînement conjoint entre le CPA 30 et l’EH 1/67 Pyrénées (defense.gouv.fr)"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/air/actualites/volfa-25-mission-recherche-sauvetage-au-combat-inedite",
+          "title": "VOLFA 25 : mission de recherche et sauvetage au combat (defense.gouv.fr)"
+        }
+      ]
+    },
+    {
+      "id": "fr-gign-plongee",
+      "code": "FR-GIGN-PLONGEE",
+      "category": "maritime",
+      "name": {
+        "fr": "Plongée d’intervention (GIGN)",
+        "en": "Intervention diving (GIGN)"
+      },
+      "official_name": "Plongeur d’intervention du GIGN",
+      "short_name": "Plongée GIGN",
+      "description": {
+        "fr": "Spécialité détenue par une partie des opérationnels du GIGN, selon leur section, pour intervenir en milieu aquatique ou maritime (approche subaquatique, intervention sur navire ou en plan d’eau). Les détails de formation ne sont pas publics.",
+        "en": "Specialty held by some GIGN operators, depending on their section, to operate in aquatic or maritime environments (underwater approach, ship or waterside intervention). Training details are not public."
+      },
+      "body": {
+        "fr": "Groupe d’intervention de la Gendarmerie nationale",
+        "en": "National Gendarmerie Intervention Group"
+      },
+      "issuer": {
+        "name": "Groupe d’intervention de la Gendarmerie nationale",
+        "short_name": "GIGN"
+      },
+      "reference": {
+        "fr": "Rapport d’information du Sénat n° 813 (2023-2024) et article Wikipédia sur le GIGN",
+        "en": "French Senate information report no. 813 (2023-2024) and Wikipedia article on the GIGN"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation initiale des opérationnels du GIGN"
+        ],
+        "en": [
+          "GIGN operator initial training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.senat.fr/rap/r24-813/r24-813_mono.html",
+          "title": "Rapport d’information du Sénat n° 813 (2023-2024)"
+        },
+        {
+          "url": "https://fr.wikipedia.org/wiki/Groupe_d%27intervention_de_la_Gendarmerie_nationale",
+          "title": "Groupe d’intervention de la Gendarmerie nationale (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "id": "fr-gign-selection",
+      "code": "FR-GIGN-SEL",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection du GIGN (tests de présélection et de sélection)",
+        "en": "GIGN selection (pre-selection and selection tests)"
+      },
+      "official_name": "Tests de sélection du GIGN",
+      "short_name": "Sélection GIGN",
+      "description": {
+        "fr": "Processus de sélection ouvert aux gendarmes volontaires : épreuves physiques, de tir, psychotechniques et entretiens, en plusieurs phases, avant l’admission en formation initiale. Les personnels de soutien et de la cellule de négociation font l’objet d’une sélection interne par tests.",
+        "en": "Selection process open to volunteer gendarmes: physical, shooting and psychological tests and interviews in several phases, before admission to initial training. Support staff and members of the negotiation cell go through an internal selection by testing."
+      },
+      "body": {
+        "fr": "Groupe d’intervention de la Gendarmerie nationale",
+        "en": "National Gendarmerie Intervention Group"
+      },
+      "issuer": {
+        "name": "Groupe d’intervention de la Gendarmerie nationale",
+        "short_name": "GIGN"
+      },
+      "reference": {
+        "fr": "Article Wikipédia sur le GIGN et rapport d’information du Sénat n° 813 (2023-2024)",
+        "en": "Wikipedia article on the GIGN and French Senate information report no. 813 (2023-2024)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/Groupe_d%27intervention_de_la_Gendarmerie_nationale",
+          "title": "Groupe d’intervention de la Gendarmerie nationale (Wikipédia)"
+        },
+        {
+          "url": "https://www.senat.fr/rap/r24-813/r24-813_mono.html",
+          "title": "Rapport d’information du Sénat n° 813 (2023-2024)"
+        }
+      ]
     }
   ]
 }
