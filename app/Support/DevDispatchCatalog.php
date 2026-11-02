@@ -294,6 +294,21 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1299, '2026-11-02', 'Appel de feu typé, vraie radio MPU5, nouveaux écrans et vidéoprojecteur', 'Avec le pack 2.9.31, l’appel de feu de l’app CAS choisit un moyen réel (mortier 60, 81 ou 120, obusier, lance-roquettes, naval ou appui aérien) avec ses portées, ses munitions, ses délais et sa distance de sécurité : les pièces IA de votre camp tirent vraiment et un joueur servant reçoit la mission. La MPU5 devient une vraie radio de données : le téléphone s’y relie par câble ou par Wi-Fi, les radios du même canal forment un maillage, et une radio tactique ACRE ou TFAR prend le relais à bas débit. De nouveaux écrans COMSPEC sur les modèles du jeu affichent une image nette de jour comme de nuit, et un vidéoprojecteur projette diapositives, affichage TOC, carte ou caméra sur un tableau blanc. Tout se règle dans les options des addons et peut être désactivé.', [
+                'Appel de feu typé dans l’app CAS : mortier 60, 81 ou 120, obusier, lance-roquettes, naval ou CAS, portées, munitions, délais et distance de sécurité',
+                'Tir réel des pièces IA du camp, mission envoyée au joueur servant dans l’app Tâches ; réglage + / – / G / D, EFFICACE, FIN DE MISSION',
+                'Cercles de portée et missions de tir sur la carte du téléphone et le PC du poste TOC, appel d’artillerie depuis l’app JTAC',
+                'MPU5 fonctionnelle : liaison téléphone-radio par Câble EUD ou Wi-Fi, maillage multi-sauts par canal, relief, brouillage, batterie et puissance',
+                'Section Radio de données dans l’app Réseau et menu ACE Radio de données ; objets Câble EUD et Batterie de radio MPU5, MPU5 posable au sol',
+                'Écrans COMSPEC (grand et double écran sur trépied, téléviseur, moniteur du jeu) avec une image nette de jour comme de nuit',
+                'Vidéoprojecteur COMSPEC : diapositives, affichage TOC, carte ou caméra sur un tableau blanc sur trépied ou mural, s’il est allumé, tourné vers le tableau et sans obstacle',
+            ], [
+                'Sans MPU5, une radio tactique ACRE ou TFAR transporte les données à bas débit : photos en attente d’une MPU5, pas de vidéo',
+                'Réglages Options des addons › COMSPEC › ATAK · Appui feu et ATAK · Radio de données (MPU5), que la mission peut imposer',
+            ], [], ['atak'], [
+                'Mettez à jour le pack 2.9.31 (liaison 2.0.116 incluse), quittez Arma complètement et relancez.',
+                'La liaison réaliste téléphone-radio est désactivée par défaut : cochez « Liaison téléphone-radio réaliste » pour l’essayer.',
+            ], 'Pack téléphone 2.9.31'),
             $pr(1297, '2026-11-02', 'Photos cherchées au bon endroit, dossier des captures réglable', 'Avec le pack 2.9.30, le jeu ne fouille plus tout le disque pour retrouver une photo prise avec le téléphone, le drone, une fiche ou la capture de la carte : il regarde seulement le dossier que vous avez choisi, puis le dossier des captures de votre profil Arma, puis Documents\Arma 3\Screenshots. Un nouveau réglage permet d’indiquer ce dossier quand vos photos ne sont jamais trouvées, et le téléphone dit où il a cherché quand une photo manque.', [
                 'Réglage « Dossier des captures d’écran » (Options des addons › COMSPEC › ATAK · Photo) : vide pour l’automatique, ou le dossier où Arma range vos captures',
                 'Case « Vérifier le dossier des captures » : dossier utilisé, nombre d’images et dernière capture trouvée',
