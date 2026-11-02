@@ -52,7 +52,7 @@ if (_drawn isEqualTo _page) then {
         { if (_y isEqualTo _fc) exitWith { _focusKey = _x; }; } forEach _form;
     };
 };
-[] call comspec_atak_native_fnc_pageClear;
+[_drawn isEqualTo _page && {!(_page in ["MAP", "CHAT"])}] call comspec_atak_native_fnc_pageClear;
 // Lignes à mise à jour sur place (fn_formSet) : celles de la page effacée sont oubliées.
 uiNamespace setVariable ["COMSPEC_ATAK_FormIds", createHashMap];
 // Calques hors zone de contenu : recréés plus bas, après la page.
