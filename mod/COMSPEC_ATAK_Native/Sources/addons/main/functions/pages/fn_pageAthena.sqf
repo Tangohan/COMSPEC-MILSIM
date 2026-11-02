@@ -27,7 +27,8 @@ private _logo = "\z\comspec_atak_native\addons\main\data\logo_athena.paa";
 // Une fois connecté, la photo de profil Athena remplace le logo (si le portail en a une).
 if (_logged) then { private _av = [player] call comspec_atak_native_fnc_avatarPath; if (_av isNotEqualTo "") then { _logo = _av; }; };
 
-private _rows = [["status", _logo, _st get "color", _st get "title", _st get "text", _st get "action"]];
+// Connecté : la carte (photo, indicatif) ouvre l'app Profil.
+private _rows = [["status", _logo, _st get "color", _st get "title", _st get "text", _st get "action", [{}, { ["PROFILE"] call comspec_atak_native_fnc_navigate; }] select _logged]];
 if (_hText isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#9fd3c0", "#f2c66b"] select _hWarn, _hText], [0.06, 0.075, 0.07, 1]]; };
 
 // Bouton qui règle la situation, sous la carte d'état.
@@ -69,14 +70,15 @@ if (_logged) then {
             ["info", "Indicatif", ["comspec_profile_callsign", [player, true] call comspec_atak_native_fnc_unitCallsign] call _v],
             ["info", "Nom", ["comspec_profile_name", name player] call _v],
             ["info", "Unité (ORBAT)", [[player, true] call comspec_atak_native_fnc_unitGroup, "—"] select ((["comspec_profile_unit", ""] call _v) in ["", "—"])],
-            // Fonction actuelle (site : function) ; l'ancien rôle de communauté (role) seulement à défaut, sous son nom.
-            [["info", "Fonction", [["comspec_profile_function", "—"] call _v, [missionNamespace getVariable ["comspec_profile_unit", ""]]] call comspec_atak_native_fnc_abbrev],
-             ["info", "Rôle", [["comspec_profile_role", "—"] call _v, [missionNamespace getVariable ["comspec_profile_unit", ""]]] call comspec_atak_native_fnc_abbrev]] select (((missionNamespace getVariable ["comspec_profile_function", ""]) isEqualTo "") && {(missionNamespace getVariable ["comspec_profile_role", ""]) isNotEqualTo ""}),
+            // Fonction de la communauté (site), puis rôle affiché (fn_displayRole, réglé dans l'app Profil).
+            ["info", "Fonction", [([player, "sources"] call comspec_atak_native_fnc_displayRole) select 2, [missionNamespace getVariable ["comspec_profile_unit", ""]]] call comspec_atak_native_fnc_abbrev],
+            ["info", "Rôle affiché", [[[player] call comspec_atak_native_fnc_displayRole, "—"] select (([player] call comspec_atak_native_fnc_displayRole) isEqualTo ""), [missionNamespace getVariable ["comspec_profile_unit", ""]]] call comspec_atak_native_fnc_abbrev],
             ["info", "Grade", ["comspec_profile_grade", "—"] call _v],
             ["info", "Communauté", ["comspec_tenant_name", "—"] call _v],
             ["info", "Identifiant ATAK", ["COMSPEC_AtakId", "—"] call _v],
             ["gap"],
-            ["text", "<t size='0.8' color='#a9b8b1'>Qualifications, certificat et batterie : app Profil.</t>"]
+            ["text", "<t size='0.8' color='#a9b8b1'>Rôle affiché, qualifications, certificat et batterie : app Profil.</t>"],
+            ["buttons", [["MON PROFIL", { ["PROFILE"] call comspec_atak_native_fnc_navigate; }, true, true, "Ouvrir l'app Profil"]]]
         ];
     };
 } else {

@@ -50,9 +50,10 @@ if ((count _e) isEqualTo 0) then {
     private _lines = [format ["<t size='1.15' font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  %2", (_e getOrDefault ["callsign", "CONTACT"]) call _esc, _affTxt]];
     if (!isNull _o) then {
         if (isPlayer _o && {_aff isEqualTo "friend"}) then { _lines pushBack format ["%1 %2", "Nom :" call _dim, (name _o) call _esc]; };
-        private _role = roleDescription _o;
-        if (_role isEqualTo "") then { _role = getText (configOf _o >> "displayName"); };
-        _lines pushBack format ["%1 %2 · %3", "Rang :" call _dim, createHashMapFromArray [["PRIVATE", "Soldat"], ["CORPORAL", "Caporal"], ["SERGEANT", "Sergent"], ["LIEUTENANT", "Lieutenant"], ["CAPTAIN", "Capitaine"], ["MAJOR", "Commandant"], ["COLONEL", "Colonel"]] getOrDefault [rank _o, rank _o], _role call _esc];
+        // Joueur ami : rôle affiché (fn_displayRole, rien sans rôle) ; sinon description du slot ou type d'unité.
+        private _role = if (isPlayer _o && {_aff isEqualTo "friend"}) then { [_o] call comspec_atak_native_fnc_displayRole } else { [roleDescription _o, getText (configOf _o >> "displayName")] select ((roleDescription _o) isEqualTo "") };
+        private _rk = createHashMapFromArray [["PRIVATE", "Soldat"], ["CORPORAL", "Caporal"], ["SERGEANT", "Sergent"], ["LIEUTENANT", "Lieutenant"], ["CAPTAIN", "Capitaine"], ["MAJOR", "Commandant"], ["COLONEL", "Colonel"]] getOrDefault [rank _o, rank _o];
+        _lines pushBack ([format ["%1 %2 · %3", "Rang :" call _dim, _rk, _role call _esc], format ["%1 %2", "Rang :" call _dim, _rk]] select (_role isEqualTo ""));
         if (_aff isEqualTo "friend") then { _lines pushBack format ["%1 %2%3", "Groupe :" call _dim, ([_o, true] call comspec_atak_native_fnc_unitGroup) call _esc, ["", " (chef)"] select (leader group _o isEqualTo _o)]; };
         private _life = switch (true) do {
             case (!alive _o): { "<t color='#e5483a'>mort</t>" };

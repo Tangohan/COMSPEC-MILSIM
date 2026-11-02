@@ -48,8 +48,9 @@
           liseré et pastille d'icône à la couleur de l'état, titre en gras, état à droite, texte en dessous ; les cartes
           d'une même rangée prennent la hauteur de la plus haute
       ["empty", icône, titre, sous-titre]   état vide centré : grande icône pâle, titre et explication
-      ["status", image, couleur RGBA, titre, texte, action]   carte d'état (app Athena) : liseré et titre à la couleur de
-          l'état, image carrée à gauche, explication dessous, action à faire en ambre (facultative) ; hauteur au contenu
+      ["status", image, couleur RGBA, titre, texte, action, code]   carte d'état (app Athena) : liseré et titre à la couleur de
+          l'état, image carrée à gauche, explication dessous, action à faire en ambre (facultative) ; hauteur au contenu ;
+          code (facultatif) : clic sur la carte
       ["check", niveau, libellé, valeur, aide]   étape d'une chaîne (liaison) : pastille d'icône (niveau "ok" | "now" |
           "warn" | "ko" | "todo" | "off"), libellé à gauche, valeur à droite, aide en petit dessous ; hauteur au contenu
     id (facultatif, switch / slider / fold) : la ligne se met à jour sur place par fn_formSet, sans redessiner la page.
@@ -763,7 +764,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
         };
         case "status": {
             // Carte d'état : la situation en toutes lettres, sans code ni jargon (app Athena).
-            _row params ["", "_pic", ["_col", [0.36, 0.78, 0.42, 1]], ["_title", ""], ["_txt", ""], ["_act", ""]];
+            _row params ["", "_pic", ["_col", [0.36, 0.78, 0.42, 1]], ["_title", ""], ["_txt", ""], ["_act", ""], ["_open", {}]];
             private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
             private _ih = _font * 2.6;
             private _iw = _ih * _ratio;
@@ -789,6 +790,8 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _t ctrlSetPosition [_tx, _y + _ip + (((_ih - _th) / 2) max 0), _tw, _th];
             _t ctrlCommit 0;
             { _x ctrlSetPositionH _h; _x ctrlCommit 0; } forEach [_card, _bar];
+            // Carte cliquable (8e paramètre, facultatif) : bouton invisible sur toute la carte.
+            if (_open isNotEqualTo {}) then { [["COMSPEC_RscButtonInvisible", [_pad, _y, _w, _h]] call _mk, _open] call _click; };
             _y = _y + _h + _pad / 2;
         };
         case "check": {
