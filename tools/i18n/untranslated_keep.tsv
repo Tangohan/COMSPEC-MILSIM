@@ -1234,3 +1234,10 @@ Centre d’instruction CAS	nom propre d’exemple (émetteur fictif)	views/admin
 ?nouveau=brevet	paramètre d'URL	views/academy/studio_kinds.php
 ?nouveau=qualification	paramètre d'URL	views/academy/studio_kinds.php
 back-office/organisation/noms?filtre=sans	URL interne	views/admin/organization/member_names.php
+<button type="button" class="ce-btn ce-btn--soft nl-mini nl-danger" data-delete="	balisage HTML (classes ce-*)	public/assets/js/atak-nine-line.js
+<button type="button" class="ce-btn ce-btn--soft nl-mini" data-reuse="	balisage HTML (classes ce-*)	public/assets/js/atak-nine-line.js
+<div class="ce-field nl-line" data-line="	balisage HTML (classes ce-*)	public/assets/js/atak-nine-line.js
+<label class="ce-label" for="nl-line	balisage HTML (classes ce-*)	public/assets/js/atak-nine-line.js
+<span class="ce-label-hint" id="nl-help	balisage HTML (classes ce-*)	public/assets/js/atak-nine-line.js
+ce-notice nl-form-msg	balisage HTML (classes ce-*)	public/assets/js/atak-nine-line.js
+ce-notice--info is-ok	balisage HTML (classes ce-*)	public/assets/js/atak-nine-line.js

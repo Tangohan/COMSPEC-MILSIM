@@ -304,6 +304,18 @@ final class DevDispatchCatalog
                 'L’administrateur lance run-migrations.php (étape qualification_issuer_fields) : les détails des émetteurs existants passent dans les nouveaux champs.',
                 'Essai : Référentiels › Qualifications › Émetteurs, ouvrez un émetteur créé ou importé : pays, localisation et site apparaissent à part, et la présentation ne les répète plus.',
             ], 'Portail'),
+            $pr(1337, '2026-11-02', 'Page 9-LINE : rédaction, appareils en l’air et historique', 'La page 9-LINE (athena-comspec.eu/public/9-line, QR code et bouton de l’app JTAC) est refaite au thème du questionnaire d’enrôlement. Le 9-LINE se rédige ligne par ligne, en CAS ou en MEDEVAC, avec une aide et un contrôle sur chaque ligne et le calcul du cap et de la distance depuis l’IP et la cible. Les aéronefs avec équipage remontés par le jeu s’affichent avec leur pilote et leur équipage (indicatif, puis prénom et initiale du nom quand le membre est reconnu), leur position, leur altitude, leur état et l’heure de la dernière remontée ; on coche le ou les appareils destinataires. Une carte de transmission récapitule la demande à lire à la radio. L’historique permet de reprendre un 9-LINE dans le formulaire, de le supprimer (son auteur ou un responsable) et, pour un responsable, de vider l’historique d’une carte ou de toutes.', [
+                'Page 9-LINE : formulaire ligne par ligne (CAS ou MEDEVAC), lignes obligatoires signalées, brouillon gardé dans le navigateur, bouton Réinitialiser le formulaire',
+                'Appareils remontés par le jeu : indicatif, appareil, grille, altitude, cap, carburant, pilote et équipage, état (en vol, au sol, signal perdu) ; choix des destinataires',
+                'Carte de transmission : récapitulatif du 9-LINE en cours et des 9-LINE reçus',
+                'Historique : filtre par carte, Reprendre, Supprimer (auteur ou responsable), Vider l’historique (responsable, mot de confirmation) ; chaque action est inscrite au journal',
+            ], [
+                'Mode jour et mode nuit, comme le reste du site ; page lisible sur téléphone',
+            ], [], ['atak'], [
+                'L’administrateur lance run-migrations.php (étape atak_nine_line_author_user) pour retenir l’auteur des 9-LINE rédigés sur le site.',
+                'Essai en jeu : monter dans un aéronef avec le mod connecté, ouvrir athena-comspec.eu/public/9-line, vérifier que l’appareil, son pilote et son équipage apparaissent, transmettre un 9-LINE à cet appareil, puis vérifier qu’il apparaît dans l’app JTAC (Appui aérien) et dans Overwatch.',
+            ], 'Portail Athena'),
+
             $pr(1336, '2026-11-02', 'Annuler partout, app Zones refaite, plans partagés au camp', 'Avec le pack 2.9.38, les apps Routes et Zones savent annuler : ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), VALIDER qui n’envoie qu’une fois, bandeau « Supprimé · ANNULER » après chaque suppression. L’app Zones est refaite : grande carte avec barre d’outils, panneau en onglets, polygone aimanté aux routes, bâtiments et rives, découpage par vos traits, aperçu avant de générer et couleurs au choix. Les plans et les routes partent maintenant à tout le camp et vont sur la carte d’Arma ; l’état des zones ne change toujours que par un joueur.', [
                 'Apps Routes et Zones : ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), VALIDER (un seul envoi), ANNULER LES MODIFICATIONS (route comme à l’ouverture, nouvelle route abandonnée)',
                 'App Routes : mode CHOISIR par défaut, barre TERMINER / ANNULER sur la carte pendant AJOUTER, INSÉRER ou DÉPLACER, Échap ou clic droit pour en sortir ; onglet ITINÉRAIRES pour effacer l’itinéraire de l’app Itinéraire ou le guidage GPS',
