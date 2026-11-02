@@ -1102,6 +1102,17 @@ addMissionEventHandler ["Ended", { ["selfFlush"] call comspec_atak_native_fnc_di
 // puis chaque seconde : arrivée aux étapes de la route suivie et vue 3D (fn_routeAction "tick").
 ["comspec_atak_native_route", { if (["hold", ["comspec_atak_native_route", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_routeAction; }] call CBA_fnc_addEventHandler;
 [{ ["tick"] call comspec_atak_native_fnc_routeAction; }, 1] call COMSPEC_ATAK_PfhSpread;
+// Carte : trace (fil d'Ariane) de mon point GPS si elle est allumée (volet de configuration, fn_mapPrefs).
+[{ ["trail"] call comspec_atak_native_fnc_mapPrefs; }, 2] call COMSPEC_ATAK_PfhSpread;
+// App Zones : plan reçu ou retiré, état et signalements des zones (retenus hors réseau, rejoués par le serveur à l'arrivée).
+["comspec_atak_native_zone", { if (["hold", ["comspec_atak_native_zone", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_zoneAction; }] call CBA_fnc_addEventHandler;
+// Marqueur ennemi posé par ce joueur (palette ATAK ou carte d'Arma) : la zone qui le contient passe « ennemi signalé »
+// (fn_zoneAction "contact"). Type lu un peu après la création (fn_markerDrop le pose juste après) ; une fois par marqueur.
+addMissionEventHandler ["MarkerCreated", {
+    params ["_m", "", ["_owner", objNull]];
+    if (_owner isNotEqualTo player) exitWith {};
+    [{ ["markerContact", _this] call comspec_atak_native_fnc_zoneAction; }, _m, 0.5] call CBA_fnc_waitAndExecute;
+}];
 // Breacher : top de brèche reçu du chef de colonne.
 ["comspec_atak_native_breach", { _this call comspec_atak_native_fnc_breachTop; }] call CBA_fnc_addEventHandler;
 // Carte : ping d'un membre de mon camp (menu clic droit, fn_mapPing).
