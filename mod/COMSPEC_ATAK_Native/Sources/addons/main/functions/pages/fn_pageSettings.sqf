@@ -567,6 +567,12 @@ if (_cat isEqualTo "ABOUT" || {_query isNotEqualTo ""}) then {
     private _anom = missionNamespace getVariable ["COMSPEC_ATAK_Integrity", []];
     if !(_anom isEqualType []) then { _anom = []; };
     (missionNamespace getVariable ["COMSPEC_ATAK_LatestRemote", []]) params [["_lastAtak", ""], ["_lastLink", ""]];
+    // Dossier des captures vérifié en tâche de fond à l'ouverture (une fois par minute au plus) ; la page se redessine.
+    private _shot = uiNamespace getVariable ["COMSPEC_ATAK_ShotDirInfo", []];
+    if ((diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_ShotDirAskAt", -1e9])) > 60 && {_shot isEqualTo [] || {(diag_tickTime - (_shot param [10, -1e9])) > 60}}) then {
+        uiNamespace setVariable ["COMSPEC_ATAK_ShotDirAskAt", diag_tickTime];
+        ["check", false] spawn comspec_atak_native_fnc_shotDir;
+    };
     _about = [
         ["hero", "\z\comspec_atak_native\addons\main\data\app_settings.paa", format ["<t size='1.2' font='COMSPEC_BarlowBold'>%1</t><br/><t color='#8a9a93'>COMSPEC ATAK %2</t>", _modelName, _build]],
         ["section", "Téléphone", "Identité roleplay : le numéro est lié à la carte SIM"],
@@ -584,6 +590,10 @@ if (_cat isEqualTo "ABOUT" || {_query isNotEqualTo ""}) then {
         }],
         ["info", "Dernière version publiée", [format ["ATAK %1 · Link %2", _lastAtak, _lastLink], "pas encore vérifiée"] select (_lastAtak isEqualTo "")],
         ["info", "Installation", ["<t color='#5cc76b'>aucune anomalie</t>", format ["<t color='#f2ab33'>%1 anomalie(s) : voir l'app Debug</t>", count _anom]] select ((count _anom) > 0)],
+        // Dossier où les DLL cherchent les photos (réglage CBA « Dossier des captures d'écran », sinon profil Arma).
+        ["section", "Photos", "Dossier où le téléphone cherche les captures du jeu"],
+        ["text", format ["<t size='0.8'>%1</t>", ((["text"] call comspec_atak_native_fnc_shotDir) regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"]]],
+        ["buttons", [["VÉRIFIER LE DOSSIER", { ["check", true] spawn comspec_atak_native_fnc_shotDir; }]]],
         ["buttons", [
             ["CRÉDITS", { [{ ["CREDITS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }],
             ["DEBUG", { [{ ["DEBUG"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }, (count _anom) > 0],

@@ -235,6 +235,8 @@ private _eh = addMissionEventHandler ["ExtensionCallback", {
     [format ["Rappel DLL natif %1", _this param [1, ""]] select [0, 60], _pt] call comspec_atak_native_fnc_perfAcc;
 }];
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
+// Dossier des captures (réglage du joueur) et nom du profil Arma transmis aux DLL : elles savent où chercher les photos.
+["apply"] call comspec_atak_native_fnc_shotDir;
 // Service Athéna changé (Oui / Non) : apps Athena affichées ou masquées tout de suite.
 ["COMSPEC_AthenaModeChanged", { [{ if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_dockRender; }; }] call CBA_fnc_execNextFrame; }] call CBA_fnc_addEventHandler;
 ["COMSPEC_AthenaLinkChanged", { params ["_state"]; private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["networkState", toUpper _state]; }] call CBA_fnc_addEventHandler;

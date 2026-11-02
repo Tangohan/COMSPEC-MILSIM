@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.115";
+    private const string ExtensionVersion = "2.0.116";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -1838,7 +1838,8 @@ public static partial class Extension
         if (string.IsNullOrEmpty(function) || NonUplinkCommands.Contains(function)
             || function.StartsWith("Music", StringComparison.Ordinal) || function.StartsWith("Clip", StringComparison.Ordinal)
             || function.StartsWith("Bt", StringComparison.Ordinal) || function.StartsWith("Local", StringComparison.Ordinal)
-            || function.StartsWith("MapCap.", StringComparison.Ordinal) || function.StartsWith("MapPhoto.", StringComparison.Ordinal))
+            || function.StartsWith("MapCap.", StringComparison.Ordinal) || function.StartsWith("MapPhoto.", StringComparison.Ordinal)
+            || function.StartsWith("Shots.", StringComparison.Ordinal))
             return;
         System.Threading.Volatile.Write(ref _lastGameUplinkMs, Environment.TickCount64);
     }
@@ -3919,6 +3920,8 @@ public static partial class Extension
         if (function != null && function.StartsWith("MapCap.", StringComparison.Ordinal)) return HandleMapCapture(function, args);
         // Fond PHOTO téléchargé en jeu depuis Athena (2.0.92) : tuiles JPEG en cache, réponse immédiate, réseau en tâche de fond.
         if (function != null && function.StartsWith("MapPhoto.", StringComparison.Ordinal)) return HandleMapPhoto(function, args);
+        // Dossier des captures d'écran (2.0.116) : réglage du joueur, profil Arma utilisé, vérification du dossier.
+        if (function != null && function.StartsWith("Shots.", StringComparison.Ordinal)) return HandleShotDirs(function, args);
 
         if (function == "Distance.Batch")
         {
@@ -4491,14 +4494,11 @@ public static partial class Extension
             return "OK|" + dirs;
         }
 
-        // Dossier Screenshot réel du pack BCE / SOAR (séparateurs Windows corrects).
-        // Discord ouvre ce chemin : un collage « Arma 3!Workshop@mod » ne trouve rien.
+        // Ancien dossier Screenshot du pack BCE / SOAR (addon atak_athena archivé) : plus aucun parcours des
+        // dossiers Workshop depuis 2.0.116, les captures sont cherchées dans ScreenshotDirs() seulement.
         if (function == "GetBceScreenshotDir")
         {
-            var dir = FindBceScreenshotDir();
-            return string.IsNullOrWhiteSpace(dir)
-                ? "ERR|not_found"
-                : "OK|" + SanitizeIdentityField(dir);
+            return "ERR|not_found";
         }
 
         // Existence disque (SQF ne peut pas le savoir) — dossier ou fichier.
@@ -6966,7 +6966,7 @@ public static partial class Extension
             if (function == "StartPhotoWatcher")
             {
                 EnsureScreenshotWatchers();
-                return _screenshotWatchersStarted ? "OK|watching" : "ERR|watcher_failed";
+                return _screenshotWatchersStarted ? "OK|watching" : "OK|starting";
             }
             if (function == "UploadLatestScreenshot" && args.Length >= 1)
             {
@@ -10623,16 +10623,42 @@ public static partial class Extension
     }
 
     /// <summary>
-    /// Surveille Screenshots/Screenshot (profil + Workshop) et file les nouveaux fichiers.
+    /// Surveille les dossiers de captures de ScreenshotDirs() (réglage du joueur, profil Arma, Documents),
+    /// sans sous-dossiers, et file les nouveaux fichiers. Démarrage hors du fil du jeu (appelé par NotifyNewPhoto).
     /// </summary>
     private static void EnsureScreenshotWatchers()
+    {
+        if (_screenshotWatchersStarted) return;
+        _ = Task.Run(StartScreenshotWatchersCore);
+    }
+
+    /// <summary>Dossier des captures changé (réglage, profil) : watchers refaits sur la nouvelle liste.</summary>
+    private static void RestartScreenshotWatchers()
+    {
+        _ = Task.Run(() =>
+        {
+            lock (ScreenshotWatcherLock)
+            {
+                foreach (var w in ScreenshotWatchers)
+                {
+                    try { w.EnableRaisingEvents = false; w.Dispose(); } catch { /* ignore */ }
+                }
+                ScreenshotWatchers.Clear();
+                _screenshotWatchersStarted = false;
+                _lastWatcherAttemptTicks = 0;
+            }
+            StartScreenshotWatchersCore();
+        });
+    }
+
+    private static void StartScreenshotWatchersCore()
     {
         if (_screenshotWatchersStarted) return;
         lock (ScreenshotWatcherLock)
         {
             if (_screenshotWatchersStarted) return;
             var nowTicks = DateTime.UtcNow.Ticks;
-            // Throttle si aucun dossier encore visible (cwd Arma / profils pas prêts).
+            // Throttle si aucun dossier encore visible (profil pas encore transmis, Screenshots pas encore créé).
             if (_lastWatcherAttemptTicks > 0
                 && nowTicks - _lastWatcherAttemptTicks < TimeSpan.FromSeconds(20).Ticks
                 && ScreenshotWatchers.Count == 0)
@@ -10640,14 +10666,11 @@ public static partial class Extension
             _lastWatcherAttemptTicks = nowTicks;
             _screenshotWatchersStartedTicks = nowTicks;
             var started = 0;
-            foreach (var dir in EnumerateScreenshotDirs())
+            foreach (var dir in ScreenshotDirs())
             {
                 try
                 {
                     if (!Directory.Exists(dir)) continue;
-                    // Jamais surveiller la racine Arma / un dossier « fourre-tout » :
-                    // IncludeSubdirectories dessus = tempête d’événements + scans fatals.
-                    if (!IsScreenshotCaptureDir(dir)) continue;
                     var w = new FileSystemWatcher(dir)
                     {
                         Filter = "*.*",
@@ -10690,6 +10713,11 @@ public static partial class Extension
         if (IsSseNoteCaptureName(fullPath)) return;
         // Tuiles de la capture de carte (fn_mapCapture) : rangées par MapCap.Collect, jamais envoyées comme photos.
         if (IsMapCaptureName(fullPath)) return;
+        // Dossier choisi par le joueur : seules les captures du mod (COMSPEC_…) remontent d'elles-mêmes, jamais ses
+        // autres images.
+        if (IsUserShotDir(Path.GetDirectoryName(fullPath) ?? "")
+            && !(Path.GetFileName(fullPath) ?? "").StartsWith("COMSPEC_", StringComparison.OrdinalIgnoreCase))
+            return;
         if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth()) return;
 
         // Debounce Created+Changed pendant l'écriture.
@@ -11318,9 +11346,9 @@ public static partial class Extension
     }
 
     /// <summary>
-    /// Résout un chemin BCE / Photo Library (absolu, relatif, ou nom seul) vers un fichier disque.
-    /// Gère : guillemets, chemins Arma « \Documents\… », jpg↔png, sous-dossiers Screenshots.
-    /// Court délai d’attente uniquement si le fichier n’existe pas encore (écriture BCE).
+    /// Résout un chemin de capture (absolu, relatif, ou nom seul) vers un fichier disque.
+    /// Gère : guillemets, chemins Arma « \Documents\… », jpg↔png. Nom seul : cherché dans ScreenshotDirs()
+    /// (liste bornée, sans sous-dossiers). Aucune attente : la file des photos relance elle-même (Task.Delay).
     /// </summary>
     private static string? ResolveLocalImagePath(string? raw, TimeSpan? newestFallback = null)
     {
@@ -11329,10 +11357,9 @@ public static partial class Extension
             return newestFallback.HasValue ? FindNewestScreenshot(newestFallback.Value) : null;
 
         path = RepairBrokenWorkshopScreenshotPath(path.Replace('/', '\\'));
-        path = RemapMissingWorkshopScreenshotPath(path);
 
-        // Chemin absolu Windows dont le dossier parent n'existe pas → échec immédiat
-        // (Photo Library obsolète). Évite 8× Sleep + scan Screenshots qui gèle le jeu.
+        // Chemin absolu Windows dont le dossier parent n'existe pas : même nom dans les dossiers de captures,
+        // puis la capture la plus récente si l'appelant l'accepte.
         try
         {
             if (Path.IsPathRooted(path)
@@ -11341,20 +11368,9 @@ public static partial class Extension
                 var parent = Path.GetDirectoryName(path);
                 if (!string.IsNullOrWhiteSpace(parent) && !Directory.Exists(parent))
                 {
-                    // Dossier annoncé mort (Photo Library / IceMan / ancien Steam) :
-                    // chercher le même nom ailleurs, puis la capture la plus récente.
                     var orphanName = Path.GetFileName(path);
                     if (!string.IsNullOrWhiteSpace(orphanName))
                     {
-                        var remapped = RemapMissingWorkshopScreenshotPath(
-                            Path.Combine(FindBceScreenshotDir() ?? parent, orphanName));
-                        if (!string.IsNullOrWhiteSpace(remapped)
-                            && !string.Equals(remapped, path, StringComparison.OrdinalIgnoreCase))
-                        {
-                            var remappedFound = TryReadableImageFile(remapped);
-                            if (remappedFound != null)
-                                return remappedFound;
-                        }
                         var byName = FindScreenshotByFileName(orphanName);
                         if (byName != null)
                             return byName;
@@ -11387,46 +11403,7 @@ public static partial class Extension
         }
 
         if (newestFallback.HasValue)
-        {
-            var immediate = FindNewestScreenshot(newestFallback.Value);
-            if (immediate != null)
-                return immediate;
-        }
-
-        // Attente courte uniquement si le dossier source existe (écriture BCE en cours).
-        // Pas de re-scan global : FindScreenshotByFileName a déjà été tenté une fois.
-        var parentExists = false;
-        try
-        {
-            var parent = Path.GetDirectoryName(path);
-            parentExists = !string.IsNullOrWhiteSpace(parent) && Directory.Exists(parent);
-        }
-        catch { /* ignore */ }
-
-        if (!parentExists)
-            return null;
-
-        const int maxAttempts = 6;
-        for (var attempt = 0; attempt < maxAttempts; attempt++)
-        {
-            foreach (var candidate in ExpandLocalImageCandidates(path))
-            {
-                var found = TryReadableImageFile(candidate);
-                if (found != null)
-                    return found;
-            }
-
-            if (newestFallback.HasValue && attempt >= 3)
-            {
-                var newest = FindNewestScreenshot(newestFallback.Value);
-                if (newest != null)
-                    return newest;
-            }
-
-            if (attempt < maxAttempts - 1)
-                System.Threading.Thread.Sleep(50);
-        }
-
+            return FindNewestScreenshot(newestFallback.Value);
         return null;
     }
 
@@ -11492,7 +11469,11 @@ public static partial class Extension
             }
             catch { /* ignore */ }
 
-            return $"{srcDir}|dirs={dirCount}|{newestHint}|{string.Join(" ; ", dirs)}";
+            // « in= » : dossier des captures en service (réglage du joueur ou profil Arma), cité tel quel au joueur.
+            ScreenshotDirs();
+            string active;
+            lock (ShotDirsLock) { active = _shotDirActive; }
+            return $"{srcDir}|dirs={dirCount}|{newestHint}|{string.Join(" ; ", dirs)}|in={active.Replace('|', '/')}";
         }
         catch
         {
@@ -11644,13 +11625,6 @@ public static partial class Extension
             {
                 Add(Path.Combine(dir, Path.GetFileName(path)));
                 Add(Path.Combine(dir, rel));
-                try
-                {
-                    var profileRoot = Directory.GetParent(dir)?.FullName;
-                    if (!string.IsNullOrWhiteSpace(profileRoot))
-                        Add(Path.Combine(profileRoot, rel));
-                }
-                catch { /* ignore */ }
             }
         }
 
@@ -11685,40 +11659,8 @@ public static partial class Extension
     }
 
     /// <summary>
-    /// True si le dossier est un vrai dossier de captures (Screenshots / Screenshot / Captures COMSPEC).
-    /// Évite de traiter la racine Arma 3 comme source de photos.
-    /// </summary>
-    private static bool IsScreenshotCaptureDir(string dir)
-    {
-        try
-        {
-            var name = Path.GetFileName(dir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-            if (string.IsNullOrWhiteSpace(name)) return false;
-            if (name.Equals("Screenshots", StringComparison.OrdinalIgnoreCase)) return true;
-            if (name.Equals("Screenshot", StringComparison.OrdinalIgnoreCase)) return true;
-            if (name.Equals("ATAK_PhotoLibrary", StringComparison.OrdinalIgnoreCase)) return true;
-            if (name.Equals("Captures", StringComparison.OrdinalIgnoreCase))
-            {
-                var parent = Directory.GetParent(dir)?.Name;
-                return parent != null
-                    && parent.Equals("Arma 3 - COMSPEC", StringComparison.OrdinalIgnoreCase);
-            }
-            // screenshot "foo.png" atterrit souvent à la racine de %LOCALAPPDATA%\Arma 3,
-            // pas dans Screenshots du profil. Ce n’est pas un scan récursif.
-            if (IsLocalArma3Root(dir))
-                return true;
-            return false;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Cherche un fichier image par nom (et stem .jpg↔.png) dans les dossiers Screenshots.
-    /// Scan peu profond uniquement (racine + 1 niveau) — jamais AllDirectories sur l’install Arma
-    /// (jonctions Workshop → STATUS_STACK_OVERFLOW / 0xC00000FD).
+    /// Cherche un fichier image par nom (et variantes .jpg↔.png, 1.1141e+06 → entier) dans les dossiers de
+    /// captures (ScreenshotDirs + Captures COMSPEC) : un test d'existence par dossier, jamais de sous-dossier.
     /// Ignore les fichiers encore à 0 octet (PNG Arma non flushé), sauf allowUnstable
     /// (on attendra ensuite le flush plutôt que de prendre une autre photo).
     /// </summary>
@@ -11728,7 +11670,6 @@ public static partial class Extension
         foreach (var variant in ScreenshotFileNameVariants(fileName))
             names.Add(variant);
 
-        var stem = Path.GetFileNameWithoutExtension(fileName);
         foreach (var dir in EnumeratePhotoLookupDirs())
         {
             foreach (var name in names)
@@ -11744,26 +11685,6 @@ public static partial class Extension
                 }
                 catch { /* ignore */ }
             }
-
-            if (string.IsNullOrWhiteSpace(stem)) continue;
-            if (!IsScreenshotCaptureDir(dir) && !IsLocalArma3Root(dir)) continue;
-            try
-            {
-                foreach (var f in EnumerateFilesShallow(dir, stem + ".*", maxDepth: 1))
-                {
-                    try
-                    {
-                        if (!IsImageExtension(Path.GetExtension(f))) continue;
-                        var readable = allowUnstable
-                            ? TryExistingImagePath(f)
-                            : TryReadableImageFile(f);
-                        if (readable != null)
-                            return readable;
-                    }
-                    catch { /* ignore */ }
-                }
-            }
-            catch { /* ignore */ }
         }
 
         return null;
@@ -11809,55 +11730,6 @@ public static partial class Extension
         catch
         {
             return null;
-        }
-    }
-
-    /// <summary>
-    /// Dossiers où Arma peut poser un PNG au nom seul, sans en faire une source de watcher.
-    /// </summary>
-    private static IEnumerable<string> EnumerateLooseScreenshotDirs()
-    {
-        string? local = null;
-        try { local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData); }
-        catch { yield break; }
-        if (string.IsNullOrWhiteSpace(local)) yield break;
-        var arma = Path.Combine(local, "Arma 3");
-        if (Directory.Exists(arma))
-            yield return arma;
-        var armaShots = Path.Combine(arma, "Screenshots");
-        if (Directory.Exists(armaShots))
-            yield return armaShots;
-        string? cwd = null;
-        try { cwd = Directory.GetCurrentDirectory(); }
-        catch { cwd = null; }
-        if (!string.IsNullOrWhiteSpace(cwd) && Directory.Exists(cwd))
-            yield return cwd;
-    }
-
-    /// <summary>
-    /// Énumère des fichiers jusqu’à maxDepth sous-dossiers (0 = racine seule).
-    /// Remplace SearchOption.AllDirectories pour éviter les boucles de jonctions.
-    /// </summary>
-    private static IEnumerable<string> EnumerateFilesShallow(string root, string pattern, int maxDepth)
-    {
-        if (string.IsNullOrWhiteSpace(root) || maxDepth < 0) yield break;
-        IEnumerable<string> top;
-        try { top = Directory.EnumerateFiles(root, pattern, SearchOption.TopDirectoryOnly); }
-        catch { yield break; }
-        foreach (var f in top)
-            yield return f;
-
-        if (maxDepth < 1) yield break;
-        IEnumerable<string> subs;
-        try { subs = Directory.EnumerateDirectories(root); }
-        catch { yield break; }
-        foreach (var sub in subs)
-        {
-            IEnumerable<string> nested;
-            try { nested = Directory.EnumerateFiles(sub, pattern, SearchOption.TopDirectoryOnly); }
-            catch { continue; }
-            foreach (var f in nested)
-                yield return f;
         }
     }
 
@@ -12062,17 +11934,14 @@ public static partial class Extension
                 || ext.Equals(".webp", StringComparison.OrdinalIgnoreCase)))
                 return false;
 
-            bool Under(string? dir)
+            // Fichier posé directement dans le dossier (jamais dans un sous-dossier).
+            bool DirectlyIn(string? dir)
             {
                 if (string.IsNullOrWhiteSpace(dir)) return false;
                 try
                 {
-                    var root = Path.GetFullPath(dir).TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
-                    var probe = full.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
-                        ? full
-                        : full;
-                    return probe.StartsWith(root, StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(Path.GetDirectoryName(full), Path.GetFullPath(dir), StringComparison.OrdinalIgnoreCase);
+                    return string.Equals(Path.GetDirectoryName(full)?.TrimEnd('\\'), Path.GetFullPath(dir).TrimEnd('\\'),
+                        StringComparison.OrdinalIgnoreCase);
                 }
                 catch
                 {
@@ -12080,15 +11949,18 @@ public static partial class Extension
                 }
             }
 
-            var cap = ComspecCaptureDir();
-            if (Under(cap)) return true;
-            foreach (var dir in EnumeratePhotoLookupDirs())
+            if (DirectlyIn(ComspecCaptureDir())) return true;
+            // Dossier choisi par le joueur : lu seulement. Seules les images écrites par le mod (COMSPEC_…, cmap_…)
+            // peuvent y être retirées, à la demande du joueur (Galerie, fiche du cliché drone).
+            string user;
+            lock (ShotDirsLock) { user = _shotDirUser; }
+            var leaf = Path.GetFileName(full);
+            if (user.Length > 0 && DirectlyIn(user))
+                return leaf.StartsWith("COMSPEC_", StringComparison.OrdinalIgnoreCase)
+                    || leaf.StartsWith("cmap_", StringComparison.OrdinalIgnoreCase);
+            foreach (var dir in ScreenshotDirs())
             {
-                if (Under(dir)) return true;
-            }
-            foreach (var dir in EnumerateScreenshotDirs())
-            {
-                if (Under(dir)) return true;
+                if (DirectlyIn(dir)) return true;
             }
             return false;
         }
@@ -12099,66 +11971,321 @@ public static partial class Extension
     }
 
     /// <summary>
-    /// %LOCALAPPDATA%\Arma 3 : Arma y pose souvent le PNG de <c>screenshot</c> à la racine.
-    /// </summary>
-    private static bool IsLocalArma3Root(string dir)
-    {
-        try
-        {
-            var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            if (string.IsNullOrWhiteSpace(local)) return false;
-            var arma = Path.GetFullPath(Path.Combine(local, "Arma 3"));
-            var full = Path.GetFullPath(dir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-            return full.Equals(arma, StringComparison.OrdinalIgnoreCase);
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Tous les dossiers où une capture peut atterrir, y compris la racine locale Arma
-    /// et le dossier parent du profil (JPEG IceMan parfois à côté de Screenshots).
-    /// Jamais la racine Documents ni AppData\Local elle-même.
+    /// Dossiers où une capture est cherchée : ScreenshotDirs() (réglage du joueur, profil Arma, Documents),
+    /// puis le dossier Captures COMSPEC où le mod recopie les photos. Liste bornée, jamais de sous-dossier.
     /// </summary>
     private static IEnumerable<string> EnumeratePhotoLookupDirs()
     {
-        var dirs = new List<string>();
-        void Add(string? p)
+        var dirs = new List<string>(ScreenshotDirs());
+        var cap = ComspecCaptureDir();
+        if (!string.IsNullOrWhiteSpace(cap) && !dirs.Contains(cap, StringComparer.OrdinalIgnoreCase))
+            dirs.Add(cap);
+        return dirs;
+    }
+
+    // ---- Dossier des captures d'écran (2.0.116) ----------------------------------------------------------------
+    // Avant : une vingtaine de dossiers balayés (Documents, Other Profiles et chacun de ses profils, OneDrive,
+    // %LOCALAPPDATA%\Arma 3, dossier du jeu, chaque mod de !Workshop, bibliothèques Steam de C: à H:), dont
+    // certains sous-dossiers. Maintenant, dans cet ordre et sans sous-dossier :
+    //   (a) le dossier choisi par le joueur (réglage CBA « Dossier des captures d'écran ») ;
+    //   (b) le dossier Screenshots du profil Arma utilisé (nom transmis par le SQF, profileName ; -profiles / -name) ;
+    //   (c) Documents\Arma 3\Screenshots, puis OneDrive\Documents.
+    // Liste recalculée toutes les 5 s au plus (quelques Directory.Exists), jamais de parcours récursif.
+
+    private static readonly object ShotDirsLock = new();
+    private static string _shotDirUser = "";
+    private static string _shotDirUserRaw = "";
+    private static string _shotDirUserErr = "";
+    private static string _shotProfileName = "";
+    private static string[] _shotDirsCache = Array.Empty<string>();
+    private static string _shotDirActive = "";
+    private static string _shotDirSource = "";
+    private static long _shotDirsAtMs = long.MinValue / 2;
+    private const long ShotDirsTtlMs = 5000;
+
+    /// <summary>Dossiers de captures existants, dans l'ordre de résolution (a) (b) (c). Captures COMSPEC non comprises.</summary>
+    private static string[] ScreenshotDirs()
+    {
+        var now = Environment.TickCount64;
+        lock (ShotDirsLock)
         {
-            if (string.IsNullOrWhiteSpace(p) || !Directory.Exists(p)) return;
-            try { p = Path.GetFullPath(p); }
-            catch { return; }
-            if (!dirs.Contains(p, StringComparer.OrdinalIgnoreCase))
-                dirs.Add(p);
+            if (now - _shotDirsAtMs < ShotDirsTtlMs) return _shotDirsCache;
+        }
+        var (dirs, active, source) = ComputeShotDirs();
+        lock (ShotDirsLock)
+        {
+            _shotDirsCache = dirs;
+            _shotDirActive = active;
+            _shotDirSource = source;
+            _shotDirsAtMs = Environment.TickCount64;
+        }
+        return dirs;
+    }
+
+    /// <summary>Ancien nom gardé pour les appelants (capture de carte, ménage du dossier plein).</summary>
+    private static IEnumerable<string> EnumerateScreenshotDirs() => ScreenshotDirs();
+
+    private static bool IsUserShotDir(string dir)
+    {
+        string user;
+        lock (ShotDirsLock) { user = _shotDirUser; }
+        return user.Length > 0 && string.Equals(dir.TrimEnd('\\'), user.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void InvalidateShotDirs()
+    {
+        lock (ShotDirsLock) { _shotDirsAtMs = long.MinValue / 2; }
+    }
+
+    /// <summary>
+    /// Chemin saisi par le joueur : dossier local absolu (X:\…). Refusés : chemin réseau (\\serveur\…), relatif,
+    /// « . » ou « .. », racine d'un lecteur, caractères interdits. Vide = automatique. Sans accès disque.
+    /// </summary>
+    private static string ValidateUserShotDir(string? raw, out string err)
+    {
+        err = "";
+        var p = (raw ?? "").Trim().Trim('"').Trim('\'').Trim();
+        if (p.Length == 0) return "";
+        try { p = Environment.ExpandEnvironmentVariables(p); } catch { /* garder tel quel */ }
+        p = p.Replace('/', '\\');
+        if (p.Length > 240) { err = "too_long"; return ""; }
+        if (p.StartsWith(@"\\", StringComparison.Ordinal)) { err = "network"; return ""; }
+        if (p.Length < 3 || !char.IsAsciiLetter(p[0]) || p[1] != ':' || p[2] != '\\') { err = "not_absolute"; return ""; }
+        if (p.IndexOf(':', 2) >= 0 || p.IndexOfAny(new[] { '*', '?', '"', '<', '>', '|' }) >= 0
+            || p.Any(c => c < ' '))
+        {
+            err = "invalid";
+            return "";
+        }
+        foreach (var seg in p.Split('\\'))
+        {
+            if (seg == ".." || seg == ".") { err = "parent"; return ""; }
+        }
+        string full;
+        try { full = Path.GetFullPath(p).TrimEnd('\\'); }
+        catch { err = "invalid"; return ""; }
+        if (full.Length <= 2) { err = "drive_root"; return ""; }
+        return full;
+    }
+
+    private static bool IsNetworkDrive(string path)
+    {
+        try
+        {
+            var root = Path.GetPathRoot(path);
+            return !string.IsNullOrEmpty(root) && new DriveInfo(root).DriveType == DriveType.Network;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Formes du nom de profil dans les dossiers d'Arma (« Jean Dupont » → « Jean%20Dupont »).</summary>
+    private static List<string> ProfileFolderNames(string name)
+    {
+        var list = new List<string>();
+        if (string.IsNullOrWhiteSpace(name)) return list;
+        list.Add(name);
+        try
+        {
+            var esc = Uri.EscapeDataString(name);
+            if (!list.Contains(esc, StringComparer.OrdinalIgnoreCase)) list.Add(esc);
+        }
+        catch { /* ignore */ }
+        return list;
+    }
+
+    /// <summary>
+    /// Candidats dans l'ordre (a) (b) (c), avec leur origine. Aucun parcours de dossier, sauf la liste des
+    /// profils de « Arma 3 - Other Profiles » (un niveau) quand le nom du profil n'y est pas trouvé tel quel.
+    /// </summary>
+    private static (string[] Dirs, string Active, string Source) ComputeShotDirs()
+    {
+        string user, name;
+        lock (ShotDirsLock)
+        {
+            user = _shotDirUser;
+            name = _shotProfileName;
+        }
+        if (name.Length == 0) name = ReadLaunchArg("name");
+        var candidates = new List<(string Path, string Source)>();
+        void Cand(string source, string? root, params string[] parts)
+        {
+            if (string.IsNullOrWhiteSpace(root)) return;
+            try { candidates.Add((Path.GetFullPath(Path.Combine(new[] { root }.Concat(parts).ToArray())), source)); }
+            catch { /* nom de profil illisible */ }
         }
 
-        foreach (var d in EnumerateScreenshotDirs())
-            Add(d);
-        foreach (var d in EnumerateLooseScreenshotDirs())
-            Add(d);
-        foreach (var d in EnumerateIcemanPhotoLibraryDirs())
-            Add(d);
+        // (a) Dossier choisi par le joueur (lecteur réseau écarté ici : la vérification le dit).
+        if (user.Length > 0 && !IsNetworkDrive(user))
+            Cand("user", user);
 
-        foreach (var d in EnumerateScreenshotDirs())
+        // (b) Profil Arma utilisé.
+        var forms = ProfileFolderNames(name);
+        var profiles = ReadLaunchArg("profiles");
+        if (profiles.Length > 0 && !profiles.StartsWith(@"\\", StringComparison.Ordinal))
         {
-            if (!IsScreenshotCaptureDir(d) || IsLocalArma3Root(d)) continue;
+            foreach (var f in forms)
+            {
+                Cand("profile", profiles, "Users", f, "Screenshots");
+                Cand("profile", profiles, f, "Screenshots");
+            }
+            Cand("profile", profiles, "Screenshots");
+        }
+        var docs = "";
+        try { docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments); } catch { docs = ""; }
+        var oneDriveDocs = "";
+        try
+        {
+            var od = Environment.GetEnvironmentVariable("OneDrive");
+            if (string.IsNullOrWhiteSpace(od))
+            {
+                var up = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                if (!string.IsNullOrWhiteSpace(up)) od = Path.Combine(up, "OneDrive");
+            }
+            if (!string.IsNullOrWhiteSpace(od)) oneDriveDocs = Path.Combine(od, "Documents");
+        }
+        catch { oneDriveDocs = ""; }
+        foreach (var d in new[] { docs, oneDriveDocs })
+        {
+            if (string.IsNullOrWhiteSpace(d) || forms.Count == 0) continue;
             try
             {
-                var parent = Directory.GetParent(d)?.FullName;
-                if (string.IsNullOrWhiteSpace(parent)) continue;
-                var parentName = Path.GetFileName(parent.TrimEnd('\\'));
-                if (parentName.Equals("Local", StringComparison.OrdinalIgnoreCase)
-                    || parentName.Equals("Documents", StringComparison.OrdinalIgnoreCase)
-                    || parentName.Equals("OneDrive", StringComparison.OrdinalIgnoreCase))
+                // Profil par défaut : <nom>.Arma3Profile dans Documents\Arma 3 ; sinon Other Profiles\<nom>.
+                if (forms.Any(f => File.Exists(Path.Combine(d, "Arma 3", f + ".Arma3Profile"))))
+                {
+                    Cand("profile", d, "Arma 3", "Screenshots");
                     continue;
-                Add(parent);
+                }
+                var other = Path.Combine(d, "Arma 3 - Other Profiles");
+                var hit = forms.FirstOrDefault(f => Directory.Exists(Path.Combine(other, f)));
+                if (hit == null && Directory.Exists(other))
+                {
+                    foreach (var sub in Directory.EnumerateDirectories(other))
+                    {
+                        var leaf = Path.GetFileName(sub);
+                        string decoded;
+                        try { decoded = Uri.UnescapeDataString(leaf); } catch { decoded = leaf; }
+                        if (string.Equals(decoded, name, StringComparison.OrdinalIgnoreCase)) { hit = leaf; break; }
+                    }
+                }
+                if (hit != null) Cand("profile", other, hit, "Screenshots");
             }
-            catch { /* ignore */ }
+            catch { /* dossier illisible */ }
         }
 
-        return dirs;
+        // (c) Repli : Documents\Arma 3\Screenshots, puis OneDrive\Documents.
+        Cand("default", docs, "Arma 3", "Screenshots");
+        Cand("default", oneDriveDocs, "Arma 3", "Screenshots");
+
+        var dirs = new List<string>();
+        var active = "";
+        var source = "";
+        foreach (var (p, src) in candidates)
+        {
+            if (dirs.Contains(p, StringComparer.OrdinalIgnoreCase)) continue;
+            bool exists;
+            try { exists = Directory.Exists(p); } catch { exists = false; }
+            if (!exists) continue;
+            dirs.Add(p);
+            if (active.Length == 0) { active = p; source = src; }
+        }
+        // Rien n'existe encore (aucune capture prise) : le dossier attendu, pour le message au joueur.
+        if (active.Length == 0)
+        {
+            var first = candidates.FirstOrDefault(c => c.Source != "user");
+            if (first.Path != null) { active = first.Path; source = first.Source; }
+        }
+        return (dirs.ToArray(), active, source);
+    }
+
+    /// <summary>
+    /// Shots.Config [dossier saisi, nom du profil] : mémoire seulement, réponse immédiate (appel direct permis).
+    /// Shots.Check : dossier en service, existe, lisible, nombre d'images, dernière capture (disque : par Async).
+    /// </summary>
+    private static string HandleShotDirs(string function, string?[] args)
+    {
+        switch (function)
+        {
+            case "Shots.Config":
+            {
+                var raw = args.Length > 0 ? (args[0] ?? "") : "";
+                var dir = ValidateUserShotDir(raw, out var err);
+                var name = args.Length > 1 ? (args[1] ?? "").Trim() : "";
+                if (name.Length > 64 || name.Any(c => c < ' ' || c == '\\' || c == '/' || c == ':')) name = "";
+                bool changed;
+                lock (ShotDirsLock)
+                {
+                    changed = !string.Equals(dir, _shotDirUser, StringComparison.OrdinalIgnoreCase)
+                        || (name.Length > 0 && !string.Equals(name, _shotProfileName, StringComparison.Ordinal));
+                    _shotDirUser = dir;
+                    _shotDirUserRaw = raw.Trim();
+                    _shotDirUserErr = err;
+                    if (name.Length > 0) _shotProfileName = name;
+                    _shotDirsAtMs = long.MinValue / 2;
+                }
+                if (changed)
+                {
+                    if (_screenshotWatchersStarted) RestartScreenshotWatchers();
+                    else _lastWatcherAttemptTicks = 0;
+                }
+                return err.Length > 0 ? "ERR|" + err : "OK|" + (dir.Length > 0 ? "user" : "auto");
+            }
+            case "Shots.Check":
+            {
+                InvalidateShotDirs();
+                var dirs = ScreenshotDirs();
+                string active, source, userRaw, userErr, user;
+                lock (ShotDirsLock)
+                {
+                    active = _shotDirActive;
+                    source = _shotDirSource;
+                    userRaw = _shotDirUserRaw;
+                    userErr = _shotDirUserErr;
+                    user = _shotDirUser;
+                }
+                // Dossier saisi mais écarté : dit pourquoi (absent, lecteur réseau, chemin refusé).
+                if (userErr.Length == 0 && user.Length > 0)
+                {
+                    if (IsNetworkDrive(user)) userErr = "network";
+                    else if (!Directory.Exists(user)) userErr = "missing";
+                }
+                var exists = active.Length > 0 && Directory.Exists(active);
+                var readable = false;
+                var count = 0;
+                FileInfo? newest = null;
+                if (exists)
+                {
+                    try
+                    {
+                        // Lecture seule : ouverture de la liste du dossier, aucun fichier écrit ni créé.
+                        using (var e = Directory.EnumerateFileSystemEntries(active).GetEnumerator())
+                            e.MoveNext();
+                        readable = true;
+                        foreach (var f in EnumerateRecentImagesInDir(active))
+                        {
+                            if (++count > 100000) break;
+                            try
+                            {
+                                var fi = new FileInfo(f);
+                                if (fi.Length >= 32 && (newest == null || fi.LastWriteTimeUtc > newest.LastWriteTimeUtc)) newest = fi;
+                            }
+                            catch { /* fichier en cours d'écriture */ }
+                        }
+                    }
+                    catch { readable = false; }
+                }
+                var age = newest == null ? -1 : (long)Math.Max(0, (DateTime.UtcNow - newest.LastWriteTimeUtc).TotalSeconds);
+                static string Clean(string s) => s.Replace('|', '/').Replace('\n', ' ').Replace('\r', ' ');
+                return "OK|" + (source.Length > 0 ? source : "none") + "|" + Clean(active.Length > 0 ? active : "-") + "|"
+                    + (exists ? "1" : "0") + "|" + (readable ? "1" : "0") + "|"
+                    + count.ToString(CultureInfo.InvariantCulture) + "|" + Clean(newest?.Name ?? "-") + "|"
+                    + age.ToString(CultureInfo.InvariantCulture) + "|" + (userErr.Length > 0 ? userErr : "-") + "|"
+                    + Clean(userRaw.Length > 0 ? userRaw : "-") + "|" + Clean(dirs.Length > 0 ? string.Join(" ; ", dirs) : "-");
+            }
+        }
+        return "ERR|unknown";
     }
 
     /// <summary>
@@ -12233,7 +12360,8 @@ public static partial class Extension
             const long softLimit = 180L * 1024 * 1024;
             foreach (var dir in EnumerateScreenshotDirs())
             {
-                if (!IsScreenshotCaptureDir(dir) || IsLocalArma3Root(dir)) continue;
+                // Dossier choisi par le joueur : lecture seule, jamais de ménage.
+                if (IsUserShotDir(dir)) continue;
                 FileInfo[] files;
                 try { files = new DirectoryInfo(dir).GetFiles("*.*", SearchOption.TopDirectoryOnly); }
                 catch { continue; }
@@ -12274,6 +12402,8 @@ public static partial class Extension
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var dir in EnumerateScreenshotDirs())
         {
+            // Profil Arma seulement : le dossier choisi par le joueur et son parent ne sont jamais modifiés.
+            if (IsUserShotDir(dir)) continue;
             DirectoryInfo? parent;
             try { parent = Directory.GetParent(dir); }
             catch { continue; }
@@ -12398,36 +12528,6 @@ public static partial class Extension
         }
     }
 
-    private static IEnumerable<string> EnumerateArmaLaunchScreenshotDirs()
-    {
-        string? profiles = null;
-        string? name = null;
-        try
-        {
-            var cmd = Environment.GetCommandLineArgs();
-            for (var i = 0; i < cmd.Length; i++)
-            {
-                var a = cmd[i] ?? "";
-                if (a.StartsWith("-profiles=", StringComparison.OrdinalIgnoreCase))
-                    profiles = a["-profiles=".Length..].Trim().Trim('"');
-                else if (a.Equals("-profiles", StringComparison.OrdinalIgnoreCase) && i + 1 < cmd.Length)
-                    profiles = (cmd[++i] ?? "").Trim().Trim('"');
-                else if (a.StartsWith("-name=", StringComparison.OrdinalIgnoreCase))
-                    name = a["-name=".Length..].Trim().Trim('"');
-                else if (a.Equals("-name", StringComparison.OrdinalIgnoreCase) && i + 1 < cmd.Length)
-                    name = (cmd[++i] ?? "").Trim().Trim('"');
-            }
-        }
-        catch
-        {
-            yield break;
-        }
-        if (string.IsNullOrWhiteSpace(profiles)) yield break;
-        if (!string.IsNullOrWhiteSpace(name))
-            yield return Path.Combine(profiles, name, "Screenshots");
-        yield return Path.Combine(profiles, "Screenshots");
-    }
-
     private static string? FindNewestMatchingPrefix(string prefix, TimeSpan maxAge)
     {
         try
@@ -12465,167 +12565,6 @@ public static partial class Extension
     }
 
     /// <summary>
-    /// Dossier où IceMan / BCE posent les JPEG Photo Library :
-    /// <c>!Workshop\@…\addons\ATAK_PhotoLibrary</c> — pas Screenshots du profil.
-    /// Scan plat uniquement (pas de récursion Workshop).
-    /// </summary>
-    private static IEnumerable<string> EnumerateIcemanPhotoLibraryDirs()
-    {
-        var dirs = new List<string>();
-        void Add(string? p)
-        {
-            if (string.IsNullOrWhiteSpace(p) || !Directory.Exists(p)) return;
-            try { p = Path.GetFullPath(p); }
-            catch { return; }
-            if (!dirs.Contains(p, StringComparer.OrdinalIgnoreCase))
-                dirs.Add(p);
-        }
-
-        void ScanModRoot(string modDir)
-        {
-            if (string.IsNullOrWhiteSpace(modDir) || !Directory.Exists(modDir)) return;
-            Add(Path.Combine(modDir, "addons", "ATAK_PhotoLibrary"));
-            Add(Path.Combine(modDir, "ATAK_PhotoLibrary"));
-        }
-
-        void ScanWorkshop(string workshopRoot)
-        {
-            if (string.IsNullOrWhiteSpace(workshopRoot) || !Directory.Exists(workshopRoot)) return;
-            string[] mods;
-            try { mods = Directory.GetDirectories(workshopRoot); }
-            catch { return; }
-            foreach (var modDir in mods)
-                ScanModRoot(modDir);
-        }
-
-        try
-        {
-            var cwd = Directory.GetCurrentDirectory();
-            if (!string.IsNullOrWhiteSpace(cwd))
-            {
-                ScanWorkshop(Path.Combine(cwd, "!Workshop"));
-                ScanWorkshop(Path.Combine(cwd, "!workshop"));
-                Add(Path.Combine(cwd, "addons", "ATAK_PhotoLibrary"));
-            }
-        }
-        catch { /* ignore */ }
-
-        return dirs;
-    }
-
-    private static IEnumerable<string> EnumerateScreenshotDirs()
-    {
-        var dirs = new List<string>();
-        void AddIfExists(string p)
-        {
-            if (!string.IsNullOrWhiteSpace(p) && Directory.Exists(p)
-                && !dirs.Contains(p, StringComparer.OrdinalIgnoreCase))
-                dirs.Add(p);
-        }
-        void AddScreenshotsUnder(string root)
-        {
-            if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return;
-            AddIfExists(Path.Combine(root, "Screenshots"));
-            AddIfExists(Path.Combine(root, "Screenshot"));
-            try
-            {
-                foreach (var sub in Directory.EnumerateDirectories(root))
-                {
-                    AddIfExists(Path.Combine(sub, "Screenshots"));
-                    AddIfExists(Path.Combine(sub, "Screenshot"));
-                }
-            }
-            catch { /* ignore */ }
-        }
-        try
-        {
-            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            if (!string.IsNullOrWhiteSpace(docs))
-            {
-                AddIfExists(Path.Combine(docs, "Arma 3", "Screenshots"));
-                AddIfExists(Path.Combine(docs, "Arma 3", "Screenshot"));
-                AddScreenshotsUnder(Path.Combine(docs, "Arma 3 - Other Profiles"));
-                // Profils déplacés / -profiles= parfois sous Documents\Arma 3\<name>
-                AddScreenshotsUnder(Path.Combine(docs, "Arma 3"));
-            }
-        }
-        catch { /* ignore */ }
-        try
-        {
-            foreach (var launchDir in EnumerateArmaLaunchScreenshotDirs())
-                AddIfExists(launchDir);
-        }
-        catch { /* ignore */ }
-        try
-        {
-            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            if (!string.IsNullOrWhiteSpace(userProfile))
-            {
-                AddIfExists(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3", "Screenshots"));
-                AddIfExists(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3", "Screenshot"));
-                AddScreenshotsUnder(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3 - Other Profiles"));
-                AddScreenshotsUnder(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3"));
-            }
-        }
-        catch { /* ignore */ }
-        try
-        {
-            var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            if (!string.IsNullOrWhiteSpace(local))
-            {
-                var armaLocal = Path.Combine(local, "Arma 3");
-                AddIfExists(armaLocal);
-                AddScreenshotsUnder(armaLocal);
-            }
-        }
-        catch { /* ignore */ }
-        // Captures miroir COMSPEC (stable, hors Workshop) + Screenshots du même profil.
-        try
-        {
-            var cap = ComspecCaptureDir();
-            if (!string.IsNullOrWhiteSpace(cap))
-            {
-                AddIfExists(cap);
-                var parent = Directory.GetParent(cap)?.FullName;
-                if (!string.IsNullOrWhiteSpace(parent))
-                {
-                    AddIfExists(Path.Combine(parent, "Screenshots"));
-                    AddIfExists(Path.Combine(parent, "Screenshot"));
-                    AddScreenshotsUnder(parent);
-                }
-            }
-        }
-        catch { /* ignore */ }
-
-        // Dossier courant / install Arma : uniquement les feuilles Screenshots/Screenshot.
-        // Ne JAMAIS ajouter la racine Arma elle-même (scan AllDirectories / watcher
-        // dessus → jonctions Workshop → STATUS_STACK_OVERFLOW 0xC00000FD).
-        try
-        {
-            var cwd = Directory.GetCurrentDirectory();
-            if (!string.IsNullOrWhiteSpace(cwd))
-            {
-                AddIfExists(Path.Combine(cwd, "Screenshots"));
-                AddIfExists(Path.Combine(cwd, "Screenshot"));
-                // Profils / dossiers déportés sous la racine Arma (un niveau).
-                AddScreenshotsUnder(cwd);
-
-                // Mods Workshop : BCE / ATAK Enhanced écrivent dans le dossier du mod,
-                // deux niveaux sous la racine Arma.
-                //   <Arma 3>\!Workshop\@<mod>\Screenshot\<capture>.jpg
-                foreach (var workshopRoot in new[] { "!Workshop", "!workshop" })
-                {
-                    var wr = Path.Combine(cwd, workshopRoot);
-                    if (!Directory.Exists(wr)) continue;
-                    AddScreenshotsUnder(wr);
-                }
-            }
-        }
-        catch { /* ignore */ }
-        return dirs;
-    }
-
-    /// <summary>
     /// L’extension de capture BCE colle parfois la racine Arma, <c>!Workshop</c> et
     /// le dossier du mod sans séparateur : <c>Arma 3!Workshop@mod\Screenshot</c>.
     /// Discord ouvre ce chemin tel quel et échoue. On réinsère les <c>\</c>.
@@ -12645,229 +12584,6 @@ public static partial class Extension
         p = BrokenArmaWorkshopGlue.Replace(p, @"$1\!Workshop");
         p = BrokenWorkshopModGlue.Replace(p, @"!Workshop\@");
         return p;
-    }
-
-    /// <summary>
-    /// Si le chemin pointe vers un <c>Screenshot</c> Workshop fantôme (ancienne
-    /// bibliothèque Steam / pack « FN + CHR + OBJ » disparu), le réécrit vers le
-    /// dossier Screenshot réel trouvé sous l’install Arma courante.
-    /// </summary>
-    private static string RemapMissingWorkshopScreenshotPath(string path)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(path)) return path;
-            var p = path.Replace('/', '\\');
-            var parent = Path.GetDirectoryName(p);
-            if (string.IsNullOrWhiteSpace(parent) || Directory.Exists(parent))
-                return p;
-            var parentName = Path.GetFileName(parent.TrimEnd('\\')) ?? "";
-            var isShotLeaf = parentName.Equals("Screenshot", StringComparison.OrdinalIgnoreCase)
-                || parentName.Equals("Screenshots", StringComparison.OrdinalIgnoreCase)
-                || parentName.Equals("ATAK_PhotoLibrary", StringComparison.OrdinalIgnoreCase);
-            if (!isShotLeaf) return p;
-            var grand = Directory.GetParent(parent)?.Name ?? "";
-            var looksWorkshop = grand.IndexOf("S.O.A.R", StringComparison.OrdinalIgnoreCase) >= 0
-                || grand.IndexOf("SOAR", StringComparison.OrdinalIgnoreCase) >= 0
-                || grand.IndexOf("ATAK", StringComparison.OrdinalIgnoreCase) >= 0
-                || grand.IndexOf("Iceman", StringComparison.OrdinalIgnoreCase) >= 0
-                || grand.IndexOf("BCE", StringComparison.OrdinalIgnoreCase) >= 0
-                || parent.IndexOf("!Workshop", StringComparison.OrdinalIgnoreCase) >= 0;
-            if (!looksWorkshop) return p;
-            var real = FindBceScreenshotDir();
-            if (string.IsNullOrWhiteSpace(real)) return p;
-            var leaf = Path.GetFileName(p);
-            return string.IsNullOrWhiteSpace(leaf) ? real : Path.Combine(real, leaf);
-        }
-        catch
-        {
-            return path;
-        }
-    }
-
-    /// <summary>
-    /// Racines Arma 3 candidates : cwd + bibliothèques Steam (libraryfolders.vdf).
-    /// </summary>
-    private static IEnumerable<string> EnumerateArmaInstallRoots()
-    {
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var roots = new List<string>();
-        void Consider(string? p)
-        {
-            if (string.IsNullOrWhiteSpace(p)) return;
-            try { p = Path.GetFullPath(p.Trim().Trim('"')); }
-            catch { return; }
-            if (!Directory.Exists(p) || !seen.Add(p)) return;
-            var hasWorkshop = Directory.Exists(Path.Combine(p, "!Workshop"))
-                || Directory.Exists(Path.Combine(p, "!workshop"));
-            var hasExe = File.Exists(Path.Combine(p, "Arma3_x64.exe"))
-                || File.Exists(Path.Combine(p, "arma3.exe"));
-            if (hasWorkshop || hasExe)
-                roots.Add(p);
-        }
-
-        string? cwd = null;
-        try { cwd = Directory.GetCurrentDirectory(); } catch { /* ignore */ }
-        Consider(cwd);
-
-        foreach (var libRoot in EnumerateSteamLibraryRoots())
-            Consider(Path.Combine(libRoot, "steamapps", "common", "Arma 3"));
-
-        return roots;
-    }
-
-    private static IEnumerable<string> EnumerateSteamLibraryRoots()
-    {
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var candidates = new List<string>();
-        try
-        {
-            var pf86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-            if (!string.IsNullOrWhiteSpace(pf86))
-                candidates.Add(Path.Combine(pf86, "Steam"));
-        }
-        catch { /* ignore */ }
-        try
-        {
-            var pf = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            if (!string.IsNullOrWhiteSpace(pf))
-                candidates.Add(Path.Combine(pf, "Steam"));
-        }
-        catch { /* ignore */ }
-        // Bibliothèques secondaires fréquentes (évite de manquer F:\ quand cwd est OK
-        // mais un chemin annoncé pointe ailleurs).
-        foreach (var drive in new[] { "C", "D", "E", "F", "G", "H" })
-        {
-            candidates.Add($@"{drive}:\SteamLibrary");
-            candidates.Add($@"{drive}:\Steam");
-        }
-
-        foreach (var steamRoot in candidates)
-        {
-            if (string.IsNullOrWhiteSpace(steamRoot) || !Directory.Exists(steamRoot)) continue;
-            if (seen.Add(steamRoot))
-                yield return steamRoot;
-
-            var vdf = Path.Combine(steamRoot, "steamapps", "libraryfolders.vdf");
-            if (!File.Exists(vdf)) continue;
-            string text;
-            try { text = File.ReadAllText(vdf); }
-            catch { continue; }
-            foreach (Match m in Regex.Matches(
-                         text,
-                         @"""path""\s+""([^""]+)""",
-                         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
-            {
-                var lib = (m.Groups[1].Value ?? "").Replace(@"\\", @"\");
-                if (string.IsNullOrWhiteSpace(lib) || !Directory.Exists(lib)) continue;
-                if (seen.Add(lib))
-                    yield return lib;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Dossier <c>Screenshot</c> réel du pack BCE / SOAR sous <c>!Workshop</c>.
-    /// Crée <c>Screenshot</c> sous le meilleur pack SOAR s’il manque.
-    /// </summary>
-    private static string? FindBceScreenshotDir()
-    {
-        try
-        {
-            string? best = null;
-            var bestScore = -1;
-            string? bestCreateUnder = null;
-            var bestCreateScore = -1;
-
-            foreach (var armaRoot in EnumerateArmaInstallRoots())
-            {
-                foreach (var workshopRoot in new[] { "!Workshop", "!workshop" })
-                {
-                    var wr = Path.Combine(armaRoot, workshopRoot);
-                    if (!Directory.Exists(wr)) continue;
-                    string[] mods;
-                    try { mods = Directory.GetDirectories(wr); }
-                    catch { continue; }
-                    foreach (var modDir in mods)
-                    {
-                        var name = Path.GetFileName(modDir.TrimEnd('\\')) ?? "";
-                        var score = ScoreBceScreenshotMod(name);
-                        if (score > bestCreateScore
-                            && (name.IndexOf("S.O.A.R", StringComparison.OrdinalIgnoreCase) >= 0
-                                || name.IndexOf("SOAR", StringComparison.OrdinalIgnoreCase) >= 0
-                                || name.IndexOf("ATAK", StringComparison.OrdinalIgnoreCase) >= 0
-                                || name.IndexOf("Iceman", StringComparison.OrdinalIgnoreCase) >= 0
-                                || name.IndexOf("BCE", StringComparison.OrdinalIgnoreCase) >= 0))
-                        {
-                            bestCreateScore = score;
-                            bestCreateUnder = modDir;
-                        }
-
-                        string shot;
-                        try
-                        {
-                            shot = Path.Combine(modDir, "Screenshot");
-                            if (!Directory.Exists(shot))
-                                shot = Path.Combine(modDir, "Screenshots");
-                            if (!Directory.Exists(shot))
-                                shot = Path.Combine(modDir, "addons", "ATAK_PhotoLibrary");
-                            if (!Directory.Exists(shot)) continue;
-                            shot = Path.GetFullPath(shot);
-                        }
-                        catch { continue; }
-
-                        if (score > bestScore)
-                        {
-                            bestScore = score;
-                            best = shot;
-                        }
-                        else if (score == bestScore && score == 0 && best == null)
-                        {
-                            best = shot;
-                        }
-                    }
-                }
-            }
-
-            if (best != null)
-                return best;
-
-            // Aucun Screenshot existant : créer sous le meilleur pack SOAR/ATAK.
-            if (!string.IsNullOrWhiteSpace(bestCreateUnder))
-            {
-                try
-                {
-                    var created = Path.Combine(bestCreateUnder, "Screenshot");
-                    Directory.CreateDirectory(created);
-                    return Path.GetFullPath(created);
-                }
-                catch { /* ignore */ }
-            }
-            return null;
-        }
-        catch { return null; }
-    }
-
-    private static int ScoreBceScreenshotMod(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name)) return 0;
-        // Pack FN (BCE / ATAK) : le dossier réel chez SOAR.
-        if (name.IndexOf("S.O.A.R", StringComparison.OrdinalIgnoreCase) >= 0
-            && name.IndexOf(" FN", StringComparison.OrdinalIgnoreCase) >= 0)
-            return 6;
-        if (name.IndexOf("S.O.A.R", StringComparison.OrdinalIgnoreCase) >= 0
-            && name.IndexOf("- FN", StringComparison.OrdinalIgnoreCase) >= 0)
-            return 6;
-        if (name.IndexOf("S.O.A.R", StringComparison.OrdinalIgnoreCase) >= 0)
-            return 3;
-        if (name.IndexOf("SOAR", StringComparison.OrdinalIgnoreCase) >= 0)
-            return 2;
-        if (name.IndexOf("ATAK", StringComparison.OrdinalIgnoreCase) >= 0
-            || name.IndexOf("Iceman", StringComparison.OrdinalIgnoreCase) >= 0)
-            return 2;
-        if (name.IndexOf("BCE", StringComparison.OrdinalIgnoreCase) >= 0)
-            return 1;
-        return 0;
     }
 
     /// <summary>

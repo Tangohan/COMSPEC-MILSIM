@@ -191,6 +191,21 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
 ["comspec_atak_native_dating_black", "CHECKBOX",
     ["Photos de profil sur fond noir", "Réglage personnel, coché par défaut. Dans Tinder (profils de joueurs, HVT et SSE), la personne est montrée sur fond noir, comme en studio. Décochez pour la voir en direct, là où elle se trouve sur la carte."],
     ["COMSPEC", "ATAK · Photo"], true, 0] call comspec_atak_native_fnc_addSetting;
+// Dossier des captures d'écran (fn_shotDir), par joueur : là où les DLL cherchent les photos prises par le jeu.
+["comspec_atak_native_shot_dir", "EDITBOX",
+    ["Dossier des captures d'écran", "Réglage personnel, vide par défaut (automatique) : le téléphone cherche vos photos dans le dossier Screenshots de votre profil Arma (Documents\Arma 3\Screenshots, ou Documents\Arma 3 - Other Profiles\(nom du profil)\Screenshots). Si vos photos ne sont jamais trouvées (profil déplacé, lancement avec -profiles, Documents déplacé par OneDrive), collez ici le chemin complet du dossier où Arma range vos captures, par exemple D:\Arma\Profils\Screenshots. Dossier de ce PC uniquement (pas de dossier réseau) ; le téléphone n'y fait que lire. Pour voir le dossier utilisé : cochez « Vérifier le dossier des captures » ci-dessous, ou Réglages du téléphone › À propos."],
+    ["COMSPEC", "ATAK · Photo"], "", 0,
+    { [{ ["apply"] call comspec_atak_native_fnc_shotDir; }] call CBA_fnc_execNextFrame; }] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_shot_check", "CHECKBOX",
+    ["Vérifier le dossier des captures", "Cochez puis validez (OK) : le dossier où le téléphone cherche vos photos s'affiche à l'écran, avec le nombre d'images et la dernière capture trouvée. La case se décoche toute seule."],
+    ["COMSPEC", "ATAK · Photo"], false, 0,
+    {
+        if !(_this isEqualTo true) exitWith {};
+        [{
+            ["comspec_atak_native_shot_check", false, 0, "client"] call CBA_settings_fnc_set;
+            ["check", true] spawn comspec_atak_native_fnc_shotDir;
+        }] call CBA_fnc_execNextFrame;
+    }] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_gesture_finger", "CHECKBOX",
     ["Geste du doigt d'honneur", "Décoché par défaut. Coché : les touches « Doigt d'honneur » et « Doigt d'honneur libre (maintenir) » font le geste. À assigner dans Options > Contrôles > Configurer les addons > COMSPEC ATAK."],
     ["COMSPEC", "ATAK · Gestes"], false, 1] call comspec_atak_native_fnc_addSetting;

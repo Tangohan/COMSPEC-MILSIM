@@ -294,7 +294,22 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1296, '2026-11-02', 'Ordres aux IA réparés, grands écrans allumés, montre, app Athena et Tenues', 'Avec le pack 2.9.29, les groupes IA de votre camp exécutent vraiment les ordres donnés depuis la carte du téléphone, l’app Ordres ou le PC du poste TOC, et renvoient leur état. Quand un ordre est impossible, le téléphone explique pourquoi. Les grands écrans sur trépied affichent enfin la carte TOC, les diapositives et la caméra en direct, la carte de la montre Garmin reste dans son cadran, et l’app Athena n’annonce plus un serveur injoignable quand votre compte est connecté. Le panneau Tenues devient plus lisible et s’utilise au clavier.', [
+            $pr(1297, '2026-11-02', 'Photos cherchées au bon endroit, dossier des captures réglable', 'Avec le pack 2.9.30, le jeu ne fouille plus tout le disque pour retrouver une photo prise avec le téléphone, le drone, une fiche ou la capture de la carte : il regarde seulement le dossier que vous avez choisi, puis le dossier des captures de votre profil Arma, puis Documents\Arma 3\Screenshots. Un nouveau réglage permet d’indiquer ce dossier quand vos photos ne sont jamais trouvées, et le téléphone dit où il a cherché quand une photo manque.', [
+                'Réglage « Dossier des captures d’écran » (Options des addons › COMSPEC › ATAK · Photo) : vide pour l’automatique, ou le dossier où Arma range vos captures',
+                'Case « Vérifier le dossier des captures » : dossier utilisé, nombre d’images et dernière capture trouvée',
+                'Réglages du téléphone › À propos › Photos : dossier utilisé et bouton VÉRIFIER LE DOSSIER',
+            ], [
+                'Recherche d’une photo limitée au dossier choisi, au profil Arma utilisé et au dossier Documents : plus de dossiers de mods ni de bibliothèques Steam parcourus',
+                'Dossier choisi accepté seulement sur ce PC (pas de dossier réseau) et jamais modifié par le téléphone',
+            ], [
+                'Petit gel possible à la première photo d’une partie, pendant la recherche des dossiers de captures',
+                'Photo introuvable signalée par un simple échec, sans dire où elle avait été cherchée',
+                'Photos jamais trouvées avec un profil lancé depuis un autre dossier',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.30 (liaison 2.0.116 incluse), quittez Arma complètement et relancez.',
+                'Laissez le réglage vide si vos photos partent déjà : le dossier de votre profil est trouvé tout seul.',
+            ], 'Pack téléphone 2.9.30'),
+            $pr(1296,'2026-11-02', 'Ordres aux IA réparés, grands écrans allumés, montre, app Athena et Tenues', 'Avec le pack 2.9.29, les groupes IA de votre camp exécutent vraiment les ordres donnés depuis la carte du téléphone, l’app Ordres ou le PC du poste TOC, et renvoient leur état. Quand un ordre est impossible, le téléphone explique pourquoi. Les grands écrans sur trépied affichent enfin la carte TOC, les diapositives et la caméra en direct, la carte de la montre Garmin reste dans son cadran, et l’app Athena n’annonce plus un serveur injoignable quand votre compte est connecté. Le panneau Tenues devient plus lisible et s’utilise au clavier.', [
                 'Groupes IA du camp dans les destinataires de l’app Ordres : DÉPLACER, TENIR, RECO et RENFORT exécutés au point de la grille saisie',
                 'Étape « Envois vers Athena » dans l’app Athena : dit clairement quand un envoi est refusé',
                 'Menu Écran COMSPEC sur les doubles écrans sur trépied (toutes les teintes)',

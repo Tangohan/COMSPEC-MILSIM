@@ -39,7 +39,9 @@ final class OverwatchPhotoJpgAndNoteAttachAssetTest extends TestCase
         self::assertStringContainsString('Arma 3 - COMSPEC\\Captures', $folder);
         self::assertStringContainsString('StageCapture', $cs);
         self::assertStringContainsString('EnumeratePhotoLookupDirs', $cs);
-        self::assertStringContainsString('IsLocalArma3Root', $cs);
+        // COMSPEC Link 2.0.116 : plus de %LOCALAPPDATA%\Arma 3 ni de dossier Workshop, liste bornée ScreenshotDirs().
+        self::assertStringNotContainsString('IsLocalArma3Root', $cs);
+        self::assertStringContainsString('ScreenshotDirs()', $cs);
         self::assertStringContainsString('GetPhotoSaveDir', $cs);
         self::assertStringNotContainsString(
             'if (!_ok && {_path isNotEqualTo _png}) then {',

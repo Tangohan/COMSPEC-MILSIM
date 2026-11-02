@@ -16,6 +16,15 @@ if ((_function select [0, 6]) isEqualTo "async:") exitWith {
     if (_ticket in _pending) then { _pending set [_ticket, [_data]]; };
 };
 
+// Capture introuvable (file_not_found) : la DLL joint « in=dossier » (COMSPEC Link 2.0.116), le dossier où elle a cherché.
+private _fnc_shotMissing = {
+    params [["_parts", []]];
+    private _in = "";
+    { if (_x isEqualType "" && {(_x select [0, 3]) isEqualTo "in="}) then { _in = _x select [3]; }; } forEach _parts;
+    if (_in isEqualTo "") exitWith { "Capture introuvable : vérifiez le réglage Dossier des captures d'écran (Options des addons › COMSPEC › ATAK · Photo)." };
+    format ["Capture introuvable dans %1 : vérifiez le réglage Dossier des captures d'écran (Options des addons › COMSPEC › ATAK · Photo).", _in]
+};
+
 switch (_function) do {
     case "PhoneHandset": {
         // Numéro du terminal attribué au joueur. L'e-mail et le nom civil ne passent pas ici.
@@ -370,7 +379,7 @@ switch (_function) do {
                 ["UploadSseNoteAttachment", "fail", _data, _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
                 private _msg = switch (true) do {
                     case ((_detail find "file_not_found") == 0): {
-                        "La photo jointe n’a pas été trouvée — reprenez-la depuis le terrain, puis renvoyez la fiche."
+                        format ["%1 Reprenez la photo, puis renvoyez la fiche.", [_parts] call _fnc_shotMissing]
                     };
                     case ((_detail find "file_empty") == 0): {
                         "La capture n’était pas encore prête — renvoyez la fiche avec une nouvelle photo."
@@ -406,7 +415,7 @@ switch (_function) do {
                 ["UploadSsePhoto", "fail", _data, _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
                 private _msg = switch (true) do {
                     case ((_detail find "file_not_found") == 0): {
-                        "La photo du visage n’a pas pu être jointe — passez la qualité HDR au moins sur Moyen, puis refaites PHOTO DU VISAGE."
+                        format ["%1 Qualité HDR au moins sur Moyen, puis refaites PHOTO DU VISAGE.", [_parts] call _fnc_shotMissing]
                     };
                     case ((_detail find "file_empty") == 0): {
                         "La capture du visage n’était pas encore prête — refaites PHOTO DU VISAGE."
@@ -536,7 +545,7 @@ switch (_function) do {
                 ["PhotoUpload", _txPhase, format ["%1 · %2", _detail, _fileHint], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
                 private _msg = switch (true) do {
                     case (_planRefused): { "Photo non envoyée. La formule de votre communauté n’inclut pas la carte et les liaisons Athena, prévenez son administrateur." };
-                    case ((_detail find "file_not_found") == 0): { "Photo introuvable sur le disque — capturez à nouveau." };
+                    case ((_detail find "file_not_found") == 0): { [_parts] call _fnc_shotMissing };
                     case ((_detail find "file_empty") == 0): { "La capture n’était pas encore prête — reprenez la photo." };
                     case ((_detail find "not_connected") == 0): { "Pas de liaison Athena — reconnectez-vous puis renvoyez." };
                     case ((_detail find "http_503") == 0): { "Le poste est saturé — la photo partira dès qu’il respirera." };
@@ -545,6 +554,10 @@ switch (_function) do {
                     default { "Échec d’envoi de la photo vers ATAK web." };
                 };
                 missionNamespace setVariable ["COMSPEC_LastReconUploadResult", ["ERR", _msg, format ["%1 · %2", _detail, _fileHint], [daytime, "HH:MM:SS"] call BIS_fnc_timeToString], false];
+                // Capture introuvable : dit au joueur où elle a été cherchée (téléphone natif), au lieu d'un échec muet.
+                if ((_detail find "file_not_found") == 0 && {!isNil "comspec_atak_native_fnc_notify"}) then {
+                    ["WARNING", _msg, 10, 40, "PHOTOS"] call comspec_atak_native_fnc_notify;
+                };
                 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback") then {
                     private _fbKind = if (
                         _planRefused

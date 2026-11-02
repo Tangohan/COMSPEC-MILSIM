@@ -1,27 +1,21 @@
-[h1]COMSPEC ATAK — Mise à jour 2.9.29.AG - Denver[/h1]
+[h1]COMSPEC ATAK — Mise à jour 2.9.30.AG - Denver[/h1]
 [b]Publication : 02/11/2026[/b]
 [quote]
-[b]Important :[/b] mettez à jour le pack 2.9.29 (COMSPEC Link 2.0.115 incluse), quittez Arma 3 complètement, puis relancez. Le serveur doit avoir la même version pour les ordres aux IA.
+[b]Important :[/b] mettez à jour le pack 2.9.30 (COMSPEC Link 2.0.116 incluse), quittez Arma 3 complètement, puis relancez.
 [/quote]
 
-[h2]Correctif — Les ordres aux IA marchent[/h2]
-Clic droit sur la carte du téléphone › Ordre aux IA, app Ordres ou PC du poste TOC : le groupe IA exécute enfin l'ordre (aller, patrouiller, attaquer, tenir, me suivre, embarquer…) et renvoie son état sur la carte. Quand l'ordre est impossible, le téléphone dit pourquoi : pas de réseau, pas le droit, aucun groupe IA, groupe avec un joueur ou protégé par la mission, serveur pas à jour. Dans l'app Ordres, les groupes IA du camp sont dans les destinataires et la grille saisie sert de point.
+[h2]Correctif — Les photos sont cherchées au bon endroit[/h2]
+Pour retrouver une photo prise avec le téléphone, le drone, une fiche ou la capture de la carte, le jeu ne fouille plus tout le disque (dossiers des mods Workshop, bibliothèques Steam, dossier du jeu…). Il regarde seulement, dans cet ordre : le dossier que vous avez choisi, le dossier Screenshots de votre profil Arma, puis Documents\Arma 3\Screenshots. Fini les petits gels à la première photo.
 
-[h2]Correctif — Grands écrans sur trépied[/h2]
-Grand écran sur trépied standard, noir ou sable : la carte TOC, les diapositives et la caméra en direct s'affichent au lieu d'un écran noir. Les doubles écrans sur trépied ont aussi le menu Écran COMSPEC.
+[h2]Nouveau — Réglage « Dossier des captures d'écran »[/h2]
+Options › Options des addons › COMSPEC › ATAK · Photo › Dossier des captures d'écran. Laissez-le vide (automatique) ou collez le dossier où Arma range vos captures si vos photos ne sont jamais trouvées (profil déplacé, lancement avec -profiles, dossier Documents déplacé). Dossier de ce PC uniquement : le téléphone n'y fait que lire. La case « Vérifier le dossier des captures », juste en dessous, affiche le dossier utilisé, le nombre d'images et la dernière capture trouvée ; c'est aussi dans Réglages du téléphone › À propos › Photos.
 
-[h2]Correctif — Montre Garmin[/h2]
-La carte reste dans le cadran rond, plus de grand nom de lieu en travers ni de « START | STOP » en double, et l'écran Téléphone de la montre affiche de nouveau les notifications.
-
-[h2]Correctif — App Athena[/h2]
-Plus de « Serveur Athena injoignable » ni de « Reconnexion impossible » quand votre compte est connecté. Une nouvelle étape « Envois vers Athena » dit clairement quand un envoi est refusé, et le jeu n'envoie plus rien à Athena avant d'être connecté.
-
-[h2]Amélioration — Tenues Athena[/h2]
-Le panneau Tenues de l'arsenal ACE est plus lisible : icônes nettes, textes plus grands. Il s'utilise au clavier (flèches, Entrée pour enfiler, Suppr, Ctrl+C pour copier) et la fiche d'une tenue montre le poids estimé, le remplissage de la tenue, du gilet et du sac, les munitions et le matériel. La recherche trouve aussi une tenue par ses pièces (arme, gilet…).
+[h2]Correctif — Photo introuvable : un message clair[/h2]
+Quand une photo n'est pas trouvée, le téléphone dit dans quel dossier il l'a cherchée et vous renvoie vers ce réglage, au lieu d'un simple échec.
 
 [h2]Composants[/h2]
 [list]
-[*] Téléphone ATAK 2.9.29.AG - Denver
-[*] COMSPEC Link 2.0.115
-[*] Overwatch connect 1.6.27 · Overwatch main 1.4.8
+[*] Téléphone ATAK 2.9.30.AG - Denver
+[*] COMSPEC Link 2.0.116
+[*] Overwatch connect 1.6.28 · Overwatch main 1.4.8
 [/list]
