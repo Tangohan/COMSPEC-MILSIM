@@ -90,6 +90,11 @@ if (diag_tickTime - (_cache select 0) > 1) then {
     private _side = side group player;
     private _fr = (allUnits select { alive _x && {side group _x isEqualTo _side} && {!((vehicle _x) isKindOf "Air")} && {(_x distance2D _c) < 4000} && {_x isNotEqualTo player} }) apply { [getPosASL _x, getDir _x] };
     private _airs = vehicles select { _x isKindOf "Air" && {alive _x} && {(count crew _x) > 0} && {side group (effectiveCommander _x) isEqualTo _side} && {(_x distance2D player) < 40000} };
+    // Bascule « Joueurs uniquement » de la carte JTAC (profil, défaut non) : IA masquées, filtre relu ici une fois par seconde.
+    if (profileNamespace getVariable ["COMSPEC_ATAK_JtacMapPlayers", false]) then {
+        _fr = (allUnits select { alive _x && {isPlayer _x} && {side group _x isEqualTo _side} && {!((vehicle _x) isKindOf "Air")} && {(_x distance2D _c) < 4000} && {_x isNotEqualTo player} }) apply { [getPosASL _x, getDir _x] };
+        _airs = _airs select { ((crew _x) findIf { isPlayer _x }) >= 0 };
+    };
     _cache = [diag_tickTime, _fr, _airs];
     uiNamespace setVariable ["COMSPEC_ATAK_JtacDrawCache", _cache];
 };

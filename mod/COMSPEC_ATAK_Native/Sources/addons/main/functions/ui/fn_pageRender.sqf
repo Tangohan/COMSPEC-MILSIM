@@ -17,7 +17,7 @@ if ("email" in _form || {"pair" in _form} || {"otp" in _form}) then {
     uiNamespace setVariable ["COMSPEC_ATAK_AthenaDraft", _draft];
 };
 // App JTAC : saisie du brief gardée (un appel radio reçu redessine la page).
-if ("j5" in _form || {"jBda" in _form}) then { ["save"] call comspec_atak_native_fnc_jtacAction; };
+if ("j5" in _form || {"jBda" in _form} || {"jL1" in _form} || {"jF1" in _form} || {"aCs" in _form} || {"jCs" in _form}) then { ["save"] call comspec_atak_native_fnc_jtacAction; };
 // Rédacteur d'ordre (TASK) : saisie gardée quand la page se redessine (ordre reçu, retour de liaison, mise en page, redémarrage).
 private _st0 = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 if ((_st0 getOrDefault ["orderCompose", false]) && {(_st0 getOrDefault ["pageDrawn", ""]) isEqualTo "TASK"} && {"text" in _form || {"sit" in _form}}) then {

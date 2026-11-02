@@ -5,6 +5,10 @@
     Ranger complètement : touche « porter » (Ctrl+U) depuis la miniature.
 */
 if (!hasInterface) exitWith { false };
+// Même appui vu deux fois dans la même image (raccourci CBA et fenêtre de bord, fn_vehicleKeys ; ou deux touches réglées
+// pareil) : un seul basculement.
+if ((uiNamespace getVariable ["COMSPEC_ATAK_ToggleFrame", -1]) isEqualTo diag_frameNo) exitWith { false };
+uiNamespace setVariable ["COMSPEC_ATAK_ToggleFrame", diag_frameNo];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _d = [] call comspec_atak_native_fnc_display;
 // En main -> miniature : fn_displayUnload rouvre le téléphone porté (COMSPEC_ATAK_HudWanted).

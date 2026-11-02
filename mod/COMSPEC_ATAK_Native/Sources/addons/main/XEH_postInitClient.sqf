@@ -235,6 +235,9 @@ if (!isNil "zen_custom_modules_fnc_register") then {
 ["comspec_atak_native_cas", { if (["hold", ["comspec_atak_native_cas", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_jtacAction; }] call CBA_fnc_addEventHandler;
 // App JTAC ouverte en contrôle (ou vue équipage) : position et géométrie de l'appareil rafraîchies.
 [{ ["tick"] call comspec_atak_native_fnc_jtacAction; }, 3] call COMSPEC_ATAK_PfhSpread;
+// Briefs air (9-LINE, 5-LINE) envoyés aux pilotes et leurs accusés (WILCO, UNABLE) ; boîte Athena relevée à bord d'un aéronef.
+["comspec_atak_native_airBrief", { if (["hold", ["comspec_atak_native_airBrief", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_airBrief; }] call CBA_fnc_addEventHandler;
+[{ ["poll"] call comspec_atak_native_fnc_airBrief; }, 12] call COMSPEC_ATAK_PfhSpread;
 private _eh = addMissionEventHandler ["ExtensionCallback", {
     if !(missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) exitWith { _this call comspec_atak_native_fnc_extensionCallback };
     private _pt = diag_tickTime;
@@ -505,6 +508,8 @@ player addEventHandler ["Respawn", { [{ ["apply"] call comspec_atak_native_fnc_l
     if (_k isEqualTo "toc") then { ["INFO", format ["Poste TOC %1 : app Poste TOC disponible", ["callsign"] call comspec_atak_native_fnc_tocPost], 4, 20, "TOC"] call comspec_atak_native_fnc_notify; };
     if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; };
 }, 2] call COMSPEC_ATAK_PfhSpread;
+// À bord : touches du téléphone reprises sur les fenêtres de cockpit ou de bord qui gardent le clavier (fn_vehicleKeys).
+[{ ["tick"] call comspec_atak_native_fnc_vehicleKeys; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Lueur des écrans la nuit (la sienne publiée, celle des joueurs proches dessinée) et filtre JVN (fn_screenGlow).
 [{ ["tick"] call comspec_atak_native_fnc_screenGlow; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Action ACE : changer la batterie du téléphone (si une batterie de rechange est portée).
