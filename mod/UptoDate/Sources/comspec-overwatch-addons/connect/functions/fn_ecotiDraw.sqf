@@ -13,6 +13,9 @@ params [["_buildCache", false, [false]]];
 // PFH avec affichage coupé (cas normal) : sortir avant le thème / icône (config, fileExists, A3TI) recalculés à 8 Hz.
 if (_buildCache && {!([] call comspec_overwatch_connect_fnc_ecotiIsActive)}) exitWith {
     missionNamespace setVariable ["COMSPEC_EcotiDrawActive", false, false];
+    // Réactivation : listes refaites tout de suite.
+    private _c = missionNamespace getVariable "COMSPEC_EcotiDrawCache";
+    if (!isNil "_c") then { _c set ["scanAt", -1]; };
 };
 
 if (!_buildCache && {!(missionNamespace getVariable ["COMSPEC_EcotiDrawActive", false])}) exitWith {
@@ -35,8 +38,11 @@ private _showUnitOutline = missionNamespace getVariable ["comspec_overwatch_ecot
 private _cache = missionNamespace getVariable ["COMSPEC_EcotiDrawCache", createHashMap];
 private _fusionOn = missionNamespace getVariable ["comspec_overwatch_ecoti_fusion", true];
 if (!(_fusionOn isEqualType true)) then { _fusionOn = true; };
+// Unités, véhicules, thème : relus 1 fois / s (le Draw3D suit les positions à chaque image), plus à 8 Hz.
+private _rescan = _buildCache && {diag_tickTime >= (_cache getOrDefault ["scanAt", -1])};
+if (_rescan) then { _cache set ["scanAt", diag_tickTime + 1]; };
 // Icône (fileExists) + thème (config) : recalculés par le PFH, plus à chaque image.
-if (_buildCache || {!("icon" in _cache)}) then {
+if (_rescan || {!("icon" in _cache)}) then {
     private _theme = [] call comspec_overwatch_connect_fnc_ecotiThemeColors;
     private _colOutlineC = _theme getOrDefault ["outline", [1, 1, 0.7, 0.95]];
     private _colBldgC = _theme getOrDefault ["building", [0.65, 1, 0.9, 0.98]];
@@ -144,6 +150,7 @@ private _fnc_drawSorted = {
 if (_buildCache) exitWith {
     // État actif déjà vérifié en tête (sortie si coupé).
     missionNamespace setVariable ["COMSPEC_EcotiDrawActive", true, false];
+    if (_rescan) then {
     _cache set ["units", if (_showAllies) then {
         allUnits select {
             alive _x
@@ -165,6 +172,7 @@ if (_buildCache) exitWith {
         });
     };
     _cache set ["vehicles", _vehList];
+    };
     private _mkEntries = [];
     // Même nombre de marqueurs, caméra à < 100 m et scan < 2 s : on garde la liste (Draw3D refait écran + distance).
     private _mkReuse = _showMarkers
