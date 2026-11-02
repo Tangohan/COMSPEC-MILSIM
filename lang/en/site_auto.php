@@ -51739,4 +51739,6 @@ return [
     'Nom copié' => 'Name to copy',
     'Allemand' => 'German',
     'nom officiel' => 'official name',
+    'élément lié' => 'linked item',
+    'qualification délivrée' => 'qualification awarded',
 ];

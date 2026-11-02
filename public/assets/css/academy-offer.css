@@ -281,3 +281,6 @@
 .acx-how__group { margin-top: .35rem; color: var(--academy-muted); font-size: .75rem; font-weight: 700; }
 .acx-how__group:first-child { margin-top: 0; }
 .acx-how + .acx-progress, .acx-how + .acx-note { margin-top: 1rem; }
+/* « outline » est aussi une classe utilitaire Tailwind (contour plein) : on garde seulement le contour de focus. */
+.acx .button.outline:not(:focus-visible) { outline: 0; }
+.acx-how__info { color: var(--academy-muted); font-size: .8125rem; font-weight: 600; }

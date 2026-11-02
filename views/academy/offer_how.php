@@ -47,10 +47,10 @@ if ($howShown === [] && !in_array($it['kind'], ['pathway', 'competency', 'issuer
 <?php endforeach ?>
 <?php if (!$howFull && count($howLines) > 3): ?><li class="acx-how__more"><span>et</span> <?= count($howLines) - 3 ?> <span>autres conditions</span></li><?php endif ?>
 <?php if ($it['kind'] === 'pathway'): ?>
-    <li class="acx-how__line"><span class="acx-how__mark" aria-hidden="true"></span><span class="acx-how__text"><?= count($it['steps'] ?? []) ?> <span>étapes</span></span></li>
+    <li class="acx-how__info"><?= count($it['steps'] ?? []) ?> <span><?= count($it['steps'] ?? []) === 1 ? 'étape' : 'étapes' ?></span></li>
 <?php elseif ($it['kind'] === 'competency' && ($it['links'] ?? []) !== []): ?>
-    <li class="acx-how__line"><span class="acx-how__mark" aria-hidden="true"></span><span class="acx-how__text"><span>S’acquiert avec</span> <?= count($it['links']) ?> <span>éléments liés</span></span></li>
+    <li class="acx-how__info"><span>S’acquiert avec</span> <?= count($it['links']) ?> <span><?= count($it['links']) === 1 ? 'élément lié' : 'éléments liés' ?></span></li>
 <?php elseif ($it['kind'] === 'issuer'): ?>
-    <li class="acx-how__line"><span class="acx-how__mark" aria-hidden="true"></span><span class="acx-how__text"><?= (int) ($it['count'] ?? 0) ?> <span>qualifications délivrées</span></span></li>
+    <li class="acx-how__info"><?= (int) ($it['count'] ?? 0) ?> <span><?= (int) ($it['count'] ?? 0) === 1 ? 'qualification délivrée' : 'qualifications délivrées' ?></span></li>
 <?php endif ?>
 </ul>
