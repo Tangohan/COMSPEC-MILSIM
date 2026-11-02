@@ -145,6 +145,7 @@ use App\Controllers\Api\AdvancementApiController;
 use App\Controllers\Admin\Organization\PilotLogbookController;
 use App\Controllers\Admin\Organization\PilotSyllabusController;
 use App\Controllers\Admin\Organization\QualificationReferentielController;
+use App\Controllers\Admin\Organization\QualificationRulesController;
 use App\Controllers\Admin\Organization\RankCatalogAdminController;
 use App\Controllers\Admin\Organization\AwardReferentielController;
 use App\Controllers\Admin\Organization\EquipmentReferentielController;
@@ -1750,6 +1751,13 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/qualifications/{id}/champs/{fieldId}/supprimer', [QualificationReferentielController::class, 'deleteCustomField'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/{id}/droits', [QualificationReferentielController::class, 'storePermissionGrant'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/{id}/droits/{grantId}/supprimer', [QualificationReferentielController::class, 'deletePermissionGrant'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Qualifications de toute nature : fiche, délivrance depuis la matrice des effectifs, passage automatique, propositions.
+    $router->post('/back-office/referentiels/qualifications/matrice/case', [QualificationRulesController::class, 'cell'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/academy/rattacher', [QualificationRulesController::class, 'importAcademy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/propositions/{awardId}', [QualificationRulesController::class, 'decide'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/{id}/evaluer', [QualificationRulesController::class, 'evaluate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/{id}/restaurer', [QualificationRulesController::class, 'restore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/referentiels/qualifications/{id}', [QualificationRulesController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
 
     $router->get('/back-office/referentiels/decorations', [AwardReferentielController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/decorations', [AwardReferentielController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

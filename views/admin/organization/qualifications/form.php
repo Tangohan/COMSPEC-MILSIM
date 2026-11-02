@@ -47,13 +47,22 @@ $examplePreview = \App\Support\QualificationExamples::numberPreview($v('certific
                 <h1><?= $isEdit ? $e($v('name', 'Qualification')) : 'Nouvelle qualification' ?></h1>
                 <p class="rq-lead">Une qualification décrit ce qu’un membre <strong>sait faire</strong> : sa durée de validité, la façon dont elle se valide et le brevet qui l’atteste. Chaque champ est expliqué ; rien n’est obligatoire hormis le code et le nom.</p>
             </div>
-            <?php if ($isEdit && empty($definition['archived_at'])): ?>
+            <?php if ($isEdit): ?>
+            <div class="rq-top__acts">
+                <a class="rq-btn" href="<?= $e(url($base)) ?>">Voir la fiche et les titulaires</a>
+                <?php if (empty($definition['archived_at'])): ?>
                 <form method="post" action="<?= $e(url($base . '/archive')) ?>" onsubmit="return confirm('Archiver cette qualification ? Les attributions existantes sont conservées.');">
                     <?= \App\Core\Csrf::field() ?>
                     <button class="rq-btn rq-btn--warn" type="submit">Archiver</button>
                 </form>
-            <?php elseif ($isEdit): ?>
+                <?php else: ?>
                 <span class="rq-pill rq-pill--muted">Archivée</span>
+                <form method="post" action="<?= $e(url($base . '/restaurer')) ?>">
+                    <?= \App\Core\Csrf::field() ?>
+                    <button class="rq-btn" type="submit">Réactiver</button>
+                </form>
+                <?php endif; ?>
+            </div>
             <?php endif; ?>
         </div>
     </header>
@@ -275,6 +284,8 @@ $examplePreview = \App\Support\QualificationExamples::numberPreview($v('certific
                     </div>
                 </div>
             </section>
+
+            <?php require __DIR__ . '/_obtention.php'; ?>
 
             <div class="rq-submit">
                 <p data-rq-dirty-note><?= $isEdit ? 'Les attributions existantes gardent leurs dates ; les nouvelles règles s’appliquent aux prochaines.' : 'Après la création : insigne, niveaux, prérequis et droits associés.' ?></p>

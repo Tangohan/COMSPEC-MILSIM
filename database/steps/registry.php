@@ -37,4 +37,6 @@ return [
     ['id' => 'org_low_member_reminders', 'label' => 'Communautés à un ou deux membres : rappels aux responsables et liste « Organisations à supprimer »', 'group' => 'schema', 'file' => '3310_org_low_member_reminders.php', 'rerun' => true],
     ['id' => 'tenant_generated_labels', 'label' => 'Libellés des unités et postes générés : personnalisation par communauté et par langue', 'group' => 'schema', 'file' => '3295_tenant_generated_labels.php', 'rerun' => true],
     ['id' => 'unit_assignment_repair', 'label' => 'Affectations : réparation des membres affectés sur leur fiche mais absents des effectifs (double envoi du formulaire)', 'group' => 'schema', 'file' => '3345_unit_assignment_repair.php', 'rerun' => true],
+    ['id' => 'qualification_award_rules', 'label' => 'Qualifications : modes d’obtention (à la main, Academy, automatique sur heures de jeu, de vol, missions…), prérequis et visibilité', 'group' => 'schema', 'file' => '3430_qualification_award_rules.php', 'rerun' => true],
+    ['id' => 'qualification_academy_reprise', 'label' => 'Qualifications : reprise des attestations Academy dans le référentiel (une qualification par formation, attestations rattachées)', 'group' => 'schema', 'file' => '3435_qualification_academy_reprise.php', 'rerun' => true],
 ];
