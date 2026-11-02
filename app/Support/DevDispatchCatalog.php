@@ -294,6 +294,14 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1318, '2026-11-02', 'Publier un document : un assistant en cinq étapes', 'La page « Publier un document » de la doctrine devient un assistant pas à pas : le texte, le classement, les destinataires, la lecture attendue, puis un récapitulatif avant de publier. Une barre de progression indique où vous en êtes, chaque étape vérifie l’essentiel avant d’avancer avec un message clair sous le champ concerné, et le récapitulatif renvoie d’un clic vers l’étape à corriger. Tous les réglages précédents sont conservés.', [
+                'Import d’un texte existant par glisser-déposer (page web, texte ou Markdown) et aperçu du document tel que le lecteur le verra',
+                'Destinataires en listes à cocher : recherche dans chaque liste (unités, emplois, rôles, membres), « Tout cocher », compteur par liste et total',
+                'Saisie conservée sur l’appareil jusqu’à l’enregistrement : après une fermeture ou un enregistrement refusé, la page propose de la reprendre',
+            ], [
+                'Indicateur d’attente pendant l’enregistrement et la publication, et pendant le chargement de l’éditeur',
+                'Dates vérifiées : la date limite de lecture et la fin d’application doivent suivre la prise d’effet',
+            ], [], ['command'], [], 'Portail'),
             $pr(1317, '2026-11-02', 'App Zones (battleplan), bandeau du curseur et point GPS personnalisables', 'Avec le pack 2.9.35, le téléphone gagne l’app Zones : une zone de travail se découpe toute seule en grille de référence A1, B2…, en îlots délimités par les routes ou en secteurs N, NE…, chaque zone nommée et numérotée, les bâtiments numérotés avec leurs étages et les grands axes routiers nommés MSR et ASR avec leurs points de contrôle. Chaque zone a un état et ses signalements : on signale un ennemi dans « B-04 » en un clic, un contact posé dans une zone la met à jour, et la situation se partage à l’équipe, au groupe ou au camp. Sur la carte, le bandeau du curseur se choisit (nouveau, classique d’avant la 2.9.34, compact ou masqué) et votre point GPS se règle.', [
                 'App Zones (Mission) : zone de travail en rectangle, polygone, cercle ou autour de moi, découpée en grille GRG (A1… ou numéros en serpentin, cases de 50 m à 1 km), en îlots délimités par les routes de la carte, en secteurs N, NE… ou numérotés avec anneaux, ou en une seule zone ; préfixe et noms de code au choix',
                 'Bâtiments d’une zone numérotés du nord au sud, avec leurs étages',
