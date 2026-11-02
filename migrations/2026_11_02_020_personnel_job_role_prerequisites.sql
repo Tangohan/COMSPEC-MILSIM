@@ -1,6 +1,6 @@
 -- Emplois : prérequis (doctrines, heures de jeu / de vol, qualifications, compétences) et dérogations motivées.
 -- Aucune donnée existante n'est modifiée : un emploi sans ligne ici n'a aucun prérequis.
--- Exécuté par database/steps/3385_personnel_job_role_prerequisites.php ; idempotent (CREATE TABLE IF NOT EXISTS).
+-- Exécuté par database/steps/3440_personnel_job_role_prerequisites.php ; idempotent (CREATE TABLE IF NOT EXISTS).
 
 CREATE TABLE IF NOT EXISTS `personnel_job_role_requirements` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,

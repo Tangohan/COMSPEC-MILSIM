@@ -267,7 +267,7 @@ final class JobCatalogPrerequisitesTest extends TestCase
             };
             require $root . '/database/steps/_context.php';
             ob_start();
-            require $root . '/database/steps/3385_personnel_job_role_prerequisites.php';
+            require $root . '/database/steps/3440_personnel_job_role_prerequisites.php';
 
             return (string) ob_get_clean();
         };

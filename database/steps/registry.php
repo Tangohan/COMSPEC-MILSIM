@@ -38,5 +38,5 @@ return [
     ['id' => 'tenant_generated_labels', 'label' => 'Libellés des unités et postes générés : personnalisation par communauté et par langue', 'group' => 'schema', 'file' => '3295_tenant_generated_labels.php', 'rerun' => true],
     ['id' => 'unit_assignment_repair', 'label' => 'Affectations : réparation des membres affectés sur leur fiche mais absents des effectifs (double envoi du formulaire)', 'group' => 'schema', 'file' => '3345_unit_assignment_repair.php', 'rerun' => true],
     ['id' => 'personnel_job_role_enrichment', 'label' => 'Fonctions : abrégé, icône, étiquettes de la communauté et fonctions du site masquées', 'group' => 'schema', 'file' => '3360_personnel_job_role_enrichment.php', 'rerun' => true],
-    ['id' => 'personnel_job_role_prerequisites', 'label' => 'Emplois : prérequis (doctrines, heures de jeu et de vol, qualifications, compétences) et dérogations motivées', 'group' => 'schema', 'file' => '3385_personnel_job_role_prerequisites.php', 'rerun' => true],
+    ['id' => 'personnel_job_role_prerequisites', 'label' => 'Emplois : prérequis (doctrines, heures de jeu et de vol, qualifications, compétences) et dérogations motivées', 'group' => 'schema', 'file' => '3440_personnel_job_role_prerequisites.php', 'rerun' => true],
 ];
