@@ -294,6 +294,15 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1320, '2026-11-02', 'Émetteurs des qualifications : liste triable et assistants pas à pas', 'La page Émetteurs du référentiel des qualifications devient un tableau : recherche instantanée, filtres par pays, type, origine (catalogue réel ou création de la communauté) et statut, tri par colonne, pages, et pour chaque émetteur le nombre de qualifications qui l’utilisent. Importer les émetteurs réels et créer un émetteur se font maintenant en trois étapes dans une fenêtre, avec une recherche à chaque étape, un récapitulatif avant l’envoi et le plafond de la formule affiché ; la liste se met à jour sans recharger la page.', [
+                'Liste des émetteurs : tableau triable (nom, pays, type, origine, qualifications, délivrances), recherche, filtres pays / type / origine / statut, 25, 50 ou 100 par page ; les filtres restent dans l’adresse',
+                'Actions sur chaque ligne : modifier, voir les qualifications liées, archiver ou réactiver sans quitter la page',
+                'Importer les émetteurs réels en trois étapes : pays (compteurs par pays, recherche), émetteurs (recherche, type, déjà présents grisés, tout cocher parmi ceux affichés), récapitulatif avec la jauge du plafond de la formule',
+                'Créer un émetteur en trois étapes : identité (nom, sigle, pays, type), détails (localisation, site officiel, présentation en français et en anglais, logo, rattachement, signataire, qualifications délivrées), récapitulatif',
+            ], [
+                'En tapant le nom d’un nouvel émetteur, la page signale un émetteur déjà présent ou un organisme du catalogue réel à importer plutôt',
+                'Chargements visibles (liste en cours d’actualisation, boutons occupés) et messages de réussite ou d’erreur dans la page',
+            ], [], ['personnel', 'platform'], [], 'Portail'),
             $pr(1318, '2026-11-02', 'Publier un document : un assistant en cinq étapes', 'La page « Publier un document » de la doctrine devient un assistant pas à pas : le texte, le classement, les destinataires, la lecture attendue, puis un récapitulatif avant de publier. Une barre de progression indique où vous en êtes, chaque étape vérifie l’essentiel avant d’avancer avec un message clair sous le champ concerné, et le récapitulatif renvoie d’un clic vers l’étape à corriger. Tous les réglages précédents sont conservés.', [
                 'Import d’un texte existant par glisser-déposer (page web, texte ou Markdown) et aperçu du document tel que le lecteur le verra',
                 'Destinataires en listes à cocher : recherche dans chaque liste (unités, emplois, rôles, membres), « Tout cocher », compteur par liste et total',
