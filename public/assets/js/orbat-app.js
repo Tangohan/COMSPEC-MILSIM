@@ -253,6 +253,11 @@
       tags += '<span class="orb-pill orb-pill--vis">' + esc(n.visibilityHintLabel || n.maskHintLabel) + '</span>';
     }
     if (n.echelon) tags += '<span class="orb-pill orb-pill--ech">' + esc(echelonLabel(n.echelon)) + '</span>';
+    var aq = S.adq && n.unitId > 0 && !opt.preview ? S.adq[n.unitId] : null;
+    if (aq) {
+      tags += '<span class="orb-pill orb-pill--adq is-' + esc(aq.tone || 'info') + '" title="' + esc((aq.texts || []).join(' · ')) + '">' +
+        esc(aq.label || '') + (aq.count > 1 ? ' · ' + aq.count : '') + '</span>';
+    }
     var html = '<div class="orb-nd-top"><span class="orb-sym" aria-hidden="true">' + symHtml(n, 25) + '</span>' +
       '<div class="orb-nd-t"><b data-name>' + esc(n.label || '—') + '</b><span class="orb-code">' + esc(code) + '</span></div>' +
       (n.chartIconUrl ? '<img class="orb-nd-icon" alt="" src="' + esc(mediaSrc(n.chartIconUrl)) + '">' : '') +
@@ -734,6 +739,21 @@
     setRoster(root);
     render();
     refreshOpenModal();
+    loadAdequacy();
+  }
+  /* Adéquation de l’organisation (gestionnaires) : pastille par unité, textes déjà traduits par le serveur. */
+  function loadAdequacy() {
+    if (!B.canManage || S.previewAs) { S.adq = null; return; }
+    fetch(api('/api/orbat/adequation'), { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j || !j.success) return;
+        var next = j.units || {};
+        if (JSON.stringify(next) === JSON.stringify(S.adq || {})) return;
+        S.adq = next;
+        if (S.root) render();
+      })
+      .catch(function () { /* pastilles facultatives */ });
   }
   function ensureOptions() {
     if (S.opts || !B.canManage) return Promise.resolve(S.opts);
@@ -2016,6 +2036,7 @@
     if (B.open && B.canManage) focusFromQuery();
   }
   if (B.canManage) ensureOptions().then(function () { if (S.view === 'sheet') renderSheet(); });
+  loadAdequacy();
   // milsymbol (850 Ko) arrive après le premier affichage : les cartes montrent d’abord un repère, puis le symbole.
   if (window.requestIdleCallback) window.requestIdleCallback(loadMilsymbol, { timeout: 1200 }); else setTimeout(loadMilsymbol, 200);
 

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/partials/effk.php';
+require_once __DIR__ . '/partials/adequacy.php';
 
 /*
  * Effectifs > Chaîne de commandement (maquette « Effectifs Chaîne », 2026-11-02).
@@ -66,8 +67,42 @@ $crest = static function (array $u): string {
 $designated = count($units) - $missingChefs;
 $chipLimit = 24;
 
+// Adéquation de l’organisation (OrgAdequacyService) : absente si le contrôle est désactivé ou indisponible.
+$adq = is_array($chainAdequacy ?? null) && !empty($chainAdequacy['enabled']) ? $chainAdequacy : null;
+$adqPeople = $adq !== null && is_array($adq['people'] ?? null) ? $adq['people'] : [];
+$adqUnits = $adq !== null && is_array($adq['units'] ?? null) ? $adq['units'] : [];
+$adqIssues = $adq !== null && is_array($adq['issues'] ?? null) ? $adq['issues'] : [];
+$onlyGaps = !empty($adequacyOnlyGaps) && $adq !== null;
+$memberUrl = static fn (int $id): string => effectifs_workspace_url('membres/' . $id);
+/** Pastille d’adéquation d’une personne (sous-capacité, surqualification), chaîne vide sinon. */
+$adqMark = static function (int $userId) use ($adqPeople): string {
+    $status = (string) ($adqPeople[$userId]['status'] ?? '');
+
+    return in_array($status, [\App\Services\Organization\OrgAdequacyEngine::STATUS_UNDER, \App\Services\Organization\OrgAdequacyEngine::STATUS_OVER], true)
+        ? adq_badge($status, true) : '';
+};
+/** Ligne « Adjoint » sous le chef : adjoint désigné, adjoint de fait, ou adjoint attendu à nommer. */
+$deputyLine = static function (int $unitId) use ($h, $adqUnits, $adqPeople, $adqIssues): string {
+    $row = $adqUnits[$unitId] ?? null;
+    if (!is_array($row)) {
+        return '';
+    }
+    $did = (int) ($row['deputy_id'] ?? 0);
+    if ($did > 0) {
+        return '<small class="effk-slot__adj">' . $h(($row['deputy_source'] ?? '') === 'subunit' ? 'Adjoint de fait :' : 'Adjoint :') . ' '
+            . $h((string) ($adqPeople[$did]['label'] ?? 'Membre')) . '</small>';
+    }
+    foreach ($row['issues'] ?? [] as $i) {
+        if (($adqIssues[$i]['code'] ?? '') === 'deputy_missing') {
+            return '<small class="effk-slot__adj is-miss">Adjoint à nommer</small>';
+        }
+    }
+
+    return '';
+};
+
 /** Poste de chef d’une unité : titulaire ou poste à pourvoir. */
-$slot = static function (array $u, string $variant = '') use ($h, $canManage, $memberById, $isWithin, $shortName, $unitById): string {
+$slot = static function (array $u, string $variant = '') use ($h, $canManage, $memberById, $isWithin, $shortName, $unitById, $adqMark, $deputyLine): string {
     $uid = (int) $u['id'];
     $cid = (int) ($u['commander_user_id'] ?? 0);
     $type = effk_unit_type_label((string) ($u['type'] ?? ''));
@@ -83,7 +118,7 @@ $slot = static function (array $u, string $variant = '') use ($h, $canManage, $m
         return '<' . $tag . $attrs . '>'
             . '<span class="effk-slot__vi" aria-hidden="true">' . effk_icon('plus') . '</span>'
             . '<span class="effk-slot__txt"><span class="effk-k">' . $h($role) . '</span><b>Chef à désigner</b>'
-            . '<small>' . $h($unitName) . '</small></span>'
+            . '<small>' . $h($unitName) . '</small>' . $deputyLine($uid) . '</span>'
             . '</' . $tag . '>';
     }
     $m = $memberById[$cid] ?? null;
@@ -103,14 +138,14 @@ $slot = static function (array $u, string $variant = '') use ($h, $canManage, $m
     return '<' . $tag . $attrs . '>'
         . effk_avatar($cid, $label, $variant === 'cmd' ? 'lg' : '')
         . '<span class="effk-slot__txt"><span class="effk-k">' . $h($role) . '</span>'
-        . '<b><span class="effk-slot__name">' . $h($label) . '</span>' . $detached . '</b>'
-        . '<small>' . $h($sub) . '</small></span>'
+        . '<b><span class="effk-slot__name">' . $h($label) . '</span>' . $detached . $adqMark($cid) . '</b>'
+        . '<small>' . $h($sub) . '</small>' . $deputyLine($uid) . '</span>'
         . ($canManage ? effk_icon('down', 'effk-slot__ed') : '')
         . '</' . $tag . '>';
 };
 
 /** Membres d’une unité (hors chef) en pastilles ; chaîne vide s’il n’y en a aucun. */
-$chips = static function (int $unitId) use ($h, $membersByUnit, $unitById, $chipLimit): string {
+$chips = static function (int $unitId) use ($h, $membersByUnit, $unitById, $chipLimit, $adqPeople): string {
     $cid = (int) ($unitById[$unitId]['commander_user_id'] ?? 0);
     $list = array_values(array_filter($membersByUnit[$unitId] ?? [], static fn (array $m): bool => (int) $m['user_id'] !== $cid));
     if ($list === []) {
@@ -120,8 +155,11 @@ $chips = static function (int $unitId) use ($h, $membersByUnit, $unitById, $chip
     foreach (array_slice($list, 0, $chipLimit) as $m) {
         $mid = (int) $m['user_id'];
         $role = trim((string) ($m['role_name'] ?? ''));
-        $out .= '<a class="effk-chip" href="' . $h(effectifs_workspace_url('membres/' . $mid)) . '" data-chain-chip="' . $mid . '" data-chain-member="' . $mid . '"'
-            . ($role !== '' && $role !== 'Membre' ? ' title="' . $h($role) . '"' : '') . '>'
+        $adqStatus = (string) ($adqPeople[$mid]['status'] ?? '');
+        $flag = in_array($adqStatus, ['sous_capacite', 'surqualifie', 'sans_chef'], true) ? adq_status_meta($adqStatus) : null;
+        $title = trim(($role !== '' && $role !== 'Membre' ? $role : '') . ($flag !== null ? ($role !== '' && $role !== 'Membre' ? ' · ' : '') . $flag[0] : ''));
+        $out .= '<a class="effk-chip' . ($flag !== null ? ' has-adq is-adq-' . $h($flag[1]) : '') . '" href="' . $h(effectifs_workspace_url('membres/' . $mid)) . '" data-chain-chip="' . $mid . '" data-chain-member="' . $mid . '"'
+            . ($title !== '' ? ' title="' . $h($title) . '"' : '') . '>'
             . effk_avatar($mid, (string) $m['label'], 'sm') . '<span>' . $h((string) $m['label']) . '</span></a>';
     }
     if (count($list) > $chipLimit) {
@@ -247,6 +285,15 @@ $structureLink = $canManage ? '<a class="effk-btn" href="' . $h(url('back-office
         if ($withoutUnit > 0) {
             echo effk_pill($withoutUnit . ' membre' . ($withoutUnit > 1 ? 's' : '') . ' sans unité, donc sans chef', 'info', '', effectifs_workspace_url() . '?sans_affectation=1');
         }
+        if ($adq !== null) {
+            $gapsUrl = effectifs_workspace_url('chaine') . '?ecarts=1#eff-adequacy';
+            foreach (adq_summary_items(is_array($adq['summary'] ?? null) ? $adq['summary'] : []) as [$sLabel, $sCount, $sTone]) {
+                if (in_array($sLabel, ['Chefs à désigner'], true)) {
+                    continue;
+                }
+                echo '<a class="effk-pill' . ($sTone !== 'muted' ? ' is-' . $h($sTone) : '') . '" href="' . $h($gapsUrl) . '"><span>' . $h($sLabel) . '</span> <b>' . (int) $sCount . '</b></a>';
+            }
+        }
         ?>
     </div>
 
@@ -296,6 +343,76 @@ $structureLink = $canManage ? '<a class="effk-btn" href="' . $h(url('back-office
         </p>
         <?php endif; ?>
     </section>
+
+    <?php if ($adq !== null): ?>
+    <?php
+    $byUnitIssues = [];
+    $personIssues = [];
+    foreach ($adqIssues as $issue) {
+        $iu = (int) ($issue['unit_id'] ?? 0);
+        if ($iu > 0 && isset($unitById[$iu])) {
+            $byUnitIssues[$iu][] = $issue;
+        } else {
+            $personIssues[] = $issue;
+        }
+    }
+    $settingsUrl = effectifs_workspace_url('chaine/adequation');
+    ?>
+    <?= adq_styles() ?>
+    <details class="effk-panel effk-fold adq-scope" id="eff-adequacy"<?= $onlyGaps || $adqIssues !== [] ? ' open' : '' ?>>
+        <summary><span><b>Adéquation de l’organisation</b><small><?= $adqIssues === [] ? 'Chaque poste est tenu au niveau attendu par son échelon' : str_replace('%1', (string) count($adqIssues), count($adqIssues) > 1 ? '%1 écarts à examiner' : '%1 écart à examiner') ?></small></span><?= effk_icon('down') ?></summary>
+        <div class="effk-fold__body">
+            <p class="effk-fold__lead">
+                Chaque échelon attend un chef d’un certain grade, souvent un adjoint et un effectif de référence.
+                Les écarts décrivent la capacité de commandement d’un poste au regard de son échelon, pas la valeur des personnes :
+                une sous-capacité signale un poste tenu en dessous de ce qu’il demande, une surqualification une expérience qui servirait plus haut.
+            </p>
+            <div class="adq-filter">
+                <a class="effk-btn" href="<?= $h($settingsUrl) ?>"><?= effk_icon('route') ?><span>Référentiel et réglages de l’adéquation</span></a>
+                <?php if ($onlyGaps): ?>
+                    <a class="effk-btn" href="<?= $h(effectifs_workspace_url('chaine') . '#eff-chain-people-panel') ?>">Afficher tout le monde</a>
+                <?php else: ?>
+                    <a class="effk-btn" href="<?= $h(effectifs_workspace_url('chaine') . '?ecarts=1#eff-chain-people-panel') ?>">Filtrer : personnes avec un écart</a>
+                <?php endif; ?>
+            </div>
+            <?php if ($adqIssues === []): ?>
+                <?= effk_empty('Aucun écart', 'Chaque personne a sa place, son chef, et chaque poste est tenu au niveau attendu.') ?>
+            <?php else: ?>
+                <div class="adq-groups">
+                    <?php foreach ($units as $u):
+                        $uid = (int) $u['id'];
+                        if (($byUnitIssues[$uid] ?? []) === []) {
+                            continue;
+                        }
+                        $urow = $adqUnits[$uid] ?? [];
+                        ?>
+                        <div class="adq-group" id="eff-adequacy-unit-<?= $uid ?>">
+                            <h4><?= $h((string) $u['name']) ?>
+                                <?php if (($urow['standard_label'] ?? '') !== ''): ?><small><?= $h((string) $urow['standard_label']) ?> · <?= (int) ($urow['strength'] ?? 0) ?> / <?= $h((string) ($urow['strength_expected'] ?? '')) ?></small><?php endif; ?>
+                                <?= effk_unit_level_badge((string) ($u['visibility'] ?? '')) ?>
+                            </h4>
+                            <?= adq_issue_list($byUnitIssues[$uid], $adqPeople, $memberUrl, $canManage) ?>
+                        </div>
+                    <?php endforeach; ?>
+                    <?php if ($personIssues !== []): ?>
+                        <div class="adq-group">
+                            <h4>Personnes hors de l’organigramme</h4>
+                            <?php
+                            $named = [];
+                            foreach ($personIssues as $pi) {
+                                $piUser = (int) ($pi['user_id'] ?? 0);
+                                $pi['title'] = (string) ($adqPeople[$piUser]['label'] ?? 'Membre');
+                                $named[] = $pi;
+                            }
+                            ?>
+                            <?= adq_issue_list($named, $adqPeople, $memberUrl, $canManage, 30) ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </details>
+    <?php endif; ?>
 
     <?php if ($canManage): ?>
     <form method="post" action="<?= $h(effectifs_workspace_url('chaine')) ?>" data-chain-quick hidden>
@@ -404,10 +521,26 @@ $structureLink = $canManage ? '<a class="effk-btn" href="' . $h(url('back-office
         </form>
     </details>
 
-    <details class="effk-panel effk-fold" id="eff-chain-people-panel">
-        <summary><span><b>Qui relève de qui</b><small>La chaîne de chaque membre, lue depuis les chefs désignés et l’organigramme</small></span><?= effk_icon('down') ?></summary>
+    <?php
+    $peopleRows = $members;
+    // Toutes les personnes évaluées, y compris celles sans affectation que la chaîne ne liste pas.
+    foreach ($adqPeople as $apId => $apRow) {
+        if (!isset($memberById[(int) $apId])) {
+            $peopleRows[] = ['user_id' => (int) $apId, 'label' => (string) ($apRow['label'] ?? 'Membre'), 'unit_id' => 0, 'unit_name' => '',
+                'reports_to_label' => '', 'commands' => [], 'chain_labels' => []];
+        }
+    }
+    if ($onlyGaps) {
+        $peopleRows = array_values(array_filter($peopleRows, static fn (array $m): bool => ($adqPeople[(int) ($m['user_id'] ?? 0)]['issues'] ?? []) !== []));
+    }
+    ?>
+    <details class="effk-panel effk-fold" id="eff-chain-people-panel"<?= $onlyGaps ? ' open' : '' ?>>
+        <summary><span><b>Qui relève de qui</b><small><?= $onlyGaps ? 'Filtré : personnes avec un écart d’adéquation' : 'La chaîne de chaque membre, lue depuis les chefs désignés et l’organigramme' ?></small></span><?= effk_icon('down') ?></summary>
         <div class="effk-fold__body">
-        <?php if ($members === []): ?>
+        <?php if ($onlyGaps): ?>
+            <p class="effk-fold__lead"><?= count($peopleRows) ?> personne<?= count($peopleRows) > 1 ? 's' : '' ?> avec un écart. <a href="<?= $h(effectifs_workspace_url('chaine') . '#eff-chain-people-panel') ?>">Afficher tout le monde</a></p>
+        <?php endif; ?>
+        <?php if ($peopleRows === []): ?>
             <?= effk_empty('Aucun membre actif à afficher.') ?>
         <?php else: ?>
             <div class="effk-table-wrap" role="region" aria-label="Qui relève de qui" tabindex="0">
@@ -418,10 +551,15 @@ $structureLink = $canManage ? '<a class="effk-btn" href="' . $h(url('back-office
                             <th scope="col">Unité</th>
                             <th scope="col">Relève de</th>
                             <th scope="col">Chaîne</th>
+                            <?php if ($adq !== null): ?>
+                            <th scope="col">Place</th>
+                            <th scope="col">Adjoint</th>
+                            <th scope="col">Adéquation</th>
+                            <?php endif; ?>
                         </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($members as $m):
+                    <?php foreach ($peopleRows as $m):
                         $mid = (int) ($m['user_id'] ?? 0);
                         $unitName = trim((string) ($m['unit_name'] ?? ''));
                         $reports = trim((string) ($m['reports_to_label'] ?? ''));
@@ -444,6 +582,14 @@ $structureLink = $canManage ? '<a class="effk-btn" href="' . $h(url('back-office
                                 <?php endif; ?>
                             </td>
                             <td><?= $chain !== [] ? '<span class="eff-chain__path">' . $h(implode(' → ', $chain)) . '</span>' : '<span class="effk-muted">—</span>' ?></td>
+                            <?php if ($adq !== null):
+                                $ap = $adqPeople[$mid] ?? null;
+                                $apDeputy = (int) ($ap['deputy_id'] ?? 0);
+                                ?>
+                            <td><?= $ap !== null ? $h(adq_place_label((string) $ap['place'])) : '<span class="effk-muted">—</span>' ?><?php if ($ap !== null && ($ap['roles'] ?? []) !== []): ?><small class="effk-muted effk-block"><?= adq_roles_html($ap['roles']) ?></small><?php endif; ?></td>
+                            <td><?= $apDeputy > 0 ? $h((string) ($adqPeople[$apDeputy]['label'] ?? 'Membre')) : '<span class="effk-muted">—</span>' ?></td>
+                            <td><?php if ($ap !== null): ?><?= adq_badge((string) $ap['status'], true) ?><?php foreach (array_slice($ap['issues'] ?? [], 0, 2) as $ii): ?><small class="effk-muted effk-block"><?= $h((string) ($adqIssues[$ii]['title'] ?? '')) ?></small><?php endforeach; ?><?php endif; ?></td>
+                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>

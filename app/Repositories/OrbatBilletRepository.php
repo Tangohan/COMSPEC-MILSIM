@@ -449,6 +449,47 @@ final class OrbatBilletRepository
     }
 
     /**
+     * Titulaires (titulaire ou intérim) des postes d’adjoint de chaque unité : poste clé « deputy » ou code ADJ.
+     *
+     * @return array<int, list<int>> unit_id => user_id
+     */
+    public function deputyHoldersByUnitForTenant(int $tenantId, ?string $asOfDate = null): array
+    {
+        if (!$this->schemaReady() || $tenantId < 1) {
+            return [];
+        }
+        $asOf = $asOfDate !== null && preg_match('/^\d{4}-\d{2}-\d{2}/', $asOfDate)
+            ? substr($asOfDate, 0, 10)
+            : date('Y-m-d');
+        $kindSql = $this->columnExists('orbat_billets', 'key_post_kind')
+            ? "(b.key_post_kind = 'deputy' OR UPPER(b.code) = 'ADJ')"
+            : "UPPER(b.code) = 'ADJ'";
+        $occSql = $this->columnExists('orbat_billet_holders', 'occupancy_type')
+            ? "AND (h.occupancy_type IN ('primary', 'acting') OR (h.occupancy_type IS NULL AND h.holder_role = 'PRIMARY') OR (h.occupancy_type = '' AND h.holder_role = 'PRIMARY'))"
+            : "AND h.holder_role = 'PRIMARY'";
+        $st = $this->pdo()->prepare(
+            "SELECT b.unit_id, h.user_id
+             FROM orbat_billets b
+             INNER JOIN orbat_billet_holders h ON h.billet_id = b.id AND h.tenant_id = b.tenant_id
+             WHERE b.tenant_id = ? AND b.is_active = 1 AND {$kindSql}
+               AND h.starts_at <= ? AND (h.ends_at IS NULL OR h.ends_at >= ?)
+               {$occSql}
+             ORDER BY b.unit_id ASC, h.starts_at ASC, h.id ASC"
+        );
+        $st->execute([$tenantId, $asOf, $asOf]);
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $unitId = (int) ($row['unit_id'] ?? 0);
+            $userId = (int) ($row['user_id'] ?? 0);
+            if ($unitId > 0 && $userId > 0 && !in_array($userId, $out[$unitId] ?? [], true)) {
+                $out[$unitId][] = $userId;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function primaryBilletsForUser(int $tenantId, int $userId, ?string $asOfDate = null): array

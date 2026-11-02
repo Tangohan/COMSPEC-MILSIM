@@ -1371,6 +1371,19 @@ class EffectifsWorkspaceController
             ))->chainForUser($tenantId, $id);
         } catch (\Throwable) {
         }
+        $memberAdequacy = null;
+        try {
+            $memberAdequacy = \App\Services\Organization\OrgAdequacyView::forPerson(
+                (new \App\Services\Organization\OrgAdequacyService(
+                    $this->unitRepository,
+                    $this->userRepository,
+                    $this->personnelAssignmentRepository
+                ))->evaluate($tenantId),
+                $id
+            );
+        } catch (\Throwable) {
+            $memberAdequacy = null;
+        }
 
         $canEditProfiles = EffectifsLmsAccess::canEditProfiles($gate);
         $jobRolePickerGroups = [];
@@ -1449,6 +1462,7 @@ class EffectifsWorkspaceController
             'dutyPosition' => $dutyPosition,
             'remainingTrainingDays' => $remainingTrainingDays,
             'memberCommandChain' => $commandChain,
+            'memberAdequacy' => $memberAdequacy,
             'memberInsights' => $insights,
             'canViewSanctions' => $canViewSanctions,
             'canManageSanctions' => EffectifsLmsAccess::canManageSanctions($gate),
@@ -3729,10 +3743,22 @@ class EffectifsWorkspaceController
             $this->userRepository,
             $this->personnelAssignmentRepository
         ))->workspace($tenantId);
+        $adequacy = null;
+        try {
+            $adequacy = (new \App\Services\Organization\OrgAdequacyService(
+                $this->unitRepository,
+                $this->userRepository,
+                $this->personnelAssignmentRepository
+            ))->evaluate($tenantId);
+        } catch (\Throwable) {
+            $adequacy = null;
+        }
 
         return $this->shell('admin.effectifs_workspace.chaine', [
             'title' => 'Chaîne de commandement',
             'effectifsNav' => 'chaine',
+            'chainAdequacy' => $adequacy,
+            'adequacyOnlyGaps' => $request->query('ecarts') === '1',
             'chainUnits' => $data['units'],
             'chainMembers' => $data['members'],
             'chainMemberOptions' => $data['memberOptions'],
@@ -3785,6 +3811,98 @@ class EffectifsWorkspaceController
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
         return Response::redirect(effectifs_workspace_url('chaine'));
+    }
+
+    /**
+     * Référentiel des échelons et réglages de l’adéquation de l’organisation (attentes par échelon, règles).
+     */
+    public function adequacySettings(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $settings = \App\Services\Organization\OrgAdequacySettings::forTenant($tenantId);
+        $profile = \App\Services\Organization\OrgAdequacySettings::profileForTenant($tenantId, $settings);
+        $service = new \App\Services\Organization\OrgAdequacyService(
+            $this->unitRepository,
+            $this->userRepository,
+            $this->personnelAssignmentRepository
+        );
+        [, $gradeLabels] = $service->gradeCatalog($tenantId);
+        $qualifications = [];
+        try {
+            foreach ((new \App\Repositories\QualificationDefinitionRepository())->listForTenant($tenantId) as $d) {
+                $qualifications[] = ['id' => (int) $d['id'], 'label' => trim((string) ($d['name'] ?? ''))];
+            }
+        } catch (\Throwable) {
+        }
+        $jobRoles = [];
+        try {
+            foreach ((new \App\Repositories\PersonnelJobRoleRepository())->listRolesWithCategory($tenantId) as $r) {
+                $jobRoles[] = ['id' => (int) $r['id'], 'label' => trim((string) ($r['name'] ?? ''))];
+            }
+        } catch (\Throwable) {
+        }
+
+        return $this->shell('admin.effectifs_workspace.adequation', [
+            'title' => 'Adéquation de l’organisation',
+            'effectifsNav' => 'chaine',
+            'adequacySettings' => $settings,
+            'adequacyProfile' => $profile,
+            'adequacyStandards' => \App\Services\Organization\OrgAdequacySettings::effectiveStandards($settings, $profile),
+            'adequacyGradeLabels' => $gradeLabels,
+            'adequacyQualifications' => $qualifications,
+            'adequacyJobRoles' => $jobRoles,
+            'canEditAdequacy' => $this->canEditAdequacy(),
+            'csrfToken' => Csrf::token(),
+            'rosterCounts' => $this->rosterCounts($tenantId),
+        ]);
+    }
+
+    public function saveAdequacySettings(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $back = effectifs_workspace_url('chaine/adequation');
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Rechargez la page, puis enregistrez de nouveau.');
+
+            return Response::redirect($back);
+        }
+        if (!$this->canEditAdequacy()) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier les attentes de l’organisation.');
+
+            return Response::redirect($back);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $raw = $request->input('org_adequacy', []);
+        $raw = is_array($raw) ? $raw : [];
+        if ($request->input('reset') === '1') {
+            $raw = \App\Services\Organization\OrgAdequacySettings::defaults();
+        }
+        $adminSettings = new \App\Repositories\TenantAdminSettingsRepository($this->tenantRepository);
+        $all = $adminSettings->getForTenant($tenantId);
+        $all['org_adequacy'] = \App\Services\Organization\OrgAdequacySettings::sanitize($raw);
+        $adminSettings->saveForTenant($tenantId, $all);
+        \App\Services\Organization\OrgAdequacyService::forget();
+        Session::flash('success', $request->input('reset') === '1'
+            ? 'Les valeurs par défaut du référentiel sont rétablies.'
+            : 'Réglages de l’adéquation enregistrés. La chaîne de commandement en tient compte dès maintenant.');
+
+        return Response::redirect($back);
+    }
+
+    private function canEditAdequacy(): bool
+    {
+        $gate = Gate::getInstance();
+
+        return EffectifsLmsAccess::canManageAssignments($gate)
+            || $gate->allows('admin.organization')
+            || $gate->allows('admin.access');
     }
 
     public function elevationRequests(Request $request, array $params = []): Response

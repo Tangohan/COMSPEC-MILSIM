@@ -1151,6 +1151,31 @@ if ($personnelFileIsRhFull) {
                     <?php endif; ?>
                 </section>
 
+                <?php $orgPlace = is_array($orgPlace ?? null) ? $orgPlace : null; ?>
+                <?php if ($orgPlace !== null):
+                    require_once dirname(__DIR__) . '/admin/effectifs_workspace/partials/adequacy.php';
+                    $opSelf = !empty($orgPlace['is_self']);
+                    $opH = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+                    ?>
+                <?= adq_styles() ?>
+                <section class="bg-white border border-slate-200 rounded-3xl p-8 adq-place" aria-labelledby="pf-orgplace-title" id="pf-orgplace">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <h2 id="pf-orgplace-title" class="text-xs font-black uppercase tracking-[0.35em] text-slate-900"><?= $opSelf ? 'Votre place dans l’organisation' : 'Place dans l’organisation' ?></h2>
+                        <?= adq_badge((string) $orgPlace['status'], true) ?>
+                    </div>
+                    <dl>
+                        <div><dt>Rôle</dt><dd><?= $opH(adq_place_label((string) $orgPlace['place'])) ?><?php if (($orgPlace['roles'] ?? []) !== []): ?><small><?= adq_roles_html($orgPlace['roles']) ?></small><?php endif; ?></dd></div>
+                        <div><dt>Unité</dt><dd><?= $orgPlace['unit_name'] !== '' ? $opH((string) $orgPlace['unit_name']) : '—' ?></dd></div>
+                        <div><dt>Chef direct</dt><dd><?= (int) $orgPlace['chief_id'] > 0 ? $opH((string) $orgPlace['chief_label']) : 'Aucun chef désigné pour le moment' ?></dd></div>
+                        <div><dt>Adjoint</dt><dd><?= (int) $orgPlace['deputy_id'] > 0 ? $opH((string) $orgPlace['deputy_label']) : 'Pas d’adjoint désigné' ?></dd></div>
+                        <div><dt>Adéquation</dt><dd><?= $opH(adq_status_meta((string) $orgPlace['status'])[0]) ?></dd></div>
+                    </dl>
+                    <?= adq_issue_list($orgPlace['issues'], $orgPlace['people'], static fn (int $pid): string => url('personnel/' . $pid), false) ?>
+                    <p class="adq-note">L’adéquation compare le poste tenu aux attentes de son échelon (grade, qualifications de commandement, effectif). Elle décrit une capacité de commandement, pas la valeur de la personne.</p>
+                    <?php if ($opSelf): ?><p class="adq-note">Votre encadrement s’en sert pour proposer formations, avancements et affectations.</p><?php endif; ?>
+                </section>
+                <?php endif; ?>
+
                 <section class="bg-white border border-slate-200 rounded-3xl p-8">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Affectations actives</h2>
                     <p class="mb-6 max-w-3xl text-sm leading-relaxed text-slate-600">L’équipe dans laquelle la personne est rattachée. L’affectation principale place la personne dans l’organigramme et sur la fiche.</p>

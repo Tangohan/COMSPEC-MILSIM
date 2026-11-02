@@ -8,6 +8,7 @@ use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Services\Organization\OrgVisibilityService;
+use App\Support\UnitMilitarySymbol;
 
 /**
  * Chaîne de commandement : chef d’unité + organigramme (unité parente).
@@ -87,6 +88,8 @@ final class PersonnelCommandChainService
                 'name' => trim((string) ($u['name'] ?? '')),
                 'type' => trim((string) ($u['type'] ?? '')),
                 'code' => trim((string) ($u['code'] ?? '')),
+                // Échelon saisi dans l’ORBAT, sinon déduit du nom et du type (adéquation de l’organisation).
+                'echelon' => (string) (UnitMilitarySymbol::resolve($u)['echelon'] ?? ''),
                 'depth' => max(0, (int) (($meta[$id]['depth'] ?? 1) - 1)),
                 'path' => (string) ($meta[$id]['path'] ?? ''),
                 'command_key' => (string) ($meta[$id]['command_key'] ?? ''),

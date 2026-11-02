@@ -492,3 +492,14 @@ html[data-bo-theme="dark"] .effk-md .effk-note.is-info { background: #13202e; co
 /* Champs intégrés (recherche, filtre du menu) : sans le cadre des champs globaux du back-office. */
 .bo-eff-workspace .effk .effk-search input,
 .bo-eff-workspace .effk-pop .effk-pop__q input { background: transparent !important; border: 0 !important; box-shadow: none !important; outline: 0; }
+
+/* Adéquation de l’organisation dans l’organigramme (sombre) : adjoint sous le chef, pastilles, membres signalés. */
+.bo-eff-workspace .effk-slot small.effk-slot__adj { font-size: 11px; color: var(--k-ink-dim); }
+.bo-eff-workspace .effk-slot small.effk-slot__adj.is-miss { color: #fcd34d; }
+.bo-eff-workspace .effk-chart .adq-badge { flex: none; font-size: 10px; line-height: 1.5; padding: 0 6px; border-radius: 4px; }
+.bo-eff-workspace .effk-chart .adq-badge.is-warn { background: rgba(252, 211, 77, 0.14); border-color: rgba(252, 211, 77, 0.35); color: #fcd34d; }
+.bo-eff-workspace .effk-chart .adq-badge.is-info { background: rgba(56, 189, 248, 0.14); border-color: rgba(56, 189, 248, 0.3); color: #7dd3fc; }
+.bo-eff-workspace .effk-chip.has-adq { border-color: rgba(56, 189, 248, 0.45); }
+.bo-eff-workspace .effk-chip.has-adq.is-adq-warn { border-color: rgba(252, 211, 77, 0.55); }
+.bo-eff-workspace .effk-chip.has-adq::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #7dd3fc; flex: none; }
+.bo-eff-workspace .effk-chip.has-adq.is-adq-warn::after { background: #fcd34d; }
