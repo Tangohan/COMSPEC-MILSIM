@@ -37,6 +37,11 @@
             <English>CS-10 charging dock (10 ATAK phones)</English>
             <French>Socle de recharge CS-10 (10 téléphones ATAK)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_080F6D4857">
+            <Original>USB-C cable between the ATAK phone and a data radio (MPU5, tactical radio). ACE menu ATAK phone &gt; Data radio.</Original>
+            <English>USB-C cable between the ATAK phone and a data radio (MPU5, tactical radio). ACE menu ATAK phone &gt; Data radio.</English>
+            <French>Câble USB-C entre le téléphone ATAK et une radio de données (MPU5, radio tactique). Menu ACE Téléphone ATAK &gt; Radio de données.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_0913AEF2ED">
             <Original>COMSPEC — ATAK · Network</Original>
             <English>COMSPEC — ATAK · Network</English>
@@ -727,6 +732,11 @@
             <English>NVG screen filter (ATAK)</English>
             <French>Filtre d'écran JVN (ATAK)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_9CE51F8DD1">
+            <Original>Spare battery for the MPU5 mesh radio (realistic link). ACE menu ATAK phone &gt; Data radio.</Original>
+            <English>Spare battery for the MPU5 mesh radio (realistic link). ACE menu ATAK phone &gt; Data radio.</English>
+            <French>Batterie de rechange pour la radio maillée MPU5 (liaison réaliste). Menu ACE Téléphone ATAK &gt; Radio de données.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_9E4D5298F6">
             <Original>ATAK battery</Original>
             <English>ATAK battery</English>
@@ -896,6 +906,11 @@
             <Original>C 4,970 MHz</Original>
             <English>C 4,970 MHz</English>
             <French>C 4 970 MHz</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_B7A0EF529E">
+            <Original>Wave Relay MANET radio. Forms a mesh network with MPU5s on the same channel and relays. Link the phone to it (EUD cable or Wi-Fi): ACE menu ATAK phone &gt; Data radio, or Network app.</Original>
+            <English>Wave Relay MANET radio. Forms a mesh network with MPU5s on the same channel and relays. Link the phone to it (EUD cable or Wi-Fi): ACE menu ATAK phone &gt; Data radio, or Network app.</English>
+            <French>Radio MANET Wave Relay. Forme un réseau maillé avec les MPU5 du même canal et les relais. Reliez-y le téléphone (câble EUD ou Wi-Fi) : menu ACE Téléphone ATAK &gt; Radio de données, ou app Réseau.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_B80BA8ECDA">
             <Original>On plug-in</Original>
@@ -1082,6 +1097,11 @@
             <English>Screen color</English>
             <French>Couleur de l'écran</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E368B137C6">
+            <Original>EUD cable (phone - radio)</Original>
+            <English>EUD cable (phone - radio)</English>
+            <French>Câble EUD (téléphone - radio)</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_E370327F96">
             <Original>Yes (HVT hunt)</Original>
             <English>Yes (HVT hunt)</English>
@@ -1171,6 +1191,11 @@
             <Original>Share of false tips</Original>
             <English>Share of false tips</English>
             <French>Part de faux tuyaux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_F4C0E14202">
+            <Original>MPU5 radio battery</Original>
+            <English>MPU5 radio battery</English>
+            <French>Batterie de radio MPU5</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_FA0AF6576A">
             <Original>Tinder: HVT / SSE profile</Original>
