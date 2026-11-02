@@ -64,7 +64,7 @@ switch (_act) do {
             private _e = _all getOrDefault [(uiNamespace getVariable ["COMSPEC_ATAK_DbfUi", createHashMap]) getOrDefault ["open", ""], createHashMap];
             if ((count _e) isEqualTo 0 || {(_e get "state") isEqualTo "done"}) then {
                 private _pend = (values _all) select { (_x get "state") isNotEqualTo "done" };
-                _e = [createHashMap, _pend select ((count _pend) - 1)] select ((count _pend) > 0);
+                _e = if (_pend isEqualTo []) then { createHashMap } else { _pend select -1 };
             };
             if ((count _e) > 0) then {
                 _body set ["context", createHashMapFromArray [

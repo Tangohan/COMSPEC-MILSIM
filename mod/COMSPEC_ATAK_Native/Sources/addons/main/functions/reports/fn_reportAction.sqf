@@ -351,7 +351,7 @@ switch (_act) do {
         { if (_x isEqualType [] && {(_x param [0, 0]) isEqualType ""} && {(_x param [1, 0]) isEqualType ""}) then { _mv set [_x select 0, _x select 1]; }; } forEach _pairs;
         // Heures (genre dtg) : celle du jeu, comme la proposition d'une fiche ouverte ici.
         private _dtgKeys = ((_t select 5) select { (_x select 1) isEqualTo "dtg" && {((_mv getOrDefault [_x select 0, ""]) isEqualTo "")} }) apply { _x select 0 };
-        if ((count _dtgKeys) > 0) then {
+        if (_dtgKeys isNotEqualTo []) then {
             private _now = (([["dtg"]] call comspec_atak_native_fnc_reportAuto) getOrDefault ["dtg", ""]);
             { _mv set [_x, _now]; } forEach _dtgKeys;
         };
