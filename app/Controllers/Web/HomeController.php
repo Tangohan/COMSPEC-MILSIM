@@ -1081,7 +1081,8 @@ class HomeController
             $levelLabels = function_exists('training_course_level_labels_fr') ? training_course_level_labels_fr() : [];
             $sessionLabel = '';
             if (is_string($rawDate) && $rawDate !== '' && ($sts = strtotime($rawDate)) !== false) {
-                $sessionLabel = (int) date('j', $sts) . ' ' . $monthsFr[(int) date('n', $sts) - 1] . ' ' . date('Y', $sts);
+                // $monthsFr n'existe plus depuis la traduction des mois (avertissement → tableau de bord en erreur 500).
+                $sessionLabel = (int) date('j', $sts) . ' ' . \App\Support\LocalizedCalendar::month((int) date('n', $sts)) . ' ' . date('Y', $sts);
             }
             $isBookable = !in_array($badge, ['full', 'closed'], true);
             $out[] = [

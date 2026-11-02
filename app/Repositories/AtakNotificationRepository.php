@@ -125,7 +125,8 @@ class AtakNotificationRepository
      */
     public function cleanupExpired(int $tenantId, int $contextId): int
     {
-        $stmt = $this->db->execute(
+        // Database::execute() renvoie déjà le nombre de lignes : ->rowCount() sur cet entier levait une erreur.
+        $count = $this->db->execute(
             "UPDATE atak_realtime_notifications 
              SET is_active = FALSE 
              WHERE tenant_id = ? AND context_id = ?
@@ -135,7 +136,7 @@ class AtakNotificationRepository
             [$tenantId, $contextId]
         );
 
-        return $stmt->rowCount();
+        return $count;
     }
 
     /**

@@ -286,7 +286,8 @@ class AtakZoneThreatRepository
      */
     public function cleanupExpiredEvents(int $tenantId, int $contextId): int
     {
-        $stmt = $this->db->execute(
+        // Database::execute() renvoie déjà le nombre de lignes : ->rowCount() sur cet entier levait une erreur.
+        $count = $this->db->execute(
             "UPDATE atak_zone_events 
              SET is_active = FALSE 
              WHERE tenant_id = ? AND context_id = ?
@@ -296,7 +297,7 @@ class AtakZoneThreatRepository
             [$tenantId, $contextId]
         );
 
-        return $stmt->rowCount();
+        return $count;
     }
 
     /**

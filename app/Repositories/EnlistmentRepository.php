@@ -1135,6 +1135,21 @@ class EnlistmentRepository
         return $stmt->rowCount() > 0;
     }
 
+    /** Un message du fil de suivi, limité au dossier du candidat (signalement depuis le portail). */
+    public function findCandidatePortalMessage(int $tenantId, int $enlistmentId, int $messageId): ?array
+    {
+        if (!$this->hasCandidatePortalTables() || $messageId < 1) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM enlistment_candidate_messages WHERE tenant_id = ? AND enlistment_id = ? AND id = ? LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $enlistmentId, $messageId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public function listCandidatePortalMessages(int $tenantId, int $enlistmentId): array
     {
         if (!$this->hasCandidatePortalTables()) {

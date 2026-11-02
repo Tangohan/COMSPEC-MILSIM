@@ -87,7 +87,7 @@ function training_canvas_sanitize_href(string $href): ?string
     if (preg_match('#\Ahttps?://#i', $h)) {
         return filter_var($h, FILTER_VALIDATE_URL) !== false ? $h : null;
     }
-    if (str_starts_with($h, '/') && !str_starts_with($h, '//') && preg_match('#\A/[a-zA-Z0-9/_\\-.?=&%#+:~]*\z#', $h)) {
+    if (str_starts_with($h, '/') && !str_starts_with($h, '//') && preg_match('#\A/[a-zA-Z0-9/_\\-.?=&%\#+:~]*\z#', $h)) {
         return $h;
     }
     if (preg_match('/\Amailto:[^\s<>"\']+\z/i', $h)) {
