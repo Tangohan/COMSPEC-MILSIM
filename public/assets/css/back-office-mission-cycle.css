@@ -422,3 +422,27 @@
   font-weight: 700;
   color: var(--bo-ink);
 }
+
+/* ——— Étapes du cycle, réglages de détection, cycle manuel (refonte 2026-11) ——— */
+.bo-mcycle__deck { display: grid; gap: 14px; }
+.bo-mcycle__flow, .bo-mcycle__manual, .bo-mcycle__settings { display: grid; gap: 10px; }
+.bo-mcycle__timeline { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr)); gap: 10px; counter-reset: none; }
+.bo-mcycle__tstep { display: flex; gap: 10px; padding: 10px 12px; border: 1px solid var(--ath-line); background: var(--ath-surface); }
+.bo-mcycle__tnum { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: var(--ath-ink); color: var(--ath-bg, #fff); font-family: var(--ath-mono); font-size: 11px; font-weight: 900; }
+.bo-mcycle__tbody { min-width: 0; }
+.bo-mcycle__tbody p { margin: 4px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--ath-ink); }
+.bo-mcycle__ttitle { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; font-weight: 900; color: var(--ath-ink); }
+.bo-mcycle__thow { color: var(--ath-muted) !important; }
+.bo-mcycle__tlinks { font-weight: 700; }
+.bo-mcycle__settings > summary { cursor: pointer; }
+.bo-mcycle__dl { margin: 0; display: grid; gap: 6px; font-size: 11.5px; }
+.bo-mcycle__dl div { display: grid; grid-template-columns: minmax(10rem, 14rem) 1fr; gap: 4px 12px; }
+.bo-mcycle__dl dt { font-weight: 800; color: var(--ath-ink); }
+.bo-mcycle__dl dd { margin: 0; color: var(--ath-ink); }
+.bo-mcycle__dl small { color: var(--ath-muted); }
+.bo-mcycle__split { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 12px; }
+.ath-main .bo-mcycle__panel { background: var(--ath-surface); border-color: var(--ath-line); color: var(--ath-ink); }
+.ath-main .bo-mcycle__panel-title, .ath-main .bo-mcycle__list-title { color: var(--ath-ink); }
+@media (max-width: 640px) {
+  .bo-mcycle__dl div { grid-template-columns: 1fr; }
+}

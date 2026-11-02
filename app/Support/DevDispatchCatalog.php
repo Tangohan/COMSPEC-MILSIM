@@ -294,6 +294,19 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1313, '2026-11-02', 'Cycle de mission expliqué et parties détectées en jeu gérées', 'La page Cycle de mission montre maintenant les sept étapes d’une opération, de la planification aux heures comptées : ce que fait chaque étape, comment elle se déclenche (site, serveur, Zeus) et combien des parties récentes l’ont passée. Chaque partie lancée sur le serveur est rapprochée automatiquement de l’opération planifiée, du cycle de mission ou de l’événement prévu au même créneau (carte et joueurs prévus présents compris) ; vous confirmez, corrigez ou indiquez « aucune ». Dans le suivi des CR, le bouton « Gérer » d’une partie permet de la renommer, de lui donner un type et une catégorie, de l’ignorer (une fois ou à l’avenir) ou de la supprimer, seule ou en groupe.', [
+                'Cycle de mission : étapes expliquées avec leurs liens (planification, briefing, suivi des CR, comptes rendus, heures, sessions de jeu, qualifications, avancement) et réglages de la détection',
+                'Parties détectées : état de chaque étape, opération prévue proposée ou choisie, parties sans opération signalées',
+                'Fenêtre « Gérer » : nom, type, catégorie, opération rattachée, ignorer cette partie ou à l’avenir (même mission ou même carte), supprimer avec le détail de ce qui sera retiré',
+                'Types d’opération enregistrés avec une règle : les prochaines parties qui correspondent sont typées automatiquement ; type proposé d’après le nom de la mission, la durée et le nombre de joueurs',
+                'Catégories modifiables par la communauté, règles d’exclusion et parties supprimées restaurables',
+                'Actions groupées sur les parties cochées : catégoriser, ignorer, compter à nouveau, supprimer',
+            ], [
+                'Une partie ignorée ou supprimée ne compte plus dans le temps de jeu, le temps par rôle, les heures de vol et les heures prises en compte pour les qualifications ; rien n’est effacé',
+            ], [], ['atak', 'platform'], [
+                'Aucune mise à jour du jeu n’est nécessaire. L’administrateur lance run-migrations.php (étape atak_played_operations) pour activer types, règles et rattachements.',
+                'La présence pointée dans Sessions de jeu reste gérée sur sa propre page.',
+            ], 'Portail Athena'),
             $pr(1310, '2026-11-02', 'Écrans et vidéoprojecteur réparés, voix radio par le maillage MPU5', 'Avec le pack 2.9.33, les écrans du TOC, les écrans COMSPEC et le vidéoprojecteur affichent de nouveau la carte du TOC, les diapositives et les leçons Academy : depuis la 2.9.29, le jeu refusait la taille de l’image posée sur l’écran et il restait noir. La radio ACRE2 ou TFAR reliée à la MPU5 fait passer la voix par le maillage jusqu’aux radios reliées des équipiers sur la même fréquence (réglage serveur, désactivé par défaut).', [
                 'Radio de données : reliez votre radio ACRE2 ou TFAR à votre MPU5 (menu ACE ou app Réseau) et votre voix passe par le maillage (MPU5, relais, pylônes, véhicules) jusqu’aux radios reliées de vos équipiers sur la même fréquence, sans limite de distance ni de relief. Hors maillage, la radio retrouve sa portée normale (réglage serveur, désactivé par défaut).',
             ], [

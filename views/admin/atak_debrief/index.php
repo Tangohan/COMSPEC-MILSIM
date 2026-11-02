@@ -248,6 +248,9 @@ $opStart = static function (string $key) use ($fmt): string {
     </div>
     <?php if ($canManage): ?>
     <div class="bo-dbf-head__actions">
+      <?php $poIdx = array_search($op, array_column((array) (($dbfPlayed ?? [])['ops'] ?? []), 'key'), true); if ($poIdx !== false): ?>
+        <a class="ath-btn ath-btn--solid" href="#dbf-parties" onclick="var d=document.getElementById('dbf-parties-dlg-<?= (int) $poIdx ?>');if(d&&d.showModal){d.showModal();return false;}">Gérer la partie</a>
+      <?php endif; ?>
       <button class="ath-btn" type="button" data-dbf-toggle="dbf-rename">Renommer</button>
       <form method="post" action="<?= $h($base . '/retirer-session') ?>" onsubmit="return confirm('Retirer cette session de la liste ? Ses remontées et son temps d’écran restent sur Athena.');"><?= $csrf ?><input type="hidden" name="op" value="<?= $h($op) ?>"><button class="ath-btn bo-aar-danger" type="submit">Retirer de la liste</button></form>
     </div>
@@ -342,6 +345,16 @@ $opStart = static function (string $key) use ($fmt): string {
     <?php endif; ?>
     <footer class="bo-dbf-grid__foot"><span data-dbf-count><?= count($rows) ?></span> / <?= $total ?> joueur(s)</footer>
   </section>
+
+<?php
+$playedOps = $dbfPlayed ?? null;
+$playedCanManage = $canManage;
+$playedCsrf = (string) ($csrfToken ?? '');
+$playedBack = 'suivi';
+$playedSteps = false;
+$playedId = 'dbf-parties';
+require base_path('views/admin/partials/played_ops_manager.php');
+?>
 
 <?php if ($canManage): ?>
   <details class="ath-panel bo-dbf-panel" id="dbf-imposer"<?= $openPanel === 'imposer' ? ' open' : '' ?>>

@@ -99,6 +99,11 @@ final class AdminAtakDebriefController
             $aars = array_slice((new AarReportRepository())->listForTenant($tenantId, []), 0, 40);
         } catch (\Throwable) {
         }
+        $played = null;
+        try {
+            $played = (new \App\Services\Atak\PlayedOperationsService())->overview($tenantId);
+        } catch (\Throwable) {
+        }
 
         return Response::view('layout.main', [
             'content' => 'admin.atak_debrief.index',
@@ -108,7 +113,7 @@ final class AdminAtakDebriefController
             'boPageTitle' => 'Suivi des CR de fin d’opération',
             'boPageKicker' => 'OPÉRATIONS · RETOURS',
             'boPageSubtitle' => 'Qui a reçu le CR imposé sur son ATAK, qui l’a remis, et quand son téléphone s’est synchronisé pour la dernière fois.',
-            'backOfficePageCss' => ['back-office-aar.css', 'back-office-debrief.css'],
+            'backOfficePageCss' => ['back-office-aar.css', 'back-office-debrief.css', 'back-office-played-ops.css'],
             'dbfReady' => $ready,
             'dbfDebriefs' => $debriefs,
             'dbfOperations' => $operations,
@@ -124,6 +129,7 @@ final class AdminAtakDebriefController
             'dbfAars' => $aars,
             'dbfCanManage' => ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'manage'),
             'dbfOpen' => (string) $request->query('ouvrir', ''),
+            'dbfPlayed' => $played,
             'csrfToken' => Csrf::token(),
         ]);
     }
