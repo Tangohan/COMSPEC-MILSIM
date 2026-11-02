@@ -294,6 +294,17 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1309, '2026-11-02', 'Studio Academy : créer ses qualifications et ses brevets', 'Le Studio de l’Academy ne sert plus seulement à écrire des cours. Le bouton « Nouveau » propose une formation, une qualification ou un brevet. Une qualification se règle comme dans le référentiel : portée, catégorie, émetteur, validité, examen, et conditions d’obtention (cours réussis, heures de jeu, heures de vol par appareil, qualifications préalables). Un brevet ajoute son insigne, son gabarit de PDF et son numéro. Chaque cours peut délivrer une qualification ou un brevet à la réussite, et chaque fiche montre les cours qui y mènent ; les onglets Qualifications et Brevets séparent les créations de la communauté du catalogue de base.', [
+                'Studio : menu « Nouveau » (formation, qualification, brevet) et onglets Formations, Qualifications, Brevets',
+                'Fiches qualification et brevet dans le Studio : identité, portée, catégorie, émetteur, validité, examen, conditions d’obtention, insigne et numéro du brevet',
+                'Réglages d’un cours : « Délivré à la réussite » pour rattacher ou détacher une qualification ou un brevet',
+                'Listes filtrables : créations de la communauté mises en avant, catalogue de base, archivées',
+            ], [
+                'Réussir un cours du Studio délivre aussitôt les qualifications qui le demandent ; une nouvelle version du cours garde ce lien',
+                'Référentiel des qualifications : les cours publiés du Studio sont proposés comme condition « Formation Academy »',
+            ], [], ['personnel', 'platform'], [
+                'Mêmes droits que la création de cours. Les fiches sont celles du référentiel des qualifications : rien n’est dupliqué.',
+            ], 'Portail'),
             $pr(1307, '2026-11-02', 'Seule la MPU5 relie le téléphone au réseau', 'Avec le pack 2.9.32, le repli par radio tactique en données disparaît : en liaison téléphone-radio réaliste, seule une radio de données MPU5, reliée par le Câble EUD ou par son Wi-Fi, donne du réseau au téléphone. Sans MPU5, pas de réseau de données ; le Bluetooth entre téléphones et les données déjà reçues restent. Les radios ACRE ou TFAR gardent leur rôle d’avant quand la liaison réaliste est décochée.', [], [
                 'App Réseau, menu ACE Radio de données et réglages : plus de bouton ni d’action Radio tactique, message clair « Sans MPU5 : pas de réseau de données »',
                 'Bouton Brancher sur ma radio de l’app Wave Relay masqué en liaison réaliste ; le réglage « Données par radio ACRE2 / TFAR » n’y est plus pris en compte',

@@ -56,31 +56,87 @@ final class AcademyBuiltInQualifications
     }
 
     /**
-     * Cours intégrés terminés (dernier chapitre validé), par membre : membre => clé du cours => true.
+     * Cours Academy terminés (dernier chapitre validé), par membre : membre => clé du cours => true. Cours intégrés
+     * et cours du Studio ; terminer une nouvelle version d’un cours vaut aussi pour les versions qu’elle remplace
+     * (une qualification rattachée au cours d’origine reste délivrée après une révision).
      *
      * @return array<int, array<string, bool>>
      */
     public function completions(int $tenantId): array
     {
-        $keys = array_keys(AcademyBuiltInCourses::qualifications());
-        if ($keys === [] || !$this->writer->has('academy_learners')) {
+        if (!$this->writer->has('academy_learners')) {
             return [];
         }
         try {
             $st = $this->writer->pdo()->prepare(
-                'SELECT user_id, course_key, state_json FROM academy_learners WHERE tenant_id = ? AND course_key IN ('
-                . implode(',', array_fill(0, count($keys), '?')) . ") AND state_json LIKE '%\"completed\":true%'"
+                "SELECT user_id, course_key, state_json FROM academy_learners WHERE tenant_id = ? AND course_key <> '__notes'"
+                . " AND state_json LIKE '%\"completed\":true%'"
             );
-            $st->execute(array_merge([$tenantId], $keys));
+            $st->execute([$tenantId]);
         } catch (\Throwable) {
             return [];
         }
+        $lineage = $this->lineage($tenantId);
         $out = [];
         foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
             $state = json_decode((string) $row['state_json'], true);
             if (is_array($state) && ($state['completed'] ?? false) === true) {
-                $out[(int) $row['user_id']][(string) $row['course_key']] = true;
+                $key = (string) $row['course_key'];
+                $out[(int) $row['user_id']][$key] = true;
+                foreach ($lineage[$key] ?? [] as $older) {
+                    $out[(int) $row['user_id']][$older] = true;
+                }
             }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Versions successives des cours du Studio : clé d’une version => clés des versions qu’elle remplace (de la plus
+     * récente à la plus ancienne).
+     *
+     * @return array<string, list<string>>
+     */
+    public function lineage(int $tenantId): array
+    {
+        if (!$this->writer->has('academy_courses')) {
+            return [];
+        }
+        try {
+            $st = $this->writer->pdo()->prepare("SELECT course_key, content_json FROM academy_courses WHERE tenant_id = ? AND content_json LIKE '%\"replaces\"%'");
+            $st->execute([$tenantId]);
+            $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+            return [];
+        }
+        $parent = [];
+        foreach ($rows as $row) {
+            $content = json_decode((string) $row['content_json'], true);
+            $replaces = is_array($content) ? ($content['replaces'] ?? null) : null;
+            if (is_string($replaces) && $replaces !== '' && $replaces !== $row['course_key']) {
+                $parent[(string) $row['course_key']] = $replaces;
+            }
+        }
+
+        return self::chains($parent);
+    }
+
+    /**
+     * @param array<string, string> $parent version => version remplacée
+     * @return array<string, list<string>>
+     */
+    public static function chains(array $parent): array
+    {
+        $out = [];
+        foreach (array_keys($parent) as $key) {
+            $seen = [$key => true];
+            $chain = [];
+            for ($cursor = $parent[$key] ?? null; is_string($cursor) && !isset($seen[$cursor]); $cursor = $parent[$cursor] ?? null) {
+                $seen[$cursor] = true;
+                $chain[] = $cursor;
+            }
+            $out[(string) $key] = $chain;
         }
 
         return $out;

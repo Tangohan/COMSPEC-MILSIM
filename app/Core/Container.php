@@ -1237,6 +1237,14 @@ class Container
                 self::get(\App\Repositories\GradeRepository::class),
                 self::get(\App\Repositories\PilotFleetRepository::class)
             ),
+            \App\Services\Academy\AcademyStudioCredentials::class => new \App\Services\Academy\AcademyStudioCredentials(
+                self::get(\App\Repositories\QualificationDefinitionRepository::class),
+                self::get(\App\Repositories\QualificationReferentielRepository::class),
+                self::get(\App\Services\Personnel\QualificationAwardRuleService::class),
+                self::get(\App\Repositories\QualificationAwardRuleRepository::class),
+                new \App\Repositories\QualificationIssuerRepository(),
+                self::get(\App\Services\Personnel\QualificationBadgeStorageService::class)
+            ),
             \App\Services\Cron\Jobs\QualificationAutoRulesCronJob::class => new \App\Services\Cron\Jobs\QualificationAutoRulesCronJob(
                 self::get(\App\Repositories\QualificationAwardRuleRepository::class),
                 self::get(\App\Services\Personnel\QualificationAwardRuleService::class)

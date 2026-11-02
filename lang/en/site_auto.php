@@ -52418,4 +52418,5 @@ return [
     'Rattaché : ajouté aux prérequis à l’enregistrement' => 'Attached: added to the prerequisites when you save',
     'Doctrine du référentiel :' => 'Library doctrine:',
     'Doctrine du référentiel' => 'Library doctrine',
+    'Cours du Studio de l’Academy' => 'Academy Studio courses',
 ];

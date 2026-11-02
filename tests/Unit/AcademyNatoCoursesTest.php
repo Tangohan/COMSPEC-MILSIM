@@ -179,7 +179,7 @@ final class AcademyNatoCoursesTest extends TestCase
         $service = AcademyBuiltInQualifications::forPdo($pdo);
         self::assertTrue($service->ready());
         self::assertSame([1 => [AcademyBuiltInCourses::JTAC_KEY => true], 2 => ['otan-compte-rendu-salute' => true]], $service->completions(14));
-        self::assertSame([], $service->completions(15), 'formation de la communauté : hors cours intégrés');
+        self::assertSame([3 => ['formation-communaute' => true]], $service->completions(15), 'cours du Studio de la communauté : compté aussi');
         self::assertSame($service->completions(14), (new QualificationAwardRuleRepository($pdo))->builtInCourseCompletions(14));
 
         $id = $service->ensureDefinition(14, 'otan-compte-rendu-salute', 'en', 99);

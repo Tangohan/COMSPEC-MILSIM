@@ -828,9 +828,29 @@ final class QualificationAwardRuleService
             $scopes['class:' . $it['class_name']] = trim((string) $it['name']) !== '' ? (string) $it['name'] : (string) $it['class_name'];
         }
 
-        $builtIn = \App\Services\Academy\AcademyBuiltInQualifications::courseTitles(function_exists('locale') ? (string) locale() : 'fr');
+        $lang = function_exists('locale') ? (string) locale() : 'fr';
+        $builtIn = \App\Services\Academy\AcademyBuiltInQualifications::courseTitles($lang);
+        $studio = self::studioCourseTitles($tenantId, $lang);
 
-        return ['courses' => $this->repo->courseTitles($tenantId), 'builtin' => $builtIn, 'definitions' => $defs, 'scopes' => $scopes];
+        // builtin : tous les cours désignés par leur clé (intégrés et Studio), pour décrire les critères ; studio : ceux du Studio.
+        return ['courses' => $this->repo->courseTitles($tenantId), 'builtin' => $builtIn + $studio, 'studio' => $studio, 'definitions' => $defs, 'scopes' => $scopes];
+    }
+
+    /** @return array<string, string> cours publiés du Studio de la communauté : clé => titre */
+    private static function studioCourseTitles(int $tenantId, string $lang): array
+    {
+        $lang = str_starts_with(strtolower($lang), 'en') ? 'en' : 'fr';
+        $out = [];
+        try {
+            foreach ((new \App\Repositories\AcademyRepository())->courses($tenantId) as $course) {
+                if (empty($course['built_in']) && is_string($course['key'] ?? null)) {
+                    $out[$course['key']] = trim((string) ($course['title'][$lang] ?? '')) ?: (trim((string) ($course['title']['fr'] ?? '')) ?: $course['key']);
+                }
+            }
+        } catch (Throwable) {
+        }
+
+        return $out;
     }
 
     /**

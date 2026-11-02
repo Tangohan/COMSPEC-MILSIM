@@ -1165,7 +1165,8 @@ final class QualificationReferentielController
             'grades' => $grades,
             'jobs' => $jobs,
             'courses' => $names['courses'],
-            'builtInCourses' => $names['builtin'] ?? [],
+            'builtInCourses' => array_diff_key($names['builtin'] ?? [], $names['studio'] ?? []),
+            'studioCourses' => $names['studio'] ?? [],
             'definitions' => array_filter($names['definitions'], static fn (int $id): bool => $id !== $definitionId, ARRAY_FILTER_USE_KEY),
             'aircraft' => $this->rules->aircraftOptions($tenantId),
             'items' => $this->rules->itemOptions($tenantId),
@@ -1176,27 +1177,7 @@ final class QualificationReferentielController
     /** @return array<string, mixed> */
     private function definitionPayload(Request $request): array
     {
-        return [
-            'code' => $request->input('code'),
-            'name' => $request->input('name'),
-            'short_name' => $request->input('short_name'),
-            'description' => $request->input('description'),
-            'category_id' => $request->input('category_id'),
-            'type_id' => $request->input('type_id'),
-            'uses_levels' => $request->input('uses_levels'),
-            'is_permanent' => $request->input('is_permanent'),
-            'default_validity_months' => $request->input('default_validity_months'),
-            'alert_before_expiry_days' => $request->input('alert_before_expiry_days'),
-            'grace_period_days' => $request->input('grace_period_days'),
-            'enforce_level_progression' => $request->input('enforce_level_progression'),
-            'requires_panel' => $request->input('requires_panel'),
-            'qualification_scope' => $request->input('qualification_scope', 'global'),
-            'certificate_template_id' => $request->input('certificate_template_id'),
-            'certificate_number_format' => $request->input('certificate_number_format'),
-            'currency_days' => $request->input('currency_days'),
-            'requires_exam' => $request->input('requires_exam'),
-            'renewal_required' => $request->input('renewal_required'),
-        ];
+        return \App\Support\QualificationDefinitionPayload::fromInput(static fn (string $field): mixed => $request->input($field));
     }
 
     private function tenantIdOrRedirect(): int|Response
