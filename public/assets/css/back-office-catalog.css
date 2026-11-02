@@ -696,3 +696,90 @@
     font-size: 0.75rem;
   }
 }
+/* Modèles regroupés par pays et armée, recherche, unités réelles. */
+.bo-catalog__filter {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 34rem;
+  margin: 0 0 1.25rem;
+}
+.bo-catalog__filter label {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.bo-catalog__filter input {
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 0.55rem 0.8rem;
+  font: inherit;
+}
+.bo-catalog__filter-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.bo-catalog__group + .bo-catalog__group {
+  margin-top: 1.6rem;
+}
+.bo-catalog__group-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+  font-weight: 800;
+}
+.bo-catalog__group-count {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.bo-catalog__real-note {
+  margin: 0 0 0.8rem;
+  color: #92400e;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.bo-catalog__branch + .bo-catalog__branch {
+  margin-top: 1rem;
+}
+.bo-catalog__branch-title {
+  margin: 0 0 0.5rem;
+  color: #475569;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.bo-catalog__tree-code {
+  margin-left: 0.4rem;
+  color: #0f766e;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.bo-catalog__tree-meta {
+  display: block;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+.bo-catalog__sources {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+.bo-catalog__sources a {
+  color: #0369a1;
+  overflow-wrap: anywhere;
+}
+.bo-catalog__hero .bo-catalog__real-note {
+  margin-top: 0.6rem;
+  color: #fcd34d;
+}
+.bo-catalog [data-catalog-group][hidden],
+.bo-catalog [data-catalog-branch][hidden],
+.bo-catalog [data-catalog-search][hidden],
+.bo-catalog__filter-empty[hidden] {
+  display: none;
+}

@@ -12,6 +12,7 @@ $code = (string) ($item['code'] ?? '');
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $gradeLabel = (string) ($item['grade_label'] ?? 'Système de grades déjà en place, ou non précisé');
 $showUrl = url('back-office/organisation/catalogue/modele?modele=' . rawurlencode($code));
+$hasGrades = trim((string) ($item['grade_system_code'] ?? '')) !== '';
 
 $addedUnits = is_array($report['units_added_names'] ?? null) ? $report['units_added_names'] : [];
 $keptUnits = is_array($report['units_kept_names'] ?? null) ? $report['units_kept_names'] : [];
@@ -25,6 +26,9 @@ $keptRoles = is_array($report['roles_kept_names'] ?? null) ? $report['roles_kept
         <p class="bo-catalog__kicker">Aperçu</p>
         <h1 class="bo-catalog__title"><?= $h((string) ($item['title'] ?? 'Modèle')) ?></h1>
         <p class="bo-catalog__lead"><?= $h((string) ($item['summary'] ?? '')) ?></p>
+        <?php if (!empty($item['real_units'])): ?>
+            <p class="bo-catalog__real-note">Inspiré d’unités réelles, à adapter : organisation publique simplifiée, sans effectifs ni noms de personnes.</p>
+        <?php endif; ?>
         <div class="bo-catalog__hero-actions">
             <a class="ath-btn ath-btn--solid" href="<?= $h($showUrl) ?>">Voir le contenu complet</a>
             <a class="ath-btn" href="<?= $h(url('back-office/organisation/catalogue')) ?>">Retour au catalogue</a>
@@ -49,7 +53,7 @@ $keptRoles = is_array($report['roles_kept_names'] ?? null) ? $report['roles_kept
         </article>
         <article class="bo-catalog__tile">
             <span class="bo-catalog__tile-kicker">Grades</span>
-            <strong class="bo-catalog__tile-value">1</strong>
+            <strong class="bo-catalog__tile-value"><?= $hasGrades ? 1 : 0 ?></strong>
             <span class="bo-catalog__tile-label"><?= $h($gradeLabel) ?></span>
         </article>
     </div>

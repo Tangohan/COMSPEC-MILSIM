@@ -15,12 +15,20 @@ $functionGroups = is_array($item['function_groups'] ?? null) ? $item['function_g
 $roleNames = is_array($item['role_names'] ?? null) ? $item['role_names'] : [];
 $gradeLabel = (string) ($item['grade_label'] ?? '');
 $apercuUrl = url('back-office/organisation/catalogue/apercu?modele=' . rawurlencode($code));
+$real = !empty($item['real_units']);
+$sources = is_array($item['sources'] ?? null) ? $item['sources'] : [];
+$jobCount = (int) ($item['job_catalog_count'] ?? 0);
+$hasGrades = trim((string) ($item['grade_system_code'] ?? '')) !== '';
+$lang = function_exists('site_lang') && site_lang() === 'en' ? 'en' : 'fr';
 ?>
 <div class="bo-catalog">
     <header class="bo-catalog__hero">
-        <p class="bo-catalog__kicker"><?= $official ? 'Modèle officiel Athena' : ($archived ? 'Modèle retiré' : 'Modèle de cette organisation') ?></p>
+        <p class="bo-catalog__kicker"><?= $real ? 'Inspiré d’unités réelles' : ($official ? 'Modèle officiel Athena' : ($archived ? 'Modèle retiré' : 'Modèle de cette organisation')) ?></p>
         <h1 class="bo-catalog__title"><?= $h((string) ($item['title'] ?? 'Modèle')) ?></h1>
         <p class="bo-catalog__lead"><?= $h((string) ($item['summary'] ?? '')) ?></p>
+        <?php if ($real): ?>
+            <p class="bo-catalog__real-note">Inspiré d’unités réelles, à adapter : organisation publique simplifiée, sans effectifs ni noms de personnes. Les noms restent ceux du pays ; chaque nom se traduit ou se renomme ensuite dans Libellés.</p>
+        <?php endif; ?>
         <div class="bo-catalog__hero-actions">
             <?php if (!$archived): ?>
                 <a class="ath-btn ath-btn--solid" href="<?= $h($apercuUrl) ?>">Aperçu et application</a>
@@ -55,7 +63,7 @@ $apercuUrl = url('back-office/organisation/catalogue/apercu?modele=' . rawurlenc
         </article>
         <article class="bo-catalog__tile">
             <span class="bo-catalog__tile-kicker">Grades</span>
-            <strong class="bo-catalog__tile-value">1</strong>
+            <strong class="bo-catalog__tile-value"><?= $hasGrades ? 1 : 0 ?></strong>
             <span class="bo-catalog__tile-label"><?= $h($gradeLabel) ?></span>
         </article>
     </div>
@@ -68,8 +76,27 @@ $apercuUrl = url('back-office/organisation/catalogue/apercu?modele=' . rawurlenc
             <?php else: ?>
                 <ul class="bo-catalog__tree">
                     <?php foreach ($unitOutline as $node): ?>
-                        <?php $depth = max(0, min(8, (int) ($node['depth'] ?? 0))); ?>
-                        <li style="--d: <?= $depth ?>"><?= $h((string) ($node['name'] ?? '')) ?></li>
+                        <?php
+                        $depth = max(0, min(8, (int) ($node['depth'] ?? 0)));
+                        $nodeId = (string) ($node['id'] ?? '');
+                        $nodeName = (string) ($node['name'] ?? '');
+                        $nodeLabel = function_exists('generated_label') ? generated_label('unit', $nodeName, $nodeId !== '' ? $nodeId : null) : $nodeName;
+                        $nodeCode = (string) ($node['code'] ?? '');
+                        $nodeEchelon = $real ? \App\Services\OrganizationCatalog\RealUnitKitDefinitions::echelonLabel((string) ($node['echelon'] ?? ''), $lang) : '';
+                        // Nom officiel étranger : traduction dans la langue du lecteur, ou nom officiel sous le libellé anglais.
+                        $nodeHint = $real ? (\App\Services\OrganizationCatalog\RealUnitKitDefinitions::translation($nodeId, $lang) ?? '') : '';
+                        if ($real && $lang === 'en' && $nodeLabel !== $nodeName) {
+                            $nodeHint = $nodeName;
+                        } elseif ($nodeHint === $nodeLabel) {
+                            $nodeHint = '';
+                        }
+                        ?>
+                        <li style="--d: <?= $depth ?>">
+                            <span translate="no"><?= $h($nodeLabel) ?></span><?php if ($real && $nodeCode !== '' && $nodeCode !== $nodeLabel): ?><span class="bo-catalog__tree-code" translate="no"><?= $h($nodeCode) ?></span><?php endif; ?>
+                            <?php if ($nodeEchelon !== '' || $nodeHint !== ''): ?>
+                                <span class="bo-catalog__tree-meta"><?= $h(implode(' · ', array_filter([$nodeEchelon, $nodeHint], static fn (string $v): bool => $v !== ''))) ?></span>
+                            <?php endif; ?>
+                        </li>
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
@@ -77,7 +104,9 @@ $apercuUrl = url('back-office/organisation/catalogue/apercu?modele=' . rawurlenc
         </section>
         <section class="bo-catalog__outline" aria-labelledby="bo-cat-fn">
             <h2 id="bo-cat-fn" class="bo-catalog__section-title">Fonctions</h2>
-            <?php if ($functionGroups === []): ?>
+            <?php if ($functionGroups === [] && $jobCount > 1): ?>
+                <p class="bo-catalog__card-summary">Ce modèle n’ajoute aucune fonction. Le catalogue d’emplois propose <?= $jobCount ?> emplois sourcés pour ce commandement, à copier dans vos fonctions (Effectifs, onglet Fonctions).</p>
+            <?php elseif ($functionGroups === []): ?>
                 <p class="bo-catalog__empty">Aucune fonction dans ce modèle.</p>
             <?php else: ?>
                 <?php foreach ($functionGroups as $group): ?>
@@ -109,6 +138,20 @@ $apercuUrl = url('back-office/organisation/catalogue/apercu?modele=' . rawurlenc
             <p class="bo-catalog__card-summary"><?= $h($gradeLabel) ?></p>
             <a class="ath-btn" href="<?= $h(url('back-office/referentiels/grades')) ?>">Administrer les grades</a>
         </section>
+        <?php if ($sources !== []): ?>
+            <section class="bo-catalog__outline" aria-labelledby="bo-cat-sources">
+                <h2 id="bo-cat-sources" class="bo-catalog__section-title">Sources publiques</h2>
+                <p class="bo-catalog__card-summary">Chaque unité du modèle s’appuie sur au moins une de ces sources ouvertes. Une unité sans source publique n’est pas proposée.</p>
+                <ul class="bo-catalog__sources">
+                    <?php foreach ($sources as $source): ?>
+                        <?php $sourceUrl = (string) ($source['url'] ?? ''); ?>
+                        <?php if (str_starts_with($sourceUrl, 'https://')): ?>
+                            <li><a href="<?= $h($sourceUrl) ?>" target="_blank" rel="noopener noreferrer" translate="no"><?= $h((string) ($source['title'] ?? $sourceUrl)) ?></a></li>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </ul>
+            </section>
+        <?php endif; ?>
     </div>
 
     <?php if (!$official): ?>
