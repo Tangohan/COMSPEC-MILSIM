@@ -1,0 +1,93 @@
+[APP] Crédits — équipe, versions des composants chargés, remerciements, traductions et licence
+
+[h1]Crédits[/h1]
+[i]Catégorie : Système · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Crédits présente qui fait COMSPEC ATAK et ce qui tourne sur votre poste : version du mod, de la DLL et des mods détectés. C'est aussi un moyen rapide de vérifier qu'un seul exemplaire du mod est chargé et que la DLL correspond.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Système : Crédits (pas dans le dock par défaut).
+[*]Réglages › À propos du téléphone : bouton [b]CRÉDITS[/b].
+[*]Si vous l'avez désinstallée, l'App Store la réinstalle.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]En-tête[/b] : logo, « COMSPEC ATAK », version en cours, « Terminal tactique pour Arma 3 ».
+[*][b]Équipe[/b] : équipe SOAR, développeur NewPI.
+[*][b]Versions[/b] (composants chargés sur ce poste) : COMSPEC ATAK, interface, DLL (native ou COMSPEC Link), addon Overwatch connect, CBA, ACE, ACRE2 (« non chargé » s'ils sont absents) et version d'Arma 3. Une version de mod en rouge signale deux exemplaires du mod chargés en même temps ; une DLL en orange n'est pas celle attendue, en rouge elle est absente ou trop ancienne.
+[*][b]Remerciements[/b] : Better CAS Environment (BCE, Aaren) et Simple Map Tools (POLPOX) comme sources d'inspiration, sans reprise de code ; symboles de carte d'Arma 3 (Bohemia Interactive).
+[*][b]Traductions communautaires[/b] : chinois simplifié par RickLeo et MOYA.
+[*][b]Licence[/b] : usage personnel depuis le Steam Workshop officiel ; copie, modification et redistribution interdites sans autorisation écrite.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Après une mise à jour, ouvrez Crédits.
+[*]Vérifiez la version de COMSPEC ATAK et que la ligne DLL n'est ni orange ni rouge.
+[*]En cas d'alerte, ouvrez Debug (onglet DLL) pour le détail de l'installation.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE / ACRE2[/b] : seulement leur version, s'ils sont chargés.
+[*][b]Réglages[/b] : À propos du téléphone mène ici et propose [b]RELIRE LA LICENCE[/b].
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list][*]Page d'information seulement : rien ne s'y règle.[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Credits shows who makes COMSPEC ATAK and what is running on your machine: version of the mod, of the DLL and of detected mods. It is also a quick way to check that only one copy of the mod is loaded and that the DLL matches.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] carries the phone in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, System category: Credits (not in the dock by default).
+[*]Settings › About phone: [b]CREDITS[/b] button.
+[*]If you uninstalled it, the App Store reinstalls it.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]Header[/b]: logo, "COMSPEC ATAK", current version, "Tactical terminal for Arma 3".
+[*][b]Team[/b]: SOAR team, developer NewPI.
+[*][b]Versions[/b] (components loaded on this machine): COMSPEC ATAK, interface, DLL (native or COMSPEC Link), Overwatch connect addon, CBA, ACE, ACRE2 ("not loaded" if absent) and Arma 3 version. A mod version in red means two copies of the mod are loaded at once; a DLL in orange is not the expected one, in red it is missing or too old.
+[*][b]Credits[/b] (thanks): Better CAS Environment (BCE, Aaren) and Simple Map Tools (POLPOX) as inspiration, with no code reused; Arma 3 map symbols (Bohemia Interactive).
+[*][b]Community translations[/b]: Simplified Chinese by RickLeo and MOYA.
+[*][b]License[/b]: personal use from the official Steam Workshop; copying, modification and redistribution forbidden without written permission.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]After an update, open Credits.
+[*]Check the COMSPEC ATAK version and that the DLL line is neither orange nor red.
+[*]If something is flagged, open Debug (DLL tab) for installation details.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE / ACRE2[/b]: only their version, if loaded.
+[*][b]Settings[/b]: About phone leads here and offers [b]READ THE LICENCE[/b].
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list][*]Information page only: nothing to configure.[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

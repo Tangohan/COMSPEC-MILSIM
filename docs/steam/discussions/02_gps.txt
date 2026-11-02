@@ -1,0 +1,131 @@
+[APP] GPS — guidage par la route, position, satellites et précision du GPS
+
+[i]Message 1/2[/i]
+[h1]GPS[/h1]
+[i]Catégorie : Navigation · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Le GPS routier du téléphone : il calcule un itinéraire par les routes et les pistes vers une grille, un point de la carte, l'étape active de l'Itinéraire ou un marqueur, puis vous guide virage par virage. Il montre aussi l'état réel de votre GPS : satellites, précision, grille, altitude, cap et vitesse.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*]Sortez le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie [b]Navigation[/b], app [b]GPS[/b] (pas dans le dock). Désinstallée : réinstallez-la depuis l'[b]App Store[/b].
+[*]Sans ouvrir l'app : sur la [b]Carte[/b], clic droit > [b]Y aller[/b], ou [b]OUTILS[/b] > [b]GPS : itinéraire[/b] puis clic sur la destination ; dans l'app [b]Itinéraire[/b], [b]GPS VERS L'ÉTAPE[/b].
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Guidage en cours[/b] : prochaine manœuvre (tournez, serrez à gauche ou à droite, faites demi-tour, continuez), distance avant la manœuvre, minutes et distance restantes, heure d'arrivée (heure du jeu) et destination. [b]VOIR SUR LA CARTE[/b] ouvre la carte en suivi de votre position, [b]ARRÊTER[/b] coupe le guidage (et un calcul en cours).
+[*][b]Bandeau sur la carte[/b] : le même guidage s'affiche en haut de l'app Carte, mis à jour chaque seconde, avec [b]ARRÊTER[/b].
+[*][b]Calcul[/b] : plus court chemin sur le réseau routier d'Arma (les pistes sont un peu évitées), quelques secondes au plus sans geler le jeu. Destination à moins de 150 m : ligne droite. Pas de route trouvée : cap direct, avec un avertissement ; réseau coupé : le seul tronçon manquant passe en ligne droite.
+[*][b]Hors itinéraire[/b] : à plus de 60 m du tracé pendant quelques secondes, l'itinéraire est recalculé tout seul (au plus toutes les 12 s).
+[*][b]Arrivée[/b] : à 30 m de la destination, notification « Vous êtes arrivé » et vibreur, le guidage s'arrête.
+[*][b]Heure d'arrivée[/b] : d'après votre vitesse réelle, bornée autour d'une allure type (5 km/h à pied, 45 km/h en véhicule).
+[*][b]Ma position[/b] : [b]Signal GPS[/b] (nombre de satellites et précision en ± mètres, ou « Recherche des satellites… », « Pas de fix · position réseau », « Pas de fix · dernière position connue », « Aucune position »), raisons de la perte de précision, [b]Grille[/b] à 8 chiffres telle que le GPS la donne (erreur comprise), [b]Altitude[/b], [b]Cap · vitesse[/b].
+[*][b]Destination[/b] : champ [b]Grille[/b] de 4 à 10 chiffres (ex. 1540 1728, espaces acceptés ; grille courte : centre de la case), [b]Y ALLER[/b] ; [b]CHOISIR SUR LA CARTE[/b] ouvre la carte avec l'outil GPS : cliquez la destination.
+[*][b]Raccourcis[/b] : un bouton vers l'étape active de l'Itinéraire, puis les 8 marqueurs nommés les plus proches, avec distance et direction.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*][b]Ctrl+Maj+U[/b], ouvrez [b]GPS[/b].
+[*]Vérifiez [b]Signal GPS[/b] : attendez la fin de « Recherche des satellites… » si le téléphone vient d'être allumé.
+[*]Tapez la grille de destination dans [b]Grille[/b], puis [b]Y ALLER[/b] (« Calcul de l'itinéraire… » s'affiche).
+[*][b]VOIR SUR LA CARTE[/b], puis [b]Ctrl+U[/b] : le téléphone dans le coin, suivez les manœuvres du bandeau.
+[*]À l'arrivée le guidage s'arrête seul ; sinon [b]ARRÊTER[/b].
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › GPS réaliste[/b] (serveur) : précision selon le ciel visible (forêt, rue étroite, vallée, bâtiment ; aucun fix en sous-sol). Décoché : GPS exact (hors brouillage et dégâts).
+[*][b]… › Force des erreurs GPS[/b] (serveur) : 50 % à 200 % (100 % = réel).
+[*][b]… › Attente des satellites[/b] (serveur) : au démarrage du téléphone ou après un changement de batterie, de quelques secondes à environ 40 s ; en attendant, position approximative par le réseau.
+[*][b]… › Pertes de fix GPS[/b] (serveur) : 0 % (le fix tient partout, seule la précision baisse) à 200 %.
+[*][b]… › Fiabilité du GPS[/b] (serveur) : Parfaite, Bonne (réel), Moyenne, Médiocre : fréquence des décrochages et des sauts de position.
+[*][b]… › Profil de réalisme[/b] (serveur) : Milsim, Standard (erreurs à moitié, pas d'attente des satellites), Arcade (GPS exact) ou Personnalisé.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : bandeau de guidage, tracé de l'itinéraire, [b]Y aller[/b] au clic droit.
+[*][b]Itinéraire[/b] : [b]GPS VERS L'ÉTAPE[/b] et le raccourci de l'étape active.
+[*][b]Athena[/b] : une communauté peut imposer les réglages du GPS simulé depuis Athena.
+[*][b]Guerre électronique, dégâts[/b] : un brouilleur ou un GPS abîmé dégrade la position affichée.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Le guidage suit les routes et les pistes connues d'Arma, pas le hors-piste : loin de toute route, le tracé part en ligne droite.
+[*]Une nouvelle destination demandée pendant un calcul est gardée et lancée à la fin du calcul en cours.
+[*]Dans un bâtiment la précision baisse nettement, en sous-sol le fix se perd : sortez à découvert pour une grille fiable.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions publiques.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h1]GPS[/h1]
+[i]Category: Navigation · ATAK COMSPEC 2.9.34[/i]
+
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+The phone's road GPS: it computes a route along roads and tracks to a grid, a map point, the active waypoint of the Route app or a marker, then guides you turn by turn. It also shows the real state of your GPS: satellites, accuracy, grid, elevation, heading and speed.
+
+[h3]How to open it[/h3]
+[list]
+[*]Take out the phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, [b]Navigation[/b] category, [b]GPS[/b] app (not in the dock). Uninstalled: reinstall it from the [b]App Store[/b].
+[*]Without opening the app: on the [b]Map[/b], right click > [b]Go there[/b], or [b]TOOLS[/b] > [b]GPS: route[/b] then click the destination; in the [b]Route[/b] app, [b]GPS TO STOP[/b].
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]Active guidance[/b]: next manoeuvre (turn, keep left or right, make a U-turn, continue), distance to the manoeuvre, minutes and distance remaining, arrival time (game time) and destination. [b]SHOW ON MAP[/b] opens the map following your position, [b]STOP[/b] ends guidance (and any calculation in progress).
+[*][b]Map banner[/b]: the same guidance appears at the top of the Map app, updated every second, with [b]STOP[/b].
+[*][b]Calculation[/b]: shortest path on Arma's road network (tracks are slightly avoided), a few seconds at most without freezing the game. Destination under 150 m: straight line. No road found: direct heading, with a warning; broken network: only the missing leg is a straight line.
+[*][b]Off route[/b]: more than 60 m from the route for a few seconds, the route is recalculated automatically (at most every 12 s).
+[*][b]Arrival[/b]: within 30 m of the destination, a "You have arrived" notification and vibration, guidance stops.
+[*][b]Arrival time[/b]: from your real speed, bounded around a typical pace (5 km/h on foot, 45 km/h in a vehicle).
+[*][b]My position[/b]: [b]GPS signal[/b] (number of satellites and accuracy in ± metres, or "Searching for satellites…", "No fix · network position", "No fix · last known position", "No position"), reasons for the accuracy loss, 8-digit [b]Grid[/b] as the GPS gives it (error included), elevation, heading · speed.
+[*][b]Destination[/b]: [b]Grid[/b] field, 4 to 10 digits (e.g. 1540 1728, spaces allowed; short grid: centre of the square), [b]GO THERE[/b]; [b]PICK ON MAP[/b] opens the map with the GPS tool: click the destination.
+[*][b]Shortcuts[/b]: a button to the active waypoint of the Route app, then the 8 nearest named markers, with distance and direction.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*][b]Ctrl+Shift+U[/b], open [b]GPS[/b].
+[*]Check [b]GPS signal[/b]: wait for "Searching for satellites…" to finish if the phone was just switched on.
+[*]Type the destination grid in [b]Grid[/b], then [b]GO THERE[/b] ("Calculating route…" appears).
+[*][b]SHOW ON MAP[/b], then [b]Ctrl+U[/b]: phone in the corner, follow the manoeuvres on the banner.
+[*]Guidance stops on its own on arrival; otherwise [b]STOP[/b].
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Realistic GPS[/b] (server): accuracy depends on visible sky (forest, narrow street, valley, building; no fix underground). Unchecked: exact GPS (except jamming and damage).
+[*][b]… › GPS error strength[/b] (server): 50 % to 200 % (100 % = real).
+[*][b]… › Satellite acquisition[/b] (server): when the phone starts or after a battery swap, from a few seconds to about 40 s; meanwhile, approximate network position.
+[*][b]… › GPS fix losses[/b] (server): 0 % (fix holds everywhere, only accuracy drops) to 200 %.
+[*][b]… › GPS reliability[/b] (server): Perfect, Good (real), Average, Poor: how often the fix drops and the position jumps.
+[*][b]… › Realism profile[/b] (server): Milsim, Standard (half errors, no satellite wait), Arcade (exact GPS) or Custom.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: guidance banner, route drawn, [b]Go there[/b] on right click.
+[*][b]Route app[/b]: [b]GPS TO STOP[/b] and the active waypoint shortcut.
+[*][b]Athena[/b]: a community can enforce the simulated GPS settings from Athena.
+[*][b]Electronic warfare, damage[/b]: a jammer or a damaged GPS degrades the position shown.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Guidance follows Arma's known roads and tracks, not cross-country: far from any road, the route goes in a straight line.
+[*]A new destination requested during a calculation is kept and started when the current one ends.
+[*]Inside a building accuracy drops clearly, underground the fix is lost: get out in the open for a reliable grid.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first public versions.

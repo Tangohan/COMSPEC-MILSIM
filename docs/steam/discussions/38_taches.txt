@@ -1,0 +1,110 @@
+[APP] Tâches — ordres du commandement, réponses REÇU / EN COURS / TERMINÉ et tâches de mission
+
+[i]Message 1/2[/i]
+[h1]Tâches[/h1]
+[i]Catégorie : Mission · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Tâches réunit tout ce qu'on vous demande de faire : les ordres envoyés par le commandement (depuis Athena, un PC de TOC ou un chef en jeu), avec vos réponses et le suivi de qui les a vus, et les tâches de la mission Arma. Les chefs y rédigent aussi leurs propres ordres.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Tâches est dans la catégorie Mission du lanceur et dans le dock en bas de l'écran d'accueil. Une notification annonce chaque nouvel ordre. On y arrive aussi depuis Poste TOC (NOUVEL ORDRE, ORDRE) et depuis Comptes rendus (VOIR sur un ordre reçu).
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Ordres du TOC[/b] : une carte par ordre, avec son type, son état en couleur, la mention PRIORITAIRE si besoin, l'émetteur, la cible et la consigne. En tête, le nombre d'ordres et ceux qui restent à traiter.
+[*][b]Votre réponse[/b] : quatre boutons REÇU, EN COURS, TERMINÉ, IMPOSSIBLE. Si vous êtes chef d'un groupe qui compte d'autres joueurs, votre réponse vaut pour tout le groupe (c'est écrit au-dessus des boutons).
+[*][b]Suivi[/b] : sous chaque ordre, « Vu x/y · reçu · en cours · terminé ». QUI ? déplie la liste des destinataires attendus avec, pour chacun, « pas encore vu », « vu » ou sa réponse, et le chef qui a répondu pour lui. Le simple affichage de l'ordre renvoie « vu ».
+[*][b]NOUVEL ORDRE[/b] (visible pour un chef de groupe, un joueur seul, un rôle de chef ou de commandant, ou l'opérateur d'un PC de TOC) : type DÉPLACER, TENIR, RECO, DEM-SSE, APPUI AÉRIEN, RENFORT ou FRAGO ; priorité ROUTINE, IMPORTANT, URGENT ou FLASH ; destinataire (mon groupe, un autre groupe du camp, un groupe IA, tout le monde) ; grille de l'objectif (MA POSITION la remplit) ; consigne. FRAGO propose les rubriques Situation, Mission, Exécution, Soutien, Commandement ; DEM-SSE demande la nature du site, la collecte prioritaire, la menace et le dossier SSE. ENVOYER L'ORDRE l'expédie.
+[*][b]Ordres aux IA[/b] : adressé à un groupe IA du camp, un ordre DÉPLACER, TENIR, RECO ou RENFORT est réellement exécuté par ce groupe.
+[*][b]Missions de tir[/b] : si l'appui feu typé est activé, les missions de tir du camp apparaissent ici, avec les boutons du servant ou du demandeur.
+[*][b]Tâches de la mission[/b] : les tâches Arma du joueur, avec leur état, la distance, CARTE (centre la carte du téléphone sur l'objectif) et SUIVRE (en fait la tâche courante, affichée SUIVIE).
+[*][b]Hors connexion[/b] : sans réseau, l'app montre les ordres connus à la perte du signal ; les nouveaux arrivent au retour du réseau.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Une notification « Nouvel ordre » arrive : ouvrez Tâches.
+[*]Lisez la consigne de l'ordre, touchez REÇU.
+[*]Au départ, touchez EN COURS ; à la fin, TERMINÉ (ou IMPOSSIBLE si l'ordre ne peut pas être exécuté).
+[*]Côté chef : NOUVEL ORDRE, type RECO, destinataire « IA · Alpha 2 », MA POSITION, consigne, ENVOYER L'ORDRE. Le groupe IA part ; QUI ? montre les réponses des joueurs visés.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Appui feu › Appui feu typé[/b] (serveur) : affiche les missions de tir du camp dans Tâches.
+[*][b]COMSPEC › ATAK · Mode local et poste TOC › Mode full local (sans Athena)[/b] (serveur) : les ordres passent seulement en jeu.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b] : avec COMSPEC Link, les ordres d'Athena arrivent ici et vos réponses lui sont renvoyées ; sans Athena, les ordres passent en jeu par le serveur.
+[*][b]Poste TOC[/b] : l'opérateur rédige ses ordres ici et y suit les réponses.
+[*][b]Comptes rendus[/b] : l'onglet NOUVEAU propose d'accuser réception des ordres pas encore traités.
+[*][b]Carte[/b] : CARTE sur une tâche de mission centre la carte du téléphone dessus.
+[*][b]IA[/b] : ordres réels aux groupes IA du camp (jamais à un groupe qui compte un joueur).
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Le statut d'une tâche de mission est géré par la mission : seuls SUIVRE et CARTE agissent dessus.
+[*]Un joueur arrivé en cours de partie reçoit les ordres déjà émis sans Athena.
+[*]QUI ? affiche 16 noms au plus, puis « … et n autre(s) ».
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x). Suivi par joueur et réponse du chef pour le groupe dès ATAK natif 1.33.0 ; ordres sans Athena depuis 2.4.0.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Tasks gathers everything you are asked to do: orders sent by command (from Athena, a TOC laptop or a leader in game), with your replies and tracking of who has seen them, and the Arma mission tasks. Leaders also write their own orders there.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). Tasks is in the Mission category of the launcher and in the dock at the bottom of the home screen. A notification announces each new order. You also reach it from TOC post (NEW ORDER, ORDER) and from Reports (VIEW on a received order).
+
+[h3]Features[/h3]
+[list]
+[*][b]TOC orders[/b]: one card per order, with its type, colour-coded status, PRIORITY tag when needed, issuer, target and instruction. At the top, the number of orders and how many are still open.
+[*][b]Your reply[/b]: four buttons RECEIVED, NOW PLAYING (the "in progress" button; that is its current English label), COMPLETE, IMPOSSIBLE. If you lead a group with other players, your reply counts for the whole group (it is written above the buttons).
+[*][b]Tracking[/b]: under each order, "Seen x/y · received · in progress · complete". WHO? expands the list of expected recipients with, for each, "not seen yet", "seen" or their reply, and the leader who answered for them. Simply displaying the order sends back "seen".
+[*][b]NEW ORDER[/b] (shown to a group leader, a player alone, a leader or commander role, or a TOC laptop operator): type MOVE, HOLD, RECON, DEM-SSE, AIR SUPPORT, REINFORCEMENTS or FRAGO; priority ROUTINE, IMPORTANT, URGENT or FLASH; recipient (my group, another group of the side, an AI group, everyone); objective grid (MY POSITION fills it); instruction. FRAGO offers the Situation, Mission, Execution, Support, Command headings; DEM-SSE asks for the site type, priority collection, threat and SSE case. SEND THE ORDER sends it.
+[*][b]Orders to AI[/b]: addressed to an AI group of the side, a MOVE, HOLD, RECON or REINFORCEMENTS order is really carried out by that group.
+[*][b]Fire missions[/b]: when typed fire support is on, the side's fire missions show up here, with the gunner's or requester's buttons.
+[*][b]Mission tasks[/b]: the player's Arma tasks, with status, distance, MAP (centres the phone map on the objective) and FOLLOW (makes it the current task, shown as TRACKED).
+[*][b]Offline[/b]: without network, the app shows the orders known when the signal was lost; new ones arrive when the network is back.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]A "New order" notification arrives: open Tasks.
+[*]Read the order's instruction, tap RECEIVED.
+[*]When you move out, tap the in-progress button; at the end, COMPLETE (or IMPOSSIBLE if the order cannot be carried out).
+[*]As a leader: NEW ORDER, type RECON, recipient "IA · Alpha 2", MY POSITION, instruction, SEND THE ORDER. The AI group moves; WHO? shows the replies of the targeted players.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Fire support › Typed fire support[/b] (server): shows the side's fire missions in Tasks.
+[*][b]COMSPEC › ATAK · Local mode and TOC post › Full local mode (no Athena)[/b] (server): orders only travel in game.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b]: with COMSPEC Link, Athena orders arrive here and your replies go back to it; without Athena, orders travel in game through the server.
+[*][b]TOC post[/b]: the operator writes orders here and follows the replies.
+[*][b]Reports[/b]: the NEW tab offers to acknowledge orders not yet handled.
+[*][b]Map[/b]: MAP on a mission task centres the phone map on it.
+[*][b]AI[/b]: real orders to the side's AI groups (never to a group that includes a player).
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]A mission task's status is handled by the mission: only FOLLOW and MAP act on it.
+[*]A player joining mid-game receives the orders already issued without Athena.
+[*]WHO? shows 16 names at most, then "… and n other(s)".
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x). Per-player tracking and the leader's reply for the group since native ATAK 1.33.0; orders without Athena since 2.4.0.

@@ -1,0 +1,126 @@
+[APP] CAS — 9-LINE, 5-LINE et appel de feu typé (mortiers, obusier, lance-roquettes, naval, CAS)
+
+[i]Message 1/2[/i]
+[h1]CAS[/h1]
+[i]Catégorie : Appui et feux · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Demander un appui feu depuis le téléphone : un 9-LINE d'appui aérien rapproché, un 5-LINE pour un hélicoptère ou un gunship, et un appel de feu indirect (mortier, obusier, lance-roquettes, appui naval ou aérien) avec calcul de la solution de tir, tir réel par l'IA de votre camp, réglage et fin de mission.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est dans la catégorie [b]Appui et feux[/b] (pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller. Autres accès : bouton [b]APPEL DE FEU (ARTILLERIE)[/b] de l'app JTAC (la cible verrouillée part dans l'onglet APPEL DE FEU), bouton [b]RÉGLER[/b] d'une mission de tir dans l'app Tâches, bouton [b]DEMANDE DE TIR DANS L'APP CAS[/b] d'un compte rendu qui demande un appui feu, et la notification « Nouvelle demande CAS reçue ».
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Bandeau du haut[/b] : onglets [b]9-LINE[/b], [b]5-LINE[/b], [b]APPEL DE FEU[/b], avec votre grille, votre altitude et le vent.
+[*][b]9-LINE[/b] : les neuf lignes (IP / BP, cap, distance, altitude, description, position, marquage, amis, dégagement) et les remarques. [b]CIBLE SUR LA CARTE[/b] puis [b]PRÉ-REMPLIR[/b] remplissent les lignes 4, 6, 7 (votre code laser ACE) et 8. Lignes 5 et 6 obligatoires. [b]ENVOYER LE 9-LINE[/b] : avec la liaison Athena, il part sur Athena (les pilotes et le site le reçoivent) ; sinon il part au camp en ordre CAS (app Tâches et poste TOC).
+[*][b]5-LINE[/b] : indicatif, amis, cible, description, remarques ; [b]PRÉ-REMPLIR[/b] remplit les lignes 1 à 3. Envoyé au camp en ordre CAS.
+[*][b]APPEL DE FEU › Position de tir[/b] : [b]MOYEN[/b] (appui générique ou un moyen typé), liste des pièces du camp, [b]MAN[/b] (pièce manuelle : saisir sa grille), [b]PIÈCE À MA POSITION[/b], grille et altitude de la pièce. Avec les batteries simulées, une batterie « hors carte » s'ajoute.
+[*][b]Cible[/b] : [b]GRILLE[/b] ou [b]POLAIRE[/b] (azimut et distance depuis [b]OBSERVATEUR[/b] ou [b]MA POS[/b]), ou [b]SUR LA CARTE[/b] ; champ [b]ENNEMI[/b], munition HE, ILM (éclairant) ou FUM (fumigène) selon le moyen, nombre de coups, [b]OFF[/b] ou [b]GERBE[/b] (coups répartis autour de la cible).
+[*][b]Solution[/b] : unité, charge, dérive, élévation, durée de vol, flèche ; [b]CALCULER[/b], [b]TIR[/b], [b]FIN DE MISSION[/b].
+[*][b]Moyens typés[/b] : mortier léger 60 mm, moyen 81/82 mm, lourd 120 mm, obusier 105/155 mm, lance-roquettes multiples, appui naval, appui aérien (CAS). Chacun a ses portées, délais, munitions, dispersion, nombre de coups maximum et distance de sécurité (600 m pour les mortiers et l'obusier, 750 m naval, 1 000 m lance-roquettes et CAS). Les pièces de la mission sont reconnues seules.
+[*][b]Tir[/b] : pièce servie par l'IA de votre camp, elle tire pour de vrai ; appareil IA, il reçoit l'ordre d'attaquer la zone ; pièce tenue par un joueur, la mission arrive sur son téléphone ; batterie simulée, les coups tombent après le délai et la durée de vol. Hors portée, munition absente ou amis trop près : refus motivé ou alerte DANGER CLOSE.
+[*][b]Réglage du tir[/b] (mission en cours) : [b]+[/b] / [b]–[/b] / [b]G[/b] / [b]D[/b] de 50, 100 ou 200 m sur l'axe observateur-cible, un coup de réglage à chaque fois, puis [b]EFFICACE[/b].
+[*][b]État de la mission et journal[/b] : TRANSMISE, REÇUE, EN PRÉPARATION, COUPS PARTIS, SPLASH, TIR FINI, IMPOSSIBLE, FIN DE MISSION. Le journal garde les dernières missions : un appui les rappelle, [b]NOUVELLE MSN[/b] remet à zéro.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Ouvrez l'app, onglet [b]APPEL DE FEU[/b], choisissez le [b]MOYEN[/b] (par exemple mortier moyen) puis la pièce dans la liste.
+[*]Donnez la cible : [b]SUR LA CARTE[/b], une grille, ou azimut et distance depuis votre position.
+[*]Choisissez HE et le nombre de coups, puis [b]CALCULER[/b] : vérifiez portée, dérive et durée de vol.
+[*][b]TIR[/b] : suivez l'état jusqu'à SPLASH, réglez avec + / – / G / D, puis [b]EFFICACE[/b].
+[*]Terminez par [b]FIN DE MISSION[/b].
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Appui feu › Appui feu typé[/b] (serveur) : décoché, appel de feu générique (toute pièce, sans moyen ni distance de sécurité).
+[*][b]COMSPEC › ATAK · Appui feu › Moyen autorisé : …[/b] (serveur, un par moyen) : décoché, ce moyen n'est plus proposé et le serveur refuse ses demandes.
+[*][b]COMSPEC › ATAK · Appui feu › Tir exécuté par l'IA[/b] (serveur) : décoché, la demande reste écrite.
+[*][b]COMSPEC › ATAK · Appui feu › Batteries simulées[/b] (serveur, décoché par défaut).
+[*][b]COMSPEC › ATAK · Appui feu › Délais de réaction[/b] (serveur) : Réalistes (30 s pour un mortier léger à 3 min pour un appui aérien), Réduits ou Aucun.
+[*][b]COMSPEC › ATAK · Appui feu › Cercles de portée et zone dangereuse[/b] (personnel).
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : portées min et max de la pièce choisie, cercle DANGER CLOSE autour de la cible et missions de tir en cours (aussi sur la carte du poste TOC).
+[*][b]Tâches et poste TOC[/b] : chaque premier tir part en ordre écrit ; l'app Tâches liste les missions du camp avec [b]REÇU[/b], [b]COUPS PARTIS[/b], [b]IMPOSSIBLE[/b] pour le servant et [b]RÉGLER[/b], [b]FIN DE MISSION[/b] pour le demandeur.
+[*][b]JTAC[/b] : la cible verrouillée peut partir à l'appel de feu ; le 9-LINE de l'app JTAC passe par le même envoi vers Athena.
+[*][b]Athena[/b] : le 9-LINE part sur Athena quand le téléphone est relié ; sans Athena, tout fonctionne en jeu.
+[*][b]ACE[/b] : le code laser ACE est repris dans la ligne 7 du 9-LINE.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Seuls les observateurs, JTAC, chefs, commandants, le poste TOC ou Zeus peuvent faire tirer une pièce IA ; les autres demandes restent écrites.
+[*]Une mission peut forcer le moyen d'une pièce ou l'exclure des ordres.
+[*]Changer de pièce, de munition ou d'origine efface la solution : refaites CALCULER.
+[*]Les drones armés ne se commandent pas ici mais dans l'app Drone.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x) ; l'app Feux a été renommée CAS en 1.16.2, l'appel de feu typé est arrivé en 2.9.31.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Request fire support from the phone: a close air support 9-LINE, a 5-LINE for a helicopter or gunship, and an indirect call for fire (mortar, howitzer, rocket launcher, naval or air support) with a computed firing solution, real fire by your side's AI, adjustment and end of mission.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app sits in the [b]Support and Fires[/b] category (not in the dock). If it was uninstalled, the App Store reinstalls it. Other ways in: the [b]CALL FOR FIRE (ARTILLERY)[/b] button of the JTAC app (the locked target goes to the CALL FOR FIRE tab), the [b]ADJUST[/b] button of a fire mission in the Tasks app, the fire request button of a report that asks for fire support, and the "New CAS request received" notification.
+
+[h3]Features[/h3]
+[list]
+[*][b]Top bar[/b]: [b]9-LINE[/b], [b]5-LINE[/b], [b]CALL FOR FIRE[/b] tabs, with your grid, your altitude and the wind.
+[*][b]9-LINE[/b]: the nine lines (IP / BP, heading, distance, elevation, description, location, mark, friendlies, egress) and remarks. [b]TARGET ON MAP[/b] then [b]PRE-FILL[/b] fill lines 4, 6, 7 (your ACE laser code) and 8. Lines 5 and 6 are required. [b]SEND 9-LINE[/b]: with the Athena link it goes to Athena (pilots and the website receive it); otherwise it goes to your side as a CAS order (Tasks app and TOC post).
+[*][b]5-LINE[/b]: callsign, friendlies, target, description, remarks; [b]PRE-FILL[/b] fills lines 1 to 3. Sent to your side as a CAS order.
+[*][b]CALL FOR FIRE › Firing position[/b]: [b]ASSET[/b] (generic support or a typed asset), list of your side's guns, [b]MAN[/b] (manual gun: enter its grid), [b]GUN AT MY POSITION[/b], gun grid and altitude. With simulated batteries, an "off map" battery is added.
+[*][b]Target[/b]: [b]GRID[/b] or [b]POLAR[/b] (bearing and distance from [b]OBSERVER[/b] or [b]MY POS[/b]), or [b]ON THE MAP[/b]; [b]ENEMY[/b] field, HE, ILM (illumination) or FUM (smoke) ammunition depending on the asset, number of rounds, [b]OFF[/b] or sheaf (rounds spread around the target).
+[*][b]Solution[/b]: unit, charge, deflection, elevation, time of flight, maximum ordinate; [b]CALCULATE[/b], [b]FIRE[/b], [b]END OF MISSION[/b].
+[*][b]Typed assets[/b]: light mortar 60 mm, medium mortar 81/82 mm, heavy mortar 120 mm, howitzer 105/155 mm, multiple rocket launcher, naval gunfire, air support (CAS). Each has its own ranges, delays, ammunition, dispersion, maximum rounds and danger-close distance (600 m for mortars and howitzer, 750 m naval, 1,000 m rockets and CAS). The mission's guns are recognised automatically.
+[*][b]Firing[/b]: a gun crewed by your side's AI really fires; an AI aircraft is ordered to attack the area; a gun manned by a player receives the mission on their phone; a simulated battery drops its rounds after the delay and time of flight. Out of range, missing ammunition or friendlies too close: reasoned refusal or DANGER CLOSE warning.
+[*][b]Fire adjustment[/b] (mission in progress): [b]+[/b] / [b]–[/b] / [b]G[/b] (left) / [b]D[/b] (right) by 50, 100 or 200 m along the observer-target line, one adjusting round each time, then [b]FIRE FOR EFFECT[/b].
+[*][b]Mission status and log[/b]: sent, received, in preparation, shot, splash, fire complete, unable, end of mission. The log keeps the latest missions: tap one to recall it, [b]NEW MSN[/b] resets.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Open the app, [b]CALL FOR FIRE[/b] tab, pick the [b]ASSET[/b] (for example medium mortar) then the gun in the list.
+[*]Give the target: [b]ON THE MAP[/b], a grid, or bearing and distance from your position.
+[*]Pick HE and the number of rounds, then [b]CALCULATE[/b]: check range, deflection and time of flight.
+[*][b]FIRE[/b]: follow the status up to SPLASH, adjust with + / – / G / D, then [b]FIRE FOR EFFECT[/b].
+[*]Finish with [b]END OF MISSION[/b].
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Fire support › Typed fire support[/b] (server): unchecked, generic call for fire (any gun, no asset nor danger-close distance).
+[*][b]COMSPEC › ATAK · Fire support › Allowed asset: …[/b] (server, one per asset): unchecked, the asset is no longer offered and the server refuses its requests.
+[*][b]COMSPEC › ATAK · Fire support › AI-executed fire[/b] (server): unchecked, the request stays written only.
+[*][b]COMSPEC › ATAK · Fire support › Simulated batteries[/b] (server, unchecked by default).
+[*][b]COMSPEC › ATAK · Fire support › Reaction times[/b] (server): realistic (30 s for a light mortar up to 3 min for air support), reduced or none.
+[*][b]COMSPEC › ATAK · Fire support › Range rings and danger area[/b] (personal).
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: minimum and maximum range of the selected gun, DANGER CLOSE ring around the target and fire missions in progress (also on the TOC post map).
+[*][b]Tasks and TOC post[/b]: each first shot goes out as a written order; the Tasks app lists your side's missions with [b]RECEIVED[/b], [b]SHOT[/b], unable for the gunner and [b]ADJUST[/b], [b]END OF MISSION[/b] for the requester.
+[*][b]JTAC[/b]: the locked target can be sent to the call for fire; the JTAC app's 9-LINE uses the same path to Athena.
+[*][b]Athena[/b]: the 9-LINE goes to Athena when the phone is linked; without Athena, everything works in game.
+[*][b]ACE[/b]: the ACE laser code is used for line 7 of the 9-LINE.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Only observers, JTACs, leaders, commanders, the TOC post or Zeus can make an AI gun fire; other requests stay written.
+[*]A mission can force a gun's asset type or exclude it from orders.
+[*]Changing gun, ammunition or origin clears the solution: CALCULATE again.
+[*]Armed drones are not controlled here but in the Drone app.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x); the Fires app was renamed CAS in 1.16.2, typed call for fire arrived in 2.9.31.
