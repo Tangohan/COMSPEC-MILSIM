@@ -127,7 +127,10 @@ final class QualificationRulesController
         $awardId = (int) ($params['awardId'] ?? 0);
         $definitionId = (int) $request->input('definition_id', 0);
 
-        return $this->post($request, url(self::BASE . '/' . $definitionId) . '#a-valider', function (int $tenantId) use ($request, $awardId): void {
+        // Décision prise depuis la file de l'espace instructeur Academy : on y revient.
+        $back = (string) $request->input('return_to', '') === 'academy' ? url('academy/instructor') . '#file' : url(self::BASE . '/' . $definitionId) . '#a-valider';
+
+        return $this->post($request, $back, function (int $tenantId) use ($request, $awardId): void {
             $approve = (string) $request->input('decision', '') === 'approve';
             $this->service->decide($tenantId, $awardId, $approve, (int) Session::get('user_id'));
             Session::flash('success', $approve ? 'Qualification validée.' : 'Proposition refusée.');

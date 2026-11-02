@@ -29,15 +29,19 @@ $academyIcons = ['dashboard'=>'overview','catalogue'=>'catalogue','courses'=>'mi
 $academyNavItems = [];
 foreach ($allSpaces as $item) {
     if (in_array($item, ['instructor','studio'], true) && !$staff) continue;
-    $academyNavItems[] = ['href'=>$link($item), 'label'=>$t($item), 'icon'=>$academyIcons[$item], 'active'=>$space===$item||($space==='droits'&&$item==='instructor')];
+    // Espace instructeur : nombre d'éléments à traiter (chapitres à valider, demandes, propositions).
+    $academyNavItems[] = ['href'=>$link($item), 'label'=>$t($item), 'icon'=>$academyIcons[$item], 'active'=>$space===$item||($space==='droits'&&$item==='instructor'), 'badge'=>$item==='instructor' ? (int) ($instructorBadge ?? 0) : null, 'hint'=>$item==='instructor' && (int) ($instructorBadge ?? 0) > 0 ? sprintf($t('q_badge_hint'), (int) $instructorBadge) : null];
 }
 $lmsNav = ['id'=>'academy','tone'=>'emerald','kicker'=>'Academy','title'=>$t('brand'),'lead'=>$t('tagline'),'aria'=>$t('brand'),'sections'=>[['label'=>$t('welcome'),'items'=>$academyNavItems]],'foot'=>['href'=>url('dashboard'),'label'=>$t('back_athena')]];
 (static function (array $lmsNav): void { require base_path('views/partials/lms_nav_aside.php'); })($lmsNav);
 ?>
 <main id="main" class="app-main"><div class="breadcrumb"><a href="<?= $h($link()) ?>">Academy</a><span>/</span><?= $h($t($space)) ?></div>
 <?php if ($notice): ?><div class="notice" role="status"><?= $h($t($notice)) ?></div><?php \App\Core\Session::set('academy_notice', ''); endif ?>
+<?php /* Réponse à une demande ou décision sur une proposition prise depuis la file : message de l'écran d'origine. */
+foreach (['success' => 'notice', 'error' => 'notice notice--error'] as $flashKey => $flashClass): $flashText = \App\Core\Session::getFlash($flashKey); if (is_string($flashText) && $flashText !== '' && empty($queueBulk)): ?><div class="<?= $flashClass ?>" role="status"><?= $h($flashText) ?></div><?php endif; endforeach ?>
 <?php if (!$academyStorageReady): ?><p class="notice"><?= $h($t('lms_storage_notice')) ?></p><?php endif ?>
 <?php if ($space === 'dashboard'): ?>
+<?php if (!empty($queue)) require __DIR__.'/queue_dashboard.php'; ?>
 <?php require __DIR__.'/offer_dashboard.php'; ?>
 <?php elseif ($space === 'catalogue'): ?>
 <?php require __DIR__.'/offer_catalogue.php'; ?>
