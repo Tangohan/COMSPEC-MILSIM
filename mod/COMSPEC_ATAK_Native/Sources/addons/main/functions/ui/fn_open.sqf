@@ -8,9 +8,17 @@ if (!hasInterface) exitWith { false };
 disableSerialization;
 if (isNil { uiNamespace getVariable "COMSPEC_ATAK_State" }) then { [] call comspec_atak_native_fnc_stateInit; };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+// Réouverture en main d'un téléphone déjà en main (remis au premier plan, fn_interactToggle) : l'interaction avec la
+// miniature en cours (fn_miniInteract) continue, fn_displayUnload ne doit pas la terminer.
+private _keepMini = [uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", ""], ""] select !(_interactive && {!isNull ([] call comspec_atak_native_fnc_display)} && {_s getOrDefault ["interactive", false]});
+private _keepMode = profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"];
 _s set ["suppressHudRestore", true];
 [] call comspec_atak_native_fnc_close;
 _s set ["suppressHudRestore", false];
+if (_keepMini isNotEqualTo "") then {
+    uiNamespace setVariable ["COMSPEC_ATAK_MiniPrevMode", _keepMini];
+    profileNamespace setVariable ["COMSPEC_ATAK_Mode", _keepMode];
+};
 // Menu d'actions d'Arma masqué tant que le téléphone est affiché (COMSPEC_ATAK_ActionBlock, XEH_postInitClient).
 // Réinstallé à chaque ouverture : une mission ou un autre mod a pu le remplacer. Remis à vide à la fermeture
 // (fn_displayUnload) : téléphone rangé, le gestionnaire d'une mission ou d'un autre mod n'est plus écrasé pour la session.
@@ -19,10 +27,12 @@ inGameUISetEventHandler ["PrevAction", "[false] call (missionNamespace getVariab
 inGameUISetEventHandler ["NextAction", "[false] call (missionNamespace getVariable ['COMSPEC_ATAK_ActionBlock', { false }])"];
 inGameUISetEventHandler ["Action", "[true] call (missionNamespace getVariable ['COMSPEC_ATAK_ActionBlock', { false }])"];
 if (_interactive) exitWith {
-    private _parent = findDisplay 46;
-    if (isNull _parent) then { _parent = findDisplay 12; };
+    // Display de mission (46) ; à bord, la fenêtre la plus haute (écran de cockpit cliquable, MFD d'un autre mod) :
+    // ouvert sur 46, le téléphone restait dessous, invisible, souris et commandes de vol prises (fn_vehicleKeys, 2.9.41).
+    private _parent = ["parent"] call comspec_atak_native_fnc_vehicleKeys;
     if (isNull _parent) exitWith { ["ERROR", "UI", "No parent display"] call comspec_atak_native_fnc_log; false };
     private _disp = _parent createDisplay "COMSPEC_RscDisplayATAK";
+    if (isNull _disp) then { ["WARNING", "ATAK", format ["Téléphone en main impossible à ouvrir sur la fenêtre IDD %1", ctrlIDD _parent]] call comspec_atak_native_fnc_log; };
     // Téléphone en main : les raccourcis CBA ne passent plus. Principal, orientation et position relus ici
     // (porter, prendre en main et zoom : fn_displayLoad).
     if (!isNull _disp) then {

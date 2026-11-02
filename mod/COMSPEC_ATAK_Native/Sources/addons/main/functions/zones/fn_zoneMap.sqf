@@ -6,11 +6,14 @@
       "move" [carte, x, y]         curseur ; outil POLYGONE aimanté : accroche cherchée ~10 fois par seconde au plus
                                    (fn_zoneSnap, voisinage du curseur, cache), ancrage automatique à intervalle (2,5 rayons)
       "down" [carte, bouton, x, y, maj, ctrl, alt] outil (uiNamespace COMSPEC_ATAK_ZnUi « tool ») :
-                                     RECT   deux coins ; CIRCLE centre puis bord ; POLY un clic par sommet (aimanté sauf
+                                     RECT   deux coins (deux clics, ou clic-glisser : « up ») ; CIRCLE centre puis bord
+                                     (idem) ; POLY un clic par sommet (aimanté sauf
                                      Alt), clic sur le premier sommet (fermé), Entrée ou clic droit pour terminer ;
                                    sans outil : trait choisi (sommet : le choisir puis cliquer sa nouvelle place ; rond au
                                    milieu d'un segment : ajouter un sommet), autre trait, zone (fiche dans le panneau).
                                    Clic droit sans outil : menu (zone, trait, tracer ici, découper par mes traits, annuler).
+      "up" [carte, bouton, x, y]    relâchement : rectangle ou cercle glissé de plus de 10 pixels terminé au relâchement
+                                   (écart mesuré à l'écran : juste aussi si la carte a bougé pendant le glisser)
       "menu" [clé]                 ligne du menu choisie ; "menuClose"
     Vue : même calage que les apps Plan et Routes (la vue n'est enregistrée qu'une fois la carte calée sur son but).
 */
@@ -20,6 +23,27 @@ private _ui = uiNamespace getVariable ["COMSPEC_ATAK_ZnUi", createHashMap];
 private _ZA = comspec_atak_native_fnc_zoneAction;
 private _tr = { _this call comspec_atak_native_fnc_tr };
 private _refresh = { ["#refresh"] call comspec_atak_native_fnc_pageZones; };
+// Rectangle ou cercle terminé (second clic, ou relâchement d'un clic-glisser) : zone de travail du plan.
+private _shapeEnd = {
+    params ["_id", "_tool", "_p"];
+    private _pts = _ui getOrDefault ["draftPts", []];
+    if ((count _pts) isEqualTo 0) exitWith { false };
+    private _q = _pts select 0;
+    private _ok = if (_tool isEqualTo "RECT") then {
+        if (((abs ((_q select 0) - (_p select 0))) < 20) || {(abs ((_q select 1) - (_p select 1))) < 20}) then {
+            ["INFO", "Rectangle trop étroit", 2, 10] call comspec_atak_native_fnc_notify;
+            false
+        } else { ["areaSet", [_id, "RECT", [_q, _p]]] call _ZA; true }
+    } else {
+        private _r = round (_q distance2D _p);
+        if (_r < 20) then { false } else { ["areaSet", [_id, "CIRCLE", [_q, _r min 5000]]] call _ZA; true }
+    };
+    if (!_ok) exitWith { false };
+    _ui set ["tool", ""]; _ui set ["draftPts", []]; _ui set ["dragAt", []];
+    // Suite proposée sur la consigne de la carte : DÉCOUPER ou TRACER (fn_pageZones « afterArea »).
+    _ui set ["next", "AREA"];
+    true
+};
 private _menuWipe = {
     { ctrlDelete _x; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_ZnMenu", []]);
     uiNamespace setVariable ["COMSPEC_ATAK_ZnMenu", []];
@@ -107,6 +131,14 @@ switch (_ev) do {
     case "move": {
         _a params ["_map", "_mx", "_my"];
         private _w = _map ctrlMapScreenToWorld [_mx, _my];
+        // Clic-glisser d'un rectangle ou d'un cercle : point courant = premier point + écart à l'écran depuis l'appui.
+        private _da = _ui getOrDefault ["dragAt", []];
+        private _dp = _ui getOrDefault ["draftPts", []];
+        if ((count _da) isEqualTo 2 && {(count _dp) isEqualTo 1} && {(_ui getOrDefault ["tool", ""]) in ["RECT", "CIRCLE"]}) then {
+            private _w0 = _map ctrlMapScreenToWorld _da;
+            private _p0 = _dp select 0;
+            _w = [(_p0 select 0) + (_w select 0) - (_w0 select 0), (_p0 select 1) + (_w select 1) - (_w0 select 1)];
+        };
         _ui set ["cursor", _w];
         // Aimant : seulement outil POLYGONE aimanté, sans Alt, ~10 fois par seconde et si le curseur a bougé.
         if ((_ui getOrDefault ["tool", ""]) isNotEqualTo "POLY" || {!(_ui getOrDefault ["polyMag", true])} || {_ui getOrDefault ["alt", false]}) exitWith { _ui set ["snap", []]; };
@@ -128,9 +160,31 @@ switch (_ev) do {
             if ((_t - (_ui getOrDefault ["autoRef", 0])) > 0.5) then { _ui set ["autoRef", _t]; ["#refresh"] call comspec_atak_native_fnc_pageZones; };
         };
     };
+    case "up": {
+        _a params ["_map", "_btn", "_mx", "_my"];
+        private _da = _ui getOrDefault ["dragAt", []];
+        _ui set ["dragAt", []];
+        if (_btn isNotEqualTo 0 || {(count _da) < 2}) exitWith {};
+        private _tool = _ui getOrDefault ["tool", ""];
+        private _pts = _ui getOrDefault ["draftPts", []];
+        if (!(_tool in ["RECT", "CIRCLE"]) || {(count _pts) isNotEqualTo 1}) exitWith {};
+        // Moins de 10 pixels : simple clic, le second clic posera le coin opposé ou le bord.
+        if ((((abs (_mx - (_da select 0))) / pixelW) + ((abs (_my - (_da select 1))) / pixelH)) < 10) exitWith {};
+        private _w1 = _map ctrlMapScreenToWorld [_mx, _my];
+        private _w0 = _map ctrlMapScreenToWorld _da;
+        private _p0 = _pts select 0;
+        if ([_ui getOrDefault ["id", ""], _tool, [(_p0 select 0) + (_w1 select 0) - (_w0 select 0), (_p0 select 1) + (_w1 select 1) - (_w0 select 1)]] call _shapeEnd) then {
+            playSound "ClickSoft";
+            ["INFO", "ZONES", format ["Zone de travail tracée en clic-glisser (%1)", _tool]] call comspec_atak_native_fnc_log;
+        };
+        call _refresh;
+    };
     case "down": {
         _a params ["_map", "_btn", "_mx", "_my", ["_shift", false], ["_ctrl", false], ["_alt", false]];
         call _menuWipe;
+        _ui set ["dragAt", []];
+        // Clic sur la carte sans outil : le choix DÉCOUPER / TRACER proposé sur la consigne est retiré.
+        if ((_ui getOrDefault ["tool", ""]) isEqualTo "") then { _ui set ["next", ""]; };
         private _id = _ui getOrDefault ["id", ""];
         private _b = ["get", _id] call _ZA;
         if ((count _b) isEqualTo 0) exitWith {};
@@ -149,23 +203,10 @@ switch (_ev) do {
             if (!_mine) exitWith {};
             private _p = [_w select 0, _w select 1];
             switch (_tool) do {
-                case "RECT": {
-                    if ((count _pts) isEqualTo 0) then { _ui set ["draftPts", [_p]]; } else {
-                        private _q = _pts select 0;
-                        if (((abs ((_q select 0) - (_p select 0))) < 20) || {(abs ((_q select 1) - (_p select 1))) < 20}) exitWith { ["INFO", "Rectangle trop étroit", 2, 10] call comspec_atak_native_fnc_notify; };
-                        ["areaSet", [_id, "RECT", [_q, _p]]] call _ZA;
-                        _ui set ["tool", ""]; _ui set ["draftPts", []];
-                        ["INFO", "Zone de travail posée : onglet DÉCOUPER (aperçu sur la carte), puis GÉNÉRER", 4, 10] call comspec_atak_native_fnc_notify;
-                    };
-                };
+                case "RECT";
                 case "CIRCLE": {
-                    if ((count _pts) isEqualTo 0) then { _ui set ["draftPts", [_p]]; } else {
-                        private _r = round ((_pts select 0) distance2D _p);
-                        if (_r < 20) exitWith {};
-                        ["areaSet", [_id, "CIRCLE", [_pts select 0, _r min 5000]]] call _ZA;
-                        _ui set ["tool", ""]; _ui set ["draftPts", []];
-                        ["INFO", "Zone de travail posée : onglet DÉCOUPER (aperçu sur la carte), puis GÉNÉRER", 4, 10] call comspec_atak_native_fnc_notify;
-                    };
+                    // Premier point : gardé avec sa position à l'écran (clic-glisser terminé au relâchement, « up »).
+                    if ((count _pts) isEqualTo 0) then { _ui set ["draftPts", [_p]]; _ui set ["dragAt", [_mx, _my]]; } else { [_id, _tool, _p] call _shapeEnd; };
                 };
                 default {
                     // Clic sur le premier sommet (14 pixels) : polygone fermé.
