@@ -294,10 +294,13 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1322, '2026-11-02', 'App Zones : plus rien d’automatique sans votre accord', 'Avec le pack 2.9.36, l’app Zones ne change plus rien toute seule. Un contact ennemi posé dans une zone ne la fait plus passer « ennemi signalé » : par défaut l’opérateur met l’état lui-même, et le serveur peut choisir de proposer le changement (question OUI / NON) ou de le faire automatiquement comme avant. Les zones ne vont plus sur la carte d’Arma par défaut, car tout le camp les y voyait sans appareil.', [
+            $pr(1322, '2026-11-02', 'App Zones sans automatisme, menu Zones au clic droit, bandeau du curseur', 'Avec le pack 2.9.36, l’app Zones ne change plus rien toute seule. Un contact ennemi posé dans une zone ne la fait plus passer « ennemi signalé » : par défaut l’opérateur met l’état lui-même, et le serveur peut choisir de proposer le changement (question OUI / NON) ou de le faire automatiquement comme avant. Les zones ne vont plus sur la carte d’Arma par défaut, car tout le camp les y voyait sans appareil. Un menu Zones arrive au clic droit de la carte et le bandeau du curseur montre la direction de votre vue.', [
                 'Nouveau réglage serveur « Contact dans une zone » : Manuel (par défaut, rien ne se passe), Proposer (celui qui a posé le contact et l’auteur du plan reçoivent « Contact en B-04 : passer la zone en ennemi signalé ? », OUI / NON dans l’app Zones, sans effet sans réponse) ou Automatique (comportement de la 2.9.35)',
                 'Zones sur la carte d’Arma et Athena : désactivé par défaut (réaliste) ; quand le serveur l’autorise, un plan n’est envoyé au site Athena que s’il est partagé',
                 'Le nom de la zone sous le curseur reste affiché dans le bandeau : c’est l’affichage de vos plans sur votre propre téléphone',
+                'Clic droit sur la carte › Zones : découper ici (grille 100, 200 ou 500 m, îlots, secteurs, rayon au choix), nouveau plan à partir d’ici, nommer les axes autour ; sur une zone : fiche, état, signaler un ennemi, citer @zone, masquer, rendu',
+                'Bandeau du curseur (style Nouveau) : flèche et cap selon la direction de votre vue ; distance et gisement vers le curseur dans l’étiquette de survol, ou dans le bandeau sur option',
+                'Traductions anglaises corrigées (IN PROGRESS, CANCEL, ESTABLISHED, rubriques des réglages ATAK, retour de l’app Routes)',
             ], [], [], ['atak'], [
                 'Mettez à jour le pack 2.9.36, quittez Arma complètement et relancez.',
                 'L’ancien réglage « Contacts ennemis dans les zones » (coché par défaut) est remplacé : tous les serveurs repartent sur Manuel, à remettre sur Proposer ou Automatique dans Options des addons › COMSPEC › ATAK · Plan / Zones si vous le souhaitez.',

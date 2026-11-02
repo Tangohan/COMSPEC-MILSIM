@@ -303,6 +303,33 @@ switch (_act) do {
             default { [[], "", [0, 0], 0] };
         }
     };
+    // Menu clic droit de la carte, sous-menu Zones : [genre G100 | G200 | G500 | BLOCK | RADIAL | AXES | NEW, point].
+    // Nouveau plan, zone de travail en cercle autour du point (rayon choisi dans le menu), puis le calcul demandé.
+    case "ctxGen": {
+        _arg params [["_kind", ""], ["_pos", []]];
+        if ((count _pos) < 2) exitWith { "" };
+        private _r = ((profileNamespace getVariable ["COMSPEC_ATAK_ZnCtxRad", 300]) max 50) min 5000;
+        private _id = ["new", [""]] call comspec_atak_native_fnc_zoneAction;
+        if (_id isEqualTo "") exitWith { "" };
+        private _gp = (_mine get _id) get "gp";
+        _gp set ["radius", _r];
+        switch (_kind) do {
+            case "G100": { _gp set ["cut", "GRID"]; _gp set ["size", 100]; };
+            case "G200": { _gp set ["cut", "GRID"]; _gp set ["size", 200]; };
+            case "G500": { _gp set ["cut", "GRID"]; _gp set ["size", 500]; };
+            case "BLOCK": { _gp set ["cut", "BLOCK"]; };
+            case "RADIAL": { _gp set ["cut", "RADIAL"]; };
+        };
+        ["areaSet", [_id, "CIRCLE", [[_pos select 0, _pos select 1], _r]]] call comspec_atak_native_fnc_zoneAction;
+        switch (true) do {
+            case (_kind isEqualTo "AXES"): { ["axes", [_id]] call comspec_atak_native_fnc_zoneAction; };
+            case (_kind isEqualTo "NEW"): {};
+            default { ["gen", [_id]] call comspec_atak_native_fnc_zoneAction; };
+        };
+        ["INFO", format [("Plan %1 : zone de travail de %2 m autour du point%3") call _tr, (_mine get _id) get "name", _r, ["", (" · calcul en cours") call _tr] select (_kind isNotEqualTo "NEW")], 4, 20] call comspec_atak_native_fnc_notify;
+        if (_kind isEqualTo "NEW") then { ["#ui", ["open", _id]] call comspec_atak_native_fnc_pageZones; ["ZONES"] call comspec_atak_native_fnc_navigate; };
+        _id
+    };
     // Calculs en arrière-plan (fn_zoneGen) : découpage, axes, bâtiments.
     case "gen";
     case "axes";
