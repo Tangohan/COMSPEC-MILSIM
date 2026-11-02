@@ -208,6 +208,7 @@ $referentialChildren = [
         'children' => [
             ['label' => 'Qualifications', 'href' => url('back-office/referentiels/qualifications'), 'active' => $navAt('back-office/referentiels/qualifications') && !$navAt('back-office/referentiels/qualifications/cursus-pilote')],
             ['label' => 'Référentiel des compétences', 'href' => url('back-office/referentiels/competences'), 'active' => $navAt('back-office/referentiels/competences')],
+            ['label' => 'Espace aérien', 'href' => url('back-office/espace-aerien'), 'active' => $navAt('back-office/espace-aerien')],
             ['label' => 'Cursus pilote', 'href' => url('back-office/referentiels/qualifications/cursus-pilote'), 'active' => $navAt('back-office/referentiels/qualifications/cursus-pilote')],
         ],
     ],
@@ -345,7 +346,8 @@ $atakResChildren = [
 
 // ——— ACADEMY ———
 $doctrineChildren = [
-    ['label' => 'Doctrine et SOP', 'href' => url('back-office/doctrine'), 'active' => $navAt('back-office/doctrine')],
+    ['label' => 'Doctrine et SOP', 'href' => url('back-office/doctrine'), 'active' => $navAt('back-office/doctrine') && !$navAt('back-office/doctrine/referentiel')],
+    ['label' => 'Référentiel doctrinal', 'href' => url('back-office/doctrine/referentiel'), 'active' => $navAt('back-office/doctrine/referentiel')],
     ['label' => 'Fichiers partagés', 'href' => url('back-office/partage'), 'active' => $navAt('back-office/partage')],
 ];
 

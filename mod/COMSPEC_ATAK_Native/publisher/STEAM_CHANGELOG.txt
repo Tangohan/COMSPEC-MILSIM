@@ -1,21 +1,27 @@
-[h1]COMSPEC ATAK — Mise à jour 2.9.30.AG - Denver[/h1]
+[h1]COMSPEC ATAK — Mise à jour 2.9.31.AG - Denver[/h1]
 [b]Publication : 02/11/2026[/b]
 [quote]
-[b]Important :[/b] mettez à jour le pack 2.9.30 (COMSPEC Link 2.0.116 incluse), quittez Arma 3 complètement, puis relancez.
+[b]Important :[/b] mettez à jour le pack 2.9.31 (COMSPEC Link 2.0.116 incluse), quittez Arma 3 complètement, puis relancez.
 [/quote]
 
-[h2]Correctif — Les photos sont cherchées au bon endroit[/h2]
-Pour retrouver une photo prise avec le téléphone, le drone, une fiche ou la capture de la carte, le jeu ne fouille plus tout le disque (dossiers des mods Workshop, bibliothèques Steam, dossier du jeu…). Il regarde seulement, dans cet ordre : le dossier que vous avez choisi, le dossier Screenshots de votre profil Arma, puis Documents\Arma 3\Screenshots. Fini les petits gels à la première photo.
+[h2]Nouveau — Appel de feu typé[/h2]
+Dans l'app CAS, l'onglet APPEL DE FEU propose maintenant un moyen : mortier 60, 81 ou 120, obusier, lance-roquettes, naval ou appui aérien (CAS). Chaque moyen a ses portées, ses munitions, ses délais et sa distance de sécurité, affichés dans la solution de tir. Les pièces IA de votre camp tirent vraiment ; un joueur servant d'une pièce reçoit la mission dans l'app Tâches avec sa solution. Réglez le tir avec + / – / G / D, puis EFFICACE ou FIN DE MISSION. Les cercles de portée et les missions en cours s'affichent sur la carte du téléphone et sur le PC du poste TOC.
 
-[h2]Nouveau — Réglage « Dossier des captures d'écran »[/h2]
-Options › Options des addons › COMSPEC › ATAK · Photo › Dossier des captures d'écran. Laissez-le vide (automatique) ou collez le dossier où Arma range vos captures si vos photos ne sont jamais trouvées (profil déplacé, lancement avec -profiles, dossier Documents déplacé). Dossier de ce PC uniquement : le téléphone n'y fait que lire. La case « Vérifier le dossier des captures », juste en dessous, affiche le dossier utilisé, le nombre d'images et la dernière capture trouvée ; c'est aussi dans Réglages du téléphone › À propos › Photos.
+[h2]Nouveau — MPU5 et liaison téléphone-radio réalistes[/h2]
+Comme sur le terrain, le téléphone peut passer par une radio de données MPU5 reliée par le Câble EUD ou par son Wi-Fi à quelques mètres. Les MPU5 allumées sur le même canal forment un maillage multi-sauts avec les relais de la mission ; le relief, le brouillage, la batterie et la puissance (1, 3 ou 6 W) comptent. L'app Réseau a une section Radio de données (canal, puissance, batterie, nœuds, sauts, débit), et le menu ACE du téléphone un menu Radio de données.
 
-[h2]Correctif — Photo introuvable : un message clair[/h2]
-Quand une photo n'est pas trouvée, le téléphone dit dans quel dossier il l'a cherchée et vous renvoie vers ce réglage, au lieu d'un simple échec.
+[h2]Nouveau — Radio tactique ACRE ou TFAR en repli[/h2]
+Sans MPU5, une radio tactique ACRE ou TFAR peut transporter les données à bas débit : messages et positions passent, les photos attendent une liaison MPU5 et la vidéo ne passe pas.
+
+[h2]Nouveau — Écrans et vidéoprojecteur COMSPEC[/h2]
+Nouveaux écrans COMSPEC (grand et double écran sur trépied, téléviseur, moniteur de bureau) sur les vrais modèles du jeu, avec une image nette de jour comme de nuit ; le double écran affiche la même image sur ses deux dalles. Nouveau vidéoprojecteur COMSPEC : menu ACE Vidéoprojecteur › Projecteur COMSPEC, Allumer puis Projeter sur… un tableau blanc (sur trépied ou mural, à moins de 15 m) les diapositives, l'affichage TOC, la carte ou la caméra. L'image n'apparaît que si le projecteur est allumé, tourné vers le tableau et que rien ne coupe le faisceau. Catégorie Eden / Zeus « COMSPEC › Écrans TOC et projection ».
+
+[h2]Nouveau — Objets et réglages[/h2]
+Nouveaux objets Câble EUD et Batterie de radio MPU5 ; la MPU5 peut être posée au sol (Eden, Zeus). Options › Options des addons › COMSPEC › ATAK · Appui feu (activé) et ATAK · Radio de données (MPU5) (désactivée par défaut) : tout se règle et peut être désactivé, la mission peut imposer ses choix.
 
 [h2]Composants[/h2]
 [list]
-[*] Téléphone ATAK 2.9.30.AG - Denver
+[*] Téléphone ATAK 2.9.31.AG - Denver
 [*] COMSPEC Link 2.0.116
 [*] Overwatch connect 1.6.28 · Overwatch main 1.4.8
 [/list]

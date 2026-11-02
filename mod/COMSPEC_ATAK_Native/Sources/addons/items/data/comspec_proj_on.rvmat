@@ -1,0 +1,10 @@
+// Toile éclairée par un projecteur allumé, de jour (fn_projector) : la toile reste mate, la lumière du projecteur
+// s'ajoute à celle du jour (image pâle en plein soleil, comme une vraie projection).
+ambient[]={0.5,0.5,0.5,1};
+diffuse[]={0.5,0.5,0.5,1};
+forcedDiffuse[]={0,0,0,0};
+emmisive[]={0.9,0.9,0.9,1};
+specular[]={0.02,0.02,0.02,1};
+specularPower=4;
+PixelShaderID="Normal";
+VertexShaderID="Basic";

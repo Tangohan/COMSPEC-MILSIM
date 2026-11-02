@@ -4,6 +4,8 @@ declare(strict_types=1);
 // rempli par assets/js/job-catalog.js depuis fonctions/catalogue (tous pays, langue du lecteur, marqué translate="no").
 // Les libellés data-job-catalog-label servent aux textes construits par le script (puces, catalogues de communauté…).
 // Catalogues de communauté : formulaires envoyés en JSON (fonctions/catalogue/collections|emplois), jeton CSRF de la page.
+// Brevets et qualifications cliquables : sous-fiche d’une qualification du catalogue (assets/js/qualification-sheet.js,
+// fiche JSON du référentiel des qualifications), lien vers le cours Academy, recherche dans le catalogue de qualifications.
 $catalogUrl = effectifs_workspace_url('fonctions/catalogue');
 $jcIcons = \App\Support\JobRoleIconLibrary::all();
 $jcIconOptions = static function () use ($jcIcons, $h): string {
@@ -15,7 +17,7 @@ $jcIconOptions = static function () use ($jcIcons, $h): string {
     return $html;
 };
 ?>
-<dialog class="jobcat" id="job-catalog-dialog" aria-labelledby="job-catalog-title" aria-describedby="job-catalog-lead" data-job-catalog data-catalog-url="<?= $h($catalogUrl) ?>" data-collection-url="<?= $h($catalogUrl . '/collections') ?>" data-entry-url="<?= $h($catalogUrl . '/emplois') ?>" data-csrf="<?= $h($csrf ?? '') ?>">
+<dialog class="jobcat" id="job-catalog-dialog" aria-labelledby="job-catalog-title" aria-describedby="job-catalog-lead" data-job-catalog data-catalog-url="<?= $h($catalogUrl) ?>" data-collection-url="<?= $h($catalogUrl . '/collections') ?>" data-entry-url="<?= $h($catalogUrl . '/emplois') ?>" data-csrf="<?= $h($csrf ?? '') ?>" data-qualification-url="<?= $h(url('back-office/referentiels/qualifications/catalogue/fiche')) ?>" data-qualification-search-url="<?= $h(url('back-office/referentiels/qualifications/catalogue')) ?>" data-referentiel-url="<?= $h(url('back-office/referentiels/qualifications')) ?>" data-academy-url="<?= $h(url('academy/catalogue')) ?>">
 <div class="jobcat__frame">
     <header class="jobcat__head">
         <div>
@@ -90,13 +92,14 @@ $jcIconOptions = static function () use ($jcIcons, $h): string {
                 <div data-jc-row="unit"><dt>Unité et commandement</dt><dd translate="no"><span data-jc="unit"></span></dd><dd></dd></div>
                 <div data-jc-row="description" class="is-wide"><dt>Description</dt><dd translate="no" data-jc="description"></dd><dd><button type="button" class="jobcat__copy" data-job-catalog-copy="description">Copier la description</button></dd></div>
                 <div data-jc-row="qualifications" class="is-wide is-card"><dt>Brevets, qualifications et formations typiques</dt><dd translate="no"><ul class="jobcat__list" data-jc-list="qualifications"></ul></dd><dd><button type="button" class="jobcat__copy" data-job-catalog-copy="qualifications">Ajouter à la description</button></dd></div>
-                <div data-jc-row="linked_qualifications" class="is-wide is-card"><dt>Qualifications liées (catalogue)</dt><dd translate="no"><ul class="jobcat__list jobcat__quals" data-jc-quals></ul></dd><dd><small>Qualifications de jeu inspirées des brevets réels, sans valeur réelle. Importables depuis la page Qualifications ou avec « Copier tout ».</small></dd></div>
+                <div data-jc-row="linked_qualifications" class="is-wide is-card"><dt>Qualifications liées (catalogue)</dt><dd translate="no"><ul class="jobcat__list jobcat__quals" data-jc-quals></ul></dd><dd><small>Qualifications de jeu inspirées des brevets réels, sans valeur réelle. Ouvrez-en une pour sa fiche détaillée et l’importer, ou importez-les avec « Copier tout ».</small></dd></div>
                 <div data-jc-row="billets" class="is-wide is-card"><dt>Postes typiques dans l’équipe</dt><dd translate="no"><ul class="jobcat__list" data-jc-list="billets"></ul></dd><dd><button type="button" class="jobcat__copy" data-job-catalog-copy="billets">Ajouter à la description</button></dd></div>
                 <div data-jc-row="icon"><dt>Icône proposée</dt><dd><span data-jc-icon-label></span></dd><dd><button type="button" class="jobcat__copy" data-job-catalog-copy="icon">Utiliser cette icône</button></dd></div>
                 <div data-jc-row="tags" class="is-wide"><dt>Étiquettes suggérées</dt><dd translate="no"><span data-jc-list="tags" class="jobcat__tags"></span></dd><dd><button type="button" class="jobcat__copy" data-job-catalog-copy="tags">Ajouter les étiquettes</button></dd></div>
                 <div data-jc-row="sources" class="is-wide"><dt>Sources publiques</dt><dd translate="no"><ol data-jc-list="sources" class="jobcat__sources"></ol></dd><dd></dd></div>
             </dl>
         </section>
+        <section class="jobcat__detail jobcat__qsheet" data-job-catalog-qsheet aria-label="Fiche de la qualification du catalogue" tabindex="-1" hidden></section>
         <p class="jobcat__placeholder" data-job-catalog-placeholder>Choisissez un emploi dans la liste pour voir sa fiche.</p>
         <section class="jobcat__manage" data-job-catalog-manage aria-labelledby="job-catalog-manage-title" tabindex="-1" hidden>
             <button type="button" class="jobcat__back" data-job-catalog-manage-cancel>← Retour à la liste</button>
@@ -167,6 +170,11 @@ $jcIconOptions = static function () use ($jcIcons, $h): string {
         <span data-job-catalog-label="shared-by">Partagé par la communauté</span>
         <span data-job-catalog-label="replace-field">Remplacer le champ déjà rempli :</span>
         <span data-job-catalog-label="copied">Emploi du catalogue copié. Vérifiez la fiche puis enregistrez.</span>
+        <span data-job-catalog-label="back-job">← Retour à l’emploi</span><span data-job-catalog-label="back-list">← Retour à la liste</span>
+        <span data-job-catalog-label="open-qual">Ouvrir la fiche de la qualification</span><span data-job-catalog-label="academy-course">Formation Academy</span>
+        <span data-job-catalog-label="search-qual">Chercher ce brevet dans les qualifications</span><span data-job-catalog-label="qualif">Exige la qualification</span>
+        <span data-job-catalog-label="open-ref">Ouvrir la fiche du référentiel</span><span data-job-catalog-label="linked-to">Reliée à</span>
+        <span data-job-catalog-label="link-ref">Relier à une qualification du référentiel</span><span data-job-catalog-label="unlink">Ne plus relier</span>
     </div>
 </div>
 <dialog class="jobcat-confirm" data-job-catalog-confirm aria-labelledby="job-catalog-confirm-title" aria-describedby="job-catalog-confirm-lead">

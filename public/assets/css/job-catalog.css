@@ -315,3 +315,69 @@
 .jobcat__link-quals { display: flex; align-items: flex-start; gap: 0.45rem; flex-basis: 100%; font-size: 0.82rem; font-weight: 600; color: var(--jc-ink); cursor: pointer; }
 .jobcat__link-quals input { margin-top: 0.15rem; accent-color: var(--jc-accent); }
 .jobcat__link-quals[hidden] { display: none; }
+
+/*
+ * Brevets et qualifications cliquables de la fiche emploi, et fiche détaillée d’une qualification du catalogue
+ * (assets/js/qualification-sheet.js) : dans la fenêtre des emplois et sur la page Catalogue de référence.
+ */
+.qsheet, .rqc-sheet {
+  --jc-ink: var(--pg-ink, var(--ath-ink, #17202a));
+  --jc-muted: var(--pg-muted, var(--ath-muted, #5b6670));
+  --jc-line: var(--pg-line, var(--ath-line, #dfe4e8));
+  --jc-surface: var(--pg-surface, var(--ath-surface, #fff));
+  --jc-head: var(--pg-head, var(--ath-table-head, #f4f6f8));
+  --jc-accent: var(--pg-accent, var(--ath-accent, #1f6f5c));
+}
+.jobcat__qual-item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.6rem; }
+.jobcat__qual-open, .qsheet__qual, .qsheet__job { display: inline-flex; align-items: baseline; gap: 0.4rem; min-height: 1.75rem; padding: 0.1rem 0; border: 0; background: none; color: var(--jc-accent); font: inherit; font-weight: 600; text-align: left; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; cursor: pointer; }
+.jobcat__qual-open:hover, .qsheet__qual:hover, .qsheet__job:hover { text-decoration-thickness: 2px; }
+.jobcat__qual-open:focus-visible, .qsheet__qual:focus-visible, .qsheet__job:focus-visible, .jobcat__qual-search:focus-visible, .jobcat__academy:focus-visible, .qsheet__link:focus-visible { outline: 2px solid var(--jc-accent); outline-offset: 2px; }
+.jobcat__qual-open::after { content: "›"; text-decoration: none; display: inline-block; font-weight: 800; }
+.jobcat__qual-ref { color: var(--jc-accent); font-weight: 600; }
+.jobcat__qual-search, .jobcat__academy, .qsheet__link { color: var(--jc-accent); font-size: 0.75rem; font-weight: 600; }
+.jobcat__qual-search { color: var(--jc-muted); }
+.jobcat__academy { display: inline-block; padding: 0 0.35rem; border: 1px solid var(--jc-accent); text-decoration: none; }
+.jobcat__qual-link select { max-width: 16rem; min-height: 1.75rem; border: 1px solid var(--jc-line); background: var(--jc-surface); color: var(--jc-ink); font: inherit; font-size: 0.75rem; }
+.jobcat__quals li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.1rem 0.6rem; }
+.jobcat__quals .jobcat__qual-issuer { flex-basis: 100%; }
+
+.qsheet { color: var(--jc-ink); }
+.qsheet__back { margin-bottom: 0.75rem; }
+.qsheet__title { margin: 0.2rem 0 0; font-size: 1.15rem; overflow-wrap: anywhere; }
+.qsheet__level { border-color: var(--jc-accent); }
+.qsheet__level small { font-weight: 500; color: var(--jc-muted); }
+.qsheet__disclaimer { margin: 0 0 0.75rem; padding: 0.45rem 0.6rem; border-left: 3px solid #c27a1a; background: rgba(194, 122, 26, 0.09); color: var(--jc-ink); font-size: 0.78rem; }
+.qsheet__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin: 0 0 0.25rem; padding: 0.75rem; border: 1px solid var(--jc-line); background: var(--jc-head); }
+.qsheet__actions .eff-btn small { font-weight: 500; }
+.qsheet__done { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.5rem; border: 1px solid #0b8a5c; color: #0b8a5c; font-size: 0.75rem; font-weight: 700; }
+.qsheet__done::before { content: "✓"; }
+.qsheet__status { min-height: 1.2rem; margin: 0.25rem 0 0.5rem; color: var(--jc-muted); font-size: 0.78rem; }
+.qsheet__fields { margin-top: 0.25rem; }
+.qsheet__issuer { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.5rem; }
+.qsheet__muted { flex-basis: 100%; color: var(--jc-muted); }
+.qsheet__code { padding: 0 0.3rem; border: 1px solid var(--jc-line); color: var(--jc-muted); font-size: 0.68rem; font-weight: 700; text-decoration: none; }
+.qsheet__prereqs li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.1rem 0.5rem; }
+.qsheet__go { display: inline-flex; flex-wrap: wrap; gap: 0.1rem 0.75rem; }
+.qsheet__prereqs .qsheet__go::before { content: "→"; color: var(--jc-muted); }
+.qsheet__jobs { margin: 0 0 0.4rem; padding: 0 !important; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.15rem 1rem; }
+.qsheet__job { align-items: center; }
+.qsheet__job small { color: var(--jc-muted); font-weight: 400; text-decoration: none; }
+.qsheet__job .jobcat__flag { flex: none; text-decoration: none; }
+.qsheet__loading, .qsheet__error { margin: 0; padding: 1.5rem 0; color: var(--jc-muted); font-size: 0.875rem; }
+.qsheet__error { color: #b42318; }
+@media (max-width: 760px) {
+  .qsheet__jobs { grid-template-columns: minmax(0, 1fr); }
+  .jobcat__qual-link select { max-width: 100%; }
+}
+[data-bo-theme="dark"] .qsheet__done { border-color: #3ccf91; color: #3ccf91; }
+[data-bo-theme="dark"] .qsheet__error { color: #ff8a80; }
+.jobcat .qsheet__back, .qsheet__back { display: inline-block; }
+.qsheet .jobcat__origin > span:nth-child(3)::before { content: "·"; margin-right: 0.4rem; }
+.jobcat__qual-open { display: inline; min-height: 0; padding: 0.15rem 0; line-height: 1.6; }
+.jobcat__qual-open small { margin-left: 0.25rem; }
+.jobcat__fields > div[data-jc-row="linked_qualifications"] > dd { grid-column: 1 / -1; }
+.qsheet__job { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 0.5rem; align-items: start; width: 100%; text-decoration: none; }
+.qsheet__job > span:nth-child(2) { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+.qsheet__job .jobcat__flag { margin-top: 0.25rem; }
+.qsheet__job small { grid-column: 2; font-size: 0.72rem; }
+.qsheet__jobs li { padding: 0.15rem 0; }

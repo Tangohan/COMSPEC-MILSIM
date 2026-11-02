@@ -374,6 +374,7 @@ final class TenantTypeConfig
             'back-office/organisation/qualite-donnees' => 'personnel',
             'back-office/organisation/disponibilite' => 'personnel',
             'back-office/referentiels/qualifications' => 'personnel',
+            'back-office/espace-aerien' => 'personnel',
             'back-office/referentiels/decorations' => 'personnel',
             'back-office/referentiels/dotation' => 'personnel',
             'back-office/referentiels/competences' => 'personnel',

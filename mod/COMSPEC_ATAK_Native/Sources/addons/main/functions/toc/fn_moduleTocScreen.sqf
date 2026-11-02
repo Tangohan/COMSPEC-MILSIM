@@ -14,7 +14,7 @@ if !(_ctx get "run") exitWith { true };
 private _targets = _ctx get "targets";
 private _vals = [
     _logic getVariable ["Name", ""], _logic getVariable ["Side", ""], _logic getVariable ["View", "SPLIT"],
-    _logic getVariable ["Toc", true], _logic getVariable ["Class", "Land_TripodScreen_01_large_F"], _logic getVariable ["Index", 0]
+    _logic getVariable ["Toc", true], _logic getVariable ["Class", "COMSPEC_ATAK_Screen_Tripod"], _logic getVariable ["Index", 0]
 ];
 _vals params ["_name", "_side", "_view", "_toc", "_cls", "_sel"];
 if !(_ctx get "zeus") exitWith {

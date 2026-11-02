@@ -103,36 +103,76 @@ private _panel = {
 };
 
 // Données.
-private _guns = [] call comspec_atak_native_fnc_firesGuns;
-private _gunId = ["gun", if ((count _guns) > 0) then { netId (_guns select 0) } else { "MAN" }] call _v;
+// Appui feu typé (fn_fireSupport, réglage CBA) : moyen choisi, pièces de ce moyen, batterie simulée si la mission l'autorise.
+private _fsOn = ["on"] call comspec_atak_native_fnc_fireSupport;
+private _fsTypes = if (_fsOn) then { ["types"] call comspec_atak_native_fnc_fireSupport } else { [] };
+private _fsType = if (_fsOn) then { ["fsType", ""] call _v } else { "" };
+if (_fsType isNotEqualTo "" && {(_fsTypes findIf { (_x get "key") isEqualTo _fsType }) < 0}) then { _fsType = ""; _f set ["fsType", ""]; };
+private _fsT = ["type", _fsType] call comspec_atak_native_fnc_fireSupport;
+private _fsSim = _fsType isNotEqualTo "" && {missionNamespace getVariable ["comspec_atak_native_fs_sim", false]};
+private _guns = if (_fsOn) then { ["guns", _fsType] call comspec_atak_native_fnc_fireSupport } else { [] call comspec_atak_native_fnc_firesGuns };
+private _gunId = ["gun", if ((count _guns) > 0) then { netId (_guns select 0) } else { ["MAN", "SIM"] select _fsSim }] call _v;
 // Pièce absente de la liste (supprimée ou détruite : firesGuns ne garde que les vivantes) : retour à MAN, gardé dans l'état.
-if (_gunId isNotEqualTo "MAN" && {(_guns findIf { netId _x isEqualTo _gunId }) < 0}) then { _gunId = "MAN"; _f set ["gun", _gunId]; _f deleteAt "solution"; };
+if (_gunId isNotEqualTo "MAN" && {!(_gunId isEqualTo "SIM" && {_fsSim})} && {(_guns findIf { netId _x isEqualTo _gunId }) < 0}) then { _gunId = "MAN"; _f set ["gun", _gunId]; _f deleteAt "solution"; };
 // Pièce par défaut (première de la liste) gardée dans l'état : CALCULER et TIR lisent "gun", la liste ne déclenche pas LBSelChanged ici.
 if !("gun" in _f) then { _f set ["gun", _gunId]; };
 private _gunName = { params ["_g", "_i"]; _g getVariable ["COMSPEC_ATAK_GunName", format [("PIÈCE %1") call comspec_atak_native_fnc_tr, _i + 1]] };
-private _gunLabel = if (_gunId isEqualTo "MAN") then { "MAN" } else { [objectFromNetId _gunId, _guns findIf { netId _x isEqualTo _gunId }] call _gunName };
+private _gunLabel = switch (_gunId) do { case "MAN": { "MAN" }; case "SIM": { "SIMULÉE" }; default { [objectFromNetId _gunId, _guns findIf { netId _x isEqualTo _gunId }] call _gunName }; };
 private _mode = ["mode", "POLAR"] call _v;
 private _from = ["from", "ME"] call _v;
 private _ammo = ["ammo", "HE"] call _v;
+private _fsAmmo = _fsT getOrDefault ["ammo", ["HE", "SMOKE", "ILLUM"]];
+if !(_ammo in _fsAmmo) then { _ammo = _fsAmmo select 0; _f set ["ammo", _ammo]; };
 private _sheaf = ["sheaf", false] call _v;
 private _sol = _f getOrDefault ["solution", createHashMap];
 private _tgtGrid = _sol getOrDefault ["grid", ["tgtGrid", ""] call _v];
 // Mission en cours : la solution peut avoir été effacée (pièce, munition, origine changées), la cible reste activeGrid.
 private _stGrid = if (_f getOrDefault ["active", false]) then { _f getOrDefault ["activeGrid", _tgtGrid] } else { _tgtGrid };
+// Cercles de la carte (fn_fireSupport "draw") : portées de la pièce choisie et distance de sécurité autour de la cible,
+// calculées ici (à l'ouverture de l'écran), pas à chaque image.
+_f deleteAt "fsRing";
+_f deleteAt "fsDcRing";
+if (_fsOn) then {
+    private _g = if (_gunId in ["MAN", "SIM"]) then { objNull } else { objectFromNetId _gunId };
+    private _rk = [_fsType, ["classify", _g] call comspec_atak_native_fnc_fireSupport] select (_fsType isEqualTo "" && {!isNull _g});
+    private _c = if (isNull _g) then { [_sol getOrDefault ["gunPos", []], []] select (_gunId isEqualTo "SIM") } else { getPosATL _g };
+    if ((count _c) >= 2) then {
+        (["range", [_g, ["mag", [_g, _ammo]] call comspec_atak_native_fnc_fireSupport, _rk]] call comspec_atak_native_fnc_fireSupport) params ["_rMin", "_rMax"];
+        if (_rMax > 0) then { _f set ["fsRing", [[_c select 0, _c select 1, 0], _rMin, _rMax, format [("PORTÉE %1–%2 M") call comspec_atak_native_fnc_tr, _rMin, _rMax]]]; };
+    };
+    private _tg = _f getOrDefault ["target", []];
+    if ((count _tg) >= 2) then {
+        private _dc = (["type", _rk] call comspec_atak_native_fnc_fireSupport) getOrDefault ["dc", 600];
+        _f set ["fsDcRing", [[_tg select 0, _tg select 1, 0], _dc, format [("DANGER CLOSE %1 M") call comspec_atak_native_fnc_tr, _dc]]];
+    };
+};
 
 // ---------- POSITION DE TIR ----------
 private _drawFiring = {
     params ["_px", "_py", "_pw"];
-    private _h = _rowH * 0.9 + _pad * 4 + _rowH * 3;
+    private _h = _rowH * 0.9 + _pad * 4 + _rowH * 3 + ([0, _rowH + _pad] select _fsOn);
     private _cy = [_px, _py, _pw, _h, "Position de tir"] call _panel;
     private _ix = _px + _pad;
     private _iw = _pw - 2 * _pad;
+    // Appui feu typé : moyen d'appui (générique = toute pièce, comme sans le système), puis la liste ne garde que ses pièces.
+    if (_fsOn) then {
+        private _lw0 = _iw * 0.2;
+        [[_ix, _cy, _lw0, _rowH], "MOYEN"] call _label;
+        private _tc = ["COMSPEC_RscCombo", [_ix + _lw0, _cy, _iw - _lw0, _rowH], "", _cBtn, _cInk, _fs * 0.95] call _mk;
+        _tc lbSetData [_tc lbAdd (("Appui générique (toute pièce)") call comspec_atak_native_fnc_tr), ""];
+        { _tc lbSetData [_tc lbAdd (((format ["%1 · %2–%3 m · %4", (_x get "label") call comspec_atak_native_fnc_tr, _x get "min", _x get "max", (_x get "angle") call comspec_atak_native_fnc_tr])) call comspec_atak_native_fnc_tr), _x get "key"]; } forEach _fsTypes;
+        _tc lbSetCurSel (((_fsTypes findIf { (_x get "key") isEqualTo _fsType }) + 1) max 0);
+        _tc ctrlSetTooltip (("Moyen d'appui : portées, munitions, coups, délais et distance de sécurité propres au moyen") call comspec_atak_native_fnc_tr);
+        _tc ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ["fsType", _c lbData _i] call comspec_atak_native_fnc_firesAction; }];
+        _cy = _cy + _rowH + _pad;
+    };
     // Pièce : liste des pièces du camp (bleue) et MAN.
     private _cw = _iw * 0.62;
     private _combo = ["COMSPEC_RscCombo", [_ix, _cy, _cw, _rowH], "", _cBtn, _cInk, _fs * 0.95] call _mk;
     { _combo lbSetData [_combo lbAdd (((([_x, _forEachIndex] call _gunName) + " · " + ([_x, 8] call comspec_atak_native_fnc_gridRef))) call comspec_atak_native_fnc_tr), netId _x]; } forEach _guns;
     if ((count _guns) isEqualTo 0) then { _combo lbAdd (("Aucune pièce du camp") call comspec_atak_native_fnc_tr); _combo lbSetData [0, "MAN"]; };
-    private _ci = _guns findIf { netId _x isEqualTo _gunId };
+    if (_fsSim) then { _combo lbSetData [_combo lbAdd (((format [("Batterie simulée · %1 (hors carte)") call comspec_atak_native_fnc_tr, (_fsT getOrDefault ["short", ""]) call comspec_atak_native_fnc_tr])) call comspec_atak_native_fnc_tr), "SIM"]; };
+    private _ci = [_guns findIf { netId _x isEqualTo _gunId }, (lbSize _combo) - 1] select (_gunId isEqualTo "SIM" && {_fsSim});
     _combo lbSetCurSel (_ci max 0);
     _form set ["gun", _combo];
     _combo ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ["gun", _c lbData _i] call comspec_atak_native_fnc_firesAction; }];
@@ -141,13 +181,14 @@ private _drawFiring = {
     [[_ix, _cy, _cw, _rowH], "PIÈCE À MA POSITION", { ["gunHere"] call comspec_atak_native_fnc_firesAction; }, "yellow"] call _btn;
     _cy = _cy + _rowH + _pad;
     // Grille et altitude de la pièce.
-    private _gunPos = if (_gunId isEqualTo "MAN") then { [] } else { getPosASL (objectFromNetId _gunId) };
+    private _gunPos = if (_gunId in ["MAN", "SIM"]) then { [] } else { getPosASL (objectFromNetId _gunId) };
     private _lw = _iw * 0.14;
     [[_ix, _cy, _lw, _rowH], "GRILLE"] call _label;
-    if (_gunId isEqualTo "MAN") then {
-        ["gunGrid", [_ix + _lw, _cy, _iw * 0.48, _rowH], ["gunGrid"] call _v] call _edit;
-    } else {
-        [[_ix + _lw, _cy, _iw * 0.48, _rowH], [objectFromNetId _gunId, 10] call comspec_atak_native_fnc_gridRef] call _ro;
+    switch (_gunId) do {
+        case "MAN": { ["gunGrid", [_ix + _lw, _cy, _iw * 0.48, _rowH], ["gunGrid"] call _v] call _edit; };
+        // Batterie simulée (appui feu typé) : pas de position sur la carte.
+        case "SIM": { [[_ix + _lw, _cy, _iw * 0.48, _rowH], "HORS CARTE"] call _ro; };
+        default { [[_ix + _lw, _cy, _iw * 0.48, _rowH], [objectFromNetId _gunId, 10] call comspec_atak_native_fnc_gridRef] call _ro; };
     };
     [[_ix + _iw * 0.66, _cy, _lw * 0.7, _rowH], "ALT"] call _label;
     private _alt = if ((count _gunPos) > 2) then { str round (_gunPos select 2) } else { _sol getOrDefault ["gunAlt", "—"] };
@@ -200,7 +241,7 @@ private _drawTarget = {
     {
         _x params ["_t", "_k", "_tip"];
         [[_ix + _u * (5.8 + _forEachIndex * 1.55), _cy, _u * 1.55, _rowH], _t, compile format ["['ammo', '%1'] call comspec_atak_native_fnc_firesAction;", _k], ["off", "sel"] select (_ammo isEqualTo _k), controlNull, _tip] call _btn;
-    } forEach [["HE", "HE", "Explosif"], ["ILM", "ILLUM", "Éclairant"], ["FUM", "SMOKE", "Fumigène"]];
+    } forEach ([["HE", "HE", "Explosif"], ["ILM", "ILLUM", "Éclairant"], ["FUM", "SMOKE", "Fumigène"]] select { (_x select 1) in _fsAmmo });
     [[_ix + _u * 10.6, _cy, _u * 0.5, _rowH], "X"] call _label;
     ["rounds", [_ix + _u * 11.1, _cy, _u * 0.9, _rowH], ["rounds", "3"] call _v] call _edit;
     _cy = _cy + _rowH + _pad;
@@ -213,7 +254,7 @@ private _drawTarget = {
 // ---------- SOLUTION (bandeau sombre) ----------
 private _drawSolution = {
     params ["_px", "_py", "_pw"];
-    private _h = _rowH * 2.6;
+    private _h = _rowH * ([2.6, 3.4] select _fsOn);
     ["COMSPEC_RscText", [_px, _py, _pw, _h], "", _cDark] call _mk;
     private _has = (count _sol) > 0;
     private _num = { params ["_k", "_fmt"]; if (!_has || {(_sol getOrDefault [_k, -1]) isEqualTo -1}) exitWith { "—" }; format [_fmt, _sol get _k] };
@@ -238,6 +279,18 @@ private _drawSolution = {
             [("  ·  HORS PORTÉE") call comspec_atak_native_fnc_tr, ""] select (_sol getOrDefault ["inRange", true])]
     } else { "CALCULER pour obtenir la solution de tir" };
     ["COMSPEC_RscText", [_px + _pad, _py + _h - _rowH * 0.85, _pw - 2 * _pad, _rowH * 0.8], _note, [], [[0.95, 0.85, 0.40, 1], _cRed] select (_has && {!(_sol getOrDefault ["inRange", true])}), _fs * 0.85] call _mk;
+    // Appui feu typé : portée du moyen et distance de sécurité (ami le plus proche de la cible).
+    if (_fsOn) then {
+        private _fr = _sol getOrDefault ["friend", -1];
+        private _dc = _sol getOrDefault ["dc", _fsT getOrDefault ["dc", 600]];
+        private _close = _has && {_fr >= 0} && {_fr < _dc};
+        private _rMax = _sol getOrDefault ["rMax", _fsT getOrDefault ["max", 0]];
+        private _n2 = (if (_rMax > 0) then { format [("PORTÉE %1–%2 M") call comspec_atak_native_fnc_tr, _sol getOrDefault ["rMin", _fsT getOrDefault ["min", 0]], _rMax] + "  ·  " } else { "" })
+            + (if (_close) then { format [("DANGER CLOSE : AMIS À %1 M (SÉCURITÉ %2 M)") call comspec_atak_native_fnc_tr, _fr, _dc] } else { format [("DISTANCE DE SÉCURITÉ %1 M") call comspec_atak_native_fnc_tr, _dc] })
+            + (if (_fsType isEqualTo "") then { "" } else { "  ·  " + format [("%1 COUPS MAX") call comspec_atak_native_fnc_tr, _fsT get "rounds"] });
+        private _c2 = ["COMSPEC_RscText", [_px + _pad, _py + _h - _rowH * 1.65, _pw - 2 * _pad, _rowH * 0.8], "", [], [[0.70, 0.86, 1, 1], _cRed] select _close, _fs * 0.85] call _mk;
+        _c2 ctrlSetText _n2; // i18n:brut (morceaux déjà traduits)
+    };
     _py + _h + _pad
 };
 
@@ -251,9 +304,40 @@ private _drawStatus = {
         format [("%1 COUPS %2") call comspec_atak_native_fnc_tr, ["rounds", "3"] call _v, ["HE", "ILM", "FUM"] select ((["HE", "ILLUM", "SMOKE"] find _ammo) max 0)] + (["", (" · GERBE") call comspec_atak_native_fnc_tr] select _sheaf),
         ([] call comspec_atak_native_fnc_firesWind) select 0
     ];
+    // Appui feu typé : moyen choisi et état de la mission de tir suivie (pièce IA, batterie simulée, servant joueur).
+    if (_fsOn) then {
+        _lines pushBack (if (_fsType isEqualTo "") then { ("APPUI GÉNÉRIQUE") call comspec_atak_native_fnc_tr } else { toUpper ((_fsT get "label") call comspec_atak_native_fnc_tr) });
+        private _e = (missionNamespace getVariable ["COMSPEC_ATAK_FsMsns", createHashMap]) getOrDefault [_f getOrDefault ["fsId", _f getOrDefault ["fsRecv", ""]], createHashMap];
+        if ((count _e) > 0) then {
+            private _stL = createHashMapFromArray [["NEW", "TRANSMISE"], ["ACK", "REÇUE"], ["EXEC", "EN PRÉPARATION"], ["SHOT", "COUPS PARTIS"], ["SPLASH", "SPLASH"], ["DONE", "TIR FINI"], ["FAIL", "IMPOSSIBLE"], ["EOM", "FIN DE MISSION"]];
+            _lines pushBack format ["%1 · %2", ((_stL getOrDefault [_e getOrDefault ["state", ""], ""])) call comspec_atak_native_fnc_tr, (_e getOrDefault ["text", ""]) call comspec_atak_native_fnc_tr];
+        };
+    };
     private _h = _rowH * 0.9 + _pad * 2 + _fs * 1.25 * (count _lines);
     private _cy = [_px, _py, _pw, _h, "État de la mission"] call _panel;
-    { (["COMSPEC_RscText", [_px + _pad, _cy + _forEachIndex * _fs * 1.25, _pw * 0.7, _fs * 1.25], "", [], _cInk, _fs * 0.92] call _mk) ctrlSetText ((_x) call comspec_atak_native_fnc_tr); } forEach _lines;
+    { (["COMSPEC_RscText", [_px + _pad, _cy + _forEachIndex * _fs * 1.25, [_pw * 0.7, _pw - 2 * _pad] select _fsOn, _fs * 1.25], "", [], _cInk, _fs * 0.92] call _mk) ctrlSetText ((_x) call comspec_atak_native_fnc_tr); } forEach _lines;
+    _py + _h + _pad
+};
+
+// ---------- RÉGLAGE DU TIR (appui feu typé, mission en cours) ----------
+private _drawAdjust = {
+    params ["_px", "_py", "_pw"];
+    if (!_fsOn || {!(_f getOrDefault ["active", false])} || {!("fsId" in _f)}) exitWith { _py };
+    private _h = _rowH * 0.9 + _pad * 3 + _rowH * 2;
+    private _cy = [_px, _py, _pw, _h, "Réglage du tir · axe observateur-cible"] call _panel;
+    private _ix = _px + _pad;
+    private _u = (_pw - 2 * _pad) / 12;
+    private _step = _f getOrDefault ["adjStep", 100];
+    {
+        _x params ["_t", "_k", "_tip"];
+        [[_ix + _u * 3 * _forEachIndex, _cy, _u * 2.9, _rowH], _t, compile format ["['adj', '%1'] call comspec_atak_native_fnc_firesAction;", _k], "off", controlNull, _tip] call _btn;
+    } forEach [[format ["+ %1", _step], "ADD", "Allonger : plus loin sur l'axe, un coup de réglage"], [format ["– %1", _step], "DROP", "Raccourcir : plus près sur l'axe, un coup de réglage"],
+        [format ["G %1", _step], "LEFT", "Gauche de l'axe, un coup de réglage"], [format ["D %1", _step], "RIGHT", "Droite de l'axe, un coup de réglage"]];
+    _cy = _cy + _rowH + _pad;
+    {
+        [[_ix + _u * 2 * _forEachIndex, _cy, _u * 1.9, _rowH], format ["%1 M", _x], compile format ["['adjStep', %1] call comspec_atak_native_fnc_firesAction;", _x], ["off", "sel"] select (_step isEqualTo _x), controlNull, "Pas du réglage"] call _btn;
+    } forEach [50, 100, 200];
+    [[_ix + _u * 6.2, _cy, _u * 5.8, _rowH], "EFFICACE", { ["ffe"] call comspec_atak_native_fnc_firesAction; }, "yellow", controlNull, "Tir d'efficacité : tous les coups au point réglé"] call _btn;
     _py + _h + _pad
 };
 
@@ -288,6 +372,7 @@ if (_land) then {
     _yl = [_pad, _yl, _wL] call _drawTarget;
     _yl = [_pad, _yl, _wL] call _drawSolution;
     private _yr = [_xR, _y0, _wR] call _drawStatus;
+    _yr = [_xR, _yr, _wR] call _drawAdjust;
     [_xR, _yr, _wR, (_yl - _yr - _pad) max 0] call _drawLog;
 } else {
     private _w = _gw - 2 * _pad;
@@ -295,6 +380,7 @@ if (_land) then {
     _y = [_pad, _y, _w] call _drawTarget;
     _y = [_pad, _y, _w] call _drawSolution;
     _y = [_pad, _y, _w] call _drawStatus;
+    _y = [_pad, _y, _w] call _drawAdjust;
     [_pad, _y, _w] call _drawLog;
 };
 

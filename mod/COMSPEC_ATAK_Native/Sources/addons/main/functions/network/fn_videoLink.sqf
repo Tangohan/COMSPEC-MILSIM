@@ -31,6 +31,14 @@ switch (_act) do {
         private _cache = uiNamespace getVariable ["COMSPEC_ATAK_VideoPath", createHashMap];
         private _hit = _cache getOrDefault [_key, []];
         if ((count _hit) isEqualTo 2 && {diag_tickTime - (_hit select 0) < 1}) exitWith { _hit select 1 };
+        // Téléphone relié à une radio tactique en données (fn_mpuLink) : quelques dizaines de kbit/s, pas de vidéo.
+        private _vb = ["videoBlock"] call comspec_atak_native_fnc_mpuLink;
+        if (_vb isNotEqualTo "") exitWith {
+            private _r = createHashMapFromArray [["active", true], ["ok", false], ["q", 0], ["mbps", 0], ["lat", 0], ["loss", 100], ["hops", 0], ["via", ""], ["viaMe", ""], ["target", 0], ["why", _vb]];
+            _cache set [_key, [diag_tickTime, _r]];
+            uiNamespace setVariable ["COMSPEC_ATAK_VideoPath", _cache];
+            _r
+        };
         private _relays = [];
         if (["videoRelays"] call comspec_atak_native_fnc_netCond) then {
             _relays = ["list"] call comspec_atak_native_fnc_relayNet;

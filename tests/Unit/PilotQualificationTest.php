@@ -185,7 +185,8 @@ final class PilotQualificationTest extends TestCase
 
         $nav = (string) file_get_contents(self::ROOT . '/views/partials/ath_sidebar_nav.php');
         self::assertStringContainsString("'Cursus pilote'", $nav);
-        $view = (string) file_get_contents(self::ROOT . '/views/admin/organization/qualifications/pilot_syllabus.php');
+        $view = (string) file_get_contents(self::ROOT . '/views/admin/organization/qualifications/pilot_syllabus.php')
+            . (string) file_get_contents(self::ROOT . '/views/admin/organization/qualifications/_pilot_install.php');
         self::assertStringContainsString('À valider par un instructeur', $view);
         self::assertStringContainsString('Vraie vie :', $view);
         self::assertStringContainsString("url('platform/upgrade')", $view);
