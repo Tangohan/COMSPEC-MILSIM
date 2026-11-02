@@ -6,8 +6,8 @@
       db              auto | absent | enrole | bewl1 | bewl2 | bewl3 | bewl4
       reason          motif de signalement affiché
       bioId           identifiant biométrique fixe (campagne)
-      trueName        vraie identité si le sujet porte de faux papiers
-      falsePapers     auto | oui | non
+      trueName        vraie identité si le sujet porte de faux papiers (serveur seulement, jamais diffusée)
+      falsePapers     auto | oui | non (serveur seulement, jamais diffusé)
       relativeOf      nom de variable (ou identifiant) d'un parent
       relation        parent | enfant | frere
       missingFingers  ex. "2,7" (numérotation FBI 1-10)
@@ -22,16 +22,24 @@ private _map = createHashMapFromArray [
     ["relativeof", "COMSPEC_SSE_BioRelativeOf"], ["relation", "COMSPEC_SSE_BioRelation"],
     ["missingfingers", "COMSPEC_SSE_BioMissingFingers"], ["irisstate", "COMSPEC_SSE_BioIrisState"]
 ];
+// Vraie identité et faux papiers : vérité gardée sur le SERVEUR seulement (jamais diffusée aux joueurs, qui pouvaient
+// la lire sur l'unité). Appelé ailleurs (script, Eden d'un client) : ces deux champs partent au serveur.
+private _secret = ["truename", "falsepapers"];
+if (!isServer) then {
+    private _sec = _pairs select { (_x isEqualType []) && {(toLower (_x param [0, ""])) in _secret} };
+    if (_sec isNotEqualTo []) then { [_unit, _sec] remoteExecCall ["comspec_sse_fnc_bioSetProfile", 2]; };
+};
 {
     if ((_x isEqualType []) && {(count _x) >= 2}) then {
         _x params ["_k", "_v"];
         private _var = _map getOrDefault [toLower _k, ""];
-        if (_var isNotEqualTo "" && {_v isEqualType ""}) then {
+        private _hidden = (toLower _k) in _secret;
+        if (_var isNotEqualTo "" && {_v isEqualType ""} && {!_hidden || {isServer}}) then {
             private _t = trim _v;
             if (_t isEqualTo "" || {(toLower _t) isEqualTo "auto"}) then {
-                _unit setVariable [_var, nil, true];
+                _unit setVariable [_var, nil, !_hidden];
             } else {
-                _unit setVariable [_var, _t, true];
+                _unit setVariable [_var, _t, !_hidden];
             };
         };
     };

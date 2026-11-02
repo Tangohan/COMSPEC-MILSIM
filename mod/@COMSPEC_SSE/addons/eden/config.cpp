@@ -370,6 +370,7 @@ class Cfg3DEN {
             #include "attributes_authored.hpp"
             #include "attributes_domex.hpp"
             #include "attributes_biometrics.hpp"
+            #include "attributes_identity.hpp"
         };
     };
 };

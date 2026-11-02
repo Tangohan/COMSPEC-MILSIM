@@ -2,6 +2,36 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
+[h1]COMSPEC SSE 1.1.0 — contrôle d'identité (03/11/2026)[/h1]
+[b]Relance Arma complètement.[/b] Les contrôles en ligne (documents et base Athena) demandent COMSPEC Link 2.0.118 (pack ATAK 3.0.0) ; sans lui, tout fonctionne hors ligne.
+
+[list]
+[*] Papiers d'identité fictifs (carte, passeport, permis) de quatre pays imaginaires, marqués SIMULATION, avec bande MRZ et puce.
+[*] Menu ACE « Contrôle d'identité » : demander les papiers, examiner le document, fouiller les papiers d'un prisonnier ou d'un corps, saisir et rendre, contrôler les occupants d'un véhicule, faire descendre.
+[*] Entre joueurs : la demande arrive sur l'ATAK, réponse par « Mes papiers » (présenter, remettre, refuser).
+[*] Les IA réagissent : civils coopératifs, insurgés aux faux papiers, cibles sous couverture, recherchés qui refusent ou s'enfuient.
+[*] Nouvelle app « Contrôle ID » du téléphone : examen visuel, MRZ, puce, base, verdict, historique, envoi à Athena et fiche FRM.
+[*] Eden : catégorie « Papiers ». Zeus : donner des papiers, signaler volé ou révoqué, voir les vrais papiers.
+[*] La vraie identité d'un sujet aux faux papiers n'est plus lisible par les joueurs.
+[/list]
+
+----------------------------------------
+
+[h1]COMSPEC SSE 1.1.0 — identity checks (03/11/2026)[/h1]
+[b]Restart Arma completely.[/b] Online checks (Athena documents and database) need COMSPEC Link 2.0.118 (ATAK pack 3.0.0); without it, everything works offline.
+
+[list]
+[*] Fictional identity papers (ID card, passport, driving licence) from four imaginary countries, marked SIMULATION, with MRZ and chip.
+[*] ACE menu "Identity check": ask for papers, examine the document, search the papers of a prisoner or a body, seize and return, check vehicle occupants, order them out.
+[*] Between players: the request arrives on the ATAK, answer through "My papers" (show, hand over, refuse).
+[*] AI react: cooperative civilians, insurgents with forged papers, targets under cover, wanted persons who refuse or run.
+[*] New "ID Check" phone app: visual check, MRZ, chip, database, verdict, history, sending to Athena and FRM report.
+[*] Eden: "Papers" category. Zeus: give papers, report stolen or revoked, view true papers.
+[*] The true identity of a subject with forged papers can no longer be read by players.
+[/list]
+
+----------------------------------------
+
 [h1]COMSPEC SSE — update of 26/10/2026 (2)[/h1]
 [b]Restart Arma completely.[/b] Use with COMSPEC ATAK 2.6.0.AB "Denver".
 

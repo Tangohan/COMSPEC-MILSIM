@@ -320,6 +320,36 @@ final class DevDispatchCatalog
                 'La partie jeu (contrôle d’identité avec ACE et app Contrôle ID) arrive avec la prochaine mise à jour du mod SSE ; la liaison COMSPEC Link 2.0.118 sortira avec le prochain pack ATAK.',
                 'Essai : sur le bureau SSE, Référentiel › Identités & documents, cliquer « Nouvelle identité », « Générer », enregistrer, préparer un passeport, le valider puis l’émettre.',
             ], 'Portail Athena'),
+            $pr(1349, '2026-11-03', 'ATAK 3.0.0 « Austin » : COMSPEC IDENTITY, le contrôle d’identité sur le terrain', 'Le téléphone passe en version 3.0.0, nommée Austin, avec COMSPEC Link 2.0.118. Sa grande nouveauté est COMSPEC IDENTITY : avec le mod SSE 1.1.0, chaque personnage porte une carte d’identité, un passeport ou un permis, se contrôle au menu ACE et dans la nouvelle app « Contrôle ID » (examen visuel, bande de lecture, puce, fichiers d’Athena), et chaque contrôle remonte sur la fiche de la personne dans Athena. Cette version rassemble aussi tout ce que la génération 2.9 a apporté : radio de données MPU5 et maillage qui relaie la voix ACRE2 ou TFAR, appui feu typé, apps Routes et Zones pour le battleplan, 9-LINE et 5-LINE envoyés aux pilotes, Sur mon téléphone par QR code, bandeau du curseur et point GPS personnalisables, un seul rôle affiché partout, miniature utilisable à la souris, ATAK au-dessus des cockpits et beaucoup moins de saccades. Les téléphones encore en 2.9 sont invités à se mettre à jour, sans être bloqués.', [
+                'COMSPEC IDENTITY avec le SSE 1.1.0 : papiers d’identité, contrôle au menu ACE, app « Contrôle ID »',
+                'Vérification d’un papier dans les fichiers d’Athena depuis le jeu (signalé, recherché, volé, expiré, révoqué, inconnu)',
+                'Contrôles transmis à Athena et retrouvés sur la fiche de la personne',
+                'Récapitulatif de la génération 2.9 dans les notes de version du téléphone et du Workshop',
+            ], [
+                'Version 3.0.0 « Austin » affichée dans les Réglages, l’app Debug, les Crédits et le journal',
+                'COMSPEC Link 2.0.118 livré avec le pack',
+                'Description du Workshop à jour : app Zones, briefs air aux pilotes, Sur mon téléphone, COMSPEC IDENTITY',
+            ], [], ['atak'], [
+                'Mettez à jour le pack 3.0.0 et le mod COMSPEC SSE 1.1.0, quittez Arma complètement et relancez.',
+                'Un téléphone resté en 2.9 continue de se connecter à Athena et affiche « mise à jour disponible ».',
+            ], 'Pack 3.0.0'),
+
+            $pr(1348, '2026-11-03', 'SSE 1.1.0 : contrôle d’identité sur le terrain', 'Le mod SSE apporte des papiers d’identité fictifs (carte d’identité, passeport, permis de conduire) de quatre pays imaginaires, Altis, Tanoa, Livonie et Malden, tous marqués SIMULATION, avec leur bande de lecture et leur puce. Au menu ACE d’une personne, « Contrôle d’identité » permet de demander les papiers, de les examiner dans une visionneuse recto verso, de fouiller les papiers d’un prisonnier, d’une personne rendue, inconsciente ou d’un corps, de saisir un document puis de le rendre, et de contrôler les occupants d’un véhicule ou de les faire descendre. Entre joueurs, la demande arrive sur le téléphone et se règle par « Mes papiers » : présenter, remettre ou refuser. Les personnages réagissent : un civil tend ses papiers, un insurgé montre de faux papiers, une cible porte une identité de couverture, un recherché armé refuse ou s’enfuit. La nouvelle app « Contrôle ID » du téléphone mène le contrôle par étapes (examen visuel, bande de lecture, puce, base), affiche le verdict, fait vibrer le téléphone pour une personne signalée, garde l’historique et envoie le contrôle à Athena ou le joint à une fiche FRM. Le Zeus donne des papiers, signale un document volé ou révoqué et voit les vrais papiers ; Eden gagne une catégorie Papiers. Hors ligne, tout fonctionne avec la base locale ; les documents et la base d’Athena arrivent avec le pack ATAK 3.0.0 (COMSPEC Link 2.0.118).', [
+                'Papiers fictifs : carte d’identité, passeport et permis de conduire de quatre pays imaginaires, mention SIMULATION',
+                'Menu ACE « Contrôle d’identité » : demander les papiers, examiner, fouiller, saisir, rendre, contrôler les occupants, faire descendre',
+                'Menu ACE personnel « Mes papiers » : présenter, remettre, refuser, consulter',
+                'App « Contrôle ID » : examen visuel, bande de lecture, puce, base, verdict, historique, envoi à Athena, fiche FRM',
+                'Zeus : donner des papiers, signaler volé ou révoqué, voir les vrais papiers ; Eden : catégorie Papiers',
+            ], [
+                'Réactions des personnages : civils, insurgés aux faux papiers, cibles sous couverture, recherchés qui refusent ou fuient',
+                'Réglages : difficulté, pays des papiers, papiers des personnages, durée d’une présentation, envoi automatique',
+            ], [
+                'La vraie identité d’un sujet aux faux papiers, réglée dans Eden ou par le Zeus, n’est plus lisible par les joueurs',
+            ], ['atak'], [
+                'Mettez à jour le mod COMSPEC SSE 1.1.0, quittez Arma complètement et relancez.',
+                'Documents et base d’Athena dans le jeu : avec le pack ATAK 3.0.0 ; avant, le contrôle se fait sur la base locale.',
+            ], 'SSE 1.1.0'),
+
             $pr(1347, '2026-11-03', 'ATAK 2.9.41 : l’ATAK au-dessus des cockpits, téléphone réparé après la descente, noms de code au choix', 'Dans un avion à cockpit cliquable comme l’A-10C, dans un hélicoptère ou un véhicule, l’ATAK pris en main et la miniature utilisée à la souris restaient parfois cachés derrière les écrans du cockpit alors que la souris leur était donnée : ils s’affichent désormais par-dessus, et la touche Prendre en main les remet devant s’ils restaient masqués. Après être descendu d’un appareil, le téléphone ne s’ouvrait plus du tout, puis revenait tout seul avec un fin cadre bleu autour de tout l’écran : monter, descendre, changer de place, mourir ou réapparaître remet désormais le téléphone au propre, et une action ACE sur soi, « ATAK : réparer l’affichage », remet tout à zéro en un geste. Dans l’app Zones, le chef choisit le thème des noms de code de ses axes et de ses zones : villes françaises, américaines, britanniques ou allemandes, planètes et lunes, alphabet OTAN, animaux, ou les graphiques de contrôle de la doctrine OTAN (MSR TAMPA, PL MARS, OBJ LYON, CP1). Après une zone de travail posée, l’app propose tout de suite de la découper ou de tracer dessus.', [
                 'App Zones, onglet NOMMER et clic droit › Nommer les axes autour : thème des noms de code (villes de quatre pays, planètes et lunes, alphabet OTAN, animaux, doctrine OTAN MIL-STD), gardé pour les prochains plans et partagé avec le plan',
                 'Doctrine OTAN : abréviation selon l’élément (MSR, ASR, PL, LD, LOA, OBJ, NAI, BP, LZ, ROZ, CP, RP…), changeable élément par élément, suivie d’un nom du thème choisi',

@@ -1,3 +1,35 @@
+[h1]COMSPEC ATAK — Mise à jour 3.0.0.AG - Austin[/h1]
+[b]Publication : 03/11/2026[/b]
+[quote]
+[b]Important :[/b] mettez à jour le pack 3.0.0 (COMSPEC Link 2.0.118 inclus), quittez Arma 3 complètement, puis relancez. Pour COMSPEC IDENTITY, mettez aussi à jour COMSPEC SSE en 1.1.0.
+[/quote]
+
+[h2]COMSPEC IDENTITY : le contrôle d'identité sur le terrain[/h2]
+[list]
+[*] Avec [b]COMSPEC SSE 1.1.0[/b], chaque personnage (joueur, civil ou IA) peut porter une carte d'identité, un passeport ou un permis, chacun avec son numéro et sa bande MRZ.
+[*] Menu ACE : demander les papiers, les contrôler, fouiller, saisir ou rendre, présenter ou consulter vos propres papiers, contrôler les occupants d'un véhicule ou les faire descendre. Les IA réagissent au contrôle.
+[*] Nouvelle app [b]Contrôle ID[/b] : examen à l'œil, lecture de la bande MRZ, de la puce NFC, vérification dans les fichiers d'Athena (papier signalé, recherché, volé, expiré, révoqué ou inconnu), historique, Transmettre à Athena, Joindre à une FRM.
+[*] Sur Athena, l'encadrement prépare et émet les papiers et retrouve chaque contrôle sur la fiche de la personne. Modules Zeus et attribut « Papiers » dans Eden.
+[/list]
+
+[h2]La génération 2.9 en bref[/h2]
+[list]
+[*] [b]Radio de données MPU5[/b] et maillage multi-sauts ; votre voix ACRE2 / TFAR relayée par le maillage jusqu'aux radios reliées de vos équipiers.
+[*] [b]Appui feu typé[/b] : mortier, obusier, lance-roquettes, naval ou CAS ; [b]9-LINE et 5-LINE[/b] envoyés aux pilotes, reçus dans BRIEFS AIR (WILCO / UNABLE).
+[*] [b]App Routes[/b] (étapes typées, suivi guidé, 3D) et [b]app Zones[/b] (battleplan : découpage, axes nommés, état des zones, ANNULER / RÉTABLIR, plans partagés au camp).
+[*] [b]SUR MON TÉLÉPHONE[/b] : un QR code ouvre vos comptes rendus, votre CR de fin d'op et la carte sur votre vrai téléphone.
+[*] Carte à votre goût : bandeau du curseur et point GPS personnalisables, marqueurs aux vraies couleurs.
+[*] Un seul [b]rôle affiché[/b] partout ; miniature utilisable à la souris (Maj+U) ; ATAK en grand dans tous les véhicules et au-dessus des cockpits ; beaucoup moins de saccades.
+[/list]
+
+[h2]Composants[/h2]
+[list]
+[*] Téléphone ATAK 3.0.0.AG - Austin
+[*] COMSPEC Link 2.0.118
+[*] Overwatch connect 1.6.32 · Overwatch main 1.4.8
+[*] Avec COMSPEC SSE 1.1.0 (mod séparé) pour COMSPEC IDENTITY
+[/list]
+
 [h1]COMSPEC ATAK — Mise à jour 2.9.41.AG - Denver[/h1]
 [b]Publication : 03/11/2026[/b]
 [quote]
