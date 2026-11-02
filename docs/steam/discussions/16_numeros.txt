@@ -1,0 +1,103 @@
+[APP] Numéros — mes numéros typés, annuaire du camp, carnet de contacts et fichier config.json
+
+[h1]Numéros[/h1]
+[i]Catégorie : Communication · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Gérer les numéros de votre téléphone et ceux des autres. Vous pouvez avoir jusqu'à 8 numéros typés (mobile, satellite, ligne fixe, radio IP, ligne chiffrée, bip, urgence), consulter l'annuaire des joueurs de votre camp et tenir un carnet de contacts. Tout est enregistré dans un fichier de configuration locale, donc gardé d'une partie à l'autre, même hors ligne.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie [b]Communication[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Bandeau[/b] : « Mon numéro » et d'où il vient. Avec Athena, le numéro principal est celui attribué par Athena et vos autres numéros s'ajoutent à votre fiche dans la partie. En ATAK local (sans Athena), votre numéro principal remplace le numéro calculé du téléphone.
+[*][b]Onglet MES NUMÉROS[/b] : liste de vos numéros (type, libellé, privé ou visible). Boutons [b]PRINCIPAL[/b], [b]MODIFIER[/b], [b]SUPPR.[/b] (deux appuis : CONFIRMER). [b]AJOUTER UN NUMÉRO[/b] : type, numéro (ou [b]GÉNÉRER[/b]), libellé facultatif (Perso, Service, Iridium…), [b]Numéro principal[/b] (celui des SMS et de la recherche par numéro sur la carte), [b]Visible dans l'annuaire[/b].
+[*][b]Format des numéros générés[/b] : FR, US, UK, DE, BE, RU ou ES, utilisé par GÉNÉRER. Un numéro satellite est généré en +8816, une radio IP en adresse 10.x.x.x, une ligne chiffrée en DSN.
+[*][b]Onglet ANNUAIRE[/b] : les joueurs vivants de votre camp, avec leur groupe, le numéro de leur téléphone et les numéros qu'ils ont rendus visibles. [b]SMS[/b] ouvre la conversation dans Messages ; [b]+ CARNET[/b] l'ajoute à votre carnet.
+[*][b]Onglet CARNET[/b] : vos contacts (nom, numéro, type, note facultative). [b]AJOUTER UN CONTACT[/b], [b]MODIFIER[/b], [b]SUPPR.[/b] en deux appuis.
+[*][b]Onglet FICHIER[/b] : source de la configuration (config.json, copie dans le profil Arma ou valeurs par défaut) et son dossier. [b]OUVRIR LE DOSSIER[/b] (Documents\Arma 3\COMSPEC_Local dans l'explorateur), [b]RECHARGER[/b] (relit le fichier modifié à la main), [b]ENREGISTRER[/b]. Un exemple du format JSON est affiché ; les commentaires // sont acceptés.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Ouvrez Numéros, [b]AJOUTER UN NUMÉRO[/b], type Satellite, [b]GÉNÉRER[/b], libellé « Iridium », [b]ENREGISTRER[/b].
+[*]Laissez [b]Visible dans l'annuaire[/b] coché : vos équipiers le voient sous votre nom.
+[*]Onglet [b]ANNUAIRE[/b] : touchez [b]+ CARNET[/b] sur votre chef, puis [b]ENREGISTRER[/b].
+[*]Touchez [b]SMS[/b] pour lui écrire directement.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Mode local et poste TOC › Mode full local (sans Athena)[/b] (serveur) : numéros de téléphone et carnet passent en jeu par le serveur ; chaque joueur garde sa configuration dans Documents\Arma 3\COMSPEC_Local\config.json.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Messages[/b] : bouton SMS de l'annuaire ; le numéro principal est celui des SMS.
+[*][b]Carte[/b] : recherche par numéro.
+[*][b]Athena[/b] : numéro principal attribué par le poste ; vos numéros supplémentaires s'ajoutent à votre fiche.
+[*][b]GE[/b] : un numéro sert aussi à géolocaliser un téléphone (app GE › GÉOLOC).
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]8 numéros et 100 contacts au plus.
+[*]config.json illisible après une modification à la main : la copie du profil reste utilisée ; corrigez le fichier puis RECHARGER. L'ancien fichier est gardé en config.json.bak à chaque enregistrement.
+[*]Sans la DLL native à jour, la configuration n'est écrite que dans le profil Arma.
+[*]Un numéro privé n'apparaît pas dans l'annuaire des autres.
+[/list]
+
+[h3]Version d'introduction[/h3]
+2.4.0 (regroupement « Mode full local : PC portable de TOC, app Numéros, configuration locale config.json »).
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Manage your phone's numbers and other people's. You can have up to 8 typed numbers (mobile, satellite, landline, IP radio, secure line, pager, emergency), browse the directory of your side's players and keep a contacts book. Everything is saved in a local configuration file, so it is kept from one game to the next, even offline.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the [b]Communication[/b] category (not in the dock). If it was uninstalled, the App Store reinstalls it.
+
+[h3]Features[/h3]
+[list]
+[*][b]Banner[/b]: "My number" and where it comes from. With Athena, the main number is the one assigned by Athena and your other numbers are added to your profile in the game. In local ATAK (no Athena), your main number replaces the phone's computed number.
+[*][b]MY NUMBERS tab[/b]: list of your numbers (type, label, private or visible). Buttons [b]MAIN[/b], [b]EDIT[/b], [b]SUPPR.[/b] (delete, two presses: CONFIRM). [b]ADD A NUMBER[/b]: type, number (or [b]GENERATE[/b]), optional label (Personal, Work, Iridium…), [b]Main number[/b] (the one used for SMS and number search on the map), [b]Visible in the directory[/b].
+[*][b]Format of generated numbers[/b]: FR, US, UK, DE, BE, RU or ES, used by GENERATE. A satellite number is generated as +8816, an IP radio as a 10.x.x.x address, a secure line as DSN.
+[*][b]DIRECTORY tab[/b]: living players of your side, with their group, their phone's number and the numbers they made visible. [b]SMS[/b] opens the conversation in Messages; [b]+ CONTACTS[/b] adds them to your book.
+[*][b]CONTACTS tab[/b]: your contacts (name, number, type, optional note). [b]ADD A CONTACT[/b], [b]EDIT[/b], [b]SUPPR.[/b] in two presses.
+[*][b]FILE tab[/b]: configuration source (config.json, copy in the Arma profile or defaults) and its folder. [b]OPEN FOLDER[/b] (Documents\Arma 3\COMSPEC_Local in Explorer), [b]RELOAD[/b] (re-reads a hand-edited file), [b]SAVE[/b]. An example of the JSON format is shown; // comments are accepted.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Open Numbers, [b]ADD A NUMBER[/b], type Satellite, [b]GENERATE[/b], label "Iridium", [b]SAVE[/b].
+[*]Leave [b]Visible in the directory[/b] checked: your teammates see it under your name.
+[*][b]DIRECTORY[/b] tab: tap [b]+ CONTACTS[/b] on your leader, then [b]SAVE[/b].
+[*]Tap [b]SMS[/b] to write to them directly.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Local mode and TOC post › Full local mode (no Athena)[/b] (server): phone numbers and contacts go through the server in game; each player keeps their configuration in Documents\Arma 3\COMSPEC_Local\config.json.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Messages[/b]: SMS button in the directory; the main number is the one used for SMS.
+[*][b]Map[/b]: search by number.
+[*][b]Athena[/b]: main number assigned by the post; your extra numbers are added to your profile.
+[*][b]EW[/b]: a number can also be used to geolocate a phone (EW app › GEOLOC).
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]8 numbers and 100 contacts at most.
+[*]config.json unreadable after a hand edit: the profile copy stays in use; fix the file then RELOAD. The previous file is kept as config.json.bak at every save.
+[*]Without an up-to-date native DLL, the configuration is only written to the Arma profile.
+[*]A private number does not show in other players' directory.
+[/list]
+
+[h3]Introduced in[/h3]
+2.4.0 (bundle "Full local mode: TOC laptop, Numbers app, local configuration config.json").

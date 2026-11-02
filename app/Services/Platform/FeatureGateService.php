@@ -124,13 +124,8 @@ final class FeatureGateService
             return 0;
         }
         $planSlug = $this->isPastDueWithoutGift($tenant) ? 'free' : $this->effectivePlanSlug($tenant);
-        $plan = $this->planRepository->findBySlug($planSlug);
-        $features = $plan ? json_decode((string) ($plan['features_json'] ?? '{}'), true) : [];
-        if (is_array($features) && array_key_exists($feature, $features)) {
-            return max(0, (int) $features[$feature]);
-        }
 
-        return max(0, (int) (SubscriptionPlanFeaturesCatalog::defaultsForSlug($planSlug)[$feature] ?? 0));
+        return $this->planIntCap($planSlug, $feature);
     }
 
     private function applyDeploymentChannelGate(int $tenantId, string $feature): bool
@@ -307,32 +302,55 @@ final class FeatureGateService
             && PlanGift::activeFromSettings($tenant['settings'] ?? null) === null;
     }
 
+    /**
+     * Plafond de membres de la formule appliquée (0 = illimité). Clé absente : valeur du catalogue pour ce palier
+     * (jamais un plafond codé en dur). Paiement en retard sans formule offerte : plafond de la formule de base.
+     */
     public function maxMembers(int $tenantId): int
     {
         $tenant = $this->tenantRepository->findById($tenantId);
         if (!$tenant) {
             return 0;
         }
-        if ($this->isPastDueWithoutGift($tenant)) {
-            $plan = $this->planRepository->findBySlug($tenant['plan_slug'] ?? 'free');
-            $features = $plan ? json_decode((string) ($plan['features_json'] ?? '{}'), true) : [];
-            if (!is_array($features)) {
-                return 50;
-            }
+        $planSlug = $this->isPastDueWithoutGift($tenant)
+            ? ((string) ($tenant['plan_slug'] ?? '') !== '' ? (string) $tenant['plan_slug'] : 'free')
+            : $this->effectivePlanSlug($tenant);
 
-            return (int) ($features['max_members'] ?? 50);
-        }
-        $planSlug = $this->effectivePlanSlug($tenant);
+        return $this->planIntCap($planSlug, 'max_members');
+    }
+
+    /**
+     * Plafond entier d'une formule : valeur de features_json (négatif ramené à 0 = illimité), sinon défaut du
+     * catalogue pour ce palier (formule absente de la base comprise).
+     */
+    private function planIntCap(string $planSlug, string $feature): int
+    {
         $plan = $this->planRepository->findBySlug($planSlug);
-        if (!$plan) {
-            return 50;
-        }
-        $features = json_decode((string) ($plan['features_json'] ?? '{}'), true);
-        if (!is_array($features)) {
-            return 50;
+        $features = $plan ? json_decode((string) ($plan['features_json'] ?? '{}'), true) : null;
+        if (is_array($features) && array_key_exists($feature, $features) && is_numeric($features[$feature])) {
+            return max(0, (int) $features[$feature]);
         }
 
-        return (int) ($features['max_members'] ?? 50);
+        return max(0, (int) (SubscriptionPlanFeaturesCatalog::defaultsForSlug($planSlug)[$feature] ?? 0));
+    }
+
+    /**
+     * Jauge membres pour l'affichage (« 42 / illimité »).
+     *
+     * @return array{unlimited: bool, limit: int, used: int, remaining: int|null, can_add: bool}
+     */
+    public function memberCapacity(int $tenantId): array
+    {
+        $cap = $this->maxMembers($tenantId);
+        $used = $this->currentMemberCount($tenantId);
+
+        return [
+            'unlimited' => $cap <= 0,
+            'limit' => $cap,
+            'used' => $used,
+            'remaining' => $cap <= 0 ? null : max(0, $cap - $used),
+            'can_add' => $cap <= 0 || $used < $cap,
+        ];
     }
 
     public function currentMemberCount(int $tenantId): int
@@ -342,7 +360,9 @@ final class FeatureGateService
 
     public function canAddMember(int $tenantId): bool
     {
-        return $this->currentMemberCount($tenantId) < $this->maxMembers($tenantId);
+        $cap = $this->maxMembers($tenantId);
+
+        return $cap <= 0 || $this->currentMemberCount($tenantId) < $cap;
     }
 
     /**
@@ -355,12 +375,12 @@ final class FeatureGateService
             return 0;
         }
         if ($this->isPastDueWithoutGift($tenant)) {
-            return $this->maxTrainingCoursesFromTenantRow($tenant);
-        }
-        $planSlug = $this->effectivePlanSlug($tenant);
-        $plan = $this->planRepository->findBySlug($planSlug);
+            $base = (string) ($tenant['plan_slug'] ?? '');
 
-        return $this->maxTrainingCoursesFromPlanRow($plan);
+            return $this->planIntCap($base !== '' ? $base : 'free', 'max_training_courses');
+        }
+
+        return $this->planIntCap($this->effectivePlanSlug($tenant), 'max_training_courses');
     }
 
     public function countTenantCatalogTrainingCourses(int $tenantId): int
@@ -412,31 +432,6 @@ final class FeatureGateService
             'remaining' => $remaining,
             'can_create' => $this->allows($tenantId, 'training') && $used < $cap,
         ];
-    }
-
-    /** @param array<string, mixed>|null $plan */
-    private function maxTrainingCoursesFromPlanRow(?array $plan): int
-    {
-        if (!$plan) {
-            return 0;
-        }
-        $features = json_decode((string) ($plan['features_json'] ?? '{}'), true);
-        if (!is_array($features)) {
-            return 0;
-        }
-        if (!array_key_exists('max_training_courses', $features)) {
-            return 0;
-        }
-
-        return (int) $features['max_training_courses'];
-    }
-
-    /** @param array<string, mixed> $tenant */
-    private function maxTrainingCoursesFromTenantRow(array $tenant): int
-    {
-        $plan = $this->planRepository->findBySlug($tenant['plan_slug'] ?? 'free');
-
-        return $this->maxTrainingCoursesFromPlanRow($plan);
     }
 
     /** @param array<string, mixed> $plan */

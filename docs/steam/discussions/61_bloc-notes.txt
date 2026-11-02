@@ -1,0 +1,91 @@
+[APP] Bloc-notes — notes personnelles enregistrées sur votre PC, gardées d'une mission à l'autre
+
+[h1]Bloc-notes[/h1]
+[i]Catégorie : Civil · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Un carnet de notes dans le téléphone : un rappel, une grille, une fréquence, un message à garder hors liaison. Les notes restent sur votre PC (dans votre profil Arma) : elles vous suivent d'une mission et d'un serveur à l'autre, et personne d'autre ne les voit.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Civil : Bloc-notes (pas dans le dock par défaut).
+[*]Si vous l'avez désinstallée, l'App Store la réinstalle.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Liste[/b] : nombre de notes, bouton [b]Nouvelle note[/b], puis « Mes notes », les plus récemment modifiées en premier, avec le titre (« Sans titre » s'il est vide) et le début de la première ligne. [b]Ouvrir[/b] pour lire ou modifier.
+[*][b]Édition[/b] : champ [b]Titre[/b] (80 caractères au plus) et zone [b]Texte[/b] sur plusieurs lignes (4 000 caractères au plus), puis [b]Enregistrer[/b] ou [b]Annuler[/b].
+[*][b]Supprimer[/b] : sur une note existante, la supprime définitivement.
+[*]Une note sans titre ni texte n'est pas enregistrée (« Écrivez un titre ou un texte ») ; 40 notes au plus.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Au briefing, ouvrez Bloc-notes et touchez [b]Nouvelle note[/b].
+[*]Titre « Fréquences », texte : les canaux de chaque groupe et le mot de passe radio.
+[*][b]Enregistrer[/b] : la note apparaît en tête de liste.
+[*]En pleine mission, [b]Ouvrir[/b] la note pour la relire, la compléter, puis [b]Enregistrer[/b].
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list][*][b]COMSPEC › ATAK · Simulation › Apps civiles[/b] (serveur) : décoché, les apps de la catégorie Civil, dont le Bloc-notes, disparaissent de tous les téléphones (vos notes restent sur votre PC).[/list]
+
+[h3]Interactions[/h3]
+Aucune : rien n'est envoyé au réseau ni à Athena, et la note ne se partage pas.
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Les notes sont liées à ce PC et à ce profil Arma : sur un autre PC, vous ne les retrouvez pas.
+[*]La touche retour pendant l'édition revient à la liste sans enregistrer.
+[*][b]Supprimer[/b] ne demande pas de confirmation.
+[/list]
+
+[h3]Version d'introduction[/h3]
+2.9.9 (avec la Calculette et les groupes d'apps de l'accueil).
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+A notebook in the phone: a reminder, a grid, a frequency, a message to keep off the link. Notes stay on your PC (in your Arma profile): they follow you from one mission and server to the next, and nobody else sees them.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] carries the phone in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, Civilian category: Notepad (not in the dock by default).
+[*]If you uninstalled it, the App Store reinstalls it.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]List[/b]: number of notes, [b]New note[/b] button, then "My notes", most recently edited first, with the title ("Untitled" if empty) and the start of the first line. [b]Open[/b] to read or edit.
+[*][b]Editing[/b]: [b]Title[/b] field (80 characters max) and multi-line [b]Text[/b] area (4,000 characters max), then [b]Save[/b] or [b]Cancel[/b].
+[*][b]Delete[/b]: on an existing note, deletes it permanently.
+[*]A note with neither title nor text is not saved ("Write a title or some text"); 40 notes max.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]At the briefing, open Notepad and tap [b]New note[/b].
+[*]Title "Frequencies", text: each group's channels and the radio password.
+[*][b]Save[/b]: the note appears at the top of the list.
+[*]During the mission, [b]Open[/b] the note to read it again, add to it, then [b]Save[/b].
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list][*][b]COMSPEC › ATAK · Simulation › Civilian apps[/b] (server): unticked, the apps of the Civilian category, including Notepad, disappear from every phone (your notes stay on your PC).[/list]
+
+[h3]Interactions[/h3]
+None: nothing is sent to the network or to Athena, and notes cannot be shared.
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Notes are tied to this PC and this Arma profile: on another PC you will not find them.
+[*]The back key while editing returns to the list without saving.
+[*][b]Delete[/b] does not ask for confirmation.
+[/list]
+
+[h3]Introduced in[/h3]
+2.9.9 (together with the Calculator and home screen app groups).

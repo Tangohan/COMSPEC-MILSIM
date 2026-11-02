@@ -1,0 +1,110 @@
+[APP] Briefing — diapositives Athena ou Google Slides, présentation en direct, questions et notes de mission
+
+[i]Message 1/2[/i]
+[h1]Briefing[/h1]
+[i]Catégorie : Mission · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Briefing affiche les diapositives de la mission dans le téléphone et permet de les présenter en direct à son camp : les téléphones des auditeurs suivent la diapositive du présentateur. L'app regroupe aussi les questions posées sur une diapositive, les informations de la mission (journal Arma) et l'envoi des diapositives sur les écrans posés dans le jeu.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie Mission du lanceur. Un briefing partagé par le présentateur s'y ouvre (plus de tableau par-dessus le jeu). L'app Academy y ouvre aussi les diapositives d'un cours.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]DIAPOSITIVES[/b] : la présentation en cours, avec son titre, sa source, sa position, ses notes, un sommaire cliquable, les boutons « PRÉCÉDENTE et SUIVANTE », et ACTUALISER pour relire les diapositives.
+[*][b]Sources[/b] : diapositives publiées sur Athena, présentation Google Slides partagée par le présentateur ou chargée depuis votre propre lien, et, sans Athena, les diapositives fournies par la mission.
+[*][b]PRÉSENTER / SUIVRE[/b] : un joueur du camp présente (un seul à la fois) ; les téléphones de son camp suivent sa diapositive. Un bandeau dit qui présente et qui est présent. Un auditeur peut naviguer librement puis SUIVRE pour revenir au présentateur. PRÉSENTER fonctionne avec les diapositives Athena ou celles de la mission.
+[*][b]QUESTIONS[/b] : questions posées sur la diapositive Athena en cours, gardées sur Athena ; écrivez la vôtre et touchez ENVOYER, le présentateur est prévenu.
+[*][b]MISSION[/b] : nom de la mission, carte, date et heure, météo, puis les notes du briefing Arma (journal), remises en forme lisible.
+[*][b]CARTE[/b] : ouvre l'app Plan, la carte de briefing fixe.
+[*][b]ÉCRANS[/b] (onglet présent seulement quand un écran est à portée) : DIFFUSER votre diapositive sur un écran COMSPEC, la faire défiler avec les flèches « et », ARRÊTER, ou DIFFUSER SUR TOUS. L'écran suit quand vous tournez les pages. Avec le mod Live Presentation (FENRIR), ses présentations à portée apparaissent aussi : les voir, les piloter si leur module le permet, ou y mettre votre Google Slides.
+[*][b]Engrenage[/b] (en haut à droite) : source des diapositives (AUTOMATIQUE, ATHENA, GOOGLE SLIDES), lien Google Slides (TESTER LE LIEN le charge sur votre téléphone seulement, ENREGISTRER, EFFACER, DIFFUSER À TOUS), relecture automatique des diapositives Athena toutes les 60 s. Le lien collé est nettoyé et vérifié ; un lien « Publier sur le Web » est refusé avec l'explication.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Le chef publie ses diapositives sur Athena ; ouvrez Briefing et touchez ACTUALISER.
+[*]Le chef touche PRÉSENTER : les téléphones du camp passent sur sa diapositive.
+[*]Il avance avec SUIVANTE » ; chaque auditeur suit. Une question ? Onglet QUESTIONS, écrivez-la, ENVOYER.
+[*]Devant un écran posé, le chef ouvre ÉCRANS et touche DIFFUSER : l'écran montre la même diapositive.
+[*]Pour finir, il touche de nouveau PRÉSENTER pour arrêter.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié. Les préférences de l'engrenage sont gardées dans le profil du joueur.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b] : diapositives publiées, notes et questions viennent d'Athena et demandent COMSPEC Link.
+[*][b]Google Slides[/b] : chargé par COMSPEC Link ; sans lui, pas de Google Slides.
+[*][b]Sans Athena[/b] : la mission peut fournir ses propres diapositives, présentées au camp de la même façon.
+[*][b]Plan[/b] : l'onglet CARTE ouvre la carte de briefing.
+[*][b]Academy[/b] : les diapositives d'un cours s'ouvrent ici et se diffusent ensuite.
+[*][b]Écrans COMSPEC et mod Live Presentation (FENRIR)[/b] : diffusion sur les écrans du jeu ; tout le monde peut faire défiler un écran avec ACE.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Un seul présentateur par camp : si quelqu'un présente déjà, son nom s'affiche.
+[*]Les questions ne portent que sur une diapositive Athena.
+[*]TESTER LE LIEN ne montre la présentation qu'à vous ; DIFFUSER À TOUS la partage.
+[*]Image noire ou absente : touchez ACTUALISER, l'app affiche la raison.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x). Le briefing partagé s'ouvre dans l'app (et plus par-dessus le jeu) depuis ATAK natif 2.2.0.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Briefing shows the mission slides on the phone and lets you present them live to your side: listeners' phones follow the presenter's slide. The app also gathers questions asked on a slide, the mission information (Arma diary) and casting slides to screens placed in the game.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the Mission category of the launcher. A briefing shared by the presenter opens there (no more board over the game). The Academy app also opens a course's slides here.
+
+[h3]Features[/h3]
+[list]
+[*][b]SLIDES[/b]: the current presentation, with its title, source, position, notes, a clickable outline, PREVIOUS and NEXT, and REFRESH to reload the slides.
+[*][b]Sources[/b]: slides published on Athena, a Google Slides deck shared by the presenter or loaded from your own link, and, without Athena, slides provided by the mission.
+[*][b]PRESENT / FOLLOW[/b]: one player of the side presents (one at a time); the side's phones follow their slide. A banner shows who presents and who attends. A listener can browse freely then FOLLOW to return to the presenter. PRESENT works with Athena slides or mission slides.
+[*][b]QUESTIONS[/b]: questions asked on the current Athena slide, kept on Athena; write yours and tap SEND, the presenter is notified.
+[*][b]MISSION[/b]: mission name, map, date and time, weather, then the Arma briefing notes (diary), reformatted to be readable.
+[*][b]MAP[/b]: opens the Plan app, the fixed briefing map.
+[*][b]SCREENS[/b] (tab only shown when a screen is in range): CAST your slide to a COMSPEC screen, scroll it with the « and » arrows, STOP, or CAST TO ALL. The screen follows when you turn pages. With the Live Presentation mod (FENRIR), its presentations in range show up too: view them, drive them if their module allows it, or put your Google Slides on them.
+[*][b]Gear[/b] (top right): slide source (AUTOMATIC, ATHENA, GOOGLE SLIDES), Google Slides link (TEST LINK loads it on your phone only, SAVE, CLEAR, SHOW TO EVERYONE), automatic reload of Athena slides every 60 s. The pasted link is cleaned and checked; a "Publish to the web" link is refused with an explanation.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]The leader publishes slides on Athena; open Briefing and tap REFRESH.
+[*]The leader taps PRESENT: the side's phones switch to their slide.
+[*]They move on with NEXT; every listener follows. A question? QUESTIONS tab, type it, SEND.
+[*]In front of a placed screen, the leader opens SCREENS and taps CAST: the screen shows the same slide.
+[*]To finish, they tap PRESENT again to stop.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting. Gear preferences are kept in the player's profile.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b]: published slides, notes and questions come from Athena and need COMSPEC Link.
+[*][b]Google Slides[/b]: loaded by COMSPEC Link; without it, no Google Slides.
+[*][b]Without Athena[/b]: the mission can provide its own slides, presented to the side the same way.
+[*][b]Plan[/b]: the MAP tab opens the briefing map.
+[*][b]Academy[/b]: a course's slides open here and can then be cast.
+[*][b]COMSPEC screens and Live Presentation mod (FENRIR)[/b]: casting to in-game screens; anyone can scroll a screen with ACE.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]One presenter per side: if someone already presents, their name is shown.
+[*]Questions only apply to an Athena slide.
+[*]TEST LINK only shows the deck to you; SHOW TO EVERYONE shares it.
+[*]Black or missing picture: tap REFRESH, the app shows the reason.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x). The shared briefing opens in the app (no longer over the game) since native ATAK 2.2.0.

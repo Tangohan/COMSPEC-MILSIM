@@ -1,0 +1,95 @@
+[APP] Calculette — calculatrice simple : quatre opérations, pourcentage, changement de signe
+
+[h1]Calculette[/h1]
+[i]Catégorie : Civil · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Une calculatrice de poche pour les calculs courants en partie : additionner des distances, répartir des munitions, convertir un pourcentage, sans sortir du jeu.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Civil : Calculette (pas dans le dock par défaut).
+[*]Si vous l'avez désinstallée, l'App Store la réinstalle.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Affichage[/b] : le calcul en cours en petit au-dessus, le nombre ou le résultat en grand dessous.
+[*][b]Chiffres[/b] 0 à 9 et [b].[/b] (virgule décimale) ; 16 caractères au plus par nombre.
+[*][b]÷ × − +[/b] : opérations ; on peut enchaîner plusieurs opérations avant [b]=[/b].
+[*][b]=[/b] : calcule et affiche le résultat (sans zéros inutiles). L'expression entière est calculée d'un coup, multiplications et divisions d'abord (2 + 3 × 4 = 14). Un calcul invalide affiche « Erreur ».
+[*][b]%[/b] : divise le nombre affiché par 100.
+[*][b]±[/b] : change le signe du nombre affiché.
+[*][b]C[/b] efface tout ; [b]CE[/b] efface seulement le nombre en cours de saisie.
+[*]Après [b]=[/b], taper un chiffre commence un nouveau calcul ; taper une opération continue à partir du résultat.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Vous devez répartir 210 cartouches entre 7 équipiers : tapez 210, [b]÷[/b], 7, [b]=[/b] : 30.
+[*]Touchez [b]×[/b] puis 2 et [b]=[/b] pour doubler la dotation : 60.
+[*][b]C[/b] pour repartir de zéro.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list][*][b]COMSPEC › ATAK · Simulation › Apps civiles[/b] (serveur) : décoché, les apps de la catégorie Civil, dont la Calculette, disparaissent de tous les téléphones.[/list]
+
+[h3]Interactions[/h3]
+Aucune : la Calculette fonctionne sans réseau, sans Athena et sans autre mod.
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Pas de parenthèses ni de fonctions scientifiques.
+[*]Le dernier calcul reste affiché quand vous revenez dans l'app.
+[/list]
+
+[h3]Version d'introduction[/h3]
+2.9.9 (avec le Bloc-notes et les groupes d'apps de l'accueil).
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+A pocket calculator for everyday in-game sums: adding up distances, splitting ammunition, working out a percentage, without leaving the game.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] carries the phone in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, Civilian category: Calculator (not in the dock by default).
+[*]If you uninstalled it, the App Store reinstalls it.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]Display[/b]: the current calculation small on top, the number or result large below.
+[*][b]Digits[/b] 0 to 9 and [b].[/b] (decimal point); 16 characters max per number.
+[*][b]÷ × − +[/b]: operations; several operations can be chained before [b]=[/b].
+[*][b]=[/b]: calculates and shows the result (without trailing zeros). The whole expression is calculated at once, multiplications and divisions first (2 + 3 × 4 = 14). An invalid calculation shows "Error".
+[*][b]%[/b]: divides the displayed number by 100.
+[*][b]±[/b]: changes the sign of the displayed number.
+[*][b]C[/b] clears everything; [b]CE[/b] clears only the number being typed.
+[*]After [b]=[/b], typing a digit starts a new calculation; typing an operation continues from the result.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]You must split 210 rounds between 7 teammates: type 210, [b]÷[/b], 7, [b]=[/b]: 30.
+[*]Tap [b]×[/b], then 2 and [b]=[/b] to double the allowance: 60.
+[*][b]C[/b] to start again from zero.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list][*][b]COMSPEC › ATAK · Simulation › Civilian apps[/b] (server): unticked, the apps of the Civilian category, including the Calculator, disappear from every phone.[/list]
+
+[h3]Interactions[/h3]
+None: the Calculator works without network, without Athena and without any other mod.
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]No brackets and no scientific functions.
+[*]The last calculation stays on screen when you come back to the app.
+[/list]
+
+[h3]Introduced in[/h3]
+2.9.9 (together with Notepad and home screen app groups).

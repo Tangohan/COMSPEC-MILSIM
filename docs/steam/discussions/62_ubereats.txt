@@ -1,0 +1,101 @@
+[APP] UberEats — rations et boissons ACE livrées par drone-cargo, sous parachute près de vous
+
+[h1]UberEats[/h1]
+[i]Catégorie : Civil · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Une app de livraison pour le ravitaillement personnel : vous choisissez des rations et des boissons ACE, et une caisse arrive sous parachute à côté de vous quelques minutes plus tard, signalée par une fumée violette. Pratique quand la faim et la soif d'ACE se font sentir loin de la logistique.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Civil : UberEats (pas dans le dock par défaut).
+[*]Si vous l'avez désinstallée, l'App Store la réinstalle. App civile : le serveur peut la retirer de tous les téléphones.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Au menu[/b] : toutes les rations et boissons ACE chargées (repas MRE, rations humanitaires, eau, gourdes, canettes, jus, encas), avec image et nom. Filtres [b]TOUT[/b], [b]REPAS[/b], [b]BOISSONS[/b], [b]ENCAS[/b]. [b]+[/b] ajoute un article au panier.
+[*][b]Panier (x/6)[/b] : 6 articles au plus par livraison, [b]-[/b] pour en retirer, [b]COMMANDER[/b] pour valider.
+[*][b]Suivi de commande[/b] : numéro de commande, étapes ACCEPTÉE · EN CUISINE · DRONE EN VOL · LIVRÉE, compte à rebours avant l'arrivée. [b]ANNULER LA COMMANDE[/b] tant qu'elle est en cuisine (ou en attente de réseau) ; ensuite, « Trop tard : le drone est déjà parti ».
+[*][b]Livraison[/b] : la caisse est larguée sous parachute à quelques dizaines de mètres de votre position au moment de l'arrivée, sur un sol dégagé, avec une fumée violette, une notification et une vibration. Un marqueur « UberEats » apparaît sur votre carte pendant 15 min.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]À pied, ouvrez UberEats, filtre [b]REPAS[/b], touchez [b]+[/b] sur deux rations ; filtre [b]BOISSONS[/b], [b]+[/b] sur deux bouteilles d'eau.
+[*]Touchez [b]COMMANDER[/b] : « Commande acceptée : livraison dans X min environ ».
+[*]Préparation (30 à 60 s), puis vol (1 à 2 min et demie) : restez dans la zone.
+[*]Repérez la fumée violette, ouvrez la caisse et prenez vos articles.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list][*][b]COMSPEC › ATAK · Simulation › Apps civiles[/b] (serveur) : décoché, UberEats et Tinder sont retirés de tous les téléphones.[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE (Field Rations)[/b] : obligatoire. Sans lui, l'app affiche « Aucune ration disponible ».
+[*][b]Réseau simulé[/b] : la commande part par le réseau du téléphone ; sans signal, elle attend que le réseau revienne.
+[*][b]Carte[/b] : marqueur de la livraison, visible de vous seul.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Une seule commande à la fois, puis 10 min avant la suivante.
+[*]Il faut être hors véhicule pour commander : « Descendez du véhicule : le drone livre au sol ».
+[*]La caisse se pose près de l'endroit où vous êtes à l'arrivée, pas là où vous avez commandé.
+[*]Une caisse oubliée est retirée au bout de 20 min.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+A delivery app for personal resupply: you pick ACE rations and drinks, and a crate lands under a parachute next to you a few minutes later, marked by purple smoke. Handy when ACE hunger and thirst kick in far from logistics.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] carries the phone in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, Civilian category: UberEats (not in the dock by default).
+[*]If you uninstalled it, the App Store reinstalls it. Civilian app: the server can remove it from every phone.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]On the menu[/b]: every loaded ACE ration and drink (MRE meals, humanitarian rations, water, canteens, cans, juice, snacks), with picture and name. Filters [b]ALL[/b], [b]MEALS[/b], [b]DRINKS[/b], [b]SNACKS[/b]. [b]+[/b] adds an item to the cart.
+[*][b]Cart (x/6)[/b]: 6 items max per delivery, [b]-[/b] to remove one, [b]COMMANDER[/b] (order) to confirm.
+[*][b]Order tracking[/b]: order number, steps ACCEPTED · IN THE KITCHEN · DRONE IN FLIGHT · DELIVERED, countdown to arrival. [b]CANCEL ORDER[/b] while it is in the kitchen (or waiting for network); after that, "Too late: the drone has already left".
+[*][b]Delivery[/b]: the crate is dropped under a parachute a few dozen metres from where you are when it arrives, on clear ground, with purple smoke, a notification and a vibration. An "UberEats" marker appears on your map for 15 min.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]On foot, open UberEats, [b]MEALS[/b] filter, tap [b]+[/b] on two rations; [b]DRINKS[/b] filter, [b]+[/b] on two water bottles.
+[*]Tap [b]COMMANDER[/b] (order): "Order accepted: delivery in about X min".
+[*]Preparation (30 to 60 s), then flight (1 to 2.5 min): stay in the area.
+[*]Spot the purple smoke, open the crate and take your items.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list][*][b]COMSPEC › ATAK · Simulation › Civilian apps[/b] (server): unticked, UberEats and Tinder are removed from every phone.[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE (Field Rations)[/b]: required. Without it, the app shows "No rations available: the ACE (Field Rations) mod is not loaded on this server."
+[*][b]Simulated network[/b]: the order goes out over the phone's network; without signal, it waits for the network to come back.
+[*][b]Map[/b]: delivery marker, visible to you only.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]One order at a time, then 10 min before the next one.
+[*]You must be out of a vehicle to order: "Get out of the vehicle: the drone delivers on the ground".
+[*]The crate lands near where you are on arrival, not where you ordered.
+[*]A forgotten crate is removed after 20 min.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

@@ -357,7 +357,7 @@ switch (_view) do {
             _b
         };
         private _bw3 = (_bw - _pad * 2 - _pad) / 3;
-        [[_pad, _pad / 2, _bw3 * 0.8, _rowH], "◀ ROUTES", ["view", "LIST"] call _ui1] call _btn;
+        [[_pad, _pad / 2, _bw3 * 0.8, _rowH], "◀ MES ROUTES", ["view", "LIST"] call _ui1] call _btn;
         private _tt = ["COMSPEC_RscStructuredText", [_pad + _bw3 * 0.8 + _pad / 2, _pad / 2, _bw3 * 1.4, _rowH]] call comspec_atak_native_fnc_pageCtrl;
         _tt ctrlSetStructuredText parseText (((format ["<t font='COMSPEC_BarlowBold' size='1.1'>%1</t><br/><t size='0.85' color='#a9b6b0'>%2</t>", [_r get "name"] call _esc, ((["kind", _r get "kind"] call _RA) select 1) call _tr])) call comspec_atak_native_fnc_tr);
         private _isF = ((missionNamespace getVariable ["COMSPEC_ATAK_RteFollow", createHashMap]) getOrDefault ["id", ""]) isEqualTo (_r get "id");

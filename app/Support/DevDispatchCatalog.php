@@ -294,7 +294,8 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1328, '2026-11-02', 'Malaisie : grades, emplois, qualifications et modèles d’unités', 'La Malaisie rejoint les pays du site. Le référentiel des grades propose les grades de l’Angkatan Tentera Malaysia, système d’origine britannique, en malais avec leur équivalent anglais et leur code OTAN : armée de terre (Tentera Darat, de Prebet à Jeneral), marine (TLDM) et armée de l’air (TUDM). Le catalogue d’emplois ajoute 81 emplois malaisiens sourcés (Grup Gerak Khas, 10 Briged Para, Askar Melayu, Renjer, PASKAL, PASKAU, aviation de l’armée, et à part la police : VAT 69 et UTK), reliés à 31 qualifications et 19 écoles et unités réelles. Cinq modèles d’organisation inspirés d’unités réelles s’appliquent avec les grades malaisiens, dont un bataillon de l’Askar Melayu détaillé jusqu’au seksyen, et l’adéquation de l’organisation suit le modèle britannique (le chef de seksyen est un Koperal).', [
+<<<<<<< HEAD
+            $pr(1329, '2026-11-02', 'Malaisie : grades, emplois, qualifications et modèles d’unités', 'La Malaisie rejoint les pays du site. Le référentiel des grades propose les grades de l’Angkatan Tentera Malaysia, système d’origine britannique, en malais avec leur équivalent anglais et leur code OTAN : armée de terre (Tentera Darat, de Prebet à Jeneral), marine (TLDM) et armée de l’air (TUDM). Le catalogue d’emplois ajoute 81 emplois malaisiens sourcés (Grup Gerak Khas, 10 Briged Para, Askar Melayu, Renjer, PASKAL, PASKAU, aviation de l’armée, et à part la police : VAT 69 et UTK), reliés à 31 qualifications et 19 écoles et unités réelles. Cinq modèles d’organisation inspirés d’unités réelles s’appliquent avec les grades malaisiens, dont un bataillon de l’Askar Melayu détaillé jusqu’au seksyen, et l’adéquation de l’organisation suit le modèle britannique (le chef de seksyen est un Koperal).', [
                 'Référentiel des grades : onglets Malaisie (armée de terre, marine, armée de l’air), intitulés malais, abrégés usuels, équivalent anglais et code OTAN ; bouton pour utiliser ces grades dans la communauté',
                 'Création de communauté : les grades malaisiens se choisissent à l’étape Grades, avec aperçu et grade du fondateur',
                 'Catalogue d’emplois : pays Malaisie (drapeau, nom « Malaysia »), 81 emplois avec intitulé officiel malais, traductions française et anglaise, brevets et formations reliés',
@@ -307,6 +308,31 @@ final class DevDispatchCatalog
                 'L’administrateur lance run-migrations.php (étape grade_systems_malaysia) pour installer les grades malaisiens ; les emplois, qualifications et modèles d’unités sont disponibles sans migration.',
                 'Essai : Référentiel des grades › Malaisie : armée de terre › « Utiliser les grades malaisiens… », puis Effectifs › attribuer « Kapten » à un membre.',
             ], 'Portail Athena'),
+=======
+            $pr(1327, '2026-11-02', 'Invitations : plus de blocage à tort et une page refaite', 'Certaines communautés Pro+ ne pouvaient plus inviter : la page affichait « Votre formule actuelle limite le nombre de membres » alors que leur formule n’a pas de plafond. Un plafond de membres à 0 compte de nouveau comme illimité, et une formule sans plafond renseigné reprend celui de son palier au lieu de 50. La page Invitations est refaite : chiffres en tête (envoyées, acceptées, en attente, expirées) et membres sur le plafond de la formule (« 42 / illimité »), assistant en trois étapes pour inviter plusieurs adresses à la fois avec rôle, grade d’entrée, unité, durée du lien et message, tableau filtrable et triable pour renvoyer, révoquer ou copier un lien.', [
+                'Inviter plusieurs adresses e-mail en une fois, avec grade d’entrée, durée du lien (1 à 30 jours) et message personnel ajouté à l’e-mail',
+                'Tableau des invitations : recherche, filtre par état, tri par colonne ; renvoyer, révoquer, copier un nouveau lien',
+                'Jauge des membres sur le plafond de la formule, lien vers les formules seulement quand le plafond est réellement atteint',
+            ], [
+                'Les liens tout juste envoyés s’affichent une fois pour les transmettre soi-même',
+                'Accès direct aux liens d’invitation partageables',
+            ], [
+                'Formules : un plafond de membres à 0 bloquait toutes les invitations au lieu de signifier « illimité »',
+                'Formules : un plafond absent valait 50 membres au lieu du plafond de la formule',
+                'Une formule offerte inférieure ou l’essai fondateur ne font plus redescendre une communauté Pro+',
+                'Modifier une formule : un plafond vidé garde sa valeur au lieu de devenir illimité',
+            ], ['personnel'], [
+                'Essai : Back-office › Invitations, « Inviter des membres » avec deux adresses, puis « Copier le lien » et « Renvoyer » sur une invitation en attente.',
+            ], 'Portail Athena'),
+            $pr(1325, '2026-11-02', 'Liens d’invitation : en anglais de bout en bout', 'Les pages des liens d’invitation (back-office et page publique) gardaient quelques phrases en français en anglais : elles sont désormais entièrement traduites.', [], [], [
+                'Liens d’invitation en anglais : la présentation de la liste, le quota, l’aide de l’adresse personnalisée, l’action « Rejoindre » et le bandeau de candidature restaient en français',
+            ], ['personnel'], [], 'Portail Athena'),
+
+            $pr(1323, '2026-11-02', 'Liens d’invitation : la mise en page revient', 'Les pages Recrutement › Liens d’invitation s’affichaient sans mise en page : elles retrouvent le style du back-office, comme les codes prioritaires.', [], [], [
+                'Recrutement › Liens d’invitation : liste, création, fiche et modification s’affichaient sans mise en page ; elles retrouvent le style du back-office',
+            ], ['personnel'], [], 'Portail Athena'),
+
+>>>>>>> origin/main
             $pr(1321, '2026-11-02', 'Liens d’invitation à partager, comme sur Discord', 'Recrutement › Liens d’invitation crée des liens à partager (athena-comspec.eu/public/i/…) : la personne qui l’ouvre découvre votre communauté (nom, emblème, bannière, jeu, membres) puis candidate ou rejoint la communauté. Sans compte, elle en crée un : l’invitation est gardée pendant l’inscription et la confirmation de l’adresse, puis la ramène sur le lien. Chaque lien a son nom interne, sa durée (30 minutes à 7 jours, une date ou jamais), son nombre d’utilisations, son action et ses statistiques ; il se copie, s’affiche en QR code, se révoque et se réactive.', [
                 'Recrutement › Liens d’invitation : création, fiche, modification, révocation, réactivation, copie du lien et QR code à télécharger',
                 'Action « Candidater » : formulaire de la communauté préparé (type de candidature, offre, unité visée, code prioritaire appliqué d’office)',
@@ -349,14 +375,14 @@ final class DevDispatchCatalog
                 'Indicateur d’attente pendant l’enregistrement et la publication, et pendant le chargement de l’éditeur',
                 'Dates vérifiées : la date limite de lecture et la fin d’application doivent suivre la prise d’effet',
             ], [], ['command'], [], 'Portail'),
-            $pr(1317, '2026-11-02', 'App Zones (battleplan), bandeau du curseur et point GPS personnalisables', 'Avec le pack 2.9.35, le téléphone gagne l’app Zones : une zone de travail se découpe toute seule en grille de référence A1, B2…, en îlots délimités par les routes ou en secteurs N, NE…, chaque zone nommée et numérotée, les bâtiments numérotés avec leurs étages et les grands axes routiers nommés MSR et ASR avec leurs points de contrôle. Chaque zone a un état et ses signalements : on signale un ennemi dans « B-04 » en un clic, un contact posé dans une zone la met à jour, et la situation se partage à l’équipe, au groupe ou au camp. Sur la carte, le bandeau du curseur se choisit (nouveau, classique d’avant la 2.9.34, compact ou masqué) et votre point GPS se règle.', [
+            $pr(1317, '2026-11-02', 'App Zones (battleplan), bandeau du curseur et point GPS personnalisables', 'Avec le pack 2.9.35, le téléphone gagne l’app Zones : une zone de travail se découpe toute seule en grille de référence A1, B2…, en îlots délimités par les routes ou en secteurs N, NE…, chaque zone nommée et numérotée, les bâtiments numérotés avec leurs étages et les grands axes routiers nommés MSR et ASR avec leurs points de contrôle. Chaque zone a un état et ses signalements : on signale un ennemi dans « B-04 » en un clic, un contact posé dans une zone peut la mettre à jour, sur proposition ou selon le réglage du serveur, et la situation se partage à l’équipe, au groupe ou au camp. Sur la carte, le bandeau du curseur se choisit (nouveau, classique d’avant la 2.9.34, compact ou masqué) et votre point GPS se règle.', [
                 'App Zones (Mission) : zone de travail en rectangle, polygone, cercle ou autour de moi, découpée en grille GRG (A1… ou numéros en serpentin, cases de 50 m à 1 km), en îlots délimités par les routes de la carte, en secteurs N, NE… ou numérotés avec anneaux, ou en une seule zone ; préfixe et noms de code au choix',
                 'Bâtiments d’une zone numérotés du nord au sud, avec leurs étages',
                 'Grands axes routiers nommés automatiquement (MSR puis ASR, thème villes, animaux ou OTAN) avec leurs carrefours en points de contrôle CP1… ; chaque axe peut devenir une route de l’app Routes',
                 'Rendu par plan, zone ou axe : surligné, contour seul ou point centré avec le nom ; couleurs par type et par état ; bascule globale sur la carte',
                 'Situation par zone : état en un clic (non reconnue, claire, contact, ennemi signalé, tenue par ami, interdite), signalements avec nature, effectif et heure, tableau de situation, SIGNALER ICI et ligne « Zone … · signaler » au clic droit de la carte',
-                'Un contact ennemi posé ou signalé dans une zone (marqueur ennemi, TIC, SALUTE, compte rendu CONTACT ou SPOTREP) met la zone à jour ; @zone cite la zone dans un message ou un compte rendu ; la zone sous le curseur s’affiche dans le bandeau',
-                'Plans et situation partagés à l’équipe, au groupe ou au camp par le réseau ATAK (sans réseau, envoi au retour du signal ; remis aux joueurs qui arrivent), sur la carte d’Arma et sur Athena',
+                'Un contact ennemi posé ou signalé dans une zone (marqueur ennemi, TIC, SALUTE, compte rendu CONTACT ou SPOTREP) peut mettre la zone à jour, sur proposition ou selon le réglage du serveur ; @zone cite la zone dans un message ou un compte rendu ; la zone sous le curseur s’affiche dans le bandeau',
+                'Plans et situation partagés à l’équipe, au groupe ou au camp par le réseau ATAK (sans réseau, envoi au retour du signal ; remis aux joueurs qui arrivent) et, si le serveur l’autorise, sur la carte d’Arma et sur Athena',
                 'Carte : bandeau du curseur au choix (nouveau, classique, compact, masqué), éléments affichés, format de grille, unités, position, fond et taille ; mon point GPS : forme, couleur, taille, cône de cap, trace et indicatif',
             ], [
                 'Le bandeau classique d’avant la 2.9.34 revient au choix, sans ses anciens défauts (« ALT 17 m », jamais « NON »)',

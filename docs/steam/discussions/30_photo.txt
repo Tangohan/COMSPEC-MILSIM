@@ -1,0 +1,119 @@
+[APP] Photo — appareil photo du téléphone : viseur en direct, zoom, flash, selfie, flou des visages, envoi à Athena
+
+[i]Message 1/2[/i]
+[h1]Photo[/h1]
+[i]Catégorie : Renseignement · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Photographier ce que vous voyez (ou vous-même en selfie) et l'envoyer à Athena, avec une légende, votre position et votre cap. Les photos prises se revoient, se renvoient et se suppriment dans l'app Galerie.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est rangée dans la catégorie [b]Renseignement[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller. Téléphone en main, l'app s'ouvre directement sur le viseur ; téléphone porté en coin d'écran (mini), elle propose seulement [b]PHOTO[/b], [b]SELFIE[/b] (plein écran) et [b]GALERIE[/b].
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Viseur dans l'écran[/b] : image en direct de l'objectif, avec grille, cap, heure, objectif et zoom. Glisser sur l'image décale l'objectif, la molette zoome, un double clic recentre.
+[*][b]Boutons sur l'image[/b] : [b]FLASH[/b] (AUTO la nuit et dans un intérieur sombre, FORCÉ à chaque photo, COUPÉ pour la discrétion), [b]VISAGES[/b] (type de flou : gaussien, mouvement, pixel, carré noir ou coupé), [b]PLEIN ÉCRAN[/b], zoom − / + (numérique, jusqu'à x8).
+[*][b]Commandes[/b] : [b]GALERIE[/b] (avec le nombre de photos), déclencheur au centre, [b]SELFIE[/b] (objectif avant, le personnage range son arme et tend le bras).
+[*][b]Légende[/b] : facultative, envoyée avec la photo. Sans légende, la photo porte votre indicatif, votre carroyage et votre cap.
+[*][b]Mode plein écran[/b] : vous vous déplacez normalement, arme rangée. Clic gauche : photo (plusieurs à la suite possibles). [b]R[/b] : selfie / objectif arrière. Molette ou [b]+ / -[/b] : zoom, à l'arrêt seulement (marcher le ramène à x1). [b]F[/b] : flash. [b]B[/b] : type de flou des visages. [b]T[/b] : marquer la cible sous le réticule. [b]H[/b] ou [b]F1[/b] : afficher ou replier la barre des raccourcis. [b]Espace[/b] : revenir au téléphone.
+[*][b]Flou automatique des visages[/b] : les visages visibles sont repérés à la prise ; Athena les floute à la réception, selon vos réglages.
+[*][b]TEST VIDÉO[/b] : si le viseur reste noir, ce bouton affiche 30 secondes la vidéo de plusieurs façons (lettres A à I) pour aider au diagnostic.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Connectez-vous à Athena (app Athena), puis ouvrez Photo, téléphone en main.
+[*]Visez, zoomez à la molette si besoin, tapez une légende courte.
+[*]Appuyez sur le déclencheur : l'écran bascule un instant sur la prise de vue, puis la photo part vers Athena.
+[*]Pour plusieurs photos en marchant, passez en [b]PLEIN ÉCRAN[/b], photographiez au clic gauche, puis [b]Espace[/b] pour revenir.
+[*]Retrouvez vos photos dans l'app [b]Galerie[/b].
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Photo › Photo : lever le téléphone[/b] (personnel) : décoché, votre bras reste baissé pendant une photo ; coché, votre personnage lève le téléphone et les autres le voient. En selfie, il est toujours levé.
+[*][b]COMSPEC › ATAK · Photo › Selfie : inverser gauche / droite[/b] et [b]Selfie : inverser haut / bas[/b] (personnels) : sens du cadrage à la souris en selfie.
+[*][b]COMSPEC › ATAK · Photo › Floutage automatique des visages[/b] (personnel) : flou classique, flou de mouvement, pixelisé, bande noire ou aucun. L'original n'est pas conservé par Athena.
+[*][b]COMSPEC › ATAK · Photo › Visages à flouter[/b] (personnel) : alliés (votre camp et les camps amis) ou tout le monde.
+[*][b]COMSPEC › ATAK · Photo › Flou : intensité / opacité / taille de la zone / distance max[/b] et [b]Flou de mouvement : direction[/b] (personnels) : réglage fin du flou.
+[*][b]COMSPEC › ATAK · Photo › Animation de l'appareil photo[/b] et [b]Animation du selfie[/b] (mission makers) : animation jouée pendant la prise.
+[*][b]COMSPEC › ATAK · Photo › Dossier des captures d'écran[/b] et [b]Vérifier le dossier des captures[/b] (personnels) : où le téléphone cherche vos photos.
+[*][b]COMSPEC › ATAK · Marquage de cible › Marquage de cible à la caméra[/b] et [b]Portée du marquage à l'appareil photo (m)[/b] (serveur) : touche T en plein écran.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b] : la prise de vue demande le volet Overwatch de COMSPEC et une connexion Athena active (app Athena). Sans réseau sur le téléphone, la photo est gardée sur le poste et s'envoie plus tard depuis la Galerie.
+[*][b]Galerie, FRS / FRM[/b] : les photos alimentent la photothèque, où l'app FRS / FRM peut aussi les joindre à une fiche.
+[*][b]Carte[/b] : une cible marquée avec T apparaît sur la carte et dans l'app Marquer tracking.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Arma ne sait capturer que l'écran du joueur : au déclenchement, le téléphone et l'interface sont masqués environ 0,3 seconde.
+[*]Deux secondes au moins entre deux photos du viseur intégré.
+[*]Si vos photos ne sont jamais retrouvées, réglez le [b]Dossier des captures d'écran[/b] et utilisez [b]Vérifier le dossier des captures[/b].
+[/list]
+
+[h3]Version d'introduction[/h3]
+App présente dès les premières versions de l'ATAK natif ; refondue en 1.11.0, viseur dans l'écran du téléphone depuis 1.18.0 (octobre 2026).
+
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Take pictures of what you see (or of yourself as a selfie) and send them to Athena, with a caption, your position and your heading. Photos taken can be reviewed, resent and deleted in the Gallery app.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app is in the [b]Intelligence[/b] category (it is not in the dock). If it was uninstalled, the App Store reinstalls it. With the phone in hand, the app opens straight on the viewfinder; with the phone carried in a corner (mini), it only offers [b]PHOTO[/b], [b]SELFIE[/b] (fullscreen) and [b]GALLERY[/b].
+
+[h3]Features[/h3]
+[list]
+[*][b]Viewfinder in the screen[/b]: live image from the lens, with grid, heading, time, lens and zoom. Dragging on the image shifts the lens, the wheel zooms, a double click recentres.
+[*][b]Buttons on the image[/b]: [b]FLASH[/b] (AUTO at night and in dark interiors, FORCED on every shot, OFF for discretion), [b]FACES[/b] (blur type: gaussian, motion, pixel, black box or off), [b]FULL SCREEN[/b], zoom − / + (digital, up to x8).
+[*][b]Controls[/b]: [b]GALLERY[/b] (with the photo count), shutter in the centre, [b]SELFIE[/b] (front lens, the character holsters the weapon and stretches the arm).
+[*][b]Caption[/b]: optional, sent with the photo. Without a caption, the photo carries your callsign, grid and heading.
+[*][b]Fullscreen mode[/b]: you move normally, weapon holstered. Left click: photo (several in a row allowed). [b]R[/b]: selfie / rear lens. Wheel or [b]+ / -[/b]: zoom, only when standing still (walking resets it to x1). [b]F[/b]: flash. [b]B[/b]: face blur type. [b]T[/b]: mark the target under the reticle. [b]H[/b] or [b]F1[/b]: show or fold the shortcut bar. [b]Space[/b]: back to the phone.
+[*][b]Automatic face blur[/b]: visible faces are detected at the shot; Athena blurs them on reception, according to your settings.
+[*][b]VIDEO TEST[/b]: if the viewfinder stays black, this button shows the video in several ways for 30 seconds (letters A to I) to help diagnose.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Connect to Athena (Athena app), then open Photo with the phone in hand.
+[*]Aim, zoom with the wheel if needed, type a short caption.
+[*]Press the shutter: the screen switches to the shot for a moment, then the photo is sent to Athena.
+[*]For several photos while walking, switch to [b]FULL SCREEN[/b], shoot with left click, then [b]Space[/b] to come back.
+[*]Find your photos in the [b]Gallery[/b] app.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Photo › Photo: raise the phone[/b] (personal): unticked, your arm stays down during a photo; ticked, your character raises the phone and others see it. In selfie, it is always raised.
+[*][b]COMSPEC › ATAK · Photo › Selfie: invert left / right[/b] and [b]Selfie: invert up / down[/b] (personal): mouse framing direction in selfie.
+[*][b]COMSPEC › ATAK · Photo › Automatic face blur[/b] (personal): gaussian blur, motion, pixelated, black box or none. Athena does not keep the original.
+[*][b]COMSPEC › ATAK · Photo › Blurred faces[/b] (personal): allies (your side and friendly sides) or everyone.
+[*][b]COMSPEC › ATAK · Photo › Blur: strength / opacity / size / range[/b] and [b]Blur: angle[/b] (personal): fine tuning of the blur.
+[*][b]COMSPEC › ATAK · Photo › Camera animation[/b] and [b]Selfie animation[/b] (mission makers): animation played during the shot.
+[*][b]COMSPEC › ATAK · Photo › Screenshot folder[/b] and [b]Check the screenshot folder[/b] (personal): where the phone looks for your photos.
+[*][b]COMSPEC › ATAK · Target marking › Sight marking[/b] and [b]Phone marking range[/b] (server): T key in fullscreen.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b]: taking a picture requires COMSPEC's Overwatch component and an active Athena connection (Athena app). Without network on the phone, the photo is kept on the computer and can be sent later from the Gallery.
+[*][b]Gallery, FRS / FRM[/b]: photos feed the photo library, from which the FRS / FRM app can also attach them to a report.
+[*][b]Map[/b]: a target marked with T appears on the map and in the Mark tracking app.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Arma can only capture the player's screen: at the shot, the phone and interface are hidden for about 0.3 seconds.
+[*]At least two seconds between two photos from the built-in viewfinder.
+[*]If your photos are never found, set the [b]Screenshot folder[/b] and use [b]Check the screenshot folder[/b].
+[/list]
+
+[h3]Introduced in[/h3]
+App present since the first native ATAK versions; rebuilt in 1.11.0, viewfinder inside the phone screen since 1.18.0 (October 2026).
