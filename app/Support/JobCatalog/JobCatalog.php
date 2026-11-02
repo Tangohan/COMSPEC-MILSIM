@@ -22,7 +22,7 @@ use App\Support\JobRoleIconLibrary;
 final class JobCatalog
 {
     /** Packs livrés (nom du fichier sans extension). */
-    public const PACKS = ['us_sof', 'fr_sof'];
+    public const PACKS = ['us_sof', 'fr_sof', 'nato'];
 
     public const TYPES = ['operator', 'command', 'support', 'aviation'];
     public const BRANCHES = ['army', 'navy', 'air_force', 'marine_corps', 'gendarmerie', 'joint'];
@@ -31,10 +31,12 @@ final class JobCatalog
     /** Filtres exacts de la recherche, dans l’ordre de la fenêtre (pays → armée → commandement → unité → type). */
     public const FILTERS = ['country', 'branch', 'command', 'formation', 'type', 'pack'];
 
-    /** Pays des packs, dans l’ordre d’affichage des catégories (code ISO 3166-1 alpha-2). */
+    /** Pays des packs, dans l’ordre d’affichage des catégories (code ISO 3166-1 alpha-2 ; « NATO » pour l’OTAN). */
     public const COUNTRIES = [
         'US' => ['fr' => 'États-Unis', 'en' => 'United States'],
         'FR' => ['fr' => 'France', 'en' => 'France'],
+        // Fonctions interalliées standardisées (pas un pays) : code « NATO », emblème dessiné en CSS.
+        'NATO' => ['fr' => 'OTAN', 'en' => 'NATO'],
     ];
 
     /** Armées d’un pays ; une armée absente reprend le libellé générique de LABELS['branch']. */
@@ -52,6 +54,12 @@ final class JobCatalog
             'air_force' => ['fr' => 'Armée de l’Air et de l’Espace', 'en' => 'French Air and Space Force'],
             'gendarmerie' => ['fr' => 'Gendarmerie nationale', 'en' => 'French Gendarmerie'],
             'joint' => ['fr' => 'Interarmées (COS)', 'en' => 'Joint (COS)'],
+        ],
+        'NATO' => [
+            'army' => ['fr' => 'Composante terrestre (LCC)', 'en' => 'Land component (LCC)'],
+            'navy' => ['fr' => 'Composante maritime (MCC)', 'en' => 'Maritime component (MCC)'],
+            'air_force' => ['fr' => 'Composante aérienne (ACC)', 'en' => 'Air component (ACC)'],
+            'joint' => ['fr' => 'Interarmées et interalliés', 'en' => 'Joint and combined'],
         ],
     ];
 
@@ -438,7 +446,8 @@ final class JobCatalog
     {
         $id = (string) ($entry['id'] ?? '');
         $p = [];
-        if (preg_match('/^[a-z]{2,3}-[a-z0-9-]{2,60}$/', $id) !== 1) {
+        // Préfixe : code pays en minuscules (« us- », « fr- ») ou « nato- » pour les fonctions interalliées.
+        if (preg_match('/^[a-z]{2,4}-[a-z0-9-]{2,60}$/', $id) !== 1) {
             $p[] = 'id invalide';
         }
         if (!in_array($entry['branch'] ?? null, self::BRANCHES, true)) {
