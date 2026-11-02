@@ -6,8 +6,8 @@ $events=array_slice($events,0,50);
 $archives=$jobArchives??[];
 $moreArchives=count($archives)>50;
 $archives=array_slice($archives,0,50);
-$verbs=['created'=>'Création','updated'=>'Modification','deleted'=>'Suppression d’une catégorie vide','archived'=>'Archivage','restored'=>'Restauration'];
-$fields=['name'=>'Nom','label_en'=>'Nom anglais','mos_code'=>'Code métier','mos_specialty_title'=>'Spécialité métier','source_unit_id'=>'Unité d’origine','description'=>'Description','category_id'=>'Catégorie','parent_id'=>'Catégorie parente','parent_job_role_id'=>'Emploi parent','linked_unit_id'=>'Unité de référence','grade_id'=>'Grade de référence','specialty_id'=>'Spécialité de référence','code'=>'Code','kind'=>'Nature'];
+$verbs=['created'=>'Création','updated'=>'Modification','deleted'=>'Suppression d’une catégorie vide','archived'=>'Archivage','restored'=>'Restauration','prerequisites'=>'Prérequis modifiés','waiver_granted'=>'Dérogation accordée','waiver_revoked'=>'Dérogation révoquée'];
+$fields=['name'=>'Nom','label_en'=>'Nom anglais','mos_code'=>'Code métier','mos_specialty_title'=>'Spécialité métier','source_unit_id'=>'Unité d’origine','description'=>'Description','category_id'=>'Catégorie','parent_id'=>'Catégorie parente','parent_job_role_id'=>'Emploi parent','linked_unit_id'=>'Unité de référence','grade_id'=>'Grade de référence','specialty_id'=>'Spécialité de référence','code'=>'Code','kind'=>'Nature','prerequisites'=>'Nombre de prérequis','waiver_member'=>'Membre','waiver_reason'=>'Motif'];
 $flatten=static function(array $row):array{$meta=$row['structure']??[];unset($row['structure']);return $row+$meta;};
 $value=static function(mixed $v,string $field):string{if($v===null||$v===''||$v===0)return 'Aucun';if($field==='kind')return $v==='function'?'Fonction':'Emploi';return (str_ends_with($field,'_id')?'#':'').(string)$v;};
 ?>
