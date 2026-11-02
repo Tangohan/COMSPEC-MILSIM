@@ -304,6 +304,14 @@ final class DevDispatchCatalog
             ], [], ['personnel'], [
                 'Ouvrez Effectifs › Fonctions, éditez un emploi, puis Chercher dans le catalogue. Choisissez un emploi OTAN (SOCC) : ouvrez AJP-3.5, cliquez Rattacher à la fonction, enregistrez l’emploi et vérifiez ses prérequis.',
             ], 'Portail Athena'),
+            $pr(1306, '2026-11-02', 'Recherches, filtres et onglets de nouveau pris en compte', 'Plusieurs pages ignoraient ce qui était demandé dans l’adresse : la recherche, le tri et les filtres de la documentation, le filtre de Mes documents, les onglets des sessions de jeu de rôle, le filtre des catégories ou le simulateur d’accès affichaient toujours la vue par défaut. Ces choix sont de nouveau appliqués, par formulaire comme par lien direct, et le téléchargement d’un document à signature obligatoire fonctionne de nouveau après la signature.', [], [], [
+                'Documentation et gestion des documents : recherche, catégorie, statut, type, classification et tri de nouveau appliqués',
+                'Mes documents : le filtre choisi (à lire, obligatoires, en retard, lus) est de nouveau appliqué',
+                'Back-office : onglets des sessions de jeu de rôle, filtre des catégories, simulateur d’accès, export des lectures d’un document, réglage des annonces de coopération et formule offerte présélectionnée',
+                'Téléchargement d’un document à signature obligatoire de nouveau possible une fois la signature faite',
+            ], ['platform'], [
+                'Aucune donnée n’a été modifiée : seule la lecture des paramètres de l’adresse était en cause.',
+            ], 'Portail'),
             $pr(1305, '2026-11-02', 'Espace aérien : les onglets s’ouvrent de nouveau', 'Dans le back-office, la page Espace aérien affichait toujours la ligne de vol, quel que soit l’onglet choisi. Les onglets Cursus pilote, Pilotes, Carnet de vol et Flotte et filières s’ouvrent de nouveau, par clic comme par lien direct, et les filtres du carnet de vol et de la filière du cursus sont pris en compte.', [], [], [
                 'Espace aérien : les onglets Cursus pilote, Pilotes, Carnet de vol et Flotte et filières affichaient la ligne de vol au lieu de leur contenu',
                 'Filtres du carnet de vol (à contresigner, contresignés, refusés, relevés en jeu) et choix de la filière du cursus de nouveau appliqués',

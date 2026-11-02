@@ -65,8 +65,8 @@ final class CooperationAnnouncementsWebController
             return Response::redirect(url('dashboard'));
         }
         $tid = (int) Session::get('tenant_id');
-        $eventKey = trim((string) $request->input('event', ''));
-        $channel = trim((string) $request->input('channel', ''));
+        $eventKey = trim($request->queryString('event', ''));
+        $channel = trim($request->queryString('channel', ''));
         if (! CooperationAnnouncementEvents::isKnown($eventKey) || ! isset(CooperationAnnouncementEvents::channelLabels()[$channel])) {
             Session::flash('error', 'Sélection invalide.');
 
