@@ -100,12 +100,76 @@ final class EffectifsShellRenderTest extends TestCase
         self::assertStringContainsString('Owen &lt;Hale&gt;', $html);
         self::assertStringNotContainsString('Owen <Hale>', $html);
         self::assertStringContainsString('Sans unité', $html);
-        // Vue « Par unité » : carte avec code, identifiant administratif et titulaires (grade, rôle, emploi).
-        self::assertStringContainsString('class="eff-ut__admin"', $html);
+        // Vue « Par unité » (tableau de la maquette) : colonne avec code, identifiant administratif et titulaires.
+        self::assertStringContainsString('class="effk-col__id"', $html);
         self::assertStringContainsString('<span>ID</span>0002-0003', $html);
-        self::assertStringContainsString('<span class="eff-ut__grade">SSG</span>Ryan Mercer', $html);
+        self::assertStringContainsString('Ryan Mercer</a><span class="effk-gd" translate="no">SSG</span>', $html);
         self::assertStringContainsString('Chef de groupe · Infirmier de combat', $html);
+        self::assertStringContainsString('Chef : <b>SSG Mercer</b>', $html);
         self::assertStringNotContainsString('prochaine ouverture', $html);
+        // Mutation : glisser ou ⇄, puis l'action habituelle (CSRF, retour sur la page), y compris « Sans unité ».
+        self::assertStringContainsString('draggable="true"', $html);
+        self::assertStringContainsString('data-eff-aff-move="7"', $html);
+        self::assertStringContainsString('/membres/__ID__/affectation"', $html);
+        self::assertStringContainsString('name="_csrf_token" value="tok"', $html);
+        self::assertStringContainsString('name="return_url"', $html);
+        self::assertStringContainsString('data-unit="0"', $html);
+        self::assertStringContainsString('Mouvements récents', $html);
+    }
+
+    public function testAffectationsWithoutAssignmentRightIsReadOnly(): void
+    {
+        $html = $this->render([
+            'effectifsNav' => 'affectations',
+            'effectifsContent' => 'admin.effectifs_workspace.affectations',
+            'affMatrix' => $this->matrix(),
+            'affMovements' => [['id' => 1, 'user_id' => 7, 'unit_id' => 3, 'from_unit_id' => 0, 'date' => '2026-10-30', 'reason' => 'Renfort <b>', 'display_name' => 'Ryan Mercer', 'callsign' => 'Viper', 'user_status' => 'active']],
+            'canManageAssignments' => false,
+            'canEditCommunityCode' => false,
+        ]);
+
+        self::assertStringNotContainsString('draggable="true"', $html);
+        self::assertStringNotContainsString('data-eff-aff-move=', $html);
+        self::assertStringNotContainsString('/affectation"', $html);
+        self::assertStringContainsString('Première affectation', $html);
+        self::assertStringContainsString('Renfort &lt;b&gt;', $html);
+        self::assertStringContainsString('datetime="2026-10-30"', $html);
+    }
+
+    public function testCommandChainShowsChartPickerAndKeepsTables(): void
+    {
+        $units = [
+            ['id' => 1, 'name' => 'Escadron', 'type' => 'squadron', 'code' => '', 'depth' => 0, 'parent_id' => 0, 'parent_name' => '', 'commander_user_id' => 7, 'commander_label' => 'Mercer', 'visibility' => 'normal', 'member_count' => 1, 'member_ids' => [7]],
+            ['id' => 2, 'name' => 'Groupe <1>', 'type' => 'squad', 'code' => '', 'depth' => 1, 'parent_id' => 1, 'parent_name' => 'Escadron', 'commander_user_id' => 0, 'commander_label' => '', 'visibility' => 'hidden', 'member_count' => 1, 'member_ids' => [8]],
+        ];
+        $members = [
+            ['user_id' => 7, 'label' => 'Mercer', 'unit_id' => 1, 'unit_name' => 'Escadron', 'role_name' => 'Commandant', 'reports_to_id' => 0, 'reports_to_label' => '', 'chain_labels' => [], 'chain_ids' => [], 'commands' => ['Escadron']],
+            ['user_id' => 8, 'label' => 'Hale', 'unit_id' => 2, 'unit_name' => 'Groupe <1>', 'role_name' => '', 'reports_to_id' => 7, 'reports_to_label' => 'Mercer', 'chain_labels' => ['Mercer'], 'chain_ids' => [7], 'commands' => []],
+        ];
+        $html = $this->render([
+            'effectifsNav' => 'chaine',
+            'effectifsContent' => 'admin.effectifs_workspace.chaine',
+            'chainUnits' => $units,
+            'chainMembers' => $members,
+            'chainMemberOptions' => [['id' => 7, 'label' => 'Mercer'], ['id' => 8, 'label' => 'Hale']],
+            'chainMissingCommanders' => 1,
+            'canManageAssignments' => true,
+            'csrfToken' => 'tok',
+        ]);
+
+        self::assertStringContainsString('class="effk-slot is-cmd"', $html);
+        self::assertStringContainsString('data-chain-slot="2"', $html);
+        self::assertStringContainsString('Chef à désigner', $html);
+        self::assertStringContainsString('Groupe &lt;1&gt;', $html);
+        self::assertStringNotContainsString('Groupe <1>', $html);
+        // Confidentialité : pastille commune pour le lecteur habilité.
+        self::assertStringContainsString('data-confidential="staff_hidden"', $html);
+        // Écriture inchangée : même envoi commanders[unité], jeton CSRF, tableau complet conservé.
+        self::assertStringContainsString('name="commanders[2]"', $html);
+        self::assertStringContainsString('data-chain-quick', $html);
+        self::assertStringContainsString('name="_csrf_token" value="tok"', $html);
+        self::assertStringContainsString('"chain":[7]', $html);
+        self::assertStringNotContainsString('<script type="application/json" id="eff-chain-data">{"units":{"1":{"name":"Escadron","chef":7,"members":[7]},"2":{"name":"Groupe <1>', $html);
     }
 
     public function testCommunityCodeFormIsHiddenWithoutAdministrationRight(): void
