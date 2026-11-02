@@ -51,12 +51,16 @@ uiNamespace setVariable ["COMSPEC_ATAK_DevCache", _devCache];
 // (la recherche parcourt toutes les pistes Athena pour chaque unité, quatre fois par seconde carte en main).
 private _nearCache = uiNamespace getVariable ["COMSPEC_ATAK_NearCache", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_NearCache", _nearCache];
+// Pistes des unités en jeu gardées d'un passage à l'autre (une table par unité, plus une par unité et par passage).
+private _trk = uiNamespace getVariable ["COMSPEC_ATAK_TrackCache", createHashMap];
+uiNamespace setVariable ["COMSPEC_ATAK_TrackCache", _trk];
 // Unités disparues (morts, respawns, IA supprimées) retirées toutes les 30 s : ces tables grossissaient toute la partie.
 if (isMultiplayer && {diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_BftPruneAt", 0]) > 30}) then {
     uiNamespace setVariable ["COMSPEC_ATAK_BftPruneAt", diag_tickTime];
     { if (isNull (objectFromNetId _x)) then { _devCache deleteAt _x; }; } forEach (keys _devCache);
     { if (isNull (objectFromNetId _x)) then { _last deleteAt _x; }; } forEach (keys _last);
     { if (isNull (objectFromNetId _x)) then { _nearCache deleteAt _x; }; } forEach (keys _nearCache);
+    { if (isNull (objectFromNetId _x)) then { _trk deleteAt _x; }; } forEach (keys _trk);
 };
 // Liste des alliés vivants relevée toutes les 2 s (parcours de allUnits, ennemis compris) ; les positions restent
 // relues à chaque passage, et un allié mort entre deux relevés est écarté dans la boucle.
@@ -171,8 +175,9 @@ private _friendMeta = [];
         _fr = if (!_on) then { "OFFLINE" } else { switch (true) do { case (_age < _liveAge): { "LIVE" }; case (_age < _staleAge): { "STALE" }; default { "LOST" }; } };
     };
     // Réutiliser la piste déjà en mémoire (SQF-002 / SQF-C03) : n’allouer un HashMap qu’à la première vue.
-    private _track = _units getOrDefault [_id, createHashMap];
-    if ((count _track) isEqualTo 0) then { _units set [_id, _track]; };
+    private _track = _trk get _id;
+    if (isNil "_track") then { _track = createHashMap; _trk set [_id, _track]; };
+    _units set [_id, _track];
     _track set ["id", _id];
     _track set ["object", _obj];
     _track set ["self", _obj isEqualTo player];
