@@ -54643,4 +54643,8 @@ return [
     'Les forces spéciales de l’armée de l’air royale malaisienne : escadron de sauvetage au combat et escadron de protection des forces (contre-terrorisme, libération d’otages), avec les grades de l’armée de l’air malaisienne.' => 'The Royal Malaysian Air Force special forces: combat air rescue squadron and force protection squadron (counter-terrorism, hostage rescue), with Royal Malaysian Air Force ranks.',
     '21 Gerup Gerak Khas (GGK)' => '21st Special Service Group (21 GGK)',
     'Briged Ke-10 Payung Terjun (10 Briged Para)' => '10th Parachute Brigade (10 Briged Para)',
+    'Royaume-Uni : British Army et Royal Marines' => 'United Kingdom: British Army and Royal Marines',
+    'Royaume-Uni : Royal Navy' => 'United Kingdom: Royal Navy',
+    'Royaume-Uni : Royal Air Force' => 'United Kingdom: Royal Air Force',
+    'Grades britanniques' => 'British ranks',
 ];

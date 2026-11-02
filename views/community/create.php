@@ -523,6 +523,7 @@ $guideUrl = url('communities/create/guide');
                                     $kitGrades = match ($kitGradeCode) {
                                         'US_CLASSIC' => 'Grades américains',
                                         'FR_CLASSIC' => 'Grades français',
+                                        'GB_ARMY', 'GB_RN', 'GB_RAF' => 'Grades britanniques',
                                         'MY_CLASSIC', 'MY_TLDM', 'MY_TUDM' => 'Grades malaisiens',
                                         default => 'Sans système de grades',
                                     };
