@@ -1,0 +1,99 @@
+[APP] Anti-drone — détecteur RF passif : relèvement des drones proches, AMI / INCONNU, radar et alerte automatique
+
+[h1]Anti-drone[/h1]
+[i]Catégorie : Spécialités · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Entendre les drones autour de vous, comme un capteur RF portable : l'app écoute passivement leurs liaisons vidéo (5,8 GHz) et de commande (2,4 GHz) et donne la direction d'où vient chaque signal, sa force, et si le drone est ami ou inconnu. Elle n'émet rien et ne donne jamais de position exacte.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est dans la catégorie [b]Spécialités[/b] (pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Radar[/b] : couronne tournée selon votre cap (cap en haut), une aiguille par drone avec son cône d'erreur ; rouge pour un drone inconnu, bleu pour un ami. À côté : votre cap, le nombre de drones inconnus entendus, le mode de balayage et l'heure du dernier balayage.
+[*][b]BALAYER[/b] : un balayage manuel, avec un bilan en notification. [b]EFFACER[/b] vide la liste.
+[*][b]Balayage automatique[/b] : toutes les 5 s, même l'app fermée ; alerte et vibration si un drone inconnu est proche et fort (une fois par minute et par drone).
+[*][b]Relèvements sur la carte[/b] : cône d'erreur tracé depuis le point où vous avez relevé le signal.
+[*][b]Détections[/b] : [b]AMI[/b] ou [b]INCONNU[/b], relèvement en degrés et point cardinal avec sa marge (de ±25° pour un signal faible à ±5° pour un fort), position horaire (« à 2 h »), barres de signal et puissance en dBm, bande de fréquence, distance estimée seulement si le signal est fort, depuis quand on l'entend, signal présent ou perdu. Les inconnus et les plus forts sont en tête ; une détection est oubliée 60 s après le dernier relevé. [b]VOIR SUR LA CARTE[/b].
+[*][b]Capteur[/b] : capteur RF externe (portée en vue directe 2 km pour un quadricoptère, 4 km pour une voilure fixe) ou antenne du téléphone seule (portée réduite de moitié).
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Ouvrez l'app et activez le [b]Balayage automatique[/b].
+[*]Un bourdonnement suspect : regardez l'aiguille rouge du radar et sa position horaire.
+[*]Tournez-vous vers le relèvement, rapprochez-vous : les barres montent et une distance estimée apparaît.
+[*][b]VOIR SUR LA CARTE[/b] pour recouper avec les relèvements pris ailleurs.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Anti-drone : capteur dédié[/b] (serveur, coché par défaut) : décoché, l'app n'a que l'antenne du téléphone, portée divisée par deux. Une mission peut aussi régler le capteur joueur par joueur.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : cônes de relèvement (si l'option est active).
+[*][b]Drone[/b] : un drone de votre camp piloté par quelqu'un de votre groupe apparaît en AMI ; tous les autres, y compris les drones amis d'autres groupes, sont INCONNU.
+[*][b]GE[/b] : le brouillage subi relève le bruit et réduit la portée de détection.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Seuls les drones en vol ou moteur en marche émettent : un drone posé, moteur coupé, est invisible.
+[*]Relief, bâtiments, être dans un véhicule, pluie (surtout à 5,8 GHz) et brouillage réduisent la portée.
+[*]La distance est estimée d'après la puissance reçue : un drone masqué par un obstacle paraît plus loin qu'il n'est.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Hear the drones around you, like a handheld RF sensor: the app passively listens to their video (5.8 GHz) and control (2.4 GHz) links and gives the direction each signal comes from, its strength, and whether the drone is friendly or unknown. It emits nothing and never gives an exact position.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app sits in the [b]Specialized[/b] category (not in the dock). If it was uninstalled, the App Store reinstalls it.
+
+[h3]Features[/h3]
+[list]
+[*][b]Radar[/b]: ring turned with your heading (heading up), one needle per drone with its error cone; red for an unknown drone, blue for a friendly. Next to it: your heading, the number of unknown drones heard, the scan mode and the time of the last scan.
+[*][b]SCAN[/b]: one manual scan, with a summary notification. [b]CLEAR[/b] empties the list.
+[*][b]Auto sweep[/b]: every 5 s, even with the app closed; alert and vibration if an unknown drone is close and strong (once per minute and per drone).
+[*][b]Bearings on map[/b]: error cone drawn from the point where you picked up the signal.
+[*][b]Detections[/b]: [b]FRIEND[/b] or [b]UNKNOWN[/b], bearing in degrees and compass point with its margin (from ±25° for a weak signal to ±5° for a strong one), clock position ("at 2 o'clock"), signal bars and power in dBm, frequency band, estimated distance only for a strong signal, how long it has been heard, signal present or lost. Unknowns and the strongest come first; a detection is forgotten 60 s after the last pick-up. [b]SHOW ON MAP[/b].
+[*][b]Sensor[/b]: external RF sensor (line-of-sight range 2 km for a quadcopter, 4 km for a fixed wing) or the phone's own antenna (half the range).
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Open the app and turn on [b]Auto sweep[/b].
+[*]A suspicious buzz: look at the red needle on the radar and its clock position.
+[*]Turn towards the bearing, move closer: the bars rise and an estimated distance appears.
+[*][b]SHOW ON MAP[/b] to cross-check with bearings taken elsewhere.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Anti-drone: dedicated sensor[/b] (server, checked by default): unchecked, the app only has the phone's antenna, half the range. A mission can also set the sensor player by player.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: bearing cones (when the option is on).
+[*][b]Drone[/b]: a drone of your side flown by someone in your group shows as FRIEND; all others, including friendly drones of other groups, are UNKNOWN.
+[*][b]EW[/b]: jamming you suffer raises the noise floor and reduces detection range.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Only drones in flight or with the engine running emit: a landed drone with its engine off is invisible.
+[*]Terrain, buildings, being in a vehicle, rain (mostly at 5.8 GHz) and jamming reduce the range.
+[*]Distance is estimated from received power: a drone hidden behind an obstacle seems farther than it is.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

@@ -43,6 +43,33 @@ final class QualificationAwardRepository
         return $this->enrichedReady;
     }
 
+    /**
+     * Qualifications et brevets proposés (passage automatique en mode « proposer ») qui attendent la décision d'un
+     * responsable, les plus anciens d'abord. Liste vide tant que le référentiel enrichi n'est pas installé.
+     *
+     * @return list<array{id: int|string, user_id: int|string, definition_id: int|string, name: string, since: ?string}>
+     */
+    public function pendingProposals(int $tenantId, int $limit = 100): array
+    {
+        if (!$this->enrichedReady()) {
+            return [];
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT pq.id, pq.user_id, pq.definition_id, d.name, COALESCE(pq.updated_at, pq.created_at) AS since
+                 FROM personnel_qualifications pq
+                 INNER JOIN personnel_qualification_definitions d ON d.id = pq.definition_id AND d.tenant_id = ?
+                 WHERE (pq.tenant_id = ? OR pq.tenant_id IS NULL) AND pq.admin_status = ?
+                 ORDER BY since ASC LIMIT ' . max(1, min(500, $limit))
+            );
+            $st->execute([$tenantId, $tenantId, QualificationAdminStatus::IN_EVALUATION]);
+
+            return $st->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
     /** @return array<string, mixed>|null */
     public function find(int $id, ?int $tenantId = null): ?array
     {

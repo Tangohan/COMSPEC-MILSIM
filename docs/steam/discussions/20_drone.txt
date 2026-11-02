@@ -1,0 +1,122 @@
+[APP] Drone — appairage, caméra jour / nuit / thermique, tâches, frappe, suivi de cibles, flotte de 4 drones
+
+[i]Message 1/2[/i]
+[h1]Drone[/h1]
+[i]Catégorie : Appui et feux · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Piloter depuis le téléphone un drone posé par vous (quadricoptère, drone de sac à dos, drones du mod Mavic) : caméra de nacelle, ordres de vol, tâches sur la carte, marquage et suivi de cibles, clichés envoyés à Athena, frappe kamikaze si le serveur l'autorise, et jusqu'à 4 drones en flotte.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est dans la catégorie [b]Appui et feux[/b] (pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller. Une fois un drone appairé : clic droit sur la carte [b]Ordre au drone[/b], outil de carte [b]Drone : ordres sur la carte[/b], et touches CBA (voir plus bas).
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Appairage[/b] : posez le drone à vos pieds (depuis le sac à dos : Assembler). L'app liste les drones au sol à moins de 15 m : [b]APPAIRER[/b]. Un drone déjà appairé à un autre joueur présent est refusé.
+[*][b]Liaison et batterie[/b] : la liaison porte jusqu'à la distance réglée par le serveur, divisée par trois si le relief vous sépare. Liaison perdue : le drone rentre seul à son point de décollage (en CQB, il se pose sur place). Batterie : alerte à 20 %, retour automatique à 10 %.
+[*][b]Caméra[/b] : [b]OUVRIR LA CAMÉRA[/b] ; glisser ou cliquer sur l'image pour viser, zoom x1 à x8, [b]VISION JOUR[/b], [b]VISION NOCTURNE[/b], [b]THERMIQUE[/b], [b]PHOTO[/b], [b]MARQUER[/b], [b]PLEIN ÉCRAN[/b], [b]CAMÉRA PLEIN ÉCRAN[/b] (Échap pour revenir). Qualité du flux BASSE ou HAUTE, source de l'image (drone, caméra du téléphone ou caméra casque). Sans flux : neige « NO DATA » ; liaison faible : image figée, macroblocs, déchirures.
+[*][b]VOL[/b] : [b]DÉMARRER ET DÉCOLLER[/b], [b]STATIONNAIRE[/b], [b]ME SUIVRE[/b], [b]REVENIR À MOI[/b], [b]ATTERRIR[/b] ; altitude 15 à 150 m, vitesse 20 à 90 km/h ; [b]Profil CQB[/b] (vol bas en intérieur, 2 à 8 m, 5 à 15 km/h, arrêt devant un obstacle). [b]PRENDRE LA MANETTE[/b] : pilotage direct par boutons ou clavier (ZQSD ou WASD, A / E ou Q / E pour pivoter, Espace monter, C descendre). [b]Suivre un joueur[/b] (15 m derrière) et [b]ME FILMER[/b] / [b]FILMER[/b] (caméra braquée sur lui). [b]Veille[/b] : [b]SE POSER[/b] ou [b]RESTER EN L'AIR[/b], consommation réduite, [b]REPRENDRE[/b]. [b]Dépannage[/b] : [b]FORCER L'EXÉCUTION[/b], [b]PILOTAGE MANUEL[/b] (terminal UAV). [b]Identité[/b] : nom et icône (QUADRI, AILE, HEXA, NANO, FPV). [b]Transférer l'appairage[/b] à un allié à moins de 50 m, [b]DÉSAPPAIRER[/b].
+[*][b]TÂCHES[/b] : [b]ALLER[/b], [b]ORBITE[/b], [b]OBSERVER[/b] (rayon 50 à 500 m, caméra fixée sur le point), [b]ESCORTE[/b] (allié à moins de 2 km, 30 m derrière) sur une grille ou [b]CHOISIR SUR LA CARTE[/b], puis [b]ENVOYER[/b]. [b]Frappe[/b] : à moins de 5 m du drone, choisissez une charge de votre inventaire (grenade, roquette, missile ou explosif, tout mod) et [b]ARMER[/b] ; puis [b]PIQUER SUR LE LASER[/b] (laser d'un membre de votre groupe) ou [b]PIQUER SUR LA GRILLE[/b], second appui sous 5 s pour confirmer ; drone perdu. [b]DÉSARMER[/b] rend la charge. [b]Recherche[/b] (100, 250 ou 500 m) : bandes parallèles puis croisées ; signale le premier ennemi vu, ou pique dessus si armé.
+[*][b]CIBLES[/b] : cibles marquées (LOCK), suivies sur la carte tant que la caméra les voit ; [b]EN MARQUEUR[/b], [b]EN FICHE SSE[/b], [b]OUBLIER LA CIBLE[/b]. [b]Suivi par le drone[/b] : [b]AJOUTER[/b] des cibles, ordre [b]PLUS TÔT[/b] / [b]PLUS TARD[/b], [b]FILER[/b] ou [b]ORBITE[/b], temps par cible ([b]AU PILOTE[/b], 30 s, 1 ou 2 min), [b]LANCER LE SUIVI[/b], [b]CIBLE SUIVANTE[/b] ; en boucle. Détections automatiques (si le serveur l'active) : personnel jusqu'à 450 m, véhicules jusqu'à 700 m, avec [b]MARQUER (LOCK)[/b], [b]MARQUEUR SUR LA CARTE[/b], [b]FRAPPER[/b].
+[*][b]PHOTOS[/b] : [b]OUVRIR LE VISEUR PHOTO[/b] (cadrer, zoomer, marquer, surligner d'un cadre ou d'un cercle), puis fiche : titre obligatoire, description, SSE, confidentiel ; envoi vers Athena ou garde sur le téléphone.
+[*][b]FLOTTE[/b] : jusqu'à 4 drones, un seul piloté ([b]PILOTER[/b]), les autres tiennent seuls un rôle : [b]ME SUIVRE[/b], [b]CQB[/b], [b]SURVEILLER LE POINT[/b], [b]SURVEILLER LE JOUEUR[/b], [b]GARDE[/b] (si le repérage automatique est activé), [b]RECHERCHE[/b] ; [b]RTB[/b], [b]LIBÉRER[/b]. [b]Essaim[/b] : [b]TOUS ME SUIVRE[/b], [b]TOUS EN CQB[/b], [b]TOUS EN GARDE[/b], [b]TOUS EN RECHERCHE[/b], [b]TOUS SUR LE POINT[/b], [b]TOUS STATIONNAIRE[/b], [b]TOUS RTB[/b], [b]TOUS ATTERRIR[/b]. [b]Télécommande sur votre téléphone[/b] : QR code pour piloter depuis votre vrai téléphone connecté à Athena.
+[*][b]JOURNAL[/b] : chaque ordre et chaque retour du drone, datés.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Posez le drone à vos pieds, ouvrez l'app, [b]APPAIRER[/b].
+[*]Onglet [b]VOL[/b] : [b]DÉMARRER ET DÉCOLLER[/b], réglez altitude et vitesse.
+[*]Onglet [b]TÂCHES[/b] : [b]OBSERVER[/b], [b]CHOISIR SUR LA CARTE[/b], [b]ENVOYER[/b].
+[*][b]OUVRIR LA CAMÉRA[/b], passez en [b]THERMIQUE[/b], [b]MARQUER[/b] un ennemi : il apparaît sur la carte du camp.
+[*]Rentrez avec [b]REVENIR À MOI[/b] puis [b]ATTERRIR[/b].
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Portée de la liaison drone (m)[/b] (serveur, 6 000 m par défaut ; avec le mod Mavic, sa propre portée s'applique si elle est plus grande).
+[*][b]COMSPEC › ATAK · Simulation › Drones armés[/b] (serveur) : autorise ARMER et les frappes.
+[*][b]COMSPEC › ATAK · Simulation › Repérage automatique par les drones[/b] (serveur, décoché par défaut) : détections automatiques et rôle GARDE.
+[*][b]COMSPEC › ATAK · Simulation › Vidéo dépendante des relais[/b] (serveur) : avec des relais dans la mission, qualité (1080p à image par image), fluidité et délai suivent le chemin radio.
+[*][b]COMSPEC › ATAK · Marquage de cible[/b] (serveur) : marquage à la caméra, marqueur qui suit la cible, délai et sort d'une cible perdue, reprise automatique.
+[*]Touches CBA, rubrique [b]COMSPEC ATAK[/b] : [b]Marquer la cible (réticule)[/b] (Ctrl+T par défaut), [b]Vue drone sur la carte[/b], [b]Drone : RECHERCHE[/b], [b]Drone : ME SUIVRE[/b], [b]Drone : RTB[/b], [b]Drone : ATTERRIR[/b] (libres par défaut).
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : clic droit [b]Ordre au drone[/b] (aller, rechercher, stationnaire, atterrir au point), [b]Zone interdite au drone[/b] (partagée au camp) ; outil [b]Drone : ordres sur la carte[/b] pour tracer une route (une fois, en boucle ou en aller-retour) ou une zone de recherche ; vue drone en plein écran ou incrustée.
+[*][b]Vidéo live[/b] : vos équipiers voient la nacelle de votre drone en lecture seule. [b]Galerie[/b] : vos clichés. [b]FRS[/b] : fiche SSE préremplie depuis une cible.
+[*][b]Athena[/b] : envoi des clichés et télécommande par QR code.
+[*][b]Terminal UAV[/b] : le connecter passe en pilotage manuel ; tant que le téléphone pilote, personne d'autre ne peut se connecter au drone.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]L'appairage se fait au contact : rien à distance.
+[*]Tout ordre de vol du téléphone reprend la main sur le terminal UAV et arrête le suivi des cibles.
+[*]Les tâches ORBITE et OBSERVER font quitter le profil CQB.
+[*]Image noire : [b]CAMÉRA PLEIN ÉCRAN[/b] passe en vue directe.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x) ; refondue en 1.11.0.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Fly from the phone a drone you have placed (quadcopter, backpack drone, Mavic mod drones): gimbal camera, flight orders, map tasks, target marking and tracking, snapshots sent to Athena, kamikaze strike if the server allows it, and up to 4 drones as a fleet.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app sits in the [b]Support and Fires[/b] category (not in the dock). If it was uninstalled, the App Store reinstalls it. Once a drone is paired: map right-click [b]Drone order[/b], map tool [b]Drone: map orders[/b], and CBA keys (see below).
+
+[h3]Features[/h3]
+[list]
+[*][b]Pairing[/b]: place the drone at your feet (from the backpack: Assemble). The app lists grounded drones within 15 m: [b]Pair[/b]. A drone already paired to another player in the mission is refused.
+[*][b]Link and battery[/b]: the link reaches the distance set by the server, divided by three when terrain separates you. Link lost: the drone flies back to its take-off point on its own (in CQB it lands on the spot). Battery: warning at 20 %, automatic return at 10 %.
+[*][b]Camera[/b]: [b]OPEN CAMERA[/b]; drag or click on the image to aim, zoom x1 to x8, [b]DAY VISION[/b], [b]NIGHT VISION[/b], [b]THERMAL[/b], photo, [b]MARK[/b], [b]FULL SCREEN[/b], [b]FULL-SCREEN CAMERA[/b] (Esc to return). Feed quality low or high, image source (drone, phone camera or helmet camera). No feed: "NO DATA" snow; weak link: frozen image, macroblocks, tearing.
+[*][b]Flight[/b]: [b]START AND TAKE OFF[/b], [b]HOVER[/b], [b]FOLLOW ME[/b], [b]BACK TO ME[/b], [b]Land[/b]; altitude 15 to 150 m, speed 20 to 90 km/h; [b]CQB profile[/b] (low indoor flight, 2 to 8 m, 5 to 15 km/h, stops before obstacles). [b]TAKE THE JOYSTICK[/b]: direct control by buttons or keyboard (ZQSD or WASD, A / E or Q / E to turn, Space up, C down). [b]Follow a player[/b] (15 m behind) and [b]FILM ME[/b] / [b]FILM[/b] (camera kept on them). [b]Standby[/b]: [b]LAND[/b] or [b]LOITER[/b], reduced consumption, [b]RESUME[/b]. [b]Recovery[/b]: [b]FORCE EXECUTION[/b], [b]MANUAL CONTROL[/b] (UAV terminal). [b]Identity[/b]: name and icon (quad, wing, hexa, nano, FPV). [b]Transfer pairing[/b] to an ally within 50 m, [b]UNPAIR[/b].
+[*][b]TASKS[/b]: [b]GO[/b], [b]Orbit[/b], observe (radius 50 to 500 m, camera locked on the point), [b]Escort[/b] (ally within 2 km, 30 m behind) on a grid or [b]PICK ON MAP[/b], then [b]SEND[/b]. [b]Strike[/b]: within 5 m of the drone, pick a charge from your inventory (grenade, rocket, missile or explosive, any mod) and [b]ARM[/b]; then [b]DIVE ON LASER[/b] (laser from a member of your group) or [b]DIVE ON GRID[/b], second press within 5 s to confirm; the drone is lost. [b]DISARM[/b] gives the charge back. [b]Search[/b] (100, 250 or 500 m): parallel then crossed lanes; reports the first enemy seen, or dives on it if armed.
+[*][b]TARGETS[/b]: marked targets (LOCK), tracked on the map while the camera sees them; to map marker, to SSE sheet, forget the target. [b]Drone tracking[/b]: [b]ADD[/b] targets, move them earlier or later, shadow or orbit, time per target (at the pilot's call, 30 s, 1 or 2 min), [b]START TRACKING[/b], [b]NEXT TARGET[/b]; it loops. Automatic detections (if the server enables them): personnel up to 450 m, vehicles up to 700 m, with mark (LOCK), map marker, [b]STRIKE[/b].
+[*][b]PHOTOS[/b]: [b]OPEN PHOTO VIEWFINDER[/b] (frame, zoom, mark, highlight with a box or a circle), then the sheet: title required, description, SSE, confidential; send to Athena or keep on the phone.
+[*][b]FLEET[/b]: up to 4 drones, only one piloted ([b]PILOT[/b]), the others hold a role on their own: follow me, CQB, watch the point, watch the player, guard (if automatic spotting is enabled), search; RTB, release. [b]Swarm[/b]: all follow me, all CQB, all guard, all search, all on the point, all hover, all RTB, all land. [b]Remote on your phone[/b]: QR code to fly from your real phone logged into Athena.
+[*][b]LOG[/b]: every order and every drone report, time-stamped.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Place the drone at your feet, open the app, [b]Pair[/b].
+[*][b]Flight[/b] tab: [b]START AND TAKE OFF[/b], set altitude and speed.
+[*][b]TASKS[/b] tab: observe, [b]PICK ON MAP[/b], [b]SEND[/b].
+[*][b]OPEN CAMERA[/b], switch to [b]THERMAL[/b], [b]MARK[/b] an enemy: it shows on your side's map.
+[*]Come back with [b]BACK TO ME[/b] then [b]Land[/b].
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Drone link range[/b] (server, 6,000 m by default; with the Mavic mod, its own range applies if larger).
+[*][b]COMSPEC › ATAK · Simulation › Armed drones[/b] (server): allows ARM and strikes.
+[*][b]COMSPEC › ATAK · Simulation › Automatic drone spotting[/b] (server, off by default): automatic detections and the guard role.
+[*][b]COMSPEC › ATAK · Simulation › Video feeds follow the relays[/b] (server): with relays in the mission, quality (1080p down to frame by frame), smoothness and delay follow the radio path.
+[*][b]COMSPEC › ATAK · Marquage de cible[/b] (server): camera marking, marker following the target, lost-target delay and handling, automatic re-acquisition.
+[*]CBA keys, [b]COMSPEC ATAK[/b] section: [b]Mark target (reticle)[/b] (Ctrl+T by default), [b]Drone view on map[/b], [b]Drone: SEARCH[/b], [b]Drone: FOLLOW ME[/b], [b]Drone: RTB[/b], [b]Drone: LAND[/b] (unbound by default).
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: right-click [b]Drone order[/b] (go, search, hover, land at the point), [b]Drone no-fly zone[/b] (shared with your side); [b]Drone: map orders[/b] tool to draw a route (once, loop or back and forth) or a search area; drone view full screen or inset.
+[*][b]Live Feed[/b]: teammates see your gimbal read-only. [b]Gallery[/b]: your snapshots. [b]FRS[/b]: SSE sheet pre-filled from a target.
+[*][b]Athena[/b]: snapshot upload and remote by QR code.
+[*][b]UAV terminal[/b]: connecting it switches to manual control; while the phone flies, nobody else can connect to the drone.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Pairing is by contact: nothing remotely.
+[*]Any flight order from the phone takes back control from the UAV terminal and stops target tracking.
+[*]Orbit and observe tasks leave the CQB profile.
+[*]Black image: [b]FULL-SCREEN CAMERA[/b] switches to the direct view.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x); overhauled in 1.11.0.

@@ -1,0 +1,100 @@
+[APP] Médical — alertes et triage, suivi des troupes avec moniteur, MEDEVAC 9-line, dossiers médicaux de l'unité
+
+[i]Message 1/2[/i]
+[h1]Médical[/h1]
+[i]Catégorie : Spécialités · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+L'outil des médecins et des chefs d'équipe : voir et trier les alertes médicales, suivre l'état des joueurs de votre camp avec un moniteur cardiaque, demander et suivre une évacuation sanitaire (MEDEVAC 9-line), et lire les dossiers médicaux de l'unité saisis sur Athena.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est dans la catégorie [b]Spécialités[/b] (pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller. Avec l'addon Overwatch, la touche [b]MEDEVAC rapide[/b] (rubrique COMSPEC Overwatch, raccourcis activés, sans touche par défaut) ouvre aussi l'app.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]ALERTES[/b] : alertes médicales reçues d'Athena (ARRÊT CARDIAQUE, INCONSCIENT, KIA, BILAN, ASSISTANCE) avec indicatif, grille, état de triage et heure. Toucher une alerte affiche le groupe sanguin et le poids du blessé et le bouton [b]LOCALISER[/b] (carte centrée). Les médecins et chefs d'équipe trient : [b]EN COURS[/b], [b]TRAITÉ[/b], [b]KIA[/b] ; les autres sont en lecture seule.
+[*][b]TROUPES[/b] : joueurs de votre camp, les plus graves en premier : ARRÊT, INCONSCIENT, CRITIQUE, BLESSÉ, STABLE, KIA, avec classe d'hémorragie estimée (I à IV), pouls, distance et grille. [b]MONITEUR[/b] affiche en haut le tracé cardiaque du blessé choisi (par défaut le plus grave), avec son groupe sanguin et son poids.
+[*][b]MEDEVAC[/b] : demande 9-line. [b]REMPLIR AUTO (blessés à 50 m)[/b] compte les blessés alliés autour de vous et choisit la priorité. Champs : priorité (URGENT, PRIORITAIRE, ROUTINE), blessés T1, T2, T3, couchés et assis, équipement spécial (AUCUN, TREUIL, EXTRACTION, RESPIRATEUR), sécurité de la LZ, marquage (FUMÉE, PANNEAU, PYRO, AUCUN) et couleur, grille de la LZ, remarques ; [b]LZ À MA POSITION[/b], [b]LZ SUR LA CARTE[/b], [b]DEMANDER LE MEDEVAC[/b].
+[*][b]Suivi des MEDEVAC[/b] : chaque demande du camp passe par DEMANDÉE, ACCEPTÉE, EN VOL, SUR ZONE, TERMINÉE. Les autres joueurs font avancer l'étape, le demandeur peut [b]ANNULER[/b] ; [b]LZ[/b] centre la carte sur la zone.
+[*][b]DOSSIERS[/b] : fiches médicales de la communauté (groupe sanguin, poids, taille, allergies, intolérances), [b]EN JEU[/b] ou [b]TOUTE L'UNITÉ[/b], recherche par indicatif ou fonction, [b]MONITEUR[/b] pour un joueur présent. La liste est gardée sur votre PC (lisible hors ligne) ; [b]ACTUALISER[/b] la relit sur Athena.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Un équipier tombe : onglet [b]TROUPES[/b], repérez-le en tête de liste et [b]MONITEUR[/b] pour suivre son pouls.
+[*]Onglet [b]MEDEVAC[/b] : [b]REMPLIR AUTO[/b], vérifiez l'équipement et la sécurité, posez la LZ ([b]LZ SUR LA CARTE[/b]).
+[*][b]DEMANDER LE MEDEVAC[/b] : la demande part au camp et apparaît dans le suivi.
+[*]Suivez les étapes jusqu'à TERMINÉE ; dans [b]ALERTES[/b], passez l'alerte en [b]TRAITÉ[/b].
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Données médicales › Afficher : …[/b] (serveur, un réglage par donnée et par endroit) : état, pouls et tracé, tension, saturation, perte sanguine, hémorragie, douleur, blessures, garrots, fractures, médicaments, triage, groupe sanguin, poids ; et les endroits carte et BFT, app Médical, alertes, liaison NFC et rapports. Décoché, la donnée disparaît partout pour tout le monde ; coché, chaque joueur peut encore la cacher pour lui dans Réglages › Réalisme.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE[/b] : l'état des blessés vient d'ACE Médical (arrêt cardiaque, inconscience, saignement) ; le groupe sanguin vient de la plaque d'identité ACE, d'ACE Médical, de KAT ou du profil COMSPEC.
+[*][b]Athena[/b] : les alertes et les dossiers demandent la liaison ; le triage passe par Overwatch. Sans Athena, TROUPES et MEDEVAC fonctionnent en jeu.
+[*][b]Overwatch[/b] : avec l'addon et Athena actif, la demande MEDEVAC part aussi au poste web et la LZ est marquée.
+[*][b]Carte[/b] : [b]LOCALISER[/b], LZ posée ou centrée.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Les dossiers sont réservés aux médecins (fonction médicale sur Athena), à la gestion et au pilotage des effectifs.
+[*]Une MEDEVAC demande au moins un blessé.
+[*]Une donnée masquée par le serveur, la communauté ou vous-même n'apparaît nulle part dans l'ATAK.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x) ; onglet DOSSIERS ajouté au regroupement 2.5.0.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+The tool for medics and team leaders: see and triage medical alerts, follow the condition of your side's players with a heart monitor, request and track a medical evacuation (MEDEVAC 9-line), and read the unit's medical records entered on Athena.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app sits in the [b]Specialized[/b] category (not in the dock). If it was uninstalled, the App Store reinstalls it. With the Overwatch addon, the quick MEDEVAC key (COMSPEC Overwatch section, shortcuts enabled, unbound by default) also opens the app.
+
+[h3]Features[/h3]
+[list]
+[*][b]ALERTS[/b]: medical alerts received from Athena (cardiac arrest, unconscious, KIA, report, assistance) with callsign, grid, triage status and time. Tapping an alert shows the casualty's blood type and weight and the [b]LOCATE[/b] button (map centred). Medics and team leaders triage: in progress, [b]TREATED[/b], KIA; others are read-only.
+[*][b]TROOPS[/b]: your side's players, most serious first: arrest, unconscious, critical, wounded, stable, KIA, with estimated haemorrhage class (I to IV), pulse, distance and grid. [b]MONITOR[/b] shows at the top the heart trace of the chosen casualty (the most serious by default), with blood type and weight.
+[*][b]MEDEVAC[/b]: 9-line request. [b]AUTO-FILL (casualties within 50 m)[/b] counts friendly casualties around you and sets the priority. Fields: [b]Priority[/b] (urgent, priority, routine), [b]Urgent casualties (T1)[/b], [b]Priority casualties (T2)[/b], [b]Delayed casualties (T3)[/b], litter and ambulatory, [b]Special equipment[/b] (none, hoist, extraction, ventilator), [b]LZ security[/b], marking (smoke, panel, pyro, none) and colour, [b]LZ grid[/b], remarks; [b]LZ AT MY POSITION[/b], [b]LZ ON MAP[/b], [b]REQUEST MEDEVAC[/b].
+[*][b]MEDEVAC tracking[/b]: each request of your side goes through [b]REQUESTED[/b], [b]ACCEPTED[/b], [b]AIRBORNE[/b], [b]ON STATION[/b], [b]COMPLETED[/b]. Other players advance the step, the requester can cancel; [b]LZ[/b] centres the map on the zone.
+[*][b]FILES[/b]: the community's medical records (blood type, weight, height, allergies, drug intolerances), [b]IN GAME[/b] or [b]WHOLE UNIT[/b], search by callsign or job, [b]MONITOR[/b] for a player in the mission. The list is kept on your PC (readable offline); [b]REFRESH[/b] reads it again from Athena.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]A teammate goes down: [b]TROOPS[/b] tab, find him at the top of the list and [b]MONITOR[/b] to follow his pulse.
+[*][b]MEDEVAC[/b] tab: [b]AUTO-FILL[/b], check equipment and security, set the LZ ([b]LZ ON MAP[/b]).
+[*][b]REQUEST MEDEVAC[/b]: the request goes to your side and shows in the tracking.
+[*]Follow the steps up to [b]COMPLETED[/b]; in [b]ALERTS[/b], set the alert to [b]TREATED[/b].
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Données médicales › Show: …[/b] (server, one setting per data item and per place): state, pulse and trace, blood pressure, saturation, blood loss, haemorrhage, pain, wounds, tourniquets, fractures, medications, triage, blood type, weight; and the places map and BFT, Medical app, alerts, NFC link and reports. Unchecked, the item disappears everywhere for everyone; checked, each player can still hide it for himself in Settings › Realism.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE[/b]: casualty state comes from ACE Medical (cardiac arrest, unconsciousness, bleeding); blood type comes from the ACE dog tag, ACE Medical, KAT or the COMSPEC profile.
+[*][b]Athena[/b]: alerts and records need the link; triage goes through Overwatch. Without Athena, TROOPS and MEDEVAC work in game.
+[*][b]Overwatch[/b]: with the addon and Athena on, the MEDEVAC request also goes to the web post and the LZ is marked.
+[*][b]Map[/b]: [b]LOCATE[/b], LZ set or centred.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Records are restricted to medics (medical job on Athena), community management and personnel staff.
+[*]A MEDEVAC needs at least one casualty.
+[*]An item hidden by the server, the community or yourself shows nowhere in the ATAK.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x); FILES tab added with the 2.5.0 bundle.

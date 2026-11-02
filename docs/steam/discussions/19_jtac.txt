@@ -1,0 +1,114 @@
+[APP] JTAC — contrôle CAS du check-in au BDA : 9-LINE calculé, readback, CLEARED HOT, carte tactique
+
+[i]Message 1/2[/i]
+[h1]JTAC[/h1]
+[i]Catégorie : Appui et feux · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Contrôler un appui aérien rapproché comme un JTAC, à la façon de la doctrine OTAN : choisir un appareil ami en station, préparer et transmettre le 9-LINE, suivre le readback, la corrélation et la passe, autoriser ou annuler le tir, puis transmettre le BDA. Le même écran sert à l'équipage qui reçoit le brief (vue ÉQUIPAGE).
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est dans la catégorie [b]Appui et feux[/b] (pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller. Côté équipage, un 9-LINE reçu arrive par notification et vibreur, et l'app s'ouvre sur la vue ÉQUIPAGE. L'outil de la carte [b]JTAC : IP » cible[/b] renvoie aussi vers l'onglet 9-LINE.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Terminal[/b] : bandeau avec votre indicatif, code et état du laser, heure ; frise de la mission CHECK-IN, BRIEF, READBACK, CORREL, IN, CLEARED (HOT ou DRY), OFF, BDA ; bandeau d'état en gros (ce qu'on attend, ce qu'on peut décider).
+[*][b]SITU[/b] : [b]VERROUILLER[/b] la cible (votre point laser s'il y en a un, sinon le point visé jusqu'à 3 km), [b]SUR LA CARTE[/b], [b]EFFACER[/b] ; grille, altitude en pieds et mètres, azimut et distance depuis vous, amis les plus proches (DANGER CLOSE si trop près). Liste des [b]Appareils en station[/b] (indicatif, type, équipage joueur ou IA, altitude, vitesse, carburant, nacelle, armement air-sol restant) : [b]CHOISIR[/b], puis [b]PRÉPARER LE 9-LINE[/b].
+[*][b]9-LINE[/b] : game plan ([b]TYPE 1[/b], [b]TYPE 2[/b], [b]TYPE 3[/b], méthode [b]BOT[/b] ou [b]BOC[/b], armement demandé, marquage LASER, IR, FUMIGÈNE ou AUCUN, code laser 1111, 1688, 1788 ou 1888). Les lignes 2 (cap magnétique IP » cible), 3 (distance), 4 (altitude), 6 (grille 10 chiffres), 7 (marquage) et 8 (amis) se calculent ; IP, lignes 5 et 9, axe final (FAH), menaces sont à saisir. DANGER CLOSE : initiales du chef obligatoires. [b]POSER L'IP SUR LA CARTE[/b], [b]POSER LA CIBLE[/b], puis [b]TRANSMETTRE LE 9-LINE[/b] (ou [b]RETRANSMETTRE (CORRECTION)[/b]).
+[*][b]CARTE[/b] : carte tactique avec cible, IP, axe d'entrée, cône FAH, ligne laser-cible, amis et appareils ; boutons CIBLE, MOI, ACFT pour centrer, [b]POSER TGT[/b] et [b]POSER IP[/b]. En paysage, elle reste à gauche des onglets.
+[*][b]CTRL[/b] : altitude, vitesse et géométrie de l'appareil (dans l'axe FAH ou non, vérifiée aussi au moment du IN) ; readback attendu et reçu avec [b]READBACK CORRECT[/b] ou [b]CORRECTION[/b] ; [b]LASER ON[/b], [b]LASER OFF[/b], [b]MARQUE[/b] ; [b]CLEARED HOT[/b] (ou CLEARED TO ENGAGE en type 3), [b]CONTINUE DRY[/b], [b]ABORT ABORT ABORT[/b]. L'autorisation reste grisée tant qu'il manque le readback, l'appel IN (ou TALLY / SPOT en type 3) ou les initiales DANGER CLOSE. BDA : [b]DÉTRUIT[/b], [b]ENDOMMAGÉ[/b], [b]SANS EFFET[/b] ou [b]RE-ATTACK[/b], puis [b]NOUVELLE MISSION[/b].
+[*][b]LOG[/b] : journal radio horodaté de la mission.
+[*][b]Vue ÉQUIPAGE[/b] (joueur à bord de l'appareil briefé) : le 9-LINE reçu et les appels du pilote [b]READBACK[/b], [b]CONTACT[/b], [b]TALLY[/b], [b]SPOT[/b], [b]VISUAL[/b], [b]NO JOY[/b], [b]IN[/b], [b]WEAPONS AWAY[/b], [b]OFF[/b], [b]UNABLE[/b], et [b]CARTE ATAK[/b] centrée sur la cible.
+[*][b]Équipage IA[/b] : le JTAC note lui-même les appels entendus à la radio (barre « Appels du pilote (radio) »).
+[*][b]9-LINE sur un autre écran[/b] : [b]OUVRIR LA PAGE 9-LINE[/b] dans le navigateur, ou QR code à scanner avec votre vrai téléphone connecté à Athena (dernier 9-LINE en grand, avec calculateur IP » cible). [b]OUTIL CARTE IP » CIBLE[/b] ouvre l'outil de la carte.
+[*][b]APPEL DE FEU (ARTILLERIE)[/b] : si l'appui feu typé est actif, la cible verrouillée part dans l'app CAS, onglet APPEL DE FEU.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Onglet [b]SITU[/b] : visez la cible (ou désignez-la au laser) et [b]VERROUILLER[/b] ; choisissez l'appareil dans la liste.
+[*]Onglet [b]9-LINE[/b] : type de contrôle, méthode, armement, marquage ; posez l'IP sur la carte, saisissez lignes 5 et 9 et l'axe final.
+[*][b]TRANSMETTRE LE 9-LINE[/b] : l'onglet CTRL s'ouvre. Confirmez le readback ([b]READBACK CORRECT[/b]).
+[*]Marquez la cible ([b]LASER ON[/b] ou [b]MARQUE[/b]), attendez TALLY ou SPOT, puis l'appel IN.
+[*][b]CLEARED HOT[/b] (ou [b]ABORT ABORT ABORT[/b]) ; après OFF, transmettez le BDA.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Déclinaison magnétique (°)[/b] (serveur, 0 par défaut) : sert au cap magnétique de la ligne 2 et de l'outil carte JTAC.
+[*][b]COMSPEC › ATAK · Appui feu › Appui feu typé[/b] (serveur) : fait apparaître le bouton APPEL DE FEU (ARTILLERIE).
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : outil [b]JTAC : IP » cible[/b] (clic sur l'IP puis sur la cible : cap magnétique et vrai, distance en mètres et milles nautiques, altitude, ami le plus proche), repris dans l'onglet 9-LINE.
+[*][b]Athena[/b] : quand le téléphone est relié, le 9-LINE et sa géométrie (cible, IP, cône FAH, distance de risque, appareil) partent aussi sur Athena et le poste Overwatch. La complétion automatique de toute la fiche (IP proposé à 5 NM, lignes 5 et 9, FAH, menaces) n'existe que si l'administration l'active sur Athena ; par défaut, réalisme.
+[*][b]ACE[/b] : le code laser choisi devient votre code laser ACE.
+[*][b]CAS[/b] : appel de feu artillerie depuis la cible verrouillée.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Seuls les appareils amis en vol avec un équipage, à moins de 40 km, apparaissent.
+[*]Avec un équipage IA, transmettez le 9-LINE à la radio : l'app le signale à l'envoi.
+[*]Les distances de risque de l'armement sont des ordres de grandeur (bombe lourde 500 m, bombe 425 m, roquettes 160 m, missile et canon 100 m).
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x) ; refaite en contrôle CAS complet du check-in au BDA en 1.47.0.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Control close air support like a JTAC, following NATO doctrine: pick a friendly aircraft on station, prepare and send the 9-LINE, follow the readback, correlation and attack run, clear or abort the release, then send the BDA. The same screen serves the aircrew that receives the brief (CREW view).
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app sits in the [b]Support and Fires[/b] category (not in the dock). If it was uninstalled, the App Store reinstalls it. On the aircrew side, a received 9-LINE arrives with a notification and vibration, and the app opens on the CREW view. The map tool [b]JTAC: IP » target[/b] also feeds the 9-LINE tab.
+
+[h3]Features[/h3]
+[list]
+[*][b]Terminal[/b]: header with your callsign, laser code and state, time; mission strip CHECK-IN, BRIEF, READBACK, CORREL, IN, CLEARED (HOT or DRY), OFF, BDA; large status banner (what is awaited, what you can decide).
+[*][b]SIT[/b]: [b]LOCK[/b] the target (your laser spot if any, otherwise the aimed point up to 3 km), [b]ON THE MAP[/b], [b]CLEAR[/b]; grid, elevation in feet and metres, bearing and distance from you, nearest friendlies (DANGER CLOSE when too close). List of [b]Aircraft on station[/b] (callsign, type, player or AI crew, altitude, speed, fuel, targeting pod, remaining air-to-ground ordnance): [b]PICK[/b], then [b]PREPARE THE 9-LINE[/b].
+[*][b]9-LINE[/b]: game plan ([b]TYPE 1[/b], [b]TYPE 2[/b], [b]TYPE 3[/b], [b]BOT[/b] or [b]BOC[/b] method, requested ordnance, LASER, IR, smoke or no mark, laser code 1111, 1688, 1788 or 1888). Lines 2 (magnetic heading IP » target), 3 (distance), 4 (elevation), 6 (10-digit grid), 7 (mark) and 8 (friendlies) are computed; IP, lines 5 and 9, final attack heading (FAH) and threats are typed in. DANGER CLOSE: commander's initials required. [b]SET IP ON MAP[/b], [b]SET TARGET[/b], then [b]SEND THE 9-LINE[/b] (or resend as a correction).
+[*][b]MAP[/b]: tactical map with target, IP, run-in line, FAH cone, laser-target line, friendlies and aircraft; TARGET, ME, ACFT buttons to centre, [b]SET TGT[/b] and [b]SET IP[/b]. In landscape it stays left of the tabs.
+[*][b]CTRL[/b]: aircraft altitude, speed and geometry (inside the FAH or not, also checked at the IN call); expected and received readback with [b]correct readback[/b] or [b]CORRECTION[/b]; [b]LASER ON[/b], [b]LASER OFF[/b], [b]MARK[/b]; [b]CLEARED HOT[/b] (or CLEARED TO ENGAGE in type 3), [b]CONTINUE DRY[/b], [b]ABORT ABORT ABORT[/b]. Clearance stays greyed out while the readback, the IN call (or TALLY / SPOT in type 3) or the DANGER CLOSE initials are missing. BDA: [b]DESTROYED[/b], [b]DAMAGED[/b], [b]NO EFFECT[/b] or [b]RE-ATTACK[/b], then [b]NEW MISSION[/b].
+[*][b]LOG[/b]: time-stamped radio log of the mission.
+[*][b]CREW view[/b] (player aboard the briefed aircraft): the received 9-LINE and pilot calls [b]READBACK[/b], [b]CONTACT[/b], [b]TALLY[/b], [b]SPOT[/b], [b]VISUAL[/b], [b]NO JOY[/b], [b]IN[/b], [b]WEAPONS AWAY[/b], [b]OFF[/b], [b]UNABLE[/b], and [b]ATAK MAP[/b] centred on the target.
+[*][b]AI aircrew[/b]: the JTAC logs the calls heard on the radio himself (pilot radio calls bar).
+[*][b]9-LINE on another screen[/b]: [b]OPEN THE 9-LINE PAGE[/b] in the browser, or a QR code to scan with your real phone logged into Athena (latest 9-LINE in large print, with an IP » target calculator). [b]IP » TARGET MAP TOOL[/b] opens the map tool.
+[*][b]CALL FOR FIRE (ARTILLERY)[/b]: when typed fire support is on, the locked target goes to the CAS app, CALL FOR FIRE tab.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*][b]SIT[/b] tab: aim at the target (or lase it) and [b]LOCK[/b]; pick the aircraft in the list.
+[*][b]9-LINE[/b] tab: control type, method, ordnance, mark; set the IP on the map, type lines 5 and 9 and the final attack heading.
+[*][b]SEND THE 9-LINE[/b]: the CTRL tab opens. Confirm the readback.
+[*]Mark the target ([b]LASER ON[/b] or [b]MARK[/b]), wait for TALLY or SPOT, then the IN call.
+[*][b]CLEARED HOT[/b] (or [b]ABORT ABORT ABORT[/b]); after OFF, send the BDA.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Magnetic declination (°)[/b] (server, 0 by default): used for the magnetic heading of line 2 and of the JTAC map tool.
+[*][b]COMSPEC › ATAK · Fire support › Typed fire support[/b] (server): shows the CALL FOR FIRE (ARTILLERY) button.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: [b]JTAC: IP » target[/b] tool (click the IP then the target: magnetic and true heading, distance in metres and nautical miles, elevation, nearest friendly), carried over to the 9-LINE tab.
+[*][b]Athena[/b]: when the phone is linked, the 9-LINE and its geometry (target, IP, FAH cone, risk distance, aircraft) also go to Athena and the Overwatch post. Full auto-completion of the sheet (IP suggested at 5 NM, lines 5 and 9, FAH, threats) only exists if staff enable it on Athena; realism by default.
+[*][b]ACE[/b]: the chosen laser code becomes your ACE laser code.
+[*][b]CAS[/b]: artillery call for fire from the locked target.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Only friendly aircraft in flight with a crew, within 40 km, are listed.
+[*]With an AI crew, pass the 9-LINE on the radio: the app tells you when sending.
+[*]Ordnance risk distances are orders of magnitude (heavy bomb 500 m, bomb 425 m, rockets 160 m, missile and gun 100 m).
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x); rebuilt as full CAS control from check-in to BDA in 1.47.0.

@@ -1,0 +1,100 @@
+[APP] Reco — note d'observation rapide : type, fiabilité, position, repère sur la carte et envoi à Athena
+
+[h1]Reco[/h1]
+[i]Catégorie : Renseignement · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Signaler en quelques secondes ce que vous voyez sur le terrain : un type d'observation, sa fiabilité, l'endroit et une phrase courte. La note pose un repère coloré sur la carte et part vers Athena. C'est la version courte, pensée pour le contact ; pour une fiche complète avec thèmes et pièces jointes, utilisez l'app FRS / FRM.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est rangée dans la catégorie [b]Renseignement[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]En-tête[/b] : RECO, l'heure, la localité la plus proche et le carroyage visé.
+[*][b]Quoi[/b] : sept tuiles à icône : Véhicule, Groupe armé, Position statique, Obstacle / mine, Civil, Infrastructure, Autre.
+[*][b]Fiabilité[/b] : [b]VU DIRECTEMENT[/b] (par moi ou mon équipe) ou [b]RAPPORTÉ[/b] (par un tiers, à confirmer).
+[*][b]Où[/b] : carroyage en saisie libre (6, 8 ou 10 chiffres, ex. 1518 1730), bouton [b]MA POSITION[/b] ou [b]POINTÉ CARTE[/b] (la carte du téléphone s'ouvre, vous touchez le point, l'app revient avec ce carroyage). La distance et l'azimut depuis vous s'affichent à côté (« ICI » à moins de 15 m, « grille illisible » si la saisie est fausse).
+[*][b]Observation[/b] : 140 caractères avec compteur, puis [b]ENVOYER LA NOTE[/b].
+[*][b]Dernières notes[/b] : les huit dernières notes de la session, en cartes de la couleur de leur type, avec carroyage et texte.
+[*][b]Disposition[/b] : en paysage, Quoi et Fiabilité à gauche, Où et Observation à droite ; en portrait, l'un sous l'autre avec défilement.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Ouvrez Reco et touchez la tuile qui correspond (par exemple [b]Véhicule[/b]).
+[*]Choisissez [b]VU DIRECTEMENT[/b] ou [b]RAPPORTÉ[/b].
+[*]Laissez votre carroyage, ou appuyez sur [b]POINTÉ CARTE[/b] et touchez l'endroit observé.
+[*]Écrivez une phrase courte (« 2 pick-up armés vers le nord »), puis [b]ENVOYER LA NOTE[/b].
+[*]Un repère apparaît sur la carte et la note s'ajoute à [b]Dernières notes[/b].
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : chaque note pose un point coloré selon le type (rouge pour un groupe armé, orange pour un véhicule, etc.) avec le type et le début du texte. POINTÉ CARTE utilise la carte du téléphone.
+[*][b]Athena[/b] : la note part vers Athena par la liaison COMSPEC Link (volet Overwatch de COMSPEC). Sans ce volet sur le serveur, l'app affiche seulement un avertissement. Le résultat de la transmission s'affiche à l'écran.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Il faut attendre 8 secondes entre deux notes.
+[*]Le texte est coupé à 140 caractères. Le texte saisi est gardé si vous quittez l'app, et vidé après un envoi réussi.
+[*]Un carroyage illisible n'empêche pas l'envoi : la note prend alors votre position.
+[*]La liste Dernières notes ne couvre que la session en cours.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Les notes de reco du téléphone existent depuis Overwatch 1.6.9 (septembre 2026) ; l'app a été refaite dans ATAK natif 1.37.0 (octobre 2026).
+
+[hr][/hr]
+
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Report in a few seconds what you see in the field: an observation type, its reliability, the place and a short sentence. The note puts a coloured marker on the map and is sent to Athena. It is the short version, meant for contact situations; for a full report with topics and attachments, use the FRS / FRM app.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app (shown as [b]Recon[/b] in English) is in the [b]Intelligence[/b] category (it is not in the dock). If it was uninstalled, the App Store reinstalls it.
+
+[h3]Features[/h3]
+[list]
+[*][b]Header[/b]: RECO, the time, the nearest locality and the target grid.
+[*][b]What[/b]: seven icon tiles: Vehicle, Armed group, Static position, Obstacle / mine, Civilian, Infrastructure, Other.
+[*][b]Reliability[/b]: [b]SEEN DIRECTLY[/b] (by me or my team) or [b]REPORTED[/b] (by a third party, to confirm).
+[*][b]Where[/b]: free grid entry (6, 8 or 10 digits, e.g. 1518 1730), [b]MY POSITION[/b] button or [b]PICK ON MAP[/b] (the phone map opens, you tap the point, the app returns with that grid). Distance and bearing from you are shown next to it ("HERE" under 15 m, "unreadable grid" if the entry is wrong).
+[*][b]Observation[/b]: 140 characters with a counter, then [b]SEND NOTE[/b].
+[*][b]Latest notes[/b]: the last eight notes of the session, as cards in the colour of their type, with grid and text.
+[*][b]Layout[/b]: in landscape, What and Reliability on the left, Where and Observation on the right; in portrait, one under the other with scrolling.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Open Recon and tap the matching tile (for example [b]Vehicle[/b]).
+[*]Choose [b]SEEN DIRECTLY[/b] or [b]REPORTED[/b].
+[*]Keep your own grid, or press [b]PICK ON MAP[/b] and tap the observed spot.
+[*]Write a short sentence ("2 armed pick-ups heading north"), then [b]SEND NOTE[/b].
+[*]A marker appears on the map and the note is added to [b]Latest notes[/b].
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: each note places a dot coloured by type (red for an armed group, orange for a vehicle, etc.) with the type and the start of the text. PICK ON MAP uses the phone map.
+[*][b]Athena[/b]: the note is sent to Athena through the COMSPEC Link (COMSPEC's Overwatch component). Without that component on the server, the app only shows a warning. The transmission result is shown on screen.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]You must wait 8 seconds between two notes.
+[*]The text is cut at 140 characters. Typed text is kept if you leave the app, and cleared after a successful send.
+[*]An unreadable grid does not block sending: the note then uses your position.
+[*]The Latest notes list only covers the current session.
+[/list]
+
+[h3]Introduced in[/h3]
+Phone recon notes have existed since Overwatch 1.6.9 (September 2026); the app was rebuilt in native ATAK 1.37.0 (October 2026).

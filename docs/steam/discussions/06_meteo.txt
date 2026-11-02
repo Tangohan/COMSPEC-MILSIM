@@ -1,0 +1,87 @@
+[APP] Météo — conditions actuelles, prévisions, aviation, parachutage et tir longue distance
+
+[h1]Météo[/h1]
+[i]Catégorie : Navigation · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Lire le temps qu'il fait là où vous êtes et ce qui arrive : vent, visibilité, températures, soleil et lune, prévisions, plus des calculs pratiques pour les pilotes, les parachutistes et les tireurs.
+
+[h3]Comment l'ouvrir[/h3]
+Sortez le téléphone ([b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main), puis écran d'accueil › catégorie [b]Navigation[/b] › [b]Météo[/b] (pas dans le dock). Désinstallée : réinstallez-la depuis l'[b]App Store[/b].
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Onglet ACTUEL[/b] : température, ciel (dégagé, nuageux, couvert, bruine, pluie…), vent (provenance, degrés, m/s et km/h), grille et heure ; couverture nuageuse, pluie, brouillard, rafales, humidité, pression, visibilité estimée (brouillard, pluie, distance de vue) ; lever et coucher du soleil calculés pour la carte, éclairement de la lune, prochain lever ou coucher, et rappel des JVN quand la nuit est noire.
+[*][b]Onglet PRÉVISIONS[/b] : échéance du prochain changement, couverture nuageuse et brouillard actuels puis prévus (en hausse, en baisse, stable), risque de pluie, conseil tactique (brouillard attendu, dégradation, amélioration), lumière des 6 prochaines heures (jour, crépuscule, nuit).
+[*][b]Onglet AVIATION / TIR[/b] : pression, altitude pression, altitude-densité (avec conseil pour les hélicoptères), densité de l'air, vent au sol ; [b]Parachutage[/b] : sens de la dérive, durée et dérive pour SOA 300 m, HAHO 3 000 m, HALO 4 000 m et depuis votre hauteur ; [b]Tir à longue distance[/b] : vent traversier et de face / arrière selon la direction où vous regardez, dérive approchée à 300, 600 et 1 000 m (en m et en mrad) pour 5,56 mm, 7,62 mm, .338 LM et 12,7 mm.
+[*][b]ACTUALISER[/b] : relit les valeurs (la page ne se met pas à jour seule).
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Avant un saut, ouvrez Météo › [b]AVIATION / TIR[/b].
+[*]Lisez la section Parachutage : sens de la dérive et distance pour votre type de saut.
+[*]Décalez votre point de largage dans le sens inverse de la dérive.
+[*]Au sol, tournez-vous vers la cible et touchez [b]ACTUALISER[/b] pour lire le vent traversier et la correction.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié. (Le réglage [b]COMSPEC › ATAK · Simulation › La météo gêne le réseau[/b] concerne le signal du téléphone, pas cette app.)
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE[/b] : avec ACE Weather, température, humidité et pression viennent d'ACE ; sans lui, elles sont estimées (la section Conditions l'indique).
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Les dérives de tir sont une approximation, pas un calculateur balistique complet (voir l'app Sniper).
+[*]Le tir longue distance se calcule sur la direction où vous regardez au moment de l'affichage.
+[*]La visibilité est une estimation et ne dépasse jamais la distance de vue du jeu.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Read the weather where you are and what is coming: wind, visibility, temperatures, sun and moon, forecast, plus practical calculations for pilots, paratroopers and shooters.
+
+[h3]How to open it[/h3]
+Take out the phone ([b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand), then home screen › [b]Navigation[/b] category › [b]Weather[/b] (not in the dock). Uninstalled: reinstall it from the [b]App Store[/b].
+
+[h3]Features[/h3]
+[list]
+[*][b]CURRENT tab[/b]: temperature, sky (clear, cloudy, overcast, drizzle, rain…), wind (direction, degrees, m/s and km/h), grid and time; cloud cover, rain, fog, gusts, humidity, pressure, estimated visibility (fog, rain, view distance); sunrise and sunset calculated for the map, moonlight, next sunrise or sunset, and an NVG reminder when the night is dark.
+[*][b]FORECAST tab[/b]: time of the next change, current then forecast cloud cover and fog (rising, falling, stable), chance of rain, tactical advice (fog expected, worsening, improving), light for the next 6 hours (day, twilight, night).
+[*][b]AVIATION / FIRING tab[/b]: pressure, pressure altitude, density altitude (with advice for helicopters), air density, surface wind; [b]Airdrop[/b]: drift direction, time and drift for SOA 300 m, HAHO 3,000 m, HALO 4,000 m and from your own height; [b]Long-range firing[/b]: crosswind and head / tail wind for the direction you are looking, approximate drift at 300, 600 and 1,000 m (in m and mrad) for 5.56 mm, 7.62 mm, .338 LM and 12.7 mm.
+[*][b]REFRESH[/b]: reads the values again (the page does not update by itself).
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Before a jump, open Weather › [b]AVIATION / FIRING[/b].
+[*]Read the Airdrop section: drift direction and distance for your jump type.
+[*]Shift your release point in the opposite direction of the drift.
+[*]On the ground, face the target and press [b]REFRESH[/b] to read the crosswind and the correction.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting. (The [b]COMSPEC › ATAK · Simulation › Weather on the network[/b] setting affects the phone signal, not this app.)
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE[/b]: with ACE Weather, temperature, humidity and pressure come from ACE; without it they are estimated (the Conditions section says so).
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Firing drifts are an approximation, not a full ballistic calculator (see the Sniper app).
+[*]Long-range firing is calculated for the direction you are looking when the page is drawn.
+[*]Visibility is an estimate and never exceeds the game's view distance.
+[/list]
+
+[h3]Introduced in[/h3]
+Available since the first native ATAK versions (1.x).

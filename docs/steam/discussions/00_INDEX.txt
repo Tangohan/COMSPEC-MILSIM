@@ -1,0 +1,219 @@
+[GUIDE] Toutes les apps ATAK — index
+
+[i]Message 1/2[/i]
+[h1]Toutes les apps ATAK — index[/h1]
+[i]COMSPEC ATAK 2.9.34 · 63 apps · un sujet par app[/i]
+
+[h2]FRANÇAIS[/h2]
+Chaque app a son sujet dédié : à quoi elle sert, comment l'ouvrir, ses fonctions, un pas-à-pas, ses réglages CBA, ses liens avec les autres apps, Athena, ACE/ACRE/TFAR et Zeus. [b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main. Entre parenthèses : le nom de classe à saisir dans les réglages serveur Apps retirées / obligatoires / interdites.
+
+[h3]Navigation[/h3]
+[list]
+[*][b]Carte[/b] (Map) : alliés, marqueurs, mesures, dessins, recherche, calques. Voir le sujet dédié.
+[*][b]GPS[/b] (Gps) : guidage par les routes, position, satellites et précision. Voir le sujet dédié.
+[*][b]Itinéraire[/b] (Waypoints) : points de passage typés, navigation et partage au groupe. Voir le sujet dédié.
+[*][b]Routes[/b] (Route) : routes nommées, étapes typées, guidage et partage. Nouveau en 2.9.34. Voir le sujet dédié.
+[*][b]Relief[/b] (Relief) : champ de vision, altitude, ligne de vue, bâtiments en vue. Voir le sujet dédié.
+[*][b]Météo[/b] (Weather) : conditions, prévisions, aviation, parachutage, tir longue distance. Voir le sujet dédié.
+[*][b]Distances[/b] (Distance) : pas, kilomètres par mode, heures de pilote, records. Voir le sujet dédié.
+[*][b]Garmin[/b] (Garmin) : montre au poignet et suivi cardio, stress, sommeil. Voir le sujet dédié.
+[/list]
+
+[h3]Communication[/h3]
+[list]
+[*][b]Messages[/b] (Chat) : canaux du TOC, SMS entre joueurs, commandes et @grille. Voir le sujet dédié.
+[*][b]Groupe[/b] (Group) : membres, équipes de feu, rôles, indicatif. Voir le sujet dédié.
+[*][b]Alertes[/b] (Alerts) : PANIQUE, contacts, téléphones compromis, journal. Voir le sujet dédié.
+[*][b]BFT[/b] (Bft) : suivi des forces amies, vue ORBAT, filtres. Voir le sujet dédié.
+[*][b]Inter-team[/b] (InterTeam) : escouades et équipes de feu de tout le camp. Voir le sujet dédié.
+[*][b]C2[/b] (C2) : tableau de commande, contacts, ordres, liaisons perdues. Voir le sujet dédié.
+[*][b]Wave Relay[/b] (WaveRelay) : réseau maillé, relais, couverture, voix. Voir le sujet dédié.
+[*][b]Numéros[/b] (Numbers) : vos numéros, annuaire du camp, carnet. Voir le sujet dédié.
+[*][b]Discord[/b] (Discord) : écrire dans le salon Discord de l'unité, via Athena. Voir le sujet dédié.
+[/list]
+
+[h3]Appui et feux[/h3]
+[list]
+[*][b]CAS[/b] (Fires) : 9-LINE, 5-LINE, appel de feu typé (mortiers, obusier, naval…). Voir le sujet dédié.
+[*][b]JTAC[/b] (Jtac) : contrôle CAS du check-in au BDA. Voir le sujet dédié.
+[*][b]Drone[/b] (Drone) : pilotage, caméra jour / nuit / thermique, flotte. Voir le sujet dédié.
+[/list]
+
+[h3]Spécialités[/h3]
+[list]
+[*][b]Médical[/b] (Medical) : triage, moniteur, MEDEVAC 9-line, dossiers. Voir le sujet dédié.
+[*][b]Sniper[/b] (Sniper) : élévation et dérive, télémètre, vent, table de tir. Voir le sujet dédié.
+[*][b]Explosifs[/b] (Explo) : charges posées, mise à feu, minuteries. Voir le sujet dédié.
+[*][b]GE[/b] (Ew) : brouillage, goniométrie, géolocalisation de téléphones. Voir le sujet dédié.
+[*][b]Anti-drone[/b] (DroneDetect) : détection RF des drones proches. Voir le sujet dédié.
+[*][b]Liaison allié[/b] (LinkAlly) : se relier au téléphone d'un équipier à terre. Voir le sujet dédié.
+[*][b]Brèche[/b] (Breach) : en préparation, affichée grisée. Pas encore de sujet.
+[/list]
+
+[h3]Renseignement[/h3]
+[list]
+[*][b]FRS / FRM[/b] (Intel) : fiches de renseignement envoyées à Athena. Voir le sujet dédié.
+[*][b]Reco[/b] (Reco) : observation rapide avec repère sur la carte. Voir le sujet dédié.
+[*][b]SALUTE[/b] (Salute) : compte rendu d'observation en six lettres. Voir le sujet dédié.
+[*][b]Photo[/b] (Photos) : appareil photo, zoom, selfie, flou des visages. Voir le sujet dédié.
+[*][b]Galerie[/b] (Gallery) : photos prises et reçues, envoi à Athena. Voir le sujet dédié.
+[*][b]Vidéo live[/b] (Livecam) : caméras d'équipiers, caméras IP, drones. Voir le sujet dédié.
+[*][b]Marquer tracking[/b] (Tracking) : cibles marquées au viseur, zones interdites au drone. Voir le sujet dédié.
+[*][b]SSE[/b] (Sse) : exploitation de site, terminal SEEK ; app SSE terrain avec le mod COMSPEC SSE. Voir le sujet dédié.
+[*][b]Extraction[/b] (DataLink) : câble DL-7, mot de passe, téléchargement. Voir le sujet dédié.
+[*][b]Recherchés[/b] (Wanted) : avis de recherche HVT de la communauté. Voir le sujet dédié.
+[*][b]OSINT[/b] (Osint) : en préparation, affichée grisée. Pas encore de sujet.
+[/list]
+
+[h3]Mission[/h3]
+[list]
+[*][b]Poste TOC[/b] (Toc) : le poste de commandement, au PC portable de TOC. Voir le sujet dédié.
+[*][b]Tâches[/b] (Tasks) : ordres reçus et réponses, tâches de mission. Voir le sujet dédié.
+[*][b]Comptes rendus[/b] (Reports) : une fiche par type de C.R. Voir le sujet dédié.
+[*][b]CR fin d'op[/b] (Debrief) : compte rendu de fin d'opération imposé. Voir le sujet dédié.
+[*][b]Briefing[/b] (Briefing) : diapositives, présentation en direct. Voir le sujet dédié.
+[*][b]Plan[/b] (Plan) : carte de briefing APP-6A partagée. Voir le sujet dédié.
+[*][b]Academy[/b] (Academy) : cours COMSPEC Academy en jeu. Voir le sujet dédié.
+[*][b]Logistique[/b] (Logistics) : demandes de ravitaillement, largage. Voir le sujet dédié.
+[*][b]Rejeu[/b] (Aar) : revoir la mission sur la carte. Voir le sujet dédié.
+[/list]
+
+[h3]Système[/h3]
+[list]
+[*][b]App Store[/b] (Store) : installer, désinstaller, apps imposées. Voir le sujet dédié.
+[*][b]Athena[/b] (Athena) : relier son jeu au compte Athena. Voir le sujet dédié.
+[*][b]Admin[/b] (Admin) : outil Zeus et gestion. Voir le sujet dédié.
+[*][b]Réseau[/b] (Network) : chemin de la liaison, relais, MPU5, débit. Voir le sujet dédié.
+[*][b]Bluetooth[/b] (Bluetooth) : envois aux téléphones proches. Voir le sujet dédié.
+[*][b]Synchro[/b] (Resynch) : renvoyer à Athena ce qui manque. Voir le sujet dédié.
+[*][b]Statut[/b] (Status) : état du téléphone d'un coup d'œil. Voir le sujet dédié.
+[*][b]Profil[/b] (Profile) : fiche opérateur, identité du téléphone. Voir le sujet dédié.
+[*][b]Accessoires[/b] (Accessories) : antenne, batteries, DL-7, filtre JVN. Voir le sujet dédié.
+[*][b]Réglages[/b] (Settings) : réglages du téléphone. Voir le sujet dédié.
+[*][b]Temps d'écran[/b] (ScreenTime) : temps par app et par rôle. Voir le sujet dédié.
+[*][b]Debug[/b] (Debug) : journal, liaison, diagnostic. Voir le sujet dédié.
+[*][b]Crédits[/b] (Credits) : équipe, versions, licence. Voir le sujet dédié.
+[/list]
+
+[h3]Civil[/h3]
+[list]
+[*][b]Musique[/b] (Music) : lecteur avec haut-parleur partagé. Voir le sujet dédié.
+[*][b]Calculette[/b] (Calc) : calculatrice simple. Voir le sujet dédié.
+[*][b]Bloc-notes[/b] (Notes) : notes personnelles gardées sur votre PC. Voir le sujet dédié.
+[*][b]UberEats[/b] (Food) : rations livrées sous parachute. Voir le sujet dédié.
+[*][b]Tinder[/b] (Dating) : rencontres, et une chasse aux HVT cachée. Voir le sujet dédié.
+[/list]
+
+[h3]Aide[/h3]
+[list]
+[*][b][AIDE] Installation, serveur et logs[/b]. Voir le sujet dédié.
+[*][b][AIDE] Réglages serveur (CBA)[/b]. Voir le sujet dédié.
+[/list]
+
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+Every app has its own thread: what it is for, how to open it, its features, a walkthrough, its CBA settings, its links with other apps, Athena, ACE/ACRE/TFAR and Zeus. [b]Ctrl+U[/b] wears the phone in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand. In brackets: the class name to type in the Disabled / Mandatory / Forbidden apps server settings. App names below are the English in-game names.
+
+[h3]Navigation[/h3]
+[list]
+[*][b]Map[/b] (Map): friendlies, markers, measuring, drawing, search, layers. See the dedicated thread.
+[*][b]GPS[/b] (Gps): road guidance, position, satellites and accuracy. See the dedicated thread.
+[*][b]Route[/b] (Waypoints): typed waypoints, navigation and squad sharing. See the dedicated thread.
+[*][b]Routes[/b] (Route): named routes, typed steps, guidance and sharing. New in 2.9.34. See the dedicated thread.
+[*][b]Terrain[/b] (Relief): field of view, elevation, line of sight, buildings in sight. See the dedicated thread.
+[*][b]Weather[/b] (Weather): conditions, forecast, aviation, airdrops, long-range fire. See the dedicated thread.
+[*][b]Distances[/b] (Distance): steps, kilometres per mode, pilot hours, records. See the dedicated thread.
+[*][b]Garmin[/b] (Garmin): wrist watch plus heart rate, stress and sleep tracking. See the dedicated thread.
+[/list]
+
+[h3]Communication[/h3]
+[list]
+[*][b]Messages[/b] (Chat): TOC channels, player SMS, commands and @grid. See the dedicated thread.
+[*][b]Squad[/b] (Group): members, fire teams, roles, callsign. See the dedicated thread.
+[*][b]Alerts[/b] (Alerts): PANIC, contacts, compromised phones, log. See the dedicated thread.
+[*][b]BFT[/b] (Bft): blue force tracking, ORBAT view, filters. See the dedicated thread.
+[*][b]Inter-team[/b] (InterTeam): every squad and fire team of the side. See the dedicated thread.
+[*][b]C2[/b] (C2): command board, contacts, orders, lost links. See the dedicated thread.
+[*][b]Wave Relay[/b] (WaveRelay): mesh network, relays, coverage, voice. See the dedicated thread.
+[*][b]Numbers[/b] (Numbers): your numbers, side directory, contacts. See the dedicated thread.
+[*][b]Discord[/b] (Discord): write to the unit's Discord channel, through Athena. See the dedicated thread.
+[/list]
+
+[h3]Support and fires[/h3]
+[list]
+[*][b]CAS[/b] (Fires): 9-LINE, 5-LINE, typed call for fire (mortars, howitzer, naval…). See the dedicated thread.
+[*][b]JTAC[/b] (Jtac): CAS control from check-in to BDA. See the dedicated thread.
+[*][b]Drone[/b] (Drone): flying, day / night / thermal camera, fleet. See the dedicated thread.
+[/list]
+
+[h3]Specialties[/h3]
+[list]
+[*][b]Medical[/b] (Medical): triage, monitor, MEDEVAC 9-line, records. See the dedicated thread.
+[*][b]Sniper[/b] (Sniper): elevation and windage, rangefinder, wind, range card. See the dedicated thread.
+[*][b]Explosives[/b] (Explo): placed charges, firing, timers. See the dedicated thread.
+[*][b]EW[/b] (Ew): jamming, direction finding, phone geolocation. See the dedicated thread.
+[*][b]Anti-drone[/b] (DroneDetect): RF detection of nearby drones. See the dedicated thread.
+[*][b]ATAK Link[/b] (LinkAlly): link to a downed teammate's phone. See the dedicated thread.
+[*][b]Breach[/b] (Breach): in preparation, shown greyed out. No thread yet.
+[/list]
+
+[h3]Intelligence[/h3]
+[list]
+[*][b]FRS / FRM[/b] (Intel): intelligence reports sent to Athena. See the dedicated thread.
+[*][b]Reco[/b] (Reco): quick observation with a map marker. See the dedicated thread.
+[*][b]SALUTE[/b] (Salute): six-letter observation report. See the dedicated thread.
+[*][b]Photo[/b] (Photos): camera, zoom, selfie, face blur. See the dedicated thread.
+[*][b]Gallery[/b] (Gallery): photos taken and received, send to Athena. See the dedicated thread.
+[*][b]Live Feed[/b] (Livecam): teammate cameras, IP cameras, drones. See the dedicated thread.
+[*][b]Mark tracking[/b] (Tracking): sight-marked targets, drone no-fly zones. See the dedicated thread.
+[*][b]SSE[/b] (Sse): site exploitation, SEEK terminal; SSE field app with the COMSPEC SSE mod. See the dedicated thread.
+[*][b]Extraction[/b] (DataLink): DL-7 cable, password, download. See the dedicated thread.
+[*][b]Target Deck[/b] (Wanted): the community's HVT wanted notices. See the dedicated thread.
+[*][b]OSINT[/b] (Osint): in preparation, shown greyed out. No thread yet.
+[/list]
+
+[h3]Mission[/h3]
+[list]
+[*][b]TOC post[/b] (Toc): the command post, at a TOC laptop. See the dedicated thread.
+[*][b]Tasks[/b] (Tasks): orders received and replies, mission tasks. See the dedicated thread.
+[*][b]Reports[/b] (Reports): one sheet per report type. See the dedicated thread.
+[*][b]End-of-op report[/b] (Debrief): required end-of-operation report. See the dedicated thread.
+[*][b]Briefing[/b] (Briefing): slides, live presentation. See the dedicated thread.
+[*][b]Plan[/b] (Plan): shared APP-6A briefing map. See the dedicated thread.
+[*][b]Academy[/b] (Academy): COMSPEC Academy courses in game. See the dedicated thread.
+[*][b]Logistics[/b] (Logistics): resupply requests, airdrop. See the dedicated thread.
+[*][b]Replay (AAR)[/b] (Aar): review the mission on the map. See the dedicated thread.
+[/list]
+
+[h3]System[/h3]
+[list]
+[*][b]App Store[/b] (Store): install, uninstall, required apps. See the dedicated thread.
+[*][b]Athena[/b] (Athena): link your game to your Athena account. See the dedicated thread.
+[*][b]Admin[/b] (Admin): Zeus and management tool. See the dedicated thread.
+[*][b]Network[/b] (Network): link path, relays, MPU5, throughput. See the dedicated thread.
+[*][b]Bluetooth[/b] (Bluetooth): sending to nearby phones. See the dedicated thread.
+[*][b]Sync[/b] (Resynch): resend to Athena what is missing. See the dedicated thread.
+[*][b]Status[/b] (Status): the phone at a glance. See the dedicated thread.
+[*][b]Profile[/b] (Profile): operator card, phone identity. See the dedicated thread.
+[*][b]Accessories[/b] (Accessories): antenna, batteries, DL-7, NVG filter. See the dedicated thread.
+[*][b]Settings[/b] (Settings): phone settings. See the dedicated thread.
+[*][b]Screen time[/b] (ScreenTime): time per app and per role. See the dedicated thread.
+[*][b]Debug[/b] (Debug): log, link, diagnostics. See the dedicated thread.
+[*][b]Credits[/b] (Credits): team, versions, licence. See the dedicated thread.
+[/list]
+
+[h3]Civilian[/h3]
+[list]
+[*][b]Music[/b] (Music): player with shared speaker. See the dedicated thread.
+[*][b]Calculator[/b] (Calc): simple calculator. See the dedicated thread.
+[*][b]Notepad[/b] (Notes): personal notes kept on your PC. See the dedicated thread.
+[*][b]UberEats[/b] (Food): rations delivered by parachute. See the dedicated thread.
+[*][b]Tinder[/b] (Dating): dating, and a hidden HVT hunt. See the dedicated thread.
+[/list]
+
+[h3]Help[/h3]
+[list]
+[*][b][AIDE] Installation, server and logs[/b]. See the dedicated thread.
+[*][b][AIDE] Server settings (CBA)[/b]. See the dedicated thread.
+[/list]

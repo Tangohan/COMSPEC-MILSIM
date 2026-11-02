@@ -401,6 +401,9 @@ return function (Router $router) {
     $router->post('/resend-verification', [VerifyEmailController::class, 'resendVerification'], [GuestMiddleware::class]);
     $router->get('/security/device-deny', [SecurityDeviceController::class, 'denyDevice'], [GuestMiddleware::class]);
     $router->get('/join', [JoinController::class, 'show']);
+    // Lien d'invitation partageable d'une communauté (créé dans Recrutement › Liens d'invitation).
+    $router->get('/i/{code}', [\App\Controllers\Web\InviteLinkController::class, 'show']);
+    $router->post('/i/{code}', [\App\Controllers\Web\InviteLinkController::class, 'act']);
     $router->post('/community/resolve-code', [JoinController::class, 'resolve']);
     $router->get('/soutenir-atak', [AtakSupportController::class, 'index']);
     $router->get('/soutenir-atak/connexion', [AtakSupportController::class, 'loginGate']);
@@ -1999,6 +2002,16 @@ return function (Router $router) {
     $router->get('/back-office/recruitments/{id}/suivi', [AdminRecruitmentsController::class, 'redirectCandidatePortalSuivi'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Avant « {id} » : sinon l'adresse est prise pour un numéro de dossier et renvoie à la liste des candidatures.
     $router->get('/back-office/recruitments/codes-invitation', [RecruitmentInviteCodesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Liens d'invitation partageables (/i/<code>) : avant « {id} » pour la même raison.
+    $router->get('/back-office/recruitments/liens-invitation', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/recruitments/liens-invitation/creer', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/liens-invitation/creer', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/recruitments/liens-invitation/{id}', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/recruitments/liens-invitation/{id}/qr.png', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'qr'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/recruitments/liens-invitation/{id}/modifier', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/liens-invitation/{id}/modifier', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/liens-invitation/{id}/revoquer', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'revoke'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/liens-invitation/{id}/reactiver', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'reactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}', [AdminRecruitmentsController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}/onboarding', [AdminRecruitmentsController::class, 'onboarding'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/onboarding', [AdminRecruitmentsController::class, 'onboardingSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

@@ -301,7 +301,7 @@ final class InvitationAcceptController
      * Grade d'entrée d'une recrue : le plus bas grade non officier du référentiel de la communauté
      * (sort_order le plus grand, militaires du rang d'abord). Ancien schéma (grades par communauté) pris en charge.
      */
-    private static function entryGradeIdForTenant(int $tenantId): int
+    public static function entryGradeIdForTenant(int $tenantId): int
     {
         $grades = new \App\Repositories\GradeRepository();
         if ($grades->isReferentielTablePresent()) {

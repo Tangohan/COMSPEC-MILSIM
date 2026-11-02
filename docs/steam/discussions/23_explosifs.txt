@@ -1,0 +1,93 @@
+[APP] Explosifs — vos charges posées, mise à feu une par une ou en séquence minutée, minuteries ACE suivies
+
+[h1]Explosifs[/h1]
+[i]Catégorie : Spécialités · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Gérer depuis le téléphone les charges que vous avez posées : les voir dans l'ordre de pose avec leur position, les mettre à feu une par une ou en séquence (délai avant la première, intervalle entre charges), et suivre le temps restant des minuteries.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est dans la catégorie [b]Spécialités[/b] (pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Bandeau d'état[/b] : [b]SÉCURITÉ[/b] ou [b]PRÊT AU TIR[/b], nombre de charges posées ; interrupteur [b]Lever la sécurité de mise à feu[/b]. Aucun tir n'est possible sécurité mise.
+[*][b]Charges posées[/b] : C1 est la première posée. Pour chacune : nom, type (ATAK, déclencheur, minuterie, mine), grille, distance et azimut depuis vous, depuis quand elle est posée. Boutons [b]CARTE[/b], [b]COCHER[/b] / [b]DÉCOCHER[/b] et [b]FEU[/b].
+[*][b]Minuteries[/b] : compte à rebours « saute dans … » ; elles ne se mettent pas à feu depuis l'app et n'entrent pas dans une séquence.
+[*][b]Séquence[/b] : [b]Délai avant la première[/b] (0, 3, 5, 10 ou 30 s), [b]Intervalle entre charges[/b] (0, 0,5, 1, 2 ou 5 s), durée prévue affichée ; [b]TOUT COCHER[/b], [b]DÉCOCHER[/b], [b]FEU (n)[/b]. Les charges sautent dans l'ordre de la liste.
+[*][b]Mise à feu en cours[/b] : compte à rebours de chaque charge (T-), fin de séquence, [b]ANNULER LA SÉQUENCE[/b] pour ce qui n'a pas encore sauté. À la fin, la sécurité est remise et les cases décochées.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Posez vos charges avec ACE (déclencheur), puis ouvrez l'app : elles apparaissent C1, C2, C3…
+[*]Cochez celles de la séquence, choisissez par exemple 10 s de délai et 1 s d'intervalle.
+[*]Mettez-vous à l'abri, levez la sécurité, puis [b]FEU (n)[/b].
+[*]Suivez le compte à rebours ; [b]ANNULER LA SÉQUENCE[/b] si besoin.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : chaque charge s'affiche avec son numéro, le temps restant d'une minuterie et le T- de la séquence ; [b]CARTE[/b] centre la carte sur la charge.
+[*][b]ACE[/b] : charges et déclencheurs d'ACE Explosifs ; la mise à feu passe par ACE quand il est chargé, sinon par le jeu de base.
+[*][b]Overwatch / Athena[/b] : une charge raccordée à l'ATAK par Overwatch est mise à feu par Overwatch, et le poste est prévenu.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Seules vos propres charges apparaissent : celles que vous avez posées, vos déclencheurs ACE, vos charges raccordées ATAK et vos mines.
+[*]Une charge déjà sautée ou introuvable est signalée au lieu d'être tirée.
+[*]Un intervalle de 0 s fait sauter toutes les charges cochées en même temps.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Manage from the phone the charges you have placed: see them in placing order with their position, fire them one by one or in a sequence (delay before the first, interval between charges), and follow the remaining time of timers.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app sits in the [b]Specialized[/b] category (not in the dock); it is named [b]Explosives[/b] in English. If it was uninstalled, the App Store reinstalls it.
+
+[h3]Features[/h3]
+[list]
+[*][b]Status banner[/b]: [b]SAFETY[/b] or [b]READY TO FIRE[/b], number of placed charges; [b]Release firing safety[/b] switch. Nothing can fire while the safety is on.
+[*][b]Charges placed[/b]: C1 is the first one placed. For each: name, type (ATAK, trigger, timer, mine), grid, distance and bearing from you, time since placing. Buttons [b]MAP[/b], [b]CHECK[/b] / [b]UNCHECK[/b] and fire.
+[*][b]Timers[/b]: countdown to detonation; they cannot be fired from the app and are not part of a sequence.
+[*][b]Sequence[/b]: [b]Delay before first[/b] (0, 3, 5, 10 or 30 s), [b]Interval between charges[/b] (0, 0.5, 1, 2 or 5 s), planned duration shown; [b]CHECK ALL[/b], [b]UNCHECK[/b], [b]FIRE (n)[/b]. Charges go off in list order.
+[*][b]FIRING IN PROGRESS[/b]: countdown of each charge (T-), end of sequence, [b]CANCEL SEQUENCE[/b] for what has not gone off yet. At the end, the safety is set again and the boxes are unchecked.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Place your charges with ACE (trigger), then open the app: they show as C1, C2, C3…
+[*]Check those for the sequence, pick for example a 10 s delay and a 1 s interval.
+[*]Take cover, release the safety, then [b]FIRE (n)[/b].
+[*]Follow the countdown; [b]CANCEL SEQUENCE[/b] if needed.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: each charge shows with its number, a timer's remaining time and the sequence T-; [b]MAP[/b] centres the map on the charge.
+[*][b]ACE[/b]: ACE Explosives charges and triggers; firing goes through ACE when loaded, otherwise through the base game.
+[*][b]Overwatch / Athena[/b]: a charge wired to the ATAK by Overwatch is fired by Overwatch, and the post is notified.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Only your own charges show: those you placed, your ACE triggers, your ATAK-wired charges and your mines.
+[*]A charge already detonated or not found is reported instead of fired.
+[*]A 0 s interval sets off all checked charges at once.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

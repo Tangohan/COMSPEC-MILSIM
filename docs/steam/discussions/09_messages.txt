@@ -1,0 +1,114 @@
+[APP] Messages — canaux du TOC, SMS entre joueurs, commandes / et raccourcis @grille
+
+[i]Message 1/2[/i]
+[h1]Messages[/h1]
+[i]Catégorie : Communication · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+La messagerie du téléphone. Elle regroupe les canaux écrits du TOC (avec la liaison Athena : les canaux de la communauté, plus le fil « Alertes TOC ») et les SMS de joueur à joueur. Les SMS partent directement au téléphone du destinataire, sans serveur web ni Athena, en passant par le réseau simulé du téléphone (relais, portée, brouillage).
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie [b]Communication[/b] et dans le dock en bas de l'écran d'accueil. Si elle a été désinstallée, l'App Store permet de la réinstaller. Autres accès : bouton [b]SMS[/b] d'un membre dans [b]Groupe[/b], d'un chef dans [b]Inter-team[/b], d'une piste dans [b]BFT[/b], d'un joueur de l'annuaire dans [b]Numéros[/b] : chacun ouvre directement la conversation avec ce joueur.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Liste des conversations[/b] : en tête, un bandeau dit où partent les messages (« Athena connecté », « Athena non connecté », « Hors réseau · envoi différé », ou « TOC local · SMS directs » sans liaison). Puis la section [b]Canaux[/b], puis [b]Messages directs[/b]. Chaque ligne montre la photo ou l'initiale, le dernier message, l'heure et une pastille de non-lus (la même que sur l'icône de l'app).
+[*][b]Canaux[/b] : avec Athena, les canaux de la communauté (par défaut Général, Commandement, Groupe) et [b]Alertes TOC[/b]. Sans liaison, un seul canal TOC. En mode full local (sans Athena), le message part par le serveur aux téléphones de votre camp ; le canal Groupe reste limité à votre groupe.
+[*][b]+ CANAL[/b] (téléphone en main, avec Athena) : crée un canal sur Athena. Un canal créé depuis le web ou le terminal peut être supprimé pour tout le monde (deux appuis) ; les canaux système, non.
+[*][b]+ NOUVEAU SMS[/b] : choisissez un joueur de votre camp. Les contacts récents sont en tête, avec leur état (« En ligne · numéro » ou « Hors ligne »).
+[*][b]Conversation[/b] : bulles regroupées par auteur, séparateurs de jour, repère des non-lus. Les messages urgents sont soulignés en rouge. En haut : [b]?[/b] (aide), tri (plus anciens ou plus récents en haut), [b]VIDER[/b] (masque les messages sur ce téléphone seulement, rien n'est effacé sur Athena).
+[*][b]État des SMS envoyés[/b] : Envoi…, Distribué, Lu (avec l'heure), « Destinataire hors réseau · remis à son retour », « Non transmis · en attente de réseau ». Sans accusé au bout de 60 s, ou si le joueur s'est déconnecté, le SMS passe « Non transmis · cliquer pour renvoyer » : un clic dessus le renvoie. Quand vous ouvrez une conversation, l'expéditeur voit vos SMS passer à « Lu ».
+[*][b]Commandes /[/b] en tête du message (combinables) : priorité [b]/routine[/b] (/r), [b]/prioritaire[/b] (/p), [b]/urgent[/b] (/u, en rouge) ; type [b]/contact[/b] (/c), [b]/tic[/b], [b]/sitrep[/b], [b]/salute[/b], [b]/lace[/b], [b]/medevac[/b], [b]/intel[/b], [b]/ordre[/b], [b]/log[/b]. Un aperçu sous le fil montre les puces et le texte final avant l'envoi. [b]/aide[/b] ou le bouton ? ouvre le mini wiki.
+[*][b]Raccourcis dans le texte[/b] : [b]@grille[/b] (votre grille à 8 chiffres), [b]@heure[/b] (heure du jeu), [b]@cap[/b], [b]@alt[/b].
+[*][b]Saisie[/b] : Entrée ou le bouton d'envoi. SMS limités à 400 caractères (compteur affiché). Un brouillon est gardé par conversation.
+[*][b]Affichage[/b] : en main, en paysage et plein écran, la liste et la conversation sont côte à côte ; en mode PETIT, une vue à la fois. Téléphone porté (sans souris) : la conversation seule, en lecture.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Ouvrez Messages, touchez [b]+ NOUVEAU SMS[/b] et choisissez votre chef d'équipe.
+[*]Tapez [code]/u /contact 2 BMP en approche @grille[/code] : l'aperçu affiche [URGENT] [CONTACT] et votre grille.
+[*]Appuyez sur Entrée. Le SMS passe « Distribué », puis « Lu » quand il ouvre la conversation.
+[*]Pour le TOC, revenez à la liste, ouvrez le canal voulu et écrivez de la même façon.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Réseau réaliste[/b] (serveur) : décoché, réseau parfait partout ; coché, messages retardés, perdus ou mis en attente selon le terrain.
+[*][b]COMSPEC › ATAK · Simulation › Mode hors connexion[/b] et [b]Garder les données après une déconnexion[/b] (serveur) : file d'attente sans réseau, SMS et messages retrouvés après un crash ou une reconnexion.
+[*][b]COMSPEC › ATAK · Mode local et poste TOC › Mode full local (sans Athena)[/b] (serveur) : la messagerie passe par le serveur de jeu.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b] : canaux écrits partagés avec le site et la tablette du poste ; création et suppression de canaux. Hors ligne, les messages attendent et partent au retour du réseau.
+[*][b]Poste TOC (PC portable)[/b] : un message reçu du poste (« TOC · indicatif ») peut recevoir une réponse par SMS, remise à l'opérateur assis au poste de votre camp.
+[*][b]Groupe, BFT, Inter-team, Numéros[/b] : leurs boutons SMS ouvrent la conversation ici.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Les SMS ne vont qu'aux joueurs de votre camp. Un joueur déconnecté ne reçoit rien : renvoyez à son retour.
+[*]Sans réseau (bâtiment, relais hors de portée, brouillage), rien ne part ni n'arrive : un rappel s'affiche dans la conversation.
+[*]VIDER ne concerne que votre téléphone.
+[*]Le téléphone garde les 200 derniers SMS, toutes conversations confondues.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+The phone's messaging app. It gathers the TOC text channels (with the Athena link: the community's channels plus the "TOC alerts" feed) and player-to-player SMS. SMS go straight to the recipient's phone, with no web server and no Athena, over the phone's simulated network (relays, range, jamming).
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the [b]Communication[/b] category and in the dock at the bottom of the home screen. If it was uninstalled, the App Store reinstalls it. Other ways in: the [b]SMS[/b] button of a member in [b]Squad[/b] (Group app), of a leader in [b]Inter-team[/b], of a track in [b]BFT[/b], of a player in the [b]Numbers[/b] directory: each opens the conversation with that player.
+
+[h3]Features[/h3]
+[list]
+[*][b]Conversation list[/b]: a banner on top says where messages go ("Athena connected", "Athena not connected", "No network · deferred sending", or "Local TOC · direct SMS" without the link). Then the [b]Channels[/b] section, then [b]Direct messages[/b]. Each row shows the photo or initial, last message, time and an unread badge (the same as on the app icon).
+[*][b]Channels[/b]: with Athena, the community's channels (by default General, Command, Group) and [b]TOC alerts[/b]. Without the link, a single TOC channel. In full local mode (no Athena), messages go through the server to your side's phones; the Group channel stays limited to your group.
+[*][b]+ CHANNEL[/b] (phone in hand, with Athena): creates a channel on Athena. A channel created from the web or the terminal can be deleted for everyone (two presses); system channels cannot.
+[*][b]+ NEW SMS[/b]: pick a player from your side. Recent contacts come first, with their state ("Online · number" or "Offline").
+[*][b]Conversation[/b]: bubbles grouped by author, day separators, unread marker. Urgent messages are edged in red. On top: [b]?[/b] (help), sort (oldest or newest on top), [b]CLEAR[/b] (hides the messages on this phone only, nothing is deleted on Athena).
+[*][b]State of sent SMS[/b]: Sending…, Delivered, Read (with the time), "Recipient out of network · delivered when back", "Not sent · waiting for network". With no receipt after 60 s, or if the player disconnected, the SMS turns "Not sent · click to send again": click it to resend. When you open a conversation, the sender sees your SMS turn "Read".
+[*][b]/ commands[/b] at the start of the message (can be combined): priority [b]/routine[/b] (/r), [b]/priority[/b] (/p), [b]/urgent[/b] (/u, in red); type [b]/contact[/b] (/c), [b]/tic[/b], [b]/sitrep[/b], [b]/salute[/b], [b]/lace[/b], [b]/medevac[/b], [b]/intel[/b], [b]/order[/b], [b]/log[/b]. A preview under the thread shows the tags and final text before sending. [b]/help[/b] or the ? button opens the mini wiki.
+[*][b]Shortcuts in the text[/b]: [b]@grid[/b] (your 8-digit grid), [b]@time[/b] (game time), [b]@hdg[/b] (heading); the French [b]@grille[/b], [b]@heure[/b], [b]@cap[/b], [b]@alt[/b] (altitude) also work.
+[*][b]Typing[/b]: Enter or the send button. SMS are capped at 400 characters (counter shown). A draft is kept per conversation.
+[*][b]Layout[/b]: in hand, landscape and full screen, list and conversation sit side by side; in SMALL mode, one view at a time. Phone carried (no mouse): the conversation only, read-only.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Open Messages, tap [b]+ NEW SMS[/b] and pick your team leader.
+[*]Type [code]/u /contact 2 BMP inbound @grid[/code]: the preview shows [URGENT] [CONTACT] and your grid.
+[*]Press Enter. The SMS turns "Delivered", then "Read" when they open the conversation.
+[*]For the TOC, go back to the list, open the channel and write the same way.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Simulated network throughput[/b] (server): unchecked, perfect network everywhere; checked, messages are delayed, lost or queued depending on terrain.
+[*][b]COMSPEC › ATAK · Simulation › Offline operation[/b] and [b]Data kept between connections[/b] (server): queue without network, SMS and messages restored after a crash or reconnection.
+[*][b]COMSPEC › ATAK · Local mode and TOC post › Full local mode (no Athena)[/b] (server): messaging goes through the game server.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b]: text channels shared with the website and the post tablet; channel creation and deletion. Offline, messages wait and leave when the network returns.
+[*][b]TOC post (laptop)[/b]: a message received from the post ("TOC · callsign") can be answered by SMS, delivered to the operator seated at your side's post.
+[*][b]Squad, BFT, Inter-team, Numbers[/b]: their SMS buttons open the conversation here.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]SMS only reach players of your side. A disconnected player gets nothing: resend when they are back.
+[*]Without network (building, relay out of range, jamming), nothing leaves or arrives: a reminder shows in the conversation.
+[*]CLEAR only affects your phone.
+[*]The phone keeps the last 200 SMS, all conversations combined.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

@@ -187,11 +187,27 @@ final class AcademyController
             $gate = Gate::getInstance();
             $offerCanImport = $space === 'catalogue' && ($gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support'));
             $offerQuota = $offerCanImport ? $this->qualificationQuota($tenantId)->status(\App\Services\Billing\QualificationCatalogQuota::IMPORTS) : null;
-            return Response::view('academy.space', compact('space', 'staff', 'states', 'courses', 'selected', 'state', 'account', 'tenant', 'preview', 'offer', 'offerFilters', 'offerDetail', 'offerCanImport', 'offerQuota') + $lmsData + [
+            // File « à traiter » de l'encadrement : complète sur le tableau de bord et l'espace instructeur, simple compteur ailleurs (menu).
+            $instructorView = $space === 'instructor' ? $this->instructorData($repository, $rights, $tenantId, $academyStorageReady) : ['learners' => []];
+            $queue = null;
+            $instructorBadge = 0;
+            if ($staff && $academyStorageReady) {
+                if (in_array($space, ['dashboard', 'instructor'], true)) {
+                    $queue = $this->instructorQueue($repository, $rights, $tenantId, $space === 'instructor' ? $instructorView['learners'] : null);
+                    $instructorBadge = $queue['total'];
+                } else {
+                    $instructorBadge = $this->instructorBadge($repository, $rights, $tenantId);
+                }
+            }
+            return Response::view('academy.space', compact('space', 'staff', 'states', 'courses', 'selected', 'state', 'account', 'tenant', 'preview', 'offer', 'offerFilters', 'offerDetail', 'offerCanImport', 'offerQuota', 'queue', 'instructorBadge') + $lmsData + [
                 'academyStorageReady' => $academyStorageReady && !$preview,
                 'viewStep' => $request->queryString('step'),
                 'notice' => Session::get('academy_notice', ''),
-            ] + ($space === 'instructor' ? $this->instructorData($repository, $rights, $tenantId, $academyStorageReady) : ['learners' => []]))->header('Cache-Control', 'private, no-store');
+                'queueMembers' => $queue !== null ? ($instructorView['instructor']['members'] ?? $this->memberNames($tenantId)) : [],
+                // File de l'espace instructeur : filtre ouvert depuis un compteur du tableau de bord, bilan d'une action groupée.
+                'queueType' => $request->queryString('type'),
+                'queueBulk' => $request->queryString('bulk') === '1' ? ['done' => max(0, (int) $request->queryString('ok')), 'failed' => max(0, (int) $request->queryString('ko'))] : null,
+            ] + $instructorView)->header('Cache-Control', 'private, no-store');
         } catch (\PDOException) {
             return $this->error('unavailable', 503);
         }
@@ -281,6 +297,14 @@ final class AcademyController
                     });
                     $this->awardCourseQualifications($repository, $tenantId, $learnerId, $key, $userId);
                     $this->audit('academy.learner.validated', $tenantId, $key, ['learner' => $learnerId, 'chapter' => is_scalar($expectedChapter) ? (int) $expectedChapter : null]);
+                    if ($request->inputString('return') === 'dashboard') {
+                        Session::set('academy_notice', 'ins_validated');
+                        return Response::redirect(url('academy/dashboard') . '#a-traiter', 303);
+                    }
+                    if ($request->inputString('return') === 'queue') {
+                        Session::set('academy_notice', 'ins_validated');
+                        return Response::redirect(url('academy/instructor') . '#file', 303);
+                    }
                 }
                 $returnSpace = 'instructor';
             } else {
@@ -937,8 +961,7 @@ final class AcademyController
         $learners = $managed = [];
         if ($storageReady) {
             try {
-                $all = $rights->can('stats') || $rights->can('validate');
-                $learners = array_values(array_filter($repository->learners($tenantId), static fn (array $row): bool => $all || $rights->canTeach((string) $row['course_key'])));
+                $learners = $this->followedLearners($repository, $rights, $tenantId);
                 foreach (AcademyBuiltInCourses::all() as $builtIn) {
                     if ($rights->can('validate') || $rights->can('stats') || $rights->can('create')) {
                         $managed[] = $builtIn;
@@ -957,14 +980,7 @@ final class AcademyController
         foreach ($managed as $course) {
             $settings[$course['key']] = $rights->settings((string) $course['key']);
         }
-        $pendingRequests = 0;
-        if ($rights->can('assign')) {
-            try {
-                $pendingRequests = count(Container::get(TrainingEnrollmentRepository::class)->listPendingApproval($tenantId));
-            } catch (\Throwable) {
-                $pendingRequests = 0;
-            }
-        }
+        $pendingRequests = count($this->pendingEnrollments($rights, $tenantId));
         $assignable = [];
         if ($rights->can('assign')) {
             try {
@@ -983,6 +999,73 @@ final class AcademyController
                 'pendingRequests' => $pendingRequests, 'assignable' => $assignable,
             ],
         ];
+    }
+
+    /** Stagiaires suivis : tous avec le droit « statistiques » ou « valider », sinon ceux des cours que l'on encadre. */
+    private function followedLearners(AcademyRepository $repository, AcademyRights $rights, int $tenantId): array
+    {
+        $all = $rights->can('stats') || $rights->can('validate');
+        return array_values(array_filter($repository->learners($tenantId), static fn (array $row): bool => $all || $rights->canTeach((string) $row['course_key'])));
+    }
+
+    /** Demandes d'inscription aux formations de la communauté : pour qui a le droit « inscrire ». */
+    private function pendingEnrollments(AcademyRights $rights, int $tenantId): array
+    {
+        if (!$rights->can('assign')) {
+            return [];
+        }
+        try {
+            return Container::get(TrainingEnrollmentRepository::class)->listPendingApproval($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** Qualifications et brevets proposés à un responsable : mêmes droits que la fiche du référentiel qui les décide. */
+    private function pendingProposals(int $tenantId): array
+    {
+        $gate = Gate::getInstance();
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.access') && !$gate->allows('site.support')) {
+            return [];
+        }
+        try {
+            return Container::get(\App\Repositories\QualificationAwardRepository::class)->pendingProposals($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * File « à traiter » (tableau de bord et espace instructeur) et séances que l'on encadre.
+     *
+     * @param list<array<string, mixed>>|null $learners stagiaires déjà lus par l'espace instructeur
+     * @return array{items: list<array<string, mixed>>, counts: array<string, int>, total: int, sessions: list<array<string, mixed>>, certify: bool, can: array<string, bool>}
+     */
+    private function instructorQueue(AcademyRepository $repository, AcademyRights $rights, int $tenantId, ?array $learners = null): array
+    {
+        $userId = (int) Session::get('user_id');
+        try {
+            $learners ??= $this->followedLearners($repository, $rights, $tenantId);
+        } catch (\PDOException) {
+            $learners = [];
+        }
+        $queue = \App\Services\Academy\AcademyInstructorQueue::build($learners, $rights->canTeach(...), $rights->can('certify'), $this->pendingEnrollments($rights, $tenantId), $this->pendingProposals($tenantId), $userId, time());
+        $gate = Gate::getInstance();
+        return $queue + ['sessions' => $this->accessRepository()->upcomingSessionsFor($tenantId, $userId), 'certify' => $rights->can('certify'),
+            'can' => ['enrollment' => $rights->can('assign'), 'proposal' => $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support')]];
+    }
+
+    /** Compteur du menu « Espace instructeur (n) » : lecture légère, sans le contenu des cours. */
+    private function instructorBadge(AcademyRepository $repository, AcademyRights $rights, int $tenantId): int
+    {
+        $userId = (int) Session::get('user_id');
+        $notMine = static fn (array $row): bool => (int) ($row['user_id'] ?? 0) !== $userId;
+        try {
+            $rows = $repository->reviewRows($tenantId);
+        } catch (\PDOException) {
+            $rows = [];
+        }
+        return \App\Services\Academy\AcademyInstructorQueue::badge($rows, $rights->canTeach(...), count(array_filter($this->pendingEnrollments($rights, $tenantId), $notMine)), count(array_filter($this->pendingProposals($tenantId), $notMine)), $userId);
     }
 
     /**

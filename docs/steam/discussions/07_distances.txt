@@ -1,0 +1,103 @@
+[APP] Distances — pas, kilomètres par mode, heures de pilote, carrière et records
+
+[h1]Distances[/h1]
+[i]Catégorie : Navigation · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Voir ce que vous avez parcouru : pas, kilomètres à pied, en véhicule terrestre, en bateau, en vol et en saut, et heures de pilote par appareil, pour la mission en cours et sur toute votre carrière. Le comptage de la mission est fait par le serveur : il continue même si votre téléphone est vide, cassé ou rangé.
+
+[h3]Comment l'ouvrir[/h3]
+Sortez le téléphone ([b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main), puis écran d'accueil › catégorie [b]Navigation[/b] › [b]Distances[/b] (pas dans le dock). Désinstallée : réinstallez-la depuis l'[b]App Store[/b].
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]CETTE MISSION[/b] : distance totale en grand, [b]PAS[/b], temps [b]EN MOUVEMENT[/b], total [b]CARRIÈRE[/b] et barre de répartition par mode.
+[*][b]Par mode[/b] : une carte par mode (À pied, Véhicule terrestre, Bateau, Vol, Saut) avec sa part du total ; à pied : pas, temps de marche, allure moyenne (min/km) et cadence (pas/min) ; véhicule, bateau, vol : vitesse moyenne ; saut : nombre de sauts.
+[*][b]Heures de pilote[/b] : tableau par appareil (hélicoptère ou avion), temps de cette mission, de la carrière et distance ; comptées aux commandes, moteur allumé.
+[*][b]Dernières missions[/b] : barres empilées par mode des 10 dernières missions, mission en cours en couleur.
+[*][b]Mission et carrière[/b] : chaque mode et les pas, cette mission face au cumul, avec sa part de la carrière.
+[*][b]Records d'une mission[/b] : plus longue mission, plus long à pied, plus de pas, plus long en véhicule, plus long en vol, plus de sauts ; un record battu en direct est marqué [b]NOUVEAU[/b].
+[*][b]ATHENA[/b] : état du dernier envoi au site (envoyé il y a…, échec, pas encore envoyé) ; bouton [b]ACTUALISER[/b] pour envoyer tout de suite ce qui est en attente.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Jouez la mission normalement : rien à lancer.
+[*]Ouvrez Distances pour voir le bilan de la mission (mis à jour toutes les 15 s).
+[*]Descendez jusqu'à Records d'une mission pour voir si vous battez un record.
+[*]En fin de partie, vérifiez la carte ATHENA : le cumul part sur votre fiche du site.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Équipes et suivi › Distances parcourues[/b] (serveur) : décoché, le serveur ne compte plus rien (l'app l'indique).
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b] : envoi par le serveur toutes les 10 min (et au départ d'un joueur, en fin de mission). Si le serveur n'est pas relié à Athena, c'est votre téléphone qui compte et envoie, toujours toutes les 10 min. Le cumul est sur la fiche du membre.
+[*][b]Garmin[/b] : la montre compte pas et distances avec les mêmes règles.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Les pas sont estimés d'après l'allure ; rien n'est compté à la nage ni en rampant.
+[*]Un saut compte s'il part d'au moins 150 m ou sous voile.
+[*]Un téléport (Zeus, respawn) n'est pas compté.
+[*]Carrière, dernières missions et records sont gardés sur ce PC (12 missions dans le carnet) : un autre PC repart à zéro dans l'app, pas sur le site.
+[*]Si le serveur n'a pas le mod ATAK natif, les distances ne sont pas comptées (l'app l'indique).
+[/list]
+
+[h3]Version d'introduction[/h3]
+1.96.0 (nouvelle app), refaite en tableau de bord en 2.1.0.
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+See how far you have travelled: steps, kilometres on foot, by land vehicle, by boat, in flight and in jumps, and pilot hours per aircraft, for the current mission and over your whole career. Mission counting is done by the server: it keeps going even if your phone is flat, broken or put away.
+
+[h3]How to open it[/h3]
+Take out the phone ([b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand), then home screen › [b]Navigation[/b] category › [b]Distances[/b] (not in the dock). Uninstalled: reinstall it from the [b]App Store[/b].
+
+[h3]Features[/h3]
+[list]
+[*][b]THIS MISSION[/b]: total distance in large print, [b]STEPS[/b], time [b]MOVING[/b], [b]CAREER[/b] total and a split-by-mode bar.
+[*][b]By mode[/b]: one card per mode (On foot, Land vehicle, Boat, Flight, Jump) with its share of the total; on foot: steps, time on the move, average pace (min/km) and rate (steps/min); vehicle, boat, flight: average speed; jump: number of jumps.
+[*][b]Pilot hours[/b]: table per aircraft (helicopter or plane), time this mission, career time and distance; counted at the controls, engine on.
+[*][b]Recent missions[/b]: stacked bars by mode for the last 10 missions, current mission in colour.
+[*][b]Mission and career[/b]: each mode and steps, this mission against the total, with its share of the career.
+[*][b]Single-mission records[/b]: longest mission, longest on foot, most steps, longest by vehicle, longest in flight, most jumps; a record beaten live is tagged [b]NEW[/b].
+[*][b]ATHENA[/b]: status of the last send to the site (sent … ago, failed, not sent yet); [b]REFRESH[/b] button to send what is waiting right away.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Play the mission normally: nothing to start.
+[*]Open Distances to see the mission summary (updated every 15 s).
+[*]Scroll down to Single-mission records to see if you beat a record.
+[*]At the end of the game, check the ATHENA card: the total goes to your member file on the site.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Équipes et suivi › Distance travelled[/b] (server): unticked, the server no longer counts anything (the app says so).
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b]: sent by the server every 10 min (and when a player leaves, at the end of the mission). If the server is not linked to Athena, your phone counts and sends instead, still every 10 min. The total is on the member file.
+[*][b]Garmin[/b]: the watch counts steps and distances with the same rules.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Steps are estimated from your pace; nothing is counted while swimming or crawling.
+[*]A jump counts if it starts from at least 150 m or under canopy.
+[*]A teleport (Zeus, respawn) is not counted.
+[*]Career, recent missions and records are kept on this PC (12 missions in the log): another PC starts from zero in the app, not on the site.
+[*]If the server does not run the native ATAK mod, distances are not counted (the app says so).
+[/list]
+
+[h3]Introduced in[/h3]
+1.96.0 (new app), redone as a dashboard in 2.1.0.

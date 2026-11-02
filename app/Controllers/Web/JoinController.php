@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Container;
 use App\Core\Csrf;
+use App\Repositories\InviteLinkRepository;
+use App\Services\Recruitment\InviteLinkService;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -36,6 +39,11 @@ final class JoinController
             return Response::redirect(url('join'));
         }
         $raw = trim((string) $request->input('community_code'));
+        // Lien d'invitation collé dans le champ (https://…/i/abc ou abc) : sa page d'invitation.
+        $pasted = InviteLinkService::codeFromPastedLink($raw);
+        if ($pasted !== null) {
+            return Response::redirect(InviteLinkService::publicUrl($pasted));
+        }
         $norm = TenantRepository::normalizeCommunityCode($raw);
         if (strlen($norm) < 3) {
             Session::flash('error', 'Code invalide.');
@@ -43,6 +51,10 @@ final class JoinController
             return Response::redirect(url('join'));
         }
         $tenant = $this->tenantRepository->findByCommunityCode($norm);
+        if (!$tenant && InviteLinkService::isWellFormedCode($raw)
+            && Container::get(InviteLinkRepository::class)->findByPublicCode($raw) !== null) {
+            return Response::redirect(InviteLinkService::publicUrl(strtolower($raw)));
+        }
         if (!$tenant) {
             Session::flash('error', 'Code invalide.');
 

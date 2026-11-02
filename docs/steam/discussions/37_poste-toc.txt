@@ -1,0 +1,128 @@
+[APP] Poste TOC — le poste de commandement dans le téléphone, à côté d'un PC de TOC
+
+[i]Message 1/2[/i]
+[h1]Poste TOC[/h1]
+[i]Catégorie : Mission · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Poste TOC transforme votre téléphone en console du poste de commandement quand vous êtes à côté d'un PC de TOC posé dans la mission. Depuis l'app, vous écrivez à tout votre camp, donnez des ordres aux groupes, suivez leurs réponses, voyez où sont les groupes et lisez les derniers comptes rendus. Tout passe en jeu par le serveur : l'app marche avec ou sans Athena. Avec Athena, Athena reste le poste principal et ce PC parle en plus au camp.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie Mission du lanceur, mais elle n'y apparaît [b]que[/b] quand vous êtes à pied, à moins de 2,5 m d'un PC de TOC de votre camp (4,5 m du centre d'un écran TOC qui sert de poste). Si vous vous éloignez, elle disparaît et le téléphone revient à l'accueil.
+Un PC de TOC est l'objet « PC portable de TOC (ATAK) » d'Eden ou de Zeus, un objet désigné par la mission, ou n'importe quel ordinateur portable du jeu si le serveur l'autorise. Un camp peut lui être réservé dans Eden (BLUFOR, OPFOR, INDEP sont acceptés).
+À ne pas confondre : l'action [b]PC du poste TOC[/b] (menu ACE de l'objet, ou molette sans ACE) ouvre l'écran du PC lui-même, sans téléphone (carte en grand, onglets GROUPES, FLUX, ORDRES, CAMP). Cette fiche décrit l'app du téléphone.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Bandeau du poste[/b] : indicatif du poste et mode de fonctionnement (avec Athena, ou mode local sans Athena ni site web).
+[*][b]Message à tout le camp[/b] : texte de 400 caractères au plus, priorité ROUTINE, URGENT ou FLASH, bouton ENVOYER AU CAMP. Le message arrive dans l'app Messages de chaque joueur du camp qui porte un téléphone, dans la conversation « TOC · indicatif ». En URGENT ou FLASH, il déclenche aussi une notification et une vibration.
+[*][b]NOUVEL ORDRE[/b] : ouvre le rédacteur d'ordre de l'app Tâches (ordre au camp entier).
+[*][b]Caméra sur les écrans du poste[/b] : si un écran TOC de votre camp est à moins de 30 m, choisissez une caméra du camp (drone en vol, caméra fixe, caméra de téléphone partagée avec vous) et touchez AFFICHER : l'écran la montre en direct aux joueurs qui le regardent. CARTE ET FLUX remet l'écran sur la carte et le flux du poste.
+[*][b]Groupes du camp[/b] : chaque groupe qui compte des joueurs, avec son effectif, son chef, le numéro de téléphone du chef et sa grille. SMS ouvre une conversation avec le chef dans Messages ; ORDRE ouvre le rédacteur d'ordre déjà adressé à ce groupe.
+[*][b]Ordres émis[/b] : vos six derniers ordres envoyés sans Athena (type, heure, cible, priorité, consigne) et leur suivi : vu, reçu, en cours, terminé.
+[*][b]Derniers comptes rendus[/b] : les six dernières entrées du journal de l'app Alertes, envoyées ou reçues (type, heure, auteur, grille, texte).
+[*][b]Raccourcis[/b] : ALERTES, CARTE, NUMÉROS ouvrent les apps correspondantes.
+[*][b]Indicatif du poste[/b] : modifiable puis ENREGISTRER (24 caractères au plus, « OVERWATCH » par défaut). Il est gardé dans votre fichier config.json (Documents, Arma 3, COMSPEC_Local).
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Approchez-vous à pied du PC de TOC, sortez le téléphone et prenez-le en main (Ctrl+Maj+U).
+[*]Ouvrez Poste TOC dans la catégorie Mission.
+[*]Dans « Message à tout le camp », écrivez « Point de ralliement RP2, départ dans 10 min », choisissez URGENT, touchez ENVOYER AU CAMP.
+[*]Dans « Groupes du camp », repérez le groupe concerné et touchez ORDRE : choisissez le type (par exemple DÉPLACER), la consigne, la grille, puis ENVOYER L'ORDRE dans l'app Tâches.
+[*]Revenez dans Poste TOC : la section « Ordres émis » montre qui a vu, reçu, exécute ou a terminé l'ordre.
+[*]Les réponses écrites à « TOC · indicatif » arrivent à l'opérateur qui se tient au poste.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Mode local et poste TOC › PC portables de TOC[/b] (serveur, activé par défaut) : sans lui, aucun PC de TOC ne fonctionne.
+[*][b]COMSPEC › ATAK · Mode local et poste TOC › Tous les ordinateurs portables servent de PC de TOC[/b] (serveur, désactivé par défaut) : les ordinateurs portables et postes informatiques du jeu deviennent des PC de TOC, pour tous les camps.
+[*][b]COMSPEC › ATAK · Mode local et poste TOC › Mode full local (sans Athena)[/b] (serveur) : personne ne se connecte à Athena, tout passe en jeu.
+[*][b]COMSPEC › ATAK · Mode local et poste TOC › Caméras en direct sur les écrans TOC (par joueur)[/b] et [b]Distance d'activation des caméras d'écran (m)[/b] (serveur) : combien d'écrans en caméra chaque joueur rend en direct, et à quelle distance.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Tâches[/b] : NOUVEL ORDRE et ORDRE ouvrent son rédacteur ; les réponses REÇU, EN COURS, TERMINÉ remontent ici.
+[*][b]Messages[/b] : les messages du poste et les SMS aux chefs y arrivent.
+[*][b]Écrans TOC[/b] : choix de la caméra affichée en direct.
+[*][b]Athena[/b] : facultatif. Avec Athena, ce poste s'ajoute au poste web ; en mode local, il le remplace.
+[*][b]ACE[/b] : l'action PC du poste TOC est dans le menu ACE de l'objet ; sans ACE, elle passe par la molette.
+[*][b]Zeus[/b] : un Zeus peut poser un PC de TOC en cours de partie.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]L'app n'est jamais dans le lanceur loin d'un PC de TOC, ni en véhicule : c'est normal.
+[*]Seuls les joueurs du camp qui portent un téléphone reçoivent les messages du poste.
+[*]Un PC réservé à un autre camp reste muet pour vous.
+[*]La caméra en direct ne tourne que pour les joueurs proches qui regardent l'écran ; sa qualité dépend de la liaison de la caméra.
+[/list]
+
+[h3]Version d'introduction[/h3]
+ATAK natif 2.4.0 (mode full local et PC portable de TOC). Caméras en direct sur les écrans TOC ajoutées en 2.9.24.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+TOC post turns your phone into the command post console when you stand next to a TOC laptop placed in the mission. From the app you write to your whole side, give orders to groups, follow their replies, see where groups are and read the latest reports. Everything runs in game through the server: the app works with or without Athena. With Athena, Athena stays the main post and this laptop also talks to the side.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app sits in the Mission category of the launcher, but it [b]only[/b] shows up when you are on foot, within 2.5 m of a TOC laptop of your side (4.5 m from the centre of a TOC screen used as a post). Walk away and it disappears, the phone goes back to the home screen.
+A TOC laptop is the "TOC laptop (ATAK)" object from Eden or Zeus, an object designated by the mission, or any in-game laptop if the server allows it. It can be reserved to one side in Eden (BLUFOR, OPFOR, INDEP are accepted).
+Do not mix it up: the [b]TOC post laptop[/b] action (ACE menu of the object, or scroll menu without ACE) opens the laptop screen itself, with no phone (large map, GROUPS, FEED, ORDERS, SIDE tabs). This page covers the phone app.
+
+[h3]Features[/h3]
+[list]
+[*][b]Post banner[/b]: post callsign and operating mode (with Athena, or local mode without Athena or website).
+[*][b]Message to the whole side[/b]: up to 400 characters, ROUTINE, URGENT or FLASH priority, SEND TO SIDE button. The message lands in the Messages app of every player of the side who carries a phone, in the "TOC · callsign" conversation. URGENT or FLASH also triggers a notification and a vibration.
+[*][b]NEW ORDER[/b]: opens the order composer of the Tasks app (order to the whole side).
+[*][b]Camera on the post's screens[/b]: if a TOC screen of your side is within 30 m, pick a side camera (drone in flight, fixed camera, phone camera shared with you) and tap SHOW: the screen shows it live to players looking at it. MAP AND FEED puts the screen back on the post map and feed.
+[*][b]Groups on my side[/b]: every group with players, with strength, leader, leader's phone number and grid. SMS opens a conversation with the leader in Messages; ORDER opens the order composer already addressed to that group.
+[*][b]Orders sent[/b]: your last six orders sent without Athena (type, time, target, priority, instruction) and their tracking: seen, received, in progress, complete.
+[*][b]Latest reports[/b]: the last six entries of the Alerts app log, sent or received (type, time, author, grid, text).
+[*][b]Shortcuts[/b]: ALERTS, MAP, NUMBERS open the matching apps.
+[*][b]Post callsign[/b]: edit it then SAVE (24 characters max, "OVERWATCH" by default). It is kept in your config.json file (Documents, Arma 3, COMSPEC_Local).
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Walk up to the TOC laptop, take the phone out and take it in hand (Ctrl+Shift+U).
+[*]Open TOC post in the Mission category.
+[*]In "Message to the whole side", type "Rally point RP2, moving in 10 min", choose URGENT, tap SEND TO SIDE.
+[*]In "Groups on my side", find the group and tap ORDER: choose the type (for example MOVE), the instruction, the grid, then SEND THE ORDER in the Tasks app.
+[*]Back in TOC post, "Orders sent" shows who has seen, received, is carrying out or has completed the order.
+[*]Written replies to "TOC · callsign" reach the operator standing at the post.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Local mode and TOC post › TOC laptops[/b] (server, on by default): without it, no TOC laptop works.
+[*][b]COMSPEC › ATAK · Local mode and TOC post › Every laptop works as a TOC laptop[/b] (server, off by default): in-game laptops and computer sets become TOC laptops, for every side.
+[*][b]COMSPEC › ATAK · Local mode and TOC post › Full local mode (no Athena)[/b] (server): nobody connects to Athena, everything runs in game.
+[*][b]COMSPEC › ATAK · Local mode and TOC post › Live cameras on TOC screens (per player)[/b] and [b]Screen camera activation distance (m)[/b] (server): how many camera screens each player renders live, and from how far.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Tasks[/b]: NEW ORDER and ORDER open its composer; RECEIVED, IN PROGRESS, COMPLETE replies come back here.
+[*][b]Messages[/b]: post messages and SMS to leaders land there.
+[*][b]TOC screens[/b]: choice of the live camera shown.
+[*][b]Athena[/b]: optional. With Athena this post adds to the web post; in local mode it replaces it.
+[*][b]ACE[/b]: the TOC post laptop action is in the object's ACE menu; without ACE it uses the scroll menu.
+[*][b]Zeus[/b]: a Zeus can place a TOC laptop during the game.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]The app is never in the launcher away from a TOC laptop, nor in a vehicle: this is expected.
+[*]Only players of the side who carry a phone receive post messages.
+[*]A laptop reserved to another side stays silent for you.
+[*]The live camera only runs for nearby players looking at the screen; its quality depends on the camera's link.
+[/list]
+
+[h3]Introduced in[/h3]
+Native ATAK 2.4.0 (full local mode and TOC laptop). Live cameras on TOC screens added in 2.9.24.

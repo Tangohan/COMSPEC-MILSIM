@@ -276,6 +276,19 @@ final class AcademyRepository
         $stmt->execute([$tenantId, $userId, '__notes', json_encode(['text' => $text], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)]);
     }
 
+    /**
+     * Lecture légère pour le badge « à traiter » de l'instructeur : étape et fin de cours de chaque inscription, sans
+     * transférer le contenu des cours (MariaDB extrait les deux champs).
+     *
+     * @return list<array{user_id: int|string, course_key: string, stage: mixed, completed: mixed}>
+     */
+    public function reviewRows(int $tenantId): array
+    {
+        $stmt = $this->pdo->prepare("SELECT user_id, course_key, JSON_EXTRACT(state_json, '$.stage') AS stage, JSON_EXTRACT(state_json, '$.completed') AS completed FROM academy_learners WHERE tenant_id = ? AND course_key <> '__notes' ORDER BY updated_at DESC LIMIT 500");
+        $stmt->execute([$tenantId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     /** Staff see educational submissions in their own community, never personal notebooks. */
     public function learners(int $tenantId): array
     {
