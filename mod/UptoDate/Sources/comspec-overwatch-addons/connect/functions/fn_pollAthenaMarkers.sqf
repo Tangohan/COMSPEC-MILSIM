@@ -18,6 +18,12 @@ if (
 private _raw = _this param [0, nil, [""]];
 if (isNil "_raw") exitWith {
     if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_WebMarkersBusyAt", -1e9])) < 60) exitWith { nil };
+    // Un seul poste tire les marqueurs : le joueur lié et équipé de plus petit UID. Les marqueurs restent globaux, donc
+    // visibles de tous (sans téléphone compris) ; avant, chaque poste équipé faisait la même requête et les mêmes écritures.
+    private _cands = (allPlayers select { alive _x && {_x isEqualTo player || {_x getVariable ["COMSPEC_AtakReporterLinked", false]}} }) apply { [getPlayerUID _x, _x] };
+    _cands sort true;
+    private _first = _cands findIf { [_x select 1] call comspec_overwatch_connect_fnc_hasTerminal };
+    if (_first >= 0 && {((_cands select _first) select 1) isNotEqualTo player}) exitWith { nil };
     missionNamespace setVariable ["COMSPEC_WebMarkersBusyAt", diag_tickTime, false];
     ["world:" + worldName] spawn {
         private _r = [["COMSPECExtension", "GetMarkers", _this] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
@@ -124,8 +130,8 @@ if (_capped) then { missionNamespace setVariable ["COMSPEC_WebMarkersSig", "", f
     if (_bootMk) then { "" } else { " · première lecture" }
 ]] call comspec_overwatch_connect_fnc_noteUplinkReturn;
 
-private _prev = missionNamespace getVariable ["COMSPEC_WebMarkerIds", []];
-if (!(_prev isEqualType [])) then { _prev = []; };
+// Marqueurs web présents sur la carte, quel que soit le poste qui les a créés (le relais peut changer en cours de partie).
+private _prev = (allMapMarkers select { (_x select [0, 14]) isEqualTo "comspec_webmk_" }) apply { _x select [14] };
 if ((count _raw) < 7990) then {
     {
         if (!(_x in _seen)) then {
@@ -140,5 +146,4 @@ if ((count _raw) < 7990) then {
             };
         };
     } forEach _prev;
-    missionNamespace setVariable ["COMSPEC_WebMarkerIds", _seen, false];
 };

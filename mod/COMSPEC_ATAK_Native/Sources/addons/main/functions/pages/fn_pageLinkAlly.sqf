@@ -22,17 +22,23 @@ if (_phase in ["LINKING", "LINKED"] && {isNull _target}) then { _phase = ""; };
 
 switch (_phase) do {
     case "LINKING": {
-        private _p = ((diag_tickTime - (_st getOrDefault ["start", diag_tickTime])) / ((_st getOrDefault ["dur", 4]) max 0.1)) min 1;
-        private _n = round (_p * 10);
-        private _on = ""; private _off = "";
-        for "_i" from 1 to _n do { _on = _on + "● "; };
-        for "_i" from 1 to (10 - _n) do { _off = _off + "○ "; };
-        private _bar = format ["<t color='#5cc76b'>%1</t><t color='#4a5a53'>%2</t>", _on, _off];
+        // Barre de progression : texte refait sur place toutes les 0,5 s par fn_linkAllyInit (contrôle gardé sous
+        // COMSPEC_ATAK_LinkAllyBar), sans redessiner la page.
+        private _barTxt = {
+            params ["_st"];
+            private _p = ((diag_tickTime - (_st getOrDefault ["start", diag_tickTime])) / ((_st getOrDefault ["dur", 4]) max 0.1)) min 1;
+            private _n = round (_p * 10);
+            private _on = ""; private _off = "";
+            for "_i" from 1 to _n do { _on = _on + "● "; };
+            for "_i" from 1 to (10 - _n) do { _off = _off + "○ "; };
+            format ["<t size='1.2'>%1</t>  <t font='COMSPEC_BarlowBold'>%2 %%</t>", format ["<t color='#5cc76b'>%1</t><t color='#4a5a53'>%2</t>", _on, _off], round (_p * 100)]
+        };
+        uiNamespace setVariable ["COMSPEC_ATAK_LinkAllyBarTxt", _barTxt];
         _rows append [
             ["title", "Liaison en cours"],
             ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · gardez le contact (2 m)</t>", [name _target] call _esc,
                 ["Lien NFC : posez votre téléphone contre le sien", "Câble USB-C branché : lecture directe de la mémoire"] select ((_st getOrDefault ["mode", "NFC"]) isNotEqualTo "NFC")], [], [0.36, 0.78, 0.42, 1]],
-            ["text", format ["<t size='1.2'>%1</t>  <t font='COMSPEC_BarlowBold'>%2 %%</t>", _bar, round (_p * 100)]],
+            ["text", [_st] call _barTxt, [], "COMSPEC_ATAK_LinkAllyBar"],
             ["buttons", [["ANNULER", { ["unlink"] call comspec_atak_native_fnc_linkAllyAction; }]]]
         ];
     };

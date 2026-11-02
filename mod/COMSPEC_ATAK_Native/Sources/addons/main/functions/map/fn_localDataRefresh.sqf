@@ -51,12 +51,16 @@ uiNamespace setVariable ["COMSPEC_ATAK_DevCache", _devCache];
 // (la recherche parcourt toutes les pistes Athena pour chaque unité, quatre fois par seconde carte en main).
 private _nearCache = uiNamespace getVariable ["COMSPEC_ATAK_NearCache", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_NearCache", _nearCache];
+// Pistes des unités en jeu gardées d'un passage à l'autre (une table par unité, plus une par unité et par passage).
+private _trk = uiNamespace getVariable ["COMSPEC_ATAK_TrackCache", createHashMap];
+uiNamespace setVariable ["COMSPEC_ATAK_TrackCache", _trk];
 // Unités disparues (morts, respawns, IA supprimées) retirées toutes les 30 s : ces tables grossissaient toute la partie.
 if (isMultiplayer && {diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_BftPruneAt", 0]) > 30}) then {
     uiNamespace setVariable ["COMSPEC_ATAK_BftPruneAt", diag_tickTime];
     { if (isNull (objectFromNetId _x)) then { _devCache deleteAt _x; }; } forEach (keys _devCache);
     { if (isNull (objectFromNetId _x)) then { _last deleteAt _x; }; } forEach (keys _last);
     { if (isNull (objectFromNetId _x)) then { _nearCache deleteAt _x; }; } forEach (keys _nearCache);
+    { if (isNull (objectFromNetId _x)) then { _trk deleteAt _x; }; } forEach (keys _trk);
 };
 // Liste des alliés vivants relevée toutes les 2 s (parcours de allUnits, ennemis compris) ; les positions restent
 // relues à chaque passage, et un allié mort entre deux relevés est écarté dans la boucle.
@@ -76,8 +80,10 @@ private _carries = {
     _c select 0
 };
 private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends", true];
-// Méta pour retirer les fantômes Athena (pseudo Steam à côté de l'indicatif tactique).
-private _friendMeta = [];
+// Méta pour retirer les fantômes Athena (pseudo Steam à côté de l'indicatif tactique), indexée : pseudo Steam dont
+// l'indicatif tactique est autre ; indicatif -> positions (avant : chaque piste Athena parcourait tous les alliés).
+private _metaName = createHashMap;
+private _metaCs = createHashMap;
 {
     private _obj = _x;
     if (isNull _obj || {!alive _obj}) then { continue };
@@ -171,8 +177,9 @@ private _friendMeta = [];
         _fr = if (!_on) then { "OFFLINE" } else { switch (true) do { case (_age < _liveAge): { "LIVE" }; case (_age < _staleAge): { "STALE" }; default { "LOST" }; } };
     };
     // Réutiliser la piste déjà en mémoire (SQF-002 / SQF-C03) : n’allouer un HashMap qu’à la première vue.
-    private _track = _units getOrDefault [_id, createHashMap];
-    if ((count _track) isEqualTo 0) then { _units set [_id, _track]; };
+    private _track = _trk get _id;
+    if (isNil "_track") then { _track = createHashMap; _trk set [_id, _track]; };
+    _units set [_id, _track];
     _track set ["id", _id];
     _track set ["object", _obj];
     _track set ["self", _obj isEqualTo player];
@@ -187,7 +194,14 @@ private _friendMeta = [];
     _track set ["icon", _obj getVariable ["COMSPEC_ATAK_Icon", ""]];
     _track set ["orbat", _obj getVariable ["COMSPEC_ATAK_Orbat", ""]];
     if (side group _obj isEqualTo side group player) then {
-        _friendMeta pushBack [toLower (name _obj), toLower _callsign, _pos];
+        private _sn = toLower (name _obj);
+        private _tcs = toLower _callsign;
+        if (_tcs isNotEqualTo "") then {
+            if (_tcs isNotEqualTo _sn) then { _metaName set [_sn, true]; };
+            private _l = _metaCs getOrDefault [_tcs, []];
+            if ((count _l) isEqualTo 0) then { _metaCs set [_tcs, _l]; };
+            _l pushBack _pos;
+        };
     };
 } forEach (_fl select 0);
 
@@ -199,12 +213,7 @@ private _friendMeta = [];
     if (isNil "_remote") then { continue };
     private _rcs = toLower (_remote getOrDefault ["callsign", ""]);
     private _rpos = _remote getOrDefault ["position", [0, 0, 0]];
-    private _drop = false;
-    {
-        _x params ["_sn", "_tcs", "_fp"];
-        if (_rcs isEqualTo _sn && {_tcs isNotEqualTo "" && {_tcs isNotEqualTo _sn}}) exitWith { _drop = true; };
-        if (_rcs isEqualTo _tcs && {_tcs isNotEqualTo ""} && {(_fp distance2D _rpos) < 35}) exitWith { _drop = true; };
-    } forEach _friendMeta;
+    private _drop = (_rcs in _metaName) || {((_metaCs getOrDefault [_rcs, []]) findIf { (_x distance2D _rpos) < 35 }) >= 0};
     if (_drop) then { _units deleteAt _x; };
 } forEach (keys _units);
 
@@ -229,8 +238,9 @@ private _mkRemote = _data getOrDefault ["remoteMarkers",createHashMap];
 private _remRev = (_data getOrDefault ["revisions",createHashMap]) getOrDefault ["remoteMarkers",0];
 private _dirty = missionNamespace getVariable ["COMSPEC_ATAK_MkDirtyLd", createHashMap];
 private _mk = missionNamespace getVariable ["COMSPEC_ATAK_MkLocal", []];
-private _full = (count _mk) < 4 || {diag_tickTime > (_mk select 0)} || {"" in _dirty};
-if (!_full && {(count _dirty) isEqualTo 0} && {_remRev isEqualTo (_mk select 2)}) exitWith {};
+private _full = (count _mk) < 5 || {diag_tickTime > (_mk select 0)} || {"" in _dirty};
+private _remChanged = _full || {_remRev isNotEqualTo (_mk select 2)};
+if (!_remChanged && {(count _dirty) isEqualTo 0}) exitWith {};
 missionNamespace setVariable ["COMSPEC_ATAK_MkDirtyLd", createHashMap];
 private _entry = {
     createHashMapFromArray [
@@ -242,7 +252,7 @@ private _entry = {
 private _local = createHashMap;
 if (_full) then {
     { _local set [_x, _x call _entry]; } forEach allMapMarkers;
-    _mk = [diag_tickTime + 300, _local, _remRev, (_mk param [3, 0]) + 1];
+    _mk = [diag_tickTime + 300, _local, _remRev, (_mk param [3, 0]) + 1, createHashMap];
 } else {
     _local = _mk select 1;
     { if ((markerShape _x) isEqualTo "") then { _local deleteAt _x; } else { _local set [_x, _x call _entry]; }; } forEach (keys _dirty);
@@ -250,7 +260,14 @@ if (_full) then {
     _mk set [3, (_mk select 3) + 1];
 };
 missionNamespace setVariable ["COMSPEC_ATAK_MkLocal", _mk];
-private _markers = createHashMap;
+// Marqueurs Athena inchangés : seuls les marqueurs du carnet sont reportés dans la table finale (sans copier tous les
+// marqueurs ni refaire la grille des doublons). Un doublon Athena / jeu apparu entre-temps se règle au prochain envoi Athena.
+private _markers = _mk select 4;
+if (!_remChanged) then {
+    { if !(_x in _mkRemote) then { if (_x in _local) then { _markers set [_x, _local get _x]; } else { _markers deleteAt _x; }; }; } forEach (keys _dirty);
+} else {
+_markers = createHashMap;
+_mk set [4, _markers];
 _markers merge _local;
 if ((count _mkRemote) > 0) then {
     // Doublon Athena / jeu : même texte (ou sans texte) à moins de 15 m. Marqueurs du jeu rangés par cases de 15 m :
@@ -279,5 +296,6 @@ if ((count _mkRemote) > 0) then {
         };
         if (!_dup) then { _markers set [_x,_r]; };
     } forEach _mkRemote;
+};
 };
 ["markers",_markers,-1,str (_mk select 3)] call comspec_atak_native_fnc_storeSet;

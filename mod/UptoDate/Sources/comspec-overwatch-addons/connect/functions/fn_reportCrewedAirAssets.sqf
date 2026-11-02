@@ -29,8 +29,14 @@ private _globalReporter = _linked param [0, _myUid];
 
 // Aéronefs vivants hors parachutes (Helicopter / Plane / UAV héritent de Air), plus les drones terrestres :
 // évite de parcourir tous les `vehicles` avec 5 isKindOf chacun toutes les 3 s.
-private _airAssets = (entities [["Air"], ["ParachuteBase"], false, true])
-    + (allUnitsUAV select { !(_x isKindOf "Air") });
+// Pas le relais global : je ne remonte au mieux que l'aéronef où je suis (équipage relié) ; à pied, rien à parcourir.
+private _airAssets = if (_globalReporter isEqualTo _myUid) then {
+    (entities [["Air"], ["ParachuteBase"], false, true]) + (allUnitsUAV select { !(_x isKindOf "Air") })
+} else {
+    private _v = vehicle player;
+    [[], [_v]] select (_v isNotEqualTo player && {(_v isKindOf "Air" && {!(_v isKindOf "ParachuteBase")}) || {unitIsUAV _v}})
+};
+if (_airAssets isEqualTo []) exitWith { false };
 {
     if (_sent >= 12) then { break };
     if (isNull _x || {!alive _x}) then { continue };

@@ -2,6 +2,8 @@
 if ([] call comspec_atak_native_fnc_bridge) exitWith { false };
 private _raw = ["GetMarkers",["world:" + worldName]] call comspec_atak_native_fnc_extensionCall;
 if ((_raw find "OK|") isNotEqualTo 0) exitWith { false };
+// Texte de la DLL identique au précédent : rien à relire (signature = texte brut, sans str de toute la table).
+if ((((uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap]) getOrDefault ["signatures",createHashMap]) getOrDefault ["remoteMarkers",""]) isEqualTo _raw) exitWith { false };
 
 private _markers = createHashMap;
 private _tab = toString [9];
@@ -18,4 +20,4 @@ private _tab = toString [9];
     ]];
 } forEach ((_raw select [3]) splitString (toString [10]));
 
-["remoteMarkers",_markers] call comspec_atak_native_fnc_storeSet
+["remoteMarkers",_markers,-1,_raw] call comspec_atak_native_fnc_storeSet

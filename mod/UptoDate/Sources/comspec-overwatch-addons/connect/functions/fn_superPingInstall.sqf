@@ -42,7 +42,9 @@ missionNamespace setVariable ["COMSPEC_SuperPingAttachVanilla", _attachVanilla, 
             missionNamespace setVariable ["COMSPEC_SuperPingPulses", _live, false];
         };
     };
-    private _open = !(isNil "cTabIfOpen")
+    // cTab réellement ouvert (son écran nommé dans cTabIfOpen) : la variable seule reste définie après fermeture, et le
+    // relevé GetPings tournait alors toute la mission.
+    private _open = (!(isNil "cTabIfOpen") && {cTabIfOpen isEqualType []} && {!isNull (uiNamespace getVariable [cTabIfOpen param [1, ""], displayNull])})
         || {!isNull (findDisplay 9973)}
         || {!isNull (findDisplay 9974)}
         || {visibleMap}

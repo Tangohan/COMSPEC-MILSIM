@@ -60,30 +60,31 @@ if !([] call comspec_atak_native_fnc_bridge) exitWith {
     if (_mine || _force) then { missionNamespace setVariable ["COMSPEC_ATAK_PlanWebLast", [dayTime, ["pas de liaison Athena, un autre téléphone l'enverra", "pas de liaison Athena"] select (_owner isNotEqualTo ""), _rev, _n]]; };
     false
 };
-// Tracés à main levée allégés : 6000 sommets au plus pour tout le plan (premier et dernier gardés).
-private _total = 0;
-{ _total = _total + count (_x select 2); } forEach _items;
-private _step = ceil (_total / 6000) max 1;
-private _js = comspec_atak_native_fnc_json;
-private _parts = _items apply {
-    _x params [["_id", ""], ["_kind", ""], ["_pts", []], ["_text", ""], ["_ck", "WHITE"], ["_dashed", false], ["_arrow", false], ["_w", 2], ["_num", 0], ["_author", ""], ["_desc", ""]];
-    private _keep = _pts;
-    if (_step > 1 && {(count _pts) > 8}) then {
-        _keep = [];
-        { if ((_forEachIndex mod _step) isEqualTo 0) then { _keep pushBack _x; }; } forEach _pts;
-        if ((_keep select -1) isNotEqualTo (_pts select -1)) then { _keep pushBack (_pts select -1); };
+// JSON construit dans la tâche de fond : un plan de plusieurs dizaines de Ko (tracés) figeait l'image en cours.
+[_items, _rev, _n, _webVar, _side, _name, _owner] spawn {
+    params ["_items", "_rev", "_n", "_webVar", "_side", "_name", "_owner"];
+    // Tracés à main levée allégés : 6000 sommets au plus pour tout le plan (premier et dernier gardés).
+    private _total = 0;
+    { _total = _total + count (_x select 2); } forEach _items;
+    private _step = ceil (_total / 6000) max 1;
+    private _js = comspec_atak_native_fnc_json;
+    private _parts = _items apply {
+        _x params [["_id", ""], ["_kind", ""], ["_pts", []], ["_text", ""], ["_ck", "WHITE"], ["_dashed", false], ["_arrow", false], ["_w", 2], ["_num", 0], ["_author", ""], ["_desc", ""]];
+        private _keep = _pts;
+        if (_step > 1 && {(count _pts) > 8}) then {
+            _keep = [];
+            { if ((_forEachIndex mod _step) isEqualTo 0) then { _keep pushBack _x; }; } forEach _pts;
+            if ((_keep select -1) isNotEqualTo (_pts select -1)) then { _keep pushBack (_pts select -1); };
+        };
+        format ['{"id":%1,"kind":%2,"text":%3,"color":%4,"dashed":%5,"arrow":%6,"width":%7,"num":%8,"author":%9,"desc":%10,"pts":',
+            [_id] call _js, [_kind] call _js, [_text] call _js, [_ck] call _js, [_dashed] call _js, [_arrow] call _js, [_w] call _js, [_num] call _js, [_author] call _js, [_desc] call _js]
+            + (str (_keep apply { [round (_x select 0), round (_x select 1)] })) + "}"
     };
-    format ['{"id":%1,"kind":%2,"text":%3,"color":%4,"dashed":%5,"arrow":%6,"width":%7,"num":%8,"author":%9,"desc":%10,"pts":',
-        [_id] call _js, [_kind] call _js, [_text] call _js, [_ck] call _js, [_dashed] call _js, [_arrow] call _js, [_w] call _js, [_num] call _js, [_author] call _js, [_desc] call _js]
-        + (str (_keep apply { [round (_x select 0), round (_x select 1)] })) + "}"
-};
-// Concaténation (et non format, borné à quelques milliers de caractères) : le plan peut peser plusieurs dizaines de Ko.
-private _json = format ['{"mission_key":%1,"world":%2,"side":%3,"rev":%4,"name":%5,"reported_by":%6,"owner":%7,"items":[',
-    [missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2", missionName, worldName]]] call _js,
-    [worldName] call _js, [str _side] call _js, _rev, [_name] call _js, [[player] call comspec_atak_native_fnc_unitCallsign] call _js, [_owner] call _js]
-    + (_parts joinString ",") + "]}";
-[_json, _rev, _n, _webVar] spawn {
-    params ["_json", "_rev", "_n", "_webVar"];
+    // Concaténation (et non format, borné à quelques milliers de caractères) : le plan peut peser plusieurs dizaines de Ko.
+    private _json = format ['{"mission_key":%1,"world":%2,"side":%3,"rev":%4,"name":%5,"reported_by":%6,"owner":%7,"items":[',
+        [missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2", missionName, worldName]]] call _js,
+        [worldName] call _js, [str _side] call _js, _rev, [_name] call _js, [[player] call comspec_atak_native_fnc_unitCallsign] call _js, [_owner] call _js]
+        + (_parts joinString ",") + "]}";
     private _r = (["COMSPECExtension", "BriefingPlan.Push", [_json]] call comspec_overwatch_connect_fnc_extDirect);
     if (_r isEqualType []) then { _r = _r param [0, ""]; };
     // Vide : COMSPEC Link plus ancien que 2.0.84 (commande inconnue).

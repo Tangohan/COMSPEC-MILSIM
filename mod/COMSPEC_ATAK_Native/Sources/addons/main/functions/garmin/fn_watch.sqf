@@ -941,7 +941,7 @@ switch (_act) do {
                     _mc setVariable ["comspec_watchAim", _pos];
                     _mc ctrlMapAnimAdd [0, _z, _pos];
                     ctrlMapAnimCommit _mc;
-                    _mc ctrlAddEventHandler ["Draw", { (_this select 0) call comspec_atak_native_fnc_watchMapDraw; }];
+                    _mc ctrlAddEventHandler ["Draw", { private _t = diag_tickTime; (_this select 0) call comspec_atak_native_fnc_watchMapDraw; ["carte montre (image)", _t] call comspec_atak_native_fnc_perfAcc; }];
                     // Mode nuit : filtre rouge sur la carte.
                     if (_night) then { ["nf", "gw_disc", -1.02, -1.02, 2.04, [0.55, 0, 0, 0.4]] call _pic; (_n get "nf") ctrlSetTextColor [0.55, 0, 0, 0.4]; (_n get "nf") ctrlCommit 0; };
                     ["northBg", -0.32, -0.96, 0.64, 0.16, [0, 0, 0, 0.75]] call _box;

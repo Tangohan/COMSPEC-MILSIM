@@ -103,7 +103,7 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["deleted", _m] call c
         private _h = missionNamespace getVariable [_x, createHashMap];
         if ((count _h) < 300) then { _h set [_m, true]; } else { _h set ["", true]; };
         missionNamespace setVariable [_x, _h];
-    } forEach ["COMSPEC_ATAK_MkDirtyGm", "COMSPEC_ATAK_MkDirtyLd", "COMSPEC_ATAK_MkDirtySk"];
+    } forEach ["COMSPEC_ATAK_MkDirtyGm", "COMSPEC_ATAK_MkDirtyLd", "COMSPEC_ATAK_MkDirtySk", "COMSPEC_ATAK_MkDirtyWs"];
 }]; } forEach ["MarkerCreated", "MarkerDeleted", "MarkerUpdated"];
 // Position de la miniature : coin suivant (réglage profil COMSPEC_ATAK_MiniAnchor, aussi dans Réglages).
 missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
@@ -577,6 +577,8 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 [{ ["tick"] call comspec_atak_native_fnc_tocScreen; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Vidéoprojecteurs et toiles proches (fn_projector) : toile éclairée ou non, lumières de l'objectif ; menus ACE.
 ["aceInit"] call comspec_atak_native_fnc_projector;
+// Aucun projecteur dans la mission (cas courant) : le passage de 2 s s'arrête net (deux nearestObjects à 160 m évités).
+["COMSPEC_ATAK_Projector", "init", { COMSPEC_ATAK_ProjAny = true; }, true, [], true] call CBA_fnc_addClassEventHandler;
 [{ ["tick"] call comspec_atak_native_fnc_projector; }, 2] call COMSPEC_ATAK_PfhSpread;
 
 // App Musique : son du lecteur et des haut-parleurs voisins ; coupé en quittant la partie (la DLL jouerait encore au menu).

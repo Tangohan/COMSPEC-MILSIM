@@ -6,6 +6,10 @@
 */
 private _out = createHashMap;
 if (!hasInterface) exitWith { _out };
+// Résultat gardé 1 s (lecture seule chez les appelants : bandeau de liaison, carte du relais, profil), au lieu de
+// recompter les joueurs à portée à chaque rafraîchissement.
+private _cached = missionNamespace getVariable ["COMSPEC_NearestRelayCache", []];
+if ((count _cached) isEqualTo 2 && {diag_tickTime - (_cached select 0) < 1}) exitWith { _cached select 1 };
 
 private _unit = missionNamespace getVariable ["COMSPEC_PlayerUnit", player];
 if (isNull _unit) then { _unit = player; };
@@ -120,4 +124,5 @@ _out set ["power_w", _power];
 _out set ["throughput_mbps", _thru];
 _out set ["reliability_pct", _rel];
 _out set ["grid", mapGridPosition _pos];
+missionNamespace setVariable ["COMSPEC_NearestRelayCache", [diag_tickTime, _out]];
 _out
