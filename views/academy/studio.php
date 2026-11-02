@@ -16,6 +16,9 @@ $stages = AcademyCurriculum::STAGES;
 $csrf = \App\Core\Csrf::field();
 $role = $role ?? 'owner';
 $staff = (bool) ($staff ?? false);
+/* Créer un cours et régler son partage : droits Academy distincts (écran « Droits d'accès »), par défaut ceux de l'encadrement. */
+$canCreate = (bool) ($canCreate ?? $staff);
+$canShare = (bool) ($canShare ?? $staff);
 $sharing = $sharing ?? null;
 $sharingReady = (bool) ($sharingReady ?? false);
 $lifecycleReady = (bool) ($lifecycleReady ?? false);
@@ -98,7 +101,7 @@ $card = static function (array $c, string $mode) use ($h, $t, $local, $link, $cs
 <?php };
 ?>
 <header class="ast-top">
-<a class="tb icon" href="<?= $h($link($staff ? 'instructor' : 'dashboard')) ?>" title="<?= $h($t('back_academy')) ?>"><svg class="i"><use href="#ai-back"/></svg><span class="sr-only"><?= $h($t('back_academy')) ?></span></a>
+<a class="tb icon" href="<?= $h($link($staff || $canCreate ? 'instructor' : 'dashboard')) ?>" title="<?= $h($t('back_academy')) ?>"><svg class="i"><use href="#ai-back"/></svg><span class="sr-only"><?= $h($t('back_academy')) ?></span></a>
 <span class="wm">ACADEMY <span>STUDIO</span></span>
 <span class="sp"></span>
 <a class="tb" href="<?= $h($link('classroom')) ?>"><?= $h($t('classroom')) ?></a>
@@ -108,7 +111,7 @@ $card = static function (array $c, string $mode) use ($h, $t, $local, $link, $cs
 <?php if ($notice): ?><p class="ast-notice ast-notice--<?= $noticeClass($notice) ?>" role="status"><?= $h($t($notice)) ?></p><?php endif ?>
 <section class="sth-hero" style="--img:url('<?= $h($coverUrl('fog')) ?>')">
 <div class="hin"><div><p class="kk"><i></i>Academy<?= !empty($tenant['name']) ? ' · ' . $h($tenant['name']) : '' ?></p><h1>Studio</h1><p><?= $h($t('studio_intro')) ?></p></div>
-<?php if ($staff): ?><button class="hb1" type="button" data-open-dialog="sth-new">+ <?= $h($t('studio_new_course')) ?></button><?php endif ?></div>
+<?php if ($canCreate): ?><button class="hb1" type="button" data-open-dialog="sth-new">+ <?= $h($t('studio_new_course')) ?></button><?php endif ?></div>
 <dl class="hst"><div><dt><?= $h($t('stat_courses')) ?></dt><dd><?= count($active) ?></dd></div><div><dt><?= $h($t('stat_published')) ?></dt><dd class="ok"><?= $published ?></dd></div><div><dt><?= $h($t('stat_drafts')) ?></dt><dd class="dr"><?= count($active) - $published ?></dd></div><div><dt><?= $h($t('stat_chapters')) ?></dt><dd><?= $chapterTotal ?></dd></div></dl>
 </section>
 <div class="sth-bar">
@@ -124,7 +127,7 @@ $card = static function (array $c, string $mode) use ($h, $t, $local, $link, $cs
 <?php if ($view === 'archives'): ?><p class="sth-hint"><?= $h($t('archived_help')) ?></p><?php elseif ($view === 'corbeille'): ?><p class="sth-hint"><?= $h(sprintf($t('trash_help'), \App\Repositories\AcademyRepository::TRASH_DAYS)) ?></p><?php endif ?>
 <div class="sth-grid" data-studio-grid>
 <?php foreach (['actives' => $active, 'archives' => $archived, 'corbeille' => $trashed][$view] as $item) { $card($item, $view); } ?>
-<?php if ($view === 'actives' && $staff): ?><button type="button" class="sth-new" data-open-dialog="sth-new" data-new-card><span class="pl">+</span><b><?= $h($t('studio_new_course')) ?></b><span><?= $h($t('studio_new_hint')) ?></span></button><?php endif ?>
+<?php if ($view === 'actives' && $canCreate): ?><button type="button" class="sth-new" data-open-dialog="sth-new" data-new-card><span class="pl">+</span><b><?= $h($t('studio_new_course')) ?></b><span><?= $h($t('studio_new_hint')) ?></span></button><?php endif ?>
 <?php if ($view !== 'actives' && ['archives' => $archived, 'corbeille' => $trashed][$view] === []): ?><p class="sth-empty"><b><?= $h($t($view === 'archives' ? 'archived_empty' : 'trash_empty')) ?></b></p><?php endif ?>
 <p class="sth-empty" data-studio-empty hidden><b><?= $h($t('studio_search_empty')) ?></b><?= $h($t('studio_search_empty_help')) ?></p>
 </div>
@@ -133,13 +136,14 @@ $card = static function (array $c, string $mode) use ($h, $t, $local, $link, $cs
 <div class="sth-grid"><?php foreach ($builtInCourses as $item) { $card($item, 'builtin'); } ?></div>
 <?php endif ?>
 </main>
-<?php if ($staff): ?>
+<?php if ($canCreate): ?>
 <dialog class="ast-dialog" id="sth-new" aria-labelledby="sth-new-title"><form method="post" action="<?= $h($link('action/studio_new')) ?>"><?= $csrf ?><input type="hidden" name="course" value="academy">
 <div class="mh"><div><p class="k"><?= $h($t('studio_new_course')) ?></p><h2 id="sth-new-title"><?= $h($t('new_course_heading')) ?></h2></div><button class="mx" type="button" data-close-dialog aria-label="<?= $h($t('close')) ?>">×</button></div>
 <div class="mb">
 <label class="fl"><span class="lab"><?= $h($t('new_course_title')) ?></span><input class="in" name="new_title" maxlength="200" required placeholder="<?= $h($t('new_course_title_ph')) ?>"></label>
 <label class="fl"><span class="lab"><?= $h($t('new_course_summary')) ?></span><textarea class="in" name="new_summary" rows="3" maxlength="2000" placeholder="<?= $h($t('new_course_summary_ph')) ?>"></textarea></label>
 <fieldset class="fl"><legend class="lab"><?= $h($t('studio_cover')) ?></legend><div class="covs"><?php foreach (AcademyStudio::COVERS as $index => $cover): ?><label style="--img:url('<?= $h($coverUrl($cover)) ?>')"><input type="radio" name="new_cover" value="<?= $cover ?>"<?= $index === 0 ? ' checked' : '' ?>><span class="sr-only"><?= $h($t('studio_cover_' . $cover)) ?></span></label><?php endforeach ?></div></fieldset>
+<label class="fl sth-private"><input type="checkbox" name="new_private" value="1"> <span><b><?= $h($t('private_draft')) ?></b> · <?= $h($t('private_draft_help')) ?></span></label>
 </div>
 <div class="mf"><span class="h"><?= $h($t('new_course_draft')) ?></span><button class="btn" type="button" data-close-dialog><?= $h($t('cancel')) ?></button><button class="btn dark"><?= $h($t('create_and_open')) ?></button></div>
 </form></dialog>
@@ -233,7 +237,7 @@ $deckFigure = static function (array $resource) use ($h, $t, $link, $local): voi
 <?php if (!$readOnly): ?><span class="sv-st" data-save-state data-dirty="<?= $h($t('studio_unsaved')) ?>" aria-live="polite"><?= $h($t('studio_saved')) ?></span>
 <details class="ast-issues"><summary class="tb <?= $issues ? 'warn' : 'okc' ?>"><?php if ($issues): ?><svg class="i"><use href="#ai-alert"/></svg><?= count($issues) ?> <?= $h($t(count($issues) === 1 ? 'studio_issue' : 'studio_issues')) ?><?php else: ?>✓ <?= $h($t('studio_ready')) ?><?php endif ?></summary>
 <div class="pop"><?php if ($issues): ?><p class="k"><?= $h($t('studio_before_publish')) ?></p><ul><?php foreach ($issues as $issue): $c = (int) ($issue['chapter'] ?? 0); ?><li><a href="<?= $h($stepUrl($c, $issue['stage'])) ?>" data-step-link="<?= $c ?>.<?= $issue['stage'] ?>"<?= $issue['chapter'] === null ? ' data-open-course-tab' : '' ?>><b><?= $issue['chapter'] === null ? $h($t('studio_course_settings')) : $h($t('chapter')) . ' ' . ($c + 1) . ' · ' . $h($t($stages[$issue['stage']])) ?></b><?= $h($t($issue['issue'])) ?></a></li><?php endforeach ?></ul><?php else: ?><p class="okp"><?= $h($t('studio_ready_text')) ?></p><?php endif ?></div></details><?php endif ?>
-<?php if ($staff && !$builtIn): ?><button class="tb" type="button" data-open-dialog="ast-share"><?= $h($t('share')) ?></button><?php endif ?>
+<?php if ($canShare && !$builtIn): ?><button class="tb" type="button" data-open-dialog="ast-share"><?= $h($t('share')) ?></button><?php endif ?>
 <?php if (!$builtIn): ?><a class="tb" href="<?= $h($previewUrl) ?>"><svg class="i"><use href="#ai-eye"/></svg><?= $h($t('studio_preview')) ?></a><?php endif ?>
 <?php if ($isArchived && $staff): ?><button class="tb pri" form="ast-unarchive"><?= $h($t('restore')) ?></button>
 <?php elseif ($readOnly && $staff): ?><button class="tb pri" form="ast-revise"><?= $h($t($builtIn ? 'studio_copy_builtin' : 'studio_revise')) ?></button>
@@ -385,7 +389,7 @@ foreach ($links + [$nextIndex => null] as $ri => $resource): ?>
 </dialog>
 <?php endif ?>
 </form>
-<?php if ($staff && !$builtIn) { require __DIR__ . '/studio_share.php'; } ?>
+<?php if ($canShare && !$builtIn) { require __DIR__ . '/studio_share.php'; } ?>
 <?php endif ?>
 <?php require __DIR__ . '/disclaimer.php'; ?>
 </body></html>

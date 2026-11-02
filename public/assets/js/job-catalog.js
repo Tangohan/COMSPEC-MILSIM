@@ -42,10 +42,24 @@
     const form = () => document.querySelector('form[data-job-catalog-form]');
     const isEnglish = () => (document.documentElement.lang || 'fr').slice(0, 2) === 'en';
     const branchKey = entry => entry.country + ':' + entry.branch;
-    // Nom officiel (langue du pays) en titre ; translittération (« ru-Latn »), puis traductions (langue du lecteur,
-    // puis anglais) en ligne secondaire.
+    // Nom officiel (langue du pays) en titre ; romanisation (« zh-Latn », « ru-Latn ») dessous, puis traductions (langue du
+    // lecteur, puis anglais) en ligne secondaire.
     const officialTitle = entry => entry.official_name || entry.name;
-    const translations = entry => Object.entries(entry.names || {}).slice(1).filter(([lang]) => lang === 'en' || lang === (isEnglish() ? 'en' : 'fr') || lang.endsWith('-Latn'));
+    // Romanisation du nom officiel en alphabet non latin, clé « <langue>-Latn » (« zh-Latn » : pinyin, « ru-Latn » : russe
+    // translittéré) : ligne à part sous le titre, donc exclue des traductions.
+    const latinKey = entry => (entry.official_lang || 'en') + '-Latn';
+    const romanized = entry => (entry.names || {})[latinKey(entry)] || '';
+    const translations = entry => Object.entries(entry.names || {}).slice(1).filter(([lang]) => lang === 'en' || lang === (isEnglish() ? 'en' : 'fr'));
+    // Langue HTML d'un nom : caractères chinois simplifiés (police CJK, glyphes simplifiés) et pinyin.
+    const htmlLang = lang => ({zh: 'zh-Hans', 'zh-Latn': 'zh-Latn-pinyin'})[lang] || lang;
+    // Romanisation cherchée sans accents ni tons, aussi d'un seul tenant (« tezhongzuozhan », « boevoyplovets ») et
+    // avec « v » pour « ü » du pinyin (« lvzhang »), comme on la tape au clavier.
+    const latinForms = text => {
+        if (!text) return '';
+        const flat = normalize(text).trim();
+        const v = /[üǖǘǚǜÜǕǗǙǛ]/.test(text) ? normalize(text.replace(/[üǖǘǚǜÜǕǗǙǛ]/g, 'v')).trim() : '';
+        return [flat.replace(/ /g, ''), v, v.replace(/ /g, '')].filter(Boolean).join(' ') + ' ';
+    };
     const el = (tag, className, text) => {
         const node = document.createElement(tag);
         if (className) node.className = className;
@@ -81,7 +95,7 @@
             entry.formation, entry.branch_label, entry.country_label, entry.type_label, (entry.tags || []).join(' '),
             (entry.qualifications || []).join(' '), entry.id].join(' ');
         const german = transliterate(text);
-        return ' ' + normalize(text) + ' ' + (german !== text ? normalize(german) + ' ' : '') + String(entry.code || '').toLowerCase().replace(/\s+/g, '') + ' ';
+        return ' ' + normalize(text) + ' ' + (german !== text ? normalize(german) + ' ' : '') + latinForms(romanized(entry)) + String(entry.code || '').toLowerCase().replace(/\s+/g, '') + ' ';
     }
 
     async function load() {
@@ -304,6 +318,7 @@
         }
         const name = el('span', 'jobcat__result-name');
         name.appendChild(highlight(entry.official_name || entry.name, words));
+        name.lang = htmlLang(entry.official_lang || 'en');
         title.appendChild(name);
         if (entry.code) {
             const code = el('code');
@@ -313,6 +328,12 @@
         const meta = el('small');
         meta.appendChild(highlight([entry.formation || entry.command, entry.type_label, entry.formation ? '' : entry.unit].filter(Boolean).join(' · '), words));
         button.append(title);
+        if (romanized(entry)) {
+            const roman = el('span', 'jobcat__result-roman');
+            roman.lang = htmlLang(latinKey(entry));
+            roman.appendChild(highlight(romanized(entry), words));
+            button.append(roman);
+        }
         const others = translations(entry);
         if (others.length) {
             const alt = el('span', 'jobcat__result-alt');
@@ -486,11 +507,14 @@
         box.querySelector('[data-job-catalog-placeholder]').hidden = true;
         box.querySelector('.jobcat__frame').classList.add('is-detail');
         detail.querySelectorAll('[data-jc]').forEach(node => { node.textContent = entry[node.dataset.jc] || ''; node.hidden = !entry[node.dataset.jc]; });
+        detail.querySelector('h3[data-jc="official_name"]').lang = htmlLang(entry.official_lang || 'en');
         const official = detail.querySelector('[data-jc-translations]');
         official.textContent = '';
-        translations(entry).forEach(([lang, text], i) => {
+        (romanized(entry) ? [[latinKey(entry), romanized(entry)]] : []).concat(translations(entry)).forEach(([lang, text], i) => {
             if (i) official.appendChild(document.createTextNode(' · '));
-            official.append(langCode(lang), document.createTextNode(text));
+            const node = el('span', '', text);
+            node.lang = htmlLang(lang);
+            official.append(langCode(lang), node);
         });
         official.hidden = !official.childNodes.length;
         const names = detail.querySelector('[data-jc-names]');
@@ -508,6 +532,7 @@
             copy.dataset.lang = lang;
             copy.setAttribute('aria-label', label('copy-name') + (lang ? ' (' + label('lang-' + lang) + ')' : ''));
             const name = el('span', 'jobcat__names-text', text);
+            if (lang) name.lang = htmlLang(lang);
             if (i === 0 && lang) name.appendChild(el('small', '', ' — ' + label('official')));
             if (lang) item.append(langCode(lang));
             item.append(name, copy);

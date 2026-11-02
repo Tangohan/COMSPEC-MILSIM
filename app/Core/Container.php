@@ -32,6 +32,7 @@ class Container
             \App\Controllers\Web\AcademyController::class => new \App\Controllers\Web\AcademyController(),
             \App\Services\Academy\GoogleSlidesImporter::class => new \App\Services\Academy\GoogleSlidesImporter(),
             \App\Repositories\AcademyCourseShareRepository::class => new \App\Repositories\AcademyCourseShareRepository(),
+            \App\Repositories\AcademyAccessRepository::class => new \App\Repositories\AcademyAccessRepository(),
             TenantRepository::class => new TenantRepository(),
             \App\Repositories\SubscriptionPlanRepository::class => new \App\Repositories\SubscriptionPlanRepository(),
             \App\Repositories\PlatformModuleReleaseRepository::class => new \App\Repositories\PlatformModuleReleaseRepository(),

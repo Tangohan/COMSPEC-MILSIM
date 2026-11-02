@@ -16,14 +16,16 @@ use App\Support\JobRoleIconLibrary;
  * Format d’un pack : { pack, country, official_lang, label{fr,en}, compiled_at, sources_note{fr,en}, entries[] } ;
  * une entrée : id, branch, command, formation, unit{fr,en}, type, code, code_system, name{fr,en}, abbreviation,
  * description{fr,en}, qualifications{fr[],en[]}, billets{fr[],en[]}, icon, tags{fr[],en[]}, sources[{url,title}].
- * official_lang : langue des appellations officielles du pays (« en » par défaut ; « de » : name porte aussi une clé de) ; un nom officiel
- * en alphabet non latin a sa translittération sous la clé <langue>-Latn (« ru-Latn ») ; formation : unité courte
+ * official_lang : langue des appellations officielles du pays (« en » par défaut ; « de » : name porte aussi une clé de ;
+ * « zh » : clé zh en caractères simplifiés ; « ru » : clé ru en cyrillique) ; un nom officiel en alphabet non latin a sa
+ * romanisation sous la clé <langue>-Latn (« zh-Latn » : pinyin avec tons, « ru-Latn » : translittération usuelle), cherchée
+ * aussi sans accents ni tons et d’un seul tenant (latinForms) ; formation : unité courte
  * (« 1er RPIMa », « CPA 10 »), facultative, proposée comme filtre sous le commandement.
  */
 final class JobCatalog
 {
     /** Packs livrés (nom du fichier sans extension). */
-    public const PACKS = ['us_sof', 'fr_sof', 'de_sof', 'ru_sof'];
+    public const PACKS = ['us_sof', 'fr_sof', 'de_sof', 'cn_sof', 'ru_sof'];
 
     public const TYPES = ['operator', 'command', 'support', 'aviation'];
     public const BRANCHES = ['army', 'navy', 'air_force', 'marine_corps', 'gendarmerie', 'joint'];
@@ -37,6 +39,7 @@ final class JobCatalog
         'US' => ['fr' => 'États-Unis', 'en' => 'United States'],
         'FR' => ['fr' => 'France', 'en' => 'France'],
         'DE' => ['fr' => 'Allemagne', 'en' => 'Germany'],
+        'CN' => ['fr' => 'Chine', 'en' => 'China'],
         'RU' => ['fr' => 'Russie', 'en' => 'Russia'],
     ];
 
@@ -62,6 +65,14 @@ final class JobCatalog
             'navy' => ['fr' => 'Deutsche Marine (marine)', 'en' => 'German Navy (Deutsche Marine)'],
             'air_force' => ['fr' => 'Luftwaffe (armée de l’air)', 'en' => 'German Air Force (Luftwaffe)'],
             'joint' => ['fr' => 'Interarmées (Bundeswehr)', 'en' => 'Joint (Bundeswehr)'],
+        ],
+        // Nom chinois officiel de l’armée gardé dans les deux langues ; la Police armée du peuple est une force à part.
+        'CN' => [
+            'army' => ['fr' => 'Armée de terre de l’APL (解放军陆军)', 'en' => 'PLA Army (解放军陆军)'],
+            'navy' => ['fr' => 'Marine de l’APL (解放军海军)', 'en' => 'PLA Navy (解放军海军)'],
+            'marine_corps' => ['fr' => 'Corps des Marines de l’APL (海军陆战队)', 'en' => 'PLA Navy Marine Corps (海军陆战队)'],
+            'air_force' => ['fr' => 'Force aérienne de l’APL (解放军空军)', 'en' => 'PLA Air Force (解放军空军)'],
+            'gendarmerie' => ['fr' => 'Police armée du peuple (武警部队)', 'en' => 'People’s Armed Police (武警部队)'],
         ],
         // Sigles russes translittérés ; la sécurité intérieure (Rosgvardia, FSB) est hors des forces armées.
         'RU' => [
@@ -303,9 +314,8 @@ final class JobCatalog
     public static function names(array $entry, string $lang): array
     {
         $name = is_array($entry['name'] ?? null) ? $entry['name'] : [];
-        $official = (string) ($entry['official_lang'] ?? 'en');
-        // La translittération (« ru-Latn ») suit le nom officiel.
-        $order = array_unique(array_merge([$official, $official . '-Latn', self::lang($lang), 'en'], array_map('strval', array_keys($name))));
+        // La romanisation (« zh-Latn », « ru-Latn ») suit le nom officiel qu’elle transcrit.
+        $order = array_unique(array_merge([(string) ($entry['official_lang'] ?? 'en'), self::latinKey($entry), self::lang($lang), 'en'], array_map('strval', array_keys($name))));
         $out = [];
         foreach ($order as $l) {
             $value = trim((string) ($name[$l] ?? ''));
@@ -341,7 +351,11 @@ final class JobCatalog
         if (class_exists(\Normalizer::class)) {
             $text = (string) preg_replace('/\p{Mn}+/u', '', (string) \Normalizer::normalize($text, \Normalizer::FORM_D));
         } else {
-            $text = strtr($text, ['ß' => 'ss', 'à' => 'a', 'â' => 'a', 'ä' => 'a', 'á' => 'a', 'ç' => 'c', 'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'î' => 'i', 'ï' => 'i', 'í' => 'i', 'ô' => 'o', 'ö' => 'o', 'ó' => 'o', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ú' => 'u', 'ÿ' => 'y', 'ñ' => 'n', 'œ' => 'oe', 'æ' => 'ae', 'ё' => 'е', 'й' => 'и']);
+            $text = strtr($text, ['ß' => 'ss', 'à' => 'a', 'â' => 'a', 'ä' => 'a', 'á' => 'a', 'ç' => 'c', 'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'î' => 'i', 'ï' => 'i', 'í' => 'i', 'ô' => 'o', 'ö' => 'o', 'ó' => 'o', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ú' => 'u', 'ÿ' => 'y', 'ñ' => 'n', 'œ' => 'oe', 'æ' => 'ae',
+                // Tons du pinyin (« jūjīshǒu » → « jujishou »).
+                'ā' => 'a', 'ǎ' => 'a', 'ē' => 'e', 'ě' => 'e', 'ī' => 'i', 'ǐ' => 'i', 'ì' => 'i', 'ō' => 'o', 'ǒ' => 'o', 'ò' => 'o', 'ū' => 'u', 'ǔ' => 'u', 'ǖ' => 'u', 'ǘ' => 'u', 'ǚ' => 'u', 'ǜ' => 'u',
+                // Cyrillique : comme la décomposition Unicode (ё → е, й → и).
+                'ё' => 'е', 'й' => 'и']);
         }
 
         // « ß » n’a pas de forme décomposée : « Straße » se cherche « strasse ».
@@ -381,7 +395,37 @@ final class JobCatalog
         $german = self::transliterate($text);
 
         // « 18B » se trouve aussi en tapant « 18 b » ; « Fallschirmjäger » en tapant « fallschirmjager » ou « fallschirmjaeger ».
-        return ' ' . self::normalize($text) . ' ' . ($german !== $text ? self::normalize($german) . ' ' : '') . strtolower(str_replace(' ', '', $code)) . ' ';
+        return ' ' . self::normalize($text) . ' ' . ($german !== $text ? self::normalize($german) . ' ' : '') . self::latinForms((string) ($entry['name'][self::latinKey($entry)] ?? '')) . strtolower(str_replace(' ', '', $code)) . ' ';
+    }
+
+    /**
+     * Clé de la romanisation du nom officiel : « <langue>-Latn » (« zh-Latn » pour le pinyin, « ru-Latn » pour le russe).
+     *
+     * @param array<string, mixed> $entry
+     */
+    public static function latinKey(array $entry): string
+    {
+        return (string) ($entry['official_lang'] ?? 'en') . '-Latn';
+    }
+
+    /**
+     * Romanisation (« zh-Latn », « ru-Latn ») cherchée comme on la tape au clavier : sans accents ni tons (la normalisation
+     * les retire), aussi d’un seul tenant (« tezhongzuozhan », « boevoyplovets ») et avec « v » pour « ü » du pinyin (« lvzhang »).
+     */
+    public static function latinForms(string $latin): string
+    {
+        if (trim($latin) === '') {
+            return '';
+        }
+        $flat = self::normalize($latin);
+        $forms = [str_replace(' ', '', $flat)];
+        if (preg_match('/[üǖǘǚǜÜǕǗǙǛ]/u', $latin) === 1) {
+            $v = self::normalize((string) preg_replace('/[üǖǘǚǜÜǕǗǙǛ]/u', 'v', $latin));
+            $forms[] = $v;
+            $forms[] = str_replace(' ', '', $v);
+        }
+
+        return implode(' ', array_unique($forms)) . ' ';
     }
 
     /**
