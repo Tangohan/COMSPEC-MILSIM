@@ -1735,11 +1735,18 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/qualifications/types', [QualificationReferentielController::class, 'storeType'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/cursus-pilote/carnet/{userId}', [PilotLogbookController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/cursus-pilote/carnet/vols/{entryId}', [PilotLogbookController::class, 'review'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/espace-aerien', [\App\Controllers\Admin\Organization\AirspaceController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/cursus-pilote', [PilotSyllabusController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/cursus-pilote/installer', [PilotSyllabusController::class, 'install'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/cursus-pilote/evaluer', [PilotSyllabusController::class, 'evaluate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/cursus-pilote/paliers/{ruleId}', [PilotSyllabusController::class, 'updateRule'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/cursus-pilote/propositions/{awardId}', [PilotSyllabusController::class, 'decide'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/appareils', [PilotSyllabusController::class, 'saveAircraft'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/familles', [PilotSyllabusController::class, 'saveGroup'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/paliers-communaute', [PilotSyllabusController::class, 'saveStep'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/paliers-communaute/propositions/{awardId}', [PilotSyllabusController::class, 'decideStep'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/paliers-communaute/{stepId}', [PilotSyllabusController::class, 'saveStep'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/paliers-communaute/{stepId}/action', [PilotSyllabusController::class, 'stepAction'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/attribuer', [QualificationReferentielController::class, 'awardForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/attribuer', [QualificationReferentielController::class, 'awardStore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/brevets/lot', [QualificationReferentielController::class, 'generateCertificateBatch'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

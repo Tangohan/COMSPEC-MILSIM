@@ -6,6 +6,7 @@ namespace App\Services\Personnel;
 
 use App\Repositories\AtakDistanceRepository;
 use App\Repositories\GradeRepository;
+use App\Repositories\PilotFleetRepository;
 use App\Repositories\PilotLogbookRepository;
 use App\Repositories\PilotQualificationRuleRepository;
 use App\Repositories\QualificationAwardRuleRepository;
@@ -13,6 +14,7 @@ use App\Repositories\QualificationAwardRepository;
 use App\Repositories\QualificationDefinitionRepository;
 use App\Repositories\UserRepository;
 use App\Services\GameEquipment\GameItemKinds;
+use App\Support\PilotFleet;
 use App\Support\PilotSyllabusCatalog;
 use App\Support\QualificationAdminStatus;
 use App\Support\QualificationCriteriaCatalog as Cat;
@@ -41,6 +43,7 @@ final class QualificationAwardRuleService
         private UserRepository $users,
         private ?PilotLogbookRepository $logbook = null,
         private ?GradeRepository $grades = null,
+        private ?PilotFleetRepository $fleet = null,
     ) {
     }
 
@@ -166,6 +169,7 @@ final class QualificationAwardRuleService
             'grades' => $gradeById,
             'metrics' => [],
             'flight' => null,
+            'flight_counts' => null,
             'best' => [],
         ];
     }
@@ -211,6 +215,9 @@ final class QualificationAwardRuleService
     {
         $metric = (string) ($c['metric'] ?? '');
         $scope = (string) ($c['scope'] ?? '');
+        if ($metric === 'flight_count') {
+            return (float) ($this->flightCountTotals($tenantId)[$userId][$scope] ?? 0);
+        }
         if ($metric === 'flight_hours' || $metric === 'flight_cond_hours') {
             $totals = $this->flightTotals($tenantId)[$userId] ?? [];
             if ($metric === 'flight_hours' && $scope === '') {
@@ -247,7 +254,61 @@ final class QualificationAwardRuleService
             $logByUser = [];
         }
 
-        return $ctx['flight'] = self::flightScopes($rowsByUser, $logByUser);
+        return $ctx['flight'] = self::flightScopes($rowsByUser, $logByUser, $this->fleetFor($tenantId));
+    }
+
+    private function fleetFor(int $tenantId): PilotFleet
+    {
+        try {
+            return $this->fleet?->fleet($tenantId) ?? PilotFleet::empty();
+        } catch (Throwable) {
+            return PilotFleet::empty();
+        }
+    }
+
+    /** @return array<int, array<string, int>> */
+    private function flightCountTotals(int $tenantId): array
+    {
+        $ctx = &$this->ctx[$tenantId];
+        if (is_array($ctx['flight_counts'] ?? null)) {
+            return $ctx['flight_counts'];
+        }
+
+        return $ctx['flight_counts'] = self::flightCounts($this->fleet?->flightCountsByUser($tenantId) ?? [], $this->fleetFor($tenantId));
+    }
+
+    /**
+     * Nombre de vols de chaque membre par périmètre : « » (tous), filière, appareil reconnu ou de la communauté,
+     * famille et classe exacte.
+     *
+     * @param array<int, list<array<string, mixed>>> $rowsByUser vols du carnet par classe (vehicle_class, vehicle_label, vehicle_kind, flights)
+     * @return array<int, array<string, int>>
+     */
+    public static function flightCounts(array $rowsByUser, ?PilotFleet $fleet = null): array
+    {
+        $fleet ??= PilotFleet::empty();
+        $out = [];
+        foreach ($rowsByUser as $uid => $rows) {
+            $t = [];
+            foreach ($rows as $r) {
+                $n = max(0, (int) ($r['flights'] ?? 0));
+                if ($n < 1) {
+                    continue;
+                }
+                $class = (string) ($r['vehicle_class'] ?? '');
+                $kind = ($r['vehicle_kind'] ?? '') === 'plane' ? 'plane' : 'heli';
+                $scopes = array_merge([''], $fleet->scopes($class, (string) ($r['vehicle_label'] ?? ''), $kind));
+                if (trim($class) !== '') {
+                    $scopes[] = 'vclass:' . strtolower(trim($class));
+                }
+                foreach (array_unique($scopes) as $sc) {
+                    $t[$sc] = ($t[$sc] ?? 0) + $n;
+                }
+            }
+            $out[(int) $uid] = $t;
+        }
+
+        return $out;
     }
 
     /**
@@ -255,13 +316,13 @@ final class QualificationAwardRuleService
      * @param array<int, list<array<string, mixed>>> $logByUser carnet de vol contresigné
      * @return array<int, array<string, array{seconds: int, last_flown_at: string}>>
      */
-    public static function flightScopes(array $rowsByUser, array $logByUser): array
+    public static function flightScopes(array $rowsByUser, array $logByUser, ?PilotFleet $fleet = null): array
     {
         $out = [];
         foreach (array_unique(array_merge(array_keys($rowsByUser), array_keys($logByUser))) as $uid) {
             $rows = $rowsByUser[$uid] ?? [];
             $log = $logByUser[$uid] ?? [];
-            $totals = PilotQualificationEngine::mergeLogbook(PilotQualificationEngine::scopeTotals($rows), $log);
+            $totals = PilotQualificationEngine::mergeLogbook(PilotQualificationEngine::scopeTotals($rows, $fleet), $log, $fleet);
             $byClass = [];
             foreach ($rows as $r) {
                 $byClass[] = [(string) ($r['vehicle_class'] ?? ''), (int) ($r['seconds'] ?? 0)];
@@ -571,6 +632,44 @@ final class QualificationAwardRuleService
     }
 
     /**
+     * Résumé de plusieurs qualifications (paliers du cursus pilote créés par la communauté) en un seul calcul :
+     * titulaires, propositions à valider, membres éligibles et les plus avancés vers les conditions.
+     *
+     * @param list<int> $definitionIds
+     * @return array<int, array{held: int, eligible: int, pending: list<array{member: array<string, mixed>, award_id: int}>, near: list<array{member: array<string, mixed>, pct: int, missing: list<string>}>, auto: bool, rule: array<string, mixed>}>
+     */
+    public function summaries(int $tenantId, array $definitionIds): array
+    {
+        $out = [];
+        if (!$this->repo->schemaReady() || $definitionIds === []) {
+            return $out;
+        }
+        unset($this->ctx[$tenantId]);
+        $ctx = $this->context($tenantId);
+        foreach (array_unique(array_map('intval', $definitionIds)) as $defId) {
+            $settings = $this->settings($tenantId, $defId);
+            $sum = ['held' => 0, 'eligible' => 0, 'pending' => [], 'near' => [], 'auto' => !empty($settings['auto_enabled']), 'rule' => $settings['rule']];
+            foreach ($ctx['members'] as $uid => $m) {
+                $ev = $this->evaluateMember($tenantId, $defId, $settings, $uid);
+                if (in_array($ev['state'], [QualificationCriteriaEngine::HELD, QualificationCriteriaEngine::RENEW], true)) {
+                    $sum['held']++;
+                } elseif ($ev['state'] === QualificationCriteriaEngine::PENDING) {
+                    $sum['pending'][] = ['member' => $m, 'award_id' => (int) ($ev['award']['id'] ?? 0)];
+                } elseif ($ev['state'] === QualificationCriteriaEngine::ELIGIBLE) {
+                    $sum['eligible']++;
+                } elseif ($ev['state'] === QualificationCriteriaEngine::PROGRESS && $ev['pct'] > 0) {
+                    $sum['near'][] = ['member' => $m, 'pct' => (int) $ev['pct'], 'missing' => $ev['prereq']['missing']];
+                }
+            }
+            usort($sum['near'], static fn (array $a, array $b): int => $b['pct'] <=> $a['pct']);
+            $sum['near'] = array_slice($sum['near'], 0, 3);
+            $out[$defId] = $sum;
+        }
+
+        return $out;
+    }
+
+    /**
      * Case de la matrice : qualifié, expire bientôt (ou en grâce), expirée, en cours (formation, à valider,
      * progression vers les seuils), retirée, rien.
      *
@@ -749,6 +848,12 @@ final class QualificationAwardRuleService
                 $families['family:' . $key] = $label;
             }
         }
+        $fleet = $this->fleetFor($tenantId);
+        foreach ($fleet->aircraftRows() as $key => $row) {
+            if (empty($row['archived_at']) && trim((string) ($row['name'] ?? '')) !== '') {
+                $families['family:' . $key] = (string) $row['name'];
+            }
+        }
         $classes = [];
         foreach ($this->repo->aircraftSeen($tenantId) as $a) {
             $class = (string) ($a['vehicle_class'] ?? '');
@@ -759,6 +864,9 @@ final class QualificationAwardRuleService
         }
         foreach ($families as $v => $l) {
             $out[] = [$v, $l, 'family'];
+        }
+        foreach ($fleet->groups() as $g => $l) {
+            $out[] = ['group:' . $g, $l, 'group'];
         }
         foreach ($classes as $v => $l) {
             $out[] = [$v, $l, 'class'];
