@@ -51616,4 +51616,5 @@ return [
     'Nom copié' => 'Name to copy',
     'Allemand' => 'German',
     'nom officiel' => 'official name',
+    'Russe en alphabet latin' => 'Russian in Latin script',
 ];

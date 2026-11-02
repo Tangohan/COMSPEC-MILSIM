@@ -23,15 +23,21 @@
     const LIMITS = {name: 120, abbreviation: 8, description: 500, tags: 400, code: 40};
     // Sans accents ni casse ; « ß » (sans forme décomposée) devient « ss ».
     const normalize = value => String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLocaleLowerCase().replace(/ß/g, 'ss').replace(/[^\p{L}\p{N}]+/gu, ' ');
-    // Graphie allemande sans tréma : « Fallschirmjäger » se trouve aussi en tapant « fallschirmjaeger ».
-    const transliterate = value => value.replace(/[äöüÄÖÜ]/g, c => ({ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'Ae', Ö: 'Oe', Ü: 'Ue'})[c]);
+    // Graphie allemande sans tréma : « Fallschirmjäger » se trouve aussi en tapant « fallschirmjaeger » ;
+    // russe en latin usuel (même table que JobCatalog::CYRILLIC) : « Спецназ » se trouve en tapant « spetsnaz ».
+    const CYRILLIC = {а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'kh', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'shch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya'};
+    const transliterate = value => {
+        const latin = value.replace(/[äöüÄÖÜ]/g, c => ({ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'Ae', Ö: 'Oe', Ü: 'Ue'})[c]);
+        return /\p{Script=Cyrillic}/u.test(latin) ? latin.toLowerCase().replace(/[а-яё]/g, c => CYRILLIC[c]) : latin;
+    };
     const dialog = () => document.querySelector('[data-job-catalog]');
     const form = () => document.querySelector('form[data-job-catalog-form]');
     const isEnglish = () => (document.documentElement.lang || 'fr').slice(0, 2) === 'en';
     const branchKey = entry => entry.country + ':' + entry.branch;
-    // Nom officiel (langue du pays) en titre ; traductions (langue du lecteur, puis anglais) en ligne secondaire.
+    // Nom officiel (langue du pays) en titre ; translittération (« ru-Latn »), puis traductions (langue du lecteur,
+    // puis anglais) en ligne secondaire.
     const officialTitle = entry => entry.official_name || entry.name;
-    const translations = entry => Object.entries(entry.names || {}).slice(1).filter(([lang]) => lang === 'en' || lang === (isEnglish() ? 'en' : 'fr'));
+    const translations = entry => Object.entries(entry.names || {}).slice(1).filter(([lang]) => lang === 'en' || lang === (isEnglish() ? 'en' : 'fr') || lang.endsWith('-Latn'));
     const el = (tag, className, text) => {
         const node = document.createElement(tag);
         if (className) node.className = className;

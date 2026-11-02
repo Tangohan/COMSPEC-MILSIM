@@ -20,7 +20,7 @@ use ReflectionProperty;
 use Tests\Support\MysqlDdlSqlitePdo;
 
 /**
- * Catalogue d’emplois de référence (forces spéciales américaines, françaises et allemandes) et prérequis d’un emploi : doctrines, heures de
+ * Catalogue d’emplois de référence (forces spéciales américaines, françaises, allemandes et russes) et prérequis d’un emploi : doctrines, heures de
  * jeu / de vol mesurées, qualifications, compétences, contrôle à l’attribution et dérogation motivée.
  */
 final class JobCatalogPrerequisitesTest extends TestCase
@@ -196,6 +196,78 @@ final class JobCatalogPrerequisitesTest extends TestCase
         }
     }
 
+    public function testRussianPackHasCyrillicOfficialNamesTransliterationAndSecurityForcesApart(): void
+    {
+        $pack = JobCatalog::packs()['ru_sof'] ?? null;
+        self::assertIsArray($pack);
+        self::assertSame('RU', $pack['country']);
+        self::assertSame('ru', $pack['official_lang']);
+        $entries = array_values(array_filter(JobCatalog::rawEntries(), static fn (array $e): bool => $e['country'] === 'RU'));
+        $branches = array_count_values(array_column($entries, 'branch'));
+        // Forces terrestres et VDV, infanterie de marine, marine, aviation de l’armée, sécurité intérieure à part, KSSO.
+        foreach (['army' => 40, 'marine_corps' => 15, 'navy' => 8, 'air_force' => 8, 'gendarmerie' => 8, 'joint' => 3] as $branch => $min) {
+            self::assertGreaterThanOrEqual($min, $branches[$branch] ?? 0, 'RU ' . $branch);
+        }
+        foreach (['KSSO', 'GU GSh', 'VDV', 'VKS', 'Rosgvardia', 'FSB'] as $command) {
+            self::assertContains($command, array_column($entries, 'command'), 'Commandement absent du catalogue russe.');
+        }
+        $formations = array_unique(array_column($entries, 'formation'));
+        foreach (['2 OBrSpN', '22 OBrSpN', '45 OBrSpN VDV', '76 DShD', '55 DMP', '810 OBrMP', '42 OMRP', 'PDSS', 'SOBR', 'TsSN FSB Alfa'] as $unit) {
+            self::assertContains($unit, $formations, 'Unité absente du catalogue russe.');
+        }
+        foreach ($entries as $entry) {
+            $id = (string) $entry['id'];
+            self::assertNotSame('', trim((string) ($entry['formation'] ?? '')), $id . ' : unité courte manquante.');
+            self::assertDoesNotMatchRegularExpression('/\p{Cyrillic}/u', (string) $entry['formation'], $id . ' : unité courte en latin.');
+            // Nom officiel en cyrillique et sa translittération latine, toujours dans la même table que la recherche.
+            $ru = (string) ($entry['name']['ru'] ?? '');
+            $latin = (string) ($entry['name']['ru-Latn'] ?? '');
+            self::assertMatchesRegularExpression('/\p{Cyrillic}/u', $ru, $id . ' : nom officiel russe en cyrillique.');
+            self::assertLessThanOrEqual(120, mb_strlen($ru), $id);
+            self::assertDoesNotMatchRegularExpression('/\p{Cyrillic}/u', $latin, $id . ' : translittération en latin.');
+            self::assertSame(JobCatalog::transliterate($ru), mb_strtolower($latin), $id . ' : translittération.');
+            self::assertSame('', (string) $entry['code'], $id . ' : aucun code VUS publié.');
+            // Source faible marquée sur l’entrée et sur son titre ; sinon au moins une source hors Wikipédia.
+            if (($entry['source_quality'] ?? '') === 'weak') {
+                self::assertNotSame([], array_filter($entry['sources'], static fn (array $s): bool => str_contains((string) $s['title'], '[source faible]')), $id);
+            } else {
+                self::assertArrayNotHasKey('source_quality', $entry, $id);
+                self::assertNotSame([], array_filter($entry['sources'], static fn (array $s): bool => preg_match('~wikipedia\.org~', (string) $s['url']) !== 1), $id . ' : Wikipédia ne peut pas être la seule source.');
+            }
+        }
+        $weak = count(array_filter($entries, static fn (array $e): bool => ($e['source_quality'] ?? '') === 'weak'));
+        self::assertLessThanOrEqual(intdiv(count($entries), 4), $weak, 'Au plus un quart d’entrées à source faible.');
+        // Nom officiel russe en titre, translittération puis traductions ; armée et pays traduits.
+        $byId = array_column($entries, null, 'id');
+        $diver = JobCatalog::find('ru-vmf-42omrp-vodolaz-razvedchik', 'fr');
+        self::assertSame('Водолаз-разведчик', $diver['official_name']);
+        self::assertSame(['ru', 'ru-Latn', 'fr', 'en'], array_keys($diver['names']));
+        self::assertSame('Vodolaz-razvedchik', $diver['names']['ru-Latn']);
+        self::assertSame('VMF (marine)', $diver['branch_label']);
+        self::assertSame('Russie', $diver['country_label']);
+        $en = JobCatalog::find('ru-fsb-tssn-alfa-sotrudnik', 'en');
+        self::assertSame(['ru', 'ru-Latn', 'en', 'fr'], array_keys($en['names']));
+        self::assertSame('Internal security (Rosgvardia, FSB), not armed forces', $en['branch_label']);
+        self::assertSame('Russia', $en['country_label']);
+        // Recherche : cyrillique, translittération, français et anglais, quel que soit le lecteur.
+        $kg = $byId['ru-vmf-561omrp-boevoy-plovets']['name'];
+        foreach ([$kg['ru'], mb_strtoupper($kg['ru']), $kg['ru-Latn'], 'boevoy plovets', $kg['fr'], $kg['en']] as $q) {
+            foreach (['fr', 'en'] as $reader) {
+                self::assertContains('ru-vmf-561omrp-boevoy-plovets', array_column(JobCatalog::search($q, ['country' => 'RU'], $reader), 'id'), $q . ' / ' . $reader);
+            }
+        }
+        $snipers = array_column(JobCatalog::search('снайпер', ['country' => 'RU'], 'fr'), 'id');
+        self::assertContains('ru-rosgv-sobr-snaiper', $snipers);
+        self::assertContains('ru-vdv-11odshbr-snaiper', $snipers);
+        self::assertSame($snipers, array_column(JobCatalog::search('snayper', ['country' => 'RU'], 'fr'), 'id'));
+        self::assertContains('ru-vdv-83odshbr-pulemetchik', array_column(JobCatalog::search('пулеметчик', [], 'en'), 'id'), 'ё tapé е.');
+        self::assertContains('ru-vdv-83odshbr-pulemetchik', array_column(JobCatalog::search('pulemetchik', [], 'en'), 'id'));
+        self::assertContains('ru-vks-aa-ka52-komandir-ekipazha', array_column(JobCatalog::search('Ка-52', [], 'fr'), 'id'));
+        self::assertContains('ru-vks-aa-ka52-komandir-ekipazha', array_column(JobCatalog::search('ka 52', [], 'fr'), 'id'));
+        self::assertSame([], array_column(JobCatalog::search('spetsnaz', ['country' => 'DE'], 'fr'), 'id'));
+        self::assertSame(['RU' => 'Russie'], array_intersect_key(JobCatalog::facets('fr')['country'], ['RU' => true]));
+    }
+
     public function testContentIsServedInTheReadersLanguageAndSearchCoversCodesNamesUnitsAndFilters(): void
     {
         $dir = sys_get_temp_dir() . '/jobcat-' . bin2hex(random_bytes(4));
@@ -368,6 +440,75 @@ final class JobCatalogPrerequisitesTest extends TestCase
         }
     }
 
+    public function testRussianCountryHasCyrillicOfficialNamesTransliterationAndCyrillicOrLatinSearch(): void
+    {
+        $dir = sys_get_temp_dir() . '/jobcat-' . bin2hex(random_bytes(4));
+        mkdir($dir);
+        $entry = static fn (string $id, string $branch, string $command, string $formation, string $type, array $name, string $unitFr, array $qualFr = []): array => [
+            'id' => $id, 'branch' => $branch, 'command' => $command, 'formation' => $formation, 'type' => $type,
+            'code' => '', 'code_system' => '', 'abbreviation' => '', 'icon' => 'crosshair', 'name' => $name,
+            'unit' => ['fr' => $unitFr, 'en' => $formation . ' (unit)'], 'description' => ['fr' => 'Texte.', 'en' => 'Text.'],
+            'qualifications' => ['fr' => $qualFr, 'en' => $qualFr], 'billets' => ['fr' => [], 'en' => []],
+            'tags' => ['fr' => ['Forces spéciales'], 'en' => ['Special Forces']], 'sources' => [['url' => 'https://www.mil.ru/x', 'title' => 'x']],
+        ];
+        $pack = static fn (string $country, string $official, array $entries): string => (string) json_encode(['country' => $country, 'official_lang' => $official, 'label' => ['fr' => 'FS ' . $country, 'en' => $country . ' SOF'], 'compiled_at' => '2026-11-02', 'sources_note' => ['fr' => 'n', 'en' => 'n'], 'entries' => $entries]);
+        file_put_contents($dir . '/us_sof.json', $pack('US', 'en', [$entry('us-army-18b', 'army', 'USASOC', '1st SFG', 'operator', ['fr' => 'Sergent armement', 'en' => 'Weapons Sergeant'], '1st SFG')]));
+        file_put_contents($dir . '/fr_sof.json', $pack('FR', 'fr', [$entry('fr-terre-1rpima-ce', 'army', 'CFST', '1er RPIMa', 'command', ['fr' => 'Chef d’équipe', 'en' => 'Team Leader'], '1er RPIMa')]));
+        file_put_contents($dir . '/de_sof.json', $pack('DE', 'de', [$entry('de-marine-ksm-kampfschwimmer', 'navy', 'EinsFltl 1', 'KSM', 'operator', ['de' => 'Kampfschwimmer', 'fr' => 'Nageur de combat', 'en' => 'Combat Swimmer'], 'KSM')]));
+        file_put_contents($dir . '/ru_sof.json', $pack('RU', 'ru', [
+            $entry('ru-gu-2obrspn-snaiper', 'army', 'GU GSh', '2 OBrSpN', 'operator', ['ru' => 'Разведчик-снайпер', 'ru-Latn' => 'Razvedchik-snayper', 'fr' => 'Éclaireur tireur d’élite', 'en' => 'Reconnaissance sniper'], '2e brigade (2-я отдельная бригада специального назначения)', ['Parachutisme (парашютно-десантная подготовка)']),
+            $entry('ru-vdv-45obrspn-pulemetchik', 'army', 'VDV', '45 OBrSpN VDV', 'operator', ['ru' => 'Разведчик-пулемётчик', 'ru-Latn' => 'Razvedchik-pulemetchik', 'fr' => 'Éclaireur mitrailleur', 'en' => 'Reconnaissance machine gunner'], '45e brigade spetsnaz des VDV (45-я гвардейская бригада)'),
+            $entry('ru-mp-155obrmp-strelok', 'marine_corps', 'Tikhookeansky flot', '155 OBrMP', 'operator', ['ru' => 'Стрелок', 'ru-Latn' => 'Strelok', 'fr' => 'Fusilier marin', 'en' => 'Naval infantry rifleman'], '155e brigade (155-я отдельная бригада морской пехоты)'),
+            $entry('ru-fsb-alfa-sotrudnik', 'gendarmerie', 'FSB', 'TsSN FSB Alfa', 'operator', ['ru' => 'Сотрудник управления «А»', 'ru-Latn' => 'Sotrudnik upravleniya «A»', 'fr' => 'Opérateur de la direction A', 'en' => 'Directorate A operator'], 'Direction A du TsSN (Управление «А» ЦСН ФСБ)'),
+        ]));
+        JobCatalog::useDirectory($dir);
+        try {
+            $ids = static fn (array $hits): array => array_column($hits, 'id');
+            // Compteurs : quatre pays, dans l’ordre de COUNTRIES.
+            self::assertSame(['US', 'FR', 'DE', 'RU'], array_column(JobCatalog::countries('fr'), 'code'));
+            self::assertSame([1, 1, 1, 4], array_column(JobCatalog::countries('fr'), 'count'));
+            self::assertSame('Russie', JobCatalog::countries('fr')[3]['label']);
+            self::assertSame('Russia', JobCatalog::countries('en')[3]['label']);
+            self::assertSame('Russie', JobCatalog::facets('fr')['country']['RU']);
+            // Armées russes : libellés propres au pays ; la sécurité intérieure est classée à part.
+            $ru = JobCatalog::facets('fr', ['country' => 'RU']);
+            self::assertSame(['army', 'marine_corps', 'gendarmerie'], array_keys($ru['branch']));
+            self::assertSame('Sécurité intérieure (Rosgvardia, FSB), hors armées', $ru['branch']['gendarmerie']);
+            self::assertSame('Naval Infantry (Morskaya pekhota)', JobCatalog::find('ru-mp-155obrmp-strelok', 'en')['branch_label']);
+            self::assertSame(['FSB', 'GU GSh', 'Tikhookeansky flot', 'VDV'], array_keys($ru['command']));
+            // Nom officiel en cyrillique en titre, translittération juste après, puis la langue du lecteur et l’anglais.
+            $fr = JobCatalog::find('ru-gu-2obrspn-snaiper', 'fr');
+            self::assertSame('Разведчик-снайпер', $fr['official_name']);
+            self::assertSame('Éclaireur tireur d’élite', $fr['name']);
+            self::assertSame(['ru', 'ru-Latn', 'fr', 'en'], array_keys($fr['names']));
+            self::assertSame(['ru', 'ru-Latn', 'en', 'fr'], array_keys(JobCatalog::find('ru-gu-2obrspn-snaiper', 'en')['names']));
+            self::assertSame('Razvedchik-snayper', $fr['names']['ru-Latn']);
+            // Recherche : cyrillique (casse, ё/е), translittération, français et anglais, quel que soit le lecteur.
+            foreach (['снайпер', 'СНАЙПЕР', 'Разведчик-снайпер', 'snayper', 'razvedchik snayper', 'tireur d elite', 'sniper'] as $q) {
+                foreach (['fr', 'en'] as $reader) {
+                    self::assertSame(['ru-gu-2obrspn-snaiper'], $ids(JobCatalog::search($q, [], $reader)), $q . ' / ' . $reader);
+                }
+            }
+            foreach (['пулемётчик', 'пулеметчик', 'pulemetchik', 'machine gunner'] as $q) {
+                self::assertSame(['ru-vdv-45obrspn-pulemetchik'], $ids(JobCatalog::search($q, [], 'fr')), $q);
+            }
+            // Unité et brevets en cyrillique trouvés aussi en latin (translittération automatique).
+            self::assertSame(['ru-mp-155obrmp-strelok'], $ids(JobCatalog::search('morskoy pekhoty', [], 'fr')));
+            self::assertSame(['ru-mp-155obrmp-strelok'], $ids(JobCatalog::search('морской пехоты', [], 'en')));
+            self::assertSame(['ru-gu-2obrspn-snaiper'], $ids(JobCatalog::search('parashyutno', [], 'en')));
+            self::assertSame(['ru-fsb-alfa-sotrudnik'], $ids(JobCatalog::search('alfa', ['country' => 'RU'], 'fr')));
+            self::assertSame(['ru-gu-2obrspn-snaiper', 'ru-vdv-45obrspn-pulemetchik'], $ids(JobCatalog::search('razvedchik', ['country' => 'RU', 'branch' => 'army'], 'fr')));
+            self::assertSame([], $ids(JobCatalog::search('снайпер', ['country' => 'DE'], 'fr')));
+            self::assertSame('spetsnaz shchit', JobCatalog::normalize(JobCatalog::transliterate('Спецназ ЩИТ')));
+            self::assertSame('снаипер', JobCatalog::normalize('Снайпер'), 'Cyrillique gardé, sans signe diacritique.');
+        } finally {
+            foreach (['us_sof', 'fr_sof', 'de_sof', 'ru_sof'] as $file) {
+                unlink($dir . '/' . $file . '.json');
+            }
+            rmdir($dir);
+        }
+    }
+
     public function testCatalogueEndpointAnswersJsonForTheWorkspaceOnly(): void
     {
         $_SESSION = ['tenant_id' => 14, 'user_id' => 7];
@@ -382,7 +523,7 @@ final class JobCatalogPrerequisitesTest extends TestCase
         self::assertNotEmpty($body['entries']);
         self::assertSame('air_force', $body['entries'][0]['branch']);
         self::assertArrayHasKey('branch', $body['facets']);
-        self::assertSame(['US', 'FR', 'DE'], array_column($body['countries'], 'code'));
+        self::assertSame(['US', 'FR', 'DE', 'RU'], array_values(array_intersect(array_column($body['countries'], 'code'), ['US', 'FR', 'DE', 'RU'])));
         $_GET = ['q' => 'nageur de combat', 'country' => 'FR'];
         $body = json_decode((new JobCatalogController())->catalogue(new Request())->body(), true);
         self::assertNotEmpty($body['entries']);

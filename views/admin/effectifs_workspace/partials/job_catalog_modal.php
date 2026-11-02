@@ -38,6 +38,7 @@ $catalogUrl = effectifs_workspace_url('fonctions/catalogue');
             <button type="button" class="jobcat__reset" data-job-catalog-reset>Réinitialiser les filtres</button>
         </div>
         <span hidden data-job-catalog-label="name">Nom</span><span hidden data-job-catalog-label="lang-fr">Français</span><span hidden data-job-catalog-label="lang-en">Anglais</span><span hidden data-job-catalog-label="lang-de">Allemand</span><span hidden data-job-catalog-label="official">nom officiel</span><span hidden data-job-catalog-label="copy">Copier</span><span hidden data-job-catalog-label="copy-name">Copier le nom</span><span hidden data-job-catalog-label="country">Pays</span><span hidden data-job-catalog-label="q">Recherche</span><span hidden data-job-catalog-label="remove">Retirer le filtre</span>
+        <span hidden data-job-catalog-label="lang-ru">Russe</span><span hidden data-job-catalog-label="lang-ru-Latn">Russe en alphabet latin</span>
     </div>
     <div class="jobcat__body">
         <div class="jobcat__results" id="job-catalog-results" data-job-catalog-results aria-label="Emplois du catalogue" translate="no"></div>

@@ -16,13 +16,14 @@ use App\Support\JobRoleIconLibrary;
  * Format d’un pack : { pack, country, official_lang, label{fr,en}, compiled_at, sources_note{fr,en}, entries[] } ;
  * une entrée : id, branch, command, formation, unit{fr,en}, type, code, code_system, name{fr,en}, abbreviation,
  * description{fr,en}, qualifications{fr[],en[]}, billets{fr[],en[]}, icon, tags{fr[],en[]}, sources[{url,title}].
- * official_lang : langue des appellations officielles du pays (« en » par défaut ; « de » : name porte aussi une clé de) ; formation : unité courte
+ * official_lang : langue des appellations officielles du pays (« en » par défaut ; « de » : name porte aussi une clé de) ; un nom officiel
+ * en alphabet non latin a sa translittération sous la clé <langue>-Latn (« ru-Latn ») ; formation : unité courte
  * (« 1er RPIMa », « CPA 10 »), facultative, proposée comme filtre sous le commandement.
  */
 final class JobCatalog
 {
     /** Packs livrés (nom du fichier sans extension). */
-    public const PACKS = ['us_sof', 'fr_sof', 'de_sof'];
+    public const PACKS = ['us_sof', 'fr_sof', 'de_sof', 'ru_sof'];
 
     public const TYPES = ['operator', 'command', 'support', 'aviation'];
     public const BRANCHES = ['army', 'navy', 'air_force', 'marine_corps', 'gendarmerie', 'joint'];
@@ -36,6 +37,7 @@ final class JobCatalog
         'US' => ['fr' => 'États-Unis', 'en' => 'United States'],
         'FR' => ['fr' => 'France', 'en' => 'France'],
         'DE' => ['fr' => 'Allemagne', 'en' => 'Germany'],
+        'RU' => ['fr' => 'Russie', 'en' => 'Russia'],
     ];
 
     /** Armées d’un pays ; une armée absente reprend le libellé générique de LABELS['branch']. */
@@ -61,6 +63,22 @@ final class JobCatalog
             'air_force' => ['fr' => 'Luftwaffe (armée de l’air)', 'en' => 'German Air Force (Luftwaffe)'],
             'joint' => ['fr' => 'Interarmées (Bundeswehr)', 'en' => 'Joint (Bundeswehr)'],
         ],
+        // Sigles russes translittérés ; la sécurité intérieure (Rosgvardia, FSB) est hors des forces armées.
+        'RU' => [
+            'army' => ['fr' => 'Forces terrestres et VDV (troupes aéroportées)', 'en' => 'Ground Forces and VDV (Airborne Forces)'],
+            'navy' => ['fr' => 'VMF (marine)', 'en' => 'Russian Navy (VMF)'],
+            'air_force' => ['fr' => 'VKS (forces aérospatiales)', 'en' => 'Aerospace Forces (VKS)'],
+            'marine_corps' => ['fr' => 'Morskaya pekhota (infanterie de marine)', 'en' => 'Naval Infantry (Morskaya pekhota)'],
+            'gendarmerie' => ['fr' => 'Sécurité intérieure (Rosgvardia, FSB), hors armées', 'en' => 'Internal security (Rosgvardia, FSB), not armed forces'],
+            'joint' => ['fr' => 'Interarmées (KSSO, état-major général)', 'en' => 'Joint (KSSO, General Staff)'],
+        ],
+    ];
+
+    /** Translittération latine usuelle du russe (recherche ; ё et е s’écrivent « e »). */
+    private const CYRILLIC = [
+        'а' => 'a', 'б' => 'b', 'в' => 'v', 'г' => 'g', 'д' => 'd', 'е' => 'e', 'ё' => 'e', 'ж' => 'zh', 'з' => 'z', 'и' => 'i', 'й' => 'y',
+        'к' => 'k', 'л' => 'l', 'м' => 'm', 'н' => 'n', 'о' => 'o', 'п' => 'p', 'р' => 'r', 'с' => 's', 'т' => 't', 'у' => 'u', 'ф' => 'f',
+        'х' => 'kh', 'ц' => 'ts', 'ч' => 'ch', 'ш' => 'sh', 'щ' => 'shch', 'ъ' => '', 'ы' => 'y', 'ь' => '', 'э' => 'e', 'ю' => 'yu', 'я' => 'ya',
     ];
 
     /** Libellés des filtres, contenus du catalogue (langue du lecteur). */
@@ -276,7 +294,7 @@ final class JobCatalog
     }
 
     /**
-     * Noms de l’emploi par langue, nom officiel (langue du pays) en premier, puis la langue du lecteur, puis
+     * Noms de l’emploi par langue, nom officiel (langue du pays) en premier, puis sa translittération, puis la langue du lecteur, puis
      * l’anglais, puis les autres langues livrées ; un nom identique à un précédent n’est pas répété.
      *
      * @param array<string, mixed> $entry
@@ -285,7 +303,9 @@ final class JobCatalog
     public static function names(array $entry, string $lang): array
     {
         $name = is_array($entry['name'] ?? null) ? $entry['name'] : [];
-        $order = array_unique(array_merge([(string) ($entry['official_lang'] ?? 'en'), self::lang($lang), 'en'], array_map('strval', array_keys($name))));
+        $official = (string) ($entry['official_lang'] ?? 'en');
+        // La translittération (« ru-Latn ») suit le nom officiel.
+        $order = array_unique(array_merge([$official, $official . '-Latn', self::lang($lang), 'en'], array_map('strval', array_keys($name))));
         $out = [];
         foreach ($order as $l) {
             $value = trim((string) ($name[$l] ?? ''));
@@ -321,17 +341,19 @@ final class JobCatalog
         if (class_exists(\Normalizer::class)) {
             $text = (string) preg_replace('/\p{Mn}+/u', '', (string) \Normalizer::normalize($text, \Normalizer::FORM_D));
         } else {
-            $text = strtr($text, ['ß' => 'ss', 'à' => 'a', 'â' => 'a', 'ä' => 'a', 'á' => 'a', 'ç' => 'c', 'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'î' => 'i', 'ï' => 'i', 'í' => 'i', 'ô' => 'o', 'ö' => 'o', 'ó' => 'o', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ú' => 'u', 'ÿ' => 'y', 'ñ' => 'n', 'œ' => 'oe', 'æ' => 'ae']);
+            $text = strtr($text, ['ß' => 'ss', 'à' => 'a', 'â' => 'a', 'ä' => 'a', 'á' => 'a', 'ç' => 'c', 'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'î' => 'i', 'ï' => 'i', 'í' => 'i', 'ô' => 'o', 'ö' => 'o', 'ó' => 'o', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ú' => 'u', 'ÿ' => 'y', 'ñ' => 'n', 'œ' => 'oe', 'æ' => 'ae', 'ё' => 'е', 'й' => 'и']);
         }
 
         // « ß » n’a pas de forme décomposée : « Straße » se cherche « strasse ».
         return (string) preg_replace('/[^\p{L}\p{N}]+/u', ' ', str_replace('ß', 'ss', $text));
     }
 
-    /** Graphie allemande sans tréma (« Fallschirmjäger » → « Fallschirmjaeger »), pour la recherche. */
+    /** Graphie allemande sans tréma (« Fallschirmjäger » → « Fallschirmjaeger ») et russe en latin (« Спецназ » → « spetsnaz »), pour la recherche. */
     public static function transliterate(string $text): string
     {
-        return strtr($text, ['ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'Ä' => 'Ae', 'Ö' => 'Oe', 'Ü' => 'Ue']);
+        $text = strtr($text, ['ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'Ä' => 'Ae', 'Ö' => 'Oe', 'Ü' => 'Ue']);
+
+        return preg_match('/\p{Cyrillic}/u', $text) === 1 ? strtr(mb_strtolower($text, 'UTF-8'), self::CYRILLIC) : $text;
     }
 
     /** Texte cherché d’une entrée : noms, abrégé, code, unité, commandement, branche et étiquettes dans les deux langues. */
