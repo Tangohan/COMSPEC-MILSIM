@@ -64,6 +64,7 @@ return [
     'chef' => 'Leader',
     'deputy' => 'Deputy',
     'chef_none' => 'No leader appointed',
+    'trigram' => 'Trigram',
     'deputy_none' => 'No deputy appointed',
     'vacant' => 'Vacant',
     'posts_more_one' => '+ :n more post',

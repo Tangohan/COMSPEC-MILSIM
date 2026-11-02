@@ -144,6 +144,37 @@ class SubscriptionPlanRepository
         ]);
     }
 
+    public function slugExists(string $slug): bool
+    {
+        $stmt = $this->pdo->prepare('SELECT 1 FROM subscription_plans WHERE ' . SqlText::equals($this->pdo, 'slug') . ' LIMIT 1');
+        $stmt->execute([$slug]);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /**
+     * Nouvelle formule (copie d'une formule existante) ; sans prix, donc jamais vendue d'office.
+     *
+     * @param array{slug: string, name: string, sort_order: int, features_json: ?string, limits_json: ?string} $data
+     */
+    public function insert(array $data): int
+    {
+        $this->findBySlugCache = [];
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO subscription_plans (slug, name, sort_order, features_json, limits_json, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([
+            $data['slug'],
+            $data['name'],
+            $data['sort_order'],
+            $data['features_json'],
+            $data['limits_json'],
+            date('Y-m-d H:i:s'),
+        ]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
     /** Prix PayPal (centimes) ; sans effet tant que la migration des prix n’a pas tourné. */
     public function updatePrices(int $id, ?int $monthlyCents, ?int $yearlyCents): bool
     {

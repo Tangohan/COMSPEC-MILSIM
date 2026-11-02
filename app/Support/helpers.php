@@ -2608,5 +2608,55 @@ if (!function_exists('email_for_display')) {
     }
 }
 
+if (!function_exists('member_name')) {
+    /**
+     * Nom d’un membre au format de sa communauté : « list » (Prénom N. par défaut), « card » (Prénom NOM),
+     * ou un format explicite (full, short, trigram, callsign). Hors C2 uniquement : voir member_name_c2().
+     *
+     * Grade ajouté devant si la communauté le demande ; $allowGrade = false là où le grade est déjà affiché à côté.
+     *
+     * @param array<string, mixed> $row first_name, last_name, display_name, callsign, trigram, grade_short, anonymized
+     */
+    function member_name(array $row, string $context = 'list', ?int $tenantId = null, bool $allowGrade = true): string
+    {
+        $settings = \App\Services\Personnel\MemberNameSettings::forTenant($tenantId ?? (int) \App\Core\Session::get('tenant_id'));
+        if (!$settings['trigrams_enabled']) {
+            $row['trigram'] = '';
+        }
+
+        return \App\Support\MemberName::format(
+            $row,
+            \App\Services\Personnel\MemberNameSettings::formatFor($settings, $context),
+            $allowGrade && $settings['show_grade']
+        );
+    }
+}
+
+if (!function_exists('member_trigram')) {
+    /**
+     * Trigramme du membre si la communauté les utilise (jamais pour un membre masqué), sinon chaîne vide.
+     *
+     * @param array<string, mixed> $row
+     */
+    function member_trigram(array $row, ?int $tenantId = null): string
+    {
+        $settings = \App\Services\Personnel\MemberNameSettings::forTenant($tenantId ?? (int) \App\Core\Session::get('tenant_id'));
+
+        return $settings['trigrams_enabled'] ? \App\Support\MemberName::trigram($row) : '';
+    }
+}
+
+if (!function_exists('member_name_c2')) {
+    /**
+     * C2 (carte tactique, ATAK web, Overwatch, ordres, données du jeu) : l’indicatif reste prioritaire.
+     *
+     * @param array<string, mixed> $row
+     */
+    function member_name_c2(array $row): string
+    {
+        return \App\Support\MemberName::c2($row);
+    }
+}
+
 require __DIR__ . '/markdown_helpers.php';
 require __DIR__ . '/moderation_helpers.php';
