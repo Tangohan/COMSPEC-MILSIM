@@ -33,6 +33,7 @@ $homeTopbarRegisterUrl = (string) ($homeTopbarRegisterUrl ?? url('register'));
                 <a href="<?= $e(url('communities')) ?>"><?= $e(__('common.communities')) ?></a>
                 <a href="<?= $e(url('sse')) ?>"><?= $e(__('site.sse')) ?></a>
                 <a href="<?= $e(url('atak-natif')) ?>"><?= $e(__('site.atak_native')) ?></a>
+                <a href="<?= $e(url('wiki/atak')) ?>">Wiki ATAK</a>
                 <a href="<?= $e(url('a-propos')) ?>"><?= $e(__('site.about')) ?></a>
             </nav>
             <div class="hi-topbar__right">

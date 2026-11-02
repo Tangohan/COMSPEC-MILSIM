@@ -63,6 +63,7 @@ $icon = static fn (string $paths): string => '<svg class="atx-ico" viewBox="0 0 
                         <?= $t('cta_steam') ?>
                     </a>
                     <a href="#apps" class="atx-btn atx-btn--ghost"><?= $t('cta_apps') ?></a>
+                    <a href="<?= $e(url('wiki/atak')) ?>" class="atx-btn atx-btn--ghost">Wiki ATAK</a>
                 </div>
                 <?php if ($release['atak_native'] !== null): ?>
                 <p class="atx-version atx-rise" style="--d:4">

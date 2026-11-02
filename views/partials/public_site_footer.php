@@ -49,6 +49,7 @@ $psfColumns = [
         'links' => [
             ['href' => url('contact'), 'label' => __('site.contact')],
             ['href' => url('atak-natif') . '#faq', 'label' => __('site.atakn_faq_title')],
+            ['href' => url('wiki/atak'), 'label' => 'Wiki ATAK'],
             ['href' => url('soutenir-atak'), 'label' => __('site.support_crumb')],
             ['href' => url('traduire-site'), 'label' => __('site.sitetr_crumb')],
             ['href' => url('traduire-atak'), 'label' => __('site.atakt_crumb')],
