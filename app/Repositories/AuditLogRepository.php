@@ -286,6 +286,7 @@ final class AuditLogRepository
             'invitation.sent',
             'invitation.accepted',
             'invitation.revoked',
+            'invite_link.joined',
             'auth.register',
             'tenant.setup_completed',
         ];

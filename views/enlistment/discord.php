@@ -31,6 +31,7 @@ $discordQuestions = is_array($discordQuestions ?? null) ? $discordQuestions : []
 
     <form method="post" action="<?= htmlspecialchars($formAction, ENT_QUOTES, 'UTF-8') ?>" class="space-y-5 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
         <?= \App\Core\Csrf::field() ?>
+        <?php require base_path('views/enlistment/_invite_link.php'); ?>
 
         <div>
             <label class="block text-xs font-bold text-slate-700 mb-1.5" for="discord_pseudo">Pseudo Discord <span class="text-rose-600">*</span></label>
