@@ -171,6 +171,16 @@ final class AdminDoctrineController
             $doctrine = $this->doctrineRepository->findByDocumentId($documentId, $tenantId);
             $audiences = $this->audienceRepository->listForDocument($documentId, $tenantId);
         }
+        // « Créer un document à partir de cette référence » (Doctrine › Référentiel) : formulaire pré-rempli.
+        $fromReference = null;
+        $referenceKey = trim((string) $request->query('reference', ''));
+        if ($documentId === 0 && $referenceKey !== '') {
+            try {
+                $fromReference = (new \App\Services\Doctrine\DoctrineLibraryService())->resolve($tenantId, $referenceKey);
+            } catch (\Throwable) {
+                $fromReference = null;
+            }
+        }
 
         return Response::view('layout.main', [
             'content' => 'admin/documents/publish_form',
@@ -188,6 +198,7 @@ final class AdminDoctrineController
             'roles' => $this->roleRepository->allForTenant($tenantId),
             'users' => $this->userRepository->allForTenant($tenantId),
             'publishedDocs' => $this->doctrineRepository->listPublishedForTenant($tenantId),
+            'fromReference' => $fromReference,
             'csrf_token' => Csrf::token(),
         ]);
     }
@@ -241,6 +252,17 @@ final class AdminDoctrineController
         } else {
             $result = $this->publicationService->createDraft($tenantId, $userId, $input, $audiences);
             $documentId = (int) ($result['document_id'] ?? 0);
+            $sourceReference = trim((string) $request->input('source_reference', ''));
+            if (!empty($result['ok']) && $documentId > 0 && $sourceReference !== '') {
+                try {
+                    $library = new \App\Services\Doctrine\DoctrineLibraryService();
+                    if ($library->knows($tenantId, $sourceReference) && $library->repository()->schemaReady()) {
+                        $library->repository()->link($tenantId, $userId, $sourceReference, $documentId);
+                    }
+                } catch (\Throwable $e) {
+                    error_log('Doctrine library link on create: ' . $e->getMessage());
+                }
+            }
         }
 
         if (empty($result['ok'])) {
