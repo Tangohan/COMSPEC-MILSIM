@@ -294,6 +294,16 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1338, '2026-11-02', 'Émetteurs des qualifications : pays, localisation et site dans des champs à part', 'Le pays, la localisation, le site officiel et la présentation en anglais d’un émetteur ont maintenant leurs propres champs, au lieu d’être écrits à la suite de sa présentation. La fiche de l’émetteur les affiche à part (drapeau, lieu, lien vers le site) et le formulaire de modification les propose séparément, avec le pays à choisir dans une liste avec drapeaux. Les émetteurs existants sont repris automatiquement : les détails sont retirés de la présentation, qui garde son texte, et les émetteurs réels importés sont reliés à leur fiche du catalogue.', [
+                'Modifier un émetteur : pays (liste avec drapeaux), localisation, site officiel, présentation en français et en anglais',
+                'Fiche de l’émetteur : pays, localisation et site officiel affichés à part ; présentation anglaise pour les membres qui lisent le site en anglais',
+            ], [
+                'Liste des émetteurs : le filtre par pays s’appuie sur le pays enregistré',
+                'Émetteurs réels importés : reliés à leur fiche du catalogue, retrouvés même après un changement de nom',
+            ], [], ['personnel', 'platform'], [
+                'L’administrateur lance run-migrations.php (étape qualification_issuer_fields) : les détails des émetteurs existants passent dans les nouveaux champs.',
+                'Essai : Référentiels › Qualifications › Émetteurs, ouvrez un émetteur créé ou importé : pays, localisation et site apparaissent à part, et la présentation ne les répète plus.',
+            ], 'Portail'),
             $pr(1336, '2026-11-02', 'Annuler partout, app Zones refaite, plans partagés au camp', 'Avec le pack 2.9.38, les apps Routes et Zones savent annuler : ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), VALIDER qui n’envoie qu’une fois, bandeau « Supprimé · ANNULER » après chaque suppression. L’app Zones est refaite : grande carte avec barre d’outils, panneau en onglets, polygone aimanté aux routes, bâtiments et rives, découpage par vos traits, aperçu avant de générer et couleurs au choix. Les plans et les routes partent maintenant à tout le camp et vont sur la carte d’Arma ; l’état des zones ne change toujours que par un joueur.', [
                 'Apps Routes et Zones : ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), VALIDER (un seul envoi), ANNULER LES MODIFICATIONS (route comme à l’ouverture, nouvelle route abandonnée)',
                 'App Routes : mode CHOISIR par défaut, barre TERMINER / ANNULER sur la carte pendant AJOUTER, INSÉRER ou DÉPLACER, Échap ou clic droit pour en sortir ; onglet ITINÉRAIRES pour effacer l’itinéraire de l’app Itinéraire ou le guidage GPS',

@@ -30,7 +30,8 @@ final class QualificationIssuerCatalogImporter
     private function tenantIssuers(int $tenantId): array
     {
         if (!isset($this->tenantIssuers[$tenantId])) {
-            $st = $this->writer->pdo()->prepare('SELECT id, name, short_name FROM qualification_issuers WHERE tenant_id = ? ORDER BY id');
+            $key = $this->writer->has('qualification_issuers', 'issuer_key') ? 'issuer_key' : 'NULL AS issuer_key';
+            $st = $this->writer->pdo()->prepare('SELECT id, name, short_name, ' . $key . ' FROM qualification_issuers WHERE tenant_id = ? ORDER BY id');
             $st->execute([$tenantId]);
             $this->tenantIssuers[$tenantId] = $st->fetchAll(\PDO::FETCH_ASSOC) ?: [];
         }
@@ -47,7 +48,7 @@ final class QualificationIssuerCatalogImporter
         $rows = $this->tenantIssuers($tenantId);
         $out = [];
         foreach (QualificationIssuerCatalog::all() as $key => $issuer) {
-            $id = QualificationIssuerCatalog::matchTenant($issuer, $rows);
+            $id = self::byKey((string) $key, $rows) ?: QualificationIssuerCatalog::matchTenant($issuer, $rows);
             if ($id > 0) {
                 $out[$key] = $id;
             }
@@ -69,24 +70,47 @@ final class QualificationIssuerCatalogImporter
         if ($issuer === null || !$this->ready()) {
             return null;
         }
-        $id = QualificationIssuerCatalog::matchTenant($issuer, $this->tenantIssuers($tenantId));
+        $rows = $this->tenantIssuers($tenantId);
+        $id = self::byKey($key, $rows) ?: QualificationIssuerCatalog::matchTenant($issuer, $rows);
         if ($id > 0) {
             return $id;
         }
+        $fields = $this->writer->has('qualification_issuers', 'country_code');
+        $l = QualificationIssuerCatalog::localize($issuer, $lang);
         $id = $this->writer->ensureIssuer(
             $tenantId,
             (string) $issuer['name'],
             (string) ($issuer['short_name'] ?? ''),
             QualificationIssuerCatalog::kindOf($issuer),
-            QualificationIssuerCatalog::description($issuer, $lang),
-            $actorId
+            QualificationIssuerCatalog::description($issuer, $lang, !$fields),
+            $actorId,
+            $fields ? [
+                'issuer_key' => $key,
+                'issuer_type' => (string) ($issuer['type'] ?? ''),
+                'country_code' => (string) ($issuer['country'] ?? ''),
+                'location' => mb_substr($l['location'], 0, 200),
+                'website_url' => $l['website'],
+                'description_en' => QualificationIssuerCatalog::localize($issuer, 'en')['description'],
+            ] : []
         );
         if ($id !== null) {
             $created = true;
-            $this->tenantIssuers[$tenantId][] = ['id' => $id, 'name' => (string) $issuer['name'], 'short_name' => (string) ($issuer['short_name'] ?? '')];
+            $this->tenantIssuers[$tenantId][] = ['id' => $id, 'name' => (string) $issuer['name'], 'short_name' => (string) ($issuer['short_name'] ?? ''), 'issuer_key' => $key];
         }
 
         return $id;
+    }
+
+    /** @param list<array<string, mixed>> $rows */
+    private static function byKey(string $key, array $rows): int
+    {
+        foreach ($rows as $row) {
+            if ((string) ($row['issuer_key'] ?? '') === $key) {
+                return (int) $row['id'];
+            }
+        }
+
+        return 0;
     }
 
     /**

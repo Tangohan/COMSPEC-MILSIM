@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Support\QualificationCatalog;
 
 /**
- * Détails d’un émetteur créé par la communauté (assistant « Créer un émetteur ») : pays, localisation, site officiel
- * et présentation anglaise n’ont pas de colonne ; ils sont ajoutés à la présentation, sous la forme des émetteurs
- * réels importés (« Localisation : … », « Site officiel : … »), et le pays y est relu pour la liste.
+ * Détails d’un émetteur écrits en lignes dans sa présentation (« Pays : … », « Localisation : … », « Site officiel :
+ * … », « English: … ») avant l’étape 3680, qui leur a donné des colonnes (country_code, location, website_url,
+ * description_en). split() sert à l’étape pour les extraire et, en lecture de repli, pour les lignes restantes.
+ *
+ * @deprecated Les détails s’enregistrent dans les colonnes de qualification_issuers ; compose() ne sert plus que si
+ *             l’étape 3680 n’est pas appliquée, split() que pour relire d’anciennes présentations.
  */
 final class IssuerDetails
 {
@@ -70,5 +73,41 @@ final class IssuerDetails
         }
 
         return '';
+    }
+
+    /**
+     * Sépare une présentation en texte libre et détails reconnus. Seules les lignes structurées reconnues sont
+     * retirées (pays connu, localisation, site valide, bloc « English: » jusqu’à la fin) ; le reste est conservé.
+     *
+     * @return array{description: string, country_code: string, location: string, website_url: string, description_en: string}
+     */
+    public static function split(string $description): array
+    {
+        $out = ['description' => '', 'country_code' => '', 'location' => '', 'website_url' => '', 'description_en' => ''];
+        $keep = [];
+        $lines = preg_split('/\R/u', $description) ?: [];
+        foreach ($lines as $n => $line) {
+            $t = trim($line);
+            if (preg_match('/^English\s*:\s*(.*)$/u', $t, $m) === 1) {
+                $out['description_en'] = trim($m[1] . "\n" . implode("\n", array_slice($lines, $n + 1)));
+                break;
+            }
+            if ($out['country_code'] === '' && preg_match('/^(?:Pays|Country)\s*:\s*(.+)$/iu', $t) === 1 && ($c = self::country($t)) !== '') {
+                $out['country_code'] = $c;
+                continue;
+            }
+            if ($out['location'] === '' && preg_match('/^(?:Localisation|Location)\s*:\s*(.+)$/iu', $t, $m) === 1) {
+                $out['location'] = mb_substr(trim($m[1]), 0, 200);
+                continue;
+            }
+            if ($out['website_url'] === '' && preg_match('/^(?:Site officiel|Official website)\s*:\s*(\S+)$/iu', $t, $m) === 1 && self::validWebsite($m[1])) {
+                $out['website_url'] = $m[1];
+                continue;
+            }
+            $keep[] = rtrim($line);
+        }
+        $out['description'] = trim((string) preg_replace("/\n{3,}/", "\n\n", implode("\n", $keep)));
+
+        return $out;
     }
 }

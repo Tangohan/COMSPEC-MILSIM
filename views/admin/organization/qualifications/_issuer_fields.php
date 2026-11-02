@@ -13,6 +13,8 @@ declare(strict_types=1);
  * @var bool $enriched
  * @var bool $linkReady
  * @var string $fid préfixe des identifiants de champs
+ * @var array<string, array{fr: string, en: string}> $countries pays du catalogue
+ * @var string $lang
  */
 $iss = is_array($iss ?? null) ? $iss : null;
 $fid = (string) ($fid ?? 'qi');
@@ -27,6 +29,9 @@ $kinds = [
     'external' => ['Organisme externe', 'Une autre communauté ou un partenaire dont vous reconnaissez les brevets.'],
 ];
 $curId = (int) ($iss['id'] ?? 0);
+$countries = is_array($countries ?? null) ? $countries : \App\Support\QualificationCatalog\QualificationCatalog::COUNTRIES;
+$lang = (string) ($lang ?? 'fr');
+$curCountry = (string) ($iss['country_code'] ?? '');
 ?>
 <fieldset class="qis-step">
     <legend><span class="qis-step__n" aria-hidden="true">1</span> Identité</legend>
@@ -54,6 +59,30 @@ $curId = (int) ($iss['id'] ?? 0);
         <span>Présentation</span>
         <textarea id="<?= $e($fid) ?>-desc" name="description" rows="3" maxlength="2000" placeholder="Ce que l’émetteur forme et valide, ses exigences, son contact…"><?= $e($iss['description'] ?? '') ?></textarea>
     </label>
+    <label class="qis-f" for="<?= $e($fid) ?>-desc-en">
+        <span>Présentation en anglais</span>
+        <textarea id="<?= $e($fid) ?>-desc-en" name="description_en" rows="3" maxlength="2000" placeholder="What the issuer trains and validates…"><?= $e($iss['description_en'] ?? '') ?></textarea>
+        <small>Facultatif : affichée aux membres qui lisent le site en anglais.</small>
+    </label>
+    <div class="qis-f">
+        <span id="<?= $e($fid) ?>-country-h">Pays</span>
+        <div class="qis-countries" role="radiogroup" aria-labelledby="<?= $e($fid) ?>-country-h">
+            <label class="qis-country-opt"><input type="radio" name="country" value=""<?= $curCountry === '' ? ' checked' : '' ?>><span>Aucun</span></label>
+            <?php foreach ($countries as $code => $labels): ?>
+            <label class="qis-country-opt"><input type="radio" name="country" value="<?= $e($code) ?>"<?= $curCountry === (string) $code ? ' checked' : '' ?>><?= \App\Support\QualificationCatalog\CatalogCountry::flag((string) $code) ?><span><?= $e($labels[$lang] ?? $labels['fr'] ?? $code) ?></span></label>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <div class="qis-grid">
+        <label class="qis-f" for="<?= $e($fid) ?>-loc">
+            <span>Localisation</span>
+            <input id="<?= $e($fid) ?>-loc" name="location" maxlength="200" value="<?= $e($iss['location'] ?? '') ?>" placeholder="Camp de Canjuers, Var">
+        </label>
+        <label class="qis-f" for="<?= $e($fid) ?>-web">
+            <span>Site officiel</span>
+            <input id="<?= $e($fid) ?>-web" name="website" type="url" maxlength="300" inputmode="url" value="<?= $e($iss['website_url'] ?? '') ?>" placeholder="https://www.exemple.fr">
+        </label>
+    </div>
     <label class="qis-f" for="<?= $e($fid) ?>-logo">
         <span>Logo ou insigne</span>
         <input id="<?= $e($fid) ?>-logo" type="file" name="logo" accept="image/png,image/webp,image/svg+xml">
