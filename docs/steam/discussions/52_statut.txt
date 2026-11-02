@@ -1,0 +1,103 @@
+[APP] Statut — état du téléphone d'un coup d'œil : liaison, synchronisation, batterie, mémoire et versions
+
+[h1]Statut[/h1]
+[i]Catégorie : Système · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Statut résume l'état de votre terminal sur une seule page : êtes-vous en ligne avec Athena, le canal du poste est-il ouvert, quelle est la qualité du signal, quand a eu lieu la dernière synchro, combien de batterie et de mémoire il vous reste, et quelle version du mod tourne. C'est la première page à ouvrir pour savoir si tout va bien.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Système.
+[*]Volet rapide (clic sur l'heure ou la batterie dans la barre d'état) : tuile Batterie.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]En-tête[/b] : pastille [b]EN LIGNE[/b] (liaison Athena établie), [b]DÉGRADÉ[/b] (liaison instable, envois retardés) ou [b]HORS LIGNE[/b] (le terminal et la carte restent utilisables).
+[*][b]Liaison[/b] : état Athena, canal du poste (ouvert ou fermé), signal (barres sur 4, débit et qualité), latence et perte, attente avant renvoi.
+[*][b]Synchronisation[/b] : dernière synchro, dernière resynchronisation, nombre d'unités sur la carte, ordres reçus.
+[*][b]Terminal[/b] : batterie (en couleur), mémoire vive simulée (utilisée sur le total, puis la part de chaque poste), version du mod, extension utilisée.
+[*][b]Raccourcis[/b] : boutons [b]RESYNCH[/b] (app Synchro), [b]ATHENA[/b] et DEBUG.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Au début de la mission, ouvrez Statut.
+[*]Vérifiez EN LIGNE et « Canal poste : ouvert ».
+[*]Si le canal est fermé ou si vous êtes hors ligne, appuyez sur ATHENA pour voir la cause ; si le poste ne vous voit pas, RESYNCH.
+[*]Mémoire vive presque pleine (en rouge) : les apps restées en fond les plus anciennes se ferment d'elles-mêmes.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Batterie et mémoire › Apps gardées ouvertes en fond[/b] (serveur, 0 à 10, défaut 6) : nombre d'apps qui restent ouvertes derrière celle utilisée, compté dans la mémoire vive.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b] : les lignes Athena, canal du poste et synchronisation n'ont de sens qu'avec un compte relié ; sans Athena, la pastille reste HORS LIGNE et le téléphone fonctionne en local.
+[*][b]Synchro, Athena, Debug[/b] : accessibles d'un appui depuis Statut.
+[*][b]Réseau[/b] : pour le détail du signal, ouvrez l'app Réseau.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Statut est une page de lecture : elle ne règle rien elle-même.
+[*]Signal, débit, batterie et mémoire sont simulés par le mod, pas mesurés sur votre PC.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Status sums up your terminal on a single page: are you online with Athena, is the command post channel open, how good is the signal, when was the last sync, how much battery and memory you have left, and which mod version is running. It is the first page to open to check that everything is fine.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] brings the phone to a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, System category.
+[*]Quick panel (click the clock or battery in the status bar): Battery tile.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]Header[/b]: [b]ONLINE[/b] badge (Athena link established), [b]DEGRADED[/b] (unstable link, sends delayed) or [b]OFFLINE[/b] (the terminal and map stay usable).
+[*][b]Link[/b]: Athena state, post channel (open or closed), signal (bars out of 4, throughput and quality), latency and loss, wait before resend.
+[*][b]Synchronization[/b]: last sync, last resync, number of units on the map, orders received.
+[*][b]Terminal[/b]: battery (colour-coded), simulated RAM (used out of total, then each item's share), mod version, extension in use.
+[*][b]Shortcuts[/b]: [b]RESYNCH[/b] (Sync app), [b]ATHENA[/b] and DEBUG buttons.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]At mission start, open Status.
+[*]Check ONLINE and "Post channel: open".
+[*]If the channel is closed or you are offline, tap ATHENA to see why; if the command post does not see you, RESYNCH.
+[*]RAM nearly full (in red): the oldest apps left in the background close by themselves.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Battery and memory › Apps kept in background[/b] (server, 0 to 10, default 6): how many apps stay open behind the one in use, counted in RAM.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b]: the Athena, post channel and sync lines only make sense with a linked account; without Athena, the badge stays OFFLINE and the phone works locally.
+[*][b]Sync, Athena, Debug[/b]: one tap away from Status.
+[*][b]Network[/b]: for signal details, open the Network app.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Status is a read-only page: it does not change anything by itself.
+[*]Signal, throughput, battery and memory are simulated by the mod, not measured on your PC.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

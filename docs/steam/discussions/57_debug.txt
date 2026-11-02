@@ -1,0 +1,112 @@
+[APP] Debug — journal, transferts, état de la liaison, DLL et outils de diagnostic du téléphone
+
+[i]Message 1/2[/i]
+[h1]Debug[/h1]
+[i]Catégorie : Système · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Debug est le diagnostic technique du téléphone. Il sert quand quelque chose ne marche pas : voir les erreurs, savoir si la liaison Athena et la DLL COMSPEC Link répondent, vérifier l'installation, puis copier le journal pour l'envoyer à l'équipe.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Système : Debug (pas dans le dock par défaut).
+[*]Réglages › À propos du téléphone : bouton [b]DEBUG[/b] (mis en avant s'il y a une anomalie d'installation).
+[*]App Statut : bouton [b]DEBUG[/b].
+[*]Une notification d'installation (erreur ou mise à jour disponible) ouvre Debug sur l'onglet DLL.
+[*]Si vous l'avez désinstallée, l'App Store la réinstalle.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]JOURNAL[/b] : journal du téléphone et d'Overwatch fusionné, le plus récent en haut (80 lignes affichées), avec le nombre de lignes, d'erreurs et d'alertes. Filtres [b]TOUT[/b], [b]ALERTES[/b], [b]ERREURS[/b], [b]ATAK[/b], [b]OVERWATCH[/b].
+[*][b]TRANSFERTS[/b] : débit du réseau simulé (qualité, kbit/s, latence, perte), envois en file faute de réseau, photos en attente / reçues / refusées, dernier envoi photo et réponse d'Athena, puis les 60 derniers transferts avec leur état (livré, immédiat, en file, perdu).
+[*][b]ÉTAT[/b] : liaison (DLL native seule ou COMSPEC Link, Athena prête, état de liaison, authentification, latence mesurée, attente réseau), extensions, version, communauté, simulations actives (dégâts, débit, apps civiles), état et batterie du téléphone, FPS et nombre de joueurs.
+[*][b]DLL[/b] : DLL chargée et sa version, COMSPEC Link, identité du téléphone reçue, liste des fonctions de la DLL attendues par le mod (OK ou MANQUANT : fiches FRS, avis de recherche, diapositives, numéro de téléphone Athena, images, fiches médicales…), section Installation (DLL attendue, dernières versions publiées sur Athena, anomalies), et check de démarrage (étapes en alerte ou en échec, envoi au Discord). [b]RELANCER LE TEST[/b] rafraîchit l'onglet.
+[*][b]OUTILS[/b] : [b]COPIER LE JOURNAL[/b] (presse-papiers), [b]VIDER[/b] (journaux du téléphone), [b]TEST DE DÉBIT[/b], [b]MESURER LA LATENCE[/b] (Overwatch), [b]ÉTAT DANS LE RPT[/b] (écrit l'état complet dans le journal d'Arma), [b]RELIRE LES APPS[/b] (vide les caches), et la bascule [b]Journal détaillé (DEBUG)[/b] qui affiche aussi les lignes de niveau DEBUG.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Une app affiche « mettez la DLL à jour » : ouvrez Debug, onglet [b]DLL[/b], et regardez les fonctions marquées MANQUANT et la section Installation.
+[*]Onglet [b]JOURNAL[/b], filtre [b]ERREURS[/b] : repérez l'erreur au moment du problème.
+[*]Onglet [b]OUTILS[/b] : activez [b]Journal détaillé (DEBUG)[/b], refaites l'action qui échoue, puis [b]COPIER LE JOURNAL[/b].
+[*]Collez le journal dans votre demande d'aide (Discord) ; le fichier RPT d'Arma contient aussi tout le journal.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Debug › Envoyer le rapport de démarrage[/b] (joueur, coché par défaut) : une fois, au premier lancement, un rapport sur l'état du mod (versions, DLL, connexion, numéro et IMEI du téléphone, FPS, erreurs) part dans le salon de debug du Discord Athena, avec votre pseudo et votre indicatif, sans UID Steam ni adresse IP. Son résultat apparaît dans l'onglet DLL.
+[*][b]COMSPEC › ATAK · Debug › Profilage (saccades)[/b] (joueur, décoché par défaut) : toutes les 10 s, le RPT note le temps de chaque tâche de fond et chaque saccade. À cocher seulement le temps d'un test.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena / COMSPEC Link[/b] : liaison, photos, versions publiées, check de démarrage. Sans Link, l'onglet ÉTAT indique « DLL native seule ».
+[*][b]COMSPEC Overwatch[/b] : ses lignes de journal et la mesure de latence ; sans lui, un message l'indique.
+[*][b]Réglages[/b] : À propos du téléphone signale les anomalies et renvoie ici.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Le journal complet est aussi dans le fichier RPT d'Arma (et dans COMSPEC/logs avec Overwatch).
+[*]Pour renvoyer le check de démarrage : menu Échap › Dépannage liaison › Renvoyer le check de démarrage.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Debug is the phone's technical diagnostics. Use it when something does not work: see the errors, check whether the Athena link and the COMSPEC Link DLL respond, check the installation, then copy the log to send it to the team.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] carries the phone in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, System category: Debug (not in the dock by default).
+[*]Settings › About phone: [b]DEBUG[/b] button (highlighted when there is an installation anomaly).
+[*]Status app: [b]DEBUG[/b] button.
+[*]An installation notification (error or update available) opens Debug on the DLL tab.
+[*]If you uninstalled it, the App Store reinstalls it.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]LOG[/b]: phone and Overwatch log merged, newest on top (80 lines shown), with the number of lines, errors and warnings. Filters [b]ALL[/b], [b]ALERTS[/b], [b]ERRORS[/b], [b]ATAK[/b], [b]OVERWATCH[/b].
+[*][b]TRANSFERS[/b]: simulated network throughput (quality, kbit/s, latency, loss), sends queued for lack of network, photos pending / received / rejected, last photo upload and Athena's reply, then the last 60 transfers with their state (delivered, immediate, queued, lost).
+[*][b]STATUS[/b]: link (native DLL only or COMSPEC Link, Athena ready, link state, authentication, measured latency, network back-off), extensions, version, community, active simulations (damage, throughput, civilian apps), phone state and battery, FPS and player count.
+[*][b]DLL[/b]: loaded DLL and its version, COMSPEC Link, phone identity received, list of DLL functions the mod expects (OK or MISSING: FRS sheets, wanted notices, slides, Athena phone number, images, medical records…), Installation section (expected DLL, latest versions published on Athena, anomalies), and startup check (steps in warning or failure, Discord send). [b]RERUN TEST[/b] refreshes the tab.
+[*][b]TOOLS[/b]: [b]COPY LOG[/b] (clipboard), [b]CLEAR[/b] (phone logs), [b]THROUGHPUT TEST[/b], [b]MEASURE LATENCY[/b] (Overwatch), [b]STATUS IN RPT[/b] (writes the full state to the Arma log), [b]RELOAD APPS[/b] (clears caches), and the [b]Detailed log (DEBUG)[/b] switch, which also shows DEBUG-level lines.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]An app says "update the DLL": open Debug, [b]DLL[/b] tab, and look at the functions marked MISSING and the Installation section.
+[*][b]LOG[/b] tab, [b]ERRORS[/b] filter: find the error at the time of the problem.
+[*][b]TOOLS[/b] tab: turn on [b]Detailed log (DEBUG)[/b], repeat the failing action, then [b]COPY LOG[/b].
+[*]Paste the log into your help request (Discord); the Arma RPT file also holds the whole log.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Debug › Send the startup check[/b] (player, ticked by default): once, at first launch, a report on the mod's state (versions, DLL, connection, phone number and IMEI, FPS, errors) is posted to the Athena Discord debug channel, with your nickname and callsign, without Steam UID or IP address. Its result shows in the DLL tab.
+[*][b]COMSPEC › ATAK · Debug › Profiling (stutters)[/b] (player, unticked by default): every 10 s, the RPT logs the time of each background task and each stutter. Tick it only for the length of a test.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena / COMSPEC Link[/b]: link, photos, published versions, startup check. Without Link, the STATUS tab shows "Native DLL only".
+[*][b]COMSPEC Overwatch[/b]: its log lines and the latency measurement; without it, a message says so.
+[*][b]Settings[/b]: About phone flags anomalies and leads here.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]The full log is also in the Arma RPT file (and in COMSPEC/logs with Overwatch).
+[*]To resend the startup check: Escape menu › Link troubleshooting › Resend startup check.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

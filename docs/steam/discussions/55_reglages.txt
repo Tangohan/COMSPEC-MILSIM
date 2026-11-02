@@ -1,0 +1,126 @@
+[APP] Réglages — réglages du téléphone par catégorie : Athena, langue, apparence, carte, alertes, touches
+
+[i]Message 1/2[/i]
+[h1]Réglages[/h1]
+[i]Catégorie : Système · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Réglages règle votre téléphone, comme sur Android : une page d'accueil, puis une page par catégorie. Ce sont vos réglages de joueur, gardés dans votre profil Arma ; les réglages de serveur se font dans les options CBA. Un réglage que votre communauté impose depuis Athena s'affiche « IMPOSÉ » et ne se change pas d'ici. C'est une app système : toujours présente, elle ne se désinstalle pas.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Système : Réglages.
+[*]Volet rapide (clic sur l'heure) : bouton [b]TOUS LES RÉGLAGES[/b].
+[*]Au premier lancement, la réponse à la question du service Athéna y mène.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Accueil[/b] : état de la liaison Athena en tête (bouton [b]SERVICE ATHÉNA[/b], [b]RÉGLER LA CONNEXION[/b] ou [b]SYNCHRONISATION[/b]), nombre de réglages imposés, champ « Rechercher un réglage » + [b]CHERCHER[/b] (dans les libellés, aides et choix, en français et dans la langue affichée), puis les onze catégories. La touche retour revient à l'accueil.
+[*][b]Athéna et synchronisation[/b] : « Mon unité utilise Athéna » OUI / NON (Non = ATAK local, rien n'est envoyé), état, [b]LIER MON COMPTE[/b]. Avec Oui : réseau, dernière synchro, envois en attente, volume échangé, et [b]RESYNCH[/b], [b]APP ATHENA[/b], [b]DÉTAIL[/b] (app Réseau).
+[*][b]Langue / Language[/b] : ENGLISH, FRANÇAIS, langues des mods de traduction chargés, AUTO (langue du jeu).
+[*][b]Personnalisation[/b] : téléphone porté (le modèle vient de l'objet dans vos poches), coque jour / nuit / auto, antenne, tablette dans les véhicules ; couleur d'accent, thèmes rapides (OPÉRATIONS, NUIT, DÉSERT, ATHENA), fond d'écran, flou, taille du texte, police (Roboto ou Purista), taille et style des icônes, luminosité, mode nuit (rouge ou sombre) ; écran de verrouillage, code de verrouillage ([b]ENREGISTRER LE CODE[/b]) et [b]EFFACEMENT D'URGENCE[/b] (deux appuis en 5 s) ; animations, clic et vibration des appuis, recherche dans le lanceur ; accessoires (batterie externe, filtre JVN, infos tactiques dans les JVN, couleur du module DL-7) ; patch au dos (insignes, patch nominatif, [b]VOIR L'ARRIÈRE DU TÉLÉPHONE[/b]) ; téléphone sur le gilet (si le serveur l'autorise) ; dock (6 apps au plus, [b]DOCK PAR DÉFAUT[/b]) ; [b]TOUT RÉINITIALISER (APPARENCE)[/b].
+[*][b]Emplacement[/b] : taille du mini, taille en plein écran (60 à 100 %), sens du mini, coin de l'écran (8 positions), [b]DÉPLACER À LA SOURIS (MODE DISPOSITION)[/b], [b]REMETTRE LE TÉLÉPHONE EN PLACE[/b].
+[*][b]Carte[/b] : indicatifs et étiquettes des unités, coordonnées et style des noms des marqueurs, style et affichage des noms de lieux, boussole et son style, alliés affichés (tous, mon groupe, mon ORBAT), masquer les IA alliées, symboles OTAN ou points, couleurs, mon icône (vue par tous), barre d'outils, précision des grilles (6, 8 ou 10 chiffres), taille des textes et icônes (80 à 220 %), fond de carte (topo, clair, sombre, nuit, satellite…), relief des bâtiments, cartes hors ligne, [b]RÉTABLIR LA CARTE PAR DÉFAUT[/b] (deux appuis).
+[*][b]Alertes[/b] : bandeaux de notification, petits messages, vibration, alertes BFT du groupe, mode discrétion, et bandeaux coupés par type (ils restent dans le centre de notifications).
+[*][b]Applications[/b] : apps installées et à installer, apps imposées ou interdites, [b]OUVRIR L'APP STORE[/b].
+[*][b]Matériel et réseau[/b] : mode avion, Bluetooth, état et usure du téléphone, [b]NETTOYER L'ÉCRAN[/b], [b]NETTOYAGE COMPLET[/b], [b]REDÉMARRER LE TÉLÉPHONE[/b], réseau simulé.
+[*][b]Réalisme[/b] : avec Athena, réglages roleplay (mode roleplay, coupures réseau, défauts des capteurs médicaux, effets visuels, liaison instable, barre d'infos sous la carte) et niveau de dégâts ; pour tous, saleté et sang sur l'écran, données médicales affichées et où les afficher.
+[*][b]Accès et touches[/b] : item requis et téléphone sur vous ; chaque raccourci ATAK (par groupe) se change en appuyant sur la touche affichée puis sur la nouvelle, [b]DÉFAUT[/b] par touche, [b]TOUTES LES TOUCHES PAR DÉFAUT[/b] (deux appuis).
+[*][b]À propos du téléphone[/b] : indicatif, numéro, IMEI, MAC, batterie, versions installées et dernière publiée, anomalies d'installation, dossier des captures ([b]VÉRIFIER LE DOSSIER[/b]), [b]CRÉDITS[/b], [b]DEBUG[/b], [b]RELIRE LA LICENCE[/b].
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Ouvrez Réglages, tapez « nuit » dans la recherche puis [b]CHERCHER[/b] : thème NUIT, mode nuit et coque de nuit s'affichent.
+[*]Touchez le thème rapide [b]NUIT[/b] (accent rouge, fond de nuit, flou).
+[*]Catégorie Emplacement : choisissez le coin BAS G et la taille du mini.
+[*]Catégorie Accès et touches : changez la touche d'un raccourci si elle entre en conflit (« Même touche que : … »).
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › Langue / Language[/b] et [b]Police du téléphone / Phone font[/b] (joueur) : mêmes réglages que dans l'app.
+[*][b]COMSPEC › ATAK · Affichage › Taille du téléphone en main[/b] (joueur) : même réglage que « Taille en plein écran ».
+[*][b]COMSPEC › ATAK · Affichage › Téléphone visible en 3D[/b] (serveur) : fait apparaître « Téléphone sur le gilet ».
+[*][b]COMSPEC › ATAK · Simulation › Saleté et sang sur l'écran[/b] et [b]Dégâts du téléphone[/b] (serveur) : coupés, la catégorie Réalisme l'indique.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b] : réglages imposés par la communauté, service Athéna, synchronisation (aussi dans le menu Échap, bouton Service Athéna).
+[*][b]Options CBA et contrôles[/b] : touches identiques à Échap > Options > Contrôles > Configurer les addons > COMSPEC ATAK.
+[*][b]ACE[/b] : nettoyage de l'écran aussi dans le menu ACE.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Le modèle et la couleur du téléphone ne se choisissent plus ici : ils suivent l'objet porté.
+[*]Le code de verrouillage protège contre un câble DL-7 ennemi : 3 essais, puis tout est effacé.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Settings configures your phone, Android style: a home page, then one page per category. These are your player settings, kept in your Arma profile; server settings are made in the CBA options. A setting your community enforces from Athena shows "ENFORCED" and cannot be changed here. It is a system app: always present, it cannot be uninstalled.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] carries the phone in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, System category: Settings.
+[*]Quick panel (click the clock): [b]ALL SETTINGS[/b] button.
+[*]At first launch, answering the Athena service question leads here.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]Home[/b]: Athena link status on top ([b]ATHENA SERVICE[/b], [b]FIX THE CONNECTION[/b] or [b]SYNCHRONIZATION[/b] button), number of imposed settings, "Search settings" field + [b]SEARCH[/b] (labels, help and choices, in French and in the displayed language), then the eleven categories. The back key returns to the home page.
+[*][b]Athena and sync[/b]: "My unit uses Athena" YES / NO (No = local ATAK, nothing is sent), status, [b]LINK MY ACCOUNT[/b]. With Yes: network, last sync, pending sends, traffic volume, and [b]RESYNCH[/b], [b]ATHENA APP[/b], [b]DETAIL[/b] (Network app).
+[*][b]Language[/b]: ENGLISH, FRANÇAIS, languages of loaded translation mods, AUTO (game language).
+[*][b]Customization[/b]: worn phone (the model comes from the item in your pockets), day / night / auto case, antenna, tablet in vehicles; accent colour, quick themes (OPERATIONS, NIGHT, DESERT, ATHENA), wallpaper, blur, text size, font (Roboto or Purista), icon size and style, brightness, night mode (red or dim); lock screen, lock code ([b]SAVE CODE[/b]) and [b]EMERGENCY WIPE[/b] (two taps within 5 s); animations, tap click and vibration, launcher search; accessories (external battery, NVG filter, situation display in NVG, DL-7 module colour); back patch (insignia, name patch, [b]VIEW PHONE REAR[/b]); phone on the vest (if the server allows it); dock (6 apps max, [b]DEFAULT DOCK[/b]); [b]RESET ALL (APPEARANCE)[/b].
+[*][b]Location[/b]: mini size, full-screen size (60 to 100 %), mini orientation, screen corner (8 positions), [b]MOVE WITH THE MOUSE (LAYOUT MODE)[/b], [b]RESET PHONE POSITION[/b].
+[*][b]Map[/b]: unit callsigns and labels, marker coordinates and marker name style, place name style and display, compass and its style, allies shown (all, my group, my ORBAT), hide allied AI, NATO symbols or dots, colours, my icon (seen by everyone), toolbar, grid precision (6, 8 or 10 digits), text and icon size (80 to 220 %), map background (topo, light, dark, night, satellite…), building relief, offline maps, [b]RESET MAP TO DEFAULT[/b] (two taps).
+[*][b]Alerts[/b]: notification banners, small messages, vibration, group BFT alerts, discreet mode, and banners muted per type (they stay in the notification centre).
+[*][b]Applications[/b]: installed apps and apps to install, imposed or forbidden apps, [b]OPEN THE APP STORE[/b].
+[*][b]Hardware and network[/b]: airplane mode, Bluetooth, phone state and wear, [b]CLEAN SCREEN[/b], [b]FULL CLEAN[/b], [b]REBOOT PHONE[/b], simulated network.
+[*][b]Realism[/b]: with Athena, roleplay settings (roleplay mode, network outages, medical sensor faults, visual effects, unstable link, info bar under the map) and damage level; for everyone, dirt and blood on screen, medical data shown and where to show it.
+[*][b]Access and keys[/b]: required equipment and phone on you; each ATAK shortcut (by group) is changed by tapping the displayed key, then pressing the new one, [b]DEFAULT[/b] per key, [b]ALL KEYS TO DEFAULT[/b] (two taps).
+[*][b]About phone[/b]: callsign, number, IMEI, MAC, battery, installed and latest published versions, installation anomalies, screenshot folder ([b]CHECK FOLDER[/b]), [b]CREDITS[/b], [b]DEBUG[/b], [b]READ THE LICENCE[/b].
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Open Settings, type "night" in the search, then [b]SEARCH[/b]: night theme, night mode and night case appear.
+[*]Tap the [b]NIGHT[/b] quick theme (red accent, night wallpaper, blur).
+[*]Location category: pick the bottom-left corner and the mini size.
+[*]Access and keys category: change a shortcut if it conflicts ("Same key as: …").
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › Langue / Language[/b] and [b]Phone font[/b] (player): same settings as in the app.
+[*][b]COMSPEC › ATAK · Display › Phone size in full screen[/b] (player): same setting as "Full-screen size".
+[*][b]COMSPEC › ATAK · Display › Visible 3D ATAK[/b] (server): makes "Phone on vest" appear.
+[*][b]COMSPEC › ATAK · Simulation › Dirt and blood on screen[/b] and [b]Phone damage[/b] (server): when off, the Realism category says so.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b]: settings imposed by the community, Athena service, synchronization (also in the Escape menu, Athena Service button).
+[*][b]CBA options and controls[/b]: keys identical to Escape > Options > Controls > Configure Addons > COMSPEC ATAK.
+[*][b]ACE[/b]: screen cleaning is also in the ACE menu.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Phone model and colour are no longer chosen here: they follow the item you carry.
+[*]The lock code protects against an enemy DL-7 cable: 3 attempts, then everything is wiped.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

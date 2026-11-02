@@ -1,0 +1,112 @@
+[APP] BFT — suivi des forces amies : pistes, vue ORBAT, filtres, vibreur et caméra d'équipier
+
+[i]Message 1/2[/i]
+[h1]BFT[/h1]
+[i]Catégorie : Communication · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Le tableau du Blue Force Tracking, comme sur un terminal JBC-P : toutes les pistes amies suivies par le téléphone, triées par distance, avec leur fraîcheur. Une piste dont le téléphone est éteint, cassé ou sans signal reste figée à sa dernière position connue ; sans réseau, toutes les pistes vieillissent. Depuis une piste, vous pouvez la voir sur la carte, lancer un itinéraire, envoyer un SMS, faire vibrer son téléphone ou regarder sa caméra poitrine.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie [b]Communication[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller. Autres accès : bouton [b]BFT[/b] de l'app [b]C2[/b] et [b]OUVRIR LE BFT[/b] de l'app [b]Inter-team[/b].
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]En-tête[/b] : votre position (grille, cap, altitude) et le bilan des pistes : [b]DIRECT[/b], [b]ANCIENNE[/b], [b]PERDUE[/b], [b]HORS LIGNE[/b].
+[*][b]Filtres rapides[/b] : [b]TOUS[/b], [b]MON ÉQUIPE[/b] (équipe de feu), [b]MON GROUPE[/b], [b]VÉHICULES[/b], [b]PERDUS[/b].
+[*][b]Chaque piste[/b] : symbole (infanterie, véhicule, blindé, aérien) à la couleur de son équipe de feu, indicatif, distance et gisement, temps de trajet, âge de la dernière position. Les pistes anciennes sont orange, les perdues et hors ligne grisées, les morts en rouge.
+[*][b]VUE : LISTE / VUE : ORBAT[/b] : tableau trié par distance, ou arbre repliable formation › groupe (chef, échelon, effectif, distance au chef) › équipe de feu › membres. La formation vient de l'ORBAT d'Athena, sinon du préfixe de l'indicatif (« Star 4 » donne STAR). Le choix et les replis sont mémorisés.
+[*][b]FILTRES[/b] (tiroir, nombre de filtres actifs entre parenthèses) : masquer les IA, les aériens, les véhicules (l'équipage reste dans son groupe), les pistes anciennes et perdues, les pistes hors ligne ; [b]MON GROUPE[/b], [b]MON UNITÉ[/b] ou [b]TOUT[/b] ; [b]Distance max[/b]. [b]RÉINITIALISER[/b] remet tout. Ces filtres s'appliquent aussi à la carte.
+[*][b]Fiche de la piste choisie[/b] : trajet à pied et à votre vitesse, rapprochement mutuel, et le reste de l'itinéraire GPS en cours vers elle.
+[*][b]Boutons[/b] : [b]CARTE[/b] (centre la carte), [b]Y ALLER[/b] (itinéraire GPS et ouverture de la carte), [b]SMS[/b] (ouvre Messages), [b]VIBRER[/b], [b]VOIR CAMÉRA[/b].
+[*][b]VIBRER[/b] : son téléphone vibre et affiche une alerte avec votre message, même rangé. Messages rapides [b]RALLIEMENT[/b], [b]CONTACT[/b], [b]STOP[/b], [b]BESOIN D'AIDE[/b], [b]APPELEZ-MOI[/b], [b]RAS[/b], ou texte libre de 80 caractères puis [b]ENVOYER[/b]. Il peut répondre « VU ». 5 secondes au moins entre deux vibreurs vers la même personne.
+[*][b]VOIR CAMÉRA[/b] : la carte se centre sur l'équipier et sa caméra poitrine s'affiche en petite fenêtre (joueur vivant équipé d'un téléphone).
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Ouvrez BFT, filtre [b]MON GROUPE[/b] : la piste la plus proche est en tête.
+[*]Choisissez le membre qui n'avance plus : sa fiche montre l'âge de sa dernière position.
+[*]Appuyez sur [b]VIBRER[/b], puis [b]RALLIEMENT[/b] : son téléphone vibre et affiche votre message.
+[*]Pas de réponse : [b]Y ALLER[/b] lance l'itinéraire GPS vers sa dernière position.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Positions BFT par points (PLI)[/b] (serveur, coché par défaut) : chaque téléphone envoie sa position à intervalle régulier, avec l'erreur de son GPS ; les alliés avancent par bonds et un allié mal couvert apparaît en retard ou en gris. Décoché : positions exactes en direct.
+[*][b]COMSPEC › ATAK · Simulation › Intervalle des positions BFT[/b] (serveur) : de 2 à 60 s (10 s par défaut) ; un joueur rapide envoie jusqu'à deux fois plus souvent.
+[*][b]COMSPEC › ATAK · Simulation › Réseau réaliste[/b] (serveur) : sans réseau, les pistes vieillissent.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : mêmes pistes et mêmes filtres ; CARTE, Y ALLER et VOIR CAMÉRA y mènent.
+[*][b]Groupe[/b] : les couleurs et rôles des équipes de feu viennent de l'app Groupe.
+[*][b]Athena[/b] : pistes du site fusionnées avec les unités en jeu (même indicatif = même piste) ; formations de l'ORBAT d'Athena.
+[*][b]ACE[/b] : l'état inconscient compte comme hors de combat.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]VIBRER, SMS et VOIR CAMÉRA ne marchent que sur un joueur ; VIBRER est grisé sur une piste hors ligne.
+[*]Si l'état médical des alliés est masqué dans les réglages du téléphone, seul le décès est affiché.
+[*]Des IA d'un même groupe sans indicatif propre sont distinguées par leur rôle.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+The Blue Force Tracking board, as on a JBC-P terminal: every friendly track followed by the phone, sorted by distance, with its freshness. A track whose phone is off, broken or without signal stays frozen at its last known position; without network, all tracks age. From a track you can see it on the map, start a route, send an SMS, buzz its phone or watch its chest camera.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the [b]Communication[/b] category (not in the dock). If it was uninstalled, the App Store reinstalls it. Other ways in: the [b]BFT[/b] button of the [b]C2[/b] app and [b]OPEN BFT[/b] in the [b]Inter-team[/b] app.
+
+[h3]Features[/h3]
+[list]
+[*][b]Header[/b]: your position (grid, heading, altitude) and the track summary: [b]DIRECT[/b] (live), [b]OLD[/b], [b]PERDUE[/b] (lost), [b]OFFLINE[/b].
+[*][b]Quick filters[/b]: [b]ALL[/b], [b]MY TEAM[/b] (fire team), [b]MY GROUP[/b], [b]VEHICLES[/b], [b]LOST[/b].
+[*][b]Each track[/b]: symbol (infantry, vehicle, armour, air) in its fire team's colour, callsign, distance and bearing, travel time, age of the last position. Old tracks are orange, lost and offline ones greyed, the dead in red.
+[*][b]VIEW: LIST / VIEW: ORBAT[/b]: a table sorted by distance, or a foldable tree formation › group (leader, echelon, strength, distance to leader) › fire team › members. The formation comes from Athena's ORBAT, otherwise from the callsign prefix ("Star 4" gives STAR). The choice and folds are remembered.
+[*][b]FILTERS[/b] (drawer, number of active filters in brackets): hide AI, aircraft, vehicles (the crew stays in its group), old and lost tracks, offline tracks; [b]MY GROUP[/b], [b]MY UNIT[/b] or [b]ALL[/b]; [b]Max distance[/b]. [b]RESET[/b] clears everything. These filters also apply to the map.
+[*][b]Selected track card[/b]: travel time on foot and at your speed, mutual closing, and the rest of the GPS route in progress towards it.
+[*][b]Buttons[/b]: [b]MAP[/b] (centres the map), [b]GO THERE[/b] (GPS route and opens the map), [b]SMS[/b] (opens Messages), [b]VIBRATE[/b], [b]VIEW CAMERA[/b].
+[*][b]VIBRATE[/b]: their phone vibrates and shows an alert with your message, even put away. Quick messages [b]RALLY[/b], [b]CONTACT[/b], [b]STOP[/b], [b]NEED HELP[/b], [b]CALL ME[/b], [b]ALL CLEAR[/b], or free text of 80 characters then [b]SEND[/b]. They can answer "SEEN". At least 5 seconds between two buzzes to the same person.
+[*][b]VIEW CAMERA[/b]: the map centres on the teammate and their chest camera shows in a small window (living player carrying a phone).
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Open BFT, filter [b]MY GROUP[/b]: the nearest track is on top.
+[*]Select the member who stopped moving: the card shows the age of their last position.
+[*]Press [b]VIBRATE[/b], then [b]RALLY[/b]: their phone vibrates and shows your message.
+[*]No answer: [b]GO THERE[/b] starts a GPS route to their last position.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › BFT positions by reports (PLI)[/b] (server, checked by default): each phone sends its position at regular intervals, with its GPS error; allies move in jumps and a poorly covered ally shows late or grey. Unchecked: exact live positions.
+[*][b]COMSPEC › ATAK · Simulation › BFT position interval[/b] (server): 2 to 60 s (10 s by default); a fast player sends up to twice as often.
+[*][b]COMSPEC › ATAK · Simulation › Simulated network throughput[/b] (server): without network, tracks age.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: same tracks and same filters; MAP, GO THERE and VIEW CAMERA lead there.
+[*][b]Squad (Group app)[/b]: fire team colours and roles come from it.
+[*][b]Athena[/b]: website tracks merged with in-game units (same callsign = same track); formations from Athena's ORBAT.
+[*][b]ACE[/b]: the unconscious state counts as out of action.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]VIBRATE, SMS and VIEW CAMERA only work on a player; VIBRATE is greyed out on an offline track.
+[*]If allies' medical state is hidden in the phone settings, only death is shown.
+[*]AI of the same group without their own callsign are told apart by their role.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

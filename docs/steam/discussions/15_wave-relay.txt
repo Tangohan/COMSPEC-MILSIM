@@ -1,0 +1,114 @@
+[APP] Wave Relay — réseau maillé du camp : mon nœud, relais, couverture, localisation et voix ACRE2
+
+[i]Message 1/2[/i]
+[h1]Wave Relay[/h1]
+[i]Catégorie : Communication · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Voir et comprendre le réseau radio maillé (MANET) qui relie les téléphones du camp : par où passe votre liaison, combien de sauts vous séparent de la passerelle, quels relais sont en service, où sont les zones blanches. L'app sert aussi à localiser le téléphone d'un équipier par triangulation et, avec ACRE2, à suivre qui émet sur vos fréquences. Tout ce qui passe par le téléphone (SMS, messages, positions BFT, photos) dépend de ce réseau.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie [b]Communication[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Onglet MON NŒUD[/b] : nom de votre nœud, état (« Je suis la passerelle », nombre de sauts jusqu'à la passerelle, ou « Coupé de la passerelle »), débit, latence et perte. Puis la passerelle utilisée, le signal sur 4, votre radio (MPU5 portée : portée, gain et débit relayé à l'équipe ; sinon « téléphone seul »), la distance à la passerelle, votre talkgroup.
+[*][b]Voisins directs[/b] : les nœuds joints sans relais intermédiaire, avec la qualité du lien en %, distance et direction. Aucun voisin : montez sur un point haut ou rapprochez-vous d'un nœud. [b]Facteurs de débit[/b] : ce qui réduit votre débit.
+[*][b]BRANCHER SUR MA RADIO[/b] / [b]DÉBRANCHER LA RADIO[/b] : relie le téléphone à votre radio ACRE2 ou TFAR, qui relaie alors les données comme une MPU5 (selon les réglages du serveur, hors liaison réaliste).
+[*][b]Onglet RÉSEAU[/b] : tous les nœuds du maillage (passerelle, puis par nombre de sauts, nœuds isolés à la fin) avec voisins et distance. [b]LOCALISER[/b] sur le téléphone d'un équipier : triangulation par les relais et les téléphones qui l'entendent, affichée sur la carte (utile si sa balise est coupée ou s'il est perdu).
+[*][b]Onglet COUVERTURE[/b] : choisissez le [b]Rayon[/b] (2, 5 ou 10 km) et [b]CALCULER[/b] : carte du débit à hauteur d'homme autour de vous d'après les relais et passerelles du camp, relief et brouilleurs compris. Résultat : terrain couvert, zones blanches, débit moyen, débit à votre position. [b]EFFACER[/b] retire le calque. Légende : 4 Mbit/s et plus, 1,5, 0,5, faible, zone blanche.
+[*][b]Relais et passerelles[/b] : chaque relais de la mission, passerelle de véhicule, PC mobile ou MPU5 d'un équipier, avec état, portée, débit, places, batterie, distance, et le débit que vous en recevez (ou « hors de portée »). [b]Triangulations[/b] : localisations récentes (10 min sur la carte), [b]EFFACER[/b].
+[*][b]Calques[/b] : interrupteurs [b]Couverture et liens sur la carte[/b] (liens colorés selon leur qualité) et [b]Relais sur la carte[/b]. [b]VOIR SUR LA CARTE[/b] et [b]ACTUALISER[/b] en bas des onglets.
+[*][b]Onglet VOIX[/b] (si ACRE2 est chargé) : [b]En émission[/b] (qui émet sur les fréquences de vos radios), [b]Mes radios ACRE2[/b] (canal, fréquence, alternat PTT ; canal modifiable avec - / + ou 1 à 6), [b]Connectés[/b] (téléphones du camp qui publient leurs fréquences, les vôtres en tête, MPU5 signalées).
+[*][b]Onglet TALKGROUPS[/b] (sans ACRE2) : Commandement, Section Alpha / Bravo / Charlie, Appui feux, Logistique, Santé / MEDEVAC, Air / sol. [b]REJOINDRE[/b] ou [b]QUITTER[/b] ; le talkgroup sert à regrouper les échanges data du maillage.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Vos SMS ne partent plus : ouvrez Wave Relay, onglet [b]MON NŒUD[/b] : « Coupé de la passerelle ».
+[*]Onglet [b]COUVERTURE[/b], rayon 5 km, [b]CALCULER[/b] : la carte montre la zone couverte la plus proche.
+[*]Déplacez-vous vers elle ou vers un point haut, puis [b]ACTUALISER[/b] : le nombre de sauts réapparaît.
+[*]Un équipier ne répond plus : onglet [b]RÉSEAU[/b], [b]LOCALISER[/b] sur son téléphone.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Portée de la MPU5 (m)[/b] (serveur) : portée d'un joueur qui porte une MPU5 (6 000 m par défaut) ; le téléphone seul porte à 3 000 m.
+[*][b]COMSPEC › ATAK · Simulation › Données par radio ACRE2 / TFAR[/b] (serveur) : autorise BRANCHER SUR MA RADIO (la radio personnelle 343 ne compte pas) ; portée et débit réglés à part pour radio longue portée et radio portative.
+[*][b]COMSPEC › ATAK · Radio de données (MPU5) › Liaison téléphone-radio réaliste[/b] (serveur, décoché par défaut) : le téléphone ne passe que par une MPU5 reliée par câble EUD ou Wi-Fi. Voir aussi [b]Voix ACRE/TFAR relayée par le maillage MPU5[/b].
+[*][b]COMSPEC › ATAK · Simulation › Réseau uniquement par les relais[/b], [b]Véhicules relais et PC mobile[/b], [b]Antennes du jeu = relais ATAK[/b], portées et débits des relais, [b]Dégâts des relais[/b] (serveur).
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : calques Wave Relay et Relais, triangulations.
+[*][b]ACRE2[/b] : onglet VOIX, canal des radios modifiable. [b]ACRE2 / TFAR[/b] : radio branchée comme relais de données.
+[*][b]Réseau[/b] : l'app Réseau montre l'état de la radio de données et ses réglages.
+[*][b]Zeus / Eden[/b] : les relais posés par la mission (module « ATAK · Relais ») apparaissent ici.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]La couverture se calcule pour l'endroit où vous étiez : après un déplacement, relancez-la.
+[*]Dans VOIX, vous voyez émettre les fréquences réglées sur vos radios, sans tenir compte de la portée ; les joueurs sans téléphone ATAK n'apparaissent pas.
+[*]Plus de joueurs que de places sur un relais : le débit est partagé.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x). Onglet VOIX ACRE2 et radio MPU5 : 2.3.0.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+See and understand the mesh radio network (MANET) linking your side's phones: where your link goes, how many hops to the gateway, which relays are in service, where the dead zones are. The app also locates a teammate's phone by triangulation and, with ACRE2, shows who is transmitting on your frequencies. Everything that goes through the phone (SMS, messages, BFT positions, photos) depends on this network.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the [b]Communication[/b] category (not in the dock). If it was uninstalled, the App Store reinstalls it.
+
+[h3]Features[/h3]
+[list]
+[*][b]MY NODE tab[/b]: your node's name, state ("I am the gateway", hops to the gateway, or "Cut from the gateway"), throughput, latency and loss. Then the gateway used, signal out of 4, your radio (MPU5 carried: range, gain and throughput relayed to the team; otherwise "phone alone"), distance to the gateway, your talkgroup.
+[*][b]Direct neighbors[/b]: nodes reached with no relay in between, with link quality in %, distance and direction. No neighbour: climb to high ground or move closer to a node. [b]Bitrate factors[/b]: what reduces your throughput.
+[*][b]PLUG INTO MY RADIO[/b] / [b]UNPLUG THE RADIO[/b]: links the phone to your ACRE2 or TFAR radio, which then relays data like an MPU5 (per server settings, outside the realistic link).
+[*][b]NETWORK tab[/b]: every mesh node (gateway, then by hops, isolated nodes last) with neighbours and distance. [b]LOCATE[/b] on a teammate's phone: triangulation through the relays and phones that hear it, shown on the map (useful if their beacon is off or they are lost).
+[*][b]COVERAGE tab[/b]: pick the [b]Radius[/b] (2, 5 or 10 km) and [b]CALCULATE[/b]: a map of throughput at head height around you from the side's relays and gateways, terrain and jammers included. Result: ground covered, dead zones, average throughput, throughput at your position. [b]CLEAR[/b] removes the layer. Legend: 4 Mbit/s and more, 1.5, 0.5, weak, dead zone.
+[*][b]Relays and gateways[/b]: each mission relay, vehicle gateway, mobile CP or teammate's MPU5, with state, range, throughput, slots, battery, distance, and the throughput you get from it (or "out of range"). [b]Triangulations[/b]: recent locations (10 min on the map), [b]CLEAR[/b].
+[*][b]Layers[/b]: switches [b]Coverage and links on the map[/b] (links coloured by quality) and [b]Relays on the map[/b]. [b]SHOW ON MAP[/b] and [b]REFRESH[/b] at the bottom of the tabs.
+[*][b]VOICE tab[/b] (if ACRE2 is loaded): [b]Transmitting[/b] (who transmits on your radios' frequencies), [b]My ACRE2 radios[/b] (channel, frequency, PTT; channel changed with - / + or 1 to 6), [b]Connected[/b] (side phones that publish their frequencies, yours first, MPU5 flagged).
+[*][b]TALKGROUPS tab[/b] (without ACRE2): Command, Squad Alpha / Bravo / Charlie, Fire support, Logistics, Health / MEDEVAC, Air / ground. [b]JOIN[/b] or [b]QUITTER[/b] (leave); the talkgroup groups the mesh's data traffic.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Your SMS no longer leave: open Wave Relay, [b]MY NODE[/b] tab: "Cut from the gateway".
+[*][b]COVERAGE[/b] tab, 5 km radius, [b]CALCULATE[/b]: the map shows the nearest covered area.
+[*]Move towards it or to high ground, then [b]REFRESH[/b]: the hop count comes back.
+[*]A teammate stops answering: [b]NETWORK[/b] tab, [b]LOCATE[/b] on their phone.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › MPU5 range (m)[/b] (server): range of a player carrying an MPU5 (6,000 m by default); the phone alone reaches 3,000 m.
+[*][b]COMSPEC › ATAK · Simulation › Data over ACRE2 / TFAR radio[/b] (server): allows PLUG INTO MY RADIO (the 343 personal radio does not count); range and throughput set separately for long-range and handheld radios.
+[*][b]COMSPEC › ATAK · Data radio (MPU5) › Realistic phone-radio link[/b] (server, unchecked by default): the phone only goes through an MPU5 linked by EUD cable or Wi-Fi. See also [b]ACRE/TFAR voice relayed over the MPU5 mesh[/b].
+[*][b]COMSPEC › ATAK · Simulation › Network through relays only[/b], [b]Vehicle gateways and mobile CP[/b], [b]Game antennas = ATAK relays[/b], relay ranges and throughputs, [b]Relay damage[/b] (server).
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: Wave Relay and Relays layers, triangulations.
+[*][b]ACRE2[/b]: VOICE tab, radio channel can be changed. [b]ACRE2 / TFAR[/b]: radio plugged in as a data relay.
+[*][b]Network[/b]: the Network app shows the data radio's state and its settings.
+[*][b]Zeus / Eden[/b]: relays placed by the mission ("ATAK · Relais" module) show here.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Coverage is computed for where you were: after moving, run it again.
+[*]In VOICE, you see transmissions on the frequencies set on your radios, regardless of range; players without an ATAK phone do not show.
+[*]More players than slots on a relay: throughput is shared.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x). ACRE2 VOICE tab and MPU5 radio: 2.3.0.
