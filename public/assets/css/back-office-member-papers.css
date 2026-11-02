@@ -1,0 +1,131 @@
+/* Fiche membre › Identité & papiers, formulaire de papier, Ma situation › Mes papiers (COMSPEC IDENTITY). */
+.idm-new {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+    margin: 0 0 12px;
+}
+.idm-new label,
+.idm-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    font-size: 0.82rem;
+    color: var(--fm-muted, var(--ath-muted, #64748b));
+}
+.idm-new select,
+.idm-form input,
+.idm-form select,
+.idm-form textarea {
+    min-width: 0;
+    max-width: 100%;
+}
+.idm-docs {
+    display: grid;
+    gap: 10px;
+}
+.idm-doc {
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--fm-border, var(--ath-border, rgba(127, 127, 127, 0.3)));
+    border-radius: 10px;
+    background: var(--fm-surface, var(--ath-surface, transparent));
+}
+.idm-doc__head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    align-items: center;
+}
+.idm-doc__num {
+    font-family: var(--fm-mono, ui-monospace, monospace);
+    letter-spacing: 0.04em;
+    overflow-wrap: anywhere;
+}
+.idm-doc__meta {
+    margin: 4px 0 0;
+    font-size: 0.82rem;
+    color: var(--fm-muted, var(--ath-muted, #64748b));
+    overflow-wrap: anywhere;
+}
+.idm-doc__preview {
+    margin-top: 8px;
+}
+.idm-doc__preview summary,
+.idm-doc__revoke summary {
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+.idm-doc__preview .idp-card {
+    margin-top: 8px;
+}
+.idm-doc__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+.idm-doc__actions form {
+    margin: 0;
+}
+.idm-doc__revoke {
+    flex-basis: 100%;
+}
+.idm-form {
+    display: grid;
+    gap: 14px;
+    max-width: 920px;
+}
+.idm-form__grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+.idm-form__wide {
+    grid-column: 1 / -1;
+}
+.idm-form__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+.idm-sim {
+    padding: 8px 12px;
+    border: 1px dashed var(--amber, #f59e0b);
+    border-radius: 10px;
+    font-size: 0.85rem;
+}
+.idm-sim strong {
+    letter-spacing: 0.18em;
+    color: var(--amber, #f59e0b);
+}
+.idm-flag {
+    display: inline-block;
+    width: 32px;
+    height: 20px;
+    vertical-align: middle;
+    border: 1px solid rgba(127, 127, 127, 0.35);
+    border-radius: 3px;
+    object-fit: cover;
+}
+.idm-swatch {
+    display: inline-flex;
+    width: 32px;
+    height: 20px;
+    vertical-align: middle;
+    border: 1px solid rgba(127, 127, 127, 0.35);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.idm-swatch span {
+    flex: 1;
+}
+@media (max-width: 640px) {
+    .idm-new {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
