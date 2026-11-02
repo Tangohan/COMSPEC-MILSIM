@@ -281,7 +281,7 @@ switch (_act) do {
     case "del": {
         private _b = [_arg] call _get;
         if ((count _b) isEqualTo 0) exitWith { false };
-        { deleteMarker _x; [_x, true] call comspec_atak_native_fnc_markerWeb; } forEach (_b getOrDefault ["mk", []]);
+        { [_x, true] call comspec_atak_native_fnc_markerWeb; deleteMarker _x; } forEach (_b getOrDefault ["mk", []]);
         _b set ["mk", []]; _b set ["mkz", createHashMap]; _b set ["mkTok", (_b getOrDefault ["mkTok", 0]) + 1];
         if (_arg in _mine) then {
             if ((_b get "scope") > 0) then { ["unshare", _arg] call comspec_atak_native_fnc_zoneAction; };
@@ -1307,7 +1307,7 @@ switch (_act) do {
             private _k = str [_x, _ch];
             if (_k in _old && {(_old get _k) isNotEqualTo ""}) then { _new set [_k, _old get _k]; _old deleteAt _k; } else { if !(_k in _new) then { _todo pushBack [_k, _x]; _new set [_k, ""]; }; };
         } forEach _want;
-        { private _m = _old get _x; if (_m isNotEqualTo "") then { deleteMarker _m; [_m, true] call comspec_atak_native_fnc_markerWeb; }; } forEach (keys _old);
+        { private _m = _old get _x; if (_m isNotEqualTo "") then { [_m, true] call comspec_atak_native_fnc_markerWeb; deleteMarker _m; }; } forEach (keys _old);
         _b set ["mkz", _new];
         _b set ["mk", (values _new) select { _x isNotEqualTo "" }];
         _b set ["mkTok", (_b getOrDefault ["mkTok", 0]) + 1];

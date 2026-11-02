@@ -5,6 +5,14 @@
     Débit simulé (fn_netSend) : sans signal, l'envoi attend le retour du réseau ; seul le dernier état du marqueur part.
 */
 params [["_name", ""], ["_deleted", false]];
+// Suppression annoncée avant deleteMarker (routes, zones) : position et texte gardés en pierre tombale, pour que le
+// relevé des repères d'Athena (Overwatch connect, fn_pollAthenaMarkers) n'en recrée pas une copie web.
+if (_deleted && {_name isNotEqualTo ""} && {(markerShape _name) isNotEqualTo ""}) then {
+    private _g = missionNamespace getVariable ["COMSPEC_WebMkGoneSig", createHashMap];
+    if ((count _g) > 2000) then { _g = createHashMap; };
+    _g set [format ["%1|%2|%3", round ((markerPos _name) select 0), round ((markerPos _name) select 1), markerText _name], true];
+    missionNamespace setVariable ["COMSPEC_WebMkGoneSig", _g];
+};
 // Mode « réseau ATAK uniquement » : le marqueur part aussi aux téléphones du canal (fn_markerNet), avec ou sans Athena.
 if (_name isNotEqualTo "") then {
     [{ ["touch", _this] call comspec_atak_native_fnc_markerNet; }, [_name, _deleted], [0.5, 0] select _deleted] call CBA_fnc_waitAndExecute;

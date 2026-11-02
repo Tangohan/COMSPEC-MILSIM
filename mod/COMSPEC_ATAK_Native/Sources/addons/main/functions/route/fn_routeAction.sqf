@@ -238,7 +238,7 @@ switch (_act) do {
         private _r = [_arg] call _get;
         if ((count _r) isEqualTo 0) exitWith { false };
         // Marqueurs d'Arma posés : retirés partout (et sur Athena).
-        { deleteMarker _x; [_x, true] call comspec_atak_native_fnc_markerWeb; } forEach (_r getOrDefault ["mk", []]);
+        { [_x, true] call comspec_atak_native_fnc_markerWeb; deleteMarker _x; } forEach (_r getOrDefault ["mk", []]);
         _r set ["mk", []];
         if (_arg in _mine) then {
             // Route partagée : retirée chez ceux qui l'ont reçue.
@@ -621,7 +621,7 @@ switch (_act) do {
     case "armaNow": {
         private _r = _mine getOrDefault [_arg, createHashMap];
         if ((count _r) isEqualTo 0) exitWith {};
-        { deleteMarker _x; [_x, true] call comspec_atak_native_fnc_markerWeb; } forEach (_r getOrDefault ["mk", []]);
+        { [_x, true] call comspec_atak_native_fnc_markerWeb; deleteMarker _x; } forEach (_r getOrDefault ["mk", []]);
         _r set ["mk", []];
         if (!(_r get "arma") || {!(missionNamespace getVariable ["comspec_atak_native_route_arma", true])} || {(count (_r get "steps")) isEqualTo 0}) exitWith {};
         private _ch = [3, 1] select ((_r get "scope") >= 3);
@@ -704,7 +704,7 @@ switch (_act) do {
         private _r = _mine getOrDefault [_id, createHashMap];
         if ((count _r) isEqualTo 0) exitWith { false };
         if (_isNew && {(_r get "scope") isEqualTo 0}) exitWith {
-            { deleteMarker _x; [_x, true] call comspec_atak_native_fnc_markerWeb; } forEach (_r getOrDefault ["mk", []]);
+            { [_x, true] call comspec_atak_native_fnc_markerWeb; deleteMarker _x; } forEach (_r getOrDefault ["mk", []]);
             _mine deleteAt _id;
             if (((missionNamespace getVariable ["COMSPEC_ATAK_RteFollow", createHashMap]) getOrDefault ["id", ""]) isEqualTo _id) then { ["unfollow", true] call comspec_atak_native_fnc_routeAction; };
             call _save; call _refresh;

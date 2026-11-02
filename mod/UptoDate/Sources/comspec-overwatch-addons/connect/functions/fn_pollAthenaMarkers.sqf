@@ -58,6 +58,14 @@ private _lines = _body splitString _nl;
 // Index des marqueurs existants (hashmap) : « in allMapMarkers » dans la boucle recopiait toute la liste à chaque ligne.
 private _mkIndex = createHashMapFromArray (allMapMarkers apply { [_x, true] });
 private _bootMk = missionNamespace getVariable ["COMSPEC_WebMarkersBootstrapped", false];
+// Pierres tombales (1.6.30) : un repère web que ce poste avait créé puis qui a été supprimé en jeu (Suppr, clic droit),
+// ou la copie web d'une forme retirée par l'ATAK natif (étapes de route, zones : COMSPEC_WebMkGoneSig, position et
+// texte), ne revient plus à chaque relevé tant que la partie dure.
+private _gone = missionNamespace getVariable ["COMSPEC_WebMkGone", createHashMap];
+missionNamespace setVariable ["COMSPEC_WebMkGone", _gone, false];
+private _made = missionNamespace getVariable ["COMSPEC_WebMkMade", createHashMap];
+missionNamespace setVariable ["COMSPEC_WebMkMade", _made, false];
+private _goneSig = missionNamespace getVariable ["COMSPEC_WebMkGoneSig", createHashMap];
 if (!_bootMk) then {
     missionNamespace setVariable ["COMSPEC_WebMarkersBootstrapped", true, false];
 };
@@ -83,6 +91,9 @@ if (!_bootMk) then {
 
     _seen pushBack _id;
     private _name = format ["comspec_webmk_%1", _id];
+    if (_id in _gone) then { continue };
+    if (_name in _made && {!(_name in _mkIndex)}) then { _gone set [_id, true]; diag_log format ["[COMSPEC Overwatch][INFO][MARKERS] Repère web %1 supprimé en jeu : plus recréé", _id]; continue };
+    if ((format ["%1|%2|%3", round _xPos, round _yPos, _text]) in _goneSig) then { _gone set [_id, true]; diag_log format ["[COMSPEC Overwatch][INFO][MARKERS] Repère web %1 (%2) retiré par l'ATAK : plus recréé", _id, _text]; continue };
     if (_typeL isEqualTo "manual" || {!(isClass (configFile >> "CfgMarkers" >> _type))}) then {
         _type = "mil_dot";
     };
@@ -115,6 +126,7 @@ if (!_bootMk) then {
         _mk setMarkerSizeLocal [0.85, 0.85];
         _mk setMarkerAlpha 1;
         _mkIndex set [_mk, true];
+        _made set [_mk, true];
         _created = _created + 1;
     };
     private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
