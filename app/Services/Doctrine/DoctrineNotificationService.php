@@ -164,6 +164,33 @@ final class DoctrineNotificationService
         return ['ok' => true, 'count' => $count];
     }
 
+    /**
+     * Date de la dernière relance enregistrée par document (suivi de diffusion).
+     *
+     * @return array<int, string> document_id => created_at
+     */
+    public function lastReminderByDocument(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        try {
+            $stmt = \App\Core\Database::getPdo()->prepare(
+                'SELECT document_id, MAX(created_at) AS last_at FROM document_doctrine_reminders
+                 WHERE tenant_id = ? GROUP BY document_id'
+            );
+            $stmt->execute([$tenantId]);
+            $out = [];
+            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+                $out[(int) $row['document_id']] = (string) $row['last_at'];
+            }
+
+            return $out;
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     private function recordReminder(
         int $tenantId,
         int $documentId,

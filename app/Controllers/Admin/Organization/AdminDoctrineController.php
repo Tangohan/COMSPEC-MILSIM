@@ -326,9 +326,7 @@ final class AdminDoctrineController
         $tenantId = (int) Session::get('tenant_id');
         $documentFilter = (int) $request->input('document_id', 0);
         $statusFilter = trim((string) $request->input('statut', ''));
-        $unitFilter = (int) $request->input('unit_id', 0);
         $doctrines = $this->doctrineRepository->listPublishedForTenant($tenantId);
-        $rows = [];
         $stats = [
             'concerned' => 0,
             'acknowledged' => 0,
@@ -342,23 +340,40 @@ final class AdminDoctrineController
             'pending_validation' => 0,
             'approaching_deadline' => 0,
         ];
+        $statusCounts = [];
 
-        foreach ($doctrines as $doc) {
-            $documentId = (int) ($doc['document_id'] ?? 0);
-            if ($documentFilter > 0 && $documentId !== $documentFilter) {
-                continue;
-            }
-            $deadline = $doc['acknowledgment_deadline_at'] ?? null;
-            if ($deadline) {
-                $ts = strtotime((string) $deadline);
-                if ($ts !== false && $ts > time() && $ts < time() + 7 * 86400) {
-                    ++$commandStats['approaching_deadline'];
+        // Unité principale de chaque membre (affectation active) : facultative, la ligne reste lisible sans.
+        $unitByUser = [];
+        try {
+            /** @var \App\Repositories\PersonnelAssignmentRepository $assignments */
+            $assignments = \App\Core\Container::get(\App\Repositories\PersonnelAssignmentRepository::class);
+            $unitNames = $this->unitRepository->namesByIdForTenant($tenantId);
+            foreach ($assignments->primaryUnitIdByUserForTenant($tenantId) as $uid => $unitId) {
+                if (isset($unitNames[$unitId])) {
+                    $unitByUser[(int) $uid] = (string) $unitNames[$unitId];
                 }
             }
+        } catch (\Throwable) {
+        }
+        $lastReminders = $this->notificationService->lastReminderByDocument($tenantId);
+
+        $users = [];
+        $docs = [];
+        foreach ($doctrines as $doc) {
+            $documentId = (int) ($doc['document_id'] ?? 0);
+            $deadline = $doc['acknowledgment_deadline_at'] ?? null;
+            $deadlineTs = $deadline ? strtotime((string) $deadline) : false;
+            if ($deadlineTs !== false && $deadlineTs > time() && $deadlineTs < time() + 7 * 86400) {
+                ++$commandStats['approaching_deadline'];
+            }
             $versionId = (int) ($doc['version_id'] ?? 0);
-            $userIds = $this->audienceResolver->resolveUserIds($tenantId, $documentId);
-            foreach ($userIds as $uid) {
-                $user = $this->userRepository->findById($uid, $tenantId);
+            $recipients = [];
+            foreach ($this->audienceResolver->resolveUserIds($tenantId, $documentId) as $uid) {
+                $uid = (int) $uid;
+                if (!array_key_exists($uid, $users)) {
+                    $users[$uid] = $this->userRepository->findById($uid, $tenantId);
+                }
+                $user = $users[$uid];
                 if ($user === null) {
                     continue;
                 }
@@ -369,6 +384,7 @@ final class AdminDoctrineController
                     continue;
                 }
                 ++$stats['concerned'];
+                $statusCounts[$badge['badge']] = ($statusCounts[$badge['badge']] ?? 0) + 1;
                 if ($badge['badge'] === 'ACKNOWLEDGED') {
                     ++$stats['acknowledged'];
                     ++$stats['read'];
@@ -385,46 +401,54 @@ final class AdminDoctrineController
                     ++$stats['opened'];
                 }
                 $ack = $versionId > 0 ? $this->acknowledgmentRepository->findForUserVersion($tenantId, $uid, $versionId) : null;
+                $signedAt = $ack['signed_at'] ?? null;
+                $signedTs = $signedAt ? strtotime((string) $signedAt) : false;
 
-                if ($statusFilter !== '' && $badge['badge'] !== $statusFilter) {
-                    continue;
-                }
-
-                $rows[] = [
+                $recipients[] = [
                     'user_id' => $uid,
                     'display_name' => (string) ($user['display_name'] ?? ''),
-                    'unit_label' => (string) ($user['unit_name'] ?? $user['primary_unit_name'] ?? '—'),
-                    'reference' => (string) ($doc['reference_code'] ?? ''),
-                    'title' => (string) ($doc['title'] ?? ''),
-                    'document_id' => $documentId,
-                    'version_id' => $versionId,
-                    'version_label' => trim((string) ($doc['version_label'] ?? ''))
-                        ?: ('v' . (int) ($doc['version_major'] ?? 1) . '.' . (int) ($doc['version_minor'] ?? 0)),
+                    'unit_label' => $unitByUser[$uid] ?? '',
                     'status' => $badge['label'],
                     'status_code' => $badge['badge'],
                     'first_viewed_at' => $view['first_viewed_at'] ?? null,
-                    'viewed_at' => $view['last_viewed_at'] ?? null,
-                    'signed_at' => $ack['signed_at'] ?? null,
-                    'deadline' => $doc['acknowledgment_deadline_at'] ?? null,
+                    'signed_at' => $signedAt,
+                    'signed_late' => $signedTs !== false && $deadlineTs !== false && $signedTs > $deadlineTs,
                 ];
             }
+            $docs[] = [
+                'document_id' => $documentId,
+                'reference' => (string) ($doc['reference_code'] ?? ''),
+                'title' => (string) ($doc['title'] ?? ''),
+                'type_label' => (string) ($doc['type_label'] ?? ''),
+                'version_label' => trim((string) ($doc['version_label'] ?? ''))
+                    ?: ('v' . (int) ($doc['version_major'] ?? 1) . '.' . (int) ($doc['version_minor'] ?? 0)),
+                'published_at' => $doc['version_published_at'] ?? ($doc['published_at'] ?? null),
+                'deadline' => $deadline,
+                'last_reminder_at' => $lastReminders[$documentId] ?? null,
+                'recipients' => $recipients,
+            ];
         }
 
         $compliancePct = $stats['concerned'] > 0
             ? round(100 * $stats['read'] / $stats['concerned'], 1)
             : 100.0;
+        $gate = Gate::getInstance();
 
         return Response::view('layout.main', [
             'content' => 'admin/documents/doctrine_compliance',
             'title' => 'Suivi de diffusion',
-            'rows' => $rows,
+            'backOfficePageCss' => ['doctrine-compliance.css'],
+            'boSkipPageHead' => true,
+            'docs' => $docs,
             'stats' => $stats,
+            'statusCounts' => $statusCounts,
             'commandStats' => $commandStats,
             'compliancePct' => $compliancePct,
-            'doctrines' => $doctrines,
             'documentFilter' => $documentFilter,
             'statusFilter' => $statusFilter,
-            'unitFilter' => $unitFilter,
+            'canRemind' => !($gate->deny('doctrine.send_reminders') && $this->denyManage()),
+            'canCreate' => !$this->denyCreate(),
+            'canManage' => !$this->denyManage(),
             'csrf_token' => Csrf::token(),
         ]);
     }
