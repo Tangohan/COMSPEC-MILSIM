@@ -3223,21 +3223,22 @@ class EffectifsWorkspaceController
         $enrichment = new JobRoleEnrichmentService();
         $hidden = $enrichment->hiddenCatalogSlugs($tenantId);
         $holders = $enrichment->holderCounts($tenantId);
+        $decorations = $enrichment->decorations($tenantId);
         $roleIdBySlug = [];
         foreach ($this->personnelJobRoleRepository->listRolesWithCategory($tenantId) as $role) {
             $roleIdBySlug[(string)($role['slug'] ?? '')] = (int)$role['id'];
         }
+        // Toutes les fonctions sont envoyées : la page filtre visibles / masquées sans rechargement.
         $showHidden = $request->queryString('masquees', '0') === '1';
         $groups = [];
         foreach (JobRoleEnrichmentService::catalogBySlug() as $slug => $entry) {
             $roleId = $roleIdBySlug[$slug] ?? 0;
-            $isHidden = isset($hidden[$slug]);
-            if ($isHidden && !$showHidden) continue;
             $category = trim((string)($entry['category'] ?? '')) ?: 'Autres';
             $groups[$category][] = [
                 'slug'=>$slug, 'name'=>(string)$entry['name'], 'subcategory'=>(string)($entry['subcategory'] ?? ''),
                 'description'=>(string)($entry['description'] ?? ''), 'icon'=>JobRoleEnrichmentService::defaultIconForCatalogSlug($slug),
-                'hidden'=>$isHidden, 'role_id'=>$roleId, 'holders'=>$roleId > 0 ? (int)($holders[$roleId] ?? 0) : 0,
+                'abbreviation'=>$roleId > 0 ? (string)($decorations[$roleId]['abbreviation'] ?? '') : '',
+                'hidden'=>isset($hidden[$slug]), 'role_id'=>$roleId, 'holders'=>$roleId > 0 ? (int)($holders[$roleId] ?? 0) : 0,
             ];
         }
         return ['siteJobGroups'=>$groups, 'jobShowHidden'=>$showHidden, 'jobHiddenCount'=>count($hidden),

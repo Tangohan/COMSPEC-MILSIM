@@ -86,4 +86,4 @@ $roleTrail=static function(array $role)use($roleById):string{
 <?php require __DIR__.'/job_browser.php'; ?>
 <?php endif ?>
 </div>
-<?php if(empty($jobsFragment)): ?><link rel="stylesheet" href="<?= $h(asset_url('assets/css/personnel-jobs-workspace.css')) ?>"><script src="<?= $h(asset_url('assets/js/personnel-jobs-workspace.js')) ?>" defer></script><?php endif ?>
+<?php if(empty($jobsFragment)): ?><link rel="stylesheet" href="<?= $h(asset_url('assets/css/personnel-jobs-workspace.css')) ?>"><script src="<?= $h(asset_url('assets/js/personnel-jobs-workspace.js')) ?>" defer></script><link rel="stylesheet" href="<?= $h(asset_url('assets/css/job-site-catalog.css')) ?>"><script src="<?= $h(asset_url('assets/js/job-site-catalog.js')) ?>" defer></script><?php endif ?>

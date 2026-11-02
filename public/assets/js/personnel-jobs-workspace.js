@@ -189,14 +189,6 @@
         current.appendChild(document.createTextNode(' ' + (option.querySelector('small')?.textContent || '')));
     }
 
-    function siteSelection(scope) {
-        const form = scope?.closest('form') || scope;
-        const counter = form?.querySelector('[data-site-selected-count]');
-        if (!counter) return;
-        const count = form.querySelectorAll('[data-site-job]:checked').length;
-        counter.textContent = count > 0 ? count + ' sélectionnée(s)' : '';
-    }
-
     document.addEventListener('input', event => {
         if (!event.target.closest('[data-jobs-workspace]')) return;
         if (event.target.matches('[data-icon-search]')) { filterIcons(event.target); return; }
@@ -217,11 +209,6 @@
         if (event.target.matches('[data-category-placement]')) placement(event.target);
         if (event.target.matches('[data-icon-picker] input[name=icon]')) showIcon(event.target);
         if (event.target.matches('[data-jobs-workspace] [data-jobs-autosubmit]')) event.target.form?.requestSubmit();
-        if (event.target.matches('[data-jobs-workspace] [data-site-select-all]')) {
-            const group = event.target.closest('fieldset');
-            group?.querySelectorAll('[data-site-job]').forEach(box => { if (!box.closest('[data-jobs-row]')?.hidden) box.checked = event.target.checked; });
-        }
-        if (event.target.matches('[data-jobs-workspace] [data-site-job], [data-jobs-workspace] [data-site-select-all]')) siteSelection(event.target);
     });
 
     document.addEventListener('click', event => {
