@@ -1,0 +1,2984 @@
+{
+  "pack": "ru",
+  "country": "RU",
+  "official_lang": "ru",
+  "label": {
+    "fr": "Brevets et qualifications militaires russes",
+    "en": "Russian military badges and qualifications"
+  },
+  "disclaimer": {
+    "fr": "Qualification de jeu inspirée d’une qualification ou d’une formation militaire russe réelle, sans valeur réelle.",
+    "en": "In-game qualification inspired by a real Russian military qualification or course, with no real-world value."
+  },
+  "issuer": {
+    "name": "Forces armées de la Fédération de Russie (référence)",
+    "short_name": "VS RF",
+    "description": {
+      "fr": "Émetteur de référence des qualifications importées du catalogue russe quand l’école n’est pas précisée : qualifications de jeu, sans valeur réelle.",
+      "en": "Reference issuer for qualifications imported from the Russian catalogue when no school is specified: in-game qualifications, with no real-world value."
+    }
+  },
+  "compiled_at": "2026-11-02",
+  "sources_note": {
+    "fr": "Compilé le 2 novembre 2026 à partir des sources publiques citées par le catalogue d’emplois russe (site du ministère de la Défense mil.ru, écoles militaires, presse, Wikipédia en russe et en anglais) ; textes reformulés, rien de classifié ; un champ vide signifie qu’aucune source ouverte ne le précise.",
+    "en": "Compiled on 2 November 2026 from the public sources cited by the Russian job catalogue (Ministry of Defence site mil.ru, military schools, press, Russian and English Wikipedia); texts are paraphrased, nothing classified; an empty field means no open source specifies it."
+  },
+  "entries": [
+    {
+      "id": "ru-rvvdku",
+      "code": "RU-RVVDKU",
+      "category": "airborne",
+      "name": {
+        "fr": "Diplôme de l’École supérieure de commandement aéroportée de Riazan (РВВДКУ)",
+        "en": "Graduate of the Ryazan Guards Higher Airborne Command School (RVVDKU)"
+      },
+      "official_name": "Рязанское гвардейское высшее воздушно-десантное командное училище имени генерала армии В. Ф. Маргелова",
+      "short_name": "РВВДКУ",
+      "description": {
+        "fr": "Cursus de cinq ans menant au grade de lieutenant et à un diplôme de spécialiste (enseignement supérieur), spécialité principale « Emploi des unités des troupes aéroportées ». L’école forme les chefs de section des VDV et une grande partie des officiers des unités spetsnaz.",
+        "en": "Five-year course leading to lieutenant rank and a specialist degree (higher education), main specialty “Employment of Airborne Forces units”. The school trains VDV platoon commanders and a large share of spetsnaz unit officers."
+      },
+      "body": {
+        "fr": "École supérieure de commandement aéroportée de Riazan (ministère de la Défense)",
+        "en": "Ryazan Higher Airborne Command School (Ministry of Defence)"
+      },
+      "issuer": {
+        "name": "Рязанское гвардейское высшее воздушно-десантное командное училище",
+        "short_name": "РВВДКУ"
+      },
+      "reference": {
+        "fr": "Présentation de l’école et de ses spécialités (Wikipédia ru/en)",
+        "en": "Overview of the school and its specialties (Russian/English Wikipedia)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Baccalauréat (enseignement secondaire général)",
+          "Concours d’entrée et aptitude médicale"
+        ],
+        "en": [
+          "Secondary school completion",
+          "Entrance examination and medical fitness"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Рязанское_гвардейское_высшее_воздушно-десантное_командное_училище",
+          "title": "Рязанское гвардейское высшее воздушно-десантное командное училище (Википедия)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Ryazan_Guards_Higher_Airborne_Command_School",
+          "title": "Ryazan Guards Higher Airborne Command School (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "ru-rvvdku-desantnoe-obespechenie",
+      "code": "RU-RVVDKU-DO",
+      "category": "airborne",
+      "name": {
+        "fr": "Spécialité « Emploi des unités d’appui au parachutage » (РВВДКУ)",
+        "en": "Specialty “Employment of airborne delivery support units” (RVVDKU)"
+      },
+      "official_name": "Применение подразделений десантного обеспечения",
+      "short_name": "РВВДКУ ДО",
+      "description": {
+        "fr": "Spécialité du cursus d’officier de cinq ans de l’école de Riazan formant les officiers des unités d’appui au parachutage : préparation et largage du personnel, des matériels et des charges.",
+        "en": "Specialty of the five-year officer course at the Ryazan school training officers of airborne delivery support units: preparation and airdrop of personnel, equipment and loads."
+      },
+      "body": {
+        "fr": "École supérieure de commandement aéroportée de Riazan",
+        "en": "Ryazan Higher Airborne Command School"
+      },
+      "issuer": {
+        "name": "Рязанское гвардейское высшее воздушно-десантное командное училище",
+        "short_name": "РВВДКУ"
+      },
+      "reference": {
+        "fr": "Liste des spécialités de l’école (Wikipédia ru/en)",
+        "en": "List of the school’s specialties (Russian/English Wikipedia)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Рязанское_гвардейское_высшее_воздушно-десантное_командное_училище",
+          "title": "РВВДКУ (Википедия)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Ryazan_Guards_Higher_Airborne_Command_School",
+          "title": "Ryazan Guards Higher Airborne Command School (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "ru-rvvdku-spetsrazvedka",
+      "code": "RU-RVVDKU-SR",
+      "category": "sof",
+      "name": {
+        "fr": "Spécialité « Emploi des unités de reconnaissance spéciale » (РВВДКУ)",
+        "en": "Specialty “Employment of special reconnaissance units” (RVVDKU)"
+      },
+      "official_name": "Применение подразделений специальной разведки",
+      "short_name": "РВВДКУ СпР",
+      "description": {
+        "fr": "Cursus d’officier de cinq ans de l’école de Riazan formant les officiers des unités de reconnaissance spéciale (spetsnaz). La faculté correspondante a été transférée de l’école de Novossibirsk à Riazan en 2013.",
+        "en": "Five-year officer course at the Ryazan school training officers for special reconnaissance (spetsnaz) units. The corresponding faculty was transferred from the Novosibirsk school to Ryazan in 2013."
+      },
+      "body": {
+        "fr": "École supérieure de commandement aéroportée de Riazan",
+        "en": "Ryazan Higher Airborne Command School"
+      },
+      "issuer": {
+        "name": "Рязанское гвардейское высшее воздушно-десантное командное училище",
+        "short_name": "РВВДКУ"
+      },
+      "reference": {
+        "fr": "Liste des spécialités de l’école (Wikipédia ru)",
+        "en": "List of the school’s specialties (Russian Wikipedia)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Рязанское_гвардейское_высшее_воздушно-десантное_командное_училище",
+          "title": "РВВДКУ (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Новосибирское_высшее_военное_командное_училище",
+          "title": "Новосибирское высшее военное командное училище (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-dvoku",
+      "code": "RU-DVOKU",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Diplôme de l’École supérieure de commandement interarmes d’Extrême-Orient (ДВОКУ)",
+        "en": "Graduate of the Far Eastern Higher Combined Arms Command School (DVOKU)"
+      },
+      "official_name": "Дальневосточное высшее общевойсковое командное ордена Жукова училище имени Маршала Советского Союза К. К. Рокоссовского",
+      "short_name": "ДВОКУ",
+      "description": {
+        "fr": "École d’officiers de Blagovechtchensk formant en cinq ans des chefs de section interarmes (fusiliers motorisés, reconnaissance) ; elle fournit aussi des officiers aux brigades spetsnaz et aux VDV.",
+        "en": "Officer school in Blagoveshchensk training combined-arms platoon commanders (motor rifle, reconnaissance) over five years; it also supplies officers to spetsnaz brigades and the VDV."
+      },
+      "body": {
+        "fr": "École supérieure de commandement interarmes d’Extrême-Orient (ministère de la Défense)",
+        "en": "Far Eastern Higher Combined Arms Command School (Ministry of Defence)"
+      },
+      "issuer": {
+        "name": "Дальневосточное высшее общевойсковое командное училище",
+        "short_name": "ДВОКУ"
+      },
+      "reference": {
+        "fr": "Présentation de l’école (Wikipédia ru)",
+        "en": "Overview of the school (Russian Wikipedia)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Дальневосточное_высшее_общевойсковое_командное_училище",
+          "title": "Дальневосточное высшее общевойсковое командное училище (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Норполов,_Эдуард_Доржиевич",
+          "title": "Норполов, Эдуард Доржиевич (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-nvvku",
+      "code": "RU-NVVKU",
+      "category": "intelligence",
+      "name": {
+        "fr": "Diplôme de l’École supérieure de commandement militaire de Novossibirsk (НВВКУ)",
+        "en": "Graduate of the Novosibirsk Higher Military Command School (NVVKU)"
+      },
+      "official_name": "Новосибирское гвардейское высшее военное командное ордена Жукова училище",
+      "short_name": "НВВКУ",
+      "description": {
+        "fr": "Ancienne école supérieure de commandement interarmes de Novossibirsk, qui forme des chefs de section de reconnaissance, de reconnaissance profonde et de fusiliers motorisés. Jusqu’en 2013 elle formait aussi les officiers de reconnaissance spéciale (spetsnaz), faculté depuis transférée à Riazan.",
+        "en": "Former Novosibirsk Higher Combined Arms Command School, training reconnaissance, deep reconnaissance and motor rifle platoon commanders. Until 2013 it also trained special reconnaissance (spetsnaz) officers, a faculty since transferred to Ryazan."
+      },
+      "body": {
+        "fr": "École supérieure de commandement militaire de Novossibirsk (ministère de la Défense)",
+        "en": "Novosibirsk Higher Military Command School (Ministry of Defence)"
+      },
+      "issuer": {
+        "name": "Новосибирское высшее военное командное училище",
+        "short_name": "НВВКУ"
+      },
+      "reference": {
+        "fr": "Présentation de l’école et de ses spécialités (Wikipédia ru)",
+        "en": "Overview of the school and its specialties (Russian Wikipedia)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Новосибирское_высшее_военное_командное_училище",
+          "title": "Новосибирское высшее военное командное училище (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Калинин,_Александр_Анатольевич",
+          "title": "Калинин, Александр Анатольевич (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-vvuz-ofitser",
+      "code": "RU-VVUZ-OFF",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation initiale d’officier en école militaire supérieure (ВВУЗ)",
+        "en": "Initial officer training at a higher military school (VVUZ)"
+      },
+      "official_name": "Высшее военное образование в военно-учебном заведении Министерства обороны",
+      "short_name": "ВВУЗ",
+      "description": {
+        "fr": "Cursus d’officier en établissement d’enseignement militaire supérieur du ministère de la Défense (en général cinq ans), conclu par un diplôme de spécialiste et la nomination au grade de lieutenant. C’est la voie normale vers les postes de chef de section puis de commandant de compagnie.",
+        "en": "Officer course at a Ministry of Defence higher military educational institution (generally five years), ending with a specialist degree and commissioning as lieutenant. It is the standard path to platoon then company command posts."
+      },
+      "body": {
+        "fr": "Ministère de la Défense de la Fédération de Russie",
+        "en": "Ministry of Defence of the Russian Federation"
+      },
+      "issuer": {
+        "name": "Военно-учебные заведения Министерства обороны Российской Федерации",
+        "short_name": "ВУЗ МО РФ"
+      },
+      "reference": {
+        "fr": "Biographies publiques d’officiers des unités spetsnaz (Wikipédia ru)",
+        "en": "Public biographies of spetsnaz unit officers (Russian Wikipedia)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Жихарев,_Александр_Николаевич",
+          "title": "Жихарев, Александр Николаевич (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Реховский,_Иван_Анатольевич",
+          "title": "Реховский, Иван Анатольевич (Википедия)"
+        },
+        {
+          "url": "https://www.kommersant.ru/doc/3867782",
+          "title": "Коммерсантъ"
+        }
+      ]
+    },
+    {
+      "id": "ru-vumo-voenno-politicheskaya",
+      "code": "RU-VUMO-VP",
+      "category": "influence",
+      "name": {
+        "fr": "Formation d’officier militaro-politique (Université militaire du ministère de la Défense)",
+        "en": "Military-political officer training (Military University of the Ministry of Defence)"
+      },
+      "official_name": "Подготовка офицеров военно-политических органов",
+      "short_name": "ВП",
+      "description": {
+        "fr": "Formation des officiers adjoints au commandant chargés du travail militaro-politique (замполит), assurée par l’Université militaire du ministère de la Défense à Moscou et par des facultés d’écoles militaires. Elle prépare aux postes militaro-politiques des unités.",
+        "en": "Training of deputy commanders for military-political work (zampolit), delivered by the Military University of the Ministry of Defence in Moscow and by faculties of military schools. It prepares for military-political posts in units."
+      },
+      "body": {
+        "fr": "Direction militaro-politique principale des forces armées",
+        "en": "Main Military-Political Directorate of the Armed Forces"
+      },
+      "issuer": {
+        "name": "Военный университет Министерства обороны Российской Федерации",
+        "short_name": "ВУ МО РФ"
+      },
+      "reference": {
+        "fr": "Biographie publique d’un adjoint militaro-politique spetsnaz (Wikipédia ru)",
+        "en": "Public biography of a spetsnaz military-political deputy (Russian Wikipedia)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Военный_университет_Министерства_обороны_Российской_Федерации",
+          "title": "Военный университет МО РФ (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Горбоконенко,_Павел_Александрович",
+          "title": "Горбоконенко, Павел Александрович (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-ova",
+      "code": "RU-OVA",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours de l’Académie interarmes des forces armées (commandement de régiment/brigade)",
+        "en": "Combined Arms Academy of the Armed Forces course (regiment/brigade command)"
+      },
+      "official_name": "Общевойсковая академия Вооружённых сил Российской Федерации",
+      "short_name": "ОВА ВС РФ",
+      "description": {
+        "fr": "Enseignement militaire supérieur de niveau opérationnel-tactique à Moscou (héritière de l’Académie Frounze) préparant les officiers à commander des bataillons, régiments et brigades et à servir en état-major.",
+        "en": "Operational-tactical level higher military education in Moscow (successor of the Frunze Academy) preparing officers to command battalions, regiments and brigades and to serve on staffs."
+      },
+      "body": {
+        "fr": "Ministère de la Défense de la Fédération de Russie",
+        "en": "Ministry of Defence of the Russian Federation"
+      },
+      "issuer": {
+        "name": "Общевойсковая академия Вооружённых сил Российской Федерации",
+        "short_name": "ОВА ВС РФ"
+      },
+      "reference": {
+        "fr": "Présentation de l’académie (Wikipédia ru)",
+        "en": "Overview of the academy (Russian Wikipedia)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Общевойсковая_академия_Вооружённых_сил_Российской_Федерации",
+          "title": "Общевойсковая академия ВС РФ (Википедия)"
+        },
+        {
+          "url": "https://novayagazeta.eu/articles/2022/11/24/v-novosibirske-na-dne-podrazdelenii-spetsnaza-pokazali-rolik-s-imenami-78-pogibshikh-iz-elitnoi-24-oi-brigady-gru-news",
+          "title": "Новая газета Европа"
+        }
+      ]
+    },
+    {
+      "id": "ru-vagsh",
+      "code": "RU-VAGSH",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Académie militaire de l’état-major général des forces armées",
+        "en": "Military Academy of the General Staff of the Armed Forces"
+      },
+      "official_name": "Военная академия Генерального штаба Вооружённых сил Российской Федерации",
+      "short_name": "ВАГШ",
+      "description": {
+        "fr": "Plus haut établissement d’enseignement militaire russe, formant les officiers supérieurs aux fonctions de commandement et d’état-major de niveau opérationnel-stratégique ; passage habituel avant les postes d’officier général.",
+        "en": "Russia’s highest military educational institution, training senior officers for operational-strategic command and staff posts; the usual step before general officer appointments."
+      },
+      "body": {
+        "fr": "État-major général des forces armées",
+        "en": "General Staff of the Armed Forces"
+      },
+      "issuer": {
+        "name": "Военная академия Генерального штаба Вооружённых сил Российской Федерации",
+        "short_name": "ВАГШ ВС РФ"
+      },
+      "reference": {
+        "fr": "Présentation de l’académie (Wikipédia ru)",
+        "en": "Overview of the academy (Russian Wikipedia)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Военная_академия_Генерального_штаба_Вооружённых_сил_Российской_Федерации",
+          "title": "Военная академия Генерального штаба (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Силы_специальных_операций_Российской_Федерации",
+          "title": "Силы специальных операций (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-va-vpvo",
+      "code": "RU-VA-VPVO",
+      "category": "fires",
+      "name": {
+        "fr": "Diplôme de l’Académie militaire de défense antiaérienne des troupes (Smolensk)",
+        "en": "Graduate of the Military Academy of Troop Air Defence (Smolensk)"
+      },
+      "official_name": "Военная академия войсковой противовоздушной обороны Вооружённых сил Российской Федерации имени Маршала Советского Союза А. М. Василевского",
+      "short_name": "ВА ВПВО",
+      "description": {
+        "fr": "Académie de Smolensk formant les officiers de défense antiaérienne des forces terrestres et des VDV (cursus d’officier et formation continue), ainsi que des spécialistes du guidage aérien.",
+        "en": "Smolensk academy training air defence officers for the ground forces and the VDV (officer course and continuing education), as well as air guidance specialists."
+      },
+      "body": {
+        "fr": "Ministère de la Défense de la Fédération de Russie",
+        "en": "Ministry of Defence of the Russian Federation"
+      },
+      "issuer": {
+        "name": "Военная академия войсковой ПВО ВС РФ",
+        "short_name": "ВА ВПВО ВС РФ"
+      },
+      "reference": {
+        "fr": "Biographie publique d’Alexandre Prokhorenko et présentation de l’académie (Wikipédia ru)",
+        "en": "Public biography of Aleksandr Prokhorenko and overview of the academy (Russian Wikipedia)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Военная_академия_войсковой_противовоздушной_обороны",
+          "title": "Военная академия войсковой ПВО (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Прохоренко,_Александр_Александрович",
+          "title": "Прохоренко, Александр Александрович (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-avianavodchik",
+      "code": "RU-AVIANAVODCHIK",
+      "category": "air_support",
+      "name": {
+        "fr": "Officier de guidage aérien avancé (авианаводчик)",
+        "en": "Forward air controller (avianavodchik)"
+      },
+      "official_name": "Авианаводчик (офицер боевого управления авиацией)",
+      "short_name": "Авианаводчик",
+      "description": {
+        "fr": "Spécialité d’officier chargé de guider au sol les frappes de l’aviation sur les objectifs désignés. Elle était notamment enseignée à l’Académie de défense antiaérienne de Smolensk et a été illustrée par Alexandre Prokhorenko, tué en Syrie en 2016.",
+        "en": "Officer specialty responsible for guiding aviation strikes onto designated targets from the ground. It was notably taught at the Smolensk air defence academy and was illustrated by Aleksandr Prokhorenko, killed in Syria in 2016."
+      },
+      "body": {
+        "fr": "Forces armées de la Fédération de Russie",
+        "en": "Armed Forces of the Russian Federation"
+      },
+      "issuer": {
+        "name": "Военная академия войсковой ПВО ВС РФ",
+        "short_name": "ВА ВПВО ВС РФ"
+      },
+      "reference": {
+        "fr": "Témoignage sur le métier d’авианаводчик (MK.ru) et biographie publique (Wikipédia ru)",
+        "en": "Account of the avianavodchik trade (MK.ru) and public biography (Russian Wikipedia)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.mk.ru/social/2016/05/05/avianavodchik-rasskazal-o-sekretnoy-professii-pogibshego-v-sirii-aleksandra-prokhorenko.html",
+          "title": "Авианаводчик рассказал о секретной профессии (МК)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Прохоренко,_Александр_Александрович",
+          "title": "Прохоренко, Александр Александрович (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-mvaa",
+      "code": "RU-MVAA",
+      "category": "fires",
+      "name": {
+        "fr": "Diplôme de l’Académie militaire d’artillerie Mikhaïlovskaïa",
+        "en": "Graduate of the Mikhailovskaya Military Artillery Academy"
+      },
+      "official_name": "Михайловская военная артиллерийская академия",
+      "short_name": "МВАА",
+      "description": {
+        "fr": "Académie de Saint-Pétersbourg formant les officiers des troupes de missiles et d’artillerie (cursus d’officier et formation supérieure), y compris les officiers d’artillerie des VDV et de l’infanterie de marine.",
+        "en": "Saint Petersburg academy training missile and artillery troops officers (officer course and advanced education), including artillery officers of the VDV and the naval infantry."
+      },
+      "body": {
+        "fr": "Ministère de la Défense de la Fédération de Russie",
+        "en": "Ministry of Defence of the Russian Federation"
+      },
+      "issuer": {
+        "name": "Михайловская военная артиллерийская академия",
+        "short_name": "МВАА"
+      },
+      "reference": {
+        "fr": "Présentation de l’académie (Wikipédia ru)",
+        "en": "Overview of the academy (Russian Wikipedia)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Михайловская_военная_артиллерийская_академия",
+          "title": "Михайловская военная артиллерийская академия (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/98-я_гвардейская_воздушно-десантная_дивизия",
+          "title": "98-я гвардейская воздушно-десантная дивизия (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-shkola-praporshchikov",
+      "code": "RU-PRAPORSHCHIK",
+      "category": "c2_staff",
+      "name": {
+        "fr": "École d’adjudants (школа прапорщиков)",
+        "en": "Warrant officer school (shkola praporshchikov)"
+      },
+      "official_name": "Школа прапорщиков",
+      "short_name": "Школа прапорщиков",
+      "description": {
+        "fr": "Formation des militaires sous contrat au grade de praporchtchik (adjudant), destinés aux postes techniques et d’encadrement comme adjoint au commandant de groupe ou de section. Supprimées en 2009, ces écoles ont été rétablies au milieu des années 2010.",
+        "en": "Training of contract servicemen for the rank of praporshchik (warrant officer), intended for technical and supervisory posts such as deputy team or platoon commander. Abolished in 2009, these schools were re-established in the mid-2010s."
+      },
+      "body": {
+        "fr": "Ministère de la Défense de la Fédération de Russie",
+        "en": "Ministry of Defence of the Russian Federation"
+      },
+      "issuer": {
+        "name": "Школы и учебные центры подготовки прапорщиков Министерства обороны",
+        "short_name": "МО РФ"
+      },
+      "reference": {
+        "fr": "Article Wikipédia (ru) sur le grade de praporchtchik et biographies publiques",
+        "en": "Russian Wikipedia article on the praporshchik rank and public biographies"
+      },
+      "prerequisites": {
+        "fr": [
+          "Service militaire sous contrat"
+        ],
+        "en": [
+          "Contract military service"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Прапорщик",
+          "title": "Прапорщик (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Кондратенко,_Николай_Андреевич",
+          "title": "Кондратенко, Николай Андреевич (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Ерёменко,_Анатолий_Михайлович",
+          "title": "Ерёменко, Анатолий Михайлович (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-kontrakt-otbor",
+      "code": "RU-KONTRAKT",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection pour le service militaire sous contrat",
+        "en": "Selection for contract military service"
+      },
+      "official_name": "Отбор на военную службу по контракту",
+      "short_name": "Контракт",
+      "description": {
+        "fr": "Procédure d’entrée dans le service sous contrat du ministère de la Défense : examen médical et psychologique, épreuves physiques et signature d’un contrat de durée déterminée, souvent après le service militaire obligatoire. Elle conditionne l’accès aux postes de soldat et de sergent professionnels.",
+        "en": "Entry procedure into Ministry of Defence contract service: medical and psychological examination, physical tests and signature of a fixed-term contract, often after compulsory service. It conditions access to professional soldier and sergeant posts."
+      },
+      "body": {
+        "fr": "Points de sélection pour le service sous contrat (ministère de la Défense)",
+        "en": "Contract service selection points (Ministry of Defence)"
+      },
+      "issuer": {
+        "name": "Пункты отбора на военную службу по контракту",
+        "short_name": "ПОВСК"
+      },
+      "reference": {
+        "fr": "Loi fédérale n° 53-FZ « Sur l’obligation militaire et le service militaire » et biographies publiques",
+        "en": "Federal Law No. 53-FZ “On military duty and military service” and public biographies"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Соколовский,_Андрей_Андреевич",
+          "title": "Соколовский, Андрей Андреевич (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Красный,_Виталий_Сергеевич",
+          "title": "Красный, Виталий Сергеевич (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Миягашев,_Аймир_Евгеньевич",
+          "title": "Миягашев, Аймир Евгеньевич (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-kmb",
+      "code": "RU-KMB",
+      "category": "selection",
+      "name": {
+        "fr": "Cours du jeune combattant (курс молодого бойца)",
+        "en": "Basic soldier course (kurs molodogo boytsa)"
+      },
+      "official_name": "Курс молодого бойца",
+      "short_name": "КМБ",
+      "description": {
+        "fr": "Instruction militaire initiale des appelés, contractuels et réservistes rappelés : tir, tactique élémentaire, protection NRBC, premiers secours et règlements généraux. Les mobilisés de 2022 ont suivi une remise à niveau de ce type sur les terrains d’entraînement avant leur engagement.",
+        "en": "Initial military instruction for conscripts, contract soldiers and recalled reservists: shooting, basic tactics, CBRN protection, first aid and general regulations. Those mobilised in 2022 underwent refresher training of this kind on training grounds before deployment."
+      },
+      "body": {
+        "fr": "Ministère de la Défense de la Fédération de Russie",
+        "en": "Ministry of Defence of the Russian Federation"
+      },
+      "issuer": {
+        "name": "Учебные центры и воинские части Министерства обороны",
+        "short_name": "МО РФ"
+      },
+      "reference": {
+        "fr": "Article Wikipédia (ru) sur le cours du jeune combattant et biographies publiques",
+        "en": "Russian Wikipedia article on the basic soldier course and public biographies"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Курс_молодого_бойца",
+          "title": "Курс молодого бойца (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Евдокимов,_Николай_Владимирович",
+          "title": "Евдокимов, Николай Владимирович (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-vvk-kategoriya-a",
+      "code": "RU-VVK-A",
+      "category": "medical",
+      "name": {
+        "fr": "Aptitude médicale militaire catégorie « A » (commission médicale militaire)",
+        "en": "Military medical fitness category A (military medical board)"
+      },
+      "official_name": "Категория годности к военной службе «А» (военно-врачебная комиссия)",
+      "short_name": "ВВК «А»",
+      "description": {
+        "fr": "Décision de la commission médicale militaire déclarant le candidat « apte au service militaire » sans restriction, exigée pour les troupes aéroportées et les unités d’assaut. Elle est délivrée selon le règlement sur l’expertise médicale militaire.",
+        "en": "Decision of the military medical board declaring the candidate “fit for military service” without restriction, required for the airborne forces and air assault units. It is issued under the regulation on military medical examination."
+      },
+      "body": {
+        "fr": "Commissions médicales militaires (ВВК)",
+        "en": "Military medical boards (VVK)"
+      },
+      "issuer": {
+        "name": "Военно-врачебная комиссия",
+        "short_name": "ВВК"
+      },
+      "reference": {
+        "fr": "Décret du gouvernement de la Fédération de Russie n° 565 du 4 juillet 2013 (règlement sur l’expertise médicale militaire)",
+        "en": "Government of the Russian Federation Decree No. 565 of 4 July 2013 (regulation on military medical examination)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://contractarmy.ru/articles/sluzhba-vdv-po-kontraktu-2026",
+          "title": "Служба в ВДВ по контракту (contractarmy.ru)"
+        },
+        {
+          "url": "https://gazetarb.ru/news/11-ya-odshbr-iz-buryatii-udostoilas-ordena-zhukova/",
+          "title": "Газета «Республика Бурятия»"
+        }
+      ]
+    },
+    {
+      "id": "ru-medkolledzh",
+      "code": "RU-MEDKOLLEDZH",
+      "category": "medical",
+      "name": {
+        "fr": "Diplôme d’un collège médical (enseignement médical secondaire)",
+        "en": "Medical college diploma (secondary medical education)"
+      },
+      "official_name": "Среднее медицинское образование (медицинский колледж)",
+      "short_name": "Медколледж",
+      "description": {
+        "fr": "Diplôme civil d’enseignement professionnel secondaire (infirmier, feldscher) obtenu avant l’engagement ; il oriente vers les postes de santé ou de secouriste des unités.",
+        "en": "Civilian secondary vocational diploma (nurse, feldsher) obtained before enlistment; it steers towards medical or combat medic posts in units."
+      },
+      "body": {
+        "fr": "Enseignement professionnel médical civil",
+        "en": "Civilian medical vocational education"
+      },
+      "issuer": {
+        "name": "Медицинские колледжи Российской Федерации",
+        "short_name": "Медколледж"
+      },
+      "reference": {
+        "fr": "Biographie publique d’un militaire de la 346e brigade spetsnaz",
+        "en": "Public biography of a 346th spetsnaz brigade serviceman"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://kbrria.ru/obshchestvo/SemeNikitySemochkinaperedananavechnoekhranenieZolotayaZvezdaGeroyaRossii",
+          "title": "КБР РИА"
+        }
+      ]
+    },
+    {
+      "id": "ru-spn-razvedchik",
+      "code": "RU-SPN-RAZV",
+      "category": "sof",
+      "name": {
+        "fr": "Formation d’éclaireur des unités spetsnaz du GU",
+        "en": "GU spetsnaz scout training"
+      },
+      "official_name": "Подготовка разведчика подразделений специального назначения",
+      "short_name": "Разведчик СпН",
+      "description": {
+        "fr": "Instruction des militaires des brigades de spetsnaz relevant de la Direction principale de l’état-major général (GU) : reconnaissance spéciale, déplacement discret, transmissions, minage, parachutisme et tir. Elle est dispensée au sein des brigades et de leurs unités d’instruction.",
+        "en": "Training of servicemen in spetsnaz brigades under the General Staff Main Directorate (GU): special reconnaissance, covert movement, communications, demolition, parachuting and shooting. It is delivered within the brigades and their training units."
+      },
+      "body": {
+        "fr": "Brigades de spetsnaz de la Direction principale de l’état-major général",
+        "en": "Spetsnaz brigades of the General Staff Main Directorate"
+      },
+      "issuer": {
+        "name": "Отдельные бригады специального назначения ГУ ГШ ВС РФ",
+        "short_name": "ОБрСпН ГУ"
+      },
+      "reference": {
+        "fr": "Articles Wikipédia sur le spetsnaz du GU et biographies publiques",
+        "en": "Wikipedia articles on GU spetsnaz and public biographies"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Spetsnaz_GRU",
+          "title": "Spetsnaz GRU (Wikipedia)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Карпенко,_Евгений_Васильевич",
+          "title": "Карпенко, Евгений Васильевич (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-spn-radist-razvedchik",
+      "code": "RU-SPN-RADIST",
+      "category": "communications",
+      "name": {
+        "fr": "Radio-éclaireur (школа младших специалистов de brigade spetsnaz)",
+        "en": "Radio operator-scout (spetsnaz brigade junior specialists school)"
+      },
+      "official_name": "Радист-разведчик (школа младших специалистов)",
+      "short_name": "Радист-разведчик",
+      "description": {
+        "fr": "Formation des radiotélégraphistes et radiotéléphonistes des groupes de reconnaissance spéciale, dispensée dans l’école des spécialistes subalternes des brigades : transmissions longue distance, procédures radio et chiffrement en plus de l’instruction d’éclaireur.",
+        "en": "Training of radio operators for special reconnaissance teams, delivered at the brigades’ junior specialists school: long-range communications, radio procedures and encryption in addition to scout training."
+      },
+      "body": {
+        "fr": "Brigades de spetsnaz du GU",
+        "en": "GU spetsnaz brigades"
+      },
+      "issuer": {
+        "name": "Школа младших специалистов бригады специального назначения",
+        "short_name": "ШМС ОБрСпН"
+      },
+      "reference": {
+        "fr": "Articles Wikipédia (ru) sur les brigades spetsnaz et biographies publiques",
+        "en": "Russian Wikipedia articles on spetsnaz brigades and public biographies"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/2-я_отдельная_гвардейская_бригада_специального_назначения",
+          "title": "2-я отдельная гвардейская бригада СпН (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Миягашев,_Аймир_Евгеньевич",
+          "title": "Миягашев, Аймир Евгеньевич (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-razvedpodgotovka",
+      "code": "RU-RAZVEDPODG",
+      "category": "intelligence",
+      "name": {
+        "fr": "Formation de reconnaissance (разведывательная подготовка)",
+        "en": "Reconnaissance training (razvedyvatelnaya podgotovka)"
+      },
+      "official_name": "Разведывательная подготовка",
+      "short_name": "Разведподготовка",
+      "description": {
+        "fr": "Discipline de l’instruction au combat des unités de reconnaissance des VDV et des forces terrestres : observation, orientation, embuscade, coup de main, recueil et transmission du renseignement.",
+        "en": "Combat training subject for VDV and ground forces reconnaissance units: observation, navigation, ambush, raids, collection and reporting of intelligence."
+      },
+      "body": {
+        "fr": "Troupes aéroportées (VDV)",
+        "en": "Airborne Forces (VDV)"
+      },
+      "issuer": {
+        "name": "Разведывательные подразделения ВДВ",
+        "short_name": "ВДВ"
+      },
+      "reference": {
+        "fr": "Articles Wikipédia (ru) sur les divisions aéroportées",
+        "en": "Russian Wikipedia articles on airborne divisions"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/98-я_гвардейская_воздушно-десантная_дивизия",
+          "title": "98-я гвардейская ВДД (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/7-я_гвардейская_десантно-штурмовая_дивизия",
+          "title": "7-я гвардейская ДШД (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-snaiper",
+      "code": "RU-SNAIPER",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Tireur d’élite des forces armées : cours et niveaux de qualification",
+        "en": "Armed forces sniper: courses and qualification levels"
+      },
+      "official_name": "Снайперская подготовка (уровни квалификации снайпера: третий, второй, первый, мастер)",
+      "short_name": "Снайпер",
+      "description": {
+        "fr": "Formation et qualification des tireurs d’élite par niveaux successifs (troisième, deuxième, premier niveau, maître) : tir à longue distance aux fusils SVD/SVDS, SV-98 et ASVK, emploi des optiques nocturnes et télémètres, travail en binôme tireur-observateur.",
+        "en": "Sniper training and qualification in successive levels (third, second, first level, master): long-range shooting with SVD/SVDS, SV-98 and ASVK rifles, use of night sights and rangefinders, shooter-spotter pair work."
+      },
+      "body": {
+        "fr": "Forces armées de la Fédération de Russie (écoles et unités)",
+        "en": "Armed Forces of the Russian Federation (schools and units)"
+      },
+      "issuer": {
+        "name": "Снайперские подразделения и учебные центры ВС РФ",
+        "short_name": "ВС РФ"
+      },
+      "reference": {
+        "fr": "Reportage de Zvezda sur les niveaux de qualification des tireurs d’élite de l’infanterie de marine",
+        "en": "Zvezda report on naval infantry sniper qualification levels"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://zvezdaweekly.ru/news/20239111036-FCfc5.html",
+          "title": "Еженедельник «Звезда»"
+        },
+        {
+          "url": "https://www.kommersant.ru/doc/8248515",
+          "title": "Коммерсантъ"
+        }
+      ]
+    },
+    {
+      "id": "ru-snaiper-spetspodrazdeleniya",
+      "code": "RU-SNAIPER-SPN",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Tireur d’élite des unités spéciales d’intervention (SOBR, ЦСН ФСБ)",
+        "en": "Special intervention unit sniper (SOBR, FSB TsSN)"
+      },
+      "official_name": "Снайпер специального подразделения",
+      "short_name": "Снайпер СП",
+      "description": {
+        "fr": "Spécialisation interne des unités d’intervention (SOBR de la Rosgvardia, direction « A » du FSB) pour le tir de précision en milieu urbain et en prise d’otages, attribuée à des opérateurs déjà sélectionnés.",
+        "en": "Internal specialisation of intervention units (Rosgvardiya SOBR, FSB Directorate A) for precision shooting in urban and hostage situations, assigned to already selected operators."
+      },
+      "body": {
+        "fr": "Unités spéciales de la Rosgvardia et du FSB",
+        "en": "Rosgvardiya and FSB special units"
+      },
+      "issuer": {
+        "name": "Специальные подразделения Росгвардии и ФСБ России",
+        "short_name": "СОБР / ЦСН ФСБ"
+      },
+      "reference": {
+        "fr": "Pages officielles Rosgvardia (SOBR) et article Wikipédia (ru) sur Alpha",
+        "en": "Official Rosgvardiya pages (SOBR) and Russian Wikipedia article on Alpha"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://rosguard.gov.ru/page/index/specialnye-otryady-bystrogo-reagirovaniya",
+          "title": "Специальные отряды быстрого реагирования (Росгвардия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Альфа_(спецподразделение)",
+          "title": "Альфа (спецподразделение) (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-vdp",
+      "code": "RU-VDP",
+      "category": "airborne",
+      "name": {
+        "fr": "Instruction aéroportée avec sauts en parachute (воздушно-десантная подготовка, ВДП)",
+        "en": "Airborne training with parachute jumps (vozdushno-desantnaya podgotovka, VDP)"
+      },
+      "official_name": "Воздушно-десантная подготовка",
+      "short_name": "ВДП",
+      "description": {
+        "fr": "Instruction des parachutistes militaires : préparation au sol sur installations dédiées, sauts sur parachutes à calotte ronde D-6, D-10 ou Arbalet, sauts de nuit et sur plan d’eau, ainsi que mise à terre par hélicoptère. Elle est suivie par les VDV, le spetsnaz, les forces d’opérations spéciales et l’infanterie de marine.",
+        "en": "Military parachutist training: ground preparation on dedicated facilities, jumps with D-6, D-10 or Arbalet parachutes, night and water jumps, as well as helicopter insertion. It is undertaken by the VDV, spetsnaz, special operations forces and naval infantry."
+      },
+      "body": {
+        "fr": "Troupes aéroportées (VDV) et unités parachutistes",
+        "en": "Airborne Forces (VDV) and parachute units"
+      },
+      "issuer": {
+        "name": "Служба воздушно-десантной подготовки ВДВ и соединений",
+        "short_name": "ВДП"
+      },
+      "reference": {
+        "fr": "Articles de la presse militaire sur l’instruction aéroportée (NVO, Zvezda) et articles Wikipédia",
+        "en": "Military press articles on airborne training (NVO, Zvezda) and Wikipedia articles"
+      },
+      "prerequisites": {
+        "fr": [
+          "Aptitude médicale catégorie « A »"
+        ],
+        "en": [
+          "Medical fitness category A"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://nvo.ng.ru/nvo/2022-07-07/3_1196_infantry.html",
+          "title": "Независимое военное обозрение"
+        },
+        {
+          "url": "https://zvezdaweekly.ru/news/2022231314-zeIET.html",
+          "title": "Еженедельник «Звезда»"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/45th_Guards_Spetsnaz_Brigade",
+          "title": "45th Guards Spetsnaz Brigade (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "ru-parashyutist-instruktor",
+      "code": "RU-PARA-INSTR",
+      "category": "airborne",
+      "name": {
+        "fr": "Parachutiste-instructeur (парашютист-инструктор)",
+        "en": "Parachute instructor (parashyutist-instruktor)"
+      },
+      "official_name": "Парашютист-инструктор",
+      "short_name": "Инструктор ПДП",
+      "description": {
+        "fr": "Qualification d’instructeur de parachutisme permettant d’encadrer la préparation au sol et les sauts des unités ; elle est notamment tenue par les officiers chargés de l’instruction aéroportée dans l’infanterie de marine et les VDV.",
+        "en": "Parachute instructor qualification allowing its holder to supervise unit ground preparation and jumps; it is notably held by officers in charge of airborne training in the naval infantry and the VDV."
+      },
+      "body": {
+        "fr": "Service d’instruction aéroportée",
+        "en": "Airborne training service"
+      },
+      "issuer": {
+        "name": "Служба воздушно-десантной подготовки",
+        "short_name": "ВДП"
+      },
+      "reference": {
+        "fr": "Reportage de Zvezda sur l’instruction aéroportée de l’infanterie de marine de la flotte de la mer Noire",
+        "en": "Zvezda report on Black Sea Fleet naval infantry airborne training"
+      },
+      "prerequisites": {
+        "fr": [
+          "Instruction aéroportée (ВДП)"
+        ],
+        "en": [
+          "Airborne training (VDP)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "instructor",
+      "sources": [
+        {
+          "url": "https://zvezdaweekly.ru/news/2022231314-zeIET.html",
+          "title": "Еженедельник «Звезда»"
+        }
+      ]
+    },
+    {
+      "id": "ru-parashyut-krylo",
+      "code": "RU-PARA-KRYLO",
+      "category": "airborne",
+      "name": {
+        "fr": "Saut sous voilure aile (parachute PV-3)",
+        "en": "Ram-air canopy jumping (PV-3 parachute)"
+      },
+      "official_name": "Парашютная подготовка на парашютных системах типа «крыло» (ПВ-3)",
+      "short_name": "ПВ-3",
+      "description": {
+        "fr": "Qualification de parachutisme avancée sur parachutes à voilure aile, notamment le PV-3 utilisé par les nageurs de combat et les unités spéciales pour des mises à terre précises, y compris sur l’eau.",
+        "en": "Advanced parachuting qualification on ram-air canopies, notably the PV-3 used by combat swimmers and special units for precise insertions, including onto water."
+      },
+      "body": {
+        "fr": "Unités spéciales de la Marine russe",
+        "en": "Russian Navy special units"
+      },
+      "issuer": {
+        "name": "Морские разведывательные пункты ВМФ",
+        "short_name": "МРП ВМФ"
+      },
+      "reference": {
+        "fr": "Articles de presse sur la 42e unité de reconnaissance navale (Primamedia, Rambler)",
+        "en": "Press articles on the 42nd naval reconnaissance unit (Primamedia, Rambler)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Instruction aéroportée (ВДП)"
+        ],
+        "en": [
+          "Airborne training (VDP)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://primamedia.ru/news/522062/",
+          "title": "PrimaMedia"
+        },
+        {
+          "url": "https://news.rambler.ru/troops/41116525-legenda-o-holuae/",
+          "title": "Рамблер: Легенда о Холуае"
+        }
+      ]
+    },
+    {
+      "id": "ru-ukladka-vdt",
+      "code": "RU-UKLADKA-VDT",
+      "category": "airborne",
+      "name": {
+        "fr": "Pliage des parachutes et entretien du matériel aéroporté",
+        "en": "Parachute packing and airborne equipment maintenance"
+      },
+      "official_name": "Укладка парашютов и эксплуатация воздушно-десантной техники",
+      "short_name": "ВДТ",
+      "description": {
+        "fr": "Qualification des personnels chargés du pliage des parachutes, du stockage et de la maintenance du matériel aéroporté (воздушно-десантная техника) au sein des unités parachutistes.",
+        "en": "Qualification of personnel responsible for parachute packing, storage and maintenance of airborne equipment (vozdushno-desantnaya tekhnika) within parachute units."
+      },
+      "body": {
+        "fr": "Service d’instruction aéroportée",
+        "en": "Airborne training service"
+      },
+      "issuer": {
+        "name": "Служба воздушно-десантной подготовки",
+        "short_name": "ВДП"
+      },
+      "reference": {
+        "fr": "Reportage de Zvezda sur le service aéroporté de l’infanterie de marine",
+        "en": "Zvezda report on the naval infantry airborne service"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://zvezdaweekly.ru/news/2022231314-zeIET.html",
+          "title": "Еженедельник «Звезда»"
+        }
+      ]
+    },
+    {
+      "id": "ru-vodolaznaya-podgotovka",
+      "code": "RU-VODOLAZ",
+      "category": "maritime",
+      "name": {
+        "fr": "Formation à la plongée militaire (водолазная подготовка)",
+        "en": "Military diving training (vodolaznaya podgotovka)"
+      },
+      "official_name": "Водолазная подготовка",
+      "short_name": "Водолазная подг.",
+      "description": {
+        "fr": "Instruction à la plongée en scaphandre autonome (acqualung) pour les éclaireurs des forces spéciales, de l’infanterie de marine et des unités de reconnaissance navale : déplacement sous l’eau, navigation et sécurité de plongée.",
+        "en": "Scuba diving training for special forces, naval infantry and naval reconnaissance scouts: underwater movement, navigation and diving safety."
+      },
+      "body": {
+        "fr": "Marine russe et forces spéciales",
+        "en": "Russian Navy and special forces"
+      },
+      "issuer": {
+        "name": "Водолазная служба ВМФ России",
+        "short_name": "ВМФ"
+      },
+      "reference": {
+        "fr": "Articles Wikipédia sur les nageurs de combat russes et presse militaire (Dagpravda)",
+        "en": "Wikipedia articles on Russian combat swimmers and military press (Dagpravda)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Боевые_пловцы",
+          "title": "Боевые пловцы (Википедия)"
+        },
+        {
+          "url": "https://dagpravda.ru/pravoporyadok/na-sushe-na-more-i-v-vozduhe-3/",
+          "title": "Дагестанская правда"
+        }
+      ]
+    },
+    {
+      "id": "ru-boevoy-plovets",
+      "code": "RU-BOEVOY-PLOVETS",
+      "category": "maritime",
+      "name": {
+        "fr": "Nageur de combat (боевой пловец)",
+        "en": "Combat swimmer (boevoy plovets)"
+      },
+      "official_name": "Подготовка боевого пловца",
+      "short_name": "Боевой пловец",
+      "description": {
+        "fr": "Formation des nageurs de combat des points de reconnaissance navale et des détachements anti-sabotage (PDSS) : plongée de combat, sortie par tube lance-torpilles, emploi des propulseurs sous-marins, acrobatie et combat au corps à corps sous l’eau.",
+        "en": "Training of combat swimmers of naval reconnaissance points and anti-sabotage detachments (PDSS): combat diving, torpedo-tube exit, use of diver propulsion vehicles, underwater acrobatics and hand-to-hand combat."
+      },
+      "body": {
+        "fr": "Marine russe",
+        "en": "Russian Navy"
+      },
+      "issuer": {
+        "name": "Морские разведывательные пункты и отряды ПДСС ВМФ",
+        "short_name": "МРП / ПДСС ВМФ"
+      },
+      "reference": {
+        "fr": "Article Wikipédia sur les nageurs de combat russes et presse spécialisée",
+        "en": "Wikipedia article on Russian commando frogmen and specialised press"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation à la plongée militaire"
+        ],
+        "en": [
+          "Military diving training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Russian_commando_frogmen",
+          "title": "Russian commando frogmen (Wikipedia)"
+        },
+        {
+          "url": "https://www.techinsider.ru/weapon/news-572154-voennyh-plovcov-obuchat-podvodnomu-rukopashnomu-boyu-v-dagestane/",
+          "title": "TechInsider"
+        },
+        {
+          "url": "https://navalmuseum.ru/filials/baltic_fleet/2",
+          "title": "Центральный военно-морской музей"
+        }
+      ]
+    },
+    {
+      "id": "ru-podvodnoe-oruzhie",
+      "code": "RU-PODV-ORUZHIE",
+      "category": "maritime",
+      "name": {
+        "fr": "Tir aux armes spéciales et sous-marines (SPP-1, APS, ADS)",
+        "en": "Special and underwater weapons firing (SPP-1, APS, ADS)"
+      },
+      "official_name": "Огневая подготовка из специального и подводного оружия (СПП-1, АПС, АДС)",
+      "short_name": "Подводное оружие",
+      "description": {
+        "fr": "Instruction au tir sous l’eau au pistolet SPP-1 et au fusil APS, ainsi qu’aux armes amphibies et silencieuses (ADS, VSS, AS Val) des nageurs de combat.",
+        "en": "Training in underwater firing with the SPP-1 pistol and the APS rifle, as well as with the combat swimmers’ amphibious and suppressed weapons (ADS, VSS, AS Val)."
+      },
+      "body": {
+        "fr": "Marine russe",
+        "en": "Russian Navy"
+      },
+      "issuer": {
+        "name": "Морские разведывательные пункты и отряды ПДСС ВМФ",
+        "short_name": "МРП / ПДСС ВМФ"
+      },
+      "reference": {
+        "fr": "Article Wikipédia sur les nageurs de combat russes et presse spécialisée",
+        "en": "Wikipedia article on Russian commando frogmen and specialised press"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Russian_commando_frogmen",
+          "title": "Russian commando frogmen (Wikipedia)"
+        },
+        {
+          "url": "https://www.techinsider.ru/weapon/news-572154-voennyh-plovcov-obuchat-podvodnomu-rukopashnomu-boyu-v-dagestane/",
+          "title": "TechInsider"
+        }
+      ]
+    },
+    {
+      "id": "ru-pdss-granatomety",
+      "code": "RU-PDSS-DP",
+      "category": "maritime",
+      "name": {
+        "fr": "Lance-grenades anti-sabotage (DP-61, DP-64, DP-65)",
+        "en": "Anti-sabotage grenade launchers (DP-61, DP-64, DP-65)"
+      },
+      "official_name": "Противодиверсионные гранатомёты ДП-61 «Дуэль», ДП-64 «Непрядва», ДП-65",
+      "short_name": "ДП-64",
+      "description": {
+        "fr": "Mise en œuvre par les détachements PDSS et les équipages de vedettes anti-sabotage des lance-grenades destinés à neutraliser les nageurs de combat ennemis autour des bases et des navires.",
+        "en": "Operation by PDSS detachments and anti-sabotage boat crews of grenade launchers designed to neutralise enemy combat swimmers around bases and ships."
+      },
+      "body": {
+        "fr": "Marine russe (détachements PDSS)",
+        "en": "Russian Navy (PDSS detachments)"
+      },
+      "issuer": {
+        "name": "Отряды по борьбе с подводными диверсионными силами и средствами",
+        "short_name": "ПДСС"
+      },
+      "reference": {
+        "fr": "Article Wikipédia (ru) sur le DP-64 et presse militaire",
+        "en": "Russian Wikipedia article on the DP-64 and military press"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/ДП-64",
+          "title": "ДП-64 (Википедия)"
+        },
+        {
+          "url": "https://profile.ru/news/military/baltflot-otrabatyvaet-borbu-s-podvodnymi-diversantami-v-ramkah-uchenij-zapad-2025-1754746/",
+          "title": "Профиль"
+        }
+      ]
+    },
+    {
+      "id": "ru-mrp-otbor",
+      "code": "RU-MRP-OTBOR",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection des points de reconnaissance navale (MRP)",
+        "en": "Naval reconnaissance point (MRP) selection"
+      },
+      "official_name": "Отбор в морской разведывательный пункт",
+      "short_name": "Отбор МРП",
+      "description": {
+        "fr": "Sélection physique en trois étapes des candidats aux unités de reconnaissance navale : course, exercices de force puis combat sur ring, suivie d’entretiens et d’examens médicaux.",
+        "en": "Three-stage physical selection of candidates for naval reconnaissance units: run, strength exercises then ring bouts, followed by interviews and medical checks."
+      },
+      "body": {
+        "fr": "Marine russe",
+        "en": "Russian Navy"
+      },
+      "issuer": {
+        "name": "Морские разведывательные пункты ВМФ",
+        "short_name": "МРП ВМФ"
+      },
+      "reference": {
+        "fr": "Articles de presse sur la 42e unité de reconnaissance navale (Primamedia, Rambler)",
+        "en": "Press articles on the 42nd naval reconnaissance unit (Primamedia, Rambler)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://primamedia.ru/news/522062/",
+          "title": "PrimaMedia"
+        },
+        {
+          "url": "https://news.rambler.ru/troops/41116525-legenda-o-holuae/",
+          "title": "Рамблер: Легенда о Холуае"
+        }
+      ]
+    },
+    {
+      "id": "ru-rrtr",
+      "code": "RU-RRTR",
+      "category": "intelligence",
+      "name": {
+        "fr": "Spécialiste de reconnaissance radio et radiotechnique (РРТР)",
+        "en": "Radio and electronic reconnaissance specialist (RRTR)"
+      },
+      "official_name": "Радио- и радиотехническая разведка",
+      "short_name": "РРТР",
+      "description": {
+        "fr": "Spécialité d’interception et de localisation des émissions radio et radars adverses au profit des unités de reconnaissance, notamment des points de reconnaissance navale.",
+        "en": "Specialty of intercepting and locating enemy radio and radar emissions for reconnaissance units, notably naval reconnaissance points."
+      },
+      "body": {
+        "fr": "Marine russe et forces armées",
+        "en": "Russian Navy and armed forces"
+      },
+      "issuer": {
+        "name": "Подразделения радио- и радиотехнической разведки",
+        "short_name": "РРТР"
+      },
+      "reference": {
+        "fr": "Articles de presse sur la 42e unité de reconnaissance navale",
+        "en": "Press articles on the 42nd naval reconnaissance unit"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://primamedia.ru/news/522062/",
+          "title": "PrimaMedia"
+        },
+        {
+          "url": "https://news.rambler.ru/troops/41116525-legenda-o-holuae/",
+          "title": "Рамблер: Легенда о Холуае"
+        }
+      ]
+    },
+    {
+      "id": "ru-minno-podryvnoe",
+      "code": "RU-MINNO-PODRYV",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Minage et destruction (минно-подрывное дело)",
+        "en": "Mining and demolition (minno-podryvnoe delo)"
+      },
+      "official_name": "Минно-подрывное дело",
+      "short_name": "МПД",
+      "description": {
+        "fr": "Instruction à la préparation et à la mise en œuvre de charges explosives et de mines, à la destruction d’ouvrages et au déminage, enseignée aux forces spéciales et aux nageurs de combat.",
+        "en": "Training in preparing and employing explosive charges and mines, destroying structures and clearing mines, taught to special forces and combat swimmers."
+      },
+      "body": {
+        "fr": "Forces armées de la Fédération de Russie",
+        "en": "Armed Forces of the Russian Federation"
+      },
+      "issuer": {
+        "name": "Инженерные войска и подразделения специального назначения",
+        "short_name": "ВС РФ"
+      },
+      "reference": {
+        "fr": "Articles Wikipédia sur les forces d’opérations spéciales et presse spécialisée",
+        "en": "Wikipedia articles on special operations forces and specialised press"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Operations_Forces_(Russia)",
+          "title": "Special Operations Forces (Russia) (Wikipedia)"
+        },
+        {
+          "url": "https://www.techinsider.ru/weapon/news-572154-voennyh-plovcov-obuchat-podvodnomu-rukopashnomu-boyu-v-dagestane/",
+          "title": "TechInsider"
+        }
+      ]
+    },
+    {
+      "id": "ru-rkhbz",
+      "code": "RU-RKHBZ",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Spécialiste de défense NRBC (РХБЗ)",
+        "en": "CBRN defence specialist (RKhBZ)"
+      },
+      "official_name": "Радиационная, химическая и биологическая защита",
+      "short_name": "РХБЗ",
+      "description": {
+        "fr": "Spécialité des troupes de défense radiologique, chimique et biologique : reconnaissance NRBC, décontamination et emploi des lance-flammes et des fumigènes ; elle existe au sein des unités RKhBZ des divisions aéroportées.",
+        "en": "Specialty of the radiological, chemical and biological defence troops: CBRN reconnaissance, decontamination and use of flamethrowers and smoke; it exists within the RKhBZ units of airborne divisions."
+      },
+      "body": {
+        "fr": "Troupes de défense radiologique, chimique et biologique",
+        "en": "Radiological, chemical and biological defence troops"
+      },
+      "issuer": {
+        "name": "Войска радиационной, химической и биологической защиты",
+        "short_name": "Войска РХБЗ"
+      },
+      "reference": {
+        "fr": "Articles Wikipédia (ru) sur la 7e division d’assaut aérien",
+        "en": "Russian Wikipedia article on the 7th air assault division"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Войска_радиационной,_химической_и_биологической_защиты",
+          "title": "Войска РХБЗ (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/7-я_гвардейская_десантно-штурмовая_дивизия",
+          "title": "7-я гвардейская ДШД (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-vzryvotekhnik",
+      "code": "RU-VZRYVOTEKHNIK",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Technicien en explosifs des unités spéciales (взрывотехник)",
+        "en": "Special unit explosives technician (vzryvotekhnik)"
+      },
+      "official_name": "Взрывотехник",
+      "short_name": "Взрывотехник",
+      "description": {
+        "fr": "Spécialisation des SOBR et des groupes techniques des OMON de la Rosgvardia : détection, identification et neutralisation d’objets explosifs, ouverture d’accès par explosifs lors des interventions.",
+        "en": "Specialisation of Rosgvardiya SOBR and OMON technical groups: detection, identification and neutralisation of explosive objects, explosive breaching during interventions."
+      },
+      "body": {
+        "fr": "Garde nationale de Russie (Rosgvardia)",
+        "en": "National Guard of Russia (Rosgvardiya)"
+      },
+      "issuer": {
+        "name": "Федеральная служба войск национальной гвардии Российской Федерации",
+        "short_name": "Росгвардия"
+      },
+      "reference": {
+        "fr": "Pages officielles de la Rosgvardia sur les SOBR et les OMON",
+        "en": "Official Rosgvardiya pages on SOBR and OMON"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://rosguard.gov.ru/page/index/specialnye-otryady-bystrogo-reagirovaniya",
+          "title": "Специальные отряды быстрого реагирования (Росгвардия)"
+        },
+        {
+          "url": "https://rosguard.gov.ru/page/index/otryady-mobilnye-osobogo-naznacheniya",
+          "title": "Отряды мобильные особого назначения (Росгвардия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-inostrannye-yazyki",
+      "code": "RU-INYAZ",
+      "category": "intelligence",
+      "name": {
+        "fr": "Formation militaire en langues étrangères",
+        "en": "Military foreign language training"
+      },
+      "official_name": "Подготовка по иностранным языкам",
+      "short_name": "Иностранный язык",
+      "description": {
+        "fr": "Apprentissage d’une langue étrangère dans le cadre de la formation des officiers des forces d’opérations spéciales, dont l’enseignement militaire de référence est assuré par l’Université militaire du ministère de la Défense.",
+        "en": "Foreign language learning as part of special operations forces officer training, the reference military teaching being delivered by the Military University of the Ministry of Defence."
+      },
+      "body": {
+        "fr": "Ministère de la Défense de la Fédération de Russie",
+        "en": "Ministry of Defence of the Russian Federation"
+      },
+      "issuer": {
+        "name": "Военный университет Министерства обороны Российской Федерации",
+        "short_name": "ВУ МО РФ"
+      },
+      "reference": {
+        "fr": "Articles sur les forces d’opérations spéciales russes (1prime, Wikipédia)",
+        "en": "Articles on Russian special operations forces (1prime, Wikipedia)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://1prime.ru/20250227/sily-855287974.html",
+          "title": "ПРАЙМ"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Operations_Forces_(Russia)",
+          "title": "Special Operations Forces (Russia) (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "ru-operator-bpla",
+      "code": "RU-OPERATOR-BPLA",
+      "category": "intelligence",
+      "name": {
+        "fr": "Opérateur de drone (оператор БПЛА)",
+        "en": "UAV operator (operator BPLA)"
+      },
+      "official_name": "Оператор беспилотного летательного аппарата",
+      "short_name": "Оператор БПЛА",
+      "description": {
+        "fr": "Spécialité de mise en œuvre des drones de reconnaissance (Orlan-10, quadricoptères) et d’attaque (FPV, munitions rôdeuses) pour l’observation, le réglage des tirs et les frappes ; elle s’est fortement développée dans les VDV et l’infanterie de marine depuis 2022.",
+        "en": "Specialty of operating reconnaissance drones (Orlan-10, quadcopters) and attack drones (FPV, loitering munitions) for observation, fire adjustment and strikes; it has expanded strongly in the VDV and naval infantry since 2022."
+      },
+      "body": {
+        "fr": "Forces armées de la Fédération de Russie",
+        "en": "Armed Forces of the Russian Federation"
+      },
+      "issuer": {
+        "name": "Центры и курсы подготовки операторов БПЛА ВС РФ",
+        "short_name": "ВС РФ"
+      },
+      "reference": {
+        "fr": "Presse militaire (TASS, Dagpravda) et articles publics sur les VDV",
+        "en": "Military press (TASS, Dagpravda) and public articles on the VDV"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://tass.com/defense/2063555",
+          "title": "TASS"
+        },
+        {
+          "url": "https://dagpravda.ru/pravoporyadok/na-sushe-na-more-i-v-vozduhe-3/",
+          "title": "Дагестанская правда"
+        },
+        {
+          "url": "https://contractarmy.ru/articles/sluzhba-vdv-po-kontraktu-2026",
+          "title": "Служба в ВДВ по контракту (contractarmy.ru)"
+        }
+      ]
+    },
+    {
+      "id": "ru-strelets-ratnik",
+      "code": "RU-STRELETS",
+      "category": "communications",
+      "name": {
+        "fr": "Emploi de l’équipement Ratnik et du système Strelets",
+        "en": "Use of the Ratnik kit and the Strelets system"
+      },
+      "official_name": "Боевая экипировка «Ратник» и комплекс разведки, управления и связи «Стрелец»",
+      "short_name": "Стрелец",
+      "description": {
+        "fr": "Formation à l’emploi de l’équipement individuel du combattant Ratnik et du complexe de reconnaissance, de commandement et de transmissions Strelets (désignation d’objectifs, échange de données, navigation).",
+        "en": "Training in using the Ratnik individual soldier kit and the Strelets reconnaissance, command and communications complex (target designation, data exchange, navigation)."
+      },
+      "body": {
+        "fr": "Forces armées de la Fédération de Russie",
+        "en": "Armed Forces of the Russian Federation"
+      },
+      "issuer": {
+        "name": "Подразделения ВС РФ",
+        "short_name": "ВС РФ"
+      },
+      "reference": {
+        "fr": "Blog bmpd (CAST) et presse militaire sur l’infanterie de marine",
+        "en": "bmpd (CAST) blog and military press on the naval infantry"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://bmpd.livejournal.com/3423737.html",
+          "title": "bmpd"
+        },
+        {
+          "url": "https://dagpravda.ru/pravoporyadok/na-sushe-na-more-i-v-vozduhe-3/",
+          "title": "Дагестанская правда"
+        }
+      ]
+    },
+    {
+      "id": "ru-sbr",
+      "code": "RU-SBR",
+      "category": "intelligence",
+      "name": {
+        "fr": "Opérateur de radar de reconnaissance rapprochée (СБР)",
+        "en": "Short-range reconnaissance radar operator (SBR)"
+      },
+      "official_name": "Станция ближней разведки",
+      "short_name": "СБР",
+      "description": {
+        "fr": "Spécialité de mise en œuvre des radars portables de reconnaissance rapprochée pour détecter les personnels et véhicules adverses, au sein des unités de reconnaissance de l’infanterie de marine.",
+        "en": "Specialty of operating man-portable short-range reconnaissance radars to detect enemy personnel and vehicles, within naval infantry reconnaissance units."
+      },
+      "body": {
+        "fr": "Infanterie de marine de la Marine russe",
+        "en": "Russian Navy naval infantry"
+      },
+      "issuer": {
+        "name": "Разведывательные подразделения морской пехоты",
+        "short_name": "Морская пехота"
+      },
+      "reference": {
+        "fr": "Presse militaire (NVO, Kommersant)",
+        "en": "Military press (NVO, Kommersant)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://nvo.ng.ru/nvo/2022-07-07/3_1196_infantry.html",
+          "title": "Независимое военное обозрение"
+        },
+        {
+          "url": "https://www.kommersant.ru/doc/8248515",
+          "title": "Коммерсантъ"
+        }
+      ]
+    },
+    {
+      "id": "ru-242uc-mladshiy-komandir",
+      "code": "RU-242UC-MK",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation de commandant d’escouade (младший командир) des VDV",
+        "en": "VDV junior commander (squad leader) course"
+      },
+      "official_name": "Подготовка младших командиров (командир отделения боевой машины)",
+      "short_name": "Мл. командир",
+      "description": {
+        "fr": "Formation des sergents commandants d’escouade et de véhicule de combat des troupes aéroportées. Elle est dispensée au 242e centre d’instruction des VDV à Omsk.",
+        "en": "Training of airborne forces sergeants as squad and combat vehicle commanders. It is delivered at the VDV 242nd Training Centre in Omsk."
+      },
+      "body": {
+        "fr": "242e centre d’instruction des spécialistes subalternes des VDV (Omsk)",
+        "en": "242nd VDV Junior Specialists Training Centre (Omsk)"
+      },
+      "issuer": {
+        "name": "242-й учебный центр ВДВ",
+        "short_name": "242 УЦ ВДВ"
+      },
+      "reference": {
+        "fr": "Article Wikipédia (ru) sur le 242e centre d’instruction des VDV",
+        "en": "Russian Wikipedia article on the VDV 242nd Training Centre"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/242-й_учебный_центр_ВДВ",
+          "title": "242-й учебный центр ВДВ (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/98-я_гвардейская_воздушно-десантная_дивизия",
+          "title": "98-я гвардейская ВДД (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-242uc-mekhvod",
+      "code": "RU-242UC-MV",
+      "category": "airborne",
+      "name": {
+        "fr": "Mécanicien-conducteur de véhicules aéroportés (BMD, BTR-MDM)",
+        "en": "Airborne vehicle driver-mechanic (BMD, BTR-MDM)"
+      },
+      "official_name": "Механик-водитель БМД / БТР-МДМ",
+      "short_name": "Механик-водитель",
+      "description": {
+        "fr": "Formation des mécaniciens-conducteurs des véhicules de combat aéroportés BMD-4M et des transports de troupes BTR-MDM. Elle est dispensée au 242e centre d’instruction des VDV à Omsk.",
+        "en": "Training of driver-mechanics for BMD-4M airborne combat vehicles and BTR-MDM personnel carriers. It is delivered at the VDV 242nd Training Centre in Omsk."
+      },
+      "body": {
+        "fr": "242e centre d’instruction des spécialistes subalternes des VDV (Omsk)",
+        "en": "242nd VDV Junior Specialists Training Centre (Omsk)"
+      },
+      "issuer": {
+        "name": "242-й учебный центр ВДВ",
+        "short_name": "242 УЦ ВДВ"
+      },
+      "reference": {
+        "fr": "Article Wikipédia (ru) sur le 242e centre d’instruction des VDV",
+        "en": "Russian Wikipedia article on the VDV 242nd Training Centre"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/242-й_учебный_центр_ВДВ",
+          "title": "242-й учебный центр ВДВ (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/БМД-4",
+          "title": "БМД-4 (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/БТР-МДМ",
+          "title": "БТР-МДМ (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-242uc-navodchik-bmd",
+      "code": "RU-242UC-NO",
+      "category": "fires",
+      "name": {
+        "fr": "Tireur-opérateur de BMD (наводчик-оператор)",
+        "en": "BMD gunner-operator"
+      },
+      "official_name": "Наводчик-оператор БМД",
+      "short_name": "Наводчик-оператор",
+      "description": {
+        "fr": "Formation des tireurs-opérateurs du module d’armes des véhicules de combat aéroportés BMD-4M. Elle est dispensée au 242e centre d’instruction des VDV à Omsk.",
+        "en": "Training of gunner-operators for the weapon module of BMD-4M airborne combat vehicles. It is delivered at the VDV 242nd Training Centre in Omsk."
+      },
+      "body": {
+        "fr": "242e centre d’instruction des spécialistes subalternes des VDV (Omsk)",
+        "en": "242nd VDV Junior Specialists Training Centre (Omsk)"
+      },
+      "issuer": {
+        "name": "242-й учебный центр ВДВ",
+        "short_name": "242 УЦ ВДВ"
+      },
+      "reference": {
+        "fr": "Article Wikipédia (ru) sur le 242e centre d’instruction des VDV",
+        "en": "Russian Wikipedia article on the VDV 242nd Training Centre"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/242-й_учебный_центр_ВДВ",
+          "title": "242-й учебный центр ВДВ (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/БМД-4",
+          "title": "БМД-4 (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-242uc-sao-2s9",
+      "code": "RU-242UC-2S9",
+      "category": "fires",
+      "name": {
+        "fr": "Chef de pièce de mortier automoteur 2S9 Nona-S",
+        "en": "2S9 Nona-S self-propelled gun commander"
+      },
+      "official_name": "Командир орудия САО 2С9 «Нона-С»",
+      "short_name": "Командир 2С9",
+      "description": {
+        "fr": "Formation des chefs de pièce de l’artillerie automotrice aéroportée 2S9 Nona-S. Elle est dispensée au 242e centre d’instruction des VDV à Omsk.",
+        "en": "Training of gun commanders for the 2S9 Nona-S airborne self-propelled artillery. It is delivered at the VDV 242nd Training Centre in Omsk."
+      },
+      "body": {
+        "fr": "242e centre d’instruction des spécialistes subalternes des VDV (Omsk)",
+        "en": "242nd VDV Junior Specialists Training Centre (Omsk)"
+      },
+      "issuer": {
+        "name": "242-й учебный центр ВДВ",
+        "short_name": "242 УЦ ВДВ"
+      },
+      "reference": {
+        "fr": "Article Wikipédia (ru) sur le 242e centre d’instruction des VDV",
+        "en": "Russian Wikipedia article on the VDV 242nd Training Centre"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/242-й_учебный_центр_ВДВ",
+          "title": "242-й учебный центр ВДВ (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/2С9",
+          "title": "2С9 «Нона-С» (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-242uc-d30",
+      "code": "RU-242UC-D30",
+      "category": "fires",
+      "name": {
+        "fr": "Servant d’obusier D-30 (номер расчёта)",
+        "en": "D-30 howitzer crew member"
+      },
+      "official_name": "Номер расчёта гаубицы Д-30",
+      "short_name": "Расчёт Д-30",
+      "description": {
+        "fr": "Formation des servants de l’obusier tracté de 122 mm D-30 en service dans l’artillerie des VDV. Elle est dispensée au 242e centre d’instruction des VDV à Omsk.",
+        "en": "Training of crew members for the 122 mm D-30 towed howitzer in service with VDV artillery. It is delivered at the VDV 242nd Training Centre in Omsk."
+      },
+      "body": {
+        "fr": "242e centre d’instruction des spécialistes subalternes des VDV (Omsk)",
+        "en": "242nd VDV Junior Specialists Training Centre (Omsk)"
+      },
+      "issuer": {
+        "name": "242-й учебный центр ВДВ",
+        "short_name": "242 УЦ ВДВ"
+      },
+      "reference": {
+        "fr": "Article Wikipédia (ru) sur le 242e centre d’instruction des VDV",
+        "en": "Russian Wikipedia article on the VDV 242nd Training Centre"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/242-й_учебный_центр_ВДВ",
+          "title": "242-й учебный центр ВДВ (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/11-я_отдельная_гвардейская_десантно-штурмовая_бригада",
+          "title": "11-я ОДШБр (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-242uc-radiotelefonist",
+      "code": "RU-242UC-RT",
+      "category": "communications",
+      "name": {
+        "fr": "Radiotéléphoniste des VDV (радиотелефонист)",
+        "en": "VDV radiotelephone operator"
+      },
+      "official_name": "Радиотелефонист",
+      "short_name": "Радиотелефонист",
+      "description": {
+        "fr": "Formation des radiotéléphonistes des unités aéroportées : mise en œuvre des postes radio tactiques et procédures de liaison. Elle est dispensée au 242e centre d’instruction des VDV à Omsk.",
+        "en": "Training of airborne unit radiotelephone operators: operating tactical radios and communication procedures. It is delivered at the VDV 242nd Training Centre in Omsk."
+      },
+      "body": {
+        "fr": "242e centre d’instruction des spécialistes subalternes des VDV (Omsk)",
+        "en": "242nd VDV Junior Specialists Training Centre (Omsk)"
+      },
+      "issuer": {
+        "name": "242-й учебный центр ВДВ",
+        "short_name": "242 УЦ ВДВ"
+      },
+      "reference": {
+        "fr": "Article Wikipédia (ru) sur le 242e centre d’instruction des VDV",
+        "en": "Russian Wikipedia article on the VDV 242nd Training Centre"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/242-й_учебный_центр_ВДВ",
+          "title": "242-й учебный центр ВДВ (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Сычёв,_Александр_Николаевич_(Герой_Российской_Федерации)",
+          "title": "Сычёв, Александр Николаевич (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-voditel",
+      "code": "RU-VODITEL",
+      "category": "sof",
+      "name": {
+        "fr": "Conducteur militaire (водитель)",
+        "en": "Military driver (voditel)"
+      },
+      "official_name": "Военный водитель (подготовка водителей транспортных средств)",
+      "short_name": "Водитель",
+      "description": {
+        "fr": "Spécialité militaire de conducteur de véhicules à roues, préparée par la formation au permis (souvent via le DOSAAF) puis l’instruction en unité ; elle permet de tenir les postes de conducteur des unités de soutien.",
+        "en": "Military specialty of wheeled vehicle driver, prepared through licence training (often via DOSAAF) followed by unit instruction; it qualifies for driver posts in support units."
+      },
+      "body": {
+        "fr": "Forces armées de la Fédération de Russie",
+        "en": "Armed Forces of the Russian Federation"
+      },
+      "issuer": {
+        "name": "ДОСААФ России и учебные подразделения ВС РФ",
+        "short_name": "ДОСААФ / ВС РФ"
+      },
+      "reference": {
+        "fr": "Biographie publique d’un militaire de la 3e brigade spetsnaz et article Wikipédia (ru) sur le DOSAAF",
+        "en": "Public biography of a 3rd spetsnaz brigade serviceman and Russian Wikipedia article on DOSAAF"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Старчков,_Александр_Иванович",
+          "title": "Старчков, Александр Иванович (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/ДОСААФ_России",
+          "title": "ДОСААФ России (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-mekhvod-tanka",
+      "code": "RU-MEKHVOD-TANK",
+      "category": "sof",
+      "name": {
+        "fr": "Mécanicien-conducteur de char (механик-водитель танка)",
+        "en": "Tank driver-mechanic"
+      },
+      "official_name": "Механик-водитель танка",
+      "short_name": "Механик-водитель",
+      "description": {
+        "fr": "Spécialité de conduite et d’entretien de premier niveau des chars de combat ; les divisions d’assaut aérien en disposent depuis la création de leurs bataillons de chars.",
+        "en": "Specialty of driving and first-level maintenance of main battle tanks; air assault divisions have needed it since their tank battalions were created."
+      },
+      "body": {
+        "fr": "Forces armées de la Fédération de Russie",
+        "en": "Armed Forces of the Russian Federation"
+      },
+      "issuer": {
+        "name": "Учебные центры Сухопутных войск",
+        "short_name": "СВ ВС РФ"
+      },
+      "reference": {
+        "fr": "Article Wikipédia (ru) sur la 76e division et presse (VZ.ru)",
+        "en": "Russian Wikipedia article on the 76th division and press (VZ.ru)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/76-я_гвардейская_десантно-штурмовая_дивизия",
+          "title": "76-я гвардейская ДШД (Википедия)"
+        },
+        {
+          "url": "https://vz.ru/society/2021/3/26/1091354.html",
+          "title": "Взгляд"
+        }
+      ]
+    },
+    {
+      "id": "ru-btr-82a",
+      "code": "RU-BTR-82A",
+      "category": "maritime",
+      "name": {
+        "fr": "Conduite et mise en œuvre du BTR-82A, y compris à flot",
+        "en": "BTR-82A driving and operation, including afloat"
+      },
+      "official_name": "Вождение и стрельба из БТР-82А, обслуживание техники",
+      "short_name": "БТР-82А",
+      "description": {
+        "fr": "Formation des équipages de l’infanterie de marine au véhicule blindé amphibie BTR-82A : conduite sur terre et à flot, tir de l’armement de tourelle, entretien courant et préparation saisonnière du matériel.",
+        "en": "Training of naval infantry crews on the BTR-82A amphibious armoured vehicle: driving on land and afloat, firing the turret armament, routine maintenance and seasonal preparation of equipment."
+      },
+      "body": {
+        "fr": "Infanterie de marine de la Marine russe",
+        "en": "Russian Navy naval infantry"
+      },
+      "issuer": {
+        "name": "Подразделения морской пехоты ВМФ",
+        "short_name": "Морская пехота"
+      },
+      "reference": {
+        "fr": "Article Wikipédia (ru) sur le BTR-82 et presse militaire",
+        "en": "Russian Wikipedia article on the BTR-82 and military press"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/БТР-82",
+          "title": "БТР-82 (Википедия)"
+        },
+        {
+          "url": "https://armstrade.org/includes/periodics/news/2021/0405/150562312/detail.shtml",
+          "title": "ARMS-TASS / armstrade.org"
+        }
+      ]
+    },
+    {
+      "id": "ru-artpodgotovka-mp",
+      "code": "RU-ARTPODG-MP",
+      "category": "fires",
+      "name": {
+        "fr": "Instruction d’artillerie de l’infanterie de marine (артиллерийская подготовка)",
+        "en": "Naval infantry artillery training"
+      },
+      "official_name": "Артиллерийская подготовка",
+      "short_name": "Артподготовка",
+      "description": {
+        "fr": "Instruction des pointeurs et servants des pièces d’artillerie automotrices des unités d’infanterie de marine : pointage, préparation des tirs et service de la pièce.",
+        "en": "Training of gunners and crews of naval infantry self-propelled artillery: laying, fire preparation and gun drill."
+      },
+      "body": {
+        "fr": "Infanterie de marine de la Marine russe",
+        "en": "Russian Navy naval infantry"
+      },
+      "issuer": {
+        "name": "Артиллерийские подразделения морской пехоты",
+        "short_name": "Морская пехота"
+      },
+      "reference": {
+        "fr": "Presse militaire (NVO) et presse régionale sur le 177e régiment",
+        "en": "Military press (NVO) and regional press on the 177th regiment"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://nvo.ng.ru/forces/2019-12-06/2_1073_marines.html",
+          "title": "Независимое военное обозрение"
+        },
+        {
+          "url": "https://dagpravda.ru/pravoporyadok/na-sushe-na-more-i-v-vozduhe-3/",
+          "title": "Дагестанская правда"
+        }
+      ]
+    },
+    {
+      "id": "ru-mp-boevaya-podgotovka",
+      "code": "RU-MP-BOEVAYA",
+      "category": "sof",
+      "name": {
+        "fr": "Instruction au combat de l’infanterie de marine",
+        "en": "Naval infantry combat training"
+      },
+      "official_name": "Боевая подготовка морской пехоты",
+      "short_name": "БП МП",
+      "description": {
+        "fr": "Programme d’instruction au combat des fusiliers marins : tir tactique et tir aux armes de la compagnie, assaut d’objectifs fortifiés, débarquement, lutte contre les groupes de reconnaissance et de sabotage adverses.",
+        "en": "Combat training programme for naval infantrymen: tactical shooting and company weapons firing, assault of fortified objectives, landing operations, countering enemy reconnaissance and sabotage groups."
+      },
+      "body": {
+        "fr": "Infanterie de marine de la Marine russe",
+        "en": "Russian Navy naval infantry"
+      },
+      "issuer": {
+        "name": "Соединения и части морской пехоты ВМФ",
+        "short_name": "Морская пехота ВМФ"
+      },
+      "reference": {
+        "fr": "Article Wikipédia sur l’infanterie de marine russe et presse militaire (NVO, TASS)",
+        "en": "Wikipedia article on the Russian Naval Infantry and military press (NVO, TASS)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Russian_Naval_Infantry",
+          "title": "Russian Naval Infantry (Wikipedia)"
+        },
+        {
+          "url": "https://nvo.ng.ru/forces/2019-12-06/2_1073_marines.html",
+          "title": "Независимое военное обозрение"
+        },
+        {
+          "url": "https://vesti-kaliningrad.ru/u-morskih-pehotinczev-baltijskogo-flota-bolshie-peremeny/",
+          "title": "Вести Калининград"
+        }
+      ]
+    },
+    {
+      "id": "ru-arktika",
+      "code": "RU-ARKTIKA",
+      "category": "environment",
+      "name": {
+        "fr": "Combat en zone arctique (действия в условиях Заполярья)",
+        "en": "Arctic operations (Far North conditions)"
+      },
+      "official_name": "Подготовка к действиям в условиях Арктики и Заполярья",
+      "short_name": "Арктика",
+      "description": {
+        "fr": "Instruction des unités de la flotte du Nord, notamment la 61e brigade d’infanterie de marine, au déplacement, à la survie et au combat par grand froid au-delà du cercle polaire.",
+        "en": "Training of Northern Fleet units, notably the 61st Naval Infantry Brigade, in movement, survival and combat in extreme cold beyond the Arctic Circle."
+      },
+      "body": {
+        "fr": "Flotte du Nord",
+        "en": "Northern Fleet"
+      },
+      "issuer": {
+        "name": "61-я отдельная бригада морской пехоты Северного флота",
+        "short_name": "61 ОБрМП"
+      },
+      "reference": {
+        "fr": "Article Wikipédia (ru) sur la 61e brigade d’infanterie de marine",
+        "en": "Russian Wikipedia article on the 61st Naval Infantry Brigade"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/61-я_отдельная_бригада_морской_пехоты",
+          "title": "61-я отдельная бригада морской пехоты (Википедия)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Russian_Naval_Infantry",
+          "title": "Russian Naval Infantry (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "ru-svvaul",
+      "code": "RU-SVVAUL",
+      "category": "aviation",
+      "name": {
+        "fr": "Formation initiale de pilote d’hélicoptère militaire (École de Syzran)",
+        "en": "Initial military helicopter pilot training (Syzran school)"
+      },
+      "official_name": "Сызранское высшее военное авиационное училище лётчиков",
+      "short_name": "СВВАУЛ",
+      "description": {
+        "fr": "École de Syzran, rattachée au centre scientifique et d’instruction des forces aériennes, formant les équipages de l’aviation de l’armée de terre. Les élèves volent sur hélicoptères d’instruction (Ansat-U, Ka-226, Mi-2) puis pratiquent sur Mi-8 et Mi-24.",
+        "en": "Syzran school, part of the Air Force research and training centre, training army aviation aircrew. Cadets fly trainer helicopters (Ansat-U, Ka-226, Mi-2) and then practise on the Mi-8 and Mi-24."
+      },
+      "body": {
+        "fr": "Forces aérospatiales russes (VKS)",
+        "en": "Russian Aerospace Forces (VKS)"
+      },
+      "issuer": {
+        "name": "Сызранское высшее военное авиационное училище лётчиков (филиал ВУНЦ ВВС «ВВА»)",
+        "short_name": "СВВАУЛ"
+      },
+      "reference": {
+        "fr": "Présentation de l’école (Wikipédia ru/en)",
+        "en": "Overview of the school (Russian/English Wikipedia)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Сызранское_высшее_военное_авиационное_училище_лётчиков",
+          "title": "Сызранское ВВАУЛ (Википедия)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Syzran_Higher_Military_Aviation_School",
+          "title": "Syzran Higher Military Aviation School (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "ru-344-tsbpipls",
+      "code": "RU-344-PEREUCH",
+      "category": "aviation",
+      "name": {
+        "fr": "Reconversion sur type au 344e centre de Torjok",
+        "en": "Type conversion at the 344th Torzhok centre"
+      },
+      "official_name": "344-й центр боевого применения и переучивания лётного состава армейской авиации (переучивание)",
+      "short_name": "344 ЦБПиПЛС",
+      "description": {
+        "fr": "Centre de l’aviation de l’armée de terre à Torjok chargé de la reconversion des équipages sur nouveaux types (Ka-52, Mi-28N/NM, Mi-8AMTSh…) et de l’élaboration des procédés d’emploi ; l’entraînement inclut le Mi-28UB à double commande.",
+        "en": "Army aviation centre in Torzhok responsible for converting aircrew to new types (Ka-52, Mi-28N/NM, Mi-8AMTSh…) and developing employment procedures; training includes the dual-control Mi-28UB."
+      },
+      "body": {
+        "fr": "Aviation de l’armée de terre (VKS)",
+        "en": "Army Aviation (VKS)"
+      },
+      "issuer": {
+        "name": "344-й центр боевого применения и переучивания лётного состава армейской авиации",
+        "short_name": "344 ЦБПиПЛС"
+      },
+      "reference": {
+        "fr": "Article Wikipédia (ru) sur le 344e centre",
+        "en": "Russian Wikipedia article on the 344th centre"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation initiale de pilote ou de navigateur"
+        ],
+        "en": [
+          "Initial pilot or navigator training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/344-й_центр_боевого_применения_и_переучивания_лётного_состава_армейской_авиации",
+          "title": "344-й ЦБПиПЛС АА (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Ми-28",
+          "title": "Ми-28 (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-aviatekhnik",
+      "code": "RU-AVIATEKHNIK",
+      "category": "aviation",
+      "name": {
+        "fr": "Technicien d’aviation qualifié sur type (Mi-8 / Mi-8AMTSh)",
+        "en": "Aviation technician type rating (Mi-8 / Mi-8AMTSh)"
+      },
+      "official_name": "Допуск инженерно-технического состава к обслуживанию вертолёта Ми-8 / Ми-8АМТШ",
+      "short_name": "Бортовой техник",
+      "description": {
+        "fr": "Autorisation donnée aux techniciens et mécaniciens navigants (бортовой техник) d’entretenir et d’exploiter en vol un type d’hélicoptère, après étude du matériel et contrôle des connaissances.",
+        "en": "Authorisation given to technicians and flight engineers (bortovoy tekhnik) to maintain and operate a helicopter type in flight, after studying the equipment and passing a knowledge check."
+      },
+      "body": {
+        "fr": "Aviation de l’armée de terre (VKS)",
+        "en": "Army Aviation (VKS)"
+      },
+      "issuer": {
+        "name": "Инженерно-авиационная служба армейской авиации",
+        "short_name": "ИАС"
+      },
+      "reference": {
+        "fr": "Articles Wikipédia (ru) sur le Mi-8 et le Mi-8AMTSh",
+        "en": "Russian Wikipedia articles on the Mi-8 and Mi-8AMTSh"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Ми-8",
+          "title": "Ми-8 (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Ми-8АМТШ",
+          "title": "Ми-8АМТШ (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-letchik-snaiper",
+      "code": "RU-LETCHIK-SNAIPER",
+      "category": "aviation",
+      "name": {
+        "fr": "Classe de qualification « pilote tireur d’élite » (лётчик-снайпер)",
+        "en": "“Sniper pilot” proficiency class (letchik-snaiper)"
+      },
+      "official_name": "Классная квалификация «лётчик-снайпер» / «штурман-снайпер»",
+      "short_name": "Лётчик-снайпер",
+      "description": {
+        "fr": "Plus haute classe de qualification du personnel navigant militaire russe, au-dessus de la 1re classe, attribuée aux pilotes et navigateurs les plus expérimentés, notamment aux instructeurs du centre de Torjok.",
+        "en": "Highest proficiency class of Russian military aircrew, above 1st class, awarded to the most experienced pilots and navigators, notably instructors at the Torzhok centre."
+      },
+      "body": {
+        "fr": "Forces aérospatiales russes (VKS)",
+        "en": "Russian Aerospace Forces (VKS)"
+      },
+      "issuer": {
+        "name": "Министерство обороны Российской Федерации",
+        "short_name": "МО РФ"
+      },
+      "reference": {
+        "fr": "Article Wikipédia (ru) sur le 344e centre et sur la patrouille Berkouty",
+        "en": "Russian Wikipedia articles on the 344th centre and the Berkuty display team"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/344-й_центр_боевого_применения_и_переучивания_лётного_состава_армейской_авиации",
+          "title": "344-й ЦБПиПЛС АА (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Беркуты_(пилотажная_группа)",
+          "title": "Беркуты (пилотажная группа) (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-sobr-otbor",
+      "code": "RU-SOBR-OTBOR",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection et admission au SOBR (Rosgvardia)",
+        "en": "SOBR selection and entry (Rosgvardiya)"
+      },
+      "official_name": "Отбор кандидатов в специальный отряд быстрого реагирования",
+      "short_name": "Отбор СОБР",
+      "description": {
+        "fr": "Admission dans les détachements spéciaux de réaction rapide : statut d’officier, études supérieures et service militaire préalable, normes physiques (tractions, 100 m, 5 km), examens médicaux et psychologiques.",
+        "en": "Entry into special rapid response detachments: officer status, higher education and prior military service, physical standards (pull-ups, 100 m, 5 km), medical and psychological examinations."
+      },
+      "body": {
+        "fr": "Garde nationale de Russie (Rosgvardia)",
+        "en": "National Guard of Russia (Rosgvardiya)"
+      },
+      "issuer": {
+        "name": "Федеральная служба войск национальной гвардии Российской Федерации",
+        "short_name": "Росгвардия"
+      },
+      "reference": {
+        "fr": "Page officielle de la Rosgvardia sur les SOBR (conditions de recrutement)",
+        "en": "Official Rosgvardiya page on SOBR (recruitment conditions)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://rosguard.gov.ru/page/index/specialnye-otryady-bystrogo-reagirovaniya",
+          "title": "Специальные отряды быстрого реагирования (Росгвардия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Специальный_отряд_быстрого_реагирования",
+          "title": "Специальный отряд быстрого реагирования (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-krapovyi-beret",
+      "code": "RU-KRAPOVYI-BERET",
+      "category": "selection",
+      "name": {
+        "fr": "Épreuve du béret cerise (краповый берет)",
+        "en": "Crimson beret test (krapovy beret)"
+      },
+      "official_name": "Квалификационные испытания на право ношения крапового берета",
+      "short_name": "Краповый берет",
+      "description": {
+        "fr": "Épreuve de qualification des unités spéciales de la Rosgvardia (OSN Vitiaz, OMON, SOBR) : marche forcée d’environ 12 km, parcours d’obstacles, tir sous fatigue, assaut d’immeuble, acrobatie et combat de 12 minutes contre trois partenaires. Elle se passe au sein des SOBR et OMON depuis 1996.",
+        "en": "Qualification test of Rosgvardiya special units (OSN Vityaz, OMON, SOBR): forced march of about 12 km, obstacle course, shooting under fatigue, building assault, acrobatics and a 12-minute bout against three partners. It has been held within SOBR and OMON since 1996."
+      },
+      "body": {
+        "fr": "Garde nationale de Russie (Rosgvardia)",
+        "en": "National Guard of Russia (Rosgvardiya)"
+      },
+      "issuer": {
+        "name": "Федеральная служба войск национальной гвардии Российской Федерации",
+        "short_name": "Росгвардия"
+      },
+      "reference": {
+        "fr": "Article Wikipédia (ru) sur le béret cerise et pages officielles de la Rosgvardia",
+        "en": "Russian Wikipedia article on the crimson beret and official Rosgvardiya pages"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Краповый_берет",
+          "title": "Краповый берет (Википедия)"
+        },
+        {
+          "url": "https://rosguard.gov.ru/page/index/vojskovoj-specnaz",
+          "title": "Войсковой спецназ (Росгвардия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-peregovorshchik",
+      "code": "RU-PEREGOVORSHCHIK",
+      "category": "influence",
+      "name": {
+        "fr": "Négociateur des unités spéciales (переговорщик)",
+        "en": "Special unit negotiator (peregovorshchik)"
+      },
+      "official_name": "Переговорщик специального подразделения",
+      "short_name": "Переговорщик",
+      "description": {
+        "fr": "Spécialisation interne des SOBR chargée de la négociation lors des prises d’otages et des situations de crise, en appui des groupes d’intervention.",
+        "en": "Internal SOBR specialisation responsible for negotiation during hostage-taking and crisis situations, in support of assault teams."
+      },
+      "body": {
+        "fr": "Garde nationale de Russie (Rosgvardia)",
+        "en": "National Guard of Russia (Rosgvardiya)"
+      },
+      "issuer": {
+        "name": "Специальные отряды быстрого реагирования Росгвардии",
+        "short_name": "СОБР"
+      },
+      "reference": {
+        "fr": "Page officielle de la Rosgvardia sur les SOBR",
+        "en": "Official Rosgvardiya page on SOBR"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://rosguard.gov.ru/page/index/specialnye-otryady-bystrogo-reagirovaniya",
+          "title": "Специальные отряды быстрого реагирования (Росгвардия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-vysotnaya-podgotovka",
+      "code": "RU-VYSOTNAYA",
+      "category": "environment",
+      "name": {
+        "fr": "Formation au travail en hauteur (высотная подготовка)",
+        "en": "High-angle training (vysotnaya podgotovka)"
+      },
+      "official_name": "Высотная подготовка",
+      "short_name": "Высотная подготовка",
+      "description": {
+        "fr": "Spécialisation des opérateurs SOBR pour l’intervention par cordes : descente en rappel sur façade, franchissement d’ouvrages et pénétration par les ouvertures en hauteur.",
+        "en": "SOBR operator specialisation for rope-based intervention: rappelling down façades, crossing structures and entering through high openings."
+      },
+      "body": {
+        "fr": "Garde nationale de Russie (Rosgvardia)",
+        "en": "National Guard of Russia (Rosgvardiya)"
+      },
+      "issuer": {
+        "name": "Специальные отряды быстрого реагирования Росгвардии",
+        "short_name": "СОБР"
+      },
+      "reference": {
+        "fr": "Page officielle de la Rosgvardia sur les SOBR",
+        "en": "Official Rosgvardiya page on SOBR"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://rosguard.gov.ru/page/index/specialnye-otryady-bystrogo-reagirovaniya",
+          "title": "Специальные отряды быстрого реагирования (Росгвардия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-rukopashnyi-boi",
+      "code": "RU-RUKOPASHNYI",
+      "category": "sof",
+      "name": {
+        "fr": "Combat au corps à corps (рукопашный бой)",
+        "en": "Hand-to-hand combat (rukopashny boy)"
+      },
+      "official_name": "Рукопашный бой",
+      "short_name": "Рукопашный бой",
+      "description": {
+        "fr": "Discipline de la préparation physique et professionnelle des OMON et des unités spéciales de la Rosgvardia : techniques de frappe, d’immobilisation et de désarmement.",
+        "en": "Subject of the physical and professional training of OMON and Rosgvardiya special units: striking, restraint and disarming techniques."
+      },
+      "body": {
+        "fr": "Garde nationale de Russie (Rosgvardia)",
+        "en": "National Guard of Russia (Rosgvardiya)"
+      },
+      "issuer": {
+        "name": "Отряды мобильные особого назначения Росгвардии",
+        "short_name": "ОМОН"
+      },
+      "reference": {
+        "fr": "Page officielle de la Rosgvardia sur les OMON",
+        "en": "Official Rosgvardiya page on OMON"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://rosguard.gov.ru/page/index/otryady-mobilnye-osobogo-naznacheniya",
+          "title": "Отряды мобильные особого назначения (Росгвардия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Отряд_мобильный_особого_назначения",
+          "title": "ОМОН (Википедия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-ognevaya-rosgv",
+      "code": "RU-OGNEVAYA-RG",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Instruction au tir des unités de la Rosgvardia (огневая подготовка)",
+        "en": "Rosgvardiya unit firearms training (ognevaya podgotovka)"
+      },
+      "official_name": "Огневая подготовка",
+      "short_name": "Огневая подготовка",
+      "description": {
+        "fr": "Discipline de tir des OMON et unités spéciales : maniement et tir à l’arme de poing, au fusil d’assaut et aux armes collectives selon les normes de la Rosgvardia.",
+        "en": "Firearms training of OMON and special units: handling and shooting of handguns, assault rifles and crew-served weapons to Rosgvardiya standards."
+      },
+      "body": {
+        "fr": "Garde nationale de Russie (Rosgvardia)",
+        "en": "National Guard of Russia (Rosgvardiya)"
+      },
+      "issuer": {
+        "name": "Отряды мобильные особого назначения Росгвардии",
+        "short_name": "ОМОН"
+      },
+      "reference": {
+        "fr": "Page officielle de la Rosgvardia sur les OMON",
+        "en": "Official Rosgvardiya page on OMON"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://rosguard.gov.ru/page/index/otryady-mobilnye-osobogo-naznacheniya",
+          "title": "Отряды мобильные особого назначения (Росгвардия)"
+        }
+      ]
+    },
+    {
+      "id": "ru-tssn-fsb-otbor",
+      "code": "RU-TSSN-FSB",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection et formation du Centre des forces spéciales du FSB (Alpha, Vympel)",
+        "en": "FSB Special Purpose Centre selection and training (Alpha, Vympel)"
+      },
+      "official_name": "Отбор и подготовка сотрудников Центра специального назначения ФСБ России (Управления «А» и «В»)",
+      "short_name": "ЦСН ФСБ",
+      "description": {
+        "fr": "Sélection des directions « A » (Alpha) et « V » (Vympel) : limites d’âge et de taille, épreuves physiques, combat au corps à corps en plusieurs reprises, examens médicaux et psychologiques, polygraphe, accord écrit des proches. Elle est suivie d’environ trois ans de formation avant l’emploi opérationnel complet.",
+        "en": "Selection for Directorates A (Alpha) and V (Vympel): age and height limits, physical tests, multi-round hand-to-hand bouts, medical and psychological checks, polygraph, written consent of relatives. It is followed by about three years of training before full operational employment."
+      },
+      "body": {
+        "fr": "Service fédéral de sécurité (FSB)",
+        "en": "Federal Security Service (FSB)"
+      },
+      "issuer": {
+        "name": "Центр специального назначения ФСБ России",
+        "short_name": "ЦСН ФСБ"
+      },
+      "reference": {
+        "fr": "Articles Wikipédia sur Alpha et Vympel et presse (Kommersant)",
+        "en": "Wikipedia articles on Alpha and Vympel and press (Kommersant)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Альфа_(спецподразделение)",
+          "title": "Альфа (спецподразделение) (Википедия)"
+        },
+        {
+          "url": "https://ru.wikipedia.org/wiki/Вымпел_(спецподразделение)",
+          "title": "Вымпел (спецподразделение) (Википедия)"
+        },
+        {
+          "url": "https://www.kommersant.ru/doc/503107",
+          "title": "Коммерсантъ"
+        }
+      ]
+    }
+  ]
+}

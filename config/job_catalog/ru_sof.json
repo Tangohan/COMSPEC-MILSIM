@@ -43,6 +43,9 @@
      "Career officer: progression from platoon commander to company commander (от командира взвода до командира роты)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vvuz-ofitser"
+   ],
    "billets": {
     "fr": [
      "Commandant de compagnie (командир роты)",
@@ -112,6 +115,9 @@
      "Ryazan Higher Airborne Command School (Рязанское высшее воздушно-десантное командное училище)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-rvvdku"
+   ],
    "billets": {
     "fr": [
      "Commandant de groupe (командир группы специального назначения)",
@@ -183,6 +189,9 @@
      "Specialist training at the brigade's junior specialists school (школа младших специалистов)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-spn-radist-razvedchik"
+   ],
    "billets": {
     "fr": [
      "Radio du groupe (радист)",
@@ -250,6 +259,10 @@
      "Prior military-political posts (военно-политические должности)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-dvoku",
+    "qualification:ru-vumo-voenno-politicheskaya"
+   ],
    "billets": {
     "fr": [
      "Commandant de détachement (командир отряда)",
@@ -319,6 +332,10 @@
      "Prior post: spetsnaz team commander (командир группы спецназа)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-nvvku",
+    "qualification:ru-nvvku"
+   ],
    "billets": {
     "fr": [
      "Commandant de groupe de minage (командир группы минирования)",
@@ -387,6 +404,9 @@
      "Ryazan Guards Higher Airborne Command School named after Gen. Margelov (РВВДКУ), 5 years"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-rvvdku"
+   ],
    "billets": {
     "fr": [
      "Commandant de groupe (командир группы специального назначения)",
@@ -456,6 +476,9 @@
      "Conscript service then contract (служба по контракту)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-kontrakt-otbor"
+   ],
    "billets": {
     "fr": [
      "Éclaireur principal (старший разведчик)",
@@ -525,6 +548,9 @@
      "Contract with the Ministry of Defence (контракт с Минобороны)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-kontrakt-otbor"
+   ],
    "billets": {
     "fr": [
      "Chef d'équipe (командир отделения специального назначения)",
@@ -592,6 +618,10 @@
      "2022 partial mobilisation (мобилизация)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-spn-razvedchik",
+    "qualification:ru-kmb"
+   ],
    "billets": {
     "fr": [
      "Chef d'équipe (командир отделения)",
@@ -659,6 +689,9 @@
      "Military driving qualification (водитель)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-voditel"
+   ],
    "billets": {
     "fr": [
      "Conducteur (водитель)",
@@ -728,6 +761,9 @@
      "Officer training (higher command school)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vvuz-ofitser"
+   ],
    "billets": {
     "fr": [
      "Commandant de groupe (командир группы специального назначения)",
@@ -803,6 +839,10 @@
      "Radio operator-scout specialty (радист-разведчик)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-kontrakt-otbor",
+    "qualification:ru-spn-radist-razvedchik"
+   ],
    "billets": {
     "fr": [
      "Radio-éclaireur principal (старший радист-разведчик)",
@@ -874,6 +914,10 @@
      "2022 partial mobilisation (мобилизация)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-snaiper",
+    "qualification:ru-kmb"
+   ],
    "billets": {
     "fr": [
      "Éclaireur principal (старший разведчик)",
@@ -943,6 +987,10 @@
      "Prior team commander experience (командир группы)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-dvoku",
+    "qualification:ru-dvoku"
+   ],
    "billets": {
     "fr": [
      "Commandant de compagnie (командир роты спецназначения)",
@@ -1016,6 +1064,10 @@
      "Prior deputy reconnaissance team commander (зам. командира разведывательной группы)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-shkola-praporshchikov",
+    "qualification:ru-shkola-praporshchikov"
+   ],
    "billets": {
     "fr": [
      "Commandant de groupe de reconnaissance (командир разведгруппы)",
@@ -1087,6 +1139,9 @@
      "Officer training (Novosibirsk Higher Combined Arms Command School per Wikipedia)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-nvvku"
+   ],
    "billets": {
     "fr": [
      "Commandant de détachement (командир отряда)",
@@ -1155,6 +1210,9 @@
      "Long-term contract service (служба по контракту)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-kontrakt-otbor"
+   ],
    "billets": {
     "fr": [
      "Adjoint (заместитель командира разведывательной группы)",
@@ -1229,6 +1287,10 @@
      "About ten years of contract service before the post"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-shkola-praporshchikov",
+    "qualification:ru-kontrakt-otbor"
+   ],
    "billets": {
     "fr": [
      "Adjoint (заместитель командира группы специального назначения)",
@@ -1300,6 +1362,9 @@
      "Officer career in spetsnaz units (группа → рота → отряд)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-ova"
+   ],
    "billets": {
     "fr": [
      "Commandant de brigade (командир бригады)",
@@ -1371,6 +1436,10 @@
      "Medical college (медицинский колледж) before enlistment"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-rvvdku",
+    "qualification:ru-medkolledzh"
+   ],
    "billets": {
     "fr": [
      "Commandant de groupe (командир группы спецназначения)",
@@ -1441,6 +1510,10 @@
      "Air controller specialty (авианаводчик)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-va-vpvo",
+    "qualification:ru-avianavodchik"
+   ],
    "billets": {
     "fr": [
      "Guideur aérien avancé (передовой авиационный наводчик)",
@@ -1508,6 +1581,9 @@
      "General officer (генерал)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vagsh"
+   ],
    "billets": {
     "fr": [
      "Commandant (командующий ССО)",
@@ -1583,6 +1659,12 @@
      "Foreign languages (иностранные языки)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vdp",
+    "qualification:ru-vodolaznaya-podgotovka",
+    "qualification:ru-minno-podryvnoe",
+    "qualification:ru-inostrannye-yazyki"
+   ],
    "billets": {
     "fr": [
      "Officier des FOS (офицер ССО)",
@@ -1656,6 +1738,10 @@
      "Airborne training in a dedicated facility (воздушно-десантная подготовка)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-rvvdku",
+    "qualification:ru-vdp"
+   ],
    "billets": {
     "fr": [
      "Commandant de groupe (командир группы специального назначения)",
@@ -1733,6 +1819,10 @@
      "Drone / loitering munition operation (оператор БПЛА)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vdp",
+    "qualification:ru-operator-bpla"
+   ],
    "billets": {
     "fr": [
      "Chef d'équipe (командир отделения группы специального назначения)",
@@ -1804,6 +1894,10 @@
      "Drone operator (оператор БПЛА)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-242uc-radiotelefonist",
+    "qualification:ru-operator-bpla"
+   ],
    "billets": {
     "fr": [
      "Technicien radio (техник-радиотелефонист)"
@@ -1871,6 +1965,10 @@
      "Airborne training (воздушно-десантная подготовка)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-operator-bpla",
+    "qualification:ru-vdp"
+   ],
    "billets": {
     "fr": [
      "Opérateur de drone (оператор БПЛА)",
@@ -1940,6 +2038,9 @@
      "Officer training, e.g. at the Ryazan airborne school (РВВДКУ)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-rvvdku"
+   ],
    "billets": {
     "fr": [
      "Chef de section (командир парашютно-десантного взвода)",
@@ -2013,6 +2114,9 @@
      "Combat vehicle squad leader course (командир отделения боевой машины) at the VDV 242nd Training Centre, Omsk"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-242uc-mladshiy-komandir"
+   ],
    "billets": {
     "fr": [
      "Chef de groupe (командир отделения)",
@@ -2086,6 +2190,9 @@
      "BMD driver-mechanic course (механик-водитель БМД) at the VDV 242nd Training Centre, Omsk"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-242uc-mekhvod"
+   ],
    "billets": {
     "fr": [
      "Commandant de véhicule (командир)",
@@ -2157,6 +2264,9 @@
      "Tank driver-mechanic specialty (механик-водитель)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-mekhvod-tanka"
+   ],
    "billets": {
     "fr": [
      "Mécanicien-conducteur (механик-водитель)",
@@ -2222,6 +2332,9 @@
      "Air defence officer (зенитный ракетный взвод)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-va-vpvo"
+   ],
    "billets": {
     "fr": [
      "Chef de section (командир зенитно-ракетного взвода)"
@@ -2291,6 +2404,10 @@
      "Precision shooting (снайперская подготовка)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-rvvdku",
+    "qualification:ru-snaiper"
+   ],
    "billets": {
     "fr": [
      "Chef de section (командир взвода снайперов)",
@@ -2356,6 +2473,9 @@
      "Reconnaissance training (разведывательная подготовка)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-razvedpodgotovka"
+   ],
    "billets": {
     "fr": [
      "Éclaireur-opérateur (разведчик-оператор)",
@@ -2425,6 +2545,9 @@
      "Officer training, e.g. at the Ryazan airborne school (РВВДКУ)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-rvvdku"
+   ],
    "billets": {
     "fr": [
      "Commandant de compagnie (командир разведывательной роты)",
@@ -2494,6 +2617,9 @@
      "Junior commander training (младший командир) at the VDV 242nd Training Centre, Omsk"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-242uc-mladshiy-komandir"
+   ],
    "billets": {
     "fr": [
      "Adjoint du chef de section (заместитель командира взвода)",
@@ -2563,6 +2689,9 @@
      "Airborne artillery officer"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-mvaa"
+   ],
    "billets": {
     "fr": [
      "Chef de section (командир взвода)",
@@ -2636,6 +2765,10 @@
      "Airborne training with parachute jumps (воздушно-десантная подготовка)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vvk-kategoriya-a",
+    "qualification:ru-vdp"
+   ],
    "billets": {
     "fr": [
      "Tireur (стрелок)",
@@ -2710,6 +2843,9 @@
      "BMD gunner-operator course (наводчик-оператор БМД) at the VDV 242nd Training Centre, Omsk"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-242uc-navodchik-bmd"
+   ],
    "billets": {
     "fr": [
      "Commandant de véhicule (командир)",
@@ -2781,6 +2917,9 @@
      "Airborne vehicle driver-mechanic specialty (механик-водитель)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-242uc-mekhvod"
+   ],
    "billets": {
     "fr": [
      "Commandant de véhicule (командир)",
@@ -2850,6 +2989,9 @@
      "SAO-2S9 gun commander course (командир орудия САО-2С9) at the VDV 242nd Training Centre, Omsk"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-242uc-sao-2s9"
+   ],
    "billets": {
     "fr": [
      "Commandant de pièce (командир САО)",
@@ -2923,6 +3065,9 @@
      "CBRN defence specialty (радиационная, химическая и биологическая защита)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-rkhbz"
+   ],
    "billets": {
     "fr": [
      "Lance-flammes (огнемётчик)"
@@ -2986,6 +3131,9 @@
      "Radiotelephone operator course (радиотелефонист) at the VDV 242nd Training Centre, Omsk"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-242uc-radiotelefonist"
+   ],
    "billets": {
     "fr": [
      "Chef de groupe transmissions (командир отделения связи)",
@@ -3055,6 +3203,9 @@
      "Officer training, e.g. at the Ryazan airborne school (РВВДКУ)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-rvvdku"
+   ],
    "billets": {
     "fr": [
      "Chef de section (командир десантно-штурмового взвода)",
@@ -3128,6 +3279,9 @@
      "Reconnaissance training (разведывательная подготовка)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-razvedpodgotovka"
+   ],
    "billets": {
     "fr": [
      "Chef de groupe de reconnaissance (командир разведотделения)",
@@ -3193,6 +3347,9 @@
      "Drone operator (оператор БПЛА)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-operator-bpla"
+   ],
    "billets": {
     "fr": [
      "Opérateur de drone (оператор БПЛА)",
@@ -3265,6 +3422,10 @@
      "Medical fitness category A (категория годности «А»)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-snaiper",
+    "qualification:ru-vvk-kategoriya-a"
+   ],
    "billets": {
     "fr": [
      "Tireur d'élite (снайпер)",
@@ -3334,6 +3495,9 @@
      "D-30 crew course (номер расчёта гаубицы Д-30) at the VDV 242nd Training Centre, Omsk"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-242uc-d30"
+   ],
    "billets": {
     "fr": [
      "Chef de pièce (командир орудия)",
@@ -3405,6 +3569,9 @@
      "Officer training, e.g. at the Ryazan airborne school (РВВДКУ)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-rvvdku"
+   ],
    "billets": {
     "fr": [
      "Commandant de compagnie (командир десантно-штурмовой роты)",
@@ -3474,6 +3641,10 @@
      "Airborne training (воздушно-десантная подготовка)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vvk-kategoriya-a",
+    "qualification:ru-vdp"
+   ],
    "billets": {
     "fr": [
      "Mitrailleur (пулемётчик)",
@@ -3544,6 +3715,11 @@
      "Specialty 'Employment of airborne delivery support units' (применение подразделений десантного обеспечения)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-rvvdku",
+    "qualification:ru-rvvdku",
+    "qualification:ru-rvvdku-desantnoe-obespechenie"
+   ],
    "billets": {
     "fr": [
      "Élève-officier (курсант)"
@@ -3610,6 +3786,10 @@
      "Specialty 'Employment of special reconnaissance units' (применение подразделений специальной разведки)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-rvvdku-spetsrazvedka",
+    "qualification:ru-rvvdku-spetsrazvedka"
+   ],
    "billets": {
     "fr": [
      "Élève-officier (курсант)",
@@ -3680,6 +3860,10 @@
      "Live firing with attack and reconnaissance drones (ударные и разведывательные БПЛА)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-mp-boevaya-podgotovka",
+    "qualification:ru-operator-bpla"
+   ],
    "billets": {
     "fr": [
      "Fusilier marin d'une compagnie (морской пехотинец)"
@@ -3749,6 +3933,10 @@
      "Countering reconnaissance and sabotage groups (борьба с разведчиками и диверсантами)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-mp-boevaya-podgotovka",
+    "qualification:ru-mp-boevaya-podgotovka"
+   ],
    "billets": {
     "fr": [
      "Matelot de la garde (гвардии матрос)",
@@ -3820,6 +4008,10 @@
      "Assault on fortified objects (штурм укреплённых объектов)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-mp-boevaya-podgotovka",
+    "qualification:ru-mp-boevaya-podgotovka"
+   ],
    "billets": {
     "fr": [
      "Fusilier marin (морской пехотинец)"
@@ -3883,6 +4075,9 @@
      "Naval infantry combat training (боевая подготовка морской пехоты)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-mp-boevaya-podgotovka"
+   ],
    "billets": {
     "fr": [
      "Fusilier marin (морской пехотинец)"
@@ -3946,6 +4141,9 @@
      "Naval infantry combat training (боевая подготовка морской пехоты)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-mp-boevaya-podgotovka"
+   ],
    "billets": {
     "fr": [
      "Fusilier marin (морской пехотинец)"
@@ -4011,6 +4209,10 @@
      "Long-range shooting, SVD/SVDS, SV-98, ASVK rifles (СВД, СВ-98, АСВК)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-snaiper",
+    "qualification:ru-snaiper"
+   ],
    "billets": {
     "fr": [
      "Tireur d'élite (снайпер)",
@@ -4082,6 +4284,10 @@
      "TPN-1TOD sights and LPR-3/LPR-4 rangefinders (ТПН-1ТОД, ЛПР)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-snaiper",
+    "qualification:ru-snaiper"
+   ],
    "billets": {
     "fr": [
      "Chef de groupe et observateur (снайпер-наблюдатель)",
@@ -4149,6 +4355,11 @@
      "Ratnik kit and Strelets system (комплект «Ратник», комплекс «Стрелец»)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vdp",
+    "qualification:ru-vodolaznaya-podgotovka",
+    "qualification:ru-strelets-ratnik"
+   ],
    "billets": {
     "fr": [
      "Chef de section (командир взвода)",
@@ -4216,6 +4427,10 @@
      "Helicopter landing and parachuting (высадка с вертолёта, парашютное десантирование)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-btr-82a",
+    "qualification:ru-vdp"
+   ],
    "billets": {
     "fr": [
      "Chef de groupe (командир отделения)",
@@ -4285,6 +4500,11 @@
      "Reconnaissance drone operation (БЛА «Орлан-10»)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vdp",
+    "qualification:ru-vodolaznaya-podgotovka",
+    "qualification:ru-operator-bpla"
+   ],
    "billets": {
     "fr": [
      "Éclaireur (разведчик)",
@@ -4350,6 +4570,9 @@
      "Artillery training (артиллерийская подготовка)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-artpodgotovka-mp"
+   ],
    "billets": {
     "fr": [
      "Pointeur (наводчик)",
@@ -4417,6 +4640,10 @@
      "Vehicle maintenance and seasonal preparation (обслуживание техники)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-btr-82a",
+    "qualification:ru-btr-82a"
+   ],
    "billets": {
     "fr": [
      "Mécanicien-conducteur (механик-водитель)",
@@ -4488,6 +4715,10 @@
      "Night and water jumps (ночные прыжки, прыжки на воду)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-parashyutist-instruktor",
+    "qualification:ru-vdp"
+   ],
    "billets": {
     "fr": [
      "Commandant de compagnie (командир роты)",
@@ -4555,6 +4786,11 @@
      "D-6 and D-10 parachutes (Д-6, Д-10)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vdp",
+    "qualification:ru-parashyutist-instruktor",
+    "qualification:ru-vdp"
+   ],
    "billets": {
     "fr": [
      "Adjoint au chef de bataillon pour l'ВДП (заместитель командира батальона по ВДП)",
@@ -4622,6 +4858,10 @@
      "Parachute packing (укладка парашютов)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-ukladka-vdt",
+    "qualification:ru-ukladka-vdt"
+   ],
    "billets": {
     "fr": [
      "Chef de magasin (начальник склада ВДТ)"
@@ -4683,6 +4923,10 @@
      "D-6 / Arbalet-1 parachute jumps (Д-6, «Арбалет-1»)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vdp",
+    "qualification:ru-vdp"
+   ],
    "billets": {
     "fr": [
      "Parachutiste (десантник)",
@@ -4750,6 +4994,10 @@
      "Airborne training (воздушно-десантная подготовка)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-sbr",
+    "qualification:ru-vdp"
+   ],
    "billets": {
     "fr": [
      "Opérateur-éclaireur (оператор-разведчик)",
@@ -4817,6 +5065,10 @@
      "Arctic operations (действия в условиях Заполярья)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vdp",
+    "qualification:ru-arktika"
+   ],
    "billets": {
     "fr": [
      "Éclaireur (разведчик)"
@@ -4887,6 +5139,12 @@
      "Sirena and Protei diver propulsion vehicles (носители «Сирена», «Протей»)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vodolaznaya-podgotovka",
+    "qualification:ru-parashyut-krylo",
+    "qualification:ru-boevoy-plovets",
+    "qualification:ru-boevoy-plovets"
+   ],
    "billets": {
     "fr": [
      "Plongeur-éclaireur (водолаз-разведчик)",
@@ -4964,6 +5222,11 @@
      "Special and underwater weapons (СПП-1, АДС, ВСС, АС «Вал»)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vodolaznaya-podgotovka",
+    "qualification:ru-vdp",
+    "qualification:ru-podvodnoe-oruzhie"
+   ],
    "billets": {
     "fr": [
      "Chef de groupe (командир группы)",
@@ -5033,6 +5296,10 @@
      "Three-stage physical selection (отбор: кросс, силовые упражнения, ринг)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vdp",
+    "qualification:ru-mrp-otbor"
+   ],
    "billets": {
     "fr": [
      "Éclaireur (войсковой разведчик)",
@@ -5100,6 +5367,9 @@
      "Radio and electronic reconnaissance (радио- и радиотехническая разведка, РРТР)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-rrtr"
+   ],
    "billets": {
     "fr": [
      "Spécialiste РРТР (разведчик радио- и радиотехнических средств)"
@@ -5163,6 +5433,9 @@
      "Diving (водолазная подготовка)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vodolaznaya-podgotovka"
+   ],
    "billets": {
     "fr": [
      "Plongeur-éclaireur (водолаз-разведчик)",
@@ -5229,6 +5502,9 @@
      "Combat diving (водолазная подготовка)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-boevoy-plovets"
+   ],
    "billets": {
     "fr": [
      "Nageur de combat (боевой пловец)"
@@ -5293,6 +5569,9 @@
      "Command of a naval special unit (морская разведка)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vvuz-ofitser"
+   ],
    "billets": {
     "fr": [
      "Commandant d'unité (командир части)",
@@ -5364,6 +5643,11 @@
      "DP-61 anti-sabotage grenade launcher (ДП-61 «Дуэль»)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vodolaznaya-podgotovka",
+    "qualification:ru-podvodnoe-oruzhie",
+    "qualification:ru-pdss-granatomety"
+   ],
    "billets": {
     "fr": [
      "Plongeur de combat anti-sabotage (боец отряда ПДСС)",
@@ -5435,6 +5719,12 @@
      "Underwater firing with the APS (стрельба из АПС под водой)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vodolaznaya-podgotovka",
+    "qualification:ru-minno-podryvnoe",
+    "qualification:ru-boevoy-plovets",
+    "qualification:ru-podvodnoe-oruzhie"
+   ],
    "billets": {
     "fr": [
      "Nageur militaire (военный пловец)"
@@ -5500,6 +5790,10 @@
      "DP-65A multi-barrel grenade launcher (ДП-65А)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-pdss-granatomety",
+    "qualification:ru-pdss-granatomety"
+   ],
    "billets": {
     "fr": [
      "Membre d'équipage (экипаж противодиверсионного катера)",
@@ -5568,6 +5862,10 @@
      "Type conversion at the Torzhok centre (переучивание лётного состава, 344 ЦБПиПЛС)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-svvaul",
+    "qualification:ru-344-tsbpipls"
+   ],
    "billets": {
     "fr": [
      "Commandant d'équipage (командир экипажа)",
@@ -5637,6 +5935,10 @@
      "Type conversion at the Torzhok centre (344 ЦБПиПЛС)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-svvaul",
+    "qualification:ru-344-tsbpipls"
+   ],
    "billets": {
     "fr": [
      "Navigateur-opérateur (штурман-оператор)",
@@ -5708,6 +6010,11 @@
      "Training on the dual-control Mi-28UB (Ми-28УБ)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-svvaul",
+    "qualification:ru-344-tsbpipls",
+    "qualification:ru-344-tsbpipls"
+   ],
    "billets": {
     "fr": [
      "Commandant d'équipage / pilote (командир экипажа, лётчик)",
@@ -5777,6 +6084,10 @@
      "Type conversion (переучивание, 344 ЦБПиПЛС, Torzhok)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-svvaul",
+    "qualification:ru-344-tsbpipls"
+   ],
    "billets": {
     "fr": [
      "Navigateur-opérateur (штурман-оператор)",
@@ -5846,6 +6157,10 @@
      "Type conversion (переучивание, 344 ЦБПиПЛС, Torzhok)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-svvaul",
+    "qualification:ru-344-tsbpipls"
+   ],
    "billets": {
     "fr": [
      "Commandant d'équipage (командир экипажа)",
@@ -5919,6 +6234,9 @@
      "Aviation technician type rating (Ми-8 / Ми-8АМТШ)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-aviatekhnik"
+   ],
    "billets": {
     "fr": [
      "Technicien navigant (бортмеханик / борттехник)"
@@ -5985,6 +6303,9 @@
      "Type conversion (переучивание, 344 ЦБПиПЛС, Torzhok)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-344-tsbpipls"
+   ],
    "billets": {
     "fr": [
      "Commandant d'équipage (командир экипажа, КЭ)",
@@ -6059,6 +6380,9 @@
      "Highest proficiency class: \"sniper pilot\" (лётчик-снайпер) / \"sniper navigator\" (штурман-снайпер)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-letchik-snaiper"
+   ],
    "billets": {
     "fr": [
      "Pilote du 696e régiment (696-й исследовательско-инструкторский вертолётный полк)",
@@ -6133,6 +6457,10 @@
      "Flying practice on Mi-8 and Mi-24 (лётная практика)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-svvaul",
+    "qualification:ru-svvaul"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -6202,6 +6530,11 @@
      "Crimson beret test (краповый берет), held within SOBR/OMON since 1996"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-sobr-otbor",
+    "qualification:ru-sobr-otbor",
+    "qualification:ru-krapovyi-beret"
+   ],
    "billets": {
     "fr": [
      "Opérateur de section de combat (боевое отделение)",
@@ -6277,6 +6610,10 @@
      "Sniper specialisation (снайпер)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-sobr-otbor",
+    "qualification:ru-snaiper-spetspodrazdeleniya"
+   ],
    "billets": {
     "fr": [
      "Tireur d'élite (снайпер)"
@@ -6342,6 +6679,10 @@
      "Explosives specialisation (взрывотехника)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-sobr-otbor",
+    "qualification:ru-vzryvotekhnik"
+   ],
    "billets": {
     "fr": [
      "Spécialiste explosifs (взрывотехник)"
@@ -6403,6 +6744,10 @@
      "Negotiation specialisation (переговоры)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-sobr-otbor",
+    "qualification:ru-peregovorshchik"
+   ],
    "billets": {
     "fr": [
      "Négociateur (переговорщик)"
@@ -6466,6 +6811,10 @@
      "High-angle specialisation (высотная подготовка)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-sobr-otbor",
+    "qualification:ru-vysotnaya-podgotovka"
+   ],
    "billets": {
     "fr": [
      "Spécialiste en hauteur (высотник)"
@@ -6529,6 +6878,11 @@
      "Crimson beret test (краповый берет), held within OMON since 1996"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-rukopashnyi-boi",
+    "qualification:ru-ognevaya-rosgv",
+    "qualification:ru-krapovyi-beret"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -6594,6 +6948,9 @@
      "Detection and neutralisation of explosive objects (обнаружение и обезвреживание взрывоопасных предметов)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-vzryvotekhnik"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -6649,6 +7006,9 @@
      "Crimson beret test (краповый берет): ~12 km forced march, obstacle course, shooting under fatigue, building assault, acrobatics, hand-to-hand combat (12 min against three partners)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-krapovyi-beret"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -6718,6 +7078,11 @@
      "About three years of training (подготовка)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-tssn-fsb-otbor",
+    "qualification:ru-tssn-fsb-otbor",
+    "qualification:ru-tssn-fsb-otbor"
+   ],
    "billets": {
     "fr": [
      "Officier (офицер)",
@@ -6791,6 +7156,10 @@
      "Sniper specialisation (снайпер)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-tssn-fsb-otbor",
+    "qualification:ru-snaiper-spetspodrazdeleniya"
+   ],
    "billets": {
     "fr": [
      "Groupe de tireurs d'élite (снайперская группа)"
@@ -6856,6 +7225,10 @@
      "About three years of training (подготовка)"
     ]
    },
+   "reference_keys": [
+    "qualification:ru-tssn-fsb-otbor",
+    "qualification:ru-tssn-fsb-otbor"
+   ],
    "billets": {
     "fr": [
      "Officier (офицер)",

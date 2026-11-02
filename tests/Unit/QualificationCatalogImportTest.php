@@ -27,6 +27,8 @@ final class QualificationCatalogImportTest extends TestCase
         'us' => ['US', 'us-', 'US-', 'en'],
         'fr' => ['FR', 'fr-', 'FR-', 'fr'],
         'de' => ['DE', 'de-', 'DE-', 'de'],
+        'cn' => ['CN', 'cn-', 'CN-', 'zh'],
+        'ru' => ['RU', 'ru-', 'RU-', 'ru'],
         'nato' => ['NATO', 'nato-', 'OTAN-', 'en'],
     ];
 
@@ -39,7 +41,7 @@ final class QualificationCatalogImportTest extends TestCase
     public function testShippedCatalogsAreValidUniqueSourcedAndBilingualPerCountry(): void
     {
         self::assertSame(QualificationCatalog::PACKS, array_keys(QualificationCatalog::packs()), 'chaque pack inscrit est livré et lisible');
-        self::assertSame(['US', 'FR', 'DE', 'NATO'], array_keys(QualificationCatalog::COUNTRIES));
+        self::assertSame(['US', 'FR', 'DE', 'CN', 'RU', 'NATO'], array_keys(QualificationCatalog::COUNTRIES));
         $allIds = [];
         $allCodes = [];
         foreach (self::PACKS as $name => [$country, $idPrefix, $codePrefix, $official]) {
@@ -56,7 +58,7 @@ final class QualificationCatalogImportTest extends TestCase
             self::assertStringContainsString('no real-world value', (string) $pack['disclaimer']['en'], $name);
             $entries = QualificationCatalog::rawEntries($name);
             self::assertGreaterThanOrEqual(15, count($entries), $name);
-            self::assertLessThanOrEqual(120, count($entries), $name);
+            self::assertLessThanOrEqual(400, count($entries), $name);
             $problems = [];
             foreach ($entries as $e) {
                 foreach (QualificationCatalog::problems($e) as $p) {
@@ -94,7 +96,7 @@ final class QualificationCatalogImportTest extends TestCase
                 $linkedJobs[$job['country']] = ($linkedJobs[$job['country']] ?? 0) + 1;
             }
         }
-        foreach (['US', 'FR', 'DE', 'NATO'] as $country) {
+        foreach (['US', 'FR', 'DE', 'CN', 'RU', 'NATO'] as $country) {
             self::assertGreaterThan(0, $linkedJobs[$country] ?? 0, 'emplois ' . $country . ' reliés à leurs brevets');
         }
         // La fiche d’un emploi relié montre ses qualifications dans la langue du lecteur.

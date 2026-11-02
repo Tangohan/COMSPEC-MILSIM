@@ -47,6 +47,13 @@
      "Static-line jumpmaster"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sfas",
+    "qualification:us-sfqc",
+    "qualification:us-sof-ccc",
+    "qualification:us-basic-airborne",
+    "qualification:us-jumpmaster"
+   ],
    "qualification_refs": [
     "us-sfas",
     "us-sfqc",
@@ -128,6 +135,12 @@
      "GT score 110 or higher"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sfqc",
+    "qualification:us-sfwottc",
+    "qualification:us-sere-c",
+    "qualification:us-asvab"
+   ],
    "qualification_refs": [
     "us-sfwottc",
     "us-sere-c"
@@ -206,6 +219,12 @@
      "Two or more SF advanced skills"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sfqc",
+    "qualification:us-mlc",
+    "qualification:us-jumpmaster",
+    "qualification:us-arsof-advanced-skills"
+   ],
    "qualification_refs": [
     "us-sfqc",
     "us-mlc",
@@ -284,6 +303,11 @@
      "SF Intelligence Sergeant Course (SFISC)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sfqc",
+    "qualification:us-sfqc",
+    "qualification:us-sfisc"
+   ],
    "qualification_refs": [
     "us-sfisc"
    ],
@@ -351,6 +375,11 @@
      "Special Operations Language Training (OPI 1+)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sfqc",
+    "qualification:us-basic-airborne",
+    "qualification:us-solt"
+   ],
    "qualification_refs": [
     "us-sfqc",
     "us-sere-c",
@@ -425,6 +454,11 @@
      "Special Operations Language Training (OPI 1+)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sfqc",
+    "qualification:us-basic-airborne",
+    "qualification:us-solt"
+   ],
    "qualification_refs": [
     "us-sfqc",
     "us-sere-c",
@@ -501,6 +535,11 @@
      "Special Operations Language Training (OPI 1+)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sfqc",
+    "qualification:us-basic-airborne",
+    "qualification:us-solt"
+   ],
    "qualification_refs": [
     "us-sfqc",
     "us-sf-medical-sergeant",
@@ -577,6 +616,11 @@
      "Special Operations Language Training (OPI 1+)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sfqc",
+    "qualification:us-basic-airborne",
+    "qualification:us-solt"
+   ],
    "qualification_refs": [
     "us-sfqc",
     "us-sere-c",
@@ -653,6 +697,12 @@
      "Basic Airborne Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sf-prep",
+    "qualification:us-sfas",
+    "qualification:us-sfqc",
+    "qualification:us-basic-airborne"
+   ],
    "qualification_refs": [
     "us-sf-prep",
     "us-sfas",
@@ -723,6 +773,13 @@
      "Waterborne Infiltration Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sf-mac",
+    "qualification:us-cdqc",
+    "qualification:us-cdsc",
+    "qualification:us-cdmt",
+    "qualification:us-wic"
+   ],
    "qualification_refs": [
     "us-cdqc",
     "us-cdsc",
@@ -805,6 +862,13 @@
      "MFF Instructor Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-basic-airborne",
+    "qualification:us-mffpc",
+    "qualification:us-mffjm",
+    "qualification:us-atic",
+    "qualification:us-mffic"
+   ],
    "qualification_refs": [
     "us-basic-airborne",
     "us-mffpc",
@@ -880,6 +944,11 @@
      "Static-line jumpmaster"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sfqc",
+    "qualification:us-cgsoc",
+    "qualification:us-jumpmaster"
+   ],
    "qualification_refs": [
     "us-sfqc",
     "us-cgsoc",
@@ -945,6 +1014,10 @@
      "Prior SFOD-A command"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sfqc",
+    "qualification:us-sfqc"
+   ],
    "qualification_refs": [
     "us-sfqc"
    ],
@@ -1006,6 +1079,10 @@
      "Prior service as ODA assistant detachment commander"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sfwottc",
+    "qualification:us-sfwottc"
+   ],
    "qualification_refs": [
     "us-sfwottc"
    ],
@@ -1071,6 +1148,11 @@
      "Two or more SF advanced skills"
     ]
    },
+   "reference_keys": [
+    "qualification:us-smc",
+    "qualification:us-jumpmaster",
+    "qualification:us-arsof-advanced-skills"
+   ],
    "qualification_refs": [
     "us-smc",
     "us-jumpmaster",
@@ -1136,6 +1218,10 @@
      "Static-line or MFF jumpmaster"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sfqc",
+    "qualification:us-jumpmaster"
+   ],
    "qualification_refs": [
     "us-jumpmaster",
     "us-mffjm"
@@ -1204,6 +1290,11 @@
      "ILE / JPME"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sfqc",
+    "qualification:us-army-cap",
+    "qualification:us-cgsoc"
+   ],
    "qualification_refs": [
     "us-sfqc",
     "us-cgsoc"
@@ -1272,6 +1363,11 @@
      "Static-line or MFF jumpmaster"
     ]
    },
+   "reference_keys": [
+    "qualification:us-smc",
+    "qualification:us-smc",
+    "qualification:us-jumpmaster"
+   ],
    "qualification_refs": [
     "us-smc",
     "us-jumpmaster",
@@ -1339,6 +1435,11 @@
      "Current foreign language proficiency"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sfwottc",
+    "qualification:us-sfwoac",
+    "qualification:us-dlpt"
+   ],
    "qualification_refs": [
     "us-sfwottc"
    ],
@@ -1404,6 +1505,11 @@
      "Instructor courses (CFDIC, EIC)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sfqc",
+    "qualification:us-sfqc",
+    "qualification:us-cfdic"
+   ],
    "qualification_refs": [
     "us-cfdic",
     "us-eic"
@@ -1480,6 +1586,10 @@
      "Basic Airborne Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-rasp-1",
+    "qualification:us-basic-airborne"
+   ],
    "qualification_refs": [
     "us-rasp-1",
     "us-basic-airborne"
@@ -1556,6 +1666,11 @@
      "Basic Airborne Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-rasp-1",
+    "qualification:us-ranger-school",
+    "qualification:us-basic-airborne"
+   ],
    "qualification_refs": [
     "us-rasp-1",
     "us-ranger-school",
@@ -1629,6 +1744,11 @@
      "Advanced Leader Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-rasp-1",
+    "qualification:us-ranger-school",
+    "qualification:us-alc"
+   ],
    "qualification_refs": [
     "us-rasp-1",
     "us-ranger-school",
@@ -1702,6 +1822,11 @@
      "Senior Leader Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-rasp-2",
+    "qualification:us-ranger-school",
+    "qualification:us-slc"
+   ],
    "qualification_refs": [
     "us-rasp-2",
     "us-ranger-school",
@@ -1771,6 +1896,11 @@
      "Basic Airborne Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-rasp-2",
+    "qualification:us-ranger-school",
+    "qualification:us-basic-airborne"
+   ],
    "qualification_refs": [
     "us-rasp-2",
     "us-ranger-school",
@@ -1844,6 +1974,11 @@
      "Secret clearance eligibility"
     ]
    },
+   "reference_keys": [
+    "qualification:us-rasp-2",
+    "qualification:us-ranger-school",
+    "qualification:us-clearance-secret"
+   ],
    "qualification_refs": [
     "us-rasp-2",
     "us-ranger-school"
@@ -1916,6 +2051,11 @@
      "Master Leader Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-rasp-2",
+    "qualification:us-ranger-school",
+    "qualification:us-mlc"
+   ],
    "qualification_refs": [
     "us-rasp-2",
     "us-ranger-school",
@@ -1985,6 +2125,11 @@
      "Basic Airborne Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-rasp-1",
+    "qualification:us-ranger-school",
+    "qualification:us-basic-airborne"
+   ],
    "qualification_refs": [
     "us-rasp-1",
     "us-rasp-2",
@@ -2057,6 +2202,11 @@
      "RASP"
     ]
    },
+   "reference_keys": [
+    "qualification:us-socm",
+    "qualification:us-nremt",
+    "qualification:us-rasp-1"
+   ],
    "qualification_refs": [
     "us-socm",
     "us-nremt",
@@ -2130,6 +2280,11 @@
      "JTAC qualification (NCOs)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-13f-ait",
+    "qualification:us-rasp-1",
+    "qualification:us-jtac"
+   ],
    "qualification_refs": [
     "us-rasp-1",
     "us-jtac"
@@ -2196,6 +2351,10 @@
      "Basic Airborne Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-rasp-1",
+    "qualification:us-basic-airborne"
+   ],
    "qualification_refs": [
     "us-rasp-1",
     "us-basic-airborne"
@@ -2260,6 +2419,12 @@
      "DLAB 85 or higher"
     ]
    },
+   "reference_keys": [
+    "qualification:us-poas",
+    "qualification:us-poqc",
+    "qualification:us-basic-airborne",
+    "qualification:us-dlab"
+   ],
    "qualification_refs": [
     "us-poas",
     "us-poqc",
@@ -2335,6 +2500,11 @@
      "Senior Leader Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-poqc",
+    "qualification:us-jumpmaster",
+    "qualification:us-slc"
+   ],
    "qualification_refs": [
     "us-poqc",
     "us-jumpmaster",
@@ -2406,6 +2576,11 @@
      "Advanced skill / functional courses"
     ]
    },
+   "reference_keys": [
+    "qualification:us-smc",
+    "qualification:us-jumpmaster",
+    "qualification:us-arsof-advanced-skills"
+   ],
    "qualification_refs": [
     "us-smc",
     "us-jsofsea",
@@ -2479,6 +2654,11 @@
      "Basic Airborne Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-poas",
+    "qualification:us-poqc",
+    "qualification:us-basic-airborne"
+   ],
    "qualification_refs": [
     "us-poas",
     "us-poqc",
@@ -2552,6 +2732,11 @@
      "Basic Airborne Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-caas",
+    "qualification:us-caqc",
+    "qualification:us-basic-airborne"
+   ],
    "qualification_refs": [
     "us-caas",
     "us-caqc",
@@ -2623,6 +2808,12 @@
      "Basic Airborne Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-caas",
+    "qualification:us-sof-blc",
+    "qualification:us-caqc",
+    "qualification:us-basic-airborne"
+   ],
    "qualification_refs": [
     "us-caas",
     "us-sof-blc",
@@ -2693,6 +2884,11 @@
      "Basic Airborne Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-caas",
+    "qualification:us-caqc",
+    "qualification:us-basic-airborne"
+   ],
    "qualification_refs": [
     "us-caas",
     "us-caqc",
@@ -2762,6 +2958,11 @@
      "Civil Affairs Qualification Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-caas",
+    "qualification:us-socm",
+    "qualification:us-caqc"
+   ],
    "qualification_refs": [
     "us-caas",
     "us-socm",
@@ -2835,6 +3036,12 @@
      "Joint Targeting Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-35f-ait",
+    "qualification:us-basic-airborne",
+    "qualification:us-ranger-school",
+    "qualification:us-joint-targeting"
+   ],
    "qualification_refs": [
     "us-basic-airborne",
     "us-ranger-school"
@@ -2905,6 +3112,11 @@
      "Basic Airborne Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-35m-ait",
+    "qualification:us-dlpt",
+    "qualification:us-basic-airborne"
+   ],
    "qualification_refs": [
     "us-basic-airborne"
    ],
@@ -2970,6 +3182,11 @@
      "Top secret clearance"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-35n-ait",
+    "qualification:us-basic-airborne",
+    "qualification:us-clearance-ts"
+   ],
    "qualification_refs": [
     "us-basic-airborne"
    ],
@@ -3035,6 +3252,11 @@
      "Basic Airborne Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-35p-ait",
+    "qualification:us-dliflc",
+    "qualification:us-basic-airborne"
+   ],
    "qualification_refs": [
     "us-dliflc",
     "us-basic-airborne"
@@ -3101,6 +3323,10 @@
      "Basic Airborne Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-signal-ait",
+    "qualification:us-basic-airborne"
+   ],
    "qualification_refs": [
     "us-basic-airborne"
    ],
@@ -3172,6 +3398,11 @@
      "Partial 18D Special Forces medical course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-68w-ait",
+    "qualification:us-basic-airborne",
+    "qualification:us-sf-medical-sergeant"
+   ],
    "qualification_refs": [
     "us-basic-airborne",
     "us-sf-medical-sergeant"
@@ -3244,6 +3475,13 @@
      "ASI K7 – SOA MH-60 (Assault) Pilot"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-pic",
+    "qualification:us-160-green-platoon",
+    "qualification:us-160-bmq",
+    "qualification:us-160-bmq",
+    "qualification:us-160-bmq"
+   ],
    "qualification_refs": [
     "us-160-green-platoon",
     "us-160-bmq"
@@ -3314,6 +3552,11 @@
      "ASI K8 – SOA MH-60 DAP Pilot"
     ]
    },
+   "reference_keys": [
+    "qualification:us-160-bmq",
+    "qualification:us-160-bmq",
+    "qualification:us-160-bmq"
+   ],
    "qualification_refs": [
     "us-160-bmq"
    ],
@@ -3383,6 +3626,13 @@
      "ASI K6 – MH-47 Pilot (SOA units)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-160-green-platoon",
+    "qualification:us-160-bmq",
+    "qualification:us-160-bmq",
+    "qualification:us-160-fmq",
+    "qualification:us-160-bmq"
+   ],
    "qualification_refs": [
     "us-160-green-platoon",
     "us-160-bmq"
@@ -3459,6 +3709,12 @@
      "ASI K3 – SOA MH-6 (Assault) Pilot"
     ]
    },
+   "reference_keys": [
+    "qualification:us-160-green-platoon",
+    "qualification:us-160-bmq",
+    "qualification:us-160-bmq",
+    "qualification:us-160-bmq"
+   ],
    "qualification_refs": [
     "us-160-green-platoon",
     "us-160-bmq"
@@ -3531,6 +3787,12 @@
      "ASI K2 – SOA AH-6 (Attack) Pilot"
     ]
    },
+   "reference_keys": [
+    "qualification:us-160-green-platoon",
+    "qualification:us-160-bmq",
+    "qualification:us-160-bmq",
+    "qualification:us-160-bmq"
+   ],
    "qualification_refs": [
     "us-160-green-platoon",
     "us-160-bmq"
@@ -3601,6 +3863,13 @@
      "Aircraft BMQ"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-avn-bolc",
+    "qualification:us-army-pic",
+    "qualification:us-clearance-ts",
+    "qualification:us-160-green-platoon",
+    "qualification:us-160-bmq"
+   ],
    "qualification_refs": [
     "us-160-green-platoon",
     "us-160-bmq"
@@ -3671,6 +3940,11 @@
      "Officer Combat Skills (Green Platoon)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-avn-bolc",
+    "qualification:us-army-avccc",
+    "qualification:us-160-green-platoon"
+   ],
    "qualification_refs": [
     "us-160-green-platoon"
    ],
@@ -3738,6 +4012,10 @@
      "Flight Lead evaluation"
     ]
    },
+   "reference_keys": [
+    "qualification:us-160-fmq",
+    "qualification:us-160-flight-lead"
+   ],
    "qualification_refs": [
     "us-160-fmq"
    ],
@@ -3803,6 +4081,10 @@
      "Instructor Pilot Course (e.g. A/MH-6M IPC, 23 days)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-160-fmq",
+    "qualification:us-army-ipc"
+   ],
    "qualification_refs": [
     "us-160-fmq"
    ],
@@ -3874,6 +4156,10 @@
      "Rated SOA aviator"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-mtp",
+    "qualification:us-160-bmq"
+   ],
    "billets": {
     "fr": [
      "CW3 : officier maintenance armement (MH-60/MH-47)",
@@ -3944,6 +4230,11 @@
      "Maintenance Management Course (MMC)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-pic",
+    "qualification:us-army-avccc",
+    "qualification:us-army-avn-mmc"
+   ],
    "billets": {
     "fr": [
      "Commandant de compagnie de soutien aviation ARSOA : MAJ"
@@ -4014,6 +4305,13 @@
      "Dunker (water egress) qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-160-green-platoon",
+    "qualification:us-160-maintainer",
+    "qualification:us-160-nrcm",
+    "qualification:us-160-nrcm",
+    "qualification:us-160-nrcm"
+   ],
    "qualification_refs": [
     "us-160-green-platoon",
     "us-160-nrcm"
@@ -4090,6 +4388,12 @@
      "Door gunnery qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-160-green-platoon",
+    "qualification:us-160-maintainer",
+    "qualification:us-160-nrcm",
+    "qualification:us-160-nrcm"
+   ],
    "qualification_refs": [
     "us-160-green-platoon",
     "us-160-nrcm"
@@ -4160,6 +4464,11 @@
      "Green Platoon"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-15u-ait",
+    "qualification:us-160-nrcm",
+    "qualification:us-160-green-platoon"
+   ],
    "qualification_refs": [
     "us-160-nrcm",
     "us-160-green-platoon"
@@ -4232,6 +4541,11 @@
      "NRCM Standardization Instructor course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-160-nrcm",
+    "qualification:us-160-nrcm",
+    "qualification:us-160-nrcm"
+   ],
    "qualification_refs": [
     "us-160-nrcm"
    ],
@@ -4305,6 +4619,12 @@
      "Fully Mission Qualified Flight Medic"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-68w-ait",
+    "qualification:us-socm",
+    "qualification:us-160-soamic",
+    "qualification:us-160-fmq"
+   ],
    "qualification_refs": [
     "us-socm",
     "us-160-fmq"
@@ -4375,6 +4695,11 @@
      "SOF Gray Eagle course (20 days)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-15w-ait",
+    "qualification:us-160-green-platoon",
+    "qualification:us-160-sof-gray-eagle"
+   ],
    "qualification_refs": [
     "us-160-green-platoon"
    ],
@@ -4448,6 +4773,11 @@
      "Officer Combat Skills (Green Platoon)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-15w-ait",
+    "qualification:us-army-awobc",
+    "qualification:us-160-green-platoon"
+   ],
    "qualification_refs": [
     "us-160-green-platoon"
    ],
@@ -4511,6 +4841,9 @@
      "Night Stalker (Green Platoon graduate)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-160-green-platoon"
+   ],
    "qualification_refs": [
     "us-160-green-platoon"
    ],
@@ -4586,6 +4919,10 @@
      "NCO professional military education"
     ]
    },
+   "reference_keys": [
+    "qualification:us-160-green-platoon",
+    "qualification:us-smc"
+   ],
    "qualification_refs": [
     "us-160-green-platoon"
    ],
@@ -4655,6 +4992,11 @@
      "AC-130J aircraft qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-commissioning",
+    "qualification:us-af-upt",
+    "qualification:us-afsoc-aircrew-qual"
+   ],
    "qualification_refs": [
     "us-af-upt",
     "us-afsoc-aircrew-qual"
@@ -4733,6 +5075,11 @@
      "AC-130J aircraft qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-commissioning",
+    "qualification:us-af-uct",
+    "qualification:us-afsoc-aircrew-qual"
+   ],
    "qualification_refs": [
     "us-af-uct",
     "us-afsoc-aircrew-qual"
@@ -4813,6 +5160,12 @@
      "AC-130J qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-bmt",
+    "qualification:us-af-aircrew-fundamentals",
+    "qualification:us-af-sma",
+    "qualification:us-afsoc-aircrew-qual"
+   ],
    "qualification_refs": [
     "us-af-aircrew-fundamentals",
     "us-af-sma",
@@ -4890,6 +5243,10 @@
      "MC-130J aircraft qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-upt",
+    "qualification:us-afsoc-aircrew-qual"
+   ],
    "qualification_refs": [
     "us-af-upt",
     "us-afsoc-aircrew-qual"
@@ -4962,6 +5319,10 @@
      "MC-130J mission qualification training"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-uct",
+    "qualification:us-afsoc-aircrew-qual"
+   ],
    "qualification_refs": [
     "us-af-uct",
     "us-afsoc-aircrew-qual"
@@ -5034,6 +5395,12 @@
      "MC-130J qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-bmt",
+    "qualification:us-af-aircrew-fundamentals",
+    "qualification:us-af-sma",
+    "qualification:us-afsoc-aircrew-qual"
+   ],
    "qualification_refs": [
     "us-af-aircrew-fundamentals",
     "us-af-sma",
@@ -5107,6 +5474,10 @@
      "CV-22B aircraft qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-upt",
+    "qualification:us-afsoc-aircrew-qual"
+   ],
    "qualification_refs": [
     "us-af-upt",
     "us-afsoc-aircrew-qual"
@@ -5183,6 +5554,12 @@
      "CV-22 qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-bmt",
+    "qualification:us-af-aircrew-fundamentals",
+    "qualification:us-af-sma",
+    "qualification:us-afsoc-aircrew-qual"
+   ],
    "qualification_refs": [
     "us-af-aircrew-fundamentals",
     "us-af-sma",
@@ -5252,6 +5629,10 @@
      "U-28A aircraft qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-upt",
+    "qualification:us-afsoc-u28-qual"
+   ],
    "qualification_refs": [
     "us-af-upt"
    ],
@@ -5323,6 +5704,10 @@
      "U-28A qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-uct",
+    "qualification:us-afsoc-u28-qual"
+   ],
    "qualification_refs": [
     "us-af-uct"
    ],
@@ -5398,6 +5783,12 @@
      "Survival schools"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-1a8x2",
+    "qualification:us-af-acct",
+    "qualification:us-afsoc-aircrew-qual",
+    "qualification:us-af-sere"
+   ],
    "qualification_refs": [
     "us-af-sere"
    ],
@@ -5477,6 +5868,11 @@
      "MQ-9 qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-commissioning",
+    "qualification:us-af-urt",
+    "qualification:us-af-mq9-qual"
+   ],
    "billets": {
     "fr": [
      "Pilote évaluateur / commandant de mission d'exercice"
@@ -5543,6 +5939,11 @@
      "MQ-9 qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-bmt",
+    "qualification:us-af-rpa-sensor",
+    "qualification:us-af-mq9-qual"
+   ],
    "qualification_refs": [
     "us-af-rpa-sensor"
    ],
@@ -5608,6 +6009,11 @@
      "Region-specific language training"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-caamqc",
+    "qualification:us-af-caamqc",
+    "qualification:us-dliflc"
+   ],
    "qualification_refs": [
     "us-af-caamqc"
    ],
@@ -5679,6 +6085,10 @@
      "Evaluator / instructor pilot (for some mission commanders)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-afsoc-ac-upgrade",
+    "qualification:us-af-ip-ep"
+   ],
    "billets": {
     "fr": [
      "Commandant de bord (par sortie)",
@@ -5759,6 +6169,16 @@
      "Pararescue Apprentice Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-sw-as",
+    "qualification:us-af-zulu",
+    "qualification:us-af-combat-dive",
+    "qualification:us-basic-airborne",
+    "qualification:us-mffpc",
+    "qualification:us-sere-c",
+    "qualification:us-af-pj-paramedic",
+    "qualification:us-af-pj-apprentice"
+   ],
    "qualification_refs": [
     "us-af-sw-as",
     "us-af-zulu",
@@ -5843,6 +6263,17 @@
      "Special Tactics Training (Hurlburt Field)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-sw-as",
+    "qualification:us-af-zulu",
+    "qualification:us-af-predive",
+    "qualification:us-basic-airborne",
+    "qualification:us-mffpc",
+    "qualification:us-sere-c",
+    "qualification:us-af-atc",
+    "qualification:us-af-cct-apprentice",
+    "qualification:us-af-st-training"
+   ],
    "qualification_refs": [
     "us-af-sw-as",
     "us-af-zulu",
@@ -5932,6 +6363,15 @@
      "Initial Certification Course Phase 2 (Strike Phase)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-sw-as",
+    "qualification:us-af-zulu",
+    "qualification:us-af-tacp-apprentice",
+    "qualification:us-basic-airborne",
+    "qualification:us-sere-c",
+    "qualification:us-af-tacp-icc",
+    "qualification:us-af-tacp-icc"
+   ],
    "qualification_refs": [
     "us-af-sw-as",
     "us-af-zulu",
@@ -6012,6 +6452,16 @@
      "Special Tactics Training (Hurlburt Field)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-sw-as",
+    "qualification:us-af-zulu",
+    "qualification:us-af-predive",
+    "qualification:us-basic-airborne",
+    "qualification:us-mffpc",
+    "qualification:us-sere-c",
+    "qualification:us-af-sr-apprentice",
+    "qualification:us-af-st-training"
+   ],
    "qualification_refs": [
     "us-af-sw-as",
     "us-af-zulu",
@@ -6090,6 +6540,13 @@
      "SSBI clearance"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-commissioning",
+    "qualification:us-af-swo-as",
+    "qualification:us-af-cct-apprentice",
+    "qualification:us-af-sw-medical",
+    "qualification:us-clearance-ts"
+   ],
    "qualification_refs": [
     "us-af-cct-apprentice"
    ],
@@ -6165,6 +6622,13 @@
      "SSBI clearance"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-commissioning",
+    "qualification:us-af-swo-as",
+    "qualification:us-jtac",
+    "qualification:us-af-sw-medical",
+    "qualification:us-clearance-ts"
+   ],
    "qualification_refs": [
     "us-jtac"
    ],
@@ -6240,6 +6704,16 @@
      "CRO course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-commissioning",
+    "qualification:us-af-cro",
+    "qualification:us-af-combat-dive",
+    "qualification:us-basic-airborne",
+    "qualification:us-mffpc",
+    "qualification:us-af-sere",
+    "qualification:us-af-cro",
+    "qualification:us-af-cro"
+   ],
    "qualification_refs": [
     "us-af-sw-as",
     "us-af-combat-dive",
@@ -6314,6 +6788,11 @@
      "Secret clearance"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-sere-specialist",
+    "qualification:us-af-sere-specialist",
+    "qualification:us-clearance-secret"
+   ],
    "qualification_refs": [
     "us-af-sere-specialist"
    ],
@@ -6375,6 +6854,10 @@
      "JTAC certification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-tacp-icc",
+    "qualification:us-jtac"
+   ],
    "qualification_refs": [
     "us-jtac"
    ],
@@ -6440,6 +6923,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Chief enlisted manager d'un Special Tactics Squadron",
@@ -6494,6 +6978,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Surintendant des opérations d'un Special Tactics Squadron"
@@ -6550,6 +7035,9 @@
      "Combat controller (1Z2X1)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-af-cct-apprentice"
+   ],
    "billets": {
     "fr": [
      "Sous-officier responsable du flight contrôle de combat",
@@ -6608,6 +7096,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Technicien de maintenance radio attaché à une équipe Special Tactics",
@@ -6674,6 +7163,13 @@
      "Marine Corps Combatant Diver Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-as",
+    "qualification:us-marsoc-itc",
+    "qualification:us-sere-c",
+    "qualification:us-basic-airborne",
+    "qualification:us-usmc-combatant-diver"
+   ],
    "qualification_refs": [
     "us-marsoc-as",
     "us-marsoc-itc",
@@ -6751,6 +7247,11 @@
      "Team Commander's Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-as",
+    "qualification:us-marsoc-itc",
+    "qualification:us-marsoc-tcc"
+   ],
    "qualification_refs": [
     "us-marsoc-as",
     "us-marsoc-itc"
@@ -6819,6 +7320,10 @@
      "Team Commander's Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-tcc",
+    "qualification:us-marsoc-tcc"
+   ],
    "billets": {
     "fr": [
      "MSOT (14 Marines) : 1 commandant d'équipe (capitaine)"
@@ -6883,6 +7388,9 @@
      "0372 MOS"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-itc"
+   ],
    "billets": {
     "fr": [
      "MSOT (14 Marines) : 1 team chief (master sergeant)"
@@ -6943,6 +7451,9 @@
      "0372 MOS"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-itc"
+   ],
    "billets": {
     "fr": [
      "Chef des opérations d'équipe, MSOT"
@@ -6999,6 +7510,9 @@
      "0372 MOS"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-itc"
+   ],
    "billets": {
     "fr": [
      "MSOT : 2 éléments tactiques, chacun commandé par un chef d'élément (gunnery sergeant)"
@@ -7059,6 +7573,9 @@
      "0370 MOS"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-tcc"
+   ],
    "billets": {
     "fr": [
      "MSOC (4 MSOT) : commandant en second"
@@ -7119,6 +7636,9 @@
      "Former Marine Raider team chief"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-itc"
+   ],
    "billets": {
     "fr": [
      "Sous-officier conseiller du Training and Exercise Group du Raider Regiment (exemple de poste antérieur)"
@@ -7181,6 +7701,12 @@
      "JTAC certification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-sof-level1",
+    "qualification:us-marsoc-stc",
+    "qualification:us-sere-c",
+    "qualification:us-jtac"
+   ],
    "qualification_refs": [
     "us-marsoc-soffc",
     "us-sere-c",
@@ -7256,6 +7782,12 @@
      "MOS-specific communications course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-sof-level1",
+    "qualification:us-marsoc-stc",
+    "qualification:us-sere-c",
+    "qualification:us-usmc-comm-school"
+   ],
    "qualification_refs": [
     "us-marsoc-soffc",
     "us-sere-c"
@@ -7322,6 +7854,10 @@
      "SERE (Level C)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-sof-level1",
+    "qualification:us-sere-c"
+   ],
    "qualification_refs": [
     "us-sere-c"
    ],
@@ -7389,6 +7925,11 @@
      "SERE (Level C)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-sof-level1",
+    "qualification:us-marsoc-stc",
+    "qualification:us-sere-c"
+   ],
    "qualification_refs": [
     "us-marsoc-soffc",
     "us-sere-c"
@@ -7453,6 +7994,11 @@
      "Multi-Disciplined Intelligence Operator Course (MDIOC)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-soffc",
+    "qualification:us-sere-c",
+    "qualification:us-marsoc-mdioc"
+   ],
    "qualification_refs": [
     "us-marsoc-soffc",
     "us-sere-c",
@@ -7524,6 +8070,11 @@
      "Multi-Disciplined Intelligence Operator Course (MDIOC)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-soffc",
+    "qualification:us-sere-c",
+    "qualification:us-marsoc-mdioc"
+   ],
    "qualification_refs": [
     "us-marsoc-soffc",
     "us-sere-c",
@@ -7595,6 +8146,11 @@
      "Multi-Disciplined Intelligence Operator Course (MDIOC)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-soffc",
+    "qualification:us-sere-c",
+    "qualification:us-marsoc-mdioc"
+   ],
    "qualification_refs": [
     "us-marsoc-soffc",
     "us-sere-c",
@@ -7666,6 +8222,11 @@
      "Multi-Disciplined Intelligence Operator Course (MDIOC)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-marsoc-soffc",
+    "qualification:us-sere-c",
+    "qualification:us-marsoc-mdioc"
+   ],
    "qualification_refs": [
     "us-marsoc-soffc",
     "us-sere-c",
@@ -7729,6 +8290,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -7793,6 +8355,13 @@
      "SEAL Trident"
     ]
    },
+   "reference_keys": [
+    "qualification:us-nsw-orientation",
+    "qualification:us-buds",
+    "qualification:us-basic-airborne",
+    "qualification:us-sqt",
+    "qualification:us-sqt"
+   ],
    "qualification_refs": [
     "us-nsw-orientation",
     "us-buds",
@@ -7874,6 +8443,12 @@
      "SEAL Trident"
     ]
    },
+   "reference_keys": [
+    "qualification:us-nsw-officer-selection",
+    "qualification:us-buds",
+    "qualification:us-sqt",
+    "qualification:us-sqt"
+   ],
    "qualification_refs": [
     "us-buds",
     "us-sqt"
@@ -7952,6 +8527,11 @@
      "Annual NSW officer selection board"
     ]
    },
+   "reference_keys": [
+    "qualification:us-navy-commissioning",
+    "qualification:us-nsw-officer-selection",
+    "qualification:us-nsw-officer-selection"
+   ],
    "billets": {
     "fr": [
      "Officier stagiaire dans le cursus BUD/S et SQT"
@@ -8016,6 +8596,11 @@
      "SEAL NEC O26A"
     ]
    },
+   "reference_keys": [
+    "qualification:us-nsw-lpo-course",
+    "qualification:us-nsw-lpo-course",
+    "qualification:us-sqt"
+   ],
    "qualification_refs": [
     "us-sqt"
    ],
@@ -8081,6 +8666,10 @@
      "Squad LPO milestone (O26L)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-nsw-plc",
+    "qualification:us-nsw-lpo-course"
+   ],
    "billets": {
     "fr": [
      "Peloton SEAL : 1 chef de peloton aux côtés de l'officier commandant"
@@ -8143,6 +8732,10 @@
      "Platoon LCPO milestone (O26C)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-nsw-tlc",
+    "qualification:us-nsw-plc"
+   ],
    "billets": {
     "fr": [
      "État-major de task unit : major (E-8) aux côtés du commandant de task unit"
@@ -8205,6 +8798,10 @@
      "SEAL Trident"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sqt",
+    "qualification:us-sqt"
+   ],
    "qualification_refs": [
     "us-sqt"
    ],
@@ -8274,6 +8871,10 @@
      "Prior platoon command"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sqt",
+    "qualification:us-nsw-plc"
+   ],
    "billets": {
     "fr": [
      "État-major de task unit : commandant (O-4), major (E-8), officier opérations/ciblage, LPO/chef opérations"
@@ -8340,6 +8941,10 @@
      "Executive officer tour"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sqt",
+    "qualification:us-nwc-cns"
+   ],
    "billets": {
     "fr": [
      "Triade de commandement : commandant, commandant en second, command master chief"
@@ -8406,6 +9011,10 @@
      "JSOF Senior Enlisted Academy or Navy Senior Enlisted Academy"
     ]
    },
+   "reference_keys": [
+    "qualification:us-nsw-tlc",
+    "qualification:us-jsofsea"
+   ],
    "qualification_refs": [
     "us-jsofsea"
    ],
@@ -8475,6 +9084,10 @@
      "NSW sniper course (NEC O19A)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sqt",
+    "qualification:us-nsw-sniper"
+   ],
    "qualification_refs": [
     "us-sqt",
     "us-nsw-sniper"
@@ -8545,6 +9158,11 @@
      "TCCC"
     ]
    },
+   "reference_keys": [
+    "qualification:us-socm",
+    "qualification:us-socm",
+    "qualification:us-tccc"
+   ],
    "qualification_refs": [
     "us-socm",
     "us-tccc"
@@ -8619,6 +9237,11 @@
      "JTAC Evaluator (NEC 836A)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-jtac",
+    "qualification:us-jtac-instructor",
+    "qualification:us-jtac"
+   ],
    "qualification_refs": [
     "us-jtac",
     "us-jtac-instructor"
@@ -8685,6 +9308,10 @@
      "Explosive Breaching RSO (EXBR)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-nsw-breacher",
+    "qualification:us-nsw-breacher"
+   ],
    "qualification_refs": [
     "us-nsw-breacher"
    ],
@@ -8750,6 +9377,10 @@
      "SEAL NEC O26A"
     ]
    },
+   "reference_keys": [
+    "qualification:us-nsw-communicator",
+    "qualification:us-sqt"
+   ],
    "qualification_refs": [
     "us-sqt"
    ],
@@ -8817,6 +9448,11 @@
      "SDV Diving Supervisor (SDSP)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-nsw-lcs",
+    "qualification:us-nsw-dive-supervisor",
+    "qualification:us-nsw-dive-supervisor"
+   ],
    "qualification_refs": [
     "us-nsw-dive-supervisor"
    ],
@@ -8884,6 +9520,11 @@
      "SDV Diving Supervisor"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sqt",
+    "qualification:us-sdv",
+    "qualification:us-sdv"
+   ],
    "qualification_refs": [
     "us-sqt",
     "us-sdv",
@@ -8955,6 +9596,10 @@
      "Advanced Special Operations Techniques (NEC O22A)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-sqt",
+    "qualification:us-asotc"
+   ],
    "qualification_refs": [
     "us-sqt",
     "us-swcc-cqt",
@@ -9026,6 +9671,12 @@
      "SWCC insignia"
     ]
    },
+   "reference_keys": [
+    "qualification:us-nsw-orientation",
+    "qualification:us-swcc-bcs",
+    "qualification:us-swcc-cqt",
+    "qualification:us-swcc-cqt"
+   ],
    "qualification_refs": [
     "us-nsw-orientation",
     "us-swcc-bcs",
@@ -9111,6 +9762,12 @@
      "SWCC 302(E) Tactical Engineer"
     ]
    },
+   "reference_keys": [
+    "qualification:us-swcc-cqt",
+    "qualification:us-swcc-302",
+    "qualification:us-swcc-302",
+    "qualification:us-swcc-302"
+   ],
    "billets": {
     "fr": [
      "Équipage d'embarcation : tireur, transmetteur, navigateur, mécanicien"
@@ -9175,6 +9832,10 @@
      "NSW LPO Course"
     ]
    },
+   "reference_keys": [
+    "qualification:us-swcc-senior-master",
+    "qualification:us-nsw-lpo-course"
+   ],
    "qualification_refs": [
     "us-swcc-senior-master"
    ],
@@ -9242,6 +9903,11 @@
      "Detachment LPO milestone (O52L)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-swcc-senior-master",
+    "qualification:us-nsw-plc",
+    "qualification:us-nsw-lpo-course"
+   ],
    "qualification_refs": [
     "us-swcc-senior-master"
    ],
@@ -9309,6 +9975,11 @@
      "SWCC Master"
     ]
    },
+   "reference_keys": [
+    "qualification:us-nsw-tlc",
+    "qualification:us-nsw-plc",
+    "qualification:us-swcc-senior-master"
+   ],
    "qualification_refs": [
     "us-swcc-senior-master"
    ],
@@ -9378,6 +10049,12 @@
      "EOD Tactical Training and Basic Airborne"
     ]
    },
+   "reference_keys": [
+    "qualification:us-navy-eod",
+    "qualification:us-navy-eod",
+    "qualification:us-navy-eod",
+    "qualification:us-basic-airborne"
+   ],
    "qualification_refs": [
     "us-navy-eod",
     "us-basic-airborne"
@@ -9452,6 +10129,11 @@
      "First Class Diver (later)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-navy-diver-prep",
+    "qualification:us-navy-diver-2c",
+    "qualification:us-navy-diver-1c"
+   ],
    "qualification_refs": [
     "us-navy-diver-2c",
     "us-navy-diver-1c"
@@ -9522,6 +10204,10 @@
      "Information Warfare (IW) qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:us-navy-is-a",
+    "qualification:us-navy-eiws"
+   ],
    "billets": {
     "fr": [
      "Renfort renseignement d'escadron / task unit SEAL, état-major N2 NSW"
@@ -9588,6 +10274,12 @@
      "Reconnaissance Independent Duty Corpsman (L02A, optional)"
     ]
    },
+   "reference_keys": [
+    "qualification:us-navy-hm-a",
+    "qualification:us-fmst",
+    "qualification:us-socm",
+    "qualification:us-soidc"
+   ],
    "qualification_refs": [
     "us-fmst",
     "us-socm",
@@ -9659,6 +10351,9 @@
      "SEAL officer (113X) with prior team command"
     ]
    },
+   "reference_keys": [
+    "qualification:us-nwc-cns"
+   ],
    "billets": {
     "fr": [
      "Commandement de groupe : commodore (CV) et command master chief de groupe"
@@ -9727,6 +10422,9 @@
      "SEAL officer (113X) with prior team, group or joint task force command"
     ]
    },
+   "reference_keys": [
+    "qualification:us-ndu-capstone"
+   ],
    "billets": {
     "fr": [
      "État-major NSWC : commandant (contre-amiral) et Force Master Chief"
@@ -9787,6 +10485,9 @@
      "Four-star general or flag officer"
     ]
    },
+   "reference_keys": [
+    "qualification:us-ndu-capstone"
+   ],
    "billets": {
     "fr": [
      "Groupe de commandement : commandant, adjoint, vice-commandant, sous-officier de commandement, chef d'état-major"
@@ -9847,6 +10548,9 @@
      "Senior SOF enlisted leader (E-9) with joint experience"
     ]
    },
+   "reference_keys": [
+    "qualification:us-jsofsea"
+   ],
    "billets": {
     "fr": [
      "Groupe de commandement USSOCOM ; CSEL équivalents à la NSWC (Force Master Chief), dans les composantes et les TSOC"
@@ -9907,6 +10611,9 @@
      "Colonel to lieutenant general / vice admiral"
     ]
    },
+   "reference_keys": [
+    "qualification:us-army-war-college"
+   ],
    "billets": {
     "fr": [
      "Groupe de commandement du TSOC : commandant et sous-officier de commandement",

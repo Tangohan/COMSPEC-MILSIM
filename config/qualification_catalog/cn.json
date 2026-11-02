@@ -1,0 +1,2065 @@
+{
+  "pack": "cn",
+  "country": "CN",
+  "official_lang": "zh",
+  "label": {
+    "fr": "Brevets et qualifications militaires chinois (APL, Police armée du peuple)",
+    "en": "Chinese military badges and qualifications (PLA, People’s Armed Police)"
+  },
+  "disclaimer": {
+    "fr": "Qualification de jeu inspirée d’une qualification ou d’une formation militaire chinoise réelle, sans valeur réelle.",
+    "en": "In-game qualification inspired by a real Chinese military qualification or course, with no real-world value."
+  },
+  "issuer": {
+    "name": "Armée populaire de libération (référence)",
+    "short_name": "APL",
+    "description": {
+      "fr": "Émetteur de référence des qualifications importées du catalogue chinois quand l’école n’est pas précisée : qualifications de jeu, sans valeur réelle.",
+      "en": "Reference issuer for qualifications imported from the Chinese catalogue when no school is specified: in-game qualifications, with no real-world value."
+    }
+  },
+  "compiled_at": "2026-11-02",
+  "sources_note": {
+    "fr": "Compilé le 2 novembre 2026 à partir des sources publiques citées par le catalogue d’emplois chinois (presse officielle chinoise, 中国军网, Wikipédia en chinois et en anglais) ; textes reformulés, rien de classifié ; un champ vide signifie qu’aucune source ouverte ne le précise.",
+    "en": "Compiled on 2 November 2026 from the public sources cited by the Chinese job catalogue (Chinese official press, China Military Online, Chinese and English Wikipedia); texts are paraphrased, nothing classified; an empty field means no open source specifies it."
+  },
+  "entries": [
+    {
+      "id": "cn-officer-initial-education",
+      "code": "CN-OFF-INIT",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation initiale d’officier (académies militaires de l’APL)",
+        "en": "Initial officer education (PLA military academies)"
+      },
+      "official_name": "生长军官学历教育",
+      "short_name": "生长军官",
+      "description": {
+        "fr": "Cursus de formation initiale des « officiers de croissance » (生长军官) dans les académies militaires de l’APL, ouvert aux lycéens admis au concours national et aux militaires du rang sélectionnés. Il débouche sur le grade de sous-lieutenant ou de lieutenant et sur les premiers postes de chef de section ou d’adjoint au commandant de compagnie.",
+        "en": "Initial education of “grown” officers (生长军官) at the PLA military academies, open to secondary-school graduates admitted through the national entrance examination and to selected enlisted personnel. It leads to the rank of second lieutenant or lieutenant and to first assignments as platoon leader or deputy company commander."
+      },
+      "body": {
+        "fr": "Académies militaires de l’APL (军队院校)",
+        "en": "PLA military academies (军队院校)"
+      },
+      "issuer": {
+        "name": "Académies militaires de l’APL",
+        "short_name": "APL"
+      },
+      "reference": {
+        "fr": "Système d’éducation des officiers de l’APL ; grades d’officier subalterne (少尉 à 上尉)",
+        "en": "PLA officer education system; junior officer ranks (少尉 to 上尉)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E5%86%9B%E5%AE%98",
+          "title": "维基百科：军官"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Ranks_of_the_People%27s_Liberation_Army",
+          "title": "Wikipedia : Ranks of the People’s Liberation Army"
+        },
+        {
+          "url": "https://mil.news.sina.com.cn/2018-05-09/doc-ihaichqy8057672.shtml",
+          "title": "Sina Military (2018) : brigade d’opérations spéciales « 南国利剑 »"
+        },
+        {
+          "url": "https://news.cgtn.com/news/3d3d674e784d444d34457a6333566d54/index.html",
+          "title": "CGTN : Jiaolong Commando"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-sof-academy",
+      "code": "CN-ASOA",
+      "category": "sof",
+      "name": {
+        "fr": "Diplôme de l’Académie des opérations spéciales de l’Armée de terre (陆军特种作战学院)",
+        "en": "Army Special Operations Academy graduate (陆军特种作战学院)"
+      },
+      "official_name": "陆军特种作战学院生长军官学历教育",
+      "short_name": "陆军特种作战学院",
+      "description": {
+        "fr": "Formation initiale des officiers des forces spéciales de l’Armée de terre dispensée par l’Académie des opérations spéciales de l’Armée de terre, à Guangzhou. Les élèves-officiers y sont admis par le concours d’entrée des académies militaires puis suivent un cursus combinant études supérieures et entraînement aux techniques des forces spéciales.",
+        "en": "Initial education of PLA Army special forces officers at the Army Special Operations Academy in Guangzhou. Cadets are admitted through the military academies entrance examination and follow a curriculum combining higher education with training in special forces techniques."
+      },
+      "body": {
+        "fr": "Académie des opérations spéciales de l’Armée de terre (Guangzhou)",
+        "en": "Army Special Operations Academy (Guangzhou)"
+      },
+      "issuer": {
+        "name": "中国人民解放军陆军特种作战学院",
+        "short_name": "陆军特种作战学院"
+      },
+      "reference": {
+        "fr": "Page de l’Académie des opérations spéciales de l’Armée de terre (陆军特种作战学院)",
+        "en": "Army Special Operations Academy (陆军特种作战学院) page"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E4%B8%AD%E5%9B%BD%E4%BA%BA%E6%B0%91%E8%A7%A3%E6%94%BE%E5%86%9B%E9%99%86%E5%86%9B%E7%89%B9%E7%A7%8D%E4%BD%9C%E6%88%98%E5%AD%A6%E9%99%A2",
+          "title": "维基百科：中国人民解放军陆军特种作战学院"
+        },
+        {
+          "url": "https://warontherocks.com/chinese-special-operations-forces-not-like-back-at-bragg/",
+          "title": "War on the Rocks : Chinese special operations forces"
+        },
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "Xinhua (news.cn, 2022) : brigade d’opérations spéciales du 74e groupe d’armées"
+        }
+      ]
+    },
+    {
+      "id": "cn-nco-course",
+      "code": "CN-NCO",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation de sous-officier (士官任职培训)",
+        "en": "NCO training course (士官任职培训)"
+      },
+      "official_name": "士官任职培训",
+      "short_name": "士官任职培训",
+      "description": {
+        "fr": "Formation de prise de fonction des sous-officiers (士官) de l’APL, suivie dans les écoles et centres de formation de sous-officiers avant ou lors de l’accession aux grades de 下士, 中士 et au-delà. Elle prépare au commandement d’un groupe ou d’une équipe et à la spécialité technique du poste.",
+        "en": "Assignment training for PLA non-commissioned officers (士官), taken at NCO schools and training centres before or upon promotion to 下士, 中士 and above. It prepares NCOs to lead a squad or team and to master the technical speciality of the post."
+      },
+      "body": {
+        "fr": "Écoles de sous-officiers de l’APL (士官学校)",
+        "en": "PLA NCO schools (士官学校)"
+      },
+      "issuer": {
+        "name": "Écoles de sous-officiers de l’APL",
+        "short_name": "APL"
+      },
+      "reference": {
+        "fr": "Système de sous-officiers de l’APL (士官制度) ; grades 下士 à 军士长",
+        "en": "PLA NCO system (士官制度); ranks 下士 to 军士长"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E5%A3%AB%E5%AE%98",
+          "title": "维基百科：士官"
+        },
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E4%B8%AD%E5%9B%BD%E4%BA%BA%E6%B0%91%E8%A7%A3%E6%94%BE%E5%86%9B%E5%86%9B%E8%A1%94",
+          "title": "维基百科：中国人民解放军军衔"
+        },
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "Xinhua (news.cn, 2022) : brigade d’opérations spéciales du 74e groupe d’armées"
+        },
+        {
+          "url": "https://www.chinanews.com.cn/m/mil/2017/07-14/8278187.shtml",
+          "title": "Chinanews (2017) : brigade du 71e groupe d’armées"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-command-college-course",
+      "code": "CN-ACC",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation de commandement et d’état-major (Collège de commandement de l’Armée de terre)",
+        "en": "Command and staff training (Army Command College)"
+      },
+      "official_name": "陆军指挥学院任职培训",
+      "short_name": "陆军指挥学院",
+      "description": {
+        "fr": "Formation de prise de fonction des officiers de l’Armée de terre appelés aux postes de commandement et d’état-major de bataillon et de brigade, dispensée par le Collège de commandement de l’Armée de terre à Nankin. Elle porte sur la planification, le commandement interarmes et le travail d’état-major.",
+        "en": "Assignment training for PLA Army officers moving to battalion- and brigade-level command and staff posts, delivered by the Army Command College in Nanjing. It covers planning, combined-arms command and staff work."
+      },
+      "body": {
+        "fr": "Collège de commandement de l’Armée de terre (Nankin)",
+        "en": "Army Command College (Nanjing)"
+      },
+      "issuer": {
+        "name": "中国人民解放军陆军指挥学院",
+        "short_name": "陆军指挥学院"
+      },
+      "reference": {
+        "fr": "Page du Collège de commandement de l’Armée de terre (陆军指挥学院)",
+        "en": "Army Command College (陆军指挥学院) page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation initiale d’officier"
+        ],
+        "en": [
+          "Initial officer education"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E4%B8%AD%E5%9B%BD%E4%BA%BA%E6%B0%91%E8%A7%A3%E6%94%BE%E5%86%9B%E9%99%86%E5%86%9B%E6%8C%87%E6%8C%A5%E5%AD%A6%E9%99%A2",
+          "title": "维基百科：中国人民解放军陆军指挥学院"
+        },
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "Xinhua (news.cn, 2022) : brigade d’opérations spéciales du 74e groupe d’armées"
+        },
+        {
+          "url": "https://www.xinhuanet.com/politics/2021-08/05/c_1127732866.htm",
+          "title": "Xinhua (2021) : brigade d’opérations spéciales « 雪枫 » du 76e groupe d’armées"
+        }
+      ]
+    },
+    {
+      "id": "cn-ndu-senior-command",
+      "code": "CN-NDU",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation supérieure de commandement (Université de la défense nationale)",
+        "en": "Senior command education (National Defence University)"
+      },
+      "official_name": "国防大学任职教育",
+      "short_name": "国防大学",
+      "description": {
+        "fr": "Formation de prise de fonction des officiers supérieurs (colonels et colonels supérieurs) appelés au commandement de brigade et aux postes de niveau supérieur, dispensée par l’Université de la défense nationale de l’APL à Pékin. Elle porte sur les opérations interarmées et le commandement de grandes unités.",
+        "en": "Assignment education for senior officers (colonels and senior colonels) called to brigade command and higher posts, delivered by the PLA National Defence University in Beijing. It focuses on joint operations and the command of large formations."
+      },
+      "body": {
+        "fr": "Université de la défense nationale de l’APL (Pékin)",
+        "en": "PLA National Defence University (Beijing)"
+      },
+      "issuer": {
+        "name": "中国人民解放军国防大学",
+        "short_name": "国防大学"
+      },
+      "reference": {
+        "fr": "Page de l’Université de la défense nationale de l’APL (国防大学)",
+        "en": "PLA National Defence University (国防大学) page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de commandement et d’état-major"
+        ],
+        "en": [
+          "Command and staff training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E4%B8%AD%E5%9B%BD%E4%BA%BA%E6%B0%91%E8%A7%A3%E6%94%BE%E5%86%9B%E5%9B%BD%E9%98%B2%E5%A4%A7%E5%AD%A6",
+          "title": "维基百科：中国人民解放军国防大学"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/PLA_National_Defence_University",
+          "title": "Wikipedia : PLA National Defence University"
+        },
+        {
+          "url": "https://www.chinanews.com.cn/m/mil/2017/07-14/8278187.shtml",
+          "title": "Chinanews (2017) : brigade du 71e groupe d’armées"
+        }
+      ]
+    },
+    {
+      "id": "cn-political-officer-course",
+      "code": "CN-POL-OFF",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation d’officier politique (政治工作干部任职培训)",
+        "en": "Political officer training (政治工作干部任职培训)"
+      },
+      "official_name": "政治工作干部任职培训",
+      "short_name": "政工干部培训",
+      "description": {
+        "fr": "Formation des cadres du travail politique de l’APL (instructeurs politiques de compagnie, directeurs du travail politique, commissaires politiques), notamment au Collège politique de l’Université de la défense nationale à Shanghai. Elle prépare à l’encadrement idéologique, au moral et à la discipline des unités.",
+        "en": "Training of PLA political work cadres (company political instructors, political work directors, political commissars), notably at the Political College of the National Defence University in Shanghai. It prepares them for the ideological leadership, morale and discipline of units."
+      },
+      "body": {
+        "fr": "Collège politique de l’Université de la défense nationale (Shanghai)",
+        "en": "Political College of the National Defence University (Shanghai)"
+      },
+      "issuer": {
+        "name": "中国人民解放军国防大学政治学院",
+        "short_name": "国防大学政治学院"
+      },
+      "reference": {
+        "fr": "Système des commissaires politiques et instructeurs politiques de l’APL",
+        "en": "PLA political commissar and political instructor system"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E4%B8%AD%E5%9B%BD%E4%BA%BA%E6%B0%91%E8%A7%A3%E6%94%BE%E5%86%9B%E5%9B%BD%E9%98%B2%E5%A4%A7%E5%AD%A6%E6%94%BF%E6%B2%BB%E5%AD%A6%E9%99%A2",
+          "title": "维基百科：中国人民解放军国防大学政治学院"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Political_commissar",
+          "title": "Wikipedia : Political commissar"
+        },
+        {
+          "url": "https://www.chinanews.com.cn/m/mil/2017/07-14/8278187.shtml",
+          "title": "Chinanews (2017) : brigade du 71e groupe d’armées"
+        },
+        {
+          "url": "https://news.ifeng.com/c/7fjkg3pHzZq",
+          "title": "ifeng : Falcon Commando Unit (猎鹰突击队)"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-sof-selection",
+      "code": "CN-SOF-SEL",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection et formation de base des forces spéciales de l’Armée de terre (特种兵选拔集训)",
+        "en": "PLA Army special forces selection and basic training (特种兵选拔集训)"
+      },
+      "official_name": "特种兵选拔集训",
+      "short_name": "特种兵选拔",
+      "description": {
+        "fr": "Sélection et entraînement intensif des candidats aux brigades d’opérations spéciales de l’Armée de terre : endurance, tir, combat rapproché, parachutisme, nage et plongée, survie. Les admis reçoivent une formation polyvalente qui leur permet de tenir plusieurs spécialités au sein d’une équipe d’opérations spéciales.",
+        "en": "Selection and intensive training of candidates for PLA Army special operations brigades: endurance, shooting, close combat, parachuting, swimming and diving, survival. Those admitted receive cross-training that lets them cover several specialities within a special operations team."
+      },
+      "body": {
+        "fr": "Brigades d’opérations spéciales de l’Armée de terre (陆军特战旅)",
+        "en": "PLA Army special operations brigades (陆军特战旅)"
+      },
+      "issuer": {
+        "name": "Brigades d’opérations spéciales de l’Armée de terre",
+        "short_name": "陆军特战旅"
+      },
+      "reference": {
+        "fr": "Reportages officiels (Xinhua, China Daily) sur la sélection des brigades d’opérations spéciales",
+        "en": "Official features (Xinhua, China Daily) on special operations brigade selection"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "Xinhua (news.cn, 2022) : brigade d’opérations spéciales du 74e groupe d’armées"
+        },
+        {
+          "url": "https://mil.news.sina.com.cn/2018-05-09/doc-ihaichqy8057672.shtml",
+          "title": "Sina Military (2018) : brigade d’opérations spéciales « 南国利剑 »"
+        },
+        {
+          "url": "https://china.chinadaily.com.cn/a/201906/07/WS5cfa3f22a31011d294daa7c0.html",
+          "title": "China Daily (2019) : entraînement des forces spéciales"
+        },
+        {
+          "url": "https://jamestown.org/pla-special-operations-forces-command-training-and-future-direction/",
+          "title": "Jamestown Foundation : PLA SOF command, training and future direction"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Liberation_Army_Special_Operations_Forces",
+          "title": "Wikipedia : PLA Special Operations Forces"
+        }
+      ]
+    },
+    {
+      "id": "cn-sihui-instructor",
+      "code": "CN-SIHUI",
+      "category": "sof",
+      "name": {
+        "fr": "Instructeur « quatre savoir-faire » (四会教练员)",
+        "en": "“Four-capable” instructor (四会教练员)"
+      },
+      "official_name": "四会教练员",
+      "short_name": "四会教练员",
+      "description": {
+        "fr": "Qualification d’instructeur de l’APL attribuée aux cadres et soldats expérimentés capables d’expliquer, de démontrer, d’enseigner et de mener le travail de cohésion (会讲、会做、会教、会做思想工作). Dans les brigades d’opérations spéciales, elle est détenue par les opérateurs confirmés chargés des cours et des évaluations.",
+        "en": "PLA instructor qualification awarded to experienced leaders and soldiers able to explain, demonstrate, teach and conduct morale work (会讲、会做、会教、会做思想工作). In special operations brigades it is held by experienced operators in charge of courses and evaluations."
+      },
+      "body": {
+        "fr": "Unités de l’APL",
+        "en": "PLA units"
+      },
+      "issuer": {
+        "name": "Armée populaire de libération",
+        "short_name": "APL"
+      },
+      "reference": {
+        "fr": "Reportages officiels sur les instructeurs des brigades d’opérations spéciales (Xinhua)",
+        "en": "Official features on special operations brigade instructors (Xinhua)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Sélection des forces spéciales"
+        ],
+        "en": [
+          "Special forces selection"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "instructor",
+      "sources": [
+        {
+          "url": "https://www.xinhuanet.com/politics/2021-08/05/c_1127732866.htm",
+          "title": "Xinhua (2021) : brigade d’opérations spéciales « 雪枫 » du 76e groupe d’armées"
+        },
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "Xinhua (news.cn, 2022) : brigade d’opérations spéciales du 74e groupe d’armées"
+        }
+      ]
+    },
+    {
+      "id": "cn-sniper-training",
+      "code": "CN-SNIPER",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Formation de tireur d’élite (狙击手集训)",
+        "en": "Sniper training (狙击手集训)"
+      },
+      "official_name": "狙击手集训",
+      "short_name": "狙击手集训",
+      "description": {
+        "fr": "Stage de formation des tireurs d’élite et observateurs de l’APL et de la Police armée du peuple : tir de précision à longue distance, binôme tireur-observateur, camouflage, tir depuis plates-formes mobiles. Les tireurs confirmés participent aux compétitions et encadrent les stages suivants.",
+        "en": "Training course for PLA and People’s Armed Police snipers and spotters: long-range precision shooting, shooter-spotter pairing, camouflage, shooting from moving platforms. Experienced snipers take part in competitions and instruct subsequent courses."
+      },
+      "body": {
+        "fr": "APL et Police armée du peuple (集训队)",
+        "en": "PLA and People’s Armed Police (集训队)"
+      },
+      "issuer": {
+        "name": "Armée populaire de libération / Police armée du peuple",
+        "short_name": "APL / PAP"
+      },
+      "reference": {
+        "fr": "Reportages officiels sur la formation des tireurs d’élite (Xinhua, Global Times)",
+        "en": "Official features on sniper training (Xinhua, Global Times)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "Xinhua (news.cn, 2022) : brigade d’opérations spéciales du 74e groupe d’armées"
+        },
+        {
+          "url": "https://www.kankanews.com/detail/qMyE3DJ9Aw8",
+          "title": "Kankanews : tireurs d’élite du Corps des marines"
+        },
+        {
+          "url": "https://www.globaltimes.cn/content/1186610.shtml",
+          "title": "Global Times : PLA Airborne Corps training"
+        },
+        {
+          "url": "https://news.ifeng.com/c/7fjkg3pHzZq",
+          "title": "ifeng : Falcon Commando Unit (猎鹰突击队)"
+        },
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E7%8B%99%E5%87%BB%E6%89%8B",
+          "title": "维基百科：狙击手"
+        }
+      ]
+    },
+    {
+      "id": "cn-special-reconnaissance",
+      "code": "CN-SOF-SR",
+      "category": "sof",
+      "name": {
+        "fr": "Formation de reconnaissance spéciale (特种侦察)",
+        "en": "Special reconnaissance training (特种侦察)"
+      },
+      "official_name": "特种侦察训练",
+      "short_name": "特种侦察",
+      "description": {
+        "fr": "Formation des opérateurs et éclaireurs des brigades d’opérations spéciales à la reconnaissance en profondeur : infiltration, observation, tir de précision, désignation d’objectifs et guidage des feux. Elle s’appuie sur la formation de base des forces spéciales.",
+        "en": "Training of special operations brigade operators and scouts for deep reconnaissance: infiltration, observation, precision shooting, target designation and fire guidance. It builds on special forces basic training."
+      },
+      "body": {
+        "fr": "Armée de terre de l’APL (陆军)",
+        "en": "PLA Army (陆军)"
+      },
+      "issuer": {
+        "name": "Brigades d’opérations spéciales de l’Armée de terre",
+        "short_name": "陆军特战旅"
+      },
+      "reference": {
+        "fr": "Études ouvertes sur l’entraînement des forces spéciales de l’APL (Jamestown, War on the Rocks)",
+        "en": "Open-source studies of PLA special forces training (Jamestown, War on the Rocks)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Sélection des forces spéciales"
+        ],
+        "en": [
+          "Special forces selection"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://jamestown.org/pla-special-operations-forces-command-training-and-future-direction/",
+          "title": "Jamestown Foundation : PLA SOF command, training and future direction"
+        },
+        {
+          "url": "https://warontherocks.com/chinese-special-operations-forces-not-like-back-at-bragg/",
+          "title": "War on the Rocks : Chinese special operations forces"
+        },
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "Xinhua (news.cn, 2022) : brigade d’opérations spéciales du 74e groupe d’armées"
+        },
+        {
+          "url": "https://mil.news.sina.com.cn/2018-05-09/doc-ihaichqy8057672.shtml",
+          "title": "Sina Military (2018) : brigade d’opérations spéciales « 南国利剑 »"
+        }
+      ]
+    },
+    {
+      "id": "cn-combat-diver",
+      "code": "CN-FROGMAN",
+      "category": "maritime",
+      "name": {
+        "fr": "Formation de nageur de combat (蛙人)",
+        "en": "Combat diver training (蛙人)"
+      },
+      "official_name": "蛙人训练",
+      "short_name": "蛙人",
+      "description": {
+        "fr": "Formation des nageurs de combat de l’APL (forces spéciales de l’Armée de terre, Jiaolong, nageurs de combat de la Marine) : nage armée de longue distance, plongée de combat, infiltration sous-marine, y compris la sortie de sous-marin. Elle exige une condition physique et une aptitude médicale spécifiques.",
+        "en": "Training of PLA combat divers (Army special forces, Jiaolong, Navy frogmen): long-distance armed swimming, combat diving, underwater infiltration, including submarine lock-out. It requires specific physical fitness and medical clearance."
+      },
+      "body": {
+        "fr": "Armée populaire de libération (APL)",
+        "en": "People’s Liberation Army (PLA)"
+      },
+      "issuer": {
+        "name": "Armée populaire de libération",
+        "short_name": "APL"
+      },
+      "reference": {
+        "fr": "Reportages officiels sur les nageurs de combat (China Daily, Xinhua, Global Times)",
+        "en": "Official features on combat divers (China Daily, Xinhua, Global Times)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://china.chinadaily.com.cn/a/201906/07/WS5cfa3f22a31011d294daa7c0.html",
+          "title": "China Daily (2019) : entraînement des forces spéciales"
+        },
+        {
+          "url": "https://www.xinhuanet.com/mil/2022-12/27/c_1211712585.htm",
+          "title": "Xinhua (2022) : Jiaolong Commando"
+        },
+        {
+          "url": "https://www.chinadaily.com.cn/a/201904/23/WS5cbeacdca3104842260b7c93.html",
+          "title": "China Daily (2019) : Jiaolong Commando"
+        },
+        {
+          "url": "https://www.globaltimes.cn/page/202505/1333264.shtml",
+          "title": "Global Times (2025) : Navy frogmen, Northern Theater Command"
+        },
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E8%9B%99%E4%BA%BA",
+          "title": "维基百科：蛙人"
+        }
+      ]
+    },
+    {
+      "id": "cn-demolition",
+      "code": "CN-DEMO",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Formation destruction et effraction (爆破)",
+        "en": "Demolition and breaching training (爆破)"
+      },
+      "official_name": "爆破训练",
+      "short_name": "爆破",
+      "description": {
+        "fr": "Formation des spécialistes de la destruction des équipes d’opérations spéciales : emploi des explosifs, effraction, raid et sabotage d’objectifs. Elle fait partie des spécialités tenues au sein de l’équipe.",
+        "en": "Training of special operations team demolition specialists: use of explosives, breaching, raids and sabotage of targets. It is one of the specialities held within the team."
+      },
+      "body": {
+        "fr": "Armée de terre de l’APL (陆军)",
+        "en": "PLA Army (陆军)"
+      },
+      "issuer": {
+        "name": "Brigades d’opérations spéciales de l’Armée de terre",
+        "short_name": "陆军特战旅"
+      },
+      "reference": {
+        "fr": "Reportages officiels et études ouvertes sur les spécialités des forces spéciales",
+        "en": "Official features and open-source studies on special forces specialities"
+      },
+      "prerequisites": {
+        "fr": [
+          "Sélection des forces spéciales"
+        ],
+        "en": [
+          "Special forces selection"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "Xinhua (news.cn, 2022) : brigade d’opérations spéciales du 74e groupe d’armées"
+        },
+        {
+          "url": "https://jamestown.org/?p=12835",
+          "title": "Jamestown Foundation : PLA special operations forces"
+        }
+      ]
+    },
+    {
+      "id": "cn-infantry-heavy-weapons",
+      "code": "CN-HVY-WPN",
+      "category": "fires",
+      "name": {
+        "fr": "Formation armes lourdes d’infanterie (步兵重武器)",
+        "en": "Infantry heavy weapons training (步兵重武器)"
+      },
+      "official_name": "步兵重武器训练",
+      "short_name": "重武器",
+      "description": {
+        "fr": "Formation au service des armes lourdes d’infanterie (mitrailleuses lourdes, lance-grenades automatiques, lance-roquettes, mortiers légers) au sein des équipes d’opérations spéciales.",
+        "en": "Training in crewing infantry heavy weapons (heavy machine guns, automatic grenade launchers, rocket launchers, light mortars) within special operations teams."
+      },
+      "body": {
+        "fr": "Armée de terre de l’APL (陆军)",
+        "en": "PLA Army (陆军)"
+      },
+      "issuer": {
+        "name": "Brigades d’opérations spéciales de l’Armée de terre",
+        "short_name": "陆军特战旅"
+      },
+      "reference": {
+        "fr": "Reportage Xinhua sur la brigade d’opérations spéciales du 74e groupe d’armées",
+        "en": "Xinhua feature on the 74th Group Army special operations brigade"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "Xinhua (news.cn, 2022) : brigade d’opérations spéciales du 74e groupe d’armées"
+        }
+      ]
+    },
+    {
+      "id": "cn-close-quarters-combat",
+      "code": "CN-CQB",
+      "category": "sof",
+      "name": {
+        "fr": "Formation au combat rapproché (近距离战斗)",
+        "en": "Close quarters combat training (近距离战斗)"
+      },
+      "official_name": "近距离战斗训练",
+      "short_name": "近战",
+      "description": {
+        "fr": "Formation des groupes d’assaut au combat en milieu clos : progression en bâtiment, nettoyage de pièces, tir à courte distance et combat au corps à corps.",
+        "en": "Training of assault groups in close quarters battle: movement through buildings, room clearing, short-range shooting and hand-to-hand combat."
+      },
+      "body": {
+        "fr": "Armée populaire de libération (APL)",
+        "en": "People’s Liberation Army (PLA)"
+      },
+      "issuer": {
+        "name": "Armée populaire de libération",
+        "short_name": "APL"
+      },
+      "reference": {
+        "fr": "Reportages officiels (Xinhua) sur l’entraînement des groupes d’assaut",
+        "en": "Official features (Xinhua) on assault group training"
+      },
+      "prerequisites": {
+        "fr": [
+          "Sélection des forces spéciales"
+        ],
+        "en": [
+          "Special forces selection"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "Xinhua (news.cn, 2022) : brigade d’opérations spéciales du 74e groupe d’armées"
+        },
+        {
+          "url": "https://www.xinhuanet.com/mil/2022-12/27/c_1211712585.htm",
+          "title": "Xinhua (2022) : Jiaolong Commando"
+        }
+      ]
+    },
+    {
+      "id": "cn-combat-shooting",
+      "code": "CN-COMBAT-SHOOT",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Formation au tir de combat (战斗射击)",
+        "en": "Combat shooting training (战斗射击)"
+      },
+      "official_name": "战斗射击训练",
+      "short_name": "战斗射击",
+      "description": {
+        "fr": "Formation au tir en conditions de combat : tir en mouvement, transitions d’armes, tir depuis véhicules, embarcations et hélicoptères. Elle est pratiquée par les cellules de feu et les mitrailleurs des forces spéciales et du Jiaolong.",
+        "en": "Training in shooting under combat conditions: shooting on the move, weapon transitions, shooting from vehicles, boats and helicopters. It is practised by special forces fire cells and Jiaolong machine gunners."
+      },
+      "body": {
+        "fr": "Armée populaire de libération (APL)",
+        "en": "People’s Liberation Army (PLA)"
+      },
+      "issuer": {
+        "name": "Armée populaire de libération",
+        "short_name": "APL"
+      },
+      "reference": {
+        "fr": "Reportages officiels sur l’entraînement au tir des forces spéciales",
+        "en": "Official features on special forces shooting training"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "Xinhua (news.cn, 2022) : brigade d’opérations spéciales du 74e groupe d’armées"
+        },
+        {
+          "url": "https://jamestown.org/pla-special-operations-forces-command-training-and-future-direction/",
+          "title": "Jamestown Foundation : PLA SOF command, training and future direction"
+        },
+        {
+          "url": "https://www.xinhuanet.com/mil/2022-12/27/c_1211712585.htm",
+          "title": "Xinhua (2022) : Jiaolong Commando"
+        },
+        {
+          "url": "https://www.globaltimes.cn/page/201704/1041778.shtml",
+          "title": "Global Times (2017) : PLA Navy special forces, Gulf of Aden escort"
+        }
+      ]
+    },
+    {
+      "id": "cn-uav-operator",
+      "code": "CN-UAV",
+      "category": "aviation",
+      "name": {
+        "fr": "Formation de télépilote de drone (无人机操作员)",
+        "en": "UAV operator training (无人机操作员)"
+      },
+      "official_name": "无人机操作员培训",
+      "short_name": "无人机操作员",
+      "description": {
+        "fr": "Formation des télépilotes de drones tactiques des unités de l’APL (forces spéciales, troupes aéroportées) : pilotage, reconnaissance, désignation d’objectifs et réglage des tirs.",
+        "en": "Training of tactical UAV operators in PLA units (special forces, airborne troops): piloting, reconnaissance, target designation and fire adjustment."
+      },
+      "body": {
+        "fr": "Armée populaire de libération (APL)",
+        "en": "People’s Liberation Army (PLA)"
+      },
+      "issuer": {
+        "name": "Armée populaire de libération",
+        "short_name": "APL"
+      },
+      "reference": {
+        "fr": "Études et reportages ouverts sur l’emploi des drones par les forces spéciales et aéroportées",
+        "en": "Open-source studies and features on UAV use by special and airborne forces"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://jamestown.org/pla-special-operations-forces-command-training-and-future-direction/",
+          "title": "Jamestown Foundation : PLA SOF command, training and future direction"
+        },
+        {
+          "url": "https://www.chinanews.com.cn/m/mil/2017/07-14/8278187.shtml",
+          "title": "Chinanews (2017) : brigade du 71e groupe d’armées"
+        },
+        {
+          "url": "https://www.globaltimes.cn/content/1186610.shtml",
+          "title": "Global Times : PLA Airborne Corps training"
+        }
+      ]
+    },
+    {
+      "id": "cn-parachute-training",
+      "code": "CN-PARA",
+      "category": "airborne",
+      "name": {
+        "fr": "Brevet de parachutiste (跳伞训练)",
+        "en": "Parachute qualification (跳伞训练)"
+      },
+      "official_name": "跳伞训练",
+      "short_name": "跳伞",
+      "description": {
+        "fr": "Formation au saut en parachute en automatique dispensée par le Corps aéroporté de l’Armée de l’air, qui forme aussi les parachutistes d’autres unités (forces spéciales de l’Armée de terre). Elle comprend l’instruction au sol, les sauts depuis avions de transport et l’emploi des équipements de largage.",
+        "en": "Static-line parachute training delivered by the Air Force Airborne Corps, which also trains parachutists from other units (Army special forces). It includes ground instruction, jumps from transport aircraft and the use of airdrop equipment."
+      },
+      "body": {
+        "fr": "Corps aéroporté de l’Armée de l’air de l’APL (空降兵军)",
+        "en": "PLA Air Force Airborne Corps (空降兵军)"
+      },
+      "issuer": {
+        "name": "中国人民解放军空降兵军",
+        "short_name": "空降兵军"
+      },
+      "reference": {
+        "fr": "Page du Corps aéroporté de l’APL ; reportages officiels sur l’entraînement au saut",
+        "en": "PLA Airborne Corps page; official features on jump training"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/content/1186610.shtml",
+          "title": "Global Times : PLA Airborne Corps training"
+        },
+        {
+          "url": "https://jamestown.org/pla-airborne-capabilities-and-paratrooper-doctrine-for-taiwan/",
+          "title": "Jamestown Foundation : PLA airborne capabilities and paratrooper doctrine"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Liberation_Army_Air_Force_Airborne_Corps",
+          "title": "Wikipedia : PLAAF Airborne Corps"
+        },
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E4%B8%AD%E5%9B%BD%E4%BA%BA%E6%B0%91%E8%A7%A3%E6%94%BE%E5%86%9B%E7%A9%BA%E9%99%8D%E5%85%B5%E5%86%9B",
+          "title": "维基百科：中国人民解放军空降兵军"
+        },
+        {
+          "url": "https://www.news.cn/politics/2023-04/25/c_1129564955.htm",
+          "title": "Xinhua (news.cn, 2023) : 8e compagnie « 南京路上好八连 »"
+        }
+      ]
+    },
+    {
+      "id": "cn-special-parachuting",
+      "code": "CN-PARA-SPEC",
+      "category": "airborne",
+      "name": {
+        "fr": "Parachutisme spécial : grande hauteur, voilure à caisson, saut en mer (特种跳伞)",
+        "en": "Special parachuting: high altitude, ram-air, water jumps (特种跳伞)"
+      },
+      "official_name": "特种跳伞训练",
+      "short_name": "特种跳伞",
+      "description": {
+        "fr": "Formation avancée au parachutisme des forces spéciales (Thunder God, Jiaolong) : sauts à grande hauteur, voilures à caisson (aile), sauts en mer avec récupération par embarcation. Elle s’adresse à des parachutistes déjà brevetés.",
+        "en": "Advanced parachute training for special forces (Thunder God, Jiaolong): high-altitude jumps, ram-air canopies, water jumps with boat recovery. It is open to already qualified parachutists."
+      },
+      "body": {
+        "fr": "Armée populaire de libération (APL)",
+        "en": "People’s Liberation Army (PLA)"
+      },
+      "issuer": {
+        "name": "Armée populaire de libération",
+        "short_name": "APL"
+      },
+      "reference": {
+        "fr": "Reportages officiels sur le parachutisme des forces spéciales (Xinhua, Global Times)",
+        "en": "Official features on special forces parachuting (Xinhua, Global Times)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation au saut en parachute"
+        ],
+        "en": [
+          "Basic parachute training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.xinhuanet.com/mil/2022-12/27/c_1211712585.htm",
+          "title": "Xinhua (2022) : Jiaolong Commando"
+        },
+        {
+          "url": "https://www.globaltimes.cn/page/202208/1272101.shtml",
+          "title": "Global Times (2022) : Thunder God commando"
+        }
+      ]
+    },
+    {
+      "id": "cn-airdrop-pilot",
+      "code": "CN-AIRDROP",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification de largage pour pilotes de transport (空投空降)",
+        "en": "Airdrop qualification for transport pilots (空投空降)"
+      },
+      "official_name": "空投空降飞行训练",
+      "short_name": "空投空降",
+      "description": {
+        "fr": "Qualification des équipages de la brigade d’aviation du Corps aéroporté (Y-5, Y-8, Y-12) au largage de parachutistes et de matériel.",
+        "en": "Qualification of Airborne Corps aviation brigade aircrews (Y-5, Y-8, Y-12) for dropping paratroopers and cargo."
+      },
+      "body": {
+        "fr": "Corps aéroporté de l’Armée de l’air de l’APL (空降兵军)",
+        "en": "PLA Air Force Airborne Corps (空降兵军)"
+      },
+      "issuer": {
+        "name": "中国人民解放军空降兵军",
+        "short_name": "空降兵军"
+      },
+      "reference": {
+        "fr": "Page du Corps aéroporté de l’APL ; étude Jamestown sur les capacités aéroportées",
+        "en": "PLA Airborne Corps page; Jamestown study on airborne capabilities"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://jamestown.org/pla-airborne-capabilities-and-paratrooper-doctrine-for-taiwan/",
+          "title": "Jamestown Foundation : PLA airborne capabilities and paratrooper doctrine"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Liberation_Army_Air_Force_Airborne_Corps",
+          "title": "Wikipedia : PLAAF Airborne Corps"
+        }
+      ]
+    },
+    {
+      "id": "cn-type-conversion",
+      "code": "CN-TYPE-CONV",
+      "category": "aviation",
+      "name": {
+        "fr": "Transformation sur type d’aéronef (改装训练)",
+        "en": "Aircraft type conversion (改装训练)"
+      },
+      "official_name": "改装训练",
+      "short_name": "改装训练",
+      "description": {
+        "fr": "Formation de transformation des pilotes de l’APL sur un nouveau type d’aéronef (hélicoptères Z-20, Z-8, Z-9, avions Y-8…), sanctionnée par l’autorisation de vol sur le type. Elle est conduite par les écoles d’aviation et les unités d’emploi.",
+        "en": "Conversion training of PLA pilots on a new aircraft type (Z-20, Z-8, Z-9 helicopters, Y-8 aircraft…), concluding with clearance to fly the type. It is conducted by aviation schools and operational units."
+      },
+      "body": {
+        "fr": "Écoles et unités d’aviation de l’APL",
+        "en": "PLA aviation schools and units"
+      },
+      "issuer": {
+        "name": "Armée populaire de libération",
+        "short_name": "APL"
+      },
+      "reference": {
+        "fr": "Études et reportages ouverts sur l’aviation de l’Armée de terre et du Corps aéroporté",
+        "en": "Open-source studies and features on Army and Airborne Corps aviation"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://jamestown.org/recent-developments-chinese-armys-helicopter-force/",
+          "title": "Jamestown Foundation : Chinese Army helicopter force"
+        },
+        {
+          "url": "https://www.globaltimes.cn/page/202105/1224703.shtml",
+          "title": "Global Times (2021) : air assault brigade, 83rd Group Army"
+        },
+        {
+          "url": "https://en.people.cn/n3/2025/0610/c90000-20325507.html",
+          "title": "People’s Daily Online (2025) : army aviation brigade"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Harbin_Z-20",
+          "title": "Wikipedia : Harbin Z-20"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Liberation_Army_Ground_Force_Aviation",
+          "title": "Wikipedia : PLA Ground Force Aviation"
+        }
+      ]
+    },
+    {
+      "id": "cn-attack-helicopter",
+      "code": "CN-ATK-HELO",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification pilote d’hélicoptère d’attaque (Z-10 / Z-19)",
+        "en": "Attack helicopter pilot qualification (Z-10 / Z-19)"
+      },
+      "official_name": "武装直升机改装训练",
+      "short_name": "武直改装",
+      "description": {
+        "fr": "Transformation des pilotes de l’aviation de l’Armée de terre sur hélicoptère d’attaque Z-10 ou de reconnaissance armée Z-19, en place avant ou arrière. L’Académie d’aviation de l’Armée de terre assure la formation initiale des pilotes d’hélicoptère.",
+        "en": "Conversion of PLA Army Aviation pilots to the Z-10 attack or Z-19 armed reconnaissance helicopter, in the front or rear seat. The Army Aviation Academy provides initial helicopter pilot training."
+      },
+      "body": {
+        "fr": "Aviation de l’Armée de terre de l’APL (陆军航空兵)",
+        "en": "PLA Army Aviation (陆军航空兵)"
+      },
+      "issuer": {
+        "name": "中国人民解放军陆军航空兵学院",
+        "short_name": "陆航学院"
+      },
+      "reference": {
+        "fr": "Page de l’Académie d’aviation de l’Armée de terre ; fiches Z-10 et Z-19",
+        "en": "Army Aviation Academy page; Z-10 and Z-19 entries"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://mil.huanqiu.com/article/4Omrr7Wf6Xz",
+          "title": "Huanqiu : équipe de voltige « 风雷 » (Z-10)"
+        },
+        {
+          "url": "https://jamestown.org/recent-developments-chinese-armys-helicopter-force/",
+          "title": "Jamestown Foundation : Chinese Army helicopter force"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/CAIC_Z-10",
+          "title": "Wikipedia : CAIC Z-10"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Harbin_Z-19",
+          "title": "Wikipedia : Harbin Z-19"
+        },
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E4%B8%AD%E5%9B%BD%E4%BA%BA%E6%B0%91%E8%A7%A3%E6%94%BE%E5%86%9B%E9%99%86%E5%86%9B%E8%88%AA%E7%A9%BA%E5%85%B5%E5%AD%A6%E9%99%A2",
+          "title": "维基百科：中国人民解放军陆军航空兵学院"
+        }
+      ]
+    },
+    {
+      "id": "cn-night-flying",
+      "code": "CN-NIGHT-FLT",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification vol de nuit (夜间飞行)",
+        "en": "Night flying qualification (夜间飞行)"
+      },
+      "official_name": "夜间飞行训练",
+      "short_name": "夜航",
+      "description": {
+        "fr": "Qualification des pilotes d’hélicoptère au vol de nuit, y compris sous jumelles de vision nocturne, pour les missions d’assaut aérien.",
+        "en": "Qualification of helicopter pilots for night flying, including with night vision goggles, for air assault missions."
+      },
+      "body": {
+        "fr": "Aviation de l’Armée de terre de l’APL (陆军航空兵)",
+        "en": "PLA Army Aviation (陆军航空兵)"
+      },
+      "issuer": {
+        "name": "Brigades d’aviation et d’assaut aérien de l’Armée de terre",
+        "short_name": "陆航旅"
+      },
+      "reference": {
+        "fr": "Reportage Global Times sur la brigade d’assaut aérien du 83e groupe d’armées",
+        "en": "Global Times feature on the 83rd Group Army air assault brigade"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/page/202105/1224703.shtml",
+          "title": "Global Times (2021) : air assault brigade, 83rd Group Army"
+        },
+        {
+          "url": "https://jamestown.org/recent-developments-chinese-armys-helicopter-force/",
+          "title": "Jamestown Foundation : Chinese Army helicopter force"
+        }
+      ]
+    },
+    {
+      "id": "cn-air-assault",
+      "code": "CN-AIR-ASLT",
+      "category": "airborne",
+      "name": {
+        "fr": "Formation héliportage et descente en corde (机降、索降)",
+        "en": "Helicopter insertion and fast-rope training (机降、索降)"
+      },
+      "official_name": "机降与索降训练",
+      "short_name": "机降索降",
+      "description": {
+        "fr": "Formation des troupes d’assaut aérien et des équipes d’abordage à l’embarquement en hélicoptère, au débarquement tactique et à la descente en corde lisse.",
+        "en": "Training of air assault troops and boarding teams in helicopter embarkation, tactical insertion and fast-roping."
+      },
+      "body": {
+        "fr": "Armée populaire de libération (APL)",
+        "en": "People’s Liberation Army (PLA)"
+      },
+      "issuer": {
+        "name": "Armée populaire de libération",
+        "short_name": "APL"
+      },
+      "reference": {
+        "fr": "Reportages officiels sur l’assaut aérien et l’abordage (Global Times)",
+        "en": "Official features on air assault and boarding (Global Times)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/page/202105/1224703.shtml",
+          "title": "Global Times (2021) : air assault brigade, 83rd Group Army"
+        },
+        {
+          "url": "https://jamestown.org/recent-developments-chinese-armys-helicopter-force/",
+          "title": "Jamestown Foundation : Chinese Army helicopter force"
+        },
+        {
+          "url": "https://www.globaltimes.cn/page/201704/1041778.shtml",
+          "title": "Global Times (2017) : PLA Navy special forces, Gulf of Aden escort"
+        }
+      ]
+    },
+    {
+      "id": "cn-amphibious-training",
+      "code": "CN-AMPHIB",
+      "category": "maritime",
+      "name": {
+        "fr": "Formation amphibie du Corps des marines (两栖作战训练)",
+        "en": "Marine Corps amphibious training (两栖作战训练)"
+      },
+      "official_name": "两栖作战训练",
+      "short_name": "两栖训练",
+      "description": {
+        "fr": "Formation de base des fusiliers marins chinois aux opérations amphibies : débarquement depuis navires et véhicules amphibies, nage, combat sur la plage et en zone littorale.",
+        "en": "Basic training of Chinese marines in amphibious operations: landing from ships and amphibious vehicles, swimming, beach and littoral combat."
+      },
+      "body": {
+        "fr": "Corps des marines de la Marine de l’APL (海军陆战队)",
+        "en": "PLA Navy Marine Corps (海军陆战队)"
+      },
+      "issuer": {
+        "name": "中国人民解放军海军陆战队",
+        "short_name": "海军陆战队"
+      },
+      "reference": {
+        "fr": "Page du Corps des marines de l’APL ; études Jamestown",
+        "en": "PLA Navy Marine Corps page; Jamestown studies"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://jamestown.org/program/the-chinese-navys-marine-corps-part-1-expansion-and-reorganization/",
+          "title": "Jamestown Foundation : The Chinese Navy’s Marine Corps, part 1"
+        },
+        {
+          "url": "https://jamestown.org/new-wine-into-new-wineskins-the-evolving-role-of-the-pla-navy-marine-corps-in-amphibious-warfare-and-other-mission-areas/",
+          "title": "Jamestown Foundation : evolving role of the PLAN Marine Corps"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Liberation_Army_Navy_Marine_Corps",
+          "title": "Wikipedia : PLA Navy Marine Corps"
+        },
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E4%B8%AD%E5%9B%BD%E4%BA%BA%E6%B0%91%E8%A7%A3%E6%94%BE%E5%86%9B%E6%B5%B7%E5%86%9B%E9%99%86%E6%88%98%E9%98%9F",
+          "title": "维基百科：中国人民解放军海军陆战队"
+        }
+      ]
+    },
+    {
+      "id": "cn-amphibious-vehicle-driver",
+      "code": "CN-AAV-DRV",
+      "category": "maritime",
+      "name": {
+        "fr": "Conducteur de véhicule blindé amphibie (两栖装甲车驾驶员)",
+        "en": "Amphibious armoured vehicle driver (两栖装甲车驾驶员)"
+      },
+      "official_name": "两栖装甲车驾驶员",
+      "short_name": "两栖车驾驶员",
+      "description": {
+        "fr": "Qualification de conduite des véhicules blindés amphibies du Corps des marines (famille ZBD-05/ZTD-05), à terre et en mer, y compris la mise à l’eau depuis les navires de débarquement.",
+        "en": "Driving qualification for Marine Corps amphibious armoured vehicles (ZBD-05/ZTD-05 family), on land and at sea, including launching from landing ships."
+      },
+      "body": {
+        "fr": "Corps des marines de la Marine de l’APL (海军陆战队)",
+        "en": "PLA Navy Marine Corps (海军陆战队)"
+      },
+      "issuer": {
+        "name": "中国人民解放军海军陆战队",
+        "short_name": "海军陆战队"
+      },
+      "reference": {
+        "fr": "Page du Corps des marines de l’APL ; études Jamestown",
+        "en": "PLA Navy Marine Corps page; Jamestown studies"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://jamestown.org/program/the-chinese-navys-marine-corps-part-1-expansion-and-reorganization/",
+          "title": "Jamestown Foundation : The Chinese Navy’s Marine Corps, part 1"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Liberation_Army_Navy_Marine_Corps",
+          "title": "Wikipedia : PLA Navy Marine Corps"
+        }
+      ]
+    },
+    {
+      "id": "cn-armoured-vehicle-commander",
+      "code": "CN-AFV-CDR",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Chef d’engin blindé (装甲车车长)",
+        "en": "Armoured vehicle commander (装甲车车长)"
+      },
+      "official_name": "装甲车车长",
+      "short_name": "车长",
+      "description": {
+        "fr": "Qualification de chef de char ou de véhicule blindé amphibie : commandement de l’équipage, conduite du tir et navigation à terre et en mer.",
+        "en": "Qualification as commander of an amphibious tank or armoured vehicle: crew command, fire control and navigation on land and at sea."
+      },
+      "body": {
+        "fr": "Corps des marines de la Marine de l’APL (海军陆战队)",
+        "en": "PLA Navy Marine Corps (海军陆战队)"
+      },
+      "issuer": {
+        "name": "中国人民解放军海军陆战队",
+        "short_name": "海军陆战队"
+      },
+      "reference": {
+        "fr": "Page du Corps des marines de l’APL ; études Jamestown",
+        "en": "PLA Navy Marine Corps page; Jamestown studies"
+      },
+      "prerequisites": {
+        "fr": [
+          "Conducteur de véhicule blindé amphibie"
+        ],
+        "en": [
+          "Amphibious armoured vehicle driver"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://jamestown.org/program/the-chinese-navys-marine-corps-part-1-expansion-and-reorganization/",
+          "title": "Jamestown Foundation : The Chinese Navy’s Marine Corps, part 1"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Liberation_Army_Navy_Marine_Corps",
+          "title": "Wikipedia : PLA Navy Marine Corps"
+        }
+      ]
+    },
+    {
+      "id": "cn-amphibious-recon",
+      "code": "CN-AMPH-RECON",
+      "category": "maritime",
+      "name": {
+        "fr": "Formation de reconnaissance amphibie (两栖侦察)",
+        "en": "Amphibious reconnaissance training (两栖侦察)"
+      },
+      "official_name": "两栖侦察训练",
+      "short_name": "两栖侦察",
+      "description": {
+        "fr": "Formation des éclaireurs du Corps des marines à la reconnaissance des plages et du littoral : infiltration par la mer, nage, observation et compte rendu avant un débarquement.",
+        "en": "Training of Marine Corps scouts in beach and littoral reconnaissance: sea infiltration, swimming, observation and reporting ahead of a landing."
+      },
+      "body": {
+        "fr": "Corps des marines de la Marine de l’APL (海军陆战队)",
+        "en": "PLA Navy Marine Corps (海军陆战队)"
+      },
+      "issuer": {
+        "name": "中国人民解放军海军陆战队",
+        "short_name": "海军陆战队"
+      },
+      "reference": {
+        "fr": "Étude Jamestown sur le rôle du Corps des marines de l’APL",
+        "en": "Jamestown study on the role of the PLAN Marine Corps"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation amphibie du Corps des marines"
+        ],
+        "en": [
+          "Marine Corps amphibious training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://jamestown.org/new-wine-into-new-wineskins-the-evolving-role-of-the-pla-navy-marine-corps-in-amphibious-warfare-and-other-mission-areas/",
+          "title": "Jamestown Foundation : evolving role of the PLAN Marine Corps"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Liberation_Army_Navy_Marine_Corps",
+          "title": "Wikipedia : PLA Navy Marine Corps"
+        }
+      ]
+    },
+    {
+      "id": "cn-deck-landing",
+      "code": "CN-DECK-LAND",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification appontage (舰面起降)",
+        "en": "Deck-landing qualification (舰面起降)"
+      },
+      "official_name": "舰面起降训练",
+      "short_name": "舰面起降",
+      "description": {
+        "fr": "Qualification des pilotes d’hélicoptère embarqués (Z-8, Z-9, Z-20J) à l’appontage et au décollage depuis les bâtiments de la Marine, de jour comme de nuit.",
+        "en": "Qualification of shipborne helicopter pilots (Z-8, Z-9, Z-20J) for landing on and taking off from Navy ships, by day and night."
+      },
+      "body": {
+        "fr": "Aviation navale de la Marine de l’APL",
+        "en": "PLA Navy aviation"
+      },
+      "issuer": {
+        "name": "中国人民解放军海军航空大学",
+        "short_name": "海军航空大学"
+      },
+      "reference": {
+        "fr": "Page de l’Université d’aviation navale ; études Jamestown et Global Times sur l’aviation du Corps des marines",
+        "en": "Naval Aviation University page; Jamestown and Global Times on Marine Corps aviation"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://jamestown.org/program/the-chinese-navys-marine-corps-part-1-expansion-and-reorganization/",
+          "title": "Jamestown Foundation : The Chinese Navy’s Marine Corps, part 1"
+        },
+        {
+          "url": "https://globaltimes.cn/page/202411/1322795.shtml",
+          "title": "Global Times (2024) : PLAN Marine Corps aviation"
+        },
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E4%B8%AD%E5%9B%BD%E4%BA%BA%E6%B0%91%E8%A7%A3%E6%94%BE%E5%86%9B%E6%B5%B7%E5%86%9B%E8%88%AA%E7%A9%BA%E5%A4%A7%E5%AD%A6",
+          "title": "维基百科：中国人民解放军海军航空大学"
+        }
+      ]
+    },
+    {
+      "id": "cn-jiaolong-selection",
+      "code": "CN-JIAOLONG-SEL",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection du Jiaolong (蛟龙突击队)",
+        "en": "Jiaolong selection (蛟龙突击队)"
+      },
+      "official_name": "蛟龙突击队选拔",
+      "short_name": "蛟龙选拔",
+      "description": {
+        "fr": "Sélection des opérateurs du Jiaolong, unité de forces spéciales du Corps des marines basée à Sanya (Hainan). Les candidats sont testés sur l’endurance, la nage, le tir et la résistance psychologique avant une formation aux opérations maritimes spéciales.",
+        "en": "Selection of operators for the Jiaolong, the Marine Corps special forces unit based in Sanya (Hainan). Candidates are tested on endurance, swimming, shooting and mental resilience before training in maritime special operations."
+      },
+      "body": {
+        "fr": "Corps des marines de la Marine de l’APL (海军陆战队)",
+        "en": "PLA Navy Marine Corps (海军陆战队)"
+      },
+      "issuer": {
+        "name": "蛟龙突击队",
+        "short_name": "蛟龙突击队"
+      },
+      "reference": {
+        "fr": "Reportages officiels sur le Jiaolong (CGTN, China Daily)",
+        "en": "Official features on the Jiaolong (CGTN, China Daily)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://news.cgtn.com/news/3d3d674e784d444d34457a6333566d54/index.html",
+          "title": "CGTN : Jiaolong Commando"
+        },
+        {
+          "url": "https://news.cgtn.com/news/35597a4d34637a6333566d54/index.html",
+          "title": "CGTN : Jiaolong Commando training"
+        },
+        {
+          "url": "https://www.chinadaily.com.cn/a/201904/23/WS5cbeacdca3104842260b7c93.html",
+          "title": "China Daily (2019) : Jiaolong Commando"
+        },
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E8%9B%9F%E9%BE%99%E7%AA%81%E5%87%BB%E9%98%9F",
+          "title": "维基百科：蛟龙突击队"
+        }
+      ]
+    },
+    {
+      "id": "cn-navy-boarding",
+      "code": "CN-BOARDING",
+      "category": "maritime",
+      "name": {
+        "fr": "Formation abordage et visite (登临检查)",
+        "en": "Boarding and search training (登临检查)"
+      },
+      "official_name": "登临检查训练",
+      "short_name": "登临检查",
+      "description": {
+        "fr": "Formation des forces spéciales de la Marine embarquées avec les groupes d’escorte du golfe d’Aden à l’abordage, la visite et la fouille de navires suspects, ainsi qu’à la reprise de navires détournés.",
+        "en": "Training of Navy special forces embarked with Gulf of Aden escort task forces in boarding, inspecting and searching suspect vessels, and retaking hijacked ships."
+      },
+      "body": {
+        "fr": "Forces spéciales de la Marine de l’APL",
+        "en": "PLA Navy special forces"
+      },
+      "issuer": {
+        "name": "Marine de l’APL",
+        "short_name": "Marine APL"
+      },
+      "reference": {
+        "fr": "Reportages Global Times sur les forces spéciales des groupes d’escorte",
+        "en": "Global Times features on escort task force special forces"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/page/201704/1041778.shtml",
+          "title": "Global Times (2017) : PLA Navy special forces, Gulf of Aden escort"
+        },
+        {
+          "url": "https://www.globaltimes.cn/page/202609/1369583.shtml",
+          "title": "Global Times (2026) : naval escort task force"
+        }
+      ]
+    },
+    {
+      "id": "cn-leishen-selection",
+      "code": "CN-LEISHEN-SEL",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection du Thunder God (雷神突击队)",
+        "en": "Thunder God selection (雷神突击队)"
+      },
+      "official_name": "雷神突击队选拔",
+      "short_name": "雷神选拔",
+      "description": {
+        "fr": "Sélection des opérateurs du « Thunder God », unité de forces spéciales du Corps aéroporté de l’Armée de l’air. Elle s’adresse à des parachutistes déjà formés et précède l’entraînement aux opérations spéciales aéroportées.",
+        "en": "Selection of operators for the “Thunder God”, the special forces unit of the Air Force Airborne Corps. It is open to trained paratroopers and precedes training in airborne special operations."
+      },
+      "body": {
+        "fr": "Corps aéroporté de l’Armée de l’air de l’APL (空降兵军)",
+        "en": "PLA Air Force Airborne Corps (空降兵军)"
+      },
+      "issuer": {
+        "name": "中国人民解放军空降兵军",
+        "short_name": "空降兵军"
+      },
+      "reference": {
+        "fr": "Reportage Global Times sur le Thunder God ; étude Jamestown sur les forces aéroportées",
+        "en": "Global Times feature on the Thunder God; Jamestown study on airborne forces"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation au saut en parachute"
+        ],
+        "en": [
+          "Basic parachute training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/page/202208/1272101.shtml",
+          "title": "Global Times (2022) : Thunder God commando"
+        },
+        {
+          "url": "https://jamestown.org/pla-airborne-capabilities-and-paratrooper-doctrine-for-taiwan/",
+          "title": "Jamestown Foundation : PLA airborne capabilities and paratrooper doctrine"
+        }
+      ]
+    },
+    {
+      "id": "cn-zbd03-driver",
+      "code": "CN-ZBD03-DRV",
+      "category": "airborne",
+      "name": {
+        "fr": "Conducteur de véhicule de combat aéroporté ZBD-03",
+        "en": "ZBD-03 airborne combat vehicle driver"
+      },
+      "official_name": "ZBD-03伞兵战车驾驶员",
+      "short_name": "ZBD-03驾驶员",
+      "description": {
+        "fr": "Qualification de conduite du véhicule de combat d’infanterie aéroporté ZBD-03, largable par avion de transport, au sein des brigades du Corps aéroporté.",
+        "en": "Driving qualification for the ZBD-03 airborne infantry fighting vehicle, which can be airdropped from transport aircraft, in Airborne Corps brigades."
+      },
+      "body": {
+        "fr": "Corps aéroporté de l’Armée de l’air de l’APL (空降兵军)",
+        "en": "PLA Air Force Airborne Corps (空降兵军)"
+      },
+      "issuer": {
+        "name": "中国人民解放军空降兵军",
+        "short_name": "空降兵军"
+      },
+      "reference": {
+        "fr": "Fiche ZBD-03 ; études Jamestown et US Naval War College",
+        "en": "ZBD-03 entry; Jamestown and US Naval War College studies"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/ZBD-03",
+          "title": "Wikipedia : ZBD-03"
+        },
+        {
+          "url": "https://jamestown.org/pla-airborne-capabilities-and-paratrooper-doctrine-for-taiwan/",
+          "title": "Jamestown Foundation : PLA airborne capabilities and paratrooper doctrine"
+        },
+        {
+          "url": "https://digital-commons.usnwc.edu/cmsi-maritime-reports/19/",
+          "title": "US Naval War College, CMSI China Maritime Report n° 19"
+        }
+      ]
+    },
+    {
+      "id": "cn-snow-leopard-selection",
+      "code": "CN-XUEBAO-SEL",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection du Snow Leopard et « Semaine du diable » (魔鬼周)",
+        "en": "Snow Leopard selection and “Devil Week” (魔鬼周)"
+      },
+      "official_name": "雪豹突击队选拔（魔鬼周）",
+      "short_name": "魔鬼周",
+      "description": {
+        "fr": "Sélection et formation des opérateurs du Snow Leopard, unité antiterroriste de la Police armée du peuple. La « Semaine du diable » (魔鬼周) soumet les candidats à plusieurs jours d’efforts continus avec très peu de sommeil.",
+        "en": "Selection and training of operators for the Snow Leopard, the People’s Armed Police counter-terrorist unit. “Devil Week” (魔鬼周) puts candidates through several days of continuous effort with very little sleep."
+      },
+      "body": {
+        "fr": "Police armée du peuple (武警部队)",
+        "en": "People’s Armed Police (武警部队)"
+      },
+      "issuer": {
+        "name": "雪豹突击队",
+        "short_name": "雪豹突击队"
+      },
+      "reference": {
+        "fr": "Page du Snow Leopard Commando Unit ; reportages du Quotidien du peuple et du Global Times",
+        "en": "Snow Leopard Commando Unit page; People’s Daily and Global Times features"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Snow_Leopard_Commando_Unit",
+          "title": "Wikipedia : Snow Leopard Commando Unit"
+        },
+        {
+          "url": "https://paper.people.com.cn/hqrw/html/2008-07/16/content_103945.htm",
+          "title": "People’s Daily (2008) : Snow Leopard Commando Unit"
+        },
+        {
+          "url": "https://www.globaltimes.cn/content/1153670.shtml",
+          "title": "Global Times : PAP commando units"
+        }
+      ]
+    },
+    {
+      "id": "cn-crisis-negotiator",
+      "code": "CN-NEGOT",
+      "category": "influence",
+      "name": {
+        "fr": "Formation de négociateur de crise (谈判专家)",
+        "en": "Crisis negotiator training (谈判专家)"
+      },
+      "official_name": "谈判专家培训",
+      "short_name": "谈判专家",
+      "description": {
+        "fr": "Formation des négociateurs des unités antiterroristes de la Police armée du peuple aux prises d’otages et situations de crise : communication, psychologie et coordination avec les groupes d’intervention.",
+        "en": "Training of People’s Armed Police counter-terrorist negotiators for hostage-taking and crisis situations: communication, psychology and coordination with intervention teams."
+      },
+      "body": {
+        "fr": "Police armée du peuple (武警部队)",
+        "en": "People’s Armed Police (武警部队)"
+      },
+      "issuer": {
+        "name": "Police armée du peuple",
+        "short_name": "武警"
+      },
+      "reference": {
+        "fr": "Reportage du Quotidien du peuple (2008) sur le Snow Leopard",
+        "en": "People’s Daily feature (2008) on the Snow Leopard"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://paper.people.com.cn/hqrw/html/2008-07/16/content_103945.htm",
+          "title": "People’s Daily (2008) : Snow Leopard Commando Unit"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Armed_Police",
+          "title": "Wikipedia : People’s Armed Police"
+        }
+      ]
+    },
+    {
+      "id": "cn-falcon-selection",
+      "code": "CN-LIEYING-SEL",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection du Falcon et « Semaine de l’enfer » (猎鹰突击队)",
+        "en": "Falcon selection and “Hell Week” (猎鹰突击队)"
+      },
+      "official_name": "猎鹰突击队选拔（地狱周）",
+      "short_name": "猎鹰选拔",
+      "description": {
+        "fr": "Sélection et formation des opérateurs du Falcon, unité antiterroriste de la Police armée du peuple rattachée à l’Académie de police spéciale à Pékin. La « Semaine de l’enfer » éprouve l’endurance et la résistance des candidats ; les opérateurs confirmés deviennent adjoints de chef d’équipe.",
+        "en": "Selection and training of operators for the Falcon, the People’s Armed Police counter-terrorist unit attached to the Special Police Academy in Beijing. “Hell Week” tests candidates’ endurance and resilience; experienced operators go on to become deputy team leaders."
+      },
+      "body": {
+        "fr": "Police armée du peuple (武警部队)",
+        "en": "People’s Armed Police (武警部队)"
+      },
+      "issuer": {
+        "name": "中国人民武装警察部队特种警察学院",
+        "short_name": "武警特警学院"
+      },
+      "reference": {
+        "fr": "Page du Falcon Commando Unit ; reportages ifeng et Global Times",
+        "en": "Falcon Commando Unit page; ifeng and Global Times features"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E7%8C%8E%E9%B9%B0%E7%AA%81%E5%87%BB%E9%98%9F",
+          "title": "维基百科：猎鹰突击队"
+        },
+        {
+          "url": "https://news.ifeng.com/c/7fjkg3pHzZq",
+          "title": "ifeng : Falcon Commando Unit (猎鹰突击队)"
+        },
+        {
+          "url": "https://www.globaltimes.cn/content/1159826.shtml",
+          "title": "Global Times : Falcon Commando Unit"
+        }
+      ]
+    },
+    {
+      "id": "cn-pap-eod",
+      "code": "CN-EOD",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Formation de démineur / neutralisation d’engins explosifs (排爆)",
+        "en": "Explosive ordnance disposal training (排爆)"
+      },
+      "official_name": "排爆训练",
+      "short_name": "排爆",
+      "description": {
+        "fr": "Formation des spécialistes de la neutralisation d’engins explosifs des unités antiterroristes de la Police armée du peuple, dispensée notamment à l’Académie de police spéciale : reconnaissance, désamorçage et destruction d’engins explosifs.",
+        "en": "Training of explosive ordnance disposal specialists for People’s Armed Police counter-terrorist units, delivered notably at the Special Police Academy: detection, render-safe and destruction of explosive devices."
+      },
+      "body": {
+        "fr": "Police armée du peuple (武警部队)",
+        "en": "People’s Armed Police (武警部队)"
+      },
+      "issuer": {
+        "name": "中国人民武装警察部队特种警察学院",
+        "short_name": "武警特警学院"
+      },
+      "reference": {
+        "fr": "Page de l’Académie de police spéciale de la PAP ; reportages ifeng et Global Times",
+        "en": "PAP Special Police Academy page; ifeng and Global Times features"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/%E4%B8%AD%E5%9B%BD%E4%BA%BA%E6%B0%91%E6%AD%A6%E8%A3%85%E8%AD%A6%E5%AF%9F%E9%83%A8%E9%98%9F%E7%89%B9%E7%A7%8D%E8%AD%A6%E5%AF%9F%E5%AD%A6%E9%99%A2",
+          "title": "维基百科：中国人民武装警察部队特种警察学院"
+        },
+        {
+          "url": "https://news.ifeng.com/c/7fjkg3pHzZq",
+          "title": "ifeng : Falcon Commando Unit (猎鹰突击队)"
+        },
+        {
+          "url": "https://www.globaltimes.cn/content/1153670.shtml",
+          "title": "Global Times : PAP commando units"
+        }
+      ]
+    },
+    {
+      "id": "cn-counter-hijack",
+      "code": "CN-CT-AIRCRAFT",
+      "category": "sof",
+      "name": {
+        "fr": "Formation d’intervention en aéronef / contre-détournement (反劫机)",
+        "en": "Aircraft assault / counter-hijack training (反劫机)"
+      },
+      "official_name": "反劫机训练",
+      "short_name": "反劫机",
+      "description": {
+        "fr": "Formation des groupes d’intervention de la Police armée du peuple à l’assaut d’aéronefs détournés : approche, ouverture des accès, progression en cabine et libération d’otages.",
+        "en": "Training of People’s Armed Police intervention teams in assaulting hijacked aircraft: approach, gaining entry, cabin movement and hostage rescue."
+      },
+      "body": {
+        "fr": "Police armée du peuple (武警部队)",
+        "en": "People’s Armed Police (武警部队)"
+      },
+      "issuer": {
+        "name": "中国人民武装警察部队特种警察学院",
+        "short_name": "武警特警学院"
+      },
+      "reference": {
+        "fr": "Reportages ifeng et Global Times sur le Falcon",
+        "en": "ifeng and Global Times features on the Falcon"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://news.ifeng.com/c/7fjkg3pHzZq",
+          "title": "ifeng : Falcon Commando Unit (猎鹰突击队)"
+        },
+        {
+          "url": "https://www.globaltimes.cn/content/1159826.shtml",
+          "title": "Global Times : Falcon Commando Unit"
+        }
+      ]
+    },
+    {
+      "id": "cn-mountain-warfare",
+      "code": "CN-MOUNTAIN",
+      "category": "environment",
+      "name": {
+        "fr": "Formation au combat en montagne (山地作战)",
+        "en": "Mountain warfare training (山地作战)"
+      },
+      "official_name": "山地作战训练",
+      "short_name": "山地作战",
+      "description": {
+        "fr": "Formation des opérateurs de l’unité Mountain Eagle (corps de la Police armée du peuple du Xinjiang) au combat et à la progression en haute montagne et en zone désertique.",
+        "en": "Training of Mountain Eagle unit operators (People’s Armed Police Xinjiang corps) in combat and movement in high mountains and desert terrain."
+      },
+      "body": {
+        "fr": "Police armée du peuple (武警部队)",
+        "en": "People’s Armed Police (武警部队)"
+      },
+      "issuer": {
+        "name": "武警新疆总队",
+        "short_name": "武警新疆总队"
+      },
+      "reference": {
+        "fr": "Page du Mountain Eagle Commando Unit ; Asia Times (2019)",
+        "en": "Mountain Eagle Commando Unit page; Asia Times (2019)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Mountain_Eagle_Commando_Unit",
+          "title": "Wikipedia : Mountain Eagle Commando Unit"
+        },
+        {
+          "url": "https://asiatimes.com/2019/08/china-unveils-special-counter-terror-force-in-xinjiang/",
+          "title": "Asia Times (2019) : counter-terror force in Xinjiang"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-top-ten-team-leader",
+      "code": "CN-TOP10-TL",
+      "category": "sof",
+      "name": {
+        "fr": "Distinction « dix meilleurs chefs d’équipe de l’Armée de terre » (陆军十佳小队长)",
+        "en": "“Army Top Ten Team Leaders” award (陆军十佳小队长)"
+      },
+      "official_name": "陆军十佳小队长",
+      "short_name": "十佳小队长",
+      "description": {
+        "fr": "Distinction décernée par l’Armée de terre de l’APL aux meilleurs chefs d’équipe des unités d’opérations spéciales et de reconnaissance, à l’issue d’évaluations et de compétitions. Elle reconnaît un niveau de commandement et d’expertise tactique éprouvé.",
+        "en": "Award granted by the PLA Army to the best team leaders of special operations and reconnaissance units, following evaluations and competitions. It recognises proven leadership and tactical expertise."
+      },
+      "body": {
+        "fr": "Armée de terre de l’APL (陆军)",
+        "en": "PLA Army (陆军)"
+      },
+      "issuer": {
+        "name": "Armée de terre de l’APL",
+        "short_name": "陆军"
+      },
+      "reference": {
+        "fr": "Reportage Xinhua (2023) sur la 8e compagnie du 72e groupe d’armées",
+        "en": "Xinhua feature (2023) on the 8th Company, 72nd Group Army"
+      },
+      "prerequisites": {
+        "fr": [
+          "Sélection des forces spéciales"
+        ],
+        "en": [
+          "Special forces selection"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2023-04/25/c_1129564955.htm",
+          "title": "Xinhua (news.cn, 2023) : 8e compagnie « 南京路上好八连 »"
+        }
+      ]
+    }
+  ]
+}

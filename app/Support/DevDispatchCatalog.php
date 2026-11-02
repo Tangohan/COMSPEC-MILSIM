@@ -294,6 +294,16 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1308, '2026-11-02', 'Emplois du catalogue : brevets, formations et doctrines réels, rattachables à vos fonctions', 'Dans la fiche d’un emploi du catalogue (États-Unis, France, Allemagne, Chine, Russie, OTAN), chaque brevet, qualification, formation ou doctrine typique ouvre désormais sa vraie fiche : qualification du catalogue de référence avec son école et son intitulé d’origine, ou publication du référentiel doctrinal. Un bouton « Rattacher à la fonction » l’ajoute aux prérequis de votre emploi à l’enregistrement, en important la qualification dans votre référentiel si besoin.', [
+                'Plus de 250 qualifications et formations de référence ajoutées au catalogue, dont deux nouveaux catalogues pays : Chine et Russie, avec les intitulés officiels en chinois et en russe',
+                'Doctrines OTAN ajoutées au référentiel doctrinal, dont la doctrine interalliée des opérations spéciales AJP-3.5',
+                'Bouton « Rattacher à la fonction » sur chaque brevet ou doctrine de la fiche d’un emploi du catalogue',
+                'Prérequis « Doctrine lue » relié à une publication du référentiel : tenu dès qu’un document de doctrine de votre communauté rattaché à cette publication est lu',
+            ], [
+                'Brevets et doctrines de la fiche : lien direct vers l’élément au lieu d’une simple recherche dans les qualifications',
+            ], [], ['personnel'], [
+                'Ouvrez Effectifs › Fonctions, éditez un emploi, puis Chercher dans le catalogue. Choisissez un emploi OTAN (SOCC) : ouvrez AJP-3.5, cliquez Rattacher à la fonction, enregistrez l’emploi et vérifiez ses prérequis.',
+            ], 'Portail Athena'),
             $pr(1300, '2026-11-02', 'Appel de feu typé, vraie radio MPU5, nouveaux écrans et vidéoprojecteur', 'Avec le pack 2.9.31, l’appel de feu de l’app CAS choisit un moyen réel (mortier 60, 81 ou 120, obusier, lance-roquettes, naval ou appui aérien) avec ses portées, ses munitions, ses délais et sa distance de sécurité : les pièces IA de votre camp tirent vraiment et un joueur servant reçoit la mission. La MPU5 devient une vraie radio de données : le téléphone s’y relie par câble ou par Wi-Fi, les radios du même canal forment un maillage, et une radio tactique ACRE ou TFAR prend le relais à bas débit. De nouveaux écrans COMSPEC sur les modèles du jeu affichent une image nette de jour comme de nuit, et un vidéoprojecteur projette diapositives, affichage TOC, carte ou caméra sur un tableau blanc. Tout se règle dans les options des addons et peut être désactivé.', [
                 'Appel de feu typé dans l’app CAS : mortier 60, 81 ou 120, obusier, lance-roquettes, naval ou CAS, portées, munitions, délais et distance de sécurité',
                 'Tir réel des pièces IA du camp, mission envoyée au joueur servant dans l’app Tâches ; réglage + / – / G / D, EFFICACE, FIN DE MISSION',
