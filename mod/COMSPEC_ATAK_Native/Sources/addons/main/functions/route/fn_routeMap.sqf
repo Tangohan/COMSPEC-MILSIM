@@ -39,7 +39,9 @@ switch (_ev) do {
         private _id = _ui getOrDefault ["id", ""];
         private _mine = ["isMine", _id] call comspec_atak_native_fnc_routeAction;
         private _k = ((((_cp select 3) / (safeZoneH * 0.7)) max 0.6) min 1.2);
-        [_map, _k, _k max 0.95, _id, _ui getOrDefault ["sel", -1], [[], _ui getOrDefault ["cursor", []]] select _mine, _ui getOrDefault ["mode", "ADD"]] call comspec_atak_native_fnc_routeDraw;
+        private _mode = _ui getOrDefault ["mode", "SEL"];
+        // Aperçu sous le curseur seulement dans un mode de saisie (rien en mode CHOISIR).
+        [_map, _k, _k max 0.95, _id, _ui getOrDefault ["sel", -1], [[], _ui getOrDefault ["cursor", []]] select (_mine && {_mode isNotEqualTo "SEL"}), _mode] call comspec_atak_native_fnc_routeDraw;
     };
     case "move": {
         _a params ["_map", "_mx", "_my"];
@@ -50,8 +52,10 @@ switch (_ev) do {
         private _id = _ui getOrDefault ["id", ""];
         private _r = ["get", _id] call comspec_atak_native_fnc_routeAction;
         if ((count _r) isEqualTo 0) exitWith {};
+        // Clic droit : sort du mode de saisie (ce qui est posé reste), sinon plus d'étape choisie.
         if (_btn isEqualTo 1) exitWith {
-            _ui set ["sel", -1]; _ui set ["mode", "ADD"];
+            if ((_ui getOrDefault ["mode", "SEL"]) isNotEqualTo "SEL") exitWith { ["#ui", ["modeEnd"]] call comspec_atak_native_fnc_pageRoute; };
+            _ui set ["sel", -1];
             ["#refresh"] call comspec_atak_native_fnc_pageRoute;
         };
         if (_btn isNotEqualTo 0) exitWith {};
@@ -63,7 +67,7 @@ switch (_ev) do {
             private _d = (_map ctrlMapWorldToScreen ((_x select 0) select [0, 2])) distance2D [_mx, _my];
             if (_d < _best) then { _best = _d; _hit = _forEachIndex; };
         } forEach _st;
-        private _mode = _ui getOrDefault ["mode", "ADD"];
+        private _mode = _ui getOrDefault ["mode", "SEL"];
         private _sel = _ui getOrDefault ["sel", -1];
         if (_hit >= 0 && {!(_mode isEqualTo "MOVE" && {_sel >= 0})}) exitWith {
             _ui set ["sel", [_hit, -1] select (_hit isEqualTo _sel)];
@@ -73,12 +77,16 @@ switch (_ev) do {
         if !(["isMine", _id] call comspec_atak_native_fnc_routeAction) exitWith {
             ["INFO", "Route reçue : DUPLIQUER pour la modifier", 3, 10] call comspec_atak_native_fnc_notify;
         };
+        // Mode CHOISIR : un clic hors d'une étape ne pose rien (plus d'étape choisie).
+        if (_mode isEqualTo "SEL") exitWith {
+            if (_sel >= 0) then { _ui set ["sel", -1]; ["#refresh"] call comspec_atak_native_fnc_pageRoute; };
+        };
         private _w = _map ctrlMapScreenToWorld [_mx, _my];
         private _p = [_w select 0, _w select 1, 0];
         switch (true) do {
             case (_mode isEqualTo "MOVE" && {_sel >= 0}): {
                 ["stepMove", [_id, _sel, _p]] call comspec_atak_native_fnc_routeAction;
-                _ui set ["mode", "ADD"];
+                _ui set ["mode", "SEL"];
             };
             case (_mode isEqualTo "INSERT" && {_sel >= 0}): {
                 private _i = ["stepAdd", [_id, _p, _sel + 1]] call comspec_atak_native_fnc_routeAction;

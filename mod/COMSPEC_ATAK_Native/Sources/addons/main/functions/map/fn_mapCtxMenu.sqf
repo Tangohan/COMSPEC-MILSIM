@@ -93,8 +93,27 @@ switch (_mode) do {
         // Étape de l'itinéraire pointée : MODIFIER, NAVIGUER VERS, SUPPRIMER L'ÉTAPE.
         private _wpi = [_map, _screen] call comspec_atak_native_fnc_wpAt;
         if (_card) then { _m = ""; _who = objNull; _wpi = -1; };
+        // Éléments supprimables sous le clic (2.9.37) : route de l'app Routes, itinéraire (app Itinéraire), guidage GPS,
+        // zone et plan de l'app Zones ; [genre, id, nom, à moi].
+        private _dels = [];
+        if (!_card) then {
+            private _rid = ["at", [_map, _screen]] call comspec_atak_native_fnc_routeAction;
+            if (_rid isNotEqualTo "") then { _dels pushBack ["ROUTE", _rid, (["get", _rid] call comspec_atak_native_fnc_routeAction) getOrDefault ["name", ""], ["isMine", _rid] call comspec_atak_native_fnc_routeAction]; };
+            if (_wpi >= 0) then { _dels pushBack ["WP", "", ("l'itinéraire (app Itinéraire)") call comspec_atak_native_fnc_tr, true]; };
+            private _g = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];
+            if ((count _g) > 0 && {((_g getOrDefault ["pts", []]) findIf { ((_map ctrlMapWorldToScreen [_x select 0, _x select 1]) distance2D _screen) < (pixelW * 12) }) >= 0}) then {
+                _dels pushBack ["GPS", "", ("le guidage GPS") call comspec_atak_native_fnc_tr, true];
+            };
+            private _zh = ["at", [_w]] call comspec_atak_native_fnc_zoneAction;
+            if ((count _zh) > 0) then {
+                _zh params ["_zb", "_zz"];
+                private _zm = ["isMine", _zb get "id"] call comspec_atak_native_fnc_zoneAction;
+                if (_zm) then { _dels pushBack ["ZONE", [_zb get "id", _zz select 0], _zz select 1, true]; };
+                _dels pushBack ["PLAN", _zb get "id", _zb get "name", _zm];
+            };
+        };
         _s set ["mapCtx", createHashMapFromArray [["pos", [_w select 0, _w select 1, 0]], ["marker", _m], ["unit", [netId _who, ""] select (isNull _who)], ["at", diag_tickTime],
-            ["relay", _rl], ["card", _card], ["wp", _wpi], ["aiG", _aiG], ["aiWhy", _aiWhy]]];
+            ["relay", _rl], ["card", _card], ["wp", _wpi], ["aiG", _aiG], ["aiWhy", _aiWhy], ["dels", _dels], ["delCf", -1]]];
         [] call _unbindEsc;
         private _d = [] call comspec_atak_native_fnc_display;
         if (!isNull _d) then {
@@ -122,6 +141,54 @@ switch (_mode) do {
         if (_arg isEqualTo "AI" && {(_c getOrDefault ["aiWhy", ""]) isNotEqualTo ""}) exitWith {
             ["close"] call comspec_atak_native_fnc_mapCtxMenu;
             ["WARNING", _c get "aiWhy", 5, 30] call comspec_atak_native_fnc_notify;
+        };
+        // Supprimer : sous-menu (plusieurs éléments sous le clic), puis deux clics (CONFIRMER), bandeau ANNULER ensuite.
+        if (_arg isEqualTo "DELS") exitWith {
+            _c set ["sub", "DEL"]; _c set ["at", diag_tickTime]; playSound "ClickSoft";
+            [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
+        };
+        if ((_arg select [0, 4]) isEqualTo "DEL_") exitWith {
+            private _i = parseNumber (_arg select [4]);
+            private _e = (_c getOrDefault ["dels", []]) param [_i, []];
+            if ((count _e) isEqualTo 0) exitWith {};
+            if ((_c getOrDefault ["delCf", -1]) isNotEqualTo _i) exitWith {
+                _c set ["delCf", _i]; _c set ["at", diag_tickTime]; playSound "ClickSoft";
+                [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
+            };
+            ["close"] call comspec_atak_native_fnc_mapCtxMenu;
+            playSound "ClickSoft";
+            _e params ["_k", "_v", "_n", "_mineE"];
+            private _T = { _this call comspec_atak_native_fnc_tr };
+            switch (_k) do {
+                case "ROUTE": {
+                    if (_mineE) then {
+                        ["trash", _v] call comspec_atak_native_fnc_routeAction;
+                        [format [("Route %1 supprimée") call _T, _n], compile format ["['untrash', %1] call comspec_atak_native_fnc_routeAction;", str _v]] call comspec_atak_native_fnc_undoSnack;
+                    } else {
+                        ["set", [_v, "vis", false]] call comspec_atak_native_fnc_routeAction;
+                        [format [("Route %1 masquée chez moi") call _T, _n], compile format ["['set', [%1, 'vis', true]] call comspec_atak_native_fnc_routeAction;", str _v]] call comspec_atak_native_fnc_undoSnack;
+                    };
+                };
+                case "WP";
+                case "GPS": {
+                    ["itinDel", _k] call comspec_atak_native_fnc_routeAction;
+                    [[("Itinéraire effacé") call _T, ("Guidage GPS arrêté et effacé") call _T] select (_k isEqualTo "GPS"), compile format ["['itinUndo', %1] call comspec_atak_native_fnc_routeAction;", str _k]] call comspec_atak_native_fnc_undoSnack;
+                };
+                case "ZONE": {
+                    _v params ["_bid", "_zid"];
+                    private _r = ["zoneCut", [_bid, _zid]] call comspec_atak_native_fnc_zoneAction;
+                    if ((count _r) > 0) then { [format [("Zone %1 supprimée") call _T, _n], compile format ["['zoneRestore', %1] call comspec_atak_native_fnc_zoneAction;", str ([_bid] + _r)]] call comspec_atak_native_fnc_undoSnack; };
+                };
+                case "PLAN": {
+                    if (_mineE) then {
+                        ["trash", _v] call comspec_atak_native_fnc_zoneAction;
+                        [format [("Plan %1 supprimé") call _T, _n], compile format ["['untrash', %1] call comspec_atak_native_fnc_zoneAction;", str _v]] call comspec_atak_native_fnc_undoSnack;
+                    } else {
+                        ["set", [_v, "vis", false]] call comspec_atak_native_fnc_zoneAction;
+                        [format [("Plan %1 masqué chez moi") call _T, _n], compile format ["['set', [%1, 'vis', true]] call comspec_atak_native_fnc_zoneAction;", str _v]] call comspec_atak_native_fnc_undoSnack;
+                    };
+                };
+            };
         };
         // Sous-menu Zones (ZN), ses états (ZNST) et le rayon du découpage (ZN_RAD, menu gardé ouvert).
         if (_arg in ["ZN", "ZNST", "ZN_RAD"]) exitWith {
@@ -163,7 +230,7 @@ switch (_mode) do {
             ["send", [_g, _arg select [3], [_pos select 0, _pos select 1]]] call comspec_atak_native_fnc_aiOrder;
         };
         // Sous-menu Zones : découpage autour du point (nouveau plan, calcul en arrière-plan), zone sous le clic.
-        if ((_arg select [0, 3]) isEqualTo "ZG_") exitWith { ["ctxGen", [_arg select [3], _pos]] call comspec_atak_native_fnc_zoneAction; };
+        if ((_arg select [0, 3]) isEqualTo "ZG_") exitWith { ["ctxGen", [_arg select [3], _pos, (_c getOrDefault ["zone", []]) param [0, ""]]] call comspec_atak_native_fnc_zoneAction; };
         if ((_arg select [0, 3]) in ["ZS_", "ZR_", "ZN_"]) exitWith {
             (_c getOrDefault ["zone", []]) params [["_zbid", ""], ["_zzid", ""]];
             if (_zbid isEqualTo "") exitWith {};
@@ -458,6 +525,30 @@ switch (_mode) do {
                 ["BACK", "Retour", "ordres", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]
             ] };
         };
+        // Supprimer ce qui est sous le clic : une ligne (un élément) ou un sous-menu (plusieurs) ; CONFIRMER au second clic.
+        private _dels = _c getOrDefault ["dels", []];
+        private _delCf = _c getOrDefault ["delCf", -1];
+        private _delRow = {
+            params ["_i"];
+            (_dels select _i) params ["_k", "", "_n", "_mineE"];
+            private _hide = !_mineE && {_k in ["ROUTE", "PLAN"]};
+            private _what = switch (_k) do {
+                case "ROUTE": { [format [("Supprimer la route %1") call comspec_atak_native_fnc_tr, _n], format [("Masquer chez moi la route %1") call comspec_atak_native_fnc_tr, _n]] select _hide };
+                case "PLAN": { [format [("Supprimer le plan %1") call comspec_atak_native_fnc_tr, _n], format [("Masquer chez moi le plan %1") call comspec_atak_native_fnc_tr, _n]] select _hide };
+                case "ZONE": { format [("Supprimer la zone %1") call comspec_atak_native_fnc_tr, _n] };
+                default { format [("Effacer %1") call comspec_atak_native_fnc_tr, _n] };
+            };
+            ["DEL_" + str _i, [_what, ("CONFIRMER") call comspec_atak_native_fnc_tr] select (_delCf isEqualTo _i), ["deux clics, puis ANNULER", "second clic : c'est fait"] select (_delCf isEqualTo _i), _dir + "ui_trash.paa", [0.95, 0.30, 0.25, 1]]
+        };
+        if ((_c getOrDefault ["sub", ""]) isEqualTo "DEL") then {
+            private _dr = [];
+            for "_i" from 0 to ((count _dels) - 1) do { _dr pushBack ([_i] call _delRow); };
+            _rows = _dr + [["BACK", "Retour", "", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]];
+        } else {
+            private _top = (_c getOrDefault ["sub", ""]) isEqualTo "";
+            if (_top && {!_card} && {(count _dels) isEqualTo 1}) then { _rows pushBack ([0] call _delRow); };
+            if (_top && {!_card} && {(count _dels) > 1}) then { _rows pushBack ["DELS", "Supprimer…", format [("%1 éléments ici") call comspec_atak_native_fnc_tr, count _dels], _dir + "ui_trash.paa", [0.95, 0.30, 0.25, 1]]; };
+        };
         // Zones : une ligne au menu principal, puis le sous-menu (tout part d'un clic : rien d'automatique).
         private _znSub = _c getOrDefault ["sub", ""];
         private _znCol = [0.36, 0.78, 0.42, 1];
@@ -482,6 +573,8 @@ switch (_mode) do {
                     ["ZG_BLOCK", "Découper ici : îlots", "par les routes", _dir + "app_zones.paa", _znCol],
                     ["ZG_RADIAL", "Découper ici : secteurs", "N, NE… et anneaux", _dir + "app_zones.paa", _znCol],
                     ["ZG_NEW", "Nouveau plan à partir d'ici", "ouvre l'app Zones", _dir + "app_zones.paa", _znCol],
+                    ["ZG_MAGC", "Contour aimanté à partir d'ici", "polygone, app Zones", _dir + "app_zones.paa", [1, 0.85, 0.2, 1]],
+                    ["ZG_MAGO", "Trait aimanté à partir d'ici", "pour découper, app Zones", _dir + "app_zones.paa", [1, 0.85, 0.2, 1]],
                     ["ZG_AXES", "Nommer les axes autour", "MSR, ASR, CP", _dir + "map_route.paa", _znCol]
                 ];
                 if ((count _zz) > 0) then {

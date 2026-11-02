@@ -294,6 +294,25 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1333, '2026-11-02', 'Annuler partout, app Zones refaite, plans partagés au camp', 'Avec le pack 2.9.37, les apps Routes et Zones savent annuler : ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), VALIDER qui n’envoie qu’une fois, bandeau « Supprimé · ANNULER » après chaque suppression. L’app Zones est refaite : grande carte avec barre d’outils, panneau en onglets, polygone aimanté aux routes, bâtiments et rives, découpage par vos traits, aperçu avant de générer et couleurs au choix. Les plans et les routes partent maintenant à tout le camp et vont sur la carte d’Arma ; l’état des zones ne change toujours que par un joueur.', [
+                'Apps Routes et Zones : ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), VALIDER (un seul envoi), ANNULER LES MODIFICATIONS (route comme à l’ouverture, nouvelle route abandonnée)',
+                'App Routes : mode CHOISIR par défaut, barre TERMINER / ANNULER sur la carte pendant AJOUTER, INSÉRER ou DÉPLACER, Échap ou clic droit pour en sortir ; onglet ITINÉRAIRES pour effacer l’itinéraire de l’app Itinéraire ou le guidage GPS',
+                'Suppression d’étape, de route, de plan, de zone ou de trait : deux clics, puis ANNULER pendant 8 secondes ; un changement d’état de zone part au bout de 5 secondes, annulable d’ici là ; un découpage lancé s’annule',
+                'App Zones : carte agrandie et barre d’outils (sélection, rectangle, polygone, cercle, annuler, rétablir), onglets Tracer, Découper, Nommer, Style, Situation, fiche de zone dans le panneau avec un bouton SIGNALER toujours visible',
+                'Polygone aimanté (routes, coins et bords des bâtiments, rives ; rayon 15, 30 ou 60 m ; Alt pour s’en passer), fermé ou en trait ; plusieurs contours et traits par plan, sommets modifiables ; nouvelle méthode « Découper par mes traits »',
+                'Aperçu du découpage avant GÉNÉRER et message clair si rien ne tient ; couleurs : thèmes OTAN, contraste élevé, vision nocturne, couleurs par type et par état, opacité, épaisseur, tirets, étiquettes, style d’une zone ou de tout un type',
+                'Plans de zones et routes partagés au camp par défaut et affichés sur la carte d’Arma (réglage serveur « Portée par défaut des plans et routes »)',
+                'Clic droit sur la carte : supprimer la route, l’itinéraire, la zone ou le plan sous le curseur (ou le masquer chez soi), avec ANNULER ; unité sélectionnée : VIBRER, SMS, PING, CENTRER, ROUTE VERS',
+            ], [
+                'Routes en 3D seulement avec la JVN allumée et pendant le suivi ; une étape atteinte disparaît aussitôt',
+                'Sélection d’une unité sur la carte : coins fins au lieu du gros cercle blanc qui cachait le symbole',
+                'Carte d’Arma : seuls les marqueurs de zone qui changent sont refaits, par petits lots (plus de saccade sur un gros découpage)',
+            ], [
+                'App Zones : fiche de zone affichée en double, découpage invisible sur la carte claire, petit carré sans légende devant « État de la zone »',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.37, quittez Arma complètement et relancez.',
+                'Changement de défaut : plans et routes partent au camp et vont sur la carte d’Arma. Pour revenir au comportement de la 2.9.36 : Options des addons › COMSPEC › ATAK · Plan / Zones › « Portée par défaut des plans et routes » sur Privé, et « Zones sur la carte d’Arma et Athena » décoché.',
+            ], 'Pack téléphone 2.9.37'),
             $pr(1324, '2026-11-02', 'App Zones sans automatisme, menu Zones au clic droit, bandeau du curseur', 'Avec le pack 2.9.36, l’app Zones ne change plus rien toute seule. Un contact ennemi posé dans une zone ne la fait plus passer « ennemi signalé » : par défaut l’opérateur met l’état lui-même, et le serveur peut choisir de proposer le changement (question OUI / NON) ou de le faire automatiquement comme avant. Les zones ne vont plus sur la carte d’Arma par défaut, car tout le camp les y voyait sans appareil. Un menu Zones arrive au clic droit de la carte et le bandeau du curseur montre la direction de votre vue.', [
                 'Nouveau réglage serveur « Contact dans une zone » : Manuel (par défaut, rien ne se passe), Proposer (celui qui a posé le contact et l’auteur du plan reçoivent « Contact en B-04 : passer la zone en ennemi signalé ? », OUI / NON dans l’app Zones, sans effet sans réponse) ou Automatique (comportement de la 2.9.35)',
                 'Zones sur la carte d’Arma et Athena : désactivé par défaut (réaliste) ; quand le serveur l’autorise, un plan n’est envoyé au site Athena que s’il est partagé',

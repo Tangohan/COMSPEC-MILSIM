@@ -8,15 +8,27 @@
       FOLLOW  guidage « Suivre la route » : étape visée, distance, cap, arrivée, reste, progression (mis à jour sur place
               chaque seconde, sans rendu de page).
     Dans la vue EDIT, un clic (carte ou fiche) ne refait que la fiche : la carte garde sa vue (pas de rendu complet).
+    Édition (fn_routeAction editBegin… editCommit) : ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y, 30 pas), VALIDER (un seul
+    envoi), ANNULER LES MODIFICATIONS (état d'ouverture ; nouvelle route : brouillon abandonné). Modes de saisie de la
+    carte (CHOISIR par défaut, AJOUTER, INSÉRER, DÉPLACER) : barre sur la carte (TERMINER, ANNULER), Échap ou clic
+    droit pour en sortir. Suppression d'étape ou de route : deux clics, puis bandeau « ANNULER » 8 s.
     Téléphone porté (sans souris) : guidage si une route est suivie, sinon la liste.
     Params : [page, rectangle] (app de module, fn_pageRender) | ["#refresh"] | ["#live"] | ["#ui", [op, valeur]]
+             | ["#key", paramètres de KeyDown] -> touche gardée
 */
 params [["_page", "ROUTE"], ["_arg", []]];
 disableSerialization;
 private _ui = uiNamespace getVariable "COMSPEC_ATAK_RteUi";
 if (isNil "_ui") then {
-    _ui = createHashMapFromArray [["view", "LIST"], ["tab", "MINE"], ["id", ""], ["sel", -1], ["mode", "ADD"], ["draft", createHashMap], ["confirm", ""]];
+    _ui = createHashMapFromArray [["view", "LIST"], ["tab", "MINE"], ["id", ""], ["sel", -1], ["mode", "SEL"], ["draft", createHashMap], ["confirm", ""], ["undoBar", []], ["modeMark", 0]];
     uiNamespace setVariable ["COMSPEC_ATAK_RteUi", _ui];
+};
+// Bandeau « … · ANNULER » (8 s) : [texte, opération d'annulation, valeur, heure].
+private _bar = {
+    params ["_t", "_op", ["_v", ""]];
+    private _at = diag_tickTime;
+    _ui set ["undoBar", [_t, _op, _v, _at]];
+    [{ private _u = uiNamespace getVariable ["COMSPEC_ATAK_RteUi", createHashMap]; if (((_u getOrDefault ["undoBar", []]) param [3, -1]) isEqualTo _this) then { _u set ["undoBar", []]; if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ROUTE") then { ["#refresh"] call comspec_atak_native_fnc_pageRoute; }; }; }, _at, 8] call CBA_fnc_waitAndExecute;
 };
 private _tr = { _this call comspec_atak_native_fnc_tr };
 private _RA = comspec_atak_native_fnc_routeAction;
@@ -77,15 +89,71 @@ if (_page isEqualTo "#ui") exitWith {
     private _id = _ui get "id";
     private _full = true;
     switch (_op) do {
-        case "view": { _ui set ["view", _v]; _ui set ["confirm", ""]; };
+        case "view": {
+            // Retour à la liste : l'édition en cours est validée (un seul envoi).
+            if (_v isEqualTo "LIST" && {(count (["editInfo"] call _RA)) > 0}) then { ["editCommit"] call _RA; };
+            _ui set ["view", _v]; _ui set ["confirm", ""];
+        };
         case "tab": { _ui set ["tab", _v]; };
-        case "open": { _ui set ["id", _v]; _ui set ["sel", -1]; _ui set ["mode", "ADD"]; _ui set ["view", "EDIT"]; _ui set ["draft", createHashMap]; _ui set ["confirm", ""]; uiNamespace setVariable ["COMSPEC_ATAK_RteView", []]; };
+        case "open": {
+            _ui set ["id", _v]; _ui set ["sel", -1]; _ui set ["mode", "SEL"]; _ui set ["modeMark", 0]; _ui set ["view", "EDIT"]; _ui set ["draft", createHashMap]; _ui set ["confirm", ""]; _ui set ["undoBar", []];
+            uiNamespace setVariable ["COMSPEC_ATAK_RteView", []];
+            ["editBegin", [_v, false]] call _RA;
+        };
         case "new": {
             private _nid = ["new", [_v]] call _RA;
             if (_nid isEqualTo "") exitWith { _full = false; };
             ["#ui", ["open", _nid]] call comspec_atak_native_fnc_pageRoute;
-            ["INFO", "Route créée : cliquez sur la carte pour poser ses étapes", 4, 20] call comspec_atak_native_fnc_notify;
+            ["editBegin", [_nid, true]] call _RA;
+            _ui set ["mode", "ADD"];
+            ["INFO", "Route créée : cliquez sur la carte pour poser ses étapes (ANNULER l'abandonne)", 4, 20] call comspec_atak_native_fnc_notify;
             _full = false;
+        };
+        // Annuler / rétablir (Ctrl+Z / Ctrl+Y).
+        case "undo";
+        case "redo": {
+            if !([_op] call _RA) exitWith { [[("Rien à rétablir") call _tr, ("Rien à annuler") call _tr] select (_op isEqualTo "undo"), 2] call comspec_atak_native_fnc_toast; _full = false; };
+            _ui set ["undoBar", []]; _ui set ["confirm", ""];
+            playSound "ClickSoft";
+            if ((_ui get "view") isEqualTo "EDIT") then { _full = false; };
+        };
+        // VALIDER : fin de l'édition, un seul envoi si la route est partagée ou sur la carte d'Arma.
+        case "commit": {
+            private _r0 = ["get", _id] call _RA;
+            private _dirty = ["editCommit"] call _RA;
+            ["SUCCESS", ["Route validée", "Route validée et envoyée"] select (_dirty && {(_r0 getOrDefault ["scope", 0]) > 0} && {_r0 getOrDefault ["live", false]}), 2, 10] call comspec_atak_native_fnc_notify;
+            _ui set ["view", "LIST"]; _ui set ["confirm", ""]; _ui set ["mode", "SEL"];
+        };
+        // ANNULER LES MODIFICATIONS (deux clics si la route a changé) ; nouvelle route : brouillon abandonné.
+        case "revert": {
+            private _e = ["editInfo"] call _RA;
+            if ((_e getOrDefault ["dirty", false]) && {(_ui get "confirm") isNotEqualTo "revert"}) exitWith { _ui set ["confirm", "revert"]; _full = false; ["#refresh"] call comspec_atak_native_fnc_pageRoute; };
+            private _isNew = _e getOrDefault ["isNew", false];
+            ["editRevert"] call _RA;
+            ["INFO", ["Modifications annulées : route comme à l'ouverture", "Nouvelle route abandonnée"] select _isNew, 2, 10] call comspec_atak_native_fnc_notify;
+            _ui set ["view", "LIST"]; _ui set ["confirm", ""]; _ui set ["mode", "SEL"];
+        };
+        // Mode de saisie terminé (Échap, clic droit, TERMINER) : ce qui est posé reste ; ANNULER le retire.
+        case "modeEnd": { _ui set ["mode", "SEL"]; _full = false; ["#refresh"] call comspec_atak_native_fnc_pageRoute; };
+        case "modeCancel": {
+            private _n = (count ((["editInfo"] call _RA) getOrDefault ["undo", []])) - (_ui getOrDefault ["modeMark", 0]);
+            for "_k" from 1 to _n do { ["undo"] call _RA; };
+            if (_n > 0) then { [format [("%1 modification(s) annulée(s)") call _tr, _n], 2] call comspec_atak_native_fnc_toast; };
+            _ui set ["mode", "SEL"]; _ui set ["undoBar", []]; _full = false; ["#refresh"] call comspec_atak_native_fnc_pageRoute;
+        };
+        case "itinDel": {
+            if ((_ui get "confirm") isNotEqualTo ("itin" + _v)) exitWith { _ui set ["confirm", "itin" + _v]; };
+            _ui set ["confirm", ""];
+            ["itinDel", _v] call _RA;
+            [[("Itinéraire effacé") call _tr, ("Guidage GPS arrêté et effacé") call _tr] select (_v isEqualTo "GPS"), "itinUndo", _v] call _bar;
+        };
+        case "itinUndo": {
+            if (["itinUndo", _v] call _RA) then { ["INFO", "Itinéraire rétabli", 2, 10] call comspec_atak_native_fnc_notify; };
+            _ui set ["undoBar", []];
+        };
+        case "untrash": {
+            if (["untrash", _v] call _RA) then { ["INFO", "Route rétablie", 2, 10] call comspec_atak_native_fnc_notify; };
+            _ui set ["undoBar", []];
         };
         case "import": {
             private _nid = ["import"] call _RA;
@@ -96,7 +164,8 @@ if (_page isEqualTo "#ui") exitWith {
         case "sel": { _ui set ["sel", _v]; _full = false; ["#refresh"] call comspec_atak_native_fnc_pageRoute; };
         case "mode": {
             if (_v in ["INSERT", "MOVE"] && {(_ui get "sel") < 0}) exitWith { ["INFO", "Choisissez d'abord une étape (clic sur la carte ou dans la liste)", 3, 10] call comspec_atak_native_fnc_notify; _full = false; };
-            _ui set ["mode", _v]; _full = false; ["#refresh"] call comspec_atak_native_fnc_pageRoute;
+            _ui set ["mode", _v]; _ui set ["modeMark", count ((["editInfo"] call _RA) getOrDefault ["undo", []])];
+            _full = false; ["#refresh"] call comspec_atak_native_fnc_pageRoute;
         };
         case "follow": { ["follow", [_v, [_v]] select (_v isEqualType "")] call _RA; _ui set ["view", "FOLLOW"]; };
         case "unfollow": { ["unfollow"] call _RA; _ui set ["view", ["LIST", "EDIT"] select (_id isNotEqualTo "")]; };
@@ -164,26 +233,59 @@ if (_page isEqualTo "#ui") exitWith {
             _full = false;
         };
         case "stepDel": {
-            ["stepDel", [_id, _v]] call _RA;
+            // Deux clics (CONFIRMER), puis bandeau « Étape supprimée · ANNULER ».
+            private _ck = "st" + str _v;
+            if ((_ui get "confirm") isNotEqualTo _ck) exitWith { _ui set ["confirm", _ck]; _full = (_ui get "view") isNotEqualTo "EDIT"; if (!_full) then { ["#refresh"] call comspec_atak_native_fnc_pageRoute; }; };
+            _ui set ["confirm", ""];
+            private _nm = (((["get", _id] call _RA) getOrDefault ["steps", []]) param [_v, []]) param [2, ""];
+            if !(["stepDel", [_id, _v]] call _RA) exitWith { _full = false; };
             private _s = _ui get "sel";
             _ui set ["sel", [[_s, _s - 1] select (_v < _s), -1] select (_s isEqualTo _v)];
-            if ((_ui get "view") isEqualTo "STEP") then { _ui set ["view", "EDIT"]; } else { _full = false; };
+            [format [("Étape %1 supprimée") call _tr, [[_nm] call comspec_atak_native_fnc_markerAutoName] call _esc], "undo"] call _bar;
+            if ((_ui get "view") isEqualTo "STEP") then { _ui set ["view", "EDIT"]; } else { _full = false; ["#refresh"] call comspec_atak_native_fnc_pageRoute; };
         };
         case "dup": { private _nid = ["dup", _id] call _RA; if (_nid isNotEqualTo "") then { ["#ui", ["open", _nid]] call comspec_atak_native_fnc_pageRoute; }; _full = false; };
         case "reverse": { ["reverse", _id] call _RA; _ui set ["sel", -1]; _full = false; };
         case "del": {
             if ((_ui get "confirm") isNotEqualTo _id) exitWith { _ui set ["confirm", _id]; _full = false; ["#refresh"] call comspec_atak_native_fnc_pageRoute; };
-            ["del", _id] call _RA;
-            ["INFO", "Route supprimée", 2, 10] call comspec_atak_native_fnc_notify;
+            private _nm = (["get", _id] call _RA) getOrDefault ["name", ""];
+            ["trash", _id] call _RA;
+            [format [("Route %1 supprimée") call _tr, [_nm] call _esc], "untrash", _id] call _bar;
             _ui set ["id", ""]; _ui set ["view", "LIST"]; _ui set ["confirm", ""];
         };
-        case "share": { ["share", [_id, _v]] call _RA; _full = false; };
+        // Partager valide d'abord l'édition (le partage envoie la route), puis l'édition reprend sur ce nouvel état.
+        case "share": {
+            ["editCommit", true] call _RA;
+            ["share", [_id, _v]] call _RA;
+            ["editBegin", [_id, false]] call _RA;
+            _full = false;
+        };
         case "unshare": { ["unshare", _id] call _RA; ["INFO", "Partage retiré", 2, 10] call comspec_atak_native_fnc_notify; _full = false; };
         case "vis": { private _r = ["get", _v] call _RA; if ((count _r) > 0) then { ["set", [_v, "vis", !(_r get "vis")]] call _RA; }; _full = false; };
         case "map": { ["MAP"] call comspec_atak_native_fnc_navigate; _full = false; };
     };
     if (_full) then { call _rerender; };
     true
+};
+
+// Clavier (vue EDIT, STEP, MARKERS) : Ctrl+Z / Ctrl+Y (aussi Ctrl+W, le Z d'un clavier AZERTY), Échap sort du mode de
+// saisie, d'une confirmation, ou revient à la fiche de la route. Saisie dans un champ : touches laissées au champ.
+if (_page isEqualTo "#key") exitWith {
+    _arg params ["_disp", "_key", ["_shift", false], ["_ctrl", false]];
+    private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+    if ((_s getOrDefault ["activePage", ""]) isNotEqualTo "ROUTE" || {!(_s getOrDefault ["interactive", false])}) exitWith { false };
+    private _view = _ui get "view";
+    if !(_view in ["EDIT", "STEP", "MARKERS"]) exitWith { false };
+    private _f = focusedCtrl _disp;
+    if (!isNull _f && {(ctrlType _f) isEqualTo 2}) exitWith { false };
+    switch (true) do {
+        case (_ctrl && {_key in [0x2C, 0x11]} && {!_shift}): { [{ ["#ui", ["undo"]] call comspec_atak_native_fnc_pageRoute; }] call CBA_fnc_execNextFrame; true };
+        case (_ctrl && {_key isEqualTo 0x15 || {_shift && {_key in [0x2C, 0x11]}}}): { [{ ["#ui", ["redo"]] call comspec_atak_native_fnc_pageRoute; }] call CBA_fnc_execNextFrame; true };
+        case (_key isEqualTo 0x01 && {_view isEqualTo "EDIT"} && {(_ui get "mode") isNotEqualTo "SEL"}): { [{ ["#ui", ["modeEnd"]] call comspec_atak_native_fnc_pageRoute; }] call CBA_fnc_execNextFrame; true };
+        case (_key isEqualTo 0x01 && {(_ui get "confirm") isNotEqualTo ""}): { _ui set ["confirm", ""]; [{ ["#refresh"] call comspec_atak_native_fnc_pageRoute; }] call CBA_fnc_execNextFrame; true };
+        case (_key isEqualTo 0x01 && {_view in ["STEP", "MARKERS"]}): { [{ ["#ui", ["view", "EDIT"]] call comspec_atak_native_fnc_pageRoute; }] call CBA_fnc_execNextFrame; true };
+        default { false };
+    }
 };
 
 // Guidage : textes mis à jour sur place (fn_routeAction "tick").
@@ -222,7 +324,27 @@ private _editRows = {
         _rows pushBack ["text", format ["<t color='#f2ab33'>%1</t>", format [("Route reçue de %1 (%2) : lecture seule. DUPLIQUER pour en faire une copie modifiable.") call _tr, [_r get "from"] call _esc, ["scopeName", _r get "scope"] call _RA]], [0.10, 0.09, 0.05, 1]];
         _rows pushBack ["buttons", [["DUPLIQUER", ["dup"] call _ui1, true], ["SUIVRE", ["follow", _r get "id"] call _ui1]]];
     } else {
+        // Édition : annuler, rétablir, valider (un seul envoi), annuler les modifications.
+        private _e = ["editInfo"] call _RA;
+        private _nU = count (_e getOrDefault ["undo", []]);
+        private _nR = count (_e getOrDefault ["redo", []]);
+        private _isNew = _e getOrDefault ["isNew", false];
+        private _cRev = (_ui get "confirm") isEqualTo "revert";
+        _rows pushBack ["buttons", [
+            [format ["↶ %1%2", ("ANNULER") call _tr, ["", format [" (%1)", _nU]] select (_nU > 0)], ["undo"] call _ui1, false, _nU > 0, "Annule la dernière modification (Ctrl+Z)"],
+            ["↷ RÉTABLIR", ["redo"] call _ui1, false, _nR > 0, "Refait ce qui vient d'être annulé (Ctrl+Y)"],
+            ["✓ VALIDER", ["commit"] call _ui1, true, true, "Termine l'édition ; une route partagée part une seule fois, maintenant"]
+        ]];
+        _rows pushBack ["buttons", [
+            [[["ANNULER LES MODIFICATIONS", "ABANDONNER LA NOUVELLE ROUTE"] select _isNew, "CONFIRMER : TOUT ANNULER"] select _cRev, ["revert"] call _ui1, ["red", false] select !_cRev, _isNew || {_e getOrDefault ["dirty", false]},
+                ["Remet la route comme à l'ouverture", "Supprime ce brouillon de route"] select _isNew]
+        ]];
+        (_ui get "undoBar") params [["_ubT", ""], ["_ubOp", ""], ["_ubV", ""], ["_ubAt", -1]];
+        if (_ubT isNotEqualTo "" && {(diag_tickTime - _ubAt) < 8}) then {
+            _rows pushBack ["person", "", format ["<t color='#f2ab33'>%1</t>", _ubT], [["ANNULER", [_ubOp, _ubV] call _ui1, true]], [0.95, 0.67, 0.2, 1]];
+        };
         _rows pushBack ["segment", "Clic sur la carte", [
+            ["CHOISIR", ["mode", "SEL"] call _ui1, (_ui get "mode") isEqualTo "SEL", "Un clic choisit une étape, sans rien poser"],
             ["AJOUTER", ["mode", "ADD"] call _ui1, (_ui get "mode") isEqualTo "ADD", "Chaque clic ajoute une étape en fin de route"],
             ["INSÉRER APRÈS", ["mode", "INSERT"] call _ui1, (_ui get "mode") isEqualTo "INSERT", "Chaque clic ajoute une étape après l'étape choisie"],
             ["DÉPLACER", ["mode", "MOVE"] call _ui1, (_ui get "mode") isEqualTo "MOVE", "Le prochain clic déplace l'étape choisie"]
@@ -261,7 +383,7 @@ private _editRows = {
             ["FICHE", ["step", _i] call _ui1, false, true, "Nom, type, action, H+, consigne"],
             ["▲", ["stepUp", _i] call _ui1, false, _i > 0, "Monter"],
             ["▼", ["stepDown", _i] call _ui1, false, _i < ((count _st) - 1), "Descendre"],
-            ["X", ["stepDel", _i] call _ui1, false, true, "Supprimer l'étape"]
+            [["X", "OK ?"] select ((_ui get "confirm") isEqualTo ("st" + str _i)), ["stepDel", _i] call _ui1, ["red", false] select ((_ui get "confirm") isNotEqualTo ("st" + str _i)), true, "Supprimer l'étape (deux clics)"]
         ] } else { [["FICHE", ["step", _i] call _ui1]] };
         _rows pushBack ["person", ["icon", _k] call _RA, _txt, _btns, _tRow select 3];
     } forEach _st;
@@ -289,7 +411,7 @@ private _editRows = {
     if (_mine) then {
         _rows pushBack ["switch", "Carte d'Arma et Athena", _r get "arma", ["toggle", ["arma", "rteArma"]] call _ui1, "Tracé et étapes en marqueurs, sur le canal du groupe (du camp si partagée au camp), aussi envoyés au site Athena", !(missionNamespace getVariable ["comspec_atak_native_route_arma", true]), "rteArma"];
     };
-    _rows pushBack ["switch", "Vue 3D", _r get "d3", ["toggle", ["d3", "rteD3"]] call _ui1, "Trait et étapes affichés dans le monde (à moins de 1,5 km)", !(missionNamespace getVariable ["comspec_atak_native_route_3d", true]), "rteD3"];
+    _rows pushBack ["switch", "Affichage 3D (JVN uniquement)", _r get "d3", ["toggle", ["d3", "rteD3"]] call _ui1, "Pendant « Suivre la route », JVN allumée : trait et étapes restantes affichés dans le monde (à moins de 1,5 km)", !(missionNamespace getVariable ["comspec_atak_native_route_3d", true]), "rteD3"];
     if (_mine) then {
         private _sc = _r get "scope";
         _rows pushBack ["section", "Partage", [("Non partagée") call _tr, format [("Partagée : %1, chaque modification est renvoyée") call _tr, ["scopeName", _sc] call _RA]] select (_sc > 0)];
@@ -308,6 +430,48 @@ private _editRows = {
         ]];
     };
     _rows
+};
+
+// Barre du mode de saisie, sur la carte de l'app (AJOUTER, INSÉRER, DÉPLACER) : consigne, TERMINER, ANNULER. Refaite
+// sans rendu de page (fiche refaite seule) ; rien en mode CHOISIR.
+private _mapBar = {
+    { ctrlDelete _x; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_RteMapBar", []]);
+    uiNamespace setVariable ["COMSPEC_ATAK_RteMapBar", []];
+    private _mr = uiNamespace getVariable ["COMSPEC_ATAK_RteMapRect", []];
+    private _mode = _ui get "mode";
+    if ((count _mr) < 4 || {!_mine} || {_mode isEqualTo "SEL"} || {(_ui get "view") isNotEqualTo "EDIT"}) exitWith {};
+    _mr params ["_mx", "_my", "_mw", "_mh"];
+    private _sel = _ui get "sel";
+    private _txt = switch (_mode) do {
+        case "INSERT": { format [("Insertion après l'étape %1 : chaque clic pose une étape") call _tr, _sel + 1] };
+        case "MOVE": { format [("Déplacement de l'étape %1 : cliquez sa nouvelle place") call _tr, _sel + 1] };
+        default { ("Ajout : chaque clic pose une étape en fin de route") call _tr };
+    };
+    private _h = _font * 2.1;
+    private _y = _my + _mh - _h - _pad * 0.5;
+    private _bwB = (_mw * 0.2) max (_font * 4.2);
+    private _nB = [2, 1] select (_mode isEqualTo "MOVE");
+    private _list = [];
+    private _bgc = ["COMSPEC_RscText", [_mx + _pad * 0.5, _y, _mw - _pad, _h], "", false] call comspec_atak_native_fnc_pageCtrl;
+    _bgc ctrlSetBackgroundColor [0.03, 0.04, 0.035, 0.9];
+    _list pushBack _bgc;
+    private _t = ["COMSPEC_RscStructuredText", [_mx + _pad, _y + _h * 0.08, _mw - _pad * 2 - _nB * (_bwB + _pad * 0.4), _h * 0.9], "", false] call comspec_atak_native_fnc_pageCtrl;
+    _t ctrlSetStructuredText parseText format ["<t size='0.95' font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#a9b6b0'>%2</t>", _txt, ("Échap ou clic droit : terminer · Ctrl+Z : annuler") call _tr]; // i18n:brut
+    _list pushBack _t;
+    private _bx0 = _mx + _mw - _pad * 0.9 - _bwB;
+    {
+        _x params ["_lbl", "_code", "_main", "_tip"];
+        private _b = ["COMSPEC_RscButton", [_bx0, _y + _h * 0.15, _bwB, _h * 0.7], _lbl, false] call comspec_atak_native_fnc_pageCtrl;
+        _b ctrlSetFontHeight ((_fs * 0.95) max COMSPEC_ATAK_FontMin);
+        _b ctrlSetTooltip ((_tip) call _tr);
+        if (_main) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
+        _b setVariable ["comspec_click", _code];
+        _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call CBA_fnc_execNextFrame; }];
+        _list pushBack _b;
+        _bx0 = _bx0 - _bwB - _pad * 0.4;
+    } forEach ([[["ANNULER", ["modeCancel"] call _ui1, false, "Sort du mode et retire ce qui a été posé depuis"]],
+        [["TERMINER", ["modeEnd"] call _ui1, true, "Sort du mode ; les étapes posées restent"], ["ANNULER", ["modeCancel"] call _ui1, false, "Sort du mode et retire ce qui a été posé depuis"]]] select (_nB isEqualTo 2));
+    uiNamespace setVariable ["COMSPEC_ATAK_RteMapBar", _list];
 };
 
 // Rafraîchissement : vue EDIT affichée, fiche seule refaite (champs saisis gardés) ; sinon rendu de la page.
@@ -333,6 +497,7 @@ if (_page isEqualTo "#refresh") exitWith {
         _ng ctrlSetScrollValues [_sv, -1];
         [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_ng, _sv]] call CBA_fnc_execNextFrame;
     };
+    call _mapBar;
     true
 };
 
@@ -387,7 +552,14 @@ switch (_view) do {
         _map ctrlMapAnimAdd [0, _v select 0, [(_v select 1) select 0, (_v select 1) select 1, 0]];
         ctrlMapAnimCommit _map;
         uiNamespace setVariable ["COMSPEC_ATAK_RteFormRect", _formRect];
+        uiNamespace setVariable ["COMSPEC_ATAK_RteMapRect", _mapRect];
         uiNamespace setVariable ["COMSPEC_ATAK_RteForm", [call _editRows, _formRect] call comspec_atak_native_fnc_formRender];
+        call _mapBar;
+        // Clavier de l'app (Ctrl+Z / Ctrl+Y, Échap) : un gestionnaire par écran du téléphone, actif sur cette page seulement.
+        private _disp = [] call comspec_atak_native_fnc_display;
+        if (!isNull _disp && {(_disp getVariable ["COMSPEC_RteKeyEh", -1]) < 0}) then {
+            _disp setVariable ["COMSPEC_RteKeyEh", _disp displayAddEventHandler ["KeyDown", { ["#key", _this] call comspec_atak_native_fnc_pageRoute }]];
+        };
         (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["ROUTE", { ['#ui', ['view', 'LIST']] call comspec_atak_native_fnc_pageRoute; }]];
     };
     case "STEP": {
@@ -413,10 +585,10 @@ switch (_view) do {
                 ["buttons", [["ENREGISTRER", ["stepSave"] call _ui1, true]]],
                 ["buttons", [
                     ["MA POSITION ICI", ["stepHere"] call _ui1, false, true, "Place l'étape sur ma position GPS"],
-                    ["DÉPLACER SUR LA CARTE", compile format ["['#ui', ['view', 'EDIT']] call comspec_atak_native_fnc_pageRoute; (uiNamespace getVariable 'COMSPEC_ATAK_RteUi') set ['mode', 'MOVE'];"], false, true, "Le prochain clic sur la carte déplace l'étape"]
+                    ["DÉPLACER SUR LA CARTE", compile format ["['#ui', ['view', 'EDIT']] call comspec_atak_native_fnc_pageRoute; ['#ui', ['mode', 'MOVE']] call comspec_atak_native_fnc_pageRoute;"], false, true, "Le prochain clic sur la carte déplace l'étape"]
                 ]],
                 ["buttons", [
-                    ["INSÉRER APRÈS", compile format ["['#ui', ['view', 'EDIT']] call comspec_atak_native_fnc_pageRoute; (uiNamespace getVariable 'COMSPEC_ATAK_RteUi') set ['mode', 'INSERT'];"], false, true, "Les clics sur la carte ajoutent des étapes après celle-ci"],
+                    ["INSÉRER APRÈS", compile format ["['#ui', ['view', 'EDIT']] call comspec_atak_native_fnc_pageRoute; ['#ui', ['mode', 'INSERT']] call comspec_atak_native_fnc_pageRoute;"], false, true, "Les clics sur la carte ajoutent des étapes après celle-ci"],
                     ["SUIVRE D'ICI", compile format ["['#ui', ['follow', [%1, %2]]] call comspec_atak_native_fnc_pageRoute;", str (_r get "id"), _i]],
                     ["SUPPRIMER", ["stepDel", _i] call _ui1, "red"]
                 ]]
@@ -476,10 +648,17 @@ switch (_view) do {
         private _tab = _ui get "tab";
         private _mineL = values (["mine"] call _RA);
         private _rxL = values (["rx"] call _RA);
+        private _itL = ["itins"] call _RA;
         _rows pushBack ["segment", "", [
             [format [("MES ROUTES (%1)") call _tr, count _mineL], ["tab", "MINE"] call _ui1, _tab isEqualTo "MINE"],
-            [format [("REÇUES (%1)") call _tr, count _rxL], ["tab", "RX"] call _ui1, _tab isEqualTo "RX", "Routes partagées par l'équipe, le groupe ou le camp"]
+            [format [("REÇUES (%1)") call _tr, count _rxL], ["tab", "RX"] call _ui1, _tab isEqualTo "RX", "Routes partagées par l'équipe, le groupe ou le camp"],
+            [format [("ITINÉRAIRES (%1)") call _tr, count _itL], ["tab", "ITIN"] call _ui1, _tab isEqualTo "ITIN", "Itinéraire de l'app Itinéraire et guidage GPS « Y aller » (ligne jaune)"]
         ]];
+        // Bandeau « … supprimé(e) · ANNULER » (8 s).
+        (_ui get "undoBar") params [["_ubT", ""], ["_ubOp", ""], ["_ubV", ""], ["_ubAt", -1]];
+        if (_ubT isNotEqualTo "" && {(diag_tickTime - _ubAt) < 8}) then {
+            _rows pushBack ["person", "", format ["<t color='#f2ab33'>%1</t>", _ubT], [["ANNULER", [_ubOp, _ubV] call _ui1, true]], [0.95, 0.67, 0.2, 1]];
+        };
         if (_following) then {
             private _fi = ["followInfo"] call _RA;
             if ((count _fi) > 0) then {
@@ -487,6 +666,21 @@ switch (_view) do {
                     ("cap sur") call _tr, [[(_fi get "step") select 2] call comspec_atak_native_fnc_markerAutoName] call _esc, [_fi get "dist"] call _fmt], [0.06, 0.11, 0.07, 1]];
                 _rows pushBack ["buttons", [["GUIDAGE", ["view", "FOLLOW"] call _ui1, true], ["ARRÊTER", ["unfollow"] call _ui1]]];
             };
+        };
+        if (_tab isEqualTo "ITIN") exitWith {
+            if ((count _itL) isEqualTo 0) then {
+                _rows pushBack ["empty", "\z\comspec_atak_native\addons\main\data\app_route.paa", "Aucun itinéraire", "L'itinéraire de l'app Itinéraire et le guidage GPS « Y aller » apparaissent ici, pour les effacer."];
+            };
+            {
+                _x params ["_k", "_n", "_d"];
+                private _ck = "itin" + _k;
+                private _cf = (_ui get "confirm") isEqualTo _ck;
+                _rows pushBack ["person", ["\z\comspec_atak_native\addons\main\data\app_waypoints.paa", "\z\comspec_atak_native\addons\main\data\map_route.paa"] select (_k isEqualTo "GPS"),
+                    format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t color='#a9b6b0'>%2</t>", [_n] call _esc, _d],
+                    ([[], [["COPIER DANS LES ROUTES", ["import"] call _ui1, false, true, "Reprend ses étapes dans une nouvelle route"]]] select (_k isEqualTo "WP")) + [
+                        [["SUPPRIMER", "CONFIRMER"] select _cf, ["itinDel", _k] call _ui1, ["red", false] select !_cf, true, ["Arrête le guidage et efface la ligne (deux clics)", "Efface l'itinéraire, aussi chez ceux qui le partagent (deux clics)"] select (_k isEqualTo "WP")]
+                    ], [[0.95, 0.75, 0.18, 1], [1, 0.85, 0.15, 1]] select (_k isEqualTo "GPS")];
+            } forEach _itL;
         };
         private _list = [_rxL, _mineL] select (_tab isEqualTo "MINE");
         _list = _list apply { [toLower (_x get "name"), _x] };

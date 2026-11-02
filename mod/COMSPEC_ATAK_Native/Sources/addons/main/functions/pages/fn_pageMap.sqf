@@ -486,6 +486,21 @@ if (_interactive) then {
             uiNamespace setVariable ["COMSPEC_ATAK_InspTextCtrl", controlNull];
             uiNamespace setVariable ["COMSPEC_ATAK_InspSelKey", ["", _sel getOrDefault ["callsign", "CONTACT"]] select ((count _sel) > 0)];
             if (_sitOpen) then { _rows pushBack ["text", [true] call comspec_atak_native_fnc_inspectorUpdate, [0.06, 0.075, 0.068, 0.96], "COMSPEC_ATAK_InspTextCtrl"]; };
+            // Unité sélectionnée, allié joueur : actions (2.9.37) par fn_bftAction (même vibreur et même SMS que l'app BFT).
+            private _so = _sel getOrDefault ["object", objNull];
+            if (_sitOpen && {(count _sel) > 0} && {(_sel getOrDefault ["affiliation", ""]) isEqualTo "friend"}) then {
+                private _ok = !isNull _so && {isPlayer _so} && {_so isNotEqualTo player} && {[_so] call comspec_atak_native_fnc_hasDevice};
+                private _go = { params ["_a"]; compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['bftSel', %1]; [%2] call comspec_atak_native_fnc_bftAction;", str (_sel getOrDefault ["id", ""]), str _a] };
+                _rows pushBack ["buttons", [
+                    ["VIBRER", ["vibe"] call _go, false, _ok, ["Pas de téléphone ATAK chez cet allié", "Fait vibrer son téléphone (une fois toutes les 5 s)"] select _ok],
+                    ["SMS", ["sms"] call _go, false, _ok, "Ouvre Messages avec lui"],
+                    ["PING", ["ping"] call _go, false, true, "Ping sur sa position, visible de tout le camp"]
+                ]];
+                _rows pushBack ["buttons", [
+                    ["CENTRER", ["center"] call _go, false, true, "Centre la carte sur lui"],
+                    ["ROUTE VERS", ["route"] call _go, false, true, "Guidage GPS jusqu'à lui"]
+                ]];
+            };
             // Fond de carte : boutons sur deux rangées au-delà de trois (TOPO CLAIR SOMBRE / NUIT SATELLITE HYBRIDE, PHOTO en plus).
             private _style = [] call comspec_atak_native_fnc_mapStyle;
             private _styles = [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"], ["CLASSIQUE", "SAT"], ["HYBRIDE", "HYBRID"]];

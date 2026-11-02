@@ -1,7 +1,10 @@
 /*
     Vue 3D des routes (option « Vue 3D » d'une route, réglage client comspec_atak_native_route_3d) : trait posé sur le
-    terrain et repère de chaque étape dans le monde, pour les routes à 3D cochée (la route suivie : étape visée en vert).
-    Appelée une fois par seconde (fn_routeAction "tick") : prépare les morceaux à moins de 1,5 km du joueur (découpés pour
+    terrain et repère de chaque étape dans le monde. 2.9.37 : seulement JVN allumée (currentVisionMode 1, même règle
+    que l'affichage ECOTI) et seulement la route suivie, à 3D cochée, à partir de l'étape visée (étapes atteintes
+    retirées tout de suite : fn_routeAction rappelle cette fonction à chaque étape, à l'arrêt et à la fin du suivi).
+    Sans JVN, sans suivi ou sans 3D : aucun événement Draw3D (coût nul).
+    Appelée une fois par seconde (fn_routeAction "tick") : si une route a changé ou après 20 m parcourus, prépare les morceaux à moins de 1,5 km du joueur (découpés pour
     suivre le relief, 400 au plus) et les repères, puis pose ou retire l'événement Draw3D. À chaque image, Draw3D ne fait
     que tracer la liste préparée (aucun calcul de route ni de terrain).
     Params : [] (préparation) | ["draw"] (Draw3D)
@@ -19,16 +22,24 @@ if (_op isEqualTo "draw") exitWith {
     } forEach _tags;
 };
 private _ok = missionNamespace getVariable ["comspec_atak_native_route_3d", true];
-private _list = if (_ok && {[player] call comspec_atak_native_fnc_hasDevice} && {alive player}) then {
-    ((values (missionNamespace getVariable ["COMSPEC_ATAK_RteMine", createHashMap])) + (values (missionNamespace getVariable ["COMSPEC_ATAK_RteRx", createHashMap]))) select { (_x get "d3") && {(count (_x get "steps")) > 0} }
+private _f = missionNamespace getVariable ["COMSPEC_ATAK_RteFollow", createHashMap];
+private _fid = _f getOrDefault ["id", ""];
+private _list = if (_ok && {_fid isNotEqualTo ""} && {(currentVisionMode player) isEqualTo 1} && {!visibleMap} && {[player] call comspec_atak_native_fnc_hasDevice} && {alive player}) then {
+    private _r = ["get", _fid] call comspec_atak_native_fnc_routeAction;
+    [[], [_r]] select ((count _r) > 0 && {_r get "d3"} && {(count (_r get "steps")) > 0})
 } else { [] };
 private _eh = missionNamespace getVariable ["COMSPEC_ATAK_Rte3dEh", -1];
 if ((count _list) isEqualTo 0) exitWith {
     if (_eh >= 0) then { removeMissionEventHandler ["Draw3D", _eh]; missionNamespace setVariable ["COMSPEC_ATAK_Rte3dEh", -1]; };
     missionNamespace setVariable ["COMSPEC_ATAK_Rte3d", [[], []]];
+    missionNamespace setVariable ["COMSPEC_ATAK_Rte3dKey", []];
 };
-private _f = missionNamespace getVariable ["COMSPEC_ATAK_RteFollow", createHashMap];
 private _me = getPosATL vehicle player;
+// Liste refaite seulement si une route a changé (révision, couleur, étape visée) ou après 20 m parcourus.
+private _key = [_list apply { [_x get "id", _x get "rev", _x get "color"] }, _f getOrDefault ["id", ""], _f getOrDefault ["idx", -1]];
+private _last = missionNamespace getVariable ["COMSPEC_ATAK_Rte3dKey", []];
+if (_eh >= 0 && {(_last param [0, []]) isEqualTo _key} && {(_me distance2D (_last param [1, [-1e6, -1e6, 0]])) < 20}) exitWith {};
+missionNamespace setVariable ["COMSPEC_ATAK_Rte3dKey", [_key, _me]];
 private _near = 1500;
 private _segs = [];
 private _tags = [];
@@ -37,8 +48,9 @@ private _agl = { params ["_p", ["_h", 1.2]]; [_p select 0, _p select 1, _h] };
     private _r = _x;
     private _col = ["rgba", _r get "color"] call comspec_atak_native_fnc_routeAction;
     private _air = (_r get "kind") isEqualTo "AIR";
-    private _pts = (["geo", _r] call comspec_atak_native_fnc_routeAction) select 1;
-    private _fi = if ((_f getOrDefault ["id", ""]) isEqualTo (_r get "id")) then { _f getOrDefault ["idx", -1] } else { -1 };
+    private _fi = _f getOrDefault ["idx", 0];
+    // Trait restant : de ma position à l'étape visée, puis les étapes suivantes (tracé par les routes non repris).
+    private _pts = [[_me select 0, _me select 1, 0]] + (((_r get "steps") select [_fi]) apply { [(_x select 0) select 0, (_x select 0) select 1, 0] });
     // Trait : morceaux de 30 m au plus près du joueur, posés 1,2 m au-dessus du sol (aérien : 2 m, pour rester lisible).
     for "_i" from 1 to ((count _pts) - 1) do {
         if ((count _segs) >= 400) exitWith {};
@@ -56,7 +68,7 @@ private _agl = { params ["_p", ["_h", 1.2]]; [_p select 0, _p select 1, _h] };
     };
     {
         _x params ["_p", "_k", "_n"];
-        if ((_me distance2D _p) > 4000) then { continue };
+        if (_forEachIndex < _fi || {(_me distance2D _p) > 4000}) then { continue };
         private _c = [_col, [0.36, 0.85, 0.42, 1]] select (_forEachIndex isEqualTo _fi);
         _tags pushBack [[_p, 3] call _agl, ["icon", _k] call comspec_atak_native_fnc_routeAction, _c, format ["%1. %2", _forEachIndex + 1, [_n] call comspec_atak_native_fnc_markerAutoName]];
     } forEach (_r get "steps");
