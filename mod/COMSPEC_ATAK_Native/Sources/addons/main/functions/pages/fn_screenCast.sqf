@@ -7,7 +7,7 @@
     Arma refuse toute image hors d'un PBO (journal de TTRD du 26/10 : texture [-1,-1], écran noir) : comme dans l'app
     Briefing, la copie JPEG du site est lue en base64 par COMSPEC Link (ImageDataChunk, 2.0.96+) et montrée par un
     navigateur intégré (CT_WEBBROWSER) dans une texture UI posée sur l'objet
-    (#(rgb,1280,720,1)ui("COMSPEC_RscScreenSlideTexture", nom unique)). Le chemin direct reste utilisé quand Arma le lit
+    (#(rgb,2048,1024,1)ui("COMSPEC_RscScreenSlideTexture", nom unique)). Le chemin direct reste utilisé quand Arma le lit
     (-filePatching).
 
     Variables publiques de l'objet :
@@ -123,14 +123,19 @@ switch (_mode) do {
         ["cast", _a] call _fn
     };
     case "cast": {
-        if (isNull _a) exitWith { false };
-        if ((count (_a getVariable ["COMSPEC_ATAK_Screen", []])) < 5) exitWith { false };
+        if (isNull _a) exitWith { ["WARNING", "SCREEN", "Diffusion refusée : aucun écran visé"] call comspec_atak_native_fnc_log; false };
+        if ((count (_a getVariable ["COMSPEC_ATAK_Screen", []])) < 5) exitWith {
+            ["WARNING", "SCREEN", format ["Diffusion refusée : %1 n'est pas désigné comme écran", typeOf _a]] call comspec_atak_native_fnc_log;
+            false
+        };
         private _d = call _myDeck;
         if ((count _d) isEqualTo 0) exitWith {
+            ["WARNING", "SCREEN", format ["Diffusion refusée sur %1 : aucune diapositive ouverte dans l'app Briefing", typeOf _a]] call comspec_atak_native_fnc_log;
             ["WARNING", "Aucune diapositive à diffuser : ouvrez une présentation dans l'onglet DIAPOSITIVES", 4, 20] call comspec_atak_native_fnc_notify;
             false
         };
         _d params ["_src", "_deck", "_idx"];
+        ["INFO", "SCREEN", format ["Diffusion lancée : écran %1 (%2), source %3, diapositive %4 sur %5, COMSPEC Link %6", typeOf _a, (_a getVariable ["COMSPEC_ATAK_Screen", []]) param [0, "?"], _src, _idx + 1, count _deck, ["absent (écran noir pour ce poste)", "présent"] select ([] call comspec_atak_native_fnc_bridge)]] call comspec_atak_native_fnc_log;
         // Google chargé par TESTER LE LIEN (ce téléphone seul) : les autres joueurs n'avaient pas le deck et voyaient un
         // écran noir. Il leur est d'abord diffusé (même chemin que DIFFUSER À TOUS), la navigation suit ensuite pour tous.
         if (_src isEqualTo "GOOGLE") then {
@@ -176,6 +181,7 @@ switch (_mode) do {
     };
     case "stop": {
         if (isNull _a) exitWith { false };
+        ["INFO", "SCREEN", format ["Diffusion arrêtée : écran %1", typeOf _a]] call comspec_atak_native_fnc_log;
         _a setVariable ["COMSPEC_ATAK_ScreenCast", [], true];
         true
     };
@@ -344,7 +350,8 @@ switch (_mode) do {
                 };
                 // Nom distinct pour Academy : pas de navigateur réutilisé d'une diapositive précédente.
                 _uiName = [_ui, _ui + "a"] select _acad;
-                _want = format ["#(rgb,1280,720,1)ui(""COMSPEC_RscScreenSlideTexture"",""%1"")", _uiName];
+                // Texture en puissances de 2 : Arma refusait 1280 x 720 (« Cannot load texture », écran noir de la 2.9.31).
+                _want = format ["#(rgb,2048,1024,1)ui(""COMSPEC_RscScreenSlideTexture"",""%1"")", _uiName];
                 // Un écran en attente de son display à la fois (comme les écrans TOC) : les autres attendent leur tour,
                 // sinon un display pourrait être rangé sous le nom d'un autre écran. Attente libérée au bout de 4 s.
                 private _pend = uiNamespace getVariable ["COMSPEC_ATAK_ScreenPending", []];
@@ -367,6 +374,14 @@ switch (_mode) do {
                 };
                 // Texture d'origine gardée avant le premier changement, remise à la fin de la diffusion.
                 if (isNil { _o getVariable "COMSPEC_ATAK_ScreenOrig" }) then { _o setVariable ["COMSPEC_ATAK_ScreenOrig", ["orig", [_o, _sel]] call comspec_atak_native_fnc_tocScreen]; };
+                ["INFO", "SCREEN", format ["Écran %1 (%2), dalle %3 (%4) : %5", typeOf _o, (_o getVariable ["COMSPEC_ATAK_Screen", []]) param [0, "?"], _sel, (getArray (configOf _o >> "hiddenSelections")) param [_sel, "?"],
+                    switch (true) do {
+                        case (_want isEqualTo ""): { "fin de diffusion, texture d'origine remise" };
+                        case (_acad): { format ["leçon Academy, texture UI %1", _uiName] };
+                        case (_uiName isNotEqualTo ""): { format ["diapositive par le navigateur intégré, texture UI %1", _uiName] };
+                        case ((_want select [0, 2]) isEqualTo "#("): { "écran noir en attendant l'image (téléchargement par COMSPEC Link, ou COMSPEC Link absent)" };
+                        default { format ["image posée : %1", _want] };
+                    }]] call comspec_atak_native_fnc_log;
                 ["paint", [_o, _sel, [_want, _o getVariable ["COMSPEC_ATAK_ScreenOrig", ""]] select (_want isEqualTo "")]] call comspec_atak_native_fnc_tocScreen;
                 // Dalle préparée pour l'image (matière d'écran, dalles superposées du grand écran masquées), remise à la fin.
                 ["surface", [_o, _sel, _want isNotEqualTo ""]] call comspec_atak_native_fnc_tocScreen;
@@ -462,6 +477,7 @@ switch (_mode) do {
         _disps set [_p select 1, _a];
         uiNamespace setVariable ["COMSPEC_ATAK_ScreenDisps", _disps];
         uiNamespace setVariable ["COMSPEC_ATAK_ScreenPending", []];
+        ["INFO", "SCREEN", format ["Écran %1 : texture UI %2 chargée", typeOf (_p select 0), _p select 1]] call comspec_atak_native_fnc_log;
         true
     };
     case "academyDraw": {
