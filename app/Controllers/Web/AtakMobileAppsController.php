@@ -567,7 +567,15 @@ final class AtakMobileAppsController
             }
         }
         $app = AtakMobileLinkService::APPS;
-        $response = Response::view('m.' . $view, $data + [
+        $template = match ($view) {
+            'cr' => 'm.cr',
+            'compte_rendu' => 'm.compte_rendu',
+            'carte' => 'm.carte',
+            'briefs' => 'm.briefs',
+            'briefs_denied' => 'm.briefs_denied',
+            default => 'm.home',
+        };
+        $response = Response::view($template, $data + [
             'title' => ($app[$view === 'compte_rendu' ? 'compte-rendu' : $view][1] ?? 'Sur mon téléphone') . ' — Athena',
             'mobileLink' => $link,
             'mobileView' => $view,
