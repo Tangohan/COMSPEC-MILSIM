@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.36 : app Zones, plus rien d'automatique sans accord (ATAK natif 2.9.36.AG - Denver)
+
+### Résumé joueur
+Type : patch
+FR : App Zones : plus rien ne change tout seul
+- Un contact ennemi posé dans une zone ne la passe plus « ennemi signalé » d'office : par défaut, c'est vous qui mettez l'état.
+- Le serveur peut choisir de vous le proposer (question OUI / NON dans l'app Zones, sans effet si vous ne répondez pas) ou de le faire automatiquement comme en 2.9.35.
+- Les zones ne vont plus sur la carte d'Arma par défaut : tout le camp les y voyait sans téléphone. Le serveur peut le réautoriser ; le site Athena ne reçoit alors que les plans partagés.
+EN : Zones app: nothing changes on its own any more
+- An enemy contact placed in a zone no longer turns it "enemy reported" by itself: by default, you set the state.
+- The server can choose to suggest it to you (OUI / NON, yes / no question in the Zones app, no effect if you do not answer) or to do it automatically as in 2.9.35.
+- Zones no longer go on the Arma map by default: the whole side saw them there without a phone. The server can allow it again; the Athena site then only gets shared plans.
+
+### Détail technique
+- Réglage serveur `zones_contact` (CHECKBOX, défaut oui) remplacé par `comspec_atak_native_zones_contact_mode` (LIST `MANUAL` / `ASK` / `AUTO`, défaut `MANUAL`). **Migration** : nouveau nom de variable, donc l'ancienne valeur (même `true`) n'est pas reprise et tout serveur repart sur Manuel ; à remettre sur Proposer ou Automatique au besoin.
+- `fn_zoneAction` `contact` : `MANUAL` → rien ; `AUTO` → `sit` comme en 2.9.35 ; `ASK` → `ask` local (question gardée dans `COMSPEC_ATAK_ZnAsk`, notification ouvrant l'app Zones) et, pour un plan reçu, même question envoyée à l'auteur du plan (`comspec_atak_native_zone` `["ask", …]`, accepté seulement pour ses propres plans, jamais en rejeu). `askAnswer` : OUI → `sit` (état + signalement, envoyés), NON → oubliée. Une question tombe dès qu'un `sit` avec état arrive pour la zone. Cartes OUI / NON en tête de la liste de l'app Zones.
+- `zones_arma` : défaut **non** (marqueurs de la carte d'Arma visibles de tout le canal sans appareil). `armaNow` n'appelle `fn_markerWeb` (Athena) que si le plan est partagé ; sinon seul `fn_markerNet touch` (téléphones du canal).
+- Revue des automatismes : génération, nommage, axes, partage (et renvoi en direct d'un plan partagé), réception, rejeu JIP, `@zone` découlent tous d'une action de l'utilisateur ; la zone sous le curseur dans le bandeau reste (affichage local, réglage joueur `zones_cursor`).
+- i18n : 8 textes ajoutés par `tools/i18n.py merge` ; OUI / NON non traduits.
+
+---
+
 ## Pack 2.9.35 : app Zones (battleplan), bandeau du curseur et point GPS personnalisables (ATAK natif 2.9.35.AG - Denver, COMSPEC Link 2.0.116)
 
 ### Résumé joueur

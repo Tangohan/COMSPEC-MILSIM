@@ -166,8 +166,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["Partage des plans de zones", "Les joueurs peuvent envoyer leurs plans de zones (app Zones) à leur équipe, leur groupe ou leur camp, avec les états et signalements des zones, par le réseau du téléphone. Décoché : chaque plan reste sur son téléphone."],
     ["COMSPEC", "ATAK · Plan / Zones"], true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_zones_arma", "CHECKBOX",
-    ["Zones sur la carte d'Arma et Athena", "Option « Carte d'Arma et Athena » d'un plan : cases en rectangles, autres zones en contour, étiquettes, axes et points de contrôle posés en marqueurs et envoyés au site Athena. Décoché : les zones restent sur les téléphones."],
-    ["COMSPEC", "ATAK · Plan / Zones"], true, 1] call comspec_atak_native_fnc_addSetting;
+    ["Zones sur la carte d'Arma et Athena", "Décoché par défaut (réaliste) : les plans de zones restent sur les téléphones, seuls ceux qui ont un appareil et à qui le plan est partagé les voient. Coché (confort) : l'auteur d'un plan peut activer son option « Carte d'Arma et Athena » ; cases, contours, étiquettes, axes et points de contrôle deviennent des marqueurs de la carte d'Arma, visibles de tout le canal sans appareil, et partent au site Athena si le plan est partagé."],
+    ["COMSPEC", "ATAK · Plan / Zones"], false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_zones_maxcells", "SLIDER",
     ["Cases de grille au plus", "Nombre de cases d'une grille générée (200 par défaut). Au-delà, prendre des cases plus grandes."],
     ["COMSPEC", "ATAK · Plan / Zones"], [20, 600, 200, 0], 1] call comspec_atak_native_fnc_addSetting;
@@ -177,9 +177,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 ["comspec_atak_native_zones_armamax", "SLIDER",
     ["Zones en marqueurs d'Arma au plus", "Au-delà (60 par défaut), seules les étiquettes des zones vont sur la carte d'Arma et Athena."],
     ["COMSPEC", "ATAK · Plan / Zones"], [10, 200, 60, 0], 1] call comspec_atak_native_fnc_addSetting;
-["comspec_atak_native_zones_contact", "CHECKBOX",
-    ["Contacts ennemis dans les zones", "Un contact posé ou signalé depuis un téléphone (marqueur ennemi, TIC, SALUTE, compte rendu CONTACT / SPOTREP) met à jour l'état de la zone qui le contient et y ajoute un signalement."],
-    ["COMSPEC", "ATAK · Plan / Zones"], true, 1] call comspec_atak_native_fnc_addSetting;
+// Ancien booléen (2.9.35, coché par défaut) : remplacé par une liste ; toute ancienne valeur repart sur « Manuel ».
+["comspec_atak_native_zones_contact_mode", "LIST",
+    ["Contact dans une zone", "Que se passe-t-il quand un contact ennemi est posé ou signalé depuis un téléphone (marqueur ennemi, TIC, SALUTE, compte rendu CONTACT / SPOTREP) dans une zone d'un plan. Manuel (par défaut, réaliste) : rien, l'opérateur met lui-même l'état de la zone. Proposer : celui qui a posé le contact et l'auteur du plan reçoivent une question (passer la zone en « ennemi signalé » ? OUI / NON, dans l'app Zones), sans effet sans réponse. Automatique (confort) : la zone change d'état toute seule et reçoit un signalement."],
+    ["COMSPEC", "ATAK · Plan / Zones"], [["MANUAL", "ASK", "AUTO"], ["Manuel", "Proposer", "Automatique"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_zones_cursor", "CHECKBOX",
     ["Zone sous le curseur", "Le bandeau du curseur de la carte donne la zone survolée (nom, plan, état)."],
     ["COMSPEC", "ATAK · Plan / Zones"], true, 0] call comspec_atak_native_fnc_addSetting;
