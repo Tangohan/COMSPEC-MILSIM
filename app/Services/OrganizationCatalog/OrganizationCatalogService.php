@@ -444,6 +444,10 @@ final class OrganizationCatalogService
             'unit_outline' => $this->unitOutline($def),
             'function_groups' => $this->functionOutline($def),
             'role_names' => $this->roleNames($def),
+            'real_units' => OrganizationKitDefinitions::isRealUnits($def),
+            'origin' => is_array($def['origin'] ?? null) ? $def['origin'] : [],
+            'sources' => is_array($def['sources'] ?? null) ? $def['sources'] : [],
+            'job_catalog_count' => OrganizationKitDefinitions::isRealUnits($def) ? RealUnitKitDefinitions::jobCatalogCount($def) : 0,
             'definition' => $def,
         ];
     }
@@ -1065,7 +1069,7 @@ final class OrganizationCatalogService
 
     /**
      * @param array<string, mixed> $def
-     * @return list<array{name: string, depth: int}>
+     * @return list<array{name: string, depth: int, id: string, code: string, echelon: string}>
      */
     private function unitOutline(array $def): array
     {
@@ -1105,7 +1109,13 @@ final class OrganizationCatalogService
             }
             $name = trim((string) ($u['name'] ?? ''));
             if ($name !== '') {
-                $out[] = ['name' => $name, 'depth' => $depth];
+                $out[] = [
+                    'name' => $name,
+                    'depth' => $depth,
+                    'id' => trim((string) ($u['slug'] ?? '')),
+                    'code' => trim((string) ($u['code'] ?? '')),
+                    'echelon' => trim((string) ($u['echelon'] ?? '')),
+                ];
             }
             foreach ($children[$key] ?? [] as $child) {
                 $walk((string) $child, $depth + 1);

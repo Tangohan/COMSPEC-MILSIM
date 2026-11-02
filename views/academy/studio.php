@@ -174,16 +174,55 @@ $title = $local($course['title']) ?: $t('untitled_course');
 $statusKey = $builtIn ? 'builtin' : ($isArchived ? 'archived' : (!empty($course['published']) ? 'pub' : (isset($course['replaces']) ? 'version' : 'draft')));
 $canPublish = $staff && !$readOnly;
 $fieldId = 0;
-/** Champ bilingue : une langue visible à la fois (bascule FR / EN de la barre), le texte français sert d'indice en anglais. */
-$bi = static function (string $name, ?array $value, string $label, int $rows = 0, string $help = '', string $placeholder = '') use ($h, $v, &$fieldId): void {
+/** Barre d'outils du texte riche : elle insère la syntaxe AcademyRichText dans le champ de la langue affichée. */
+$richBar = static function () use ($h, $t, $lang): void {
+    $tool = static fn (string $cmd, string $label, string $glyph): string => '<button type="button" class="rte-b" data-rte-cmd="' . $cmd . '" title="' . $h($label) . '" aria-label="' . $h($label) . '">' . (str_starts_with($glyph, '#') ? '<svg class="i" aria-hidden="true"><use href="' . $glyph . '"/></svg>' : '<span aria-hidden="true">' . $glyph . '</span>') . '</button>'; ?>
+<div class="rte-bar" role="toolbar" aria-label="<?= $h($t('rte_toolbar')) ?>">
+<?= $tool('bold', $t('rte_bold'), '<b>B</b>') ?><?= $tool('italic', $t('rte_italic'), '<i>I</i>') ?><?= $tool('heading', $t('rte_heading'), 'H') ?>
+<span class="rte-sep" aria-hidden="true"></span>
+<?= $tool('list', $t('rte_list'), '#ai-list') ?><?= $tool('numbered', $t('rte_numbered'), '#ai-olist') ?><?= $tool('quote', $t('rte_quote'), '#ai-quote') ?><?= $tool('rule', $t('rte_rule'), '#ai-rule') ?>
+<span class="rte-sep" aria-hidden="true"></span>
+<label class="rte-sel"><span class="sr-only"><?= $h($t('rte_callout')) ?></span><select data-rte-callout title="<?= $h($t('rte_callout')) ?>"><option value=""><?= $h($t('rte_callout')) ?>…</option>
+<?php foreach (['note' => 'note', 'tip' => 'astuce', 'warning' => 'attention', 'example' => 'exemple', 'analysis' => 'analyse'] as $kind => $keyword): ?><option value="<?= $lang === 'en' ? $kind : $keyword ?>"><?= $h($t('rt_' . $kind)) ?></option><?php endforeach ?></select></label>
+<?= $tool('radio', $t('rte_radio'), '#ai-radio') ?><?= $tool('steps', $t('rte_steps'), '#ai-steps') ?><?= $tool('log', $t('rte_log'), '#ai-code') ?><?= $tool('table', $t('rte_table'), '#ai-table') ?>
+<span class="rte-sep" aria-hidden="true"></span>
+<?= $tool('image', $t('rte_image'), '#ai-image') ?><?= $tool('link', $t('rte_link'), '#ai-link') ?>
+<span class="sp"></span>
+<button type="button" class="rte-b rte-pvt" data-rte-toggle aria-pressed="false"><?= $h($t('rte_preview')) ?></button>
+</div>
+<?php };
+/** Aide repliable : syntaxe disponible (les exemples restent en syntaxe brute). */
+$richHelp = static function () use ($h, $t): void {
+    $rows = [
+        ['## ' . $t('rte_ph_heading'), 'rte_help_heading'], ['**' . $t('rte_ph_bold') . '** *' . $t('rte_ph_italic') . '*', 'rte_help_bold'], ['`9-line`', 'rte_help_code'],
+        ["- " . $t('rte_ph_item') . "\n1. " . $t('rte_ph_item'), 'rte_help_list'], ['> ' . $t('rte_ph_quote'), 'rte_help_quote'], ['---', 'rte_help_rule'],
+        ['[' . $t('rte_ph_link') . '](https://…)', 'rte_help_link'], [':::' . mb_strtolower($t('rt_tip')) . "\n" . $t('rte_ph_callout') . "\n:::", 'rte_help_callout'],
+        [":::transmission\nVoodoo 1 : " . $t('rte_ph_message') . "\nBastion : " . $t('rte_ph_message') . "\n:::", 'rte_help_radio'],
+        [":::" . mb_strtolower($t('rt_steps')) . "\n1. " . $t('rte_ph_step') . "\n:::", 'rte_help_steps'], ["```\n" . $t('rte_ph_log') . "\n```", 'rte_help_log'],
+        ['| ' . $t('rte_ph_col') . ' | ' . $t('rte_ph_col') . " |\n|---|---|\n| " . $t('rte_ph_cell') . ' | ' . $t('rte_ph_cell') . ' |', 'rte_help_table'],
+        ['![' . $t('rte_ph_caption') . '](uploads/…)', 'rte_help_image'],
+    ]; ?>
+<details class="rte-help"><summary><?= $h($t('rte_help')) ?></summary><p class="h"><?= $h($t('rte_help_intro')) ?></p>
+<dl><?php foreach ($rows as [$syntax, $key]): ?><div><dt><code translate="no"><?= nl2br($h($syntax)) ?></code></dt><dd><?= $h($t($key)) ?></dd></div><?php endforeach ?></dl></details>
+<?php };
+/** Champ bilingue : une langue visible à la fois (bascule FR / EN de la barre), le texte français sert d'indice en anglais.
+ *  $richText : barre d'outils, aperçu en direct (rendu de la salle de cours) et, pour les grands textes, aide de syntaxe. */
+$bi = static function (string $name, ?array $value, string $label, int $rows = 0, string $help = '', string $placeholder = '', bool $richText = false) use ($h, $v, &$fieldId, $richBar, $richHelp, $t, $copy): void {
     $fieldId++;
-    $fr = $v($value, 'fr'); ?>
-<div class="fl full" data-bi><label class="lab" for="f<?= $fieldId ?>-fr"><?= $h($label) ?></label><?php if ($help !== ''): ?><span class="h"><?= $h($help) ?></span><?php endif ?>
+    $fr = $v($value, 'fr');
+    $compact = $rows < 6; ?>
+<div class="fl full<?= $richText ? ' rte' . ($compact ? ' rte--compact' : '') : '' ?>" data-bi<?= $richText ? ' data-rte' : '' ?>><label class="lab" for="f<?= $fieldId ?>-fr"><?= $h($label) ?></label><?php if ($help !== ''): ?><span class="h"><?= $h($help) ?></span><?php endif ?>
+<?php if ($richText) { $richBar(); } ?>
+<?php if ($richText): ?><div class="rte-split"><div class="rte-src"><?php endif ?>
 <?php foreach (['fr', 'en'] as $language): $text = $v($value, $language); $missing = $language === 'en' && $fr !== '' && $text === '';
     $hint = $language === 'en' && $fr !== '' ? 'FR : ' . mb_substr(preg_replace('/\s+/u', ' ', $fr) ?? '', 0, 160) : $placeholder;
     $attributes = 'class="in' . ($missing ? ' is-missing' : '') . '" id="f' . $fieldId . '-' . $language . '" name="' . $h($name) . '[' . $language . ']" lang="' . $language . '" data-lang-field="' . $language . '" placeholder="' . $h($hint) . '"'; ?>
-<?php if ($rows > 0): ?><textarea <?= $attributes ?> rows="<?= $rows ?>" maxlength="20000"><?= $h($text) ?></textarea><?php else: ?><input <?= $attributes ?> value="<?= $h($text) ?>" maxlength="2000"><?php endif ?>
-<?php endforeach ?></div>
+<?php if ($rows > 0): ?><textarea <?= $attributes ?> rows="<?= $rows ?>" maxlength="20000"<?= $richText ? ' data-rte-input' : '' ?>><?= $h($text) ?></textarea><?php else: ?><input <?= $attributes ?> value="<?= $h($text) ?>" maxlength="2000"><?php endif ?>
+<?php endforeach ?>
+<?php if ($richText): ?></div><div class="rte-pv" data-rte-pane<?= $compact ? ' hidden' : '' ?>><p class="k"><?= $h($t('rte_preview_title')) ?></p>
+<?php foreach (['fr', 'en'] as $language): $text = $v($value, $language); ?><div class="lesson-text rt" lang="<?= $language ?>" data-lang-field="<?= $language ?>" data-rte-preview aria-live="polite"><?= $text !== '' ? \App\Services\Academy\AcademyRichText::render($text, $copy) : '<p class="rte-empty">' . $h($t('rte_preview_empty')) . '</p>' ?></div><?php endforeach ?>
+</div></div><?php if (!$compact) { $richHelp(); } endif ?>
+</div>
 <?php };
 $questionFields = static function (string $name, ?array $question, string $label) use ($bi, $h, $v, $t): void {
     $question ??= [];
@@ -193,7 +232,7 @@ $questionFields = static function (string $name, ?array $question, string $label
 <?php for ($i = 0; $i < 3; $i++): ?><div class="opt"><label class="lt" title="<?= $h($t('mark_correct')) ?>"><input type="radio" name="<?= $h($name) ?>[answer]" value="<?= $i ?>"<?= $answer === $i ? ' checked' : '' ?>><span aria-hidden="true"><?= ['A', 'B', 'C'][$i] ?></span><span class="sr-only"><?= $h($t('mark_correct')) ?> <?= ['A', 'B', 'C'][$i] ?></span></label>
 <div class="bd"><?php foreach (['fr', 'en'] as $language): $fr = $v($question['options'][$i] ?? null, 'fr'); $text = $v($question['options'][$i] ?? null, $language); ?><input class="in<?= $language === 'en' && $fr !== '' && $text === '' ? ' is-missing' : '' ?>" name="<?= $h($name) ?>[options][<?= $i ?>][<?= $language ?>]" value="<?= $h($text) ?>" maxlength="2000" lang="<?= $language ?>" data-lang-field="<?= $language ?>" aria-label="<?= $h($t('answer_choice')) ?> <?= ['A', 'B', 'C'][$i] ?> (<?= strtoupper($language) ?>)" placeholder="<?= $h($language === 'en' && $fr !== '' ? 'FR : ' . $fr : $t('answer_choice_ph')) ?>"><?php endforeach ?></div></div><?php endfor ?>
 </fieldset>
-<?php $bi($name . '[feedback]', $question['feedback'] ?? null, $t('studio_feedback'), 2);
+<?php $bi($name . '[feedback]', $question['feedback'] ?? null, $t('studio_feedback'), 2, '', '', true);
 };
 /** Liste de critères : une ligne par critère, retrait par ×, ligne vide révélée par « Ajouter ». */
 $criteriaFields = static function (string $name, array $criteria, int $chapter, string $stage) use ($h, $v, $t): void { ?>
@@ -233,6 +272,7 @@ $deckFigure = static function (array $resource) use ($h, $t, $link, $local): voi
 <button class="ctitle" type="button" data-open-course-tab title="<?= $h($t('studio_course_settings')) ?>"><span class="cr" aria-hidden="true"><?= $h($crestOf($title)) ?></span><span><b><?= $h($title) ?></b><small><?= count($chapters) ?> <?= $h(mb_strtolower($t(count($chapters) === 1 ? 'chapter' : 'chapters'))) ?> · <?= $stepCount ?> <?= $h($t('steps_word')) ?></small></span><svg class="i cog" aria-hidden="true"><use href="#ai-cog"/></svg></button>
 <span class="pill p-<?= $statusKey ?>"><i></i><?= $h($t('status_' . $statusKey)) ?></span>
 <span class="sp"></span>
+<button class="tb icon" type="button" data-academy-theme data-to-dark="<?= $h($t('theme_to_dark')) ?>" data-to-light="<?= $h($t('theme_to_light')) ?>" aria-pressed="false" title="<?= $h($t('theme_to_dark')) ?>"><svg class="i th-moon" aria-hidden="true"><use href="#ai-moon"/></svg><svg class="i th-sun" aria-hidden="true"><use href="#ai-sun"/></svg><span class="sr-only" data-theme-label><?= $h($t('theme_to_dark')) ?></span></button>
 <div class="langsw" role="group" aria-label="<?= $h($t('edit_language')) ?>"><?php foreach (['fr' => 'FR', 'en' => 'EN'] as $code => $label): ?><a href="<?= $h($link('studio') . '?course=' . rawurlencode($key) . '&step=' . $selC . '.' . $selS . ($code === 'en' ? '&edit=en' : '')) ?>" data-edit-lang="<?= $code ?>" aria-pressed="<?= $editLang === $code ? 'true' : 'false' ?>"><?= $label ?><?php if ($code === 'en'): ?><small><?= $enPercent ?> %</small><?php endif ?></a><?php endforeach ?></div>
 <?php if (!$readOnly): ?><span class="sv-st" data-save-state data-dirty="<?= $h($t('studio_unsaved')) ?>" aria-live="polite"><?= $h($t('studio_saved')) ?></span>
 <details class="ast-issues"><summary class="tb <?= $issues ? 'warn' : 'okc' ?>"><?php if ($issues): ?><svg class="i"><use href="#ai-alert"/></svg><?= count($issues) ?> <?= $h($t(count($issues) === 1 ? 'studio_issue' : 'studio_issues')) ?><?php else: ?>✓ <?= $h($t('studio_ready')) ?><?php endif ?></summary>
@@ -286,7 +326,7 @@ $deckFigure = static function (array $resource) use ($h, $t, $link, $local): voi
 <div class="ast-gs__row"><input class="in" type="url" name="slides_url_here[<?= $ci ?>]" inputmode="url" maxlength="512" placeholder="https://docs.google.com/presentation/d/…" autocomplete="off" aria-label="<?= $h($t('studio_import_link')) ?>"><button class="hb1" name="slides_here" value="<?= $ci ?>" formaction="<?= $h($link('action/studio_import')) ?>"><?= $h($t('studio_import_button')) ?></button></div>
 <p class="h"><?= $h($t('studio_import_limits')) ?></p></div>
 <?php endif ?>
-<div class="fc"><h3><?= $h($t('studio_lesson')) ?></h3><p><?= $h($t('studio_theory_help')) ?></p><div class="fg"><?php $bi($base . '[theory]', $chapter['theory'], $t('theory'), 12); ?></div></div>
+<div class="fc"><h3><?= $h($t('studio_lesson')) ?></h3><p><?= $h($t('studio_theory_help')) ?></p><div class="fg"><?php $bi($base . '[theory]', $chapter['theory'], $t('theory'), 14, '', '', true); ?></div></div>
 <?php if ($decks): ?><div class="fc"><h3><?= $h($t('studio_slides')) ?> <span class="k"><?= count($decks) ?></span></h3><p><?= $h($t('studio_slides_help')) ?></p><div class="ast-items">
 <?php foreach ($decks as $ri => $resource): $mediaUrl = $link('media/' . rawurlencode((string) $resource['file'])); ?>
 <div class="item"><span class="ic t-theory"><svg class="i"><use href="#ai-theory"/></svg></span><div class="grow"><input type="hidden" name="<?= $h($base) ?>[resources][<?= $ri ?>][file]" value="<?= $h($resource['file']) ?>">
@@ -305,22 +345,22 @@ foreach ($links + [$nextIndex => null] as $ri => $resource): ?>
 <?php if ($resource !== null): ?><div class="acts"><button class="ib dg" name="op" value="remove_resource:<?= $ci ?>:<?= $ri ?>" title="<?= $h($t('remove')) ?>"><svg class="i"><use href="#ai-trash"/></svg><span class="sr-only"><?= $h($t('remove')) ?></span></button></div><?php endif ?></div>
 <?php endforeach ?></div><button type="button" class="add" data-reveal-slot hidden>+ <?= $h($t('add_resource')) ?></button></div>
 <?php elseif ($si === 1): ?>
-<div class="fc"><h3><?= $h($t('demonstration')) ?></h3><p><?= $h($t('studio_demo_help')) ?></p><div class="fg"><?php $bi($base . '[demonstration]', $chapter['demonstration'], $t('demonstration'), 12); ?></div></div>
+<div class="fc"><h3><?= $h($t('demonstration')) ?></h3><p><?= $h($t('studio_demo_help')) ?></p><div class="fg"><?php $bi($base . '[demonstration]', $chapter['demonstration'], $t('demonstration'), 14, '', '', true); ?></div></div>
 <?php elseif ($si === 2): ?>
 <div class="fc"><h3><?= $h($t('studio_reference_question')) ?></h3><p><?= $h($t('studio_reference_help')) ?></p><div class="fg"><?php $questionFields($base, $chapter, $t('question_label')); ?></div></div>
 <details class="fc ast-optional"<?= isset($chapter['guided']) ? ' open' : '' ?>><summary><h3><?= $h($t('studio_custom_guided')) ?></h3><span><?= $h($t('studio_optional')) ?></span></summary><p><?= $h($t('studio_guided_help')) ?></p><div class="fg">
-<?php $bi($base . '[guided][brief]', $chapter['guided']['brief'] ?? null, $t('studio_case_brief'), 4); ?>
-<?php $bi($base . '[guided][hint]', $chapter['guided']['hint'] ?? null, $t('hint_title'), 2, $t('hint_help')); ?>
+<?php $bi($base . '[guided][brief]', $chapter['guided']['brief'] ?? null, $t('studio_case_brief'), 5, '', '', true); ?>
+<?php $bi($base . '[guided][hint]', $chapter['guided']['hint'] ?? null, $t('hint_title'), 2, $t('hint_help'), '', true); ?>
 <?php $questionFields($base . '[guided]', $chapter['guided'] ?? null, $t('question_label')); ?>
 </div></details>
 <?php elseif ($si === 3): ?>
 <details class="fc ast-optional"<?= isset($chapter['simulation']) ? ' open' : '' ?>><summary><h3><?= $h($t('simulation')) ?></h3><span><?= $h($t('studio_optional')) ?></span></summary><p><?= $h($t('studio_simulation_help')) ?></p><div class="fg">
-<?php $bi($base . '[simulation][brief]', $chapter['simulation']['brief'] ?? null, $t('studio_case_brief'), 4); ?>
+<?php $bi($base . '[simulation][brief]', $chapter['simulation']['brief'] ?? null, $t('studio_case_brief'), 5, '', '', true); ?>
 <?php $questionFields($base . '[simulation]', $chapter['simulation'] ?? null, $t('question_label')); ?>
 </div></details>
 <?php elseif ($si === 4): $assessment = $chapter['assessment'] ?? null; ?>
 <div class="fc"><h3><?= $h($t('assessment')) ?></h3><p><?= $h($t('studio_assessment_help')) ?></p><div class="fg">
-<?php $bi($base . '[assessment][instructions]', $assessment['instructions'] ?? null, $t('studio_instructions'), 3); ?>
+<?php $bi($base . '[assessment][instructions]', $assessment['instructions'] ?? null, $t('studio_instructions'), 3, '', '', true); ?>
 <label class="fl"><span class="lab"><?= $h($t('studio_minutes')) ?></span><input class="in" type="number" min="1" max="120" name="<?= $h($base) ?>[assessment][minutes]" value="<?= (int) ceil(($assessment['seconds'] ?? 300) / 60) ?>"></label>
 <label class="fl"><span class="lab"><?= $h(rtrim($t('passing_score'), ' :')) ?> (%)</span><input class="in" type="number" min="1" max="100" name="<?= $h($base) ?>[assessment][pass_percent]" value="<?= (int) ($assessment['pass_percent'] ?? 80) ?>"></label>
 </div></div>
@@ -330,12 +370,12 @@ foreach ($links + [$nextIndex => null] as $ri => $resource): ?>
 <button type="button" class="add wide" data-reveal-slot hidden>+ <?= $h($t('add_question')) ?></button>
 <?php elseif ($si === 5): ?>
 <div class="fc"><h3><?= $h($t('debrief')) ?></h3><p><?= $h($t('studio_debrief_help')) ?></p><div class="fg">
-<?php $bi($base . '[debrief][prompt]', $chapter['debrief']['prompt'] ?? null, $t('studio_debrief_prompt'), 4); ?>
+<?php $bi($base . '[debrief][prompt]', $chapter['debrief']['prompt'] ?? null, $t('studio_debrief_prompt'), 4, '', '', true); ?>
 <?php $criteriaFields($base . '[debrief][criteria]', $chapter['debrief']['criteria'] ?? [], $ci, 'debrief'); ?>
 </div></div>
 <?php else: ?>
 <div class="fc"><h3><?= $h($t('validation')) ?></h3><p><?= $h($t('studio_validation_help')) ?></p><div class="fg">
-<?php $bi($base . '[validation][brief]', $chapter['validation']['brief'] ?? null, $t('studio_validation_brief'), 4); ?>
+<?php $bi($base . '[validation][brief]', $chapter['validation']['brief'] ?? null, $t('studio_validation_brief'), 4, '', '', true); ?>
 <?php $criteriaFields($base . '[validation][criteria]', $chapter['validation']['criteria'] ?? [], $ci, 'validation'); ?>
 </div></div>
 <?php endif ?>
@@ -389,6 +429,27 @@ foreach ($links + [$nextIndex => null] as $ri => $resource): ?>
 </dialog>
 <?php endif ?>
 </form>
+<?php /* Éditeur de texte riche : réglages lus par academy-richtext.js (aperçu côté serveur, envoi d'image, libellés traduits). */
+$rteLabels = [];
+foreach (['ph_bold', 'ph_italic', 'ph_heading', 'ph_item', 'ph_quote', 'ph_callout', 'ph_message', 'ph_link', 'ph_caption', 'ph_step', 'ph_log', 'ph_col', 'ph_cell', 'link_prompt', 'preview_error', 'preview_empty', 'uploading', 'upload_failed', 'url_refused'] as $rteKey) {
+    $rteLabels[$rteKey] = $t('rte_' . $rteKey);
+} ?>
+<div hidden data-rte-config data-preview-url="<?= $h($link('action/studio_preview')) ?>" data-image-url="<?= $h($link('action/studio_image')) ?>" data-course="<?= $h($key) ?>" data-hosts="<?= $h(implode(' ', \App\Services\Academy\AcademyRichText::IMAGE_HOSTS)) ?>" data-callsigns="<?= $h('Voodoo 1|Bastion') ?>" data-labels="<?= $h((string) json_encode($rteLabels, JSON_UNESCAPED_UNICODE)) ?>"></div>
+<?php if (!$readOnly): ?>
+<dialog class="ast-dialog rte-dialog" id="rte-image" aria-labelledby="rte-image-title">
+<div class="mh"><div><p class="k"><?= $h($t('rte_image')) ?></p><h2 id="rte-image-title"><?= $h($t('rte_image_title')) ?></h2></div><button class="mx" type="button" data-close-dialog aria-label="<?= $h($t('close')) ?>">×</button></div>
+<div class="mb">
+<label class="fl"><span class="lab"><?= $h($t('rte_image_upload')) ?></span><input class="in rte-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-rte-file><span class="h"><?= $h($t('rte_image_limits')) ?></span></label>
+<p class="rte-status" data-rte-status role="status" aria-live="polite"></p>
+<p class="k"><?= $h($t('rte_image_library')) ?></p>
+<div class="rte-lib" data-rte-library><?php foreach ($mediaImages ?? [] as $image): ?><button type="button" class="rte-thumb" data-rte-pick="<?= $h($image['path']) ?>" aria-pressed="false" title="<?= $h($t('rte_choose_image')) ?>"><img src="<?= $h($image['url']) ?>" alt="" loading="lazy"><span class="sr-only"><?= $h($t('rte_choose_image')) ?> · <?= $h(basename($image['path'])) ?></span></button><?php endforeach ?></div>
+<p class="h" data-rte-none<?= !empty($mediaImages) ? ' hidden' : '' ?>><?= $h($t('rte_image_none')) ?></p>
+<label class="fl"><span class="lab"><?= $h($t('rte_image_url')) ?></span><input class="in" type="url" inputmode="url" maxlength="2000" data-rte-src placeholder="https://upload.wikimedia.org/…" autocomplete="off"><span class="h"><?= $h($t('rte_image_hosts')) ?> <?= $h(implode(', ', \App\Services\Academy\AcademyRichText::IMAGE_HOSTS)) ?></span></label>
+<label class="fl"><span class="lab"><?= $h($t('rte_image_caption')) ?></span><input class="in" maxlength="300" data-rte-caption placeholder="<?= $h($t('rte_ph_caption')) ?>"></label>
+</div>
+<div class="mf"><span class="sp"></span><button class="btn" type="button" data-close-dialog><?= $h($t('cancel')) ?></button><button class="btn dark" type="button" data-rte-insert-image><?= $h($t('rte_insert')) ?></button></div>
+</dialog>
+<?php endif ?>
 <?php if ($canShare && !$builtIn) { require __DIR__ . '/studio_share.php'; } ?>
 <?php endif ?>
 <?php require __DIR__ . '/disclaimer.php'; ?>

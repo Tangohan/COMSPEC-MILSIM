@@ -160,7 +160,7 @@ final class QualificationAwardRuleService
             'settings' => $this->repo->listForTenant($tenantId),
             'pilot' => $pilotDefs,
             'awards' => $this->repo->awardsByUser($tenantId),
-            'academy' => $this->repo->validAcademyCourses($tenantId),
+            'academy' => $this->academyCompletions($tenantId),
             'prereqs' => $this->repo->prerequisitesByDefinition($tenantId),
             'jobs' => $this->repo->jobRolesByUser($tenantId),
             'grades' => $gradeById,
@@ -168,6 +168,24 @@ final class QualificationAwardRuleService
             'flight' => null,
             'best' => [],
         ];
+    }
+
+    /**
+     * Formations réussies par membre : attestations Academy valides (id de formation) et cours intégrés terminés
+     * (clé du cours : JTAC, cours inspirés des standards OTAN).
+     *
+     * @return array<int, array<int|string, bool>>
+     */
+    private function academyCompletions(int $tenantId): array
+    {
+        $out = $this->repo->validAcademyCourses($tenantId);
+        foreach ($this->repo->builtInCourseCompletions($tenantId) as $userId => $keys) {
+            foreach ($keys as $key => $done) {
+                $out[$userId][$key] = $done;
+            }
+        }
+
+        return $out;
     }
 
     /** @return array<int, array{label: string, order: int, system: int}> */
@@ -403,7 +421,7 @@ final class QualificationAwardRuleService
                 $rule,
                 fn (array $c): float => $this->measure($tenantId, $userId, $c),
                 fn (int $id): bool => $this->holdsActive($tenantId, $best[$id] ?? null, $id),
-                static fn (int $courseId): bool => !empty($ctx['academy'][$userId][$courseId]),
+                static fn (int|string $course): bool => !empty($ctx['academy'][$userId][$course]),
             );
         }
         $prereq = $this->prerequisites($tenantId, $userId, $definitionId, $settings);
@@ -711,7 +729,9 @@ final class QualificationAwardRuleService
             $scopes['class:' . $it['class_name']] = trim((string) $it['name']) !== '' ? (string) $it['name'] : (string) $it['class_name'];
         }
 
-        return ['courses' => $this->repo->courseTitles($tenantId), 'definitions' => $defs, 'scopes' => $scopes];
+        $builtIn = \App\Services\Academy\AcademyBuiltInQualifications::courseTitles(function_exists('locale') ? (string) locale() : 'fr');
+
+        return ['courses' => $this->repo->courseTitles($tenantId), 'builtin' => $builtIn, 'definitions' => $defs, 'scopes' => $scopes];
     }
 
     /**

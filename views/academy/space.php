@@ -38,14 +38,10 @@ $lmsNav = ['id'=>'academy','tone'=>'emerald','kicker'=>'Academy','title'=>$t('br
 <?php if ($notice): ?><div class="notice" role="status"><?= $h($t($notice)) ?></div><?php \App\Core\Session::set('academy_notice', ''); endif ?>
 <?php if (!$academyStorageReady): ?><p class="notice"><?= $h($t('lms_storage_notice')) ?></p><?php endif ?>
 <?php if ($space === 'dashboard'): ?>
-<section class="academy-workspace-heading"><p class="eyebrow"><?= $h($t('welcome')) ?></p><h1><?= $h($t('dashboard_heading')) ?></h1><p><?= $h($t('academy_learning')) ?></p>
-<?php $resumeCourse=null; foreach($learning as $key=>$item){if(empty($item['completed'])){$resumeCourse=$key;break;}} ?>
-<a class="button" href="<?= $h($resumeCourse!==null?$courseUrl('classroom',$resumeCourse):$link('catalogue')) ?>"><?= $h($t($resumeCourse!==null?'continue':'catalogue')) ?> ↗</a></section>
-<div class="academy-live-stats"><span><strong><?= count($legacyCourses)+count($courses) ?></strong><?= $h($t('published_courses')) ?></span><span><strong><?= count($legacyEnrollments)+count($learning) ?></strong><?= $h($t('enrolled')) ?></span><span><strong><?= count(array_filter($legacyEnrollments,static fn(array $entry):bool=>($entry['status']??'')==='completed'))+count(array_filter($learning,static fn(array $item):bool=>!empty($item['completed']))) ?></strong><?= $h($t('completed')) ?></span></div>
-<h2><?= $h($t('academy_curricula')) ?></h2><?php $displayCourses=$courses; require __DIR__.'/course_list.php'; ?>
-<?php if($legacyCourses!==[]): ?><h2><?= $h($t('your_community_courses')) ?></h2><?php require __DIR__.'/native_course_list.php'; endif ?>
-<?php require __DIR__.'/lms_tools.php'; ?>
-<?php elseif (in_array($space,['catalogue','courses'],true)): ?>
+<?php require __DIR__.'/offer_dashboard.php'; ?>
+<?php elseif ($space === 'catalogue'): ?>
+<?php require __DIR__.'/offer_catalogue.php'; ?>
+<?php elseif ($space === 'courses'): ?>
 <div class="page-heading"><p class="eyebrow">ATHENA / <?= $h($t($space)) ?></p><h1><?= $h($t($space)) ?></h1><p><?= $h($t('academy_learning')) ?></p></div>
 <label class="search"><span>⌕</span><input type="search" data-course-search placeholder="<?= $h($t('search')) ?>" aria-label="<?= $h($t('search')) ?>"></label>
 <?php $displayCourses=$space==='catalogue'?$courses:array_map(static fn(array $item):array=>$item['snapshot'],array_values($learning)); ?>

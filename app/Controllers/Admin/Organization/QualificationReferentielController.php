@@ -16,6 +16,9 @@ use App\Repositories\QualificationIssuerRepository;
 use App\Repositories\QualificationReferentielRepository;
 use App\Services\Personnel\QualificationAwardRuleService;
 use App\Services\Personnel\QualificationBadgeStorageService;
+use App\Services\Personnel\QualificationCatalogImporter;
+use App\Services\Personnel\QualificationReferenceWriter;
+use App\Support\QualificationCatalog\QualificationCatalog;
 use App\Services\Personnel\QualificationCriteriaEngine;
 use App\Services\Personnel\QualificationCertificatePdfService;
 use App\Services\Personnel\QualificationStatusTransitionService;
@@ -297,6 +300,95 @@ final class QualificationReferentielController
 
                 return Response::redirect(url(self::ISSUERS));
             }
+        });
+    }
+
+    private function catalogImporter(): QualificationCatalogImporter
+    {
+        return new QualificationCatalogImporter(new QualificationReferenceWriter(\App\Core\Database::getPdo()));
+    }
+
+    /**
+     * Catalogue de qualifications de référence par pays (États-Unis, France, Allemagne) et OTAN : un onglet par pays
+     * (?pays=US), import au choix, sans doublon.
+     */
+    public function catalog(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantIdOrRedirect();
+        if ($tenantId instanceof Response) {
+            return $tenantId;
+        }
+        $lang = QualificationCatalog::lang(function_exists('locale') ? (string) locale() : 'fr');
+        $countries = [];
+        foreach (QualificationCatalog::packs() as $name => $data) {
+            $code = (string) ($data['country'] ?? '');
+            if ($code !== '') {
+                $countries[$code] = ['code' => $code, 'pack' => $name, 'label' => QualificationCatalog::countryLabel($code, $lang), 'count' => count($data['entries'])];
+            }
+        }
+        $order = array_flip(array_keys(QualificationCatalog::COUNTRIES));
+        uksort($countries, static fn (string $a, string $b): int => ($order[$a] ?? 99) <=> ($order[$b] ?? 99));
+        $wanted = strtoupper(trim((string) $request->query('pays', '')));
+        $country = isset($countries[$wanted]) ? $wanted : (string) (array_key_first($countries) ?? '');
+        $packName = $countries[$country]['pack'] ?? '';
+        $imported = [];
+        try {
+            $imported = $this->catalogImporter()->importedCodes($tenantId);
+        } catch (Throwable) {
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'admin.organization.qualifications.catalog',
+            'title' => 'Catalogue des qualifications de référence',
+            'backOfficePageCss' => ['referentiel-qualifications.css', 'job-catalog.css'],
+            'boSkipPageHead' => true,
+            'catalogLang' => $lang,
+            'catalogCountries' => array_values($countries),
+            'catalogCountry' => $country,
+            'catalogPack' => $packName !== '' ? QualificationCatalog::pack($packName) : null,
+            'catalogPackName' => $packName,
+            'catalogEntries' => $packName !== '' ? QualificationCatalog::entries($lang, $packName) : [],
+            'catalogImported' => $imported,
+        ]);
+    }
+
+    public function importCatalog(Request $request, array $params = []): Response
+    {
+        return $this->withTenantPost($request, function (int $tenantId) use ($request) {
+            $pack = (string) $request->input('pack', '');
+            $packData = QualificationCatalog::pack($pack);
+            $back = url('back-office/referentiels/qualifications/catalogue') . ($packData !== null ? '?pays=' . rawurlencode((string) ($packData['country'] ?? '')) : '');
+            $raw = $request->input('ids', []);
+            $ids = is_array($raw) ? array_values(array_filter(array_map(static fn ($v): string => is_scalar($v) ? (string) $v : '', $raw))) : [];
+            if ((string) $request->input('all', '') === '1' && $packData !== null) {
+                $ids = array_map(static fn (array $e): string => (string) ($e['id'] ?? ''), QualificationCatalog::rawEntries($pack));
+            }
+            if ($ids === []) {
+                Session::flash('error', 'Cochez au moins une qualification à importer.');
+
+                return Response::redirect($back);
+            }
+            try {
+                $lang = function_exists('locale') ? (string) locale() : 'fr';
+                $result = $this->catalogImporter()->import($tenantId, array_slice($ids, 0, 200), $lang, $this->actorId());
+            } catch (Throwable $e) {
+                Session::flash('error', 'Import impossible : ' . $e->getMessage());
+
+                return Response::redirect($back);
+            }
+            $created = count($result['created']);
+            $skipped = count($result['skipped']);
+            if ($created === 0) {
+                Session::flash('success', $skipped > 0 ? 'Ces qualifications sont déjà dans votre référentiel : rien à importer.' : 'Aucune qualification importée.');
+
+                return Response::redirect($back);
+            }
+            Session::flash('success', $skipped > 0
+                ? $created . ' qualification(s) importée(s) du catalogue, ' . $skipped . ' déjà présente(s) ignorée(s). Qualifications de jeu, sans valeur réelle : réglez ensuite leur mode d’obtention.'
+                : $created . ' qualification(s) importée(s) du catalogue. Qualifications de jeu, sans valeur réelle : réglez ensuite leur mode d’obtention.');
+            $issuers = $result['issuer_ids'];
+
+            return Response::redirect(url('back-office/referentiels/qualifications') . (count($issuers) === 1 ? '?emetteur=' . (int) $issuers[0] : ''));
         });
     }
 
@@ -946,6 +1038,7 @@ final class QualificationReferentielController
             'grades' => $grades,
             'jobs' => $jobs,
             'courses' => $names['courses'],
+            'builtInCourses' => $names['builtin'] ?? [],
             'definitions' => array_filter($names['definitions'], static fn (int $id): bool => $id !== $definitionId, ARRAY_FILTER_USE_KEY),
             'aircraft' => $this->rules->aircraftOptions($tenantId),
             'items' => $this->rules->itemOptions($tenantId),

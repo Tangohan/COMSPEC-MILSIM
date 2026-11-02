@@ -30,6 +30,8 @@ $roleCount = (int) ($inv['role_count'] ?? 0);
 $gradeCount = (int) ($inv['grade_count'] ?? 0);
 $installCount = (int) ($inv['install_count'] ?? count($installs));
 $gradeLabel = trim((string) ($inv['grade_label'] ?? 'Système de grades'));
+$catalogLang = function_exists('site_lang') && site_lang() === 'en' ? 'en' : 'fr';
+$groups = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::displayGroups($items, $catalogLang);
 ?>
 <div class="bo-catalog">
     <header class="bo-catalog__hero">
@@ -119,28 +121,89 @@ $gradeLabel = trim((string) ($inv['grade_label'] ?? 'Système de grades'));
         <?php if ($items === []): ?>
             <p class="bo-catalog__empty">Aucun modèle n’est encore disponible.</p>
         <?php else: ?>
-            <div class="bo-catalog__grid">
-                <?php foreach ($items as $item): ?>
-                    <?php
-                    $code = (string) ($item['code'] ?? '');
-                    $official = !empty($item['official']);
-                    $modeleUrl = url('back-office/organisation/catalogue/modele?modele=' . rawurlencode($code));
-                    $apercuUrl = url('back-office/organisation/catalogue/apercu?modele=' . rawurlencode($code));
-                    ?>
-                    <article class="bo-catalog__card">
-                        <p class="bo-catalog__card-origin<?= $official ? '' : ' bo-catalog__card-origin--local' ?>">
-                            <?= $official ? 'Modèle officiel Athena' : 'Modèle de cette organisation' ?>
-                        </p>
-                        <h3 class="bo-catalog__card-title"><?= $h((string) ($item['title'] ?? '')) ?></h3>
-                        <p class="bo-catalog__card-summary"><?= $h((string) ($item['summary'] ?? '')) ?></p>
-                        <p class="bo-catalog__card-volume"><?= $h((string) ($item['volume'] ?? '')) ?></p>
-                        <div class="bo-catalog__card-actions">
-                            <a class="ath-btn ath-btn--solid" href="<?= $h($modeleUrl) ?>">Voir le contenu</a>
-                            <a class="ath-btn" href="<?= $h($apercuUrl) ?>">Aperçu et application</a>
-                        </div>
-                    </article>
-                <?php endforeach; ?>
+            <div class="bo-catalog__filter">
+                <label for="bo-catalog-filter">Rechercher un modèle</label>
+                <input type="search" id="bo-catalog-filter" placeholder="Ex. SOCAFRICA, Rangers, KSK, CPA 10, infanterie…" autocomplete="off" data-catalog-filter>
+                <p class="bo-catalog__filter-empty" hidden data-catalog-empty>Aucun modèle ne correspond. Effacez la recherche pour tout afficher.</p>
             </div>
+            <?php foreach ($groups as $group): ?>
+                <?php $groupReal = !in_array($group['key'], ['generic', 'private'], true); ?>
+                <div class="bo-catalog__group" data-catalog-group>
+                    <h3 class="bo-catalog__group-heading">
+                        <?= $h((string) $group['label']) ?>
+                        <span class="bo-catalog__group-count"><?= (int) $group['count'] ?> modèle<?= (int) $group['count'] > 1 ? 's' : '' ?></span>
+                    </h3>
+                    <?php if ($groupReal): ?>
+                        <p class="bo-catalog__real-note">Inspiré d’unités réelles, à adapter : organisation publique simplifiée, sans effectifs ni noms de personnes. Chaque modèle cite ses sources.</p>
+                    <?php endif; ?>
+                    <?php foreach ($group['branches'] as $branch): ?>
+                        <div class="bo-catalog__branch" data-catalog-branch>
+                            <?php if ((string) $branch['label'] !== ''): ?>
+                                <p class="bo-catalog__branch-title"><?= $h((string) $branch['label']) ?></p>
+                            <?php endif; ?>
+                            <div class="bo-catalog__grid">
+                                <?php foreach ($branch['items'] as $item): ?>
+                                    <?php
+                                    $code = (string) ($item['code'] ?? '');
+                                    $official = !empty($item['official']);
+                                    $def = is_array($item['definition'] ?? null) ? $item['definition'] : [];
+                                    $real = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::isRealUnits($def);
+                                    $command = $real ? (string) ($def['origin']['command'] ?? '') : '';
+                                    $modeleUrl = url('back-office/organisation/catalogue/modele?modele=' . rawurlencode($code));
+                                    $apercuUrl = url('back-office/organisation/catalogue/apercu?modele=' . rawurlencode($code));
+                                    ?>
+                                    <article class="bo-catalog__card" data-catalog-search="<?= $h(\App\Services\OrganizationCatalog\OrganizationKitDefinitions::searchText($def + ['title' => (string) ($item['title'] ?? ''), 'summary' => (string) ($item['summary'] ?? '')])) ?>">
+                                        <p class="bo-catalog__card-origin<?= $official ? '' : ' bo-catalog__card-origin--local' ?>">
+                                            <span><?= $real ? 'Inspiré d’unités réelles' : ($official ? 'Modèle officiel Athena' : 'Modèle de cette organisation') ?></span><?php if ($command !== ''): ?> · <span translate="no"><?= $h($command) ?></span><?php endif; ?>
+                                        </p>
+                                        <h3 class="bo-catalog__card-title"><?= $h((string) ($item['title'] ?? '')) ?></h3>
+                                        <p class="bo-catalog__card-summary"><?= $h((string) ($item['summary'] ?? '')) ?></p>
+                                        <p class="bo-catalog__card-volume"><?= $h((string) ($item['volume'] ?? '')) ?></p>
+                                        <div class="bo-catalog__card-actions">
+                                            <a class="ath-btn ath-btn--solid" href="<?= $h($modeleUrl) ?>">Voir le contenu</a>
+                                            <a class="ath-btn" href="<?= $h($apercuUrl) ?>">Aperçu et application</a>
+                                        </div>
+                                    </article>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endforeach; ?>
+            <script>
+            (function () {
+                var input = document.querySelector('[data-catalog-filter]');
+                if (!input) return;
+                var empty = document.querySelector('[data-catalog-empty]');
+                function norm(v) {
+                    var t = String(v || '').toLowerCase();
+                    if (t.normalize) t = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    return t.trim();
+                }
+                input.addEventListener('input', function () {
+                    var q = norm(input.value);
+                    var tokens = q ? q.split(/\s+/) : [];
+                    var shown = 0;
+                    document.querySelectorAll('[data-catalog-group]').forEach(function (group) {
+                        var inGroup = 0;
+                        group.querySelectorAll('[data-catalog-branch]').forEach(function (branch) {
+                            var inBranch = 0;
+                            branch.querySelectorAll('[data-catalog-search]').forEach(function (card) {
+                                var hay = norm(card.getAttribute('data-catalog-search'));
+                                var ok = tokens.every(function (tok) { return hay.indexOf(tok) !== -1; });
+                                card.hidden = !ok;
+                                if (ok) inBranch++;
+                            });
+                            branch.hidden = inBranch === 0;
+                            inGroup += inBranch;
+                        });
+                        group.hidden = inGroup === 0;
+                        shown += inGroup;
+                    });
+                    if (empty) empty.hidden = shown > 0;
+                });
+            })();
+            </script>
         <?php endif; ?>
     </section>
 
