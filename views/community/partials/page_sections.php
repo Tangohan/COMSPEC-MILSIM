@@ -12,7 +12,7 @@ use App\Services\Community\PublicPageBuilder;
 
 $pbFullBleed = ['hero', 'signals', 'video', 'stats'];
 $pbBoLinks = [
-    'organisation' => 'back-office/organisation-effectifs',
+    'organisation' => 'orbat',
     'agenda' => 'back-office/community/presentation',
     'openings' => 'back-office/recruitment/offers',
     'media' => 'back-office/media',

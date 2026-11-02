@@ -44,7 +44,7 @@ $csrf = \App\Core\Csrf::token();
     <div class="bo-ft__frame">
         <header class="bo-ft__hero">
             <div class="bo-ft__hero-main">
-                <p class="bo-ft__kicker"><a href="<?= $h(url('back-office/atak/fire-teams')) ?>">Équipes de feu</a> · <?= $isPermanent ? 'Organigramme' : 'Mission' ?></p>
+                <p class="bo-ft__kicker"><a href="<?= $h(url('back-office/atak/escouades?onglet=fire-teams')) ?>">Équipes de feu</a> · <?= $isPermanent ? 'Organigramme' : 'Mission' ?></p>
                 <h1 class="bo-ft__title"><?= $isEdit ? $h($team['label'] ?? 'Équipe de feu') : 'Nouvelle équipe de feu' ?></h1>
                 <p class="bo-ft__lead">
                     <?= $isPermanent
@@ -211,10 +211,10 @@ $csrf = \App\Core\Csrf::token();
                     <?php if (!$dissolved): ?>
                         <div class="bo-ft__submit">
                             <button type="submit" class="bo-ft__btn bo-ft__btn--primary bo-ft__btn--block"><?= $isEdit ? 'Enregistrer' : 'Créer l’équipe' ?></button>
-                            <a href="<?= $h(url('back-office/atak/fire-teams')) ?>" class="bo-ft__btn bo-ft__btn--quiet bo-ft__btn--block">Annuler</a>
+                            <a href="<?= $h(url('back-office/atak/escouades?onglet=fire-teams')) ?>" class="bo-ft__btn bo-ft__btn--quiet bo-ft__btn--block">Annuler</a>
                         </div>
                     <?php else: ?>
-                        <a href="<?= $h(url('back-office/atak/fire-teams')) ?>" class="bo-ft__btn bo-ft__btn--block">Retour à la liste</a>
+                        <a href="<?= $h(url('back-office/atak/escouades?onglet=fire-teams')) ?>" class="bo-ft__btn bo-ft__btn--block">Retour à la liste</a>
                     <?php endif; ?>
                 </aside>
             </form>

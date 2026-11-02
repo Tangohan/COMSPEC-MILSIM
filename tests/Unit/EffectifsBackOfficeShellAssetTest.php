@@ -25,7 +25,7 @@ final class EffectifsBackOfficeShellAssetTest extends TestCase
         self::assertStringContainsString('bo-eff-head', $shell);
         self::assertStringContainsString('bo-eff-tabs', $shell);
         self::assertStringContainsString('Roleplay', $shell);
-        self::assertStringContainsString('Intégration', $shell);
+        self::assertStringContainsString("url('back-office/integration-membres')", $shell);
         self::assertStringContainsString('Réglages', $shell);
         self::assertStringContainsString('Chaîne', $shell);
         self::assertStringContainsString('Tableur', $shell);

@@ -77,10 +77,12 @@ final class RoleplayImmersionSettingsAssetTest extends TestCase
         $configNav = (string) file_get_contents($root . '/config/navigation.php');
         $search = (string) file_get_contents($root . '/app/Services/Portal/BackOfficeSearchService.php');
 
-        self::assertStringContainsString('Parcours d’immersion', $nav);
+        // Parcours d’immersion et Parcours RH : onglets du bureau de suivi (plus d’entrée de menu dédiée).
+        $tabs = (string) file_get_contents($root . '/app/Support/BackOfficeTabs.php');
+        self::assertStringContainsString("'label' => 'Parcours d’immersion', 'legacy' => 'back-office/roleplay/immersion'", $tabs);
+        self::assertStringContainsString("'label' => 'Parcours RH', 'legacy' => 'back-office/roleplay/regles-phases'", $tabs);
         self::assertStringContainsString('Parcours d’immersion', $configNav);
         self::assertStringContainsString('Parcours d’immersion', $search);
-        self::assertStringContainsString('Parcours RH', $nav);
         self::assertStringContainsString('Sessions Arma', $nav);
         self::assertStringContainsString('Parcours RH', $configNav);
         self::assertStringContainsString('Sessions Arma', $configNav);

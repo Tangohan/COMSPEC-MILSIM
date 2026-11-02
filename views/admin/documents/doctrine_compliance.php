@@ -128,7 +128,7 @@ uasort($people, static fn (array $a, array $b): int => strcasecmp($a['name'], $b
         <?php if ($canCreate || $canManage): ?>
         <div class="dfs-hero__acts">
             <?php if ($canManage): ?>
-            <a class="dfs-hb2" href="<?= $h(url('back-office/documents/types')) ?>">Types de documents</a>
+            <a class="dfs-hb2" href="<?= $h(url('back-office/doctrine?onglet=types')) ?>">Types de documents</a>
             <?php endif; ?>
             <?php if ($canCreate): ?>
             <a class="dfs-hb1" href="<?= $h(url('back-office/documents/publier')) ?>"><?= $icon('up') ?>Publier un document</a>

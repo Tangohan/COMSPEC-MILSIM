@@ -301,59 +301,6 @@ class RolesFunctionsAdminController
         return Response::redirect(url('back-office/roles-functions'));
     }
 
-    /**
-     * Données graphe (nœuds + arêtes) pour visualisation JS.
-     */
-    public function graphJson(Request $request, array $params = []): Response
-    {
-        $tenantId = (int) Session::get('tenant_id');
-        if (!$tenantId) {
-            return Response::json(['error' => 'unauthorized'], 401);
-        }
-        $gate = Gate::getInstance();
-        if (!$gate->allows('admin.organization') && !$gate->allows('admin.roles.manage') && !$gate->allows('admin.permissions.manage')) {
-            return Response::json(['error' => 'forbidden'], 403);
-        }
-
-        $pdo = Database::getPdo();
-        $nodes = [];
-        $edges = [];
-        try {
-            $st = $pdo->prepare(
-                "SELECT rr.relation_type, rf.id AS from_id, rf.slug AS from_slug, rf.name AS from_name,
-                        rt.id AS to_id, rt.slug AS to_slug, rt.name AS to_name
-                 FROM role_relations rr
-                 INNER JOIN roles rf ON rf.id = rr.from_role_id AND rf.tenant_id = rr.tenant_id AND rf.role_layer IN ('community','intra')
-                 INNER JOIN roles rt ON rt.id = rr.to_role_id AND rt.tenant_id = rr.tenant_id AND rt.role_layer IN ('community','intra')
-                 WHERE rr.tenant_id = ?"
-            );
-            $st->execute([$tenantId]);
-            $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            $nodeMap = [];
-            foreach ($rows as $r) {
-                $fid = (int) ($r['from_id'] ?? 0);
-                $tid = (int) ($r['to_id'] ?? 0);
-                if ($fid > 0) {
-                    $nodeMap[$fid] = ['id' => 'r' . $fid, 'label' => (string) ($r['from_name'] ?? ''), 'slug' => (string) ($r['from_slug'] ?? '')];
-                }
-                if ($tid > 0) {
-                    $nodeMap[$tid] = ['id' => 'r' . $tid, 'label' => (string) ($r['to_name'] ?? ''), 'slug' => (string) ($r['to_slug'] ?? '')];
-                }
-                $rtype = (string) ($r['relation_type'] ?? '');
-                $edges[] = [
-                    'from' => 'r' . $fid,
-                    'to' => 'r' . $tid,
-                    'type' => $rtype,
-                    'type_label' => RoleDoctrineUiLabels::relationTypeShort($rtype),
-                ];
-            }
-            $nodes = array_values($nodeMap);
-        } catch (\Throwable) {
-        }
-
-        return Response::json(['nodes' => $nodes, 'edges' => $edges]);
-    }
-
     private function guardBackOfficeAccess(): ?Response
     {
         $gate = Gate::getInstance();
