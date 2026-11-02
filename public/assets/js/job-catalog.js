@@ -21,7 +21,10 @@
     const FILTERS = ['country', 'branch', 'command', 'formation', 'type'];
     const state = {country: '', branch: '', command: '', formation: '', type: '', sort: 'relevance', group: true};
     const LIMITS = {name: 120, abbreviation: 8, description: 500, tags: 400, code: 40};
-    const normalize = value => String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ');
+    // Sans accents ni casse ; « ß » (sans forme décomposée) devient « ss ».
+    const normalize = value => String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLocaleLowerCase().replace(/ß/g, 'ss').replace(/[^\p{L}\p{N}]+/gu, ' ');
+    // Graphie allemande sans tréma : « Fallschirmjäger » se trouve aussi en tapant « fallschirmjaeger ».
+    const transliterate = value => value.replace(/[äöüÄÖÜ]/g, c => ({ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'Ae', Ö: 'Oe', Ü: 'Ue'})[c]);
     const dialog = () => document.querySelector('[data-job-catalog]');
     const form = () => document.querySelector('form[data-job-catalog-form]');
     const isEnglish = () => (document.documentElement.lang || 'fr').slice(0, 2) === 'en';
@@ -57,9 +60,11 @@
     }
 
     function haystack(entry) {
-        return ' ' + normalize([entry.name, entry.official_name, entry.alt, entry.abbreviation, entry.code, entry.unit, entry.command,
+        const text = [entry.name, entry.official_name, entry.alt, entry.abbreviation, entry.code, entry.unit, entry.command,
             entry.formation, entry.branch_label, entry.country_label, entry.type_label, (entry.tags || []).join(' '),
-            (entry.qualifications || []).join(' '), entry.id].join(' ')) + ' ' + String(entry.code || '').toLowerCase().replace(/\s+/g, '') + ' ';
+            (entry.qualifications || []).join(' '), entry.id].join(' ');
+        const german = transliterate(text);
+        return ' ' + normalize(text) + ' ' + (german !== text ? normalize(german) + ' ' : '') + String(entry.code || '').toLowerCase().replace(/\s+/g, '') + ' ';
     }
 
     async function load() {

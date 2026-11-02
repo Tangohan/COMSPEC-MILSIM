@@ -16,13 +16,13 @@ use App\Support\JobRoleIconLibrary;
  * Format d’un pack : { pack, country, official_lang, label{fr,en}, compiled_at, sources_note{fr,en}, entries[] } ;
  * une entrée : id, branch, command, formation, unit{fr,en}, type, code, code_system, name{fr,en}, abbreviation,
  * description{fr,en}, qualifications{fr[],en[]}, billets{fr[],en[]}, icon, tags{fr[],en[]}, sources[{url,title}].
- * official_lang : langue des appellations officielles du pays (« en » par défaut) ; formation : unité courte
+ * official_lang : langue des appellations officielles du pays (« en » par défaut ; « de » : name porte aussi une clé de) ; formation : unité courte
  * (« 1er RPIMa », « CPA 10 »), facultative, proposée comme filtre sous le commandement.
  */
 final class JobCatalog
 {
     /** Packs livrés (nom du fichier sans extension). */
-    public const PACKS = ['us_sof', 'fr_sof'];
+    public const PACKS = ['us_sof', 'fr_sof', 'de_sof'];
 
     public const TYPES = ['operator', 'command', 'support', 'aviation'];
     public const BRANCHES = ['army', 'navy', 'air_force', 'marine_corps', 'gendarmerie', 'joint'];
@@ -35,6 +35,7 @@ final class JobCatalog
     public const COUNTRIES = [
         'US' => ['fr' => 'États-Unis', 'en' => 'United States'],
         'FR' => ['fr' => 'France', 'en' => 'France'],
+        'DE' => ['fr' => 'Allemagne', 'en' => 'Germany'],
     ];
 
     /** Armées d’un pays ; une armée absente reprend le libellé générique de LABELS['branch']. */
@@ -52,6 +53,13 @@ final class JobCatalog
             'air_force' => ['fr' => 'Armée de l’Air et de l’Espace', 'en' => 'French Air and Space Force'],
             'gendarmerie' => ['fr' => 'Gendarmerie nationale', 'en' => 'French Gendarmerie'],
             'joint' => ['fr' => 'Interarmées (COS)', 'en' => 'Joint (COS)'],
+        ],
+        // Nom allemand officiel de l’armée gardé dans les deux langues.
+        'DE' => [
+            'army' => ['fr' => 'Heer (armée de terre)', 'en' => 'German Army (Heer)'],
+            'navy' => ['fr' => 'Deutsche Marine (marine)', 'en' => 'German Navy (Deutsche Marine)'],
+            'air_force' => ['fr' => 'Luftwaffe (armée de l’air)', 'en' => 'German Air Force (Luftwaffe)'],
+            'joint' => ['fr' => 'Interarmées (Bundeswehr)', 'en' => 'Joint (Bundeswehr)'],
         ],
     ];
 
@@ -132,7 +140,7 @@ final class JobCatalog
         foreach (self::packs() as $pack => $data) {
             foreach ($data['entries'] as $entry) {
                 if (is_array($entry)) {
-                    $out[] = $entry + ['pack' => $pack, 'country' => (string) ($data['country'] ?? ''), 'official_lang' => self::lang((string) ($data['official_lang'] ?? 'en'))];
+                    $out[] = $entry + ['pack' => $pack, 'country' => (string) ($data['country'] ?? ''), 'official_lang' => self::officialLang((string) ($data['official_lang'] ?? 'en'))];
                 }
             }
         }
@@ -145,7 +153,15 @@ final class JobCatalog
         return str_starts_with(strtolower($lang), 'en') ? 'en' : 'fr';
     }
 
-    /** @param mixed $pair {fr, en} */
+    /** Langue des appellations officielles d’un pack (code à deux lettres : fr, en, de…). */
+    public static function officialLang(string $lang): string
+    {
+        $lang = strtolower(substr(trim($lang), 0, 2));
+
+        return preg_match('/^[a-z]{2}$/', $lang) === 1 ? $lang : 'en';
+    }
+
+    /** @param mixed $pair {fr, en} (et, pour le nom officiel, la langue du pays) */
     private static function pick(mixed $pair, string $lang): string
     {
         if (!is_array($pair)) {
@@ -281,10 +297,17 @@ final class JobCatalog
         if (class_exists(\Normalizer::class)) {
             $text = (string) preg_replace('/\p{Mn}+/u', '', (string) \Normalizer::normalize($text, \Normalizer::FORM_D));
         } else {
-            $text = strtr($text, ['à' => 'a', 'â' => 'a', 'ä' => 'a', 'á' => 'a', 'ç' => 'c', 'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'î' => 'i', 'ï' => 'i', 'í' => 'i', 'ô' => 'o', 'ö' => 'o', 'ó' => 'o', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ú' => 'u', 'ÿ' => 'y', 'ñ' => 'n', 'œ' => 'oe', 'æ' => 'ae']);
+            $text = strtr($text, ['ß' => 'ss', 'à' => 'a', 'â' => 'a', 'ä' => 'a', 'á' => 'a', 'ç' => 'c', 'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'î' => 'i', 'ï' => 'i', 'í' => 'i', 'ô' => 'o', 'ö' => 'o', 'ó' => 'o', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ú' => 'u', 'ÿ' => 'y', 'ñ' => 'n', 'œ' => 'oe', 'æ' => 'ae']);
         }
 
-        return (string) preg_replace('/[^\p{L}\p{N}]+/u', ' ', $text);
+        // « ß » n’a pas de forme décomposée : « Straße » se cherche « strasse ».
+        return (string) preg_replace('/[^\p{L}\p{N}]+/u', ' ', str_replace('ß', 'ss', $text));
+    }
+
+    /** Graphie allemande sans tréma (« Fallschirmjäger » → « Fallschirmjaeger »), pour la recherche. */
+    public static function transliterate(string $text): string
+    {
+        return strtr($text, ['ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'Ä' => 'Ae', 'Ö' => 'Oe', 'Ü' => 'Ue']);
     }
 
     /** Texte cherché d’une entrée : noms, abrégé, code, unité, commandement, branche et étiquettes dans les deux langues. */
@@ -292,8 +315,9 @@ final class JobCatalog
     {
         $parts = [(string) ($entry['id'] ?? ''), (string) ($entry['abbreviation'] ?? ''), (string) ($entry['code'] ?? ''), (string) ($entry['command'] ?? ''), (string) ($entry['formation'] ?? '')];
         foreach (['name', 'unit'] as $field) {
-            foreach (['fr', 'en'] as $l) {
-                $parts[] = self::pick($entry[$field] ?? '', $l);
+            // Toutes les langues livrées, dont le nom officiel allemand.
+            foreach (array_unique(array_merge(['fr', 'en'], is_array($entry[$field] ?? null) ? array_keys($entry[$field]) : [])) as $l) {
+                $parts[] = self::pick($entry[$field] ?? '', (string) $l);
             }
         }
         foreach (['tags', 'qualifications'] as $field) {
@@ -307,9 +331,11 @@ final class JobCatalog
             $parts[] = self::countryLabel((string) ($entry['country'] ?? ''), $l);
         }
         $code = (string) ($entry['code'] ?? '');
+        $text = implode(' ', $parts);
+        $german = self::transliterate($text);
 
-        // « 18B » se trouve aussi en tapant « 18 b ».
-        return ' ' . self::normalize(implode(' ', $parts)) . ' ' . strtolower(str_replace(' ', '', $code)) . ' ';
+        // « 18B » se trouve aussi en tapant « 18 b » ; « Fallschirmjäger » en tapant « fallschirmjager » ou « fallschirmjaeger ».
+        return ' ' . self::normalize($text) . ' ' . ($german !== $text ? self::normalize($german) . ' ' : '') . strtolower(str_replace(' ', '', $code)) . ' ';
     }
 
     /**

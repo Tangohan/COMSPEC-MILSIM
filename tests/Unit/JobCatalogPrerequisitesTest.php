@@ -20,7 +20,7 @@ use ReflectionProperty;
 use Tests\Support\MysqlDdlSqlitePdo;
 
 /**
- * Catalogue d’emplois de référence (forces spéciales américaines et françaises) et prérequis d’un emploi : doctrines, heures de
+ * Catalogue d’emplois de référence (forces spéciales américaines, françaises et allemandes) et prérequis d’un emploi : doctrines, heures de
  * jeu / de vol mesurées, qualifications, compétences, contrôle à l’attribution et dérogation motivée.
  */
 final class JobCatalogPrerequisitesTest extends TestCase
@@ -135,6 +135,52 @@ final class JobCatalogPrerequisitesTest extends TestCase
         self::assertSame('France', $en['country_label']);
     }
 
+    public function testGermanPackCoversKskDskKsmAndLuftwaffeWithGermanOfficialNames(): void
+    {
+        $pack = JobCatalog::packs()['de_sof'] ?? null;
+        self::assertIsArray($pack);
+        self::assertSame('DE', $pack['country']);
+        self::assertSame('de', $pack['official_lang']);
+        $entries = array_values(array_filter(JobCatalog::rawEntries(), static fn (array $e): bool => $e['country'] === 'DE'));
+        $branches = array_count_values(array_column($entries, 'branch'));
+        foreach (['army' => 40, 'navy' => 15, 'air_force' => 10, 'joint' => 3] as $branch => $min) {
+            self::assertGreaterThanOrEqual($min, $branches[$branch] ?? 0, 'DE ' . $branch);
+        }
+        foreach (['KSK', 'DSK', 'EinsFltl 1', 'Luftwaffe'] as $command) {
+            self::assertContains($command, array_column($entries, 'command'), 'Commandement absent du catalogue allemand.');
+        }
+        $formations = array_unique(array_column($entries, 'formation'));
+        foreach (['Kommandokompanie', 'KSK Unterstützung', 'FschJgRgt 26', 'FschJgRgt 31', 'Fernspähkompanie 1', 'GebJgBrig 23', 'KSM', 'Seebataillon', 'HSG 64', 'ObjSRgt'] as $unit) {
+            self::assertContains($unit, $formations, 'Unité absente du catalogue allemand.');
+        }
+        foreach ($entries as $entry) {
+            self::assertNotSame('', trim((string) ($entry['formation'] ?? '')), $entry['id'] . ' : unité courte manquante.');
+            // Nom officiel allemand obligatoire, montré dans la fiche sous le nom traduit.
+            self::assertNotSame('', trim((string) ($entry['name']['de'] ?? '')), $entry['id'] . ' : nom officiel allemand manquant.');
+            self::assertLessThanOrEqual(120, mb_strlen((string) $entry['name']['de']), $entry['id']);
+            $official = array_filter($entry['sources'], static fn (array $s): bool => preg_match('~wikipedia\.org~', (string) $s['url']) !== 1);
+            self::assertNotSame([], $official, $entry['id'] . ' : Wikipédia ne peut pas être la seule source.');
+        }
+        $byId = array_column($entries, null, 'id');
+        $ksm = JobCatalog::find('de-marine-ksm-kampfschwimmer', 'fr');
+        self::assertIsArray($ksm);
+        self::assertSame('Kampfschwimmerunteroffizier', $ksm['official_name']);
+        self::assertNotSame($ksm['official_name'], $ksm['name']);
+        self::assertSame('Deutsche Marine (marine)', $ksm['branch_label']);
+        self::assertSame('Allemagne', $ksm['country_label']);
+        $en = JobCatalog::find('de-heer-ksk-kommandofeldwebel', 'en');
+        self::assertSame($byId['de-heer-ksk-kommandofeldwebel']['name']['de'], $en['official_name']);
+        self::assertSame($byId['de-heer-ksk-kommandofeldwebel']['name']['en'], $en['name']);
+        self::assertSame('German Army (Heer)', $en['branch_label']);
+        self::assertSame('Germany', $en['country_label']);
+        // Recherche sans tréma dans le vrai catalogue.
+        $hits = array_column(JobCatalog::search('fallschirmjager', ['country' => 'DE'], 'fr'), 'id');
+        self::assertNotEmpty($hits);
+        self::assertSame($hits, array_column(JobCatalog::search('Fallschirmjäger', ['country' => 'DE'], 'fr'), 'id'));
+        self::assertSame($hits, array_column(JobCatalog::search('fallschirmjaeger', ['country' => 'DE'], 'fr'), 'id'));
+        self::assertContains('de-marine-ksm-kampfschwimmer', array_column(JobCatalog::search('kampfschwimmer', [], 'en'), 'id'));
+    }
+
     public function testContentIsServedInTheReadersLanguageAndSearchCoversCodesNamesUnitsAndFilters(): void
     {
         $dir = sys_get_temp_dir() . '/jobcat-' . bin2hex(random_bytes(4));
@@ -240,6 +286,73 @@ final class JobCatalogPrerequisitesTest extends TestCase
         }
     }
 
+    public function testThirdCountryHasItsCountersFiltersOfficialGermanNameAndUmlautFreeSearch(): void
+    {
+        $dir = sys_get_temp_dir() . '/jobcat-' . bin2hex(random_bytes(4));
+        mkdir($dir);
+        $entry = static fn (string $id, string $branch, string $command, string $formation, string $type, array $name, array $qualDe = []): array => [
+            'id' => $id, 'branch' => $branch, 'command' => $command, 'formation' => $formation, 'type' => $type,
+            'code' => '', 'code_system' => '', 'abbreviation' => '', 'icon' => 'parachute', 'name' => $name,
+            'unit' => ['fr' => $formation . ' (unité)', 'en' => $formation . ' (unit)'], 'description' => ['fr' => 'Texte.', 'en' => 'Text.'],
+            'qualifications' => ['fr' => $qualDe, 'en' => $qualDe], 'billets' => ['fr' => [], 'en' => []],
+            'tags' => ['fr' => ['Forces spéciales'], 'en' => ['Special Forces']], 'sources' => [['url' => 'https://www.bundeswehr.de/x', 'title' => 'x']],
+        ];
+        $pack = static fn (string $country, string $official, array $entries): string => (string) json_encode(['country' => $country, 'official_lang' => $official, 'label' => ['fr' => 'FS ' . $country, 'en' => $country . ' SOF'], 'compiled_at' => '2026-11-02', 'sources_note' => ['fr' => 'n', 'en' => 'n'], 'entries' => $entries]);
+        file_put_contents($dir . '/us_sof.json', $pack('US', 'en', [
+            $entry('us-navy-so', 'navy', 'NSWC', 'SEAL Teams', 'operator', ['fr' => 'Opérateur de guerre spéciale', 'en' => 'Special Warfare Operator']),
+        ]));
+        file_put_contents($dir . '/fr_sof.json', $pack('FR', 'fr', [
+            $entry('fr-marine-hubert-nageur', 'navy', 'FORFUSCO', 'Commando Hubert', 'operator', ['fr' => 'Nageur de combat', 'en' => 'Combat Swimmer']),
+        ]));
+        file_put_contents($dir . '/de_sof.json', $pack('DE', 'de', [
+            $entry('de-heer-fschjg26-fallschirmjaeger', 'army', 'DSK', 'FschJgRgt 26', 'operator', ['de' => 'Fallschirmjäger', 'fr' => 'Parachutiste (Fallschirmjäger)', 'en' => 'Paratrooper'], ['Einzelkämpferlehrgang']),
+            $entry('de-marine-ksm-kampfschwimmer', 'navy', 'EinsFltl 1', 'KSM', 'operator', ['de' => 'Kampfschwimmer', 'fr' => 'Nageur de combat (KSM)', 'en' => 'Combat Swimmer (KSM)'], ['Kampfschwimmerlehrgang']),
+            $entry('de-lw-hsg64-pilot', 'air_force', 'Luftwaffe', 'HSG 64', 'aviation', ['de' => 'Luftfahrzeugführer H145M LUH SOF', 'fr' => 'Pilote H145M LUH SOF', 'en' => 'H145M LUH SOF pilot']),
+            $entry('de-heer-gebjg-bergfuehrer', 'army', 'DSK', 'GebJgBrig 23', 'support', ['de' => 'Heeresbergführer', 'fr' => 'Guide de haute montagne', 'en' => 'Army mountain guide'], ['Heeresbergführerausbildung, Straße des Gebirges']),
+        ]));
+        JobCatalog::useDirectory($dir);
+        try {
+            $ids = static fn (array $hits): array => array_column($hits, 'id');
+            // Compteurs : un pays par pack, dans l’ordre de COUNTRIES.
+            self::assertSame([['code' => 'US', 'label' => 'États-Unis', 'count' => 1], ['code' => 'FR', 'label' => 'France', 'count' => 1], ['code' => 'DE', 'label' => 'Allemagne', 'count' => 4]], JobCatalog::countries('fr'));
+            self::assertSame('Germany', JobCatalog::countries('en')[2]['label']);
+            self::assertSame(['US' => 'États-Unis', 'FR' => 'France', 'DE' => 'Allemagne'], JobCatalog::facets('fr')['country']);
+            // Filtres en cascade : armées, commandements et unités du seul pays choisi ; armée commune à trois pays = libellé générique.
+            self::assertSame('Marines', JobCatalog::facets('fr')['branch']['navy']);
+            $de = JobCatalog::facets('fr', ['country' => 'DE']);
+            self::assertSame(['army' => 'Heer (armée de terre)', 'navy' => 'Deutsche Marine (marine)', 'air_force' => 'Luftwaffe (armée de l’air)'], $de['branch']);
+            self::assertSame(['DSK', 'EinsFltl 1', 'Luftwaffe'], array_keys($de['command']));
+            self::assertSame(['FschJgRgt 26', 'GebJgBrig 23'], array_keys(JobCatalog::facets('fr', ['country' => 'DE', 'branch' => 'army', 'command' => 'DSK'])['formation']));
+            self::assertSame(['de-marine-ksm-kampfschwimmer'], $ids(JobCatalog::search('', ['country' => 'DE', 'branch' => 'navy'], 'fr')));
+            self::assertSame(['us-navy-so', 'fr-marine-hubert-nageur', 'de-marine-ksm-kampfschwimmer'], $ids(JobCatalog::search('', ['branch' => 'navy'], 'fr')));
+            self::assertSame('German Navy (Deutsche Marine)', JobCatalog::find('de-marine-ksm-kampfschwimmer', 'en')['branch_label']);
+            // Nom officiel allemand montré sous le nom traduit, dans les deux langues du site.
+            $fr = JobCatalog::find('de-heer-fschjg26-fallschirmjaeger', 'fr');
+            self::assertSame('Parachutiste (Fallschirmjäger)', $fr['name']);
+            self::assertSame('Fallschirmjäger', $fr['official_name']);
+            self::assertSame('de', JobCatalog::rawEntries()[2]['official_lang']);
+            self::assertSame('Paratrooper', JobCatalog::find('de-heer-fschjg26-fallschirmjaeger', 'en')['name']);
+            self::assertSame('Fallschirmjäger', JobCatalog::find('de-heer-fschjg26-fallschirmjaeger', 'en')['official_name']);
+            // Trémas et ß : sans tréma, avec la graphie « ae », avec ou sans ß, en majuscules ; le nom allemand est cherché.
+            foreach (['fallschirmjager', 'fallschirmjaeger', 'FALLSCHIRMJÄGER', 'Fallschirmjäger', 'einzelkampfer', 'einzelkaempfer'] as $q) {
+                self::assertSame(['de-heer-fschjg26-fallschirmjaeger'], $ids(JobCatalog::search($q, [], 'fr')), $q);
+            }
+            foreach (['heeresbergfuhrer', 'heeresbergfuehrer', 'strasse', 'straße', 'STRASSE'] as $q) {
+                self::assertSame(['de-heer-gebjg-bergfuehrer'], $ids(JobCatalog::search($q, [], 'en')), $q);
+            }
+            self::assertSame(['de-lw-hsg64-pilot'], $ids(JobCatalog::search('luftfahrzeugfuhrer', [], 'en')), 'Nom officiel allemand cherché.');
+            self::assertSame(['de-marine-ksm-kampfschwimmer'], $ids(JobCatalog::search('kampfschwimmer', ['country' => 'DE'], 'en')));
+            self::assertSame([], $ids(JobCatalog::search('kampfschwimmer', ['country' => 'FR'], 'en')));
+            self::assertSame('strasse', JobCatalog::normalize('Straße'));
+            self::assertSame('fallschirmjager', JobCatalog::normalize('Fallschirmjäger'));
+        } finally {
+            foreach (['us_sof', 'fr_sof', 'de_sof'] as $file) {
+                unlink($dir . '/' . $file . '.json');
+            }
+            rmdir($dir);
+        }
+    }
+
     public function testCatalogueEndpointAnswersJsonForTheWorkspaceOnly(): void
     {
         $_SESSION = ['tenant_id' => 14, 'user_id' => 7];
@@ -254,7 +367,7 @@ final class JobCatalogPrerequisitesTest extends TestCase
         self::assertNotEmpty($body['entries']);
         self::assertSame('air_force', $body['entries'][0]['branch']);
         self::assertArrayHasKey('branch', $body['facets']);
-        self::assertSame(['US', 'FR'], array_column($body['countries'], 'code'));
+        self::assertSame(['US', 'FR', 'DE'], array_column($body['countries'], 'code'));
         $_GET = ['q' => 'nageur de combat', 'country' => 'FR'];
         $body = json_decode((new JobCatalogController())->catalogue(new Request())->body(), true);
         self::assertNotEmpty($body['entries']);
