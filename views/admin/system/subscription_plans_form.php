@@ -1,22 +1,44 @@
 <?php
 declare(strict_types=1);
 
-use App\Services\Billing\SubscriptionPlanFeaturesCatalog;
+use App\Services\Billing\SubscriptionPlanFeaturesCatalog as PlanCatalog;
 
 $row = is_array($subscriptionPlanRow ?? null) ? $subscriptionPlanRow : null;
-$action = (string) ($subscriptionPlanFormAction ?? '');
-$csrf = \App\Core\Csrf::token();
 if ($row === null) {
     echo '<p class="p-8 text-slate-600">Données manquantes.</p>';
 
     return;
 }
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$action = (string) ($subscriptionPlanFormAction ?? '');
+$previewAction = (string) ($subscriptionPlanPreviewAction ?? '');
+$duplicateAction = (string) ($subscriptionPlanDuplicateAction ?? '');
+$csrf = \App\Core\Csrf::token();
+$planValues = is_array($subscriptionPlanValues ?? null) ? $subscriptionPlanValues : PlanCatalog::planValues($row);
+$values = $planValues['values'];
+$defaulted = $planValues['defaulted'];
+$unknown = is_array($subscriptionPlanUnknownKeys ?? null) ? $subscriptionPlanUnknownKeys : [];
+$subs = is_array($subscriptionPlanSubscribers ?? null) ? $subscriptionPlanSubscribers : [];
+$history = is_array($subscriptionPlanHistory ?? null) ? $subscriptionPlanHistory : [];
+$preview = is_array($subscriptionPlanPreview ?? null) ? $subscriptionPlanPreview : ['cards' => [], 'isPublic' => true, 'slug' => ''];
 $id = (int) ($row['id'] ?? 0);
 $name = (string) ($row['name'] ?? '');
 $slug = (string) ($row['slug'] ?? '');
 $sort = (int) ($row['sort_order'] ?? 0);
-$fj = $row['features_json'] ?? null;
-$lj = $row['limits_json'] ?? null;
+$defs = PlanCatalog::definitions();
+$groups = PlanCatalog::keysByGroup();
+$tabs = ['general' => 'Général et prix'];
+foreach ($groups as $g => $keys) {
+    if ($keys !== []) {
+        $tabs[$g] = PlanCatalog::GROUPS[$g]['label'];
+    }
+}
+$tabs['apercu'] = 'Aperçu client';
+$tabs['historique'] = 'Historique';
+$tab = (string) ($subscriptionPlanTab ?? 'members');
+if (!isset($tabs[$tab])) {
+    $tab = 'members';
+}
 $centsToEuros = static function ($cents): string {
     $cents = is_numeric($cents) ? (int) $cents : 0;
     if ($cents <= 0) {
@@ -27,133 +49,224 @@ $centsToEuros = static function ($cents): string {
 };
 $priceM = $centsToEuros($row['price_monthly_cents'] ?? null);
 $priceY = $centsToEuros($row['price_yearly_cents'] ?? null);
-
-$features = [];
-if (is_string($fj) && trim($fj) !== '') {
-    $decoded = json_decode($fj, true);
-    if (is_array($decoded)) {
-        $features = $decoded;
-    }
+$limitsVal = '';
+$lj = $row['limits_json'] ?? null;
+if (is_string($lj) && trim($lj) !== '') {
+    $d = json_decode($lj, true);
+    $limitsVal = is_array($d) ? (string) json_encode($d, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : $lj;
 }
-$defs = SubscriptionPlanFeaturesCatalog::definitions();
+$fmtDate = static function (string $raw): string {
+    $t = strtotime($raw);
 
-$prettyJson = static function (?string $raw): string {
-    if ($raw === null || trim($raw) === '') {
-        return '';
-    }
-    $d = json_decode($raw, true);
-    if (!is_array($d)) {
-        return (string) $raw;
-    }
-    $enc = json_encode($d, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-
-    return $enc !== false ? $enc : (string) $raw;
+    return $t ? date('d/m/Y H:i', $t) : $raw;
 };
-$limitsVal = $prettyJson(is_string($lj) ? $lj : null);
+$ok = \App\Core\Session::getFlash('success');
+$warn = \App\Core\Session::getFlash('warning');
+$err = \App\Core\Session::getFlash('error');
 ?>
-<div class="min-h-0 flex-1 bg-slate-50">
-    <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-        <nav class="mb-6 text-sm text-slate-500">
-            <a href="<?= htmlspecialchars(url('admin'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 hover:text-emerald-950">Administration plateforme</a>
-            <span class="mx-2" aria-hidden="true">/</span>
-            <a href="<?= htmlspecialchars(url('admin/system/subscription-plans'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 hover:text-emerald-950">Formules d’accès</a>
-            <span class="mx-2" aria-hidden="true">/</span>
-            <span class="text-slate-800">Modifier</span>
-        </nav>
-
-        <?php $err = \App\Core\Session::getFlash('error'); ?>
-        <?php if ($err): ?>
-            <p class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900"><?= htmlspecialchars((string) $err, ENT_QUOTES, 'UTF-8') ?></p>
-        <?php endif; ?>
-
-        <header class="pa-head">
-            <h1 class="text-2xl font-black text-slate-900">Modifier la formule</h1>
-            <p class="mt-2 text-sm text-slate-600">
-                Identifiant interne : <span class="font-mono text-xs font-semibold text-slate-800"><?= htmlspecialchars($slug, ENT_QUOTES, 'UTF-8') ?></span>
+<div class="pa spl">
+    <div class="pa__frame">
+        <header class="pa-hero">
+            <p class="pa-crumb">
+                <a href="<?= $h(url('admin')) ?>">Administration du site</a>
+                <span aria-hidden="true"> / </span>
+                <a href="<?= $h(url('admin/system/subscription-plans')) ?>">Formules d’accès</a>
+                <span aria-hidden="true"> / </span>
+                <?= $h($name) ?>
             </p>
+            <h1 class="pa-hero__title"><?= $h($name) ?></h1>
+            <p class="pa-hero__lead">
+                <span>Identifiant interne :</span> <code translate="no"><?= $h($slug) ?></code> ·
+                <strong><?= count($subs) ?></strong> <span>communauté(s) sur cette formule (formules offertes comprises).</span>
+            </p>
+            <div class="pa-hero__actions">
+                <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/system/subscription-plans')) ?>">Comparer les formules</a>
+                <form method="post" action="<?= $h($duplicateAction) ?>">
+                    <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+                    <button type="submit" class="pa-btn pa-btn--ghost">Dupliquer cette formule</button>
+                </form>
+                <a class="pa-btn pa-btn--ghost" href="<?= $h(url('platform/upgrade')) ?>">Page publique des formules</a>
+            </div>
         </header>
 
-        <form method="post" action="<?= htmlspecialchars($action, ENT_QUOTES, 'UTF-8') ?>" class="mt-8 space-y-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+        <div class="pa-panel">
+            <?php if ($ok): ?>
+                <p class="pa-flash pa-flash--ok"><?= $h((string) $ok) ?></p>
+            <?php endif; ?>
+            <?php if ($warn): ?>
+                <p class="pa-flash pa-flash--warn"><?= $h((string) $warn) ?></p>
+            <?php endif; ?>
+            <?php if ($err): ?>
+                <p class="pa-flash pa-flash--err"><?= $h((string) $err) ?></p>
+            <?php endif; ?>
 
-            <div>
-                <label for="sp_name" class="block text-sm font-semibold text-slate-800">Libellé</label>
-                <input id="sp_name" name="name" type="text" required maxlength="100" value="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" />
-            </div>
+            <form id="spl-form" class="spl-form" method="post" action="<?= $h($action) ?>" data-spl-form data-preview-url="<?= $h($previewAction) ?>" novalidate>
+                <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+                <input type="hidden" name="onglet" value="<?= $h($tab) ?>" data-spl-tab-input>
 
-            <div>
-                <label for="sp_sort" class="block text-sm font-semibold text-slate-800">Ordre d’affichage</label>
-                <input id="sp_sort" name="sort_order" type="number" value="<?= (int) $sort ?>" class="mt-1 w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" />
-            </div>
-
-            <fieldset>
-                <legend class="text-sm font-semibold text-slate-800">Modules inclus</legend>
-                <p class="mt-1 text-xs text-slate-500">Cochez les modules disponibles pour les communautés sur cette formule.</p>
-                <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                    <?php foreach (SubscriptionPlanFeaturesCatalog::BOOL_FEATURES as $key): ?>
-                        <?php
-                        $def = $defs[$key] ?? ['label' => $key, 'help' => ''];
-                        // Clé absente de la formule (ajoutée depuis) : la valeur par défaut du catalogue s'applique déjà.
-                        $checked = array_key_exists($key, $features) ? !empty($features[$key]) : !empty(SubscriptionPlanFeaturesCatalog::defaultsForSlug((string) ($row['slug'] ?? 'free'))[$key] ?? false);
-                        ?>
-                        <label class="flex gap-3 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm hover:border-emerald-300">
-                            <input type="checkbox" name="feature_<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" value="1" class="mt-1 rounded border-slate-300 text-emerald-700 focus:ring-emerald-500" <?= $checked ? 'checked' : '' ?> />
-                            <span>
-                                <span class="font-semibold text-slate-900"><?= htmlspecialchars((string) $def['label'], ENT_QUOTES, 'UTF-8') ?></span>
-                                <?php if (!empty($def['help'])): ?>
-                                    <span class="mt-0.5 block text-xs text-slate-500"><?= htmlspecialchars((string) $def['help'], ENT_QUOTES, 'UTF-8') ?></span>
-                                <?php endif; ?>
-                            </span>
+                <div class="spl-layout">
+                    <aside class="spl-side">
+                        <label class="spl-search">
+                            <span class="spl-sr">Rechercher un paramètre</span>
+                            <input type="search" data-spl-search placeholder="Rechercher un paramètre" autocomplete="off">
                         </label>
-                    <?php endforeach; ?>
-                </div>
-            </fieldset>
+                        <nav class="spl-tabs" role="tablist" aria-label="Groupes de paramètres" data-spl-tabs>
+                            <?php foreach ($tabs as $tk => $tl): ?>
+                                <button type="button" role="tab" class="spl-tab" id="spl-tab-<?= $h($tk) ?>" aria-controls="spl-panel-<?= $h($tk) ?>" aria-selected="<?= $tk === $tab ? 'true' : 'false' ?>" data-spl-tab="<?= $h($tk) ?>">
+                                    <?= $h($tl) ?>
+                                    <?php if (isset($groups[$tk])): ?><span class="spl-tab__count"><?= count($groups[$tk]) ?></span><?php endif; ?>
+                                </button>
+                            <?php endforeach; ?>
+                        </nav>
+                    </aside>
 
-            <fieldset>
-                <legend class="text-sm font-semibold text-slate-800">Plafonds</legend>
-                <div class="mt-3 grid gap-4 sm:grid-cols-2">
-                    <?php foreach (SubscriptionPlanFeaturesCatalog::INT_FEATURES as $key): ?>
-                        <?php
-                        $def = $defs[$key] ?? ['label' => $key, 'help' => ''];
-                        // Clé absente de la formule (ajoutée depuis) : le plafond par défaut du catalogue s'applique déjà.
-                        $val = (int) (array_key_exists($key, $features) ? $features[$key] : (SubscriptionPlanFeaturesCatalog::defaultsForSlug((string) ($row['slug'] ?? 'free'))[$key] ?? 0));
-                        ?>
-                        <div>
-                            <label for="feat_<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" class="block text-sm font-semibold text-slate-800"><?= htmlspecialchars((string) $def['label'], ENT_QUOTES, 'UTF-8') ?></label>
-                            <?php if (!empty($def['help'])): ?>
-                                <p class="mt-0.5 text-xs text-slate-500"><?= htmlspecialchars((string) $def['help'], ENT_QUOTES, 'UTF-8') ?></p>
+                    <div class="spl-panels">
+                        <p class="spl-search-empty" data-spl-search-empty hidden>Aucun paramètre ne correspond à la recherche.</p>
+
+                        <section class="spl-panel pa-card" role="tabpanel" id="spl-panel-general" aria-labelledby="spl-tab-general" data-spl-panel="general">
+                            <p class="pa-card__kicker">Général et prix</p>
+                            <div class="spl-grid2">
+                                <div class="pa-field">
+                                    <label for="sp_name">Libellé</label>
+                                    <input id="sp_name" name="name" type="text" required maxlength="100" value="<?= $h($name) ?>">
+                                </div>
+                                <div class="pa-field">
+                                    <label for="sp_sort">Ordre d’affichage</label>
+                                    <input id="sp_sort" name="sort_order" type="number" step="1" value="<?= (int) $sort ?>" class="spl-input">
+                                </div>
+                                <div class="pa-field">
+                                    <label for="sp_price_m">Prix pour 1 mois (€)</label>
+                                    <input id="sp_price_m" name="price_monthly" type="text" inputmode="decimal" maxlength="10" value="<?= $h($priceM) ?>" placeholder="Ex. 9,99">
+                                </div>
+                                <div class="pa-field">
+                                    <label for="sp_price_y">Prix pour 1 an (€)</label>
+                                    <input id="sp_price_y" name="price_yearly" type="text" inputmode="decimal" maxlength="10" value="<?= $h($priceY) ?>" placeholder="Ex. 99">
+                                </div>
+                            </div>
+                            <p class="pa-hint">Montants demandés sur la page de paiement d’Athena (PayPal). Laissez vide pour ne pas proposer la période ; l’activation se fait dans Admin › Paiements.</p>
+                            <details class="spl-advanced"<?= $limitsVal !== '' ? ' open' : '' ?>>
+                                <summary>Quotas périodiques (avancé)</summary>
+                                <p class="pa-hint">Plafonds remis à zéro chaque mois, semaine ou jour, pour un module non inclus (ex. événements de la formule gratuite). Format JSON ; laissez vide si non utilisé.</p>
+                                <textarea id="sp_limits" name="limits_json" rows="7" class="spl-code" spellcheck="false" translate="no"><?= $h($limitsVal) ?></textarea>
+                            </details>
+                            <?php if ($unknown !== []): ?>
+                                <p class="pa-flash pa-flash--warn spl-unknown">
+                                    <span>Autres réglages enregistrés dans cette formule, inconnus du catalogue, conservés tels quels :</span>
+                                    <code translate="no"><?= $h(implode(', ', $unknown)) ?></code>
+                                </p>
                             <?php endif; ?>
-                            <input id="feat_<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" name="feature_<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" type="number" min="0" value="<?= $val ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" />
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </fieldset>
+                        </section>
 
-            <div>
-                <label for="sp_limits" class="block text-sm font-semibold text-slate-800">Quotas avancés (optionnel)</label>
-                <p class="mt-0.5 text-xs text-slate-500">Réservé aux plafonds périodiques (ex. événements mensuels). Laissez vide si non utilisé.</p>
-                <textarea id="sp_limits" name="limits_json" rows="6" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"><?= htmlspecialchars($limitsVal, ENT_QUOTES, 'UTF-8') ?></textarea>
-            </div>
+                        <?php foreach ($groups as $group => $keys): ?>
+                            <?php if ($keys === []) { continue; } ?>
+                            <section class="spl-panel pa-card" role="tabpanel" id="spl-panel-<?= $h($group) ?>" aria-labelledby="spl-tab-<?= $h($group) ?>" data-spl-panel="<?= $h($group) ?>">
+                                <p class="pa-card__kicker"><?= $h(PlanCatalog::GROUPS[$group]['label']) ?></p>
+                                <?php foreach ($keys as $key): ?>
+                                    <?php
+                                    $def = $defs[$key];
+                                    $v = $values[$key];
+                                    $fid = 'feat_' . $key;
+                                    ?>
+                                    <div class="spl-param" data-spl-row data-spl-text="<?= $h(mb_strtolower($def['label'] . ' ' . $def['label_en'] . ' ' . $def['help'] . ' ' . $key)) ?>">
+                                        <div class="spl-param__text">
+                                            <label class="spl-param__label" for="<?= $h($fid) ?>"><?= $h($def['label']) ?></label>
+                                            <p class="spl-param__help"><?= $h($def['help']) ?></p>
+                                            <p class="spl-param__meta">
+                                                <code translate="no"><?= $h($key) ?></code>
+                                                <?php if (!$def['read']): ?>
+                                                    <span class="pa-pill pa-pill--amber">Non contrôlé par le site : sans effet aujourd’hui</span>
+                                                <?php endif; ?>
+                                                <?php if (in_array($key, $defaulted, true)): ?>
+                                                    <span class="pa-pill pa-pill--slate">Valeur par défaut du palier</span>
+                                                <?php endif; ?>
+                                            </p>
+                                        </div>
+                                        <div class="spl-param__control">
+                                            <?php if ($def['type'] === 'bool'): ?>
+                                                <label class="spl-switch">
+                                                    <input type="checkbox" role="switch" id="<?= $h($fid) ?>" name="feature_<?= $h($key) ?>" value="1"<?= $v ? ' checked' : '' ?>>
+                                                    <span class="spl-switch__track" aria-hidden="true"></span>
+                                                    <span class="spl-switch__on">Inclus</span>
+                                                    <span class="spl-switch__off">Non inclus</span>
+                                                </label>
+                                            <?php else: ?>
+                                                <?php $unl = (int) $v === 0; ?>
+                                                <div class="spl-quota" data-spl-quota>
+                                                    <input type="number" class="spl-input spl-quota__num" id="<?= $h($fid) ?>" name="feature_<?= $h($key) ?>" min="<?= (int) $def['min'] ?>" max="<?= (int) $def['max'] ?>" step="1" inputmode="numeric" value="<?= $unl ? '' : (int) $v ?>"<?= $unl ? ' disabled' : ' required' ?> aria-describedby="<?= $h($fid) ?>_unit">
+                                                    <span class="spl-quota__unit" id="<?= $h($fid) ?>_unit"><?= $h((string) $def['unit']) ?></span>
+                                                    <label class="spl-quota__unl">
+                                                        <input type="checkbox" name="feature_<?= $h($key) ?>_unlimited" value="1"<?= $unl ? ' checked' : '' ?> data-spl-unlimited>
+                                                        <span>Illimité</span>
+                                                    </label>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </section>
+                        <?php endforeach; ?>
 
-            <fieldset>
-                <legend class="text-sm font-semibold text-slate-800">Prix (paiement PayPal)</legend>
-                <p class="mt-1 text-xs text-slate-500">Montants en euros demandés sur la page de paiement d’Athena (lien paypal.me pré-rempli). Laissez vide pour ne pas proposer la période. Chaque paiement couvre un mois ou un an ; vous l’activez dans Admin &gt; Paiements.</p>
-                <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                        <label for="sp_price_m" class="block text-sm font-semibold text-slate-800">Prix pour 1 mois (€)</label>
-                        <input id="sp_price_m" name="price_monthly" type="text" inputmode="decimal" maxlength="10" value="<?= htmlspecialchars($priceM, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" placeholder="Ex. 9,99" />
+                        <section class="spl-panel pa-card" role="tabpanel" id="spl-panel-apercu" aria-labelledby="spl-tab-apercu" data-spl-panel="apercu">
+                            <p class="pa-card__kicker">Ce que voit le client</p>
+                            <p class="pa-hint">Comparatif affiché sur la page des formules, avec les valeurs saisies ci-contre (mis à jour à chaque changement, avant l’enregistrement).</p>
+                            <div class="spl-preview" data-spl-preview aria-live="polite">
+                                <?php
+                                $previewData = $preview;
+                                $previewErrors = [];
+                                $previewOverages = [];
+                                $previewSubscribers = count($subs);
+                                require base_path('views/admin/system/partials/subscription_plan_preview.php');
+                                ?>
+                            </div>
+                        </section>
+
+                        <section class="spl-panel pa-card" role="tabpanel" id="spl-panel-historique" aria-labelledby="spl-tab-historique" data-spl-panel="historique">
+                            <p class="pa-card__kicker">Historique des modifications</p>
+                            <?php if ($history === []): ?>
+                                <p class="pa-empty">Aucune modification enregistrée dans le journal d’audit.</p>
+                            <?php else: ?>
+                                <ol class="spl-history">
+                                    <?php foreach ($history as $e): ?>
+                                        <li class="spl-history__item">
+                                            <p class="spl-history__head">
+                                                <strong><?= $h($fmtDate((string) $e['at'])) ?></strong>
+                                                <span>·</span>
+                                                <span><?= $h((string) $e['actor']) ?></span>
+                                                <span>·</span>
+                                                <span><?= $h(\App\Services\Audit\AuditActionLabel::toFrench((string) $e['action'])) ?></span>
+                                                <a class="spl-history__link" href="<?= $h(url('admin/audit/' . (int) $e['id'])) ?>">Détail et restauration</a>
+                                            </p>
+                                            <?php if ($e['changes'] === []): ?>
+                                                <p class="pa-hint">Enregistrée sans changement.</p>
+                                            <?php else: ?>
+                                                <ul class="spl-history__changes">
+                                                    <?php foreach ($e['changes'] as $c): ?>
+                                                        <li>
+                                                            <span class="spl-history__label"><?= $h((string) $c['label']) ?></span>
+                                                            <span class="spl-history__from"><?= $h((string) $c['from']) ?></span>
+                                                            <span aria-hidden="true">→</span>
+                                                            <span class="spl-history__to"><?= $h((string) $c['to']) ?></span>
+                                                        </li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            <?php endif; ?>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ol>
+                            <?php endif; ?>
+                        </section>
                     </div>
-                    <div>
-                        <label for="sp_price_y" class="block text-sm font-semibold text-slate-800">Prix pour 1 an (€)</label>
-                        <input id="sp_price_y" name="price_yearly" type="text" inputmode="decimal" maxlength="10" value="<?= htmlspecialchars($priceY, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" placeholder="Ex. 99" />
+                </div>
+
+                <div class="spl-savebar">
+                    <div class="spl-savebar__impact" data-spl-impact aria-live="polite"></div>
+                    <div class="spl-savebar__actions">
+                        <a class="pa-btn pa-btn--line" href="<?= $h(url('admin/system/subscription-plans')) ?>">Annuler</a>
+                        <button type="submit" class="pa-btn pa-btn--mint">Enregistrer la formule</button>
                     </div>
                 </div>
-            </fieldset>
-
-            <div class="flex flex-wrap gap-3 pt-2">
-                <button type="submit" class="inline-flex rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800">Enregistrer</button>
-                <a href="<?= htmlspecialchars(url('admin/system/subscription-plans'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50">Annuler</a>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 </div>
+<script src="<?= $h(asset_url('assets/js/admin-subscription-plans.js')) ?>" defer></script>

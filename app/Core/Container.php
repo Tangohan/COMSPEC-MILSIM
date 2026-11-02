@@ -468,7 +468,9 @@ class Container
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class),
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Services\Audit\AuditService::class),
-                self::get(\App\Services\EmailService::class)
+                self::get(\App\Services\EmailService::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\SubscriptionPlanRepository::class)
             ),
             \App\Repositories\TenantDashboardPinRepository::class => new \App\Repositories\TenantDashboardPinRepository(),
             \App\Services\Dashboard\TenantDashboardPinService::class => new \App\Services\Dashboard\TenantDashboardPinService(

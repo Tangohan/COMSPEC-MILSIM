@@ -324,6 +324,48 @@ final class DevDispatchCatalog
                 'Mettez à jour le pack 2.9.36, quittez Arma complètement et relancez.',
                 'L’ancien réglage « Contacts ennemis dans les zones » (coché par défaut) est remplacé : tous les serveurs repartent sur Manuel, à remettre sur Proposer ou Automatique dans Options des addons › COMSPEC › ATAK · Plan / Zones si vous le souhaitez.',
             ], 'Pack téléphone 2.9.36'),
+            $pr(1331, '2026-11-02', 'Liens d’invitation : suppression et page aux couleurs du site', 'Un lien d’invitation se supprime désormais depuis la liste ou sa fiche, après confirmation : il cesse de fonctionner, ses statistiques sont effacées et il libère la place dans la limite de liens actifs ; les candidatures et adhésions déjà faites restent intactes. La page ouverte par le lien (athena-comspec.eu/public/i/…) reprend la barre de navigation et le pied de page de l’accueil du site.', [
+                'Recrutement › Liens d’invitation : bouton Supprimer dans la liste et sur la fiche, avec une fenêtre de confirmation qui détaille ce qui est conservé et ce qui est effacé',
+                'Page d’un lien supprimé : le visiteur voit que la communauté l’a supprimé',
+            ], [
+                'Page d’invitation /i/… : même barre de navigation (menu, langue, connexion) et même pied de page que l’accueil ; Connexion et Inscription gardent l’invitation',
+            ], [], ['personnel'], [], 'Portail Athena'),
+
+            $pr(1329, '2026-11-02', 'Administration des formules : tableau comparatif et fiche par formule', 'Administration › Formules d’accès devient un tableau comparatif : une colonne par formule, une ligne par paramètre, rangés par groupe (membres et organisation, Academy et qualifications, recrutement, ATAK et jeu, documents, marque et intégrations) et repliables, avec une recherche et le nombre de communautés sur chaque formule. Chaque formule s’ouvre sur une fiche à onglets : interrupteurs pour les modules, nombre ou case « Illimité » pour les plafonds, aperçu de la page des formules telle que la voit le client, liste des communautés qui dépasseraient un plafond abaissé (rien ne leur est retiré) et historique des modifications. Une formule se duplique en un clic. La page publique des formules calcule désormais son comparatif depuis les vraies valeurs des formules.', [
+                'Tableau comparatif des formules : groupes repliables, recherche d’un paramètre, communautés par formule, boutons Modifier et Dupliquer',
+                'Fiche d’une formule : onglets par groupe, interrupteurs, quotas avec case « Illimité », contrôle des valeurs à l’enregistrement',
+                'Aperçu « ce que voit le client » mis à jour à chaque changement, avant l’enregistrement',
+                'Avertissement : communautés qui dépassent déjà un nouveau plafond, sans rien couper',
+                'Historique des modifications de la formule (journal d’audit) avec lien vers la restauration',
+                'Dupliquer une formule : copie de tous ses paramètres, sans prix, à offrir depuis Formules offertes',
+            ], [
+                'Page des formules : le comparatif (modules et plafonds) est généré depuis les formules réelles, plus aucun chiffre écrit à la main ; Pro+ y figure quand elle est en vente',
+                'Message « passez à une formule supérieure » des qualifications : plafond lu dans la formule réelle',
+                'Paramètres signalés « Non contrôlé » quand aucun écran ne les vérifie encore (documents, effectifs, recrutement, création de communauté)',
+                'Réglages inconnus enregistrés dans une formule : toujours conservés à l’enregistrement',
+            ], [], ['platform'], [
+                'Aucune migration.',
+                'Essai : Administration › Formules d’accès, ouvrez Standard, abaissez « Nombre max. de membres » : l’aperçu et l’avertissement se mettent à jour ; enregistrez puis consultez l’onglet Historique.',
+            ], 'Portail Athena'),
+            $pr(1327, '2026-11-02', 'Invitations : plus de blocage à tort et une page refaite', 'Certaines communautés Pro+ ne pouvaient plus inviter : la page affichait « Votre formule actuelle limite le nombre de membres » alors que leur formule n’a pas de plafond. Un plafond de membres à 0 compte de nouveau comme illimité, et une formule sans plafond renseigné reprend celui de son palier au lieu de 50. La page Invitations est refaite : chiffres en tête (envoyées, acceptées, en attente, expirées) et membres sur le plafond de la formule (« 42 / illimité »), assistant en trois étapes pour inviter plusieurs adresses à la fois avec rôle, grade d’entrée, unité, durée du lien et message, tableau filtrable et triable pour renvoyer, révoquer ou copier un lien.', [
+                'Inviter plusieurs adresses e-mail en une fois, avec grade d’entrée, durée du lien (1 à 30 jours) et message personnel ajouté à l’e-mail',
+                'Tableau des invitations : recherche, filtre par état, tri par colonne ; renvoyer, révoquer, copier un nouveau lien',
+                'Jauge des membres sur le plafond de la formule, lien vers les formules seulement quand le plafond est réellement atteint',
+            ], [
+                'Les liens tout juste envoyés s’affichent une fois pour les transmettre soi-même',
+                'Accès direct aux liens d’invitation partageables',
+            ], [
+                'Formules : un plafond de membres à 0 bloquait toutes les invitations au lieu de signifier « illimité »',
+                'Formules : un plafond absent valait 50 membres au lieu du plafond de la formule',
+                'Une formule offerte inférieure ou l’essai fondateur ne font plus redescendre une communauté Pro+',
+                'Modifier une formule : un plafond vidé garde sa valeur au lieu de devenir illimité',
+            ], ['personnel'], [
+                'Essai : Back-office › Invitations, « Inviter des membres » avec deux adresses, puis « Copier le lien » et « Renvoyer » sur une invitation en attente.',
+            ], 'Portail Athena'),
+            $pr(1325, '2026-11-02', 'Liens d’invitation : en anglais de bout en bout', 'Les pages des liens d’invitation (back-office et page publique) gardaient quelques phrases en français en anglais : elles sont désormais entièrement traduites.', [], [], [
+                'Liens d’invitation en anglais : la présentation de la liste, le quota, l’aide de l’adresse personnalisée, l’action « Rejoindre » et le bandeau de candidature restaient en français',
+            ], ['personnel'], [], 'Portail Athena'),
+
             $pr(1323, '2026-11-02', 'Liens d’invitation : la mise en page revient', 'Les pages Recrutement › Liens d’invitation s’affichaient sans mise en page : elles retrouvent le style du back-office, comme les codes prioritaires.', [], [], [
                 'Recrutement › Liens d’invitation : liste, création, fiche et modification s’affichaient sans mise en page ; elles retrouvent le style du back-office',
             ], ['personnel'], [], 'Portail Athena'),

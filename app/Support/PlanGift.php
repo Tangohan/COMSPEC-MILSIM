@@ -68,16 +68,21 @@ final class PlanGift
      */
     public static function effectivePlanSlug(array $tenant, ?int $now = null): string
     {
-        $gift = self::activeFromSettings($tenant['settings'] ?? null, $now);
-        if ($gift !== null) {
-            return $gift['plan_slug'];
-        }
         $base = (string) ($tenant['plan_slug'] ?? 'free');
         $base = $base !== '' ? $base : 'free';
+        $paid = false;
         if (ManualBilling::isExpired($tenant, $now)) {
             // Période payée par PayPal terminée sans renouvellement : retour à la formule gratuite.
             $base = 'free';
         } elseif (in_array((string) ($tenant['subscription_status'] ?? 'none'), ['active', 'trialing'], true)) {
+            $paid = true;
+        }
+        $gift = self::activeFromSettings($tenant['settings'] ?? null, $now);
+        if ($gift !== null) {
+            // Une offre inférieure ne fait jamais redescendre la formule déjà attribuée (ex. Pro offert sur Pro+).
+            return self::rank($gift['plan_slug']) >= self::rank($base) ? $gift['plan_slug'] : $base;
+        }
+        if ($paid) {
             return $base;
         }
         $settings = $tenant['settings'] ?? null;
@@ -85,7 +90,7 @@ final class PlanGift
             $settings = trim($settings) !== '' ? json_decode($settings, true) : [];
         }
         $end = is_array($settings) ? ($settings['founder_trial_ends_at'] ?? null) : null;
-        if (is_string($end) && $end !== '') {
+        if (is_string($end) && $end !== '' && self::rank($base) < self::rank('pro')) {
             $ts = strtotime($end);
             if ($ts !== false && $ts > ($now ?? time())) {
                 return 'pro';
@@ -93,6 +98,12 @@ final class PlanGift
         }
 
         return $base;
+    }
+
+    /** Ordre des formules (inconnue = au niveau gratuit). */
+    public static function rank(string $slug): int
+    {
+        return ['free' => 0, 'standard' => 1, 'pro' => 2, 'pro_plus' => 3][strtolower(trim($slug))] ?? 0;
     }
 
     /**

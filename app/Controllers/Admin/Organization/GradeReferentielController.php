@@ -18,6 +18,7 @@ use App\Repositories\TenantRepository;
 use App\Services\Advancement\GradeScaleTemplateService;
 use App\Services\GradeDisplayService;
 use App\Support\CustomGradeTemplates;
+use App\Support\OfficialGradeSystems;
 
 class GradeReferentielController
 {
@@ -50,7 +51,7 @@ class GradeReferentielController
                 $currentCustom = $cs;
             }
         }
-        $defaultTab = $currentCustom !== null ? 'custom' : (str_starts_with($systemCode, 'US') ? 'us' : 'fr');
+        $defaultTab = $currentCustom !== null ? 'custom' : OfficialGradeSystems::tab($systemCode);
         $tab = $this->normalizeTab((string) $request->query('tab', $defaultTab));
         $selectedCustomId = (int) $request->query('systeme', 0);
         if ($tab === 'custom' && $this->custom->findSystem($tenantId, $selectedCustomId) === null) {
@@ -60,14 +61,17 @@ class GradeReferentielController
         $categoryFilter = $categoryFilter > 0 ? $categoryFilter : null;
         $systems = $this->gradeSystemRepository->listActive();
         $categories = $this->gradeCategoryRepository->listActive();
-        $gradesFr = $this->gradeRepository->listBySystemCodeForTenantAdmin('FR_CLASSIC', $tenantId, $categoryFilter);
-        $gradesUs = $this->gradeRepository->listBySystemCodeForTenantAdmin('US_CLASSIC', $tenantId, $categoryFilter);
+        // Un onglet par système officiel (France, États-Unis, Malaisie…) ; un système absent de la base reste vide.
+        $gradesBySystem = [];
+        $catalogForExtras = [];
+        foreach (OfficialGradeSystems::CODES as $officialCode) {
+            $gradesBySystem[$officialCode] = $this->gradeRepository->listBySystemCodeForTenantAdmin($officialCode, $tenantId, $categoryFilter);
+            $catalogForExtras = array_merge($catalogForExtras, $this->gradeRepository->listBySystemCode($officialCode));
+        }
+        $gradesFr = $gradesBySystem['FR_CLASSIC'];
+        $gradesUs = $gradesBySystem['US_CLASSIC'];
         $allGrades = $this->gradeRepository->listActive();
         $this->templates->completeForTenant($tenantId, $systemCode);
-        $catalogForExtras = array_merge(
-            $this->gradeRepository->listBySystemCode('FR_CLASSIC'),
-            $this->gradeRepository->listBySystemCode('US_CLASSIC')
-        );
 
         return $this->gradeView($request, [
             'content' => 'admin.organization.referentiels.grades.index',
@@ -77,6 +81,7 @@ class GradeReferentielController
             'categories' => $categories,
             'gradesFr' => $gradesFr,
             'gradesUs' => $gradesUs,
+            'gradesBySystem' => $gradesBySystem,
             'allGrades' => $allGrades,
             'tenantExtras' => $this->tenantExtras($tenantId, $catalogForExtras),
             'customReady' => $this->custom->ready(),
@@ -94,7 +99,7 @@ class GradeReferentielController
     }
 
     /**
-     * Raccourci : change le système de grades de la communauté (français ↔ américain) depuis le référentiel.
+     * Raccourci : change le système de grades de la communauté (français, américain, malaisien…) depuis le référentiel.
      * Les grades déjà attribués aux membres sont conservés ; les listes proposent ensuite le nouveau système.
      */
     public function setSystem(Request $request, array $params = []): Response
@@ -105,7 +110,7 @@ class GradeReferentielController
         }
         $rawCode = trim((string) $request->input('grade_system_code', ''));
         $code = strtoupper($rawCode);
-        $tab = str_starts_with($code, 'US') ? 'us' : 'fr';
+        $tab = OfficialGradeSystems::tab($code);
         $back = url('back-office/referentiels/grades') . '?tab=' . $tab;
         // Système sur mesure de la communauté : réglé depuis l’onglet « Sur mesure ».
         $customSystem = $this->custom->findSystemByCode($tenantId, $rawCode);
@@ -143,7 +148,7 @@ class GradeReferentielController
 
             return Response::redirect($back);
         }
-        if (!in_array($code, ['FR_CLASSIC', 'US_CLASSIC'], true)) {
+        if (!in_array($code, OfficialGradeSystems::CODES, true)) {
             Session::flash('error', 'Système de grades inconnu.');
 
             return Response::redirect($back);
@@ -152,9 +157,7 @@ class GradeReferentielController
         if ($gradesHidden) {
             $this->tenantRepository->mergeSettings($tenantId, ['grades_hidden' => false, 'grade_system_code' => $code]);
             \App\Support\TenantGrades::forget($tenantId);
-            Session::flash('success', $code === 'US_CLASSIC'
-                ? 'Les grades américains sont de nouveau affichés dans la communauté.'
-                : 'Les grades français sont de nouveau affichés dans la communauté.');
+            Session::flash('success', 'Les ' . OfficialGradeSystems::name($code) . ' sont de nouveau affichés dans la communauté.');
 
             return Response::redirect($back);
         }
@@ -169,9 +172,7 @@ class GradeReferentielController
         } catch (\Throwable) {
             // l’échelle se complète aussi à l’ouverture du référentiel
         }
-        Session::flash('success', $code === 'US_CLASSIC'
-            ? 'La communauté utilise maintenant les grades américains. Les grades déjà attribués sont conservés.'
-            : 'La communauté utilise maintenant les grades français. Les grades déjà attribués sont conservés.');
+        Session::flash('success', 'La communauté utilise maintenant les ' . OfficialGradeSystems::name($code) . '. Les grades déjà attribués sont conservés.');
 
         return Response::redirect($back);
     }
@@ -376,17 +377,22 @@ class GradeReferentielController
 
     private function normalizeTab(string $tab): string
     {
-        return in_array($tab, ['fr', 'us', 'perso', 'custom'], true) ? $tab : 'fr';
+        return in_array($tab, array_merge(OfficialGradeSystems::tabs(), ['perso', 'custom']), true) ? $tab : 'fr';
     }
 
     private function normalizeGradeTab(string $tab): string
     {
-        return in_array($tab, ['us', 'perso'], true) ? $tab : 'fr';
+        return in_array($tab, array_merge(OfficialGradeSystems::tabs(), ['perso']), true) ? $tab : 'fr';
     }
 
     /** @param array<string, mixed>|null $grade */
     private function tabForGrade(?array $grade): string
     {
+        $system = (string) ($grade['system_code'] ?? '');
+        if (OfficialGradeSystems::has($system)) {
+            return OfficialGradeSystems::tab($system);
+        }
+
         return strtoupper((string) ($grade['country_code'] ?? 'FR')) === 'US' ? 'us' : 'fr';
     }
 
@@ -394,6 +400,10 @@ class GradeReferentielController
     {
         foreach ($this->gradeSystemRepository->listActive() as $system) {
             if ((int) ($system['id'] ?? 0) === $systemId) {
+                if (OfficialGradeSystems::has((string) ($system['code'] ?? ''))) {
+                    return OfficialGradeSystems::tab((string) $system['code']);
+                }
+
                 return strtoupper((string) ($system['country_code'] ?? 'FR')) === 'US' ? 'us' : 'fr';
             }
         }

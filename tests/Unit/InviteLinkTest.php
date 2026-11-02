@@ -362,4 +362,75 @@ final class InviteLinkTest extends TestCase
             }
         }
     }
+
+    public function testInviteLinkPagesUseTheirDedicatedStylesheet(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $ctrl = (string) file_get_contents($root . '/app/Controllers/Admin/Organization/RecruitmentInviteLinksController.php');
+        self::assertStringContainsString('invite-links-ath.css', $ctrl, 'feuille des liens chargée dans le back-office');
+        $landing = (string) file_get_contents($root . '/views/invite_link/landing.php');
+        self::assertStringContainsString('invite-links-ath.css', $landing);
+        $css = (string) file_get_contents($root . '/public/assets/css/invite-links-ath.css');
+        self::assertStringContainsString('prefers-color-scheme: dark', $css, 'page publique en clair et en sombre');
+        foreach (['views/invite_link/landing.php', 'views/admin/organization/recruitment_invite_links/show.php'] as $view) {
+            preg_match_all('/class="([^"]*)"/', (string) file_get_contents($root . '/' . $view), $m);
+            foreach ($m[1] as $list) {
+                foreach (preg_split('/[\s<>?=$]+/', $list) ?: [] as $cls) {
+                    if (preg_match('/^ilx-[a-z0-9_-]+$/', $cls)) {
+                        self::assertMatchesRegularExpression('/\.' . preg_quote($cls, '/') . '\b/', $css, $view . ' : ' . $cls);
+                    }
+                }
+            }
+        }
+    }
+
+    public function testDeleteRemovesUnreferencedLinkAndItsStatsAndFreesTheQuota(): void
+    {
+        $id = $this->make(self::OWN, 'asupprimer');
+        $this->links->recordEvent(self::OWN, $id, InviteLinkRepository::EVENT_CLICK);
+        self::assertSame(1, $this->links->countActiveForTenant(self::OWN));
+
+        self::assertNull($this->links->delete(self::OTHER, $id), 'une autre communauté ne peut pas supprimer le lien');
+        self::assertNotNull($this->links->findById(self::OWN, $id));
+
+        self::assertSame('hard', $this->links->delete(self::OWN, $id));
+        self::assertNull($this->links->findById(self::OWN, $id));
+        self::assertNull($this->links->findByPublicCode('asupprimer'));
+        self::assertSame(0, $this->links->countActiveForTenant(self::OWN), 'quota de liens actifs libéré');
+        self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM recruitment_invite_link_events')->fetchColumn());
+        self::assertNull($this->links->delete(self::OWN, $id), 'deuxième suppression sans effet');
+    }
+
+    public function testDeleteKeepsALinkedApplicationIntactAndShowsDeletedOnThePublicPage(): void
+    {
+        $this->pdo->exec('CREATE TABLE enlistments (id INTEGER PRIMARY KEY, invite_code_id INTEGER)');
+        $id = $this->make(self::OWN, 'avecdossier');
+        $this->pdo->exec('INSERT INTO enlistments (id, invite_code_id) VALUES (40, ' . $id . ')');
+
+        self::assertSame('soft', $this->links->delete(self::OWN, $id));
+        self::assertSame((string) $id, (string) $this->pdo->query('SELECT invite_code_id FROM enlistments WHERE id = 40')->fetchColumn());
+        self::assertNull($this->links->findById(self::OWN, $id), 'invisible dans le back-office');
+        self::assertSame([], $this->links->listForTenant(self::OWN));
+        self::assertNull($this->links->findByPublicCode('avecdossier'), 'le lien ne fonctionne plus');
+        self::assertTrue($this->links->isDeletedPublicCode('avecdossier'));
+        self::assertTrue($this->links->publicCodeTaken('avecdossier'), 'adresse non réattribuée');
+        self::assertSame(0, $this->links->countActiveForTenant(self::OWN));
+        self::assertStringContainsString('supprimé', InviteLinkService::unusableMessage(InviteLinkService::STATUS_DELETED));
+    }
+
+    public function testDeleteRouteIsPostWithCsrfAndAudit(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $routes = (string) file_get_contents($root . '/routes/web.php');
+        self::assertMatchesRegularExpression('#post\(\'/back-office/recruitments/liens-invitation/\{id\}/supprimer\', \[[^\]]*RecruitmentInviteLinksController::class, \'destroy\'\], \[AuthMiddleware::class, OrganizationAdminMiddleware::class\]\)#', $routes);
+        $ctrl = (string) file_get_contents($root . '/app/Controllers/Admin/Organization/RecruitmentInviteLinksController.php');
+        $destroy = substr($ctrl, (int) strpos($ctrl, 'public function destroy('));
+        $destroy = substr($destroy, 0, (int) strpos($destroy, 'public function reactivate('));
+        self::assertStringContainsString('Csrf::validate', $destroy);
+        self::assertStringContainsString('$this->findOrNull($tenantId', $destroy, 'lien cherché dans la communauté courante');
+        self::assertStringContainsString('AuditAction::INVITE_LINK_DELETED', $destroy);
+        self::assertSame('invite_link.deleted', \App\Services\Audit\AuditAction::INVITE_LINK_DELETED);
+        $public = (string) file_get_contents($root . '/app/Controllers/Web/InviteLinkController.php');
+        self::assertStringContainsString('isDeletedPublicCode', $public);
+    }
 }

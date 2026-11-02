@@ -14,6 +14,7 @@ declare(strict_types=1);
  * @var int $currentUserId
  * @var string $tenantName
  * @var bool $canAccessEffectifsLms
+ * @var array<int, array<string, mixed>> $memberIdentities prénom, nom du personnage et trigramme par membre
  */
 
 $query = trim((string) ($query ?? ''));
@@ -25,6 +26,7 @@ $currentUserId = (int) ($currentUserId ?? 0);
 $tenantName = trim((string) ($tenantName ?? ''));
 $canAccessEffectifsLms = !empty($canAccessEffectifsLms);
 $canSeeInactiveDirectory = !empty($canSeeInactiveDirectory);
+$memberIdentities = is_array($memberIdentities ?? null) ? $memberIdentities : [];
 
 $e = static fn (?string $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
@@ -110,7 +112,16 @@ foreach ($results as $row) {
     if ($uid < 1) {
         continue;
     }
-    $displayName = trim((string) ($row['display_name'] ?? '')) ?: 'Profil sans nom';
+    // Prénom et nom d’abord (« Prénom N. » par défaut), pseudo et indicatif en second ; un membre masqué reste masqué.
+    // Les prénom et nom de la ligne sont ceux de l’identité civile : jamais affichés comme nom du personnage.
+    $nameRow = \App\Support\MemberName::withIdentity(array_diff_key($row, ['first_name' => 1, 'last_name' => 1]), $memberIdentities[$uid] ?? null);
+    $displayName = member_name($nameRow, 'list', null, false);
+    if ($displayName === \App\Support\MemberName::FALLBACK) {
+        $displayName = 'Profil sans nom';
+    }
+    $rpFullName = !empty($row['anonymized']) ? '' : \App\Support\MemberName::full($nameRow);
+    $pseudo = !empty($row['anonymized']) ? '' : trim((string) ($nameRow['display_name'] ?? ''));
+    $legalFullName = trim((string) ($row['first_name'] ?? '') . ' ' . (string) ($row['last_name'] ?? ''));
     $unitName = trim((string) ($row['unit_name'] ?? ''));
     $unitCode = trim((string) ($row['unit_code'] ?? ''));
     $unitTooltip = trim((string) ($row['unit_tooltip'] ?? ''));
@@ -142,7 +153,10 @@ foreach ($results as $row) {
     $people[] = [
         'uid' => $uid,
         'name' => $displayName,
-        'fullName' => trim((string) ($row['first_name'] ?? '') . ' ' . (string) ($row['last_name'] ?? '')),
+        'fullName' => $rpFullName !== '' && $rpFullName !== $displayName ? $rpFullName : '',
+        'legalName' => $legalFullName !== '' && mb_strtolower($legalFullName, 'UTF-8') !== mb_strtolower($rpFullName, 'UTF-8') ? $legalFullName : '',
+        'pseudo' => $pseudo !== '' && !in_array(mb_strtolower($pseudo, 'UTF-8'), [mb_strtolower($displayName, 'UTF-8'), mb_strtolower($rpFullName, 'UTF-8')], true) ? $pseudo : '',
+        'trigram' => member_trigram($nameRow),
         'character' => \App\Support\PersonnelDirectoryHints::distinctCharacterLabel($displayName, (string) ($row['character_name'] ?? '')),
         'callsign' => trim((string) ($row['callsign'] ?? '')),
         'radio' => trim((string) ($row['radio_assigned'] ?? '')),
@@ -271,7 +285,7 @@ $unitCount = count(array_filter(array_keys($units), static fn ($k) => $k !== '__
                 $sen = $p['seniority'];
                 $pct = $sen !== null ? max(4, (int) round($sen['days'] / $maxDays * 100)) : 0;
                 $search = mb_strtolower(implode(' ', [
-                    $p['name'], $p['fullName'], $p['character'], $p['callsign'], $p['matricule'],
+                    $p['name'], $p['fullName'], $p['legalName'], $p['pseudo'], $p['trigram'], $p['character'], $p['callsign'], $p['matricule'],
                     $p['grade'], $p['unitName'], $p['unitCode'], $p['function'],
                 ]), 'UTF-8');
                 $roleNames = array_values(array_filter(array_map(static fn ($r) => trim((string) ($r['name'] ?? '')), $p['roles'])));
@@ -304,10 +318,17 @@ $unitCount = count(array_filter(array_keys($units), static fn ($k) => $k !== '__
                         <p class="pd-grade"><?= $p['grade'] !== '' ? $e($p['grade']) : '<em>Grade non renseigné</em>' ?></p>
                         <h2 class="pd-name">
                             <a href="<?= $e($p['href']) ?>" class="pd-name__link<?= \App\Services\Billing\DonorService::nameClass((int) $p['uid']) ?><?= staff_name_class((int) $p['uid']) ?>" data-staff-done><?= $p['anonymized'] ? \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::PERSON_ANONYMIZED, $p['name'], true) : $e($p['name']) ?></a><?php if (!$p['anonymized']): ?><?= staff_mark((int) $p['uid']) ?><?= \App\Services\Billing\DonorService::mark((int) $p['uid']) ?><?php endif; ?>
+                            <?php if ($p['trigram'] !== ''): ?><span class="pd-tri" title="Trigramme"><?= $e($p['trigram']) ?></span><?php endif; ?>
                             <?php if ($p['isMe']): ?><span class="pd-me">Vous</span><?php endif; ?>
                         </h2>
-                        <?php if ($p['fullName'] !== '' && $p['fullName'] !== $p['name']): ?>
+                        <?php if ($p['fullName'] !== ''): ?>
                         <p class="pd-sub"><?= $e($p['fullName']) ?></p>
+                        <?php endif; ?>
+                        <?php if ($p['legalName'] !== ''): ?>
+                        <p class="pd-sub"><?= $e($p['legalName']) ?></p>
+                        <?php endif; ?>
+                        <?php if ($p['pseudo'] !== ''): ?>
+                        <p class="pd-sub" title="Pseudo">« <?= $e($p['pseudo']) ?> »</p>
                         <?php endif; ?>
                         <?php if ($p['character'] !== ''): ?>
                         <p class="pd-sub">Personnage : <?= $e($p['character']) ?></p>

@@ -1182,6 +1182,8 @@ return function (Router $router) {
     $router->get('/admin/system/subscription-plans', [SystemSubscriptionPlansController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/subscription-plans/{id}/edit', [SystemSubscriptionPlansController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/subscription-plans/{id}/update', [SystemSubscriptionPlansController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/subscription-plans/{id}/apercu', [SystemSubscriptionPlansController::class, 'preview'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/subscription-plans/{id}/dupliquer', [SystemSubscriptionPlansController::class, 'duplicate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/deployment/campaigns/nouveau', [PlatformDeploymentAdminController::class, 'campaignsNew'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/deployment/campaigns', [PlatformDeploymentAdminController::class, 'campaignsStore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/deployment/campaigns/{id}/executer', [PlatformDeploymentAdminController::class, 'campaignsProcess'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1404,6 +1406,10 @@ return function (Router $router) {
     $router->get('/back-office/organisation/indicatifs', [OrganizationCallsignSequencesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/indicatifs', [OrganizationCallsignSequencesController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/indicatifs/{id}', [OrganizationCallsignSequencesController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/noms', [\App\Controllers\Admin\Organization\OrganizationMemberNamesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/noms', [\App\Controllers\Admin\Organization\OrganizationMemberNamesController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/noms/attribuer', [\App\Controllers\Admin\Organization\OrganizationMemberNamesController::class, 'assignMissing'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/noms/trigramme', [\App\Controllers\Admin\Organization\OrganizationMemberNamesController::class, 'updateMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules/import', [OrganizationMemberNumberController::class, 'importCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1492,6 +1498,8 @@ return function (Router $router) {
     $router->get('/back-office/invitations/envoyees', [InvitationAdminController::class, 'sent'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
     $router->post('/back-office/invitations', [InvitationAdminController::class, 'store'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
     $router->post('/back-office/invitations/revoke', [InvitationAdminController::class, 'revoke'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
+    $router->post('/back-office/invitations/renvoyer', [InvitationAdminController::class, 'resend'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
+    $router->post('/back-office/invitations/lien', [InvitationAdminController::class, 'link'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
     $router->get('/back-office/dashboard-pins', [DashboardPinsAdminController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/back-office/dashboard-pins/create', [DashboardPinsAdminController::class, 'create'], [AuthMiddleware::class]);
     $router->post('/back-office/dashboard-pins/store', [DashboardPinsAdminController::class, 'store'], [AuthMiddleware::class]);
@@ -2011,6 +2019,7 @@ return function (Router $router) {
     $router->get('/back-office/recruitments/liens-invitation/{id}/modifier', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/liens-invitation/{id}/modifier', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/liens-invitation/{id}/revoquer', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'revoke'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/liens-invitation/{id}/supprimer', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'destroy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/liens-invitation/{id}/reactiver', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'reactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}', [AdminRecruitmentsController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}/onboarding', [AdminRecruitmentsController::class, 'onboarding'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

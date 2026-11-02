@@ -37,18 +37,20 @@ $tone = match ($status) {
     default => 'ath-tag--neut',
 };
 ?>
-<div class="ath-item ath-rise" style="margin-bottom:16px;">
-    <div class="ath-item__head">
+<div class="ilx-bo-ticket ath-rise<?= $isActive ? '' : ' is-off' ?>">
+    <div class="ilx-bo-ticket__head">
         <div style="min-width:0;">
-            <p class="ath-item__name"><?= $h((string) ($link['label'] ?? '')) ?></p>
-            <p class="ath-item__meta">Créé le <?= $h($fmt((string) ($link['created_at'] ?? ''), 'd/m/Y')) ?> · expire : <?= $h($expires !== '' ? $fmt($expires) : 'jamais') ?></p>
+            <p class="ilx-bo-ticket__k">Lien d’invitation</p>
+            <p class="ilx-bo-ticket__t"><?= $h((string) ($link['label'] ?? '')) ?></p>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
             <span class="ath-tag <?= $tone ?>"><?= $h(InviteLinkService::statusLabel($status)) ?></span>
+            <span class="ilx-bo-ticket__code" translate="no"><?= $h((string) ($link['public_code'] ?? '')) ?></span>
         </div>
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-top:12px;">
-        <div style="flex:1 1 260px;min-width:0;">
+    <div class="ilx-bo-ticket__perf"></div>
+    <div class="ilx-bo-ticket__body">
+        <div class="ilx-bo-ticket__main">
             <label class="ath-field" style="margin:0;">
                 <span class="ath-field__label">Lien à partager</span>
                 <input type="text" readonly value="<?= $h($publicUrl) ?>" class="ath-field__input ath-mono" data-invite-link-url onclick="this.select()" translate="no">
@@ -61,7 +63,12 @@ $tone = match ($status) {
                 <a href="<?= $h($baseUrl . '/' . $id . '/modifier') ?>" class="ath-btn">Modifier</a>
             </div>
         </div>
-        <img src="<?= $h($baseUrl . '/' . $id . '/qr.png') ?>" alt="QR code du lien d’invitation" width="140" height="140" style="border:1px solid var(--ath-line, #e2e8f0);border-radius:12px;background:#fff;" loading="lazy">
+        <img src="<?= $h($baseUrl . '/' . $id . '/qr.png') ?>" alt="QR code du lien d’invitation" width="140" height="140" class="ilx-bo-ticket__qr" loading="lazy">
+    </div>
+    <div class="ilx-bo-ticket__foot">
+        <span>Créé le <?= $h($fmt((string) ($link['created_at'] ?? ''), 'd/m/Y')) ?></span>
+        <?php if ($expires !== ''): ?><span>Expire le <?= $h($fmt($expires)) ?></span><?php else: ?><span>Sans date d’expiration</span><?php endif; ?>
+        <?php if ($maxUses !== null): ?><span><?= $usesCount ?> utilisations sur <?= (int) $maxUses ?></span><?php else: ?><span><?= $usesCount ?> utilisations, sans limite</span><?php endif; ?>
     </div>
 </div>
 
@@ -132,6 +139,15 @@ require base_path('views/partials/ath_table.php');
     </form>
 </div>
 <?php endif; ?>
+
+<div class="ath-warn" style="margin-top:16px;">
+    <p class="ath-warn__title">Supprimer le lien</p>
+    <p class="ath-warn__text">Le lien et ses statistiques disparaissent ; les candidatures et adhésions déjà faites sont conservées.</p>
+    <div style="margin-top:11px;">
+        <button type="button" class="ath-row-action ath-row-action--danger" data-invite-link-delete="<?= $h($baseUrl . '/' . $id . '/supprimer') ?>" data-invite-link-label="<?= $h((string) ($link['label'] ?? '')) ?>">Supprimer ce lien</button>
+    </div>
+</div>
+<?php require __DIR__ . '/_delete_dialog.php'; ?>
 
 <?php if ($status !== InviteLinkService::STATUS_REVOKED): ?>
 <div class="ath-warn" style="margin-top:16px;">

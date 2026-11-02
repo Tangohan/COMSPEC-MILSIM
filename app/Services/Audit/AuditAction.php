@@ -66,6 +66,7 @@ final class AuditAction
     public const INVITE_LINK_CREATED = 'invite_link.created';
     public const INVITE_LINK_UPDATED = 'invite_link.updated';
     public const INVITE_LINK_REVOKED = 'invite_link.revoked';
+    public const INVITE_LINK_DELETED = 'invite_link.deleted';
     public const INVITE_LINK_REACTIVATED = 'invite_link.reactivated';
     public const INVITE_LINK_JOINED = 'invite_link.joined';
     public const INVITE_LINK_JOIN_REQUESTED = 'invite_link.join_requested';
@@ -178,6 +179,7 @@ final class AuditAction
     public const PLATFORM_CONTRIBUTOR_UPDATED = 'platform.contributor_updated';
 
     public const SUBSCRIPTION_PLAN_UPDATED = 'platform.subscription_plan_updated';
+    public const SUBSCRIPTION_PLAN_DUPLICATED = 'platform.subscription_plan_duplicated';
 
     /** Affectation manuelle d’une formule à une communauté (opérateur plateforme). */
     public const TENANT_PLAN_ASSIGNED = 'platform.tenant_plan_assigned';
