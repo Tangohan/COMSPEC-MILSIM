@@ -38,6 +38,35 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.33 : écrans et vidéoprojecteur réparés, voix radio par le maillage MPU5, diagnostic de l'arsenal ACE (ATAK natif 2.9.33.AG - Denver, COMSPEC Link 2.0.116)
+
+### Résumé joueur
+Type : correctif
+FR : Écrans et vidéoprojecteur réparés, voix radio par le maillage MPU5
+- Les écrans du TOC, les écrans COMSPEC et le vidéoprojecteur affichent de nouveau la carte du TOC, les diapositives et les leçons Academy : l'image restait noire depuis la 2.9.29.
+- Radio de données : reliez votre radio ACRE2 ou TFAR à votre MPU5 (menu ACE ou app Réseau) et votre voix passe par le maillage (MPU5, relais, pylônes, véhicules) jusqu'aux radios reliées de vos équipiers sur la même fréquence, sans limite de distance ni de relief. Hors maillage, la radio retrouve sa portée normale (réglage serveur, désactivé par défaut).
+- Arsenal ACE : une ligne de diagnostic est écrite dans le journal à chaque ouverture, pour comprendre les arsenaux qui n'affichent que l'équipement porté.
+EN : Screens and video projector fixed, radio voice over the MPU5 mesh
+- TOC screens, COMSPEC screens and the video projector show the TOC map, slides and Academy lessons again: the picture had stayed black since 2.9.29.
+- Data radio: link your ACRE2 or TFAR radio to your MPU5 (ACE menu or Network app) and your voice travels over the mesh (MPU5s, relays, towers, vehicles) to your teammates' linked radios on the same frequency, regardless of distance or terrain. Outside the mesh the radio falls back to its normal range (server setting, off by default).
+- ACE Arsenal: a diagnostic line is written to the log each time it opens, to understand arsenals that only show the gear you are wearing.
+
+### Détail technique
+- **Écrans noirs (cause)** : texture d'interface posée sur l'objet en `#(rgb,1600,900,1)ui("COMSPEC_RscTocScreenTexture",…)` (écran TOC, `fn_tocScreen` l. 334 en 2.9.32) et `#(rgb,1280,720,1)ui("COMSPEC_RscScreenSlideTexture",…)` (diapositives et Academy, `fn_screenCast` l. 347). Arma n'accepte une texture procédurale qu'en puissances de 2 : RPT de la 2.9.31 (pack FN, 02/11) avec 74 `Cannot load texture #(rgb,1600,900,1)ui(...)`, un par essai toutes les 4 s, sur `Land_TripodScreen_01_large_black_F` comme sur `MRH_projectionScreenSmall` ; le display de la texture n'est jamais créé (`onLoad` jamais appelé, avertissement « image non chargée en 4 s »), donc rien n'est dessiné. Le vidéoprojecteur pose la même texture sur sa surface de projection : même effet.
+- **Correctif** : texture en 2048 x 1024 pour les deux (`_texSpec` dans `fn_tocScreen`) ; la mise en page reste en pixels virtuels 1600 x 900 (positions relatives au display), rien d'autre ne change. Caméras en direct (`r2t`, 512 / 1024) déjà en puissances de 2.
+- **Traces `[SCREEN]`** (recopiées avec `TOC` dans le journal de session COMSPEC, `fn_log`) : diffusion lancée (écran, source, diapositive, COMSPEC Link présent ou non) ou refusée avec la raison (pas d'écran, objet non désigné, aucune diapositive), texture posée par écran (dalle et sélection, image directe, navigateur intégré, Academy, attente du téléchargement, fin de diffusion), texture d'interface chargée, écran TOC demandé (affichage, dalle, sélection) puis chargé, arrêt.
+- Les deux erreurs `hemtt check` sur `ctrlWebBrowserAction` (`fn_screenCast`, `fn_slideWebShow`) restent sans effet en jeu (commande connue du jeu, inconnue de HEMTT).
+- **Voix par le maillage MPU5** (fusion de `atak/voix-radio-relais-mpu5`) : `fn_mpuVoice` (passerelle radio sur IP) ; ACRE2 : fonction de signal enchaînée (`acre_api_fnc_setCustomSignalFunc`, calcul normal toujours appelé, meilleur des deux, cache par paire 2 s) ; TFAR 1.0 / 0.9 : `tf_receivingDistanceMultiplicator` du récepteur, valeur d'origine rendue hors maillage. Pont radio par action ACE ou app Réseau (`fn_mpuLink`, `fn_pageNetwork`). Réglage serveur `comspec_atak_native_mpu_voice`, désactivé par défaut.
+- **Arsenal ACE vide (signalé en 2.9.31)** : aucune cause trouvée dans les mods COMSPEC. Ni l'ATAK, ni Overwatch connect, ni le SSE ne touchent aux objets de l'arsenal (`ace_arsenal_virtualItems`, boîtes, `initBox`, `addVirtualItems`, configuration d'arsenal) ; le panneau Tenues Athena ne fait que s'ajouter à l'écran. La liste de gauche réduite à « <Vide> » + l'arme portée est ce qu'ACE affiche quand sa liste d'objets est vide ou en mode « Objets : Favoris ». Ligne `[INFO][ARSENAL]` ajoutée 1 s après l'ouverture (lignes de la liste, objets reçus, arsenal complet, mode Favoris, boîte), sans rien modifier.
+- connect 1.6.28 et COMSPEC Link 2.0.116 inchangés.
+
+### À tester en jeu
+- **Écran TOC** (grand écran COMSPEC ou `Land_TripodScreen_01_large_F`) : ACE › Écran COMSPEC › Affichage TOC : carte et flux à l'écran ; RPT : `[SCREEN] Écran TOC … texture UI … demandée` puis `… chargée, image dessinée`, aucun `Cannot load texture`.
+- **Diapositives** : app Briefing ouverte sur une diapositive, ACE › Diffusion › Diffuser mes diapositives : la diapositive s'affiche ; suivante / précédente ; Arrêter : l'écran revient. Second joueur : même image.
+- **Vidéoprojecteur** : projecteur COMSPEC allumé face à un tableau COMSPEC, diffusion ou TOC : image sur le tableau.
+- **Voix MPU5** (réglage serveur activé, ACRE2 ou TFAR) : deux joueurs avec MPU5 reliée au téléphone et radio pontée sur la MPU5, même fréquence, hors portée radio : ils s'entendent par le maillage ; radio débranchée : portée normale.
+- **Arsenal** : ouvrir l'arsenal qui paraissait vide, relever la ligne `[COMSPEC ATAK NATIVE][INFO][ARSENAL]` du RPT et le texte du bouton « Objets : Tous / Favoris » en bas.
+
 ## Pack 2.9.32 : retrait du repli radio tactique en données, seule la MPU5 relie le téléphone (ATAK natif 2.9.32.AG - Denver, COMSPEC Link 2.0.116)
 
 ### Résumé joueur
