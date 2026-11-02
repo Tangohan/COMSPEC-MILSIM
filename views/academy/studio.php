@@ -111,10 +111,11 @@ $card = static function (array $c, string $mode) use ($h, $t, $local, $link, $cs
 <?php if ($notice): ?><p class="ast-notice ast-notice--<?= $noticeClass($notice) ?>" role="status"><?= $h($t($notice)) ?></p><?php endif ?>
 <section class="sth-hero" style="--img:url('<?= $h($coverUrl('fog')) ?>')">
 <div class="hin"><div><p class="kk"><i></i>Academy<?= !empty($tenant['name']) ? ' · ' . $h($tenant['name']) : '' ?></p><h1>Studio</h1><p><?= $h($t('studio_intro')) ?></p></div>
-<?php if ($canCreate): ?><button class="hb1" type="button" data-open-dialog="sth-new">+ <?= $h($t('studio_new_course')) ?></button><?php endif ?></div>
+<?php if ($canCreate): ?><button class="hb1" type="button" data-open-dialog="sth-pick">+ <?= $h($t('studio_new')) ?></button><?php endif ?></div>
 <dl class="hst"><div><dt><?= $h($t('stat_courses')) ?></dt><dd><?= count($active) ?></dd></div><div><dt><?= $h($t('stat_published')) ?></dt><dd class="ok"><?= $published ?></dd></div><div><dt><?= $h($t('stat_drafts')) ?></dt><dd class="dr"><?= count($active) - $published ?></dd></div><div><dt><?= $h($t('stat_chapters')) ?></dt><dd><?= $chapterTotal ?></dd></div></dl>
 </section>
 <div class="sth-bar">
+<?php $kindActive = 'course'; $kindCounts = ['course' => count($active)] + ($credentialCounts ?? []); $kindCanCreate = $canCreate; $kindCourseDialog = $canCreate; require __DIR__ . '/studio_kinds.php'; ?>
 <nav class="sth-tabs" aria-label="<?= $h($t('studio_filter')) ?>">
 <?php if ($view === 'actives'): ?><button type="button" class="on" aria-pressed="true" data-filter="all"><?= $h($t('filter_all')) ?><em><?= count($active) ?></em></button><button type="button" aria-pressed="false" data-filter="draft"><?= $h($t('filter_drafts')) ?><em><?= count($active) - $published ?></em></button><button type="button" aria-pressed="false" data-filter="pub"><?= $h($t('filter_published')) ?><em><?= $published ?></em></button>
 <?php else: ?><a href="<?= $h($link('studio')) ?>"><?= $h($t('filter_all')) ?><em><?= count($active) ?></em></a><?php endif ?>
@@ -137,7 +138,7 @@ $card = static function (array $c, string $mode) use ($h, $t, $local, $link, $cs
 <?php endif ?>
 </main>
 <?php if ($canCreate): ?>
-<dialog class="ast-dialog" id="sth-new" aria-labelledby="sth-new-title"><form method="post" action="<?= $h($link('action/studio_new')) ?>"><?= $csrf ?><input type="hidden" name="course" value="academy">
+<dialog class="ast-dialog" id="sth-new" aria-labelledby="sth-new-title"<?= !empty($openNewCourse) ? ' data-autoshow' : '' ?>><form method="post" action="<?= $h($link('action/studio_new')) ?>"><?= $csrf ?><input type="hidden" name="course" value="academy">
 <div class="mh"><div><p class="k"><?= $h($t('studio_new_course')) ?></p><h2 id="sth-new-title"><?= $h($t('new_course_heading')) ?></h2></div><button class="mx" type="button" data-close-dialog aria-label="<?= $h($t('close')) ?>">×</button></div>
 <div class="mb">
 <label class="fl"><span class="lab"><?= $h($t('new_course_title')) ?></span><input class="in" name="new_title" maxlength="200" required placeholder="<?= $h($t('new_course_title_ph')) ?>"></label>
@@ -288,6 +289,8 @@ $deckFigure = static function (array $resource) use ($h, $t, $link, $local): voi
 <form id="ast-unarchive" method="post" action="<?= $h($link('action/studio_unarchive')) ?>" hidden><?= $csrf ?><input type="hidden" name="course" value="<?= $h($key) ?>"></form>
 <form id="ast-archive" method="post" action="<?= $h($link('action/studio_archive')) ?>" hidden><?= $csrf ?><input type="hidden" name="course" value="<?= $h($key) ?>"></form>
 <form id="ast-delete" method="post" action="<?= $h($link('action/studio_delete')) ?>" hidden><?= $csrf ?><input type="hidden" name="course" value="<?= $h($key) ?>"></form>
+<form id="ast-cred-link" method="post" action="<?= $h($link('action/studio_cred_link')) ?>" hidden><?= $csrf ?><input type="hidden" name="course" value="<?= $h($key) ?>"><input type="hidden" name="return" value="course"></form>
+<form id="ast-cred-unlink" method="post" action="<?= $h($link('action/studio_cred_unlink')) ?>" hidden><?= $csrf ?><input type="hidden" name="course" value="<?= $h($key) ?>"><input type="hidden" name="return" value="course"></form>
 <form id="ast-form" class="ast-form" method="post" action="<?= $h($link('action/studio_save')) ?>" data-studio-form data-lang="<?= $editLang ?>">
 <?= $csrf ?><input type="hidden" name="course" value="<?= $h($key) ?>"><input type="hidden" name="step" value="<?= $selC ?>.<?= $selS ?>" data-step-input><input type="hidden" name="edit_lang" value="<?= $editLang ?>" data-edit-lang-input>
 <?php $lock = $readOnly ? ' disabled' : ''; /* Lecture seule : champs désactivés, navigation et zone sensible restent actives. */ ?>
@@ -405,6 +408,17 @@ foreach ($links + [$nextIndex => null] as $ri => $resource): ?>
 </div>
 <div class="isec"><p class="k"><?= $h($t('studio_cover')) ?></p><p class="h"><?= $h($t('studio_cover_help')) ?></p><div class="imgs"><?php foreach (AcademyStudio::COVERS as $cover): ?><label style="--img:url('<?= $h($coverUrl($cover)) ?>')"><input type="radio" name="draft[cover]" value="<?= $cover ?>"<?= ($course['cover'] ?? 'night') === $cover ? ' checked' : '' ?>><span class="sr-only"><?= $h($t('studio_cover_' . $cover)) ?></span></label><?php endforeach ?></div></div>
 </fieldset>
+<?php if (!empty($courseCredentials)): $cc = $courseCredentials; /* Ce que le cours délivre à la réussite (fiches du référentiel). */ ?>
+<div class="isec ast-delivers"><p class="k"><?= $h($t('course_delivers')) ?></p><p class="h"><?= $h($t('course_delivers_help')) ?></p>
+<?php if ($cc['linked'] === []): ?><p class="h"><i><?= $h($t('course_delivers_none')) ?></i></p><?php endif ?>
+<ul class="cred-courses"><?php foreach ($cc['linked'] as $cred): ?><li><a href="<?= $h($link('studio') . '?fiche=' . (int) $cred['id']) ?>"><b><?= $h($cred['name']) ?></b> <small><?= $h($t('kind_' . $cred['kind'])) ?></small></a>
+<?php if ($cc['canManage'] && $cc['rulesReady']): ?><button class="ib dg" form="ast-cred-unlink" name="cred_id" value="<?= (int) $cred['id'] ?>" title="<?= $h($t('cred_unlink')) ?>"><svg class="i"><use href="#ai-x"/></svg><span class="sr-only"><?= $h($t('cred_unlink')) ?></span></button><?php endif ?></li><?php endforeach ?></ul>
+<?php if ($cc['canManage'] && $cc['rulesReady']): ?>
+<?php if ($cc['available'] !== []): ?><label class="fl"><span class="lab"><?= $h($t('course_delivers_add')) ?></span><select class="in" name="cred_id" form="ast-cred-link"><?php foreach ($cc['available'] as $cred): ?><option value="<?= (int) $cred['id'] ?>"><?= $h($cred['name']) ?> · <?= $h($t('kind_' . $cred['kind'])) ?></option><?php endforeach ?></select></label>
+<button class="ib" form="ast-cred-link"><?= $h($t('cred_link')) ?></button><?php endif ?>
+<p class="h"><a href="<?= $h($link('studio') . '?nouveau=brevet&cours=' . rawurlencode($key)) ?>">+ <?= $h($t('course_delivers_new_brevet')) ?></a> · <a href="<?= $h($link('studio') . '?nouveau=qualification&cours=' . rawurlencode($key)) ?>">+ <?= $h($t('course_delivers_new_qual')) ?></a></p>
+<?php endif ?></div>
+<?php endif ?>
 <?php if ($staff && !$builtIn): ?>
 <div class="isec danger"><p class="k"><?= $h($t('danger_zone')) ?></p>
 <?php if (!$lifecycleReady): ?><p class="h"><?= $h($t('studio_lifecycle_pending')) ?></p>

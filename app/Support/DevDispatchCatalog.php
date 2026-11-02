@@ -294,6 +294,17 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1309, '2026-11-02', 'Studio Academy : créer ses qualifications et ses brevets', 'Le Studio de l’Academy ne sert plus seulement à écrire des cours. Le bouton « Nouveau » propose une formation, une qualification ou un brevet. Une qualification se règle comme dans le référentiel : portée, catégorie, émetteur, validité, examen, et conditions d’obtention (cours réussis, heures de jeu, heures de vol par appareil, qualifications préalables). Un brevet ajoute son insigne, son gabarit de PDF et son numéro. Chaque cours peut délivrer une qualification ou un brevet à la réussite, et chaque fiche montre les cours qui y mènent ; les onglets Qualifications et Brevets séparent les créations de la communauté du catalogue de base.', [
+                'Studio : menu « Nouveau » (formation, qualification, brevet) et onglets Formations, Qualifications, Brevets',
+                'Fiches qualification et brevet dans le Studio : identité, portée, catégorie, émetteur, validité, examen, conditions d’obtention, insigne et numéro du brevet',
+                'Réglages d’un cours : « Délivré à la réussite » pour rattacher ou détacher une qualification ou un brevet',
+                'Listes filtrables : créations de la communauté mises en avant, catalogue de base, archivées',
+            ], [
+                'Réussir un cours du Studio délivre aussitôt les qualifications qui le demandent ; une nouvelle version du cours garde ce lien',
+                'Référentiel des qualifications : les cours publiés du Studio sont proposés comme condition « Formation Academy »',
+            ], [], ['personnel', 'platform'], [
+                'Mêmes droits que la création de cours. Les fiches sont celles du référentiel des qualifications : rien n’est dupliqué.',
+            ], 'Portail'),
             $pr(1305, '2026-11-02', 'Espace aérien : les onglets s’ouvrent de nouveau', 'Dans le back-office, la page Espace aérien affichait toujours la ligne de vol, quel que soit l’onglet choisi. Les onglets Cursus pilote, Pilotes, Carnet de vol et Flotte et filières s’ouvrent de nouveau, par clic comme par lien direct, et les filtres du carnet de vol et de la filière du cursus sont pris en compte.', [], [], [
                 'Espace aérien : les onglets Cursus pilote, Pilotes, Carnet de vol et Flotte et filières affichaient la ligne de vol au lieu de leur contenu',
                 'Filtres du carnet de vol (à contresigner, contresignés, refusés, relevés en jeu) et choix de la filière du cursus de nouveau appliqués',

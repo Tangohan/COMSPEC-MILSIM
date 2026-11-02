@@ -28,6 +28,7 @@ $aircraft = $grouped(is_array($ob['aircraft'] ?? null) ? $ob['aircraft'] : []);
 $items = $grouped(is_array($ob['items'] ?? null) ? $ob['items'] : []);
 $courses = is_array($ob['courses'] ?? null) ? $ob['courses'] : [];
 $builtInCourses = is_array($ob['builtInCourses'] ?? null) ? $ob['builtInCourses'] : [];
+$studioCourses = is_array($ob['studioCourses'] ?? null) ? $ob['studioCourses'] : [];
 $otherDefs = is_array($ob['definitions'] ?? null) ? $ob['definitions'] : [];
 $grades = is_array($ob['grades'] ?? null) ? $ob['grades'] : [];
 $jobs = is_array($ob['jobs'] ?? null) ? $ob['jobs'] : [];
@@ -138,10 +139,15 @@ $sessionCats = is_array($ob['sessionCategories'] ?? null) ? $ob['sessionCategori
                     </span>
                     <label data-qr-when="academy"><span class="sr-only">Formation</span>
                         <select data-qr-course>
-                            <?php if ($courses === [] && $builtInCourses === []): ?><option value="">Aucune formation dans votre Academy</option><?php endif; ?>
+                            <?php if ($courses === [] && $builtInCourses === [] && $studioCourses === []): ?><option value="">Aucune formation dans votre Academy</option><?php endif; ?>
                             <?php if ($courses !== []): ?><optgroup label="Formations de la communauté">
                             <?php foreach ($courses as $cid => $title): ?>
                                 <option value="<?= (int) $cid ?>"><?= $e($title) ?></option>
+                            <?php endforeach; ?>
+                            </optgroup><?php endif; ?>
+                            <?php if ($studioCourses !== []): ?><optgroup label="Cours du Studio de l’Academy">
+                            <?php foreach ($studioCourses as $courseKey => $title): ?>
+                                <option value="key:<?= $e((string) $courseKey) ?>"><?= $e($title) ?></option>
                             <?php endforeach; ?>
                             </optgroup><?php endif; ?>
                             <?php if ($builtInCourses !== []): ?><optgroup label="Cours intégrés de l’Academy">

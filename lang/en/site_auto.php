@@ -52412,4 +52412,5 @@ return [
     'Édition publiée' => 'Published edition',
     'Formations pour bien démarrer' => 'Courses to get started',
     'Publications de référence FR, US, OTAN, Allemagne' => 'Reference publications FR, US, NATO, Germany',
+    'Cours du Studio de l’Academy' => 'Academy Studio courses',
 ];

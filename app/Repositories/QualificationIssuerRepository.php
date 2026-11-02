@@ -330,6 +330,16 @@ final class QualificationIssuerRepository
         }
     }
 
+    /** Émetteur habituel d’une seule qualification (null : aucun). Les délivrances passées ne changent pas. */
+    public function setDefaultIssuer(int $tenantId, int $definitionId, ?int $issuerId): void
+    {
+        if (!$this->linkReady() || $definitionId < 1) {
+            return;
+        }
+        $this->pdo()->prepare('UPDATE personnel_qualification_definitions SET default_issuer_id = ? WHERE tenant_id = ? AND id = ?')
+            ->execute([$issuerId !== null && $issuerId > 0 ? $issuerId : null, $tenantId, $definitionId]);
+    }
+
     /** Émetteur habituel d’une qualification, s’il est actif. */
     public function defaultIssuerFor(int $tenantId, int $definitionId): ?int
     {
