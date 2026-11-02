@@ -31,12 +31,20 @@ final class JobRolePickerService
 
     /**
      * @param list<int> $assignedIds
+     * Chaque choix porte aussi son habillage (icon, abbreviation, origin, hidden, tags, description). Une fonction du
+     * site masquée par la communauté n’est plus proposée, sauf si elle est cochée ou qu’un membre l’occupe encore
+     * (elle reste alors visible, signalée « masquée », pour qu’aucun enregistrement ne la retire).
+     *
      * @return list<array{label: string, hint: string, items: list<array{value: string, label: string, detail: string, checked: bool}>}>
      */
     public function groups(int $tenantId, array $assignedIds = []): array
     {
         $assigned = array_fill_keys(array_map('intval', $assignedIds), true);
         $tenantRoles = $this->jobRoles->tablesExist() ? $this->jobRoles->listRolesWithCategory($tenantId) : [];
+        $enrichment = $this->enrichment();
+        $decorations = $enrichment !== null && $tenantRoles !== [] ? $enrichment->decorations($tenantId) : [];
+        $hiddenSlugs = $enrichment !== null ? $enrichment->hiddenCatalogSlugs($tenantId) : [];
+        $held = $hiddenSlugs !== [] && $enrichment !== null ? $enrichment->holderCounts($tenantId) : [];
         $catalog = self::catalogEntries();
         $catalogBySlug = [];
         foreach ($catalog as $entry) {
@@ -64,12 +72,25 @@ final class JobRolePickerService
             }
             $slug = trim((string) ($role['slug'] ?? ''));
             $name = trim((string) ($role['name'] ?? ''));
+            $decoration = $decorations[$rid] ?? [];
             $item = [
                 'value' => (string) $rid,
                 'label' => $name !== '' ? $name : 'Fonction #' . $rid,
                 'detail' => '',
                 'checked' => isset($assigned[$rid]),
+                'icon' => $decoration['icon'] ?? null,
+                'abbreviation' => $decoration['abbreviation'] ?? null,
+                'origin' => $decoration['origin'] ?? JobRoleEnrichmentService::origin($role),
+                'hidden' => !empty($decoration['hidden']),
+                'tags' => $decoration['tags'] ?? [],
+                'description' => (string) ($decoration['description'] ?? ''),
             ];
+            if ($item['hidden'] && !$item['checked'] && ($held[$rid] ?? 0) < 1) {
+                if ($slug !== '') {
+                    $materialized[$slug] = true;
+                }
+                continue;
+            }
             if (str_starts_with($slug, 'unit-') || (int) ($role['source_unit_id'] ?? 0) > 0) {
                 $item['detail'] = 'Unité de l’ORBAT';
                 $orbat[] = $item;
@@ -92,7 +113,7 @@ final class JobRolePickerService
             $add(self::GROUP_COMMUNITY, 'Ajoutées dans l’onglet Emplois.', $item);
         }
         foreach ($catalog as $entry) {
-            if (isset($materialized[$entry['slug']]) || in_array($entry['category'], self::HIDDEN_DOMAINS, true)) {
+            if (isset($materialized[$entry['slug']]) || isset($hiddenSlugs[$entry['slug']]) || in_array($entry['category'], self::HIDDEN_DOMAINS, true)) {
                 continue;
             }
             $add($entry['category'], '', [
@@ -100,6 +121,12 @@ final class JobRolePickerService
                 'label' => $entry['name'],
                 'detail' => $entry['subcategory'],
                 'checked' => false,
+                'icon' => JobRoleEnrichmentService::defaultIconForCatalogSlug($entry['slug']),
+                'abbreviation' => null,
+                'origin' => JobRoleEnrichmentService::ORIGIN_SITE,
+                'hidden' => false,
+                'tags' => [],
+                'description' => $entry['description'],
             ]);
         }
         if ($orbat !== []) {
@@ -147,6 +174,15 @@ final class JobRolePickerService
         }
 
         return $ids;
+    }
+
+    private function enrichment(): ?JobRoleEnrichmentService
+    {
+        try {
+            return new JobRoleEnrichmentService();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /** Copie une fonction du référentiel dans la communauté (domaine compris), ou retrouve la copie existante. */

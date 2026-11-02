@@ -656,7 +656,7 @@ final class OrganizationCatalogService
                     continue;
                 }
                 if (!$dryRun) {
-                    $this->jobRoles->createRole(
+                    $newRoleId = $this->jobRoles->createRole(
                         $tenantId,
                         $categoryId,
                         $name,
@@ -665,6 +665,7 @@ final class OrganizationCatalogService
                         (int) ($jr['sort_order'] ?? 0),
                         false
                     );
+                    $this->applyJobRoleEnrichment($tenantId, $newRoleId, $jr);
                 }
                 $functionsAdded++;
                 $functionsAddedNames[] = $name;
@@ -873,13 +874,19 @@ final class OrganizationCatalogService
                     'sort_order' => (int) ($cat['sort_order'] ?? 0),
                 ];
             }
+            $decorations = $this->jobRoleDecorations($tenantId);
             foreach ($this->jobRoles->listRolesWithCategory($tenantId) as $jr) {
+                $decoration = $decorations[(int) ($jr['id'] ?? 0)] ?? [];
                 $jobRoles[] = [
                     'category_key' => !empty($jr['category_id']) ? 'c' . (int) $jr['category_id'] : '',
                     'name' => (string) ($jr['name'] ?? ''),
                     'slug' => (string) ($jr['slug'] ?? ''),
                     'description' => isset($jr['description']) ? (string) $jr['description'] : null,
                     'sort_order' => (int) ($jr['sort_order'] ?? 0),
+                    // Repères visuels : l'icône par défaut d'une fonction du site n'est pas figée dans l'instantané.
+                    'abbreviation' => $decoration['abbreviation'] ?? null,
+                    'icon' => empty($decoration['icon_is_default']) ? ($decoration['icon'] ?? null) : null,
+                    'tags' => array_map(static fn (array $t): array => ['name' => $t['name'], 'color' => $t['color']], $decoration['tags'] ?? []),
                 ];
             }
         }
@@ -908,6 +915,60 @@ final class OrganizationCatalogService
             'job_roles' => $jobRoles,
             'roles' => $roles,
         ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function jobRoleDecorations(int $tenantId): array
+    {
+        try {
+            return (new \App\Services\Personnel\JobRoleEnrichmentService($this->pdo))->decorations($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * Abrégé, icône et étiquettes d'une fonction du modèle. Un abrégé déjà pris ou invalide est ignoré (la fonction est
+     * créée quand même) ; la couleur d'une étiquette n'est reprise que si la communauté ne l'a pas déjà.
+     *
+     * @param array<string, mixed> $definition
+     */
+    private function applyJobRoleEnrichment(int $tenantId, int $roleId, array $definition): void
+    {
+        if ($roleId < 1 || (!isset($definition['abbreviation']) && !isset($definition['icon']) && empty($definition['tags']))) {
+            return;
+        }
+        try {
+            $enrichment = new \App\Services\Personnel\JobRoleEnrichmentService($this->pdo);
+            if (!$enrichment->columnsReady()) {
+                return;
+            }
+            $tags = [];
+            $colors = [];
+            foreach (is_array($definition['tags'] ?? null) ? $definition['tags'] : [] as $tag) {
+                $name = is_array($tag) ? (string) ($tag['name'] ?? '') : (is_scalar($tag) ? (string) $tag : '');
+                if (trim($name) !== '') {
+                    $tags[] = $name;
+                    $colors[mb_strtolower(trim($name), 'UTF-8')] = is_array($tag) ? ($tag['color'] ?? null) : null;
+                }
+            }
+            $tags = array_slice($tags, 0, \App\Services\Personnel\JobRoleEnrichmentService::MAX_TAGS);
+            try {
+                $data = $enrichment->validate($tenantId, $roleId, ['abbreviation' => $definition['abbreviation'] ?? null, 'icon' => $definition['icon'] ?? '', 'tags' => $tags]);
+            } catch (\InvalidArgumentException) {
+                $data = $enrichment->validate($tenantId, $roleId, ['icon' => \App\Support\JobRoleIconLibrary::has(is_string($definition['icon'] ?? null) ? $definition['icon'] : null) ? $definition['icon'] : '', 'tags' => $tags]);
+            }
+            $known = array_column($enrichment->tags($tenantId), 'id', 'name');
+            $enrichment->save($tenantId, $roleId, $data);
+            foreach ($enrichment->tags($tenantId) as $tag) {
+                $color = $colors[mb_strtolower($tag['name'], 'UTF-8')] ?? null;
+                if ($color !== null && $tag['color'] === null && !isset($known[$tag['name']])) {
+                    $enrichment->updateTagColor($tenantId, $tag['id'], (string) $color);
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('Organization catalog: job role enrichment skipped: ' . $e->getMessage());
+        }
     }
 
     /**
