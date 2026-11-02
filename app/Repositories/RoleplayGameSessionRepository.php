@@ -60,6 +60,62 @@ final class RoleplayGameSessionRepository
         return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Participants par session : nombre, pointés, comptés pour le suivi et temps retenu.
+     *
+     * @param list<int> $sessionIds
+     * @return array<int, array{total: int, checked_in: int, counted: int, validated_seconds: int}>
+     */
+    public function memberStatsForSessions(int $tenantId, array $sessionIds): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $sessionIds), static fn (int $v): bool => $v > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        $st = $this->pdo->prepare(
+            'SELECT session_id,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN checked_in_at IS NOT NULL THEN 1 ELSE 0 END) AS checked_in,
+                    SUM(CASE WHEN attendance_valid = 1 AND rh_excluded = 0 THEN 1 ELSE 0 END) AS counted,
+                    COALESCE(SUM(CASE WHEN rh_excluded = 0 THEN validated_seconds ELSE 0 END), 0) AS validated_seconds
+             FROM roleplay_game_session_members
+             WHERE tenant_id = ? AND session_id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')
+             GROUP BY session_id'
+        );
+        $st->execute(array_merge([$tenantId], $ids));
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $out[(int) $r['session_id']] = [
+                'total' => (int) $r['total'],
+                'checked_in' => (int) $r['checked_in'],
+                'counted' => (int) $r['counted'],
+                'validated_seconds' => (int) $r['validated_seconds'],
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Session en cours à laquelle rattacher le temps de jeu remonté par le mod quand il n’indique pas de session :
+     * la plus récemment démarrée, ouverte, non terminée, démarrée depuis moins de $maxHours heures.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function currentLiveForTenant(int $tenantId, int $maxHours = 12): ?array
+    {
+        $st = $this->pdo->prepare(
+            "SELECT * FROM roleplay_game_sessions
+             WHERE tenant_id = ? AND status IN ('open', 'discovered') AND started_at IS NOT NULL AND ended_at IS NULL
+               AND started_at <= NOW() AND started_at >= DATE_SUB(NOW(), INTERVAL ? HOUR)
+             ORDER BY started_at DESC, id DESC LIMIT 1"
+        );
+        $st->execute([$tenantId, max(1, min(48, $maxHours))]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     /** @param array<string, mixed> $data */
     public function create(int $tenantId, array $data): int
     {

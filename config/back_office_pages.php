@@ -202,7 +202,9 @@ return [
             ['label' => 'Sessions Arma', 'href' => 'back-office/roleplay/sessions'],
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
         ]],
-        ['path' => 'back-office/roleplay/sessions', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · SESSIONS', 'title' => 'Sessions Arma', 'subtitle' => 'Les types de sessions de jeu, la façon de compter les heures et le temps pris en compte dans le suivi.', 'css' => ['back-office-roleplay-immersion.css'], 'quick' => [
+        ['path' => 'back-office/roleplay/sessions', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · SESSIONS', 'title' => 'Sessions Arma', 'subtitle' => 'Les soirées de jeu dont le temps de présence compte pour le suivi RH des membres.', 'css' => ['back-office-roleplay-sessions.css'], 'quick' => [
+            ['label' => 'Nouvelle session', 'href' => 'back-office/roleplay/sessions#nouvelle'],
+            ['label' => 'Événements', 'href' => 'back-office/events'],
             ['label' => 'Parcours RH', 'href' => 'back-office/roleplay/regles-phases'],
             ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay/immersion'],
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],

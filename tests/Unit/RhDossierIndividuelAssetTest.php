@@ -96,7 +96,7 @@ final class RhDossierIndividuelAssetTest extends TestCase
         $css = (string) file_get_contents($root . '/public/assets/css/effectifs_lms.css');
         $agg = (string) file_get_contents($root . '/app/Services/Effectifs/RhAlertAggregatorService.php');
 
-        self::assertStringContainsString('eff-rh-hero', $docs);
+        self::assertStringContainsString('class="edr"', $docs);
         self::assertStringContainsString('eff-rh-hero', $mob);
         self::assertStringContainsString('eff-rh-hero', $viv);
         self::assertStringContainsString('eff-rh-hero', $alerts);
@@ -105,7 +105,7 @@ final class RhDossierIndividuelAssetTest extends TestCase
         self::assertStringContainsString('Visible du membre', $docs);
         self::assertStringContainsString('enctype="multipart/form-data"', $docs);
         self::assertStringContainsString('name="document"', $docs);
-        self::assertStringContainsString('eff-rh-deposit', $docs);
+        self::assertStringContainsString('edr-drop', $docs);
         self::assertStringContainsString('Pièce jointe', $docs);
         self::assertStringContainsString('Déposer le fichier', $docs);
         self::assertStringContainsString('Ouvrir la pièce', $docs);
@@ -118,5 +118,21 @@ final class RhDossierIndividuelAssetTest extends TestCase
         self::assertStringContainsString('eff-rh-tip__pop', $css);
         self::assertStringContainsString('Organigramme', $agg);
         self::assertStringNotContainsString("'ORBAT'", $agg);
+    }
+
+    public function testDocumentsVaultKeepsBothFormsCsrfAndMemberScope(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $docs = (string) file_get_contents($root . '/views/admin/effectifs_workspace/rh_documents.php');
+        $ctrl = (string) file_get_contents($root . '/app/Controllers/Admin/RhDossierWorkspaceController.php');
+
+        self::assertSame(2, substr_count($docs, 'name="_csrf_token"'));
+        self::assertStringContainsString("effectifs_workspace_url('documents-rh/etablir')", $docs);
+        self::assertStringContainsString('/fichier', $docs);
+        self::assertStringContainsString('name="return_user"', $docs);
+        self::assertStringContainsString("query('user_id'", $ctrl);
+        self::assertStringContainsString('effectifs-documents-rh.css', $ctrl);
+        self::assertFileExists($root . '/public/assets/css/effectifs-documents-rh.css');
+        self::assertFileExists($root . '/public/assets/js/effectifs-documents-rh.js');
     }
 }

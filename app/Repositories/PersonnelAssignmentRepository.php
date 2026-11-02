@@ -538,6 +538,62 @@ class PersonnelAssignmentRepository
     }
 
     /**
+     * Dernières affectations principales de la communauté (lecture seule, page Effectifs « Affectations ») :
+     * unité d’arrivée, unité principale précédente du membre, date d’effet et motif saisi.
+     *
+     * @return list<array{id:int,user_id:int,unit_id:int,from_unit_id:int,date:string,reason:string,display_name:string,callsign:string,user_status:string}>
+     */
+    public function listRecentPrimaryMovementsForTenant(int $tenantId, int $limit = 30): array
+    {
+        if (!$this->personnelAssignmentsTableExists() || $tenantId < 1) {
+            return [];
+        }
+        $limit = max(1, min(100, $limit));
+        $reason = $this->changeReasonColumnReady() ? 'pa.change_reason' : 'NULL';
+        $stmt = $this->pdo->prepare(
+            'SELECT pa.id, pa.user_id, pa.unit_id, pa.started_at, pa.created_at, ' . $reason . ' AS change_reason,
+                    usr.display_name, usr.callsign, usr.status AS user_status,
+                    (SELECT p2.unit_id FROM personnel_assignments p2
+                       INNER JOIN units u2 ON u2.id = p2.unit_id AND u2.tenant_id = ?
+                      WHERE p2.user_id = pa.user_id AND p2.is_primary = 1 AND p2.id < pa.id
+                      ORDER BY p2.id DESC LIMIT 1) AS from_unit_id
+             FROM personnel_assignments pa
+             INNER JOIN units u ON u.id = pa.unit_id AND u.tenant_id = ?
+             INNER JOIN users usr ON usr.id = pa.user_id AND usr.tenant_id = ?
+             WHERE pa.is_primary = 1
+             ORDER BY COALESCE(pa.started_at, DATE(pa.created_at)) DESC, pa.id DESC
+             LIMIT ' . $limit
+        );
+        $stmt->execute([$tenantId, $tenantId, $tenantId]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $from = (int) ($row['from_unit_id'] ?? 0);
+            $to = (int) ($row['unit_id'] ?? 0);
+            if ($from === $to) {
+                // Même unité réenregistrée (changement de rôle) : ce n’est pas une mutation.
+                continue;
+            }
+            $date = trim((string) ($row['started_at'] ?? ''));
+            if ($date === '') {
+                $date = trim((string) ($row['created_at'] ?? ''));
+            }
+            $out[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'user_id' => (int) ($row['user_id'] ?? 0),
+                'unit_id' => $to,
+                'from_unit_id' => $from,
+                'date' => substr($date, 0, 10),
+                'reason' => trim((string) ($row['change_reason'] ?? '')),
+                'display_name' => trim((string) ($row['display_name'] ?? '')),
+                'callsign' => trim((string) ($row['callsign'] ?? '')),
+                'user_status' => trim((string) ($row['user_status'] ?? '')),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Toutes les périodes d’affectation enregistrées (actives et closes), scoping tenant.
      *
      * @return list<array<string, mixed>>

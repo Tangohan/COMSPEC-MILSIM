@@ -294,6 +294,19 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1269, '2026-11-02', 'Fonctions : abrégé, icône, étiquettes et fonctions du site masquables', 'Chaque fonction de votre communauté peut recevoir un abrégé (CDG, MED, JTAC…), une icône choisie dans la bibliothèque du site, des étiquettes de couleur et une description affichée au survol. Ces repères apparaissent dans les effectifs, la fiche membre, les postes de l’ORBAT, la page publique du joueur et les choix de fonction. Vous pouvez masquer les fonctions fournies par le site que vous n’utilisez pas, sans rien retirer aux membres qui les occupent, et les fonctions que vous avez créées sont mises en avant.', [
+                'Abrégé de fonction (2 à 8 majuscules, unique dans la communauté), icône de la bibliothèque avec recherche, étiquettes avec suggestions et couleur facultative',
+                'Onglet « Fonctions du site » : masquer ou réafficher une ou plusieurs fonctions, filtre « Afficher les masquées »',
+                'Filtre par étiquette dans la liste des fonctions et dans le tableur des effectifs',
+            ], [
+                'Badge « Créée par vous » et fonctions de la communauté en tête de liste ; badge discret « Site » pour les fonctions fournies par Athena',
+                'Icône et abrégé dans les effectifs, la fiche membre, les postes de l’ORBAT, la page publique, les choix de fonction et le PDF des effectifs',
+                'Description de la fonction affichée au survol et sur la fiche membre',
+                'Modèles d’organisation : l’abrégé, l’icône et les étiquettes sont repris à l’export et à l’application',
+            ], [], ['platform', 'personnel'], [
+                'Une fonction masquée reste affichée normalement pour les membres qui l’occupent ; aucune attribution ni aucun droit d’accès ne change.',
+                'L’étape de migration « Fonctions : abrégé, icône, étiquettes… » doit être passée (console Migrations) pour enregistrer ces champs.',
+            ], 'Portail'),
             $pr(1262, '2026-11-01', 'Moins d’à-coups en partie, mode profilage des saccades', 'Avec le pack 2.9.28, le téléphone n’enregistre plus votre profil Arma toutes les deux minutes quand rien n’a changé (cet enregistrement figeait brièvement l’image, même téléphone rangé), et en solo, dans l’éditeur Eden ou en partie hébergée, la recherche des socles de recharge ne parcourt plus tous les objets de la mission chaque minute. Un nouveau réglage « Profilage (saccades) » note dans le fichier RPT ce qui tourne à chaque saccade, pour nous aider à trouver la suite.', [
                 'Réglage Profilage (saccades) dans ATAK · Debug : bilan des tâches de fond toutes les 10 s dans le RPT',
             ], [

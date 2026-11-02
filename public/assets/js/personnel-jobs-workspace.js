@@ -166,8 +166,46 @@
         }
     }
 
+    function filterIcons(input) {
+        const picker = input.closest('[data-icon-picker]');
+        if (!picker) return;
+        const query = normalize(input.value).trim();
+        let visible = 0;
+        picker.querySelectorAll('[data-icon-option]').forEach(option => {
+            option.hidden = !!query && !normalize(option.dataset.search || '').includes(query);
+            if (!option.hidden) visible++;
+        });
+        const empty = picker.querySelector('[data-icon-empty]');
+        if (empty) empty.hidden = visible > 0;
+    }
+
+    function showIcon(radio) {
+        const current = radio.closest('[data-icon-picker]')?.querySelector('[data-icon-current]');
+        const option = radio.closest('[data-icon-option]');
+        if (!current || !option) return;
+        const svg = option.querySelector('svg');
+        current.textContent = '';
+        if (svg) current.appendChild(svg.cloneNode(true));
+        current.appendChild(document.createTextNode(' ' + (option.querySelector('small')?.textContent || '')));
+    }
+
+    function siteSelection(scope) {
+        const form = scope?.closest('form') || scope;
+        const counter = form?.querySelector('[data-site-selected-count]');
+        if (!counter) return;
+        const count = form.querySelectorAll('[data-site-job]:checked').length;
+        counter.textContent = count > 0 ? count + ' sélectionnée(s)' : '';
+    }
+
     document.addEventListener('input', event => {
         if (!event.target.closest('[data-jobs-workspace]')) return;
+        if (event.target.matches('[data-icon-search]')) { filterIcons(event.target); return; }
+        if (event.target.matches('[data-jobs-abbr]')) {
+            const field = event.target;
+            const caret = field.selectionStart;
+            field.value = field.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (caret !== null) field.setSelectionRange(Math.min(caret, field.value.length), Math.min(caret, field.value.length));
+        }
         if (event.target.matches('[data-jobs-search]')) filter();
         if (event.target.matches('[data-category-search]')) filterCategories();
         const form = event.target.closest('form[data-jobs-save]');
@@ -177,9 +215,29 @@
         const form = event.target.closest('[data-jobs-workspace] form[data-jobs-save]');
         if (form) { dirty.add(form); jobPreview(); }
         if (event.target.matches('[data-category-placement]')) placement(event.target);
+        if (event.target.matches('[data-icon-picker] input[name=icon]')) showIcon(event.target);
+        if (event.target.matches('[data-jobs-workspace] [data-jobs-autosubmit]')) event.target.form?.requestSubmit();
+        if (event.target.matches('[data-jobs-workspace] [data-site-select-all]')) {
+            const group = event.target.closest('fieldset');
+            group?.querySelectorAll('[data-site-job]').forEach(box => { if (!box.closest('[data-jobs-row]')?.hidden) box.checked = event.target.checked; });
+        }
+        if (event.target.matches('[data-jobs-workspace] [data-site-job], [data-jobs-workspace] [data-site-select-all]')) siteSelection(event.target);
     });
 
     document.addEventListener('click', event => {
+        const tagButton = event.target.closest('[data-jobs-workspace] [data-jobs-tag-add]');
+        if (tagButton) {
+            const field = tagButton.closest('form')?.querySelector('[data-jobs-tags]');
+            if (!field) return;
+            const tags = field.value.split(',').map(tag => tag.trim()).filter(Boolean);
+            const name = tagButton.dataset.jobsTagAdd;
+            if (!tags.some(tag => normalize(tag) === normalize(name))) {
+                tags.push(name);
+                field.value = tags.join(', ');
+                field.dispatchEvent(new Event('input', {bubbles: true}));
+            }
+            return;
+        }
         const toggle = event.target.closest('[data-category-toggle]');
         if (toggle && toggle.closest('[data-jobs-workspace]')) {
             const id = toggle.dataset.categoryToggle;

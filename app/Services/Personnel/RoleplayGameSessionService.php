@@ -23,7 +23,9 @@ final class RoleplayGameSessionService
         $sessionSeconds = $this->sessionLengthSeconds($session);
         $okMinutes = $minMinutes <= 0 || $raw >= $minMinutes * 60;
         $okPercent = $minPercent <= 0 || $sessionSeconds <= 0 || $raw >= (int) floor($sessionSeconds * $minPercent / 100);
-        $attendanceValid = ($okMinutes || $okPercent) && empty($member['rh_excluded']);
+        // Présence retenue à la main par un responsable : elle tient même sous les seuils.
+        $staffKept = trim((string) ($member['staff_validated_at'] ?? '')) !== '' && !empty($member['attendance_valid']);
+        $attendanceValid = ($okMinutes || $okPercent || $staffKept) && empty($member['rh_excluded']);
         $kind = (string) ($session['session_kind'] ?? 'libre');
         $validated = 0;
         if ($kind !== 'libre' && $attendanceValid) {
@@ -271,16 +273,95 @@ final class RoleplayGameSessionService
 
     public function staffValidate(int $tenantId, int $sessionId, int $memberId, int $actorId, bool $valid, bool $exclude): void
     {
-        $this->sessions->updateMember($tenantId, $memberId, [
+        $patch = [
             'attendance_valid' => $valid ? 1 : 0,
             'rh_excluded' => $exclude ? 1 : 0,
             'staff_validated_at' => date('Y-m-d H:i:s'),
             'staff_validated_by' => $actorId,
-            'validated_seconds' => $valid && !$exclude ? null : 0,
-        ]);
+        ];
+        // validated_seconds est NOT NULL : le temps retenu est recalculé juste après pour une présence retenue.
+        if (!$valid || $exclude) {
+            $patch['validated_seconds'] = 0;
+            $patch['eligible_seconds'] = 0;
+        }
+        $this->sessions->updateMember($tenantId, $memberId, $patch);
         if ($valid && !$exclude) {
             $this->refreshMember($tenantId, $sessionId, $memberId);
         }
+    }
+
+    /** Démarre une session prévue (ou rouverte) maintenant. */
+    public function startSession(int $tenantId, int $sessionId): void
+    {
+        $session = $this->sessions->findById($tenantId, $sessionId);
+        if (!$session) {
+            return;
+        }
+        $this->sessions->update($tenantId, $sessionId, [
+            'status' => 'open',
+            'started_at' => trim((string) ($session['started_at'] ?? '')) !== '' ? $session['started_at'] : date('Y-m-d H:i:s'),
+            'ended_at' => null,
+        ]);
+    }
+
+    /**
+     * Clôture : ferme le temps encore ouvert de chaque participant (à son dernier signal du jeu), recalcule les
+     * présences et fige la session.
+     */
+    public function closeSession(int $tenantId, int $sessionId, string $status = 'closed'): void
+    {
+        $session = $this->sessions->findById($tenantId, $sessionId);
+        if (!$session) {
+            return;
+        }
+        $now = date('Y-m-d H:i:s');
+        foreach ($this->sessions->listMembers($tenantId, $sessionId) as $member) {
+            $open = $this->sessions->openSegment($tenantId, (int) $member['id']);
+            if (!$open) {
+                continue;
+            }
+            $start = strtotime((string) $open['started_at']) ?: time();
+            $last = strtotime((string) ($member['last_heartbeat_at'] ?? '')) ?: 0;
+            $end = $last >= $start ? $last : time();
+            $this->sessions->closeSegment($tenantId, (int) $open['id'], date('Y-m-d H:i:s', $end), max(0, $end - $start));
+        }
+        $this->sessions->update($tenantId, $sessionId, [
+            'status' => $status === 'cancelled' ? 'cancelled' : 'closed',
+            'ended_at' => trim((string) ($session['started_at'] ?? '')) !== '' ? $now : null,
+        ]);
+        $this->refreshSession($tenantId, $sessionId);
+    }
+
+    /** Recalcule temps et présence de tous les participants (après un changement de type ou de seuils). */
+    public function refreshSession(int $tenantId, int $sessionId): void
+    {
+        foreach ($this->sessions->listMembers($tenantId, $sessionId) as $member) {
+            $this->refreshMember($tenantId, $sessionId, (int) $member['id']);
+        }
+    }
+
+    /**
+     * Ajout à la main par un responsable : présence pointée, temps saisi en minutes (enregistré comme une plage
+     * terminée pour ne pas être effacé par le recalcul).
+     */
+    public function addMemberByStaff(int $tenantId, int $sessionId, int $userId, int $minutes, int $actorId): ?int
+    {
+        $now = date('Y-m-d H:i:s');
+        $seconds = max(0, min(24 * 60, $minutes)) * 60;
+        $memberId = $this->sessions->upsertMember($tenantId, $sessionId, [
+            'user_id' => $userId,
+            'checked_in_at' => $now,
+            'attendance_source' => 'staff',
+        ]);
+        if ($memberId < 1) {
+            return null;
+        }
+        if ($seconds > 0) {
+            $this->sessions->addSegment($tenantId, $sessionId, $memberId, 'manual', date('Y-m-d H:i:s', time() - $seconds), $now, $seconds);
+        }
+        $this->refreshMember($tenantId, $sessionId, $memberId);
+
+        return $memberId;
     }
 
     private function sumClosedSegments(int $tenantId, int $memberId): int
@@ -315,6 +396,10 @@ final class RoleplayGameSessionService
         $uid = trim((string) ($payload['session_uid'] ?? ''));
         if ($uid !== '') {
             return $this->sessions->findByUid($tenantId, $uid);
+        }
+        // Le mod remonte le temps de jeu sans numéro de session : on le rattache à la session démarrée en cours.
+        if (!empty(RoleplayGameSessionSettings::forTenant($tenantId)['sync_enabled'])) {
+            return $this->sessions->currentLiveForTenant($tenantId, \App\Support\RoleplaySessionBoard::STALE_HOURS);
         }
 
         return null;
