@@ -47,6 +47,7 @@
 .jobcat__flag.is-all svg { width: 1.1rem; height: 1.1rem; }
 .jobcat__flag[data-flag="FR"] { color: transparent; background: linear-gradient(90deg, #002654 0 33.34%, #fff 33.34% 66.67%, #ce1126 66.67%); }
 .jobcat__flag[data-flag="US"] { color: transparent; background: linear-gradient(#3c3b6e, #3c3b6e) 0 0 / 42% 54% no-repeat, repeating-linear-gradient(#b22234 0 7.69%, #fff 7.69% 15.38%); }
+.jobcat__flag[data-flag="DE"] { color: transparent; background: linear-gradient(#000 0 33.34%, #d00 33.34% 66.67%, #ffce00 66.67%); }
 
 /* Recherche, filtres, tri. */
 .jobcat__toolbar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.6rem; padding: 0.75rem 1.25rem; background: var(--jc-head); border-bottom: 1px solid var(--jc-line); }
@@ -125,6 +126,19 @@
 .jobcat__source-host { display: block; color: var(--jc-muted); font-size: 0.7rem; }
 .jobcat__foot { padding: 0.6rem 1.25rem; border-top: 1px solid var(--jc-line); background: var(--jc-head); color: var(--jc-muted); font-size: 0.7rem; line-height: 1.45; }
 .jobcat__foot p { margin: 0; }
+/* Notes de sources : une ligne (tronquée), panneau repliable borné pour ne pas réduire la liste. */
+.jobcat__notes > summary { display: flex; align-items: center; gap: 0.75rem; min-height: 1.5rem; list-style: none; cursor: pointer; }
+.jobcat__notes > summary::-webkit-details-marker { display: none; }
+.jobcat__notes-line { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jobcat__notes-toggle { flex: none; color: var(--jc-accent); font-weight: 700; text-decoration: underline; }
+.jobcat__notes-less, .jobcat__notes[open] .jobcat__notes-more { display: none; }
+.jobcat__notes[open] .jobcat__notes-less { display: inline; }
+.jobcat__notes > summary:focus-visible { outline: 2px solid var(--jc-accent); outline-offset: 2px; }
+.jobcat__notes-panel { max-height: 9rem; margin-top: 0.4rem; padding-top: 0.4rem; overflow-y: auto; border-top: 1px solid var(--jc-line); }
+.jobcat__notes-list { margin: 0 0 0.4rem; padding: 0; list-style: none; }
+.jobcat__notes-list li { display: flex; align-items: flex-start; gap: 0.5rem; }
+.jobcat__notes-list li + li { margin-top: 0.35rem; }
+.jobcat__notes-list .jobcat__flag { width: 1.1rem; height: 0.75rem; margin-top: 0.2rem; }
 .jobcat .eff-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (max-width: 1100px) {
   .jobcat__filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
