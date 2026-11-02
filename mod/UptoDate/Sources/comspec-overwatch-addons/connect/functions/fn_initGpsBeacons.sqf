@@ -112,7 +112,18 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
         missionNamespace setVariable ["COMSPEC_TrackSigEpoch", (missionNamespace getVariable ["COMSPEC_TrackSigEpoch", 0]) + 1, false];
     };
     // Autres joueurs vivants pris une fois par passage pour le choix du relais (au lieu de allPlayers par objet).
-    private _others = allPlayers select { alive _x && {isPlayer _x} && {_x isNotEqualTo player} };
+    // Seuls les joueurs liés comptent (isNearestAtakReporter les écartait déjà un par un, objet par objet).
+    private _others = allPlayers select { alive _x && {isPlayer _x} && {_x isNotEqualTo player} && {_x getVariable ["COMSPEC_AtakReporterLinked", false]} };
+    // Relais élu une fois par passage (plus petit UID lié, moi compris) : il prend tout objet à moins de 1 km de lui,
+    // une distance par objet. Au-delà, repli sur le joueur lié le plus proche (boucle sur tous les joueurs par objet).
+    private _cands = _others apply { [getPlayerUID _x, _x] };
+    if (alive player) then { _cands pushBack [getPlayerUID player, player]; };
+    _cands sort true;
+    private _relay = (_cands param [0, ["", objNull]]) select 1;
+    private _mine = {
+        if (!isNull _relay && {(_relay distance2D _this) < 1000}) exitWith { _relay isEqualTo player };
+        [_this, _others] call comspec_overwatch_connect_fnc_isNearestAtakReporter
+    };
 
     private _vehs = missionNamespace getVariable ["COMSPEC_GpsBeaconObjects", []];
     if (_vehs isEqualType []) then {
@@ -120,7 +131,7 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
         {
             if (isNull _x) then { continue };
             _keep pushBack _x;
-            if !([_x, _others] call comspec_overwatch_connect_fnc_isNearestAtakReporter) then { continue };
+            if !(_x call _mine) then { continue };
             [_x] call comspec_overwatch_connect_fnc_updateVehicleTracking;
             [_x] call comspec_overwatch_connect_fnc_reportGpsBeacon;
         } forEach _vehs;
@@ -139,7 +150,7 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
             if !([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) then { continue };
             _keepA pushBack _x;
             _seenNids pushBackUnique (netId _x);
-            if !([_x, _others] call comspec_overwatch_connect_fnc_isNearestAtakReporter) then { continue };
+            if !(_x call _mine) then { continue };
             [_x] call comspec_overwatch_connect_fnc_reportAllyPosition;
         } forEach _allies;
         if ((count _keepA) isNotEqualTo (count _allies)) then {
@@ -169,7 +180,7 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
             // Géoloc coupée ailleurs (drapeau public à faux) : retirer de la liste locale.
             if !([_x, "COMSPEC_PhoneTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) then { continue };
             _keepU pushBack _x;
-            if !([_x, _others] call comspec_overwatch_connect_fnc_isNearestAtakReporter) then { continue };
+            if !(_x call _mine) then { continue };
             [_x] call comspec_overwatch_connect_fnc_reportPhonePosition;
         } forEach _phones;
         if ((count _keepU) isNotEqualTo (count _phones)) then {
