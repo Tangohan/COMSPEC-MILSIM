@@ -86,7 +86,7 @@ private _mapAt = {
     _bgm ctrlSetBackgroundColor [0.02, 0.028, 0.024, 1];
     private _map = ["COMSPEC_RscMapJtac", [_bx + _mx, _by + _my, _mw, _mh], "", false] call comspec_atak_native_fnc_pageCtrl;
     _map setVariable ["mode", _mode];
-    _map ctrlAddEventHandler ["Draw", { params ["_c"]; [_c, _c getVariable ["mode", "JTAC"]] call comspec_atak_native_fnc_jtacDraw; }];
+    _map ctrlAddEventHandler ["Draw", { params ["_c"]; private _t = diag_tickTime; [_c, _c getVariable ["mode", "JTAC"]] call comspec_atak_native_fnc_jtacDraw; ["carte JTAC (image)", _t] call comspec_atak_native_fnc_perfAcc; }];
     _map ctrlAddEventHandler ["MouseButtonClick", {
         params ["_c", "_btn", "_x", "_y"];
         private _k = (uiNamespace getVariable ["COMSPEC_ATAK_Jtac", createHashMap]) getOrDefault ["mapPick", ""];

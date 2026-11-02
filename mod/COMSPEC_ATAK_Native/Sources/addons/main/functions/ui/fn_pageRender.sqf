@@ -5,6 +5,10 @@ private _d = ([] call comspec_atak_native_fnc_display);
 if (isNull _d) exitWith { false };
 // Rendus comptés : fn_layoutApply (mise en page seule) ne redessine pas la page si un rendu a suivi.
 uiNamespace setVariable ["COMSPEC_ATAK_RenderSeq", (uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]) + 1];
+// Rendus par page sur la fenêtre de 30 s (onglet PERFS du Debug, remis à zéro par fn_perfAcc « report »).
+private _rc = uiNamespace getVariable ["COMSPEC_ATAK_RenderCount", createHashMap];
+_rc set [_page, (_rc getOrDefault [_page, 0]) + 1];
+uiNamespace setVariable ["COMSPEC_ATAK_RenderCount", _rc];
 // Garder la saisie en cours de l'app Athena quand la page se redessine.
 private _form = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
 if ("email" in _form || {"pair" in _form} || {"otp" in _form}) then {

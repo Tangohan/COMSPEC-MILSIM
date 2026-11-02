@@ -10,7 +10,7 @@ private _tab = _s getOrDefault ["dbgTab", "LOG"];
 private _lvl = _s getOrDefault ["dbgLvl", "ALL"];
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [[_t, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
 private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['dbgTab', '%1']; [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
-private _rows = [["segment", "", [["JOURNAL", "LOG"] call _tabBtn, ["TRANSFERTS", "NET"] call _tabBtn, ["ÉTAT", "STATE"] call _tabBtn, ["DLL", "DLL"] call _tabBtn, ["OUTILS", "TOOLS"] call _tabBtn]]];
+private _rows = [["segment", "", [["JOURNAL", "LOG"] call _tabBtn, ["TRANSFERTS", "NET"] call _tabBtn, ["ÉTAT", "STATE"] call _tabBtn, ["DLL", "DLL"] call _tabBtn, ["PERFS", "PERF"] call _tabBtn, ["OUTILS", "TOOLS"] call _tabBtn]]];
 private _lvlColor = { params ["_v"]; switch (_v) do { case "ERROR": { "#e5483a" }; case "WARN"; case "WARNING": { "#f2ab33" }; case "DEBUG": { "#6c7671" }; default { "#8a9a93" }; } };
 // Journal fusionné : natif [t, niveau, module, message] et Overwatch « t [COMSPEC Overwatch][NIV][Canal] message ».
 private _merged = {
@@ -26,6 +26,26 @@ private _merged = {
     _out
 };
 switch (_tab) do {
+    case "PERF": {
+        // Dernier bilan de 30 s (fn_perfAcc « report ») : fonctions les plus coûteuses et rendus complets par page.
+        (missionNamespace getVariable ["COMSPEC_ATAK_PerfLast", []]) params [["_at", -1], ["_fps", 0], ["_slowN", 0], ["_slowMax", 0], ["_top", []], ["_rend", []]];
+        if (_at < 0) exitWith { _rows pushBack ["text", "<t color='#8a9a93'>Premier bilan dans 30 s au plus (profilage CBA actif : bilan dans le journal).</t>"]; };
+        _rows append [
+            ["info", "Dernier bilan", format ["il y a %1 s · fenêtre de 30 s", round (diag_tickTime - _at)]],
+            ["info", "Images par seconde", str _fps],
+            ["info", "Images lentes (plus de 50 ms)", format ["%1 (pire %2 ms)", _slowN, _slowMax]],
+            ["section", "Les plus coûteuses", "temps total sur 30 s"]
+        ];
+        _rows pushBack ["text", ["<t color='#8a9a93'>Rien mesuré.</t>", format ["<t size='0.8' font='EtelkaMonospacePro'>%1</t>", (_top apply {
+            _x params ["_k", "_n", "_avg", "_max", "_tot"];
+            format ["%1 ms · %2× · moy %3 · max %4 · %5", _tot toFixed 1, _n, _avg toFixed 2, _max toFixed 1, [_k] call _esc]
+        }) joinString "<br/>"]] select ((count _top) > 0)];
+        _rend = _rend apply { [_x select 1, _x select 0] };
+        _rend sort false;
+        _rows pushBack ["section", "Rendus complets de page", "sur 30 s"];
+        _rows pushBack ["text", ["<t color='#8a9a93'>Aucun rendu.</t>", format ["<t size='0.8' font='EtelkaMonospacePro'>%1</t>", (_rend apply { format ["%1× %2", _x select 0, [_x select 1] call _esc] }) joinString "<br/>"]] select ((count _rend) > 0)];
+        _rows pushBack ["buttons", [["ACTUALISER", { [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true]]];
+    };
     case "NET": {
         private _q = [] call comspec_atak_native_fnc_linkQuality;
         _rows append [
