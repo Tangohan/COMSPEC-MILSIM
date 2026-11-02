@@ -2381,6 +2381,11 @@ class Container
                 self::get(UserRepository::class)
             ),
             \App\Services\Export\TablePdfExportService::class => new \App\Services\Export\TablePdfExportService(),
+            // Emplois & fonctions : catalogue de référence, prérequis et dérogations.
+            \App\Controllers\Admin\JobCatalogController::class => new \App\Controllers\Admin\JobCatalogController(
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(TenantRepository::class)
+            ),
             \App\Controllers\Admin\EffectifsWorkspaceController::class => new \App\Controllers\Admin\EffectifsWorkspaceController(
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),

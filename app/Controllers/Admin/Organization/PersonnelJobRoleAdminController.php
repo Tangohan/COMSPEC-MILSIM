@@ -443,6 +443,13 @@ class PersonnelJobRoleAdminController
             }
             unset($p);
         }
+        $currentIds = array_map(static fn (array $r): int => (int) ($r['personnel_job_role_id'] ?? 0), $this->jobRoleRepository->listPivotAssignmentsForUsers($tenantId, [$userId])[$userId] ?? []);
+        $prereq = $this->prerequisiteCheck($tenantId, $userId, array_values(array_diff(array_column($parsed, 'personnel_job_role_id'), $currentIds)), $assignCfg);
+        if ($prereq !== null && !$prereq['ok']) {
+            Session::flash('error', $prereq['message']);
+
+            return Response::redirect($this->assignmentsRedirectAfterSave($request));
+        }
         try {
             $this->jobRoleRepository->replaceUserPivotJobRoles($tenantId, $userId, $parsed);
         } catch (\Throwable) {
@@ -465,7 +472,7 @@ class PersonnelJobRoleAdminController
         } catch (\Throwable) {
         }
 
-        Session::flash('success', 'Rôles métier du dossier mis à jour pour ' . trim((string) ($user['display_name'] ?? 'le membre')) . '.');
+        Session::flash('success', 'Rôles métier du dossier mis à jour pour ' . trim((string) ($user['display_name'] ?? 'le membre')) . '.' . ($prereq !== null ? ' ' . $prereq['message'] : ''));
 
         return Response::redirect($this->assignmentsRedirectAfterSave($request));
     }
@@ -630,8 +637,42 @@ class PersonnelJobRoleAdminController
             'role_detail' => '',
             'is_primary' => $slots === [],
         ];
+        $prereq = $this->prerequisiteCheck($tenantId, $userId, [$roleId], $assignCfg);
+        if ($prereq !== null && !$prereq['ok']) {
+            return ['ok' => false, 'message' => $prereq['message']];
+        }
+        $result = $this->commitJobRoleSlots($tenantId, $userId, (string) ($user['display_name'] ?? ''), $slots);
+        if ($result['ok'] && $prereq !== null) {
+            $result['message'] .= ' ' . $prereq['message'];
+        }
 
-        return $this->commitJobRoleSlots($tenantId, $userId, (string) ($user['display_name'] ?? ''), $slots);
+        return $result;
+    }
+
+    /**
+     * Prérequis des emplois ajoutés depuis l’écran des titulaires (sans saisie de motif) : null s’ils sont remplis,
+     * refus en mode bloquant (la dérogation motivée se fait depuis la fiche du membre), avertissement sinon.
+     *
+     * @param list<int> $newRoleIds
+     * @param array<string, mixed> $assignCfg
+     * @return array{ok: bool, message: string}|null
+     */
+    private function prerequisiteCheck(int $tenantId, int $userId, array $newRoleIds, array $assignCfg): ?array
+    {
+        try {
+            $gate = (new \App\Services\Personnel\JobPrerequisiteService())->gate($tenantId, $userId, $newRoleIds, '', false, !empty($assignCfg['prerequisites_blocking']), (int) Session::get('user_id'));
+        } catch (\Throwable $e) {
+            error_log('Job assignments: prerequisites check failed: ' . $e->getMessage());
+
+            return null;
+        }
+        if ($gate['unmet'] === []) {
+            return null;
+        }
+
+        return $gate['allowed']
+            ? ['ok' => true, 'message' => 'Attention : prérequis de la fonction non remplis.']
+            : ['ok' => false, 'message' => 'Prérequis de la fonction non remplis. Pour l’attribuer quand même, ouvrez la fiche du membre et indiquez un motif de dérogation.'];
     }
 
     /**
