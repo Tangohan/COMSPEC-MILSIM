@@ -126,8 +126,7 @@ final class QualificationDefinitionRepository
             $this->intOrNull($data['grace_period_days'] ?? null),
             !empty($data['enforce_level_progression']) ? 1 : 0,
             !empty($data['requires_panel']) ? 1 : 0,
-            in_array(($data['qualification_scope'] ?? 'global'), ['global', 'unit'], true)
-                ? $data['qualification_scope'] : 'global',
+            ($data['qualification_scope'] ?? 'global') === 'unit' ? 'unit' : 'global',
             $this->nullIfEmpty($data['badge_media_path'] ?? null),
             $this->intOrNull($data['certificate_template_id'] ?? null),
             $this->nullIfEmpty($data['certificate_number_format'] ?? null),
@@ -180,8 +179,7 @@ final class QualificationDefinitionRepository
             $this->intOrNull($data['grace_period_days'] ?? null),
             !empty($data['enforce_level_progression']) ? 1 : 0,
             !empty($data['requires_panel']) ? 1 : 0,
-            in_array(($data['qualification_scope'] ?? 'global'), ['global', 'unit'], true)
-                ? $data['qualification_scope'] : 'global',
+            ($data['qualification_scope'] ?? 'global') === 'unit' ? 'unit' : 'global',
             array_key_exists('badge_media_path', $data) ? $this->nullIfEmpty($data['badge_media_path']) : null,
             $this->intOrNull($data['certificate_template_id'] ?? null),
             $this->nullIfEmpty($data['certificate_number_format'] ?? null),

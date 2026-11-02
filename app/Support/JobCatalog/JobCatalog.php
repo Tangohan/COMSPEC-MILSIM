@@ -16,13 +16,14 @@ use App\Support\JobRoleIconLibrary;
  * Format d’un pack : { pack, country, official_lang, label{fr,en}, compiled_at, sources_note{fr,en}, entries[] } ;
  * une entrée : id, branch, command, formation, unit{fr,en}, type, code, code_system, name{fr,en}, abbreviation,
  * description{fr,en}, qualifications{fr[],en[]}, billets{fr[],en[]}, icon, tags{fr[],en[]}, sources[{url,title}].
- * official_lang : langue des appellations officielles du pays (« en » par défaut ; « de » : name porte aussi une clé de) ; formation : unité courte
+ * official_lang : langue des appellations officielles du pays (« en » par défaut ; « de » : name porte aussi une clé de ;
+ * « zh » : clé zh en caractères simplifiés et clé pinyin, romanisation avec tons, cherchée aussi sans tons) ; formation : unité courte
  * (« 1er RPIMa », « CPA 10 »), facultative, proposée comme filtre sous le commandement.
  */
 final class JobCatalog
 {
     /** Packs livrés (nom du fichier sans extension). */
-    public const PACKS = ['us_sof', 'fr_sof', 'de_sof'];
+    public const PACKS = ['us_sof', 'fr_sof', 'de_sof', 'cn_sof'];
 
     public const TYPES = ['operator', 'command', 'support', 'aviation'];
     public const BRANCHES = ['army', 'navy', 'air_force', 'marine_corps', 'gendarmerie', 'joint'];
@@ -36,6 +37,7 @@ final class JobCatalog
         'US' => ['fr' => 'États-Unis', 'en' => 'United States'],
         'FR' => ['fr' => 'France', 'en' => 'France'],
         'DE' => ['fr' => 'Allemagne', 'en' => 'Germany'],
+        'CN' => ['fr' => 'Chine', 'en' => 'China'],
     ];
 
     /** Armées d’un pays ; une armée absente reprend le libellé générique de LABELS['branch']. */
@@ -60,6 +62,14 @@ final class JobCatalog
             'navy' => ['fr' => 'Deutsche Marine (marine)', 'en' => 'German Navy (Deutsche Marine)'],
             'air_force' => ['fr' => 'Luftwaffe (armée de l’air)', 'en' => 'German Air Force (Luftwaffe)'],
             'joint' => ['fr' => 'Interarmées (Bundeswehr)', 'en' => 'Joint (Bundeswehr)'],
+        ],
+        // Nom chinois officiel de l’armée gardé dans les deux langues ; la Police armée du peuple est une force à part.
+        'CN' => [
+            'army' => ['fr' => 'Armée de terre de l’APL (解放军陆军)', 'en' => 'PLA Army (解放军陆军)'],
+            'navy' => ['fr' => 'Marine de l’APL (解放军海军)', 'en' => 'PLA Navy (解放军海军)'],
+            'marine_corps' => ['fr' => 'Corps des Marines de l’APL (海军陆战队)', 'en' => 'PLA Navy Marine Corps (海军陆战队)'],
+            'air_force' => ['fr' => 'Force aérienne de l’APL (解放军空军)', 'en' => 'PLA Air Force (解放军空军)'],
+            'gendarmerie' => ['fr' => 'Police armée du peuple (武警部队)', 'en' => 'People’s Armed Police (武警部队)'],
         ],
     ];
 
@@ -285,7 +295,8 @@ final class JobCatalog
     public static function names(array $entry, string $lang): array
     {
         $name = is_array($entry['name'] ?? null) ? $entry['name'] : [];
-        $order = array_unique(array_merge([(string) ($entry['official_lang'] ?? 'en'), self::lang($lang), 'en'], array_map('strval', array_keys($name))));
+        // La romanisation (pinyin) suit le nom officiel qu’elle transcrit.
+        $order = array_unique(array_merge([(string) ($entry['official_lang'] ?? 'en'), 'pinyin', self::lang($lang), 'en'], array_map('strval', array_keys($name))));
         $out = [];
         foreach ($order as $l) {
             $value = trim((string) ($name[$l] ?? ''));
@@ -321,7 +332,9 @@ final class JobCatalog
         if (class_exists(\Normalizer::class)) {
             $text = (string) preg_replace('/\p{Mn}+/u', '', (string) \Normalizer::normalize($text, \Normalizer::FORM_D));
         } else {
-            $text = strtr($text, ['ß' => 'ss', 'à' => 'a', 'â' => 'a', 'ä' => 'a', 'á' => 'a', 'ç' => 'c', 'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'î' => 'i', 'ï' => 'i', 'í' => 'i', 'ô' => 'o', 'ö' => 'o', 'ó' => 'o', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ú' => 'u', 'ÿ' => 'y', 'ñ' => 'n', 'œ' => 'oe', 'æ' => 'ae']);
+            $text = strtr($text, ['ß' => 'ss', 'à' => 'a', 'â' => 'a', 'ä' => 'a', 'á' => 'a', 'ç' => 'c', 'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'î' => 'i', 'ï' => 'i', 'í' => 'i', 'ô' => 'o', 'ö' => 'o', 'ó' => 'o', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ú' => 'u', 'ÿ' => 'y', 'ñ' => 'n', 'œ' => 'oe', 'æ' => 'ae',
+                // Tons du pinyin (« jūjīshǒu » → « jujishou »).
+                'ā' => 'a', 'ǎ' => 'a', 'ē' => 'e', 'ě' => 'e', 'ī' => 'i', 'ǐ' => 'i', 'ì' => 'i', 'ō' => 'o', 'ǒ' => 'o', 'ò' => 'o', 'ū' => 'u', 'ǔ' => 'u', 'ǖ' => 'u', 'ǘ' => 'u', 'ǚ' => 'u', 'ǜ' => 'u']);
         }
 
         // « ß » n’a pas de forme décomposée : « Straße » se cherche « strasse ».
@@ -359,7 +372,27 @@ final class JobCatalog
         $german = self::transliterate($text);
 
         // « 18B » se trouve aussi en tapant « 18 b » ; « Fallschirmjäger » en tapant « fallschirmjager » ou « fallschirmjaeger ».
-        return ' ' . self::normalize($text) . ' ' . ($german !== $text ? self::normalize($german) . ' ' : '') . strtolower(str_replace(' ', '', $code)) . ' ';
+        return ' ' . self::normalize($text) . ' ' . ($german !== $text ? self::normalize($german) . ' ' : '') . self::pinyinForms((string) ($entry['name']['pinyin'] ?? '')) . strtolower(str_replace(' ', '', $code)) . ' ';
+    }
+
+    /**
+     * Pinyin cherché sans tons (la normalisation les retire) aussi d’un seul tenant (« tezhongzuozhan ») et avec « v »
+     * pour « ü » (« lvzhang »), comme on le tape au clavier.
+     */
+    public static function pinyinForms(string $pinyin): string
+    {
+        if (trim($pinyin) === '') {
+            return '';
+        }
+        $flat = self::normalize($pinyin);
+        $forms = [str_replace(' ', '', $flat)];
+        if (preg_match('/[üǖǘǚǜÜǕǗǙǛ]/u', $pinyin) === 1) {
+            $v = self::normalize((string) preg_replace('/[üǖǘǚǜÜǕǗǙǛ]/u', 'v', $pinyin));
+            $forms[] = $v;
+            $forms[] = str_replace(' ', '', $v);
+        }
+
+        return implode(' ', array_unique($forms)) . ' ';
     }
 
     /**
