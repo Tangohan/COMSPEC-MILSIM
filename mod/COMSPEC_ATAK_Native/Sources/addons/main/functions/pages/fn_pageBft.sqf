@@ -13,6 +13,9 @@
     FILTRES : tiroir de réglages persistants (fn_bftFilter : IA, aériens, véhicules, pistes anciennes, hors ligne,
     mon groupe / mon unité, distance max), appliqués aussi à la carte.
 */
+// Mode « update » (fn_statusUpdate) : même vue, même filtre, tableau affiché : lignes, en-tête et fiche réécrites sur
+// place (aucun contrôle recréé, défilement du tableau gardé). Renvoie false si un rendu complet est nécessaire.
+params [["_mode", ""]];
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
@@ -37,6 +40,13 @@ private _etaTxt = {
 };
 private _distTxt = { params ["_d"]; [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 1]] select (_d >= 1000) };
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
+private _live = uiNamespace getVariable ["COMSPEC_ATAK_BftLive", createHashMap];
+private _upd = _mode isEqualTo "update";
+if (_upd && {
+    (count _live) isEqualTo 0 || {_filtersOpen} || {(_s getOrDefault ["bftBuzz", ""]) isNotEqualTo ""}
+    || {[_view, _filter, _land, _bw, _bh] isNotEqualTo (_live get "key")}
+    || {((_live get "ctrls") findIf { isNull _x || {!ctrlShown _x} }) >= 0}
+}) exitWith { false };
 private _fresh = createHashMapFromArray [["LIVE", ["DIRECT", "#5cc76b"]], ["STALE", ["ANCIENNE", "#f2ab33"]], ["LOST", ["PERDUE", "#e5483a"]], ["OFFLINE", ["HORS LIGNE", "#6c7671"]]];
 
 // Pistes amies (hors moi), avec distance et gisement.
@@ -103,8 +113,11 @@ _tracks sort true;
 private _y = 0;
 private _meOn = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 1]) > 0;
 private _hbW = _bw * ([0.24, 0.16] select _land);
-private _head = ["COMSPEC_RscCard", [0, 0, _bw - _hbW - _pad / 2, _font * 2.6]] call comspec_atak_native_fnc_pageCtrl;
-_head ctrlSetBackgroundColor [0.035, 0.05, 0.07, 1];
+private _head = if (_upd) then { (_live get "ctrls") select 0 } else {
+    private _c = ["COMSPEC_RscCard", [0, 0, _bw - _hbW - _pad / 2, _font * 2.6]] call comspec_atak_native_fnc_pageCtrl;
+    _c ctrlSetBackgroundColor [0.035, 0.05, 0.07, 1];
+    _c
+};
 _head ctrlSetStructuredText parseText ((format [
     "<t size='0.75' color='#7fb6e6'> MOI </t><t font='EtelkaMonospacePro' size='0.9'>%1</t>  <t size='0.8' color='#8a9a93'>cap</t> %2° %3  <t size='0.8' color='#8a9a93'>alt</t> %4 m  <t size='0.8' color='#8a9a93'>vit</t> %9 km/h%10<br/><t size='0.75' color='#7fb6e6'> PISTES </t><t color='#5cc76b'>● %5 direct</t>   <t color='#f2ab33'>● %6 ancienne(s)</t>   <t color='#e5483a'>● %7 perdue(s)</t>   <t color='#8a948f'>○ %8 hors ligne</t>",
     [player, 8] call comspec_atak_native_fnc_gridRef, round getDir player, [getDir player] call _card, round (_me select 2), _counts select 0, _counts select 1, _counts select 2, _counts select 3,
@@ -113,6 +126,7 @@ _head ctrlSetStructuredText parseText ((format [
 private _nFilt = ({ profileNamespace getVariable [_x, false] } count ["COMSPEC_ATAK_HideAllyAi", "COMSPEC_ATAK_BftHideAir", "COMSPEC_ATAK_BftHideVeh", "COMSPEC_ATAK_BftHideLost", "COMSPEC_ATAK_BftHideOffline"])
     + ([0, 1] select ((profileNamespace getVariable ["COMSPEC_ATAK_AllyFilter", "ALL"]) isNotEqualTo "ALL"))
     + ([0, 1] select ((profileNamespace getVariable ["COMSPEC_ATAK_BftMaxDist", 0]) isNotEqualTo 0));
+if (!_upd) then {
 private _vb = ["COMSPEC_RscButton", [_bw - _hbW, 0, _hbW, _font * 1.25], ["VUE : LISTE", "VUE : ORBAT"] select (_view isEqualTo "ORBAT")] call comspec_atak_native_fnc_pageCtrl;
 _vb ctrlSetFontHeight (_fs * 0.9);
 _vb ctrlSetTooltip (("Basculer entre le tableau des pistes et l'arbre ORBAT (formation, groupe, équipe)") call comspec_atak_native_fnc_tr);
@@ -132,9 +146,11 @@ _fb ctrlAddEventHandler ["ButtonClick", {
     _st set ["bftFiltersAnim", true];
     [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }];
+};
 _y = _font * 2.6 + _pad / 2;
 
 // Filtres
+if (!_upd) then {
 private _opts = [["TOUS", "ALL"], ["MON ÉQUIPE", "FT"], ["MON GROUPE", "GROUP"], ["VÉHICULES", "VEH"], ["PERDUS", "LOST"]];
 private _fw = (_bw - _pad * 2) / 5;
 {
@@ -144,12 +160,14 @@ private _fw = (_bw - _pad * 2) / 5;
     if (_k isEqualTo _filter) then { _b ctrlSetBackgroundColor [0.28, 0.55, 0.85, 1]; _b ctrlSetTextColor [1, 1, 1, 1]; };
     _b ctrlAddEventHandler ["ButtonClick", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['bftFilter', '%1']; [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k]];
 } forEach _opts;
+};
 _y = _y + _font * 1.4 + _pad / 2;
 
 // Tableau des pistes (à gauche en paysage, en haut en portrait) et fiche de la piste choisie.
 private _detailH = [_bh * 0.36, 0] select _land;
 private _listW = [_bw, _bw * 0.58] select _land;
 private _listH = _bh - _y - _detailH - _pad / 2;
+if (!_upd) then {
 private _cols = ["COMSPEC_RscMono", [_pad, _y, _listW - _pad, _fs * 1.2], ""] call comspec_atak_native_fnc_pageCtrl;
 _cols ctrlSetText (((switch (true) do {
     case _filtersOpen: { "  FILTRES DU BFT (aussi appliqués à la carte)" };
@@ -158,6 +176,7 @@ _cols ctrlSetText (((switch (true) do {
 })) call comspec_atak_native_fnc_tr);
 _cols ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin);
 _cols ctrlSetTextColor [0.55, 0.61, 0.58, 1];
+};
 _y = _y + _fs * 1.2;
 _listH = _listH - _fs * 1.2;
 private _ids = [];
@@ -255,9 +274,20 @@ if (_filtersOpen) then {
     _pc append _made;
     uiNamespace setVariable ["COMSPEC_ATAK_PageControls", _pc];
 } else {
+if (_upd) then { _list = (_live get "ctrls") select 1; } else {
 _list = ["COMSPEC_RscListBox", [0, _y, _listW, _listH]] call comspec_atak_native_fnc_pageCtrl;
 _list ctrlSetFontHeight _font;
 _list ctrlSetBackgroundColor [0.03, 0.04, 0.05, 0.9];
+};
+// Ligne suivante du tableau : réécrite sur place en mise à jour (sans lbClear, le défilement reste), ajoutée sinon.
+private _rowN = 0;
+private _rowAt = {
+    params ["_t"];
+    private _i = _rowN;
+    if (_i < lbSize _list) then { _list lbSetText [_i, _t]; _list lbSetPicture [_i, ""]; _list lbSetTextRight [_i, ""]; _list lbSetTooltip [_i, ""]; } else { _i = _list lbAdd _t; };
+    _rowN = _rowN + 1;
+    _i
+};
 // Une ligne de piste (tableau et ORBAT). Params : [piste, retrait, mention après l'indicatif]
 private _addMember = {
     params ["_t", ["_indent", ""], ["_extra", ""]];
@@ -272,7 +302,7 @@ private _addMember = {
     private _ft = if (isNull _obj) then { createHashMap } else { [_obj] call comspec_atak_native_fnc_ftInfo };
     private _ftName = _ft getOrDefault ["name", ""];
     if (_ftName isNotEqualTo "") then { _color = _ft get "rgba"; };
-    private _i = _list lbAdd ((format ["%5%1%2%3%4%6", [_id, _e] call _labelOf, ["", format ["  · %1%2", _ftName, ["", " " + (_ft get "roleShort")] select ((_ft getOrDefault ["roleShort", ""]) isNotEqualTo "")]] select (_ftName isNotEqualTo ""), ["", "  (blessé)"] select _dead, ["", "  (hors ligne)"] select (_f isEqualTo "OFFLINE"), _indent, _extra]) call comspec_atak_native_fnc_tr);
+    private _i = [(format ["%5%1%2%3%4%6", [_id, _e] call _labelOf, ["", format ["  · %1%2", _ftName, ["", " " + (_ft get "roleShort")] select ((_ft getOrDefault ["roleShort", ""]) isNotEqualTo "")]] select (_ftName isNotEqualTo ""), ["", "  (blessé)"] select _dead, ["", "  (hors ligne)"] select (_f isEqualTo "OFFLINE"), _indent, _extra]) call comspec_atak_native_fnc_tr] call _rowAt;
     _list lbSetPicture [_i, _icon];
     _list lbSetPictureColor [_i, [_color, [0.45, 0.50, 0.55, 1]] select (_f in ["LOST", "OFFLINE"])];
     _list lbSetPictureColorSelected [_i, [1, 1, 1, 1]];
@@ -288,7 +318,7 @@ private _addMember = {
 // Ligne d'en-tête de l'ORBAT (clic : replier / déplier).
 private _addHead = {
     params ["_key", "_text", "_right", "_rgba"];
-    private _i = _list lbAdd ((_text) call comspec_atak_native_fnc_tr);
+    private _i = [(_text) call comspec_atak_native_fnc_tr] call _rowAt;
     _list lbSetColor [_i, _rgba];
     _list lbSetTextRight [_i, _right];
     _list lbSetColorRight [_i, [0.62, 0.70, 0.66, 1]];
@@ -386,15 +416,17 @@ if (_view isEqualTo "ORBAT") then {
     { [_x] call _addMember; } forEach _tracks;
 };
 if ((count _tracks) isEqualTo 0) then {
-    private _i = _list lbAdd (((["Aucune piste amie suivie.", "Aucune piste pour ce filtre."] select (_filter isNotEqualTo "ALL" || {_nFilt > 0}))) call comspec_atak_native_fnc_tr);
+    private _i = [((["Aucune piste amie suivie.", "Aucune piste pour ce filtre."] select (_filter isNotEqualTo "ALL" || {_nFilt > 0}))) call comspec_atak_native_fnc_tr] call _rowAt;
     _list lbSetColor [_i, [0.55, 0.60, 0.58, 1]];
     _rows pushBack ["", ""];
 };
+while { (lbSize _list) > _rowN } do { _list lbDelete ((lbSize _list) - 1); };
 uiNamespace setVariable ["COMSPEC_ATAK_BftIds", _ids];
 uiNamespace setVariable ["COMSPEC_ATAK_BftRows", _rows];
 // Piste choisie absente (filtrée) : la première de la liste ; repliée dans l'ORBAT : elle reste choisie.
 if (_selIdx < 0 && {_firstRow >= 0} && {(_tracks findIf { (_x select 1) isEqualTo _selId }) < 0}) then { _selIdx = _firstRow; _selId = _ids select _firstRow; _s set ["bftSel", _selId]; };
-if (_selIdx >= 0) then { _list lbSetCurSel _selIdx; };
+if (_selIdx >= 0 && {(lbCurSel _list) isNotEqualTo _selIdx}) then { _list lbSetCurSel _selIdx; };
+if (!_upd) then {
 _list ctrlAddEventHandler ["LBSelChanged", {
     params ["", "_i"];
     ((uiNamespace getVariable ["COMSPEC_ATAK_BftRows", []]) param [_i, []]) params [["_k", ""], ["_v", ""]];
@@ -416,13 +448,17 @@ _list ctrlAddEventHandler ["LBDblClick", {
     [{ ["center"] call comspec_atak_native_fnc_bftAction; }] call CBA_fnc_execNextFrame;
 }];
 };
+};
 
 // Fiche de la piste choisie.
 private _dRect = if (_land) then { [_listW + _pad / 2, _y - _fs * 1.2, _bw - _listW - _pad / 2, _bh - _y + _fs * 1.2] } else { [0, _y + _listH + _pad / 2, _bw, _detailH] };
 _dRect params ["_dx", "_dy", "_dw", "_dh"];
 private _sel = (_tracks select { (_x select 1) isEqualTo _selId }) param [0, []];
-private _det = ["COMSPEC_RscCard", [_dx, _dy, _dw, _dh - _font * 1.6], ""] call comspec_atak_native_fnc_pageCtrl;
-_det ctrlSetBackgroundColor [0.035, 0.05, 0.07, 1];
+private _det = if (_upd) then { (_live get "ctrls") select 2 } else {
+    private _c = ["COMSPEC_RscCard", [_dx, _dy, _dw, _dh - _font * 1.6], ""] call comspec_atak_native_fnc_pageCtrl;
+    _c ctrlSetBackgroundColor [0.035, 0.05, 0.07, 1];
+    _c
+};
 if ((count _sel) isEqualTo 0) then {
     _det ctrlSetStructuredText parseText (("<t color='#8a9a93'>Choisissez une piste dans le tableau.</t>") call comspec_atak_native_fnc_tr);
 } else {
@@ -495,12 +531,15 @@ if (_buzzOn) then {
     uiNamespace setVariable ["COMSPEC_ATAK_BuzzEdit", _ed];
 };
 private _bw3 = (_dw - _pad * 4) / 5;
+private _btns = [];
 {
     _x params ["_t", "_act", "_on"];
+    if (_upd) then { private _b = (_live get "btns") param [_forEachIndex, controlNull]; _b ctrlSetText ((_t) call comspec_atak_native_fnc_tr); _b ctrlEnable _on; continue };
     private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_forEachIndex isEqualTo 1), [_dx + _forEachIndex * (_bw3 + _pad), _dy + _dh - _font * 1.5, _bw3, _font * 1.4], _t] call comspec_atak_native_fnc_pageCtrl;
     _b ctrlSetFontHeight _fs;
     _b ctrlEnable _on;
     _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['%1'] call comspec_atak_native_fnc_bftAction; }] call CBA_fnc_execNextFrame;", _act]];
+    _btns pushBack _b;
 } forEach ([[
     ["CARTE", "center", (count _sel) > 0],
     ["Y ALLER", "route", (count _sel) > 0],
@@ -513,4 +552,10 @@ private _bw3 = (_dw - _pad * 4) / 5;
     ["ANNULER", "buzzCancel", true],
     ["ENVOYER", "buzzSend", _meOn]
 ]] select _buzzOn);
+// Contrôles gardés pour la mise à jour sur place (tableau seulement, hors tiroir des filtres et vibreur).
+if (!_upd) then {
+    uiNamespace setVariable ["COMSPEC_ATAK_BftLive", [createHashMap, createHashMapFromArray [
+        ["key", [_view, _filter, _land, _bw, _bh]], ["ctrls", [_head, _list, _det]], ["btns", _btns], ["drawnSeq", uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]]
+    ]] select (!_filtersOpen && {!_buzzOn} && {!isNull _list})];
+};
 true

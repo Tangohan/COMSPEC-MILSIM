@@ -200,6 +200,9 @@ if (!isNull _fc && {(ctrlType _fc) isEqualTo 2}) then { _sigWait = true; };
 if ((_state getOrDefault ["pageSigPage", ""]) isEqualTo _page && {_pageSig isNotEqualTo (_state getOrDefault ["pageSig", []])}) then {
     if (_sigWait) exitWith { _pageSig = _state getOrDefault ["pageSig", []]; };
     _state set ["sigRenderAt", diag_tickTime];
+    // BFT : lignes, en-tête et fiche réécrites sur place quand c'est possible (aucun contrôle recréé, défilement gardé).
+    private _pt = diag_tickTime;
+    if (_page isEqualTo "BFT" && {["update"] call comspec_atak_native_fnc_pageBft}) exitWith { ["page BFT (mise à jour)", _pt] call comspec_atak_native_fnc_perfAcc; };
     [_page] call comspec_atak_native_fnc_pageRender;
 };
 _state set ["pageSig", _pageSig];
