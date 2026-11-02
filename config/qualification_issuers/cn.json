@@ -1,0 +1,414 @@
+{
+  "pack": "cn",
+  "country": "CN",
+  "compiled_at": "2026-11-02",
+  "sources_note": {
+    "fr": "Compilé à partir de Wikipédia (zh/en/fr) et, quand ils existent, des sites officiels. Les établissements de l'APL ont été profondément réorganisés en 2017 puis en 2024 ; les sites officiels sont rares et les implantations parfois non publiées. Les points non confirmés sont signalés dans « uncertain ».",
+    "en": "Compiled from Wikipedia (zh/en/fr) and official websites where they exist. PLA institutions were heavily reorganised in 2017 and again in 2024; official websites are rare and some locations are not published. Unconfirmed points are flagged under \"uncertain\"."
+  },
+  "issuers": [
+    {
+      "key": "cn-ndu",
+      "name": "中国人民解放军国防大学",
+      "transliteration": "Zhōngguó Rénmín Jiěfàngjūn Guófáng Dàxué",
+      "short_name": "国防大学",
+      "type": "academy",
+      "location": "Pékin",
+      "location_en": "Beijing, China",
+      "website": "",
+      "description": {
+        "fr": "Université de défense nationale de l'APL, plus haut établissement d'enseignement militaire supérieur chinois, qui forme les officiers supérieurs et généraux de toutes les armées.",
+        "en": "PLA National Defence University, China's highest military education institution, training senior and general officers of all services."
+      },
+      "aliases": [
+        "中国人民解放军国防大学"
+      ],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/中国人民解放军国防大学",
+          "title": "中国人民解放军国防大学 (维基百科)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/PLA_National_Defence_University",
+          "title": "PLA National Defence University (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "cn-ndu-political",
+      "name": "中国人民解放军国防大学政治学院",
+      "transliteration": "Zhōngguó Rénmín Jiěfàngjūn Guófáng Dàxué Zhèngzhì Xuéyuàn",
+      "short_name": "国防大学政治学院",
+      "type": "school",
+      "location": "Shanghai",
+      "location_en": "Shanghai, China",
+      "website": "",
+      "description": {
+        "fr": "Collège politique de l'Université de défense nationale, qui forme les cadres politiques (commissaires) de l'APL.",
+        "en": "Political college of the National Defence University, training PLA political officers (commissars)."
+      },
+      "aliases": [
+        "中国人民解放军国防大学政治学院"
+      ],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/中国人民解放军国防大学政治学院",
+          "title": "中国人民解放军国防大学政治学院 (维基百科)"
+        }
+      ]
+    },
+    {
+      "key": "cn-nudt",
+      "name": "中国人民解放军国防科技大学",
+      "transliteration": "Zhōngguó Rénmín Jiěfàngjūn Guófáng Kējì Dàxué",
+      "short_name": "国防科大",
+      "type": "academy",
+      "location": "Changsha (Hunan)",
+      "location_en": "Changsha, China",
+      "website": "https://www.nudt.edu.cn",
+      "description": {
+        "fr": "Université nationale de technologie de défense : principal établissement scientifique et technique de l'APL (ingénieurs et officiers techniciens).",
+        "en": "National University of Defense Technology: the PLA's main science and engineering institution (engineers and technical officers)."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/National_University_of_Defense_Technology",
+          "title": "National University of Defense Technology (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "cn-army-command-college",
+      "name": "中国人民解放军陆军指挥学院",
+      "transliteration": "Zhōngguó Rénmín Jiěfàngjūn Lùjūn Zhǐhuī Xuéyuàn",
+      "short_name": "陆军指挥学院",
+      "type": "school",
+      "location": "Nankin (Jiangsu)",
+      "location_en": "Nanjing, China",
+      "website": "",
+      "description": {
+        "fr": "Académie de commandement de l'Armée de terre de l'APL, qui forme les officiers de commandement de niveau intermédiaire.",
+        "en": "PLA Army Command College, training mid-level command officers."
+      },
+      "aliases": [
+        "中国人民解放军陆军指挥学院"
+      ],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/中国人民解放军陆军指挥学院",
+          "title": "中国人民解放军陆军指挥学院 (维基百科)"
+        }
+      ]
+    },
+    {
+      "key": "cn-army-sof-academy",
+      "name": "中国人民解放军陆军特种作战学院",
+      "transliteration": "Zhōngguó Rénmín Jiěfàngjūn Lùjūn Tèzhǒng Zuòzhàn Xuéyuàn",
+      "short_name": "陆军特种作战学院",
+      "type": "school",
+      "location": "Guilin (Guangxi)",
+      "location_en": "Guilin, China",
+      "website": "",
+      "description": {
+        "fr": "Académie des opérations spéciales de l'Armée de terre de l'APL, qui forme les cadres des unités d'opérations spéciales.",
+        "en": "PLA Army Special Operations Academy, training cadres for special operations units."
+      },
+      "aliases": [
+        "中国人民解放军陆军特种作战学院"
+      ],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/中国人民解放军陆军特种作战学院",
+          "title": "中国人民解放军陆军特种作战学院 (维基百科)"
+        }
+      ]
+    },
+    {
+      "key": "cn-army-aviation-academy",
+      "name": "中国人民解放军陆军航空兵学院",
+      "transliteration": "Zhōngguó Rénmín Jiěfàngjūn Lùjūn Hángkōngbīng Xuéyuàn",
+      "short_name": "陆航学院",
+      "type": "school",
+      "location": "Pékin",
+      "location_en": "Beijing, China",
+      "website": "",
+      "description": {
+        "fr": "Académie d'aviation de l'Armée de terre de l'APL, qui forme les pilotes et cadres de l'aviation de l'Armée de terre (hélicoptères).",
+        "en": "PLA Army Aviation Academy, training Army aviation (helicopter) pilots and cadres."
+      },
+      "aliases": [
+        "中国人民解放军陆军航空兵学院"
+      ],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/中国人民解放军陆军航空兵学院",
+          "title": "中国人民解放军陆军航空兵学院 (维基百科)"
+        }
+      ]
+    },
+    {
+      "key": "cn-army-engineering-univ",
+      "name": "中国人民解放军陆军工程大学",
+      "transliteration": "Zhōngguó Rénmín Jiěfàngjūn Lùjūn Gōngchéng Dàxué",
+      "short_name": "陆军工程大学",
+      "type": "academy",
+      "location": "Nankin (Jiangsu)",
+      "location_en": "Nanjing, China",
+      "website": "",
+      "description": {
+        "fr": "Université d'ingénierie de l'Armée de terre de l'APL (génie, communications, défense NRBC, neutralisation d'explosifs).",
+        "en": "PLA Army Engineering University (engineering, communications, CBRN defence, explosive ordnance disposal)."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/中国人民解放军陆军工程大学",
+          "title": "中国人民解放军陆军工程大学 (维基百科)"
+        }
+      ]
+    },
+    {
+      "key": "cn-army-medical-univ",
+      "name": "中国人民解放军陆军军医大学",
+      "transliteration": "Zhōngguó Rénmín Jiěfàngjūn Lùjūn Jūnyī Dàxué",
+      "short_name": "陆军军医大学",
+      "type": "academy",
+      "location": "Chongqing",
+      "location_en": "Chongqing, China",
+      "website": "",
+      "description": {
+        "fr": "Université médicale militaire de l'Armée de terre (ex-Troisième université médicale militaire), qui forme médecins et personnels de santé de l'APL.",
+        "en": "PLA Army Medical University (formerly the Third Military Medical University), training PLA doctors and medical personnel."
+      },
+      "aliases": [
+        "第三军医大学"
+      ],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/中国人民解放军陆军军医大学",
+          "title": "中国人民解放军陆军军医大学 (维基百科)"
+        }
+      ]
+    },
+    {
+      "key": "cn-naval-aviation-univ",
+      "name": "中国人民解放军海军航空大学",
+      "transliteration": "Zhōngguó Rénmín Jiěfàngjūn Hǎijūn Hángkōng Dàxué",
+      "short_name": "海军航空大学",
+      "type": "academy",
+      "location": "Yantai (Shandong)",
+      "location_en": "Yantai, China",
+      "website": "",
+      "description": {
+        "fr": "Université d'aviation navale de l'APL, qui forme les pilotes et techniciens de l'aéronavale chinoise.",
+        "en": "PLA Naval Aviation University, training Chinese naval aviation pilots and technicians."
+      },
+      "aliases": [
+        "中国人民解放军海军航空大学"
+      ],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/中国人民解放军海军航空大学",
+          "title": "中国人民解放军海军航空大学 (维基百科)"
+        }
+      ]
+    },
+    {
+      "key": "cn-air-force-command-college",
+      "name": "中国人民解放军空军指挥学院",
+      "transliteration": "Zhōngguó Rénmín Jiěfàngjūn Kōngjūn Zhǐhuī Xuéyuàn",
+      "short_name": "空军指挥学院",
+      "type": "school",
+      "location": "Pékin",
+      "location_en": "Beijing, China",
+      "website": "",
+      "description": {
+        "fr": "Collège de commandement de l'Armée de l'air de l'APL, qui forme les officiers d'état-major et de commandement de l'Armée de l'air.",
+        "en": "PLA Air Force Command College, training Air Force staff and command officers."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/中国人民解放军空军指挥学院",
+          "title": "中国人民解放军空军指挥学院 (维基百科)"
+        }
+      ]
+    },
+    {
+      "key": "cn-air-force-aviation-univ",
+      "name": "中国人民解放军空军航空大学",
+      "transliteration": "Zhōngguó Rénmín Jiěfàngjūn Kōngjūn Hángkōng Dàxué",
+      "short_name": "空军航空大学",
+      "type": "academy",
+      "location": "Changchun (Jilin)",
+      "location_en": "Changchun, China",
+      "website": "",
+      "description": {
+        "fr": "Université d'aviation de l'Armée de l'air de l'APL, principal établissement de formation initiale des pilotes de l'Armée de l'air.",
+        "en": "PLA Air Force Aviation University, the main initial training institution for Air Force pilots."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/中国人民解放军空军航空大学",
+          "title": "中国人民解放军空军航空大学 (维基百科)"
+        }
+      ]
+    },
+    {
+      "key": "cn-airborne-corps",
+      "name": "中国人民解放军空降兵军",
+      "transliteration": "Zhōngguó Rénmín Jiěfàngjūn Kōngjiàngbīng Jūn",
+      "short_name": "空降兵军",
+      "type": "command",
+      "location": "Xiaogan (Hubei)",
+      "location_en": "Xiaogan, China",
+      "website": "",
+      "description": {
+        "fr": "Corps aéroporté de l'APL, rattaché à l'Armée de l'air, qui regroupe les brigades parachutistes et assure la formation parachutiste.",
+        "en": "PLA Airborne Corps, under the Air Force, grouping the airborne brigades and running parachute training."
+      },
+      "aliases": [
+        "中国人民解放军空降兵军"
+      ],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/中国人民解放军空降兵军",
+          "title": "中国人民解放军空降兵军 (维基百科)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People's_Liberation_Army_Air_Force_Airborne_Corps",
+          "title": "People's Liberation Army Air Force Airborne Corps (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "cn-marine-corps",
+      "name": "中国人民解放军海军陆战队",
+      "transliteration": "Zhōngguó Rénmín Jiěfàngjūn Hǎijūn Lùzhànduì",
+      "short_name": "海军陆战队",
+      "type": "command",
+      "location": "Zhanjiang (Guangdong)",
+      "location_en": "Zhanjiang, China",
+      "website": "",
+      "description": {
+        "fr": "Corps des fusiliers marins de la Marine de l'APL, qui regroupe les brigades de fusiliers marins et la brigade d'opérations spéciales Jiaolong.",
+        "en": "PLA Navy Marine Corps, grouping the marine brigades and the Jiaolong special operations brigade."
+      },
+      "aliases": [
+        "中国人民解放军海军陆战队"
+      ],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/中国人民解放军海军陆战队",
+          "title": "中国人民解放军海军陆战队 (维基百科)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People's_Liberation_Army_Navy_Marine_Corps",
+          "title": "People's Liberation Army Navy Marine Corps (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "cn-jiaolong",
+      "name": "蛟龙突击队",
+      "transliteration": "Jiāolóng Tūjīduì",
+      "short_name": "蛟龙突击队",
+      "type": "unit",
+      "location": "Sanya (Hainan)",
+      "location_en": "Sanya, China",
+      "website": "",
+      "description": {
+        "fr": "Commando « Jiaolong » des forces spéciales des fusiliers marins de l'APL, connu pour les missions anti-piraterie et d'évacuation (golfe d'Aden, Yémen).",
+        "en": "\"Jiaolong\" special forces commando of the PLA Navy Marine Corps, known for anti-piracy and evacuation missions (Gulf of Aden, Yemen)."
+      },
+      "aliases": [
+        "蛟龙突击队"
+      ],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/蛟龙突击队",
+          "title": "蛟龙突击队 (维基百科)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Implantation (Sanya) et rattachement exact au niveau brigade non confirmés officiellement.",
+        "en": "Location (Sanya) and exact brigade-level parent not officially confirmed."
+      }
+    },
+    {
+      "key": "cn-pap-special-police-academy",
+      "name": "中国人民武装警察部队特种警察学院",
+      "transliteration": "Zhōngguó Rénmín Wǔzhuāng Jǐngchá Bùduì Tèzhǒng Jǐngchá Xuéyuàn",
+      "short_name": "武警特警学院",
+      "type": "school",
+      "location": "Pékin",
+      "location_en": "Beijing, China",
+      "website": "",
+      "description": {
+        "fr": "École de police spéciale de la Police armée du peuple, qui forme les cadres et opérateurs des unités d'intervention et de contre-terrorisme.",
+        "en": "People's Armed Police Special Police Academy, training cadres and operators of intervention and counter-terrorism units."
+      },
+      "aliases": [
+        "中国人民武装警察部队特种警察学院"
+      ],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/中国人民武装警察部队特种警察学院",
+          "title": "中国人民武装警察部队特种警察学院 (维基百科)"
+        }
+      ]
+    },
+    {
+      "key": "cn-snow-leopard",
+      "name": "雪豹突击队",
+      "transliteration": "Xuěbào Tūjīduì",
+      "short_name": "雪豹突击队",
+      "type": "unit",
+      "location": "Pékin",
+      "location_en": "Beijing, China",
+      "website": "",
+      "description": {
+        "fr": "Unité de contre-terrorisme « Snow Leopard » de la Police armée du peuple, rattachée au contingent de Pékin.",
+        "en": "\"Snow Leopard\" counter-terrorism unit of the People's Armed Police, part of the Beijing contingent."
+      },
+      "aliases": [
+        "雪豹突击队"
+      ],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/雪豹突击队",
+          "title": "雪豹突击队 (维基百科)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Snow_Leopard_Commando_Unit",
+          "title": "Snow Leopard Commando Unit (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "cn-pap-xinjiang",
+      "name": "中国人民武装警察部队新疆维吾尔自治区总队",
+      "transliteration": "Zhōngguó Rénmín Wǔzhuāng Jǐngchá Bùduì Xīnjiāng Wéiwú'ěr Zìzhìqū Zǒngduì",
+      "short_name": "武警新疆总队",
+      "type": "command",
+      "location": "Urumqi (Xinjiang)",
+      "location_en": "Ürümqi, China",
+      "website": "",
+      "description": {
+        "fr": "Contingent de la Police armée du peuple pour la région autonome du Xinjiang, dont relèvent des unités spéciales de contre-terrorisme.",
+        "en": "People's Armed Police contingent for the Xinjiang Autonomous Region, which includes special counter-terrorism units."
+      },
+      "aliases": [
+        "武警新疆总队"
+      ],
+      "sources": [
+        {
+          "url": "https://zh.wikipedia.org/wiki/中国人民武装警察部队新疆维吾尔自治区总队",
+          "title": "中国人民武装警察部队新疆维吾尔自治区总队 (维基百科)"
+        }
+      ]
+    }
+  ]
+}

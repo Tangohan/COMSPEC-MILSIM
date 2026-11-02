@@ -245,4 +245,5 @@ return [
 'fb_previous_try'=>'Previous choice', 'fb_result_correct'=>'Correct answer: choice %s.', 'fb_result_wrong'=>'Incorrect answer: choice %s.', 'exam_result_title'=>'Assessment result',
 'exam_passed'=>'Assessment passed', 'exam_failed'=>'Assessment not passed', 'exam_expired_note'=>'The time limit had passed: the attempt does not count as passed.', 'exam_count'=>'%1$d of %2$d answers correct',
 'exam_by_question'=>'Question by question', 'exam_details_after_pass'=>'The detailed correction appears once the assessment is passed, so answers are not revealed before another attempt.', 'exam_retry'=>'New attempt', 'exam_retry_help'=>'Review the chapter lesson and demonstration, then start the assessment again.',
+'catalog_imported'=>'Qualification imported into your registry, with its real issuer. In-game qualification with no real-world value: now set how it is obtained.', 'catalog_already'=>'This qualification is already in your registry.', 'catalog_quota_reached'=>'Your plan’s import limit is reached: nothing was imported. Everything already in your registry remains usable.', 'catalog_import_failed'=>'Import not possible right now. Please try again.',
 ];

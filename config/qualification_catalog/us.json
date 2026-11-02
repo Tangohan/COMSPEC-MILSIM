@@ -46,6 +46,7 @@
         "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
         "short_name": "USAJFKSWCS"
       },
+      "issuer_key": "us-usajfkswcs",
       "reference": {
         "fr": "Programme d’accès initial 18X de l’Army (goarmy.com) ; cursus SWCS",
         "en": "Army 18X initial accession program (goarmy.com); SWCS pipeline"
@@ -96,6 +97,7 @@
         "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
         "short_name": "USAJFKSWCS"
       },
+      "issuer_key": "us-usajfkswcs",
       "reference": {
         "fr": "Cursus de qualification des forces spéciales (SFQC, phase de sélection) ; DA PAM 600-3 (branche Special Forces)",
         "en": "Special Forces qualification pipeline (selection phase of the SFQC); DA PAM 600-3 (Special Forces branch)"
@@ -152,6 +154,7 @@
         "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
         "short_name": "USAJFKSWCS"
       },
+      "issuer_key": "us-usajfkswcs",
       "reference": {
         "fr": "AR 600-8-22 (Military Awards) pour les badges et insignes de l’Army ; onglet Special Forces Tab ; DA PAM 600-25 (CMF 18)",
         "en": "AR 600-8-22 (Military Awards) for Army badges and tabs; Special Forces Tab; DA PAM 600-25 (CMF 18)"
@@ -212,6 +215,7 @@
         "name": "Joint Special Operations Medical Training Center",
         "short_name": "JSOMTC"
       },
+      "issuer_key": "us-jsomtc",
       "reference": {
         "fr": "Phase de spécialité 18D du SFQC ; DA PAM 600-25 (CMF 18)",
         "en": "18D specialty phase of the SFQC; DA PAM 600-25 (CMF 18)"
@@ -266,6 +270,7 @@
         "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
         "short_name": "USAJFKSWCS"
       },
+      "issuer_key": "us-usajfkswcs",
       "reference": {
         "fr": "DA PAM 600-3 (branche Special Forces, warrant officers 180A)",
         "en": "DA PAM 600-3 (Special Forces branch, 180A warrant officers)"
@@ -316,6 +321,7 @@
         "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
         "short_name": "USAJFKSWCS"
       },
+      "issuer_key": "us-usajfkswcs",
       "reference": {
         "fr": "DA PAM 600-25 (CMF 18), MOS 18F",
         "en": "DA PAM 600-25 (CMF 18), MOS 18F"
@@ -368,6 +374,7 @@
         "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
         "short_name": "USAJFKSWCS"
       },
+      "issuer_key": "us-usajfkswcs",
       "reference": {
         "fr": "DA PAM 600-3 (branche Special Forces)",
         "en": "DA PAM 600-3 (Special Forces branch)"
@@ -456,6 +463,7 @@
         "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
         "short_name": "USAJFKSWCS"
       },
+      "issuer_key": "us-usajfkswcs",
       "reference": {
         "fr": "Phase II des cours de qualification ARSOF (SWCS) ; échelle ILR / entretien OPI",
         "en": "Phase II of the ARSOF qualification courses (SWCS); ILR scale / OPI"
@@ -506,6 +514,7 @@
         "name": "Defense Language Institute Foreign Language Center",
         "short_name": "DLIFLC"
       },
+      "issuer_key": "us-dliflc",
       "reference": {
         "fr": "Programme de langues étrangères de la Défense ; tests DLPT",
         "en": "Defense Foreign Language Program; DLPT tests"
@@ -552,6 +561,7 @@
         "name": "Special Forces Underwater Operations School (USAJFKSWCS), Key West",
         "short_name": "SFUWO"
       },
+      "issuer_key": "us-sfuwo",
       "reference": {
         "fr": "AR 600-8-22 (Military Awards) pour les badges et insignes de l’Army ; Special Forces Combat Diver Badge ; DA PAM 600-25 (CMF 18), ASI W7",
         "en": "AR 600-8-22 (Military Awards) for Army badges and tabs; Special Forces Combat Diver Badge; DA PAM 600-25 (CMF 18), ASI W7"
@@ -606,6 +616,7 @@
         "name": "Special Forces Underwater Operations School (USAJFKSWCS), Key West",
         "short_name": "SFUWO"
       },
+      "issuer_key": "us-sfuwo",
       "reference": {
         "fr": "DA PAM 600-25 (CMF 18), compétences avancées et ASI S6",
         "en": "DA PAM 600-25 (CMF 18), advanced skills and ASI S6"
@@ -660,6 +671,7 @@
         "name": "Special Forces Underwater Operations School (USAJFKSWCS), Key West",
         "short_name": "SFUWO"
       },
+      "issuer_key": "us-sfuwo",
       "reference": {
         "fr": "DA PAM 600-25 (CMF 18), compétences avancées et ASI Q5",
         "en": "DA PAM 600-25 (CMF 18), advanced skills and ASI Q5"
@@ -748,6 +760,7 @@
         "name": "Military Free Fall School (USAJFKSWCS), Yuma Proving Ground",
         "short_name": "MFFS"
       },
+      "issuer_key": "us-mffs",
       "reference": {
         "fr": "AR 600-8-22 (Military Awards) pour les badges et insignes de l’Army ; Military Freefall Parachutist Badge (également décerné par l’Air Force)",
         "en": "AR 600-8-22 (Military Awards) for Army badges and tabs; Military Freefall Parachutist Badge (also awarded by the Air Force)"
@@ -806,6 +819,7 @@
         "name": "Military Free Fall School (USAJFKSWCS), Yuma Proving Ground",
         "short_name": "MFFS"
       },
+      "issuer_key": "us-mffs",
       "reference": {
         "fr": "AR 600-8-22 (Military Awards) pour les badges et insignes de l’Army ; Master Military Freefall Parachutist Badge ; ASI J9 (DA PAM 600-25, CMF 18)",
         "en": "AR 600-8-22 (Military Awards) for Army badges and tabs; Master Military Freefall Parachutist Badge; ASI J9 (DA PAM 600-25, CMF 18)"
@@ -862,6 +876,7 @@
         "name": "Military Free Fall School (USAJFKSWCS), Yuma Proving Ground",
         "short_name": "MFFS"
       },
+      "issuer_key": "us-mffs",
       "reference": {
         "fr": "DA PAM 600-25 (CMF 18), compétences avancées",
         "en": "DA PAM 600-25 (CMF 18), advanced skills"
@@ -916,6 +931,7 @@
         "name": "Military Free Fall School (USAJFKSWCS), Yuma Proving Ground",
         "short_name": "MFFS"
       },
+      "issuer_key": "us-mffs",
       "reference": {
         "fr": "DA PAM 600-25 (CMF 18), compétences avancées et PDSI S1J",
         "en": "DA PAM 600-25 (CMF 18), advanced skills and PDSI S1J"
@@ -970,6 +986,7 @@
         "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
         "short_name": "USAJFKSWCS"
       },
+      "issuer_key": "us-usajfkswcs",
       "reference": {
         "fr": "DA PAM 600-25 (CMF 18), compétences avancées (ASOT-C, ASOT-MC) et PDSI D5E",
         "en": "DA PAM 600-25 (CMF 18), advanced skills (ASOT-C, ASOT-MC) and PDSI D5E"
@@ -1100,6 +1117,7 @@
         "name": "1st Battalion (Airborne), 507th Infantry Regiment – Airborne and Ranger Training Brigade",
         "short_name": "1-507th PIR (ARTB)"
       },
+      "issuer_key": "us-1-507th",
       "reference": {
         "fr": "AR 600-8-22 (Military Awards) pour les badges et insignes de l’Army ; Parachutist Badge (badge commun à toutes les armées, insigne dans l’US Marine Corps)",
         "en": "AR 600-8-22 (Military Awards) for Army badges and tabs; Parachutist Badge (common to all services; an insignia in the Marine Corps)"
@@ -1154,6 +1172,7 @@
         "name": "1st Battalion (Airborne), 507th Infantry Regiment – Airborne and Ranger Training Brigade",
         "short_name": "1-507th PIR (ARTB)"
       },
+      "issuer_key": "us-1-507th",
       "reference": {
         "fr": "AR 600-8-22 (Military Awards) pour les badges et insignes de l’Army ; Senior / Master Parachutist Badge ; ASI 5W",
         "en": "AR 600-8-22 (Military Awards) for Army badges and tabs; Senior / Master Parachutist Badge; ASI 5W"
@@ -1212,6 +1231,7 @@
         "name": "Airborne and Ranger Training Brigade",
         "short_name": "ARTB"
       },
+      "issuer_key": "us-artb",
       "reference": {
         "fr": "AR 600-8-22 (Military Awards) pour les badges et insignes de l’Army ; Ranger Tab",
         "en": "AR 600-8-22 (Military Awards) for Army badges and tabs; Ranger Tab"
@@ -1262,6 +1282,7 @@
         "name": "75th Ranger Regiment",
         "short_name": "75th RR"
       },
+      "issuer_key": "us-75th-rr",
       "reference": {
         "fr": "Sélection du 75e régiment de Rangers (USASOC)",
         "en": "75th Ranger Regiment selection (USASOC)"
@@ -1314,6 +1335,7 @@
         "name": "75th Ranger Regiment",
         "short_name": "75th RR"
       },
+      "issuer_key": "us-75th-rr",
       "reference": {
         "fr": "Sélection du 75e régiment de Rangers (USASOC)",
         "en": "75th Ranger Regiment selection (USASOC)"
@@ -1364,6 +1386,7 @@
         "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
         "short_name": "USAJFKSWCS"
       },
+      "issuer_key": "us-usajfkswcs",
       "reference": {
         "fr": "DA PAM 600-25 (CMF 37) ; cursus PSYOP (goarmy.com)",
         "en": "DA PAM 600-25 (CMF 37); PSYOP pipeline (goarmy.com)"
@@ -1410,6 +1433,7 @@
         "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
         "short_name": "USAJFKSWCS"
       },
+      "issuer_key": "us-usajfkswcs",
       "reference": {
         "fr": "DA PAM 600-25 (CMF 37)",
         "en": "DA PAM 600-25 (CMF 37)"
@@ -1464,6 +1488,7 @@
         "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
         "short_name": "USAJFKSWCS"
       },
+      "issuer_key": "us-usajfkswcs",
       "reference": {
         "fr": "Cursus Civil Affairs (goarmy.com)",
         "en": "Civil Affairs pipeline (goarmy.com)"
@@ -1510,6 +1535,7 @@
         "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
         "short_name": "USAJFKSWCS"
       },
+      "issuer_key": "us-usajfkswcs",
       "reference": {
         "fr": "Cursus Civil Affairs (goarmy.com)",
         "en": "Civil Affairs pipeline (goarmy.com)"
@@ -1556,6 +1582,7 @@
         "name": "David K. Thuma Noncommissioned Officer Academy (USAJFKSWCS)",
         "short_name": "SWCS NCOA"
       },
+      "issuer_key": "us-swcs-ncoa",
       "reference": {
         "fr": "Enseignement des sous-officiers ARSOF (DA PAM 600-25, CMF 37)",
         "en": "ARSOF NCO professional development (DA PAM 600-25, CMF 37)"
@@ -1606,6 +1633,7 @@
         "name": "Joint Special Operations Medical Training Center",
         "short_name": "JSOMTC"
       },
+      "issuer_key": "us-jsomtc",
       "reference": {
         "fr": "Certification ATP de l’USSOCOM ; ASI W1 (DA PAM 600-25, CMF 68)",
         "en": "USSOCOM Advanced Tactical Practitioner (ATP) credential; ASI W1 (DA PAM 600-25, CMF 68)"
@@ -1664,6 +1692,7 @@
         "name": "National Registry of Emergency Medical Technicians",
         "short_name": "NREMT"
       },
+      "issuer_key": "us-nremt",
       "reference": {
         "fr": "Certification accréditée par la National Commission for Certifying Agencies (NCCA)",
         "en": "Certification accredited by the National Commission for Certifying Agencies (NCCA)"
@@ -1714,6 +1743,7 @@
         "name": "Defense Health Agency – Joint Trauma System (CoTCCC)",
         "short_name": "DHA JTS"
       },
+      "issuer_key": "us-dha-jts",
       "reference": {
         "fr": "Lignes directrices TCCC (CoTCCC) ; programme de formation TCCC du département de la Défense",
         "en": "TCCC guidelines (CoTCCC); Department of Defense TCCC training curriculum"
@@ -1760,6 +1790,7 @@
         "name": "Joint Special Operations Medical Training Center",
         "short_name": "JSOMTC"
       },
+      "issuer_key": "us-jsomtc",
       "reference": {
         "fr": "NEC L02A (Navy Enlisted Classification)",
         "en": "NEC L02A (Navy Enlisted Classification)"
@@ -1806,6 +1837,7 @@
         "name": "Field Medical Training Battalion (East / West)",
         "short_name": "FMTB"
       },
+      "issuer_key": "us-fmtb",
       "reference": {
         "fr": "NEC L03A (Navy Enlisted Classification)",
         "en": "NEC L03A (Navy Enlisted Classification)"
@@ -1852,6 +1884,7 @@
         "name": "U.S. Army Sergeants Major Academy / NCO Leadership Center of Excellence",
         "short_name": "USASMA"
       },
+      "issuer_key": "us-usasma",
       "reference": {
         "fr": "Système d’enseignement des sous-officiers de l’Army (NCOPDS) ; DA PAM 600-25",
         "en": "Army NCO Professional Development System (NCOPDS); DA PAM 600-25"
@@ -1898,6 +1931,7 @@
         "name": "U.S. Army Sergeants Major Academy / NCO Leadership Center of Excellence",
         "short_name": "USASMA"
       },
+      "issuer_key": "us-usasma",
       "reference": {
         "fr": "Système d’enseignement des sous-officiers de l’Army (NCOPDS) ; DA PAM 600-25",
         "en": "Army NCO Professional Development System (NCOPDS); DA PAM 600-25"
@@ -1948,6 +1982,7 @@
         "name": "U.S. Army Sergeants Major Academy / NCO Leadership Center of Excellence",
         "short_name": "USASMA"
       },
+      "issuer_key": "us-usasma",
       "reference": {
         "fr": "Système d’enseignement des sous-officiers de l’Army (NCOPDS) ; DA PAM 600-25 (CMF 18, CMF 37)",
         "en": "Army NCO Professional Development System (NCOPDS); DA PAM 600-25 (CMF 18, CMF 37)"
@@ -2002,6 +2037,7 @@
         "name": "U.S. Army Sergeants Major Academy / NCO Leadership Center of Excellence",
         "short_name": "USASMA"
       },
+      "issuer_key": "us-usasma",
       "reference": {
         "fr": "Système d’enseignement des sous-officiers de l’Army (NCOPDS) ; DA PAM 600-25 (CMF 37)",
         "en": "Army NCO Professional Development System (NCOPDS); DA PAM 600-25 (CMF 37)"
@@ -2054,6 +2090,7 @@
         "name": "Joint Special Operations University",
         "short_name": "JSOU"
       },
+      "issuer_key": "us-jsou",
       "reference": {
         "fr": "Enseignement interarmées des forces d’opérations spéciales (USSOCOM / JSOU) ; DA PAM 600-25 (CMF 37)",
         "en": "Joint SOF education (USSOCOM / JSOU); DA PAM 600-25 (CMF 37)"
@@ -2104,6 +2141,7 @@
         "name": "U.S. Army Command and General Staff College",
         "short_name": "CGSC"
       },
+      "issuer_key": "us-cgsc",
       "reference": {
         "fr": "Enseignement militaire professionnel des officiers (ILE / JPME phase I)",
         "en": "Officer professional military education (ILE / JPME phase I)"
@@ -2146,6 +2184,7 @@
         "name": "Special Operations Aviation Training Battalion (160th SOAR(A))",
         "short_name": "SOATB"
       },
+      "issuer_key": "us-soatb",
       "reference": {
         "fr": "Cursus d’intégration du 160th SOAR(A) (USASOAC)",
         "en": "160th SOAR(A) integration pipeline (USASOAC)"
@@ -2206,6 +2245,7 @@
         "name": "Special Operations Aviation Training Battalion (160th SOAR(A))",
         "short_name": "SOATB"
       },
+      "issuer_key": "us-soatb",
       "reference": {
         "fr": "DA PAM 611-21 (ASI K2, K3, K7, K8 des pilotes d’aviation d’opérations spéciales)",
         "en": "DA PAM 611-21 (special operations aviation pilot ASIs K2, K3, K7, K8)"
@@ -2266,6 +2306,7 @@
         "name": "160th Special Operations Aviation Regiment (Airborne)",
         "short_name": "160th SOAR(A)"
       },
+      "issuer_key": "us-160th-soar",
       "reference": {
         "fr": "Programme de progression des aviateurs du 160th SOAR(A)",
         "en": "160th SOAR(A) aviator progression program"
@@ -2316,6 +2357,7 @@
         "name": "Special Operations Aviation Training Battalion (160th SOAR(A))",
         "short_name": "SOATB"
       },
+      "issuer_key": "us-soatb",
       "reference": {
         "fr": "Cursus enlisté du 160th SOAR(A) ; DA PAM 600-25 (CMF 15)",
         "en": "160th SOAR(A) enlisted pipeline; DA PAM 600-25 (CMF 15)"
@@ -2372,6 +2414,7 @@
         "name": "Air Education and Training Command",
         "short_name": "AETC"
       },
+      "issuer_key": "us-aetc",
       "reference": {
         "fr": "Qualifications requises des pilotes de l’Air Force (airforce.com)",
         "en": "Air Force pilot qualification requirements (airforce.com)"
@@ -2424,6 +2467,7 @@
         "name": "Air Education and Training Command",
         "short_name": "AETC"
       },
+      "issuer_key": "us-aetc",
       "reference": {
         "fr": "Qualifications requises des CSO de l’Air Force (airforce.com)",
         "en": "Air Force CSO qualification requirements (airforce.com)"
@@ -2602,6 +2646,7 @@
         "name": "58th Special Operations Wing",
         "short_name": "58 SOW"
       },
+      "issuer_key": "us-58-sow",
       "reference": {
         "fr": "Formation des équipages AFSOC (AETC)",
         "en": "AFSOC aircrew training (AETC)"
@@ -2652,6 +2697,7 @@
         "name": "371st Special Operations Combat Training Squadron",
         "short_name": "371 SOCTS"
       },
+      "issuer_key": "us-371-socts",
       "reference": {
         "fr": "Formation des conseillers en aviation de combat de l’AFSOC",
         "en": "AFSOC combat aviation advisor training"
@@ -2694,6 +2740,7 @@
         "name": "Air Force Special Warfare Training Wing",
         "short_name": "SWTW"
       },
+      "issuer_key": "us-swtw",
       "reference": {
         "fr": "Cursus Air Force Special Warfare (airforce.com)",
         "en": "Air Force Special Warfare pipeline (airforce.com)"
@@ -2754,6 +2801,7 @@
         "name": "Air Force Special Warfare Training Wing",
         "short_name": "SWTW"
       },
+      "issuer_key": "us-swtw",
       "reference": {
         "fr": "Cursus Air Force Special Warfare (airforce.com)",
         "en": "Air Force Special Warfare pipeline (airforce.com)"
@@ -2804,6 +2852,7 @@
         "name": "Air Force Special Warfare Training Wing",
         "short_name": "SWTW"
       },
+      "issuer_key": "us-swtw",
       "reference": {
         "fr": "Cursus Air Force Special Warfare (airforce.com)",
         "en": "Air Force Special Warfare pipeline (airforce.com)"
@@ -2900,6 +2949,7 @@
         "name": "336th Training Group – U.S. Air Force Survival School",
         "short_name": "336 TRG"
       },
+      "issuer_key": "us-336-trg",
       "reference": {
         "fr": "Formation SERE niveau C du département de la Défense ; JPRA",
         "en": "Department of Defense SERE Level C training; JPRA"
@@ -2954,6 +3004,7 @@
         "name": "351st Special Warfare Training Squadron",
         "short_name": "351st SWTS"
       },
+      "issuer_key": "us-351-swts",
       "reference": {
         "fr": "Cursus Pararescue (spécialité 1Z1X1)",
         "en": "Pararescue pipeline (1Z1X1 specialty)"
@@ -3004,6 +3055,7 @@
         "name": "351st Special Warfare Training Squadron",
         "short_name": "351st SWTS"
       },
+      "issuer_key": "us-351-swts",
       "reference": {
         "fr": "Cursus Pararescue (spécialité 1Z1X1) ; béret marron (DAFI 36-2903)",
         "en": "Pararescue pipeline (1Z1X1 specialty); maroon beret (DAFI 36-2903)"
@@ -3058,6 +3110,7 @@
         "name": "351st Special Warfare Training Squadron",
         "short_name": "351st SWTS"
       },
+      "issuer_key": "us-351-swts",
       "reference": {
         "fr": "Spécialité 19ZXC (airforce.com)",
         "en": "19ZXC specialty (airforce.com)"
@@ -3114,6 +3167,7 @@
         "name": "Air Force Special Warfare Training Wing",
         "short_name": "SWTW"
       },
+      "issuer_key": "us-swtw",
       "reference": {
         "fr": "Cursus Combat Control (spécialité 1Z2X1) ; certification FAA de contrôleur aérien",
         "en": "Combat Control pipeline (1Z2X1 specialty); FAA air traffic controller certification"
@@ -3160,6 +3214,7 @@
         "name": "Air Force Special Warfare Training Wing",
         "short_name": "SWTW"
       },
+      "issuer_key": "us-swtw",
       "reference": {
         "fr": "Cursus Combat Control (spécialité 1Z2X1)",
         "en": "Combat Control pipeline (1Z2X1 specialty)"
@@ -3210,6 +3265,7 @@
         "name": "Special Tactics Training Squadron",
         "short_name": "STTS"
       },
+      "issuer_key": "us-stts",
       "reference": {
         "fr": "Cursus Combat Control et Special Reconnaissance (airforce.com)",
         "en": "Combat Control and Special Reconnaissance pipelines (airforce.com)"
@@ -3260,6 +3316,7 @@
         "name": "Air Force Special Warfare Training Wing",
         "short_name": "SWTW"
       },
+      "issuer_key": "us-swtw",
       "reference": {
         "fr": "Cursus TACP (spécialité 1Z3X1)",
         "en": "TACP pipeline (1Z3X1 specialty)"
@@ -3392,6 +3449,7 @@
         "name": "336th Training Group – U.S. Air Force Survival School",
         "short_name": "336 TRG"
       },
+      "issuer_key": "us-336-trg",
       "reference": {
         "fr": "Spécialité 1T0X1 (airforce.com)",
         "en": "1T0X1 specialty (airforce.com)"
@@ -3442,6 +3500,7 @@
         "name": "Marine Raider Training Center (MARSOC)",
         "short_name": "MRTC"
       },
+      "issuer_key": "us-mrtc",
       "reference": {
         "fr": "Cursus des Marine Raiders (MARSOC)",
         "en": "Marine Raider pipeline (MARSOC)"
@@ -3496,6 +3555,7 @@
         "name": "Marine Raider Training Center (MARSOC)",
         "short_name": "MRTC"
       },
+      "issuer_key": "us-mrtc",
       "reference": {
         "fr": "Spécialités 0372 et 0370 (MARSOC)",
         "en": "MOS 0372 and 0370 (MARSOC)"
@@ -3686,6 +3746,7 @@
         "name": "Naval Special Warfare Center",
         "short_name": "NAVSPECWARCEN"
       },
+      "issuer_key": "us-navspecwarcen",
       "reference": {
         "fr": "Cursus Special Warfare Operator (SO) et Special Warfare Boat Operator (SB)",
         "en": "Special Warfare Operator (SO) and Special Warfare Boat Operator (SB) pipelines"
@@ -3732,6 +3793,7 @@
         "name": "Naval Special Warfare Center",
         "short_name": "NAVSPECWARCEN"
       },
+      "issuer_key": "us-navspecwarcen",
       "reference": {
         "fr": "Cursus Special Warfare Operator (SO) et officiers 113X",
         "en": "Special Warfare Operator (SO) and 113X officer pipelines"
@@ -3788,6 +3850,7 @@
         "name": "Naval Special Warfare Center",
         "short_name": "NAVSPECWARCEN"
       },
+      "issuer_key": "us-navspecwarcen",
       "reference": {
         "fr": "Special Warfare insignia (Trident), règlement des uniformes de la Navy (NAVPERS 15665) ; NEC O26A / désignation 113X",
         "en": "Special Warfare insignia (Trident), Navy Uniform Regulations (NAVPERS 15665); NEC O26A / 113X designator"
@@ -3844,6 +3907,7 @@
         "name": "Naval Special Warfare Center",
         "short_name": "NAVSPECWARCEN"
       },
+      "issuer_key": "us-navspecwarcen",
       "reference": {
         "fr": "Cursus Special Warfare Boat Operator (SB)",
         "en": "Special Warfare Boat Operator (SB) pipeline"
@@ -3894,6 +3958,7 @@
         "name": "Naval Special Warfare Center",
         "short_name": "NAVSPECWARCEN"
       },
+      "issuer_key": "us-navspecwarcen",
       "reference": {
         "fr": "Insigne SWCC (Basic), règlement des uniformes de la Navy ; cursus Special Warfare Boat Operator (SB)",
         "en": "SWCC insignia (Basic), Navy Uniform Regulations; Special Warfare Boat Operator (SB) pipeline"
@@ -4112,6 +4177,7 @@
         "name": "Naval Special Warfare Center",
         "short_name": "NAVSPECWARCEN"
       },
+      "issuer_key": "us-navspecwarcen",
       "reference": {
         "fr": "NEC SDV (Navy Enlisted Classification)",
         "en": "SDV NEC (Navy Enlisted Classification)"
@@ -4162,6 +4228,7 @@
         "name": "Naval School Explosive Ordnance Disposal",
         "short_name": "NAVSCOLEOD"
       },
+      "issuer_key": "us-navscoleod",
       "reference": {
         "fr": "Spécialité Explosive Ordnance Disposal (EOD) de la Navy",
         "en": "Navy Explosive Ordnance Disposal (EOD) rating"
@@ -4208,6 +4275,7 @@
         "name": "Naval Diving and Salvage Training Center",
         "short_name": "NDSTC"
       },
+      "issuer_key": "us-ndstc",
       "reference": {
         "fr": "Spécialité Navy Diver (ND) ; insigne de plongeur de la Navy",
         "en": "Navy Diver (ND) rating; Navy diver insignia"
@@ -4258,6 +4326,7 @@
         "name": "Naval Diving and Salvage Training Center",
         "short_name": "NDSTC"
       },
+      "issuer_key": "us-ndstc",
       "reference": {
         "fr": "Spécialité Navy Diver (ND)",
         "en": "Navy Diver (ND) rating"
@@ -4308,6 +4377,7 @@
         "name": "Joint Fire Support Executive Steering Committee (JTAC MOA)",
         "short_name": "JFS ESC"
       },
+      "issuer_key": "us-jfs-esc",
       "reference": {
         "fr": "JTAC Memorandum of Agreement (JFS ESC) ; NEC 822A (Navy)",
         "en": "JTAC Memorandum of Agreement (JFS ESC); NEC 822A (Navy)"
@@ -4358,6 +4428,7 @@
         "name": "6th Combat Training Squadron",
         "short_name": "6 CTS"
       },
+      "issuer_key": "us-6-cts",
       "reference": {
         "fr": "JTAC Memorandum of Agreement (JFS ESC) ; NEC 823A (Navy)",
         "en": "JTAC Memorandum of Agreement (JFS ESC); NEC 823A (Navy)"
@@ -4404,6 +4475,7 @@
         "name": "U.S. Department of Defense",
         "short_name": "DoD"
       },
+      "issuer_key": "us-dod",
       "reference": {
         "fr": "Seuils GT des spécialités dans la DA PAM 600-3 / 600-25 de la CMF 18",
         "en": "GT thresholds in DA PAM 600-3 / CMF 18 DA PAM 600-25"
@@ -4451,6 +4523,7 @@
         "name": "U.S. Department of Defense",
         "short_name": "DoD"
       },
+      "issuer_key": "us-dod",
       "reference": {
         "fr": "Prérequis de la CMF 37 (DA PAM 600-25)",
         "en": "CMF 37 prerequisites (DA PAM 600-25)"
@@ -4498,6 +4571,7 @@
         "name": "Defense Language Institute Foreign Language Center",
         "short_name": "DLIFLC"
       },
+      "issuer_key": "us-dliflc",
       "reference": {
         "fr": "Programme linguistique du DoD ; exigences linguistiques de la DA PAM 600-3 (SF)",
         "en": "DoD language program; language requirements in DA PAM 600-3 (SF)"
@@ -4545,6 +4619,7 @@
         "name": "Defense Counterintelligence and Security Agency",
         "short_name": "DCSA"
       },
+      "issuer_key": "us-dcsa",
       "reference": {
         "fr": "Executive Order 13526 ; programme de sécurité du personnel du DoD",
         "en": "Executive Order 13526; DoD personnel security program"
@@ -4592,6 +4667,7 @@
         "name": "Defense Counterintelligence and Security Agency",
         "short_name": "DCSA"
       },
+      "issuer_key": "us-dcsa",
       "reference": {
         "fr": "Executive Order 13526 ; programme de sécurité du personnel du DoD",
         "en": "Executive Order 13526; DoD personnel security program"
@@ -4639,6 +4715,7 @@
         "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
         "short_name": "USAJFKSWCS"
       },
+      "issuer_key": "us-usajfkswcs",
       "reference": {
         "fr": "DA PAM 600-25 de la CMF 18 et de la CMF 37 (développement professionnel)",
         "en": "CMF 18 and CMF 37 DA PAM 600-25 (professional development)"
@@ -4729,6 +4806,7 @@
         "name": "U.S. Army Human Resources Command – Command Assessment Program",
         "short_name": "HRC CAP"
       },
+      "issuer_key": "us-hrc",
       "reference": {
         "fr": "Articles officiels de l’US Army sur le BCAP (army.mil)",
         "en": "Official U.S. Army articles on BCAP (army.mil)"
@@ -4776,6 +4854,7 @@
         "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
         "short_name": "USAJFKSWCS"
       },
+      "issuer_key": "us-usajfkswcs",
       "reference": {
         "fr": "DA PAM 600-3, branche forces spéciales (warrant officers 180A)",
         "en": "DA PAM 600-3, Special Forces branch (180A warrant officers)"
@@ -4827,6 +4906,7 @@
         "name": "U.S. Army Field Artillery School",
         "short_name": "USAFAS"
       },
+      "issuer_key": "us-usafas",
       "reference": {
         "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
         "en": "MOS description in the branch DA PAM 600-25"
@@ -4870,6 +4950,7 @@
         "name": "U.S. Army Intelligence Center of Excellence",
         "short_name": "USAICoE"
       },
+      "issuer_key": "us-usaicoe",
       "reference": {
         "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
         "en": "MOS description in the branch DA PAM 600-25"
@@ -4917,6 +4998,7 @@
         "name": "U.S. Army Intelligence Center of Excellence",
         "short_name": "USAICoE"
       },
+      "issuer_key": "us-usaicoe",
       "reference": {
         "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
         "en": "MOS description in the branch DA PAM 600-25"
@@ -4964,6 +5046,7 @@
         "name": "U.S. Army Intelligence Center of Excellence",
         "short_name": "USAICoE"
       },
+      "issuer_key": "us-usaicoe",
       "reference": {
         "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
         "en": "MOS description in the branch DA PAM 600-25"
@@ -5011,6 +5094,7 @@
         "name": "U.S. Army Intelligence Center of Excellence",
         "short_name": "USAICoE"
       },
+      "issuer_key": "us-usaicoe",
       "reference": {
         "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
         "en": "MOS description in the branch DA PAM 600-25"
@@ -5058,6 +5142,7 @@
         "name": "U.S. Army Cyber Center of Excellence",
         "short_name": "CCoE"
       },
+      "issuer_key": "us-cyber-coe",
       "reference": {
         "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
         "en": "MOS description in the branch DA PAM 600-25"
@@ -5105,6 +5190,7 @@
         "name": "U.S. Army Medical Center of Excellence",
         "short_name": "MEDCoE"
       },
+      "issuer_key": "us-medcoe",
       "reference": {
         "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
         "en": "MOS description in the branch DA PAM 600-25"
@@ -5152,6 +5238,7 @@
         "name": "128th Aviation Brigade (U.S. Army Aviation Logistics School)",
         "short_name": "128th Avn Bde"
       },
+      "issuer_key": "us-128th-avn-bde",
       "reference": {
         "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
         "en": "MOS description in the branch DA PAM 600-25"
@@ -5199,6 +5286,7 @@
         "name": "U.S. Army Aviation Center of Excellence – UAS training (Fort Huachuca)",
         "short_name": "USAACE"
       },
+      "issuer_key": "us-usaace",
       "reference": {
         "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
         "en": "MOS description in the branch DA PAM 600-25"
@@ -5246,6 +5334,7 @@
         "name": "Joint Targeting School",
         "short_name": "JTS"
       },
+      "issuer_key": "us-jts-dam-neck",
       "reference": {
         "fr": "Doctrine de ciblage interarmées (JP 3-60) ; DA PAM 600-25 de la CMF 35",
         "en": "Joint targeting doctrine (JP 3-60); CMF 35 DA PAM 600-25"
@@ -5289,6 +5378,7 @@
         "name": "U.S. Army Aviation Center of Excellence",
         "short_name": "USAACE"
       },
+      "issuer_key": "us-usaace",
       "reference": {
         "fr": "AR 95-1 et programme d’entraînement des équipages (Aircrew Training Program)",
         "en": "AR 95-1 and the Aircrew Training Program"
@@ -5336,6 +5426,7 @@
         "name": "U.S. Army Aviation Center of Excellence",
         "short_name": "USAACE"
       },
+      "issuer_key": "us-usaace",
       "reference": {
         "fr": "DA PAM 600-3 / 611-21, branche aviation (chapitre 3)",
         "en": "DA PAM 600-3 / 611-21, Aviation branch (chapter 3)"
@@ -5383,6 +5474,7 @@
         "name": "U.S. Army Aviation Center of Excellence",
         "short_name": "USAACE"
       },
+      "issuer_key": "us-usaace",
       "reference": {
         "fr": "DA PAM 600-3, branche aviation",
         "en": "DA PAM 600-3, Aviation branch"
@@ -5430,6 +5522,7 @@
         "name": "U.S. Army Aviation Center of Excellence",
         "short_name": "USAACE"
       },
+      "issuer_key": "us-usaace",
       "reference": {
         "fr": "DA PAM 611-21, chapitre 8b (spécifications warrant officers)",
         "en": "DA PAM 611-21, chapter 8b (warrant officer specifications)"
@@ -5477,6 +5570,7 @@
         "name": "160th Special Operations Aviation Regiment (Airborne)",
         "short_name": "160th SOAR(A)"
       },
+      "issuer_key": "us-160th-soar",
       "reference": {
         "fr": "Pages officielles de recrutement du 160th SOAR",
         "en": "Official 160th SOAR recruiting pages"
@@ -5528,6 +5622,7 @@
         "name": "Special Operations Aviation Training Battalion (160th SOAR(A))",
         "short_name": "SOATB"
       },
+      "issuer_key": "us-soatb",
       "reference": {
         "fr": "DA PAM 611-21, chapitre 8b ; pages de recrutement du 160th SOAR",
         "en": "DA PAM 611-21, chapter 8b; 160th SOAR recruiting pages"
@@ -5575,6 +5670,7 @@
         "name": "Special Operations Aviation Training Battalion (160th SOAR(A))",
         "short_name": "SOATB"
       },
+      "issuer_key": "us-soatb",
       "reference": {
         "fr": "DA PAM 611-21, chapitre 8b ; pages de recrutement du 160th SOAR",
         "en": "DA PAM 611-21, chapter 8b; 160th SOAR recruiting pages"
@@ -5622,6 +5718,7 @@
         "name": "U.S. Army Aviation Center of Excellence",
         "short_name": "USAACE"
       },
+      "issuer_key": "us-usaace",
       "reference": {
         "fr": "DA PAM 611-21, chapitre 3 (branches et domaines fonctionnels des officiers)",
         "en": "DA PAM 611-21, chapter 3 (officer branches and functional areas)"
@@ -5669,6 +5766,7 @@
         "name": "Special Operations Aviation Training Battalion (160th SOAR(A))",
         "short_name": "SOATB"
       },
+      "issuer_key": "us-soatb",
       "reference": {
         "fr": "Pages de recrutement du 160th SOAR ; historique de la formation SOA (arsof-history.org)",
         "en": "160th SOAR recruiting pages; SOA training history (arsof-history.org)"
@@ -5716,6 +5814,7 @@
         "name": "160th Special Operations Aviation Regiment (Airborne)",
         "short_name": "160th SOAR(A)"
       },
+      "issuer_key": "us-160th-soar",
       "reference": {
         "fr": "Articles du Journal of Special Operations Medicine sur la formation des infirmiers du 160th SOAR",
         "en": "Journal of Special Operations Medicine articles on 160th SOAR medic training"
@@ -5767,6 +5866,7 @@
         "name": "Special Operations Aviation Training Battalion (160th SOAR(A))",
         "short_name": "SOATB"
       },
+      "issuer_key": "us-soatb",
       "reference": {
         "fr": "Pages officielles du 160th SOAR ; article army.mil sur la compagnie E",
         "en": "Official 160th SOAR pages; army.mil article on Company E"
@@ -5818,6 +5918,7 @@
         "name": "737th Training Group",
         "short_name": "737 TRG"
       },
+      "issuer_key": "us-737-trg",
       "reference": {
         "fr": "Programme officiel de la formation de base de l’Air Force",
         "en": "Official Air Force basic training program"
@@ -5865,6 +5966,7 @@
         "name": "Air University – Jeanne M. Holm Center for Officer Accessions and Citizen Development",
         "short_name": "Holm Center"
       },
+      "issuer_key": "us-holm-center",
       "reference": {
         "fr": "Pages officielles de recrutement de l’Air Force (airforce.com)",
         "en": "Official Air Force recruiting pages (airforce.com)"
@@ -5912,6 +6014,7 @@
         "name": "Air Force Special Operations Command",
         "short_name": "AFSOC"
       },
+      "issuer_key": "us-afsoc",
       "reference": {
         "fr": "Fiche U-28A (Air & Space Forces Magazine) ; articles DVIDS sur les équipages Draco",
         "en": "U-28A fact sheet (Air & Space Forces Magazine); DVIDS articles on Draco crews"
@@ -5959,6 +6062,7 @@
         "name": "Air Education and Training Command",
         "short_name": "AETC"
       },
+      "issuer_key": "us-aetc",
       "reference": {
         "fr": "Description de l’AFSC 1A8X2 ; articles DVIDS sur les TSO de l’AFSOC",
         "en": "AFSC 1A8X2 description; DVIDS articles on AFSOC TSOs"
@@ -6002,6 +6106,7 @@
         "name": "Air Education and Training Command",
         "short_name": "AETC"
       },
+      "issuer_key": "us-aetc",
       "reference": {
         "fr": "Articles DVIDS sur les opérateurs des systèmes tactiques de l’AFSOC",
         "en": "DVIDS articles on AFSOC tactical systems operators"
@@ -6045,6 +6150,7 @@
         "name": "Air Education and Training Command",
         "short_name": "AETC"
       },
+      "issuer_key": "us-aetc",
       "reference": {
         "fr": "Page officielle du métier de pilote RPA (airforce.com)",
         "en": "Official RPA pilot career page (airforce.com)"
@@ -6135,6 +6241,7 @@
         "name": "Air Force Special Operations Command",
         "short_name": "AFSOC"
       },
+      "issuer_key": "us-afsoc",
       "reference": {
         "fr": "Articles DVIDS sur les équipages de l’AFSOC",
         "en": "DVIDS articles on AFSOC aircrews"
@@ -6178,6 +6285,7 @@
         "name": "Air Force Special Operations Command",
         "short_name": "AFSOC"
       },
+      "issuer_key": "us-afsoc",
       "reference": {
         "fr": "Articles DVIDS sur les équipages de l’AFSOC",
         "en": "DVIDS articles on AFSOC aircrews"
@@ -6225,6 +6333,7 @@
         "name": "Special Warfare Training Wing",
         "short_name": "SWTW"
       },
+      "issuer_key": "us-swtw",
       "reference": {
         "fr": "Pages officielles des métiers d’officier Special Warfare (airforce.com)",
         "en": "Official special warfare officer career pages (airforce.com)"
@@ -6276,6 +6385,7 @@
         "name": "Air Force Medical Service",
         "short_name": "AFMS"
       },
+      "issuer_key": "us-afms",
       "reference": {
         "fr": "DAFMAN 48-123, Medical Examinations and Standards",
         "en": "DAFMAN 48-123, Medical Examinations and Standards"
@@ -6323,6 +6433,7 @@
         "name": "Marine Raider Training Center",
         "short_name": "MRTC"
       },
+      "issuer_key": "us-mrtc",
       "reference": {
         "fr": "Pages MARSOC (Wikipedia) et articles DVIDS",
         "en": "MARSOC pages (Wikipedia) and DVIDS articles"
@@ -6374,6 +6485,7 @@
         "name": "Marine Raider Training Center",
         "short_name": "MRTC"
       },
+      "issuer_key": "us-mrtc",
       "reference": {
         "fr": "Messages du Marine Corps et articles DVIDS sur les SOCS",
         "en": "Marine Corps messages and DVIDS articles on SOCS"
@@ -6421,6 +6533,7 @@
         "name": "Marine Raider Training Center",
         "short_name": "MRTC"
       },
+      "issuer_key": "us-mrtc",
       "reference": {
         "fr": "Articles MARSOC et DVIDS sur le STC",
         "en": "MARSOC and DVIDS articles on STC"
@@ -6468,6 +6581,7 @@
         "name": "Marine Corps Communication-Electronics School",
         "short_name": "MCCES"
       },
+      "issuer_key": "us-mcces",
       "reference": {
         "fr": "Articles DVIDS sur les SOCS transmissions du MARSOC",
         "en": "DVIDS articles on MARSOC communications SOCS"
@@ -6515,6 +6629,7 @@
         "name": "Naval Service Training Command",
         "short_name": "NSTC"
       },
+      "issuer_key": "us-nstc",
       "reference": {
         "fr": "Officer Navy Recruiting Manual ; page Special Warfare de l’Académie navale",
         "en": "Officer Navy Recruiting Manual; U.S. Naval Academy Special Warfare page"
@@ -6562,6 +6677,7 @@
         "name": "Naval Special Warfare Command",
         "short_name": "NAVSPECWARCOM"
       },
+      "issuer_key": "us-navspecwarcom",
       "reference": {
         "fr": "Officer Navy Recruiting Manual ; page Special Warfare de l’Académie navale",
         "en": "Officer Navy Recruiting Manual; U.S. Naval Academy Special Warfare page"
@@ -6609,6 +6725,7 @@
         "name": "Naval Special Warfare Command",
         "short_name": "NAVSPECWARCOM"
       },
+      "issuer_key": "us-navspecwarcom",
       "reference": {
         "fr": "Fiches de carrière SO/SB de l’US Navy (Learning and Development Roadmap, cool.osd.mil)",
         "en": "U.S. Navy SO/SB career roadmaps (Learning and Development Roadmap, cool.osd.mil)"
@@ -6660,6 +6777,7 @@
         "name": "Naval Special Warfare Command",
         "short_name": "NAVSPECWARCOM"
       },
+      "issuer_key": "us-navspecwarcom",
       "reference": {
         "fr": "Fiches de carrière SO/SB de l’US Navy (Learning and Development Roadmap, cool.osd.mil)",
         "en": "U.S. Navy SO/SB career roadmaps (Learning and Development Roadmap, cool.osd.mil)"
@@ -6711,6 +6829,7 @@
         "name": "Naval Special Warfare Command",
         "short_name": "NAVSPECWARCOM"
       },
+      "issuer_key": "us-navspecwarcom",
       "reference": {
         "fr": "Fiches de carrière SO/SB de l’US Navy (Learning and Development Roadmap, cool.osd.mil)",
         "en": "U.S. Navy SO/SB career roadmaps (Learning and Development Roadmap, cool.osd.mil)"
@@ -6762,6 +6881,7 @@
         "name": "Naval Special Warfare Command",
         "short_name": "NAVSPECWARCOM"
       },
+      "issuer_key": "us-navspecwarcom",
       "reference": {
         "fr": "Fiches de carrière SO de l’US Navy (cool.osd.mil)",
         "en": "U.S. Navy SO career roadmaps (cool.osd.mil)"
@@ -6813,6 +6933,7 @@
         "name": "Naval Special Warfare Command",
         "short_name": "NAVSPECWARCOM"
       },
+      "issuer_key": "us-navspecwarcom",
       "reference": {
         "fr": "Fiches de carrière SO de l’US Navy (cool.osd.mil)",
         "en": "U.S. Navy SO career roadmaps (cool.osd.mil)"
@@ -6864,6 +6985,7 @@
         "name": "Naval Special Warfare Command",
         "short_name": "NAVSPECWARCOM"
       },
+      "issuer_key": "us-navspecwarcom",
       "reference": {
         "fr": "Fiches de carrière SB de l’US Navy (cool.osd.mil)",
         "en": "U.S. Navy SB career roadmaps (cool.osd.mil)"
@@ -6915,6 +7037,7 @@
         "name": "Naval Service Training Command",
         "short_name": "NSTC"
       },
+      "issuer_key": "us-nstc",
       "reference": {
         "fr": "Fiche de la spécialité ND (cool.osd.mil)",
         "en": "ND rating information card (cool.osd.mil)"
@@ -6958,6 +7081,7 @@
         "name": "Navy and Marine Corps Intelligence Training Center",
         "short_name": "NMITC"
       },
+      "issuer_key": "us-nmitc",
       "reference": {
         "fr": "Fiche de carrière IS de l’US Navy (cool.osd.mil)",
         "en": "U.S. Navy IS career roadmap (cool.osd.mil)"
@@ -7044,6 +7168,7 @@
         "name": "Medical Education and Training Campus",
         "short_name": "METC"
       },
+      "issuer_key": "us-metc",
       "reference": {
         "fr": "Fiche de carrière HM de l’US Navy (cool.osd.mil)",
         "en": "U.S. Navy HM career roadmap (cool.osd.mil)"
@@ -7091,6 +7216,7 @@
         "name": "U.S. Naval War College",
         "short_name": "NWC"
       },
+      "issuer_key": "us-nwc",
       "reference": {
         "fr": "Programme JPME du Naval War College",
         "en": "Naval War College JPME program"
@@ -7138,6 +7264,7 @@
         "name": "U.S. Army War College",
         "short_name": "USAWC"
       },
+      "issuer_key": "us-usawc",
       "reference": {
         "fr": "Programme JPME II de l’Army War College",
         "en": "Army War College JPME II program"
@@ -7185,6 +7312,7 @@
         "name": "National Defense University",
         "short_name": "NDU"
       },
+      "issuer_key": "us-ndu",
       "reference": {
         "fr": "Programme CAPSTONE (capstone.ndu.edu) ; loi Goldwater-Nichols (1986)",
         "en": "CAPSTONE program (capstone.ndu.edu); Goldwater-Nichols Act (1986)"

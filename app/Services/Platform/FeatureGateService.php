@@ -113,6 +113,26 @@ final class FeatureGateService
         return !empty(SubscriptionPlanFeaturesCatalog::defaultsForSlug($planSlug)[$feature] ?? false);
     }
 
+    /**
+     * Plafond entier de la formule appliquée (0 = illimité) ; clé absente de la formule : valeur par défaut du
+     * catalogue pour ce palier. Paiement en retard sans formule offerte : plafonds de la formule gratuite.
+     */
+    public function intWithCatalogDefault(int $tenantId, string $feature): int
+    {
+        $tenant = $this->tenantRepository->findById($tenantId);
+        if (!$tenant) {
+            return 0;
+        }
+        $planSlug = $this->isPastDueWithoutGift($tenant) ? 'free' : $this->effectivePlanSlug($tenant);
+        $plan = $this->planRepository->findBySlug($planSlug);
+        $features = $plan ? json_decode((string) ($plan['features_json'] ?? '{}'), true) : [];
+        if (is_array($features) && array_key_exists($feature, $features)) {
+            return max(0, (int) $features[$feature]);
+        }
+
+        return max(0, (int) (SubscriptionPlanFeaturesCatalog::defaultsForSlug($planSlug)[$feature] ?? 0));
+    }
+
     private function applyDeploymentChannelGate(int $tenantId, string $feature): bool
     {
         if ($this->deploymentEvaluator === null) {

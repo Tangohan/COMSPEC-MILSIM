@@ -1722,6 +1722,7 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/qualifications/store', [QualificationReferentielController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/emetteurs', [QualificationReferentielController::class, 'issuers'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/emetteurs', [QualificationReferentielController::class, 'storeIssuer'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/emetteurs/importer-reels', [QualificationReferentielController::class, 'importRealIssuers'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/emetteurs/{issuerId}', [QualificationReferentielController::class, 'showIssuer'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/emetteurs/{issuerId}/modifier', [QualificationReferentielController::class, 'updateIssuer'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/emetteurs/{issuerId}/archiver', [QualificationReferentielController::class, 'archiveIssuer'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

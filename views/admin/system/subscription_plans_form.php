@@ -115,7 +115,8 @@ $limitsVal = $prettyJson(is_string($lj) ? $lj : null);
                     <?php foreach (SubscriptionPlanFeaturesCatalog::INT_FEATURES as $key): ?>
                         <?php
                         $def = $defs[$key] ?? ['label' => $key, 'help' => ''];
-                        $val = (int) ($features[$key] ?? 0);
+                        // Clé absente de la formule (ajoutée depuis) : le plafond par défaut du catalogue s'applique déjà.
+                        $val = (int) (array_key_exists($key, $features) ? $features[$key] : (SubscriptionPlanFeaturesCatalog::defaultsForSlug((string) ($row['slug'] ?? 'free'))[$key] ?? 0));
                         ?>
                         <div>
                             <label for="feat_<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" class="block text-sm font-semibold text-slate-800"><?= htmlspecialchars((string) $def['label'], ENT_QUOTES, 'UTF-8') ?></label>

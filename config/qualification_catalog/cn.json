@@ -101,6 +101,7 @@
         "name": "中国人民解放军陆军特种作战学院",
         "short_name": "陆军特种作战学院"
       },
+      "issuer_key": "cn-army-sof-academy",
       "reference": {
         "fr": "Page de l’Académie des opérations spéciales de l’Armée de terre (陆军特种作战学院)",
         "en": "Army Special Operations Academy (陆军特种作战学院) page"
@@ -207,6 +208,7 @@
         "name": "中国人民解放军陆军指挥学院",
         "short_name": "陆军指挥学院"
       },
+      "issuer_key": "cn-army-command-college",
       "reference": {
         "fr": "Page du Collège de commandement de l’Armée de terre (陆军指挥学院)",
         "en": "Army Command College (陆军指挥学院) page"
@@ -262,6 +264,7 @@
         "name": "中国人民解放军国防大学",
         "short_name": "国防大学"
       },
+      "issuer_key": "cn-ndu",
       "reference": {
         "fr": "Page de l’Université de la défense nationale de l’APL (国防大学)",
         "en": "PLA National Defence University (国防大学) page"
@@ -317,6 +320,7 @@
         "name": "中国人民解放军国防大学政治学院",
         "short_name": "国防大学政治学院"
       },
+      "issuer_key": "cn-ndu-political",
       "reference": {
         "fr": "Système des commissaires politiques et instructeurs politiques de l’APL",
         "en": "PLA political commissar and political instructor system"
@@ -910,6 +914,7 @@
         "name": "中国人民解放军空降兵军",
         "short_name": "空降兵军"
       },
+      "issuer_key": "cn-airborne-corps",
       "reference": {
         "fr": "Page du Corps aéroporté de l’APL ; reportages officiels sur l’entraînement au saut",
         "en": "PLA Airborne Corps page; official features on jump training"
@@ -1020,6 +1025,7 @@
         "name": "中国人民解放军空降兵军",
         "short_name": "空降兵军"
       },
+      "issuer_key": "cn-airborne-corps",
       "reference": {
         "fr": "Page du Corps aéroporté de l’APL ; étude Jamestown sur les capacités aéroportées",
         "en": "PLA Airborne Corps page; Jamestown study on airborne capabilities"
@@ -1126,6 +1132,7 @@
         "name": "中国人民解放军陆军航空兵学院",
         "short_name": "陆航学院"
       },
+      "issuer_key": "cn-army-aviation-academy",
       "reference": {
         "fr": "Page de l’Académie d’aviation de l’Armée de terre ; fiches Z-10 et Z-19",
         "en": "Army Aviation Academy page; Z-10 and Z-19 entries"
@@ -1283,6 +1290,7 @@
         "name": "中国人民解放军海军陆战队",
         "short_name": "海军陆战队"
       },
+      "issuer_key": "cn-marine-corps",
       "reference": {
         "fr": "Page du Corps des marines de l’APL ; études Jamestown",
         "en": "PLA Navy Marine Corps page; Jamestown studies"
@@ -1338,6 +1346,7 @@
         "name": "中国人民解放军海军陆战队",
         "short_name": "海军陆战队"
       },
+      "issuer_key": "cn-marine-corps",
       "reference": {
         "fr": "Page du Corps des marines de l’APL ; études Jamestown",
         "en": "PLA Navy Marine Corps page; Jamestown studies"
@@ -1385,6 +1394,7 @@
         "name": "中国人民解放军海军陆战队",
         "short_name": "海军陆战队"
       },
+      "issuer_key": "cn-marine-corps",
       "reference": {
         "fr": "Page du Corps des marines de l’APL ; études Jamestown",
         "en": "PLA Navy Marine Corps page; Jamestown studies"
@@ -1436,6 +1446,7 @@
         "name": "中国人民解放军海军陆战队",
         "short_name": "海军陆战队"
       },
+      "issuer_key": "cn-marine-corps",
       "reference": {
         "fr": "Étude Jamestown sur le rôle du Corps des marines de l’APL",
         "en": "Jamestown study on the role of the PLAN Marine Corps"
@@ -1487,6 +1498,7 @@
         "name": "中国人民解放军海军航空大学",
         "short_name": "海军航空大学"
       },
+      "issuer_key": "cn-naval-aviation-univ",
       "reference": {
         "fr": "Page de l’Université d’aviation navale ; études Jamestown et Global Times sur l’aviation du Corps des marines",
         "en": "Naval Aviation University page; Jamestown and Global Times on Marine Corps aviation"
@@ -1538,6 +1550,7 @@
         "name": "蛟龙突击队",
         "short_name": "蛟龙突击队"
       },
+      "issuer_key": "cn-jiaolong",
       "reference": {
         "fr": "Reportages officiels sur le Jiaolong (CGTN, China Daily)",
         "en": "Official features on the Jiaolong (CGTN, China Daily)"
@@ -1640,6 +1653,7 @@
         "name": "中国人民解放军空降兵军",
         "short_name": "空降兵军"
       },
+      "issuer_key": "cn-airborne-corps",
       "reference": {
         "fr": "Reportage Global Times sur le Thunder God ; étude Jamestown sur les forces aéroportées",
         "en": "Global Times feature on the Thunder God; Jamestown study on airborne forces"
@@ -1691,6 +1705,7 @@
         "name": "中国人民解放军空降兵军",
         "short_name": "空降兵军"
       },
+      "issuer_key": "cn-airborne-corps",
       "reference": {
         "fr": "Fiche ZBD-03 ; études Jamestown et US Naval War College",
         "en": "ZBD-03 entry; Jamestown and US Naval War College studies"
@@ -1742,6 +1757,7 @@
         "name": "雪豹突击队",
         "short_name": "雪豹突击队"
       },
+      "issuer_key": "cn-snow-leopard",
       "reference": {
         "fr": "Page du Snow Leopard Commando Unit ; reportages du Quotidien du peuple et du Global Times",
         "en": "Snow Leopard Commando Unit page; People’s Daily and Global Times features"
@@ -1840,6 +1856,7 @@
         "name": "中国人民武装警察部队特种警察学院",
         "short_name": "武警特警学院"
       },
+      "issuer_key": "cn-pap-special-police-academy",
       "reference": {
         "fr": "Page du Falcon Commando Unit ; reportages ifeng et Global Times",
         "en": "Falcon Commando Unit page; ifeng and Global Times features"
@@ -1891,6 +1908,7 @@
         "name": "中国人民武装警察部队特种警察学院",
         "short_name": "武警特警学院"
       },
+      "issuer_key": "cn-pap-special-police-academy",
       "reference": {
         "fr": "Page de l’Académie de police spéciale de la PAP ; reportages ifeng et Global Times",
         "en": "PAP Special Police Academy page; ifeng and Global Times features"
@@ -1942,6 +1960,7 @@
         "name": "中国人民武装警察部队特种警察学院",
         "short_name": "武警特警学院"
       },
+      "issuer_key": "cn-pap-special-police-academy",
       "reference": {
         "fr": "Reportages ifeng et Global Times sur le Falcon",
         "en": "ifeng and Global Times features on the Falcon"
@@ -1989,6 +2008,7 @@
         "name": "武警新疆总队",
         "short_name": "武警新疆总队"
       },
+      "issuer_key": "cn-pap-xinjiang",
       "reference": {
         "fr": "Page du Mountain Eagle Commando Unit ; Asia Times (2019)",
         "en": "Mountain Eagle Commando Unit page; Asia Times (2019)"

@@ -4,9 +4,13 @@
  *
  * @var array<string, mixed> $it
  */
+if ($it['kind'] === 'reference') {
+    require __DIR__ . '/offer_reference.php';
+    return;
+}
 $backTab = $it['tabs'][0] ?? 'tout';
 $award = is_array($it['award'] ?? null) ? $it['award'] : null;
-$cardKind = $it['kind'] === 'qualification' && in_array('brevets', $it['tabs'], true) ? 'Brevet' : ($it['kind'] === 'course' && ($it['licence'] ?? '') !== '' ? 'Formation à licence' : $oxKinds[$it['kind']]);
+$cardKind = isset($it['nature']) ? $oxNatures[$it['nature']] : ($it['kind'] === 'course' && ($it['licence'] ?? '') !== '' ? 'Formation à licence' : $oxKinds[$it['kind']]);
 $facts = [];
 if (($it['issuer'] ?? '') !== '' && $it['kind'] !== 'issuer') {
     $facts[] = [$it['kind'] === 'qualification' ? 'Émetteur' : 'Proposé par', '<span translate="no">' . $h($it['issuer']) . '</span>'];
@@ -32,7 +36,10 @@ if (!empty($it['unit'])) {
 if ($it['modes'] !== []) {
     $facts[] = ['Mode d’obtention', implode(' · ', array_map(static fn (string $m): string => '<span>' . $h($oxModes[$m] ?? $m) . '</span>', $it['modes']))];
 }
-$facts[] = ['Origine', '<span>' . $h($oxSources[$it['source']] ?? '') . '</span>'];
+$facts[] = ['Origine', '<span>' . $h(isset($it['origin']) ? $oxOrigins[$it['origin']] : ($oxSources[$it['source']] ?? '')) . '</span>'];
+if (($it['country'] ?? '') !== '') {
+    $facts[] = ['Pays', $oxCountry((string) $it['country'], (string) ($it['country_label'] ?? ''), true)];
+}
 ?>
 <p class="acx-back"><a class="text-link" href="<?= $h($oxUrl(['onglet' => $backTab])) ?>">← <span>Retour :</span> <span><?= $h($oxTabs[$backTab]) ?></span></a></p>
 <article class="acx-detail acx-card--<?= $h($it['kind']) ?> is-<?= $h($it['state']) ?>">
@@ -90,7 +97,9 @@ $facts[] = ['Origine', '<span>' . $h($oxSources[$it['source']] ?? '') . '</span>
                 <?php if (($it['links'] ?? []) === []): ?><p>Aucune formation ni qualification n’est encore liée à cette compétence. Le générateur de parcours peut proposer des étapes.</p>
                 <?php else: ?><ul class="acx-links"><?php foreach ($it['links'] as $l): ?><li class="<?= $l['done'] ? 'is-done' : '' ?>"><?php if ($l['detail'] !== ''): ?><a href="<?= $h($oxFiche($l['detail'])) ?>" translate="no"><?= $h($l['title']) ?></a><?php elseif ($l['url'] !== ''): ?><a href="<?= $h($l['url']) ?>" translate="no"><?= $h($l['title']) ?></a><?php else: ?><span translate="no"><?= $h($l['title']) ?></span><?php endif ?><?php if ($l['done']): ?> <span class="acx-state acx-state--held">Acquis</span><?php endif ?></li><?php endforeach ?></ul><?php endif ?>
             </section>
-            <?php elseif ($it['kind'] === 'issuer'):
+            <?php endif ?>
+            <?php if (($it['ref_id'] ?? '') !== '' && $it['kind'] === 'qualification') { $refCompact = true; require __DIR__ . '/offer_reference.php'; $refCompact = false; } ?>
+            <?php if ($it['kind'] === 'issuer'):
                 $issuerQuals = array_values(array_filter($offerItems, static fn (array $q): bool => $q['kind'] === 'qualification' && (int) $q['issuer_id'] === (int) $it['issuer_id'])); ?>
             <section class="acx-panel" aria-labelledby="acx-iq-title">
                 <h2 id="acx-iq-title">Qualifications délivrées <b class="acx-count"><?= count($issuerQuals) ?></b></h2>

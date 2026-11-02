@@ -1,0 +1,469 @@
+{
+  "pack": "ru",
+  "country": "RU",
+  "compiled_at": "2026-11-02",
+  "sources_note": {
+    "fr": "Compilé à partir de Wikipédia (ru/en/fr) et des sites officiels quand ils sont identifiés. Les sites du ministère russe de la Défense (mil.ru) sont souvent inaccessibles depuis l'étranger ; ils sont donc laissés vides. Les points non confirmés sont signalés dans « uncertain ».",
+    "en": "Compiled from Wikipedia (ru/en/fr) and official websites where identified. Russian Ministry of Defence websites (mil.ru) are often unreachable from abroad, so they are left empty. Unconfirmed points are flagged under \"uncertain\"."
+  },
+  "issuers": [
+    {
+      "key": "ru-rvvdku",
+      "name": "Рязанское гвардейское высшее воздушно-десантное командное училище",
+      "transliteration": "Ryazanskoye gvardeyskoye vyssheye vozdushno-desantnoye komandnoye uchilishche",
+      "short_name": "РВВДКУ",
+      "type": "school",
+      "location": "Riazan",
+      "location_en": "Ryazan, Russia",
+      "website": "",
+      "description": {
+        "fr": "École supérieure de commandement aéroportée de la Garde de Riazan, qui forme les officiers des troupes aéroportées (VDV) et d'autres unités de forces spéciales.",
+        "en": "Ryazan Guards Higher Airborne Command School, training officers for the Airborne Forces (VDV) and some special forces units."
+      },
+      "aliases": [
+        "Рязанское гвардейское высшее воздушно-десантное командное училище"
+      ],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Рязанское_гвардейское_высшее_воздушно-десантное_командное_училище",
+          "title": "Рязанское гвардейское высшее воздушно-десантное командное училище (Википедия)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Ryazan_Guards_Higher_Airborne_Command_School",
+          "title": "Ryazan Guards Higher Airborne Command School (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "ru-242-uts-vdv",
+      "name": "242-й учебный центр ВДВ",
+      "transliteration": "242-y uchebnyy tsentr VDV",
+      "short_name": "242 УЦ ВДВ",
+      "type": "training_center",
+      "location": "Omsk",
+      "location_en": "Omsk, Russia",
+      "website": "",
+      "description": {
+        "fr": "Centre d'instruction des troupes aéroportées qui forme les sergents et spécialistes des VDV.",
+        "en": "Airborne Forces training centre that trains VDV sergeants and specialists."
+      },
+      "aliases": [
+        "242-й учебный центр ВДВ"
+      ],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/242-й_учебный_центр_ВДВ",
+          "title": "242-й учебный центр ВДВ (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-344-tsbp-aa",
+      "name": "344-й центр боевого применения и переучивания лётного состава армейской авиации",
+      "transliteration": "344-y tsentr boyevogo primeneniya i pereuchivaniya lyotnogo sostava armeyskoy aviatsii",
+      "short_name": "344 ЦБПиПЛС",
+      "type": "training_center",
+      "location": "Torjok (oblast de Tver)",
+      "location_en": "Torzhok, Russia",
+      "website": "",
+      "description": {
+        "fr": "Centre d'emploi au combat et de transformation des équipages de l'aviation de l'Armée de terre (hélicoptères).",
+        "en": "Combat employment and conversion training centre for Army aviation (helicopter) aircrews."
+      },
+      "aliases": [
+        "344-й центр боевого применения и переучивания лётного состава армейской авиации"
+      ],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/344-й_центр_боевого_применения_и_переучивания_лётного_состава_армейской_авиации",
+          "title": "344-й центр боевого применения и переучивания лётного состава армейской авиации (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-svvaul",
+      "name": "Сызранское высшее военное авиационное училище лётчиков",
+      "transliteration": "Syzranskoye vyssheye voyennoye aviatsionnoye uchilishche lyotchikov",
+      "short_name": "СВВАУЛ",
+      "type": "school",
+      "location": "Syzran (oblast de Samara)",
+      "location_en": "Syzran, Russia",
+      "website": "",
+      "description": {
+        "fr": "École supérieure d'aviation militaire des pilotes de Syzran, filiale du Centre militaire d'enseignement et de recherche des Forces aériennes (VUNTs VVS « VVA »), qui forme les pilotes d'hélicoptère.",
+        "en": "Syzran Higher Military Aviation School of Pilots, branch of the Air Force Military Education and Research Centre (VUNTs VVS \"VVA\"), training helicopter pilots."
+      },
+      "aliases": [
+        "Сызранское высшее военное авиационное училище лётчиков (филиал ВУНЦ ВВС «ВВА»)"
+      ],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Сызранское_высшее_военное_авиационное_училище_лётчиков",
+          "title": "Сызранское высшее военное авиационное училище лётчиков (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-vunts-vvs-vva",
+      "name": "Военный учебно-научный центр Военно-воздушных сил «Военно-воздушная академия имени профессора Н. Е. Жуковского и Ю. А. Гагарина»",
+      "transliteration": "Voyennyy uchebno-nauchnyy tsentr Voyenno-vozdushnykh sil «Voyenno-vozdushnaya akademiya imeni professora N. Ye. Zhukovskogo i Yu. A. Gagarina»",
+      "short_name": "ВУНЦ ВВС «ВВА»",
+      "type": "academy",
+      "location": "Voronej",
+      "location_en": "Voronezh, Russia",
+      "website": "",
+      "description": {
+        "fr": "Centre militaire d'enseignement et de recherche des Forces aériennes (Académie Joukovski et Gagarine), dont relèvent plusieurs écoles d'aviation, dont celle de Syzran.",
+        "en": "Air Force Military Education and Research Centre (Zhukovsky and Gagarin Air Force Academy), which oversees several aviation schools, including Syzran."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Военно-воздушная_академия_имени_профессора_Н._Е._Жуковского_и_Ю._А._Гагарина",
+          "title": "Военно-воздушная академия имени профессора Н. Е. Жуковского и Ю. А. Гагарина (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-vagsh",
+      "name": "Военная академия Генерального штаба Вооружённых сил Российской Федерации",
+      "transliteration": "Voyennaya akademiya Generalnogo shtaba Vooruzhonnykh sil Rossiyskoy Federatsii",
+      "short_name": "ВАГШ ВС РФ",
+      "type": "academy",
+      "location": "Moscou",
+      "location_en": "Moscow, Russia",
+      "website": "",
+      "description": {
+        "fr": "Académie militaire de l'état-major général, plus haut établissement d'enseignement militaire russe, qui forme les officiers généraux et supérieurs.",
+        "en": "Military Academy of the General Staff, Russia's highest military education institution, training general and senior officers."
+      },
+      "aliases": [
+        "Военная академия Генерального штаба Вооружённых сил Российской Федерации"
+      ],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Военная_академия_Генерального_штаба_Вооружённых_сил_Российской_Федерации",
+          "title": "Военная академия Генерального штаба ВС РФ (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-ova",
+      "name": "Общевойсковая академия Вооружённых сил Российской Федерации",
+      "transliteration": "Obshchevoyskovaya akademiya Vooruzhonnykh sil Rossiyskoy Federatsii",
+      "short_name": "ОВА ВС РФ",
+      "type": "academy",
+      "location": "Moscou",
+      "location_en": "Moscow, Russia",
+      "website": "",
+      "description": {
+        "fr": "Académie interarmes des Forces armées russes (héritière de l'Académie Frounzé), qui forme les officiers de commandement des forces terrestres.",
+        "en": "Combined Arms Academy of the Russian Armed Forces (successor of the Frunze Academy), training ground forces command officers."
+      },
+      "aliases": [
+        "Общевойсковая академия Вооружённых сил Российской Федерации"
+      ],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Общевойсковая_академия_Вооружённых_сил_Российской_Федерации",
+          "title": "Общевойсковая академия ВС РФ (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-mvaa",
+      "name": "Михайловская военная артиллерийская академия",
+      "transliteration": "Mikhaylovskaya voyennaya artilleriyskaya akademiya",
+      "short_name": "МВАА",
+      "type": "academy",
+      "location": "Saint-Pétersbourg",
+      "location_en": "Saint Petersburg, Russia",
+      "website": "",
+      "description": {
+        "fr": "Académie d'artillerie Mikhaïlovski, qui forme les officiers de l'artillerie et des troupes de missiles et d'artillerie.",
+        "en": "Mikhailovskaya Military Artillery Academy, training artillery and missile troop officers."
+      },
+      "aliases": [
+        "Михайловская военная артиллерийская академия"
+      ],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Михайловская_военная_артиллерийская_академия",
+          "title": "Михайловская военная артиллерийская академия (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-va-vpvo",
+      "name": "Военная академия войсковой противовоздушной обороны Вооружённых сил Российской Федерации",
+      "transliteration": "Voyennaya akademiya voyskovoy protivovozdushnoy oborony Vooruzhonnykh sil Rossiyskoy Federatsii",
+      "short_name": "ВА ВПВО ВС РФ",
+      "type": "academy",
+      "location": "Smolensk",
+      "location_en": "Smolensk, Russia",
+      "website": "",
+      "description": {
+        "fr": "Académie de la défense antiaérienne des forces terrestres (académie Vassilevski), qui forme les officiers de la DCA des forces terrestres.",
+        "en": "Military Academy of Army Air Defence (Vasilevsky Academy), training ground forces air defence officers."
+      },
+      "aliases": [
+        "Военная академия войсковой ПВО ВС РФ"
+      ],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Военная_академия_войсковой_противовоздушной_обороны",
+          "title": "Военная академия войсковой ПВО ВС РФ (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-vu-mo",
+      "name": "Военный университет Министерства обороны Российской Федерации",
+      "transliteration": "Voyennyy universitet Ministerstva oborony Rossiyskoy Federatsii",
+      "short_name": "ВУ МО РФ",
+      "type": "academy",
+      "location": "Moscou",
+      "location_en": "Moscow, Russia",
+      "website": "",
+      "description": {
+        "fr": "Université militaire du ministère de la Défense, qui forme notamment les officiers politico-militaires, juristes, linguistes et spécialistes des médias.",
+        "en": "Military University of the Ministry of Defence, training notably military-political officers, lawyers, linguists and media specialists."
+      },
+      "aliases": [
+        "Военный университет Министерства обороны Российской Федерации"
+      ],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Военный_университет_Министерства_обороны_Российской_Федерации",
+          "title": "Военный университет МО РФ (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-nvvku",
+      "name": "Новосибирское высшее военное командное училище",
+      "transliteration": "Novosibirskoye vyssheye voyennoye komandnoye uchilishche",
+      "short_name": "НВВКУ",
+      "type": "school",
+      "location": "Novossibirsk",
+      "location_en": "Novosibirsk, Russia",
+      "website": "",
+      "description": {
+        "fr": "École supérieure de commandement de Novossibirsk, qui forme notamment les officiers de reconnaissance et de forces spéciales (spetsnaz).",
+        "en": "Novosibirsk Higher Military Command School, training notably reconnaissance and special forces (spetsnaz) officers."
+      },
+      "aliases": [
+        "Новосибирское высшее военное командное училище"
+      ],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Новосибирское_высшее_военное_командное_училище",
+          "title": "Новосибирское высшее военное командное училище (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-dvoku",
+      "name": "Дальневосточное высшее общевойсковое командное училище",
+      "transliteration": "Dalnevostochnoye vyssheye obshchevoyskovoye komandnoye uchilishche",
+      "short_name": "ДВОКУ",
+      "type": "school",
+      "location": "Blagovechtchensk (oblast de l'Amour)",
+      "location_en": "Blagoveshchensk, Russia",
+      "website": "",
+      "description": {
+        "fr": "École supérieure interarmes de commandement d'Extrême-Orient, qui forme des officiers de l'infanterie motorisée et de l'infanterie de marine.",
+        "en": "Far Eastern Higher Combined Arms Command School, training motor rifle and naval infantry officers."
+      },
+      "aliases": [
+        "Дальневосточное высшее общевойсковое командное училище"
+      ],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Дальневосточное_высшее_общевойсковое_командное_училище",
+          "title": "Дальневосточное высшее общевойсковое командное училище (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-mvoku",
+      "name": "Московское высшее общевойсковое командное училище",
+      "transliteration": "Moskovskoye vyssheye obshchevoyskovoye komandnoye uchilishche",
+      "short_name": "МВОКУ",
+      "type": "school",
+      "location": "Moscou",
+      "location_en": "Moscow, Russia",
+      "website": "",
+      "description": {
+        "fr": "École supérieure interarmes de commandement de Moscou, qui forme les officiers de l'infanterie motorisée.",
+        "en": "Moscow Higher Combined Arms Command School, training motor rifle officers."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Московское_высшее_общевойсковое_командное_училище",
+          "title": "Московское высшее общевойсковое командное училище (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-vmeda",
+      "name": "Военно-медицинская академия имени С. М. Кирова",
+      "transliteration": "Voyenno-meditsinskaya akademiya imeni S. M. Kirova",
+      "short_name": "ВМедА",
+      "type": "academy",
+      "location": "Saint-Pétersbourg",
+      "location_en": "Saint Petersburg, Russia",
+      "website": "",
+      "description": {
+        "fr": "Académie de médecine militaire S. M. Kirov, principal établissement de formation des médecins militaires russes.",
+        "en": "S. M. Kirov Military Medical Academy, the main training institution for Russian military doctors."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Военно-медицинская_академия_имени_С._М._Кирова",
+          "title": "Военно-медицинская академия имени С. М. Кирова (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-va-rkhbz",
+      "name": "Военная академия радиационной, химической и биологической защиты имени Маршала Советского Союза С. К. Тимошенко",
+      "transliteration": "Voyennaya akademiya radiatsionnoy, khimicheskoy i biologicheskoy zashchity imeni Marshala Sovetskogo Soyuza S. K. Timoshenko",
+      "short_name": "ВА РХБЗ",
+      "type": "academy",
+      "location": "Kostroma",
+      "location_en": "Kostroma, Russia",
+      "website": "",
+      "description": {
+        "fr": "Académie de défense radiologique, chimique et biologique (NRBC), qui forme les officiers des troupes RKhBZ.",
+        "en": "Military Academy of Radiological, Chemical and Biological Defence, training officers of the CBRN defence troops."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Военная_академия_радиационной,_химической_и_биологической_защиты_имени_Маршала_Советского_Союза_С._К._Тимошенко",
+          "title": "Военная академия РХБЗ (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-61-obrmp",
+      "name": "61-я отдельная бригада морской пехоты Северного флота",
+      "transliteration": "61-ya otdelnaya brigada morskoy pekhoty Severnogo flota",
+      "short_name": "61 ОБрМП",
+      "type": "unit",
+      "location": "Spoutnik (oblast de Mourmansk)",
+      "location_en": "Sputnik (Murmansk Oblast), Russia",
+      "website": "",
+      "description": {
+        "fr": "Brigade d'infanterie de marine de la Flotte du Nord, spécialisée dans les opérations en milieu arctique.",
+        "en": "Northern Fleet naval infantry brigade, specialised in Arctic operations."
+      },
+      "aliases": [
+        "61-я отдельная бригада морской пехоты Северного флота"
+      ],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/61-я_отдельная_бригада_морской_пехоты",
+          "title": "61-я отдельная бригада морской пехоты (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-tsn-fsb",
+      "name": "Центр специального назначения ФСБ России",
+      "transliteration": "Tsentr spetsialnogo naznacheniya FSB Rossii",
+      "short_name": "ЦСН ФСБ",
+      "type": "command",
+      "location": "Moscou",
+      "location_en": "Moscow, Russia",
+      "website": "",
+      "description": {
+        "fr": "Centre des forces spéciales du FSB, qui regroupe notamment les directions « A » (Alpha) et « V » (Vympel) de contre-terrorisme.",
+        "en": "FSB Special Purpose Centre, grouping notably the counter-terrorism Directorates \"A\" (Alpha) and \"V\" (Vympel)."
+      },
+      "aliases": [
+        "Центр специального назначения ФСБ России"
+      ],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Центр_специального_назначения_ФСБ",
+          "title": "Центр специального назначения ФСБ России (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-rosgvardiya",
+      "name": "Федеральная служба войск национальной гвардии Российской Федерации",
+      "transliteration": "Federalnaya sluzhba voysk natsionalnoy gvardii Rossiyskoy Federatsii",
+      "short_name": "Росгвардия",
+      "type": "agency",
+      "location": "Moscou",
+      "location_en": "Moscow, Russia",
+      "website": "",
+      "description": {
+        "fr": "Garde nationale russe (Rosgvardia), créée en 2016, dont relèvent les troupes de la garde nationale et les unités OMON et SOBR.",
+        "en": "Russian National Guard (Rosgvardiya), created in 2016, overseeing the National Guard troops and the OMON and SOBR units."
+      },
+      "aliases": [
+        "Федеральная служба войск национальной гвардии Российской Федерации"
+      ],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Федеральная_служба_войск_национальной_гвардии_Российской_Федерации",
+          "title": "Росгвардия (Википедия)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Site officiel (rosgvard.ru) non vérifiable depuis l'étranger (certificat non reconnu) ; laissé vide.",
+        "en": "Official website (rosgvard.ru) not verifiable from abroad (untrusted certificate); left empty."
+      }
+    },
+    {
+      "key": "ru-mo-rf",
+      "name": "Министерство обороны Российской Федерации",
+      "transliteration": "Ministerstvo oborony Rossiyskoy Federatsii",
+      "short_name": "МО РФ",
+      "type": "agency",
+      "location": "Moscou",
+      "location_en": "Moscow, Russia",
+      "website": "",
+      "description": {
+        "fr": "Ministère de la Défense de la Fédération de Russie, autorité de tutelle des forces armées et de leurs établissements de formation.",
+        "en": "Ministry of Defence of the Russian Federation, parent authority of the armed forces and their training institutions."
+      },
+      "aliases": [
+        "Министерство обороны Российской Федерации"
+      ],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/Министерство_обороны_Российской_Федерации",
+          "title": "Министерство обороны Российской Федерации (Википедия)"
+        }
+      ]
+    },
+    {
+      "key": "ru-dosaaf",
+      "name": "Общероссийская общественно-государственная организация «Добровольное общество содействия армии, авиации и флоту России»",
+      "transliteration": "Obshcherossiyskaya obshchestvenno-gosudarstvennaya organizatsiya «Dobrovolnoye obshchestvo sodeystviya armii, aviatsii i flotu Rossii»",
+      "short_name": "ДОСААФ России",
+      "type": "agency",
+      "location": "Moscou (réseau national)",
+      "location_en": "Moscow (nationwide network), Russia",
+      "website": "",
+      "description": {
+        "fr": "Organisation para-militaire publique-étatique (DOSAAF) qui assure la préparation des conscrits, la formation de spécialistes (conducteurs, parachutistes, pilotes) et les sports techniques militaires.",
+        "en": "Public-state paramilitary organisation (DOSAAF) providing pre-conscription training, specialist training (drivers, parachutists, pilots) and military technical sports."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://ru.wikipedia.org/wiki/ДОСААФ_России",
+          "title": "ДОСААФ России (Википедия)"
+        }
+      ]
+    }
+  ]
+}
