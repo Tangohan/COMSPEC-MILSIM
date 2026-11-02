@@ -393,8 +393,7 @@ if ($canIntelIntake) {
 if ($canAdmin) {
     $backofficeTiles[] = $tile('backoffice', 'Back-office', 'Espace état-major', 'bo', null, $links([
         ['label' => 'Back-office', 'href' => url('back-office'), 'hint' => 'Espace état-major'],
-        ['label' => 'Centre d’opérations', 'href' => url('back-office/centre-operations'), 'hint' => 'File actionnable'],
-        ['label' => 'Utilisateurs', 'href' => url('back-office/users'), 'hint' => 'Comptes de la communauté'],
+        ['label' => 'Effectifs', 'href' => effectifs_workspace_url(), 'hint' => 'Fiches des membres'],
         ['label' => 'Paramètres de la communauté', 'href' => url('back-office/community'), 'hint' => 'Identité, vitrine, inscription et accueil'],
     ]), 'backoffice');
 } else {

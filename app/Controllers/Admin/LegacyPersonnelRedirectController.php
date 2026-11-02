@@ -7,7 +7,7 @@ namespace App\Controllers\Admin;
 use App\Core\Request;
 use App\Core\Response;
 
-/** Compatibilité des anciens favoris : toute édition RH converge vers Effectifs. */
+/** Compatibilité des anciens favoris : toute édition RH converge vers Effectifs (redirection permanente). */
 final class LegacyPersonnelRedirectController
 {
     public function roster(Request $request, array $params = []): Response
@@ -15,21 +15,21 @@ final class LegacyPersonnelRedirectController
         $query = $_SERVER['QUERY_STRING'] ?? '';
         $target = effectifs_workspace_url();
 
-        return Response::redirect($target . ($query !== '' ? '?' . $query : ''));
+        return Response::redirect($target . ($query !== '' ? '?' . $query : ''), 301);
     }
 
     public function member(Request $request, array $params = []): Response
     {
-        return Response::redirect(effectifs_workspace_url('membres/' . (int) ($params['id'] ?? 0)));
+        return Response::redirect(effectifs_workspace_url('membres/' . (int) ($params['id'] ?? 0)), 301);
     }
 
     public function edit(Request $request, array $params = []): Response
     {
-        return Response::redirect(effectifs_workspace_url('membres/' . (int) ($params['id'] ?? 0)));
+        return Response::redirect(effectifs_workspace_url('membres/' . (int) ($params['id'] ?? 0)), 301);
     }
 
     public function create(Request $request, array $params = []): Response
     {
-        return Response::redirect(effectifs_workspace_url('nouveau'));
+        return Response::redirect(effectifs_workspace_url('nouveau'), 301);
     }
 }

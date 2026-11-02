@@ -19,6 +19,8 @@ $movementReasonRows = is_array($summary['movement_reasons'] ?? null) ? $summary[
 $peopleNames = is_array($peopleNames ?? null) ? $peopleNames : [];
 $schemaReady = !empty($schemaReady);
 $csrfToken = (string) ($csrfToken ?? '');
+/** @var list<array<string, mixed>> $missingMediaUsers */
+$missingMediaUsers = is_array($missingMediaUsers ?? null) ? array_values($missingMediaUsers) : [];
 
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
@@ -106,6 +108,7 @@ $nav = [
     ['id' => 'mouvements', 'icon' => 'moves', 'title' => 'Mouvements', 'count' => count($movements)],
     ['id' => 'corbeille', 'icon' => 'trash', 'title' => 'Corbeille des postes', 'count' => count($trash)],
     ['id' => 'versions', 'icon' => 'versions', 'title' => 'Versions de l’ORBAT', 'count' => count($snapshots)],
+    ['id' => 'photos', 'icon' => 'camera', 'title' => 'Photos perdues', 'count' => count($missingMediaUsers), 'tone' => $missingMediaUsers !== [] ? 'warn' : null],
     ['id' => 'reperes', 'icon' => 'model', 'title' => 'Modèle des données'],
 ];
 ?>
@@ -464,6 +467,48 @@ $nav = [
                         <?php endif; ?>
                     </div>
                 </div>
+            </section>
+
+            <!-- Photos perdues (fichiers absents du disque) -->
+            <section class="bo-dq-section" id="dq-photos" data-dq-section="photos">
+                <header class="bo-dq-section__head">
+                    <span class="bo-dq-section__icon"><?= $icon('camera') ?></span>
+                    <div>
+                        <h2 class="bo-dq-section__title">Photos perdues</h2>
+                        <p class="bo-dq-section__lead">Comptes dont la photo, le portrait ou la bannière n’est plus sur le serveur (souvent après une migration). Le membre reçoit une alerte l’invitant à la téléverser de nouveau depuis Mon compte ; les images externes (Steam…) ne sont pas signalées.</p>
+                    </div>
+                </header>
+                <?php if ($missingMediaUsers === []): ?>
+                <div class="bo-dq-empty bo-dq-empty--quiet">
+                    <p class="bo-dq-empty__text">Aucune photo perdue.</p>
+                </div>
+                <?php else: ?>
+                <ul class="bo-dq-trash">
+                    <?php
+                    $mediaKindLabels = ['avatar' => 'Photo', 'portrait' => 'Portrait personnage', 'banner' => 'Bannière'];
+                    foreach (array_slice($missingMediaUsers, 0, 60) as $mu):
+                        $muId = (int) ($mu['id'] ?? 0);
+                        $muName = trim((string) ($mu['display_name'] ?? ''));
+                        $muKinds = [];
+                        foreach (is_array($mu['missing'] ?? null) ? $mu['missing'] : [] as $k) {
+                            $muKinds[] = $mediaKindLabels[(string) $k] ?? (string) $k;
+                        }
+                    ?>
+                    <li class="bo-dq-trash__item">
+                        <div class="bo-dq-trash__body">
+                            <p class="bo-dq-trash__title" translate="no"><?= $h($muName !== '' ? $muName : 'Membre n° ' . $muId) ?></p>
+                            <p class="bo-dq-trash__meta"><span><?= $h(implode(' · ', $muKinds)) ?></span></p>
+                        </div>
+                        <?php if ($muId > 0): ?>
+                        <a class="ath-btn" href="<?= $h(effectifs_workspace_url('membres/' . $muId)) ?>">Fiche</a>
+                        <?php endif; ?>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php if (count($missingMediaUsers) > 60): ?>
+                <p class="bo-dq-section__lead"><?= (int) (count($missingMediaUsers) - 60) ?> autre(s) compte(s) non affiché(s).</p>
+                <?php endif; ?>
+                <?php endif; ?>
             </section>
 
             <!-- Repères -->

@@ -72,9 +72,12 @@ final class PlayerMetricsTest extends TestCase
         $sidebar = (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php');
         $pages = (string) file_get_contents($root . '/config/back_office_pages.php');
 
-        self::assertStringContainsString("'/back-office/metriques-joueurs', [\\App\\Controllers\\Admin\\AdminPlayerMetricsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]", $routes);
+        $tabs = (string) file_get_contents($root . '/app/Support/BackOfficeTabs.php');
+        self::assertStringContainsString("'back-office/metriques-joueurs' => [", $tabs);
+        self::assertStringContainsString("'handler' => [AdminPlayerMetricsController::class, 'index'],\n            'middleware' => self::RES,", str_replace("\r\n", "\n", $tabs));
+        self::assertStringContainsString("'legacy' => 'back-office/atak/temps-ecran'", $tabs);
         self::assertStringContainsString("'label' => 'Métriques joueurs'", $sidebar);
-        foreach (['back-office/metriques-joueurs', 'back-office/atak/temps-ecran', 'back-office/atak/heures'] as $path) {
+        foreach (['back-office/metriques-joueurs', 'back-office/atak/heures'] as $path) {
             self::assertStringContainsString("url('" . $path . "')", $sidebar);
         }
         self::assertStringContainsString("'path' => 'back-office/metriques-joueurs'", $pages);

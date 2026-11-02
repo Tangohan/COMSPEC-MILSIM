@@ -201,7 +201,6 @@ use App\Controllers\Admin\Organization\OrganizationSeniorityAdminController;
 use App\Controllers\Admin\Organization\OrganizationCatalogController;
 use App\Controllers\Admin\Organization\OrganizationCallsignSequencesController;
 use App\Controllers\Admin\Organization\OrganizationMemberNumberController;
-use App\Controllers\Admin\Organization\OrganizationProgressionHubController;
 use App\Controllers\Admin\Organization\RoleplayFollowupAdminController;
 use App\Controllers\Admin\Organization\PersonnelPhaseAdminController;
 use App\Controllers\Admin\Organization\PersonnelPassAdminController;
@@ -682,9 +681,6 @@ return function (Router $router) {
     $router->post('/admin/system/advanced-fiche-edit/grant', [\App\Controllers\Web\AdvancedFicheEditGrantController::class, 'grant'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/advanced-fiche-edit/{id}/revoke', [\App\Controllers\Web\AdvancedFicheEditGrantController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     /* Ancienne URL back-office → admin plateforme */
-    $router->get('/back-office/personnel/advanced-edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/system/advanced-fiche-edit')), [AuthMiddleware::class]);
-    $router->post('/back-office/personnel/advanced-edit/grant', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/system/advanced-fiche-edit')), [AuthMiddleware::class]);
-    $router->post('/back-office/personnel/advanced-edit/{id}/revoke', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/system/advanced-fiche-edit')), [AuthMiddleware::class]);
     $router->get('/personnel/tutorials', [PersonnelController::class, 'tutorials'], [AuthMiddleware::class]);
     $router->post('/personnel/mon-espace-rh/actualiser', [RhWorkspaceController::class, 'refreshFromDossier'], [AuthMiddleware::class]);
     $router->post('/personnel/mon-espace-rh/absences', [RhWorkspaceController::class, 'storeAbsence'], [AuthMiddleware::class]);
@@ -1376,9 +1372,6 @@ return function (Router $router) {
     $router->get('/back-office/ma-situation/carriere', [MemberSituationController::class, 'carriere'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/decorations', [MemberSituationController::class, 'decorations'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/dotation', [MemberSituationController::class, 'dotation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/centre-operations', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/operations-admin', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/organisation-effectifs', [OrganizationDashboardController::class, 'effectifsHub'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/anciennete', [OrganizationSeniorityAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/anciennete', [OrganizationSeniorityAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/anciennete/initialiser', [OrganizationSeniorityAdminController::class, 'seedDefaults'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1397,7 +1390,6 @@ return function (Router $router) {
     $router->post('/back-office/organisation/catalogue/restaurer', [OrganizationCatalogController::class, 'restore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/catalogue/libelles', [\App\Controllers\Admin\Organization\OrganizationGeneratedLabelsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/catalogue/libelles/enregistrer', [\App\Controllers\Admin\Organization\OrganizationGeneratedLabelsController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/organisation/progression', [OrganizationProgressionHubController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/passes', [PersonnelPassAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/passes/create', [PersonnelPassAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/passes/store', [PersonnelPassAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1425,7 +1417,6 @@ return function (Router $router) {
     $router->post('/back-office/organisation/unites/{id}', [UnitSheetController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/unites/{id}/activites', [UnitSheetController::class, 'storeActivity'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/unites/{id}/postes', [UnitSheetController::class, 'savePosts'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/organisation/parametres', [OrganizationSettingsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/parametres', [OrganizationSettingsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/parametres/accueil-connexion', [OrganizationSettingsController::class, 'storeLoginAccueilImage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/parametres/accueil-connexion/defilement', [OrganizationSettingsController::class, 'saveLoginAccueilSlideshow'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1441,8 +1432,6 @@ return function (Router $router) {
     $router->post('/back-office/configuration-initiale', [TenantInitialSetupController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/configuration-initiale/dismiss', [TenantInitialSetupController::class, 'dismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/configuration-initiale/complete', [TenantInitialSetupController::class, 'complete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/mise-a-niveau', [ConfigurationUpdateController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/nouveautes-organisation', [ConfigurationUpdateController::class, 'novelties'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/nouveautes-organisation/continuer', [ConfigurationUpdateController::class, 'continueToDashboard'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/mise-a-niveau/demarrer', [ConfigurationUpdateController::class, 'start'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/mise-a-niveau/ignorer', [ConfigurationUpdateController::class, 'dismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1462,7 +1451,6 @@ return function (Router $router) {
     $router->post('/back-office/media/collections/{id}', [CommunityMediaAdminController::class, 'updateCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/media/collections/{id}/delete', [CommunityMediaAdminController::class, 'deleteCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/onboarding-recovery', [OrganizationCommunityController::class, 'onboardingRecovery'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/onboarding-members', [OrganizationCommunityController::class, 'onboardingMembers'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $mwIntegration = [AuthMiddleware::class, OrganizationAdminMiddleware::class];
     $router->get('/back-office/integration-membres', [MemberIntegrationAdminController::class, 'index'], $mwIntegration);
     $router->get('/back-office/integration-membres/modeles', [MemberIntegrationAdminController::class, 'templates'], $mwIntegration);
@@ -1552,23 +1540,19 @@ return function (Router $router) {
     $router->post('/back-office/integrations/sse-relais/{relayId}/essai', [OrganizationIntegrationsController::class, 'testSseRelay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/doctrine/referentiel', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine/referentiel', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/doctrine', [DoctrineAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine', [DoctrineAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine/versions/{versionId}/activate', [DoctrineAdminController::class, 'activate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/doctrine/export-lectures', [DoctrineAdminController::class, 'exportCompliance'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine/relances', [DoctrineAdminController::class, 'remindAll'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine/documents/{id}/publier', [DoctrineAdminController::class, 'publishDocument'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine/documents/{id}/archiver', [DoctrineAdminController::class, 'archiveDocument'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/documents/nomenclature', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'nomenclature'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/documents/nomenclature', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'nomenclatureSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/documents/types', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'types'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/documents/types', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'typesSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/documents/publier', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'publishForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/documents/publier/{id}', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'publishForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/documents/publier', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'publishSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/documents/{id}/nouvelle-version', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'newVersionForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/documents/{id}/nouvelle-version', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'newVersionSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/documents/compliance', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'compliance'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/documents/relances', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'sendReminders'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys', [OrganizationIntegrationsController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/api-keys/{id}/update', [OrganizationIntegrationsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1599,9 +1583,7 @@ return function (Router $router) {
     $router->post('/back-office/events/{id}/slots/{slotId}/supprimer', [CommunityEventsAdminController::class, 'deleteSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/evenements', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/events')), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/evenements/insights', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/events/insights')), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/missions', [MissionsPortalController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/missions/{id}', [MissionsPortalController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/planification', [MissionPlanningController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/planification', [MissionPlanningController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/planification/{id}', [MissionPlanningController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/planification/{id}/planning', [MissionPlanningController::class, 'updatePlanning'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1618,7 +1600,6 @@ return function (Router $router) {
     $router->get('/back-office/roles-functions', [RolesFunctionsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/referentiel', [RolesFunctionsAdminController::class, 'referentiel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/catalogue', [RolesFunctionsAdminController::class, 'catalogue'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/roles-functions/graph.json', [RolesFunctionsAdminController::class, 'graphJson'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/definitions/store', [RolesFunctionsAdminController::class, 'storeDefinition'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/relations/store', [RolesFunctionsAdminController::class, 'storeRoleRelation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/required/save', [RolesFunctionsAdminController::class, 'saveRequiredDefinitions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1855,16 +1836,13 @@ return function (Router $router) {
     $router->post('/back-office/teams/{id}/update', [TeamAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/teams/{id}/delete', [TeamAdminController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/configuration', [AdminConfigurationController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/roleplay-followup', [RoleplayFollowupAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roleplay-followup/echeances', [RoleplayFollowupAdminController::class, 'deadlines'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay-followup/{id}/stage', [RoleplayFollowupAdminController::class, 'updateStage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay-followup/{id}/tutor', [RoleplayFollowupAdminController::class, 'updateTutor'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay-followup/{id}/validate', [RoleplayFollowupAdminController::class, 'validateStage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay-followup/{id}/bilan', [RoleplayFollowupAdminController::class, 'markBilanReviewed'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay-followup/{id}/deadline', [RoleplayFollowupAdminController::class, 'updateDeadline'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/roleplay/immersion', [RoleplayFollowupAdminController::class, 'immersionSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay/immersion', [RoleplayFollowupAdminController::class, 'immersionSettingsUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/roleplay/regles-phases', [PersonnelPhaseAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay/regles-phases', [PersonnelPhaseAdminController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/atak/detection-marqueurs', [AtakMarkerDetectionAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/atak/detection-marqueurs', [AtakMarkerDetectionAdminController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1929,6 +1907,10 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/fonctions/attributions/lot', [\App\Controllers\Admin\JobAssignmentBoardController::class, 'bulk'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/fonctions/attributions/export', [\App\Controllers\Admin\JobAssignmentBoardController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/fonctions/catalogue', [\App\Controllers\Admin\JobCatalogController::class, 'catalogue'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/catalogue/collections', [\App\Controllers\Admin\JobCatalogController::class, 'saveCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/catalogue/collections/supprimer', [\App\Controllers\Admin\JobCatalogController::class, 'deleteCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/catalogue/emplois', [\App\Controllers\Admin\JobCatalogController::class, 'saveEntry'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/catalogue/emplois/supprimer', [\App\Controllers\Admin\JobCatalogController::class, 'deleteEntry'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/prerequis', [\App\Controllers\Admin\JobCatalogController::class, 'savePrerequisites'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/prerequis/reglage', [\App\Controllers\Admin\JobCatalogController::class, 'saveSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/derogations/revoquer', [\App\Controllers\Admin\JobCatalogController::class, 'revokeWaiver'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1976,10 +1958,6 @@ return function (Router $router) {
     $router->get('/back-office/ressources/effectifs/vivier', [RhDossierWorkspaceController::class, 'succession'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/vivier', [RhDossierWorkspaceController::class, 'storeSuccession'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/vivier/{id}/retirer', [RhDossierWorkspaceController::class, 'deactivateSuccession'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ressources/effectifs/a-traiter', [RhDossierWorkspaceController::class, 'inbox'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ressources/effectifs/alertes', [RhDossierWorkspaceController::class, 'alerts'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ressources/effectifs/roleplay', [RhDossierWorkspaceController::class, 'roleplay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ressources/effectifs/integration', [RhDossierWorkspaceController::class, 'integration'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/reglages', [RhDossierWorkspaceController::class, 'settings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/reglages', [RhDossierWorkspaceController::class, 'saveSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/reglages/avancements', [RhDossierWorkspaceController::class, 'runAdvancement'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2130,7 +2108,6 @@ return function (Router $router) {
     $router->get('/admin/atak/roleplay', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/atak/roleplay')), [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak/roleplay/intel-scramble', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/atak/roleplay') . '#intel-scramble'), [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     // ARCH-006 : second enregistrement identique relays GET/DELETE + roleplay server-tests retiré.
-    $router->get('/back-office/ressources/atak-realism/config', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-realism/save', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'save'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/ressources/atak-realism/history', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'history'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/ressources/atak-realism/version/{id}', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'getVersion'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2148,9 +2125,6 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/cycle-mission', [AdminMissionCycleController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/cycle-mission/{id}/ouvrir', [AdminMissionCycleController::class, 'open'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/cycle-mission/{id}/cloturer', [AdminMissionCycleController::class, 'close'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/back-office/atak/escouades', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/back-office/atak/temps-ecran', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'screenTime'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/back-office/metriques-joueurs', [\App\Controllers\Admin\AdminPlayerMetricsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/partage', [\App\Controllers\Web\FileShareController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/heures', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'hours'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/files-envoi', [\App\Controllers\Admin\AdminAtakSendQueueController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2161,7 +2135,6 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/remontees/joueurs/{key}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'player'], [AuthMiddleware::class]);
     $router->get('/back-office/remontees/{source}/{id}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'show'], [AuthMiddleware::class]);
     $router->post('/back-office/remontees/{source}/{id}/{action}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'action'], [AuthMiddleware::class]);
-    $router->get('/back-office/atak/fire-teams', [AdminFireTeamsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/fire-teams/create', [AdminFireTeamsController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/fire-teams/store', [AdminFireTeamsController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/fire-teams/{id}', [AdminFireTeamsController::class, 'show'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2174,7 +2147,6 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/atak/operateurs', [AdminAtakOperatorsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/operateurs/export', [AdminAtakOperatorsController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/fiche-operateur', [AdminAtakOperatorsController::class, 'profile'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/back-office/atak/realisme', [\App\Controllers\Admin\AdminAtakRealismController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/realisme/terminaux/{id}/journal', [\App\Controllers\Admin\AdminAtakRealismController::class, 'terminalJournal'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/certificats', [\App\Controllers\Admin\AdminAtakRealismController::class, 'certificates'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/realisme/terminaux', [\App\Controllers\Admin\AdminAtakRealismController::class, 'storeTerminal'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2188,7 +2160,6 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/certificats/{id}/revoquer', [\App\Controllers\Admin\AdminAtakRealismController::class, 'revokeCertificate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/certificats/{id}/supprimer', [\App\Controllers\Admin\AdminAtakRealismController::class, 'deleteCertificate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     // CR de fin d'opération imposé sur les téléphones ATAK : suivi par joueur, envoi, relance, réglages du jeu.
-    $router->get('/back-office/atak/suivi-cr', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/imposer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'force'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/reglages', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'settings'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/renommer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'rename'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2198,7 +2169,6 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/atak/suivi-cr/{id}/export.csv', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/{id}/relancer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'remind'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/{id}/cloturer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'close'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/back-office/atak/comptes-rendus', [\App\Controllers\Admin\AdminAarReportsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/nouveau', [\App\Controllers\Admin\AdminAarReportsController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/export.csv', [\App\Controllers\Admin\AdminAarReportsController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/modeles', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesIndex'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2545,6 +2515,14 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/signalements/{id}/liberer', [ReportsModerationController::class, 'unclaimReport'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
     $router->post('/back-office/signalements/{id}/commenter', [ReportsModerationController::class, 'addReportComment'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
     $router->post('/back-office/signalements/{id}/rouvrir', [ReportsModerationController::class, 'reopenReport'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
+    // Pages regroupées en onglets (« ?onglet=… ») : chaque onglet garde le contrôleur et les droits de l’ancienne page.
+    foreach (array_keys(\App\Support\BackOfficeTabs::FAMILIES) as $tabBasePath) {
+        $router->get('/' . $tabBasePath, static fn (\App\Core\Request $r, array $p): \App\Core\Response => \App\Support\BackOfficeTabs::dispatch($tabBasePath, $r, $p));
+    }
+    // Pages retirées ou fusionnées en onglets : redirection permanente (voir App\Support\BackOfficeLegacyRedirects).
+    foreach (array_keys(\App\Support\BackOfficeLegacyRedirects::map()) as $legacyBoPath) {
+        $router->get('/' . $legacyBoPath, static fn (\App\Core\Request $r, array $p): \App\Core\Response => \App\Support\BackOfficeLegacyRedirects::response($legacyBoPath, $r->queryParams()));
+    }
     foreach (['/back-office/forum-moderation', '/admin/forum-moderation'] as $legacyModerationPath) {
         $router->get($legacyModerationPath, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/signalements')), [AuthMiddleware::class]);
     }

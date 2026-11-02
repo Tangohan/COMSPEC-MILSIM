@@ -244,7 +244,6 @@ return [
                         ['label' => 'Analyses candidatures', 'path' => 'back-office/ressources/recrutement/analyses', 'any_permissions' => ['organization.recruitment.manage', 'admin.organization', 'admin.access'], 'description' => 'Volumes, canaux et offres liées'],
                         ['label' => 'Paramètres SLA recrutement', 'path' => 'back-office/recruitments/settings', 'any_permissions' => ['organization.recruitment.manage', 'admin.organization', 'admin.access'], 'description' => 'Seuil interne et alertes de blocage'],
                         ['label' => 'Codes d’invitation prioritaires', 'path' => 'back-office/recruitments/codes-invitation', 'any_permissions' => ['organization.recruitment.manage', 'admin.organization', 'admin.access'], 'description' => 'Accélérer une candidature (distinct des invitations e-mail)'],
-                        ['label' => 'Organisation', 'path' => 'back-office/organisation-effectifs', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Organigramme, grades et catalogue (distinct du tableur Effectifs)'],
                     ],
                 ],
             ],
@@ -391,7 +390,6 @@ return [
                         // La racine est aussi l'espace personnel en lecture seule des opérateurs.
                         // Les pages de gestion placées dessous conservent leurs propres permissions.
                         ['label' => 'Mon back-office', 'path' => 'back-office', 'auth_only' => true],
-                        ['label' => 'Centre d’opérations', 'path' => 'back-office/centre-operations', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'File actionnable, playbooks, audit et objectifs KPI'],
                         ['label' => 'Mur opérationnel', 'path' => 'tableau-operationnel', 'permission' => 'operational.board.view', 'description' => 'Permanences et consignes publiées'],
                         ['label' => 'Pilotage du mur opérationnel', 'path' => 'back-office/tableau-operationnel', 'any_permissions' => ['operational.board.edit', 'admin.organization', 'admin.access', 'admin.system'], 'description' => 'Événements, articles, ATAK et mur de consignes'],
                         ['label' => 'E-mails aux membres', 'path' => 'back-office/communications', 'any_permissions' => ['comms.email.send.orbat', 'comms.email.send.mission', 'comms.email.send.activity', 'comms.email.send.custom', 'comms.email.broadcast', 'comms.email_templates.manage', 'comms.notifications.history.view'], 'description' => 'Diffusions, modèles et groupes de destinataires'],
@@ -414,7 +412,6 @@ return [
                         ['label' => 'Parcours RH', 'path' => 'back-office/roleplay/regles-phases', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Étapes du parcours et conditions de passage à l’étape suivante'],
                         ['label' => 'Sessions Arma', 'path' => 'back-office/roleplay/sessions', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Types de sessions, pointage et temps retenu pour le suivi'],
                         ['label' => 'Bureau effectifs', 'path' => 'back-office/ressources/effectifs', 'any_permissions' => ['organization.effectifs.hub.view', 'personnel.profile.update', 'personnel.assignments.manage', 'personnel.grades.manage', 'personnel.status.manage', 'admin.organization', 'admin.access'], 'description' => 'Tableur RH nominatif : profils, statuts, affectations, élévations'],
-                        ['label' => 'Organisation', 'path' => 'back-office/organisation-effectifs', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Organigramme, grades et catalogue (distinct du tableur Effectifs)'],
                         ['label' => 'Accès', 'path' => 'back-office/ressources/effectifs/roles', 'any_permissions' => ['admin.organization', 'admin.access', 'admin.roles.manage'], 'description' => 'Corriger ce qu’un niveau a le droit de faire, comme un rôle Discord'],
                         ['label' => 'Emplois', 'path' => 'back-office/ressources/effectifs/fonctions', 'any_permissions' => ['admin.organization', 'admin.access', 'personnel.assignments.manage'], 'description' => 'Libellés du dossier, distincts des niveaux d’accès'],
                         ['label' => 'Raccourcis dashboard', 'path' => 'back-office/dashboard-pins', 'any_permissions' => ['dashboard.pins.manage', 'admin.organization', 'admin.access']],

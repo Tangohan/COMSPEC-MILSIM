@@ -73,9 +73,9 @@ if (!function_exists('dct_e')) {
         $tabs = [
             'hub' => ['Vue d’ensemble', 'back-office/doctrine', true],
             'publish' => ['Publier', 'back-office/documents/publier', !empty($can['create'])],
-            'compliance' => ['Suivi de diffusion', 'back-office/documents/compliance', !empty($can['compliance'])],
-            'types' => ['Types', 'back-office/documents/types', !empty($can['manage'])],
-            'nomenclature' => ['Nomenclature', 'back-office/documents/nomenclature', !empty($can['manage'])],
+            'compliance' => ['Suivi de diffusion', 'back-office/doctrine?onglet=conformite', !empty($can['compliance'])],
+            'types' => ['Types', 'back-office/doctrine?onglet=types', !empty($can['manage'])],
+            'nomenclature' => ['Nomenclature', 'back-office/doctrine?onglet=nomenclature', !empty($can['manage'])],
             'referential' => ['Référentiel doctrinal', 'back-office/doctrine/referentiel', true],
         ];
         $nav = '';

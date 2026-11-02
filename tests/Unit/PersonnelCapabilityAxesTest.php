@@ -124,10 +124,6 @@ final class PersonnelCapabilityAxesTest extends TestCase
         $schedule = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Cron/CronSchedule.php');
         self::assertStringContainsString('personnel_capability_refresh', $schedule);
 
-        $hub = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/organization/progression_hub.php');
-        self::assertStringContainsString('Quatre axes séparés', $hub);
-        self::assertStringNotContainsString('legacy placeholders', $hub);
-
         $audit = (string) file_get_contents(dirname(__DIR__, 2) . '/docs/technique/personnel-progression-engine-audit.md');
         self::assertStringContainsString('quatre axes', $audit);
         self::assertStringContainsString('NON_CURRENT', $audit);
