@@ -2019,6 +2019,7 @@ return function (Router $router) {
     $router->get('/back-office/recruitments/liens-invitation/{id}/modifier', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/liens-invitation/{id}/modifier', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/liens-invitation/{id}/revoquer', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'revoke'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/liens-invitation/{id}/supprimer', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'destroy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/liens-invitation/{id}/reactiver', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'reactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}', [AdminRecruitmentsController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}/onboarding', [AdminRecruitmentsController::class, 'onboarding'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

@@ -90,13 +90,31 @@ final class InviteLinkViewsEnglishTest extends TestCase
             }
         }
         yield 'create' => ['admin/organization/recruitment_invite_links/create', ['inviteLinkOld' => []] + $common];
-        foreach (['expired', 'exhausted', 'revoked', 'unknown'] as $st) {
+        foreach (['expired', 'exhausted', 'revoked', 'deleted', 'unknown'] as $st) {
             yield "landing $st" => ['invite_link/landing', [
                 'unusableMessage' => \App\Services\Recruitment\InviteLinkService::unusableMessage($st), 'community' => null, 'link' => [],
                 'formUrl' => '', 'loginUrl' => '/connexion', 'registerUrl' => '/inscription', 'actionUrl' => '',
             ]];
         }
         yield 'bandeau candidature' => ['enlistment/_invite_link', ['inviteLinkBanner' => ['community' => 'Task Force', 'label' => 'Discord', 'unit' => 'Alpha', 'code' => 'PRIO']]];
+    }
+
+    public function testPublicPageUsesTheHomeTopbarAndFooterAndKeepsTheInvitationInSignInLinks(): void
+    {
+        $html = $this->render('invite_link/landing', [
+            'link' => self::link('apply'), 'isApply' => true, 'loggedIn' => false, 'memberState' => null,
+            'actionUrl' => '', 'formUrl' => '/c/tf/candidature',
+            'loginUrl' => '/login?redirect=i%2Fabcd1234', 'registerUrl' => '/register?invite=abcd1234',
+            'community' => ['name' => 'Task Force', 'slug' => 'tf', 'logo' => '', 'banner' => '', 'game' => '', 'tagline' => '', 'members' => 0, 'public_url' => ''],
+        ]);
+        self::assertStringContainsString('class="hi-topbar"', $html, 'barre de la page d’accueil');
+        self::assertStringContainsString('id="navDrawer"', $html, 'menu latéral de la page d’accueil');
+        self::assertStringContainsString('class="psf"', $html, 'pied de page du site public');
+        $header = substr($html, 0, (int) strpos($html, '<main'));
+        self::assertStringContainsString('href="/login?redirect=i%2Fabcd1234"', $header);
+        self::assertStringContainsString('href="/register?invite=abcd1234"', $header);
+        self::assertStringNotContainsString('public_portal_auth_frame', (string) file_get_contents(self::ROOT . '/views/invite_link/landing.php'));
+        self::assertStringContainsString("require base_path('views/partials/home_topbar.php')", (string) file_get_contents(self::ROOT . '/views/home/index.php'), 'même barre que l’accueil');
     }
 
     /**
@@ -107,6 +125,9 @@ final class InviteLinkViewsEnglishTest extends TestCase
     public function testRenderedPageHasNoFrenchLeftInEnglish(string $view, array $vars): void
     {
         $html = HtmlTranslator::translate($this->render($view, $vars));
+        // Sélecteurs de langue (barre et pied de page) : chaque langue garde son propre nom (« Français »), voulu ;
+        // la langue de session reste le français dans ce test.
+        $html = (string) preg_replace(['#<a[^>]*\blang="fr"[^>]*>.*?</a>#s', '#<details class="psf-lang">.*?</details>#s'], '', $html);
         $left = array_values(array_filter(
             UntranslatedFrenchScanner::viewSegments($html),
             static fn (string $s): bool => !UntranslatedFrenchScanner::isTranslated($s),

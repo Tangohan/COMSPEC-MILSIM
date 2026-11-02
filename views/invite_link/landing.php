@@ -34,7 +34,7 @@ $bannerStyle = $community !== null && $community['banner'] !== '' ? ' style="bac
 $step = $loggedIn ? 2 : 1;
 ?>
 <!DOCTYPE html>
-<html lang="fr" class="public-portal-day">
+<html lang="<?= $h(html_lang()) ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -43,13 +43,20 @@ $step = $loggedIn ? 2 : 1;
     <meta name="robots" content="noindex,nofollow">
     <?php $tailwindBaseUrl = $base; require base_path('views/partials/tailwind_cdn_or_build.php'); ?>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;0,800;0,900;1,900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-    <link href="<?= $h($base) ?>/assets/css/public-portal-day.css" rel="stylesheet">
+    <link href="<?= $h(asset_url('assets/css/styles.css')) ?>" rel="stylesheet">
+    <link href="<?= $h(asset_url('assets/css/home-impact.css')) ?>" rel="stylesheet">
+    <link href="<?= $h(asset_url('assets/css/public-site-footer.css')) ?>" rel="stylesheet">
     <link href="<?= $h(asset_url('assets/css/invite-links-ath.css')) ?>" rel="stylesheet">
 </head>
-<body class="ilx-page min-h-screen antialiased flex flex-col">
-<?php require base_path('views/partials/public_portal_auth_frame.php'); ?>
+<body class="home-impact layout-light ilx-page ilx-body antialiased overflow-x-hidden">
+<?php
+// Même barre que la page d'accueil ; connexion et inscription gardent l'invitation.
+$homeTopbarLoginUrl = isset($loginUrl) && $loginUrl !== '' ? (string) $loginUrl : null;
+$homeTopbarRegisterUrl = isset($registerUrl) && $registerUrl !== '' ? (string) $registerUrl : null;
+require base_path('views/partials/home_topbar.php');
+?>
 
-<main class="ilx-hero" style="flex:1 0 auto;">
+<main id="contenu" class="ilx-hero" tabindex="-1">
     <div class="ilx-hero__ph"<?= $bannerStyle ?>></div>
     <div class="ilx-wrap">
         <div>
@@ -189,7 +196,8 @@ $step = $loggedIn ? 2 : 1;
 </main>
 <p class="ilx-toast" role="status" aria-live="polite" data-ilx-toast>Lien copié</p>
 
-<?php require base_path('views/partials/public_portal_auth_footer.php'); ?>
+<?php require base_path('views/partials/public_site_footer.php'); ?>
+<?php require base_path('views/partials/cookie_banner.php'); ?>
 <script>
 (function () {
     var btn = document.querySelector('[data-ilx-copy]');

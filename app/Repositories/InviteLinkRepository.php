@@ -17,6 +17,9 @@ class InviteLinkRepository
 {
     public const KIND = 'link';
 
+    /** Lien supprimé mais conservé (candidatures liées) : invisible partout, son adresse reste réservée. */
+    public const KIND_DELETED = 'link_deleted';
+
     public const ACTION_APPLY = 'apply';
     public const ACTION_JOIN = 'join';
 
@@ -142,6 +145,61 @@ class InviteLinkRepository
         $stmt->execute([$expiresAt, self::now(), $tenantId, $id, self::KIND]);
 
         return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Suppression : statistiques effacées ; la ligne disparaît si rien n'y renvoie, sinon elle est mise de côté
+     * (KIND_DELETED, révoquée) pour garder les candidatures liées intactes. Le quota de liens actifs est libéré.
+     *
+     * @return 'hard'|'soft'|null null si le lien n'existe pas pour cette communauté
+     */
+    public function delete(int $tenantId, int $id): ?string
+    {
+        if ($this->findById($tenantId, $id) === null) {
+            return null;
+        }
+        $pdo = $this->pdo();
+        $pdo->prepare('DELETE FROM recruitment_invite_link_events WHERE tenant_id = ? AND invite_code_id = ?')->execute([$tenantId, $id]);
+        $referenced = false;
+        try {
+            $stmt = $pdo->prepare('SELECT 1 FROM enlistments WHERE invite_code_id = ? LIMIT 1');
+            $stmt->execute([$id]);
+            $referenced = (bool) $stmt->fetchColumn();
+        } catch (\Throwable) {
+            // Table ou colonne absente : aucune candidature ne peut renvoyer au lien.
+        }
+        if (!$referenced) {
+            try {
+                $stmt = $pdo->prepare('DELETE FROM recruitment_invite_codes WHERE tenant_id = ? AND id = ? AND code_kind = ?');
+                $stmt->execute([$tenantId, $id, self::KIND]);
+                if ($stmt->rowCount() > 0) {
+                    return 'hard';
+                }
+            } catch (\Throwable) {
+                // Une autre table y renvoie : suppression logique.
+            }
+        }
+        $now = self::now();
+        $stmt = $pdo->prepare(
+            'UPDATE recruitment_invite_codes SET code_kind = ?, revoked_at = COALESCE(revoked_at, ?), updated_at = ?
+             WHERE tenant_id = ? AND id = ? AND code_kind = ?'
+        );
+        $stmt->execute([self::KIND_DELETED, $now, $now, $tenantId, $id, self::KIND]);
+
+        return $stmt->rowCount() > 0 ? 'soft' : null;
+    }
+
+    /** Adresse d'un lien supprimé et mis de côté : la page /i/<code> l'indique au visiteur. */
+    public function isDeletedPublicCode(string $code): bool
+    {
+        $code = strtolower(trim($code));
+        if (!$this->tablesExist() || $code === '') {
+            return false;
+        }
+        $stmt = $this->pdo()->prepare('SELECT 1 FROM recruitment_invite_codes WHERE public_code = ? AND code_kind = ? LIMIT 1');
+        $stmt->execute([$code, self::KIND_DELETED]);
+
+        return (bool) $stmt->fetchColumn();
     }
 
     private function setRevoked(int $tenantId, int $id, ?string $at): bool
