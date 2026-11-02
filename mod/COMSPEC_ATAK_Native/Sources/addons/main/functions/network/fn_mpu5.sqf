@@ -21,6 +21,8 @@
                    la radio relaie alors les données comme une MPU5, avec ses propres réglages (comspec_atak_native_radio_*).
       "plugged"  : radio branchée encore portée par le joueur : [id, "LR" | "SW", nom] ou [].
       "source"   : ce qui relaie mes données : ["MPU5" | "LR" | "SW", nom, portée m, gain dB, débit max Mbit/s] ou [].
+                   Liaison réaliste active (fn_mpuLink, réglage comspec_atak_native_mpu_real) : toujours [] (la MPU5 et la
+                   radio tactique passent par le maillage de fn_mpuLink) ; "plug" exige alors le câble EUD.
     Lecture prudente d'ACRE2 : chaque fonction est testée avant l'appel ; sans ACRE2, seule la partie maillage reste.
 */
 params [["_act", ""], ["_arg", []]];
@@ -87,7 +89,13 @@ switch (_act) do {
         _p
     };
     case "plug": {
-        if ((["plugged"] call comspec_atak_native_fnc_mpu5) isNotEqualTo []) exitWith {
+        // Liaison réaliste (fn_mpuLink) : débrancher passe par elle ; le câble EUD est exigé pour brancher.
+        private _real = ["active"] call comspec_atak_native_fnc_mpuLink;
+        if (_real && {((uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap]) getOrDefault ["link", ""]) isEqualTo "tac"}) exitWith { ["unlink"] call comspec_atak_native_fnc_mpuLink; false };
+        if (_real && {missionNamespace getVariable ["comspec_atak_native_mpu_cable", true]} && {!("COMSPEC_ATAK_EudCable" in (items player))}) exitWith {
+            ["WARNING", "Il faut un câble EUD dans l'inventaire pour relier le téléphone à la radio", 4, 20] call comspec_atak_native_fnc_notify; false
+        };
+        if (!_real && {(["plugged"] call comspec_atak_native_fnc_mpu5) isNotEqualTo []}) exitWith {
             uiNamespace setVariable ["COMSPEC_ATAK_RadioPlug", []];
             ["INFO", "Téléphone débranché de la radio", 3, 20] call comspec_atak_native_fnc_notify;
             false
@@ -125,10 +133,13 @@ switch (_act) do {
         };
         uiNamespace setVariable ["COMSPEC_ATAK_RadioPlug", _found];
         uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Has", nil];
-        ["INFO", format ["Téléphone branché sur %1 : les données passent par la radio", _found select 2], 4, 20] call comspec_atak_native_fnc_notify;
+        ["INFO", format [["Téléphone branché sur %1 : les données passent par la radio", "Téléphone relié à %1 (câble) : données à bas débit, pas de vidéo ni de photo lourde"] select _real, _found select 2], 4, 20] call comspec_atak_native_fnc_notify;
+        if (_real) then { ["linked", ["tac"]] call comspec_atak_native_fnc_mpuLink; };
         true
     };
     case "source": {
+        // Liaison réaliste (fn_mpuLink) : la radio ne sert plus de relais « porté » de l'ancien modèle.
+        if (["active"] call comspec_atak_native_fnc_mpuLink) exitWith { [] };
         if (["has", [player]] call comspec_atak_native_fnc_mpu5) exitWith {
             ["MPU5", "MPU5", missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000],
                 missionNamespace getVariable ["comspec_atak_native_mpu5_gain", 8], missionNamespace getVariable ["comspec_atak_native_mpu5_mbps", 20]]

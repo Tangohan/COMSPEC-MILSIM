@@ -545,6 +545,39 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
     _sim, [0, 15, 4, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_radio_sw_mbps", "SLIDER", ["Radio portative : débit relayé (Mbit/s)", "Débit maximal relayé à l'équipe. Une radio tactique transporte bien moins qu'une MPU5 : les photos et vidéos passent lentement."],
     _sim, [0.1, 20, 0.5, 1], 1] call comspec_atak_native_fnc_addSetting;
+// Liaison réaliste téléphone <-> radio de données (fn_mpuLink) : désactivée par défaut (comportement d'avant). Réglages
+// serveur, une mission peut les imposer (cba_settings.sqf de la mission).
+private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
+["comspec_atak_native_mpu_real", "CHECKBOX",
+    ["Liaison téléphone-radio réaliste", "Comme sur le terrain, le téléphone n'a pas de réseau tactique à lui : il passe par une radio de données reliée par câble EUD ou par le Wi-Fi d'une MPU5 (menu ACE Téléphone ATAK > Radio de données, ou app Réseau). Les MPU5 allumées sur le même canal forment un maillage avec les relais de la mission. Décoché : comportement d'avant."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_require", "CHECKBOX",
+    ["Radio de données obligatoire", "Sans radio reliée et en service, plus aucun réseau (le Bluetooth entre téléphones et les données déjà reçues restent). Décoché : sans radio, le téléphone garde son réseau d'avant ; la radio ne fait que l'améliorer."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_cable", "CHECKBOX",
+    ["Câble EUD obligatoire", "Il faut l'objet « Câble EUD » dans l'inventaire pour relier le téléphone à la MPU5 ou à une radio tactique par câble."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_wifi", "CHECKBOX",
+    ["Wi-Fi de la MPU5 autorisé", "Le téléphone peut se relier sans câble au Wi-Fi d'une MPU5 portée ou posée au sol, à quelques mètres."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_wifi_range", "SLIDER",
+    ["Portée du Wi-Fi de la MPU5 (m)", "Au-delà, la liaison Wi-Fi tombe (elle revient seule en se rapprochant de la radio)."],
+    _mpuCat, [2, 50, 8, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_hours", "SLIDER",
+    ["Autonomie de la MPU5 (heures)", "Durée d'une batterie pleine à pleine puissance (6 W). À 3 W elle tient environ 1,3 fois plus, à 1 W presque 2 fois plus. Batterie vide : radio coupée, plus de maillage."],
+    _mpuCat, [0.5, 48, 10, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_hop_ms", "SLIDER",
+    ["Latence par saut du maillage (ms)", "Délai ajouté par chaque radio traversée jusqu'à la passerelle. La portée (6 W) et le débit d'une MPU5 sont les réglages « Portée de la MPU5 » et « Débit relayé par une MPU5 » (section Simulation)."],
+    _mpuCat, [0, 300, 15, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_tac_kbps", "SLIDER",
+    ["Radio tactique : débit de données (kbit/s)", "Débit d'une radio portative ACRE2 / TFAR (PRC-152, PRC-148…) reliée en données ; une radio longue portée (PRC-117, véhicule) en a 4 fois plus. Autorisées par le réglage « Données par radio ACRE2 / TFAR » (section Simulation)."],
+    _mpuCat, [2, 500, 32, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_tac_ms", "SLIDER",
+    ["Radio tactique : latence (ms)", "Délai de chaque envoi par une radio tactique."],
+    _mpuCat, [100, 5000, 1200, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_tac_maxkb", "SLIDER",
+    ["Radio tactique : taille maximale d'un envoi (Ko)", "Au-delà (photos, fichiers), l'envoi attend une liaison MPU5. Pas de vidéo par radio tactique."],
+    _mpuCat, [5, 500, 40, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_aar", "CHECKBOX",
     ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s, et les pertes alliées, pour revoir la mission dans l'app Rejeu. Décochez pour ne rien enregistrer."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;

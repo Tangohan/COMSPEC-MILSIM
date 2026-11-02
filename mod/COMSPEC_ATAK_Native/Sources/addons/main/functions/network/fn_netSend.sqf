@@ -11,7 +11,9 @@
     - aucun signal : mis en file, parti dès que le réseau revient (vidé par la boucle de XEH_postInitClient) ;
       un envoi avec une clé remplace celui de même clé déjà en file (marqueur modifié plusieurs fois : seul le dernier part) ;
       les envois urgents (MEDEVAC, alertes, JTAC, rapports…) passent devant les autres dans la file et ne sont jamais
-      abandonnés quand elle est pleine (les autres les plus anciens partent).
+      abandonnés quand elle est pleine (les autres les plus anciens partent) ;
+    - radio tactique en données (fn_mpuLink "heavy") : un envoi trop lourd (photo, vidéo) attend en file une liaison
+      MPU5 ; la boucle de XEH_postInitClient ne fait partir que les envois assez légers (fn_mpuLink "maxKb").
     Renvoie "SENT" (immédiat), "DELAYED" ou "QUEUED".
 */
 params ["_code", ["_args", []], ["_label", "Message"], ["_kb", 1], ["_try", 1], ["_key", ""]];
@@ -31,7 +33,8 @@ if ((count _txAt) > 50) then { _txAt deleteAt 0; };
 missionNamespace setVariable ["COMSPEC_ATAK_NetTxAt", _txAt];
 if (_try isEqualTo 1) then { ["track", _kb] call comspec_atak_native_fnc_netLoad; };
 if !(_q get "sim") exitWith { ["IMMÉDIAT", "simulation coupée"] call _trace; _args call _code; "SENT" };
-if ((_q get "bars") isEqualTo 0 || {!(_q getOrDefault ["tx", true])}) exitWith {
+private _heavy = ["heavy", [_kb]] call comspec_atak_native_fnc_mpuLink;
+if ((_q get "bars") isEqualTo 0 || {!(_q getOrDefault ["tx", true])} || {_heavy}) exitWith {
     private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
     if (_key isNotEqualTo "") then { _queue = _queue select { (_x param [5, ""]) isNotEqualTo _key }; };
     private _urgent = { params ["_l"]; _l = toLower _l; (["medevac", "alerte", "salute", "jtac", "rapport", "blessure", "décès", "panique", "accusé"] findIf { (_l find _x) >= 0 }) >= 0 };
@@ -47,10 +50,11 @@ if ((_q get "bars") isEqualTo 0 || {!(_q getOrDefault ["tx", true])}) exitWith {
         private _i = _queue findIf { !([_x param [2, ""]] call _urgent) };
         _queue deleteAt (_i max 0);
     };
-    private _why = ["aucun signal", "réception seule"] select ((_q get "bars") > 0);
+    private _why = [["aucun signal", "réception seule"] select ((_q get "bars") > 0), "trop lourd pour la radio tactique"] select _heavy;
     ["EN FILE", _why] call _trace;
     missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue];
-    ["WARNING", format [["Pas de réseau : %1 en attente (%2 dans la file)", "Réception seule, émission impossible : %1 en attente (%2 dans la file)"] select ((_q get "bars") > 0), _label, count _queue], 4, 40] call comspec_atak_native_fnc_notify;
+    ["WARNING", if (_heavy) then { format ["Radio tactique : %1 trop lourd (%2 Ko), en attente d'une liaison MPU5 (%3 dans la file)", _label, round _kb, count _queue] } else {
+        format [["Pas de réseau : %1 en attente (%2 dans la file)", "Réception seule, émission impossible : %1 en attente (%2 dans la file)"] select ((_q get "bars") > 0), _label, count _queue] }, 4, 40] call comspec_atak_native_fnc_notify;
     "QUEUED"
 };
 // Canal partagé : cet envoi attend la fin de ceux déjà en cours (COMSPEC_ATAK_NetBusyUntil, horloge time) ; latence

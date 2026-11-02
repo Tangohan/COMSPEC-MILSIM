@@ -201,6 +201,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_pli; ["positions BFT", _t] call comspec_atak_native_fnc_perfAcc; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Radio maillée MPU5 et voix ACRE2 (fn_mpu5) : détection de l'objet, réseau voix publié, qui émet.
 ["init"] call comspec_atak_native_fnc_mpu5;
+// Liaison réaliste téléphone <-> radio de données (fn_mpuLink, réglage comspec_atak_native_mpu_real) : toutes les 2 s,
+// sans rien faire tant que le réglage est décoché.
+[{ ["tick"] call comspec_atak_native_fnc_mpuLink; }, 2] call COMSPEC_ATAK_PfhSpread;
 ["register"] call comspec_atak_native_fnc_zeusMenu;
 // Attributs ZEN des relais (fenêtre Éditer d'un pylône ou relais) et menu clic droit « ATAK · Relais ».
 ["register"] call comspec_atak_native_fnc_relayZeus;
@@ -715,8 +718,15 @@ addMissionEventHandler ["EntityKilled", {
     private _lq = [] call comspec_atak_native_fnc_linkQuality;
     if ((_lq get "bars") isEqualTo 0 || {!(_lq getOrDefault ["tx", true])}) exitWith {};
     // Au plus 5 envois toutes les 2 s : vider toute la file d'un coup figeait le jeu au retour du réseau.
-    private _batch = _queue select [0, 5];
-    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue select [5]];
+    // Radio tactique en données (fn_mpuLink) : les envois trop lourds restent en file jusqu'à une liaison MPU5.
+    private _lim = ["maxKb"] call comspec_atak_native_fnc_mpuLink;
+    private _batch = [];
+    private _rest = [];
+    if (_lim < 0) then { _batch = _queue select [0, 5]; _rest = _queue select [5]; } else {
+        { if ((count _batch) < 5 && {(_x param [3, 1]) <= _lim}) then { _batch pushBack _x; } else { _rest pushBack _x; }; } forEach _queue;
+    };
+    if (_batch isEqualTo []) exitWith {};
+    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _rest];
     if !(missionNamespace getVariable ["COMSPEC_ATAK_NetFlushing", false]) then { ["SUCCESS", format ["Réseau revenu : %1 envoi(s) en attente partent", count _queue], 4, 30] call comspec_atak_native_fnc_notify; };
     missionNamespace setVariable ["COMSPEC_ATAK_NetFlushing", (count _queue) > 5];
     { _x call comspec_atak_native_fnc_netSend; } forEach _batch;
