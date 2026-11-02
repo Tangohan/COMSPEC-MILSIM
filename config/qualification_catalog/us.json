@@ -4381,6 +4381,2834 @@
           "title": "Joint terminal attack controller — Wikipedia"
         }
       ]
+    },
+    {
+      "id": "us-asvab",
+      "code": "US-ASVAB",
+      "category": "selection",
+      "name": {
+        "fr": "Batterie de tests d’aptitude ASVAB (score GT)",
+        "en": "Armed Services Vocational Aptitude Battery (ASVAB, GT score)"
+      },
+      "official_name": "Armed Services Vocational Aptitude Battery (ASVAB)",
+      "short_name": "ASVAB",
+      "description": {
+        "fr": "Test d’aptitude passé par tout candidat à l’engagement dans les forces armées américaines. Ses sous-tests servent à calculer les « line scores » de l’US Army, dont le score General Technical (GT), qui conditionne l’accès à de nombreuses spécialités et aux cursus des opérations spéciales.",
+        "en": "Aptitude test taken by every applicant for enlistment in the U.S. armed forces. Its subtests are used to compute the Army’s line scores, including the General Technical (GT) score, which gates access to many specialties and to special operations pipelines."
+      },
+      "body": {
+        "fr": "Département de la Défense des États-Unis (programme de test d’engagement)",
+        "en": "U.S. Department of Defense (enlistment testing program)"
+      },
+      "issuer": {
+        "name": "U.S. Department of Defense",
+        "short_name": "DoD"
+      },
+      "reference": {
+        "fr": "Seuils GT des spécialités dans la DA PAM 600-3 / 600-25 de la CMF 18",
+        "en": "GT thresholds in DA PAM 600-3 / CMF 18 DA PAM 600-25"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Armed_Services_Vocational_Aptitude_Battery",
+          "title": "Armed Services Vocational Aptitude Battery (Wikipedia)"
+        },
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2022/08/03/a615c5d3/3-sf-da-pam-600-3.pdf",
+          "title": "DA PAM 600-3, Special Forces branch (army.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-dlab",
+      "code": "US-DLAB",
+      "category": "selection",
+      "name": {
+        "fr": "Test d’aptitude linguistique DLAB",
+        "en": "Defense Language Aptitude Battery (DLAB)"
+      },
+      "official_name": "Defense Language Aptitude Battery (DLAB)",
+      "short_name": "DLAB",
+      "description": {
+        "fr": "Test du département de la Défense qui mesure l’aptitude d’un candidat à apprendre une langue étrangère, sans exiger la connaissance préalable d’une langue. Un score minimal est requis pour l’accès à certaines spécialités, dont les opérations psychologiques et le renseignement linguistique.",
+        "en": "Department of Defense test measuring a candidate’s ability to learn a foreign language, without requiring prior knowledge of one. A minimum score is required for access to some specialties, including psychological operations and language-based intelligence."
+      },
+      "body": {
+        "fr": "Département de la Défense des États-Unis",
+        "en": "U.S. Department of Defense"
+      },
+      "issuer": {
+        "name": "U.S. Department of Defense",
+        "short_name": "DoD"
+      },
+      "reference": {
+        "fr": "Prérequis de la CMF 37 (DA PAM 600-25)",
+        "en": "CMF 37 prerequisites (DA PAM 600-25)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Defense_Language_Aptitude_Battery",
+          "title": "Defense Language Aptitude Battery (Wikipedia)"
+        },
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2024/03/01/eb8ef23c/cmf-37f-po-da-pam-600-25-v8-6-final-22-feb-24.pdf",
+          "title": "CMF 37 DA PAM 600-25 (army.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-dlpt",
+      "code": "US-DLPT",
+      "category": "communications",
+      "name": {
+        "fr": "Test de compétence linguistique DLPT",
+        "en": "Defense Language Proficiency Test (DLPT)"
+      },
+      "official_name": "Defense Language Proficiency Test (DLPT)",
+      "short_name": "DLPT",
+      "description": {
+        "fr": "Batterie de tests du département de la Défense qui évalue la compréhension écrite et orale d’une langue étrangère selon l’échelle ILR ; elle est souvent complétée par un entretien oral (OPI). Le score doit être revalidé périodiquement pour attester une aptitude linguistique à jour.",
+        "en": "Department of Defense test battery assessing reading and listening proficiency in a foreign language on the ILR scale, often complemented by an Oral Proficiency Interview (OPI). The score must be renewed periodically to show current language proficiency."
+      },
+      "body": {
+        "fr": "Defense Language Institute Foreign Language Center (concepteur des tests)",
+        "en": "Defense Language Institute Foreign Language Center (test developer)"
+      },
+      "issuer": {
+        "name": "Defense Language Institute Foreign Language Center",
+        "short_name": "DLIFLC"
+      },
+      "reference": {
+        "fr": "Programme linguistique du DoD ; exigences linguistiques de la DA PAM 600-3 (SF)",
+        "en": "DoD language program; language requirements in DA PAM 600-3 (SF)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Defense_Language_Proficiency_Tests",
+          "title": "Defense Language Proficiency Tests (Wikipedia)"
+        },
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2022/08/03/a615c5d3/3-sf-da-pam-600-3.pdf",
+          "title": "DA PAM 600-3, Special Forces branch (army.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-clearance-secret",
+      "code": "US-CLR-SECRET",
+      "category": "intelligence",
+      "name": {
+        "fr": "Habilitation de sécurité SECRET",
+        "en": "SECRET security clearance"
+      },
+      "official_name": "Personnel security clearance – SECRET",
+      "short_name": "Secret",
+      "description": {
+        "fr": "Habilitation individuelle donnant accès aux informations classifiées SECRET, délivrée après enquête de sécurité et décision d’habilitation. Elle est exigée pour de nombreux postes d’opérations spéciales et fait l’objet d’une réévaluation périodique.",
+        "en": "Individual clearance granting access to information classified SECRET, issued after a background investigation and an adjudication decision. It is required for many special operations positions and is subject to periodic reinvestigation."
+      },
+      "body": {
+        "fr": "Département de la Défense (enquêtes et habilitations du personnel)",
+        "en": "Department of Defense (personnel vetting and adjudication)"
+      },
+      "issuer": {
+        "name": "Defense Counterintelligence and Security Agency",
+        "short_name": "DCSA"
+      },
+      "reference": {
+        "fr": "Executive Order 13526 ; programme de sécurité du personnel du DoD",
+        "en": "Executive Order 13526; DoD personnel security program"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Security_clearance",
+          "title": "Security clearance (Wikipedia)"
+        },
+        {
+          "url": "https://www.dcsa.mil/",
+          "title": "Defense Counterintelligence and Security Agency (dcsa.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-clearance-ts",
+      "code": "US-CLR-TS",
+      "category": "intelligence",
+      "name": {
+        "fr": "Habilitation de sécurité TOP SECRET (enquête SSBI)",
+        "en": "TOP SECRET security clearance (SSBI investigation)"
+      },
+      "official_name": "Personnel security clearance – TOP SECRET (SSBI / Tier 5)",
+      "short_name": "Top Secret",
+      "description": {
+        "fr": "Habilitation individuelle donnant accès aux informations TOP SECRET, accordée après une enquête approfondie (historiquement la Single Scope Background Investigation, SSBI, aujourd’hui de niveau Tier 5). Elle conditionne souvent l’accès aux informations compartimentées (SCI) exigé par les emplois de renseignement et d’aviation spéciale.",
+        "en": "Individual clearance granting access to TOP SECRET information, issued after an extensive investigation (historically the Single Scope Background Investigation, SSBI, now Tier 5). It is often the basis for the Sensitive Compartmented Information (SCI) access required by intelligence and special operations aviation jobs."
+      },
+      "body": {
+        "fr": "Département de la Défense (enquêtes et habilitations du personnel)",
+        "en": "Department of Defense (personnel vetting and adjudication)"
+      },
+      "issuer": {
+        "name": "Defense Counterintelligence and Security Agency",
+        "short_name": "DCSA"
+      },
+      "reference": {
+        "fr": "Executive Order 13526 ; programme de sécurité du personnel du DoD",
+        "en": "Executive Order 13526; DoD personnel security program"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Security_clearance",
+          "title": "Security clearance (Wikipedia)"
+        },
+        {
+          "url": "https://www.dcsa.mil/",
+          "title": "Defense Counterintelligence and Security Agency (dcsa.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-arsof-advanced-skills",
+      "code": "US-ARSOF-ADVSK",
+      "category": "sof",
+      "name": {
+        "fr": "Cours de compétences avancées ARSOF (SWCS)",
+        "en": "ARSOF advanced skills courses (SWCS)"
+      },
+      "official_name": "ARSOF advanced skills and functional courses",
+      "short_name": "ARSOF Adv Skills",
+      "description": {
+        "fr": "Ensemble des cours de compétences avancées et fonctionnelles proposés par le SWCS aux personnels des forces spéciales, des opérations psychologiques et des affaires civiles déjà qualifiés (chute libre opérationnelle, plongée de combat, techniques avancées, etc.). Ils donnent en général un identifiant de compétence (ASI/SQI) et sont recherchés pour les postes de chef d’équipe et de sergent-major.",
+        "en": "Set of advanced skill and functional courses offered by SWCS to already qualified Special Forces, Psychological Operations and Civil Affairs personnel (military free fall, combat diving, advanced techniques, etc.). They usually award a skill identifier (ASI/SQI) and are sought for team sergeant and sergeant major positions."
+      },
+      "body": {
+        "fr": "Commandement des forces d’opérations spéciales de l’US Army (formation)",
+        "en": "U.S. Army Special Operations Command (training)"
+      },
+      "issuer": {
+        "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
+        "short_name": "USAJFKSWCS"
+      },
+      "reference": {
+        "fr": "DA PAM 600-25 de la CMF 18 et de la CMF 37 (développement professionnel)",
+        "en": "CMF 18 and CMF 37 DA PAM 600-25 (professional development)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2025/02/07/4a45e99c/cmf-18-da-pam-600-25-7-feb-25.pdf",
+          "title": "CMF 18 DA PAM 600-25 (army.mil)"
+        },
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2024/03/01/eb8ef23c/cmf-37f-po-da-pam-600-25-v8-6-final-22-feb-24.pdf",
+          "title": "CMF 37 DA PAM 600-25 (army.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-sf-mac",
+      "code": "US-SF-MAC",
+      "category": "maritime",
+      "name": {
+        "fr": "Maritime Assessment Course (évaluation maritime des groupes FS)",
+        "en": "Maritime Assessment Course (SF group dive screening)"
+      },
+      "official_name": "Maritime Assessment Course (MAC)",
+      "short_name": "MAC",
+      "description": {
+        "fr": "Évaluation d’une dizaine de jours conduite par chaque groupe de forces spéciales pour préparer ses candidats à la plongée de combat : fondamentaux aquatiques et maîtrise du stress sous l’eau. Sa réussite donne un certificat de validation exigé pour entrer au Combat Diver Qualification Course.",
+        "en": "Roughly ten-day assessment run by each Special Forces group to prepare its candidates for combat diving: aquatic fundamentals and composure under water. Passing it earns a validation certificate required to attend the Combat Diver Qualification Course."
+      },
+      "body": {
+        "fr": "Groupes de forces spéciales (aéroportés) de l’US Army",
+        "en": "U.S. Army Special Forces Groups (Airborne)"
+      },
+      "issuer": {
+        "name": "Special Forces Groups (Airborne)",
+        "short_name": "SFG(A)"
+      },
+      "reference": {
+        "fr": "Article officiel de l’US Army sur le CDQC (army.mil, 2025)",
+        "en": "Official U.S. Army article on the CDQC (army.mil, 2025)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.army.mil/article/295908/special_operations_forces_sharpen_sub_surface_lethality_at_qualification_course",
+          "title": "Special Operations Forces sharpen sub-surface lethality at qualification course (army.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-cap",
+      "code": "US-ARMY-CAP",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Programme d’évaluation au commandement (BCAP / CAP)",
+        "en": "Command Assessment Program (BCAP / CAP)"
+      },
+      "official_name": "Battalion Commander Assessment Program (BCAP) – Command Assessment Program",
+      "short_name": "BCAP / CAP",
+      "description": {
+        "fr": "Évaluation de plusieurs jours créée en 2020 à Fort Knox pour sélectionner les lieutenants-colonels appelés au commandement de bataillon (liste de sélection centralisée) : tests cognitifs et physiques, épreuves écrites et orales, évaluation psychologique et retours des pairs et subordonnés. Le programme a ensuite été étendu au commandement de brigade et aux sergents-majors.",
+        "en": "Multi-day assessment created in 2020 at Fort Knox to select lieutenant colonels for battalion command (Centralized Selection List): cognitive and physical tests, written and verbal assessments, psychological evaluation and peer and subordinate feedback. The program was later extended to brigade command and sergeants major."
+      },
+      "body": {
+        "fr": "US Army (gestion des talents, Human Resources Command)",
+        "en": "U.S. Army (talent management, Human Resources Command)"
+      },
+      "issuer": {
+        "name": "U.S. Army Human Resources Command – Command Assessment Program",
+        "short_name": "HRC CAP"
+      },
+      "reference": {
+        "fr": "Articles officiels de l’US Army sur le BCAP (army.mil)",
+        "en": "Official U.S. Army articles on BCAP (army.mil)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://www.army.mil/article/243040/bcap_the_battalion_command_assessment_program",
+          "title": "BCAP: The Battalion Command Assessment Program (army.mil)"
+        },
+        {
+          "url": "https://www.army.mil/article/229500/army_announces_new_battalion_commander_selection_program",
+          "title": "Army announces new battalion commander selection program (army.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-sfwoac",
+      "code": "US-SFWOAC",
+      "category": "sof",
+      "name": {
+        "fr": "Cours avancé des warrant officers des forces spéciales",
+        "en": "Special Forces Warrant Officer Advanced Course"
+      },
+      "official_name": "Special Forces Warrant Officer Advanced Course (SFWOAC)",
+      "short_name": "SFWOAC",
+      "description": {
+        "fr": "Cours de formation professionnelle des warrant officers 180A expérimentés, conduit par le Special Forces Warrant Officer Institute du SWCS. Il prépare aux fonctions d’état-major et d’opérations au niveau compagnie (SFOD-B), bataillon et groupe.",
+        "en": "Professional military education course for experienced 180A warrant officers, delivered by the SWCS Special Forces Warrant Officer Institute. It prepares them for operations and staff duties at company (SFOD-B), battalion and group level."
+      },
+      "body": {
+        "fr": "Special Forces Warrant Officer Institute (SWCS)",
+        "en": "Special Forces Warrant Officer Institute (SWCS)"
+      },
+      "issuer": {
+        "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
+        "short_name": "USAJFKSWCS"
+      },
+      "reference": {
+        "fr": "DA PAM 600-3, branche forces spéciales (warrant officers 180A)",
+        "en": "DA PAM 600-3, Special Forces branch (180A warrant officers)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Warrant officer 180A qualifié (SFWOTTC)"
+        ],
+        "en": [
+          "Qualified 180A warrant officer (SFWOTTC)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2022/08/03/a615c5d3/3-sf-da-pam-600-3.pdf",
+          "title": "DA PAM 600-3, Special Forces branch (army.mil)"
+        },
+        {
+          "url": "https://www.army.mil/article/284323/special_forces_warrant_officer_institute_shapes_next_generation_of_warrants_for_future_warfare",
+          "title": "Special Forces Warrant Officer Institute shapes next generation of warrants (army.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-13f-ait",
+      "code": "US-13F-AIT",
+      "category": "fires",
+      "name": {
+        "fr": "AIT 13F (spécialiste appui-feux)",
+        "en": "13F Fire Support Specialist AIT"
+      },
+      "official_name": "Fire Support Specialist (13F) Advanced Individual Training",
+      "short_name": "13F AIT",
+      "description": {
+        "fr": "Formation individuelle avancée suivie après la formation de base à Fort Sill : observation et réglage des feux d’artillerie, de mortier et d’appui aérien, emploi des systèmes de désignation et de transmission des demandes de tir. Elle donne la spécialité 13F, préalable aux postes d’appui-feux du 75th Ranger Regiment.",
+        "en": "Advanced Individual Training taken after basic training at Fort Sill: observing and adjusting artillery, mortar and air-delivered fires, using targeting and fire-request systems. It awards MOS 13F, a prerequisite for fire support positions in the 75th Ranger Regiment."
+      },
+      "body": {
+        "fr": "US Army (formation individuelle avancée)",
+        "en": "U.S. Army (Advanced Individual Training)"
+      },
+      "issuer": {
+        "name": "U.S. Army Field Artillery School",
+        "short_name": "USAFAS"
+      },
+      "reference": {
+        "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
+        "en": "MOS description in the branch DA PAM 600-25"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.army.mil/article/239985/fort_sill_ait_students_take_on_ranger_challenge_in_pt",
+          "title": "Fort Sill AIT students take on Ranger challenge in PT (army.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-35f-ait",
+      "code": "US-35F-AIT",
+      "category": "intelligence",
+      "name": {
+        "fr": "AIT 35F (analyste renseignement)",
+        "en": "35F Intelligence Analyst AIT"
+      },
+      "official_name": "Intelligence Analyst (35F) Advanced Individual Training",
+      "short_name": "35F AIT",
+      "description": {
+        "fr": "Formation individuelle avancée de l’analyste renseignement à Fort Huachuca : préparation du renseignement de l’environnement opérationnel, analyse toutes sources, production et diffusion du renseignement. Elle donne la spécialité 35F.",
+        "en": "Advanced Individual Training for intelligence analysts at Fort Huachuca: intelligence preparation of the operational environment, all-source analysis, intelligence production and dissemination. It awards MOS 35F."
+      },
+      "body": {
+        "fr": "US Army (formation individuelle avancée)",
+        "en": "U.S. Army (Advanced Individual Training)"
+      },
+      "issuer": {
+        "name": "U.S. Army Intelligence Center of Excellence",
+        "short_name": "USAICoE"
+      },
+      "reference": {
+        "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
+        "en": "MOS description in the branch DA PAM 600-25"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2023/02/13/9a58a638/cmf-35-final-13-feb-23.pdf",
+          "title": "CMF 35 DA PAM 600-25 (army.mil)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Fort_Huachuca",
+          "title": "Fort Huachuca (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-35m-ait",
+      "code": "US-35M-AIT",
+      "category": "intelligence",
+      "name": {
+        "fr": "AIT 35M (collecteur de renseignement humain)",
+        "en": "35M Human Intelligence Collector AIT"
+      },
+      "official_name": "Human Intelligence Collector (35M) Advanced Individual Training",
+      "short_name": "35M AIT",
+      "description": {
+        "fr": "Formation individuelle avancée du collecteur de renseignement d’origine humaine à Fort Huachuca : techniques d’interrogatoire et de débriefing, rédaction des rapports et exploitation de documents, dans le respect du droit applicable. Elle donne la spécialité 35M.",
+        "en": "Advanced Individual Training for human intelligence collectors at Fort Huachuca: interrogation and debriefing techniques, reporting and document exploitation, within the applicable legal framework. It awards MOS 35M."
+      },
+      "body": {
+        "fr": "US Army (formation individuelle avancée)",
+        "en": "U.S. Army (Advanced Individual Training)"
+      },
+      "issuer": {
+        "name": "U.S. Army Intelligence Center of Excellence",
+        "short_name": "USAICoE"
+      },
+      "reference": {
+        "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
+        "en": "MOS description in the branch DA PAM 600-25"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2023/02/13/9a58a638/cmf-35-final-13-feb-23.pdf",
+          "title": "CMF 35 DA PAM 600-25 (army.mil)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Fort_Huachuca",
+          "title": "Fort Huachuca (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-35n-ait",
+      "code": "US-35N-AIT",
+      "category": "intelligence",
+      "name": {
+        "fr": "AIT 35N (analyste renseignement d’origine électromagnétique)",
+        "en": "35N Signals Intelligence Analyst AIT"
+      },
+      "official_name": "Signals Intelligence Analyst (35N) Advanced Individual Training",
+      "short_name": "35N AIT",
+      "description": {
+        "fr": "Formation individuelle avancée de l’analyste du renseignement d’origine électromagnétique, dispensée sur le site de formation cryptologique de Goodfellow AFB (Texas). Elle donne la spécialité 35N et exige une habilitation TOP SECRET.",
+        "en": "Advanced Individual Training for signals intelligence analysts, delivered at the Goodfellow AFB (Texas) cryptologic training site. It awards MOS 35N and requires a TOP SECRET clearance."
+      },
+      "body": {
+        "fr": "US Army (formation individuelle avancée)",
+        "en": "U.S. Army (Advanced Individual Training)"
+      },
+      "issuer": {
+        "name": "U.S. Army Intelligence Center of Excellence",
+        "short_name": "USAICoE"
+      },
+      "reference": {
+        "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
+        "en": "MOS description in the branch DA PAM 600-25"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2023/02/13/9a58a638/cmf-35-final-13-feb-23.pdf",
+          "title": "CMF 35 DA PAM 600-25 (army.mil)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Goodfellow_Air_Force_Base",
+          "title": "Goodfellow Air Force Base (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-35p-ait",
+      "code": "US-35P-AIT",
+      "category": "intelligence",
+      "name": {
+        "fr": "AIT 35P (linguiste cryptologue)",
+        "en": "35P Cryptologic Linguist AIT"
+      },
+      "official_name": "Cryptologic Linguist (35P) Advanced Individual Training",
+      "short_name": "35P AIT",
+      "description": {
+        "fr": "Cursus du linguiste cryptologue : apprentissage d’une langue au Defense Language Institute (Monterey), puis formation cryptologique à Goodfellow AFB (Texas). Il donne la spécialité 35P, employée notamment dans les équipes SOT-A des forces spéciales.",
+        "en": "Cryptologic linguist pipeline: language training at the Defense Language Institute (Monterey), then cryptologic training at Goodfellow AFB (Texas). It awards MOS 35P, used in particular in Special Forces SOT-A teams."
+      },
+      "body": {
+        "fr": "US Army (formation individuelle avancée)",
+        "en": "U.S. Army (Advanced Individual Training)"
+      },
+      "issuer": {
+        "name": "U.S. Army Intelligence Center of Excellence",
+        "short_name": "USAICoE"
+      },
+      "reference": {
+        "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
+        "en": "MOS description in the branch DA PAM 600-25"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2023/02/13/9a58a638/cmf-35-final-13-feb-23.pdf",
+          "title": "CMF 35 DA PAM 600-25 (army.mil)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Goodfellow_Air_Force_Base",
+          "title": "Goodfellow Air Force Base (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-signal-ait",
+      "code": "US-SIG-AIT",
+      "category": "communications",
+      "name": {
+        "fr": "AIT de spécialité transmissions (Signal Corps)",
+        "en": "Signal Corps MOS AIT"
+      },
+      "official_name": "Signal Corps Advanced Individual Training",
+      "short_name": "Signal AIT",
+      "description": {
+        "fr": "Formation individuelle avancée des spécialités de transmissions de l’US Army (réseaux, radio, satellite, systèmes d’information), dispensée au Cyber Center of Excellence de Fort Eisenhower (ex-Fort Gordon). Elle est le préalable aux affectations dans les unités de transmissions des opérations spéciales comme le 112th Signal Battalion.",
+        "en": "Advanced Individual Training for U.S. Army signal specialties (networks, radio, satellite, information systems), delivered at the Cyber Center of Excellence at Fort Eisenhower (formerly Fort Gordon). It is the prerequisite for assignment to special operations signal units such as the 112th Signal Battalion."
+      },
+      "body": {
+        "fr": "US Army (formation individuelle avancée)",
+        "en": "U.S. Army (Advanced Individual Training)"
+      },
+      "issuer": {
+        "name": "U.S. Army Cyber Center of Excellence",
+        "short_name": "CCoE"
+      },
+      "reference": {
+        "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
+        "en": "MOS description in the branch DA PAM 600-25"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://arsof-history.org/articles/19dec_no_ordinary_signal_unit_page_1.html",
+          "title": "No ordinary signal unit (arsof-history.org)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Fort_Eisenhower",
+          "title": "Fort Eisenhower (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-68w-ait",
+      "code": "US-68W-AIT",
+      "category": "medical",
+      "name": {
+        "fr": "Formation de spécialiste 68W (combat medic)",
+        "en": "68W Combat Medic Specialist training"
+      },
+      "official_name": "Combat Medic Specialist (68W) Advanced Individual Training",
+      "short_name": "68W AIT",
+      "description": {
+        "fr": "Formation individuelle avancée de l’auxiliaire sanitaire de l’US Army à JBSA-Fort Sam Houston : soins d’urgence et de traumatologie, évacuation et soins de base. Elle donne la spécialité 68W et inclut la certification de technicien médical d’urgence (NREMT-EMT).",
+        "en": "Advanced Individual Training for U.S. Army combat medics at JBSA-Fort Sam Houston: emergency and trauma care, evacuation and basic care. It awards MOS 68W and includes National Registry EMT certification."
+      },
+      "body": {
+        "fr": "US Army (formation individuelle avancée)",
+        "en": "U.S. Army (Advanced Individual Training)"
+      },
+      "issuer": {
+        "name": "U.S. Army Medical Center of Excellence",
+        "short_name": "MEDCoE"
+      },
+      "reference": {
+        "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
+        "en": "MOS description in the branch DA PAM 600-25"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2023/10/31/1721efce/cmf-68-da-pam-600-25-22-aug-23.pdf",
+          "title": "CMF 68 DA PAM 600-25 (army.mil)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Combat_medic",
+          "title": "Combat medic (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-15u-ait",
+      "code": "US-15U-AIT",
+      "category": "aviation",
+      "name": {
+        "fr": "AIT 15U (mécanicien hélicoptère CH-47)",
+        "en": "15U CH-47 Helicopter Repairer AIT"
+      },
+      "official_name": "CH-47 Helicopter Repairer (15U) Advanced Individual Training",
+      "short_name": "15U AIT",
+      "description": {
+        "fr": "Formation individuelle avancée du mécanicien d’hélicoptère lourd CH-47 Chinook, dispensée à Fort Eustis par l’école de logistique aéronautique de l’Army. Elle donne la spécialité 15U, préalable aux fonctions de chef d’équipage et de mécanicien navigant sur MH-47 au 160th SOAR.",
+        "en": "Advanced Individual Training for CH-47 Chinook heavy helicopter repairers, delivered at Fort Eustis by the Army aviation logistics school. It awards MOS 15U, the prerequisite for MH-47 crew chief and flight engineer duties in the 160th SOAR."
+      },
+      "body": {
+        "fr": "US Army (formation individuelle avancée)",
+        "en": "U.S. Army (Advanced Individual Training)"
+      },
+      "issuer": {
+        "name": "128th Aviation Brigade (U.S. Army Aviation Logistics School)",
+        "short_name": "128th Avn Bde"
+      },
+      "reference": {
+        "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
+        "en": "MOS description in the branch DA PAM 600-25"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2023/08/25/0b908d89/cmf-15-da-pam-600-25-25-aug-23.pdf",
+          "title": "CMF 15 DA PAM 600-25 (army.mil)"
+        },
+        {
+          "url": "https://arsof-history.org/articles/19sept_enlisted_green_platoon_page_1.html",
+          "title": "Enlisted Green Platoon (arsof-history.org)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-15w-ait",
+      "code": "US-15W-AIT",
+      "category": "aviation",
+      "name": {
+        "fr": "AIT 15W (opérateur de drones)",
+        "en": "15W UAS Operator AIT"
+      },
+      "official_name": "Unmanned Aircraft Systems Operator (15W) Advanced Individual Training",
+      "short_name": "15W AIT",
+      "description": {
+        "fr": "Formation individuelle avancée de l’opérateur de systèmes aériens sans pilote de l’US Army à Fort Huachuca : pilotage, préparation de mission et exploitation des capteurs. Elle donne la spécialité 15W (les réparateurs de drones relèvent de la spécialité voisine 15E) et précède l’affectation à la compagnie Gray Eagle du 160th SOAR.",
+        "en": "Advanced Individual Training for U.S. Army unmanned aircraft systems operators at Fort Huachuca: flying, mission planning and sensor employment. It awards MOS 15W (UAS repairers belong to the related MOS 15E) and precedes assignment to the 160th SOAR Gray Eagle company."
+      },
+      "body": {
+        "fr": "US Army (formation individuelle avancée)",
+        "en": "U.S. Army (Advanced Individual Training)"
+      },
+      "issuer": {
+        "name": "U.S. Army Aviation Center of Excellence – UAS training (Fort Huachuca)",
+        "short_name": "USAACE"
+      },
+      "reference": {
+        "fr": "Fiche de la spécialité dans la DA PAM 600-25 de la branche",
+        "en": "MOS description in the branch DA PAM 600-25"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2023/08/25/0b908d89/cmf-15-da-pam-600-25-25-aug-23.pdf",
+          "title": "CMF 15 DA PAM 600-25 (army.mil)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Fort_Huachuca",
+          "title": "Fort Huachuca (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "us-joint-targeting",
+      "code": "US-JTS-JTSC",
+      "category": "intelligence",
+      "name": {
+        "fr": "Cours de ciblage interarmées (Joint Targeting School)",
+        "en": "Joint Targeting Course (Joint Targeting School)"
+      },
+      "official_name": "Joint Targeting Staff Course (Joint Targeting School)",
+      "short_name": "JTSC",
+      "description": {
+        "fr": "Formation interarmées au processus de ciblage (développement des cibles, analyse, estimation des dommages) dispensée par la Joint Targeting School de Dam Neck (Virginie). Elle est recherchée pour les analystes renseignement qui appuient les opérations spéciales.",
+        "en": "Joint training in the targeting process (target development, analysis, damage assessment) delivered by the Joint Targeting School at Dam Neck, Virginia. It is sought for intelligence analysts supporting special operations."
+      },
+      "body": {
+        "fr": "État-major interarmées (formation interarmées)",
+        "en": "Joint Staff (joint training)"
+      },
+      "issuer": {
+        "name": "Joint Targeting School",
+        "short_name": "JTS"
+      },
+      "reference": {
+        "fr": "Doctrine de ciblage interarmées (JP 3-60) ; DA PAM 600-25 de la CMF 35",
+        "en": "Joint targeting doctrine (JP 3-60); CMF 35 DA PAM 600-25"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2023/02/13/9a58a638/cmf-35-final-13-feb-23.pdf",
+          "title": "CMF 35 DA PAM 600-25 (army.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-pic",
+      "code": "US-AVN-PIC",
+      "category": "aviation",
+      "name": {
+        "fr": "Désignation de commandant de bord (Pilot in Command)",
+        "en": "Pilot in Command (PIC) designation"
+      },
+      "official_name": "Pilot in Command (PIC)",
+      "short_name": "PIC",
+      "description": {
+        "fr": "Désignation accordée par le commandant d’unité à un aviateur de l’Army ayant démontré, dans le cadre du programme d’entraînement des équipages, sa capacité à commander l’aéronef et l’équipage. Le 160th SOAR l’exige de ses candidats pilotes avant l’évaluation d’entrée.",
+        "en": "Designation granted by the unit commander to an Army aviator who has shown, under the aircrew training program, the ability to command the aircraft and crew. The 160th SOAR requires it from its pilot candidates before the entry assessment."
+      },
+      "body": {
+        "fr": "Aviation de l’US Army (programme d’entraînement des équipages)",
+        "en": "U.S. Army Aviation (Aircrew Training Program)"
+      },
+      "issuer": {
+        "name": "U.S. Army Aviation Center of Excellence",
+        "short_name": "USAACE"
+      },
+      "reference": {
+        "fr": "AR 95-1 et programme d’entraînement des équipages (Aircrew Training Program)",
+        "en": "AR 95-1 and the Aircrew Training Program"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://go160thsoar.com/warrant/",
+          "title": "Warrant officer careers (go160thsoar.com)"
+        },
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2025/12/04/720183c2/chapter-8b-wo-specifications.pdf",
+          "title": "DA PAM 611-21 chapter 8b, warrant officer specifications (army.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-avn-bolc",
+      "code": "US-AVN-BOLC",
+      "category": "aviation",
+      "name": {
+        "fr": "Cours de base des officiers de l’aviation (AOC 15B)",
+        "en": "Aviation Basic Officer Leader Course (AOC 15B)"
+      },
+      "official_name": "Aviation Basic Officer Leader Course (BOLC)",
+      "short_name": "Aviation BOLC",
+      "description": {
+        "fr": "Formation initiale des lieutenants de l’aviation de l’Army à Fort Novosel (ex-Fort Rucker), associée à la formation de pilote d’hélicoptère : vol initial, qualification sur aéronef et emploi interarmes de l’aviation. Elle donne la spécialité d’officier 15B (opérations interarmes aviation).",
+        "en": "Initial training for Army aviation lieutenants at Fort Novosel (formerly Fort Rucker), combined with helicopter flight training: initial flight, aircraft qualification and combined arms employment of aviation. It awards officer specialty 15B (Aviation Combined Arms Operations)."
+      },
+      "body": {
+        "fr": "École d’aviation de l’US Army",
+        "en": "U.S. Army Aviation School"
+      },
+      "issuer": {
+        "name": "U.S. Army Aviation Center of Excellence",
+        "short_name": "USAACE"
+      },
+      "reference": {
+        "fr": "DA PAM 600-3 / 611-21, branche aviation (chapitre 3)",
+        "en": "DA PAM 600-3 / 611-21, Aviation branch (chapter 3)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2025/12/04/e1190672/chapter-3-officer-branches-and-fas.pdf",
+          "title": "DA PAM 611-21 chapter 3, officer branches (army.mil)"
+        },
+        {
+          "url": "https://go160thsoar.com/officer/",
+          "title": "Officer careers (go160thsoar.com)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-avccc",
+      "code": "US-AVN-CCC",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours de carrière des capitaines de l’aviation",
+        "en": "Aviation Captains Career Course"
+      },
+      "official_name": "Aviation Captains Career Course (AVCCC)",
+      "short_name": "AVCCC",
+      "description": {
+        "fr": "Cours de formation professionnelle des capitaines de l’aviation de l’Army à Fort Novosel, qui prépare au commandement de compagnie et aux fonctions d’état-major de bataillon et de brigade. Il est exigé des officiers appelés à commander une compagnie au 160th SOAR.",
+        "en": "Professional military education course for Army aviation captains at Fort Novosel, preparing them for company command and battalion and brigade staff duties. It is required of officers who will command a company in the 160th SOAR."
+      },
+      "body": {
+        "fr": "École d’aviation de l’US Army",
+        "en": "U.S. Army Aviation School"
+      },
+      "issuer": {
+        "name": "U.S. Army Aviation Center of Excellence",
+        "short_name": "USAACE"
+      },
+      "reference": {
+        "fr": "DA PAM 600-3, branche aviation",
+        "en": "DA PAM 600-3, Aviation branch"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2025/12/04/e1190672/chapter-3-officer-branches-and-fas.pdf",
+          "title": "DA PAM 611-21 chapter 3, officer branches (army.mil)"
+        },
+        {
+          "url": "https://go160thsoar.com/officer/",
+          "title": "Officer careers (go160thsoar.com)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-awobc",
+      "code": "US-AVN-WOBC",
+      "category": "aviation",
+      "name": {
+        "fr": "Cours de base des warrant officers de l’aviation",
+        "en": "Aviation Warrant Officer Basic Course"
+      },
+      "official_name": "Aviation Warrant Officer Basic Course (WOBC)",
+      "short_name": "Avn WOBC",
+      "description": {
+        "fr": "Formation initiale des warrant officers de l’aviation de l’Army à Fort Novosel, après la Warrant Officer Candidate School : formation technique et tactique de la spécialité. Pour les techniciens 150U (drones), elle fait suite à une spécialité d’origine d’opérateur ou de réparateur de drones.",
+        "en": "Initial training for Army aviation warrant officers at Fort Novosel, after Warrant Officer Candidate School: technical and tactical training in the specialty. For 150U (UAS) technicians it follows a feeder MOS as a UAS operator or repairer."
+      },
+      "body": {
+        "fr": "École d’aviation de l’US Army",
+        "en": "U.S. Army Aviation School"
+      },
+      "issuer": {
+        "name": "U.S. Army Aviation Center of Excellence",
+        "short_name": "USAACE"
+      },
+      "reference": {
+        "fr": "DA PAM 611-21, chapitre 8b (spécifications warrant officers)",
+        "en": "DA PAM 611-21, chapter 8b (warrant officer specifications)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2025/12/04/720183c2/chapter-8b-wo-specifications.pdf",
+          "title": "DA PAM 611-21 chapter 8b, warrant officer specifications (army.mil)"
+        },
+        {
+          "url": "https://go160thsoar.com/warrant/",
+          "title": "Warrant officer careers (go160thsoar.com)"
+        }
+      ]
+    },
+    {
+      "id": "us-160-flight-lead",
+      "code": "US-160-FL",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification chef de patrouille (Flight Lead, 160th SOAR)",
+        "en": "Flight Lead qualification (160th SOAR)"
+      },
+      "official_name": "Flight Lead",
+      "short_name": "Flight Lead",
+      "description": {
+        "fr": "Qualification de l’aviateur pleinement qualifié en mission (FMQ) apte à conduire une formation d’aéronefs et à planifier une mission en tant que chef de patrouille, après une évaluation en vol et un examen devant un jury. Elle ouvre ensuite la voie aux qualifications d’instructeur.",
+        "en": "Qualification of a Fully Mission Qualified (FMQ) aviator allowed to lead a formation of aircraft and plan a mission as flight lead, after a flight evaluation and an oral board. It then opens the way to instructor qualifications."
+      },
+      "body": {
+        "fr": "160th Special Operations Aviation Regiment (Airborne)",
+        "en": "160th Special Operations Aviation Regiment (Airborne)"
+      },
+      "issuer": {
+        "name": "160th Special Operations Aviation Regiment (Airborne)",
+        "short_name": "160th SOAR(A)"
+      },
+      "reference": {
+        "fr": "Pages officielles de recrutement du 160th SOAR",
+        "en": "Official 160th SOAR recruiting pages"
+      },
+      "prerequisites": {
+        "fr": [
+          "Statut FMQ (pleinement qualifié en mission)"
+        ],
+        "en": [
+          "Fully Mission Qualified (FMQ) status"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://go160thsoar.com/warrant/",
+          "title": "Warrant officer careers (go160thsoar.com)"
+        },
+        {
+          "url": "https://go160thsoar.com/officer/",
+          "title": "Officer careers (go160thsoar.com)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-ipc",
+      "code": "US-AVN-IPC",
+      "category": "aviation",
+      "name": {
+        "fr": "Cours de pilote instructeur (IPC)",
+        "en": "Instructor Pilot Course (IPC)"
+      },
+      "official_name": "Instructor Pilot Course (IPC)",
+      "short_name": "IPC",
+      "description": {
+        "fr": "Cours qui qualifie un aviateur expérimenté comme pilote instructeur sur un type d’aéronef. Pour les appareils propres aux opérations spéciales (par exemple l’A/MH-6M), il est dispensé par le bataillon de formation du 160th SOAR.",
+        "en": "Course qualifying an experienced aviator as an instructor pilot on an aircraft type. For special operations aircraft (for example the A/MH-6M) it is delivered by the 160th SOAR training battalion."
+      },
+      "body": {
+        "fr": "Bataillon de formation de l’aviation des opérations spéciales",
+        "en": "Special Operations Aviation Training Battalion"
+      },
+      "issuer": {
+        "name": "Special Operations Aviation Training Battalion (160th SOAR(A))",
+        "short_name": "SOATB"
+      },
+      "reference": {
+        "fr": "DA PAM 611-21, chapitre 8b ; pages de recrutement du 160th SOAR",
+        "en": "DA PAM 611-21, chapter 8b; 160th SOAR recruiting pages"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "instructor",
+      "sources": [
+        {
+          "url": "https://go160thsoar.com/warrant/",
+          "title": "Warrant officer careers (go160thsoar.com)"
+        },
+        {
+          "url": "https://arsof-history.org/articles/19sept_officer_green_platoon_page_1.html",
+          "title": "Officer Green Platoon (arsof-history.org)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-mtp",
+      "code": "US-AVN-MTP",
+      "category": "aviation",
+      "name": {
+        "fr": "Cours de pilote d’essais maintenance (MTP)",
+        "en": "Maintenance Test Pilot Course (MTP)"
+      },
+      "official_name": "Maintenance Test Pilot Course (MTP)",
+      "short_name": "MTP",
+      "description": {
+        "fr": "Cours qui qualifie un aviateur pour les vols de contrôle après maintenance et le diagnostic des pannes en vol sur un type d’aéronef. Pour l’A/MH-6, il est dispensé par le bataillon de formation du 160th SOAR à des aviateurs SOA déjà qualifiés.",
+        "en": "Course qualifying an aviator to fly maintenance test flights and troubleshoot in flight on an aircraft type. For the A/MH-6 it is delivered by the 160th SOAR training battalion to already qualified SOA aviators."
+      },
+      "body": {
+        "fr": "Bataillon de formation de l’aviation des opérations spéciales",
+        "en": "Special Operations Aviation Training Battalion"
+      },
+      "issuer": {
+        "name": "Special Operations Aviation Training Battalion (160th SOAR(A))",
+        "short_name": "SOATB"
+      },
+      "reference": {
+        "fr": "DA PAM 611-21, chapitre 8b ; pages de recrutement du 160th SOAR",
+        "en": "DA PAM 611-21, chapter 8b; 160th SOAR recruiting pages"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://go160thsoar.com/warrant/",
+          "title": "Warrant officer careers (go160thsoar.com)"
+        },
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2025/12/04/720183c2/chapter-8b-wo-specifications.pdf",
+          "title": "DA PAM 611-21 chapter 8b, warrant officer specifications (army.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-avn-mmc",
+      "code": "US-AVN-MMC",
+      "category": "aviation",
+      "name": {
+        "fr": "Cours de gestion de la maintenance aéronautique (MMC)",
+        "en": "Aviation Maintenance Management Course (MMC)"
+      },
+      "official_name": "Maintenance Management Course (MMC)",
+      "short_name": "MMC",
+      "description": {
+        "fr": "Formation à la gestion de la maintenance aéronautique (organisation, contrôle de la production, suivi de navigabilité) destinée aux officiers et warrant officers chargés de la maintenance dans les unités d’aviation de l’Army, dont le 160th SOAR.",
+        "en": "Training in aviation maintenance management (organisation, production control, airworthiness tracking) for officers and warrant officers responsible for maintenance in Army aviation units, including the 160th SOAR."
+      },
+      "body": {
+        "fr": "Aviation de l’US Army (logistique aéronautique)",
+        "en": "U.S. Army Aviation (aviation logistics)"
+      },
+      "issuer": {
+        "name": "U.S. Army Aviation Center of Excellence",
+        "short_name": "USAACE"
+      },
+      "reference": {
+        "fr": "DA PAM 611-21, chapitre 3 (branches et domaines fonctionnels des officiers)",
+        "en": "DA PAM 611-21, chapter 3 (officer branches and functional areas)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://api.army.mil/e2/c/downloads/2025/12/04/e1190672/chapter-3-officer-branches-and-fas.pdf",
+          "title": "DA PAM 611-21 chapter 3, officer branches (army.mil)"
+        },
+        {
+          "url": "https://go160thsoar.com/officer/",
+          "title": "Officer careers (go160thsoar.com)"
+        }
+      ]
+    },
+    {
+      "id": "us-160-maintainer",
+      "code": "US-160-MAINT",
+      "category": "aviation",
+      "name": {
+        "fr": "Cours de maintenance SOA (MH-60 / MH-47)",
+        "en": "SOA maintainer courses (MH-60 / MH-47)"
+      },
+      "official_name": "MH-60 / MH-47 Maintainer Course",
+      "short_name": "SOA Maintainer",
+      "description": {
+        "fr": "Formation des mécaniciens et chefs d’équipage (15T, 15U) affectés au 160th SOAR sur les versions opérations spéciales de leur appareil (MH-60 ou MH-47), après le Green Platoon. Elle précède la formation de membre d’équipage non pilote (NRCM).",
+        "en": "Training for repairers and crew chiefs (15T, 15U) assigned to the 160th SOAR on the special operations versions of their aircraft (MH-60 or MH-47), after Green Platoon. It precedes non-rated crewmember (NRCM) training."
+      },
+      "body": {
+        "fr": "Bataillon de formation de l’aviation des opérations spéciales",
+        "en": "Special Operations Aviation Training Battalion"
+      },
+      "issuer": {
+        "name": "Special Operations Aviation Training Battalion (160th SOAR(A))",
+        "short_name": "SOATB"
+      },
+      "reference": {
+        "fr": "Pages de recrutement du 160th SOAR ; historique de la formation SOA (arsof-history.org)",
+        "en": "160th SOAR recruiting pages; SOA training history (arsof-history.org)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://arsof-history.org/articles/19sept_enlisted_green_platoon_page_1.html",
+          "title": "Enlisted Green Platoon (arsof-history.org)"
+        },
+        {
+          "url": "https://go160thsoar.com/enlisted/",
+          "title": "Enlisted careers (go160thsoar.com)"
+        }
+      ]
+    },
+    {
+      "id": "us-160-soamic",
+      "code": "US-160-SOAMIC",
+      "category": "medical",
+      "name": {
+        "fr": "Cours d’initiation des infirmiers de l’aviation des opérations spéciales (SOAMIC)",
+        "en": "Special Operations Aviation Medic Indoctrination Course (SOAMIC)"
+      },
+      "official_name": "Special Operations Aviation Medic Indoctrination Course (SOAMIC)",
+      "short_name": "SOAMIC",
+      "description": {
+        "fr": "Cours propre au 160th SOAR qui forme ses infirmiers navigants aux évacuations sanitaires en opérations spéciales : soins en vol, treuillage et corde lisse, mises en situation tirées de missions réelles. Il s’adresse à des auxiliaires sanitaires 68W déjà formés.",
+        "en": "Course specific to the 160th SOAR that trains its flight medics in special operations casualty evacuation: in-flight care, hoist and fast-rope work, scenarios drawn from real missions. It is intended for already trained 68W combat medics."
+      },
+      "body": {
+        "fr": "160th Special Operations Aviation Regiment (Airborne)",
+        "en": "160th Special Operations Aviation Regiment (Airborne)"
+      },
+      "issuer": {
+        "name": "160th Special Operations Aviation Regiment (Airborne)",
+        "short_name": "160th SOAR(A)"
+      },
+      "reference": {
+        "fr": "Articles du Journal of Special Operations Medicine sur la formation des infirmiers du 160th SOAR",
+        "en": "Journal of Special Operations Medicine articles on 160th SOAR medic training"
+      },
+      "prerequisites": {
+        "fr": [
+          "Spécialité 68W"
+        ],
+        "en": [
+          "MOS 68W"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://jsomonline.org/wp-content/uploads/2024/02/2012314Faudree.pdf",
+          "title": "Journal of Special Operations Medicine (jsomonline.org)"
+        },
+        {
+          "url": "https://arsof-history.org/articles/19sept_enlisted_green_platoon_page_1.html",
+          "title": "Enlisted Green Platoon (arsof-history.org)"
+        }
+      ]
+    },
+    {
+      "id": "us-160-sof-gray-eagle",
+      "code": "US-160-GE",
+      "category": "aviation",
+      "name": {
+        "fr": "Cours Gray Eagle SOF (160th SOAR)",
+        "en": "SOF Gray Eagle course (160th SOAR)"
+      },
+      "official_name": "SOF Gray Eagle Course",
+      "short_name": "SOF Gray Eagle",
+      "description": {
+        "fr": "Formation des opérateurs de drones affectés à la compagnie Gray Eagle (MQ-1C) du 160th SOAR à l’emploi du système en appui des opérations spéciales. Elle suit la formation de spécialité 15W et le Green Platoon.",
+        "en": "Training for UAS operators assigned to the 160th SOAR Gray Eagle (MQ-1C) company in employing the system in support of special operations. It follows 15W MOS training and Green Platoon."
+      },
+      "body": {
+        "fr": "160th Special Operations Aviation Regiment (Airborne)",
+        "en": "160th Special Operations Aviation Regiment (Airborne)"
+      },
+      "issuer": {
+        "name": "Special Operations Aviation Training Battalion (160th SOAR(A))",
+        "short_name": "SOATB"
+      },
+      "reference": {
+        "fr": "Pages officielles du 160th SOAR ; article army.mil sur la compagnie E",
+        "en": "Official 160th SOAR pages; army.mil article on Company E"
+      },
+      "prerequisites": {
+        "fr": [
+          "Spécialité 15W"
+        ],
+        "en": [
+          "MOS 15W"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://go160thsoar.com/160th-soar-night-stalkers-service/",
+          "title": "Service in the 160th SOAR (go160thsoar.com)"
+        },
+        {
+          "url": "https://www.army.mil/article/115647/fort_becomes_home_to_newly_activated_company_e_160th_soar_a",
+          "title": "Newly activated Company E, 160th SOAR(A) (army.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-af-bmt",
+      "code": "US-AF-BMT",
+      "category": "selection",
+      "name": {
+        "fr": "Formation militaire de base de l’US Air Force (BMT)",
+        "en": "U.S. Air Force Basic Military Training (BMT)"
+      },
+      "official_name": "Basic Military Training (BMT)",
+      "short_name": "BMT",
+      "description": {
+        "fr": "Formation initiale de tous les engagés de l’US Air Force et de l’US Space Force, à JBSA-Lackland (Texas) : discipline militaire, condition physique, armement, secourisme et valeurs. Elle précède toute formation technique de spécialité.",
+        "en": "Initial training of all U.S. Air Force and U.S. Space Force enlistees at JBSA-Lackland, Texas: military discipline, physical fitness, weapons, first aid and core values. It precedes any technical specialty training."
+      },
+      "body": {
+        "fr": "Air Education and Training Command (2nd Air Force)",
+        "en": "Air Education and Training Command (2nd Air Force)"
+      },
+      "issuer": {
+        "name": "737th Training Group",
+        "short_name": "737 TRG"
+      },
+      "reference": {
+        "fr": "Programme officiel de la formation de base de l’Air Force",
+        "en": "Official Air Force basic training program"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Air_Force_Basic_Military_Training",
+          "title": "U.S. Air Force Basic Military Training (Wikipedia)"
+        },
+        {
+          "url": "https://www.airforce.com/careers/aviation-and-flight/special-missions-aviator",
+          "title": "Special Missions Aviator (airforce.com)"
+        }
+      ]
+    },
+    {
+      "id": "us-af-commissioning",
+      "code": "US-AF-COMM",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation d’officier de l’US Air Force (OTS, USAFA ou AFROTC)",
+        "en": "U.S. Air Force officer commissioning (OTS, USAFA or AFROTC)"
+      },
+      "official_name": "Air Force officer commissioning (Officer Training School, U.S. Air Force Academy, Air Force ROTC)",
+      "short_name": "Commission (USAF)",
+      "description": {
+        "fr": "Les officiers de l’US Air Force sont nommés à l’issue de l’une de trois filières : l’Officer Training School (Maxwell AFB), l’U.S. Air Force Academy (Colorado Springs) ou le programme universitaire AFROTC. La nomination est le préalable aux formations de pilote, d’officier systèmes de combat et d’officier des forces spéciales de l’Air Force.",
+        "en": "U.S. Air Force officers are commissioned through one of three sources: Officer Training School (Maxwell AFB), the U.S. Air Force Academy (Colorado Springs) or the university-based AFROTC program. The commission is the prerequisite for pilot, combat systems officer and Air Force special warfare officer training."
+      },
+      "body": {
+        "fr": "US Air Force (recrutement et formation des officiers)",
+        "en": "U.S. Air Force (officer accessions)"
+      },
+      "issuer": {
+        "name": "Air University – Jeanne M. Holm Center for Officer Accessions and Citizen Development",
+        "short_name": "Holm Center"
+      },
+      "reference": {
+        "fr": "Pages officielles de recrutement de l’Air Force (airforce.com)",
+        "en": "Official Air Force recruiting pages (airforce.com)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Air_Force_Officer_Training_School",
+          "title": "Air Force Officer Training School (Wikipedia)"
+        },
+        {
+          "url": "https://www.airforce.com/careers/aviation-and-flight/pilot/special-operations-pilot",
+          "title": "Special operations pilot (airforce.com)"
+        }
+      ]
+    },
+    {
+      "id": "us-afsoc-u28-qual",
+      "code": "US-AFSOC-U28",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification d’équipage U-28A (AFSOC)",
+        "en": "U-28A aircrew qualification (AFSOC)"
+      },
+      "official_name": "U-28A aircraft and mission qualification",
+      "short_name": "U-28A qual",
+      "description": {
+        "fr": "Qualification des pilotes, officiers systèmes de combat et opérateurs ISR sur l’U-28A Draco, avion monomoteur de renseignement, surveillance et reconnaissance de l’AFSOC : qualification sur l’appareil puis formation de qualification en mission avant l’affectation en escadron.",
+        "en": "Qualification of pilots, combat systems officers and ISR operators on the U-28A Draco, AFSOC’s single-engine intelligence, surveillance and reconnaissance aircraft: aircraft qualification then mission qualification training before squadron assignment."
+      },
+      "body": {
+        "fr": "Air Force Special Operations Command",
+        "en": "Air Force Special Operations Command"
+      },
+      "issuer": {
+        "name": "Air Force Special Operations Command",
+        "short_name": "AFSOC"
+      },
+      "reference": {
+        "fr": "Fiche U-28A (Air & Space Forces Magazine) ; articles DVIDS sur les équipages Draco",
+        "en": "U-28A fact sheet (Air & Space Forces Magazine); DVIDS articles on Draco crews"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.airandspaceforces.com/weapons-platforms/u-28a/",
+          "title": "U-28A (airandspaceforces.com)"
+        },
+        {
+          "url": "https://www.dvidshub.net/news/458100/hurlburt-field-u-28a-crews-awarded-distinguished-flying-cross-first-ever-draco-community",
+          "title": "Hurlburt Field U-28A crews awarded DFC (dvidshub.net)"
+        }
+      ]
+    },
+    {
+      "id": "us-af-1a8x2",
+      "code": "US-AF-1A8X2",
+      "category": "intelligence",
+      "name": {
+        "fr": "Formation technique d’opérateur ISR aéroporté (AFSC 1A8X2)",
+        "en": "Airborne ISR Operator technical training (AFSC 1A8X2)"
+      },
+      "official_name": "Airborne Intelligence, Surveillance and Reconnaissance Operator (1A8X2) technical training",
+      "short_name": "1A8X2 tech",
+      "description": {
+        "fr": "Formation technique de la spécialité d’opérateur ISR aéroporté de l’US Air Force, qui exploite les capteurs et transmet le renseignement en vol. Elle donne l’AFSC 1A8X2, employé notamment comme opérateur des systèmes tactiques (TSO) de l’AFSOC.",
+        "en": "Technical training for the U.S. Air Force airborne ISR operator specialty, who operates sensors and passes intelligence in flight. It awards AFSC 1A8X2, used in particular as an AFSOC tactical systems operator (TSO)."
+      },
+      "body": {
+        "fr": "Air Education and Training Command",
+        "en": "Air Education and Training Command"
+      },
+      "issuer": {
+        "name": "Air Education and Training Command",
+        "short_name": "AETC"
+      },
+      "reference": {
+        "fr": "Description de l’AFSC 1A8X2 ; articles DVIDS sur les TSO de l’AFSOC",
+        "en": "AFSC 1A8X2 description; DVIDS articles on AFSOC TSOs"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.dvidshub.net/news/385942/28-tsos-key-contributors-sof-mission-success",
+          "title": "28 TSOs key contributors to SOF mission success (dvidshub.net)"
+        }
+      ]
+    },
+    {
+      "id": "us-af-acct",
+      "code": "US-AF-ACCT",
+      "category": "intelligence",
+      "name": {
+        "fr": "Certification cryptologique aéroportée (ACCT)",
+        "en": "Airborne Cryptologic Certification Training (ACCT)"
+      },
+      "official_name": "Airborne Cryptologic Certification Training (ACCT)",
+      "short_name": "ACCT",
+      "description": {
+        "fr": "Formation de certification des opérateurs de renseignement aéroporté aux tâches cryptologiques en vol, suivie après la formation technique de spécialité. Elle est exigée des opérateurs des systèmes tactiques de l’AFSOC avant la qualification en mission.",
+        "en": "Certification training for airborne intelligence operators in in-flight cryptologic tasks, taken after specialty technical training. It is required of AFSOC tactical systems operators before mission qualification."
+      },
+      "body": {
+        "fr": "US Air Force (renseignement aéroporté)",
+        "en": "U.S. Air Force (airborne intelligence)"
+      },
+      "issuer": {
+        "name": "Air Education and Training Command",
+        "short_name": "AETC"
+      },
+      "reference": {
+        "fr": "Articles DVIDS sur les opérateurs des systèmes tactiques de l’AFSOC",
+        "en": "DVIDS articles on AFSOC tactical systems operators"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.dvidshub.net/news/305139/eye-sky",
+          "title": "Eye in the sky (dvidshub.net)"
+        }
+      ]
+    },
+    {
+      "id": "us-af-urt",
+      "code": "US-AF-URT",
+      "category": "aviation",
+      "name": {
+        "fr": "Formation initiale de pilote de drone de l’Air Force (URT)",
+        "en": "Undergraduate RPA Training (URT)"
+      },
+      "official_name": "Undergraduate Remotely Piloted Aircraft Training (URT)",
+      "short_name": "URT",
+      "description": {
+        "fr": "Formation initiale des officiers pilotes d’aéronefs télépilotés de l’US Air Force : formation au vol initial, qualification aux instruments sur simulateur et cours fondamental RPA. Elle précède la qualification sur MQ-9 en unité de formation.",
+        "en": "Initial training for U.S. Air Force remotely piloted aircraft pilot officers: initial flight training, simulator-based instrument qualification and an RPA fundamentals course. It precedes MQ-9 qualification at a formal training unit."
+      },
+      "body": {
+        "fr": "Air Education and Training Command (19th Air Force)",
+        "en": "Air Education and Training Command (19th Air Force)"
+      },
+      "issuer": {
+        "name": "Air Education and Training Command",
+        "short_name": "AETC"
+      },
+      "reference": {
+        "fr": "Page officielle du métier de pilote RPA (airforce.com)",
+        "en": "Official RPA pilot career page (airforce.com)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.airforce.com/careers/aviation-and-flight/pilot/remotely-piloted-aircraft-pilot",
+          "title": "Remotely piloted aircraft pilot (airforce.com)"
+        }
+      ]
+    },
+    {
+      "id": "us-af-mq9-qual",
+      "code": "US-AF-MQ9",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification MQ-9 Reaper (unité de formation)",
+        "en": "MQ-9 Reaper qualification (formal training unit)"
+      },
+      "official_name": "MQ-9 Initial Qualification Training",
+      "short_name": "MQ-9 IQT",
+      "description": {
+        "fr": "Qualification initiale des pilotes et opérateurs capteurs sur le drone MQ-9 Reaper dans une unité de formation de l’Air Force, avant l’affectation en escadron opérationnel, notamment dans les escadrons d’opérations spéciales de l’AFSOC.",
+        "en": "Initial qualification of pilots and sensor operators on the MQ-9 Reaper at an Air Force formal training unit, before assignment to an operational squadron, including AFSOC special operations squadrons."
+      },
+      "body": {
+        "fr": "Air Combat Command / Air Education and Training Command",
+        "en": "Air Combat Command / Air Education and Training Command"
+      },
+      "issuer": {
+        "name": "U.S. Air Force MQ-9 formal training units",
+        "short_name": "MQ-9 FTU"
+      },
+      "reference": {
+        "fr": "Pages officielles des métiers RPA (airforce.com)",
+        "en": "Official RPA career pages (airforce.com)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.airforce.com/careers/aviation-and-flight/pilot/remotely-piloted-aircraft-pilot",
+          "title": "Remotely piloted aircraft pilot (airforce.com)"
+        },
+        {
+          "url": "https://www.airforce.com/careers/aviation-and-flight/remotely-piloted-aircraft-rpa-sensor-operator",
+          "title": "RPA sensor operator (airforce.com)"
+        }
+      ]
+    },
+    {
+      "id": "us-afsoc-ac-upgrade",
+      "code": "US-AFSOC-ACUPG",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification commandant de bord (AFSOC)",
+        "en": "Aircraft commander upgrade (AFSOC)"
+      },
+      "official_name": "Aircraft Commander upgrade",
+      "short_name": "AC upgrade",
+      "description": {
+        "fr": "Programme de progression qui qualifie un pilote expérimenté comme commandant de bord, responsable de l’appareil, de l’équipage et de l’exécution de la mission, après formation et contrôle en vol.",
+        "en": "Upgrade program qualifying an experienced pilot as aircraft commander, responsible for the aircraft, crew and mission execution, after training and a flight evaluation."
+      },
+      "body": {
+        "fr": "Air Force Special Operations Command (escadres d’opérations spéciales)",
+        "en": "Air Force Special Operations Command (special operations wings)"
+      },
+      "issuer": {
+        "name": "Air Force Special Operations Command",
+        "short_name": "AFSOC"
+      },
+      "reference": {
+        "fr": "Articles DVIDS sur les équipages de l’AFSOC",
+        "en": "DVIDS articles on AFSOC aircrews"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.dvidshub.net/news/429310/draco-crew-excels-despite-adversity-afghanistan-withdrawal",
+          "title": "Draco crew excels despite adversity (dvidshub.net)"
+        }
+      ]
+    },
+    {
+      "id": "us-af-ip-ep",
+      "code": "US-AF-IPEP",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification pilote instructeur / évaluateur",
+        "en": "Instructor / evaluator pilot upgrade"
+      },
+      "official_name": "Instructor Pilot / Evaluator Pilot upgrade",
+      "short_name": "IP / EP",
+      "description": {
+        "fr": "Qualification qui permet à un commandant de bord expérimenté d’instruire puis de contrôler les autres équipages sur son type d’appareil. Le niveau évaluateur est attribué aux instructeurs chevronnés chargés des contrôles en vol.",
+        "en": "Qualification allowing an experienced aircraft commander to instruct, then evaluate, other crews on the aircraft type. The evaluator level is given to seasoned instructors in charge of flight evaluations."
+      },
+      "body": {
+        "fr": "Air Force Special Operations Command (escadres d’opérations spéciales)",
+        "en": "Air Force Special Operations Command (special operations wings)"
+      },
+      "issuer": {
+        "name": "Air Force Special Operations Command",
+        "short_name": "AFSOC"
+      },
+      "reference": {
+        "fr": "Articles DVIDS sur les équipages de l’AFSOC",
+        "en": "DVIDS articles on AFSOC aircrews"
+      },
+      "prerequisites": {
+        "fr": [
+          "Qualification commandant de bord"
+        ],
+        "en": [
+          "Aircraft commander qualification"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "instructor",
+      "sources": [
+        {
+          "url": "https://www.dvidshub.net/news/551537/total-force-integration-afr-aircrew-executes-live-fire-training-alaska-active-duty-ac-130j-gunship",
+          "title": "AFR aircrew executes live-fire training in AC-130J (dvidshub.net)"
+        }
+      ]
+    },
+    {
+      "id": "us-af-swo-as",
+      "code": "US-AF-SWOAS",
+      "category": "selection",
+      "name": {
+        "fr": "Évaluation et sélection des officiers Special Warfare de l’Air Force",
+        "en": "Air Force Special Warfare officer assessment and selection"
+      },
+      "official_name": "Special Warfare Officer Assessment and Selection",
+      "short_name": "SW Officer A&S",
+      "description": {
+        "fr": "Processus de sélection des candidats officiers Special Tactics, Combat Rescue et TACP de l’Air Force : épreuves physiques et mentales, évaluation du leadership et passage devant une commission. Les candidats retenus entrent ensuite dans le cursus de formation de leur spécialité (19Z).",
+        "en": "Selection process for Air Force Special Tactics, Combat Rescue and TACP officer candidates: physical and mental events, leadership assessment and a selection board. Selected candidates then enter their specialty’s training pipeline (19Z)."
+      },
+      "body": {
+        "fr": "US Air Force Special Warfare",
+        "en": "U.S. Air Force Special Warfare"
+      },
+      "issuer": {
+        "name": "Special Warfare Training Wing",
+        "short_name": "SWTW"
+      },
+      "reference": {
+        "fr": "Pages officielles des métiers d’officier Special Warfare (airforce.com)",
+        "en": "Official special warfare officer career pages (airforce.com)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Nomination officier"
+        ],
+        "en": [
+          "Officer commission"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.airforce.com/careers/special-warfare-and-combat-support/special-tactics-officer",
+          "title": "Special tactics officer (airforce.com)"
+        },
+        {
+          "url": "https://www.airandspaceforces.com/air-force-creates-new-afsc-for-special-warfare-officers/",
+          "title": "Air Force creates new AFSC for special warfare officers (airandspaceforces.com)"
+        }
+      ]
+    },
+    {
+      "id": "us-af-sw-medical",
+      "code": "US-AF-SWMED",
+      "category": "medical",
+      "name": {
+        "fr": "Aptitude médicale Special Warfare (plongée, parachutisme, contrôle aérien)",
+        "en": "Special warfare medical qualification (diving, parachuting, ATC duty)"
+      },
+      "official_name": "Physical qualification for marine diving, parachute and air traffic control duty",
+      "short_name": "SW medical",
+      "description": {
+        "fr": "Examen médical et décision d’aptitude exigés avant les cursus Special Warfare de l’Air Force : aptitude à la plongée, au parachutisme et au contrôle de la circulation aérienne selon les normes médicales du département de l’Air Force.",
+        "en": "Medical examination and fitness decision required before Air Force special warfare pipelines: fitness for diving, parachuting and air traffic control duty under Department of the Air Force medical standards."
+      },
+      "body": {
+        "fr": "Service de santé de l’US Air Force",
+        "en": "U.S. Air Force Medical Service"
+      },
+      "issuer": {
+        "name": "Air Force Medical Service",
+        "short_name": "AFMS"
+      },
+      "reference": {
+        "fr": "DAFMAN 48-123, Medical Examinations and Standards",
+        "en": "DAFMAN 48-123, Medical Examinations and Standards"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.airforce.com/careers/special-warfare-and-combat-support/special-tactics-officer",
+          "title": "Special tactics officer (airforce.com)"
+        },
+        {
+          "url": "https://www.airforce.com/careers/special-warfare-and-combat-support/tactical-air-control-party-tacp-officer",
+          "title": "TACP officer (airforce.com)"
+        }
+      ]
+    },
+    {
+      "id": "us-marsoc-tcc",
+      "code": "US-MARSOC-TCC",
+      "category": "sof",
+      "name": {
+        "fr": "Team Commander Course (stage chef d’équipe MARSOC)",
+        "en": "MARSOC Team Commander Course"
+      },
+      "official_name": "Team Commander Course (TCC)",
+      "short_name": "TCC",
+      "description": {
+        "fr": "Cours suivi par les officiers des Marine Raiders après le cursus de formation individuelle (ITC / Marine Raider Course) pour prendre le commandement d’une Marine Special Operations Team. Il donne, avec ce cursus, la spécialité d’officier d’opérations spéciales 0370.",
+        "en": "Course taken by Marine Raider officers after the individual training pipeline (ITC / Marine Raider Course) to command a Marine Special Operations Team. Together with that pipeline it awards the 0370 special operations officer MOS."
+      },
+      "body": {
+        "fr": "Marine Forces Special Operations Command",
+        "en": "Marine Forces Special Operations Command"
+      },
+      "issuer": {
+        "name": "Marine Raider Training Center",
+        "short_name": "MRTC"
+      },
+      "reference": {
+        "fr": "Pages MARSOC (Wikipedia) et articles DVIDS",
+        "en": "MARSOC pages (Wikipedia) and DVIDS articles"
+      },
+      "prerequisites": {
+        "fr": [
+          "Évaluation et sélection MARSOC (A&S)"
+        ],
+        "en": [
+          "MARSOC Assessment and Selection (A&S)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Marine_Forces_Special_Operations_Command",
+          "title": "U.S. Marine Forces Special Operations Command (Wikipedia)"
+        },
+        {
+          "url": "https://www.dvidshub.net/news/printable/137525",
+          "title": "MARSOC special operations officer (dvidshub.net)"
+        }
+      ]
+    },
+    {
+      "id": "us-marsoc-sof-level1",
+      "code": "US-MARSOC-SOF1",
+      "category": "sof",
+      "name": {
+        "fr": "Formation SOF niveau I (MARSOC)",
+        "en": "MARSOC SOF Level I training"
+      },
+      "official_name": "Special Operations Forces Level I (SOF Lvl 1)",
+      "short_name": "SOF Lvl 1",
+      "description": {
+        "fr": "Formation initiale aux opérations spéciales exigée des Marines de soutien affectés au MARSOC (Special Operations Capabilities Specialists), y compris dans une déclinaison propre aux maîtres-chiens (SOCS-D). Avec le Special Operations Training Course et le SERE, elle conditionne l’attribution de la spécialité MARSOC.",
+        "en": "Initial special operations training required of support Marines assigned to MARSOC (Special Operations Capabilities Specialists), including a version for dog handlers (SOCS-D). Together with the Special Operations Training Course and SERE, it is required for the award of the MARSOC MOS."
+      },
+      "body": {
+        "fr": "Marine Forces Special Operations Command",
+        "en": "Marine Forces Special Operations Command"
+      },
+      "issuer": {
+        "name": "Marine Raider Training Center",
+        "short_name": "MRTC"
+      },
+      "reference": {
+        "fr": "Messages du Marine Corps et articles DVIDS sur les SOCS",
+        "en": "Marine Corps messages and DVIDS articles on SOCS"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.dvidshub.net/news/printable/223833",
+          "title": "Seeking combat support Marines for special ops (dvidshub.net)"
+        },
+        {
+          "url": "https://www.dvidshub.net/image/6584012/socs-d-sof-level-1-amphib-phase",
+          "title": "SOCS-D SOF Level 1 amphib phase (dvidshub.net)"
+        }
+      ]
+    },
+    {
+      "id": "us-marsoc-stc",
+      "code": "US-MARSOC-STC",
+      "category": "sof",
+      "name": {
+        "fr": "Special Operations Training Course (MARSOC)",
+        "en": "MARSOC Special Operations Training Course"
+      },
+      "official_name": "Special Operations Training Course (STC)",
+      "short_name": "STC",
+      "description": {
+        "fr": "Cours d’environ six semaines qui forme les Marines et marins d’appui au combat et de soutien du MARSOC aux savoir-faire de base et intermédiaires des forces d’opérations spéciales. Il fait partie des exigences avant déploiement des Special Operations Capabilities Specialists.",
+        "en": "Course of about six weeks training MARSOC combat support and combat service support Marines and sailors in basic to intermediate special operations skills. It is part of the pre-deployment requirements for Special Operations Capabilities Specialists."
+      },
+      "body": {
+        "fr": "Marine Forces Special Operations Command",
+        "en": "Marine Forces Special Operations Command"
+      },
+      "issuer": {
+        "name": "Marine Raider Training Center",
+        "short_name": "MRTC"
+      },
+      "reference": {
+        "fr": "Articles MARSOC et DVIDS sur le STC",
+        "en": "MARSOC and DVIDS articles on STC"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.marsoc.marines.mil/COMMSTRAT/News/Article/Article/513714/the-first-special-operations-training-course-helps-close-the-gap-between-marsoc",
+          "title": "The first Special Operations Training Course (marsoc.marines.mil)"
+        },
+        {
+          "url": "https://www.dvidshub.net/news/printable/223833",
+          "title": "Seeking combat support Marines for special ops (dvidshub.net)"
+        }
+      ]
+    },
+    {
+      "id": "us-usmc-comm-school",
+      "code": "US-USMC-MCCES",
+      "category": "communications",
+      "name": {
+        "fr": "Formation de spécialité transmissions du Marine Corps (MCCES)",
+        "en": "Marine Corps communications MOS training (MCCES)"
+      },
+      "official_name": "Marine Corps Communication-Electronics School (MCCES) MOS course",
+      "short_name": "MCCES",
+      "description": {
+        "fr": "Formation de spécialité des Marines des transmissions (radio, réseaux, systèmes de données) dispensée à la Marine Corps Communication-Electronics School de Twentynine Palms (Californie). Elle précède l’affectation comme spécialiste transmissions dans les unités du MARSOC.",
+        "en": "MOS training for Marine communicators (radio, networks, data systems) delivered at the Marine Corps Communication-Electronics School at Twentynine Palms, California. It precedes assignment as a communications specialist in MARSOC units."
+      },
+      "body": {
+        "fr": "Training and Education Command (USMC)",
+        "en": "Training and Education Command (USMC)"
+      },
+      "issuer": {
+        "name": "Marine Corps Communication-Electronics School",
+        "short_name": "MCCES"
+      },
+      "reference": {
+        "fr": "Articles DVIDS sur les SOCS transmissions du MARSOC",
+        "en": "DVIDS articles on MARSOC communications SOCS"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.dvidshub.net/image/6061779/socs-train-advanced-tactical-skills-support-sof",
+          "title": "SOCS train advanced tactical skills to support SOF (dvidshub.net)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Marine_Corps_Air_Ground_Combat_Center_Twentynine_Palms",
+          "title": "MCAGCC Twentynine Palms (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "us-navy-commissioning",
+      "code": "US-NAVY-COMM",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation d’officier de l’US Navy (OCS, Académie navale ou NROTC)",
+        "en": "U.S. Navy officer commissioning (OCS, USNA or NROTC)"
+      },
+      "official_name": "Navy officer commissioning (Officer Candidate School, U.S. Naval Academy, NROTC)",
+      "short_name": "Commission (USN)",
+      "description": {
+        "fr": "Les officiers de l’US Navy, dont les futurs officiers SEAL, sont nommés à l’issue de l’Officer Candidate School (Newport), de l’U.S. Naval Academy (Annapolis) ou du programme universitaire NROTC. La nomination précède l’entrée dans le cursus de formation SEAL.",
+        "en": "U.S. Navy officers, including future SEAL officers, are commissioned through Officer Candidate School (Newport), the U.S. Naval Academy (Annapolis) or the university-based NROTC program. The commission precedes entry into the SEAL training pipeline."
+      },
+      "body": {
+        "fr": "US Navy (recrutement et formation des officiers)",
+        "en": "U.S. Navy (officer accessions)"
+      },
+      "issuer": {
+        "name": "Naval Service Training Command",
+        "short_name": "NSTC"
+      },
+      "reference": {
+        "fr": "Officer Navy Recruiting Manual ; page Special Warfare de l’Académie navale",
+        "en": "Officer Navy Recruiting Manual; U.S. Naval Academy Special Warfare page"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.usna.edu/SpecialWarfare/specialwarfare.php",
+          "title": "Special Warfare (usna.edu)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Navy_SEAL_selection_and_training",
+          "title": "U.S. Navy SEAL selection and training (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "us-nsw-officer-selection",
+      "code": "US-NSW-OSEL",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection des officiers SEAL (évaluation et commission annuelle)",
+        "en": "SEAL officer assessment and selection (annual board)"
+      },
+      "official_name": "SEAL Officer Assessment and Selection (SOAS) and NSW officer selection panel",
+      "short_name": "SOAS",
+      "description": {
+        "fr": "Processus par lequel la Naval Special Warfare évalue les candidats officiers SEAL (évaluation de plusieurs semaines, entretiens) puis les retient lors d’une commission annuelle de sélection. Les candidats retenus entrent ensuite au BUD/S.",
+        "en": "Process by which Naval Special Warfare assesses SEAL officer candidates (multi-week assessment, interviews) and then selects them at an annual selection board. Selected candidates then enter BUD/S."
+      },
+      "body": {
+        "fr": "Naval Special Warfare Command (recrutement)",
+        "en": "Naval Special Warfare Command (recruiting)"
+      },
+      "issuer": {
+        "name": "Naval Special Warfare Command",
+        "short_name": "NAVSPECWARCOM"
+      },
+      "reference": {
+        "fr": "Officer Navy Recruiting Manual ; page Special Warfare de l’Académie navale",
+        "en": "Officer Navy Recruiting Manual; U.S. Naval Academy Special Warfare page"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.usna.edu/SpecialWarfare/specialwarfare.php",
+          "title": "Special Warfare (usna.edu)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Navy_SEAL_selection_and_training",
+          "title": "U.S. Navy SEAL selection and training (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "us-nsw-lpo-course",
+      "code": "US-NSW-LPO",
+      "category": "sof",
+      "name": {
+        "fr": "Cours NSW de chef de groupe (LPO)",
+        "en": "NSW Leading Petty Officer (LPO) Course"
+      },
+      "official_name": "NSW LPO Course",
+      "short_name": "NSW LPO",
+      "description": {
+        "fr": "Cours de leadership de la Naval Special Warfare destiné aux opérateurs SEAL et SWCC appelés à tenir un poste de Leading Petty Officer (chef de groupe ou de détachement). Il valide, avec le temps passé en poste, les jalons de carrière correspondants.",
+        "en": "Naval Special Warfare leadership course for SEAL and SWCC operators moving into a Leading Petty Officer position (squad or detachment). Together with time in the position, it validates the corresponding career milestones."
+      },
+      "body": {
+        "fr": "Naval Special Warfare Command (formation au commandement)",
+        "en": "Naval Special Warfare Command (leadership training)"
+      },
+      "issuer": {
+        "name": "Naval Special Warfare Command",
+        "short_name": "NAVSPECWARCOM"
+      },
+      "reference": {
+        "fr": "Fiches de carrière SO/SB de l’US Navy (Learning and Development Roadmap, cool.osd.mil)",
+        "en": "U.S. Navy SO/SB career roadmaps (Learning and Development Roadmap, cool.osd.mil)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Qualification SEAL (O26A) ou SWCC (O52A)"
+        ],
+        "en": [
+          "SEAL (O26A) or SWCC (O52A) qualification"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.cool.osd.mil/usn/LaDR/so_e6.pdf",
+          "title": "SO E-6 Learning and Development Roadmap (cool.osd.mil)"
+        },
+        {
+          "url": "https://www.cool.osd.mil/usn/LaDR/sb_e6.pdf",
+          "title": "SB E-6 Learning and Development Roadmap (cool.osd.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-nsw-plc",
+      "code": "US-NSW-PLC",
+      "category": "sof",
+      "name": {
+        "fr": "Cours NSW des chefs de peloton",
+        "en": "NSW Platoon Leaders Course"
+      },
+      "official_name": "NSW Platoon Leaders Course",
+      "short_name": "NSW PLC",
+      "description": {
+        "fr": "Cours de leadership de la Naval Special Warfare pour les chefs de peloton SEAL et de détachement SWCC (officiers et Leading Chief Petty Officers) : planification, conduite et commandement des opérations au niveau peloton ou détachement.",
+        "en": "Naval Special Warfare leadership course for SEAL platoon and SWCC detachment leaders (officers and Leading Chief Petty Officers): planning, conduct and command of operations at platoon or detachment level."
+      },
+      "body": {
+        "fr": "Naval Special Warfare Command (formation au commandement)",
+        "en": "Naval Special Warfare Command (leadership training)"
+      },
+      "issuer": {
+        "name": "Naval Special Warfare Command",
+        "short_name": "NAVSPECWARCOM"
+      },
+      "reference": {
+        "fr": "Fiches de carrière SO/SB de l’US Navy (Learning and Development Roadmap, cool.osd.mil)",
+        "en": "U.S. Navy SO/SB career roadmaps (Learning and Development Roadmap, cool.osd.mil)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours NSW LPO"
+        ],
+        "en": [
+          "NSW LPO Course"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.cool.osd.mil/usn/LaDR/so_e7.pdf",
+          "title": "SO E-7 Learning and Development Roadmap (cool.osd.mil)"
+        },
+        {
+          "url": "https://www.cool.osd.mil/usn/LaDR/sb_e7.pdf",
+          "title": "SB E-7 Learning and Development Roadmap (cool.osd.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-nsw-tlc",
+      "code": "US-NSW-TLC",
+      "category": "sof",
+      "name": {
+        "fr": "Cours NSW des chefs de troop",
+        "en": "NSW Troop Leaders Course"
+      },
+      "official_name": "NSW Troop Leaders Course",
+      "short_name": "NSW TLC",
+      "description": {
+        "fr": "Cours de leadership de la Naval Special Warfare pour les sous-officiers supérieurs appelés à tenir un poste de chef de troop SEAL ou SWCC, échelon qui regroupe plusieurs pelotons ou détachements.",
+        "en": "Naval Special Warfare leadership course for senior enlisted leaders moving into a SEAL or SWCC troop chief position, the echelon grouping several platoons or detachments."
+      },
+      "body": {
+        "fr": "Naval Special Warfare Command (formation au commandement)",
+        "en": "Naval Special Warfare Command (leadership training)"
+      },
+      "issuer": {
+        "name": "Naval Special Warfare Command",
+        "short_name": "NAVSPECWARCOM"
+      },
+      "reference": {
+        "fr": "Fiches de carrière SO/SB de l’US Navy (Learning and Development Roadmap, cool.osd.mil)",
+        "en": "U.S. Navy SO/SB career roadmaps (Learning and Development Roadmap, cool.osd.mil)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours NSW des chefs de peloton"
+        ],
+        "en": [
+          "NSW Platoon Leaders Course"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://www.cool.osd.mil/usn/LaDR/so_e8.pdf",
+          "title": "SO E-8 Learning and Development Roadmap (cool.osd.mil)"
+        },
+        {
+          "url": "https://www.cool.osd.mil/usn/LaDR/sb_e8.pdf",
+          "title": "SB E-8 Learning and Development Roadmap (cool.osd.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-nsw-communicator",
+      "code": "US-NSW-NCM",
+      "category": "communications",
+      "name": {
+        "fr": "Transmetteur NSW (NCM)",
+        "en": "NSW Communicator (NCM)"
+      },
+      "official_name": "NSW Communicator (NCM)",
+      "short_name": "NCM",
+      "description": {
+        "fr": "Qualification avancée d’opérateur SEAL chargé des transmissions de son unité : emploi des systèmes radio et satellites tactiques, planification des communications et liaison avec les appuis. Elle s’obtient après la qualification SEAL.",
+        "en": "Advanced qualification for the SEAL operator in charge of his unit’s communications: tactical radio and satellite systems, communications planning and liaison with supporting assets. It is earned after SEAL qualification."
+      },
+      "body": {
+        "fr": "Naval Special Warfare Command",
+        "en": "Naval Special Warfare Command"
+      },
+      "issuer": {
+        "name": "Naval Special Warfare Command",
+        "short_name": "NAVSPECWARCOM"
+      },
+      "reference": {
+        "fr": "Fiches de carrière SO de l’US Navy (cool.osd.mil)",
+        "en": "U.S. Navy SO career roadmaps (cool.osd.mil)"
+      },
+      "prerequisites": {
+        "fr": [
+          "NEC SEAL O26A"
+        ],
+        "en": [
+          "SEAL NEC O26A"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.cool.osd.mil/usn/LaDR/so_e4.pdf",
+          "title": "SO E-4 Learning and Development Roadmap (cool.osd.mil)"
+        },
+        {
+          "url": "https://www.cool.osd.mil/usn/LaDR/so_e6.pdf",
+          "title": "SO E-6 Learning and Development Roadmap (cool.osd.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-nsw-lcs",
+      "code": "US-NSW-LCS",
+      "category": "maritime",
+      "name": {
+        "fr": "Nageur de combat chef (Lead Combat Swimmer)",
+        "en": "Lead Combat Swimmer (LCS)"
+      },
+      "official_name": "Lead Combat Swimmer (LCS)",
+      "short_name": "LCS",
+      "description": {
+        "fr": "Qualification avancée de plongée de combat de la Naval Special Warfare : conduite des binômes de nageurs de combat, navigation sous-marine et planification des infiltrations sous la surface. Elle s’obtient après la qualification SEAL.",
+        "en": "Advanced Naval Special Warfare combat diving qualification: leading combat swimmer pairs, underwater navigation and planning subsurface infiltrations. It is earned after SEAL qualification."
+      },
+      "body": {
+        "fr": "Naval Special Warfare Command",
+        "en": "Naval Special Warfare Command"
+      },
+      "issuer": {
+        "name": "Naval Special Warfare Command",
+        "short_name": "NAVSPECWARCOM"
+      },
+      "reference": {
+        "fr": "Fiches de carrière SO de l’US Navy (cool.osd.mil)",
+        "en": "U.S. Navy SO career roadmaps (cool.osd.mil)"
+      },
+      "prerequisites": {
+        "fr": [
+          "NEC SEAL O26A"
+        ],
+        "en": [
+          "SEAL NEC O26A"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.cool.osd.mil/usn/rating_info_cards/so.pdf",
+          "title": "SO rating information card (cool.osd.mil)"
+        },
+        {
+          "url": "https://www.cool.osd.mil/usn/LaDR/so_e6.pdf",
+          "title": "SO E-6 Learning and Development Roadmap (cool.osd.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-swcc-302",
+      "code": "US-SWCC-302",
+      "category": "maritime",
+      "name": {
+        "fr": "Qualifications SWCC 302 (transmetteur, navigateur, mécanicien tactique)",
+        "en": "SWCC 302 qualifications (tactical communicator, navigator, engineer)"
+      },
+      "official_name": "SWCC 302 – Tactical Communicator (C), Tactical Navigator (N), Tactical Engineer (E)",
+      "short_name": "SWCC 302",
+      "description": {
+        "fr": "Niveau de qualification des équipiers SWCC qui suit la qualification de base 301 : spécialisation à bord des embarcations de combat comme transmetteur tactique (C), navigateur tactique (N) ou mécanicien tactique (E).",
+        "en": "SWCC crewman qualification level following the basic 301 qualification: specialisation aboard combatant craft as tactical communicator (C), tactical navigator (N) or tactical engineer (E)."
+      },
+      "body": {
+        "fr": "Naval Special Warfare Command (Special Boat Teams)",
+        "en": "Naval Special Warfare Command (Special Boat Teams)"
+      },
+      "issuer": {
+        "name": "Naval Special Warfare Command",
+        "short_name": "NAVSPECWARCOM"
+      },
+      "reference": {
+        "fr": "Fiches de carrière SB de l’US Navy (cool.osd.mil)",
+        "en": "U.S. Navy SB career roadmaps (cool.osd.mil)"
+      },
+      "prerequisites": {
+        "fr": [
+          "SWCC 301"
+        ],
+        "en": [
+          "SWCC 301"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.cool.osd.mil/usn/LaDR/sb_e4.pdf",
+          "title": "SB E-4 Learning and Development Roadmap (cool.osd.mil)"
+        },
+        {
+          "url": "https://www.cool.osd.mil/usn/LaDR/sb_e5.pdf",
+          "title": "SB E-5 Learning and Development Roadmap (cool.osd.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-navy-diver-prep",
+      "code": "US-ND-PREP",
+      "category": "maritime",
+      "name": {
+        "fr": "Cours préparatoire plongeur de l’US Navy (Great Lakes)",
+        "en": "Navy Diver preparatory course (Great Lakes)"
+      },
+      "official_name": "Navy Diver Preparatory Course",
+      "short_name": "ND Prep",
+      "description": {
+        "fr": "Cours préparatoire suivi à Great Lakes (Illinois) par les recrues de la spécialité de plongeur de la Navy après la formation de base : condition physique et aisance aquatique avant l’école « A » de plongeur.",
+        "en": "Preparatory course taken at Great Lakes, Illinois, by Navy Diver recruits after boot camp: physical conditioning and water confidence before Navy Diver “A” School."
+      },
+      "body": {
+        "fr": "Naval Service Training Command",
+        "en": "Naval Service Training Command"
+      },
+      "issuer": {
+        "name": "Naval Service Training Command",
+        "short_name": "NSTC"
+      },
+      "reference": {
+        "fr": "Fiche de la spécialité ND (cool.osd.mil)",
+        "en": "ND rating information card (cool.osd.mil)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.cool.osd.mil/usn/rating_info_cards/nd.pdf",
+          "title": "ND rating information card (cool.osd.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-navy-is-a",
+      "code": "US-NAVY-IS-A",
+      "category": "intelligence",
+      "name": {
+        "fr": "École « A » de spécialiste renseignement (IS) de l’US Navy",
+        "en": "Navy Intelligence Specialist (IS) “A” School"
+      },
+      "official_name": "Intelligence Specialist “A” School",
+      "short_name": "IS A School",
+      "description": {
+        "fr": "Formation initiale des spécialistes renseignement de l’US Navy au Navy and Marine Corps Intelligence Training Center (Dam Neck, Virginie) : analyse, préparation des dossiers et exposés, systèmes de renseignement. Elle donne la spécialité IS.",
+        "en": "Initial training of U.S. Navy intelligence specialists at the Navy and Marine Corps Intelligence Training Center (Dam Neck, Virginia): analysis, products and briefings, intelligence systems. It awards the IS rating."
+      },
+      "body": {
+        "fr": "Center for Information Warfare Training",
+        "en": "Center for Information Warfare Training"
+      },
+      "issuer": {
+        "name": "Navy and Marine Corps Intelligence Training Center",
+        "short_name": "NMITC"
+      },
+      "reference": {
+        "fr": "Fiche de carrière IS de l’US Navy (cool.osd.mil)",
+        "en": "U.S. Navy IS career roadmap (cool.osd.mil)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.cool.osd.mil/usn/LaDR/is_e6.pdf",
+          "title": "IS E-6 Learning and Development Roadmap (cool.osd.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-navy-eiws",
+      "code": "US-NAVY-EIWS",
+      "category": "intelligence",
+      "name": {
+        "fr": "Qualification Information Warfare des marins (EIWS)",
+        "en": "Enlisted Information Warfare Specialist (EIWS)"
+      },
+      "official_name": "Enlisted Information Warfare Specialist (EIWS)",
+      "short_name": "EIWS",
+      "description": {
+        "fr": "Qualification de guerre de l’US Navy pour les marins des spécialités de l’information (renseignement, cryptologie, systèmes) : programme de qualification sur les capacités de la communauté Information Warfare et jury final, sanctionné par un insigne.",
+        "en": "U.S. Navy warfare qualification for sailors in information ratings (intelligence, cryptology, systems): a qualification program on Information Warfare community capabilities and a final board, recognised by a breast insignia."
+      },
+      "body": {
+        "fr": "US Navy (communauté Information Warfare)",
+        "en": "U.S. Navy (Information Warfare community)"
+      },
+      "issuer": {
+        "name": "U.S. Navy Information Warfare community",
+        "short_name": "IW"
+      },
+      "reference": {
+        "fr": "Fiche de carrière IS de l’US Navy (cool.osd.mil)",
+        "en": "U.S. Navy IS career roadmap (cool.osd.mil)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.cool.osd.mil/usn/LaDR/is_e6.pdf",
+          "title": "IS E-6 Learning and Development Roadmap (cool.osd.mil)"
+        }
+      ]
+    },
+    {
+      "id": "us-navy-hm-a",
+      "code": "US-NAVY-HM-A",
+      "category": "medical",
+      "name": {
+        "fr": "École « A » d’infirmier de la Navy (Hospital Corps School)",
+        "en": "Navy Hospital Corpsman “A” School"
+      },
+      "official_name": "Hospital Corpsman “A” School",
+      "short_name": "HM A School",
+      "description": {
+        "fr": "Formation initiale des infirmiers (hospital corpsmen) de l’US Navy au Medical Education and Training Campus de JBSA-Fort Sam Houston : soins infirmiers, urgences et soutien sanitaire. Elle donne la spécialité HM, préalable aux filières de reconnaissance amphibie et d’opérations spéciales.",
+        "en": "Initial training of U.S. Navy hospital corpsmen at the Medical Education and Training Campus, JBSA-Fort Sam Houston: nursing care, emergency care and health service support. It awards the HM rating, the prerequisite for amphibious reconnaissance and special operations pipelines."
+      },
+      "body": {
+        "fr": "Navy Medicine (Medical Education and Training Campus)",
+        "en": "Navy Medicine (Medical Education and Training Campus)"
+      },
+      "issuer": {
+        "name": "Medical Education and Training Campus",
+        "short_name": "METC"
+      },
+      "reference": {
+        "fr": "Fiche de carrière HM de l’US Navy (cool.osd.mil)",
+        "en": "U.S. Navy HM career roadmap (cool.osd.mil)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.cool.osd.mil/usn/LaDR/hm_e6.pdf",
+          "title": "HM E-6 Learning and Development Roadmap (cool.osd.mil)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Hospital_corpsman",
+          "title": "Hospital corpsman (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "us-nwc-cns",
+      "code": "US-NWC-CNS",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Collège de commandement et d’état-major naval (Naval War College)",
+        "en": "College of Naval Command and Staff (Naval War College)"
+      },
+      "official_name": "College of Naval Command and Staff, U.S. Naval War College",
+      "short_name": "NWC CNCS",
+      "description": {
+        "fr": "Enseignement militaire supérieur de niveau intermédiaire (JPME phase I) dispensé à Newport (Rhode Island) aux officiers de l’US Navy de grade lieutenant commander et commander. Il prépare aux fonctions de commandant en second, de commandant d’unité et d’officier d’état-major.",
+        "en": "Intermediate-level professional military education (JPME Phase I) delivered at Newport, Rhode Island, to U.S. Navy lieutenant commanders and commanders. It prepares them for executive officer, commanding officer and staff duties."
+      },
+      "body": {
+        "fr": "US Navy (enseignement militaire supérieur)",
+        "en": "U.S. Navy (professional military education)"
+      },
+      "issuer": {
+        "name": "U.S. Naval War College",
+        "short_name": "NWC"
+      },
+      "reference": {
+        "fr": "Programme JPME du Naval War College",
+        "en": "Naval War College JPME program"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Naval_War_College",
+          "title": "Naval War College (Wikipedia)"
+        },
+        {
+          "url": "https://usnwc.edu/",
+          "title": "U.S. Naval War College (usnwc.edu)"
+        }
+      ]
+    },
+    {
+      "id": "us-army-war-college",
+      "code": "US-USAWC",
+      "category": "c2_staff",
+      "name": {
+        "fr": "École de guerre de l’US Army (Army War College)",
+        "en": "U.S. Army War College"
+      },
+      "official_name": "U.S. Army War College Resident Education Program",
+      "short_name": "USAWC",
+      "description": {
+        "fr": "Enseignement militaire supérieur de niveau stratégique (JPME phase II) dispensé à Carlisle (Pennsylvanie) aux lieutenants-colonels et colonels, toutes armées confondues. Il prépare aux commandements de niveau brigade et aux postes de responsabilité stratégique, dont les commandements de théâtre des opérations spéciales.",
+        "en": "Strategic-level professional military education (JPME Phase II) delivered at Carlisle, Pennsylvania, to lieutenant colonels and colonels from all services. It prepares them for brigade-level command and senior strategic positions, including theater special operations commands."
+      },
+      "body": {
+        "fr": "US Army (enseignement militaire supérieur)",
+        "en": "U.S. Army (professional military education)"
+      },
+      "issuer": {
+        "name": "U.S. Army War College",
+        "short_name": "USAWC"
+      },
+      "reference": {
+        "fr": "Programme JPME II de l’Army War College",
+        "en": "Army War College JPME II program"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_War_College",
+          "title": "United States Army War College (Wikipedia)"
+        },
+        {
+          "url": "https://www.armywarcollege.edu/",
+          "title": "U.S. Army War College (armywarcollege.edu)"
+        }
+      ]
+    },
+    {
+      "id": "us-ndu-capstone",
+      "code": "US-NDU-CAPSTONE",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours CAPSTONE des officiers généraux (NDU)",
+        "en": "CAPSTONE General and Flag Officer Course (NDU)"
+      },
+      "official_name": "CAPSTONE General and Flag Officer Course",
+      "short_name": "CAPSTONE",
+      "description": {
+        "fr": "Cours de la National Defense University (Fort McNair, Washington) obligatoire, depuis la loi Goldwater-Nichols de 1986, pour tous les officiers nouvellement promus généraux et amiraux. Il porte sur les opérations interarmées et multinationales, la sécurité nationale et le travail avec les autres administrations.",
+        "en": "National Defense University course (Fort McNair, Washington) mandatory since the 1986 Goldwater-Nichols Act for all newly selected general and flag officers. It covers joint and multinational operations, national security and work with other government agencies."
+      },
+      "body": {
+        "fr": "Département de la Défense (enseignement militaire supérieur interarmées)",
+        "en": "Department of Defense (joint professional military education)"
+      },
+      "issuer": {
+        "name": "National Defense University",
+        "short_name": "NDU"
+      },
+      "reference": {
+        "fr": "Programme CAPSTONE (capstone.ndu.edu) ; loi Goldwater-Nichols (1986)",
+        "en": "CAPSTONE program (capstone.ndu.edu); Goldwater-Nichols Act (1986)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://capstone.ndu.edu/",
+          "title": "CAPSTONE (capstone.ndu.edu)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Capstone_Military_Leadership_Program",
+          "title": "Capstone Military Leadership Program (Wikipedia)"
+        }
+      ]
     }
   ]
 }

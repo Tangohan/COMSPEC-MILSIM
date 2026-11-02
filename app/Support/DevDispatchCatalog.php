@@ -294,6 +294,16 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1308, '2026-11-02', 'Emplois du catalogue : brevets, formations et doctrines réels, rattachables à vos fonctions', 'Dans la fiche d’un emploi du catalogue (États-Unis, France, Allemagne, Chine, Russie, OTAN), chaque brevet, qualification, formation ou doctrine typique ouvre désormais sa vraie fiche : qualification du catalogue de référence avec son école et son intitulé d’origine, ou publication du référentiel doctrinal. Un bouton « Rattacher à la fonction » l’ajoute aux prérequis de votre emploi à l’enregistrement, en important la qualification dans votre référentiel si besoin.', [
+                'Plus de 250 qualifications et formations de référence ajoutées au catalogue, dont deux nouveaux catalogues pays : Chine et Russie, avec les intitulés officiels en chinois et en russe',
+                'Doctrines OTAN ajoutées au référentiel doctrinal, dont la doctrine interalliée des opérations spéciales AJP-3.5',
+                'Bouton « Rattacher à la fonction » sur chaque brevet ou doctrine de la fiche d’un emploi du catalogue',
+                'Prérequis « Doctrine lue » relié à une publication du référentiel : tenu dès qu’un document de doctrine de votre communauté rattaché à cette publication est lu',
+            ], [
+                'Brevets et doctrines de la fiche : lien direct vers l’élément au lieu d’une simple recherche dans les qualifications',
+            ], [], ['personnel'], [
+                'Ouvrez Effectifs › Fonctions, éditez un emploi, puis Chercher dans le catalogue. Choisissez un emploi OTAN (SOCC) : ouvrez AJP-3.5, cliquez Rattacher à la fonction, enregistrez l’emploi et vérifiez ses prérequis.',
+            ], 'Portail Athena'),
             $pr(1306, '2026-11-02', 'Recherches, filtres et onglets de nouveau pris en compte', 'Plusieurs pages ignoraient ce qui était demandé dans l’adresse : la recherche, le tri et les filtres de la documentation, le filtre de Mes documents, les onglets des sessions de jeu de rôle, le filtre des catégories ou le simulateur d’accès affichaient toujours la vue par défaut. Ces choix sont de nouveau appliqués, par formulaire comme par lien direct, et le téléchargement d’un document à signature obligatoire fonctionne de nouveau après la signature.', [], [], [
                 'Documentation et gestion des documents : recherche, catégorie, statut, type, classification et tri de nouveau appliqués',
                 'Mes documents : le filtre choisi (à lire, obligatoires, en retard, lus) est de nouveau appliqué',

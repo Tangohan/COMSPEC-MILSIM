@@ -5,7 +5,8 @@ declare(strict_types=1);
 // Les libellés data-job-catalog-label servent aux textes construits par le script (puces, catalogues de communauté…).
 // Catalogues de communauté : formulaires envoyés en JSON (fonctions/catalogue/collections|emplois), jeton CSRF de la page.
 // Brevets et qualifications cliquables : sous-fiche d’une qualification du catalogue (assets/js/qualification-sheet.js,
-// fiche JSON du référentiel des qualifications), lien vers le cours Academy, recherche dans le catalogue de qualifications.
+// fiche JSON du référentiel des qualifications), lien vers le cours Academy ; doctrines citées : lien vers le référentiel doctrinal.
+// « Rattacher à la fonction » : qualification ou doctrine ajoutée aux prérequis à l’enregistrement (catalog_reference_keys[]).
 $catalogUrl = effectifs_workspace_url('fonctions/catalogue');
 $jcIcons = \App\Support\JobRoleIconLibrary::all();
 $jcIconOptions = static function () use ($jcIcons, $h): string {
@@ -17,7 +18,7 @@ $jcIconOptions = static function () use ($jcIcons, $h): string {
     return $html;
 };
 ?>
-<dialog class="jobcat" id="job-catalog-dialog" aria-labelledby="job-catalog-title" aria-describedby="job-catalog-lead" data-job-catalog data-catalog-url="<?= $h($catalogUrl) ?>" data-collection-url="<?= $h($catalogUrl . '/collections') ?>" data-entry-url="<?= $h($catalogUrl . '/emplois') ?>" data-csrf="<?= $h($csrf ?? '') ?>" data-qualification-url="<?= $h(url('back-office/referentiels/qualifications/catalogue/fiche')) ?>" data-qualification-search-url="<?= $h(url('back-office/referentiels/qualifications/catalogue')) ?>" data-referentiel-url="<?= $h(url('back-office/referentiels/qualifications')) ?>" data-academy-url="<?= $h(url('academy/catalogue')) ?>">
+<dialog class="jobcat" id="job-catalog-dialog" aria-labelledby="job-catalog-title" aria-describedby="job-catalog-lead" data-job-catalog data-catalog-url="<?= $h($catalogUrl) ?>" data-collection-url="<?= $h($catalogUrl . '/collections') ?>" data-entry-url="<?= $h($catalogUrl . '/emplois') ?>" data-csrf="<?= $h($csrf ?? '') ?>" data-qualification-url="<?= $h(url('back-office/referentiels/qualifications/catalogue/fiche')) ?>" data-qualification-search-url="<?= $h(url('back-office/referentiels/qualifications/catalogue')) ?>" data-referentiel-url="<?= $h(url('back-office/referentiels/qualifications')) ?>" data-academy-url="<?= $h(url('academy/catalogue')) ?>" data-doctrine-url="<?= $h(url('back-office/doctrine/referentiel')) ?>">
 <div class="jobcat__frame">
     <header class="jobcat__head">
         <div>
@@ -174,6 +175,8 @@ $jcIconOptions = static function () use ($jcIcons, $h): string {
         <span data-job-catalog-label="open-qual">Ouvrir la fiche de la qualification</span><span data-job-catalog-label="academy-course">Formation Academy</span>
         <span data-job-catalog-label="search-qual">Chercher ce brevet dans les qualifications</span><span data-job-catalog-label="qualif">Exige la qualification</span>
         <span data-job-catalog-label="open-ref">Ouvrir la fiche du référentiel</span><span data-job-catalog-label="linked-to">Reliée à</span>
+        <span data-job-catalog-label="attach">Rattacher à la fonction</span><span data-job-catalog-label="attached">Rattaché : ajouté aux prérequis à l’enregistrement</span><span data-job-catalog-label="detached">Rattachement annulé</span>
+        <span data-job-catalog-label="open-doctrine">Ouvrir dans le référentiel doctrinal</span><span data-job-catalog-label="doctrine">Doctrine</span>
         <span data-job-catalog-label="link-ref">Relier à une qualification du référentiel</span><span data-job-catalog-label="unlink">Ne plus relier</span>
     </div>
 </div>

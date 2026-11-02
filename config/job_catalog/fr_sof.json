@@ -43,6 +43,10 @@
      "Special forces specialist training at the 1er RPIMa (SAS course, training company)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-cfim",
+    "qualification:fr-cursus-sas"
+   ],
    "qualification_refs": [
     "fr-cfim",
     "fr-cursus-sas"
@@ -110,6 +114,10 @@
      "Special forces specialist training at the 1er RPIMa (12 months)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-ensoa",
+    "qualification:fr-cursus-sas"
+   ],
    "qualification_refs": [
     "fr-ensoa",
     "fr-cursus-sas"
@@ -171,6 +179,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Régiment : chef de corps (colonel)"
@@ -228,6 +237,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Compagnie SAS : commandant d'unité"
@@ -287,6 +297,10 @@
      "Canopy infiltration (ISV)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-chuteur-operationnel",
+    "qualification:fr-chuteur-operationnel"
+   ],
    "qualification_refs": [
     "fr-chuteur-operationnel"
    ],
@@ -347,6 +361,9 @@
      "SAS PO specialty (offensive diver)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-sas-po"
+   ],
    "qualification_refs": [
     "fr-sas-po"
    ],
@@ -409,6 +426,10 @@
      "SAS mountain team member"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-sas-jungle",
+    "qualification:fr-sas-montagne"
+   ],
    "qualification_refs": [
     "fr-sas-jungle",
     "fr-sas-montagne"
@@ -472,6 +493,9 @@
      "SAS patrol course (PATSAS)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-patsas"
+   ],
    "qualification_refs": [
     "fr-patsas"
    ],
@@ -528,6 +552,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -581,6 +606,9 @@
      "Advanced sniper course (1er RPIMa training company)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-tireur-elite"
+   ],
    "qualification_refs": [
     "fr-tireur-elite"
    ],
@@ -637,6 +665,9 @@
      "Counter-terrorism and hostage rescue course (CTLO)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-ctlo"
+   ],
    "qualification_refs": [
     "fr-ctlo"
    ],
@@ -701,6 +732,9 @@
      "Advanced close protection course (1er RPIMa training company)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-protection-rapprochee"
+   ],
    "qualification_refs": [
     "fr-protection-rapprochee"
    ],
@@ -751,6 +785,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -800,6 +835,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -859,6 +895,10 @@
      "Specialist training at CeFOS, La Valbonne (1 month)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-cfim",
+    "qualification:fr-auxiliaire-sanitaire"
+   ],
    "qualification_refs": [
     "fr-cfim",
     "fr-auxiliaire-sanitaire"
@@ -922,6 +962,10 @@
      "2-month specialist training (CFIM Dieuze or a signals regiment)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-cfim",
+    "qualification:fr-cfim"
+   ],
    "qualification_refs": [
     "fr-cfim"
    ],
@@ -978,6 +1022,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -1031,6 +1076,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -1080,6 +1126,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "CAST : commandant (général de division)"
@@ -1137,6 +1184,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "CAST : adjoint « forces spéciales »"
@@ -1190,6 +1238,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "CAST : adjoint « hybridité »"
@@ -1247,6 +1296,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -1296,6 +1346,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -1349,6 +1400,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -1402,6 +1454,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -1451,6 +1504,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -1500,6 +1554,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -1549,6 +1604,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "COS : commandant (officier général)"
@@ -1606,6 +1662,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "COS : officier général adjoint"
@@ -1659,6 +1716,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -1712,6 +1770,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -1761,6 +1820,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -1820,6 +1880,11 @@
      "Scorpion course (RA field technical qualification)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-parachutiste",
+    "qualification:fr-cte-ra",
+    "qualification:fr-stage-scorpion"
+   ],
    "qualification_refs": [
     "fr-brevet-parachutiste",
     "fr-cte-ra",
@@ -1892,6 +1957,10 @@
      "CTE RA (elementary technical certificate, airborne reconnaissance)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-parachutiste",
+    "qualification:fr-cte-ra"
+   ],
    "qualification_refs": [
     "fr-brevet-parachutiste",
     "fr-cte-ra"
@@ -1963,6 +2032,10 @@
      "CTE RA (elementary technical certificate, airborne reconnaissance)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-parachutiste",
+    "qualification:fr-cte-ra"
+   ],
    "qualification_refs": [
     "fr-brevet-parachutiste",
     "fr-cte-ra"
@@ -2032,6 +2105,11 @@
      "Airborne reconnaissance team cell leader qualification"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-parachutiste",
+    "qualification:fr-cte-ra",
+    "qualification:fr-chef-cellule-ra"
+   ],
    "qualification_refs": [
     "fr-brevet-parachutiste",
     "fr-cte-ra",
@@ -2104,6 +2182,10 @@
      "CTE RA (elementary technical certificate, airborne reconnaissance)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-parachutiste",
+    "qualification:fr-cte-ra"
+   ],
    "qualification_refs": [
     "fr-brevet-parachutiste",
     "fr-cte-ra"
@@ -2169,6 +2251,11 @@
      "Military parachutist badge (brevet parachutiste)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-tests-agrement-fs",
+    "qualification:fr-chef-equipe-ra",
+    "qualification:fr-brevet-parachutiste"
+   ],
    "qualification_refs": [
     "fr-tests-agrement-fs",
     "fr-chef-equipe-ra",
@@ -2243,6 +2330,11 @@
      "Military parachutist badge (brevet parachutiste)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-chuteur-operationnel",
+    "qualification:fr-chuteur-operationnel",
+    "qualification:fr-brevet-parachutiste"
+   ],
    "qualification_refs": [
     "fr-chuteur-operationnel",
     "fr-brevet-parachutiste"
@@ -2314,6 +2406,10 @@
      "CTE RA (elementary technical certificate, airborne reconnaissance)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-parachutiste",
+    "qualification:fr-cte-ra"
+   ],
    "qualification_refs": [
     "fr-brevet-parachutiste",
     "fr-cte-ra"
@@ -2381,6 +2477,10 @@
      "Specialist training at the 13e RDP (Souge)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-cfim",
+    "qualification:fr-specialite-13rdp"
+   ],
    "qualification_refs": [
     "fr-cfim"
    ],
@@ -2447,6 +2547,10 @@
      "Specialist training at the 13e RDP (Souge)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-cfim",
+    "qualification:fr-specialite-13rdp"
+   ],
    "qualification_refs": [
     "fr-cfim"
    ],
@@ -2503,6 +2607,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -2552,6 +2657,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "État-major du régiment : officier opérations (lieutenant/capitaine) ; chef du BOI (officier supérieur)"
@@ -2609,6 +2715,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Escadron : commandant d'unité (capitaine)"
@@ -2666,6 +2773,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Régiment : chef de corps (colonel)"
@@ -2733,6 +2841,10 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-pilote-ealat",
+    "qualification:fr-orhas"
+   ],
    "qualification_refs": [
     "fr-pilote-ealat",
     "fr-orhas"
@@ -2804,6 +2916,10 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-pilote-ealat",
+    "qualification:fr-orhas"
+   ],
    "qualification_refs": [
     "fr-pilote-ealat",
     "fr-orhas"
@@ -2875,6 +2991,10 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-pilote-ealat",
+    "qualification:fr-orhas"
+   ],
    "qualification_refs": [
     "fr-pilote-ealat",
     "fr-orhas"
@@ -2938,6 +3058,10 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-pilote-ealat",
+    "qualification:fr-orhas"
+   ],
    "qualification_refs": [
     "fr-pilote-ealat",
     "fr-orhas"
@@ -3005,6 +3129,10 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-chef-de-bord-alat",
+    "qualification:fr-orhas"
+   ],
    "qualification_refs": [
     "fr-orhas"
    ],
@@ -3075,6 +3203,10 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-pilote-ealat",
+    "qualification:fr-orhas"
+   ],
    "qualification_refs": [
     "fr-pilote-ealat",
     "fr-orhas"
@@ -3140,6 +3272,9 @@
      "EALAT pilot training"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-pilote-ealat"
+   ],
    "qualification_refs": [
     "fr-pilote-ealat"
    ],
@@ -3204,6 +3339,9 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-orhas"
+   ],
    "qualification_refs": [
     "fr-orhas"
    ],
@@ -3272,6 +3410,9 @@
      "ORHAS course, including module M3 (combat survival and SF procedures)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-orhas"
+   ],
    "qualification_refs": [
     "fr-orhas"
    ],
@@ -3340,6 +3481,9 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-orhas"
+   ],
    "qualification_refs": [
     "fr-orhas"
    ],
@@ -3404,6 +3548,9 @@
      "ORHAS course, module M4 (preparation to command an SF helicopter package)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-orhas"
+   ],
    "qualification_refs": [
     "fr-orhas"
    ],
@@ -3464,6 +3611,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Régiment : chef de corps (colonel)"
@@ -3525,6 +3673,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Cellule d'instruction spécialisée : chef de cellule (chef de bataillon), un officier, un militaire du rang"
@@ -3584,6 +3733,10 @@
      "Aircraft mechanic specialist training"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-cfim",
+    "qualification:fr-maintenance-aero-terre"
+   ],
    "qualification_refs": [
     "fr-cfim",
     "fr-maintenance-aero-terre"
@@ -3651,6 +3804,10 @@
      "Specialist training at Rochefort (8 to 11 months)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-ensoa",
+    "qualification:fr-maintenance-aero-terre"
+   ],
    "qualification_refs": [
     "fr-ensoa",
     "fr-maintenance-aero-terre"
@@ -3718,6 +3875,10 @@
      "Aircraft maintenance specialist training (about 1 year)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-officier-amscc",
+    "qualification:fr-maintenance-aero-terre"
+   ],
    "qualification_refs": [
     "fr-maintenance-aero-terre"
    ],
@@ -3784,6 +3945,10 @@
      "Specialist training at EALAT Dax (about 6.5 months)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-ensoa",
+    "qualification:fr-technicien-simulateur-ealat"
+   ],
    "qualification_refs": [
     "fr-ensoa"
    ],
@@ -3840,6 +4005,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "FORFUSCO : amiral commandant (contre-amiral en 2024)"
@@ -3907,6 +4073,10 @@
      "Fusilier BAT, BS then BM career badges (technical, senior, master)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-ecofus-fi",
+    "qualification:fr-bat-fusilier"
+   ],
    "qualification_refs": [
     "fr-ecofus-fi",
     "fr-bat-fusilier",
@@ -3974,6 +4144,9 @@
      "Basic commando badge (green beret)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-commando-marine"
+   ],
    "qualification_refs": [
     "fr-brevet-commando-marine"
    ],
@@ -4038,6 +4211,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -4097,6 +4271,10 @@
      "Military parachutist badge (end of commando course)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-commando-marine",
+    "qualification:fr-brevet-parachutiste"
+   ],
    "qualification_refs": [
     "fr-brevet-commando-marine",
     "fr-brevet-parachutiste"
@@ -4168,6 +4346,10 @@
      "Team leader level (BAT equivalent, technical aptitude badge)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-commando-marine",
+    "qualification:fr-bat-fusilier"
+   ],
    "qualification_refs": [
     "fr-brevet-commando-marine",
     "fr-bat-fusilier"
@@ -4235,6 +4417,10 @@
      "Group leader level (BS equivalent, senior badge)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-commando-marine",
+    "qualification:fr-bs-fusilier"
+   ],
    "qualification_refs": [
     "fr-brevet-commando-marine",
     "fr-bs-fusilier"
@@ -4302,6 +4488,10 @@
      "Mission leader level (BM equivalent, master badge)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-commando-marine",
+    "qualification:fr-bm-fusilier"
+   ],
    "qualification_refs": [
     "fr-brevet-commando-marine",
     "fr-bm-fusilier"
@@ -4359,6 +4549,9 @@
      "Commando marine fusilier specialty (officer)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-commando-marine"
+   ],
    "qualification_refs": [
     "fr-brevet-commando-marine"
    ],
@@ -4429,6 +4622,10 @@
      "Military free-fall qualification (chuteur opérationnel)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-commando-marine",
+    "qualification:fr-chuteur-operationnel"
+   ],
    "qualification_refs": [
     "fr-brevet-commando-marine",
     "fr-paraspe-marine"
@@ -4496,6 +4693,10 @@
      "Fin swimmer qualification (palmeur)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-commando-marine",
+    "qualification:fr-palmeur"
+   ],
    "qualification_refs": [
     "fr-brevet-commando-marine",
     "fr-palmeur"
@@ -4563,6 +4764,10 @@
      "Sniper specialisation"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-commando-marine",
+    "qualification:fr-tireur-elite"
+   ],
    "qualification_refs": [
     "fr-brevet-commando-marine",
     "fr-tireur-elite"
@@ -4630,6 +4835,10 @@
      "CTLO specialisation (counter-terrorism and hostage rescue)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-commando-marine",
+    "qualification:fr-ctlo"
+   ],
    "qualification_refs": [
     "fr-brevet-commando-marine",
     "fr-ctlo"
@@ -4701,6 +4910,10 @@
      "CTLO specialisation (counter-terrorism and hostage rescue)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-commando-marine",
+    "qualification:fr-ctlo"
+   ],
    "qualification_refs": [
     "fr-brevet-commando-marine",
     "fr-ctlo"
@@ -4770,6 +4983,9 @@
      "Basic commando badge"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-commando-marine"
+   ],
    "qualification_refs": [
     "fr-brevet-commando-marine"
    ],
@@ -4838,6 +5054,9 @@
      "Basic commando badge"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-commando-marine"
+   ],
    "qualification_refs": [
     "fr-brevet-commando-marine"
    ],
@@ -4908,6 +5127,10 @@
      "Combat swimmer certificate (Navy Diving School, Saint-Mandrier)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-commando-marine",
+    "qualification:fr-nageur-de-combat"
+   ],
    "qualification_refs": [
     "fr-brevet-commando-marine",
     "fr-nageur-de-combat"
@@ -4979,6 +5202,10 @@
      "CTLO specialisation (counter-terrorism and hostage rescue)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-commando-marine",
+    "qualification:fr-ctlo"
+   ],
    "qualification_refs": [
     "fr-brevet-commando-marine",
     "fr-ctlo"
@@ -5040,6 +5267,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Commando Kieffer : cellule cynotechnique (binôme maître-chien et chien)"
@@ -5101,6 +5329,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Commando Kieffer : cellule drone"
@@ -5162,6 +5391,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Commando Kieffer : cellule NRBC"
@@ -5219,6 +5449,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Commando Kieffer : cellule renseignement"
@@ -5276,6 +5507,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -5333,6 +5565,9 @@
      "Navy SITEL specialty (information systems and telecoms)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-sitel-marine"
+   ],
    "qualification_refs": [
     "fr-sitel-marine"
    ],
@@ -5393,6 +5628,9 @@
      "Navy COA specialty (air operations controller)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-coa-marine"
+   ],
    "qualification_refs": [
     "fr-coa-marine"
    ],
@@ -5445,6 +5683,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Équipage ECUME : pilote, avec navigateur, tireurs de bord et mécanicien"
@@ -5506,6 +5745,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Équipage ECUME : navigateur"
@@ -5567,6 +5807,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Équipage ECUME : tireur de bord"
@@ -5628,6 +5869,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Équipage ECUME : mécanicien"
@@ -5685,6 +5927,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Commando Ponchardier : escouade Terre"
@@ -5750,6 +5993,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Commando Ponchardier : escouade 3D"
@@ -5811,6 +6055,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Commando Ponchardier : quatre escouades (Mer, Terre, 3D, Moyens spéciaux) et un élément de commandement"
@@ -5878,6 +6123,10 @@
      "Counter-terrorism and hostage rescue procedures (CTLO)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-belouga",
+    "qualification:fr-ctlo"
+   ],
    "qualification_refs": [
     "fr-belouga",
     "fr-ctlo"
@@ -5949,6 +6198,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Commandant d'unité (lieutenant-colonel)"
@@ -6006,6 +6256,9 @@
      "JTAC (Joint Terminal Attack Controller)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-jtac"
+   ],
    "qualification_refs": [
     "fr-jtac",
     "nato-jtac"
@@ -6073,6 +6326,10 @@
      "High-altitude operational jump (SOGH), qualification in progress"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-afte",
+    "qualification:fr-chuteur-operationnel"
+   ],
    "qualification_refs": [
     "fr-afte",
     "fr-paraspe-air"
@@ -6136,6 +6393,9 @@
      "Designated marksman (secondary specialty)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-tireur-elite"
+   ],
    "qualification_refs": [
     "fr-tireur-elite"
    ],
@@ -6198,6 +6458,11 @@
      "Canopy infiltration (ISV)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-chuteur-operationnel",
+    "qualification:fr-paraspe-air",
+    "qualification:fr-chuteur-operationnel"
+   ],
    "qualification_refs": [
     "fr-paraspe-air"
    ],
@@ -6262,6 +6527,9 @@
      "Dog handler (about 18 months of training)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-maitre-chien"
+   ],
    "qualification_refs": [
     "fr-maitre-chien"
    ],
@@ -6318,6 +6586,9 @@
      "Combat signaller level 1 course (10 weeks)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-transmetteur-combat-n1"
+   ],
    "qualification_refs": [
     "fr-transmetteur-combat-n1"
    ],
@@ -6378,6 +6649,10 @@
      "Helicopter cluster (rope) extraction"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-aerocordage",
+    "qualification:fr-aerocordage"
+   ],
    "billets": {
     "fr": [
      "Équipe de récupération RESCO : commando"
@@ -6443,6 +6718,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Groupe de commandos RESCO : chef de groupe"
@@ -6500,6 +6776,9 @@
      "EOD (explosive ordnance disposal)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-nedex-air"
+   ],
    "qualification_refs": [
     "fr-nedex-air"
    ],
@@ -6564,6 +6843,11 @@
      "Military parachutist badge"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-maquis",
+    "qualification:fr-matou",
+    "qualification:fr-brevet-parachutiste"
+   ],
    "qualification_refs": [
     "fr-maquis",
     "fr-matou",
@@ -6640,6 +6924,9 @@
      "TACP specialty"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-tacp"
+   ],
    "qualification_refs": [
     "fr-tacp"
    ],
@@ -6702,6 +6989,10 @@
      "Military parachutist badge"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-moniteur-parachutiste",
+    "qualification:fr-brevet-parachutiste"
+   ],
    "qualification_refs": [
     "fr-moniteur-parachutiste",
     "fr-brevet-parachutiste"
@@ -6763,6 +7054,11 @@
      "Air-to-air refuelling (day / night)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-pilote-helicoptere-aae",
+    "qualification:fr-commandant-bord-helicoptere",
+    "qualification:fr-ravitaillement-vol-helicoptere"
+   ],
    "qualification_refs": [
     "fr-pilote-helicoptere-aae",
     "fr-commandant-bord-helicoptere",
@@ -6835,6 +7131,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Équipage Caracal : 2 mécaniciens navigants"
@@ -6898,6 +7195,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Équipage Caracal : 1 sauveteur plongeur héliporté"
@@ -6955,6 +7253,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Escadron : chef de sous-division Caracal"
@@ -7012,6 +7311,9 @@
      "Military transport pilot wings"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-pilote-transport-aae"
+   ],
    "qualification_refs": [
     "fr-pilote-transport-aae"
    ],
@@ -7082,6 +7384,9 @@
      "Flight engineer competitive selection"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-mecanicien-navigant-aae"
+   ],
    "qualification_refs": [
     "fr-mecanicien-navigant-aae"
    ],
@@ -7148,6 +7453,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "Commandant d'escadron (lieutenant-colonel)"
@@ -7209,6 +7515,9 @@
      "Air parachute commando diploma"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-commando-parachutiste-air"
+   ],
    "qualification_refs": [
     "fr-commando-parachutiste-air"
    ],
@@ -7273,6 +7582,10 @@
      "Matou course (8 weeks)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-maquis",
+    "qualification:fr-matou"
+   ],
    "qualification_refs": [
     "fr-maquis",
     "fr-matou"
@@ -7330,6 +7643,9 @@
      "Commando training (aircrew recovery, air-to-ground fire support, air mobility)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-officier-commando-air"
+   ],
    "qualification_refs": [
     "fr-officier-commando-air"
    ],
@@ -7394,6 +7710,11 @@
      "Military free-fall badge (13-week SOGH high-altitude jump course, ETAP Pau)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-parachutiste",
+    "qualification:fr-jedburgh",
+    "qualification:fr-chuteur-operationnel"
+   ],
    "qualification_refs": [
     "fr-brevet-parachutiste",
     "fr-jedburgh",
@@ -7472,6 +7793,10 @@
      "High-altitude oxygen jump"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-chuteur-operationnel",
+    "qualification:fr-sotgh"
+   ],
    "qualification_refs": [
     "fr-chuteur-operationnel",
     "fr-sotgh"
@@ -7529,6 +7854,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "État-major de la 11e BP : chef du GCP (commandant en 2026)"
@@ -7586,6 +7912,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "SGCP : chef du sous-groupement (lieutenant-colonel en 2020)",
@@ -7649,6 +7976,9 @@
      "JTAC qualification (forward air controller)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-jtac"
+   ],
    "qualification_refs": [
     "fr-jtac",
     "nato-jtac"
@@ -7712,6 +8042,10 @@
      "Military free-fall badge"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-brevet-parachutiste",
+    "qualification:fr-chuteur-operationnel"
+   ],
    "qualification_refs": [
     "fr-brevet-parachutiste",
     "fr-chuteur-operationnel"
@@ -7773,6 +8107,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "GCM : environ 200 commandos issus des régiments de la brigade"
@@ -7840,6 +8175,9 @@
      "Military paragliding badges (A, B, C)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-parapente-militaire"
+   ],
    "qualification_refs": [
     "fr-parapente-militaire"
    ],
@@ -7908,6 +8246,10 @@
      "High mountain team leader badge (summer / winter)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-bam",
+    "qualification:fr-cehm"
+   ],
    "qualification_refs": [
     "fr-bam",
     "fr-cehm"
@@ -7979,6 +8321,10 @@
      "High mountain unit leader badge (officers)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-cdhm",
+    "qualification:fr-cuhm"
+   ],
    "qualification_refs": [
     "fr-cdhm",
     "fr-cuhm"
@@ -8050,6 +8396,10 @@
      "State high-mountain guide diploma (where held)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-moniteur-guide-militaire",
+    "qualification:fr-guide-haute-montagne"
+   ],
    "qualification_refs": [
     "fr-moniteur-guide-militaire",
     "fr-guide-haute-montagne"
@@ -8125,6 +8475,11 @@
      "Diving (depending on section)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-gign-formation",
+    "qualification:fr-chuteur-operationnel",
+    "qualification:fr-gign-plongee"
+   ],
    "qualification_refs": [
     "fr-gign-formation",
     "fr-chuteur-operationnel"
@@ -8198,6 +8553,9 @@
      "Ten-month common initial training, then observation-research specialisation"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-gign-formation"
+   ],
    "qualification_refs": [
     "fr-gign-formation"
    ],
@@ -8264,6 +8622,9 @@
      "Ten-month common initial training, then security-protection specialisation"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-gign-formation"
+   ],
    "qualification_refs": [
     "fr-gign-formation"
    ],
@@ -8336,6 +8697,10 @@
      "Basic sniper training common to all operators (open sources)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-gign-tir-haute-precision",
+    "qualification:fr-gign-tir-haute-precision"
+   ],
    "qualification_refs": [
     "fr-gign-tir-haute-precision"
    ],
@@ -8400,6 +8765,9 @@
      "Internal selection by testing"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-gign-selection"
+   ],
    "billets": {
     "fr": [
      "CNN : négociateurs travaillant en binôme"
@@ -8461,6 +8829,9 @@
      "Mechanical and explosive breaching"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-gign-effraction"
+   ],
    "qualification_refs": [
     "fr-gign-effraction"
    ],
@@ -8521,6 +8892,9 @@
      "K9 handling (attack, explosives detection)"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-maitre-chien"
+   ],
    "qualification_refs": [
     "fr-maitre-chien"
    ],
@@ -8585,6 +8959,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [],
     "en": []
@@ -8642,6 +9017,9 @@
      "Two-month initial training tailored to the career track"
     ]
    },
+   "reference_keys": [
+    "qualification:fr-gign-antenne"
+   ],
    "qualification_refs": [
     "fr-gign-antenne"
    ],
@@ -8702,6 +9080,7 @@
     "fr": [],
     "en": []
    },
+   "reference_keys": [],
    "billets": {
     "fr": [
      "GIGN : commandant (officier général ; général de division en 2025)"
