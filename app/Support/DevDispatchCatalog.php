@@ -294,7 +294,7 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1268, '2026-11-02', 'Fonctions : abrégé, icône, étiquettes et fonctions du site masquables', 'Chaque fonction de votre communauté peut recevoir un abrégé (CDG, MED, JTAC…), une icône choisie dans la bibliothèque du site, des étiquettes de couleur et une description affichée au survol. Ces repères apparaissent dans les effectifs, la fiche membre, les postes de l’ORBAT, la page publique du joueur et les choix de fonction. Vous pouvez masquer les fonctions fournies par le site que vous n’utilisez pas, sans rien retirer aux membres qui les occupent, et les fonctions que vous avez créées sont mises en avant.', [
+            $pr(1269, '2026-11-02', 'Fonctions : abrégé, icône, étiquettes et fonctions du site masquables', 'Chaque fonction de votre communauté peut recevoir un abrégé (CDG, MED, JTAC…), une icône choisie dans la bibliothèque du site, des étiquettes de couleur et une description affichée au survol. Ces repères apparaissent dans les effectifs, la fiche membre, les postes de l’ORBAT, la page publique du joueur et les choix de fonction. Vous pouvez masquer les fonctions fournies par le site que vous n’utilisez pas, sans rien retirer aux membres qui les occupent, et les fonctions que vous avez créées sont mises en avant.', [
                 'Abrégé de fonction (2 à 8 majuscules, unique dans la communauté), icône de la bibliothèque avec recherche, étiquettes avec suggestions et couleur facultative',
                 'Onglet « Fonctions du site » : masquer ou réafficher une ou plusieurs fonctions, filtre « Afficher les masquées »',
                 'Filtre par étiquette dans la liste des fonctions et dans le tableur des effectifs',
