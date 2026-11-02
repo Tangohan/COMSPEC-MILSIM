@@ -445,8 +445,9 @@ final class DoctrinePublicationService
                 'domain_code' => $type['code'] ?? 'GEN',
                 'seq_year' => (int) date('Y'),
                 'seq_number' => 0,
-                'domain_id' => isset($input['domain_id']) ? (int) $input['domain_id'] : null,
-                'subdomain_id' => isset($input['subdomain_id']) ? (int) $input['subdomain_id'] : null,
+                // Champ vide (« Aucun domaine ») : null, jamais 0 (clé étrangère vers document_reference_domains).
+                'domain_id' => (int) ($input['domain_id'] ?? 0) > 0 ? (int) $input['domain_id'] : null,
+                'subdomain_id' => (int) ($input['subdomain_id'] ?? 0) > 0 ? (int) $input['subdomain_id'] : null,
             ];
         }
 
@@ -455,11 +456,11 @@ final class DoctrinePublicationService
             $generated = $this->referenceService->generateReference(
                 $tenantId,
                 $domainId,
-                isset($input['subdomain_id']) ? (int) $input['subdomain_id'] : null,
-                isset($input['issuing_unit_id']) ? (int) $input['issuing_unit_id'] : null,
+                (int) ($input['subdomain_id'] ?? 0) > 0 ? (int) $input['subdomain_id'] : null,
+                (int) ($input['issuing_unit_id'] ?? 0) > 0 ? (int) $input['issuing_unit_id'] : null,
             );
             $generated['domain_id'] = $domainId;
-            $generated['subdomain_id'] = isset($input['subdomain_id']) ? (int) $input['subdomain_id'] : null;
+            $generated['subdomain_id'] = (int) ($input['subdomain_id'] ?? 0) > 0 ? (int) $input['subdomain_id'] : null;
 
             return $generated;
         }

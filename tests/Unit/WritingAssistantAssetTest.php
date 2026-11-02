@@ -13,7 +13,9 @@ final class WritingAssistantAssetTest extends TestCase
         $partial = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/writing_assistant.php');
         $js = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/courrier-editor.js');
         $service = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Courrier/CourrierSnippetService.php');
-        $doctrine = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/organization/doctrine.php');
+        // Le formulaire des fiches SOP est un partiel inclus par la page Doctrine.
+        $doctrine = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/organization/doctrine.php')
+            . (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/organization/partials/doctrine_sop.php');
         $courrier = (string) file_get_contents(dirname(__DIR__, 2) . '/views/courrier/editor.php');
 
         self::assertStringContainsString('Assistant rédactionnel', $partial);
