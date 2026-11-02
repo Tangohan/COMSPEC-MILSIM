@@ -41,11 +41,11 @@ foreach ($inviteLinks as $link) {
 <div class="ath-note">
     <p class="ath-note__title">Un lien à partager, comme sur Discord</p>
     <p class="ath-note__text">
-        Chaque lien ouvre une page de présentation de votre communauté, puis propose de <strong>candidater</strong>
-        ou de <strong>rejoindre</strong> la communauté. Les visiteurs sans compte en créent un : l’invitation est gardée
-        jusqu’au bout de l’inscription. Collez le lien sur Discord, un forum ou un message, ou affichez son QR code.
+        <span>Chaque lien ouvre une page de présentation de votre communauté, puis propose de candidater ou de rejoindre la communauté.</span>
+        <span>Les visiteurs sans compte en créent un : l’invitation est gardée jusqu’au bout de l’inscription.</span>
+        <span>Collez le lien sur Discord, un forum ou un message, ou affichez son QR code.</span>
         <?php if ($quota['max'] > 0): ?>
-            Votre formule permet <strong><?= (int) $quota['max'] ?></strong> liens actifs à la fois (<?= (int) $quota['active'] ?> en service).
+            <span>Votre formule permet <?= (int) $quota['max'] ?> liens actifs à la fois (<?= (int) $quota['active'] ?> en service).</span>
         <?php endif; ?>
     </p>
 </div>
