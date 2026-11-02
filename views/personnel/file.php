@@ -280,10 +280,28 @@ $tenantMemberNumberEnabled = !empty($tenantMemberNumberEnabled);
 $tenantMemberNumberMode = (string) ($tenantMemberNumberMode ?? 'free');
 $tenantMemberNumberPreview = isset($tenantMemberNumberPreview) ? (string) $tenantMemberNumberPreview : '';
 // Prénom + nom du personnage = identité unique affichée partout.
+// Format de la communauté pour une fiche (« Prénom NOM » par défaut) ; pseudo et indicatif en second.
+$memberTrigram = !empty($personnelAnonymizedForViewer) ? '' : trim((string) ($memberTrigram ?? ''));
+$memberPseudo = '';
 if (!$privatePersonnelIdentity) {
     $dn = trim((string) ($targetUser['display_name'] ?? ''));
     $cs = trim((string) ($callsign ?? ''));
-    $displayName = $dn !== '' ? $dn : ($cs !== '' ? $cs : $missingLabel);
+    $nameRow = [
+        'first_name' => is_array($userProfile ?? null) ? (string) ($userProfile['first_name'] ?? '') : '',
+        'last_name' => is_array($userProfile ?? null) ? (string) ($userProfile['last_name'] ?? '') : '',
+        'display_name' => $dn,
+        'callsign' => $cs,
+        'trigram' => $memberTrigram,
+        'anonymized' => !empty($personnelAnonymizedForViewer),
+    ];
+    $displayName = member_name($nameRow, 'card', null, false);
+    if ($displayName === \App\Support\MemberName::FALLBACK) {
+        $displayName = $missingLabel;
+    }
+    $rpFull = \App\Support\MemberName::full($nameRow);
+    if ($dn !== '' && empty($personnelAnonymizedForViewer) && !in_array(mb_strtolower($dn, 'UTF-8'), [mb_strtolower((string) $displayName, 'UTF-8'), mb_strtolower($rpFull, 'UTF-8'), mb_strtolower($cs, 'UTF-8')], true)) {
+        $memberPseudo = $dn;
+    }
 } else {
     $civilFull = trim(($civilIdentity['first_name'] ?? '') . ' ' . ($civilIdentity['last_name'] ?? ''));
     if ($civilFull !== '') {
@@ -607,12 +625,24 @@ if ($personnelFileIsRhFull) {
                 <p class="personnel-file-hero__confidential"><?= \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::PERSON_ANONYMIZED, null, true) ?></p>
                 <?php endif; ?>
                 <?php if ($pfDonorTier !== null): ?><p class="personnel-file-hero__donor"><a href="<?= htmlspecialchars(url('soutenir-atak') . '#donateurs') ?>">Donateur Athena · <?= htmlspecialchars(\App\Services\Billing\DonorService::tierLabel($pfDonorTier)) ?></a> — merci pour votre soutien au projet.</p><?php endif; ?>
-                <?php if ($callsign || !empty($effectiveRankDisplay) || $nicknamePrimary !== '' || ($matricule && !empty($showMatriculePublic))): ?>
+                <?php if ($callsign || $memberTrigram !== '' || $memberPseudo !== '' || !empty($effectiveRankDisplay) || $nicknamePrimary !== '' || ($matricule && !empty($showMatriculePublic))): ?>
                 <ul class="personnel-file-hero__meta">
                     <?php if ($callsign): ?>
                     <li>
                         <span class="personnel-file-hero__meta-label">Indicatif</span>
                         <p class="personnel-file-hero__meta-value"><?= htmlspecialchars($callsign) ?></p>
+                    </li>
+                    <?php endif; ?>
+                    <?php if ($memberTrigram !== ''): ?>
+                    <li>
+                        <span class="personnel-file-hero__meta-label">Trigramme</span>
+                        <p class="personnel-file-hero__meta-value personnel-file-hero__meta-value--id"><?= htmlspecialchars($memberTrigram) ?></p>
+                    </li>
+                    <?php endif; ?>
+                    <?php if ($memberPseudo !== ''): ?>
+                    <li>
+                        <span class="personnel-file-hero__meta-label">Pseudo</span>
+                        <p class="personnel-file-hero__meta-value"><?= htmlspecialchars($memberPseudo, ENT_QUOTES, 'UTF-8') ?></p>
                     </li>
                     <?php endif; ?>
                     <?php if (!empty($effectiveRankDisplay)): ?>

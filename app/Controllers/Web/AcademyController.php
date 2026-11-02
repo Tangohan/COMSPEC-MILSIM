@@ -409,13 +409,24 @@ final class AcademyController
         }
     }
 
-    /** @return array<int,string> membres actifs de la communauté : identifiant => indicatif ou nom */
+    /** @return array<int,string> membres actifs de la communauté : identifiant => « Prénom N. » (indicatif ensuite, s’il existe) */
     private function memberNames(int $tenantId): array
     {
+        $rows = Container::get(UserRepository::class)->listForTenant($tenantId, null, 'active', null, 500);
+        $ids = array_map(static fn (array $m): int => (int) $m['id'], $rows);
+        try {
+            $identities = (new \App\Services\Personnel\MemberNameService())->identitiesFor($tenantId, $ids);
+        } catch (\Throwable) {
+            $identities = [];
+        }
         $members = [];
-        foreach (Container::get(UserRepository::class)->listForTenant($tenantId, null, 'active', null, 500) as $member) {
-            $members[(int) $member['id']] = trim((string) ($member['callsign'] ?? '')) !== '' ? (string) $member['callsign']
-                : (trim(((string) ($member['first_name'] ?? '')) . ' ' . ((string) ($member['last_name'] ?? ''))) ?: '#' . (int) $member['id']);
+        foreach ($rows as $member) {
+            $id = (int) $member['id'];
+            $row = \App\Support\MemberName::withIdentity($member, $identities[$id] ?? null);
+            $name = member_name($row, 'list', $tenantId);
+            $callsign = \App\Support\MemberName::callsign($row);
+            $members[$id] = $name === \App\Support\MemberName::FALLBACK ? '#' . $id
+                : ($callsign !== '' && $callsign !== $name ? $name . ' (' . $callsign . ')' : $name);
         }
         asort($members, SORT_NATURAL | SORT_FLAG_CASE);
         return $members;

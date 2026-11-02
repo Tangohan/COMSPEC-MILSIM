@@ -1401,6 +1401,10 @@ return function (Router $router) {
     $router->get('/back-office/organisation/indicatifs', [OrganizationCallsignSequencesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/indicatifs', [OrganizationCallsignSequencesController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/indicatifs/{id}', [OrganizationCallsignSequencesController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/noms', [\App\Controllers\Admin\Organization\OrganizationMemberNamesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/noms', [\App\Controllers\Admin\Organization\OrganizationMemberNamesController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/noms/attribuer', [\App\Controllers\Admin\Organization\OrganizationMemberNamesController::class, 'assignMissing'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/noms/trigramme', [\App\Controllers\Admin\Organization\OrganizationMemberNamesController::class, 'updateMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules/import', [OrganizationMemberNumberController::class, 'importCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

@@ -51,4 +51,5 @@ return [
     ['id' => 'doctrine_library_custom', 'label' => 'Doctrine : référentiel personnalisable par communauté (références ajoutées, masquées, catégories et rattachements aux documents)', 'group' => 'schema', 'file' => '3560_doctrine_library_custom.php', 'rerun' => true],
     ['id' => 'pilot_fleet_and_steps', 'label' => 'Cursus pilote : appareils, familles d’appareils et paliers créés par la communauté', 'group' => 'schema', 'file' => '3570_pilot_fleet_and_steps.php', 'rerun' => true],
     ['id' => 'atak_played_operations', 'label' => 'Parties détectées en jeu : types, catégories, règles « ignorer à l’avenir », suppression réversible et rattachement aux opérations planifiées', 'group' => 'schema', 'file' => '3580_atak_played_operations.php', 'rerun' => true],
+    ['id' => 'member_names_trigrams', 'label' => 'Noms des membres : trigrammes uniques par communauté (remplissage initial) et réglage d’affichage (Prénom N., Prénom NOM)', 'group' => 'schema', 'file' => '3590_member_names_trigrams.php', 'rerun' => true],
 ];

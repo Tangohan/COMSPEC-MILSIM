@@ -569,6 +569,16 @@ class UnitRepository
             $em = trim((string) ($row['email'] ?? ''));
             $out[$id] = $dn !== '' ? $dn : ($cs !== '' ? $cs : $em);
         }
+        // Prénom et nom d’abord (format « listes » de la communauté), indicatif en second : voir MemberName.
+        try {
+            foreach ((new \App\Services\Personnel\MemberNameService($this->pdo()))->labelsFor($tenantId, array_keys($out), 'list') as $id => $label) {
+                if ($label !== \App\Support\MemberName::FALLBACK) {
+                    $out[$id] = $label;
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('[noms] libellés ORBAT : ' . $e->getMessage());
+        }
 
         return $out;
     }

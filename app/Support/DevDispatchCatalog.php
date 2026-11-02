@@ -294,6 +294,16 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1327, '2026-11-02', 'Noms des membres : prénom et nom d’abord, trigrammes automatiques', 'Partout sur le site, un membre apparaît d’abord sous le prénom et le nom de son personnage : « Jean D. » dans les listes (organigramme, annuaire, tableur des effectifs, Academy), « Jean DUPONT » sur sa fiche. L’indicatif et le pseudo restent visibles en second. La carte tactique, ATAK et les ordres gardent l’indicatif en premier. Chaque membre reçoit un trigramme d’état-major (Jean DUPONT → JDU), unique dans la communauté : en cas de doublon, la variante suivante est proposée (JDP, JDT…). Le trigramme ne change plus quand le nom change ; le membre ou un responsable peut le modifier, et il sert de paraphe dans les documents. Un membre masqué reste masqué : ni son nom ni son trigramme n’apparaissent.', [
+                'Organisation › Noms et trigrammes : format des noms dans les listes et sur les fiches (Prénom N., Prénom NOM, trigramme ou indicatif), grade devant le nom, trigrammes activés ou non',
+                'Trigrammes attribués automatiquement à tous les membres (accents et particules « de », « van der » ignorés, noms composés gérés), uniques par communauté, modifiables à la main avec contrôle des doublons',
+                'Fiche du membre : trigramme et pseudo affichés, trigramme modifiable dans « Modifier ma fiche »',
+                'Organigramme : trigramme à côté du nom des cadres et des membres',
+                'Documents : champs « Trigramme (paraphe) », « Nom abrégé » et « Trigramme du supérieur »',
+            ], [
+                'Organigramme, annuaire, tableur des effectifs et Academy : « Prénom N. » à la place de l’indicatif ou du pseudo, indicatif en second',
+                'Fiche du membre : « Prénom NOM » en titre',
+            ], [], ['personnel'], [], 'Portail'),
             $pr(1319, '2026-11-02', 'Academy : les instructeurs savent où valider', 'Sur le tableau de bord de l’Academy, l’encadrement trouve en tête un bloc « À traiter » : chapitres à valider, qualifications et brevets proposés à approuver, demandes d’inscription, évaluations échouées, stagiaires en retard et séances à venir, chacun avec son compteur. Un chapitre se lit et se valide dans une fenêtre, sans changer de page ; une demande d’inscription ou une qualification proposée s’accepte ou se refuse en un clic. L’espace instructeur réunit tout dans une seule file, triable et filtrable, avec des actions groupées et une aide « Comment valider un chapitre ? ». Le menu affiche « Espace instructeur » avec le nombre d’éléments à traiter, et le stagiaire voit que son chapitre attend la validation d’un instructeur.', [
                 'Tableau de bord Academy (encadrement) : bloc « À traiter » avec compteurs et liens directs vers la file filtrée',
                 'Validation rapide d’un chapitre dans une fenêtre : résultat de l’évaluation, réponses, débriefing, critères et commentaire',

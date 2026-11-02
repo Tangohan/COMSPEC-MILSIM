@@ -363,6 +363,7 @@ final class BackOfficeSearchService
             ['title' => 'Groupes', 'subtitle' => 'Sous-unités et cellules', 'href' => url('back-office/groups'), 'keywords' => 'groupes cellules sous-unités', 'ok' => $org],
             ['title' => 'Équipes', 'subtitle' => 'Équipes de mission', 'href' => url('back-office/teams'), 'keywords' => 'équipes binômes', 'ok' => $org],
             ['title' => 'Matricules', 'subtitle' => 'Numérotation des membres', 'href' => url('back-office/organisation/matricules'), 'keywords' => 'matricules numéros', 'ok' => $org],
+            ['title' => 'Noms et trigrammes', 'subtitle' => 'Affichage des noms des membres et trigrammes', 'href' => url('back-office/organisation/noms'), 'keywords' => 'noms prénom trigramme paraphe affichage abrégé', 'ok' => $org],
             ['title' => 'Indicatifs radio', 'subtitle' => 'Séries d’indicatifs', 'href' => url('back-office/organisation/indicatifs'), 'keywords' => 'indicatifs callsign radio', 'ok' => $org],
             ['title' => 'E-mails aux membres', 'subtitle' => 'Écrire à tout ou partie de la communauté', 'href' => url('back-office/communications'), 'keywords' => 'e-mail communications envoi message', 'ok' => $org],
             ['title' => 'Doctrine et SOP', 'subtitle' => 'Procédures de l’unité', 'href' => url('back-office/doctrine'), 'keywords' => 'doctrine sop procédures', 'ok' => $org],
