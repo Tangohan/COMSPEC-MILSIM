@@ -72,7 +72,7 @@ final class SystemPlanGiftsController
             'planGiftRows' => $rows,
             'planGiftPlans' => $plans,
             'planGiftTenants' => $this->tenants->listOverviewForPlatform(),
-            'planGiftSelectedTenant' => (int) $request->input('tenant_id', 0),
+            'planGiftSelectedTenant' => (int) $request->query('tenant_id', 0),
             'planGiftError' => $error,
             'planGiftDurations' => PlanGift::DURATIONS,
             'planGiftFormAction' => url('admin/formules-offertes'),

@@ -1634,6 +1634,2180 @@
           "title": "NMIOTC – Course Catalogue"
         }
       ]
+    },
+    {
+      "id": "nato-nsou-socc-staff",
+      "code": "OTAN-NSOU-SOCC",
+      "category": "sof",
+      "name": {
+        "fr": "Cours d’état-major de commandement de composante opérations spéciales (SOCC) – NSOU",
+        "en": "Special Operations Component Command (SOCC) staff course – NSOU"
+      },
+      "official_name": "NATO SOCC Staff Course",
+      "short_name": "SOCC Staff Course",
+      "description": {
+        "fr": "Cours de l’université des opérations spéciales de l’OTAN (NSOU), à Chièvres, consacré aux fonctions d’état-major d’un commandement de composante opérations spéciales (SOCC) : planification, conduite et coordination des opérations spéciales dans une force interalliée. Il s’inscrit dans l’offre de la NSOU sur le SOCC, complétée par des modules d’enseignement à distance (ADL 102, fondamentaux des opérations d’un SOCC OTAN).",
+        "en": "NATO Special Operations University (NSOU) course in Chièvres on the staff functions of a Special Operations Component Command (SOCC): planning, conduct and coordination of special operations within a combined force. It is part of NSOU’s SOCC offering, complemented by distance learning modules (ADL 102, Fundamentals of NATO SOCC Operations)."
+      },
+      "body": {
+        "fr": "Université des opérations spéciales de l’OTAN (NSOU), Chièvres – SOFCOM",
+        "en": "NATO Special Operations University (NSOU), Chièvres – SOFCOM"
+      },
+      "issuer": {
+        "name": "NATO Special Operations University",
+        "short_name": "NSOU"
+      },
+      "reference": {
+        "fr": "Catalogue de cours de la NSOU (cursus SOCC) ; AJP-3.5",
+        "en": "NSOU course catalogue (SOCC curriculum); AJP-3.5"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.nshq.nato.int/nsou",
+          "title": "NATO Special Operations University (nshq.nato.int)"
+        },
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/special-operations-forces",
+          "title": "NATO – Special Operations Forces (nato.int)"
+        }
+      ]
+    },
+    {
+      "id": "nato-nso-intelligence",
+      "code": "OTAN-NSO-INTEL",
+      "category": "intelligence",
+      "name": {
+        "fr": "Cours de renseignement de la NATO School Oberammergau",
+        "en": "NATO School Oberammergau intelligence courses"
+      },
+      "official_name": "NATO School Oberammergau – Intelligence courses",
+      "short_name": "NSO Intel",
+      "description": {
+        "fr": "Cours de niveau opératif dispensés par le département renseignement de la NATO School Oberammergau : processus de renseignement OTAN, renseignement interarmées, surveillance et reconnaissance (JISR) et travail d’état-major J2 au sein d’un quartier général allié.",
+        "en": "Operational-level courses delivered by the intelligence department of NATO School Oberammergau: NATO intelligence process, joint intelligence, surveillance and reconnaissance (JISR) and J2 staff work in an Allied headquarters."
+      },
+      "body": {
+        "fr": "NATO School Oberammergau (Allemagne)",
+        "en": "NATO School Oberammergau (Germany)"
+      },
+      "issuer": {
+        "name": "NATO School Oberammergau",
+        "short_name": "NSO"
+      },
+      "reference": {
+        "fr": "Catalogue de cours de la NATO School Oberammergau (département renseignement)",
+        "en": "NATO School Oberammergau course catalogue (intelligence department)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/NATO_School",
+          "title": "NATO School Oberammergau (Wikipedia)"
+        },
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/joint-intelligence-surveillance-and-reconnaissance",
+          "title": "NATO – Joint ISR (nato.int)"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-sof-selection",
+      "code": "OTAN-NAT-SOF-SEL",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection et formation forces spéciales de la nation contributrice",
+        "en": "Special forces selection and training of the contributing nation"
+      },
+      "official_name": "National special forces selection and qualification",
+      "short_name": "Sélection FS nat.",
+      "description": {
+        "fr": "Les opérateurs des groupes opérationnels d’opérations spéciales (SOTG) de l’OTAN sont sélectionnés et formés par leur pays : chaque nation contributrice conduit sa propre sélection et sa formation de qualification forces spéciales avant de mettre ses unités à disposition de l’Alliance, l’OTAN n’assurant que la formation complémentaire et la certification interalliée.",
+        "en": "Operators of NATO special operations task groups (SOTG) are selected and trained by their own country: each contributing nation runs its own special forces selection and qualification training before assigning its units to the Alliance, NATO providing only complementary training and multinational certification."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Cursus national de sélection et de qualification forces spéciales ; cadre OTAN : AJP-3.5",
+        "en": "National special forces selection and qualification pipeline; NATO framework: AJP-3.5"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/special-operations-forces",
+          "title": "NATO – Special Operations Forces (nato.int)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_forces",
+          "title": "Special forces (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-air-mission-commander",
+      "code": "OTAN-NAT-AMC",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification nationale de chef de mission aérienne",
+        "en": "National air mission commander qualification"
+      },
+      "official_name": "Air Mission Commander qualification",
+      "short_name": "AMC",
+      "description": {
+        "fr": "Qualification nationale permettant de commander une mission aérienne composite (plusieurs aéronefs ou formations) : planification, briefing, conduite et débriefing. Elle est délivrée par l’armée de l’air ou l’aviation de la nation contributrice selon ses propres programmes.",
+        "en": "National qualification to lead a composite air mission (several aircraft or formations): planning, briefing, execution and debriefing. It is awarded by the contributing nation’s air force or aviation branch under its own syllabi."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Programme national de qualification de chef de mission ; cadre OTAN : AJP-3.3",
+        "en": "National mission commander syllabus; NATO framework: AJP-3.3"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.japcc.org/competencies/jrw",
+          "title": "JAPCC – Joint rotary wing competency"
+        },
+        {
+          "url": "https://www.gov.uk/government/publications/allied-joint-doctrine-for-air-and-space-operations-ajp-33b",
+          "title": "AJP-3.3 Allied Joint Doctrine for Air and Space Operations (gov.uk)"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-tactical-helo-aircrew",
+      "code": "OTAN-NAT-HELO-TAC",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification nationale d’équipage d’hélicoptère tactique (pilote ou membre d’équipage)",
+        "en": "National tactical helicopter aircrew qualification (pilot or crew member)"
+      },
+      "official_name": "National tactical helicopter aircrew qualification",
+      "short_name": "Équipage hélico tac",
+      "description": {
+        "fr": "Qualification nationale de pilote ou de membre d’équipage d’hélicoptère apte au vol tactique (vol en formation, très basse altitude, poser en zone non préparée), acquise dans les écoles et unités de l’aviation de la nation contributrice. Elle est la base requise avant toute spécialisation opérations spéciales ou récupération de personnel.",
+        "en": "National qualification as a helicopter pilot or aircrew member cleared for tactical flying (formation flying, low level, landing in unprepared areas), gained in the contributing nation’s aviation schools and units. It is the baseline required before any special operations or personnel recovery specialisation."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Programme national de qualification tactique hélicoptère ; cadre OTAN : JAPCC (compétence voilure tournante)",
+        "en": "National tactical helicopter syllabus; NATO framework: JAPCC (rotary wing competency)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.japcc.org/competencies/rw",
+          "title": "JAPCC – Rotary wing competency"
+        },
+        {
+          "url": "https://www.japcc.org/competencies/jrw",
+          "title": "JAPCC – Joint rotary wing competency"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-nvg-flying",
+      "code": "OTAN-NAT-NVG",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification nationale de vol sous jumelles de vision nocturne (JVN)",
+        "en": "National night vision goggle (NVG) flying qualification"
+      },
+      "official_name": "Night vision goggle flying qualification",
+      "short_name": "Vol JVN",
+      "description": {
+        "fr": "Formation nationale au pilotage et au travail d’équipage de nuit sous jumelles de vision nocturne : limites physiologiques, procédures et entraînement progressif en vol. Elle est indispensable aux équipages d’hélicoptères des opérations spéciales.",
+        "en": "National training in flying and crew work at night with night vision goggles: physiological limits, procedures and progressive in-flight training. It is essential for special operations helicopter crews."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Programme national de qualification vol JVN",
+        "en": "National NVG flying syllabus"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.japcc.org/competencies/rw",
+          "title": "JAPCC – Rotary wing competency"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Night-vision_device",
+          "title": "Night-vision device (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "nato-train-the-trainer",
+      "code": "OTAN-INSTR",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation de formateur (pédagogie pour instructeurs)",
+        "en": "Train-the-trainer (instructor education)"
+      },
+      "official_name": "Train-the-trainer / instructor development course",
+      "short_name": "Formateur",
+      "description": {
+        "fr": "Formation pédagogique suivie par les instructeurs avant d’enseigner dans un établissement de formation de l’OTAN (NSOU, NCI Academy, NATO School Oberammergau) : conception de cours, techniques d’enseignement et d’évaluation, conduite d’exercices. Elle est assurée par la nation d’origine ou par l’établissement d’affectation.",
+        "en": "Instructional training taken by instructors before teaching at a NATO education and training facility (NSOU, NCI Academy, NATO School Oberammergau): course design, teaching and assessment techniques, exercise delivery. It is provided by the parent nation or by the assigned facility."
+      },
+      "body": {
+        "fr": "Nation d’origine ou établissement de formation OTAN d’affectation",
+        "en": "Parent nation or assigned NATO education and training facility"
+      },
+      "issuer": {
+        "name": "Nation d’origine / établissement de formation OTAN",
+        "short_name": "Nation / ETF OTAN"
+      },
+      "reference": {
+        "fr": "Exigences des établissements de formation accrédités OTAN (ACT)",
+        "en": "Requirements of NATO-accredited education and training facilities (ACT)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "instructor",
+      "sources": [
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/education-and-training",
+          "title": "NATO – Education and training (nato.int)"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-military-atc",
+      "code": "OTAN-NAT-ATC",
+      "category": "aviation",
+      "name": {
+        "fr": "Licence nationale de contrôleur de la circulation aérienne militaire",
+        "en": "National military air traffic controller licence"
+      },
+      "official_name": "Military air traffic controller licence",
+      "short_name": "Contrôleur aérien",
+      "description": {
+        "fr": "Licence délivrée par la nation contributrice à l’issue de sa formation de contrôleur aérien militaire (tour, approche), avec qualifications locales. Elle est préalable à l’emploi dans un élément déployable de contrôle aérien sur aérodrome de campagne ou zone de poser.",
+        "en": "Licence issued by the contributing nation after its military air traffic controller training (tower, approach), with local ratings. It is a prerequisite for service in a deployable air traffic control element on a field airfield or landing zone."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Réglementation nationale de la circulation aérienne militaire",
+        "en": "National military air traffic regulations"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.japcc.org/competencies/atm",
+          "title": "JAPCC – Air traffic management competency"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Air_traffic_controller",
+          "title": "Air traffic controller (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-air-defence-controller",
+      "code": "OTAN-NAT-ADC",
+      "category": "aviation",
+      "name": {
+        "fr": "Formation nationale de contrôleur de défense aérienne",
+        "en": "National air defence controller training"
+      },
+      "official_name": "Air defence / weapons controller training",
+      "short_name": "Contrôleur DA",
+      "description": {
+        "fr": "Formation nationale des contrôleurs de défense aérienne chargés de guider les chasseurs et de surveiller l’espace aérien depuis un centre de détection et de contrôle ou un avion radar. Elle précède l’affectation comme contrôleur d’armes au sein de la force AWACS de l’OTAN (NAEW&C).",
+        "en": "National training of air defence controllers who guide fighters and monitor airspace from a control and reporting centre or an airborne radar aircraft. It precedes assignment as a weapons controller in the NATO AWACS force (NAEW&C)."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Programme national de formation des contrôleurs de défense aérienne",
+        "en": "National air defence controller syllabus"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/NATO_Airborne_Early_Warning_and_Control_Force",
+          "title": "NATO Airborne Early Warning and Control Force (Wikipedia)"
+        },
+        {
+          "url": "https://www.nato.int/en/about-us/organization/nato-structure/allied-command-operations-aco",
+          "title": "Allied Command Operations (nato.int)"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-rpas-operator",
+      "code": "OTAN-NAT-RPAS",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification nationale de pilote ou d’opérateur de drone (RPAS)",
+        "en": "National remotely piloted aircraft system (RPAS) pilot or operator qualification"
+      },
+      "official_name": "RPAS pilot / sensor operator qualification",
+      "short_name": "Pilote RPAS",
+      "description": {
+        "fr": "Qualification nationale de pilote ou d’opérateur capteurs de système d’aéronef télépiloté de grande endurance. Les équipages de la force ISR de l’OTAN (NISRF, Sigonella) sont formés par leur pays puis qualifiés sur le RQ-4D Phoenix.",
+        "en": "National qualification as a pilot or sensor operator of a long-endurance remotely piloted aircraft system. Crews of the NATO ISR Force (NISRF, Sigonella) are trained by their nation and then qualified on the RQ-4D Phoenix."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Programme national de qualification des équipages RPAS ; cadre OTAN : JAPCC (compétence UAS)",
+        "en": "National RPAS crew syllabus; NATO framework: JAPCC (UAS competency)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/nato-intelligence-surveillance-and-reconnaissance-force-nisrf",
+          "title": "NATO ISR Force (nato.int)"
+        },
+        {
+          "url": "https://www.japcc.org/competencies/uas",
+          "title": "JAPCC – UAS competency"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-imagery-analyst",
+      "code": "OTAN-NAT-IMINT",
+      "category": "intelligence",
+      "name": {
+        "fr": "Formation nationale d’interprétateur image (IMINT)",
+        "en": "National imagery analyst (IMINT) training"
+      },
+      "official_name": "Imagery analyst training",
+      "short_name": "Interprétateur image",
+      "description": {
+        "fr": "Formation nationale d’analyste en imagerie : interprétation de l’imagerie radar et électro-optique, identification des matériels et rédaction de comptes rendus. Elle précède l’affectation comme analyste image au sein de la force ISR de l’OTAN.",
+        "en": "National imagery analyst training: interpretation of radar and electro-optical imagery, equipment recognition and report writing. It precedes assignment as an imagery analyst in the NATO ISR Force."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Programme national de formation au renseignement d’origine image",
+        "en": "National imagery intelligence syllabus"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/joint-intelligence-surveillance-and-reconnaissance",
+          "title": "NATO – Joint ISR (nato.int)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Imagery_intelligence",
+          "title": "Imagery intelligence (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-mpa-tacco",
+      "code": "OTAN-NAT-TACCO",
+      "category": "maritime",
+      "name": {
+        "fr": "Formation nationale de coordinateur tactique de patrouille maritime (TACCO)",
+        "en": "National maritime patrol tactical coordinator (TACCO) training"
+      },
+      "official_name": "Maritime patrol aircraft Tactical Coordinator training",
+      "short_name": "TACCO",
+      "description": {
+        "fr": "Formation nationale de l’officier qui dirige l’emploi tactique d’un avion de patrouille maritime : lutte anti-sous-marine, surveillance de surface et coordination avec les forces navales. Elle est délivrée par les écoles de l’aéronautique navale ou de l’armée de l’air de la nation contributrice.",
+        "en": "National training of the officer who directs the tactical employment of a maritime patrol aircraft: anti-submarine warfare, surface surveillance and coordination with naval forces. It is delivered by the contributing nation’s naval aviation or air force schools."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Programme national de formation des équipages de patrouille maritime ; cadre OTAN : AJP-3.1",
+        "en": "National maritime patrol crew syllabus; NATO framework: AJP-3.1"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.japcc.org/competencies/marair",
+          "title": "JAPCC – Maritime air competency"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Maritime_patrol_aircraft",
+          "title": "Maritime patrol aircraft (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-pararescue-pipeline",
+      "code": "OTAN-NAT-PJ",
+      "category": "personnel_recovery",
+      "name": {
+        "fr": "Cursus national de sauveteur de combat (pararescue)",
+        "en": "National pararescue training pipeline"
+      },
+      "official_name": "Pararescue training pipeline",
+      "short_name": "Pararescue",
+      "description": {
+        "fr": "Cursus national d’environ deux ans formant les sauveteurs de combat des unités de récupération de personnel (par exemple les pararescuemen de l’US Air Force) : sélection physique, parachutisme, plongée, survie (SERE), soins paramédicaux et techniques de récupération. Il précède l’emploi au sein des escadrons de sauvetage alliés.",
+        "en": "National pipeline of about two years training the combat rescue specialists of personnel recovery units (for example US Air Force pararescuemen): physical selection, parachuting, diving, survival (SERE), paramedic care and recovery techniques. It precedes service in Allied rescue squadrons."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Cursus national de sauveteur de combat ; cadre OTAN : AJP-3.7",
+        "en": "National pararescue pipeline; NATO framework: AJP-3.7"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Pararescue",
+          "title": "Pararescue (Wikipedia)"
+        },
+        {
+          "url": "https://www.japcc.org/competencies/jpr/",
+          "title": "JAPCC – Joint personnel recovery competency"
+        }
+      ]
+    },
+    {
+      "id": "nato-medeval",
+      "code": "OTAN-MEDEVAL",
+      "category": "medical",
+      "name": {
+        "fr": "Cours d’évaluation médicale de l’OTAN (MEDEVAL)",
+        "en": "NATO Medical Evaluation Course (MEDEVAL)"
+      },
+      "official_name": "NATO Medical Evaluation Course",
+      "short_name": "MEDEVAL",
+      "description": {
+        "fr": "Cours de cinq jours du centre d’excellence de médecine militaire de l’OTAN (MILMED COE) garantissant un emploi cohérent et crédible du manuel d’évaluation médicale de l’OTAN (MEM) lors de l’évaluation et de la certification des unités médicales multinationales.",
+        "en": "Five-day course of the NATO Centre of Excellence for Military Medicine (MILMED COE) ensuring consistent and credible use of the NATO Medical Evaluation Manual (MEM) when evaluating and certifying multinational medical units."
+      },
+      "body": {
+        "fr": "Centre d’excellence de médecine militaire de l’OTAN (MILMED COE), Budapest",
+        "en": "NATO Centre of Excellence for Military Medicine (MILMED COE), Budapest"
+      },
+      "issuer": {
+        "name": "NATO Centre of Excellence for Military Medicine",
+        "short_name": "MILMED COE"
+      },
+      "reference": {
+        "fr": "MILMED COE, fiche du cours MEDEVAL ; AMedP-1.6, 1.7 et 1.8 (STANAG 2560)",
+        "en": "MILMED COE MEDEVAL course description; AMedP-1.6, 1.7 and 1.8 (STANAG 2560)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation médicale",
+          "Anglais SLP 3232 (STANAG 6001)",
+          "Lecture préalable des AMedP-1.6, 1.7 et 1.8"
+        ],
+        "en": [
+          "Medical background",
+          "English SLP 3232 (STANAG 6001)",
+          "Pre-reading of AMedP-1.6, 1.7 and 1.8"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://coemed.org/courses/course_desc/medeval",
+          "title": "MILMED COE – MEDEVAL course"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-flight-medic",
+      "code": "OTAN-NAT-AEROMED",
+      "category": "medical",
+      "name": {
+        "fr": "Formation nationale aux soins en vol (évacuation sanitaire aérienne)",
+        "en": "National in-flight care training (aeromedical evacuation)"
+      },
+      "official_name": "Flight medic / aeromedical evacuation training",
+      "short_name": "Soins en vol",
+      "description": {
+        "fr": "Formation nationale du personnel soignant aux soins en vol à bord des aéronefs d’évacuation sanitaire : contraintes physiologiques de l’altitude, matériel embarqué et continuité des soins pendant le transport. Elle est préalable à l’emploi dans un moyen MEDEVAC avancé.",
+        "en": "National training of medical personnel in in-flight care aboard aeromedical evacuation aircraft: physiological effects of altitude, onboard equipment and continuity of care during transport. It is a prerequisite for service on a forward MEDEVAC asset."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Programme national de médecine aéronautique ; cadre OTAN : AJP-4.2",
+        "en": "National aviation medicine syllabus; NATO framework: AJP-4.2"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.japcc.org/articles/aeromedical-evacuation-in-nato/",
+          "title": "JAPCC – Aeromedical evacuation in NATO"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Medical_evacuation",
+          "title": "Medical evacuation (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "nato-eod-coe-training",
+      "code": "OTAN-EODCOE-ET",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Formations du centre d’excellence EOD de l’OTAN (Trenčín)",
+        "en": "NATO EOD Centre of Excellence training (Trenčín)"
+      },
+      "official_name": "NATO EOD COE education and individual training activities",
+      "short_name": "EOD COE",
+      "description": {
+        "fr": "Activités de formation individuelle du centre d’excellence OTAN de neutralisation des explosifs et munitions (EOD COE) à Trenčín (Slovaquie) : cours sur les explosifs artisanaux, l’état-major EOD et l’interopérabilité EOD, destinés aux techniciens EOD des nations alliées et partenaires.",
+        "en": "Individual training activities of the NATO Explosive Ordnance Disposal Centre of Excellence (EOD COE) in Trenčín (Slovakia): courses on home-made explosives, EOD staff work and EOD interoperability, for EOD technicians of Allied and partner nations."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN EOD (EOD COE), Trenčín",
+        "en": "NATO EOD Centre of Excellence (EOD COE), Trenčín"
+      },
+      "issuer": {
+        "name": "NATO Explosive Ordnance Disposal Centre of Excellence",
+        "short_name": "EOD COE"
+      },
+      "reference": {
+        "fr": "Catalogue « Education & Training » de l’EOD COE ; AJP-3.18",
+        "en": "EOD COE Education & Training catalogue; AJP-3.18"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.eodcoe.org/en/education-amp-training/",
+          "title": "EOD COE – Education & Training"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-iedd",
+      "code": "OTAN-NAT-IEDD",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Qualification nationale de neutralisation des engins explosifs improvisés (IEDD)",
+        "en": "National improvised explosive device disposal (IEDD) qualification"
+      },
+      "official_name": "IEDD operator qualification",
+      "short_name": "IEDD",
+      "description": {
+        "fr": "Qualification nationale des techniciens EOD autorisés à neutraliser des engins explosifs improvisés, obtenue dans les écoles de déminage de la nation contributrice après la qualification EOD de base. Les standards OTAN (AJP-3.15, AJP-3.18) encadrent l’interopérabilité mais la qualification reste nationale.",
+        "en": "National qualification of EOD technicians authorised to render safe improvised explosive devices, gained at the contributing nation’s EOD schools after basic EOD qualification. NATO standards (AJP-3.15, AJP-3.18) frame interoperability but the qualification remains national."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Programme national IEDD ; cadre OTAN : AJP-3.15 et AJP-3.18",
+        "en": "National IEDD syllabus; NATO framework: AJP-3.15 and AJP-3.18"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/improvised-explosive-devices",
+          "title": "NATO – Countering improvised explosive devices (nato.int)"
+        },
+        {
+          "url": "https://www.eodcoe.org/en/education-amp-training/",
+          "title": "EOD COE – Education & Training"
+        }
+      ]
+    },
+    {
+      "id": "nato-bifec",
+      "code": "OTAN-BIFEC",
+      "category": "intelligence",
+      "name": {
+        "fr": "Cours d’exploitation de terrain de base (BIFEC) – C-IED COE",
+        "en": "Basic Field Exploitation Course (BIFEC) – C-IED COE"
+      },
+      "official_name": "Basic Field Exploitation Course",
+      "short_name": "BIFEC",
+      "description": {
+        "fr": "Cours du centre d’excellence de lutte contre les engins explosifs improvisés (C-IED COE, Madrid) présentant l’exploitation de terrain après un incident EEI : travail technique et criminalistique pour recueillir rapidement du renseignement et préserver les preuves en vue d’enquêtes et de poursuites.",
+        "en": "Course of the Counter-IED Centre of Excellence (C-IED COE, Madrid) on field exploitation after an IED incident: technical and forensic work to gather intelligence quickly and preserve evidence for investigations and prosecution."
+      },
+      "body": {
+        "fr": "Centre d’excellence C-IED de l’OTAN (C-IED COE), Madrid",
+        "en": "NATO Counter-IED Centre of Excellence (C-IED COE), Madrid"
+      },
+      "issuer": {
+        "name": "Counter Improvised Explosive Devices Centre of Excellence",
+        "short_name": "C-IED COE"
+      },
+      "reference": {
+        "fr": "C-IED COE, fiche du cours BIFEC ; AJP-3.15",
+        "en": "C-IED COE BIFEC course page; AJP-3.15"
+      },
+      "prerequisites": {
+        "fr": [
+          "Expérience EOD, génie, renseignement, police militaire, forces spéciales ou infanterie",
+          "Grade OR-4 à OR-8 ou OF-1 à OF-3"
+        ],
+        "en": [
+          "Background in EOD, engineering, intelligence, military police, special operations or infantry",
+          "Rank OR-4 to OR-8 or OF-1 to OF-3"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.ciedcoe.org/basic-field-exploitation-course-bifec/",
+          "title": "C-IED COE – Basic Field Exploitation Course (BIFEC)"
+        }
+      ]
+    },
+    {
+      "id": "nato-anuc",
+      "code": "OTAN-ANUC",
+      "category": "intelligence",
+      "name": {
+        "fr": "Cours utilisateur d’Analyst’s Notebook (ANUC) – C-IED COE",
+        "en": "Analyst’s Notebook Users Course (ANUC) – C-IED COE"
+      },
+      "official_name": "The Analyst’s Notebook Users Course",
+      "short_name": "ANUC",
+      "description": {
+        "fr": "Cours du C-IED COE donnant les connaissances théoriques et la pratique du logiciel IBM i2 Analyst’s Notebook pour l’analyse de réseaux : visualisation des données et identification des relations et schémas clés, au profit de la lutte contre les EEI et du renseignement.",
+        "en": "C-IED COE course providing theoretical knowledge and hands-on practice of IBM i2 Analyst’s Notebook for network analysis: data visualisation and identification of key relationships and patterns, in support of counter-IED and intelligence work."
+      },
+      "body": {
+        "fr": "Centre d’excellence C-IED de l’OTAN (C-IED COE), Madrid",
+        "en": "NATO Counter-IED Centre of Excellence (C-IED COE), Madrid"
+      },
+      "issuer": {
+        "name": "Counter Improvised Explosive Devices Centre of Excellence",
+        "short_name": "C-IED COE"
+      },
+      "reference": {
+        "fr": "C-IED COE, fiche du cours ANUC",
+        "en": "C-IED COE ANUC course page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire ou policier affecté à des fonctions d’analyse de réseaux"
+        ],
+        "en": [
+          "Military or law enforcement personnel assigned to network analysis duties"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.ciedcoe.org/the-analysts-notebook-users-course-anuc/",
+          "title": "C-IED COE – The Analyst’s Notebook Users Course (ANUC)"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-clearance-diver",
+      "code": "OTAN-NAT-PLG-DEM",
+      "category": "maritime",
+      "name": {
+        "fr": "Qualification nationale de plongeur démineur",
+        "en": "National clearance diver qualification"
+      },
+      "official_name": "Clearance diver qualification",
+      "short_name": "Plongeur démineur",
+      "description": {
+        "fr": "Qualification nationale des plongeurs de la marine spécialisés dans la recherche et la neutralisation des mines et engins explosifs sous l’eau, délivrée par l’école de plongée de la nation contributrice. Elle est préalable aux cours OTAN de neutralisation d’EEI en milieu maritime.",
+        "en": "National qualification of navy divers specialised in locating and neutralising mines and explosive ordnance underwater, awarded by the contributing nation’s diving school. It is a prerequisite for NATO maritime IED disposal courses."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Programme national de plongeur démineur",
+        "en": "National clearance diver syllabus"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Clearance_diver",
+          "title": "Clearance diver (Wikipedia)"
+        },
+        {
+          "url": "https://www.nmwcoe.org/",
+          "title": "NATO Naval Mine Warfare Centre of Excellence"
+        }
+      ]
+    },
+    {
+      "id": "nato-cbrn-consequence-management",
+      "code": "OTAN-NRBC-CM",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Cours de gestion des conséquences NRBC – JCBRN Defence COE",
+        "en": "CBRN Consequence Management Course – JCBRN Defence COE"
+      },
+      "official_name": "CBRN Consequence Management Course",
+      "short_name": "CBRN CM",
+      "description": {
+        "fr": "Cours de cinq jours approuvé par l’OTAN, au centre d’excellence de défense NRBC interarmées (JCBRN Defence COE) de Vyškov, présentant les concepts OTAN de gestion des conséquences : planification, entraînement et équipement pour la coopération civilo-militaire NRBC, à partir des retours d’expérience récents.",
+        "en": "Five-day NATO-approved course at the Joint CBRN Defence Centre of Excellence (JCBRN Defence COE) in Vyškov introducing NATO consequence management concepts: planning, training and equipping for civil-military CBRN cooperation, drawing on recent lessons learned."
+      },
+      "body": {
+        "fr": "Centre d’excellence de défense NRBC interarmées (JCBRN Defence COE), Vyškov",
+        "en": "Joint CBRN Defence Centre of Excellence (JCBRN Defence COE), Vyškov"
+      },
+      "issuer": {
+        "name": "Joint Chemical, Biological, Radiological and Nuclear Defence Centre of Excellence",
+        "short_name": "JCBRN Defence COE"
+      },
+      "reference": {
+        "fr": "JCBRN Defence COE, fiche du cours (ETOC WMD-CD-25633) ; AJP-3.23",
+        "en": "JCBRN Defence COE course page (ETOC WMD-CD-25633); AJP-3.23"
+      },
+      "prerequisites": {
+        "fr": [
+          "Officier OF-3 à OF-5, sous-officier OR-7 à OR-9 ou civil équivalent"
+        ],
+        "en": [
+          "Officer OF-3 to OF-5, NCO OR-7 to OR-9 or civilian equivalent"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.jcbrncoe.org/courses/cbrn-consequence-management-course/",
+          "title": "JCBRN Defence COE – CBRN Consequence Management Course"
+        }
+      ]
+    },
+    {
+      "id": "nato-hpac",
+      "code": "OTAN-NRBC-HPAC",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Cours de prédiction et d’évaluation des risques NRBC (HPAC) – JCBRN Defence COE",
+        "en": "Hazard Prediction and Assessment Capability (HPAC) course – JCBRN Defence COE"
+      },
+      "official_name": "Hazard Prediction and Assessment Capability (HPAC) Course",
+      "short_name": "HPAC",
+      "description": {
+        "fr": "Cours de cinq jours du JCBRN Defence COE formant à l’emploi du logiciel HPAC et de ses modules de terme source pour produire des modèles de prédiction des dangers consécutifs à un événement NRBC, au profit des centres d’alerte et de l’appui à distance (reachback).",
+        "en": "Five-day JCBRN Defence COE course training students to use the HPAC software and its source-term modules to produce hazard prediction models following a CBRN event, in support of warning centres and reachback."
+      },
+      "body": {
+        "fr": "Centre d’excellence de défense NRBC interarmées (JCBRN Defence COE), Vyškov",
+        "en": "Joint CBRN Defence Centre of Excellence (JCBRN Defence COE), Vyškov"
+      },
+      "issuer": {
+        "name": "Joint Chemical, Biological, Radiological and Nuclear Defence Centre of Excellence",
+        "short_name": "JCBRN Defence COE"
+      },
+      "reference": {
+        "fr": "JCBRN Defence COE, fiche du cours HPAC",
+        "en": "JCBRN Defence COE HPAC course page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Sous-officier OR-5 à OR-9, officier OF-1 à OF-3 ou civil équivalent"
+        ],
+        "en": [
+          "NCO OR-5 to OR-9, officer OF-1 to OF-3 or civilian equivalent"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.jcbrncoe.org/courses/hazard-prediction-and-assessment-capability-hpac-course/",
+          "title": "JCBRN Defence COE – HPAC course"
+        }
+      ]
+    },
+    {
+      "id": "nato-ndc-senior-course",
+      "code": "OTAN-NDC-SC",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours de haut niveau du Collège de défense de l’OTAN (Senior Course)",
+        "en": "NATO Defense College Senior Course"
+      },
+      "official_name": "NATO Defense College Senior Course",
+      "short_name": "NDC SC",
+      "description": {
+        "fr": "Cours d’environ six mois du Collège de défense de l’OTAN à Rome, destiné à des officiers supérieurs, diplomates et fonctionnaires des pays alliés et partenaires : questions stratégiques et politico-militaires de l’Alliance, avec voyages d’étude dans les capitales et les quartiers généraux de l’OTAN.",
+        "en": "Course of about six months at the NATO Defense College in Rome for senior officers, diplomats and officials of Allied and partner countries: strategic and political-military issues of the Alliance, with field studies to NATO capitals and headquarters."
+      },
+      "body": {
+        "fr": "Collège de défense de l’OTAN (NDC), Rome",
+        "en": "NATO Defense College (NDC), Rome"
+      },
+      "issuer": {
+        "name": "NATO Defense College",
+        "short_name": "NDC"
+      },
+      "reference": {
+        "fr": "Programme du Senior Course du NATO Defense College",
+        "en": "NATO Defense College Senior Course programme"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/NATO_Defense_College",
+          "title": "NATO Defense College (Wikipedia)"
+        },
+        {
+          "url": "https://www.ndc.nato.int/",
+          "title": "NATO Defense College (ndc.nato.int)"
+        }
+      ]
+    },
+    {
+      "id": "nato-nso-staff",
+      "code": "OTAN-NSO-STAFF",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours d’état-major de niveau opératif de la NATO School Oberammergau",
+        "en": "NATO School Oberammergau operational-level staff courses"
+      },
+      "official_name": "NATO School Oberammergau – operational-level staff courses",
+      "short_name": "NSO Staff",
+      "description": {
+        "fr": "Cours de la NATO School Oberammergau (Allemagne), principal centre de formation de niveau opératif de l’OTAN, qui propose plus de cent cours : planification des opérations, fonctions d’état-major interarmées (J1 à J9), liaison et travail en quartier général allié. Ils préparent le personnel des nations à servir dans les structures de commandement et de forces de l’OTAN.",
+        "en": "Courses of NATO School Oberammergau (Germany), NATO’s main operational-level training centre, offering more than one hundred courses: operations planning, joint staff functions (J1 to J9), liaison and work in an Allied headquarters. They prepare national personnel to serve in the NATO command and force structures."
+      },
+      "body": {
+        "fr": "NATO School Oberammergau (Allemagne)",
+        "en": "NATO School Oberammergau (Germany)"
+      },
+      "issuer": {
+        "name": "NATO School Oberammergau",
+        "short_name": "NSO"
+      },
+      "reference": {
+        "fr": "Catalogue de cours de la NATO School Oberammergau ; AJP-5",
+        "en": "NATO School Oberammergau course catalogue; AJP-5"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/NATO_School",
+          "title": "NATO School Oberammergau (Wikipedia)"
+        },
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/education-and-training",
+          "title": "NATO – Education and training (nato.int)"
+        }
+      ]
+    },
+    {
+      "id": "nato-cicoe-courses",
+      "code": "OTAN-CICOE",
+      "category": "intelligence",
+      "name": {
+        "fr": "Cours du centre d’excellence de contre-ingérence de l’OTAN (Cracovie)",
+        "en": "NATO Counter Intelligence Centre of Excellence courses (Kraków)"
+      },
+      "official_name": "NATO Counter Intelligence Centre of Excellence courses",
+      "short_name": "CI COE",
+      "description": {
+        "fr": "Formations du centre d’excellence de contre-ingérence de l’OTAN (NATO CI COE), implanté à Cracovie (Pologne) : cours de contre-ingérence et de sécurité destinés au personnel des nations alliées et des quartiers généraux de l’OTAN.",
+        "en": "Training of the NATO Counter Intelligence Centre of Excellence (NATO CI COE) in Kraków (Poland): counter-intelligence and security courses for personnel of Allied nations and NATO headquarters."
+      },
+      "body": {
+        "fr": "Centre d’excellence de contre-ingérence de l’OTAN (CI COE), Cracovie",
+        "en": "NATO Counter Intelligence Centre of Excellence (CI COE), Kraków"
+      },
+      "issuer": {
+        "name": "NATO Counter Intelligence Centre of Excellence",
+        "short_name": "NATO CI COE"
+      },
+      "reference": {
+        "fr": "Catalogue de formation du NATO CI COE",
+        "en": "NATO CI COE training catalogue"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://cicoe.org/",
+          "title": "NATO Counter Intelligence Centre of Excellence"
+        },
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/centres-of-excellence",
+          "title": "NATO – Centres of Excellence (nato.int)"
+        }
+      ]
+    },
+    {
+      "id": "nato-nci-academy",
+      "code": "OTAN-NCI-ACAD",
+      "category": "communications",
+      "name": {
+        "fr": "Formations de la NCI Academy (Oeiras)",
+        "en": "NCI Academy training (Oeiras)"
+      },
+      "official_name": "NATO Communications and Information Academy courses",
+      "short_name": "NCI Academy",
+      "description": {
+        "fr": "Cours de l’Académie des communications et de l’information de l’OTAN (NCI Academy), ouverte en 2019 à Oeiras (Portugal) au sein de l’agence NCIA : systèmes d’information et de communication de l’OTAN, cyberdéfense et services informatiques, pour le personnel des nations et des organismes de l’OTAN.",
+        "en": "Courses of the NATO Communications and Information Academy (NCI Academy), opened in 2019 in Oeiras (Portugal) within the NCI Agency: NATO communication and information systems, cyber defence and IT services, for personnel of nations and NATO bodies."
+      },
+      "body": {
+        "fr": "Académie des communications et de l’information de l’OTAN (NCI Academy), agence NCIA",
+        "en": "NATO Communications and Information Academy (NCI Academy), NCI Agency"
+      },
+      "issuer": {
+        "name": "NATO Communications and Information Academy",
+        "short_name": "NCI Academy"
+      },
+      "reference": {
+        "fr": "Catalogue de cours de la NCI Academy ; AJP-6",
+        "en": "NCI Academy course catalogue; AJP-6"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.nato.int/en/about-us/organization/nato-structure/nato-communications-and-information-agency-nci-agency",
+          "title": "NATO Communications and Information Agency (nato.int)"
+        },
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/education-and-training",
+          "title": "NATO – Education and training (nato.int)"
+        }
+      ]
+    },
+    {
+      "id": "nato-cimic-higher-command",
+      "code": "OTAN-CIMIC-HCC",
+      "category": "influence",
+      "name": {
+        "fr": "Cours CIMIC de haut niveau de l’OTAN (NCHCC) – CIMIC COE",
+        "en": "NATO CIMIC Higher Command Course (NCHCC) – CIMIC COE"
+      },
+      "official_name": "NATO CIMIC Higher Command Course",
+      "short_name": "NCHCC",
+      "description": {
+        "fr": "Cours de deux semaines du centre d’excellence CIMIC (La Haye) préparant le personnel CIMIC de rang OF-3 à OF-6 à planifier et conduire les activités de coopération civilo-militaire dans les opérations multidomaines de l’OTAN, centré sur le processus de planification des opérations.",
+        "en": "Two-week course of the CIMIC Centre of Excellence (The Hague) preparing CIMIC personnel of ranks OF-3 to OF-6 to plan and conduct civil-military cooperation activities in NATO multi-domain operations, focusing on the operations planning process."
+      },
+      "body": {
+        "fr": "Centre d’excellence de coopération civilo-militaire (CIMIC COE), La Haye",
+        "en": "Civil-Military Cooperation Centre of Excellence (CIMIC COE), The Hague"
+      },
+      "issuer": {
+        "name": "Civil-Military Cooperation Centre of Excellence",
+        "short_name": "CCOE"
+      },
+      "reference": {
+        "fr": "CIMIC COE, fiche du cours NCHCC ; AJP-3.19",
+        "en": "CIMIC COE NCHCC course page; AJP-3.19"
+      },
+      "prerequisites": {
+        "fr": [
+          "Grade OF-3 à OF-6 ou civil équivalent",
+          "Anglais SLP 3332 (STANAG 6001)",
+          "Cours NCSWC ou modules ADL 037, 143 et 169"
+        ],
+        "en": [
+          "Rank OF-3 to OF-6 or civilian equivalent",
+          "English SLP 3332 (STANAG 6001)",
+          "NCSWC or ADL modules 037, 143 and 169"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.cimic-coe.org/courses/nato-cimic-higher-command-course/",
+          "title": "CIMIC COE – NATO CIMIC Higher Command Course"
+        }
+      ]
+    },
+    {
+      "id": "nato-nso-legal-advisor",
+      "code": "OTAN-NSO-LEGAD",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours de conseiller juridique opérationnel de la NATO School Oberammergau",
+        "en": "NATO School Oberammergau operational legal advisor courses"
+      },
+      "official_name": "NATO School Oberammergau – Legal courses (NATO Legal Advisors)",
+      "short_name": "NSO Legal",
+      "description": {
+        "fr": "Cours du département juridique de la NATO School Oberammergau destinés aux juristes militaires et civils affectés comme conseillers juridiques (LEGAD) : droit des conflits armés, statut des forces, règles d’engagement et appui juridique au ciblage dans les opérations de l’OTAN. Les stagiaires sont des juristes diplômés habilités par leur nation.",
+        "en": "Courses of the NATO School Oberammergau legal department for military and civilian lawyers serving as legal advisors (LEGAD): law of armed conflict, status of forces, rules of engagement and legal support to targeting in NATO operations. Participants are qualified lawyers cleared by their nation."
+      },
+      "body": {
+        "fr": "NATO School Oberammergau (Allemagne)",
+        "en": "NATO School Oberammergau (Germany)"
+      },
+      "issuer": {
+        "name": "NATO School Oberammergau",
+        "short_name": "NSO"
+      },
+      "reference": {
+        "fr": "Catalogue de cours de la NATO School Oberammergau (département juridique) ; AJP-3.9",
+        "en": "NATO School Oberammergau course catalogue (legal department); AJP-3.9"
+      },
+      "prerequisites": {
+        "fr": [
+          "Diplôme de droit",
+          "Habilitation nationale de sécurité"
+        ],
+        "en": [
+          "Law degree",
+          "National security clearance"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/NATO_School",
+          "title": "NATO School Oberammergau (Wikipedia)"
+        },
+        {
+          "url": "https://www.gov.uk/government/publications/allied-joint-doctrine-for-joint-targeting-ajp-39a",
+          "title": "AJP-3.9 Allied Joint Doctrine for Joint Targeting (gov.uk)"
+        }
+      ]
+    },
+    {
+      "id": "nato-genad",
+      "code": "OTAN-GENAD",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours de conseiller genre (GENAD) – Centre nordique pour le genre dans les opérations militaires",
+        "en": "Gender Advisor Course (GENAD) – Nordic Centre for Gender in Military Operations"
+      },
+      "official_name": "Gender Advisor Course",
+      "short_name": "GENAD",
+      "description": {
+        "fr": "Cours approuvé par l’OTAN depuis 2017 et dispensé par le Centre nordique pour le genre dans les opérations militaires (NCGM, Kungsängen, Suède), chef de département OTAN pour cette discipline. Il forme les conseillers genre des niveaux stratégique et opératif pour des postes OTAN, ONU, UE ou nationaux.",
+        "en": "NATO-approved course since 2017 delivered by the Nordic Centre for Gender in Military Operations (NCGM, Kungsängen, Sweden), NATO Department Head for this discipline. It trains strategic- and operational-level gender advisors for NATO, UN, EU or national posts."
+      },
+      "body": {
+        "fr": "Centre nordique pour le genre dans les opérations militaires (NCGM), forces armées suédoises",
+        "en": "Nordic Centre for Gender in Military Operations (NCGM), Swedish Armed Forces"
+      },
+      "issuer": {
+        "name": "Nordic Centre for Gender in Military Operations",
+        "short_name": "NCGM"
+      },
+      "reference": {
+        "fr": "Invitations et programme du cours GENAD du NCGM",
+        "en": "NCGM GENAD course invitations and programme"
+      },
+      "prerequisites": {
+        "fr": [
+          "Modules ADL OTAN sur le rôle du conseiller genre et l’intégration de la perspective de genre"
+        ],
+        "en": [
+          "NATO ADL modules on the role of the gender advisor and integrating a gender perspective"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.forsvarsmakten.se/en/about-the-swedish-armed-forces/organisation/centres/ncgm/facilities/",
+          "title": "Nordic Centre for Gender in Military Operations (forsvarsmakten.se)"
+        },
+        {
+          "url": "https://www.nato.int/en/what-we-do/wider-activities/women-peace-and-security",
+          "title": "NATO – Women, Peace and Security (nato.int)"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-psyops",
+      "code": "OTAN-NAT-PSYOPS",
+      "category": "influence",
+      "name": {
+        "fr": "Formation nationale aux opérations psychologiques (PSYOPS)",
+        "en": "National psychological operations (PSYOPS) training"
+      },
+      "official_name": "Psychological operations training",
+      "short_name": "PSYOPS",
+      "description": {
+        "fr": "Formation nationale des spécialistes des opérations psychologiques : analyse des publics cibles, conception et diffusion de messages, évaluation des effets. Elle est dispensée par les unités ou écoles d’opérations militaires d’influence de la nation contributrice, en cohérence avec la doctrine OTAN des opérations d’information.",
+        "en": "National training of psychological operations specialists: target audience analysis, message design and dissemination, effects assessment. It is delivered by the contributing nation’s influence operations units or schools, consistent with NATO information operations doctrine."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Programme national PSYOPS ; cadre OTAN : AJP-10.1",
+        "en": "National PSYOPS syllabus; NATO framework: AJP-10.1"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Psychological_operations",
+          "title": "Psychological operations (Wikipedia)"
+        },
+        {
+          "url": "https://www.gov.uk/government/publications/allied-joint-doctrine-for-information-operations-ajp-101",
+          "title": "AJP-10.1 Allied Joint Doctrine for Information Operations (gov.uk)"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-ew",
+      "code": "OTAN-NAT-GE",
+      "category": "communications",
+      "name": {
+        "fr": "Formation nationale de spécialiste guerre électronique",
+        "en": "National electronic warfare specialist training"
+      },
+      "official_name": "Electronic warfare specialist training",
+      "short_name": "Spécialiste GE",
+      "description": {
+        "fr": "Formation nationale des spécialistes de guerre électronique : soutien, attaque et protection électroniques, gestion du spectre et coordination des activités de GE. Elle précède l’emploi comme coordinateur de guerre électronique dans un état-major allié.",
+        "en": "National training of electronic warfare specialists: electronic support, attack and protection, spectrum management and coordination of EW activities. It precedes service as an electronic warfare coordinator in an Allied headquarters."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Programme national de guerre électronique",
+        "en": "National electronic warfare syllabus"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.japcc.org/competencies/ew",
+          "title": "JAPCC – Electronic warfare competency"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Electronic_warfare",
+          "title": "Electronic warfare (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "nato-ccdcoe-training",
+      "code": "OTAN-CCDCOE",
+      "category": "communications",
+      "name": {
+        "fr": "Formations et exercices du CCDCOE (Tallinn)",
+        "en": "CCDCOE training and exercises (Tallinn)"
+      },
+      "official_name": "NATO CCDCOE courses and exercises (Locked Shields, Crossed Swords)",
+      "short_name": "CCDCOE",
+      "description": {
+        "fr": "Cours et exercices du centre d’excellence de cyberdéfense coopérative de l’OTAN (CCDCOE) à Tallinn (Estonie), notamment l’exercice de cyberdéfense en tir réel Locked Shields et l’exercice Crossed Swords : défense des réseaux, réponse aux incidents, droit international du cyberespace.",
+        "en": "Courses and exercises of the NATO Cooperative Cyber Defence Centre of Excellence (CCDCOE) in Tallinn (Estonia), notably the live-fire cyber defence exercise Locked Shields and the Crossed Swords exercise: network defence, incident response, international cyber law."
+      },
+      "body": {
+        "fr": "Centre d’excellence de cyberdéfense coopérative de l’OTAN (CCDCOE), Tallinn",
+        "en": "NATO Cooperative Cyber Defence Centre of Excellence (CCDCOE), Tallinn"
+      },
+      "issuer": {
+        "name": "NATO Cooperative Cyber Defence Centre of Excellence",
+        "short_name": "CCDCOE"
+      },
+      "reference": {
+        "fr": "Catalogue de formation et exercices du CCDCOE ; AJP-3.20",
+        "en": "CCDCOE training catalogue and exercises; AJP-3.20"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.ccdcoe.org/",
+          "title": "NATO CCDCOE"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Cooperative_Cyber_Defence_Centre_of_Excellence",
+          "title": "Cooperative Cyber Defence Centre of Excellence (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-metoc",
+      "code": "OTAN-NAT-METOC",
+      "category": "environment",
+      "name": {
+        "fr": "Formation nationale de prévisionniste météorologique militaire",
+        "en": "National military weather forecaster training"
+      },
+      "official_name": "Military meteorological forecaster training",
+      "short_name": "Prévisionniste",
+      "description": {
+        "fr": "Formation nationale des prévisionnistes météorologiques et océanographiques (METOC) militaires, assurée par le service météorologique de défense de la nation contributrice. Elle précède l’emploi d’officier METOC dans un état-major allié.",
+        "en": "National training of military meteorological and oceanographic (METOC) forecasters, provided by the contributing nation’s defence weather service. It precedes service as a METOC officer in an Allied headquarters."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Programme national de formation des prévisionnistes militaires",
+        "en": "National military forecaster syllabus"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.mgeometoc-coe.org/",
+          "title": "NATO Military Geography and METOC Centre of Excellence"
+        },
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/centres-of-excellence",
+          "title": "NATO – Centres of Excellence (nato.int)"
+        }
+      ]
+    },
+    {
+      "id": "nato-cimic-adl",
+      "code": "OTAN-CIMIC-ADL",
+      "category": "influence",
+      "name": {
+        "fr": "Modules d’apprentissage à distance CIMIC préalables (ADL 037, 143 et 169)",
+        "en": "Prerequisite CIMIC distance learning modules (ADL 037, 143 and 169)"
+      },
+      "official_name": "NATO CIMIC ADL prerequisite modules (ADL 037, ADL 143, ADL 169)",
+      "short_name": "ADL CIMIC",
+      "description": {
+        "fr": "Modules d’apprentissage à distance (ADL) obligatoires avant les cours résidentiels du centre d’excellence CIMIC, dont le cours d’opérateur CIMIC de terrain : ils donnent les bases de la doctrine CIMIC de l’OTAN. Le lien d’accès est envoyé avec la confirmation d’inscription.",
+        "en": "Mandatory advanced distributed learning (ADL) modules before the CIMIC Centre of Excellence resident courses, including the CIMIC field worker course: they cover the basics of NATO CIMIC doctrine. The access link is sent with the enrolment confirmation."
+      },
+      "body": {
+        "fr": "Centre d’excellence de coopération civilo-militaire (CIMIC COE), La Haye",
+        "en": "Civil-Military Cooperation Centre of Excellence (CIMIC COE), The Hague"
+      },
+      "issuer": {
+        "name": "Civil-Military Cooperation Centre of Excellence",
+        "short_name": "CCOE"
+      },
+      "reference": {
+        "fr": "CIMIC COE, prérequis du NATO CIMIC Field Worker Course",
+        "en": "CIMIC COE, NATO CIMIC Field Worker Course prerequisites"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.cimic-coe.org/courses/nato-cimic-field-worker-course/",
+          "title": "CIMIC COE – NATO CIMIC Field Worker Course"
+        }
+      ]
+    },
+    {
+      "id": "nato-cimic-functional-specialist",
+      "code": "OTAN-CIMIC-FS",
+      "category": "influence",
+      "name": {
+        "fr": "Cours de spécialiste fonctionnel CIMIC de l’OTAN (NCFSC) – CIMIC COE",
+        "en": "NATO CIMIC Functional Specialist Course (NCFSC) – CIMIC COE"
+      },
+      "official_name": "NATO CIMIC Functional Specialist Course",
+      "short_name": "NCFSC",
+      "description": {
+        "fr": "Cours d’une semaine du centre d’excellence CIMIC (La Haye) préparant les spécialistes fonctionnels (experts civils ou réservistes d’un domaine : santé, infrastructures, gouvernance…) à appuyer les états-majors CIMIC à tous les niveaux et les familiarisant avec la doctrine CIMIC de l’OTAN.",
+        "en": "One-week course of the CIMIC Centre of Excellence (The Hague) preparing functional specialists (civilian or reservist experts in a field: health, infrastructure, governance…) to support CIMIC staff at all levels and familiarising them with NATO CIMIC doctrine."
+      },
+      "body": {
+        "fr": "Centre d’excellence de coopération civilo-militaire (CIMIC COE), La Haye",
+        "en": "Civil-Military Cooperation Centre of Excellence (CIMIC COE), The Hague"
+      },
+      "issuer": {
+        "name": "Civil-Military Cooperation Centre of Excellence",
+        "short_name": "CCOE"
+      },
+      "reference": {
+        "fr": "CIMIC COE, fiche du cours NCFSC ; AJP-3.19",
+        "en": "CIMIC COE NCFSC course page; AJP-3.19"
+      },
+      "prerequisites": {
+        "fr": [
+          "Grade OR-5 à OF-4 ou civil équivalent",
+          "Modules ADL 037 et 143"
+        ],
+        "en": [
+          "Rank OR-5 to OF-4 or civilian equivalent",
+          "ADL modules 037 and 143"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.cimic-coe.org/courses/nato-cimic-functional-specialist-course/",
+          "title": "CIMIC COE – NATO CIMIC Functional Specialist Course"
+        }
+      ]
+    },
+    {
+      "id": "nato-cimic-liaison",
+      "code": "OTAN-CIMIC-LO",
+      "category": "influence",
+      "name": {
+        "fr": "Cours de liaison CIMIC de l’OTAN (NCLC) – CIMIC COE",
+        "en": "NATO CIMIC Liaison Course (NCLC) – CIMIC COE"
+      },
+      "official_name": "NATO CIMIC Liaison Course",
+      "short_name": "NCLC",
+      "description": {
+        "fr": "Cours d’une semaine du centre d’excellence CIMIC formant les officiers et sous-officiers de liaison CIMIC à conduire la liaison civilo-militaire aux niveaux tactique et opératif, selon l’architecture de liaison et de coordination de l’OTAN.",
+        "en": "One-week CIMIC Centre of Excellence course training CIMIC liaison officers and NCOs to conduct civil-military liaison at tactical and operational levels, using NATO’s liaison and coordination architecture."
+      },
+      "body": {
+        "fr": "Centre d’excellence de coopération civilo-militaire (CIMIC COE), La Haye",
+        "en": "Civil-Military Cooperation Centre of Excellence (CIMIC COE), The Hague"
+      },
+      "issuer": {
+        "name": "Civil-Military Cooperation Centre of Excellence",
+        "short_name": "CCOE"
+      },
+      "reference": {
+        "fr": "CIMIC COE, fiche du cours NCLC ; AJP-3.19",
+        "en": "CIMIC COE NCLC course page; AJP-3.19"
+      },
+      "prerequisites": {
+        "fr": [
+          "Anglais SLP 3332 (STANAG 6001)",
+          "Module ADL NCLC et cours ADL NATO CIMIC Awareness"
+        ],
+        "en": [
+          "English SLP 3332 (STANAG 6001)",
+          "ADL NCLC module and ADL NATO CIMIC Awareness Course"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.cimic-coe.org/courses/nato-cimic-liaison-course/",
+          "title": "CIMIC COE – NATO CIMIC Liaison Course"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-kfor-predeployment",
+      "code": "OTAN-NAT-KFOR",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Préparation opérationnelle nationale avant déploiement à la KFOR",
+        "en": "National pre-deployment training for KFOR"
+      },
+      "official_name": "KFOR pre-deployment training",
+      "short_name": "Prépa KFOR",
+      "description": {
+        "fr": "Mise en condition avant projection organisée par la nation contributrice pour ses personnels affectés à la force de l’OTAN au Kosovo (KFOR), par exemple dans les équipes de liaison et de surveillance (LMT) : connaissance du milieu, cadre du mandat, sécurité et procédures de la force.",
+        "en": "Pre-deployment training organised by the contributing nation for its personnel assigned to the NATO Kosovo Force (KFOR), for example in liaison and monitoring teams (LMT): area knowledge, mandate framework, security and force procedures."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Programme national de préparation opérationnelle KFOR",
+        "en": "National KFOR pre-deployment programme"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.nato.int/en/what-we-do/operations-and-missions/natos-role-in-kosovo",
+          "title": "NATO’s role in Kosovo (nato.int)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Kosovo_Force",
+          "title": "Kosovo Force (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "nato-omlt-predeployment",
+      "code": "OTAN-OMLT-JMRC",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Préparation OMLT avant déploiement au Joint Multinational Readiness Center (Hohenfels)",
+        "en": "OMLT pre-deployment training at the Joint Multinational Readiness Center (Hohenfels)"
+      },
+      "official_name": "OMLT pre-deployment training (JMRC Hohenfels)",
+      "short_name": "Prépa OMLT",
+      "description": {
+        "fr": "Entraînement avant déploiement des équipes de mentorat et de liaison opérationnelles (OMLT) de la FIAS en Afghanistan, conduit notamment au Joint Multinational Readiness Center de l’US Army à Hohenfels (Allemagne) : mentorat d’une unité de l’armée afghane, procédures de la force et mises en situation.",
+        "en": "Pre-deployment training of ISAF Operational Mentor and Liaison Teams (OMLT) for Afghanistan, conducted notably at the US Army’s Joint Multinational Readiness Center in Hohenfels (Germany): mentoring an Afghan army unit, force procedures and scenario-based training."
+      },
+      "body": {
+        "fr": "Joint Multinational Readiness Center (JMRC), Hohenfels – US Army Europe",
+        "en": "Joint Multinational Readiness Center (JMRC), Hohenfels – US Army Europe"
+      },
+      "issuer": {
+        "name": "Joint Multinational Readiness Center",
+        "short_name": "JMRC"
+      },
+      "reference": {
+        "fr": "Préparation OMLT de la FIAS (OTAN)",
+        "en": "ISAF OMLT pre-deployment training (NATO)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Operational_Mentor_and_Liaison_Team",
+          "title": "Operational Mentor and Liaison Team (Wikipedia)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Joint_Multinational_Readiness_Center",
+          "title": "Joint Multinational Readiness Center (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "nato-sfa-operators",
+      "code": "OTAN-SFA-OPS",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours d’opérateur d’assistance aux forces de sécurité (SFA) – NATO SFA COE",
+        "en": "SFA Operators Course – NATO SFA COE"
+      },
+      "official_name": "SFA Operators Course",
+      "short_name": "SFA Ops",
+      "description": {
+        "fr": "Cours du centre d’excellence OTAN d’assistance aux forces de sécurité (NATO SFA COE, Rome) visant à rendre les opérateurs SFA plus compétents et efficaces pour conseiller, encadrer et former des forces partenaires. Il commence par une phase d’auto-apprentissage à distance (ADL), suivie d’une phase résidentielle.",
+        "en": "Course of the NATO Security Force Assistance Centre of Excellence (NATO SFA COE, Rome) to make SFA operators more competent and effective in advising, mentoring and training partner forces. It starts with a distance self-study phase (ADL), followed by a resident phase."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN d’assistance aux forces de sécurité (NATO SFA COE), Rome",
+        "en": "NATO Security Force Assistance Centre of Excellence (NATO SFA COE), Rome"
+      },
+      "issuer": {
+        "name": "NATO Security Force Assistance Centre of Excellence",
+        "short_name": "NATO SFA COE"
+      },
+      "reference": {
+        "fr": "NATO SFA COE, fiche du SFA Operators Course ; AJP-3.16",
+        "en": "NATO SFA COE SFA Operators Course page; AJP-3.16"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours ADL 362 Introduction to SFA"
+        ],
+        "en": [
+          "ADL 362 Introduction to SFA course"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.nsfacoe.org/courses-and-seminars/sfa-operators-course-2026-2/",
+          "title": "NATO SFA COE – SFA Operators Course"
+        }
+      ]
+    },
+    {
+      "id": "nato-sfa-adl362",
+      "code": "OTAN-SFA-ADL362",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours à distance ADL 362 « Introduction à l’assistance aux forces de sécurité » – NATO SFA COE",
+        "en": "ADL 362 Introduction to Security Force Assistance – NATO SFA COE"
+      },
+      "official_name": "ADL 362 Introduction to Security Force Assistance (SFA)",
+      "short_name": "ADL 362",
+      "description": {
+        "fr": "Cours d’apprentissage à distance du NATO SFA COE, accessible sur les plateformes JADL ou DEEP de l’OTAN, présentant l’origine du concept SFA, son cadre doctrinal (AJP-3.16) et ses activités. Il est préalable au SFA Operators Course et donne lieu à un certificat.",
+        "en": "Distance learning course of the NATO SFA COE, available on NATO’s JADL or DEEP platforms, presenting the origin of the SFA concept, its doctrinal framework (AJP-3.16) and its activities. It is a prerequisite for the SFA Operators Course and leads to a certificate."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN d’assistance aux forces de sécurité (NATO SFA COE), Rome",
+        "en": "NATO Security Force Assistance Centre of Excellence (NATO SFA COE), Rome"
+      },
+      "issuer": {
+        "name": "NATO Security Force Assistance Centre of Excellence",
+        "short_name": "NATO SFA COE"
+      },
+      "reference": {
+        "fr": "NATO SFA COE, fiche du cours ADL 362 ; AJP-3.16",
+        "en": "NATO SFA COE ADL 362 course page; AJP-3.16"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.nsfacoe.org/courses-and-seminars/adl-362-introduction-to-security-force-assistance-sfa-course/",
+          "title": "NATO SFA COE – ADL 362 Introduction to SFA"
+        }
+      ]
+    },
+    {
+      "id": "nato-sfa-strategic-advising",
+      "code": "OTAN-SFA-SSR",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Séminaire avancé de conseil stratégique SFA dans la réforme du secteur de la sécurité – NATO SFA COE",
+        "en": "Advanced Seminar for SFA Strategic Advising within SSR – NATO SFA COE"
+      },
+      "official_name": "Advanced Seminar for SFA Strategic Advising within SSR",
+      "short_name": "SFA Strat Adv",
+      "description": {
+        "fr": "Séminaire avancé en formation mixte (phase à distance puis résidentielle, évaluation finale) du NATO SFA COE, consacré au conseil de niveau stratégique en assistance aux forces de sécurité dans le cadre de la réforme du secteur de la sécurité. Il vise des experts de rang OF-4 à OF-6 ou civils équivalents.",
+        "en": "Advanced blended-learning seminar (distance then resident phase, final assessment) of the NATO SFA COE on strategic-level security force assistance advising within security sector reform. It targets experts of rank OF-4 to OF-6 or civilian equivalents."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN d’assistance aux forces de sécurité (NATO SFA COE), Rome",
+        "en": "NATO Security Force Assistance Centre of Excellence (NATO SFA COE), Rome"
+      },
+      "issuer": {
+        "name": "NATO Security Force Assistance Centre of Excellence",
+        "short_name": "NATO SFA COE"
+      },
+      "reference": {
+        "fr": "NATO SFA COE, fiche du séminaire ; AJP-3.16",
+        "en": "NATO SFA COE seminar page; AJP-3.16"
+      },
+      "prerequisites": {
+        "fr": [
+          "Institutional Adviser Course",
+          "Diplôme de niveau licence ou master, ou formation militaire équivalente",
+          "Expérience pratique de la SFA"
+        ],
+        "en": [
+          "Institutional Adviser Course",
+          "Bachelor’s or master’s degree, or equivalent military education",
+          "Practical SFA experience"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://www.nsfacoe.org/courses-and-seminars/advanced-seminar-for-sfa-strategic-advising-within-ssr-2025/",
+          "title": "NATO SFA COE – Advanced Seminar for SFA Strategic Advising within SSR"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-battalion-command",
+      "code": "OTAN-NAT-CDT-BAT",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cursus national de commandant de bataillon",
+        "en": "National battalion commander course"
+      },
+      "official_name": "National battalion command course",
+      "short_name": "Cdt bataillon",
+      "description": {
+        "fr": "Formation nationale préparant un officier supérieur au commandement d’un bataillon ou régiment (cours d’état-major puis stage de chef de corps), condition préalable au commandement d’un groupement tactique multinational de la présence avancée de l’OTAN.",
+        "en": "National training preparing a field-grade officer to command a battalion or regiment (staff college then pre-command course), a prerequisite for commanding a multinational battlegroup of NATO’s forward presence."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Programme national de formation des chefs de corps",
+        "en": "National pre-command programme"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/strengthening-natos-eastern-flank",
+          "title": "Strengthening NATO’s eastern flank (nato.int)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Enhanced_Forward_Presence",
+          "title": "Enhanced Forward Presence (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "nato-national-sea-command",
+      "code": "OTAN-NAT-CDT-MER",
+      "category": "maritime",
+      "name": {
+        "fr": "Qualification nationale de commandement à la mer",
+        "en": "National command at sea qualification"
+      },
+      "official_name": "Command at sea qualification",
+      "short_name": "Cdt à la mer",
+      "description": {
+        "fr": "Qualification nationale délivrée par la marine de la nation contributrice aux officiers aptes à commander un bâtiment de combat, après les cours de commandement et l’expérience requise. Elle précède le commandement d’un groupe maritime permanent de l’OTAN (SNMG).",
+        "en": "National qualification awarded by the contributing nation’s navy to officers fit to command a warship, after command courses and the required experience. It precedes command of a Standing NATO Maritime Group (SNMG)."
+      },
+      "body": {
+        "fr": "Forces armées de la nation contributrice (formation nationale)",
+        "en": "Armed forces of the contributing nation (national training)"
+      },
+      "issuer": {
+        "name": "Forces armées de la nation contributrice",
+        "short_name": "Nation contributrice"
+      },
+      "reference": {
+        "fr": "Réglementation nationale de qualification au commandement à la mer",
+        "en": "National command at sea qualification rules"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://www.nato.int/en/what-we-do/operations-and-missions/natos-maritime-activities",
+          "title": "NATO’s maritime activities (nato.int)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Standing_NATO_Maritime_Group_1",
+          "title": "Standing NATO Maritime Group 1 (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "nato-nmwcoe-training",
+      "code": "OTAN-NMWCOE",
+      "category": "maritime",
+      "name": {
+        "fr": "Formations du centre d’excellence guerre des mines navale de l’OTAN (Ostende)",
+        "en": "NATO Naval Mine Warfare Centre of Excellence training (Ostend)"
+      },
+      "official_name": "NATO Naval Mine Warfare Centre of Excellence courses",
+      "short_name": "NMW COE",
+      "description": {
+        "fr": "Formations du centre d’excellence de l’OTAN pour la guerre des mines navale (NMW COE), adossé à l’école de guerre des mines belgo-néerlandaise EGUERMIN à Ostende (Belgique) : lutte contre les mines, conduite des opérations de déminage et emploi des moyens de guerre des mines.",
+        "en": "Training of the NATO Naval Mine Warfare Centre of Excellence (NMW COE), based on the Belgian-Dutch mine warfare school EGUERMIN in Ostend (Belgium): mine countermeasures, conduct of mine clearance operations and use of mine warfare assets."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN pour la guerre des mines navale (NMW COE), Ostende",
+        "en": "NATO Naval Mine Warfare Centre of Excellence (NMW COE), Ostend"
+      },
+      "issuer": {
+        "name": "NATO Naval Mine Warfare Centre of Excellence",
+        "short_name": "NMW COE"
+      },
+      "reference": {
+        "fr": "Catalogue de formation du NMW COE / EGUERMIN ; AJP-3.1",
+        "en": "NMW COE / EGUERMIN training catalogue; AJP-3.1"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.nmwcoe.org/",
+          "title": "NATO Naval Mine Warfare Centre of Excellence"
+        },
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/centres-of-excellence",
+          "title": "NATO – Centres of Excellence (nato.int)"
+        }
+      ]
+    },
+    {
+      "id": "nato-mpcoe-training",
+      "code": "OTAN-MPCOE",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formations du centre d’excellence police militaire de l’OTAN (Bydgoszcz)",
+        "en": "NATO Military Police Centre of Excellence training (Bydgoszcz)"
+      },
+      "official_name": "NATO Military Police Centre of Excellence courses",
+      "short_name": "MP COE",
+      "description": {
+        "fr": "Cours du centre d’excellence de police militaire de l’OTAN (NATO MP COE), à Bydgoszcz (Pologne), destinés au personnel de police militaire des nations alliées : fonctions de police militaire en opérations, protection de la force et interopérabilité.",
+        "en": "Courses of the NATO Military Police Centre of Excellence (NATO MP COE) in Bydgoszcz (Poland) for military police personnel of Allied nations: military police functions in operations, force protection and interoperability."
+      },
+      "body": {
+        "fr": "Centre d’excellence de police militaire de l’OTAN (MP COE), Bydgoszcz",
+        "en": "NATO Military Police Centre of Excellence (MP COE), Bydgoszcz"
+      },
+      "issuer": {
+        "name": "NATO Military Police Centre of Excellence",
+        "short_name": "NATO MP COE"
+      },
+      "reference": {
+        "fr": "Catalogue de formation du NATO MP COE ; AJP-3.14",
+        "en": "NATO MP COE training catalogue; AJP-3.14"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.mpcoe.org/",
+          "title": "NATO Military Police Centre of Excellence"
+        },
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/centres-of-excellence",
+          "title": "NATO – Centres of Excellence (nato.int)"
+        }
+      ]
+    },
+    {
+      "id": "nato-nspcoe-training",
+      "code": "OTAN-NSPCOE",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formations du centre d’excellence police de stabilisation de l’OTAN (Vicence)",
+        "en": "NATO Stability Policing Centre of Excellence training (Vicenza)"
+      },
+      "official_name": "NATO Stability Policing Centre of Excellence courses",
+      "short_name": "NSPCOE",
+      "description": {
+        "fr": "Cours du centre d’excellence de police de stabilisation de l’OTAN (NSPCOE), à Vicence (Italie), nation-cadre italienne avec les Carabinieri : police de stabilisation, renforcement ou remplacement des forces de police locales et doctrine AJP-3.22.",
+        "en": "Courses of the NATO Stability Policing Centre of Excellence (NSPCOE) in Vicenza (Italy), with Italy and its Carabinieri as framework nation: stability policing, reinforcement or replacement of local police forces and AJP-3.22 doctrine."
+      },
+      "body": {
+        "fr": "Centre d’excellence de police de stabilisation de l’OTAN (NSPCOE), Vicence",
+        "en": "NATO Stability Policing Centre of Excellence (NSPCOE), Vicenza"
+      },
+      "issuer": {
+        "name": "NATO Stability Policing Centre of Excellence",
+        "short_name": "NSPCOE"
+      },
+      "reference": {
+        "fr": "Catalogue de formation du NSPCOE ; AJP-3.22",
+        "en": "NSPCOE training catalogue; AJP-3.22"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.nspcoe.org/",
+          "title": "NATO Stability Policing Centre of Excellence"
+        },
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/centres-of-excellence",
+          "title": "NATO – Centres of Excellence (nato.int)"
+        }
+      ]
     }
   ]
 }

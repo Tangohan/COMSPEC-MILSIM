@@ -126,9 +126,9 @@ final class AccessManagementController
     public function simulate(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
-        $userId = (int) $request->query('user_id', $request->input('user_id', 0));
-        $resource = trim((string) $request->query('resource', $request->input('resource', 'documents')));
-        $action = strtoupper(trim((string) $request->query('action', $request->input('action', 'READ'))));
+        $userId = (int) $request->queryString('user_id', '0');
+        $resource = trim($request->queryString('resource', 'documents'));
+        $action = strtoupper(trim($request->queryString('action', 'READ')));
 
         $user = $this->users->findById($userId, $tenantId);
         if (!$user) {

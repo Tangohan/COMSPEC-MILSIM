@@ -23,13 +23,15 @@ namespace App\Support\QualificationCatalog;
 final class QualificationCatalog
 {
     /** Packs livrés (nom du fichier sans extension). */
-    public const PACKS = ['us', 'fr', 'de', 'nato'];
+    public const PACKS = ['us', 'fr', 'de', 'cn', 'ru', 'nato'];
 
     /** Pays des packs, dans l’ordre des onglets (mêmes codes que le catalogue d’emplois). */
     public const COUNTRIES = [
         'US' => ['fr' => 'États-Unis', 'en' => 'United States'],
         'FR' => ['fr' => 'France', 'en' => 'France'],
         'DE' => ['fr' => 'Allemagne', 'en' => 'Germany'],
+        'CN' => ['fr' => 'Chine', 'en' => 'China'],
+        'RU' => ['fr' => 'Russie', 'en' => 'Russia'],
         'NATO' => ['fr' => 'OTAN', 'en' => 'NATO'],
     ];
 

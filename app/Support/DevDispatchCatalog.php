@@ -305,6 +305,24 @@ final class DevDispatchCatalog
             ], [], ['personnel', 'platform'], [
                 'Mêmes droits que la création de cours. Les fiches sont celles du référentiel des qualifications : rien n’est dupliqué.',
             ], 'Portail'),
+            $pr(1308, '2026-11-02', 'Emplois du catalogue : brevets, formations et doctrines réels, rattachables à vos fonctions', 'Dans la fiche d’un emploi du catalogue (États-Unis, France, Allemagne, Chine, Russie, OTAN), chaque brevet, qualification, formation ou doctrine typique ouvre désormais sa vraie fiche : qualification du catalogue de référence avec son école et son intitulé d’origine, ou publication du référentiel doctrinal. Un bouton « Rattacher à la fonction » l’ajoute aux prérequis de votre emploi à l’enregistrement, en important la qualification dans votre référentiel si besoin.', [
+                'Plus de 250 qualifications et formations de référence ajoutées au catalogue, dont deux nouveaux catalogues pays : Chine et Russie, avec les intitulés officiels en chinois et en russe',
+                'Doctrines OTAN ajoutées au référentiel doctrinal, dont la doctrine interalliée des opérations spéciales AJP-3.5',
+                'Bouton « Rattacher à la fonction » sur chaque brevet ou doctrine de la fiche d’un emploi du catalogue',
+                'Prérequis « Doctrine lue » relié à une publication du référentiel : tenu dès qu’un document de doctrine de votre communauté rattaché à cette publication est lu',
+            ], [
+                'Brevets et doctrines de la fiche : lien direct vers l’élément au lieu d’une simple recherche dans les qualifications',
+            ], [], ['personnel'], [
+                'Ouvrez Effectifs › Fonctions, éditez un emploi, puis Chercher dans le catalogue. Choisissez un emploi OTAN (SOCC) : ouvrez AJP-3.5, cliquez Rattacher à la fonction, enregistrez l’emploi et vérifiez ses prérequis.',
+            ], 'Portail Athena'),
+            $pr(1306, '2026-11-02', 'Recherches, filtres et onglets de nouveau pris en compte', 'Plusieurs pages ignoraient ce qui était demandé dans l’adresse : la recherche, le tri et les filtres de la documentation, le filtre de Mes documents, les onglets des sessions de jeu de rôle, le filtre des catégories ou le simulateur d’accès affichaient toujours la vue par défaut. Ces choix sont de nouveau appliqués, par formulaire comme par lien direct, et le téléchargement d’un document à signature obligatoire fonctionne de nouveau après la signature.', [], [], [
+                'Documentation et gestion des documents : recherche, catégorie, statut, type, classification et tri de nouveau appliqués',
+                'Mes documents : le filtre choisi (à lire, obligatoires, en retard, lus) est de nouveau appliqué',
+                'Back-office : onglets des sessions de jeu de rôle, filtre des catégories, simulateur d’accès, export des lectures d’un document, réglage des annonces de coopération et formule offerte présélectionnée',
+                'Téléchargement d’un document à signature obligatoire de nouveau possible une fois la signature faite',
+            ], ['platform'], [
+                'Aucune donnée n’a été modifiée : seule la lecture des paramètres de l’adresse était en cause.',
+            ], 'Portail'),
             $pr(1305, '2026-11-02', 'Espace aérien : les onglets s’ouvrent de nouveau', 'Dans le back-office, la page Espace aérien affichait toujours la ligne de vol, quel que soit l’onglet choisi. Les onglets Cursus pilote, Pilotes, Carnet de vol et Flotte et filières s’ouvrent de nouveau, par clic comme par lien direct, et les filtres du carnet de vol et de la filière du cursus sont pris en compte.', [], [], [
                 'Espace aérien : les onglets Cursus pilote, Pilotes, Carnet de vol et Flotte et filières affichaient la ligne de vol au lieu de leur contenu',
                 'Filtres du carnet de vol (à contresigner, contresignés, refusés, relevés en jeu) et choix de la filière du cursus de nouveau appliqués',

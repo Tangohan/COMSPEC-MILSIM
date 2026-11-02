@@ -162,7 +162,7 @@ final class AdminDoctrineController
             return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
         }
         $tenantId = (int) Session::get('tenant_id');
-        $documentId = (int) ($params['id'] ?? $request->input('id', 0));
+        $documentId = (int) ($params['id'] ?? $request->query('id', 0));
         $document = null;
         $doctrine = null;
         $audiences = [];
@@ -173,7 +173,7 @@ final class AdminDoctrineController
         }
         // « Créer un document à partir de cette référence » (Doctrine › Référentiel) : formulaire pré-rempli.
         $fromReference = null;
-        $referenceKey = trim((string) $request->query('reference', ''));
+        $referenceKey = trim($request->queryString('reference', ''));
         if ($documentId === 0 && $referenceKey !== '') {
             try {
                 $fromReference = (new \App\Services\Doctrine\DoctrineLibraryService())->resolve($tenantId, $referenceKey);

@@ -21,7 +21,7 @@ class CategoryAdminController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $type = $request->input('type');
+        $type = $request->queryString('type');
         $categories = $this->categoryRepository->allForTenant($tenantId, $type !== '' ? $type : null);
         return Response::view('layout.main', [
             'content' => 'admin.organization.categories.index',

@@ -43,6 +43,9 @@
           "Field-grade officer from the special operations companies"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-army-command-college-course"
+      ],
       "billets": {
         "fr": [
           "副旅长, brigade FS du 74e groupe d’armées"
@@ -100,6 +103,9 @@
           "Brigade staff officer"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-army-command-college-course"
+      ],
       "billets": {
         "fr": [
           "参谋, 作训科"
@@ -157,6 +163,9 @@
           "SOF operator or leadership experience"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-army-sof-selection"
+      ],
       "billets": {
         "fr": [
           "考评组成员"
@@ -214,6 +223,9 @@
           "Junior officer"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-officer-initial-education"
+      ],
       "billets": {
         "fr": [
           "副连长"
@@ -271,6 +283,9 @@
           "Graduate of the Army Special Operations Academy"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-army-sof-academy"
+      ],
       "billets": {
         "fr": [
           "排长, 特战连"
@@ -328,6 +343,9 @@
           "Cross-training in the team’s specialties"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-army-sof-selection"
+      ],
       "billets": {
         "fr": [
           "小队长"
@@ -389,6 +407,9 @@
           "NCO (sergeant or above)"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-nco-course"
+      ],
       "billets": {
         "fr": [
           "副小队长"
@@ -444,6 +465,9 @@
           "NCO (sergeant, 中士)"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-nco-course"
+      ],
       "billets": {
         "fr": [
           "中士班长, 特战连"
@@ -507,6 +531,10 @@
           "Armed swimming and diving"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-army-sof-selection",
+        "qualification:cn-combat-diver"
+      ],
       "billets": {
         "fr": [
           "特战队员, 特战连"
@@ -570,6 +598,9 @@
           "Precision shooting and reconnaissance"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-special-reconnaissance"
+      ],
       "billets": {
         "fr": [
           "Équipe de concours de la brigade"
@@ -629,6 +660,9 @@
           "Sniper training"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-sniper-training"
+      ],
       "billets": {
         "fr": [
           "狙击手, 特战小队"
@@ -686,6 +720,9 @@
           "Demolition and breaching"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-demolition"
+      ],
       "billets": {
         "fr": [
           "爆破手, 破袭组"
@@ -743,6 +780,9 @@
           "Infantry heavy weapons"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-infantry-heavy-weapons"
+      ],
       "billets": {
         "fr": [
           "重火器手, 火力组"
@@ -800,6 +840,9 @@
           "Special reconnaissance"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-special-reconnaissance"
+      ],
       "billets": {
         "fr": [
           "侦察引导组"
@@ -861,6 +904,9 @@
           "Close quarters combat"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-close-quarters-combat"
+      ],
       "billets": {
         "fr": [
           "近战突击组"
@@ -916,6 +962,9 @@
           "Raid and sabotage"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-demolition"
+      ],
       "billets": {
         "fr": [
           "破袭一组 / 破袭二组"
@@ -977,6 +1026,9 @@
           "Combat shooting"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-combat-shooting"
+      ],
       "billets": {
         "fr": [
           "火力组"
@@ -1040,6 +1092,10 @@
           "Long-distance armed swimming"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-combat-diver",
+        "qualification:cn-combat-diver"
+      ],
       "billets": {
         "fr": [
           "蛙人, 特战旅"
@@ -1103,6 +1159,9 @@
           "Brigade selection"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-army-sof-selection"
+      ],
       "billets": {
         "fr": [
           "女兵, 特战连"
@@ -1164,6 +1223,9 @@
           "Senior officer (colonel or senior colonel)"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-ndu-senior-command"
+      ],
       "billets": {
         "fr": [
           "旅长"
@@ -1225,6 +1287,9 @@
           "Senior political officer"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-political-officer-course"
+      ],
       "billets": {
         "fr": [
           "旅政委"
@@ -1286,6 +1351,9 @@
           "Political officer"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-political-officer-course"
+      ],
       "billets": {
         "fr": [
           "政治工作部主任"
@@ -1343,6 +1411,9 @@
           "Junior officer (captain)"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-officer-initial-education"
+      ],
       "billets": {
         "fr": [
           "连长, 红三连"
@@ -1404,6 +1475,9 @@
           "Junior political officer"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-political-officer-course"
+      ],
       "billets": {
         "fr": [
           "指导员, 特战连"
@@ -1465,6 +1539,9 @@
           "Experienced sniper"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-sniper-training"
+      ],
       "billets": {
         "fr": [
           "教练员, 狙击"
@@ -1524,6 +1601,9 @@
           "UAV piloting"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-uav-operator"
+      ],
       "billets": {
         "fr": [
           "无人机组"
@@ -1585,6 +1665,9 @@
           "Parachute qualification"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-parachute-training"
+      ],
       "billets": {
         "fr": [
           "特战八连"
@@ -1646,6 +1729,9 @@
           "“Army Top Ten Team Leaders” award"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-army-top-ten-team-leader"
+      ],
       "billets": {
         "fr": [
           "小队长, 特战八连"
@@ -1705,6 +1791,9 @@
           "Field-grade officer"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-army-command-college-course"
+      ],
       "billets": {
         "fr": [
           "营长, 特战营"
@@ -1764,6 +1853,9 @@
           "Experienced SOF operator"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-sihui-instructor"
+      ],
       "billets": {
         "fr": [
           "教练员, 集训队"
@@ -1823,6 +1915,10 @@
           "Parachuting, diving, swimming"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-special-reconnaissance",
+        "qualification:cn-army-sof-selection"
+      ],
       "billets": {
         "fr": [
           "特战小队"
@@ -1888,6 +1984,9 @@
           "Academy admission"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-army-sof-academy"
+      ],
       "billets": {
         "fr": [
           "学员"
@@ -1949,6 +2048,9 @@
           "Z-10 qualification"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-attack-helicopter"
+      ],
       "billets": {
         "fr": [
           "前舱飞行员"
@@ -2010,6 +2112,9 @@
           "Z-10 qualification"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-attack-helicopter"
+      ],
       "billets": {
         "fr": [
           "后舱飞行员"
@@ -2069,6 +2174,10 @@
           "Night flying"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-type-conversion",
+        "qualification:cn-night-flying"
+      ],
       "billets": {
         "fr": [
           "飞行员, 空中突击旅"
@@ -2130,6 +2239,9 @@
           "Z-10 or Z-19 qualification"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-attack-helicopter"
+      ],
       "billets": {
         "fr": [
           "飞行员, 攻击直升机"
@@ -2193,6 +2305,9 @@
           "Type rating"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-type-conversion"
+      ],
       "billets": {
         "fr": [
           "飞行员, 陆航旅"
@@ -2256,6 +2371,9 @@
           "Staff officer"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-army-command-college-course"
+      ],
       "billets": {
         "fr": [
           "副参谋长"
@@ -2315,6 +2433,10 @@
           "Helicopter insertion"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-air-assault",
+        "qualification:cn-air-assault"
+      ],
       "billets": {
         "fr": [
           "空中突击营"
@@ -2378,6 +2500,9 @@
           "Amphibious training"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-amphibious-training"
+      ],
       "billets": {
         "fr": [
           "陆战队员, 陆战旅"
@@ -2439,6 +2564,10 @@
           "Shooting from moving platforms"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-sniper-training",
+        "qualification:cn-sniper-training"
+      ],
       "billets": {
         "fr": [
           "狙击手, 陆战旅"
@@ -2496,6 +2625,9 @@
           "Sniper training"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-sniper-training"
+      ],
       "billets": {
         "fr": [
           "观察手, 狙击小组"
@@ -2553,6 +2685,9 @@
           "Amphibious vehicle driving"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-amphibious-vehicle-driver"
+      ],
       "billets": {
         "fr": [
           "驾驶员, 两栖装甲车"
@@ -2616,6 +2751,9 @@
           "Armoured vehicle commander"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-armoured-vehicle-commander"
+      ],
       "billets": {
         "fr": [
           "车长"
@@ -2679,6 +2817,9 @@
           "Amphibious reconnaissance"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-amphibious-recon"
+      ],
       "billets": {
         "fr": [
           "侦察兵"
@@ -2738,6 +2879,9 @@
           "Deck-landing qualification"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-deck-landing"
+      ],
       "billets": {
         "fr": [
           "飞行员, 陆战队航空兵旅"
@@ -2805,6 +2949,9 @@
           "Jiaolong selection"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-jiaolong-selection"
+      ],
       "billets": {
         "fr": [
           "蛟龙突击队"
@@ -2872,6 +3019,9 @@
           "NCO (sergeant, 中士)"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-nco-course"
+      ],
       "billets": {
         "fr": [
           "班长, 蛟龙突击队"
@@ -2931,6 +3081,9 @@
           "Close quarters combat"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-close-quarters-combat"
+      ],
       "billets": {
         "fr": [
           "突击手"
@@ -2988,6 +3141,9 @@
           "Shooting from helicopters"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-combat-shooting"
+      ],
       "billets": {
         "fr": [
           "机枪手, 护航编队"
@@ -3053,6 +3209,10 @@
           "Water jumps"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-special-parachuting",
+        "qualification:cn-special-parachuting"
+      ],
       "billets": {
         "fr": [
           "伞降队员"
@@ -3114,6 +3274,10 @@
           "Submarine lock-out"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-combat-diver",
+        "qualification:cn-combat-diver"
+      ],
       "billets": {
         "fr": [
           "潜水队员, 引导员"
@@ -3175,6 +3339,9 @@
           "Junior officer"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-officer-initial-education"
+      ],
       "billets": {
         "fr": [
           "中队"
@@ -3236,6 +3403,10 @@
           "Fast-roping"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-navy-boarding",
+        "qualification:cn-air-assault"
+      ],
       "billets": {
         "fr": [
           "护航编队特战队"
@@ -3299,6 +3470,9 @@
           "Combat diving"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-combat-diver"
+      ],
       "billets": {
         "fr": [
           "蛙人"
@@ -3356,6 +3530,9 @@
           "Parachute qualification"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-parachute-training"
+      ],
       "billets": {
         "fr": [
           "伞兵, 空降兵旅"
@@ -3423,6 +3600,10 @@
           "High-altitude parachuting"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-leishen-selection",
+        "qualification:cn-special-parachuting"
+      ],
       "billets": {
         "fr": [
           "雷神突击队"
@@ -3486,6 +3667,9 @@
           "Parachute-qualified officer"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-parachute-training"
+      ],
       "billets": {
         "fr": [
           "侦察连连长"
@@ -3545,6 +3729,9 @@
           "Parachute qualification"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-parachute-training"
+      ],
       "billets": {
         "fr": [
           "侦察引导分队"
@@ -3604,6 +3791,9 @@
           "Parachute qualification"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-parachute-training"
+      ],
       "billets": {
         "fr": [
           "机枪手"
@@ -3661,6 +3851,9 @@
           "Parachute qualification"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-parachute-training"
+      ],
       "billets": {
         "fr": [
           "火箭筒手"
@@ -3724,6 +3917,10 @@
           "Sniper training"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-parachute-training",
+        "qualification:cn-sniper-training"
+      ],
       "billets": {
         "fr": [
           "狙击手"
@@ -3783,6 +3980,9 @@
           "UAV piloting"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-uav-operator"
+      ],
       "billets": {
         "fr": [
           "无人机操作手"
@@ -3840,6 +4040,9 @@
           "ZBD-03 driving"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-zbd03-driver"
+      ],
       "billets": {
         "fr": [
           "驾驶员, 空降战车"
@@ -3903,6 +4106,10 @@
           "Personnel and cargo drops"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-type-conversion",
+        "qualification:cn-airdrop-pilot"
+      ],
       "billets": {
         "fr": [
           "飞行员, 航空兵旅"
@@ -3966,6 +4173,9 @@
           "Type rating"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-type-conversion"
+      ],
       "billets": {
         "fr": [
           "飞行员, 航空兵旅"
@@ -4033,6 +4243,9 @@
           "“Devil Week” (魔鬼周)"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-snow-leopard-selection"
+      ],
       "billets": {
         "fr": [
           "雪豹突击队"
@@ -4100,6 +4313,9 @@
           "Crisis negotiation"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-crisis-negotiator"
+      ],
       "billets": {
         "fr": [
           "谈判专家"
@@ -4157,6 +4373,9 @@
           "Sniper training"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-sniper-training"
+      ],
       "billets": {
         "fr": [
           "狙击手, 战斗队"
@@ -4220,6 +4439,9 @@
           "Experienced operator"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-falcon-selection"
+      ],
       "billets": {
         "fr": [
           "一队副队长"
@@ -4277,6 +4499,9 @@
           "Explosive ordnance disposal"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-pap-eod"
+      ],
       "billets": {
         "fr": [
           "排爆手"
@@ -4340,6 +4565,10 @@
           "“Hell Week”"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-counter-hijack",
+        "qualification:cn-falcon-selection"
+      ],
       "billets": {
         "fr": [
           "猎鹰突击队"
@@ -4403,6 +4632,9 @@
           "Political officer"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-political-officer-course"
+      ],
       "billets": {
         "fr": [
           "教导员"
@@ -4462,6 +4694,9 @@
           "Mountain warfare"
         ]
       },
+      "reference_keys": [
+        "qualification:cn-mountain-warfare"
+      ],
       "billets": {
         "fr": [
           "山鹰突击队"
