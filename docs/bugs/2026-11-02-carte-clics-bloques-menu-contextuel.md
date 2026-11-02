@@ -36,5 +36,11 @@ seulement, console de débogage locale : `profileNamespace setVariable [format [
 En jeu : clic droit › ZONES › NOMMER LES AXES puis clic sur la carte ; › ZONE DEPUIS LE CLIC puis POLYGONE, 4 clics,
 Entrée ; Athena puis APPLICATIONS (aucune trace d'Athena) ; miniature Maj+U et plein écran.
 
+## Suite 2.9.41
+Outil POLYGONE relu : barre d'outils, panneau et menu de la carte de l'app passent tous par un clic différé d'une
+image, la carte de l'app n'est jamais supprimée dans son propre gestionnaire (fin de tracé, clic droit, Entrée) : le
+correctif 2.9.40 suffit. Rectangle et cercle acceptent en plus le clic-glisser (`fn_zoneMap` « up »), et l'app propose
+DÉCOUPER ou TRACER dès la zone de travail posée.
+
 ## Statut
 corrigé à vérifier en jeu
