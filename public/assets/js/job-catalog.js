@@ -29,6 +29,9 @@
     const form = () => document.querySelector('form[data-job-catalog-form]');
     const isEnglish = () => (document.documentElement.lang || 'fr').slice(0, 2) === 'en';
     const branchKey = entry => entry.country + ':' + entry.branch;
+    // Nom officiel (langue du pays) en titre ; traductions (langue du lecteur, puis anglais) en ligne secondaire.
+    const officialTitle = entry => entry.official_name || entry.name;
+    const translations = entry => Object.entries(entry.names || {}).slice(1).filter(([lang]) => lang === 'en' || lang === (isEnglish() ? 'en' : 'fr'));
     const el = (tag, className, text) => {
         const node = document.createElement(tag);
         if (className) node.className = className;
@@ -60,7 +63,7 @@
     }
 
     function haystack(entry) {
-        const text = [entry.name, entry.official_name, entry.alt, entry.abbreviation, entry.code, entry.unit, entry.command,
+        const text = [entry.name, entry.official_name, Object.values(entry.names || {}).join(' '), entry.alt, entry.abbreviation, entry.code, entry.unit, entry.command,
             entry.formation, entry.branch_label, entry.country_label, entry.type_label, (entry.tags || []).join(' '),
             (entry.qualifications || []).join(' '), entry.id].join(' ');
         const german = transliterate(text);
@@ -79,7 +82,7 @@
             .then(json => {
                 json.entries.forEach((entry, index) => {
                     entry._hay = haystack(entry);
-                    entry._name = ' ' + normalize(entry.name) + ' ';
+                    entry._name = ' ' + normalize(officialTitle(entry) + ' ' + entry.name) + ' ';
                     entry._index = index;
                 });
                 json.countries = json.countries || [];
@@ -228,10 +231,17 @@
 
     function sorted(hits) {
         const collator = new Intl.Collator(isEnglish() ? 'en' : 'fr', {sensitivity: 'base', numeric: true});
-        const byName = (a, b) => collator.compare(a.entry.name, b.entry.name);
+        const byName = (a, b) => collator.compare(officialTitle(a.entry), officialTitle(b.entry));
         if (state.sort === 'name') return hits.sort((a, b) => byName(a, b) || a.entry._index - b.entry._index);
         if (state.sort === 'unit') return hits.sort((a, b) => collator.compare(a.entry.formation || a.entry.unit, b.entry.formation || b.entry.unit) || byName(a, b));
         return hits.sort((a, b) => b.score - a.score || a.entry._index - b.entry._index);
+    }
+
+    /** Code de langue (« DE ») avec son nom complet en infobulle. */
+    function langCode(lang) {
+        const code = el('abbr', 'jobcat__lang', lang.toUpperCase());
+        code.title = label('lang-' + lang) !== 'lang-' + lang ? label('lang-' + lang) : lang.toUpperCase();
+        return code;
     }
 
     function resultButton(entry, words) {
@@ -246,7 +256,7 @@
             title.appendChild(abbr);
         }
         const name = el('span', 'jobcat__result-name');
-        name.appendChild(highlight(entry.name, words));
+        name.appendChild(highlight(entry.official_name || entry.name, words));
         title.appendChild(name);
         if (entry.code) {
             const code = el('code');
@@ -256,6 +266,15 @@
         const meta = el('small');
         meta.appendChild(highlight([entry.formation || entry.command, entry.type_label, entry.formation ? '' : entry.unit].filter(Boolean).join(' · '), words));
         button.append(title);
+        const others = translations(entry);
+        if (others.length) {
+            const alt = el('span', 'jobcat__result-alt');
+            others.forEach(([lang, text], i) => {
+                if (i) alt.appendChild(document.createTextNode(' · '));
+                alt.append(langCode(lang), highlight(text, words));
+            });
+            button.append(alt);
+        }
         if (!state.group) {
             const line = el('span', 'jobcat__result-origin');
             line.append(flag(entry.country), document.createTextNode(entry.branch_label));
@@ -399,8 +418,33 @@
         box.querySelector('[data-job-catalog-placeholder]').hidden = true;
         box.querySelector('.jobcat__frame').classList.add('is-detail');
         detail.querySelectorAll('[data-jc]').forEach(node => { node.textContent = entry[node.dataset.jc] || ''; node.hidden = !entry[node.dataset.jc]; });
-        const official = detail.querySelector('.jobcat__official');
-        official.hidden = !entry.official_name || entry.official_name === entry.name;
+        const official = detail.querySelector('[data-jc-translations]');
+        official.textContent = '';
+        translations(entry).forEach(([lang, text], i) => {
+            if (i) official.appendChild(document.createTextNode(' · '));
+            official.append(langCode(lang), document.createTextNode(text));
+        });
+        official.hidden = !official.childNodes.length;
+        const names = detail.querySelector('[data-jc-names]');
+        const select = detail.querySelector('[data-job-catalog-name-lang]');
+        names.textContent = '';
+        select.textContent = '';
+        Object.entries(entry.names || {}).forEach(([lang, text], i) => {
+            const item = el('li');
+            const copy = el('button', 'jobcat__copy', label('copy'));
+            copy.type = 'button';
+            copy.dataset.jobCatalogCopy = 'name';
+            copy.dataset.lang = lang;
+            copy.setAttribute('aria-label', label('copy-name') + ' (' + label('lang-' + lang) + ')');
+            const name = el('span', 'jobcat__names-text', text);
+            if (i === 0) name.appendChild(el('small', '', ' — ' + label('official')));
+            item.append(langCode(lang), name, copy);
+            names.appendChild(item);
+            const option = el('option', '', lang.toUpperCase() + ' · ' + text + (i === 0 ? ' (' + label('official') + ')' : ''));
+            option.value = lang;
+            select.appendChild(option);
+        });
+        select.value = Object.keys(entry.names || {})[0] || '';
         const flagNode = detail.querySelector('[data-jc-flag]');
         flagNode.dataset.flag = entry.country;
         flagNode.textContent = entry.country;
@@ -512,6 +556,7 @@
     }
 
     function rowLabel(key) {
+        if (key === 'name') return label('name');
         return dialog()?.querySelector('[data-jc-row="' + key + '"] dt')?.textContent.trim() || key;
     }
 
@@ -548,12 +593,23 @@
         return true;
     }
 
+    /** Nom copié : langue demandée, sinon celle choisie dans la fiche, sinon le nom officiel. */
+    function nameIn(lang) {
+        const names = current.names || {};
+        const chosen = lang || dialog()?.querySelector('[data-job-catalog-name-lang]')?.value || '';
+        return names[chosen] || current.official_name || current.name || '';
+    }
+
+    function valueOf(key, lang) {
+        return key === 'name' ? nameIn(lang) : String(current[key] || '');
+    }
+
     function plain(key) {
         return key === 'code' ? field('code') : field(key);
     }
 
     /** Copie d'un champ ; confirmation si le champ de la fiche est déjà rempli autrement. */
-    function copyOne(key, confirmed = false) {
+    function copyOne(key, confirmed = false, lang = '') {
         if (!current) return false;
         if (key === 'icon') return current.icon ? setIcon(current.icon) : false;
         if (key === 'tags') return mergeTags(current.tags || []);
@@ -566,7 +622,7 @@
             return true;
         }
         const target = plain(key);
-        const value = String(current[key] || '');
+        const value = valueOf(key, lang);
         if (!target || value === '') return false;
         if (!confirmed && target.value.trim() !== '' && target.value.trim() !== value && !window.confirm('Remplacer le champ « ' + rowLabel(key) + ' » déjà rempli ?')) return null;
         if (key === 'code') target.closest('details')?.setAttribute('open', '');
@@ -579,7 +635,7 @@
         const keys = ['name', 'abbreviation', 'description', 'code'].filter(key => current[key] && plain(key));
         const replaced = keys.filter(key => {
             const target = plain(key);
-            return target.value.trim() !== '' && target.value.trim() !== String(current[key]);
+            return target.value.trim() !== '' && target.value.trim() !== valueOf(key);
         });
         const checkedIcon = form()?.querySelector('input[name=icon]:checked');
         if (current.icon && checkedIcon && checkedIcon.value !== '' && checkedIcon.value !== current.icon) replaced.push('icon');
@@ -634,7 +690,7 @@
         if (copy) {
             const key = copy.dataset.jobCatalogCopy;
             if (key === 'all') { copyAll(); return; }
-            const done = copyOne(key);
+            const done = copyOne(key, false, copy.dataset.lang || '');
             if (done === true) announce('Copié : ' + rowLabel(key));
             else if (done === false) announce('Champ indisponible dans cette fiche : ' + rowLabel(key));
         }

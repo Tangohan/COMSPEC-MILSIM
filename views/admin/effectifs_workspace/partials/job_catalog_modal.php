@@ -37,7 +37,7 @@ $catalogUrl = effectifs_workspace_url('fonctions/catalogue');
             <span class="jobcat__active-list" data-job-catalog-chips></span>
             <button type="button" class="jobcat__reset" data-job-catalog-reset>Réinitialiser les filtres</button>
         </div>
-        <span hidden data-job-catalog-label="country">Pays</span><span hidden data-job-catalog-label="q">Recherche</span><span hidden data-job-catalog-label="remove">Retirer le filtre</span>
+        <span hidden data-job-catalog-label="name">Nom</span><span hidden data-job-catalog-label="lang-fr">Français</span><span hidden data-job-catalog-label="lang-en">Anglais</span><span hidden data-job-catalog-label="lang-de">Allemand</span><span hidden data-job-catalog-label="official">nom officiel</span><span hidden data-job-catalog-label="copy">Copier</span><span hidden data-job-catalog-label="copy-name">Copier le nom</span><span hidden data-job-catalog-label="country">Pays</span><span hidden data-job-catalog-label="q">Recherche</span><span hidden data-job-catalog-label="remove">Retirer le filtre</span>
     </div>
     <div class="jobcat__body">
         <div class="jobcat__results" id="job-catalog-results" data-job-catalog-results aria-label="Emplois du catalogue" translate="no"></div>
@@ -47,14 +47,14 @@ $catalogUrl = effectifs_workspace_url('fonctions/catalogue');
                 <span class="jobcat__icon" data-jc-icon aria-hidden="true"></span>
                 <div>
                     <p class="jobcat__origin" translate="no"><span class="jobcat__flag" data-jc-flag aria-hidden="true"></span><span data-jc="country_label"></span><span data-jc="branch_label"></span></p>
-                    <h3 data-jc="name" translate="no"></h3>
-                    <p class="jobcat__official" translate="no"><span data-jc="official_name"></span></p>
+                    <h3 data-jc="official_name" translate="no"></h3>
+                    <p class="jobcat__official" translate="no" data-jc-translations></p>
                 </div>
             </div>
             <p class="jobcat__chips" translate="no"><span data-jc="abbreviation" class="jobcat__chip is-abbr"></span><span data-jc="code" class="jobcat__chip"></span><span data-jc="command" class="jobcat__chip"></span><span data-jc="formation" class="jobcat__chip"></span><span data-jc="type_label" class="jobcat__chip is-type"></span></p>
-            <div class="jobcat__actions"><button type="button" class="eff-btn eff-btn--primary" data-job-catalog-copy="all">Copier tout dans l’emploi</button><small>Nom, abrégé, description, icône, étiquettes et code. Vous confirmez avant de remplacer un champ déjà rempli.</small></div>
+            <div class="jobcat__actions"><button type="button" class="eff-btn eff-btn--primary" data-job-catalog-copy="all">Copier tout dans l’emploi</button><div class="jobcat__name-lang"><span id="job-catalog-name-lang">Nom copié</span><select data-job-catalog-name-lang aria-labelledby="job-catalog-name-lang" translate="no"></select></div><small>Nom, abrégé, description, icône, étiquettes et code. Vous confirmez avant de remplacer un champ déjà rempli.</small></div>
             <dl class="jobcat__fields">
-                <div data-jc-row="name"><dt>Nom</dt><dd translate="no" data-jc="name"></dd><dd><button type="button" class="jobcat__copy" data-job-catalog-copy="name">Copier le nom</button></dd></div>
+                <div data-jc-row="names" class="is-wide"><dt>Noms</dt><dd translate="no"><ul class="jobcat__names" data-jc-names></ul></dd><dd></dd></div>
                 <div data-jc-row="abbreviation"><dt>Abrégé</dt><dd translate="no" data-jc="abbreviation"></dd><dd><button type="button" class="jobcat__copy" data-job-catalog-copy="abbreviation">Copier l’abrégé</button></dd></div>
                 <div data-jc-row="code"><dt>Code de spécialité</dt><dd translate="no"><span data-jc="code"></span> <small data-jc="code_system_label"></small></dd><dd><button type="button" class="jobcat__copy" data-job-catalog-copy="code">Copier le code</button></dd></div>
                 <div data-jc-row="unit"><dt>Unité et commandement</dt><dd translate="no"><span data-jc="unit"></span></dd><dd></dd></div>
