@@ -59,10 +59,18 @@ switch (toLower _action) do {
         };
         if (_grid isNotEqualTo "") then { _payload = format ["%1 — Grille: %2", _payload, _grid]; };
         private _target = if (_tType isEqualTo "all") then { "" } else { _tLabel };
+        // Groupe IA visé : l'ordre ne passe jamais par Athena (qui ne parle qu'aux joueurs), il part au camp sans Athena et
+        // le groupe l'exécute (fn_orderLocal → fn_aiOrder), au point de la grille saisie.
+        private _aiTgt = _tType isEqualTo "group" && {((["groups", [str side group player, getPosATL player]] call comspec_atak_native_fnc_aiOrder) findIf { (groupId _x) isEqualTo _tLabel }) >= 0};
+        private _pos = if (_grid isEqualTo "") then { [] } else { ([_grid] call comspec_atak_native_fnc_gridParse) param [0, []] };
+        if (_aiTgt && {_grid isNotEqualTo ""} && {_pos isEqualTo []}) exitWith {
+            uiNamespace setVariable ["COMSPEC_ATAK_OrderHint", "Grille illisible : tapez par exemple 012 345."];
+            call _redraw;
+        };
         // Mode full local, poste TOC ou pas de COMSPEC Link : l'ordre part au camp sans Athena.
-        if (["local"] call comspec_atak_native_fnc_orderLocal) exitWith {
-            ["send", [_kind, ["", "DEM-SSE"] select (_kind isEqualTo "DEMSSE"), _tType, _tgt param [1, ""], _tLabel, _payload, _prio]] call comspec_atak_native_fnc_orderLocal;
-            ["INFO", format ["Ordre envoyé à %1 (sans Athena)", ["tout le monde", _tLabel] select (_tType isNotEqualTo "all")], 3, 30] call comspec_atak_native_fnc_notify;
+        if (_aiTgt || {["local"] call comspec_atak_native_fnc_orderLocal}) exitWith {
+            ["send", [_kind, ["", "DEM-SSE"] select (_kind isEqualTo "DEMSSE"), _tType, _tgt param [1, ""], _tLabel, _payload, _prio, false, _pos]] call comspec_atak_native_fnc_orderLocal;
+            if (!_aiTgt) then { ["INFO", format ["Ordre envoyé à %1 (sans Athena)", ["tout le monde", _tLabel] select (_tType isNotEqualTo "all")], 3, 30] call comspec_atak_native_fnc_notify; };
             uiNamespace setVariable ["COMSPEC_ATAK_OrderDraft", createHashMapFromArray [["kind", _kind], ["prio", _prio], ["target", _d getOrDefault ["target", ""]]]];
             _s set ["orderCompose", false];
             call _redraw;

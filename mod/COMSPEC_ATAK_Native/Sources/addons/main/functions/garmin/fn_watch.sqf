@@ -739,7 +739,9 @@ switch (_act) do {
             if (_night) exitWith { private _l = (_r max _g max _b) * _lum; [_l, _l * 0.14, _l * 0.08, _a] };
             [_r * _lum, _g * _lum, _b * _lum, _a]
         };
-        private _H = {
+        // Couleur en « #rrggbb » pour le texte riche. Pas de « _H » : les variables SQF ignorent la casse, le « _h » des
+        // notifications (écran TÉLÉPHONE) le remplaçait et chaque mise à jour finissait en erreur.
+        private _toHex = {
             private _c = _this call _tone;
             private _hx = "0123456789abcdef";
             private _o = "#";
@@ -927,8 +929,11 @@ switch (_act) do {
                     ["hint", -0.6, 0.66, 1.2, 0.11, 0.085, _fR, _cGrey] call _txt;
                 };
                 case "MAP": {
-                    // Carré plus grand que le cadran : le boîtier masque les coins, plus de bandes noires haut/bas.
-                    private _mc = ["map", "COMSPEC_RscMapAtak", [-1.08, -1.08, 2.16, 2.16] call _P] call _mk;
+                    // Carré de demi-côté 0,97 : ses coins (rayon 1,37) restent sous le boîtier, opaque jusqu'à 1,40 en
+                    // diagonale sur les quatre coloris (mesuré sur les textures). À 1,08, les coins sortaient du boîtier
+                    // et la carte se voyait au-delà de la lunette. Le liseré sombre du verre couvre les fines bandes
+                    // noires laissées au bord de l'écran. Carte sans les textes d'Arma (COMSPEC_RscMapWatch).
+                    private _mc = ["map", "COMSPEC_RscMapWatch", [-0.97, -0.97, 1.94, 1.94] call _P] call _mk;
                     _mc ctrlCommit 0;
                     private _pos = [] call comspec_atak_native_fnc_gpsPos;
                     if ((count _pos) >= 2) then { _pos = [_pos select 0, _pos select 1]; };
@@ -1218,7 +1223,7 @@ switch (_act) do {
         };
         if (_showBan) then {
             ("ban" call _g) ctrlSetStructuredText parseText ((format ["<t align='center' font='%5' color='%3'>%1</t><br/><t align='center' color='%4'>%2</t>",
-                _bt, _bb2, _cBlue call _H, _cWhite call _H, _fB]) call comspec_atak_native_fnc_tr);
+                _bt, _bb2, _cBlue call _toHex, _cWhite call _toHex, _fB]) call comspec_atak_native_fnc_tr);
         };
 
         // --- Mises à jour lentes (1 s) ---
@@ -1436,9 +1441,9 @@ switch (_act) do {
                         private _e = _last select _i;
                         private _msg = (_e getOrDefault ["message", ""]) call _tr;
                         if ((count _msg) > 70) then { _msg = (_msg select [0, 68]) + "…"; };
-                        _c ctrlSetStructuredText parseText ((format ["<t color='%3' size='0.85'>%1</t>  <t color='%4'>%2</t>", _e getOrDefault ["time", ""], _msg, _cGrey call _H, _cWhite call _H]) call comspec_atak_native_fnc_tr);
+                        _c ctrlSetStructuredText parseText ((format ["<t color='%3' size='0.85'>%1</t>  <t color='%4'>%2</t>", _e getOrDefault ["time", ""], _msg, _cGrey call _toHex, _cWhite call _toHex]) call comspec_atak_native_fnc_tr);
                     } else {
-                        _c ctrlSetStructuredText parseText (((if (_i isEqualTo 0) then { format ["<t align='center' color='%2'>%1</t>", "Aucune notification" call _tr, _cGrey call _H] } else { "" })) call comspec_atak_native_fnc_tr);
+                        _c ctrlSetStructuredText parseText (((if (_i isEqualTo 0) then { format ["<t align='center' color='%2'>%1</t>", "Aucune notification" call _tr, _cGrey call _toHex] } else { "" })) call comspec_atak_native_fnc_tr);
                     };
                 };
                 ["hint", "START : faire sonner le téléphone"] call _set;

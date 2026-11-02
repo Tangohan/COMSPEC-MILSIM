@@ -13,6 +13,8 @@
       "groups" [camp, centre]           -> groupes IA commandables du camp, du plus proche au plus loin
       "label"  groupe                   -> « Alpha 1-1 · 4 IA · Hunter »
       "can"    unité                    -> l'unité peut donner un ordre aux IA (toute machine)
+      "why"    [groupe ou grpNull]      -> "" si le joueur peut ordonner à ce groupe, sinon le motif à lui afficher
+      "netId"  groupe                   -> identifiant réseau du groupe ("" si aucun), aussi en solo
       "send"   [groupe, clé, [x, y] ou [], depuis le PC du poste] (client) -> true si la demande part
       "srv"    [joueur, netId, clé, position, id, émetteur, PC du poste] (serveur)
       "exec"   [netId, clé, position, id, donneur] (machine où le groupe est local)
@@ -60,6 +62,12 @@ private _kinds = [
 private _post = createHashMapFromArray [["AWARE", "beh"], ["COMBAT", "beh"], ["STEALTH", "beh"], ["LIMITED", "spd"], ["NORMAL", "spd"], ["FULL", "spd"],
     ["COLUMN", "frm"], ["WEDGE", "frm"], ["LINE", "frm"], ["FILE", "frm"]];
 private _kLabel = { params ["_k"]; (_kinds param [(_kinds findIf { (_x select 0) isEqualTo _k }) max 0]) select 1 };
+// Suivi d'un ordre de bout en bout dans le RPT (réglage CBA « Niveau de journal » d'Overwatch sur Détaillé), sinon muet.
+private _dbg = { if ((missionNamespace getVariable ["comspec_overwatch_log_level", 3]) >= 4) then { ["DEBUG", "AIORDER", _this] call comspec_atak_native_fnc_log; }; };
+// Identifiants réseau : BIS_fnc_netId prend le groupe nu et BIS_fnc_groupFromNetId la chaîne nue. Les appeler avec
+// [groupe] / [chaîne] échouait sans bruit (contrôle de type de BIS) : le serveur ne retrouvait jamais le groupe.
+private _gid = { if (_this isEqualType grpNull && {!isNull _this}) then { _this call BIS_fnc_netId } else { "" } };
+private _gOf = { if (_this isEqualType "" && {_this isNotEqualTo ""}) then { _this call BIS_fnc_groupFromNetId } else { grpNull } };
 switch (_act) do {
     case "kinds": { _kinds };
     case "groups": {
@@ -85,51 +93,99 @@ switch (_act) do {
         (leader _g) isEqualTo _u || {({isPlayer _x} count (units _g)) <= 1}
             || {private _r = toLower (roleDescription _u); (_r find "chef") >= 0 || {(_r find "command") >= 0} || {(_r find "leader") >= 0}}
     };
+    case "netId": { _arg call _gid };
+    case "why": {
+        private _g = _arg;
+        if !(_g isEqualType grpNull) then { _g = grpNull; };
+        if (!hasInterface || {isNull player} || {!alive player}) exitWith { "Aucun joueur" };
+        // Serveur sans le mod, ou d'une version d'avant les ordres aux IA : la demande partirait dans le vide.
+        if (!isServer && {(missionNamespace getVariable ["COMSPEC_ATAK_SrvAiOrdV", 0]) < 1}) exitWith {
+            ["Le serveur n'a pas le mod ATAK natif : ordres aux IA impossibles",
+             "Le serveur a une version plus ancienne du mod ATAK : ordres aux IA impossibles tant qu'il n'est pas mis à jour"] select (missionNamespace getVariable ["COMSPEC_ATAK_PlanSrvOn", false])
+        };
+        if !(["can", player] call comspec_atak_native_fnc_aiOrder) exitWith { "Seul un chef de groupe, un commandant, le poste TOC ou Zeus peut donner un ordre aux IA" };
+        if (isNull _g) exitWith { "Aucun groupe IA de votre camp ne peut recevoir d'ordre" };
+        if (({alive _x} count (units _g)) isEqualTo 0) exitWith { "Ce groupe IA n'existe plus" };
+        if ((str side _g) isNotEqualTo (str side group player)) exitWith { "Ce groupe n'est pas de votre camp" };
+        if (({isPlayer _x} count (units _g)) > 0) exitWith { "Ce groupe compte un joueur : envoyez-lui un ordre ou un message" };
+        if (_g getVariable ["COMSPEC_ATAK_NoOrders", false]) exitWith { "Ce groupe est protégé par la mission : il ne prend pas d'ordre" };
+        if (unitIsUAV (vehicle leader _g)) exitWith { "Un drone se commande depuis l'app Drone" };
+        ""
+    };
     case "send": {
         _arg params [["_g", grpNull], ["_k", ""], ["_pos", []], ["_toc", false]];
+        if !(_g isEqualType grpNull) then { _g = grpNull; };
         // PC du poste ouvert : ligne d'état du PC ; sinon notification du téléphone.
         private _say = {
             params ["_t", ["_type", "WARNING"]];
-            if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _t] call comspec_atak_native_fnc_tocLaptop; } else { [_type, _t, 3, 30] call comspec_atak_native_fnc_notify; };
+            if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _t] call comspec_atak_native_fnc_tocLaptop; } else { [_type, _t, 4, 30] call comspec_atak_native_fnc_notify; };
             false
         };
-        if (isNull _g) exitWith { ["Choisissez d'abord un groupe IA"] call _say };
-        if !(["can", player] call comspec_atak_native_fnc_aiOrder) exitWith { ["Seul un chef ou le poste TOC peut donner un ordre aux IA"] call _say };
+        private _why = ["why", _g] call comspec_atak_native_fnc_aiOrder;
+        if (_why isNotEqualTo "") exitWith { format ["refus local : %1 (%2 · %3)", _why, groupId _g, _k] call _dbg; [_why] call _say };
         private _ki = _kinds findIf { (_x select 0) isEqualTo _k };
-        if (_ki < 0) exitWith { false };
-        if (((_kinds select _ki) select 2) && {(count _pos) < 2}) exitWith { ["Choisissez d'abord le point sur la carte (clic droit)"] call _say };
+        if (_ki < 0) exitWith { format ["ordre inconnu %1", _k] call _dbg; false };
+        if (((_kinds select _ki) select 2) && {(count _pos) < 2}) exitWith { ["Indiquez d'abord le point de l'ordre : clic droit sur la carte, ou grille de l'objectif"] call _say };
         private _issuer = if (_toc) then { format ["TOC · %1", ["callsign"] call comspec_atak_native_fnc_tocPost] } else {
             ([[player, true] call comspec_atak_native_fnc_unitCallsign, name player] select { _x isNotEqualTo "" }) param [0, name player]
         };
         if ((count _pos) >= 2) then { _pos = [_pos select 0, _pos select 1]; } else { _pos = []; };
-        private _ev = [player, [_g] call BIS_fnc_netId, _k, _pos,
-            format ["AI-%1-%2", getPlayerUID player, floor (serverTime * 10)], _issuer, _toc];
+        private _nid = _g call _gid;
+        private _id = format ["AI-%1-%2", getPlayerUID player, floor (serverTime * 10)];
+        private _ev = [player, _nid, _k, _pos, _id, _issuer, _toc];
+        format ["%1 demandé : %2 → %3 (%4), point %5, depuis %6", _id, _k, groupId _g, _nid, _pos, ["le téléphone", "le PC du poste"] select _toc] call _dbg;
         // PC du poste : réseau filaire, envoi direct ; téléphone : soumis au signal comme les autres ordres (fn_netSend).
+        private _how = "SENT";
         if (_toc) then { ["comspec_atak_native_aiOrdSrv", _ev] call CBA_fnc_serverEvent; } else {
-            [{ ["comspec_atak_native_aiOrdSrv", _this] call CBA_fnc_serverEvent; }, _ev, "Ordre IA", 1] call comspec_atak_native_fnc_netSend;
+            _how = [{ ["comspec_atak_native_aiOrdSrv", _this] call CBA_fnc_serverEvent; }, _ev, "Ordre IA", 1] call comspec_atak_native_fnc_netSend;
         };
-        [format ["%1 · %2 : ordre transmis", groupId _g, [_k] call _kLabel], "INFO"] call _say;
+        format ["%1 : envoi %2", _id, _how] call _dbg;
+        // Sans réseau, fn_netSend a déjà prévenu (« Pas de réseau : Ordre IA en attente ») : l'ordre part au retour du signal.
+        if (_how isEqualTo "QUEUED") exitWith { true };
+        // Attente de la réponse du serveur : sans nouvelle au bout de 30 s (envoi perdu, serveur muet), le joueur le sait.
+        private _pend = missionNamespace getVariable ["COMSPEC_ATAK_AiOrdPend", createHashMap];
+        _pend set [_id, [groupId _g, [_k] call _kLabel]];
+        missionNamespace setVariable ["COMSPEC_ATAK_AiOrdPend", _pend];
+        [{
+            params ["_id"];
+            private _pend = missionNamespace getVariable ["COMSPEC_ATAK_AiOrdPend", createHashMap];
+            if !(_id in _pend) exitWith {};
+            (_pend deleteAt _id) params ["_gn", "_kl"];
+            // Remis en file par fn_netSend (3 pertes de suite) : il repartira, pas d'alerte en double.
+            if (((missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]) findIf { ((_x param [1, []]) param [4, ""]) isEqualTo _id }) >= 0) exitWith {};
+            if ((missionNamespace getVariable ["comspec_overwatch_log_level", 3]) >= 4) then { ["DEBUG", "AIORDER", format ["%1 : aucune réponse du serveur après 30 s", _id]] call comspec_atak_native_fnc_log; };
+            private _t = format ["%1 · %2 : pas de réponse du serveur. Réessayez ; si ça recommence, le serveur n'a sans doute pas la même version du mod ATAK", _gn, _kl];
+            if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _t] call comspec_atak_native_fnc_tocLaptop; };
+            ["WARNING", _t, 6, 40] call comspec_atak_native_fnc_notify;
+        }, [_id], 30] call CBA_fnc_waitAndExecute;
+        [format ["%1 · %2 : ordre envoyé", groupId _g, [_k] call _kLabel], "INFO"] call _say;
         true
     };
     case "srv": {
         if (!isServer) exitWith {};
         _arg params [["_u", objNull], ["_nid", ""], ["_k", ""], ["_pos", []], ["_id", ""], ["_by", ""], ["_toc", false]];
-        private _g = [_nid] call BIS_fnc_groupFromNetId;
+        if !(_u isEqualType objNull) exitWith {};
+        private _g = _nid call _gOf;
         private _sd = str side group _u;
         private _no = {
             params ["_t"];
-            if (!isNull _u) then { ["comspec_atak_native_aiOrdState", ["", [["text", _t]], _sd], _u] call CBA_fnc_targetEvent; };
+            format ["%1 refusé par le serveur : %2", _id, _t] call _dbg;
+            if (!isNull _u) then { ["comspec_atak_native_aiOrdState", ["", [["text", _t], ["id", _id]], _sd], _u] call CBA_fnc_targetEvent; };
         };
-        if (isNull _u || {!alive _u} || {!isPlayer _u}) exitWith {};
-        if (isNull _g || {({alive _x} count (units _g)) isEqualTo 0}) exitWith { ["Ce groupe n'existe plus"] call _no; };
-        if ((str side _g) isNotEqualTo _sd || {({isPlayer _x} count (units _g)) > 0} || {_g getVariable ["COMSPEC_ATAK_NoOrders", false]}) exitWith { ["Ce groupe ne prend pas d'ordre du téléphone"] call _no; };
-        if !(["can", _u] call comspec_atak_native_fnc_aiOrder) exitWith { ["Seul un chef ou le poste TOC peut donner un ordre aux IA"] call _no; };
-        if ((_kinds findIf { (_x select 0) isEqualTo _k }) < 0) exitWith {};
+        format ["%1 reçu par le serveur : %2 → %3 (%4) de %5", _id, _k, [groupId _g, "groupe introuvable"] select (isNull _g), _nid, [name _u, "?"] select (isNull _u)] call _dbg;
+        if (isNull _u || {!alive _u} || {!isPlayer _u}) exitWith { format ["%1 ignoré : donneur absent ou mort", _id] call _dbg; };
+        if (isNull _g || {({alive _x} count (units _g)) isEqualTo 0}) exitWith { ["Ce groupe IA n'existe plus"] call _no; };
+        if ((str side _g) isNotEqualTo _sd) exitWith { ["Ce groupe n'est pas de votre camp"] call _no; };
+        if (({isPlayer _x} count (units _g)) > 0) exitWith { ["Ce groupe compte un joueur : envoyez-lui un ordre ou un message"] call _no; };
+        if (_g getVariable ["COMSPEC_ATAK_NoOrders", false]) exitWith { ["Ce groupe est protégé par la mission : il ne prend pas d'ordre"] call _no; };
+        if !(["can", _u] call comspec_atak_native_fnc_aiOrder) exitWith { ["Seul un chef de groupe, un commandant, le poste TOC ou Zeus peut donner un ordre aux IA"] call _no; };
+        if ((_kinds findIf { (_x select 0) isEqualTo _k }) < 0) exitWith { ["Ordre inconnu du serveur : versions du mod différentes"] call _no; };
         if !(_pos isEqualTypeArray [0, 0]) then { _pos = []; };
         _by = (_by regexReplace ["[<>&]", ""]) select [0, 40];
         if !(_k in _post) then {
             ["report", [_nid, _sd, [["id", _id], ["kind", _k], ["state", "NEW"], ["text", "transmis"], ["pos", _pos], ["by", _by], ["uid", getPlayerUID _u], ["grp", groupId _g], ["at", serverTime]]]] call comspec_atak_native_fnc_aiOrder;
         };
+        format ["%1 accepté, exécuté %2", _id, ["sur le serveur", format ["sur la machine %1 (client headless ou joueur)", groupOwner _g]] select !(local _g)] call _dbg;
         ["comspec_atak_native_aiOrdExec", [_nid, _k, _pos, _id, _u], leader _g] call CBA_fnc_targetEvent;
     };
     case "report": {
@@ -138,13 +194,19 @@ switch (_act) do {
     };
     case "exec": {
         _arg params [["_nid", ""], ["_k", ""], ["_pos", []], ["_id", ""], ["_by", objNull]];
-        private _g = [_nid] call BIS_fnc_groupFromNetId;
-        // shortcut: groupe passé sur une autre machine entre la demande et l'exécution, ordre perdu ; à relayer si les clients headless en font souvent.
-        if (isNull _g || {!local _g}) exitWith {};
+        private _g = _nid call _gOf;
+        // Groupe disparu, ou passé sur une autre machine entre la demande et l'exécution : le donneur le sait.
+        if (isNull _g || {!local _g}) exitWith {
+            format ["%1 non exécuté ici : %2", _id, ["groupe passé sur une autre machine", "groupe introuvable"] select (isNull _g)] call _dbg;
+            if (!isNull _by) then {
+                ["comspec_atak_native_aiOrdState", ["", [["text", ["Le groupe vient de changer de machine : renvoyez l'ordre", "Ce groupe IA n'existe plus"] select (isNull _g)], ["id", _id]], str side group _by], _by] call CBA_fnc_targetEvent;
+            };
+        };
         private _sd = str side _g;
-        private _rep = { params ["_st", "_txt"]; ["report", [_nid, _sd, [["id", _id], ["state", _st], ["text", _txt]]]] call comspec_atak_native_fnc_aiOrder; };
+        private _rep = { params ["_st", "_txt"]; format ["%1 %2 : %3", _id, _st, _txt] call _dbg; ["report", [_nid, _sd, [["id", _id], ["state", _st], ["text", _txt]]]] call comspec_atak_native_fnc_aiOrder; };
         private _ld = leader _g;
         private _units = (units _g) select { alive _x };
+        format ["%1 exécuté par %2 (%3 IA) : %4", _id, groupId _g, count _units, _k] call _dbg;
         if (_k in _post) exitWith {
             private _f = _post get _k;
             switch (_f) do {
@@ -152,7 +214,16 @@ switch (_act) do {
                 case "spd": { _g setSpeedMode _k; };
                 default { _g setFormation _k; };
             };
-            ["report", [_nid, _sd, [[_f, _k], ["ack", [_k] call _kLabel], ["ackUid", getPlayerUID _by]]]] call comspec_atak_native_fnc_aiOrder;
+            ["report", [_nid, _sd, [[_f, _k], ["ack", [_k] call _kLabel], ["ackUid", getPlayerUID _by], ["pid", _id]]]] call comspec_atak_native_fnc_aiOrder;
+        };
+        // Groupe figé par la mission ou par Eden : simulation dynamique (gelé loin des joueurs) et IA sans déplacement
+        // (« PATH » / « MOVE » coupés, garnisons). Un ordre de déplacement les libère, sinon le groupe restait sur place.
+        if (_k in ["MOVE", "PATROL", "ATTACK", "WITHDRAW", "HOLD", "FOLLOW", "BOARD"]) then {
+            if (dynamicSimulationEnabled _g) then {
+                if (isServer) then { _g enableDynamicSimulation false; } else { [_g, false] remoteExecCall ["enableDynamicSimulation", 2]; };
+                format ["%1 : simulation dynamique coupée pour le groupe", _id] call _dbg;
+            };
+            { if (!(_x checkAIFeature "PATH") || {!(_x checkAIFeature "MOVE")}) then { _x enableAI "PATH"; _x enableAI "MOVE"; }; } forEach _units;
         };
         // Ordre précédent abandonné : points de passage effacés (du dernier au premier), arrêts et tirs levés.
         private _clear = {
@@ -291,10 +362,10 @@ switch (_act) do {
         if (_nid isEqualTo "") exitWith {};
         private _all = COMSPEC_ATAK_SrvAiOrd getOrDefault [_sd, createHashMap];
         private _e = _all getOrDefault [_nid, createHashMap];
-        { if !((_x select 0) in ["ack", "ackUid"]) then { _e set [_x select 0, _x select 1]; }; } forEach _pairs;
+        { if !((_x select 0) in ["ack", "ackUid", "pid"]) then { _e set [_x select 0, _x select 1]; }; } forEach _pairs;
         _all set [_nid, _e];
         // Groupes disparus : plus rien à rejouer.
-        { if (isNull ([_x] call BIS_fnc_groupFromNetId)) then { _all deleteAt _x; }; } forEach (keys _all);
+        { if (isNull (_x call _gOf)) then { _all deleteAt _x; }; } forEach (keys _all);
         COMSPEC_ATAK_SrvAiOrd set [_sd, _all];
     };
     case "recv": {
@@ -307,15 +378,19 @@ switch (_act) do {
             if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _t] call comspec_atak_native_fnc_tocLaptop; };
             [_type, _t, 6, 50, "MAP"] call comspec_atak_native_fnc_notify;
         };
+        private _in = createHashMapFromArray _pairs;
+        // Réponse du serveur reçue : plus d'alerte « pas de réponse » pour cet ordre (fn_aiOrder "send").
+        private _pend = missionNamespace getVariable ["COMSPEC_ATAK_AiOrdPend", createHashMap];
+        private _pid = _in getOrDefault ["pid", _in getOrDefault ["id", ""]];
+        if (_pid in _pend) then { _pend deleteAt _pid; format ["%1 : réponse reçue (%2)", _pid, _in getOrDefault ["state", _in getOrDefault ["text", "posture"]]] call _dbg; };
         // Demande refusée par le serveur : seulement le motif, au donneur.
-        if (_nid isEqualTo "") exitWith { [(createHashMapFromArray _pairs) getOrDefault ["text", ""], "WARNING"] call _tell; };
+        if (_nid isEqualTo "") exitWith { [_in getOrDefault ["text", ""], "WARNING"] call _tell; };
         private _all = missionNamespace getVariable ["COMSPEC_ATAK_AiOrds", createHashMap];
         missionNamespace setVariable ["COMSPEC_ATAK_AiOrds", _all];
         private _e = _all getOrDefault [_nid, createHashMap];
         private _was = [_e getOrDefault ["id", ""], _e getOrDefault ["state", ""]];
-        private _in = createHashMapFromArray _pairs;
-        { if !(_x in ["ack", "ackUid"]) then { _e set [_x, _y]; }; } forEach _in;
-        if (isNull (_e getOrDefault ["g", grpNull])) then { _e set ["g", [_nid] call BIS_fnc_groupFromNetId]; };
+        { if !(_x in ["ack", "ackUid", "pid"]) then { _e set [_x, _y]; }; } forEach _in;
+        if (isNull (_e getOrDefault ["g", grpNull])) then { _e set ["g", _nid call _gOf]; };
         private _g = _e get "g";
         private _gn = _e getOrDefault ["grp", groupId _g];
         private _st = _e getOrDefault ["state", ""];

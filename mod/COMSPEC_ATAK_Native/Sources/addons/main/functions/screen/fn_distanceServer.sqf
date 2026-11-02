@@ -124,6 +124,9 @@ if (_mode in ["tick", "self"] && {(_now - _sent0) < 600}) exitWith { true };
 private _uids = if (_mode isEqualTo "leave") then { [_only] select { _x in _acc } } else { keys _acc };
 if (_uids isEqualTo []) exitWith { true };
 if (_mode isNotEqualTo "leave") then { missionNamespace setVariable ["COMSPEC_ATAK_DistSent" + _v, _now]; };
+// Envois coupés par la coupure centrale (joueur sans téléphone ATAK, liaison désactivée : fn_uplinkHold) : rien ne part,
+// les compteurs restent en mémoire sans le faux « Distance.Batch refusé (COMSPEC Link requis) » du journal.
+if (!isNil "comspec_overwatch_connect_fnc_uplinkHold" && {["Distance.Batch"] call comspec_overwatch_connect_fnc_uplinkHold}) exitWith { true };
 private _mk = missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2", missionName, worldName]];
 private _ok = true;
 private _r = "";

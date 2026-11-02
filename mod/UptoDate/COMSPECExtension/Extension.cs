@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.114";
+    private const string ExtensionVersion = "2.0.115";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -1860,6 +1860,9 @@ public static partial class Extension
         if (IsRateLimitedNow() || IsNetworkBackoffNow()) return;
         // Clé ou compte refusés pour de bon : la file attend la nouvelle liaison au lieu d'être renvoyée chaque seconde.
         if (IsAuthLatched()) return;
+        // Pas de clé ni de jeton valable : la file (lot de télémétrie compris) attend la connexion au lieu de partir sans
+        // authentification (401 à chaque passage, 2.0.115).
+        if (!HasUsableAuthNow()) return;
         // Un drain actif max (timer chevauché + HTTP async) : ne pas empiler de workers ni bloquer 8×N s via GetResult.
         // _drainInFlight remplace Monitor pendant l’await (Exit sur un autre fil après ConfigureAwait casserait le verrou).
         if (System.Threading.Interlocked.CompareExchange(ref _drainInFlight, 1, 0) != 0) return;
@@ -2573,6 +2576,12 @@ public static partial class Extension
         if (IsBestEffortEndpoint(url)
             && (IsRateLimitedNow() || IsNetworkBackoffNow() || IsBestEffortCoolingNow()))
         {
+            return;
+        }
+        // Rien pour s'authentifier (pas encore connecté, jeton périmé sans clé) : en file, pas de 401 en boucle.
+        if (!HasUsableAuthNow())
+        {
+            if (!IsBestEffortEndpoint(url)) EnqueueForRetry(url, jsonBody);
             return;
         }
         if (IsRateLimitedNow() || IsNetworkBackoffNow() || IsEndpointCoolingNow(url))
@@ -3384,6 +3393,14 @@ public static partial class Extension
     {
         return _apiKey.Length > 0 || _gameAccessToken.Length > 0;
     }
+
+    /// <summary>
+    /// 2.0.115 : une requête partirait-elle authentifiée maintenant (clé communauté, ou jeton jeu encore valable) ?
+    /// Sans l'un ni l'autre, AttachApiKeyHeader n'attache rien : Athena répondait 401 à chaque lot de positions,
+    /// marqueur, véhicule ou manifeste (hôte local / serveur sans compte, jeton périmé sans clé), en boucle toutes les
+    /// 2 s, et la page Athena du joueur affichait le serveur « injoignable ». Les envois attendent alors en file.
+    /// </summary>
+    private static bool HasUsableAuthNow() => _apiKey.Length > 0 || GameAccessTokenUsableNow();
 
     /// <summary>
     /// Après Redeem / LinkBySteam : la clé communauté doit être utilisée.

@@ -497,7 +497,7 @@ switch (_mode) do {
                     format ["<t size='1.1' color='#8a9a93'>%1 groupe(s) dans le camp. Choisissez un groupe : la carte se centre sur lui, puis ORDRE AU GROUPE ou MESSAGE AU CHEF.</t>", count _groupsL]
                 } else {
                     (_g select 0) params ["_gn", "", "_ld", "_np", "_nAll", "_n", "_best", "_p"];
-                    private _ao = (missionNamespace getVariable ["COMSPEC_ATAK_AiOrds", createHashMap]) getOrDefault [[group _ld] call BIS_fnc_netId, createHashMap];
+                    private _ao = (missionNamespace getVariable ["COMSPEC_ATAK_AiOrds", createHashMap]) getOrDefault [["netId", group _ld] call comspec_atak_native_fnc_aiOrder, createHashMap];
                     format ["<t size='1.35' font='COMSPEC_BarlowBold'>%1</t><br/><t size='1.1'>Chef %2 %3<br/>%4 vivant(s) dont %5 joueur(s) · %6 nœud(s) ATAK<br/>%7%8</t>",
                         [_gn] call _esc, [name _ld] call _esc, ["", format [" · n° %1", ([_ld] call comspec_atak_native_fnc_phoneIdent) select 0]] select (isPlayer _ld), _nAll, _np, _n,
                         // if, pas [a, b] select : les deux branches seraient évaluées et _p vide (groupe sans ATAK) planterait le rafraîchissement.

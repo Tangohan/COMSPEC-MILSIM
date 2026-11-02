@@ -91,6 +91,12 @@ class COMSPEC_RscMapAtakHyb: COMSPEC_RscMapAtakSat {
     colorTracks[]={0.84,0.80,0.66,0.55}; colorTracksFill[]={0.95,0.91,0.78,0.75};
     colorRoads[]={0.80,0.76,0.62,0.75}; colorRoadsFill[]={1,0.96,0.80,0.9};
     colorMainRoads[]={0.85,0.62,0.25,0.85}; colorMainRoadsFill[]={1,0.82,0.42,0.95}; };
+// Carte de la montre Garmin (fn_watch, écran MAP) : zoom très rapproché, où Arma écrit les lieux-dits (« armée »,
+// « military »…) à la taille prévue pour la grande carte, énormes sur le petit cadran. Aucun texte d'Arma ici :
+// densité de textes nulle (ptsPerSquareTxt), noms transparents, tailles minuscules. Mon point et les alliés sont
+// dessinés par fn_watchMapDraw.
+class COMSPEC_RscMapWatch: COMSPEC_RscMapAtak { ptsPerSquareTxt=100000; colorNames[]={0,0,0,0}; colorLevels[]={0,0,0,0};
+    sizeExUnits="0.0005"; sizeExInfo="0.0005"; sizeExLevel="0.0005"; sizeEx="0.0005"; };
 class COMSPEC_RscMapJtac: COMSPEC_RscMapAtak { showMarkers=1; sizeExLabel="0.022 * safeZoneH"; sizeExNames="0.030 * safeZoneH"; };
 // Carte du PC portable du poste TOC (fn_tocLaptop) : vraie carte d'Arma en grand, marqueurs de la mission compris,
 // textes à la taille d'un écran d'ordinateur (le PC n'est pas un téléphone).

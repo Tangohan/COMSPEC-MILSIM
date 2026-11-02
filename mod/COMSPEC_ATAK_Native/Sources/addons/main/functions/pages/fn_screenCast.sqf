@@ -361,6 +361,8 @@ switch (_mode) do {
                 // Texture d'origine gardée avant le premier changement, remise à la fin de la diffusion.
                 if (isNil { _o getVariable "COMSPEC_ATAK_ScreenOrig" }) then { _o setVariable ["COMSPEC_ATAK_ScreenOrig", (getObjectTextures _o) param [_sel, ""]]; };
                 _o setObjectTexture [_sel, [_want, _o getVariable ["COMSPEC_ATAK_ScreenOrig", ""]] select (_want isEqualTo "")];
+                // Dalle préparée pour l'image (matière d'écran, dalles superposées du grand écran masquées), remise à la fin.
+                ["surface", [_o, _sel, _want isNotEqualTo ""]] call comspec_atak_native_fnc_tocScreen;
                 _o setVariable ["COMSPEC_ATAK_ScreenCur", _want];
                 _o setVariable ["COMSPEC_ATAK_ScreenSel", _sel];
                 // Fin de diffusion sur un écran TOC : la texture d'origine vient d'écraser la carte du TOC, que fn_tocScreen
@@ -437,6 +439,7 @@ switch (_mode) do {
         {
             if ((_x getVariable ["COMSPEC_ATAK_ScreenCur", ""]) isNotEqualTo "") then {
                 _x setObjectTexture [_x getVariable ["COMSPEC_ATAK_ScreenSel", 0], _x getVariable ["COMSPEC_ATAK_ScreenOrig", ""]];
+                ["surface", [_x, _x getVariable ["COMSPEC_ATAK_ScreenSel", 0], false]] call comspec_atak_native_fnc_tocScreen;
                 _x setVariable ["COMSPEC_ATAK_ScreenCur", ""];
             };
         } forEach ((missionNamespace getVariable ["COMSPEC_ATAK_ScreensOff", []]) select { !isNull _x });

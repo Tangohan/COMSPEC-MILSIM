@@ -134,7 +134,8 @@ if (_prefix == "OK") then {
         // IP du joueur : locale (affichage journal) — la diffuser l'envoyait à tous les clients (trafic + vie privée).
         missionNamespace setVariable ["COMSPEC_userIp", _userIp, false];
         missionNamespace setVariable ["COMSPEC_LastHealthOk", diag_tickTime, false];
-        if (_key isEqualTo "") then {
+        // Sans clé de communauté mais session de jeu ouverte (code, Steam, e-mail) : liaison établie, pas « compte non lié ».
+        if (_key isEqualTo "" && {!([] call comspec_overwatch_connect_fnc_isReady)}) then {
             missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
             missionNamespace setVariable ["COMSPEC_LinkDetail", "Compte non lie", false];
             private _label = [_url] call comspec_overwatch_connect_fnc_portalLabel;
@@ -161,7 +162,8 @@ if (_prefix == "OK") then {
     } else {
         // Auth Connect OK mais whoami KO : on garde linked si cle presente (whoami n'est pas l'auth).
         missionNamespace setVariable ["COMSPEC_userIp", "—", false];
-        if (_key isEqualTo "") then {
+        // Sans clé de communauté mais session de jeu ouverte (code, Steam, e-mail) : liaison établie, pas « compte non lié ».
+        if (_key isEqualTo "" && {!([] call comspec_overwatch_connect_fnc_isReady)}) then {
             missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
             missionNamespace setVariable ["COMSPEC_LinkDetail", "Portail injoignable", false];
             private _why = if (count _ipParts >= 2) then { _ipParts select 1 } else { _ipResult };

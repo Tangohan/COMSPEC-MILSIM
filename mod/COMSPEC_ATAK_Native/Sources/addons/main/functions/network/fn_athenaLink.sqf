@@ -47,7 +47,11 @@ switch (_action) do {
     case "watch": {
         if (!hasInterface || {([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on"}) exitWith {};
         private _st = [] call comspec_atak_native_fnc_athenaStatus;
-        if (_st get "logged") exitWith { uiNamespace setVariable ["COMSPEC_ATAK_AthenaWasLogged", true]; };
+        if (_st get "logged") exitWith {
+            uiNamespace setVariable ["COMSPEC_ATAK_AthenaWasLogged", true];
+            // Session ouverte : l'échec d'une demande de code plus ancienne est effacé (il ne se remettait jamais à zéro).
+            if (_state in ["error", "expired"]) then { uiNamespace setVariable ["COMSPEC_ATAK_AthenaLink", ["", "", 0, "", "", ""]]; };
+        };
         if !(uiNamespace getVariable ["COMSPEC_ATAK_AthenaWasLogged", false]) exitWith {};
         private _lost = (_st getOrDefault ["code", ""]) in ["SESSION_EXPIRED", "SESSION_REVOKED", "TOKEN_REVOKED", "REFRESH_REVOKED", "INVALID_REFRESH", "UNAUTHORIZED", "C2_UNAUTHORIZED", "HTTP_401", "STEAM_NOT_LINKED", "C2_STEAM_NOT_LINKED"];
         if (!_lost) exitWith {};
