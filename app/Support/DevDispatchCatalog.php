@@ -294,6 +294,20 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1349, '2026-11-03', 'ATAK 3.0.0 « Austin » : COMSPEC IDENTITY, le contrôle d’identité sur le terrain', 'Le téléphone passe en version 3.0.0, nommée Austin, avec COMSPEC Link 2.0.118. Sa grande nouveauté est COMSPEC IDENTITY : avec le mod SSE 1.1.0, chaque personnage porte une carte d’identité, un passeport ou un permis, se contrôle au menu ACE et dans la nouvelle app « Contrôle ID » (examen visuel, bande de lecture, puce, fichiers d’Athena), et chaque contrôle remonte sur la fiche de la personne dans Athena. Cette version rassemble aussi tout ce que la génération 2.9 a apporté : radio de données MPU5 et maillage qui relaie la voix ACRE2 ou TFAR, appui feu typé, apps Routes et Zones pour le battleplan, 9-LINE et 5-LINE envoyés aux pilotes, Sur mon téléphone par QR code, bandeau du curseur et point GPS personnalisables, un seul rôle affiché partout, miniature utilisable à la souris, ATAK au-dessus des cockpits et beaucoup moins de saccades. Les téléphones encore en 2.9 sont invités à se mettre à jour, sans être bloqués.', [
+                'COMSPEC IDENTITY avec le SSE 1.1.0 : papiers d’identité, contrôle au menu ACE, app « Contrôle ID »',
+                'Vérification d’un papier dans les fichiers d’Athena depuis le jeu (signalé, recherché, volé, expiré, révoqué, inconnu)',
+                'Contrôles transmis à Athena et retrouvés sur la fiche de la personne',
+                'Récapitulatif de la génération 2.9 dans les notes de version du téléphone et du Workshop',
+            ], [
+                'Version 3.0.0 « Austin » affichée dans les Réglages, l’app Debug, les Crédits et le journal',
+                'COMSPEC Link 2.0.118 livré avec le pack',
+                'Description du Workshop à jour : app Zones, briefs air aux pilotes, Sur mon téléphone, COMSPEC IDENTITY',
+            ], [], ['atak'], [
+                'Mettez à jour le pack 3.0.0 et le mod COMSPEC SSE 1.1.0, quittez Arma complètement et relancez.',
+                'Un téléphone resté en 2.9 continue de se connecter à Athena et affiche « mise à jour disponible ».',
+            ], 'Pack 3.0.0'),
+
             $pr(1348, '2026-11-03', 'SSE 1.1.0 : contrôle d’identité sur le terrain', 'Le mod SSE apporte des papiers d’identité fictifs (carte d’identité, passeport, permis de conduire) de quatre pays imaginaires, Altis, Tanoa, Livonie et Malden, tous marqués SIMULATION, avec leur bande de lecture et leur puce. Au menu ACE d’une personne, « Contrôle d’identité » permet de demander les papiers, de les examiner dans une visionneuse recto verso, de fouiller les papiers d’un prisonnier, d’une personne rendue, inconsciente ou d’un corps, de saisir un document puis de le rendre, et de contrôler les occupants d’un véhicule ou de les faire descendre. Entre joueurs, la demande arrive sur le téléphone et se règle par « Mes papiers » : présenter, remettre ou refuser. Les personnages réagissent : un civil tend ses papiers, un insurgé montre de faux papiers, une cible porte une identité de couverture, un recherché armé refuse ou s’enfuit. La nouvelle app « Contrôle ID » du téléphone mène le contrôle par étapes (examen visuel, bande de lecture, puce, base), affiche le verdict, fait vibrer le téléphone pour une personne signalée, garde l’historique et envoie le contrôle à Athena ou le joint à une fiche FRM. Le Zeus donne des papiers, signale un document volé ou révoqué et voit les vrais papiers ; Eden gagne une catégorie Papiers. Hors ligne, tout fonctionne avec la base locale ; les documents et la base d’Athena arrivent avec le pack ATAK 3.0.0 (COMSPEC Link 2.0.118).', [
                 'Papiers fictifs : carte d’identité, passeport et permis de conduire de quatre pays imaginaires, mention SIMULATION',
                 'Menu ACE « Contrôle d’identité » : demander les papiers, examiner, fouiller, saisir, rendre, contrôler les occupants, faire descendre',

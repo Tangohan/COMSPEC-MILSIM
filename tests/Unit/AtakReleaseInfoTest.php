@@ -28,7 +28,8 @@ final class AtakReleaseInfoTest extends TestCase
 
         // VERSION_NAME (« 2.0.1.AB - Denver ») n'est qu'affiché ; VERSION_STR reste MAJEUR.MINEUR.CORRECTIF pour
         // les comparaisons (versionStr, contrôle d'intégrité, /api/atak/version).
-        self::assertSame(1, preg_match('/^#define VERSION_NAME "([^"]+)"$/m', $hpp, $m));
+        // \r? : fins de ligne CRLF d'un checkout Windows (core.autocrlf).
+        self::assertSame(1, preg_match('/^#define VERSION_NAME "([^"]+)"\r?$/m', $hpp, $m));
         self::assertStringStartsWith(AtakReleaseInfo::latest($root)['atak_native'] . '.', $m[1]);
     }
 
@@ -57,7 +58,7 @@ final class AtakReleaseInfoTest extends TestCase
 
         // L'empreinte (date, commit) est posée au build puis retirée (docs/VERSIONING.md) : committée, elle ferait
         // entrer en conflit chaque PR native et afficherait une date fausse dans les builds suivants.
-        self::assertSame(1, preg_match('/^#define BUILD_STAMP ""$/m', $hpp));
+        self::assertSame(1, preg_match('/^#define BUILD_STAMP ""\r?$/m', $hpp));
         self::assertStringContainsString('#include "build_info.hpp"', (string) file_get_contents($root . '/script_component.hpp'));
     }
 
