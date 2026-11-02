@@ -692,6 +692,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\TrainingExpireCronJob::class),
                     self::get(\App\Services\Cron\Jobs\QualificationExpiryScanCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PilotQualificationsCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\QualificationAutoRulesCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelProgressionCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelCapabilityCronJob::class),
                     self::get(\App\Services\Cron\Jobs\SenioritySyncCronJob::class),
@@ -1194,6 +1195,29 @@ class Container
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Services\Personnel\PilotLogbookService::class)
             ),
+            \App\Repositories\QualificationAwardRuleRepository::class => new \App\Repositories\QualificationAwardRuleRepository(),
+            \App\Services\Personnel\QualificationAwardRuleService::class => new \App\Services\Personnel\QualificationAwardRuleService(
+                self::get(\App\Repositories\QualificationAwardRuleRepository::class),
+                self::get(\App\Repositories\QualificationDefinitionRepository::class),
+                self::get(\App\Repositories\PilotQualificationRuleRepository::class),
+                self::get(\App\Services\Personnel\QualificationStatusTransitionService::class),
+                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class),
+                self::get(\App\Repositories\QualificationAwardRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\PilotLogbookRepository::class),
+                self::get(\App\Repositories\GradeRepository::class)
+            ),
+            \App\Services\Cron\Jobs\QualificationAutoRulesCronJob::class => new \App\Services\Cron\Jobs\QualificationAutoRulesCronJob(
+                self::get(\App\Repositories\QualificationAwardRuleRepository::class),
+                self::get(\App\Services\Personnel\QualificationAwardRuleService::class)
+            ),
+            \App\Controllers\Admin\Organization\QualificationRulesController::class => new \App\Controllers\Admin\Organization\QualificationRulesController(
+                self::get(\App\Services\Personnel\QualificationAwardRuleService::class),
+                self::get(\App\Repositories\QualificationDefinitionRepository::class),
+                self::get(\App\Repositories\QualificationAwardRuleRepository::class),
+                self::get(\App\Services\Personnel\QualificationBadgeStorageService::class),
+                self::get(\App\Services\Personnel\QualificationCertificatePdfService::class)
+            ),
             \App\Controllers\Admin\Organization\QualificationReferentielController::class => new \App\Controllers\Admin\Organization\QualificationReferentielController(
                 self::get(\App\Repositories\QualificationDefinitionRepository::class),
                 self::get(\App\Repositories\QualificationReferentielRepository::class),
@@ -1201,7 +1225,10 @@ class Container
                 self::get(\App\Services\Personnel\QualificationStatusTransitionService::class),
                 self::get(\App\Services\Personnel\QualificationTemporalStatusService::class),
                 self::get(\App\Services\Personnel\QualificationBadgeStorageService::class),
-                self::get(\App\Services\Personnel\QualificationCertificatePdfService::class)
+                self::get(\App\Services\Personnel\QualificationCertificatePdfService::class),
+                self::get(\App\Services\Personnel\QualificationAwardRuleService::class),
+                self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class)
             ),
             \App\Repositories\PersonnelAssignmentRepository::class => new \App\Repositories\PersonnelAssignmentRepository(),
             \App\Repositories\PersonnelServiceHistoryRepository::class => new \App\Repositories\PersonnelServiceHistoryRepository(),
@@ -1261,10 +1288,17 @@ class Container
             \App\Services\Cron\Jobs\AdvancementSeniorityCronJob::class => new \App\Services\Cron\Jobs\AdvancementSeniorityCronJob(
                 self::get(\App\Services\Advancement\AdvancementWorkflowService::class)
             ),
+            \App\Repositories\AdvancementProposalRepository::class => new \App\Repositories\AdvancementProposalRepository(),
+            \App\Services\Advancement\AdvancementProposalService::class => new \App\Services\Advancement\AdvancementProposalService(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\AdvancementWorkflowService::class),
+                self::get(\App\Repositories\AdvancementProposalRepository::class)
+            ),
             \App\Controllers\Admin\Organization\AdvancementAdminController::class => new \App\Controllers\Admin\Organization\AdvancementAdminController(
                 self::get(\App\Repositories\AdvancementRepository::class),
                 self::get(\App\Services\Advancement\AdvancementWorkflowService::class),
-                self::get(\App\Services\Advancement\GradeScaleTemplateService::class)
+                self::get(\App\Services\Advancement\GradeScaleTemplateService::class),
+                self::get(\App\Services\Advancement\AdvancementProposalService::class)
             ),
             \App\Controllers\Admin\Organization\MemberAdvancementController::class => new \App\Controllers\Admin\Organization\MemberAdvancementController(
                 self::get(\App\Repositories\AdvancementRepository::class),
@@ -2403,6 +2437,11 @@ class Container
                 self::get(UserRepository::class)
             ),
             \App\Services\Export\TablePdfExportService::class => new \App\Services\Export\TablePdfExportService(),
+            // Emplois & fonctions : catalogue de référence, prérequis et dérogations.
+            \App\Controllers\Admin\JobCatalogController::class => new \App\Controllers\Admin\JobCatalogController(
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(TenantRepository::class)
+            ),
             \App\Controllers\Admin\EffectifsWorkspaceController::class => new \App\Controllers\Admin\EffectifsWorkspaceController(
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
@@ -2420,6 +2459,20 @@ class Container
                 self::get(\App\Repositories\MemberDepartureRepository::class),
                 self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
                 self::get(\App\Repositories\ElevationRequestRepository::class),
+            ),
+            \App\Controllers\Admin\JobAssignmentBoardController::class => new \App\Controllers\Admin\JobAssignmentBoardController(
+                new \App\Services\Personnel\JobAssignmentBoardLoader(
+                    self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                    self::get(UserRepository::class),
+                    self::get(\App\Repositories\UnitRepository::class),
+                    self::get(\App\Repositories\OrbatBilletRepository::class),
+                ),
+                new \App\Services\Personnel\JobAssignmentBulkService(
+                    self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                    self::get(UserRepository::class),
+                    self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
+                ),
+                self::get(TenantRepository::class),
             ),
             \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController::class => new \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController(
                 self::get(AuthService::class),

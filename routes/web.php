@@ -145,6 +145,7 @@ use App\Controllers\Api\AdvancementApiController;
 use App\Controllers\Admin\Organization\PilotLogbookController;
 use App\Controllers\Admin\Organization\PilotSyllabusController;
 use App\Controllers\Admin\Organization\QualificationReferentielController;
+use App\Controllers\Admin\Organization\QualificationRulesController;
 use App\Controllers\Admin\Organization\RankCatalogAdminController;
 use App\Controllers\Admin\Organization\AwardReferentielController;
 use App\Controllers\Admin\Organization\EquipmentReferentielController;
@@ -1698,8 +1699,13 @@ return function (Router $router) {
     $router->get('/back-office/rh/avancement', [AdvancementAdminController::class, 'campaigns'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/rh/avancement/create', [AdvancementAdminController::class, 'campaignCreate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/rh/avancement/store', [AdvancementAdminController::class, 'campaignStore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/reglages', [AdvancementAdminController::class, 'proposalSettingsSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/rh/avancement/{id}', [AdvancementAdminController::class, 'campaignShow'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/rh/avancement/{id}/candidatures', [AdvancementAdminController::class, 'candidacyStore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/{id}/propositions/retenir', [AdvancementAdminController::class, 'proposalAccept'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/{id}/propositions/retenir-tout', [AdvancementAdminController::class, 'proposalAcceptAll'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/{id}/propositions/ecarter', [AdvancementAdminController::class, 'proposalDismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/{id}/propositions/retablir', [AdvancementAdminController::class, 'proposalRestore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/rh/avancement/{id}/reverifier', [AdvancementAdminController::class, 'recheck'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/rh/avancement/{id}/cloturer', [AdvancementAdminController::class, 'closeCampaign'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/rh/avancement/{id}/commission', [AdvancementAdminController::class, 'openCommission'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1754,6 +1760,13 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/qualifications/{id}/champs/{fieldId}/supprimer', [QualificationReferentielController::class, 'deleteCustomField'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/{id}/droits', [QualificationReferentielController::class, 'storePermissionGrant'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/{id}/droits/{grantId}/supprimer', [QualificationReferentielController::class, 'deletePermissionGrant'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Qualifications de toute nature : fiche, délivrance depuis la matrice des effectifs, passage automatique, propositions.
+    $router->post('/back-office/referentiels/qualifications/matrice/case', [QualificationRulesController::class, 'cell'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/academy/rattacher', [QualificationRulesController::class, 'importAcademy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/propositions/{awardId}', [QualificationRulesController::class, 'decide'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/{id}/evaluer', [QualificationRulesController::class, 'evaluate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/{id}/restaurer', [QualificationRulesController::class, 'restore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/referentiels/qualifications/{id}', [QualificationRulesController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
 
     $router->get('/back-office/referentiels/decorations', [AwardReferentielController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/decorations', [AwardReferentielController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1904,6 +1917,12 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/fonctions/recuperer', [EffectifsWorkspaceController::class, 'recoverJobRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/masquage', [EffectifsWorkspaceController::class, 'hideSiteJobRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/etiquettes', [EffectifsWorkspaceController::class, 'saveJobTags'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/attributions/lot', [\App\Controllers\Admin\JobAssignmentBoardController::class, 'bulk'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/fonctions/attributions/export', [\App\Controllers\Admin\JobAssignmentBoardController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/fonctions/catalogue', [\App\Controllers\Admin\JobCatalogController::class, 'catalogue'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/prerequis', [\App\Controllers\Admin\JobCatalogController::class, 'savePrerequisites'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/prerequis/reglage', [\App\Controllers\Admin\JobCatalogController::class, 'saveSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/derogations/revoquer', [\App\Controllers\Admin\JobCatalogController::class, 'revokeWaiver'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/affectations', [EffectifsWorkspaceController::class, 'affectations'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/recherche', [EffectifsDirectoryController::class, 'search'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/codes/communaute', [EffectifsDirectoryController::class, 'saveCommunityCode'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

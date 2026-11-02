@@ -116,8 +116,6 @@ foreach ($heroVideoClips as $clip) {
 }
 $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
 $e = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-/** Unités affichées sur l’accueil (deux rangées de quatre) ; le registre complet reste à un clic. */
-$homeUnits = array_slice($featuredUnits, 0, 8);
 /*
  * Chiffres réels de toute la plateforme (PublicHistoryStatsService : cache de 10 minutes partagé avec
  * « Notre histoire » et « À propos »). Un compteur à zéro n’apporte rien : seuls les non nuls s’affichent.
@@ -437,103 +435,208 @@ $heroPosterUrl = $heroImages[0]['src'];
         </section>
         <?php endif; ?>
 
-        <!-- Communautés présentes sur la plateforme -->
-        <section class="hp hp--units" aria-labelledby="units-heading">
-            <div class="hi-wrap">
-                <div class="hp-head">
+        <!-- Communautés présentes sur la plateforme (maquette « Section Communautes - Athena ») -->
+        <?php
+        /*
+         * Mêmes données qu'avant (registre public : communautés masquées, archivées ou non listées exclues ;
+         * chiffres en cache). Deux « À la une » en grand, sept cartes, puis le défilé des autres unités.
+         */
+        $unitsFeatured = array_slice(array_values(array_filter($featuredUnits, static fn (array $u): bool => !empty($u['featured']))), 0, 2);
+        $unitsFeaturedSlugs = array_column($unitsFeatured, 'slug');
+        $unitsRest = array_values(array_filter($featuredUnits, static fn (array $u): bool => !in_array($u['slug'] ?? '', $unitsFeaturedSlugs, true)));
+        $unitsGrid = array_slice($unitsRest, 0, 7);
+        $unitsOthers = array_slice($unitsRest, 7);
+        $homeUnits = array_merge($unitsFeatured, $unitsGrid);
+        $unitsMembersTotal = array_sum(array_map(static fn (array $u): int => (int) ($u['members'] ?? 0), $featuredUnits));
+        $unitsLangs = array_values(array_unique(array_filter(array_map(static fn (array $u): string => trim((string) ($u['locale_label'] ?? '')), $featuredUnits), static fn (string $l): bool => $l !== '')));
+        $unitsCounts = array_values(array_filter([
+            ['v' => count($featuredUnits), 'l' => __('home.units_count_units')],
+            ['v' => $unitsMembersTotal, 'l' => __('home.units_count_members')],
+            ['v' => count($unitsLangs), 'l' => __('home.units_count_langs')],
+        ], static fn (array $c): bool => $c['v'] > 0));
+        /* Filtres : seulement s'ils départagent les cartes affichées. */
+        $unitsShownRecruiting = count(array_filter($homeUnits, static fn (array $u): bool => !empty($u['recruitment_open'])));
+        $unitsShownLangs = [];
+        foreach ($homeUnits as $u) {
+            $l = trim((string) ($u['locale_label'] ?? ''));
+            if ($l !== '') {
+                $unitsShownLangs[$l] = ($unitsShownLangs[$l] ?? 0) + 1;
+            }
+        }
+        $unitsFilters = [];
+        if ($unitsShownRecruiting > 0 && $unitsShownRecruiting < count($homeUnits)) {
+            $unitsFilters[] = ['key' => 'rec', 'label' => __('home.units_filter_recruiting'), 'n' => $unitsShownRecruiting, 'dot' => true];
+        }
+        if (count($unitsShownLangs) > 1) {
+            foreach ($unitsShownLangs as $l => $n) {
+                $unitsFilters[] = ['key' => 'lang:' . $l, 'label' => $l, 'n' => $n, 'dot' => false];
+            }
+        }
+        $unitCard = static function (array $unit) use ($resolveLogo): array {
+            $name = (string) ($unit['name'] ?? __('home.unit_fallback'));
+            $slug = (string) ($unit['slug'] ?? $name);
+            $initials = '';
+            foreach (preg_split('/\s+/u', $name) ?: [] as $part) {
+                // Seules les lettres et chiffres comptent : « [CCO] - SPARTA™ » donne « CS ».
+                $part = (string) preg_replace('/[^\p{L}\p{N}]+/u', '', (string) $part);
+                if ($part === '') {
+                    continue;
+                }
+                $initials .= mb_strtoupper(mb_substr($part, 0, 1));
+                if (mb_strlen($initials) >= 3) {
+                    break;
+                }
+            }
+            $games = [];
+            foreach (\App\Support\GameCatalog::split((string) ($unit['game'] ?? '')) as $part) {
+                $g = \App\Support\GameCatalog::canonical($part) ?? $part;
+                $games[\App\Support\GameCatalog::key($g)] ??= $g;
+            }
+            $tagline = trim((string) ($unit['tagline'] ?? ''));
+            $affiliation = trim((string) ($unit['affiliation'] ?? ''));
+            $accent = (string) ($unit['accent'] ?? '');
+
+            return [
+                'name' => $name,
+                'initials' => $initials !== '' ? $initials : 'C',
+                'logo' => $resolveLogo((string) ($unit['logo_url'] ?? '')),
+                'banner' => $resolveLogo((string) ($unit['banner_url'] ?? '')),
+                /* Teinte stable par communauté ; la couleur de marque la remplace si elle existe. */
+                'style' => '--u-hue:' . (crc32($slug) % 360) . ($accent !== '' ? ';--u-accent:' . $accent : ''),
+                'href' => (string) ($unit['href'] ?? url('communities')),
+                'games' => array_values($games),
+                'locale' => trim((string) ($unit['locale_label'] ?? '')),
+                'text' => $tagline !== '' ? $tagline : $affiliation,
+                'affiliation' => $tagline !== '' ? $affiliation : '',
+                'stats' => array_values(array_filter([
+                    ['v' => (int) ($unit['members'] ?? 0), 'l' => __('home.units_stat_members')],
+                    ['v' => (int) ($unit['units'] ?? 0), 'l' => __('home.units_stat_orbat')],
+                    ['v' => (int) round((float) ($unit['ops_per_month'] ?? 0)), 'l' => __('home.units_stat_ops')],
+                ], static fn (array $s): bool => $s['v'] > 0)),
+                'recruiting' => !empty($unit['recruitment_open']),
+            ];
+        };
+        $unitCrest = static function (array $c, string $class = 'hu-crest') use ($e): string {
+            return '<span class="' . $class . '" aria-hidden="true">'
+                . ($c['logo'] !== '' ? '<img src="' . $e($c['logo']) . '" alt="" width="52" height="52" loading="lazy" decoding="async">' : $e($c['initials']))
+                . '</span>';
+        };
+        $unitTags = static function (array $c) use ($e): string {
+            $out = '';
+            foreach ($c['games'] as $g) {
+                $out .= '<span class="hu-tag" translate="no">' . $e($g) . '</span>';
+            }
+            if ($c['locale'] !== '') {
+                $out .= '<span class="hu-tag">' . $e($c['locale']) . '</span>';
+            }
+
+            return $out !== '' ? '<span class="hu-tags">' . $out . '</span>' : '';
+        };
+        $unitStats = static function (array $c, int $max) use ($e, $formatInt): string {
+            $out = '';
+            foreach (array_slice($c['stats'], 0, $max) as $st) {
+                $out .= '<span class="hu-st"><b>' . $e($formatInt($st['v'])) . '</b><small>' . $e($st['l']) . '</small></span>';
+            }
+
+            return $out;
+        };
+        $unitRec = static fn (array $c): string => '<span class="hu-rec' . ($c['recruiting'] ? '' : ' is-inv') . '"><i aria-hidden="true"></i>'
+            . $e(__($c['recruiting'] ? 'home.units_recruiting' : 'home.units_invite_only')) . '</span>';
+        $unitData = static fn (array $c): string => 'data-hu-rec="' . ($c['recruiting'] ? '1' : '0') . '" data-hu-lang="' . $e($c['locale']) . '"';
+        ?>
+        <section class="hu" aria-labelledby="units-heading" data-hu>
+            <div class="hu-wrap">
+                <div class="hu-hd">
                     <div>
-                        <h2 id="units-heading" class="hp-title"><?= $e(__('home.units_headline')) ?></h2>
-                        <?php if ($homeUnits !== []): ?>
-                        <p class="hp-lead"><?= $e(__(count($featuredUnits) > 1 ? 'home.units_lead' : 'home.units_lead_one', ['count' => $formatInt(count($featuredUnits))])) ?></p>
-                        <?php endif; ?>
+                        <span class="hu-kk"><i aria-hidden="true"></i><?= $e(__('home.units_kicker')) ?></span>
+                        <h2 id="units-heading"><?= $e(__('home.units_title_lead')) ?> <span><?= $e(__('home.units_title_accent')) ?></span></h2>
+                        <p class="hu-lead"><?= $e(__('home.units_intro')) ?></p>
                     </div>
-                    <a href="<?= $e(url('communities')) ?>" class="hp-link"><?= $e(__($homeUnits !== [] ? 'home.see_all_communities' : 'home.communities_registry')) ?></a>
+                    <?php if ($unitsCounts !== []): ?>
+                    <dl class="hu-counts">
+                        <?php foreach ($unitsCounts as $c): ?>
+                        <div><dd><?= $e($formatInt($c['v'])) ?></dd><dt><?= $e($c['l']) ?></dt></div>
+                        <?php endforeach; ?>
+                    </dl>
+                    <?php endif; ?>
                 </div>
-                <?php if ($homeUnits !== []): ?>
-                <ul class="hp-units">
-                    <?php foreach ($homeUnits as $unit): ?>
-                        <?php
-                        $logoSrc = $resolveLogo((string) ($unit['logo_url'] ?? ''));
-                        $bannerSrc = $resolveLogo((string) ($unit['banner_url'] ?? ''));
-                        $unitName = (string) ($unit['name'] ?? __('home.unit_fallback'));
-                        $unitSlug = (string) ($unit['slug'] ?? $unitName);
-                        $initials = '';
-                        foreach (preg_split('/\s+/u', $unitName) ?: [] as $part) {
-                            // Seules les lettres et chiffres comptent : « [CCO] - SPARTA™ » donne « CS ».
-                            $part = (string) preg_replace('/[^\p{L}\p{N}]+/u', '', (string) $part);
-                            if ($part === '') {
-                                continue;
-                            }
-                            $initials .= mb_strtoupper(mb_substr($part, 0, 1));
-                            if (mb_strlen($initials) >= 2) {
-                                break;
-                            }
-                        }
-                        if ($initials === '') {
-                            $initials = 'C';
-                        }
-                        /* Teinte stable par communauté (couverture de repli) ; la couleur de marque la remplace si elle existe. */
-                        $accent = (string) ($unit['accent'] ?? '');
-                        $cardStyle = '--u-hue:' . (crc32($unitSlug) % 360) . ($accent !== '' ? ';--u-accent:' . $accent : '');
-                        $metaBits = array_values(array_filter([
-                            (string) ($unit['game'] ?? ''),
-                            (string) ($unit['locale_label'] ?? ''),
-                        ], static fn (string $v): bool => trim($v) !== ''));
-                        $tagline = trim((string) ($unit['tagline'] ?? ''));
-                        if ($tagline === '') {
-                            $tagline = trim((string) ($unit['affiliation'] ?? ''));
-                        }
-                        $unitStats = array_values(array_filter([
-                            ['v' => (int) ($unit['members'] ?? 0), 'l' => __('home.units_stat_members')],
-                            ['v' => (int) ($unit['units'] ?? 0), 'l' => __('home.units_stat_orbat')],
-                            ['v' => (int) round((float) ($unit['ops_per_month'] ?? 0)), 'l' => __('home.units_stat_ops')],
-                        ], static fn (array $s): bool => $s['v'] > 0));
-                        $recruiting = !empty($unit['recruitment_open']);
-                        ?>
-                        <li>
-                            <a href="<?= $e((string) ($unit['href'] ?? url('communities'))) ?>" class="hp-card<?= !empty($unit['featured']) ? ' hp-card--featured' : '' ?>" style="<?= $e($cardStyle) ?>">
-                                <span class="hp-card__cover" aria-hidden="true">
-                                    <?php if ($bannerSrc !== ''): ?>
-                                    <img src="<?= $e($bannerSrc) ?>" alt="" width="640" height="240" loading="lazy" decoding="async">
-                                    <?php endif; ?>
-                                </span>
-                                <span class="hp-card__badge" aria-hidden="true">
-                                    <?php if ($logoSrc !== ''): ?>
-                                    <img src="<?= $e($logoSrc) ?>" alt="" width="56" height="56" loading="lazy" decoding="async">
-                                    <?php else: ?>
-                                    <?= $e($initials) ?>
-                                    <?php endif; ?>
-                                </span>
-                                <span class="hp-card__body">
-                                    <span class="hp-card__name"><?= name_blur_html($unitName) ?></span>
-                                    <?php if ($metaBits !== []): ?>
-                                    <span class="hp-card__meta"><?= $e(implode(', ', $metaBits)) ?></span>
-                                    <?php endif; ?>
-                                    <?php if ($tagline !== ''): ?>
-                                    <span class="hp-card__tagline"><?= $e($tagline) ?></span>
-                                    <?php endif; ?>
-                                    <?php if ($unitStats !== []): ?>
-                                    <span class="hp-card__stats">
-                                        <?php foreach ($unitStats as $st): ?>
-                                        <span><strong><?= $e($formatInt($st['v'])) ?></strong> <?= $e($st['l']) ?></span>
-                                        <?php endforeach; ?>
-                                    </span>
-                                    <?php endif; ?>
-                                    <span class="hp-card__foot">
-                                        <span class="hp-status<?= $recruiting ? ' is-open' : '' ?>"><?= $e(__($recruiting ? 'home.units_recruiting' : 'home.units_invite_only')) ?></span>
-                                        <?php if (!empty($unit['featured'])): ?>
-                                        <span class="hp-featured"><?= $e(__('home.units_featured')) ?></span>
-                                        <?php endif; ?>
-                                    </span>
-                                </span>
-                            </a>
-                        </li>
+
+                <div class="hu-bar">
+                    <?php if ($unitsFilters !== []): ?>
+                    <div class="hu-fc" role="group" aria-label="<?= $e(__('home.units_filter_label')) ?>" data-hu-filters hidden>
+                        <button type="button" class="is-on" data-hu-filter="" aria-pressed="true"><?= $e(__('home.units_filter_all')) ?><em><?= $e($formatInt(count($homeUnits))) ?></em></button>
+                        <?php foreach ($unitsFilters as $f): ?>
+                        <button type="button" data-hu-filter="<?= $e($f['key']) ?>" aria-pressed="false"><?php if ($f['dot']): ?><i aria-hidden="true"></i><?php endif; ?><?= $e($f['label']) ?><em><?= $e($formatInt($f['n'])) ?></em></button>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+                    <span class="hu-sp"></span>
+                    <a class="hu-all" href="<?= $e(url('communities')) ?>"><?= $e(__($homeUnits !== [] ? 'home.see_all_communities' : 'home.communities_registry')) ?><svg class="hu-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+                </div>
+
+                <?php if ($unitsFeatured !== []): ?>
+                <ul class="hu-feat<?= count($unitsFeatured) === 1 ? ' is-single' : '' ?>">
+                    <?php foreach ($unitsFeatured as $unit): $c = $unitCard($unit); ?>
+                    <li <?= $unitData($c) ?>>
+                        <a href="<?= $e($c['href']) ?>" class="hu-fcard" style="<?= $e($c['style']) ?>">
+                            <span class="hu-ph" aria-hidden="true"><?php if ($c['banner'] !== ''): ?><img src="<?= $e($c['banner']) ?>" alt="" width="960" height="420" loading="lazy" decoding="async"><?php endif; ?></span>
+                            <span class="hu-star"><svg class="hu-i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg><?= $e(__('home.units_featured')) ?></span>
+                            <span class="hu-fbody">
+                                <span class="hu-fid"><?= $unitCrest($c) ?><span class="hu-fname"><?php if ($c['affiliation'] !== ''): ?><small translate="no"><?= $e($c['affiliation']) ?></small><?php endif; ?><span class="hu-name" translate="no"><?= name_blur_html($c['name']) ?></span></span></span>
+                                <?php if ($c['text'] !== ''): ?><span class="hu-desc" translate="no"><?= $e($c['text']) ?></span><?php endif; ?>
+                                <?= $unitTags($c) ?>
+                                <span class="hu-ffoot"><?= $unitStats($c, 3) ?><?= $unitRec($c) ?><span class="hu-go"><?= $e(__($c['recruiting'] ? 'home.units_cta_join' : 'home.units_cta_discover')) ?><svg class="hu-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></span>
+                            </span>
+                        </a>
+                    </li>
                     <?php endforeach; ?>
                 </ul>
-                <?php else: ?>
-                <p class="hp-empty"><?= $e(__('home.communities_empty_body')) ?></p>
                 <?php endif; ?>
+
+                <ul class="hu-grid">
+                    <?php foreach ($unitsGrid as $unit): $c = $unitCard($unit); ?>
+                    <li <?= $unitData($c) ?>>
+                        <a href="<?= $e($c['href']) ?>" class="hu-card" style="<?= $e($c['style']) ?>">
+                            <span class="hu-bn" aria-hidden="true"><?php if ($c['banner'] !== ''): ?><img src="<?= $e($c['banner']) ?>" alt="" width="640" height="240" loading="lazy" decoding="async"><?php else: ?><span class="hu-code"><?= $e($c['initials']) ?></span><?php endif; ?></span>
+                            <span class="hu-cb">
+                                <?= $unitCrest($c) ?>
+                                <span class="hu-name" translate="no"><?= name_blur_html($c['name']) ?></span>
+                                <?= $unitTags($c) ?>
+                                <?php if ($c['text'] !== ''): ?><span class="hu-loc" translate="no"><?= $e($c['text']) ?></span><?php endif; ?>
+                                <span class="hu-cf"><?= $unitStats($c, 2) ?><?= $unitRec($c) ?></span>
+                            </span>
+                            <span class="hu-more" aria-hidden="true"></span>
+                        </a>
+                    </li>
+                    <?php endforeach; ?>
+                    <li class="hu-join-li">
+                        <a class="hu-join" href="<?= $e(url('communities/create/guide')) ?>">
+                            <span class="hu-plus" aria-hidden="true"><svg class="hu-i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+                            <span><span class="hu-jt"><?= $e(__('home.units_join_title')) ?></span><span class="hu-jb"><?= $e(__('home.units_join_body')) ?></span></span>
+                            <span class="hu-jl"><?= $e(__('home.units_join_cta')) ?><svg class="hu-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+                        </a>
+                    </li>
+                </ul>
+                <?php if ($homeUnits === []): ?>
+                <p class="hu-empty"><?= $e(__('home.communities_empty_body')) ?></p>
+                <?php endif; ?>
+                <p class="hu-empty" data-hu-none hidden><?= $e(__('home.units_filter_empty')) ?></p>
             </div>
+
+            <?php if ($unitsOthers !== []): ?>
+            <div class="hu-mq">
+                <p class="hu-mq__lbl"><?= $e(count($unitsOthers) > 1 ? __('home.units_others', ['count' => $formatInt(count($unitsOthers))]) : __('home.units_others_one')) ?></p>
+                <div class="hu-trk">
+                    <?php foreach ([false, true] as $copy): ?>
+                    <ul class="hu-trk__set"<?= $copy ? ' aria-hidden="true"' : '' ?>>
+                        <?php foreach (array_slice($unitsOthers, 0, 30) as $unit): $c = $unitCard($unit); ?>
+                        <li><a class="hu-pill" href="<?= $e($c['href']) ?>" style="<?= $e($c['style']) ?>"<?= $copy ? ' tabindex="-1"' : '' ?>><?= $unitCrest($c) ?><span translate="no"><?= name_blur_html($c['name']) ?></span></a></li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
         </section>
 
         <!-- Pour qui -->
