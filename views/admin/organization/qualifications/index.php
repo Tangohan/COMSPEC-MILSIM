@@ -42,9 +42,16 @@ $athKpis = [
         <a href="<?= $h(effectifs_workspace_url('qualifications')) ?>" class="ath-btn">Matrice des effectifs</a>
         <a href="<?= $h(url('back-office/referentiels/qualifications/attribuer')) ?>" class="ath-btn">Attribuer à un membre</a>
         <a href="<?= $h(url('academy')) ?>" class="ath-btn">Ouvrir l’Academy</a>
-        <a href="<?= $h(url('back-office/referentiels/qualifications/emetteurs')) ?>" class="ath-btn">Organismes émetteurs</a>
+        <a href="<?= $h(url('back-office/referentiels/qualifications/emetteurs')) ?>" class="ath-btn">Émetteurs</a>
         <a href="<?= $h(url('back-office/referentiels/qualifications/cursus-pilote')) ?>" class="ath-btn">Cursus pilote</a>
     </div>
+
+    <?php if (is_array($issuerFilter ?? null)): ?>
+    <p class="rql-issuer-filter" role="status">
+        <span>Qualifications rattachées à l’émetteur ou délivrées en son nom : <a href="<?= $h(url('back-office/referentiels/qualifications/emetteurs/' . (int) $issuerFilter['id'])) ?>"><b><?= $h((string) $issuerFilter['name']) ?></b></a> (<?= count($definitions) ?>).</span>
+        <a href="<?= $h(url('back-office/referentiels/qualifications')) ?>" class="ath-btn">Tout afficher</a>
+    </p>
+    <?php endif; ?>
 
     <?php require base_path('views/partials/ath_kpis.php'); ?>
 

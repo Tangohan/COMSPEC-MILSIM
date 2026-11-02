@@ -48,6 +48,8 @@ final class QualificationRulesController
             return Response::redirect(url(self::BASE));
         }
         $board = $this->service->board($tenantId, $id);
+        $issuerRepo = new \App\Repositories\QualificationIssuerRepository();
+        $defaultIssuer = (int) ($definition['default_issuer_id'] ?? 0) > 0 ? $issuerRepo->find($tenantId, (int) $definition['default_issuer_id']) : null;
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.qualifications.show',
@@ -60,6 +62,8 @@ final class QualificationRulesController
             'history' => $this->rules->historyForDefinition($tenantId, $id),
             'badgeUrl' => $this->badges->publicUrl($definition['badge_media_path'] ?? null),
             'schemaReady' => $this->service->schemaReady(),
+            'defaultIssuer' => $defaultIssuer,
+            'issuerLinkReady' => $issuerRepo->linkReady(),
         ]);
     }
 

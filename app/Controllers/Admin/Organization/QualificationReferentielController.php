@@ -12,6 +12,7 @@ use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\QualificationAwardRepository;
 use App\Repositories\QualificationDefinitionRepository;
+use App\Repositories\QualificationIssuerRepository;
 use App\Repositories\QualificationReferentielRepository;
 use App\Services\Personnel\QualificationAwardRuleService;
 use App\Services\Personnel\QualificationBadgeStorageService;
@@ -26,6 +27,10 @@ use Throwable;
 
 final class QualificationReferentielController
 {
+    private const ISSUERS = 'back-office/referentiels/qualifications/emetteurs';
+
+    private ?QualificationIssuerRepository $issuerRepository = null;
+
     public function __construct(
         private QualificationDefinitionRepository $definitions,
         private QualificationReferentielRepository $referentiel,
@@ -48,6 +53,15 @@ final class QualificationReferentielController
         }
 
         $definitions = $this->definitions->listForTenant($tenantId, true);
+        $issuerFilter = null;
+        $issuerFilterId = (int) $request->query('emetteur', 0);
+        if ($issuerFilterId > 0) {
+            $issuerFilter = $this->issuerRepo()->find($tenantId, $issuerFilterId);
+            if ($issuerFilter !== null) {
+                $linked = $this->issuerRepo()->definitionsByIssuer($tenantId)[$issuerFilterId] ?? [];
+                $definitions = array_values(array_filter($definitions, static fn (array $d): bool => isset($linked[(int) ($d['id'] ?? 0)])));
+            }
+        }
         $badgeUrls = [];
         foreach ($definitions as $d) {
             if (trim((string) ($d['badge_media_path'] ?? '')) !== '') {
@@ -73,6 +87,7 @@ final class QualificationReferentielController
         return Response::view('layout.main', [
             'content' => 'admin.organization.qualifications.index',
             'modesByDef' => $modesByDef,
+            'issuerFilter' => $issuerFilter,
             'backOfficePageCss' => ['referentiel-qualifications.css'],
             'badgeUrls' => $badgeUrls,
             'title' => 'Référentiel des qualifications',
@@ -267,21 +282,21 @@ final class QualificationReferentielController
         return $this->withTenantPost($request, function (int $tenantId) use ($request) {
             $name = trim((string) $request->input('name', ''));
             if ($name === '') {
-                Session::flash('error', 'Le nom de l’organisme est obligatoire.');
+                Session::flash('error', 'Le nom de l’émetteur est obligatoire.');
 
-                return Response::redirect(url('back-office/referentiels/qualifications/emetteurs'));
+                return Response::redirect(url(self::ISSUERS) . '#nouvel-emetteur');
             }
-            $parent = (int) $request->input('parent_issuer_id', 0);
-            $this->referentiel->createIssuer(
-                $tenantId,
-                $name,
-                (string) $request->input('short_name', ''),
-                (string) $request->input('issuer_kind', 'unit'),
-                $parent > 0 ? $parent : null
-            );
-            Session::flash('success', 'Organisme émetteur ajouté.');
+            try {
+                $id = $this->issuerRepo()->create($tenantId, $this->issuerPayload($request), $this->actorId());
+                $this->saveIssuerExtras($tenantId, $id, $request);
+                Session::flash('success', 'Émetteur « ' . $name . ' » ajouté.');
 
-            return Response::redirect(url('back-office/referentiels/qualifications/emetteurs'));
+                return Response::redirect(url(self::ISSUERS . '/' . $id));
+            } catch (Throwable $e) {
+                Session::flash('error', 'Création impossible : ' . $e->getMessage());
+
+                return Response::redirect(url(self::ISSUERS));
+            }
         });
     }
 
@@ -291,12 +306,220 @@ final class QualificationReferentielController
         if ($tenantId instanceof Response) {
             return $tenantId;
         }
+        $repo = $this->issuerRepo();
+        $issuers = $repo->listForTenant($tenantId);
+        $logoUrls = [];
+        foreach ($issuers as $i) {
+            if (trim((string) ($i['logo_media_path'] ?? '')) !== '') {
+                $logoUrls[(int) $i['id']] = $this->badges->publicUrl((string) $i['logo_media_path']);
+            }
+        }
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.qualifications.issuers',
-            'title' => 'Organismes émetteurs',
-            'issuers' => $this->referentiel->listIssuers($tenantId),
+            'title' => 'Émetteurs des qualifications',
+            'boSkipPageHead' => true,
+            'backOfficePageCss' => ['effectifs-kit.css', 'qualification-issuers.css'],
+            'issuers' => $issuers,
+            'logoUrls' => $logoUrls,
+            'stats' => $repo->awardStats($tenantId),
+            'definitionsByIssuer' => $repo->definitionsByIssuer($tenantId),
+            'authorizations' => $repo->authorizationsByIssuer($tenantId),
+            'definitions' => $this->definitions->listForTenant($tenantId),
+            'units' => $repo->unitOptions($tenantId),
+            'enriched' => $repo->enrichedReady(),
+            'linkReady' => $repo->linkReady(),
         ]);
+    }
+
+    public function showIssuer(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantIdOrRedirect();
+        if ($tenantId instanceof Response) {
+            return $tenantId;
+        }
+        $repo = $this->issuerRepo();
+        $id = (int) ($params['issuerId'] ?? 0);
+        $issuer = $repo->find($tenantId, $id);
+        if ($issuer === null) {
+            Session::flash('error', 'Émetteur introuvable.');
+
+            return Response::redirect(url(self::ISSUERS));
+        }
+        $members = [];
+        try {
+            foreach ((new \App\Repositories\UserRepository())->listForTenant($tenantId) as $u) {
+                if (in_array(strtolower((string) ($u['status'] ?? 'active')), ['inactive', 'banned', 'deleted'], true)) {
+                    continue;
+                }
+                $cs = trim((string) ($u['callsign'] ?? ''));
+                $dn = trim((string) ($u['display_name'] ?? ''));
+                $members[] = ['id' => (int) $u['id'], 'label' => $cs !== '' && $dn !== '' && $cs !== $dn ? $cs . ' · ' . $dn : ($cs !== '' ? $cs : ($dn !== '' ? $dn : '#' . (int) $u['id']))];
+            }
+            usort($members, static fn (array $a, array $b): int => strnatcasecmp($a['label'], $b['label']));
+        } catch (Throwable) {
+        }
+        $jobs = [];
+        try {
+            $jobs = $this->jobRoles !== null && $this->jobRoles->tablesExist() ? $this->jobRoles->listRoleOptionsForSelect($tenantId) : [];
+        } catch (Throwable) {
+        }
+        $stats = $repo->awardStats($tenantId);
+
+        return Response::view('layout.main', [
+            'content' => 'admin.organization.qualifications.issuer_show',
+            'title' => (string) $issuer['name'],
+            'boSkipPageHead' => true,
+            'backOfficePageCss' => ['effectifs-kit.css', 'qualification-issuers.css'],
+            'issuer' => $issuer,
+            'issuers' => $repo->listForTenant($tenantId),
+            'logoUrl' => trim((string) ($issuer['logo_media_path'] ?? '')) !== '' ? $this->badges->publicUrl((string) $issuer['logo_media_path']) : '',
+            'stat' => $stats[$id] ?? ['total' => 0, 'recent' => 0, 'definitions' => 0, 'last_at' => ''],
+            'linkedDefinitions' => $repo->definitionsByIssuer($tenantId)[$id] ?? [],
+            'authorizations' => $repo->authorizationsByIssuer($tenantId)[$id] ?? [],
+            'recentAwards' => $repo->recentAwards($tenantId, $id, 15),
+            'definitions' => $this->definitions->listForTenant($tenantId),
+            'units' => $repo->unitOptions($tenantId),
+            'members' => $members,
+            'jobs' => $jobs,
+            'enriched' => $repo->enrichedReady(),
+            'linkReady' => $repo->linkReady(),
+            'authorizationsReady' => $repo->authorizationsReady(),
+        ]);
+    }
+
+    public function updateIssuer(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['issuerId'] ?? 0);
+
+        return $this->withTenantPost($request, function (int $tenantId) use ($request, $id) {
+            $back = url(self::ISSUERS . '/' . $id);
+            if ($this->issuerRepo()->find($tenantId, $id) === null) {
+                Session::flash('error', 'Émetteur introuvable.');
+
+                return Response::redirect(url(self::ISSUERS));
+            }
+            if (trim((string) $request->input('name', '')) === '') {
+                Session::flash('error', 'Le nom de l’émetteur est obligatoire.');
+
+                return Response::redirect($back . '#modifier');
+            }
+            try {
+                $this->issuerRepo()->update($tenantId, $id, $this->issuerPayload($request));
+                $this->saveIssuerExtras($tenantId, $id, $request);
+                Session::flash('success', 'Émetteur enregistré.');
+            } catch (Throwable $e) {
+                Session::flash('error', 'Enregistrement impossible : ' . $e->getMessage());
+            }
+
+            return Response::redirect($back);
+        });
+    }
+
+    public function archiveIssuer(Request $request, array $params = []): Response
+    {
+        return $this->toggleIssuerArchive($request, (int) ($params['issuerId'] ?? 0), true);
+    }
+
+    public function restoreIssuer(Request $request, array $params = []): Response
+    {
+        return $this->toggleIssuerArchive($request, (int) ($params['issuerId'] ?? 0), false);
+    }
+
+    public function storeIssuerAuthorization(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['issuerId'] ?? 0);
+
+        return $this->withTenantPost($request, function (int $tenantId) use ($request, $id) {
+            $back = url(self::ISSUERS . '/' . $id) . '#habilites';
+            if ($this->issuerRepo()->find($tenantId, $id) === null) {
+                return Response::redirect(url(self::ISSUERS));
+            }
+            $who = (string) $request->input('who', '');
+            $userId = str_starts_with($who, 'u:') ? (int) substr($who, 2) : 0;
+            $jobId = str_starts_with($who, 'j:') ? (int) substr($who, 2) : 0;
+            if ($userId <= 0 && $jobId <= 0) {
+                Session::flash('error', 'Choisissez un membre ou une fonction.');
+
+                return Response::redirect($back);
+            }
+            try {
+                $added = $this->issuerRepo()->addAuthorization($tenantId, $id, $userId, $jobId, (string) $request->input('role', 'instructor'), $this->actorId());
+                Session::flash($added ? 'success' : 'error', $added ? 'Habilitation ajoutée.' : 'Cette habilitation existe déjà.');
+            } catch (Throwable $e) {
+                Session::flash('error', 'Habilitation impossible : ' . $e->getMessage());
+            }
+
+            return Response::redirect($back);
+        });
+    }
+
+    public function deleteIssuerAuthorization(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['issuerId'] ?? 0);
+        $authId = (int) ($params['authId'] ?? 0);
+
+        return $this->withTenantPost($request, function (int $tenantId) use ($id, $authId) {
+            $removed = $this->issuerRepo()->removeAuthorization($tenantId, $id, $authId);
+            Session::flash($removed ? 'success' : 'error', $removed ? 'Habilitation retirée. Les brevets déjà délivrés ne changent pas.' : 'Habilitation introuvable.');
+
+            return Response::redirect(url(self::ISSUERS . '/' . $id) . '#habilites');
+        });
+    }
+
+    private function toggleIssuerArchive(Request $request, int $id, bool $archive): Response
+    {
+        return $this->withTenantPost($request, function (int $tenantId) use ($id, $archive) {
+            if ($this->issuerRepo()->find($tenantId, $id) === null) {
+                return Response::redirect(url(self::ISSUERS));
+            }
+            if (!$this->issuerRepo()->setArchived($tenantId, $id, $archive)) {
+                Session::flash('error', 'L’archivage arrive avec la prochaine mise à jour du site.');
+            } else {
+                Session::flash('success', $archive
+                    ? 'Émetteur archivé : il n’est plus proposé pour les nouvelles délivrances. Les brevets déjà délivrés restent à son nom.'
+                    : 'Émetteur réactivé.');
+            }
+
+            return Response::redirect(url(self::ISSUERS . '/' . $id));
+        });
+    }
+
+    /** @return array<string, mixed> */
+    private function issuerPayload(Request $request): array
+    {
+        return [
+            'name' => $request->input('name'),
+            'short_name' => $request->input('short_name'),
+            'issuer_kind' => (string) $request->input('issuer_kind', 'unit'),
+            'parent_issuer_id' => $request->input('parent_issuer_id'),
+            'description' => $request->input('description'),
+            'unit_id' => $request->input('unit_id'),
+            'signatory_name' => $request->input('signatory_name'),
+            'signatory_title' => $request->input('signatory_title'),
+        ];
+    }
+
+    /** Qualifications rattachées et logo envoyés avec le formulaire de l’émetteur. */
+    private function saveIssuerExtras(int $tenantId, int $id, Request $request): void
+    {
+        if ($request->input('definitions_form') !== null) {
+            $this->issuerRepo()->syncDefinitions($tenantId, $id, array_map('intval', (array) $request->input('definition_ids', [])));
+        }
+        $file = $_FILES['logo'] ?? null;
+        if (is_array($file) && (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            try {
+                $path = $this->badges->storeUpload($tenantId, $id, $file, 'issuer');
+                $this->issuerRepo()->setLogo($tenantId, $id, $path);
+            } catch (Throwable $e) {
+                Session::flash('error', 'Logo non enregistré : ' . $e->getMessage());
+            }
+        }
+    }
+
+    private function issuerRepo(): QualificationIssuerRepository
+    {
+        return $this->issuerRepository ??= new QualificationIssuerRepository();
     }
 
     public function storeLevel(Request $request, array $params = []): Response
@@ -489,7 +712,8 @@ final class QualificationReferentielController
             'content' => 'admin.organization.qualifications.award_form',
             'title' => $renewalOf > 0 ? 'Renouveler une qualification' : 'Attribuer une qualification',
             'definitions' => $this->definitions->listForTenant($tenantId),
-            'issuers' => $this->referentiel->listIssuers($tenantId),
+            'issuers' => $this->issuerRepo()->listForTenant($tenantId),
+            'issuerPreset' => (int) $request->query('issuer_id', 0),
             'levels' => $definition ? $this->referentiel->listLevels($tenantId, (int) $definition['id']) : [],
             'customFields' => $definition ? $this->referentiel->listCustomFields($tenantId, (int) $definition['id']) : [],
             'userId' => $userId,

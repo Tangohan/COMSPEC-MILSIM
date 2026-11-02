@@ -19,6 +19,9 @@ $qualification = trim((string) ($qualification_name ?? ''));
 $level = trim((string) ($level_name ?? ''));
 $category = trim((string) ($category_name ?? ''));
 $issuer = trim((string) ($issuer_name ?? ''));
+// Signataire du brevet renseigné sur la fiche de l’émetteur (sinon : l’émetteur lui-même).
+$signatoryName = trim((string) ($issuer_signatory_name ?? ''));
+$signatoryTitle = trim((string) ($issuer_signatory_title ?? ''));
 $grade = trim((string) ($holder_grade ?? ''));
 $callsign = trim((string) ($holder_callsign ?? ''));
 $expires = trim((string) ($expires_at ?? ''));
@@ -125,7 +128,9 @@ $cert = [
     ],
     'signatures' => [
         ['name' => (string) ($holder_name ?? ''), 'role' => 'Le titulaire'],
-        ['name' => $issuer !== '' ? $issuer : $tenant, 'role' => 'Pour l’autorité émettrice'],
+        $signatoryName !== ''
+            ? ['name' => $signatoryName, 'role' => ($signatoryTitle !== '' ? $signatoryTitle . ' · ' : 'Pour ') . ($issuer !== '' ? $issuer : $tenant)]
+            : ['name' => $issuer !== '' ? $issuer : $tenant, 'role' => $signatoryTitle !== '' ? $signatoryTitle : 'Pour l’autorité émettrice'],
     ],
     'seal_image' => $badgeSrc,
     'seal_letter' => mb_substr($tenant, 0, 1, 'UTF-8'),

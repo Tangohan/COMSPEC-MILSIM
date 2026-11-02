@@ -78,6 +78,14 @@ final class QualificationStatusTransitionService
             'source' => $data['source'] ?? 'manual',
         ]);
 
+        // Sans émetteur choisi (délivrance automatique, Academy, matrice), l’émetteur habituel de la qualification signe.
+        if ((int) ($payload['issuer_id'] ?? 0) <= 0 && !empty($def['default_issuer_id'])) {
+            try {
+                $payload['issuer_id'] = (new \App\Repositories\QualificationIssuerRepository())->defaultIssuerFor($tenantId, $definitionId);
+            } catch (\Throwable) {
+            }
+        }
+
         if ($levelId !== null) {
             $levels = $this->referentiel->listLevels($tenantId, $definitionId);
             foreach ($levels as $lvl) {

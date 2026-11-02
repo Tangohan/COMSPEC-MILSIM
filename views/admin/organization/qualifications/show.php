@@ -101,6 +101,11 @@ $eventLabels = [
     <?php if (trim((string) ($def['description'] ?? '')) !== ''): ?>
         <p class="qfs-lead"><?= nl2br($h($def['description'])) ?></p>
     <?php endif; ?>
+    <?php if (is_array($defaultIssuer ?? null)): ?>
+        <p class="qfs-lead qfs-issuer"><span>Émetteur habituel :</span> <a href="<?= $h(url('back-office/referentiels/qualifications/emetteurs/' . (int) $defaultIssuer['id'])) ?>"><b translate="no"><?= $h($defaultIssuer['name']) ?></b></a><?php if (!empty($defaultIssuer['archived_at'])): ?> <span>(archivé)</span><?php endif; ?><br><small>Son nom figure sur le brevet, y compris quand la qualification est obtenue par l’Academy ou automatiquement.</small></p>
+    <?php elseif (!empty($issuerLinkReady)): ?>
+        <p class="qfs-lead qfs-issuer">Aucun émetteur habituel : sans choix à la délivrance, le brevet porte le nom de la communauté. <a href="<?= $h(url('back-office/referentiels/qualifications/emetteurs')) ?>">Rattacher un émetteur</a></p>
+    <?php endif; ?>
 
     <div class="qmx-stats qmx-stats--static">
         <?php foreach ([
