@@ -2399,6 +2399,20 @@ class Container
                 self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
                 self::get(\App\Repositories\ElevationRequestRepository::class),
             ),
+            \App\Controllers\Admin\JobAssignmentBoardController::class => new \App\Controllers\Admin\JobAssignmentBoardController(
+                new \App\Services\Personnel\JobAssignmentBoardLoader(
+                    self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                    self::get(UserRepository::class),
+                    self::get(\App\Repositories\UnitRepository::class),
+                    self::get(\App\Repositories\OrbatBilletRepository::class),
+                ),
+                new \App\Services\Personnel\JobAssignmentBulkService(
+                    self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                    self::get(UserRepository::class),
+                    self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
+                ),
+                self::get(TenantRepository::class),
+            ),
             \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController::class => new \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController(
                 self::get(AuthService::class),
                 self::get(\App\Repositories\BlockedIndicatorRepository::class),

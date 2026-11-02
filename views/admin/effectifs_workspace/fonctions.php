@@ -62,7 +62,7 @@ $roleTrail=static function(array $role)use($roleById):string{
 <a class="eff-jobs-tabs__item<?= $vue===$tab?' is-current':'' ?>" href="<?= $h($base.($tab==='catalogue'?'':'?vue='.$tab)) ?>" <?= $tab!=='attributions'?'data-jobs-nav':'' ?> <?= $vue===$tab?'aria-current="page"':'' ?>><?= $h($label) ?></a>
 <?php endforeach ?></nav>
 <?php if($vue==='attributions'): ?>
-<?php require base_path('views/admin/organization/personnel_job_roles/assignments.php'); ?>
+<?php require __DIR__.'/job_assignments.php'; ?>
 <?php elseif($vue==='site'): ?>
 <?php require __DIR__.'/job_site_catalog.php'; ?>
 <?php elseif($vue==='historique'&&$canManage): ?>
