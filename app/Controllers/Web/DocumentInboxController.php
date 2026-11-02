@@ -27,7 +27,7 @@ final class DocumentInboxController
             return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
         }
 
-        $filter = trim((string) $request->input('filtre', 'a_lire'));
+        $filter = trim($request->queryString('filtre', 'a_lire'));
         $box = $this->inboxService->forUser($tenantId, $userId, $filter);
 
         return Response::view('layout.main', [
