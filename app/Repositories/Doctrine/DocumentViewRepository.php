@@ -55,6 +55,26 @@ final class DocumentViewRepository
         return $row ?: null;
     }
 
+    /**
+     * Première ouverture de chaque lecteur d’une version (page de pilotage Doctrine).
+     *
+     * @return array<int, string> user_id => first_viewed_at
+     */
+    public function firstViewsForVersion(int $tenantId, int $versionId): array
+    {
+        if ($tenantId < 1 || $versionId < 1 || !$this->tableExists()) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare('SELECT user_id, first_viewed_at FROM document_views WHERE tenant_id = ? AND version_id = ?');
+        $stmt->execute([$tenantId, $versionId]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $out[(int) $row['user_id']] = (string) ($row['first_viewed_at'] ?? '');
+        }
+
+        return $out;
+    }
+
     public function hasViewed(int $tenantId, int $userId, int $versionId): bool
     {
         return $this->findForUserVersion($tenantId, $userId, $versionId) !== null;
