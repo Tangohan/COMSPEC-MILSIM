@@ -30,7 +30,7 @@ $items = [
     ],
     [
         'id' => 'alertes',
-        'href' => effectifs_workspace_url('alertes'),
+        'href' => effectifs_workspace_url('a-traiter?onglet=alertes'),
         'title' => 'Alertes RH',
         'hint' => 'Ce qui demande un suivi',
     ],

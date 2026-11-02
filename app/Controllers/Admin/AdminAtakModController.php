@@ -57,7 +57,7 @@ class AdminAtakModController
             'modLegacyArchive' => is_file($legacy) ? ['size' => (int) filesize($legacy), 'at' => date('d/m/Y H:i', (int) filemtime($legacy))] : null,
             'memberPageUrl' => url('atak/mod'),
             'discordRelayReady' => $this->modDiscord->hasWebhookConfigured($tenantId),
-            'organizationSettingsUrl' => url('back-office/organisation/parametres'),
+            'organizationSettingsUrl' => url('back-office/community'),
             'csrfToken' => Csrf::token(),
         ]);
     }

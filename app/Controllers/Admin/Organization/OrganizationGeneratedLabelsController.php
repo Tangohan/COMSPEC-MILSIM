@@ -200,7 +200,7 @@ final class OrganizationGeneratedLabelsController
         if (!$allowed) {
             Session::flash('error', 'Vous n’avez pas l’habilitation pour administrer le catalogue de l’organisation.');
 
-            return Response::redirect(url('back-office/organisation-effectifs'));
+            return Response::redirect(url('back-office'));
         }
         if ((int) Session::get('tenant_id') < 1) {
             return Response::redirect(url('dashboard'));

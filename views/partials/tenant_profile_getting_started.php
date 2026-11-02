@@ -66,7 +66,7 @@ $tpgAudienceLabel = ['member' => 'Chaque membre', 'hr' => 'RH ou Gestionnaire', 
         <p class="tpg__foot">
             <a href="<?= $tpgH(url('documentation/profils')) ?>">Comprendre les profils et les niveaux d’accès</a>
             <?php if ($tpgIsManager): ?>
-                · <a href="<?= $tpgH(url('back-office/organisation/parametres') . '?onglet=profil#profil') ?>">Changer de profil</a>
+                · <a href="<?= $tpgH(url('back-office/community') . '?onglet=profil#profil') ?>">Changer de profil</a>
             <?php endif; ?>
         </p>
     </details>

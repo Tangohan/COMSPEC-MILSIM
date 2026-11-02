@@ -181,7 +181,7 @@ if ($rowsJson === false) {
                 </p>
             </div>
             <div class="bo-seniority__hero-actions">
-                <a href="<?= htmlspecialchars(url('back-office/organisation-effectifs'), ENT_QUOTES, 'UTF-8') ?>" class="bo-seniority__btn bo-seniority__btn--ghost">Organisation des effectifs</a>
+                <a href="<?= htmlspecialchars(orbat_page_url(), ENT_QUOTES, 'UTF-8') ?>" class="bo-seniority__btn bo-seniority__btn--ghost">Organisation des effectifs</a>
                 <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="bo-seniority__btn bo-seniority__btn--solid">Centre de pilotage</a>
             </div>
         </div>
@@ -528,7 +528,7 @@ if ($rowsJson === false) {
                 Les périodes détaillées se gèrent sur chaque
                 <a href="<?= htmlspecialchars(url('personnel'), ENT_QUOTES, 'UTF-8') ?>">fiche personnel</a>.
                 Revenez à l’
-                <a href="<?= htmlspecialchars(url('back-office/organisation-effectifs'), ENT_QUOTES, 'UTF-8') ?>">organisation des effectifs</a>
+                <a href="<?= htmlspecialchars(orbat_page_url(), ENT_QUOTES, 'UTF-8') ?>">organisation des effectifs</a>
                 pour les autres réglages RH.
             </p>
         <?php endif; ?>

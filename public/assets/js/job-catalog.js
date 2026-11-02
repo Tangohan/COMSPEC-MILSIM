@@ -6,6 +6,9 @@
  * tout ou d'un champ dans la fiche d'emploi ouverte (confirmation avant de remplacer un champ déjà rempli). Rien
  * n'est enregistré : l'utilisateur relit et valide le formulaire lui-même. Les derniers filtres sont mémorisés dans
  * le navigateur (localStorage, facultatif).
+ * Catalogues de communauté : affichés comme des pays (emblème, bannière), créés et complétés depuis la fenêtre
+ * (formulaires envoyés en JSON) ; fenêtre agrandissable (mémorisé, Alt + Entrée) ; fenêtre de confirmation avant
+ * « Copier tout » (récapitulatif, champs remplacés, « Ne plus afficher »).
  */
 (() => {
     'use strict';
@@ -18,6 +21,11 @@
     let opener = null;
     let timer = 0;
     const STORE = 'athena.jobCatalog.filters.v2';
+    const EXPANDED = 'athena.jobCatalog.expanded.v1';
+    const SKIP_CONFIRM = 'athena.jobCatalog.skipCopyConfirm.v1';
+    // Stockage du navigateur protégé : navigation privée ou stockage bloqué = comportement par défaut.
+    const stored = key => { try { return window.localStorage.getItem(key); } catch (error) { return null; } };
+    const store = (key, value) => { try { if (value === null) window.localStorage.removeItem(key); else window.localStorage.setItem(key, value); } catch (error) { /* indisponible */ } };
     const FILTERS = ['country', 'branch', 'command', 'formation', 'type'];
     const state = {country: '', branch: '', command: '', formation: '', type: '', sort: 'relevance', group: true};
     const LIMITS = {name: 120, abbreviation: 8, description: 500, tags: 400, code: 40};
@@ -29,6 +37,9 @@
     const form = () => document.querySelector('form[data-job-catalog-form]');
     const isEnglish = () => (document.documentElement.lang || 'fr').slice(0, 2) === 'en';
     const branchKey = entry => entry.country + ':' + entry.branch;
+    // Nom officiel (langue du pays) en titre ; traductions (langue du lecteur, puis anglais) en ligne secondaire.
+    const officialTitle = entry => entry.official_name || entry.name;
+    const translations = entry => Object.entries(entry.names || {}).slice(1).filter(([lang]) => lang === 'en' || lang === (isEnglish() ? 'en' : 'fr'));
     const el = (tag, className, text) => {
         const node = document.createElement(tag);
         if (className) node.className = className;
@@ -60,7 +71,7 @@
     }
 
     function haystack(entry) {
-        const text = [entry.name, entry.official_name, entry.alt, entry.abbreviation, entry.code, entry.unit, entry.command,
+        const text = [entry.name, entry.official_name, Object.values(entry.names || {}).join(' '), entry.alt, entry.abbreviation, entry.code, entry.unit, entry.command,
             entry.formation, entry.branch_label, entry.country_label, entry.type_label, (entry.tags || []).join(' '),
             (entry.qualifications || []).join(' '), entry.id].join(' ');
         const german = transliterate(text);
@@ -79,7 +90,7 @@
             .then(json => {
                 json.entries.forEach((entry, index) => {
                     entry._hay = haystack(entry);
-                    entry._name = ' ' + normalize(entry.name) + ' ';
+                    entry._name = ' ' + normalize(officialTitle(entry) + ' ' + entry.name) + ' ';
                     entry._index = index;
                 });
                 json.countries = json.countries || [];
@@ -90,19 +101,38 @@
         return loading;
     }
 
-    function flag(code) {
-        const node = el('span', 'jobcat__flag');
+    const catalogOf = code => (data?.countries || []).find(c => c.code === code) || null;
+    const initials = text => String(text || '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+
+    /** Drapeau d'un pays (CSS) ou emblème d'un catalogue de communauté (image, sinon initiales sur sa couleur). */
+    function paintFlag(node, code) {
+        node.className = 'jobcat__flag';
         node.dataset.flag = code;
         node.setAttribute('aria-hidden', 'true');
+        node.textContent = '';
+        node.style.removeProperty('--jc-flag');
+        const c = catalogOf(code);
+        if (c?.community) {
+            node.classList.add('is-community');
+            if (c.color) node.style.setProperty('--jc-flag', c.color);
+            if (c.emblem_url) { const img = el('img'); img.src = c.emblem_url; img.alt = ''; img.loading = 'lazy'; node.appendChild(img); }
+            else node.textContent = initials(c.label);
+            return node;
+        }
         node.textContent = code;
         return node;
+    }
+
+    function flag(code) {
+        return paintFlag(el('span'), code);
     }
 
     /** Catégories pays : « Tous les pays » est dans la page, les pays viennent du catalogue. */
     function buildCountries(box) {
         const bar = box.querySelector('[data-job-catalog-countries]');
-        if (bar.dataset.ready) return;
-        bar.dataset.ready = '1';
+        bar.querySelectorAll('[data-job-catalog-country]:not([data-job-catalog-country=""])').forEach(node => node.remove());
+        const add = bar.querySelector('[data-job-catalog-new-collection]');
+        if (add) add.hidden = !data.community_ready;
         data.countries.forEach(country => {
             const button = el('button', 'jobcat__country');
             button.type = 'button';
@@ -112,7 +142,11 @@
             const count = el('span', 'jobcat__country-count');
             count.dataset.jobCatalogCountryCount = '';
             button.append(flag(country.code), el('span', 'jobcat__country-name', country.label), count);
-            bar.appendChild(button);
+            if (country.community) {
+                button.classList.add('is-community');
+                if (country.author) button.title = label('shared-by') + ' ' + country.author;
+            }
+            bar.insertBefore(button, add || null);
         });
     }
 
@@ -228,10 +262,17 @@
 
     function sorted(hits) {
         const collator = new Intl.Collator(isEnglish() ? 'en' : 'fr', {sensitivity: 'base', numeric: true});
-        const byName = (a, b) => collator.compare(a.entry.name, b.entry.name);
+        const byName = (a, b) => collator.compare(officialTitle(a.entry), officialTitle(b.entry));
         if (state.sort === 'name') return hits.sort((a, b) => byName(a, b) || a.entry._index - b.entry._index);
         if (state.sort === 'unit') return hits.sort((a, b) => collator.compare(a.entry.formation || a.entry.unit, b.entry.formation || b.entry.unit) || byName(a, b));
         return hits.sort((a, b) => b.score - a.score || a.entry._index - b.entry._index);
+    }
+
+    /** Code de langue (« DE ») avec son nom complet en infobulle. */
+    function langCode(lang) {
+        const code = el('abbr', 'jobcat__lang', lang.toUpperCase());
+        code.title = label('lang-' + lang) !== 'lang-' + lang ? label('lang-' + lang) : lang.toUpperCase();
+        return code;
     }
 
     function resultButton(entry, words) {
@@ -239,6 +280,14 @@
         button.type = 'button';
         button.dataset.jobCatalogEntry = entry.id;
         if (current && current.id === entry.id) button.setAttribute('aria-current', 'true');
+        if (entry.image_url) {
+            button.classList.add('has-thumb');
+            const thumb = el('img', 'jobcat__thumb');
+            thumb.src = entry.image_url;
+            thumb.alt = '';
+            thumb.loading = 'lazy';
+            button.appendChild(thumb);
+        }
         const title = el('strong');
         if (entry.abbreviation) {
             const abbr = el('span', 'jobcat__chip is-abbr');
@@ -246,7 +295,7 @@
             title.appendChild(abbr);
         }
         const name = el('span', 'jobcat__result-name');
-        name.appendChild(highlight(entry.name, words));
+        name.appendChild(highlight(entry.official_name || entry.name, words));
         title.appendChild(name);
         if (entry.code) {
             const code = el('code');
@@ -256,6 +305,15 @@
         const meta = el('small');
         meta.appendChild(highlight([entry.formation || entry.command, entry.type_label, entry.formation ? '' : entry.unit].filter(Boolean).join(' · '), words));
         button.append(title);
+        const others = translations(entry);
+        if (others.length) {
+            const alt = el('span', 'jobcat__result-alt');
+            others.forEach(([lang, text], i) => {
+                if (i) alt.appendChild(document.createTextNode(' · '));
+                alt.append(langCode(lang), highlight(text, words));
+            });
+            button.append(alt);
+        }
         if (!state.group) {
             const line = el('span', 'jobcat__result-origin');
             line.append(flag(entry.country), document.createTextNode(entry.branch_label));
@@ -349,7 +407,28 @@
         const count = box.querySelector('[data-job-catalog-count]');
         count.textContent = hits.length > 0 ? `${hits.length} emploi(s)` : 'Aucun emploi ne correspond.';
         notes(box);
+        banner(box);
         persist();
+    }
+
+    /** Bannière du catalogue de communauté choisi : image, description, auteur ou boutons de gestion. */
+    function banner(box) {
+        const zone = box.querySelector('[data-job-catalog-banner]');
+        if (!zone) return;
+        const c = catalogOf(state.country);
+        zone.hidden = !c?.community;
+        if (!c?.community) return;
+        if (c.color) zone.style.setProperty('--jc-flag', c.color); else zone.style.removeProperty('--jc-flag');
+        const img = zone.querySelector('[data-job-catalog-banner-img]');
+        img.hidden = !c.banner_url;
+        if (c.banner_url) img.src = c.banner_url; else img.removeAttribute('src');
+        paintFlag(zone.querySelector('[data-job-catalog-banner-flag]'), c.code);
+        zone.querySelector('[data-job-catalog-banner-name]').textContent = c.label;
+        zone.querySelector('[data-job-catalog-banner-text]').textContent = c.description || '';
+        zone.querySelector('[data-job-catalog-banner-shared]').hidden = !(c.editable && c.is_public);
+        zone.querySelector('[data-job-catalog-banner-author]').hidden = !c.author;
+        zone.querySelector('[data-job-catalog-banner-author-name]').textContent = c.author || '';
+        zone.querySelector('[data-job-catalog-banner-actions]').hidden = !c.editable;
     }
 
     /**
@@ -399,15 +478,51 @@
         box.querySelector('[data-job-catalog-placeholder]').hidden = true;
         box.querySelector('.jobcat__frame').classList.add('is-detail');
         detail.querySelectorAll('[data-jc]').forEach(node => { node.textContent = entry[node.dataset.jc] || ''; node.hidden = !entry[node.dataset.jc]; });
-        const official = detail.querySelector('.jobcat__official');
-        official.hidden = !entry.official_name || entry.official_name === entry.name;
-        const flagNode = detail.querySelector('[data-jc-flag]');
-        flagNode.dataset.flag = entry.country;
-        flagNode.textContent = entry.country;
+        const official = detail.querySelector('[data-jc-translations]');
+        official.textContent = '';
+        translations(entry).forEach(([lang, text], i) => {
+            if (i) official.appendChild(document.createTextNode(' · '));
+            official.append(langCode(lang), document.createTextNode(text));
+        });
+        official.hidden = !official.childNodes.length;
+        const names = detail.querySelector('[data-jc-names]');
+        const select = detail.querySelector('[data-job-catalog-name-lang]');
+        names.textContent = '';
+        select.textContent = '';
+        // Catalogue de communauté : un seul nom, langue non précisée.
+        const nameList = Object.entries(entry.names || {});
+        if (!nameList.length) nameList.push(['', entry.official_name || entry.name]);
+        nameList.forEach(([lang, text], i) => {
+            const item = el('li');
+            const copy = el('button', 'jobcat__copy', label('copy'));
+            copy.type = 'button';
+            copy.dataset.jobCatalogCopy = 'name';
+            copy.dataset.lang = lang;
+            copy.setAttribute('aria-label', label('copy-name') + (lang ? ' (' + label('lang-' + lang) + ')' : ''));
+            const name = el('span', 'jobcat__names-text', text);
+            if (i === 0 && lang) name.appendChild(el('small', '', ' — ' + label('official')));
+            if (lang) item.append(langCode(lang));
+            item.append(name, copy);
+            names.appendChild(item);
+            const option = el('option', '', lang.toUpperCase() + ' · ' + text + (i === 0 ? ' (' + label('official') + ')' : ''));
+            option.value = lang;
+            select.appendChild(option);
+        });
+        select.value = Object.keys(entry.names || {})[0] || '';
+        // Choix de la langue utile seulement s'il existe plusieurs noms.
+        select.closest('.jobcat__name-lang').hidden = select.options.length < 2;
+        paintFlag(detail.querySelector('[data-jc-flag]'), entry.country);
+        const image = detail.querySelector('[data-jc-image]');
+        image.hidden = !entry.image_url;
+        if (entry.image_url) image.src = entry.image_url; else image.removeAttribute('src');
+        detail.querySelector('[data-jc-author]').hidden = !entry.author;
+        detail.querySelector('[data-jc-author-name]').textContent = entry.author || '';
+        detail.querySelector('[data-jc-owner]').hidden = !entry.editable;
+        box.querySelector('[data-job-catalog-manage]').hidden = true;
         detail.querySelectorAll('[data-jc-row]').forEach(row => {
             const key = row.dataset.jcRow;
             const value = entry[key];
-            row.hidden = Array.isArray(value) ? value.length === 0 : !value;
+            row.hidden = key === 'names' ? false : Array.isArray(value) ? value.length === 0 : !value;
         });
         ['qualifications', 'billets', 'tags'].forEach(key => {
             const target = detail.querySelector('[data-jc-list="' + key + '"]');
@@ -455,10 +570,130 @@
         (button || box.querySelector('[data-job-catalog-search]')).focus();
     }
 
+    /** Recharge le catalogue (après un enregistrement) et revient sur le catalogue ou l'emploi indiqué. */
+    async function reload(code, entryId) {
+        data = null;
+        await load();
+        const box = dialog();
+        buildCountries(box);
+        if (code !== undefined) state.country = code;
+        sanitize();
+        render();
+        const entry = entryId ? data.entries.find(e => e.id === entryId) : null;
+        if (entry) show(entry); else closeManage();
+    }
+
+    function manageSection() {
+        return dialog().querySelector('[data-job-catalog-manage]');
+    }
+
+    function closeManage() {
+        const box = dialog();
+        const section = manageSection();
+        if (!section || section.hidden) return;
+        section.hidden = true;
+        if (current && !box.querySelector('[data-job-catalog-detail]').hidden) return;
+        box.querySelector('[data-job-catalog-placeholder]').hidden = false;
+        box.querySelector('.jobcat__frame').classList.remove('is-detail');
+    }
+
+    /** Affiche un formulaire (catalogue ou emploi) à la place de la fiche. */
+    function openForm(selector) {
+        const box = dialog();
+        const section = manageSection();
+        box.querySelector('[data-job-catalog-detail]').hidden = true;
+        box.querySelector('[data-job-catalog-placeholder]').hidden = true;
+        box.querySelector('.jobcat__frame').classList.add('is-detail');
+        section.hidden = false;
+        section.querySelectorAll('form').forEach(f => { f.hidden = !f.matches(selector); });
+        const formEl = section.querySelector(selector);
+        formEl.querySelector('[data-job-catalog-form-error]').hidden = true;
+        section.scrollTop = 0;
+        formEl.querySelector('input:not([type=hidden]), textarea, select')?.focus();
+        return formEl;
+    }
+
+    function openCollectionForm(c) {
+        const formEl = openForm('[data-job-catalog-collection-form]');
+        formEl.reset();
+        formEl.querySelector('[data-job-catalog-manage-title]').textContent = label(c ? 'edit-collection' : 'new-collection');
+        formEl.elements.collection_id.value = c ? String(c.id) : '0';
+        formEl.elements.name.value = c?.label || '';
+        formEl.elements.description.value = c?.description || '';
+        formEl.elements.icon.value = c?.icon || '';
+        formEl.elements.color.value = c?.color || '#1f6f5c';
+        formEl.elements.is_public.checked = !!c?.is_public;
+        formEl.querySelector('[data-job-catalog-delete-collection]').hidden = !c;
+        formEl.elements.name.focus();
+    }
+
+    function openEntryForm(c, entry) {
+        const formEl = openForm('[data-job-catalog-entry-form]');
+        formEl.reset();
+        formEl.querySelector('[data-job-catalog-entry-title]').textContent = label(entry ? 'edit-entry' : 'new-entry');
+        formEl.querySelector('[data-job-catalog-entry-collection]').textContent = c.label;
+        formEl.elements.collection_id.value = String(c.id);
+        formEl.elements.entry_id.value = entry ? String(entry.entry_id) : '0';
+        if (entry) {
+            formEl.elements.name.value = entry.name || '';
+            formEl.elements.abbreviation.value = entry.abbreviation || '';
+            formEl.elements.type.value = entry.type || 'operator';
+            formEl.elements.category.value = entry.category || '';
+            formEl.elements.unit.value = entry.unit || '';
+            formEl.elements.description.value = entry.description || '';
+            formEl.elements.qualifications.value = (entry.qualifications || []).join('\n');
+            formEl.elements.tags.value = (entry.tags || []).join(', ');
+            formEl.elements.icon.value = entry.icon || '';
+        }
+        formEl.elements.name.focus();
+    }
+
+    /** Envoi JSON d'un formulaire de gestion ; null si l'envoi a échoué (message affiché). */
+    async function send(url, body, errorNode) {
+        const box = dialog();
+        body.append('_csrf_token', box.dataset.csrf || '');
+        if (errorNode) { errorNode.hidden = false; errorNode.textContent = label('saving'); errorNode.classList.add('is-pending'); }
+        try {
+            const response = await fetch(url, {method: 'POST', body, credentials: 'same-origin', headers: {'Accept': 'application/json', 'X-CSRF-Token': box.dataset.csrf || ''}});
+            const json = await response.json().catch(() => ({ok: false, message: label('save-failed')}));
+            if (errorNode) errorNode.classList.remove('is-pending');
+            if (!json.ok) {
+                if (errorNode) errorNode.textContent = json.message || label('save-failed');
+                else window.alert(json.message || label('save-failed'));
+                return null;
+            }
+            if (errorNode) errorNode.hidden = true;
+            announce(json.message || '');
+            return json;
+        } catch (error) {
+            if (errorNode) { errorNode.classList.remove('is-pending'); errorNode.textContent = label('save-failed'); }
+            return null;
+        }
+    }
+
+    async function submitForm(formEl) {
+        const box = dialog();
+        const isEntry = formEl.matches('[data-job-catalog-entry-form]');
+        const url = isEntry ? box.dataset.entryUrl : box.dataset.collectionUrl;
+        const json = await send(url, new FormData(formEl), formEl.querySelector('[data-job-catalog-form-error]'));
+        if (!json) return;
+        if (isEntry) await reload('c' + formEl.elements.collection_id.value, json.id);
+        else await reload(json.code);
+    }
+
+    function setExpanded(on, remember = true) {
+        const box = dialog();
+        if (!box) return;
+        box.classList.toggle('is-expanded', on);
+        box.querySelector('[data-job-catalog-expand]')?.setAttribute('aria-pressed', on ? 'true' : 'false');
+        if (remember) store(EXPANDED, on ? '1' : null);
+    }
+
     async function open(trigger) {
         const box = dialog();
         if (!box) return;
         opener = trigger || document.activeElement;
+        setExpanded(stored(EXPANDED) === '1', false);
         if (!box.open) box.showModal();
         box.querySelector('[data-job-catalog-search]').focus();
         try {
@@ -512,6 +747,7 @@
     }
 
     function rowLabel(key) {
+        if (key === 'name') return label('name');
         return dialog()?.querySelector('[data-jc-row="' + key + '"] dt')?.textContent.trim() || key;
     }
 
@@ -548,12 +784,23 @@
         return true;
     }
 
+    /** Nom copié : langue demandée, sinon celle choisie dans la fiche, sinon le nom officiel. */
+    function nameIn(lang) {
+        const names = current.names || {};
+        const chosen = lang || dialog()?.querySelector('[data-job-catalog-name-lang]')?.value || '';
+        return names[chosen] || current.official_name || current.name || '';
+    }
+
+    function valueOf(key, lang) {
+        return key === 'name' ? nameIn(lang) : String(current[key] || '');
+    }
+
     function plain(key) {
         return key === 'code' ? field('code') : field(key);
     }
 
     /** Copie d'un champ ; confirmation si le champ de la fiche est déjà rempli autrement. */
-    function copyOne(key, confirmed = false) {
+    function copyOne(key, confirmed = false, lang = '') {
         if (!current) return false;
         if (key === 'icon') return current.icon ? setIcon(current.icon) : false;
         if (key === 'tags') return mergeTags(current.tags || []);
@@ -566,7 +813,7 @@
             return true;
         }
         const target = plain(key);
-        const value = String(current[key] || '');
+        const value = valueOf(key, lang);
         if (!target || value === '') return false;
         if (!confirmed && target.value.trim() !== '' && target.value.trim() !== value && !window.confirm('Remplacer le champ « ' + rowLabel(key) + ' » déjà rempli ?')) return null;
         if (key === 'code') target.closest('details')?.setAttribute('open', '');
@@ -574,16 +821,59 @@
         return true;
     }
 
-    function copyAll() {
-        if (!current) return;
-        const keys = ['name', 'abbreviation', 'description', 'code'].filter(key => current[key] && plain(key));
-        const replaced = keys.filter(key => {
+    /** Ce que « Copier tout » écrit dans la fiche : champs, valeur résumée, champ déjà rempli remplacé ou non. */
+    function copyPlan() {
+        const keys = ['name', 'abbreviation', 'description', 'code'].filter(key => valueOf(key) && plain(key));
+        const plan = keys.map(key => {
             const target = plain(key);
-            return target.value.trim() !== '' && target.value.trim() !== String(current[key]);
+            return {key, value: valueOf(key), replaced: target.value.trim() !== '' && target.value.trim() !== valueOf(key)};
         });
-        const checkedIcon = form()?.querySelector('input[name=icon]:checked');
-        if (current.icon && checkedIcon && checkedIcon.value !== '' && checkedIcon.value !== current.icon) replaced.push('icon');
-        if (replaced.length && !window.confirm('Remplacer les champs déjà remplis : ' + replaced.map(rowLabel).join(', ') + ' ?')) return;
+        if (current.icon && form()?.querySelector('input[name=icon]')) {
+            const checkedIcon = form().querySelector('input[name=icon]:checked');
+            plan.push({key: 'icon', value: iconPreview(current.icon)?.label || current.icon, replaced: !!(checkedIcon && checkedIcon.value !== '' && checkedIcon.value !== current.icon)});
+        }
+        if ((current.tags || []).length && field('tags')) plan.push({key: 'tags', value: current.tags.join(', '), replaced: false});
+        return plan;
+    }
+
+    /** Fenêtre unique avant « Copier tout » (sauf « Ne plus afficher ») ; résout true pour copier. */
+    function confirmCopy(plan) {
+        const box = dialog();
+        const modal = box?.querySelector('[data-job-catalog-confirm]');
+        if (!modal || stored(SKIP_CONFIRM) === '1') return Promise.resolve(true);
+        const caption = key => modal.querySelector('[data-job-catalog-confirm-label="' + key + '"]')?.textContent.trim() || key;
+        const list = modal.querySelector('[data-job-catalog-confirm-fields]');
+        list.textContent = '';
+        plan.forEach(item => {
+            const row = el('div', item.replaced ? 'is-replaced' : '');
+            const term = el('dt', '', caption(item.key));
+            if (item.replaced) term.appendChild(el('span', 'jobcat-confirm__badge', caption('replaced')));
+            const text = String(item.value);
+            row.append(term, el('dd', '', text.length > 160 ? text.slice(0, 157) + '…' : text));
+            list.appendChild(row);
+        });
+        modal.querySelector('[data-job-catalog-confirm-author]').hidden = !current.author;
+        modal.querySelector('[data-job-catalog-confirm-author-name]').textContent = current.author || '';
+        modal.querySelector('[data-job-catalog-confirm-reference]').hidden = !!current.community;
+        const skip = modal.querySelector('[data-job-catalog-confirm-skip]');
+        skip.checked = false;
+        modal.returnValue = '';
+        return new Promise(resolve => {
+            modal.addEventListener('close', () => {
+                const ok = modal.returnValue === 'copy';
+                if (ok && skip.checked) store(SKIP_CONFIRM, '1');
+                resolve(ok);
+            }, {once: true});
+            modal.showModal();
+            modal.querySelector('[data-job-catalog-confirm-ok]').focus();
+        });
+    }
+
+    async function copyAll() {
+        if (!current) return;
+        const plan = copyPlan();
+        if (!plan.length || !(await confirmCopy(plan))) return;
+        const keys = plan.map(item => item.key).filter(key => key !== 'icon' && key !== 'tags');
         keys.forEach(key => copyOne(key, true));
         if (current.icon) setIcon(current.icon);
         if ((current.tags || []).length) mergeTags(current.tags);
@@ -605,7 +895,29 @@
         if (event.target === box) { close(); return; }
         if (event.target.closest('[data-job-catalog-close]')) { close(); return; }
         if (event.target.closest('[data-job-catalog-back]')) { back(); return; }
+        if (event.target.closest('[data-job-catalog-expand]')) { setExpanded(!box.classList.contains('is-expanded')); return; }
         if (!data) return;
+        if (event.target.closest('[data-job-catalog-new-collection]')) { openCollectionForm(null); return; }
+        if (event.target.closest('[data-job-catalog-edit-collection]')) { openCollectionForm(catalogOf(state.country)); return; }
+        if (event.target.closest('[data-job-catalog-new-entry]')) { const c = catalogOf(state.country); if (c?.editable) openEntryForm(c, null); return; }
+        if (event.target.closest('[data-job-catalog-edit-entry]')) { const c = current ? catalogOf(current.country) : null; if (c?.editable) openEntryForm(c, current); return; }
+        if (event.target.closest('[data-job-catalog-manage-cancel]')) { closeManage(); back(); return; }
+        if (event.target.closest('[data-job-catalog-delete-collection]')) {
+            const formEl = event.target.closest('form');
+            if (!window.confirm(label('confirm-delete-collection'))) return;
+            const body = new FormData();
+            body.append('collection_id', formEl.elements.collection_id.value);
+            send(box.dataset.collectionUrl + '/supprimer', body, formEl.querySelector('[data-job-catalog-form-error]')).then(json => { if (json) reload(''); });
+            return;
+        }
+        if (event.target.closest('[data-job-catalog-delete-entry]')) {
+            if (!current?.editable || !window.confirm(label('confirm-delete-entry'))) return;
+            const body = new FormData();
+            body.append('entry_id', String(current.entry_id));
+            const code = current.country;
+            send(box.dataset.entryUrl + '/supprimer', body, null).then(json => { if (json) { current = null; box.querySelector('[data-job-catalog-detail]').hidden = true; reload(code); } });
+            return;
+        }
         const country = event.target.closest('[data-job-catalog-country]');
         if (country) { setCountry(country.dataset.jobCatalogCountry); country.focus(); return; }
         const chip = event.target.closest('[data-job-catalog-unset]');
@@ -634,10 +946,18 @@
         if (copy) {
             const key = copy.dataset.jobCatalogCopy;
             if (key === 'all') { copyAll(); return; }
-            const done = copyOne(key);
+            const done = copyOne(key, false, copy.dataset.lang || '');
             if (done === true) announce('Copié : ' + rowLabel(key));
             else if (done === false) announce('Champ indisponible dans cette fiche : ' + rowLabel(key));
         }
+    });
+
+    document.addEventListener('submit', event => {
+        const formEl = event.target.closest('[data-job-catalog-collection-form], [data-job-catalog-entry-form]');
+        if (!formEl) return;
+        event.preventDefault();
+        if (!formEl.elements.name.value.trim()) { formEl.elements.name.focus(); return; }
+        submitForm(formEl);
     });
 
     document.addEventListener('input', event => {
@@ -673,6 +993,8 @@
     document.addEventListener('keydown', event => {
         const box = dialog();
         if (!box?.open || !box.contains(event.target)) return;
+        if (event.target.closest('[data-job-catalog-confirm]')) return;
+        if (event.key === 'Enter' && event.altKey) { event.preventDefault(); setExpanded(!box.classList.contains('is-expanded')); return; }
         if (event.key === 'Tab') {
             const list = focusables(box);
             if (!list.length) return;

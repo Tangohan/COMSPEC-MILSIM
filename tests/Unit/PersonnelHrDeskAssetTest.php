@@ -24,13 +24,15 @@ final class PersonnelHrDeskAssetTest extends TestCase
         $pdfService = (string) file_get_contents($root . '/app/Support/PersonnelHrPdfService.php');
 
         self::assertStringContainsString("'rh_roleplay', 'Roleplay'", $shell);
-        self::assertStringContainsString("'rh_integration', 'Intégration'", $shell);
+        self::assertStringContainsString("'rh_alerts', 'Alertes', 'a-traiter?onglet=alertes'", $shell);
         self::assertStringContainsString("'rh_settings', 'Réglages'", $shell);
 
         self::assertStringContainsString('effectifs/documents-rh/etablir', $routes);
         self::assertStringContainsString('effectifs/chaine', $routes);
-        self::assertStringContainsString('effectifs/roleplay', $routes);
-        self::assertStringContainsString('effectifs/integration', $routes);
+        $tabs = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/BackOfficeTabs.php');
+        $legacy = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/BackOfficeLegacyRedirects.php');
+        self::assertStringContainsString("'legacy' => 'back-office/ressources/effectifs/roleplay'", $tabs);
+        self::assertStringContainsString("'back-office/ressources/effectifs/integration' => 'back-office/integration-membres'", $legacy);
         self::assertStringContainsString('effectifs/reglages', $routes);
 
         self::assertStringContainsString('.bo-eff-workspace .eff-rh-form', $css);

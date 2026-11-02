@@ -149,7 +149,7 @@ final class ChangelogCatalog
                 'before_after' => null,
                 'links' => [
                     ['label_key' => 'site.cl_link_hub', 'href' => 'back-office/atak'],
-                    ['label_key' => 'site.cl_link_planning', 'href' => 'back-office/planification'],
+                    ['label_key' => 'site.cl_link_planning', 'href' => 'back-office/missions?onglet=planification'],
                 ],
                 'availability_key' => 'site.cl_avail_atak_sse',
             ],
@@ -190,7 +190,7 @@ final class ChangelogCatalog
                 'video' => null,
                 'before_after' => null,
                 'links' => [
-                    ['label_key' => 'site.cl_link_planning', 'href' => 'back-office/planification'],
+                    ['label_key' => 'site.cl_link_planning', 'href' => 'back-office/missions?onglet=planification'],
                     ['label_key' => 'site.cl_link_about', 'href' => 'a-propos'],
                 ],
                 'availability_key' => 'site.cl_avail_all',

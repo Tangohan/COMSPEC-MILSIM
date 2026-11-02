@@ -47,7 +47,7 @@ final class RhCareerInboxAssetTest extends TestCase
 
         self::assertStringContainsString("['rh_inbox', 'À traiter', 'a-traiter'", $shell);
         self::assertStringContainsString("effectifs_workspace_url('a-traiter')", $shell);
-        self::assertStringContainsString("'/back-office/ressources/effectifs/a-traiter'", $routes);
+        self::assertStringContainsString("'back-office/ressources/effectifs/a-traiter' => [", (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/BackOfficeTabs.php'));
         self::assertStringContainsString('function inbox', $controller);
 
         self::assertStringContainsString("'promotion' => 'Promotion'", $carriere);

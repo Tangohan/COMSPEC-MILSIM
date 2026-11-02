@@ -79,7 +79,7 @@ $fmtSize = static fn (int $b): string => $b >= 1048576 ? number_format($b / 1048
     <label class="bo-wsm-field"><span>Notes (facultatif)</span><textarea name="changelog_notes" rows="3" maxlength="4000" placeholder="Ex. Nouvelle application Météo, correctifs de la liaison radio."></textarea></label>
     <div class="bo-wsm-row bo-wsm-row--end">
       <?php if ($discord): ?><label class="bo-wsm-check"><input type="checkbox" name="notify_discord" value="1" checked> Relayer sur Discord</label>
-      <?php else: ?><span class="bo-wsm-muted">Discord non relié : <a href="<?= $h($organizationSettingsUrl ?? url('back-office/organisation/parametres')) ?>">paramètres de l’organisation</a></span><?php endif; ?>
+      <?php else: ?><span class="bo-wsm-muted">Discord non relié : <a href="<?= $h($organizationSettingsUrl ?? url('back-office/community')) ?>">paramètres de l’organisation</a></span><?php endif; ?>
       <button type="submit" class="ath-btn ath-btn--solid">Publier l’annonce</button>
     </div>
   </form>

@@ -267,7 +267,7 @@ final class PortalSearchService
             // Espace personnel du back-office (carnet de vol) : réservé au personnel qui y a accès.
             ['title' => 'Mon carnet de vol', 'subtitle' => 'Vols, heures et contreseing instructeur', 'href' => url('back-office/ma-situation/carnet-de-vol'), 'keywords' => 'carnet vol logbook pilote heures de vol', 'ok' => $staffBo],
             ['title' => 'Heures de jeu (OVL)', 'subtitle' => 'Heures Overwatch par joueur', 'href' => url('back-office/atak/heures'), 'keywords' => 'heures ovl overwatch temps de jeu heures de vol playtime', 'ok' => $staffBo],
-            ['title' => 'CR des joueurs (fin d’op)', 'subtitle' => 'Suivi des comptes rendus imposés', 'href' => url('back-office/atak/suivi-cr'), 'keywords' => 'cr compte rendu fin opération debrief suivi', 'ok' => $staffBo],
+            ['title' => 'CR des joueurs (fin d’op)', 'subtitle' => 'Suivi des comptes rendus imposés', 'href' => url('back-office/atak/comptes-rendus?onglet=suivi'), 'keywords' => 'cr compte rendu fin opération debrief suivi', 'ok' => $staffBo],
             ['title' => 'Comptes rendus', 'subtitle' => 'Après-action (AAR)', 'href' => url('back-office/atak/comptes-rendus'), 'keywords' => 'cr compte rendu aar après-action debriefing', 'ok' => $staffBo],
         ];
         // Mêmes règles que les menus : droits explicites, type de communauté et règles de navigation.

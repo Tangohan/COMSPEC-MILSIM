@@ -76,7 +76,7 @@ final class AdminDoctrineController
         }
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée.');
-            return Response::redirect(url('back-office/documents/nomenclature'));
+            return Response::redirect(url('back-office/doctrine?onglet=nomenclature'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $code = trim((string) $request->input('code', ''));
@@ -84,12 +84,12 @@ final class AdminDoctrineController
         $prefix = trim((string) $request->input('doc_prefix', ''));
         if ($code === '' || $label === '' || $prefix === '') {
             Session::flash('error', 'Code, libellé et abréviation requis.');
-            return Response::redirect(url('back-office/documents/nomenclature'));
+            return Response::redirect(url('back-office/doctrine?onglet=nomenclature'));
         }
         $this->domainRepository->create($tenantId, $code, $label, $prefix, trim((string) $request->input('color', '')) ?: null, 50);
         Session::flash('success', 'Entrée de nomenclature ajoutée.');
 
-        return Response::redirect(url('back-office/documents/nomenclature'));
+        return Response::redirect(url('back-office/doctrine?onglet=nomenclature'));
     }
 
     public function types(Request $request, array $params = []): Response
@@ -117,7 +117,7 @@ final class AdminDoctrineController
         }
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée.');
-            return Response::redirect(url('back-office/documents/types'));
+            return Response::redirect(url('back-office/doctrine?onglet=types'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) $request->input('id', 0);
@@ -125,7 +125,7 @@ final class AdminDoctrineController
         $prefix = strtoupper(trim((string) $request->input('code_prefix', '')));
         if ($label === '' || $prefix === '') {
             Session::flash('error', 'Le nom et l’abréviation de numérotation sont obligatoires.');
-            return Response::redirect(url('back-office/documents/types'));
+            return Response::redirect(url('back-office/doctrine?onglet=types'));
         }
 
         $payload = [
@@ -153,7 +153,7 @@ final class AdminDoctrineController
             Session::flash('success', 'Type de document ajouté.');
         }
 
-        return Response::redirect(url('back-office/documents/types'));
+        return Response::redirect(url('back-office/doctrine?onglet=types'));
     }
 
     public function publishForm(Request $request, array $params = []): Response
@@ -305,7 +305,7 @@ final class AdminDoctrineController
         }
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée.');
-            return Response::redirect(url('back-office/documents/compliance'));
+            return Response::redirect(url('back-office/doctrine?onglet=conformite'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) Session::get('user_id');
@@ -472,7 +472,7 @@ final class AdminDoctrineController
         }
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée.');
-            return Response::redirect(url('back-office/documents/compliance'));
+            return Response::redirect(url('back-office/doctrine?onglet=conformite'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) Session::get('user_id');
@@ -485,7 +485,7 @@ final class AdminDoctrineController
             Session::flash('success', (int) ($result['count'] ?? 0) . ' rappel(s) envoyé(s).');
         }
 
-        return Response::redirect(url('back-office/documents/compliance') . '?document_id=' . $documentId);
+        return Response::redirect(url('back-office/doctrine?onglet=conformite') . '&document_id=' . $documentId);
     }
 
     /** @return list<array{audience_type: string, audience_value: string, include_children: int}> */

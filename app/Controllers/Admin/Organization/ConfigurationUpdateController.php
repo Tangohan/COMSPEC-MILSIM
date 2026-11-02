@@ -90,7 +90,7 @@ final class ConfigurationUpdateController
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Merci de réessayer.');
 
-            return Response::redirect(url('back-office/nouveautes-organisation'));
+            return Response::redirect(url('back-office/mise-a-niveau?onglet=nouveautes'));
         }
 
         $tenantId = (int) Session::get('tenant_id');

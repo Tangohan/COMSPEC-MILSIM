@@ -81,7 +81,7 @@ require base_path('views/partials/alert_banners.php');
                 <span>Carte ATAK, Overwatch, équipes de feu, matériel et relais, avec une gestion allégée des membres. Effectifs, recrutement et formations restent hors périmètre.</span>
                 <a href="<?= htmlspecialchars(url('documentation/profils'), ENT_QUOTES, 'UTF-8') ?>">Comprendre les profils</a>
                 <?php if ($canAdjustTenantType): ?>
-                <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '?onglet=profil#profil', ENT_QUOTES, 'UTF-8') ?>">
+                <a href="<?= htmlspecialchars(url('back-office/community') . '?onglet=profil#profil', ENT_QUOTES, 'UTF-8') ?>">
                     Changer de profil
                 </a>
                 <?php endif; ?>
@@ -169,7 +169,7 @@ require base_path('views/partials/alert_banners.php');
             <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Première liaison</a>
             <a href="<?= htmlspecialchars(url('tacmap'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">TACMAP</a>
             <?php if ($canAdjustTenantType): ?>
-            <a href="<?= htmlspecialchars(url('back-office/atak/fire-teams'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Équipes de feu</a>
+            <a href="<?= htmlspecialchars(url('back-office/atak/escouades?onglet=fire-teams'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Équipes de feu</a>
             <a href="<?= htmlspecialchars(url('back-office/atak/heures'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Heures de jeu</a>
             <a href="<?= htmlspecialchars(url('back-office/ressources/atak-config'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Réglages carte</a>
             <a href="<?= htmlspecialchars(url('back-office/atak/parc-atak'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Parc ATAK</a>
