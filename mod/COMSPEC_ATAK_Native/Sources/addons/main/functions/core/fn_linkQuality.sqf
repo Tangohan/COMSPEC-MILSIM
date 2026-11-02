@@ -123,12 +123,21 @@ private _eye = eyePos player;
 // Intérieur : toit au-dessus de la tête, étages empilés, murs autour, sous-sol.
 // Près d'une fenêtre ou d'une porte le signal passe encore ; au cœur du bâtiment ou en sous-sol, plus rien.
 if (_unit isEqualTo player) then {
-    private _roofs = count (lineIntersectsSurfaces [_eye, _eye vectorAdd [0, 0, 30], player, objNull, true, 4, "GEOM", "NONE"]);
-    if (_roofs > 0) then {
-        private _walls = 0;
-        for "_a" from 0 to 315 step 45 do {
-            if ((count (lineIntersectsSurfaces [_eye, _eye vectorAdd [8 * sin _a, 8 * cos _a, 0], player, objNull, true, 1, "GEOM", "NONE"])) > 0) then { _walls = _walls + 1; };
+    // Toit et murs : rayons partagés avec fn_gpsFix / fn_linkQuality, relancés seulement après 3 m de déplacement (ou 10 s).
+    private _ind = missionNamespace getVariable ["COMSPEC_ATAK_IndoorRays", []];
+    if ((count _ind) < 4 || {((_ind select 0) distance _eye) >= 3} || {diag_tickTime - (_ind select 3) > 10}) then {
+        private _r = count (lineIntersectsSurfaces [_eye, _eye vectorAdd [0, 0, 30], player, objNull, true, 4, "GEOM", "NONE"]);
+        private _w = 0;
+        if (_r > 0) then {
+            for "_a" from 0 to 315 step 45 do {
+                if ((count (lineIntersectsSurfaces [_eye, _eye vectorAdd [8 * sin _a, 8 * cos _a, 0], player, objNull, true, 1, "GEOM", "NONE"])) > 0) then { _w = _w + 1; };
+            };
         };
+        _ind = [_eye, _r, _w, diag_tickTime];
+        missionNamespace setVariable ["COMSPEC_ATAK_IndoorRays", _ind];
+    };
+    _ind params ["", "_roofs", "_walls"];
+    if (_roofs > 0) then {
         private _under = (_eye select 2) < (getTerrainHeightASL _eye) - 0.5;
         switch (true) do {
             case (_under): { _mul = 0; _f pushBack ["En sous-sol", "aucun signal"]; };

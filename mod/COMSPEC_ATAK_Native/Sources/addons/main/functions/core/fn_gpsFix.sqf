@@ -59,13 +59,22 @@ private _res = call {
     private _inside = false;
     // Bâtiment : toit au-dessus, murs autour (mêmes rayons que la liaison radio, fn_linkQuality), sous-sol.
     if (_veh isEqualTo player) then {
-        private _roofs = count (lineIntersectsSurfaces [_eye, _eye vectorAdd [0, 0, 30], player, objNull, true, 4, "GEOM", "NONE"]);
+        // Toit et murs : rayons partagés avec fn_gpsFix / fn_linkQuality, relancés seulement après 3 m de déplacement (ou 10 s).
+        private _ind = missionNamespace getVariable ["COMSPEC_ATAK_IndoorRays", []];
+        if ((count _ind) < 4 || {((_ind select 0) distance _eye) >= 3} || {diag_tickTime - (_ind select 3) > 10}) then {
+            private _r = count (lineIntersectsSurfaces [_eye, _eye vectorAdd [0, 0, 30], player, objNull, true, 4, "GEOM", "NONE"]);
+            private _w = 0;
+            if (_r > 0) then {
+                for "_a" from 0 to 315 step 45 do {
+                    if ((count (lineIntersectsSurfaces [_eye, _eye vectorAdd [8 * sin _a, 8 * cos _a, 0], player, objNull, true, 1, "GEOM", "NONE"])) > 0) then { _w = _w + 1; };
+                };
+            };
+            _ind = [_eye, _r, _w, diag_tickTime];
+            missionNamespace setVariable ["COMSPEC_ATAK_IndoorRays", _ind];
+        };
+        _ind params ["", "_roofs", "_walls"];
         if (_roofs > 0) then {
             _inside = true;
-            private _walls = 0;
-            for "_a" from 0 to 315 step 45 do {
-                if ((count (lineIntersectsSurfaces [_eye, _eye vectorAdd [8 * sin _a, 8 * cos _a, 0], player, objNull, true, 1, "GEOM", "NONE"])) > 0) then { _walls = _walls + 1; };
-            };
             switch (true) do {
                 case ((_eye select 2) < (getTerrainHeightASL _eye) - 0.5): { _sats = 0; _why pushBack "En sous-sol"; };
                 // Bâtiment : le fix tient (un téléphone récent garde le GPS près des fenêtres, aidé du Wi-Fi), erreur de
