@@ -79,7 +79,7 @@ $lmsNav = ['id'=>'academy','tone'=>'emerald','kicker'=>'Academy','title'=>$t('br
 <h2><?= $h($t('learner')) ?> #<?= (int)$learner['user_id'] ?> · <?= $h($local($item['snapshot']['title'])) ?></h2><h3><?= $h($local($reviewChapter['title'])) ?></h3>
 <?php require __DIR__.'/course_review.php'; ?>
 <h3><?= $h($t('submitted_debrief')) ?></h3><p class="lesson-text"><?= nl2br($h($item['debriefs'][$item['chapter']]??'')) ?></p>
-<?php if(!empty($reviewChapter['validation']['brief'])): ?><p><?= nl2br($h($local($reviewChapter['validation']['brief']))) ?></p><?php endif ?>
+<?php if(!empty($reviewChapter['validation']['brief'])): ?><div class="rt"><?= $rich($reviewChapter['validation']['brief']) ?></div><?php endif ?>
 <?php if(!empty($reviewChapter['validation']['criteria'])): ?><h3><?= $h($t('validation_criteria')) ?></h3><ul class="academy-rubric"><?php foreach($reviewChapter['validation']['criteria'] as $criterion): ?><li><?= $h($local($criterion)) ?></li><?php endforeach ?></ul><?php endif ?>
 <?php if((int)$learner['user_id']===(int)\App\Core\Session::get('user_id')): ?><p class="hint"><?= $h($t('self_validation')) ?></p>
 <?php else: $formStart('validate',$learner['course_key']); ?><input type="hidden" name="learner" value="<?= (int)$learner['user_id'] ?>"><input type="hidden" name="expected_chapter" value="<?= (int)$item['chapter'] ?>"><label for="comment-<?= $pendingCount ?>"><?= $h($t('comment')) ?></label><textarea id="comment-<?= $pendingCount ?>" name="comment" rows="5" minlength="10" maxlength="5000" required></textarea><button class="button"><?= $h($t('validate')) ?> ✓</button></form><?php endif ?></section>

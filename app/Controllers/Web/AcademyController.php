@@ -23,7 +23,9 @@ use App\Services\Academy\AcademyAccess;
 use App\Services\Academy\AcademyLmsBridge;
 use App\Services\Academy\AcademyCurriculum;
 use App\Services\Academy\AcademyBuiltInCourses;
+use App\Services\Academy\AcademyRichText;
 use App\Services\Academy\AcademyStudio;
+use App\Services\Training\TrainingCourseMediaUploadService;
 use App\Services\Academy\GoogleSlidesImporter;
 use App\Support\TrainingLmsStaffAccess;
 
@@ -229,7 +231,18 @@ final class AcademyController
                 $returnSpace = 'instructor';
             } else {
                 $input = ['answer' => $request->input('answer'), 'answers' => $request->input('answers'), 'token' => $request->input('token'), 'reflection' => $request->input('reflection'), 'expected_stage' => $request->input('expected_stage'), 'expected_chapter' => $request->input('expected_chapter')];
-                $repository->mutate($tenantId, $userId, $key, static fn (array $state): array => AcademyCurriculum::transition($state, $state['snapshot'], $action, $input, time()));
+                $resultStep = '';
+                $repository->mutate($tenantId, $userId, $key, static function (array $state) use ($action, $input, &$resultStep): array {
+                    $next = AcademyCurriculum::transition($state, $state['snapshot'], $action, $input, time());
+                    // Bonne réponse ou évaluation remise : le retour s'affiche sur l'étape validée, pas en tête de la suivante.
+                    if (($action === 'practice' && ($next['feedback'] ?? '') === 'correct') || $action === 'exam_submit') {
+                        $resultStep = (int) $state['chapter'] . '.' . (int) $state['stage'];
+                    }
+                    return $next;
+                });
+                if (in_array($action, ['practice', 'exam_submit'], true)) {
+                    return Response::redirect($this->classroomUrl($key, $resultStep) . '#acr-result', 303);
+                }
             }
             Session::set('academy_notice', 'saved');
             return Response::redirect(url('academy/' . $returnSpace . '?course=' . rawurlencode($key)), 303);
@@ -358,6 +371,7 @@ final class AcademyController
                 'learnerCount' => $course !== null && empty($course['built_in']) ? $repository->learnerCount($tenantId, $key) : 0,
                 'lifecycleReady' => $repository->lifecycleReady(), 'sharing' => $sharing, 'sharingReady' => $shares !== null,
                 'viewStep' => $request->queryString('step'),
+                'mediaImages' => $course !== null && $role !== 'viewer' ? self::academyImages($tenantId) : [],
                 'editLang' => $request->queryString('edit') === 'en' ? 'en' : 'fr',
                 'openShare' => $request->queryString('share') === '1',
                 'studioView' => $request->queryString('vue'),
@@ -368,17 +382,59 @@ final class AcademyController
         }
     }
 
+    /**
+     * Médiathèque du Studio : images déjà envoyées par la communauté pour ses cours (les plus récentes d'abord).
+     *
+     * @return list<array{path:string,url:string}>
+     */
+    private static function academyImages(int $tenantId): array
+    {
+        $dir = base_path('public/uploads/training-course-media/' . $tenantId);
+        $files = is_dir($dir) ? (glob($dir . '/academy-*') ?: []) : [];
+        usort($files, static fn (string $a, string $b): int => (int) @filemtime($b) <=> (int) @filemtime($a));
+        $images = [];
+        foreach (array_slice($files, 0, 60) as $file) {
+            $path = 'uploads/training-course-media/' . $tenantId . '/' . basename($file);
+            if (AcademyRichText::imageAllowed($path)) {
+                $images[] = ['path' => $path, 'url' => url($path)];
+            }
+        }
+        return $images;
+    }
+
     private function studioAction(Request $request, AcademyRepository $repository, string $action, string $key, int $tenantId, int $userId): Response
     {
         $staff = TrainingLmsStaffAccess::allows(Gate::getInstance());
         // Un éditeur invité modifie le brouillon ; publier, versionner, archiver, supprimer et partager restent à l'encadrement.
-        if (!in_array($action, ['studio_save', 'studio_import'], true) && !$staff) {
+        if (!in_array($action, ['studio_save', 'studio_import', 'studio_preview', 'studio_image'], true) && !$staff) {
             return $this->error('forbidden', 403);
         }
         if (!$staff && $this->courseRole($tenantId, $key, false) !== 'editor') {
             return $this->error('forbidden', 403);
         }
         $step = $request->inputString('step');
+        if ($action === 'studio_preview') {
+            // Aperçu en direct de l'éditeur : même rendu que la salle de cours, rien n'est enregistré.
+            $text = $request->input('text', '');
+            if (!is_string($text) || strlen($text) > 20000) {
+                return Response::json(['error' => 'invalid_content'], 422)->header('Cache-Control', 'private, no-store');
+            }
+            $copy = require base_path('lang/' . (locale() === 'en' ? 'en' : 'fr') . '/academy.php');
+            return Response::json(['html' => AcademyRichText::render($text, $copy)])->header('Cache-Control', 'private, no-store');
+        }
+        if ($action === 'studio_image') {
+            // Image d'un texte de cours : stockage public de la communauté (contrôle d'extension, de type réel et de taille).
+            try {
+                $path = Container::get(TrainingCourseMediaUploadService::class)->storeUpload($tenantId, is_array($_FILES['image'] ?? null) ? $_FILES['image'] : null, 'academy');
+            } catch (\InvalidArgumentException | \RuntimeException) {
+                $path = null;
+            }
+            if ($path === null || !AcademyRichText::imageAllowed($path)) {
+                return Response::json(['error' => 'rte_upload_failed'], 422)->header('Cache-Control', 'private, no-store');
+            }
+            $this->audit('academy.course.image_uploaded', $tenantId, $key, ['path' => $path]);
+            return Response::json(['path' => $path, 'url' => url($path)])->header('Cache-Control', 'private, no-store');
+        }
         if ($action === 'studio_new') {
             // Fenêtre « Nouveau cours » : titre, présentation et couverture en français, le reste se rédige dans l'éditeur.
             $blank = AcademyStudio::blankCourse();

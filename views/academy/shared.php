@@ -33,8 +33,8 @@ $mediaUrl = static fn (string $file): string => url('academy/partage/' . rawurle
 <figcaption><?= $h($local($resource['title'])) ?> · <?= (int) ($resource['pages'] ?? 0) ?> <?= $h($t('slides_count')) ?></figcaption>
 </figure>
 <?php endforeach ?>
-<section><h3><?= $h($t('theory')) ?></h3><div class="lesson-text"><?= nl2br($h($local($chapter['theory']))) ?></div></section>
-<section><h3><?= $h($t('demonstration')) ?></h3><div class="lesson-text"><?= nl2br($h($local($chapter['demonstration']))) ?></div></section>
+<section><h3><?= $h($t('theory')) ?></h3><div class="lesson-text rt"><?= $rich($chapter['theory']) ?></div></section>
+<section><h3><?= $h($t('demonstration')) ?></h3><div class="lesson-text rt"><?= $rich($chapter['demonstration']) ?></div></section>
 </article>
 <?php endforeach ?>
 </main>

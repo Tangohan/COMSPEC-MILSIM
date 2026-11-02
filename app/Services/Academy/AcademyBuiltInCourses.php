@@ -9,12 +9,13 @@ namespace App\Services\Academy;
  *
  * JTAC 2.0 follows the community's in-game CAS procedure in five phases (initial contact, situation update,
  * game plan, 9-line CAS brief, terminal attack and BDA) plus a brevity chapter. Learners keep the snapshot
- * they enrolled with; database/steps/3280_academy_jtac_v2_refresh.php only refreshes untouched enrolments.
+ * they enrolled with; database/steps/3280_academy_jtac_v2_refresh.php and 3480_academy_jtac_rich_text_refresh.php
+ * (2.1.0 : text formatted with AcademyRichText, same content) only refresh untouched enrolments.
  */
 final class AcademyBuiltInCourses
 {
     public const JTAC_KEY = 'jtac-licence-ath-academy';
-    public const JTAC_VERSION = '2.0.1';
+    public const JTAC_VERSION = '2.1.0';
 
     /** @return array<string, array<string, mixed>> */
     public static function all(): array
@@ -122,110 +123,158 @@ final class AcademyBuiltInCourses
     private static function initialContact(): array
     {
         $theoryFr = <<<'FR'
-OBJECTIF DE LA FORMATION
+## Objectif de la formation
 Ce cours forme au rôle de JTAC dans nos missions Arma 3 : le joueur au sol qui coordonne un appui aérien rapproché (CAS) piloté par d’autres joueurs. Il reprend la procédure de la communauté, en cinq phases : contact initial, situation update, game plan, CAS brief (9-line), puis attaque terminale et BDA. Un dernier chapitre rassemble le vocabulaire brevity. Les termes OTAN restent en anglais, comme à la radio en jeu. Il s’agit d’une formation de jeu : la licence ATH-ACADEMY atteste un parcours interne et n’a aucune valeur de qualification réelle, militaire ou aéronautique.
 
-01 — Le rôle du contact initial
+## 01 — Le rôle du contact initial
 Le contact initial est le premier échange radio entre le JTAC et la patrouille aérienne qui arrive sur zone. Il sert à prendre en charge l’appareil, à lui signaler les dangers et à connaître ses moyens. Aucune cible n’est encore désignée : tant que ce contact n’est pas terminé, aucune attaque ne se prépare.
 
-02 — Prise en charge de la patrouille
+## 02 — Prise en charge de la patrouille
 Le JTAC répond à l’appel de la patrouille avec son propre indicatif et annonce qu’il la prend en charge. À partir de ce moment, la patrouille travaille pour lui sur cette fréquence. Exemple : « Voodoo 1, ici Bastion, je vous prends en compte. » Les deux indicatifs sont toujours prononcés pour éviter qu’un autre joueur réponde à la place du bon appareil.
 
-03 — Menaces immédiates
+## 03 — Menaces immédiates
 Le JTAC annonce ensuite ce qui peut mettre l’appareil en danger : défense sol-air observée ou signalée, tirs vers le ciel, zone à éviter. Une menace annoncée tôt laisse au pilote le temps d’adapter son altitude et son approche. Si aucune menace n’est connue, le JTAC le dit aussi, en précisant que c’est ce qu’il sait à cet instant.
 
-04 — Trafic aérien
+## 04 — Trafic aérien
 Le JTAC signale les autres appareils présents ou attendus dans le secteur : hélicoptères, drones, autre patrouille. Sur un serveur, plusieurs pilotes partagent le même ciel ; cette information évite les collisions et les confusions d’indicatifs.
 
-05 — Check-in de la patrouille
+## 05 — Check-in de la patrouille
 La patrouille présente ses moyens :
-- Armement : types et quantités de munitions emportées. Si l’armement est guidé laser, le code laser est donné et confirmé : la munition ne suit que le spot émis sur son propre code.
-- Senseurs : ce que l’appareil peut voir ou marquer, notamment ses pods de désignation et de visée.
-- Rover : retour de la vidéo de l’appareil vers le JTAC, lorsque la mission le permet.
+- **Armement** : types et quantités de munitions emportées. Si l’armement est guidé laser, le code laser est donné et confirmé : la munition ne suit que le spot émis sur son propre code.
+- **Senseurs** : ce que l’appareil peut voir ou marquer, notamment ses pods de désignation et de visée.
+- **Rover** : retour de la vidéo de l’appareil vers le JTAC, lorsque la mission le permet.
 Le JTAC note ces informations : elles conditionnent le type de contrôle, la méthode d’attaque et la munition qu’il choisira dans le game plan.
 
-06 — Le code abort
+## 06 — Le code abort
 Le JTAC communique un code abort : un mot convenu qui permet d’annuler l’attaque à tout moment. Lorsqu’il est prononcé, la patrouille cesse immédiatement l’action. Le pilote le répète pour montrer qu’il l’a noté. Choisissez un mot simple et distinct du vocabulaire radio habituel. Le code abort est rappelé dans les remarques du 9-line et chaque mission a son propre code.
 
-07 — Ce qu’il faut retenir
+:::astuce 07 — Ce qu’il faut retenir
 Ordre de la phase : prise en charge, menaces immédiates, trafic aérien, check-in (armement et code laser, senseurs, pods, rover), code abort. À la fin du contact initial, le JTAC sait ce que la patrouille emporte et comment arrêter une attaque. Il passe alors à la situation update.
+:::
 FR;
         $theoryEn = <<<'EN'
-TRAINING OBJECTIVE
+## Training objective
 This course trains the JTAC role in our Arma 3 missions: the player on the ground who coordinates close air support (CAS) flown by other players. It follows the community procedure in five phases: initial contact, situation update, game plan, CAS brief (9-line), then terminal attack and BDA. A final chapter gathers the brevity words. NATO terms stay in English, as on the in-game radio. This is in-game training: the ATH-ACADEMY licence records an internal pathway and has no real-world military or aviation qualification value.
 
-01 — The purpose of initial contact
+## 01 — The purpose of initial contact
 Initial contact is the first radio exchange between the JTAC and the aircraft flight arriving in the area. It is used to take control of the aircraft, warn it of dangers and learn what it carries. No target is designated yet: until this contact is complete, no attack is prepared.
 
-02 — Taking control of the flight
+## 02 — Taking control of the flight
 The JTAC answers the flight’s call with their own callsign and states that they are taking control. From that moment, the flight works for the JTAC on this frequency. Example: “Voodoo 1, this is Bastion, I have you.” Both callsigns are always spoken so that another player does not answer instead of the right aircraft.
 
-03 — Immediate threats
+## 03 — Immediate threats
 The JTAC then announces anything that could endanger the aircraft: observed or reported air defence, fire towards the sky, areas to avoid. A threat announced early gives the pilot time to adjust altitude and approach. If no threat is known, the JTAC says so too, making clear that this is what they know at this moment.
 
-04 — Air traffic
+## 04 — Air traffic
 The JTAC reports other aircraft present or expected in the area: helicopters, drones, another flight. On a server, several pilots share the same sky; this information prevents collisions and callsign confusion.
 
-05 — The flight’s check-in
+## 05 — The flight’s check-in
 The flight presents its assets:
-- Weapons: types and quantities carried. If the weapons are laser-guided, the laser code is given and confirmed: the weapon only follows a spot emitted on its own code.
-- Sensors: what the aircraft can see or mark, in particular its targeting pods.
-- Rover: the aircraft’s video feed sent to the JTAC, when the mission allows it.
+- **Weapons**: types and quantities carried. If the weapons are laser-guided, the laser code is given and confirmed: the weapon only follows a spot emitted on its own code.
+- **Sensors**: what the aircraft can see or mark, in particular its targeting pods.
+- **Rover**: the aircraft’s video feed sent to the JTAC, when the mission allows it.
 The JTAC notes this information: it determines the type of control, attack method and weapon they will choose in the game plan.
 
-06 — The abort code
+## 06 — The abort code
 The JTAC passes an abort code: an agreed word that cancels the attack at any time. When it is spoken, the flight immediately stops the action. The pilot reads it back to show it has been noted. Choose a simple word that is distinct from usual radio vocabulary. The abort code is repeated in the 9-line remarks and each mission has its own code.
 
-07 — Key points
+:::tip 07 — Key points
 Order of the phase: taking control, immediate threats, air traffic, check-in (weapons and laser code, sensors, pods, rover), abort code. At the end of initial contact, the JTAC knows what the flight carries and how to stop an attack. They then move on to the situation update.
+:::
 EN;
         $demoFr = <<<'FR'
-DÉMONSTRATION COMMENTÉE — CHECK-IN DE VOODOO 1
-Situation de jeu : une section progresse vers un village tenu par l’ennemi. Le JTAC « Bastion » attend une patrouille de deux avions, indicatif « Voodoo 1 ».
+## Démonstration commentée — check-in de Voodoo 1
+:::note Situation de jeu
+Une section progresse vers un village tenu par l’ennemi. Le JTAC « Bastion » attend une patrouille de deux avions, indicatif « Voodoo 1 ».
+:::
 
-Voodoo 1 : « Bastion, Voodoo 1, en approche de votre secteur, prêt pour check-in. »
-Bastion : « Voodoo 1, Bastion, je vous prends en compte. »
-Commentaire : prise en charge explicite, avec les deux indicatifs.
+:::transmission
+Voodoo 1 : Bastion, Voodoo 1, en approche de votre secteur, prêt pour check-in.
+Bastion : Voodoo 1, Bastion, je vous prends en compte.
+:::
+:::analyse Commentaire
+Prise en charge explicite, avec les deux indicatifs.
+:::
 
-Bastion : « Menaces : armes légères et une mitrailleuse lourde signalées au nord du village. Pas de défense sol-air observée à cette heure. »
-Commentaire : les menaces viennent en premier. L’absence de défense sol-air est donnée comme une observation du moment, pas comme une certitude.
+:::transmission
+Bastion : Menaces : armes légères et une mitrailleuse lourde signalées au nord du village. Pas de défense sol-air observée à cette heure.
+:::
+:::analyse Commentaire
+Les menaces viennent en premier. L’absence de défense sol-air est donnée comme une observation du moment, pas comme une certitude.
+:::
 
-Bastion : « Trafic : un hélicoptère de transport en attente au sud, à basse altitude. »
-Commentaire : le pilote sait qu’il n’est pas seul dans le ciel.
+:::transmission
+Bastion : Trafic : un hélicoptère de transport en attente au sud, à basse altitude.
+:::
+:::analyse Commentaire
+Le pilote sait qu’il n’est pas seul dans le ciel.
+:::
 
-Voodoo 1 : « Voodoo 1, deux appareils. Quatre GBU-12 guidées laser, code laser 1688. Deux GBU-38. Canon. Pod de désignation disponible, rover disponible. »
-Commentaire : armement complet ; le code laser est donné parce que des munitions sont guidées laser ; senseurs et rover sont annoncés.
+:::transmission
+Voodoo 1 : Voodoo 1, deux appareils. Quatre GBU-12 guidées laser, code laser 1688. Deux GBU-38. Canon. Pod de désignation disponible, rover disponible.
+:::
+:::analyse Commentaire
+Armement complet ; le code laser est donné parce que des munitions sont guidées laser ; senseurs et rover sont annoncés.
+:::
 
-Bastion : « Reçu, code laser 1688. Code abort : CITRON. »
-Voodoo 1 : « Code abort CITRON, Voodoo 1. »
-Commentaire : le JTAC reprend le code laser pour régler son désignateur sur le même code, puis donne le code abort, que le pilote répète.
+:::transmission
+Bastion : Reçu, code laser 1688. Code abort : CITRON.
+Voodoo 1 : Code abort CITRON, Voodoo 1.
+:::
+:::analyse Commentaire
+Le JTAC reprend le code laser pour régler son désignateur sur le même code, puis donne le code abort, que le pilote répète.
+:::
 
-À RETENIR
+:::astuce À retenir
 Bastion n’a encore parlé d’aucune cible. Il connaît les menaces signalées, le trafic, les moyens de la patrouille et le mot qui arrête toute attaque. Il peut passer à la situation update.
+:::
 FR;
         $demoEn = <<<'EN'
-ANNOTATED DEMONSTRATION — VOODOO 1 CHECK-IN
-Game situation: a section is advancing towards a village held by the enemy. The JTAC “Bastion” is expecting a flight of two aircraft, callsign “Voodoo 1”.
+## Annotated demonstration — Voodoo 1 check-in
+:::note Game situation
+A section is advancing towards a village held by the enemy. The JTAC “Bastion” is expecting a flight of two aircraft, callsign “Voodoo 1”.
+:::
 
-Voodoo 1: “Bastion, Voodoo 1, approaching your area, ready for check-in.”
-Bastion: “Voodoo 1, Bastion, I have you.”
-Comment: explicit control, with both callsigns.
+:::transmission
+Voodoo 1: Bastion, Voodoo 1, approaching your area, ready for check-in.
+Bastion: Voodoo 1, Bastion, I have you.
+:::
+:::analysis Comment
+Explicit control, with both callsigns.
+:::
 
-Bastion: “Threats: small arms and one heavy machine gun reported north of the village. No air defence observed at this time.”
-Comment: threats come first. The absence of air defence is given as a current observation, not as a certainty.
+:::transmission
+Bastion: Threats: small arms and one heavy machine gun reported north of the village. No air defence observed at this time.
+:::
+:::analysis Comment
+Threats come first. The absence of air defence is given as a current observation, not as a certainty.
+:::
 
-Bastion: “Traffic: one transport helicopter holding to the south, low altitude.”
-Comment: the pilot knows they are not alone in the sky.
+:::transmission
+Bastion: Traffic: one transport helicopter holding to the south, low altitude.
+:::
+:::analysis Comment
+The pilot knows they are not alone in the sky.
+:::
 
-Voodoo 1: “Voodoo 1, two aircraft. Four laser-guided GBU-12, laser code 1688. Two GBU-38. Gun. Targeting pod available, rover available.”
-Comment: full weapons list; the laser code is given because some weapons are laser-guided; sensors and rover are announced.
+:::transmission
+Voodoo 1: Voodoo 1, two aircraft. Four laser-guided GBU-12, laser code 1688. Two GBU-38. Gun. Targeting pod available, rover available.
+:::
+:::analysis Comment
+Full weapons list; the laser code is given because some weapons are laser-guided; sensors and rover are announced.
+:::
 
-Bastion: “Copy, laser code 1688. Abort code: LEMON.”
-Voodoo 1: “Abort code LEMON, Voodoo 1.”
-Comment: the JTAC repeats the laser code to set their designator to the same code, then gives the abort code, which the pilot reads back.
+:::transmission
+Bastion: Copy, laser code 1688. Abort code: LEMON.
+Voodoo 1: Abort code LEMON, Voodoo 1.
+:::
+:::analysis Comment
+The JTAC repeats the laser code to set their designator to the same code, then gives the abort code, which the pilot reads back.
+:::
 
-KEY POINT
+:::tip Key point
 Bastion has not mentioned any target yet. They know the reported threats, the traffic, the flight’s assets and the word that stops any attack. They can move on to the situation update.
+:::
 EN;
         $guided = self::question(
             'Voodoo 2 annonce seulement : « Voodoo 2, deux GBU-12, prêt. » Que manque-t-il avant de quitter le contact initial ?',
@@ -371,88 +420,120 @@ EN;
     private static function situationUpdate(): array
     {
         $theoryFr = <<<'FR'
-01 — Le rôle de la situation update
+## 01 — Le rôle de la situation update
 Après le contact initial, le JTAC partage avec la patrouille l’image de la situation au sol. La procédure de la communauté nomme cette phase sans en fixer le format : retenez son but, donner au pilote une vision commune avant le game plan. Le contenu ci-dessous est un guide de jeu ; l’instructeur peut le préciser en session.
 
-02 — Ce que le JTAC transmet
-- Les amis : où se trouvent, de façon générale, les éléments alliés. Leur position par rapport à la cible sera précisée à la ligne 8 du 9-line.
-- L’ennemi : ce qui est observé ou signalé dans la zone, et ce qui a bougé.
-- Les menaces : rappel ou mise à jour de celles annoncées au contact initial.
+## 02 — Ce que le JTAC transmet
+- **Les amis** : où se trouvent, de façon générale, les éléments alliés. Leur position par rapport à la cible sera précisée à la ligne 8 du 9-line.
+- **L’ennemi** : ce qui est observé ou signalé dans la zone, et ce qui a bougé.
+- **Les menaces** : rappel ou mise à jour de celles annoncées au contact initial.
 - Les changements depuis le check-in.
 
-03 — Séparer les faits des suppositions
+## 03 — Séparer les faits des suppositions
 « Une mitrailleuse observée dans le bâtiment au toit rouge » est un fait. « Il y a sûrement d’autres ennemis » est une supposition. Le JTAC dit d’où vient une information (« signalé par le groupe Alpha », « non confirmé ») pour que le pilote sache quel crédit lui accorder.
 
-04 — Rester court et visible du ciel
+## 04 — Rester court et visible du ciel
 Le pilote retient ces informations en vol. Utilisez des phrases brèves et des repères visibles depuis l’avion : village, route, rivière, carrefour, bâtiment remarquable. Reprenez les mêmes noms que sur la carte de la mission.
 
-05 — Vérifier la compréhension
+## 05 — Vérifier la compréhension
 Le pilote confirme ce qu’il a reçu. S’il ne voit pas un repère, il le dit ; le JTAC reformule avec un autre repère au lieu de répéter la même phrase.
 
-06 — Mettre à jour en continu
+## 06 — Mettre à jour en continu
 La situation évolue pendant la mission. Toute nouvelle menace, tout déplacement des amis près de la zone d’attaque est annoncé immédiatement, même au milieu d’une autre phase.
 
-07 — Ce qu’il faut retenir
+:::astuce 07 — Ce qu’il faut retenir
 Amis en général, ennemi, menaces, changements ; faits séparés des suppositions ; phrases courtes et repères visibles ; confirmation du pilote. Le JTAC passe ensuite au game plan.
+:::
 FR;
         $theoryEn = <<<'EN'
-01 — The purpose of the situation update
+## 01 — The purpose of the situation update
 After initial contact, the JTAC shares the ground picture with the flight. The community procedure names this phase without fixing a format: remember its purpose, giving the pilot a shared picture before the game plan. The content below is in-game guidance; the instructor may refine it during a session.
 
-02 — What the JTAC passes on
-- Friendlies: where friendly elements are, in general terms. Their position relative to the target will be given in line 8 of the 9-line.
-- Enemy: what is observed or reported in the area, and what has moved.
-- Threats: a reminder or update of those announced at initial contact.
+## 02 — What the JTAC passes on
+- **Friendlies**: where friendly elements are, in general terms. Their position relative to the target will be given in line 8 of the 9-line.
+- **Enemy**: what is observed or reported in the area, and what has moved.
+- **Threats**: a reminder or update of those announced at initial contact.
 - Changes since check-in.
 
-03 — Separating facts from assumptions
+## 03 — Separating facts from assumptions
 “A machine gun observed in the red-roofed building” is a fact. “There are surely more enemies” is an assumption. The JTAC states where information comes from (“reported by Alpha team”, “unconfirmed”) so the pilot knows how much weight to give it.
 
-04 — Short and visible from the air
+## 04 — Short and visible from the air
 The pilot has to remember this information while flying. Use short sentences and landmarks visible from the aircraft: village, road, river, crossroads, distinctive building. Use the same names as on the mission map.
 
-05 — Checking understanding
+## 05 — Checking understanding
 The pilot confirms what they received. If they cannot see a landmark, they say so; the JTAC rephrases using another landmark instead of repeating the same sentence.
 
-06 — Updating continuously
+## 06 — Updating continuously
 The situation changes during the mission. Any new threat, or any movement of friendlies near the attack area, is announced immediately, even in the middle of another phase.
 
-07 — Key points
+:::tip 07 — Key points
 Friendlies in general, enemy, threats, changes; facts separated from assumptions; short sentences and visible landmarks; pilot confirmation. The JTAC then moves on to the game plan.
+:::
 EN;
         $demoFr = <<<'FR'
-DÉMONSTRATION COMMENTÉE — SITUATION UPDATE POUR VOODOO 1
-Suite du check-in : Bastion a pris en compte Voodoo 1, donné les menaces, le trafic et le code abort CITRON.
+## Démonstration commentée — situation update pour Voodoo 1
+:::note Suite du check-in
+Bastion a pris en compte Voodoo 1, donné les menaces, le trafic et le code abort CITRON.
+:::
 
-Bastion : « Voodoo 1, situation update. Amis : ma section est en lisière du bois, au sud du village. Ennemis : une mitrailleuse lourde observée dans le bâtiment au toit rouge, à l’entrée nord du village ; infanterie en nombre inconnu autour. Menaces : sans changement, pas de sol-air observé. »
-Commentaire : amis en général, ennemi observé, menaces mises à jour. Le nombre inconnu de fantassins est dit tel quel, sans l’inventer.
+:::transmission
+Bastion : Voodoo 1, situation update. Amis : ma section est en lisière du bois, au sud du village. Ennemis : une mitrailleuse lourde observée dans le bâtiment au toit rouge, à l’entrée nord du village ; infanterie en nombre inconnu autour. Menaces : sans changement, pas de sol-air observé.
+:::
+:::analyse Commentaire
+Amis en général, ennemi observé, menaces mises à jour. Le nombre inconnu de fantassins est dit tel quel, sans l’inventer.
+:::
 
-Voodoo 1 : « Voodoo 1, reçu : amis lisière sud, mitrailleuse toit rouge entrée nord. Je ne distingue pas de toit rouge. »
-Commentaire : le pilote confirme et signale franchement ce qu’il ne voit pas.
+:::transmission
+Voodoo 1 : Voodoo 1, reçu : amis lisière sud, mitrailleuse toit rouge entrée nord. Je ne distingue pas de toit rouge.
+:::
+:::analyse Commentaire
+Le pilote confirme et signale franchement ce qu’il ne voit pas.
+:::
 
-Bastion : « Le bâtiment est le premier à gauche de la route qui entre dans le village par le nord. »
-Voodoo 1 : « Vu, premier bâtiment à gauche de la route nord. »
-Commentaire : Bastion change de repère au lieu de répéter « toit rouge ». La route est visible du ciel.
+:::transmission
+Bastion : Le bâtiment est le premier à gauche de la route qui entre dans le village par le nord.
+Voodoo 1 : Vu, premier bâtiment à gauche de la route nord.
+:::
+:::analyse Commentaire
+Bastion change de repère au lieu de répéter « toit rouge ». La route est visible du ciel.
+:::
 
-À RETENIR
+:::astuce À retenir
 La patrouille et le JTAC partagent maintenant la même image : où sont les amis, où est l’ennemi, ce qui menace l’avion. Le game plan peut commencer.
+:::
 FR;
         $demoEn = <<<'EN'
-ANNOTATED DEMONSTRATION — SITUATION UPDATE FOR VOODOO 1
-Following the check-in: Bastion has taken control of Voodoo 1 and given threats, traffic and the abort code LEMON.
+## Annotated demonstration — situation update for Voodoo 1
+:::note Following the check-in
+Bastion has taken control of Voodoo 1 and given threats, traffic and the abort code LEMON.
+:::
 
-Bastion: “Voodoo 1, situation update. Friendlies: my section is at the edge of the wood, south of the village. Enemy: one heavy machine gun observed in the red-roofed building at the northern entrance of the village; infantry around it, number unknown. Threats: no change, no air defence observed.”
-Comment: friendlies in general, observed enemy, updated threats. The unknown number of infantry is stated as such, without inventing a figure.
+:::transmission
+Bastion: Voodoo 1, situation update. Friendlies: my section is at the edge of the wood, south of the village. Enemy: one heavy machine gun observed in the red-roofed building at the northern entrance of the village; infantry around it, number unknown. Threats: no change, no air defence observed.
+:::
+:::analysis Comment
+Friendlies in general, observed enemy, updated threats. The unknown number of infantry is stated as such, without inventing a figure.
+:::
 
-Voodoo 1: “Voodoo 1, copy: friendlies south edge, machine gun red roof north entrance. I cannot make out a red roof.”
-Comment: the pilot confirms and clearly reports what they cannot see.
+:::transmission
+Voodoo 1: Voodoo 1, copy: friendlies south edge, machine gun red roof north entrance. I cannot make out a red roof.
+:::
+:::analysis Comment
+The pilot confirms and clearly reports what they cannot see.
+:::
 
-Bastion: “The building is the first one on the left of the road entering the village from the north.”
-Voodoo 1: “Visual on it, first building left of the north road.”
-Comment: Bastion changes landmark instead of repeating “red roof”. The road is visible from the air.
+:::transmission
+Bastion: The building is the first one on the left of the road entering the village from the north.
+Voodoo 1: Visual on it, first building left of the north road.
+:::
+:::analysis Comment
+Bastion changes landmark instead of repeating “red roof”. The road is visible from the air.
+:::
 
-KEY POINT
+:::tip Key point
 The flight and the JTAC now share the same picture: where friendlies are, where the enemy is, what threatens the aircraft. The game plan can begin.
+:::
 EN;
         $guided = self::question(
             'Quel message transmettez-vous à Voodoo 1 ?',
@@ -598,100 +679,124 @@ EN;
     private static function gamePlan(): array
     {
         $theoryFr = <<<'FR'
-01 — Le rôle du game plan
+## 01 — Le rôle du game plan
 Le game plan annonce à la patrouille comment l’attaque sera contrôlée et conduite, avant le 9-line. Le type de contrôle y est obligatoire. Le game plan se termine par la demande « retour radio si prêt pour 9-Line ».
 
-02 — Type 1
+## 02 — Type 1
 Le JTAC a le visuel sur la cible ET sur l’attaquant, c’est-à-dire l’avion allié. Une seule attaque.
 
-03 — Type 2
+## 03 — Type 2
 Le JTAC a le visuel sur la cible OU sur l’attaquant. Une seule attaque. Une bombe guidée par coordonnées de type JDAM, comme la GBU-38, impose forcément un type 2.
 
-04 — Type 3
+## 04 — Type 3
 Le JTAC a le visuel sur la cible ; attaque multiple. Ce type sert pour des cibles multiples : l’avion peut réaliser d’initiative le nombre de passes souhaité pour détruire ou neutraliser la ou les cibles. Le JTAC l’autorise par « Cleared to engage » et la patrouille reprend contact à l’issue.
 
-05 — Une seule attaque en types 1 et 2
+## 05 — Une seule attaque en types 1 et 2
 En types 1 et 2, chaque autorisation vaut pour une seule attaque. Relancer une attaque est à l’initiative du JTAC : le pilote ne repasse pas de lui-même.
 
-06 — Méthode d’acquisition
-- Bomb on target : la cible est acquise par un marquage ou un senseur — fumigène (fumi), laser, strobe IR…
-- Bomb on coordinate : l’attaque se fait uniquement sur des coordonnées.
+## 06 — Méthode d’acquisition
+- **Bomb on target** : la cible est acquise par un marquage ou un senseur — fumigène (fumi), laser, strobe IR…
+- **Bomb on coordinate** : l’attaque se fait uniquement sur des coordonnées.
 
-07 — Préciser la munition
+## 07 — Préciser la munition
 Le JTAC précise toujours le type de munition. En bomb on coordinate, il donne aussi le nombre de bombes, impact unique ou impact simultané si plusieurs appareils attaquent, et le format de la coordonnée (6 ou 8 chiffres).
 
-08 — Exemples de phrases radio
-« Voodoo 1, Type 1, bomb on target, retour radio si prêt pour 9-Line. »
-« Voodoo 1, Type 2, bomb on coordinate, une GBU-38, impact unique, coordonnée 8 chiffres, retour radio si prêt pour 9-Line. »
-« Voodoo 1, Type 3, bomb on target, besoin que tout véhicule et toute infanterie soient détruits, retour radio si prêt pour 9-Line. »
+## 08 — Exemples de phrases radio
+> « Voodoo 1, Type 1, bomb on target, retour radio si prêt pour 9-Line. »
+> « Voodoo 1, Type 2, bomb on coordinate, une GBU-38, impact unique, coordonnée 8 chiffres, retour radio si prêt pour 9-Line. »
+> « Voodoo 1, Type 3, bomb on target, besoin que tout véhicule et toute infanterie soient détruits, retour radio si prêt pour 9-Line. »
 
-09 — Ce qu’il faut retenir
+:::astuce 09 — Ce qu’il faut retenir
 Type de contrôle (obligatoire), méthode (bomb on target ou bomb on coordinate), munition, et pour une attaque sur coordonnées : nombre, impact unique ou simultané, coordonnée 6 ou 8 chiffres. JDAM = type 2. Types 1 et 2 = une attaque ; type 3 = plusieurs passes jusqu’à ce que tout soit traité.
+:::
 FR;
         $theoryEn = <<<'EN'
-01 — The purpose of the game plan
+## 01 — The purpose of the game plan
 The game plan tells the flight how the attack will be controlled and conducted, before the 9-line. The type of control is mandatory. The game plan ends with the request “call when ready for 9-Line”.
 
-02 — Type 1
+## 02 — Type 1
 The JTAC has eyes on the target AND on the attacker, meaning the friendly aircraft. A single attack.
 
-03 — Type 2
+## 03 — Type 2
 The JTAC has eyes on the target OR on the attacker. A single attack. A coordinate-guided JDAM-type bomb, such as the GBU-38, always means Type 2.
 
-04 — Type 3
+## 04 — Type 3
 The JTAC has eyes on the target; multiple attacks. This type is used for multiple targets: the aircraft may, on its own initiative, make as many passes as it needs to destroy or neutralise the target or targets. The JTAC authorises this with “Cleared to engage” and the flight checks back in when finished.
 
-05 — A single attack in Types 1 and 2
+## 05 — A single attack in Types 1 and 2
 In Types 1 and 2, each clearance is valid for one attack only. Launching another attack is the JTAC’s decision: the pilot does not make another pass on their own.
 
-06 — Acquisition method
-- Bomb on target: the target is acquired with a mark or a sensor — smoke, laser, IR strobe…
-- Bomb on coordinate: the attack is made on coordinates only.
+## 06 — Acquisition method
+- **Bomb on target**: the target is acquired with a mark or a sensor — smoke, laser, IR strobe…
+- **Bomb on coordinate**: the attack is made on coordinates only.
 
-07 — Specifying the weapon
+## 07 — Specifying the weapon
 The JTAC always specifies the type of weapon. For bomb on coordinate, they also give the number of bombs, single impact or simultaneous impact if several aircraft attack, and the coordinate format (6 or 8 digits).
 
-08 — Sample radio calls
-“Voodoo 1, Type 1, bomb on target, call when ready for 9-Line.”
-“Voodoo 1, Type 2, bomb on coordinate, one GBU-38, single impact, 8-digit coordinate, call when ready for 9-Line.”
-“Voodoo 1, Type 3, bomb on target, need all vehicles and all infantry destroyed, call when ready for 9-Line.”
+## 08 — Sample radio calls
+> “Voodoo 1, Type 1, bomb on target, call when ready for 9-Line.”
+> “Voodoo 1, Type 2, bomb on coordinate, one GBU-38, single impact, 8-digit coordinate, call when ready for 9-Line.”
+> “Voodoo 1, Type 3, bomb on target, need all vehicles and all infantry destroyed, call when ready for 9-Line.”
 
-09 — Key points
+:::tip 09 — Key points
 Type of control (mandatory), method (bomb on target or bomb on coordinate), weapon, and for a coordinate attack: number, single or simultaneous impact, 6- or 8-digit coordinate. JDAM = Type 2. Types 1 and 2 = one attack; Type 3 = several passes until everything is dealt with.
+:::
 EN;
         $demoFr = <<<'FR'
-DÉMONSTRATION COMMENTÉE — GAME PLAN POUR VOODOO 1
-Suite de la situation update : la mitrailleuse est dans le premier bâtiment à gauche de la route nord. Bastion connaît sa coordonnée à 8 chiffres. L’avion vole haut et Bastion ne le voit pas depuis sa position.
+## Démonstration commentée — game plan pour Voodoo 1
+:::note Suite de la situation update
+La mitrailleuse est dans le premier bâtiment à gauche de la route nord. Bastion connaît sa coordonnée à 8 chiffres. L’avion vole haut et Bastion ne le voit pas depuis sa position.
+:::
 
-Bastion : « Voodoo 1, game plan. Type 2, bomb on coordinate, une GBU-38, impact unique, coordonnée 8 chiffres. Retour radio si prêt pour 9-Line. »
-Commentaire : la GBU-38 est une JDAM guidée par coordonnées : le type 2 est imposé. Bastion voit la cible mais pas l’avion, ce qui correspond aussi au type 2. Munition, nombre, impact et format de coordonnée sont précisés.
+:::transmission
+Bastion : Voodoo 1, game plan. Type 2, bomb on coordinate, une GBU-38, impact unique, coordonnée 8 chiffres. Retour radio si prêt pour 9-Line.
+:::
+:::analyse Commentaire
+La GBU-38 est une JDAM guidée par coordonnées : le type 2 est imposé. Bastion voit la cible mais pas l’avion, ce qui correspond aussi au type 2. Munition, nombre, impact et format de coordonnée sont précisés.
+:::
 
-Voodoo 1 : « Voodoo 1, Type 2, bomb on coordinate, une GBU-38, impact unique. Prêt pour 9-Line. »
-Commentaire : le pilote reprend le game plan et se déclare prêt. Une seule attaque est prévue ; une seconde passe dépendra de Bastion.
+:::transmission
+Voodoo 1 : Voodoo 1, Type 2, bomb on coordinate, une GBU-38, impact unique. Prêt pour 9-Line.
+:::
+:::analyse Commentaire
+Le pilote reprend le game plan et se déclare prêt. Une seule attaque est prévue ; une seconde passe dépendra de Bastion.
+:::
 
-VARIANTES
-Si Bastion voyait la cible et l’avion et désignait au laser pour une GBU-12 : « Voodoo 1, Type 1, bomb on target, retour radio si prêt pour 9-Line. »
-Si plusieurs véhicules et de l’infanterie devaient être traités en plusieurs passes : « Voodoo 1, Type 3, bomb on target, besoin que tout véhicule et toute infanterie soient détruits, retour radio si prêt pour 9-Line. » L’autorisation sera alors « Cleared to engage ».
+### Variantes
+- Si Bastion voyait la cible et l’avion et désignait au laser pour une GBU-12 : « Voodoo 1, Type 1, bomb on target, retour radio si prêt pour 9-Line. »
+- Si plusieurs véhicules et de l’infanterie devaient être traités en plusieurs passes : « Voodoo 1, Type 3, bomb on target, besoin que tout véhicule et toute infanterie soient détruits, retour radio si prêt pour 9-Line. » L’autorisation sera alors « Cleared to engage ».
 
-À RETENIR
+:::astuce À retenir
 Le type de contrôle découle de ce que voit le JTAC et de la munition choisie. Le game plan annonce le cadre ; le 9-line donnera le détail.
+:::
 FR;
         $demoEn = <<<'EN'
-ANNOTATED DEMONSTRATION — GAME PLAN FOR VOODOO 1
-Following the situation update: the machine gun is in the first building on the left of the north road. Bastion knows its 8-digit coordinate. The aircraft is flying high and Bastion cannot see it from his position.
+## Annotated demonstration — game plan for Voodoo 1
+:::note Following the situation update
+The machine gun is in the first building on the left of the north road. Bastion knows its 8-digit coordinate. The aircraft is flying high and Bastion cannot see it from his position.
+:::
 
-Bastion: “Voodoo 1, game plan. Type 2, bomb on coordinate, one GBU-38, single impact, 8-digit coordinate. Call when ready for 9-Line.”
-Comment: the GBU-38 is a coordinate-guided JDAM, so Type 2 is required. Bastion sees the target but not the aircraft, which also matches Type 2. Weapon, number, impact and coordinate format are specified.
+:::transmission
+Bastion: Voodoo 1, game plan. Type 2, bomb on coordinate, one GBU-38, single impact, 8-digit coordinate. Call when ready for 9-Line.
+:::
+:::analysis Comment
+The GBU-38 is a coordinate-guided JDAM, so Type 2 is required. Bastion sees the target but not the aircraft, which also matches Type 2. Weapon, number, impact and coordinate format are specified.
+:::
 
-Voodoo 1: “Voodoo 1, Type 2, bomb on coordinate, one GBU-38, single impact. Ready for 9-Line.”
-Comment: the pilot reads back the game plan and reports ready. Only one attack is planned; a second pass will be Bastion’s decision.
+:::transmission
+Voodoo 1: Voodoo 1, Type 2, bomb on coordinate, one GBU-38, single impact. Ready for 9-Line.
+:::
+:::analysis Comment
+The pilot reads back the game plan and reports ready. Only one attack is planned; a second pass will be Bastion’s decision.
+:::
 
-VARIANTS
-If Bastion could see the target and the aircraft and was lasing for a GBU-12: “Voodoo 1, Type 1, bomb on target, call when ready for 9-Line.”
-If several vehicles and infantry had to be engaged over several passes: “Voodoo 1, Type 3, bomb on target, need all vehicles and all infantry destroyed, call when ready for 9-Line.” The clearance would then be “Cleared to engage”.
+### Variants
+- If Bastion could see the target and the aircraft and was lasing for a GBU-12: “Voodoo 1, Type 1, bomb on target, call when ready for 9-Line.”
+- If several vehicles and infantry had to be engaged over several passes: “Voodoo 1, Type 3, bomb on target, need all vehicles and all infantry destroyed, call when ready for 9-Line.” The clearance would then be “Cleared to engage”.
 
-KEY POINT
+:::tip Key point
 The type of control follows from what the JTAC can see and from the chosen weapon. The game plan sets the frame; the 9-line will give the details.
+:::
 EN;
         $guided = self::question(
             'Quel game plan annoncez-vous ?',
@@ -849,146 +954,218 @@ EN;
     private static function nineLine(): array
     {
         $theoryFr = <<<'FR'
-01 — Le rôle du CAS brief
+## 01 — Le rôle du CAS brief
 Le CAS brief, appelé 9-line, donne au pilote tout ce qu’il faut pour exécuter l’attaque annoncée dans le game plan. Les neuf lignes sont toujours données dans le même ordre ; le pilote sait ainsi ce qui arrive et peut noter chaque ligne à sa place.
 
-02 — Ligne 1 : IP / BP
+## 02 — Ligne 1 : IP / BP
 Marqueur, coordonnées ou point naturel visible servant de point d’entrée de l’axe d’attaque du support aérien. L’IP est choisie à au moins 4 km de la cible.
 
-03 — Ligne 2 : Heading / Offset
+## 03 — Ligne 2 : Heading / Offset
 Axe d’attaque depuis l’IP vers la cible, en degrés, avec un décalage Left ou Right par rapport à cet axe.
 
-04 — Ligne 3 : Distance
+## 04 — Ligne 3 : Distance
 Distance entre l’IP et la cible, selon la convention en vigueur dans l’unité de jeu (à rappeler au briefing de mission).
 
-05 — Ligne 4 : Target Elevation
+## 05 — Ligne 4 : Target Elevation
 Altitude de la cible par rapport au niveau de la mer.
 
-06 — Ligne 5 : Target Description
+## 06 — Ligne 5 : Target Description
 Description concise de la cible : type, nombre, disposition, orientation.
 
-07 — Ligne 6 : Target Location
+## 07 — Ligne 6 : Target Location
 Position exacte de la cible : coordonnées, repère terrain ou combinaison des deux.
 
-08 — Ligne 7 : Mark Type
+## 08 — Ligne 7 : Mark Type
 Moyen de marquage de la cible : laser, fumigène, traceur, IR, ou « none » s’il n’y a pas de marquage.
 
-09 — Ligne 8 : Friendlies
+## 09 — Ligne 8 : Friendlies
 Position des amis par rapport à la cible : distance et direction.
 
-10 — Ligne 9 : Egress
+## 10 — Ligne 9 : Egress
 Direction ou point de sortie de l’avion après l’attaque.
 
-11 — Remarques et restrictions
+## 11 — Remarques et restrictions
 Après les neuf lignes, le JTAC ajoute les remarques et restrictions : danger close lorsque des amis sont proches de la cible, et le code abort. Chaque mission doit avoir un code abort unique : on ne réutilise pas celui d’une mission précédente.
 
-12 — Collationnement et « Continue »
+## 12 — Collationnement et « Continue »
 À la fin du brief, le pilote collationne, c’est-à-dire qu’il relit le brief. Si tout est correct, le JTAC répond « Continue ». Si une ligne est fausse, le JTAC la corrige et attend un nouveau collationnement avant de dire « Continue ».
 
-13 — Ce qu’il faut retenir
+:::astuce 13 — Ce qu’il faut retenir
 1 IP/BP (au moins 4 km) · 2 Heading/Offset · 3 Distance · 4 Target Elevation · 5 Target Description · 6 Target Location · 7 Mark Type · 8 Friendlies · 9 Egress · Remarques (danger close, code abort unique) · collationnement · « Continue ».
+:::
 FR;
         $theoryEn = <<<'EN'
-01 — The purpose of the CAS brief
+## 01 — The purpose of the CAS brief
 The CAS brief, called the 9-line, gives the pilot everything needed to carry out the attack announced in the game plan. The nine lines are always given in the same order; the pilot therefore knows what is coming and can note each line in its place.
 
-02 — Line 1: IP / BP
+## 02 — Line 1: IP / BP
 A marker, coordinates or visible natural feature used as the entry point of the air support’s attack run. The IP is chosen at least 4 km from the target.
 
-03 — Line 2: Heading / Offset
+## 03 — Line 2: Heading / Offset
 The attack heading from the IP to the target, in degrees, with an offset Left or Right of that heading.
 
-04 — Line 3: Distance
+## 04 — Line 3: Distance
 The distance between the IP and the target, using the convention in force in the game unit (to be stated at the mission briefing).
 
-05 — Line 4: Target Elevation
+## 05 — Line 4: Target Elevation
 The target’s elevation above sea level.
 
-06 — Line 5: Target Description
+## 06 — Line 5: Target Description
 A concise description of the target: type, number, layout, orientation.
 
-07 — Line 6: Target Location
+## 07 — Line 6: Target Location
 The exact position of the target: coordinates, a terrain feature or a combination of both.
 
-08 — Line 7: Mark Type
+## 08 — Line 7: Mark Type
 How the target is marked: laser, smoke, tracer, IR, or “none” if there is no mark.
 
-09 — Line 8: Friendlies
+## 09 — Line 8: Friendlies
 The position of friendlies relative to the target: distance and direction.
 
-10 — Line 9: Egress
+## 10 — Line 9: Egress
 The aircraft’s exit direction or exit point after the attack.
 
-11 — Remarks and restrictions
+## 11 — Remarks and restrictions
 After the nine lines, the JTAC adds remarks and restrictions: danger close when friendlies are close to the target, and the abort code. Each mission must have a unique abort code: do not reuse one from a previous mission.
 
-12 — Readback and “Continue”
+## 12 — Readback and “Continue”
 At the end of the brief, the pilot reads it back. If everything is correct, the JTAC answers “Continue”. If a line is wrong, the JTAC corrects it and waits for a new readback before saying “Continue”.
 
-13 — Key points
+:::tip 13 — Key points
 1 IP/BP (at least 4 km) · 2 Heading/Offset · 3 Distance · 4 Target Elevation · 5 Target Description · 6 Target Location · 7 Mark Type · 8 Friendlies · 9 Egress · Remarks (danger close, unique abort code) · readback · “Continue”.
+:::
 EN;
         $demoFr = <<<'FR'
-DÉMONSTRATION COMMENTÉE — 9-LINE POUR VOODOO 1
-Suite du game plan : Type 1, bomb on target, une GBU-12 guidée laser, code 1688. Voodoo 1 s’est déclaré prêt pour 9-Line.
+## Démonstration commentée — 9-line pour Voodoo 1
+:::note Suite du game plan
+Type 1, bomb on target, une GBU-12 guidée laser, code 1688. Voodoo 1 s’est déclaré prêt pour 9-Line.
+:::
 
-Bastion : « Voodoo 1, 9-Line, prêt à copier ? »
-Voodoo 1 : « Prêt à copier. »
+:::transmission
+Bastion : Voodoo 1, 9-Line, prêt à copier ?
+Voodoo 1 : Prêt à copier.
+:::
 
-Bastion :
-« Ligne 1 : IP CARRIÈRE. »
-Commentaire : la carrière est un point naturel bien visible du ciel, à 6 km de la cible, donc au-delà du minimum de 4 km.
-« Ligne 2 : cap 015, offset left. »
-Commentaire : axe d’attaque de l’IP vers la cible, avec un décalage à gauche de cet axe.
-« Ligne 3 : 6 kilomètres. »
-Commentaire : distance IP-cible, dans l’unité convenue au briefing.
-« Ligne 4 : 85 mètres. »
-Commentaire : altitude de la cible au-dessus du niveau de la mer.
-« Ligne 5 : une mitrailleuse lourde dans un bâtiment, orientée vers le sud. »
-« Ligne 6 : coordonnée 0452 1238, premier bâtiment à gauche de la route nord du village. »
-Commentaire : coordonnée et repère terrain combinés.
-« Ligne 7 : laser, code 1688. »
-« Ligne 8 : amis 600 mètres au sud. »
-« Ligne 9 : sortie à gauche, vers l’ouest. »
-« Remarques : pas de danger close. Code abort CITRON. »
+:::transmission
+Bastion : Ligne 1 : IP CARRIÈRE.
+:::
+:::analyse Commentaire
+La carrière est un point naturel bien visible du ciel, à 6 km de la cible, donc au-delà du minimum de 4 km.
+:::
 
-Voodoo 1 collationne : « IP CARRIÈRE, cap 015 offset left, 6 kilomètres, 85 mètres, mitrailleuse lourde dans un bâtiment, 0452 1238, laser 1688, amis 600 mètres sud, sortie gauche vers l’ouest, abort CITRON. »
-Bastion : « Collationnement correct. Continue. »
-Commentaire : le pilote a relu, tout est exact : Bastion dit « Continue ». L’autorisation de tir viendra plus tard, pendant l’attaque terminale.
+:::transmission
+Bastion : Ligne 2 : cap 015, offset left.
+:::
+:::analyse Commentaire
+Axe d’attaque de l’IP vers la cible, avec un décalage à gauche de cet axe.
+:::
 
-À RETENIR
+:::transmission
+Bastion : Ligne 3 : 6 kilomètres.
+:::
+:::analyse Commentaire
+Distance IP-cible, dans l’unité convenue au briefing.
+:::
+
+:::transmission
+Bastion : Ligne 4 : 85 mètres.
+:::
+:::analyse Commentaire
+Altitude de la cible au-dessus du niveau de la mer.
+:::
+
+:::transmission
+Bastion : Ligne 5 : une mitrailleuse lourde dans un bâtiment, orientée vers le sud.
+Bastion : Ligne 6 : coordonnée 0452 1238, premier bâtiment à gauche de la route nord du village.
+:::
+:::analyse Commentaire
+Coordonnée et repère terrain combinés.
+:::
+
+:::transmission
+Bastion : Ligne 7 : laser, code 1688.
+Bastion : Ligne 8 : amis 600 mètres au sud.
+Bastion : Ligne 9 : sortie à gauche, vers l’ouest.
+Bastion : Remarques : pas de danger close. Code abort CITRON.
+:::
+
+:::transmission
+Voodoo 1 collationne : IP CARRIÈRE, cap 015 offset left, 6 kilomètres, 85 mètres, mitrailleuse lourde dans un bâtiment, 0452 1238, laser 1688, amis 600 mètres sud, sortie gauche vers l’ouest, abort CITRON.
+Bastion : Collationnement correct. Continue.
+:::
+:::analyse Commentaire
+Le pilote a relu, tout est exact : Bastion dit « Continue ». L’autorisation de tir viendra plus tard, pendant l’attaque terminale.
+:::
+
+:::astuce À retenir
 Neuf lignes dans l’ordre, puis les remarques, puis le collationnement. « Continue » n’autorise pas le tir : il autorise la poursuite de la manœuvre.
+:::
 FR;
         $demoEn = <<<'EN'
-ANNOTATED DEMONSTRATION — 9-LINE FOR VOODOO 1
-Following the game plan: Type 1, bomb on target, one laser-guided GBU-12, code 1688. Voodoo 1 has reported ready for 9-Line.
+## Annotated demonstration — 9-line for Voodoo 1
+:::note Following the game plan
+Type 1, bomb on target, one laser-guided GBU-12, code 1688. Voodoo 1 has reported ready for 9-Line.
+:::
 
-Bastion: “Voodoo 1, 9-Line, ready to copy?”
-Voodoo 1: “Ready to copy.”
+:::transmission
+Bastion: Voodoo 1, 9-Line, ready to copy?
+Voodoo 1: Ready to copy.
+:::
 
-Bastion:
-“Line 1: IP QUARRY.”
-Comment: the quarry is a natural feature clearly visible from the air, 6 km from the target, beyond the 4 km minimum.
-“Line 2: heading 015, offset left.”
-Comment: attack heading from the IP to the target, offset to the left of that heading.
-“Line 3: 6 kilometres.”
-Comment: IP-to-target distance, in the unit agreed at the briefing.
-“Line 4: 85 metres.”
-Comment: target elevation above sea level.
-“Line 5: one heavy machine gun inside a building, facing south.”
-“Line 6: coordinate 0452 1238, first building on the left of the village’s north road.”
-Comment: coordinate and terrain feature combined.
-“Line 7: laser, code 1688.”
-“Line 8: friendlies 600 metres south.”
-“Line 9: egress left, to the west.”
-“Remarks: no danger close. Abort code LEMON.”
+:::transmission
+Bastion: Line 1: IP QUARRY.
+:::
+:::analysis Comment
+The quarry is a natural feature clearly visible from the air, 6 km from the target, beyond the 4 km minimum.
+:::
 
-Voodoo 1 reads back: “IP QUARRY, heading 015 offset left, 6 kilometres, 85 metres, heavy machine gun in a building, 0452 1238, laser 1688, friendlies 600 metres south, egress left to the west, abort LEMON.”
-Bastion: “Readback correct. Continue.”
-Comment: the pilot has read back and everything is correct, so Bastion says “Continue”. Clearance to fire will come later, during the terminal attack.
+:::transmission
+Bastion: Line 2: heading 015, offset left.
+:::
+:::analysis Comment
+Attack heading from the IP to the target, offset to the left of that heading.
+:::
 
-KEY POINT
+:::transmission
+Bastion: Line 3: 6 kilometres.
+:::
+:::analysis Comment
+IP-to-target distance, in the unit agreed at the briefing.
+:::
+
+:::transmission
+Bastion: Line 4: 85 metres.
+:::
+:::analysis Comment
+Target elevation above sea level.
+:::
+
+:::transmission
+Bastion: Line 5: one heavy machine gun inside a building, facing south.
+Bastion: Line 6: coordinate 0452 1238, first building on the left of the village’s north road.
+:::
+:::analysis Comment
+Coordinate and terrain feature combined.
+:::
+
+:::transmission
+Bastion: Line 7: laser, code 1688.
+Bastion: Line 8: friendlies 600 metres south.
+Bastion: Line 9: egress left, to the west.
+Bastion: Remarks: no danger close. Abort code LEMON.
+:::
+
+:::transmission
+Voodoo 1 reads back: IP QUARRY, heading 015 offset left, 6 kilometres, 85 metres, heavy machine gun in a building, 0452 1238, laser 1688, friendlies 600 metres south, egress left to the west, abort LEMON.
+Bastion: Readback correct. Continue.
+:::
+:::analysis Comment
+The pilot has read back and everything is correct, so Bastion says “Continue”. Clearance to fire will come later, during the terminal attack.
+:::
+
+:::tip Key point
 Nine lines in order, then remarks, then the readback. “Continue” does not clear fire: it clears the manoeuvre to proceed.
+:::
 EN;
         $guided = self::question(
             'Le château d’eau est à 2 km de la cible. Que faites-vous pour la ligne 1 ?',
@@ -1158,120 +1335,178 @@ EN;
     private static function terminalAttack(): array
     {
         $theoryFr = <<<'FR'
-01 — Le rôle de l’attaque terminale
+## 01 — Le rôle de l’attaque terminale
 Après le 9-line collationné, l’attaque terminale est la passe de l’avion vers la cible. Le JTAC garde le contrôle par des ordres brefs, toujours les mêmes, que le pilote reconnaît sans ambiguïté.
 
-02 — Abort
+## 02 — Abort
 « Abort » : cessez l’action. L’appareil interrompt immédiatement l’attaque. Le code abort de la mission a le même effet. Le JTAC l’utilise dès qu’un doute apparaît : amis trop proches, mauvaise cible, avion mal aligné.
 
-03 — Continue
+## 03 — Continue
 « Continue » : poursuivez la manœuvre. Exemple : l’avion arrive à l’IP et le signale ; le JTAC répond « Continue » ; le pilote confirme « Prêt » avant la passe d’attaque.
 
-04 — Continue dry
+## 04 — Continue dry
 « Continue dry » (ou « Cleared dry ») : poursuivez la manœuvre, mais tir interdit. L’avion fait la passe sans larguer d’armement, par exemple pour vérifier qu’il a bien identifié la cible.
 
-05 — Clear hot
+## 05 — Clear hot
 « Clear hot » : autorisé à larguer l’armement. En types 1 et 2, l’autorisation vaut pour cette attaque uniquement. Le pilote annonce « Paveway » lorsqu’il a effectivement utilisé la munition.
 
-06 — Cleared to engage
+## 06 — Cleared to engage
 « Cleared to engage » : autorisé à engager, en type 3, jusqu’à ce que tout soit traité. L’avion choisit lui-même ses passes, puis reprend contact avec le JTAC à l’issue.
 
-07 — Le BDA
+## 07 — Le BDA
 Après l’impact, le JTAC observe le résultat (BDA : évaluation des dégâts) et décide de la suite :
-- Cible non détruite : on réattaque.
+- **Cible non détruite** : on réattaque.
 - Cible détruite mais encore du travail sur la même zone : talk-on, puis réattaque. Le talk-on consiste à guider le regard du pilote, de repère en repère, jusqu’à la nouvelle cible.
-- Cible détruite mais travail hors secteur : nouvelle 9-Line.
-- Cible détruite et fin du travail : le JTAC libère la patrouille.
+- **Cible détruite mais travail hors secteur** : nouvelle 9-Line.
+- **Cible détruite et fin du travail** : le JTAC libère la patrouille.
 
-08 — Ce qu’il faut retenir
+:::astuce 08 — Ce qu’il faut retenir
 Abort = stop. Continue = poursuivre. Continue dry = poursuivre sans tirer. Clear hot = larguer (une attaque). Cleared to engage = engager en type 3 jusqu’à ce que tout soit traité. Après chaque impact, un BDA et l’une des quatre issues.
+:::
 FR;
         $theoryEn = <<<'EN'
-01 — The purpose of the terminal attack
+## 01 — The purpose of the terminal attack
 After the 9-line has been read back, the terminal attack is the aircraft’s run onto the target. The JTAC keeps control with short, standard calls that the pilot recognises without ambiguity.
 
-02 — Abort
+## 02 — Abort
 “Abort”: stop the action. The aircraft immediately breaks off the attack. The mission abort code has the same effect. The JTAC uses it as soon as a doubt appears: friendlies too close, wrong target, aircraft misaligned.
 
-03 — Continue
+## 03 — Continue
 “Continue”: carry on with the manoeuvre. Example: the aircraft reaches the IP and reports it; the JTAC answers “Continue”; the pilot confirms “Ready” before the attack run.
 
-04 — Continue dry
+## 04 — Continue dry
 “Continue dry” (or “Cleared dry”): carry on with the manoeuvre, but no weapons release. The aircraft makes the run without releasing weapons, for example to check it has correctly identified the target.
 
-05 — Clear hot
+## 05 — Clear hot
 “Clear hot”: cleared to release weapons. In Types 1 and 2, the clearance covers this attack only. The pilot calls “Paveway” when they have actually released the weapon.
 
-06 — Cleared to engage
+## 06 — Cleared to engage
 “Cleared to engage”: cleared to engage, in Type 3, until everything has been dealt with. The aircraft chooses its own passes, then contacts the JTAC again when finished.
 
-07 — BDA
+## 07 — BDA
 After impact, the JTAC observes the result (BDA: battle damage assessment) and decides what comes next:
-- Target not destroyed: re-attack.
+- **Target not destroyed**: re-attack.
 - Target destroyed but more work in the same area: talk-on, then re-attack. A talk-on means guiding the pilot’s eyes, from landmark to landmark, onto the new target.
 - Target destroyed but the work is outside the area: new 9-Line.
 - Target destroyed and the work is complete: the JTAC releases the flight.
 
-08 — Key points
+:::tip 08 — Key points
 Abort = stop. Continue = carry on. Continue dry = carry on without firing. Clear hot = release (one attack). Cleared to engage = engage in Type 3 until everything is dealt with. After each impact, a BDA and one of the four outcomes.
+:::
 EN;
         $demoFr = <<<'FR'
-DÉMONSTRATION COMMENTÉE — ATTAQUE DE VOODOO 1 ET BDA
-Suite du 9-line : Type 1, bomb on target, GBU-12 laser code 1688, IP CARRIÈRE, code abort CITRON. Collationnement correct, Bastion a dit « Continue ».
+## Démonstration commentée — attaque de Voodoo 1 et BDA
+:::note Suite du 9-line
+Type 1, bomb on target, GBU-12 laser code 1688, IP CARRIÈRE, code abort CITRON. Collationnement correct, Bastion a dit « Continue ».
+:::
 
-Voodoo 1 : « Voodoo 1, IP. »
-Bastion : « Continue. »
-Voodoo 1 : « Voodoo 1, prêt. »
-Commentaire : l’avion signale l’IP, le JTAC l’autorise à poursuivre, le pilote confirme qu’il est prêt pour la passe.
+:::transmission
+Voodoo 1 : Voodoo 1, IP.
+Bastion : Continue.
+Voodoo 1 : Voodoo 1, prêt.
+:::
+:::analyse Commentaire
+L’avion signale l’IP, le JTAC l’autorise à poursuivre, le pilote confirme qu’il est prêt pour la passe.
+:::
 
-Bastion : « Laser en marche, code 1688. »
-Voodoo 1 : « Spot. Captured. »
-Commentaire : le pilote voit le spot laser, puis son pod l’acquiert.
+:::transmission
+Bastion : Laser en marche, code 1688.
+Voodoo 1 : Spot. Captured.
+:::
+:::analyse Commentaire
+Le pilote voit le spot laser, puis son pod l’acquiert.
+:::
 
-Bastion : « Je vous ai en visuel, aligné sur la cible. Clear hot. »
-Voodoo 1 : « Paveway. »
-Commentaire : type 1, Bastion voit l’avion et la cible. « Clear hot » autorise cette attaque ; « Paveway » annonce la munition larguée.
+:::transmission
+Bastion : Je vous ai en visuel, aligné sur la cible. Clear hot.
+Voodoo 1 : Paveway.
+:::
+:::analyse Commentaire
+Type 1, Bastion voit l’avion et la cible. « Clear hot » autorise cette attaque ; « Paveway » annonce la munition larguée.
+:::
 
-Impact. Bastion observe.
-Bastion : « Mitrailleuse détruite. Infanterie encore active à 100 mètres à l’est du bâtiment, même zone. »
-Commentaire : BDA. La cible est détruite mais il reste du travail sur la même zone : talk-on et réattaque.
+*Impact. Bastion observe.*
 
-Bastion : « Depuis le bâtiment détruit, suivez la route vers l’est jusqu’au muret. Infanterie derrière le muret. »
-Voodoo 1 : « Tally. »
-Commentaire : talk-on de repère en repère ; « Tally » signifie que le pilote voit l’ennemi. Une nouvelle attaque est à l’initiative de Bastion, puisque le type 1 ne vaut que pour une attaque.
+:::transmission
+Bastion : Mitrailleuse détruite. Infanterie encore active à 100 mètres à l’est du bâtiment, même zone.
+:::
+:::analyse Commentaire
+BDA. La cible est détruite mais il reste du travail sur la même zone : talk-on et réattaque.
+:::
 
-Après la seconde attaque :
-Bastion : « Cible détruite. Fin du travail. Voodoo 1, vous êtes libéré, merci. »
-Commentaire : quatrième issue du BDA, la patrouille est libérée.
+:::transmission
+Bastion : Depuis le bâtiment détruit, suivez la route vers l’est jusqu’au muret. Infanterie derrière le muret.
+Voodoo 1 : Tally.
+:::
+:::analyse Commentaire
+Talk-on de repère en repère ; « Tally » signifie que le pilote voit l’ennemi. Une nouvelle attaque est à l’initiative de Bastion, puisque le type 1 ne vaut que pour une attaque.
+:::
+
+*Après la seconde attaque :*
+
+:::transmission
+Bastion : Cible détruite. Fin du travail. Voodoo 1, vous êtes libéré, merci.
+:::
+:::analyse Commentaire
+Quatrième issue du BDA, la patrouille est libérée.
+:::
 FR;
         $demoEn = <<<'EN'
-ANNOTATED DEMONSTRATION — VOODOO 1 ATTACK AND BDA
-Following the 9-line: Type 1, bomb on target, GBU-12 laser code 1688, IP QUARRY, abort code LEMON. Readback correct, Bastion has said “Continue”.
+## Annotated demonstration — Voodoo 1 attack and BDA
+:::note Following the 9-line
+Type 1, bomb on target, GBU-12 laser code 1688, IP QUARRY, abort code LEMON. Readback correct, Bastion has said “Continue”.
+:::
 
-Voodoo 1: “Voodoo 1, IP.”
-Bastion: “Continue.”
-Voodoo 1: “Voodoo 1, ready.”
-Comment: the aircraft reports the IP, the JTAC clears it to carry on, the pilot confirms ready for the run.
+:::transmission
+Voodoo 1: Voodoo 1, IP.
+Bastion: Continue.
+Voodoo 1: Voodoo 1, ready.
+:::
+:::analysis Comment
+The aircraft reports the IP, the JTAC clears it to carry on, the pilot confirms ready for the run.
+:::
 
-Bastion: “Laser on, code 1688.”
-Voodoo 1: “Spot. Captured.”
-Comment: the pilot sees the laser spot, then their pod acquires it.
+:::transmission
+Bastion: Laser on, code 1688.
+Voodoo 1: Spot. Captured.
+:::
+:::analysis Comment
+The pilot sees the laser spot, then their pod acquires it.
+:::
 
-Bastion: “I have you visual, aligned on the target. Clear hot.”
-Voodoo 1: “Paveway.”
-Comment: Type 1, Bastion sees the aircraft and the target. “Clear hot” clears this attack; “Paveway” reports the weapon released.
+:::transmission
+Bastion: I have you visual, aligned on the target. Clear hot.
+Voodoo 1: Paveway.
+:::
+:::analysis Comment
+Type 1, Bastion sees the aircraft and the target. “Clear hot” clears this attack; “Paveway” reports the weapon released.
+:::
 
-Impact. Bastion observes.
-Bastion: “Machine gun destroyed. Infantry still active 100 metres east of the building, same area.”
-Comment: BDA. The target is destroyed but there is more work in the same area: talk-on and re-attack.
+*Impact. Bastion observes.*
 
-Bastion: “From the destroyed building, follow the road east to the low wall. Infantry behind the wall.”
-Voodoo 1: “Tally.”
-Comment: talk-on from landmark to landmark; “Tally” means the pilot sees the enemy. Another attack is Bastion’s decision, since Type 1 covers one attack only.
+:::transmission
+Bastion: Machine gun destroyed. Infantry still active 100 metres east of the building, same area.
+:::
+:::analysis Comment
+BDA. The target is destroyed but there is more work in the same area: talk-on and re-attack.
+:::
 
-After the second attack:
-Bastion: “Target destroyed. Work complete. Voodoo 1, you are released, thank you.”
-Comment: fourth BDA outcome, the flight is released.
+:::transmission
+Bastion: From the destroyed building, follow the road east to the low wall. Infantry behind the wall.
+Voodoo 1: Tally.
+:::
+:::analysis Comment
+Talk-on from landmark to landmark; “Tally” means the pilot sees the enemy. Another attack is Bastion’s decision, since Type 1 covers one attack only.
+:::
+
+*After the second attack:*
+
+:::transmission
+Bastion: Target destroyed. Work complete. Voodoo 1, you are released, thank you.
+:::
+:::analysis Comment
+Fourth BDA outcome, the flight is released.
+:::
 EN;
         $guided = self::question(
             'Voodoo 1 annonce : « Voodoo 1, IP. » Que répondez-vous ?',
@@ -1441,130 +1676,196 @@ EN;
     private static function brevity(): array
     {
         $theoryFr = <<<'FR'
-01 — Le rôle du brevity
+## 01 — Le rôle du brevity
 Le brevity est un vocabulaire de mots courts, toujours les mêmes, qui remplacent une phrase entière à la radio. Il fait gagner du temps et évite les malentendus entre le JTAC et les pilotes. Ces mots restent en anglais.
 
-02 — Visual / Blind
+## 02 — Visual / Blind
 « Visual » : je vois un ami (l’avion allié, un élément au sol ami). « Blind » : je ne vois pas cet ami.
 
-03 — Tally / No Joy
+## 03 — Tally / No Joy
 « Tally » : je vois l’ennemi ou la cible. « No Joy » : je ne vois pas l’ennemi. Retenez la différence : Visual et Blind parlent des amis, Tally et No Joy de l’ennemi.
 
-04 — Contact
+## 04 — Contact
 « Contact » : j’ai le visuel sur un marquage au sol, par exemple un fumigène ou un panneau.
 
-05 — Spot
+## 05 — Spot
 « Spot » : je vois le spot du code laser.
 
-06 — Captured
+## 06 — Captured
 « Captured » : j’ai acquis la cible ou le marquage avec un senseur, par exemple le pod qui accroche le marqueur laser.
 
-07 — Winchester
+## 07 — Winchester
 « Winchester » : l’appareil rentre à la base, il n’a plus de munitions ou plus de carburant. Le JTAC en tient compte pour la suite de la mission.
 
-08 — Paveway
+## 08 — Paveway
 « Paveway » : le pilote annonce l’utilisation effective de la munition, après « Clear hot ».
 
-09 — Évacuation sanitaire : « Dust Off »
+## 09 — Évacuation sanitaire : « Dust Off »
 L’hélicoptère d’évacuation sanitaire (Medevac) a pour indicatif « Dust Off ». Le JTAC l’emploie pour l’appeler ou le désigner à la radio.
 
-10 — Ce qu’il faut retenir
+:::astuce 10 — Ce qu’il faut retenir
 Visual / Blind = ami vu / pas vu. Tally / No Joy = ennemi vu / pas vu. Contact = marquage au sol vu. Spot = spot laser vu. Captured = acquis au senseur. Winchester = retour base. Paveway = munition larguée après Clear hot. Dust Off = Medevac.
+:::
 FR;
         $theoryEn = <<<'EN'
-01 — The purpose of brevity
+## 01 — The purpose of brevity
 Brevity is a vocabulary of short, standard words that replace a whole sentence on the radio. It saves time and prevents misunderstandings between the JTAC and pilots. These words stay in English.
 
-02 — Visual / Blind
+## 02 — Visual / Blind
 “Visual”: I can see a friendly (the friendly aircraft, a friendly ground element). “Blind”: I cannot see that friendly.
 
-03 — Tally / No Joy
+## 03 — Tally / No Joy
 “Tally”: I can see the enemy or the target. “No Joy”: I cannot see the enemy. Remember the difference: Visual and Blind are about friendlies, Tally and No Joy about the enemy.
 
-04 — Contact
+## 04 — Contact
 “Contact”: I have eyes on a ground mark, for example smoke or a panel.
 
-05 — Spot
+## 05 — Spot
 “Spot”: I can see the laser code spot.
 
-06 — Captured
+## 06 — Captured
 “Captured”: I have acquired the target or the mark with a sensor, for example the pod locking onto the laser marker.
 
-07 — Winchester
+## 07 — Winchester
 “Winchester”: the aircraft is returning to base; it has no weapons or no fuel left. The JTAC takes this into account for the rest of the mission.
 
-08 — Paveway
+## 08 — Paveway
 “Paveway”: the pilot reports actual release of the weapon, after “Clear hot”.
 
-09 — Medical evacuation: “Dust Off”
+## 09 — Medical evacuation: “Dust Off”
 The medical evacuation (Medevac) helicopter uses the callsign “Dust Off”. The JTAC uses it to call or refer to it on the radio.
 
-10 — Key points
+:::tip 10 — Key points
 Visual / Blind = friendly seen / not seen. Tally / No Joy = enemy seen / not seen. Contact = ground mark seen. Spot = laser spot seen. Captured = acquired by sensor. Winchester = returning to base. Paveway = weapon released after Clear hot. Dust Off = Medevac.
+:::
 EN;
         $demoFr = <<<'FR'
-DÉMONSTRATION COMMENTÉE — LE BREVITY EN SITUATION
-Situation de jeu : Bastion guide Voodoo 1 vers un véhicule ennemi au carrefour nord. La section amie est au sud.
+## Démonstration commentée — le brevity en situation
+:::note Situation de jeu
+Bastion guide Voodoo 1 vers un véhicule ennemi au carrefour nord. La section amie est au sud.
+:::
 
-Bastion : « Voodoo 1, fumigène vert sur ma position. »
-Voodoo 1 : « Contact fumigène vert. Visual. »
-Commentaire : « Contact » = le pilote voit le marquage au sol ; « Visual » = il voit les amis.
+:::transmission
+Bastion : Voodoo 1, fumigène vert sur ma position.
+Voodoo 1 : Contact fumigène vert. Visual.
+:::
+:::analyse Commentaire
+« Contact » = le pilote voit le marquage au sol ; « Visual » = il voit les amis.
+:::
 
-Bastion : « Cible : véhicule au carrefour nord, 400 mètres au nord du fumigène. »
-Voodoo 1 : « No Joy. »
-Commentaire : le pilote ne voit pas l’ennemi. Bastion fait un talk-on.
+:::transmission
+Bastion : Cible : véhicule au carrefour nord, 400 mètres au nord du fumigène.
+Voodoo 1 : No Joy.
+:::
+:::analyse Commentaire
+Le pilote ne voit pas l’ennemi. Bastion fait un talk-on.
+:::
 
-Bastion : « Depuis le fumigène, suivez la route vers le nord jusqu’au carrefour. Le véhicule est à l’arrêt sur le bas-côté est. »
-Voodoo 1 : « Tally. »
-Commentaire : le pilote voit maintenant la cible.
+:::transmission
+Bastion : Depuis le fumigène, suivez la route vers le nord jusqu’au carrefour. Le véhicule est à l’arrêt sur le bas-côté est.
+Voodoo 1 : Tally.
+:::
+:::analyse Commentaire
+Le pilote voit maintenant la cible.
+:::
 
-Bastion : « Laser en marche. »
-Voodoo 1 : « Spot. Captured. »
-Commentaire : « Spot » = il voit le spot laser ; « Captured » = son pod l’a acquis.
+:::transmission
+Bastion : Laser en marche.
+Voodoo 1 : Spot. Captured.
+:::
+:::analyse Commentaire
+« Spot » = il voit le spot laser ; « Captured » = son pod l’a acquis.
+:::
 
-Bastion : « Clear hot. »
-Voodoo 1 : « Paveway. »
-Commentaire : la munition est effectivement larguée.
+:::transmission
+Bastion : Clear hot.
+Voodoo 1 : Paveway.
+:::
+:::analyse Commentaire
+La munition est effectivement larguée.
+:::
 
-Plus tard :
-Voodoo 1 : « Voodoo 1, Winchester. »
-Commentaire : plus de munitions ou de carburant, l’avion rentre à la base. Bastion doit compter sans lui.
+*Plus tard :*
 
-Un blessé grave est signalé dans la section :
-Bastion : « Dust Off, Bastion. »
-Commentaire : « Dust Off » est l’indicatif de l’hélicoptère d’évacuation sanitaire.
+:::transmission
+Voodoo 1 : Voodoo 1, Winchester.
+:::
+:::analyse Commentaire
+Plus de munitions ou de carburant, l’avion rentre à la base. Bastion doit compter sans lui.
+:::
+
+*Un blessé grave est signalé dans la section :*
+
+:::transmission
+Bastion : Dust Off, Bastion.
+:::
+:::analyse Commentaire
+« Dust Off » est l’indicatif de l’hélicoptère d’évacuation sanitaire.
+:::
 FR;
         $demoEn = <<<'EN'
-ANNOTATED DEMONSTRATION — BREVITY IN ACTION
-Game situation: Bastion guides Voodoo 1 onto an enemy vehicle at the northern crossroads. The friendly section is to the south.
+## Annotated demonstration — brevity in action
+:::note Game situation
+Bastion guides Voodoo 1 onto an enemy vehicle at the northern crossroads. The friendly section is to the south.
+:::
 
-Bastion: “Voodoo 1, green smoke on my position.”
-Voodoo 1: “Contact green smoke. Visual.”
-Comment: “Contact” = the pilot sees the ground mark; “Visual” = they see the friendlies.
+:::transmission
+Bastion: Voodoo 1, green smoke on my position.
+Voodoo 1: Contact green smoke. Visual.
+:::
+:::analysis Comment
+“Contact” = the pilot sees the ground mark; “Visual” = they see the friendlies.
+:::
 
-Bastion: “Target: vehicle at the northern crossroads, 400 metres north of the smoke.”
-Voodoo 1: “No Joy.”
-Comment: the pilot cannot see the enemy. Bastion does a talk-on.
+:::transmission
+Bastion: Target: vehicle at the northern crossroads, 400 metres north of the smoke.
+Voodoo 1: No Joy.
+:::
+:::analysis Comment
+The pilot cannot see the enemy. Bastion does a talk-on.
+:::
 
-Bastion: “From the smoke, follow the road north to the crossroads. The vehicle is stopped on the east verge.”
-Voodoo 1: “Tally.”
-Comment: the pilot can now see the target.
+:::transmission
+Bastion: From the smoke, follow the road north to the crossroads. The vehicle is stopped on the east verge.
+Voodoo 1: Tally.
+:::
+:::analysis Comment
+The pilot can now see the target.
+:::
 
-Bastion: “Laser on.”
-Voodoo 1: “Spot. Captured.”
-Comment: “Spot” = they see the laser spot; “Captured” = their pod has acquired it.
+:::transmission
+Bastion: Laser on.
+Voodoo 1: Spot. Captured.
+:::
+:::analysis Comment
+“Spot” = they see the laser spot; “Captured” = their pod has acquired it.
+:::
 
-Bastion: “Clear hot.”
-Voodoo 1: “Paveway.”
-Comment: the weapon has actually been released.
+:::transmission
+Bastion: Clear hot.
+Voodoo 1: Paveway.
+:::
+:::analysis Comment
+The weapon has actually been released.
+:::
 
-Later:
-Voodoo 1: “Voodoo 1, Winchester.”
-Comment: no weapons or fuel left, the aircraft returns to base. Bastion must plan without it.
+*Later:*
 
-A serious casualty is reported in the section:
-Bastion: “Dust Off, Bastion.”
-Comment: “Dust Off” is the callsign of the medical evacuation helicopter.
+:::transmission
+Voodoo 1: Voodoo 1, Winchester.
+:::
+:::analysis Comment
+No weapons or fuel left, the aircraft returns to base. Bastion must plan without it.
+:::
+
+*A serious casualty is reported in the section:*
+
+:::transmission
+Bastion: Dust Off, Bastion.
+:::
+:::analysis Comment
+“Dust Off” is the callsign of the medical evacuation helicopter.
+:::
 EN;
         $guided = self::question(
             'Le pilote voit maintenant le véhicule ennemi. Que dit-il ?',
