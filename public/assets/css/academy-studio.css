@@ -332,3 +332,58 @@
   .ast-dialog .sum { grid-template-columns: repeat(2,1fr); }
   .sh-row { flex-wrap: wrap; }
 }
+
+/* ---------- Studio : qualifications et brevets ---------- */
+.sth-kinds > a { text-decoration: none; }
+.sth-pick { width: min(560px, 94vw); }
+.sth-pick__list { display: flex; flex-direction: column; gap: 8px; }
+.academy-workspace .sth-pick__opt { display: flex; gap: 14px; align-items: center; width: 100%; padding: 14px 16px; border: 1.5px solid var(--w-border); border-radius: 12px; background: var(--w-surface); color: var(--w-text); font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
+.academy-workspace .sth-pick__opt:hover, .academy-workspace .sth-pick__opt:focus-visible { border-color: var(--w-primary); background: var(--w-primary-soft); }
+.sth-pick__opt b { display: block; font-size: 15px; }
+.sth-pick__opt small { display: block; color: var(--w-muted); font-size: 12.5px; margin-top: 2px; }
+.sth-hero--slim .hin { padding: 24px 30px; align-items: center; }
+.academy-workspace .sth-hero--slim h1 { font-size: clamp(30px, 4vw, 52px); line-height: .95; }
+.sth-hero .kk a { color: inherit; text-decoration: none; }
+.sth-hero code, .cred-card code, .cred-mono { font-family: var(--w-mono, ui-monospace, monospace); }
+.cred-card .cred-head { display: flex; align-items: center; gap: 14px; padding: 18px 18px 0; text-decoration: none; color: var(--w-text); flex-wrap: wrap; }
+.cred-card .cred-head code { margin-left: auto; font-size: 11.5px; color: var(--w-muted); }
+.cred-card .pill { background: var(--w-soft); }
+.cred-card.is-mine { border-color: var(--w-primary); box-shadow: inset 0 3px 0 var(--w-primary); }
+.cred-badge { width: 56px; height: 56px; border-radius: 12px; object-fit: contain; background: var(--w-soft); border: 1px solid var(--w-border); flex: none; }
+.cred-badge--crest { display: grid; place-items: center; background: #0b0f0e; color: var(--w-accent); font-weight: 900; font-style: italic; font-size: 17px; border-color: rgba(244,244,240,.15); }
+.cred-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+.cred-side { position: sticky; top: 16px; display: flex; flex-direction: column; }
+.cred-head--big { display: flex; gap: 14px; align-items: center; }
+.cred-head--big .cred-badge { width: 72px; height: 72px; }
+.cred-head--big b { display: block; font-size: 15px; }
+.cred-head--big small { display: block; color: var(--w-muted); font-size: 12px; margin-top: 2px; }
+.academy-workspace .cred-check { flex-direction: row; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--w-muted); }
+.academy-workspace .cred-check input { margin-top: 3px; accent-color: var(--w-primary); }
+.academy-workspace .cred-check b { color: var(--w-text); }
+.cred-group { border: 0; border-top: 1px solid var(--w-border); margin: 16px 0 0; padding: 14px 0 0; }
+.academy-workspace .cred-group legend { font-size: 13px; font-weight: 700; padding: 0; }
+.cred-group > .h { margin-bottom: 10px; }
+.cred-picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; }
+.academy-workspace .cred-picks label { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--w-border); border-radius: 8px; font-size: 13px; cursor: pointer; }
+.academy-workspace .cred-picks label:has(input:checked) { border-color: var(--w-primary); background: var(--w-primary-soft); }
+.cred-picks input { margin-top: 3px; accent-color: var(--w-primary); }
+.cred-metric { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.3fr) minmax(0, .6fr); gap: 10px; margin-bottom: 10px; }
+.cred-submit { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 30px; }
+.cred-courses { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.academy-workspace .cred-courses li { display: flex; align-items: center; gap: 8px; justify-content: space-between; padding: 8px 10px; border: 1px solid var(--w-border); border-radius: 8px; font-size: 13px; }
+.cred-courses li a { color: var(--w-text); min-width: 0; overflow-wrap: anywhere; }
+.cred-courses li small { color: var(--w-muted); }
+.cred-courses form { margin: 0; }
+.cred-link { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 10px; }
+.cred-link .fl { flex: 1; }
+.cred-confirm > summary { list-style: none; width: max-content; }
+.cred-confirm > summary::-webkit-details-marker { display: none; }
+.cred-confirm form { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.academy-workspace .cred-danger > h3 { color: var(--w-danger); }
+.ast-delivers .cred-courses li { padding: 6px 8px; }
+@media (max-width: 960px) {
+  .cred-layout { grid-template-columns: minmax(0, 1fr); }
+  .cred-side { position: static; }
+  .cred-metric { grid-template-columns: minmax(0, 1fr); }
+  .sth-hero--slim .hin { padding: 20px; }
+}

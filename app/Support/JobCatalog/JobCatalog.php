@@ -17,7 +17,9 @@ use App\Support\JobRoleIconLibrary;
  * une entrée : id, branch, command, formation, unit{fr,en}, type, code, code_system, name{fr,en}, abbreviation,
  * description{fr,en}, qualifications{fr[],en[]}, billets{fr[],en[]}, icon, tags{fr[],en[]}, sources[{url,title}],
  * qualification_refs[] (facultatif : ids du catalogue de qualifications, App\Support\QualificationCatalog, des brevets
- * cités dans qualifications).
+ * cités dans qualifications), reference_keys[] (alignée sur qualifications : pour chaque brevet, formation ou doctrine
+ * citée, la clé stable de l’élément de référence qu’elle désigne, « qualification:<id> » du catalogue de qualifications
+ * ou « doctrine:<clé> » du référentiel doctrinal, App\Services\Doctrine\DoctrineLibraryCatalog).
  * official_lang : langue des appellations officielles du pays (« en » par défaut ; « de » : name porte aussi une clé de ;
  * « zh » : clé zh en caractères simplifiés ; « ru » : clé ru en cyrillique) ; un nom officiel en alphabet non latin a sa
  * romanisation sous la clé <langue>-Latn (« zh-Latn » : pinyin avec tons, « ru-Latn » : translittération usuelle), cherchée
@@ -315,6 +317,7 @@ final class JobCatalog
             'qualification_refs' => self::qualificationRefs($entry),
             'qualification_links' => self::qualificationLinks($entry, $lang),
             'linked_qualifications' => self::linkedQualifications($entry, $lang),
+            'references' => self::references($entry, $lang),
         ];
     }
 
@@ -341,12 +344,85 @@ final class JobCatalog
         return $out;
     }
 
-    /** @return list<string> ids du catalogue de qualifications cités par l’entrée */
+    /**
+     * Ids du catalogue de qualifications cités par l’entrée : qualification_refs, puis les qualifications désignées par
+     * reference_keys.
+     *
+     * @return list<string>
+     */
     public static function qualificationRefs(array $entry): array
     {
         $refs = is_array($entry['qualification_refs'] ?? null) ? $entry['qualification_refs'] : [];
+        foreach (self::referenceKeys($entry) as $key) {
+            if (str_starts_with($key, 'qualification:')) {
+                $refs[] = substr($key, 14);
+            }
+        }
 
         return array_values(array_unique(array_filter(array_map(static fn ($r): string => is_string($r) ? trim($r) : '', $refs), static fn (string $r): bool => $r !== '')));
+    }
+
+    /**
+     * Clés des éléments de référence désignés par les brevets cités (alignées sur qualifications, '' si absente).
+     *
+     * @param array<string, mixed> $entry
+     * @return list<string>
+     */
+    public static function referenceKeys(array $entry): array
+    {
+        $keys = is_array($entry['reference_keys'] ?? null) ? array_values($entry['reference_keys']) : [];
+
+        return array_map(static fn ($k): string => is_string($k) && preg_match(self::REFERENCE_KEY, $k) === 1 ? $k : '', $keys);
+    }
+
+    /** Clé stable d’un élément de référence : qualification du catalogue ou publication du référentiel doctrinal. */
+    public const REFERENCE_KEY = '/^(qualification:[a-z]{2,4}-[a-z0-9-]{2,60}|doctrine:[a-z]{2,4}-[a-z0-9-]{2,80})$/';
+
+    /**
+     * Élément de référence désigné par une clé, dans la langue du lecteur, ou null s’il n’existe pas.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function resolveReference(string $key, string $lang): ?array
+    {
+        if (str_starts_with($key, 'qualification:')) {
+            $raw = \App\Support\QualificationCatalog\QualificationCatalog::findRaw(substr($key, 14));
+            if ($raw === null) {
+                return null;
+            }
+            $q = \App\Support\QualificationCatalog\QualificationCatalog::localize($raw, $lang);
+
+            return ['key' => $key, 'kind' => 'qualification', 'id' => $q['id'], 'code' => $q['code'], 'name' => $q['name'], 'official_name' => $q['official_name'],
+                'issuer' => $q['issuer'], 'academy' => \App\Support\QualificationCatalog\QualificationCatalogExplorer::academyCourse($q['id'], $lang)];
+        }
+        if (str_starts_with($key, 'doctrine:')) {
+            $d = \App\Services\Doctrine\DoctrineLibraryCatalog::find(substr($key, 9));
+            if ($d === null) {
+                return null;
+            }
+
+            return ['key' => $key, 'kind' => 'doctrine', 'id' => (string) $d['key'], 'code' => (string) $d['code'], 'name' => self::lang($lang) === 'en' ? (string) $d['title_en'] : (string) $d['title_fr'],
+                'official_name' => (string) $d['title'], 'issuer' => (string) $d['issuer'], 'academy' => null];
+        }
+
+        return null;
+    }
+
+    /**
+     * Pour chaque brevet cité (langue du lecteur), l’élément de référence qu’il désigne, ou null.
+     *
+     * @param array<string, mixed> $entry
+     * @return list<array<string, mixed>|null>
+     */
+    public static function references(array $entry, string $lang): array
+    {
+        $keys = self::referenceKeys($entry);
+        $out = [];
+        foreach (self::pickList($entry['qualifications'] ?? [], $lang) as $i => $text) {
+            $out[] = ($keys[$i] ?? '') !== '' ? self::resolveReference($keys[$i], $lang) : null;
+        }
+
+        return $out;
     }
 
     /**
@@ -360,6 +436,11 @@ final class JobCatalog
     public static function qualificationLinks(array $entry, string $lang): array
     {
         $shown = self::pickList($entry['qualifications'] ?? [], $lang);
+        // Clé stable de l’élément désigné : prioritaire sur le rapprochement par le texte.
+        $keys = self::referenceKeys($entry);
+        if ($keys !== []) {
+            return array_map(static fn (int $i): string => str_starts_with($keys[$i] ?? '', 'qualification:') ? substr($keys[$i], 14) : '', array_keys($shown));
+        }
         $fr = array_values(is_array($entry['qualifications']['fr'] ?? null) ? $entry['qualifications']['fr'] : []);
         $en = array_values(is_array($entry['qualifications']['en'] ?? null) ? $entry['qualifications']['en'] : []);
         $candidates = array_values(array_filter(array_map(static fn (string $ref): ?array => \App\Support\QualificationCatalog\QualificationCatalog::findRaw($ref), self::qualificationRefs($entry))));
@@ -677,6 +758,11 @@ final class JobCatalog
             if (is_array($tags) && (count($tags) > JobRoleEnrichmentService::MAX_TAGS || array_filter($tags, static fn ($t): bool => mb_strlen((string) $t) > JobRoleEnrichmentService::TAG_MAX_LENGTH) !== [])) {
                 $p[] = 'étiquettes trop nombreuses ou trop longues';
             }
+        }
+        $keys = $entry['reference_keys'] ?? [];
+        if (!is_array($keys) || !array_is_list($keys) || count($keys) !== count(is_array($entry['qualifications']['fr'] ?? null) ? $entry['qualifications']['fr'] : [])
+            || array_filter($keys, static fn ($k): bool => !is_string($k) || preg_match(self::REFERENCE_KEY, $k) !== 1) !== []) {
+            $p[] = 'reference_keys invalides';
         }
         $refs = $entry['qualification_refs'] ?? [];
         if (!is_array($refs) || !array_is_list($refs) || count($refs) > 12

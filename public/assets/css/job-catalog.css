@@ -336,6 +336,8 @@
 .jobcat__qual-ref { color: var(--jc-accent); font-weight: 600; }
 .jobcat__qual-search, .jobcat__academy, .qsheet__link { color: var(--jc-accent); font-size: 0.75rem; font-weight: 600; }
 .jobcat__qual-search { color: var(--jc-muted); }
+.jobcat__attach { margin-left: auto; white-space: normal; text-align: left; }
+.jobcat__attach.is-on { background: var(--jc-accent); color: var(--jc-surface); border-color: var(--jc-accent); }
 .jobcat__academy { display: inline-block; padding: 0 0.35rem; border: 1px solid var(--jc-accent); text-decoration: none; }
 .jobcat__qual-link select { max-width: 16rem; min-height: 1.75rem; border: 1px solid var(--jc-line); background: var(--jc-surface); color: var(--jc-ink); font: inherit; font-size: 0.75rem; }
 .jobcat__quals li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.1rem 0.6rem; }

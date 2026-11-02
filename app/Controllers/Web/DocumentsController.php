@@ -61,19 +61,19 @@ class DocumentsController
                 'noOrgMessage' => 'La documentation est propre à chaque communauté. Rejoignez une communauté avec un code d’invitation, ou créez la vôtre, pour y accéder.',
             ]);
         }
-        $categoryId = $request->input('category') ? (int) $request->input('category') : null;
-        $categorySlugFilter = trim((string) ($request->input('category_slug') ?? ''));
-        $doctrineQuick = trim((string) ($request->input('doctrine_filter') ?? ''));
-        $search = $request->input('q') ? trim((string) $request->input('q')) : null;
-        $documentType = $request->input('document_type') ? trim((string) $request->input('document_type')) : null;
+        $categoryId = ((int) $request->queryString('category') ?: null);
+        $categorySlugFilter = trim($request->queryString('category_slug'));
+        $doctrineQuick = trim($request->queryString('doctrine_filter'));
+        $search = (trim($request->queryString('q')) ?: null);
+        $documentType = (trim($request->queryString('document_type')) ?: null);
         if ($documentType === '') {
             $documentType = null;
         }
-        $sortRaw = $request->input('sort') ? trim((string) $request->input('sort')) : '';
+        $sortRaw = (trim($request->queryString('sort')) ?: '');
         $allowedSort = ['title_asc', 'title_desc', 'updated_desc', 'updated_asc'];
         $sort = in_array($sortRaw, $allowedSort, true) ? $sortRaw : 'title_asc';
-        $entityType = $request->input('entity_type') ? trim((string) $request->input('entity_type')) : null;
-        $entityId = $request->input('entity_id') ? (int) $request->input('entity_id') : null;
+        $entityType = (trim($request->queryString('entity_type')) ?: null);
+        $entityId = ((int) $request->queryString('entity_id') ?: null);
         $userId = (int) Session::get('user_id');
         $canManageCollections = Gate::getInstance()->allows('documents.upload') || Gate::getInstance()->allows('admin.access');
         $categoriesList = $this->categoryRepository->listForTenant($tenantId);
@@ -119,7 +119,7 @@ class DocumentsController
             'documentTrainingRefs' => $documentTrainingRefs,
             'collections' => $collections,
             'canManageCollections' => $canManageCollections,
-            'focus' => (string) ($request->input('focus') ?? ''),
+            'focus' => $request->queryString('focus'),
         ]);
     }
 
@@ -293,7 +293,7 @@ class DocumentsController
         if (!$doc) {
             return $this->missingDocumentFilePage(null, $id);
         }
-        $denied = $this->denyAttachedFileAccess($doc, $id, (int) $tenantId, true, trim((string) $request->input('security_session_token')));
+        $denied = $this->denyAttachedFileAccess($doc, $id, (int) $tenantId, true, trim($request->queryString('security_session_token')));
         if ($denied !== null) {
             return $denied;
         }
@@ -303,7 +303,7 @@ class DocumentsController
         }
         $fullPath = $resolved['path'];
         $this->auditService->logDocumentDownloaded((int) $tenantId, $userId ? (int) $userId : 0, $id);
-        $securitySessionToken = trim((string) $request->input('security_session_token'));
+        $securitySessionToken = trim($request->queryString('security_session_token'));
         if ($securitySessionToken !== '') {
             $this->documentSecurityRepository->markDownloaded($securitySessionToken);
             $this->documentSecurityRepository->logEvent($securitySessionToken, $id, $userId ? (int) $userId : null, 'document_downloaded');

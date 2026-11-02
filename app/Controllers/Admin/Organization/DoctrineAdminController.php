@@ -80,7 +80,7 @@ final class DoctrineAdminController
         if ($tenantId < 1) {
             return Response::redirect(url('dashboard'));
         }
-        $documentId = (int) $request->input('document_id', 0);
+        $documentId = (int) $request->query('document_id', 0);
         $rows = [['Référence', 'Titre', 'Version', 'Membre', 'Unité', 'Statut', 'Première ouverture', 'Lecture confirmée le', 'Échéance']];
         foreach ($this->hubService->complianceRows($tenantId, $documentId) as $r) {
             $rows[] = [

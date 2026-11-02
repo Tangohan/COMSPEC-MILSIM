@@ -3501,15 +3501,21 @@ class EffectifsWorkspaceController
     private function applyCatalogQualifications(Request $request, int $tenantId, int $roleId): int
     {
         $refs=$request->input('catalog_qualification_refs',[]);
-        if ((string)$request->input('catalog_qualifications_prereq','')!=='1' || !is_array($refs) || $refs===[]) return 0;
+        $refs=(string)$request->input('catalog_qualifications_prereq','')==='1' && is_array($refs) ? array_values($refs) : [];
+        // « Rattacher à la fonction » d’un brevet ou d’une doctrine de la fiche du catalogue.
+        $keys=$request->input('catalog_reference_keys',[]);
+        $keys=is_array($keys) ? array_values($keys) : [];
+        if ($refs===[] && $keys===[]) return 0;
         try {
             $pdo=Database::getPdo();
             $linker=new \App\Services\Personnel\JobCatalogQualificationLinker(
                 new \App\Services\Personnel\QualificationCatalogImporter(new \App\Services\Personnel\QualificationReferenceWriter($pdo)),
                 new \App\Services\Personnel\JobPrerequisiteService($pdo)
             );
-            $result=$linker->apply($tenantId,$roleId,array_values($refs),function_exists('locale')?(string)locale():'fr',(int)Session::get('user_id'));
-            return $result['added'];
+            $lang=function_exists('locale')?(string)locale():'fr';
+            $actor=(int)Session::get('user_id');
+            $added=$refs!==[] ? $linker->apply($tenantId,$roleId,$refs,$lang,$actor)['added'] : 0;
+            return $added+($keys!==[] ? $linker->applyReferences($tenantId,$roleId,$keys,$lang,$actor)['added'] : 0);
         } catch (\Throwable $e) {
             error_log('Effectifs jobs catalog qualifications: '.$e->getMessage());
             return 0;

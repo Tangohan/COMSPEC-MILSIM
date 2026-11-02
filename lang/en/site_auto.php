@@ -52412,4 +52412,11 @@ return [
     'Édition publiée' => 'Published edition',
     'Formations pour bien démarrer' => 'Courses to get started',
     'Publications de référence FR, US, OTAN, Allemagne' => 'Reference publications FR, US, NATO, Germany',
+    'Ouvrir dans le référentiel doctrinal' => 'Open in the doctrine library',
+    'Rattachement annulé' => 'Attachment cancelled',
+    'Rattacher à la fonction' => 'Attach to the role',
+    'Rattaché : ajouté aux prérequis à l’enregistrement' => 'Attached: added to the prerequisites when you save',
+    'Doctrine du référentiel :' => 'Library doctrine:',
+    'Doctrine du référentiel' => 'Library doctrine',
+    'Cours du Studio de l’Academy' => 'Academy Studio courses',
 ];

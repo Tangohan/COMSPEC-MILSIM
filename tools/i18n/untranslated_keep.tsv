@@ -1226,3 +1226,10 @@ vs %1	identique en anglais	views/admin/system/plan_payments.php
 Intervention — %1	identique en anglais	views/admin/system/tenant_intervention.php
 Studio — version	identique en anglais	views/admin/training/studio_edit.php
 Centre d’instruction CAS	nom propre d’exemple (émetteur fictif)	views/admin/organization/qualifications/_issuer_fields.php
+?nouveau=brevet&cours=	paramètre d'URL	views/academy/studio.php
+?nouveau=qualification&cours=	paramètre d'URL	views/academy/studio.php
+?nouveau-cours=1	paramètre d'URL	views/academy/studio_credentials.php
+?nouveau=	paramètre d'URL	views/academy/studio_credentials.php
+?nouveau-cours=1	paramètre d'URL	views/academy/studio_kinds.php
+?nouveau=brevet	paramètre d'URL	views/academy/studio_kinds.php
+?nouveau=qualification	paramètre d'URL	views/academy/studio_kinds.php

@@ -37,7 +37,7 @@ final class UnitSheetController
     public function show(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
-        $unitId = (int) ($params['id'] ?? $request->input('id', 0));
+        $unitId = (int) ($params['id'] ?? $request->query('id', 0));
         if ($tenantId < 1 || $unitId < 1) {
             return Response::redirect(url('back-office/organisation/structure'));
         }

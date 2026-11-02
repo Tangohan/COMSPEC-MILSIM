@@ -28,6 +28,7 @@ use App\Services\Academy\AcademyBuiltInCourses;
 use App\Services\Academy\AcademyRichText;
 use App\Services\Academy\AcademyOffer;
 use App\Services\Academy\AcademyStudio;
+use App\Services\Academy\AcademyStudioCredentials;
 use App\Services\Training\TrainingCourseMediaUploadService;
 use App\Services\Academy\GoogleSlidesImporter;
 use App\Support\TrainingLmsStaffAccess;
@@ -274,7 +275,7 @@ final class AcademyController
                         }
                         return AcademyCurriculum::validateChapter($state, $state['snapshot'], $userId, $comment, time());
                     });
-                    $this->awardBuiltInQualification($repository, $tenantId, $learnerId, $key, $userId);
+                    $this->awardCourseQualifications($repository, $tenantId, $learnerId, $key, $userId);
                     $this->audit('academy.learner.validated', $tenantId, $key, ['learner' => $learnerId, 'chapter' => is_scalar($expectedChapter) ? (int) $expectedChapter : null]);
                 }
                 $returnSpace = 'instructor';
@@ -306,24 +307,27 @@ final class AcademyController
     }
 
     /**
-     * Dernier chapitre d’un cours intégré validé : la qualification Athena Academy du cours est créée si besoin dans le
-     * référentiel (mode « Formation Academy ») puis attribuée par la règle automatique. Ne bloque jamais la validation.
+     * Dernier chapitre d’un cours validé. Cours intégré : sa qualification Athena Academy est créée si besoin dans le
+     * référentiel (mode « Formation Academy ») puis attribuée par la règle automatique. Tout cours : les qualifications
+     * et brevets qui le demandent (Studio) sont évalués aussitôt. Ne bloque jamais la validation.
      */
-    private function awardBuiltInQualification(AcademyRepository $repository, int $tenantId, int $learnerId, string $key, int $instructorId): void
+    private function awardCourseQualifications(AcademyRepository $repository, int $tenantId, int $learnerId, string $key, int $instructorId): void
     {
-        if (!isset(AcademyBuiltInCourses::qualifications()[$key])) {
-            return;
-        }
         try {
             $state = $repository->states($tenantId, $learnerId)[$key] ?? null;
             if (!is_array($state) || ($state['completed'] ?? false) !== true) {
                 return;
             }
-            $definitionId = \App\Services\Academy\AcademyBuiltInQualifications::forPdo(\App\Core\Database::getPdo())
-                ->ensureDefinition($tenantId, $key, function_exists('locale') ? (string) locale() : 'fr', $instructorId);
-            if ($definitionId > 0) {
-                Container::get(\App\Services\Personnel\QualificationAwardRuleService::class)->runAuto($tenantId, $definitionId);
+            $builtIn = \App\Services\Academy\AcademyBuiltInQualifications::forPdo(\App\Core\Database::getPdo());
+            $definitionId = 0;
+            if (isset(AcademyBuiltInCourses::qualifications()[$key])) {
+                $definitionId = $builtIn->ensureDefinition($tenantId, $key, function_exists('locale') ? (string) locale() : 'fr', $instructorId);
+                if ($definitionId > 0) {
+                    Container::get(\App\Services\Personnel\QualificationAwardRuleService::class)->runAuto($tenantId, $definitionId);
+                }
             }
+            // Qualifications et brevets du Studio qui demandent ce cours (ou une version qu'il remplace).
+            $this->credentials()->awardForCourse($tenantId, $key, $builtIn->lineage($tenantId)[$key] ?? [], $definitionId);
         } catch (\Throwable $e) {
             error_log('[academy] qualification du cours ' . $key . ' : ' . $e->getMessage());
         }
@@ -429,6 +433,10 @@ final class AcademyController
                 return $this->error('module_unavailable', 403);
             }
             $repository = new AcademyRepository();
+            $credentialPage = $this->credentialsPage($request, $rights, $repository, $tenantId);
+            if ($credentialPage !== null) {
+                return $credentialPage;
+            }
             $shares = $this->shareRepository();
             $access = $this->accessRepository();
             $key = $request->queryString('course');
@@ -484,6 +492,9 @@ final class AcademyController
                 'editLang' => $request->queryString('edit') === 'en' ? 'en' : 'fr',
                 'openShare' => $request->queryString('share') === '1',
                 'studioView' => $request->queryString('vue'),
+                'courseCredentials' => $course !== null ? $this->courseCredentials($rights, $tenantId, $key) : null,
+                'credentialCounts' => $course === null ? $this->credentialCounts($tenantId) : [],
+                'openNewCourse' => $course === null && $request->queryString('nouveau-cours') === '1' && $rights->can('create'),
             ])->header('Cache-Control', 'private, no-store');
         } catch (\PDOException) {
             // Tables Academy absentes : la création attend l'étape de migration.
@@ -522,6 +533,9 @@ final class AcademyController
     private function studioAction(Request $request, AcademyRepository $repository, string $action, string $key, int $tenantId, int $userId): Response
     {
         $rights = $this->rights($tenantId, $userId);
+        if (str_starts_with($action, 'studio_cred_')) {
+            return $this->credentialAction($request, $repository, $rights, $action, $key, $tenantId, $userId);
+        }
         $access = $this->accessRepository();
         if (in_array($action, ['studio_preview', 'studio_image'], true)) {
             // Aperçu en direct et images de l'éditeur : qui peut rédiger ce cours (auteur, droit « modifier », éditeur
@@ -1086,6 +1100,231 @@ final class AcademyController
             ->setBodyStream(static function () use ($path): void {
                 readfile($path);
             });
+    }
+
+    private function credentials(): AcademyStudioCredentials
+    {
+        return Container::get(AcademyStudioCredentials::class);
+    }
+
+    /** Créer et modifier les qualifications et brevets du Studio : mêmes droits que créer ou modifier un cours. */
+    private function canManageCredentials(AcademyRights $rights): bool
+    {
+        return $rights->can('create') || $rights->can('edit');
+    }
+
+    /** @return list<string> versions précédentes d'un cours du Studio */
+    private function olderVersions(int $tenantId, string $key): array
+    {
+        try {
+            return \App\Services\Academy\AcademyBuiltInQualifications::forPdo(\App\Core\Database::getPdo())->lineage($tenantId)[$key] ?? [];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * Cours qui peuvent mener à une qualification : cours du Studio (hors corbeille) et cours intégrés.
+     *
+     * @return array<string, array{title: string, source: string, status: string}>
+     */
+    private function credentialCourses(AcademyRepository $repository, AcademyRights $rights, int $tenantId): array
+    {
+        $lang = locale() === 'en' ? 'en' : 'fr';
+        $titleOf = static fn (array $c): string => trim((string) ($c['title'][$lang] ?? '')) ?: (trim((string) ($c['title']['fr'] ?? '')) ?: (string) $c['key']);
+        $out = [];
+        try {
+            foreach ($repository->studioList($tenantId) as $c) {
+                if (!empty($c['deleted_at']) || (empty($c['published']) && $rights->studioRole($c) === null)) {
+                    continue;
+                }
+                $status = !empty($c['archived']) ? 'archived' : (!empty($c['published']) ? 'pub' : (isset($c['replaces']) ? 'version' : 'draft'));
+                $out[(string) $c['key']] = ['title' => $titleOf($c), 'source' => 'studio', 'status' => $status];
+            }
+        } catch (\PDOException | \JsonException) {
+        }
+        foreach (AcademyBuiltInCourses::all() as $c) {
+            $out[(string) $c['key']] = ['title' => $titleOf($c), 'source' => 'builtin', 'status' => 'builtin'];
+        }
+        return $out;
+    }
+
+    /** Compteurs des onglets du Studio : qualifications et brevets actifs. @return array<string,int> */
+    private function credentialCounts(int $tenantId): array
+    {
+        $counts = ['qualification' => 0, 'brevet' => 0];
+        try {
+            foreach ($this->credentials()->list($tenantId) as $c) {
+                if (empty($c['archived'])) {
+                    $counts[$c['kind']]++;
+                }
+            }
+        } catch (\Throwable) {
+        }
+        return $counts;
+    }
+
+    /** Réglages du cours : ce qu'il délivre à la réussite, et ce qu'on peut y rattacher. */
+    private function courseCredentials(AcademyRights $rights, int $tenantId, string $key): ?array
+    {
+        try {
+            $credentials = $this->credentials();
+            if (!$credentials->ready()) {
+                return null;
+            }
+            $linked = $credentials->forCourse($tenantId, $key, $this->olderVersions($tenantId, $key));
+            $linkedIds = array_column($linked, 'id');
+            $available = array_values(array_filter($credentials->list($tenantId), static fn (array $c): bool => empty($c['archived']) && !in_array($c['id'], $linkedIds, true)));
+            return ['linked' => $linked, 'available' => $available, 'canManage' => $this->canManageCredentials($rights), 'rulesReady' => $credentials->rulesReady()];
+        } catch (\Throwable $e) {
+            error_log('[academy] qualifications du cours ' . $key . ' : ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Studio, qualifications et brevets : listes (?vue=qualifications|brevets), création (?nouveau=qualification|brevet,
+     * &cours=clé pour la rattacher d'emblée à un cours) et fiche (?fiche=id). Null : autre page du Studio.
+     */
+    private function credentialsPage(Request $request, AcademyRights $rights, AcademyRepository $repository, int $tenantId): ?Response
+    {
+        $view = $request->queryString('vue');
+        $new = $request->queryString('nouveau');
+        $fiche = $request->queryString('fiche');
+        $isList = in_array($view, ['qualifications', 'brevets'], true);
+        if (!$isList && !in_array($new, AcademyStudioCredentials::KINDS, true) && !ctype_digit($fiche)) {
+            return null;
+        }
+        if (!$rights->entersStudio()) {
+            return $this->error('forbidden', 403);
+        }
+        $credentials = $this->credentials();
+        if (!$credentials->ready()) {
+            return $this->error('unavailable', 503);
+        }
+        $canManage = $this->canManageCredentials($rights);
+        $editing = null;
+        $kind = $isList ? ($view === 'brevets' ? 'brevet' : 'qualification') : $new;
+        if (!$isList && ctype_digit($fiche)) {
+            $editing = $credentials->find($tenantId, (int) $fiche);
+            if ($editing === null) {
+                return $this->error('not_found', 404);
+            }
+            $kind = $editing['kind'];
+        } elseif (!$isList && !$canManage) {
+            return $this->error('forbidden', 403);
+        }
+        $origin = in_array($request->queryString('origine'), ['communaute', 'base', 'archives'], true) ? $request->queryString('origine') : 'tout';
+        $courses = $this->credentialCourses($repository, $rights, $tenantId);
+        $notice = (string) Session::get('academy_notice', '');
+        Session::set('academy_notice', '');
+        $form = Session::get('academy_form', []);
+        Session::set('academy_form', []);
+        $data = [
+            'space' => 'studio', 'tenant' => Container::get(TenantRepository::class)->findById($tenantId), 'notice' => $notice,
+            'canManage' => $canManage, 'canArchive' => $rights->can('publish'), 'credKind' => $kind, 'credList' => $isList,
+            'credOrigin' => $origin, 'credentials' => $credentials->list($tenantId), 'editing' => $editing, 'studioCourses' => $courses,
+            'counts' => $this->credentialCounts($tenantId), 'rulesReady' => $credentials->rulesReady(), 'oldForm' => is_array($form) ? $form : [],
+        ];
+        if (!$isList) {
+            $referentiel = Container::get(\App\Repositories\QualificationReferentielRepository::class);
+            $lang = locale() === 'en' ? 'en' : 'fr';
+            $prefill = $request->queryString('cours');
+            $data += [
+                'categories' => $referentiel->listCategories($tenantId),
+                'catalogCategories' => array_values(array_map(static fn (array $label): string => (string) $label[$lang], \App\Support\QualificationCatalog\QualificationCatalog::CATEGORIES)),
+                'issuers' => array_values(array_filter((new \App\Repositories\QualificationIssuerRepository())->listForTenant($tenantId), static fn (array $i): bool => empty($i['archived_at']))),
+                'templates' => $referentiel->listCertificateTemplates($tenantId),
+                'metricOptions' => array_map(static fn (array $m): string => $m['label'], \App\Support\QualificationCriteriaCatalog::METRICS),
+                'aircraftOptions' => $credentials->rulesReady() ? Container::get(\App\Services\Personnel\QualificationAwardRuleService::class)->aircraftOptions($tenantId) : [],
+                'prefillCourse' => isset($courses[$prefill]) ? $prefill : '',
+                'backOfficeUrl' => $editing !== null && Gate::getInstance()->allows('admin.organization') ? url('back-office/referentiels/qualifications/' . (int) $editing['id'] . '/edit') : '',
+            ];
+        }
+        return Response::view('academy.studio_credentials', $data)->header('Cache-Control', 'private, no-store');
+    }
+
+    private function credentialUrl(string $query): string
+    {
+        return url('academy/studio?' . $query);
+    }
+
+    /** Qualifications et brevets du Studio : enregistrer (avec l'insigne), archiver, rattacher ou détacher un cours. */
+    private function credentialAction(Request $request, AcademyRepository $repository, AcademyRights $rights, string $action, string $key, int $tenantId, int $userId): Response
+    {
+        $credentials = $this->credentials();
+        $id = (int) $request->inputString('cred_id');
+        $kind = in_array($request->inputString('cred_kind'), AcademyStudioCredentials::KINDS, true) ? $request->inputString('cred_kind') : 'qualification';
+        if (!($action === 'studio_cred_archive' ? $rights->can('publish') : $this->canManageCredentials($rights))) {
+            return $this->error('forbidden', 403);
+        }
+        // Rattacher depuis les réglages d'un cours : retour au cours ; sinon retour à la fiche.
+        $fromCourse = $request->inputString('return') === 'course' && $key !== 'academy';
+        $back = fn (int $credId, string $notice): Response => $this->credentialBack($fromCourse ? $this->studioUrl($key)
+            : $this->credentialUrl($credId > 0 ? 'fiche=' . $credId : 'nouveau=' . $kind), $notice);
+        try {
+            if ($action === 'studio_cred_save') {
+                $form = [];
+                foreach (\App\Support\QualificationDefinitionPayload::FIELDS as $field) {
+                    if ($request->input($field) !== null) {
+                        $form[$field] = $request->input($field);
+                    }
+                }
+                foreach (['is_permanent', 'requires_exam', 'renewal_required', 'uses_levels', 'auto_enabled'] as $box) {
+                    $form[$box] = $request->inputString($box) === '1';
+                }
+                $form += ['issuer_id' => $request->inputString('issuer_id'), 'category_new' => $request->inputString('category_new'), 'auto_mode' => $request->inputString('auto_mode')];
+                $conditions = $request->input('conditions');
+                if (is_array($conditions)) {
+                    $form['conditions'] = $conditions;
+                }
+                $saved = $credentials->save($tenantId, $id > 0 ? $id : null, $kind, $form, $userId);
+                $notice = $id > 0 ? 'cred_saved' : 'cred_created';
+                $file = $_FILES['badge'] ?? null;
+                if (is_array($file) && (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                    try {
+                        $credentials->saveBadge($tenantId, $saved, $file);
+                    } catch (\Throwable) {
+                        $notice = 'cred_badge_failed';
+                    }
+                }
+                $this->audit($id > 0 ? 'academy.credential.updated' : 'academy.credential.created', $tenantId, $key, ['definition' => $saved, 'kind' => $kind]);
+                return $this->credentialBack($this->credentialUrl('fiche=' . $saved), $notice);
+            }
+            if ($action === 'studio_cred_archive') {
+                $credentials->archive($tenantId, $id, $userId);
+                $this->audit('academy.credential.archived', $tenantId, $key, ['definition' => $id]);
+                return $this->credentialBack($this->credentialUrl('vue=' . ($kind === 'brevet' ? 'brevets' : 'qualifications')), 'cred_archived');
+            }
+            if (in_array($action, ['studio_cred_link', 'studio_cred_unlink'], true)) {
+                $courseKey = $fromCourse ? $key : $request->inputString('link_course');
+                $id = $id > 0 ? $id : (int) $request->inputString('link_cred');
+                if (!isset($this->credentialCourses($repository, $rights, $tenantId)[$courseKey])) {
+                    return $back($id, 'not_found');
+                }
+                if ($action === 'studio_cred_link') {
+                    $credentials->linkCourse($tenantId, $id, $courseKey, $userId);
+                } else {
+                    $credentials->unlinkCourse($tenantId, $id, $courseKey, $this->olderVersions($tenantId, $courseKey), $userId);
+                }
+                $this->audit($action === 'studio_cred_link' ? 'academy.credential.course_linked' : 'academy.credential.course_unlinked', $tenantId, $courseKey, ['definition' => $id]);
+                return $back($id, $action === 'studio_cred_link' ? 'cred_linked' : 'cred_unlinked');
+            }
+        } catch (\RuntimeException $e) {
+            if ($action === 'studio_cred_save') {
+                // Formulaire refusé : les valeurs saisies sont reproposées.
+                Session::set('academy_form', array_intersect_key($_POST, array_flip(array_merge(\App\Support\QualificationDefinitionPayload::FIELDS, ['issuer_id', 'category_new']))));
+            }
+            $known = ['not_found', 'cred_unavailable', 'cred_name_required', 'cred_code_invalid', 'cred_code_taken', 'cred_rules_pending'];
+            return $back($id, in_array($e->getMessage(), $known, true) ? $e->getMessage() : 'cred_rule_error');
+        }
+        return $this->error('invalid_content', 422);
+    }
+
+    private function credentialBack(string $url, string $notice): Response
+    {
+        Session::set('academy_notice', $notice);
+        return Response::redirect($url, 303);
     }
 
     private function error(string $message, int $status): Response

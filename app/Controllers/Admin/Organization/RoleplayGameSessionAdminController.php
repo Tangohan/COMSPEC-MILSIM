@@ -69,7 +69,7 @@ final class RoleplayGameSessionAdminController
         }
         $suggested = array_values(array_filter($events, static fn (array $e): bool => !isset($linked[(int) $e['id']])));
 
-        $tab = (string) $request->input('vue', '');
+        $tab = $request->queryString('vue', '');
         $tabs = ['a-venir' => RoleplaySessionBoard::UPCOMING, 'en-cours' => RoleplaySessionBoard::LIVE, 'passees' => RoleplaySessionBoard::PAST];
         if (!isset($tabs[$tab])) {
             $tab = $groups[RoleplaySessionBoard::LIVE] !== [] ? 'en-cours' : 'a-venir';

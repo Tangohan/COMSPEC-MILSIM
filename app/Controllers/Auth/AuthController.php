@@ -833,7 +833,7 @@ class AuthController
         if ($this->authService->check()) {
             return Response::redirect(url('dashboard'));
         }
-        $token = trim((string) ($request->query('token') ?? $request->input('token') ?? ''));
+        $token = trim($request->queryString('token'));
         if ($this->passwordResetService->findValidReset($token) === null) {
             Session::flash('error', __('auth.flash_link_invalid'));
             return Response::redirect(url('forgot-password'));

@@ -305,6 +305,17 @@ final class DevDispatchCatalog
                 'Mettez à jour le pack 2.9.33 (liaison 2.0.116 incluse), quittez Arma complètement et relancez.',
                 'Voix par le maillage : l’administrateur du serveur coche « Voix ACRE/TFAR relayée par le maillage MPU5 », avec la liaison téléphone-radio réaliste, dans Options des addons › COMSPEC › ATAK · Radio de données (MPU5).',
             ], 'Pack téléphone 2.9.33'),
+            $pr(1309, '2026-11-02', 'Studio Academy : créer ses qualifications et ses brevets', 'Le Studio de l’Academy ne sert plus seulement à écrire des cours. Le bouton « Nouveau » propose une formation, une qualification ou un brevet. Une qualification se règle comme dans le référentiel : portée, catégorie, émetteur, validité, examen, et conditions d’obtention (cours réussis, heures de jeu, heures de vol par appareil, qualifications préalables). Un brevet ajoute son insigne, son gabarit de PDF et son numéro. Chaque cours peut délivrer une qualification ou un brevet à la réussite, et chaque fiche montre les cours qui y mènent ; les onglets Qualifications et Brevets séparent les créations de la communauté du catalogue de base.', [
+                'Studio : menu « Nouveau » (formation, qualification, brevet) et onglets Formations, Qualifications, Brevets',
+                'Fiches qualification et brevet dans le Studio : identité, portée, catégorie, émetteur, validité, examen, conditions d’obtention, insigne et numéro du brevet',
+                'Réglages d’un cours : « Délivré à la réussite » pour rattacher ou détacher une qualification ou un brevet',
+                'Listes filtrables : créations de la communauté mises en avant, catalogue de base, archivées',
+            ], [
+                'Réussir un cours du Studio délivre aussitôt les qualifications qui le demandent ; une nouvelle version du cours garde ce lien',
+                'Référentiel des qualifications : les cours publiés du Studio sont proposés comme condition « Formation Academy »',
+            ], [], ['personnel', 'platform'], [
+                'Mêmes droits que la création de cours. Les fiches sont celles du référentiel des qualifications : rien n’est dupliqué.',
+            ], 'Portail'),
             $pr(1307, '2026-11-02', 'Seule la MPU5 relie le téléphone au réseau', 'Avec le pack 2.9.32, le repli par radio tactique en données disparaît : en liaison téléphone-radio réaliste, seule une radio de données MPU5, reliée par le Câble EUD ou par son Wi-Fi, donne du réseau au téléphone. Sans MPU5, pas de réseau de données ; le Bluetooth entre téléphones et les données déjà reçues restent. Les radios ACRE ou TFAR gardent leur rôle d’avant quand la liaison réaliste est décochée.', [], [
                 'App Réseau, menu ACE Radio de données et réglages : plus de bouton ni d’action Radio tactique, message clair « Sans MPU5 : pas de réseau de données »',
                 'Bouton Brancher sur ma radio de l’app Wave Relay masqué en liaison réaliste ; le réglage « Données par radio ACRE2 / TFAR » n’y est plus pris en compte',
@@ -315,6 +326,30 @@ final class DevDispatchCatalog
                 'Mettez à jour le pack 2.9.32 (liaison 2.0.116 incluse), quittez Arma complètement et relancez.',
                 'Liaison réaliste (réglage « Liaison téléphone-radio réaliste ») : prévoyez une MPU5 et un Câble EUD par joueur qui doit avoir du réseau.',
             ], 'Pack téléphone 2.9.32'),
+            $pr(1308, '2026-11-02', 'Emplois du catalogue : brevets, formations et doctrines réels, rattachables à vos fonctions', 'Dans la fiche d’un emploi du catalogue (États-Unis, France, Allemagne, Chine, Russie, OTAN), chaque brevet, qualification, formation ou doctrine typique ouvre désormais sa vraie fiche : qualification du catalogue de référence avec son école et son intitulé d’origine, ou publication du référentiel doctrinal. Un bouton « Rattacher à la fonction » l’ajoute aux prérequis de votre emploi à l’enregistrement, en important la qualification dans votre référentiel si besoin.', [
+                'Plus de 250 qualifications et formations de référence ajoutées au catalogue, dont deux nouveaux catalogues pays : Chine et Russie, avec les intitulés officiels en chinois et en russe',
+                'Doctrines OTAN ajoutées au référentiel doctrinal, dont la doctrine interalliée des opérations spéciales AJP-3.5',
+                'Bouton « Rattacher à la fonction » sur chaque brevet ou doctrine de la fiche d’un emploi du catalogue',
+                'Prérequis « Doctrine lue » relié à une publication du référentiel : tenu dès qu’un document de doctrine de votre communauté rattaché à cette publication est lu',
+            ], [
+                'Brevets et doctrines de la fiche : lien direct vers l’élément au lieu d’une simple recherche dans les qualifications',
+            ], [], ['personnel'], [
+                'Ouvrez Effectifs › Fonctions, éditez un emploi, puis Chercher dans le catalogue. Choisissez un emploi OTAN (SOCC) : ouvrez AJP-3.5, cliquez Rattacher à la fonction, enregistrez l’emploi et vérifiez ses prérequis.',
+            ], 'Portail Athena'),
+            $pr(1306, '2026-11-02', 'Recherches, filtres et onglets de nouveau pris en compte', 'Plusieurs pages ignoraient ce qui était demandé dans l’adresse : la recherche, le tri et les filtres de la documentation, le filtre de Mes documents, les onglets des sessions de jeu de rôle, le filtre des catégories ou le simulateur d’accès affichaient toujours la vue par défaut. Ces choix sont de nouveau appliqués, par formulaire comme par lien direct, et le téléchargement d’un document à signature obligatoire fonctionne de nouveau après la signature.', [], [], [
+                'Documentation et gestion des documents : recherche, catégorie, statut, type, classification et tri de nouveau appliqués',
+                'Mes documents : le filtre choisi (à lire, obligatoires, en retard, lus) est de nouveau appliqué',
+                'Back-office : onglets des sessions de jeu de rôle, filtre des catégories, simulateur d’accès, export des lectures d’un document, réglage des annonces de coopération et formule offerte présélectionnée',
+                'Téléchargement d’un document à signature obligatoire de nouveau possible une fois la signature faite',
+            ], ['platform'], [
+                'Aucune donnée n’a été modifiée : seule la lecture des paramètres de l’adresse était en cause.',
+            ], 'Portail'),
+            $pr(1305, '2026-11-02', 'Espace aérien : les onglets s’ouvrent de nouveau', 'Dans le back-office, la page Espace aérien affichait toujours la ligne de vol, quel que soit l’onglet choisi. Les onglets Cursus pilote, Pilotes, Carnet de vol et Flotte et filières s’ouvrent de nouveau, par clic comme par lien direct, et les filtres du carnet de vol et de la filière du cursus sont pris en compte.', [], [], [
+                'Espace aérien : les onglets Cursus pilote, Pilotes, Carnet de vol et Flotte et filières affichaient la ligne de vol au lieu de leur contenu',
+                'Filtres du carnet de vol (à contresigner, contresignés, refusés, relevés en jeu) et choix de la filière du cursus de nouveau appliqués',
+            ], ['platform', 'personnel'], [
+                'Aucune donnée n’a été modifiée : seul l’affichage de la page était en cause.',
+            ], 'Portail'),
             $pr(1300, '2026-11-02', 'Appel de feu typé, vraie radio MPU5, nouveaux écrans et vidéoprojecteur', 'Avec le pack 2.9.31, l’appel de feu de l’app CAS choisit un moyen réel (mortier 60, 81 ou 120, obusier, lance-roquettes, naval ou appui aérien) avec ses portées, ses munitions, ses délais et sa distance de sécurité : les pièces IA de votre camp tirent vraiment et un joueur servant reçoit la mission. La MPU5 devient une vraie radio de données : le téléphone s’y relie par câble ou par Wi-Fi, les radios du même canal forment un maillage avec les relais de la mission. De nouveaux écrans COMSPEC sur les modèles du jeu affichent une image nette de jour comme de nuit, et un vidéoprojecteur projette diapositives, affichage TOC, carte ou caméra sur un tableau blanc. Tout se règle dans les options des addons et peut être désactivé.', [
                 'Appel de feu typé dans l’app CAS : mortier 60, 81 ou 120, obusier, lance-roquettes, naval ou CAS, portées, munitions, délais et distance de sécurité',
                 'Tir réel des pièces IA du camp, mission envoyée au joueur servant dans l’app Tâches ; réglage + / – / G / D, EFFICACE, FIN DE MISSION',

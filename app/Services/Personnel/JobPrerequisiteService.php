@@ -16,6 +16,9 @@ use Throwable;
  * Critères (personnel_job_role_requirements.criteria_json, liste) — mêmes clés que le moteur de critères des
  * qualifications (type, metric, scope, min, definition_id) pour pouvoir le brancher plus tard :
  *   {type: doctrine, document_id, mode: read|ack}
+ *   {type: doctrine_ref, key, mode: read|ack}  (publication du référentiel doctrinal, rattachée depuis le catalogue
+ *     d’emplois : tenue si le membre a lu un document de doctrine de la communauté rattaché à cette publication,
+ *     ou portant son code ; non mesurable tant qu’aucun document ne lui correspond)
  *   {type: metric, metric: playtime_hours|flight_hours, scope, min}
  *   {type: qualification, definition_id}
  *   {type: competency, requirement_id}  (tenue si le membre détient les qualifications liées à la compétence)
@@ -102,7 +105,7 @@ final class JobPrerequisiteService
             if ($c === null) {
                 continue;
             }
-            $key = json_encode([$c['type'], $c['mode'] ?? '', $c['document_id'] ?? 0, $c['metric'] ?? '', $c['scope'] ?? '', $c['definition_id'] ?? 0, $c['requirement_id'] ?? 0]);
+            $key = json_encode([$c['type'], $c['mode'] ?? '', $c['key'] ?? '', $c['document_id'] ?? 0, $c['metric'] ?? '', $c['scope'] ?? '', $c['definition_id'] ?? 0, $c['requirement_id'] ?? 0]);
             if (isset($seen[$key])) {
                 continue;
             }
@@ -131,6 +134,11 @@ final class JobPrerequisiteService
                 $mode = (string) ($c['mode'] ?? 'read');
 
                 return $id > 0 ? ['type' => 'doctrine', 'document_id' => $id, 'mode' => isset(self::DOCTRINE_MODES[$mode]) ? $mode : 'read'] : null;
+            case 'doctrine_ref':
+                $key = trim((string) ($c['key'] ?? ''));
+                $mode = (string) ($c['mode'] ?? 'read');
+
+                return preg_match('/^[a-z]{2,4}-[a-z0-9-]{2,80}$/', $key) === 1 ? ['type' => 'doctrine_ref', 'key' => $key, 'mode' => isset(self::DOCTRINE_MODES[$mode]) ? $mode : 'read'] : null;
             case 'qualification':
                 $id = (int) ($c['definition_id'] ?? $c['ref'] ?? 0);
 
@@ -320,6 +328,42 @@ final class JobPrerequisiteService
         }
     }
 
+    /**
+     * Documents de doctrine de la communauté qui correspondent à une publication du référentiel doctrinal : rattachés
+     * dans Doctrine › Référentiel, sinon portant le même code de référence (« AJP-3.5 »).
+     *
+     * @return list<int>
+     */
+    public function libraryDocuments(int $tenantId, string $entryKey): array
+    {
+        $key = "lib:$tenantId:$entryKey";
+        if (array_key_exists($key, $this->memo)) {
+            return $this->memo[$key];
+        }
+        $ids = [];
+        if ($this->hasTable('doctrine_library_links')) {
+            try {
+                $st = $this->pdo->prepare('SELECT document_id FROM doctrine_library_links WHERE tenant_id = ? AND entry_key = ? AND unlinked_at IS NULL');
+                $st->execute([$tenantId, $entryKey]);
+                $ids = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
+            } catch (Throwable) {
+                $ids = [];
+            }
+        }
+        $code = (string) (\App\Services\Doctrine\DoctrineLibraryCatalog::find($entryKey)['code'] ?? '');
+        if ($ids === [] && $code !== '' && $this->hasTable('document_doctrines')) {
+            try {
+                $st = $this->pdo->prepare("SELECT document_id FROM document_doctrines WHERE (tenant_id = ? OR scope = 'platform') AND LOWER(reference_code) = LOWER(?)");
+                $st->execute([$tenantId, $code]);
+                $ids = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
+            } catch (Throwable) {
+                $ids = [];
+            }
+        }
+
+        return $this->memo[$key] = array_values(array_unique(array_filter($ids, static fn (int $i): bool => $i > 0)));
+    }
+
     /** @return array<int, true> qualifications valides et non expirées du membre */
     private function heldQualifications(int $tenantId, int $userId): array
     {
@@ -390,6 +434,18 @@ final class JobPrerequisiteService
                     break;
                 case 'doctrine':
                     $state = $this->doctrineMet($tenantId, $userId, (int) $c['document_id'], (string) $c['mode']);
+                    break;
+                case 'doctrine_ref':
+                    foreach ($this->libraryDocuments($tenantId, (string) $c['key']) as $documentId) {
+                        $one = $this->doctrineMet($tenantId, $userId, $documentId, (string) $c['mode']);
+                        if ($one === true) {
+                            $state = true;
+                            break;
+                        }
+                        if ($one === false) {
+                            $state = false;
+                        }
+                    }
                     break;
                 case 'qualification':
                     $state = isset($this->heldQualifications($tenantId, $userId)[(int) $c['definition_id']]);
@@ -639,6 +695,7 @@ final class JobPrerequisiteService
 
         return match ($c['type'] ?? '') {
             'doctrine' => ['label' => ($c['mode'] ?? 'read') === 'ack' ? 'Doctrine lue et signée' : 'Doctrine lue', 'value' => '', 'unit' => '', 'target' => $find('doctrines', (int) $c['document_id']), 'content' => true],
+            'doctrine_ref' => ['label' => ($c['mode'] ?? 'read') === 'ack' ? 'Doctrine lue et signée' : 'Doctrine lue', 'value' => '', 'unit' => '', 'target' => self::libraryLabel((string) ($c['key'] ?? '')), 'content' => true],
             'qualification' => ['label' => 'Qualification détenue', 'value' => '', 'unit' => '', 'target' => $find('qualifications', (int) $c['definition_id']), 'content' => true],
             'competency' => ['label' => 'Compétence acquise', 'value' => '', 'unit' => '', 'target' => $find('competencies', (int) $c['requirement_id']), 'content' => true],
             'metric' => [
@@ -650,6 +707,17 @@ final class JobPrerequisiteService
             ],
             default => ['label' => '', 'value' => '', 'unit' => '', 'target' => '', 'content' => false],
         };
+    }
+
+    /** Code et titre (langue du lecteur) d’une publication du référentiel doctrinal, ou sa clé si elle n’existe plus. */
+    public static function libraryLabel(string $key): string
+    {
+        $d = \App\Services\Doctrine\DoctrineLibraryCatalog::find($key);
+        if ($d === null) {
+            return $key;
+        }
+
+        return $d['code'] . ' · ' . (\App\Services\Doctrine\DoctrineLibraryCatalog::lang() === 'en' ? $d['title_en'] : $d['title_fr']);
     }
 
     /** @param array<string, list<array{id: int|string, label: string}>> $options */
