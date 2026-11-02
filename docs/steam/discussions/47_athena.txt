@@ -1,0 +1,123 @@
+[APP] Athena — relier son jeu au compte Athena par code, e-mail ou Steam, état de la liaison en clair
+
+[i]Message 1/2[/i]
+[h1]Athena[/h1]
+[i]Catégorie : Système · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+L'app Athena relie votre jeu à votre compte sur le portail Athena (athena-comspec.eu) et vous dit, en toutes lettres, où en est la liaison. Une fois connecté, votre position, vos marqueurs, messages, comptes rendus et votre fiche remontent au poste de commandement, et le téléphone reçoit votre profil, votre communauté et ses réglages. La liaison se fait une seule fois : aux parties suivantes, la connexion se fait seule.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Système, et dans le dock en bas.
+[*]Tant que votre jeu n'est relié à aucun compte, la première sortie du téléphone de chaque mission ouvre l'app Athena avec un code (réglage désactivable, voir plus bas).
+[*]Réglages, section Athéna et synchronisation : bouton [b]APP ATHENA[/b]. App Statut : bouton [b]ATHENA[/b].
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Carte d'état[/b] : Non connecté, Connexion en cours, Connecté en tant que (votre indicatif), liaison instable, canal du poste fermé, Athena en maintenance, ou Erreur avec sa cause et ce qu'il faut faire.
+[*][b]Bouton de dépannage[/b] sous la carte, selon la situation : [b]RECONNECTER[/b], [b]OUVRIR LE CANAL[/b], [b]DÉCONNEXION[/b], [b]ACTIVER LE SERVICE ATHENA[/b], ou [b]OUI, MON UNITÉ UTILISE ATHENA[/b] / [b]NON[/b] si le service n'a pas encore été choisi.
+[*][b]ÉTAPES DE LA LIAISON[/b] (section repliable, dépliée tant que vous n'êtes pas connecté) : Module de liaison, Service Athena, Serveur Athena, Compte Athena, Identité du téléphone, Canal du poste, chacune avec son état.
+[*][b]Onglet CODE[/b] (recommandé) : [b]OBTENIR MON CODE[/b] affiche un code (il est demandé tout seul à l'ouverture si le service est actif). Vous l'autorisez sur athena-comspec.eu/lier, connecté à votre compte. Le code reste valable quelques minutes, avec le temps restant affiché. [b]OUVRIR LA PAGE[/b] ouvre la page dans votre navigateur, code déjà rempli ; [b]NOUVEAU CODE[/b] en redemande un. Un QR code mène à la même page depuis votre vrai téléphone. Aucune clé ni identifiant de communauté à saisir, et votre Steam est associé au compte à cette occasion.
+[*][b]Onglet E-MAIL[/b] : e-mail et mot de passe puis [b]SE CONNECTER[/b] ; ou [b]RECEVOIR LE CODE[/b], puis saisie du code reçu par e-mail et [b]VALIDER LE CODE[/b].
+[*][b]Onglet STEAM[/b] : [b]CONNEXION STEAM[/b] si votre compte Steam est déjà relié à votre profil Athena.
+[*][b]Fiche opérateur[/b] (une fois connecté) : indicatif, nom, unité (ORBAT), fonction, grade, communauté, identifiant ATAK ; votre photo de profil Athena remplace le logo.
+[*][b]AIDE À LA CONNEXION[/b] (repliable) : les trois étapes et les blocages courants (pas de code, code expiré, non lié, pack non reconnu).
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Ouvrez l'app Athena. Si on vous le demande, répondez OUI, MON UNITÉ UTILISE ATHENA.
+[*]Onglet CODE : notez le code affiché.
+[*]Sur votre PC ou votre vrai téléphone, connecté à votre compte, ouvrez athena-comspec.eu/lier (ou OUVRIR LA PAGE, ou le QR code) et saisissez le code.
+[*]Autorisez : le téléphone se connecte en quelques secondes et la carte passe à « Connecté en tant que … ».
+[*]Si plus tard la carte indique un problème, utilisez le bouton proposé (RECONNECTER, OUVRIR LE CANAL…).
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Interface › Proposer la liaison Athena à la sortie du téléphone[/b] (joueur, coché par défaut) : décochez pour garder votre dernière app à l'ouverture.
+[*][b]COMSPEC › ATAK · Mode local et poste TOC › Mode full local (sans Athena)[/b] (serveur) : personne ne se connecte à Athena sur ce serveur ; le service est coupé sans question.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b] : il faut un compte gratuit sur athena-comspec.eu, membre de votre communauté. Ce que vous voyez du poste dépend des réglages de votre communauté sur le site.
+[*][b]Réglages[/b] : la section Athéna et synchronisation reprend l'état et les étapes de la liaison et permet de changer de réponse au service Athena.
+[*][b]Synchro et Réseau[/b] : Synchro renvoie vos données une fois connecté ; Réseau détaille le chemin de la liaison.
+[*][b]App Store[/b] : si vous avez répondu Non au service Athena, l'app Athena n'est plus proposée.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]BattlEye bloque le module de liaison : avec BattlEye actif, Athena ne peut pas se connecter. Décochez-le dans le lanceur Arma 3.
+[*]« Pack non reconnu » : Athena n'accepte que la version officielle du Steam Workshop ; retirez les copies locales ou modifiées du mod, puis relancez Arma.
+[*]Un code expiré se remplace par NOUVEAU CODE. Si Athena est en maintenance, l'app retente seule toutes les minutes tant qu'elle reste ouverte.
+[*]Sans Athena, le téléphone reste utilisable en local.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+The Athena app links your game to your account on the Athena portal (athena-comspec.eu) and tells you, in plain words, how the link is doing. Once connected, your position, markers, messages, reports and operator record go up to the command post, and the phone receives your profile, your community and its settings. You link once: in later games, the connection happens by itself.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] brings the phone to a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, System category, and in the dock at the bottom.
+[*]As long as your game is not linked to an account, the first time you take the phone out in each mission it opens the Athena app with a code (can be turned off, see below).
+[*]Settings, Athena and sync section: [b]ATHENA APP[/b] button. Status app: [b]ATHENA[/b] button.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]Status card[/b]: Not connected, Connecting, Connected as (your callsign), unstable link, command post channel closed, Athena under maintenance, or Error with its cause and what to do.
+[*][b]Fix button[/b] under the card, depending on the situation: [b]RECONNECT[/b], [b]OPEN CHANNEL[/b], [b]DISCONNECT[/b], [b]TURN ON ATHENA SERVICE[/b], or [b]YES, MY UNIT USES ATHENA[/b] / [b]NO[/b] if the service has not been chosen yet.
+[*][b]LINK STEPS[/b] (folding section, open until you are connected): Link module, Athena service, Athena server, Athena account, Phone identity, Command post channel, each with its state.
+[*][b]CODE tab[/b] (recommended): [b]GET MY CODE[/b] shows a code (requested automatically on opening when the service is on). You approve it on athena-comspec.eu/lier, signed in to your account. The code lasts a few minutes, with the time left shown. [b]OPEN THE PAGE[/b] opens the page in your browser with the code filled in; [b]NEW CODE[/b] asks for another. A QR code leads to the same page from your real phone. No key or community ID to type, and your Steam is tied to the account at the same time.
+[*][b]EMAIL tab[/b]: email and password then [b]SIGN IN[/b]; or [b]RECEIVE CODE[/b], type the code received by email and [b]VALIDATE CODE[/b].
+[*][b]STEAM tab[/b]: [b]STEAM LOGIN[/b] if your Steam account is already linked to your Athena profile.
+[*][b]Operator record[/b] (once connected): callsign, name, unit (ORBAT), role, rank, community, ATAK ID; your Athena profile picture replaces the logo.
+[*][b]SIGN-IN HELP[/b] (folding): the three steps and the usual blockers (no code, expired code, not linked, pack not recognised).
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Open the Athena app. If asked, answer YES, MY UNIT USES ATHENA.
+[*]CODE tab: note the code shown.
+[*]On your PC or real phone, signed in to your account, open athena-comspec.eu/lier (or OPEN THE PAGE, or the QR code) and type the code.
+[*]Approve it: the phone connects within seconds and the card changes to "Connected as …".
+[*]If the card later shows a problem, use the button offered (RECONNECT, OPEN CHANNEL…).
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Interface › Offer the Athena link when taking out the phone[/b] (player, checked by default): uncheck to keep your last app on opening.
+[*][b]COMSPEC › ATAK · Local mode and TOC post › Full local mode (no Athena)[/b] (server): nobody connects to Athena on this server; the service is off with no question asked.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b]: you need a free account on athena-comspec.eu, member of your community. What you see from the command post depends on your community's settings on the website.
+[*][b]Settings[/b]: the Athena and sync section repeats the link state and steps, and lets you change your answer to the Athena service.
+[*][b]Sync and Network[/b]: Sync resends your data once connected; Network details the link path.
+[*][b]App Store[/b]: if you answered No to the Athena service, the Athena app is no longer offered.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]BattlEye blocks the link module: with BattlEye on, Athena cannot connect. Untick it in the Arma 3 launcher.
+[*]"Pack not recognised": Athena only accepts the official Steam Workshop version; remove local or modified copies of the mod, then restart Arma.
+[*]An expired code is replaced with NEW CODE. If Athena is under maintenance, the app retries every minute while it stays open.
+[*]Without Athena, the phone stays usable locally.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

@@ -38,6 +38,33 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.36 : app Zones sans automatisme, menu Zones au clic droit, bandeau du curseur (ATAK natif 2.9.36.AG - Denver)
+
+### Résumé joueur
+Type : patch
+FR : App Zones : plus rien ne change tout seul, et un menu Zones au clic droit
+- Un contact ennemi posé dans une zone ne la passe plus « ennemi signalé » d'office : par défaut, c'est vous qui mettez l'état.
+- Le serveur peut choisir de vous le proposer (question OUI / NON dans l'app Zones, sans effet si vous ne répondez pas) ou de le faire automatiquement comme en 2.9.35.
+- Les zones ne vont plus sur la carte d'Arma par défaut : tout le camp les y voyait sans téléphone. Le serveur peut le réautoriser ; le site Athena ne reçoit alors que les plans partagés.
+- Clic droit sur la carte, menu Zones : découper ici (grille 100, 200 ou 500 m, îlots, secteurs), nouveau plan, nommer les axes, et pour la zone cliquée sa fiche, son état, signaler, citer, masquer, rendu. Le bandeau du curseur montre maintenant la direction de votre vue (la distance vers le curseur reste près du curseur).
+EN : Zones app: nothing changes on its own any more, and a Zones menu on right-click
+- An enemy contact placed in a zone no longer turns it "enemy reported" by itself: by default, you set the state.
+- The server can choose to suggest it to you (OUI / NON, yes / no question in the Zones app, no effect if you do not answer) or to do it automatically as in 2.9.35.
+- Zones no longer go on the Arma map by default: the whole side saw them there without a phone. The server can allow it again; the Athena site then only gets shared plans.
+- Right-click on the map, Zones menu: divide here (100, 200 or 500 m grid, blocks, sectors), new plan, name the axes, and for the clicked zone its card, state, report, quote, hide, rendering. The cursor strip now shows where you are looking (distance to the cursor stays next to the cursor).
+
+### Détail technique
+- Réglage serveur `zones_contact` (CHECKBOX, défaut oui) remplacé par `comspec_atak_native_zones_contact_mode` (LIST `MANUAL` / `ASK` / `AUTO`, défaut `MANUAL`). **Migration** : nouveau nom de variable, donc l'ancienne valeur (même `true`) n'est pas reprise et tout serveur repart sur Manuel ; à remettre sur Proposer ou Automatique au besoin.
+- `fn_zoneAction` `contact` : `MANUAL` → rien ; `AUTO` → `sit` comme en 2.9.35 ; `ASK` → `ask` local (question gardée dans `COMSPEC_ATAK_ZnAsk`, notification ouvrant l'app Zones) et, pour un plan reçu, même question envoyée à l'auteur du plan (`comspec_atak_native_zone` `["ask", …]`, accepté seulement pour ses propres plans, jamais en rejeu). `askAnswer` : OUI → `sit` (état + signalement, envoyés), NON → oubliée. Une question tombe dès qu'un `sit` avec état arrive pour la zone. Cartes OUI / NON en tête de la liste de l'app Zones.
+- `zones_arma` : défaut **non** (marqueurs de la carte d'Arma visibles de tout le canal sans appareil). `armaNow` n'appelle `fn_markerWeb` (Athena) que si le plan est partagé ; sinon seul `fn_markerNet touch` (téléphones du canal).
+- Revue des automatismes : génération, nommage, axes, partage (et renvoi en direct d'un plan partagé), réception, rejeu JIP, `@zone` découlent tous d'une action de l'utilisateur ; la zone sous le curseur dans le bandeau reste (affichage local, réglage joueur `zones_cursor`).
+- Menu contextuel de la carte (`fn_mapCtxMenu`) : ligne « Zones » et sous-menus `ZN` / `ZNST` ; `ZN_RAD` fait tourner le rayon (150 / 300 / 600 / 1000 m, profil `COMSPEC_ATAK_ZnCtxRad`) ; `ZG_*` → `fn_zoneAction` `ctxGen` (nouveau plan, zone de travail en cercle autour du point, puis `gen` ou `axes` en arrière-plan ; `NEW` ouvre l'app Zones sur le plan) ; `ZS_*` état, `ZR_*` rendu (auteur), `ZN_ENY` / `ZN_CITE` / `ZN_VIS`. Pas encore dans la carte propre de l'app Zones.
+- Bandeau du curseur, style NOUVEAU : nouvel élément `CURDIST` (`fn_mapPrefs`, absent par défaut, réglage « Distance / gisement vers le curseur dans le bandeau ») ; sans lui la flèche et « CAP » de la ligne 2 donnent la direction de la vue (`getCameraViewDirection player`), le cap de droite disparaît (l'indicatif reste), la distance et le gisement vers le curseur restent dans l'étiquette de survol. CLASSIQUE et COMPACT inchangés.
+- Traductions corrigées : EN COURS → IN PROGRESS, ANNULER → CANCEL, ÉTABLI → ESTABLISHED, « Reprise automatique de la cible », rubriques de réglages « ATAK · … » ; retour de l'app Routes renommé « ◀ MES ROUTES » (« ROUTES » seul donnait ROADS).
+- i18n : textes ajoutés par `tools/i18n.py merge` ; OUI / NON non traduits.
+
+---
+
 ## Pack 2.9.35 : app Zones (battleplan), bandeau du curseur et point GPS personnalisables (ATAK natif 2.9.35.AG - Denver, COMSPEC Link 2.0.116)
 
 ### Résumé joueur

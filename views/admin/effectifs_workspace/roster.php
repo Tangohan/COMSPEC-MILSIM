@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 $rows = is_array($rosterRows ?? null) ? $rosterRows : [];
+$rosterIdentities = is_array($rosterIdentities ?? null) ? $rosterIdentities : [];
 $filters = is_array($rosterFilters ?? null) ? $rosterFilters : [];
 $sortOptions = is_array($rosterSortOptions ?? null) ? $rosterSortOptions : [];
 $roles = is_array($orgRoles ?? null) ? $orgRoles : [];
@@ -372,7 +373,14 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                     $display = trim((string) ($row['display_name'] ?? ''));
                     $callsign = trim((string) ($row['callsign'] ?? ''));
                     $email = (string) ($row['email'] ?? '');
-                    $name = $display !== '' ? $display : ($callsign !== '' ? $callsign : $email);
+                    // Prénom et nom d’abord (« Prénom N. » par défaut), indicatif en second ; repli sur le pseudo puis l’e-mail.
+                    $nameRow = \App\Support\MemberName::withIdentity(array_diff_key($row, ['first_name' => 1, 'last_name' => 1]), $rosterIdentities[$id] ?? null);
+                    $name = member_name($nameRow, 'list', null, false);
+                    if ($name === \App\Support\MemberName::FALLBACK) {
+                        $name = $display !== '' ? $display : ($callsign !== '' ? $callsign : $email);
+                    }
+                    $rowFullName = \App\Support\MemberName::full($nameRow);
+                    $rowTrigram = member_trigram($nameRow);
                     $status = (string) ($row['status'] ?? '');
                     $grade = function_exists('personnel_assigned_grade_label')
                         ? personnel_assigned_grade_label($row)
@@ -514,8 +522,11 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                     <?php endif; ?>
                                 </span>
                                 <span class="eff-mq-mb__txt">
-                                    <a class="eff-sheets__name eff-mq-mb__name" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></a>
+                                    <a class="eff-sheets__name eff-mq-mb__name" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>"<?= $rowFullName !== $name ? ' title="' . htmlspecialchars($rowFullName, ENT_QUOTES, 'UTF-8') . '"' : '' ?>><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></a>
                                     <small class="eff-mq-mb__line">
+                                        <?php if ($rowTrigram !== ''): ?>
+                                            <span class="eff-mq-cs" title="Trigramme"><?= htmlspecialchars($rowTrigram, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php endif; ?>
                                         <?php if ($callsign !== ''): ?>
                                             <span class="eff-mq-cs" title="Indicatif<?= $extraCallsigns !== [] ? ' · aussi ' . htmlspecialchars(implode(', ', $extraCallsigns), ENT_QUOTES, 'UTF-8') : '' ?>"><?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?><?= $extraCallsigns !== [] ? ' +' . count($extraCallsigns) : '' ?></span>
                                         <?php endif; ?>

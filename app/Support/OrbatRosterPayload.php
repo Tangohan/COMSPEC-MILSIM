@@ -305,6 +305,10 @@ final class OrbatRosterPayload
                 )
             );
             $root = self::attachGrades($root, self::attempt('grades', static fn (): array => $unitRepository->gradeShortNamesForUsers($tenantId, $personIds), []));
+            // Trigrammes : mêmes garde-fous que les grades (jamais sur une unité aux noms masqués ni un membre anonymisé).
+            $root = self::attachGrades($root, self::attempt('trigrammes', static fn (): array => \App\Services\Personnel\MemberNameSettings::forTenant($tenantId)['trigrams_enabled']
+                ? (new \App\Services\Personnel\MemberNameService())->trigramsFor($tenantId, $personIds)
+                : [], []), 'trigram');
             // Noms d’unités et postes générés par Athena dans la langue du lecteur (personnalisés par la communauté).
             $root = \App\Services\I18n\GeneratedLabels::localizeOrbat($root, $tenantId, array_column($flat, 'slug', 'id'));
         }
@@ -400,32 +404,33 @@ final class OrbatRosterPayload
     }
 
     /**
-     * Ajoute l’abréviation du grade aux cadres et aux membres (jamais sur une unité aux noms masqués).
+     * Ajoute l’abréviation du grade (ou le trigramme, $field = 'trigram') aux cadres et aux membres
+     * (jamais sur une unité aux noms masqués ; un membre anonymisé n’a plus d’identifiant, rien ne s’y attache).
      *
      * @param array<string, mixed> $node
      * @param array<int, string> $grades
      * @return array<string, mixed>
      */
-    private static function attachGrades(array $node, array $grades): array
+    private static function attachGrades(array $node, array $grades, string $field = 'grade'): array
     {
         if ($grades !== [] && empty($node['viewerNamesRedacted']) && empty($node['isOrbatPlaceholder'])) {
-            $node['commanderGrade'] = $grades[(int) ($node['commanderUserId'] ?? 0)] ?? '';
+            $node['commander' . ucfirst($field)] = $grades[(int) ($node['commanderUserId'] ?? 0)] ?? '';
             foreach (['commander', 'deputy'] as $k) {
                 if (is_array($node[$k] ?? null)) {
-                    $node[$k]['grade'] = $grades[(int) ($node[$k]['userId'] ?? 0)] ?? '';
+                    $node[$k][$field] = $grades[(int) ($node[$k]['userId'] ?? 0)] ?? '';
                 }
             }
             if (is_array($node['members'] ?? null)) {
                 foreach ($node['members'] as $i => $m) {
                     if (is_array($m)) {
-                        $node['members'][$i]['grade'] = $grades[(int) ($m['user_id'] ?? 0)] ?? '';
+                        $node['members'][$i][$field] = $grades[(int) ($m['user_id'] ?? 0)] ?? '';
                     }
                 }
             }
             if (is_array($node['billets'] ?? null)) {
                 foreach ($node['billets'] as $i => $b) {
                     foreach (is_array($b['holders'] ?? null) ? $b['holders'] : [] as $j => $h) {
-                        $node['billets'][$i]['holders'][$j]['grade'] = $grades[(int) ($h['user_id'] ?? 0)] ?? '';
+                        $node['billets'][$i]['holders'][$j][$field] = $grades[(int) ($h['user_id'] ?? 0)] ?? '';
                     }
                 }
             }
@@ -433,7 +438,7 @@ final class OrbatRosterPayload
         if (is_array($node['children'] ?? null)) {
             foreach ($node['children'] as $i => $c) {
                 if (is_array($c)) {
-                    $node['children'][$i] = self::attachGrades($c, $grades);
+                    $node['children'][$i] = self::attachGrades($c, $grades, $field);
                 }
             }
         }

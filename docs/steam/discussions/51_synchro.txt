@@ -1,0 +1,105 @@
+[APP] Synchro — renvoyer d'un coup vers Athena tout ce qui manque au poste, avec compte rendu par catégorie
+
+[h1]Synchro[/h1]
+[i]Catégorie : Système · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Synchro (le Resynch de l'ancien ATAK) renvoie vers Athena les données de votre téléphone quand le poste de commandement ne vous voit plus : après une coupure de liaison, un changement de groupe ou une reconnexion. Seul ce qui manque à Athena repart, sans doublon, puis un compte rendu montre ce qui est parti, catégorie par catégorie.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Système.
+[*]Réglages, section Athéna et synchronisation : bouton RESYNCH. App Statut : bouton RESYNCH.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Renvoi à l'ouverture[/b] : si le dernier renvoi date de plus de 5 minutes ; sinon le compte rendu précédent reste affiché.
+[*][b]Carte d'état[/b] : Renvoi en cours, Rien renvoyé pour l'instant, N élément(s) pas partis, ou Athena est à jour (renvoyés, déjà à jour, en file), avec l'heure du dernier renvoi.
+[*][b]RELANCER LE RESYNCH[/b] : relance tout. Entre deux renvois, le bouton affiche « PATIENTEZ N S » (15 s), puis « RENVOI EN COURS… » pendant l'envoi.
+[*][b]Compte rendu[/b] : une case par catégorie, avec son icône, son état ([b]RENVOYÉ[/b], [b]À JOUR[/b], [b]EN FILE[/b], [b]PAS PARTI[/b], [b]SANS OBJET[/b]) et le détail.
+[*][b]Ce qui repart[/b] : fiche opérateur (identité, tenue et kit porté…), position, temps de mission, marqueurs posés et carte du camp, comptes rendus en attente, effectif du groupe, derniers messages, plan de briefing, escouades et équipes, montre Garmin, tenues ACE Arsenal modifiées depuis leur dernier envoi, état de la file d'envoi.
+[*][b]Téléphone effacé en urgence[/b] : la synchro le remet en service.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Le poste ne voit plus votre position : ouvrez Synchro.
+[*]Le renvoi part tout seul ; attendez « Athena est à jour ».
+[*]Une case affiche PAS PARTI : lisez son détail, réglez la cause (réseau, liaison), puis RELANCER LE RESYNCH.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Mode local et poste TOC › Mode full local (sans Athena)[/b] (serveur) : coché, Synchro n'est plus proposée.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b] : indispensable. Synchro demande un compte relié (app Athena) ; si vous avez répondu Non au service Athena, elle n'est plus proposée.
+[*][b]ACE[/b] : les tenues renvoyées sont celles de l'arsenal ACE.
+[*][b]Réseau[/b] : ce qui ne peut pas partir reste dans la file d'envoi et part au retour du réseau.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Les photos déjà transmises ne repartent pas.
+[*]Les tenues jamais partagées restent sur votre PC : partagez-les depuis Tenues Athena.
+[*]Sans le module de liaison COMSPEC Link, la Synchro est indisponible et le compte rendu le dit.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Sync (the old ATAK's Resynch) resends your phone's data to Athena when the command post no longer sees you: after a link drop, a squad change or a reconnection. Only what Athena is missing goes out, with no duplicates, then a report shows what was sent, category by category.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] brings the phone to a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, System category.
+[*]Settings, Athena and sync section: RESYNCH button. Status app: RESYNCH button.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]Resend on opening[/b]: when the last resend is more than 5 minutes old; otherwise the previous report stays on screen.
+[*][b]Status card[/b]: Resync in progress, Nothing resent yet, N item(s) not sent, or Athena is up to date (resent, already up to date, queued), with the time of the last resend.
+[*][b]RERUN RESYNC[/b]: sends everything again. Between two resends the button reads "WAIT N S" (15 s), then "RESYNC IN PROGRESS…" while sending.
+[*][b]Report[/b]: one tile per category, with its icon, its state ([b]RESENT[/b], [b]UP TO DATE[/b], [b]QUEUED[/b], [b]NOT SENT[/b], [b]N/A[/b]) and the detail.
+[*][b]What goes out[/b]: operator record (identity, outfit and kit worn…), position, mission time, placed markers and side map, pending reports, squad roster, latest messages, briefing plan, squads and teams, Garmin watch, ACE Arsenal loadouts changed since last sent, send queue state.
+[*][b]Phone wiped in an emergency[/b]: sync puts it back into service.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]The command post no longer sees your position: open Sync.
+[*]The resend starts by itself; wait for "Athena is up to date".
+[*]A tile reads NOT SENT: read its detail, fix the cause (network, link), then RERUN RESYNC.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Local mode and TOC post › Full local mode (no Athena)[/b] (server): when checked, Sync is no longer offered.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b]: required. Sync needs a linked account (Athena app); if you answered No to the Athena service, it is no longer offered.
+[*][b]ACE[/b]: the loadouts resent are ACE Arsenal ones.
+[*][b]Network[/b]: what cannot go out stays in the send queue and leaves when the network returns.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Photos already sent are not sent again.
+[*]Loadouts never shared stay on your PC: share them from Athena loadouts.
+[*]Without the COMSPEC Link module, Sync is unavailable and the report says so.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

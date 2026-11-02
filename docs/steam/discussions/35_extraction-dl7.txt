@@ -1,0 +1,109 @@
+[APP] Extraction — câble DL-7 : se brancher sur un ordinateur, un téléphone ou une clé et télécharger ses données
+
+[i]Message 1/2[/i]
+[h1]Extraction[/h1]
+[i]Catégorie : Renseignement · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Exploiter les supports numériques trouvés sur le terrain : brancher le téléphone au câble DL-7 sur un ordinateur, un téléphone, une clé USB, une radio ou tout objet préparé par le mission maker, passer son écran de connexion (mot de passe ou forçage), choisir les fichiers et les télécharger. Les données récupérées se lisent ensuite dans l'app, se marquent sur la carte ou se partagent au groupe.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est rangée dans la catégorie [b]Renseignement[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller. Autres accès : regardez un support et choisissez l'action [b]Brancher l'ATAK (câble DL-7)[/b] (molette, ou menu d'interaction ACE sur le support) : l'app s'ouvre câble branché. L'app Accessoires y mène aussi.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Câble non branché[/b] : [b]Supports à proximité[/b] (dans les 25 m, du plus proche au plus loin, avec [b]BRANCHER[/b]) et [b]Données récupérées[/b].
+[*][b]Câble branché[/b] : l'écran du support distant s'affiche à son thème (session Windows, terminal Linux, système militaire, supervision industrielle, téléphone, coffre chiffré), avec les étapes de connexion : lecture de l'identifiant matériel, négociation de la liaison, montage du volume.
+[*][b]Authentification[/b] : champ [b]Mot de passe[/b] (un indice peut s'afficher) ou [b]FORCER L'ACCÈS[/b] si le support le permet. Selon le réglage du mission maker, trop d'essais ratés verrouillent le support, effacent ses données ou déclenchent une alarme.
+[*][b]Fichiers[/b] : cochez-les un par un ou avec [b]TOUT / RIEN[/b], puis [b]TÉLÉCHARGER[/b]. Le transfert prend du temps selon la taille et le support.
+[*][b]Données récupérées[/b] : types texte, document, identifiants, coordonnées, image et audio. [b]OUVRIR[/b] pour lire, [b]MARQUER SUR LA CARTE[/b] pour des coordonnées, [b]ÉCOUTER[/b] pour un son, [b]PARTAGER[/b] / [b]PARTAGER AU GROUPE[/b] (joueurs de votre groupe), [b]SUPPRIMER[/b] et [b]TOUT EFFACER[/b].
+[*][b]DÉBRANCHER LE CÂBLE[/b] : met fin à la liaison (aussi par l'action molette [b]Débrancher le câble DL-7[/b]).
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Approchez-vous d'un ordinateur ennemi, regardez-le et choisissez [b]Brancher l'ATAK (câble DL-7)[/b].
+[*]L'app s'ouvre sur l'écran de connexion. Tapez le mot de passe trouvé sur place, ou appuyez sur [b]FORCER L'ACCÈS[/b] et attendez.
+[*]Dans la liste, appuyez sur [b]TOUT / RIEN[/b], puis [b]TÉLÉCHARGER[/b]. Restez près du support pendant le transfert.
+[*]Débranchez, ouvrez [b]Données récupérées[/b], lisez les fichiers et marquez les coordonnées sur la carte.
+[*]Partagez au groupe ce qui doit l'être.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Extraction de données › Câble DL-7 obligatoire[/b] (serveur) : coché, il faut l'objet [b]Câble de données DL-7[/b] (COMSPEC_ATAK_DataCable) dans son équipement ; décoché, le téléphone suffit.
+[*][b]COMSPEC › ATAK · Extraction de données › Longueur du câble (m)[/b] (serveur, 3 m par défaut) : en vous éloignant plus, le câble s'arrache ; le transfert s'arrête, les fichiers déjà copiés sont gardés.
+[*][b]COMSPEC › ATAK · Extraction de données › Vitesse des transferts[/b] (serveur) : multiplie la vitesse de copie et de forçage prévue par le mission maker.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Zeus et Eden[/b] : les modules [b]ATAK · Données[/b] ([i]Données à extraire[/i], [i]Ajouter un fichier[/i], [i]Remettre / retirer les données[/i]) préparent un support : nom, type, thème, mot de passe, essais, sanction, forçage, durée, alarme, fichiers. Sans objet visé, le module crée le support. Zeus est prévenu des branchements.
+[*][b]Alarme[/b] : un support réglé avec alarme fait sonner une sirène, prévient Zeus et révèle la position du pirate aux ennemis proches.
+[*][b]Carte[/b] : MARQUER SUR LA CARTE pour les fichiers de coordonnées.
+[*][b]ACE[/b] : action sur chaque support et [b]Débrancher le câble DL-7[/b] dans le menu [b]Téléphone ATAK[/b] ; sans ACE, l'action molette suffit.
+[*][b]Mod COMSPEC SSE (séparé)[/b] : s'il est chargé, les appareils numériques générés par le SSE (téléphones, ordinateurs, clés, radios) deviennent extractibles au DL-7 avec leurs propres fichiers et protections, et l'app SSE terrain peut brancher le câble.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Un support verrouillé ne s'ouvre plus que par un forçage, s'il est permis ; un support effacé est vide.
+[*]Un support peut être à usage unique : ses données disparaissent après le premier téléchargement complet.
+[/list]
+
+[h3]Version d'introduction[/h3]
+ATAK natif 1.8.0 (octobre 2026).
+
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Exploit the digital media found in the field: connect the phone with the DL-7 cable to a computer, a phone, a USB stick, a radio or any object prepared by the mission maker, get past its login screen (password or breach), pick the files and download them. Recovered data can then be read in the app, marked on the map or shared with the group.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app is in the [b]Intelligence[/b] category (it is not in the dock). If it was uninstalled, the App Store reinstalls it. Other ways in: look at a device and choose the action [b]Plug in the ATAK (DL-7 cable)[/b] (scroll menu, or ACE interaction menu on the device): the app opens with the cable plugged in. The Accessories app also leads there.
+
+[h3]Features[/h3]
+[list]
+[*][b]Cable unplugged[/b]: [b]Nearby media[/b] (within 25 m, closest first, with [b]PLUG IN[/b]) and [b]Recovered data[/b].
+[*][b]Cable plugged in[/b]: the remote device screen is shown in its theme (Windows session, Linux terminal, military system, industrial control, phone, encrypted vault), with the connection steps: reading the hardware ID, link negotiation, volume mounting.
+[*][b]Authentication[/b]: [b]Password[/b] field (a hint may be shown) or [b]BREACH ACCESS[/b] if the device allows it. Depending on the mission maker's setup, too many failed attempts lock the device, wipe its data or trigger an alarm.
+[*][b]Files[/b]: tick them one by one or with [b]ALL / NONE[/b], then [b]DOWNLOAD[/b]. The transfer takes time depending on size and device.
+[*][b]Recovered data[/b]: text, document, credentials, coordinates, image and audio types. [b]OPEN[/b] to read, [b]MARK ON MAP[/b] for coordinates, [b]LISTEN[/b] for a sound, share / [b]SHARE WITH GROUP[/b] (players of your group), [b]DELETE[/b] and [b]CLEAR ALL[/b].
+[*][b]UNPLUG CABLE[/b]: ends the link (also through the scroll action [b]Unplug DL-7 cable[/b]).
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Walk up to an enemy computer, look at it and choose [b]Plug in the ATAK (DL-7 cable)[/b].
+[*]The app opens on the login screen. Type the password found on site, or press [b]BREACH ACCESS[/b] and wait.
+[*]In the list, press [b]ALL / NONE[/b], then [b]DOWNLOAD[/b]. Stay close to the device during the transfer.
+[*]Unplug, open [b]Recovered data[/b], read the files and mark the coordinates on the map.
+[*]Share with the group what needs to be shared.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Data extraction › DL-7 cable required[/b] (server): ticked, the [b]DL-7 data cable[/b] item (COMSPEC_ATAK_DataCable) must be in your gear; unticked, the phone is enough.
+[*][b]COMSPEC › ATAK · Data extraction › Cable length (m)[/b] (server, 3 m by default): if you move further away, the cable is torn out; the transfer stops, files already copied are kept.
+[*][b]COMSPEC › ATAK · Data extraction › Transfer speed[/b] (server): multiplies the copy and breach speed set by the mission maker.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Zeus and Eden[/b]: the [b]ATAK · Data[/b] modules (data to extract, add a file, restore / remove data) prepare a device: name, type, theme, password, attempts, penalty, breach, duration, alarm, files. With no object targeted, the module creates the device. Zeus is notified of connections.
+[*][b]Alarm[/b]: a device set with an alarm sounds a siren, warns Zeus and reveals the hacker's position to nearby enemies.
+[*][b]Map[/b]: MARK ON MAP for coordinate files.
+[*][b]ACE[/b]: action on each device and [b]Unplug DL-7 cable[/b] in the [b]ATAK phone[/b] menu; without ACE, the scroll action is enough.
+[*][b]COMSPEC SSE mod (separate)[/b]: if loaded, digital devices generated by SSE (phones, computers, sticks, radios) become extractable with the DL-7, with their own files and protections, and the SSE field app can plug in the cable.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]A locked device can only be opened by a breach, if allowed; a wiped device is empty.
+[*]A device can be single-use: its data disappears after the first complete download.
+[/list]
+
+[h3]Introduced in[/h3]
+Native ATAK 1.8.0 (October 2026).

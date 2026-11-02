@@ -1,0 +1,104 @@
+[APP] CR fin d'op — le compte rendu de fin d'opération imposé par le commandement, à remplir ou à lire
+
+[i]Message 1/2[/i]
+[h1]CR fin d'op[/h1]
+[i]Catégorie : Mission · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+CR fin d'op recueille le compte rendu de fin d'opération de chaque joueur. Quand le commandement l'impose, la fiche s'ouvre d'elle-même dans le téléphone : soit un questionnaire à remplir, soit un texte à lire et à confirmer. Le commandement suit en direct qui l'a ouverte, lue ou remise.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie Mission du lanceur. En pratique, vous n'avez rien à faire : à la demande du commandement, une alerte s'affiche dans l'écran du téléphone, une notification et une vibration arrivent, et le téléphone s'ouvre sur la fiche (jamais pendant que vous conduisez, pilotez, êtes inconscient ou dans un autre menu). Tant que la fiche n'est pas remise, elle revient toutes les deux minutes. Rien ne s'affiche sur l'écran de jeu lui-même.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Fiche à remplir[/b] : bandeau « À REMPLIR AVANT DE QUITTER », message d'introduction éventuel, puis les questions : texte libre, choix en boutons ou en liste, OUI / NON. Les questions obligatoires portent une étoile ; si l'une est vide, elle passe en rouge. TRANSMETTRE LE CR l'envoie.
+[*][b]Questionnaire intégré[/b] (quand le site n'en fournit pas) : déroulé de votre mission (obligatoire), ce qui a bien marché, ce qui doit progresser, pertes, blessés et matériel perdu, liaisons radio et ATAK (Bonnes, Correctes, Difficiles, Coupées), note de la mission de 1 à 5.
+[*][b]Texte à lire[/b] : bandeau « À LIRE AVANT DE QUITTER », le texte du commandement, puis LU ET COMPRIS pour prévenir que vous l'avez lu.
+[*][b]Après remise[/b] : bandeau « CR REMIS À hh:mm » ou « LU À hh:mm », vos réponses en lecture, et l'état de l'envoi à Athena (reçu, en cours, hors ligne, échec) avec RENVOYER À ATHENA si besoin.
+[*][b]Autres CR de la partie[/b] : les autres demandes reçues dans la partie, avec OUVRIR.
+[*][b]Onglet IMPOSER[/b] (commandement seulement, à côté de MES CR) : mode À REMPLIR ou À LIRE, joueurs visés TOUS, MON CAMP ou MON GROUPE, titre, message ou texte à lire, puis IMPOSER LE CR.
+[*][b]Suivi des CR de la partie[/b] : pour chaque demande faite en jeu, le nombre de remis et, joueur par joueur, Envoyé, Reçu, Ouvert, Lu ou Remis. RELANCER ramène la fiche chez ceux qui ne l'ont pas remise ; LEVER la retire des téléphones.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Fin de mission : un Zeus touche IMPOSER LE CR (mode À REMPLIR, TOUS).
+[*]Chez chaque joueur, le téléphone s'ouvre sur la fiche « Fin d'opération ».
+[*]Le joueur répond aux questions, au moins celles marquées d'une étoile, puis touche TRANSMETTRE LE CR.
+[*]Côté Zeus, le suivi passe à « Remis ✓ » ; RELANCER pour les retardataires, puis LEVER une fois terminé.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Admin › Zeus peut imposer le CR de fin d'opération[/b] (serveur, activé par défaut) : un Zeus peut l'imposer depuis l'app ou le menu Zeus. L'hôte, l'admin connecté, les gestionnaires en jeu et les gestionnaires désignés sur Athena le peuvent toujours.
+[*][b]COMSPEC › ATAK · Admin › Gestionnaires en jeu (UID Steam)[/b] (serveur) : UID Steam des joueurs qui ont ce droit.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Zeus[/b] : menu « ATAK · Contrôle Zeus », groupe Fin d'opération : Imposer le CR à remplir, Imposer un CR à lire…, Lever le CR.
+[*][b]Athena[/b] : le site peut aussi imposer le CR (back-office « CR des joueurs (fin d'op) ») avec son propre questionnaire, et ses demandes se suivent sur Athena. Si le téléphone est relié, ouverture, lecture et remise sont renvoyées au site. Sans Athena, tout fonctionne en jeu, suivi par le serveur.
+[*][b]Lanceur[/b] : une pastille reste sur l'app tant qu'un CR n'est pas remis.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Le suivi de l'onglet IMPOSER ne montre que les demandes faites en jeu (les quatre dernières) ; celles du site se suivent sur Athena.
+[*]Un joueur qui arrive en cours de partie reçoit la demande en cours.
+[*]Sans téléphone, la fiche ne peut pas s'ouvrir d'elle-même.
+[/list]
+
+[h3]Version d'introduction[/h3]
+ATAK natif 2.5.0 (regroupement 2.5.0).
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+End-of-op report collects every player's end-of-operation report. When command requires it, the form opens by itself on the phone: either a questionnaire to fill in, or a text to read and confirm. Command follows live who opened, read or submitted it.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the Mission category of the launcher. In practice you have nothing to do: when command asks, an alert shows on the phone screen, a notification and a vibration arrive, and the phone opens on the form (never while you drive, fly, are unconscious or in another menu). Until the form is submitted, it comes back every two minutes. Nothing shows on the game screen itself.
+
+[h3]Features[/h3]
+[list]
+[*][b]Form to fill in[/b]: "FILL IN BEFORE YOU LEAVE" banner, optional intro message, then the questions: free text, choices as buttons or a list, OUI / NON (yes / no). Required questions carry a star; if one is empty it turns red. SEND THE REPORT sends it.
+[*][b]Built-in questionnaire[/b] (when the website provides none): how your mission went (required), what worked well, what must improve, losses, wounded and lost equipment, radio and ATAK links (Good, Fair, Difficult, Cut), mission rating from 1 to 5.
+[*][b]Text to read[/b]: "READ BEFORE YOU LEAVE" banner, command's text, then READ AND UNDERSTOOD to confirm you read it.
+[*][b]After submitting[/b]: "SUBMITTED AT hh:mm" or "READ AT hh:mm" banner, your answers read-only, and the state of the send to Athena (received, sending, offline, failed) with SEND TO ATHENA AGAIN if needed.
+[*][b]Other reports this game[/b]: other requests received during the game, with OPEN.
+[*][b]IMPOSER tab[/b] (command only, next to MY REPORTS): mode TO FILL IN or TO READ, players ALL, MY SIDE or MY GROUP, title, message or text to read, then REQUIRE THE REPORT.
+[*][b]Report tracking for this game[/b]: for each request made in game, how many submitted and, player by player, Sent, Received, Opened, Read or Submitted. REMIND brings the form back to those who have not submitted; LIFT removes it from the phones.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]End of mission: a Zeus taps REQUIRE THE REPORT (mode TO FILL IN, ALL).
+[*]On every player's side, the phone opens on the "End of operation" form.
+[*]The player answers the questions, at least the starred ones, then taps SEND THE REPORT.
+[*]On the Zeus side, tracking turns to "Submitted ✓"; REMIND the late ones, then LIFT when done.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Admin › Zeus can require the end-of-operation report[/b] (server, on by default): a Zeus can require it from the app or the Zeus menu. The host, the logged-in admin, in-game managers and managers designated on Athena always can.
+[*][b]COMSPEC › ATAK · Admin › In-game managers (Steam UID)[/b] (server): Steam UIDs of players who hold that right.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Zeus[/b]: "ATAK · Zeus control" menu, End of operation group: Require the report to fill in, Require a report to read…, Lift the report.
+[*][b]Athena[/b]: the website can also require the report (back-office "player reports (end of op)") with its own questionnaire, and its requests are tracked on Athena. If the phone is linked, opening, reading and submitting are sent back to the site. Without Athena everything works in game, tracked by the server.
+[*][b]Launcher[/b]: a badge stays on the app while a report has not been submitted.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Tracking in the IMPOSER tab only shows requests made in game (the last four); website requests are tracked on Athena.
+[*]A player joining mid-game receives the current request.
+[*]Without a phone, the form cannot open by itself.
+[/list]
+
+[h3]Introduced in[/h3]
+Native ATAK 2.5.0 (2.5.0 bundle).

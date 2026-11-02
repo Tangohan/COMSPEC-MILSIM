@@ -67,6 +67,7 @@ return [
     'chef' => 'Chef',
     'deputy' => 'Adjoint',
     'chef_none' => 'Chef non désigné',
+    'trigram' => 'Trigramme',
     'deputy_none' => 'Adjoint non désigné',
     'vacant' => 'Vacant',
     'posts_more_one' => '+ :n autre poste',

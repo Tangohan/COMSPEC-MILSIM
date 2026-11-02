@@ -1,0 +1,108 @@
+[APP] Comptes rendus — une fiche par C.R. (SALUTE, SITREP, UXO…), préremplie par le jeu, diffusée au camp
+
+[i]Message 1/2[/i]
+[h1]Comptes rendus[/h1]
+[i]Catégorie : Mission · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Comptes rendus réunit tous les C.R. au même endroit : chaque type a sa propre fiche, au format militaire, avec ses lignes repérées (lettres SALUTE, numéros des 9 lignes, paragraphes). Le jeu propose des valeurs (ennemi visé, état de votre groupe, ma position), vous complétez, puis le C.R. part au camp ou à votre groupe et, si votre téléphone est relié, à Athena.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie Mission du lanceur. Une notification annonce chaque C.R. reçu.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Onglet NOUVEAU[/b] : en tête, les ordres du commandement pas encore accusés (ACCUSER RÉCEPTION, VOIR ouvre Tâches) ; puis trois touches d'urgence CONTACT, BLESSÉ (opérateur à terre) et SALUTE ; puis tous les types rangés par famille, avec RÉDIGER, ou REPRENDRE si un brouillon existe.
+[*][b]Types de C.R.[/b] : Combat et renseignement (Contact, SALUTE, SPOTREP, SITREP, PATROLREP) ; Feux et effets (BDA, plus des raccourcis vers l'app CAS pour l'appel de feu et l'app JTAC pour le CAS 9 lignes) ; Santé (Opérateur à terre, raccourci vers le MEDEVAC 9 lignes de l'app Médical) ; Logistique (LOGREP, raccourci vers l'app Logistique) ; Menaces (engin explosif 9 lignes, NBC-1) ; Ordres et divers (FRAGO, compte rendu libre).
+[*][b]La fiche[/b] : bandeau avec le code, le titre, le DTG et votre indicatif ; frise des lignes (remplie en vert, à faire en orange, manquante en rouge après un envoi refusé) ; gros boutons colorés, niveaux VERT / ORANGE / ROUGE / NOIR, rose des vents, listes et champs. Une grille se remplit par MA POSITION ou SUR LA CARTE (vous touchez la carte).
+[*][b]Propositions[/b] : boutons ENNEMI, MON GROUPE, CIBLE, MA POSITION selon la fiche. Seul ce que votre groupe connaît sert : l'ennemi est placé à sa position estimée, jamais à sa vraie position s'il n'a pas été vu. CIBLE prend la grille de votre désignateur laser, sinon ce que vous visez.
+[*][b]Transmission[/b] : priorité ROUTINE, PRIORITAIRE, IMMÉDIAT ou FLASH ; diffusion en jeu CAMP, MON GROUPE ou AUCUNE ; sur certaines fiches, « Remonter à » ÉCHELON SUP., +2 ÉCHELONS ou SOMMET (unités au-dessus de la vôtre sur Athena) ; photo jointe (JOINDRE UNE PHOTO, choisie parmi les photos du téléphone). Un aperçu montre le message tel qu'il part.
+[*][b]Envoi[/b] : ENREGISTRER LE BROUILLON, puis TRANSMETTRE (rouge pour IMMÉDIAT, FLASH et les C.R. d'urgence). Le C.R. ne part pas tant qu'une ligne obligatoire est vide ou mal remplie.
+[*][b]BROUILLONS[/b] : fiches entamées, gardées jusqu'à l'envoi (REPRENDRE, SUPPRIMER). Quitter une fiche la garde en brouillon.
+[*][b]ENVOYÉS[/b] : vos C.R. avec leur parcours (diffusé, Athena reçu ou non, lu par n, reçu par n). DÉTAILS déplie la fiche, CARTE la montre sur la carte, RENVOYER le renvoie à Athena après un échec, REPRENDRE crée une nouvelle fiche à partir de celle-ci, RETIRER l'enlève de votre liste.
+[*][b]REÇUS[/b] : les C.R. du camp ou de votre groupe, marqués NOUVEAU tant que vous ne les avez pas ouverts. Les ouvrir prévient l'auteur que vous l'avez lu ; ACCUSER RÉCEPTION lui confirme la réception.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Vous repérez une patrouille ennemie : ouvrez Comptes rendus, touchez SALUTE.
+[*]Visez l'ennemi et touchez ENNEMI : taille, activité, position estimée et équipement se remplissent.
+[*]Corrigez ou complétez les lignes, choisissez PRIORITAIRE et la diffusion CAMP.
+[*]Vérifiez l'aperçu du message, touchez TRANSMETTRE.
+[*]Dans ENVOYÉS, suivez qui l'a lu et qui en a accusé réception.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié. Le réglage serveur [b]COMSPEC › ATAK · Mode local et poste TOC › Mode full local (sans Athena)[/b] garde les C.R. en jeu seulement.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b] : si le téléphone est relié, chaque C.R. est aussi enregistré sur Athena, avec la remontée choisie et la photo jointe (qui part dans la photothèque d'Athena). Sans Athena, il ne vit qu'en jeu.
+[*][b]Tâches[/b] : accusé de réception des ordres du commandement depuis l'onglet NOUVEAU.
+[*][b]CAS, JTAC, Médical, Logistique[/b] : les fiches marquées comme raccourcis ouvrent ces apps.
+[*][b]Photo[/b] : la photo jointe vient de la galerie du téléphone.
+[*][b]Carte[/b] : position d'un C.R. pointée sur la carte, et CARTE pour le retrouver.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]La photo jointe n'est proposée que si COMSPEC Link est relié.
+[*]« Remonter à » n'agit que sur Athena.
+[*]En cas d'échec vers Athena, le C.R. est quand même diffusé en jeu : utilisez RENVOYER plus tard.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x). Refaite en ATAK natif 1.93.0 : une fiche par type de compte rendu.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Reports gathers every report in one place: each type has its own sheet, in military format, with its tagged lines (SALUTE letters, 9-line numbers, paragraphs). The game suggests values (aimed enemy, your group's state, your position), you complete them, then the report goes to the side or your group and, if your phone is linked, to Athena.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the Mission category of the launcher. A notification announces each report received.
+
+[h3]Features[/h3]
+[list]
+[*][b]NEW tab[/b]: at the top, command orders not yet acknowledged (ACKNOWLEDGE, VIEW opens Tasks); then three emergency keys CONTACT, WOUNDED (operator down) and SALUTE; then every type sorted by family, with WRITE, or RESUME when a draft exists.
+[*]Report types: Combat and intelligence (Contact, SALUTE, SPOTREP, SITREP, PATROLREP); Fires and effects (BDA, plus shortcuts to the CAS app for a call for fire and the JTAC app for the CAS 9-line); Health (Operator down, shortcut to the MEDEVAC 9-line of the Medical app); Logistics (LOGREP, shortcut to the Logistics app); Threats (explosive device 9-line, NBC-1); Orders and misc (FRAGO, free report).
+[*][b]The sheet[/b]: header with code, title, DTG and your callsign; line strip (filled in green, to do in orange, missing in red after a refused send); large coloured buttons, GREEN / ORANGE / RED / BLACK levels, compass rose, lists and fields. A grid is filled with MY POSITION or ON THE MAP (you tap the map).
+[*][b]Suggestions[/b]: ENEMY, MY GROUP, TARGET, MY POSITION buttons depending on the sheet. Only what your group knows is used: the enemy is placed at its estimated position, never at its real position if nobody saw it. TARGET takes your laser designator's grid, otherwise what you aim at.
+[*][b]Transmission[/b]: priority ROUTINE, PRIORITY, IMMEDIATE or FLASH; in-game distribution SIDE, MY GROUP or NONE; on some sheets, "Send up to" NEXT ECHELON, +2 ECHELONS or TOP (units above yours on Athena); attached photo (ATTACH A PHOTO, picked from the phone's photos). A preview shows the message as it will go out.
+[*][b]Sending[/b]: SAVE DRAFT, then TRANSMIT (red for IMMEDIATE, FLASH and emergency reports). The report does not go out while a required line is empty or wrongly filled.
+[*][b]DRAFTS[/b]: sheets you started, kept until sent (RESUME, DELETE). Leaving a sheet keeps it as a draft.
+[*][b]SENT[/b]: your reports with their trail (distributed, received by Athena or not, read by n, acknowledged by n). DETAILS expands the sheet, MAP shows it on the map, SEND AGAIN resends it to Athena after a failure, RESUME starts a new sheet from it, REMOVE takes it off your list.
+[*][b]RECEIVED[/b]: reports from the side or your group, tagged NEW until you open them. Opening one tells the author you read it; ACKNOWLEDGE confirms receipt to them.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]You spot an enemy patrol: open Reports, tap SALUTE.
+[*]Aim at the enemy and tap ENEMY: size, activity, estimated position and equipment are filled in.
+[*]Correct or complete the lines, choose PRIORITY and SIDE distribution.
+[*]Check the message preview, tap TRANSMIT.
+[*]In SENT, follow who read it and who acknowledged it.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting. The server setting [b]COMSPEC › ATAK · Local mode and TOC post › Full local mode (no Athena)[/b] keeps reports in game only.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b]: if the phone is linked, each report is also saved on Athena, with the chosen escalation and the attached photo (which goes to Athena's photo library). Without Athena it only lives in game.
+[*][b]Tasks[/b]: acknowledge command orders from the NEW tab.
+[*][b]CAS, JTAC, Medical, Logistics[/b]: the sheets marked as shortcuts open those apps.
+[*][b]Photo[/b]: the attached photo comes from the phone's gallery.
+[*][b]Map[/b]: a report's position picked on the map, and MAP to find it again.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]The attached photo is only offered when COMSPEC Link is linked.
+[*]"Send up to" only acts on Athena.
+[*]If sending to Athena fails, the report is still distributed in game: use SEND AGAIN later.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x). Rebuilt in native ATAK 1.93.0: one sheet per report type.

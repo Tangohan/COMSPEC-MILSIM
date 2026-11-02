@@ -1,0 +1,127 @@
+[APP] Carte — carte tactique ATAK : alliés, marqueurs, mesures, dessins, recherche et calques
+
+[i]Message 1/2[/i]
+[h1]Carte[/h1]
+[i]Catégorie : Navigation · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+L'écran principal du téléphone, façon ATAK : la carte occupe tout l'écran et les informations flottent par-dessus. Vous y voyez votre position, les alliés (BFT), les marqueurs de la mission et ceux des joueurs ; vous y mesurez, dessinez, marquez et lancez vos déplacements. D'autres apps (GPS, Itinéraire, Relief, Drone, JTAC) s'appuient sur elle.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran : la carte reste visible et suit votre position pendant que vous jouez. [b]Ctrl+Maj+U[/b] le prend en main (souris) pour tous les outils.
+[*]La Carte est dans le [b]dock[/b], en bas de l'écran d'accueil (catégorie [b]Navigation[/b]). Le téléphone se rouvre sur la dernière app utilisée, la Carte par défaut.
+[*]D'autres apps y mènent : [b]VOIR SUR LA CARTE[/b] (GPS, Relief), [b]POSER LES ÉTAPES SUR LA CARTE[/b] (Itinéraire). Désinstallée : l'[b]App Store[/b] la réinstalle.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Écran[/b] : boussole en haut à gauche ; bandeau en bas à gauche (en main : grille MGRS sous le curseur, distance, azimut et altitude depuis vous ; à côté : votre cap, indicatif et équipe de feu). Barre à droite, en main : [b]Centrer sur moi[/b], [b]Suivre ma position[/b], zoom, [b]Poser un marqueur[/b], [b]Afficher / masquer les indicatifs[/b], et la vue drone si un drone est appairé.
+[*][b]Clics[/b] : clic gauche sur un allié = sa fiche dans le panneau [b]SITUATION[/b] ; double clic = modifier le marqueur pointé ou en poser un ; [b]Ctrl+clic[/b] = ping, [b]Maj+clic[/b] = marqueur, [b]Alt+clic[/b] = mesure.
+[*][b]Clic droit[/b] : [b]Ping[/b] (signal à votre camp), [b]Mettre un marqueur[/b], [b]Point de passage[/b], [b]Y aller[/b] (itinéraire GPS), [b]Centrer ici[/b], [b]Copier la grille[/b] (10 chiffres), [b]Champ de vision ici[/b]. Selon ce qui est pointé : [b]Voir la caméra[/b], [b]Son champ de vision[/b], [b]Localiser par relais[/b] (équipier) ; [b]Modifier[/b], [b]Copier[/b] ou [b]Supprimer le marqueur[/b] ; [b]Modifier l'étape[/b], [b]Naviguer vers l'étape[/b], [b]Supprimer l'étape[/b] ; fiche d'un relais. Aussi, selon le cas : [b]Envoyer à la montre[/b] (montre Garmin portée), [b]Zone interdite au drone[/b], [b]Ordre au drone[/b], [b]Ordre aux IA[/b] (chef ou poste TOC), et les lignes d'effacement (alertes, champ de vision, ligne de vue, localisations).
+[*][b]OUTILS[/b] — Navigation : [b]GPS : itinéraire[/b], [b]Points de passage[/b], [b]Rechercher[/b]. Mesurer : [b]Mesure A-B[/b], [b]Hauteur[/b] (altitude du point et écart avec vous), [b]Ligne de vue[/b], [b]Terrain plat[/b] (jusqu'à 5 zones de posé dans 200 m ; un clic sur une LZ trouvée en fait un marqueur), [b]JTAC : IP » cible[/b] (cap magnétique). Dessiner : [b]Tracer un trait[/b] (Ctrl+clic = étape, 8 au plus), [b]Dessin libre[/b] (lissé au relâchement), [b]Marquer bâtiments[/b] (B1, B2… pour les bâtiments où l'on entre, dans 150 m). Affichage : [b]Distance[/b], [b]Boussole[/b], grille 6 / 8 / 10 chiffres, [b]Zones tactiques[/b], [b]Goniométrie[/b], [b]Tout effacer[/b]. Un outil reste actif jusqu'au clic droit ou au ✕ de son bandeau.
+[*][b]Traits[/b] : couleur, épaisseur, [b]FLÈCHE[/b], [b]ZONE[/b] (forme fermée), [b]ANNULER[/b], [b]EFFACER MES TRAITS[/b] ; [b]ROUTES[/b] colle le trait aux routes ([b]RAPIDE[/b] / [b]COURT[/b], [b]TOUTES VOIES[/b], [b]GRANDS AXES[/b], [b]DISCRET[/b], [b]SANS PONT[/b]) avec distance et temps affichés. Les traits sont des marqueurs partagés sur le canal choisi.
+[*][b]Marqueurs[/b] : palette avec camp ([b]ENNEMI[/b], [b]AMI[/b], [b]NEUTRE[/b], [b]INCONNU[/b], [b]TACTIQUE[/b]), icônes par type, couleur, taille, [b]AUTRES[/b] (tous les marqueurs Arma et des mods), durée (permanent à 1 h), récents, [b]CANAL[/b], [b]TEXTE[/b]. Clic droit pour choisir le point puis [b]VALIDER[/b], ou clic gauche pour poser tout de suite. Clic sur un marqueur : fiche (heure de pose, auteur, grille, distance, note) avec [b]Y ALLER[/b], [b]CENTRER[/b], [b]MODIFIER[/b], [b]SUPPRIMER[/b].
+[*][b]RECHERCHER[/b] : localiser un téléphone ([b]IMEI[/b], [b]NUMÉRO[/b]), une [b]BALISE GPS[/b], un allié ([b]INDICATIF[/b]) ou une [b]GRILLE[/b] ; la carte se centre et une fiche s'ouvre avec [b]SUIVRE[/b] et [b]CENTRER[/b].
+[*][b]SITUATION et calques[/b] (en main) : fiche de l'unité choisie, fond de carte ([b]TOPO[/b], [b]CLAIR[/b], [b]SOMBRE[/b], [b]NUIT[/b], [b]CLASSIQUE[/b], [b]HYBRIDE[/b], [b]SATELLITE[/b] si une photo de la carte existe), calques par thème : Étiquettes, Forces, Repères et lieux, Renseignement (zones Athena, SIGINT, guerre électronique), Réseau et logistique, Relief. [b]CONFIGURATION[/b] explique chaque calque.
+[*][b]Par-dessus la carte[/b] : guidage GPS ([b]ARRÊTER[/b]), flèche vers l'étape active de l'Itinéraire, vue du drone appairé, caméra d'un équipier.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*][b]Ctrl+Maj+U[/b], ouvrez la Carte.
+[*]Clic droit sur le contact > [b]Mettre un marqueur[/b] : [b]ENNEMI[/b], icône infanterie, canal, puis [b]VALIDER[/b].
+[*][b]OUTILS[/b] > [b]Mesure A-B[/b] : cliquez A puis B pour la distance et l'azimut ; clic droit pour quitter l'outil.
+[*]Clic droit sur votre destination > [b]Y aller[/b] : le guidage s'affiche en haut de la carte.
+[*][b]Ctrl+U[/b] : le téléphone passe dans le coin et la carte suit votre progression.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Carte › Diffusion des marqueurs ATAK[/b] (serveur) : [i]Carte d'Arma (canaux du jeu)[/i] par défaut : visible aussi sur la carte d'Arma du canal ; [i]Réseau ATAK uniquement[/i] : seuls les téléphones qui reçoivent le réseau le voient.
+[*][b]… › Canal des marqueurs[/b] : canal par défaut (Global, Camp, Commandement, Groupe, Véhicule, Direct), modifiable à chaque pose. [b]… › Fenêtre de création de marqueur[/b] : Palette d'icônes ou Éditeur complet.
+[*][b]… › Nom des marqueurs posés[/b] (modèle avec {camp} {type} {n} {grille} {indicatif} {heure}) et [b]… › Numérotation des marqueurs[/b] (À la suite ou Premier numéro libre).
+[*][b]… › Style des noms de marqueurs[/b], [b]… › Style des noms de lieux[/b], [b]… › Noms des marqueurs / villes / villages / lieux-dits / sites militaires[/b] : par joueur, aussi dans les calques et dans Réglages > Carte.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]GPS, Itinéraire, Routes, Relief[/b] : guidage, étapes, routes et champs de vision s'affichent et se posent sur la carte.
+[*][b]Athena[/b] : zones tactiques et SIGINT reçues d'Athena ; les marqueurs du téléphone remontent sur la carte web ; fond [b]SATELLITE[/b] téléchargeable depuis Athena (Réglages > Carte > Cartes hors ligne) ou fourni par un mod de photos de carte optionnel. Une communauté peut imposer certains réglages de la carte.
+[*][b]ACE[/b] : raccourci [b]Envoyer le point visé à l'ATAK[/b] (sans touche par défaut) : depuis une optique, des jumelles ou un désignateur, le point visé ouvre la palette de marqueurs ; avec ACE, une mesure au Vector 21 l'envoie seule.
+[*][b]Zeus / Eden[/b] : les balises GPS posées par la mission se retrouvent avec [b]RECHERCHER[/b].
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Zoom au clavier, même téléphone porté : [b]Ctrl+Pg.Préc[/b] / [b]Ctrl+Pg.Suiv[/b] (modifiables dans les touches CBA).
+[*]Les marqueurs de la mission ne s'effacent pas depuis le téléphone ; une alerte reçue ne s'efface que sur votre téléphone.
+[*]Réglages > Carte : style de boussole, taille de la barre d'outils, précision des grilles, tailles des textes et icônes, couleurs, fond, [b]RÉTABLIR LA CARTE PAR DÉFAUT[/b].
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions publiques ; clic droit et palette des marqueurs refaits en 2.1.0.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h1]Map[/h1]
+[i]Category: Navigation · ATAK COMSPEC 2.9.34[/i]
+
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+The phone's main screen, ATAK style: the map fills the screen and information floats on top. You see your position, friendlies (BFT), mission markers and player markers; you measure, draw, mark and start your movements from it. Other apps (GPS, Route, Terrain, Drone, JTAC) build on it.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] carries the phone in a corner of the screen: the map stays visible and follows your position while you play. [b]Ctrl+Shift+U[/b] takes it in hand (mouse) for every tool.
+[*]The Map is in the [b]dock[/b], at the bottom of the home screen ([b]Navigation[/b] category). The phone reopens on the last app used, the Map by default.
+[*]Other apps lead to it: [b]SHOW ON MAP[/b] (GPS, Terrain), [b]PLACE WAYPOINTS ON THE MAP[/b] (Route). Uninstalled: the [b]App Store[/b] reinstalls it.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]Screen[/b]: compass top left; info strip bottom left (in hand: MGRS grid under the cursor, distance, bearing and elevation from you; next to it: your heading, callsign and fire team). Right-hand bar, in hand: [b]Center on me[/b], [b]Follow my position[/b], zoom, [b]Place a marker[/b], [b]Show / hide callsigns[/b], plus the drone view when a drone is paired.
+[*][b]Clicks[/b]: left click on a friendly = their card in the [b]SITUATION[/b] panel; double click = edit the marker under the cursor or place one; [b]Ctrl+click[/b] = ping, [b]Shift+click[/b] = marker, [b]Alt+click[/b] = measure.
+[*][b]Right click[/b]: [b]Ping[/b] (signal to your side), [b]Place a marker[/b], [b]Waypoint[/b], [b]Go there[/b] (GPS route), [b]Center here[/b], [b]Copy the grid[/b] (10 digits), [b]Field of view here[/b]. Depending on what is under the cursor: [b]View camera[/b], [b]Their field of view[/b], [b]Locate by relays[/b] (teammate); [b]Edit[/b], [b]Copy[/b] or [b]Delete marker[/b]; [b]Edit waypoint[/b], [b]Navigate to waypoint[/b], [b]Delete waypoint[/b]; a relay's card. Also, when relevant: [b]Send to watch[/b] (Garmin watch worn), [b]Drone no-fly zone[/b], [b]Drone order[/b], [b]AI order[/b] (leader or TOC station), and the clear lines (alerts, field of view, line of sight, locations).
+[*][b]TOOLS[/b] — Navigation: [b]GPS: route[/b], [b]Waypoints[/b], [b]Search[/b]. Measure: [b]Measure A-B[/b], [b]Height[/b] (point elevation and difference with you), [b]Line of sight[/b], [b]Flat terrain[/b] (up to 5 landing spots within 200 m; clicking a found LZ turns it into a marker), [b]JTAC: IP » target[/b] (magnetic heading). Draw: [b]Draw a line[/b] (Ctrl+click = waypoint, 8 max), [b]Freehand drawing[/b] (smoothed on release), [b]Mark buildings[/b] (B1, B2… for enterable buildings within 150 m). Display: [b]Distance[/b], [b]Compass[/b], 6 / 8 / 10-digit grid, [b]Tactical zones[/b], [b]Direction finding[/b], [b]Clear all[/b]. A tool stays active until right click or the ✕ on its banner.
+[*][b]Lines[/b]: colour, width, [b]ARROW[/b], [b]AREA[/b] (closed shape), [b]UNDO[/b], clear my lines; [b]ROADS[/b] snaps the line to roads ([b]FASTEST[/b] / [b]SHORTEST[/b], [b]ALL ROADS[/b], [b]MAIN ROADS[/b], [b]QUIET[/b], [b]NO BRIDGES[/b]) with distance and time shown. Lines are shared markers on the chosen channel.
+[*][b]Markers[/b]: palette with side ([b]ENEMY[/b], [b]FRIEND[/b], [b]NEUTRAL[/b], [b]UNKNOWN[/b], [b]TACTICAL[/b]), icons by type, colour, size, others (every Arma and mod marker), duration (permanent to 1 h), recent, [b]CHANNEL[/b], [b]TEXT[/b]. Right click to choose the point then [b]CONFIRM[/b], or left click to place at once. Click a marker: card (time placed, author, grid, distance, note) with [b]GO THERE[/b], [b]CENTRE[/b], [b]EDIT[/b], [b]DELETE[/b].
+[*][b]SEARCH[/b]: locate a phone (IMEI, [b]NUMBER[/b]), a [b]GPS BEACON[/b], a friendly (callsign) or a [b]GRID[/b]; the map centres and a card opens with follow and [b]CENTRE[/b].
+[*][b]SITUATION and layers[/b] (in hand): selected unit's card, map background (TOPO, [b]LIGHT[/b], [b]DARK[/b], NIGHT, [b]CLASSIC[/b], [b]HYBRID[/b], SATELLITE when a photo of the map exists), layers by theme: Labels, Forces, Markers and places, Intelligence (Athena zones, SIGINT, electronic warfare), Network and logistics, Terrain. CONFIGURATION explains each layer.
+[*][b]On top of the map[/b]: GPS guidance ([b]STOP[/b]), arrow to the active waypoint of the Route app, paired drone view, a teammate's camera.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*][b]Ctrl+Shift+U[/b], open the Map.
+[*]Right click the contact > [b]Place a marker[/b]: [b]ENEMY[/b], infantry icon, channel, then [b]CONFIRM[/b].
+[*][b]TOOLS[/b] > [b]Measure A-B[/b]: click A then B for distance and bearing; right click to leave the tool.
+[*]Right click your destination > [b]Go there[/b]: guidance appears at the top of the map.
+[*][b]Ctrl+U[/b]: the phone moves to the corner and the map follows your progress.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Carte › ATAK marker distribution[/b] (server): [i]Arma map (game channels)[/i] by default: also visible on the channel's Arma map; [i]ATAK network only[/i]: only phones receiving the network see it.
+[*][b]… › Marker channel[/b]: default channel (Global, Side, Command, Squad, Vehicle, Direct), changeable at each placement. [b]… › Marker placement menu[/b]: Icon palette or Full editor.
+[*][b]… › Name of placed markers[/b] (template with {camp} {type} {n} {grille} {indicatif} {heure}) and [b]… › Marker numbering[/b] (next number, or first free number).
+[*][b]… › Marker name style[/b], [b]… › Place name style[/b], [b]… › Marker / Town / Village / Locality / Site names[/b]: per player, also in the layers and in Settings > Map.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]GPS, Route, Routes, Terrain[/b]: guidance, waypoints, routes and fields of view are shown and placed on the map.
+[*][b]Athena[/b]: tactical zones and SIGINT received from Athena; phone markers go up to the web map; SATELLITE background downloadable from Athena (Settings > Map > Offline maps) or supplied by an optional map photo mod. A community can enforce some map settings.
+[*][b]ACE[/b]: keybind [b]Send aimed point to the ATAK[/b] (no default key): from an optic, binoculars or a designator, the aimed point opens the marker palette; with ACE, a Vector 21 measurement sends it on its own.
+[*][b]Zeus / Eden[/b]: GPS beacons placed by the mission can be found with [b]SEARCH[/b].
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Keyboard zoom, even with the phone carried: [b]Ctrl+Page Up[/b] / [b]Ctrl+Page Down[/b] (rebindable in CBA keys).
+[*]Mission markers cannot be deleted from the phone; a received alert is only cleared on your phone.
+[*]Settings > Map: compass style, toolbar size, grid precision, text and icon sizes, colours, background, [b]RESET MAP TO DEFAULT[/b].
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first public versions; right click and marker palette rebuilt in 2.1.0.

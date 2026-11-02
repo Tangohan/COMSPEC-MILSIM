@@ -1,0 +1,119 @@
+[APP] Admin — ATAK des joueurs, effets Zeus, parc Athena, IA ennemie et règles des apps, pour Zeus et gestion
+
+[i]Message 1/2[/i]
+[h1]Admin[/h1]
+[i]Catégorie : Système · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+L'app Admin est l'outil de gestion dans le téléphone, réservé à l'encadrement. Elle montre l'ATAK de chaque joueur de la partie, permet d'agir dessus (effets Zeus), de gérer le parc ATAK de la communauté sur Athena, de suivre les téléphones ramassés par l'IA ennemie et de fixer les apps obligatoires ou interdites de la partie. Rien ne s'affiche sur l'écran de jeu : tout se passe dans le téléphone.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Système. L'app n'apparaît que si vous y avez droit : Zeus, hôte d'une partie locale ou solo, admin connecté au serveur, gestionnaire désigné par le serveur, ou gestionnaire de la communauté (ou administrateur de la plateforme) sur Athena.
+[*]Elle n'est pas dans l'App Store : elle suit vos droits.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Tableau de bord[/b] en tête : JOUEURS (dont avec ATAK), ALERTES, EFFETS ZEUS en cours, IA ENNEMIE (téléphones aux mains de l'IA).
+[*][b]Onglet EN JEU[/b] (droits en jeu) : une ligne par joueur avec batterie, état Athena, alertes (COMPROMIS, BLOQUÉ, ÉTEINT ou CASSÉ, BATTERIE faible, SANS ATAK) et effets Zeus actifs. Filtre [b]TOUS[/b] / [b]ALERTES[/b] / [b]ZEUS[/b]. [b]ACTUALISER[/b] redemande l'état (relevé automatique toutes les 10 s tant que l'app est à l'écran). [b]TOUT RÉTABLIR[/b] retire les effets Zeus de tous les joueurs.
+[*][b]Fiche d'un joueur[/b] ([b]GÉRER[/b]) : groupe et camp, téléphone porté, batterie, état de l'appareil, balise BFT, liaison Athena, versions du mod et du module de liaison, numéro et IMEI, position (coordonnées et distance), fiche Athena. [b]CARTE[/b] centre la carte sur lui.
+[*][b]Contrôle du téléphone[/b] : interrupteurs [b]Verrouillé[/b] (écran verrouillé avec un message de l'encadrement), [b]Muet[/b], [b]Brouillé[/b] (brouillage fort du réseau), [b]Éteint[/b] ; boutons [b]RÉPARER[/b] (écran, composants), [b]TOUT RÉTABLIR[/b], [b]FICHE ATHENA[/b].
+[*][b]Onglet ATHENA[/b] (droits sur le site) : parc ATAK de la communauté, mêmes règles que Gestion > Parc ATAK du site. Recherche, pages de 40 ([b]PRÉCÉDENTS[/b], [b]SUIVANTS[/b], [b]RECHARGER[/b]). Par ATAK : [b]BLOQUER[/b] / [b]LEVER LE BLOCAGE[/b], [b]DÉCONNECTER[/b] (ferme ses sessions sans bloquer), [b]MESSAGE[/b] (message imposé affiché dans son ATAK jusqu'à COMPRIS), [b]DÉCLARER CAPTURÉ[/b], [b]DÉCLARER COMPROMIS[/b] (ses certificats sont révoqués), [b]LEVER LA COMPROMISSION[/b].
+[*][b]Onglet IA ENNEMIE[/b] (droits en jeu) : réglages de capture de la partie, puis chaque téléphone ramassé par l'IA : porteur, déchiffrage, exploitation du BFT, groupes en traque et joueurs repérés. Boutons [b]PORTEUR[/b] et [b]LIEU[/b] (carte), [b]VALIDER[/b] (coupe le téléphone du réseau et révoque son certificat sur Athena), [b]REJETER[/b] (fausse alerte), [b]ARRÊTER LA TRAQUE[/b], [b]REPRENDRE LE TÉLÉPHONE[/b], et [b]COUPER LA TRAQUE[/b] / [b]RÉTABLIR LA TRAQUE[/b] pour toute la partie.
+[*][b]Onglet APPS[/b] (droits en jeu) : pour chaque app, [b]LIBRE[/b] (au choix du joueur), [b]OBLIGATOIRE[/b] (installée chez tous, pas de désinstallation) ou [b]INTERDITE[/b] (retirée des téléphones, ne s'ouvre plus). [b]TOUT LIBÉRER[/b] lève les règles de la partie.
+[*][b]Confirmation[/b] : les actions lourdes (bloquer, déclarer compromis, tout rétablir…) demandent un second appui sur « CONFIRMER : … ».
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]En Zeus, ouvrez Admin, onglet EN JEU, filtre ALERTES.
+[*]Sur le joueur concerné, appuyez sur GÉRER pour voir sa fiche.
+[*]Activez Verrouillé ou Brouillé pour simuler une panne ; RÉPARER ou TOUT RÉTABLIR pour la lever.
+[*]Onglet APPS : passez Tinder en INTERDITE pour la partie ; elle disparaît de tous les téléphones.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Admin › Gestionnaires en jeu (UID Steam)[/b] (serveur) : UID Steam 64 bits séparés par des virgules ; ces joueurs ont l'app Admin sans être Zeus.
+[*][b]COMSPEC › ATAK · Capture par l'ennemi[/b] (serveur) : ramassage, rayon, traque et déchiffrage affichés dans l'onglet IA ENNEMIE.
+[*][b]COMSPEC › ATAK · Simulation › Apps obligatoires / Apps interdites[/b] (serveur) : règles fixes du serveur, qui s'ajoutent à celles de l'onglet APPS.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Zeus[/b] : un Zeus assigné a l'app d'office ; les effets agissent sur le vrai téléphone du joueur.
+[*][b]Athena[/b] : l'onglet ATHENA demande un compte relié en jeu et un rôle de gestion sur le site ; il est indisponible si le service Athena est coupé sur ce téléphone.
+[*][b]App Store[/b] : les règles de l'onglet APPS s'y affichent chez chaque joueur (« imposé par : mission »).
+[*][b]Carte[/b] : CARTE, PORTEUR et LIEU centrent la carte du téléphone.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Sans droits en jeu, seul l'onglet ATHENA est utile ; sans rôle sur le site, l'onglet ATHENA indique qu'il est réservé à la gestion.
+[*]TOUT LIBÉRER ne lève que les règles de la partie : celles du serveur et d'Athena restent.
+[*]Les droits sont vérifiés par le serveur : afficher l'app ne suffit pas à agir.
+[/list]
+
+[h3]Version d'introduction[/h3]
+ATAK natif 2.4.0.
+
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+The Admin app is the management tool inside the phone, for command staff only. It shows every player's ATAK in the game, lets you act on it (Zeus effects), manage the community's ATAK fleet on Athena, follow phones picked up by enemy AI and set the game's mandatory or forbidden apps. Nothing shows on the game screen: it all happens in the phone.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] brings the phone to a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, System category. The app only shows if you are entitled to it: Zeus, host of a local or solo game, admin logged in to the server, manager designated by the server, or community manager (or platform administrator) on Athena.
+[*]It is not in the App Store: it follows your rights.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]Dashboard[/b] at the top: PLAYERS (and how many with ATAK), ALERTS, ZEUS EFFECTS running, ENEMY AI (phones held by the AI).
+[*][b]IN GAME tab[/b] (in-game rights): one line per player with battery, Athena state, alerts (COMPROMISED, BLOCKED, OFF or BROKEN, low BATTERY, NO ATAK) and active Zeus effects. Filter [b]ALL[/b] / [b]ALERTS[/b] / [b]ZEUS[/b]. [b]REFRESH[/b] asks for each ATAK's state again (automatic every 10 s while the app is on screen). [b]RESTORE ALL[/b] removes Zeus effects from every player.
+[*][b]Player record[/b] ([b]MANAGE[/b]): squad and side, phone carried, battery, device state, BFT beacon, Athena link, mod and link module versions, number and IMEI, location (grid and distance), Athena record. [b]MAP[/b] centres the map on them.
+[*][b]Phone control[/b]: switches [b]Locked[/b] (screen locked with a message from command), [b]Mute[/b], [b]Jammed[/b] (strong network jamming), [b]Off[/b]; buttons [b]REPAIR[/b] (screen, components), [b]RESTORE ALL[/b], [b]ATHENA RECORD[/b].
+[*][b]ATHENA tab[/b] (website rights): the community's ATAK fleet, same rules as Management > ATAK fleet on the website. Search, pages of 40 ([b]PREVIOUS[/b], [b]NEXT[/b], [b]RELOAD[/b]). Per ATAK: [b]BLOCK[/b] / [b]LIFT BLOCK[/b], [b]DISCONNECT[/b] (closes its sessions without blocking), [b]MESSAGE[/b] (enforced message shown in their ATAK until GOT IT), [b]DECLARE CAPTURED[/b], [b]DECLARE COMPROMISED[/b] (its certificates are revoked), [b]CLEAR COMPROMISE[/b].
+[*][b]ENEMY AI tab[/b] (in-game rights): the game's capture settings, then each phone picked up by the AI: carrier, decryption, BFT exploitation, hunting groups and spotted players. Buttons [b]CARRIER[/b] and [b]PLACE[/b] (map), [b]CONFIRM[/b] (cuts the phone from the network and revokes its certificate on Athena), [b]DISMISS[/b] (false alarm), [b]STOP THE HUNT[/b], [b]TAKE THE PHONE BACK[/b], and [b]STOP HUNT[/b] / [b]RESTORE HUNT[/b] for the whole game.
+[*][b]APPS tab[/b] (in-game rights): for each app, [b]FREE[/b] (player's choice), [b]MANDATORY[/b] (installed for everyone, cannot be uninstalled) or [b]FORBIDDEN[/b] (removed from phones, no longer opens). [b]FREE ALL[/b] lifts the game's rules.
+[*][b]Confirmation[/b]: heavy actions (block, declare compromised, restore all…) need a second tap on "CONFIRM: …".
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]As Zeus, open Admin, IN GAME tab, ALERTS filter.
+[*]On the player concerned, tap MANAGE to see their record.
+[*]Turn on Locked or Jammed to simulate a failure; REPAIR or RESTORE ALL to clear it.
+[*]APPS tab: set Tinder to FORBIDDEN for the game; it disappears from every phone.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Admin › In-game managers (Steam UID)[/b] (server): 64-bit Steam UIDs separated by commas; these players get the Admin app without being Zeus.
+[*][b]COMSPEC › ATAK · Enemy capture[/b] (server): pickup, radius, hunt and decryption shown in the ENEMY AI tab.
+[*][b]COMSPEC › ATAK · Simulation › Mandatory apps / Forbidden apps[/b] (server): fixed server rules, added to those of the APPS tab.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Zeus[/b]: an assigned Zeus gets the app automatically; effects act on the player's actual phone.
+[*][b]Athena[/b]: the ATHENA tab needs an account linked in game and a management role on the website; it is unavailable if the Athena service is off on this phone.
+[*][b]App Store[/b]: APPS tab rules show in every player's App Store ("enforced by: mission").
+[*][b]Map[/b]: MAP, CARRIER and PLACE centre the phone's map.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Without in-game rights, only the ATHENA tab is useful; without a website role, the ATHENA tab says it is reserved for management.
+[*]FREE ALL only lifts the game's rules: server and Athena rules stay.
+[*]Rights are checked by the server: seeing the app is not enough to act.
+[/list]
+
+[h3]Introduced in[/h3]
+Native ATAK 2.4.0.

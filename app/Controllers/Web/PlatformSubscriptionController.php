@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Billing\PlanOfferSummary;
 use App\Services\Billing\PlanPaymentService;
 use App\Services\Billing\SubscriptionPlanFeaturesCatalog;
 
@@ -55,6 +56,8 @@ final class PlatformSubscriptionController
             $openPayment = \App\Core\Container::get(\App\Repositories\PlanPaymentRequestRepository::class)->latestOpenForTenant($tenantId);
         }
 
+        $offers = $this->payments->offers();
+
         return Response::view('layout.main', [
             'title' => 'Offres et formules',
             'content' => 'platform.upgrade',
@@ -62,7 +65,8 @@ final class PlatformSubscriptionController
             'featureKey' => $featureKey,
             'planName' => 'Standard ou Pro',
             'upgradeFrom' => $from,
-            'paymentOffers' => $this->payments->offers(),
+            'paymentOffers' => $offers,
+            'planOfferCards' => $this->planOfferCards($offers),
             'openPayment' => $openPayment,
             'canManageBilling' => $canManageBilling,
             'csrfToken' => Csrf::token(),
@@ -118,6 +122,31 @@ final class PlatformSubscriptionController
     public function complete(Request $request, array $params = []): Response
     {
         return Response::redirect(url('platform/upgrade'));
+    }
+
+    /**
+     * Comparatif de la page des formules, généré depuis les valeurs réelles (formule gratuite + formules en vente).
+     *
+     * @param list<array<string, mixed>> $offers
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function planOfferCards(array $offers): array
+    {
+        try {
+            $repo = \App\Core\Container::get(\App\Repositories\SubscriptionPlanRepository::class);
+            if (!$repo->tableExists()) {
+                return [];
+            }
+            $onSale = array_values(array_map(
+                static fn (array $o): string => (string) $o['slug'],
+                array_filter($offers, static fn (array $o): bool => ($o['on_sale'] ?? true) !== false)
+            ));
+
+            return PlanOfferSummary::cards(PlanOfferSummary::publicPlans($repo->allOrdered(), $onSale));
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     private function canManageBilling(): bool

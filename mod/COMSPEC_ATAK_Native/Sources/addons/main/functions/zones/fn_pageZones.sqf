@@ -179,6 +179,7 @@ if (_page isEqualTo "#ui") exitWith {
             ["zoneSet", [_id, _ui get "zid", "del"]] call _ZA;
             _ui set ["zid", ""]; _ui set ["view", "EDIT"]; _ui set ["confirm", ""];
         };
+        case "ask": { _v params ["_k", "_yes"]; ["askAnswer", [_k, _yes]] call _ZA; };
         case "bld": { ["bld", [_id, _ui get "zid"]] call _ZA; ["INFO", "Numérotation des bâtiments en cours…", 2, 10] call comspec_atak_native_fnc_notify; _full = false; };
     };
     if (_full) then { call _rerender; };
@@ -320,7 +321,7 @@ private _editRows = {
     };
     _rows pushBack ["switch", "Afficher ce plan", _b get "vis", ["toggle", ["vis", "znVis"]] call _ui1, "Sur la carte ATAK et dans le bandeau du curseur", false, "znVis"];
     if (_mineB) then {
-        _rows pushBack ["switch", "Carte d'Arma et Athena", _b get "arma", ["toggle", ["arma", "znArma"]] call _ui1, "Cases en rectangles, autres zones en contour, étiquettes, axes et CP en marqueurs (canal du groupe, du camp si partagé au camp), aussi envoyés au site Athena", !(missionNamespace getVariable ["comspec_atak_native_zones_arma", true]), "znArma"];
+        _rows pushBack ["switch", "Carte d'Arma et Athena", _b get "arma", ["toggle", ["arma", "znArma"]] call _ui1, "Cases en rectangles, autres zones en contour, étiquettes, axes et CP en marqueurs (canal du groupe, du camp si partagé au camp), vus sans appareil ; envoyés au site Athena si le plan est partagé", !(missionNamespace getVariable ["comspec_atak_native_zones_arma", false]), "znArma"];
         private _sc = _b get "scope";
         _rows pushBack ["section", "Partage", [("Non partagé") call _tr, format [("Partagé : %1, chaque modification est renvoyée") call _tr, ["scopeName", _sc] call _ZA]] select (_sc > 0)];
         _rows pushBack ["segment", "Envoyer à", [
@@ -492,6 +493,17 @@ switch (_view) do {
         ]];
         _rows pushBack ["switch", "Zones sur la carte ATAK", profileNamespace getVariable ["COMSPEC_ATAK_ZonesShow", true], ["show"] call _ui1, "Bascule de tous les plans sur la carte de l'app Carte", false, "znShow"];
         _rows pushBack ["buttons", [["+ NOUVEAU PLAN", ["new"] call _ui1, true], ["SIGNALER ICI", ["here"] call _ui1, false, true, "Ouvre la zone sous ma position pour signaler"]]];
+        // Questions du mode « Proposer » (contact posé dans une zone) : rien ne change sans OUI.
+        {
+            _x params ["_qid", "_qz", "_qst", "", "_qby", "_qt"];
+            private _qb = ["get", _qid] call _ZA;
+            private _z = ["zone", [_qid, _qz]] call _ZA;
+            if ((count _z) > 0) then {
+                private _k = _qid + "|" + _qz;
+                _rows pushBack ["section", format [("Contact en %1 (%2)") call _tr, _z select 1, _qb get "name"], format [("%1, %2 : passer la zone en « %3 » ?") call _tr, _qby, [_qt] call _ago, ((["state", _qst] call _ZA) select 1) call _tr]];
+                _rows pushBack ["buttons", [["OUI", ["ask", [_k, true]] call _ui1, true], ["NON", ["ask", [_k, false]] call _ui1]]];
+            };
+        } forEach (["asks"] call _ZA);
         if (_tab isEqualTo "SIT") then {
             private _all = (_mL + _rL) select { _x get "vis" };
             private _cnt = createHashMap;

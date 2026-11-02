@@ -254,7 +254,7 @@ switch (_act) do {
             // Type par défaut : appliqué à toutes les zones.
             case "aff": { { _x set [4, _v]; } forEach (_b get "zones"); [_b, false] call _changed; };
             case "arma": {
-                if (_v && {!(missionNamespace getVariable ["comspec_atak_native_zones_arma", true])}) exitWith {
+                if (_v && {!(missionNamespace getVariable ["comspec_atak_native_zones_arma", false])}) exitWith {
                     _b set ["arma", false];
                     ["WARNING", "Zones sur la carte d'Arma désactivées par le serveur", 3, 20] call comspec_atak_native_fnc_notify;
                 };
@@ -302,6 +302,33 @@ switch (_act) do {
             case "POLY": { [_d, "POLY", ["centroid", [_d]] call comspec_atak_native_fnc_zoneGeom, 0] };
             default { [[], "", [0, 0], 0] };
         }
+    };
+    // Menu clic droit de la carte, sous-menu Zones : [genre G100 | G200 | G500 | BLOCK | RADIAL | AXES | NEW, point].
+    // Nouveau plan, zone de travail en cercle autour du point (rayon choisi dans le menu), puis le calcul demandé.
+    case "ctxGen": {
+        _arg params [["_kind", ""], ["_pos", []]];
+        if ((count _pos) < 2) exitWith { "" };
+        private _r = ((profileNamespace getVariable ["COMSPEC_ATAK_ZnCtxRad", 300]) max 50) min 5000;
+        private _id = ["new", [""]] call comspec_atak_native_fnc_zoneAction;
+        if (_id isEqualTo "") exitWith { "" };
+        private _gp = (_mine get _id) get "gp";
+        _gp set ["radius", _r];
+        switch (_kind) do {
+            case "G100": { _gp set ["cut", "GRID"]; _gp set ["size", 100]; };
+            case "G200": { _gp set ["cut", "GRID"]; _gp set ["size", 200]; };
+            case "G500": { _gp set ["cut", "GRID"]; _gp set ["size", 500]; };
+            case "BLOCK": { _gp set ["cut", "BLOCK"]; };
+            case "RADIAL": { _gp set ["cut", "RADIAL"]; };
+        };
+        ["areaSet", [_id, "CIRCLE", [[_pos select 0, _pos select 1], _r]]] call comspec_atak_native_fnc_zoneAction;
+        switch (true) do {
+            case (_kind isEqualTo "AXES"): { ["axes", [_id]] call comspec_atak_native_fnc_zoneAction; };
+            case (_kind isEqualTo "NEW"): {};
+            default { ["gen", [_id]] call comspec_atak_native_fnc_zoneAction; };
+        };
+        ["INFO", format [("Plan %1 : zone de travail de %2 m autour du point%3") call _tr, (_mine get _id) get "name", _r, ["", (" · calcul en cours") call _tr] select (_kind isNotEqualTo "NEW")], 4, 20] call comspec_atak_native_fnc_notify;
+        if (_kind isEqualTo "NEW") then { ["#ui", ["open", _id]] call comspec_atak_native_fnc_pageZones; ["ZONES"] call comspec_atak_native_fnc_navigate; };
+        _id
     };
     // Calculs en arrière-plan (fn_zoneGen) : découpage, axes, bâtiments.
     case "gen";
@@ -556,6 +583,12 @@ switch (_act) do {
                 };
                 call _bump; call _refresh;
             };
+            case "ask": {
+                _arg params ["", ["_id", ""], ["_zid", ""], ["_st", ""], ["_rep", []], ["_by", ""]];
+                if (_quiet || {!(_id isEqualType "" && {_id in _mine} && {_zid isEqualType ""} && {_st isEqualType ""} && {_rep isEqualType []} && {_by isEqualType ""})}) exitWith {};
+                _rep = (_rep select [0, 4]) apply { [_x, ""] select !(_x isEqualType "" || {_x isEqualType []}) };
+                ["ask", [_id, _zid, _st, _rep, [_by, 24] call _clean]] call comspec_atak_native_fnc_zoneAction;
+            };
             case "sit";
             case "sitAll": {
                 _arg params ["", ["_id", ""], ["_zid", ""], ["_st", ""], ["_stamp", 0], ["_by", ""], ["_reps", []]];
@@ -566,6 +599,8 @@ switch (_act) do {
                 _reps2 = _reps2 apply { [(_x select 0) select [0, 24], _x select 1, [_x select 2, 5] call _clean, [_x select 3, 24] call _clean, [_x select 4, 6] call _clean, [_x select 5, 12] call _clean, [_x select 6, 120] call _clean, [[0, 0], _x select 7] select ((_x select 7) isEqualType [] && {(count (_x select 7)) >= 2})] };
                 private _z = [_b, _zid] call _zoneOf;
                 if ((count _z) isEqualTo 0) exitWith {};
+                // Question en attente sur cette zone : un autre a déjà tranché.
+                if (_st isNotEqualTo "") then { (missionNamespace getVariable ["COMSPEC_ATAK_ZnAsk", createHashMap]) deleteAt (_id + "|" + _zid); };
                 private _was = _z select 6;
                 if !([_b, _zid, _st, _stamp, _by, _reps2] call _apply) exitWith {};
                 [_b, false, false] call _changed;
@@ -703,11 +738,14 @@ switch (_act) do {
         ["cite", _hit] call comspec_atak_native_fnc_zoneAction
     };
     // Contact ennemi posé ou signalé par ce téléphone (marqueur hostile, TIC, SALUTE, C.R. CONTACT / SPOTREP) :
-    // [position, nature, effectif, texte]. La zone qui le contient passe « ennemi signalé » (« contact » si elle est
-    // tenue par un ami ; interdite ou déjà ennemie : inchangée) avec un signalement, envoyé comme un rapport de zone.
+    // [position, nature, effectif, texte]. Réglage serveur « Contact dans une zone » (zones_contact_mode) :
+    //   MANUAL (défaut) rien ; ASK question OUI / NON à ce joueur et à l'auteur du plan (sans réponse : rien) ;
+    //   AUTO la zone qui le contient passe « ennemi signalé » (« contact » si tenue par un ami ; interdite ou déjà
+    //   ennemie : inchangée) avec un signalement, envoyé comme un rapport de zone.
     case "contact": {
         _arg params [["_p", []], ["_nat", "UNK"], ["_size", ""], ["_txt", ""]];
-        if ((count _p) < 2 || {!(missionNamespace getVariable ["comspec_atak_native_zones_contact", true])}) exitWith { 0 };
+        private _mode = missionNamespace getVariable ["comspec_atak_native_zones_contact_mode", "MANUAL"];
+        if ((count _p) < 2 || {!(_mode in ["ASK", "AUTO"])}) exitWith { 0 };
         private _n = 0;
         {
             private _b = _x;
@@ -715,11 +753,56 @@ switch (_act) do {
             if ((count _z) > 0) then {
                 private _st = _z select 6;
                 private _new = switch (true) do { case (_st in ["UNREC", "CLEAR", "CONT"]): { "ENY" }; case (_st isEqualTo "FRD"): { "CONT" }; default { "" }; };
-                ["sit", [_b get "id", _z select 0, _new, [_nat, _size, _txt, _p]]] call comspec_atak_native_fnc_zoneAction;
-                _n = _n + 1;
+                private _rep = [_nat, _size, _txt, [_p select 0, _p select 1]];
+                if (_mode isEqualTo "AUTO") then {
+                    ["sit", [_b get "id", _z select 0, _new, _rep]] call comspec_atak_native_fnc_zoneAction;
+                    _n = _n + 1;
+                } else {
+                    if (_new isEqualTo "") exitWith {};
+                    private _q = [_b get "id", _z select 0, _new, _rep, [player] call comspec_atak_native_fnc_unitCallsign];
+                    ["ask", _q] call comspec_atak_native_fnc_zoneAction;
+                    // Plan reçu : la même question part à son auteur (s'il est là).
+                    if !((_b get "id") in _mine) then {
+                        private _ou = _b getOrDefault ["uid", ""];
+                        private _to = allPlayers select { (getPlayerUID _x) isEqualTo _ou && {_x isNotEqualTo player} };
+                        if ((count _to) > 0) then {
+                            [{
+                                params ["_q", "_to"];
+                                ["comspec_atak_native_zone", ["ask"] + _q, _to] call CBA_fnc_targetEvent;
+                            }, [_q, _to], "Rapport de zone", 1] call comspec_atak_native_fnc_netSend;
+                        };
+                    };
+                    _n = _n + 1;
+                };
             };
         } forEach ((values _mine) + (values _rx));
         _n
+    };
+    // Question en attente (mode Proposer) : [id, zone, état proposé, signalement, auteur du contact].
+    case "ask": {
+        _arg params [["_id", ""], ["_zid", ""], ["_st", ""], ["_rep", []], ["_by", ""]];
+        private _b = [_id] call _get;
+        if ((count _b) isEqualTo 0) exitWith { false };
+        private _z = [_b, _zid] call _zoneOf;
+        if ((count _z) isEqualTo 0 || {(_states findIf { (_x select 0) isEqualTo _st }) < 0}) exitWith { false };
+        private _asks = missionNamespace getVariable ["COMSPEC_ATAK_ZnAsk", createHashMap];
+        missionNamespace setVariable ["COMSPEC_ATAK_ZnAsk", _asks];
+        _asks set [_id + "|" + _zid, [_id, _zid, _st, _rep, _by, serverTime]];
+        ["WARNING", format [("Contact en %1 (%2) : passer la zone en « %3 » ? OUI / NON dans l'app Zones") call _tr, _z select 1, _b get "name", (([_st] call _stateRow) select 1) call _tr], 8, 40, "ZONES"] call comspec_atak_native_fnc_notify;
+        [] call comspec_atak_native_fnc_vibrate;
+        call _bump; call _refresh;
+        true
+    };
+    case "asks": { values (missionNamespace getVariable ["COMSPEC_ATAK_ZnAsk", createHashMap]) };
+    // Réponse : [clé id|zone, oui]. Oui : état et signalement appliqués et envoyés (« sit ») ; non : oubliée.
+    case "askAnswer": {
+        _arg params [["_k", ""], ["_yes", false]];
+        private _asks = missionNamespace getVariable ["COMSPEC_ATAK_ZnAsk", createHashMap];
+        private _q = _asks getOrDefault [_k, []];
+        _asks deleteAt _k;
+        if ((count _q) > 0 && {_yes}) then { ["sit", [_q select 0, _q select 1, _q select 2, _q select 3]] call comspec_atak_native_fnc_zoneAction; };
+        call _bump; call _refresh;
+        true
     };
     // Marqueur posé par ce joueur (EH MarkerCreated, fn_markerDrop) : contact si c'est un marqueur ennemi, une fois.
     case "markerContact": {
@@ -758,7 +841,7 @@ switch (_act) do {
         if ((count _b) isEqualTo 0) exitWith {};
         { deleteMarker _x; [_x, true] call comspec_atak_native_fnc_markerWeb; } forEach (_b getOrDefault ["mk", []]);
         _b set ["mk", []];
-        if (!(_b get "arma") || {!(missionNamespace getVariable ["comspec_atak_native_zones_arma", true])} || {((count (_b get "zones")) + (count (_b get "axes"))) isEqualTo 0}) exitWith {};
+        if (!(_b get "arma") || {!(missionNamespace getVariable ["comspec_atak_native_zones_arma", false])} || {((count (_b get "zones")) + (count (_b get "axes"))) isEqualTo 0}) exitWith {};
         private _ch = [3, 1] select ((_b get "scope") >= 3);
         private _mk = [];
         private _mkName = {
@@ -845,7 +928,12 @@ switch (_act) do {
         if ((count _mk) isEqualTo 0) exitWith { ["WARNING", "Marqueurs refusés sur ce canal", 3, 20] call comspec_atak_native_fnc_notify; };
         if (_ptsOnly) then { ["INFO", format ["Plus de %1 zones : seules leurs étiquettes vont sur la carte d'Arma et Athena", _cap], 4, 20] call comspec_atak_native_fnc_notify; };
         _b set ["mk", _mk];
-        { [_x] call comspec_atak_native_fnc_markerWeb; } forEach _mk;
+        // Site Athena : seulement si le plan est partagé (sinon ses marqueurs ne vont qu'au canal, sans le site).
+        if ((_b get "scope") > 0) then {
+            { [_x] call comspec_atak_native_fnc_markerWeb; } forEach _mk;
+        } else {
+            [{ { ["touch", [_x, false]] call comspec_atak_native_fnc_markerNet; } forEach _this; }, _mk, 0.5] call CBA_fnc_waitAndExecute;
+        };
     };
     default { nil };
 };

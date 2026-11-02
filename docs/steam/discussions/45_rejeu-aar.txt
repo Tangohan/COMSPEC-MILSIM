@@ -1,0 +1,92 @@
+[APP] Rejeu — revoir la mission sur la carte du téléphone : positions du camp et pertes amies (AAR)
+
+[h1]Rejeu[/h1]
+[i]Catégorie : Mission · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Rejeu permet de revoir le déroulé de la mission directement dans le téléphone, pour un débriefing à chaud (AAR). Pendant la partie, le téléphone enregistre toutes les 10 secondes les positions des unités de votre camp, et note l'endroit de chaque perte amie. L'app rejoue ces images sur une carte.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie Mission du lanceur. Tant que moins de deux images sont enregistrées, l'app indique de revenir dans un instant.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Carte du rejeu[/b] : les unités du camp à l'instant affiché (icône de fantassin ou de véhicule, orientée), vous-même en plus grand et dans votre couleur ; noms et groupes affichés en zoomant. Les pertes amies apparaissent en croix rouges à partir de l'instant où elles se sont produites. À la première ouverture, la carte se cadre sur l'ensemble des positions.
+[*][b]Bandeau horaire[/b] : date et heure réelles de l'image, heure du jeu, temps écoulé depuis le début (H+ minutes), numéro de l'image et début de la session.
+[*][b]Curseur[/b] : glissez-le pour aller à n'importe quel moment.
+[*][b]Boutons[/b] : ◀ 10 s et 10 s ▶ (image précédente ou suivante), LECTURE / PAUSE, vitesse x10, x30, x60 ou x120 du temps réel, TRACES (traînée des six images précédentes derrière chaque unité, allumée par défaut), SUIVRE (la carte reste centrée sur vous pendant la lecture), EFFACER (supprime l'enregistrement).
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Fin de mission : ouvrez Rejeu.
+[*]Ramenez le curseur au début, choisissez x60, touchez LECTURE.
+[*]Au moment d'un accrochage, touchez PAUSE puis avancez image par image avec 10 s ▶ pour voir qui était où.
+[*]Repérez les croix rouges des pertes pour en discuter au débriefing.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list][*][b]COMSPEC › ATAK · Simulation › Rejeu de mission[/b] (serveur, activé par défaut) : décoché, rien n'est enregistré.[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : le rejeu a sa propre carte, il ne touche pas à celle de l'app Carte.
+[*][b]Réglages du téléphone[/b] : votre couleur et celle des alliés sont celles choisies pour la carte.
+[*][b]Athena[/b] : inutile. L'enregistrement du rejeu reste dans votre téléphone.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Chaque téléphone ne rejoue que ce qu'il a enregistré : un joueur arrivé en cours de partie n'a que la suite de la mission depuis son arrivée.
+[*]Seul votre camp est enregistré (120 unités au plus par image), jamais l'ennemi.
+[*]Mémoire bornée : les 30 dernières minutes gardent une image toutes les 10 s, au-delà une toutes les 30 s, 400 images au plus ; les plus anciennes disparaissent ensuite.
+[*]EFFACER est définitif.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x). Date et heure réelles de chaque image depuis ATAK natif 1.33.0.
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Replay (AAR) lets you review how the mission went directly on the phone, for a hot debrief (after-action review). During the game, the phone records the positions of your side's units every 10 seconds, and notes where each friendly loss happened. The app replays these frames on a map.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the Mission category of the launcher. While fewer than two frames are recorded, the app asks you to come back in a moment.
+
+[h3]Features[/h3]
+[list]
+[*][b]Replay map[/b]: the side's units at the displayed moment (infantry or vehicle icon, oriented), yourself larger and in your colour; names and groups shown when zoomed in. Friendly losses show as red crosses from the moment they happened. On first opening, the map frames all positions.
+[*][b]Time bar[/b]: real date and time of the frame, game time, elapsed time since the start (H+ minutes), frame number and session start.
+[*][b]Slider[/b]: drag it to go to any moment.
+[*][b]Buttons[/b]: ◀ 10 s and 10 s ▶ (previous or next frame), PLAY / PAUSED, speed x10, x30, x60 or x120 real time, TRACES (trail of the six previous frames behind each unit, on by default), FOLLOW (the map stays centred on you during playback), CLEAR (deletes the recording).
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]End of mission: open Replay (AAR).
+[*]Move the slider back to the start, choose x60, tap PLAY.
+[*]At the moment of a contact, tap PAUSED then step frame by frame with 10 s ▶ to see who was where.
+[*]Spot the red crosses of losses to discuss them at the debrief.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list][*][b]COMSPEC › ATAK · Simulation › Mission replay[/b] (server, on by default): unchecked, nothing is recorded.[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: the replay has its own map, it does not touch the Map app.
+[*][b]Phone settings[/b]: your colour and the allies' colour are the ones chosen for the map.
+[*][b]Athena[/b]: not needed. The replay recording stays on your phone.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Each phone only replays what it recorded: a player who joined mid-game only has the mission from their arrival.
+[*]Only your side is recorded (120 units at most per frame), never the enemy.
+[*]Bounded memory: the last 30 minutes keep a frame every 10 s, older ones one every 30 s, 400 frames at most; the oldest then disappear.
+[*]CLEAR is final.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x). Real date and time on each frame since native ATAK 1.33.0.

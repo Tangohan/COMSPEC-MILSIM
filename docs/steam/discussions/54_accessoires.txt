@@ -1,0 +1,118 @@
+[APP] Accessoires — établi du téléphone : antenne, batterie de rechange, module DL-7, filtre JVN, batterie externe
+
+[i]Message 1/2[/i]
+[h1]Accessoires[/h1]
+[i]Catégorie : Système · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Accessoires est un établi : le dos de votre téléphone au centre, entouré de cinq emplacements reliés par un trait à leur point de fixation. D'un coup d'œil, vous voyez ce qui est monté, et vous fixez ou retirez les accessoires que vous avez dans l'inventaire.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Système : Accessoires (pas dans le dock par défaut).
+[*]Sans ouvrir l'app : menu ACE « Téléphone ATAK » › Accessoires (batterie externe, filtre JVN) et › Antenne ; Réglages › Personnalisation, section Accessoires et choix « Antenne (port SMA) ».
+[*]Si vous l'avez désinstallée, l'App Store la réinstalle.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]En-tête[/b] : modèle du téléphone (ou couleur de coque pour le Samsung S7) et nombre d'emplacements occupés sur cinq.
+[*][b]Emplacement[/b] : titre, objet monté (ou vide) et son état ; une pastille « +N » compte les objets compatibles dans vos poches. Toucher un emplacement ouvre son tiroir ; [b]FERMER[/b] ou un appui à côté le referme.
+[*][b]Tiroir[/b] : l'objet monté, les objets compatibles de l'inventaire avec [b]FIXER[/b] (ou [b]REMPLACER[/b] si quelque chose est déjà monté), [b]RETIRER[/b] / [b]DÉVISSER[/b], et les actions propres à l'emplacement. « Aucun objet compatible dans votre inventaire » si vous n'avez rien.
+[*][b]Antenne (port SMA)[/b] : courte SMA (débit x1,25), fouet longue (x1,5) ou patch 9 dBi (x1,7, à l'arrêt seulement ; en mouvement ou en véhicule, presque sans effet). Elle atténue aussi les pertes dues au terrain, aux bâtiments et au brouillage, et remplace une antenne interne abîmée. Sans aucun signal, elle ne fait rien. L'antenne doit rester dans l'inventaire. [b]DÉVISSER[/b] la retire.
+[*][b]Batterie de rechange[/b] : la batterie trouvée sur vous, combien vous en avez et le niveau du téléphone. [b]CHANGER LA BATTERIE[/b] consomme une batterie (5 s avec ACE) ; le téléphone redémarre à 100 %.
+[*][b]Module DL-7[/b] : présent si le câble de données est dans votre équipement (couleur du module choisie dans Réglages). [b]OUVRIR EXTRACTION[/b] ouvre l'app Extraction ; pendant une extraction, [b]DÉBRANCHER[/b] coupe le câble.
+[*][b]Filtre d'écran JVN[/b] : posé, il réduit la lueur de l'écran de 88 % (vous êtes moins visible de nuit). [b]RETIRER[/b] l'enlève.
+[*][b]Batterie externe[/b] (plaque au dos) : 10 000 mAh, recharge le téléphone à 2 % par minute, environ deux charges complètes ; vide, elle est jetée. Elle reste dans l'inventaire (et pèse) tant qu'elle est fixée. [b]RETIRER[/b] la décroche.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Avant une patrouille en zone de mauvais réseau, mettez une antenne fouet et une batterie externe dans votre sac.
+[*]Ouvrez Accessoires : les emplacements Antenne et Batterie externe affichent « +1 ».
+[*]Touchez Antenne, puis [b]FIXER[/b] sur l'antenne fouet ; touchez Batterie externe, puis [b]FIXER[/b].
+[*]Le dos du téléphone montre l'antenne et la batterie ; l'en-tête passe à 2 / 5.
+[*]La nuit, fixez aussi le filtre d'écran JVN si vous en avez un.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Accès au téléphone › Batteries de rechange[/b] (serveur) : objets acceptés comme batterie de rechange (la « Batterie ATAK », COMSPEC_ATAK_Battery, marche toujours).
+[*][b]COMSPEC › ATAK · Accès au téléphone › Batteries d'autres mods (mots-clés)[/b] (serveur) : piles et batteries d'autres mods reconnues par mot-clé.
+[*][b]COMSPEC › ATAK · Simulation › Batterie réaliste[/b] (serveur) : sans elle, batteries et recharge n'ont pas d'effet.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE[/b] : changement de batterie avec barre de progression ; mêmes accessoires dans le menu ACE « Téléphone ATAK ».
+[*][b]Extraction[/b] : le module DL-7 y mène directement.
+[*][b]Réseau[/b] : l'antenne change le débit affiché dans l'app Réseau et ailleurs.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Le dessin de l'antenne et de la batterie externe sur le dos n'apparaît pas sur tous les modèles (Samsung S7 notamment) ; les emplacements marchent pour tous les modèles.
+[*]« Voir l'arrière du téléphone » (Réglages ou menu ACE) montre le même dos en grand.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Accessories is a workbench: the back of your phone in the middle, surrounded by five slots linked by a thin line to their mounting point. At a glance you see what is mounted, and you attach or remove the accessories you carry in your inventory.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] carries the phone in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, System category: Accessories (not in the dock by default).
+[*]Without opening the app: ACE menu "ATAK phone" › Accessories (external battery, NVG filter) and › Antenna; Settings › Customization, Accessories section and the "Antenna (SMA port)" choice.
+[*]If you uninstalled it, the App Store reinstalls it.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]Header[/b]: phone model (or case colour for the Samsung S7) and number of occupied slots out of five.
+[*][b]Slot[/b]: title, mounted item (or empty) and its state; a "+N" badge counts compatible items in your pockets. Tapping a slot opens its drawer; [b]CLOSE[/b] or a tap outside closes it.
+[*][b]Drawer[/b]: the mounted item, compatible inventory items with [b]FIX[/b] (or [b]REPLACE[/b] if something is already mounted), [b]REMOVE[/b] / [b]UNSCREW[/b], and the slot's own actions. "No compatible item in your inventory." if you have nothing.
+[*][b]Antenna (SMA port)[/b]: short SMA (throughput x1.25), long whip (x1.5) or 9 dBi patch (x1.7, only when stationary; moving or in a vehicle it does almost nothing). It also reduces losses from terrain, buildings and jamming, and replaces a damaged internal antenna. With no signal at all it does nothing. The antenna must stay in your inventory. [b]UNSCREW[/b] removes it.
+[*][b]Spare battery[/b]: the battery found on you, how many you have and the phone level. [b]SWAP BATTERY[/b] consumes one battery (5 s with ACE); the phone reboots at 100 %.
+[*][b]DL-7 module[/b]: present if the data cable is in your gear (module colour chosen in Settings). [b]OPEN EXTRACTION[/b] opens the Extraction app; during an extraction, [b]UNPLUG[/b] disconnects the cable.
+[*][b]NVG screen filter[/b]: fitted, it cuts the screen glow by 88 % (you are less visible at night). [b]REMOVE[/b] takes it off.
+[*][b]External battery[/b] (back plate): 10,000 mAh, charges the phone at 2 % per minute, about two full charges; when empty it is discarded. It stays in your inventory (and weighs) while attached. [b]REMOVE[/b] detaches it.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Before a patrol in a poor-coverage area, put a whip antenna and an external battery in your backpack.
+[*]Open Accessories: the Antenna and External battery slots show "+1".
+[*]Tap Antenna, then [b]FIX[/b] on the whip antenna; tap External battery, then [b]FIX[/b].
+[*]The phone's back shows the antenna and battery; the header reads 2 / 5.
+[*]At night, also fit the NVG screen filter if you have one.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Phone access › Spare batteries[/b] (server): items accepted as spare battery (the "ATAK battery", COMSPEC_ATAK_Battery, always works).
+[*][b]COMSPEC › ATAK · Phone access › Other mods' batteries (patterns)[/b] (server): cells and batteries from other mods recognised by keyword.
+[*][b]COMSPEC › ATAK · Simulation › Simulated battery[/b] (server): without it, batteries and charging have no effect.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE[/b]: battery swap with a progress bar; same accessories in the ACE menu "ATAK phone".
+[*][b]Extraction[/b]: the DL-7 module leads straight to it.
+[*][b]Network[/b]: the antenna changes the throughput shown in the Network app and elsewhere.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]The antenna and external battery drawing on the back does not appear on every model (it does on the Samsung S7); the slots work for every model.
+[*]"View phone rear" (Settings or ACE menu) shows the same back, full size.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

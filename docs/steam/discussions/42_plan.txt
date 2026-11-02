@@ -1,0 +1,106 @@
+[APP] Plan — carte de briefing APP-6A partagée par le camp, brouillon, salles collaboratives et export
+
+[i]Message 1/2[/i]
+[h1]Plan[/h1]
+[i]Catégorie : Mission · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Plan est une carte de briefing à part, nord en haut et fixe : elle ne suit ni le joueur ni la caméra d'un drone. On y dessine le plan de manœuvre avec des graphismes de type APP-6A (zones, lignes de phase, axes, attaques, points de contrôle, unités, bâtiments nettoyés). Le plan du camp est commun à tous ses joueurs, identique chez chacun à tout zoom.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie Mission du lanceur ; l'onglet CARTE de l'app Briefing y mène aussi. Téléphone seulement porté (Ctrl+U), la carte s'affiche en lecture : prenez-le en main pour dessiner. Au premier lancement, un tutoriel pas à pas vous fait le tour de l'app.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]☰ OUTILS[/b] : palette en trois onglets. ZONES : ennemi, infiltration, exfiltration, objectif, AO, NAI, EA, AA, HLZ, NFA, zone libre. LIGNES : PL, LD, LOA, limite, itinéraire, mouvement, axe de progression, attaque principale et secondaire, CRAYON à main levée. POINTS : bâtiment nettoyé / non nettoyé, unité amie, unité ennemie, note, CP, RP, TRP, objectif, SBF et ABF (position puis visée).
+[*][b]Dessiner[/b] : zone, un clic par sommet puis clic sur le premier, Entrée ou clic droit pour fermer (deux points font un rectangle) ; ligne, point par point (double clic pour finir) ou au CRAYON ; point, un clic. En bas : couleur, épaisseur, TIRETS, FLÈCHE, texte affiché, TERMINER.
+[*][b]Couches[/b] : CAMP (plan partagé, affiché CAMP (LECT.) si vous n'avez pas le droit de le modifier), BROUILLON (votre plan personnel, gardé dans votre profil), SALLE. Les nouveaux éléments vont dans la couche allumée.
+[*][b]Sélection[/b] : sans outil, un clic sur un élément ouvre sa fiche en bas (texte, description pour le briefing, couleur, DUPLIQUER, NET. ⇄ pour basculer nettoyé / non nettoyé, SUPPRIMER). Le clic droit ouvre un menu : modifier, dupliquer, copier vers une autre couche, supprimer, copier la grille, centrer ici ; sur la carte vide, poser une note, une unité ennemie ou un CP.
+[*][b]↶ ANNULER / ↷ RÉTABLIR[/b] : défait ou refait votre dernière modification, même sur le plan partagé ; pendant un tracé, ANNULER retire le dernier point. TOUT EFFACER vide le brouillon et la couche visée si vous en avez le droit (deux appuis).
+[*][b]SALLE COLLABORATIVE[/b] : créez une salle, un code de 5 caractères s'affiche ; tous ceux qui le saisissent (REJOINDRE), de n'importe quel camp, dessinent sur le même plan. Elle peut ensuite être publiée sur le plan du camp.
+[*][b]EXPORTER ▾[/b] : copier le code du plan (à coller dans un autre ATAK), copier un texte de briefing avec les grilles (Discord, ordre écrit), enregistrer dans mes plans, publier sur le plan du camp, importer un plan depuis le presse-papiers vers le brouillon.
+[*][b]PLANS[/b] : plan du camp (qui peut le modifier, état de l'envoi au site), brouillon (AJOUTER AU CAMP, REMPLACER LE CAMP), salle, jusqu'à 30 plans enregistrés dans votre profil (APERÇU, CHARGER, PUBLIER, EXPORTER, SUPPR.), import d'un code, et affichage : plan sur la carte principale, fond assombri, REVOIR LE TUTORIEL.
+[*][b]? AIDE[/b] (touche H) : l'aide de l'outil en cours et les raccourcis : Ctrl+Z annuler, Ctrl+Y ou Ctrl+Maj+Z rétablir, Ctrl+D dupliquer, Suppr supprimer la sélection, Échap abandonner ou fermer.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Avant la mission, allumez BROUILLON et préparez le plan : AO, OBJ, ligne de débouché, axe de progression, RP.
+[*]Donnez une description aux éléments clés (clic sur l'élément, fiche en bas).
+[*]Au briefing, ouvrez PLANS et touchez AJOUTER AU CAMP (si vous avez le droit d'édition) : tout le camp voit le plan.
+[*]EXPORTER ▾ puis « Copier le texte de briefing » pour coller l'ordre écrit sur Discord.
+[*]Pendant la mission, le plan reste affiché sur la carte du téléphone, sous les unités.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list][*][b]COMSPEC › ATAK · Équipes et suivi › Plan de briefing : qui peut dessiner[/b] (serveur) : Tout le monde, Chefs de groupe, Zeus et admins (par défaut), ou Zeus et admins seulement. Les autres voient le plan et peuvent préparer un brouillon, qu'un chef ajoute ensuite.[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : plan du camp, salle et brouillon (plus pâle) s'affichent par défaut sur la carte du téléphone, sous les unités ; interrupteur dans PLANS.
+[*][b]Briefing[/b] : l'onglet CARTE ouvre Plan.
+[*][b]Athena[/b] : avec COMSPEC Link, le plan du camp apparaît sur la carte du site Athena, en lecture seule (calque « Plan de briefing »).
+[*][b]Zeus[/b] : selon le réglage, Zeus et admins gardent le droit de modifier le plan du camp.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Le serveur est seul à écrire le plan partagé : deux joueurs qui dessinent en même temps ne s'écrasent pas.
+[*]Sans droit d'édition, dessinez dans le brouillon : un chef pourra l'ajouter au camp.
+[*]Le code COMSPECPLAN1 ne contient pas l'auteur : il se partage librement.
+[/list]
+
+[h3]Version d'introduction[/h3]
+ATAK natif 1.11.0 (vague de retours du 12/10/2026). Plan affiché sur la carte d'Athena depuis 1.91.0.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Plan is a separate briefing map, north up and fixed: it follows neither the player nor a drone camera. You draw the scheme of manoeuvre with APP-6A style graphics (areas, phase lines, axes, attacks, control points, units, cleared buildings). The side plan is shared by all its players, identical for everyone at any zoom.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the Mission category of the launcher; the MAP tab of the Briefing app also leads there. With the phone only carried (Ctrl+U), the map is read-only: take it in hand to draw. On first launch, a step-by-step tutorial tours the app.
+
+[h3]Features[/h3]
+[list]
+[*][b]☰ TOOLS[/b]: palette with three tabs. ZONES: enemy, infiltration, exfiltration, objective, AO, NAI, EA, AA, HLZ, NFA, free area. LINES: PL, LD, LOA, boundary, route, movement, axis of advance, main and supporting attack, freehand PEN. POINTS: cleared / uncleared building, friendly unit, enemy unit, note, CP, RP, TRP, objective, SBF and ABF (position then aim).
+[*][b]Drawing[/b]: area, one click per vertex then click the first one, Enter or right-click to close (two points make a rectangle); line, point by point (double-click to finish) or with the PEN; point, one click. At the bottom: colour, thickness, DASHES, ARROW, displayed text, DONE.
+[*][b]Layers[/b]: SIDE (shared plan, shown as SIDE (READ) if you may not edit it), DRAFT (your personal plan, kept in your profile), ROOM. New elements go to the lit layer.
+[*][b]Selection[/b]: with no tool, clicking an element opens its sheet at the bottom (text, briefing description, colour, DUPLICATE, CLEAN ⇄ to toggle cleared / uncleared, DELETE). Right-click opens a menu: edit, duplicate, copy to another layer, delete, copy the grid, centre here; on empty map, place a note, an enemy unit or a CP.
+[*][b]↶ UNDO / ↷ REDO[/b]: undoes or redoes your last change, even on the shared plan; while drawing, UNDO removes the last point. CLEAR ALL empties the draft and the targeted layer if you are allowed (two presses).
+[*][b]COLLABORATIVE ROOM[/b]: create a room, a 5-character code shows; everyone who enters it (JOIN), from any side, draws on the same plan. It can then be published to the side plan.
+[*][b]EXPORT ▾[/b]: copy the plan code (to paste in another ATAK), copy a briefing text with grids (Discord, written order), save to my plans, publish to the side plan, import a plan from the clipboard into the draft.
+[*][b]PLANS[/b]: side plan (who may edit it, state of the upload to the website), draft (ADD TO SIDE PLAN, REPLACE SIDE PLAN), room, up to 30 plans saved in your profile (PREVIEW, LOAD, PUBLISH, EXPORT, SUPPR. to delete), code import, and display: plan on the main map, dimmed background, REPLAY THE TUTORIAL.
+[*][b]? HELP[/b] (H key): help for the current tool and the shortcuts: Ctrl+Z undo, Ctrl+Y or Ctrl+Shift+Z redo, Ctrl+D duplicate, Delete removes the selection, Esc abandons or closes.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Before the mission, light DRAFT and prepare the plan: AO, OBJ, line of departure, axis of advance, RP.
+[*]Give key elements a description (click the element, sheet at the bottom).
+[*]At the briefing, open PLANS and tap ADD TO SIDE PLAN (if you have edit rights): the whole side sees the plan.
+[*]EXPORT ▾ then "Copy the briefing text" to paste the written order on Discord.
+[*]During the mission, the plan stays on the phone map, under the units.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list][*][b]COMSPEC › ATAK · Teams and tracking › Briefing plan: editing[/b] (server): Everyone, Squad leaders, Zeus and admins (default), or Zeus and admins only. Others see the plan and can prepare a draft, which a leader then adds.[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: side plan, room and draft (paler) show by default on the phone map, under the units; switch in PLANS.
+[*][b]Briefing[/b]: the MAP tab opens Plan.
+[*][b]Athena[/b]: with COMSPEC Link, the side plan shows on the Athena website map, read-only ("Briefing plan" layer).
+[*][b]Zeus[/b]: depending on the setting, Zeus and admins keep the right to edit the side plan.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Only the server writes the shared plan: two players drawing at the same time do not overwrite each other.
+[*]Without edit rights, draw in the draft: a leader can add it to the side plan.
+[*]The COMSPECPLAN1 code does not include the author: it can be shared freely.
+[/list]
+
+[h3]Introduced in[/h3]
+Native ATAK 1.11.0 (feedback wave of 12/10/2026). Plan shown on the Athena map since 1.91.0.

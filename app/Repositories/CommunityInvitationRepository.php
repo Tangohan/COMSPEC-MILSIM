@@ -163,6 +163,41 @@ class CommunityInvitationRepository
         return $out;
     }
 
+    /**
+     * Nouveau lien pour une invitation en attente ou expirée (renvoi, copie) : l'ancien lien cesse de fonctionner.
+     */
+    public function rotateToken(int $id, int $tenantId, string $tokenHash, \DateTimeInterface $expiresAt): bool
+    {
+        $stmt = $this->pdo->prepare(
+            "UPDATE community_invitations SET token_hash = ?, expires_at = ?, status = 'pending', updated_at = NOW()
+             WHERE id = ? AND tenant_id = ? AND status IN ('pending', 'expired')"
+        );
+        $stmt->execute([$tokenHash, $expiresAt->format('Y-m-d H:i:s'), $id, $tenantId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Adresses (en minuscules) qui ont déjà une invitation en attente dans la communauté.
+     *
+     * @param list<string> $emails
+     * @return list<string>
+     */
+    public function pendingEmails(int $tenantId, array $emails): array
+    {
+        $emails = array_values(array_unique(array_filter(array_map(static fn ($e): string => strtolower(trim((string) $e)), $emails))));
+        if ($emails === []) {
+            return [];
+        }
+        $in = implode(',', array_fill(0, count($emails), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT DISTINCT LOWER(email) FROM community_invitations WHERE tenant_id = ? AND status = 'pending' AND expires_at > NOW() AND LOWER(email) IN ($in)"
+        );
+        $stmt->execute(array_merge([$tenantId], $emails));
+
+        return array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
+    }
+
     public function expireStale(): int
     {
         return (int) $this->pdo->exec(

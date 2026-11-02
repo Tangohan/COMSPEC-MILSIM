@@ -1,0 +1,87 @@
+[AIDE] Installation, serveur dédié et envoi des logs — à lire avant de signaler un bug
+
+[h1]Installation, serveur et logs[/h1]
+[i]COMSPEC ATAK 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]Prérequis[/h3]
+[list]
+[*][b]Obligatoire[/b] : CBA_A3, sur les clients et sur le serveur. C'est la seule dépendance.
+[*][b]Détectés automatiquement s'ils sont chargés[/b] : ACE3 (médical, arsenal, menus d'interaction, explosifs, JVN, laser, météo), ACRE2 ou TFAR (liaison radio par la MPU5, brouilleurs TFAR), ZEN (modules COMSPEC dans Zeus), Live Presentation (présentations dans l'app Briefing), COMSPEC SSE (app SSE terrain, terminal SEEK), Crows Electronic Warfare (brouilleurs).
+[*][b]COMSPEC Overwatch connect est déjà inclus[/b] : ne chargez pas l'ancien @COMSPECOverwatch en plus.
+[*][b]COMSPEC Link[/b] (deux extensions Windows livrées dans le mod) : liaison Athena, musique, Bluetooth, configuration locale, contrôle de version. Rien à installer à part.
+[/list]
+
+[h3]Installer (joueur)[/h3]
+[olist]
+[*]S'abonner à CBA_A3 et à COMSPEC ATAK sur le Workshop.
+[*]Activer les deux mods dans le lanceur Arma 3.
+[*]En jeu, avoir un téléphone dans son équipement (par défaut, l'item est obligatoire : réglable par le serveur), puis [b]Ctrl+U[/b] pour porter le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] (ou [b]Alt+U[/b]) pour le prendre en main. Les touches se changent dans Options › Contrôles › Configurer les addons › COMSPEC ATAK.
+[*]Après une mise à jour du mod, quittez Arma complètement avant de relancer.
+[/list]
+
+[h3]Serveur dédié[/h3]
+[olist]
+[*]Charger les deux mods côté serveur : [code]-mod=@CBA_A3;@COMSPEC_ATAK_Native[/code]
+[*]Serveur avec vérification des signatures : copier [b]keys\comspec_atak_native.bikey[/b] (dans le dossier du mod) vers le dossier [b]keys[/b] du serveur.
+[*]Réglages : Options › Options des addons › COMSPEC, onglet Serveur (voir le sujet « [AIDE] Réglages serveur (CBA) »).
+[*]Sans compte Athena : cochez [b]ATAK · Mode local et poste TOC › Mode full local (sans Athena)[/b] ; ordres, messages, marqueurs, comptes rendus, 9-line et diapositives de mission passent alors par le serveur.
+[/list]
+
+[h3]Signaler un bug : envoyer ses logs[/h3]
+[olist]
+[*]Reproduisez le problème, puis quittez Arma (ou laissez-le ouvert, ça marche aussi).
+[*]Dans le dossier du mod (Workshop › COMSPEC ATAK), double-cliquez [b]Envoyer_mes_logs.bat[/b].
+[*]Un fichier [b]COMSPEC_logs_date_heure.zip[/b] apparaît sur votre Bureau : il contient les deux derniers logs d'Arma (.rpt) et les deux derniers logs de COMSPEC Link. Les mots de passe, jetons et liens de webhook sont masqués.
+[*]Postez ce zip sur le Discord COMSPEC avec : ce que vous faisiez, l'app concernée, solo / serveur, et les autres mods chargés.
+[/olist]
+[quote]Problème de liaison avec Athena ? Menu Échap › [b]Dépannage liaison[/b] : diagnostic immédiat, causes probables et corrections proposées.[/quote]
+
+[h3]Problèmes fréquents[/h3]
+[list]
+[*][b]Ctrl+U ne fait rien[/b] : vous n'avez pas de téléphone dans l'équipement et le serveur l'exige (réglage « Item obligatoire pour utiliser l'ATAK »), ou une autre touche est déjà sur Ctrl+U.
+[*][b]Signature refusée par le serveur[/b] : la clé .bikey n'est pas dans le dossier keys du serveur, ou client et serveur n'ont pas la même version du mod.
+[*][b]Une app manque au lanceur[/b] : elle a été désinstallée (App Store pour la remettre), interdite ou retirée par le serveur, ou elle dépend d'Athena alors que vous avez répondu Non au service Athena.
+[/list]
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]Requirements[/h3]
+[list]
+[*][b]Required[/b]: CBA_A3, on clients and server. It is the only dependency.
+[*][b]Detected automatically when loaded[/b]: ACE3 (medical, arsenal, interaction menus, explosives, NVG, laser, weather), ACRE2 or TFAR (radio link through the MPU5, TFAR jammers), ZEN (COMSPEC modules in Zeus), Live Presentation (presentations in the Briefing app), COMSPEC SSE (SSE field app, SEEK terminal), Crows Electronic Warfare (jammers).
+[*][b]COMSPEC Overwatch connect is already included[/b]: do not load the old @COMSPECOverwatch on top.
+[*][b]COMSPEC Link[/b] (two Windows extensions shipped with the mod): Athena link, music, Bluetooth, local configuration, version check. Nothing else to install.
+[/list]
+
+[h3]Install (player)[/h3]
+[olist]
+[*]Subscribe to CBA_A3 and COMSPEC ATAK on the Workshop.
+[*]Enable both mods in the Arma 3 launcher.
+[*]In game, carry a phone in your inventory (required by default; the server can change this), then press [b]Ctrl+U[/b] to wear the phone in a corner of the screen, [b]Ctrl+Shift+U[/b] (or [b]Alt+U[/b]) to take it in hand. Keys can be changed in Options › Controls › Configure Addons › COMSPEC ATAK.
+[*]After a mod update, quit Arma completely before restarting.
+[/olist]
+
+[h3]Dedicated server[/h3]
+[olist]
+[*]Load both mods on the server: [code]-mod=@CBA_A3;@COMSPEC_ATAK_Native[/code]
+[*]Server with signature verification: copy [b]keys\comspec_atak_native.bikey[/b] (in the mod folder) into the server [b]keys[/b] folder.
+[*]Settings: Options › Addon Options › COMSPEC, Server tab (see the "[AIDE] Server settings (CBA)" thread).
+[*]No Athena account: tick [b]ATAK · Local mode and TOC post › Full local mode (no Athena)[/b]; orders, messages, markers, reports, 9-line and mission slides then go through the server.
+[/olist]
+
+[h3]Reporting a bug: sending your logs[/h3]
+[olist]
+[*]Reproduce the problem, then quit Arma (leaving it open also works).
+[*]In the mod folder (Workshop › COMSPEC ATAK), double-click [b]Envoyer_mes_logs.bat[/b].
+[*]A [b]COMSPEC_logs_date_time.zip[/b] file appears on your Desktop: it holds the last two Arma logs (.rpt) and the last two COMSPEC Link logs. Passwords, tokens and webhook links are masked.
+[*]Post the zip on the COMSPEC Discord with: what you were doing, which app, solo or server, and your other loaded mods.
+[/olist]
+[quote]Athena link problem? Escape menu › [b]Link troubleshooting[/b]: instant diagnosis, likely causes and suggested fixes.[/quote]
+
+[h3]Common problems[/h3]
+[list]
+[*][b]Ctrl+U does nothing[/b]: you carry no phone and the server requires one ("Required item to have ATAK" setting), or another key already uses Ctrl+U.
+[*][b]Signature rejected by the server[/b]: the .bikey is not in the server keys folder, or client and server run different mod versions.
+[*][b]An app is missing from the launcher[/b]: it was uninstalled (reinstall it from the App Store), forbidden or removed by the server, or it needs Athena and you answered No to the Athena service.
+[/list]

@@ -1,0 +1,104 @@
+[APP] Logistique — demandes de ravitaillement suivies de bout en bout, jusqu'au largage parachuté
+
+[i]Message 1/2[/i]
+[h1]Logistique[/h1]
+[i]Catégorie : Mission · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Logistique sert à demander un ravitaillement (munitions, soins, vivres, batteries, véhicule, matériel libre) et à suivre la demande jusqu'à la livraison. La demande part à tous les porteurs de téléphone du camp ; n'importe lequel d'entre eux peut la valider, la refuser, la mettre en route, la déclarer livrée ou lancer un largage parachuté de la caisse au point demandé.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie Mission du lanceur. L'app Comptes rendus y mène aussi (« Demande de ravitaillement », famille Logistique).
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Onglet NOUVELLE[/b] : Besoin MUNITIONS, SANTÉ, VIVRES, BATTERIES, VÉHICULE ou AUTRE. Pour les munitions, choisissez l'arme (PRINCIPALE, POING, LANCEUR) : le chargeur de l'arme que vous portez est demandé. AUTRE accepte une liste de classes d'objets séparées par des virgules (ex. « ToolKit x2 »). La ligne Contenu montre ce qui sera livré.
+[*][b]Quantité[/b] : 1, 2, 4, 6 ou 10 (chargeurs, lots de soins, articles ou unités selon le besoin).
+[*][b]Livraison[/b] : RAMASSAGE, LARGAGE (parachute) ou VÉHICULE ; point de livraison MA POSITION ou SUR LA CARTE, avec sa grille et sa distance.
+[*][b]Priorité et remarques[/b] : URGENT, PRIORITAIRE ou ROUTINE, et une remarque de 200 caractères ; ENVOYER LA DEMANDE.
+[*][b]Onglet MES DEMANDES[/b] : vos demandes avec leur parcours Demandée › Validée › En route › Livrée (ou Refusée / Annulée), qui les a traitées et à quelle heure, CARTE pour voir le point, ANNULER tant qu'elles ne sont pas en route. Une notification arrive à chaque changement.
+[*][b]Onglet REÇUES[/b] : les demandes du camp, les ouvertes d'abord. Selon l'état : VALIDER ou REFUSER, puis EN ROUTE (ou LANCER LE LARGAGE pour un largage), puis LIVRÉE.
+[*][b]Largage[/b] : après validation, LANCER LE LARGAGE annonce l'arrivée dans 40 à 90 s environ ; la caisse descend sous parachute au point demandé, remplie selon la demande, marquée d'une fumée verte (et d'un bâton lumineux vert la nuit). Pour un besoin véhicule, un jerrican est posé à côté. La demande passe alors LIVRÉE. Caisse et jerrican oubliés sont retirés au bout de 30 minutes.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Le chef d'équipe ouvre Logistique, onglet NOUVELLE : MUNITIONS, PRINCIPALE, quantité 6, LARGAGE, SUR LA CARTE (il touche une clairière), URGENT, ENVOYER LA DEMANDE.
+[*]Le logisticien voit la demande dans REÇUES et touche VALIDER, puis LANCER LE LARGAGE.
+[*]Environ une minute plus tard, la caisse arrive sous parachute, signalée par une fumée verte.
+[*]Dans MES DEMANDES, la demande est passée LIVRÉE.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list][*][b]COMSPEC › ATAK · Accès au téléphone › Batteries de rechange[/b] (serveur) : pour le besoin BATTERIES, la caisse contient la première classe de cette liste qui existe sur le serveur (par défaut la Batterie ATAK).[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : point de livraison choisi sur la carte, et CARTE pour le retrouver.
+[*][b]Athena[/b] : avec la liaison Overwatch (COMSPEC Link), la demande part aussi au poste web avec son suivi d'état, et les décisions prises sur le site reviennent en jeu. Sans liaison, elle reste sur le réseau du camp.
+[*][b]ACE[/b] : avec ACE Medical, le lot de soins contient pansements, garrot, morphine, adrénaline et perfusion (sinon des trousses de premiers secours) ; les vivres sont des bouteilles d'eau et rations ACE (rien sans ACE) ; avec ACE Refuel, le jerrican livré est utilisable.
+[*][b]Comptes rendus[/b] : la fiche « Demande de ravitaillement » ouvre cette app.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Une demande toutes les 20 secondes au plus par joueur.
+[*]Seul le largage fait apparaître une caisse : RAMASSAGE et VÉHICULE ne sont que des états à suivre, la livraison se fait par les joueurs.
+[*]Un matériel qui n'existe pas sur le serveur (mod absent) est refusé à l'envoi ; dans AUTRE, seules les classes connues remplissent la caisse.
+[*]Munitions : il faut porter une arme dans l'emplacement choisi.
+[*]REÇUES ne montre que les demandes faites depuis votre arrivée.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Logistics is used to request resupply (ammo, medical, rations, batteries, vehicle, free items) and follow the request up to delivery. The request goes to every phone carrier of the side; any of them can confirm it, decline it, set it en route, mark it delivered or launch a parachute drop of the crate at the requested point.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the Mission category of the launcher. The Reports app also leads there ("Resupply request", Logistics family).
+
+[h3]Features[/h3]
+[list]
+[*][b]NEW tab[/b]: Need AMMO, MEDICAL, RATIONS, BATTERIES, VEHICLE or OTHER. For ammo, pick the weapon (PRIMARY, HANDGUN, LAUNCHER): the magazine of the weapon you carry is requested. OTHER takes a comma-separated list of item classes (e.g. "ToolKit x2"). The Content line shows what will be delivered.
+[*][b]Quantity[/b]: 1, 2, 4, 6 or 10 (magazines, medical kits, items or units depending on the need).
+[*][b]Delivery[/b]: PICKUP, AIRDROP (parachute) or VEHICLE; delivery point MY POSITION or ON THE MAP, with its grid and distance.
+[*][b]Priority and remarks[/b]: URGENT, PRIORITY or ROUTINE, and a 200-character remark; SEND REQUEST.
+[*][b]MY REQUESTS tab[/b]: your requests with their trail Requested › Validated › En route › Delivered (or Refused / Cancelled), who handled them and when, MAP to see the point, and the cancel button (labelled UNDO in English) until they are en route. A notification arrives at each change.
+[*][b]RECEIVED tab[/b]: the side's requests, open ones first. Depending on state: CONFIRM or DECLINE, then EN ROUTE (or START AIRDROP for a drop), then DELIVERED.
+[*][b]Airdrop[/b]: after validation, START AIRDROP announces arrival in about 40 to 90 s; the crate comes down under a parachute at the requested point, filled as requested, marked with green smoke (and a green chemlight at night). For a vehicle need, a jerrycan is placed next to it. The request then turns DELIVERED. Forgotten crate and jerrycan are removed after 30 minutes.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]The team leader opens Logistics, NEW tab: AMMO, PRIMARY, quantity 6, AIRDROP, ON THE MAP (taps a clearing), URGENT, SEND REQUEST.
+[*]The logistician sees the request in RECEIVED and taps CONFIRM, then START AIRDROP.
+[*]About a minute later, the crate arrives under a parachute, marked by green smoke.
+[*]In MY REQUESTS, the request has turned DELIVERED.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list][*][b]COMSPEC › ATAK · Phone access › Spare batteries[/b] (server): for the BATTERIES need, the crate holds the first class of this list that exists on the server (ATAK battery by default).[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: delivery point picked on the map, and MAP to find it again.
+[*][b]Athena[/b]: with the Overwatch link (COMSPEC Link), the request also goes to the web post with its status tracking, and decisions taken on the website come back in game. Without the link, it stays on the side's network.
+[*][b]ACE[/b]: with ACE Medical, the medical kit holds dressings, tourniquet, morphine, epinephrine and IV (otherwise first aid kits); rations are ACE water bottles and MREs (nothing without ACE); with ACE Refuel, the delivered jerrycan is usable.
+[*][b]Reports[/b]: the "Resupply request" sheet opens this app.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]One request every 20 seconds at most per player.
+[*]Only the airdrop spawns a crate: PICKUP and VEHICLE are just states to track, delivery is done by players.
+[*]Items that do not exist on the server (missing mod) are refused when sending; in OTHER, only known classes fill the crate.
+[*]Ammo: you must carry a weapon in the chosen slot.
+[*]RECEIVED only shows requests made since you joined.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).
