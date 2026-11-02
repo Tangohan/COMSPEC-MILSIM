@@ -324,6 +324,33 @@ class CompetencyModuleRepository
         return $out;
     }
 
+    /**
+     * Statut effectif et échéance de chaque membre sur les modules donnés (vue commandement).
+     *
+     * @param list<int> $moduleIds
+     * @return array<int, array<int, array{status: string, expires_at: ?string}>> user_id => module_id => état
+     */
+    public function progressMatrix(int $tenantId, array $moduleIds): array
+    {
+        if ($moduleIds === [] || !$this->schemaReady()) {
+            return [];
+        }
+        $in = implode(',', array_fill(0, count($moduleIds), '?'));
+        $st = $this->pdo()->prepare("SELECT user_id, module_id, status, expires_at FROM user_progress WHERE tenant_id = ? AND module_id IN ($in)");
+        $st->execute(array_merge([$tenantId], array_values($moduleIds)));
+        $out = [];
+        $now = time();
+        while ($r = $st->fetch(PDO::FETCH_ASSOC)) {
+            $exp = isset($r['expires_at']) && (string) $r['expires_at'] !== '' ? (string) $r['expires_at'] : null;
+            $out[(int) $r['user_id']][(int) $r['module_id']] = [
+                'status' => self::effectiveStatus((string) $r['status'], $exp, $now),
+                'expires_at' => $exp,
+            ];
+        }
+
+        return $out;
+    }
+
     /** Enregistre le statut d'un membre sur un module. */
     public function setProgress(
         int $tenantId,
