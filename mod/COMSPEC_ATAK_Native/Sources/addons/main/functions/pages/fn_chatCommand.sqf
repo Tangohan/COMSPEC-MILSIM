@@ -46,6 +46,11 @@ private _subst = [
     ["@time", [dayTime, "HH:MM"] call BIS_fnc_timeToString],
     ["@hdg", format ["%1°", round getDir player]]
 ];
+// @zone : zone de l'app Zones sous ma position (« B-04 (OBJ BRAVO) grille · état »), calculée seulement si le texte la cite.
+if (((toLower _text) find "@zone") >= 0) then {
+    private _zc = ["citeAt", getPosASL player] call comspec_atak_native_fnc_zoneAction;
+    _subst pushBack ["@zone", [_zc, ("hors zone") call comspec_atak_native_fnc_tr] select (_zc isEqualTo "")];
+};
 { _text = [_text, _x select 0, _x select 1] call CBA_fnc_replace; } forEach _subst;
 private _tags = [];
 if (_prio isNotEqualTo "") then { _tags pushBack _prio; };

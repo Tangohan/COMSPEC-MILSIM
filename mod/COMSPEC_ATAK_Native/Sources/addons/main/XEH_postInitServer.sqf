@@ -55,6 +55,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 COMSPEC_ATAK_SrvLog = createHashMap;      // camp -> [[événement, arguments]...] (200 au plus)
 COMSPEC_ATAK_SrvRoutes = createHashMap;   // netId du groupe -> [points, auteur]
 COMSPEC_ATAK_SrvRte = createHashMap;      // app Routes : id -> [route (paires), portée 1-3, camp, netId du groupe, équipe de feu, auteur]
+COMSPEC_ATAK_SrvZn = createHashMap;       // app Zones : id -> [plan (paires), portée 1-3, camp, netId du groupe, équipe de feu, auteur]
+COMSPEC_ATAK_SrvZnSit = createHashMap;    // app Zones : id -> HashMap id de zone -> [état, horodatage, auteur, signalements]
 // Accusés LU/ACK des comptes rendus : envoyés au seul auteur et gardés à part, un par lecteur (le dernier l'emporte),
 // pour que le journal ci-dessus garde ses 200 événements utiles. Rejoués à l'auteur seul quand il revient.
 COMSPEC_ATAK_SrvRepBy = createHashMap;    // id du C.R. -> UID de son auteur
@@ -151,6 +153,36 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["srvMeta", [_m, objNu
     { if (isNull (groupFromNetId ((COMSPEC_ATAK_SrvRte get _x) select 3)) && {((COMSPEC_ATAK_SrvRte get _x) select 1) < 3}) then { COMSPEC_ATAK_SrvRte deleteAt _x; }; } forEach (keys COMSPEC_ATAK_SrvRte);
     while { (count COMSPEC_ATAK_SrvRte) > 300 } do { COMSPEC_ATAK_SrvRte deleteAt ((keys COMSPEC_ATAK_SrvRte) select 0); };
 }] call CBA_fnc_addEventHandler;
+// App Zones : plans partagés et situation des zones gardés pour les joueurs qui arrivent ensuite (rejoués par syncReq),
+// 100 plans au plus ; dernier état de chaque zone (le plus récent l'emporte) et ses 12 derniers signalements.
+["comspec_atak_native_zoneSrv", {
+    params [["_op", ""], ["_id", ""]];
+    if !(_id isEqualType "" && {_id isNotEqualTo ""}) exitWith {};
+    switch (_op) do {
+        case "del": { COMSPEC_ATAK_SrvZn deleteAt _id; COMSPEC_ATAK_SrvZnSit deleteAt _id; };
+        case "set": {
+            params ["", "", ["_pk", []], ["_sc", 2], ["_side", ""], ["_grp", ""], ["_ft", ""], ["_who", ""]];
+            COMSPEC_ATAK_SrvZn set [_id, [_pk, _sc, _side, _grp, _ft, _who]];
+            { if (isNull (groupFromNetId ((COMSPEC_ATAK_SrvZn get _x) select 3)) && {((COMSPEC_ATAK_SrvZn get _x) select 1) < 3}) then { COMSPEC_ATAK_SrvZn deleteAt _x; COMSPEC_ATAK_SrvZnSit deleteAt _x; }; } forEach (keys COMSPEC_ATAK_SrvZn);
+            while { (count COMSPEC_ATAK_SrvZn) > 100 } do { private _k = (keys COMSPEC_ATAK_SrvZn) select 0; COMSPEC_ATAK_SrvZn deleteAt _k; COMSPEC_ATAK_SrvZnSit deleteAt _k; };
+        };
+        case "sit": {
+            params ["", "", ["_zid", ""], ["_st", ""], ["_stamp", 0], ["_by", ""], ["_reps", []]];
+            if !(_zid isEqualType "" && {_stamp isEqualType 0} && {_reps isEqualType []}) exitWith {};
+            private _h = COMSPEC_ATAK_SrvZnSit getOrDefault [_id, createHashMap];
+            COMSPEC_ATAK_SrvZnSit set [_id, _h];
+            (_h getOrDefault [_zid, ["", -1e9, "", []]]) params ["_os", "_ot", "_ob", "_or"];
+            if (_st isNotEqualTo "" && {_stamp >= _ot}) then { _os = _st; _ot = _stamp; _ob = _by; };
+            _or = (_or + (_reps select [0, 12])) select [((count _or) + ((count _reps) min 12) - 12) max 0, 12];
+            _h set [_zid, [_os, _ot, _ob, _or]];
+        };
+        case "reset": {
+            params ["", "", ["_t", 0]];
+            private _h = COMSPEC_ATAK_SrvZnSit getOrDefault [_id, createHashMap];
+            { _h set [_x, ["UNREC", _t, "", []]]; } forEach (keys _h);
+        };
+    };
+}] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_wpStore", {
     params ["_grp", "_pts", "_who"];
     // Itinéraire effacé par le groupe : plus rien à rejouer aux arrivants.
@@ -212,6 +244,15 @@ COMSPEC_ATAK_FtCheck = {
             _log pushBack ["comspec_atak_native_route", ["set", _pk, _who, _sc]];
         };
     } forEach COMSPEC_ATAK_SrvRte;
+    // Plans de zones partagés qui concernent l'arrivant (même règle que les routes), puis la situation de leurs zones.
+    {
+        _y params ["_pk", "_sc", "_zs", "_zg", "_zf", "_who"];
+        if (_zs isEqualTo _side && {_sc >= 3 || {_zg isEqualTo (netId group _unit) && {_sc >= 2 || {_zf isEqualTo "" || {_zf isEqualTo (_unit getVariable ["COMSPEC_FT", ""])}}}}}) then {
+            _log pushBack ["comspec_atak_native_zone", ["set", _pk, _who, _sc]];
+            private _zid0 = _x;
+            { _log pushBack ["comspec_atak_native_zone", ["sitAll", _zid0, _x, _y select 0, _y select 1, _y select 2, _y select 3]]; } forEach (COMSPEC_ATAK_SrvZnSit getOrDefault [_x, createHashMap]);
+        };
+    } forEach COMSPEC_ATAK_SrvZn;
     ["comspec_atak_native_syncData", [_log, COMSPEC_ATAK_SrvRoutes getOrDefault [netId group _unit, []]], _unit] call CBA_fnc_targetEvent;
     // Plans de briefing des camps (fn_planServer) : plus dans la file JIP, envoyés ici à l'arrivant (tous, comme la file
     // JIP le faisait : un joueur qui change de camp retrouve le plan de son nouveau camp).

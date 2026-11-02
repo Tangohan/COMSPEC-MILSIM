@@ -600,6 +600,7 @@ private _drawConv = {
             ["@heure", "l'heure du jeu"] call _c,
             ["@cap", "mon cap"] call _c,
             ["@alt", "mon altitude"] call _c,
+            ["@zone", "ma zone (app Zones) : nom, plan, grille, état"] call _c,
             "", ["Exemples"] call _h,
             "<t font='EtelkaMonospacePro'>/u /contact 2 BMP en approche @grille</t>",
             "<t font='EtelkaMonospacePro'>/sitrep RAS sur la position, en attente</t>",

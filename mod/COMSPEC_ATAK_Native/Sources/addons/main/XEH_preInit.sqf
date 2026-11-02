@@ -161,6 +161,28 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 ["comspec_atak_native_route_3d", "CHECKBOX",
     ["Vue 3D des routes", "Option « Vue 3D » d'une route : trait et étapes affichés dans le monde (à moins de 1,5 km). Décoché : jamais de 3D, même si une route la demande."],
     ["COMSPEC", "ATAK · Routes"], true, 0] call comspec_atak_native_fnc_addSetting;
+// App Zones (fn_zoneAction, fn_zoneGen) : partage, carte d'Arma et Athena, plafonds du découpage, contacts, curseur.
+["comspec_atak_native_zones_share", "CHECKBOX",
+    ["Partage des plans de zones", "Les joueurs peuvent envoyer leurs plans de zones (app Zones) à leur équipe, leur groupe ou leur camp, avec les états et signalements des zones, par le réseau du téléphone. Décoché : chaque plan reste sur son téléphone."],
+    ["COMSPEC", "ATAK · Plan / Zones"], true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_zones_arma", "CHECKBOX",
+    ["Zones sur la carte d'Arma et Athena", "Option « Carte d'Arma et Athena » d'un plan : cases en rectangles, autres zones en contour, étiquettes, axes et points de contrôle posés en marqueurs et envoyés au site Athena. Décoché : les zones restent sur les téléphones."],
+    ["COMSPEC", "ATAK · Plan / Zones"], true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_zones_maxcells", "SLIDER",
+    ["Cases de grille au plus", "Nombre de cases d'une grille générée (200 par défaut). Au-delà, prendre des cases plus grandes."],
+    ["COMSPEC", "ATAK · Plan / Zones"], [20, 600, 200, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_zones_maxblocks", "SLIDER",
+    ["Îlots au plus", "Nombre d'îlots gardés par le découpage par les routes (les plus grands ; 80 par défaut)."],
+    ["COMSPEC", "ATAK · Plan / Zones"], [10, 200, 80, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_zones_armamax", "SLIDER",
+    ["Zones en marqueurs d'Arma au plus", "Au-delà (60 par défaut), seules les étiquettes des zones vont sur la carte d'Arma et Athena."],
+    ["COMSPEC", "ATAK · Plan / Zones"], [10, 200, 60, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_zones_contact", "CHECKBOX",
+    ["Contacts ennemis dans les zones", "Un contact posé ou signalé depuis un téléphone (marqueur ennemi, TIC, SALUTE, compte rendu CONTACT / SPOTREP) met à jour l'état de la zone qui le contient et y ajoute un signalement."],
+    ["COMSPEC", "ATAK · Plan / Zones"], true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_zones_cursor", "CHECKBOX",
+    ["Zone sous le curseur", "Le bandeau du curseur de la carte donne la zone survolée (nom, plan, état)."],
+    ["COMSPEC", "ATAK · Plan / Zones"], true, 0] call comspec_atak_native_fnc_addSetting;
 // Réglages serveur (forçables par l'admin dans les réglages CBA du serveur / de la mission).
 // Tous les mods COMSPEC partagent une seule catégorie CBA « COMSPEC » ; sous-catégories « ATAK · … », « Overwatch · … », « SSE ».
 private _cat = ["COMSPEC", "ATAK · Accès au téléphone"];

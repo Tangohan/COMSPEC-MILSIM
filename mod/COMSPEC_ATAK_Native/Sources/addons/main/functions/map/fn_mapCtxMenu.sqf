@@ -152,6 +152,11 @@ switch (_mode) do {
         };
         switch (_arg) do {
             case "PING": { ["send", _pos] call comspec_atak_native_fnc_mapPing; };
+            // App Zones : fiche de la zone cliquée (état en un clic, signaler un ennemi au point cliqué).
+            case "ZONE": {
+                (_c getOrDefault ["zone", []]) params [["_zbid", ""], ["_zzid", ""]];
+                if (_zbid isNotEqualTo "") then { ["#open", [_zbid, _zzid, [_pos select 0, _pos select 1]]] call comspec_atak_native_fnc_pageZones; };
+            };
             case "MARKER": { ["open", _pos] call comspec_atak_native_fnc_markerPlace; };
             // Points de passage : fiche de pose au point (nom, type, partage, VALIDER), ou l'étape pointée.
             case "WPADD": { ["open", _pos] call comspec_atak_native_fnc_wpAction; };
@@ -276,6 +281,14 @@ switch (_mode) do {
         if (((assignedItems player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"] }) >= 0
             || {((items player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatchItem", configFile >> "CfgWeapons"] }) >= 0}) then {
             _rows insert [4, [["WATCH", "Envoyer à la montre", "boussole de la montre", _dir + "app_garmin.paa", [0.36, 0.78, 0.42, 1]]]];
+        };
+        // Zone de l'app Zones sous le clic : sa fiche en tête (signaler un ennemi au point, état en un clic).
+        private _zh = ["at", [_pos]] call comspec_atak_native_fnc_zoneAction;
+        if ((count _zh) > 0) then {
+            _zh params ["_zb", "_zz"];
+            _c set ["zone", [_zb get "id", _zz select 0]];
+            private _zsr = ["state", _zz select 6] call comspec_atak_native_fnc_zoneAction;
+            _rows insert [0, [["ZONE", format [("Zone %1 · signaler") call comspec_atak_native_fnc_tr, _zz select 1], format ["%1 · %2", _zb get "name", ((_zsr select 1) call comspec_atak_native_fnc_tr)], _dir + "app_zones.paa", _zsr select 4]]];
         };
         // Étape pointée : ses lignes en tête (la liste a pu changer depuis l'ouverture : index revérifié).
         private _wpPts = (missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []];

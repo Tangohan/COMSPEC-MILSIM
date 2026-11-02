@@ -265,6 +265,8 @@ switch (_act) do {
                 if (_kind isEqualTo "big" && {!(_k in _vals)}) then { _v = ""; };
                 if !(_v isEqualType "") then { _v = str _v; };
                 _v = trim ((_v splitString toString [13, 10]) joinString " / ");
+                // @zone : zone de l'app Zones sous ma position (comme dans les messages).
+                if ((_v find "@zone") >= 0) then { _v = [_v, "@zone", ["citeAt", getPosASL player] call comspec_atak_native_fnc_zoneAction] call CBA_fnc_replace; };
                 if (_kind isEqualTo "grid" && {_grid isEqualTo ""} && {_v isNotEqualTo ""}) then { _grid = _v; };
                 if (_v isNotEqualTo "") then { _lines pushBack [_k, [_flabel, _k] select (_flabel isEqualTo ""), _v, _tag]; };
             };
@@ -299,6 +301,11 @@ switch (_act) do {
         _list set [_r get "id", _r];
         if (_dest isNotEqualTo "AUCUNE") then {
             [{ params ["_r", "_side"]; ["comspec_atak_native_sideEvent", ["comspec_atak_native_report", [_r, _side], _side]] call CBA_fnc_serverEvent; }, [+_r, str side group player], _label, 2] call comspec_atak_native_fnc_netSend;
+        };
+        // App Zones : contact, SALUTE ou SPOTREP dans une zone affichée : la zone passe « ennemi signalé ».
+        if (_code in ["CONTACT", "SALUTE", "SPOTREP"]) then {
+            private _val = { params ["_k"]; private _i = _lines findIf { (_x select 0) isEqualTo _k }; [(_lines select _i) select 2, ""] select (_i < 0) };
+            ["contact", [_pos, "UNK", ((["size"] call _val) + (["count"] call _val)) select [0, 12], _summary]] call comspec_atak_native_fnc_zoneAction;
         };
         _r set ["web", [_r] call _toWeb];
         // Photo jointe : elle part vers la photothèque d'Athena, légendée avec le C.R.
