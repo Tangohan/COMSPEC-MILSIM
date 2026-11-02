@@ -348,9 +348,28 @@
         chips(box, query);
         const count = box.querySelector('[data-job-catalog-count]');
         count.textContent = hits.length > 0 ? `${hits.length} emploi(s)` : 'Aucun emploi ne correspond.';
-        const note = box.querySelector('[data-job-catalog-note]');
-        if (note) note.textContent = (data.packs || []).filter(p => !state.country || p.country === state.country).map(p => p.label + ' · ' + p.count + ' · ' + p.compiled_at + (p.sources_note ? ' — ' + p.sources_note : '')).join(' | ');
+        notes(box);
         persist();
+    }
+
+    /**
+     * Pied de fenêtre sur une ligne : « Sources : n catalogues » (tous pays) ou la note du pays choisi, tronquée ;
+     * le panneau repliable liste la note complète de chaque pack affiché.
+     */
+    function notes(box) {
+        const line = box.querySelector('[data-job-catalog-note-line]');
+        const list = box.querySelector('[data-job-catalog-note-list]');
+        if (!line || !list) return;
+        const packs = (data.packs || []).filter(p => !state.country || p.country === state.country);
+        const text = p => p.label + ' · ' + p.count + ' · ' + p.compiled_at + (p.sources_note ? ' — ' + p.sources_note : '');
+        line.textContent = packs.length === 1 ? text(packs[0]) : label('sources') + (isEnglish() ? ': ' : ' : ') + packs.length + ' ' + label('catalogs');
+        box.querySelector('[data-job-catalog-note-more]').textContent = label(packs.length === 1 ? 'see-more' : 'see-sources');
+        list.textContent = '';
+        packs.forEach(p => {
+            const item = el('li');
+            item.append(flag(p.country), el('span', '', text(p)));
+            list.appendChild(item);
+        });
     }
 
     /** Groupes pays → armée, dans l'ordre des pays puis de la première entrée de chaque armée. */

@@ -51514,4 +51514,8 @@ return [
     'Parcours de formation en cours.' => 'Training path in progress.',
     'fonction(s)' => 'function(s)',
     'Inspirez-vous d’un emploi de référence (forces spéciales américaines, françaises et allemandes) : copiez tout ou un seul champ, puis adaptez avant d’enregistrer.' => 'Start from a reference job (US, French and German special forces): copy everything or a single field, then adapt it before saving.',
+    'Voir les sources' => 'Show sources',
+    'Masquer les sources' => 'Hide sources',
+    'Sources' => 'Sources',
+    'catalogues' => 'catalogs',
 ];
