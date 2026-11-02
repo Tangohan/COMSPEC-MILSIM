@@ -928,6 +928,19 @@ return function (Router $router) {
     $router->get('/atak/sse/recherche/suggestions', [SsePortalController::class, 'searchSuggest'], $mwSsePortal);
     $router->get('/atak/sse/identites', [SsePortalController::class, 'identitiesIndex'], $mwSsePortal);
     $router->get('/atak/sse/identites/{id}', [SsePortalController::class, 'identityShow'], $mwSsePortal);
+    // RENS › Identités & documents (COMSPEC IDENTITY) : « nouvelle » / « nouveau » avant /{id}.
+    $router->get('/atak/sse/papiers', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentsIndex'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/identites', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identitiesIndex'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/identites/nouvelle', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identityCreateForm'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/identites', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identityStore'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/identites/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identityShow'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/documents/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentCreateForm'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/documents', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStore'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/documents/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentShow'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/documents/{id}/statuts', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStatuses'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/documents/{id}/cycle', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentWorkflow'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/controles', [\App\Controllers\Web\SseIdentityRegistryController::class, 'checksIndex'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/controles/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'checkShow'], $mwSsePortal);
     $router->get('/atak/sse/objets/nouveau', [SsePortalController::class, 'objectCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/objets/nouveau', [SsePortalController::class, 'objectStore'], $mwSsePortal);
     $router->post('/atak/sse/objets/creer', [SsePortalController::class, 'objectStore'], $mwSsePortal);
@@ -3079,6 +3092,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/sse/persons/{id}/biometrics-sim', [SseApiController::class, 'personsBiometricsSim']);
     $router->post('/api/sse/digital-acquisitions', [SseApiController::class, 'digitalAcquisitionStore']);
     $router->get('/api/sse/identity-query', [SseApiController::class, 'identityQuery']);
+    // COMSPEC IDENTITY (Lot 1) : pack du serveur de jeu, contrôle N3 d'un papier, contrôles remontés (COMSPEC Link).
+    $router->get('/api/sse/identity/pack', [\App\Controllers\Api\SseIdentityApiController::class, 'pack']);
+    $router->get('/api/sse/identity/documents/lookup', [\App\Controllers\Api\SseIdentityApiController::class, 'lookup']);
+    $router->post('/api/sse/identity/checks', [\App\Controllers\Api\SseIdentityApiController::class, 'checksStore']);
 
     // Exploitation de site sensible
     $router->get('/api/sse/sites', [SseApiController::class, 'sitesIndex']);
