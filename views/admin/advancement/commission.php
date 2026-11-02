@@ -164,6 +164,42 @@ $quota = $campaign['quota_slots'] ?? null;
         </form>
     <?php endif; ?>
 
+    <?php
+    $boardRows = array_values(array_filter($candidacies, static fn (array $r): bool => (string) ($r['decision'] ?? '') === 'inscrit'));
+    usort($boardRows, static fn (array $a, array $b): int => ((int) ($a['preference_rank'] ?? 9999)) <=> ((int) ($b['preference_rank'] ?? 9999)));
+    $boardOver = $quota !== null && $quota !== '' && count($boardRows) > (int) $quota;
+    ?>
+    <section class="adv-panel advc-board" aria-labelledby="advc-board">
+        <h2 id="advc-board"><?= $locked ? 'Tableau d’avancement publié' : 'Tableau à publier' ?></h2>
+        <p class="adv-muted">
+            <?= count($boardRows) ?> inscrit(s)<?php if ($quota !== null && $quota !== ''): ?> pour <?= (int) $quota ?> place(s)<?php endif; ?>.
+            <?php if (!$locked): ?>Enregistrez la commission pour mettre ce tableau à jour. À la publication, chaque inscrit reçoit le grade et un message dans sa boîte de réception.<?php endif; ?>
+        </p>
+        <?php if ($boardOver): ?>
+            <p class="advc-notice advc-notice--bad">Plus d’inscrits que de places : la publication sera refusée tant que le quota est dépassé.</p>
+        <?php endif; ?>
+        <?php if ($boardRows === []): ?>
+            <p class="adv-muted">Personne n’est encore inscrit : choisissez « Inscrit au tableau » dans la décision des candidats retenus.</p>
+        <?php else: ?>
+            <ol class="advc-board__list">
+                <?php foreach ($boardRows as $row): ?>
+                    <?php $rowEligible = !empty($row['is_eligible']) || !empty($row['live_eligible']); $rowForced = !empty($row['is_forced']) || !empty($row['exceptional_override']); ?>
+                    <li>
+                        <strong><?= adv_h(adv_person($row)) ?></strong>
+                        <?php if ($rowForced): ?>
+                            <span class="adv-badge adv-badge--exception">Passage exceptionnel</span>
+                        <?php elseif (!$rowEligible): ?>
+                            <span class="adv-badge adv-badge--bad">Non éligible : bloque la publication</span>
+                        <?php endif; ?>
+                        <?php if ((string) ($row['commission_opinion'] ?? '') === ''): ?>
+                            <span class="adv-muted">sans avis</span>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ol>
+        <?php endif; ?>
+    </section>
+
     <?php if (!$locked && (string) ($campaign['status'] ?? '') === 'en_commission'): ?>
         <section class="adv-panel">
             <h2>Publication <?= adv_info('Publication', 'Irréversible. Crée la ligne d’historique de grade. Un inscrit non éligible bloque, sauf passage exceptionnel motivé.') ?></h2>

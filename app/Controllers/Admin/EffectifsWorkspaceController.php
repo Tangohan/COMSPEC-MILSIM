@@ -3667,12 +3667,19 @@ class EffectifsWorkspaceController
             new \App\Services\Effectifs\UnitCodeService()
         ))->build($tenantId);
         $view = (string) $request->query('vue', '');
+        try {
+            $movements = $this->personnelAssignmentRepository->listRecentPrimaryMovementsForTenant($tenantId, 30);
+        } catch (\Throwable) {
+            $movements = [];
+        }
 
         return $this->shell('admin.effectifs_workspace.affectations', [
             'title' => 'Affectations',
             'effectifsNav' => 'affectations',
             'affMatrix' => $matrix,
-            'affView' => $view === 'unites' ? 'units' : 'members',
+            'affMovements' => $movements,
+            // Tableau par unité (maquette 2026-11-02) par défaut ; « ?vue=membres » ouvre la liste par membre.
+            'affView' => $view === 'membres' ? 'members' : 'units',
             'affInitialQuery' => mb_substr(trim((string) $request->query('q', '')), 0, 80, 'UTF-8'),
             'affInitialUnit' => max(0, (int) $request->query('unite', 0)),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
@@ -4071,7 +4078,7 @@ class EffectifsWorkspaceController
             'boSkipPageHead' => true,
             // The member page embeds the personnel editor. Its response only contains
             // the view body, so its component stylesheet must be loaded by this shell.
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'effectifs-kit.css'],
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
             'elevationOpenCount' => $elevationOpen,
@@ -4703,66 +4710,8 @@ class EffectifsWorkspaceController
      */
     private function jobAssignmentPageData(Request $request, int $tenantId): array
     {
-        $search = trim((string) $request->query('search', ''));
-        $search = $search !== '' ? $search : null;
-        $filterJobRoleId = (int) $request->query('job_role_id', 0);
-        $filterJobRoleId = $filterJobRoleId > 0 ? $filterJobRoleId : null;
-        $onlyUnassigned = $request->query('unassigned') === '1' || $request->query('unassigned') === 'true';
-        if ($onlyUnassigned) {
-            $filterJobRoleId = null;
-        }
-        $page = max(1, (int) $request->query('page', 1));
-        $tenantSettings = $this->tenantRepository->getSettings($tenantId);
-        $pjrAssignSettings = PersonnelJobRoleAssignmentsSettings::resolve($tenantSettings);
-        $perPage = (int) ($pjrAssignSettings['assignments_page_size'] ?? 30);
-        $total = 0;
-        $rows = [];
-        $assignmentPivot = [];
-        $jobRoleOptions = [];
-        if ($this->personnelJobRoleRepository->tablesExist() && $this->personnelJobRoleRepository->personnelProfilesHaveJobRoleColumns()) {
-            $total = $this->personnelJobRoleRepository->countUsersForJobRoleAssignments($tenantId, $search, $filterJobRoleId, $onlyUnassigned);
-            $rows = $this->personnelJobRoleRepository->listUsersForJobRoleAssignments(
-                $tenantId,
-                $search,
-                $filterJobRoleId,
-                $onlyUnassigned,
-                $perPage,
-                ($page - 1) * $perPage
-            );
-            $userIds = array_values(array_filter(array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows), static fn (int $id): bool => $id > 0));
-            $assignmentPivot = $this->personnelJobRoleRepository->pivotTableExists()
-                ? $this->personnelJobRoleRepository->listPivotAssignmentsForUsers($tenantId, $userIds)
-                : [];
-            $community = is_array($tenantSettings['community'] ?? null) ? $tenantSettings['community'] : [];
-            $jobRoleOptions = $this->personnelJobRoleRepository->listRoleOptionsForSelect(
-                $tenantId,
-                (bool) ($pjrAssignSettings['show_english_labels'] ?? false),
-                (bool) ($pjrAssignSettings['show_category_in_role_picklist'] ?? false),
-                OrganizationRoleLabels::mode($community, $this->tenantRepository->findById($tenantId) ?: [])
-            );
-        }
-        $totalPages = max(1, (int) ceil($total / max(1, $perPage)));
-
-        return [
-            'assignmentRows' => $rows,
-            'assignmentPivot' => $assignmentPivot,
-            'jobRoleOptions' => $jobRoleOptions,
-            'jobRolePermissionCounts' => $this->personnelJobRoleRepository->tablesExist()
-                ? $this->personnelJobRoleRepository->permissionCountsForTenant($tenantId)
-                : [],
-            'pjrAssignSettings' => $pjrAssignSettings,
-            'pivotEnabled' => $this->personnelJobRoleRepository->pivotTableExists(),
-            'filters' => [
-                'search' => $search ?? '',
-                'job_role_id' => $filterJobRoleId ?? 0,
-                'unassigned' => $onlyUnassigned,
-            ],
-            'assignmentsTotal' => $total,
-            'assignmentsPage' => $page,
-            'assignmentsPerPage' => $perPage,
-            'assignmentsTotalPages' => $totalPages,
-            'activeTab' => 'assignments',
-        ];
+        // Tableau « Qui tient quel emploi » : filtres, confidentialité et actions groupées dans JobAssignmentBoardController.
+        return \App\Core\Container::get(JobAssignmentBoardController::class)->boardData($request, $tenantId);
     }
 
     private function resolveJobCategoryId(int $tenantId, int $categoryId): int

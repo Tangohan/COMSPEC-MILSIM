@@ -33,7 +33,7 @@ final class HomeUnitsShowcaseTest extends TestCase
     public function testCardsKeepNamesModeratedAndContentVisibleWithoutJs(): void
     {
         $view = (string) file_get_contents(self::root() . '/views/home/index.php');
-        self::assertStringContainsString('name_blur_html($unitName)', $view);
+        self::assertStringContainsString('name_blur_html($c[\'name\'])', $view);
         // Les chiffres gardent leur valeur finale dans le HTML ; le JS ne fait que l’animer.
         self::assertStringContainsString('data-hp-count="<?= (int) $figure[\'n\'] ?>"><?= $e($formatInt((int) $figure[\'n\'])) ?>', $view);
 

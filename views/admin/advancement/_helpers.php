@@ -30,6 +30,14 @@ if (!function_exists('adv_h')) {
         return $name;
     }
 
+    /** Date « 12 mars 2027 » dans la langue du lecteur (vide si inconnue). */
+    function adv_date(?string $iso): string
+    {
+        $iso = trim((string) $iso);
+
+        return $iso === '' ? '' : \App\Support\AdvancementCampaignProgress::date($iso);
+    }
+
     function adv_info(string $title, string $body): string
     {
         return '<span class="adv-info" tabindex="0">'

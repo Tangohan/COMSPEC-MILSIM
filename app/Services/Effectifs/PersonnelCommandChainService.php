@@ -7,6 +7,7 @@ namespace App\Services\Effectifs;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
+use App\Services\Organization\OrgVisibilityService;
 
 /**
  * Chaîne de commandement : chef d’unité + organigramme (unité parente).
@@ -60,6 +61,8 @@ final class PersonnelCommandChainService
             $unitsById[$id] = $u;
         }
         $meta = $this->units->hierarchyMetaByUnitId($tenantId);
+        // Confidentialité effective (héritée de l’unité parente), rendue par App\Support\ConfidentialDisplay.
+        $levels = OrgVisibilityService::effectiveUnitLevels(array_values($unitsById));
         $membersByUnit = $this->assignments->listActiveMembersByUnitForTenant($tenantId);
         $primaryByUser = $this->assignments->primaryUnitIdByUserForTenant($tenantId);
         $commandedByUser = self::commandedUnitIdsByUser($unitsById);
@@ -91,6 +94,7 @@ final class PersonnelCommandChainService
                 'parent_name' => $parentId > 0 ? trim((string) ($unitsById[$parentId]['name'] ?? '')) : '',
                 'commander_user_id' => $commanderId > 0 ? $commanderId : 0,
                 'commander_label' => $commanderId > 0 ? ($labels[$commanderId] ?? '—') : '',
+                'visibility' => (string) ($levels[$id] ?? 'normal'),
                 'member_count' => count($members),
                 'member_ids' => array_values(array_map(static fn (array $m): int => (int) ($m['user_id'] ?? 0), $members)),
             ];
@@ -101,6 +105,15 @@ final class PersonnelCommandChainService
             return $c !== 0 ? $c : strcasecmp((string) $a['name'], (string) $b['name']);
         });
 
+        $roleByUser = [];
+        foreach ($membersByUnit as $unitKey => $list) {
+            foreach ($list as $m) {
+                $muid = (int) ($m['user_id'] ?? 0);
+                if ($muid > 0 && (int) ($primaryByUser[$muid] ?? 0) === (int) $unitKey) {
+                    $roleByUser[$muid] ??= trim((string) ($m['role_name'] ?? ''));
+                }
+            }
+        }
         $memberRows = [];
         foreach ($labels as $userId => $label) {
             $unitId = (int) ($primaryByUser[$userId] ?? 0);
@@ -118,12 +131,14 @@ final class PersonnelCommandChainService
                 'label' => $label,
                 'unit_id' => $unitId,
                 'unit_name' => $unitId > 0 ? trim((string) ($unitsById[$unitId]['name'] ?? '')) : '',
+                'role_name' => (string) ($roleByUser[$userId] ?? ''),
                 'reports_to_id' => $reportsTo,
                 'reports_to_label' => $reportsTo > 0 ? ($labels[$reportsTo] ?? '—') : '',
                 'chain_labels' => array_values(array_filter(array_map(
                     static fn (int $id): string => $labels[$id] ?? '',
                     $chainIds
                 ))),
+                'chain_ids' => array_values(array_map('intval', $chainIds)),
                 'commands' => $commands,
             ];
         }

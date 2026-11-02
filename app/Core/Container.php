@@ -1239,10 +1239,17 @@ class Container
             \App\Services\Cron\Jobs\AdvancementSeniorityCronJob::class => new \App\Services\Cron\Jobs\AdvancementSeniorityCronJob(
                 self::get(\App\Services\Advancement\AdvancementWorkflowService::class)
             ),
+            \App\Repositories\AdvancementProposalRepository::class => new \App\Repositories\AdvancementProposalRepository(),
+            \App\Services\Advancement\AdvancementProposalService::class => new \App\Services\Advancement\AdvancementProposalService(
+                self::get(\App\Repositories\AdvancementRepository::class),
+                self::get(\App\Services\Advancement\AdvancementWorkflowService::class),
+                self::get(\App\Repositories\AdvancementProposalRepository::class)
+            ),
             \App\Controllers\Admin\Organization\AdvancementAdminController::class => new \App\Controllers\Admin\Organization\AdvancementAdminController(
                 self::get(\App\Repositories\AdvancementRepository::class),
                 self::get(\App\Services\Advancement\AdvancementWorkflowService::class),
-                self::get(\App\Services\Advancement\GradeScaleTemplateService::class)
+                self::get(\App\Services\Advancement\GradeScaleTemplateService::class),
+                self::get(\App\Services\Advancement\AdvancementProposalService::class)
             ),
             \App\Controllers\Admin\Organization\MemberAdvancementController::class => new \App\Controllers\Admin\Organization\MemberAdvancementController(
                 self::get(\App\Repositories\AdvancementRepository::class),
@@ -2403,6 +2410,20 @@ class Container
                 self::get(\App\Repositories\MemberDepartureRepository::class),
                 self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
                 self::get(\App\Repositories\ElevationRequestRepository::class),
+            ),
+            \App\Controllers\Admin\JobAssignmentBoardController::class => new \App\Controllers\Admin\JobAssignmentBoardController(
+                new \App\Services\Personnel\JobAssignmentBoardLoader(
+                    self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                    self::get(UserRepository::class),
+                    self::get(\App\Repositories\UnitRepository::class),
+                    self::get(\App\Repositories\OrbatBilletRepository::class),
+                ),
+                new \App\Services\Personnel\JobAssignmentBulkService(
+                    self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                    self::get(UserRepository::class),
+                    self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
+                ),
+                self::get(TenantRepository::class),
             ),
             \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController::class => new \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController(
                 self::get(AuthService::class),
