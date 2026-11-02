@@ -29,7 +29,7 @@ $academyIcons = ['dashboard'=>'overview','catalogue'=>'catalogue','courses'=>'mi
 $academyNavItems = [];
 foreach ($allSpaces as $item) {
     if (in_array($item, ['instructor','studio'], true) && !$staff) continue;
-    $academyNavItems[] = ['href'=>$link($item), 'label'=>$t($item), 'icon'=>$academyIcons[$item], 'active'=>$space===$item];
+    $academyNavItems[] = ['href'=>$link($item), 'label'=>$t($item), 'icon'=>$academyIcons[$item], 'active'=>$space===$item||($space==='droits'&&$item==='instructor')];
 }
 $lmsNav = ['id'=>'academy','tone'=>'emerald','kicker'=>'Academy','title'=>$t('brand'),'lead'=>$t('tagline'),'aria'=>$t('brand'),'sections'=>[['label'=>$t('welcome'),'items'=>$academyNavItems]],'foot'=>['href'=>url('dashboard'),'label'=>$t('back_athena')]];
 (static function (array $lmsNav): void { require base_path('views/partials/lms_nav_aside.php'); })($lmsNav);
@@ -71,20 +71,9 @@ $lmsNav = ['id'=>'academy','tone'=>'emerald','kicker'=>'Academy','title'=>$t('br
 <div class="page-heading"><p class="eyebrow">ATHENA / <?= $h($t('record')) ?></p><h1><?= $h($t('record')) ?></h1><p><?= $h($t('not_official')) ?></p></div><div class="stat-grid"><div><span><?= $h($t('enrolled')) ?></span><strong><?= count($learning) ?></strong></div><div><span><?= $h($t('validated')) ?></span><strong><?= $validCount ?></strong></div><div><span><?= $h($t('attempts')) ?></span><strong><?= $attemptCount ?></strong></div></div>
 <?php foreach ($learning as $key=>$item): ?><section class="lms-panel panel"><?php $licenseState=$item; require __DIR__.'/course_license.php'; ?><h2><?= $h($local($item['snapshot']['title'])) ?></h2><p><?= $h($t(!empty($item['completed'])?'completed':'in_progress')) ?> · <?= $percent($item) ?> %</p><?php foreach ($item['validations']??[] as $i=>$validation): ?><div class="validation"><b>✓ <?= $h($local($item['snapshot']['chapters'][$i]['title'])) ?></b><p><?= $h($t('feedback')) ?> : <?= nl2br($h($validation['comment'])) ?></p><small><?= $h((new DateTimeImmutable('@'.$validation['at']))->setTimezone(new DateTimeZone('Europe/Paris'))->format('d/m/Y H:i')) ?></small></div><?php endforeach ?><h3><?= $h($t('history')) ?></h3><?php if (empty($item['attempts'])): ?><p class="muted"><?= $h($t('no_attempt')) ?></p><?php else: ?><div class="table-scroll"><table><thead><tr><th><?= $h($t('chapter')) ?></th><th><?= $h($t('score')) ?></th><th><?= $h($t('date')) ?></th></tr></thead><tbody><?php foreach (array_reverse($item['attempts']) as $attempt): ?><tr><td><?= $attempt['chapter']+1 ?></td><td><?= $attempt['score'] ?> %</td><td><?= $h((new DateTimeImmutable('@'.$attempt['at']))->setTimezone(new DateTimeZone('Europe/Paris'))->format('d/m/Y H:i')) ?></td></tr><?php endforeach ?></tbody></table></div><?php endif ?></section><?php endforeach; if (!$learning): ?><div class="empty-state"><h2><?= $h($t('empty')) ?></h2><p><?= $h($t('empty_text')) ?></p></div><?php endif ?>
 <?php elseif ($space==='instructor'): ?>
-<?php require __DIR__.'/lms_tools.php'; ?>
-<div class="page-heading"><p class="eyebrow">ATHENA / <?= $h($t('instructor')) ?></p><h1><?= $h($t('instructor')) ?></h1><p><?= $h($t('instructor_desc')) ?></p></div>
-<section class="lms-panel panel"><h2><?= $h($t('review')) ?></h2><div class="table-scroll"><table><thead><tr><th><?= $h($t('learner')) ?></th><th><?= $h($t('program')) ?></th><th><?= $h($t('progress')) ?></th></tr></thead><tbody><?php foreach($learners as $learner): $item=$learner['state']; ?><tr><td>#<?= (int)$learner['user_id'] ?></td><td><?= $h($local($item['snapshot']['title'])) ?></td><td><?= $percent($item) ?> % · <?= $h($t(!empty($item['completed'])?'completed':((int)$item['stage']===6?'pending':'in_progress'))) ?></td></tr><?php endforeach ?></tbody></table></div></section>
-<?php $pendingCount=0; foreach($learners as $learner): $item=$learner['state']; if((int)$item['stage']!==6||!empty($item['completed']))continue; $pendingCount++; $reviewState=$item; $reviewChapter=$item['snapshot']['chapters'][$item['chapter']]; ?>
-<section class="lms-panel panel academy-instructor-review"><span class="pill accent"><?= $h($t('pending')) ?></span>
-<h2><?= $h($t('learner')) ?> #<?= (int)$learner['user_id'] ?> · <?= $h($local($item['snapshot']['title'])) ?></h2><h3><?= $h($local($reviewChapter['title'])) ?></h3>
-<?php require __DIR__.'/course_review.php'; ?>
-<h3><?= $h($t('submitted_debrief')) ?></h3><p class="lesson-text"><?= nl2br($h($item['debriefs'][$item['chapter']]??'')) ?></p>
-<?php if(!empty($reviewChapter['validation']['brief'])): ?><div class="rt"><?= $rich($reviewChapter['validation']['brief']) ?></div><?php endif ?>
-<?php if(!empty($reviewChapter['validation']['criteria'])): ?><h3><?= $h($t('validation_criteria')) ?></h3><ul class="academy-rubric"><?php foreach($reviewChapter['validation']['criteria'] as $criterion): ?><li><?= $h($local($criterion)) ?></li><?php endforeach ?></ul><?php endif ?>
-<?php if((int)$learner['user_id']===(int)\App\Core\Session::get('user_id')): ?><p class="hint"><?= $h($t('self_validation')) ?></p>
-<?php else: $formStart('validate',$learner['course_key']); ?><input type="hidden" name="learner" value="<?= (int)$learner['user_id'] ?>"><input type="hidden" name="expected_chapter" value="<?= (int)$item['chapter'] ?>"><label for="comment-<?= $pendingCount ?>"><?= $h($t('comment')) ?></label><textarea id="comment-<?= $pendingCount ?>" name="comment" rows="5" minlength="10" maxlength="5000" required></textarea><button class="button"><?= $h($t('validate')) ?> ✓</button></form><?php endif ?></section>
-<?php endforeach; if(!$pendingCount): ?><p class="muted"><?= $h($t('review_empty')) ?></p><?php endif ?>
-<section class="lms-panel panel"><h2><?= $h($t('catalogue')) ?></h2><p><a class="button" href="<?= $h($link('studio')) ?>"><?= $h($t('open_studio')) ?></a></p><?php foreach($courses as $course): ?><div class="activity"><h3><?= $h($local($course['title'])) ?></h3><span class="pill"><?= $h($t(isset($course['published'])&&!$course['published']?'draft':'published_course')) ?></span><?php if(empty($course['built_in'])): ?><a class="text-link" href="<?= $h($link('studio').'?course='.rawurlencode($course['key'])) ?>"><?= $h($t('edit_in_studio')) ?></a><?php endif ?></div><?php endforeach ?></section>
+<?php require __DIR__.'/instructor.php'; ?>
+<?php elseif ($space==='droits'): ?>
+<?php require __DIR__.'/rights.php'; ?>
 <?php endif ?>
 </main></div>
 <?php endif ?>

@@ -44,5 +44,6 @@ return [
     ['id' => 'personnel_job_role_prerequisites', 'label' => 'Emplois : prérequis (doctrines, heures de jeu et de vol, qualifications, compétences) et dérogations motivées', 'group' => 'schema', 'file' => '3440_personnel_job_role_prerequisites.php', 'rerun' => true],
     ['id' => 'qualification_issuers_enrichment', 'label' => 'Qualifications : émetteurs (description, unité, signataire du brevet, logo, archivage, qualifications rattachées, habilités)', 'group' => 'schema', 'file' => '3470_qualification_issuers_enrichment.php', 'rerun' => true],
     ['id' => 'job_catalog_collections', 'label' => 'Emplois : catalogues de communauté (univers, unité fictive, PMC…) avec emblème, bannière, images et partage facultatif', 'group' => 'schema', 'file' => '3480_job_catalog_collections.php', 'rerun' => true],
+    ['id' => 'academy_access_rules', 'label' => 'Academy : droits d’accès (qui crée, modifie, publie, inscrit, valide, délivre et voit chaque cours)', 'group' => 'schema', 'file' => '3520_academy_access_rules.php', 'rerun' => true],
     ['id' => 'academy_jtac_rich_text_refresh', 'label' => 'Académie : cours JTAC 2.1.0 mis en forme (titres, échanges radio, encadrés) pour les inscrits qui ne l’ont pas encore commencé', 'group' => 'schema', 'file' => '3540_academy_jtac_rich_text_refresh.php', 'rerun' => true],
 ];

@@ -1,0 +1,4496 @@
+{
+  "pack": "cn_sof",
+  "country": "CN",
+  "official_lang": "zh",
+  "label": {
+    "fr": "Forces spéciales et unités spécialisées chinoises (APL et Police armée du peuple)",
+    "en": "Chinese special forces and specialised units (PLA and People’s Armed Police)"
+  },
+  "compiled_at": "2026-11-02",
+  "sources_note": {
+    "fr": "Compilé le 2 novembre 2026 à partir de sources publiques : presse officielle chinoise (新华网, 解放军报 via 新华网/凤凰网, 中国新闻网, 中国日报, 环球网, 人民日报, Global Times, CGTN, People’s Daily Online), analyses publiques (Jamestown China Brief, War on the Rocks, CMSI US Naval War College, Shephard, Asia Times) et Wikipédia en complément seulement. eng.chinamil.com.cn, eng.mod.gov.cn et www.mod.gov.cn (certificat HTTPS invalide), www.81.cn (redirection vers http), usmcu.edu et army.edu (403) n’ont pas pu être consultés : aucun contournement. Noms officiels en chinois simplifié avec pinyin, textes reformulés, sans contenu classifié ; peu de sources ouvertes détaillent les billets, d’où un pack plus court que les autres ; les entrées marquées « Source faible » restent à confirmer. Organisation d’après les sources 2017-2026 : une restructuration des brigades FS de l’Armée de terre en 2024-2026, rapportée par la presse taïwanaise, n’a pas pu être vérifiée.",
+    "en": "Compiled on 2 November 2026 from public sources: official Chinese media (Xinhua, PLA Daily via Xinhua/ifeng, China News Service, China Daily, Huanqiu, People’s Daily, Global Times, CGTN, People’s Daily Online), public analysis (Jamestown China Brief, War on the Rocks, CMSI US Naval War College, Shephard, Asia Times) and Wikipedia only as a complement. eng.chinamil.com.cn, eng.mod.gov.cn and www.mod.gov.cn (invalid HTTPS certificate), www.81.cn (redirects to http), usmcu.edu and army.edu (403) could not be consulted: nothing was bypassed. Official names in simplified Chinese with pinyin, rephrased text, no classified content; few open sources detail billets, hence a shorter pack than the others; entries tagged “Weak source” remain to be confirmed. Organisation per 2017-2026 sources: a 2024-2026 restructuring of the Army SOF brigades reported by the Taiwanese press could not be verified."
+  },
+  "entries": [
+    {
+      "id": "cn-army-74-sof-deputy-commander",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "特战旅副旅长",
+        "pinyin": "tèzhànlǚ fù lǚzhǎng",
+        "fr": "Commandant en second de brigade d’opérations spéciales",
+        "en": "Deputy commander, special operations brigade"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Adjoint du commandant de brigade. Lors du concours « 剑锋对决 » (Duel des lames) de janvier 2022, le commandant en second présente l’épreuve et note sur le terrain les chefs d’équipe engagés dans des scénarios d’embuscade, d’infiltration et de raid.",
+        "en": "Second in command of the brigade. During the January 2022 “Sword-Edge Duel” (剑锋对决) competition, the deputy commander presented the event and graded team leaders in the field during ambush, infiltration and raid scenarios."
+      },
+      "qualifications": {
+        "fr": [
+          "Officier supérieur issu des compagnies d’opérations spéciales"
+        ],
+        "en": [
+          "Field-grade officer from the special operations companies"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "副旅长, brigade FS du 74e groupe d’armées"
+        ],
+        "en": [
+          "Deputy brigade commander, 74th Group Army SOF brigade"
+        ]
+      },
+      "icon": "star",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Commandement"
+        ],
+        "en": [
+          "Special Forces",
+          "Command"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-training-staff-officer",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "作训科参谋",
+        "pinyin": "zuòxùnkē cānmóu",
+        "fr": "Officier d’état-major opérations-entraînement",
+        "en": "Operations and training staff officer"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Officier de la section opérations et entraînement (作训科) de la brigade. Il prépare les exercices et concours, suit les équipes sur le terrain comme arbitre et pondère la notation sur les actions de combat décisives plutôt que sur la seule vitesse.",
+        "en": "Officer of the brigade operations and training section (作训科). Plans exercises and competitions, follows teams in the field as an umpire and weights the scoring towards decisive combat actions rather than speed alone."
+      },
+      "qualifications": {
+        "fr": [
+          "Officier d’état-major de brigade"
+        ],
+        "en": [
+          "Brigade staff officer"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "参谋, 作训科"
+        ],
+        "en": [
+          "Staff officer, operations and training section"
+        ]
+      },
+      "icon": "clipboard",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "État-major"
+        ],
+        "en": [
+          "Special Forces",
+          "Staff"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-evaluator",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "support",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "考评员",
+        "pinyin": "kǎopíngyuán",
+        "fr": "Évaluateur-arbitre d’exercice",
+        "en": "Exercise evaluator"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Membre du groupe d’évaluation (考评组) qui suit chaque équipe pendant les épreuves de confrontation de la brigade et attribue une note chiffrée à chaque phase : reconnaissance, infiltration, embuscade, franchissement, destruction.",
+        "en": "Member of the evaluation group (考评组) who follows each team through the brigade’s force-on-force events and gives a numerical score to every phase: reconnaissance, infiltration, ambush, obstacle crossing, demolition."
+      },
+      "qualifications": {
+        "fr": [
+          "Expérience d’opérateur ou d’encadrement FS"
+        ],
+        "en": [
+          "SOF operator or leadership experience"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "考评组成员"
+        ],
+        "en": [
+          "Evaluation group member"
+        ]
+      },
+      "icon": "scale",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Instruction"
+        ],
+        "en": [
+          "Special Forces",
+          "Instruction"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-deputy-company-commander",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "特战连副连长",
+        "pinyin": "tèzhànlián fù liánzhǎng",
+        "fr": "Commandant en second de compagnie d’opérations spéciales",
+        "en": "Deputy commander, special operations company"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Adjoint du commandant d’une compagnie d’opérations spéciales (特战连). L’article de 2018 sur la brigade cite un commandant en second engagé en 2008, passé par la sélection interne de la brigade et ses épreuves de course, de tir, de combat et d’escalade.",
+        "en": "Second in command of a special operations company (特战连). The 2018 article on the brigade quotes a deputy company commander who enlisted in 2008 and went through the brigade’s internal selection with running, shooting, combat and climbing tests."
+      },
+      "qualifications": {
+        "fr": [
+          "Officier subalterne"
+        ],
+        "en": [
+          "Junior officer"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "副连长"
+        ],
+        "en": [
+          "Deputy company commander"
+        ]
+      },
+      "icon": "chevrons",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Commandement"
+        ],
+        "en": [
+          "Special Forces",
+          "Command"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://mil.news.sina.com.cn/2018-05-09/doc-ihaichqy8057672.shtml",
+          "title": "解放军第74集团军某特战旅的特权全军罕见 — 澎湃新闻 via 新浪军事, 9 mai 2018"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-platoon-leader",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "特战排排长",
+        "pinyin": "tèzhànpái páizhǎng",
+        "fr": "Chef de section d’opérations spéciales",
+        "en": "Special operations platoon leader"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Officier sorti de l’Académie des opérations spéciales de l’Armée de terre (陆军特种作战学院), affecté comme chef de section dans une compagnie FS. En concours, il commande aussi une équipe (小队) et donne les ordres d’embuscade et de franchissement.",
+        "en": "Officer graduated from the Army Special Operations Academy (陆军特种作战学院), posted as platoon leader in an SOF company. In competitions he also leads a team (小队) and issues ambush and crossing orders."
+      },
+      "qualifications": {
+        "fr": [
+          "Diplômé du 陆军特种作战学院"
+        ],
+        "en": [
+          "Graduate of the Army Special Operations Academy"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "排长, 特战连"
+        ],
+        "en": [
+          "Platoon leader, SOF company"
+        ]
+      },
+      "icon": "chevrons",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Commandement"
+        ],
+        "en": [
+          "Special Forces",
+          "Command"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-team-leader",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "特战小队长",
+        "pinyin": "tèzhàn xiǎoduìzhǎng",
+        "fr": "Chef d’équipe d’opérations spéciales",
+        "en": "Special operations team leader"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Commande une équipe (小队) de quelques opérateurs. Il répartit l’équipe en groupes (reconnaissance-guidage, assaut rapproché, feu, destruction), choisit l’emplacement d’embuscade, déclenche le tir et décide face aux incidents, par exemple franchir à la force des bras après la rupture d’un tendeur.",
+        "en": "Leads a team (小队) of a few operators. Splits the team into cells (reconnaissance and guidance, close assault, fire, demolition), picks the ambush site, triggers the fire and decides when things go wrong, such as crossing hand over hand after a rope tensioner broke."
+      },
+      "qualifications": {
+        "fr": [
+          "Formation croisée des spécialités de l’équipe"
+        ],
+        "en": [
+          "Cross-training in the team’s specialties"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "小队长"
+        ],
+        "en": [
+          "Team leader"
+        ]
+      },
+      "icon": "users",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Commandement"
+        ],
+        "en": [
+          "Special Forces",
+          "Command"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        },
+        {
+          "url": "https://jamestown.org/pla-special-operations-forces-command-training-and-future-direction/",
+          "title": "K. McCauley, PLA Special Operations: Forces, Command, Training and Future Direction — Jamestown China Brief 15/16, 2015"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-deputy-team-leader",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "特战副小队长",
+        "pinyin": "tèzhàn fù xiǎoduìzhǎng",
+        "fr": "Chef d’équipe adjoint d’opérations spéciales",
+        "en": "Deputy special operations team leader"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Adjoint du chef d’équipe ; il conduit l’infiltration et reprend le commandement si besoin. Le cas cité est un sergent (中士) chef de groupe, vétéran de plusieurs concours de l’Armée de terre et d’exercices avec des armées étrangères.",
+        "en": "Assistant to the team leader; leads the infiltration and takes over command when needed. The example cited is a sergeant (中士) squad leader, veteran of several Army competitions and exercises with foreign armies."
+      },
+      "qualifications": {
+        "fr": [
+          "Sous-officier (中士 ou plus)"
+        ],
+        "en": [
+          "NCO (sergeant or above)"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "副小队长"
+        ],
+        "en": [
+          "Deputy team leader"
+        ]
+      },
+      "icon": "user",
+      "tags": {
+        "fr": [
+          "Forces spéciales"
+        ],
+        "en": [
+          "Special Forces"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-squad-leader",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "班长",
+        "pinyin": "bānzhǎng",
+        "fr": "Chef de groupe",
+        "en": "Squad leader"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Sous-officier qui commande un groupe (班) d’une compagnie d’opérations spéciales : instruction quotidienne, discipline et conduite du groupe en exercice. Dans les brigades FS, il est souvent aussi chef ou adjoint d’une équipe (小队).",
+        "en": "NCO in charge of a squad (班) of a special operations company: daily training, discipline and leading the squad in exercises. In SOF brigades he often doubles as team leader or deputy (小队)."
+      },
+      "qualifications": {
+        "fr": [
+          "Sous-officier (中士)"
+        ],
+        "en": [
+          "NCO (sergeant, 中士)"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "中士班长, 特战连"
+        ],
+        "en": [
+          "Sergeant squad leader, SOF company"
+        ]
+      },
+      "icon": "chevrons",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Commandement"
+        ],
+        "en": [
+          "Special Forces",
+          "Command"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        },
+        {
+          "url": "https://www.chinanews.com.cn/m/mil/2017/07-14/8278187.shtml",
+          "title": "第71集团军某旅“红三连”：党旗引领战旗红 书写浴血荣光 — 中国新闻网, 14 juil. 2017"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-operator",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "特战队员",
+        "pinyin": "tèzhàn duìyuán",
+        "fr": "Opérateur des forces spéciales",
+        "en": "Special operations member"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Opérateur d’une brigade FS de l’Armée de terre. La brigade sélectionne ses recrues dans tout le groupe d’armées (5 km en moins de 20 minutes, tir, combat, escalade) ; l’entraînement couvre le tir, le combat rapproché, la nage armée en mer, la plongée et le parachutisme.",
+        "en": "Operator of an Army SOF brigade. The brigade selects recruits across the whole group army (5 km in under 20 minutes, shooting, combat, climbing); training covers shooting, close combat, armed sea swimming, diving and parachuting."
+      },
+      "qualifications": {
+        "fr": [
+          "Sélection de la brigade",
+          "Nage armée et plongée"
+        ],
+        "en": [
+          "Brigade selection",
+          "Armed swimming and diving"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "特战队员, 特战连"
+        ],
+        "en": [
+          "SOF member, SOF company"
+        ]
+      },
+      "icon": "crosshair",
+      "tags": {
+        "fr": [
+          "Forces spéciales"
+        ],
+        "en": [
+          "Special Forces"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://mil.news.sina.com.cn/2018-05-09/doc-ihaichqy8057672.shtml",
+          "title": "解放军第74集团军某特战旅的特权全军罕见 — 澎湃新闻 via 新浪军事, 9 mai 2018"
+        },
+        {
+          "url": "https://china.chinadaily.com.cn/a/201906/07/WS5cfa3f22a31011d294daa7c0.html",
+          "title": "Brigade « 南国利剑 » : entraînement en mer — 中国日报网 (repris du 解放军报), 7 juin 2019"
+        },
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-elite-scout",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "特战尖兵",
+        "pinyin": "tèzhàn jiānbīng",
+        "fr": "Éclaireur d’élite des forces spéciales",
+        "en": "Elite special operations scout"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Opérateur d’élite choisi pour représenter la brigade. En juillet 2017, douze « 特战尖兵 » de la brigade ont participé au concours international russe « Scout Sniper » : 2e place au classement général et cinq épreuves individuelles gagnées.",
+        "en": "Top operator picked to represent the brigade. In July 2017, twelve of the brigade’s “特战尖兵” took part in the Russian international “Scout Sniper” competition: 2nd overall and five individual events won."
+      },
+      "qualifications": {
+        "fr": [
+          "Tir de précision et reconnaissance"
+        ],
+        "en": [
+          "Precision shooting and reconnaissance"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "Équipe de concours de la brigade"
+        ],
+        "en": [
+          "Brigade competition team"
+        ]
+      },
+      "icon": "binoculars",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Reconnaissance",
+          "Tir de précision"
+        ],
+        "en": [
+          "Special Forces",
+          "Reconnaissance",
+          "Sniping"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://mil.news.sina.com.cn/2018-05-09/doc-ihaichqy8057672.shtml",
+          "title": "解放军第74集团军某特战旅的特权全军罕见 — 澎湃新闻 via 新浪军事, 9 mai 2018"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-sniper",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "狙击手",
+        "pinyin": "jūjīshǒu",
+        "fr": "Tireur d’élite",
+        "en": "Sniper"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Tireur d’élite d’une équipe FS. En embuscade, en tenue de camouflage, il neutralise le véhicule de tête d’un convoi en portant près de 50 kg d’équipement. Le tir de précision est l’une des sept « sous-plates-formes » d’entraînement de la brigade.",
+        "en": "Sniper of an SOF team. In an ambush, wearing a ghillie suit, he hits the lead vehicle of a convoy while carrying nearly 50 kg of kit. Precision shooting is one of the brigade’s seven training “sub-platforms”."
+      },
+      "qualifications": {
+        "fr": [
+          "Formation tireur d’élite"
+        ],
+        "en": [
+          "Sniper training"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "狙击手, 特战小队"
+        ],
+        "en": [
+          "Sniper, SOF team"
+        ]
+      },
+      "icon": "crosshair",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Tir de précision"
+        ],
+        "en": [
+          "Special Forces",
+          "Sniping"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-demolition",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "爆破手",
+        "pinyin": "bàopòshǒu",
+        "fr": "Spécialiste destruction",
+        "en": "Demolition specialist"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Envoyé en avant de l’équipe pour dégager et baliser un passage, couvert par le groupe de destruction. Le « 破拆爆破 » (effraction et destruction) est une sous-plate-forme d’entraînement de la brigade.",
+        "en": "Sent ahead of the team to clear and mark a lane, covered by the breaching cell. “破拆爆破” (breaching and demolition) is one of the brigade’s training sub-platforms."
+      },
+      "qualifications": {
+        "fr": [
+          "Destruction et effraction"
+        ],
+        "en": [
+          "Demolition and breaching"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "爆破手, 破袭组"
+        ],
+        "en": [
+          "Demolition specialist, breaching cell"
+        ]
+      },
+      "icon": "bomb",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Destruction"
+        ],
+        "en": [
+          "Special Forces",
+          "Demolition"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-heavy-weapons",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "重火器手",
+        "pinyin": "zhònghuǒqìshǒu",
+        "fr": "Servant d’arme lourde",
+        "en": "Heavy weapons operator"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Met en œuvre les armes lourdes de l’équipe. En embuscade, sur ordre du chef d’équipe, il prend à partie les ennemis descendus des véhicules. Les armes lourdes (重火器) sont une sous-plate-forme d’entraînement de la brigade.",
+        "en": "Operates the team’s heavy weapons. In an ambush, on the team leader’s order, he engages enemies dismounting from vehicles. Heavy weapons (重火器) are one of the brigade’s training sub-platforms."
+      },
+      "qualifications": {
+        "fr": [
+          "Armes lourdes d’infanterie"
+        ],
+        "en": [
+          "Infantry heavy weapons"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "重火器手, 火力组"
+        ],
+        "en": [
+          "Heavy weapons operator, fire cell"
+        ]
+      },
+      "icon": "target",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Appui feu"
+        ],
+        "en": [
+          "Special Forces",
+          "Fire support"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-recon-guidance",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "侦察引导组队员",
+        "pinyin": "zhēnchá yǐndǎozǔ duìyuán",
+        "fr": "Équipier reconnaissance et guidage",
+        "en": "Reconnaissance and guidance cell member"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Membre du groupe de reconnaissance et de guidage (侦察引导组) d’une équipe FS : il reconnaît l’objectif, renseigne le chef d’équipe et guide les autres groupes ou les feux vers la cible.",
+        "en": "Member of an SOF team’s reconnaissance and guidance cell (侦察引导组): scouts the objective, reports to the team leader and guides the other cells or fires onto the target."
+      },
+      "qualifications": {
+        "fr": [
+          "Reconnaissance spéciale"
+        ],
+        "en": [
+          "Special reconnaissance"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "侦察引导组"
+        ],
+        "en": [
+          "Reconnaissance and guidance cell"
+        ]
+      },
+      "icon": "binoculars",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Reconnaissance"
+        ],
+        "en": [
+          "Special Forces",
+          "Reconnaissance"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        },
+        {
+          "url": "https://jamestown.org/pla-special-operations-forces-command-training-and-future-direction/",
+          "title": "K. McCauley, PLA Special Operations: Forces, Command, Training and Future Direction — Jamestown China Brief 15/16, 2015"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-close-assault",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "近战突击组队员",
+        "pinyin": "jìnzhàn tūjīzǔ duìyuán",
+        "fr": "Équipier d’assaut rapproché",
+        "en": "Close assault cell member"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Membre du groupe d’assaut rapproché (近战突击组) : après l’embuscade ou le raid, il ratisse la zone, neutralise les ennemis restants et capture les cibles.",
+        "en": "Member of the close assault cell (近战突击组): after the ambush or raid, sweeps the area, neutralises remaining enemies and captures targets."
+      },
+      "qualifications": {
+        "fr": [
+          "Combat rapproché"
+        ],
+        "en": [
+          "Close quarters combat"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "近战突击组"
+        ],
+        "en": [
+          "Close assault cell"
+        ]
+      },
+      "icon": "sword",
+      "tags": {
+        "fr": [
+          "Forces spéciales"
+        ],
+        "en": [
+          "Special Forces"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-breaching",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "破袭组队员",
+        "pinyin": "pòxízǔ duìyuán",
+        "fr": "Équipier du groupe de destruction-raid",
+        "en": "Breaching and raid cell member"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Membre d’un groupe de destruction-raid (破袭组, groupes 1 et 2 dans l’exercice cité) : il couvre le spécialiste destruction et attaque les installations visées.",
+        "en": "Member of a breaching and raid cell (破袭组, cells 1 and 2 in the exercise reported): covers the demolition specialist and attacks the targeted installations."
+      },
+      "qualifications": {
+        "fr": [
+          "Raid et sabotage"
+        ],
+        "en": [
+          "Raid and sabotage"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "破袭一组 / 破袭二组"
+        ],
+        "en": [
+          "Breaching cell 1 / 2"
+        ]
+      },
+      "icon": "flame",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Destruction"
+        ],
+        "en": [
+          "Special Forces",
+          "Demolition"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        },
+        {
+          "url": "https://jamestown.org/?p=12835",
+          "title": "D. Blasko, PLA Special Operations Forces: Organizations, Missions and Training — Jamestown China Brief 15/9, 2015"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-fire-cell",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "火力组队员",
+        "pinyin": "huǒlìzǔ duìyuán",
+        "fr": "Équipier du groupe feu",
+        "en": "Fire cell member"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Membre du groupe feu (火力组) : il assure la sûreté de l’équipe pendant l’escalade et le franchissement des cours d’eau et appuie l’assaut par ses tirs.",
+        "en": "Member of the fire cell (火力组): provides security while the team climbs and crosses rivers, and supports the assault with fire."
+      },
+      "qualifications": {
+        "fr": [
+          "Tir de combat"
+        ],
+        "en": [
+          "Combat shooting"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "火力组"
+        ],
+        "en": [
+          "Fire cell"
+        ]
+      },
+      "icon": "target",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Appui feu"
+        ],
+        "en": [
+          "Special Forces",
+          "Fire support"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        },
+        {
+          "url": "https://jamestown.org/pla-special-operations-forces-command-training-and-future-direction/",
+          "title": "K. McCauley, PLA Special Operations: Forces, Command, Training and Future Direction — Jamestown China Brief 15/16, 2015"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-frogman",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "蛙人",
+        "pinyin": "wārén",
+        "fr": "Nageur de combat (Armée de terre)",
+        "en": "Army combat swimmer (frogman)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Opérateur de brigade FS qualifié en plongée. La brigade « 南国利剑 » s’entraîne à la plongée profonde et à la nage armée en mer, avec des nages d’environ cinq heures. Les brigades FS de l’Armée de terre sont décrites comme « triphibies » (air, terre, mer).",
+        "en": "SOF brigade operator qualified in diving. The “南国利剑” brigade trains in deep diving and armed sea swimming, with swims of about five hours. Army SOF brigades are described as “triphibious” (air, land, sea)."
+      },
+      "qualifications": {
+        "fr": [
+          "Plongée de combat",
+          "Nage armée longue distance"
+        ],
+        "en": [
+          "Combat diving",
+          "Long-distance armed swimming"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "蛙人, 特战旅"
+        ],
+        "en": [
+          "Frogman, SOF brigade"
+        ]
+      },
+      "icon": "anchor",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Plongée de combat",
+          "Amphibie"
+        ],
+        "en": [
+          "Special Forces",
+          "Combat diving",
+          "Amphibious"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://china.chinadaily.com.cn/a/201906/07/WS5cfa3f22a31011d294daa7c0.html",
+          "title": "Brigade « 南国利剑 » : entraînement en mer — 中国日报网 (repris du 解放军报), 7 juin 2019"
+        },
+        {
+          "url": "https://jamestown.org/?p=12835",
+          "title": "D. Blasko, PLA Special Operations Forces: Organizations, Missions and Training — Jamestown China Brief 15/9, 2015"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-74-sof-female-operator",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第74集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 74e groupe d’armées (第74集团军某特战旅), dite « Nánguó Lìjiàn » (南国利剑), commandement de théâtre Sud (南部战区)",
+        "en": "74th Group Army special operations brigade (第74集团军某特战旅), nicknamed “Nánguó Lìjiàn” (南国利剑, Southern Sharp Sword), Southern Theater Command (南部战区)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "女子特战队员",
+        "pinyin": "nǚzǐ tèzhàn duìyuán",
+        "fr": "Opératrice des forces spéciales",
+        "en": "Female special operations member"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Militaire féminine affectée en brigade FS. Dans la brigade du 74e groupe d’armées, les femmes s’entraînent avec les hommes ; on les retrouve aussi dans les exercices de la brigade FS du 78e groupe d’armées (théâtre Nord).",
+        "en": "Female soldier serving in an SOF brigade. In the 74th Group Army brigade, women train alongside men; they also take part in the exercises of the 78th Group Army SOF brigade (Northern Theater)."
+      },
+      "qualifications": {
+        "fr": [
+          "Sélection de la brigade"
+        ],
+        "en": [
+          "Brigade selection"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "女兵, 特战连"
+        ],
+        "en": [
+          "Female soldier, SOF company"
+        ]
+      },
+      "icon": "user",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Personnel féminin"
+        ],
+        "en": [
+          "Special Forces",
+          "Women"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://mil.news.sina.com.cn/2018-05-09/doc-ihaichqy8057672.shtml",
+          "title": "解放军第74集团军某特战旅的特权全军罕见 — 澎湃新闻 via 新浪军事, 9 mai 2018"
+        },
+        {
+          "url": "https://www.cac.gov.cn/2017-07/20/c_1121347320.htm",
+          "title": "忠诚和血性塑造的特战劲旅 (第78集团军) — 军报记者 via cac.gov.cn, 20 juil. 2017"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-71-brigade-commander",
+      "branch": "army",
+      "command": "东部战区 ETC",
+      "formation": "第71集团军特战旅",
+      "unit": {
+        "fr": "Brigade du 71e groupe d’armées passée aux opérations spéciales (第71集团军某旅, compagnie « 红三连 »), commandement de théâtre Est (东部战区)",
+        "en": "71st Group Army brigade converted to special operations (第71集团军某旅, “Red 3rd Company”), Eastern Theater Command (东部战区)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "旅长",
+        "pinyin": "lǚzhǎng",
+        "fr": "Commandant de brigade",
+        "en": "Brigade commander"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Commande la brigade (旅) et en assume l’entraînement et l’emploi au combat, en binôme avec le commissaire politique. Les articles citent le commandant de la brigade du 71e groupe d’armées et celui de la brigade FS du 78e, présent aux exercices dans la neige vers −30 °C.",
+        "en": "Commands the brigade (旅) and is responsible for its training and combat employment, alongside the political commissar. Articles name the 71st Group Army brigade commander and the 78th Group Army SOF brigade commander, out with his troops in snow exercises at about −30 °C."
+      },
+      "qualifications": {
+        "fr": [
+          "Officier supérieur (colonel ou colonel supérieur)"
+        ],
+        "en": [
+          "Senior officer (colonel or senior colonel)"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "旅长"
+        ],
+        "en": [
+          "Brigade commander"
+        ]
+      },
+      "icon": "star",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Commandement"
+        ],
+        "en": [
+          "Special Forces",
+          "Command"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.chinanews.com.cn/m/mil/2017/07-14/8278187.shtml",
+          "title": "第71集团军某旅“红三连”：党旗引领战旗红 书写浴血荣光 — 中国新闻网, 14 juil. 2017"
+        },
+        {
+          "url": "https://www.cac.gov.cn/2017-07/20/c_1121347320.htm",
+          "title": "忠诚和血性塑造的特战劲旅 (第78集团军) — 军报记者 via cac.gov.cn, 20 juil. 2017"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-71-political-commissar",
+      "branch": "army",
+      "command": "东部战区 ETC",
+      "formation": "第71集团军特战旅",
+      "unit": {
+        "fr": "Brigade du 71e groupe d’armées passée aux opérations spéciales (第71集团军某旅, compagnie « 红三连 »), commandement de théâtre Est (东部战区)",
+        "en": "71st Group Army brigade converted to special operations (第71集团军某旅, “Red 3rd Company”), Eastern Theater Command (东部战区)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "政治委员",
+        "pinyin": "zhèngzhì wěiyuán",
+        "fr": "Commissaire politique de brigade",
+        "en": "Brigade political commissar"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Codirige la brigade avec le commandant : il est responsable du travail politique, du moral et de la discipline, et du comité du Parti de la brigade. Abrégé usuel : 政委 (zhèngwěi).",
+        "en": "Co-leads the brigade with the commander: responsible for political work, morale and discipline, and the brigade Party committee. Usual short form: 政委 (zhèngwěi)."
+      },
+      "qualifications": {
+        "fr": [
+          "Officier politique supérieur"
+        ],
+        "en": [
+          "Senior political officer"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "旅政委"
+        ],
+        "en": [
+          "Brigade political commissar"
+        ]
+      },
+      "icon": "flag",
+      "tags": {
+        "fr": [
+          "Commandement",
+          "Travail politique"
+        ],
+        "en": [
+          "Command",
+          "Political work"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.chinanews.com.cn/m/mil/2017/07-14/8278187.shtml",
+          "title": "第71集团军某旅“红三连”：党旗引领战旗红 书写浴血荣光 — 中国新闻网, 14 juil. 2017"
+        },
+        {
+          "url": "https://www.cac.gov.cn/2017-07/20/c_1121347320.htm",
+          "title": "忠诚和血性塑造的特战劲旅 (第78集团军) — 军报记者 via cac.gov.cn, 20 juil. 2017"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-71-political-work-director",
+      "branch": "army",
+      "command": "东部战区 ETC",
+      "formation": "第71集团军特战旅",
+      "unit": {
+        "fr": "Brigade du 71e groupe d’armées passée aux opérations spéciales (第71集团军某旅, compagnie « 红三连 »), commandement de théâtre Est (东部战区)",
+        "en": "71st Group Army brigade converted to special operations (第71集团军某旅, “Red 3rd Company”), Eastern Theater Command (东部战区)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "政治工作部主任",
+        "pinyin": "zhèngzhì gōngzuòbù zhǔrèn",
+        "fr": "Chef du département du travail politique",
+        "en": "Director, political work department"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Dirige le département du travail politique (政治工作部) de la brigade : formation politique, cadres, encadrement des cérémonies et de la mémoire d’unité, comme celle de la compagnie « 红三连 ».",
+        "en": "Heads the brigade political work department (政治工作部): political education, personnel, ceremonies and unit heritage, such as that of the “Red 3rd Company”."
+      },
+      "qualifications": {
+        "fr": [
+          "Officier politique"
+        ],
+        "en": [
+          "Political officer"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "政治工作部主任"
+        ],
+        "en": [
+          "Director, political work department"
+        ]
+      },
+      "icon": "flag",
+      "tags": {
+        "fr": [
+          "Travail politique",
+          "État-major"
+        ],
+        "en": [
+          "Political work",
+          "Staff"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.chinanews.com.cn/m/mil/2017/07-14/8278187.shtml",
+          "title": "第71集团军某旅“红三连”：党旗引领战旗红 书写浴血荣光 — 中国新闻网, 14 juil. 2017"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-71-company-commander",
+      "branch": "army",
+      "command": "东部战区 ETC",
+      "formation": "第71集团军特战旅",
+      "unit": {
+        "fr": "Brigade du 71e groupe d’armées passée aux opérations spéciales (第71集团军某旅, compagnie « 红三连 »), commandement de théâtre Est (东部战区)",
+        "en": "71st Group Army brigade converted to special operations (第71集团军某旅, “Red 3rd Company”), Eastern Theater Command (东部战区)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "连长",
+        "pinyin": "liánzhǎng",
+        "fr": "Commandant de compagnie",
+        "en": "Company commander"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Commande une compagnie (连). La compagnie « 红三连 », passée aux opérations spéciales, a fait son premier saut en parachute vers 800 m et s’entraîne à la survie insulaire, à l’infiltration de nuit, au tir depuis une embarcation et à la nage de combat.",
+        "en": "Commands a company (连). The “Red 3rd Company”, converted to special operations, made its first parachute jump at about 800 m and trains in island survival, night infiltration, shooting from boats and combat swimming."
+      },
+      "qualifications": {
+        "fr": [
+          "Officier subalterne (capitaine)"
+        ],
+        "en": [
+          "Junior officer (captain)"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "连长, 红三连"
+        ],
+        "en": [
+          "Company commander, Red 3rd Company"
+        ]
+      },
+      "icon": "chevrons",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Commandement"
+        ],
+        "en": [
+          "Special Forces",
+          "Command"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.chinanews.com.cn/m/mil/2017/07-14/8278187.shtml",
+          "title": "第71集团军某旅“红三连”：党旗引领战旗红 书写浴血荣光 — 中国新闻网, 14 juil. 2017"
+        },
+        {
+          "url": "https://www.news.cn/politics/2023-04/25/c_1129564955.htm",
+          "title": "霹雳尖兵淬炼胜战刀锋——记新征程上的“南京路上好八连” — 新华网, 25 avr. 2023"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-71-political-instructor",
+      "branch": "army",
+      "command": "东部战区 ETC",
+      "formation": "第71集团军特战旅",
+      "unit": {
+        "fr": "Brigade du 71e groupe d’armées passée aux opérations spéciales (第71集团军某旅, compagnie « 红三连 »), commandement de théâtre Est (东部战区)",
+        "en": "71st Group Army brigade converted to special operations (第71集团军某旅, “Red 3rd Company”), Eastern Theater Command (东部战区)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "指导员",
+        "pinyin": "zhǐdǎoyuán",
+        "fr": "Instructeur politique de compagnie",
+        "en": "Company political instructor"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Officier politique de la compagnie, à égalité avec le commandant de compagnie : moral, formation politique et cohésion. Dans la 8e compagnie du 72e groupe d’armées, l’instructeur a fait écrire à chaque soldat une lettre à lui-même fixant ses objectifs militaires.",
+        "en": "Political officer of the company, on a par with the company commander: morale, political education and cohesion. In the 72nd Group Army’s 8th Company, the instructor had each soldier write a letter to himself setting his military goals."
+      },
+      "qualifications": {
+        "fr": [
+          "Officier politique subalterne"
+        ],
+        "en": [
+          "Junior political officer"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "指导员, 特战连"
+        ],
+        "en": [
+          "Political instructor, SOF company"
+        ]
+      },
+      "icon": "flag",
+      "tags": {
+        "fr": [
+          "Commandement",
+          "Travail politique"
+        ],
+        "en": [
+          "Command",
+          "Political work"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.chinanews.com.cn/m/mil/2017/07-14/8278187.shtml",
+          "title": "第71集团军某旅“红三连”：党旗引领战旗红 书写浴血荣光 — 中国新闻网, 14 juil. 2017"
+        },
+        {
+          "url": "https://www.news.cn/politics/2023-04/25/c_1129564955.htm",
+          "title": "霹雳尖兵淬炼胜战刀锋——记新征程上的“南京路上好八连” — 新华网, 25 avr. 2023"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-71-sniper-instructor",
+      "branch": "army",
+      "command": "东部战区 ETC",
+      "formation": "第71集团军特战旅",
+      "unit": {
+        "fr": "Brigade du 71e groupe d’armées passée aux opérations spéciales (第71集团军某旅, compagnie « 红三连 »), commandement de théâtre Est (东部战区)",
+        "en": "71st Group Army brigade converted to special operations (第71集团军某旅, “Red 3rd Company”), Eastern Theater Command (东部战区)"
+      },
+      "type": "support",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "狙击教练员",
+        "pinyin": "jūjī jiàoliànyuán",
+        "fr": "Instructrice ou instructeur tireur d’élite",
+        "en": "Sniper instructor"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Tireur d’élite confirmé chargé de former les tireurs de l’unité. L’article de 2017 présente une tireuse d’élite de premier plan de la brigade, devenue instructrice.",
+        "en": "Experienced sniper in charge of training the unit’s snipers. The 2017 article features one of the brigade’s top female snipers, who became an instructor."
+      },
+      "qualifications": {
+        "fr": [
+          "Tireur d’élite confirmé"
+        ],
+        "en": [
+          "Experienced sniper"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "教练员, 狙击"
+        ],
+        "en": [
+          "Sniper instructor"
+        ]
+      },
+      "icon": "graduation",
+      "tags": {
+        "fr": [
+          "Tir de précision",
+          "Instruction",
+          "Personnel féminin"
+        ],
+        "en": [
+          "Sniping",
+          "Instruction",
+          "Women"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.chinanews.com.cn/m/mil/2017/07-14/8278187.shtml",
+          "title": "第71集团军某旅“红三连”：党旗引领战旗红 书写浴血荣光 — 中国新闻网, 14 juil. 2017"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-71-uav-operator",
+      "branch": "army",
+      "command": "东部战区 ETC",
+      "formation": "第71集团军特战旅",
+      "unit": {
+        "fr": "Brigade du 71e groupe d’armées passée aux opérations spéciales (第71集团军某旅, compagnie « 红三连 »), commandement de théâtre Est (东部战区)",
+        "en": "71st Group Army brigade converted to special operations (第71集团军某旅, “Red 3rd Company”), Eastern Theater Command (东部战区)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "无人机操作手",
+        "pinyin": "wúrénjī cāozuòshǒu",
+        "fr": "Télépilote de drone",
+        "en": "UAV operator"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Met en œuvre les drones de l’équipe FS. En action directe, l’équipe compte un groupe drone à côté des groupes assaut, feu et bouclage ; la compagnie « 红三连 » s’entraîne à des raids appuyés par drones. Au sein des brigades, on parle aussi de « 飞控手 » (contrôleur de vol).",
+        "en": "Operates the SOF team’s drones. For direct action the team includes a UAV cell alongside the assault, fire and blocking cells; the “Red 3rd Company” trains in drone-supported raids. Brigades also use the term “飞控手” (flight controller)."
+      },
+      "qualifications": {
+        "fr": [
+          "Télépilotage de drone"
+        ],
+        "en": [
+          "UAV piloting"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "无人机组"
+        ],
+        "en": [
+          "UAV cell"
+        ]
+      },
+      "icon": "drone",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Drone"
+        ],
+        "en": [
+          "Special Forces",
+          "UAV"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://jamestown.org/pla-special-operations-forces-command-training-and-future-direction/",
+          "title": "K. McCauley, PLA Special Operations: Forces, Command, Training and Future Direction — Jamestown China Brief 15/16, 2015"
+        },
+        {
+          "url": "https://www.chinanews.com.cn/m/mil/2017/07-14/8278187.shtml",
+          "title": "第71集团军某旅“红三连”：党旗引领战旗红 书写浴血荣光 — 中国新闻网, 14 juil. 2017"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-72-sof-parachute-operator",
+      "branch": "army",
+      "command": "东部战区 ETC",
+      "formation": "第72集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 72e groupe d’armées, 8e compagnie « 南京路上好八连 » (第72集团军某特战旅), commandement de théâtre Est",
+        "en": "72nd Group Army special operations brigade, 8th Company “Good 8th Company on Nanjing Road” (第72集团军某特战旅), Eastern Theater Command"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "伞降特战队员",
+        "pinyin": "sǎnjiàng tèzhàn duìyuán",
+        "fr": "Opérateur FS parachutiste",
+        "en": "Parachute-qualified special operations member"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Opérateur FS qualifié au saut. Dans la 8e compagnie du 72e groupe d’armées, les opérateurs sautent d’un gros porteur puis attaquent l’objectif dès l’atterrissage ; le commandant de compagnie encourage lui-même les sauteurs avant les sauts réels.",
+        "en": "Jump-qualified SOF operator. In the 72nd Group Army’s 8th Company, operators jump from a large transport aircraft and attack the objective right after landing; the company commander himself encourages jumpers before live jumps."
+      },
+      "qualifications": {
+        "fr": [
+          "Brevet de parachutiste"
+        ],
+        "en": [
+          "Parachute qualification"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "特战八连"
+        ],
+        "en": [
+          "8th SOF Company"
+        ]
+      },
+      "icon": "parachute",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Parachutisme"
+        ],
+        "en": [
+          "Special Forces",
+          "Parachuting"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2023-04/25/c_1129564955.htm",
+          "title": "霹雳尖兵淬炼胜战刀锋——记新征程上的“南京路上好八连” — 新华网, 25 avr. 2023"
+        },
+        {
+          "url": "https://www.chinanews.com.cn/m/mil/2017/07-14/8278187.shtml",
+          "title": "第71集团军某旅“红三连”：党旗引领战旗红 书写浴血荣光 — 中国新闻网, 14 juil. 2017"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-72-sof-team-leader-rear-recon",
+      "branch": "army",
+      "command": "东部战区 ETC",
+      "formation": "第72集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 72e groupe d’armées, 8e compagnie « 南京路上好八连 » (第72集团军某特战旅), commandement de théâtre Est",
+        "en": "72nd Group Army special operations brigade, 8th Company “Good 8th Company on Nanjing Road” (第72集团军某特战旅), Eastern Theater Command"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "敌后侦察小队长",
+        "pinyin": "díhòu zhēnchá xiǎoduìzhǎng",
+        "fr": "Chef d’équipe de reconnaissance dans la profondeur",
+        "en": "Deep reconnaissance team leader"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Chef d’équipe chargé de la reconnaissance derrière les lignes (敌后侦察). Lors d’un exercice, un chef d’équipe de la 8e compagnie a attiré l’ennemi loin de son équipe puis sauté d’une falaise pour échapper à la capture ; il a ensuite rédigé plus de cent scénarios d’urgence et réponses.",
+        "en": "Team leader for reconnaissance behind enemy lines (敌后侦察). In an exercise, an 8th Company team leader drew the enemy away from his team and jumped off a cliff to avoid capture; he later wrote over a hundred emergency scenarios and responses."
+      },
+      "qualifications": {
+        "fr": [
+          "Distinction « 陆军十佳小队长 » (dix meilleurs chefs d’équipe de l’Armée de terre)"
+        ],
+        "en": [
+          "“Army Top Ten Team Leaders” award"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "小队长, 特战八连"
+        ],
+        "en": [
+          "Team leader, 8th SOF Company"
+        ]
+      },
+      "icon": "binoculars",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Reconnaissance",
+          "Commandement"
+        ],
+        "en": [
+          "Special Forces",
+          "Reconnaissance",
+          "Command"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.news.cn/politics/2023-04/25/c_1129564955.htm",
+          "title": "霹雳尖兵淬炼胜战刀锋——记新征程上的“南京路上好八连” — 新华网, 25 avr. 2023"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-76-sof-battalion-commander",
+      "branch": "army",
+      "command": "西部战区 WTC",
+      "formation": "第76集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 76e groupe d’armées, dite « Xuěfēng » (雪枫旅), au pied du Helan Shan, commandement de théâtre Ouest (西部战区)",
+        "en": "76th Group Army special operations brigade, nicknamed “Xuěfēng” (雪枫旅), at the foot of the Helan Mountains, Western Theater Command (西部战区)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "特战营营长",
+        "pinyin": "tèzhànyíng yíngzhǎng",
+        "fr": "Commandant de bataillon d’opérations spéciales",
+        "en": "Special operations battalion commander"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Commande un bataillon (营) de la brigade « Xuěfēng ». Le commandant cité a fait lever plus de vingt difficultés d’entraînement, dont le saut tactique en haute altitude et le raid combiné terre-air, après avoir commandé la 9e compagnie et encadré quatorze stages.",
+        "en": "Commands a battalion (营) of the “Xuěfēng” brigade. The commander profiled solved over twenty training problems, including high-altitude tactical jumps and combined ground-air raids, after commanding the 9th Company and running fourteen training courses."
+      },
+      "qualifications": {
+        "fr": [
+          "Officier supérieur"
+        ],
+        "en": [
+          "Field-grade officer"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "营长, 特战营"
+        ],
+        "en": [
+          "Battalion commander, SOF battalion"
+        ]
+      },
+      "icon": "star",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Commandement",
+          "Parachutisme"
+        ],
+        "en": [
+          "Special Forces",
+          "Command",
+          "Parachuting"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.xinhuanet.com/politics/2021-08/05/c_1127732866.htm",
+          "title": "忠诚赤胆铸尖刀——记陆军第76集团军某特战旅特战营营长刘近 — 新华网, 5 août 2021"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-76-sof-course-instructor",
+      "branch": "army",
+      "command": "西部战区 WTC",
+      "formation": "第76集团军特战旅",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du 76e groupe d’armées, dite « Xuěfēng » (雪枫旅), au pied du Helan Shan, commandement de théâtre Ouest (西部战区)",
+        "en": "76th Group Army special operations brigade, nicknamed “Xuěfēng” (雪枫旅), at the foot of the Helan Mountains, Western Theater Command (西部战区)"
+      },
+      "type": "support",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "集训队教练员",
+        "pinyin": "jíxùnduì jiàoliànyuán",
+        "fr": "Instructeur de stage d’opérations spéciales",
+        "en": "Special operations course instructor"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Instructeur d’un stage de formation (集训队) de la brigade : il conduit les épreuves, dont la « semaine du diable » (魔鬼周) et les longues marches, la nage armée, l’assaut et le combat au corps à corps dans la boue.",
+        "en": "Instructor of a brigade training course (集训队): runs the events, including “Devil Week” (魔鬼周) and long marches, armed swimming, assault drills and close combat in mud pits."
+      },
+      "qualifications": {
+        "fr": [
+          "Opérateur FS confirmé"
+        ],
+        "en": [
+          "Experienced SOF operator"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "教练员, 集训队"
+        ],
+        "en": [
+          "Instructor, training course"
+        ]
+      },
+      "icon": "graduation",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Instruction"
+        ],
+        "en": [
+          "Special Forces",
+          "Instruction"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.xinhuanet.com/politics/2021-08/05/c_1127732866.htm",
+          "title": "忠诚赤胆铸尖刀——记陆军第76集团军某特战旅特战营营长刘近 — 新华网, 5 août 2021"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-sof-special-recon",
+      "branch": "army",
+      "command": "陆军",
+      "formation": "陆军特战旅",
+      "unit": {
+        "fr": "Brigades d’opérations spéciales de l’Armée de terre (陆军特种作战旅) : une par groupe d’armées et dans les districts militaires du Xinjiang et du Tibet",
+        "en": "PLA Army special operations brigades (陆军特种作战旅): one per group army plus the Xinjiang and Tibet military districts"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "特种侦察兵",
+        "pinyin": "tèzhǒng zhēnchábīng",
+        "fr": "Opérateur de reconnaissance spéciale",
+        "en": "Special reconnaissance soldier"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Mission première des brigades FS : reconnaissance spéciale, puis raids, sabotage, libération d’otages et neutralisation de responsables. Les équipes de 3 à 15 hommes, surtout officiers et sous-officiers, sont formées en croisé sur les spécialités.",
+        "en": "Primary mission of the SOF brigades: special reconnaissance, followed by raids, sabotage, hostage rescue and decapitation strikes. Teams of 3 to 15, mostly officers and NCOs, are cross-trained across specialties."
+      },
+      "qualifications": {
+        "fr": [
+          "Reconnaissance spéciale",
+          "Parachutisme, plongée, nage"
+        ],
+        "en": [
+          "Special reconnaissance",
+          "Parachuting, diving, swimming"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "特战小队"
+        ],
+        "en": [
+          "SOF team"
+        ]
+      },
+      "icon": "eye",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Reconnaissance"
+        ],
+        "en": [
+          "Special Forces",
+          "Reconnaissance"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://jamestown.org/?p=12835",
+          "title": "D. Blasko, PLA Special Operations Forces: Organizations, Missions and Training — Jamestown China Brief 15/9, 2015"
+        },
+        {
+          "url": "https://jamestown.org/pla-special-operations-forces-command-training-and-future-direction/",
+          "title": "K. McCauley, PLA Special Operations: Forces, Command, Training and Future Direction — Jamestown China Brief 15/16, 2015"
+        },
+        {
+          "url": "https://warontherocks.com/chinese-special-operations-forces-not-like-back-at-bragg/",
+          "title": "D. Blasko, Chinese Special Operations Forces: Not Like “Back at Bragg” — War on the Rocks, 2015"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-sof-academy-cadet",
+      "branch": "army",
+      "command": "陆军",
+      "formation": "陆军特种作战学院",
+      "unit": {
+        "fr": "Académie des opérations spéciales de l’Armée de terre (陆军特种作战学院), Guangzhou",
+        "en": "Army Special Operations Academy (陆军特种作战学院), Guangzhou"
+      },
+      "type": "support",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "特种作战学院学员",
+        "pinyin": "tèzhǒng zuòzhàn xuéyuàn xuéyuán",
+        "fr": "Élève officier des opérations spéciales",
+        "en": "Special operations academy cadet"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Élève de l’Académie des opérations spéciales de l’Armée de terre, qui forme les jeunes officiers des brigades FS (créée en 2012 à Guangzhou). Les diplômés sont affectés comme chefs de section.",
+        "en": "Cadet of the Army Special Operations Academy, which trains junior officers for the SOF brigades (founded in 2012 in Guangzhou). Graduates are posted as platoon leaders."
+      },
+      "qualifications": {
+        "fr": [
+          "Admission à l’académie"
+        ],
+        "en": [
+          "Academy admission"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "学员"
+        ],
+        "en": [
+          "Cadet"
+        ]
+      },
+      "icon": "graduation",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Instruction"
+        ],
+        "en": [
+          "Special Forces",
+          "Instruction"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://warontherocks.com/chinese-special-operations-forces-not-like-back-at-bragg/",
+          "title": "D. Blasko, Chinese Special Operations Forces: Not Like “Back at Bragg” — War on the Rocks, 2015"
+        },
+        {
+          "url": "https://www.news.cn/politics/2022-01/09/c_1128246854.htm",
+          "title": "逼近实战，加速战斗力提升——直击第74集团军某特战旅“剑锋对决”比武 — 新华网, 9 janv. 2022"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-avn-z10-front-pilot",
+      "branch": "army",
+      "command": "陆军",
+      "formation": "风雷飞行表演队",
+      "unit": {
+        "fr": "Aviation de l’Armée de terre (陆军航空兵) — équipe de voltige « Fēngléi » (风雷飞行表演队), sur Z-10 (直-10)",
+        "en": "PLA Army Aviation (陆军航空兵) — “Fēngléi” aerobatic team (风雷飞行表演队), flying the Z-10 (直-10)"
+      },
+      "type": "aviation",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "直-10前舱飞行员",
+        "pinyin": "Zhí-shí qiáncāng fēixíngyuán",
+        "fr": "Pilote de Z-10, poste avant (armement)",
+        "en": "Z-10 front-seat pilot (weapons)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "L’hélicoptère d’attaque Z-10 a un équipage de deux pilotes en tandem. Le pilote de la cabine avant décolle l’appareil, porte le viseur de casque (le canon suit son regard) et gère les leurres.",
+        "en": "The Z-10 attack helicopter has two pilots in tandem. The front-cockpit pilot takes off, wears the helmet sight (the gun follows his gaze) and manages decoy release."
+      },
+      "qualifications": {
+        "fr": [
+          "Qualification Z-10"
+        ],
+        "en": [
+          "Z-10 qualification"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "前舱飞行员"
+        ],
+        "en": [
+          "Front-cockpit pilot"
+        ]
+      },
+      "icon": "helicopter",
+      "tags": {
+        "fr": [
+          "Hélicoptère",
+          "Pilote"
+        ],
+        "en": [
+          "Helicopter",
+          "Pilot"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://mil.huanqiu.com/article/4Omrr7Wf6Xz",
+          "title": "“直”击长空！解码“风雷”飞行表演队座驾直-10 — 环球网 (CCTV), oct. 2025"
+        },
+        {
+          "url": "https://jamestown.org/recent-developments-chinese-armys-helicopter-force/",
+          "title": "D. Blasko, Recent Developments in the Chinese Army’s Helicopter Force — Jamestown China Brief 17/8, 2017"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-avn-z10-rear-pilot",
+      "branch": "army",
+      "command": "陆军",
+      "formation": "风雷飞行表演队",
+      "unit": {
+        "fr": "Aviation de l’Armée de terre (陆军航空兵) — équipe de voltige « Fēngléi » (风雷飞行表演队), sur Z-10 (直-10)",
+        "en": "PLA Army Aviation (陆军航空兵) — “Fēngléi” aerobatic team (风雷飞行表演队), flying the Z-10 (直-10)"
+      },
+      "type": "aviation",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "直-10后舱飞行员",
+        "pinyin": "Zhí-shí hòucāng fēixíngyuán",
+        "fr": "Pilote de Z-10, poste arrière",
+        "en": "Z-10 rear-seat pilot"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Second pilote du Z-10, en cabine arrière. Dans l’équipe de voltige « 风雷 », créée en 2013 et seule équipe de voltige hélicoptère de l’APL, il pilote pendant les passages en solo.",
+        "en": "Second Z-10 pilot, in the rear cockpit. In the “风雷” aerobatic team, formed in 2013 and the PLA’s only helicopter display team, he flies the solo passes."
+      },
+      "qualifications": {
+        "fr": [
+          "Qualification Z-10"
+        ],
+        "en": [
+          "Z-10 qualification"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "后舱飞行员"
+        ],
+        "en": [
+          "Rear-cockpit pilot"
+        ]
+      },
+      "icon": "helicopter",
+      "tags": {
+        "fr": [
+          "Hélicoptère",
+          "Pilote"
+        ],
+        "en": [
+          "Helicopter",
+          "Pilot"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://mil.huanqiu.com/article/4Omrr7Wf6Xz",
+          "title": "“直”击长空！解码“风雷”飞行表演队座驾直-10 — 环球网 (CCTV), oct. 2025"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-avn-z20-pilot",
+      "branch": "army",
+      "command": "中部战区 CTC",
+      "formation": "第83集团军空中突击旅",
+      "unit": {
+        "fr": "Brigade d’assaut aérien du 83e groupe d’armées (第83集团军空中突击旅), Z-20 et Z-10, commandement de théâtre Centre (中部战区)",
+        "en": "83rd Group Army air assault brigade (第83集团军空中突击旅), Z-20 and Z-10, Central Theater Command (中部战区)"
+      },
+      "type": "aviation",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "直-20飞行员",
+        "pinyin": "Zhí-èrshí fēixíngyuán",
+        "fr": "Pilote d’hélicoptère Z-20",
+        "en": "Z-20 helicopter pilot"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Pilote de l’hélicoptère de manœuvre Z-20 d’une brigade d’assaut aérien, chargé de transporter les troupes là où il faut. De nuit, les pilotes ont du mal à juger distance et hauteur ; le vol de nuit en formation a montré une première capacité tout temps.",
+        "en": "Pilot of the Z-20 utility helicopter of an air assault brigade, tasked with carrying troops where needed. At night pilots struggle to judge distance and height; night formation flying showed an initial all-weather capability."
+      },
+      "qualifications": {
+        "fr": [
+          "Qualification Z-20",
+          "Vol de nuit"
+        ],
+        "en": [
+          "Z-20 qualification",
+          "Night flying"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "飞行员, 空中突击旅"
+        ],
+        "en": [
+          "Pilot, air assault brigade"
+        ]
+      },
+      "icon": "helicopter",
+      "tags": {
+        "fr": [
+          "Hélicoptère",
+          "Pilote"
+        ],
+        "en": [
+          "Helicopter",
+          "Pilot"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/page/202105/1224703.shtml",
+          "title": "China’s Z-20 chopper shows all-weather capability in nighttime drill — Global Times, 27 mai 2021"
+        },
+        {
+          "url": "https://jamestown.org/recent-developments-chinese-armys-helicopter-force/",
+          "title": "D. Blasko, Recent Developments in the Chinese Army’s Helicopter Force — Jamestown China Brief 17/8, 2017"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-avn-attack-pilot",
+      "branch": "army",
+      "command": "中部战区 CTC",
+      "formation": "第83集团军空中突击旅",
+      "unit": {
+        "fr": "Brigade d’assaut aérien du 83e groupe d’armées (第83集团军空中突击旅), Z-20 et Z-10, commandement de théâtre Centre (中部战区)",
+        "en": "83rd Group Army air assault brigade (第83集团军空中突击旅), Z-20 and Z-10, Central Theater Command (中部战区)"
+      },
+      "type": "aviation",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "武装直升机飞行员",
+        "pinyin": "wǔzhuāng zhíshēngjī fēixíngyuán",
+        "fr": "Pilote d’hélicoptère d’attaque (Z-10, Z-19)",
+        "en": "Attack helicopter pilot (Z-10, Z-19)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Pilote d’hélicoptère armé (Z-10 d’attaque, Z-19 de reconnaissance-attaque) qui escorte les Z-20 et prend à partie les menaces. L’Armée de terre alignait environ 120 Z-10 et 120 Z-19 en 2017.",
+        "en": "Armed helicopter pilot (Z-10 attack, Z-19 scout-attack) who escorts the Z-20s and engages threats. The Army fielded about 120 Z-10 and 120 Z-19 in 2017."
+      },
+      "qualifications": {
+        "fr": [
+          "Qualification Z-10 ou Z-19"
+        ],
+        "en": [
+          "Z-10 or Z-19 qualification"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "飞行员, 攻击直升机"
+        ],
+        "en": [
+          "Pilot, attack helicopter"
+        ]
+      },
+      "icon": "helicopter",
+      "tags": {
+        "fr": [
+          "Hélicoptère",
+          "Pilote",
+          "Appui feu"
+        ],
+        "en": [
+          "Helicopter",
+          "Pilot",
+          "Fire support"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/page/202105/1224703.shtml",
+          "title": "China’s Z-20 chopper shows all-weather capability in nighttime drill — Global Times, 27 mai 2021"
+        },
+        {
+          "url": "https://jamestown.org/recent-developments-chinese-armys-helicopter-force/",
+          "title": "D. Blasko, Recent Developments in the Chinese Army’s Helicopter Force — Jamestown China Brief 17/8, 2017"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-avn-transport-pilot",
+      "branch": "army",
+      "command": "南部战区 STC",
+      "formation": "第75集团军陆航旅",
+      "unit": {
+        "fr": "Brigade d’aviation de l’Armée de terre du 75e groupe d’armées (第75集团军陆航旅), commandement de théâtre Sud",
+        "en": "75th Group Army army aviation brigade (第75集团军陆航旅), Southern Theater Command"
+      },
+      "type": "aviation",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "运输直升机飞行员",
+        "pinyin": "yùnshū zhíshēngjī fēixíngyuán",
+        "fr": "Pilote d’hélicoptère de transport (Mi-171, Z-8)",
+        "en": "Transport helicopter pilot (Mi-171, Z-8)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Pilote d’hélicoptère de transport d’une brigade d’aviation (Mi-17/Mi-171, Z-8). En 2017, l’aviation de l’Armée de terre comptait 11 brigades et un régiment, plus de 1 000 hélicoptères, dont environ 300 Mi-17/Mi-8 et 85 Z-8.",
+        "en": "Transport helicopter pilot of an aviation brigade (Mi-17/Mi-171, Z-8). In 2017 Army Aviation had 11 brigades and a regiment, over 1,000 helicopters, including about 300 Mi-17/Mi-8 and 85 Z-8."
+      },
+      "qualifications": {
+        "fr": [
+          "Qualification sur type"
+        ],
+        "en": [
+          "Type rating"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "飞行员, 陆航旅"
+        ],
+        "en": [
+          "Pilot, army aviation brigade"
+        ]
+      },
+      "icon": "helicopter",
+      "tags": {
+        "fr": [
+          "Hélicoptère",
+          "Pilote",
+          "Transport aérien"
+        ],
+        "en": [
+          "Helicopter",
+          "Pilot",
+          "Airlift"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://jamestown.org/recent-developments-chinese-armys-helicopter-force/",
+          "title": "D. Blasko, Recent Developments in the Chinese Army’s Helicopter Force — Jamestown China Brief 17/8, 2017"
+        },
+        {
+          "url": "https://en.people.cn/n3/2025/0610/c90000-20325507.html",
+          "title": "Army aviation brigade flight training (75th Group Army) — People’s Daily Online, 10 juin 2025"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-aa-deputy-chief-of-staff",
+      "branch": "army",
+      "command": "中部战区 CTC",
+      "formation": "第83集团军空中突击旅",
+      "unit": {
+        "fr": "Brigade d’assaut aérien du 83e groupe d’armées (第83集团军空中突击旅), Z-20 et Z-10, commandement de théâtre Centre (中部战区)",
+        "en": "83rd Group Army air assault brigade (第83集团军空中突击旅), Z-20 and Z-10, Central Theater Command (中部战区)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "副参谋长",
+        "pinyin": "fù cānmóuzhǎng",
+        "fr": "Chef d’état-major adjoint de brigade",
+        "en": "Brigade deputy chief of staff"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Officier d’état-major de la brigade qui coordonne la planification des vols et l’emploi des hélicoptères. Un chef d’état-major adjoint d’une brigade du 83e groupe d’armées commente l’entraînement de nuit des Z-20.",
+        "en": "Brigade staff officer who coordinates flight planning and helicopter employment. A deputy chief of staff of a 83rd Group Army brigade commented on the Z-20 night training."
+      },
+      "qualifications": {
+        "fr": [
+          "Officier d’état-major"
+        ],
+        "en": [
+          "Staff officer"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "副参谋长"
+        ],
+        "en": [
+          "Deputy chief of staff"
+        ]
+      },
+      "icon": "clipboard",
+      "tags": {
+        "fr": [
+          "État-major",
+          "Hélicoptère"
+        ],
+        "en": [
+          "Staff",
+          "Helicopter"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/page/202105/1224703.shtml",
+          "title": "China’s Z-20 chopper shows all-weather capability in nighttime drill — Global Times, 27 mai 2021"
+        }
+      ]
+    },
+    {
+      "id": "cn-army-aa-air-assault-trooper",
+      "branch": "army",
+      "command": "中部战区 CTC",
+      "formation": "第83集团军空中突击旅",
+      "unit": {
+        "fr": "Brigade d’assaut aérien du 83e groupe d’armées (第83集团军空中突击旅), Z-20 et Z-10, commandement de théâtre Centre (中部战区)",
+        "en": "83rd Group Army air assault brigade (第83集团军空中突击旅), Z-20 and Z-10, Central Theater Command (中部战区)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "空中突击兵",
+        "pinyin": "kōngzhōng tūjībīng",
+        "fr": "Fantassin d’assaut aérien",
+        "en": "Air assault trooper"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Fantassin d’une brigade d’assaut aérien (空中突击旅), transporté par les Z-20 de la brigade, escortés par des Z-10, jusqu’au point d’engagement. La descente en corde lisse (索降) depuis Z-20, Z-8 ou Mi-171 est citée comme cœur de l’entraînement par des sources non consultables. Source ouverte faible : à confirmer.",
+        "en": "Infantryman of an air assault brigade (空中突击旅), carried by the brigade’s Z-20s, escorted by Z-10s, to where he is needed. Fast-roping (索降) from Z-20, Z-8 or Mi-171 is cited as core training by sources that could not be consulted. Weak open source: to be confirmed."
+      },
+      "qualifications": {
+        "fr": [
+          "Descente en corde lisse",
+          "Héliportage"
+        ],
+        "en": [
+          "Fast-roping",
+          "Helicopter insertion"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "空中突击营"
+        ],
+        "en": [
+          "Air assault battalion"
+        ]
+      },
+      "icon": "helicopter",
+      "tags": {
+        "fr": [
+          "Hélicoptère",
+          "Aéroporté",
+          "Source faible"
+        ],
+        "en": [
+          "Helicopter",
+          "Airborne",
+          "Weak source"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/page/202105/1224703.shtml",
+          "title": "China’s Z-20 chopper shows all-weather capability in nighttime drill — Global Times, 27 mai 2021"
+        },
+        {
+          "url": "https://jamestown.org/recent-developments-chinese-armys-helicopter-force/",
+          "title": "D. Blasko, Recent Developments in the Chinese Army’s Helicopter Force — Jamestown China Brief 17/8, 2017"
+        }
+      ]
+    },
+    {
+      "id": "cn-mc-marine",
+      "branch": "marine_corps",
+      "command": "海军陆战队",
+      "formation": "海军陆战队某旅",
+      "unit": {
+        "fr": "Brigades de combat du Corps des Marines de la Marine de l’APL (海军陆战队某旅), Zhanjiang, Jieyang, Jinjiang, Shandong",
+        "en": "PLA Navy Marine Corps combat brigades (海军陆战队某旅), Zhanjiang, Jieyang, Jinjiang, Shandong"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "陆战队员",
+        "pinyin": "lùzhàn duìyuán",
+        "fr": "Fusilier marin (Corps des Marines)",
+        "en": "Marine"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Combattant d’une brigade du Corps des Marines. Le Corps est passé de deux brigades (1re et 164e, Zhanjiang) à huit à partir de 2017 : six de combat, une d’opérations spéciales et une d’aviation. Il est conçu comme une force de premier choc pour les raids, la reconnaissance et les opérations spéciales.",
+        "en": "Fighter of a Marine Corps brigade. The Corps grew from two brigades (1st and 164th, Zhanjiang) to eight from 2017: six combat, one special operations and one aviation. It is designed as a first-strike force for raids, reconnaissance and special operations."
+      },
+      "qualifications": {
+        "fr": [
+          "Formation amphibie"
+        ],
+        "en": [
+          "Amphibious training"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "陆战队员, 陆战旅"
+        ],
+        "en": [
+          "Marine, Marine brigade"
+        ]
+      },
+      "icon": "anchor",
+      "tags": {
+        "fr": [
+          "Amphibie"
+        ],
+        "en": [
+          "Amphibious"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://jamestown.org/program/the-chinese-navys-marine-corps-part-1-expansion-and-reorganization/",
+          "title": "D. Blasko, R. Lee, The Chinese Navy’s Marine Corps, Part 1: Expansion and Reorganization — Jamestown China Brief 19/3, 2019"
+        },
+        {
+          "url": "https://jamestown.org/new-wine-into-new-wineskins-the-evolving-role-of-the-pla-navy-marine-corps-in-amphibious-warfare-and-other-mission-areas/",
+          "title": "Ying-Yu Lin, New Wine Into New Wineskins: the evolving role of the PLA Navy Marine Corps — Jamestown China Brief 20/2, 2020"
+        }
+      ]
+    },
+    {
+      "id": "cn-mc-sniper",
+      "branch": "marine_corps",
+      "command": "海军陆战队",
+      "formation": "海军陆战队某旅",
+      "unit": {
+        "fr": "Brigades de combat du Corps des Marines de la Marine de l’APL (海军陆战队某旅), Zhanjiang, Jieyang, Jinjiang, Shandong",
+        "en": "PLA Navy Marine Corps combat brigades (海军陆战队某旅), Zhanjiang, Jieyang, Jinjiang, Shandong"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "狙击手",
+        "pinyin": "jūjīshǒu",
+        "fr": "Tireur d’élite (Corps des Marines)",
+        "en": "Marine sniper"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Tireur d’élite d’une brigade du Corps des Marines, en binôme avec un observateur. Entraînement : approche de 5 km en jungle de montagne avec plus de 20 kg, duels tireur contre contre-tireur, tir depuis hélicoptère et depuis navire sur cibles en mer et à terre, et des milliers de répétitions au simulateur.",
+        "en": "Sniper of a Marine Corps brigade, paired with a spotter. Training: 5 km approach march in mountain jungle with over 20 kg, sniper versus counter-sniper duels, shooting from helicopters and from ships at sea and shore targets, and thousands of simulator repetitions."
+      },
+      "qualifications": {
+        "fr": [
+          "Formation tireur d’élite",
+          "Tir depuis plate-forme mobile"
+        ],
+        "en": [
+          "Sniper training",
+          "Shooting from moving platforms"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "狙击手, 陆战旅"
+        ],
+        "en": [
+          "Sniper, Marine brigade"
+        ]
+      },
+      "icon": "crosshair",
+      "tags": {
+        "fr": [
+          "Tir de précision",
+          "Amphibie"
+        ],
+        "en": [
+          "Sniping",
+          "Amphibious"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.kankanews.com/detail/qMyE3DJ9Aw8",
+          "title": "一击毙敌！海军陆战队狙击手多平台要素综合射击 — 看看新闻, 27 juin 2019"
+        }
+      ]
+    },
+    {
+      "id": "cn-mc-spotter",
+      "branch": "marine_corps",
+      "command": "海军陆战队",
+      "formation": "海军陆战队某旅",
+      "unit": {
+        "fr": "Brigades de combat du Corps des Marines de la Marine de l’APL (海军陆战队某旅), Zhanjiang, Jieyang, Jinjiang, Shandong",
+        "en": "PLA Navy Marine Corps combat brigades (海军陆战队某旅), Zhanjiang, Jieyang, Jinjiang, Shandong"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "观察手",
+        "pinyin": "guāncháshǒu",
+        "fr": "Observateur de binôme tireur d’élite",
+        "en": "Sniper spotter"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Second membre du binôme de tir : il observe, mesure et corrige le tir du tireur d’élite, et partage avec lui la marche d’approche et les tirs depuis hélicoptère et navire.",
+        "en": "Second member of the sniper pair: observes, ranges and corrects the sniper’s fire, and shares the approach march and the shooting from helicopters and ships."
+      },
+      "qualifications": {
+        "fr": [
+          "Formation tireur d’élite"
+        ],
+        "en": [
+          "Sniper training"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "观察手, 狙击小组"
+        ],
+        "en": [
+          "Spotter, sniper pair"
+        ]
+      },
+      "icon": "binoculars",
+      "tags": {
+        "fr": [
+          "Tir de précision",
+          "Reconnaissance"
+        ],
+        "en": [
+          "Sniping",
+          "Reconnaissance"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.kankanews.com/detail/qMyE3DJ9Aw8",
+          "title": "一击毙敌！海军陆战队狙击手多平台要素综合射击 — 看看新闻, 27 juin 2019"
+        }
+      ]
+    },
+    {
+      "id": "cn-mc-amphibious-vehicle-driver",
+      "branch": "marine_corps",
+      "command": "海军陆战队",
+      "formation": "海军陆战队某旅",
+      "unit": {
+        "fr": "Brigades de combat du Corps des Marines de la Marine de l’APL (海军陆战队某旅), Zhanjiang, Jieyang, Jinjiang, Shandong",
+        "en": "PLA Navy Marine Corps combat brigades (海军陆战队某旅), Zhanjiang, Jieyang, Jinjiang, Shandong"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "两栖装甲车驾驶员",
+        "pinyin": "liǎngqī zhuāngjiǎchē jiàshǐyuán",
+        "fr": "Pilote de véhicule blindé amphibie",
+        "en": "Amphibious armoured vehicle driver"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Conduit les véhicules amphibies des brigades mécanisées du Corps des Marines (famille Type 05 : ZBD-05, ZTD-05), de la mer jusqu’à la plage. Le détail des billets d’équipage n’est pas publié. Source ouverte faible : à confirmer.",
+        "en": "Drives the amphibious vehicles of the Marine Corps mechanised brigades (Type 05 family: ZBD-05, ZTD-05), from sea to beach. Crew billet details are not published. Weak open source: to be confirmed."
+      },
+      "qualifications": {
+        "fr": [
+          "Conduite de véhicule amphibie"
+        ],
+        "en": [
+          "Amphibious vehicle driving"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "驾驶员, 两栖装甲车"
+        ],
+        "en": [
+          "Driver, amphibious armoured vehicle"
+        ]
+      },
+      "icon": "tank",
+      "tags": {
+        "fr": [
+          "Amphibie",
+          "Blindé",
+          "Source faible"
+        ],
+        "en": [
+          "Amphibious",
+          "Armoured vehicle",
+          "Weak source"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://jamestown.org/program/the-chinese-navys-marine-corps-part-1-expansion-and-reorganization/",
+          "title": "D. Blasko, R. Lee, The Chinese Navy’s Marine Corps, Part 1: Expansion and Reorganization — Jamestown China Brief 19/3, 2019"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Liberation_Army_Navy_Marine_Corps",
+          "title": "People’s Liberation Army Navy Marine Corps — Wikipedia (complément)"
+        }
+      ]
+    },
+    {
+      "id": "cn-mc-amphibious-assault-vehicle-commander",
+      "branch": "marine_corps",
+      "command": "海军陆战队",
+      "formation": "海军陆战队某旅",
+      "unit": {
+        "fr": "Brigades de combat du Corps des Marines de la Marine de l’APL (海军陆战队某旅), Zhanjiang, Jieyang, Jinjiang, Shandong",
+        "en": "PLA Navy Marine Corps combat brigades (海军陆战队某旅), Zhanjiang, Jieyang, Jinjiang, Shandong"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "两栖突击车车长",
+        "pinyin": "liǎngqī tūjīchē chēzhǎng",
+        "fr": "Chef de véhicule d’assaut amphibie",
+        "en": "Amphibious assault vehicle commander"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Commande un véhicule d’assaut amphibie à canon (ZTD-05) et son équipage dans les brigades mécanisées du Corps des Marines. Source ouverte faible : à confirmer.",
+        "en": "Commands a gun-armed amphibious assault vehicle (ZTD-05) and its crew in the Marine Corps mechanised brigades. Weak open source: to be confirmed."
+      },
+      "qualifications": {
+        "fr": [
+          "Chef d’engin blindé"
+        ],
+        "en": [
+          "Armoured vehicle commander"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "车长"
+        ],
+        "en": [
+          "Vehicle commander"
+        ]
+      },
+      "icon": "tank",
+      "tags": {
+        "fr": [
+          "Amphibie",
+          "Blindé",
+          "Source faible"
+        ],
+        "en": [
+          "Amphibious",
+          "Armoured vehicle",
+          "Weak source"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://jamestown.org/program/the-chinese-navys-marine-corps-part-1-expansion-and-reorganization/",
+          "title": "D. Blasko, R. Lee, The Chinese Navy’s Marine Corps, Part 1: Expansion and Reorganization — Jamestown China Brief 19/3, 2019"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Liberation_Army_Navy_Marine_Corps",
+          "title": "People’s Liberation Army Navy Marine Corps — Wikipedia (complément)"
+        }
+      ]
+    },
+    {
+      "id": "cn-mc-amphibious-recon",
+      "branch": "marine_corps",
+      "command": "海军陆战队",
+      "formation": "海军陆战队某旅",
+      "unit": {
+        "fr": "Brigades de combat du Corps des Marines de la Marine de l’APL (海军陆战队某旅), Zhanjiang, Jieyang, Jinjiang, Shandong",
+        "en": "PLA Navy Marine Corps combat brigades (海军陆战队某旅), Zhanjiang, Jieyang, Jinjiang, Shandong"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "两栖侦察兵",
+        "pinyin": "liǎngqī zhēnchábīng",
+        "fr": "Éclaireur amphibie",
+        "en": "Amphibious reconnaissance scout"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Reconnaissance des plages et de l’arrière-pays avant un débarquement, une des missions de premier choc confiées au Corps des Marines (raids, reconnaissance, opérations spéciales). Source ouverte faible : à confirmer.",
+        "en": "Beach and hinterland reconnaissance ahead of a landing, one of the first-strike missions given to the Marine Corps (raids, reconnaissance, special operations). Weak open source: to be confirmed."
+      },
+      "qualifications": {
+        "fr": [
+          "Reconnaissance amphibie"
+        ],
+        "en": [
+          "Amphibious reconnaissance"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "侦察兵"
+        ],
+        "en": [
+          "Scout"
+        ]
+      },
+      "icon": "binoculars",
+      "tags": {
+        "fr": [
+          "Amphibie",
+          "Reconnaissance",
+          "Source faible"
+        ],
+        "en": [
+          "Amphibious",
+          "Reconnaissance",
+          "Weak source"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://jamestown.org/new-wine-into-new-wineskins-the-evolving-role-of-the-pla-navy-marine-corps-in-amphibious-warfare-and-other-mission-areas/",
+          "title": "Ying-Yu Lin, New Wine Into New Wineskins: the evolving role of the PLA Navy Marine Corps — Jamestown China Brief 20/2, 2020"
+        }
+      ]
+    },
+    {
+      "id": "cn-mc-shipborne-helicopter-pilot",
+      "branch": "marine_corps",
+      "command": "海军陆战队",
+      "formation": "海军陆战队航空兵旅",
+      "unit": {
+        "fr": "Brigade d’aviation embarquée du Corps des Marines (海军陆战队航空兵旅), hélicoptères Z-8, Z-9, Z-20J",
+        "en": "PLA Navy Marine Corps shipborne aviation brigade (海军陆战队航空兵旅), Z-8, Z-9, Z-20J helicopters"
+      },
+      "type": "aviation",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "舰载直升机飞行员",
+        "pinyin": "jiànzài zhíshēngjī fēixíngyuán",
+        "fr": "Pilote d’hélicoptère embarqué (Corps des Marines)",
+        "en": "Marine Corps shipborne helicopter pilot"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Pilote de la brigade d’aviation du Corps des Marines, créée à partir de 2018 avec des éléments des régiments aériens de la Marine. Le Z-20J appuie le débarquement par missiles, roquettes et mitrailleuses ; le Z-8C transporte marines et armes depuis les grands bâtiments amphibies.",
+        "en": "Pilot of the Marine Corps aviation brigade, built from 2018 with elements of the Navy air regiments. The Z-20J supports landings with missiles, rockets and machine guns; the Z-8C carries marines and weapons from large amphibious ships."
+      },
+      "qualifications": {
+        "fr": [
+          "Qualification appontage"
+        ],
+        "en": [
+          "Deck-landing qualification"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "飞行员, 陆战队航空兵旅"
+        ],
+        "en": [
+          "Pilot, Marine aviation brigade"
+        ]
+      },
+      "icon": "helicopter",
+      "tags": {
+        "fr": [
+          "Hélicoptère",
+          "Pilote",
+          "Amphibie"
+        ],
+        "en": [
+          "Helicopter",
+          "Pilot",
+          "Amphibious"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://jamestown.org/program/the-chinese-navys-marine-corps-part-1-expansion-and-reorganization/",
+          "title": "D. Blasko, R. Lee, The Chinese Navy’s Marine Corps, Part 1: Expansion and Reorganization — Jamestown China Brief 19/3, 2019"
+        },
+        {
+          "url": "https://jamestown.org/new-wine-into-new-wineskins-the-evolving-role-of-the-pla-navy-marine-corps-in-amphibious-warfare-and-other-mission-areas/",
+          "title": "Ying-Yu Lin, New Wine Into New Wineskins: the evolving role of the PLA Navy Marine Corps — Jamestown China Brief 20/2, 2020"
+        },
+        {
+          "url": "https://globaltimes.cn/page/202411/1322795.shtml",
+          "title": "Chinese marines debut at Airshow China 2024 (Z-20J, Z-8C) — Global Times, 10 nov. 2024"
+        }
+      ]
+    },
+    {
+      "id": "cn-mc-jiaolong-operator",
+      "branch": "marine_corps",
+      "command": "海军陆战队",
+      "formation": "蛟龙突击队",
+      "unit": {
+        "fr": "Jiaolong Commando (蛟龙突击队), brigade d’opérations spéciales du Corps des Marines, Sanya (Hainan)",
+        "en": "Jiaolong Commando (蛟龙突击队), PLA Navy Marine Corps special operations brigade, Sanya (Hainan)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "蛟龙突击队队员",
+        "pinyin": "Jiāolóng tūjīduì duìyuán",
+        "fr": "Opérateur du Jiaolong Commando",
+        "en": "Jiaolong Commando operator"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Opérateur des forces spéciales du Corps des Marines, basées à Sanya, capables d’agir par air, terre, mer et sous l’eau : assaut, guidage des frappes, escorte navale, contre-terrorisme en mer. Le Jiaolong a été la force principale de l’évacuation des ressortissants au Yémen (2015).",
+        "en": "Marine Corps special forces operator, based in Sanya, able to act by air, land, sea and underwater: assault, strike guidance, naval escort, maritime counter-terrorism. Jiaolong was the main force of the 2015 evacuation of nationals from Yemen."
+      },
+      "qualifications": {
+        "fr": [
+          "Sélection du Jiaolong"
+        ],
+        "en": [
+          "Jiaolong selection"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "蛟龙突击队"
+        ],
+        "en": [
+          "Jiaolong Commando"
+        ]
+      },
+      "icon": "shield",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Maritime",
+          "Contre-terrorisme"
+        ],
+        "en": [
+          "Special Forces",
+          "Maritime",
+          "Counter-terrorism"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://news.cgtn.com/news/3d3d674e784d444d34457a6333566d54/index.html",
+          "title": "The Jiaolong Commandos — CGTN, 15 avr. 2019"
+        },
+        {
+          "url": "https://news.cgtn.com/news/35597a4d34637a6333566d54/index.html",
+          "title": "Chinese Navy’s Special Forces “Jiaolong Commando” first official trailer — CGTN, 27 déc. 2017"
+        },
+        {
+          "url": "https://www.chinadaily.com.cn/a/201904/23/WS5cbeacdca3104842260b7c93.html",
+          "title": "A peek into spec ops team of PLA Navy — China Daily, 23 avr. 2019"
+        }
+      ]
+    },
+    {
+      "id": "cn-mc-jiaolong-squad-leader",
+      "branch": "marine_corps",
+      "command": "海军陆战队",
+      "formation": "蛟龙突击队",
+      "unit": {
+        "fr": "Jiaolong Commando (蛟龙突击队), brigade d’opérations spéciales du Corps des Marines, Sanya (Hainan)",
+        "en": "Jiaolong Commando (蛟龙突击队), PLA Navy Marine Corps special operations brigade, Sanya (Hainan)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "班长",
+        "pinyin": "bānzhǎng",
+        "fr": "Chef de groupe (Jiaolong)",
+        "en": "Squad leader (Jiaolong)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Sous-officier qui mène son groupe en raid. Dans l’exercice décrit, le chef de groupe divise sa petite équipe en groupe de couverture et groupe de destruction et dirige de nuit l’assaut et la destruction de la salle serveurs d’une base adverse.",
+        "en": "NCO who leads his squad on raids. In the exercise described, the squad leader split his small team into a cover cell and a demolition cell and led the night assault and demolition of an opposing base’s server room."
+      },
+      "qualifications": {
+        "fr": [
+          "Sous-officier (中士)"
+        ],
+        "en": [
+          "NCO (sergeant, 中士)"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "班长, 蛟龙突击队"
+        ],
+        "en": [
+          "Squad leader, Jiaolong Commando"
+        ]
+      },
+      "icon": "chevrons",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Commandement",
+          "Destruction"
+        ],
+        "en": [
+          "Special Forces",
+          "Command",
+          "Demolition"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.xinhuanet.com/mil/2022-12/27/c_1211712585.htm",
+          "title": "走进“蛟龙突击队”，感受海军特战尖兵的血性与忠诚 — 新华网 (解放军报), 27 déc. 2022"
+        }
+      ]
+    },
+    {
+      "id": "cn-mc-jiaolong-assaulter",
+      "branch": "marine_corps",
+      "command": "海军陆战队",
+      "formation": "蛟龙突击队",
+      "unit": {
+        "fr": "Jiaolong Commando (蛟龙突击队), brigade d’opérations spéciales du Corps des Marines, Sanya (Hainan)",
+        "en": "Jiaolong Commando (蛟龙突击队), PLA Navy Marine Corps special operations brigade, Sanya (Hainan)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "突击手",
+        "pinyin": "tūjīshǒu",
+        "fr": "Équipier d’assaut (Jiaolong)",
+        "en": "Assaulter (Jiaolong)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Équipier d’assaut d’un groupe du Jiaolong, engagé dans les raids de destruction contre des installations techniques adverses et dans le combat rapproché.",
+        "en": "Assault member of a Jiaolong squad, engaged in demolition raids on opposing technical installations and in close combat."
+      },
+      "qualifications": {
+        "fr": [
+          "Combat rapproché"
+        ],
+        "en": [
+          "Close quarters combat"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "突击手"
+        ],
+        "en": [
+          "Assaulter"
+        ]
+      },
+      "icon": "sword",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Maritime"
+        ],
+        "en": [
+          "Special Forces",
+          "Maritime"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.xinhuanet.com/mil/2022-12/27/c_1211712585.htm",
+          "title": "走进“蛟龙突击队”，感受海军特战尖兵的血性与忠诚 — 新华网 (解放军报), 27 déc. 2022"
+        }
+      ]
+    },
+    {
+      "id": "cn-mc-jiaolong-machine-gunner",
+      "branch": "marine_corps",
+      "command": "海军陆战队",
+      "formation": "蛟龙突击队",
+      "unit": {
+        "fr": "Jiaolong Commando (蛟龙突击队), brigade d’opérations spéciales du Corps des Marines, Sanya (Hainan)",
+        "en": "Jiaolong Commando (蛟龙突击队), PLA Navy Marine Corps special operations brigade, Sanya (Hainan)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "机枪手",
+        "pinyin": "jīqiāngshǒu",
+        "fr": "Mitrailleur embarqué (Jiaolong)",
+        "en": "Door gunner (Jiaolong)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Pendant les missions d’escorte du golfe d’Aden, le mitrailleur embarque en hélicoptère pour couvrir le sauvetage en mer et la fouille de navires ; un mitrailleur cité a participé à la libération d’un cargo pris par des pirates.",
+        "en": "During Gulf of Aden escort missions, the machine gunner rides the helicopter to cover sea rescues and ship searches; one gunner profiled took part in freeing a cargo ship seized by pirates."
+      },
+      "qualifications": {
+        "fr": [
+          "Tir depuis hélicoptère"
+        ],
+        "en": [
+          "Shooting from helicopters"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "机枪手, 护航编队"
+        ],
+        "en": [
+          "Machine gunner, escort task force"
+        ]
+      },
+      "icon": "helicopter",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Maritime",
+          "Appui feu"
+        ],
+        "en": [
+          "Special Forces",
+          "Maritime",
+          "Fire support"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.xinhuanet.com/mil/2022-12/27/c_1211712585.htm",
+          "title": "走进“蛟龙突击队”，感受海军特战尖兵的血性与忠诚 — 新华网 (解放军报), 27 déc. 2022"
+        },
+        {
+          "url": "https://www.globaltimes.cn/page/201704/1041778.shtml",
+          "title": "Gulf of Aden rescue demonstrates mission of PLA Navy — Global Times, 10 avr. 2017"
+        }
+      ]
+    },
+    {
+      "id": "cn-mc-jiaolong-parachutist",
+      "branch": "marine_corps",
+      "command": "海军陆战队",
+      "formation": "蛟龙突击队",
+      "unit": {
+        "fr": "Jiaolong Commando (蛟龙突击队), brigade d’opérations spéciales du Corps des Marines, Sanya (Hainan)",
+        "en": "Jiaolong Commando (蛟龙突击队), PLA Navy Marine Corps special operations brigade, Sanya (Hainan)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "伞降队员",
+        "pinyin": "sǎnjiàng duìyuán",
+        "fr": "Chuteur opérationnel (Jiaolong)",
+        "en": "Military free-fall parachutist (Jiaolong)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Chuteur du Jiaolong, qualifié en voile (翼伞) au-dessus de la mer. Le chuteur cité, dix ans de saut, a ouvert les essais de vent du premier saut en mer d’un nouveau parachute à voile et a dû passer sur sa voile de secours après un emmêlement.",
+        "en": "Jiaolong parachutist qualified on ram-air canopies (翼伞) over the sea. The jumper profiled, with ten years of jumping, flew the wind-test jump of a new ram-air canopy’s first sea jump and had to cut away to his reserve after a line twist."
+      },
+      "qualifications": {
+        "fr": [
+          "Saut à ouverture commandée",
+          "Saut en mer"
+        ],
+        "en": [
+          "Ram-air parachuting",
+          "Water jumps"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "伞降队员"
+        ],
+        "en": [
+          "Parachutist"
+        ]
+      },
+      "icon": "parachute",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Parachutisme",
+          "Maritime"
+        ],
+        "en": [
+          "Special Forces",
+          "Parachuting",
+          "Maritime"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.xinhuanet.com/mil/2022-12/27/c_1211712585.htm",
+          "title": "走进“蛟龙突击队”，感受海军特战尖兵的血性与忠诚 — 新华网 (解放军报), 27 déc. 2022"
+        }
+      ]
+    },
+    {
+      "id": "cn-mc-jiaolong-combat-diver",
+      "branch": "marine_corps",
+      "command": "海军陆战队",
+      "formation": "蛟龙突击队",
+      "unit": {
+        "fr": "Jiaolong Commando (蛟龙突击队), brigade d’opérations spéciales du Corps des Marines, Sanya (Hainan)",
+        "en": "Jiaolong Commando (蛟龙突击队), PLA Navy Marine Corps special operations brigade, Sanya (Hainan)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "潜水队员",
+        "pinyin": "qiánshuǐ duìyuán",
+        "fr": "Nageur de combat (Jiaolong)",
+        "en": "Combat diver (Jiaolong)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Plongeur du Jiaolong. En exercice d’infiltration profonde, il sort par le tube lance-torpilles d’un sous-marin, déploie la ligne de signal et la bouée, et sert de guide (引导员) au reste de l’équipe.",
+        "en": "Jiaolong diver. In a deep infiltration exercise, he exits a submarine through the torpedo tube, deploys the signal line and buoy, and acts as guide (引导员) for the rest of the team."
+      },
+      "qualifications": {
+        "fr": [
+          "Plongée de combat",
+          "Sortie de sous-marin"
+        ],
+        "en": [
+          "Combat diving",
+          "Submarine lock-out"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "潜水队员, 引导员"
+        ],
+        "en": [
+          "Diver, guide"
+        ]
+      },
+      "icon": "anchor",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Plongée de combat"
+        ],
+        "en": [
+          "Special Forces",
+          "Combat diving"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.xinhuanet.com/mil/2022-12/27/c_1211712585.htm",
+          "title": "走进“蛟龙突击队”，感受海军特战尖兵的血性与忠诚 — 新华网 (解放军报), 27 déc. 2022"
+        },
+        {
+          "url": "https://www.chinadaily.com.cn/a/201904/23/WS5cbeacdca3104842260b7c93.html",
+          "title": "A peek into spec ops team of PLA Navy — China Daily, 23 avr. 2019"
+        }
+      ]
+    },
+    {
+      "id": "cn-mc-jiaolong-squadron-officer",
+      "branch": "marine_corps",
+      "command": "海军陆战队",
+      "formation": "蛟龙突击队",
+      "unit": {
+        "fr": "Jiaolong Commando (蛟龙突击队), brigade d’opérations spéciales du Corps des Marines, Sanya (Hainan)",
+        "en": "Jiaolong Commando (蛟龙突击队), PLA Navy Marine Corps special operations brigade, Sanya (Hainan)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "中队干部",
+        "pinyin": "zhōngduì gànbù",
+        "fr": "Officier d’escadron (Jiaolong)",
+        "en": "Squadron officer (Jiaolong)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Officier d’un escadron (中队) du Jiaolong. L’officier cité a participé à la 25e mission d’escorte du golfe d’Aden ; l’unité s’entraîne à l’infiltration en eaux saumâtres, à la fouille en jungle et au contre-terrorisme urbain. Source ouverte faible : à confirmer.",
+        "en": "Officer of a Jiaolong squadron (中队). The officer profiled took part in the 25th Gulf of Aden escort mission; the unit trains in brackish-water infiltration, jungle searches and urban counter-terrorism. Weak open source: to be confirmed."
+      },
+      "qualifications": {
+        "fr": [
+          "Officier subalterne"
+        ],
+        "en": [
+          "Junior officer"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "中队"
+        ],
+        "en": [
+          "Squadron"
+        ]
+      },
+      "icon": "chevrons",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Commandement",
+          "Source faible"
+        ],
+        "en": [
+          "Special Forces",
+          "Command",
+          "Weak source"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://news.cgtn.com/news/3d3d674e784d444d34457a6333566d54/index.html",
+          "title": "The Jiaolong Commandos — CGTN, 15 avr. 2019"
+        }
+      ]
+    },
+    {
+      "id": "cn-navy-boarding-team-member",
+      "branch": "navy",
+      "command": "海军",
+      "formation": "海军特战队员 (护航编队)",
+      "unit": {
+        "fr": "Forces spéciales de la Marine embarquées sur les forces d’escorte du golfe d’Aden (护航编队), commandement de théâtre Sud",
+        "en": "PLA Navy special forces embarked with the Gulf of Aden escort task forces (护航编队), Southern Theater Command"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "登临检查队员",
+        "pinyin": "dēnglín jiǎnchá duìyuán",
+        "fr": "Équipier de visite et d’abordage",
+        "en": "Boarding team member"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Forces spéciales embarquées sur les forces d’escorte. En avril 2017, seize d’entre elles ont repris le cargo OS35 détourné et libéré dix-neuf marins ; en 2026, la 49e force d’escorte s’entraîne à reprendre un navire par corde depuis deux hélicoptères et par quatre vedettes.",
+        "en": "Special forces embarked with the escort task forces. In April 2017, sixteen of them retook the hijacked cargo ship OS35 and freed nineteen sailors; in 2026 the 49th escort task force trained to retake a ship by fast-rope from two helicopters and from four assault boats."
+      },
+      "qualifications": {
+        "fr": [
+          "Abordage et fouille",
+          "Descente en corde lisse"
+        ],
+        "en": [
+          "Boarding and search",
+          "Fast-roping"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "护航编队特战队"
+        ],
+        "en": [
+          "Escort task force special forces"
+        ]
+      },
+      "icon": "anchor",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Abordage",
+          "Maritime"
+        ],
+        "en": [
+          "Special Forces",
+          "Boarding",
+          "Maritime"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/page/201704/1041778.shtml",
+          "title": "Gulf of Aden rescue demonstrates mission of PLA Navy — Global Times, 10 avr. 2017"
+        },
+        {
+          "url": "https://www.globaltimes.cn/page/202609/1369583.shtml",
+          "title": "Exercice de reprise de navire de la 49e force d’escorte — Global Times, 1er sept. 2026"
+        }
+      ]
+    },
+    {
+      "id": "cn-navy-frogman",
+      "branch": "navy",
+      "command": "北部战区 NTC",
+      "formation": "北部战区海军某基地",
+      "unit": {
+        "fr": "Base navale du commandement de théâtre Nord (北部战区海军某基地), nageurs de combat de la Marine",
+        "en": "Naval base of the Northern Theater Command (北部战区海军某基地), Navy frogmen"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "蛙人",
+        "pinyin": "wārén",
+        "fr": "Nageur de combat de la Marine",
+        "en": "Navy frogman"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Nageur de combat d’une base navale du commandement de théâtre Nord, entraîné à la plongée et à l’action sous-marine.",
+        "en": "Combat swimmer of a Northern Theater Command naval base, trained in diving and underwater operations."
+      },
+      "qualifications": {
+        "fr": [
+          "Plongée de combat"
+        ],
+        "en": [
+          "Combat diving"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "蛙人"
+        ],
+        "en": [
+          "Frogman"
+        ]
+      },
+      "icon": "anchor",
+      "tags": {
+        "fr": [
+          "Plongée de combat",
+          "Maritime"
+        ],
+        "en": [
+          "Combat diving",
+          "Maritime"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/page/202505/1333264.shtml",
+          "title": "Naval frogmen in underwater training — Global Times, 2 mai 2025"
+        }
+      ]
+    },
+    {
+      "id": "cn-af-ab-paratrooper",
+      "branch": "air_force",
+      "command": "空降兵军",
+      "formation": "空降兵某旅",
+      "unit": {
+        "fr": "Brigades aéroportées du Corps aéroporté de la Force aérienne (空降兵军, ex-15e Corps 空降兵第15军), Xiaogan (Hubei)",
+        "en": "Airborne brigades of the PLA Air Force Airborne Corps (空降兵军, formerly 15th Airborne Corps 空降兵第15军), Xiaogan (Hubei)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "伞兵",
+        "pinyin": "sǎnbīng",
+        "fr": "Parachutiste",
+        "en": "Paratrooper"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Parachutiste d’une brigade du Corps aéroporté (空降兵). Plus d’un millier ont sauté entièrement équipés à basse altitude depuis plusieurs avions de transport, récupéré leurs armes selon leur rôle puis se sont regroupés au sol. Le Corps compte six brigades aéroportées.",
+        "en": "Paratrooper of an Airborne Corps brigade (空降兵). Over a thousand jumped fully equipped at low altitude from several transport aircraft, recovered their weapons by role and regrouped on the ground. The Corps has six airborne brigades."
+      },
+      "qualifications": {
+        "fr": [
+          "Brevet de parachutiste"
+        ],
+        "en": [
+          "Parachute qualification"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "伞兵, 空降兵旅"
+        ],
+        "en": [
+          "Paratrooper, airborne brigade"
+        ]
+      },
+      "icon": "parachute",
+      "tags": {
+        "fr": [
+          "Aéroporté",
+          "Parachutisme"
+        ],
+        "en": [
+          "Airborne",
+          "Parachuting"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/content/1186610.shtml",
+          "title": "Paratroopers hold fully armed parachute jump exercises — Global Times, 24 avr. 2020"
+        },
+        {
+          "url": "https://jamestown.org/pla-airborne-capabilities-and-paratrooper-doctrine-for-taiwan/",
+          "title": "D. Fu, PLA Airborne Capabilities and Paratrooper Doctrine for Taiwan — Jamestown China Brief 23/11, 2023"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Liberation_Army_Air_Force_Airborne_Corps",
+          "title": "PLAAF Airborne Corps — Wikipedia (complément)"
+        }
+      ]
+    },
+    {
+      "id": "cn-af-ab-leishen-operator",
+      "branch": "air_force",
+      "command": "空降兵军",
+      "formation": "雷神突击队",
+      "unit": {
+        "fr": "Brigade d’opérations spéciales du Corps aéroporté — « Léishén » (雷神突击队, « Thunder God »)",
+        "en": "Airborne Corps special operations brigade — “Léishén” (雷神突击队, “Thunder God” commando)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "雷神突击队队员",
+        "pinyin": "Léishén tūjīduì duìyuán",
+        "fr": "Opérateur du commando « Léishén »",
+        "en": "“Thunder God” commando operator"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Opérateur de la brigade d’opérations spéciales du Corps aéroporté. Exercices de plusieurs jours : parachutage, pénétration à longue distance et frappes de précision ; sauts à haute altitude et capture de cibles de grande valeur dans un scénario de débarquement insulaire.",
+        "en": "Operator of the Airborne Corps special operations brigade. Multi-day exercises: parachute insertion, long-range penetration and precision strikes; high-altitude jumps and capture of high-value targets in an island landing scenario."
+      },
+      "qualifications": {
+        "fr": [
+          "Sélection du 雷神突击队",
+          "Saut à haute altitude"
+        ],
+        "en": [
+          "Thunder God selection",
+          "High-altitude parachuting"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "雷神突击队"
+        ],
+        "en": [
+          "Thunder God commando"
+        ]
+      },
+      "icon": "parachute",
+      "tags": {
+        "fr": [
+          "Forces spéciales",
+          "Aéroporté",
+          "Parachutisme"
+        ],
+        "en": [
+          "Special Forces",
+          "Airborne",
+          "Parachuting"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/page/202208/1272101.shtml",
+          "title": "Airborne troops in parachute training exercise (雷神突击队) — Global Times, 3 août 2022"
+        },
+        {
+          "url": "https://jamestown.org/pla-airborne-capabilities-and-paratrooper-doctrine-for-taiwan/",
+          "title": "D. Fu, PLA Airborne Capabilities and Paratrooper Doctrine for Taiwan — Jamestown China Brief 23/11, 2023"
+        }
+      ]
+    },
+    {
+      "id": "cn-af-ab-recon-company-commander",
+      "branch": "air_force",
+      "command": "空降兵军",
+      "formation": "空降兵某旅",
+      "unit": {
+        "fr": "Brigades aéroportées du Corps aéroporté de la Force aérienne (空降兵军, ex-15e Corps 空降兵第15军), Xiaogan (Hubei)",
+        "en": "Airborne brigades of the PLA Air Force Airborne Corps (空降兵军, formerly 15th Airborne Corps 空降兵第15军), Xiaogan (Hubei)"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "侦察连连长",
+        "pinyin": "zhēnchálián liánzhǎng",
+        "fr": "Commandant de compagnie de reconnaissance aéroportée",
+        "en": "Airborne reconnaissance company commander"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Commande la compagnie de reconnaissance, larguée en premier avec les équipes de guidage. Le commandant cité saute avec environ 40 kg : pistolet, fusil, drone de reconnaissance, vivres et parachute.",
+        "en": "Commands the reconnaissance company, dropped first with the guidance teams. The commander profiled jumps with about 40 kg: pistol, rifle, reconnaissance drone, rations and parachute."
+      },
+      "qualifications": {
+        "fr": [
+          "Officier parachutiste"
+        ],
+        "en": [
+          "Parachute-qualified officer"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "侦察连连长"
+        ],
+        "en": [
+          "Reconnaissance company commander"
+        ]
+      },
+      "icon": "binoculars",
+      "tags": {
+        "fr": [
+          "Aéroporté",
+          "Reconnaissance",
+          "Commandement"
+        ],
+        "en": [
+          "Airborne",
+          "Reconnaissance",
+          "Command"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/content/1186610.shtml",
+          "title": "Paratroopers hold fully armed parachute jump exercises — Global Times, 24 avr. 2020"
+        }
+      ]
+    },
+    {
+      "id": "cn-af-ab-pathfinder",
+      "branch": "air_force",
+      "command": "空降兵军",
+      "formation": "空降兵某旅",
+      "unit": {
+        "fr": "Brigades aéroportées du Corps aéroporté de la Force aérienne (空降兵军, ex-15e Corps 空降兵第15军), Xiaogan (Hubei)",
+        "en": "Airborne brigades of the PLA Air Force Airborne Corps (空降兵军, formerly 15th Airborne Corps 空降兵第15军), Xiaogan (Hubei)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "引导员",
+        "pinyin": "yǐndǎoyuán",
+        "fr": "Guide-éclaireur aéroporté (pathfinder)",
+        "en": "Airborne pathfinder"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Membre des équipes de reconnaissance et de guidage larguées en tête de la force aéroportée pour reconnaître et baliser la zone de saut. Source ouverte faible : à confirmer.",
+        "en": "Member of the reconnaissance and guidance teams dropped ahead of the airborne force to scout and mark the drop zone. Weak open source: to be confirmed."
+      },
+      "qualifications": {
+        "fr": [
+          "Brevet de parachutiste"
+        ],
+        "en": [
+          "Parachute qualification"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "侦察引导分队"
+        ],
+        "en": [
+          "Reconnaissance and guidance team"
+        ]
+      },
+      "icon": "compass",
+      "tags": {
+        "fr": [
+          "Aéroporté",
+          "Reconnaissance",
+          "Source faible"
+        ],
+        "en": [
+          "Airborne",
+          "Reconnaissance",
+          "Weak source"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/content/1186610.shtml",
+          "title": "Paratroopers hold fully armed parachute jump exercises — Global Times, 24 avr. 2020"
+        }
+      ]
+    },
+    {
+      "id": "cn-af-ab-machine-gunner",
+      "branch": "air_force",
+      "command": "空降兵军",
+      "formation": "空降兵某旅",
+      "unit": {
+        "fr": "Brigades aéroportées du Corps aéroporté de la Force aérienne (空降兵军, ex-15e Corps 空降兵第15军), Xiaogan (Hubei)",
+        "en": "Airborne brigades of the PLA Air Force Airborne Corps (空降兵军, formerly 15th Airborne Corps 空降兵第15军), Xiaogan (Hubei)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "机枪手",
+        "pinyin": "jīqiāngshǒu",
+        "fr": "Mitrailleur parachutiste",
+        "en": "Airborne machine gunner"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Saute avec la mitrailleuse légère de son groupe et fournit l’appui feu dès le regroupement au sol.",
+        "en": "Jumps with the squad’s light machine gun and provides fire support as soon as the unit regroups on the ground."
+      },
+      "qualifications": {
+        "fr": [
+          "Brevet de parachutiste"
+        ],
+        "en": [
+          "Parachute qualification"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "机枪手"
+        ],
+        "en": [
+          "Machine gunner"
+        ]
+      },
+      "icon": "target",
+      "tags": {
+        "fr": [
+          "Aéroporté",
+          "Appui feu"
+        ],
+        "en": [
+          "Airborne",
+          "Fire support"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/content/1186610.shtml",
+          "title": "Paratroopers hold fully armed parachute jump exercises — Global Times, 24 avr. 2020"
+        }
+      ]
+    },
+    {
+      "id": "cn-af-ab-rocket-launcher-gunner",
+      "branch": "air_force",
+      "command": "空降兵军",
+      "formation": "空降兵某旅",
+      "unit": {
+        "fr": "Brigades aéroportées du Corps aéroporté de la Force aérienne (空降兵军, ex-15e Corps 空降兵第15军), Xiaogan (Hubei)",
+        "en": "Airborne brigades of the PLA Air Force Airborne Corps (空降兵军, formerly 15th Airborne Corps 空降兵第15军), Xiaogan (Hubei)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "火箭筒手",
+        "pinyin": "huǒjiàntǒngshǒu",
+        "fr": "Tireur lance-roquettes parachutiste",
+        "en": "Airborne rocket launcher gunner"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Saute avec un lance-roquettes individuel pour la lutte antichar et contre les positions ; les brigades disposent aussi de missiles antichars HJ-8.",
+        "en": "Jumps with a shoulder-fired rocket launcher against armour and positions; the brigades also field HJ-8 anti-tank missiles."
+      },
+      "qualifications": {
+        "fr": [
+          "Brevet de parachutiste"
+        ],
+        "en": [
+          "Parachute qualification"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "火箭筒手"
+        ],
+        "en": [
+          "Rocket launcher gunner"
+        ]
+      },
+      "icon": "target",
+      "tags": {
+        "fr": [
+          "Aéroporté",
+          "Appui feu"
+        ],
+        "en": [
+          "Airborne",
+          "Fire support"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/content/1186610.shtml",
+          "title": "Paratroopers hold fully armed parachute jump exercises — Global Times, 24 avr. 2020"
+        },
+        {
+          "url": "https://jamestown.org/pla-airborne-capabilities-and-paratrooper-doctrine-for-taiwan/",
+          "title": "D. Fu, PLA Airborne Capabilities and Paratrooper Doctrine for Taiwan — Jamestown China Brief 23/11, 2023"
+        }
+      ]
+    },
+    {
+      "id": "cn-af-ab-sniper",
+      "branch": "air_force",
+      "command": "空降兵军",
+      "formation": "空降兵某旅",
+      "unit": {
+        "fr": "Brigades aéroportées du Corps aéroporté de la Force aérienne (空降兵军, ex-15e Corps 空降兵第15军), Xiaogan (Hubei)",
+        "en": "Airborne brigades of the PLA Air Force Airborne Corps (空降兵军, formerly 15th Airborne Corps 空降兵第15军), Xiaogan (Hubei)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "狙击手",
+        "pinyin": "jūjīshǒu",
+        "fr": "Tireur d’élite parachutiste",
+        "en": "Airborne sniper"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Tireur d’élite d’une brigade aéroportée, qui saute avec son fusil de précision. Source ouverte faible : à confirmer.",
+        "en": "Sniper of an airborne brigade, jumping with his precision rifle. Weak open source: to be confirmed."
+      },
+      "qualifications": {
+        "fr": [
+          "Brevet de parachutiste",
+          "Formation tireur d’élite"
+        ],
+        "en": [
+          "Parachute qualification",
+          "Sniper training"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "狙击手"
+        ],
+        "en": [
+          "Sniper"
+        ]
+      },
+      "icon": "crosshair",
+      "tags": {
+        "fr": [
+          "Aéroporté",
+          "Tir de précision",
+          "Source faible"
+        ],
+        "en": [
+          "Airborne",
+          "Sniping",
+          "Weak source"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/content/1186610.shtml",
+          "title": "Paratroopers hold fully armed parachute jump exercises — Global Times, 24 avr. 2020"
+        }
+      ]
+    },
+    {
+      "id": "cn-af-ab-uav-operator",
+      "branch": "air_force",
+      "command": "空降兵军",
+      "formation": "空降兵某旅",
+      "unit": {
+        "fr": "Brigades aéroportées du Corps aéroporté de la Force aérienne (空降兵军, ex-15e Corps 空降兵第15军), Xiaogan (Hubei)",
+        "en": "Airborne brigades of the PLA Air Force Airborne Corps (空降兵军, formerly 15th Airborne Corps 空降兵第15军), Xiaogan (Hubei)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "无人机操作手",
+        "pinyin": "wúrénjī cāozuòshǒu",
+        "fr": "Télépilote de drone aéroporté",
+        "en": "Airborne UAV operator"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Met en œuvre les petits drones de reconnaissance emportés au saut ; les forces aéroportées emploient aussi des drones pour ravitailler les unités loin derrière les lignes.",
+        "en": "Operates the small reconnaissance drones carried on the jump; airborne forces also use drones to resupply units deep behind the lines."
+      },
+      "qualifications": {
+        "fr": [
+          "Télépilotage de drone"
+        ],
+        "en": [
+          "UAV piloting"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "无人机操作手"
+        ],
+        "en": [
+          "UAV operator"
+        ]
+      },
+      "icon": "drone",
+      "tags": {
+        "fr": [
+          "Aéroporté",
+          "Drone"
+        ],
+        "en": [
+          "Airborne",
+          "UAV"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/content/1186610.shtml",
+          "title": "Paratroopers hold fully armed parachute jump exercises — Global Times, 24 avr. 2020"
+        }
+      ]
+    },
+    {
+      "id": "cn-af-ab-ifv-driver",
+      "branch": "air_force",
+      "command": "空降兵军",
+      "formation": "空降兵某旅",
+      "unit": {
+        "fr": "Brigades aéroportées du Corps aéroporté de la Force aérienne (空降兵军, ex-15e Corps 空降兵第15军), Xiaogan (Hubei)",
+        "en": "Airborne brigades of the PLA Air Force Airborne Corps (空降兵军, formerly 15th Airborne Corps 空降兵第15军), Xiaogan (Hubei)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "空降战车驾驶员",
+        "pinyin": "kōngjiàng zhànchē jiàshǐyuán",
+        "fr": "Pilote de véhicule de combat aéroporté (ZBD-03)",
+        "en": "Airborne fighting vehicle driver (ZBD-03)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Conduit le véhicule de combat aéroporté ZBD-03, largable ; un Y-20 en emporte trois. Le Corps a été réorganisé pour la manœuvre mécanisée derrière les lignes ennemies.",
+        "en": "Drives the air-droppable ZBD-03 airborne fighting vehicle; one Y-20 carries three. The Corps was reorganised for mechanised manoeuvre behind enemy lines."
+      },
+      "qualifications": {
+        "fr": [
+          "Conduite ZBD-03"
+        ],
+        "en": [
+          "ZBD-03 driving"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "驾驶员, 空降战车"
+        ],
+        "en": [
+          "Driver, airborne fighting vehicle"
+        ]
+      },
+      "icon": "tank",
+      "tags": {
+        "fr": [
+          "Aéroporté",
+          "Blindé"
+        ],
+        "en": [
+          "Airborne",
+          "Armoured vehicle"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://jamestown.org/pla-airborne-capabilities-and-paratrooper-doctrine-for-taiwan/",
+          "title": "D. Fu, PLA Airborne Capabilities and Paratrooper Doctrine for Taiwan — Jamestown China Brief 23/11, 2023"
+        },
+        {
+          "url": "https://digital-commons.usnwc.edu/cmsi-maritime-reports/19/",
+          "title": "C. Garafola, China Maritime Report No. 19: The PLA Airborne Corps in a Joint Island Landing Campaign — CMSI, US Naval War College, 2022"
+        }
+      ]
+    },
+    {
+      "id": "cn-af-ab-transport-pilot",
+      "branch": "air_force",
+      "command": "空降兵军",
+      "formation": "空降兵军航空兵旅",
+      "unit": {
+        "fr": "Brigade d’aviation de transport du Corps aéroporté (空降兵军航空兵旅) : avions Y-5, Y-8, Y-12 et hélicoptères",
+        "en": "Airborne Corps transport aviation brigade (空降兵军航空兵旅): Y-5, Y-8, Y-12 aircraft and helicopters"
+      },
+      "type": "aviation",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "运输机飞行员",
+        "pinyin": "yùnshūjī fēixíngyuán",
+        "fr": "Pilote d’avion de transport",
+        "en": "Transport aircraft pilot"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Pilote d’avion de transport et de largage. La brigade d’aviation du Corps vole sur Y-5, Y-8 et Y-12 (Y-12 depuis 2022) ; les grands largages s’appuient sur les Y-20, Il-76 et Y-8/Y-9 des régiments de transport de la Force aérienne.",
+        "en": "Transport and drop aircraft pilot. The Corps aviation brigade flies Y-5, Y-8 and Y-12 (Y-12 since 2022); large drops rely on the Air Force transport regiments’ Y-20, Il-76 and Y-8/Y-9."
+      },
+      "qualifications": {
+        "fr": [
+          "Qualification sur type",
+          "Largage de personnel et de matériel"
+        ],
+        "en": [
+          "Type rating",
+          "Personnel and cargo drops"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "飞行员, 航空兵旅"
+        ],
+        "en": [
+          "Pilot, aviation brigade"
+        ]
+      },
+      "icon": "plane",
+      "tags": {
+        "fr": [
+          "Pilote",
+          "Transport aérien",
+          "Aéroporté"
+        ],
+        "en": [
+          "Pilot",
+          "Airlift",
+          "Airborne"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://jamestown.org/pla-airborne-capabilities-and-paratrooper-doctrine-for-taiwan/",
+          "title": "D. Fu, PLA Airborne Capabilities and Paratrooper Doctrine for Taiwan — Jamestown China Brief 23/11, 2023"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Liberation_Army_Air_Force_Airborne_Corps",
+          "title": "PLAAF Airborne Corps — Wikipedia (complément)"
+        }
+      ]
+    },
+    {
+      "id": "cn-af-ab-helicopter-pilot",
+      "branch": "air_force",
+      "command": "空降兵军",
+      "formation": "空降兵军航空兵旅",
+      "unit": {
+        "fr": "Brigade d’aviation de transport du Corps aéroporté (空降兵军航空兵旅) : avions Y-5, Y-8, Y-12 et hélicoptères",
+        "en": "Airborne Corps transport aviation brigade (空降兵军航空兵旅): Y-5, Y-8, Y-12 aircraft and helicopters"
+      },
+      "type": "aviation",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "直升机飞行员",
+        "pinyin": "zhíshēngjī fēixíngyuán",
+        "fr": "Pilote d’hélicoptère du Corps aéroporté",
+        "en": "Airborne Corps helicopter pilot"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Pilote d’hélicoptère de la brigade d’aviation de transport, issue en 2017 de l’ancienne brigade d’hélicoptères et du régiment de transport du Corps ; il assure l’assaut héliporté des parachutistes. Source ouverte faible : à confirmer.",
+        "en": "Helicopter pilot of the transport aviation brigade, formed in 2017 from the Corps’ former helicopter brigade and transport regiment; flies heliborne assaults for the paratroopers. Weak open source: to be confirmed."
+      },
+      "qualifications": {
+        "fr": [
+          "Qualification sur type"
+        ],
+        "en": [
+          "Type rating"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "飞行员, 航空兵旅"
+        ],
+        "en": [
+          "Pilot, aviation brigade"
+        ]
+      },
+      "icon": "helicopter",
+      "tags": {
+        "fr": [
+          "Hélicoptère",
+          "Pilote",
+          "Source faible"
+        ],
+        "en": [
+          "Helicopter",
+          "Pilot",
+          "Weak source"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://shephardmedia.com/news/defence-notes/plaaf-restructures-its-airborne-corps",
+          "title": "G. Arthur, PLAAF restructures its Airborne Corps — Shephard Media, 2017 (introduction publique)"
+        },
+        {
+          "url": "https://jamestown.org/pla-airborne-capabilities-and-paratrooper-doctrine-for-taiwan/",
+          "title": "D. Fu, PLA Airborne Capabilities and Paratrooper Doctrine for Taiwan — Jamestown China Brief 23/11, 2023"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Liberation_Army_Air_Force_Airborne_Corps",
+          "title": "PLAAF Airborne Corps — Wikipedia (complément)"
+        }
+      ]
+    },
+    {
+      "id": "cn-pap-snow-leopard-assaulter",
+      "branch": "gendarmerie",
+      "command": "武警部队",
+      "formation": "雪豹突击队",
+      "unit": {
+        "fr": "Snow Leopard Commando Unit (雪豹突击队), Police armée du peuple, ex-corps PAP de Pékin, rattachée depuis la réforme au 2e corps mobile (第二机动总队)",
+        "en": "Snow Leopard Commando Unit (雪豹突击队), People’s Armed Police, formerly PAP Beijing corps, since the reform under the 2nd Mobile Corps (第二机动总队)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "突击队员",
+        "pinyin": "tūjī duìyuán",
+        "fr": "Opérateur d’assaut (Snow Leopard)",
+        "en": "Assault operator (Snow Leopard)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Opérateur du Snow Leopard Commando Unit (créée en 2002 sous le nom de 雪狼, renommée en 2007), environ 400 hommes. Mission première : le contre-terrorisme urbain ; protection de dizaines de grands événements, dont les Jeux olympiques de Pékin ; entraînement en collines au sauvetage et au déminage.",
+        "en": "Operator of the Snow Leopard Commando Unit (formed in 2002 as 雪狼, renamed in 2007), about 400 strong. Main mission: urban counter-terrorism; protection of dozens of major events, including the Beijing Olympics; hill training in rescue and explosive clearance."
+      },
+      "qualifications": {
+        "fr": [
+          "« Semaine du diable » (魔鬼周)"
+        ],
+        "en": [
+          "“Devil Week” (魔鬼周)"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "雪豹突击队"
+        ],
+        "en": [
+          "Snow Leopard Commando Unit"
+        ]
+      },
+      "icon": "shield",
+      "tags": {
+        "fr": [
+          "Police armée du peuple",
+          "Contre-terrorisme",
+          "Libération d’otages"
+        ],
+        "en": [
+          "People’s Armed Police",
+          "Counter-terrorism",
+          "Hostage rescue"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.globaltimes.cn/content/1153670.shtml",
+          "title": "Snow Leopard commandos in intensive training — Global Times, 10 juin 2019"
+        },
+        {
+          "url": "https://paper.people.com.cn/hqrw/html/2008-07/16/content_103945.htm",
+          "title": "“雪豹突击队”显神威 — 环球人物 (人民日报), juil. 2008"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Armed_Police",
+          "title": "People’s Armed Police — Wikipedia (complément)"
+        }
+      ]
+    },
+    {
+      "id": "cn-pap-snow-leopard-negotiator",
+      "branch": "gendarmerie",
+      "command": "武警部队",
+      "formation": "雪豹突击队",
+      "unit": {
+        "fr": "Snow Leopard Commando Unit (雪豹突击队), Police armée du peuple, ex-corps PAP de Pékin, rattachée depuis la réforme au 2e corps mobile (第二机动总队)",
+        "en": "Snow Leopard Commando Unit (雪豹突击队), People’s Armed Police, formerly PAP Beijing corps, since the reform under the 2nd Mobile Corps (第二机动总队)"
+      },
+      "type": "support",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "谈判专家",
+        "pinyin": "tánpàn zhuānjiā",
+        "fr": "Négociateur (Snow Leopard)",
+        "en": "Negotiator (Snow Leopard)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Négociateur de crise qui travaille avec les équipes d’assaut pendant les prises d’otages, avant ou pendant l’intervention.",
+        "en": "Crisis negotiator working with the assault teams in hostage situations, before or during the intervention."
+      },
+      "qualifications": {
+        "fr": [
+          "Négociation de crise"
+        ],
+        "en": [
+          "Crisis negotiation"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "谈判专家"
+        ],
+        "en": [
+          "Negotiator"
+        ]
+      },
+      "icon": "megaphone",
+      "tags": {
+        "fr": [
+          "Police armée du peuple",
+          "Libération d’otages"
+        ],
+        "en": [
+          "People’s Armed Police",
+          "Hostage rescue"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://paper.people.com.cn/hqrw/html/2008-07/16/content_103945.htm",
+          "title": "“雪豹突击队”显神威 — 环球人物 (人民日报), juil. 2008"
+        }
+      ]
+    },
+    {
+      "id": "cn-pap-falcon-sniper",
+      "branch": "gendarmerie",
+      "command": "武警部队",
+      "formation": "猎鹰突击队",
+      "unit": {
+        "fr": "Falcon Commando Unit (猎鹰突击队), Police armée du peuple, École des forces spéciales de police (武警特警学院), Pékin",
+        "en": "Falcon Commando Unit (猎鹰突击队), People’s Armed Police, PAP Special Police Academy (武警特警学院), Beijing"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "狙击手",
+        "pinyin": "jūjīshǒu",
+        "fr": "Tireur d’élite (Falcon)",
+        "en": "Sniper (Falcon)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Tireur d’élite du Falcon Commando Unit. Au championnat de tir d’élite des World Police and Fire Games de Budapest (juin 2014), l’unité a gagné trois médailles d’or ; elle a aussi concouru à la Sniper World Cup en Hongrie.",
+        "en": "Sniper of the Falcon Commando Unit. At the World Police and Fire Games sniper championship in Budapest (June 2014), the unit won three gold medals; it has also competed in the Sniper World Cup in Hungary."
+      },
+      "qualifications": {
+        "fr": [
+          "Formation tireur d’élite"
+        ],
+        "en": [
+          "Sniper training"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "狙击手, 战斗队"
+        ],
+        "en": [
+          "Sniper, combat team"
+        ]
+      },
+      "icon": "crosshair",
+      "tags": {
+        "fr": [
+          "Police armée du peuple",
+          "Tir de précision",
+          "Contre-terrorisme"
+        ],
+        "en": [
+          "People’s Armed Police",
+          "Sniping",
+          "Counter-terrorism"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://news.ifeng.com/c/7fjkg3pHzZq",
+          "title": "追寻忠勇善战的力量之源 (猎鹰突击队) — 解放军报 via 凤凰网, 25 juil. 2014"
+        },
+        {
+          "url": "https://www.globaltimes.cn/content/1159826.shtml",
+          "title": "Falcon Force! — Global Times, 31 juil. 2019"
+        }
+      ]
+    },
+    {
+      "id": "cn-pap-falcon-team-deputy-leader",
+      "branch": "gendarmerie",
+      "command": "武警部队",
+      "formation": "猎鹰突击队",
+      "unit": {
+        "fr": "Falcon Commando Unit (猎鹰突击队), Police armée du peuple, École des forces spéciales de police (武警特警学院), Pékin",
+        "en": "Falcon Commando Unit (猎鹰突击队), People’s Armed Police, PAP Special Police Academy (武警特警学院), Beijing"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "战斗队副队长",
+        "pinyin": "zhàndòuduì fù duìzhǎng",
+        "fr": "Chef adjoint d’équipe de combat (Falcon)",
+        "en": "Deputy combat team leader (Falcon)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Adjoint du chef d’une équipe de combat (战斗队) du Falcon. Le chef adjoint de l’équipe n° 1 cité est aussi tireur d’élite. L’unité a remporté quatre médailles d’or et deux d’argent à la Warrior Competition de Jordanie en 2013.",
+        "en": "Second in command of a Falcon combat team (战斗队). The deputy leader of team no. 1 profiled is also a sniper. The unit won four gold and two silver medals at the 2013 Warrior Competition in Jordan."
+      },
+      "qualifications": {
+        "fr": [
+          "Opérateur confirmé"
+        ],
+        "en": [
+          "Experienced operator"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "一队副队长"
+        ],
+        "en": [
+          "Deputy leader, team 1"
+        ]
+      },
+      "icon": "users",
+      "tags": {
+        "fr": [
+          "Police armée du peuple",
+          "Commandement"
+        ],
+        "en": [
+          "People’s Armed Police",
+          "Command"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://news.ifeng.com/c/7fjkg3pHzZq",
+          "title": "追寻忠勇善战的力量之源 (猎鹰突击队) — 解放军报 via 凤凰网, 25 juil. 2014"
+        }
+      ]
+    },
+    {
+      "id": "cn-pap-falcon-eod",
+      "branch": "gendarmerie",
+      "command": "武警部队",
+      "formation": "猎鹰突击队",
+      "unit": {
+        "fr": "Falcon Commando Unit (猎鹰突击队), Police armée du peuple, École des forces spéciales de police (武警特警学院), Pékin",
+        "en": "Falcon Commando Unit (猎鹰突击队), People’s Armed Police, PAP Special Police Academy (武警特警学院), Beijing"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "排爆手",
+        "pinyin": "páibàoshǒu",
+        "fr": "Démineur NEDEX (Falcon)",
+        "en": "EOD technician (Falcon)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Spécialiste de la neutralisation d’engins explosifs ; un démineur du Falcon s’est distingué au concours NEDEX des forces spéciales de la Police armée en 2012. Le déminage fait aussi partie de l’entraînement du Snow Leopard.",
+        "en": "Explosive ordnance disposal specialist; a Falcon EOD technician stood out at the 2012 PAP special forces EOD competition. EOD is also part of Snow Leopard training."
+      },
+      "qualifications": {
+        "fr": [
+          "Neutralisation d’engins explosifs"
+        ],
+        "en": [
+          "Explosive ordnance disposal"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "排爆手"
+        ],
+        "en": [
+          "EOD technician"
+        ]
+      },
+      "icon": "bomb",
+      "tags": {
+        "fr": [
+          "Police armée du peuple",
+          "Déminage NEDEX"
+        ],
+        "en": [
+          "People’s Armed Police",
+          "EOD"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://news.ifeng.com/c/7fjkg3pHzZq",
+          "title": "追寻忠勇善战的力量之源 (猎鹰突击队) — 解放军报 via 凤凰网, 25 juil. 2014"
+        },
+        {
+          "url": "https://www.globaltimes.cn/content/1153670.shtml",
+          "title": "Snow Leopard commandos in intensive training — Global Times, 10 juin 2019"
+        }
+      ]
+    },
+    {
+      "id": "cn-pap-falcon-counter-hijack",
+      "branch": "gendarmerie",
+      "command": "武警部队",
+      "formation": "猎鹰突击队",
+      "unit": {
+        "fr": "Falcon Commando Unit (猎鹰突击队), Police armée du peuple, École des forces spéciales de police (武警特警学院), Pékin",
+        "en": "Falcon Commando Unit (猎鹰突击队), People’s Armed Police, PAP Special Police Academy (武警特警学院), Beijing"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "反劫机队员",
+        "pinyin": "fǎnjiéjī duìyuán",
+        "fr": "Opérateur anti-détournement (Falcon)",
+        "en": "Counter-hijack operator (Falcon)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Le Falcon remonte à la première unité professionnelle anti-détournement d’avion (1982) ; il est aujourd’hui présenté comme la première force antiterroriste nationale (drapeau remis en 2014). Quatre « semaines de l’enfer » par an, dont une consacrée à l’eau ; formateurs israéliens, hongrois et jordaniens.",
+        "en": "The Falcon traces back to the first professional anti-hijacking unit (1982); it is now presented as the top national counter-terrorism force (colours presented in 2014). Four “Hell Weeks” a year, one of them in water; Israeli, Hungarian and Jordanian trainers."
+      },
+      "qualifications": {
+        "fr": [
+          "Intervention en aéronef",
+          "« Semaine de l’enfer »"
+        ],
+        "en": [
+          "Aircraft assault",
+          "“Hell Week”"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "猎鹰突击队"
+        ],
+        "en": [
+          "Falcon Commando Unit"
+        ]
+      },
+      "icon": "plane",
+      "tags": {
+        "fr": [
+          "Police armée du peuple",
+          "Contre-terrorisme",
+          "Libération d’otages"
+        ],
+        "en": [
+          "People’s Armed Police",
+          "Counter-terrorism",
+          "Hostage rescue"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://news.ifeng.com/c/7fjkg3pHzZq",
+          "title": "追寻忠勇善战的力量之源 (猎鹰突击队) — 解放军报 via 凤凰网, 25 juil. 2014"
+        },
+        {
+          "url": "https://www.globaltimes.cn/content/1159826.shtml",
+          "title": "Falcon Force! — Global Times, 31 juil. 2019"
+        }
+      ]
+    },
+    {
+      "id": "cn-pap-falcon-political-instructor",
+      "branch": "gendarmerie",
+      "command": "武警部队",
+      "formation": "猎鹰突击队",
+      "unit": {
+        "fr": "Falcon Commando Unit (猎鹰突击队), Police armée du peuple, École des forces spéciales de police (武警特警学院), Pékin",
+        "en": "Falcon Commando Unit (猎鹰突击队), People’s Armed Police, PAP Special Police Academy (武警特警学院), Beijing"
+      },
+      "type": "command",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "教导员",
+        "pinyin": "jiàodǎoyuán",
+        "fr": "Instructeur politique de bataillon (Falcon)",
+        "en": "Battalion political instructor (Falcon)"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Officier politique à l’échelon bataillon (à ne pas confondre avec 教练员, entraîneur) : moral, formation politique et cohésion de l’unité, aux côtés du chef d’unité. Source ouverte faible : à confirmer.",
+        "en": "Battalion-level political officer (not to be confused with 教练员, coach): morale, political education and unit cohesion, alongside the unit leader. Weak open source: to be confirmed."
+      },
+      "qualifications": {
+        "fr": [
+          "Officier politique"
+        ],
+        "en": [
+          "Political officer"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "教导员"
+        ],
+        "en": [
+          "Political instructor"
+        ]
+      },
+      "icon": "flag",
+      "tags": {
+        "fr": [
+          "Police armée du peuple",
+          "Travail politique",
+          "Source faible"
+        ],
+        "en": [
+          "People’s Armed Police",
+          "Political work",
+          "Weak source"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://news.ifeng.com/c/7fjkg3pHzZq",
+          "title": "追寻忠勇善战的力量之源 (猎鹰突击队) — 解放军报 via 凤凰网, 25 juil. 2014"
+        }
+      ]
+    },
+    {
+      "id": "cn-pap-mountain-eagle-operator",
+      "branch": "gendarmerie",
+      "command": "武警部队",
+      "formation": "山鹰突击队",
+      "unit": {
+        "fr": "Mountain Eagle Commando Unit (山鹰突击队), détachement d’opérations spéciales du corps PAP du Xinjiang (武警新疆总队)",
+        "en": "Mountain Eagle Commando Unit (山鹰突击队), special operations detachment of the PAP Xinjiang corps (武警新疆总队)"
+      },
+      "type": "operator",
+      "code": "",
+      "code_system": "",
+      "name": {
+        "zh": "山鹰突击队队员",
+        "pinyin": "Shānyīng tūjīduì duìyuán",
+        "fr": "Opérateur du Mountain Eagle",
+        "en": "Mountain Eagle commando operator"
+      },
+      "abbreviation": "",
+      "description": {
+        "fr": "Opérateur de l’unité antiterroriste de la Police armée du Xinjiang, révélée en 2019 et nommée d’après son terrain de montagne et de plateau. En 2018 elle a consommé autant de munitions que toutes les autres unités de la Police armée du Xinjiang en trois ans.",
+        "en": "Operator of the Xinjiang PAP counter-terrorism unit, unveiled in 2019 and named after its mountain and plateau terrain. In 2018 it used as much ammunition as all the other Xinjiang PAP units over three years."
+      },
+      "qualifications": {
+        "fr": [
+          "Combat en montagne"
+        ],
+        "en": [
+          "Mountain warfare"
+        ]
+      },
+      "billets": {
+        "fr": [
+          "山鹰突击队"
+        ],
+        "en": [
+          "Mountain Eagle Commando Unit"
+        ]
+      },
+      "icon": "shield",
+      "tags": {
+        "fr": [
+          "Police armée du peuple",
+          "Contre-terrorisme"
+        ],
+        "en": [
+          "People’s Armed Police",
+          "Counter-terrorism"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://asiatimes.com/2019/08/china-unveils-special-counter-terror-force-in-xinjiang/",
+          "title": "China unveils special counter-terror force in Xinjiang — Asia Times, 20 août 2019"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/People%27s_Armed_Police",
+          "title": "People’s Armed Police — Wikipedia (complément)"
+        }
+      ]
+    }
+  ]
+}
