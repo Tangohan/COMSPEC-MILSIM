@@ -62,6 +62,7 @@
 .jobcat__flag[data-flag="FR"] { color: transparent; background: linear-gradient(90deg, #002654 0 33.34%, #fff 33.34% 66.67%, #ce1126 66.67%); }
 .jobcat__flag[data-flag="US"] { color: transparent; background: linear-gradient(#3c3b6e, #3c3b6e) 0 0 / 42% 54% no-repeat, repeating-linear-gradient(#b22234 0 7.69%, #fff 7.69% 15.38%); }
 .jobcat__flag[data-flag="DE"] { color: transparent; background: linear-gradient(#000 0 33.34%, #d00 33.34% 66.67%, #ffce00 66.67%); }
+.jobcat__flag[data-flag="RU"] { color: transparent; background: linear-gradient(#fff 0 33.34%, #0039a6 33.34% 66.67%, #d52b1e 66.67%); }
 /* OTAN : rose des vents blanche à quatre branches sur fond bleu OTAN (#004990), cercle évidé. */
 .jobcat__flag[data-flag="NATO"] { color: transparent; background: #004990; }
 .jobcat__flag[data-flag="NATO"]::before, .jobcat__flag[data-flag="NATO"]::after { content: ""; position: absolute; top: 50%; left: 50%; height: 84%; aspect-ratio: 1; transform: translate(-50%, -50%); }

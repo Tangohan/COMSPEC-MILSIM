@@ -51777,6 +51777,7 @@ return [
     'Un catalogue rassemble les emplois d’un univers ou d’une unité (SCP Foundation, Warhammer 40k, unité fictive, PMC…). Il s’affiche à côté des pays, pour votre communauté seulement, sauf si vous le partagez.' => 'A catalog groups the jobs of a universe or a unit (SCP Foundation, Warhammer 40k, fictional unit, PMC…). It appears next to the countries, for your community only unless you share it.',
     'remplacé' => 'replaced',
     'Étiquettes (séparées par des virgules)' => 'Tags (comma-separated)',
+    'Russe en alphabet latin' => 'Russian in Latin script',
     '← Qualifications' => '← Qualifications',
     'PERSONNEL · QUALIFICATIONS · CATALOGUE OTAN' => 'PERSONNEL · QUALIFICATIONS · NATO CATALOGUE',
     'CATALOGUE OTAN' => 'NATO CATALOGUE',
