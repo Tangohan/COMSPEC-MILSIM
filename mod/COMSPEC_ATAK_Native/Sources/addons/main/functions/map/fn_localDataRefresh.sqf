@@ -234,8 +234,9 @@ private _mkRemote = _data getOrDefault ["remoteMarkers",createHashMap];
 private _remRev = (_data getOrDefault ["revisions",createHashMap]) getOrDefault ["remoteMarkers",0];
 private _dirty = missionNamespace getVariable ["COMSPEC_ATAK_MkDirtyLd", createHashMap];
 private _mk = missionNamespace getVariable ["COMSPEC_ATAK_MkLocal", []];
-private _full = (count _mk) < 4 || {diag_tickTime > (_mk select 0)} || {"" in _dirty};
-if (!_full && {(count _dirty) isEqualTo 0} && {_remRev isEqualTo (_mk select 2)}) exitWith {};
+private _full = (count _mk) < 5 || {diag_tickTime > (_mk select 0)} || {"" in _dirty};
+private _remChanged = _full || {_remRev isNotEqualTo (_mk select 2)};
+if (!_remChanged && {(count _dirty) isEqualTo 0}) exitWith {};
 missionNamespace setVariable ["COMSPEC_ATAK_MkDirtyLd", createHashMap];
 private _entry = {
     createHashMapFromArray [
@@ -247,7 +248,7 @@ private _entry = {
 private _local = createHashMap;
 if (_full) then {
     { _local set [_x, _x call _entry]; } forEach allMapMarkers;
-    _mk = [diag_tickTime + 300, _local, _remRev, (_mk param [3, 0]) + 1];
+    _mk = [diag_tickTime + 300, _local, _remRev, (_mk param [3, 0]) + 1, createHashMap];
 } else {
     _local = _mk select 1;
     { if ((markerShape _x) isEqualTo "") then { _local deleteAt _x; } else { _local set [_x, _x call _entry]; }; } forEach (keys _dirty);
@@ -255,7 +256,14 @@ if (_full) then {
     _mk set [3, (_mk select 3) + 1];
 };
 missionNamespace setVariable ["COMSPEC_ATAK_MkLocal", _mk];
-private _markers = createHashMap;
+// Marqueurs Athena inchangés : seuls les marqueurs du carnet sont reportés dans la table finale (sans copier tous les
+// marqueurs ni refaire la grille des doublons). Un doublon Athena / jeu apparu entre-temps se règle au prochain envoi Athena.
+private _markers = _mk select 4;
+if (!_remChanged) then {
+    { if !(_x in _mkRemote) then { if (_x in _local) then { _markers set [_x, _local get _x]; } else { _markers deleteAt _x; }; }; } forEach (keys _dirty);
+} else {
+_markers = createHashMap;
+_mk set [4, _markers];
 _markers merge _local;
 if ((count _mkRemote) > 0) then {
     // Doublon Athena / jeu : même texte (ou sans texte) à moins de 15 m. Marqueurs du jeu rangés par cases de 15 m :
@@ -284,5 +292,6 @@ if ((count _mkRemote) > 0) then {
         };
         if (!_dup) then { _markers set [_x,_r]; };
     } forEach _mkRemote;
+};
 };
 ["markers",_markers,-1,str (_mk select 3)] call comspec_atak_native_fnc_storeSet;
