@@ -302,6 +302,13 @@ return function (Router $router) {
     $router->get('/nouveautes/{kind}/{number}', [SitePagesController::class, 'dispatch']);
     $router->get('/sse', [SitePagesController::class, 'sse']);
     $router->get('/atak-natif', [SitePagesController::class, 'atakNative']);
+    // Wiki ATAK public : une page par app, lue dans docs/steam/discussions (docs/wiki-atak.md).
+    $router->get('/wiki', [\App\Controllers\Web\AtakWikiController::class, 'root']);
+    $router->get('/wiki/atak', [\App\Controllers\Web\AtakWikiController::class, 'home']);
+    $router->get('/wiki/atak/apps', [\App\Controllers\Web\AtakWikiController::class, 'apps']);
+    $router->get('/wiki/atak/nouveautes', [\App\Controllers\Web\AtakWikiController::class, 'news']);
+    $router->get('/wiki/atak/recherche', [\App\Controllers\Web\AtakWikiController::class, 'search']);
+    $router->get('/wiki/atak/{slug}', [\App\Controllers\Web\AtakWikiController::class, 'show']);
     $router->get('/traduire-atak', [SitePagesController::class, 'translateAtak']);
     $router->get('/traduire-atak/modele.json', [SitePagesController::class, 'translateAtakTemplate']);
     // Packs de langue partagés : la page s'ouvre par le lien (jeton dans le fragment #), l'API lit X-Pack-Token.

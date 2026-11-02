@@ -113,6 +113,25 @@ final class SeoController
             // Journal indisponible : continuer.
         }
 
+        // Wiki ATAK : accueil, sommaire, nouveautés et une page par sujet (date du fichier source).
+        try {
+            $wiki = \App\Support\Wiki\AtakWiki::catalog();
+            $urls[] = $this->urlEntry($base . '/wiki/atak', null, 'weekly', '0.8');
+            $urls[] = $this->urlEntry($base . '/wiki/atak/apps', null, 'weekly', '0.7');
+            $urls[] = $this->urlEntry($base . '/wiki/atak/nouveautes', null, 'weekly', '0.6');
+            foreach ($wiki['pages'] as $slug => $page) {
+                $mtime = (int) ($page['mtime'] ?? 0);
+                $urls[] = $this->urlEntry(
+                    $base . '/wiki/atak/' . rawurlencode((string) $slug),
+                    $mtime > 0 ? gmdate('Y-m-d', $mtime) : null,
+                    'monthly',
+                    '0.6'
+                );
+            }
+        } catch (\Throwable) {
+            // Fichiers du wiki illisibles : continuer.
+        }
+
         try {
             /** @var TenantRepository $tenants */
             $tenants = Container::get(TenantRepository::class);
