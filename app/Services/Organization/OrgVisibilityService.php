@@ -229,7 +229,7 @@ final class OrgVisibilityService
             $member['athena_identifier'] = null;
             $member['anonymized'] = true;
             $member['confidential'] = ConfidentialDisplay::payload(ConfidentialDisplay::PERSON_ANONYMIZED, $member['label']);
-            unset($member['first_name'], $member['last_name'], $member['character_name']);
+            unset($member['first_name'], $member['last_name'], $member['character_name'], $member['trigram']);
         }
 
         if ($caps->shouldRedactAssignment($aVis, $uVis)) {

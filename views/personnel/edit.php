@@ -450,6 +450,13 @@ $editValidTabIds = implode(',', array_map(
                   <input type="text" name="callsign" id="callsign" value="<?= htmlspecialchars($p['callsign'] ?? $targetUser['callsign'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
                   <p class="mt-1 text-[11px] text-slate-500">Surnom radio / callsign utilisé en mission (ATAK, annuaire).</p>
                 </div>
+                <?php if (\App\Services\Personnel\MemberNameSettings::forTenant((int) \App\Core\Session::get('tenant_id'))['trigrams_enabled']): ?>
+                <div>
+                  <label for="member_trigram" class="mb-1 block text-xs font-bold text-slate-600">Trigramme</label>
+                  <input type="text" name="member_trigram" id="member_trigram" value="<?= htmlspecialchars((string) ($memberTrigram ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-mono uppercase" maxlength="3" pattern="[A-Za-z]{3}" autocomplete="off" spellcheck="false">
+                  <p class="mt-1 text-[11px] text-slate-500">Trois lettres, uniques dans la communauté (paraphes, organigramme). Calculé depuis le prénom et le nom, puis conservé même si le nom change.</p>
+                </div>
+                <?php endif; ?>
                 <div>
                   <label for="motto" class="mb-1 block text-xs font-bold text-slate-600">Devise</label>
                   <input type="text" name="motto" id="motto" value="<?= htmlspecialchars((string) ($p['motto'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">

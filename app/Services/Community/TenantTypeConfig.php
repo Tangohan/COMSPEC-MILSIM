@@ -369,6 +369,7 @@ final class TenantTypeConfig
             'admin/units' => 'personnel',
             'back-office/organisation/passes' => 'personnel',
             'back-office/organisation/matricules' => 'personnel',
+            'back-office/organisation/noms' => 'personnel',
             'back-office/organisation/unites' => 'personnel',
             'back-office/organisation/grades' => 'personnel',
             'back-office/organisation/qualite-donnees' => 'personnel',

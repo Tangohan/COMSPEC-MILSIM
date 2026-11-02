@@ -170,7 +170,7 @@ final class QualificationCatalogQuota
     public static function upgradeOffer(string $key, int $currentLimit = 0): ?array
     {
         foreach (['standard', 'pro', 'pro_plus'] as $slug) {
-            $value = SubscriptionPlanFeaturesCatalog::defaultsForSlug($slug)[$key] ?? null;
+            $value = self::planValue($slug, $key);
             $better = $key === self::BULK ? !empty($value) : ($value !== null && ((int) $value === 0 || (int) $value > $currentLimit));
             if ($better) {
                 return ['slug' => $slug, 'name' => self::planName($slug), 'value' => (int) $value];
@@ -178,6 +178,20 @@ final class QualificationCatalogQuota
         }
 
         return null;
+    }
+
+    /** Valeur réelle de la formule du site (réglée dans l'administration), sinon le défaut du catalogue. */
+    private static function planValue(string $slug, string $key): bool|int|null
+    {
+        try {
+            $row = \App\Core\Container::get(\App\Repositories\SubscriptionPlanRepository::class)->findBySlug($slug);
+            if (is_array($row)) {
+                return SubscriptionPlanFeaturesCatalog::planValues($row)['values'][$key] ?? null;
+            }
+        } catch (Throwable) {
+        }
+
+        return SubscriptionPlanFeaturesCatalog::defaultsForSlug($slug)[$key] ?? null;
     }
 
     public static function planName(string $slug): string

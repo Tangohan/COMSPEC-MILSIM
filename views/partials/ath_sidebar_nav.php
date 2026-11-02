@@ -189,6 +189,7 @@ $orbatChildren = [
         'children' => [
             ['label' => 'Indicatifs radio', 'href' => url('back-office/organisation/indicatifs'), 'active' => $navAt('back-office/organisation/indicatifs')],
             ['label' => 'Matricules', 'href' => url('back-office/organisation/matricules'), 'active' => $navAt('back-office/organisation/matricules')],
+            ['label' => 'Noms et trigrammes', 'href' => url('back-office/organisation/noms'), 'active' => $navAt('back-office/organisation/noms')],
             ['label' => 'PASS RH', 'href' => url('back-office/organisation/passes'), 'active' => $navAt('back-office/organisation/passes')],
         ],
     ],
