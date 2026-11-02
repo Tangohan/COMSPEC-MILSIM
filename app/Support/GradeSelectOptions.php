@@ -35,6 +35,7 @@ final class GradeSelectOptions
     private const SYSTEM_LABELS = [
         'FR' => 'France',
         'US' => 'États-Unis',
+        'GB' => 'Royaume-Uni',
         'MY' => 'Malaisie',
     ];
 
@@ -50,6 +51,7 @@ final class GradeSelectOptions
     private const SYSTEM_LABELS_EN = [
         'FR' => 'France',
         'US' => 'United States',
+        'GB' => 'United Kingdom',
         'MY' => 'Malaysia',
     ];
 

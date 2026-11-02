@@ -46,7 +46,7 @@ $oxCountry = static function (string $code, string $label, bool $native = false)
     }
     $nativeName = \App\Support\QualificationCatalog\CatalogCountry::native($code);
     return '<span class="acx-country">' . \App\Support\QualificationCatalog\CatalogCountry::flag($code) . '<span translate="no">' . $h($label !== '' ? $label : $code) . '</span>'
-        . ($native && $nativeName !== '' && $nativeName !== $label ? ' <span class="acx-country__native" translate="no" lang="' . $h(strtolower($code === 'NATO' ? 'en' : ($code === 'US' ? 'en' : ($code === 'CN' ? 'zh' : $code)))) . '">' . $h($nativeName) . '</span>' : '') . '</span>';
+        . ($native && $nativeName !== '' && $nativeName !== $label ? ' <span class="acx-country__native" translate="no" lang="' . $h(strtolower(in_array($code, ['NATO', 'US', 'GB'], true) ? 'en' : ($code === 'CN' ? 'zh' : $code))) . '">' . $h($nativeName) . '</span>' : '') . '</span>';
 };
 $oxStates = [
     'held' => 'Acquis',
