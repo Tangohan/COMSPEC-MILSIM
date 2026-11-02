@@ -61,5 +61,16 @@ Configuration du jeu (`props_f_exp`, `props_f_enoch`, lue le 02/11) :
   4. Serveur : un second joueur voit la même chose. Il rejoint pendant une diffusion : il voit aussi l'image.
   5. On s'éloigne à plus de 150 m puis on revient : l'écran retrouve son aspect normal, puis l'image.
 
+## Suite (2.9.33)
+- RPT de la 2.9.31 (pack FN, 02/11) : 74 `Cannot load texture #(rgb,1600,900,1)ui("COMSPEC_RscTocScreenTexture",…)`,
+  un par essai toutes les 4 s, sur `Land_TripodScreen_01_large_black_F` et `MRH_projectionScreenSmall` ; le display
+  de la texture n'est jamais créé (avertissement « image non chargée en 4 s »). La matière et les dalles n'étaient
+  donc pas la seule cause : Arma refuse une texture procédurale qui n'est pas en puissances de 2.
+- Correctif : `#(rgb,2048,1024,1)` pour l'écran TOC (`fn_tocScreen`, `_texSpec`) et pour les diapositives / leçons
+  Academy (`fn_screenCast`), mise en page inchangée (pixels virtuels 1600 x 900). Le vidéoprojecteur pose la même texture.
+- Traces `[SCREEN]` à chaque étape (diffusion lancée ou refusée, écran, dalle, texture posée, texture chargée).
+- La tablette JPC utilise encore `#(rgb,1024,576,1)` (et 496 / 384 / 584 selon le modèle) : à vérifier en jeu, même
+  cause probable si son écran reste noir.
+
 ## Statut
-Corrigé dans les sources (2.9.29), à vérifier en jeu.
+Corrigé dans les sources (2.9.33), à vérifier en jeu.
