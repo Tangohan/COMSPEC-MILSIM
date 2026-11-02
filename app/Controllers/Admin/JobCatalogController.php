@@ -58,7 +58,7 @@ final class JobCatalogController
         return null;
     }
 
-    /** Catalogue dans la langue du lecteur (JSON lu par la fenêtre de recherche). */
+    /** Catalogue tous pays dans la langue du lecteur (JSON lu par la fenêtre de recherche, qui filtre elle-même). */
     public function catalogue(Request $request, array $params = []): Response
     {
         if ($denied = $this->denied()) {
@@ -67,7 +67,7 @@ final class JobCatalogController
         $lang = JobCatalog::lang(function_exists('locale') ? locale() : 'fr');
         $query = trim((string) $request->queryString('q', ''));
         $filters = [];
-        foreach (['branch', 'command', 'type', 'pack'] as $f) {
+        foreach (JobCatalog::FILTERS as $f) {
             $filters[$f] = mb_substr(trim((string) $request->queryString($f, '')), 0, 40);
         }
         $entries = $query !== '' || array_filter($filters) !== [] ? JobCatalog::search(mb_substr($query, 0, 120), $filters, $lang) : JobCatalog::entries($lang);
@@ -76,6 +76,7 @@ final class JobCatalogController
             'ok' => true,
             'lang' => $lang,
             'packs' => JobCatalog::packSummaries($lang),
+            'countries' => JobCatalog::countries($lang),
             'facets' => JobCatalog::facets($lang),
             'entries' => $entries,
         ])->header('Cache-Control', 'private, max-age=600')->header('Vary', 'Cookie');

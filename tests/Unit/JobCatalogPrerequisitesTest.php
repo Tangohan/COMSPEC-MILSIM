@@ -20,7 +20,7 @@ use ReflectionProperty;
 use Tests\Support\MysqlDdlSqlitePdo;
 
 /**
- * Catalogue d’emplois de référence (forces spéciales américaines) et prérequis d’un emploi : doctrines, heures de
+ * Catalogue d’emplois de référence (forces spéciales américaines et françaises) et prérequis d’un emploi : doctrines, heures de
  * jeu / de vol mesurées, qualifications, compétences, contrôle à l’attribution et dérogation motivée.
  */
 final class JobCatalogPrerequisitesTest extends TestCase
@@ -72,35 +72,67 @@ final class JobCatalogPrerequisitesTest extends TestCase
     public function testShippedCatalogIsValidUniqueSourcedAndCopyable(): void
     {
         $packs = JobCatalog::packs();
-        self::assertArrayHasKey('us_sof', $packs);
-        $pack = $packs['us_sof'];
-        self::assertSame('US', $pack['country']);
-        self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', (string) $pack['compiled_at']);
-        self::assertNotSame('', trim((string) ($pack['sources_note']['fr'] ?? '')));
-        self::assertNotSame('', trim((string) ($pack['sources_note']['en'] ?? '')));
-        $entries = JobCatalog::rawEntries();
-        self::assertGreaterThanOrEqual(80, count($entries));
-        self::assertLessThanOrEqual(150, count($entries));
-        $ids = array_column($entries, 'id');
-        self::assertSame(count($ids), count(array_unique($ids)), 'Identifiant en double dans le catalogue.');
-        $problems = [];
-        foreach ($entries as $entry) {
-            foreach (JobCatalog::problems($entry) as $p) {
-                $problems[] = $entry['id'] . ' : ' . $p;
+        self::assertSame(JobCatalog::PACKS, array_keys($packs), 'Chaque pack inscrit est livré et lisible.');
+        $all = JobCatalog::rawEntries();
+        $ids = array_column($all, 'id');
+        self::assertSame(count($ids), count(array_unique($ids)), 'Identifiant en double entre les pays.');
+        foreach ($packs as $name => $pack) {
+            self::assertArrayHasKey((string) $pack['country'], JobCatalog::COUNTRIES, $name . ' : pays sans nom affiché.');
+            self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', (string) $pack['compiled_at']);
+            self::assertNotSame('', trim((string) ($pack['sources_note']['fr'] ?? '')));
+            self::assertNotSame('', trim((string) ($pack['sources_note']['en'] ?? '')));
+            $entries = array_values(array_filter($all, static fn (array $e): bool => $e['pack'] === $name));
+            self::assertGreaterThanOrEqual(80, count($entries), $name);
+            self::assertLessThanOrEqual(150, count($entries), $name);
+            $prefix = strtolower((string) $pack['country']) . '-';
+            $problems = [];
+            foreach ($entries as $entry) {
+                if (!str_starts_with((string) $entry['id'], $prefix)) {
+                    $problems[] = $entry['id'] . ' : préfixe du pays attendu ' . $prefix;
+                }
+                foreach (JobCatalog::problems($entry) as $p) {
+                    $problems[] = $entry['id'] . ' : ' . $p;
+                }
+                if (($entry['abbreviation'] ?? '') !== '') {
+                    // L’abrégé proposé passe tel quel la règle des fonctions (2 à 8 lettres ou chiffres).
+                    self::assertSame($entry['abbreviation'], JobRoleEnrichmentService::normalizeAbbreviation($entry['abbreviation']));
+                }
             }
-            if (($entry['abbreviation'] ?? '') !== '') {
-                // L’abrégé proposé passe tel quel la règle des fonctions (2 à 8 lettres ou chiffres).
-                self::assertSame($entry['abbreviation'], JobRoleEnrichmentService::normalizeAbbreviation($entry['abbreviation']));
-            }
+            self::assertSame([], $problems, $name);
+            self::assertContains('aviation', array_column($entries, 'type'), $name);
+            self::assertContains('command', array_column($entries, 'type'), $name);
         }
-        self::assertSame([], $problems);
         // Toutes les branches attendues sont couvertes.
-        $branches = array_count_values(array_column($entries, 'branch'));
+        $us = array_count_values(array_column(array_filter($all, static fn (array $e): bool => $e['country'] === 'US'), 'branch'));
         foreach (['army', 'navy', 'air_force', 'marine_corps'] as $branch) {
-            self::assertGreaterThanOrEqual(10, $branches[$branch] ?? 0, $branch);
+            self::assertGreaterThanOrEqual(10, $us[$branch] ?? 0, 'US ' . $branch);
         }
-        self::assertContains('aviation', array_column($entries, 'type'));
-        self::assertContains('command', array_column($entries, 'type'));
+    }
+
+    public function testFrenchPackCoversTheSpecialForcesOfEachServiceWithFrenchOfficialNames(): void
+    {
+        $pack = JobCatalog::packs()['fr_sof'] ?? null;
+        self::assertIsArray($pack);
+        self::assertSame('FR', $pack['country']);
+        self::assertSame('fr', $pack['official_lang']);
+        $entries = array_values(array_filter(JobCatalog::rawEntries(), static fn (array $e): bool => $e['country'] === 'FR'));
+        $branches = array_count_values(array_column($entries, 'branch'));
+        foreach (['army', 'navy', 'air_force'] as $branch) {
+            self::assertGreaterThanOrEqual(10, $branches[$branch] ?? 0, 'FR ' . $branch);
+        }
+        $formations = array_unique(array_column($entries, 'formation'));
+        foreach (['1er RPIMa', '13e RDP', '4e RHFS', 'Commando Hubert', 'Commando Kieffer', 'CPA 10', 'EH 1/67 Pyrénées', 'ET 3/61 Poitou'] as $unit) {
+            self::assertContains($unit, $formations, 'Unité absente du catalogue français.');
+        }
+        foreach ($entries as $entry) {
+            self::assertNotSame('', trim((string) ($entry['formation'] ?? '')), $entry['id'] . ' : unité courte manquante.');
+        }
+        // Nom officiel : l’appellation française, montrée au lecteur anglophone sous le nom traduit.
+        $first = $entries[0];
+        $en = JobCatalog::find((string) $first['id'], 'en');
+        self::assertSame($first['name']['fr'], $en['official_name']);
+        self::assertSame($first['name']['en'], $en['name']);
+        self::assertSame('France', $en['country_label']);
     }
 
     public function testContentIsServedInTheReadersLanguageAndSearchCoversCodesNamesUnitsAndFilters(): void
@@ -144,6 +176,70 @@ final class JobCatalogPrerequisitesTest extends TestCase
         }
     }
 
+    public function testCountriesFiltersAndSearchSpanEveryPack(): void
+    {
+        $dir = sys_get_temp_dir() . '/jobcat-' . bin2hex(random_bytes(4));
+        mkdir($dir);
+        $entry = static fn (string $id, string $branch, string $command, string $formation, string $type, string $abbr, string $fr, string $en, array $qualFr, array $qualEn): array => [
+            'id' => $id, 'branch' => $branch, 'command' => $command, 'formation' => $formation, 'type' => $type,
+            'code' => '', 'code_system' => '', 'abbreviation' => $abbr, 'icon' => 'parachute',
+            'name' => ['fr' => $fr, 'en' => $en], 'unit' => ['fr' => $formation . ' (unité)', 'en' => $formation . ' (unit)'],
+            'description' => ['fr' => 'Texte.', 'en' => 'Text.'], 'qualifications' => ['fr' => $qualFr, 'en' => $qualEn],
+            'billets' => ['fr' => [], 'en' => []], 'tags' => ['fr' => ['Forces spéciales'], 'en' => ['Special Forces']],
+            'sources' => [['url' => 'https://www.defense.gouv.fr/x', 'title' => 'x']],
+        ];
+        $pack = static fn (string $country, array $entries, string $official = 'en'): string => (string) json_encode(['country' => $country, 'official_lang' => $official, 'label' => ['fr' => 'FS ' . $country, 'en' => $country . ' SOF'], 'compiled_at' => '2026-11-02', 'sources_note' => ['fr' => 'n', 'en' => 'n'], 'entries' => $entries]);
+        file_put_contents($dir . '/us_sof.json', $pack('US', [
+            $entry('us-navy-so', 'navy', 'NSWC', '', 'operator', 'SO', 'Opérateur de guerre spéciale', 'Special Warfare Operator', ['Brevet parachutiste'], ['Basic Airborne Course']),
+            $entry('us-army-18b', 'army', 'USASOC', '', 'operator', 'WPN', 'Sergent armement', 'Weapons Sergeant', ['Brevet parachutiste'], ['Basic Airborne Course']),
+        ]));
+        file_put_contents($dir . '/fr_sof.json', $pack('FR', [
+            $entry('fr-marine-hubert-nageur', 'navy', 'FORFUSCO', 'Commando Hubert', 'operator', 'NC', 'Nageur de combat', 'Combat Swimmer', ['Brevet de nageur de combat', 'Brevet parachutiste'], ['Combat swimmer badge', 'Parachutist badge']),
+            $entry('fr-terre-1rpima-ce', 'army', 'CFST', '1er RPIMa', 'command', 'CE', 'Chef d’équipe forces spéciales', 'Special Forces Team Leader', ['BSAP', 'Chuteur opérationnel'], ['BSAP', 'Military free-fall']),
+            $entry('fr-air-cpa10-jtac', 'air_force', 'BFSA', 'CPA 10', 'operator', 'JTAC', 'Contrôleur aérien avancé', 'Joint Terminal Attack Controller', ['Qualification JTAC'], ['JTAC qualification']),
+        ], 'fr'));
+        JobCatalog::useDirectory($dir);
+        try {
+            $ids = static fn (array $hits): array => array_column($hits, 'id');
+            self::assertSame([['code' => 'US', 'label' => 'États-Unis', 'count' => 2], ['code' => 'FR', 'label' => 'France', 'count' => 3]], JobCatalog::countries('fr'));
+            self::assertSame('United States', JobCatalog::countries('en')[0]['label']);
+            // Recherche tous pays : brevet en français, nom anglais, unité courte, sans accents.
+            self::assertEqualsCanonicalizing(['us-navy-so', 'us-army-18b', 'fr-marine-hubert-nageur'], $ids(JobCatalog::search('brevet parachutiste', [], 'fr')));
+            self::assertSame(['fr-marine-hubert-nageur'], $ids(JobCatalog::search('combat swimmer', [], 'fr')));
+            self::assertSame(['fr-air-cpa10-jtac'], $ids(JobCatalog::search('cpa 10', [], 'en')));
+            self::assertSame(['fr-terre-1rpima-ce'], $ids(JobCatalog::search('chef d equipe', [], 'en')));
+            self::assertSame(['fr-terre-1rpima-ce'], $ids(JobCatalog::search('chuteur', [], 'fr')), 'Les brevets sont cherchés.');
+            self::assertSame(['fr-terre-1rpima-ce'], $ids(JobCatalog::search('', ['country' => 'FR', 'branch' => 'army'], 'fr')));
+            self::assertSame(['us-navy-so', 'fr-marine-hubert-nageur'], $ids(JobCatalog::search('', ['branch' => 'navy'], 'fr')), 'Même armée dans deux pays.');
+            self::assertSame(['fr-marine-hubert-nageur'], $ids(JobCatalog::search('', ['country' => 'FR', 'branch' => 'navy', 'formation' => 'Commando Hubert', 'type' => 'operator'], 'fr')));
+            self::assertSame([], $ids(JobCatalog::search('', ['country' => 'US', 'formation' => 'Commando Hubert'], 'fr')));
+            self::assertSame([], $ids(JobCatalog::search('jtac', ['country' => 'US'], 'fr')));
+            // Libellés d’armée par pays ; libellé générique quand l’armée existe dans deux pays.
+            self::assertSame('Marine nationale', JobCatalog::find('fr-marine-hubert-nageur', 'fr')['branch_label']);
+            self::assertSame('French Navy', JobCatalog::find('fr-marine-hubert-nageur', 'en')['branch_label']);
+            self::assertSame('US Navy', JobCatalog::find('us-navy-so', 'en')['branch_label']);
+            $facets = JobCatalog::facets('fr');
+            self::assertSame(['US' => 'États-Unis', 'FR' => 'France'], $facets['country']);
+            self::assertSame('Marines', $facets['branch']['navy']);
+            self::assertSame('Armée de l’Air et de l’Espace', $facets['branch']['air_force']);
+            self::assertSame(['1er RPIMa' => '1er RPIMa', 'Commando Hubert' => 'Commando Hubert', 'CPA 10' => 'CPA 10'], $facets['formation']);
+            $fr = JobCatalog::facets('en', ['country' => 'FR']);
+            self::assertSame('French Navy', $fr['branch']['navy']);
+            self::assertSame(['BFSA', 'CFST', 'FORFUSCO'], array_keys($fr['command']));
+            // Nom officiel dans la langue du pays ; l’autre langue reste cherchable par la fenêtre.
+            $nc = JobCatalog::find('fr-marine-hubert-nageur', 'en');
+            self::assertSame('Combat Swimmer', $nc['name']);
+            self::assertSame('Nageur de combat', $nc['official_name']);
+            self::assertStringContainsString('Brevet de nageur de combat', $nc['alt']);
+            self::assertSame('Commando Hubert', $nc['formation']);
+            self::assertSame('Weapons Sergeant', JobCatalog::find('us-army-18b', 'fr')['official_name']);
+        } finally {
+            unlink($dir . '/us_sof.json');
+            unlink($dir . '/fr_sof.json');
+            rmdir($dir);
+        }
+    }
+
     public function testCatalogueEndpointAnswersJsonForTheWorkspaceOnly(): void
     {
         $_SESSION = ['tenant_id' => 14, 'user_id' => 7];
@@ -158,6 +254,11 @@ final class JobCatalogPrerequisitesTest extends TestCase
         self::assertNotEmpty($body['entries']);
         self::assertSame('air_force', $body['entries'][0]['branch']);
         self::assertArrayHasKey('branch', $body['facets']);
+        self::assertSame(['US', 'FR'], array_column($body['countries'], 'code'));
+        $_GET = ['q' => 'nageur de combat', 'country' => 'FR'];
+        $body = json_decode((new JobCatalogController())->catalogue(new Request())->body(), true);
+        self::assertNotEmpty($body['entries']);
+        self::assertSame(['FR'], array_values(array_unique(array_column($body['entries'], 'country'))));
     }
 
     public function testCriteriaAreNormalizedAndMeasuredFromRealSources(): void

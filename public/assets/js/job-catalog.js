@@ -1,8 +1,11 @@
 /*
  * Emplois & fonctions : fenêtre « Chercher dans le catalogue ».
- * Recherche dans le catalogue d'emplois de référence (fonctions/catalogue, JSON dans la langue du lecteur), fiche
- * détaillée, puis copie de tout ou d'un champ dans la fiche d'emploi ouverte (confirmation avant de remplacer un
- * champ déjà rempli). Rien n'est enregistré : l'utilisateur relit et valide le formulaire lui-même.
+ * Catalogue d'emplois de référence tous pays (fonctions/catalogue, JSON dans la langue du lecteur) : catégories par
+ * pays, filtres combinables pays → armée → commandement → unité → type (puces des filtres actifs, réinitialisation),
+ * recherche plein texte avec mise en évidence, tri, regroupement par pays et armée, fiche détaillée, puis copie de
+ * tout ou d'un champ dans la fiche d'emploi ouverte (confirmation avant de remplacer un champ déjà rempli). Rien
+ * n'est enregistré : l'utilisateur relit et valide le formulaire lui-même. Les derniers filtres sont mémorisés dans
+ * le navigateur (localStorage, facultatif).
  */
 (() => {
     'use strict';
@@ -14,20 +17,49 @@
     let current = null;
     let opener = null;
     let timer = 0;
+    const STORE = 'athena.jobCatalog.filters.v2';
+    const FILTERS = ['country', 'branch', 'command', 'formation', 'type'];
+    const state = {country: '', branch: '', command: '', formation: '', type: '', sort: 'relevance', group: true};
     const LIMITS = {name: 120, abbreviation: 8, description: 500, tags: 400, code: 40};
     const normalize = value => String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ');
     const dialog = () => document.querySelector('[data-job-catalog]');
     const form = () => document.querySelector('form[data-job-catalog-form]');
     const isEnglish = () => (document.documentElement.lang || 'fr').slice(0, 2) === 'en';
+    const branchKey = entry => entry.country + ':' + entry.branch;
+    const el = (tag, className, text) => {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+    };
 
     function announce(message) {
         const live = dialog()?.querySelector('[data-job-catalog-live]');
         if (live) { live.textContent = ''; window.setTimeout(() => { live.textContent = message; }, 30); }
     }
 
+    /** Libellé fixe de la fenêtre (traduit avec la page). */
+    function label(key) {
+        return dialog()?.querySelector('[data-job-catalog-label="' + key + '"]')?.textContent.trim() || key;
+    }
+
+    function restore() {
+        try {
+            const saved = JSON.parse(window.localStorage.getItem(STORE) || 'null');
+            if (saved && typeof saved === 'object') {
+                Object.keys(state).forEach(key => { if (typeof saved[key] === typeof state[key]) state[key] = saved[key]; });
+            }
+        } catch (error) { /* stockage indisponible : filtres par défaut */ }
+    }
+
+    function persist() {
+        try { window.localStorage.setItem(STORE, JSON.stringify(state)); } catch (error) { /* navigation privée */ }
+    }
+
     function haystack(entry) {
-        return ' ' + normalize([entry.name, entry.official_name, entry.abbreviation, entry.code, entry.unit, entry.command,
-            entry.branch_label, entry.type_label, (entry.tags || []).join(' '), entry.id].join(' ')) + ' ' + String(entry.code || '').toLowerCase().replace(/\s+/g, '') + ' ';
+        return ' ' + normalize([entry.name, entry.official_name, entry.alt, entry.abbreviation, entry.code, entry.unit, entry.command,
+            entry.formation, entry.branch_label, entry.country_label, entry.type_label, (entry.tags || []).join(' '),
+            (entry.qualifications || []).join(' '), entry.id].join(' ')) + ' ' + String(entry.code || '').toLowerCase().replace(/\s+/g, '') + ' ';
     }
 
     async function load() {
@@ -40,7 +72,12 @@
                 return response.json();
             })
             .then(json => {
-                json.entries.forEach(entry => { entry._hay = haystack(entry); });
+                json.entries.forEach((entry, index) => {
+                    entry._hay = haystack(entry);
+                    entry._name = ' ' + normalize(entry.name) + ' ';
+                    entry._index = index;
+                });
+                json.countries = json.countries || [];
                 data = json;
                 return data;
             })
@@ -48,72 +85,281 @@
         return loading;
     }
 
-    function fillFilters(box) {
-        box.querySelectorAll('[data-job-catalog-filter]').forEach(select => {
-            if (select.options.length > 1) return;
-            const facet = data.facets[select.dataset.jobCatalogFilter] || {};
-            Object.entries(facet).forEach(([value, label]) => select.add(new Option(label, value)));
-            select.setAttribute('translate', 'no');
-        });
-        const note = box.querySelector('[data-job-catalog-note]');
-        if (note) note.textContent = (data.packs || []).map(p => p.label + ' · ' + p.count + ' · ' + p.compiled_at + (p.sources_note ? ' — ' + p.sources_note : '')).join(' | ');
+    function flag(code) {
+        const node = el('span', 'jobcat__flag');
+        node.dataset.flag = code;
+        node.setAttribute('aria-hidden', 'true');
+        node.textContent = code;
+        return node;
     }
 
-    function matches(box) {
-        const words = normalize(box.querySelector('[data-job-catalog-search]').value).split(' ').filter(Boolean);
-        const filters = {};
-        box.querySelectorAll('[data-job-catalog-filter]').forEach(select => { if (select.value) filters[select.dataset.jobCatalogFilter] = select.value; });
-        const raw = box.querySelector('[data-job-catalog-search]').value.trim().toLowerCase().replace(/\s+/g, '');
-        return data.entries
-            .map((entry, index) => {
-                if (Object.entries(filters).some(([key, value]) => entry[key] !== value)) return null;
-                let score = 0;
-                for (const word of words) {
-                    if (!entry._hay.includes(word)) return null;
-                    score += entry._hay.includes(' ' + word + ' ') ? 2 : 1;
-                }
-                if (raw && (raw === String(entry.abbreviation).toLowerCase() || raw === String(entry.code).toLowerCase())) score += 10;
-                return {entry, score, index};
-            })
-            .filter(Boolean)
-            .sort((a, b) => b.score - a.score || a.index - b.index)
-            .map(hit => hit.entry);
+    /** Catégories pays : « Tous les pays » est dans la page, les pays viennent du catalogue. */
+    function buildCountries(box) {
+        const bar = box.querySelector('[data-job-catalog-countries]');
+        if (bar.dataset.ready) return;
+        bar.dataset.ready = '1';
+        data.countries.forEach(country => {
+            const button = el('button', 'jobcat__country');
+            button.type = 'button';
+            button.setAttribute('role', 'radio');
+            button.setAttribute('translate', 'no');
+            button.dataset.jobCatalogCountry = country.code;
+            const count = el('span', 'jobcat__country-count');
+            count.dataset.jobCatalogCountryCount = '';
+            button.append(flag(country.code), el('span', 'jobcat__country-name', country.label), count);
+            bar.appendChild(button);
+        });
+    }
+
+    /** Valeurs mémorisées qui n'existent plus dans le catalogue : oubliées. */
+    function sanitize() {
+        const entries = data.entries;
+        if (state.country && !data.countries.some(c => c.code === state.country)) state.country = '';
+        const keep = (key, read) => { if (state[key] && !entries.some(e => read(e) === state[key])) state[key] = ''; };
+        keep('branch', branchKey);
+        keep('command', e => e.command);
+        keep('formation', e => e.formation);
+        keep('type', e => e.type);
+        if (!['relevance', 'name', 'unit'].includes(state.sort)) state.sort = 'relevance';
+    }
+
+    function queryWords(box) {
+        const input = box.querySelector('[data-job-catalog-search]');
+        return {words: normalize(input.value).split(' ').filter(Boolean), raw: input.value.trim().toLowerCase().replace(/\s+/g, ''), text: input.value.trim()};
+    }
+
+    function score(entry, query) {
+        let total = 0;
+        for (const word of query.words) {
+            if (!entry._hay.includes(word)) return -1;
+            total += (entry._hay.includes(' ' + word + ' ') ? 2 : 1) + (entry._name.includes(' ' + word) ? 1 : 0);
+        }
+        if (query.raw && (query.raw === String(entry.abbreviation).toLowerCase() || query.raw === String(entry.code).toLowerCase())) total += 10;
+        return total;
+    }
+
+    const READ = {country: e => e.country, branch: branchKey, command: e => e.command, formation: e => e.formation, type: e => e.type};
+
+    function passes(entry, upTo) {
+        for (const key of FILTERS) {
+            if (key === upTo) return true;
+            if (state[key] && READ[key](entry) !== state[key]) return false;
+        }
+        return true;
+    }
+
+    /** Options d'un filtre : valeurs encore possibles avec les filtres situés avant lui, et leur nombre. */
+    function options(scored, key) {
+        const seen = new Map();
+        scored.forEach(({entry}) => {
+            if (!passes(entry, key)) return;
+            const value = READ[key](entry);
+            if (!value) return;
+            const known = seen.get(value);
+            if (known) known.count++;
+            else seen.set(value, {value, count: 1, label: key === 'branch' ? entry.branch_label : (key === 'type' ? entry.type_label : value), group: entry.country_label, order: entry._index});
+        });
+        const list = Array.from(seen.values());
+        if (key === 'command' || key === 'formation') list.sort((a, b) => a.label.localeCompare(b.label, undefined, {numeric: true, sensitivity: 'base'}));
+        else list.sort((a, b) => a.order - b.order);
+        return list;
+    }
+
+    function fillSelect(select, list, groupByCountry) {
+        const keepFirst = select.options[0];
+        select.textContent = '';
+        select.appendChild(keepFirst);
+        let group = null;
+        list.forEach(item => {
+            const option = new Option(item.label + ' (' + item.count + ')', item.value);
+            if (groupByCountry) {
+                if (!group || group.label !== item.group) { group = document.createElement('optgroup'); group.label = item.group; select.appendChild(group); }
+                group.appendChild(option);
+            } else {
+                select.appendChild(option);
+            }
+        });
+        select.setAttribute('translate', 'no');
+    }
+
+    /** Petits morceaux du texte qui correspondent aux mots cherchés (sans accents ni casse), entourés de <mark>. */
+    function highlight(text, words) {
+        const fragment = document.createDocumentFragment();
+        const source = String(text || '');
+        if (!words.length || !source) { fragment.appendChild(document.createTextNode(source)); return fragment; }
+        // Texte normalisé caractère par caractère, avec la position de début et de fin de chaque caractère d'origine.
+        let flat = '';
+        const starts = [];
+        const ends = [];
+        let offset = 0;
+        for (const char of source) {
+            for (const c of (normalize(char) || ' ')) { flat += c; starts.push(offset); ends.push(offset + char.length); }
+            offset += char.length;
+        }
+        const marks = [];
+        words.forEach(word => {
+            let at = flat.indexOf(word);
+            while (at !== -1) {
+                marks.push([starts[at], ends[at + word.length - 1]]);
+                at = flat.indexOf(word, at + word.length);
+            }
+        });
+        if (!marks.length) { fragment.appendChild(document.createTextNode(source)); return fragment; }
+        marks.sort((a, b) => a[0] - b[0]);
+        const merged = [];
+        marks.forEach(range => {
+            const last = merged[merged.length - 1];
+            if (last && range[0] <= last[1]) last[1] = Math.max(last[1], range[1]); else merged.push(range.slice());
+        });
+        let pos = 0;
+        merged.forEach(([start, end]) => {
+            if (start > pos) fragment.appendChild(document.createTextNode(source.slice(pos, start)));
+            fragment.appendChild(el('mark', '', source.slice(start, end)));
+            pos = end;
+        });
+        if (pos < source.length) fragment.appendChild(document.createTextNode(source.slice(pos)));
+        return fragment;
+    }
+
+    function sorted(hits) {
+        const collator = new Intl.Collator(isEnglish() ? 'en' : 'fr', {sensitivity: 'base', numeric: true});
+        const byName = (a, b) => collator.compare(a.entry.name, b.entry.name);
+        if (state.sort === 'name') return hits.sort((a, b) => byName(a, b) || a.entry._index - b.entry._index);
+        if (state.sort === 'unit') return hits.sort((a, b) => collator.compare(a.entry.formation || a.entry.unit, b.entry.formation || b.entry.unit) || byName(a, b));
+        return hits.sort((a, b) => b.score - a.score || a.entry._index - b.entry._index);
+    }
+
+    function resultButton(entry, words) {
+        const button = el('button', 'jobcat__result' + (current && current.id === entry.id ? ' is-current' : ''));
+        button.type = 'button';
+        button.dataset.jobCatalogEntry = entry.id;
+        if (current && current.id === entry.id) button.setAttribute('aria-current', 'true');
+        const title = el('strong');
+        if (entry.abbreviation) {
+            const abbr = el('span', 'jobcat__chip is-abbr');
+            abbr.appendChild(highlight(entry.abbreviation, words));
+            title.appendChild(abbr);
+        }
+        const name = el('span', 'jobcat__result-name');
+        name.appendChild(highlight(entry.name, words));
+        title.appendChild(name);
+        if (entry.code) {
+            const code = el('code');
+            code.appendChild(highlight(entry.code, words));
+            title.appendChild(code);
+        }
+        const meta = el('small');
+        meta.appendChild(highlight([entry.formation || entry.command, entry.type_label, entry.formation ? '' : entry.unit].filter(Boolean).join(' · '), words));
+        button.append(title);
+        if (!state.group) {
+            const line = el('span', 'jobcat__result-origin');
+            line.append(flag(entry.country), document.createTextNode(entry.branch_label));
+            button.append(line);
+        }
+        button.append(meta);
+        return button;
+    }
+
+    function chips(box, query) {
+        const holder = box.querySelector('[data-job-catalog-chips]');
+        const active = box.querySelector('[data-job-catalog-active]');
+        holder.textContent = '';
+        const add = (key, value) => {
+            const chip = el('button', 'jobcat__fchip');
+            chip.type = 'button';
+            chip.dataset.jobCatalogUnset = key;
+            const kind = label(key);
+            chip.setAttribute('aria-label', label('remove') + ' ' + kind + ' : ' + value);
+            chip.append(el('span', 'jobcat__fchip-kind', kind), el('span', 'jobcat__fchip-value', value), el('span', 'jobcat__fchip-x', '×'));
+            chip.lastChild.setAttribute('aria-hidden', 'true');
+            chip.setAttribute('translate', 'no');
+            holder.appendChild(chip);
+        };
+        if (query.text) add('q', query.text);
+        if (state.country) add('country', data.countries.find(c => c.code === state.country)?.label || state.country);
+        ['branch', 'command', 'formation', 'type'].forEach(key => {
+            if (!state[key]) return;
+            const sample = data.entries.find(e => READ[key](e) === state[key]);
+            add(key, key === 'branch' ? (sample?.branch_label || state[key]) : (key === 'type' ? (sample?.type_label || state[key]) : state[key]));
+        });
+        active.hidden = holder.childElementCount === 0;
+        const badge = box.querySelector('[data-job-catalog-filter-badge]');
+        const n = ['branch', 'command', 'formation', 'type'].filter(key => state[key]).length;
+        badge.textContent = n ? String(n) : '';
+        badge.hidden = n === 0;
     }
 
     function render() {
         const box = dialog();
         if (!box || !data) return;
-        const list = box.querySelector('[data-job-catalog-results]');
-        const hits = matches(box);
-        list.textContent = '';
-        hits.forEach(entry => {
-            const li = document.createElement('li');
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'jobcat__result' + (current && current.id === entry.id ? ' is-current' : '');
-            button.dataset.jobCatalogEntry = entry.id;
-            if (current && current.id === entry.id) button.setAttribute('aria-current', 'true');
-            const title = document.createElement('strong');
-            if (entry.abbreviation) {
-                const abbr = document.createElement('span');
-                abbr.className = 'jobcat__chip is-abbr';
-                abbr.textContent = entry.abbreviation;
-                title.appendChild(abbr);
-            }
-            title.appendChild(document.createTextNode(entry.name));
-            if (entry.code) {
-                const code = document.createElement('code');
-                code.textContent = entry.code;
-                title.appendChild(code);
-            }
-            const meta = document.createElement('small');
-            meta.textContent = [entry.command, entry.type_label, entry.unit].filter(Boolean).join(' · ');
-            button.append(title, meta);
-            li.appendChild(button);
-            list.appendChild(li);
+        const query = queryWords(box);
+        const scored = [];
+        data.entries.forEach(entry => {
+            const s = score(entry, query);
+            if (s >= 0) scored.push({entry, score: s});
         });
+        // Pays : nombre d'emplois qui répondent à la recherche, quels que soient les autres filtres.
+        box.querySelectorAll('[data-job-catalog-country]').forEach(button => {
+            const code = button.dataset.jobCatalogCountry;
+            const on = code === state.country;
+            button.setAttribute('aria-checked', on ? 'true' : 'false');
+            button.tabIndex = on ? 0 : -1;
+            const count = button.querySelector('[data-job-catalog-country-count]');
+            if (count) count.textContent = String(code ? scored.filter(h => h.entry.country === code).length : scored.length);
+            // Barre des pays défilante (mobile) : le pays choisi reste visible.
+            const bar = button.parentElement;
+            if (on && (button.offsetLeft < bar.scrollLeft || button.offsetLeft + button.offsetWidth > bar.scrollLeft + bar.clientWidth)) bar.scrollLeft = Math.max(0, button.offsetLeft - 16);
+        });
+        ['branch', 'command', 'formation', 'type'].forEach(key => {
+            const select = box.querySelector('[data-job-catalog-filter="' + key + '"]');
+            const list = options(scored, key);
+            if (state[key] && !list.some(item => item.value === state[key])) state[key] = '';
+            fillSelect(select, list, key === 'branch' && !state.country && data.countries.length > 1);
+            select.value = state[key];
+            select.closest('label').hidden = list.length === 0 && !state[key];
+        });
+        box.querySelector('[data-job-catalog-sort]').value = state.sort;
+        box.querySelector('[data-job-catalog-group]').checked = state.group;
+        const hits = sorted(scored.filter(({entry}) => passes(entry, null)));
+        const list = box.querySelector('[data-job-catalog-results]');
+        list.textContent = '';
+        list.classList.toggle('is-grouped', state.group);
+        const groups = state.group ? groupHits(hits) : [{key: '', hits}];
+        groups.forEach(group => {
+            if (group.key) {
+                const head = el('p', 'jobcat__group-title');
+                head.append(flag(group.country), el('span', '', group.title), el('span', 'jobcat__group-count', String(group.hits.length)));
+                list.appendChild(head);
+            }
+            const ul = el('ul', 'jobcat__group');
+            if (group.key) ul.setAttribute('aria-label', group.title);
+            group.hits.forEach(({entry}) => {
+                const li = el('li');
+                li.appendChild(resultButton(entry, query.words));
+                ul.appendChild(li);
+            });
+            list.appendChild(ul);
+        });
+        chips(box, query);
         const count = box.querySelector('[data-job-catalog-count]');
-        count.textContent = hits.length > 0 ? hits.length + ' emploi(s)' : 'Aucun emploi ne correspond.';
+        count.textContent = hits.length > 0 ? `${hits.length} emploi(s)` : 'Aucun emploi ne correspond.';
+        const note = box.querySelector('[data-job-catalog-note]');
+        if (note) note.textContent = (data.packs || []).filter(p => !state.country || p.country === state.country).map(p => p.label + ' · ' + p.count + ' · ' + p.compiled_at + (p.sources_note ? ' — ' + p.sources_note : '')).join(' | ');
+        persist();
+    }
+
+    /** Groupes pays → armée, dans l'ordre des pays puis de la première entrée de chaque armée. */
+    function groupHits(hits) {
+        const order = new Map(data.countries.map((c, i) => [c.code, i]));
+        const groups = new Map();
+        hits.forEach(hit => {
+            const key = branchKey(hit.entry);
+            if (!groups.has(key)) groups.set(key, {key, country: hit.entry.country, title: hit.entry.country_label + ' · ' + hit.entry.branch_label, first: Infinity, hits: []});
+            const group = groups.get(key);
+            group.first = Math.min(group.first, hit.entry._index);
+            group.hits.push(hit);
+        });
+        return Array.from(groups.values()).sort((a, b) => (order.get(a.country) ?? 99) - (order.get(b.country) ?? 99) || a.first - b.first);
     }
 
     function iconPreview(key) {
@@ -129,31 +375,33 @@
         box.querySelector('[data-job-catalog-placeholder]').hidden = true;
         box.querySelector('.jobcat__frame').classList.add('is-detail');
         detail.querySelectorAll('[data-jc]').forEach(node => { node.textContent = entry[node.dataset.jc] || ''; node.hidden = !entry[node.dataset.jc]; });
+        const official = detail.querySelector('.jobcat__official');
+        official.hidden = !entry.official_name || entry.official_name === entry.name;
+        const flagNode = detail.querySelector('[data-jc-flag]');
+        flagNode.dataset.flag = entry.country;
+        flagNode.textContent = entry.country;
         detail.querySelectorAll('[data-jc-row]').forEach(row => {
             const key = row.dataset.jcRow;
-            const value = key === 'unit' ? entry.unit : entry[key];
+            const value = entry[key];
             row.hidden = Array.isArray(value) ? value.length === 0 : !value;
         });
         ['qualifications', 'billets', 'tags'].forEach(key => {
             const target = detail.querySelector('[data-jc-list="' + key + '"]');
             target.textContent = '';
             (entry[key] || []).forEach(text => {
-                const item = document.createElement(key === 'tags' ? 'span' : 'li');
-                if (key === 'tags') item.className = 'job-tag job-tag--slate';
-                item.textContent = text;
-                target.appendChild(item);
+                target.appendChild(el(key === 'tags' ? 'span' : 'li', key === 'tags' ? 'job-tag job-tag--slate' : '', text));
             });
         });
         const sources = detail.querySelector('[data-jc-list="sources"]');
         sources.textContent = '';
         (entry.sources || []).forEach(source => {
-            const li = document.createElement('li');
-            const link = document.createElement('a');
+            const li = el('li');
+            const link = el('a', '', source.title || source.url.replace(/^https:\/\//, ''));
             link.href = source.url;
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
-            link.textContent = source.title || source.url.replace(/^https:\/\//, '');
             li.appendChild(link);
+            try { li.appendChild(el('small', 'jobcat__source-host', new URL(source.url).hostname.replace(/^www\./, ''))); } catch (error) { /* URL déjà contrôlée côté serveur */ }
             sources.appendChild(li);
         });
         const icon = detail.querySelector('[data-jc-icon]');
@@ -191,7 +439,9 @@
         box.querySelector('[data-job-catalog-search]').focus();
         try {
             await load();
-            fillFilters(box);
+            if (!box.dataset.restored) { box.dataset.restored = '1'; restore(); }
+            buildCountries(box);
+            sanitize();
             render();
         } catch (error) {
             box.querySelector('[data-job-catalog-count]').textContent = 'Le catalogue n’a pas pu être chargé. Réessayez.';
@@ -201,6 +451,36 @@
     function close() {
         const box = dialog();
         if (box?.open) box.close();
+    }
+
+    function setCountry(code) {
+        if (state.country === code) return;
+        state.country = code;
+        // L'armée, le commandement et l'unité dépendent du pays ; le type reste.
+        if (code) ['branch', 'command', 'formation'].forEach(key => { if (state[key] && !data.entries.some(e => e.country === code && READ[key](e) === state[key])) state[key] = ''; });
+        render();
+    }
+
+    function unset(key) {
+        const box = dialog();
+        if (key === 'q') {
+            box.querySelector('[data-job-catalog-search]').value = '';
+        } else {
+            state[key] = '';
+            // Retirer un niveau retire aussi ceux qui en dépendent.
+            FILTERS.slice(FILTERS.indexOf(key) + 1, 4).forEach(next => {
+                if (state[next] && !data.entries.some(e => passes(e, next) && READ[next](e) === state[next])) state[next] = '';
+            });
+        }
+        render();
+    }
+
+    function reset() {
+        const box = dialog();
+        box.querySelector('[data-job-catalog-search]').value = '';
+        FILTERS.forEach(key => { state[key] = ''; });
+        render();
+        box.querySelector('[data-job-catalog-search]').focus();
     }
 
     function field(name) {
@@ -301,8 +581,27 @@
         if (event.target === box) { close(); return; }
         if (event.target.closest('[data-job-catalog-close]')) { close(); return; }
         if (event.target.closest('[data-job-catalog-back]')) { back(); return; }
+        if (!data) return;
+        const country = event.target.closest('[data-job-catalog-country]');
+        if (country) { setCountry(country.dataset.jobCatalogCountry); country.focus(); return; }
+        const chip = event.target.closest('[data-job-catalog-unset]');
+        if (chip) {
+            const keys = Array.from(chip.parentElement.children).map(node => node.dataset.jobCatalogUnset);
+            const nextKey = keys[keys.indexOf(chip.dataset.jobCatalogUnset) + 1];
+            unset(chip.dataset.jobCatalogUnset);
+            const target = nextKey ? box.querySelector('[data-job-catalog-unset="' + nextKey + '"]') : null;
+            (target || box.querySelector('[data-job-catalog-search]')).focus();
+            return;
+        }
+        if (event.target.closest('[data-job-catalog-reset]')) { reset(); return; }
+        const toggle = event.target.closest('[data-job-catalog-filters-toggle]');
+        if (toggle) {
+            const on = box.querySelector('.jobcat__frame').classList.toggle('is-filters-open');
+            toggle.setAttribute('aria-expanded', on ? 'true' : 'false');
+            return;
+        }
         const pick = event.target.closest('[data-job-catalog-entry]');
-        if (pick && data) {
+        if (pick) {
             const entry = data.entries.find(e => e.id === pick.dataset.jobCatalogEntry);
             if (entry) show(entry);
             return;
@@ -323,24 +622,71 @@
         timer = window.setTimeout(render, 120);
     });
     document.addEventListener('change', event => {
-        if (event.target.matches('[data-job-catalog-filter]')) render();
+        if (!data || !dialog()?.contains(event.target)) return;
+        const filter = event.target.closest('[data-job-catalog-filter]');
+        if (filter) {
+            state[filter.dataset.jobCatalogFilter] = filter.value;
+            // Un commandement ou une unité choisis sans armée fixent leur pays et leur armée s'ils n'en ont qu'un.
+            const key = filter.dataset.jobCatalogFilter;
+            if (filter.value && (key === 'command' || key === 'formation')) {
+                const matching = data.entries.filter(e => READ[key](e) === filter.value);
+                const countries = new Set(matching.map(e => e.country));
+                if (!state.country && countries.size === 1) state.country = matching[0].country;
+            }
+            render();
+            return;
+        }
+        if (event.target.matches('[data-job-catalog-sort]')) { state.sort = event.target.value; render(); return; }
+        if (event.target.matches('[data-job-catalog-group]')) { state.group = event.target.checked; render(); }
     });
 
-    // Flèches haut / bas dans la liste ; Échap est géré par la fenêtre elle-même.
+    function focusables(box) {
+        return Array.from(box.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+            .filter(node => !node.disabled && node.tabIndex >= 0 && node.getClientRects().length > 0);
+    }
+
+    // Clavier : focus gardé dans la fenêtre (Tab), flèches dans les pays et la liste, Échap (retour à la liste sur mobile).
     document.addEventListener('keydown', event => {
         const box = dialog();
         if (!box?.open || !box.contains(event.target)) return;
+        if (event.key === 'Tab') {
+            const list = focusables(box);
+            if (!list.length) return;
+            const first = list[0];
+            const last = list[list.length - 1];
+            if (event.shiftKey && (event.target === first || !list.includes(event.target))) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && event.target === last) { event.preventDefault(); first.focus(); }
+            return;
+        }
+        if (event.key === 'Escape' && box.querySelector('.jobcat__frame').classList.contains('is-detail') && window.matchMedia('(max-width: 760px)').matches) {
+            event.preventDefault();
+            back();
+            return;
+        }
+        const country = event.target.closest('[data-job-catalog-country]');
+        if (country && data && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) {
+            event.preventDefault();
+            const all = Array.from(box.querySelectorAll('[data-job-catalog-country]'));
+            let i = all.indexOf(country);
+            if (event.key === 'Home') i = 0;
+            else if (event.key === 'End') i = all.length - 1;
+            else i = (i + (event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1) + all.length) % all.length;
+            setCountry(all[i].dataset.jobCatalogCountry);
+            box.querySelector('[data-job-catalog-country="' + CSS.escape(all[i].dataset.jobCatalogCountry) + '"]').focus();
+            return;
+        }
+        const results = Array.from(box.querySelectorAll('[data-job-catalog-entry]'));
         if (event.key === 'ArrowDown' && event.target.matches('[data-job-catalog-search]')) {
             event.preventDefault();
-            box.querySelector('[data-job-catalog-entry]')?.focus();
+            results[0]?.focus();
             return;
         }
         const item = event.target.closest('[data-job-catalog-entry]');
-        if (!item || (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')) return;
+        if (!item || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
         event.preventDefault();
-        const li = item.parentElement;
-        const next = event.key === 'ArrowDown' ? li.nextElementSibling : li.previousElementSibling;
-        if (next) next.querySelector('button').focus(); else if (event.key === 'ArrowUp') box.querySelector('[data-job-catalog-search]').focus();
+        const i = results.indexOf(item);
+        const next = event.key === 'Home' ? results[0] : event.key === 'End' ? results[results.length - 1] : results[i + (event.key === 'ArrowDown' ? 1 : -1)];
+        if (next) next.focus(); else if (event.key === 'ArrowUp') box.querySelector('[data-job-catalog-search]').focus();
     });
 
     document.addEventListener('close', event => {
