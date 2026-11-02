@@ -3433,7 +3433,8 @@ class EffectifsWorkspaceController
             if ($enrichment!==null) (new JobRoleEnrichmentService())->save($tenantId,$id,$enrichment);
             $this->recordJobChange('job_role', $id, 'created', [], ['name'=>$name,'slug'=>$slug,'description'=>$description,'category_id'=>$categoryId,'structure'=>$metadata ?? []]+($enrichment ?? []));
             $pdo->commit();
-            return $this->jobReply($request,true,'Emploi créé. Aucun membre ni droit d’accès n’a été modifié.',['emploi'=>$id]);
+            $linked=$this->applyCatalogQualifications($request,$tenantId,$id);
+            return $this->jobReply($request,true,$linked>0?'Emploi créé, '.$linked.' qualification(s) du catalogue ajoutée(s) à ses prérequis. Aucun membre ni droit d’accès n’a été modifié.':'Emploi créé. Aucun membre ni droit d’accès n’a été modifié.',['emploi'=>$id]);
         } catch (\InvalidArgumentException $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             return $this->jobReply($request,false,$e->getMessage(),['nouveau'=>1]);
@@ -3466,7 +3467,8 @@ class EffectifsWorkspaceController
             if ($enrichment!==null) (new JobRoleEnrichmentService())->save($tenantId,$id,$enrichment);
             $this->recordJobChange('job_role', $id, 'updated', $existing, array_replace($existing, ['name'=>$name,'description'=>$description,'category_id'=>$categoryId,'structure'=>$metadata ?? $existing['structure']], $enrichment ?? []));
             $pdo->commit();
-            return $this->jobReply($request,true,'Emploi enregistré. Les affectations et les droits restent indépendants.',['emploi'=>$id]);
+            $linked=$this->applyCatalogQualifications($request,$tenantId,$id);
+            return $this->jobReply($request,true,$linked>0?'Emploi enregistré, '.$linked.' qualification(s) du catalogue ajoutée(s) à ses prérequis. Les affectations et les droits restent indépendants.':'Emploi enregistré. Les affectations et les droits restent indépendants.',['emploi'=>$id]);
         } catch (\InvalidArgumentException $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             return $this->jobReply($request,false,$e->getMessage(),['emploi'=>$id]);
@@ -3474,6 +3476,29 @@ class EffectifsWorkspaceController
             if ($pdo->inTransaction()) $pdo->rollBack();
             error_log('Effectifs jobs save: '.$e->getMessage());
             return $this->jobReply($request,false,'Enregistrement impossible. Vos modifications n’ont pas été appliquées.',['emploi'=>$id],503);
+        }
+    }
+
+    /**
+     * « Copier tout » depuis le catalogue avec la case « importer les qualifications liées » cochée : qualifications du
+     * catalogue importées dans le référentiel (sans doublon) et ajoutées aux prérequis de l’emploi. Ne bloque jamais
+     * l’enregistrement de l’emploi. Renvoie le nombre de prérequis ajoutés.
+     */
+    private function applyCatalogQualifications(Request $request, int $tenantId, int $roleId): int
+    {
+        $refs=$request->input('catalog_qualification_refs',[]);
+        if ((string)$request->input('catalog_qualifications_prereq','')!=='1' || !is_array($refs) || $refs===[]) return 0;
+        try {
+            $pdo=Database::getPdo();
+            $linker=new \App\Services\Personnel\JobCatalogQualificationLinker(
+                new \App\Services\Personnel\QualificationCatalogImporter(new \App\Services\Personnel\QualificationReferenceWriter($pdo)),
+                new \App\Services\Personnel\JobPrerequisiteService($pdo)
+            );
+            $result=$linker->apply($tenantId,$roleId,array_values($refs),function_exists('locale')?(string)locale():'fr',(int)Session::get('user_id'));
+            return $result['added'];
+        } catch (\Throwable $e) {
+            error_log('Effectifs jobs catalog qualifications: '.$e->getMessage());
+            return 0;
         }
     }
 

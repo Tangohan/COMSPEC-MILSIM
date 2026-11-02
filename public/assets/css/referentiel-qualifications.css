@@ -354,3 +354,42 @@ html[data-bo-theme="dark"] .rql__tag--perm { color: #8cc4ff; background: #13243a
 html[data-bo-theme="dark"] .rql__tag--mode-academy { background: #13202e; color: #84b9ee; }
 .rql-issuer-filter { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin: 0 0 14px; padding: 10px 14px; border: 1px solid var(--ath-line, #e2e8f0); border-radius: 10px; background: var(--ath-line-soft, #f1f5f9); color: var(--ath-ink, #0f172a); font-size: 13.5px; }
 .rql-issuer-filter a b { color: inherit; }
+
+/* Catalogue OTAN (rqc-) : qualifications de référence à importer. */
+.rqc-warn { margin: 0; padding: 10px 14px; border: 1px solid var(--rq-line); border-left: 3px solid var(--rq-warn); border-radius: 10px; background: var(--rq-warn-bg); color: var(--rq-ink); font-size: 13px; line-height: 1.5; }
+.rqc-empty { margin: 0; color: var(--rq-muted); }
+.rqc-form { display: grid; gap: 18px; }
+.rqc-bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; padding: 10px 14px; border: 1px solid var(--rq-line); border-radius: var(--rq-radius); background: var(--rq-surface); }
+.rqc-bar--end .rqc-count { flex: 1 1 24rem; font-size: 12px; }
+.rqc-count { margin: 0; font-size: 13px; color: var(--rq-muted); }
+.rqc-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.rqc-cat { display: grid; gap: 8px; }
+.rqc-cat h2 { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--rq-accent); }
+.rqc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rqc-item { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 12px 14px; border: 1px solid var(--rq-line); border-radius: var(--rq-radius); background: var(--rq-surface); }
+.rqc-item input[type="checkbox"] { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--rq-accent); }
+.rqc-item.is-done { background: var(--rq-soft); }
+.rqc-item:has(input:checked) { border-color: var(--rq-accent); box-shadow: inset 3px 0 0 var(--rq-accent); }
+.rqc-item__body { display: grid; gap: 6px; min-width: 0; }
+.rqc-item__name { font-size: 14.5px; font-weight: 700; color: var(--rq-ink); cursor: pointer; overflow-wrap: anywhere; }
+.rqc-code { font-size: 11.5px; font-weight: 600; color: var(--rq-muted); }
+.rqc-done { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--rq-accent-bg); color: var(--rq-accent); font-size: 11px; font-weight: 700; }
+.rqc-item__desc { margin: 0; font-size: 13px; line-height: 1.5; color: var(--rq-ink); }
+.rqc-meta { display: grid; gap: 3px; margin: 0; font-size: 12.5px; line-height: 1.45; }
+.rqc-meta div { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr); gap: 8px; }
+.rqc-meta dt { color: var(--rq-muted); font-weight: 600; }
+.rqc-meta dd { margin: 0; color: var(--rq-ink); overflow-wrap: anywhere; }
+.rqc-meta a { color: var(--rq-accent); }
+@media (max-width: 640px) {
+  .rqc-meta div { grid-template-columns: 1fr; gap: 0; }
+  .rqc-bar { align-items: stretch; }
+  .rqc-actions, .rqc-actions .rq-btn { width: 100%; }
+}
+.rqc-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.rqc-tab { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--rq-line); border-radius: 10px; background: var(--rq-surface); color: var(--rq-ink); font-size: 13.5px; font-weight: 600; text-decoration: none; }
+.rqc-tab:hover { border-color: var(--rq-accent); }
+.rqc-tab.is-on { border-color: var(--rq-accent); box-shadow: inset 0 -3px 0 var(--rq-accent); }
+.rqc-tab__count { padding: 0 7px; border-radius: 999px; background: var(--rq-soft); color: var(--rq-muted); font-size: 11.5px; font-weight: 700; }
+.rqc-tab .jobcat__flag { position: relative; display: inline-grid; place-items: center; width: 1.5rem; height: 1rem; overflow: hidden; border: 1px solid rgba(0, 0, 0, 0.25); font-size: 0.55rem; }
+.rqc-item__translated { margin: -2px 0 0; font-size: 12.5px; color: var(--rq-muted); }
+@media (max-width: 640px) { .rqc-tab { flex: 1 1 calc(50% - 8px); } }

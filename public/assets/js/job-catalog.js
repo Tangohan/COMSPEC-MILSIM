@@ -552,6 +552,22 @@
                 target.appendChild(el(key === 'tags' ? 'span' : 'li', key === 'tags' ? 'job-tag job-tag--slate' : '', text));
             });
         });
+        // Qualifications du catalogue liées (brevets cités) : nom, intitulé officiel et école émettrice.
+        const quals = detail.querySelector('[data-jc-quals]');
+        if (quals) {
+            quals.textContent = '';
+            (entry.linked_qualifications || []).forEach(q => {
+                const li = el('li', '', q.name);
+                if (q.official_name && q.official_name !== q.name) li.appendChild(el('small', 'jobcat__qual-official', ' — ' + q.official_name));
+                if (q.issuer) li.appendChild(el('small', 'jobcat__qual-issuer', q.issuer));
+                quals.appendChild(li);
+            });
+        }
+        const linkBox = detail.querySelector('[data-jc-link-quals]');
+        if (linkBox) {
+            linkBox.hidden = !(entry.linked_qualifications || []).length;
+            linkBox.querySelector('input').checked = false;
+        }
         const sources = detail.querySelector('[data-jc-list="sources"]');
         sources.textContent = '';
         (entry.sources || []).forEach(source => {
@@ -842,6 +858,29 @@
         return true;
     }
 
+    /**
+     * Case « importer les qualifications liées » : champs cachés lus à l'enregistrement de l'emploi (qualifications
+     * importées sans doublon et ajoutées aux prérequis). Décochée : rien n'est envoyé.
+     */
+    function linkQualifications() {
+        const target = form();
+        if (!target) return;
+        target.querySelectorAll('[data-catalog-qual]').forEach(node => node.remove());
+        const wanted = dialog()?.querySelector('[data-job-catalog-link-quals]')?.checked;
+        const refs = (current.linked_qualifications || []).map(q => q.id);
+        if (!wanted || !refs.length) return;
+        const add = (name, value) => {
+            const input = el('input');
+            input.type = 'hidden';
+            input.name = name;
+            input.value = value;
+            input.dataset.catalogQual = '';
+            target.appendChild(input);
+        };
+        add('catalog_qualifications_prereq', '1');
+        refs.forEach(ref => add('catalog_qualification_refs[]', ref));
+    }
+
     /** Ce que « Copier tout » écrit dans la fiche : champs, valeur résumée, champ déjà rempli remplacé ou non. */
     function copyPlan() {
         const keys = ['name', 'abbreviation', 'description', 'code'].filter(key => valueOf(key) && plain(key));
@@ -896,6 +935,7 @@
         if (!plan.length || !(await confirmCopy(plan))) return;
         const keys = plan.map(item => item.key).filter(key => key !== 'icon' && key !== 'tags');
         keys.forEach(key => copyOne(key, true));
+        linkQualifications();
         if (current.icon) setIcon(current.icon);
         if ((current.tags || []).length) mergeTags(current.tags);
         close();

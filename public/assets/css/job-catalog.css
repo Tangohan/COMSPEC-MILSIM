@@ -62,6 +62,11 @@
 .jobcat__flag[data-flag="FR"] { color: transparent; background: linear-gradient(90deg, #002654 0 33.34%, #fff 33.34% 66.67%, #ce1126 66.67%); }
 .jobcat__flag[data-flag="US"] { color: transparent; background: linear-gradient(#3c3b6e, #3c3b6e) 0 0 / 42% 54% no-repeat, repeating-linear-gradient(#b22234 0 7.69%, #fff 7.69% 15.38%); }
 .jobcat__flag[data-flag="DE"] { color: transparent; background: linear-gradient(#000 0 33.34%, #d00 33.34% 66.67%, #ffce00 66.67%); }
+/* OTAN : rose des vents blanche à quatre branches sur fond bleu OTAN (#004990), cercle évidé. */
+.jobcat__flag[data-flag="NATO"] { color: transparent; background: #004990; }
+.jobcat__flag[data-flag="NATO"]::before, .jobcat__flag[data-flag="NATO"]::after { content: ""; position: absolute; top: 50%; left: 50%; height: 84%; aspect-ratio: 1; transform: translate(-50%, -50%); }
+.jobcat__flag[data-flag="NATO"]::before { background: #fff; clip-path: polygon(50% 0, 58% 42%, 100% 50%, 58% 58%, 50% 100%, 42% 58%, 0 50%, 42% 42%); }
+.jobcat__flag[data-flag="NATO"]::after { height: 46%; border: 1px solid #fff; border-radius: 50%; box-sizing: border-box; }
 /* Chine : fond rouge, grande étoile jaune et quatre petites étoiles en arc dans le quart supérieur gauche. */
 .jobcat__flag[data-flag="CN"] { color: transparent; background: #ee1c25; }
 .jobcat__flag[data-flag="CN"]::before { content: ""; position: absolute; top: 10%; left: 6.67%; width: 20%; height: 30%; background: #ffde00; clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
@@ -302,3 +307,10 @@
   .jobcat__banner-img { display: none; }
   .jobcat-confirm__fields > div { grid-template-columns: minmax(0, 1fr); gap: 0.15rem; }
 }
+
+/* Qualifications du catalogue liées à l'emploi et case d'import avec « Copier tout ». */
+.jobcat__quals small { display: inline; color: var(--jc-muted); }
+.jobcat__quals .jobcat__qual-issuer { display: block; font-size: 0.75rem; }
+.jobcat__link-quals { display: flex; align-items: flex-start; gap: 0.45rem; flex-basis: 100%; font-size: 0.82rem; font-weight: 600; color: var(--jc-ink); cursor: pointer; }
+.jobcat__link-quals input { margin-top: 0.15rem; accent-color: var(--jc-accent); }
+.jobcat__link-quals[hidden] { display: none; }

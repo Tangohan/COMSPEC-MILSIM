@@ -15,7 +15,9 @@ use App\Support\JobRoleIconLibrary;
  *
  * Format d’un pack : { pack, country, official_lang, label{fr,en}, compiled_at, sources_note{fr,en}, entries[] } ;
  * une entrée : id, branch, command, formation, unit{fr,en}, type, code, code_system, name{fr,en}, abbreviation,
- * description{fr,en}, qualifications{fr[],en[]}, billets{fr[],en[]}, icon, tags{fr[],en[]}, sources[{url,title}].
+ * description{fr,en}, qualifications{fr[],en[]}, billets{fr[],en[]}, icon, tags{fr[],en[]}, sources[{url,title}],
+ * qualification_refs[] (facultatif : ids du catalogue de qualifications, App\Support\QualificationCatalog, des brevets
+ * cités dans qualifications).
  * official_lang : langue des appellations officielles du pays (« en » par défaut ; « de » : name porte aussi une clé de ;
  * « zh » : clé zh en caractères simplifiés et clé pinyin, romanisation avec tons, cherchée aussi sans tons) ; formation : unité courte
  * (« 1er RPIMa », « CPA 10 »), facultative, proposée comme filtre sous le commandement.
@@ -23,7 +25,7 @@ use App\Support\JobRoleIconLibrary;
 final class JobCatalog
 {
     /** Packs livrés (nom du fichier sans extension). */
-    public const PACKS = ['us_sof', 'fr_sof', 'de_sof', 'cn_sof'];
+    public const PACKS = ['us_sof', 'fr_sof', 'de_sof', 'cn_sof', 'nato'];
 
     public const TYPES = ['operator', 'command', 'support', 'aviation'];
     public const BRANCHES = ['army', 'navy', 'air_force', 'marine_corps', 'gendarmerie', 'joint'];
@@ -32,12 +34,14 @@ final class JobCatalog
     /** Filtres exacts de la recherche, dans l’ordre de la fenêtre (pays → armée → commandement → unité → type). */
     public const FILTERS = ['country', 'branch', 'command', 'formation', 'type', 'pack'];
 
-    /** Pays des packs, dans l’ordre d’affichage des catégories (code ISO 3166-1 alpha-2). */
+    /** Pays des packs, dans l’ordre d’affichage des catégories (code ISO 3166-1 alpha-2 ; « NATO » pour l’OTAN). */
     public const COUNTRIES = [
         'US' => ['fr' => 'États-Unis', 'en' => 'United States'],
         'FR' => ['fr' => 'France', 'en' => 'France'],
         'DE' => ['fr' => 'Allemagne', 'en' => 'Germany'],
         'CN' => ['fr' => 'Chine', 'en' => 'China'],
+        // Fonctions interalliées standardisées (pas un pays) : code « NATO », emblème dessiné en CSS.
+        'NATO' => ['fr' => 'OTAN', 'en' => 'NATO'],
     ];
 
     /** Armées d’un pays ; une armée absente reprend le libellé générique de LABELS['branch']. */
@@ -70,6 +74,12 @@ final class JobCatalog
             'marine_corps' => ['fr' => 'Corps des Marines de l’APL (海军陆战队)', 'en' => 'PLA Navy Marine Corps (海军陆战队)'],
             'air_force' => ['fr' => 'Force aérienne de l’APL (解放军空军)', 'en' => 'PLA Air Force (解放军空军)'],
             'gendarmerie' => ['fr' => 'Police armée du peuple (武警部队)', 'en' => 'People’s Armed Police (武警部队)'],
+        ],
+        'NATO' => [
+            'army' => ['fr' => 'Composante terrestre (LCC)', 'en' => 'Land component (LCC)'],
+            'navy' => ['fr' => 'Composante maritime (MCC)', 'en' => 'Maritime component (MCC)'],
+            'air_force' => ['fr' => 'Composante aérienne (ACC)', 'en' => 'Air component (ACC)'],
+            'joint' => ['fr' => 'Interarmées et interalliés', 'en' => 'Joint and combined'],
         ],
     ];
 
@@ -282,6 +292,8 @@ final class JobCatalog
             'icon' => JobRoleIconLibrary::has($icon) ? $icon : '',
             'tags' => array_slice(self::pickList($entry['tags'] ?? [], $lang), 0, JobRoleEnrichmentService::MAX_TAGS),
             'sources' => $sources,
+            'qualification_refs' => self::qualificationRefs($entry),
+            'linked_qualifications' => self::linkedQualifications($entry, $lang),
         ];
     }
 
@@ -303,6 +315,35 @@ final class JobCatalog
             if ($value !== '' && !in_array($value, $out, true)) {
                 $out[$l] = $value;
             }
+        }
+
+        return $out;
+    }
+
+    /** @return list<string> ids du catalogue de qualifications cités par l’entrée */
+    public static function qualificationRefs(array $entry): array
+    {
+        $refs = is_array($entry['qualification_refs'] ?? null) ? $entry['qualification_refs'] : [];
+
+        return array_values(array_unique(array_filter(array_map(static fn ($r): string => is_string($r) ? trim($r) : '', $refs), static fn (string $r): bool => $r !== '')));
+    }
+
+    /**
+     * Qualifications du catalogue liées à un emploi, dans la langue du lecteur (nom, intitulé officiel, émetteur).
+     *
+     * @param array<string, mixed> $entry
+     * @return list<array{id: string, code: string, name: string, official_name: string, issuer: string, country: string}>
+     */
+    public static function linkedQualifications(array $entry, string $lang): array
+    {
+        $out = [];
+        foreach (self::qualificationRefs($entry) as $ref) {
+            $raw = \App\Support\QualificationCatalog\QualificationCatalog::findRaw($ref);
+            if ($raw === null) {
+                continue;
+            }
+            $q = \App\Support\QualificationCatalog\QualificationCatalog::localize($raw, $lang);
+            $out[] = ['id' => $q['id'], 'code' => $q['code'], 'name' => $q['name'], 'official_name' => $q['official_name'], 'issuer' => $q['issuer'], 'country' => $q['country']];
         }
 
         return $out;
@@ -521,7 +562,8 @@ final class JobCatalog
     {
         $id = (string) ($entry['id'] ?? '');
         $p = [];
-        if (preg_match('/^[a-z]{2,3}-[a-z0-9-]{2,60}$/', $id) !== 1) {
+        // Préfixe : code pays en minuscules (« us- », « fr- ») ou « nato- » pour les fonctions interalliées.
+        if (preg_match('/^[a-z]{2,4}-[a-z0-9-]{2,60}$/', $id) !== 1) {
             $p[] = 'id invalide';
         }
         if (!in_array($entry['branch'] ?? null, self::BRANCHES, true)) {
@@ -567,6 +609,11 @@ final class JobCatalog
             if (is_array($tags) && (count($tags) > JobRoleEnrichmentService::MAX_TAGS || array_filter($tags, static fn ($t): bool => mb_strlen((string) $t) > JobRoleEnrichmentService::TAG_MAX_LENGTH) !== [])) {
                 $p[] = 'étiquettes trop nombreuses ou trop longues';
             }
+        }
+        $refs = $entry['qualification_refs'] ?? [];
+        if (!is_array($refs) || !array_is_list($refs) || count($refs) > 12
+            || array_filter($refs, static fn ($r): bool => !is_string($r) || preg_match('/^[a-z]{2,4}-[a-z0-9-]{2,60}$/', $r) !== 1) !== []) {
+            $p[] = 'qualification_refs invalides';
         }
         $sources = is_array($entry['sources'] ?? null) ? $entry['sources'] : [];
         if ($sources === []) {
