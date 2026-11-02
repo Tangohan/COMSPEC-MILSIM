@@ -294,19 +294,28 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1334, '2026-11-02', 'Optimisation du téléphone : moins de saccades et d’écrans qui se redessinent', 'Le pack 2.9.37 est une vague d’optimisation, après des retours de baisses d’images et de saccades. Les tâches de fond du téléphone et de la liaison Athena font beaucoup moins de calculs en double : un seul joueur relaie balises, aéronefs et marqueurs web pour tout le monde, les envois inchangés ne repartent plus, les vérifications lourdes (bâtiment, vision nocturne, écrans TOC, projecteurs) sont espacées ou arrêtées quand rien ne les demande. Les pages ne se redessinent plus pour rien : le BFT se met à jour sur place, l’app Réseau seulement quand ses données changent, et plus rien ne bouge pendant une saisie ni ne remonte en haut de page. La fiche opérateur complète part une fois par session.', [
-                'Debug › PERFS : dernier bilan de 30 s (images par seconde, images lentes, fonctions les plus coûteuses, nombre de redessins par page) pour signaler un ralentissement',
+            $pr(1335, '2026-11-02', 'Grades allemands, russes, chinois et OTAN, et fenêtre « Systèmes de grades »', 'Le référentiel des grades propose maintenant les grades de la Bundeswehr, des forces armées russes, de l’Armée populaire de libération et une échelle OTAN générique. Les onglets par pays sont remplacés par une fenêtre de catalogue : pays et armées, recherche dans tous les grades, comparaison avec le système actuel par code OTAN, puis « Utiliser pour la communauté ».', [
+                'Grades : Allemagne (Heer, Marine, Luftwaffe : 29 grades chacun, en allemand), Russie (armée de terre, marine, forces aérospatiales : 20 grades chacun, en cyrillique avec translittération), Chine (陆军, 海军, 空军 : 20 grades chacun, en sinogrammes avec pinyin) et grades OTAN génériques (OR-1 à OR-9, WO, OF-1 à OF-10)',
+                'Fenêtre « Systèmes de grades » : drapeau et nom natif du pays, armées, recherche plein texte (code, abrégé, intitulé, translittération, équivalent anglais, code OTAN), liste ordonnée des grades et comparaison avec le système actuel',
+                'Adéquation de l’organisation : référentiels allemand (Gruppe, Zug, Kompanie), russe (отделение, взвод, рота), chinois (班, 排, 连) et OTAN générique, retenus d’office avec les grades du pays',
             ], [
-                'Moins de saccades : relais élu une fois pour les balises GPS, IA alliées, téléphones et aéronefs ; marqueurs web Athena tirés par un seul joueur (toujours visibles de tous) ; écrans TOC envoyés aux seuls joueurs qui les regardent',
-                'Moins de calculs : liste des unités et marqueurs du BFT gardée d’un passage à l’autre, synchro Athena ignorée quand la réponse n’a pas changé, toit / murs du GPS et de la liaison partagés, vision nocturne (ECOTI) espacée, aucun calcul de projecteur sans projecteur',
-                'Moins de redessins : BFT mis à jour sur place, app Réseau seulement si ses données changent, barre de la Liaison allié seule, page GPS par case de 25 m',
-                'Plus de remontée d’écran : défilement gardé quand la page se redessine (BFT compris), saisie jamais interrompue par un rafraîchissement',
-                'Fiche opérateur complète envoyée une fois par session (plus de rappel toutes les 15 min) ; les changements réels partent toujours',
-                'Transfert Bluetooth de photos et musiques plus fluide (fichier ouvert une seule fois)',
-            ], [], ['atak'], [
-                'Mettez à jour le pack 2.9.37, quittez Arma complètement et relancez.',
-                'En cas de saccades : Debug › PERFS, puis capture de l’écran pour le signaler.',
-            ], 'Pack téléphone 2.9.37'),
+                'Référentiel des grades : un bandeau « Système de grades de la communauté » avec « Changer de système » et « Parcourir les catalogues » ; il reste trois onglets (grades officiels, sur mesure, grades d’avancement)',
+                'Création de communauté, étape Grades : une carte « Autres pays et armées » ouvre la même fenêtre au lieu d’une carte par système',
+                'Modèles d’unités allemands (DSK, KSK, Luftlandebrigade 1, KSM, Seebataillon, HSG 64) : grades de la Bundeswehr appliqués',
+            ], [], ['personnel'], [
+                'L’administrateur lance run-migrations.php (étape grade_systems_de_ru_cn_nato) pour ajouter les grades allemands, russes, chinois et OTAN.',
+                'Essai : Back-office › Référentiel des grades › Parcourir les catalogues › Deutschland › Armée de terre › Utiliser pour la communauté.',
+            ]),
+            $pr(1333, '2026-11-02', 'Sessions & connexions ATAK : la fonction actuelle remplace l’ancien rôle', 'La page ATAK › Sessions & connexions affichait encore, dans sa colonne « Rôle », le rôle envoyé par le jeu (rôle personnalisé, description du slot ou équipe de feu) au lieu de la fonction tenue sur le site. Chaque opérateur montre désormais son indicatif, puis le membre lié (Prénom N. et trigramme), son grade, la fonction qui lui est attribuée et son unité d’affectation dans l’organigramme. Le rôle choisi en jeu n’apparaît plus qu’à part, sous la mention « Déclaré en jeu », et seulement s’il diffère de la fonction, avec une pastille « Écart ». Les membres masqués ou anonymisés restent sans nom ni lien.', [
+                'Filtres par unité (unités subordonnées comprises) et par fonction',
+                'Colonnes Grade, Fonction · affectation et Version du mod ; « Dernière remontée » remplace « Dernière MAJ »',
+                'Export CSV : membre, trigramme, grade, fonction, unité d’affectation, rôle déclaré en jeu et version du mod',
+            ], [
+                'Fiche opérateur ATAK : fonction, grade, unité d’affectation et rôle déclaré en jeu dans le bloc Identité réseau',
+            ], [
+                'Le rôle remonté du jeu n’est plus présenté comme la fonction de l’opérateur',
+            ], ['atak'], [], 'Portail Athena'),
+
             $pr(1332, '2026-11-02', 'Royaume-Uni : grades britanniques, emplois, qualifications, doctrine et modèles d’unités', 'Une communauté peut choisir le modèle britannique à sa création (étape Grades) ou dans Back-office › Référentiel des grades : British Army et Royal Marines (Private, Trooper, Gunner, Sapper… jusqu’à Field Marshal), Royal Navy ou Royal Air Force, avec abréviations officielles et codes OTAN. Le Royaume-Uni rejoint aussi les catalogues : emplois des forces spéciales et unités spécialisées, brevets et cursus réels avec leurs écoles, publications doctrinales publiques et modèles d’organisation (UKSF, 16 Air Assault, UK Commando Force, Joint Aviation Command, bataillon d’infanterie type).', [
                 'Grades : trois systèmes britanniques (British Army et Royal Marines, Royal Navy, Royal Air Force), proposés à la création de la communauté et dans le référentiel des grades',
                 'Catalogue d’emplois : 111 emplois britanniques sourcés (UKSF, 16 Air Assault, Ranger Regiment, Royal Marines, aviation, EOD, artillerie, RAF Regiment, Royal Navy)',
