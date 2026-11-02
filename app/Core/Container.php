@@ -692,6 +692,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\TrainingExpireCronJob::class),
                     self::get(\App\Services\Cron\Jobs\QualificationExpiryScanCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PilotQualificationsCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\QualificationAutoRulesCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelProgressionCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelCapabilityCronJob::class),
                     self::get(\App\Services\Cron\Jobs\SenioritySyncCronJob::class),
@@ -1172,6 +1173,29 @@ class Container
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Services\Personnel\PilotLogbookService::class)
             ),
+            \App\Repositories\QualificationAwardRuleRepository::class => new \App\Repositories\QualificationAwardRuleRepository(),
+            \App\Services\Personnel\QualificationAwardRuleService::class => new \App\Services\Personnel\QualificationAwardRuleService(
+                self::get(\App\Repositories\QualificationAwardRuleRepository::class),
+                self::get(\App\Repositories\QualificationDefinitionRepository::class),
+                self::get(\App\Repositories\PilotQualificationRuleRepository::class),
+                self::get(\App\Services\Personnel\QualificationStatusTransitionService::class),
+                self::get(\App\Services\Personnel\QualificationTemporalStatusService::class),
+                self::get(\App\Repositories\QualificationAwardRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\PilotLogbookRepository::class),
+                self::get(\App\Repositories\GradeRepository::class)
+            ),
+            \App\Services\Cron\Jobs\QualificationAutoRulesCronJob::class => new \App\Services\Cron\Jobs\QualificationAutoRulesCronJob(
+                self::get(\App\Repositories\QualificationAwardRuleRepository::class),
+                self::get(\App\Services\Personnel\QualificationAwardRuleService::class)
+            ),
+            \App\Controllers\Admin\Organization\QualificationRulesController::class => new \App\Controllers\Admin\Organization\QualificationRulesController(
+                self::get(\App\Services\Personnel\QualificationAwardRuleService::class),
+                self::get(\App\Repositories\QualificationDefinitionRepository::class),
+                self::get(\App\Repositories\QualificationAwardRuleRepository::class),
+                self::get(\App\Services\Personnel\QualificationBadgeStorageService::class),
+                self::get(\App\Services\Personnel\QualificationCertificatePdfService::class)
+            ),
             \App\Controllers\Admin\Organization\QualificationReferentielController::class => new \App\Controllers\Admin\Organization\QualificationReferentielController(
                 self::get(\App\Repositories\QualificationDefinitionRepository::class),
                 self::get(\App\Repositories\QualificationReferentielRepository::class),
@@ -1179,7 +1203,10 @@ class Container
                 self::get(\App\Services\Personnel\QualificationStatusTransitionService::class),
                 self::get(\App\Services\Personnel\QualificationTemporalStatusService::class),
                 self::get(\App\Services\Personnel\QualificationBadgeStorageService::class),
-                self::get(\App\Services\Personnel\QualificationCertificatePdfService::class)
+                self::get(\App\Services\Personnel\QualificationCertificatePdfService::class),
+                self::get(\App\Services\Personnel\QualificationAwardRuleService::class),
+                self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class)
             ),
             \App\Repositories\PersonnelAssignmentRepository::class => new \App\Repositories\PersonnelAssignmentRepository(),
             \App\Repositories\PersonnelServiceHistoryRepository::class => new \App\Repositories\PersonnelServiceHistoryRepository(),

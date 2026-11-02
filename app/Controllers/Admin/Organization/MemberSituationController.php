@@ -416,6 +416,15 @@ final class MemberSituationController
         } catch (\Throwable) {
             $pilotProgress = [];
         }
+        $qualificationProgress = [];
+        $progressNames = [];
+        try {
+            $ruleService = Container::get(\App\Services\Personnel\QualificationAwardRuleService::class);
+            $qualificationProgress = $ruleService->memberProgress($tenantId, $userId);
+            $progressNames = $qualificationProgress !== [] ? $ruleService->names($tenantId) : [];
+        } catch (\Throwable) {
+            $qualificationProgress = [];
+        }
 
         return Response::view('layout.main', $this->boShell([
             'title' => 'Mes qualifications',
@@ -423,10 +432,12 @@ final class MemberSituationController
             'boPageTitle' => 'Mes qualifications',
             'boPageKicker' => 'OPÉRATEUR · MES QUALIFICATIONS',
             'boPageSubtitle' => 'Qualifications et brevets enregistrés sur votre dossier.',
-            'backOfficePageCss' => array_merge(['back-office-member-situation.css', 'back-office-member-dossier.css'], $pilotProgress !== [] ? ['referentiel-pilot-syllabus.css'] : []),
+            'backOfficePageCss' => array_merge(['back-office-member-situation.css', 'back-office-member-dossier.css'], $pilotProgress !== [] ? ['referentiel-pilot-syllabus.css'] : [], $qualificationProgress !== [] ? ['qualifications-matrix.css'] : []),
             'user' => $user,
             'awards' => $enriched,
             'pilotProgress' => $pilotProgress,
+            'qualificationProgress' => $qualificationProgress,
+            'progressNames' => $progressNames,
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]));

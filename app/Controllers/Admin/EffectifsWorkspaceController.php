@@ -114,10 +114,9 @@ class EffectifsWorkspaceController
     }
 
     /**
-     * Tableau des recyclages : qualifications échues ou proches de l'échéance.
-     *
-     * Répond à la question métier « quelle qualification expire bientôt ? », restée sans
-     * réponse tant que `personnel_qualifications` n'était jamais alimentée.
+     * Matrice des qualifications : chaque membre face à chaque qualification du référentiel (qualifié, expire bientôt,
+     * expirée, en cours, rien), avec délivrance, mise en formation et retrait sur place. Toutes les qualifications,
+     * pas seulement celles de l'Academy.
      */
     public function qualifications(Request $request, array $params = []): Response
     {
@@ -126,40 +125,40 @@ class EffectifsWorkspaceController
             return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
-
-        // Fenêtre d'observation : 30 / 60 / 90 jours, 60 par défaut.
-        $within = (int) $request->query('horizon', 60);
-        if (!in_array($within, [30, 60, 90], true)) {
-            $within = 60;
-        }
-
-        $ready = $this->personnelQualificationRepository->trainingLinkReady();
-        $rows = $ready
-            ? $this->personnelQualificationRepository->listExpiringForTenant($tenantId, $within, 300)
-            : [];
-
-        // Répartition : déjà échues vs à renouveler, pour hiérarchiser l'action.
-        $expired = [];
-        $expiring = [];
-        $today = date('Y-m-d');
-        foreach ($rows as $row) {
-            $exp = substr((string) ($row['expires_at'] ?? ''), 0, 10);
-            if ($exp !== '' && $exp < $today) {
-                $expired[] = $row;
-            } else {
-                $expiring[] = $row;
-            }
+        $service = \App\Core\Container::get(\App\Services\Personnel\QualificationAwardRuleService::class);
+        try {
+            $matrix = $service->matrix($tenantId);
+        } catch (\Throwable) {
+            $matrix = ['definitions' => [], 'members' => [], 'cells' => [], 'counts' => ['ok' => 0, 'soon' => 0, 'exp' => 0, 'train' => 0], 'units' => [], 'coverage' => [], 'totals' => [], 'unlinked_academy' => 0];
         }
 
         return $this->shell('admin.effectifs_workspace.qualifications', [
             'title' => 'Qualifications',
             'effectifsNav' => 'qualifications',
-            'qualificationsReady' => $ready,
-            'qualificationsHorizon' => $within,
-            'qualificationsExpired' => $expired,
-            'qualificationsExpiring' => $expiring,
-            'qualificationsExpiringCount' => count($expired) + count($expiring),
+            'qualificationMatrix' => $matrix,
+            'qualificationsExpiringCount' => (int) $matrix['counts']['soon'] + (int) $matrix['counts']['exp'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css'],
         ]);
+    }
+
+    /** Progression du membre vers les qualifications automatiques (fiche du membre). @return list<array<string, mixed>> */
+    private function memberQualificationProgress(int $tenantId, int $userId): array
+    {
+        try {
+            return \App\Core\Container::get(\App\Services\Personnel\QualificationAwardRuleService::class)->memberProgress($tenantId, $userId);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** @return array<string, mixed> */
+    private function qualificationNames(int $tenantId): array
+    {
+        try {
+            return \App\Core\Container::get(\App\Services\Personnel\QualificationAwardRuleService::class)->names($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     public function roster(Request $request, array $params = []): Response
@@ -1437,6 +1436,8 @@ class EffectifsWorkspaceController
             'orgFoundingDate' => $this->seniorityPrePlatform->getOrgFoundingDate($tenantId),
             'memberRoleIds' => $roleIds,
             'memberQualifications' => $qualifications,
+            'qualificationProgress' => $this->memberQualificationProgress($tenantId, $id),
+            'progressNames' => $this->qualificationNames($tenantId),
             'qualificationTemporal' => $qualificationTemporal,
             'qualificationBadge' => $qualificationBadge,
             'memberAbsences' => $absences,
@@ -1456,7 +1457,7 @@ class EffectifsWorkspaceController
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css'],
             'loadDecorationsKit' => true,
             'effMemberUnitCode' => (new UnitCodeService())->forUnit($tenantId, (int) ($row['unit_id'] ?? 0)),
             'memberInvitePanel' => $this->memberInvitePanel($tenantId, $user),

@@ -28,6 +28,8 @@ final class CronSchedule
         'qualification_expiry_scan' => 60,
         // Cursus pilote : les heures de vol arrivent toutes les 10 min, un passage par heure suffit.
         'pilot_qualifications' => 60,
+        // Qualifications automatiques (heures de jeu, de vol, missions…) : un passage par heure, comme le cursus pilote.
+        'qualification_auto_rules' => 60,
         'personnel_progression_evaluate' => 60,
         'personnel_capability_refresh' => 60,
         'seniority_sync_all' => 1440,

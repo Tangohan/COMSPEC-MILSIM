@@ -678,10 +678,16 @@ class AtakApiController
             return [];
         }
         $temporal = new \App\Services\Personnel\QualificationTemporalStatusService();
+        // Qualifications masquées de la fiche opérateur par la communauté (réglage de la qualification).
+        $hidden = [];
+        try {
+            $hidden = array_flip((new \App\Repositories\QualificationAwardRuleRepository())->hiddenDefinitionIds($tenantId, 'show_on_orbat'));
+        } catch (\Throwable) {
+        }
         $out = [];
         foreach ($awards as $award) {
             $visibility = \App\Support\VisibilityLevel::normalize((string) ($award['visibility_level'] ?? 'normal'));
-            if ($visibility !== \App\Support\VisibilityLevel::NORMAL || !$temporal->isEffectivelyActive($award)) {
+            if ($visibility !== \App\Support\VisibilityLevel::NORMAL || isset($hidden[(int) ($award['definition_id'] ?? 0)]) || !$temporal->isEffectivelyActive($award)) {
                 continue;
             }
             $name = trim((string) ($award['definition_short_name'] ?? ''));
