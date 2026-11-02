@@ -16,6 +16,9 @@ La carte reste dans le cadran rond, plus de grand nom de lieu en travers ni de �
 [h2]Correctif — App Athena[/h2]
 Plus de « Serveur Athena injoignable » ni de « Reconnexion impossible » quand votre compte est connecté. Une nouvelle étape « Envois vers Athena » dit clairement quand un envoi est refusé, et le jeu n'envoie plus rien à Athena avant d'être connecté.
 
+[h2]Amélioration — Tenues Athena[/h2]
+Le panneau Tenues de l'arsenal ACE est plus lisible : icônes nettes, textes plus grands. Il s'utilise au clavier (flèches, Entrée pour enfiler, Suppr, Ctrl+C pour copier) et la fiche d'une tenue montre le poids estimé, le remplissage de la tenue, du gilet et du sac, les munitions et le matériel. La recherche trouve aussi une tenue par ses pièces (arme, gilet…).
+
 [h2]Composants[/h2]
 [list]
 [*] Téléphone ATAK 2.9.29.AG - Denver

@@ -294,14 +294,16 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1291, '2026-11-02', 'Ordres aux IA réparés, grands écrans allumés, montre et app Athena justes', 'Avec le pack 2.9.29, les groupes IA de votre camp exécutent vraiment les ordres donnés depuis la carte du téléphone, l’app Ordres ou le PC du poste TOC, et renvoient leur état. Quand un ordre est impossible, le téléphone explique pourquoi. Les grands écrans sur trépied affichent enfin la carte TOC, les diapositives et la caméra en direct, la carte de la montre Garmin reste dans son cadran, et l’app Athena n’annonce plus un serveur injoignable quand votre compte est connecté.', [
+            $pr(1291, '2026-11-02', 'Ordres aux IA réparés, grands écrans allumés, montre, app Athena et Tenues', 'Avec le pack 2.9.29, les groupes IA de votre camp exécutent vraiment les ordres donnés depuis la carte du téléphone, l’app Ordres ou le PC du poste TOC, et renvoient leur état. Quand un ordre est impossible, le téléphone explique pourquoi. Les grands écrans sur trépied affichent enfin la carte TOC, les diapositives et la caméra en direct, la carte de la montre Garmin reste dans son cadran, et l’app Athena n’annonce plus un serveur injoignable quand votre compte est connecté. Le panneau Tenues devient plus lisible et s’utilise au clavier.', [
                 'Groupes IA du camp dans les destinataires de l’app Ordres : DÉPLACER, TENIR, RECO et RENFORT exécutés au point de la grille saisie',
                 'Étape « Envois vers Athena » dans l’app Athena : dit clairement quand un envoi est refusé',
                 'Menu Écran COMSPEC sur les doubles écrans sur trépied (toutes les teintes)',
+                'Tenues Athena : fiche avec poids estimé, remplissage tenue / gilet / sac, munitions et matériel, recherche par pièce et commandes au clavier',
             ], [
                 'Ligne « Ordre aux IA » du clic droit visible pour un chef même sans ordre possible : un clic dit pourquoi (aucun groupe IA, pas le droit, serveur pas à jour)',
                 'Un groupe IA gelé par la mission ou par l’éditeur se remet en mouvement quand il reçoit un ordre de déplacement',
                 'Le jeu n’envoie plus rien à Athena avant d’être connecté',
+                'Tenues Athena plus lisibles : icônes nettes et textes plus grands',
             ], [
                 'Ordres aux IA jamais exécutés depuis leur arrivée (pack 2.9.26)',
                 'Grands écrans sur trépied (standard, noir, sable) restés noirs en diffusion et en affichage TOC',

@@ -30,7 +30,7 @@ class CfgPatches {
         // 1.6.24 : ATAK natif 2.9.24 — message « pack non officiel » (CLIENT_UNTRUSTED) au lieu du faux 401.
         // 1.6.25 : ATAK natif 2.9.26 — panneau Athena · Tenues refait (cartes, onglet Favoris, menu clic droit, fiche, ligne de retour), options du menu (renommer, dupliquer, collection, enfiler en gardant sac ou armes, comparer, objets manquants, copier), note de service et licence au premier lancement (fn_licenceStatus, relecture depuis le téléphone).
         // 1.6.26 : ATAK natif 2.9.28 — fn_zeusShowPlayerAtak de nouveau compilable (replaceString inexistant), balayage des balises GPS allégé, mesures du mode profilage (appels et rappels de la DLL, écriture du profil).
-        // 1.6.27 : ATAK natif 2.9.29 — code de connexion Athena autorisé sans téléphone en main (fn_uplinkHold), liaison « établie » avec une session de jeu sans clé de communauté (fn_connect).
+        // 1.6.27 : ATAK natif 2.9.29 — code de connexion Athena autorisé sans téléphone en main (fn_uplinkHold), liaison « établie » avec une session de jeu sans clé de communauté (fn_connect) ; Tenues Athena : icônes du mod (img/arsenal), textes plus grands, clavier, fiche avec poids et remplissage (fn_arsenalLoadoutStats).
     };
 };
 
