@@ -9,6 +9,8 @@
     données ; section « Radio de données » (radio, liaison au téléphone, canal, puissance, batterie, maillage, nœuds,
     débit et latence estimés) avec ses boutons (allumer, canal, puissance, câble EUD, Wi-Fi, débrancher). Sans MPU5 :
     pas de réseau de données.
+    Voix ACRE2 / TFAR par le maillage (fn_mpuVoice, réglage comspec_atak_native_mpu_voice) : section « Voix radio par le
+    maillage » (radio pontée, état, correspondants pontés joignables) avec les boutons pour relier ou débrancher une radio.
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -332,6 +334,48 @@ if (_mpuOn) then {
     if (_lk isNotEqualTo "") then { _btn pushBack ["DÉBRANCHER", { ["unlink"] call comspec_atak_native_fnc_mpuLink; }]; };
     if ((_v get "spare") && {(_v get "batt") < 95}) then { _btn pushBack ["BATTERIE", { ["battery"] call comspec_atak_native_fnc_mpuLink; }]; };
     if (_btn isNotEqualTo []) then { [_btn] call _buttons; };
+};
+
+// --- Voix ACRE2 / TFAR relayée par le maillage MPU5 (fn_mpuVoice) : pont radio, état, correspondants joignables ---
+if ((_mpuS get "active") && {missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]}) then {
+    private _vv = ["view"] call comspec_atak_native_fnc_mpuVoice;
+    private _vb = _vv get "bridge";
+    ["Voix radio par le maillage", "Radio ACRE2 / TFAR reliée à la MPU5 par câble audio : la voix passe par le maillage jusqu'aux radios reliées des équipiers, sur la même fréquence"] call _section;
+    if (_vb isEqualTo []) then {
+        ["Pont radio", "<t color='#8a9a93'>aucune radio reliée à la MPU5</t>"] call _info;
+    } else {
+        if (_vv get "ok") then {
+            [format ["<t color='#5cc76b'>Radio %1 pontée sur MPU5 : voix relayée par le maillage (%2 relais)</t>", [_vb select 2] call _esc, _vv get "hops"]] call _para;
+        } else {
+            [format ["Radio %1 pontée sur MPU5 · <t color='#f2ab33'>%2 : portée radio normale</t>", [_vb select 2] call _esc, [_vv get "why"] call _esc]] call _para;
+        };
+        if (_vv get "ok") then {
+            private _pl = _vv get "peers";
+            if (_pl isEqualTo []) then {
+                ["<t size='0.85' color='#8a9a93'>Aucun correspondant ponté joignable pour l'instant : il faut une radio reliée à une MPU5 de l'autre côté aussi.</t>"] call _para;
+            } else {
+                [format ["<t size='0.85' color='#8a9a93'>Correspondants pontés joignables (%1)</t>", count _pl]] call _para;
+                {
+                    _x params ["_pn", "_ph", "_pd", "_ps"];
+                    [format ["<t color='#5cc76b'>●</t> %1", [_pn] call _esc], format ["%1 saut(s) · %2%3", _ph, [_pd] call _dist, ["", " · <t color='#f2ab33'>autre fréquence</t>"] select !_ps]] call _info;
+                } forEach (_pl select [0, 8]);
+                if ((_vv get "tfMult") > 0) then { [format ["<t size='0.85' color='#8a9a93'>TFAR : portée de réception allongée %1 fois</t>", round (1 / ((_vv get "tfMult") max 0.01))]] call _para; };
+            };
+        };
+    };
+    _y = _y + _pad * 0.3;
+    private _vbt = [];
+    if (_vv get "carried") then {
+        {
+            _x params ["_rk", "", "_rn"];
+            if (_vb isEqualTo [] || {(_vb select 0) isNotEqualTo _rk}) then {
+                _vbt pushBack [format ["RELIER %1", toUpper (_rn select [0, 14])], format ['["bridge", [%1]] call comspec_atak_native_fnc_mpuVoice;', str _rk], _vb isEqualTo []];
+            };
+        } forEach ((_vv get "radios") select [0, 3]);
+    };
+    if (_vb isNotEqualTo []) then { _vbt pushBack ["DÉBRANCHER LA RADIO", { ["unbridge"] call comspec_atak_native_fnc_mpuVoice; }]; };
+    if (!(_vv get "carried") && {_vb isEqualTo []}) then { ["<t size='0.85' color='#8a9a93'>Portez une MPU5 pour y relier votre radio.</t>"] call _para; };
+    while { _vbt isNotEqualTo [] } do { [_vbt select [0, 2]] call _buttons; _vbt deleteRange [0, 2]; };
 };
 
 // --- Indicateurs ---
