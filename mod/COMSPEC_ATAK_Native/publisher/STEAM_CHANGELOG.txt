@@ -1,3 +1,38 @@
+[h1]COMSPEC ATAK — Mise à jour 2.9.41.AG - Denver[/h1]
+[b]Publication : 03/11/2026[/b]
+[quote]
+[b]Important :[/b] mettez à jour le pack 2.9.41, quittez Arma 3 complètement, puis relancez. Rappel : la 2.9.40 a rendu aux marqueurs leur vraie couleur, débloqué les clics de la carte après le menu du clic droit et corrigé les pages qui se superposaient (détail ci-dessous).
+[/quote]
+
+[h2]Nouveautés[/h2]
+[list]
+[*] App Zones, onglet NOMMER, et clic droit › Zones › Nommer les axes autour : choisissez le thème des noms de code. Villes françaises, américaines, britanniques ou allemandes, planètes et lunes, alphabet OTAN (ALPHA à ZULU puis ALPHA 2), animaux, ou MIL-STD / OTAN : MSR TAMPA, PL MARS, OBJ LYON, CP1, RP2…
+[*] Votre thème est gardé pour vos prochains plans et partagé avec le plan. Jamais deux fois le même nom dans un plan ; renommage à la main toujours possible ; en MIL-STD, l'abréviation se change élément par élément.
+[*] Après « Nouveau plan à partir d'ici » ou une zone de travail tracée, l'app Zones propose tout de suite DÉCOUPER ou TRACER. Rectangle et cercle se tracent aussi en cliquant-glissant.
+[*] Nouvelle action ACE sur soi « ATAK : réparer l'affichage » : remet tout l'affichage du téléphone à zéro en un geste.
+[/list]
+
+[h2]Corrections[/h2]
+[list]
+[*] Dans un avion à cockpit cliquable (A-10C…), un hélicoptère ou un véhicule, l'ATAK en grand et la miniature utilisée à la souris (Maj+U) restaient cachés derrière les écrans du cockpit. Ils s'affichent par-dessus ; s'il restait caché, la touche Prendre en main le remet devant.
+[*] Après être descendu d'un appareil, le téléphone ne s'ouvrait plus, puis revenait tout seul avec un fin cadre bleu autour de tout l'écran. Corrigé : monter, descendre, changer de place, mourir ou réapparaître remet le téléphone au propre.
+[*] Le cadre bleu de Maj+U suit exactement le téléphone, même déplacé, et disparaît dès que l'on rend la main.
+[/list]
+
+[h1]COMSPEC ATAK — Mise à jour 2.9.40.AG - Denver[/h1]
+[b]Publication : 02/11/2026[/b]
+[quote]
+[b]Important :[/b] mettez à jour le pack 2.9.40, quittez Arma 3 complètement, puis relancez. Rappel : la 2.9.39 a apporté SUR MON TÉLÉPHONE (QR code), les briefs air aux pilotes et le rôle affiché (détail ci-dessous).
+[/quote]
+
+[h2]Corrections[/h2]
+[list]
+[*] Carte : les marqueurs ont exactement la couleur choisie (rouge vif comme dans la fiche), avec un léger contour pour rester lisibles sur fond sombre ou satellite ; seuls le noir et le bleu foncé s'éclaircissent sur carte sombre.
+[*] Carte : après une action du menu du clic droit (Zones, Nommer les axes, Zone depuis le clic…), plus aucun clic ne passait et le tracé dans l'app Zones devenait impossible. Corrigé.
+[*] En ouvrant une app, la page précédente (Athena, Profil…) pouvait rester dessinée par-dessous. Corrigé.
+[*] Quitter l'app Zones abandonne le tracé en cours.
+[/list]
+
 [h1]COMSPEC ATAK — Mise à jour 2.9.39.AG - Denver[/h1]
 [b]Publication : 02/11/2026[/b]
 [quote]

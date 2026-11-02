@@ -38,6 +38,65 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.41 : ATAK visible au-dessus des cockpits, téléphone réparé après la descente, thèmes de nommage des axes et des zones (ATAK natif 2.9.41.AG - Denver)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK au-dessus des cockpits, téléphone qui se rouvre, noms de code au choix
+- Dans un avion à cockpit cliquable (A-10C…), un hélicoptère ou un véhicule, l'ATAK en grand et la miniature utilisée à la souris (Maj+U) s'affichent désormais par-dessus les écrans du cockpit ; s'il restait caché, la touche Prendre en main le remet devant.
+- Après être descendu d'un appareil, le téléphone ne s'ouvrait plus du tout, puis revenait tout seul avec un fin cadre bleu tout autour de l'écran : corrigé. Monter, descendre, changer de place, mourir ou réapparaître remet le téléphone au propre, et la nouvelle action ACE sur soi « ATAK : réparer l'affichage » remet tout à zéro en un geste.
+- Le cadre bleu de Maj+U suit exactement le téléphone (aussi quand on le déplace) et disparaît dès que l'on rend la main.
+- App Zones, onglet NOMMER, et clic droit › Zones › Nommer les axes autour : choisissez le thème des noms de code — villes françaises, américaines, britanniques ou allemandes, planètes et lunes, alphabet OTAN (ALPHA à ZULU puis ALPHA 2), animaux, ou MIL-STD / OTAN : MSR TAMPA, PL MARS, OBJ LYON, CP1, RP2… Votre choix est gardé pour vos prochains plans et partagé avec le plan ; jamais deux fois le même nom dans un plan, renommage à la main toujours possible, abréviation changeable élément par élément.
+- Après « Nouveau plan à partir d'ici » ou une zone de travail tracée, l'app Zones propose tout de suite DÉCOUPER ou TRACER ; rectangle et cercle se tracent aussi en cliquant-glissant.
+EN : ATAK above cockpits, phone that reopens, code names of your choice
+- In an aircraft with a clickable cockpit (A-10C…), a helicopter or a vehicle, the full-screen ATAK and the mouse-driven miniature (Shift+U) now show on top of the cockpit screens; if it still stays hidden, the Take in hand key brings it back to the front.
+- After getting out of an aircraft, the phone would not open at all, then came back by itself with a thin blue frame around the whole screen: fixed. Getting in, getting out, changing seat, dying or respawning cleans the phone up, and the new ACE self action "ATAK: repair the display" resets everything in one go.
+- The blue Shift+U frame follows the phone exactly (also when you move it) and disappears as soon as you hand back control.
+- Zones app, NAME tab, and right-click › Zones › Name the axes around: pick the code name theme — French, American, British or German cities, planets and moons, NATO alphabet (ALPHA to ZULU then ALPHA 2), animals, or MIL-STD / NATO: MSR TAMPA, PL MARS, OBJ LYON, CP1, RP2… Your choice is kept for your next plans and shared with the plan; never the same name twice in a plan, manual renaming always possible, abbreviation changeable item by item.
+- After "New plan from here" or a drawn work area, the Zones app straight away offers DIVIDE or DRAW; rectangle and circle can also be drawn by click-and-drag.
+
+### Détail technique
+- **Téléphone sous le cockpit** (`fn_open`, `fn_vehicleKeys` « parent ») : à bord, le téléphone en main est créé sur la fenêtre la plus haute de la pile au-dessus de 46 (`displayChild`, hors téléphone, menu pause, carte cachée) au lieu de 46 : un display créé sur 46 passait sous l'écran de cockpit cliquable (curseur et commandes de vol pris, rien de visible). « covered » (à bord seulement) : une fenêtre étrangère au sommet de la pile ; `fn_interactToggle` / `fn_miniInteract` rouvrent alors le téléphone au premier plan au lieu de le ranger, l'interaction miniature continue (`fn_open` garde `COMSPEC_ATAK_MiniPrevMode` sur une réouverture en main). Le relais de touches posé sur les fenêtres de bord ne s'efface plus quand le téléphone est « en main » mais recouvert (c'était le « plus aucune touche ne marche »). Journal `[ATAK]` : fenêtre empilée relayée (IDD, nombre de contrôles, véhicule), téléphone ouvert par-dessus, téléphone recouvert, fenêtre encore ouverte 2 s après la descente.
+- **Remise à zéro** (`fn_vehicleKeys` « reset ») sur les évènements joueur CBA `vehicle` (montée, descente, changement de véhicule), `turret` (changement de place), `unit` (réapparition, contrôle Zeus) et `COMSPEC_ATAK_StowDown` (mort, inconscience) : mode miniature / grand du joueur remis, drapeaux (`ToggleFrame`, glisser), displays 88500 orphelins fermés, téléphone en main rendu (miniature rouverte sauf mort / nouvelle unité), vol stationnaire, alternat radio, relais `COMSPEC_ATAK_VehKeyEh` retirés, menu d'actions rendu. « heal » avant chaque ouverture par une touche ; « repair » pour l'action ACE `COMSPEC_ATAK_Repair` (ferme aussi la miniature, oublie un display qui ne se ferme pas, rouvre la miniature). Module `ATAK` recopié dans le journal de session.
+- **Cadre bleu de Maj+U** : posé et déplacé par `fn_layoutApply` autour de `visible` (suivi du glisser, de la position, de l'orientation), seulement téléphone en main en mode MINI avec une interaction miniature en cours ; `fn_displayLoad` termine une interaction restée notée quand le téléphone s'ouvre en grand (cause du cadre plein écran : `COMSPEC_ATAK_MiniPrevMode` jamais remis après une ouverture ratée sous le cockpit, puis Alt+U en mode FULL). `fn_interactToggle` le remet à zéro avant le grand ; `fn_miniInteract` le remet si l'ouverture échoue.
+- **Retour « tout seul »** : le téléphone caché sous la fenêtre de cockpit redevenait visible quand cet autre mod fermait sa fenêtre, ou une ouverture automatique en main (CR de fin d'opération `fn_debrief`, liaison Athena) le rouvrait avec l'état d'interaction miniature resté noté.
+- **Thèmes de nommage** (`fn_zoneAction`) : thèmes `CITY` (villes américaines, clé gardée), `FRCITY`, `UKCITY`, `DECITY`, `PLANET` (FR / EN selon la langue du téléphone), `NATO`, `ANIMAL`, `MIL` (+ `milSub`) dans `gp.theme` du plan, préférence `COMSPEC_ATAK_ZnNameTheme` / `COMSPEC_ATAK_ZnNameSub` (profil) pour les nouveaux plans. `nameTheme`, `nameApply` (AXES | LINES | ZONES | CPS | ALL), `abbrNext` (axe : MSR, ASR, ROUTE, PL, LD, LOA, FSCL, CFL ; trait ouvert : PL… ; contour et zone : AA, OBJ, NAI, TAI, EA, BP, LZ, PZ, DZ, ACA, ROZ, zone selon son type ; CP : CP, PP, RP, ORP, SP numérotés), `_uniq` (« 2 », « 3 »… sur toute collision dans le plan, aussi au renommage à la main d'une zone, d'un trait ou d'un axe), `_nextNames` (liste épuisée : « ALPHA 2 »). Noms pris lus sans leur abréviation (`_split`, plus de `select [4]`). Abréviations jamais traduites.
+- **Interface** : onglet NOMMER (thème, sous-thème MIL-STD, NOMMER LES AXES / LES TRAITS / LES ZONES TYPÉES / TOUT NOMMER, renommer chaque axe, abréviation par axe et points de contrôle), onglet DÉCOUPER (même choix de thème), fiche de zone et de trait (ABRÉVIATION SUIVANTE), thème du nom automatique du plan élargi. Clic droit › Zones › Nommer les axes autour : sous-menu des thèmes (`ZNAX`, `ZX_<thème>`, sous-thème `ZNAX_SUB`).
+- **Après la zone de travail** (`fn_pageZones` « afterArea », consigne de la carte) : DÉCOUPER (onglet DÉCOUPER, aperçu) ou TRACER (outil POLYGONE) après `ctxGen NEW`, rectangle, cercle ou polygone de zone de travail. **Clic-glisser** (`fn_zoneMap` « up », `MouseButtonUp` de la carte) : rectangle et cercle terminés au relâchement au-delà de 10 pixels, écart mesuré à l'écran (juste aussi si la carte se déplace) ; deux clics toujours possibles. POLYGONE : vérifié, toutes ses actions passent déjà par des clics différés ou la carte de l'app (aucun contrôle supprimé dans son propre gestionnaire), le correctif 2.9.40 suffit.
+- i18n : 44 entrées FR / EN (`tools/i18n.py merge`).
+
+### À tester en jeu
+- **A-10C (Firewill / USAF), cockpit cliquable** : pilote, Alt+U : l'ATAK en grand visible au-dessus du cockpit, souris dessus ; Maj+U : miniature utilisable, cadre bleu exactement autour ; Échap / Alt+U : main rendue, cockpit cliquable de nouveau. RPT : lignes `[ATAK]` (fenêtre de bord, IDD).
+- **Hélicoptère vanilla** : pilote en vol stationnaire, Alt+U (vol stationnaire automatique), Échap ; passager : Alt+U / Maj+U.
+- **Véhicule terrestre** : conducteur et passager, Alt+U, Maj+U, Ctrl+U.
+- **Descente** : téléphone en main (grand puis Maj+U) dans l'A-10C, descendre : miniature (ou rangé), Alt+U et Maj+U marchent tout de suite, aucun cadre bleu ; RPT `Remise à zéro de l'interaction (descente)`. Changer de place, mourir, réapparaître : même chose.
+- **Action ACE** sur soi « ATAK : réparer l'affichage » : téléphone refermé puis miniature revenue, Alt+U marche.
+- **Cadre Maj+U** : glisser la miniature, changer de coin (touche Position, Maj+Alt+U), d'orientation : le cadre suit ; Alt+U ensuite : grand sans cadre.
+- **Zones › NOMMER** : thème VILLES FRANÇAISES, NOMMER LES AXES ; MIL-STD + PLANÈTES : TOUT NOMMER (MSR MARS, PL JUPITER, OBJ / NAI…, CP1…) ; ABRÉV. › sur un axe, un trait, une zone, un CP ; renommer un axe en double : « 2 » ajouté ; deux plans : pas de nom repris. ALPHABET OTAN avec plus de 26 éléments : ALPHA 2. Plan partagé : noms identiques chez l'autre joueur.
+- **Clic droit › Zones › Nommer les axes autour** : sous-menu des thèmes, sous-thème MIL-STD qui change, axes nommés dans le thème choisi ; nouveau plan suivant : même thème.
+- **Nouveau plan à partir d'ici** : bandeau DÉCOUPER / TRACER ; RECTANGLE et CERCLE en clic-glisser puis en deux clics ; POLYGONE 4 clics + Entrée.
+
+## Pack 2.9.40 : marqueurs aux vraies couleurs, carte qui ne se fige plus après le menu du clic droit, pages qui ne se superposent plus (ATAK natif 2.9.40.AG - Denver)
+
+### Résumé joueur
+Type : correctif
+FR : Marqueurs aux vraies couleurs, carte et pages réparées
+- Sur la carte de l'ATAK, les marqueurs ont maintenant exactement la couleur choisie (le rouge est rouge vif, comme dans la fiche), entourés d'un léger contour pour rester lisibles sur fond sombre ou satellite. Seuls le noir et le bleu foncé passent à une version claire sur carte sombre.
+- Après une action du menu du clic droit de la carte (Zones, Nommer les axes, Zone depuis le clic…), la carte acceptait plus aucun clic et le tracé dans l'app Zones devenait impossible : corrigé.
+- En ouvrant une app (par exemple APPLICATIONS), la page précédente (Athena, Profil…) pouvait rester dessinée par-dessous : corrigé.
+- Quitter l'app Zones abandonne le tracé en cours.
+EN : Markers in their true colours, map and pages fixed
+- On the ATAK map, markers now have exactly the chosen colour (red is bright red, as in the marker card), with a light outline to stay readable on dark or satellite maps. Only black and dark blue switch to a lighter version on dark maps.
+- After an action from the map right-click menu (Zones, Name the axes, Zone from click…), the map no longer accepted any click and drawing in the Zones app became impossible: fixed.
+- When opening an app (for example APPLICATIONS), the previous page (Athena, Profile…) could stay drawn underneath: fixed.
+- Leaving the Zones app drops the drawing in progress.
+
+### Détail technique
+- **Couleurs** (`fn_mapColors`) : « lift » [couleur, classe] ne mélange plus vers le blanc ; table explicite par classe pour la carte sombre (ColorBlack -> gris clair, ColorBlue -> #2F6BFF, ColorWEST, ColorCIV, ColorBrown…). Halo (`halo` noir 0,75 / `haloLight` blanc 0,7 sous une couleur sombre) dessiné 30 % plus grand sous l'icône dans `fn_mapGameMarkers` (calculé à l'entrée du cache, alpha de l'icône 1) et pour les repères Athena (`fn_mapOnDraw`). Étiquettes inchangées (`liftLbl`).
+- **Clics perdus** (`fn_mapCtxMenu`) : les lignes du menu s'exécutaient dans leur propre ButtonClick et « close » supprimait ce bouton pendant son gestionnaire ; le moteur ne laissait ensuite plus passer de clic (même défaut que fn_pageClear 25/10). Action différée d'une image, contrôles du menu masqués puis supprimés à l'image suivante.
+- **Pages superposées** (`fn_pageRender`) : un rendu différé (execNextFrame / waitAndExecute) d'une page quittée la redessinait par-dessus la page active. Tout rendu d'une page autre que la page active (posée par `fn_navigate` seul) est abandonné et journalisé `[UI]`.
+- **Zones** (`fn_navigate`) : outil et points du tracé remis à zéro en quittant l'app (journal `[MAP]`).
+
 ## Pack 2.9.39 : Sur mon téléphone (QR code vers les apps mobiles), briefs air aux pilotes, rôle affiché (ATAK natif 2.9.39.AG - Denver, COMSPEC Link 2.0.117)
 
 ### Résumé joueur

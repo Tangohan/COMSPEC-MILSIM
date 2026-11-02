@@ -236,6 +236,8 @@ $pid = (int) ($person['id'] ?? 0);
         </div>
     </section>
 </div>
+
+<?php require __DIR__ . '/papers/_person_block.php'; ?>
 <?php
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';

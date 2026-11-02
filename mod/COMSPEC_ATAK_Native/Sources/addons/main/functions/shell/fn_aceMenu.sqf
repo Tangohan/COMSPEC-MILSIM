@@ -27,6 +27,12 @@ private _add = {
 [["ACE_SelfActions"], "COMSPEC_ATAK_Phone", "Téléphone ATAK", "\z\comspec_atak_native\addons\main\data\logo_atak.paa", {},
     { _player isEqualTo _target && {[_player] call comspec_atak_native_fnc_hasDevice} }] call _add;
 
+// Hors du menu du téléphone (aussi sans téléphone COMSPEC : tablette d'équipage) : tout l'affichage et l'interaction de
+// l'ATAK remis à zéro quand il ne s'ouvre plus ou qu'un cadre reste à l'écran (fn_vehicleKeys « repair », 2.9.41).
+[["ACE_SelfActions"], "COMSPEC_ATAK_Repair", "ATAK : réparer l'affichage", "\z\comspec_atak_native\addons\main\data\logo_atak.paa",
+    { [{ ["repair"] call comspec_atak_native_fnc_vehicleKeys; }] call CBA_fnc_execNextFrame; },
+    { _player isEqualTo _target && {([player] call comspec_atak_native_fnc_hasDevice) || {[player] call comspec_atak_native_fnc_aircrewTerminal} || {!isNull ([] call comspec_atak_native_fnc_display)}} }] call _add;
+
 [_root, "COMSPEC_ATAK_Back", "Voir l'arrière", "", { [{ [] call comspec_atak_native_fnc_backView; }] call CBA_fnc_execNextFrame; }] call _add;
 
 // Antennes : une entrée par antenne portée, plus « Retirer » quand une est vissée.

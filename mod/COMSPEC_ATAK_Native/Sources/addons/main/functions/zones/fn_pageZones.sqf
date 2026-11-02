@@ -64,7 +64,7 @@ private _finish = {
     if ((count _pts) < ([3, 2] select _open)) exitWith { [[("3 sommets au moins") call _tr, ("2 points au moins") call _tr] select _open, 2] call comspec_atak_native_fnc_toast; false };
     if (!_open && {(_ui get "polyFor") isEqualTo "AREA"}) then {
         ["areaSet", [_id, "POLY", (_pts select [0, 60]) apply { [_x select 0, _x select 1] }]] call _ZA;
-        ["INFO", "Zone de travail posée : onglet DÉCOUPER, puis GÉNÉRER", 4, 10] call comspec_atak_native_fnc_notify;
+        _ui set ["next", "AREA"];
     } else {
         private _lid = ["lineAdd", [_id, _pts, !_open]] call _ZA;
         if (_lid isNotEqualTo "") then { _ui set ["lid", _lid]; _ui set ["ztab", "DRAW"]; };
@@ -117,6 +117,8 @@ if (_page isEqualTo "#key") exitWith {
 if (_page isEqualTo "#ui") exitWith {
     _arg params [["_op", ""], ["_v", ""]];
     private _id = _ui get "id";
+    // Choix proposé après la pose d'une zone de travail (DÉCOUPER / TRACER, consigne de la carte) : retiré au geste suivant.
+    if (_op isNotEqualTo "afterArea") then { _ui set ["next", ""]; };
     private _full = false;
     private _form = { params ["_k", ["_d", ""]]; [_k, _d] call comspec_atak_native_fnc_formValue };
     switch (_op) do {
@@ -164,6 +166,14 @@ if (_page isEqualTo "#ui") exitWith {
             call _refresh;
         };
         case "polyEnd": { if (call _finish) then { playSound "ClickSoft"; }; call _refresh; };
+        // Après la pose d'une zone de travail (rectangle, cercle, polygone, clic droit › Nouveau plan à partir d'ici) :
+        // DÉCOUPER (onglet DÉCOUPER, aperçu sur la carte) ou TRACER (polygone : contours et traits du plan).
+        case "afterArea": {
+            _ui set ["next", ""];
+            if (_v isEqualTo "CUT") exitWith { ["#ui", ["ztab", "CUT"]] call comspec_atak_native_fnc_pageZones; };
+            _ui set ["ztab", "DRAW"];
+            ["#ui", ["tool", "POLY"]] call comspec_atak_native_fnc_pageZones;
+        };
         case "polyBack": {
             private _p = _ui get "draftPts";
             if ((count _p) > 0) then { _p deleteAt ((count _p) - 1); playSound "ClickSoft"; };
@@ -243,6 +253,25 @@ if (_page isEqualTo "#ui") exitWith {
         };
         case "genCancel": { ["genCancel", _id] call _ZA; };
         case "axes": { ["axes", [_id]] call _ZA; };
+        // Thème de nommage (préférence du joueur et plan) : [thème, sous-thème MIL].
+        case "nameTheme": { _v params ["_k", ["_sub", ""]]; ["nameTheme", [_id, _k, _sub]] call _ZA; playSound "ClickSoft"; };
+        // Noms du thème appliqués : AXES (calcul des axes s'il n'y en a pas encore) | LINES | ZONES | ALL.
+        case "nameApply": {
+            if (_v isEqualTo "AXES" && {(count ((["get", _id] call _ZA) getOrDefault ["axes", []])) isEqualTo 0}) exitWith { ["axes", [_id]] call _ZA; };
+            private _n = ["nameApply", [_id, _v]] call _ZA;
+            if (_n isEqualTo 0) exitWith { [("Rien à nommer : tracez des traits, typez des zones ou calculez les axes") call _tr, 3] call comspec_atak_native_fnc_toast; };
+            [format [("%1 élément(s) renommé(s)") call _tr, _n], "undo"] call _bar;
+            playSound "ClickSoft";
+        };
+        // Abréviation suivante d'un élément : [genre (axis | line | zone | cp), id].
+        case "abbr": { _v params ["_k", "_eid"]; ["abbrNext", [_id, _k, _eid]] call _ZA; playSound "ClickSoft"; };
+        case "axisName": {
+            private _fk = "znAx_" + _v;
+            private _nv = [_fk, ""] call _form;
+            if ((trim _nv) isNotEqualTo "") then { ["axisSet", [_id, _v, "name", _nv]] call _ZA; };
+            (_ui get "draft") deleteAt _fk;
+            playSound "ClickSoft";
+        };
         case "axisRoute": {
             private _rid = ["axisRoute", [_id, _v]] call _ZA;
             if (_rid isNotEqualTo "") then { ["ROUTE"] call comspec_atak_native_fnc_navigate; ["#ui", ["open", _rid]] call comspec_atak_native_fnc_pageRoute; };
@@ -468,6 +497,9 @@ private _panelRows = {
         if (_mineB) then {
             _rows pushBack ["section", "Zone", ""];
             _rows pushBack ["field", "znZName", "Nom", _draft getOrDefault ["znZName", _zn], "RENOMMER", ["zoneField", ["label", "znZName"]] call _ui1, false];
+            if ((_gp getOrDefault ["theme", "CITY"]) isEqualTo "MIL") then {
+                _rows pushBack ["buttons", [[("ABRÉVIATION SUIVANTE ›") call _tr, ["abbr", ["zone", _ui get "zid"]] call _ui1, false, true, "AA, OBJ, NAI, TAI, EA, BP, LZ, PZ, DZ, ACA, ROZ, puis sans abréviation"]]];
+            };
             _rows pushBack ["lineseg", "", "Type", (["types"] call _ZA) apply { [toUpper ((_x select 1) call _tr), ["zoneSet", ["type", _x select 0]] call _ui1, (_x select 0) isEqualTo _zt, (_pal get "type") getOrDefault [_x select 0, _x select 2]] }];
             _rows pushBack ["segment", "Rendu", [["COMME LE PLAN", ["zoneSet", ["rm", ""]] call _ui1, _zrm isEqualTo ""]] + ((["renders"] call _ZA) apply { [toUpper ((_x select 1) call _tr), ["zoneSet", ["rm", _x select 0]] call _ui1, (_x select 0) isEqualTo _zrm] })];
             private _cz = (_ui get "confirm") isEqualTo "zdel";
@@ -483,6 +515,17 @@ private _panelRows = {
             _rows pushBack ["text", _lines joinString "   "];
         };
         _rows
+    };
+    // Thème de nommage du plan (et du joueur) ; MIL-STD : sous-thème des noms qui suivent l'abréviation.
+    private _themeRows = {
+        private _th = _gp getOrDefault ["theme", "CITY"];
+        private _all = ["themeRows"] call _ZA;
+        _rows pushBack ["segment", "Thème des noms", _all apply { [toUpper ((_x select 1) call _tr), ["nameTheme", [_x select 0]] call _ui1, (_x select 0) isEqualTo _th, _x select 2] }];
+        if (_th isEqualTo "MIL") then {
+            private _sub = _gp getOrDefault ["milSub", "CITY"];
+            _rows pushBack ["segment", "Noms après l'abréviation (MSR TAMPA, PL MARS)", (_all select { (_x select 0) isNotEqualTo "MIL" }) apply { [toUpper ((_x select 1) call _tr), ["nameTheme", ["MIL", _x select 0]] call _ui1, (_x select 0) isEqualTo _sub, _x select 2] }];
+        };
+        _th isEqualTo "MIL"
     };
     switch (_ui get "ztab") do {
         case "CUT": {
@@ -553,8 +596,7 @@ private _panelRows = {
             };
             private _ax = _b get "axes";
             _rows pushBack ["section", "Axes routiers (MSR / ASR)", [("Grands axes nommés et carrefours en points de contrôle") call _tr, format [("%1 axe(s), %2 point(s) de contrôle") call _tr, count _ax, count (_b get "cps")]] select ((count _ax) > 0)];
-            private _th = _gp getOrDefault ["theme", "CITY"];
-            _rows pushBack ["segment", "Noms de code", [["VILLES", ["gp", ["theme", "CITY"]] call _ui1, _th isEqualTo "CITY", "TAMPA, DALLAS, BOSTON…"], ["ANIMAUX", ["gp", ["theme", "ANIMAL"]] call _ui1, _th isEqualTo "ANIMAL", "COBRA, VIPER, FALCON…"], ["OTAN", ["gp", ["theme", "NATO"]] call _ui1, _th isEqualTo "NATO", "ALPHA, BRAVO, CHARLIE…"]]];
+            call _themeRows;
             private _na = _gp getOrDefault ["asr", 3];
             _rows pushBack ["segment", "Itinéraires secondaires (ASR)", [0, 1, 2, 3, 4] apply { [str _x, ["gp", ["asr", _x]] call _ui1, _x isEqualTo _na] }];
             _rows pushBack ["buttons", [[["NOMMER LES AXES", "RENOMMER LES AXES"] select ((count _ax) > 0), ["axes"] call _ui1, false, _busy isEqualTo "", "Le plus grand axe devient MSR, les suivants ASR ; calcul en arrière-plan"]]];
@@ -574,8 +616,30 @@ private _panelRows = {
                 private _sp = _gp getOrDefault ["setPre", "OBJ"];
                 _rows pushBack ["segment", "Nom automatique", ["OBJ", "AO", "NAI", "SECT"] apply { [_x, ["gp", ["setPre", _x]] call _ui1, _x isEqualTo _sp] }];
                 private _st = _gp getOrDefault ["setTheme", "NATO"];
-                _rows pushBack ["segment", "", [["OTAN", ["gp", ["setTheme", "NATO"]] call _ui1, _st isEqualTo "NATO"], ["VILLES", ["gp", ["setTheme", "CITY"]] call _ui1, _st isEqualTo "CITY"], ["ANIMAUX", ["gp", ["setTheme", "ANIMAL"]] call _ui1, _st isEqualTo "ANIMAL"]]];
+                _rows pushBack ["segment", "", ((["themeRows"] call _ZA) select { (_x select 0) isNotEqualTo "MIL" }) apply { [toUpper ((_x select 1) call _tr), ["gp", ["setTheme", _x select 0]] call _ui1, (_x select 0) isEqualTo _st, _x select 2] }];
                 _rows pushBack ["buttons", [["NOM AUTO", ["autoName"] call _ui1, false, true, "Prochain nom de code libre ; le préfixe des zones prend son initiale"]]];
+                // Noms de code des éléments du plan : thème, application, axes (renommage et abréviation par axe).
+                _rows pushBack ["section", "Noms de code des éléments", ("Jamais deux fois le même nom dans le plan ; renommage à la main toujours possible") call _tr];
+                private _mil = call _themeRows;
+                private _axN = _b get "axes";
+                _rows pushBack ["buttons", [
+                    [["CALCULER ET NOMMER LES AXES", "NOMMER LES AXES"] select ((count _axN) > 0), ["nameApply", "AXES"] call _ui1, true, _busy isEqualTo "", "MSR pour le plus grand axe, ASR pour les suivants"],
+                    ["NOMMER LES TRAITS", ["nameApply", "LINES"] call _ui1, false, (count (_b getOrDefault ["lines", []])) > 0, ["Contours et traits tracés", "Traits : PL ; contours : AA (abréviation modifiable)"] select _mil],
+                    ["NOMMER LES ZONES TYPÉES", ["nameApply", "ZONES"] call _ui1, false, true, ["Zones d'un type autre que Repère ; les cases de grille gardent leur nom", "OBJ, NAI, BP, ROZ, LZ… selon le type ; les cases de grille gardent leur nom"] select _mil],
+                    ["TOUT NOMMER", ["nameApply", "ALL"] call _ui1, false, true, "Axes, traits, zones typées (et points de contrôle en MIL-STD)"]
+                ]];
+                {
+                    _x params ["_aid", "_an", "_cls", "", "_len"];
+                    private _btnA = [];
+                    if (_mil) then { _btnA pushBack [("ABRÉV. ›") call _tr, ["abbr", ["axis", _aid]] call _ui1, false, true, "Abréviation suivante : MSR, ASR, ROUTE, PL, LD, LOA, FSCL, CFL"]; };
+                    _rows pushBack ["person", "\a3\ui_f\data\igui\cfg\simpletasks\types\car_ca.paa", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='#a9b6b0'>%2</t>", [_an] call _esc, [_len] call _fmt], _btnA,
+                        [[0.35, 0.85, 0.40, 1], [0.30, 0.58, 1, 1]] select (_cls isEqualTo "MSR")];
+                    _rows pushBack ["field", "znAx_" + _aid, "Renommer l'axe", _draft getOrDefault ["znAx_" + _aid, _an], "RENOMMER", ["axisName", _aid] call _ui1, false];
+                } forEach _axN;
+                // MIL-STD : points de contrôle numérotés, abréviation changée d'un clic (CP, PP, RP, ORP, SP).
+                if (_mil && {(count (_b get "cps")) > 0}) then {
+                    _rows pushBack ["segment", "Points de contrôle (clic : CP, PP, RP, ORP, SP)", ((_b get "cps") select [0, 16]) apply { [_x select 1, ["abbr", ["cp", str (_x select 0)]] call _ui1, false, _x select 3] }];
+                };
             };
             // Zones : recherche, tri, pastille de l'état.
             private _fd = _ui get "find";
@@ -698,9 +762,9 @@ private _panelRows = {
             private _tool = _ui get "tool";
             _rows pushBack ["section", "Zone de travail", _aTxt];
             _rows pushBack ["segment", "Tracer sur la carte", [
-                ["RECTANGLE", ["tool", "RECT"] call _ui1, _tool isEqualTo "RECT", "Deux clics : deux coins opposés"],
+                ["RECTANGLE", ["tool", "RECT"] call _ui1, _tool isEqualTo "RECT", "Glisser d'un coin à l'autre, ou deux clics : deux coins opposés"],
                 ["POLYGONE", ["tool", "POLY"] call _ui1, _tool isEqualTo "POLY", "Un clic par sommet ; aimanté aux routes, bâtiments et rives ; fermé ou ouvert"],
-                ["CERCLE", ["tool", "CIRCLE"] call _ui1, _tool isEqualTo "CIRCLE", "Centre (objectif) puis bord"]
+                ["CERCLE", ["tool", "CIRCLE"] call _ui1, _tool isEqualTo "CIRCLE", "Glisser, ou deux clics : centre (objectif) puis bord"]
             ]];
             _rows pushBack ["field", "znRad", "Autour de moi : rayon (m)", _draft getOrDefault ["znRad", str (_gp getOrDefault ["radius", 300])], "POSER", ["aroundMe"] call _ui1, false];
             _rows pushBack ["section", "Polygone", ("Mêmes options sur la barre de la carte") call _tr];
@@ -720,6 +784,9 @@ private _panelRows = {
                     [[["CHOISIR", "CHOISI"] select _isL, ["line", _lid] call _ui1, _isL, true, "Montre ses sommets : clic sur un sommet puis sur la carte pour le déplacer, Suppr pour le retirer"]], _lc, ["/", "#"] select _closed];
                 if (_isL) then {
                     _rows pushBack ["field", "znLName", "Nom", _draft getOrDefault ["znLName", _ln], "RENOMMER", ["lineSet", ["name"]] call _ui1, false];
+                    if ((_gp getOrDefault ["theme", "CITY"]) isEqualTo "MIL") then {
+                        _rows pushBack ["buttons", [[("ABRÉVIATION SUIVANTE ›") call _tr, ["abbr", ["line", _lid]] call _ui1, false, true, ["PL, LD, LOA, ROUTE, FSCL, CFL, MSR, ASR, puis sans abréviation", "AA, OBJ, NAI, TAI, EA, BP, LZ, PZ, DZ, ACA, ROZ, puis sans abréviation"] select _closed]]];
+                    };
                     _rows pushBack ["lineseg", "", "Couleur", [[("PLAN") call _tr, ["lineSet", ["style", [0, ""]]] call _ui1, (_lsty param [0, ""]) isEqualTo ""]] + (_colors apply { [toUpper ((_x select 2) call _tr), ["lineSet", ["style", [0, _x select 0]]] call _ui1, (_x select 0) isEqualTo (_lsty param [0, ""]), _x select 1] })];
                     _rows pushBack ["segment", "Épaisseur", [[-1, "PLAN"], [2, "2 PX"], [3, "3 PX"], [5, "5 PX"]] apply { [_x select 1, ["lineSet", ["style", [1, _x select 0]]] call _ui1, (_lsty param [1, -1]) isEqualTo (_x select 0)] }];
                     _rows pushBack ["segment", "Trait", [["", "PLAN"], ["SOLID", "PLEIN"], ["DASH", "TIRETS"], ["DOT", "POINTILLÉ"], ["ARROW", "FLÈCHE"]] apply { [_x select 1, ["lineSet", ["style", [2, _x select 0]]] call _ui1, (_lsty param [2, ""]) isEqualTo (_x select 0)] }];
@@ -823,9 +890,9 @@ private _panel = {
             _list pushBack _ov;
         } forEach [
             ["", "\z\comspec_atak_native\addons\main\data\ui_hand.paa", "Sélection : clic sur une zone ou un trait ; Suppr le supprime"],
-            ["RECT", "\A3\ui_f\data\map\markers\military\box_CA.paa", "Rectangle : deux coins opposés (zone de travail)"],
+            ["RECT", "\A3\ui_f\data\map\markers\military\box_CA.paa", "Rectangle : glisser ou deux clics, coins opposés (zone de travail)"],
             ["POLY", "\A3\ui_f\data\map\markers\military\triangle_CA.paa", "Polygone : aimanté, fermé (contour) ou ouvert (trait)"],
-            ["CIRCLE", "\A3\ui_f\data\map\markers\military\circle_CA.paa", "Cercle : centre puis bord (zone de travail)"],
+            ["CIRCLE", "\A3\ui_f\data\map\markers\military\circle_CA.paa", "Cercle : glisser ou deux clics, centre puis bord (zone de travail)"],
             ["#UNDO", "\z\comspec_atak_native\addons\main\data\ui_prev.paa", "Annuler (Ctrl+Z)"],
             ["#REDO", "\z\comspec_atak_native\addons\main\data\ui_next.paa", "Rétablir (Ctrl+Y)"]
         ];
@@ -850,9 +917,11 @@ private _panel = {
     };
     // Consigne (aide concise) en bas de la carte, avec TERMINER / ANNULER pendant un tracé.
     private _np = count (_ui get "draftPts");
+    private _next = _mineB && {_tool isEqualTo ""} && {(_ui getOrDefault ["next", ""]) isEqualTo "AREA"} && {(count (_b getOrDefault ["area", []])) > 0};
     private _help = switch (true) do {
-        case (_tool isEqualTo "RECT"): { [("Rectangle : cliquez le premier coin") call _tr, ("Rectangle : cliquez le coin opposé") call _tr] select (_np > 0) };
-        case (_tool isEqualTo "CIRCLE"): { [("Cercle : cliquez le centre (l'objectif)") call _tr, ("Cercle : cliquez le bord") call _tr] select (_np > 0) };
+        case _next: { ("Zone de travail posée : DÉCOUPER en zones, ou TRACER dessus (contours, traits)") call _tr };
+        case (_tool isEqualTo "RECT"): { [("Rectangle : glissez d'un coin à l'autre, ou cliquez deux coins opposés") call _tr, ("Rectangle : cliquez le coin opposé") call _tr] select (_np > 0) };
+        case (_tool isEqualTo "CIRCLE"): { [("Cercle : glissez du centre au bord, ou cliquez le centre puis le bord") call _tr, ("Cercle : cliquez le bord") call _tr] select (_np > 0) };
         case (_tool isEqualTo "POLY"): { format [("Polygone %1 · %2 point(s) · clic : sommet · Retour arrière : retirer · Entrée ou clic droit : terminer · Échap : annuler") call _tr, [("libre") call _tr, ("aimanté") call _tr] select (_ui get "polyMag"), _np] };
         case ((_ui get "lid") isNotEqualTo "" && {(_ui get "vtx") >= 0}): { ("Sommet choisi : cliquez sa nouvelle place · Suppr : le retirer · Échap : laisser") call _tr };
         case ((_ui get "lid") isNotEqualTo ""): { ("Trait choisi : clic sur un sommet pour le déplacer, sur un rond pour en ajouter un · Suppr : supprimer le trait") call _tr };
@@ -862,7 +931,7 @@ private _panel = {
     };
     private _hh = _font * 1.5;
     private _hy = _my + _mh - _hh - _pad * 0.4;
-    private _nb = [0, 2] select (_tool isNotEqualTo "");
+    private _nb = [0, 2] select (_tool isNotEqualTo "" || _next);
     private _bwB = (_ow * 0.18) max (_font * 4);
     private _bgH = ["COMSPEC_RscText", [_x0, _hy, _ow, _hh], "", false] call comspec_atak_native_fnc_pageCtrl;
     _bgH ctrlSetBackgroundColor [0.03, 0.04, 0.035, 0.82];
@@ -870,7 +939,11 @@ private _panel = {
     private _ht = ["COMSPEC_RscStructuredText", [_x0 + _pad * 0.3, _hy + _hh * 0.12, _ow - _nb * (_bwB + _pad * 0.3) - _pad * 0.4, _hh * 0.9], "", false] call comspec_atak_native_fnc_pageCtrl;
     _ht ctrlSetStructuredText parseText format ["<t size='0.82'>%1</t>", _help]; // i18n:brut
     _list pushBack _ht;
-    if (_nb > 0) then {
+    if (_next) then {
+        [[_x0 + _ow - _bwB - _pad * 0.2, _hy + _hh * 0.1, _bwB, _hh * 0.8], "TRACER", ["afterArea", "DRAW"] call _ui1, false, "Polygone : contours et traits du plan sur la zone de travail", false] call _mkBtn;
+        [[_x0 + _ow - _bwB * 2 - _pad * 0.5, _hy + _hh * 0.1, _bwB, _hh * 0.8], "DÉCOUPER", ["afterArea", "CUT"] call _ui1, true, "Onglet DÉCOUPER : méthode, aperçu sur la carte, GÉNÉRER", false] call _mkBtn;
+    };
+    if (_nb > 0 && {!_next}) then {
         [[_x0 + _ow - _bwB - _pad * 0.2, _hy + _hh * 0.1, _bwB, _hh * 0.8], "ANNULER", ["drawCancel"] call _ui1, false, "Abandonne ce tracé (Échap)", false] call _mkBtn;
         if (_tool isEqualTo "POLY") then { [[_x0 + _ow - _bwB * 2 - _pad * 0.5, _hy + _hh * 0.1, _bwB, _hh * 0.8], "TERMINER", ["polyEnd"] call _ui1, true, "Termine le tracé (Entrée, clic droit)", false] call _mkBtn; };
     };
@@ -934,6 +1007,8 @@ switch (_view) do {
         _map ctrlAddEventHandler ["Draw", { ["draw", _this] call comspec_atak_native_fnc_zoneMap; }];
         _map ctrlAddEventHandler ["MouseButtonDown", { ["down", _this] call comspec_atak_native_fnc_zoneMap; }];
         _map ctrlAddEventHandler ["MouseMoving", { ["move", _this] call comspec_atak_native_fnc_zoneMap; }];
+        // Rectangle et cercle en clic-glisser : second point au relâchement (fn_zoneMap « up »).
+        _map ctrlAddEventHandler ["MouseButtonUp", { ["up", _this] call comspec_atak_native_fnc_zoneMap; }];
         private _v = uiNamespace getVariable ["COMSPEC_ATAK_ZnView", []];
         if ((count _v) isNotEqualTo 2) then {
             private _c = getPosATL player;
