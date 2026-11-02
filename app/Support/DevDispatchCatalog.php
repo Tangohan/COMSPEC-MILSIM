@@ -294,6 +294,14 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1318, '2026-11-02', 'Publier un document : un assistant en cinq étapes', 'La page « Publier un document » de la doctrine devient un assistant pas à pas : le texte, le classement, les destinataires, la lecture attendue, puis un récapitulatif avant de publier. Une barre de progression indique où vous en êtes, chaque étape vérifie l’essentiel avant d’avancer avec un message clair sous le champ concerné, et le récapitulatif renvoie d’un clic vers l’étape à corriger. Tous les réglages précédents sont conservés.', [
+                'Import d’un texte existant par glisser-déposer (page web, texte ou Markdown) et aperçu du document tel que le lecteur le verra',
+                'Destinataires en listes à cocher : recherche dans chaque liste (unités, emplois, rôles, membres), « Tout cocher », compteur par liste et total',
+                'Saisie conservée sur l’appareil jusqu’à l’enregistrement : après une fermeture ou un enregistrement refusé, la page propose de la reprendre',
+            ], [
+                'Indicateur d’attente pendant l’enregistrement et la publication, et pendant le chargement de l’éditeur',
+                'Dates vérifiées : la date limite de lecture et la fin d’application doivent suivre la prise d’effet',
+            ], [], ['command'], [], 'Portail'),
             $pr(1315, '2026-11-02', 'App Routes, bandeau du curseur de la carte refait, app Réseau lisible', 'Avec le pack 2.9.34, le téléphone gagne l’app Routes : des routes nommées à pied, en véhicule (par les routes au choix), aériennes ou nautiques, avec leurs étapes typées (checkpoint, ligne de phase, ralliement, LZ…), leurs consignes, leurs heures H+ et l’action attendue à chaque étape. Distances, caps, durée et heure d’arrivée sont calculés ; « Suivre la route » guide d’étape en étape. Les routes se partagent à l’équipe, au groupe ou au camp par le réseau ATAK et peuvent s’afficher sur la carte d’Arma, sur Athena et en 3D. Le bandeau du curseur de la carte et l’app Réseau sont refaits pour être lisibles.', [
                 'App Routes (Navigation) : créer, dupliquer, supprimer des routes ; type de tracé à pied, véhicule (option « Suivre les routes »), aérien (couloir) ou nautique ; couleur, épaisseur, style plein, pointillé ou flèches de direction',
                 'Étapes posées d’un clic sur la carte de l’app (ajouter, insérer, déplacer), sur ma position, un marqueur existant ou une grille MGRS ; type, nom, consigne, heure prévue H+ et action attendue pour chacune',
