@@ -20,6 +20,7 @@ use App\Services\Personnel\QualificationBadgeStorageService;
 use App\Services\Personnel\QualificationCatalogImporter;
 use App\Services\Personnel\QualificationIssuerCatalogImporter;
 use App\Services\Personnel\QualificationReferenceWriter;
+use App\Support\QualificationCatalog\IssuerDetails;
 use App\Support\QualificationCatalog\QualificationCatalog;
 use App\Support\QualificationCatalog\QualificationCatalogExplorer;
 use App\Support\QualificationCatalog\QualificationIssuerCatalog;
@@ -292,25 +293,77 @@ final class QualificationReferentielController
 
     public function storeIssuer(Request $request, array $params = []): Response
     {
-        return $this->withTenantPost($request, function (int $tenantId) use ($request) {
+        $json = self::wantsJson($request);
+        if (($guard = $this->jsonGuard($request, $json)) !== null) {
+            return $guard;
+        }
+
+        return $this->withTenantPost($request, function (int $tenantId) use ($request, $json) {
             $name = trim((string) $request->input('name', ''));
             if ($name === '') {
-                Session::flash('error', 'Le nom de l’émetteur est obligatoire.');
-
-                return Response::redirect(url(self::ISSUERS) . '#nouvel-emetteur');
+                return $this->issuerReply($json, false, 'Le nom de l’émetteur est obligatoire.', url(self::ISSUERS) . '#nouvel-emetteur', [], 422);
+            }
+            $website = trim((string) $request->input('website', ''));
+            if ($website !== '' && !IssuerDetails::validWebsite($website)) {
+                return $this->issuerReply($json, false, 'Le site officiel doit être une adresse complète, par exemple https://www.exemple.fr.', url(self::ISSUERS) . '#nouvel-emetteur', [], 422);
             }
             try {
-                $id = $this->issuerRepo()->create($tenantId, $this->issuerPayload($request), $this->actorId());
-                $this->saveIssuerExtras($tenantId, $id, $request);
-                Session::flash('success', 'Émetteur « ' . $name . ' » ajouté.');
+                $payload = $this->issuerPayload($request);
+                $payload['description'] = IssuerDetails::compose([
+                    'description' => $request->input('description'),
+                    'description_en' => $request->input('description_en'),
+                    'country' => $request->input('country'),
+                    'location' => $request->input('location'),
+                    'website' => $website,
+                ]);
+                $id = $this->issuerRepo()->create($tenantId, $payload, $this->actorId());
+                $warning = $this->saveIssuerExtras($tenantId, $id, $request);
+                if ($warning !== null && !$json) {
+                    Session::flash('error', $warning);
+                }
 
-                return Response::redirect(url(self::ISSUERS . '/' . $id));
+                return $this->issuerReply($json, true, 'Émetteur « ' . $name . ' » ajouté.', url(self::ISSUERS . '/' . $id), [
+                    'issuer_id' => $id,
+                    'url' => url(self::ISSUERS . '/' . $id),
+                    'warning' => $warning,
+                ]);
             } catch (Throwable $e) {
-                Session::flash('error', 'Création impossible : ' . $e->getMessage());
+                error_log('Qualification issuer create: ' . $e->getMessage());
 
-                return Response::redirect(url(self::ISSUERS));
+                return $this->issuerReply($json, false, 'Création impossible : ' . $e->getMessage(), url(self::ISSUERS), [], 503);
             }
         });
+    }
+
+    /** Appel des assistants de la page Émetteurs (fetch, Accept: application/json) : réponse JSON, sans redirection. */
+    private static function wantsJson(Request $request): bool
+    {
+        return str_contains((string) $request->header('Accept'), 'application/json');
+    }
+
+    /** Appel JSON sans communauté ou avec une session expirée : réponse JSON au lieu de la redirection. */
+    private function jsonGuard(Request $request, bool $json): ?Response
+    {
+        if ($json && ((int) Session::get('tenant_id') < 1 || !Csrf::validate((string) $request->input('_csrf_token', '')))) {
+            return Response::json(['ok' => false, 'message' => 'Session expirée. Rechargez la page avant de réessayer.'], 419);
+        }
+
+        return null;
+    }
+
+    /**
+     * Réponse d’une action de la page Émetteurs : JSON pour les assistants, sinon message flash et redirection.
+     *
+     * @param array<string, mixed> $extra
+     */
+    private function issuerReply(bool $json, bool $ok, string $message, string $redirect, array $extra = [], int $status = 200): Response
+    {
+        if ($json) {
+            return Response::json(['ok' => $ok, 'message' => $message] + $extra, $ok ? 200 : $status)->header('Cache-Control', 'private, no-store');
+        }
+        Session::flash($ok ? 'success' : 'error', $message);
+
+        return Response::redirect($redirect);
     }
 
     /** Ce que la formule permet d’ajouter au référentiel (imports, émetteurs réels, créations) ; admin plateforme : sans limite. */
@@ -596,6 +649,24 @@ final class QualificationReferentielController
             }
         }
 
+        $real = $this->realIssuersViewData($tenantId);
+        $keyOf = [];
+        foreach ($real['realMatched'] as $key => $iid) {
+            $keyOf[(int) $iid] ??= (string) $key;
+        }
+        $lang = QualificationCatalog::lang(function_exists('locale') ? (string) locale() : 'fr');
+        $issuerMeta = [];
+        foreach ($issuers as $i) {
+            $iid = (int) $i['id'];
+            $key = $keyOf[$iid] ?? '';
+            $country = $key !== '' ? (string) (QualificationIssuerCatalog::find($key)['country'] ?? '') : IssuerDetails::country((string) ($i['description'] ?? ''));
+            $issuerMeta[$iid] = [
+                'origin' => $key !== '' ? 'catalog' : 'custom',
+                'country' => $country,
+                'country_label' => $country !== '' ? QualificationCatalog::countryLabel($country, $lang) : '',
+            ];
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.qualifications.issuers',
             'title' => 'Émetteurs des qualifications',
@@ -610,7 +681,9 @@ final class QualificationReferentielController
             'units' => $repo->unitOptions($tenantId),
             'enriched' => $repo->enrichedReady(),
             'linkReady' => $repo->linkReady(),
-        ] + $this->realIssuersViewData($tenantId));
+            'issuerMeta' => $issuerMeta,
+            'countries' => QualificationCatalog::COUNTRIES,
+        ] + $real);
     }
 
     private function issuerCatalogImporter(): QualificationIssuerCatalogImporter
@@ -651,34 +724,53 @@ final class QualificationReferentielController
      */
     public function importRealIssuers(Request $request, array $params = []): Response
     {
-        return $this->withTenantPost($request, function (int $tenantId) use ($request) {
+        $json = self::wantsJson($request);
+        if (($guard = $this->jsonGuard($request, $json)) !== null) {
+            return $guard;
+        }
+
+        return $this->withTenantPost($request, function (int $tenantId) use ($request, $json) {
             $raw = $request->input('keys', []);
             $keys = is_array($raw) ? array_values(array_filter(array_map(static fn ($v): string => is_scalar($v) ? (string) $v : '', $raw), static fn (string $k): bool => preg_match('/^[a-z]{2,4}-[a-z0-9-]{2,60}$/', $k) === 1)) : [];
             $back = url(self::ISSUERS) . '#emetteurs-reels';
             if ($keys === []) {
-                Session::flash('error', 'Cochez au moins un émetteur réel à importer.');
-
-                return Response::redirect($back);
+                return $this->issuerReply($json, false, 'Cochez au moins un émetteur réel à importer.', $back, [], 422);
             }
             try {
                 $lang = function_exists('locale') ? (string) locale() : 'fr';
                 $quota = $this->qualificationQuota($tenantId);
                 $result = $this->issuerCatalogImporter()->import($tenantId, array_slice($keys, 0, 300), $lang, $this->actorId(), $quota->remaining(QualificationCatalogQuota::ISSUERS));
             } catch (Throwable $e) {
-                Session::flash('error', 'Import impossible : ' . $e->getMessage());
+                error_log('Real issuer import: ' . $e->getMessage());
 
-                return Response::redirect($back);
+                return $this->issuerReply($json, false, 'Import impossible : ' . $e->getMessage(), $back, [], 503);
             }
             $created = count($result['created']);
             $skipped = count($result['skipped']);
-            if ($result['blocked'] !== []) {
-                Session::flash('error', count($result['blocked']) . ' émetteur(s) non importé(s) : ' . self::quotaMessage($quota, QualificationCatalogQuota::ISSUERS, 'émetteurs réels'));
-            }
+            $blockedMsg = $result['blocked'] !== []
+                ? count($result['blocked']) . ' émetteur(s) non importé(s) : ' . self::quotaMessage($quota, QualificationCatalogQuota::ISSUERS, 'émetteurs réels')
+                : null;
             if ($created === 0) {
-                Session::flash('success', $skipped > 0 ? 'Ces émetteurs sont déjà dans votre référentiel : rien à importer.' : 'Aucun émetteur importé.');
+                $message = $skipped > 0 ? 'Ces émetteurs sont déjà dans votre référentiel : rien à importer.' : 'Aucun émetteur importé.';
             } else {
-                Session::flash('success', $created . ' émetteur(s) réel(s) importé(s)' . ($skipped > 0 ? ', ' . $skipped . ' déjà présent(s) laissé(s) tel(s) quel(s)' : '') . '. Émetteurs de jeu inspirés d’organismes réels, sans valeur réelle.');
+                $message = $created . ' émetteur(s) réel(s) importé(s)' . ($skipped > 0 ? ', ' . $skipped . ' déjà présent(s) laissé(s) tel(s) quel(s)' : '') . '. Émetteurs de jeu inspirés d’organismes réels, sans valeur réelle.';
             }
+            if ($json) {
+                $ok = $created > 0 || $skipped > 0;
+
+                return Response::json([
+                    'ok' => $ok,
+                    'message' => $ok ? $message : ($blockedMsg ?? $message),
+                    'warning' => $ok ? $blockedMsg : null,
+                    'created' => $created,
+                    'skipped' => $skipped,
+                    'blocked' => count($result['blocked']),
+                ], $ok ? 200 : 422)->header('Cache-Control', 'private, no-store');
+            }
+            if ($blockedMsg !== null) {
+                Session::flash('error', $blockedMsg);
+            }
+            Session::flash('success', $message);
 
             return Response::redirect(url(self::ISSUERS));
         });
@@ -758,7 +850,10 @@ final class QualificationReferentielController
             }
             try {
                 $this->issuerRepo()->update($tenantId, $id, $this->issuerPayload($request));
-                $this->saveIssuerExtras($tenantId, $id, $request);
+                $warning = $this->saveIssuerExtras($tenantId, $id, $request);
+                if ($warning !== null) {
+                    Session::flash('error', $warning);
+                }
                 Session::flash('success', 'Émetteur enregistré.');
             } catch (Throwable $e) {
                 Session::flash('error', 'Enregistrement impossible : ' . $e->getMessage());
@@ -821,19 +916,22 @@ final class QualificationReferentielController
 
     private function toggleIssuerArchive(Request $request, int $id, bool $archive): Response
     {
-        return $this->withTenantPost($request, function (int $tenantId) use ($id, $archive) {
+        $json = self::wantsJson($request);
+        if (($guard = $this->jsonGuard($request, $json)) !== null) {
+            return $guard;
+        }
+
+        return $this->withTenantPost($request, function (int $tenantId) use ($id, $archive, $json) {
             if ($this->issuerRepo()->find($tenantId, $id) === null) {
-                return Response::redirect(url(self::ISSUERS));
+                return $json ? Response::json(['ok' => false, 'message' => 'Émetteur introuvable.'], 404) : Response::redirect(url(self::ISSUERS));
             }
             if (!$this->issuerRepo()->setArchived($tenantId, $id, $archive)) {
-                Session::flash('error', 'L’archivage arrive avec la prochaine mise à jour du site.');
-            } else {
-                Session::flash('success', $archive
-                    ? 'Émetteur archivé : il n’est plus proposé pour les nouvelles délivrances. Les brevets déjà délivrés restent à son nom.'
-                    : 'Émetteur réactivé.');
+                return $this->issuerReply($json, false, 'L’archivage arrive avec la prochaine mise à jour du site.', url(self::ISSUERS . '/' . $id), [], 409);
             }
 
-            return Response::redirect(url(self::ISSUERS . '/' . $id));
+            return $this->issuerReply($json, true, $archive
+                ? 'Émetteur archivé : il n’est plus proposé pour les nouvelles délivrances. Les brevets déjà délivrés restent à son nom.'
+                : 'Émetteur réactivé.', url(self::ISSUERS . '/' . $id));
         });
     }
 
@@ -852,8 +950,8 @@ final class QualificationReferentielController
         ];
     }
 
-    /** Qualifications rattachées et logo envoyés avec le formulaire de l’émetteur. */
-    private function saveIssuerExtras(int $tenantId, int $id, Request $request): void
+    /** Qualifications rattachées et logo envoyés avec le formulaire de l’émetteur ; message si le logo est refusé. */
+    private function saveIssuerExtras(int $tenantId, int $id, Request $request): ?string
     {
         if ($request->input('definitions_form') !== null) {
             $this->issuerRepo()->syncDefinitions($tenantId, $id, array_map('intval', (array) $request->input('definition_ids', [])));
@@ -864,9 +962,11 @@ final class QualificationReferentielController
                 $path = $this->badges->storeUpload($tenantId, $id, $file, 'issuer');
                 $this->issuerRepo()->setLogo($tenantId, $id, $path);
             } catch (Throwable $e) {
-                Session::flash('error', 'Logo non enregistré : ' . $e->getMessage());
+                return 'Logo non enregistré : ' . $e->getMessage();
             }
         }
+
+        return null;
     }
 
     private function issuerRepo(): QualificationIssuerRepository
