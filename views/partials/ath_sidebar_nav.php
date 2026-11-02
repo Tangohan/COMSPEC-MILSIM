@@ -345,7 +345,8 @@ $atakResChildren = [
 
 // ——— ACADEMY ———
 $doctrineChildren = [
-    ['label' => 'Doctrine et SOP', 'href' => url('back-office/doctrine'), 'active' => $navAt('back-office/doctrine')],
+    ['label' => 'Doctrine et SOP', 'href' => url('back-office/doctrine'), 'active' => $navAt('back-office/doctrine') && !$navAt('back-office/doctrine/referentiel')],
+    ['label' => 'Référentiel doctrinal', 'href' => url('back-office/doctrine/referentiel'), 'active' => $navAt('back-office/doctrine/referentiel')],
     ['label' => 'Fichiers partagés', 'href' => url('back-office/partage'), 'active' => $navAt('back-office/partage')],
 ];
 
