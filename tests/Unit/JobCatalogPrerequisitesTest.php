@@ -82,7 +82,8 @@ final class JobCatalogPrerequisitesTest extends TestCase
             self::assertNotSame('', trim((string) ($pack['sources_note']['fr'] ?? '')));
             self::assertNotSame('', trim((string) ($pack['sources_note']['en'] ?? '')));
             $entries = array_values(array_filter($all, static fn (array $e): bool => $e['pack'] === $name));
-            self::assertGreaterThanOrEqual(80, count($entries), $name);
+            // Chine : moins de sources ouvertes détaillées sur les billets (voir sources_note du pack), seuil plus bas.
+            self::assertGreaterThanOrEqual($name === 'cn_sof' ? 60 : 80, count($entries), $name);
             self::assertLessThanOrEqual(150, count($entries), $name);
             $prefix = strtolower((string) $pack['country']) . '-';
             $problems = [];
@@ -193,6 +194,89 @@ final class JobCatalogPrerequisitesTest extends TestCase
             foreach (['fr', 'en'] as $reader) {
                 self::assertContains('de-heer-ksk-kommandofeldwebel', array_column(JobCatalog::search($q, ['country' => 'DE'], $reader), 'id'), $q . ' / ' . $reader);
             }
+        }
+    }
+
+    public function testChinesePackHasOfficialNamesInCharactersAndPinyinAndIsFoundEitherWay(): void
+    {
+        $pack = JobCatalog::packs()['cn_sof'] ?? null;
+        self::assertIsArray($pack);
+        self::assertSame('CN', $pack['country']);
+        self::assertSame('zh', $pack['official_lang']);
+        $entries = array_values(array_filter(JobCatalog::rawEntries(), static fn (array $e): bool => $e['country'] === 'CN'));
+        $branches = array_count_values(array_column($entries, 'branch'));
+        foreach (['army' => 20, 'marine_corps' => 8, 'air_force' => 8, 'gendarmerie' => 6] as $branch => $min) {
+            self::assertGreaterThanOrEqual($min, $branches[$branch] ?? 0, 'CN ' . $branch);
+        }
+        foreach ($entries as $entry) {
+            $id = (string) $entry['id'];
+            self::assertNotSame('', trim((string) ($entry['formation'] ?? '')), $id . ' : unité courte manquante.');
+            // Nom officiel en caractères chinois (simplifiés) et sa romanisation pinyin avec tons.
+            self::assertMatchesRegularExpression('/\p{Han}/u', (string) ($entry['name']['zh'] ?? ''), $id . ' : nom chinois manquant.');
+            self::assertLessThanOrEqual(120, mb_strlen((string) $entry['name']['zh']), $id);
+            $py = (string) ($entry['name']['pinyin'] ?? '');
+            self::assertMatchesRegularExpression('/^[\p{Latin}0-9 \'\-()·.,]+$/u', $py, $id . ' : pinyin manquant ou hors alphabet latin.');
+            self::assertMatchesRegularExpression('/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/u', $py, $id . ' : pinyin sans tons.');
+            $official = array_filter($entry['sources'], static fn (array $s): bool => preg_match('~wikipedia\.org~', (string) $s['url']) !== 1);
+            self::assertNotSame([], $official, $id . ' : Wikipédia ne peut pas être la seule source.');
+        }
+        // Officiel en chinois, pinyin juste après, puis la langue du lecteur et l’anglais.
+        $first = $entries[0];
+        $fr = JobCatalog::find((string) $first['id'], 'fr');
+        self::assertSame($first['name']['zh'], $fr['official_name']);
+        self::assertSame(['zh', 'pinyin', 'fr', 'en'], array_keys($fr['names']));
+        self::assertSame(['zh', 'pinyin', 'en', 'fr'], array_keys(JobCatalog::find((string) $first['id'], 'en')['names']));
+        self::assertSame('Chine', $fr['country_label']);
+        self::assertSame('China', JobCatalog::find((string) $first['id'], 'en')['country_label']);
+        // Recherche par caractères, pinyin avec et sans tons, d’un seul tenant, français et anglais.
+        $flat = JobCatalog::normalize((string) $first['name']['pinyin']);
+        foreach ([$first['name']['zh'], mb_substr((string) $first['name']['zh'], 0, 2), $first['name']['pinyin'], $flat, str_replace(' ', '', $flat), $first['name']['fr'], $first['name']['en']] as $q) {
+            foreach (['fr', 'en'] as $reader) {
+                self::assertContains($first['id'], array_column(JobCatalog::search((string) $q, ['country' => 'CN'], $reader), 'id'), $q . ' / ' . $reader);
+            }
+        }
+    }
+
+    public function testChineseNamesAreSearchedByCharactersAndPinyinWithOrWithoutTones(): void
+    {
+        $dir = sys_get_temp_dir() . '/jobcat-' . bin2hex(random_bytes(4));
+        mkdir($dir);
+        $entry = static fn (string $id, string $branch, string $formation, array $name): array => [
+            'id' => $id, 'branch' => $branch, 'command' => '南部战区', 'formation' => $formation, 'type' => 'operator',
+            'code' => '', 'code_system' => '', 'abbreviation' => '', 'icon' => 'crosshair', 'name' => $name,
+            'unit' => ['fr' => $formation . ' (unité)', 'en' => $formation . ' (unit)'], 'description' => ['fr' => 'Texte.', 'en' => 'Text.'],
+            'qualifications' => ['fr' => [], 'en' => []], 'billets' => ['fr' => [], 'en' => []],
+            'tags' => ['fr' => ['Forces spéciales'], 'en' => ['Special Forces']], 'sources' => [['url' => 'https://eng.chinamil.com.cn/x', 'title' => 'x']],
+        ];
+        file_put_contents($dir . '/cn_sof.json', (string) json_encode(['country' => 'CN', 'official_lang' => 'zh', 'label' => ['fr' => 'FS CN', 'en' => 'CN SOF'], 'compiled_at' => '2026-11-02', 'sources_note' => ['fr' => 'n', 'en' => 'n'], 'entries' => [
+            $entry('cn-army-sof-sniper', 'army', '特战旅', ['zh' => '狙击手', 'pinyin' => 'jūjīshǒu', 'fr' => 'Tireur d’élite', 'en' => 'Sniper']),
+            $entry('cn-pap-snow-leopard-operator', 'gendarmerie', '雪豹突击队', ['zh' => '特战队员', 'pinyin' => 'tèzhàn duìyuán', 'fr' => 'Opérateur des forces spéciales', 'en' => 'Special operations member']),
+            $entry('cn-mc-brigade-commander', 'marine_corps', '陆战旅', ['zh' => '旅长', 'pinyin' => 'lǚzhǎng', 'fr' => 'Commandant de brigade', 'en' => 'Brigade commander']),
+        ]]));
+        JobCatalog::useDirectory($dir);
+        try {
+            $ids = static fn (string $q, string $lang = 'fr'): array => array_column(JobCatalog::search($q, [], $lang), 'id');
+            self::assertSame([['code' => 'CN', 'label' => 'Chine', 'count' => 3]], JobCatalog::countries('fr'));
+            self::assertSame('China', JobCatalog::countries('en')[0]['label']);
+            foreach (['狙击手', '狙击', 'jūjīshǒu', 'jujishou', 'JUJISHOU', 'tireur', 'sniper'] as $q) {
+                self::assertSame(['cn-army-sof-sniper'], $ids($q), $q);
+            }
+            foreach (['特战队员', '雪豹', 'tèzhàn duìyuán', 'tezhan duiyuan', 'tezhanduiyuan', 'tezhan', 'special operations member'] as $q) {
+                self::assertSame(['cn-pap-snow-leopard-operator'], $ids($q, 'en'), $q);
+            }
+            // « ü » : avec ou sans tréma, ou « v » comme au clavier.
+            foreach (['旅长', 'lǚzhǎng', 'lüzhang', 'luzhang', 'lvzhang'] as $q) {
+                self::assertSame(['cn-mc-brigade-commander'], $ids($q), $q);
+            }
+            self::assertSame(['zh' => '狙击手', 'pinyin' => 'jūjīshǒu', 'fr' => 'Tireur d’élite', 'en' => 'Sniper'], JobCatalog::find('cn-army-sof-sniper', 'fr')['names']);
+            self::assertSame('狙击手', JobCatalog::find('cn-army-sof-sniper', 'en')['official_name']);
+            self::assertSame('Sniper', JobCatalog::find('cn-army-sof-sniper', 'en')['name']);
+            self::assertSame('Police armée du peuple (武警部队)', JobCatalog::find('cn-pap-snow-leopard-operator', 'fr')['branch_label']);
+            self::assertSame('PLA Navy Marine Corps (海军陆战队)', JobCatalog::find('cn-mc-brigade-commander', 'en')['branch_label']);
+            self::assertSame(['南部战区'], array_keys(JobCatalog::facets('fr', ['country' => 'CN'])['command']));
+        } finally {
+            unlink($dir . '/cn_sof.json');
+            rmdir($dir);
         }
     }
 
@@ -382,7 +466,7 @@ final class JobCatalogPrerequisitesTest extends TestCase
         self::assertNotEmpty($body['entries']);
         self::assertSame('air_force', $body['entries'][0]['branch']);
         self::assertArrayHasKey('branch', $body['facets']);
-        self::assertSame(['US', 'FR', 'DE'], array_column($body['countries'], 'code'));
+        self::assertSame(['US', 'FR', 'DE', 'CN'], array_column($body['countries'], 'code'));
         $_GET = ['q' => 'nageur de combat', 'country' => 'FR'];
         $body = json_decode((new JobCatalogController())->catalogue(new Request())->body(), true);
         self::assertNotEmpty($body['entries']);
