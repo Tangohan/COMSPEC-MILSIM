@@ -294,6 +294,16 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1345, '2026-11-02', 'Sur mon téléphone : même présentation que la page 9-LINE, fenêtres de la carte qui se ferment', 'Les pages Sur mon téléphone (comptes rendus, CR fin d’op, carte et briefs air du pilote) reprennent la présentation noir et vert de la page 9-LINE : mêmes polices, grand titre sur photo, barre du haut réduite au logo, au titre, à la langue et au joueur. Dans Briefs air, les briefs non lus sont en tête, chaque brief porte le même badge d’état que l’historique de la page 9-LINE (ENVOYÉ, REÇU, LU, WILCO, UNABLE), et un brief s’ouvre en plein écran, lu ligne par ligne en gros caractères, avec de très grands boutons WILCO et UNABLE. Sur la carte, la fenêtre d’un marqueur se ferme enfin (bouton, Échap, toucher la carte ou glisser vers le bas), et un bouton Plein écran agrandit la carte, choix gardé pendant la session.', [
+                'Briefs air : non lus en tête, badges d’état identiques à la page 9-LINE, lecture plein écran',
+                'Carte : bouton Plein écran (repli pour iPhone), mémorisé pendant la session',
+            ], [
+                'Carte du téléphone : la fenêtre d’un marqueur et le bandeau de placement ne se fermaient pas',
+                'Fermeture des fenêtres par Échap, toucher hors fenêtre et glisser vers le bas',
+            ], [], ['atak'], [
+                'Rien à installer ni à lancer côté serveur.',
+                'Essai : ouvrir /m/briefs et /m/carte depuis le QR code SUR MON TÉLÉPHONE, ouvrir puis fermer un marqueur, passer la carte en plein écran.',
+            ], 'Portail Athena'),
             $pr(1343, '2026-11-02', 'Page 9-LINE : nouvelle présentation, barre du haut allégée', 'La page 9-LINE (QR code et bouton de l’app JTAC) adopte une nouvelle présentation sombre, noir et vert : grand titre sur photo, chiffres de la demande en bandeau, cartes numérotées Destinataires, Rédaction et Historique, lignes en grille de deux colonnes et carte de transmission toujours visible à droite (en bas sur téléphone). La carte indique si la demande est prête ou transmise et liste les lignes obligatoires à corriger ; le texte radio se copie d’un clic, et l’aide au calcul remplit les lignes 2 et 3 depuis les grilles. La barre du haut ne garde que la marque Athena, le titre, la langue et le compte. Toutes les fonctions restent : 9-LINE, 5-LINE et MEDEVAC, saisie libre, destinataires et « Joueurs uniquement », indicatifs, accusés des pilotes, suppression et vidage de l’historique.', [
                 'Carte de transmission : état Brouillon, Prêt ou Transmis, lignes obligatoires à corriger, bouton Copier le texte radio',
                 'Aide au calcul : cap et distance IP → cible calculés en direct, bouton Appliquer',

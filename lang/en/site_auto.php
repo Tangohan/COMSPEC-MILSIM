@@ -53951,4 +53951,6 @@ return [
     'NOUVEAU' => 'NEW',
     'Position : %1' => 'Position: %1',
     'Position : en attente du jeu' => 'Position: waiting for the game',
+    'Déjà lus' => 'Already read',
+    '✕ Quitter' => '✕ Exit',
 ];

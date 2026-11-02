@@ -283,6 +283,26 @@ final class AtakMobileLinkTest extends TestCase
         return new AtakMobileAppsController($this->svc, null, $limiter, new AirBriefService($this->pdo));
     }
 
+    /** Thème /9-line sur /m/* et fenêtres refermables (hidden doit l'emporter sur display:flex). */
+    public function testMobilePagesUseNineLineThemeAndSheetsClose(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $css = (string) file_get_contents($root . '/public/assets/css/atak-m.css');
+        self::assertStringContainsString('[hidden] { display: none !important; }', $css);
+        self::assertStringContainsString('../fonts/nine-line/jetbrains-mono-latin.woff2', $css);
+        self::assertStringContainsString('#34d399', $css);
+        foreach (['received', 'read', 'wilco', 'unable'] as $st) {
+            self::assertStringContainsString('.mm-ack.' . $st, $css);
+        }
+        $head = (string) file_get_contents($root . '/views/m/_head.php');
+        self::assertStringContainsString('mm-lang', $head);
+        self::assertStringNotContainsString('fonts.googleapis.com', $head);
+        $js = (string) file_get_contents($root . '/public/assets/js/atak-m.js');
+        self::assertStringContainsString("e.key === 'Escape'", $js);
+        self::assertStringContainsString('requestFullscreen', $js);
+        self::assertStringContainsString('data-map-full', (string) file_get_contents($root . '/views/m/carte.php'));
+    }
+
     private function air(string $cs, string $crew): void
     {
         $this->pdo->prepare('INSERT INTO atak_air_assets (tenant_id, map_id, callsign, model, aircraft_type, pos_x, pos_y, alt, heading, status, pilot, crew, updated_at)
